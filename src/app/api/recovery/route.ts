@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
 
     const skip = (page - 1) * limit;
 
-    const where: Record<string, unknown> = { tenantId };
+    const where: Record<string, unknown> = { tenantId, deletedAt: null };
 
     const validStatuses: TicketStatus[] = [
       "OPEN",

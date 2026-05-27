@@ -1,6 +1,7 @@
 import { PrismaClient } from "../src/generated/prisma";
 import { PrismaPg } from "@prisma/adapter-pg";
 import bcrypt from "bcryptjs";
+import { randomBytes } from "node:crypto";
 
 const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
 const prisma = new PrismaClient({ adapter });
@@ -135,6 +136,7 @@ async function main() {
         rating: fd.rating,
         comment: fd.comment,
         status: fd.status,
+        token: randomBytes(32).toString("base64url"),
         submittedAt: fd.status === "SUBMITTED" ? new Date() : null,
         expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
       },

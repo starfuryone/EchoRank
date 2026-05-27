@@ -231,7 +231,7 @@ model Feedback {
   rating         Int?
   comment        String?
   status         FeedbackStatus @default(PENDING)
-  token          String         @unique @default(cuid())
+  token          String         @unique
   submittedAt    DateTime?
   expiresAt      DateTime?
   deletedAt      DateTime?
