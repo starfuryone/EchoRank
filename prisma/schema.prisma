@@ -1,0 +1,412 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+enum PlanType {
+  STARTER
+  GROWTH
+  AGENCY
+}
+
+enum BillingStatus {
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  TRIALING
+}
+
+enum FeedbackStatus {
+  PENDING
+  SUBMITTED
+  EXPIRED
+}
+
+enum CustomerStatus {
+  NEW
+  CONTACTED
+  SATISFIED
+  NEEDS_FOLLOWUP
+  RECOVERED
+  LOST
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum TicketPriority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum MessageChannel {
+  EMAIL
+  SMS
+}
+
+enum MessageStatus {
+  QUEUED
+  SENT
+  DELIVERED
+  FAILED
+  BOUNCED
+}
+
+enum CampaignStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  COMPLETED
+}
+
+model User {
+  id             String         @id @default(cuid())
+  name           String?
+  email          String         @unique
+  emailVerified  DateTime?
+  passwordHash   String?
+  image          String?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  memberships    TenantMember[]
+  accounts       Account[]
+  sessions       Session[]
+  auditLogs      AuditLog[]
+
+  @@map("users")
+}
+
+model Account {
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@id([identifier, token])
+  @@map("verification_tokens")
+}
+
+model Tenant {
+  id                  String        @id @default(cuid())
+  name                String
+  slug                String        @unique
+  logo                String?
+  brandPrimaryColor   String        @default("#2563eb")
+  brandSecondaryColor String        @default("#1e40af")
+  supportEmail        String?
+  googleReviewLink    String?
+  facebookReviewLink  String?
+  trustpilotLink      String?
+  defaultLanguage     String        @default("en")
+  timezone            String        @default("America/New_York")
+  planType            PlanType      @default(STARTER)
+  monthlyRequestLimit Int           @default(300)
+  billingStatus       BillingStatus @default(TRIALING)
+  stripeCustomerId    String?
+  stripeSubscriptionId String?
+  whitelabel          Boolean       @default(false)
+  customDomain        String?
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
+
+  members             TenantMember[]
+  customers           Customer[]
+  feedback            Feedback[]
+  reviewLinks         ReviewLink[]
+  emailTemplates      EmailTemplate[]
+  smsTemplates        SmsTemplate[]
+  recoveryTickets     RecoveryTicket[]
+  emailLogs           EmailLog[]
+  smsLogs             SmsLog[]
+  campaigns           Campaign[]
+  subscription        Subscription?
+  auditLogs           AuditLog[]
+
+  @@map("tenants")
+}
+
+model TenantMember {
+  id        String   @id @default(cuid())
+  tenantId  String
+  userId    String
+  role      Role     @default(MEMBER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, userId])
+  @@map("tenant_members")
+}
+
+model Customer {
+  id              String         @id @default(cuid())
+  tenantId        String
+  name            String
+  email           String?
+  phone           String?
+  status          CustomerStatus @default(NEW)
+  tags            String[]
+  location        String?
+  metadata        Json?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  tenant          Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  feedback        Feedback[]
+  emailLogs       EmailLog[]
+  smsLogs         SmsLog[]
+  recoveryTickets RecoveryTicket[]
+
+  @@index([tenantId])
+  @@index([tenantId, email])
+  @@map("customers")
+}
+
+model Feedback {
+  id             String         @id @default(cuid())
+  tenantId       String
+  customerId     String
+  campaignId     String?
+  rating         Int?
+  comment        String?
+  status         FeedbackStatus @default(PENDING)
+  token          String         @unique @default(cuid())
+  submittedAt    DateTime?
+  expiresAt      DateTime?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  tenant         Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customer       Customer       @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  campaign       Campaign?      @relation(fields: [campaignId], references: [id])
+  reviewRequest  ReviewRequest?
+  recoveryTicket RecoveryTicket?
+
+  @@index([tenantId])
+  @@index([token])
+  @@map("feedback")
+}
+
+model ReviewLink {
+  id        String   @id @default(cuid())
+  tenantId  String
+  platform  String
+  url       String
+  label     String?
+  location  String?
+  isDefault Boolean  @default(false)
+  clicks    Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@map("review_links")
+}
+
+model ReviewRequest {
+  id         String    @id @default(cuid())
+  feedbackId String    @unique
+  platform   String
+  url        String
+  clicked    Boolean   @default(false)
+  clickedAt  DateTime?
+  sentAt     DateTime  @default(now())
+  feedback   Feedback  @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
+
+  @@map("review_requests")
+}
+
+model EmailTemplate {
+  id        String   @id @default(cuid())
+  tenantId  String
+  name      String
+  subject   String
+  body      String
+  type      String
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@map("email_templates")
+}
+
+model SmsTemplate {
+  id        String   @id @default(cuid())
+  tenantId  String
+  name      String
+  body      String
+  type      String
+  isDefault Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@map("sms_templates")
+}
+
+model RecoveryTicket {
+  id         String         @id @default(cuid())
+  tenantId   String
+  customerId String
+  feedbackId String         @unique
+  status     TicketStatus   @default(OPEN)
+  priority   TicketPriority @default(MEDIUM)
+  assignedTo String?
+  notes      String?
+  resolvedAt DateTime?
+  createdAt  DateTime       @default(now())
+  updatedAt  DateTime       @updatedAt
+  tenant     Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customer   Customer       @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  feedback   Feedback       @relation(fields: [feedbackId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([tenantId, status])
+  @@map("recovery_tickets")
+}
+
+model EmailLog {
+  id           String        @id @default(cuid())
+  tenantId     String
+  customerId   String
+  to           String
+  subject      String
+  body         String
+  status       MessageStatus @default(QUEUED)
+  channel      MessageChannel @default(EMAIL)
+  sentAt       DateTime?
+  deliveredAt  DateTime?
+  failedAt     DateTime?
+  errorMessage String?
+  createdAt    DateTime      @default(now())
+  tenant       Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customer     Customer      @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@map("email_logs")
+}
+
+model SmsLog {
+  id           String        @id @default(cuid())
+  tenantId     String
+  customerId   String
+  to           String
+  body         String
+  status       MessageStatus @default(QUEUED)
+  sentAt       DateTime?
+  deliveredAt  DateTime?
+  failedAt     DateTime?
+  errorMessage String?
+  createdAt    DateTime      @default(now())
+  tenant       Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customer     Customer      @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@map("sms_logs")
+}
+
+model Campaign {
+  id             String         @id @default(cuid())
+  tenantId       String
+  name           String
+  description    String?
+  channel        MessageChannel @default(EMAIL)
+  status         CampaignStatus @default(DRAFT)
+  location       String?
+  scheduledAt    DateTime?
+  startedAt      DateTime?
+  completedAt    DateTime?
+  totalSent      Int            @default(0)
+  totalResponses Int            @default(0)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  tenant         Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  feedback       Feedback[]
+
+  @@index([tenantId])
+  @@map("campaigns")
+}
+
+model Subscription {
+  id                   String        @id @default(cuid())
+  tenantId             String        @unique
+  planType             PlanType
+  status               BillingStatus @default(TRIALING)
+  currentPeriodStart   DateTime?
+  currentPeriodEnd     DateTime?
+  cancelAtPeriodEnd    Boolean       @default(false)
+  stripeSubscriptionId String?
+  stripePriceId        String?
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+  tenant               Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("subscriptions")
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  tenantId  String
+  userId    String?
+  action    String
+  entity    String
+  entityId  String?
+  details   Json?
+  ipAddress String?
+  createdAt DateTime @default(now())
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user      User?    @relation(fields: [userId], references: [id])
+
+  @@index([tenantId])
+  @@index([tenantId, createdAt])
+  @@map("audit_logs")
+}
