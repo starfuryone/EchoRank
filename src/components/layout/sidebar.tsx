@@ -15,6 +15,8 @@ import {
   Settings,
   CreditCard,
   Megaphone,
+  Brain,
+  Radar,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -25,6 +27,8 @@ const navItems = [
   { label: "Campaigns", href: "/campaigns", icon: Send },
   { label: "Recovery", href: "/recovery", icon: HeartHandshake },
   { label: "Analytics", href: "/analytics", icon: BarChart3 },
+  { label: "Intelligence", href: "/intelligence", icon: Brain },
+  { label: "Monitoring", href: "/monitoring", icon: Radar },
   { label: "Templates", href: "/templates", icon: FileText },
   { label: "Review Links", href: "/review-links", icon: ExternalLink },
   { label: "Team", href: "/team", icon: UserPlus },

@@ -1,22 +1,34 @@
 import Link from "next/link";
 import {
   Megaphone,
-  Star,
-  MessageSquare,
   Shield,
-  BarChart3,
-  HeartHandshake,
-  Send,
   CheckCircle,
   ArrowRight,
-  Users,
-  Building2,
-  Zap,
+  Brain,
+  Radar,
+  HeartHandshake,
+  BarChart3,
+  MessageSquare,
+  Lock,
+  Eye,
+  Activity,
+  Globe,
+  AlertTriangle,
+  TrendingUp,
+  Star,
 } from "lucide-react";
+
+/* ------------------------------------------------------------------ */
+/* Alternative headlines (preserved for A/B testing):                  */
+/*   "Your reputation is an asset. Protect it with AI."               */
+/*   "The reputation operating system for multi-location brands."     */
+/*   "See what your customers will say — before they say it publicly."*/
+/* ------------------------------------------------------------------ */
 
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-white">
+      {/* ── Navigation ─────────────────────────────────────────────── */}
       <nav className="border-b border-gray-100">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
@@ -34,6 +46,9 @@ export default function LandingPage() {
               <a href="#pricing" className="text-sm text-gray-600 hover:text-gray-900">
                 Pricing
               </a>
+              <a href="#enterprise" className="text-sm text-gray-600 hover:text-gray-900">
+                Enterprise
+              </a>
             </div>
             <div className="flex items-center gap-4">
               <Link
@@ -46,42 +61,44 @@ export default function LandingPage() {
                 href="/register"
                 className="inline-flex items-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
               >
-                Start Free Trial
+                Start Intelligence Assessment
               </Link>
             </div>
           </div>
         </div>
       </nav>
 
-      <section className="py-20 sm:py-32">
+      {/* ── Hero ───────────────────────────────────────────────────── */}
+      <section className="py-20 sm:py-32 bg-gradient-to-b from-gray-50 to-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-700 px-4 py-1.5 rounded-full text-sm font-medium mb-8">
-            <Shield className="h-4 w-4" />
-            100% authentic feedback — no fake reviews
+            <Brain className="h-4 w-4" />
+            AI-Powered Reputation Intelligence
           </div>
-          <h1 className="text-4xl sm:text-6xl font-bold text-gray-900 tracking-tight max-w-4xl mx-auto">
-            Turn real customer feedback into{" "}
-            <span className="text-blue-600">honest reviews</span>
+          <h1 className="text-4xl sm:text-6xl font-bold text-gray-900 tracking-tight max-w-5xl mx-auto leading-tight">
+            Detect customer dissatisfaction early.{" "}
+            <span className="text-blue-600">Recover unhappy customers</span>{" "}
+            before they go public. Monitor reputation risk across every location.
           </h1>
-          <p className="mt-6 text-xl text-gray-500 max-w-2xl mx-auto">
-            Collect feedback. Request honest reviews. Recover unhappy customers before they
-            become public complaints. Reputation automation for local businesses, agencies,
-            and service brands.
+          <p className="mt-6 text-xl text-gray-500 max-w-3xl mx-auto">
+            The AI-powered reputation intelligence platform for businesses that
+            can&apos;t afford brand damage. Predict risk, automate recovery, and
+            protect your brand across every channel.
           </p>
           <div className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4">
             <Link
               href="/register"
-              className="inline-flex items-center gap-2 px-8 py-4 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors text-lg"
+              className="inline-flex items-center gap-2 px-8 py-4 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors text-lg shadow-lg shadow-blue-600/25"
             >
-              Start Free Trial
+              Start Your Intelligence Assessment
               <ArrowRight className="h-5 w-5" />
             </Link>
-            <a
-              href="#how-it-works"
+            <Link
+              href="/enterprise"
               className="inline-flex items-center gap-2 px-8 py-4 text-gray-700 font-medium rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors text-lg"
             >
-              See How It Works
-            </a>
+              Book Enterprise Demo
+            </Link>
           </div>
           <p className="mt-4 text-sm text-gray-400">
             14-day free trial. No credit card required.
@@ -89,79 +106,89 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section className="py-16 bg-gray-50">
+      {/* ── Stats ──────────────────────────────────────────────────── */}
+      <section className="py-16 bg-gray-900">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <p className="text-center text-sm font-medium text-gray-400 uppercase tracking-wider mb-8">
+            Trusted by 2,500+ businesses
+          </p>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
             {[
-              { value: "94%", label: "Average Response Rate" },
-              { value: "4.6x", label: "More Reviews Generated" },
-              { value: "73%", label: "Recovery Success Rate" },
-              { value: "2,500+", label: "Businesses Trust Us" },
+              { value: "87%", label: "Average escalation prediction accuracy" },
+              { value: "73%", label: "Recovery success rate" },
+              { value: "4.6x", label: "More authentic reviews generated" },
+              { value: "$2.3M", label: "Estimated brand damage prevented" },
             ].map((stat) => (
               <div key={stat.label}>
-                <p className="text-3xl sm:text-4xl font-bold text-gray-900">{stat.value}</p>
-                <p className="mt-1 text-sm text-gray-500">{stat.label}</p>
+                <p className="text-3xl sm:text-4xl font-bold text-white">{stat.value}</p>
+                <p className="mt-1 text-sm text-gray-400">{stat.label}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
+      {/* ── Features ───────────────────────────────────────────────── */}
       <section id="features" className="py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900">
-              Everything you need for reputation management
+              Enterprise-grade reputation intelligence
             </h2>
             <p className="mt-4 text-lg text-gray-500 max-w-2xl mx-auto">
-              One platform to collect feedback, amplify honest reviews, and recover
-              unhappy customers.
+              Six pillars of AI-powered protection for your brand, customers,
+              and bottom line.
             </p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {[
               {
-                icon: <MessageSquare className="h-6 w-6" />,
-                title: "Smart Feedback Collection",
+                icon: <AlertTriangle className="h-6 w-6" />,
+                title: "AI Risk Detection",
                 description:
-                  "Send feedback requests by email or SMS. Customers rate 1-5 and leave comments in under 30 seconds.",
+                  "Predict which customers will post negative reviews before they do it. Our models analyze sentiment, language patterns, and behavioral signals to flag high-risk interactions in real time.",
               },
               {
-                icon: <Star className="h-6 w-6" />,
-                title: "Honest Review Requests",
+                icon: <Radar className="h-6 w-6" />,
+                title: "Reputation Monitoring",
                 description:
-                  "Happy customers get a polite request to leave an honest review on Google, Facebook, Trustpilot, or Yelp.",
+                  "Track your brand across Google, Facebook, Trustpilot, Reddit, X, and more — in real time. Get instant alerts for negative mentions and emerging reputation threats.",
               },
               {
                 icon: <HeartHandshake className="h-6 w-6" />,
-                title: "Customer Recovery",
+                title: "Customer Recovery Intelligence",
                 description:
-                  "Unhappy customers trigger recovery tickets. Fix problems before they become public complaints.",
+                  "AI-prioritized recovery workflows that resolve 73% of complaints before they go public. Automated escalation, smart routing, and resolution tracking.",
               },
               {
                 icon: <BarChart3 className="h-6 w-6" />,
-                title: "Reputation Analytics",
+                title: "Executive Dashboards",
                 description:
-                  "Track ratings, response rates, review clicks, recovery success, and sentiment trends across locations.",
+                  "Reputation scores, risk alerts, and sentiment trends across every location. Board-ready reports that quantify brand health and recovery ROI.",
               },
               {
-                icon: <Send className="h-6 w-6" />,
-                title: "Campaign Automation",
+                icon: <MessageSquare className="h-6 w-6" />,
+                title: "Smart Feedback Automation",
                 description:
-                  "Create feedback campaigns for specific services, locations, or customer segments.",
+                  "Collect authentic feedback and route it through AI-powered intelligence. Multi-channel outreach, smart timing, and personalized follow-ups that drive 4.6x more reviews.",
               },
               {
-                icon: <Building2 className="h-6 w-6" />,
-                title: "Multi-Location Support",
+                icon: <Lock className="h-6 w-6" />,
+                title: "Compliance Built-In",
                 description:
-                  "Manage feedback and reviews across multiple locations with location-specific analytics.",
+                  "GDPR-ready data handling, audit trails, and no fake reviews — ever. Full platform policy compliance, consent management, and data retention controls.",
               },
             ].map((feature) => (
-              <div key={feature.title} className="bg-white rounded-xl border border-gray-200 p-6">
+              <div
+                key={feature.title}
+                className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-lg hover:border-gray-300 transition-all"
+              >
                 <div className="p-3 bg-blue-50 rounded-lg text-blue-600 w-fit mb-4">
                   {feature.icon}
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">{feature.title}</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  {feature.title}
+                </h3>
                 <p className="text-gray-500">{feature.description}</p>
               </div>
             ))}
@@ -169,50 +196,58 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ── How It Works ───────────────────────────────────────────── */}
       <section id="how-it-works" className="py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900">
-              How EchoRank works
+              From raw feedback to actionable intelligence
             </h2>
             <p className="mt-4 text-lg text-gray-500">
-              Four simple steps to better reviews and fewer complaints.
+              Four steps to a proactive reputation strategy.
             </p>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             {[
               {
                 step: "1",
-                icon: <Users className="h-8 w-8" />,
-                title: "Add Customers",
-                description: "Upload your customer list or add them individually after each service.",
+                icon: <Globe className="h-8 w-8" />,
+                title: "Connect",
+                description:
+                  "Set up feedback collection channels and connect your monitoring sources across Google, Facebook, Trustpilot, Reddit, X, and more.",
               },
               {
                 step: "2",
-                icon: <Send className="h-8 w-8" />,
-                title: "Send Feedback Request",
-                description: "Customer receives an email or SMS with a simple feedback link.",
+                icon: <Brain className="h-8 w-8" />,
+                title: "Intelligence",
+                description:
+                  "AI analyzes every interaction in real time — predicting risk, scoring reputation, and identifying patterns humans miss.",
               },
               {
                 step: "3",
-                icon: <Star className="h-8 w-8" />,
-                title: "Customer Rates Experience",
-                description: "Quick 1-5 star rating with optional comment. Takes 30 seconds.",
+                icon: <HeartHandshake className="h-8 w-8" />,
+                title: "Recover",
+                description:
+                  "Automated recovery workflows catch problems early. AI prioritizes cases and suggests resolution strategies that work.",
               },
               {
                 step: "4",
-                icon: <Zap className="h-8 w-8" />,
-                title: "Smart Routing",
+                icon: <Eye className="h-8 w-8" />,
+                title: "Monitor",
                 description:
-                  "Happy? Review request. Unhappy? Recovery ticket. Everything is handled automatically.",
+                  "Real-time reputation monitoring across all platforms. Track trends, benchmark against competitors, and stay ahead of threats.",
               },
             ].map((item) => (
               <div key={item.step} className="text-center">
                 <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 text-blue-600 rounded-2xl mb-4">
                   {item.icon}
                 </div>
-                <div className="text-sm font-medium text-blue-600 mb-1">Step {item.step}</div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">{item.title}</h3>
+                <div className="text-sm font-medium text-blue-600 mb-1">
+                  Step {item.step}
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                  {item.title}
+                </h3>
                 <p className="text-gray-500 text-sm">{item.description}</p>
               </div>
             ))}
@@ -220,18 +255,41 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ── Compliance ─────────────────────────────────────────────── */}
       <section className="py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="bg-gray-900 rounded-2xl p-8 sm:p-12 text-center">
             <Shield className="h-12 w-12 text-blue-400 mx-auto mb-4" />
             <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">
-              Built for compliance, not manipulation
+              Enterprise-grade security and compliance
             </h2>
             <p className="text-gray-400 max-w-2xl mx-auto mb-8">
-              EchoRank helps you collect and amplify authentic customer feedback. We never
-              create fake reviews, pressure customers, offer incentives for positive reviews,
-              or block unhappy customers from reviewing.
+              EchoRank is built for regulated industries and brands that demand
+              the highest standards of data protection and ethical practices.
+              No shortcuts, no compromises.
             </p>
+            <div className="grid sm:grid-cols-3 gap-6 max-w-3xl mx-auto mb-8">
+              {[
+                {
+                  title: "GDPR Compliant",
+                  description: "Full data subject rights, consent management, and EU data residency options",
+                },
+                {
+                  title: "SOC 2 Ready",
+                  description: "Security controls, access management, and continuous monitoring infrastructure",
+                },
+                {
+                  title: "Full Audit Trail",
+                  description: "Every action logged, searchable, and exportable for compliance reviews",
+                },
+              ].map((item) => (
+                <div key={item.title} className="text-left bg-gray-800/50 rounded-xl p-5">
+                  <CheckCircle className="h-6 w-6 text-green-400 mb-2" />
+                  <h3 className="text-white font-semibold text-sm mb-1">{item.title}</h3>
+                  <p className="text-gray-400 text-xs">{item.description}</p>
+                </div>
+              ))}
+            </div>
             <div className="grid sm:grid-cols-2 md:grid-cols-3 gap-4 max-w-3xl mx-auto">
               {[
                 "No fake reviews",
@@ -251,103 +309,146 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ── Pricing ────────────────────────────────────────────────── */}
       <section id="pricing" className="py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-3xl sm:text-4xl font-bold text-gray-900">
-              Simple, transparent pricing
+              Plans that scale with your reputation needs
             </h2>
             <p className="mt-4 text-lg text-gray-500">
-              Start free. Upgrade when you&apos;re ready.
+              Start free. Upgrade as your business grows.
             </p>
           </div>
-          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
             {[
               {
                 name: "Starter",
-                price: "$29",
+                price: "$49",
                 description: "For small businesses getting started",
                 features: [
                   "1 location",
-                  "300 feedback requests/month",
-                  "Email review requests",
+                  "500 requests/month",
+                  "Email only",
                   "Basic dashboard",
                   "Email support",
                 ],
                 cta: "Start Free Trial",
+                href: "/register?plan=starter",
                 highlighted: false,
               },
               {
                 name: "Growth",
-                price: "$79",
-                description: "For growing businesses",
+                price: "$149",
+                description: "For businesses that need AI insights",
                 features: [
-                  "3 locations",
-                  "2,000 feedback requests/month",
+                  "5 locations",
+                  "5,000 requests/month",
                   "Email + SMS",
-                  "Custom templates",
-                  "Full analytics",
+                  "AI risk scoring",
                   "Recovery tickets",
-                  "Priority support",
+                  "Advanced analytics",
+                  "Escalation prediction",
                 ],
                 cta: "Start Free Trial",
+                href: "/register?plan=growth",
                 highlighted: true,
               },
               {
                 name: "Agency",
-                price: "$199",
+                price: "$349",
                 description: "For agencies managing clients",
                 features: [
-                  "20 locations",
-                  "10,000 feedback requests/month",
+                  "25 locations",
+                  "15,000 requests/month",
                   "White-label dashboard",
-                  "Client accounts",
-                  "Custom branding",
+                  "Client management",
                   "API access",
-                  "Dedicated support",
+                  "Custom domain",
+                  "Priority support",
                 ],
                 cta: "Start Free Trial",
+                href: "/register?plan=agency",
+                highlighted: false,
+              },
+              {
+                name: "Enterprise",
+                price: "$999",
+                description: "Full intelligence at scale",
+                features: [
+                  "Unlimited locations",
+                  "Custom volume",
+                  "Full AI intelligence",
+                  "Reputation monitoring",
+                  "SSO / SAML",
+                  "SLA guarantee",
+                  "Dedicated support",
+                  "Executive dashboards",
+                  "Custom integrations",
+                ],
+                cta: "Book Enterprise Demo",
+                href: "/enterprise",
                 highlighted: false,
               },
             ].map((plan) => (
               <div
                 key={plan.name}
-                className={`rounded-2xl p-8 ${
+                className={`rounded-2xl p-8 flex flex-col ${
                   plan.highlighted
                     ? "bg-blue-600 text-white ring-4 ring-blue-600 ring-offset-2"
                     : "bg-white border border-gray-200"
                 }`}
               >
                 <h3
-                  className={`text-lg font-semibold ${plan.highlighted ? "text-blue-100" : "text-gray-500"}`}
+                  className={`text-lg font-semibold ${
+                    plan.highlighted ? "text-blue-100" : "text-gray-500"
+                  }`}
                 >
                   {plan.name}
                 </h3>
                 <div className="mt-4 flex items-baseline">
-                  <span className={`text-5xl font-bold ${plan.highlighted ? "text-white" : "text-gray-900"}`}>
+                  <span
+                    className={`text-4xl font-bold ${
+                      plan.highlighted ? "text-white" : "text-gray-900"
+                    }`}
+                  >
                     {plan.price}
                   </span>
-                  <span className={`ml-1 text-lg ${plan.highlighted ? "text-blue-200" : "text-gray-400"}`}>
-                    /month
+                  <span
+                    className={`ml-1 text-lg ${
+                      plan.highlighted ? "text-blue-200" : "text-gray-400"
+                    }`}
+                  >
+                    /mo
                   </span>
                 </div>
-                <p className={`mt-2 text-sm ${plan.highlighted ? "text-blue-200" : "text-gray-500"}`}>
+                <p
+                  className={`mt-2 text-sm ${
+                    plan.highlighted ? "text-blue-200" : "text-gray-500"
+                  }`}
+                >
                   {plan.description}
                 </p>
-                <ul className="mt-6 space-y-3">
+                <ul className="mt-6 space-y-3 flex-1">
                   {plan.features.map((feature) => (
                     <li key={feature} className="flex items-center gap-2">
                       <CheckCircle
-                        className={`h-5 w-5 flex-shrink-0 ${plan.highlighted ? "text-blue-200" : "text-green-500"}`}
+                        className={`h-4 w-4 flex-shrink-0 ${
+                          plan.highlighted ? "text-blue-200" : "text-green-500"
+                        }`}
                       />
-                      <span className={`text-sm ${plan.highlighted ? "text-white" : "text-gray-600"}`}>
+                      <span
+                        className={`text-sm ${
+                          plan.highlighted ? "text-white" : "text-gray-600"
+                        }`}
+                      >
                         {feature}
                       </span>
                     </li>
                   ))}
                 </ul>
                 <Link
-                  href="/register"
+                  href={plan.href}
                   className={`mt-8 block text-center px-6 py-3 rounded-lg font-medium transition-colors ${
                     plan.highlighted
                       ? "bg-white text-blue-600 hover:bg-blue-50"
@@ -362,25 +463,112 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section className="py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl sm:text-4xl font-bold text-gray-900">
-            Ready to get more honest reviews?
-          </h2>
-          <p className="mt-4 text-lg text-gray-500 max-w-xl mx-auto">
-            Join thousands of businesses using EchoRank to collect feedback, amplify honest
-            reviews, and fix problems faster.
-          </p>
-          <Link
-            href="/register"
-            className="mt-8 inline-flex items-center gap-2 px-8 py-4 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors text-lg"
-          >
-            Start Your Free Trial
-            <ArrowRight className="h-5 w-5" />
-          </Link>
+      {/* ── Enterprise CTA ─────────────────────────────────────────── */}
+      <section id="enterprise" className="py-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="bg-gradient-to-r from-blue-600 to-blue-800 rounded-2xl p-8 sm:p-12 lg:p-16">
+            <div className="grid lg:grid-cols-2 gap-8 items-center">
+              <div>
+                <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
+                  Built for enterprise reputation management
+                </h2>
+                <p className="text-blue-100 text-lg mb-6">
+                  Multi-location brands, franchise networks, and regulated
+                  industries rely on EchoRank to protect their most valuable
+                  asset — their reputation.
+                </p>
+                <ul className="space-y-3 mb-8">
+                  {[
+                    "Unlimited locations with centralized intelligence",
+                    "SSO/SAML authentication and role-based access",
+                    "99.9% uptime SLA with dedicated support",
+                    "Custom integrations with your existing tech stack",
+                    "Executive dashboards and board-ready reporting",
+                  ].map((item) => (
+                    <li key={item} className="flex items-center gap-3">
+                      <CheckCircle className="h-5 w-5 text-blue-200 flex-shrink-0" />
+                      <span className="text-white text-sm">{item}</span>
+                    </li>
+                  ))}
+                </ul>
+                <div className="flex flex-col sm:flex-row gap-4">
+                  <Link
+                    href="/register"
+                    className="inline-flex items-center justify-center gap-2 px-8 py-4 bg-white text-blue-700 font-medium rounded-lg hover:bg-blue-50 transition-colors text-lg"
+                  >
+                    Start Your Intelligence Assessment
+                    <ArrowRight className="h-5 w-5" />
+                  </Link>
+                  <Link
+                    href="/enterprise"
+                    className="inline-flex items-center justify-center gap-2 px-8 py-4 text-white font-medium rounded-lg border border-white/30 hover:bg-white/10 transition-colors text-lg"
+                  >
+                    Book Enterprise Demo
+                  </Link>
+                </div>
+              </div>
+              <div className="hidden lg:block">
+                <div className="bg-white/10 backdrop-blur-sm rounded-xl p-6 space-y-4">
+                  <div className="flex items-center gap-3 bg-white/10 rounded-lg p-4">
+                    <Activity className="h-8 w-8 text-blue-200" />
+                    <div>
+                      <p className="text-white font-semibold">Real-time Risk Monitoring</p>
+                      <p className="text-blue-200 text-sm">247 active sources across 12 locations</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 bg-white/10 rounded-lg p-4">
+                    <TrendingUp className="h-8 w-8 text-green-300" />
+                    <div>
+                      <p className="text-white font-semibold">Reputation Score: 94.2</p>
+                      <p className="text-blue-200 text-sm">Up 3.8 points this quarter</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 bg-white/10 rounded-lg p-4">
+                    <Star className="h-8 w-8 text-yellow-300" />
+                    <div>
+                      <p className="text-white font-semibold">4.7 Average Rating</p>
+                      <p className="text-blue-200 text-sm">Across 2,340 reviews this month</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
+      {/* ── Final CTA ──────────────────────────────────────────────── */}
+      <section className="py-20 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-3xl sm:text-4xl font-bold text-gray-900">
+            Your reputation is too important to leave unprotected
+          </h2>
+          <p className="mt-4 text-lg text-gray-500 max-w-2xl mx-auto">
+            Join 2,500+ businesses using EchoRank to detect risk early, recover
+            unhappy customers, and build lasting brand trust.
+          </p>
+          <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
+            <Link
+              href="/register"
+              className="inline-flex items-center gap-2 px-8 py-4 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors text-lg shadow-lg shadow-blue-600/25"
+            >
+              Start Your Intelligence Assessment
+              <ArrowRight className="h-5 w-5" />
+            </Link>
+            <Link
+              href="/enterprise"
+              className="inline-flex items-center gap-2 px-8 py-4 text-gray-700 font-medium rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors text-lg"
+            >
+              Book Enterprise Demo
+            </Link>
+          </div>
+          <p className="mt-4 text-sm text-gray-400">
+            14-day free trial. No credit card required. Cancel anytime.
+          </p>
+        </div>
+      </section>
+
+      {/* ── Footer ─────────────────────────────────────────────────── */}
       <footer className="border-t border-gray-200 py-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
@@ -389,7 +577,7 @@ export default function LandingPage() {
               <span className="font-semibold text-gray-900">EchoRank</span>
             </div>
             <p className="text-sm text-gray-400">
-              Collect feedback. Request honest reviews. Fix problems faster.
+              AI-powered reputation intelligence for businesses that can&apos;t afford brand damage.
             </p>
             <div className="flex items-center gap-6">
               <a href="#" className="text-sm text-gray-400 hover:text-gray-600">

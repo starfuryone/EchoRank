@@ -17,6 +17,7 @@ enum PlanType {
   STARTER
   GROWTH
   AGENCY
+  ENTERPRISE
 }
 
 enum BillingStatus {
@@ -167,6 +168,17 @@ model Tenant {
   campaigns           Campaign[]
   subscription        Subscription?
   auditLogs           AuditLog[]
+  domainEvents        DomainEvent[]
+  usageMeters         UsageMeter[]
+  usageSnapshots      UsageSnapshot[]
+  quota               TenantQuota?
+  retentionPolicy     DataRetentionPolicy?
+  deletionLogs        DeletionLog[]
+  reputationScores    ReputationScore[]
+  aiAnalyses          AiAnalysis[]
+  escalationAlerts    EscalationAlert[]
+  monitoringSources   MonitoringSource[]
+  externalReviews     ExternalReview[]
 
   @@map("tenants")
 }
@@ -195,6 +207,9 @@ model Customer {
   tags            String[]
   location        String?
   metadata        Json?
+  deletedAt       DateTime?
+  archivedAt      DateTime?
+  legalHold       Boolean        @default(false)
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
   tenant          Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
@@ -219,6 +234,8 @@ model Feedback {
   token          String         @unique @default(cuid())
   submittedAt    DateTime?
   expiresAt      DateTime?
+  deletedAt      DateTime?
+  legalHold      Boolean        @default(false)
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
   tenant         Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
@@ -303,6 +320,7 @@ model RecoveryTicket {
   assignedTo String?
   notes      String?
   resolvedAt DateTime?
+  deletedAt  DateTime?
   createdAt  DateTime       @default(now())
   updatedAt  DateTime       @updatedAt
   tenant     Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
@@ -410,3 +428,335 @@ model AuditLog {
   @@index([tenantId, createdAt])
   @@map("audit_logs")
 }
+
+// ─── PHASE 2: Domain Events ────────────────────────────────────────────
+
+enum DomainEventStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  DEAD_LETTER
+}
+
+model DomainEvent {
+  id            String            @id @default(cuid())
+  tenantId      String
+  eventType     String
+  eventVersion  Int               @default(1)
+  aggregateType String
+  aggregateId   String
+  payload       Json
+  metadata      Json?
+  status        DomainEventStatus @default(PENDING)
+  correlationId String?
+  causationId   String?
+  retryCount    Int               @default(0)
+  maxRetries    Int               @default(3)
+  processedAt   DateTime?
+  failedAt      DateTime?
+  error         String?
+  createdAt     DateTime          @default(now())
+  tenant        Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([eventType])
+  @@index([status])
+  @@index([correlationId])
+  @@index([createdAt])
+  @@map("domain_events")
+}
+
+// ─── PHASE 4: Usage Metering ───────────────────────────────────────────
+
+enum MeterType {
+  EMAIL_SENT
+  SMS_SENT
+  WEBHOOK_CALL
+  API_REQUEST
+  AI_TOKEN_USAGE
+  AI_INFERENCE
+  REVIEW_CONVERSION
+  ESCALATION_EVENT
+  FEEDBACK_REQUEST
+  MONITORING_CHECK
+}
+
+model UsageMeter {
+  id         String    @id @default(cuid())
+  tenantId   String
+  meterType  MeterType
+  quantity   Int       @default(1)
+  unitCost   Float     @default(0)
+  metadata   Json?
+  recordedAt DateTime  @default(now())
+  tenant     Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([tenantId, meterType])
+  @@index([tenantId, recordedAt])
+  @@map("usage_meters")
+}
+
+model UsageSnapshot {
+  id                  String   @id @default(cuid())
+  tenantId            String
+  periodStart         DateTime
+  periodEnd           DateTime
+  emailsSent          Int      @default(0)
+  smsSent             Int      @default(0)
+  webhookCalls        Int      @default(0)
+  apiRequests         Int      @default(0)
+  aiTokensUsed        Int      @default(0)
+  aiInferences        Int      @default(0)
+  aiCost              Float    @default(0)
+  feedbackRequests    Int      @default(0)
+  reviewConversions   Int      @default(0)
+  escalationEvents    Int      @default(0)
+  monitoringChecks    Int      @default(0)
+  totalCost           Float    @default(0)
+  createdAt           DateTime @default(now())
+  tenant              Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, periodStart, periodEnd])
+  @@index([tenantId])
+  @@map("usage_snapshots")
+}
+
+model TenantQuota {
+  id                  String   @id @default(cuid())
+  tenantId            String   @unique
+  maxEmailsPerMonth   Int      @default(300)
+  maxSmsPerMonth      Int      @default(0)
+  maxWebhooksPerMonth Int      @default(1000)
+  maxApiRequestsPerDay Int     @default(10000)
+  maxAiInferencesPerMonth Int  @default(100)
+  maxMonitoringChecks Int      @default(0)
+  overageAllowed      Boolean  @default(false)
+  overageRateEmail    Float    @default(0.01)
+  overageRateSms      Float    @default(0.05)
+  overageRateAi       Float    @default(0.02)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  tenant              Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("tenant_quotas")
+}
+
+// ─── PHASE 5: Soft Delete & Compliance ─────────────────────────────────
+
+model DataRetentionPolicy {
+  id                    String   @id @default(cuid())
+  tenantId              String   @unique
+  feedbackRetentionDays Int      @default(730)
+  customerRetentionDays Int      @default(1095)
+  auditLogRetentionDays Int      @default(2555)
+  eventRetentionDays    Int      @default(365)
+  autoDeleteEnabled     Boolean  @default(false)
+  gdprCompliant         Boolean  @default(true)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  tenant                Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("data_retention_policies")
+}
+
+model DeletionLog {
+  id           String   @id @default(cuid())
+  tenantId     String
+  entityType   String
+  entityId     String
+  deletedBy    String?
+  reason       String?
+  legalHold    Boolean  @default(false)
+  restorable   Boolean  @default(true)
+  snapshotData Json?
+  deletedAt    DateTime @default(now())
+  expiresAt    DateTime?
+  tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([entityType, entityId])
+  @@map("deletion_logs")
+}
+
+// ─── PHASE 6: AI Reputation Intelligence ───────────────────────────────
+
+enum RiskLevel {
+  LOW
+  MODERATE
+  HIGH
+  CRITICAL
+}
+
+model ReputationScore {
+  id                      String    @id @default(cuid())
+  tenantId                String
+  location                String?
+  overallScore            Float
+  sentimentScore          Float
+  responseRateScore       Float
+  recoveryScore           Float
+  reviewVelocityScore     Float
+  volatilityIndex         Float     @default(0)
+  riskLevel               RiskLevel @default(LOW)
+  trendDirection          String    @default("stable")
+  periodStart             DateTime
+  periodEnd               DateTime
+  sampleSize              Int       @default(0)
+  confidence              Float     @default(0)
+  createdAt               DateTime  @default(now())
+  tenant                  Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([tenantId, location])
+  @@index([tenantId, createdAt])
+  @@map("reputation_scores")
+}
+
+model AiAnalysis {
+  id                    String    @id @default(cuid())
+  tenantId              String
+  feedbackId            String?
+  externalReviewId      String?
+  analysisType          String
+  sentimentLabel        String?
+  sentimentScore        Float?
+  escalationProbability Float?
+  publicPostProbability Float?
+  churnProbability      Float?
+  riskLevel             RiskLevel @default(LOW)
+  intent                String?
+  entities              Json?
+  emotions              Json?
+  topics                Json?
+  suggestedAction       String?
+  confidence            Float     @default(0)
+  modelId               String?
+  promptTokens          Int       @default(0)
+  completionTokens      Int       @default(0)
+  latencyMs             Int       @default(0)
+  createdAt             DateTime  @default(now())
+  tenant                Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([feedbackId])
+  @@index([analysisType])
+  @@index([riskLevel])
+  @@map("ai_analyses")
+}
+
+model EscalationAlert {
+  id              String    @id @default(cuid())
+  tenantId        String
+  customerId      String?
+  feedbackId      String?
+  externalReviewId String?
+  alertType       String
+  riskLevel       RiskLevel
+  probability     Float
+  title           String
+  description     String
+  suggestedAction String?
+  acknowledged    Boolean   @default(false)
+  acknowledgedBy  String?
+  acknowledgedAt  DateTime?
+  resolvedAt      DateTime?
+  createdAt       DateTime  @default(now())
+  tenant          Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([tenantId, riskLevel])
+  @@index([tenantId, acknowledged])
+  @@map("escalation_alerts")
+}
+
+// ─── PHASE 7: External Reputation Monitoring ───────────────────────────
+
+enum MonitoringPlatform {
+  GOOGLE
+  FACEBOOK
+  TRUSTPILOT
+  YELP
+  REDDIT
+  TWITTER
+  TIKTOK
+  YOUTUBE
+  APP_STORE
+  CUSTOM
+}
+
+model MonitoringSource {
+  id           String             @id @default(cuid())
+  tenantId     String
+  platform     MonitoringPlatform
+  externalId   String
+  name         String
+  url          String?
+  credentials  Json?
+  isActive     Boolean            @default(true)
+  lastCheckedAt DateTime?
+  checkInterval Int               @default(3600)
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  tenant       Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  reviews      ExternalReview[]
+
+  @@unique([tenantId, platform, externalId])
+  @@index([tenantId])
+  @@map("monitoring_sources")
+}
+
+model ExternalReview {
+  id               String             @id @default(cuid())
+  tenantId         String
+  sourceId         String
+  platform         MonitoringPlatform
+  externalId       String
+  authorName       String?
+  authorUrl        String?
+  rating           Float?
+  content          String?
+  language         String?
+  publishedAt      DateTime?
+  url              String?
+  replyContent     String?
+  repliedAt        DateTime?
+  sentimentLabel   String?
+  sentimentScore   Float?
+  riskLevel        RiskLevel          @default(LOW)
+  isProcessed      Boolean            @default(false)
+  deduplicationKey String             @unique
+  metadata         Json?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+  tenant           Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  source           MonitoringSource   @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([tenantId, platform])
+  @@index([tenantId, riskLevel])
+  @@index([sourceId])
+  @@index([publishedAt])
+  @@map("external_reviews")
+}
+
+// ─── PHASE 3: Observability ────────────────────────────────────────────
+
+model SystemMetric {
+  id         String   @id @default(cuid())
+  tenantId   String?
+  metricName String
+  value      Float
+  tags       Json?
+  recordedAt DateTime @default(now())
+
+  @@index([metricName, recordedAt])
+  @@index([tenantId, metricName])
+  @@map("system_metrics")
+}
+
+// ─── Soft Delete Additions to Existing Models ──────────────────────────
+// Note: deletedAt, archivedAt, legalHold fields are added to core models
+// via the compliance middleware layer rather than schema changes, to avoid
+// breaking the existing API. The DeletionLog table tracks all deletions.

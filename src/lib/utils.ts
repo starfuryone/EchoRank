@@ -38,13 +38,15 @@ export function truncate(str: string, length: number): string {
 }
 
 export const PLAN_LIMITS = {
-  STARTER: { locations: 1, requests: 300, sms: false, whitelabel: false },
-  GROWTH: { locations: 3, requests: 2000, sms: true, whitelabel: false },
-  AGENCY: { locations: 20, requests: 10000, sms: true, whitelabel: true },
+  STARTER: { locations: 1, requests: 500, sms: false, whitelabel: false, aiAnalysis: false, monitoring: false },
+  GROWTH: { locations: 5, requests: 5000, sms: true, whitelabel: false, aiAnalysis: true, monitoring: false },
+  AGENCY: { locations: 25, requests: 15000, sms: true, whitelabel: true, aiAnalysis: true, monitoring: false },
+  ENTERPRISE: { locations: -1, requests: -1, sms: true, whitelabel: true, aiAnalysis: true, monitoring: true },
 } as const;
 
 export const PLAN_PRICES = {
-  STARTER: 29,
-  GROWTH: 79,
-  AGENCY: 199,
+  STARTER: 49,
+  GROWTH: 149,
+  AGENCY: 349,
+  ENTERPRISE: 999,
 } as const;

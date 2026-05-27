@@ -13,6 +13,15 @@ export async function routeFeedback(feedbackId: string) {
 
   if (!feedback || !feedback.rating) return;
 
+  await persistDomainEvent(feedback.tenantId, "feedback.submitted", "feedback", feedback.id, {
+    tenantId: feedback.tenantId,
+    feedbackId: feedback.id,
+    customerId: feedback.customerId,
+    rating: feedback.rating,
+    comment: feedback.comment,
+    submittedAt: new Date().toISOString(),
+  });
+
   if (feedback.rating >= 4) {
     await handlePositiveFeedback(feedback);
   } else {
@@ -51,6 +60,14 @@ async function handlePositiveFeedback(feedback: {
         url: reviewLink.url,
       },
     });
+
+    await persistDomainEvent(feedback.tenantId, "review.requested", "feedback", feedback.id, {
+      tenantId: feedback.tenantId,
+      feedbackId: feedback.id,
+      customerId: feedback.customerId,
+      platform: reviewLink.platform,
+      url: reviewLink.url,
+    });
   }
 
   await prisma.customer.update({
@@ -68,7 +85,7 @@ async function handleNegativeFeedback(feedback: {
   const priority =
     feedback.rating === 1 ? "URGENT" : feedback.rating === 2 ? "HIGH" : "MEDIUM";
 
-  await prisma.recoveryTicket.create({
+  const ticket = await prisma.recoveryTicket.create({
     data: {
       tenantId: feedback.tenantId,
       customerId: feedback.customerId,
@@ -81,4 +98,44 @@ async function handleNegativeFeedback(feedback: {
     where: { id: feedback.customerId },
     data: { status: "NEEDS_FOLLOWUP" },
   });
+
+  await persistDomainEvent(feedback.tenantId, "ticket.opened", "recovery_ticket", ticket.id, {
+    tenantId: feedback.tenantId,
+    ticketId: ticket.id,
+    customerId: feedback.customerId,
+    feedbackId: feedback.id,
+    priority,
+  });
+
+  if (feedback.rating !== null && feedback.rating <= 2) {
+    await persistDomainEvent(feedback.tenantId, "customer.escalated", "customer", feedback.customerId, {
+      tenantId: feedback.tenantId,
+      customerId: feedback.customerId,
+      feedbackId: feedback.id,
+      riskLevel: feedback.rating === 1 ? "HIGH" : "MODERATE",
+      probability: feedback.rating === 1 ? 0.75 : 0.5,
+    });
+  }
+}
+
+async function persistDomainEvent(
+  tenantId: string,
+  eventType: string,
+  aggregateType: string,
+  aggregateId: string,
+  payload: Record<string, unknown>
+) {
+  try {
+    await prisma.domainEvent.create({
+      data: {
+        tenantId,
+        eventType,
+        aggregateType,
+        aggregateId,
+        payload: payload as Record<string, string | number | boolean | null>,
+      },
+    });
+  } catch (error) {
+    console.error(`[EventPersist] Failed to persist ${eventType}:`, error);
+  }
 }
