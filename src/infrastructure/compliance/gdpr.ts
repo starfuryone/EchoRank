@@ -144,6 +144,13 @@ export class GdprService {
       : null;
 
     await prisma.$transaction(async (tx) => {
+      // 0. Count related records BEFORE anonymization (PII-free metadata)
+      const [feedbackCount, emailLogCount, smsLogCount] = await Promise.all([
+        tx.feedback.count({ where: { customerId, tenantId } }),
+        tx.emailLog.count({ where: { customerId, tenantId } }),
+        tx.smsLog.count({ where: { customerId, tenantId } }),
+      ]);
+
       // 1. Anonymize customer record
       await tx.customer.update({
         where: { id: customerId },
@@ -179,7 +186,7 @@ export class GdprService {
       // (ratings and non-PII are kept for analytics)
       // No changes to feedback ratings needed -- only the linked customer is anonymized.
 
-      // 5. Create deletion log
+      // 5. Create deletion log (PII-free metadata only)
       await tx.deletionLog.create({
         data: {
           tenantId,
@@ -190,9 +197,13 @@ export class GdprService {
           legalHold: false,
           restorable: false, // GDPR erasure is irreversible
           snapshotData: {
-            originalName: customer.name,
+            hadName: true,
             hadEmail: !!customer.email,
             hadPhone: !!customer.phone,
+            feedbackCount,
+            emailLogCount,
+            smsLogCount,
+            erasedAt: new Date().toISOString(),
           } as Prisma.InputJsonValue,
         },
       });

@@ -24,6 +24,7 @@ import {
 } from "@/ai/pipelines/review-authenticity";
 import { EscalationScoreCalculator } from "@/ai/scoring/escalation-score";
 import type { RiskLevel } from "@/generated/prisma";
+import { getProvider } from "@/ai/providers/registry";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -188,10 +189,11 @@ export class AiOrchestrator {
       escalationResult,
     );
 
-    // Simulate token usage
+    // Token usage: use real counts only when provider is not mock
+    const provider = getProvider();
     const config = ANALYSIS_TYPE_CONFIG.sentiment;
-    const promptTokens = Math.round(content.length / 4) + 200;
-    const completionTokens = 150;
+    const promptTokens = provider.isMock ? 0 : Math.round(content.length / 4) + 200;
+    const completionTokens = provider.isMock ? 0 : 150;
     const latencyMs = Date.now() - startMs;
 
     // Overall confidence
@@ -219,7 +221,7 @@ export class AiOrchestrator {
         topics: sentimentResult.topics as unknown as string[],
         suggestedAction,
         confidence,
-        modelId: config.modelId,
+        modelId: provider.isMock ? "mock-heuristic-v1" : provider.name,
         promptTokens,
         completionTokens,
         latencyMs,
@@ -254,15 +256,19 @@ export class AiOrchestrator {
       }
     }
 
-    // Record usage meter
-    await this.recordUsage(tenantId, promptTokens, completionTokens, config.modelId);
+    // Record usage meter only for real AI inference (not mock)
+    if (!provider.isMock) {
+      await this.recordUsage(tenantId, promptTokens, completionTokens, config.modelId);
+    }
 
     // 9. Return complete analysis
-    const cost = estimateCost(
-      config.modelId as "gpt-4o-2024-05-13" | "gpt-4o-mini-2024-07-18" | "text-embedding-3-small",
-      promptTokens,
-      completionTokens,
-    );
+    const cost = provider.isMock
+      ? 0
+      : estimateCost(
+          config.modelId as "gpt-4o-2024-05-13" | "gpt-4o-mini-2024-07-18" | "text-embedding-3-small",
+          promptTokens,
+          completionTokens,
+        );
 
     return {
       id: analysis.id,
@@ -336,9 +342,10 @@ export class AiOrchestrator {
       escalationResult,
     );
 
+    const providerExt = getProvider();
     const config = ANALYSIS_TYPE_CONFIG.sentiment;
-    const promptTokens = Math.round(content.length / 4) + 250;
-    const completionTokens = 180;
+    const promptTokens = providerExt.isMock ? 0 : Math.round(content.length / 4) + 250;
+    const completionTokens = providerExt.isMock ? 0 : 180;
     const latencyMs = Date.now() - startMs;
 
     const confidence = this.averageConfidence(
@@ -364,7 +371,7 @@ export class AiOrchestrator {
         topics: sentimentResult.topics as unknown as string[],
         suggestedAction,
         confidence,
-        modelId: config.modelId,
+        modelId: providerExt.isMock ? "mock-heuristic-v1" : providerExt.name,
         promptTokens,
         completionTokens,
         latencyMs,
@@ -395,13 +402,18 @@ export class AiOrchestrator {
       });
     }
 
-    await this.recordUsage(tenantId, promptTokens, completionTokens, config.modelId);
+    // Record usage meter only for real AI inference (not mock)
+    if (!providerExt.isMock) {
+      await this.recordUsage(tenantId, promptTokens, completionTokens, config.modelId);
+    }
 
-    const cost = estimateCost(
-      config.modelId as "gpt-4o-2024-05-13" | "gpt-4o-mini-2024-07-18" | "text-embedding-3-small",
-      promptTokens,
-      completionTokens,
-    );
+    const cost = providerExt.isMock
+      ? 0
+      : estimateCost(
+          config.modelId as "gpt-4o-2024-05-13" | "gpt-4o-mini-2024-07-18" | "text-embedding-3-small",
+          promptTokens,
+          completionTokens,
+        );
 
     return {
       id: analysis.id,

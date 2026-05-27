@@ -246,6 +246,11 @@ model Feedback {
 
   @@index([tenantId])
   @@index([token])
+  @@index([tenantId, status])
+  @@index([tenantId, rating])
+  @@index([tenantId, createdAt])
+  @@index([tenantId, customerId])
+  @@index([tenantId, campaignId])
   @@map("feedback")
 }
 
@@ -329,6 +334,8 @@ model RecoveryTicket {
 
   @@index([tenantId])
   @@index([tenantId, status])
+  @@index([tenantId, priority])
+  @@index([tenantId, createdAt])
   @@map("recovery_tickets")
 }
 
@@ -350,6 +357,9 @@ model EmailLog {
   customer     Customer      @relation(fields: [customerId], references: [id], onDelete: Cascade)
 
   @@index([tenantId])
+  @@index([tenantId, status])
+  @@index([tenantId, createdAt])
+  @@index([customerId, tenantId])
   @@map("email_logs")
 }
 
@@ -369,6 +379,7 @@ model SmsLog {
   customer     Customer      @relation(fields: [customerId], references: [id], onDelete: Cascade)
 
   @@index([tenantId])
+  @@index([tenantId, createdAt])
   @@map("sms_logs")
 }
 
@@ -391,6 +402,8 @@ model Campaign {
   feedback       Feedback[]
 
   @@index([tenantId])
+  @@index([tenantId, status])
+  @@index([tenantId, createdAt])
   @@map("campaigns")
 }
 
@@ -426,6 +439,8 @@ model AuditLog {
 
   @@index([tenantId])
   @@index([tenantId, createdAt])
+  @@index([tenantId, action])
+  @@index([tenantId, entity])
   @@map("audit_logs")
 }
 
@@ -464,6 +479,9 @@ model DomainEvent {
   @@index([status])
   @@index([correlationId])
   @@index([createdAt])
+  @@index([tenantId, eventType])
+  @@index([tenantId, createdAt])
+  @@unique([tenantId, eventType, aggregateId, correlationId], name: "event_idempotency_key")
   @@map("domain_events")
 }
 
@@ -643,6 +661,7 @@ model AiAnalysis {
   @@index([feedbackId])
   @@index([analysisType])
   @@index([riskLevel])
+  @@index([tenantId, createdAt])
   @@map("ai_analyses")
 }
 
@@ -738,6 +757,8 @@ model ExternalReview {
   @@index([tenantId, riskLevel])
   @@index([sourceId])
   @@index([publishedAt])
+  @@index([tenantId, createdAt])
+  @@index([tenantId, sentimentLabel])
   @@map("external_reviews")
 }
 
@@ -754,6 +775,19 @@ model SystemMetric {
   @@index([metricName, recordedAt])
   @@index([tenantId, metricName])
   @@map("system_metrics")
+}
+
+// ─── Processed Webhooks (Stripe idempotency) ──────────────────────────
+
+model ProcessedWebhook {
+  id              String   @id @default(cuid())
+  stripeEventId   String   @unique
+  eventType       String
+  processedAt     DateTime @default(now())
+  payload         Json?
+
+  @@index([eventType])
+  @@map("processed_webhooks")
 }
 
 // ─── Soft Delete Additions to Existing Models ──────────────────────────

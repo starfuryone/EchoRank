@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { randomBytes } from "node:crypto";
 import { prisma } from "@/lib/prisma";
 import { requireTenant } from "@/lib/tenant";
 import { createAuditLog } from "@/lib/audit";
@@ -122,12 +123,15 @@ export async function POST(request: Request) {
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7);
 
+    const token = randomBytes(32).toString("base64url");
+
     const feedback = await prisma.feedback.create({
       data: {
         tenantId,
         customerId,
         campaignId: campaignId || null,
         status: "PENDING",
+        token,
         expiresAt,
       },
     });

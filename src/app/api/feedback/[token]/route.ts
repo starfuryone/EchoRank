@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { rateLimit } from "@/lib/rate-limit";
 import { routeFeedback } from "@/lib/feedback-router";
+import { validate, submitFeedbackSchema } from "@/lib/validations";
 
 export async function GET(
   request: NextRequest,
@@ -11,7 +12,7 @@ export async function GET(
     const ip =
       request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
       "unknown";
-    const rl = rateLimit(`feedback-view:${ip}`, 30, 60_000);
+    const rl = await rateLimit(`feedback-view:${ip}`, 30, 60_000);
     if (!rl.success) {
       return NextResponse.json(
         { error: "Too many requests. Please try again later." },
@@ -77,7 +78,7 @@ export async function POST(
     const ip =
       request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
       "unknown";
-    const rl = rateLimit(`feedback-submit:${ip}`, 10, 60_000);
+    const rl = await rateLimit(`feedback-submit:${ip}`, 10, 60_000);
     if (!rl.success) {
       return NextResponse.json(
         { error: "Too many requests. Please try again later." },
@@ -119,34 +120,12 @@ export async function POST(
     }
 
     const body = await request.json();
-    const { rating, comment } = body;
-
-    if (rating === undefined || rating === null) {
-      return NextResponse.json(
-        { error: "Rating is required" },
-        { status: 400 }
-      );
-    }
-
-    const ratingNum = typeof rating === "string" ? parseInt(rating, 10) : rating;
-    if (typeof ratingNum !== "number" || !Number.isInteger(ratingNum) || ratingNum < 1 || ratingNum > 5) {
-      return NextResponse.json(
-        { error: "Rating must be an integer between 1 and 5" },
-        { status: 400 }
-      );
-    }
-
-    if (comment !== undefined && typeof comment !== "string") {
-      return NextResponse.json(
-        { error: "Comment must be a string" },
-        { status: 400 }
-      );
-    }
+    const { rating, comment } = validate(submitFeedbackSchema, body);
 
     const updatedFeedback = await prisma.feedback.update({
       where: { id: feedback.id },
       data: {
-        rating: ratingNum,
+        rating,
         comment: comment?.trim() || null,
         status: "SUBMITTED",
         submittedAt: new Date(),
@@ -160,6 +139,16 @@ export async function POST(
       message: "Thank you for your feedback!",
     });
   } catch (error) {
+    if (
+      error instanceof Error &&
+      "statusCode" in error &&
+      typeof (error as Record<string, unknown>).statusCode === "number"
+    ) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: (error as Record<string, unknown>).statusCode as number },
+      );
+    }
     console.error("Error submitting feedback:", error);
     return NextResponse.json(
       { error: "Internal server error" },

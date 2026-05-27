@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import bcrypt from "bcryptjs";
+import crypto from "node:crypto";
 import { prisma } from "@/lib/prisma";
 import { requireTenant, requireRole } from "@/lib/tenant";
 import { createAuditLog } from "@/lib/audit";
@@ -86,18 +86,27 @@ export async function POST(request: Request) {
     });
 
     if (!user) {
-      const tempPassword = await bcrypt.hash(
-        Math.random().toString(36).slice(-12),
-        10
-      );
-
+      // Create user WITHOUT a password — they must complete registration via invite
       user = await prisma.user.create({
         data: {
           email: normalizedEmail,
-          passwordHash: tempPassword,
+          passwordHash: null,
         },
       });
     }
+
+    // Generate a signed invite token
+    const inviteToken = crypto.randomBytes(32).toString("hex");
+    const expiresAt = new Date(Date.now() + 48 * 60 * 60 * 1000); // 48 hours
+
+    // Store invite token in the VerificationToken table
+    await prisma.verificationToken.create({
+      data: {
+        identifier: normalizedEmail,
+        token: inviteToken,
+        expires: expiresAt,
+      },
+    });
 
     const member = await prisma.tenantMember.create({
       data: {
@@ -125,6 +134,13 @@ export async function POST(request: Request) {
       entityId: member.id,
       details: { email: normalizedEmail, role: role || "MEMBER" },
     });
+
+    // In dev mode, log the invite URL for easy testing
+    if (process.env.NODE_ENV !== "production") {
+      const authUrl = process.env.AUTH_URL || "http://localhost:3000";
+      const inviteUrl = `${authUrl}/register?invite=${inviteToken}&email=${encodeURIComponent(normalizedEmail)}`;
+      console.log(`[Team] Invite URL for ${normalizedEmail}: ${inviteUrl}`);
+    }
 
     return NextResponse.json(member, { status: 201 });
   } catch (error) {

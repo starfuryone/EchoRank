@@ -6,6 +6,7 @@ import type {
   EventPayloadMap,
 } from "./types";
 import * as eventStore from "./store";
+import { prisma } from "@/lib/prisma";
 
 /**
  * Event handler function signature.
@@ -35,7 +36,6 @@ interface HandlerRegistration {
  */
 class EventBus {
   private handlers = new Map<string, HandlerRegistration[]>();
-  private processedKeys = new Set<string>();
 
   /**
    * Register an event handler for a specific event type.
@@ -58,37 +58,45 @@ class EventBus {
   /**
    * Emit a domain event: persist to DB, then dispatch to handlers.
    *
+   * Uses the database unique constraint (event_idempotency_key) for
+   * distributed idempotency instead of an in-memory Set.
+   *
    * Returns the persisted DomainEvent record.
    */
   async emit<T extends DomainEventPayload>(
     envelope: DomainEventEnvelope<T>,
   ): Promise<DomainEvent> {
-    // Idempotency check: skip if we already processed this exact event
-    const idempotencyKey = `${envelope.correlationId}:${envelope.eventType}:${envelope.aggregateId}`;
-    if (this.processedKeys.has(idempotencyKey)) {
-      console.log(
-        `[EventBus] Duplicate event skipped: ${envelope.eventType} (${idempotencyKey})`,
-      );
-      // Return the existing event from the DB
-      const existing = await eventStore.getByCorrelation(envelope.correlationId);
-      const match = existing.find(
-        (e) =>
-          e.eventType === envelope.eventType && e.aggregateId === envelope.aggregateId,
-      );
-      if (match) return match;
-    }
+    let event: DomainEvent;
 
-    // 1. Persist event
-    const event = await eventStore.persist(envelope);
-
-    // Track for idempotency (in-memory, resets on restart - DB is the real guard)
-    this.processedKeys.add(idempotencyKey);
-    // Prevent memory leak: cap the set size
-    if (this.processedKeys.size > 100_000) {
-      const entries = Array.from(this.processedKeys);
-      for (let i = 0; i < 50_000; i++) {
-        this.processedKeys.delete(entries[i]);
+    try {
+      // 1. Persist event – the DB unique constraint on
+      //    (tenantId, eventType, aggregateId, correlationId) enforces idempotency.
+      event = await eventStore.persist(envelope);
+    } catch (err: unknown) {
+      // Check for Prisma unique constraint violation (P2002)
+      if (
+        err &&
+        typeof err === "object" &&
+        "code" in err &&
+        (err as { code: string }).code === "P2002"
+      ) {
+        console.log(
+          `[EventBus] Duplicate event skipped: ${envelope.eventType} (${envelope.correlationId}:${envelope.aggregateId})`,
+        );
+        // Query for the existing event and return it
+        const existing = await prisma.domainEvent.findFirst({
+          where: {
+            tenantId: envelope.tenantId,
+            eventType: envelope.eventType,
+            aggregateId: envelope.aggregateId,
+            correlationId: envelope.correlationId,
+          },
+        });
+        if (existing) return existing;
+        // Shouldn't happen, but rethrow if the record is gone
+        throw err;
       }
+      throw err;
     }
 
     // 2. Mark as processing
@@ -221,7 +229,6 @@ class EventBus {
    */
   clearHandlers(): void {
     this.handlers.clear();
-    this.processedKeys.clear();
     console.log("[EventBus] All handlers cleared.");
   }
 }

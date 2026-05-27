@@ -2,43 +2,15 @@ import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { slugify } from "@/lib/tenant";
+import { validate, registerSchema } from "@/lib/validations";
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { name, email, password, businessName } = body;
-
-    if (!name || typeof name !== "string" || name.trim().length === 0) {
-      return NextResponse.json(
-        { error: "Name is required" },
-        { status: 400 }
-      );
-    }
-
-    if (!email || typeof email !== "string" || !email.includes("@")) {
-      return NextResponse.json(
-        { error: "Valid email is required" },
-        { status: 400 }
-      );
-    }
-
-    if (!password || typeof password !== "string" || password.length < 8) {
-      return NextResponse.json(
-        { error: "Password must be at least 8 characters" },
-        { status: 400 }
-      );
-    }
-
-    if (
-      !businessName ||
-      typeof businessName !== "string" ||
-      businessName.trim().length === 0
-    ) {
-      return NextResponse.json(
-        { error: "Business name is required" },
-        { status: 400 }
-      );
-    }
+    const { name, email, password, businessName } = validate(
+      registerSchema,
+      body,
+    );
 
     const existingUser = await prisma.user.findUnique({
       where: { email: email.toLowerCase().trim() },
@@ -116,6 +88,16 @@ export async function POST(request: Request) {
 
     return NextResponse.json(result, { status: 201 });
   } catch (error) {
+    if (
+      error instanceof Error &&
+      "statusCode" in error &&
+      typeof (error as Record<string, unknown>).statusCode === "number"
+    ) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: (error as Record<string, unknown>).statusCode as number },
+      );
+    }
     console.error("Registration error:", error);
     return NextResponse.json(
       { error: "Internal server error" },

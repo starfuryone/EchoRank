@@ -5,9 +5,10 @@ import type { AiProcessingJob } from "@/infrastructure/queue/jobs/schemas";
 import { eventBus } from "@/infrastructure/events/bus";
 import { EVENT_TYPES } from "@/infrastructure/events/types";
 import { prisma } from "@/lib/prisma";
+import { logger } from "@/infrastructure/observability/logger";
+import { withSpan } from "@/infrastructure/observability/telemetry";
 
 const QUEUE_NAME = "ai-processing";
-const LOG_PREFIX = `[Worker:${QUEUE_NAME}]`;
 
 // ─── Mock AI Service ──────────────────────────────────────────────────────────
 
@@ -129,120 +130,140 @@ function generateMockAnalysis(content: string, _analysisType: string): MockAiRes
 // ─── Processor ────────────────────────────────────────────────────────────────
 
 async function processAiJob(job: Job<AiProcessingJob>): Promise<void> {
-  const { tenantId, feedbackId, externalReviewId, analysisType, content, correlationId } =
-    job.data;
+  await withSpan("ai-processing.process", async (span) => {
+    const { tenantId, feedbackId, externalReviewId, analysisType, content, correlationId } =
+      job.data;
 
-  console.log(
-    `${LOG_PREFIX} Processing job ${job.id} - ${analysisType} for tenant ${tenantId}`,
-  );
+    span.setAttributes({
+      "job.id": job.id ?? "",
+      "tenant.id": tenantId,
+      "analysis.type": analysisType,
+    });
 
-  // ── Idempotency Check ──────────────────────────────────────────────────
-  const existingAnalysis = await prisma.aiAnalysis.findFirst({
-    where: {
-      tenantId,
-      feedbackId: feedbackId ?? undefined,
-      externalReviewId: externalReviewId ?? undefined,
-      analysisType,
-    },
-  });
-
-  if (existingAnalysis) {
-    console.log(
-      `${LOG_PREFIX} Idempotency: analysis already exists (${existingAnalysis.id}), skipping.`,
+    logger.info(
+      { jobId: job.id, tenantId, analysisType, queue: QUEUE_NAME },
+      "Processing job",
     );
-    return;
-  }
 
-  try {
-    // ── Run AI Analysis (mock) ──────────────────────────────────────
-    const result = generateMockAnalysis(content, analysisType);
-
-    // ── Store Result in AiAnalysis Table ─────────────────────────────
-    const analysis = await prisma.aiAnalysis.create({
-      data: {
+    // ── Idempotency Check ──────────────────────────────────────────────────
+    const existingAnalysis = await prisma.aiAnalysis.findFirst({
+      where: {
         tenantId,
-        feedbackId: feedbackId ?? null,
-        externalReviewId: externalReviewId ?? null,
+        feedbackId: feedbackId ?? undefined,
+        externalReviewId: externalReviewId ?? undefined,
         analysisType,
-        sentimentLabel: result.sentimentLabel,
-        sentimentScore: result.sentimentScore,
-        escalationProbability: result.escalationProbability,
-        publicPostProbability: result.publicPostProbability,
-        churnProbability: result.churnProbability,
-        riskLevel: result.riskLevel,
-        intent: result.intent,
-        entities: result.entities,
-        emotions: result.emotions,
-        topics: result.topics,
-        suggestedAction: result.suggestedAction,
-        confidence: result.confidence,
-        modelId: "mock-model-v1",
-        promptTokens: result.promptTokens,
-        completionTokens: result.completionTokens,
-        latencyMs: result.latencyMs,
       },
     });
 
-    // ── Record Token Usage in UsageMeter ─────────────────────────────
-    await prisma.usageMeter.create({
-      data: {
-        tenantId,
-        meterType: "AI_TOKEN_USAGE",
-        quantity: result.promptTokens + result.completionTokens,
-        metadata: {
-          analysisId: analysis.id,
-          promptTokens: result.promptTokens,
-          completionTokens: result.completionTokens,
-          correlationId,
-          jobId: job.id,
-        },
-      },
-    });
-
-    await prisma.usageMeter.create({
-      data: {
-        tenantId,
-        meterType: "AI_INFERENCE",
-        quantity: 1,
-        metadata: {
-          analysisId: analysis.id,
-          analysisType,
-          latencyMs: result.latencyMs,
-          correlationId,
-        },
-      },
-    });
-
-    // ── Emit Events Based on Risk Level ──────────────────────────────
-    if (result.riskLevel === "HIGH" || result.riskLevel === "CRITICAL") {
-      await eventBus.emit({
-        tenantId,
-        eventType: EVENT_TYPES.AI_RISK_DETECTED,
-        eventVersion: 1,
-        aggregateType: "AiAnalysis",
-        aggregateId: analysis.id,
-        payload: {
-          tenantId,
-          correlationId,
-          timestamp: new Date().toISOString(),
-          version: 1,
-          analysisId: analysis.id,
-          riskLevel: result.riskLevel,
-          riskType: result.intent,
-          confidence: result.confidence,
-        },
-        correlationId,
-      });
+    if (existingAnalysis) {
+      logger.info(
+        { jobId: job.id, tenantId, analysisId: existingAnalysis.id, queue: QUEUE_NAME },
+        "Idempotency: analysis already exists, skipping",
+      );
+      return;
     }
 
-    console.log(
-      `${LOG_PREFIX} AI analysis completed: ${analysis.id} (risk: ${result.riskLevel}, sentiment: ${result.sentimentLabel})`,
-    );
-  } catch (err) {
-    const errorMsg = err instanceof Error ? err.message : String(err);
-    console.error(`${LOG_PREFIX} AI processing failed:`, errorMsg);
-    throw err;
-  }
+    try {
+      // ── Run AI Analysis (mock) ──────────────────────────────────────
+      const result = generateMockAnalysis(content, analysisType);
+
+      // ── Store Result in AiAnalysis Table ─────────────────────────────
+      const analysis = await prisma.aiAnalysis.create({
+        data: {
+          tenantId,
+          feedbackId: feedbackId ?? null,
+          externalReviewId: externalReviewId ?? null,
+          analysisType,
+          sentimentLabel: result.sentimentLabel,
+          sentimentScore: result.sentimentScore,
+          escalationProbability: result.escalationProbability,
+          publicPostProbability: result.publicPostProbability,
+          churnProbability: result.churnProbability,
+          riskLevel: result.riskLevel,
+          intent: result.intent,
+          entities: result.entities,
+          emotions: result.emotions,
+          topics: result.topics,
+          suggestedAction: result.suggestedAction,
+          confidence: result.confidence,
+          modelId: "mock-model-v1",
+          promptTokens: result.promptTokens,
+          completionTokens: result.completionTokens,
+          latencyMs: result.latencyMs,
+        },
+      });
+
+      // ── Record Token Usage in UsageMeter ─────────────────────────────
+      await prisma.usageMeter.create({
+        data: {
+          tenantId,
+          meterType: "AI_TOKEN_USAGE",
+          quantity: result.promptTokens + result.completionTokens,
+          metadata: {
+            analysisId: analysis.id,
+            promptTokens: result.promptTokens,
+            completionTokens: result.completionTokens,
+            correlationId,
+            jobId: job.id,
+          },
+        },
+      });
+
+      await prisma.usageMeter.create({
+        data: {
+          tenantId,
+          meterType: "AI_INFERENCE",
+          quantity: 1,
+          metadata: {
+            analysisId: analysis.id,
+            analysisType,
+            latencyMs: result.latencyMs,
+            correlationId,
+          },
+        },
+      });
+
+      // ── Emit Events Based on Risk Level ──────────────────────────────
+      if (result.riskLevel === "HIGH" || result.riskLevel === "CRITICAL") {
+        await eventBus.emit({
+          tenantId,
+          eventType: EVENT_TYPES.AI_RISK_DETECTED,
+          eventVersion: 1,
+          aggregateType: "AiAnalysis",
+          aggregateId: analysis.id,
+          payload: {
+            tenantId,
+            correlationId,
+            timestamp: new Date().toISOString(),
+            version: 1,
+            analysisId: analysis.id,
+            riskLevel: result.riskLevel,
+            riskType: result.intent,
+            confidence: result.confidence,
+          },
+          correlationId,
+        });
+      }
+
+      logger.info(
+        {
+          jobId: job.id,
+          tenantId,
+          analysisId: analysis.id,
+          riskLevel: result.riskLevel,
+          sentimentLabel: result.sentimentLabel,
+          queue: QUEUE_NAME,
+        },
+        "AI analysis completed",
+      );
+    } catch (err) {
+      logger.error(
+        { jobId: job.id, tenantId, err, queue: QUEUE_NAME },
+        "AI processing failed",
+      );
+      throw err;
+    }
+  });
 }
 
 // ─── Worker Factory ───────────────────────────────────────────────────────────
@@ -263,21 +284,21 @@ export function startAiProcessingWorker(): Worker<AiProcessingJob> {
   });
 
   worker.on("completed", (job) => {
-    console.log(`${LOG_PREFIX} Job ${job.id} completed`);
+    logger.info({ jobId: job.id, queue: QUEUE_NAME }, "Job completed");
   });
 
   worker.on("failed", (job, err) => {
-    console.error(
-      `${LOG_PREFIX} Job ${job?.id} failed (attempt ${job?.attemptsMade}):`,
-      err.message,
+    logger.error(
+      { jobId: job?.id, attempt: job?.attemptsMade, err, queue: QUEUE_NAME },
+      "Job failed",
     );
   });
 
   worker.on("error", (err) => {
-    console.error(`${LOG_PREFIX} Worker error:`, err.message);
+    logger.error({ err, queue: QUEUE_NAME }, "Worker error");
   });
 
-  console.log(`${LOG_PREFIX} Worker started`);
+  logger.info({ queue: QUEUE_NAME }, "Worker started");
   return worker;
 }
 
@@ -285,7 +306,7 @@ export async function stopAiProcessingWorker(): Promise<void> {
   if (worker) {
     await worker.close();
     worker = null;
-    console.log(`${LOG_PREFIX} Worker stopped`);
+    logger.info({ queue: QUEUE_NAME }, "Worker stopped");
   }
 }
 

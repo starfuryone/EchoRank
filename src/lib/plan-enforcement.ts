@@ -1,0 +1,108 @@
+import { requireTenant } from "@/lib/tenant";
+import { meteringService } from "@/infrastructure/metering/service";
+import { hasFeature, type Feature } from "@/lib/feature-flags";
+import type { PlanType, MeterType } from "@/generated/prisma";
+
+// ─── Plan hierarchy ─────────────────────────────────────────────────────────
+
+const PLAN_RANK: Record<PlanType, number> = {
+  STARTER: 0,
+  GROWTH: 1,
+  AGENCY: 2,
+  ENTERPRISE: 3,
+};
+
+// ─── Custom error classes ───────────────────────────────────────────────────
+
+export class PlanRequiredError extends Error {
+  public readonly statusCode = 403;
+  public readonly currentPlan: PlanType;
+  public readonly requiredPlan: PlanType;
+
+  constructor(currentPlan: PlanType, requiredPlan: PlanType) {
+    super(
+      `Plan ${requiredPlan} or higher is required. Current plan: ${currentPlan}.`
+    );
+    this.name = "PlanRequiredError";
+    this.currentPlan = currentPlan;
+    this.requiredPlan = requiredPlan;
+  }
+}
+
+export class QuotaExceededError extends Error {
+  public readonly statusCode = 429;
+  public readonly meterType: MeterType;
+  public readonly limit: number;
+  public readonly remaining: number;
+
+  constructor(meterType: MeterType, limit: number, remaining: number) {
+    super(
+      `Quota exceeded for ${meterType}. Limit: ${limit}, remaining: ${remaining}.`
+    );
+    this.name = "QuotaExceededError";
+    this.meterType = meterType;
+    this.limit = limit;
+    this.remaining = remaining;
+  }
+}
+
+export class FeatureNotAvailableError extends Error {
+  public readonly statusCode = 403;
+  public readonly feature: string;
+  public readonly currentPlan: PlanType;
+
+  constructor(feature: string, currentPlan: PlanType) {
+    super(
+      `Feature "${feature}" is not available on the ${currentPlan} plan.`
+    );
+    this.name = "FeatureNotAvailableError";
+    this.feature = feature;
+    this.currentPlan = currentPlan;
+  }
+}
+
+// ─── Enforcement functions ──────────────────────────────────────────────────
+
+/**
+ * Checks that the current tenant's plan meets or exceeds the minimum plan.
+ * Throws PlanRequiredError if the tenant's plan is below the minimum.
+ */
+export async function requirePlan(minimumPlan: PlanType): Promise<void> {
+  const membership = await requireTenant();
+  const currentPlan = membership.tenant.planType;
+
+  if (PLAN_RANK[currentPlan] < PLAN_RANK[minimumPlan]) {
+    throw new PlanRequiredError(currentPlan, minimumPlan);
+  }
+}
+
+/**
+ * Checks that the current tenant has remaining quota for the specified meter type.
+ * Throws QuotaExceededError if the quota would be exceeded.
+ */
+export async function requireQuota(
+  meterType: MeterType,
+  quantity: number = 1
+): Promise<void> {
+  const membership = await requireTenant();
+  const tenantId = membership.tenantId;
+
+  const result = await meteringService.checkQuota(tenantId, meterType, quantity);
+
+  if (!result.allowed) {
+    throw new QuotaExceededError(meterType, result.limit, result.remaining);
+  }
+}
+
+/**
+ * Checks that the current tenant's plan includes the specified feature.
+ * Throws FeatureNotAvailableError if the feature is not available.
+ */
+export async function requireFeature(feature: Feature): Promise<void> {
+  const membership = await requireTenant();
+  const currentPlan = membership.tenant.planType;
+
+  if (!hasFeature(currentPlan, feature)) {
+    throw new FeatureNotAvailableError(feature, currentPlan);
+  }
+}

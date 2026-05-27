@@ -3,9 +3,10 @@ import { getSubscriberConnection } from "@/infrastructure/redis/connection";
 import { REDIS_CONFIG } from "@/infrastructure/redis/config";
 import type { EmailDeliveryJob } from "@/infrastructure/queue/jobs/schemas";
 import { prisma } from "@/lib/prisma";
+import { logger } from "@/infrastructure/observability/logger";
+import { withSpan } from "@/infrastructure/observability/telemetry";
 
 const QUEUE_NAME = "email-delivery";
-const LOG_PREFIX = `[Worker:${QUEUE_NAME}]`;
 
 /**
  * Email delivery worker.
@@ -20,125 +21,150 @@ const LOG_PREFIX = `[Worker:${QUEUE_NAME}]`;
  */
 
 async function processEmailDelivery(job: Job<EmailDeliveryJob>): Promise<void> {
-  const { tenantId, customerId, to, subject, body, correlationId } = job.data;
+  await withSpan("email-delivery.process", async (span) => {
+    const { tenantId, customerId, to, subject, body, correlationId } = job.data;
 
-  console.log(`${LOG_PREFIX} Processing job ${job.id} - sending to ${to} for tenant ${tenantId}`);
+    span.setAttributes({
+      "job.id": job.id ?? "",
+      "tenant.id": tenantId,
+      "email.to": to,
+    });
 
-  // ── Idempotency Check ──────────────────────────────────────────────────
-  // Look for an existing EmailLog that has already been sent for this correlation
-  const existingLog = await prisma.emailLog.findFirst({
-    where: {
-      tenantId,
-      customerId,
-      to,
-      status: { in: ["SENT", "DELIVERED"] },
-    },
-    orderBy: { createdAt: "desc" },
-  });
+    logger.info(
+      { jobId: job.id, tenantId, to, queue: QUEUE_NAME },
+      "Processing job",
+    );
 
-  if (existingLog) {
-    console.log(`${LOG_PREFIX} Idempotency: email already sent (log ${existingLog.id}), skipping.`);
-    return;
-  }
+    // ── Idempotency Check ──────────────────────────────────────────────────
+    // Check if a UsageMeter record already exists with this job's ID in metadata,
+    // indicating this exact job was already processed successfully.
+    if (job.id) {
+      const existingMeter = await prisma.usageMeter.findFirst({
+        where: {
+          tenantId,
+          meterType: "EMAIL_SENT",
+          metadata: {
+            path: ["jobId"],
+            equals: job.id,
+          },
+        },
+      });
 
-  // ── Create or find EmailLog ────────────────────────────────────────────
-  let emailLog = await prisma.emailLog.findFirst({
-    where: {
-      tenantId,
-      customerId,
-      to,
-      status: "QUEUED",
-    },
-    orderBy: { createdAt: "desc" },
-  });
+      if (existingMeter) {
+        logger.info(
+          { jobId: job.id, tenantId, meterId: existingMeter.id, queue: QUEUE_NAME },
+          "Idempotency: job already processed, skipping",
+        );
+        return;
+      }
+    }
 
-  if (!emailLog) {
-    emailLog = await prisma.emailLog.create({
-      data: {
+    // ── Create or find EmailLog ────────────────────────────────────────────
+    let emailLog = await prisma.emailLog.findFirst({
+      where: {
         tenantId,
         customerId,
         to,
-        subject,
-        body,
         status: "QUEUED",
-        channel: "EMAIL",
       },
+      orderBy: { createdAt: "desc" },
     });
-  }
 
-  try {
-    // ── Send Email ─────────────────────────────────────────────────────
-    const isDev = process.env.NODE_ENV !== "production";
-
-    if (isDev) {
-      // Dev mode: log the email instead of sending
-      console.log(`${LOG_PREFIX} [DEV] Email to: ${to}`);
-      console.log(`${LOG_PREFIX} [DEV] Subject: ${subject}`);
-      console.log(`${LOG_PREFIX} [DEV] Body: ${body.substring(0, 200)}...`);
-    } else {
-      // Production mode: use nodemailer
-      const nodemailer = await import("nodemailer");
-
-      const transporter = nodemailer.createTransport({
-        host: process.env.SMTP_HOST || "smtp.sendgrid.net",
-        port: parseInt(process.env.SMTP_PORT || "587", 10),
-        secure: process.env.SMTP_SECURE === "true",
-        auth: {
-          user: process.env.SMTP_USER || "apikey",
-          pass: process.env.SMTP_PASS || "",
+    if (!emailLog) {
+      emailLog = await prisma.emailLog.create({
+        data: {
+          tenantId,
+          customerId,
+          to,
+          subject,
+          body,
+          status: "QUEUED",
+          channel: "EMAIL",
         },
-      });
-
-      await transporter.sendMail({
-        from: process.env.SMTP_FROM || "noreply@echorank.io",
-        to,
-        subject,
-        html: body,
       });
     }
 
-    // ── Update EmailLog to SENT ──────────────────────────────────────
-    await prisma.emailLog.update({
-      where: { id: emailLog.id },
-      data: {
-        status: "SENT",
-        sentAt: new Date(),
-      },
-    });
+    try {
+      // ── Send Email ─────────────────────────────────────────────────────
+      const isDev = process.env.NODE_ENV !== "production";
 
-    // ── Record Usage Meter ───────────────────────────────────────────
-    await prisma.usageMeter.create({
-      data: {
-        tenantId,
-        meterType: "EMAIL_SENT",
-        quantity: 1,
-        metadata: {
-          emailLogId: emailLog.id,
-          correlationId,
-          jobId: job.id,
+      if (isDev) {
+        // Dev mode: log the email instead of sending
+        logger.info(
+          { jobId: job.id, tenantId, to, subject, bodyPreview: body.substring(0, 200), queue: QUEUE_NAME },
+          "DEV mode: email logged instead of sent",
+        );
+      } else {
+        // Production mode: use nodemailer
+        const nodemailer = await import("nodemailer");
+
+        const transporter = nodemailer.createTransport({
+          host: process.env.SMTP_HOST || "smtp.sendgrid.net",
+          port: parseInt(process.env.SMTP_PORT || "587", 10),
+          secure: process.env.SMTP_SECURE === "true",
+          auth: {
+            user: process.env.SMTP_USER || "apikey",
+            pass: process.env.SMTP_PASS || "",
+          },
+        });
+
+        await transporter.sendMail({
+          from: process.env.SMTP_FROM || "noreply@echorank.io",
+          to,
+          subject,
+          html: body,
+        });
+      }
+
+      // ── Update EmailLog to SENT ──────────────────────────────────────
+      await prisma.emailLog.update({
+        where: { id: emailLog.id },
+        data: {
+          status: "SENT",
+          sentAt: new Date(),
         },
-      },
-    });
+      });
 
-    // ── Emit Success Event ───────────────────────────────────────────
-    console.log(`${LOG_PREFIX} Email sent successfully to ${to} (log ${emailLog.id})`);
-  } catch (err) {
-    const errorMsg = err instanceof Error ? err.message : String(err);
-    console.error(`${LOG_PREFIX} Failed to send email to ${to}:`, errorMsg);
+      // ── Record Usage Meter ───────────────────────────────────────────
+      await prisma.usageMeter.create({
+        data: {
+          tenantId,
+          meterType: "EMAIL_SENT",
+          quantity: 1,
+          metadata: {
+            emailLogId: emailLog.id,
+            correlationId,
+            jobId: job.id,
+          },
+        },
+      });
 
-    // Update EmailLog to FAILED
-    await prisma.emailLog.update({
-      where: { id: emailLog.id },
-      data: {
-        status: "FAILED",
-        failedAt: new Date(),
-        errorMessage: errorMsg.substring(0, 500),
-      },
-    });
+      // ── Emit Success Event ───────────────────────────────────────────
+      logger.info(
+        { jobId: job.id, tenantId, to, emailLogId: emailLog.id, queue: QUEUE_NAME },
+        "Email sent successfully",
+      );
+    } catch (err) {
+      logger.error(
+        { jobId: job.id, tenantId, to, err, queue: QUEUE_NAME },
+        "Failed to send email",
+      );
 
-    // Throw to trigger BullMQ retry
-    throw err;
-  }
+      // Update EmailLog to FAILED
+      const errorMsg = err instanceof Error ? err.message : String(err);
+      await prisma.emailLog.update({
+        where: { id: emailLog.id },
+        data: {
+          status: "FAILED",
+          failedAt: new Date(),
+          errorMessage: errorMsg.substring(0, 500),
+        },
+      });
+
+      // Throw to trigger BullMQ retry
+      throw err;
+    }
+  });
 }
 
 // ─── Worker Factory ───────────────────────────────────────────────────────────
@@ -159,21 +185,21 @@ export function startEmailDeliveryWorker(): Worker<EmailDeliveryJob> {
   });
 
   worker.on("completed", (job) => {
-    console.log(`${LOG_PREFIX} Job ${job.id} completed`);
+    logger.info({ jobId: job.id, queue: QUEUE_NAME }, "Job completed");
   });
 
   worker.on("failed", (job, err) => {
-    console.error(
-      `${LOG_PREFIX} Job ${job?.id} failed (attempt ${job?.attemptsMade}):`,
-      err.message,
+    logger.error(
+      { jobId: job?.id, attempt: job?.attemptsMade, err, queue: QUEUE_NAME },
+      "Job failed",
     );
   });
 
   worker.on("error", (err) => {
-    console.error(`${LOG_PREFIX} Worker error:`, err.message);
+    logger.error({ err, queue: QUEUE_NAME }, "Worker error");
   });
 
-  console.log(`${LOG_PREFIX} Worker started`);
+  logger.info({ queue: QUEUE_NAME }, "Worker started");
   return worker;
 }
 
@@ -181,7 +207,7 @@ export async function stopEmailDeliveryWorker(): Promise<void> {
   if (worker) {
     await worker.close();
     worker = null;
-    console.log(`${LOG_PREFIX} Worker stopped`);
+    logger.info({ queue: QUEUE_NAME }, "Worker stopped");
   }
 }
 
