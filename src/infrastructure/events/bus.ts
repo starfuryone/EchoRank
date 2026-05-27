@@ -7,6 +7,7 @@ import type {
 } from "./types";
 import * as eventStore from "./store";
 import { prisma } from "@/lib/prisma";
+import { logger } from "@/infrastructure/observability/logger";
 
 /**
  * Event handler function signature.
@@ -52,7 +53,7 @@ class EventBus {
       name: handlerName,
     });
     this.handlers.set(eventType, existing);
-    console.log(`[EventBus] Registered handler "${handlerName}" for "${eventType}"`);
+    logger.info({ handlerName, eventType }, "Registered event handler");
   }
 
   /**
@@ -80,8 +81,9 @@ class EventBus {
         "code" in err &&
         (err as { code: string }).code === "P2002"
       ) {
-        console.log(
-          `[EventBus] Duplicate event skipped: ${envelope.eventType} (${envelope.correlationId}:${envelope.aggregateId})`,
+        logger.info(
+          { eventType: envelope.eventType, correlationId: envelope.correlationId, aggregateId: envelope.aggregateId },
+          "Duplicate event skipped",
         );
         // Query for the existing event and return it
         const existing = await prisma.domainEvent.findFirst({
@@ -116,8 +118,9 @@ class EventBus {
     const registrations = this.handlers.get(event.eventType) ?? [];
 
     if (registrations.length === 0) {
-      console.log(
-        `[EventBus] No handlers registered for "${event.eventType}", marking completed.`,
+      logger.info(
+        { eventType: event.eventType, eventId: event.id },
+        "No handlers registered, marking completed",
       );
       await eventStore.markProcessed(event.id);
       return;
@@ -132,9 +135,9 @@ class EventBus {
         results.push({ name: registration.name, success: true });
       } catch (err) {
         const errorMsg = err instanceof Error ? err.message : String(err);
-        console.error(
-          `[EventBus] Handler "${registration.name}" failed for event ${event.id} (${event.eventType}):`,
-          errorMsg,
+        logger.error(
+          { handlerName: registration.name, eventId: event.id, eventType: event.eventType, err },
+          "Event handler failed",
         );
         results.push({ name: registration.name, success: false, error: errorMsg });
       }
@@ -151,8 +154,9 @@ class EventBus {
         await eventStore.markFailed(event.id, `All handlers failed: ${errorSummary}`);
       } else {
         // Partial failure: still mark as completed but log the failures
-        console.warn(
-          `[EventBus] Partial handler failure for event ${event.id}: ${errorSummary}`,
+        logger.warn(
+          { eventId: event.id, errorSummary },
+          "Partial handler failure for event",
         );
         await eventStore.markProcessed(event.id);
       }
@@ -166,12 +170,13 @@ class EventBus {
    * Re-dispatches them through handlers.
    */
   async replay(eventType: EventType, fromDate: Date, toDate?: Date): Promise<number> {
-    console.log(
-      `[EventBus] Replaying "${eventType}" events from ${fromDate.toISOString()}...`,
+    logger.info(
+      { eventType, fromDate: fromDate.toISOString() },
+      "Replaying events",
     );
 
     const events = await eventStore.getByTypeAndDateRange(eventType, fromDate, toDate);
-    console.log(`[EventBus] Found ${events.length} events to replay.`);
+    logger.info({ eventType, count: events.length }, "Found events to replay");
 
     let replayed = 0;
     for (const event of events) {
@@ -181,14 +186,17 @@ class EventBus {
         await this.dispatch(event);
         replayed++;
       } catch (err) {
-        console.error(
-          `[EventBus] Error replaying event ${event.id}:`,
-          err instanceof Error ? err.message : err,
+        logger.error(
+          { eventId: event.id, err },
+          "Error replaying event",
         );
       }
     }
 
-    console.log(`[EventBus] Replay complete: ${replayed}/${events.length} events replayed.`);
+    logger.info(
+      { eventType, replayed, total: events.length },
+      "Replay complete",
+    );
     return replayed;
   }
 
@@ -197,7 +205,7 @@ class EventBus {
    */
   async processUnprocessed(limit: number = 100): Promise<number> {
     const events = await eventStore.getUnprocessed(limit);
-    console.log(`[EventBus] Processing ${events.length} unprocessed events...`);
+    logger.info({ count: events.length }, "Processing unprocessed events");
 
     let processed = 0;
     for (const event of events) {
@@ -206,9 +214,9 @@ class EventBus {
         await this.dispatch(event);
         processed++;
       } catch (err) {
-        console.error(
-          `[EventBus] Error processing event ${event.id}:`,
-          err instanceof Error ? err.message : err,
+        logger.error(
+          { eventId: event.id, err },
+          "Error processing event",
         );
       }
     }
@@ -229,7 +237,7 @@ class EventBus {
    */
   clearHandlers(): void {
     this.handlers.clear();
-    console.log("[EventBus] All handlers cleared.");
+    logger.info("All handlers cleared");
   }
 }
 
