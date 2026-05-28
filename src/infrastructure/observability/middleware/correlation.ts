@@ -36,7 +36,7 @@ export function withCorrelation(
     const operation = `${request.method} ${request.nextUrl.pathname}`;
 
     const response = await createTraceContext(
-      tenantId ?? "unknown",
+      tenantId,
       operation,
       () => handler(request, context),
       correlationId

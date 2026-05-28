@@ -233,6 +233,7 @@ model Feedback {
   status         FeedbackStatus @default(PENDING)
   token          String         @unique
   submittedAt    DateTime?
+  routedAt       DateTime?
   expiresAt      DateTime?
   deletedAt      DateTime?
   legalHold      Boolean        @default(false)
@@ -251,6 +252,7 @@ model Feedback {
   @@index([tenantId, createdAt])
   @@index([tenantId, customerId])
   @@index([tenantId, campaignId])
+  @@index([status, routedAt])
   @@map("feedback")
 }
 

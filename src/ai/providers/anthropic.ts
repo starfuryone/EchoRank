@@ -28,8 +28,16 @@ export class AnthropicProvider extends AiProvider {
   }
 
   async infer(request: InferenceRequest): Promise<InferenceResult> {
+    // Only honor a model override that is actually an Anthropic model. The
+    // shared analysis-type config carries OpenAI model ids, so anything that
+    // is not a "claude-*" id falls back to this provider's configured model.
+    const requestedModel =
+      request.modelId && request.modelId.startsWith("claude")
+        ? request.modelId
+        : this.model;
+
     const body: Record<string, unknown> = {
-      model: request.modelId ?? this.model,
+      model: requestedModel,
       max_tokens: request.maxTokens ?? 512,
       temperature: request.temperature ?? 0.1,
       system: request.systemPrompt,
@@ -85,7 +93,7 @@ export class AnthropicProvider extends AiProvider {
           content,
           promptTokens: data.usage?.input_tokens ?? 0,
           completionTokens: data.usage?.output_tokens ?? 0,
-          modelId: data.model ?? this.model,
+          modelId: data.model ?? requestedModel,
           provider: "anthropic",
           isMock: false,
         };

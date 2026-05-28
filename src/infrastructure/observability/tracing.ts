@@ -53,11 +53,23 @@ export function getCurrentTraceContext(): TraceContext | undefined {
 }
 
 /**
+ * Assigns the tenant ID onto the current async trace context, if one exists.
+ * Called once the request's tenant has been resolved so structured logs and
+ * spans can attribute work to the correct tenant.
+ */
+export function setCurrentTenantId(tenantId: string): void {
+  const store = asyncStorage.getStore();
+  if (store) {
+    store.tenantId = tenantId;
+  }
+}
+
+/**
  * Creates a full trace context and runs the provided function within it.
  * Combines correlation ID, tenant ID, and operation name.
  */
 export function createTraceContext<T>(
-  tenantId: string,
+  tenantId: string | undefined,
   operation: string,
   fn: () => T,
   correlationId?: string

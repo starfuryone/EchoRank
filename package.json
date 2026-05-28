@@ -11,6 +11,7 @@
     "db:migrate": "prisma migrate dev",
     "db:push": "prisma db push",
     "db:seed": "npx tsx prisma/seed.ts",
+    "db:backfill-routed-at": "npx tsx prisma/scripts/backfill_routed_at.ts",
     "db:studio": "prisma studio",
     "workers": "npx tsx src/infrastructure/queue/start-workers.ts",
     "workers:dev": "npx tsx --watch src/infrastructure/queue/start-workers.ts"

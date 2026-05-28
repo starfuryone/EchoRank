@@ -6,7 +6,6 @@ import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@/generated/prisma";
 import {
   AI_FEATURE_FLAGS,
-  AI_MODELS,
   ANALYSIS_TYPE_CONFIG,
   BATCH_CONFIG,
   ESCALATION_THRESHOLDS,
@@ -24,7 +23,6 @@ import {
 } from "@/ai/pipelines/review-authenticity";
 import { EscalationScoreCalculator } from "@/ai/scoring/escalation-score";
 import type { RiskLevel } from "@/generated/prisma";
-import { getProvider } from "@/ai/providers/registry";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -152,14 +150,18 @@ export class AiOrchestrator {
         : undefined;
 
     // 2-5. Run analysis pipelines in parallel
-    const [sentimentResult, intentResult, entitiesResult, escalationResult] =
+    const [sentimentInference, intentResult, entitiesResult, escalationResult] =
       await Promise.all([
-        // 2. Sentiment analysis
-        this.sentimentPipeline.analyze(content, {
-          customerName: feedback.customer.name,
-          rating,
-          source: "feedback",
-        }),
+        // 2. Sentiment analysis (returns real provider token usage when used)
+        this.sentimentPipeline.analyzeWithUsage(
+          content,
+          {
+            customerName: feedback.customer.name,
+            rating,
+            source: "feedback",
+          },
+          ANALYSIS_TYPE_CONFIG.sentiment.modelId,
+        ),
         // 3. Intent detection
         this.intentPipeline.detect(content),
         // 4. Entity extraction
@@ -175,6 +177,8 @@ export class AiOrchestrator {
           : null,
       ]);
 
+    const sentimentResult = sentimentInference.result;
+
     // 6. Calculate composite risk score
     const riskLevel = this.calculateCompositeRisk(
       sentimentResult,
@@ -189,11 +193,13 @@ export class AiOrchestrator {
       escalationResult,
     );
 
-    // Token usage: use real counts only when provider is not mock
-    const provider = getProvider();
-    const config = ANALYSIS_TYPE_CONFIG.sentiment;
-    const promptTokens = provider.isMock ? 0 : Math.round(content.length / 4) + 200;
-    const completionTokens = provider.isMock ? 0 : 150;
+    // Token usage & cost: use the real counts and the actual model that ran.
+    // `usage` is only present when a real (non-mock) provider produced the
+    // sentiment result, so mock runs are correctly recorded as zero-cost.
+    const usage = sentimentInference.usage;
+    const promptTokens = usage?.promptTokens ?? 0;
+    const completionTokens = usage?.completionTokens ?? 0;
+    const usedModelId = usage?.modelId ?? "mock-heuristic-v1";
     const latencyMs = Date.now() - startMs;
 
     // Overall confidence
@@ -221,7 +227,7 @@ export class AiOrchestrator {
         topics: sentimentResult.topics as unknown as string[],
         suggestedAction,
         confidence,
-        modelId: provider.isMock ? "mock-heuristic-v1" : provider.name,
+        modelId: usedModelId,
         promptTokens,
         completionTokens,
         latencyMs,
@@ -256,19 +262,15 @@ export class AiOrchestrator {
       }
     }
 
-    // Record usage meter only for real AI inference (not mock)
-    if (!provider.isMock) {
-      await this.recordUsage(tenantId, promptTokens, completionTokens, config.modelId);
+    // Record usage meter only when a real inference actually happened
+    if (usage) {
+      await this.recordUsage(tenantId, promptTokens, completionTokens, usedModelId);
     }
 
     // 9. Return complete analysis
-    const cost = provider.isMock
-      ? 0
-      : estimateCost(
-          config.modelId as "gpt-4o-2024-05-13" | "gpt-4o-mini-2024-07-18" | "text-embedding-3-small",
-          promptTokens,
-          completionTokens,
-        );
+    const cost = usage
+      ? estimateCost(usedModelId, promptTokens, completionTokens)
+      : 0;
 
     return {
       id: analysis.id,
@@ -314,12 +316,16 @@ export class AiOrchestrator {
     const rating = review.rating ?? 3;
 
     // Run pipelines in parallel
-    const [sentimentResult, intentResult, entitiesResult, authenticityResult, escalationResult] =
+    const [sentimentInference, intentResult, entitiesResult, authenticityResult, escalationResult] =
       await Promise.all([
-        this.sentimentPipeline.analyze(content, {
-          rating,
-          source: review.source.platform,
-        }),
+        this.sentimentPipeline.analyzeWithUsage(
+          content,
+          {
+            rating,
+            source: review.source.platform,
+          },
+          ANALYSIS_TYPE_CONFIG.sentiment.modelId,
+        ),
         this.intentPipeline.detect(content),
         this.extractEntities(content),
         this.authenticityPipeline.analyze(content, {
@@ -329,6 +335,8 @@ export class AiOrchestrator {
           ? this.escalationPipeline.predict(content, rating)
           : null,
       ]);
+
+    const sentimentResult = sentimentInference.result;
 
     const riskLevel = this.calculateCompositeRisk(
       sentimentResult,
@@ -342,10 +350,10 @@ export class AiOrchestrator {
       escalationResult,
     );
 
-    const providerExt = getProvider();
-    const config = ANALYSIS_TYPE_CONFIG.sentiment;
-    const promptTokens = providerExt.isMock ? 0 : Math.round(content.length / 4) + 250;
-    const completionTokens = providerExt.isMock ? 0 : 180;
+    const usage = sentimentInference.usage;
+    const promptTokens = usage?.promptTokens ?? 0;
+    const completionTokens = usage?.completionTokens ?? 0;
+    const usedModelId = usage?.modelId ?? "mock-heuristic-v1";
     const latencyMs = Date.now() - startMs;
 
     const confidence = this.averageConfidence(
@@ -371,7 +379,7 @@ export class AiOrchestrator {
         topics: sentimentResult.topics as unknown as string[],
         suggestedAction,
         confidence,
-        modelId: providerExt.isMock ? "mock-heuristic-v1" : providerExt.name,
+        modelId: usedModelId,
         promptTokens,
         completionTokens,
         latencyMs,
@@ -402,18 +410,14 @@ export class AiOrchestrator {
       });
     }
 
-    // Record usage meter only for real AI inference (not mock)
-    if (!providerExt.isMock) {
-      await this.recordUsage(tenantId, promptTokens, completionTokens, config.modelId);
+    // Record usage meter only when a real inference actually happened
+    if (usage) {
+      await this.recordUsage(tenantId, promptTokens, completionTokens, usedModelId);
     }
 
-    const cost = providerExt.isMock
-      ? 0
-      : estimateCost(
-          config.modelId as "gpt-4o-2024-05-13" | "gpt-4o-mini-2024-07-18" | "text-embedding-3-small",
-          promptTokens,
-          completionTokens,
-        );
+    const cost = usage
+      ? estimateCost(usedModelId, promptTokens, completionTokens)
+      : 0;
 
     return {
       id: analysis.id,
@@ -699,11 +703,7 @@ export class AiOrchestrator {
           tenantId,
           meterType: "AI_INFERENCE",
           quantity: 1,
-          unitCost: estimateCost(
-            modelId as "gpt-4o-2024-05-13" | "gpt-4o-mini-2024-07-18" | "text-embedding-3-small",
-            promptTokens,
-            completionTokens,
-          ),
+          unitCost: estimateCost(modelId, promptTokens, completionTokens),
           metadata: {
             modelId,
             promptTokens,

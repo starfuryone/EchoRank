@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createLogger } from "../logger";
-import { getCurrentCorrelationId } from "../tracing";
+import { getCurrentCorrelationId, getCurrentTraceContext } from "../tracing";
 
 /**
  * Fields that should never appear in logs.
@@ -72,12 +72,16 @@ export function withRequestLogger(
       getCurrentCorrelationId() ??
       request.headers.get("X-Correlation-ID") ??
       undefined;
-    const tenantId =
-      request.headers.get("X-Tenant-ID") ?? undefined;
+
+    // The tenant is usually only known once the handler authenticates, so it
+    // is read lazily from the trace context at each log call rather than bound
+    // up front (where it would always be undefined).
+    const headerTenantId = request.headers.get("X-Tenant-ID") ?? undefined;
+    const resolveTenantId = () =>
+      getCurrentTraceContext()?.tenantId ?? headerTenantId;
 
     const log = createLogger({
       correlationId,
-      tenantId,
       operation: `${method} ${path}`,
     });
 
@@ -96,6 +100,7 @@ export function withRequestLogger(
         event: "request.start",
         method,
         path,
+        tenantId: resolveTenantId(),
         query: Object.keys(query).length > 0 ? maskSensitive(query) : undefined,
       },
       `Incoming ${method} ${path}`
@@ -111,6 +116,7 @@ export function withRequestLogger(
           event: "request.error",
           method,
           path,
+          tenantId: resolveTenantId(),
           durationMs,
           error:
             error instanceof Error
@@ -129,6 +135,7 @@ export function withRequestLogger(
       event: "request.complete",
       method,
       path,
+      tenantId: resolveTenantId(),
       status,
       durationMs,
     };

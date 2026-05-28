@@ -77,11 +77,11 @@ Each tenant represents one business or agency client. All data is scoped by `ten
 
 ### Database Schema
 
-14 core tables: users, tenants, tenant_members, customers, feedback, review_links, review_requests, email_templates, sms_templates, recovery_tickets, email_logs, sms_logs, campaigns, subscriptions, audit_logs.
+31 Prisma models. The core operational tables include users, tenants, tenant_members, customers, feedback, review_links, review_requests, email_templates, sms_templates, recovery_tickets, email_logs, sms_logs, campaigns, subscriptions, and audit_logs. The platform adds models for reputation intelligence and operations: domain_events, usage_meters, usage_snapshots, tenant_quotas, data_retention_policies, deletion_logs, reputation_scores, ai_analyses, escalation_alerts, monitoring_sources, external_reviews, system_metrics, and processed_webhooks (plus NextAuth's accounts, sessions, and verification_tokens).
 
 ### API Routes
 
-20 API endpoints covering authentication, customers, feedback, campaigns, recovery, analytics, templates, team management, review links, billing, webhooks, and tenant settings.
+33 API route handlers covering authentication, customers, feedback, campaigns, recovery, analytics, templates, team management, review links, billing, webhooks, tenant settings and switching, AI analysis, monitoring, metering, compliance, enterprise inquiries, and admin queue operations.
 
 ### Dashboard Pages
 

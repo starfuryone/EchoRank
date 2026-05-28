@@ -45,6 +45,7 @@ export const REDIS_CONFIG = {
     reputationScoring: "reputation-scoring",
     escalationDetection: "escalation-detection",
     analyticsAggregation: "analytics-aggregation",
+    feedbackRouting: "feedback-routing",
   },
 
   /** DLQ namespace prefix */
@@ -83,6 +84,7 @@ export const REDIS_CONFIG = {
     "reputation-scoring": { max: 20, duration: 60_000 },
     "escalation-detection": { max: 100, duration: 60_000 },
     "analytics-aggregation": { max: 10, duration: 60_000 },
+    "feedback-routing": { max: 200, duration: 60_000 },
   } as Record<string, { max: number; duration: number }>,
 } as const;
 
@@ -95,7 +97,8 @@ export type QueueName =
   | "review-monitoring"
   | "reputation-scoring"
   | "escalation-detection"
-  | "analytics-aggregation";
+  | "analytics-aggregation"
+  | "feedback-routing";
 
 /** All valid queue names */
 export const QUEUE_NAMES: QueueName[] = [
@@ -107,4 +110,5 @@ export const QUEUE_NAMES: QueueName[] = [
   "reputation-scoring",
   "escalation-detection",
   "analytics-aggregation",
+  "feedback-routing",
 ];

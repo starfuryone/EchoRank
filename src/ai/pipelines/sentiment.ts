@@ -3,7 +3,11 @@
 // ---------------------------------------------------------------------------
 
 import { sentimentAnalysis } from "@/ai/prompts/templates";
-import { AI_FEATURE_FLAGS, CONFIDENCE_THRESHOLDS } from "@/ai/config";
+import {
+  AI_FEATURE_FLAGS,
+  ANALYSIS_TYPE_CONFIG,
+  CONFIDENCE_THRESHOLDS,
+} from "@/ai/config";
 import { getProvider } from "@/ai/providers/registry";
 
 // ---------------------------------------------------------------------------
@@ -16,6 +20,19 @@ export interface SentimentResult {
   emotions: string[];
   topics: string[];
   confidence: number;
+}
+
+/** Real token usage returned by a provider, when one actually ran. */
+export interface InferenceUsage {
+  promptTokens: number;
+  completionTokens: number;
+  modelId: string;
+}
+
+export interface SentimentInference {
+  result: SentimentResult;
+  /** Populated only when a real (non-mock) provider produced the result. */
+  usage: InferenceUsage | null;
 }
 
 // ---------------------------------------------------------------------------
@@ -305,81 +322,104 @@ export class SentimentPipeline {
   // -----------------------------------------------------------------------
 
   /**
-   * Analyse sentiment using a real LLM provider when available.
-   * Falls back to the heuristic `analyze()` method when the provider is mock
-   * or when the LLM response cannot be parsed.
+   * Analyse sentiment using a real LLM provider when available, returning the
+   * provider's real token usage and the model that actually ran. When the
+   * active provider is the mock engine (or AI is disabled), `usage` is null so
+   * callers know not to meter or cost the call.
+   *
+   * The `modelId` override is passed through to the provider so the
+   * analysis-specific model configuration is honored (e.g. the fast model for
+   * sentiment). Providers ignore overrides that don't apply to them.
    */
-  async analyzeWithLlm(
+  async analyzeWithUsage(
     content: string,
     context?: { customerName?: string; rating?: number; source?: string },
-  ): Promise<SentimentResult> {
-    const provider = getProvider();
+    modelId?: string,
+  ): Promise<SentimentInference> {
+    const heuristic = this.heuristicAnalysis(content, context?.rating);
 
-    // If provider is mock, use the existing heuristic method
-    if (provider.isMock) {
-      return this.analyze(content, context);
+    if (!AI_FEATURE_FLAGS.ENABLED || !AI_FEATURE_FLAGS.SENTIMENT_ANALYSIS) {
+      return { result: heuristic, usage: null };
     }
 
-    // Build the prompt
+    const provider = getProvider();
+
+    // Mock provider: keep the content-aware heuristic, report no usage/cost.
+    if (provider.isMock) {
+      return { result: this.mockInference(content, context?.rating), usage: null };
+    }
+
     const prompt = sentimentAnalysis(content, context);
 
     try {
-      const result = await provider.infer({
+      const inference = await provider.infer({
         systemPrompt: prompt.system,
         userPrompt: prompt.user,
-        temperature: 0.1,
-        maxTokens: 512,
+        temperature: ANALYSIS_TYPE_CONFIG.sentiment.temperature,
+        maxTokens: ANALYSIS_TYPE_CONFIG.sentiment.maxTokens,
         responseFormat: "json",
+        modelId,
       });
 
-      // Attempt to parse the JSON response
-      const parsed = JSON.parse(result.content);
-
-      // Validate the required fields exist
-      if (
-        typeof parsed.label !== "string" ||
-        typeof parsed.score !== "number" ||
-        !Array.isArray(parsed.emotions) ||
-        !Array.isArray(parsed.topics) ||
-        typeof parsed.confidence !== "number"
-      ) {
-        console.warn(
-          "[SentimentPipeline] LLM response missing required fields, falling back to heuristic",
-        );
-        return this.analyze(content, context);
-      }
-
-      // Validate label is one of the expected values
-      const validLabels = ["positive", "negative", "neutral", "mixed"] as const;
-      if (!validLabels.includes(parsed.label)) {
-        console.warn(
-          `[SentimentPipeline] LLM returned invalid label "${parsed.label}", falling back to heuristic`,
-        );
-        return this.analyze(content, context);
-      }
-
-      // Clamp score to [-1, 1] and confidence to [0, 1]
-      const score = Math.max(-1, Math.min(1, parsed.score));
-      const confidence = Math.max(0, Math.min(1, parsed.confidence));
-
-      return {
-        label: parsed.label as SentimentResult["label"],
-        score: Math.round(score * 100) / 100,
-        emotions: parsed.emotions.filter(
-          (e: unknown): e is string => typeof e === "string",
-        ),
-        topics: parsed.topics.filter(
-          (t: unknown): t is string => typeof t === "string",
-        ),
-        confidence: Math.round(confidence * 100) / 100,
+      // Real tokens were spent regardless of whether the body parses cleanly.
+      const usage: InferenceUsage = {
+        promptTokens: inference.promptTokens,
+        completionTokens: inference.completionTokens,
+        modelId: inference.modelId,
       };
+
+      const parsed = this.parseLlmResult(inference.content);
+      return { result: parsed ?? heuristic, usage };
     } catch (err) {
       console.warn(
         "[SentimentPipeline] LLM inference failed, falling back to heuristic:",
         err instanceof Error ? err.message : err,
       );
-      return this.analyze(content, context);
+      return { result: heuristic, usage: null };
     }
+  }
+
+  /**
+   * Parse and validate a JSON sentiment response from an LLM. Returns null
+   * when the payload is malformed so the caller can fall back to a heuristic.
+   */
+  private parseLlmResult(raw: string): SentimentResult | null {
+    let parsed: Record<string, unknown>;
+    try {
+      parsed = JSON.parse(raw);
+    } catch {
+      return null;
+    }
+
+    if (
+      typeof parsed.label !== "string" ||
+      typeof parsed.score !== "number" ||
+      !Array.isArray(parsed.emotions) ||
+      !Array.isArray(parsed.topics) ||
+      typeof parsed.confidence !== "number"
+    ) {
+      return null;
+    }
+
+    const validLabels = ["positive", "negative", "neutral", "mixed"];
+    if (!validLabels.includes(parsed.label)) {
+      return null;
+    }
+
+    const score = Math.max(-1, Math.min(1, parsed.score as number));
+    const confidence = Math.max(0, Math.min(1, parsed.confidence as number));
+
+    return {
+      label: parsed.label as SentimentResult["label"],
+      score: Math.round(score * 100) / 100,
+      emotions: (parsed.emotions as unknown[]).filter(
+        (e): e is string => typeof e === "string",
+      ),
+      topics: (parsed.topics as unknown[]).filter(
+        (t): t is string => typeof t === "string",
+      ),
+      confidence: Math.round(confidence * 100) / 100,
+    };
   }
 
   // -----------------------------------------------------------------------
