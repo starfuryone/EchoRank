@@ -12,7 +12,13 @@ export function validateOrigin(request: NextRequest): boolean {
     // Allow same-origin requests without Origin header (e.g., form submissions)
     // But require it for API calls via fetch
     const referer = request.headers.get("referer");
-    if (!referer) return true; // Server-to-server calls have neither
+    if (!referer) {
+      // No Origin and no Referer on a state-changing request. Browser clients
+      // always send at least one; deny by default. Stripe webhooks are already
+      // excluded upstream in middleware.ts. Set CSRF_ALLOW_NO_ORIGIN=true only
+      // if a trusted non-browser caller legitimately needs this path.
+      return process.env.CSRF_ALLOW_NO_ORIGIN === "true";
+    }
     const refererHost = new URL(referer).host;
     return refererHost === host;
   }

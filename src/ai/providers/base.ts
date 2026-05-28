@@ -17,6 +17,8 @@ export interface InferenceRequest {
   temperature?: number;
   maxTokens?: number;
   responseFormat?: "json" | "text";
+  /** Optional per-call model override. Falls back to the provider default. */
+  modelId?: string;
 }
 
 export abstract class AiProvider {

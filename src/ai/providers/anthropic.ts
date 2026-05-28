@@ -4,7 +4,7 @@
 
 import { AiProvider, type InferenceRequest, type InferenceResult } from "./base";
 
-const DEFAULT_MODEL = "claude-sonnet-4-20250514";
+const DEFAULT_MODEL = "claude-sonnet-4-6"; // refreshed; override with ANTHROPIC_MODEL
 const API_BASE = "https://api.anthropic.com/v1";
 const API_VERSION = "2023-06-01";
 const TIMEOUT_MS = 30_000;
@@ -29,7 +29,7 @@ export class AnthropicProvider extends AiProvider {
 
   async infer(request: InferenceRequest): Promise<InferenceResult> {
     const body: Record<string, unknown> = {
-      model: this.model,
+      model: request.modelId ?? this.model,
       max_tokens: request.maxTokens ?? 512,
       temperature: request.temperature ?? 0.1,
       system: request.systemPrompt,

@@ -116,17 +116,22 @@ export const ESCALATION_THRESHOLDS = {
 // ---------------------------------------------------------------------------
 
 export const COST_PER_1K_TOKENS: Record<
-  AiModelId,
+  string,
   { prompt: number; completion: number }
 > = {
   "gpt-4o-2024-05-13": { prompt: 0.005, completion: 0.015 },
   "gpt-4o-mini-2024-07-18": { prompt: 0.00015, completion: 0.0006 },
   "text-embedding-3-small": { prompt: 0.00002, completion: 0 },
+  // Anthropic rates (USD per 1K tokens) — VERIFY against current pricing.
+  "claude-sonnet-4-6": { prompt: 0.003, completion: 0.015 },
+  "claude-opus-4-7": { prompt: 0.015, completion: 0.075 },
+  "claude-opus-4-6": { prompt: 0.015, completion: 0.075 },
+  "claude-haiku-4-5-20251001": { prompt: 0.001, completion: 0.005 },
 };
 
 /** Calculate dollar cost for a given model call. */
 export function estimateCost(
-  modelId: AiModelId,
+  modelId: string,
   promptTokens: number,
   completionTokens: number,
 ): number {

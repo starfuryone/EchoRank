@@ -37,12 +37,23 @@ function mapStripePlan(
   priceId: string | null | undefined
 ): "STARTER" | "GROWTH" | "AGENCY" | "ENTERPRISE" | null {
   if (!priceId) return null;
-  const mapping: Record<string, "STARTER" | "GROWTH" | "AGENCY" | "ENTERPRISE"> = {
-    [process.env.STRIPE_PRICE_STARTER ?? ""]: "STARTER",
-    [process.env.STRIPE_PRICE_GROWTH ?? ""]: "GROWTH",
-    [process.env.STRIPE_PRICE_AGENCY ?? ""]: "AGENCY",
-    [process.env.STRIPE_PRICE_ENTERPRISE ?? ""]: "ENTERPRISE",
+  const mapping: Record<string, "STARTER" | "GROWTH" | "AGENCY" | "ENTERPRISE"> = {};
+  // Accept BOTH naming conventions so the mapping works regardless of which
+  // names are present in the runtime .env:
+  //   STRIPE_<PLAN>_PRICE_ID  (documented in .env.example)
+  //   STRIPE_PRICE_<PLAN>     (original code)
+  const registerPlan = (
+    plan: "STARTER" | "GROWTH" | "AGENCY" | "ENTERPRISE",
+    ...ids: Array<string | undefined>
+  ) => {
+    for (const id of ids) {
+      if (id) mapping[id] = plan;
+    }
   };
+  registerPlan("STARTER", process.env.STRIPE_STARTER_PRICE_ID, process.env.STRIPE_PRICE_STARTER);
+  registerPlan("GROWTH", process.env.STRIPE_GROWTH_PRICE_ID, process.env.STRIPE_PRICE_GROWTH);
+  registerPlan("AGENCY", process.env.STRIPE_AGENCY_PRICE_ID, process.env.STRIPE_PRICE_AGENCY);
+  registerPlan("ENTERPRISE", process.env.STRIPE_ENTERPRISE_PRICE_ID, process.env.STRIPE_PRICE_ENTERPRISE);
   return mapping[priceId] ?? null;
 }
 
