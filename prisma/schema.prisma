@@ -792,6 +792,24 @@ model ProcessedWebhook {
   @@map("processed_webhooks")
 }
 
+// ─── Stripe multi-currency price catalog ───────────────────────────────
+// One Stripe Price object exists per (tier, currency, interval). Rather than
+// fanning these out as env vars (4 tiers x 5 currencies = 20), they are
+// resolved from this table at checkout/webhook time. `active` lets old prices
+// be retired without deletion; lookups always filter on active = true.
+model StripePrice {
+  id            String   @id @default(cuid())
+  stripePriceId String   @unique @map("stripe_price_id")
+  planTier      String   @map("plan_tier") // starter | growth | agency | enterprise
+  currency      String // USD | EUR | GBP | CAD | CHF
+  interval      String   @default("month") // month | year
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  @@index([planTier, currency, interval, active])
+  @@map("stripe_prices")
+}
+
 // ─── Soft Delete Additions to Existing Models ──────────────────────────
 // Note: deletedAt, archivedAt, legalHold fields are added to core models
 // via the compliance middleware layer rather than schema changes, to avoid

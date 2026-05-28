@@ -3,6 +3,7 @@ import Stripe from "stripe";
 import { prisma } from "@/lib/prisma";
 import { rateLimit } from "@/lib/rate-limit";
 import { logger } from "@/infrastructure/observability/logger";
+import { resolvePlanFromPriceId } from "@/lib/stripe/prices";
 
 const log = logger.child({ module: "stripe-webhook" });
 
@@ -122,7 +123,10 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
   const billingStatus = mapStripeStatus(subscription.status);
   const firstItem = subscription.items?.data?.[0];
   const priceId = firstItem?.price?.id;
-  const planType = mapStripePlan(priceId);
+  // Prefer the DB price catalog (multi-currency, no code change to add prices);
+  // fall back to the env-var mapping for backwards compatibility.
+  const dbPlan = priceId ? await resolvePlanFromPriceId(priceId) : null;
+  const planType = dbPlan?.planType ?? mapStripePlan(priceId);
 
   // Period dates live on the subscription item in current Stripe API versions
   const periodStart = firstItem?.current_period_start
