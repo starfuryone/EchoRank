@@ -1,4 +1,7 @@
 import { prisma } from "./prisma";
+import { logger } from "@/infrastructure/observability/logger";
+
+const log = logger.child({ module: "feedback-router" });
 
 export async function routeFeedback(feedbackId: string) {
   const feedback = await prisma.feedback.findUnique({
@@ -52,22 +55,29 @@ async function handlePositiveFeedback(feedback: {
           ? { platform: "trustpilot", url: feedback.tenant.trustpilotLink }
           : null);
 
+  // Idempotent: a retried job must not create a second review request.
   if (reviewLink) {
-    await prisma.reviewRequest.create({
-      data: {
-        feedbackId: feedback.id,
-        platform: reviewLink.platform,
-        url: reviewLink.url,
-      },
+    const existing = await prisma.reviewRequest.findUnique({
+      where: { feedbackId: feedback.id },
     });
 
-    await persistDomainEvent(feedback.tenantId, "review.requested", "feedback", feedback.id, {
-      tenantId: feedback.tenantId,
-      feedbackId: feedback.id,
-      customerId: feedback.customerId,
-      platform: reviewLink.platform,
-      url: reviewLink.url,
-    });
+    if (!existing) {
+      await prisma.reviewRequest.create({
+        data: {
+          feedbackId: feedback.id,
+          platform: reviewLink.platform,
+          url: reviewLink.url,
+        },
+      });
+
+      await persistDomainEvent(feedback.tenantId, "review.requested", "feedback", feedback.id, {
+        tenantId: feedback.tenantId,
+        feedbackId: feedback.id,
+        customerId: feedback.customerId,
+        platform: reviewLink.platform,
+        url: reviewLink.url,
+      });
+    }
   }
 
   await prisma.customer.update({
@@ -85,27 +95,36 @@ async function handleNegativeFeedback(feedback: {
   const priority =
     feedback.rating === 1 ? "URGENT" : feedback.rating === 2 ? "HIGH" : "MEDIUM";
 
-  const ticket = await prisma.recoveryTicket.create({
-    data: {
-      tenantId: feedback.tenantId,
-      customerId: feedback.customerId,
-      feedbackId: feedback.id,
-      priority: priority as "LOW" | "MEDIUM" | "HIGH" | "URGENT",
-    },
+  // Idempotent: a retried job must not open a duplicate recovery ticket.
+  const existingTicket = await prisma.recoveryTicket.findUnique({
+    where: { feedbackId: feedback.id },
   });
+
+  const ticket =
+    existingTicket ??
+    (await prisma.recoveryTicket.create({
+      data: {
+        tenantId: feedback.tenantId,
+        customerId: feedback.customerId,
+        feedbackId: feedback.id,
+        priority: priority as "LOW" | "MEDIUM" | "HIGH" | "URGENT",
+      },
+    }));
 
   await prisma.customer.update({
     where: { id: feedback.customerId },
     data: { status: "NEEDS_FOLLOWUP" },
   });
 
-  await persistDomainEvent(feedback.tenantId, "ticket.opened", "recovery_ticket", ticket.id, {
-    tenantId: feedback.tenantId,
-    ticketId: ticket.id,
-    customerId: feedback.customerId,
-    feedbackId: feedback.id,
-    priority,
-  });
+  if (!existingTicket) {
+    await persistDomainEvent(feedback.tenantId, "ticket.opened", "recovery_ticket", ticket.id, {
+      tenantId: feedback.tenantId,
+      ticketId: ticket.id,
+      customerId: feedback.customerId,
+      feedbackId: feedback.id,
+      priority,
+    });
+  }
 
   if (feedback.rating !== null && feedback.rating <= 2) {
     await persistDomainEvent(feedback.tenantId, "customer.escalated", "customer", feedback.customerId, {
@@ -136,6 +155,9 @@ async function persistDomainEvent(
       },
     });
   } catch (error) {
-    console.error(`[EventPersist] Failed to persist ${eventType}:`, error);
+    log.error(
+      { eventType, aggregateType, aggregateId, err: error },
+      "Failed to persist domain event"
+    );
   }
 }

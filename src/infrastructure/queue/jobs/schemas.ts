@@ -105,6 +105,12 @@ export interface EscalationDetectionJob extends BaseJob {
   signals: EscalationSignal[];
 }
 
+// ─── Feedback Routing ─────────────────────────────────────────────────────────
+
+export interface FeedbackRoutingJob extends BaseJob {
+  feedbackId: string;
+}
+
 // ─── Analytics Aggregation ────────────────────────────────────────────────────
 
 export type PeriodType = "hourly" | "daily" | "weekly" | "monthly";
@@ -125,7 +131,8 @@ export type AllJobTypes =
   | ReviewMonitoringJob
   | ReputationScoringJob
   | EscalationDetectionJob
-  | AnalyticsAggregationJob;
+  | AnalyticsAggregationJob
+  | FeedbackRoutingJob;
 
 // ─── Queue → Job Type mapping ─────────────────────────────────────────────────
 
@@ -138,4 +145,5 @@ export interface QueueJobMap {
   "reputation-scoring": ReputationScoringJob;
   "escalation-detection": EscalationDetectionJob;
   "analytics-aggregation": AnalyticsAggregationJob;
+  "feedback-routing": FeedbackRoutingJob;
 }

@@ -26,7 +26,7 @@ export class OpenAiProvider extends AiProvider {
 
   async infer(request: InferenceRequest): Promise<InferenceResult> {
     const body: Record<string, unknown> = {
-      model: this.model,
+      model: request.modelId ?? this.model,
       messages: [
         { role: "system", content: request.systemPrompt },
         { role: "user", content: request.userPrompt },
@@ -80,7 +80,7 @@ export class OpenAiProvider extends AiProvider {
           content: choice.message?.content ?? "",
           promptTokens: data.usage?.prompt_tokens ?? 0,
           completionTokens: data.usage?.completion_tokens ?? 0,
-          modelId: data.model ?? this.model,
+          modelId: data.model ?? request.modelId ?? this.model,
           provider: "openai",
           isMock: false,
         };
