@@ -1,7 +1,16 @@
+import { randomUUID } from "node:crypto";
 import { prisma } from "./prisma";
+import { addJob } from "@/infrastructure/queue/registry";
+import type { FeedbackRoutingJob } from "@/infrastructure/queue/jobs/schemas";
 import { logger } from "@/infrastructure/observability/logger";
 
 const log = logger.child({ module: "feedback-router" });
+
+/**
+ * Feedback older than this with no `routedAt` is considered to have slipped
+ * through (e.g. enqueue failed during a Redis blip) and is re-enqueued.
+ */
+const BACKFILL_MIN_AGE_MS = 5 * 60_000;
 
 export async function routeFeedback(feedbackId: string) {
   const feedback = await prisma.feedback.findUnique({
@@ -30,6 +39,55 @@ export async function routeFeedback(feedbackId: string) {
   } else {
     await handleNegativeFeedback(feedback);
   }
+
+  // Mark routing as completed so the backfill sweep can distinguish feedback
+  // that was processed (even when it produced no artifact, e.g. a happy
+  // customer with no configured review link) from feedback that never ran.
+  await prisma.feedback.update({
+    where: { id: feedback.id },
+    data: { routedAt: new Date() },
+  });
+}
+
+/**
+ * Reconciliation sweep: re-enqueue any submitted feedback that was never
+ * routed (no `routedAt`) and is older than the grace period. This recovers
+ * feedback whose routing job failed to enqueue (e.g. a transient Redis
+ * outage), since the submission path intentionally returns success to the
+ * customer even if enqueueing fails. Returns the number re-enqueued.
+ */
+export async function backfillUnroutedFeedback(limit = 100): Promise<number> {
+  const cutoff = new Date(Date.now() - BACKFILL_MIN_AGE_MS);
+
+  const candidates = await prisma.feedback.findMany({
+    where: {
+      status: "SUBMITTED",
+      routedAt: null,
+      rating: { not: null },
+      deletedAt: null,
+      submittedAt: { lt: cutoff },
+    },
+    select: { id: true, tenantId: true },
+    take: limit,
+  });
+
+  for (const feedback of candidates) {
+    const job: FeedbackRoutingJob = {
+      tenantId: feedback.tenantId,
+      feedbackId: feedback.id,
+      correlationId: randomUUID(),
+    };
+    await addJob("feedback-routing", "route-feedback", job);
+  }
+
+  if (candidates.length > 0) {
+    log.warn(
+      { count: candidates.length },
+      "Backfilled unrouted feedback into the routing queue"
+    );
+  }
+
+  return candidates.length;
 }
 
 async function handlePositiveFeedback(feedback: {

@@ -129,13 +129,37 @@ export const COST_PER_1K_TOKENS: Record<
   "claude-haiku-4-5-20251001": { prompt: 0.001, completion: 0.005 },
 };
 
+/** Strip a trailing YYYYMMDD snapshot suffix (e.g. `-20250514`) from a model id. */
+function baseModelId(modelId: string): string {
+  return modelId.replace(/-\d{8}$/, "");
+}
+
+/**
+ * Resolve the cost rates for a model id. Providers may return a dated snapshot
+ * id (e.g. Anthropic resolves `claude-sonnet-4-6` to `claude-sonnet-4-6-2025…`)
+ * that won't exactly match a table key, so we fall back to matching on the
+ * date-stripped base. Without this, Anthropic usage would always cost $0.
+ */
+function resolveRates(
+  modelId: string,
+): { prompt: number; completion: number } | undefined {
+  const exact = COST_PER_1K_TOKENS[modelId];
+  if (exact) return exact;
+
+  const base = baseModelId(modelId);
+  for (const [key, rates] of Object.entries(COST_PER_1K_TOKENS)) {
+    if (baseModelId(key) === base) return rates;
+  }
+  return undefined;
+}
+
 /** Calculate dollar cost for a given model call. */
 export function estimateCost(
   modelId: string,
   promptTokens: number,
   completionTokens: number,
 ): number {
-  const rates = COST_PER_1K_TOKENS[modelId];
+  const rates = resolveRates(modelId);
   if (!rates) return 0;
   return (
     (promptTokens / 1000) * rates.prompt +

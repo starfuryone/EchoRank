@@ -1,12 +1,20 @@
 import { Worker, type Job } from "bullmq";
 import { getSubscriberConnection } from "@/infrastructure/redis/connection";
 import { REDIS_CONFIG } from "@/infrastructure/redis/config";
+import { getQueue } from "@/infrastructure/queue/registry";
 import type { FeedbackRoutingJob } from "@/infrastructure/queue/jobs/schemas";
-import { routeFeedback } from "@/lib/feedback-router";
+import { routeFeedback, backfillUnroutedFeedback } from "@/lib/feedback-router";
 import { logger } from "@/infrastructure/observability/logger";
 import { withSpan } from "@/infrastructure/observability/telemetry";
 
 const QUEUE_NAME = "feedback-routing";
+
+/** Name of the repeatable reconciliation job and how often it runs. */
+const BACKFILL_JOB_NAME = "backfill-unrouted";
+const BACKFILL_INTERVAL_MS = 5 * 60_000;
+
+/** A routing job carries a feedbackId; the sweep job carries no payload. */
+type FeedbackJobData = FeedbackRoutingJob | { backfill: true };
 
 /**
  * Feedback routing worker.
@@ -14,12 +22,24 @@ const QUEUE_NAME = "feedback-routing";
  * Runs the post-submission routing logic (review requests for happy customers,
  * recovery tickets for unhappy ones) asynchronously so the customer-facing
  * submission response never depends on it succeeding. `routeFeedback` is
- * idempotent, so BullMQ retries are safe.
+ * idempotent, so BullMQ retries are safe. A repeatable sweep job re-enqueues
+ * any feedback whose routing was never recorded.
  */
-async function processFeedbackRouting(job: Job<FeedbackRoutingJob>): Promise<void> {
-  await withSpan("feedback-routing.process", async (span) => {
-    const { tenantId, feedbackId, correlationId } = job.data;
+async function processFeedbackRouting(job: Job<FeedbackJobData>): Promise<void> {
+  if (job.name === BACKFILL_JOB_NAME) {
+    await withSpan("feedback-routing.backfill", async () => {
+      const count = await backfillUnroutedFeedback();
+      logger.info(
+        { jobId: job.id, count, queue: QUEUE_NAME },
+        "Backfill sweep complete",
+      );
+    });
+    return;
+  }
 
+  const { tenantId, feedbackId, correlationId } = job.data as FeedbackRoutingJob;
+
+  await withSpan("feedback-routing.process", async (span) => {
     span.setAttributes({
       "job.id": job.id ?? "",
       "tenant.id": tenantId,
@@ -51,12 +71,12 @@ async function processFeedbackRouting(job: Job<FeedbackRoutingJob>): Promise<voi
 
 // ─── Worker Factory ───────────────────────────────────────────────────────────
 
-let worker: Worker<FeedbackRoutingJob> | null = null;
+let worker: Worker<FeedbackJobData> | null = null;
 
-export function startFeedbackRoutingWorker(): Worker<FeedbackRoutingJob> {
+export function startFeedbackRoutingWorker(): Worker<FeedbackJobData> {
   if (worker) return worker;
 
-  worker = new Worker<FeedbackRoutingJob>(QUEUE_NAME, processFeedbackRouting, {
+  worker = new Worker<FeedbackJobData>(QUEUE_NAME, processFeedbackRouting, {
     connection: getSubscriberConnection(),
     prefix: REDIS_CONFIG.queues.prefix,
     concurrency: 5,
@@ -65,6 +85,22 @@ export function startFeedbackRoutingWorker(): Worker<FeedbackRoutingJob> {
       duration: 60_000,
     },
   });
+
+  // Schedule the reconciliation sweep. BullMQ dedupes the repeat config, so
+  // restarts don't stack multiple schedules.
+  getQueue(QUEUE_NAME)
+    .add(
+      BACKFILL_JOB_NAME,
+      { backfill: true },
+      {
+        repeat: { every: BACKFILL_INTERVAL_MS },
+        removeOnComplete: true,
+        removeOnFail: { count: 50 },
+      },
+    )
+    .catch((err) => {
+      logger.error({ err, queue: QUEUE_NAME }, "Failed to schedule backfill sweep");
+    });
 
   worker.on("completed", (job) => {
     logger.info({ jobId: job.id, queue: QUEUE_NAME }, "Job completed");
