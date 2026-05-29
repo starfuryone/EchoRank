@@ -50,7 +50,7 @@ export async function PATCH(
     }
 
     const member = await prisma.tenantMember.update({
-      where: { id },
+      where: { id, tenantId },
       data: { role },
       include: {
         user: {
@@ -127,7 +127,7 @@ export async function DELETE(
       select: { email: true, name: true },
     });
 
-    await prisma.tenantMember.delete({ where: { id } });
+    await prisma.tenantMember.delete({ where: { id, tenantId } });
 
     await createAuditLog({
       tenantId,

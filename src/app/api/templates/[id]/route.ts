@@ -65,7 +65,7 @@ export async function PATCH(
       if (type !== undefined) updateData.type = type;
 
       const template = await prisma.smsTemplate.update({
-        where: { id },
+        where: { id, tenantId },
         data: updateData,
       });
 
@@ -109,7 +109,7 @@ export async function PATCH(
     if (type !== undefined) updateData.type = type;
 
     const template = await prisma.emailTemplate.update({
-      where: { id },
+      where: { id, tenantId },
       data: updateData,
     });
 
@@ -161,7 +161,7 @@ export async function DELETE(
         );
       }
 
-      await prisma.smsTemplate.delete({ where: { id } });
+      await prisma.smsTemplate.delete({ where: { id, tenantId } });
 
       await createAuditLog({
         tenantId,
@@ -186,7 +186,7 @@ export async function DELETE(
       );
     }
 
-    await prisma.emailTemplate.delete({ where: { id } });
+    await prisma.emailTemplate.delete({ where: { id, tenantId } });
 
     await createAuditLog({
       tenantId,

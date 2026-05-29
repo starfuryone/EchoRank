@@ -85,7 +85,7 @@ export async function PATCH(
     if (status !== undefined) updateData.status = status;
 
     const customer = await prisma.customer.update({
-      where: { id },
+      where: { id, tenantId },
       data: updateData,
     });
 
@@ -141,7 +141,7 @@ export async function DELETE(
     }
 
     await prisma.customer.delete({
-      where: { id },
+      where: { id, tenantId },
     });
 
     await createAuditLog({

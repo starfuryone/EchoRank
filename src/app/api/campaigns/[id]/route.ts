@@ -154,7 +154,7 @@ export async function PATCH(
       updateData.scheduledAt = scheduledAt ? new Date(scheduledAt) : null;
 
     const campaign = await prisma.campaign.update({
-      where: { id },
+      where: { id, tenantId },
       data: updateData,
     });
 

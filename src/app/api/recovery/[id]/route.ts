@@ -42,13 +42,13 @@ export async function PATCH(
     if (notes !== undefined) updateData.notes = notes || null;
 
     const ticket = await prisma.recoveryTicket.update({
-      where: { id },
+      where: { id, tenantId },
       data: updateData,
     });
 
     if (status === "RESOLVED") {
       await prisma.customer.update({
-        where: { id: existing.customerId },
+        where: { id: existing.customerId, tenantId },
         data: { status: "RECOVERED" },
       });
     }

@@ -72,7 +72,7 @@ export async function PATCH(
     if (isDefault !== undefined) updateData.isDefault = isDefault;
 
     const reviewLink = await prisma.reviewLink.update({
-      where: { id },
+      where: { id, tenantId },
       data: updateData,
     });
 
@@ -121,7 +121,7 @@ export async function DELETE(
       );
     }
 
-    await prisma.reviewLink.delete({ where: { id } });
+    await prisma.reviewLink.delete({ where: { id, tenantId } });
 
     await createAuditLog({
       tenantId,

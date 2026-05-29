@@ -122,7 +122,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     const updated = await prisma.escalationAlert.update({
-      where: { id: alertId },
+      where: { id: alertId, tenantId },
       data: updateData,
     });
 

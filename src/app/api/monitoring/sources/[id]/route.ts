@@ -96,7 +96,7 @@ export async function PATCH(
     }
 
     const updated = await prisma.monitoringSource.update({
-      where: { id },
+      where: { id, tenantId },
       data: updateData,
     });
 
@@ -142,7 +142,7 @@ export async function DELETE(
 
     // Soft-deactivate rather than hard delete
     await prisma.monitoringSource.update({
-      where: { id },
+      where: { id, tenantId },
       data: { isActive: false },
     });
 
