@@ -1,11 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireTenant } from "@/lib/tenant";
+import {
+  requireFeature,
+  requireQuota,
+  enforcementErrorResponse,
+} from "@/lib/plan-enforcement";
 import { AiOrchestrator } from "@/ai/orchestrator";
 
 export async function POST(request: NextRequest) {
   try {
     const membership = await requireTenant();
     const tenantId = membership.tenantId;
+
+    // Gate: AI analysis is a GROWTH+ feature and consumes a metered AI
+    // inference. Enforce both before running the (cost-incurring) pipeline.
+    await requireFeature("ai_analysis");
+    await requireQuota("AI_INFERENCE");
 
     const body = await request.json();
     const { feedbackId } = body;
@@ -36,6 +46,9 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
+    const enforcement = enforcementErrorResponse(error);
+    if (enforcement) return enforcement;
+
     if (
       error instanceof Error &&
       error.message === "Not authenticated or no tenant access"

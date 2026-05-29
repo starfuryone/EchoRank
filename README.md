@@ -89,15 +89,18 @@ Each tenant represents one business or agency client. All data is scoped by `ten
 
 ## Pricing Plans
 
-| Feature | Starter ($29/mo) | Growth ($79/mo) | Agency ($199/mo) |
-|---------|:-:|:-:|:-:|
-| Locations | 1 | 3 | 20 |
-| Requests/month | 300 | 2,000 | 10,000 |
-| Email | Yes | Yes | Yes |
-| SMS | - | Yes | Yes |
-| Templates | - | Yes | Yes |
-| Analytics | Basic | Full | Full |
-| White-label | - | - | Yes |
+Plan limits and prices have a single source of truth: `src/lib/plan-config.ts`. The table below reflects it.
+
+| Feature | Starter ($49/mo) | Growth ($149/mo) | Agency ($349/mo) | Enterprise ($999/mo) |
+|---------|:-:|:-:|:-:|:-:|
+| Locations | 1 | 5 | 25 | Unlimited |
+| Requests/month | 500 | 5,000 | 15,000 | Custom |
+| Email | Yes | Yes | Yes | Yes |
+| SMS | - | Yes | Yes | Yes |
+| AI analysis | - | Yes | Yes | Yes |
+| Advanced analytics | - | Yes | Yes | Yes |
+| White-label | - | - | Yes | Yes |
+| Reputation monitoring | - | - | - | Yes |
 
 ## Project Structure
 

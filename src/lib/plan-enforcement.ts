@@ -1,3 +1,4 @@
+import { NextResponse } from "next/server";
 import { requireTenant } from "@/lib/tenant";
 import { meteringService } from "@/infrastructure/metering/service";
 import { hasFeature, type Feature } from "@/lib/feature-flags";
@@ -105,4 +106,25 @@ export async function requireFeature(feature: Feature): Promise<void> {
   if (!hasFeature(currentPlan, feature)) {
     throw new FeatureNotAvailableError(feature, currentPlan);
   }
+}
+
+/**
+ * Maps a plan-enforcement error to an HTTP response (403 for plan/feature, 429
+ * for quota). Returns null for any other error so callers fall through to their
+ * own handling. Lets routes gate without duplicating status-code logic.
+ */
+export function enforcementErrorResponse(
+  error: unknown,
+): NextResponse | null {
+  if (
+    error instanceof PlanRequiredError ||
+    error instanceof FeatureNotAvailableError ||
+    error instanceof QuotaExceededError
+  ) {
+    return NextResponse.json(
+      { error: error.message, code: error.name },
+      { status: error.statusCode },
+    );
+  }
+  return null;
 }

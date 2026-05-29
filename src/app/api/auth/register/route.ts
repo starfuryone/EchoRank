@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { slugify } from "@/lib/tenant";
+import { planQuotaDefaults } from "@/lib/plan-config";
 import { validate, registerSchema } from "@/lib/validations";
 
 export async function POST(request: Request) {
@@ -59,6 +60,15 @@ export async function POST(request: Request) {
           tenantId: tenant.id,
           userId: user.id,
           role: "OWNER",
+        },
+      });
+
+      // Provision quota limits so the tenant is metered from day one. New
+      // tenants default to the STARTER plan (Tenant.planType default).
+      await tx.tenantQuota.create({
+        data: {
+          tenantId: tenant.id,
+          ...planQuotaDefaults("STARTER"),
         },
       });
 

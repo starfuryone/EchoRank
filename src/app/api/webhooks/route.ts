@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { rateLimit } from "@/lib/rate-limit";
 import { logger } from "@/infrastructure/observability/logger";
 import { resolvePlanFromPriceId } from "@/lib/stripe/prices";
+import { quotaEnforcer } from "@/infrastructure/metering/quota";
 
 const log = logger.child({ module: "stripe-webhook" });
 
@@ -172,6 +173,15 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
       cancelAtPeriodEnd: subscription.cancel_at_period_end,
     },
   });
+
+  // Re-provision quota limits to match the (possibly changed) plan, so quota
+  // enforcement tracks the tier the customer is actually paying for.
+  if (planType) {
+    await quotaEnforcer.setQuota(
+      tenant.id,
+      quotaEnforcer.getDefaultQuotas(planType)
+    );
+  }
 
   log.info(
     { tenantId: tenant.id, status: billingStatus, planType },

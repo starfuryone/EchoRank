@@ -13,6 +13,7 @@ export interface PlanConfig {
     maxRequestsPerMonth: number;
     maxEmailsPerMonth: number;
     maxSmsPerMonth: number;
+    maxWebhooksPerMonth: number;
     maxAiInferencesPerMonth: number;
     maxMonitoringChecks: number;
     maxApiRequestsPerDay: number;
@@ -43,6 +44,7 @@ export const PLAN_CONFIGS: Record<PlanType, PlanConfig> = {
       maxRequestsPerMonth: 500,
       maxEmailsPerMonth: 500,
       maxSmsPerMonth: 0,
+      maxWebhooksPerMonth: 1000,
       maxAiInferencesPerMonth: 0,
       maxMonitoringChecks: 0,
       maxApiRequestsPerDay: 0,
@@ -74,6 +76,7 @@ export const PLAN_CONFIGS: Record<PlanType, PlanConfig> = {
       maxRequestsPerMonth: 5000,
       maxEmailsPerMonth: 5000,
       maxSmsPerMonth: 1000,
+      maxWebhooksPerMonth: 5000,
       maxAiInferencesPerMonth: 500,
       maxMonitoringChecks: 0,
       maxApiRequestsPerDay: 1000,
@@ -105,6 +108,7 @@ export const PLAN_CONFIGS: Record<PlanType, PlanConfig> = {
       maxRequestsPerMonth: 15000,
       maxEmailsPerMonth: 15000,
       maxSmsPerMonth: 5000,
+      maxWebhooksPerMonth: 20000,
       maxAiInferencesPerMonth: 2000,
       maxMonitoringChecks: 500,
       maxApiRequestsPerDay: 10000,
@@ -139,6 +143,7 @@ export const PLAN_CONFIGS: Record<PlanType, PlanConfig> = {
       maxRequestsPerMonth: 100000,
       maxEmailsPerMonth: 100000,
       maxSmsPerMonth: 25000,
+      maxWebhooksPerMonth: 100000,
       maxAiInferencesPerMonth: 10000,
       maxMonitoringChecks: 5000,
       maxApiRequestsPerDay: 100000,
@@ -148,6 +153,32 @@ export const PLAN_CONFIGS: Record<PlanType, PlanConfig> = {
     ctaLink: "/enterprise",
   },
 };
+
+/**
+ * The metering-relevant subset of a plan's quota defaults, in the shape the
+ * metering layer (TenantQuota / MeteringService) consumes. plan-config.ts is
+ * the single source of truth; quota.ts and service.ts derive from this.
+ */
+export interface MeteringQuotaDefaults {
+  maxEmailsPerMonth: number;
+  maxSmsPerMonth: number;
+  maxWebhooksPerMonth: number;
+  maxApiRequestsPerDay: number;
+  maxAiInferencesPerMonth: number;
+  maxMonitoringChecks: number;
+}
+
+export function planQuotaDefaults(planType: PlanType): MeteringQuotaDefaults {
+  const q = PLAN_CONFIGS[planType].quotaDefaults;
+  return {
+    maxEmailsPerMonth: q.maxEmailsPerMonth,
+    maxSmsPerMonth: q.maxSmsPerMonth,
+    maxWebhooksPerMonth: q.maxWebhooksPerMonth,
+    maxApiRequestsPerDay: q.maxApiRequestsPerDay,
+    maxAiInferencesPerMonth: q.maxAiInferencesPerMonth,
+    maxMonitoringChecks: q.maxMonitoringChecks,
+  };
+}
 
 /**
  * Get the upgrade path from a given plan.
