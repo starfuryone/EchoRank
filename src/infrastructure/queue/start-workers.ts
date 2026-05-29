@@ -7,6 +7,7 @@
  */
 import "dotenv/config";
 
+import { initTelemetry } from "@/infrastructure/observability/telemetry";
 import { startEmailDeliveryWorker } from "./workers/email-delivery.worker";
 import { startSmsDeliveryWorker } from "./workers/sms-delivery.worker";
 import { startWebhookDeliveryWorker } from "./workers/webhook-delivery.worker";
@@ -19,6 +20,9 @@ import { startFeedbackRoutingWorker } from "./workers/feedback-routing.worker";
 
 async function startWorkers() {
   console.log("[Workers] Starting EchoRank worker processes...");
+
+  // Start OpenTelemetry so worker spans (withSpan) are exported too.
+  initTelemetry();
 
   const workers: Array<{ name: string; start: () => unknown }> = [
     { name: "email-delivery", start: startEmailDeliveryWorker },
