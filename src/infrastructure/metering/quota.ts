@@ -7,6 +7,7 @@ import { planQuotaDefaults } from "@/lib/plan-config";
 // ─── Custom Error ─────────────────────────────────────────────────────
 
 export class QuotaExceededError extends Error {
+  public readonly statusCode = 429;
   public readonly tenantId: string;
   public readonly meterType: MeterType;
   public readonly limit: number;

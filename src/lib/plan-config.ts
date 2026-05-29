@@ -1,4 +1,5 @@
 import type { PlanType } from "@/generated/prisma";
+import { hasFeature } from "./feature-flags";
 
 export interface PlanConfig {
   name: string;
@@ -153,6 +154,42 @@ export const PLAN_CONFIGS: Record<PlanType, PlanConfig> = {
     ctaLink: "/enterprise",
   },
 };
+
+// ─── Derived views (single source of truth lives in PLAN_CONFIGS above) ──────
+
+const ALL_PLANS = Object.keys(PLAN_CONFIGS) as PlanType[];
+
+export interface PlanLimit {
+  locations: number;
+  requests: number;
+  sms: boolean;
+  whitelabel: boolean;
+  aiAnalysis: boolean;
+  monitoring: boolean;
+}
+
+/** Feature/limit summary per plan, derived from PLAN_CONFIGS + the feature matrix. */
+export const PLAN_LIMITS: Record<PlanType, PlanLimit> = Object.fromEntries(
+  ALL_PLANS.map((plan) => {
+    const q = PLAN_CONFIGS[plan].quotaDefaults;
+    return [
+      plan,
+      {
+        locations: q.maxLocations,
+        requests: q.maxRequestsPerMonth,
+        sms: q.maxSmsPerMonth > 0,
+        whitelabel: hasFeature(plan, "whitelabel"),
+        aiAnalysis: hasFeature(plan, "ai_analysis"),
+        monitoring: hasFeature(plan, "reputation_monitoring"),
+      } satisfies PlanLimit,
+    ];
+  }),
+) as Record<PlanType, PlanLimit>;
+
+/** Monthly USD price per plan, derived from PLAN_CONFIGS. */
+export const PLAN_PRICES: Record<PlanType, number> = Object.fromEntries(
+  ALL_PLANS.map((plan) => [plan, PLAN_CONFIGS[plan].monthlyPrice]),
+) as Record<PlanType, number>;
 
 /**
  * The metering-relevant subset of a plan's quota defaults, in the shape the
