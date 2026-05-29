@@ -53,8 +53,15 @@ export class RateLimitError extends ApiError {
 
 // ─── Types ───────────────────────────────────────────────────────────────────
 
+interface RouteContext {
+  // Next.js passes dynamic route params as a Promise on the 2nd handler arg.
+  params?: Promise<Record<string, string | string[]>>;
+}
+
 interface HandlerContext {
   correlationId: string;
+  // Forwarded from Next's route context so dynamic routes ([id], [token]) work.
+  params?: Promise<Record<string, string | string[]>>;
 }
 
 interface HandlerOptions {
@@ -75,7 +82,10 @@ const DEFAULT_MAX_BODY_SIZE = 1_048_576; // 1MB
 export function createApiHandler(handler: HandlerFn, options: HandlerOptions = {}) {
   const { requireAuth = false, maxBodySize = DEFAULT_MAX_BODY_SIZE } = options;
 
-  return async function wrappedHandler(request: NextRequest): Promise<NextResponse> {
+  return async function wrappedHandler(
+    request: NextRequest,
+    routeContext?: RouteContext,
+  ): Promise<NextResponse> {
     const correlationId = generateCorrelationId();
     const start = Date.now();
     const method = request.method;
@@ -109,7 +119,10 @@ export function createApiHandler(handler: HandlerFn, options: HandlerOptions = {
       }
 
       // ── Execute handler ────────────────────────────────────────────
-      const result = await handler(request, { correlationId });
+      const result = await handler(request, {
+        correlationId,
+        params: routeContext?.params,
+      });
 
       // If the handler returned a NextResponse directly, attach headers and return
       if (result instanceof NextResponse) {
@@ -161,10 +174,42 @@ export function createApiHandler(handler: HandlerFn, options: HandlerOptions = {
         return response;
       }
 
+      // Map requireRole()'s "Insufficient permissions" -> 403 (authenticated
+      // but not authorized).
+      if (
+        error instanceof Error &&
+        error.message === "Insufficient permissions"
+      ) {
+        status = 403;
+        const response = NextResponse.json(
+          { error: "Forbidden", code: "FORBIDDEN", correlationId },
+          { status },
+        );
+        response.headers.set("X-Correlation-ID", correlationId);
+        response.headers.set("X-Content-Type-Options", "nosniff");
+        response.headers.set("X-Frame-Options", "DENY");
+        return response;
+      }
+
+      // Map any error carrying a numeric statusCode (e.g. the plan-enforcement
+      // errors: PlanRequired/FeatureNotAvailable -> 403, QuotaExceeded -> 429).
+      if (
+        error instanceof Error &&
+        typeof (error as { statusCode?: unknown }).statusCode === "number"
+      ) {
+        status = (error as Error & { statusCode: number }).statusCode;
+        const response = NextResponse.json(
+          { error: error.message, correlationId },
+          { status },
+        );
+        response.headers.set("X-Correlation-ID", correlationId);
+        response.headers.set("X-Content-Type-Options", "nosniff");
+        response.headers.set("X-Frame-Options", "DENY");
+        return response;
+      }
+
       // Unexpected error
       status = 500;
-      const errorMsg =
-        error instanceof Error ? error.message : String(error);
       logger.error(
         { err: error, correlationId, method, path },
         "Unhandled API error",
