@@ -8,6 +8,12 @@
 import "dotenv/config";
 
 import { initTelemetry } from "@/infrastructure/observability/telemetry";
+import { eventBus } from "@/infrastructure/events/bus";
+import { registerFeedbackConsumer } from "@/infrastructure/events/consumers/feedback.consumer";
+import { registerEscalationConsumer } from "@/infrastructure/events/consumers/escalation.consumer";
+import { registerCampaignConsumer } from "@/infrastructure/events/consumers/campaign.consumer";
+import { registerReviewConsumer } from "@/infrastructure/events/consumers/review.consumer";
+import { registerAiConsumer } from "@/infrastructure/events/consumers/ai.consumer";
 import { startEmailDeliveryWorker } from "./workers/email-delivery.worker";
 import { startSmsDeliveryWorker } from "./workers/sms-delivery.worker";
 import { startWebhookDeliveryWorker } from "./workers/webhook-delivery.worker";
@@ -18,11 +24,53 @@ import { startEscalationDetectionWorker } from "./workers/escalation-detection.w
 import { startAnalyticsAggregationWorker } from "./workers/analytics-aggregation.worker";
 import { startFeedbackRoutingWorker } from "./workers/feedback-routing.worker";
 
+/**
+ * How often to drain domain events that are still PENDING/FAILED in the DB.
+ * The event bus dispatches inline on emit(), so this is a safety net for events
+ * whose inline dispatch failed (handler error -> FAILED) or that were persisted
+ * before any consumer was registered.
+ */
+const EVENT_DISPATCH_INTERVAL_MS = 30_000;
+
+/**
+ * Register all domain-event consumers on the shared event bus. Without this the
+ * workers emit events that reach zero handlers and the downstream pipeline
+ * (AI passes, escalation, reputation recalc, usage metering) never runs.
+ */
+function registerEventConsumers(): void {
+  registerFeedbackConsumer();
+  registerEscalationConsumer();
+  registerCampaignConsumer();
+  registerReviewConsumer();
+  registerAiConsumer();
+  console.log("[Workers] Registered event consumers");
+}
+
 async function startWorkers() {
   console.log("[Workers] Starting EchoRank worker processes...");
 
   // Start OpenTelemetry so worker spans (withSpan) are exported too.
   initTelemetry();
+
+  // Wire up event handlers before any worker can emit.
+  registerEventConsumers();
+
+  // Drain any backlog left from before consumers existed, then poll on an
+  // interval. A guard prevents overlapping runs if a drain is slow.
+  let draining = false;
+  const drainEvents = async () => {
+    if (draining) return;
+    draining = true;
+    try {
+      await eventBus.processUnprocessed();
+    } catch (err) {
+      console.error("[Workers] Event dispatch sweep failed:", err);
+    } finally {
+      draining = false;
+    }
+  };
+  void drainEvents();
+  const dispatchTimer = setInterval(drainEvents, EVENT_DISPATCH_INTERVAL_MS);
 
   const workers: Array<{ name: string; start: () => unknown }> = [
     { name: "email-delivery", start: startEmailDeliveryWorker },
@@ -53,6 +101,7 @@ async function startWorkers() {
 
   const shutdown = async () => {
     console.log("\n[Workers] Shutting down gracefully...");
+    clearInterval(dispatchTimer);
     try {
       const { closeAllQueues } = await import("./registry");
       await closeAllQueues();

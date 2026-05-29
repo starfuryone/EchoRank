@@ -52,7 +52,7 @@ async function processFeedbackRouting(job: Job<FeedbackJobData>): Promise<void> 
     );
 
     try {
-      await routeFeedback(feedbackId);
+      await routeFeedback(feedbackId, correlationId);
 
       logger.info(
         { jobId: job.id, tenantId, feedbackId, queue: QUEUE_NAME },
