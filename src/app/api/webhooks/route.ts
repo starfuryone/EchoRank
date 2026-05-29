@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
+import type { Prisma } from "@/generated/prisma";
 import { prisma } from "@/lib/prisma";
 import { rateLimit } from "@/lib/rate-limit";
 import { logger } from "@/infrastructure/observability/logger";
@@ -30,8 +31,14 @@ function mapStripeStatus(
       return "CANCELED";
     case "trialing":
       return "TRIALING";
+    case "incomplete":
+    case "paused":
+      return "PAST_DUE";
     default:
-      return "ACTIVE";
+      // Never default to ACTIVE: an unknown/unpaid status (e.g. a freshly
+      // created but never-paid subscription) must not activate the tenant.
+      // PAST_DUE is the safe, access-denying state.
+      return "PAST_DUE";
   }
 }
 
@@ -321,62 +328,82 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Idempotency: check if we already processed this event
-    const existing = await prisma.processedWebhook.findUnique({
-      where: { stripeEventId: event.id },
-    });
-
-    if (existing) {
-      log.info(
-        { eventId: event.id, eventType: event.type },
-        "Duplicate webhook event — skipping"
-      );
-      return NextResponse.json({ received: true, duplicate: true });
+    // Idempotency: insert the marker FIRST, guarded by the unique constraint on
+    // stripeEventId. This is atomic — two concurrent retries of the same event
+    // race on the insert and exactly one wins; the loser gets P2002 and is
+    // treated as a duplicate. (The previous findUnique-then-create left a window
+    // where both retries passed the check and both ran the handler.)
+    try {
+      await prisma.processedWebhook.create({
+        data: {
+          stripeEventId: event.id,
+          eventType: event.type,
+          payload: JSON.parse(
+            JSON.stringify(event.data.object)
+          ) as Prisma.InputJsonValue,
+        },
+      });
+    } catch (err) {
+      if (
+        err &&
+        typeof err === "object" &&
+        "code" in err &&
+        (err as { code: string }).code === "P2002"
+      ) {
+        log.info(
+          { eventId: event.id, eventType: event.type },
+          "Duplicate webhook event — skipping"
+        );
+        return NextResponse.json({ received: true, duplicate: true });
+      }
+      throw err;
     }
 
-    // Route to the appropriate handler
-    switch (event.type) {
-      case "checkout.session.completed":
-        await handleCheckoutCompleted(
-          event.data.object as Stripe.Checkout.Session
-        );
-        break;
+    // Route to the appropriate handler. If it throws, delete the idempotency
+    // marker so Stripe's retry reprocesses the event (otherwise the marker we
+    // just wrote would make the retry a no-op and the event would be lost).
+    try {
+      switch (event.type) {
+        case "checkout.session.completed":
+          await handleCheckoutCompleted(
+            event.data.object as Stripe.Checkout.Session
+          );
+          break;
 
-      case "customer.subscription.updated":
-        await handleSubscriptionUpdated(
-          event.data.object as Stripe.Subscription
-        );
-        break;
+        case "customer.subscription.updated":
+          await handleSubscriptionUpdated(
+            event.data.object as Stripe.Subscription
+          );
+          break;
 
-      case "customer.subscription.deleted":
-        await handleSubscriptionDeleted(
-          event.data.object as Stripe.Subscription
-        );
-        break;
+        case "customer.subscription.deleted":
+          await handleSubscriptionDeleted(
+            event.data.object as Stripe.Subscription
+          );
+          break;
 
-      case "invoice.payment_succeeded":
-        await handleInvoicePaymentSucceeded(
-          event.data.object as Stripe.Invoice
-        );
-        break;
+        case "invoice.payment_succeeded":
+          await handleInvoicePaymentSucceeded(
+            event.data.object as Stripe.Invoice
+          );
+          break;
 
-      case "invoice.payment_failed":
-        await handleInvoicePaymentFailed(event.data.object as Stripe.Invoice);
-        break;
+        case "invoice.payment_failed":
+          await handleInvoicePaymentFailed(event.data.object as Stripe.Invoice);
+          break;
 
-      default:
-        log.debug({ eventType: event.type }, "Unhandled Stripe event type");
-        break;
+        default:
+          log.debug({ eventType: event.type }, "Unhandled Stripe event type");
+          break;
+      }
+    } catch (err) {
+      await prisma.processedWebhook
+        .delete({ where: { stripeEventId: event.id } })
+        .catch(() => {
+          // best-effort rollback of the idempotency marker
+        });
+      throw err;
     }
-
-    // Record the processed webhook for idempotency
-    await prisma.processedWebhook.create({
-      data: {
-        stripeEventId: event.id,
-        eventType: event.type,
-        payload: JSON.parse(JSON.stringify(event.data.object)) as Record<string, string | number | boolean | null>,
-      },
-    });
 
     log.info(
       { eventId: event.id, eventType: event.type },
