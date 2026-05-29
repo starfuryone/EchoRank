@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireTenant } from "@/lib/tenant";
 import { createAuditLog } from "@/lib/audit";
+import { validate, updateCustomerSchema } from "@/lib/validations";
 
 export async function GET(
   _request: Request,
@@ -70,43 +71,10 @@ export async function PATCH(
     }
 
     const body = await request.json();
-    const { name, email, phone, location, tags, status } = body;
-
-    if (name !== undefined && (typeof name !== "string" || name.trim().length === 0)) {
-      return NextResponse.json(
-        { error: "Name cannot be empty" },
-        { status: 400 }
-      );
-    }
-
-    if (email !== undefined && email !== null && typeof email === "string" && !email.includes("@")) {
-      return NextResponse.json(
-        { error: "Invalid email address" },
-        { status: 400 }
-      );
-    }
-
-    if (tags !== undefined && !Array.isArray(tags)) {
-      return NextResponse.json(
-        { error: "Tags must be an array" },
-        { status: 400 }
-      );
-    }
-
-    const validStatuses = [
-      "NEW",
-      "CONTACTED",
-      "SATISFIED",
-      "NEEDS_FOLLOWUP",
-      "RECOVERED",
-      "LOST",
-    ];
-    if (status !== undefined && !validStatuses.includes(status)) {
-      return NextResponse.json(
-        { error: `Invalid status. Must be one of: ${validStatuses.join(", ")}` },
-        { status: 400 }
-      );
-    }
+    const { name, email, phone, location, tags, status } = validate(
+      updateCustomerSchema,
+      body,
+    );
 
     const updateData: Record<string, unknown> = {};
     if (name !== undefined) updateData.name = name.trim();
@@ -137,6 +105,12 @@ export async function PATCH(
       error.message === "Not authenticated or no tenant access"
     ) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    if (error instanceof Error && "statusCode" in error) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: (error as { statusCode: number }).statusCode },
+      );
     }
     console.error("Error updating customer:", error);
     return NextResponse.json(

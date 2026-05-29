@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireTenant } from "@/lib/tenant";
 import { createAuditLog } from "@/lib/audit";
-import type { TicketStatus, TicketPriority } from "@/generated/prisma";
+import { validate, updateRecoveryTicketSchema } from "@/lib/validations";
 
 export async function PATCH(
   request: Request,
@@ -25,55 +25,10 @@ export async function PATCH(
     }
 
     const body = await request.json();
-    const { status, priority, assignedTo, notes } = body;
-
-    const validStatuses: TicketStatus[] = [
-      "OPEN",
-      "IN_PROGRESS",
-      "RESOLVED",
-      "CLOSED",
-    ];
-    if (status !== undefined && !validStatuses.includes(status)) {
-      return NextResponse.json(
-        {
-          error: `Invalid status. Must be one of: ${validStatuses.join(", ")}`,
-        },
-        { status: 400 }
-      );
-    }
-
-    const validPriorities: TicketPriority[] = [
-      "LOW",
-      "MEDIUM",
-      "HIGH",
-      "URGENT",
-    ];
-    if (priority !== undefined && !validPriorities.includes(priority)) {
-      return NextResponse.json(
-        {
-          error: `Invalid priority. Must be one of: ${validPriorities.join(", ")}`,
-        },
-        { status: 400 }
-      );
-    }
-
-    if (
-      assignedTo !== undefined &&
-      assignedTo !== null &&
-      typeof assignedTo !== "string"
-    ) {
-      return NextResponse.json(
-        { error: "assignedTo must be a string or null" },
-        { status: 400 }
-      );
-    }
-
-    if (notes !== undefined && notes !== null && typeof notes !== "string") {
-      return NextResponse.json(
-        { error: "notes must be a string or null" },
-        { status: 400 }
-      );
-    }
+    const { status, priority, assignedTo, notes } = validate(
+      updateRecoveryTicketSchema,
+      body,
+    );
 
     const updateData: Record<string, unknown> = {};
     if (status !== undefined) {
@@ -114,6 +69,12 @@ export async function PATCH(
       error.message === "Not authenticated or no tenant access"
     ) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    if (error instanceof Error && "statusCode" in error) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: (error as { statusCode: number }).statusCode },
+      );
     }
     console.error("Error updating recovery ticket:", error);
     return NextResponse.json(
