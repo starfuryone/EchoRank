@@ -46,7 +46,7 @@ interface BufferedMetric {
 const FLUSH_INTERVAL_MS = 5_000; // 5 seconds
 const MAX_BUFFER_SIZE = 200;
 
-let buffer: BufferedMetric[] = [];
+const buffer: BufferedMetric[] = [];
 let flushTimer: ReturnType<typeof setInterval> | null = null;
 
 /**
