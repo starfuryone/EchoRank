@@ -41,13 +41,14 @@ export async function POST(request: Request) {
   } catch (error) {
     if (
       error instanceof Error &&
-      (error.message === "Not authenticated or no tenant access" ||
-        error.message === "Insufficient permissions")
+      error.message === "Not authenticated or no tenant access"
     ) {
-      return Response.json(
-        { error: "Unauthorized" },
-        { status: 401 }
-      );
+      return Response.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    // Authenticated but lacking the required role -> 403, not 401.
+    if (error instanceof Error && error.message === "Insufficient permissions") {
+      return Response.json({ error: "Forbidden" }, { status: 403 });
     }
 
     if (

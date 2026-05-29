@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireTenant } from "@/lib/tenant";
+import {
+  requireFeature,
+  enforcementErrorResponse,
+} from "@/lib/plan-enforcement";
 import { createAuditLog } from "@/lib/audit";
 import type { MonitoringPlatform, Prisma } from "@/generated/prisma";
 
@@ -13,6 +17,8 @@ export async function GET(request: NextRequest) {
   try {
     const membership = await requireTenant();
     const tenantId = membership.tenantId;
+
+    await requireFeature("reputation_monitoring");
 
     const searchParams = request.nextUrl.searchParams;
     const platform = searchParams.get("platform") as MonitoringPlatform | null;
@@ -43,6 +49,8 @@ export async function GET(request: NextRequest) {
       total: sources.length,
     });
   } catch (error) {
+    const enforcement = enforcementErrorResponse(error);
+    if (enforcement) return enforcement;
     const message = error instanceof Error ? error.message : "Internal server error";
     if (message.includes("Not authenticated")) {
       return NextResponse.json({ error: message }, { status: 401 });
@@ -55,6 +63,8 @@ export async function POST(request: NextRequest) {
   try {
     const membership = await requireTenant();
     const tenantId = membership.tenantId;
+
+    await requireFeature("reputation_monitoring");
 
     const body = await request.json();
     const { platform, externalId, name, url, checkInterval } = body;
@@ -121,6 +131,8 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ data: source }, { status: 201 });
   } catch (error) {
+    const enforcement = enforcementErrorResponse(error);
+    if (enforcement) return enforcement;
     const message = error instanceof Error ? error.message : "Internal server error";
     if (message.includes("Not authenticated")) {
       return NextResponse.json({ error: message }, { status: 401 });

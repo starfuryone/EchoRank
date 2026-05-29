@@ -1,12 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireTenant } from "@/lib/tenant";
+import {
+  requireFeature,
+  enforcementErrorResponse,
+} from "@/lib/plan-enforcement";
 import type { RiskLevel } from "@/generated/prisma";
 
 export async function GET(request: NextRequest) {
   try {
     const membership = await requireTenant();
     const tenantId = membership.tenantId;
+
+    await requireFeature("ai_analysis");
 
     const searchParams = request.nextUrl.searchParams;
     const riskLevel = searchParams.get("riskLevel") as RiskLevel | null;
@@ -51,6 +57,8 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
+    const enforcement = enforcementErrorResponse(error);
+    if (enforcement) return enforcement;
     if (
       error instanceof Error &&
       error.message === "Not authenticated or no tenant access"
@@ -69,6 +77,8 @@ export async function PATCH(request: NextRequest) {
   try {
     const membership = await requireTenant();
     const tenantId = membership.tenantId;
+
+    await requireFeature("ai_analysis");
 
     const body = await request.json();
     const { alertId, action } = body;
@@ -112,12 +122,14 @@ export async function PATCH(request: NextRequest) {
     }
 
     const updated = await prisma.escalationAlert.update({
-      where: { id: alertId },
+      where: { id: alertId, tenantId },
       data: updateData,
     });
 
     return NextResponse.json({ alert: updated });
   } catch (error) {
+    const enforcement = enforcementErrorResponse(error);
+    if (enforcement) return enforcement;
     if (
       error instanceof Error &&
       error.message === "Not authenticated or no tenant access"

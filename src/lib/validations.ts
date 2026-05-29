@@ -16,6 +16,31 @@ export const createCustomerSchema = z.object({
   tags: z.array(z.string().max(50)).max(20).optional(),
 });
 
+export const updateCustomerSchema = z.object({
+  name: z.string().trim().min(1, "Name cannot be empty").max(200).optional(),
+  email: z.string().email().max(255).optional().nullable(),
+  phone: z.string().max(50).optional().nullable(),
+  location: z.string().max(200).optional().nullable(),
+  tags: z.array(z.string().max(50)).max(20).optional(),
+  status: z
+    .enum([
+      "NEW",
+      "CONTACTED",
+      "SATISFIED",
+      "NEEDS_FOLLOWUP",
+      "RECOVERED",
+      "LOST",
+    ])
+    .optional(),
+});
+
+export const updateRecoveryTicketSchema = z.object({
+  status: z.enum(["OPEN", "IN_PROGRESS", "RESOLVED", "CLOSED"]).optional(),
+  priority: z.enum(["LOW", "MEDIUM", "HIGH", "URGENT"]).optional(),
+  assignedTo: z.string().optional().nullable(),
+  notes: z.string().optional().nullable(),
+});
+
 export const submitFeedbackSchema = z.object({
   rating: z.number().int().min(1).max(5),
   comment: z.string().max(5000).optional().nullable(),

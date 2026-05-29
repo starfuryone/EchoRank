@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireTenant } from "@/lib/tenant";
+import {
+  requireFeature,
+  enforcementErrorResponse,
+} from "@/lib/plan-enforcement";
 import { RiskScoringPipeline } from "@/ai/pipelines/risk-scoring";
 import { ReputationScoreCalculator } from "@/ai/scoring/reputation-score";
 
@@ -7,6 +11,8 @@ export async function GET(request: NextRequest) {
   try {
     const membership = await requireTenant();
     const tenantId = membership.tenantId;
+
+    await requireFeature("ai_analysis");
 
     const searchParams = request.nextUrl.searchParams;
     const location = searchParams.get("location") || undefined;
@@ -65,6 +71,8 @@ export async function GET(request: NextRequest) {
       locations: locationComparisons,
     });
   } catch (error) {
+    const enforcement = enforcementErrorResponse(error);
+    if (enforcement) return enforcement;
     if (
       error instanceof Error &&
       error.message === "Not authenticated or no tenant access"

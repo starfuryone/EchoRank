@@ -2,10 +2,12 @@ import { prisma } from "@/lib/prisma";
 import type { MeterType, PlanType } from "@/generated/prisma";
 import { meteringService } from "./service";
 import { logger } from "@/infrastructure/observability/logger";
+import { planQuotaDefaults } from "@/lib/plan-config";
 
 // ─── Custom Error ─────────────────────────────────────────────────────
 
 export class QuotaExceededError extends Error {
+  public readonly statusCode = 429;
   public readonly tenantId: string;
   public readonly meterType: MeterType;
   public readonly limit: number;
@@ -30,49 +32,9 @@ export class QuotaExceededError extends Error {
 
 // ─── Default quotas per plan ──────────────────────────────────────────
 
-export interface PlanQuotas {
-  maxEmailsPerMonth: number;
-  maxSmsPerMonth: number;
-  maxWebhooksPerMonth: number;
-  maxApiRequestsPerDay: number;
-  maxAiInferencesPerMonth: number;
-  maxMonitoringChecks: number;
-}
-
-const DEFAULT_QUOTAS: Record<PlanType, PlanQuotas> = {
-  STARTER: {
-    maxEmailsPerMonth: 300,
-    maxSmsPerMonth: 0,
-    maxWebhooksPerMonth: 1000,
-    maxApiRequestsPerDay: 10000,
-    maxAiInferencesPerMonth: 100,
-    maxMonitoringChecks: 0,
-  },
-  GROWTH: {
-    maxEmailsPerMonth: 2000,
-    maxSmsPerMonth: 500,
-    maxWebhooksPerMonth: 5000,
-    maxApiRequestsPerDay: 50000,
-    maxAiInferencesPerMonth: 500,
-    maxMonitoringChecks: 100,
-  },
-  AGENCY: {
-    maxEmailsPerMonth: 10000,
-    maxSmsPerMonth: 2000,
-    maxWebhooksPerMonth: 20000,
-    maxApiRequestsPerDay: 100000,
-    maxAiInferencesPerMonth: 2000,
-    maxMonitoringChecks: 500,
-  },
-  ENTERPRISE: {
-    maxEmailsPerMonth: 50000,
-    maxSmsPerMonth: 10000,
-    maxWebhooksPerMonth: 100000,
-    maxApiRequestsPerDay: 500000,
-    maxAiInferencesPerMonth: 10000,
-    maxMonitoringChecks: 5000,
-  },
-};
+// Shape consumed by the metering layer. Values come from plan-config.ts (the
+// single source of truth) via planQuotaDefaults — no second copy of the numbers.
+export type PlanQuotas = ReturnType<typeof planQuotaDefaults>;
 
 // ─── Quota status response types ──────────────────────────────────────
 
@@ -326,7 +288,7 @@ export class QuotaEnforcer {
    * Returns the default quota values for a given plan type.
    */
   getDefaultQuotas(planType: PlanType): PlanQuotas {
-    return { ...DEFAULT_QUOTAS[planType] };
+    return planQuotaDefaults(planType);
   }
 }
 

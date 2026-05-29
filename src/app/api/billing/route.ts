@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireTenant } from "@/lib/tenant";
-import { PLAN_LIMITS, PLAN_PRICES } from "@/lib/utils";
+import { PLAN_LIMITS, PLAN_PRICES } from "@/lib/plan-config";
 import type { PlanType } from "@/generated/prisma";
 
 export async function GET() {

@@ -2,10 +2,24 @@ import { NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { slugify } from "@/lib/tenant";
+import { planQuotaDefaults } from "@/lib/plan-config";
 import { validate, registerSchema } from "@/lib/validations";
+import { rateLimit } from "@/lib/rate-limit";
 
 export async function POST(request: Request) {
   try {
+    // Throttle account/tenant creation per IP to prevent spam signups.
+    const ip =
+      request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+      "unknown";
+    const limit = await rateLimit(`register-ip:${ip}`, 10, 3_600_000);
+    if (!limit.success) {
+      return NextResponse.json(
+        { error: "Too many registration attempts. Please try again later." },
+        { status: 429 },
+      );
+    }
+
     const body = await request.json();
     const { name, email, password, businessName } = validate(
       registerSchema,
@@ -62,6 +76,15 @@ export async function POST(request: Request) {
         },
       });
 
+      // Provision quota limits so the tenant is metered from day one. New
+      // tenants default to the STARTER plan (Tenant.planType default).
+      await tx.tenantQuota.create({
+        data: {
+          tenantId: tenant.id,
+          ...planQuotaDefaults("STARTER"),
+        },
+      });
+
       await tx.emailTemplate.createMany({
         data: [
           {
@@ -97,6 +120,23 @@ export async function POST(request: Request) {
         { error: error.message },
         { status: (error as Record<string, unknown>).statusCode as number },
       );
+    }
+    // The pre-checks above are racy; the DB unique constraints on user.email and
+    // tenant.slug are the source of truth. Translate a constraint hit (P2002)
+    // into a friendly 409 instead of a generic 500.
+    if (
+      error &&
+      typeof error === "object" &&
+      "code" in error &&
+      (error as { code: string }).code === "P2002"
+    ) {
+      const target = String(
+        (error as { meta?: { target?: unknown } }).meta?.target ?? "",
+      );
+      const message = target.includes("email")
+        ? "An account with this email already exists"
+        : "A business with this name already exists";
+      return NextResponse.json({ error: message }, { status: 409 });
     }
     console.error("Registration error:", error);
     return NextResponse.json(

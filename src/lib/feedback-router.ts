@@ -3,6 +3,8 @@ import { prisma } from "./prisma";
 import { addJob } from "@/infrastructure/queue/registry";
 import type { FeedbackRoutingJob } from "@/infrastructure/queue/jobs/schemas";
 import { logger } from "@/infrastructure/observability/logger";
+import { eventBus } from "@/infrastructure/events/bus";
+import { EVENT_TYPES, type EventType } from "@/infrastructure/events/types";
 
 const log = logger.child({ module: "feedback-router" });
 
@@ -12,7 +14,7 @@ const log = logger.child({ module: "feedback-router" });
  */
 const BACKFILL_MIN_AGE_MS = 5 * 60_000;
 
-export async function routeFeedback(feedbackId: string) {
+export async function routeFeedback(feedbackId: string, correlationId: string) {
   const feedback = await prisma.feedback.findUnique({
     where: { id: feedbackId },
     include: {
@@ -25,19 +27,25 @@ export async function routeFeedback(feedbackId: string) {
 
   if (!feedback || !feedback.rating) return;
 
-  await persistDomainEvent(feedback.tenantId, "feedback.submitted", "feedback", feedback.id, {
-    tenantId: feedback.tenantId,
-    feedbackId: feedback.id,
-    customerId: feedback.customerId,
-    rating: feedback.rating,
-    comment: feedback.comment,
-    submittedAt: new Date().toISOString(),
-  });
+  await emitEvent(
+    feedback.tenantId,
+    correlationId,
+    EVENT_TYPES.FEEDBACK_SUBMITTED,
+    "feedback",
+    feedback.id,
+    {
+      feedbackId: feedback.id,
+      customerId: feedback.customerId,
+      rating: feedback.rating,
+      comment: feedback.comment,
+      submittedAt: new Date().toISOString(),
+    },
+  );
 
   if (feedback.rating >= 4) {
-    await handlePositiveFeedback(feedback);
+    await handlePositiveFeedback(feedback, correlationId);
   } else {
-    await handleNegativeFeedback(feedback);
+    await handleNegativeFeedback(feedback, correlationId);
   }
 
   // Mark routing as completed so the backfill sweep can distinguish feedback
@@ -90,19 +98,22 @@ export async function backfillUnroutedFeedback(limit = 100): Promise<number> {
   return candidates.length;
 }
 
-async function handlePositiveFeedback(feedback: {
-  id: string;
-  tenantId: string;
-  customerId: string;
-  rating: number | null;
-  tenant: {
-    googleReviewLink: string | null;
-    facebookReviewLink: string | null;
-    trustpilotLink: string | null;
-    reviewLinks: { platform: string; url: string }[];
-  };
-  customer: { email: string | null; name: string };
-}) {
+async function handlePositiveFeedback(
+  feedback: {
+    id: string;
+    tenantId: string;
+    customerId: string;
+    rating: number | null;
+    tenant: {
+      googleReviewLink: string | null;
+      facebookReviewLink: string | null;
+      trustpilotLink: string | null;
+      reviewLinks: { platform: string; url: string }[];
+    };
+    customer: { email: string | null; name: string };
+  },
+  correlationId: string,
+) {
   const reviewLink =
     feedback.tenant.reviewLinks[0] ||
     (feedback.tenant.googleReviewLink
@@ -128,13 +139,19 @@ async function handlePositiveFeedback(feedback: {
         },
       });
 
-      await persistDomainEvent(feedback.tenantId, "review.requested", "feedback", feedback.id, {
-        tenantId: feedback.tenantId,
-        feedbackId: feedback.id,
-        customerId: feedback.customerId,
-        platform: reviewLink.platform,
-        url: reviewLink.url,
-      });
+      await emitEvent(
+        feedback.tenantId,
+        correlationId,
+        EVENT_TYPES.REVIEW_REQUESTED,
+        "feedback",
+        feedback.id,
+        {
+          feedbackId: feedback.id,
+          customerId: feedback.customerId,
+          platform: reviewLink.platform,
+          url: reviewLink.url,
+        },
+      );
     }
   }
 
@@ -144,12 +161,15 @@ async function handlePositiveFeedback(feedback: {
   });
 }
 
-async function handleNegativeFeedback(feedback: {
-  id: string;
-  tenantId: string;
-  customerId: string;
-  rating: number | null;
-}) {
+async function handleNegativeFeedback(
+  feedback: {
+    id: string;
+    tenantId: string;
+    customerId: string;
+    rating: number | null;
+  },
+  correlationId: string,
+) {
   const priority =
     feedback.rating === 1 ? "URGENT" : feedback.rating === 2 ? "HIGH" : "MEDIUM";
 
@@ -174,48 +194,70 @@ async function handleNegativeFeedback(feedback: {
     data: { status: "NEEDS_FOLLOWUP" },
   });
 
+  // Both events are emitted only when the ticket is freshly created, so a
+  // retried job (which finds the existing ticket) does not re-emit them. The
+  // event bus also dedups on (tenantId, eventType, aggregateId, correlationId).
   if (!existingTicket) {
-    await persistDomainEvent(feedback.tenantId, "ticket.opened", "recovery_ticket", ticket.id, {
-      tenantId: feedback.tenantId,
-      ticketId: ticket.id,
-      customerId: feedback.customerId,
-      feedbackId: feedback.id,
-      priority,
-    });
-  }
+    await emitEvent(
+      feedback.tenantId,
+      correlationId,
+      EVENT_TYPES.TICKET_OPENED,
+      "recovery_ticket",
+      ticket.id,
+      {
+        ticketId: ticket.id,
+        customerId: feedback.customerId,
+        feedbackId: feedback.id,
+        priority,
+      },
+    );
 
-  if (feedback.rating !== null && feedback.rating <= 2) {
-    await persistDomainEvent(feedback.tenantId, "customer.escalated", "customer", feedback.customerId, {
-      tenantId: feedback.tenantId,
-      customerId: feedback.customerId,
-      feedbackId: feedback.id,
-      riskLevel: feedback.rating === 1 ? "HIGH" : "MODERATE",
-      probability: feedback.rating === 1 ? 0.75 : 0.5,
-    });
+    if (feedback.rating !== null && feedback.rating <= 2) {
+      await emitEvent(
+        feedback.tenantId,
+        correlationId,
+        EVENT_TYPES.CUSTOMER_ESCALATED,
+        "customer",
+        feedback.customerId,
+        {
+          customerId: feedback.customerId,
+          feedbackId: feedback.id,
+          riskLevel: feedback.rating === 1 ? "HIGH" : "MODERATE",
+          probability: feedback.rating === 1 ? 0.75 : 0.5,
+        },
+      );
+    }
   }
 }
 
-async function persistDomainEvent(
+/**
+ * Emit a domain event through the event bus. The bus persists with a unique
+ * (tenantId, eventType, aggregateId, correlationId) key so retries dedup, then
+ * dispatches to registered handlers. A stable correlationId (the routing job's)
+ * is what makes the dedup work — the previous direct prisma.create wrote a null
+ * correlationId, which Postgres treats as distinct, so it never deduped.
+ */
+async function emitEvent(
   tenantId: string,
-  eventType: string,
+  correlationId: string,
+  eventType: EventType,
   aggregateType: string,
   aggregateId: string,
-  payload: Record<string, unknown>
+  data: Record<string, unknown>,
 ) {
-  try {
-    await prisma.domainEvent.create({
-      data: {
-        tenantId,
-        eventType,
-        aggregateType,
-        aggregateId,
-        payload: payload as Record<string, string | number | boolean | null>,
-      },
-    });
-  } catch (error) {
-    log.error(
-      { eventType, aggregateType, aggregateId, err: error },
-      "Failed to persist domain event"
-    );
-  }
+  await eventBus.emit({
+    tenantId,
+    eventType,
+    eventVersion: 1,
+    aggregateType,
+    aggregateId,
+    correlationId,
+    payload: {
+      tenantId,
+      correlationId,
+      timestamp: new Date().toISOString(),
+      version: 1,
+      ...data,
+    },
+  });
 }

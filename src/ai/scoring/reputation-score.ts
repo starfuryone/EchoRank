@@ -262,6 +262,12 @@ export class ReputationScoreCalculator {
         return 3;
       case "CRITICAL":
         return 4;
+      default: {
+        // Exhaustiveness guard: if RiskLevel gains a member, this fails to
+        // compile. Guarantees the function returns on every path.
+        const _exhaustive: never = level;
+        return _exhaustive;
+      }
     }
   }
 

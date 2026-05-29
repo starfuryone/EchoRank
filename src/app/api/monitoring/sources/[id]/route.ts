@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireTenant } from "@/lib/tenant";
+import {
+  requireFeature,
+  enforcementErrorResponse,
+} from "@/lib/plan-enforcement";
 import { createAuditLog } from "@/lib/audit";
 
 export async function GET(
@@ -11,6 +15,8 @@ export async function GET(
     const membership = await requireTenant();
     const tenantId = membership.tenantId;
     const { id } = await params;
+
+    await requireFeature("reputation_monitoring");
 
     const source = await prisma.monitoringSource.findFirst({
       where: { id, tenantId },
@@ -37,6 +43,8 @@ export async function GET(
       },
     });
   } catch (error) {
+    const enforcement = enforcementErrorResponse(error);
+    if (enforcement) return enforcement;
     const message = error instanceof Error ? error.message : "Internal server error";
     if (message.includes("Not authenticated")) {
       return NextResponse.json({ error: message }, { status: 401 });
@@ -53,6 +61,8 @@ export async function PATCH(
     const membership = await requireTenant();
     const tenantId = membership.tenantId;
     const { id } = await params;
+
+    await requireFeature("reputation_monitoring");
 
     const source = await prisma.monitoringSource.findFirst({
       where: { id, tenantId },
@@ -86,7 +96,7 @@ export async function PATCH(
     }
 
     const updated = await prisma.monitoringSource.update({
-      where: { id },
+      where: { id, tenantId },
       data: updateData,
     });
 
@@ -101,6 +111,8 @@ export async function PATCH(
 
     return NextResponse.json({ data: updated });
   } catch (error) {
+    const enforcement = enforcementErrorResponse(error);
+    if (enforcement) return enforcement;
     const message = error instanceof Error ? error.message : "Internal server error";
     if (message.includes("Not authenticated")) {
       return NextResponse.json({ error: message }, { status: 401 });
@@ -118,6 +130,8 @@ export async function DELETE(
     const tenantId = membership.tenantId;
     const { id } = await params;
 
+    await requireFeature("reputation_monitoring");
+
     const source = await prisma.monitoringSource.findFirst({
       where: { id, tenantId },
     });
@@ -128,7 +142,7 @@ export async function DELETE(
 
     // Soft-deactivate rather than hard delete
     await prisma.monitoringSource.update({
-      where: { id },
+      where: { id, tenantId },
       data: { isActive: false },
     });
 
@@ -143,6 +157,8 @@ export async function DELETE(
 
     return NextResponse.json({ success: true });
   } catch (error) {
+    const enforcement = enforcementErrorResponse(error);
+    if (enforcement) return enforcement;
     const message = error instanceof Error ? error.message : "Internal server error";
     if (message.includes("Not authenticated")) {
       return NextResponse.json({ error: message }, { status: 401 });

@@ -1,7 +1,11 @@
+import { NextResponse } from "next/server";
 import { requireTenant } from "@/lib/tenant";
 import { meteringService } from "@/infrastructure/metering/service";
+import { QuotaExceededError } from "@/infrastructure/metering/quota";
 import { hasFeature, type Feature } from "@/lib/feature-flags";
 import type { PlanType, MeterType } from "@/generated/prisma";
+
+export { QuotaExceededError };
 
 // ─── Plan hierarchy ─────────────────────────────────────────────────────────
 
@@ -26,23 +30,6 @@ export class PlanRequiredError extends Error {
     this.name = "PlanRequiredError";
     this.currentPlan = currentPlan;
     this.requiredPlan = requiredPlan;
-  }
-}
-
-export class QuotaExceededError extends Error {
-  public readonly statusCode = 429;
-  public readonly meterType: MeterType;
-  public readonly limit: number;
-  public readonly remaining: number;
-
-  constructor(meterType: MeterType, limit: number, remaining: number) {
-    super(
-      `Quota exceeded for ${meterType}. Limit: ${limit}, remaining: ${remaining}.`
-    );
-    this.name = "QuotaExceededError";
-    this.meterType = meterType;
-    this.limit = limit;
-    this.remaining = remaining;
   }
 }
 
@@ -90,7 +77,12 @@ export async function requireQuota(
   const result = await meteringService.checkQuota(tenantId, meterType, quantity);
 
   if (!result.allowed) {
-    throw new QuotaExceededError(meterType, result.limit, result.remaining);
+    throw new QuotaExceededError(
+      tenantId,
+      meterType,
+      result.limit,
+      result.limit - result.remaining,
+    );
   }
 }
 
@@ -105,4 +97,25 @@ export async function requireFeature(feature: Feature): Promise<void> {
   if (!hasFeature(currentPlan, feature)) {
     throw new FeatureNotAvailableError(feature, currentPlan);
   }
+}
+
+/**
+ * Maps a plan-enforcement error to an HTTP response (403 for plan/feature, 429
+ * for quota). Returns null for any other error so callers fall through to their
+ * own handling. Lets routes gate without duplicating status-code logic.
+ */
+export function enforcementErrorResponse(
+  error: unknown,
+): NextResponse | null {
+  if (
+    error instanceof PlanRequiredError ||
+    error instanceof FeatureNotAvailableError ||
+    error instanceof QuotaExceededError
+  ) {
+    return NextResponse.json(
+      { error: error.message, code: error.name },
+      { status: error.statusCode },
+    );
+  }
+  return null;
 }

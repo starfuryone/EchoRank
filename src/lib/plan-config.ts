@@ -1,4 +1,5 @@
 import type { PlanType } from "@/generated/prisma";
+import { hasFeature } from "./feature-flags";
 
 export interface PlanConfig {
   name: string;
@@ -13,6 +14,7 @@ export interface PlanConfig {
     maxRequestsPerMonth: number;
     maxEmailsPerMonth: number;
     maxSmsPerMonth: number;
+    maxWebhooksPerMonth: number;
     maxAiInferencesPerMonth: number;
     maxMonitoringChecks: number;
     maxApiRequestsPerDay: number;
@@ -43,6 +45,7 @@ export const PLAN_CONFIGS: Record<PlanType, PlanConfig> = {
       maxRequestsPerMonth: 500,
       maxEmailsPerMonth: 500,
       maxSmsPerMonth: 0,
+      maxWebhooksPerMonth: 1000,
       maxAiInferencesPerMonth: 0,
       maxMonitoringChecks: 0,
       maxApiRequestsPerDay: 0,
@@ -74,6 +77,7 @@ export const PLAN_CONFIGS: Record<PlanType, PlanConfig> = {
       maxRequestsPerMonth: 5000,
       maxEmailsPerMonth: 5000,
       maxSmsPerMonth: 1000,
+      maxWebhooksPerMonth: 5000,
       maxAiInferencesPerMonth: 500,
       maxMonitoringChecks: 0,
       maxApiRequestsPerDay: 1000,
@@ -105,6 +109,7 @@ export const PLAN_CONFIGS: Record<PlanType, PlanConfig> = {
       maxRequestsPerMonth: 15000,
       maxEmailsPerMonth: 15000,
       maxSmsPerMonth: 5000,
+      maxWebhooksPerMonth: 20000,
       maxAiInferencesPerMonth: 2000,
       maxMonitoringChecks: 500,
       maxApiRequestsPerDay: 10000,
@@ -139,6 +144,7 @@ export const PLAN_CONFIGS: Record<PlanType, PlanConfig> = {
       maxRequestsPerMonth: 100000,
       maxEmailsPerMonth: 100000,
       maxSmsPerMonth: 25000,
+      maxWebhooksPerMonth: 100000,
       maxAiInferencesPerMonth: 10000,
       maxMonitoringChecks: 5000,
       maxApiRequestsPerDay: 100000,
@@ -148,6 +154,68 @@ export const PLAN_CONFIGS: Record<PlanType, PlanConfig> = {
     ctaLink: "/enterprise",
   },
 };
+
+// ─── Derived views (single source of truth lives in PLAN_CONFIGS above) ──────
+
+const ALL_PLANS = Object.keys(PLAN_CONFIGS) as PlanType[];
+
+export interface PlanLimit {
+  locations: number;
+  requests: number;
+  sms: boolean;
+  whitelabel: boolean;
+  aiAnalysis: boolean;
+  monitoring: boolean;
+}
+
+/** Feature/limit summary per plan, derived from PLAN_CONFIGS + the feature matrix. */
+export const PLAN_LIMITS: Record<PlanType, PlanLimit> = Object.fromEntries(
+  ALL_PLANS.map((plan) => {
+    const q = PLAN_CONFIGS[plan].quotaDefaults;
+    return [
+      plan,
+      {
+        locations: q.maxLocations,
+        requests: q.maxRequestsPerMonth,
+        sms: q.maxSmsPerMonth > 0,
+        whitelabel: hasFeature(plan, "whitelabel"),
+        aiAnalysis: hasFeature(plan, "ai_analysis"),
+        monitoring: hasFeature(plan, "reputation_monitoring"),
+      } satisfies PlanLimit,
+    ];
+  }),
+) as Record<PlanType, PlanLimit>;
+
+/** Monthly USD price per plan, derived from PLAN_CONFIGS. */
+export const PLAN_PRICES: Record<PlanType, number> = Object.fromEntries(
+  ALL_PLANS.map((plan) => [plan, PLAN_CONFIGS[plan].monthlyPrice]),
+) as Record<PlanType, number>;
+
+/**
+ * The metering-relevant subset of a plan's quota defaults, in the shape the
+ * metering layer (TenantQuota / MeteringService) consumes. plan-config.ts is
+ * the single source of truth; quota.ts and service.ts derive from this.
+ */
+export interface MeteringQuotaDefaults {
+  maxEmailsPerMonth: number;
+  maxSmsPerMonth: number;
+  maxWebhooksPerMonth: number;
+  maxApiRequestsPerDay: number;
+  maxAiInferencesPerMonth: number;
+  maxMonitoringChecks: number;
+}
+
+export function planQuotaDefaults(planType: PlanType): MeteringQuotaDefaults {
+  const q = PLAN_CONFIGS[planType].quotaDefaults;
+  return {
+    maxEmailsPerMonth: q.maxEmailsPerMonth,
+    maxSmsPerMonth: q.maxSmsPerMonth,
+    maxWebhooksPerMonth: q.maxWebhooksPerMonth,
+    maxApiRequestsPerDay: q.maxApiRequestsPerDay,
+    maxAiInferencesPerMonth: q.maxAiInferencesPerMonth,
+    maxMonitoringChecks: q.maxMonitoringChecks,
+  };
+}
 
 /**
  * Get the upgrade path from a given plan.

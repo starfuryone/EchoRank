@@ -12,7 +12,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { PLAN_LIMITS, PLAN_PRICES, cn } from "@/lib/utils";
+import { cn } from "@/lib/utils";
+import { PLAN_PRICES } from "@/lib/plan-config";
 
 interface BillingData {
   plan: string;

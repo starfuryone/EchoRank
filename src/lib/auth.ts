@@ -21,10 +21,16 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       async authorize(credentials, request) {
         if (!credentials?.email || !credentials?.password) return null;
 
-        const loginEmail = String(credentials.email).toLowerCase();
+        // Registration stores email.toLowerCase().trim(); normalize the same
+        // way here so a user who types "Jane@Example.com" can still log in.
+        const loginEmail = String(credentials.email).toLowerCase().trim();
         const loginIp =
           request?.headers?.get?.("x-forwarded-for")?.split(",")[0]?.trim() ||
           "unknown";
+        // Note: when Redis is unavailable, rateLimit falls back to a
+        // per-instance in-memory counter, so effective limits scale with the
+        // number of running instances (N instances ≈ N× the limit). Acceptable
+        // as a degraded fallback; Redis is the source of truth in production.
         const ipLimit = await rateLimit(`login-ip:${loginIp}`, 20, 300_000);
         const emailLimit = await rateLimit(`login-email:${loginEmail}`, 5, 300_000);
         if (!ipLimit.success || !emailLimit.success) {
@@ -32,7 +38,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         }
 
         const user = await prisma.user.findUnique({
-          where: { email: credentials.email as string },
+          where: { email: loginEmail },
         });
 
         if (!user?.passwordHash) return null;

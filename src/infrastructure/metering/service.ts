@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import type { MeterType, Prisma } from "@/generated/prisma";
 import { logger } from "@/infrastructure/observability/logger";
+import { planQuotaDefaults, type MeteringQuotaDefaults } from "@/lib/plan-config";
 
 /**
  * In-memory cache entry for tenant quotas.
@@ -23,7 +24,7 @@ const QUOTA_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 /**
  * Maps a MeterType to the corresponding TenantQuota field name.
  */
-const METER_TO_QUOTA_FIELD: Record<string, keyof CachedQuota["data"]> = {
+const METER_TO_QUOTA_FIELD: Record<string, keyof MeteringQuotaDefaults> = {
   EMAIL_SENT: "maxEmailsPerMonth",
   SMS_SENT: "maxSmsPerMonth",
   WEBHOOK_CALL: "maxWebhooksPerMonth",
@@ -144,14 +145,25 @@ export class MeteringService {
     }
 
     const quota = await this.getCachedQuota(tenantId);
-    if (!quota) {
-      // No quota record -- allow by default
-      return { allowed: true, remaining: Infinity, limit: 0 };
-    }
 
-    const limit = quota.data[quotaField];
-    if (typeof limit !== "number") {
-      return { allowed: true, remaining: Infinity, limit: 0 };
+    let limit: number;
+    let overageAllowed: boolean;
+    if (quota) {
+      limit = quota.data[quotaField];
+      overageAllowed = quota.data.overageAllowed;
+    } else {
+      // Fail closed: with no provisioned quota row, fall back to the tenant's
+      // plan defaults rather than allowing unlimited usage. (Previously this
+      // returned allowed:true, so every un-provisioned tenant was unmetered.)
+      const tenant = await prisma.tenant.findUnique({
+        where: { id: tenantId },
+        select: { planType: true },
+      });
+      if (!tenant) {
+        return { allowed: false, remaining: 0, limit: 0 };
+      }
+      limit = planQuotaDefaults(tenant.planType)[quotaField];
+      overageAllowed = false;
     }
 
     // Determine the time window for the quota check
@@ -198,8 +210,7 @@ export class MeteringService {
 
     const remaining = Math.max(0, limit - currentUsage);
     const allowed =
-      currentUsage + requestedQuantity <= limit ||
-      quota.data.overageAllowed;
+      currentUsage + requestedQuantity <= limit || overageAllowed;
 
     return { allowed, remaining, limit };
   }
