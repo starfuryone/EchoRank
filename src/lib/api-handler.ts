@@ -91,7 +91,6 @@ export function createApiHandler(handler: HandlerFn, options: HandlerOptions = {
     const method = request.method;
     const path = request.nextUrl.pathname;
     let status = 200;
-    let tenantId: string | undefined;
 
     try {
       // ── Content-Type enforcement for mutating requests ──────────────
@@ -226,7 +225,7 @@ export function createApiHandler(handler: HandlerFn, options: HandlerOptions = {
     } finally {
       const duration = Date.now() - start;
       logger.info(
-        { method, path, status, duration, tenantId, correlationId },
+        { method, path, status, duration, correlationId },
         "API request completed",
       );
     }
