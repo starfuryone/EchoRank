@@ -60,6 +60,82 @@ function StarRating({ rating }: { rating: number | null }) {
   );
 }
 
+function FeedbackLifecycleBanner() {
+  return (
+    <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+      <style>{`
+        @keyframes erFbTravel {
+          0%   { offset-distance: 0%; opacity: 0; }
+          6%   { opacity: 1; }
+          94%  { opacity: 1; }
+          100% { offset-distance: 100%; opacity: 0; }
+        }
+        .er-fb-dot {
+          offset-path: path('M150,100 L200,100');
+          animation: erFbTravel 2.4s ease-in-out infinite;
+        }
+        .er-fb-dot2 {
+          offset-path: path('M330,100 L380,100');
+          animation: erFbTravel 2.4s ease-in-out infinite;
+          animation-delay: .8s;
+        }
+        .er-fb-dot3 {
+          offset-path: path('M510,92 C540,92 548,55 580,55');
+          animation: erFbTravel 2.4s ease-in-out infinite;
+          animation-delay: 1.6s;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .er-fb-dot, .er-fb-dot2, .er-fb-dot3 { animation: none; opacity: 0; }
+        }
+      `}</style>
+      <div className="mb-3 flex items-baseline justify-between">
+        <h3 className="text-sm font-semibold text-gray-900">How a feedback request flows</h3>
+        <span className="text-xs text-gray-500">
+          Every response gets a public review invite
+        </span>
+      </div>
+      <svg
+        viewBox="0 0 760 200"
+        className="w-full max-w-3xl"
+        role="img"
+        aria-label="Feedback request lifecycle: Send request, then Pending, then Submitted, then a public review invite, with a recovery follow-up if the rating is low."
+      >
+        <defs>
+          <marker id="erFbAh" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L6,3 L0,6 Z" fill="#94a3b8" />
+          </marker>
+        </defs>
+        <line x1="150" y1="100" x2="200" y2="100" stroke="#cbd5e1" strokeWidth="3" markerEnd="url(#erFbAh)" />
+        <line x1="330" y1="100" x2="380" y2="100" stroke="#cbd5e1" strokeWidth="3" markerEnd="url(#erFbAh)" />
+        <path d="M510,92 C540,92 548,55 580,55" fill="none" stroke="#cbd5e1" strokeWidth="3" markerEnd="url(#erFbAh)" />
+        <path d="M510,108 C540,108 548,150 580,150" fill="none" stroke="#cbd5e1" strokeWidth="3" markerEnd="url(#erFbAh)" />
+        <rect x="30" y="76" width="120" height="48" rx="12" fill="#2563eb" />
+        <text x="90" y="105" textAnchor="middle" fontSize="15" fontWeight="700" fill="#ffffff">Send request</text>
+        <rect x="200" y="76" width="130" height="48" rx="12" fill="#d97706" />
+        <text x="265" y="105" textAnchor="middle" fontSize="15" fontWeight="700" fill="#ffffff">Pending</text>
+        <rect x="380" y="76" width="130" height="48" rx="12" fill="#16a34a" />
+        <text x="445" y="105" textAnchor="middle" fontSize="15" fontWeight="700" fill="#ffffff">Submitted</text>
+        <rect x="580" y="31" width="150" height="48" rx="12" fill="#dcfce7" stroke="#16a34a" strokeWidth="2" />
+        <text x="655" y="60" textAnchor="middle" fontSize="13" fontWeight="700" fill="#15803d">Review invite</text>
+        <rect x="580" y="126" width="150" height="48" rx="12" fill="#fffbeb" stroke="#d97706" strokeWidth="2" />
+        <text x="655" y="148" textAnchor="middle" fontSize="12" fontWeight="700" fill="#b45309">Recovery</text>
+        <text x="655" y="163" textAnchor="middle" fontSize="12" fontWeight="700" fill="#b45309">if needed</text>
+        <circle className="er-fb-dot" r="7" fill="#fbbf24" />
+        <circle className="er-fb-dot2" r="7" fill="#fbbf24" />
+        <circle className="er-fb-dot3" r="7" fill="#fbbf24" />
+      </svg>
+      <p className="mt-3 text-sm leading-relaxed text-gray-600">
+        You send a request; it stays{" "}
+        <span className="font-medium text-amber-700">Pending</span> until the
+        customer responds, then becomes{" "}
+        <span className="font-medium text-green-700">Submitted</span>. Every
+        response &mdash; whatever the rating &mdash; gets a public review invite;
+        a low rating also opens a recovery follow-up for your team.
+      </p>
+    </div>
+  );
+}
+
 export default function FeedbackPage() {
   const [feedback, setFeedback] = useState<FeedbackItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -152,6 +228,8 @@ export default function FeedbackPage() {
 
   return (
     <div className="space-y-6">
+      <FeedbackLifecycleBanner />
+
       {/* Filters and actions */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="flex gap-3">

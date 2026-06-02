@@ -39,6 +39,76 @@ const STATUS_LABELS: Record<string, string> = {
   LOST: "Lost",
 };
 
+function CustomerLifecycleBanner() {
+  return (
+    <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+      <style>{`
+        @keyframes erLifeTravel {
+          0%   { offset-distance: 0%; opacity: 0; }
+          6%   { opacity: 1; }
+          94%  { opacity: 1; }
+          100% { offset-distance: 100%; opacity: 0; }
+        }
+        .er-life-dot {
+          offset-path: path('M150,100 L205,100');
+          animation: erLifeTravel 2.6s ease-in-out infinite;
+        }
+        .er-life-dot2 {
+          offset-path: path('M330,92 C380,92 388,55 440,55');
+          animation: erLifeTravel 2.6s ease-in-out infinite;
+          animation-delay: 1.3s;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .er-life-dot, .er-life-dot2 { animation: none; opacity: 0; }
+        }
+      `}</style>
+      <div className="mb-3 flex items-baseline justify-between">
+        <h3 className="text-sm font-semibold text-gray-900">Customer lifecycle</h3>
+        <span className="text-xs text-gray-500">
+          Status is set automatically from feedback
+        </span>
+      </div>
+      <svg
+        viewBox="0 0 720 210"
+        className="w-full max-w-3xl"
+        role="img"
+        aria-label="Lifecycle: New, then Contacted, then Satisfied or Needs follow-up, then Recovered. Status is set automatically from feedback and never limits a customer's ability to leave a public review."
+      >
+        <defs>
+          <marker id="erLifeAh" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L6,3 L0,6 Z" fill="#94a3b8" />
+          </marker>
+        </defs>
+        <line x1="150" y1="100" x2="205" y2="100" stroke="#cbd5e1" strokeWidth="3" markerEnd="url(#erLifeAh)" />
+        <path d="M330,92 C380,92 388,55 440,55" fill="none" stroke="#cbd5e1" strokeWidth="3" markerEnd="url(#erLifeAh)" />
+        <path d="M330,108 C380,108 388,165 440,165" fill="none" stroke="#cbd5e1" strokeWidth="3" markerEnd="url(#erLifeAh)" />
+        <line x1="600" y1="165" x2="650" y2="165" stroke="#cbd5e1" strokeWidth="3" markerEnd="url(#erLifeAh)" />
+        <rect x="30" y="78" width="120" height="48" rx="12" fill="#2563eb" />
+        <text x="90" y="107" textAnchor="middle" fontSize="16" fontWeight="700" fill="#ffffff">New</text>
+        <rect x="210" y="78" width="120" height="48" rx="12" fill="#475569" />
+        <text x="270" y="107" textAnchor="middle" fontSize="16" fontWeight="700" fill="#ffffff">Contacted</text>
+        <rect x="440" y="33" width="150" height="48" rx="12" fill="#16a34a" />
+        <text x="515" y="62" textAnchor="middle" fontSize="16" fontWeight="700" fill="#ffffff">Satisfied</text>
+        <rect x="440" y="141" width="160" height="48" rx="12" fill="#d97706" />
+        <text x="520" y="170" textAnchor="middle" fontSize="15" fontWeight="700" fill="#ffffff">Needs follow-up</text>
+        <rect x="650" y="141" width="64" height="48" rx="12" fill="#dcfce7" stroke="#16a34a" strokeWidth="2" />
+        <text x="682" y="162" textAnchor="middle" fontSize="11" fontWeight="700" fill="#15803d">Recov-</text>
+        <text x="682" y="176" textAnchor="middle" fontSize="11" fontWeight="700" fill="#15803d">ered</text>
+        <circle className="er-life-dot" r="7" fill="#fbbf24" />
+        <circle className="er-life-dot2" r="7" fill="#fbbf24" />
+      </svg>
+      <p className="mt-3 text-sm leading-relaxed text-gray-600">
+        A high rating marks a customer{" "}
+        <span className="font-medium text-green-700">Satisfied</span>; a low
+        rating marks them{" "}
+        <span className="font-medium text-amber-700">Needs follow-up</span> and
+        opens a recovery ticket. Status only tells your team who to follow up
+        with &mdash; every customer can always leave a public review.
+      </p>
+    </div>
+  );
+}
+
 export default function CustomersPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
@@ -160,6 +230,8 @@ export default function CustomersPage() {
 
   return (
     <div className="space-y-6">
+      <CustomerLifecycleBanner />
+
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <form onSubmit={handleSearch} className="flex gap-2 flex-1 max-w-md">

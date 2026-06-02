@@ -42,3 +42,10 @@ yarn-error.log*
 next-env.d.ts
 
 /src/generated/prisma
+
+# patch-script scratch — never commit
+*.bak-*
+patch_*.py
+install_*.py
+compliance_refactor.py
+*.zip

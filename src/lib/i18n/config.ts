@@ -76,12 +76,18 @@ export function resolveTarget(
   region: string | null | undefined,
   acceptLang: string | null | undefined,
 ): ResolvedTarget {
+  // Language does NOT auto-switch on geography. It defaults to English and only
+  // changes on an explicit signal: either the user picks a language via the nav
+  // switcher (which sets the echorank_locale cookie that proxy.ts honors above
+  // geo), or — the one in-resolver exception — a Québec visitor whose own
+  // Accept-Language explicitly prefers French. That is a stated user
+  // preference, not an inference from their IP, so it is honored. Currency
+  // STILL follows geo everywhere: local pricing (EUR/GBP/CAD/CHF) is helpful and
+  // not disorienting, unlike a surprise change of UI language.
   const prefersFr = acceptLang?.toLowerCase().includes("fr") ?? false;
 
   if (country === "CH") {
-    const locale: Locale =
-      CH_FR_CANTONS.has(region ?? "") || prefersFr ? "fr" : "de-CH";
-    return { locale, currency: "CHF" };
+    return { locale: "en", currency: "CHF" };
   }
 
   if (country === "CA" && region === "QC" && prefersFr) {
@@ -93,7 +99,7 @@ export function resolveTarget(
   }
 
   if (FR_COUNTRIES.has(country ?? "")) {
-    return { locale: "fr", currency: "EUR" };
+    return { locale: "en", currency: "EUR" };
   }
 
   if (country === "GB") {

@@ -128,9 +128,15 @@ export default function FeedbackPage({ params }: { params: Promise<{ id: string 
             </div>
           )}
 
-          <p className="text-xs text-gray-400 mt-4">
-            Powered by EchoRank
-          </p>
+          <div className="mt-4 flex items-center justify-center gap-1.5">
+            <span className="text-xs text-gray-400">Powered by</span>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/echorank-logo-dark.svg"
+              alt="EchoRank 360"
+              className="h-4 w-auto"
+            />
+          </div>
         </div>
       </div>
     );

@@ -88,6 +88,17 @@ async function processEmailDelivery(job: Job<EmailDeliveryJob>): Promise<void> {
       // ── Send Email ─────────────────────────────────────────────────────
       const isDev = process.env.NODE_ENV !== "production";
 
+      // Correlation token echoed back verbatim in every Brevo webhook for this
+      // message. Brevo's SMTP relay rewrites the Message-Id header, so we can't
+      // rely on it to match webhook events — but it does return X-Mailin-custom
+      // unchanged. Embedding this row's id makes webhook→log correlation exact.
+      const mailinCustom = JSON.stringify({
+        emailLogId: emailLog.id,
+        tenantId,
+      });
+
+      let providerMessageId: string | null = null;
+
       if (isDev) {
         // Dev mode: log the email instead of sending
         logger.info(
@@ -95,25 +106,32 @@ async function processEmailDelivery(job: Job<EmailDeliveryJob>): Promise<void> {
           "DEV mode: email logged instead of sent",
         );
       } else {
-        // Production mode: use nodemailer
+        // Production mode: send via Brevo SMTP relay using nodemailer
         const nodemailer = await import("nodemailer");
 
         const transporter = nodemailer.createTransport({
-          host: process.env.SMTP_HOST || "smtp.sendgrid.net",
+          host: process.env.SMTP_HOST || "smtp-relay.brevo.com",
           port: parseInt(process.env.SMTP_PORT || "587", 10),
           secure: process.env.SMTP_SECURE === "true",
           auth: {
-            user: process.env.SMTP_USER || "apikey",
+            user: process.env.SMTP_USER || "",
             pass: process.env.SMTP_PASS || "",
           },
         });
 
-        await transporter.sendMail({
+        const info = await transporter.sendMail({
           from: process.env.SMTP_FROM || "noreply@echorank.io",
           to,
           subject,
           html: body,
+          headers: {
+            // Brevo echoes this header value in webhook payloads. Keep the key
+            // exactly "X-Mailin-custom" — Brevo matches it case-sensitively.
+            "X-Mailin-custom": mailinCustom,
+          },
         });
+
+        providerMessageId = info?.messageId ?? null;
       }
 
       // ── Update EmailLog to SENT ──────────────────────────────────────
@@ -122,6 +140,7 @@ async function processEmailDelivery(job: Job<EmailDeliveryJob>): Promise<void> {
         data: {
           status: "SENT",
           sentAt: new Date(),
+          providerMessageId,
         },
       });
 

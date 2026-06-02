@@ -9,12 +9,14 @@ import {
   Palette,
   Globe,
   Mail,
+  HelpCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Modal } from "@/components/ui/modal";
 
 interface TenantSettings {
   businessName: string;
@@ -60,12 +62,80 @@ const LANGUAGES = [
   { value: "zh", label: "Chinese" },
 ];
 
+function HelpSection({
+  icon,
+  title,
+  children,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="py-3">
+      <div className="flex items-center gap-2 text-gray-900">
+        <span className="text-gray-400">{icon}</span>
+        <h3 className="text-sm font-semibold">{title}</h3>
+      </div>
+      <p className="mt-1 text-sm leading-relaxed text-gray-600">{children}</p>
+    </div>
+  );
+}
+
+function SettingsHelpModal({
+  open,
+  onClose,
+}: {
+  open: boolean;
+  onClose: () => void;
+}) {
+  return (
+    <Modal open={open} onClose={onClose} title="Settings help">
+      <div className="divide-y divide-gray-100">
+        <HelpSection icon={<Building2 className="h-4 w-4" />} title="Business Information">
+          Your business name, logo and support email appear on the feedback
+          pages customers see and on outgoing emails. Use a publicly hosted
+          image URL for the logo (PNG or SVG works best).
+        </HelpSection>
+        <HelpSection icon={<Palette className="h-4 w-4" />} title="Brand Colors">
+          The primary color is used for buttons and accents on your customer
+          feedback pages. Enter a hex value (for example #2563eb) or pick one
+          with the color swatch.
+        </HelpSection>
+        <HelpSection icon={<Globe className="h-4 w-4" />} title="Review Platform Links">
+          These are where satisfied customers are sent to leave a public review.
+          For Google, use your &ldquo;write a review&rdquo; link
+          (https://g.page/r/&hellip;/review or a Place ID review URL). Set at
+          least the Google link — it is the default destination when no specific
+          platform is configured.
+        </HelpSection>
+        <HelpSection icon={<Mail className="h-4 w-4" />} title="Localization">
+          Timezone affects when scheduled requests are sent and how times are
+          displayed. Default language sets the language of customer-facing
+          emails and pages for new requests.
+        </HelpSection>
+        <HelpSection icon={<Settings className="h-4 w-4" />} title="White-label">
+          On the Agency plan you can serve feedback pages from your own custom
+          domain and remove EchoRank branding. These options are disabled on
+          other plans.
+        </HelpSection>
+      </div>
+      <div className="mt-2 flex justify-end border-t border-gray-100 pt-4">
+        <Button type="button" onClick={onClose}>
+          Got it
+        </Button>
+      </div>
+    </Modal>
+  );
+}
+
 export default function SettingsPage() {
   const [settings, setSettings] = useState<TenantSettings | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
 
   useEffect(() => {
     async function fetchSettings() {
@@ -142,12 +212,25 @@ export default function SettingsPage() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
-        <p className="mt-1 text-sm text-gray-500">
-          Manage your business settings and brand configuration.
-        </p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Settings</h1>
+          <p className="mt-1 text-sm text-gray-500">
+            Manage your business settings and brand configuration.
+          </p>
+        </div>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => setHelpOpen(true)}
+          className="shrink-0"
+        >
+          <HelpCircle className="mr-2 h-4 w-4" />
+          Help
+        </Button>
       </div>
+
+      <SettingsHelpModal open={helpOpen} onClose={() => setHelpOpen(false)} />
 
       <form onSubmit={handleSave} className="space-y-6">
         {/* Business Information */}

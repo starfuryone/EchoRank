@@ -42,10 +42,19 @@ export async function routeFeedback(feedbackId: string, correlationId: string) {
     },
   );
 
-  if (feedback.rating >= 4) {
-    await handlePositiveFeedback(feedback, correlationId);
-  } else {
-    await handleNegativeFeedback(feedback, correlationId);
+  // ── Review Path (ALL customers, regardless of rating) ────────────────────
+  // Every customer who submits feedback is given the public review
+  // opportunity. Sentiment NEVER removes access to the public review link —
+  // it only triggers an ADDITIONAL internal recovery workflow below. This is
+  // the compliant, non-gating routing: no rating is diverted away from the
+  // public option.
+  await runReviewPath(feedback, correlationId);
+
+  // ── Recovery Path (additional, for low ratings) ──────────────────────────
+  // A low rating ALSO opens an internal recovery ticket so the business can
+  // follow up. This runs in addition to — never instead of — the review path.
+  if (feedback.rating <= 3) {
+    await runRecoveryPath(feedback, correlationId);
   }
 
   // Mark routing as completed so the backfill sweep can distinguish feedback
@@ -98,7 +107,10 @@ export async function backfillUnroutedFeedback(limit = 100): Promise<number> {
   return candidates.length;
 }
 
-async function handlePositiveFeedback(
+// Review Path: create the public review opportunity for this customer. Runs for
+// EVERY rating — this is not a "positive feedback" branch, it is the universal
+// path that guarantees public review access regardless of sentiment.
+async function runReviewPath(
   feedback: {
     id: string;
     tenantId: string;
@@ -155,13 +167,21 @@ async function handlePositiveFeedback(
     }
   }
 
-  await prisma.customer.update({
-    where: { id: feedback.customerId },
-    data: { status: "SATISFIED" },
-  });
+  // Status reflects sentiment for the team's view, but does NOT affect review
+  // access (already granted above). Low ratings are marked NEEDS_FOLLOWUP by
+  // the recovery path; here we only mark the clearly-satisfied.
+  if (feedback.rating !== null && feedback.rating >= 4) {
+    await prisma.customer.update({
+      where: { id: feedback.customerId },
+      data: { status: "SATISFIED" },
+    });
+  }
 }
 
-async function handleNegativeFeedback(
+// Recovery Path: open an internal recovery ticket and flag the customer for
+// follow-up. This is ADDITIONAL to the review path — it never replaces or
+// removes the public review opportunity.
+async function runRecoveryPath(
   feedback: {
     id: string;
     tenantId: string;

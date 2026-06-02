@@ -342,46 +342,60 @@ model RecoveryTicket {
 }
 
 model EmailLog {
-  id           String        @id @default(cuid())
-  tenantId     String
-  customerId   String
-  to           String
-  subject      String
-  body         String
-  status       MessageStatus @default(QUEUED)
-  channel      MessageChannel @default(EMAIL)
-  sentAt       DateTime?
-  deliveredAt  DateTime?
-  failedAt     DateTime?
-  errorMessage String?
-  createdAt    DateTime      @default(now())
-  tenant       Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  customer     Customer      @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  id                String        @id @default(cuid())
+  tenantId          String
+  customerId        String
+  to                String
+  subject           String
+  body              String
+  status            MessageStatus @default(QUEUED)
+  channel           MessageChannel @default(EMAIL)
+  // Brevo's message-id (Message-Id header it assigns at relay time). Captured
+  // at send for debugging/joins. NOTE: Brevo's SMTP relay rewrites Message-Id,
+  // so this is NOT a reliable webhook-correlation key on its own — webhook
+  // correlation uses the X-Mailin-custom token carrying this row's id instead.
+  providerMessageId String?
+  // Lifecycle timestamps populated by Brevo webhook events.
+  openedAt          DateTime?
+  clickedAt         DateTime?
+  bouncedAt         DateTime?
+  sentAt            DateTime?
+  deliveredAt       DateTime?
+  failedAt          DateTime?
+  errorMessage      String?
+  createdAt         DateTime      @default(now())
+  tenant            Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customer          Customer      @relation(fields: [customerId], references: [id], onDelete: Cascade)
 
   @@index([tenantId])
   @@index([tenantId, status])
   @@index([tenantId, createdAt])
   @@index([customerId, tenantId])
+  @@index([providerMessageId])
   @@map("email_logs")
 }
 
 model SmsLog {
-  id           String        @id @default(cuid())
-  tenantId     String
-  customerId   String
-  to           String
-  body         String
-  status       MessageStatus @default(QUEUED)
-  sentAt       DateTime?
-  deliveredAt  DateTime?
-  failedAt     DateTime?
-  errorMessage String?
-  createdAt    DateTime      @default(now())
-  tenant       Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  customer     Customer      @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  id                String        @id @default(cuid())
+  tenantId          String
+  customerId        String
+  to                String
+  body              String
+  status            MessageStatus @default(QUEUED)
+  // Brevo SMS message-id returned by the send API. Unlike email, the SMS API
+  // response id matches the webhook's message id, so this IS the correlation key.
+  providerMessageId String?
+  sentAt            DateTime?
+  deliveredAt       DateTime?
+  failedAt          DateTime?
+  errorMessage      String?
+  createdAt         DateTime      @default(now())
+  tenant            Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customer          Customer      @relation(fields: [customerId], references: [id], onDelete: Cascade)
 
   @@index([tenantId])
   @@index([tenantId, createdAt])
+  @@index([providerMessageId])
   @@map("sms_logs")
 }
 
@@ -790,6 +804,32 @@ model ProcessedWebhook {
 
   @@index([eventType])
   @@map("processed_webhooks")
+}
+
+// ─── Brevo (email/SMS) webhook events ─────────────────────────────────
+// Brevo does not send a unique event id (unlike Stripe), so idempotency is
+// enforced via a deterministic dedup key derived from the message id, event
+// type, and event timestamp. The unique constraint makes replays no-ops, the
+// same way ProcessedWebhook.stripeEventId does for Stripe.
+model MessageEvent {
+  id           String   @id @default(cuid())
+  tenantId     String?
+  channel      String // EMAIL | SMS
+  event        String // delivered | opened | click | hard_bounce | ...
+  recipient    String?
+  messageId    String?
+  emailLogId   String?
+  smsLogId     String?
+  dedupeKey    String   @unique
+  payload      Json?
+  occurredAt   DateTime
+  receivedAt   DateTime @default(now())
+
+  @@index([tenantId])
+  @@index([emailLogId])
+  @@index([smsLogId])
+  @@index([event])
+  @@map("message_events")
 }
 
 // ─── Stripe multi-currency price catalog ───────────────────────────────

@@ -57,8 +57,35 @@ export default async function HomePage({
       {/* ── Nav ───────────────────────────────────────────────────────── */}
       <nav className={styles.nav}>
         <div className={styles.brand}>
-          <span className={styles.glyph} aria-hidden />
-          ECHORANK
+          <svg
+            className={styles.logo}
+            viewBox="60 40 1700 220"
+            role="img"
+            aria-label="ECHORANK 360"
+          >
+            <defs>
+              <linearGradient id="erGold" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#fff6c7" />
+                <stop offset="10%" stopColor="#f7d76f" />
+                <stop offset="25%" stopColor="#d4a73d" />
+                <stop offset="50%" stopColor="#fff1a8" />
+                <stop offset="75%" stopColor="#b88420" />
+                <stop offset="100%" stopColor="#f8d66b" />
+              </linearGradient>
+              <linearGradient id="erSilver" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#ffffff" />
+                <stop offset="20%" stopColor="#d9d9d9" />
+                <stop offset="50%" stopColor="#f7f7f7" />
+                <stop offset="80%" stopColor="#b8b8b8" />
+                <stop offset="100%" stopColor="#ffffff" />
+              </linearGradient>
+            </defs>
+            <g transform="translate(90 70)">
+              <polygon points="80,0 160,80 80,160 0,80" fill="url(#erGold)" stroke="#f7d76f" strokeWidth="4" />
+              <polygon points="80,15 145,80 80,145 15,80" fill="none" stroke="#fff7c5" strokeWidth="2" />
+            </g>
+            <text x="330" y="190" fontFamily="var(--font-geist-sans), system-ui, sans-serif" fontSize="150" fontWeight="700" letterSpacing="4" fill="#ffffff">ECHORANK<tspan dx="36" fill="url(#erSilver)">360</tspan></text>
+          </svg>
         </div>
         <div className={styles.navLinks}>
           <a href="#platform">{c.nav.product}</a>

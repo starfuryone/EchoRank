@@ -11,12 +11,14 @@ import {
   TrendingUp,
   MapPin,
   Calendar,
+  HelpCircle,
 } from "lucide-react";
 import { StatCard } from "@/components/ui/stat-card";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Select } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Modal } from "@/components/ui/modal";
 import { cn } from "@/lib/utils";
 
 interface AnalyticsData {
@@ -48,11 +50,69 @@ const RATING_LABELS: Record<number, string> = {
   1: "Terrible",
 };
 
+function AnalyticsHelpModal({
+  open,
+  onClose,
+}: {
+  open: boolean;
+  onClose: () => void;
+}) {
+  return (
+    <Modal open={open} onClose={onClose} title="Reading your analytics">
+      <div className="space-y-4 text-sm leading-relaxed text-gray-600">
+        <p>
+          Everything here reflects the period chosen in the date selector
+          (last 7, 30, 90 days, or 12 months). Change it to widen or narrow the
+          view.
+        </p>
+        <div>
+          <p className="font-medium text-gray-900">The numbers up top</p>
+          <p className="mt-1">
+            Sent and Responses show how many feedback requests went out and came
+            back; Avg Rating is the mean score. Positive and Negative split those
+            responses, and Recovery Open counts low-rating tickets still being
+            worked.
+          </p>
+        </div>
+        <div>
+          <p className="font-medium text-gray-900">Rating distribution</p>
+          <p className="mt-1">
+            How responses break down across 1 to 5 stars, so you can see whether
+            scores cluster high or low.
+          </p>
+        </div>
+        <div>
+          <p className="font-medium text-gray-900">Response rate by week</p>
+          <p className="mt-1">
+            Requests sent versus responses received each week &mdash; a read on
+            how engaged your customers are over time.
+          </p>
+        </div>
+        <div>
+          <p className="font-medium text-gray-900">Top locations &amp; satisfaction trend</p>
+          <p className="mt-1">
+            Average rating per location helps you spot which sites need
+            attention, while the satisfaction trend shows whether your overall
+            score is moving up or down.
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-4 flex justify-end border-t border-gray-100 pt-4">
+        <Button type="button" onClick={onClose}>
+          Got it
+        </Button>
+      </div>
+    </Modal>
+  );
+}
+
 export default function AnalyticsPage() {
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [dateRange, setDateRange] = useState("30");
+  const [helpOpen, setHelpOpen] = useState(false);
 
   const fetchAnalytics = useCallback(async () => {
     try {
@@ -130,18 +190,26 @@ export default function AnalyticsPage() {
             Track your reputation performance over time.
           </p>
         </div>
-        <Select
-          id="date-range"
-          value={dateRange}
-          onChange={(e) => setDateRange(e.target.value)}
-          options={[
-            { value: "7", label: "Last 7 days" },
-            { value: "30", label: "Last 30 days" },
-            { value: "90", label: "Last 90 days" },
-            { value: "365", label: "Last 12 months" },
-          ]}
-        />
+        <div className="flex items-center gap-2">
+          <Select
+            id="date-range"
+            value={dateRange}
+            onChange={(e) => setDateRange(e.target.value)}
+            options={[
+              { value: "7", label: "Last 7 days" },
+              { value: "30", label: "Last 30 days" },
+              { value: "90", label: "Last 90 days" },
+              { value: "365", label: "Last 12 months" },
+            ]}
+          />
+          <Button variant="outline" onClick={() => setHelpOpen(true)}>
+            <HelpCircle className="mr-2 h-4 w-4" />
+            Help
+          </Button>
+        </div>
       </div>
+
+      <AnalyticsHelpModal open={helpOpen} onClose={() => setHelpOpen(false)} />
 
       {/* Stat cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">

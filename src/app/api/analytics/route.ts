@@ -50,6 +50,7 @@ export async function GET(request: NextRequest) {
       reviewRequestsSent,
       recoveryTicketsOpen,
       recoveryTicketsResolved,
+      recentFeedbackRaw,
     ] = await Promise.all([
       prisma.feedback.count({ where: feedbackWhere }),
       prisma.feedback.count({
@@ -73,6 +74,20 @@ export async function GET(request: NextRequest) {
       prisma.recoveryTicket.count({
         where: { ...recoveryWhere, status: "RESOLVED" },
       }),
+      // The dashboard's "Recent Feedback" list. Newest 8, with customer name.
+      prisma.feedback.findMany({
+        where: feedbackWhere,
+        orderBy: { createdAt: "desc" },
+        take: 8,
+        select: {
+          id: true,
+          rating: true,
+          comment: true,
+          status: true,
+          createdAt: true,
+          customer: { select: { name: true } },
+        },
+      }),
     ]);
 
     const ratings = feedbackWithRatings
@@ -94,15 +109,28 @@ export async function GET(request: NextRequest) {
         ? Math.round((totalResponses / totalFeedbackSent) * 100 * 10) / 10
         : 0;
 
+    // Shape matches the dashboard page's `Analytics` interface exactly. The
+    // page is the contract; renaming here (rather than there) keeps every
+    // consumer of the UI stable. Extra fields (responseRate, reviewRequestsSent,
+    // recoveryTicketsResolved) are harmless and available for other callers.
     return NextResponse.json({
-      totalFeedbackSent,
+      totalSent: totalFeedbackSent,
       totalResponses,
+      avgRating: averageRating ?? 0,
+      positiveCount: positiveFeedback,
+      negativeCount: negativeFeedback,
+      recoveryOpen: recoveryTicketsOpen,
+      recentFeedback: recentFeedbackRaw.map((f) => ({
+        id: f.id,
+        customerName: f.customer?.name ?? "Unknown",
+        rating: f.rating,
+        comment: f.comment,
+        status: f.status,
+        createdAt: f.createdAt.toISOString(),
+      })),
+      // Retained for other consumers / future use:
       responseRate,
-      averageRating,
-      positiveFeedback,
-      negativeFeedback,
       reviewRequestsSent,
-      recoveryTicketsOpen,
       recoveryTicketsResolved,
     });
   } catch (error) {

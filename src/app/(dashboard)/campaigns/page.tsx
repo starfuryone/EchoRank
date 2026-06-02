@@ -35,6 +35,80 @@ const STATUS_BADGE: Record<string, "default" | "success" | "warning" | "danger" 
   COMPLETED: "info",
 };
 
+function CampaignLifecycleBanner() {
+  return (
+    <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+      <style>{`
+        @keyframes erCpTravel {
+          0%   { offset-distance: 0%; opacity: 0; }
+          6%   { opacity: 1; }
+          94%  { opacity: 1; }
+          100% { offset-distance: 100%; opacity: 0; }
+        }
+        .er-cp-dot {
+          offset-path: path('M140,100 L190,100');
+          animation: erCpTravel 2.4s ease-in-out infinite;
+        }
+        .er-cp-dot2 {
+          offset-path: path('M320,100 L370,100');
+          animation: erCpTravel 2.4s ease-in-out infinite;
+          animation-delay: .8s;
+        }
+        .er-cp-dot3 {
+          offset-path: path('M540,100 L590,100');
+          animation: erCpTravel 2.4s ease-in-out infinite;
+          animation-delay: 1.6s;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .er-cp-dot, .er-cp-dot2, .er-cp-dot3 { animation: none; opacity: 0; }
+        }
+      `}</style>
+      <div className="mb-3 flex items-baseline justify-between">
+        <h3 className="text-sm font-semibold text-gray-900">How a campaign works</h3>
+        <span className="text-xs text-gray-500">
+          Send feedback requests to many customers at once
+        </span>
+      </div>
+      <svg
+        viewBox="0 0 760 165"
+        className="w-full max-w-3xl"
+        role="img"
+        aria-label="Campaign lifecycle: Draft, then Active which sends requests to many customers, then responses come in as reviews and recovery, then Completed."
+      >
+        <defs>
+          <marker id="erCpAh" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L6,3 L0,6 Z" fill="#94a3b8" />
+          </marker>
+        </defs>
+        <line x1="140" y1="80" x2="190" y2="80" stroke="#cbd5e1" strokeWidth="3" markerEnd="url(#erCpAh)" />
+        <line x1="320" y1="80" x2="370" y2="80" stroke="#cbd5e1" strokeWidth="3" markerEnd="url(#erCpAh)" />
+        <line x1="540" y1="80" x2="590" y2="80" stroke="#cbd5e1" strokeWidth="3" markerEnd="url(#erCpAh)" />
+        <rect x="30" y="56" width="110" height="48" rx="12" fill="#475569" />
+        <text x="85" y="85" textAnchor="middle" fontSize="15" fontWeight="700" fill="#ffffff">Draft</text>
+        <rect x="190" y="56" width="130" height="48" rx="12" fill="#16a34a" />
+        <text x="255" y="78" textAnchor="middle" fontSize="15" fontWeight="700" fill="#ffffff">Active</text>
+        <text x="255" y="94" textAnchor="middle" fontSize="10" fontWeight="600" fill="#dcfce7">sends to many</text>
+        <rect x="370" y="56" width="170" height="48" rx="12" fill="#f0fdf4" stroke="#16a34a" strokeWidth="2" />
+        <text x="455" y="78" textAnchor="middle" fontSize="13" fontWeight="700" fill="#15803d">Responses come in</text>
+        <text x="455" y="94" textAnchor="middle" fontSize="10" fontWeight="600" fill="#16a34a">reviews + recovery</text>
+        <rect x="590" y="56" width="140" height="48" rx="12" fill="#2563eb" />
+        <text x="660" y="85" textAnchor="middle" fontSize="15" fontWeight="700" fill="#ffffff">Completed</text>
+        <circle className="er-cp-dot" r="7" fill="#fbbf24" />
+        <circle className="er-cp-dot2" r="7" fill="#fbbf24" />
+        <circle className="er-cp-dot3" r="7" fill="#fbbf24" />
+      </svg>
+      <p className="mt-3 text-sm leading-relaxed text-gray-600">
+        A campaign sends feedback requests to many customers at once over email
+        or SMS. Start it as a{" "}
+        <span className="font-medium text-gray-700">Draft</span>, set it{" "}
+        <span className="font-medium text-green-700">Active</span> to send, and
+        responses flow back as public review invites &mdash; with recovery
+        follow-ups for anyone who needs attention.
+      </p>
+    </div>
+  );
+}
+
 export default function CampaignsPage() {
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [loading, setLoading] = useState(true);
@@ -170,6 +244,8 @@ export default function CampaignsPage() {
 
   return (
     <div className="space-y-6">
+      <CampaignLifecycleBanner />
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div />
@@ -211,6 +287,27 @@ export default function CampaignsPage() {
         title="Create Campaign"
       >
         <form onSubmit={handleCreate} className="space-y-4">
+          {/* Inline help */}
+          <div className="rounded-lg border border-blue-100 bg-blue-50 p-3 text-sm text-blue-900">
+            <p className="font-medium">What is a campaign?</p>
+            <p className="mt-1 text-blue-800">
+              A campaign sends feedback requests to many customers at once. Give
+              it a name, pick a channel, and it starts as a Draft you can review
+              before sending. Every customer who responds is invited to leave a
+              public review; low ratings also open a recovery follow-up.
+            </p>
+            <ul className="mt-2 space-y-1 text-blue-800">
+              <li>
+                <span className="font-medium">Channel</span> &mdash; how requests
+                are sent: Email reaches anyone with an email on file; SMS reaches
+                those with a phone number.
+              </li>
+              <li>
+                <span className="font-medium">Location</span> &mdash; optional;
+                use it to target one of your business locations.
+              </li>
+            </ul>
+          </div>
           <Input
             label="Campaign Name"
             id="campaign-name"

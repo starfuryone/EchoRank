@@ -14,7 +14,6 @@ import {
   UserPlus,
   Settings,
   CreditCard,
-  Megaphone,
   Brain,
   Radar,
 } from "lucide-react";
@@ -62,13 +61,13 @@ export function Sidebar({ open, onClose }: SidebarProps) {
         )}
       >
         {/* Brand */}
-        <div className="flex h-16 items-center gap-2.5 border-b border-gray-800 px-6">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600">
-            <Megaphone className="h-4.5 w-4.5 text-white" />
-          </div>
-          <span className="text-lg font-bold tracking-tight text-white">
-            EchoRank
-          </span>
+        <div className="flex h-16 items-center border-b border-gray-800 px-6">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/echorank-logo-light.svg"
+            alt="EchoRank 360"
+            className="h-7 w-auto"
+          />
         </div>
 
         {/* Navigation */}

@@ -53,6 +53,89 @@ const STATUS_ICON: Record<string, React.ReactNode> = {
   CLOSED: <CheckCircle2 className="h-3.5 w-3.5" />,
 };
 
+function RecoveryLifecycleBanner() {
+  return (
+    <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
+      <style>{`
+        @keyframes erRcTravel {
+          0%   { offset-distance: 0%; opacity: 0; }
+          6%   { opacity: 1; }
+          94%  { opacity: 1; }
+          100% { offset-distance: 100%; opacity: 0; }
+        }
+        .er-rc-dot {
+          offset-path: path('M155,80 L200,80');
+          animation: erRcTravel 2.2s ease-in-out infinite;
+        }
+        .er-rc-dot2 {
+          offset-path: path('M300,80 L345,80');
+          animation: erRcTravel 2.2s ease-in-out infinite;
+          animation-delay: .55s;
+        }
+        .er-rc-dot3 {
+          offset-path: path('M475,80 L520,80');
+          animation: erRcTravel 2.2s ease-in-out infinite;
+          animation-delay: 1.1s;
+        }
+        .er-rc-dot4 {
+          offset-path: path('M650,80 L695,80');
+          animation: erRcTravel 2.2s ease-in-out infinite;
+          animation-delay: 1.65s;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .er-rc-dot, .er-rc-dot2, .er-rc-dot3, .er-rc-dot4 { animation: none; opacity: 0; }
+        }
+      `}</style>
+      <div className="mb-3 flex items-baseline justify-between">
+        <h3 className="text-sm font-semibold text-gray-900">How a recovery ticket works</h3>
+        <span className="text-xs text-gray-500">
+          Opened automatically when a customer leaves a low rating
+        </span>
+      </div>
+      <svg
+        viewBox="0 0 800 130"
+        className="w-full max-w-4xl"
+        role="img"
+        aria-label="Recovery ticket lifecycle: a low rating opens a ticket, which moves from Open to In progress to Resolved to Closed."
+      >
+        <defs>
+          <marker id="erRcAh" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L6,3 L0,6 Z" fill="#94a3b8" />
+          </marker>
+        </defs>
+        <line x1="155" y1="55" x2="200" y2="55" stroke="#cbd5e1" strokeWidth="3" markerEnd="url(#erRcAh)" />
+        <line x1="300" y1="55" x2="345" y2="55" stroke="#cbd5e1" strokeWidth="3" markerEnd="url(#erRcAh)" />
+        <line x1="475" y1="55" x2="520" y2="55" stroke="#cbd5e1" strokeWidth="3" markerEnd="url(#erRcAh)" />
+        <line x1="650" y1="55" x2="695" y2="55" stroke="#cbd5e1" strokeWidth="3" markerEnd="url(#erRcAh)" />
+        <rect x="20" y="31" width="135" height="48" rx="12" fill="#d97706" />
+        <text x="87" y="53" textAnchor="middle" fontSize="13" fontWeight="700" fill="#ffffff">Low rating</text>
+        <text x="87" y="69" textAnchor="middle" fontSize="10" fontWeight="600" fill="#fde68a">(1-3 stars)</text>
+        <rect x="200" y="31" width="100" height="48" rx="12" fill="#dc2626" />
+        <text x="250" y="60" textAnchor="middle" fontSize="15" fontWeight="700" fill="#ffffff">Open</text>
+        <rect x="345" y="31" width="130" height="48" rx="12" fill="#d97706" />
+        <text x="410" y="60" textAnchor="middle" fontSize="14" fontWeight="700" fill="#ffffff">In progress</text>
+        <rect x="520" y="31" width="130" height="48" rx="12" fill="#16a34a" />
+        <text x="585" y="60" textAnchor="middle" fontSize="14" fontWeight="700" fill="#ffffff">Resolved</text>
+        <rect x="695" y="31" width="90" height="48" rx="12" fill="#475569" />
+        <text x="740" y="60" textAnchor="middle" fontSize="14" fontWeight="700" fill="#ffffff">Closed</text>
+        <circle className="er-rc-dot" r="7" fill="#fbbf24" />
+        <circle className="er-rc-dot2" r="7" fill="#fbbf24" />
+        <circle className="er-rc-dot3" r="7" fill="#fbbf24" />
+        <circle className="er-rc-dot4" r="7" fill="#fbbf24" />
+      </svg>
+      <p className="mt-3 text-sm leading-relaxed text-gray-600">
+        When a customer leaves a low rating, a recovery ticket opens
+        automatically so your team can follow up. Work it from{" "}
+        <span className="font-medium text-red-700">Open</span> through{" "}
+        <span className="font-medium text-amber-700">In progress</span> to{" "}
+        <span className="font-medium text-green-700">Resolved</span>, then{" "}
+        <span className="font-medium text-gray-700">Closed</span>. Use the
+        Priority filter to tackle the most urgent first.
+      </p>
+    </div>
+  );
+}
+
 export default function RecoveryPage() {
   const [tickets, setTickets] = useState<RecoveryTicket[]>([]);
   const [loading, setLoading] = useState(true);
@@ -188,6 +271,8 @@ export default function RecoveryPage() {
 
   return (
     <div className="space-y-6">
+      <RecoveryLifecycleBanner />
+
       {/* Filters */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div className="flex gap-3">

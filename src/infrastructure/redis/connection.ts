@@ -28,7 +28,6 @@ function createConnection(name: string): Redis {
     lazyConnect: REDIS_CONFIG.connection.lazyConnect,
     retryStrategy: REDIS_CONFIG.connection.retryStrategy,
     reconnectOnError: REDIS_CONFIG.connection.reconnectOnError,
-    keyPrefix: REDIS_CONFIG.namespace,
     connectionName: `echorank:${name}`,
   });
 

@@ -12,6 +12,7 @@ import {
   Trash2,
   Pencil,
   Globe,
+  HelpCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -49,11 +50,94 @@ const PLATFORM_BADGE: Record<string, "default" | "success" | "warning" | "danger
   Other: "default",
 };
 
+function ReviewLinksHelpModal({
+  open,
+  onClose,
+}: {
+  open: boolean;
+  onClose: () => void;
+}) {
+  return (
+    <Modal open={open} onClose={onClose} title="How review links work">
+      {/* Animated flow graphic */}
+      <style>{`
+        @keyframes erTravel {
+          0% { transform: translateX(0); opacity: 0; }
+          8% { opacity: 1; }
+          46% { transform: translateX(190px); opacity: 1; }
+          54% { transform: translateX(190px); opacity: 1; }
+          92% { opacity: 1; }
+          100% { transform: translateX(380px); opacity: 0; }
+        }
+        .er-star { animation: erTravel 3.2s ease-in-out infinite; }
+        @media (prefers-reduced-motion: reduce) {
+          .er-star { animation: none; transform: translateX(190px); }
+        }
+      `}</style>
+      <div className="rounded-lg bg-gray-50 p-4">
+        <svg viewBox="0 0 520 170" className="w-full" role="img" aria-label="Flow: customer feedback to your review link to the public review platform">
+          <defs>
+            <marker id="erAh" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+              <path d="M0,0 L6,3 L0,6 Z" fill="#cbd5e1" />
+            </marker>
+          </defs>
+          <line x1="120" y1="85" x2="218" y2="85" stroke="#e2e8f0" strokeWidth="2" markerEnd="url(#erAh)" />
+          <line x1="302" y1="85" x2="400" y2="85" stroke="#e2e8f0" strokeWidth="2" markerEnd="url(#erAh)" />
+          <g>
+            <rect x="20" y="55" width="100" height="60" rx="10" fill="#f1f5f9" stroke="#e2e8f0" />
+            <text x="70" y="80" textAnchor="middle" fontSize="11" fontWeight="600" fill="#0f172a">Customer</text>
+            <text x="70" y="97" textAnchor="middle" fontSize="11" fill="#64748b">feedback</text>
+          </g>
+          <g>
+            <rect x="220" y="53" width="80" height="64" rx="10" fill="#eff6ff" stroke="#2563eb" strokeWidth="2" />
+            <text x="260" y="79" textAnchor="middle" fontSize="11" fontWeight="700" fill="#2563eb">Your</text>
+            <text x="260" y="95" textAnchor="middle" fontSize="11" fontWeight="700" fill="#2563eb">link</text>
+          </g>
+          <g>
+            <rect x="400" y="55" width="100" height="60" rx="10" fill="#f0fdf4" stroke="#86efac" />
+            <text x="450" y="80" textAnchor="middle" fontSize="11" fontWeight="600" fill="#15803d">Google /</text>
+            <text x="450" y="97" textAnchor="middle" fontSize="11" fill="#16a34a">Facebook</text>
+          </g>
+          <text x="120" y="91" fontSize="18" fill="#f59e0b" className="er-star">★</text>
+        </svg>
+      </div>
+
+      <div className="mt-4 space-y-3 text-sm leading-relaxed text-gray-600">
+        <p>
+          A <strong>review link</strong> is the public URL where a customer
+          leaves a review — your Google, Facebook, or Trustpilot page. When a
+          customer is invited to review you, this link is where they go.
+        </p>
+        <p>
+          <strong>Finding your Google link:</strong> in your Google Business
+          Profile, use the &ldquo;Ask for reviews&rdquo; share link, or a
+          write-a-review URL of the form
+          <code className="mx-1 rounded bg-gray-100 px-1 py-0.5 text-xs">https://g.page/r/&hellip;/review</code>.
+          Set this one as Default so it is used when no platform-specific link
+          applies.
+        </p>
+        <p>
+          <strong>Default</strong> marks the link customers are sent to by
+          default. <strong>Clicks</strong> counts how many times each link has
+          been opened, so you can see which platform customers use most.
+        </p>
+      </div>
+
+      <div className="mt-4 flex justify-end border-t border-gray-100 pt-4">
+        <Button type="button" onClick={onClose}>
+          Got it
+        </Button>
+      </div>
+    </Modal>
+  );
+}
+
 export default function ReviewLinksPage() {
   const [links, setLinks] = useState<ReviewLink[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
   const [editingLink, setEditingLink] = useState<ReviewLink | null>(null);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
@@ -277,11 +361,19 @@ export default function ReviewLinksPage() {
             Manage links where customers can leave public reviews.
           </p>
         </div>
-        <Button onClick={openCreateModal}>
-          <Plus className="mr-2 h-4 w-4" />
-          Add Review Link
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => setHelpOpen(true)}>
+            <HelpCircle className="mr-2 h-4 w-4" />
+            Help
+          </Button>
+          <Button onClick={openCreateModal}>
+            <Plus className="mr-2 h-4 w-4" />
+            Add Review Link
+          </Button>
+        </div>
       </div>
+
+      <ReviewLinksHelpModal open={helpOpen} onClose={() => setHelpOpen(false)} />
 
       {/* Table */}
       <Card>

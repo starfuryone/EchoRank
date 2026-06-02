@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "EchoRank — Reputation Management & Customer Feedback Automation",
   description:
-    "Turn real customer feedback into more honest reviews, fewer public complaints, and better reputation intelligence.",
+    "Collect customer feedback, generate more authentic reviews, and identify service issues with AI-powered reputation management.",
 };
 
 export default function RootLayout({

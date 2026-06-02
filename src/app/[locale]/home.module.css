@@ -45,11 +45,14 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
+.logo {
+  height: 22px;
+  width: auto;
+  display: block;
+}
+/* .glyph retained as a no-op; the brand mark is now the inline SVG .logo. */
 .glyph {
-  width: 18px;
-  height: 18px;
-  background: var(--fg);
-  clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+  display: none;
 }
 .navLinks {
   display: flex;
