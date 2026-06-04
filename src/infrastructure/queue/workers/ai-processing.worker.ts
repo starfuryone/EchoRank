@@ -30,7 +30,7 @@ interface MockAiResult {
   latencyMs: number;
 }
 
-function generateMockAnalysis(content: string, _analysisType: string): MockAiResult {
+function generateMockAnalysis(content: string, _analysisType: string, rating?: number): MockAiResult {
   // Simulate realistic analysis based on content characteristics
   const contentLength = content.length;
   const hasNegativeWords =
@@ -42,23 +42,32 @@ function generateMockAnalysis(content: string, _analysisType: string): MockAiRes
   );
   const hasUrgencyWords = /urgent|immediately|asap|right now|emergency|critical/i.test(content);
 
-  // Determine sentiment
+  // Determine sentiment — rating is the primary signal, keywords fallback
   let sentimentScore = 0.5;
   let sentimentLabel = "neutral";
-  if (hasNegativeWords) {
-    sentimentScore = 0.1 + Math.random() * 0.3;
+  if (rating != null) {
+    if (rating >= 4) {
+      sentimentScore = rating >= 5 ? 0.9 : 0.7;
+      sentimentLabel = "positive";
+    } else if (rating <= 2) {
+      sentimentScore = rating <= 1 ? 0.1 : 0.3;
+      sentimentLabel = "negative";
+    } else {
+      sentimentScore = 0.5;
+      sentimentLabel = "neutral";
+    }
+  } else if (hasNegativeWords) {
+    sentimentScore = 0.2;
     sentimentLabel = "negative";
   } else if (hasPositiveWords) {
-    sentimentScore = 0.7 + Math.random() * 0.3;
+    sentimentScore = 0.8;
     sentimentLabel = "positive";
-  } else {
-    sentimentScore = 0.4 + Math.random() * 0.2;
-    sentimentLabel = "neutral";
   }
 
   // Escalation probability
   let escalationProbability = 0.1;
   if (hasNegativeWords) escalationProbability += 0.4;
+  if (rating != null && rating <= 2) escalationProbability += 0.35;
   if (hasUrgencyWords) escalationProbability += 0.3;
   if (contentLength > 500) escalationProbability += 0.1;
   escalationProbability = Math.min(escalationProbability, 0.99);
@@ -165,7 +174,7 @@ async function processAiJob(job: Job<AiProcessingJob>): Promise<void> {
 
     try {
       // ── Run AI Analysis (mock) ──────────────────────────────────────
-      const result = generateMockAnalysis(content, analysisType);
+      const result = generateMockAnalysis(content, analysisType, job.data.rating);
 
       // ── Store Result in AiAnalysis Table ─────────────────────────────
       const analysis = await prisma.aiAnalysis.create({
@@ -192,6 +201,19 @@ async function processAiJob(job: Job<AiProcessingJob>): Promise<void> {
           latencyMs: result.latencyMs,
         },
       });
+
+      // ── Propagate result onto the parent ExternalReview ──────────────
+      if (externalReviewId) {
+        await prisma.externalReview.update({
+          where: { id: externalReviewId },
+          data: {
+            sentimentLabel: result.sentimentLabel,
+            sentimentScore: result.sentimentScore,
+            riskLevel: result.riskLevel,
+            isProcessed: true,
+          },
+        });
+      }
 
       // ── Record Token Usage in UsageMeter ─────────────────────────────
       await prisma.usageMeter.create({

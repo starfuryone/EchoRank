@@ -23,6 +23,7 @@ import { startReputationScoringWorker } from "./workers/reputation-scoring.worke
 import { startEscalationDetectionWorker } from "./workers/escalation-detection.worker";
 import { startAnalyticsAggregationWorker } from "./workers/analytics-aggregation.worker";
 import { startFeedbackRoutingWorker } from "./workers/feedback-routing.worker";
+import { startCsvImportWorker } from "./workers/csv-import.worker";
 
 /**
  * How often to drain domain events that are still PENDING/FAILED in the DB.
@@ -82,6 +83,7 @@ async function startWorkers() {
     { name: "escalation-detection", start: startEscalationDetectionWorker },
     { name: "analytics-aggregation", start: startAnalyticsAggregationWorker },
     { name: "feedback-routing", start: startFeedbackRoutingWorker },
+    { name: "csv-import", start: startCsvImportWorker },
   ];
 
   const loaded: string[] = [];

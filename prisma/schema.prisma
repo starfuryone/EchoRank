@@ -179,6 +179,7 @@ model Tenant {
   escalationAlerts    EscalationAlert[]
   monitoringSources   MonitoringSource[]
   externalReviews     ExternalReview[]
+  importJobs          ImportJob[]
 
   @@map("tenants")
 }
@@ -736,6 +737,7 @@ model MonitoringSource {
   updatedAt    DateTime           @updatedAt
   tenant       Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   reviews      ExternalReview[]
+  importJobs   ImportJob[]
 
   @@unique([tenantId, platform, externalId])
   @@index([tenantId])
@@ -854,3 +856,72 @@ model StripePrice {
 // Note: deletedAt, archivedAt, legalHold fields are added to core models
 // via the compliance middleware layer rather than schema changes, to avoid
 // breaking the existing API. The DeletionLog table tracks all deletions.
+
+// ─── CSV / file import jobs ────────────────────────────────────────────
+// A multi-source ingestion record. Reviews uploaded via CSV (and, later,
+// Excel/Sheets/Airtable) are attached to a synthetic MonitoringSource so they
+// flow through the exact same normalize → dedup → AiAnalysis → reputation /
+// escalation pipeline as platform-monitored reviews. This table is the import
+// history + column-mapping wizard state machine, and (for v1) the staging
+// store for the raw uploaded text between the preview and commit steps.
+enum ImportStatus {
+  PENDING_MAPPING // uploaded + parsed headers; awaiting column-mapping confirmation
+  QUEUED          // mapping confirmed; csv-import job enqueued
+  PROCESSING      // worker is ingesting rows
+  COMPLETED       // all rows ingested (some may have been duplicates)
+  PARTIAL         // completed, but one or more rows failed validation
+  FAILED          // job-level failure (parse error, etc.)
+  CANCELLED       // user discarded before commit
+}
+
+enum ImportSourceFormat {
+  GENERIC_CSV
+  GOOGLE_CSV
+  FACEBOOK_CSV
+  TRUSTPILOT_CSV
+  EXCEL // reserved for the .xlsx slice (Feature 4); parsed to rows then shares this pipeline
+}
+
+model ImportJob {
+  id              String             @id @default(cuid())
+  tenantId        String
+  // The synthetic MonitoringSource these rows are attached to. Nullable so a
+  // discarded (CANCELLED) or failed-at-parse import need not allocate a source.
+  sourceId        String?
+  filename        String
+  format          ImportSourceFormat @default(GENERIC_CSV)
+  // Platform the rows represent — drives the dedup namespace and dashboards.
+  platform        MonitoringPlatform @default(CUSTOM)
+  status          ImportStatus       @default(PENDING_MAPPING)
+  // Raw uploaded text, retained for re-parse at commit time. Capped at the
+  // route layer (see MAX_IMPORT_BYTES). For very large files this should move
+  // to object storage; kept in-row for v1 since review exports are small.
+  rawContent      String?            @db.Text
+  hasHeaderRow    Boolean            @default(true)
+  // Header names detected at parse time: string[].
+  detectedColumns Json?
+  // Confirmed mapping of canonical field -> source column, e.g.
+  // { "rating": "Star Rating", "content": "Review", "author": "Name" }.
+  columnMapping   Json?
+  totalRows       Int                @default(0)
+  importedRows    Int                @default(0)
+  duplicateRows   Int                @default(0)
+  failedRows      Int                @default(0)
+  // Up to N row-level errors: [{ row: number, message: string }].
+  errors          Json?
+  errorMessage    String? // job-level failure reason
+  createdById     String?
+  startedAt       DateTime?
+  completedAt     DateTime?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  tenant Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  source MonitoringSource? @relation(fields: [sourceId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([tenantId, status])
+  @@index([tenantId, createdAt])
+  @@index([sourceId])
+  @@map("import_jobs")
+}

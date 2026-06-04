@@ -64,6 +64,7 @@ export interface AiProcessingJob extends BaseJob {
   externalReviewId?: string;
   analysisType: AiAnalysisType;
   content: string;
+  rating?: number;
 }
 
 // ─── Review Monitoring ────────────────────────────────────────────────────────
@@ -121,6 +122,12 @@ export interface AnalyticsAggregationJob extends BaseJob {
   periodEnd: string; // ISO 8601
 }
 
+// ─── CSV Import ───────────────────────────────────────────────────────────────
+
+export interface CsvImportJob extends BaseJob {
+  importJobId: string;
+}
+
 // ─── Union Type ───────────────────────────────────────────────────────────────
 
 export type AllJobTypes =
@@ -132,7 +139,8 @@ export type AllJobTypes =
   | ReputationScoringJob
   | EscalationDetectionJob
   | AnalyticsAggregationJob
-  | FeedbackRoutingJob;
+  | FeedbackRoutingJob
+  | CsvImportJob;
 
 // ─── Queue → Job Type mapping ─────────────────────────────────────────────────
 
@@ -146,4 +154,5 @@ export interface QueueJobMap {
   "escalation-detection": EscalationDetectionJob;
   "analytics-aggregation": AnalyticsAggregationJob;
   "feedback-routing": FeedbackRoutingJob;
+  "csv-import": CsvImportJob;
 }

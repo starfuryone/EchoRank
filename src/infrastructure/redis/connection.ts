@@ -23,7 +23,6 @@ function createConnection(name: string): Redis {
     maxRetriesPerRequest: REDIS_CONFIG.connection.maxRetriesPerRequest,
     enableReadyCheck: REDIS_CONFIG.connection.enableReadyCheck,
     connectTimeout: REDIS_CONFIG.connection.connectTimeout,
-    commandTimeout: REDIS_CONFIG.connection.commandTimeout,
     keepAlive: REDIS_CONFIG.connection.keepAlive,
     lazyConnect: REDIS_CONFIG.connection.lazyConnect,
     retryStrategy: REDIS_CONFIG.connection.retryStrategy,

@@ -27,7 +27,6 @@ export const REDIS_CONFIG = {
     /** Connection timeout in ms */
     connectTimeout: 10_000,
     /** Command timeout in ms */
-    commandTimeout: 5_000,
     /** Keep alive interval in ms */
     keepAlive: 30_000,
     /** Lazy connect (don't connect until first command) */
@@ -46,6 +45,7 @@ export const REDIS_CONFIG = {
     escalationDetection: "escalation-detection",
     analyticsAggregation: "analytics-aggregation",
     feedbackRouting: "feedback-routing",
+    csvImport: "csv-import",
   },
 
   /** DLQ namespace prefix */
@@ -85,6 +85,7 @@ export const REDIS_CONFIG = {
     "escalation-detection": { max: 100, duration: 60_000 },
     "analytics-aggregation": { max: 10, duration: 60_000 },
     "feedback-routing": { max: 200, duration: 60_000 },
+    "csv-import": { max: 10, duration: 60_000 },
   } as Record<string, { max: number; duration: number }>,
 } as const;
 
@@ -98,7 +99,8 @@ export type QueueName =
   | "reputation-scoring"
   | "escalation-detection"
   | "analytics-aggregation"
-  | "feedback-routing";
+  | "feedback-routing"
+  | "csv-import";
 
 /** All valid queue names */
 export const QUEUE_NAMES: QueueName[] = [
@@ -111,4 +113,5 @@ export const QUEUE_NAMES: QueueName[] = [
   "escalation-detection",
   "analytics-aggregation",
   "feedback-routing",
+  "csv-import",
 ];
