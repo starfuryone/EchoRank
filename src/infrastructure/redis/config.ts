@@ -100,7 +100,8 @@ export type QueueName =
   | "escalation-detection"
   | "analytics-aggregation"
   | "feedback-routing"
-  | "csv-import";
+  | "csv-import"
+  | "extension-import";
 
 /** All valid queue names */
 export const QUEUE_NAMES: QueueName[] = [
@@ -114,4 +115,5 @@ export const QUEUE_NAMES: QueueName[] = [
   "analytics-aggregation",
   "feedback-routing",
   "csv-import",
+  "extension-import",
 ];

@@ -128,6 +128,10 @@ export interface CsvImportJob extends BaseJob {
   importJobId: string;
 }
 
+export interface ExtensionImportJob extends BaseJob {
+  importJobId: string;
+}
+
 // ─── Union Type ───────────────────────────────────────────────────────────────
 
 export type AllJobTypes =
@@ -140,7 +144,8 @@ export type AllJobTypes =
   | EscalationDetectionJob
   | AnalyticsAggregationJob
   | FeedbackRoutingJob
-  | CsvImportJob;
+  | CsvImportJob
+  | ExtensionImportJob;
 
 // ─── Queue → Job Type mapping ─────────────────────────────────────────────────
 
@@ -155,4 +160,5 @@ export interface QueueJobMap {
   "analytics-aggregation": AnalyticsAggregationJob;
   "feedback-routing": FeedbackRoutingJob;
   "csv-import": CsvImportJob;
+  "extension-import": ExtensionImportJob;
 }

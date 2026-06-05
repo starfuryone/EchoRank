@@ -1,0 +1,62 @@
+{
+  "manifest_version": 3,
+  "name": "EchoRank Review Importer",
+  "version": "0.1.0",
+  "description": "Import reviews from Google, Facebook, and Trustpilot pages into EchoRank.",
+  "minimum_chrome_version": "111",
+  "permissions": ["storage", "activeTab", "scripting"],
+  "host_permissions": [
+    "https://www.google.com/*",
+    "https://www.google.com/maps/*",
+    "https://business.google.com/*",
+    "https://www.facebook.com/*",
+    "https://www.trustpilot.com/*",
+    "https://*.trustpilot.com/*",
+    "https://echorank360.com/*"
+  ],
+  "background": {
+    "service_worker": "background/service-worker.js",
+    "type": "module"
+  },
+  "action": {
+    "default_title": "EchoRank Review Importer",
+    "default_popup": "popup/index.html",
+    "default_icon": {
+      "16": "assets/icon-16.png",
+      "48": "assets/icon-48.png",
+      "128": "assets/icon-128.png"
+    }
+  },
+  "icons": {
+    "16": "assets/icon-16.png",
+    "48": "assets/icon-48.png",
+    "128": "assets/icon-128.png"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://www.google.com/maps/*", "https://www.google.com/search*"],
+      "js": ["content/google.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://www.facebook.com/*"],
+      "js": ["content/facebook.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://www.trustpilot.com/review/*", "https://*.trustpilot.com/review/*"],
+      "js": ["content/trustpilot.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["assets/*"],
+      "matches": [
+        "https://www.google.com/*",
+        "https://www.facebook.com/*",
+        "https://www.trustpilot.com/*"
+      ]
+    }
+  ]
+}

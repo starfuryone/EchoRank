@@ -24,6 +24,7 @@ import { startEscalationDetectionWorker } from "./workers/escalation-detection.w
 import { startAnalyticsAggregationWorker } from "./workers/analytics-aggregation.worker";
 import { startFeedbackRoutingWorker } from "./workers/feedback-routing.worker";
 import { startCsvImportWorker } from "./workers/csv-import.worker";
+import { startExtensionImportWorker } from "./workers/extension-import.worker";
 
 /**
  * How often to drain domain events that are still PENDING/FAILED in the DB.
@@ -84,6 +85,7 @@ async function startWorkers() {
     { name: "analytics-aggregation", start: startAnalyticsAggregationWorker },
     { name: "feedback-routing", start: startFeedbackRoutingWorker },
     { name: "csv-import", start: startCsvImportWorker },
+    { name: "extension-import", start: startExtensionImportWorker },
   ];
 
   const loaded: string[] = [];

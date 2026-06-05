@@ -17,6 +17,7 @@ import {
   Brain,
   Radar,
   Database,
+  Puzzle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -30,6 +31,7 @@ const navItems = [
   { label: "Intelligence", href: "/intelligence", icon: Brain },
   { label: "Monitoring", href: "/monitoring", icon: Radar },
   { label: "Data Sources", href: "/imports", icon: Database },
+  { label: "Extension", href: "/extension", icon: Puzzle },
   { label: "Templates", href: "/templates", icon: FileText },
   { label: "Review Links", href: "/review-links", icon: ExternalLink },
   { label: "Team", href: "/team", icon: UserPlus },

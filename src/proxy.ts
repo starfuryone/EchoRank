@@ -7,7 +7,7 @@ const LOCALE_COOKIE = "echorank_locale";
 
 // Paths that never require auth. The localized homepages (/, /en, /fr, …) are
 // public and handled by the locale logic below.
-const publicPaths = ["/login", "/register", "/api/auth", "/api/feedback", "/f/"];
+const publicPaths = ["/login", "/register", "/api/auth", "/api/feedback", "/f/", "/api/extension/import"];
 
 /** First path segment, e.g. "/fr/x" -> "fr". */
 function firstSegment(pathname: string): string {
@@ -46,6 +46,7 @@ export default auth((req) => {
   if (
     pathname.startsWith("/api/") &&
     !pathname.startsWith("/api/webhooks/") &&
+    !pathname.startsWith("/api/extension/import") &&
     method !== "GET" &&
     method !== "HEAD" &&
     method !== "OPTIONS"

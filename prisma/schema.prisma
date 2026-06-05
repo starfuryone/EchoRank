@@ -89,6 +89,7 @@ model User {
   accounts       Account[]
   sessions       Session[]
   auditLogs      AuditLog[]
+  extensionTokens ExtensionToken[]
 
   @@map("users")
 }
@@ -180,6 +181,7 @@ model Tenant {
   monitoringSources   MonitoringSource[]
   externalReviews     ExternalReview[]
   importJobs          ImportJob[]
+  extensionTokens     ExtensionToken[]
 
   @@map("tenants")
 }
@@ -880,6 +882,7 @@ enum ImportSourceFormat {
   FACEBOOK_CSV
   TRUSTPILOT_CSV
   EXCEL // reserved for the .xlsx slice (Feature 4); parsed to rows then shares this pipeline
+  EXTENSION // browser-extension scraped import; rows arrive pre-structured as JSON
 }
 
 model ImportJob {
@@ -924,4 +927,37 @@ model ImportJob {
   @@index([tenantId, createdAt])
   @@index([sourceId])
   @@map("import_jobs")
+}
+
+/// Long-lived API token issued to a logged-in user for the browser extension.
+/// Only a SHA-256 hash of the secret is stored; the plaintext is shown once at
+/// creation. Tokens are tenant-scoped, revocable, and rotatable (rotation =
+/// revoke old + issue new, preserving label/scopes).
+model ExtensionToken {
+  id          String    @id @default(cuid())
+  tenantId    String
+  userId      String
+  /// Human label set at creation, e.g. "Chrome on work laptop".
+  label       String
+  /// SHA-256 (hex) of the token secret. Never store plaintext.
+  tokenHash   String    @unique
+  /// First 8 chars of the public token id, surfaced in the UI for identification.
+  prefix      String
+  /// Reserved for future per-token scoping (e.g. ["import:write"]).
+  scopes      String[]  @default([])
+  lastUsedAt  DateTime?
+  /// Optional hard expiry. Null = no expiry (revoke to disable).
+  expiresAt   DateTime?
+  /// Set when revoked; a non-null value disables the token.
+  revokedAt   DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([userId])
+  @@index([tokenHash])
+  @@map("extension_tokens")
 }
