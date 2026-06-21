@@ -36,6 +36,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       emailTemplates,
       smsTemplates,
+      templates: [
+        ...emailTemplates.map((t) => ({ ...t, channel: "EMAIL" })),
+        ...smsTemplates.map((t) => ({ ...t, channel: "SMS" })),
+      ],
     });
   } catch (error) {
     if (

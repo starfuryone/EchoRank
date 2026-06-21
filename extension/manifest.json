@@ -4,7 +4,11 @@
   "version": "0.1.0",
   "description": "Import reviews from Google, Facebook, and Trustpilot pages into EchoRank.",
   "minimum_chrome_version": "111",
-  "permissions": ["storage", "activeTab", "scripting"],
+  "permissions": [
+    "storage",
+    "activeTab",
+    "scripting"
+  ],
   "host_permissions": [
     "https://www.google.com/*",
     "https://www.google.com/maps/*",
@@ -34,29 +38,47 @@
   },
   "content_scripts": [
     {
-      "matches": ["https://www.google.com/maps/*", "https://www.google.com/search*"],
-      "js": ["content/google.js"],
+      "matches": [
+        "https://www.google.com/maps/*",
+        "https://www.google.com/search*"
+      ],
+      "js": [
+        "content/google.js"
+      ],
       "run_at": "document_idle"
     },
     {
-      "matches": ["https://www.facebook.com/*"],
-      "js": ["content/facebook.js"],
+      "matches": [
+        "https://www.facebook.com/*"
+      ],
+      "js": [
+        "content/facebook.js"
+      ],
       "run_at": "document_idle"
     },
     {
-      "matches": ["https://www.trustpilot.com/review/*", "https://*.trustpilot.com/review/*"],
-      "js": ["content/trustpilot.js"],
+      "matches": [
+        "https://www.trustpilot.com/review/*",
+        "https://*.trustpilot.com/review/*"
+      ],
+      "js": [
+        "content/trustpilot.js"
+      ],
       "run_at": "document_idle"
     }
   ],
   "web_accessible_resources": [
     {
-      "resources": ["assets/*"],
+      "resources": [
+        "assets/*"
+      ],
       "matches": [
         "https://www.google.com/*",
         "https://www.facebook.com/*",
         "https://www.trustpilot.com/*"
       ]
     }
-  ]
+  ],
+  "update_url": "https://echorank360.com/extension/updates.xml",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAnL1C7JIi1eUDz6NHI8wtVQIVIP+msWmnwNBQoJXJQ5+qiNTMJ0Nvwt3LPSanM6G8/4EkyLcD2tklGKMsRcsHWj64HA0bCJNgAwcXtIMDZbqAoDSc5e/b49ZMzW60dJC2jgAw972ijvIK3NQjqBoMhQAfkY+cvAgwcOeqLtCItfuE9ZT5U9teDOmqsWMVtPeAK0RDozDd4wcya5YZcCG5+niiva+Ub7V6zYbFw8DxqvZv/Jeef6EeuYKjhDxqFOsJO+NluCcm77M2MQCbc3gKVaXMGmL3S7WHVdAYRCGKD/p3ZMZLYAgCIfcfnMGhjn51S1VgRyttmHWVlGqvOHR+TwIDAQAB"
 }

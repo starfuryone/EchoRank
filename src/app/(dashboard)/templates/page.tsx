@@ -9,6 +9,7 @@ import {
   AlertCircle,
   Pencil,
   Trash2,
+  HelpCircle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +17,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Modal } from "@/components/ui/modal";
+import { TemplatesHelpModal } from "./help-modal";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { formatDate } from "@/lib/utils";
@@ -48,6 +50,7 @@ export default function TemplatesPage() {
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<"EMAIL" | "SMS">("EMAIL");
   const [modalOpen, setModalOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<Template | null>(null);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
@@ -167,10 +170,16 @@ export default function TemplatesPage() {
             Manage your email and SMS templates for feedback and review requests.
           </p>
         </div>
-        <Button onClick={openCreateModal}>
-          <Plus className="mr-2 h-4 w-4" />
-          Create Template
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => setHelpOpen(true)}>
+            <HelpCircle className="mr-2 h-4 w-4" />
+            Help
+          </Button>
+          <Button onClick={openCreateModal}>
+            <Plus className="mr-2 h-4 w-4" />
+            Create Template
+          </Button>
+        </div>
       </div>
 
       {/* Tabs */}
@@ -374,6 +383,8 @@ export default function TemplatesPage() {
           </div>
         </form>
       </Modal>
+
+      <TemplatesHelpModal open={helpOpen} onClose={() => setHelpOpen(false)} />
     </div>
   );
 }

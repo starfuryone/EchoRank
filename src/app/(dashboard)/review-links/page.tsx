@@ -22,6 +22,7 @@ import { Modal } from "@/components/ui/modal";
 import { DataTable } from "@/components/ui/data-table";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
+import { ShareToolsCard } from "./share-tools";
 
 interface ReviewLink {
   id: string;
@@ -374,6 +375,8 @@ export default function ReviewLinksPage() {
       </div>
 
       <ReviewLinksHelpModal open={helpOpen} onClose={() => setHelpOpen(false)} />
+
+      <ShareToolsCard links={links} loading={loading} />
 
       {/* Table */}
       <Card>

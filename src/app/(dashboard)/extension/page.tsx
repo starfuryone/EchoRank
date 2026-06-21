@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
+import { ExtensionHelpButton } from "@/components/help/ExtensionHelpButton";
 
 interface TokenRow {
   id: string;
@@ -92,14 +93,17 @@ export default function ExtensionPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <Puzzle className="h-6 w-6 text-blue-600" />
-        <div>
-          <h1 className="text-2xl font-semibold">Browser Extension</h1>
-          <p className="text-sm text-gray-500">
-            Import reviews from Google, Facebook, and Trustpilot pages directly into EchoRank.
-          </p>
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <Puzzle className="h-6 w-6 text-blue-600" />
+          <div>
+            <h1 className="text-2xl font-semibold">Browser Extension</h1>
+            <p className="text-sm text-gray-500">
+              Import reviews from Google, Facebook, and Trustpilot pages directly into EchoRank.
+            </p>
+          </div>
         </div>
+        <ExtensionHelpButton />
       </div>
 
       {error && (

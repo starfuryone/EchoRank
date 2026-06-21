@@ -3,13 +3,40 @@
    No gradients, shadows, blur, color accents, or rounded corners beyond lg. */
 
 .page {
-  --bg: #07080c;
-  --fg: #e8e6df;
-  --hairline: rgba(232, 230, 223, 0.12);
-  --emphasis: rgba(232, 230, 223, 0.4);
-  --muted: rgba(232, 230, 223, 0.6);
-  --faint: rgba(232, 230, 223, 0.4);
-  --growth: rgba(232, 230, 223, 0.03);
+  /* ── Surfaces (layered charcoal) ── */
+  --bg: #07090d;
+  --surface-1: #0d1017;
+  --surface-2: #141821;
+  --surface-3: #1b2029;
+
+  /* ── Foreground (rgb triplet drives every opacity variant) ── */
+  --fg-rgb: 230, 232, 236;
+  --fg: rgb(var(--fg-rgb));
+
+  /* ── Lines ── */
+  --hairline: rgba(255, 255, 255, 0.08);
+  --emphasis: rgba(255, 255, 255, 0.16);
+
+  /* ── Text tiers ── */
+  --muted: rgba(var(--fg-rgb), 0.62);
+  --faint: rgba(var(--fg-rgb), 0.4);
+
+  /* ── Brand: gold (CTAs / logo / emphasis ONLY — never a threat level) ── */
+  --gold: #fcd535;
+  --gold-dim: #efbf04;
+  --gold-glow: rgba(252, 213, 53, 0.16);
+
+  /* ── Semantic: threat-level coding ── */
+  --positive: #21d07a;
+  --positive-bg: rgba(33, 208, 122, 0.1);
+  --risk: #ff4d4f;
+  --risk-bg: rgba(255, 77, 79, 0.1);
+  --warn: #ff8a3d;
+  --warn-bg: rgba(255, 138, 61, 0.1);
+  --info: #4d9fff;
+
+  /* ── Highlight tint (recommended tier) — gold, not faint white ── */
+  --growth: rgba(252, 213, 53, 0.06);
 
   background: var(--bg);
   color: var(--fg);
@@ -99,7 +126,7 @@
   color: var(--muted);
 }
 .btn:hover {
-  background: rgba(232, 230, 223, 0.06);
+  background: rgba(var(--fg-rgb), 0.06);
   color: var(--fg);
 }
 .navCta {
@@ -110,7 +137,7 @@
   text-decoration: none;
 }
 .navCta:hover {
-  background: rgba(232, 230, 223, 0.06);
+  background: rgba(var(--fg-rgb), 0.06);
 }
 
 /* ── Section scaffolding ─────────────────────────────────────────────── */
@@ -147,7 +174,7 @@
   max-width: 820px;
 }
 .h1 .muted {
-  color: rgba(232, 230, 223, 0.55);
+  color: rgba(var(--fg-rgb), 0.55);
   display: block;
 }
 .subhead {
@@ -155,7 +182,7 @@
   max-width: 480px;
   font-size: 15px;
   line-height: 1.6;
-  color: rgba(232, 230, 223, 0.7);
+  color: rgba(var(--fg-rgb), 0.7);
 }
 .heroCtas {
   margin-top: 36px;
@@ -173,7 +200,7 @@
   font-size: 11px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: rgba(232, 230, 223, 0.45);
+  color: rgba(var(--fg-rgb), 0.45);
 }
 .industries {
   display: flex;
@@ -232,7 +259,7 @@
   margin-top: 8px;
   font-size: 13px;
   line-height: 1.6;
-  color: rgba(232, 230, 223, 0.6);
+  color: rgba(var(--fg-rgb), 0.6);
 }
 
 /* ── How it works ────────────────────────────────────────────────────── */
@@ -295,7 +322,7 @@
 .taxLine {
   margin-top: 18px;
   font-size: 11px;
-  color: rgba(232, 230, 223, 0.4);
+  color: rgba(var(--fg-rgb), 0.4);
 }
 
 /* ── Field / testimonial ─────────────────────────────────────────────── */
@@ -307,7 +334,7 @@
   max-width: 820px;
 }
 .quote .qMuted {
-  color: rgba(232, 230, 223, 0.55);
+  color: rgba(var(--fg-rgb), 0.55);
   display: block;
 }
 .attribution {
@@ -315,7 +342,7 @@
   font-size: 12px;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: rgba(232, 230, 223, 0.5);
+  color: rgba(var(--fg-rgb), 0.5);
 }
 
 /* ── Start ───────────────────────────────────────────────────────────── */
@@ -341,7 +368,7 @@
   margin: 0 auto;
   font-size: 11px;
   letter-spacing: 0.06em;
-  color: rgba(232, 230, 223, 0.4);
+  color: rgba(var(--fg-rgb), 0.4);
   text-transform: uppercase;
 }
 .footerLinks {
@@ -349,7 +376,7 @@
   gap: 22px;
 }
 .footerLinks a {
-  color: rgba(232, 230, 223, 0.4);
+  color: rgba(var(--fg-rgb), 0.4);
   text-decoration: none;
 }
 .footerLinks a:hover {
@@ -396,4 +423,42 @@
   .stepGrid {
     grid-template-columns: 1fr;
   }
+}
+
+
+/* ── Cybersecurity accent overrides (token rebuild) ──────────────────── */
+/* Section eyebrows / keys / price labels -> gold brand accent */
+.label,
+.cellKey,
+.priceName {
+  color: var(--gold);
+}
+
+/* Primary CTA -> solid gold */
+.btnPrimary {
+  background: var(--gold);
+  color: #07090d;
+  border-color: var(--gold);
+}
+.btnPrimary:hover {
+  background: var(--gold-dim);
+  color: #07090d;
+}
+
+/* Nav register CTA -> solid gold */
+.navCta {
+  background: var(--gold);
+  color: #07090d;
+  border-color: var(--gold);
+}
+.navCta:hover {
+  background: var(--gold-dim);
+}
+
+/* Recommended pricing tier -> gold tint + gold amount */
+.priceCellHi {
+  background: var(--growth);
+}
+.priceCellHi .priceAmount {
+  color: var(--gold);
 }
