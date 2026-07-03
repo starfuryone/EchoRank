@@ -125,3 +125,7 @@ startWorkers().catch((err) => {
   console.error("[Workers] Fatal error:", err);
   process.exit(1);
 });
+
+// Signal spine — reputation risk recompute (hourly sweep + on-demand)
+import { startSignalsWorker } from '../../workers/signals.worker';
+startSignalsWorker();

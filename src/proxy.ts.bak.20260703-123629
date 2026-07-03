@@ -41,17 +41,6 @@ export default auth((req) => {
   const { pathname } = req.nextUrl;
   const method = req.method;
 
-  // ── Internal service-to-service bypass (sidecar, workers, cron) ──────
-  // Secret is re-validated in the route handlers; this only skips the
-  // browser-session redirect + CSRF for non-browser callers.
-  if (
-    pathname.startsWith("/api/") &&
-    process.env.INTERNAL_API_SECRET &&
-    req.headers.get("x-internal-secret") === process.env.INTERNAL_API_SECRET
-  ) {
-    return NextResponse.next();
-  }
-
   // ── Origin validation for mutating API requests ──────────────────────
   // Exclude /api/webhooks/ since those come from external services (e.g. Stripe)
   if (
