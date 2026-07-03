@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { riskOverview } from '../../../../lib/signals/scoring';
 import { resolveTenant, requirePlan } from '../../../../lib/signals/auth-adapter';
+import { getRevenueAtRisk } from '../../../../lib/signals/revenue';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -17,7 +18,8 @@ export async function GET(req: NextRequest) {
     const overview = await riskOverview(auth.tenantId, {
       refresh: req.nextUrl.searchParams.get('refresh') === '1',
     });
-    return NextResponse.json(overview);
+    const revenue = await getRevenueAtRisk(auth.tenantId, overview.current.score);
+    return NextResponse.json({ ...overview, revenue });
   } catch (err) {
     console.error('[signals] risk overview failed:', err);
     return NextResponse.json({ error: 'compute_failed' }, { status: 500 });

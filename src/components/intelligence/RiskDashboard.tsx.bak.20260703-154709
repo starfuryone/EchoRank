@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 
-// ── Types mirrored from the APIs ────────────────────────────────────────────
+// ── Types mirrored from the API ─────────────────────────────────────────────
 interface Components {
   negativePressure: number;
   velocity: number;
@@ -19,12 +19,6 @@ interface Driver {
   severity: number;
   contribution: number;
 }
-interface Revenue {
-  monthlyRevenue: number;
-  currency: string;
-  elasticity: number;
-  atRisk: number;
-}
 interface Overview {
   current: {
     score: number;
@@ -36,22 +30,6 @@ interface Overview {
   deltas: { d7: number | null; d30: number | null };
   history: { day: string; score: number }[];
   computedAt: string;
-  revenue: Revenue | null;
-}
-interface Alert {
-  id: string;
-  kind: string;
-  severity: 'warning' | 'critical';
-  title: string;
-  body: string | null;
-  createdAt: string;
-}
-interface Config {
-  monthlyRevenue: number | null;
-  currency: string;
-  riskElasticity: number;
-  alertEmails: string | null;
-  alertsEnabled: boolean;
 }
 
 const GRADE_COLOR: Record<string, string> = {
@@ -65,16 +43,6 @@ const COMPONENT_LABELS: { key: keyof Components; label: string; hint: string }[]
   { key: 'visibility', label: 'AI visibility', hint: 'Inverse of latest audit score' },
   { key: 'stagnation', label: 'Signal coverage', hint: 'Data drought is a blind spot' },
 ];
-
-function fmtMoney(n: number, currency: string): string {
-  try {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency', currency, maximumFractionDigits: 0,
-    }).format(n);
-  } catch {
-    return `${currency} ${Math.round(n).toLocaleString()}`;
-  }
-}
 
 function Gauge({ score, grade }: { score: number; grade: string }) {
   const color = GRADE_COLOR[grade] ?? '#fbbf24';
@@ -153,86 +121,18 @@ function Delta({ label, value }: { label: string; value: number | null }) {
   );
 }
 
-function ConfigPanel({ config, onSaved }: { config: Config; onSaved: () => void }) {
-  const [revenue, setRevenue] = useState(config.monthlyRevenue?.toString() ?? '');
-  const [emails, setEmails] = useState(config.alertEmails ?? '');
-  const [enabled, setEnabled] = useState(config.alertsEnabled);
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const save = async () => {
-    setSaving(true);
-    setError(null);
-    try {
-      const res = await fetch('/api/reputation/config', {
-        method: 'PATCH',
-        credentials: 'include',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          monthlyRevenue: revenue === '' ? null : Number(revenue),
-          alertEmails: emails.trim() === '' ? null : emails.trim(),
-          alertsEnabled: enabled,
-        }),
-      });
-      if (!res.ok) {
-        const j = (await res.json().catch(() => null)) as { error?: string } | null;
-        throw new Error(j?.error ?? `HTTP ${res.status}`);
-      }
-      onSaved();
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  return (
-    <div className="mt-3 space-y-3 border-t border-zinc-800 pt-3">
-      <label className="block">
-        <span className="text-[10px] uppercase tracking-wider text-zinc-500">Monthly revenue (for exposure estimate)</span>
-        <input type="number" min="0" step="100" value={revenue} inputMode="numeric"
-          onChange={(e) => setRevenue(e.target.value)} placeholder="e.g. 50000"
-          className="mt-1 w-full rounded-md border border-zinc-800 bg-zinc-950 px-2.5 py-1.5 font-mono text-sm text-zinc-100 placeholder-zinc-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-400" />
-      </label>
-      <label className="block">
-        <span className="text-[10px] uppercase tracking-wider text-zinc-500">Alert emails (comma-separated)</span>
-        <input type="text" value={emails} onChange={(e) => setEmails(e.target.value)}
-          placeholder="you@company.com, ops@company.com"
-          className="mt-1 w-full rounded-md border border-zinc-800 bg-zinc-950 px-2.5 py-1.5 text-sm text-zinc-100 placeholder-zinc-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-400" />
-      </label>
-      <label className="flex items-center gap-2 text-xs text-zinc-300">
-        <input type="checkbox" checked={enabled} onChange={(e) => setEnabled(e.target.checked)}
-          className="h-3.5 w-3.5 accent-teal-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-400" />
-        Email alerts enabled
-      </label>
-      {error && <p className="text-xs text-rose-400">{error}</p>}
-      <button onClick={() => void save()} disabled={saving}
-        className="rounded-md border border-teal-500/50 bg-teal-500/10 px-3 py-1.5 text-xs font-semibold text-teal-300 hover:bg-teal-500/20 disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-400">
-        {saving ? 'Saving…' : 'Save configuration'}
-      </button>
-    </div>
-  );
-}
-
 export default function RiskDashboard() {
   const [data, setData] = useState<Overview | null>(null);
-  const [alerts, setAlerts] = useState<Alert[]>([]);
-  const [config, setConfig] = useState<Config | null>(null);
   const [state, setState] = useState<'loading' | 'ready' | 'error'>('loading');
-  const [showConfig, setShowConfig] = useState(false);
 
   const load = useCallback(async (refresh = false) => {
     setState('loading');
     try {
-      const [riskRes, alertsRes, cfgRes] = await Promise.all([
-        fetch(`/api/reputation/risk${refresh ? '?refresh=1' : ''}`, { credentials: 'include', cache: 'no-store' }),
-        fetch('/api/reputation/alerts?days=30&limit=20', { credentials: 'include', cache: 'no-store' }),
-        fetch('/api/reputation/config', { credentials: 'include', cache: 'no-store' }),
-      ]);
-      if (!riskRes.ok) throw new Error(String(riskRes.status));
-      setData(await riskRes.json());
-      if (alertsRes.ok) setAlerts(((await alertsRes.json()) as { alerts: Alert[] }).alerts);
-      if (cfgRes.ok) setConfig(((await cfgRes.json()) as { config: Config }).config);
+      const res = await fetch(`/api/reputation/risk${refresh ? '?refresh=1' : ''}`, {
+        credentials: 'include', cache: 'no-store',
+      });
+      if (!res.ok) throw new Error(String(res.status));
+      setData(await res.json());
       setState('ready');
     } catch {
       setState('error');
@@ -342,63 +242,6 @@ export default function RiskDashboard() {
                   <p className="mt-0.5 font-mono text-[10px] text-zinc-500">
                     {new Date(dr.occurredAt).toLocaleDateString()} · sev {dr.severity.toFixed(2)}
                   </p>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-      </div>
-
-      <div className="grid gap-4 lg:grid-cols-3">
-        {/* Revenue at risk + config */}
-        <section className="rounded-lg border border-zinc-800 bg-zinc-900/60 p-5">
-          <div className="flex items-center justify-between">
-            <h2 className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400">Revenue at risk</h2>
-            <button onClick={() => setShowConfig((v) => !v)}
-              className="rounded-md border border-zinc-800 px-2 py-0.5 text-[10px] text-zinc-400 hover:border-teal-500/60 hover:text-zinc-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-400">
-              {showConfig ? 'Close' : 'Configure'}
-            </button>
-          </div>
-          {d.revenue ? (
-            <div className="mt-3"
-              title={`monthlyRevenue × ${d.revenue.elasticity} × max(0, score − 20) / 100`}>
-              <p className="font-mono text-3xl font-bold text-rose-400">
-                {fmtMoney(d.revenue.atRisk, d.revenue.currency)}
-                <span className="text-sm font-normal text-zinc-500"> /mo</span>
-              </p>
-              <p className="mt-1 text-xs text-zinc-500">
-                Estimated exposure at risk {d.current.score} on {fmtMoney(d.revenue.monthlyRevenue, d.revenue.currency)} monthly revenue.
-              </p>
-            </div>
-          ) : (
-            <p className="mt-3 text-xs text-zinc-500">
-              Set monthly revenue to quantify what the current risk level costs.
-            </p>
-          )}
-          {showConfig && config && <ConfigPanel config={config} onSaved={() => { setShowConfig(false); void load(); }} />}
-        </section>
-
-        {/* Alerts feed */}
-        <section className="rounded-lg border border-zinc-800 bg-zinc-900/60 p-5 lg:col-span-2">
-          <h2 className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400">Alerts — last 30 days</h2>
-          {alerts.length === 0 ? (
-            <p className="mt-3 text-xs text-zinc-500">No alerts fired. Thresholds: score crossing 60/80, 7-day jump ≥ 15, new critical signals.</p>
-          ) : (
-            <ul className="mt-3 divide-y divide-zinc-800/80">
-              {alerts.map((a) => (
-                <li key={a.id} className="flex items-start gap-3 py-2.5">
-                  <span className={`mt-0.5 rounded px-1.5 py-0.5 font-mono text-[10px] uppercase tracking-wide ${
-                    a.severity === 'critical' ? 'bg-rose-950 text-rose-300' : 'bg-amber-950 text-amber-300'
-                  }`}>
-                    {a.severity}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs text-zinc-200">{a.title}</p>
-                    {a.body && <p className="mt-0.5 line-clamp-1 text-[11px] text-zinc-500">{a.body}</p>}
-                  </div>
-                  <span className="shrink-0 font-mono text-[10px] text-zinc-600">
-                    {new Date(a.createdAt).toLocaleDateString()}
-                  </span>
                 </li>
               ))}
             </ul>

@@ -1101,34 +1101,3 @@ model RiskSnapshot {
   @@unique([tenantId, day])
   @@index([tenantId, day(sort: Desc)])
 }
-// ─────────────────────────────────────────────────────────────
-// PHASE 2 — AlertEvent + TenantRiskConfig
-// deploy-phase2.sh appends this automatically (with backup).
-// ─────────────────────────────────────────────────────────────
-
-model AlertEvent {
-  id         String    @id @default(cuid())
-  tenantId   String
-  kind       String    // risk_threshold | risk_spike | critical_signal
-  severity   String    // warning | critical
-  title      String
-  body       String?
-  dedupeKey  String    @unique
-  payload    Json?
-  notifiedAt DateTime?
-  createdAt  DateTime  @default(now())
-
-  @@index([tenantId, createdAt(sort: Desc)])
-  @@index([notifiedAt, createdAt])
-}
-
-model TenantRiskConfig {
-  tenantId       String   @id
-  monthlyRevenue Float?
-  currency       String   @default("USD")
-  riskElasticity Float    @default(0.10)
-  alertEmails    String?  // comma-separated; falls back to ALERT_FALLBACK_EMAIL
-  alertsEnabled  Boolean  @default(true)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-}

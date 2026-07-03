@@ -4,6 +4,7 @@ import { SIGNALS_RISK_QUEUE, riskQueue } from '../lib/signals/queue';
 import { getRedisConnection } from '@/infrastructure/redis/connection';
 import { computeAndPersist } from '../lib/signals/scoring';
 import { syncRecentSignals } from '../lib/signals/sync';
+import { evaluateAlerts, previousScore, flushUnnotified } from '../lib/signals/alerts';
 
 async function recomputeAll(): Promise<number> {
   const synced = await syncRecentSignals(2);
@@ -15,13 +16,16 @@ async function recomputeAll(): Promise<number> {
   let ok = 0;
   for (const { tenantId } of tenants) {
     try {
+      const prev = await previousScore(tenantId);
       const r = await computeAndPersist(tenantId);
+      await evaluateAlerts(tenantId, r, prev);
       console.log(`[signals] ${tenantId} → risk ${r.score} (${r.grade}), ${r.signalCount} signals`);
       ok++;
     } catch (err) {
       console.error(`[signals] recompute failed for ${tenantId}:`, (err as Error).message);
     }
   }
+  await flushUnnotified();
   return ok;
 }
 
@@ -31,7 +35,9 @@ export function startSignalsWorker(): Worker {
     async (job) => {
       if (job.name === 'recompute-tenant') {
         const { tenantId } = job.data as { tenantId: string };
+        const prev = await previousScore(tenantId);
         const r = await computeAndPersist(tenantId);
+        await evaluateAlerts(tenantId, r, prev);
         return { tenantId, score: r.score, grade: r.grade };
       }
       if (job.name === 'recompute-all') {
