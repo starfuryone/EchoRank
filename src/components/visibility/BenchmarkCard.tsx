@@ -1,0 +1,199 @@
+"use client";
+
+import { useCallback, useEffect, useState, type ChangeEvent, type KeyboardEvent } from "react";
+import { Lock, Swords } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+
+/**
+ * Competitor benchmark panel (GROWTH+). Quota is server-enforced:
+ * GROWTH 1 distinct competitor / rolling 24h, AGENCY+ 5. The card loads
+ * the window's existing comparisons on mount so state survives reloads.
+ */
+
+interface BenchResult {
+  url: string;
+  score: number;
+  grade: string;
+  blocked: number;
+  botTotal: number;
+}
+
+export function BenchmarkCard({
+  yourUrl,
+  yourScore,
+  yourBlocked,
+  botTotal,
+}: {
+  yourUrl: string;
+  yourScore: number;
+  yourBlocked: number;
+  botTotal: number;
+}) {
+  const [input, setInput] = useState("");
+  const [rows, setRows] = useState<BenchResult[]>([]);
+  const [limit, setLimit] = useState<number>(1);
+  const [used, setUsed] = useState<number>(0);
+  const [busy, setBusy] = useState(false);
+  const [locked, setLocked] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  const load = useCallback(async () => {
+    try {
+      const res = await fetch("/api/ai/visibility/benchmark", { cache: "no-store" });
+      if (res.status === 403) {
+        setLocked(true);
+        return;
+      }
+      const data = await res.json();
+      if (!res.ok) return;
+      setLimit(data.limit ?? 1);
+      setUsed(data.used ?? 0);
+      setRows(data.recent ?? []);
+    } catch {
+      /* non-fatal; card still works via POST */
+    }
+  }, []);
+
+  useEffect(() => {
+    void load();
+  }, [load]);
+
+  async function compare() {
+    const url = input.trim();
+    if (!url || busy) return;
+    setBusy(true);
+    setErr(null);
+    try {
+      const res = await fetch("/api/ai/visibility/benchmark", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url }),
+      });
+      const data = await res.json();
+      if (res.status === 403 && data.code !== "BenchmarkLimit") {
+        setLocked(true);
+        return;
+      }
+      if (!res.ok) {
+        setErr(data.error || `Request failed (${res.status})`);
+        if (typeof data.limit === "number") setLimit(data.limit);
+        if (typeof data.used === "number") setUsed(data.used);
+        return;
+      }
+      const r = data.result as BenchResult;
+      setRows((prev) => [r, ...prev.filter((p) => p.url !== r.url)]);
+      setLimit(data.limit ?? limit);
+      setUsed(data.used ?? used);
+      setInput("");
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Comparison failed");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  if (locked) {
+    return (
+      <Card>
+        <CardContent className="flex items-center gap-3 py-5">
+          <Lock className="h-5 w-5 shrink-0 text-gray-400" />
+          <div className="flex-1">
+            <p className="text-sm font-medium text-gray-900">Competitor benchmark</p>
+            <p className="text-sm text-gray-500">
+              See how your AI visibility stacks up against competitors, side by side. Part of the
+              Growth plan and up.
+            </p>
+          </div>
+          <Button variant="outline" size="sm" onClick={() => (window.location.href = "/billing")}>
+            Upgrade
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const atLimit = used >= limit;
+  const scoreTone = (s: number) =>
+    s > yourScore ? "text-red-600" : s < yourScore ? "text-emerald-600" : "text-gray-900";
+
+  return (
+    <Card>
+      <CardContent className="space-y-4 py-5">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Swords className="h-4 w-4 text-blue-600" />
+            <h3 className="text-sm font-semibold text-gray-900">Competitor benchmark</h3>
+          </div>
+          <span className="text-xs text-gray-500">
+            {used} / {limit} competitor{limit === 1 ? "" : "s"} today
+          </span>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-xs uppercase tracking-wide text-gray-500">
+                <th className="py-2 pr-4 font-medium">Site</th>
+                <th className="py-2 pr-4 font-medium">Score</th>
+                <th className="py-2 font-medium">Crawlers blocked</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr className="border-t border-gray-100 bg-blue-50/50">
+                <td className="max-w-[240px] truncate py-2 pr-4 font-medium text-gray-900">
+                  {yourUrl} <span className="text-xs font-normal text-blue-600">(you)</span>
+                </td>
+                <td className="py-2 pr-4 font-semibold text-gray-900">{yourScore}</td>
+                <td className="py-2 text-gray-700">
+                  {yourBlocked} / {botTotal}
+                </td>
+              </tr>
+              {rows.map((r) => (
+                <tr key={r.url} className="border-t border-gray-100">
+                  <td className="max-w-[240px] truncate py-2 pr-4 text-gray-700">{r.url}</td>
+                  <td className={`py-2 pr-4 font-semibold ${scoreTone(r.score)}`}>
+                    {r.score} <span className="text-xs font-normal text-gray-400">{r.grade}</span>
+                  </td>
+                  <td className="py-2 text-gray-700">
+                    {r.blocked} / {r.botTotal}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {!atLimit ? (
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+            <Input
+              value={input}
+              onChange={(e: ChangeEvent<HTMLInputElement>) => setInput(e.target.value)}
+              onKeyDown={(e: KeyboardEvent<HTMLInputElement>) => {
+                if (e.key === "Enter") void compare();
+              }}
+              placeholder="competitor.com"
+              className="flex-1"
+            />
+            <Button variant="outline" size="sm" onClick={() => void compare()} disabled={busy}>
+              {busy ? "Auditing…" : "Compare"}
+            </Button>
+          </div>
+        ) : (
+          limit === 1 && (
+            <p className="text-sm text-gray-500">
+              Growth includes 1 competitor per day —{" "}
+              <a href="/billing" className="font-medium text-blue-600 hover:underline">
+                Agency includes 5
+              </a>
+              .
+            </p>
+          )
+        )}
+
+        {err && <p className="text-sm text-red-600">{err}</p>}
+      </CardContent>
+    </Card>
+  );
+}

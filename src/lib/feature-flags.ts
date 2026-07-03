@@ -2,6 +2,7 @@ import type { PlanType } from "@/generated/prisma";
 
 export type Feature =
   | "ai_analysis"
+  | "ai_visibility"
   | "reputation_monitoring"
   | "sso"
   | "api_access"
@@ -14,11 +15,13 @@ export type Feature =
   | "advanced_analytics"
   | "escalation_prediction"
   | "review_authenticity"
-  | "multi_location_intelligence";
+  | "multi_location_intelligence"
+  | "answer_tracking";
 
 const ALL_FEATURES: Feature[] = [
   "review_authenticity",
   "ai_analysis",
+  "ai_visibility",
   "advanced_analytics",
   "escalation_prediction",
   "whitelabel",
@@ -30,6 +33,7 @@ const ALL_FEATURES: Feature[] = [
   "executive_dashboard",
   "sla_guarantee",
   "custom_integrations",
+  "answer_tracking",
   "multi_location_intelligence",
 ];
 
@@ -38,6 +42,7 @@ const PLAN_FEATURES: Record<PlanType, Set<Feature>> = {
   GROWTH: new Set<Feature>([
     "review_authenticity",
     "ai_analysis",
+    "ai_visibility",
     "advanced_analytics",
     "escalation_prediction",
   ]),

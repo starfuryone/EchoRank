@@ -227,7 +227,7 @@ export default function TemplatesPage() {
         <Card>
           <EmptyState
             title={`No ${activeTab.toLowerCase()} templates`}
-            description="Create a template to streamline your feedback collection process."
+            description="Customize the emails and texts your customers receive when you request feedback."
             actionLabel="Create Template"
             onAction={openCreateModal}
             icon={<FileText className="h-12 w-12" />}

@@ -18,6 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { formatDateTime } from "@/lib/utils";
+import { GettingStarted } from "@/components/onboarding/getting-started";
 
 interface Analytics {
   totalSent: number;
@@ -202,6 +203,8 @@ export default function DashboardPage() {
           Help
         </Button>
       </div>
+
+      <GettingStarted />
 
       {/* Stat cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">

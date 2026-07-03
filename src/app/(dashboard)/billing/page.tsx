@@ -80,18 +80,12 @@ export default function BillingPage() {
         if (!res.ok) throw new Error("Failed to load billing data");
         const json = await res.json();
         setBilling({
-          plan: json.plan ?? json.tenant?.planType ?? "STARTER",
-          status: json.status ?? json.tenant?.billingStatus ?? "ACTIVE",
-          currentPeriodEnd:
-            json.currentPeriodEnd ?? json.subscription?.currentPeriodEnd ?? null,
-          requestsUsed:
-            json.requestsUsed ?? json.usage?.feedbackSentThisMonth ?? 0,
-          requestsLimit:
-            json.requestsLimit ?? json.tenant?.monthlyRequestLimit ?? 300,
-          cancelAtPeriodEnd:
-            json.cancelAtPeriodEnd ??
-            json.subscription?.cancelAtPeriodEnd ??
-            false,
+          plan: json.plan?.type ?? "STARTER",
+          status: json.plan?.status ?? "ACTIVE",
+          currentPeriodEnd: json.subscription?.currentPeriodEnd ?? null,
+          requestsUsed: json.usage?.feedbackSent ?? 0,
+          requestsLimit: json.usage?.feedbackLimit ?? 300,
+          cancelAtPeriodEnd: json.subscription?.cancelAtPeriodEnd ?? false,
         });
       } catch (err) {
         setError(err instanceof Error ? err.message : "Something went wrong");
@@ -123,7 +117,18 @@ export default function BillingPage() {
       });
       if (!res.ok) throw new Error("Failed to change plan");
       const json = await res.json();
-      setBilling((prev) => (prev ? { ...prev, plan, ...json } : prev));
+      setBilling((prev) =>
+        prev
+          ? {
+              ...prev,
+              plan: json.plan?.type ?? plan,
+              status: json.plan?.status ?? prev.status,
+              requestsLimit: json.usage?.feedbackLimit ?? prev.requestsLimit,
+              cancelAtPeriodEnd:
+                json.subscription?.cancelAtPeriodEnd ?? prev.cancelAtPeriodEnd,
+            }
+          : prev,
+      );
     } catch {
       alert("Failed to change plan. Please try again.");
     } finally {

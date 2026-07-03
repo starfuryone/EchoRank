@@ -75,6 +75,12 @@ const DEFAULT_JOB_OPTIONS: Record<QueueName, JobsOptions> = {
     removeOnComplete: { age: REDIS_CONFIG.ttl.completedJobs },
     removeOnFail: { age: REDIS_CONFIG.ttl.failedJobs },
   },
+  "visibility-monitoring": {
+    attempts: 2,
+    backoff: { type: "exponential", delay: 30_000 },
+    removeOnComplete: { age: REDIS_CONFIG.ttl.completedJobs },
+    removeOnFail: { age: REDIS_CONFIG.ttl.failedJobs },
+  },
 };
 
 // ─── Queue registry ───────────────────────────────────────────────────────────

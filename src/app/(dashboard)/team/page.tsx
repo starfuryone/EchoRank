@@ -56,7 +56,18 @@ export default function TeamPage() {
       const res = await fetch("/api/team");
       if (!res.ok) throw new Error("Failed to load team members");
       const json = await res.json();
-      setMembers(json.members ?? json.data ?? []);
+      const raw = json.members ?? json.data ?? [];
+      // API returns tenantMember rows with person details nested under `user`.
+      // Flatten to the shape this page renders.
+      const normalized: TeamMember[] = raw.map((m: any) => ({
+        id: m.id,
+        name: m.user?.name ?? m.name ?? m.user?.email ?? m.email ?? "Unknown",
+        email: m.user?.email ?? m.email ?? "",
+        role: m.role ?? "MEMBER",
+        joinedAt: m.user?.createdAt ?? m.createdAt ?? m.joinedAt ?? "",
+        avatarUrl: m.user?.image ?? m.avatarUrl ?? null,
+      }));
+      setMembers(normalized);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
@@ -139,12 +150,12 @@ export default function TeamPage() {
   };
 
   const getInitials = (name: string) =>
-    name
+    (name ?? "")
       .split(" ")
-      .map((n) => n[0])
+      .map((n) => n[0] ?? "")
       .join("")
       .toUpperCase()
-      .slice(0, 2);
+      .slice(0, 2) || "?";
 
   const columns = [
     {

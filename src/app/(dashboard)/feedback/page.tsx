@@ -1,18 +1,13 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
-import {
-  Star,
-  Send,
-  AlertCircle,
-  Eye,
-} from "lucide-react";
+import { useEffect, useState, useCallback, useMemo } from "react";
+import { Star, Send, AlertCircle, Eye, Search, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Select } from "@/components/ui/select";
 import { Modal } from "@/components/ui/modal";
 import { Input } from "@/components/ui/input";
-import { Card, CardHeader, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { formatDateTime } from "@/lib/utils";
 
@@ -39,17 +34,31 @@ const STATUS_BADGE: Record<string, "default" | "success" | "warning" | "danger" 
   EXPIRED: "danger",
 };
 
+/** Accent + tone derived from the rating we actually have. Not AI sentiment. */
+function ratingTone(rating: number | null, status: string): string {
+  if (status === "PENDING") return "border-l-amber-400";
+  if (rating === null) return "border-l-slate-200";
+  if (rating >= 4) return "border-l-emerald-500";
+  if (rating === 3) return "border-l-amber-400";
+  return "border-l-rose-500";
+}
+
+function initialsOf(name: string): string {
+  return (name ?? "")
+    .trim()
+    .split(/\s+/)
+    .map((w) => w[0] ?? "")
+    .slice(0, 2)
+    .join("")
+    .toUpperCase() || "?";
+}
+
 function StarRating({ rating }: { rating: number | null }) {
   if (rating === null) return <span className="text-sm text-gray-400">No rating</span>;
   const color =
-    rating >= 4
-      ? "text-green-500"
-      : rating === 3
-        ? "text-yellow-500"
-        : "text-red-500";
-
+    rating >= 4 ? "text-green-500" : rating === 3 ? "text-yellow-500" : "text-red-500";
   return (
-    <div className="flex items-center gap-0.5">
+    <div className="flex items-center gap-0.5" aria-label={`${rating} out of 5`}>
       {[1, 2, 3, 4, 5].map((s) => (
         <Star
           key={s}
@@ -60,88 +69,84 @@ function StarRating({ rating }: { rating: number | null }) {
   );
 }
 
-function FeedbackLifecycleBanner() {
+/* ------------------------------------------------------------------ */
+/*  Pipeline strip — counts computed from real feedback, not invented  */
+/* ------------------------------------------------------------------ */
+
+function FeedbackPipeline({ items }: { items: FeedbackItem[] }) {
+  const s = useMemo(() => {
+    const sent = items.length;
+    const pending = items.filter((f) => f.status === "PENDING").length;
+    const submitted = items.filter((f) => f.status === "SUBMITTED").length;
+    const promoters = items.filter(
+      (f) => f.status === "SUBMITTED" && (f.rating ?? 0) >= 4
+    ).length;
+    const recovery = items.filter(
+      (f) => f.status === "SUBMITTED" && f.rating !== null && f.rating <= 2
+    ).length;
+    return { sent, pending, submitted, promoters, recovery };
+  }, [items]);
+
+  const nodes: { value: number; label: string; tone: string }[] = [
+    { value: s.sent, label: "Requests sent", tone: "text-gray-900" },
+    { value: s.pending, label: "Awaiting reply", tone: "text-amber-600" },
+    { value: s.submitted, label: "Responded", tone: "text-gray-900" },
+    { value: s.promoters, label: "Promoters (4–5★)", tone: "text-emerald-600" },
+    { value: s.recovery, label: "Needs recovery", tone: "text-rose-600" },
+  ];
+
   return (
     <div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
       <style>{`
-        @keyframes erFbTravel {
-          0%   { offset-distance: 0%; opacity: 0; }
-          6%   { opacity: 1; }
-          94%  { opacity: 1; }
-          100% { offset-distance: 100%; opacity: 0; }
-        }
-        .er-fb-dot {
-          offset-path: path('M150,100 L200,100');
-          animation: erFbTravel 2.4s ease-in-out infinite;
-        }
-        .er-fb-dot2 {
-          offset-path: path('M330,100 L380,100');
-          animation: erFbTravel 2.4s ease-in-out infinite;
-          animation-delay: .8s;
-        }
-        .er-fb-dot3 {
-          offset-path: path('M510,92 C540,92 548,55 580,55');
-          animation: erFbTravel 2.4s ease-in-out infinite;
-          animation-delay: 1.6s;
-        }
-        @media (prefers-reduced-motion: reduce) {
-          .er-fb-dot, .er-fb-dot2, .er-fb-dot3 { animation: none; opacity: 0; }
-        }
+        @keyframes erPipe { 0%{offset-distance:0%;opacity:0} 12%{opacity:1} 88%{opacity:1} 100%{offset-distance:100%;opacity:0} }
+        .er-pipe { position:relative; align-self:center; width:1.5rem; height:2px; background:#e5e7eb; }
+        .er-pipe::after { content:""; position:absolute; top:-2px; width:6px; height:6px; border-radius:9999px; background:#f59e0b;
+          offset-path: path('M0,1 L24,1'); animation: erPipe 2.6s ease-in-out infinite; }
+        .er-pipe.d2::after{animation-delay:.6s}.er-pipe.d3::after{animation-delay:1.2s}.er-pipe.d4::after{animation-delay:1.8s}
+        @media (prefers-reduced-motion: reduce){ .er-pipe::after{animation:none;opacity:0} }
       `}</style>
-      <div className="mb-3 flex items-baseline justify-between">
-        <h3 className="text-sm font-semibold text-gray-900">How a feedback request flows</h3>
-        <span className="text-xs text-gray-500">
-          Every response gets a public review invite
-        </span>
+
+      <div className="mb-4 flex items-baseline justify-between">
+        <h3 className="font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">
+          / Feedback pipeline
+        </h3>
+        <span className="font-mono text-[11px] text-gray-400">Current view</span>
       </div>
-      <svg
-        viewBox="0 0 760 200"
-        className="w-full max-w-3xl"
-        role="img"
-        aria-label="Feedback request lifecycle: Send request, then Pending, then Submitted, then a public review invite, with a recovery follow-up if the rating is low."
-      >
-        <defs>
-          <marker id="erFbAh" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
-            <path d="M0,0 L6,3 L0,6 Z" fill="#94a3b8" />
-          </marker>
-        </defs>
-        <line x1="150" y1="100" x2="200" y2="100" stroke="#cbd5e1" strokeWidth="3" markerEnd="url(#erFbAh)" />
-        <line x1="330" y1="100" x2="380" y2="100" stroke="#cbd5e1" strokeWidth="3" markerEnd="url(#erFbAh)" />
-        <path d="M510,92 C540,92 548,55 580,55" fill="none" stroke="#cbd5e1" strokeWidth="3" markerEnd="url(#erFbAh)" />
-        <path d="M510,108 C540,108 548,150 580,150" fill="none" stroke="#cbd5e1" strokeWidth="3" markerEnd="url(#erFbAh)" />
-        <rect x="30" y="76" width="120" height="48" rx="12" fill="#2563eb" />
-        <text x="90" y="105" textAnchor="middle" fontSize="15" fontWeight="700" fill="#ffffff">Send request</text>
-        <rect x="200" y="76" width="130" height="48" rx="12" fill="#d97706" />
-        <text x="265" y="105" textAnchor="middle" fontSize="15" fontWeight="700" fill="#ffffff">Pending</text>
-        <rect x="380" y="76" width="130" height="48" rx="12" fill="#16a34a" />
-        <text x="445" y="105" textAnchor="middle" fontSize="15" fontWeight="700" fill="#ffffff">Submitted</text>
-        <rect x="580" y="31" width="150" height="48" rx="12" fill="#dcfce7" stroke="#16a34a" strokeWidth="2" />
-        <text x="655" y="60" textAnchor="middle" fontSize="13" fontWeight="700" fill="#15803d">Review invite</text>
-        <rect x="580" y="126" width="150" height="48" rx="12" fill="#fffbeb" stroke="#d97706" strokeWidth="2" />
-        <text x="655" y="148" textAnchor="middle" fontSize="12" fontWeight="700" fill="#b45309">Recovery</text>
-        <text x="655" y="163" textAnchor="middle" fontSize="12" fontWeight="700" fill="#b45309">if needed</text>
-        <circle className="er-fb-dot" r="7" fill="#fbbf24" />
-        <circle className="er-fb-dot2" r="7" fill="#fbbf24" />
-        <circle className="er-fb-dot3" r="7" fill="#fbbf24" />
-      </svg>
-      <p className="mt-3 text-sm leading-relaxed text-gray-600">
-        You send a request; it stays{" "}
-        <span className="font-medium text-amber-700">Pending</span> until the
-        customer responds, then becomes{" "}
-        <span className="font-medium text-green-700">Submitted</span>. Every
-        response &mdash; whatever the rating &mdash; gets a public review invite;
-        a low rating also opens a recovery follow-up for your team.
+
+      <div className="flex flex-col gap-3 md:flex-row md:items-stretch">
+        {nodes.map((n, i) => (
+          <div key={n.label} className="contents md:flex md:flex-1 md:items-stretch md:gap-3">
+            <div className="flex-1 rounded-lg border border-gray-100 bg-gray-50/70 px-4 py-3">
+              <div className={`font-mono text-2xl font-semibold tabular-nums ${n.tone}`}>
+                {n.value.toLocaleString()}
+              </div>
+              <div className="mt-1 text-xs font-medium text-gray-500">{n.label}</div>
+            </div>
+            {i < nodes.length - 1 && <div className={`er-pipe d${i + 1} hidden md:block`} />}
+          </div>
+        ))}
+      </div>
+
+      <p className="mt-4 text-sm leading-relaxed text-gray-500">
+        Every response is sorted as it lands. A 4 or 5 marks a promoter you can invite to post a
+        public review; a 2 or below opens a recovery task so your team reaches the customer first.
       </p>
     </div>
   );
 }
 
+/* ------------------------------------------------------------------ */
+/*  Page                                                               */
+/* ------------------------------------------------------------------ */
+
 export default function FeedbackPage() {
   const [feedback, setFeedback] = useState<FeedbackItem[]>([]);
+  const [summary, setSummary] = useState<FeedbackItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState("all");
   const [ratingFilter, setRatingFilter] = useState("all");
+  const [query, setQuery] = useState("");
   const [detailItem, setDetailItem] = useState<FeedbackItem | null>(null);
   const [sendModalOpen, setSendModalOpen] = useState(false);
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -158,7 +163,18 @@ export default function FeedbackPage() {
       const res = await fetch(`/api/feedback?${params}`);
       if (!res.ok) throw new Error("Failed to load feedback");
       const json = await res.json();
-      setFeedback(json.feedback ?? json.data ?? []);
+      setFeedback(
+        (json.feedback ?? json.data ?? []).map((f: any) => ({
+          id: f.id,
+          customerName: f.customerName ?? f.customer?.name ?? "Unknown",
+          customerEmail: f.customerEmail ?? f.customer?.email ?? null,
+          rating: f.rating ?? null,
+          comment: f.comment ?? null,
+          status: f.status ?? "PENDING",
+          createdAt: f.createdAt ?? "",
+          submittedAt: f.submittedAt ?? null,
+        }))
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
@@ -166,9 +182,26 @@ export default function FeedbackPage() {
     }
   }, [statusFilter, ratingFilter]);
 
+  // Unfiltered pull powers the pipeline counts so the strip does not shift
+  // when you narrow the list below it.
+  const fetchSummary = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/feedback`);
+      if (!res.ok) return;
+      const json = await res.json();
+      setSummary(json.feedback ?? json.data ?? []);
+    } catch {
+      // pipeline simply shows nothing if this fails
+    }
+  }, []);
+
   useEffect(() => {
     fetchFeedback();
   }, [fetchFeedback]);
+
+  useEffect(() => {
+    fetchSummary();
+  }, [fetchSummary]);
 
   const fetchCustomers = async () => {
     try {
@@ -200,6 +233,7 @@ export default function FeedbackPage() {
       setSendModalOpen(false);
       setSelectedCustomerId("");
       fetchFeedback();
+      fetchSummary();
     } catch {
       alert("Failed to send feedback request. Please try again.");
     } finally {
@@ -212,6 +246,31 @@ export default function FeedbackPage() {
       c.name.toLowerCase().includes(customerSearch.toLowerCase()) ||
       (c.email && c.email.toLowerCase().includes(customerSearch.toLowerCase()))
   );
+
+  // Client-side text search over the already-fetched (status/rating-filtered) list.
+  const visible = useMemo(() => {
+    if (!query.trim()) return feedback;
+    const q = query.toLowerCase();
+    return feedback.filter(
+      (f) =>
+        f.customerName.toLowerCase().includes(q) ||
+        (f.customerEmail && f.customerEmail.toLowerCase().includes(q)) ||
+        (f.comment && f.comment.toLowerCase().includes(q))
+    );
+  }, [feedback, query]);
+
+  const isFiltered = statusFilter !== "all" || ratingFilter !== "all" || query.trim().length > 0;
+
+  // Headline metrics from the unfiltered set.
+  const rated = summary.filter((f) => f.rating !== null);
+  const avgRating = rated.length
+    ? (rated.reduce((s, f) => s + (f.rating ?? 0), 0) / rated.length).toFixed(1)
+    : "—";
+  const responseRate = summary.length
+    ? Math.round(
+        (summary.filter((f) => f.status === "SUBMITTED").length / summary.length) * 100
+      )
+    : null;
 
   if (error) {
     return (
@@ -228,18 +287,60 @@ export default function FeedbackPage() {
 
   return (
     <div className="space-y-6">
-      <FeedbackLifecycleBanner />
+      {/* Title + at-a-glance metrics */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h2 className="font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-400">
+            / Intelligence · Feedback
+          </h2>
+          <p className="mt-2 max-w-xl text-sm text-gray-500">
+            Responses across every request, sorted as they arrive.
+          </p>
+        </div>
+        <div className="flex gap-6">
+          <div>
+            <div className="font-mono text-2xl font-semibold tabular-nums text-gray-900">
+              {avgRating}
+            </div>
+            <div className="text-xs text-gray-500">Avg rating</div>
+          </div>
+          <div>
+            <div className="font-mono text-2xl font-semibold tabular-nums text-emerald-600">
+              {responseRate === null ? "—" : `${responseRate}%`}
+            </div>
+            <div className="text-xs text-gray-500">Response rate</div>
+          </div>
+        </div>
+      </div>
+
+      <FeedbackPipeline items={summary} />
 
       {/* Filters and actions */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div className="flex gap-3">
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+        <div className="flex flex-1 flex-wrap items-end gap-3">
+          <div className="min-w-[200px] flex-1">
+            <label
+              htmlFor="feedback-search"
+              className="mb-1 block text-sm font-medium text-gray-700"
+            >
+              Search
+            </label>
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+              <input
+                id="feedback-search"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="Name, email, or comment"
+                className="w-full rounded-lg border border-gray-300 bg-white py-2 pl-9 pr-3 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              />
+            </div>
+          </div>
           <Select
             label="Status"
             id="status-filter"
             value={statusFilter}
-            onChange={(e) => {
-              setStatusFilter(e.target.value);
-            }}
+            onChange={(e) => setStatusFilter(e.target.value)}
             options={[
               { value: "all", label: "All Statuses" },
               { value: "PENDING", label: "Pending" },
@@ -251,9 +352,7 @@ export default function FeedbackPage() {
             label="Rating"
             id="rating-filter"
             value={ratingFilter}
-            onChange={(e) => {
-              setRatingFilter(e.target.value);
-            }}
+            onChange={(e) => setRatingFilter(e.target.value)}
             options={[
               { value: "all", label: "All Ratings" },
               { value: "5", label: "5 Stars" },
@@ -278,63 +377,83 @@ export default function FeedbackPage() {
               <div key={i} className="h-16 animate-pulse rounded bg-gray-100" />
             ))}
           </div>
-        ) : feedback.length === 0 ? (
-          <EmptyState
-            title="No feedback found"
-            description="Send your first feedback request to start collecting reviews."
-            actionLabel="Send Feedback Request"
-            onAction={openSendModal}
-            icon={<Star className="h-12 w-12" />}
-          />
+        ) : visible.length === 0 ? (
+          isFiltered ? (
+            <div className="px-6 py-16 text-center">
+              <Search className="mx-auto mb-3 h-10 w-10 text-gray-300" />
+              <h3 className="text-base font-semibold text-gray-900">Nothing matches</h3>
+              <p className="mx-auto mt-1 max-w-sm text-sm text-gray-500">
+                Widen the status, rating, or search to see more responses.
+              </p>
+            </div>
+          ) : (
+            <EmptyState
+              title="No feedback found"
+              description="Send your first request — happy customers become public reviews, and unhappy ones get caught before they post."
+              actionLabel="Send Feedback Request"
+              onAction={openSendModal}
+              icon={<Star className="h-12 w-12" />}
+            />
+          )
         ) : (
-          <ul className="divide-y divide-gray-200">
-            {feedback.map((fb) => (
-              <li
-                key={fb.id}
-                className="flex items-center gap-4 px-6 py-4 hover:bg-gray-50 cursor-pointer transition-colors"
-                onClick={() => setDetailItem(fb)}
-              >
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-3">
-                    <p className="text-sm font-medium text-gray-900">
-                      {fb.customerName}
-                    </p>
-                    <Badge variant={STATUS_BADGE[fb.status] ?? "default"}>
-                      {fb.status}
-                    </Badge>
+          <ul className="divide-y divide-gray-100">
+            {visible.map((fb) => {
+              const atRisk =
+                fb.status === "SUBMITTED" && fb.rating !== null && fb.rating <= 2;
+              return (
+                <li
+                  key={fb.id}
+                  onClick={() => setDetailItem(fb)}
+                  className={`group flex cursor-pointer items-center gap-4 border-l-4 ${ratingTone(
+                    fb.rating,
+                    fb.status
+                  )} px-5 py-4 transition-colors hover:bg-gray-50`}
+                >
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gray-900 text-xs font-semibold text-white">
+                    {initialsOf(fb.customerName)}
                   </div>
-                  {fb.comment && (
-                    <p className="mt-1 text-sm text-gray-500 truncate max-w-xl">
-                      {fb.comment}
-                    </p>
-                  )}
-                </div>
-                <div className="flex items-center gap-4 shrink-0">
-                  <StarRating rating={fb.rating} />
-                  <span className="text-xs text-gray-400 whitespace-nowrap">
-                    {formatDateTime(fb.createdAt)}
-                  </span>
-                  <Eye className="h-4 w-4 text-gray-400" />
-                </div>
-              </li>
-            ))}
+
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="truncate text-sm font-semibold text-gray-900">
+                        {fb.customerName}
+                      </p>
+                      <Badge variant={STATUS_BADGE[fb.status] ?? "default"}>{fb.status}</Badge>
+                      {atRisk && (
+                        <span className="inline-flex items-center gap-1 rounded-md bg-rose-50 px-2 py-0.5 text-[11px] font-semibold text-rose-700 ring-1 ring-inset ring-rose-600/20">
+                          <AlertCircle className="h-3 w-3" /> At risk
+                        </span>
+                      )}
+                    </div>
+                    {fb.comment && (
+                      <p className="mt-1 line-clamp-1 max-w-xl text-sm text-gray-600">
+                        {fb.comment}
+                      </p>
+                    )}
+                    <div className="mt-1.5 inline-flex items-center gap-1 font-mono text-[11px] text-gray-400">
+                      <Clock className="h-3 w-3" />
+                      {formatDateTime(fb.createdAt)}
+                    </div>
+                  </div>
+
+                  <div className="flex shrink-0 items-center gap-4">
+                    <StarRating rating={fb.rating} />
+                    <Eye className="h-4 w-4 text-gray-300 transition-colors group-hover:text-gray-500" />
+                  </div>
+                </li>
+              );
+            })}
           </ul>
         )}
       </Card>
 
       {/* Detail modal */}
-      <Modal
-        open={!!detailItem}
-        onClose={() => setDetailItem(null)}
-        title="Feedback Details"
-      >
+      <Modal open={!!detailItem} onClose={() => setDetailItem(null)} title="Feedback Details">
         {detailItem && (
           <div className="space-y-4">
             <div>
               <p className="text-sm text-gray-500">Customer</p>
-              <p className="text-sm font-medium text-gray-900">
-                {detailItem.customerName}
-              </p>
+              <p className="text-sm font-medium text-gray-900">{detailItem.customerName}</p>
               {detailItem.customerEmail && (
                 <p className="text-sm text-gray-500">{detailItem.customerEmail}</p>
               )}
@@ -360,16 +479,12 @@ export default function FeedbackPage() {
             <div className="flex gap-6">
               <div>
                 <p className="text-sm text-gray-500">Created</p>
-                <p className="text-sm text-gray-900">
-                  {formatDateTime(detailItem.createdAt)}
-                </p>
+                <p className="text-sm text-gray-900">{formatDateTime(detailItem.createdAt)}</p>
               </div>
               {detailItem.submittedAt && (
                 <div>
                   <p className="text-sm text-gray-500">Submitted</p>
-                  <p className="text-sm text-gray-900">
-                    {formatDateTime(detailItem.submittedAt)}
-                  </p>
+                  <p className="text-sm text-gray-900">{formatDateTime(detailItem.submittedAt)}</p>
                 </div>
               )}
             </div>
@@ -395,28 +510,22 @@ export default function FeedbackPage() {
           </div>
           <div className="max-h-60 overflow-y-auto rounded-lg border border-gray-200">
             {filteredCustomers.length === 0 ? (
-              <div className="py-8 text-center text-sm text-gray-500">
-                No customers found
-              </div>
+              <div className="py-8 text-center text-sm text-gray-500">No customers found</div>
             ) : (
               <ul className="divide-y divide-gray-100">
                 {filteredCustomers.map((c) => (
                   <li
                     key={c.id}
                     onClick={() => setSelectedCustomerId(c.id)}
-                    className={`flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors ${
+                    className={`flex cursor-pointer items-center gap-3 px-4 py-3 transition-colors ${
                       selectedCustomerId === c.id
-                        ? "bg-blue-50 border-l-2 border-l-blue-600"
+                        ? "border-l-2 border-l-blue-600 bg-blue-50"
                         : "hover:bg-gray-50"
                     }`}
                   >
                     <div>
-                      <p className="text-sm font-medium text-gray-900">
-                        {c.name}
-                      </p>
-                      {c.email && (
-                        <p className="text-xs text-gray-500">{c.email}</p>
-                      )}
+                      <p className="text-sm font-medium text-gray-900">{c.name}</p>
+                      {c.email && <p className="text-xs text-gray-500">{c.email}</p>}
                     </div>
                   </li>
                 ))}
@@ -424,18 +533,10 @@ export default function FeedbackPage() {
             )}
           </div>
           <div className="flex justify-end gap-3 pt-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setSendModalOpen(false)}
-            >
+            <Button type="button" variant="outline" onClick={() => setSendModalOpen(false)}>
               Cancel
             </Button>
-            <Button
-              type="submit"
-              loading={sending}
-              disabled={!selectedCustomerId}
-            >
+            <Button type="submit" loading={sending} disabled={!selectedCustomerId}>
               Send Request
             </Button>
           </div>

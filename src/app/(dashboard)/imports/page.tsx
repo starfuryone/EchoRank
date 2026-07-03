@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
+import { ImportsHelpButton } from "@/components/help/ImportsHelpButton";
 
 const CANONICAL_FIELDS = [
   { key: "content", label: "Review text", required: true },
@@ -402,12 +403,15 @@ export default function ImportsPage() {
 
 function PageHeader() {
   return (
-    <div>
-      <h1 className="text-xl font-semibold text-gray-900">Data Sources</h1>
-      <p className="mt-1 text-sm text-gray-500">
-        Import reviews from CSV files. Every imported review runs through the same sentiment,
+    <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-xl font-semibold text-gray-900">Data Sources</h1>
+          <p className="mt-1 text-sm text-gray-500">
+            Import reviews from CSV files. Every imported review runs through the same sentiment,
         risk, and reputation analysis as monitored reviews.
-      </p>
-    </div>
+          </p>
+        </div>
+        <ImportsHelpButton />
+      </div>
   );
 }

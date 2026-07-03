@@ -389,7 +389,7 @@ export default function ReviewLinksPage() {
         ) : links.length === 0 ? (
           <EmptyState
             title="No review links yet"
-            description="Add your review platform links so customers can be directed to leave public reviews."
+            description="Share one link that routes happy customers straight to Google or Facebook to leave a review."
             actionLabel="Add Review Link"
             onAction={openCreateModal}
             icon={<Globe className="h-12 w-12" />}

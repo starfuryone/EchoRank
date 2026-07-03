@@ -268,7 +268,7 @@ export default function CustomersPage() {
             description={
               search
                 ? "Try adjusting your search terms."
-                : "Add your first customer to get started."
+                : "Add customers to start collecting feedback and turning happy ones into public reviews."
             }
             actionLabel={!search ? "Add Customer" : undefined}
             onAction={!search ? () => setModalOpen(true) : undefined}

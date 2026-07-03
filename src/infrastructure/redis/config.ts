@@ -86,6 +86,7 @@ export const REDIS_CONFIG = {
     "analytics-aggregation": { max: 10, duration: 60_000 },
     "feedback-routing": { max: 200, duration: 60_000 },
     "csv-import": { max: 10, duration: 60_000 },
+    "visibility-monitoring": { max: 6, duration: 60_000 },
   } as Record<string, { max: number; duration: number }>,
 } as const;
 
@@ -101,7 +102,8 @@ export type QueueName =
   | "analytics-aggregation"
   | "feedback-routing"
   | "csv-import"
-  | "extension-import";
+  | "extension-import"
+  | "visibility-monitoring";
 
 /** All valid queue names */
 export const QUEUE_NAMES: QueueName[] = [
@@ -116,4 +118,5 @@ export const QUEUE_NAMES: QueueName[] = [
   "feedback-routing",
   "csv-import",
   "extension-import",
-];
+
+  "visibility-monitoring",];

@@ -266,7 +266,7 @@ export default function CampaignsPage() {
         ) : campaigns.length === 0 ? (
           <EmptyState
             title="No campaigns yet"
-            description="Create your first campaign to start collecting feedback at scale."
+            description="Reach many customers at once instead of sending requests one by one."
             actionLabel="Create Campaign"
             onAction={() => setModalOpen(true)}
             icon={<Megaphone className="h-12 w-12" />}

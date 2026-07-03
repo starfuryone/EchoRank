@@ -79,7 +79,7 @@ export const PLAN_CONFIGS: Record<PlanType, PlanConfig> = {
       maxSmsPerMonth: 1000,
       maxWebhooksPerMonth: 5000,
       maxAiInferencesPerMonth: 500,
-      maxMonitoringChecks: 0,
+      maxMonitoringChecks: 60,
       maxApiRequestsPerDay: 1000,
     },
     highlighted: true,

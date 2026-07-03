@@ -1,0 +1,236 @@
+import { Worker, type Job } from "bullmq";
+import { getSubscriberConnection } from "@/infrastructure/redis/connection";
+import { REDIS_CONFIG } from "@/infrastructure/redis/config";
+import type { VisibilityMonitoringJob } from "@/infrastructure/queue/jobs/schemas";
+import { getQueue, addJob } from "@/infrastructure/queue/registry";
+import { prisma } from "@/lib/prisma";
+import { Prisma } from "@/generated/prisma";
+import { sidecarPost } from "@/lib/av-sidecar";
+import { meteringService } from "@/infrastructure/metering/service";
+import { sendVisibilityAlert, type BotFlip } from "@/lib/visibility-alerts";
+import { logger } from "@/infrastructure/observability/logger";
+import { withSpan } from "@/infrastructure/observability/telemetry";
+
+const QUEUE_NAME = "visibility-monitoring";
+const SWEEP_JOB_NAME = "sweep";
+const RUN_JOB_NAME = "run-monitor";
+const SWEEP_INTERVAL_MS = 15 * 60_000; // find due monitors every 15 min
+const SWEEP_BATCH = 25;
+const SCORE_DROP_THRESHOLD = 5; // alert when score falls by more than this
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+interface AuditCheck {
+  category: string;
+  points: number;
+  max: number;
+  status: string;
+  recommendation: string;
+}
+interface AuditBot {
+  status: string;
+  detail: string;
+}
+interface AuditResult {
+  url?: string;
+  score?: number;
+  grade?: string;
+  checks?: AuditCheck[];
+  robots?: { present?: boolean; bots?: Record<string, AuditBot> };
+  error?: string;
+}
+
+/** Enqueue one run job per due monitor. jobId dedupes overlapping sweeps. */
+async function processSweep(): Promise<void> {
+  const due = await prisma.visibilityMonitor.findMany({
+    where: { active: true, nextRunAt: { lte: new Date() } },
+    orderBy: { nextRunAt: "asc" },
+    take: SWEEP_BATCH,
+    select: { id: true, tenantId: true },
+  });
+  if (due.length === 0) return;
+  logger.info({ count: due.length, queue: QUEUE_NAME }, "Sweep: enqueueing due monitors");
+  for (const m of due) {
+    await addJob<VisibilityMonitoringJob>(
+      QUEUE_NAME,
+      RUN_JOB_NAME,
+      { tenantId: m.tenantId, monitorId: m.id },
+      { jobId: `vm-${m.id}`, removeOnComplete: true, removeOnFail: true },
+    );
+  }
+}
+
+async function processMonitorRun(monitorId: string): Promise<void> {
+  const monitor = await prisma.visibilityMonitor.findUnique({ where: { id: monitorId } });
+  if (!monitor || !monitor.active) return;
+
+  const interval = monitor.cadence === "DAILY" ? DAY_MS : 7 * DAY_MS;
+
+  // Config-enforced monitoring quota (plan-config maxMonitoringChecks).
+  const quota = await meteringService.checkQuota(monitor.tenantId, "MONITORING_CHECK", 1);
+  if (!quota.allowed) {
+    logger.warn(
+      { monitorId, tenantId: monitor.tenantId, limit: quota.limit, queue: QUEUE_NAME },
+      "Monitoring quota exhausted - skipping run",
+    );
+    await prisma.visibilityMonitor.update({
+      where: { id: monitor.id },
+      data: { nextRunAt: new Date(Date.now() + interval) },
+    });
+    return;
+  }
+
+  const { status, data } = await sidecarPost<AuditResult>("/audit", { url: monitor.url });
+  if (status !== 200 || typeof data.score !== "number") {
+    logger.error(
+      { monitorId, url: monitor.url, status, error: data.error, queue: QUEUE_NAME },
+      "Audit failed",
+    );
+    // Throw for BullMQ retry; nextRunAt is not advanced, so the next sweep
+    // picks it up again if retries exhaust.
+    throw new Error(`sidecar audit failed (${status})`);
+  }
+
+  const newScore = data.score;
+  const newGrade = data.grade ?? "?";
+  const newBots: Record<string, AuditBot> = data.robots?.bots ?? {};
+  const checks: AuditCheck[] = data.checks ?? [];
+
+  const prev = await prisma.visibilityAudit.findFirst({
+    where: { monitorId },
+    orderBy: { createdAt: "desc" },
+    select: { score: true, bots: true },
+  });
+
+  await prisma.visibilityAudit.create({
+    data: {
+      tenantId: monitor.tenantId,
+      monitorId: monitor.id,
+      url: data.url ?? monitor.url,
+      score: newScore,
+      grade: newGrade,
+      checks: checks as unknown as Prisma.InputJsonValue,
+      bots: newBots as unknown as Prisma.InputJsonValue,
+      raw: data as unknown as Prisma.InputJsonValue,
+    },
+  });
+
+  await prisma.visibilityMonitor.update({
+    where: { id: monitor.id },
+    data: {
+      lastRunAt: new Date(),
+      lastScore: newScore,
+      lastGrade: newGrade,
+      nextRunAt: new Date(Date.now() + interval),
+    },
+  });
+
+  await meteringService.record(monitor.tenantId, "MONITORING_CHECK", 1, {
+    monitorId: monitor.id,
+    url: monitor.url,
+    source: "visibility",
+  });
+
+  // ── Diff vs previous run ──────────────────────────────────────────────────
+  if (!prev) {
+    logger.info({ monitorId, score: newScore, queue: QUEUE_NAME }, "Baseline audit stored");
+    return;
+  }
+  const prevBots = (prev.bots ?? {}) as Record<string, Partial<AuditBot>>;
+  const flippedBlocked: BotFlip[] = [];
+  const flippedAllowed: string[] = [];
+  for (const [bot, info] of Object.entries(newBots)) {
+    const was = prevBots[bot]?.status;
+    if (was === "ALLOWED" && info.status !== "ALLOWED") {
+      flippedBlocked.push({ bot, detail: info.detail || info.status });
+    } else if (was && was !== "ALLOWED" && info.status === "ALLOWED") {
+      flippedAllowed.push(bot);
+    }
+  }
+  const dropped = newScore < prev.score - SCORE_DROP_THRESHOLD;
+
+  logger.info(
+    {
+      monitorId,
+      url: monitor.url,
+      score: `${prev.score} -> ${newScore}`,
+      flippedBlocked: flippedBlocked.length,
+      queue: QUEUE_NAME,
+    },
+    "Monitor run complete",
+  );
+
+  if (dropped || flippedBlocked.length > 0) {
+    await sendVisibilityAlert({
+      tenantId: monitor.tenantId,
+      url: monitor.url,
+      prevScore: prev.score,
+      newScore,
+      newGrade,
+      flippedBlocked,
+      flippedAllowed,
+      failingChecks: checks
+        .filter((c) => c.recommendation)
+        .slice(0, 3)
+        .map((c) => ({ category: c.category, recommendation: c.recommendation })),
+    });
+  }
+}
+
+async function processVisibilityJob(job: Job<VisibilityMonitoringJob>): Promise<void> {
+  await withSpan("visibility-monitoring.process", async () => {
+    if (job.data.sweep) return processSweep();
+    if (job.data.monitorId) return processMonitorRun(job.data.monitorId);
+    logger.warn({ jobId: job.id, queue: QUEUE_NAME }, "Job without sweep flag or monitorId");
+  });
+}
+
+// ─── Worker Factory ───────────────────────────────────────────────────────────
+
+let worker: Worker<VisibilityMonitoringJob> | null = null;
+
+export function startVisibilityMonitoringWorker(): Worker<VisibilityMonitoringJob> {
+  if (worker) return worker;
+
+  worker = new Worker<VisibilityMonitoringJob>(QUEUE_NAME, processVisibilityJob, {
+    connection: getSubscriberConnection(),
+    prefix: REDIS_CONFIG.queues.prefix,
+    concurrency: 3,
+  });
+
+  // Repeatable sweep. BullMQ dedupes the repeat config across restarts.
+  getQueue(QUEUE_NAME)
+    .add(
+      SWEEP_JOB_NAME,
+      { sweep: true },
+      {
+        repeat: { every: SWEEP_INTERVAL_MS },
+        removeOnComplete: true,
+        removeOnFail: { count: 50 },
+      },
+    )
+    .catch((err) => {
+      logger.error({ err, queue: QUEUE_NAME }, "Failed to schedule visibility sweep");
+    });
+
+  worker.on("completed", (job) => {
+    logger.info({ jobId: job.id, queue: QUEUE_NAME }, "Job completed");
+  });
+  worker.on("failed", (job, err) => {
+    logger.error({ jobId: job?.id, attempt: job?.attemptsMade, err, queue: QUEUE_NAME }, "Job failed");
+  });
+  worker.on("error", (err) => {
+    logger.error({ err, queue: QUEUE_NAME }, "Worker error");
+  });
+
+  logger.info({ queue: QUEUE_NAME }, "Worker started");
+  return worker;
+}
+
+export async function stopVisibilityMonitoringWorker(): Promise<void> {
+  if (worker) {
+    await worker.close();
+    worker = null;
+    logger.info({ queue: QUEUE_NAME }, "Worker stopped");
+  }
+}

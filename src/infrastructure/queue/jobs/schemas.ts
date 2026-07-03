@@ -134,6 +134,18 @@ export interface ExtensionImportJob extends BaseJob {
 
 // ─── Union Type ───────────────────────────────────────────────────────────────
 
+// ─── Visibility Monitoring ────────────────────────────────────────────────────
+
+export interface VisibilityMonitoringJob {
+  /** Present on per-monitor runs; absent on the repeatable sweep tick. */
+  tenantId?: string;
+  monitorId?: string;
+  sweep?: boolean;
+  promptSweep?: boolean;
+  promptTenantId?: string;
+  correlationId?: string;
+}
+
 export type AllJobTypes =
   | EmailDeliveryJob
   | SmsDeliveryJob
@@ -145,7 +157,8 @@ export type AllJobTypes =
   | AnalyticsAggregationJob
   | FeedbackRoutingJob
   | CsvImportJob
-  | ExtensionImportJob;
+  | ExtensionImportJob
+  | VisibilityMonitoringJob;
 
 // ─── Queue → Job Type mapping ─────────────────────────────────────────────────
 
@@ -161,4 +174,5 @@ export interface QueueJobMap {
   "feedback-routing": FeedbackRoutingJob;
   "csv-import": CsvImportJob;
   "extension-import": ExtensionImportJob;
+  "visibility-monitoring": VisibilityMonitoringJob;
 }

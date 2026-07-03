@@ -156,7 +156,13 @@ export default function RecoveryPage() {
       const res = await fetch(`/api/recovery?${params}`);
       if (!res.ok) throw new Error("Failed to load recovery tickets");
       const json = await res.json();
-      setTickets(json.tickets ?? json.data ?? []);
+      setTickets(
+        (json.tickets ?? json.data ?? []).map((t: any) => ({
+          ...t,
+          customerName: t.customerName ?? t.customer?.name ?? "Unknown",
+          customerEmail: t.customerEmail ?? t.customer?.email ?? null,
+        }))
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
     } finally {
@@ -319,8 +325,8 @@ export default function RecoveryPage() {
           </div>
         ) : tickets.length === 0 ? (
           <EmptyState
-            title="No recovery tickets"
-            description="Recovery tickets are created automatically when customers leave low ratings."
+            title="You're all caught up"
+            description="No unhappy customers to reach right now. When someone leaves a low rating, they'll appear here so you can respond before it goes public."
             icon={<HeartHandshake className="h-12 w-12" />}
           />
         ) : (

@@ -156,8 +156,14 @@ model Tenant {
   customDomain        String?
   createdAt           DateTime      @default(now())
   updatedAt           DateTime      @updatedAt
+  welcomeSeenAt         DateTime?
+  onboardingDismissedAt DateTime?
 
   members             TenantMember[]
+  visibilityMonitors  VisibilityMonitor[]
+  visibilityAudits    VisibilityAudit[]
+  trackedPrompts      TrackedPrompt[]
+  promptRuns          PromptRun[]
   customers           Customer[]
   feedback            Feedback[]
   reviewLinks         ReviewLink[]
@@ -960,4 +966,92 @@ model ExtensionToken {
   @@index([userId])
   @@index([tokenHash])
   @@map("extension_tokens")
+}
+
+enum VisibilityCadence {
+  DAILY
+  WEEKLY
+}
+
+model VisibilityMonitor {
+  id        String            @id @default(cuid())
+  tenantId  String
+  url       String
+  cadence   VisibilityCadence @default(WEEKLY)
+  active    Boolean           @default(true)
+  lastRunAt DateTime?
+  nextRunAt DateTime          @default(now())
+  // Snapshot of the last completed audit for cheap diffing + list views.
+  lastScore Int?
+  lastGrade String?
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+
+  tenant Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  audits VisibilityAudit[]
+
+  @@unique([tenantId, url])
+  @@index([active, nextRunAt])
+  @@map("visibility_monitors")
+}
+
+model VisibilityAudit {
+  id        String  @id @default(cuid())
+  tenantId  String
+  monitorId String?
+  url       String
+  score     Int
+  grade     String
+  // checks[] and robots.bots snapshots from the sidecar, for diffing + trend UI.
+  checks    Json
+  bots      Json
+  raw       Json?
+  createdAt DateTime @default(now())
+
+  tenant  Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  monitor VisibilityMonitor? @relation(fields: [monitorId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId, createdAt])
+  @@index([monitorId, createdAt])
+  @@map("visibility_audits")
+}
+
+model TrackedPrompt {
+  id        String   @id @default(cuid())
+  tenantId  String
+  text      String
+  active    Boolean  @default(true)
+  lastRunAt DateTime?
+  nextRunAt DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  runs   PromptRun[]
+
+  @@unique([tenantId, text])
+  @@index([active, nextRunAt])
+  @@map("tracked_prompts")
+}
+
+model PromptRun {
+  id             String  @id @default(cuid())
+  tenantId       String
+  promptId       String
+  engine         String  @default("claude")
+  model          String
+  brandMentioned Boolean
+  brandRank      Int?
+  // [{name, mentioned}] snapshot at run time.
+  competitors    Json
+  excerpt        String? @db.Text
+  error          String?
+  createdAt      DateTime @default(now())
+
+  tenant Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  prompt TrackedPrompt @relation(fields: [promptId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, createdAt])
+  @@index([promptId, createdAt])
+  @@map("prompt_runs")
 }

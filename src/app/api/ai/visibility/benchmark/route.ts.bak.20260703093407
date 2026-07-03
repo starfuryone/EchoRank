@@ -1,0 +1,62 @@
+import { NextResponse } from "next/server";
+import { requireTenant } from "@/lib/tenant";
+import { requireFeature, enforcementErrorResponse } from "@/lib/plan-enforcement";
+import { sidecarPost } from "@/lib/av-sidecar";
+
+/**
+ * Competitor benchmark (GROWTH+): runs the same sidecar audit against a
+ * competitor URL and returns a trimmed comparison shape. The public /audit
+ * route stays ungated (lead magnet); comparisons are the paid path.
+ */
+
+interface AuditBot {
+  status: string;
+  detail: string;
+}
+interface AuditResult {
+  url?: string;
+  score?: number;
+  grade?: string;
+  robots?: { bots?: Record<string, AuditBot> };
+  error?: string;
+}
+
+export async function POST(req: Request) {
+  try {
+    await requireTenant();
+    await requireFeature("ai_visibility");
+
+    const body = await req.json().catch(() => ({}));
+    const url = typeof body.url === "string" ? body.url.trim() : "";
+    if (!url || url.length > 300 || /\s/.test(url)) {
+      return NextResponse.json({ error: "A valid url is required." }, { status: 400 });
+    }
+
+    const { status, data } = await sidecarPost<AuditResult>("/audit", { url });
+    if (status !== 200 || typeof data.score !== "number") {
+      return NextResponse.json(
+        { error: data.error || "Could not audit that site." },
+        { status: status === 200 ? 502 : status },
+      );
+    }
+
+    const bots = data.robots?.bots ?? {};
+    const botTotal = Object.keys(bots).length;
+    const blocked = Object.values(bots).filter((b) => b.status === "BLOCKED").length;
+
+    return NextResponse.json({
+      result: {
+        url: data.url ?? url,
+        score: data.score,
+        grade: data.grade ?? "?",
+        blocked,
+        botTotal,
+      },
+    });
+  } catch (error) {
+    const resp = enforcementErrorResponse(error);
+    if (resp) return resp;
+    console.error("[visibility/benchmark POST]", error);
+    return NextResponse.json({ error: "Benchmark failed." }, { status: 500 });
+  }
+}
