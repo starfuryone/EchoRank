@@ -5,6 +5,7 @@ import { getRedisConnection } from '@/infrastructure/redis/connection';
 import { computeAndPersist } from '../lib/signals/scoring';
 import { syncRecentSignals } from '../lib/signals/sync';
 import { evaluateAlerts, previousScore, flushUnnotified } from '../lib/signals/alerts';
+import { runCompetitorSweep } from '../lib/signals/competitors';
 
 async function recomputeAll(): Promise<number> {
   const synced = await syncRecentSignals(2);
@@ -44,6 +45,15 @@ export function startSignalsWorker(): Worker {
         const n = await recomputeAll();
         return { tenants: n };
       }
+      if (job.name === 'competitor-sweep') {
+        const n = await runCompetitorSweep();
+        return { tenants: n };
+      }
+      if (job.name === 'competitor-sweep-tenant') {
+        const { tenantId } = job.data as { tenantId: string };
+        const n = await runCompetitorSweep(tenantId);
+        return { tenants: n };
+      }
     },
     { connection: getRedisConnection(), concurrency: 2 },
   );
@@ -56,6 +66,9 @@ export function startSignalsWorker(): Worker {
   riskQueue()
     .add('recompute-all', {}, { repeat: { pattern: '0 * * * *' }, jobId: 'recompute-hourly' })
     .catch((err) => console.error('[signals] schedule failed:', (err as Error).message));
+  riskQueue()
+    .add('competitor-sweep', {}, { repeat: { pattern: '30 6 * * *' }, jobId: 'competitor-daily' })
+    .catch((err) => console.error('[signals] competitor schedule failed:', (err as Error).message));
 
   console.log('[signals] risk worker started (hourly sweep + on-demand)');
   return worker;

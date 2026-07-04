@@ -18,7 +18,7 @@ export async function enqueueRecompute(tenantId: string): Promise<void> {
     await riskQueue().add(
       'recompute-tenant',
       { tenantId },
-      { jobId: `recompute-${tenantId}`, removeOnComplete: 100, removeOnFail: 50, delay: 5_000 },
+      { jobId: `recompute-${tenantId}`, removeOnComplete: true, removeOnFail: 50, delay: 5_000 },
     );
   } catch (err) {
     console.error('[signals] enqueueRecompute failed (non-fatal):', (err as Error).message);

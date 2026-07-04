@@ -1132,39 +1132,3 @@ model TenantRiskConfig {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 }
-// ─────────────────────────────────────────────────────────────
-// PHASE 3 — Competitor + CompetitorSnapshot
-// deploy-phase3.sh appends this automatically (with backup).
-// ─────────────────────────────────────────────────────────────
-
-model Competitor {
-  id        String   @id @default(cuid())
-  tenantId  String
-  name      String
-  placeId   String?  // Google Places (v1) id → automated daily snapshots
-  platform  String   @default("google")
-  notes     String?
-  active    Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  snapshots CompetitorSnapshot[]
-
-  @@unique([tenantId, placeId])
-  @@index([tenantId, active])
-}
-
-model CompetitorSnapshot {
-  id           String   @id @default(cuid())
-  competitorId String
-  day          DateTime @db.Date
-  rating       Float?
-  reviewCount  Int?
-  raw          Json?
-  createdAt    DateTime @default(now())
-
-  competitor Competitor @relation(fields: [competitorId], references: [id], onDelete: Cascade)
-
-  @@unique([competitorId, day])
-  @@index([competitorId, day(sort: Desc)])
-}

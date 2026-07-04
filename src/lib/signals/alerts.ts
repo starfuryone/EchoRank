@@ -44,7 +44,7 @@ async function scoreDaysAgo(tenantId: string, days: number): Promise<number | nu
 }
 
 /** Create unless dedupeKey exists. Returns the event or null on duplicate. */
-async function createEvent(e: {
+export async function createEvent(e: {
   tenantId: string;
   kind: string;
   severity: 'warning' | 'critical';
