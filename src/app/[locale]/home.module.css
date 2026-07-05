@@ -498,3 +498,6 @@
 
 /* CTA under a how-it-works step */
 .stepCtaRow { margin-top: 16px; }
+
+/* link + CTA row under each how-it-works step */
+.stepLinks { margin-top: 14px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
