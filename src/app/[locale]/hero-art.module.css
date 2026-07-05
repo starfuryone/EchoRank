@@ -1,0 +1,45 @@
+.art { width: 100%; max-width: 380px; height: auto; }
+.ln { stroke: rgba(var(--fg-rgb), 0.3); fill: none; stroke-width: 1; }
+.lnFaint { stroke: rgba(var(--fg-rgb), 0.15); fill: none; stroke-width: 1; }
+.gold { stroke: #c9971c; fill: none; stroke-width: 1.5; }
+.goldFill { fill: #c9971c; }
+
+/* visibility: radar sweep + ping */
+.sweep { transform-origin: 160px 120px; animation: artSpin 6s linear infinite; }
+@keyframes artSpin { to { transform: rotate(360deg); } }
+.ping { transform-origin: 215px 85px; animation: artPing 2.4s ease-out infinite; }
+@keyframes artPing { 0% { opacity: .7; transform: scale(.2); } 70% { opacity: 0; transform: scale(1); } 100% { opacity: 0; transform: scale(1); } }
+
+/* risk: gauge needle */
+.needle { transform-origin: 160px 150px; animation: artNeedle 3.6s ease-in-out infinite alternate; }
+@keyframes artNeedle { from { transform: rotate(-52deg); } to { transform: rotate(38deg); } }
+
+/* feedback: bubble cascade + star */
+.b1, .b2, .b3, .star { animation: artAppear 6s ease-in-out infinite; opacity: 0; }
+.b2 { animation-delay: .9s; }
+.b3 { animation-delay: 1.8s; }
+.star { animation-delay: 2.6s; transform-origin: 254px 108px; }
+@keyframes artAppear { 0% { opacity: 0; } 12%, 78% { opacity: 1; } 92%, 100% { opacity: 0; } }
+
+/* engine: flowing ring + hub pulse */
+.flow { stroke-dasharray: 6 10; animation: artFlow 1.4s linear infinite; }
+@keyframes artFlow { to { stroke-dashoffset: -32; } }
+.hub { animation: artHub 2.8s ease-in-out infinite; transform-origin: 160px 115px; }
+@keyframes artHub { 0%, 100% { opacity: .55; } 50% { opacity: 1; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .sweep, .ping, .needle, .b1, .b2, .b3, .star, .flow, .hub { animation: none; opacity: 1; }
+}
+
+/* monitor: pulse line draw + peak dot */
+.draw { stroke-dasharray: 340; stroke-dashoffset: 340; animation: artDraw 3.2s ease-in-out infinite alternate; }
+@keyframes artDraw { to { stroke-dashoffset: 0; } }
+.peak { animation: artHub 1.6s ease-in-out infinite; transform-origin: 178px 96px; }
+
+/* act: check draw */
+.check { stroke-dasharray: 60; stroke-dashoffset: 60; animation: artCheck 3s ease-in-out infinite alternate; }
+@keyframes artCheck { 40% { stroke-dashoffset: 60; } 100% { stroke-dashoffset: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .draw, .peak, .check { animation: none; stroke-dashoffset: 0; opacity: 1; }
+}

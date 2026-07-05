@@ -462,3 +462,39 @@
 .priceCellHi .priceAmount {
   color: var(--gold);
 }
+
+/* ── Hero media (16:9 video beside copy) ─────────────────────────────── */
+.heroGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 520px);
+  gap: 48px;
+  align-items: center;
+}
+.heroCopy,
+.heroMedia {
+  min-width: 0;
+}
+.heroVideo {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  display: block;
+  object-fit: cover;
+  border-radius: 12px;
+  border: 0.5px solid var(--hairline);
+  background: rgba(var(--fg-rgb), 0.04);
+}
+@media (max-width: 900px) {
+  .heroGrid {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+}
+
+/* platform body size override */
+.cellBody {
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+/* CTA under a how-it-works step */
+.stepCtaRow { margin-top: 16px; }

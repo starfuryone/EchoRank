@@ -47,7 +47,7 @@ function digestHtml(label: string, events: CreatedAlert[]): string {
   return `<div style="background:#09090b;padding:24px;font-family:-apple-system,Segoe UI,sans-serif;">
     <div style="max-width:560px;margin:0 auto;background:#18181b;border:1px solid #27272a;border-radius:8px;overflow:hidden;">
       <div style="padding:16px 20px;border-bottom:1px solid #27272a;">
-        <div style="color:#2dd4bf;font-size:11px;letter-spacing:2px;font-family:monospace;">ECHORANK360 · REPUTATION INTELLIGENCE</div>
+        <div style="color:#2dd4bf;font-size:11px;letter-spacing:2px;font-family:monospace;">ECHORANK · REPUTATION INTELLIGENCE</div>
         <div style="color:#fafafa;font-size:16px;font-weight:600;margin-top:4px;">Risk alerts — ${label}</div>
       </div>
       <table style="width:100%;border-collapse:collapse;">${rows}</table>

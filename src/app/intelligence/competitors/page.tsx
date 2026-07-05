@@ -1,6 +1,6 @@
 import CompetitorsPanel from '../../../components/intelligence/CompetitorsPanel';
 
-export const metadata = { title: 'Competitor Intelligence — EchoRank360' };
+export const metadata = { title: 'Competitor Intelligence — EchoRank' };
 
 export default function CompetitorsPage() {
   return (

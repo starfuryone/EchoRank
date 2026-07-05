@@ -1,0 +1,196 @@
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
+import Link from "next/link";
+import { SUPPORTED_LOCALES, isSupportedLocale, type Locale } from "@/lib/i18n/config";
+import { CONTENT } from "@/lib/i18n/content";
+import lp from "../legal.module.css";
+import BackButton from "../back-button";
+
+export function generateStaticParams() {
+  return SUPPORTED_LOCALES.map((locale) => ({ locale }));
+}
+
+type Doc = { title: string; updated: string; sections: { h: string; ps: string[] }[] };
+
+const EN: Doc = {
+  title: "Privacy Policy",
+  updated: "Last updated: July 5, 2026",
+  sections: [
+    { h: "1. Who we are", ps: [
+      "EchoRank (echorank360.com, the \"Service\") is operated by ChatLogic Insights Ltd, a company registered in England and Wales under company number 15593166 (\"ChatLogic\", \"we\", \"us\"). Registered office: as recorded on the Companies House register for company 15593166.",
+      "EchoRank is not available to residents of the United Kingdom (England, Scotland, Wales and Northern Ireland).",
+      "For any privacy matter, contact privacy@echorank360.com.",
+    ]},
+    { h: "2. Our two roles", ps: [
+      "For data about you as a visitor or account holder (your name, email, billing details, usage of the Service), we act as the data controller.",
+      "For data your business uploads or collects through the Service about your own customers, such as contact lists, feedback, review requests and related records (\"Customer Content\"), we act as a processor (a \"service provider\" under US state laws) on your instructions. You remain the controller of Customer Content and are responsible for having a lawful basis and any required consents to submit it.",
+    ]},
+    { h: "3. Data we collect", ps: [
+      "Account data: name, email address, business name, password (stored hashed).",
+      "Billing data: plan, transaction history. Card details are handled by our payment processor and never stored on our servers.",
+      "Usage and technical data: log data, IP address, browser type, pages viewed, cookie identifiers, and approximate location derived from IP for language and currency purposes.",
+      "Customer Content: whatever your business submits, typically end-customer names, email addresses, phone numbers, feedback and review data.",
+      "Public review data: reviews and business information collected from public platforms (for example Google) for the accounts and competitors you configure.",
+    ]},
+    { h: "4. Why we process it and legal bases", ps: [
+      "To provide and secure the Service (performance of a contract); to bill you (contract and legal obligation); to improve and protect the Service, prevent abuse and measure performance (legitimate interests); to send service messages (contract) and, only with your consent where required, marketing messages; to comply with law (legal obligation).",
+      "For Customer Content we process only to provide the Service to you, under our agreement with you.",
+    ]},
+    { h: "5. AI processing", ps: [
+      "Parts of the Service use artificial intelligence, for example sentiment analysis, response drafting and AI visibility checks. Relevant content may be transmitted to AI infrastructure providers, such as Anthropic, strictly to provide these features. We do not use your data to train our own models, and we configure providers so submitted content is used to deliver the requested output.",
+      "AI outputs can be inaccurate. Review them before relying on or publishing them.",
+    ]},
+    { h: "6. Sharing and sub-processors", ps: [
+      "We share data only with providers needed to run the Service: Brevo (transactional email and SMS), Stripe (payments), Cloudflare (content delivery and security), Google (business and review data via its APIs), Anthropic (AI processing), and our hosting provider (servers located in the United States). Each is bound by contractual data-protection terms.",
+      "We may also disclose data where required by law, to protect rights and safety, or as part of a corporate transaction with equivalent protections. We do not sell personal information, and we do not share it for cross-context behavioural advertising.",
+    ]},
+    { h: "7. International transfers", ps: [
+      "The Service is hosted in the United States, and our providers may process data in other countries. Where data protected by UK or EU law is transferred internationally, we rely on appropriate safeguards such as the UK International Data Transfer Agreement or Addendum and the EU Standard Contractual Clauses, or an applicable adequacy decision.",
+    ]},
+    { h: "8. Retention", ps: [
+      "Account and billing data are kept for the life of your account and as required afterwards for legal, tax and accounting purposes. Customer Content is kept while your subscription is active and deleted or returned following account closure, subject to a short backup cycle. Log data is kept for a limited period for security and diagnostics.",
+    ]},
+    { h: "9. Security", ps: [
+      "We apply technical and organisational measures appropriate to the risk, including encryption in transit, access controls, hashed credentials and segregated infrastructure. No system is perfectly secure; notify us immediately of any suspected compromise of your account.",
+    ]},
+    { h: "10. Your rights (EEA and UK)", ps: [
+      "If you are in the European Economic Area or the United Kingdom, you have the rights of access, rectification, erasure, restriction, portability and objection, and the right to withdraw consent where processing is based on consent. Contact privacy@echorank360.com to exercise them.",
+      "You may lodge a complaint with your supervisory authority, including the UK Information Commissioner's Office (ico.org.uk) or the authority in your EU member state.",
+    ]},
+    { h: "11. Your rights (United States)", ps: [
+      "Depending on your state (including California, Colorado, Connecticut, Texas, Virginia and others), you may have rights to know, access, correct and delete personal information, and to opt out of sale, sharing or targeted advertising. We do not sell personal information or share it for cross-context behavioural advertising, and we do not use sensitive personal information beyond what is necessary to provide the Service.",
+      "To exercise these rights, or to appeal a decision, contact privacy@echorank360.com. We will not discriminate against you for exercising them. Authorised agents may submit requests with proof of authorisation.",
+    ]},
+    { h: "12. Canada and Québec", ps: [
+      "For Canadian users, we comply with PIPEDA and, for Québec residents, with the Act respecting the protection of personal information in the private sector as amended by Law 25. You have the right to access and rectify your personal information, to withdraw consent, and, in Québec, to request cessation of dissemination or de-indexing and to receive computerised personal information you provided in a structured, commonly used technological format.",
+      "The person in charge of the protection of personal information is the company director, reachable at privacy@echorank360.com. Personal information may be processed outside Québec and Canada, including in the United States and the United Kingdom, under contractual protections. Unresolved concerns may be addressed to the Commission d'accès à l'information du Québec or the Office of the Privacy Commissioner of Canada.",
+    ]},
+    { h: "13. Cookies", ps: [
+      "We use strictly necessary cookies (session, security, language and currency preference such as echorank_locale) and minimal performance measurement via Cloudflare. We do not use advertising cookies. You can control cookies through your browser; blocking essential cookies may break sign-in.",
+    ]},
+    { h: "14. Children", ps: [
+      "The Service is for businesses and is not directed to children under 16. We do not knowingly collect their data; if you believe a child has provided data, contact us and we will delete it.",
+    ]},
+    { h: "15. Changes and contact", ps: [
+      "We may update this policy and will post the new version here with a revised date, with additional notice for material changes. Questions and requests: privacy@echorank360.com.",
+    ]},
+  ],
+};
+
+const FR: Doc = {
+  title: "Politique de confidentialité",
+  updated: "Dernière mise à jour : 5 juillet 2026",
+  sections: [
+    { h: "1. Qui nous sommes", ps: [
+      "EchoRank (echorank360.com, le « Service ») est exploité par ChatLogic Insights Ltd, société immatriculée en Angleterre et au Pays de Galles sous le numéro 15593166 (« ChatLogic », « nous »). Siège social : tel qu'inscrit au registre Companies House pour la société 15593166.",
+      "EchoRank n'est pas offert aux résidents du Royaume-Uni (Angleterre, Écosse, pays de Galles et Irlande du Nord).",
+      "Pour toute question relative à la vie privée : privacy@echorank360.com.",
+    ]},
+    { h: "2. Nos deux rôles", ps: [
+      "Pour les données vous concernant en tant que visiteur ou titulaire de compte (nom, courriel, facturation, utilisation du Service), nous agissons comme responsable du traitement.",
+      "Pour les données que votre entreprise téléverse ou collecte via le Service au sujet de ses propres clients (listes de contacts, retours, demandes d'avis, le « Contenu Client »), nous agissons comme sous-traitant, selon vos instructions. Vous demeurez responsable du Contenu Client et devez disposer d'une base légale et des consentements requis.",
+    ]},
+    { h: "3. Données collectées", ps: [
+      "Données de compte : nom, adresse courriel, nom d'entreprise, mot de passe (stocké haché).",
+      "Données de facturation : forfait, historique des transactions. Les données de carte sont traitées par notre prestataire de paiement et ne sont jamais stockées sur nos serveurs.",
+      "Données techniques et d'utilisation : journaux, adresse IP, type de navigateur, pages consultées, identifiants de témoins (cookies) et localisation approximative dérivée de l'IP pour la langue et la devise.",
+      "Contenu Client : ce que votre entreprise soumet, typiquement noms, courriels, numéros de téléphone, retours et données d'avis de vos clients.",
+      "Données d'avis publics : avis et informations d'entreprise collectés sur des plateformes publiques (par exemple Google) pour les comptes et concurrents que vous configurez.",
+    ]},
+    { h: "4. Finalités et bases légales", ps: [
+      "Fournir et sécuriser le Service (exécution du contrat) ; facturer (contrat et obligation légale) ; améliorer et protéger le Service, prévenir les abus, mesurer la performance (intérêt légitime) ; envoyer des messages de service (contrat) et, uniquement avec votre consentement lorsque requis, des messages marketing ; respecter la loi (obligation légale).",
+      "Le Contenu Client n'est traité que pour vous fournir le Service, conformément à notre contrat.",
+    ]},
+    { h: "5. Traitement par IA", ps: [
+      "Certaines fonctions utilisent l'intelligence artificielle, par exemple l'analyse de sentiment, la rédaction de réponses et les vérifications de visibilité IA. Les contenus pertinents peuvent être transmis à des fournisseurs d'infrastructure IA, comme Anthropic, strictement pour fournir ces fonctions. Nous n'utilisons pas vos données pour entraîner nos propres modèles.",
+      "Les résultats d'IA peuvent être inexacts. Vérifiez-les avant de vous y fier ou de les publier.",
+    ]},
+    { h: "6. Partage et sous-traitants", ps: [
+      "Nous ne partageons les données qu'avec les prestataires nécessaires au Service : Brevo (courriels et SMS transactionnels), Stripe (paiements), Cloudflare (diffusion et sécurité), Google (données d'entreprise et d'avis via ses API), Anthropic (traitement IA) et notre hébergeur (serveurs situés aux États-Unis). Chacun est lié par des engagements contractuels de protection des données.",
+      "Nous pouvons aussi divulguer des données lorsque la loi l'exige, pour protéger des droits et la sécurité, ou dans le cadre d'une opération d'entreprise assortie de protections équivalentes. Nous ne vendons pas de renseignements personnels et ne les partageons pas à des fins de publicité comportementale intercontexte.",
+    ]},
+    { h: "7. Transferts internationaux", ps: [
+      "Le Service est hébergé aux États-Unis et nos prestataires peuvent traiter des données dans d'autres pays. Lorsque des données protégées par le droit du Royaume-Uni ou de l'UE sont transférées à l'international, nous nous appuyons sur des garanties appropriées, telles que l'accord de transfert international du Royaume-Uni ou les clauses contractuelles types de l'UE, ou sur une décision d'adéquation applicable.",
+    ]},
+    { h: "8. Conservation", ps: [
+      "Les données de compte et de facturation sont conservées pendant la durée du compte, puis selon les obligations légales, fiscales et comptables. Le Contenu Client est conservé tant que l'abonnement est actif, puis supprimé ou restitué après la fermeture du compte, sous réserve d'un court cycle de sauvegarde. Les journaux sont conservés pour une durée limitée à des fins de sécurité et de diagnostic.",
+    ]},
+    { h: "9. Sécurité", ps: [
+      "Nous appliquons des mesures techniques et organisationnelles proportionnées au risque : chiffrement en transit, contrôles d'accès, mots de passe hachés, infrastructure cloisonnée. Aucun système n'est parfaitement sûr ; signalez-nous immédiatement toute compromission soupçonnée de votre compte.",
+    ]},
+    { h: "10. Vos droits (EEE et Royaume-Uni)", ps: [
+      "Si vous êtes dans l'Espace économique européen ou au Royaume-Uni, vous disposez des droits d'accès, de rectification, d'effacement, de limitation, de portabilité et d'opposition, ainsi que du droit de retirer votre consentement. Écrivez à privacy@echorank360.com.",
+      "Vous pouvez déposer une plainte auprès de votre autorité de contrôle, notamment l'ICO au Royaume-Uni ou l'autorité de votre État membre (par exemple la CNIL en France).",
+    ]},
+    { h: "11. Vos droits (États-Unis)", ps: [
+      "Selon votre État, vous pouvez disposer de droits d'accès, de correction, de suppression et de retrait de la vente, du partage ou de la publicité ciblée. Nous ne vendons pas de renseignements personnels et ne les partageons pas à des fins de publicité comportementale intercontexte. Pour exercer ces droits ou faire appel d'une décision : privacy@echorank360.com.",
+    ]},
+    { h: "12. Canada et Québec", ps: [
+      "Pour les utilisateurs canadiens, nous respectons la LPRPDE et, pour les résidents du Québec, la Loi sur la protection des renseignements personnels dans le secteur privé telle que modifiée par la Loi 25. Vous avez le droit d'accéder à vos renseignements personnels et de les faire rectifier, de retirer votre consentement et, au Québec, de demander la cessation de la diffusion ou la désindexation, ainsi que de recevoir les renseignements personnels informatisés que vous avez fournis dans un format technologique structuré et couramment utilisé.",
+      "La personne responsable de la protection des renseignements personnels est le dirigeant de la société, joignable à privacy@echorank360.com. Des renseignements personnels peuvent être traités hors du Québec et du Canada, notamment aux États-Unis et au Royaume-Uni, sous protections contractuelles. Tout différend non résolu peut être porté devant la Commission d'accès à l'information du Québec ou le Commissariat à la protection de la vie privée du Canada.",
+    ]},
+    { h: "13. Témoins (cookies)", ps: [
+      "Nous utilisons des témoins strictement nécessaires (session, sécurité, préférence de langue et de devise comme echorank_locale) et une mesure de performance minimale via Cloudflare. Aucun témoin publicitaire. Vous pouvez gérer les témoins dans votre navigateur ; bloquer les témoins essentiels peut empêcher la connexion.",
+    ]},
+    { h: "14. Mineurs", ps: [
+      "Le Service s'adresse aux entreprises et n'est pas destiné aux moins de 16 ans. Nous ne collectons pas sciemment leurs données ; contactez-nous pour toute suppression.",
+    ]},
+    { h: "15. Modifications et contact", ps: [
+      "Nous pouvons mettre à jour cette politique ; la nouvelle version sera publiée ici avec sa date, avec un préavis supplémentaire en cas de changement important. Questions et demandes : privacy@echorank360.com.",
+    ]},
+  ],
+};
+
+function pick(locale: Locale): Doc { return locale.startsWith("fr") ? FR : EN; }
+
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const { locale } = await params;
+  if (!isSupportedLocale(locale)) return {};
+  return { title: `${pick(locale).title} | EchoRank` };
+}
+
+export default async function Page({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  if (!isSupportedLocale(locale)) notFound();
+  const d = pick(locale);
+  const nav = CONTENT[locale].nav;
+  const foot = CONTENT[locale].footer;
+  const backLabel = locale.startsWith("fr") ? "← Retour" : locale === "de-CH" ? "← Zurück" : "← Back";
+  return (
+    <div className={lp.page}>
+      <div className={lp.wrap}>
+        <div className={lp.top}>
+          <Link href={`/${locale}`} aria-label="EchoRank 360, home">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/echorank-logo-dark.svg" alt="ECHORANK 360" className={lp.logo} />
+          </Link>
+          <Link href="/register">{nav.cta}</Link>
+        </div>
+        <div className={lp.backRow}>
+          <BackButton locale={locale} label={backLabel} className={lp.backBtnSolid} />
+        </div>
+        {locale === "de-CH" && <p className={lp.banner}>Diese Seite ist derzeit auf Englisch verfügbar. Bei Fragen: privacy@echorank360.com.</p>}
+        <h1 className={lp.h1}>{d.title}</h1>
+        <p className={lp.updated}>{d.updated}</p>
+        {d.sections.map((s) => (
+          <section key={s.h}>
+            <h2 className={lp.h2}>{s.h}</h2>
+            {s.ps.map((p, i) => (<p key={i} className={lp.p}>{p}</p>))}
+          </section>
+        ))}
+        <div className={lp.backRowBottom}>
+          <BackButton locale={locale} label={backLabel} className={lp.backBtnSolid} />
+        </div>
+        <footer className={lp.footer}>
+          <span>{foot.copyright}</span>
+          <span>
+            {foot.links.map((l) => (
+              <Link key={l.label} href={`/${locale}${l.href}`}>{l.label}</Link>
+            ))}
+          </span>
+        </footer>
+      </div>
+    </div>
+  );
+}
+// EOF-privacy

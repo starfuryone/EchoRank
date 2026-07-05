@@ -1,0 +1,369 @@
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
+import Link from "next/link";
+import { SUPPORTED_LOCALES, isSupportedLocale, type Locale } from "@/lib/i18n/config";
+import { CONTENT } from "@/lib/i18n/content";
+import BackButton from "../legal/back-button";
+import home from "../home.module.css";
+import { FeedbackArt } from "../hero-art";
+import lp from "./customer-feedback.module.css";
+
+export function generateStaticParams() {
+  return SUPPORTED_LOCALES.map((locale) => ({ locale }));
+}
+
+interface LpContent {
+  meta: { title: string; description: string };
+  hero: { label: string; h1a: string; h1b: string; sub: string; cta1: string; cta2: string };
+  read: { label: string; h2: string; items: { t: string; b: string }[] };
+  sale: { label: string; h2: string; items: { t: string; b: string }[] };
+  payoff: { label: string; h2: string; items: { t: string; b: string }[] };
+  plans: { label: string; note: string; cta: string };
+  final: { h2: string; sub: string; cta1: string; cta2: string };
+}
+
+const C: Record<Locale, LpContent> = {
+  en: {
+    meta: {
+      title: "Customer Feedback Intelligence. EchoRank",
+      description:
+        "EchoRank reads every review and comment: recurring complaints surfaced before they become crises, suspicious activity flagged, responses drafted in your own voice.",
+    },
+    hero: {
+      label: "/ CUSTOMER FEEDBACK",
+      h1a: "Turn customer feedback into more sales.",
+      h1b: "Every review is unread revenue.",
+      sub: "Reviews, private feedback, comments, every one contains something worth acting on, and almost nobody has time to find it. EchoRank reads all of it for you: recurring complaints surface before they become crises, suspicious review activity gets flagged, and professional responses arrive drafted in your own voice.",
+      cta1: "Put your reviews to work →",
+      cta2: "Book a demo ↗",
+    },
+    read: {
+      label: "/ 01 — EVERY WORD, EVERY SOURCE",
+      h2: "Read completely, so nothing slips.",
+      items: [
+        { t: "Public reviews", b: "Google and every monitored platform, each review scored for sentiment and risk the moment it lands." },
+        { t: "Private feedback", b: "Unhappy customers get a direct channel before they reach for a megaphone; routed to the right person, fast." },
+        { t: "Every comment analyzed", b: "Sentiment on each message, escalation predicted before a complaint becomes a crisis." },
+        { t: "Authenticity checks", b: "Suspicious bursts and fake-looking review patterns flagged before they distort your reputation." },
+      ],
+    },
+    sale: {
+      label: "/ 02 — FROM SIGNAL TO SALE",
+      h2: "How reading becomes revenue.",
+      items: [
+        { t: "Recurring complaints surfaced", b: "The same issue three times isn't bad luck, it's an operations fix. Catch it while it's cheap." },
+        { t: "Responses drafted in your voice", b: "Professional replies ready to approve, not written from scratch at 11pm." },
+        { t: "Speed reads as care", b: "Fast, thoughtful answers are visible to every future prospect scrolling your reviews." },
+        { t: "Feeds the Risk Score", b: "Everything read flows into your reputation spine, credibility work shows up in the number." },
+      ],
+    },
+    payoff: {
+      label: "/ 03 — THE PAYOFF",
+      h2: "What changes when nothing goes unread.",
+      items: [
+        { t: "Happier customers", b: "Problems handled while they're still conversations." },
+        { t: "Faster responses", b: "Drafts waiting for approval, not for free time." },
+        { t: "Stronger credibility", b: "A visible pattern of listening, in public." },
+        { t: "More confident buyers", b: "Prospects see a business that answers, and choose it." },
+      ],
+    },
+    plans: {
+      label: "/ 04 — PLANS",
+      note: "Review reading, sentiment, escalation detection, private feedback routing and AI response drafting ship with every plan, starting at STARTER. 14-day free trial.",
+      cta: "See pricing →",
+    },
+    final: {
+      h2: "Stop letting feedback rot in a tab.",
+      sub: "Connect your sources, the reading starts immediately.",
+      cta1: "Put your reviews to work →",
+      cta2: "Book a demo ↗",
+    },
+  },
+
+  "en-CA": null as unknown as LpContent,
+
+  fr: {
+    meta: {
+      title: "Intelligence des retours clients. EchoRank",
+      description:
+        "EchoRank lit chaque avis et commentaire : plaintes récurrentes repérées avant la crise, activités suspectes signalées, réponses rédigées dans votre ton.",
+    },
+    hero: {
+      label: "/ RETOURS CLIENTS",
+      h1a: "Transformez les commentaires de vos clients en croissance.",
+      h1b: "Chaque avis que vous ne lisez pas peut vous coûter des ventes.",
+      sub: "Les avis, les commentaires sur des plateformes comme Avis Google et les retours privés de vos clients renferment tous des informations précieuses… mais presque personne n'a le temps de les analyser. EchoRank s'en charge pour vous. Les problèmes récurrents sont détectés avant qu'ils ne deviennent des crises, les activités suspectes dans les avis sont automatiquement signalées, et des réponses professionnelles sont rédigées dans le ton et le style de votre entreprise.",
+      cta1: "Mettez vos avis au travail →",
+      cta2: "Réserver une démo ↗",
+    },
+    read: {
+      label: "/ 01 — CHAQUE MOT, CHAQUE SOURCE",
+      h2: "Une lecture complète, pour que rien n'échappe.",
+      items: [
+        { t: "Avis publics", b: "Google et chaque plateforme surveillée, chaque avis noté en sentiment et en risque dès son arrivée." },
+        { t: "Retours privés", b: "Les clients mécontents disposent d'un canal direct avant de prendre le mégaphone ; routés vers la bonne personne, vite." },
+        { t: "Chaque commentaire analysé", b: "Sentiment sur chaque message, escalade prédite avant qu'une plainte ne devienne une crise." },
+        { t: "Contrôles d'authenticité", b: "Rafales suspectes et schémas d'avis douteux signalés avant qu'ils ne déforment votre réputation." },
+      ],
+    },
+    sale: {
+      label: "/ 02 — DU SIGNAL À LA VENTE",
+      h2: "Comment la lecture devient du chiffre d'affaires.",
+      items: [
+        { t: "Plaintes récurrentes remontées", b: "Le même problème trois fois, ce n'est pas de la malchance, c'est un correctif d'exploitation. Attrapez-le tant qu'il est bon marché." },
+        { t: "Réponses rédigées dans votre ton", b: "Des réponses professionnelles prêtes à approuver, pas à écrire de zéro à 23 h." },
+        { t: "La rapidité inspire confiance", b: "Des réponses rapides et soignées, visibles par chaque prospect qui parcourt vos avis." },
+        { t: "Alimente le Score de risque", b: "Tout ce qui est lu alimente votre colonne vertébrale de réputation, le travail de crédibilité se voit dans le chiffre." },
+      ],
+    },
+    payoff: {
+      label: "/ 03 — LE GAIN",
+      h2: "Ce qui change quand plus rien ne reste non lu.",
+      items: [
+        { t: "Des clients plus satisfaits", b: "Les problèmes traités quand ce sont encore des conversations." },
+        { t: "Des réponses plus rapides", b: "Des brouillons qui attendent une approbation, pas du temps libre." },
+        { t: "Une crédibilité renforcée", b: "Une écoute visible, en public." },
+        { t: "Des acheteurs plus confiants", b: "Les prospects voient une entreprise qui répond, et la choisissent." },
+      ],
+    },
+    plans: {
+      label: "/ 04 — FORFAITS",
+      note: "Lecture des avis, sentiment, détection d'escalade, routage des retours privés et réponses rédigées par IA sont inclus dans tous les forfaits, dès STARTER. Essai gratuit de 14 jours.",
+      cta: "Voir les tarifs →",
+    },
+    final: {
+      h2: "Cessez de laisser les retours moisir dans un onglet.",
+      sub: "Reliez vos sources, la lecture commence immédiatement.",
+      cta1: "Mettez vos avis au travail →",
+      cta2: "Réserver une démo ↗",
+    },
+  },
+
+  "fr-CA": null as unknown as LpContent,
+
+  "de-CH": {
+    meta: {
+      title: "Kundenfeedback-Intelligenz. EchoRank",
+      description:
+        "EchoRank liest jede Bewertung und jeden Kommentar: wiederkehrende Beschwerden vor der Krise erkannt, verdächtige Aktivitäten gemeldet, Antworten in Ihrem Ton entworfen.",
+    },
+    hero: {
+      label: "/ KUNDENFEEDBACK",
+      h1a: "Machen Sie aus Kundenfeedback mehr Umsatz.",
+      h1b: "Jede Bewertung ist ungelesener Umsatz.",
+      sub: "Bewertungen, privates Feedback, Kommentare, jedes enthält etwas, das eine Handlung verdient, und fast niemand hat Zeit, es zu finden. EchoRank liest alles für Sie: wiederkehrende Beschwerden tauchen auf, bevor sie zur Krise werden, verdächtige Bewertungsaktivitäten werden gemeldet, und professionelle Antworten liegen bereits in Ihrem Ton entworfen bereit.",
+      cta1: "Bewertungen arbeiten lassen →",
+      cta2: "Demo buchen ↗",
+    },
+    read: {
+      label: "/ 01 — JEDES WORT, JEDE QUELLE",
+      h2: "Vollständig gelesen, damit nichts durchrutscht.",
+      items: [
+        { t: "Öffentliche Bewertungen", b: "Google und jede überwachte Plattform, jede Bewertung bei Eingang nach Stimmung und Risiko bewertet." },
+        { t: "Privates Feedback", b: "Unzufriedene Kunden erhalten einen direkten Kanal, bevor sie zum Megafon greifen; schnell an die richtige Person geleitet." },
+        { t: "Jeder Kommentar analysiert", b: "Stimmung pro Nachricht, Eskalation vorhergesagt, bevor aus einer Beschwerde eine Krise wird." },
+        { t: "Echtheitsprüfungen", b: "Verdächtige Schübe und unecht wirkende Bewertungsmuster werden gemeldet, bevor sie Ihre Reputation verzerren." },
+      ],
+    },
+    sale: {
+      label: "/ 02 — VOM SIGNAL ZUM UMSATZ",
+      h2: "Wie Lesen zu Umsatz wird.",
+      items: [
+        { t: "Wiederkehrende Beschwerden sichtbar", b: "Dasselbe Problem dreimal ist kein Pech, es ist ein Betriebsfix. Beheben Sie es, solange es günstig ist." },
+        { t: "Antworten in Ihrem Ton", b: "Professionelle Antworten zum Freigeben, nicht um 23 Uhr von Grund auf geschrieben." },
+        { t: "Tempo wirkt wie Sorgfalt", b: "Schnelle, durchdachte Antworten sieht jeder künftige Interessent, der Ihre Bewertungen liest." },
+        { t: "Speist den Risiko-Score", b: "Alles Gelesene fliesst in Ihr Reputations-Rückgrat. Glaubwürdigkeitsarbeit zeigt sich in der Zahl." },
+      ],
+    },
+    payoff: {
+      label: "/ 03 — DER GEWINN",
+      h2: "Was sich ändert, wenn nichts ungelesen bleibt.",
+      items: [
+        { t: "Zufriedenere Kunden", b: "Probleme gelöst, solange es noch Gespräche sind." },
+        { t: "Schnellere Antworten", b: "Entwürfe warten auf Freigabe, nicht auf freie Zeit." },
+        { t: "Stärkere Glaubwürdigkeit", b: "Sichtbares Zuhören, öffentlich." },
+        { t: "Sicherere Käufer", b: "Interessenten sehen ein Unternehmen, das antwortet, und wählen es." },
+      ],
+    },
+    plans: {
+      label: "/ 04 — PLÄNE",
+      note: "Bewertungs-Lektüre, Stimmung, Eskalationserkennung, privates Feedback-Routing und KI-Antwortentwürfe sind in jedem Plan enthalten, ab STARTER. 14 Tage kostenlos testen.",
+      cta: "Preise ansehen →",
+    },
+    final: {
+      h2: "Lassen Sie Feedback nicht in einem Tab vergammeln.",
+      sub: "Quellen verbinden, das Lesen beginnt sofort.",
+      cta1: "Bewertungen arbeiten lassen →",
+      cta2: "Demo buchen ↗",
+    },
+  },
+};
+
+C["en-CA"] = C.en;
+C["fr-CA"] = {
+  ...C.fr,
+  sale: {
+    ...C.fr.sale,
+    items: C.fr.sale.items.map((it) =>
+      it.t === "Alimente le Score de risque"
+        ? { t: "Alimente le Score de risque", b: "Tout ce qui est lu alimente votre colonne vertébrale de réputation, le travail de crédibilité se voit dans le chiffre." }
+        : it.t === "Réponses rédigées dans votre ton"
+          ? { t: "Réponses rédigées dans votre ton", b: "Des réponses professionnelles prêtes à approuver, pas à écrire de zéro à 23 h." }
+          : it,
+    ),
+  },
+  hero: {
+    ...C.fr.hero,
+    h1b: "Chaque avis que vous ne lisez pas peut vous coûter des ventes.",
+    sub: "Les avis, les commentaires sur des plateformes comme Avis Google et les retours privés de vos clients renferment tous des informations précieuses… mais presque personne n'a le temps de les analyser. EchoRank s'en charge pour vous. Les problèmes récurrents sont détectés avant qu'ils ne deviennent des crises, les activités suspectes dans les avis sont automatiquement signalées, et des réponses professionnelles sont rédigées dans le ton et le style de votre entreprise.",
+  },
+};
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  if (!isSupportedLocale(locale)) return {};
+  const { meta } = C[locale];
+  return { title: meta.title, description: meta.description };
+}
+
+export default async function CustomerFeedbackPage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  if (!isSupportedLocale(locale)) notFound();
+  const c = C[locale];
+  const nav = CONTENT[locale].nav;
+  const foot = CONTENT[locale].footer;
+  const backLabel = locale.startsWith("fr") ? "← Retour" : locale === "de-CH" ? "← Zurück" : "← Back";
+
+  return (
+    <div className={lp.page}>
+      <div className={home.container}>
+        <header className={lp.navbar}>
+          <Link href={`/${locale}`} className={lp.logoLink} aria-label="EchoRank 360 — home">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/echorank-logo-dark.svg" alt="ECHORANK 360" className={lp.logo} />
+          </Link>
+          <nav className={lp.navLinks} aria-label="Main">
+            <Link href={`/${locale}`} className={lp.navLink}>{nav.product}</Link>
+            <Link href={`/${locale}#pricing`} className={lp.navLink}>{nav.pricing}</Link>
+            <Link href={`/${locale}#field`} className={lp.navLink}>{nav.customers}</Link>
+            <Link href="/login" className={lp.navLink}>{nav.login}</Link>
+          </nav>
+          <div className={lp.navRight}>
+            <span className={lp.switcher}>
+              {nav.switcher.map((l) => (
+                <Link
+                  key={l}
+                  href={`/${l}/customer-feedback`}
+                  className={`${lp.switchItem} ${l === locale ? lp.switchActive : ""}`}
+                >
+                  {l.toUpperCase()}
+                </Link>
+              ))}
+            </span>
+            <Link href="/register" className={`${lp.btn} ${lp.btnPrimary}`}>
+              {nav.cta}
+            </Link>
+          </div>
+        </header>
+
+        <div className={lp.backRow}>
+          <BackButton locale={locale} label={backLabel} className={lp.backBtnGrey} />
+        </div>
+
+        <section className={`${home.section} ${lp.heroGrid}`}>
+          <div className={lp.heroCopy}>
+          <div className={home.label}>{c.hero.label}</div>
+          <h1 className={home.h1}>
+            {c.hero.h1a}
+            <span className={home.muted}>{c.hero.h1b}</span>
+          </h1>
+          <p className={home.subhead}>{c.hero.sub}</p>
+          <div className={`${lp.btnRow} ${lp.ctas}`}>
+            <Link href="/register" className={`${lp.btn} ${lp.btnPrimary}`}>{c.hero.cta1}</Link>
+            <Link href="/register" className={`${lp.btn} ${lp.btnGhost}`}>{c.hero.cta2}</Link>
+          </div>
+          </div>
+          <div className={lp.heroArt} aria-hidden="true">
+            <FeedbackArt />
+          </div>
+        </section>
+
+        <section className={home.section}>
+          <div className={home.label}>{c.read.label}</div>
+          <h2 className={home.h2}>{c.read.h2}</h2>
+          <div className={lp.grid4}>
+            {c.read.items.map((it) => (
+              <div key={it.t} className={lp.card}>
+                <h3 className={lp.cardTitle}>{it.t}</h3>
+                <p className={lp.cardBody}>{it.b}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className={home.section}>
+          <div className={home.label}>{c.sale.label}</div>
+          <h2 className={home.h2}>{c.sale.h2}</h2>
+          <div className={lp.grid4}>
+            {c.sale.items.map((it) => (
+              <div key={it.t} className={lp.card}>
+                <h3 className={lp.cardTitle}>{it.t}</h3>
+                <p className={lp.cardBody}>{it.b}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className={home.section}>
+          <div className={home.label}>{c.payoff.label}</div>
+          <h2 className={home.h2}>{c.payoff.h2}</h2>
+          <div className={lp.grid4}>
+            {c.payoff.items.map((it) => (
+              <div key={it.t} className={lp.card}>
+                <h3 className={lp.cardTitle}>{it.t}</h3>
+                <p className={lp.cardBody}>{it.b}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className={home.section}>
+          <div className={home.label}>{c.plans.label}</div>
+          <p className={lp.plansNote}>{c.plans.note}</p>
+          <Link href={`/${locale}#pricing`} className={`${lp.btn} ${lp.btnGhost}`}>{c.plans.cta}</Link>
+        </section>
+
+        <section className={`${home.section} ${lp.finalBand}`}>
+          <h2 className={home.h2}>{c.final.h2}</h2>
+          <p className={home.subhead}>{c.final.sub}</p>
+          <div className={`${lp.btnRow} ${lp.ctas}`}>
+            <Link href="/register" className={`${lp.btn} ${lp.btnPrimary}`}>{c.final.cta1}</Link>
+            <Link href="/register" className={`${lp.btn} ${lp.btnGhost}`}>{c.final.cta2}</Link>
+          </div>
+        </section>
+
+        <div className={lp.backRowBottom}>
+          <BackButton locale={locale} label={backLabel} className={lp.backBtnGrey} />
+        </div>
+
+        <footer className={lp.footer}>
+          <span>{foot.copyright}</span>
+          <span>
+            {foot.links.map((l) => (
+              <Link key={l.label} href={`/${locale}${l.href}`}>{l.label}</Link>
+            ))}
+          </span>
+        </footer>
+      </div>
+    </div>
+  );
+}
+// EOF-feedback-lp

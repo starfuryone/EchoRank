@@ -39,13 +39,13 @@ export interface HomeContent {
   platform: {
     label: string;
     h2: string;
-    cells: { key: string; title: string; body: string }[];
+    cells: { key: string; tag?: string; title: string; body: string; link?: { href: string; label: string } }[];
   };
-  how: { label: string; steps: { num: string; name: string; body: string }[] };
-  pricing: { label: string; tiers: PricingTier[] };
+  how: { label: string; steps: { num: string; name: string; body: string; link?: { href: string; label: string }; cta?: { href: string; label: string } }[] };
+  pricing: { label: string; altLink?: { href: string; label: string; hideWhenCurrency: Currency }; tiers: PricingTier[] };
   field: { label: string; quoteA: string; quoteB: string; attribution: string };
   start: { label: string; h2: string; cta1: string; cta2: string };
-  footer: { copyright: string; links: string[] };
+  footer: { copyright: string; links: { label: string; href: string }[] };
 }
 
 export type TierPrices = Record<PricingTier["key"], string>;
@@ -55,9 +55,9 @@ const COPYRIGHT = "© 2026 ECHORANK / CHATLOGIC INSIGHTS LTD";
 // ─── en (US / international default) ────────────────────────────────────────
 const en: HomeContent = {
   meta: {
-    title: "EchoRank — Reputation Intelligence",
+    title: "EchoRank. AI Reputation Intelligence Platform",
     description:
-      "Collect customer feedback, generate more authentic reviews, and identify service issues with AI-powered reputation management.",
+      "When customers ask AI who to hire, does AI send them to you, or to your competitor? Audit your AI visibility, track answers daily, and act on an explainable reputation risk score.",
   },
   nav: {
     product: "Product",
@@ -68,85 +68,304 @@ const en: HomeContent = {
     switcher: ["en", "fr"],
   },
   hero: {
-    label: "/ 01 — REPUTATION INTELLIGENCE",
-    h1a: "Turn Customer Feedback",
-    h1b: "Into Better Reviews.",
+    label: "/ 01 — AI REPUTATION INTELLIGENCE",
+    h1a: "When customers ask AI about your business…",
+    h1b: "does AI send them to you, or to your competitor?",
     subhead:
-      "Collect feedback, invite customers to share public reviews, and identify service issues early so your team can respond quickly and improve the customer experience.",
-    cta1: "Start 14-day free trial →",
-    cta2: "See it in action ↗",
+      "Every day, potential customers ask ChatGPT, Perplexity, and Google AI who to hire, where to eat, which contractor to trust, or which company to call. If AI doesn't recommend you, you never even get the chance to compete. EchoRank helps you become the business AI recommends, bringing you more qualified leads, protecting your reputation, and uncovering hidden revenue before it's lost.",
+    cta1: "Check your AI visibility →",
+    cta2: "Start free trial ↗",
   },
   trust: {
-    used: "USED BY 2,500+ INDEPENDENT BUSINESSES",
-    industries: ["RESTAURANTS", "PLUMBERS", "DENTISTS", "AUTO", "HOME SERVICES"],
+    used: "FOR INDEPENDENT BUSINESSES AND THE AGENCIES BEHIND THEM",
+    industries: ["HOME SERVICES", "CLINICS & PRACTICES", "HOSPITALITY", "RETAIL", "AGENCIES"],
   },
   outcomes: {
-    label: "/ 02 — WHAT YOU GET",
+    label: "/ 02 — THE NUMBERS",
     items: [
-      { value: "★", label: "Multi-channel review requests" },
-      { value: "◎", label: "Google and Facebook integrations" },
-      { value: "AI", label: "AI-powered sentiment analysis" },
-      { value: "↻", label: "Automated recovery workflows" },
+      { value: "0–100", label: "AI Visibility Score" },
+      { value: "DAILY", label: "Answers tracked" },
+      { value: "HOURLY", label: "Risk recalculated" },
     ],
   },
   platform: {
     label: "/ 03 — THE PLATFORM",
-    h2: "Everything you need. Nothing you don't.",
+    h2: "Get recommended more. Get ignored less.",
     cells: [
-      { key: "A", title: "Identify service issues early", body: "AI scores every customer interaction so your team can identify service issues early and respond faster." },
-      { key: "B", title: "Watch every review site", body: "Google, Yelp, Facebook, Trustpilot, Apple, Tripadvisor. All in one inbox." },
-      { key: "C", title: "Win them back", body: "Recovery tickets routed to the right person on your team. Collect customer feedback and review insights in one place." },
-      { key: "D", title: "Get more real 5-stars", body: "The right ask, at the right moment, to the right customer. By email or SMS." },
-      { key: "E", title: "One screen, every location", body: "Owner dashboard. One score. Tells you if today's a good day or a bad one." },
-      { key: "F", title: "Compliance, handled", body: "No fake reviews. No gating. No tricks Google can ban you for. Just clean infrastructure." },
+      {
+        key: "visibility",
+        title: "Become the business AI recommends",
+        body: "Every day AI decides which businesses get mentioned, most owners have no idea if they're recommended or overlooked. EchoRank audits every factor behind AI visibility and hands you a step-by-step roadmap into AI answers. Know the day AI starts recommending you, and the moment you disappear.",
+        link: { href: "/ai-visibility", label: "More details →" },
+      },
+      {
+        key: "risk",
+        title: "Stop losing customers before you know they're leaving",
+        body: "Reputation problems grow quietly, one unhappy customer, one unanswered review, one competitor gaining momentum. EchoRank connects every signal into one explainable Reputation Risk Score: what's costing you customers, and how much revenue is at risk each month. Prevent instead of react; know where to act first.",
+        link: { href: "/reputation-risk", label: "More details →" },
+      },
+      {
+        key: "feedback",
+        title: "Turn customer feedback into more sales",
+        body: "Every review contains valuable information, most businesses never have time to find it. EchoRank reads every review and comment, flags recurring complaints before they become crises, detects suspicious review activity, and drafts responses in your own voice. Happier customers, stronger credibility.",
+        link: { href: "/customer-feedback", label: "More details →" },
+      },
+      {
+        key: "engine",
+        title: "A reputation that keeps working while you sleep",
+        body: "A great reputation isn't luck, it's a system. EchoRank automates the heavy lifting: compliant SMS, email and QR campaigns, multi-platform monitoring, white-label tools for agencies, and workflows that keep fresh customer signals flowing. More trust, more referrals, more customers choosing you first.",
+        link: { href: "/reputation-engine", label: "More details →" },
+      },
+      {
+        key: "answers",
+        title: "Know what AI actually says about you",
+        body: "Your key customer questions run against ChatGPT, Perplexity and Google AI every day. See when you're cited, misquoted or missing, with history: a quiet disappearance never goes unnoticed.",
+        link: { href: "/ai-visibility", label: "More details →" },
+      },
+      {
+        key: "competitors",
+        title: "See competitors gaining ground, early",
+        body: "Daily snapshots of rival ratings and review counts. When a competitor's momentum outpaces your own review velocity, you get an alert the same week, not a surprise next quarter.",
+        link: { href: "/reputation-risk", label: "More details →" },
+      },
     ],
   },
   how: {
     label: "/ 04 — HOW IT WORKS",
     steps: [
-      { num: "01", name: "Connect", body: "Plug in your POS, booking, or CRM. Ten minutes." },
-      { num: "02", name: "Listen", body: "We score every interaction. Quietly. In the background." },
-      { num: "03", name: "Act", body: "You get a ping. You reach out, follow up, and improve the customer experience." },
-      { num: "04", name: "Grow", body: "Happy customers asked to review. Reputation compounds." },
+      {
+        num: "01",
+        name: "Connect",
+        body: "Link your Google profile, review sources and website. Your first AI-visibility audit and risk baseline land in minutes.",
+        link: { href: "/how-to", label: "More details →" },
+        cta: { href: "/register", label: "Start free trial →" },
+      },
+      {
+        num: "02",
+        name: "Monitor",
+        body: "Risk recalculated hourly, AI answers tracked daily, competitor snapshots every morning, every signal in one place.",
+        link: { href: "/live-monitoring", label: "More details →" },
+        cta: { href: "/register", label: "Start free trial →" },
+      },
+      {
+        num: "03",
+        name: "Act",
+        body: "Alerts arrive with the cause and the dollar impact. Fix what moves the score, responses already drafted in your voice.",
+        link: { href: "/act-on-signals", label: "More details →" },
+        cta: { href: "/register", label: "Start free trial →" },
+      },
     ],
   },
   pricing: {
     label: "/ 05 — PRICING",
+    altLink: { href: "/en-CA#pricing", label: "See pricing in Canadian dollars →", hideWhenCurrency: "CAD" },
     tiers: [
-      { key: "starter", name: "STARTER", features: ["1 location", "500 requests/mo", "Email outreach", "Basic dashboard"] },
-      { key: "growth", name: "GROWTH", highlighted: true, features: ["5 locations", "5,000 requests/mo", "Email + SMS", "AI risk scoring"] },
-      { key: "agency", name: "AGENCY", features: ["25 locations", "15,000 requests/mo", "White-label", "API access"] },
-      { key: "enterprise", name: "ENTERPRISE", features: ["Unlimited", "Custom volume", "SSO / SAML", "99.9% SLA"] },
+      {
+        key: "starter",
+        name: "STARTER",
+        features: ["Review campaigns (email, SMS, QR)", "Private feedback & routing", "Multi-source review monitoring", "AI response drafting"],
+      },
+      {
+        key: "growth",
+        name: "GROWTH",
+        highlighted: true,
+        features: ["Everything in Starter", "AI Visibility Auditor + fix roadmap", "Reputation Risk Score & alerts", "Revenue-at-risk"],
+      },
+      {
+        key: "agency",
+        name: "AGENCY",
+        features: ["Everything in Growth", "AI answer tracking (daily)", "Competitor momentum monitoring", "White-label & multi-client"],
+      },
+      {
+        key: "enterprise",
+        name: "ENTERPRISE",
+        features: ["Unlimited everything", "Custom volume", "SSO / SAML", "99.9% SLA"],
+      },
     ],
   },
   field: {
-    label: "/ 06 — IN THE FIELD",
-    quoteA: "EchoRank helps us collect feedback after every job, invite happy customers to leave public reviews, and follow up quickly when something needs attention.",
+    label: "/ 06 — THE BOTTOM LINE",
+    quoteA:
+      "“In the AI era, the companies that grow the fastest won't simply have the best service. They'll be the businesses AI trusts enough to recommend first.”",
     quoteB: "",
-    attribution: "ECHORANK CUSTOMER",
+    attribution: "THE ECHORANK METHOD",
   },
   start: {
     label: "/ 07 — START",
-    h2: "Try it. Or talk to us.",
-    cta1: "Start free trial →",
+    h2: "Find out if AI recommends you.",
+    cta1: "Check your AI visibility →",
     cta2: "Book a demo ↗",
   },
-  footer: { copyright: COPYRIGHT, links: ["PRIVACY", "TERMS", "SECURITY", "STATUS"] },
+  footer: {
+    copyright: COPYRIGHT,
+    links: [
+      { label: "PRIVACY", href: "/legal/privacy" },
+      { label: "TERMS", href: "/legal/terms" },
+      { label: "DISCLAIMER", href: "/legal/disclaimer" },
+    ],
+  },
 };
 
-// ─── en-CA (Canada — English) ───────────────────────────────────────────────
+// ─── en-CA (Canada. English) ───────────────────────────────────────────────
 const enCA: HomeContent = {
-  ...en,
-  nav: { ...en.nav, switcher: ["en-CA", "fr-CA"] },
-  field: { ...en.field, attribution: "OWNER, INDEPENDENT PLUMBING CO., TORONTO ON" },
+  meta: {
+    title: "EchoRank. AI Reputation Intelligence Platform",
+    description:
+      "When customers ask AI who to hire, does AI send them to you, or to your competitor? Audit your AI visibility, track answers daily, and act on an explainable reputation risk score.",
+  },
+  nav: {
+    product: "Product",
+    pricing: "Pricing",
+    customers: "Customers",
+    login: "Login",
+    cta: "Start free trial",
+    switcher: ["en-CA", "fr-CA"],
+  },
+  hero: {
+    label: "/ 01 — AI REPUTATION INTELLIGENCE",
+    h1a: "When customers ask AI about your business…",
+    h1b: "does AI send them to you, or to your competitor?",
+    subhead:
+      "Every day, potential customers ask ChatGPT, Perplexity, and Google AI who to hire, where to eat, which contractor to trust, or which company to call. If AI doesn't recommend you, you never even get the chance to compete. EchoRank helps you become the business AI recommends, bringing you more qualified leads, protecting your reputation, and uncovering hidden revenue before it's lost.",
+    cta1: "Check your AI visibility →",
+    cta2: "Start free trial ↗",
+  },
+  trust: {
+    used: "FOR INDEPENDENT BUSINESSES AND THE AGENCIES BEHIND THEM",
+    industries: ["HOME SERVICES", "CLINICS & PRACTICES", "HOSPITALITY", "RETAIL", "AGENCIES"],
+  },
+  outcomes: {
+    label: "/ 02 — THE NUMBERS",
+    items: [
+      { value: "0–100", label: "AI Visibility Score" },
+      { value: "DAILY", label: "Answers tracked" },
+      { value: "HOURLY", label: "Risk recalculated" },
+    ],
+  },
+  platform: {
+    label: "/ 03 — THE PLATFORM",
+    h2: "Get recommended more. Get ignored less.",
+    cells: [
+      {
+        key: "visibility",
+        title: "Become the business AI recommends",
+        body: "Every day AI decides which businesses get mentioned, most owners have no idea if they're recommended or overlooked. EchoRank audits every factor behind AI visibility and hands you a step-by-step roadmap into AI answers. Know the day AI starts recommending you, and the moment you disappear.",
+        link: { href: "/ai-visibility", label: "More details →" },
+      },
+      {
+        key: "risk",
+        title: "Stop losing customers before you know they're leaving",
+        body: "Reputation problems grow quietly, one unhappy customer, one unanswered review, one competitor gaining momentum. EchoRank connects every signal into one explainable Reputation Risk Score: what's costing you customers, and how much revenue is at risk each month. Prevent instead of react; know where to act first.",
+        link: { href: "/reputation-risk", label: "More details →" },
+      },
+      {
+        key: "feedback",
+        title: "Turn customer feedback into more sales",
+        body: "Every review contains valuable information, most businesses never have time to find it. EchoRank reads every review and comment, flags recurring complaints before they become crises, detects suspicious review activity, and drafts responses in your own voice. Happier customers, stronger credibility.",
+        link: { href: "/customer-feedback", label: "More details →" },
+      },
+      {
+        key: "engine",
+        title: "A reputation that keeps working while you sleep",
+        body: "A great reputation isn't luck, it's a system. EchoRank automates the heavy lifting: compliant SMS, email and QR campaigns, multi-platform monitoring, white-label tools for agencies, and workflows that keep fresh customer signals flowing. More trust, more referrals, more customers choosing you first.",
+        link: { href: "/reputation-engine", label: "More details →" },
+      },
+      {
+        key: "answers",
+        title: "Know what AI actually says about you",
+        body: "Your key customer questions run against ChatGPT, Perplexity and Google AI every day. See when you're cited, misquoted or missing, with history: a quiet disappearance never goes unnoticed.",
+        link: { href: "/ai-visibility", label: "More details →" },
+      },
+      {
+        key: "competitors",
+        title: "See competitors gaining ground, early",
+        body: "Daily snapshots of rival ratings and review counts. When a competitor's momentum outpaces your own review velocity, you get an alert the same week, not a surprise next quarter.",
+        link: { href: "/reputation-risk", label: "More details →" },
+      },
+    ],
+  },
+  how: {
+    label: "/ 04 — HOW IT WORKS",
+    steps: [
+      {
+        num: "01",
+        name: "Connect",
+        body: "Link your Google profile, review sources and website. Your first AI-visibility audit and risk baseline land in minutes.",
+        link: { href: "/how-to", label: "More details →" },
+        cta: { href: "/register", label: "Start free trial →" },
+      },
+      {
+        num: "02",
+        name: "Monitor",
+        body: "Risk recalculated hourly, AI answers tracked daily, competitor snapshots every morning, every signal in one place.",
+        link: { href: "/live-monitoring", label: "More details →" },
+        cta: { href: "/register", label: "Start free trial →" },
+      },
+      {
+        num: "03",
+        name: "Act",
+        body: "Alerts arrive with the cause and the dollar impact. Fix what moves the score, responses already drafted in your voice.",
+        link: { href: "/act-on-signals", label: "More details →" },
+        cta: { href: "/register", label: "Start free trial →" },
+      },
+    ],
+  },
+  pricing: {
+    label: "/ 05 — PRICING",
+    altLink: { href: "/en#pricing", label: "See pricing in US dollars →", hideWhenCurrency: "USD" },
+    tiers: [
+      {
+        key: "starter",
+        name: "STARTER",
+        features: ["Review campaigns (email, SMS, QR)", "Private feedback & routing", "Multi-source review monitoring", "AI response drafting"],
+      },
+      {
+        key: "growth",
+        name: "GROWTH",
+        highlighted: true,
+        features: ["Everything in Starter", "AI Visibility Auditor + fix roadmap", "Reputation Risk Score & alerts", "Revenue-at-risk"],
+      },
+      {
+        key: "agency",
+        name: "AGENCY",
+        features: ["Everything in Growth", "AI answer tracking (daily)", "Competitor momentum monitoring", "White-label & multi-client"],
+      },
+      {
+        key: "enterprise",
+        name: "ENTERPRISE",
+        features: ["Unlimited everything", "Custom volume", "SSO / SAML", "99.9% SLA"],
+      },
+    ],
+  },
+  field: {
+    label: "/ 06 — THE BOTTOM LINE",
+    quoteA:
+      "“In the AI era, the companies that grow the fastest won't simply have the best service. They'll be the businesses AI trusts enough to recommend first.”",
+    quoteB: "",
+    attribution: "THE ECHORANK METHOD",
+  },
+  start: {
+    label: "/ 07 — START",
+    h2: "Find out if AI recommends you.",
+    cta1: "Check your AI visibility →",
+    cta2: "Book a demo ↗",
+  },
+  footer: {
+    copyright: COPYRIGHT,
+    links: [
+      { label: "PRIVACY", href: "/legal/privacy" },
+      { label: "TERMS", href: "/legal/terms" },
+      { label: "DISCLAIMER", href: "/legal/disclaimer" },
+    ],
+  },
 };
 
-// ─── fr (Europe — EUR; also Swiss-Romandie with CHF) ─────────────────────────
+// ─── fr (Europe. EUR; also Swiss-Romandie with CHF) ─────────────────────────
 const fr: HomeContent = {
   meta: {
-    title: "EchoRank — Intelligence de réputation",
+    title: "EchoRank. Plateforme d'intelligence de réputation IA",
     description:
-      "Recueillez les retours clients, générez des avis plus authentiques et identifiez les problèmes de service grâce à une gestion de réputation assistée par IA.",
+      "Quand vos clients interrogent l'IA, vous envoie-t-elle chez vous, ou chez votre concurrent ? Auditez votre visibilité IA, suivez les réponses chaque jour et agissez sur un score de risque explicable.",
   },
   nav: {
     product: "Produit",
@@ -157,179 +376,467 @@ const fr: HomeContent = {
     switcher: ["fr", "en"],
   },
   hero: {
-    label: "/ 01 — INTELLIGENCE DE RÉPUTATION",
-    h1a: "Transformez les retours clients",
-    h1b: "en meilleurs avis.",
+    label: "/ 01 — INTELLIGENCE DE RÉPUTATION IA",
+    h1a: "Quand vos clients interrogent l'IA à votre sujet…",
+    h1b: "vous envoie-t-elle chez vous, ou chez votre concurrent ?",
     subhead:
-      "Recueillez les retours, invitez les clients à laisser des avis publics et identifiez tôt les problèmes de service pour que votre équipe réagisse vite et améliore l'expérience client.",
-    cta1: "Essai gratuit de 14 jours →",
-    cta2: "Voir en action ↗",
+      "Chaque jour, des clients potentiels demandent à ChatGPT, Perplexity et Google AI qui embaucher, où manger, à quel artisan faire confiance ou quelle entreprise appeler. Si l'IA ne vous recommande pas, vous n'avez même pas la chance de concourir. EchoRank fait de vous l'entreprise que l'IA recommande, plus de prospects qualifiés, une réputation protégée et des revenus cachés récupérés avant qu'ils ne soient perdus.",
+    cta1: "Vérifiez votre visibilité IA →",
+    cta2: "Essai gratuit ↗",
   },
   trust: {
-    used: "UTILISÉ PAR 2 500+ ENTREPRISES INDÉPENDANTES",
-    industries: ["RESTAURATION", "PLOMBERIE", "DENTAIRE", "AUTO", "SERVICES À DOMICILE"],
+    used: "POUR LES ENTREPRISES INDÉPENDANTES ET LES AGENCES QUI LES ACCOMPAGNENT",
+    industries: ["ARTISANS & SERVICES", "CLINIQUES & CABINETS", "HÔTELLERIE-RESTAURATION", "COMMERCE", "AGENCES"],
   },
   outcomes: {
-    label: "/ 02 — CE QUE VOUS OBTENEZ",
+    label: "/ 02 — LES CHIFFRES",
     items: [
-      { value: "★", label: "Demandes d'avis multicanal" },
-      { value: "◎", label: "Intégrations Google et Facebook" },
-      { value: "IA", label: "Analyse de sentiment par IA" },
-      { value: "↻", label: "Flux de récupération automatisés" },
+      { value: "0–100", label: "Score de visibilité IA" },
+      { value: "QUOTIDIEN", label: "Réponses IA suivies" },
+      { value: "HORAIRE", label: "Risque recalculé" },
     ],
   },
   platform: {
     label: "/ 03 — LA PLATEFORME",
-    h2: "Tout ce qu'il faut. Rien de plus.",
+    h2: "Plus recommandé. Moins ignoré.",
     cells: [
-      { key: "A", title: "Identifiez les problèmes tôt", body: "L'IA évalue chaque interaction client pour que votre équipe identifie les problèmes de service tôt et réagisse plus vite." },
-      { key: "B", title: "Tous les sites surveillés", body: "Google, Pages Jaunes, Trustpilot, TripAdvisor, Facebook. Une seule boîte de réception." },
-      { key: "C", title: "Les reconquérir", body: "Les demandes de récupération arrivent à la bonne personne. Retours clients et avis réunis au même endroit." },
-      { key: "D", title: "Plus de 5 étoiles authentiques", body: "La bonne demande, au bon moment, au bon client. Par e-mail ou SMS." },
-      { key: "E", title: "Un écran, tous vos établissements", body: "Tableau de bord propriétaire. Un score. Vous dit si la journée est bonne ou mauvaise." },
-      { key: "F", title: "Conformité, assurée", body: "Aucun faux avis. Aucun filtrage. Aucune astuce sanctionnable par Google. Juste de l'infrastructure propre." },
+      {
+        key: "visibility",
+        tag: "visibilité",
+        title: "Devenez l'entreprise que l'IA recommande",
+        body: "Chaque jour, l'IA décide quelles entreprises méritent d'être citées, la plupart des dirigeants n'en savent rien. EchoRank audite chaque facteur de votre visibilité IA et vous remet une feuille de route pas à pas vers les réponses générées. Sachez quand l'IA commence à vous recommander, et à l'instant où vous disparaissez.",
+        link: { href: "/ai-visibility", label: "Plus de détails →" },
+      },
+      {
+        key: "risk",
+        tag: "risque",
+        title: "Cessez de perdre des clients sans le savoir",
+        body: "Les problèmes de réputation grandissent en silence, un client mécontent, un avis sans réponse, un concurrent qui prend de l'élan. EchoRank relie chaque signal en un Score de risque explicable : ce qui vous coûte des clients et combien de chiffre d'affaires est menacé chaque mois. Prévenez au lieu de réagir ; sachez où agir en premier.",
+        link: { href: "/reputation-risk", label: "Plus de détails →" },
+      },
+      {
+        key: "feedback",
+        tag: "retours",
+        title: "Transformez les retours clients en ventes",
+        body: "Chaque avis contient une information précieuse, la plupart des entreprises n'ont jamais le temps de la trouver. EchoRank lit chaque avis et commentaire, repère les plaintes récurrentes avant la crise, détecte les activités d'avis suspectes et rédige des réponses dans votre ton. Clients plus satisfaits, crédibilité renforcée.",
+        link: { href: "/customer-feedback", label: "Plus de détails →" },
+      },
+      {
+        key: "engine",
+        tag: "moteur",
+        title: "Une réputation qui travaille pendant que vous dormez",
+        body: "Une grande réputation n'est pas un hasard : c'est un système. EchoRank automatise le gros du travail : campagnes conformes par SMS, e-mail et QR, surveillance multi-plateformes, marque blanche pour agences et flux qui alimentent en continu des signaux clients frais. Plus de confiance, plus de recommandations, plus de clients qui vous choisissent en premier.",
+        link: { href: "/reputation-engine", label: "Plus de détails →" },
+      },
+      {
+        key: "answers",
+        tag: "réponses IA",
+        title: "Sachez ce que l'IA dit vraiment de vous",
+        body: "Vos questions clients clés sont testées chaque jour sur ChatGPT, Perplexity et Google AI. Voyez quand vous êtes cité, déformé ou absent, avec historique : une disparition silencieuse ne passe jamais inaperçue.",
+        link: { href: "/ai-visibility", label: "Plus de détails →" },
+      },
+      {
+        key: "competitors",
+        tag: "concurrents",
+        title: "Voyez les concurrents gagner du terrain, tôt",
+        body: "Instantanés quotidiens des notes et volumes d'avis de vos concurrents. Quand l'élan d'un rival dépasse votre propre rythme d'avis, vous recevez une alerte la semaine même, pas une surprise au prochain trimestre.",
+        link: { href: "/reputation-risk", label: "Plus de détails →" },
+      },
     ],
   },
   how: {
     label: "/ 04 — COMMENT ÇA MARCHE",
     steps: [
-      { num: "01", name: "Connecter", body: "Branchez votre caisse, logiciel de réservation ou CRM. Dix minutes." },
-      { num: "02", name: "Écouter", body: "Nous évaluons chaque interaction. En silence. En arrière-plan." },
-      { num: "03", name: "Agir", body: "Vous recevez une alerte. Vous contactez, faites le suivi et améliorez l'expérience client." },
-      { num: "04", name: "Croître", body: "Les clients satisfaits sont invités à laisser un avis. La réputation se renforce." },
+      {
+        num: "01",
+        name: "Connectez",
+        body: "Reliez votre fiche Google, vos sources d'avis et votre site. Premier audit de visibilité IA et score de risque de référence en quelques minutes.",
+        link: { href: "/how-to", label: "Plus de détails →" },
+        cta: { href: "/register", label: "Essai gratuit →" },
+      },
+      {
+        num: "02",
+        name: "Surveillez",
+        body: "Risque recalculé chaque heure, réponses IA suivies chaque jour, instantanés concurrents chaque matin, tous les signaux au même endroit.",
+        link: { href: "/live-monitoring", label: "Plus de détails →" },
+        cta: { href: "/register", label: "Essai gratuit →" },
+      },
+      {
+        num: "03",
+        name: "Agissez",
+        body: "Les alertes arrivent avec la cause et l'impact en euros. Corrigez ce qui fait bouger le score, les réponses sont déjà rédigées dans votre ton.",
+        link: { href: "/act-on-signals", label: "Plus de détails →" },
+        cta: { href: "/register", label: "Essai gratuit →" },
+      },
     ],
   },
   pricing: {
     label: "/ 05 — TARIFS",
+    altLink: { href: "/fr-CA#pricing", label: "Voir les tarifs en dollars canadiens →", hideWhenCurrency: "CAD" },
     tiers: [
-      { key: "starter", name: "STARTER", features: ["1 établissement", "500 demandes/mois", "Envois par e-mail", "Tableau de bord"] },
-      { key: "growth", name: "GROWTH", highlighted: true, features: ["5 établissements", "5 000 demandes/mois", "E-mail + SMS", "Évaluation IA"] },
-      { key: "agency", name: "AGENCE", features: ["25 établissements", "15 000 demandes/mois", "Marque blanche", "Accès API"] },
-      { key: "enterprise", name: "ENTREPRISE", features: ["Illimité", "Volume sur mesure", "SSO / SAML", "SLA 99,9 %"] },
+      {
+        key: "starter",
+        name: "STARTER",
+        features: ["Campagnes d'avis (e-mail, SMS, QR)", "Retours privés & routage", "Surveillance multi-sources", "Réponses rédigées par IA"],
+      },
+      {
+        key: "growth",
+        name: "CROISSANCE",
+        highlighted: true,
+        features: ["Tout Starter inclus", "Audit de visibilité IA + feuille de route", "Score de risque & alertes", "Chiffre d'affaires à risque"],
+      },
+      {
+        key: "agency",
+        name: "AGENCE",
+        features: ["Tout Croissance inclus", "Suivi quotidien des réponses IA", "Veille concurrentielle", "Marque blanche & multi-clients"],
+      },
+      {
+        key: "enterprise",
+        name: "ENTREPRISE",
+        features: ["Illimité", "Volume sur mesure", "SSO / SAML", "SLA 99,9 %"],
+      },
     ],
   },
   field: {
-    label: "/ 06 — SUR LE TERRAIN",
-    quoteA: "« EchoRank nous aide à recueillir les retours après chaque intervention, à inviter les clients satisfaits à laisser un avis public et à réagir vite quand quelque chose mérite attention. »",
+    label: "/ 06 — L'ESSENTIEL",
+    quoteA:
+      "« À l'ère de l'IA, les entreprises qui grandiront le plus vite ne seront pas simplement celles qui offrent le meilleur service. Ce seront celles que l'IA juge assez fiables pour les recommander en premier. »",
     quoteB: "",
-    attribution: "CLIENT ECHORANK",
+    attribution: "LA MÉTHODE ECHORANK",
   },
   start: {
     label: "/ 07 — COMMENCER",
-    h2: "Essayez. Ou parlez-nous.",
-    cta1: "Essai gratuit →",
+    h2: "Découvrez si l'IA vous recommande.",
+    cta1: "Vérifiez votre visibilité IA →",
     cta2: "Réserver une démo ↗",
   },
-  footer: { copyright: COPYRIGHT, links: ["CONFIDENTIALITÉ", "CONDITIONS", "SÉCURITÉ", "STATUT"] },
+  footer: {
+    copyright: COPYRIGHT,
+    links: [
+      { label: "CONFIDENTIALITÉ", href: "/legal/privacy" },
+      { label: "CONDITIONS", href: "/legal/terms" },
+      { label: "AVIS LÉGAL", href: "/legal/disclaimer" },
+    ],
+  },
 };
 
-// ─── fr-CA (Quebec) — fr with Quebec vocabulary overrides ─────────────────────
+// ─── fr-CA (Quebec), fr with Quebec vocabulary overrides ─────────────────────
 const frCA: HomeContent = {
-  ...fr,
-  nav: { ...fr.nav, switcher: ["fr-CA", "en-CA"] },
+  meta: {
+    title: "EchoRank. Plateforme d'intelligence de réputation IA",
+    description:
+      "Quand vos clients interrogent l'IA, vous envoie-t-elle chez vous, ou chez votre concurrent ? Auditez votre visibilité IA, suivez les réponses chaque jour et agissez sur un score de risque explicable.",
+  },
+  nav: {
+    product: "Produit",
+    pricing: "Tarifs",
+    customers: "Clients",
+    login: "Connexion",
+    cta: "Essai gratuit",
+    switcher: ["fr-CA", "en-CA"],
+  },
+  hero: {
+    label: "/ 01 — INTELLIGENCE DE RÉPUTATION IA",
+    h1a: "Quand vos clients interrogent l'IA à propos de votre entreprise…",
+    h1b: "est-ce qu'elle les envoie chez vous, ou chez votre concurrent ?",
+    subhead:
+      "Chaque jour, des clients potentiels demandent à ChatGPT, Perplexity et Google AI qui embaucher, où manger, à quel entrepreneur faire confiance ou quelle entreprise appeler. Si l'IA ne vous recommande pas, vous n'avez même pas la chance de compétitionner. EchoRank fait de vous l'entreprise que l'IA recommande, plus de clients potentiels qualifiés, une réputation protégée et des revenus cachés récupérés avant qu'ils soient perdus.",
+    cta1: "Vérifiez votre visibilité IA →",
+    cta2: "Essai gratuit ↗",
+  },
+  trust: {
+    used: "POUR LES ENTREPRISES INDÉPENDANTES ET LES AGENCES QUI LES ACCOMPAGNENT",
+    industries: ["SERVICES À DOMICILE", "CLINIQUES & CABINETS", "RESTAURATION & HÔTELLERIE", "COMMERCE DE DÉTAIL", "AGENCES"],
+  },
+  outcomes: {
+    label: "/ 02 — LES CHIFFRES",
+    items: [
+      { value: "0–100", label: "Score de visibilité IA" },
+      { value: "QUOTIDIEN", label: "Réponses IA suivies" },
+      { value: "HORAIRE", label: "Risque recalculé" },
+    ],
+  },
   platform: {
-    ...fr.platform,
-    cells: fr.platform.cells.map((c) =>
-      c.key === "D"
-        ? { ...c, body: "La bonne demande, au bon moment, au bon client. Par courriel ou SMS." }
-        : c,
-    ),
+    label: "/ 03 — LA PLATEFORME",
+    h2: "Plus recommandé. Moins ignoré.",
+    cells: [
+      {
+        key: "visibility",
+        tag: "visibilité",
+        title: "Devenez l'entreprise que l'IA recommande",
+        body: "Chaque jour, l'IA décide quelles entreprises méritent d'être mentionnées, la plupart des propriétaires n'en ont aucune idée. EchoRank audite chaque facteur de votre visibilité IA et vous remet une feuille de route étape par étape vers les réponses générées. Sachez quand l'IA commence à vous recommander, et à l'instant où vous disparaissez.",
+        link: { href: "/ai-visibility", label: "Plus de détails →" },
+      },
+      {
+        key: "risk",
+        tag: "risque",
+        title: "Arrêtez de perdre des clients sans le savoir",
+        body: "Les problèmes de réputation grandissent en silence, un client insatisfait, un avis sans réponse, un concurrent qui prend de l'élan. EchoRank relie chaque signal en un Score de risque facile à comprendre : ce qui vous coûte des clients et combien de revenus sont à risque chaque mois. Prévenez au lieu de réagir; sachez où agir en premier.",
+        link: { href: "/reputation-risk", label: "Plus de détails →" },
+      },
+      {
+        key: "feedback",
+        tag: "rétroaction",
+        title: "Transformez les commentaires clients en ventes",
+        body: "Chaque avis contient de l'information précieuse, la plupart des entreprises n'ont jamais le temps de la trouver. EchoRank lit chaque avis et commentaire, repère les plaintes récurrentes avant la crise, détecte les activités d'avis suspectes et rédige des réponses dans votre ton. Des clients plus satisfaits, une crédibilité renforcée.",
+        link: { href: "/customer-feedback", label: "Plus de détails →" },
+      },
+      {
+        key: "engine",
+        tag: "moteur",
+        title: "Une réputation qui travaille pendant que vous dormez",
+        body: "Une bonne réputation, ce n'est pas de la chance : c'est un système. EchoRank automatise le gros du travail : campagnes conformes par texto, courriel et code QR, surveillance multiplateforme, marque blanche pour agences et flux qui gardent les signaux clients bien frais. Plus de confiance, plus de références, plus de clients qui vous choisissent en premier.",
+        link: { href: "/reputation-engine", label: "Plus de détails →" },
+      },
+      {
+        key: "answers",
+        tag: "réponses IA",
+        title: "Sachez ce que l'IA dit vraiment de vous",
+        body: "Vos questions clients clés sont testées chaque jour sur ChatGPT, Perplexity et Google AI. Voyez quand vous êtes cité, déformé ou absent, avec historique : une disparition silencieuse ne passe jamais inaperçue.",
+        link: { href: "/ai-visibility", label: "Plus de détails →" },
+      },
+      {
+        key: "competitors",
+        tag: "concurrents",
+        title: "Voyez les concurrents gagner du terrain, tôt",
+        body: "Instantanés quotidiens des notes et volumes d'avis de vos concurrents. Quand l'élan d'un rival dépasse votre propre rythme d'avis, vous recevez une alerte la semaine même, pas une surprise au prochain trimestre.",
+        link: { href: "/reputation-risk", label: "Plus de détails →" },
+      },
+    ],
+  },
+  how: {
+    label: "/ 04 — COMMENT ÇA FONCTIONNE",
+    steps: [
+      {
+        num: "01",
+        name: "Connectez",
+        body: "Reliez votre fiche Google, vos sources d'avis et votre site. Premier audit de visibilité IA et score de risque de base en quelques minutes.",
+        link: { href: "/how-to", label: "Plus de détails →" },
+        cta: { href: "/register", label: "Essai gratuit →" },
+      },
+      {
+        num: "02",
+        name: "Surveillez",
+        body: "Risque recalculé chaque heure, réponses IA suivies chaque jour, instantanés des concurrents chaque matin, tous les signaux au même endroit.",
+        link: { href: "/live-monitoring", label: "Plus de détails →" },
+        cta: { href: "/register", label: "Essai gratuit →" },
+      },
+      {
+        num: "03",
+        name: "Agissez",
+        body: "Les alertes arrivent avec la cause et l'impact en dollars. Corrigez ce qui fait bouger le score, les réponses sont déjà rédigées dans votre ton.",
+        link: { href: "/act-on-signals", label: "Plus de détails →" },
+        cta: { href: "/register", label: "Essai gratuit →" },
+      },
+    ],
   },
   pricing: {
-    ...fr.pricing,
-    tiers: fr.pricing.tiers.map((t) => {
-      if (t.key === "starter") {
-        return { ...t, features: ["1 établissement", "500 demandes/mois", "Envois par courriel", "Tableau de bord"] };
-      }
-      if (t.key === "growth") {
-        return { ...t, features: ["5 établissements", "5 000 demandes/mois", "Courriel + SMS", "Évaluation IA"] };
-      }
-      return t;
-    }),
+    label: "/ 05 — TARIFS",
+    altLink: { href: "/fr#pricing", label: "Voir les tarifs en euros →", hideWhenCurrency: "EUR" },
+    tiers: [
+      {
+        key: "starter",
+        name: "STARTER",
+        features: ["Campagnes d'avis (courriel, texto, QR)", "Rétroaction privée & routage", "Surveillance multi-sources", "Réponses rédigées par IA"],
+      },
+      {
+        key: "growth",
+        name: "CROISSANCE",
+        highlighted: true,
+        features: ["Tout Starter inclus", "Audit de visibilité IA + feuille de route", "Score de risque & alertes", "Revenus à risque"],
+      },
+      {
+        key: "agency",
+        name: "AGENCE",
+        features: ["Tout Croissance inclus", "Suivi quotidien des réponses IA", "Veille concurrentielle", "Marque blanche & multi-clients"],
+      },
+      {
+        key: "enterprise",
+        name: "ENTREPRISE",
+        features: ["Illimité", "Volume sur mesure", "SSO / SAML", "SLA 99,9 %"],
+      },
+    ],
   },
-  field: { ...fr.field, attribution: "PROPRIÉTAIRE, PLOMBERIE INDÉPENDANTE, MONTRÉAL QC" },
+  field: {
+    label: "/ 06 — L'ESSENTIEL",
+    quoteA:
+      "« À l'ère de l'IA, les entreprises qui vont grandir le plus vite ne seront pas simplement celles qui offrent le meilleur service. Ce seront celles que l'IA juge assez fiables pour les recommander en premier. »",
+    quoteB: "",
+    attribution: "LA MÉTHODE ECHORANK",
+  },
+  start: {
+    label: "/ 07 — COMMENCER",
+    h2: "Découvrez si l'IA vous recommande.",
+    cta1: "Vérifiez votre visibilité IA →",
+    cta2: "Réserver une démo ↗",
+  },
+  footer: {
+    copyright: COPYRIGHT,
+    links: [
+      { label: "CONFIDENTIALITÉ", href: "/legal/privacy" },
+      { label: "CONDITIONS", href: "/legal/terms" },
+      { label: "AVIS LÉGAL", href: "/legal/disclaimer" },
+    ],
+  },
 };
 
-// ─── de-CH (Switzerland — German) ─────────────────────────────────────────────
+// ─── de-CH (Switzerland. German) ─────────────────────────────────────────────
 const deCH: HomeContent = {
   meta: {
-    title: "EchoRank — Reputations-Intelligenz",
+    title: "EchoRank. KI-Reputationsintelligenz-Plattform",
     description:
-      "Erfassen Sie Kundenfeedback, generieren Sie authentischere Bewertungen und erkennen Sie Servicethemen mit KI-gestütztem Reputationsmanagement.",
+      "Wenn Kunden die KI fragen, schickt sie diese zu Ihnen, oder zur Konkurrenz? Prüfen Sie Ihre KI-Sichtbarkeit, verfolgen Sie Antworten täglich und handeln Sie auf Basis eines erklärbaren Risiko-Scores.",
   },
   nav: {
     product: "Produkt",
     pricing: "Preise",
     customers: "Kunden",
-    login: "Login",
+    login: "Anmelden",
     cta: "Kostenlos testen",
     switcher: ["de-CH", "fr", "en"],
   },
   hero: {
-    label: "/ 01 — REPUTATIONS-INTELLIGENZ",
-    h1a: "Machen Sie aus Kundenfeedback",
-    h1b: "bessere Bewertungen.",
+    label: "/ 01 — KI-REPUTATIONSINTELLIGENZ",
+    h1a: "Wenn Kunden die KI nach Ihrem Geschäft fragen…",
+    h1b: "schickt sie diese zu Ihnen, oder zur Konkurrenz?",
     subhead:
-      "Erfassen Sie Feedback, laden Sie Kunden zu öffentlichen Bewertungen ein und erkennen Sie Servicethemen früh, damit Ihr Team schnell reagieren und die Kundenerfahrung verbessern kann.",
-    cta1: "14 Tage kostenlos testen →",
-    cta2: "In Aktion ansehen ↗",
+      "Jeden Tag fragen potenzielle Kunden ChatGPT, Perplexity und Google AI, wen sie beauftragen, wo sie essen, welchem Handwerker sie vertrauen oder welche Firma sie anrufen sollen. Wenn die KI Sie nicht empfiehlt, bekommen Sie nicht einmal die Chance, mitzubieten. EchoRank macht Sie zum Unternehmen, das die KI empfiehlt, mehr qualifizierte Anfragen, eine geschützte Reputation und verborgener Umsatz, der gesichert wird, bevor er verloren geht.",
+    cta1: "KI-Sichtbarkeit prüfen →",
+    cta2: "Kostenlos testen ↗",
   },
   trust: {
-    used: "EINGESETZT VON 2'500+ UNABHÄNGIGEN UNTERNEHMEN",
-    industries: ["RESTAURANTS", "SANITÄR", "ZAHNÄRZTE", "AUTO", "HANDWERK"],
+    used: "FÜR UNABHÄNGIGE UNTERNEHMEN UND DIE AGENTUREN DAHINTER",
+    industries: ["HANDWERK & SERVICES", "PRAXEN & KLINIKEN", "GASTRONOMIE & HOTELLERIE", "DETAILHANDEL", "AGENTUREN"],
   },
   outcomes: {
-    label: "/ 02 — WAS SIE BEKOMMEN",
+    label: "/ 02 — DIE ZAHLEN",
     items: [
-      { value: "★", label: "Mehrkanalige Bewertungsanfragen" },
-      { value: "◎", label: "Google- und Facebook-Integrationen" },
-      { value: "KI", label: "KI-gestützte Sentiment-Analyse" },
-      { value: "↻", label: "Automatisierte Wiederherstellungs-Workflows" },
+      { value: "0–100", label: "KI-Sichtbarkeits-Score" },
+      { value: "TÄGLICH", label: "Antworten verfolgt" },
+      { value: "STÜNDLICH", label: "Risiko neu berechnet" },
     ],
   },
   platform: {
     label: "/ 03 — DIE PLATTFORM",
-    h2: "Alles, was Sie brauchen. Nichts, was Sie nicht brauchen.",
+    h2: "Öfter empfohlen. Seltener übersehen.",
     cells: [
-      { key: "A", title: "Servicethemen früh erkennen", body: "KI bewertet jede Kundeninteraktion, damit Ihr Team Servicethemen früh erkennt und schneller reagiert." },
-      { key: "B", title: "Alle Bewertungsplattformen im Blick", body: "Google, local.ch, Facebook, Trustpilot, TripAdvisor. Alles in einem Posteingang." },
-      { key: "C", title: "Kunden zurückgewinnen", body: "Wiederherstellungstickets gehen an die richtige Person im Team. Kundenfeedback und Bewertungs-Insights an einem Ort." },
-      { key: "D", title: "Mehr echte 5-Sterne-Bewertungen", body: "Die richtige Bitte, zum richtigen Zeitpunkt, an den richtigen Kunden. Per E-Mail oder SMS." },
-      { key: "E", title: "Ein Bildschirm, alle Standorte", body: "Geschäftsführer-Dashboard. Eine Kennzahl. Sagt Ihnen, ob es ein guter oder ein schlechter Tag ist." },
-      { key: "F", title: "Compliance erledigt", body: "Keine gefälschten Bewertungen. Kein Filtern. Keine Tricks, für die Google Sie sperren würde. Nur saubere Infrastruktur." },
+      {
+        key: "visibility",
+        tag: "sichtbarkeit",
+        title: "Werden Sie das Unternehmen, das die KI empfiehlt",
+        body: "Jeden Tag entscheidet die KI, welche Unternehmen erwähnt werden, die meisten Inhaber wissen nicht, ob sie empfohlen oder übersehen werden. EchoRank prüft jeden Faktor Ihrer KI-Sichtbarkeit und liefert einen Schritt-für-Schritt-Fahrplan in die KI-Antworten. Sie wissen, wann die KI Sie zu empfehlen beginnt, und sofort, wenn Sie verschwinden.",
+        link: { href: "/ai-visibility", label: "Mehr erfahren →" },
+      },
+      {
+        key: "risk",
+        tag: "risiko",
+        title: "Verlieren Sie keine Kunden mehr, ohne es zu merken",
+        body: "Reputationsprobleme wachsen leise, ein unzufriedener Kunde, eine unbeantwortete Bewertung, ein Konkurrent im Aufwind. EchoRank verbindet jedes Signal zu einem erklärbaren Risiko-Score: was Sie Kunden kostet und wie viel Umsatz jeden Monat auf dem Spiel steht. Vorbeugen statt reagieren; wissen, wo zuerst zu handeln ist.",
+        link: { href: "/reputation-risk", label: "Mehr erfahren →" },
+      },
+      {
+        key: "feedback",
+        tag: "feedback",
+        title: "Machen Sie aus Kundenfeedback mehr Umsatz",
+        body: "Jede Bewertung enthält wertvolle Informationen, den meisten Unternehmen fehlt die Zeit, sie zu finden. EchoRank liest jede Bewertung und jeden Kommentar, erkennt wiederkehrende Beschwerden vor der Krise, entdeckt verdächtige Bewertungsaktivitäten und entwirft Antworten in Ihrem Ton. Zufriedenere Kunden, stärkere Glaubwürdigkeit.",
+        link: { href: "/customer-feedback", label: "Mehr erfahren →" },
+      },
+      {
+        key: "engine",
+        tag: "motor",
+        title: "Eine Reputation, die arbeitet, während Sie schlafen",
+        body: "Eine starke Reputation ist kein Glück, sondern ein System. EchoRank automatisiert die Schwerarbeit: konforme Kampagnen per SMS, E-Mail und QR, Multi-Plattform-Überwachung, White-Label für Agenturen und Abläufe, die laufend frische Kundensignale liefern. Mehr Vertrauen, mehr Empfehlungen, mehr Kunden, die Sie zuerst wählen.",
+        link: { href: "/reputation-engine", label: "Mehr erfahren →" },
+      },
+      {
+        key: "answers",
+        tag: "ki-antworten",
+        title: "Wissen, was die KI wirklich über Sie sagt",
+        body: "Ihre wichtigsten Kundenfragen laufen täglich gegen ChatGPT, Perplexity und Google AI. Sehen Sie, wann Sie zitiert, verzerrt oder gar nicht genannt werden, mit Verlauf: ein stilles Verschwinden bleibt nie unbemerkt.",
+        link: { href: "/ai-visibility", label: "Mehr erfahren →" },
+      },
+      {
+        key: "competitors",
+        tag: "konkurrenz",
+        title: "Sehen Sie früh, wenn Konkurrenten aufholen",
+        body: "Tägliche Momentaufnahmen der Bewertungen und Bewertungszahlen Ihrer Mitbewerber. Überholt der Schwung eines Konkurrenten Ihr eigenes Bewertungstempo, erhalten Sie noch in derselben Woche einen Alarm, keine Überraschung im nächsten Quartal.",
+        link: { href: "/reputation-risk", label: "Mehr erfahren →" },
+      },
     ],
   },
   how: {
     label: "/ 04 — SO FUNKTIONIERT ES",
     steps: [
-      { num: "01", name: "Verbinden", body: "Kasse, Buchungssystem oder CRM anschliessen. Zehn Minuten." },
-      { num: "02", name: "Zuhören", body: "Wir bewerten jede Interaktion. Leise. Im Hintergrund." },
-      { num: "03", name: "Handeln", body: "Sie bekommen eine Meldung. Sie melden sich, folgen nach und verbessern die Kundenerfahrung." },
-      { num: "04", name: "Wachsen", body: "Zufriedene Kunden werden um eine Bewertung gebeten. Die Reputation wächst." },
+      {
+        num: "01",
+        name: "Verbinden",
+        body: "Google-Profil, Bewertungsquellen und Website verknüpfen. Erster KI-Sichtbarkeits-Audit und Risiko-Basiswert in Minuten.",
+        link: { href: "/how-to", label: "Mehr erfahren →" },
+        cta: { href: "/register", label: "Kostenlos testen →" },
+      },
+      {
+        num: "02",
+        name: "Überwachen",
+        body: "Risiko stündlich neu berechnet, KI-Antworten täglich verfolgt, Konkurrenz-Momentaufnahmen jeden Morgen, alle Signale an einem Ort.",
+        link: { href: "/live-monitoring", label: "Mehr erfahren →" },
+        cta: { href: "/register", label: "Kostenlos testen →" },
+      },
+      {
+        num: "03",
+        name: "Handeln",
+        body: "Alarme kommen mit Ursache und Umsatzwirkung. Beheben Sie, was den Score bewegt. Antworten liegen bereits in Ihrem Ton bereit.",
+        link: { href: "/act-on-signals", label: "Mehr erfahren →" },
+        cta: { href: "/register", label: "Kostenlos testen →" },
+      },
     ],
   },
   pricing: {
     label: "/ 05 — PREISE",
     tiers: [
-      { key: "starter", name: "STARTER", features: ["1 Standort", "500 Anfragen/Mt.", "E-Mail-Versand", "Dashboard"] },
-      { key: "growth", name: "GROWTH", highlighted: true, features: ["5 Standorte", "5'000 Anfragen/Mt.", "E-Mail + SMS", "KI-Risikoanalyse"] },
-      { key: "agency", name: "AGENTUR", features: ["25 Standorte", "15'000 Anfragen/Mt.", "White-Label", "API-Zugang"] },
-      { key: "enterprise", name: "ENTERPRISE", features: ["Unbegrenzt", "Individuelles Volumen", "SSO / SAML", "SLA 99,9 %"] },
+      {
+        key: "starter",
+        name: "STARTER",
+        features: ["Bewertungskampagnen (E-Mail, SMS, QR)", "Privates Feedback & Routing", "Multi-Quellen-Überwachung", "KI-Antwortentwürfe"],
+      },
+      {
+        key: "growth",
+        name: "WACHSTUM",
+        highlighted: true,
+        features: ["Alles aus Starter", "KI-Sichtbarkeits-Audit + Fahrplan", "Risiko-Score & Alarme", "Umsatz im Risiko"],
+      },
+      {
+        key: "agency",
+        name: "AGENTUR",
+        features: ["Alles aus Wachstum", "Tägliches KI-Antwort-Tracking", "Konkurrenz-Monitoring", "White-Label & Mandanten"],
+      },
+      {
+        key: "enterprise",
+        name: "ENTERPRISE",
+        features: ["Unbegrenzt", "Individuelles Volumen", "SSO / SAML", "99,9 % SLA"],
+      },
     ],
   },
   field: {
-    label: "/ 06 — IM EINSATZ",
-    quoteA: "«EchoRank hilft uns, nach jedem Auftrag Feedback zu erfassen, zufriedene Kunden zu einer öffentlichen Bewertung einzuladen und schnell nachzufassen, wenn etwas Aufmerksamkeit braucht.»",
+    label: "/ 06 — DAS FAZIT",
+    quoteA:
+      "«Im KI-Zeitalter wachsen nicht einfach die Unternehmen mit dem besten Service am schnellsten. Es werden die Unternehmen sein, denen die KI genug vertraut, um sie zuerst zu empfehlen.»",
     quoteB: "",
-    attribution: "ECHORANK-KUNDE",
+    attribution: "DIE ECHORANK-METHODE",
   },
   start: {
-    label: "/ 07 — STARTEN",
-    h2: "Testen. Oder sprechen Sie mit uns.",
-    cta1: "Kostenlos testen →",
+    label: "/ 07 — LOSLEGEN",
+    h2: "Finden Sie heraus, ob die KI Sie empfiehlt.",
+    cta1: "KI-Sichtbarkeit prüfen →",
     cta2: "Demo buchen ↗",
   },
-  footer: { copyright: COPYRIGHT, links: ["DATENSCHUTZ", "AGB", "SICHERHEIT", "STATUS"] },
+  footer: {
+    copyright: COPYRIGHT,
+    links: [
+      { label: "DATENSCHUTZ", href: "/legal/privacy" },
+      { label: "AGB", href: "/legal/terms" },
+      { label: "HAFTUNGSAUSSCHLUSS", href: "/legal/disclaimer" },
+    ],
+  },
 };
 
 export const CONTENT: Record<Locale, HomeContent> = {

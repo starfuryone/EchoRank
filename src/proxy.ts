@@ -52,6 +52,11 @@ export default auth((req) => {
     return NextResponse.next();
   }
 
+  // Public marketing page: AI visibility landing (all locales)
+  if (/^\/(en|en-CA|fr|fr-CA|de-CH)\/(ai-visibility|reputation-risk|customer-feedback|reputation-engine|how-to|live-monitoring|act-on-signals|legal\/(privacy|terms|disclaimer))\/?$/.test(pathname)) {
+    return NextResponse.next();
+  }
+
   // ── Origin validation for mutating API requests ──────────────────────
   // Exclude /api/webhooks/ since those come from external services (e.g. Stripe)
   if (

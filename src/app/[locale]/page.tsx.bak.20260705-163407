@@ -1,0 +1,292 @@
+import type { Metadata } from "next";
+import { headers } from "next/headers";
+import { notFound } from "next/navigation";
+import Link from "next/link";
+import {
+  SUPPORTED_LOCALES,
+  isSupportedLocale,
+  defaultCurrencyForLocale,
+  type Currency,
+} from "@/lib/i18n/config";
+import { CONTENT, PRICE_STRINGS, TAX_LINES } from "@/lib/i18n/content";
+import styles from "./home.module.css";
+
+const HERO_VIDEOS: Record<string, string> = {
+  fr: "/FR_A_futuristic_AI_Repute.mp4",
+  "fr-CA": "/FR_A_futuristic_AI_Repute.mp4",
+};
+const DEFAULT_HERO_VIDEO = "/EchorankIntroVid.mp4";
+
+export function generateStaticParams() {
+  return SUPPORTED_LOCALES.map((locale) => ({ locale }));
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  if (!isSupportedLocale(locale)) return {};
+  const { meta } = CONTENT[locale];
+  return { title: meta.title, description: meta.description };
+}
+
+export default async function HomePage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  if (!isSupportedLocale(locale)) notFound();
+
+  const c = CONTENT[locale];
+  const heroVideo = HERO_VIDEOS[locale] ?? DEFAULT_HERO_VIDEO;
+
+  // Currency: geo-resolved value from middleware when valid for this locale,
+  // otherwise the locale's natural currency.
+  const localePrices = PRICE_STRINGS[locale];
+  const headerCurrency = (await headers()).get("x-echorank-currency") as
+    | Currency
+    | null;
+  const currency: Currency =
+    headerCurrency && localePrices[headerCurrency]
+      ? headerCurrency
+      : defaultCurrencyForLocale(locale);
+
+  const fallbackCurrency = defaultCurrencyForLocale(locale);
+  const tierPrices = localePrices[currency] ?? localePrices[fallbackCurrency]!;
+  const taxLine =
+    TAX_LINES[locale][currency] ?? TAX_LINES[locale][fallbackCurrency]!;
+
+  return (
+    <div className={styles.page}>
+      {/* ── Nav ───────────────────────────────────────────────────────── */}
+      <nav className={styles.nav}>
+        <div className={styles.brand}>
+          <svg
+            className={styles.logo}
+            viewBox="60 40 1700 220"
+            role="img"
+            aria-label="ECHORANK 360"
+          >
+            <defs>
+              <linearGradient id="erGold" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#fff6c7" />
+                <stop offset="10%" stopColor="#f7d76f" />
+                <stop offset="25%" stopColor="#d4a73d" />
+                <stop offset="50%" stopColor="#fff1a8" />
+                <stop offset="75%" stopColor="#b88420" />
+                <stop offset="100%" stopColor="#f8d66b" />
+              </linearGradient>
+              <linearGradient id="erSilver" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#ffffff" />
+                <stop offset="20%" stopColor="#d9d9d9" />
+                <stop offset="50%" stopColor="#f7f7f7" />
+                <stop offset="80%" stopColor="#b8b8b8" />
+                <stop offset="100%" stopColor="#ffffff" />
+              </linearGradient>
+            </defs>
+            <g transform="translate(90 70)">
+              <polygon points="80,0 160,80 80,160 0,80" fill="url(#erGold)" stroke="#f7d76f" strokeWidth="4" />
+              <polygon points="80,15 145,80 80,145 15,80" fill="none" stroke="#fff7c5" strokeWidth="2" />
+            </g>
+            <text x="330" y="190" fontFamily="var(--font-geist-sans), system-ui, sans-serif" fontSize="150" fontWeight="700" letterSpacing="4" fill="#ffffff">ECHORANK<tspan dx="36" fill="url(#erSilver)">360</tspan></text>
+          </svg>
+        </div>
+        <div className={styles.navLinks}>
+          <a href="#platform">{c.nav.product}</a>
+          <a href="#pricing">{c.nav.pricing}</a>
+          <a href="#field">{c.nav.customers}</a>
+          <Link href="/login">{c.nav.login}</Link>
+        </div>
+        <div className={styles.navRight}>
+          <span className={styles.toggle}>
+            {c.nav.switcher.map((loc, i) => (
+              <span key={loc} style={{ display: "inline-flex", gap: "6px" }}>
+                {i > 0 && <span className={styles.toggleSep}>/</span>}
+                <Link
+                  href={`/${loc}`}
+                  className={styles.toggleBtn}
+                  style={{ opacity: loc === locale ? 1 : 0.4 }}
+                  aria-current={loc === locale ? "true" : undefined}
+                >
+                  {loc === locale ? "● " : ""}
+                  {loc.toUpperCase()}
+                </Link>
+              </span>
+            ))}
+          </span>
+          <Link href="/register" className={styles.navCta}>
+            {c.nav.cta} ↗
+          </Link>
+        </div>
+      </nav>
+
+      <div className={styles.container}>
+        {/* ── 01 Hero ─────────────────────────────────────────────────── */}
+        <section className={styles.hero}>
+          <div className={styles.heroGrid}>
+          <div className={styles.heroCopy}>
+          <div className={styles.label}>{c.hero.label}</div>
+          <h1 className={styles.h1}>
+            {c.hero.h1a}
+            <span className={styles.muted}>{c.hero.h1b}</span>
+          </h1>
+          <p className={styles.subhead}>{c.hero.subhead}</p>
+          <div className={`${styles.btnRow} ${styles.heroCtas}`}>
+            <Link href="/register" className={`${styles.btn} ${styles.btnPrimary}`}>
+              {c.hero.cta1}
+            </Link>
+            <Link href="/register" className={`${styles.btn} ${styles.btnGhost}`}>
+              {c.hero.cta2}
+            </Link>
+          </div>
+          </div>
+          <div className={styles.heroMedia}>
+            <video
+              className={styles.heroVideo}
+              src={heroVideo}
+              autoPlay
+              muted
+              loop
+              playsInline
+              controls
+              preload="metadata"
+              aria-label="EchoRank product overview"
+            />
+          </div>
+          </div>
+        </section>
+      </div>
+
+      {/* ── Trust band ──────────────────────────────────────────────────── */}
+      <div className={styles.container}>
+        <div className={styles.trust}>
+          <span>{c.trust.used}</span>
+          <span className={styles.industries}>
+            {c.trust.industries.map((it) => (
+              <span key={it}>{it}</span>
+            ))}
+          </span>
+        </div>
+      </div>
+
+      <div className={styles.container}>
+        {/* ── 02 What you get ─────────────────────────────────────────── */}
+        <section className={styles.section}>
+          <div className={styles.label}>{c.outcomes.label}</div>
+          <div className={styles.statGrid}>
+            {c.outcomes.items.map((s) => (
+              <div key={s.label} className={styles.statCell}>
+                <div className={styles.statValue}>{s.value}</div>
+                <div className={styles.statLabel}>{s.label}</div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* ── 03 Platform ─────────────────────────────────────────────── */}
+        <section id="platform" className={styles.section}>
+          <div className={styles.label}>{c.platform.label}</div>
+          <h2 className={styles.h2}>{c.platform.h2}</h2>
+          <div className={styles.cellGrid}>
+            {c.platform.cells.map((cell) => (
+              <div key={cell.key} className={styles.cell}>
+                <div className={styles.cellKey}>/ {cell.key}</div>
+                <div className={styles.cellTitle}>{cell.title}</div>
+                <p className={styles.cellBody}>{cell.body}</p>
+              {cell.link && (
+                <Link href={`/${locale}${cell.link.href}`} className={styles.label}>
+                  {cell.link.label}
+                </Link>
+              )}
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* ── 04 How it works ─────────────────────────────────────────── */}
+        <section className={styles.section}>
+          <div className={styles.label}>{c.how.label}</div>
+          <div className={styles.stepGrid}>
+            {c.how.steps.map((step) => (
+              <div key={step.num}>
+                <div className={styles.stepNum}>{step.num}</div>
+                <div className={styles.stepName}>{step.name}</div>
+                <p className={styles.stepBody}>{step.body}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* ── 05 Pricing ──────────────────────────────────────────────── */}
+        <section id="pricing" className={styles.section}>
+          <div className={styles.label}>{c.pricing.label}</div>
+          {c.pricing.altLink && (
+            <Link href={c.pricing.altLink.href} className={styles.label}>
+              {c.pricing.altLink.label}
+            </Link>
+          )}
+          <div className={styles.priceGrid}>
+            {c.pricing.tiers.map((tier) => (
+              <div
+                key={tier.key}
+                className={`${styles.priceCell} ${
+                  tier.highlighted ? styles.priceCellHi : ""
+                }`}
+              >
+                <div className={styles.priceName}>/ {tier.name}</div>
+                <div className={styles.priceAmount}>{tierPrices[tier.key]}</div>
+                <ul className={styles.priceFeatures}>
+                  {tier.features.map((f) => (
+                    <li key={f}>{f}</li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+          <p className={styles.taxLine}>{taxLine}</p>
+        </section>
+
+        {/* ── 06 In the field ─────────────────────────────────────────── */}
+        <section id="field" className={styles.section}>
+          <div className={styles.label}>{c.field.label}</div>
+          <blockquote className={styles.quote}>
+            {c.field.quoteA}
+            <span className={styles.qMuted}>{c.field.quoteB}</span>
+          </blockquote>
+          <div className={styles.attribution}>— {c.field.attribution}</div>
+        </section>
+
+        {/* ── 07 Start ────────────────────────────────────────────────── */}
+        <section className={styles.section}>
+          <div className={styles.label}>{c.start.label}</div>
+          <div className={styles.startRow}>
+            <h2 className={styles.h2}>{c.start.h2}</h2>
+            <div className={styles.btnRow}>
+              <Link href="/register" className={`${styles.btn} ${styles.btnPrimary}`}>
+                {c.start.cta1}
+              </Link>
+              <Link href="/register" className={`${styles.btn} ${styles.btnGhost}`}>
+                {c.start.cta2}
+              </Link>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      {/* ── Footer ──────────────────────────────────────────────────────── */}
+      <footer className={styles.footer}>
+        <span>{c.footer.copyright}</span>
+        <span className={styles.footerLinks}>
+          {c.footer.links.map((l) => (
+            <a key={l} href="#">
+              {l}
+            </a>
+          ))}
+        </span>
+      </footer>
+    </div>
+  );
+}

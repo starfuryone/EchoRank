@@ -1,0 +1,117 @@
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
+import Link from "next/link";
+import { SUPPORTED_LOCALES, isSupportedLocale, type Locale } from "@/lib/i18n/config";
+import { CONTENT } from "@/lib/i18n/content";
+import lp from "../legal.module.css";
+import BackButton from "../back-button";
+
+export function generateStaticParams() {
+  return SUPPORTED_LOCALES.map((locale) => ({ locale }));
+}
+
+type Doc = { title: string; updated: string; sections: { h: string; ps: string[] }[] };
+
+const EN: Doc = {
+  title: "Disclaimer",
+  updated: "Last updated: July 5, 2026",
+  sections: [
+    { h: "No warranty", ps: [
+      "EchoRank is provided \"as is\" and \"as available\". To the maximum extent permitted by law, ChatLogic Insights Ltd disclaims all warranties, express or implied, including merchantability, fitness for a particular purpose, non-infringement and accuracy.",
+    ]},
+    { h: "Not professional advice", ps: [
+      "Nothing on this site or in the Service constitutes legal, financial, tax or other professional advice. Revenue-at-risk figures, risk scores and similar outputs are estimates intended to help you prioritise; consult a qualified professional before making decisions that depend on them.",
+    ]},
+    { h: "AI-generated content", ps: [
+      "Parts of the Service produce AI-generated analysis and drafts. AI outputs can be wrong, incomplete or outdated. Review everything before relying on it or publishing it; you are responsible for what you publish.",
+    ]},
+    { h: "No guarantee of outcomes", ps: [
+      "We do not control search engines, AI assistants or review platforms. We make no promise that your business will be mentioned, ranked, recommended or accurately described by any third-party system, or that reviews, ratings or revenue will improve.",
+    ]},
+    { h: "Third-party names and links", ps: [
+      "Google, ChatGPT, Perplexity, Anthropic and other names and marks referenced are the property of their respective owners; their use is for identification only and implies no affiliation or endorsement. External links are provided for convenience; we are not responsible for third-party content.",
+    ]},
+    { h: "Contact", ps: [
+      "Questions about this disclaimer: privacy@echorank360.com. See also our Terms of Use and Privacy Policy, linked below.",
+    ]},
+  ],
+};
+
+const FR: Doc = {
+  title: "Avis de non-responsabilité",
+  updated: "Dernière mise à jour : 5 juillet 2026",
+  sections: [
+    { h: "Absence de garantie", ps: [
+      "EchoRank est fourni « tel quel » et « selon disponibilité ». Dans toute la mesure permise par la loi, ChatLogic Insights Ltd décline toute garantie, expresse ou implicite, y compris de qualité marchande, d'adéquation à un usage particulier, d'absence de contrefaçon et d'exactitude.",
+    ]},
+    { h: "Pas un conseil professionnel", ps: [
+      "Rien sur ce site ni dans le Service ne constitue un conseil juridique, financier, fiscal ou autre conseil professionnel. Le chiffre d'affaires à risque, les scores de risque et résultats similaires sont des estimations destinées à la priorisation ; consultez un professionnel qualifié avant toute décision qui en dépendrait.",
+    ]},
+    { h: "Contenus générés par IA", ps: [
+      "Certaines fonctions produisent des analyses et brouillons générés par IA. Ces résultats peuvent être erronés, incomplets ou obsolètes. Vérifiez tout avant de vous y fier ou de le publier ; vous êtes responsable de ce que vous publiez.",
+    ]},
+    { h: "Aucune garantie de résultats", ps: [
+      "Nous ne contrôlons ni les moteurs de recherche, ni les assistants d'IA, ni les plateformes d'avis. Nous ne promettons pas que votre entreprise sera mentionnée, classée, recommandée ou correctement décrite par un système tiers, ni que vos avis, notes ou revenus s'amélioreront.",
+    ]},
+    { h: "Noms de tiers et liens", ps: [
+      "Google, ChatGPT, Perplexity, Anthropic et les autres noms et marques cités appartiennent à leurs titulaires respectifs ; leur usage est purement descriptif et n'implique aucune affiliation ni approbation. Les liens externes sont fournis pour commodité ; nous ne répondons pas des contenus de tiers.",
+    ]},
+    { h: "Contact", ps: [
+      "Questions sur cet avis : privacy@echorank360.com. Voir aussi nos Conditions d'utilisation et notre Politique de confidentialité, en pied de page.",
+    ]},
+  ],
+};
+
+function pick(locale: Locale): Doc { return locale.startsWith("fr") ? FR : EN; }
+
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
+  const { locale } = await params;
+  if (!isSupportedLocale(locale)) return {};
+  return { title: `${pick(locale).title} | EchoRank` };
+}
+
+export default async function Page({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  if (!isSupportedLocale(locale)) notFound();
+  const d = pick(locale);
+  const nav = CONTENT[locale].nav;
+  const foot = CONTENT[locale].footer;
+  const backLabel = locale.startsWith("fr") ? "← Retour" : locale === "de-CH" ? "← Zurück" : "← Back";
+  return (
+    <div className={lp.page}>
+      <div className={lp.wrap}>
+        <div className={lp.top}>
+          <Link href={`/${locale}`} aria-label="EchoRank 360, home">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/echorank-logo-dark.svg" alt="ECHORANK 360" className={lp.logo} />
+          </Link>
+          <Link href="/register">{nav.cta}</Link>
+        </div>
+        <div className={lp.backRow}>
+          <BackButton locale={locale} label={backLabel} className={lp.backBtn} />
+        </div>
+        {locale === "de-CH" && <p className={lp.banner}>Diese Seite ist derzeit auf Englisch verfügbar. Bei Fragen: privacy@echorank360.com.</p>}
+        <h1 className={lp.h1}>{d.title}</h1>
+        <p className={lp.updated}>{d.updated}</p>
+        {d.sections.map((s) => (
+          <section key={s.h}>
+            <h2 className={lp.h2}>{s.h}</h2>
+            {s.ps.map((p, i) => (<p key={i} className={lp.p}>{p}</p>))}
+          </section>
+        ))}
+        <div className={lp.backRowBottom}>
+          <BackButton locale={locale} label={backLabel} className={lp.backBtn} />
+        </div>
+        <footer className={lp.footer}>
+          <span>{foot.copyright}</span>
+          <span>
+            {foot.links.map((l) => (
+              <Link key={l.label} href={`/${locale}${l.href}`}>{l.label}</Link>
+            ))}
+          </span>
+        </footer>
+      </div>
+    </div>
+  );
+}
+// EOF-disclaimer

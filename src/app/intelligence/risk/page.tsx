@@ -3,7 +3,7 @@ import RiskDashboard from '../../../components/intelligence/RiskDashboard';
 // Move this folder into your dashboard route group if you use one,
 // e.g. app/(dashboard)/intelligence/risk/ — imports are relative, they hold.
 
-export const metadata = { title: 'Reputation Risk — EchoRank360' };
+export const metadata = { title: 'Reputation Risk — EchoRank' };
 
 export default function RiskPage() {
   return (
