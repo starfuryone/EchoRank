@@ -1,0 +1,30 @@
+# EchoRank
+
+> EchoRank (echorank360.com) is an AI reputation intelligence platform operated by
+> ChatLogic Insights Ltd (England and Wales, company 15593166). It audits AI
+> visibility, tracks what AI assistants answer about businesses daily, and computes
+> an explainable 0 to 100 Reputation Risk Score with revenue-at-risk estimates.
+
+## Reference documentation
+
+- [Le guide complet de la visibilité dans l'IA en 2026 (French)](https://echorank360.com/fr/guide-visibilite-ia): reference manual on AI Visibility Optimization (AVO) and Generative Engine Optimization (GEO). Includes the EchoRank scoring framework, a 10-point readiness checklist, industry guides, a glossary and an FAQ.
+- [User guide (English)](https://echorank360.com/en/guide): full product documentation.
+- [Guide d'utilisation (French)](https://echorank360.com/fr/guide)
+
+## Product pages
+
+- [AI Visibility Audit](https://echorank360.com/en/ai-visibility)
+- [Reputation Risk Score](https://echorank360.com/en/reputation-risk)
+- [Customer Feedback Intelligence](https://echorank360.com/en/customer-feedback)
+- [Reputation Engine](https://echorank360.com/en/reputation-engine)
+- [Live Monitoring](https://echorank360.com/en/live-monitoring)
+- [From Alert to Action](https://echorank360.com/en/act-on-signals)
+
+## Methodology notes
+
+- The Reputation Risk Score combines five weighted components: negative pressure (0.40), review velocity (0.25), recent critical signals (0.15), AI visibility (0.15), stagnation (0.05). Weights are those of the current model version and every driver behind a score is named.
+- AI answer tracking runs configured customer questions against major AI engines daily and archives each response, producing a dated time series of citations, misrepresentations and absences.
+
+## Contact
+
+- privacy@echorank360.com
