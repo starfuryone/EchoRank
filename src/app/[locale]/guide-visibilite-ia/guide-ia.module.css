@@ -72,3 +72,18 @@
 }
 .backBtnGrey:hover { background: #d1d5db; color: #111827; }
 .backBtnGrey:focus-visible { outline: 2px solid #374151; outline-offset: 2px; }
+
+/* ── Full site navbar ───────────────────────────────────────────────── */
+.navbar { display:flex; align-items:center; justify-content:space-between; gap:24px; padding:16px 0; border-bottom:.5px solid var(--hairline); }
+.logoLink { display:inline-flex; align-items:center; flex-shrink:0; }
+.navLinks { display:flex; align-items:center; gap:26px; font-size:13px; letter-spacing:.02em; }
+.navLink { color:rgba(var(--fg-rgb),.65); text-decoration:none; }
+.navLink:hover { color:rgba(var(--fg-rgb),1); }
+.navRight { display:flex; align-items:center; gap:18px; }
+.switcher { display:flex; gap:10px; font-size:11px; letter-spacing:.08em; }
+.switchItem { color:rgba(var(--fg-rgb),.45); text-decoration:none; text-transform:uppercase; }
+.switchItem:hover { color:rgba(var(--fg-rgb),.9); }
+.switchActive { color:rgba(var(--fg-rgb),1); font-weight:600; }
+.btnPrimary { display:inline-flex; background:rgb(17 17 17); color:#fff; border-radius:8px; padding:10px 18px; font-size:13px; font-weight:600; text-decoration:none; white-space:nowrap; }
+.btnPrimary:hover { background:rgb(40 40 40); }
+@media (max-width: 760px) { .navLinks { display:none; } }

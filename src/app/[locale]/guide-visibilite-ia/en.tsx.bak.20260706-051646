@@ -2,8 +2,6 @@ import Link from "next/link";
 import { existsSync } from "node:fs";
 import { join } from "node:path";
 import s from "./guide-ia.module.css";
-import { CONTENT } from "@/lib/i18n/content";
-import { isSupportedLocale } from "@/lib/i18n/config";
 import Checklist from "./checklist";
 import RevenueCalculator from "./calculator";
 import BackButton from "../legal/back-button";
@@ -169,7 +167,6 @@ export function jsonLdEn() {
 }
 
 export default function EnGuide({ locale, foot }: { locale: string; foot: Foot }) {
-  const nav = CONTENT[isSupportedLocale(locale) ? locale : "en"].nav;
   const backLabel = locale === "de-CH" ? "← Zurück" : "← Back";
   const chapters: [string, string][] = [
     ["seo-vs-ia", "1. From SEO to GEO: what changed"],
@@ -192,29 +189,13 @@ export default function EnGuide({ locale, foot }: { locale: string; foot: Foot }
     <div className={s.page}>
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdEn()) }} />
       <div className={s.wrap}>
-        <header className={s.navbar}>
-          <Link href={`/${locale}`} className={s.logoLink} aria-label="EchoRank 360, home">
+        <div className={s.top}>
+          <Link href={`/${locale}`} aria-label="EchoRank 360, home">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/echorank-logo-dark.svg" alt="ECHORANK 360" className={s.logo} />
           </Link>
-          <nav className={s.navLinks} aria-label="Main">
-            <Link href={`/${locale}`} className={s.navLink}>{nav.product}</Link>
-            <Link href={`/${locale}#pricing`} className={s.navLink}>{nav.pricing}</Link>
-            <Link href={`/${locale}#field`} className={s.navLink}>{nav.customers}</Link>
-            <Link href="/login" className={s.navLink}>{nav.login}</Link>
-          </nav>
-          <div className={s.navRight}>
-            <span className={s.switcher}>
-              {nav.switcher.map((l) => (
-                <Link key={l} href={`/${l}/guide-visibilite-ia`}
-                  className={`${s.switchItem} ${l === locale ? s.switchActive : ""}`}>
-                  {l.toUpperCase()}
-                </Link>
-              ))}
-            </span>
-            <Link href="/register" className={s.btnPrimary}>{nav.cta}</Link>
-          </div>
-        </header>
+          <Link href="/register">AI visibility audit →</Link>
+        </div>
 
         <div className={s.backRow}>
           <BackButton locale={locale} label={backLabel} className={s.backBtnGrey} />
