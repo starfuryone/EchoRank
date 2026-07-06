@@ -203,7 +203,7 @@ const en: HomeContent = {
     copyright: COPYRIGHT,
     links: [
       { label: "GUIDE", href: "/guide" },
-      { label: "AI VISIBILITY GUIDE", href: "/guide-visibilite-ia" },
+      { label: "GUIDE IA (FR)", href: "/guide-visibilite-ia" },
       { label: "PRIVACY", href: "/legal/privacy" },
       { label: "TERMS", href: "/legal/terms" },
       { label: "DISCLAIMER", href: "/legal/disclaimer" },
@@ -358,7 +358,7 @@ const enCA: HomeContent = {
     copyright: COPYRIGHT,
     links: [
       { label: "GUIDE", href: "/guide" },
-      { label: "AI VISIBILITY GUIDE", href: "/guide-visibilite-ia" },
+      { label: "GUIDE IA (FR)", href: "/guide-visibilite-ia" },
       { label: "PRIVACY", href: "/legal/privacy" },
       { label: "TERMS", href: "/legal/terms" },
       { label: "DISCLAIMER", href: "/legal/disclaimer" },
@@ -848,7 +848,7 @@ const deCH: HomeContent = {
     copyright: COPYRIGHT,
     links: [
       { label: "ANLEITUNG", href: "/guide" },
-      { label: "KI-GUIDE (EN)", href: "/guide-visibilite-ia" },
+      { label: "KI-GUIDE (FR)", href: "/guide-visibilite-ia" },
       { label: "DATENSCHUTZ", href: "/legal/privacy" },
       { label: "AGB", href: "/legal/terms" },
       { label: "HAFTUNGSAUSSCHLUSS", href: "/legal/disclaimer" },

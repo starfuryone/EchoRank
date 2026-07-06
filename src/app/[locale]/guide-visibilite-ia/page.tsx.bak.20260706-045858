@@ -7,7 +7,6 @@ import { SUPPORTED_LOCALES, isSupportedLocale } from "@/lib/i18n/config";
 import { CONTENT } from "@/lib/i18n/content";
 import s from "./guide-ia.module.css";
 import Checklist from "./checklist";
-import EnGuide, { TITLE_EN, DESC_EN } from "./en";
 import RevenueCalculator from "./calculator";
 
 export function generateStaticParams() {
@@ -21,20 +20,16 @@ const DESC = "Le guide de référence sur la visibilité IA et le Generative Eng
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
   if (!isSupportedLocale(locale)) return {};
-  const fr = locale.startsWith("fr");
-  const langs = {
-    fr: "https://echorank360.com/fr/guide-visibilite-ia",
-    "fr-CA": "https://echorank360.com/fr-CA/guide-visibilite-ia",
-    en: "https://echorank360.com/en/guide-visibilite-ia",
-    "en-CA": "https://echorank360.com/en-CA/guide-visibilite-ia",
-    "x-default": "https://echorank360.com/en/guide-visibilite-ia",
-  };
   return {
-    title: `${fr ? TITLE : TITLE_EN} | EchoRank`,
-    description: fr ? DESC : DESC_EN,
+    title: `${TITLE} | EchoRank`,
+    description: DESC,
     alternates: {
-      canonical: fr ? langs.fr : langs.en,
-      languages: langs,
+      canonical: "https://echorank360.com/fr/guide-visibilite-ia",
+      languages: {
+        fr: "https://echorank360.com/fr/guide-visibilite-ia",
+        "fr-CA": "https://echorank360.com/fr-CA/guide-visibilite-ia",
+        "x-default": "https://echorank360.com/fr/guide-visibilite-ia",
+      },
     },
   };
 }
@@ -194,7 +189,6 @@ export default async function GuideIaPage({ params }: { params: Promise<{ locale
   if (!isSupportedLocale(locale)) notFound();
   const foot = CONTENT[locale].footer;
   const isFr = locale.startsWith("fr");
-  if (!isFr) return <EnGuide locale={locale} foot={foot} />;
 
   const jsonLd = {
     "@context": "https://schema.org",

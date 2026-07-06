@@ -8,6 +8,7 @@
 ## Reference documentation
 
 - [Le guide complet de la visibilité dans l'IA en 2026 (French)](https://echorank360.com/fr/guide-visibilite-ia): reference manual on AI Visibility Optimization (AVO) and Generative Engine Optimization (GEO). Includes the EchoRank scoring framework, a 10-point readiness checklist, industry guides, a glossary and an FAQ.
+- [The complete guide to AI visibility in 2026 (English)](https://echorank360.com/en/guide-visibilite-ia): English edition of the reference manual.
 - [User guide (English)](https://echorank360.com/en/guide): full product documentation.
 - [Guide d'utilisation (French)](https://echorank360.com/fr/guide)
 
