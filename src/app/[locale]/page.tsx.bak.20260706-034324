@@ -34,13 +34,10 @@ export async function generateMetadata({
 
 export default async function HomePage({
   params,
-  searchParams,
 }: {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { locale } = await params;
-  const sp = await searchParams;
   if (!isSupportedLocale(locale)) notFound();
 
   const c = CONTENT[locale];
@@ -52,16 +49,10 @@ export default async function HomePage({
   const headerCurrency = (await headers()).get("x-echorank-currency") as
     | Currency
     | null;
-  const qpRaw = sp.currency;
-  const qpCurrency =
-    typeof qpRaw === "string" && localePrices[qpRaw as Currency]
-      ? (qpRaw as Currency)
-      : null;
   const currency: Currency =
-    qpCurrency ??
-    (headerCurrency && localePrices[headerCurrency]
+    headerCurrency && localePrices[headerCurrency]
       ? headerCurrency
-      : defaultCurrencyForLocale(locale));
+      : defaultCurrencyForLocale(locale);
 
   const fallbackCurrency = defaultCurrencyForLocale(locale);
   const tierPrices = localePrices[currency] ?? localePrices[fallbackCurrency]!;
@@ -246,13 +237,11 @@ export default async function HomePage({
         {/* ── 05 Pricing ──────────────────────────────────────────────── */}
         <section id="pricing" className={styles.section}>
           <div className={styles.label}>{c.pricing.label}</div>
-          {c.pricing.altLinks
-            ?.filter((l) => currency !== l.hideWhenCurrency)
-            .map((l) => (
-              <Link key={l.label} href={l.href} className={styles.label}>
-                {l.label}
-              </Link>
-            ))}
+          {c.pricing.altLink && currency !== c.pricing.altLink.hideWhenCurrency && (
+            <Link href={c.pricing.altLink.href} className={styles.label}>
+              {c.pricing.altLink.label}
+            </Link>
+          )}
           <div className={styles.priceGrid}>
             {c.pricing.tiers.map((tier) => (
               <div
