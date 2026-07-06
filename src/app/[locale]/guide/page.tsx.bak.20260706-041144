@@ -10,24 +10,13 @@ export function generateStaticParams() {
   return SUPPORTED_LOCALES.map((locale) => ({ locale }));
 }
 
-type Doc = { title: string; updated: string; intro: string; sections: { h: string; ps: string[]; bullets?: string[] }[] };
+type Doc = { title: string; updated: string; intro: string; sections: { h: string; ps: string[] }[] };
 
 const EN: Doc = {
   title: "EchoRank User Guide",
   updated: "Last updated: July 6, 2026",
   intro: "This guide covers every feature of EchoRank in plain language: what it does, where to find it, and how to get value from it on day one. Feature availability by plan is noted where it applies.",
   sections: [
-    { h: "Why businesses need Google review management software", ps: [
-      "Google review management software is not just a tool for handling reviews. It is a strategic asset, for a single location shop as much as for multinationals and enterprises. Here is what the right platform brings:",
-    ], bullets: [
-      "Brand image and personalization: every review answered in a consistent voice, at scale.",
-      "Multi location and multilingual management: one place for every location and every language your customers write in.",
-      "Efficiency: reading, drafting and routing are automated, so minutes replace hours.",
-      "Measure customer satisfaction with sentiment analysis: every review and comment is scored, so satisfaction becomes a trend you can watch instead of a guess.",
-      "Risk mitigation: recurring complaints and suspicious review activity surface before they become crises.",
-      "Drive business decisions: scores, deltas and revenue at risk turn reputation into numbers a leadership team can act on.",
-      "Competitive intelligence: daily competitor snapshots show who is gaining ground and when.",
-    ]},
     { h: "1. Create your account", ps: [
       "Go to the register page, enter your name, work email, business name and a password of at least 8 characters. Every new account starts a 14 day free trial with no credit card required. Nothing is charged unless you subscribe.",
       "You can invite teammates later from the Team page. The person who creates the account is the owner.",
@@ -97,19 +86,6 @@ const EN: Doc = {
     { h: "20. Getting help", ps: [
       "Questions, problems or requests: write to privacy@echorank360.com. This guide is updated as features ship; the date at the top tells you how fresh it is.",
     ]},
-    { h: "21. Download your reviews as a CSV", ps: [
-      "Most review platforms let business owners export their own reviews. On Google, request an export of your Google Business Profile data through Google Takeout: select the Google Business Profile product, and the archive you receive includes your reviews. Other platforms offer a CSV or spreadsheet export in their business dashboard, often under settings or reports. If a platform offers no export at all, the browser extension in section 23 is usually the faster path.",
-      "Whatever the source, aim for one row per review with columns such as author, rating, date and text. The importer maps your columns, so exact column names do not matter.",
-    ]},
-    { h: "22. Upload a review CSV into EchoRank", ps: [
-      "Open the Imports page and upload your file. On the mapping screen, match your columns to EchoRank fields: the importer suggests matches and you correct anything it got wrong. Check the preview, which shows exactly what will be created and flags problem rows. Then commit.",
-      "The import runs in the background; large files are processed in batches and you can keep working while it runs. Imported reviews join your monitored feed, are scored for sentiment, and count toward your risk history like any other signal.",
-    ]},
-    { h: "23. Use the browser extension, in Chrome and in Brave", ps: [
-      "The EchoRank extension imports reviews directly from pages you can already see in your browser. It is built for Chromium browsers, so it works in Google Chrome and in Brave the same way. Install it from the link on the Extension page of your dashboard; the Chrome Web Store works natively in Brave, so click Add and confirm.",
-      "Connect it once: open the extension, sign in, and it links to your account with a secure token from the Extension page. Then browse to your reviews on a supported source, for example your Google Business listing in Search or Maps, or your public business page on platforms such as Facebook from Meta, and click Import. The extension reads the reviews visible on the page and sends them to your account, where they are deduplicated and scored like any other import.",
-      "Import only reviews of your own business or reviews you have the right to process, and respect each platform's terms of use. If a page is not recognized as a supported source, the import stays disabled; the CSV path in sections 21 and 22 is the fallback.",
-    ]},
   ],
 };
 
@@ -118,17 +94,6 @@ const FR: Doc = {
   updated: "Dernière mise à jour : 6 juillet 2026",
   intro: "Ce guide couvre chaque fonction d'EchoRank en langage simple : ce qu'elle fait, où la trouver, et comment en tirer de la valeur dès le premier jour. La disponibilité par forfait est indiquée quand elle s'applique.",
   sections: [
-    { h: "Pourquoi les entreprises ont besoin d'un logiciel de gestion des avis Google", ps: [
-      "Un logiciel de gestion des avis Google n'est pas qu'un outil pour traiter des avis. C'est un actif stratégique, pour le commerce à emplacement unique comme pour les multinationales et les grandes entreprises. Voici ce qu'apporte la bonne plateforme :",
-    ], bullets: [
-      "Image de marque et personnalisation : chaque avis reçoit une réponse dans un ton cohérent, à grande échelle.",
-      "Gestion multi-établissements et multilingue : un seul endroit pour chaque emplacement et chaque langue dans laquelle vos clients écrivent.",
-      "Efficacité : lecture, rédaction et routage sont automatisés, et les minutes remplacent les heures.",
-      "Mesure de la satisfaction client par l'analyse de sentiment : chaque avis et commentaire est noté, et la satisfaction devient une tendance observable plutôt qu'une intuition.",
-      "Réduction du risque : plaintes récurrentes et activités d'avis suspectes remontent avant de devenir des crises.",
-      "Pilotage des décisions d'affaires : scores, variations et revenus à risque transforment la réputation en chiffres sur lesquels une direction peut agir.",
-      "Intelligence concurrentielle : les instantanés quotidiens des concurrents montrent qui gagne du terrain, et quand.",
-    ]},
     { h: "1. Créez votre compte", ps: [
       "Rendez-vous sur la page d'inscription, entrez votre nom, votre courriel professionnel, le nom de votre entreprise et un mot de passe d'au moins 8 caractères. Chaque nouveau compte démarre un essai gratuit de 14 jours, sans carte de crédit. Rien n'est facturé sans souscription.",
       "Vous pourrez inviter des collègues plus tard depuis la page Équipe. La personne qui crée le compte en est propriétaire.",
@@ -198,19 +163,6 @@ const FR: Doc = {
     { h: "20. Obtenir de l'aide", ps: [
       "Questions, problèmes ou demandes : écrivez à privacy@echorank360.com. Ce guide est mis à jour au fil des sorties ; la date en haut vous dit à quel point il est frais.",
     ]},
-    { h: "21. Téléchargez vos avis en CSV", ps: [
-      "La plupart des plateformes d'avis permettent aux propriétaires d'exporter leurs propres avis. Chez Google, demandez un export de vos données de fiche Google via Google Takeout : sélectionnez le produit Google Business Profile, et l'archive reçue inclut vos avis. D'autres plateformes offrent un export CSV ou tableur dans leur tableau de bord entreprise, souvent sous réglages ou rapports. Si une plateforme n'offre aucun export, l'extension de navigateur de la section 23 est généralement la voie la plus rapide.",
-      "Quelle que soit la source, visez une ligne par avis avec des colonnes comme auteur, note, date et texte. L'importateur associe vos colonnes, alors les noms exacts importent peu.",
-    ]},
-    { h: "22. Téléversez un CSV d'avis dans EchoRank", ps: [
-      "Ouvrez la page Imports et téléversez votre fichier. Sur l'écran d'association, faites correspondre vos colonnes aux champs EchoRank : l'importateur propose des correspondances et vous corrigez ce qu'il a mal deviné. Vérifiez l'aperçu, qui montre exactement ce qui sera créé et signale les lignes problématiques. Puis validez.",
-      "L'import tourne en arrière-plan; les gros fichiers sont traités par lots et vous pouvez continuer à travailler pendant ce temps. Les avis importés rejoignent votre fil surveillé, sont notés en sentiment et comptent dans votre historique de risque comme tout autre signal.",
-    ]},
-    { h: "23. Utilisez l'extension de navigateur, dans Chrome et dans Brave", ps: [
-      "L'extension EchoRank importe les avis directement depuis les pages que vous voyez déjà dans votre navigateur. Elle est conçue pour les navigateurs Chromium, donc elle fonctionne de la même façon dans Google Chrome et dans Brave. Installez-la depuis le lien de la page Extension de votre tableau de bord; le Chrome Web Store fonctionne nativement dans Brave, cliquez Ajouter et confirmez.",
-      "Connectez-la une seule fois : ouvrez l'extension, connectez-vous, et elle se lie à votre compte avec un jeton sécurisé depuis la page Extension. Naviguez ensuite vers vos avis sur une source prise en charge, par exemple votre fiche Google dans la recherche ou dans Maps, ou votre page d'entreprise publique sur des plateformes comme Facebook de Meta, puis cliquez Importer. L'extension lit les avis visibles sur la page et les envoie vers votre compte, où ils sont dédupliqués et notés comme tout autre import.",
-      "N'importez que les avis de votre propre entreprise ou ceux que vous avez le droit de traiter, et respectez les conditions d'utilisation de chaque plateforme. Si une page n'est pas reconnue comme source prise en charge, l'import reste désactivé; la voie CSV des sections 21 et 22 est la solution de repli.",
-    ]},
   ],
 };
 
@@ -219,17 +171,6 @@ const DE: Doc = {
   updated: "Zuletzt aktualisiert: 6. Juli 2026",
   intro: "Dieses Handbuch erklärt jede Funktion von EchoRank in einfacher Sprache: was sie tut, wo sie zu finden ist und wie sie ab dem ersten Tag Nutzen bringt. Die Verfügbarkeit nach Plan ist angegeben, wo sie gilt.",
   sections: [
-    { h: "Warum Unternehmen eine Software für Google Bewertungsmanagement brauchen", ps: [
-      "Software für Google Bewertungsmanagement ist nicht nur ein Werkzeug zum Abarbeiten von Bewertungen. Sie ist ein strategischer Vorteil, für das Geschäft mit einem Standort ebenso wie für Multinationale und Grossunternehmen. Das bringt die richtige Plattform:",
-    ], bullets: [
-      "Markenbild und Personalisierung: jede Bewertung erhält eine Antwort in einheitlicher Stimme, in grossem Massstab.",
-      "Verwaltung mehrerer Standorte und Sprachen: ein Ort für jeden Standort und jede Sprache, in der Ihre Kunden schreiben.",
-      "Effizienz: Lesen, Entwerfen und Weiterleiten sind automatisiert, Minuten ersetzen Stunden.",
-      "Kundenzufriedenheit messen mit Sentiment Analyse: jede Bewertung und jeder Kommentar wird bewertet, Zufriedenheit wird zum beobachtbaren Trend statt zur Vermutung.",
-      "Risikominderung: wiederkehrende Beschwerden und verdächtige Bewertungsaktivitäten tauchen auf, bevor sie zur Krise werden.",
-      "Geschäftsentscheidungen steuern: Scores, Deltas und Umsatz im Risiko machen Reputation zu Zahlen, auf die eine Geschäftsleitung reagieren kann.",
-      "Wettbewerbsintelligenz: tägliche Konkurrenz Momentaufnahmen zeigen, wer aufholt, und wann.",
-    ]},
     { h: "1. Konto erstellen", ps: [
       "Gehen Sie zur Registrierungsseite, geben Sie Name, geschäftliche E-Mail, Firmenname und ein Passwort mit mindestens 8 Zeichen ein. Jedes neue Konto startet eine 14 Tage Testphase ohne Kreditkarte. Ohne Abo wird nichts berechnet.",
       "Teammitglieder laden Sie später über die Team Seite ein. Wer das Konto erstellt, ist Inhaber.",
@@ -299,19 +240,6 @@ const DE: Doc = {
     { h: "20. Hilfe erhalten", ps: [
       "Fragen, Probleme oder Anliegen: schreiben Sie an privacy@echorank360.com. Dieses Handbuch wird laufend aktualisiert; das Datum oben zeigt, wie frisch es ist.",
     ]},
-    { h: "21. Bewertungen als CSV herunterladen", ps: [
-      "Die meisten Bewertungsplattformen erlauben Inhabern den Export der eigenen Bewertungen. Bei Google fordern Sie einen Export Ihrer Unternehmensprofil Daten über Google Takeout an: wählen Sie das Produkt Google Business Profile, und das erhaltene Archiv enthält Ihre Bewertungen. Andere Plattformen bieten einen CSV oder Tabellen Export im Unternehmens Dashboard, oft unter Einstellungen oder Berichte. Bietet eine Plattform gar keinen Export, ist die Browser Erweiterung aus Abschnitt 23 meist der schnellere Weg.",
-      "Unabhängig von der Quelle: eine Zeile pro Bewertung mit Spalten wie Autor, Note, Datum und Text. Der Importer ordnet Ihre Spalten zu, exakte Spaltennamen sind unwichtig.",
-    ]},
-    { h: "22. Ein Bewertungs CSV in EchoRank hochladen", ps: [
-      "Öffnen Sie die Importseite und laden Sie Ihre Datei hoch. Auf dem Zuordnungsbildschirm verbinden Sie Ihre Spalten mit den EchoRank Feldern: der Importer schlägt Zuordnungen vor, Sie korrigieren, was er falsch geraten hat. Prüfen Sie die Vorschau, die genau zeigt, was angelegt wird, und Problemzeilen markiert. Dann bestätigen.",
-      "Der Import läuft im Hintergrund; grosse Dateien werden in Stapeln verarbeitet, und Sie können währenddessen weiterarbeiten. Importierte Bewertungen erscheinen im überwachten Feed, werden nach Stimmung bewertet und zählen zum Risikoverlauf wie jedes andere Signal.",
-    ]},
-    { h: "23. Die Browser Erweiterung nutzen, in Chrome und in Brave", ps: [
-      "Die EchoRank Erweiterung importiert Bewertungen direkt von Seiten, die Sie bereits im Browser sehen. Sie ist für Chromium Browser gebaut und funktioniert in Google Chrome und in Brave gleich. Installieren Sie sie über den Link auf der Erweiterungsseite Ihres Dashboards; der Chrome Web Store funktioniert in Brave nativ, also Hinzufügen klicken und bestätigen.",
-      "Einmal verbinden: Erweiterung öffnen, anmelden, und sie koppelt sich mit einem sicheren Token von der Erweiterungsseite an Ihr Konto. Dann zu Ihren Bewertungen auf einer unterstützten Quelle navigieren, zum Beispiel Ihrem Google Eintrag in der Suche oder in Maps, oder Ihrer öffentlichen Unternehmensseite auf Plattformen wie Facebook von Meta, und Importieren klicken. Die Erweiterung liest die sichtbaren Bewertungen und sendet sie an Ihr Konto, wo sie dedupliziert und wie jeder andere Import bewertet werden.",
-      "Importieren Sie nur Bewertungen Ihres eigenen Unternehmens oder solche, die Sie verarbeiten dürfen, und respektieren Sie die Nutzungsbedingungen jeder Plattform. Wird eine Seite nicht als unterstützte Quelle erkannt, bleibt der Import deaktiviert; der CSV Weg aus den Abschnitten 21 und 22 ist die Rückfalloption.",
-    ]},
   ],
 };
 
@@ -356,11 +284,6 @@ export default async function GuidePage({ params }: { params: Promise<{ locale: 
           <section key={s.h}>
             <h2 className={lp.h2}>{s.h}</h2>
             {s.ps.map((p, i) => (<p key={i} className={lp.p}>{p}</p>))}
-            {s.bullets && (
-              <ul className={lp.ul}>
-                {s.bullets.map((b, i) => (<li key={i} className={lp.li}>{b}</li>))}
-              </ul>
-            )}
           </section>
         ))}
         <div className={lp.backRowBottom}>
