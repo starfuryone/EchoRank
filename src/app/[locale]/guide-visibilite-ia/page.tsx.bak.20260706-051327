@@ -8,7 +8,6 @@ import { CONTENT } from "@/lib/i18n/content";
 import s from "./guide-ia.module.css";
 import Checklist from "./checklist";
 import EnGuide, { TITLE_EN, DESC_EN } from "./en";
-import BackButton from "../legal/back-button";
 import { GuideHeroArt, SerpToAnswerArt, ChecklistArt, CrawlerGateArt, ReviewPulseArt } from "./art";
 import RevenueCalculator from "./calculator";
 
@@ -197,7 +196,6 @@ export default async function GuideIaPage({ params }: { params: Promise<{ locale
   const foot = CONTENT[locale].footer;
   const isFr = locale.startsWith("fr");
   if (!isFr) return <EnGuide locale={locale} foot={foot} />;
-  const backLabel = "← Retour";
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -281,10 +279,6 @@ export default async function GuideIaPage({ params }: { params: Promise<{ locale
             <img src="/echorank-logo-dark.svg" alt="ECHORANK 360" className={s.logo} />
           </Link>
           <Link href="/register">Audit de visibilité IA →</Link>
-        </div>
-
-        <div className={s.backRow}>
-          <BackButton locale={locale} label={backLabel} className={s.backBtnGrey} />
         </div>
 
         {!isFr && (
@@ -540,10 +534,6 @@ export default async function GuideIaPage({ params }: { params: Promise<{ locale
         <p className={s.p}>Ce guide est rédigé et maintenu par EchoRank, plateforme d'intelligence de réputation IA exploitée par ChatLogic Insights Ltd. Il documente une méthodologie en production : les pondérations, cadences et contrôles décrits sont ceux du système réel, mis à jour au fil des versions. Signalements et corrections : privacy@echorank360.com.</p>
         <h3 className={s.h3}>Comment citer ce guide</h3>
         <p className={s.p} style={{ fontFamily: "ui-monospace, monospace", fontSize: 13 }}>EchoRank (2026). Le guide complet de la visibilité dans l'IA en 2026. ChatLogic Insights Ltd. https://echorank360.com/fr/guide-visibilite-ia</p>
-
-        <div className={s.backRow}>
-          <BackButton locale={locale} label={backLabel} className={s.backBtnGrey} />
-        </div>
 
         <footer className={s.footer}>
           <span>{foot.copyright}</span>

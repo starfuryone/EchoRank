@@ -4,7 +4,6 @@ import { join } from "node:path";
 import s from "./guide-ia.module.css";
 import Checklist from "./checklist";
 import RevenueCalculator from "./calculator";
-import BackButton from "../legal/back-button";
 import { GuideHeroArt, SerpToAnswerArt, ChecklistArt, CrawlerGateArt, ReviewPulseArt } from "./art";
 
 export const TITLE_EN = "The complete guide to AI visibility in 2026";
@@ -167,7 +166,6 @@ export function jsonLdEn() {
 }
 
 export default function EnGuide({ locale, foot }: { locale: string; foot: Foot }) {
-  const backLabel = locale === "de-CH" ? "← Zurück" : "← Back";
   const chapters: [string, string][] = [
     ["seo-vs-ia", "1. From SEO to GEO: what changed"],
     ["comment-ia-choisit", "2. How ChatGPT chooses a business"],
@@ -195,10 +193,6 @@ export default function EnGuide({ locale, foot }: { locale: string; foot: Foot }
             <img src="/echorank-logo-dark.svg" alt="ECHORANK 360" className={s.logo} />
           </Link>
           <Link href="/register">AI visibility audit →</Link>
-        </div>
-
-        <div className={s.backRow}>
-          <BackButton locale={locale} label={backLabel} className={s.backBtnGrey} />
         </div>
 
         {locale === "de-CH" && (
@@ -396,10 +390,6 @@ export default function EnGuide({ locale, foot }: { locale: string; foot: Foot }
         <p className={s.p}>This guide is written and maintained by EchoRank, the AI reputation intelligence platform operated by ChatLogic Insights Ltd. It documents a methodology in production: the weights, cadences and checks described are those of the live system, updated release by release. Reports and corrections: privacy@echorank360.com.</p>
         <h3 className={s.h3}>How to cite this guide</h3>
         <p className={s.p} style={{ fontFamily: "ui-monospace, monospace", fontSize: 13 }}>EchoRank (2026). The complete guide to AI visibility in 2026. ChatLogic Insights Ltd. https://echorank360.com/en/guide-visibilite-ia</p>
-
-        <div className={s.backRow}>
-          <BackButton locale={locale} label={backLabel} className={s.backBtnGrey} />
-        </div>
 
         <footer className={s.footer}>
           <span>{foot.copyright}</span>
