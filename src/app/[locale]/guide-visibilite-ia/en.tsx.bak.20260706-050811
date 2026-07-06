@@ -4,7 +4,6 @@ import { join } from "node:path";
 import s from "./guide-ia.module.css";
 import Checklist from "./checklist";
 import RevenueCalculator from "./calculator";
-import { GuideHeroArt, SerpToAnswerArt, ChecklistArt, CrawlerGateArt, ReviewPulseArt } from "./art";
 
 export const TITLE_EN = "The complete guide to AI visibility in 2026";
 export const SUBTITLE_EN = "How to get recommended by ChatGPT, Google AI, Gemini, Claude and Perplexity.";
@@ -202,7 +201,6 @@ export default function EnGuide({ locale, foot }: { locale: string; foot: Foot }
         <h1 className={s.h1}>{TITLE_EN}</h1>
         <p className={s.subtitle}>{SUBTITLE_EN}</p>
         <p className={s.updated}>Updated July 6, 2026 · EchoRank, AI reputation intelligence platform · <Link href="/fr/guide-visibilite-ia">Version française</Link></p>
-        <GuideHeroArt label="An AI answer highlighting one recommendation" />
 
         <nav className={s.toc} aria-label="Contents">
           <div className={s.tocTitle}>Contents</div>
@@ -217,7 +215,6 @@ export default function EnGuide({ locale, foot }: { locale: string; foot: Foot }
         <Callout>When an AI recommends only three businesses, being absent from that list means losing every prospect from that search. There is no page 2 in a generated answer.</Callout>
         <CompareTable head={["Google Search", "ChatGPT and AI assistants"]}
           rows={[["Ten links to compare yourself", "A written answer, two or three names"], ["The user clicks and verifies", "The user trusts the synthesis"], ["Page-by-page optimization", "Whole-business evaluation"], ["Traffic measured in clicks", "Value measured in mentions and citations"]]} />
-        <SerpToAnswerArt label="From a list of links to a single answer" />
         <Cta />
 
         <h2 id="comment-ia-choisit" className={s.h2}>2. How ChatGPT chooses a business</h2>
@@ -254,12 +251,10 @@ export default function EnGuide({ locale, foot }: { locale: string; foot: Foot }
 
         <h2 id="checklist" className={s.h2}>4. Is your business AI-ready?</h2>
         <p className={s.p}>Tick what is true today, without indulgence. Each item corresponds to a check automated systems actually run.</p>
-        <ChecklistArt label="A checklist being ticked" />
         <Checklist lang="en" />
 
         <h2 id="technique" className={s.h2}>5. Technical optimization: opening the door to AI</h2>
         <p className={s.p}>The first cause of invisibility is brutally simple: the door is closed. Assistants rely on dedicated crawlers, including GPTBot (OpenAI), ClaudeBot (Anthropic), PerplexityBot and Google-Extended. An overly strict robots.txt, a rule inherited from a former agency, or a misconfigured anti-bot layer can block them without any human noticing: your site stays perfect for visitors and nonexistent for AI.</p>
-        <CrawlerGateArt label="AI crawlers passing through an open gate" />
         <h3 className={s.h3}>The foundations, in order</h3>
         <ul className={s.ul}>
           <li className={s.li}>Robots.txt: explicitly allow AI crawlers, or at minimum do not block them by default.</li>
@@ -282,7 +277,6 @@ export default function EnGuide({ locale, foot }: { locale: string; foot: Foot }
         </ul>
         <CompareTable head={["Reviews (the raw material)", "Reputation signals (what AI reads)"]}
           rows={[["A score out of five", "Score, volume, freshness and trend combined"], ["An isolated text", "Recurring themes extracted from all texts"], ["One platform", "Consistency across all platforms"], ["One event", "A dated history, with the business's replies"]]} />
-        <ReviewPulseArt label="The pulse of reviews over time" />
         <p className={s.p}>Turning reviews into usable signals is continuous reading work: that is what <Link href={`/${locale}/customer-feedback`}>customer feedback intelligence</Link> does, and the <Link href={`/${locale}/reputation-risk`}>Reputation Risk Score</Link> turns it into a single, explainable measure.</p>
         <Figure file="dashboard-echorank.png" caption="The EchoRank dashboard: reviews, feedback and reputation intelligence in one place." />
         <Figure file="score-visibilite.png" caption="The AI visibility score out of 100, with every check detailed." />

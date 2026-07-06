@@ -8,7 +8,6 @@ import { CONTENT } from "@/lib/i18n/content";
 import s from "./guide-ia.module.css";
 import Checklist from "./checklist";
 import EnGuide, { TITLE_EN, DESC_EN } from "./en";
-import { GuideHeroArt, SerpToAnswerArt, ChecklistArt, CrawlerGateArt, ReviewPulseArt } from "./art";
 import RevenueCalculator from "./calculator";
 
 export function generateStaticParams() {
@@ -292,7 +291,6 @@ export default async function GuideIaPage({ params }: { params: Promise<{ locale
         <h1 className={s.h1}>{TITLE}</h1>
         <p className={s.subtitle}>{SUBTITLE}</p>
         <p className={s.updated}>Mis à jour le 6 juillet 2026 · EchoRank, plateforme d'intelligence de réputation IA</p>
-        <GuideHeroArt label="Une réponse d'IA mettant une recommandation en avant" />
 
         <nav className={s.toc} aria-label="Sommaire">
           <div className={s.tocTitle}>Sommaire</div>
@@ -323,7 +321,6 @@ export default async function GuideIaPage({ params }: { params: Promise<{ locale
             ["Trafic mesuré en clics", "Valeur mesurée en mentions et citations"],
           ]}
         />
-        <SerpToAnswerArt label="De la liste de liens à la réponse unique" />
         <Cta />
 
         {/* 2 ─────────────────────────────────────────────────────────── */}
@@ -370,13 +367,11 @@ export default async function GuideIaPage({ params }: { params: Promise<{ locale
         {/* 4 ─────────────────────────────────────────────────────────── */}
         <h2 id="checklist" className={s.h2}>4. Votre entreprise est-elle prête pour l'IA ?</h2>
         <p className={s.p}>Cochez ce qui est vrai aujourd'hui, sans indulgence. Chaque élément correspond à une vérification que les systèmes automatisés effectuent réellement.</p>
-        <ChecklistArt label="Une liste de vérifications en cours" />
         <Checklist />
 
         {/* 5 ─────────────────────────────────────────────────────────── */}
         <h2 id="technique" className={s.h2}>5. Optimisation technique : ouvrir la porte aux IA</h2>
         <p className={s.p}>La première cause d'invisibilité est brutale de simplicité : la porte est fermée. Les assistants s'appuient sur des robots d'indexation dédiés, dont GPTBot (OpenAI), ClaudeBot (Anthropic), PerplexityBot et Google-Extended. Un robots.txt trop strict, une règle héritée d'un ancien prestataire ou une protection anti-bots mal réglée peuvent les bloquer sans qu'aucun humain ne s'en aperçoive : votre site reste parfait pour les visiteurs et inexistant pour les IA.</p>
-        <CrawlerGateArt label="Des robots d'IA franchissant une porte ouverte" />
         <h3 className={s.h3}>Les fondations, dans l'ordre</h3>
         <ul className={s.ul}>
           <li className={s.li}>Robots.txt : autorisez explicitement les robots des IA, ou au minimum ne les bloquez pas par défaut.</li>
@@ -407,7 +402,6 @@ export default async function GuideIaPage({ params }: { params: Promise<{ locale
             ["Un événement", "Un historique daté, avec réponses de l'entreprise"],
           ]}
         />
-        <ReviewPulseArt label="Le pouls des avis dans le temps" />
         <p className={s.p}>Transformer les avis en signaux exploitables est un travail de lecture continue : c'est ce que fait l'<Link href={`/${locale}/customer-feedback`}>intelligence des retours clients</Link>, et le <Link href={`/${locale}/reputation-risk`}>score de risque de réputation</Link> en fait une mesure unique et explicable.</p>
         <Figure file="dashboard-echorank.png" caption="Le tableau de bord EchoRank : avis, rétroaction et intelligence de réputation au même endroit." />
         <Figure file="score-visibilite.png" caption="Le score de visibilité IA sur 100, avec chaque vérification détaillée." />
