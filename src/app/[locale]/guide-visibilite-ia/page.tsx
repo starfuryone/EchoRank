@@ -38,6 +38,14 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
       canonical: fr ? langs.fr : langs.en,
       languages: langs,
     },
+    openGraph: {
+      title: fr ? TITLE : TITLE_EN,
+      description: fr ? DESC : DESC_EN,
+      url: fr ? langs.fr : langs.en,
+      type: "article",
+      siteName: "EchoRank 360",
+    },
+    twitter: { card: "summary_large_image", title: fr ? TITLE : TITLE_EN, description: fr ? DESC : DESC_EN },
   };
 }
 

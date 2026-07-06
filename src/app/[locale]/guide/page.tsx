@@ -454,7 +454,19 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   const { locale } = await params;
   if (!isSupportedLocale(locale)) return {};
   const d = pick(locale);
-  return { title: `${d.title} | EchoRank`, description: d.intro, alternates: { canonical: `/${locale}/guide` } };
+  return {
+    title: `${d.title} | EchoRank`,
+    description: d.intro,
+    alternates: { canonical: `/${locale}/guide` },
+    openGraph: {
+      title: d.title,
+      description: d.intro,
+      url: `/${locale}/guide`,
+      type: "article",
+      siteName: "EchoRank 360",
+    },
+    twitter: { card: "summary_large_image", title: d.title, description: d.intro },
+  };
 }
 
 export default async function GuidePage({ params }: { params: Promise<{ locale: string }> }) {
