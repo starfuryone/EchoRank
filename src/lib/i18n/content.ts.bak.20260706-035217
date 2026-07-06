@@ -315,6 +315,7 @@ const enCA: HomeContent = {
   },
   pricing: {
     label: "/ 05 — PRICING",
+    altLink: { href: "/en#pricing", label: "See pricing in US dollars →", hideWhenCurrency: "USD" },
     tiers: [
       {
         key: "starter",
