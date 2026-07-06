@@ -300,13 +300,6 @@ export default async function AiVisibilityPage({
               {c.hero.cta2}
             </Link>
           </div>
-          {locale.startsWith("fr") && (
-            <p style={{ marginTop: 14 }}>
-              <Link href={`/${locale}/guide-visibilite-ia`} className={home.label}>
-                Lire le guide complet de la visibilité IA en 2026 →
-              </Link>
-            </p>
-          )}
           </div>
           <div className={lp.heroArt} aria-hidden="true">
             <VisibilityArt />

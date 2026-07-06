@@ -53,7 +53,7 @@ export default auth((req) => {
   }
 
   // Public marketing page: AI visibility landing (all locales)
-  if (/^\/(en|en-CA|fr|fr-CA|de-CH)\/(ai-visibility|reputation-risk|customer-feedback|reputation-engine|how-to|live-monitoring|act-on-signals|guide|guide-visibilite-ia|legal\/(privacy|terms|disclaimer))\/?$/.test(pathname)) {
+  if (/^\/(en|en-CA|fr|fr-CA|de-CH)\/(ai-visibility|reputation-risk|customer-feedback|reputation-engine|how-to|live-monitoring|act-on-signals|guide|legal\/(privacy|terms|disclaimer))\/?$/.test(pathname)) {
     return NextResponse.next();
   }
 
