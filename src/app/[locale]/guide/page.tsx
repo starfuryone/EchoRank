@@ -15,8 +15,23 @@ type Doc = { title: string; updated: string; intro: string; sections: { h: strin
 const EN: Doc = {
   title: "EchoRank User Guide",
   updated: "Last updated: July 6, 2026",
-  intro: "This guide covers every feature of EchoRank in plain language: what it does, where to find it, and how to get value from it on day one. Feature availability by plan is noted where it applies.",
+  intro: "By the end of this guide you will have connected your Google Business Profile, imported your review history, launched your first review campaign, set up alerts, and run your first AI visibility audit. The full setup takes under 30 minutes. This guide covers every feature of EchoRank in plain language: what it does, where to find it, and how to get value from it on day one. Feature availability by plan is noted where it applies.",
   sections: [
+    { h: "Your first 30 minutes", ps: [
+      "The full setup, in order. When every box is ticked, the platform is watching your reputation around the clock.",
+    ], bullets: [
+      "☐ Create your account (14 day trial, no card)",
+      "☐ Connect your Google Business Profile",
+      "☐ Connect your website domain",
+      "☐ Import historical reviews (extension or CSV)",
+      "☐ Add your customer list",
+      "☐ Launch your first review campaign",
+      "☐ Set alert destination addresses",
+      "☐ Run your first AI visibility audit (Growth and above)",
+      "☐ Add a competitor (Growth and above)",
+      "☐ Check your Reputation Risk Score (Growth and above)",
+    ] },
+
     { h: "Why businesses need Google review management software", ps: [
       "Google review management software is not just a tool for handling reviews. It is a strategic asset, for a single location shop as much as for multinationals and enterprises. Here is what the right platform brings:",
     ], bullets: [
@@ -58,7 +73,7 @@ const EN: Doc = {
       "Every review deserves an answer, and drafting them is the part most owners skip. EchoRank drafts a professional reply in your voice: it thanks positive reviewers concretely, acknowledges problems without arguing, and invites unhappy customers to continue offline. You review, edit if needed, and publish. Nothing is ever posted without your approval.",
     ]},
     { h: "9. AI visibility audit (Growth and above)", ps: [
-      "The audit checks every factor that decides whether AI assistants can see, trust and cite your business: crawler access, machine readability, structure, and trust signals. You get a 0 to 100 score, a grade, and a fix roadmap ordered by impact.",
+      "When a customer asks ChatGPT, Google AI or Perplexity which business to hire, those systems do not pick at random. They evaluate signals: crawler access, structured data, review freshness, information consistency. The audit measures exactly those signals and tells you what to fix, in order of impact. The audit checks every factor that decides whether AI assistants can see, trust and cite your business: crawler access, machine readability, structure, and trust signals. You get a 0 to 100 score, a grade, and a fix roadmap ordered by impact.",
       "Run it from the Visibility page. Re-run after making fixes to watch the score respond.",
     ]},
     { h: "10. Scheduled re-audits and visibility alerts (Growth and above)", ps: [
@@ -68,7 +83,7 @@ const EN: Doc = {
       "Define the questions your customers actually ask, and the platform runs them against ChatGPT, Perplexity and Google AI every day. You see when you are cited, when you are misrepresented, and when you are absent, with history, so you know the day AI starts recommending you and the moment it stops.",
     ]},
     { h: "12. The Reputation Risk Score (Growth and above)", ps: [
-      "One number from 0 to 100 summarizes your reputation risk across public reviews, private feedback, AI visibility and review velocity. It is fully explainable: five weighted components, and every driver behind the score is named, so you always know what to fix first.",
+      "Reputation problems rarely announce themselves. They build quietly, a slowing review pace or a cluster of complaints about the same thing, until a public crisis makes them visible. The Risk Score exists to surface that build-up while it is still cheap to fix. One number from 0 to 100 summarizes your reputation risk across public reviews, private feedback, AI visibility and review velocity. It is fully explainable: five weighted components, and every driver behind the score is named, so you always know what to fix first.",
       "The score recomputes every hour, with 7 and 30 day changes and a 90 day history so trends surface early. Find it under Intelligence, Risk.",
     ]},
     { h: "13. Revenue at risk (Growth and above)", ps: [
@@ -79,7 +94,7 @@ const EN: Doc = {
       "Set the destination addresses in the risk configuration panel. Digest emails group event bursts so your inbox never floods.",
     ]},
     { h: "15. Competitor monitoring (Growth: 1, Agency: 5)", ps: [
-      "Add competitors by searching for their business listing. Every morning the platform snapshots their rating and review count, computes momentum, and compares it to your own review pace. When a rival gains ground faster than you, a momentum alert reaches you the same week.",
+      "Your rating can hold steady while a competitor quietly overtakes you on review volume and momentum. By the time you notice it in your bookings, they will have had months of head start. Daily snapshots close that gap to a week. Add competitors by searching for their business listing. Every morning the platform snapshots their rating and review count, computes momentum, and compares it to your own review pace. When a rival gains ground faster than you, a momentum alert reaches you the same week.",
       "Find it under Intelligence, Competitors.",
     ]},
     { h: "16. Customers and templates", ps: [
@@ -110,7 +125,35 @@ const EN: Doc = {
       "Connect it once: open the extension, sign in, and it links to your account with a secure token from the Extension page. Then browse to your reviews on a supported source, for example your Google Business listing in Search or Maps, or your public business page on platforms such as Facebook from Meta, and click Import. The extension reads the reviews visible on the page and sends them to your account, where they are deduplicated and scored like any other import.",
       "Import only reviews of your own business or reviews you have the right to process, and respect each platform's terms of use. If a page is not recognized as a supported source, the import stays disabled; the CSV path in sections 21 and 22 is the fallback.",
     ]},
-  ],
+      { h: "Troubleshooting", ps: [
+      "Why are my Google reviews not importing? Check, in order: your Google Business Profile is connected and the Monitoring page shows the source as active; you connected the right Google account, since the wrong one is the most common cause; the initial sync is still running, as large profiles take several minutes; the review is very recent, since new reviews arrive on the next sync cycle, not instantly.",
+      "Why is my AI visibility score low even though my site looks fine? Looking fine to a visitor and being readable by AI crawlers are different tests. The most common causes are a robots.txt rule blocking GPTBot, ClaudeBot, PerplexityBot or Google-Extended, often inherited from a former agency or a CDN default, missing structured data, and key information locked inside images or PDFs. The audit report names each failing check.",
+      "Why has my Risk Score not updated? The score recomputes hourly, from dated signals. If nothing new arrived, no review, no feedback, no audit, the score holds. A score that never moves for weeks is itself a signal: the stagnation component will start to reflect it.",
+      "The browser extension says the page is not supported. The extension reads reviews from recognized layouts. If a platform page is not recognized, import is disabled by design; use the CSV path in sections 21 and 22 instead.",
+      "My campaign emails are not arriving. Check the recipient is not opted out, verify the address in your customer record, and ask the recipient to check spam on the first send. SMS additionally requires SMS sending to be enabled on your account.",
+    ] },
+    { h: "Best practices", ps: [
+      "The habits that make the platform pay for itself:",
+    ], bullets: [
+      "Ask for reviews within 24 hours of service; response rates fall fast after the first day.",
+      "Respond to every review, positive ones included. Replies are a trust signal both customers and AI systems read.",
+      "Import your history before anything else. Scores computed with context beat scores computed from zero.",
+      "Review your alerts every morning; they arrive with the cause attached, so triage takes seconds.",
+      "Check competitor momentum weekly.",
+      "Re-run the AI visibility audit after every website or infrastructure change.",
+      "Treat recurring complaint themes as operations problems, not communications problems: fix the cause, and the reviews follow.",
+    ] },
+    { h: "Frequently asked questions", ps: [
+      "Can EchoRank respond to reviews automatically? It drafts; you approve. Every reply is generated in your voice, but nothing is published without your explicit approval. That is deliberate: a wrong automated reply costs more than a slow human one.",
+      "Can I monitor multiple locations? Yes. Multi location management is a core use case, and agencies on the Agency plan can run separate client workspaces with white label branding.",
+      "How often should I run an AI Visibility Audit? On Growth and above, scheduled re-audits run automatically and alert you on score drops and crawler flips. Manually, re-run after any website change. For the full picture of what the audit checks and why, see the AI Visibility Guide.",
+      "Do Google reviews affect AI recommendations? Yes, strongly. Review freshness, volume and your replies are among the signals AI assistants weigh. The AI Visibility Guide covers the mechanics in detail.",
+      "What happens to my data if I cancel? You can export your data at any time and request deletion. Deletion removes your content subject to a short backup cycle and legal retention duties; details in the Privacy Policy.",
+    ] },
+    { h: "You are set", ps: [
+      "Your reputation is now being watched around the clock: reviews, private feedback, AI visibility, competitors and risk, continuously. You will know about opportunities and problems before they reach your bottom line. Make it a habit: check the dashboard with your morning coffee, act on alerts the day they arrive, and re-run the visibility audit after any website change. Reputation is not a one time project; it is a compounding advantage, and you now have the machinery to compound it.",
+    ] },
+],
 };
 
 const FR: Doc = {
@@ -118,6 +161,21 @@ const FR: Doc = {
   updated: "Dernière mise à jour : 6 juillet 2026",
   intro: "Ce guide couvre chaque fonction d'EchoRank en langage simple : ce qu'elle fait, où la trouver, et comment en tirer de la valeur dès le premier jour. La disponibilité par forfait est indiquée quand elle s'applique.",
   sections: [
+    { h: "Vos 30 premières minutes", ps: [
+      "Le parcours complet, dans l'ordre. Quand chaque case est cochée, la plateforme surveille votre réputation en continu.",
+    ], bullets: [
+      "☐ Créez votre compte (essai de 14 jours, sans carte)",
+      "☐ Connectez votre profil d'entreprise Google",
+      "☐ Connectez le domaine de votre site web",
+      "☐ Importez vos avis historiques (extension ou CSV)",
+      "☐ Ajoutez votre liste de clients",
+      "☐ Lancez votre première campagne d'avis",
+      "☐ Configurez les adresses de destination des alertes",
+      "☐ Lancez votre premier audit de visibilité IA (Growth et plus)",
+      "☐ Ajoutez un concurrent (Growth et plus)",
+      "☐ Consultez votre score de risque de réputation (Growth et plus)",
+    ] },
+
     { h: "Pourquoi les entreprises ont besoin d'un logiciel de gestion des avis Google", ps: [
       "Un logiciel de gestion des avis Google n'est pas qu'un outil pour traiter des avis. C'est un actif stratégique, pour le commerce à emplacement unique comme pour les multinationales et les grandes entreprises. Voici ce qu'apporte la bonne plateforme :",
     ], bullets: [
@@ -211,7 +269,35 @@ const FR: Doc = {
       "Connectez-la une seule fois : ouvrez l'extension, connectez-vous, et elle se lie à votre compte avec un jeton sécurisé depuis la page Extension. Naviguez ensuite vers vos avis sur une source prise en charge, par exemple votre fiche Google dans la recherche ou dans Maps, ou votre page d'entreprise publique sur des plateformes comme Facebook de Meta, puis cliquez Importer. L'extension lit les avis visibles sur la page et les envoie vers votre compte, où ils sont dédupliqués et notés comme tout autre import.",
       "N'importez que les avis de votre propre entreprise ou ceux que vous avez le droit de traiter, et respectez les conditions d'utilisation de chaque plateforme. Si une page n'est pas reconnue comme source prise en charge, l'import reste désactivé; la voie CSV des sections 21 et 22 est la solution de repli.",
     ]},
-  ],
+      { h: "Dépannage", ps: [
+      "Pourquoi mes avis Google ne s'importent-ils pas? Vérifiez, dans l'ordre : votre profil d'entreprise Google est connecté et la page Surveillance affiche la source comme active; vous avez connecté le bon compte Google, le mauvais compte étant la cause la plus fréquente; la synchronisation initiale est encore en cours, les grands profils prenant plusieurs minutes; l'avis est très récent, les nouveaux avis arrivant au prochain cycle de synchronisation, pas instantanément.",
+      "Pourquoi mon score de visibilité IA est-il bas alors que mon site semble correct? Paraître correct à un visiteur et être lisible par les robots d'IA sont deux tests différents. Les causes les plus fréquentes : une règle robots.txt bloquant GPTBot, ClaudeBot, PerplexityBot ou Google-Extended, souvent héritée d'une ancienne agence ou d'un réglage CDN par défaut, des données structurées manquantes, et des informations clés enfermées dans des images ou des PDF. Le rapport d'audit nomme chaque vérification en échec.",
+      "Pourquoi mon score de risque ne s'est-il pas mis à jour? Le score se recalcule chaque heure, à partir de signaux datés. Si rien de nouveau n'est arrivé, aucun avis, aucun retour, aucun audit, le score reste stable. Un score qui ne bouge pas pendant des semaines est lui-même un signal : la composante stagnation commencera à le refléter.",
+      "L'extension de navigateur indique que la page n'est pas prise en charge. L'extension lit les avis à partir de mises en page reconnues. Si une page de plateforme n'est pas reconnue, l'import reste désactivé par conception; utilisez plutôt la voie CSV des sections 21 et 22.",
+      "Mes courriels de campagne n'arrivent pas. Vérifiez que le destinataire n'est pas désabonné, validez l'adresse dans sa fiche client, et demandez-lui de vérifier ses indésirables au premier envoi. Les SMS exigent en plus que l'envoi SMS soit activé sur votre compte.",
+    ] },
+    { h: "Bonnes pratiques", ps: [
+      "Les habitudes qui rentabilisent la plateforme :",
+    ], bullets: [
+      "Demandez l'avis dans les 24 heures suivant le service; le taux de réponse chute vite après le premier jour.",
+      "Répondez à chaque avis, y compris les positifs. Les réponses sont un signal de confiance que lisent les clients comme les systèmes d'IA.",
+      "Importez votre historique avant tout le reste. Un score calculé avec du contexte vaut mieux qu'un score parti de zéro.",
+      "Consultez vos alertes chaque matin; elles arrivent avec leur cause, le tri prend quelques secondes.",
+      "Vérifiez l'élan de vos concurrents chaque semaine.",
+      "Relancez l'audit de visibilité IA après chaque changement de site ou d'infrastructure.",
+      "Traitez les thèmes de plaintes récurrents comme des problèmes d'exploitation, pas de communication : corrigez la cause, et les avis suivront.",
+    ] },
+    { h: "Foire aux questions", ps: [
+      "EchoRank peut-il répondre automatiquement aux avis? Il rédige; vous approuvez. Chaque réponse est générée dans votre ton, mais rien n'est publié sans votre approbation explicite. C'est voulu : une mauvaise réponse automatique coûte plus cher qu'une réponse humaine lente.",
+      "Puis-je surveiller plusieurs établissements? Oui. La gestion multi-établissements est un cas d'usage central, et les agences du forfait Agency peuvent gérer des espaces clients distincts en marque blanche.",
+      "À quelle fréquence lancer un audit de visibilité IA? À partir de Growth, les ré-audits planifiés s'exécutent automatiquement et vous alertent en cas de baisse de score ou de bascule d'accès des robots. Manuellement, relancez après tout changement de site. Pour le détail des vérifications, consultez le Guide de visibilité IA.",
+      "Les avis Google influencent-ils les recommandations des IA? Oui, fortement. La fraîcheur des avis, leur volume et vos réponses comptent parmi les signaux que pèsent les assistants IA. Le Guide de visibilité IA en couvre les mécanismes en détail.",
+      "Qu'advient-il de mes données si j'annule? Vous pouvez exporter vos données en tout temps et demander leur suppression. La suppression retire votre contenu sous réserve d'un court cycle de sauvegarde et des obligations légales de conservation; les détails figurent dans la politique de confidentialité.",
+    ] },
+    { h: "Vous êtes prêt", ps: [
+      "Votre réputation est désormais surveillée en continu : avis, retours privés, visibilité IA, concurrents et risque. Vous saurez ce qui se prépare, opportunités comme problèmes, avant que cela n'atteigne vos résultats. Faites-en une habitude : consultez le tableau de bord avec votre café du matin, agissez sur les alertes le jour même, et relancez l'audit de visibilité après tout changement de site. La réputation n'est pas un projet ponctuel; c'est un avantage qui se compose, et vous avez maintenant la machine pour le composer.",
+    ] },
+],
 };
 
 const DE: Doc = {
@@ -219,6 +305,21 @@ const DE: Doc = {
   updated: "Zuletzt aktualisiert: 6. Juli 2026",
   intro: "Dieses Handbuch erklärt jede Funktion von EchoRank in einfacher Sprache: was sie tut, wo sie zu finden ist und wie sie ab dem ersten Tag Nutzen bringt. Die Verfügbarkeit nach Plan ist angegeben, wo sie gilt.",
   sections: [
+    { h: "Ihre ersten 30 Minuten", ps: [
+      "Der komplette Einstieg, in der richtigen Reihenfolge. Sind alle Punkte abgehakt, überwacht die Plattform Ihre Reputation rund um die Uhr.",
+    ], bullets: [
+      "☐ Konto erstellen (14 Tage Testphase, ohne Karte)",
+      "☐ Google Unternehmensprofil verbinden",
+      "☐ Website-Domain verbinden",
+      "☐ Bisherige Bewertungen importieren (Erweiterung oder CSV)",
+      "☐ Kundenliste hinzufügen",
+      "☐ Erste Bewertungskampagne starten",
+      "☐ Zieladressen für Alerts festlegen",
+      "☐ Ersten KI-Sichtbarkeits-Audit ausführen (ab Growth)",
+      "☐ Einen Mitbewerber hinzufügen (ab Growth)",
+      "☐ Reputations-Risiko-Score prüfen (ab Growth)",
+    ] },
+
     { h: "Warum Unternehmen eine Software für Google Bewertungsmanagement brauchen", ps: [
       "Software für Google Bewertungsmanagement ist nicht nur ein Werkzeug zum Abarbeiten von Bewertungen. Sie ist ein strategischer Vorteil, für das Geschäft mit einem Standort ebenso wie für Multinationale und Grossunternehmen. Das bringt die richtige Plattform:",
     ], bullets: [
@@ -312,7 +413,35 @@ const DE: Doc = {
       "Einmal verbinden: Erweiterung öffnen, anmelden, und sie koppelt sich mit einem sicheren Token von der Erweiterungsseite an Ihr Konto. Dann zu Ihren Bewertungen auf einer unterstützten Quelle navigieren, zum Beispiel Ihrem Google Eintrag in der Suche oder in Maps, oder Ihrer öffentlichen Unternehmensseite auf Plattformen wie Facebook von Meta, und Importieren klicken. Die Erweiterung liest die sichtbaren Bewertungen und sendet sie an Ihr Konto, wo sie dedupliziert und wie jeder andere Import bewertet werden.",
       "Importieren Sie nur Bewertungen Ihres eigenen Unternehmens oder solche, die Sie verarbeiten dürfen, und respektieren Sie die Nutzungsbedingungen jeder Plattform. Wird eine Seite nicht als unterstützte Quelle erkannt, bleibt der Import deaktiviert; der CSV Weg aus den Abschnitten 21 und 22 ist die Rückfalloption.",
     ]},
-  ],
+      { h: "Fehlerbehebung", ps: [
+      "Warum werden meine Google-Bewertungen nicht importiert? Prüfen Sie der Reihe nach: Ihr Google Unternehmensprofil ist verbunden und die Monitoring-Seite zeigt die Quelle als aktiv; Sie haben das richtige Google-Konto verbunden, das falsche Konto ist die häufigste Ursache; die erste Synchronisierung läuft noch, grosse Profile brauchen mehrere Minuten; die Bewertung ist sehr neu, neue Bewertungen kommen mit dem nächsten Synchronisierungszyklus, nicht sofort.",
+      "Warum ist mein KI-Sichtbarkeits-Score tief, obwohl meine Website gut aussieht? Für Besucher gut aussehen und für KI-Crawler lesbar sein sind zwei verschiedene Tests. Die häufigsten Ursachen: eine robots.txt-Regel, die GPTBot, ClaudeBot, PerplexityBot oder Google-Extended blockiert, oft von einer früheren Agentur oder einer CDN-Voreinstellung geerbt, fehlende strukturierte Daten und Schlüsselinformationen in Bildern oder PDFs. Der Audit-Bericht benennt jede fehlgeschlagene Prüfung.",
+      "Warum hat sich mein Risiko-Score nicht aktualisiert? Der Score wird stündlich aus datierten Signalen neu berechnet. Kommt nichts Neues, keine Bewertung, kein Feedback, kein Audit, bleibt er stehen. Ein Score, der sich wochenlang nicht bewegt, ist selbst ein Signal: Die Stagnations-Komponente beginnt, das abzubilden.",
+      "Die Browser-Erweiterung meldet, die Seite werde nicht unterstützt. Die Erweiterung liest Bewertungen aus bekannten Seitenlayouts. Wird eine Plattformseite nicht erkannt, bleibt der Import bewusst deaktiviert; nutzen Sie stattdessen den CSV-Weg aus den Abschnitten 21 und 22.",
+      "Meine Kampagnen-E-Mails kommen nicht an. Prüfen Sie, ob der Empfänger sich abgemeldet hat, kontrollieren Sie die Adresse im Kundendatensatz und bitten Sie den Empfänger, beim ersten Versand den Spam-Ordner zu prüfen. SMS erfordern zusätzlich, dass der SMS-Versand auf Ihrem Konto aktiviert ist.",
+    ] },
+    { h: "Bewährte Praktiken", ps: [
+      "Die Gewohnheiten, mit denen sich die Plattform bezahlt macht:",
+    ], bullets: [
+      "Bitten Sie innert 24 Stunden nach der Leistung um eine Bewertung; die Antwortrate fällt nach dem ersten Tag schnell.",
+      "Antworten Sie auf jede Bewertung, auch auf positive. Antworten sind ein Vertrauenssignal, das Kunden wie KI-Systeme lesen.",
+      "Importieren Sie zuerst Ihre Historie. Scores mit Kontext schlagen Scores, die bei null beginnen.",
+      "Prüfen Sie Ihre Alerts jeden Morgen; sie kommen mit der Ursache, die Triage dauert Sekunden.",
+      "Prüfen Sie das Momentum der Mitbewerber wöchentlich.",
+      "Führen Sie den KI-Sichtbarkeits-Audit nach jeder Website- oder Infrastrukturänderung erneut aus.",
+      "Behandeln Sie wiederkehrende Beschwerdethemen als Betriebsprobleme, nicht als Kommunikationsprobleme: Beheben Sie die Ursache, die Bewertungen folgen.",
+    ] },
+    { h: "Häufige Fragen", ps: [
+      "Kann EchoRank automatisch auf Bewertungen antworten? Es entwirft; Sie geben frei. Jede Antwort wird in Ihrem Ton erstellt, aber nichts wird ohne Ihre ausdrückliche Freigabe veröffentlicht. Das ist Absicht: Eine falsche automatische Antwort kostet mehr als eine langsame menschliche.",
+      "Kann ich mehrere Standorte überwachen? Ja. Multi-Standort-Verwaltung ist ein Kernanwendungsfall, und Agenturen im Agency-Plan führen getrennte Kunden-Arbeitsbereiche mit White-Label-Branding.",
+      "Wie oft sollte ich einen KI-Sichtbarkeits-Audit ausführen? Ab Growth laufen geplante Re-Audits automatisch und melden Score-Einbrüche und Crawler-Zugriffswechsel. Manuell: nach jeder Website-Änderung. Die vollständige Methodik steht im KI-Sichtbarkeits-Guide.",
+      "Beeinflussen Google-Bewertungen KI-Empfehlungen? Ja, stark. Frische, Volumen und Ihre Antworten gehören zu den Signalen, die KI-Assistenten gewichten. Der KI-Sichtbarkeits-Guide erklärt die Mechanik im Detail.",
+      "Was passiert mit meinen Daten, wenn ich kündige? Sie können Ihre Daten jederzeit exportieren und die Löschung verlangen. Die Löschung entfernt Ihre Inhalte vorbehaltlich eines kurzen Backup-Zyklus und gesetzlicher Aufbewahrungspflichten; Details in der Datenschutzerklärung.",
+    ] },
+    { h: "Sie sind startklar", ps: [
+      "Ihre Reputation wird jetzt rund um die Uhr überwacht: Bewertungen, privates Feedback, KI-Sichtbarkeit, Mitbewerber und Risiko. Sie erfahren von Chancen und Problemen, bevor sie Ihr Ergebnis erreichen. Machen Sie es zur Gewohnheit: Dashboard zum Morgenkaffee, Alerts am selben Tag bearbeiten, Sichtbarkeits-Audit nach jeder Website-Änderung erneut ausführen. Reputation ist kein einmaliges Projekt; sie ist ein Vorteil, der sich aufzinst, und Sie haben jetzt die Maschine dafür.",
+    ] },
+],
 };
 
 function pick(locale: Locale): Doc {
@@ -325,7 +454,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   const { locale } = await params;
   if (!isSupportedLocale(locale)) return {};
   const d = pick(locale);
-  return { title: `${d.title} | EchoRank`, description: d.intro };
+  return { title: `${d.title} | EchoRank`, description: d.intro, alternates: { canonical: `/${locale}/guide` } };
 }
 
 export default async function GuidePage({ params }: { params: Promise<{ locale: string }> }) {
@@ -379,3 +508,7 @@ export default async function GuidePage({ params }: { params: Promise<{ locale: 
   );
 }
 // EOF-guide
+
+// GUIDE_V2_PATCH 2026-07-06
+
+// GUIDE_V2_PATCH2 2026-07-06

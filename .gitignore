@@ -49,3 +49,4 @@ patch_*.py
 install_*.py
 compliance_refactor.py
 *.zip
+*.bak.*
