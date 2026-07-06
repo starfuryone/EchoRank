@@ -202,7 +202,6 @@ const en: HomeContent = {
   footer: {
     copyright: COPYRIGHT,
     links: [
-      { label: "GUIDE", href: "/guide" },
       { label: "PRIVACY", href: "/legal/privacy" },
       { label: "TERMS", href: "/legal/terms" },
       { label: "DISCLAIMER", href: "/legal/disclaimer" },
@@ -356,7 +355,6 @@ const enCA: HomeContent = {
   footer: {
     copyright: COPYRIGHT,
     links: [
-      { label: "GUIDE", href: "/guide" },
       { label: "PRIVACY", href: "/legal/privacy" },
       { label: "TERMS", href: "/legal/terms" },
       { label: "DISCLAIMER", href: "/legal/disclaimer" },
@@ -520,7 +518,6 @@ const fr: HomeContent = {
   footer: {
     copyright: COPYRIGHT,
     links: [
-      { label: "GUIDE", href: "/guide" },
       { label: "CONFIDENTIALITÉ", href: "/legal/privacy" },
       { label: "CONDITIONS", href: "/legal/terms" },
       { label: "AVIS LÉGAL", href: "/legal/disclaimer" },
@@ -683,7 +680,6 @@ const frCA: HomeContent = {
   footer: {
     copyright: COPYRIGHT,
     links: [
-      { label: "GUIDE", href: "/guide" },
       { label: "CONFIDENTIALITÉ", href: "/legal/privacy" },
       { label: "CONDITIONS", href: "/legal/terms" },
       { label: "AVIS LÉGAL", href: "/legal/disclaimer" },
@@ -843,7 +839,6 @@ const deCH: HomeContent = {
   footer: {
     copyright: COPYRIGHT,
     links: [
-      { label: "ANLEITUNG", href: "/guide" },
       { label: "DATENSCHUTZ", href: "/legal/privacy" },
       { label: "AGB", href: "/legal/terms" },
       { label: "HAFTUNGSAUSSCHLUSS", href: "/legal/disclaimer" },
