@@ -25,6 +25,7 @@ export const metadata: Metadata = {
   },
   description: SITE_DESC,
   alternates: { canonical: "/" },
+  verification: { google: "paste_the_real_token_between_these_quotes" },
   openGraph: {
     type: "website",
     url: SITE_URL,
