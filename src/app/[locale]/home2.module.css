@@ -1,6 +1,6 @@
-/* EchoRank 360 — AI Visibility homepage redesign */
+/* Echorank — AI Visibility homepage redesign */
 .page{
-  --bg:#09090c; --surface:#101016; --surface2:#15151d;
+  --bg:#0B0E11; --surface:#101016; --surface2:#15151d;
   --line:#232330; --lineSoft:#1b1b26;
   --text:#eceaf2; --muted:#8f8fa3; --faint:#5c5c70;
   --gold:#e8c565; --goldDeep:#b88420;
@@ -21,10 +21,20 @@
 .h2{font-size:clamp(26px,3.4vw,40px);font-weight:650;letter-spacing:-.02em;line-height:1.12;margin:14px 0 10px}
 .sub{color:var(--muted);max-width:640px;font-size:16px}
 .goldtext{background:var(--goldGrad);-webkit-background-clip:text;background-clip:text;color:transparent}
-.btn{display:inline-flex;align-items:center;gap:8px;border-radius:10px;padding:13px 22px;font-size:15px;font-weight:560;border:1px solid transparent;transition:transform .15s,box-shadow .15s}
+.btn{display: inline-flex;align-items: center;gap:8px;border-radius:10px;padding: 18px 30px;font-size: 17px;font-weight:560;border:1px solid transparent;transition:transform .15s,box-shadow .15s;
+  height: 56px;
+  line-height: 1;
+  justify-content: center;
+}
 .btn:hover{transform:translateY(-1px)}
-.btnPrimary{background:var(--goldGrad);color:#191204;box-shadow:0 8px 30px -10px rgba(216,167,61,.55)}
-.btnGhost{border-color:var(--line);color:var(--text);background:rgba(255,255,255,.02)}
+.btnPrimary{background:var(--goldGrad);color: #FFFFFF;box-shadow:0 8px 30px -10px rgba(216,167,61,.55);
+  font-weight: 800;
+  letter-spacing: .2px;
+  text-shadow: 0 1px 2px rgba(0,0,0,.45), 0 0 8px rgba(255,255,255,.15);
+}
+.btnGhost{border-color:var(--line);color: #F5F5F5;background:rgba(255,255,255,.02);
+  font-weight: 600;
+}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius)}
 .chip{font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;padding:3px 8px;border-radius:99px;border:1px solid var(--line)}
 .chipGreen{composes:chip;color:var(--green);border-color:rgba(74,222,128,.35);background:rgba(74,222,128,.07)}
@@ -35,14 +45,16 @@
 .navin{display:flex;align-items:center;justify-content:space-between;height:64px}
 .brand{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:.04em;font-size:15px}
 .diamond{width:22px;height:22px;background:var(--goldGrad);transform:rotate(45deg);border-radius:4px;flex:none}
-.n360{background:linear-gradient(120deg,#fff,#b8b8b8);-webkit-background-clip:text;background-clip:text;color:transparent}
 .navlinks{display:flex;gap:26px;font-size:14px;color:var(--muted)}
 .navlinks a:hover{color:var(--text)}
 .navright{display:flex;align-items:center;gap:16px}
 .toggle{font-family:var(--mono);font-size:12px;color:var(--muted);display:inline-flex;gap:8px}
 .toggle a:hover{color:var(--text)}
 .toggleOn{color:var(--gold)}
-.navcta{background:var(--goldGrad);color:#191204;font-size:13.5px;font-weight:600;padding:9px 16px;border-radius:9px}
+.navcta{background:var(--goldGrad);color: #fff;font-size:13.5px;font-weight: 700;padding:9px 16px;border-radius:9px;
+  letter-spacing: 0.2px;
+  text-shadow: 0 1px 3px rgba(0,0,0,.35);
+}
 @media(max-width:900px){.navlinks{display:none}}
 
 /* HERO */
@@ -262,3 +274,45 @@
 .revealIn{opacity:1;transform:none}
 @media(prefers-reduced-motion:reduce){.reveal{opacity:1;transform:none;transition:none}.engfill{transition:none}}
 .page :focus-visible{outline:2px solid var(--gold);outline-offset:2px;border-radius:6px}
+
+.btnGhost:hover {
+  background: #ffffff;
+  color: #0F1117;
+  text-shadow: none;
+}
+
+.navcta:hover {
+  background: #FFD76A;
+  color: #111;
+  text-shadow: none;
+}
+
+/* Vegas gold buttons */
+.btnPrimary,
+.navcta {
+  background:
+    repeating-linear-gradient(115deg,
+      rgba(255,255,255,.07) 0px,
+      rgba(255,255,255,.07) 2px,
+      transparent 2px,
+      transparent 5px),
+    linear-gradient(135deg, #d4c56a 0%, #C4B454 45%, #a8993f 100%);
+}
+.navcta:hover {
+  background: #d4c56a;
+}
+
+/* Blinking live dots */
+@keyframes liveBlink {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%      { opacity: .25; transform: scale(.85); }
+}
+.pulse {
+  animation: liveBlink 1.4s ease-in-out infinite;
+}
+.chipGreen::before {
+  content: "●";
+  margin-right: 5px;
+  animation: liveBlink 1.4s ease-in-out infinite;
+  display: inline-block;
+}
