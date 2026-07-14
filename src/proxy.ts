@@ -110,7 +110,12 @@ export default auth((req) => {
     return NextResponse.redirect(loginUrl);
   }
 
-  return NextResponse.next();
+  // ── Authenticated app routes ──────────────────────────────────────────
+  // Expose the pathname to server components: the (dashboard) layout needs it
+  // to enforce per-plan route access, and a layout can't read it otherwise.
+  const requestHeaders = new Headers(req.headers);
+  requestHeaders.set("x-pathname", pathname);
+  return NextResponse.next({ request: { headers: requestHeaders } });
 });
 
 export const config = {

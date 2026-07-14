@@ -9,11 +9,16 @@ export { QuotaExceededError };
 
 // ─── Plan hierarchy ─────────────────────────────────────────────────────────
 
+// Ranked by price. AI_VISIBILITY ($29) sits below STARTER, so requirePlan()
+// denies it the reputation tiers — but it is a side tier, not a rung: it holds
+// ai_visibility/answer_tracking that STARTER lacks. Gate AI-visibility
+// surfaces with requireFeature(), never with requirePlan().
 const PLAN_RANK: Record<PlanType, number> = {
-  STARTER: 0,
-  GROWTH: 1,
-  AGENCY: 2,
-  ENTERPRISE: 3,
+  AI_VISIBILITY: 0,
+  STARTER: 1,
+  GROWTH: 2,
+  AGENCY: 3,
+  ENTERPRISE: 4,
 };
 
 // ─── Custom error classes ───────────────────────────────────────────────────

@@ -22,6 +22,7 @@ import { VisibilityHelpButton } from "@/components/help/VisibilityHelpButton";
 import { MonitorCard } from "@/components/visibility/MonitorCard";
 import { BenchmarkCard } from "@/components/visibility/BenchmarkCard";
 import { AnswerTrackingCard } from "@/components/visibility/AnswerTrackingCard";
+import { PromptTrends } from "@/components/visibility/prompt-trends";
 
 // ─── Types (the sidecar's serialized audit shape) ───────────────────────────
 interface Check {
@@ -247,6 +248,7 @@ export default function VisibilityPage() {
 
       {/* Answer tracking (AGENCY+) */}
       <AnswerTrackingCard />
+      <PromptTrends />
 
       {/* Competitor benchmark (GROWTH+) */}
       {audit && !loading && !error && (

@@ -7,8 +7,15 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { AuthContent } from "@/lib/i18n/auth-content";
+import { postSignupRedirect } from "@/lib/plan-routing";
 
-export default function RegisterForm({ c }: { c: AuthContent["register"] }) {
+export default function RegisterForm({
+  c,
+  plan,
+}: {
+  c: AuthContent["register"];
+  plan?: string;
+}) {
   const router = useRouter();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -26,7 +33,7 @@ export default function RegisterForm({ c }: { c: AuthContent["register"] }) {
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password, businessName }),
+        body: JSON.stringify({ name, email, password, businessName, plan }),
       });
 
       const data = await res.json();
@@ -45,7 +52,8 @@ export default function RegisterForm({ c }: { c: AuthContent["register"] }) {
       if (result?.error) {
         setError(c.errCreatedSigninFailed);
       } else {
-        router.push("/dashboard");
+        // AI_VISIBILITY signups land on /visibility; everyone else /dashboard.
+        router.push(postSignupRedirect(data.planType ?? plan));
       }
     } catch {
       setError(c.errUnexpected);

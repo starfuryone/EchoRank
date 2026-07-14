@@ -105,3 +105,107 @@ export async function sendVisibilityAlert(input: VisibilityAlertInput): Promise<
   });
   logger.info({ tenantId: input.tenantId, recipients: recipients.length, url: input.url }, "Visibility alert sent");
 }
+
+// ─── Prompt mention alerts (answer tracking) ────────────────────────────────
+
+export interface PromptTransition {
+  promptId: string;
+  promptText: string;
+  kind: "visibility_lost" | "visibility_rank_drop" | "visibility_regained";
+  prevRank: number | null;
+  newRank: number | null;
+}
+
+/**
+ * Persist AlertEvents for prompt mention transitions and send one digest
+ * email per batch. dedupeKey is per prompt+kind+day, so retried batches
+ * and overlapping sweeps cannot double-alert.
+ */
+export async function recordPromptAlerts(
+  tenantId: string,
+  transitions: PromptTransition[],
+): Promise<void> {
+  if (transitions.length === 0) return;
+
+  const day = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+  const rows = transitions.map((t) => ({
+    tenantId,
+    kind: t.kind,
+    severity: t.kind === "visibility_regained" ? "warning" : "critical",
+    title:
+      t.kind === "visibility_lost"
+        ? `No longer recommended: "${t.promptText.slice(0, 80)}"`
+        : t.kind === "visibility_rank_drop"
+          ? `Rank dropped #${t.prevRank} -> #${t.newRank}: "${t.promptText.slice(0, 80)}"`
+          : `Recommended again: "${t.promptText.slice(0, 80)}"`,
+    body: null as string | null,
+    dedupeKey: `vis-${t.kind}-${t.promptId}-${day}`,
+    payload: { promptId: t.promptId, prevRank: t.prevRank, newRank: t.newRank },
+  }));
+
+  const created = await prisma.alertEvent.createMany({
+    data: rows,
+    skipDuplicates: true,
+  });
+  if (created.count === 0) return; // everything already alerted today
+
+  const cfg = await prisma.tenantRiskConfig.findUnique({ where: { tenantId } });
+  if (cfg && !cfg.alertsEnabled) {
+    logger.info({ tenantId, count: created.count }, "Prompt alerts stored; email disabled");
+    return;
+  }
+
+  const recipients = await resolveRecipients(tenantId);
+  if (recipients.length === 0) {
+    logger.warn({ tenantId }, "Prompt alert digest: no recipients");
+    return;
+  }
+
+  const lost = transitions.filter((t) => t.kind === "visibility_lost");
+  const drops = transitions.filter((t) => t.kind === "visibility_rank_drop");
+  const regained = transitions.filter((t) => t.kind === "visibility_regained");
+
+  const subject =
+    lost.length > 0
+      ? `[EchoRank] AI stopped recommending you for ${lost.length} prompt${lost.length > 1 ? "s" : ""}`
+      : drops.length > 0
+        ? `[EchoRank] AI recommendation rank dropped on ${drops.length} prompt${drops.length > 1 ? "s" : ""}`
+        : `[EchoRank] AI is recommending you again (${regained.length} prompt${regained.length > 1 ? "s" : ""})`;
+
+  const lines: string[] = [`AI recommendation changes detected in today's tracking run:`];
+  if (lost.length > 0) {
+    lines.push(``, `NO LONGER MENTIONED:`);
+    for (const t of lost) lines.push(`  - "${t.promptText}"${t.prevRank ? ` (was #${t.prevRank})` : ""}`);
+  }
+  if (drops.length > 0) {
+    lines.push(``, `RANK DROPPED:`);
+    for (const t of drops) lines.push(`  - "${t.promptText}" #${t.prevRank} -> #${t.newRank}`);
+  }
+  if (regained.length > 0) {
+    lines.push(``, `MENTIONED AGAIN:`);
+    for (const t of regained) lines.push(`  - "${t.promptText}"${t.newRank ? ` (#${t.newRank})` : ""}`);
+  }
+  lines.push(``, `Trends and details: https://echorank360.com/visibility`);
+  const text = lines.join("\n");
+  const html = `<pre style="font-family:ui-monospace,Menlo,monospace;font-size:13px;line-height:1.6">${text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")}</pre>`;
+
+  const t = getTransport();
+  if (!t) {
+    logger.info({ tenantId, recipients, subject }, "SMTP not configured - prompt digest logged only");
+    return;
+  }
+  await t.sendMail({
+    from: process.env.SMTP_FROM || "alerts@echorank360.com",
+    to: recipients.join(", "),
+    subject,
+    text,
+    html,
+  });
+  logger.info(
+    { tenantId, recipients: recipients.length, lost: lost.length, drops: drops.length, regained: regained.length },
+    "Prompt alert digest sent",
+  );
+}
+

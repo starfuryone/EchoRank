@@ -21,33 +21,45 @@ import {
   ScanEye,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { dashNav, type DashLocale } from "@/lib/i18n/dashboard";
+import { canAccessPath } from "@/lib/plan-routing";
+import type { PlanType } from "@/generated/prisma";
 
 const navItems = [
-  { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-  { label: "Customers", href: "/customers", icon: Users },
-  { label: "Feedback", href: "/feedback", icon: MessageSquare },
-  { label: "Campaigns", href: "/campaigns", icon: Send },
-  { label: "Recovery", href: "/recovery", icon: HeartHandshake },
-  { label: "Analytics", href: "/analytics", icon: BarChart3 },
-  { label: "Intelligence", href: "/intelligence", icon: Brain },
-  { label: "Monitoring", href: "/monitoring", icon: Radar },
-  { label: "AI Visibility", href: "/visibility", icon: ScanEye },
-  { label: "Data Sources", href: "/imports", icon: Database },
-  { label: "Extension", href: "/extension", icon: Puzzle },
-  { label: "Templates", href: "/templates", icon: FileText },
-  { label: "Review Links", href: "/review-links", icon: ExternalLink },
-  { label: "Team", href: "/team", icon: UserPlus },
-  { label: "Settings", href: "/settings", icon: Settings },
-  { label: "Billing", href: "/billing", icon: CreditCard },
+  { href: "/dashboard", icon: LayoutDashboard },
+  { href: "/customers", icon: Users },
+  { href: "/feedback", icon: MessageSquare },
+  { href: "/campaigns", icon: Send },
+  { href: "/recovery", icon: HeartHandshake },
+  { href: "/analytics", icon: BarChart3 },
+  { href: "/intelligence", icon: Brain },
+  { href: "/monitoring", icon: Radar },
+  { href: "/visibility", icon: ScanEye },
+  { href: "/imports", icon: Database },
+  { href: "/extension", icon: Puzzle },
+  { href: "/templates", icon: FileText },
+  { href: "/review-links", icon: ExternalLink },
+  { href: "/team", icon: UserPlus },
+  { href: "/settings", icon: Settings },
+  { href: "/billing", icon: CreditCard },
 ] as const;
 
 interface SidebarProps {
   open?: boolean;
   onClose?: () => void;
+  locale?: DashLocale;
+  plan?: PlanType | null;
 }
 
-export function Sidebar({ open, onClose }: SidebarProps) {
+export function Sidebar({ open, onClose, locale = "en", plan }: SidebarProps) {
+  const labels = dashNav[locale];
   const pathname = usePathname();
+  // Hide what this plan can't reach. The (dashboard) layout enforces the same
+  // rule, but it only re-runs on hard loads — a <Link> soft-navigation skips
+  // it — so the nav must not offer the link in the first place.
+  const items = plan
+    ? navItems.filter((item) => canAccessPath(plan, item.href))
+    : navItems;
 
   return (
     <>
@@ -79,7 +91,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
         {/* Navigation */}
         <nav className="flex-1 overflow-y-auto px-3 py-4">
           <ul className="space-y-1">
-            {navItems.map((item) => {
+            {items.map((item) => {
               const isActive =
                 pathname === item.href ||
                 pathname.startsWith(item.href + "/");
@@ -97,7 +109,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
                     )}
                   >
                     <item.icon className="h-5 w-5 shrink-0" />
-                    {item.label}
+                    {labels[item.href]}
                   </Link>
                 </li>
               );

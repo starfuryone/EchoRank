@@ -3,8 +3,25 @@ import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { slugify } from "@/lib/tenant";
 import { planQuotaDefaults } from "@/lib/plan-config";
+import { planFromParam } from "@/lib/plan-routing";
 import { validate, registerSchema } from "@/lib/validations";
 import { rateLimit } from "@/lib/rate-limit";
+import type { PlanType } from "@/generated/prisma";
+
+/**
+ * Plans a user may put themselves on at signup. Deliberately excludes the
+ * reputation tiers: honoring ?plan=agency here would hand out a $349 plan to
+ * anyone who edits the URL. Those keep landing on STARTER's trial, exactly as
+ * before this parameter existed; upgrades go through /billing.
+ */
+const SELF_SERVE_PLANS: readonly PlanType[] = ["AI_VISIBILITY"];
+
+function resolveSignupPlan(planParam: string | undefined): PlanType {
+  const requested = planFromParam(planParam);
+  return requested && SELF_SERVE_PLANS.includes(requested)
+    ? requested
+    : "STARTER";
+}
 
 export async function POST(request: Request) {
   try {
@@ -21,10 +38,11 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { name, email, password, businessName } = validate(
+    const { name, email, password, businessName, plan } = validate(
       registerSchema,
       body,
     );
+    const planType = resolveSignupPlan(plan);
 
     const existingUser = await prisma.user.findUnique({
       where: { email: email.toLowerCase().trim() },
@@ -65,6 +83,7 @@ export async function POST(request: Request) {
         data: {
           name: businessName.trim(),
           slug,
+          planType,
         },
       });
 
@@ -76,12 +95,12 @@ export async function POST(request: Request) {
         },
       });
 
-      // Provision quota limits so the tenant is metered from day one. New
-      // tenants default to the STARTER plan (Tenant.planType default).
+      // Provision quota limits so the tenant is metered from day one, matching
+      // whichever plan the signup resolved to.
       await tx.tenantQuota.create({
         data: {
           tenantId: tenant.id,
-          ...planQuotaDefaults("STARTER"),
+          ...planQuotaDefaults(planType),
         },
       });
 
@@ -106,7 +125,9 @@ export async function POST(request: Request) {
         ],
       });
 
-      return { userId: user.id, tenantId: tenant.id };
+      // planType is echoed back so the client redirects on the plan the server
+      // actually granted, not the one the URL asked for.
+      return { userId: user.id, tenantId: tenant.id, planType };
     });
 
     return NextResponse.json(result, { status: 201 });

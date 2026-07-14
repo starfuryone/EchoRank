@@ -1,397 +1,327 @@
-import type { Metadata } from "next";
-import { notFound } from "next/navigation";
-import Link from "next/link";
-import { SUPPORTED_LOCALES, isSupportedLocale, type Locale } from "@/lib/i18n/config";
-import { CONTENT } from "@/lib/i18n/content";
-import BackButton from "../legal/back-button";
-import home from "../home.module.css";
-import { VisibilityArt } from "../hero-art";
-import lp from "./ai-visibility.module.css";
+// app/[locale]/ai-visibility/page.tsx — AI Visibility landing + free audit widget
 
-export function generateStaticParams() {
-  return SUPPORTED_LOCALES.map((locale) => ({ locale }));
-}
+import type { Metadata } from 'next';
+import { AuditWidget } from '@/components/AuditWidget';
 
-interface LpContent {
-  meta: { title: string; description: string };
-  hero: { label: string; h1a: string; h1b: string; sub: string; cta1: string; cta2: string };
-  audit: { label: string; h2: string; items: { t: string; b: string }[] };
-  how: { label: string; h2: string; steps: { n: string; t: string; b: string }[] };
-  get: { label: string; h2: string; items: { t: string; b: string }[] };
-  plans: { label: string; note: string; cta: string };
-  final: { h2: string; sub: string; cta1: string; cta2: string };
-}
-
-const C: Record<Locale, LpContent> = {
-  en: {
-    meta: {
-      title: "AI Visibility Audit. EchoRank360",
-      description:
-        "Find out whether ChatGPT, Perplexity and Google AI recommend your business, and get a step-by-step roadmap into AI-generated answers.",
-    },
-    hero: {
-      label: "/ AI VISIBILITY",
-      h1a: "Does AI recommend your business?",
-      h1b: "Most owners have no idea.",
-      sub: "ChatGPT, Perplexity and Google AI are answering your customers' questions right now. EchoRank360 audits every factor that decides whether AI can see, trust, and cite you, then tracks what the engines actually say, every day.",
-      cta1: "Run your AI visibility audit →",
-      cta2: "Book a demo ↗",
-    },
-    audit: {
-      label: "/ 01 — WHAT THE AUDIT COVERS",
-      h2: "Every factor between you and an AI recommendation.",
-      items: [
-        { t: "AI crawler access", b: "Whether the bots behind ChatGPT, Perplexity and Google AI can reach your site at all, robots rules, blocks, and misconfigurations that silently erase you." },
-        { t: "Machine readability", b: "Structure, metadata and entity signals that let an AI understand who you are, what you do, and where you operate." },
-        { t: "Trust signals", b: "The reputation surface AI draws on when deciding whether you're safe to recommend, reviews, consistency, freshness." },
-        { t: "Answer presence", b: "Your prompts run against the engines daily: are you cited, misrepresented, or absent when customers ask?" },
-        { t: "Competitor benchmark", b: "Your 0–100 score side-by-side with the competitors AI mentions instead of you." },
-        { t: "Regression watch", b: "Score drops and bot-access flips trigger alerts, you know the moment you disappear." },
-      ],
-    },
-    how: {
-      label: "/ 02 — HOW IT WORKS",
-      h2: "Audit. Fix. Track.",
-      steps: [
-        { n: "01", t: "Audit", b: "Enter your domain. Minutes later: your 0–100 AI visibility score, grade, and every failing check." },
-        { n: "02", t: "Fix", b: "A prioritized, step-by-step roadmap, exactly what to change and why it moves the score." },
-        { n: "03", t: "Track", b: "Daily answer tracking and scheduled re-audits show when AI starts recommending you, and alert you if it stops." },
-      ],
-    },
-    get: {
-      label: "/ 03 — WHAT YOU GET",
-      h2: "Not a report. A system.",
-      items: [
-        { t: "0–100 score + grade", b: "One number executives understand, backed by every underlying check." },
-        { t: "Fix roadmap", b: "Concrete remediation steps, ordered by impact." },
-        { t: "Daily answer tracking", b: "Your key prompts run against the AI engines every day, with history." },
-        { t: "Alerts", b: "Regressions, bot flips, and disappearances land in your inbox, with the cause." },
-      ],
-    },
-    plans: {
-      label: "/ 04 — PLANS",
-      note: "The AI Visibility Auditor and fix roadmap ship with GROWTH. Daily answer tracking and competitor benchmarking ship with AGENCY. 14-day free trial on both.",
-      cta: "See pricing →",
-    },
-    final: {
-      h2: "Find out what AI says about you, today.",
-      sub: "Two minutes to start. The audit does the rest.",
-      cta1: "Run your AI visibility audit →",
-      cta2: "Book a demo ↗",
-    },
-  },
-
-  "en-CA": null as unknown as LpContent, // filled below (mirrors en)
-
-  fr: {
-    meta: {
-      title: "Audit de visibilité IA. EchoRank360",
-      description:
-        "Découvrez si ChatGPT, Perplexity et Google AI recommandent votre entreprise, avec une feuille de route pas à pas vers les réponses générées par l'IA.",
-    },
-    hero: {
-      label: "/ VISIBILITÉ IA",
-      h1a: "L'IA recommande-t-elle votre entreprise ?",
-      h1b: "La plupart des dirigeants n'en savent rien.",
-      sub: "ChatGPT, Perplexity et Google AI répondent en ce moment même aux questions de vos clients. EchoRank360 audite chaque facteur qui détermine si l'IA peut vous voir, vous faire confiance et vous citer, puis suit chaque jour ce que les moteurs disent réellement.",
-      cta1: "Lancez votre audit de visibilité IA →",
-      cta2: "Réserver une démo ↗",
-    },
-    audit: {
-      label: "/ 01 — CE QUE L'AUDIT COUVRE",
-      h2: "Chaque facteur entre vous et une recommandation de l'IA.",
-      items: [
-        { t: "Accès des robots IA", b: "Les robots derrière ChatGPT, Perplexity et Google AI peuvent-ils seulement atteindre votre site ? Règles robots, blocages et erreurs de configuration qui vous effacent en silence." },
-        { t: "Lisibilité machine", b: "Structure, métadonnées et signaux d'entité qui permettent à une IA de comprendre qui vous êtes, ce que vous faites et où vous opérez." },
-        { t: "Signaux de confiance", b: "La surface de réputation sur laquelle l'IA s'appuie pour décider si elle peut vous recommander, avis, cohérence, fraîcheur." },
-        { t: "Présence dans les réponses", b: "Vos requêtes clés sont testées chaque jour sur les moteurs : êtes-vous cité, déformé ou absent quand vos clients demandent ?" },
-        { t: "Comparaison concurrentielle", b: "Votre score 0–100 face aux concurrents que l'IA mentionne à votre place." },
-        { t: "Veille des régressions", b: "Chute de score ou accès robot coupé : une alerte part, vous savez à l'instant où vous disparaissez." },
-      ],
-    },
-    how: {
-      label: "/ 02 — COMMENT ÇA MARCHE",
-      h2: "Auditer. Corriger. Suivre.",
-      steps: [
-        { n: "01", t: "Auditez", b: "Entrez votre domaine. Quelques minutes plus tard : votre score de visibilité IA sur 100, votre note et chaque contrôle en échec." },
-        { n: "02", t: "Corrigez", b: "Une feuille de route priorisée, pas à pas, exactement quoi changer et pourquoi cela fait bouger le score." },
-        { n: "03", t: "Suivez", b: "Suivi quotidien des réponses et ré-audits programmés : vous voyez quand l'IA commence à vous recommander, et êtes alerté si elle s'arrête." },
-      ],
-    },
-    get: {
-      label: "/ 03 — CE QUE VOUS OBTENEZ",
-      h2: "Pas un rapport. Un système.",
-      items: [
-        { t: "Score 0–100 + note", b: "Un chiffre que tout dirigeant comprend, appuyé par chaque contrôle sous-jacent." },
-        { t: "Feuille de route", b: "Des corrections concrètes, classées par impact." },
-        { t: "Suivi quotidien des réponses", b: "Vos requêtes clés testées chaque jour sur les moteurs IA, avec historique." },
-        { t: "Alertes", b: "Régressions, robots bloqués, disparitions : tout arrive dans votre boîte mail, avec la cause." },
-      ],
-    },
-    plans: {
-      label: "/ 04 — FORFAITS",
-      note: "L'Audit de visibilité IA et la feuille de route sont inclus dès CROISSANCE. Le suivi quotidien des réponses et la comparaison concurrentielle arrivent avec AGENCE. Essai gratuit de 14 jours sur les deux.",
-      cta: "Voir les tarifs →",
-    },
-    final: {
-      h2: "Découvrez ce que l'IA dit de vous, aujourd'hui.",
-      sub: "Deux minutes pour démarrer. L'audit fait le reste.",
-      cta1: "Lancez votre audit de visibilité IA →",
-      cta2: "Réserver une démo ↗",
-    },
-  },
-
-  "fr-CA": null as unknown as LpContent, // filled below
-
-  "de-CH": {
-    meta: {
-      title: "KI-Sichtbarkeits-Audit. EchoRank360",
-      description:
-        "Finden Sie heraus, ob ChatGPT, Perplexity und Google AI Ihr Unternehmen empfehlen, mit einem Schritt-für-Schritt-Fahrplan in die KI-Antworten.",
-    },
-    hero: {
-      label: "/ KI-SICHTBARKEIT",
-      h1a: "Empfiehlt die KI Ihr Unternehmen?",
-      h1b: "Die meisten Inhaber wissen es nicht.",
-      sub: "ChatGPT, Perplexity und Google AI beantworten in diesem Moment die Fragen Ihrer Kunden. EchoRank360 prüft jeden Faktor, der entscheidet, ob die KI Sie sehen, Ihnen vertrauen und Sie zitieren kann, und verfolgt täglich, was die Engines tatsächlich sagen.",
-      cta1: "KI-Sichtbarkeits-Audit starten →",
-      cta2: "Demo buchen ↗",
-    },
-    audit: {
-      label: "/ 01 — WAS DER AUDIT PRÜFT",
-      h2: "Jeder Faktor zwischen Ihnen und einer KI-Empfehlung.",
-      items: [
-        { t: "Zugriff der KI-Crawler", b: "Erreichen die Bots hinter ChatGPT, Perplexity und Google AI Ihre Website überhaupt? Robots-Regeln, Blockaden und Fehlkonfigurationen, die Sie lautlos löschen." },
-        { t: "Maschinenlesbarkeit", b: "Struktur, Metadaten und Entity-Signale, mit denen eine KI versteht, wer Sie sind, was Sie tun und wo Sie tätig sind." },
-        { t: "Vertrauenssignale", b: "Die Reputationsbasis, auf die sich die KI stützt, bevor sie Sie empfiehlt. Bewertungen, Konsistenz, Aktualität." },
-        { t: "Präsenz in den Antworten", b: "Ihre Schlüsselfragen laufen täglich gegen die Engines: Werden Sie zitiert, falsch dargestellt, oder fehlen Sie?" },
-        { t: "Konkurrenzvergleich", b: "Ihr 0–100-Score neben den Mitbewerbern, die die KI stattdessen nennt." },
-        { t: "Regressions-Wache", b: "Score-Einbrüche und gekippte Bot-Zugriffe lösen Alarme aus. Sie wissen sofort, wenn Sie verschwinden." },
-      ],
-    },
-    how: {
-      label: "/ 02 — SO FUNKTIONIERT ES",
-      h2: "Prüfen. Beheben. Verfolgen.",
-      steps: [
-        { n: "01", t: "Prüfen", b: "Domain eingeben. Minuten später: Ihr KI-Sichtbarkeits-Score von 0–100, die Note und jeder fehlgeschlagene Check." },
-        { n: "02", t: "Beheben", b: "Ein priorisierter Schritt-für-Schritt-Fahrplan, genau was zu ändern ist und warum es den Score bewegt." },
-        { n: "03", t: "Verfolgen", b: "Tägliches Antwort-Tracking und geplante Re-Audits zeigen, wann die KI Sie zu empfehlen beginnt, und melden, wenn sie aufhört." },
-      ],
-    },
-    get: {
-      label: "/ 03 — WAS SIE ERHALTEN",
-      h2: "Kein Bericht. Ein System.",
-      items: [
-        { t: "0–100-Score + Note", b: "Eine Zahl, die jede Geschäftsleitung versteht, gestützt auf jeden einzelnen Check." },
-        { t: "Massnahmen-Fahrplan", b: "Konkrete Korrekturen, geordnet nach Wirkung." },
-        { t: "Tägliches Antwort-Tracking", b: "Ihre Schlüsselfragen laufen jeden Tag gegen die KI-Engines, mit Verlauf." },
-        { t: "Alarme", b: "Regressionen, gekippte Bots, Verschwinden, alles landet im Posteingang, mit Ursache." },
-      ],
-    },
-    plans: {
-      label: "/ 04 — PLÄNE",
-      note: "Der KI-Sichtbarkeits-Audit samt Fahrplan ist ab WACHSTUM enthalten. Tägliches Antwort-Tracking und Konkurrenzvergleich kommen mit AGENTUR. 14 Tage kostenlos testen.",
-      cta: "Preise ansehen →",
-    },
-    final: {
-      h2: "Finden Sie heraus, was die KI über Sie sagt, heute.",
-      sub: "Zwei Minuten zum Start. Den Rest erledigt der Audit.",
-      cta1: "KI-Sichtbarkeits-Audit starten →",
-      cta2: "Demo buchen ↗",
-    },
-  },
+export const metadata: Metadata = {
+  title: 'AI Visibility — EchoRank360',
+  description:
+    'Track whether ChatGPT, Claude, Gemini and Perplexity recommend your business. Prompt tracking, lost-recommendation alerts and an AI Trust Score for $29/month.',
 };
 
-C["en-CA"] = C.en;
-C["fr-CA"] = {
-  ...C.fr,
-  hero: {
-    ...C.fr.hero,
-    sub: "ChatGPT, Perplexity et Google AI répondent en ce moment même aux questions de vos clients. EchoRank360 audite chaque facteur qui détermine si l'IA peut vous voir, vous faire confiance et vous citer, puis suit chaque jour ce que les moteurs disent vraiment.",
-  },
-  get: {
-    ...C.fr.get,
-    items: C.fr.get.items.map((it) =>
-      it.t === "Alertes"
-        ? { t: "Alertes", b: "Régressions, robots bloqués, disparitions : tout arrive dans votre boîte courriel, avec la cause." }
-        : it,
-    ),
-  },
-  plans: {
-    ...C.fr.plans,
-    note: "L'Audit de visibilité IA et la feuille de route sont inclus dès CROISSANCE. Le suivi quotidien des réponses et la comparaison concurrentielle arrivent avec AGENCE. Essai gratuit de 14 jours sur les deux forfaits.",
-  },
-};
+const PROMPTS = [
+  'best CRM for small agencies',
+  'accounting software freelancers actually use',
+  'top AI visibility tools 2026',
+];
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ locale: string }>;
-}): Promise<Metadata> {
-  const { locale } = await params;
-  if (!isSupportedLocale(locale)) return {};
-  const { meta } = C[locale];
-  return { title: meta.title, description: meta.description };
-}
-
-export default async function AiVisibilityPage({
-  params,
-}: {
-  params: Promise<{ locale: string }>;
-}) {
-  const { locale } = await params;
-  if (!isSupportedLocale(locale)) notFound();
-  const c = C[locale];
-  const nav = CONTENT[locale].nav;
-  const foot = CONTENT[locale].footer;
-  const backLabel = locale.startsWith("fr") ? "← Retour" : locale === "de-CH" ? "← Zurück" : "← Back";
-
+export default function AIVisibilityPage() {
   return (
-    <div className={lp.page}>
-      <div className={home.container}>
-        {/* navbar */}
-        <header className={lp.navbar}>
-          <Link href={`/${locale}`} className={lp.logoLink} aria-label="EchoRank 360 — home">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/echorank-logo-dark.svg" alt="ECHORANK 360" className={lp.logo} />
-          </Link>
-          <nav className={lp.navLinks} aria-label="Main">
-            <Link href={`/${locale}`} className={lp.navLink}>{nav.product}</Link>
-            <Link href={`/${locale}#pricing`} className={lp.navLink}>{nav.pricing}</Link>
-            <Link href={`/${locale}#field`} className={lp.navLink}>{nav.customers}</Link>
-            <Link href="/login" className={lp.navLink}>{nav.login}</Link>
-          </nav>
-          <div className={lp.navRight}>
-            <span className={lp.switcher}>
-              {nav.switcher.map((l) => (
-                <Link
-                  key={l}
-                  href={`/${l}/ai-visibility`}
-                  className={`${lp.switchItem} ${l === locale ? lp.switchActive : ""}`}
-                >
-                  {l.toUpperCase()}
-                </Link>
-              ))}
-            </span>
-            <Link href="/register" className={`${lp.btn} ${lp.btnPrimary}`}>
-              {nav.cta}
-            </Link>
-          </div>
-        </header>
-
-        <div className={lp.backRow}>
-          <BackButton locale={locale} label={backLabel} className={lp.backBtnGrey} />
-        </div>
-
-        {/* hero */}
-        <section className={`${home.section} ${lp.heroGrid}`}>
-          <div className={lp.heroCopy}>
-          <div className={home.label}>{c.hero.label}</div>
-          <h1 className={home.h1}>
-            {c.hero.h1a}
-            <span className={home.muted}>{c.hero.h1b}</span>
+    <main className="av">
+      <section className="av-hero">
+        <div className="av-hero-copy">
+          <p className="av-eyebrow">AI Visibility · $29/mo</p>
+          <h1>
+            When someone asks ChatGPT for a recommendation,
+            <span className="av-gold"> are you in the answer?</span>
           </h1>
-          <p className={home.subhead}>{c.hero.sub}</p>
-          <div className={`${lp.btnRow} ${lp.ctas}`}>
-            <Link href="/register" className={`${lp.btn} ${lp.btnPrimary}`}>
-              {c.hero.cta1}
-            </Link>
-            <Link href="/register" className={`${lp.btn} ${lp.btnGhost}`}>
-              {c.hero.cta2}
-            </Link>
-          </div>
-          {locale.startsWith("fr") && (
-            <p style={{ marginTop: 14 }}>
-              <Link href={`/${locale}/guide-visibilite-ia`} className={home.label}>
-                Lire le guide complet de la visibilité IA en 2026 →
-              </Link>
-            </p>
-          )}
-          </div>
-          <div className={lp.heroArt} aria-hidden="true">
-            <VisibilityArt />
-          </div>
-        </section>
-
-        {/* audit coverage */}
-        <section className={home.section}>
-          <div className={home.label}>{c.audit.label}</div>
-          <h2 className={home.h2}>{c.audit.h2}</h2>
-          <div className={lp.grid3}>
-            {c.audit.items.map((it) => (
-              <div key={it.t} className={lp.card}>
-                <h3 className={lp.cardTitle}>{it.t}</h3>
-                <p className={lp.cardBody}>{it.b}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* how */}
-        <section className={home.section}>
-          <div className={home.label}>{c.how.label}</div>
-          <h2 className={home.h2}>{c.how.h2}</h2>
-          <div className={lp.grid3}>
-            {c.how.steps.map((st) => (
-              <div key={st.n} className={lp.card}>
-                <div className={lp.stepNum}>{st.n}</div>
-                <h3 className={lp.cardTitle}>{st.t}</h3>
-                <p className={lp.cardBody}>{st.b}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* what you get */}
-        <section className={home.section}>
-          <div className={home.label}>{c.get.label}</div>
-          <h2 className={home.h2}>{c.get.h2}</h2>
-          <div className={lp.grid4}>
-            {c.get.items.map((it) => (
-              <div key={it.t} className={lp.card}>
-                <h3 className={lp.cardTitle}>{it.t}</h3>
-                <p className={lp.cardBody}>{it.b}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        {/* plans note */}
-        <section className={home.section}>
-          <div className={home.label}>{c.plans.label}</div>
-          <p className={lp.plansNote}>{c.plans.note}</p>
-          <Link href={`/${locale}#pricing`} className={`${lp.btn} ${lp.btnGhost}`}>
-            {c.plans.cta}
-          </Link>
-        </section>
-
-        {/* final CTA */}
-        <section className={`${home.section} ${lp.finalBand}`}>
-          <h2 className={home.h2}>{c.final.h2}</h2>
-          <p className={home.subhead}>{c.final.sub}</p>
-          <div className={`${lp.btnRow} ${lp.ctas}`}>
-            <Link href="/register" className={`${lp.btn} ${lp.btnPrimary}`}>
-              {c.final.cta1}
-            </Link>
-            <Link href="/register" className={`${lp.btn} ${lp.btnGhost}`}>
-              {c.final.cta2}
-            </Link>
-          </div>
-        </section>
-
-        <div className={lp.backRowBottom}>
-          <BackButton locale={locale} label={backLabel} className={lp.backBtnGrey} />
+          <p className="av-sub">
+            Millions of buying decisions now start as a prompt, not a search.
+            EchoRank360 tracks the prompts that matter to your business, alerts
+            you the moment an AI stops recommending you, and scores your
+            standing across the major assistants.
+          </p>
+          <AuditWidget />
+          <p className="av-engines">
+            Tracks answers from ChatGPT · Claude · Gemini · Perplexity
+          </p>
         </div>
 
-        <footer className={lp.footer}>
-          <span>{foot.copyright}</span>
-          <span>
-            {foot.links.map((l) => (
-              <Link key={l.label} href={`/${locale}${l.href}`}>{l.label}</Link>
-            ))}
-          </span>
-        </footer>
-      </div>
-    </div>
+        <div className="av-answer" aria-label="Example of a tracked AI answer">
+          <div className="av-answer-prompt">
+            <span className="av-answer-q">Q</span>
+            “best accounting software for freelancers”
+          </div>
+          <div className="av-answer-body">
+            <p className="av-line av-d1">Here are the tools freelancers rate highest:</p>
+            <p className="av-line av-d2">1. LedgerKit — strong invoicing</p>
+            <p className="av-line av-d3 av-you">
+              2. <strong>Your brand</strong> — best value for solo work
+              <span className="av-pos">↑ #2 this week</span>
+            </p>
+            <p className="av-line av-d4">3. Countable — good bank sync</p>
+            <span className="av-cursor" aria-hidden="true" />
+          </div>
+          <div className="av-answer-foot">
+            <span className="av-chip av-chip-alert">⚠ Dropped from Gemini answers — Jul 9</span>
+            <span className="av-chip">Trust Score 74</span>
+          </div>
+        </div>
+      </section>
+
+      <section className="av-band">
+        <h2>The new search results have no page two</h2>
+        <p>
+          An AI answer names three or four businesses. Everyone else is
+          invisible — and nothing tells you when you fall out. Rankings you
+          could watch in Google happen silently inside models. AI Visibility
+          makes that layer observable.
+        </p>
+      </section>
+
+      <section className="av-features" id="how">
+        <h2>What $29 a month watches for you</h2>
+        <div className="av-grid">
+          <article>
+            <h3>Answer tracking</h3>
+            <p>
+              We run your tracked prompts against the major assistants every
+              week and record exactly how each one answers — who gets named,
+              in what order, and with what reasoning.
+            </p>
+          </article>
+          <article>
+            <h3>Prompt trends</h3>
+            <p>
+              A sparkline per prompt shows your mention rate over time, so a
+              slow slide is visible weeks before it costs you customers.
+            </p>
+          </article>
+          <article>
+            <h3>Lost-recommendation alerts</h3>
+            <p>
+              The moment you drop out of an answer you used to appear in, you
+              get an email digest naming the prompt, the assistant, and who
+              replaced you.
+            </p>
+          </article>
+          <article>
+            <h3>AI Trust Score</h3>
+            <p>
+              One number, refreshed on schedule, summarizing how consistently
+              AIs recommend you across your prompt set. Watch it respond as
+              you improve your presence.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section className="av-band av-band-alt">
+        <h2>Track the prompts your customers actually type</h2>
+        <ul className="av-prompts">
+          {PROMPTS.map((p) => (
+            <li key={p}>“{p}”</li>
+          ))}
+          <li className="av-prompts-more">…up to 25 prompts of your own</li>
+        </ul>
+      </section>
+
+      <section className="av-pricing" id="pricing">
+        <div className="av-price-card">
+          <p className="av-eyebrow">AI Visibility</p>
+          <p className="av-price">$29<span>/month</span></p>
+          <ul>
+            <li>1 brand</li>
+            <li>25 tracked prompts</li>
+            <li>Weekly answer refresh</li>
+            <li>Lost-recommendation alerts</li>
+            <li>AI Trust Score</li>
+            <li>ChatGPT, Claude, Gemini &amp; Perplexity coverage</li>
+          </ul>
+          <a className="av-btn av-btn-gold av-btn-block" href="/register?plan=ai_visibility">
+            Start tracking — $29/mo
+          </a>
+          <p className="av-fine">
+            Cancel anytime. Need more brands, seats or nightly refresh?{' '}
+            <a href="/#pricing">Compare plans</a>.
+          </p>
+        </div>
+      </section>
+
+      <section className="av-faq">
+        <h2>Questions</h2>
+        <details>
+          <summary>Which AI assistants do you track?</summary>
+          <p>ChatGPT, Claude, Gemini and Perplexity. Coverage expands as new assistants gain real usage.</p>
+        </details>
+        <details>
+          <summary>How often are answers refreshed?</summary>
+          <p>Weekly on this plan. Higher plans refresh nightly.</p>
+        </details>
+        <details>
+          <summary>Can I change my tracked prompts?</summary>
+          <p>Yes — edit your prompt set anytime. Changes apply from the next refresh.</p>
+        </details>
+        <details>
+          <summary>Does this include review management?</summary>
+          <p>No. AI Visibility is the tracking layer only. Review and reputation tools are on Growth and Agency plans.</p>
+        </details>
+      </section>
+
+      <section className="av-final">
+        <h2>Find out what the AIs say about you</h2>
+        <a className="av-btn av-btn-gold" href="/register?plan=ai_visibility">
+          Start tracking — $29/mo
+        </a>
+      </section>
+
+      <style>{css}</style>
+    </main>
   );
 }
+
+const css = `
+.av {
+  --gold: #d4a843;
+  --gold-soft: rgba(212, 168, 67, 0.14);
+  background: var(--bg, #0c0d10);
+  color: #e9e6df;
+  line-height: 1.6;
+}
+.av h1, .av h2, .av h3 { line-height: 1.15; letter-spacing: -0.015em; margin: 0 0 0.6em; }
+.av h1 { font-size: clamp(2rem, 4.5vw, 3.4rem); font-weight: 750; }
+.av h2 { font-size: clamp(1.5rem, 3vw, 2.2rem); font-weight: 700; }
+.av h3 { font-size: 1.05rem; color: var(--gold); font-weight: 650; }
+.av section { padding: clamp(3rem, 7vw, 6rem) clamp(1.25rem, 6vw, 6rem); }
+.av-gold { color: var(--gold); }
+.av-eyebrow {
+  color: var(--gold); font-size: 0.8rem; letter-spacing: 0.14em;
+  text-transform: uppercase; font-weight: 600; margin-bottom: 1rem;
+}
+.av-sub { max-width: 34rem; color: #b8b4aa; font-size: 1.05rem; }
+.av-hero {
+  display: grid; grid-template-columns: 1.1fr 0.9fr;
+  gap: clamp(2rem, 5vw, 4rem); align-items: center; min-height: 70vh;
+}
+.av-engines { font-size: 0.85rem; color: #8b877e; }
+.av-btn {
+  display: inline-block; padding: 0.8rem 1.5rem; border-radius: 10px;
+  font-weight: 650; text-decoration: none; font-size: 0.95rem;
+  transition: transform 120ms ease, background 120ms ease;
+}
+.av-btn:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
+.av-btn-gold { background: var(--gold); color: #17140c; border: 0; cursor: pointer; }
+.av-btn-gold:hover { transform: translateY(-1px); }
+.av-btn-ghost { border: 1px solid var(--surface2, #2a2c33); color: #e9e6df; }
+.av-btn-ghost:hover { background: var(--surface, #16181d); }
+.av-btn-block { display: block; text-align: center; margin-top: 1.5rem; width: 100%; }
+.av-answer {
+  background: var(--surface, #16181d);
+  border: 1px solid var(--surface2, #2a2c33);
+  border-radius: 16px; padding: 1.5rem;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.45);
+}
+.av-answer-prompt {
+  display: flex; gap: 0.6rem; align-items: baseline;
+  color: #b8b4aa; font-size: 0.92rem; padding-bottom: 0.9rem;
+  border-bottom: 1px solid var(--surface2, #2a2c33); margin-bottom: 0.9rem;
+}
+.av-answer-q {
+  color: var(--gold); font-weight: 700; font-size: 0.8rem;
+  border: 1px solid var(--gold); border-radius: 6px; padding: 0 0.4rem;
+}
+.av-line { margin: 0.45rem 0; font-size: 0.95rem; opacity: 0; animation: av-in 400ms ease forwards; }
+.av-d1 { animation-delay: 200ms; } .av-d2 { animation-delay: 700ms; }
+.av-d3 { animation-delay: 1200ms; } .av-d4 { animation-delay: 1700ms; }
+.av-you {
+  background: var(--gold-soft); border-left: 3px solid var(--gold);
+  padding: 0.35rem 0.6rem; border-radius: 6px;
+}
+.av-pos { color: var(--gold); font-size: 0.8rem; margin-left: 0.5rem; font-weight: 600; }
+.av-cursor {
+  display: inline-block; width: 8px; height: 1em; background: var(--gold);
+  vertical-align: text-bottom; animation: av-blink 1s steps(1) infinite;
+}
+@keyframes av-in { to { opacity: 1; } }
+@keyframes av-blink { 50% { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) {
+  .av-line { animation: none; opacity: 1; }
+  .av-cursor { animation: none; }
+}
+.av-answer-foot { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 1rem; }
+.av-chip {
+  font-size: 0.78rem; padding: 0.25rem 0.65rem; border-radius: 999px;
+  border: 1px solid var(--surface2, #2a2c33); color: #b8b4aa;
+}
+.av-chip-alert { border-color: #a4552f; color: #e0a184; }
+.av-band { text-align: center; }
+.av-band p { max-width: 40rem; margin: 0 auto; color: #b8b4aa; }
+.av-band-alt { background: var(--surface, #16181d); }
+.av-features h2 { text-align: center; margin-bottom: 2.5rem; }
+.av-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 1rem;
+}
+.av-grid article {
+  background: var(--surface, #16181d);
+  border: 1px solid var(--surface2, #2a2c33);
+  border-radius: 14px; padding: 1.5rem;
+}
+.av-grid p { color: #b8b4aa; font-size: 0.93rem; margin: 0; }
+.av-prompts { list-style: none; padding: 0; margin: 1.5rem auto 0; max-width: 34rem; }
+.av-prompts li {
+  border: 1px solid var(--surface2, #2a2c33); border-radius: 999px;
+  padding: 0.55rem 1.1rem; margin: 0.5rem 0; font-size: 0.95rem;
+}
+.av-prompts-more { color: #8b877e; border-style: dashed !important; }
+.av-pricing { display: flex; justify-content: center; }
+.av-price-card {
+  background: var(--surface, #16181d);
+  border: 1px solid var(--gold); border-radius: 18px;
+  padding: 2.25rem; max-width: 24rem; width: 100%;
+}
+.av-price { font-size: 3rem; font-weight: 750; margin: 0 0 1rem; }
+.av-price span { font-size: 1rem; color: #8b877e; font-weight: 400; }
+.av-price-card ul { list-style: none; padding: 0; margin: 0; }
+.av-price-card li {
+  padding: 0.45rem 0 0.45rem 1.4rem; position: relative; font-size: 0.95rem;
+  border-bottom: 1px solid var(--surface2, #2a2c33);
+}
+.av-price-card li::before { content: '✓'; position: absolute; left: 0; color: var(--gold); }
+.av-fine { font-size: 0.8rem; color: #8b877e; margin-top: 0.9rem; }
+.av-fine a { color: var(--gold); }
+.av-faq { max-width: 44rem; margin: 0 auto; }
+.av-faq details { border-bottom: 1px solid var(--surface2, #2a2c33); padding: 0.9rem 0; }
+.av-faq summary { cursor: pointer; font-weight: 600; }
+.av-faq summary:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
+.av-faq p { color: #b8b4aa; font-size: 0.95rem; }
+.av-final { text-align: center; }
+/* ---- Audit widget ---- */
+.av-audit { margin: 1.75rem 0 1rem; max-width: 32rem; }
+.av-audit-label { display: block; font-weight: 650; margin-bottom: 0.6rem; }
+.av-audit-row { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+.av-audit-row input {
+  flex: 1; min-width: 220px; padding: 0.8rem 1rem; border-radius: 10px;
+  border: 1px solid var(--surface2, #2a2c33);
+  background: var(--surface, #16181d); color: #e9e6df; font-size: 0.95rem;
+}
+.av-audit-row input:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.av-audit-row button:disabled { opacity: 0.55; cursor: not-allowed; }
+.av-audit-note { color: #b8b4aa; font-size: 0.85rem; margin-top: 0.6rem; }
+.av-audit-err { color: #e0a184; font-size: 0.9rem; margin-top: 0.6rem; }
+.av-audit-fine { color: #8b877e; font-size: 0.78rem; margin-top: 0.5rem; }
+.av-audit-result {
+  background: var(--surface, #16181d);
+  border: 1px solid var(--gold); border-radius: 14px; padding: 1.5rem;
+}
+.av-audit-headline { font-size: 1.05rem; margin: 0 0 0.9rem; }
+.av-audit-engines { list-style: none; padding: 0; margin: 0 0 0.9rem; display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.av-audit-engines li {
+  font-size: 0.82rem; padding: 0.25rem 0.7rem; border-radius: 999px;
+  border: 1px solid var(--surface2, #2a2c33);
+}
+.av-audit-engines .av-hit { color: var(--gold); border-color: var(--gold); }
+.av-audit-engines .av-miss { color: #8b877e; }
+.av-audit-sample {
+  margin: 0 0 0.9rem; padding: 0.7rem 1rem; font-size: 0.88rem; color: #b8b4aa;
+  border-left: 3px solid var(--surface2, #2a2c33); font-style: italic;
+}
+.av-audit-upsell { color: #b8b4aa; font-size: 0.9rem; }
+.av-audit-again {
+  display: block; text-align: center; margin-top: 0.7rem;
+  color: #8b877e; font-size: 0.85rem;
+}
+@media (max-width: 860px) {
+  .av-hero { grid-template-columns: 1fr; min-height: unset; }
+}
+`;

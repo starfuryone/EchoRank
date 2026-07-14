@@ -90,7 +90,7 @@ const C: Record<Locale, LpContent> = {
       h1a: "De zéro à votre premier score de risque.",
       h1b: "En moins de dix minutes.",
       sub: "Trois connexions suffisent à la plateforme. Cette page vous montre exactement quoi relier, ce qui se passe dans vos premières 24 heures, et les gestes qui rendent l'intelligence utile dès le premier jour.",
-      cta1: "Essai gratuit →",
+      cta1: "Essai gratuit ↗",
       cta2: "Réserver une démo ↗",
     },
     connect: {
@@ -130,7 +130,7 @@ const C: Record<Locale, LpContent> = {
     final: {
       h2: "Dans dix minutes, vous connaîtrez votre chiffre.",
       sub: "Reliez les trois sources et laissez le premier audit tourner.",
-      cta1: "Essai gratuit →",
+      cta1: "Essai gratuit ↗",
       cta2: "Réserver une démo ↗",
     },
   },

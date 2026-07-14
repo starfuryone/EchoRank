@@ -2,10 +2,12 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { hasFeature, minPlanFor, type Feature, type Plan } from '@/lib/entitlements';
+import { hasFeature, getMinimumPlan, type Feature } from '@/lib/feature-flags';
+import { PLAN_CONFIGS } from '@/lib/plan-config';
+import type { PlanType } from '@/generated/prisma';
 
 interface FeatureGateProps {
-  plan: Plan | null | undefined;
+  plan: PlanType | null | undefined;
   feature: Feature;
   children: ReactNode;
   /** Rendered when locked. Defaults to an upsell card in brand dark/gold. */
@@ -13,10 +15,11 @@ interface FeatureGateProps {
 }
 
 export function FeatureGate({ plan, feature, children, fallback }: FeatureGateProps) {
-  if (hasFeature(plan, feature)) return <>{children}</>;
+  if (plan && hasFeature(plan, feature)) return <>{children}</>;
   if (fallback !== undefined) return <>{fallback}</>;
 
-  const needed = minPlanFor(feature);
+  const needed = getMinimumPlan(feature);
+  const config = PLAN_CONFIGS[needed];
   return (
     <div
       style={{
@@ -28,13 +31,13 @@ export function FeatureGate({ plan, feature, children, fallback }: FeatureGatePr
       }}
     >
       <p style={{ margin: 0, opacity: 0.8 }}>
-        Upgrade to <strong>{needed}</strong> to unlock this feature.
+        Upgrade to <strong>{config.name}</strong> to unlock this feature.
       </p>
       <a
-        href="/pricing"
+        href={config.ctaLink}
         style={{ display: 'inline-block', marginTop: '0.75rem', fontWeight: 600 }}
       >
-        View plans →
+        {config.cta} →
       </a>
     </div>
   );

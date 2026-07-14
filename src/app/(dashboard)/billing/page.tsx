@@ -8,6 +8,7 @@ import {
   Zap,
   Building2,
   Rocket,
+  Eye,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
@@ -25,6 +26,14 @@ interface BillingData {
 }
 
 const PLAN_FEATURES: Record<string, string[]> = {
+  AI_VISIBILITY: [
+    "1 location",
+    "AI answer tracking across 4 engines",
+    "Prompt trends over time",
+    "Lost-recommendation alerts",
+    "AI Trust Score",
+    "Email support",
+  ],
   STARTER: [
     "1 location",
     "300 feedback requests/mo",
@@ -56,12 +65,14 @@ const PLAN_FEATURES: Record<string, string[]> = {
 };
 
 const PLAN_ICONS: Record<string, React.ReactNode> = {
+  AI_VISIBILITY: <Eye className="h-6 w-6" />,
   STARTER: <Zap className="h-6 w-6" />,
   GROWTH: <Rocket className="h-6 w-6" />,
   AGENCY: <Building2 className="h-6 w-6" />,
 };
 
 const PLAN_LABELS: Record<string, string> = {
+  AI_VISIBILITY: "AI Visibility",
   STARTER: "Starter",
   GROWTH: "Growth",
   AGENCY: "Agency",
@@ -266,8 +277,8 @@ export default function BillingPage() {
       {/* Pricing Cards */}
       <div>
         <h3 className="mb-4 text-lg font-semibold text-gray-900">Plans</h3>
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-          {(["STARTER", "GROWTH", "AGENCY"] as const).map((plan) => {
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
+          {(["AI_VISIBILITY", "STARTER", "GROWTH", "AGENCY"] as const).map((plan) => {
             const isCurrent = billing.plan === plan;
             const price = PLAN_PRICES[plan];
             const isPopular = plan === "GROWTH";

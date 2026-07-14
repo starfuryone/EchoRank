@@ -5,23 +5,13 @@ import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { Sidebar } from "./sidebar";
 import { Header } from "./header";
-
-const pageTitles: Record<string, string> = {
-  "/dashboard": "Dashboard",
-  "/customers": "Customers",
-  "/feedback": "Feedback",
-  "/campaigns": "Campaigns",
-  "/recovery": "Recovery",
-  "/analytics": "Analytics",
-  "/templates": "Templates",
-  "/review-links": "Review Links",
-  "/team": "Team",
-  "/settings": "Settings",
-  "/billing": "Billing",
-};
+import { dashNav, type DashLocale } from "@/lib/i18n/dashboard";
+import type { PlanType } from "@/generated/prisma";
 
 interface DashboardShellProps {
   children: React.ReactNode;
+  locale?: DashLocale;
+  plan?: PlanType | null;
   user?: {
     name?: string | null;
     email?: string | null;
@@ -29,7 +19,7 @@ interface DashboardShellProps {
   };
 }
 
-export function DashboardShell({ children, user }: DashboardShellProps) {
+export function DashboardShell({ children, user, locale = "en", plan }: DashboardShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
 
@@ -46,6 +36,7 @@ export function DashboardShell({ children, user }: DashboardShellProps) {
   }, []);
 
   // Resolve page title from pathname
+  const pageTitles = dashNav[locale];
   const title =
     pageTitles[pathname] ??
     pageTitles[
@@ -56,7 +47,7 @@ export function DashboardShell({ children, user }: DashboardShellProps) {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Sidebar open={sidebarOpen} onClose={handleSidebarClose} />
+      <Sidebar open={sidebarOpen} onClose={handleSidebarClose} locale={locale} plan={plan} />
 
       {/* Main content area offset by sidebar width on desktop */}
       <div className="lg:pl-64">

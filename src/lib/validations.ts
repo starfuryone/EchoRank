@@ -6,6 +6,9 @@ export const registerSchema = z.object({
   email: z.string().email().max(255),
   password: z.string().min(8).max(128),
   businessName: z.string().min(1).max(200),
+  // Free-form rather than an enum: unrecognized values fall back to STARTER in
+  // the route instead of 400-ing, so stale ?plan= links keep working.
+  plan: z.string().max(50).optional(),
 });
 
 export const createCustomerSchema = z.object({

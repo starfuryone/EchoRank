@@ -25,6 +25,39 @@ export interface PlanConfig {
 }
 
 export const PLAN_CONFIGS: Record<PlanType, PlanConfig> = {
+  AI_VISIBILITY: {
+    name: "AI Visibility",
+    slug: "ai_visibility",
+    description:
+      "Track whether ChatGPT, Claude, Gemini and Perplexity recommend your business",
+    monthlyPrice: 29,
+    annualPrice: 24,
+    isCustomPricing: false,
+    features: [
+      "1 location",
+      "AI answer tracking across 4 engines",
+      "Prompt trends over time",
+      "Lost-recommendation alerts",
+      "AI Trust Score",
+      "Email support",
+    ],
+    // AI visibility only — no feedback requests, SMS, campaigns or API. The
+    // AI inference budget is what powers the weekly prompt sweeps.
+    quotaDefaults: {
+      maxLocations: 1,
+      maxRequestsPerMonth: 0,
+      maxEmailsPerMonth: 0,
+      maxSmsPerMonth: 0,
+      maxWebhooksPerMonth: 0,
+      maxAiInferencesPerMonth: 200,
+      maxMonitoringChecks: 120,
+      maxApiRequestsPerDay: 0,
+    },
+    highlighted: false,
+    cta: "Start tracking",
+    ctaLink: "/register?plan=ai_visibility",
+  },
+
   STARTER: {
     name: "Starter",
     slug: "starter",
@@ -222,6 +255,9 @@ export function planQuotaDefaults(planType: PlanType): MeteringQuotaDefaults {
  */
 export function getUpgradePath(currentPlan: PlanType): PlanType | null {
   const upgradeMap: Record<PlanType, PlanType | null> = {
+    // AI_VISIBILITY upgrades to GROWTH, not STARTER: STARTER lacks the
+    // ai_visibility feature, so it would be a downgrade in practice.
+    AI_VISIBILITY: "GROWTH",
     STARTER: "GROWTH",
     GROWTH: "AGENCY",
     AGENCY: "ENTERPRISE",
@@ -244,11 +280,22 @@ export function getEnterpriseContact() {
 
 /**
  * Check if a plan is at or above a target plan.
+ *
+ * Note: AI_VISIBILITY sits below STARTER by price ($29 vs $49) and that is how
+ * it ranks here, but the ladder does not describe it well — it carries
+ * ai_visibility/answer_tracking, which STARTER does not. Gate AI-visibility
+ * surfaces on hasFeature(), not on this ordering.
  */
 export function isPlanAtLeast(
   currentPlan: PlanType,
   targetPlan: PlanType
 ): boolean {
-  const order: PlanType[] = ["STARTER", "GROWTH", "AGENCY", "ENTERPRISE"];
+  const order: PlanType[] = [
+    "AI_VISIBILITY",
+    "STARTER",
+    "GROWTH",
+    "AGENCY",
+    "ENTERPRISE",
+  ];
   return order.indexOf(currentPlan) >= order.indexOf(targetPlan);
 }

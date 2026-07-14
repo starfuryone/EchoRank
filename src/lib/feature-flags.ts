@@ -38,6 +38,10 @@ const ALL_FEATURES: Feature[] = [
 ];
 
 const PLAN_FEATURES: Record<PlanType, Set<Feature>> = {
+  // Standalone $29/mo tier: AI visibility only. Deliberately excludes
+  // review_authenticity and everything reputation-side — it is not a rung on
+  // the STARTER→ENTERPRISE ladder, it is a separate product.
+  AI_VISIBILITY: new Set<Feature>(["ai_visibility", "answer_tracking"]),
   STARTER: new Set<Feature>(["review_authenticity"]),
   GROWTH: new Set<Feature>([
     "review_authenticity",
@@ -63,7 +67,15 @@ export function getFeaturesForPlan(planType: PlanType): Feature[] {
 }
 
 export function getMinimumPlan(feature: Feature): PlanType {
-  const planOrder: PlanType[] = ["STARTER", "GROWTH", "AGENCY", "ENTERPRISE"];
+  // Cheapest-first, so the AI-visibility features resolve to the $29 tier
+  // rather than to GROWTH ($149), which also carries them.
+  const planOrder: PlanType[] = [
+    "AI_VISIBILITY",
+    "STARTER",
+    "GROWTH",
+    "AGENCY",
+    "ENTERPRISE",
+  ];
   for (const plan of planOrder) {
     if (PLAN_FEATURES[plan].has(feature)) {
       return plan;

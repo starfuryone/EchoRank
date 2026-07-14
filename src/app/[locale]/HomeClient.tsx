@@ -16,8 +16,8 @@ const T = {
       live: "LIVE — MONITORING 6 AI ENGINES",
       h1a: "The business AI recommends ",
       h1b: "wins.",
-      sub: "EchoRank 360 is the AI Visibility Management platform. We measure how ChatGPT, Google AI, Perplexity, Claude, Gemini and Copilot see your business — then tell you exactly how to become the answer.",
-      cta1: "Run My Free AI Visibility Audit →",
+      sub: "Echorank is the AI Visibility Management platform. We measure how ChatGPT, Google AI, Perplexity, Claude, Gemini and Copilot see your business — then tell you exactly how to become the answer.",
+      cta1: "Run My Free AI Visibility Audit ↗",
       cta2: "Watch a 2-minute demo",
       note: "NO CARD REQUIRED · RESULTS IN 60 SECONDS",
       dashTitle: "AI VISIBILITY AUDITOR",
@@ -33,7 +33,7 @@ const T = {
       k1: "A customer asks", q1: "\u201CWho's the best plumber near me?\u201D",
       k2: "Each engine evaluates your signals",
       signals: ["Reviews", "Website quality", "Citations", "Trust", "Authority", "Freshness", "Structured data", "Brand mentions"],
-      k3: "EchoRank 360 analyzes every signal", q3: "…and scores you before AI does.",
+      k3: "Echorank analyzes every signal", q3: "…and scores you before AI does.",
       k4: "The verdict", q4: "AI recommends your business.",
     },
     cards: {
@@ -97,7 +97,7 @@ const T = {
     },
     cmp: {
       label: "THE SUCCESSOR", h2a: "SEO got you ranked. ", h2b: "AI Visibility gets you chosen.",
-      sub: "A ranking is a chance to be clicked. A recommendation is the decision already made. EchoRank 360 manages the second one.",
+      sub: "A ranking is a chance to be clicked. A recommendation is the decision already made. Echorank manages the second one.",
       oldH: "Traditional SEO", newH: "AI Visibility Management",
       rows: [["Rankings", "AI recommendations"], ["Keywords", "AI citations"], ["Backlinks", "Trust signals"], ["Search traffic", "Recommendation frequency"], ["SERP position", "AI Visibility Score™"], ["Click-through rate", "Share of AI answers"]],
     },
@@ -105,6 +105,18 @@ const T = {
       label: "COVERAGE", h2: "Every engine that names businesses. Watched continuously.",
       sub: "Not a one-time audit. Answers tracked daily, risk recalculated hourly, alerts the moment coverage flips.",
       daily: "DAILY",
+    },
+    trad: {
+      label: "THE FOUNDATION", h2: "The classic reputation stack, built in.",
+      sub: "AI engines learn from the same platforms you already manage. Echorank monitors and works them directly — the reviews that feed your AI visibility.",
+      platforms: [
+        ["Google Reviews", "MONITORING · CAMPAIGNS · AI REPLIES"],
+        ["Trustpilot", "MONITORING · ALERTS"],
+        ["Meta — Facebook & Instagram", "REVIEWS · MENTIONS"],
+        ["Yelp", "MONITORING"],
+        ["TripAdvisor", "MONITORING"],
+      ],
+      feats: "Review campaigns by email, SMS and QR · Private feedback & routing · AI response drafting in your voice · Suspicious review detection",
     },
     hist: {
       label: "AI RECOMMENDATION TRACKER", h2: "Recommendations, on the record",
@@ -144,7 +156,7 @@ const T = {
       label: "START",
       h2a: "Every day, AI recommends businesses to thousands of customers. ", h2b: "Is yours one of them?",
       sub: "Run your AI Visibility Audit in under 60 seconds. See exactly what AI says about your business — and exactly what to do next.",
-      cta1: "Run My Free AI Visibility Audit →", cta2: "Watch a 2-Minute Demo",
+      cta1: "Run My Free AI Visibility Audit ↗", cta2: "Watch a 2-Minute Demo",
     },
     foot: { links: [["guide", "GUIDE"], ["guide-visibilite-ia", "AI VISIBILITY GUIDE"], ["legal/privacy", "PRIVACY"], ["legal/terms", "TERMS"], ["legal/disclaimer", "DISCLAIMER"]] },
   },
@@ -155,8 +167,8 @@ const T = {
       live: "EN DIRECT — 6 MOTEURS IA SURVEILLÉS",
       h1a: "L'entreprise que l'IA recommande ",
       h1b: "gagne.",
-      sub: "EchoRank 360 est la plateforme de gestion de visibilité IA. Nous mesurons comment ChatGPT, Google AI, Perplexity, Claude, Gemini et Copilot perçoivent votre entreprise — puis nous vous montrons exactement comment devenir la réponse.",
-      cta1: "Lancer mon audit de visibilité IA gratuit →",
+      sub: "Echorank est la plateforme de gestion de visibilité IA. Nous mesurons comment ChatGPT, Google AI, Perplexity, Claude, Gemini et Copilot perçoivent votre entreprise — puis nous vous montrons exactement comment devenir la réponse.",
+      cta1: "Lancer mon audit de visibilité IA gratuit ↗",
       cta2: "Voir la démo de 2 minutes",
       note: "SANS CARTE · RÉSULTATS EN 60 SECONDES",
       dashTitle: "AUDITEUR DE VISIBILITÉ IA",
@@ -172,7 +184,7 @@ const T = {
       k1: "Un client demande", q1: "« Quel est le meilleur plombier près de chez moi? »",
       k2: "Chaque moteur évalue vos signaux",
       signals: ["Avis", "Qualité du site", "Citations", "Confiance", "Autorité", "Fraîcheur", "Données structurées", "Mentions de marque"],
-      k3: "EchoRank 360 analyse chaque signal", q3: "…et vous note avant que l'IA le fasse.",
+      k3: "Echorank analyse chaque signal", q3: "…et vous note avant que l'IA le fasse.",
       k4: "Le verdict", q4: "L'IA recommande votre entreprise.",
     },
     cards: {
@@ -236,7 +248,7 @@ const T = {
     },
     cmp: {
       label: "LE SUCCESSEUR", h2a: "Le SEO vous a classé. ", h2b: "La visibilité IA vous fait choisir.",
-      sub: "Un classement est une chance d'être cliqué. Une recommandation est une décision déjà prise. EchoRank 360 gère la seconde.",
+      sub: "Un classement est une chance d'être cliqué. Une recommandation est une décision déjà prise. Echorank gère la seconde.",
       oldH: "SEO traditionnel", newH: "Gestion de visibilité IA",
       rows: [["Classements", "Recommandations IA"], ["Mots-clés", "Citations IA"], ["Backlinks", "Signaux de confiance"], ["Trafic de recherche", "Fréquence de recommandation"], ["Position SERP", "Score de visibilité IA™"], ["Taux de clics", "Part des réponses IA"]],
     },
@@ -244,6 +256,18 @@ const T = {
       label: "COUVERTURE", h2: "Chaque moteur qui nomme des entreprises. Surveillé en continu.",
       sub: "Pas un audit ponctuel. Réponses suivies chaque jour, risque recalculé chaque heure, alerte dès que la couverture bascule.",
       daily: "QUOTIDIEN",
+    },
+    trad: {
+      label: "LA FONDATION", h2: "La gestion de réputation classique, intégrée.",
+      sub: "Les moteurs IA apprennent des mêmes plateformes que vous gérez déjà. Echorank les surveille et les travaille directement — les avis qui alimentent votre visibilité IA.",
+      platforms: [
+        ["Avis Google", "SURVEILLANCE · CAMPAGNES · RÉPONSES IA"],
+        ["Trustpilot", "SURVEILLANCE · ALERTES"],
+        ["Meta — Facebook et Instagram", "AVIS · MENTIONS"],
+        ["Yelp", "SURVEILLANCE"],
+        ["TripAdvisor", "SURVEILLANCE"],
+      ],
+      feats: "Campagnes d'avis par courriel, SMS et QR · Rétroaction privée et routage · Réponses IA dans votre ton · Détection d'avis suspects",
     },
     hist: {
       label: "SUIVI DES RECOMMANDATIONS IA", h2: "Les recommandations, consignées",
@@ -283,7 +307,7 @@ const T = {
       label: "COMMENCER",
       h2a: "Chaque jour, l'IA recommande des entreprises à des milliers de clients. ", h2b: "La vôtre en fait-elle partie?",
       sub: "Lancez votre audit de visibilité IA en moins de 60 secondes. Voyez exactement ce que l'IA dit de votre entreprise — et exactement quoi faire ensuite.",
-      cta1: "Lancer mon audit de visibilité IA gratuit →", cta2: "Voir la démo de 2 minutes",
+      cta1: "Lancer mon audit de visibilité IA gratuit ↗", cta2: "Voir la démo de 2 minutes",
     },
     foot: { links: [["guide", "GUIDE"], ["guide-visibilite-ia", "GUIDE VISIBILITÉ IA"], ["legal/privacy", "CONFIDENTIALITÉ"], ["legal/terms", "CONDITIONS"], ["legal/disclaimer", "AVIS"]] },
   },
@@ -390,7 +414,7 @@ export default function HomeClient({ locale }: { locale: string }) {
       <nav className={s.nav}>
         <div className={`${s.container} ${s.navin}`}>
           <Link className={s.brand} href={L("/")}>
-            <span className={s.diamond} aria-hidden />ECHORANK&nbsp;<span className={s.n360}>360</span>
+            <span className={s.diamond} aria-hidden />ECHORANK
           </Link>
           <div className={s.navlinks}>
             <a href="#how">{t.nav.how}</a>
@@ -428,7 +452,7 @@ export default function HomeClient({ locale }: { locale: string }) {
           <div className={s.dash} aria-label={t.hero.score}>
             <div className={s.dashhead}>
               <span className={s.dashtitle}>{t.hero.dashTitle}<Tm /> — {t.hero.dashBiz}</span>
-              <span className={s.chipGreen}>● LIVE</span>
+              <span className={s.chipGreen}>LIVE</span>
             </div>
             <div className={s.scorerow}>
               <div className={s.ring}>
@@ -629,10 +653,25 @@ export default function HomeClient({ locale }: { locale: string }) {
         </div>
       </section>
 
+      {/* 8b. TRADITIONAL REPUTATION STACK */}
+      <section className={s.section}>
+        <div className={s.container}>
+          <p className={s.label}><b>/ 08</b> — {t.trad.label}</p>
+          <h2 className={s.h2}>{t.trad.h2}</h2>
+          <p className={s.sub}>{t.trad.sub}</p>
+          <div className={s.englogos}>
+            {t.trad.platforms.map(([n, role]) => (
+              <div className={`${s.elogo} ${s.reveal}`} key={n}><span className={s.edot} />{n} <span className={s.est}>{role}</span></div>
+            ))}
+          </div>
+          <p className={s.label} style={{ marginTop: 22, lineHeight: 1.8 }}>{t.trad.feats}</p>
+        </div>
+      </section>
+
       {/* 9. HISTORY */}
       <section className={s.section}>
         <div className={s.container}>
-          <p className={s.label}><b>/ 08</b> — {t.hist.label}<Tm /></p>
+          <p className={s.label}><b>/ 09</b> — {t.hist.label}<Tm /></p>
           <h2 className={s.h2}>{t.hist.h2}</h2>
           <p className={s.sub}>{t.hist.sub}</p>
           <div className={s.hist}>
@@ -652,7 +691,7 @@ export default function HomeClient({ locale }: { locale: string }) {
       {/* 10. ROADMAP */}
       <section className={s.section}>
         <div className={s.container}>
-          <p className={s.label}><b>/ 09</b> — {t.rmx.label}</p>
+          <p className={s.label}><b>/ 10</b> — {t.rmx.label}</p>
           <h2 className={s.h2}>{t.rmx.h2}</h2>
           <p className={s.sub}>{t.rmx.sub}</p>
           <div className={s.roadmap}>
@@ -671,7 +710,7 @@ export default function HomeClient({ locale }: { locale: string }) {
       {/* 11. ROI */}
       <section id="roi" className={s.section}>
         <div className={s.container}>
-          <p className={s.label}><b>/ 10</b> — {t.roi.label}<Tm /></p>
+          <p className={s.label}><b>/ 11</b> — {t.roi.label}<Tm /></p>
           <h2 className={s.h2}>{t.roi.h2}</h2>
           <p className={s.sub}>{t.roi.sub}</p>
           <div className={s.roi}>
@@ -709,7 +748,7 @@ export default function HomeClient({ locale }: { locale: string }) {
       {/* 12. PRICING (compact, keeps #pricing anchor) */}
       <section id="pricing" className={s.section}>
         <div className={s.container}>
-          <p className={s.label}><b>/ 11</b> — {t.pricing.label}</p>
+          <p className={s.label}><b>/ 12</b> — {t.pricing.label}</p>
           {baseOf(locale) === "en" && locale !== "en-CA" && (
             <p><Link className={s.label} href="/en-CA#pricing">{t.pricing.cadLink}</Link></p>
           )}
@@ -729,7 +768,7 @@ export default function HomeClient({ locale }: { locale: string }) {
       {/* 13. CLOSE */}
       <section className={s.close}>
         <div className={s.container}>
-          <p className={s.label}><b>/ 12</b> — {t.close.label}</p>
+          <p className={s.label}><b>/ 13</b> — {t.close.label}</p>
           <h2 className={s.h2c}>{t.close.h2a}<span className={s.goldtext}>{t.close.h2b}</span></h2>
           <p className={s.closesub} style={{ maxWidth: 560 }}>{t.close.sub}</p>
           <div className={s.closebtns}>

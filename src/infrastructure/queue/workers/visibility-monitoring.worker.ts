@@ -7,7 +7,12 @@ import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/generated/prisma";
 import { sidecarPost } from "@/lib/av-sidecar";
 import { meteringService } from "@/infrastructure/metering/service";
-import { sendVisibilityAlert, type BotFlip } from "@/lib/visibility-alerts";
+import {
+  sendVisibilityAlert,
+  recordPromptAlerts,
+  type BotFlip,
+  type PromptTransition,
+} from "@/lib/visibility-alerts";
 import { logger } from "@/infrastructure/observability/logger";
 import { withSpan } from "@/infrastructure/observability/telemetry";
 
@@ -23,6 +28,7 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 const PROMPT_SWEEP_JOB_NAME = "prompt-sweep";
 const PROMPT_BATCH_JOB_NAME = "run-prompt-batch";
 const PROMPT_BATCH_SIZE = 25; // sidecar MAX_PROMPTS_PER_CALL
+const RANK_DROP_THRESHOLD = 2; // alert when brandRank worsens by this many
 
 interface TrackCompetitor {
   name: string;
@@ -277,6 +283,18 @@ async function processPromptBatch(tenantId: string): Promise<void> {
     throw new Error(`sidecar track failed (${status})`);
   }
 
+  // Latest prior run per prompt, for transition detection. Fetched before
+  // the inserts below so "previous" excludes this batch. distinct+orderBy
+  // desc yields the newest row per promptId.
+  const prevRuns = await prisma.promptRun.findMany({
+    where: { promptId: { in: prompts.map((p) => p.id) }, error: null },
+    orderBy: { createdAt: "desc" },
+    distinct: ["promptId"],
+    select: { promptId: true, brandMentioned: true, brandRank: true },
+  });
+  const prevByPrompt = new Map(prevRuns.map((r) => [r.promptId, r]));
+  const promptTextById = new Map(prompts.map((p) => [p.id, p.text]));
+
   const now = new Date();
   for (const r of data.results) {
     await prisma.promptRun.create({
@@ -307,6 +325,55 @@ async function processPromptBatch(tenantId: string): Promise<void> {
     { tenantId, prompts: data.results.length, mentioned, queue: QUEUE_NAME },
     "Prompt batch complete",
   );
+
+  // ── Transition detection (lost / rank drop / regained) ────────────────
+  const transitions: PromptTransition[] = [];
+  for (const r of data.results) {
+    if (r.error) continue;
+    const prev = prevByPrompt.get(r.id);
+    if (!prev) continue; // first run = baseline, never alert
+    const text = promptTextById.get(r.id) ?? r.prompt;
+    if (prev.brandMentioned && !r.brand_mentioned) {
+      transitions.push({
+        promptId: r.id,
+        promptText: text,
+        kind: "visibility_lost",
+        prevRank: prev.brandRank,
+        newRank: null,
+      });
+    } else if (!prev.brandMentioned && r.brand_mentioned) {
+      transitions.push({
+        promptId: r.id,
+        promptText: text,
+        kind: "visibility_regained",
+        prevRank: null,
+        newRank: r.brand_rank,
+      });
+    } else if (
+      prev.brandMentioned &&
+      r.brand_mentioned &&
+      prev.brandRank != null &&
+      r.brand_rank != null &&
+      r.brand_rank - prev.brandRank >= RANK_DROP_THRESHOLD
+    ) {
+      transitions.push({
+        promptId: r.id,
+        promptText: text,
+        kind: "visibility_rank_drop",
+        prevRank: prev.brandRank,
+        newRank: r.brand_rank,
+      });
+    }
+  }
+  if (transitions.length > 0) {
+    // Alerts must not fail the batch: runs are already persisted, and a
+    // throw here would re-run the whole sidecar call on retry.
+    try {
+      await recordPromptAlerts(tenantId, transitions);
+    } catch (err) {
+      logger.error({ tenantId, err, queue: QUEUE_NAME }, "Prompt alert recording failed");
+    }
+  }
 }
 
 async function processVisibilityJob(job: Job<VisibilityMonitoringJob>): Promise<void> {
