@@ -5,9 +5,20 @@ import { isSupportedLocale, resolveTarget, type Locale } from "@/lib/i18n/config
 
 const LOCALE_COOKIE = "echorank_locale";
 
-// Paths that never require auth. The localized homepages (/, /en, /fr, …) are
-// public and handled by the locale logic below.
+// Path *prefixes* that never require auth. The localized homepages (/, /en,
+// /fr, …) are public and handled by the locale logic below.
 const publicPaths = ["/login", "/register", "/api/auth", "/api/feedback", "/f/", "/api/extension/import"];
+
+// Exactly-public paths — matched whole, never by prefix.
+//
+// /api/av/audit backs the free audit widget on the AI Visibility landing page:
+// anonymous by design, rate-limited per IP in the route itself (1/24h). It is
+// listed here rather than in publicPaths so that a route added later at
+// /api/av/audit/rerun, /api/av/audit-admin or /api/av/results does NOT inherit
+// anonymous access by prefix. Opening a new one must be a deliberate edit.
+//
+// CSRF is unaffected either way: the origin check above runs before this list.
+const publicExactPaths = new Set(["/api/av/audit"]);
 
 /** First path segment, e.g. "/fr/x" -> "fr". */
 function firstSegment(pathname: string): string {
@@ -101,7 +112,9 @@ export default auth((req) => {
     return res;
   }
 
-  const isPublic = publicPaths.some((path) => pathname.startsWith(path));
+  const isPublic =
+    publicExactPaths.has(pathname) ||
+    publicPaths.some((path) => pathname.startsWith(path));
   if (isPublic) return NextResponse.next();
 
   if (!req.auth) {
