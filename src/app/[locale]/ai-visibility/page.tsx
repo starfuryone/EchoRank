@@ -1,169 +1,534 @@
 // app/[locale]/ai-visibility/page.tsx — AI Visibility landing + free audit widget
 
 import type { Metadata } from 'next';
-import { AuditWidget } from '@/components/AuditWidget';
+import { notFound } from 'next/navigation';
+import { SUPPORTED_LOCALES, isSupportedLocale, type Locale } from '@/lib/i18n/config';
+import { CONTENT } from '@/lib/i18n/content';
+import { AuditWidget, type AuditWidgetContent } from '@/components/AuditWidget';
 
-export const metadata: Metadata = {
-  title: 'AI Visibility — EchoRank360',
-  description:
-    'Track whether ChatGPT, Claude, Gemini and Perplexity recommend your business. Prompt tracking, lost-recommendation alerts and an AI Trust Score for $29/month.',
+const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://echorank360.com';
+
+// Brand/product terms kept verbatim across locales: EchoRank360, Trust Score,
+// the engine names (ChatGPT/Claude/Gemini/Perplexity), the plan names
+// (Growth/Agency), the mock-answer example brands (LedgerKit/Countable), and
+// the price token "$29". Prices are not currency-switched (task scope).
+
+interface AvContent {
+  // `title` is the branded form for og/twitter; `titleShort` is bare and the
+  // root layout's "%s | EchoRank 360" template appends the brand to it.
+  meta: { title: string; titleShort: string; description: string };
+  nav: { features: string; pricing: string; login: string; cta: string };
+  hero: {
+    eyebrow: string;
+    h1a: string;
+    h1b: string;
+    sub: string;
+    engines: string; // prefix before "ChatGPT · Claude · Gemini · Perplexity"
+    answerAria: string;
+  };
+  answer: {
+    q: string;
+    l1: string;
+    l2desc: string;
+    youBrand: string;
+    youDesc: string;
+    pos: string;
+    l4desc: string;
+    alert: string;
+  };
+  band1: { h2: string; p: string };
+  features: { h2: string; items: { h3: string; p: string }[] };
+  prompts: { h2: string; list: string[]; more: string };
+  pricing: {
+    eyebrow: string;
+    perMonth: string;
+    features: string[];
+    cta: string;
+    finePre: string;
+    fineLink: string;
+  };
+  faq: { h2: string; items: { q: string; a: string }[] };
+  final: { h2: string; cta: string };
+  widget: AuditWidgetContent;
+}
+
+const C: Record<Locale, AvContent> = {
+  en: {
+    meta: {
+      title: 'AI Visibility — EchoRank360',
+      titleShort: 'AI Visibility',
+      description:
+        'Track whether ChatGPT, Claude, Gemini and Perplexity recommend your business. Prompt tracking, lost-recommendation alerts and an AI Trust Score for $29/month.',
+    },
+    nav: { features: 'Features', pricing: 'Pricing', login: 'Login', cta: 'Start tracking' },
+    hero: {
+      eyebrow: 'AI Visibility · $29/mo',
+      h1a: 'When someone asks ChatGPT for a recommendation,',
+      h1b: ' are you in the answer?',
+      sub: 'Millions of buying decisions now start as a prompt, not a search. EchoRank360 tracks the prompts that matter to your business, alerts you the moment an AI stops recommending you, and scores your standing across the major assistants.',
+      engines: 'Tracks answers from',
+      answerAria: 'Example of a tracked AI answer',
+    },
+    answer: {
+      q: 'best accounting software for freelancers',
+      l1: 'Here are the tools freelancers rate highest:',
+      l2desc: 'strong invoicing',
+      youBrand: 'Your brand',
+      youDesc: 'best value for solo work',
+      pos: '↑ #2 this week',
+      l4desc: 'good bank sync',
+      alert: '⚠ Dropped from Gemini answers — Jul 9',
+    },
+    band1: {
+      h2: 'The new search results have no page two',
+      p: 'An AI answer names three or four businesses. Everyone else is invisible — and nothing tells you when you fall out. Rankings you could watch in Google happen silently inside models. AI Visibility makes that layer observable.',
+    },
+    features: {
+      h2: 'What $29 a month watches for you',
+      items: [
+        { h3: 'Answer tracking', p: 'We run your tracked prompts against the major assistants every week and record exactly how each one answers — who gets named, in what order, and with what reasoning.' },
+        { h3: 'Prompt trends', p: 'A sparkline per prompt shows your mention rate over time, so a slow slide is visible weeks before it costs you customers.' },
+        { h3: 'Lost-recommendation alerts', p: 'The moment you drop out of an answer you used to appear in, you get an email digest naming the prompt, the assistant, and who replaced you.' },
+        { h3: 'AI Trust Score', p: 'One number, refreshed on schedule, summarizing how consistently AIs recommend you across your prompt set. Watch it respond as you improve your presence.' },
+      ],
+    },
+    prompts: {
+      h2: 'Track the prompts your customers actually type',
+      list: [
+        'best CRM for small agencies',
+        'accounting software freelancers actually use',
+        'top AI visibility tools 2026',
+      ],
+      more: '…up to 25 prompts of your own',
+    },
+    pricing: {
+      eyebrow: 'AI Visibility',
+      perMonth: '/month',
+      features: [
+        '1 brand',
+        '25 tracked prompts',
+        'Weekly answer refresh',
+        'Lost-recommendation alerts',
+        'AI Trust Score',
+        'ChatGPT, Claude, Gemini & Perplexity coverage',
+      ],
+      cta: 'Start tracking — $29/mo',
+      finePre: 'Cancel anytime. Need more brands, seats or nightly refresh? ',
+      fineLink: 'Compare plans',
+    },
+    faq: {
+      h2: 'Questions',
+      items: [
+        { q: 'Which AI assistants do you track?', a: 'ChatGPT, Claude, Gemini and Perplexity. Coverage expands as new assistants gain real usage.' },
+        { q: 'How often are answers refreshed?', a: 'Weekly on this plan. Higher plans refresh nightly.' },
+        { q: 'Can I change my tracked prompts?', a: 'Yes — edit your prompt set anytime. Changes apply from the next refresh.' },
+        { q: 'Does this include review management?', a: 'No. AI Visibility is the tracking layer only. Review and reputation tools are on Growth and Agency plans.' },
+      ],
+    },
+    final: {
+      h2: 'Find out what the AIs say about you',
+      cta: 'Start tracking — $29/mo',
+    },
+    widget: {
+      label: 'Run a free basic audit',
+      placeholder: 'Your brand or domain, e.g. acme.com',
+      runIdle: 'Run free audit',
+      runBusy: 'Auditing…',
+      noteTemplate: 'Asking the AIs about “{brand}” — takes ~20 seconds.',
+      errLimit: 'Free audit limit reached for today. Sign up to run unlimited audits.',
+      errGeneric: 'The audit could not run. Try again in a minute.',
+      fine: 'No account needed. One audit per day.',
+      resultAppearedIn: 'appeared in',
+      resultOfPrompts: 'of test prompts',
+      trustScore: 'Trust Score',
+      upsell: 'This was 3 generic prompts, one engine pass. The full plan tracks 25 prompts of your choosing, weekly, with alerts when you drop out.',
+      ctaTemplate: 'Track {brand} — $29/mo',
+      again: 'Run another audit',
+    },
+  },
+
+  'en-CA': null as unknown as AvContent,
+
+  fr: {
+    meta: {
+      title: 'Visibilité IA — EchoRank360',
+      titleShort: 'Visibilité IA',
+      description:
+        'Suivez si ChatGPT, Claude, Gemini et Perplexity recommandent votre entreprise. Suivi des requêtes, alertes de perte de recommandation et un AI Trust Score pour $29/mois.',
+    },
+    nav: { features: 'Fonctionnalités', pricing: 'Tarifs', login: 'Connexion', cta: 'Commencer le suivi' },
+    hero: {
+      eyebrow: 'Visibilité IA · $29/mo',
+      h1a: 'Quand quelqu’un demande une recommandation à ChatGPT,',
+      h1b: ' êtes-vous dans la réponse ?',
+      sub: 'Des millions de décisions d’achat commencent désormais par une requête, pas une recherche. EchoRank360 suit les requêtes qui comptent pour votre entreprise, vous alerte dès qu’une IA cesse de vous recommander, et évalue votre position auprès des principaux assistants.',
+      engines: 'Suit les réponses de',
+      answerAria: 'Exemple de réponse d’IA suivie',
+    },
+    answer: {
+      q: 'meilleur logiciel de comptabilité pour indépendants',
+      l1: 'Voici les outils les mieux notés par les indépendants :',
+      l2desc: 'facturation solide',
+      youBrand: 'Votre marque',
+      youDesc: 'meilleur rapport qualité-prix en solo',
+      pos: '↑ n°2 cette semaine',
+      l4desc: 'bonne synchro bancaire',
+      alert: '⚠ Sorti des réponses Gemini — 9 juil.',
+    },
+    band1: {
+      h2: 'Les nouveaux résultats de recherche n’ont pas de page deux',
+      p: 'Une réponse d’IA nomme trois ou quatre entreprises. Toutes les autres sont invisibles — et rien ne vous avertit quand vous en sortez. Les classements que vous pouviez suivre dans Google se jouent en silence à l’intérieur des modèles. La Visibilité IA rend cette couche observable.',
+    },
+    features: {
+      h2: 'Ce que $29 par mois surveille pour vous',
+      items: [
+        { h3: 'Suivi des réponses', p: 'Nous exécutons vos requêtes suivies contre les principaux assistants chaque semaine et enregistrons exactement comment chacun répond — qui est nommé, dans quel ordre et avec quel raisonnement.' },
+        { h3: 'Tendances des requêtes', p: 'Une courbe par requête montre votre taux de mention dans le temps, de sorte qu’un lent déclin est visible des semaines avant qu’il ne vous coûte des clients.' },
+        { h3: 'Alertes de perte de recommandation', p: 'Dès que vous disparaissez d’une réponse où vous figuriez, vous recevez un résumé par e-mail nommant la requête, l’assistant et qui vous a remplacé.' },
+        { h3: 'AI Trust Score', p: 'Un seul chiffre, actualisé selon un calendrier, résumant la constance avec laquelle les IA vous recommandent sur l’ensemble de vos requêtes. Regardez-le réagir à mesure que vous améliorez votre présence.' },
+      ],
+    },
+    prompts: {
+      h2: 'Suivez les requêtes que vos clients tapent vraiment',
+      list: [
+        'meilleur CRM pour petites agences',
+        'logiciel de comptabilité que les indépendants utilisent vraiment',
+        'meilleurs outils de visibilité IA 2026',
+      ],
+      more: '…jusqu’à 25 requêtes bien à vous',
+    },
+    pricing: {
+      eyebrow: 'Visibilité IA',
+      perMonth: '/mois',
+      features: [
+        '1 marque',
+        '25 requêtes suivies',
+        'Actualisation hebdomadaire des réponses',
+        'Alertes de perte de recommandation',
+        'AI Trust Score',
+        'Couverture ChatGPT, Claude, Gemini et Perplexity',
+      ],
+      cta: 'Commencer le suivi — $29/mo',
+      finePre: 'Annulable à tout moment. Besoin de plus de marques, de sièges ou d’une actualisation nocturne ? ',
+      fineLink: 'Comparer les forfaits',
+    },
+    faq: {
+      h2: 'Questions',
+      items: [
+        { q: 'Quels assistants IA suivez-vous ?', a: 'ChatGPT, Claude, Gemini et Perplexity. La couverture s’étend à mesure que de nouveaux assistants gagnent en usage réel.' },
+        { q: 'À quelle fréquence les réponses sont-elles actualisées ?', a: 'Chaque semaine sur ce forfait. Les forfaits supérieurs s’actualisent chaque nuit.' },
+        { q: 'Puis-je modifier mes requêtes suivies ?', a: 'Oui — modifiez votre jeu de requêtes à tout moment. Les changements s’appliquent dès l’actualisation suivante.' },
+        { q: 'Cela inclut-il la gestion des avis ?', a: 'Non. La Visibilité IA n’est que la couche de suivi. Les outils d’avis et de réputation sont sur les forfaits Growth et Agency.' },
+      ],
+    },
+    final: {
+      h2: 'Découvrez ce que les IA disent de vous',
+      cta: 'Commencer le suivi — $29/mo',
+    },
+    widget: {
+      label: 'Lancez un audit de base gratuit',
+      placeholder: 'Votre marque ou domaine, p. ex. acme.com',
+      runIdle: 'Lancer l’audit gratuit',
+      runBusy: 'Audit en cours…',
+      noteTemplate: 'Interrogation des IA sur « {brand} » — environ 20 secondes.',
+      errLimit: 'Limite d’audit gratuit atteinte pour aujourd’hui. Inscrivez-vous pour des audits illimités.',
+      errGeneric: 'L’audit n’a pas pu s’exécuter. Réessayez dans une minute.',
+      fine: 'Aucun compte requis. Un audit par jour.',
+      resultAppearedIn: 'est apparu dans',
+      resultOfPrompts: 'des requêtes testées',
+      trustScore: 'Trust Score',
+      upsell: 'Il s’agissait de 3 requêtes génériques, un seul passage moteur. Le forfait complet suit 25 requêtes de votre choix, chaque semaine, avec des alertes quand vous décrochez.',
+      ctaTemplate: 'Suivre {brand} — $29/mo',
+      again: 'Lancer un autre audit',
+    },
+  },
+
+  'fr-CA': null as unknown as AvContent,
+
+  'de-CH': {
+    meta: {
+      title: 'KI-Sichtbarkeit — EchoRank360',
+      titleShort: 'KI-Sichtbarkeit',
+      description:
+        'Verfolgen Sie, ob ChatGPT, Claude, Gemini und Perplexity Ihr Unternehmen empfehlen. Prompt-Tracking, Benachrichtigungen bei verlorenen Empfehlungen und ein AI Trust Score für $29/Monat.',
+    },
+    nav: { features: 'Funktionen', pricing: 'Preise', login: 'Anmelden', cta: 'Jetzt starten' },
+    hero: {
+      eyebrow: 'KI-Sichtbarkeit · $29/mo',
+      h1a: 'Wenn jemand ChatGPT um eine Empfehlung bittet,',
+      h1b: ' sind Sie in der Antwort?',
+      sub: 'Millionen von Kaufentscheidungen beginnen heute als Prompt, nicht als Suche. EchoRank360 verfolgt die Prompts, die für Ihr Unternehmen zählen, benachrichtigt Sie in dem Moment, in dem eine KI Sie nicht mehr empfiehlt, und bewertet Ihre Stellung bei den grossen Assistenten.',
+      engines: 'Verfolgt Antworten von',
+      answerAria: 'Beispiel einer verfolgten KI-Antwort',
+    },
+    answer: {
+      q: 'beste Buchhaltungssoftware für Freelancer',
+      l1: 'Hier sind die von Freelancern am höchsten bewerteten Tools:',
+      l2desc: 'starke Rechnungsstellung',
+      youBrand: 'Ihre Marke',
+      youDesc: 'bestes Preis-Leistungs-Verhältnis für Solo-Arbeit',
+      pos: '↑ Nr. 2 diese Woche',
+      l4desc: 'gute Banksynchronisierung',
+      alert: '⚠ Aus Gemini-Antworten gefallen — 9. Juli',
+    },
+    band1: {
+      h2: 'Die neuen Suchergebnisse haben keine zweite Seite',
+      p: 'Eine KI-Antwort nennt drei oder vier Unternehmen. Alle anderen sind unsichtbar — und nichts sagt Ihnen, wann Sie herausfallen. Rankings, die Sie in Google beobachten konnten, geschehen still in den Modellen. KI-Sichtbarkeit macht diese Ebene sichtbar.',
+    },
+    features: {
+      h2: 'Was $29 im Monat für Sie beobachtet',
+      items: [
+        { h3: 'Antwort-Tracking', p: 'Wir führen Ihre verfolgten Prompts wöchentlich gegen die grossen Assistenten aus und erfassen genau, wie jeder antwortet — wer genannt wird, in welcher Reihenfolge und mit welcher Begründung.' },
+        { h3: 'Prompt-Trends', p: 'Eine Sparkline pro Prompt zeigt Ihre Nennungsrate über die Zeit, sodass ein langsamer Rückgang Wochen sichtbar wird, bevor er Sie Kunden kostet.' },
+        { h3: 'Benachrichtigungen bei verlorenen Empfehlungen', p: 'Sobald Sie aus einer Antwort fallen, in der Sie zuvor erschienen, erhalten Sie eine E-Mail-Zusammenfassung mit Prompt, Assistent und wer Sie ersetzt hat.' },
+        { h3: 'AI Trust Score', p: 'Eine Zahl, planmässig aktualisiert, die zusammenfasst, wie konstant KIs Sie über Ihr Prompt-Set empfehlen. Beobachten Sie, wie sie reagiert, während Sie Ihre Präsenz verbessern.' },
+      ],
+    },
+    prompts: {
+      h2: 'Verfolgen Sie die Prompts, die Ihre Kunden wirklich eingeben',
+      list: [
+        'bestes CRM für kleine Agenturen',
+        'Buchhaltungssoftware, die Freelancer wirklich nutzen',
+        'beste KI-Sichtbarkeits-Tools 2026',
+      ],
+      more: '…bis zu 25 eigene Prompts',
+    },
+    pricing: {
+      eyebrow: 'KI-Sichtbarkeit',
+      perMonth: '/Monat',
+      features: [
+        '1 Marke',
+        '25 verfolgte Prompts',
+        'Wöchentliche Antwort-Aktualisierung',
+        'Benachrichtigungen bei verlorenen Empfehlungen',
+        'AI Trust Score',
+        'Abdeckung von ChatGPT, Claude, Gemini und Perplexity',
+      ],
+      cta: 'Jetzt starten — $29/mo',
+      finePre: 'Jederzeit kündbar. Mehr Marken, Sitze oder nächtliche Aktualisierung nötig? ',
+      fineLink: 'Pläne vergleichen',
+    },
+    faq: {
+      h2: 'Fragen',
+      items: [
+        { q: 'Welche KI-Assistenten verfolgen Sie?', a: 'ChatGPT, Claude, Gemini und Perplexity. Die Abdeckung wächst, sobald neue Assistenten echte Nutzung gewinnen.' },
+        { q: 'Wie oft werden Antworten aktualisiert?', a: 'Wöchentlich in diesem Plan. Höhere Pläne aktualisieren nächtlich.' },
+        { q: 'Kann ich meine verfolgten Prompts ändern?', a: 'Ja — bearbeiten Sie Ihr Prompt-Set jederzeit. Änderungen gelten ab der nächsten Aktualisierung.' },
+        { q: 'Ist die Bewertungsverwaltung enthalten?', a: 'Nein. KI-Sichtbarkeit ist nur die Tracking-Ebene. Bewertungs- und Reputations-Tools gibt es in den Plänen Growth und Agency.' },
+      ],
+    },
+    final: {
+      h2: 'Finden Sie heraus, was die KIs über Sie sagen',
+      cta: 'Jetzt starten — $29/mo',
+    },
+    widget: {
+      label: 'Kostenlosen Basis-Audit starten',
+      placeholder: 'Ihre Marke oder Domain, z. B. acme.com',
+      runIdle: 'Gratis-Audit starten',
+      runBusy: 'Audit läuft…',
+      noteTemplate: 'Die KIs werden zu «{brand}» befragt — etwa 20 Sekunden.',
+      errLimit: 'Gratis-Audit-Limit für heute erreicht. Registrieren Sie sich für unbegrenzte Audits.',
+      errGeneric: 'Der Audit konnte nicht ausgeführt werden. Versuchen Sie es in einer Minute erneut.',
+      fine: 'Kein Konto nötig. Ein Audit pro Tag.',
+      resultAppearedIn: 'erschien in',
+      resultOfPrompts: 'der Testfragen',
+      trustScore: 'Trust Score',
+      upsell: 'Das waren 3 generische Prompts, ein Engine-Durchlauf. Der volle Plan verfolgt 25 Prompts Ihrer Wahl, wöchentlich, mit Benachrichtigungen, wenn Sie herausfallen.',
+      ctaTemplate: '{brand} verfolgen — $29/mo',
+      again: 'Weiteren Audit starten',
+    },
+  },
 };
 
-const PROMPTS = [
-  'best CRM for small agencies',
-  'accounting software freelancers actually use',
-  'top AI visibility tools 2026',
-];
+// en-CA shares en; fr-CA shares fr (task permits — prices stay USD, no strong
+// québécois divergence needed for this page).
+C['en-CA'] = C.en;
+C['fr-CA'] = C.fr;
 
-export default function AIVisibilityPage() {
+export function generateStaticParams() {
+  return SUPPORTED_LOCALES.map((locale) => ({ locale }));
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  if (!isSupportedLocale(locale)) return {};
+  const { meta } = C[locale];
+  const url = `${SITE}/${locale}/ai-visibility`;
+  return {
+    // Bare title — the root layout template appends " | EchoRank 360".
+    title: meta.titleShort,
+    description: meta.description,
+    alternates: {
+      canonical: url,
+      languages: Object.fromEntries([
+        ...SUPPORTED_LOCALES.map((l) => [l, `${SITE}/${l}/ai-visibility`]),
+        ['x-default', `${SITE}/en/ai-visibility`],
+      ]),
+    },
+    openGraph: {
+      title: meta.title,
+      description: meta.description,
+      url,
+      siteName: 'EchoRank 360',
+      type: 'website',
+      locale: locale.replace('-', '_'),
+    },
+    // Set explicitly so the page copy wins over the root-layout twitter default.
+    twitter: {
+      card: 'summary_large_image',
+      title: meta.title,
+      description: meta.description,
+    },
+  };
+}
+
+export default async function AIVisibilityPage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  if (!isSupportedLocale(locale)) notFound();
+  const c = C[locale];
+  // de-CH highlights neither side of the EN/FR toggle — it is a third locale,
+  // not a variant of either.
+  const base = locale.startsWith('fr') ? 'fr' : locale.startsWith('en') ? 'en' : null;
+  // Footer reuses the shared catalog (same mechanism as the other localized
+  // public pages) — translated labels + the exact homepage copyright.
+  const foot = CONTENT[locale].footer;
+
   return (
     <main className="av">
+      <header className="av-header">
+        <a href="/" aria-label="EchoRank home" className="av-brand">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/echorank-logo-light.svg" alt="EchoRank" width={180} height={34} />
+        </a>
+        <nav className="av-nav" aria-label="Primary">
+          <a href="#how">{c.nav.features}</a>
+          <a href="#pricing">{c.nav.pricing}</a>
+          <a href="/login">{c.nav.login}</a>
+          <span className="av-toggle">
+            <a className={base === 'en' ? 'av-toggle-on' : undefined} href="/en/ai-visibility">EN</a>
+            <span aria-hidden="true">/</span>
+            <a className={base === 'fr' ? 'av-toggle-on' : undefined} href="/fr/ai-visibility">FR</a>
+          </span>
+          <a href="/register?plan=ai_visibility" className="av-btn av-btn-gold av-nav-cta">
+            {c.nav.cta}
+          </a>
+        </nav>
+      </header>
       <section className="av-hero">
         <div className="av-hero-copy">
-          <p className="av-eyebrow">AI Visibility · $29/mo</p>
+          <p className="av-eyebrow">{c.hero.eyebrow}</p>
           <h1>
-            When someone asks ChatGPT for a recommendation,
-            <span className="av-gold"> are you in the answer?</span>
+            {c.hero.h1a}
+            <span className="av-gold">{c.hero.h1b}</span>
           </h1>
-          <p className="av-sub">
-            Millions of buying decisions now start as a prompt, not a search.
-            EchoRank360 tracks the prompts that matter to your business, alerts
-            you the moment an AI stops recommending you, and scores your
-            standing across the major assistants.
-          </p>
-          <AuditWidget />
+          <p className="av-sub">{c.hero.sub}</p>
+          <AuditWidget c={c.widget} />
           <p className="av-engines">
-            Tracks answers from ChatGPT · Claude · Gemini · Perplexity
+            {c.hero.engines} ChatGPT · Claude · Gemini · Perplexity
           </p>
         </div>
 
-        <div className="av-answer" aria-label="Example of a tracked AI answer">
+        <div className="av-answer" aria-label={c.hero.answerAria}>
           <div className="av-answer-prompt">
             <span className="av-answer-q">Q</span>
-            “best accounting software for freelancers”
+            “{c.answer.q}”
           </div>
           <div className="av-answer-body">
-            <p className="av-line av-d1">Here are the tools freelancers rate highest:</p>
-            <p className="av-line av-d2">1. LedgerKit — strong invoicing</p>
+            <p className="av-line av-d1">{c.answer.l1}</p>
+            <p className="av-line av-d2">1. LedgerKit — {c.answer.l2desc}</p>
             <p className="av-line av-d3 av-you">
-              2. <strong>Your brand</strong> — best value for solo work
-              <span className="av-pos">↑ #2 this week</span>
+              2. <strong>{c.answer.youBrand}</strong> — {c.answer.youDesc}
+              <span className="av-pos">{c.answer.pos}</span>
             </p>
-            <p className="av-line av-d4">3. Countable — good bank sync</p>
+            <p className="av-line av-d4">3. Countable — {c.answer.l4desc}</p>
             <span className="av-cursor" aria-hidden="true" />
           </div>
           <div className="av-answer-foot">
-            <span className="av-chip av-chip-alert">⚠ Dropped from Gemini answers — Jul 9</span>
+            <span className="av-chip av-chip-alert">{c.answer.alert}</span>
             <span className="av-chip">Trust Score 74</span>
           </div>
         </div>
       </section>
 
       <section className="av-band">
-        <h2>The new search results have no page two</h2>
-        <p>
-          An AI answer names three or four businesses. Everyone else is
-          invisible — and nothing tells you when you fall out. Rankings you
-          could watch in Google happen silently inside models. AI Visibility
-          makes that layer observable.
-        </p>
+        <h2>{c.band1.h2}</h2>
+        <p>{c.band1.p}</p>
       </section>
 
       <section className="av-features" id="how">
-        <h2>What $29 a month watches for you</h2>
+        <h2>{c.features.h2}</h2>
         <div className="av-grid">
-          <article>
-            <h3>Answer tracking</h3>
-            <p>
-              We run your tracked prompts against the major assistants every
-              week and record exactly how each one answers — who gets named,
-              in what order, and with what reasoning.
-            </p>
-          </article>
-          <article>
-            <h3>Prompt trends</h3>
-            <p>
-              A sparkline per prompt shows your mention rate over time, so a
-              slow slide is visible weeks before it costs you customers.
-            </p>
-          </article>
-          <article>
-            <h3>Lost-recommendation alerts</h3>
-            <p>
-              The moment you drop out of an answer you used to appear in, you
-              get an email digest naming the prompt, the assistant, and who
-              replaced you.
-            </p>
-          </article>
-          <article>
-            <h3>AI Trust Score</h3>
-            <p>
-              One number, refreshed on schedule, summarizing how consistently
-              AIs recommend you across your prompt set. Watch it respond as
-              you improve your presence.
-            </p>
-          </article>
+          {c.features.items.map((it) => (
+            <article key={it.h3}>
+              <h3>{it.h3}</h3>
+              <p>{it.p}</p>
+            </article>
+          ))}
         </div>
       </section>
 
       <section className="av-band av-band-alt">
-        <h2>Track the prompts your customers actually type</h2>
+        <h2>{c.prompts.h2}</h2>
         <ul className="av-prompts">
-          {PROMPTS.map((p) => (
+          {c.prompts.list.map((p) => (
             <li key={p}>“{p}”</li>
           ))}
-          <li className="av-prompts-more">…up to 25 prompts of your own</li>
+          <li className="av-prompts-more">{c.prompts.more}</li>
         </ul>
       </section>
 
       <section className="av-pricing" id="pricing">
         <div className="av-price-card">
-          <p className="av-eyebrow">AI Visibility</p>
-          <p className="av-price">$29<span>/month</span></p>
+          <p className="av-eyebrow">{c.pricing.eyebrow}</p>
+          <p className="av-price">$29<span>{c.pricing.perMonth}</span></p>
           <ul>
-            <li>1 brand</li>
-            <li>25 tracked prompts</li>
-            <li>Weekly answer refresh</li>
-            <li>Lost-recommendation alerts</li>
-            <li>AI Trust Score</li>
-            <li>ChatGPT, Claude, Gemini &amp; Perplexity coverage</li>
+            {c.pricing.features.map((f) => (
+              <li key={f}>{f}</li>
+            ))}
           </ul>
           <a className="av-btn av-btn-gold av-btn-block" href="/register?plan=ai_visibility">
-            Start tracking — $29/mo
+            {c.pricing.cta}
           </a>
           <p className="av-fine">
-            Cancel anytime. Need more brands, seats or nightly refresh?{' '}
-            <a href="/#pricing">Compare plans</a>.
+            {c.pricing.finePre}
+            <a href="/#pricing">{c.pricing.fineLink}</a>.
           </p>
         </div>
       </section>
 
       <section className="av-faq">
-        <h2>Questions</h2>
-        <details>
-          <summary>Which AI assistants do you track?</summary>
-          <p>ChatGPT, Claude, Gemini and Perplexity. Coverage expands as new assistants gain real usage.</p>
-        </details>
-        <details>
-          <summary>How often are answers refreshed?</summary>
-          <p>Weekly on this plan. Higher plans refresh nightly.</p>
-        </details>
-        <details>
-          <summary>Can I change my tracked prompts?</summary>
-          <p>Yes — edit your prompt set anytime. Changes apply from the next refresh.</p>
-        </details>
-        <details>
-          <summary>Does this include review management?</summary>
-          <p>No. AI Visibility is the tracking layer only. Review and reputation tools are on Growth and Agency plans.</p>
-        </details>
+        <h2>{c.faq.h2}</h2>
+        {c.faq.items.map((it) => (
+          <details key={it.q}>
+            <summary>{it.q}</summary>
+            <p>{it.a}</p>
+          </details>
+        ))}
       </section>
 
       <section className="av-final">
-        <h2>Find out what the AIs say about you</h2>
+        <h2>{c.final.h2}</h2>
         <a className="av-btn av-btn-gold" href="/register?plan=ai_visibility">
-          Start tracking — $29/mo
+          {c.final.cta}
         </a>
       </section>
+
+      <footer className="av-footer">
+        <span className="av-footer-copy">{foot.copyright}</span>
+        <nav className="av-footer-links" aria-label="Footer">
+          {foot.links.map((l) => (
+            <a key={l.href} href={`/${locale}${l.href}`}>{l.label}</a>
+          ))}
+        </nav>
+      </footer>
 
       <style>{css}</style>
     </main>
@@ -183,6 +548,25 @@ const css = `
 .av h2 { font-size: clamp(1.5rem, 3vw, 2.2rem); font-weight: 700; }
 .av h3 { font-size: 1.05rem; color: var(--gold); font-weight: 650; }
 .av section { padding: clamp(3rem, 7vw, 6rem) clamp(1.25rem, 6vw, 6rem); }
+.av-header {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 0.75rem 1.5rem; flex-wrap: wrap;
+  padding: 1.1rem clamp(1.25rem, 6vw, 6rem) 0;
+}
+.av-header img { display: block; }
+.av-nav { display: flex; align-items: center; gap: 1.4rem; flex-wrap: wrap; }
+.av-nav a:not(.av-nav-cta) { color: #b8b4aa; text-decoration: none; font-size: 0.9rem; font-weight: 550; }
+.av-nav a:not(.av-nav-cta):hover { color: var(--gold); }
+.av-nav a:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
+.av-header .av-nav-cta { padding: 0.5rem 1rem; font-size: 0.85rem; }
+/* EN/FR toggle — adapted from home2.module.css .toggle / .toggleOn */
+.av-toggle {
+  display: inline-flex; gap: 0.5rem; align-items: center;
+  font-size: 0.78rem; letter-spacing: 0.06em; color: #8b877e;
+}
+.av-nav .av-toggle a:not(.av-toggle-on) { color: #8b877e; }
+.av-nav .av-toggle a:hover { color: var(--gold); }
+.av-nav .av-toggle a.av-toggle-on { color: var(--gold); font-weight: 650; }
 .av-gold { color: var(--gold); }
 .av-eyebrow {
   color: var(--gold); font-size: 0.8rem; letter-spacing: 0.14em;
@@ -286,6 +670,20 @@ const css = `
 .av-faq summary:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
 .av-faq p { color: #b8b4aa; font-size: 0.95rem; }
 .av-final { text-align: center; }
+.av-footer {
+  display: flex; flex-wrap: wrap; gap: 1rem 1.5rem;
+  align-items: center; justify-content: space-between;
+  padding: 2rem clamp(1.25rem, 6vw, 6rem);
+  border-top: 1px solid var(--surface2, #2a2c33);
+  font-size: 0.78rem; color: #8b877e; letter-spacing: 0.04em;
+}
+.av-footer-links { display: flex; flex-wrap: wrap; gap: 0.75rem 1.25rem; }
+.av-footer-links a {
+  color: #8b877e; text-decoration: none;
+  text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.72rem;
+}
+.av-footer-links a:hover { color: var(--gold); }
+.av-footer-links a:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
 /* ---- Audit widget ---- */
 .av-audit { margin: 1.75rem 0 1rem; max-width: 32rem; }
 .av-audit-label { display: block; font-weight: 650; margin-bottom: 0.6rem; }
