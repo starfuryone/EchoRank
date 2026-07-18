@@ -17,8 +17,12 @@ const publicPaths = ["/login", "/register", "/api/auth", "/api/feedback", "/f/",
 // /api/av/audit/rerun, /api/av/audit-admin or /api/av/results does NOT inherit
 // anonymous access by prefix. Opening a new one must be a deliberate edit.
 //
+// /api/av/audit/report renders a PDF from the audit result the anonymous widget
+// already holds (no re-audit, not rate-limited). Same anonymous-by-design intent
+// as /api/av/audit, so it is opted in here as a deliberate exact-match entry.
+//
 // CSRF is unaffected either way: the origin check above runs before this list.
-const publicExactPaths = new Set(["/api/av/audit"]);
+const publicExactPaths = new Set(["/api/av/audit", "/api/av/audit/report"]);
 
 /** First path segment, e.g. "/fr/x" -> "fr". */
 function firstSegment(pathname: string): string {

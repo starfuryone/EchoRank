@@ -144,6 +144,10 @@ const C: Record<Locale, AvContent> = {
       upsell: 'This was 3 generic prompts, one engine pass. The full plan tracks 25 prompts of your choosing, weekly, with alerts when you drop out.',
       ctaTemplate: 'Track {brand} — $29/mo',
       again: 'Run another audit',
+      pdfIdle: 'Download PDF report',
+      pdfBusy: 'Generating…',
+      pdfErr: 'The report could not be generated.',
+      pdfRetry: 'Try again',
     },
   },
 
@@ -240,6 +244,10 @@ const C: Record<Locale, AvContent> = {
       upsell: 'Il s’agissait de 3 requêtes génériques, un seul passage moteur. Le forfait complet suit 25 requêtes de votre choix, chaque semaine, avec des alertes quand vous décrochez.',
       ctaTemplate: 'Suivre {brand} — $29/mo',
       again: 'Lancer un autre audit',
+      pdfIdle: 'Télécharger le rapport PDF',
+      pdfBusy: 'Génération…',
+      pdfErr: 'Le rapport n’a pas pu être généré.',
+      pdfRetry: 'Réessayer',
     },
   },
 
@@ -336,6 +344,10 @@ const C: Record<Locale, AvContent> = {
       upsell: 'Das waren 3 generische Prompts, ein Engine-Durchlauf. Der volle Plan verfolgt 25 Prompts Ihrer Wahl, wöchentlich, mit Benachrichtigungen, wenn Sie herausfallen.',
       ctaTemplate: '{brand} verfolgen — $29/mo',
       again: 'Weiteren Audit starten',
+      pdfIdle: 'PDF-Bericht herunterladen',
+      pdfBusy: 'Wird erstellt…',
+      pdfErr: 'Der Bericht konnte nicht erstellt werden.',
+      pdfRetry: 'Erneut versuchen',
     },
   },
 };
@@ -586,9 +598,10 @@ const css = `
 .av-btn:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
 .av-btn-gold { background: var(--gold); color: #17140c; border: 0; cursor: pointer; }
 .av-btn-gold:hover { transform: translateY(-1px); }
-.av-btn-ghost { border: 1px solid var(--surface2, #2a2c33); color: #e9e6df; }
+.av-btn-ghost { border: 1px solid var(--surface2, #2a2c33); color: #e9e6df; background: transparent; cursor: pointer; font: inherit; }
 .av-btn-ghost:hover { background: var(--surface, #16181d); }
 .av-btn-block { display: block; text-align: center; margin-top: 1.5rem; width: 100%; }
+.av-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
 .av-answer {
   background: var(--surface, #16181d);
   border: 1px solid var(--surface2, #2a2c33);

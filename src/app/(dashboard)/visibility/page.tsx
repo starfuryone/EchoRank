@@ -19,6 +19,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { VisibilityHelpButton } from "@/components/help/VisibilityHelpButton";
+import { VisibilityReportButton } from "@/components/visibility/VisibilityReportButton";
 import { MonitorCard } from "@/components/visibility/MonitorCard";
 import { BenchmarkCard } from "@/components/visibility/BenchmarkCard";
 import { AnswerTrackingCard } from "@/components/visibility/AnswerTrackingCard";
@@ -219,7 +220,10 @@ export default function VisibilityPage() {
             Can AI answer engines find, crawl, and cite your site?
           </p>
         </div>
-        <VisibilityHelpButton />
+        <div className="flex items-center gap-3">
+          <VisibilityReportButton />
+          <VisibilityHelpButton />
+        </div>
       </div>
 
       {/* Search */}
