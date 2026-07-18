@@ -20,6 +20,7 @@ import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Modal } from "@/components/ui/modal";
 import { EmptyState } from "@/components/ui/empty-state";
+import { ReportDownloadButton } from "@/components/reports/ReportDownloadButton";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -240,6 +241,7 @@ export default function MonitoringPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
+          <ReportDownloadButton endpoint="/api/monitoring/report" />
           <Button variant="outline" size="sm" onClick={fetchData}>
             <RefreshCw className="h-4 w-4 mr-1.5" />
             Refresh

@@ -25,6 +25,7 @@ import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select } from "@/components/ui/select";
+import { ReportDownloadButton } from "@/components/reports/ReportDownloadButton";
 import { cn } from "@/lib/utils";
 
 // ---------------------------------------------------------------------------
@@ -346,16 +347,19 @@ export default function IntelligencePage() {
             AI-powered insights into your brand reputation and customer risk signals.
           </p>
         </div>
-        <Select
-          id="date-range"
-          value={dateRange}
-          onChange={(e) => setDateRange(e.target.value)}
-          options={[
-            { value: "7", label: "Last 7 days" },
-            { value: "30", label: "Last 30 days" },
-            { value: "90", label: "Last 90 days" },
-          ]}
-        />
+        <div className="flex items-center gap-3">
+          <ReportDownloadButton endpoint="/api/intelligence/report" />
+          <Select
+            id="date-range"
+            value={dateRange}
+            onChange={(e) => setDateRange(e.target.value)}
+            options={[
+              { value: "7", label: "Last 7 days" },
+              { value: "30", label: "Last 30 days" },
+              { value: "90", label: "Last 90 days" },
+            ]}
+          />
+        </div>
       </div>
 
       {/* Top section: Score Ring + Stat Cards */}
