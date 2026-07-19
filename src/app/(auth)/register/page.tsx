@@ -5,9 +5,9 @@ import RegisterForm from "./register-form";
 export default async function RegisterPage({
   searchParams,
 }: {
-  searchParams: Promise<{ plan?: string }>;
+  searchParams: Promise<{ plan?: string; brand?: string }>;
 }) {
   const locale = await resolveRequestLocale();
-  const { plan } = await searchParams;
-  return <RegisterForm c={AUTH_CONTENT[locale].register} plan={plan} />;
+  const { plan, brand } = await searchParams;
+  return <RegisterForm c={AUTH_CONTENT[locale].register} plan={plan} brand={brand} />;
 }

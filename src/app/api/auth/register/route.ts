@@ -6,7 +6,20 @@ import { planQuotaDefaults } from "@/lib/plan-config";
 import { planFromParam } from "@/lib/plan-routing";
 import { validate, registerSchema } from "@/lib/validations";
 import { rateLimit } from "@/lib/rate-limit";
+import { normalizeDomain } from "@/lib/onboarding";
+import { resolveRequestLocale } from "@/lib/i18n/resolve-request-locale";
+import { addJob } from "@/infrastructure/queue/registry";
+import type { OnboardingEmailStage } from "@/infrastructure/queue/jobs/schemas";
 import type { PlanType } from "@/generated/prisma";
+
+/** Onboarding drip schedule: stage → delay from signup. */
+const ONBOARDING_DRIP_DELAYS: Record<OnboardingEmailStage, number> = {
+  // D0 waits a few hours so the first audit exists when the recap renders.
+  d0: 3 * 60 * 60 * 1000,
+  d2: 2 * 24 * 60 * 60 * 1000,
+  d5: 5 * 24 * 60 * 60 * 1000,
+  d10: 10 * 24 * 60 * 60 * 1000,
+};
 
 /**
  * Plans a user may put themselves on at signup. Deliberately excludes the
@@ -38,11 +51,15 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { name, email, password, businessName, plan } = validate(
+    const { name, email, password, businessName, plan, brand } = validate(
       registerSchema,
       body,
     );
     const planType = resolveSignupPlan(plan);
+    const auditDomain = normalizeDomain(brand);
+    // Emails are localized en/fr only; the dashboard collapses fr-CA → fr too.
+    const requestLocale = await resolveRequestLocale();
+    const defaultLanguage = requestLocale.startsWith("fr") ? "fr" : "en";
 
     const existingUser = await prisma.user.findUnique({
       where: { email: email.toLowerCase().trim() },
@@ -84,6 +101,8 @@ export async function POST(request: Request) {
           name: businessName.trim(),
           slug,
           planType,
+          auditDomain,
+          defaultLanguage,
         },
       });
 
@@ -129,6 +148,28 @@ export async function POST(request: Request) {
       // actually granted, not the one the URL asked for.
       return { userId: user.id, tenantId: tenant.id, planType };
     });
+
+    // Onboarding drip: delayed jobs re-check tenant state (consent, progress)
+    // before sending. Fixed jobIds make re-enqueues idempotent. Enqueue failure
+    // must never fail the signup itself.
+    try {
+      await Promise.all(
+        (Object.keys(ONBOARDING_DRIP_DELAYS) as OnboardingEmailStage[]).map(
+          (stage) =>
+            addJob(
+              "onboarding-email",
+              "drip",
+              { tenantId: result.tenantId, correlationId: result.tenantId, stage },
+              {
+                jobId: `onboarding-${result.tenantId}-${stage}`,
+                delay: ONBOARDING_DRIP_DELAYS[stage],
+              },
+            ),
+        ),
+      );
+    } catch (err) {
+      console.error("Failed to enqueue onboarding drip:", err);
+    }
 
     return NextResponse.json(result, { status: 201 });
   } catch (error) {

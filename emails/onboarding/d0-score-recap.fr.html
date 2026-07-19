@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width"></head>
+<body style="margin:0;padding:0;background:#f3f4f6;font-family:Arial,Helvetica,sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3f4f6;padding:24px 0;">
+    <tr><td align="center">
+      <table role="presentation" width="560" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;">
+        <tr><td style="background:#2563eb;padding:20px 32px;">
+          <span style="color:#ffffff;font-size:18px;font-weight:bold;">EchoRank 360</span>
+        </td></tr>
+        <tr><td style="padding:32px;">
+          <h1 style="margin:0 0 16px;font-size:20px;color:#111827;">Bonjour {{ params.firstName }},</h1>
+          {% if params.hasScore %}
+          <p style="margin:0 0 16px;font-size:15px;line-height:1.6;color:#374151;">
+            Voici o&ugrave; se situe <strong>{{ params.brand }}</strong> aupr&egrave;s des moteurs de r&eacute;ponse IA aujourd&rsquo;hui&nbsp;:
+          </p>
+          <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 20px;">
+            <tr>
+              <td style="background:#eff6ff;border-radius:10px;padding:16px 24px;text-align:center;">
+                <div style="font-size:32px;font-weight:bold;color:#2563eb;">{{ params.score }}/100</div>
+                <div style="font-size:13px;color:#6b7280;">Score de visibilit&eacute; IA &mdash; note {{ params.grade }}</div>
+              </td>
+            </tr>
+          </table>
+          {% if params.topFixTitle %}
+          <p style="margin:0 0 8px;font-size:15px;line-height:1.6;color:#374151;">
+            <strong>Votre correctif recommand&eacute; n&deg;1&nbsp;:</strong> {{ params.topFixTitle }}
+          </p>
+          <p style="margin:0 0 20px;font-size:14px;line-height:1.6;color:#6b7280;">{{ params.topFixAction }}</p>
+          {% endif %}
+          {% else %}
+          <p style="margin:0 0 20px;font-size:15px;line-height:1.6;color:#374151;">
+            Votre espace pour <strong>{{ params.brand }}</strong> est pr&ecirc;t. Lancez votre premier audit de
+            visibilit&eacute; IA pour voir comment votre entreprise appara&icirc;t dans les r&eacute;ponses des IA &mdash;
+            &ccedil;a prend moins d&rsquo;une minute.
+          </p>
+          {% endif %}
+          <table role="presentation" cellpadding="0" cellspacing="0"><tr><td style="border-radius:8px;background:#2563eb;">
+            <a href="{{ params.visibilityUrl }}" style="display:inline-block;padding:12px 24px;font-size:15px;color:#ffffff;text-decoration:none;font-weight:bold;">
+              {% if params.hasScore %}Voir vos r&eacute;sultats complets{% else %}Lancer mon premier audit{% endif %}
+            </a>
+          </td></tr></table>
+        </td></tr>
+        <tr><td style="padding:20px 32px;border-top:1px solid #e5e7eb;">
+          <p style="margin:0;font-size:12px;color:#9ca3af;">
+            Vous recevez ce courriel parce que vous avez cr&eacute;&eacute; un compte EchoRank 360.
+            <a href="{{ unsubscribe }}" style="color:#9ca3af;">Se d&eacute;sabonner</a>
+          </p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body>
+</html>

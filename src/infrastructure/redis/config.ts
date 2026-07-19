@@ -103,7 +103,8 @@ export type QueueName =
   | "feedback-routing"
   | "csv-import"
   | "extension-import"
-  | "visibility-monitoring";
+  | "visibility-monitoring"
+  | "onboarding-email";
 
 /** All valid queue names */
 export const QUEUE_NAMES: QueueName[] = [
@@ -119,4 +120,6 @@ export const QUEUE_NAMES: QueueName[] = [
   "csv-import",
   "extension-import",
 
-  "visibility-monitoring",];
+  "visibility-monitoring",
+  "onboarding-email",
+];

@@ -15,7 +15,9 @@ export const PLAN_HOME: Record<PlanType, string> = {
  * reputation surfaces (customers, campaigns, feedback, …) are not part of it.
  */
 const PLAN_ALLOWED_PREFIXES: Record<PlanType, string[] | null> = {
-  AI_VISIBILITY: ["/visibility", "/settings", "/billing"],
+  // /team is included so AI_VISIBILITY tenants can invite teammates (the
+  // onboarding checklist links there); team management is plan-agnostic.
+  AI_VISIBILITY: ["/visibility", "/settings", "/billing", "/team"],
   STARTER: null,
   GROWTH: null,
   AGENCY: null,

@@ -159,6 +159,10 @@ model Tenant {
   updatedAt           DateTime      @updatedAt
   welcomeSeenAt         DateTime?
   onboardingDismissedAt DateTime?
+  onboardingIntent      String? // "business" | "agency"
+  auditDomain           String? // domain captured from the landing audit widget or the welcome modal
+  onboarding            Json? // { pdfDownloadedAt?, roadmapViewedAt?, firstAuditScore?, firstAuditAt?, profileCompletedAt? }
+  marketingConsent      Boolean @default(true)
 
   members             TenantMember[]
   visibilityMonitors  VisibilityMonitor[]

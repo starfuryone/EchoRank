@@ -81,6 +81,12 @@ const DEFAULT_JOB_OPTIONS: Record<QueueName, JobsOptions> = {
     removeOnComplete: { age: REDIS_CONFIG.ttl.completedJobs },
     removeOnFail: { age: REDIS_CONFIG.ttl.failedJobs },
   },
+  "onboarding-email": {
+    attempts: 3,
+    backoff: { type: "exponential", delay: 60_000 },
+    removeOnComplete: { age: REDIS_CONFIG.ttl.completedJobs },
+    removeOnFail: { age: REDIS_CONFIG.ttl.failedJobs },
+  },
 };
 
 // ─── Queue registry ───────────────────────────────────────────────────────────

@@ -19,6 +19,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { VisibilityHelpButton } from "@/components/help/VisibilityHelpButton";
+import { FirstAuditRunner } from "@/components/onboarding/first-audit-runner";
+import { OnboardingChecklist } from "@/components/onboarding/onboarding-checklist";
 import { VisibilityReportButton } from "@/components/visibility/VisibilityReportButton";
 import { MonitorCard } from "@/components/visibility/MonitorCard";
 import { BenchmarkCard } from "@/components/visibility/BenchmarkCard";
@@ -81,7 +83,13 @@ const FIX_KEY: Record<string, keyof Remediation["artifacts"]> = {
   "Meta description": "meta_description",
 };
 
-export function VisibilityPageClient({ locale }: { locale: DashLocale }) {
+export function VisibilityPageClient({
+  locale,
+  onboarding = false,
+}: {
+  locale: DashLocale;
+  onboarding?: boolean;
+}) {
   const t = VISIBILITY_COPY[locale];
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
@@ -128,6 +136,16 @@ export function VisibilityPageClient({ locale }: { locale: DashLocale }) {
     }
   }
 
+  // Onboarding "explore your fix roadmap" marker: engaging with the fixes
+  // card counts, whether it renders artifacts or the upgrade lock.
+  function markRoadmapViewed() {
+    fetch("/api/onboarding", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "step_complete", step: "roadmap_viewed" }),
+    }).catch(() => {});
+  }
+
   async function generateFixes() {
     if (!audit) return;
     setRemLoading(true);
@@ -142,11 +160,13 @@ export function VisibilityPageClient({ locale }: { locale: DashLocale }) {
       });
       if (res.status === 403) {
         setRemLocked(true);
+        markRoadmapViewed();
         return;
       }
       const data = await res.json();
       if (!res.ok || data.error) throw new Error(data.error || t.requestFailed(res.status));
       setRem(data.remediation as Remediation);
+      markRoadmapViewed();
     } catch (e) {
       setRemError(e instanceof Error ? e.message : t.fixesFailed);
     } finally {
@@ -217,6 +237,20 @@ export function VisibilityPageClient({ locale }: { locale: DashLocale }) {
         </div>
       </div>
 
+      {/* First-audit auto-run banner (onboarding) */}
+      <FirstAuditRunner
+        locale={locale}
+        triggered={onboarding}
+        onResult={(data, target) => {
+          setUrl(target);
+          setAudit(data as AuditResult);
+          setError(null);
+        }}
+      />
+
+      {/* Onboarding checklist */}
+      <OnboardingChecklist locale={locale} />
+
       {/* Search */}
       <Card>
         <CardContent className="flex flex-col gap-3 py-5 sm:flex-row sm:items-center">
@@ -242,7 +276,9 @@ export function VisibilityPageClient({ locale }: { locale: DashLocale }) {
       <MonitorCard locale={locale} suggestedUrl={audit && !loading && !error ? url : null} />
 
       {/* Answer tracking (AGENCY+) */}
-      <AnswerTrackingCard locale={locale} />
+      <div id="prompts">
+        <AnswerTrackingCard locale={locale} />
+      </div>
       <PromptTrends locale={locale} />
 
       {/* Competitor benchmark (GROWTH+) */}
@@ -376,6 +412,7 @@ export function VisibilityPageClient({ locale }: { locale: DashLocale }) {
           </div>
 
           {/* Fixes */}
+          <div id="fixes">
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">
@@ -446,6 +483,7 @@ export function VisibilityPageClient({ locale }: { locale: DashLocale }) {
                 })}
             </CardContent>
           </Card>
+          </div>
 
           {/* Attribution */}
           <Card>

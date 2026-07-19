@@ -5,6 +5,7 @@ import { auth } from "@/lib/auth";
 import { getCurrentTenant } from "@/lib/tenant";
 import { canAccessPath, PLAN_HOME } from "@/lib/plan-routing";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
+import { OnboardingGate } from "@/components/onboarding/welcome-setup-modal";
 
 export default async function DashboardLayout({
   children,
@@ -40,6 +41,7 @@ export default async function DashboardLayout({
         image: session.user.image,
       }}
     >
+      <OnboardingGate locale={locale} />
       {children}
     </DashboardShell>
   );

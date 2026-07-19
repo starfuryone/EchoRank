@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireTenant, requireRole } from "@/lib/tenant";
+import { requireTenant, requireRole, slugify } from "@/lib/tenant";
 import { createAuditLog } from "@/lib/audit";
+import { planQuotaDefaults } from "@/lib/plan-config";
 
 export async function GET() {
   try {
@@ -48,6 +49,99 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
     console.error("Error fetching tenant:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
+  }
+}
+
+/**
+ * POST — create an additional (client) workspace owned by the current user.
+ * Used by the agency onboarding flow; the new tenant inherits the plan of the
+ * tenant it is created from, so agency seats stay on the agency's tier.
+ */
+export async function POST(request: Request) {
+  try {
+    const membership = await requireRole(["OWNER", "ADMIN"]);
+
+    const body = await request.json();
+    const name = typeof body?.name === "string" ? body.name.trim() : "";
+    if (!name || name.length > 200) {
+      return NextResponse.json(
+        { error: "A workspace name is required" },
+        { status: 400 }
+      );
+    }
+
+    // Auto-uniquify the slug: client names collide often ("Main Street Dental"),
+    // and unlike signup there is no user-facing form to bounce back to.
+    const base = slugify(name);
+    let slug = base;
+    for (let n = 2; n <= 20; n++) {
+      const exists = await prisma.tenant.findUnique({ where: { slug } });
+      if (!exists) break;
+      slug = `${base}-${n}`;
+    }
+
+    const planType = membership.tenant.planType;
+
+    const tenant = await prisma.$transaction(async (tx) => {
+      const created = await tx.tenant.create({
+        data: {
+          name,
+          slug,
+          planType,
+          defaultLanguage: membership.tenant.defaultLanguage,
+        },
+      });
+      await tx.tenantMember.create({
+        data: { tenantId: created.id, userId: membership.userId, role: "OWNER" },
+      });
+      await tx.tenantQuota.create({
+        data: { tenantId: created.id, ...planQuotaDefaults(planType) },
+      });
+      return created;
+    });
+
+    await createAuditLog({
+      tenantId: membership.tenantId,
+      userId: membership.userId,
+      action: "CREATE",
+      entity: "Tenant",
+      entityId: tenant.id,
+      details: { name, slug, planType },
+    });
+
+    return NextResponse.json(
+      { tenant: { id: tenant.id, name: tenant.name, slug: tenant.slug } },
+      { status: 201 }
+    );
+  } catch (error) {
+    if (
+      error instanceof Error &&
+      error.message === "Not authenticated or no tenant access"
+    ) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    if (
+      error instanceof Error &&
+      error.message === "Insufficient permissions"
+    ) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+    if (
+      error &&
+      typeof error === "object" &&
+      "code" in error &&
+      (error as { code: string }).code === "P2002"
+    ) {
+      return NextResponse.json(
+        { error: "A workspace with this name already exists" },
+        { status: 409 }
+      );
+    }
+    console.error("Error creating tenant:", error);
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

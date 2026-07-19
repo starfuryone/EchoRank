@@ -4384,3 +4384,161 @@ export const VISIBILITY_HELP_COPY: Record<DashLocale, VisibilityHelpCopy> = {
     openFullPage: "Als ganze Seite öffnen →",
   },
 };
+
+// ─── Onboarding (welcome setup, first-audit banner, checklist) ──────────────
+const onboardingEn = {
+  // Welcome setup modal
+  welcomeTitle: "Welcome to EchoRank 360",
+  welcomeIntro:
+    "Two quick questions and we'll run your first AI Visibility audit — it shows how your business appears in AI answers today.",
+  intentQuestion: "Which best describes you?",
+  intentBusiness: "I'm a business",
+  intentBusinessHint: "I want to track my own visibility",
+  intentAgency: "I'm an agency",
+  intentAgencyHint: "I manage visibility for clients",
+  domainLabel: "Your website domain",
+  domainPlaceholder: "yourbusiness.com",
+  runAuditCta: "Run my first audit",
+  saveCta: "Save",
+  skipForNow: "Skip for now",
+  genericError: "Something went wrong. Please try again.",
+
+  // First-audit banner / runner on /visibility
+  bannerTitle: "Your first AI Visibility audit",
+  bannerSub:
+    "This is your starting point — the checks and fixes below show where to improve.",
+  runningTitle: "Running your first audit…",
+  runningSub: "This usually takes under a minute.",
+  retryTitle: "Your audit didn't finish",
+  retrySub:
+    "No worries — your dashboard is ready anyway. Run the audit again whenever you like.",
+  retryCta: "Retry audit",
+
+  // Checklist card
+  checklistTitle: "Your first steps",
+  progress: (done: number, total: number) => `${done} of ${total} done`,
+  dismissAria: "Dismiss checklist",
+  steps: {
+    first_audit: "Run your first AI Visibility audit",
+    download_pdf: "Download your PDF report",
+    review_link: "Set up a review link",
+    add_prompts: "Add 3 tracked prompts",
+    explore_roadmap: "Explore your fix roadmap",
+    connect_source: "Connect a review source",
+    second_audit: "Run a follow-up audit",
+    add_client: "Add your first client workspace",
+    invite_teammate: "Invite a teammate",
+  } as Record<string, string>,
+
+  // Add-client modal (agency intent)
+  addClientTitle: "Add a client workspace",
+  addClientIntro:
+    "Each client gets their own workspace with separate audits, monitoring and reports. Switch between them from your account menu.",
+  addClientNameLabel: "Client business name",
+  addClientNamePlaceholder: "Client Inc.",
+  addClientCta: "Create workspace",
+  addClientSuccess: "Workspace created — you've been switched to it.",
+};
+export type OnboardingCopy = typeof onboardingEn;
+
+export const ONBOARDING_COPY: Record<DashLocale, OnboardingCopy> = {
+  en: onboardingEn,
+  fr: {
+    welcomeTitle: "Bienvenue dans EchoRank 360",
+    welcomeIntro:
+      "Deux petites questions et nous lancerons votre premier audit de visibilité IA — il montre comment votre entreprise apparaît aujourd'hui dans les réponses des IA.",
+    intentQuestion: "Qu'est-ce qui vous décrit le mieux?",
+    intentBusiness: "Je suis une entreprise",
+    intentBusinessHint: "Je veux suivre ma propre visibilité",
+    intentAgency: "Je suis une agence",
+    intentAgencyHint: "Je gère la visibilité de mes clients",
+    domainLabel: "Le domaine de votre site Web",
+    domainPlaceholder: "votreentreprise.com",
+    runAuditCta: "Lancer mon premier audit",
+    saveCta: "Enregistrer",
+    skipForNow: "Passer pour l'instant",
+    genericError: "Une erreur est survenue. Veuillez réessayer.",
+
+    bannerTitle: "Votre premier audit de visibilité IA",
+    bannerSub:
+      "C'est votre point de départ — les vérifications et correctifs ci-dessous montrent où vous améliorer.",
+    runningTitle: "Votre premier audit est en cours…",
+    runningSub: "Cela prend habituellement moins d'une minute.",
+    retryTitle: "Votre audit ne s'est pas terminé",
+    retrySub:
+      "Pas de souci — votre tableau de bord est prêt quand même. Relancez l'audit quand vous voulez.",
+    retryCta: "Relancer l'audit",
+
+    checklistTitle: "Vos premiers pas",
+    progress: (done: number, total: number) => `${done} sur ${total} terminées`,
+    dismissAria: "Masquer la liste de vérification",
+    steps: {
+      first_audit: "Lancez votre premier audit de visibilité IA",
+      download_pdf: "Téléchargez votre rapport PDF",
+      review_link: "Configurez un lien d'avis",
+      add_prompts: "Ajoutez 3 requêtes suivies",
+      explore_roadmap: "Explorez votre plan de correctifs",
+      connect_source: "Connectez une source d'avis",
+      second_audit: "Lancez un audit de suivi",
+      add_client: "Ajoutez votre premier espace client",
+      invite_teammate: "Invitez un membre de l'équipe",
+    } as Record<string, string>,
+
+    addClientTitle: "Ajouter un espace client",
+    addClientIntro:
+      "Chaque client a son propre espace avec ses audits, sa surveillance et ses rapports distincts. Passez de l'un à l'autre depuis le menu de votre compte.",
+    addClientNameLabel: "Nom de l'entreprise cliente",
+    addClientNamePlaceholder: "Client inc.",
+    addClientCta: "Créer l'espace",
+    addClientSuccess: "Espace créé — vous y avez été basculé.",
+  },
+  "de-CH": {
+    welcomeTitle: "Willkommen bei EchoRank 360",
+    welcomeIntro:
+      "Zwei kurze Fragen, dann starten wir Ihr erstes KI-Sichtbarkeits-Audit — es zeigt, wie Ihr Unternehmen heute in KI-Antworten erscheint.",
+    intentQuestion: "Was beschreibt Sie am besten?",
+    intentBusiness: "Ich bin ein Unternehmen",
+    intentBusinessHint: "Ich möchte meine eigene Sichtbarkeit verfolgen",
+    intentAgency: "Ich bin eine Agentur",
+    intentAgencyHint: "Ich betreue die Sichtbarkeit meiner Kunden",
+    domainLabel: "Die Domain Ihrer Website",
+    domainPlaceholder: "ihrunternehmen.ch",
+    runAuditCta: "Mein erstes Audit starten",
+    saveCta: "Speichern",
+    skipForNow: "Vorerst überspringen",
+    genericError: "Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut.",
+
+    bannerTitle: "Ihr erstes KI-Sichtbarkeits-Audit",
+    bannerSub:
+      "Das ist Ihr Ausgangspunkt — die Prüfungen und Korrekturen unten zeigen, wo Sie sich verbessern können.",
+    runningTitle: "Ihr erstes Audit läuft…",
+    runningSub: "Das dauert in der Regel weniger als eine Minute.",
+    retryTitle: "Ihr Audit wurde nicht abgeschlossen",
+    retrySub:
+      "Kein Problem — Ihr Dashboard ist trotzdem bereit. Starten Sie das Audit einfach erneut, wann immer Sie möchten.",
+    retryCta: "Audit erneut starten",
+
+    checklistTitle: "Ihre ersten Schritte",
+    progress: (done: number, total: number) => `${done} von ${total} erledigt`,
+    dismissAria: "Checkliste ausblenden",
+    steps: {
+      first_audit: "Starten Sie Ihr erstes KI-Sichtbarkeits-Audit",
+      download_pdf: "Laden Sie Ihren PDF-Bericht herunter",
+      review_link: "Richten Sie einen Bewertungslink ein",
+      add_prompts: "Fügen Sie 3 verfolgte Prompts hinzu",
+      explore_roadmap: "Erkunden Sie Ihren Korrektur-Fahrplan",
+      connect_source: "Verbinden Sie eine Bewertungsquelle",
+      second_audit: "Führen Sie ein Folge-Audit durch",
+      add_client: "Fügen Sie Ihren ersten Kunden-Arbeitsbereich hinzu",
+      invite_teammate: "Laden Sie ein Teammitglied ein",
+    } as Record<string, string>,
+
+    addClientTitle: "Kunden-Arbeitsbereich hinzufügen",
+    addClientIntro:
+      "Jeder Kunde erhält einen eigenen Arbeitsbereich mit separaten Audits, Überwachung und Berichten. Wechseln Sie über Ihr Kontomenü zwischen ihnen.",
+    addClientNameLabel: "Name des Kundenunternehmens",
+    addClientNamePlaceholder: "Kunde AG",
+    addClientCta: "Arbeitsbereich erstellen",
+    addClientSuccess: "Arbeitsbereich erstellt — Sie wurden dorthin gewechselt.",
+  },
+};

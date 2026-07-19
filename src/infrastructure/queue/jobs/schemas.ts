@@ -146,6 +146,14 @@ export interface VisibilityMonitoringJob {
   correlationId?: string;
 }
 
+// ─── Onboarding Email Drip ────────────────────────────────────────────────────
+
+export type OnboardingEmailStage = "d0" | "d2" | "d5" | "d10";
+
+export interface OnboardingEmailJob extends BaseJob {
+  stage: OnboardingEmailStage;
+}
+
 export type AllJobTypes =
   | EmailDeliveryJob
   | SmsDeliveryJob
@@ -158,7 +166,8 @@ export type AllJobTypes =
   | FeedbackRoutingJob
   | CsvImportJob
   | ExtensionImportJob
-  | VisibilityMonitoringJob;
+  | VisibilityMonitoringJob
+  | OnboardingEmailJob;
 
 // ─── Queue → Job Type mapping ─────────────────────────────────────────────────
 
@@ -175,4 +184,5 @@ export interface QueueJobMap {
   "csv-import": CsvImportJob;
   "extension-import": ExtensionImportJob;
   "visibility-monitoring": VisibilityMonitoringJob;
+  "onboarding-email": OnboardingEmailJob;
 }

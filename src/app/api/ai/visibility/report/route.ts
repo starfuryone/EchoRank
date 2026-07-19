@@ -13,6 +13,7 @@ import { requireTenant } from "@/lib/tenant";
 import { requireFeature, enforcementErrorResponse } from "@/lib/plan-enforcement";
 import { csrfProtection } from "@/lib/csrf-protection";
 import { prisma } from "@/lib/prisma";
+import { markOnboardingStep } from "@/lib/onboarding";
 
 const SIDECAR_URL = process.env.AV_SIDECAR_URL ?? "http://127.0.0.1:4500";
 const INTERNAL_SECRET = process.env.INTERNAL_API_SECRET ?? "";
@@ -250,6 +251,9 @@ export async function POST(req: NextRequest) {
       const status = res.status === 504 ? 504 : 502;
       return NextResponse.json({ error: "report_failed" }, { status });
     }
+
+    // Onboarding checklist marker; must never interfere with the PDF stream.
+    markOnboardingStep(membership.tenantId, "pdf_downloaded").catch(() => {});
 
     const pdf = new Uint8Array(await res.arrayBuffer());
     const disposition =

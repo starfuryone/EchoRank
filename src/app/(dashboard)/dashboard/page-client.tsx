@@ -18,7 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { formatDateTime } from "@/lib/utils";
-import { GettingStarted } from "@/components/onboarding/getting-started";
+import { OnboardingChecklist } from "@/components/onboarding/onboarding-checklist";
 import { DASHBOARD_COPY, type DashboardCopy, type DashLocale } from "@/lib/i18n/dashboard";
 
 interface Analytics {
@@ -213,7 +213,7 @@ export function DashboardPageClient({ locale }: { locale: DashLocale }) {
         </Button>
       </div>
 
-      <GettingStarted locale={locale} />
+      <OnboardingChecklist locale={locale} />
 
       {/* Stat cards */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">

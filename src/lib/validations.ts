@@ -9,6 +9,9 @@ export const registerSchema = z.object({
   // Free-form rather than an enum: unrecognized values fall back to STARTER in
   // the route instead of 400-ing, so stale ?plan= links keep working.
   plan: z.string().max(50).optional(),
+  // Domain carried over from the landing-page audit widget (?brand=); free-form
+  // because the route normalizes it and silently drops garbage.
+  brand: z.string().max(253).optional(),
 });
 
 export const createCustomerSchema = z.object({

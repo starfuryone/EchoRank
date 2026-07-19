@@ -12,9 +12,11 @@ import { postSignupRedirect } from "@/lib/plan-routing";
 export default function RegisterForm({
   c,
   plan,
+  brand,
 }: {
   c: AuthContent["register"];
   plan?: string;
+  brand?: string;
 }) {
   const router = useRouter();
   const [name, setName] = useState("");
@@ -33,7 +35,7 @@ export default function RegisterForm({
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password, businessName, plan }),
+        body: JSON.stringify({ name, email, password, businessName, plan, brand }),
       });
 
       const data = await res.json();
