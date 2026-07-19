@@ -6,6 +6,11 @@ import { CheckCircle2, Circle, ArrowRight, X, Sparkles } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
+import {
+  GETTING_STARTED_COPY,
+  type DashLocale,
+  type GettingStartedCopy,
+} from "@/lib/i18n/dashboard";
 
 interface Step {
   key: string;
@@ -27,32 +32,29 @@ function WelcomeModal({
   open,
   onClose,
   firstStepHref,
+  t,
 }: {
   open: boolean;
   onClose: () => void;
   firstStepHref: string;
+  t: GettingStartedCopy;
 }) {
   return (
-    <Modal open={open} onClose={onClose} title="Welcome to EchoRank 360">
+    <Modal open={open} onClose={onClose} title={t.welcomeTitle}>
       <div className="space-y-4 text-sm leading-relaxed text-gray-600">
-        <p>
-          EchoRank helps you collect customer feedback, turn happy customers into
-          public reviews, and catch unhappy ones before they post — plus see how
-          visible your business is to AI answer engines.
-        </p>
+        <p>{t.welcomeP1}</p>
         <p className="rounded-lg bg-blue-50 p-3 text-blue-900">
-          <strong>Start here:</strong> add a customer, then send your first
-          feedback request. The checklist on your dashboard walks you through the
-          rest — it checks itself off as you go.
+          <strong>{t.welcomeStartStrong}</strong>
+          {t.welcomeStartRest}
         </p>
       </div>
       <div className="mt-5 flex justify-end gap-2 border-t border-gray-100 pt-4">
         <Button variant="outline" onClick={onClose}>
-          Explore on my own
+          {t.exploreButton}
         </Button>
         <Link href={firstStepHref} onClick={onClose}>
           <Button>
-            Add my first customer
+            {t.addFirstCustomer}
             <ArrowRight className="ml-2 h-4 w-4" />
           </Button>
         </Link>
@@ -61,7 +63,8 @@ function WelcomeModal({
   );
 }
 
-export function GettingStarted() {
+export function GettingStarted({ locale = "en" }: { locale?: DashLocale }) {
+  const t = GETTING_STARTED_COPY[locale];
   const [state, setState] = useState<OnboardingState | null>(null);
   const [welcomeOpen, setWelcomeOpen] = useState(false);
 
@@ -115,6 +118,7 @@ export function GettingStarted() {
         open={welcomeOpen}
         onClose={() => setWelcomeOpen(false)}
         firstStepHref={firstStepHref}
+        t={t}
       />
 
       {showCard && (
@@ -125,17 +129,16 @@ export function GettingStarted() {
                 <Sparkles className="h-5 w-5 text-blue-600" />
                 <div>
                   <h3 className="text-base font-semibold text-gray-900">
-                    Get started with EchoRank
+                    {t.cardTitle}
                   </h3>
                   <p className="text-sm text-gray-500">
-                    {state.completedCount} of {state.totalCount} done — finish
-                    setup to start collecting reviews.
+                    {t.progress(state.completedCount, state.totalCount)}
                   </p>
                 </div>
               </div>
               <button
                 onClick={dismiss}
-                aria-label="Dismiss getting started"
+                aria-label={t.dismissAria}
                 className="rounded p-1 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
               >
                 <X className="h-4 w-4" />
@@ -164,7 +167,7 @@ export function GettingStarted() {
                       <CheckCircle2 className="h-5 w-5 shrink-0 text-green-500" />
                       <span className="line-through">{step.label}</span>
                       {step.optional && (
-                        <span className="text-xs text-gray-400">(optional)</span>
+                        <span className="text-xs text-gray-400">{t.optional}</span>
                       )}
                     </div>
                   ) : (
@@ -175,7 +178,7 @@ export function GettingStarted() {
                       <Circle className="h-5 w-5 shrink-0 text-gray-300" />
                       <span className="font-medium">{step.label}</span>
                       {step.optional && (
-                        <span className="text-xs text-gray-400">(optional)</span>
+                        <span className="text-xs text-gray-400">{t.optional}</span>
                       )}
                       <ArrowRight className="ml-auto h-4 w-4 text-gray-400" />
                     </Link>

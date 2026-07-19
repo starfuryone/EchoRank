@@ -5,6 +5,7 @@ import { Lock, Swords } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { BENCHMARK_CARD_COPY, type DashLocale } from "@/lib/i18n/dashboard";
 
 /**
  * Competitor benchmark panel (GROWTH+). Quota is server-enforced:
@@ -25,12 +26,15 @@ export function BenchmarkCard({
   yourScore,
   yourBlocked,
   botTotal,
+  locale = "en",
 }: {
   yourUrl: string;
   yourScore: number;
   yourBlocked: number;
   botTotal: number;
+  locale?: DashLocale;
 }) {
+  const t = BENCHMARK_CARD_COPY[locale];
   const [input, setInput] = useState("");
   const [rows, setRows] = useState<BenchResult[]>([]);
   const [limit, setLimit] = useState<number>(1);
@@ -77,7 +81,7 @@ export function BenchmarkCard({
         return;
       }
       if (!res.ok) {
-        setErr(data.error || `Request failed (${res.status})`);
+        setErr(data.error || t.requestFailed(res.status));
         if (typeof data.limit === "number") setLimit(data.limit);
         if (typeof data.used === "number") setUsed(data.used);
         return;
@@ -88,7 +92,7 @@ export function BenchmarkCard({
       setUsed(data.used ?? used);
       setInput("");
     } catch (e) {
-      setErr(e instanceof Error ? e.message : "Comparison failed");
+      setErr(e instanceof Error ? e.message : t.comparisonFailed);
     } finally {
       setBusy(false);
     }
@@ -100,14 +104,11 @@ export function BenchmarkCard({
         <CardContent className="flex items-center gap-3 py-5">
           <Lock className="h-5 w-5 shrink-0 text-gray-400" />
           <div className="flex-1">
-            <p className="text-sm font-medium text-gray-900">Competitor benchmark</p>
-            <p className="text-sm text-gray-500">
-              See how your AI visibility stacks up against competitors, side by side. Part of the
-              Growth plan and up.
-            </p>
+            <p className="text-sm font-medium text-gray-900">{t.title}</p>
+            <p className="text-sm text-gray-500">{t.lockedDescription}</p>
           </div>
           <Button variant="outline" size="sm" onClick={() => (window.location.href = "/billing")}>
-            Upgrade
+            {t.upgrade}
           </Button>
         </CardContent>
       </Card>
@@ -124,26 +125,24 @@ export function BenchmarkCard({
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Swords className="h-4 w-4 text-blue-600" />
-            <h3 className="text-sm font-semibold text-gray-900">Competitor benchmark</h3>
+            <h3 className="text-sm font-semibold text-gray-900">{t.title}</h3>
           </div>
-          <span className="text-xs text-gray-500">
-            {used} / {limit} competitor{limit === 1 ? "" : "s"} today
-          </span>
+          <span className="text-xs text-gray-500">{t.competitorsToday(used, limit)}</span>
         </div>
 
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="text-left text-xs uppercase tracking-wide text-gray-500">
-                <th className="py-2 pr-4 font-medium">Site</th>
-                <th className="py-2 pr-4 font-medium">Score</th>
-                <th className="py-2 font-medium">Crawlers blocked</th>
+                <th className="py-2 pr-4 font-medium">{t.colSite}</th>
+                <th className="py-2 pr-4 font-medium">{t.colScore}</th>
+                <th className="py-2 font-medium">{t.colBlocked}</th>
               </tr>
             </thead>
             <tbody>
               <tr className="border-t border-gray-100 bg-blue-50/50">
                 <td className="max-w-[240px] truncate py-2 pr-4 font-medium text-gray-900">
-                  {yourUrl} <span className="text-xs font-normal text-blue-600">(you)</span>
+                  {yourUrl} <span className="text-xs font-normal text-blue-600">{t.youBadge}</span>
                 </td>
                 <td className="py-2 pr-4 font-semibold text-gray-900">{yourScore}</td>
                 <td className="py-2 text-gray-700">
@@ -173,21 +172,21 @@ export function BenchmarkCard({
               onKeyDown={(e: KeyboardEvent<HTMLInputElement>) => {
                 if (e.key === "Enter") void compare();
               }}
-              placeholder="competitor.com"
+              placeholder={t.placeholder}
               className="flex-1"
             />
             <Button variant="outline" size="sm" onClick={() => void compare()} disabled={busy}>
-              {busy ? "Auditing…" : "Compare"}
+              {busy ? t.auditing : t.compare}
             </Button>
           </div>
         ) : (
           limit === 1 && (
             <p className="text-sm text-gray-500">
-              Growth includes 1 competitor per day —{" "}
+              {t.growthLimitBefore}
               <a href="/billing" className="font-medium text-blue-600 hover:underline">
-                Agency includes 5
+                {t.growthLimitLink}
               </a>
-              .
+              {t.growthLimitAfter}
             </p>
           )
         )}

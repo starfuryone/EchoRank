@@ -53,6 +53,7 @@ export function DashboardShell({ children, user, locale = "en", plan }: Dashboar
       <div className="lg:pl-64">
         <Header
           title={title}
+          locale={locale}
           user={user}
           onMenuToggle={handleMenuToggle}
           onSignOut={handleSignOut}

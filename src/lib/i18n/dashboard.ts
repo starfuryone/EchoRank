@@ -1,8 +1,14 @@
-/** Dashboard chrome i18n. fr* cookies → fr; everything else (incl. de-CH) → en for now. */
-export type DashLocale = "en" | "fr";
+/**
+ * Dashboard i18n: chrome (nav/header) + per-page copy catalogs.
+ * Cookie mapping: fr* → fr (Québec French, shared by fr and fr-CA),
+ * de* → de-CH (Swiss German, "ss" never "ß"), everything else (incl. en-CA) → en.
+ */
+export type DashLocale = "en" | "fr" | "de-CH";
 
 export function dashboardLocale(cookieValue?: string | null): DashLocale {
-  return cookieValue?.startsWith("fr") ? "fr" : "en";
+  if (cookieValue?.startsWith("fr")) return "fr";
+  if (cookieValue?.startsWith("de")) return "de-CH";
+  return "en";
 }
 
 export const dashNav: Record<DashLocale, Record<string, string>> = {
@@ -24,6 +30,24 @@ export const dashNav: Record<DashLocale, Record<string, string>> = {
     "/settings": "Settings",
     "/billing": "Billing",
   },
+  "de-CH": {
+    "/dashboard": "Dashboard",
+    "/customers": "Kunden",
+    "/feedback": "Feedback",
+    "/campaigns": "Kampagnen",
+    "/recovery": "Rückgewinnung",
+    "/analytics": "Analysen",
+    "/intelligence": "Intelligence",
+    "/monitoring": "Überwachung",
+    "/visibility": "KI-Sichtbarkeit",
+    "/imports": "Datenquellen",
+    "/extension": "Erweiterung",
+    "/templates": "Vorlagen",
+    "/review-links": "Bewertungslinks",
+    "/team": "Team",
+    "/settings": "Einstellungen",
+    "/billing": "Abrechnung",
+  },
   fr: {
     "/dashboard": "Tableau de bord",
     "/customers": "Clients",
@@ -41,5 +65,4322 @@ export const dashNav: Record<DashLocale, Record<string, string>> = {
     "/team": "Équipe",
     "/settings": "Paramètres",
     "/billing": "Facturation",
+  },
+};
+
+// ─── Header chrome ──────────────────────────────────────────────────────────
+export const dashChrome: Record<
+  DashLocale,
+  { toggleSidebar: string; notifications: string; signOut: string; user: string }
+> = {
+  en: {
+    toggleSidebar: "Toggle sidebar",
+    notifications: "Notifications",
+    signOut: "Sign out",
+    user: "User",
+  },
+  fr: {
+    toggleSidebar: "Afficher ou masquer le menu",
+    notifications: "Notifications",
+    signOut: "Se déconnecter",
+    user: "Utilisateur",
+  },
+  "de-CH": {
+    toggleSidebar: "Seitenleiste umschalten",
+    notifications: "Benachrichtigungen",
+    signOut: "Abmelden",
+    user: "Benutzer",
+  },
+};
+
+// ─── /extension ─────────────────────────────────────────────────────────────
+const extensionEn = {
+  title: "Browser Extension",
+  subtitle:
+    "Import reviews from Google, Facebook, and Trustpilot pages directly into EchoRank.",
+  loadFailed: "Failed to load tokens",
+  createFailed: "Failed to create token",
+  actionFailed: "Action failed",
+  revokeConfirm:
+    "Revoke this token? The extension using it will stop working immediately.",
+  copyOnce: "Copy your token now — it is shown only once.",
+  copy: "Copy",
+  pasteHint:
+    "Paste it into the extension popup → Settings. Then visit a review page and click Scan.",
+  done: "Done",
+  createTitle: "Create an extension token",
+  labelLabel: "Label",
+  labelPlaceholder: "Chrome on work laptop",
+  createButton: "Create token",
+  yourTokens: "Your tokens",
+  loading: "Loading…",
+  emptyTitle: "No tokens yet",
+  emptyDescription:
+    "Create a token above, then paste it into the extension to start importing reviews.",
+  statusActive: "Active",
+  statusRevoked: "Revoked",
+  statusExpired: "Expired",
+  created: (date: string) => `created ${date}`,
+  lastUsed: (date: string) => `last used ${date}`,
+  neverUsed: "never used",
+  rotate: "Rotate",
+  revoke: "Revoke",
+  finePrint:
+    "Imported reviews appear under Monitoring and Data Sources, and are automatically analyzed for sentiment, themes, and reputation risk.",
+};
+export type ExtensionCopy = typeof extensionEn;
+
+export const EXTENSION_COPY: Record<DashLocale, ExtensionCopy> = {
+  en: extensionEn,
+  fr: {
+    title: "Extension de navigateur",
+    subtitle:
+      "Importez des avis depuis les pages Google, Facebook et Trustpilot directement dans EchoRank.",
+    loadFailed: "Échec du chargement des jetons",
+    createFailed: "Échec de la création du jeton",
+    actionFailed: "Échec de l'action",
+    revokeConfirm:
+      "Révoquer ce jeton? L'extension qui l'utilise cessera de fonctionner immédiatement.",
+    copyOnce: "Copiez votre jeton maintenant — il n'est affiché qu'une seule fois.",
+    copy: "Copier",
+    pasteHint:
+      "Collez-le dans la fenêtre de l'extension → Paramètres. Visitez ensuite une page d'avis et cliquez sur Scan.",
+    done: "Terminé",
+    createTitle: "Créer un jeton d'extension",
+    labelLabel: "Étiquette",
+    labelPlaceholder: "Chrome sur le portable du travail",
+    createButton: "Créer un jeton",
+    yourTokens: "Vos jetons",
+    loading: "Chargement…",
+    emptyTitle: "Aucun jeton pour l'instant",
+    emptyDescription:
+      "Créez un jeton ci-dessus, puis collez-le dans l'extension pour commencer à importer des avis.",
+    statusActive: "Actif",
+    statusRevoked: "Révoqué",
+    statusExpired: "Expiré",
+    created: (date: string) => `créé le ${date}`,
+    lastUsed: (date: string) => `dernière utilisation le ${date}`,
+    neverUsed: "jamais utilisé",
+    rotate: "Renouveler",
+    revoke: "Révoquer",
+    finePrint:
+      "Les avis importés apparaissent sous Surveillance et Sources de données, et sont automatiquement analysés pour le sentiment, les thèmes et le risque de réputation.",
+  },
+  "de-CH": {
+    title: "Browser-Erweiterung",
+    subtitle:
+      "Importieren Sie Bewertungen von Google-, Facebook- und Trustpilot-Seiten direkt in EchoRank.",
+    loadFailed: "Tokens konnten nicht geladen werden",
+    createFailed: "Token konnte nicht erstellt werden",
+    actionFailed: "Aktion fehlgeschlagen",
+    revokeConfirm:
+      "Diesen Token widerrufen? Die Erweiterung, die ihn verwendet, funktioniert sofort nicht mehr.",
+    copyOnce: "Kopieren Sie Ihren Token jetzt — er wird nur einmal angezeigt.",
+    copy: "Kopieren",
+    pasteHint:
+      "Fügen Sie ihn im Erweiterungs-Popup unter → Einstellungen ein. Öffnen Sie dann eine Bewertungsseite und klicken Sie auf Scan.",
+    done: "Fertig",
+    createTitle: "Erweiterungs-Token erstellen",
+    labelLabel: "Bezeichnung",
+    labelPlaceholder: "Chrome auf dem Arbeitslaptop",
+    createButton: "Token erstellen",
+    yourTokens: "Ihre Tokens",
+    loading: "Wird geladen…",
+    emptyTitle: "Noch keine Tokens",
+    emptyDescription:
+      "Erstellen Sie oben einen Token und fügen Sie ihn in die Erweiterung ein, um Bewertungen zu importieren.",
+    statusActive: "Aktiv",
+    statusRevoked: "Widerrufen",
+    statusExpired: "Abgelaufen",
+    created: (date: string) => `erstellt am ${date}`,
+    lastUsed: (date: string) => `zuletzt verwendet am ${date}`,
+    neverUsed: "nie verwendet",
+    rotate: "Erneuern",
+    revoke: "Widerrufen",
+    finePrint:
+      "Importierte Bewertungen erscheinen unter Überwachung und Datenquellen und werden automatisch auf Stimmung, Themen und Reputationsrisiko analysiert.",
+  },
+};
+
+// ─── /analytics ─────────────────────────────────────────────────────────────
+const analyticsEn = {
+  title: "Analytics",
+  subtitle: "Track your reputation performance over time.",
+  loadFailed: "Failed to load analytics",
+  genericError: "Something went wrong",
+  errorTitle: "Failed to load analytics",
+  retry: "Retry",
+  help: "Help",
+  range7: "Last 7 days",
+  range30: "Last 30 days",
+  range90: "Last 90 days",
+  range365: "Last 12 months",
+  statSent: "Total Sent",
+  statResponses: "Responses",
+  responseRate: (pct: number) => `${pct}% response rate`,
+  statAvgRating: "Avg Rating",
+  statPositive: "Positive (4-5)",
+  statNegative: "Negative (1-2)",
+  statRecoveryOpen: "Recovery Open",
+  ratingValue: (n: number) => n.toFixed(1),
+  ratingDistribution: "Rating Distribution",
+  noRatings: "No ratings data available yet.",
+  ratingLabels: {
+    5: "Excellent",
+    4: "Good",
+    3: "Neutral",
+    2: "Poor",
+    1: "Terrible",
+  } as Record<number, string>,
+  countPct: (count: number, pct: number) => `${count} (${pct}%)`,
+  responseRateOverTime: "Response Rate Over Time",
+  noResponses: "No response data available yet.",
+  weekRatio: (responses: number, sent: number, rate: number) =>
+    `${responses}/${sent} (${rate}%)`,
+  legendSent: "Sent",
+  legendResponses: "Responses",
+  topLocations: "Top Performing Locations",
+  noLocations: "No location data available yet.",
+  responsesCount: (n: number) =>
+    n === 1 ? "1 response" : `${n} responses`,
+  satisfactionTrend: "Customer Satisfaction Trend",
+  noTrend: "No trend data available yet.",
+  scoreOutOf: (score: number) => `${score.toFixed(1)} / 5.0`,
+  helpTitle: "Reading your analytics",
+  helpIntro:
+    "Everything here reflects the period chosen in the date selector (last 7, 30, 90 days, or 12 months). Change it to widen or narrow the view.",
+  helpStatsTitle: "The numbers up top",
+  helpStatsBody:
+    "Sent and Responses show how many feedback requests went out and came back; Avg Rating is the mean score. Positive and Negative split those responses, and Recovery Open counts low-rating tickets still being worked.",
+  helpDistTitle: "Rating distribution",
+  helpDistBody:
+    "How responses break down across 1 to 5 stars, so you can see whether scores cluster high or low.",
+  helpWeekTitle: "Response rate by week",
+  helpWeekBody:
+    "Requests sent versus responses received each week — a read on how engaged your customers are over time.",
+  helpLocTitle: "Top locations & satisfaction trend",
+  helpLocBody:
+    "Average rating per location helps you spot which sites need attention, while the satisfaction trend shows whether your overall score is moving up or down.",
+  gotIt: "Got it",
+};
+export type AnalyticsCopy = typeof analyticsEn;
+
+export const ANALYTICS_COPY: Record<DashLocale, AnalyticsCopy> = {
+  en: analyticsEn,
+  fr: {
+    title: "Analytique",
+    subtitle: "Suivez la performance de votre réputation au fil du temps.",
+    loadFailed: "Échec du chargement de l'analytique",
+    genericError: "Une erreur s'est produite",
+    errorTitle: "Échec du chargement de l'analytique",
+    retry: "Réessayer",
+    help: "Aide",
+    range7: "7 derniers jours",
+    range30: "30 derniers jours",
+    range90: "90 derniers jours",
+    range365: "12 derniers mois",
+    statSent: "Total envoyé",
+    statResponses: "Réponses",
+    responseRate: (pct: number) => `Taux de réponse de ${pct} %`,
+    statAvgRating: "Note moyenne",
+    statPositive: "Positifs (4-5)",
+    statNegative: "Négatifs (1-2)",
+    statRecoveryOpen: "Récupérations ouvertes",
+    ratingValue: (n: number) =>
+      n.toLocaleString("fr", {
+        minimumFractionDigits: 1,
+        maximumFractionDigits: 1,
+      }),
+    ratingDistribution: "Répartition des notes",
+    noRatings: "Aucune donnée de notes pour l'instant.",
+    ratingLabels: {
+      5: "Excellent",
+      4: "Bon",
+      3: "Neutre",
+      2: "Mauvais",
+      1: "Très mauvais",
+    } as Record<number, string>,
+    countPct: (count: number, pct: number) => `${count} (${pct} %)`,
+    responseRateOverTime: "Taux de réponse au fil du temps",
+    noResponses: "Aucune donnée de réponses pour l'instant.",
+    weekRatio: (responses: number, sent: number, rate: number) =>
+      `${responses}/${sent} (${rate} %)`,
+    legendSent: "Envoyées",
+    legendResponses: "Réponses",
+    topLocations: "Emplacements les plus performants",
+    noLocations: "Aucune donnée d'emplacement pour l'instant.",
+    responsesCount: (n: number) =>
+      n === 1 ? "1 réponse" : `${n} réponses`,
+    satisfactionTrend: "Tendance de satisfaction client",
+    noTrend: "Aucune donnée de tendance pour l'instant.",
+    scoreOutOf: (score: number) =>
+      `${score.toLocaleString("fr", {
+        minimumFractionDigits: 1,
+        maximumFractionDigits: 1,
+      })} / 5,0`,
+    helpTitle: "Comprendre votre analytique",
+    helpIntro:
+      "Tout ce qui s'affiche ici reflète la période choisie dans le sélecteur de dates (7, 30 ou 90 derniers jours, ou 12 derniers mois). Modifiez-la pour élargir ou réduire la vue.",
+    helpStatsTitle: "Les chiffres en haut",
+    helpStatsBody:
+      "Total envoyé et Réponses indiquent combien de demandes de rétroaction sont parties et sont revenues; Note moyenne est la moyenne des scores. Positifs et Négatifs répartissent ces réponses, et Récupérations ouvertes compte les billets à faible note encore en traitement.",
+    helpDistTitle: "Répartition des notes",
+    helpDistBody:
+      "Comment les réponses se répartissent de 1 à 5 étoiles, pour voir si les scores se concentrent vers le haut ou vers le bas.",
+    helpWeekTitle: "Taux de réponse par semaine",
+    helpWeekBody:
+      "Demandes envoyées par rapport aux réponses reçues chaque semaine — un indicateur de l'engagement de vos clients au fil du temps.",
+    helpLocTitle: "Meilleurs emplacements et tendance de satisfaction",
+    helpLocBody:
+      "La note moyenne par emplacement vous aide à repérer les sites qui demandent votre attention, tandis que la tendance de satisfaction montre si votre score global monte ou descend.",
+    gotIt: "Compris",
+  },
+  "de-CH": {
+    title: "Analysen",
+    subtitle: "Verfolgen Sie die Entwicklung Ihrer Reputation im Zeitverlauf.",
+    loadFailed: "Analysen konnten nicht geladen werden",
+    genericError: "Etwas ist schiefgelaufen",
+    errorTitle: "Analysen konnten nicht geladen werden",
+    retry: "Erneut versuchen",
+    help: "Hilfe",
+    range7: "Letzte 7 Tage",
+    range30: "Letzte 30 Tage",
+    range90: "Letzte 90 Tage",
+    range365: "Letzte 12 Monate",
+    statSent: "Gesamt gesendet",
+    statResponses: "Antworten",
+    responseRate: (pct: number) => `${pct} % Antwortquote`,
+    statAvgRating: "Durchschnittsbewertung",
+    statPositive: "Positiv (4-5)",
+    statNegative: "Negativ (1-2)",
+    statRecoveryOpen: "Offene Rückgewinnungen",
+    ratingValue: (n: number) => n.toFixed(1),
+    ratingDistribution: "Bewertungsverteilung",
+    noRatings: "Noch keine Bewertungsdaten verfügbar.",
+    ratingLabels: {
+      5: "Ausgezeichnet",
+      4: "Gut",
+      3: "Neutral",
+      2: "Schlecht",
+      1: "Sehr schlecht",
+    } as Record<number, string>,
+    countPct: (count: number, pct: number) => `${count} (${pct} %)`,
+    responseRateOverTime: "Antwortquote im Zeitverlauf",
+    noResponses: "Noch keine Antwortdaten verfügbar.",
+    weekRatio: (responses: number, sent: number, rate: number) =>
+      `${responses}/${sent} (${rate} %)`,
+    legendSent: "Gesendet",
+    legendResponses: "Antworten",
+    topLocations: "Leistungsstärkste Standorte",
+    noLocations: "Noch keine Standortdaten verfügbar.",
+    responsesCount: (n: number) =>
+      n === 1 ? "1 Antwort" : `${n} Antworten`,
+    satisfactionTrend: "Trend der Kundenzufriedenheit",
+    noTrend: "Noch keine Trenddaten verfügbar.",
+    scoreOutOf: (score: number) => `${score.toFixed(1)} / 5.0`,
+    helpTitle: "Ihre Analysen verstehen",
+    helpIntro:
+      "Alles hier bezieht sich auf den im Datumswähler gewählten Zeitraum (letzte 7, 30, 90 Tage oder 12 Monate). Ändern Sie ihn, um die Ansicht zu erweitern oder einzugrenzen.",
+    helpStatsTitle: "Die Zahlen oben",
+    helpStatsBody:
+      "Gesamt gesendet und Antworten zeigen, wie viele Feedback-Anfragen verschickt wurden und zurückkamen; Durchschnittsbewertung ist der Mittelwert. Positiv und Negativ teilen diese Antworten auf, und Offene Rückgewinnungen zählt Tickets mit tiefer Bewertung, die noch bearbeitet werden.",
+    helpDistTitle: "Bewertungsverteilung",
+    helpDistBody:
+      "Wie sich die Antworten auf 1 bis 5 Sterne verteilen — so sehen Sie, ob sich die Bewertungen oben oder unten häufen.",
+    helpWeekTitle: "Antwortquote pro Woche",
+    helpWeekBody:
+      "Gesendete Anfragen im Vergleich zu erhaltenen Antworten pro Woche — ein Hinweis darauf, wie engagiert Ihre Kunden im Zeitverlauf sind.",
+    helpLocTitle: "Top-Standorte und Zufriedenheitstrend",
+    helpLocBody:
+      "Die Durchschnittsbewertung pro Standort hilft Ihnen zu erkennen, welche Standorte Aufmerksamkeit benötigen, während der Zufriedenheitstrend zeigt, ob sich Ihr Gesamtwert nach oben oder unten bewegt.",
+    gotIt: "Verstanden",
+  },
+};
+
+// ─── /billing ───────────────────────────────────────────────────────────────
+const billingEn = {
+  title: "Billing",
+  subtitle: "Manage your subscription and view usage.",
+  loadFailed: "Failed to load billing data",
+  genericError: "Something went wrong",
+  errorTitle: "Failed to load billing",
+  retry: "Retry",
+  // Plan names (Starter, Growth, Agency, AI Visibility) are product names —
+  // they stay English in every locale; only the wording around them changes.
+  planTitle: (plan: string) => `${plan} Plan`,
+  statusLabels: {
+    ACTIVE: "Active",
+    TRIALING: "Trial",
+    PAST_DUE: "Past due",
+    CANCELED: "Canceled",
+    CANCELLED: "Canceled",
+    INACTIVE: "Inactive",
+    PENDING: "Pending",
+  } as Record<string, string>,
+  perMonth: "/month",
+  renews: (date: string) => `Renews ${date}`,
+  cancelsAtPeriodEnd: "Cancels at period end",
+  usageTitle: "Usage This Month",
+  feedbackRequests: "Feedback Requests",
+  usagePct: (pct: number) => `${pct}% of your monthly limit used`,
+  plansTitle: "Plans",
+  popular: "Popular",
+  currentPlan: "Current Plan",
+  upgradeTo: (plan: string) => `Upgrade to ${plan}`,
+  downgradeTo: (plan: string) => `Downgrade to ${plan}`,
+  confirmChange: (isUpgrade: boolean, plan: string, price: number) =>
+    `Are you sure you want to ${isUpgrade ? "upgrade" : "downgrade"} to the ${plan} plan ($${price}/mo)?`,
+  changeFailed: "Failed to change plan. Please try again.",
+  planFeatures: {
+    AI_VISIBILITY: [
+      "1 location",
+      "AI answer tracking across 4 engines",
+      "Prompt trends over time",
+      "Lost-recommendation alerts",
+      "AI Trust Score",
+      "Email support",
+    ],
+    STARTER: [
+      "1 location",
+      "300 feedback requests/mo",
+      "Email channel only",
+      "Basic analytics",
+      "Email support",
+    ],
+    GROWTH: [
+      "3 locations",
+      "2,000 feedback requests/mo",
+      "Email + SMS channels",
+      "Advanced analytics",
+      "Priority support",
+      "Custom templates",
+      "Team management (5 seats)",
+    ],
+    AGENCY: [
+      "20 locations",
+      "10,000 feedback requests/mo",
+      "Email + SMS channels",
+      "Full analytics suite",
+      "Dedicated support",
+      "Custom templates",
+      "Unlimited team seats",
+      "White-label branding",
+      "Custom domain",
+      "API access",
+    ],
+  } as Record<string, string[]>,
+};
+export type BillingCopy = typeof billingEn;
+
+export const BILLING_COPY: Record<DashLocale, BillingCopy> = {
+  en: billingEn,
+  fr: {
+    title: "Facturation",
+    subtitle: "Gérez votre abonnement et consultez votre utilisation.",
+    loadFailed: "Échec du chargement des données de facturation",
+    genericError: "Une erreur s'est produite",
+    errorTitle: "Échec du chargement de la facturation",
+    retry: "Réessayer",
+    planTitle: (plan: string) => `Forfait ${plan}`,
+    statusLabels: {
+      ACTIVE: "Actif",
+      TRIALING: "Essai",
+      PAST_DUE: "En souffrance",
+      CANCELED: "Annulé",
+      CANCELLED: "Annulé",
+      INACTIVE: "Inactif",
+      PENDING: "En attente",
+    } as Record<string, string>,
+    perMonth: "/mois",
+    renews: (date: string) => `Renouvellement le ${date}`,
+    cancelsAtPeriodEnd: "S'annule à la fin de la période",
+    usageTitle: "Utilisation ce mois-ci",
+    feedbackRequests: "Demandes de rétroaction",
+    usagePct: (pct: number) =>
+      `${pct} % de votre limite mensuelle utilisée`,
+    plansTitle: "Forfaits",
+    popular: "Populaire",
+    currentPlan: "Forfait actuel",
+    upgradeTo: (plan: string) => `Passer au forfait ${plan}`,
+    downgradeTo: (plan: string) => `Rétrograder vers ${plan}`,
+    confirmChange: (isUpgrade: boolean, plan: string, price: number) =>
+      isUpgrade
+        ? `Voulez-vous vraiment passer au forfait ${plan} (${price} $/mois)?`
+        : `Voulez-vous vraiment rétrograder vers le forfait ${plan} (${price} $/mois)?`,
+    changeFailed: "Échec du changement de forfait. Veuillez réessayer.",
+    planFeatures: {
+      AI_VISIBILITY: [
+        "1 emplacement",
+        "Suivi des réponses IA sur 4 moteurs",
+        "Tendances des requêtes au fil du temps",
+        "Alertes de recommandations perdues",
+        "AI Trust Score",
+        "Soutien par courriel",
+      ],
+      STARTER: [
+        "1 emplacement",
+        "300 demandes de rétroaction/mois",
+        "Canal courriel seulement",
+        "Analytique de base",
+        "Soutien par courriel",
+      ],
+      GROWTH: [
+        "3 emplacements",
+        "2 000 demandes de rétroaction/mois",
+        "Canaux courriel + SMS",
+        "Analytique avancée",
+        "Soutien prioritaire",
+        "Modèles personnalisés",
+        "Gestion d'équipe (5 sièges)",
+      ],
+      AGENCY: [
+        "20 emplacements",
+        "10 000 demandes de rétroaction/mois",
+        "Canaux courriel + SMS",
+        "Suite analytique complète",
+        "Soutien dédié",
+        "Modèles personnalisés",
+        "Sièges d'équipe illimités",
+        "Image de marque en marque blanche",
+        "Domaine personnalisé",
+        "Accès API",
+      ],
+    } as Record<string, string[]>,
+  },
+  "de-CH": {
+    title: "Abrechnung",
+    subtitle: "Verwalten Sie Ihr Abonnement und sehen Sie Ihre Nutzung ein.",
+    loadFailed: "Abrechnungsdaten konnten nicht geladen werden",
+    genericError: "Etwas ist schiefgelaufen",
+    errorTitle: "Abrechnung konnte nicht geladen werden",
+    retry: "Erneut versuchen",
+    planTitle: (plan: string) => `${plan}-Plan`,
+    statusLabels: {
+      ACTIVE: "Aktiv",
+      TRIALING: "Testphase",
+      PAST_DUE: "Überfällig",
+      CANCELED: "Gekündigt",
+      CANCELLED: "Gekündigt",
+      INACTIVE: "Inaktiv",
+      PENDING: "Ausstehend",
+    } as Record<string, string>,
+    perMonth: "/Monat",
+    renews: (date: string) => `Verlängert sich am ${date}`,
+    cancelsAtPeriodEnd: "Wird am Ende der Laufzeit gekündigt",
+    usageTitle: "Nutzung in diesem Monat",
+    feedbackRequests: "Feedback-Anfragen",
+    usagePct: (pct: number) =>
+      `${pct} % Ihres monatlichen Limits verbraucht`,
+    plansTitle: "Pläne",
+    popular: "Beliebt",
+    currentPlan: "Aktueller Plan",
+    upgradeTo: (plan: string) => `Upgrade auf ${plan}`,
+    downgradeTo: (plan: string) => `Downgrade auf ${plan}`,
+    confirmChange: (isUpgrade: boolean, plan: string, price: number) =>
+      isUpgrade
+        ? `Möchten Sie wirklich ein Upgrade auf den ${plan}-Plan durchführen ($${price}/Monat)?`
+        : `Möchten Sie wirklich ein Downgrade auf den ${plan}-Plan durchführen ($${price}/Monat)?`,
+    changeFailed:
+      "Planwechsel fehlgeschlagen. Bitte versuchen Sie es erneut.",
+    planFeatures: {
+      AI_VISIBILITY: [
+        "1 Standort",
+        "KI-Antwort-Tracking über 4 Engines",
+        "Prompt-Trends im Zeitverlauf",
+        "Warnungen bei verlorenen Empfehlungen",
+        "AI Trust Score",
+        "E-Mail-Support",
+      ],
+      STARTER: [
+        "1 Standort",
+        "300 Feedback-Anfragen/Monat",
+        "Nur E-Mail-Kanal",
+        "Basis-Analysen",
+        "E-Mail-Support",
+      ],
+      GROWTH: [
+        "3 Standorte",
+        "2'000 Feedback-Anfragen/Monat",
+        "E-Mail- + SMS-Kanäle",
+        "Erweiterte Analysen",
+        "Prioritäts-Support",
+        "Individuelle Vorlagen",
+        "Teamverwaltung (5 Plätze)",
+      ],
+      AGENCY: [
+        "20 Standorte",
+        "10'000 Feedback-Anfragen/Monat",
+        "E-Mail- + SMS-Kanäle",
+        "Komplette Analyse-Suite",
+        "Dedizierter Support",
+        "Individuelle Vorlagen",
+        "Unbegrenzte Teamplätze",
+        "White-Label-Branding",
+        "Eigene Domain",
+        "API-Zugriff",
+      ],
+    } as Record<string, string[]>,
+  },
+};
+
+// ─── /campaigns ─────────────────────────────────────────────────────────────
+const campaignsEn = {
+  // lifecycle banner
+  bannerTitle: "How a campaign works",
+  bannerTagline: "Send feedback requests to many customers at once",
+  svgAria:
+    "Campaign lifecycle: Draft, then Active which sends requests to many customers, then responses come in as reviews and recovery, then Completed.",
+  svgDraft: "Draft",
+  svgActive: "Active",
+  svgSendsToMany: "sends to many",
+  svgResponses: "Responses come in",
+  svgReviewsRecovery: "reviews + recovery",
+  svgCompleted: "Completed",
+  p1a: "A campaign sends feedback requests to many customers at once over email or SMS. Start it as a ",
+  p1strong1: "Draft",
+  p1b: ", set it ",
+  p1strong2: "Active",
+  p1c: " to send, and responses flow back as public review invites — with recovery follow-ups for anyone who needs attention.",
+  // errors
+  loadFailed: "Failed to load campaigns",
+  genericError: "Something went wrong",
+  createFailed: "Failed to create campaign",
+  createFailedAlert: "Failed to create campaign. Please try again.",
+  retry: "Retry",
+  // actions
+  createCampaign: "Create Campaign",
+  cancel: "Cancel",
+  // table
+  colName: "Name",
+  colStatus: "Status",
+  colChannel: "Channel",
+  colSent: "Sent",
+  colResponses: "Responses",
+  colLocation: "Location",
+  colCreated: "Created",
+  statusLabels: {
+    DRAFT: "Draft",
+    ACTIVE: "Active",
+    PAUSED: "Paused",
+    COMPLETED: "Completed",
+  } as Record<string, string>,
+  channelLabels: {
+    EMAIL: "Email",
+    SMS: "SMS",
+  } as Record<string, string>,
+  // empty state
+  emptyTitle: "No campaigns yet",
+  emptyDescription:
+    "Reach many customers at once instead of sending requests one by one.",
+  // create modal — inline help
+  helpTitle: "What is a campaign?",
+  helpBody:
+    "A campaign sends feedback requests to many customers at once. Give it a name, pick a channel, and it starts as a Draft you can review before sending. Every customer who responds is invited to leave a public review; low ratings also open a recovery follow-up.",
+  helpChannelStrong: "Channel",
+  helpChannelBody:
+    "— how requests are sent: Email reaches anyone with an email on file; SMS reaches those with a phone number.",
+  helpLocationStrong: "Location",
+  helpLocationBody:
+    "— optional; use it to target one of your business locations.",
+  // create modal — form
+  nameLabel: "Campaign Name",
+  namePlaceholder: "Q1 Feedback Campaign",
+  descriptionLabel: "Description",
+  descriptionPlaceholder: "Describe the purpose of this campaign...",
+  channelLabel: "Channel",
+  locationLabel: "Location (optional)",
+  locationPlaceholder: "New York, NY",
+};
+export type CampaignsCopy = typeof campaignsEn;
+
+export const CAMPAIGNS_COPY: Record<DashLocale, CampaignsCopy> = {
+  en: campaignsEn,
+  fr: {
+    bannerTitle: "Comment fonctionne une campagne",
+    bannerTagline: "Envoyez des demandes de rétroaction à plusieurs clients à la fois",
+    svgAria:
+      "Cycle de vie d'une campagne : Brouillon, puis Active qui envoie des demandes à plusieurs clients, puis les réponses arrivent sous forme d'avis et de récupération, puis Terminée.",
+    svgDraft: "Brouillon",
+    svgActive: "Active",
+    svgSendsToMany: "envoie à plusieurs",
+    svgResponses: "Les réponses arrivent",
+    svgReviewsRecovery: "avis + récupération",
+    svgCompleted: "Terminée",
+    p1a: "Une campagne envoie des demandes de rétroaction à plusieurs clients à la fois par courriel ou SMS. Commencez-la comme ",
+    p1strong1: "Brouillon",
+    p1b: ", passez-la à ",
+    p1strong2: "Active",
+    p1c: " pour l'envoyer, et les réponses reviennent sous forme d'invitations à laisser un avis public — avec des suivis de récupération pour quiconque a besoin d'attention.",
+    loadFailed: "Échec du chargement des campagnes",
+    genericError: "Une erreur est survenue",
+    createFailed: "Échec de la création de la campagne",
+    createFailedAlert: "Échec de la création de la campagne. Veuillez réessayer.",
+    retry: "Réessayer",
+    createCampaign: "Créer une campagne",
+    cancel: "Annuler",
+    colName: "Nom",
+    colStatus: "Statut",
+    colChannel: "Canal",
+    colSent: "Envois",
+    colResponses: "Réponses",
+    colLocation: "Emplacement",
+    colCreated: "Création",
+    statusLabels: {
+      DRAFT: "Brouillon",
+      ACTIVE: "Active",
+      PAUSED: "En pause",
+      COMPLETED: "Terminée",
+    } as Record<string, string>,
+    channelLabels: {
+      EMAIL: "Courriel",
+      SMS: "SMS",
+    } as Record<string, string>,
+    emptyTitle: "Aucune campagne pour l'instant",
+    emptyDescription:
+      "Rejoignez plusieurs clients à la fois au lieu d'envoyer des demandes une par une.",
+    helpTitle: "Qu'est-ce qu'une campagne?",
+    helpBody:
+      "Une campagne envoie des demandes de rétroaction à plusieurs clients à la fois. Donnez-lui un nom, choisissez un canal, et elle commence comme brouillon que vous pouvez réviser avant l'envoi. Chaque client qui répond est invité à laisser un avis public; les notes faibles ouvrent aussi un suivi de récupération.",
+    helpChannelStrong: "Canal",
+    helpChannelBody:
+      "— comment les demandes sont envoyées : le courriel rejoint quiconque a un courriel au dossier; le SMS rejoint ceux qui ont un numéro de téléphone.",
+    helpLocationStrong: "Emplacement",
+    helpLocationBody:
+      "— optionnel; utilisez-le pour cibler un de vos emplacements d'affaires.",
+    nameLabel: "Nom de la campagne",
+    namePlaceholder: "Campagne de rétroaction T1",
+    descriptionLabel: "Description",
+    descriptionPlaceholder: "Décrivez l'objectif de cette campagne...",
+    channelLabel: "Canal",
+    locationLabel: "Emplacement (optionnel)",
+    locationPlaceholder: "Montréal, QC",
+  },
+  "de-CH": {
+    bannerTitle: "So funktioniert eine Kampagne",
+    bannerTagline: "Senden Sie Feedback-Anfragen an viele Kunden gleichzeitig",
+    svgAria:
+      "Kampagnen-Lebenszyklus: Entwurf, dann Aktiv mit Versand an viele Kunden, dann treffen Antworten als Bewertungen und Rückgewinnung ein, dann Abgeschlossen.",
+    svgDraft: "Entwurf",
+    svgActive: "Aktiv",
+    svgSendsToMany: "sendet an viele",
+    svgResponses: "Antworten treffen ein",
+    svgReviewsRecovery: "Bewertungen + Rückgewinnung",
+    svgCompleted: "Abgeschlossen",
+    p1a: "Eine Kampagne sendet Feedback-Anfragen per E-Mail oder SMS an viele Kunden gleichzeitig. Beginnen Sie mit einem ",
+    p1strong1: "Entwurf",
+    p1b: ", stellen Sie ihn auf ",
+    p1strong2: "Aktiv",
+    p1c: ", um zu senden — die Antworten kommen als Einladungen zu öffentlichen Bewertungen zurück, mit Rückgewinnungs-Nachfassaktionen für alle, die Aufmerksamkeit brauchen.",
+    loadFailed: "Kampagnen konnten nicht geladen werden",
+    genericError: "Etwas ist schiefgelaufen",
+    createFailed: "Kampagne konnte nicht erstellt werden",
+    createFailedAlert:
+      "Kampagne konnte nicht erstellt werden. Bitte versuchen Sie es erneut.",
+    retry: "Erneut versuchen",
+    createCampaign: "Kampagne erstellen",
+    cancel: "Abbrechen",
+    colName: "Name",
+    colStatus: "Status",
+    colChannel: "Kanal",
+    colSent: "Gesendet",
+    colResponses: "Antworten",
+    colLocation: "Standort",
+    colCreated: "Erstellt",
+    statusLabels: {
+      DRAFT: "Entwurf",
+      ACTIVE: "Aktiv",
+      PAUSED: "Pausiert",
+      COMPLETED: "Abgeschlossen",
+    } as Record<string, string>,
+    channelLabels: {
+      EMAIL: "E-Mail",
+      SMS: "SMS",
+    } as Record<string, string>,
+    emptyTitle: "Noch keine Kampagnen",
+    emptyDescription:
+      "Erreichen Sie viele Kunden gleichzeitig, statt Anfragen einzeln zu versenden.",
+    helpTitle: "Was ist eine Kampagne?",
+    helpBody:
+      "Eine Kampagne sendet Feedback-Anfragen an viele Kunden gleichzeitig. Geben Sie ihr einen Namen, wählen Sie einen Kanal, und sie beginnt als Entwurf, den Sie vor dem Versand prüfen können. Jeder Kunde, der antwortet, wird eingeladen, eine öffentliche Bewertung zu hinterlassen; niedrige Bewertungen öffnen zusätzlich eine Rückgewinnungs-Nachfassaktion.",
+    helpChannelStrong: "Kanal",
+    helpChannelBody:
+      "— wie Anfragen gesendet werden: E-Mail erreicht alle mit hinterlegter E-Mail-Adresse; SMS erreicht alle mit Telefonnummer.",
+    helpLocationStrong: "Standort",
+    helpLocationBody:
+      "— optional; nutzen Sie ihn, um einen Ihrer Geschäftsstandorte gezielt anzusprechen.",
+    nameLabel: "Kampagnenname",
+    namePlaceholder: "Feedback-Kampagne Q1",
+    descriptionLabel: "Beschreibung",
+    descriptionPlaceholder: "Beschreiben Sie den Zweck dieser Kampagne...",
+    channelLabel: "Kanal",
+    locationLabel: "Standort (optional)",
+    locationPlaceholder: "Zürich",
+  },
+};
+
+// ─── /customers ─────────────────────────────────────────────────────────────
+const customersEn = {
+  statusLabels: {
+    NEW: "New",
+    CONTACTED: "Contacted",
+    SATISFIED: "Satisfied",
+    NEEDS_FOLLOWUP: "Needs Follow-up",
+    RECOVERED: "Recovered",
+    LOST: "Lost",
+  } as Record<string, string>,
+  lifecycle: {
+    title: "Customer lifecycle",
+    subtitle: "Status is set automatically from feedback",
+    ariaLabel:
+      "Lifecycle: New, then Contacted, then Satisfied or Needs follow-up, then Recovered. Status is set automatically from feedback and never limits a customer's ability to leave a public review.",
+    nodeNew: "New",
+    nodeContacted: "Contacted",
+    nodeSatisfied: "Satisfied",
+    nodeNeedsFollowUp: "Needs follow-up",
+    nodeRecovered1: "Recov-",
+    nodeRecovered2: "ered",
+    p1a: "A high rating marks a customer ",
+    p1strong1: "Satisfied",
+    p1b: "; a low rating marks them ",
+    p1strong2: "Needs follow-up",
+    p1c: " and opens a recovery ticket. Status only tells your team who to follow up with — every customer can always leave a public review.",
+  },
+  loadFailed: "Failed to load customers",
+  somethingWrong: "Something went wrong",
+  createFailed: "Failed to create customer",
+  createAlert: "Failed to create customer. Please try again.",
+  retry: "Retry",
+  fields: {
+    name: "Name",
+    email: "Email",
+    phone: "Phone",
+    status: "Status",
+    location: "Location",
+    created: "Created",
+  },
+  searchPlaceholder: "Search customers...",
+  searchButton: "Search",
+  addCustomer: "Add Customer",
+  emptyTitle: "No customers found",
+  emptyFilteredDescription: "Try adjusting your search terms.",
+  emptyDescription:
+    "Add customers to start collecting feedback and turning happy ones into public reviews.",
+  pageOf: (page: number, total: number) => `Page ${page} of ${total}`,
+  previous: "Previous",
+  next: "Next",
+  namePlaceholder: "John Doe",
+  emailPlaceholder: "john@example.com",
+  phonePlaceholder: "+1 (555) 123-4567",
+  locationPlaceholder: "New York, NY",
+  cancel: "Cancel",
+};
+export type CustomersCopy = typeof customersEn;
+
+export const CUSTOMERS_COPY: Record<DashLocale, CustomersCopy> = {
+  en: customersEn,
+  fr: {
+    statusLabels: {
+      NEW: "Nouveau",
+      CONTACTED: "Contacté",
+      SATISFIED: "Satisfait",
+      NEEDS_FOLLOWUP: "Suivi requis",
+      RECOVERED: "Récupéré",
+      LOST: "Perdu",
+    } as Record<string, string>,
+    lifecycle: {
+      title: "Cycle de vie du client",
+      subtitle: "Le statut est défini automatiquement à partir de la rétroaction",
+      ariaLabel:
+        "Cycle de vie : Nouveau, puis Contacté, puis Satisfait ou Suivi requis, puis Récupéré. Le statut est défini automatiquement à partir de la rétroaction et ne limite jamais la capacité d'un client à laisser un avis public.",
+      nodeNew: "Nouveau",
+      nodeContacted: "Contacté",
+      nodeSatisfied: "Satisfait",
+      nodeNeedsFollowUp: "Suivi requis",
+      nodeRecovered1: "Récu-",
+      nodeRecovered2: "péré",
+      p1a: "Une note élevée donne au client le statut ",
+      p1strong1: "Satisfait",
+      p1b: "; une note faible lui donne le statut ",
+      p1strong2: "Suivi requis",
+      p1c: " et ouvre un billet de récupération. Le statut indique seulement à votre équipe qui relancer — chaque client peut toujours laisser un avis public.",
+    },
+    loadFailed: "Échec du chargement des clients",
+    somethingWrong: "Une erreur est survenue",
+    createFailed: "Échec de la création du client",
+    createAlert: "Échec de la création du client. Veuillez réessayer.",
+    retry: "Réessayer",
+    fields: {
+      name: "Nom",
+      email: "Courriel",
+      phone: "Téléphone",
+      status: "Statut",
+      location: "Emplacement",
+      created: "Créé le",
+    },
+    searchPlaceholder: "Rechercher des clients...",
+    searchButton: "Rechercher",
+    addCustomer: "Ajouter un client",
+    emptyTitle: "Aucun client trouvé",
+    emptyFilteredDescription: "Essayez d'ajuster vos termes de recherche.",
+    emptyDescription:
+      "Ajoutez des clients pour commencer à recueillir de la rétroaction et transformer les clients satisfaits en avis publics.",
+    pageOf: (page: number, total: number) => `Page ${page} de ${total}`,
+    previous: "Précédent",
+    next: "Suivant",
+    namePlaceholder: "Jean Tremblay",
+    emailPlaceholder: "john@example.com",
+    phonePlaceholder: "+1 (555) 123-4567",
+    locationPlaceholder: "Montréal, QC",
+    cancel: "Annuler",
+  },
+  "de-CH": {
+    statusLabels: {
+      NEW: "Neu",
+      CONTACTED: "Kontaktiert",
+      SATISFIED: "Zufrieden",
+      NEEDS_FOLLOWUP: "Nachfassen nötig",
+      RECOVERED: "Zurückgewonnen",
+      LOST: "Verloren",
+    } as Record<string, string>,
+    lifecycle: {
+      title: "Kundenlebenszyklus",
+      subtitle: "Der Status wird automatisch aus dem Feedback gesetzt",
+      ariaLabel:
+        "Lebenszyklus: Neu, dann Kontaktiert, dann Zufrieden oder Nachfassen nötig, dann Zurückgewonnen. Der Status wird automatisch aus dem Feedback gesetzt und schränkt die Möglichkeit eines Kunden, eine öffentliche Bewertung zu hinterlassen, nie ein.",
+      nodeNew: "Neu",
+      nodeContacted: "Kontaktiert",
+      nodeSatisfied: "Zufrieden",
+      nodeNeedsFollowUp: "Nachfassen nötig",
+      nodeRecovered1: "Zurück-",
+      nodeRecovered2: "gewonnen",
+      p1a: "Eine hohe Bewertung markiert einen Kunden als ",
+      p1strong1: "Zufrieden",
+      p1b: "; eine tiefe Bewertung markiert ihn als ",
+      p1strong2: "Nachfassen nötig",
+      p1c: " und öffnet ein Rückgewinnungsticket. Der Status zeigt Ihrem Team nur, bei wem nachzufassen ist — jeder Kunde kann jederzeit eine öffentliche Bewertung hinterlassen.",
+    },
+    loadFailed: "Kunden konnten nicht geladen werden",
+    somethingWrong: "Etwas ist schiefgelaufen",
+    createFailed: "Kunde konnte nicht erstellt werden",
+    createAlert: "Kunde konnte nicht erstellt werden. Bitte versuchen Sie es erneut.",
+    retry: "Erneut versuchen",
+    fields: {
+      name: "Name",
+      email: "E-Mail",
+      phone: "Telefon",
+      status: "Status",
+      location: "Standort",
+      created: "Erstellt",
+    },
+    searchPlaceholder: "Kunden suchen...",
+    searchButton: "Suchen",
+    addCustomer: "Kunde hinzufügen",
+    emptyTitle: "Keine Kunden gefunden",
+    emptyFilteredDescription: "Passen Sie Ihre Suchbegriffe an.",
+    emptyDescription:
+      "Fügen Sie Kunden hinzu, um Feedback zu sammeln und zufriedene Kunden in öffentliche Bewertungen zu verwandeln.",
+    pageOf: (page: number, total: number) => `Seite ${page} von ${total}`,
+    previous: "Zurück",
+    next: "Weiter",
+    namePlaceholder: "Hans Muster",
+    emailPlaceholder: "john@example.com",
+    phonePlaceholder: "+1 (555) 123-4567",
+    locationPlaceholder: "Zürich",
+    cancel: "Abbrechen",
+  },
+};
+
+// ─── /dashboard ─────────────────────────────────────────────────────────────
+const dashboardEn = {
+  // Help modal
+  helpTitle: "Understanding your dashboard",
+  diagramAria:
+    "Metrics funnel: sent requests to responses to positive or negative feedback, with negative opening a recovery ticket",
+  svgSent: "Sent",
+  svgRequests: "requests",
+  svgResponses: "Responses",
+  svgPositive: "Positive (4-5)",
+  svgNegative: "Negative (1-2)",
+  svgRecovery1: "Recovery",
+  svgRecovery2: "ticket",
+  help: {
+    p1a: "The cards at the top track your feedback funnel.",
+    p1strong1: " Total Sent",
+    p1b: " is how many feedback requests went out;",
+    p1strong2: " Responses",
+    p1c: " is how many customers replied;",
+    p1strong3: " Avg Rating",
+    p1d: " is the mean score across responses.",
+    p2a: "Responses split into ",
+    p2positive: "Positive (4–5)",
+    p2b: " and",
+    p2negative: " Negative (1–2)",
+    p2c: ". A negative response opens a ",
+    p2ticket: "recovery ticket",
+    p2d: " so your team can follow up — that count is ",
+    p2strong: "Recovery Open",
+    p2e: ".",
+    p3strong1: "Recent Feedback",
+    p3a: " lists the latest responses; use",
+    p3strong2: " Quick Actions",
+    p3b: " to send a request, review recovery tickets, or manage customers.",
+  },
+  gotIt: "Got it",
+  // Load / error states
+  loadAnalyticsFailed: "Failed to load analytics",
+  genericError: "Something went wrong",
+  loadDashboardFailed: "Failed to load dashboard",
+  retry: "Retry",
+  // Header
+  overview: "Overview",
+  helpButton: "Help",
+  // Stat cards
+  statTotalSent: "Total Sent",
+  statResponses: "Responses",
+  statAvgRating: "Avg Rating",
+  statPositive: "Positive (4-5)",
+  statNegative: "Negative (1-2)",
+  statRecoveryOpen: "Recovery Open",
+  responseRate: (pct: number) => `${pct}% response rate`,
+  // Recent feedback
+  recentFeedback: "Recent Feedback",
+  viewAll: "View all",
+  noFeedback: "No feedback yet. Send your first feedback request to get started.",
+  statusLabels: {
+    PENDING: "Pending",
+    SUBMITTED: "Submitted",
+    EXPIRED: "Expired",
+  } as Record<string, string>,
+  // Quick actions
+  quickActions: "Quick Actions",
+  sendFeedbackRequest: "Send Feedback Request",
+  viewRecoveryTickets: "View Recovery Tickets",
+  manageCustomers: "Manage Customers",
+  createCampaign: "Create Campaign",
+};
+export type DashboardCopy = typeof dashboardEn;
+
+export const DASHBOARD_COPY: Record<DashLocale, DashboardCopy> = {
+  en: dashboardEn,
+  fr: {
+    helpTitle: "Comprendre votre tableau de bord",
+    diagramAria:
+      "Entonnoir des indicateurs : demandes envoyées vers réponses, vers rétroaction positive ou négative, la négative ouvrant un billet de récupération",
+    svgSent: "Demandes",
+    svgRequests: "envoyées",
+    svgResponses: "Réponses",
+    svgPositive: "Positives (4-5)",
+    svgNegative: "Négatives (1-2)",
+    svgRecovery1: "Billet de",
+    svgRecovery2: "récupération",
+    help: {
+      p1a: "Les cartes en haut suivent votre entonnoir de rétroaction.",
+      p1strong1: " Total envoyé",
+      p1b: " est le nombre de demandes de rétroaction envoyées;",
+      p1strong2: " Réponses",
+      p1c: " est le nombre de clients qui ont répondu;",
+      p1strong3: " Note moyenne",
+      p1d: " est la note moyenne de l'ensemble des réponses.",
+      p2a: "Les réponses se répartissent en ",
+      p2positive: "Positives (4–5)",
+      p2b: " et",
+      p2negative: " Négatives (1–2)",
+      p2c: ". Une réponse négative ouvre un ",
+      p2ticket: "billet de récupération",
+      p2d: " pour que votre équipe fasse un suivi — ce nombre correspond à ",
+      p2strong: "Récupérations ouvertes",
+      p2e: ".",
+      p3strong1: "Rétroaction récente",
+      p3a: " liste les dernières réponses; utilisez",
+      p3strong2: " Actions rapides",
+      p3b: " pour envoyer une demande, consulter les billets de récupération ou gérer les clients.",
+    },
+    gotIt: "Compris",
+    loadAnalyticsFailed: "Échec du chargement de l'analytique",
+    genericError: "Une erreur est survenue",
+    loadDashboardFailed: "Échec du chargement du tableau de bord",
+    retry: "Réessayer",
+    overview: "Vue d'ensemble",
+    helpButton: "Aide",
+    statTotalSent: "Total envoyé",
+    statResponses: "Réponses",
+    statAvgRating: "Note moyenne",
+    statPositive: "Positives (4-5)",
+    statNegative: "Négatives (1-2)",
+    statRecoveryOpen: "Récupérations ouvertes",
+    responseRate: (pct: number) => `${pct} % de taux de réponse`,
+    recentFeedback: "Rétroaction récente",
+    viewAll: "Voir tout",
+    noFeedback:
+      "Aucune rétroaction pour l'instant. Envoyez votre première demande de rétroaction pour commencer.",
+    statusLabels: {
+      PENDING: "En attente",
+      SUBMITTED: "Soumis",
+      EXPIRED: "Expiré",
+    } as Record<string, string>,
+    quickActions: "Actions rapides",
+    sendFeedbackRequest: "Envoyer une demande de rétroaction",
+    viewRecoveryTickets: "Voir les billets de récupération",
+    manageCustomers: "Gérer les clients",
+    createCampaign: "Créer une campagne",
+  },
+  "de-CH": {
+    helpTitle: "Ihr Dashboard verstehen",
+    diagramAria:
+      "Kennzahlen-Trichter: gesendete Anfragen zu Antworten, zu positivem oder negativem Feedback; negatives Feedback öffnet ein Rückgewinnungsticket",
+    svgSent: "Gesendete",
+    svgRequests: "Anfragen",
+    svgResponses: "Antworten",
+    svgPositive: "Positiv (4-5)",
+    svgNegative: "Negativ (1-2)",
+    svgRecovery1: "Rückgewinnungs-",
+    svgRecovery2: "ticket",
+    help: {
+      p1a: "Die Karten oben zeigen Ihren Feedback-Trichter.",
+      p1strong1: " Gesamt gesendet",
+      p1b: " ist die Anzahl der versendeten Feedback-Anfragen;",
+      p1strong2: " Antworten",
+      p1c: " ist die Anzahl der Kunden, die geantwortet haben;",
+      p1strong3: " Durchschnittsbewertung",
+      p1d: " ist die mittlere Bewertung über alle Antworten.",
+      p2a: "Die Antworten teilen sich auf in ",
+      p2positive: "Positiv (4–5)",
+      p2b: " und",
+      p2negative: " Negativ (1–2)",
+      p2c: ". Eine negative Antwort öffnet ein ",
+      p2ticket: "Rückgewinnungsticket",
+      p2d: ", damit Ihr Team nachfassen kann — diese Anzahl ist ",
+      p2strong: "Offene Rückgewinnungen",
+      p2e: ".",
+      p3strong1: "Aktuelles Feedback",
+      p3a: " zeigt die neuesten Antworten; nutzen Sie",
+      p3strong2: " Schnellaktionen",
+      p3b: ", um eine Anfrage zu senden, Rückgewinnungstickets zu prüfen oder Kunden zu verwalten.",
+    },
+    gotIt: "Verstanden",
+    loadAnalyticsFailed: "Analysen konnten nicht geladen werden",
+    genericError: "Etwas ist schiefgelaufen",
+    loadDashboardFailed: "Dashboard konnte nicht geladen werden",
+    retry: "Erneut versuchen",
+    overview: "Übersicht",
+    helpButton: "Hilfe",
+    statTotalSent: "Gesamt gesendet",
+    statResponses: "Antworten",
+    statAvgRating: "Durchschnittsbewertung",
+    statPositive: "Positiv (4-5)",
+    statNegative: "Negativ (1-2)",
+    statRecoveryOpen: "Offene Rückgewinnungen",
+    responseRate: (pct: number) => `${pct}% Antwortquote`,
+    recentFeedback: "Aktuelles Feedback",
+    viewAll: "Alle anzeigen",
+    noFeedback:
+      "Noch kein Feedback. Senden Sie Ihre erste Feedback-Anfrage, um zu starten.",
+    statusLabels: {
+      PENDING: "Ausstehend",
+      SUBMITTED: "Übermittelt",
+      EXPIRED: "Abgelaufen",
+    } as Record<string, string>,
+    quickActions: "Schnellaktionen",
+    sendFeedbackRequest: "Feedback-Anfrage senden",
+    viewRecoveryTickets: "Rückgewinnungstickets anzeigen",
+    manageCustomers: "Kunden verwalten",
+    createCampaign: "Kampagne erstellen",
+  },
+};
+
+// ─── GettingStarted (shared onboarding component) ───────────────────────────
+const gettingStartedEn = {
+  welcomeTitle: "Welcome to EchoRank 360",
+  welcomeP1:
+    "EchoRank helps you collect customer feedback, turn happy customers into public reviews, and catch unhappy ones before they post — plus see how visible your business is to AI answer engines.",
+  welcomeStartStrong: "Start here:",
+  welcomeStartRest:
+    " add a customer, then send your first feedback request. The checklist on your dashboard walks you through the rest — it checks itself off as you go.",
+  exploreButton: "Explore on my own",
+  addFirstCustomer: "Add my first customer",
+  cardTitle: "Get started with EchoRank",
+  progress: (done: number, total: number) =>
+    `${done} of ${total} done — finish setup to start collecting reviews.`,
+  dismissAria: "Dismiss getting started",
+  optional: "(optional)",
+};
+export type GettingStartedCopy = typeof gettingStartedEn;
+
+export const GETTING_STARTED_COPY: Record<DashLocale, GettingStartedCopy> = {
+  en: gettingStartedEn,
+  fr: {
+    welcomeTitle: "Bienvenue dans EchoRank 360",
+    welcomeP1:
+      "EchoRank vous aide à recueillir la rétroaction de vos clients, à transformer les clients satisfaits en avis publics et à intercepter les clients insatisfaits avant qu'ils publient — en plus de voir la visibilité de votre entreprise auprès des moteurs de réponse IA.",
+    welcomeStartStrong: "Commencez ici :",
+    welcomeStartRest:
+      " ajoutez un client, puis envoyez votre première demande de rétroaction. La liste de vérification de votre tableau de bord vous guide pour la suite — elle se coche au fur et à mesure.",
+    exploreButton: "Explorer par moi-même",
+    addFirstCustomer: "Ajouter mon premier client",
+    cardTitle: "Premiers pas avec EchoRank",
+    progress: (done: number, total: number) =>
+      `${done} sur ${total} terminées — terminez la configuration pour commencer à recueillir des avis.`,
+    dismissAria: "Masquer les premiers pas",
+    optional: "(facultatif)",
+  },
+  "de-CH": {
+    welcomeTitle: "Willkommen bei EchoRank 360",
+    welcomeP1:
+      "EchoRank hilft Ihnen, Kundenfeedback zu sammeln, zufriedene Kunden in öffentliche Bewertungen zu verwandeln und unzufriedene abzufangen, bevor sie etwas veröffentlichen — und zu sehen, wie sichtbar Ihr Unternehmen für KI-Antwortmaschinen ist.",
+    welcomeStartStrong: "Starten Sie hier:",
+    welcomeStartRest:
+      " Fügen Sie einen Kunden hinzu und senden Sie dann Ihre erste Feedback-Anfrage. Die Checkliste auf Ihrem Dashboard führt Sie durch den Rest — sie hakt sich von selbst ab.",
+    exploreButton: "Selbst erkunden",
+    addFirstCustomer: "Meinen ersten Kunden hinzufügen",
+    cardTitle: "Erste Schritte mit EchoRank",
+    progress: (done: number, total: number) =>
+      `${done} von ${total} erledigt — schliessen Sie die Einrichtung ab, um Bewertungen zu sammeln.`,
+    dismissAria: "Erste Schritte ausblenden",
+    optional: "(optional)",
+  },
+};
+
+// ─── ExtensionHelpButton (shared help component) ────────────────────────────
+const extensionHelpEn = {
+  label: "How to use it",
+  modalTitle: "How to import your reviews",
+  intro:
+    "The Review Importer is a small add-on for your browser. When you're looking at your reviews on Google, Facebook, or Trustpilot, it copies them into EchoRank with one click. You don't type anything in — it does the work for you.",
+  setupHeading: "First-time setup (you only do this once)",
+  step1Title: "Install the importer",
+  step1Body:
+    "Add it to Microsoft Edge, Brave, Opera, or Vivaldi. You'll then see a small EchoRank button near the top-right of your browser, by the address bar. If it's hidden, click the puzzle-piece icon up there and pin it.",
+  step2Title: "Create your connection key",
+  step2a:
+    "On this Extension page, give a key a name you'll recognise (like “My laptop”) and create it. A code starting with ",
+  step2b:
+    " appears. Copy it right away — for your security it's shown only once. Lost it? Just make a new one.",
+  step3Title: "Paste the key into the importer",
+  step3a: "Click the EchoRank button in your browser, then ",
+  step3strongSettings: "Settings",
+  step3b: ". Paste your key, leave the web address as it is, and click ",
+  step3strongSave: "Save",
+  step3c: ". The top should now show a green dot and the word ",
+  step3strongConnected: "Connected",
+  step3d: ".",
+  useHeading: "Bringing in reviews (any time)",
+  step4Title: "Open your business's review page",
+  step4a: "Go to the real page where your reviews live. For Google, open ",
+  step4b:
+    ", search your business by name, and click it so the full listing with reviews opens.",
+  step5Title: "Click Scan & Import Reviews",
+  step5a: "Open the EchoRank button again. On the right kind of page, the ",
+  step5strong: "Scan & Import Reviews",
+  step5b:
+    " button comes to life — click it. The Found / Imported counters will move, and you're done.",
+  step6Title: "See them here",
+  step6a: "Your imported reviews appear under ",
+  step6strong: "Monitoring",
+  step6b: ", sorted and ready to track.",
+  lightsHeading: "The two status lights tell you everything",
+  lightsIntro:
+    "When you open the importer, both lines at the top must be green before the Scan button will work.",
+  light1Strong: "Connected",
+  light1Text: " — your account is linked. If this is red, redo step 3.",
+  light2Strong: "Open a Google, Facebook, or Trustpilot review page",
+  light2Text:
+    " — you're not on a review page it recognises yet. A regular search results page won't work, even if it shows reviews. Go to your business's actual page and this turns green.",
+  reassurance:
+    "Your login is safe — the importer never sees your Google, Facebook, or Trustpilot password. It only reads the reviews already shown on the page, and sends them to your own EchoRank account. Scanning the same page again later brings in new reviews and skips ones you already have.",
+  gotIt: "Got it",
+};
+export type ExtensionHelpCopy = typeof extensionHelpEn;
+
+export const EXTENSION_HELP_COPY: Record<DashLocale, ExtensionHelpCopy> = {
+  en: extensionHelpEn,
+  fr: {
+    label: "Comment l'utiliser",
+    modalTitle: "Comment importer vos avis",
+    intro:
+      "L'importateur d'avis est un petit module complémentaire pour votre navigateur. Quand vous consultez vos avis sur Google, Facebook ou Trustpilot, il les copie dans EchoRank en un clic. Vous n'avez rien à saisir — il fait le travail pour vous.",
+    setupHeading: "Configuration initiale (à faire une seule fois)",
+    step1Title: "Installer l'importateur",
+    step1Body:
+      "Ajoutez-le à Microsoft Edge, Brave, Opera ou Vivaldi. Vous verrez ensuite un petit bouton EchoRank en haut à droite de votre navigateur, près de la barre d'adresse. S'il est masqué, cliquez sur l'icône de pièce de casse-tête et épinglez-le.",
+    step2Title: "Créer votre clé de connexion",
+    step2a:
+      "Sur cette page Extension, donnez à une clé un nom que vous reconnaîtrez (comme Mon portable) et créez-la. Un code commençant par ",
+    step2b:
+      " apparaît. Copiez-le tout de suite — pour votre sécurité, il n'est affiché qu'une seule fois. Vous l'avez perdue? Créez-en simplement une nouvelle.",
+    step3Title: "Coller la clé dans l'importateur",
+    step3a: "Cliquez sur le bouton EchoRank dans votre navigateur, puis sur ",
+    step3strongSettings: "Paramètres",
+    step3b:
+      ". Collez votre clé, laissez l'adresse Web telle quelle, puis cliquez sur ",
+    step3strongSave: "Enregistrer",
+    step3c: ". Le haut devrait maintenant afficher un point vert et le mot ",
+    step3strongConnected: "Connecté",
+    step3d: ".",
+    useHeading: "Importer des avis (en tout temps)",
+    step4Title: "Ouvrir la page d'avis de votre entreprise",
+    step4a:
+      "Rendez-vous sur la vraie page où se trouvent vos avis. Pour Google, ouvrez ",
+    step4b:
+      ", recherchez votre entreprise par son nom et cliquez dessus pour ouvrir la fiche complète avec les avis.",
+    step5Title: "Cliquer sur Scan & Import Reviews",
+    step5a:
+      "Ouvrez de nouveau le bouton EchoRank. Sur le bon type de page, le bouton ",
+    step5strong: "Scan & Import Reviews",
+    step5b:
+      " s'active — cliquez dessus. Les compteurs Found / Imported avanceront, et c'est terminé.",
+    step6Title: "Les retrouver ici",
+    step6a: "Vos avis importés apparaissent sous ",
+    step6strong: "Surveillance",
+    step6b: ", triés et prêts à être suivis.",
+    lightsHeading: "Les deux voyants d'état vous disent tout",
+    lightsIntro:
+      "Quand vous ouvrez l'importateur, les deux lignes du haut doivent être vertes pour que le bouton Scan fonctionne.",
+    light1Strong: "Connecté",
+    light1Text:
+      " — votre compte est lié. Si ce voyant est rouge, refaites l'étape 3.",
+    light2Strong: "Ouvrez une page d'avis Google, Facebook ou Trustpilot",
+    light2Text:
+      " — vous n'êtes pas encore sur une page d'avis reconnue. Une page de résultats de recherche ne fonctionnera pas, même si elle affiche des avis. Allez sur la vraie page de votre entreprise et ce voyant deviendra vert.",
+    reassurance:
+      "Vos identifiants sont en sécurité — l'importateur ne voit jamais votre mot de passe Google, Facebook ou Trustpilot. Il lit seulement les avis déjà affichés sur la page et les envoie dans votre propre compte EchoRank. Scanner la même page plus tard importe les nouveaux avis et ignore ceux que vous avez déjà.",
+    gotIt: "Compris",
+  },
+  "de-CH": {
+    label: "So funktioniert es",
+    modalTitle: "So importieren Sie Ihre Bewertungen",
+    intro:
+      "Der Review Importer ist ein kleines Add-on für Ihren Browser. Wenn Sie Ihre Bewertungen auf Google, Facebook oder Trustpilot ansehen, kopiert er sie mit einem Klick in EchoRank. Sie müssen nichts eintippen — er erledigt die Arbeit für Sie.",
+    setupHeading: "Erstmalige Einrichtung (nur einmal nötig)",
+    step1Title: "Importer installieren",
+    step1Body:
+      "Fügen Sie ihn zu Microsoft Edge, Brave, Opera oder Vivaldi hinzu. Danach sehen Sie oben rechts in Ihrem Browser, neben der Adressleiste, eine kleine EchoRank-Schaltfläche. Ist sie ausgeblendet, klicken Sie dort auf das Puzzleteil-Symbol und heften Sie sie an.",
+    step2Title: "Ihren Verbindungsschlüssel erstellen",
+    step2a:
+      "Geben Sie auf dieser Erweiterungsseite einem Schlüssel einen Namen, den Sie wiedererkennen (z. B. «Mein Laptop»), und erstellen Sie ihn. Ein Code, der mit ",
+    step2b:
+      " beginnt, wird angezeigt. Kopieren Sie ihn sofort — aus Sicherheitsgründen wird er nur einmal angezeigt. Verloren? Erstellen Sie einfach einen neuen.",
+    step3Title: "Schlüssel in den Importer einfügen",
+    step3a:
+      "Klicken Sie auf die EchoRank-Schaltfläche in Ihrem Browser und dann auf ",
+    step3strongSettings: "Einstellungen",
+    step3b:
+      ". Fügen Sie Ihren Schlüssel ein, lassen Sie die Webadresse unverändert und klicken Sie auf ",
+    step3strongSave: "Speichern",
+    step3c: ". Oben sollten nun ein grüner Punkt und das Wort ",
+    step3strongConnected: "Verbunden",
+    step3d: " angezeigt werden.",
+    useHeading: "Bewertungen importieren (jederzeit)",
+    step4Title: "Die Bewertungsseite Ihres Unternehmens öffnen",
+    step4a:
+      "Gehen Sie auf die echte Seite, auf der Ihre Bewertungen stehen. Für Google öffnen Sie ",
+    step4b:
+      ", suchen Sie Ihr Unternehmen nach Namen und klicken Sie darauf, damit der vollständige Eintrag mit den Bewertungen erscheint.",
+    step5Title: "Auf Scan & Import Reviews klicken",
+    step5a:
+      "Öffnen Sie die EchoRank-Schaltfläche erneut. Auf der richtigen Seite wird die Schaltfläche ",
+    step5strong: "Scan & Import Reviews",
+    step5b:
+      " aktiv — klicken Sie darauf. Die Zähler Found / Imported bewegen sich, und Sie sind fertig.",
+    step6Title: "Hier ansehen",
+    step6a: "Ihre importierten Bewertungen erscheinen unter ",
+    step6strong: "Überwachung",
+    step6b: ", sortiert und bereit zur Nachverfolgung.",
+    lightsHeading: "Die zwei Statusleuchten sagen Ihnen alles",
+    lightsIntro:
+      "Wenn Sie den Importer öffnen, müssen beide Zeilen oben grün sein, bevor die Scan-Schaltfläche funktioniert.",
+    light1Strong: "Verbunden",
+    light1Text:
+      " — Ihr Konto ist verknüpft. Ist diese Anzeige rot, wiederholen Sie Schritt 3.",
+    light2Strong:
+      "Öffnen Sie eine Google-, Facebook- oder Trustpilot-Bewertungsseite",
+    light2Text:
+      " — Sie befinden sich noch nicht auf einer erkannten Bewertungsseite. Eine normale Suchergebnisseite funktioniert nicht, auch wenn sie Bewertungen anzeigt. Gehen Sie auf die eigentliche Seite Ihres Unternehmens, dann wird diese Anzeige grün.",
+    reassurance:
+      "Ihre Anmeldedaten sind sicher — der Importer sieht Ihr Google-, Facebook- oder Trustpilot-Passwort nie. Er liest nur die Bewertungen, die bereits auf der Seite angezeigt werden, und sendet sie an Ihr eigenes EchoRank-Konto. Wenn Sie dieselbe Seite später erneut scannen, werden neue Bewertungen importiert und bereits vorhandene übersprungen.",
+    gotIt: "Verstanden",
+  },
+};
+
+// ─── /feedback ──────────────────────────────────────────────────────────────
+const feedbackEn = {
+  statusLabels: {
+    PENDING: "Pending",
+    SUBMITTED: "Submitted",
+    EXPIRED: "Expired",
+  } as Record<string, string>,
+  noRating: "No rating",
+  ratingAria: (rating: number) => `${rating} out of 5`,
+  pipeline: {
+    title: "/ Feedback pipeline",
+    currentView: "Current view",
+    requestsSent: "Requests sent",
+    awaitingReply: "Awaiting reply",
+    responded: "Responded",
+    promoters: "Promoters (4–5★)",
+    needsRecovery: "Needs recovery",
+    note: "Every response is sorted as it lands. A 4 or 5 marks a promoter you can invite to post a public review; a 2 or below opens a recovery task so your team reaches the customer first.",
+  },
+  loadFailed: "Failed to load feedback",
+  somethingWrong: "Something went wrong",
+  sendFailed: "Failed to send request",
+  sendAlert: "Failed to send feedback request. Please try again.",
+  unknownCustomer: "Unknown",
+  retry: "Retry",
+  eyebrow: "/ Intelligence · Feedback",
+  subtitle: "Responses across every request, sorted as they arrive.",
+  avgRating: "Avg rating",
+  responseRate: "Response rate",
+  searchLabel: "Search",
+  searchPlaceholder: "Name, email, or comment",
+  statusFilterLabel: "Status",
+  ratingFilterLabel: "Rating",
+  allStatuses: "All Statuses",
+  allRatings: "All Ratings",
+  starsOption: (n: number) => (n === 1 ? "1 Star" : `${n} Stars`),
+  sendRequestButton: "Send Feedback Request",
+  nothingMatches: "Nothing matches",
+  widenFilters: "Widen the status, rating, or search to see more responses.",
+  emptyTitle: "No feedback found",
+  emptyDescription:
+    "Send your first request — happy customers become public reviews, and unhappy ones get caught before they post.",
+  atRisk: "At risk",
+  detailTitle: "Feedback Details",
+  detailCustomer: "Customer",
+  detailRating: "Rating",
+  detailStatus: "Status",
+  detailComment: "Comment",
+  noComment: "No comment provided",
+  detailCreated: "Created",
+  detailSubmitted: "Submitted",
+  searchCustomersLabel: "Search customers",
+  customerSearchPlaceholder: "Search by name or email...",
+  noCustomersFound: "No customers found",
+  cancel: "Cancel",
+  sendRequest: "Send Request",
+};
+export type FeedbackCopy = typeof feedbackEn;
+
+export const FEEDBACK_COPY: Record<DashLocale, FeedbackCopy> = {
+  en: feedbackEn,
+  fr: {
+    statusLabels: {
+      PENDING: "En attente",
+      SUBMITTED: "Soumis",
+      EXPIRED: "Expiré",
+    } as Record<string, string>,
+    noRating: "Aucune note",
+    ratingAria: (rating: number) => `${rating} sur 5`,
+    pipeline: {
+      title: "/ Pipeline de rétroaction",
+      currentView: "Vue actuelle",
+      requestsSent: "Demandes envoyées",
+      awaitingReply: "En attente de réponse",
+      responded: "Ont répondu",
+      promoters: "Promoteurs (4–5★)",
+      needsRecovery: "Récupération requise",
+      note: "Chaque réponse est triée dès sa réception. Une note de 4 ou 5 marque un promoteur que vous pouvez inviter à publier un avis public; une note de 2 ou moins ouvre une tâche de récupération pour que votre équipe joigne le client en premier.",
+    },
+    loadFailed: "Échec du chargement de la rétroaction",
+    somethingWrong: "Une erreur est survenue",
+    sendFailed: "Échec de l'envoi de la demande",
+    sendAlert: "Échec de l'envoi de la demande de rétroaction. Veuillez réessayer.",
+    unknownCustomer: "Inconnu",
+    retry: "Réessayer",
+    eyebrow: "/ Intelligence · Rétroaction",
+    subtitle: "Les réponses à toutes vos demandes, triées à mesure qu'elles arrivent.",
+    avgRating: "Note moyenne",
+    responseRate: "Taux de réponse",
+    searchLabel: "Rechercher",
+    searchPlaceholder: "Nom, courriel ou commentaire",
+    statusFilterLabel: "Statut",
+    ratingFilterLabel: "Note",
+    allStatuses: "Tous les statuts",
+    allRatings: "Toutes les notes",
+    starsOption: (n: number) => (n === 1 ? "1 étoile" : `${n} étoiles`),
+    sendRequestButton: "Envoyer une demande de rétroaction",
+    nothingMatches: "Aucun résultat",
+    widenFilters: "Élargissez le statut, la note ou la recherche pour voir plus de réponses.",
+    emptyTitle: "Aucune rétroaction trouvée",
+    emptyDescription:
+      "Envoyez votre première demande — les clients satisfaits deviennent des avis publics, et les clients insatisfaits sont interceptés avant de publier.",
+    atRisk: "À risque",
+    detailTitle: "Détails de la rétroaction",
+    detailCustomer: "Client",
+    detailRating: "Note",
+    detailStatus: "Statut",
+    detailComment: "Commentaire",
+    noComment: "Aucun commentaire fourni",
+    detailCreated: "Créé le",
+    detailSubmitted: "Soumis le",
+    searchCustomersLabel: "Rechercher des clients",
+    customerSearchPlaceholder: "Rechercher par nom ou courriel...",
+    noCustomersFound: "Aucun client trouvé",
+    cancel: "Annuler",
+    sendRequest: "Envoyer la demande",
+  },
+  "de-CH": {
+    statusLabels: {
+      PENDING: "Ausstehend",
+      SUBMITTED: "Übermittelt",
+      EXPIRED: "Abgelaufen",
+    } as Record<string, string>,
+    noRating: "Keine Bewertung",
+    ratingAria: (rating: number) => `${rating} von 5`,
+    pipeline: {
+      title: "/ Feedback-Pipeline",
+      currentView: "Aktuelle Ansicht",
+      requestsSent: "Anfragen gesendet",
+      awaitingReply: "Antwort ausstehend",
+      responded: "Geantwortet",
+      promoters: "Promotoren (4–5★)",
+      needsRecovery: "Rückgewinnung nötig",
+      note: "Jede Antwort wird bei Eingang einsortiert. Eine 4 oder 5 markiert einen Promotor, den Sie einladen können, eine öffentliche Bewertung zu veröffentlichen; eine 2 oder tiefer öffnet eine Rückgewinnungsaufgabe, damit Ihr Team den Kunden zuerst erreicht.",
+    },
+    loadFailed: "Feedback konnte nicht geladen werden",
+    somethingWrong: "Etwas ist schiefgelaufen",
+    sendFailed: "Anfrage konnte nicht gesendet werden",
+    sendAlert: "Feedback-Anfrage konnte nicht gesendet werden. Bitte versuchen Sie es erneut.",
+    unknownCustomer: "Unbekannt",
+    retry: "Erneut versuchen",
+    eyebrow: "/ Intelligence · Feedback",
+    subtitle: "Antworten auf alle Anfragen, sortiert bei Eingang.",
+    avgRating: "Durchschnittsbewertung",
+    responseRate: "Antwortquote",
+    searchLabel: "Suchen",
+    searchPlaceholder: "Name, E-Mail oder Kommentar",
+    statusFilterLabel: "Status",
+    ratingFilterLabel: "Bewertung",
+    allStatuses: "Alle Status",
+    allRatings: "Alle Bewertungen",
+    starsOption: (n: number) => (n === 1 ? "1 Stern" : `${n} Sterne`),
+    sendRequestButton: "Feedback-Anfrage senden",
+    nothingMatches: "Keine Treffer",
+    widenFilters: "Erweitern Sie Status, Bewertung oder Suche, um mehr Antworten zu sehen.",
+    emptyTitle: "Kein Feedback gefunden",
+    emptyDescription:
+      "Senden Sie Ihre erste Anfrage — zufriedene Kunden werden zu öffentlichen Bewertungen, und unzufriedene werden abgefangen, bevor sie posten.",
+    atRisk: "Gefährdet",
+    detailTitle: "Feedback-Details",
+    detailCustomer: "Kunde",
+    detailRating: "Bewertung",
+    detailStatus: "Status",
+    detailComment: "Kommentar",
+    noComment: "Kein Kommentar vorhanden",
+    detailCreated: "Erstellt",
+    detailSubmitted: "Übermittelt",
+    searchCustomersLabel: "Kunden suchen",
+    customerSearchPlaceholder: "Nach Name oder E-Mail suchen...",
+    noCustomersFound: "Keine Kunden gefunden",
+    cancel: "Abbrechen",
+    sendRequest: "Anfrage senden",
+  },
+};
+
+// ─── /imports ───────────────────────────────────────────────────────────────
+const importsEn = {
+  title: "Data Sources",
+  subtitle:
+    "Import reviews from CSV files. Every imported review runs through the same sentiment, risk, and reputation analysis as monitored reviews.",
+  uploadFailed: "Upload failed",
+  commitFailed: "Could not start import",
+  gatedTitle: "CSV import isn't on your plan",
+  gatedDescription:
+    "Importing reviews from CSV is available on Growth and above. Upgrade to feed your own review history into the analysis engine.",
+  uploadTitle: "Upload a CSV",
+  uploadSubtitle:
+    "Export reviews from Google, Facebook, Trustpilot, or any tool, and drop the file here. We'll detect the columns and let you map them before importing.",
+  dropHint: "CSV files up to 5MB",
+  chooseFile: "Choose file",
+  headerRow: "First row is a header",
+  mapTitle: (filename: string) => `Map columns — ${filename}`,
+  rowsDetected: (n: number) =>
+    `${n.toLocaleString("en")} ${n === 1 ? "row" : "rows"} detected. Match each field to a column in your file. Map at least the review text or rating.`,
+  cancel: "Cancel",
+  platformLabel: "Source platform",
+  ignoreOption: "— ignore —",
+  fieldLabels: {
+    content: "Review text",
+    rating: "Rating",
+    author: "Reviewer name",
+    publishedAt: "Date",
+    url: "Review URL",
+    authorUrl: "Reviewer URL",
+    externalId: "Native review ID",
+    language: "Language",
+  } as Record<string, string>,
+  platformLabels: {
+    GOOGLE: "Google",
+    FACEBOOK: "Facebook",
+    TRUSTPILOT: "Trustpilot",
+    YELP: "Yelp",
+    APP_STORE: "App Store",
+    CUSTOM: "Custom / Other",
+  } as Record<string, string>,
+  mapHint: "Map a review text or rating column to continue",
+  importButton: (n: number) =>
+    `Import ${n.toLocaleString("en")} ${n === 1 ? "row" : "rows"}`,
+  historyTitle: "Import history",
+  loading: "Loading…",
+  emptyTitle: "No imports yet",
+  emptyDescription:
+    "Uploaded files will appear here with their sync status and record counts.",
+  colFile: "File",
+  colPlatform: "Platform",
+  colStatus: "Status",
+  colImported: "Imported",
+  colDuplicates: "Duplicates",
+  colFailed: "Failed",
+  colWhen: "When",
+  statusLabels: {
+    PENDING_MAPPING: "pending mapping",
+    QUEUED: "queued",
+    PROCESSING: "processing",
+    COMPLETED: "completed",
+    PARTIAL: "partial",
+    FAILED: "failed",
+    CANCELLED: "cancelled",
+  } as Record<string, string>,
+};
+export type ImportsCopy = typeof importsEn;
+
+export const IMPORTS_COPY: Record<DashLocale, ImportsCopy> = {
+  en: importsEn,
+  fr: {
+    title: "Sources de données",
+    subtitle:
+      "Importez des avis à partir de fichiers CSV. Chaque avis importé passe par la même analyse de sentiment, de risque et de réputation que les avis surveillés.",
+    uploadFailed: "Échec du téléversement",
+    commitFailed: "Impossible de démarrer l'importation",
+    gatedTitle: "L'importation CSV n'est pas incluse dans votre forfait",
+    gatedDescription:
+      "L'importation d'avis à partir de fichiers CSV est offerte avec le forfait Growth et les forfaits supérieurs. Passez au forfait supérieur pour alimenter le moteur d'analyse avec votre propre historique d'avis.",
+    uploadTitle: "Téléverser un fichier CSV",
+    uploadSubtitle:
+      "Exportez vos avis depuis Google, Facebook, Trustpilot ou tout autre outil, puis déposez le fichier ici. Nous détecterons les colonnes et vous pourrez les associer avant l'importation.",
+    dropHint: "Fichiers CSV jusqu'à 5 Mo",
+    chooseFile: "Choisir un fichier",
+    headerRow: "La première ligne est un en-tête",
+    mapTitle: (filename: string) => `Associer les colonnes — ${filename}`,
+    rowsDetected: (n: number) =>
+      `${n.toLocaleString("fr")} ${n === 1 ? "ligne détectée" : "lignes détectées"}. Associez chaque champ à une colonne de votre fichier. Associez au moins le texte de l'avis ou la note.`,
+    cancel: "Annuler",
+    platformLabel: "Plateforme source",
+    ignoreOption: "— ignorer —",
+    fieldLabels: {
+      content: "Texte de l'avis",
+      rating: "Note",
+      author: "Nom de l'auteur",
+      publishedAt: "Date",
+      url: "URL de l'avis",
+      authorUrl: "URL de l'auteur",
+      externalId: "Identifiant natif de l'avis",
+      language: "Langue",
+    } as Record<string, string>,
+    platformLabels: {
+      GOOGLE: "Google",
+      FACEBOOK: "Facebook",
+      TRUSTPILOT: "Trustpilot",
+      YELP: "Yelp",
+      APP_STORE: "App Store",
+      CUSTOM: "Personnalisé / Autre",
+    } as Record<string, string>,
+    mapHint: "Associez une colonne de texte d'avis ou de note pour continuer",
+    importButton: (n: number) =>
+      `Importer ${n.toLocaleString("fr")} ${n === 1 ? "ligne" : "lignes"}`,
+    historyTitle: "Historique des importations",
+    loading: "Chargement…",
+    emptyTitle: "Aucune importation pour l'instant",
+    emptyDescription:
+      "Les fichiers téléversés apparaîtront ici avec leur statut de synchronisation et le nombre d'enregistrements.",
+    colFile: "Fichier",
+    colPlatform: "Plateforme",
+    colStatus: "Statut",
+    colImported: "Importés",
+    colDuplicates: "Doublons",
+    colFailed: "Échecs",
+    colWhen: "Quand",
+    statusLabels: {
+      PENDING_MAPPING: "association en attente",
+      QUEUED: "en file d'attente",
+      PROCESSING: "en traitement",
+      COMPLETED: "terminée",
+      PARTIAL: "partielle",
+      FAILED: "échouée",
+      CANCELLED: "annulée",
+    } as Record<string, string>,
+  },
+  "de-CH": {
+    title: "Datenquellen",
+    subtitle:
+      "Importieren Sie Bewertungen aus CSV-Dateien. Jede importierte Bewertung durchläuft dieselbe Stimmungs-, Risiko- und Reputationsanalyse wie überwachte Bewertungen.",
+    uploadFailed: "Hochladen fehlgeschlagen",
+    commitFailed: "Import konnte nicht gestartet werden",
+    gatedTitle: "CSV-Import ist in Ihrem Plan nicht enthalten",
+    gatedDescription:
+      "Der Import von Bewertungen aus CSV-Dateien ist ab dem Growth-Plan verfügbar. Führen Sie ein Upgrade durch, um Ihren eigenen Bewertungsverlauf in die Analyse-Engine einzuspeisen.",
+    uploadTitle: "CSV-Datei hochladen",
+    uploadSubtitle:
+      "Exportieren Sie Bewertungen aus Google, Facebook, Trustpilot oder einem anderen Tool und legen Sie die Datei hier ab. Wir erkennen die Spalten und Sie können sie vor dem Import zuordnen.",
+    dropHint: "CSV-Dateien bis 5 MB",
+    chooseFile: "Datei auswählen",
+    headerRow: "Erste Zeile ist eine Kopfzeile",
+    mapTitle: (filename: string) => `Spalten zuordnen — ${filename}`,
+    rowsDetected: (n: number) =>
+      `${n.toLocaleString("de-CH")} ${n === 1 ? "Zeile erkannt" : "Zeilen erkannt"}. Ordnen Sie jedes Feld einer Spalte in Ihrer Datei zu. Ordnen Sie mindestens den Bewertungstext oder die Bewertung zu.`,
+    cancel: "Abbrechen",
+    platformLabel: "Quellplattform",
+    ignoreOption: "— ignorieren —",
+    fieldLabels: {
+      content: "Bewertungstext",
+      rating: "Bewertung",
+      author: "Name des Bewerters",
+      publishedAt: "Datum",
+      url: "Bewertungs-URL",
+      authorUrl: "Bewerter-URL",
+      externalId: "Native Bewertungs-ID",
+      language: "Sprache",
+    } as Record<string, string>,
+    platformLabels: {
+      GOOGLE: "Google",
+      FACEBOOK: "Facebook",
+      TRUSTPILOT: "Trustpilot",
+      YELP: "Yelp",
+      APP_STORE: "App Store",
+      CUSTOM: "Benutzerdefiniert / Andere",
+    } as Record<string, string>,
+    mapHint:
+      "Ordnen Sie eine Spalte mit Bewertungstext oder Bewertung zu, um fortzufahren",
+    importButton: (n: number) =>
+      `${n.toLocaleString("de-CH")} ${n === 1 ? "Zeile" : "Zeilen"} importieren`,
+    historyTitle: "Importverlauf",
+    loading: "Wird geladen…",
+    emptyTitle: "Noch keine Importe",
+    emptyDescription:
+      "Hochgeladene Dateien erscheinen hier mit ihrem Synchronisierungsstatus und der Anzahl der Datensätze.",
+    colFile: "Datei",
+    colPlatform: "Plattform",
+    colStatus: "Status",
+    colImported: "Importiert",
+    colDuplicates: "Duplikate",
+    colFailed: "Fehlgeschlagen",
+    colWhen: "Wann",
+    statusLabels: {
+      PENDING_MAPPING: "Zuordnung ausstehend",
+      QUEUED: "In Warteschlange",
+      PROCESSING: "In Bearbeitung",
+      COMPLETED: "Abgeschlossen",
+      PARTIAL: "Teilweise",
+      FAILED: "Fehlgeschlagen",
+      CANCELLED: "Abgebrochen",
+    } as Record<string, string>,
+  },
+};
+
+// ─── ImportsHelpButton (shared component, /imports) ─────────────────────────
+const importsHelpEn = {
+  fullGuide: "Full guide",
+  howItWorks: "How it works",
+  modalTitle: "How to import your reviews",
+  iframeTitle: "How to import reviews — guide",
+  openFullPage: "Open as a full page →",
+};
+export type ImportsHelpCopy = typeof importsHelpEn;
+
+export const IMPORTS_HELP_COPY: Record<DashLocale, ImportsHelpCopy> = {
+  en: importsHelpEn,
+  fr: {
+    fullGuide: "Guide complet",
+    howItWorks: "Comment ça fonctionne",
+    modalTitle: "Comment importer vos avis",
+    iframeTitle: "Comment importer des avis — guide",
+    openFullPage: "Ouvrir en pleine page →",
+  },
+  "de-CH": {
+    fullGuide: "Vollständige Anleitung",
+    howItWorks: "So funktioniert es",
+    modalTitle: "So importieren Sie Ihre Bewertungen",
+    iframeTitle: "Bewertungen importieren — Anleitung",
+    openFullPage: "Als eigene Seite öffnen →",
+  },
+};
+
+// ─── /intelligence/competitors (server page header) ─────────────────────────
+const competitorsPageEn = {
+  eyebrow: "Intelligence",
+  title: "Competitors",
+  subtitle:
+    "Daily rating and review-count snapshots. Momentum alerts fire when a competitor clearly outpaces your own review velocity.",
+};
+export type CompetitorsPageCopy = typeof competitorsPageEn;
+
+export const COMPETITORS_PAGE_COPY: Record<DashLocale, CompetitorsPageCopy> = {
+  en: competitorsPageEn,
+  fr: {
+    eyebrow: "Intelligence",
+    title: "Concurrents",
+    subtitle:
+      "Instantanés quotidiens des notes et du nombre d'avis. Des alertes de momentum se déclenchent lorsqu'un concurrent dépasse clairement votre propre rythme d'avis.",
+  },
+  "de-CH": {
+    eyebrow: "Intelligence",
+    title: "Mitbewerber",
+    subtitle:
+      "Tägliche Momentaufnahmen von Note und Bewertungsanzahl. Momentum-Alarme werden ausgelöst, wenn ein Mitbewerber Ihr eigenes Bewertungstempo deutlich übertrifft.",
+  },
+};
+
+// ─── /intelligence/risk (server page header) ────────────────────────────────
+const riskPageEn = {
+  eyebrow: "Intelligence",
+  title: "Reputation risk",
+  subtitle:
+    "Unified score across reviews, private feedback and AI visibility — recomputed hourly.",
+};
+export type RiskPageCopy = typeof riskPageEn;
+
+export const RISK_PAGE_COPY: Record<DashLocale, RiskPageCopy> = {
+  en: riskPageEn,
+  fr: {
+    eyebrow: "Intelligence",
+    title: "Risque de réputation",
+    subtitle:
+      "Score unifié combinant les avis, la rétroaction privée et la visibilité IA — recalculé toutes les heures.",
+  },
+  "de-CH": {
+    eyebrow: "Intelligence",
+    title: "Reputationsrisiko",
+    subtitle:
+      "Einheitlicher Score über Bewertungen, privates Feedback und KI-Sichtbarkeit — stündlich neu berechnet.",
+  },
+};
+
+// ─── CompetitorsPanel (src/components/intelligence/CompetitorsPanel.tsx) ────
+const competitorsPanelEn = {
+  // errors / confirms
+  placesUnavailable: "Places search unavailable — add manually below.",
+  searchFailed: "Search failed.",
+  httpError: (status: number) => `HTTP ${status}`,
+  removeConfirm: (name: string) => `Remove ${name} and its snapshot history?`,
+  loadFailed: "Competitor data didn't load.",
+  retry: "Retry",
+  // add section
+  trackTitle: "Track a competitor",
+  ownPace: "your review pace (7d):",
+  searchPlaceholderPlaces: "Business name + city (Places search)",
+  searchPlaceholderManual: "Competitor name (manual — no Places key set)",
+  searching: "Searching…",
+  search: "Search",
+  add: "Add",
+  noMatches: "No matches.",
+  reviewsCount: (n: number) => `${n} review${n === 1 ? "" : "s"}`,
+  track: "Track",
+  // table section
+  tableTitle: "Competitors — daily snapshots",
+  refreshing: "Refreshing…",
+  refreshNow: "Refresh now",
+  emptyTable:
+    "No competitors tracked yet. Add one above — snapshots run daily at 06:30 UTC.",
+  placesAuto: "places · auto",
+  manualSnapshots: "manual snapshots",
+  lastDay: (day: string) => `last ${day}`,
+  noDataYet: "no data yet",
+  suffix7d: " 7d",
+  suffix30d: " 30d",
+  revAbbrev: "rev",
+  momentumTitle: (n: number) =>
+    `Momentum vs your pace — alert at +${n} reviews/7d`,
+  momentum: "momentum",
+  pause: "Pause",
+  resume: "Resume",
+  remove: "Remove",
+};
+export type CompetitorsPanelCopy = typeof competitorsPanelEn;
+
+export const COMPETITORS_PANEL_COPY: Record<DashLocale, CompetitorsPanelCopy> = {
+  en: competitorsPanelEn,
+  fr: {
+    placesUnavailable: "Recherche Places indisponible — ajoutez manuellement ci-dessous.",
+    searchFailed: "Échec de la recherche.",
+    httpError: (status: number) => `HTTP ${status}`,
+    removeConfirm: (name: string) =>
+      `Retirer ${name} et son historique d'instantanés?`,
+    loadFailed: "Les données des concurrents n'ont pas pu être chargées.",
+    retry: "Réessayer",
+    trackTitle: "Suivre un concurrent",
+    ownPace: "votre rythme d'avis (7 j) :",
+    searchPlaceholderPlaces: "Nom de l'entreprise + ville (recherche Places)",
+    searchPlaceholderManual: "Nom du concurrent (manuel — aucune clé Places configurée)",
+    searching: "Recherche…",
+    search: "Rechercher",
+    add: "Ajouter",
+    noMatches: "Aucun résultat.",
+    reviewsCount: (n: number) => `${n} avis`,
+    track: "Suivre",
+    tableTitle: "Concurrents — instantanés quotidiens",
+    refreshing: "Actualisation…",
+    refreshNow: "Actualiser maintenant",
+    emptyTable:
+      "Aucun concurrent suivi pour le moment. Ajoutez-en un ci-dessus — les instantanés sont pris chaque jour à 06:30 UTC.",
+    placesAuto: "places · auto",
+    manualSnapshots: "instantanés manuels",
+    lastDay: (day: string) => `dernier ${day}`,
+    noDataYet: "aucune donnée pour le moment",
+    suffix7d: " 7 j",
+    suffix30d: " 30 j",
+    revAbbrev: "avis",
+    momentumTitle: (n: number) =>
+      `Momentum par rapport à votre rythme — alerte à +${n} avis/7 j`,
+    momentum: "momentum",
+    pause: "Suspendre",
+    resume: "Reprendre",
+    remove: "Retirer",
+  },
+  "de-CH": {
+    placesUnavailable: "Places-Suche nicht verfügbar — fügen Sie unten manuell hinzu.",
+    searchFailed: "Suche fehlgeschlagen.",
+    httpError: (status: number) => `HTTP ${status}`,
+    removeConfirm: (name: string) =>
+      `${name} und den zugehörigen Verlauf der Momentaufnahmen entfernen?`,
+    loadFailed: "Mitbewerberdaten konnten nicht geladen werden.",
+    retry: "Erneut versuchen",
+    trackTitle: "Einen Mitbewerber verfolgen",
+    ownPace: "Ihr Bewertungstempo (7 T):",
+    searchPlaceholderPlaces: "Firmenname + Stadt (Places-Suche)",
+    searchPlaceholderManual: "Name des Mitbewerbers (manuell — kein Places-Schlüssel hinterlegt)",
+    searching: "Suche läuft…",
+    search: "Suchen",
+    add: "Hinzufügen",
+    noMatches: "Keine Treffer.",
+    reviewsCount: (n: number) => `${n} Bewertung${n === 1 ? "" : "en"}`,
+    track: "Verfolgen",
+    tableTitle: "Mitbewerber — tägliche Momentaufnahmen",
+    refreshing: "Wird aktualisiert…",
+    refreshNow: "Jetzt aktualisieren",
+    emptyTable:
+      "Noch keine Mitbewerber erfasst. Fügen Sie oben einen hinzu — Momentaufnahmen laufen täglich um 06:30 UTC.",
+    placesAuto: "places · auto",
+    manualSnapshots: "manuelle Momentaufnahmen",
+    lastDay: (day: string) => `zuletzt ${day}`,
+    noDataYet: "noch keine Daten",
+    suffix7d: " 7 T",
+    suffix30d: " 30 T",
+    revAbbrev: "Bew.",
+    momentumTitle: (n: number) =>
+      `Momentum im Vergleich zu Ihrem Tempo — Alarm bei +${n} Bewertungen/7 T`,
+    momentum: "Momentum",
+    pause: "Pausieren",
+    resume: "Fortsetzen",
+    remove: "Entfernen",
+  },
+};
+
+// ─── RiskDashboard (src/components/intelligence/RiskDashboard.tsx) ──────────
+const riskDashboardEn = {
+  // gauge
+  gaugeAria: (score: number, grade: string) =>
+    `Reputation risk ${score} out of 100, grade ${grade}`,
+  gradeLabel: (grade: string) => `GRADE ${grade}`,
+  gaugeCaption: "REPUTATION RISK · 0–100",
+  // sparkline
+  historyEmpty: "History builds as daily snapshots accumulate.",
+  sparklineAria: "90-day risk trend",
+  // deltas
+  delta7: "7-day",
+  delta30: "30-day",
+  // config panel
+  httpError: (status: number) => `HTTP ${status}`,
+  revenueLabel: "Monthly revenue (for exposure estimate)",
+  revenuePlaceholder: "e.g. 50000",
+  emailsLabel: "Alert emails (comma-separated)",
+  alertsEnabled: "Email alerts enabled",
+  saving: "Saving…",
+  saveConfig: "Save configuration",
+  // load / empty states
+  loadFailed: "Risk data didn't load.",
+  retry: "Retry",
+  emptyTitle: "No signals ingested yet.",
+  emptyHint:
+    "Run the backfill script to fold existing reviews, feedback and audits into the spine.",
+  recomputing: "Recomputing…",
+  recomputeNow: "Recompute now",
+  // components card
+  componentsTitle: "Risk components",
+  componentLabels: {
+    negativePressure: {
+      label: "Negative pressure",
+      hint: "Time-decayed weight of negative signals",
+    },
+    velocity: { label: "Velocity", hint: "This week vs 4-week baseline" },
+    criticalRecent: {
+      label: "Criticals",
+      hint: "High-severity signals, last 30 days",
+    },
+    visibility: { label: "AI visibility", hint: "Inverse of latest audit score" },
+    stagnation: {
+      label: "Signal coverage",
+      hint: "Data drought is a blind spot",
+    },
+  },
+  noData: "no data",
+  trendTitle: "90-day trend",
+  // drivers card
+  driversTitle: "Top risk drivers",
+  driversEmpty: "No negative contributors in the window. Quiet is good.",
+  pctOfPressure: (pct: number) => `${pct}% of pressure`,
+  sev: (s: string) => `sev ${s}`,
+  // revenue card
+  revenueAtRiskTitle: "Revenue at risk",
+  close: "Close",
+  configure: "Configure",
+  formulaTitle: (elasticity: number) =>
+    `monthlyRevenue × ${elasticity} × max(0, score − 20) / 100`,
+  perMonthAbbrev: "/mo",
+  exposureSummary: (score: number, money: string) =>
+    `Estimated exposure at risk ${score} on ${money} monthly revenue.`,
+  revenueUnset: "Set monthly revenue to quantify what the current risk level costs.",
+  // alerts card
+  alertsTitle: "Alerts — last 30 days",
+  alertsEmpty:
+    "No alerts fired. Thresholds: score crossing 60/80, 7-day jump ≥ 15, new critical signals.",
+  // footer
+  signalsInWindow: (n: number) => `${n} signal${n === 1 ? "" : "s"} in window`,
+  computedAtTime: (time: string) => `computed ${time}`,
+};
+export type RiskDashboardCopy = typeof riskDashboardEn;
+
+export const RISK_DASHBOARD_COPY: Record<DashLocale, RiskDashboardCopy> = {
+  en: riskDashboardEn,
+  fr: {
+    gaugeAria: (score: number, grade: string) =>
+      `Risque de réputation ${score} sur 100, cote ${grade}`,
+    gradeLabel: (grade: string) => `COTE ${grade}`,
+    gaugeCaption: "RISQUE DE RÉPUTATION · 0–100",
+    historyEmpty:
+      "L'historique se construit à mesure que les instantanés quotidiens s'accumulent.",
+    sparklineAria: "Tendance du risque sur 90 jours",
+    delta7: "7 jours",
+    delta30: "30 jours",
+    httpError: (status: number) => `HTTP ${status}`,
+    revenueLabel: "Revenu mensuel (pour l'estimation de l'exposition)",
+    revenuePlaceholder: "p. ex. 50000",
+    emailsLabel: "Courriels d'alerte (séparés par des virgules)",
+    alertsEnabled: "Alertes par courriel activées",
+    saving: "Enregistrement…",
+    saveConfig: "Enregistrer la configuration",
+    loadFailed: "Les données de risque n'ont pas pu être chargées.",
+    retry: "Réessayer",
+    emptyTitle: "Aucun signal ingéré pour le moment.",
+    emptyHint:
+      "Exécutez le script de rattrapage pour intégrer les avis, la rétroaction et les audits existants.",
+    recomputing: "Recalcul…",
+    recomputeNow: "Recalculer maintenant",
+    componentsTitle: "Composantes du risque",
+    componentLabels: {
+      negativePressure: {
+        label: "Pression négative",
+        hint: "Poids des signaux négatifs, pondéré selon le temps écoulé",
+      },
+      velocity: {
+        label: "Vélocité",
+        hint: "Cette semaine par rapport à la référence de 4 semaines",
+      },
+      criticalRecent: {
+        label: "Signaux critiques",
+        hint: "Signaux de gravité élevée, 30 derniers jours",
+      },
+      visibility: {
+        label: "Visibilité IA",
+        hint: "Inverse du dernier score d'audit",
+      },
+      stagnation: {
+        label: "Couverture des signaux",
+        hint: "Un manque de données est un angle mort",
+      },
+    },
+    noData: "aucune donnée",
+    trendTitle: "Tendance sur 90 jours",
+    driversTitle: "Principaux facteurs de risque",
+    driversEmpty:
+      "Aucun contributeur négatif dans la fenêtre. Le calme est bon signe.",
+    pctOfPressure: (pct: number) => `${pct} % de la pression`,
+    sev: (s: string) => `grav. ${s}`,
+    revenueAtRiskTitle: "Revenu à risque",
+    close: "Fermer",
+    configure: "Configurer",
+    formulaTitle: (elasticity: number) =>
+      `monthlyRevenue × ${elasticity} × max(0, score − 20) / 100`,
+    perMonthAbbrev: "/mois",
+    exposureSummary: (score: number, money: string) =>
+      `Exposition estimée au niveau de risque ${score} sur un revenu mensuel de ${money}.`,
+    revenueUnset:
+      "Définissez le revenu mensuel pour quantifier ce que coûte le niveau de risque actuel.",
+    alertsTitle: "Alertes — 30 derniers jours",
+    alertsEmpty:
+      "Aucune alerte déclenchée. Seuils : score franchissant 60/80, hausse de ≥ 15 sur 7 jours, nouveaux signaux critiques.",
+    signalsInWindow: (n: number) =>
+      `${n} ${n === 1 ? "signal" : "signaux"} dans la fenêtre`,
+    computedAtTime: (time: string) => `calculé à ${time}`,
+  },
+  "de-CH": {
+    gaugeAria: (score: number, grade: string) =>
+      `Reputationsrisiko ${score} von 100, Note ${grade}`,
+    gradeLabel: (grade: string) => `NOTE ${grade}`,
+    gaugeCaption: "REPUTATIONSRISIKO · 0–100",
+    historyEmpty:
+      "Der Verlauf baut sich auf, während sich tägliche Momentaufnahmen ansammeln.",
+    sparklineAria: "Risikotrend über 90 Tage",
+    delta7: "7 Tage",
+    delta30: "30 Tage",
+    httpError: (status: number) => `HTTP ${status}`,
+    revenueLabel: "Monatlicher Umsatz (für die Schätzung der Exponierung)",
+    revenuePlaceholder: "z. B. 50000",
+    emailsLabel: "Alarm-E-Mails (durch Kommas getrennt)",
+    alertsEnabled: "E-Mail-Alarme aktiviert",
+    saving: "Wird gespeichert…",
+    saveConfig: "Konfiguration speichern",
+    loadFailed: "Risikodaten konnten nicht geladen werden.",
+    retry: "Erneut versuchen",
+    emptyTitle: "Noch keine Signale erfasst.",
+    emptyHint:
+      "Führen Sie das Backfill-Skript aus, um bestehende Bewertungen, Feedback und Audits einzuspeisen.",
+    recomputing: "Wird neu berechnet…",
+    recomputeNow: "Jetzt neu berechnen",
+    componentsTitle: "Risikokomponenten",
+    componentLabels: {
+      negativePressure: {
+        label: "Negativer Druck",
+        hint: "Zeitlich abklingende Gewichtung negativer Signale",
+      },
+      velocity: {
+        label: "Geschwindigkeit",
+        hint: "Diese Woche im Vergleich zur 4-Wochen-Basis",
+      },
+      criticalRecent: {
+        label: "Kritische Signale",
+        hint: "Signale mit hohem Schweregrad, letzte 30 Tage",
+      },
+      visibility: {
+        label: "KI-Sichtbarkeit",
+        hint: "Kehrwert des letzten Audit-Scores",
+      },
+      stagnation: {
+        label: "Signalabdeckung",
+        hint: "Datenmangel ist ein blinder Fleck",
+      },
+    },
+    noData: "keine Daten",
+    trendTitle: "90-Tage-Trend",
+    driversTitle: "Wichtigste Risikotreiber",
+    driversEmpty:
+      "Keine negativen Beiträge im Zeitfenster. Ruhe ist ein gutes Zeichen.",
+    pctOfPressure: (pct: number) => `${pct} % des Drucks`,
+    sev: (s: string) => `Schwere ${s}`,
+    revenueAtRiskTitle: "Gefährdeter Umsatz",
+    close: "Schliessen",
+    configure: "Konfigurieren",
+    formulaTitle: (elasticity: number) =>
+      `monthlyRevenue × ${elasticity} × max(0, score − 20) / 100`,
+    perMonthAbbrev: "/Mt.",
+    exposureSummary: (score: number, money: string) =>
+      `Geschätzte Exponierung bei Risikostufe ${score} auf ${money} Monatsumsatz.`,
+    revenueUnset:
+      "Legen Sie den Monatsumsatz fest, um zu beziffern, was das aktuelle Risikoniveau kostet.",
+    alertsTitle: "Alarme — letzte 30 Tage",
+    alertsEmpty:
+      "Keine Alarme ausgelöst. Schwellenwerte: Score überschreitet 60/80, 7-Tage-Anstieg ≥ 15, neue kritische Signale.",
+    signalsInWindow: (n: number) => `${n} Signal${n === 1 ? "" : "e"} im Fenster`,
+    computedAtTime: (time: string) => `berechnet um ${time}`,
+  },
+};
+
+// ─── /intelligence ──────────────────────────────────────────────────────────
+const intelligenceEn = {
+  title: "Reputation Intelligence",
+  subtitle:
+    "AI-powered insights into your brand reputation and customer risk signals.",
+  last7Days: "Last 7 days",
+  last30Days: "Last 30 days",
+  last90Days: "Last 90 days",
+  loadFailed: "Failed to load intelligence data",
+  genericError: "Something went wrong",
+  errorTitle: "Failed to load intelligence data",
+  retry: "Retry",
+  // Score ring
+  outOf100: "/ 100",
+  riskBadge: (level: string) => `${level} RISK`,
+  riskLabels: {
+    LOW: "LOW",
+    MODERATE: "MODERATE",
+    HIGH: "HIGH",
+    CRITICAL: "CRITICAL",
+  } as Record<string, string>,
+  trendLabels: {
+    improving: "Improving",
+    declining: "Declining",
+    stable: "Stable",
+  } as Record<string, string>,
+  basedOn: (n: number, pct: string) =>
+    `Based on ${n} data point${n === 1 ? "" : "s"} (${pct}% confidence)`,
+  // Stat cards
+  sentimentScoreTitle: "Sentiment Score",
+  healthy: "Healthy",
+  needsAttention: "Needs attention",
+  atRisk: "At risk",
+  responseRateTitle: "Response Rate",
+  goodEngagement: "Good engagement",
+  lowEngagement: "Low engagement",
+  recoveryScoreTitle: "Recovery Score",
+  effectiveRecovery: "Effective recovery",
+  improveFollowUp: "Improve follow-up",
+  reviewVelocityTitle: "Review Velocity",
+  steadyFlow: "Steady flow",
+  needsBoost: "Needs boost",
+  // Volatility / alert summary / sample size row
+  volatilityIndex: "Volatility Index",
+  highVariability: "High variability",
+  moderateVariability: "Moderate variability",
+  stableVariability: "Stable",
+  activeAlerts: "Active Alerts",
+  nCritical: (n: number) => `${n} critical`,
+  nHighPriority: (n: number) => `${n} high priority`,
+  noUrgentAlerts: "No urgent alerts",
+  sampleSizeTitle: "Sample Size",
+  highConfidence: "High confidence",
+  moderateConfidence: "Moderate confidence",
+  lowConfidence: "Low confidence",
+  // Escalation alerts
+  escalationAlerts: "Escalation Alerts",
+  nActive: (n: number) => `${n} active`,
+  allClear: "All clear",
+  noActiveAlerts: "No active escalation alerts",
+  acknowledge: "Acknowledge",
+  resolve: "Resolve",
+  // Score breakdown
+  scoreBreakdown: "Score Breakdown",
+  breakdownSentiment: "Sentiment",
+  breakdownResponseRate: "Response Rate",
+  breakdownRecovery: "Recovery",
+  breakdownReviewVelocity: "Review Velocity",
+  breakdownStability: "Stability",
+  // Location comparison
+  locationComparison: "Location Comparison",
+  colLocation: "Location",
+  colOverallScore: "Overall Score",
+  colSentiment: "Sentiment",
+  colRiskLevel: "Risk Level",
+  colTrend: "Trend",
+  colSamples: "Samples",
+  // History
+  scoreHistory: "Reputation Score History",
+};
+export type IntelligenceCopy = typeof intelligenceEn;
+
+export const INTELLIGENCE_COPY: Record<DashLocale, IntelligenceCopy> = {
+  en: intelligenceEn,
+  fr: {
+    title: "Intelligence de réputation",
+    subtitle:
+      "Des analyses propulsées par l'IA sur la réputation de votre marque et les signaux de risque liés à vos clients.",
+    last7Days: "7 derniers jours",
+    last30Days: "30 derniers jours",
+    last90Days: "90 derniers jours",
+    loadFailed: "Échec du chargement des données d'intelligence",
+    genericError: "Une erreur est survenue",
+    errorTitle: "Échec du chargement des données d'intelligence",
+    retry: "Réessayer",
+    outOf100: "/ 100",
+    riskBadge: (level: string) => `RISQUE ${level}`,
+    riskLabels: {
+      LOW: "FAIBLE",
+      MODERATE: "MODÉRÉ",
+      HIGH: "ÉLEVÉ",
+      CRITICAL: "CRITIQUE",
+    } as Record<string, string>,
+    trendLabels: {
+      improving: "En amélioration",
+      declining: "En déclin",
+      stable: "Stable",
+    } as Record<string, string>,
+    basedOn: (n: number, pct: string) =>
+      `Basé sur ${n} point${n === 1 ? "" : "s"} de données (${pct} % de confiance)`,
+    sentimentScoreTitle: "Score de sentiment",
+    healthy: "Sain",
+    needsAttention: "Attention requise",
+    atRisk: "À risque",
+    responseRateTitle: "Taux de réponse",
+    goodEngagement: "Bon engagement",
+    lowEngagement: "Faible engagement",
+    recoveryScoreTitle: "Score de récupération",
+    effectiveRecovery: "Récupération efficace",
+    improveFollowUp: "Améliorer le suivi",
+    reviewVelocityTitle: "Vélocité des avis",
+    steadyFlow: "Flux régulier",
+    needsBoost: "À stimuler",
+    volatilityIndex: "Indice de volatilité",
+    highVariability: "Variabilité élevée",
+    moderateVariability: "Variabilité modérée",
+    stableVariability: "Stable",
+    activeAlerts: "Alertes actives",
+    nCritical: (n: number) => (n === 1 ? "1 critique" : `${n} critiques`),
+    nHighPriority: (n: number) =>
+      n === 1 ? "1 de priorité élevée" : `${n} de priorité élevée`,
+    noUrgentAlerts: "Aucune alerte urgente",
+    sampleSizeTitle: "Taille de l'échantillon",
+    highConfidence: "Confiance élevée",
+    moderateConfidence: "Confiance modérée",
+    lowConfidence: "Confiance faible",
+    escalationAlerts: "Alertes d'escalade",
+    nActive: (n: number) => (n === 1 ? "1 active" : `${n} actives`),
+    allClear: "Tout est en ordre",
+    noActiveAlerts: "Aucune alerte d'escalade active",
+    acknowledge: "Accuser réception",
+    resolve: "Résoudre",
+    scoreBreakdown: "Répartition du score",
+    breakdownSentiment: "Sentiment",
+    breakdownResponseRate: "Taux de réponse",
+    breakdownRecovery: "Récupération",
+    breakdownReviewVelocity: "Vélocité des avis",
+    breakdownStability: "Stabilité",
+    locationComparison: "Comparaison des emplacements",
+    colLocation: "Emplacement",
+    colOverallScore: "Score global",
+    colSentiment: "Sentiment",
+    colRiskLevel: "Niveau de risque",
+    colTrend: "Tendance",
+    colSamples: "Échantillons",
+    scoreHistory: "Historique du score de réputation",
+  },
+  "de-CH": {
+    title: "Reputations-Intelligence",
+    subtitle:
+      "KI-gestützte Einblicke in die Reputation Ihrer Marke und die Risikosignale Ihrer Kunden.",
+    last7Days: "Letzte 7 Tage",
+    last30Days: "Letzte 30 Tage",
+    last90Days: "Letzte 90 Tage",
+    loadFailed: "Intelligence-Daten konnten nicht geladen werden",
+    genericError: "Etwas ist schiefgelaufen",
+    errorTitle: "Intelligence-Daten konnten nicht geladen werden",
+    retry: "Erneut versuchen",
+    outOf100: "/ 100",
+    riskBadge: (level: string) => `RISIKO: ${level}`,
+    riskLabels: {
+      LOW: "NIEDRIG",
+      MODERATE: "MODERAT",
+      HIGH: "HOCH",
+      CRITICAL: "KRITISCH",
+    } as Record<string, string>,
+    trendLabels: {
+      improving: "Verbessert sich",
+      declining: "Verschlechtert sich",
+      stable: "Stabil",
+    } as Record<string, string>,
+    basedOn: (n: number, pct: string) =>
+      `Basierend auf ${n} ${n === 1 ? "Datenpunkt" : "Datenpunkten"} (${pct}% Konfidenz)`,
+    sentimentScoreTitle: "Stimmungswert",
+    healthy: "Gesund",
+    needsAttention: "Braucht Aufmerksamkeit",
+    atRisk: "Gefährdet",
+    responseRateTitle: "Antwortquote",
+    goodEngagement: "Gutes Engagement",
+    lowEngagement: "Geringes Engagement",
+    recoveryScoreTitle: "Rückgewinnungswert",
+    effectiveRecovery: "Wirksame Rückgewinnung",
+    improveFollowUp: "Nachfassen verbessern",
+    reviewVelocityTitle: "Bewertungsfrequenz",
+    steadyFlow: "Stetiger Zufluss",
+    needsBoost: "Braucht Schub",
+    volatilityIndex: "Volatilitätsindex",
+    highVariability: "Hohe Schwankung",
+    moderateVariability: "Mässige Schwankung",
+    stableVariability: "Stabil",
+    activeAlerts: "Aktive Warnungen",
+    nCritical: (n: number) => `${n} kritisch`,
+    nHighPriority: (n: number) => `${n} mit hoher Priorität`,
+    noUrgentAlerts: "Keine dringenden Warnungen",
+    sampleSizeTitle: "Stichprobengrösse",
+    highConfidence: "Hohe Konfidenz",
+    moderateConfidence: "Mittlere Konfidenz",
+    lowConfidence: "Geringe Konfidenz",
+    escalationAlerts: "Eskalationswarnungen",
+    nActive: (n: number) => `${n} aktiv`,
+    allClear: "Alles in Ordnung",
+    noActiveAlerts: "Keine aktiven Eskalationswarnungen",
+    acknowledge: "Bestätigen",
+    resolve: "Beheben",
+    scoreBreakdown: "Score-Aufschlüsselung",
+    breakdownSentiment: "Stimmung",
+    breakdownResponseRate: "Antwortquote",
+    breakdownRecovery: "Rückgewinnung",
+    breakdownReviewVelocity: "Bewertungsfrequenz",
+    breakdownStability: "Stabilität",
+    locationComparison: "Standortvergleich",
+    colLocation: "Standort",
+    colOverallScore: "Gesamtscore",
+    colSentiment: "Stimmung",
+    colRiskLevel: "Risikostufe",
+    colTrend: "Trend",
+    colSamples: "Stichproben",
+    scoreHistory: "Verlauf des Reputationsscores",
+  },
+};
+
+// ─── /monitoring ────────────────────────────────────────────────────────────
+const monitoringEn = {
+  title: "Reputation Monitoring",
+  subtitle: "Track your brand across review platforms and social media",
+  refresh: "Refresh",
+  addSource: "Add Source",
+  sourcesHeading: "Monitoring Sources",
+  sourcesEmptyTitle: "No monitoring sources",
+  sourcesEmptyDescription:
+    "Add your first monitoring source to start tracking reviews and mentions across platforms.",
+  active: "Active",
+  inactive: "Inactive",
+  reviewCount: (n: number) => (n === 1 ? "1 review" : `${n} reviews`),
+  lastChecked: "Last checked:",
+  // Relative time
+  never: "Never",
+  justNow: "Just now",
+  minutesAgo: (n: number) => `${n}m ago`,
+  hoursAgo: (n: number) => `${n}h ago`,
+  daysAgo: (n: number) => `${n}d ago`,
+  // Charts
+  reviewsByPlatform: "Reviews by Platform",
+  riskDistribution: "Risk Level Distribution",
+  noReviewData: "No review data yet",
+  // Reviews feed
+  recentReviews: "Recent Reviews & Mentions",
+  allPlatforms: "All Platforms",
+  allRiskLevels: "All Risk Levels",
+  riskLabels: {
+    LOW: "Low",
+    MODERATE: "Moderate",
+    HIGH: "High",
+    CRITICAL: "Critical",
+  } as Record<string, string>,
+  sentimentLabels: {
+    positive: "positive",
+    neutral: "neutral",
+    negative: "negative",
+  } as Record<string, string>,
+  reviewsEmptyTitle: "No reviews found",
+  reviewsEmptyDescription:
+    "Reviews will appear here once your monitoring sources start collecting data.",
+  // Add source modal
+  addModalTitle: "Add Monitoring Source",
+  platformFieldLabel: "Platform",
+  selectPlatform: "Select platform...",
+  platformCustom: "Custom",
+  sourceNameLabel: "Source Name",
+  sourceNamePlaceholder: "e.g., Main Location Google Reviews",
+  externalIdLabel: "External ID / Place ID",
+  externalIdPlaceholder: "Platform-specific identifier",
+  urlLabel: "URL (optional)",
+  cancel: "Cancel",
+  createSourceFailedShort: "Failed to create source",
+  createSourceFailed: "Failed to create monitoring source",
+};
+export type MonitoringCopy = typeof monitoringEn;
+
+export const MONITORING_COPY: Record<DashLocale, MonitoringCopy> = {
+  en: monitoringEn,
+  fr: {
+    title: "Surveillance de la réputation",
+    subtitle: "Suivez votre marque sur les plateformes d'avis et les médias sociaux",
+    refresh: "Actualiser",
+    addSource: "Ajouter une source",
+    sourcesHeading: "Sources de surveillance",
+    sourcesEmptyTitle: "Aucune source de surveillance",
+    sourcesEmptyDescription:
+      "Ajoutez votre première source de surveillance pour commencer à suivre les avis et les mentions sur l'ensemble des plateformes.",
+    active: "Actif",
+    inactive: "Inactif",
+    reviewCount: (n: number) => (n === 1 ? "1 avis" : `${n} avis`),
+    lastChecked: "Dernière vérification :",
+    // Relative time
+    never: "Jamais",
+    justNow: "À l'instant",
+    minutesAgo: (n: number) => `il y a ${n} min`,
+    hoursAgo: (n: number) => `il y a ${n} h`,
+    daysAgo: (n: number) => (n === 1 ? "il y a 1 jour" : `il y a ${n} jours`),
+    // Charts
+    reviewsByPlatform: "Avis par plateforme",
+    riskDistribution: "Répartition des niveaux de risque",
+    noReviewData: "Aucune donnée d'avis pour l'instant",
+    // Reviews feed
+    recentReviews: "Avis et mentions récents",
+    allPlatforms: "Toutes les plateformes",
+    allRiskLevels: "Tous les niveaux de risque",
+    riskLabels: {
+      LOW: "Faible",
+      MODERATE: "Modéré",
+      HIGH: "Élevé",
+      CRITICAL: "Critique",
+    } as Record<string, string>,
+    sentimentLabels: {
+      positive: "positif",
+      neutral: "neutre",
+      negative: "négatif",
+    } as Record<string, string>,
+    reviewsEmptyTitle: "Aucun avis trouvé",
+    reviewsEmptyDescription:
+      "Les avis apparaîtront ici dès que vos sources de surveillance commenceront à recueillir des données.",
+    // Add source modal
+    addModalTitle: "Ajouter une source de surveillance",
+    platformFieldLabel: "Plateforme",
+    selectPlatform: "Sélectionner une plateforme...",
+    platformCustom: "Personnalisée",
+    sourceNameLabel: "Nom de la source",
+    sourceNamePlaceholder: "p. ex. Avis Google de l'emplacement principal",
+    externalIdLabel: "ID externe / ID de lieu",
+    externalIdPlaceholder: "Identifiant propre à la plateforme",
+    urlLabel: "URL (facultative)",
+    cancel: "Annuler",
+    createSourceFailedShort: "Échec de la création de la source",
+    createSourceFailed: "Échec de la création de la source de surveillance",
+  },
+  "de-CH": {
+    title: "Reputationsüberwachung",
+    subtitle: "Verfolgen Sie Ihre Marke über Bewertungsplattformen und soziale Medien hinweg",
+    refresh: "Aktualisieren",
+    addSource: "Quelle hinzufügen",
+    sourcesHeading: "Überwachungsquellen",
+    sourcesEmptyTitle: "Keine Überwachungsquellen",
+    sourcesEmptyDescription:
+      "Fügen Sie Ihre erste Überwachungsquelle hinzu, um Bewertungen und Erwähnungen plattformübergreifend zu verfolgen.",
+    active: "Aktiv",
+    inactive: "Inaktiv",
+    reviewCount: (n: number) => (n === 1 ? "1 Bewertung" : `${n} Bewertungen`),
+    lastChecked: "Zuletzt geprüft:",
+    // Relative time
+    never: "Nie",
+    justNow: "Gerade eben",
+    minutesAgo: (n: number) => `vor ${n} Min.`,
+    hoursAgo: (n: number) => `vor ${n} Std.`,
+    daysAgo: (n: number) => (n === 1 ? "vor 1 Tag" : `vor ${n} Tagen`),
+    // Charts
+    reviewsByPlatform: "Bewertungen nach Plattform",
+    riskDistribution: "Verteilung der Risikostufen",
+    noReviewData: "Noch keine Bewertungsdaten",
+    // Reviews feed
+    recentReviews: "Aktuelle Bewertungen und Erwähnungen",
+    allPlatforms: "Alle Plattformen",
+    allRiskLevels: "Alle Risikostufen",
+    riskLabels: {
+      LOW: "Niedrig",
+      MODERATE: "Moderat",
+      HIGH: "Hoch",
+      CRITICAL: "Kritisch",
+    } as Record<string, string>,
+    sentimentLabels: {
+      positive: "positiv",
+      neutral: "neutral",
+      negative: "negativ",
+    } as Record<string, string>,
+    reviewsEmptyTitle: "Keine Bewertungen gefunden",
+    reviewsEmptyDescription:
+      "Bewertungen erscheinen hier, sobald Ihre Überwachungsquellen Daten sammeln.",
+    // Add source modal
+    addModalTitle: "Überwachungsquelle hinzufügen",
+    platformFieldLabel: "Plattform",
+    selectPlatform: "Plattform auswählen...",
+    platformCustom: "Benutzerdefiniert",
+    sourceNameLabel: "Name der Quelle",
+    sourceNamePlaceholder: "z. B. Google-Bewertungen Hauptstandort",
+    externalIdLabel: "Externe ID / Place ID",
+    externalIdPlaceholder: "Plattformspezifische Kennung",
+    urlLabel: "URL (optional)",
+    cancel: "Abbrechen",
+    createSourceFailedShort: "Quelle konnte nicht erstellt werden",
+    createSourceFailed: "Überwachungsquelle konnte nicht erstellt werden",
+  },
+};
+
+// ─── /recovery ──────────────────────────────────────────────────────────────
+const recoveryEn = {
+  // lifecycle banner
+  bannerTitle: "How a recovery ticket works",
+  bannerTagline: "Opened automatically when a customer leaves a low rating",
+  svgAria:
+    "Recovery ticket lifecycle: a low rating opens a ticket, which moves from Open to In progress to Resolved to Closed.",
+  svgLowRating: "Low rating",
+  svgStars: "(1-3 stars)",
+  svgOpen: "Open",
+  svgInProgress: "In progress",
+  svgResolved: "Resolved",
+  svgClosed: "Closed",
+  p1a: "When a customer leaves a low rating, a recovery ticket opens automatically so your team can follow up. Work it from ",
+  p1open: "Open",
+  p1b: " through ",
+  p1inProgress: "In progress",
+  p1c: " to ",
+  p1resolved: "Resolved",
+  p1d: ", then ",
+  p1closed: "Closed",
+  p1e: ". Use the Priority filter to tackle the most urgent first.",
+  // errors
+  loadFailed: "Failed to load recovery tickets",
+  genericError: "Something went wrong",
+  updateFailed: "Failed to update ticket",
+  updateFailedAlert: "Failed to update ticket. Please try again.",
+  retry: "Retry",
+  unknownCustomer: "Unknown",
+  // filters
+  statusLabel: "Status",
+  priorityLabel: "Priority",
+  allStatuses: "All Statuses",
+  allPriorities: "All Priorities",
+  statusLabels: {
+    OPEN: "Open",
+    IN_PROGRESS: "In Progress",
+    RESOLVED: "Resolved",
+    CLOSED: "Closed",
+  } as Record<string, string>,
+  priorityLabels: {
+    URGENT: "Urgent",
+    HIGH: "High",
+    MEDIUM: "Medium",
+    LOW: "Low",
+  } as Record<string, string>,
+  openTickets: (n: number) => (n === 1 ? "1 open ticket" : `${n} open tickets`),
+  // table
+  colCustomer: "Customer",
+  colRating: "Rating",
+  colPriority: "Priority",
+  colStatus: "Status",
+  colAssignedTo: "Assigned To",
+  colCreated: "Created",
+  unassigned: "Unassigned",
+  // empty state
+  emptyTitle: "You're all caught up",
+  emptyDescription:
+    "No unhappy customers to reach right now. When someone leaves a low rating, they'll appear here so you can respond before it goes public.",
+  // detail modal
+  modalTitle: "Recovery Ticket",
+  customerLabel: "Customer",
+  ratingLabel: "Rating",
+  createdLabel: "Created",
+  commentLabel: "Customer Comment",
+  notesLabel: "Notes",
+  notesPlaceholder: "Add notes about the recovery effort...",
+  cancel: "Cancel",
+  updateTicket: "Update Ticket",
+};
+export type RecoveryCopy = typeof recoveryEn;
+
+export const RECOVERY_COPY: Record<DashLocale, RecoveryCopy> = {
+  en: recoveryEn,
+  fr: {
+    bannerTitle: "Comment fonctionne un billet de récupération",
+    bannerTagline:
+      "Ouvert automatiquement lorsqu'un client laisse une note faible",
+    svgAria:
+      "Cycle de vie d'un billet de récupération : une note faible ouvre un billet, qui passe d'Ouvert à En cours, puis à Résolu et à Fermé.",
+    svgLowRating: "Note faible",
+    svgStars: "(1-3 étoiles)",
+    svgOpen: "Ouvert",
+    svgInProgress: "En cours",
+    svgResolved: "Résolu",
+    svgClosed: "Fermé",
+    p1a: "Lorsqu'un client laisse une note faible, un billet de récupération s'ouvre automatiquement pour que votre équipe puisse faire un suivi. Faites-le passer d'",
+    p1open: "Ouvert",
+    p1b: " à ",
+    p1inProgress: "En cours",
+    p1c: ", puis à ",
+    p1resolved: "Résolu",
+    p1d: " et enfin ",
+    p1closed: "Fermé",
+    p1e: ". Utilisez le filtre Priorité pour traiter d'abord les plus urgents.",
+    loadFailed: "Échec du chargement des billets de récupération",
+    genericError: "Une erreur est survenue",
+    updateFailed: "Échec de la mise à jour du billet",
+    updateFailedAlert: "Échec de la mise à jour du billet. Veuillez réessayer.",
+    retry: "Réessayer",
+    unknownCustomer: "Inconnu",
+    statusLabel: "Statut",
+    priorityLabel: "Priorité",
+    allStatuses: "Tous les statuts",
+    allPriorities: "Toutes les priorités",
+    statusLabels: {
+      OPEN: "Ouvert",
+      IN_PROGRESS: "En cours",
+      RESOLVED: "Résolu",
+      CLOSED: "Fermé",
+    } as Record<string, string>,
+    priorityLabels: {
+      URGENT: "Urgente",
+      HIGH: "Élevée",
+      MEDIUM: "Moyenne",
+      LOW: "Faible",
+    } as Record<string, string>,
+    openTickets: (n: number) =>
+      n === 1 ? "1 billet ouvert" : `${n} billets ouverts`,
+    colCustomer: "Client",
+    colRating: "Note",
+    colPriority: "Priorité",
+    colStatus: "Statut",
+    colAssignedTo: "Assigné à",
+    colCreated: "Création",
+    unassigned: "Non assigné",
+    emptyTitle: "Vous êtes à jour",
+    emptyDescription:
+      "Aucun client insatisfait à joindre pour le moment. Lorsqu'une personne laisse une note faible, elle apparaîtra ici pour que vous puissiez répondre avant que ça devienne public.",
+    modalTitle: "Billet de récupération",
+    customerLabel: "Client",
+    ratingLabel: "Note",
+    createdLabel: "Création",
+    commentLabel: "Commentaire du client",
+    notesLabel: "Notes",
+    notesPlaceholder: "Ajoutez des notes sur l'effort de récupération...",
+    cancel: "Annuler",
+    updateTicket: "Mettre à jour le billet",
+  },
+  "de-CH": {
+    bannerTitle: "So funktioniert ein Rückgewinnungsticket",
+    bannerTagline:
+      "Wird automatisch geöffnet, wenn ein Kunde eine niedrige Bewertung hinterlässt",
+    svgAria:
+      "Lebenszyklus eines Rückgewinnungstickets: Eine niedrige Bewertung öffnet ein Ticket, das von Offen über In Bearbeitung zu Gelöst und Geschlossen wechselt.",
+    svgLowRating: "Niedrige Bewertung",
+    svgStars: "(1-3 Sterne)",
+    svgOpen: "Offen",
+    svgInProgress: "In Bearbeitung",
+    svgResolved: "Gelöst",
+    svgClosed: "Geschlossen",
+    p1a: "Wenn ein Kunde eine niedrige Bewertung hinterlässt, wird automatisch ein Rückgewinnungsticket geöffnet, damit Ihr Team nachfassen kann. Bearbeiten Sie es von ",
+    p1open: "Offen",
+    p1b: " über ",
+    p1inProgress: "In Bearbeitung",
+    p1c: " zu ",
+    p1resolved: "Gelöst",
+    p1d: ", dann ",
+    p1closed: "Geschlossen",
+    p1e: ". Nutzen Sie den Prioritätsfilter, um die dringendsten zuerst anzugehen.",
+    loadFailed: "Rückgewinnungstickets konnten nicht geladen werden",
+    genericError: "Etwas ist schiefgelaufen",
+    updateFailed: "Ticket konnte nicht aktualisiert werden",
+    updateFailedAlert:
+      "Ticket konnte nicht aktualisiert werden. Bitte versuchen Sie es erneut.",
+    retry: "Erneut versuchen",
+    unknownCustomer: "Unbekannt",
+    statusLabel: "Status",
+    priorityLabel: "Priorität",
+    allStatuses: "Alle Status",
+    allPriorities: "Alle Prioritäten",
+    statusLabels: {
+      OPEN: "Offen",
+      IN_PROGRESS: "In Bearbeitung",
+      RESOLVED: "Gelöst",
+      CLOSED: "Geschlossen",
+    } as Record<string, string>,
+    priorityLabels: {
+      URGENT: "Dringend",
+      HIGH: "Hoch",
+      MEDIUM: "Mittel",
+      LOW: "Niedrig",
+    } as Record<string, string>,
+    openTickets: (n: number) =>
+      n === 1 ? "1 offenes Ticket" : `${n} offene Tickets`,
+    colCustomer: "Kunde",
+    colRating: "Bewertung",
+    colPriority: "Priorität",
+    colStatus: "Status",
+    colAssignedTo: "Zugewiesen an",
+    colCreated: "Erstellt",
+    unassigned: "Nicht zugewiesen",
+    emptyTitle: "Alles erledigt",
+    emptyDescription:
+      "Derzeit keine unzufriedenen Kunden zu kontaktieren. Wenn jemand eine niedrige Bewertung hinterlässt, erscheint sie hier, damit Sie antworten können, bevor sie öffentlich wird.",
+    modalTitle: "Rückgewinnungsticket",
+    customerLabel: "Kunde",
+    ratingLabel: "Bewertung",
+    createdLabel: "Erstellt",
+    commentLabel: "Kundenkommentar",
+    notesLabel: "Notizen",
+    notesPlaceholder: "Fügen Sie Notizen zur Rückgewinnung hinzu...",
+    cancel: "Abbrechen",
+    updateTicket: "Ticket aktualisieren",
+  },
+};
+
+// ─── /review-links ──────────────────────────────────────────────────────────
+const reviewLinksEn = {
+  title: "Review Links",
+  subtitle: "Manage links where customers can leave public reviews.",
+  helpButton: "Help",
+  addLink: "Add Review Link",
+  // errors / feedback
+  loadFailed: "Failed to load review links",
+  genericError: "Something went wrong",
+  saveFailed: "Failed to save review link. Please try again.",
+  updateFailed: "Failed to update review link.",
+  deleteConfirm: "Are you sure you want to delete this review link?",
+  deleteFailed: "Failed to delete review link.",
+  retry: "Retry",
+  // table
+  colPlatform: "Platform",
+  colUrl: "URL",
+  colLabel: "Label",
+  colLocation: "Location",
+  colClicks: "Clicks",
+  colDefault: "Default",
+  platformLabels: { Other: "Other" } as Record<string, string>,
+  setDefault: "Set as default",
+  removeDefault: "Remove as default",
+  tableEmpty: "No review links found",
+  // empty state
+  emptyTitle: "No review links yet",
+  emptyDescription:
+    "Share one link that routes happy customers straight to Google or Facebook to leave a review.",
+  // add/edit modal
+  modalEditTitle: "Edit Review Link",
+  modalAddTitle: "Add Review Link",
+  formPlatform: "Platform",
+  formUrl: "URL",
+  formUrlPlaceholder: "https://g.page/r/your-business/review",
+  formLabel: "Label (optional)",
+  formLabelPlaceholder: "e.g. Main Location Google",
+  formLocation: "Location (optional)",
+  formLocationPlaceholder: "e.g. Downtown Office",
+  setAsDefaultCheckbox: "Set as default review link",
+  cancel: "Cancel",
+  saveChanges: "Save Changes",
+  addLinkSubmit: "Add Link",
+  // help modal (in-file ReviewLinksHelpModal)
+  helpModal: {
+    title: "How review links work",
+    diagramAria:
+      "Flow: customer feedback to your review link to the public review platform",
+    nodeCustomer: "Customer",
+    nodeFeedback: "feedback",
+    nodeYour: "Your",
+    nodeLink: "link",
+    nodeGoogle: "Google /",
+    nodeFacebook: "Facebook",
+    p1a: "A ",
+    p1strong: "review link",
+    p1b: " is the public URL where a customer leaves a review — your Google, Facebook, or Trustpilot page. When a customer is invited to review you, this link is where they go.",
+    p2strong: "Finding your Google link:",
+    p2a: " in your Google Business Profile, use the “Ask for reviews” share link, or a write-a-review URL of the form",
+    p2b: ". Set this one as Default so it is used when no platform-specific link applies.",
+    p3strong1: "Default",
+    p3a: " marks the link customers are sent to by default. ",
+    p3strong2: "Clicks",
+    p3b: " counts how many times each link has been opened, so you can see which platform customers use most.",
+    gotIt: "Got it",
+  },
+  // sibling file: share-tools.tsx (ShareToolsCard)
+  share: {
+    headline: "Get more reviews with one link",
+    bullet1: "Share via SMS, email, or social in one click",
+    bullet2: "Customers land on the platform you choose",
+    bullet3: "Every click is tracked automatically",
+    copyLink: "Copy Link",
+    copied: "Copied!",
+    email: "Email",
+    sms: "SMS",
+    whatsapp: "WhatsApp",
+    shareBtn: "Share",
+    mailSubject: "How was your experience?",
+    shareText: (url: string) =>
+      `We'd love your feedback! Leave us a review here: ${url}`,
+    previewHeading: "What your customers see",
+    previewQuestion: "How was your experience?",
+    previewLeaveOn: "Leave a review on:",
+  },
+};
+export type ReviewLinksCopy = typeof reviewLinksEn;
+
+export const REVIEW_LINKS_COPY: Record<DashLocale, ReviewLinksCopy> = {
+  en: reviewLinksEn,
+  fr: {
+    title: "Liens d'avis",
+    subtitle: "Gérez les liens où vos clients peuvent laisser des avis publics.",
+    helpButton: "Aide",
+    addLink: "Ajouter un lien d'avis",
+    loadFailed: "Échec du chargement des liens d'avis",
+    genericError: "Une erreur est survenue",
+    saveFailed: "Échec de l'enregistrement du lien d'avis. Veuillez réessayer.",
+    updateFailed: "Échec de la mise à jour du lien d'avis.",
+    deleteConfirm: "Voulez-vous vraiment supprimer ce lien d'avis?",
+    deleteFailed: "Échec de la suppression du lien d'avis.",
+    retry: "Réessayer",
+    colPlatform: "Plateforme",
+    colUrl: "URL",
+    colLabel: "Étiquette",
+    colLocation: "Emplacement",
+    colClicks: "Clics",
+    colDefault: "Par défaut",
+    platformLabels: { Other: "Autre" } as Record<string, string>,
+    setDefault: "Définir par défaut",
+    removeDefault: "Retirer le statut par défaut",
+    tableEmpty: "Aucun lien d'avis trouvé",
+    emptyTitle: "Aucun lien d'avis pour l'instant",
+    emptyDescription:
+      "Partagez un seul lien qui dirige vos clients satisfaits directement vers Google ou Facebook pour laisser un avis.",
+    modalEditTitle: "Modifier le lien d'avis",
+    modalAddTitle: "Ajouter un lien d'avis",
+    formPlatform: "Plateforme",
+    formUrl: "URL",
+    formUrlPlaceholder: "https://g.page/r/your-business/review",
+    formLabel: "Étiquette (facultatif)",
+    formLabelPlaceholder: "p. ex. Google — emplacement principal",
+    formLocation: "Emplacement (facultatif)",
+    formLocationPlaceholder: "p. ex. Bureau du centre-ville",
+    setAsDefaultCheckbox: "Définir comme lien d'avis par défaut",
+    cancel: "Annuler",
+    saveChanges: "Enregistrer les modifications",
+    addLinkSubmit: "Ajouter le lien",
+    helpModal: {
+      title: "Comment fonctionnent les liens d'avis",
+      diagramAria:
+        "Flux : rétroaction du client vers votre lien d'avis, puis vers la plateforme d'avis publique",
+      nodeCustomer: "Client",
+      nodeFeedback: "rétroaction",
+      nodeYour: "Votre",
+      nodeLink: "lien",
+      nodeGoogle: "Google /",
+      nodeFacebook: "Facebook",
+      p1a: "Un ",
+      p1strong: "lien d'avis",
+      p1b: " est l'URL publique où un client laisse un avis — votre page Google, Facebook ou Trustpilot. Quand un client est invité à vous évaluer, c'est vers ce lien qu'il est dirigé.",
+      p2strong: "Trouver votre lien Google :",
+      p2a: " dans votre Profil d'entreprise Google, utilisez le lien de partage Demander des avis, ou une URL de rédaction d'avis de la forme",
+      p2b: ". Définissez celui-ci par défaut afin qu'il soit utilisé quand aucun lien propre à une plateforme ne s'applique.",
+      p3strong1: "Par défaut",
+      p3a: " indique le lien vers lequel les clients sont dirigés par défaut. ",
+      p3strong2: "Clics",
+      p3b: " compte combien de fois chaque lien a été ouvert, pour voir quelle plateforme vos clients utilisent le plus.",
+      gotIt: "Compris",
+    },
+    share: {
+      headline: "Obtenez plus d'avis avec un seul lien",
+      bullet1: "Partagez par SMS, courriel ou médias sociaux en un clic",
+      bullet2: "Les clients arrivent sur la plateforme de votre choix",
+      bullet3: "Chaque clic est suivi automatiquement",
+      copyLink: "Copier le lien",
+      copied: "Copié!",
+      email: "Courriel",
+      sms: "SMS",
+      whatsapp: "WhatsApp",
+      shareBtn: "Partager",
+      mailSubject: "Comment s'est passée votre expérience?",
+      shareText: (url: string) =>
+        `Votre avis compte pour nous! Laissez-nous un avis ici : ${url}`,
+      previewHeading: "Ce que vos clients voient",
+      previewQuestion: "Comment s'est passée votre expérience?",
+      previewLeaveOn: "Laissez un avis sur :",
+    },
+  },
+  "de-CH": {
+    title: "Bewertungslinks",
+    subtitle:
+      "Verwalten Sie die Links, über die Kunden öffentliche Bewertungen hinterlassen können.",
+    helpButton: "Hilfe",
+    addLink: "Bewertungslink hinzufügen",
+    loadFailed: "Bewertungslinks konnten nicht geladen werden",
+    genericError: "Etwas ist schiefgelaufen",
+    saveFailed:
+      "Bewertungslink konnte nicht gespeichert werden. Bitte versuchen Sie es erneut.",
+    updateFailed: "Bewertungslink konnte nicht aktualisiert werden.",
+    deleteConfirm: "Möchten Sie diesen Bewertungslink wirklich löschen?",
+    deleteFailed: "Bewertungslink konnte nicht gelöscht werden.",
+    retry: "Erneut versuchen",
+    colPlatform: "Plattform",
+    colUrl: "URL",
+    colLabel: "Bezeichnung",
+    colLocation: "Standort",
+    colClicks: "Klicks",
+    colDefault: "Standard",
+    platformLabels: { Other: "Andere" } as Record<string, string>,
+    setDefault: "Als Standard festlegen",
+    removeDefault: "Als Standard entfernen",
+    tableEmpty: "Keine Bewertungslinks gefunden",
+    emptyTitle: "Noch keine Bewertungslinks",
+    emptyDescription:
+      "Teilen Sie einen einzigen Link, der zufriedene Kunden direkt zu Google oder Facebook führt, um eine Bewertung zu hinterlassen.",
+    modalEditTitle: "Bewertungslink bearbeiten",
+    modalAddTitle: "Bewertungslink hinzufügen",
+    formPlatform: "Plattform",
+    formUrl: "URL",
+    formUrlPlaceholder: "https://g.page/r/your-business/review",
+    formLabel: "Bezeichnung (optional)",
+    formLabelPlaceholder: "z. B. Google Hauptstandort",
+    formLocation: "Standort (optional)",
+    formLocationPlaceholder: "z. B. Büro Stadtzentrum",
+    setAsDefaultCheckbox: "Als Standard-Bewertungslink festlegen",
+    cancel: "Abbrechen",
+    saveChanges: "Änderungen speichern",
+    addLinkSubmit: "Link hinzufügen",
+    helpModal: {
+      title: "So funktionieren Bewertungslinks",
+      diagramAria:
+        "Ablauf: Kundenfeedback zu Ihrem Bewertungslink und weiter zur öffentlichen Bewertungsplattform",
+      nodeCustomer: "Kunde",
+      nodeFeedback: "Feedback",
+      nodeYour: "Ihr",
+      nodeLink: "Link",
+      nodeGoogle: "Google /",
+      nodeFacebook: "Facebook",
+      p1a: "Ein ",
+      p1strong: "Bewertungslink",
+      p1b: " ist die öffentliche URL, unter der ein Kunde eine Bewertung hinterlässt — Ihre Google-, Facebook- oder Trustpilot-Seite. Wenn ein Kunde eingeladen wird, Sie zu bewerten, wird er zu diesem Link geführt.",
+      p2strong: "So finden Sie Ihren Google-Link:",
+      p2a: " Verwenden Sie in Ihrem Google Business Profile den Freigabelink «Bewertungen anfordern» oder eine Bewertungs-URL der Form",
+      p2b: ". Legen Sie diesen als Standard fest, damit er verwendet wird, wenn kein plattformspezifischer Link zutrifft.",
+      p3strong1: "Standard",
+      p3a: " kennzeichnet den Link, zu dem Kunden standardmässig geführt werden. ",
+      p3strong2: "Klicks",
+      p3b: " zählt, wie oft jeder Link geöffnet wurde, damit Sie sehen, welche Plattform Ihre Kunden am häufigsten nutzen.",
+      gotIt: "Verstanden",
+    },
+    share: {
+      headline: "Mehr Bewertungen mit einem einzigen Link",
+      bullet1: "Per SMS, E-Mail oder Social Media mit einem Klick teilen",
+      bullet2: "Kunden landen auf der Plattform Ihrer Wahl",
+      bullet3: "Jeder Klick wird automatisch erfasst",
+      copyLink: "Link kopieren",
+      copied: "Kopiert!",
+      email: "E-Mail",
+      sms: "SMS",
+      whatsapp: "WhatsApp",
+      shareBtn: "Teilen",
+      mailSubject: "Wie war Ihre Erfahrung?",
+      shareText: (url: string) =>
+        `Wir würden uns über Ihr Feedback freuen! Hinterlassen Sie uns hier eine Bewertung: ${url}`,
+      previewHeading: "Das sehen Ihre Kunden",
+      previewQuestion: "Wie war Ihre Erfahrung?",
+      previewLeaveOn: "Bewertung hinterlassen auf:",
+    },
+  },
+};
+
+// ─── /settings ──────────────────────────────────────────────────────────────
+const settingsEn = {
+  title: "Settings",
+  subtitle: "Manage your business settings and brand configuration.",
+  helpButton: "Help",
+  loadFailed: "Failed to load settings",
+  genericError: "Something went wrong",
+  errorTitle: "Failed to load settings",
+  retry: "Retry",
+  saveFailed: "Failed to save settings. Please try again.",
+  savedSuccess: "Settings saved successfully!",
+  saveButton: "Save Settings",
+  businessInfoTitle: "Business Information",
+  businessNameLabel: "Business Name",
+  businessNamePlaceholder: "Your Business Name",
+  logoUrlLabel: "Logo URL",
+  supportEmailLabel: "Support Email",
+  brandColorsTitle: "Brand Colors",
+  primaryColorLabel: "Primary Color",
+  secondaryColorLabel: "Secondary Color",
+  reviewLinksTitle: "Review Platform Links",
+  googleLinkLabel: "Google Review Link",
+  facebookLinkLabel: "Facebook Review Link",
+  trustpilotLinkLabel: "Trustpilot Link",
+  localizationTitle: "Localization",
+  timezoneLabel: "Timezone",
+  languageLabel: "Default Language",
+  timezones: {
+    "America/New_York": "Eastern Time (ET)",
+    "America/Chicago": "Central Time (CT)",
+    "America/Denver": "Mountain Time (MT)",
+    "America/Los_Angeles": "Pacific Time (PT)",
+    "America/Anchorage": "Alaska Time (AKT)",
+    "Pacific/Honolulu": "Hawaii Time (HT)",
+    "Europe/London": "London (GMT)",
+    "Europe/Paris": "Paris (CET)",
+    "Europe/Berlin": "Berlin (CET)",
+    "Asia/Tokyo": "Tokyo (JST)",
+    "Asia/Shanghai": "Shanghai (CST)",
+    "Australia/Sydney": "Sydney (AEST)",
+    UTC: "UTC",
+  } as Record<string, string>,
+  languages: {
+    en: "English",
+    es: "Spanish",
+    fr: "French",
+    de: "German",
+    pt: "Portuguese",
+    it: "Italian",
+    nl: "Dutch",
+    ja: "Japanese",
+    zh: "Chinese",
+  } as Record<string, string>,
+  whitelabelTitle: "White-label",
+  agencyRequired: "Agency Plan Required",
+  customDomainLabel: "Custom Domain",
+  whitelabelCheckbox: "Enable white-label branding (removes EchoRank branding)",
+  helpModal: {
+    title: "Settings help",
+    businessBody:
+      "Your business name, logo and support email appear on the feedback pages customers see and on outgoing emails. Use a publicly hosted image URL for the logo (PNG or SVG works best).",
+    brandBody:
+      "The primary color is used for buttons and accents on your customer feedback pages. Enter a hex value (for example #2563eb) or pick one with the color swatch.",
+    reviewBody:
+      "These are where satisfied customers are sent to leave a public review. For Google, use your “write a review” link (https://g.page/r/…/review or a Place ID review URL). Set at least the Google link — it is the default destination when no specific platform is configured.",
+    localizationBody:
+      "Timezone affects when scheduled requests are sent and how times are displayed. Default language sets the language of customer-facing emails and pages for new requests.",
+    whitelabelBody:
+      "On the Agency plan you can serve feedback pages from your own custom domain and remove EchoRank branding. These options are disabled on other plans.",
+    gotIt: "Got it",
+  },
+};
+export type SettingsCopy = typeof settingsEn;
+
+export const SETTINGS_COPY: Record<DashLocale, SettingsCopy> = {
+  en: settingsEn,
+  fr: {
+    title: "Paramètres",
+    subtitle: "Gérez les paramètres de votre entreprise et la configuration de votre marque.",
+    helpButton: "Aide",
+    loadFailed: "Échec du chargement des paramètres",
+    genericError: "Une erreur s'est produite",
+    errorTitle: "Échec du chargement des paramètres",
+    retry: "Réessayer",
+    saveFailed: "Échec de l'enregistrement des paramètres. Veuillez réessayer.",
+    savedSuccess: "Paramètres enregistrés avec succès!",
+    saveButton: "Enregistrer les paramètres",
+    businessInfoTitle: "Renseignements sur l'entreprise",
+    businessNameLabel: "Nom de l'entreprise",
+    businessNamePlaceholder: "Nom de votre entreprise",
+    logoUrlLabel: "URL du logo",
+    supportEmailLabel: "Courriel de soutien",
+    brandColorsTitle: "Couleurs de la marque",
+    primaryColorLabel: "Couleur principale",
+    secondaryColorLabel: "Couleur secondaire",
+    reviewLinksTitle: "Liens des plateformes d'avis",
+    googleLinkLabel: "Lien d'avis Google",
+    facebookLinkLabel: "Lien d'avis Facebook",
+    trustpilotLinkLabel: "Lien Trustpilot",
+    localizationTitle: "Localisation",
+    timezoneLabel: "Fuseau horaire",
+    languageLabel: "Langue par défaut",
+    timezones: {
+      "America/New_York": "Heure de l'Est (HE)",
+      "America/Chicago": "Heure du Centre (HC)",
+      "America/Denver": "Heure des Rocheuses (HR)",
+      "America/Los_Angeles": "Heure du Pacifique (HP)",
+      "America/Anchorage": "Heure de l'Alaska (HAK)",
+      "Pacific/Honolulu": "Heure d'Hawaï (HH)",
+      "Europe/London": "Londres (GMT)",
+      "Europe/Paris": "Paris (CET)",
+      "Europe/Berlin": "Berlin (CET)",
+      "Asia/Tokyo": "Tokyo (JST)",
+      "Asia/Shanghai": "Shanghai (CST)",
+      "Australia/Sydney": "Sydney (AEST)",
+      UTC: "UTC",
+    } as Record<string, string>,
+    languages: {
+      en: "Anglais",
+      es: "Espagnol",
+      fr: "Français",
+      de: "Allemand",
+      pt: "Portugais",
+      it: "Italien",
+      nl: "Néerlandais",
+      ja: "Japonais",
+      zh: "Chinois",
+    } as Record<string, string>,
+    whitelabelTitle: "Marque blanche",
+    agencyRequired: "Forfait Agency requis",
+    customDomainLabel: "Domaine personnalisé",
+    whitelabelCheckbox:
+      "Activer la marque blanche (retire l'image de marque EchoRank)",
+    helpModal: {
+      title: "Aide sur les paramètres",
+      businessBody:
+        "Le nom de votre entreprise, votre logo et votre courriel de soutien apparaissent sur les pages de rétroaction que voient vos clients et sur les courriels sortants. Utilisez une URL d'image hébergée publiquement pour le logo (PNG ou SVG de préférence).",
+      brandBody:
+        "La couleur principale est utilisée pour les boutons et les accents sur les pages de rétroaction de vos clients. Saisissez une valeur hexadécimale (par exemple #2563eb) ou choisissez-en une avec le sélecteur de couleur.",
+      reviewBody:
+        "C'est là que les clients satisfaits sont dirigés pour laisser un avis public. Pour Google, utilisez votre lien «Rédiger un avis» (https://g.page/r/…/review ou une URL d'avis avec identifiant de lieu). Configurez au moins le lien Google — c'est la destination par défaut lorsqu'aucune plateforme précise n'est configurée.",
+      localizationBody:
+        "Le fuseau horaire détermine le moment de l'envoi des demandes planifiées et l'affichage des heures. La langue par défaut définit la langue des courriels et des pages destinés aux clients pour les nouvelles demandes.",
+      whitelabelBody:
+        "Avec le forfait Agency, vous pouvez servir les pages de rétroaction depuis votre propre domaine personnalisé et retirer l'image de marque EchoRank. Ces options sont désactivées avec les autres forfaits.",
+      gotIt: "Compris",
+    },
+  },
+  "de-CH": {
+    title: "Einstellungen",
+    subtitle: "Verwalten Sie Ihre Unternehmenseinstellungen und Ihre Markenkonfiguration.",
+    helpButton: "Hilfe",
+    loadFailed: "Einstellungen konnten nicht geladen werden",
+    genericError: "Etwas ist schiefgelaufen",
+    errorTitle: "Einstellungen konnten nicht geladen werden",
+    retry: "Erneut versuchen",
+    saveFailed: "Einstellungen konnten nicht gespeichert werden. Bitte versuchen Sie es erneut.",
+    savedSuccess: "Einstellungen erfolgreich gespeichert!",
+    saveButton: "Einstellungen speichern",
+    businessInfoTitle: "Unternehmensinformationen",
+    businessNameLabel: "Firmenname",
+    businessNamePlaceholder: "Name Ihres Unternehmens",
+    logoUrlLabel: "Logo-URL",
+    supportEmailLabel: "Support-E-Mail",
+    brandColorsTitle: "Markenfarben",
+    primaryColorLabel: "Primärfarbe",
+    secondaryColorLabel: "Sekundärfarbe",
+    reviewLinksTitle: "Links zu Bewertungsplattformen",
+    googleLinkLabel: "Google-Bewertungslink",
+    facebookLinkLabel: "Facebook-Bewertungslink",
+    trustpilotLinkLabel: "Trustpilot-Link",
+    localizationTitle: "Lokalisierung",
+    timezoneLabel: "Zeitzone",
+    languageLabel: "Standardsprache",
+    timezones: {
+      "America/New_York": "Ostküstenzeit (ET)",
+      "America/Chicago": "Zentralzeit (CT)",
+      "America/Denver": "Rocky-Mountain-Zeit (MT)",
+      "America/Los_Angeles": "Pazifikzeit (PT)",
+      "America/Anchorage": "Alaska-Zeit (AKT)",
+      "Pacific/Honolulu": "Hawaii-Zeit (HT)",
+      "Europe/London": "London (GMT)",
+      "Europe/Paris": "Paris (MEZ)",
+      "Europe/Berlin": "Berlin (MEZ)",
+      "Asia/Tokyo": "Tokio (JST)",
+      "Asia/Shanghai": "Shanghai (CST)",
+      "Australia/Sydney": "Sydney (AEST)",
+      UTC: "UTC",
+    } as Record<string, string>,
+    languages: {
+      en: "Englisch",
+      es: "Spanisch",
+      fr: "Französisch",
+      de: "Deutsch",
+      pt: "Portugiesisch",
+      it: "Italienisch",
+      nl: "Niederländisch",
+      ja: "Japanisch",
+      zh: "Chinesisch",
+    } as Record<string, string>,
+    whitelabelTitle: "White-Label",
+    agencyRequired: "Agency-Plan erforderlich",
+    customDomainLabel: "Eigene Domain",
+    whitelabelCheckbox:
+      "White-Label-Branding aktivieren (entfernt das EchoRank-Branding)",
+    helpModal: {
+      title: "Hilfe zu den Einstellungen",
+      businessBody:
+        "Ihr Firmenname, Ihr Logo und Ihre Support-E-Mail erscheinen auf den Feedback-Seiten, die Ihre Kunden sehen, sowie in ausgehenden E-Mails. Verwenden Sie für das Logo eine öffentlich gehostete Bild-URL (PNG oder SVG funktioniert am besten).",
+      brandBody:
+        "Die Primärfarbe wird für Schaltflächen und Akzente auf Ihren Kunden-Feedback-Seiten verwendet. Geben Sie einen Hex-Wert ein (zum Beispiel #2563eb) oder wählen Sie eine Farbe mit dem Farbfeld.",
+      reviewBody:
+        "Hierhin werden zufriedene Kunden geleitet, um eine öffentliche Bewertung zu hinterlassen. Verwenden Sie für Google Ihren «Rezension schreiben»-Link (https://g.page/r/…/review oder eine Bewertungs-URL mit Place ID). Hinterlegen Sie mindestens den Google-Link — er ist das Standardziel, wenn keine bestimmte Plattform konfiguriert ist.",
+      localizationBody:
+        "Die Zeitzone beeinflusst, wann geplante Anfragen gesendet werden und wie Zeiten angezeigt werden. Die Standardsprache legt die Sprache der kundenseitigen E-Mails und Seiten für neue Anfragen fest.",
+      whitelabelBody:
+        "Mit dem Agency-Plan können Sie Feedback-Seiten über Ihre eigene Domain bereitstellen und das EchoRank-Branding entfernen. Bei anderen Plänen sind diese Optionen deaktiviert.",
+      gotIt: "Verstanden",
+    },
+  },
+};
+
+// ─── /team ──────────────────────────────────────────────────────────────────
+const teamEn = {
+  title: "Team",
+  subtitle: "Manage your team members and their roles.",
+  inviteMember: "Invite Member",
+  // Errors / alerts
+  loadFailed: "Failed to load team members",
+  somethingWrong: "Something went wrong",
+  retry: "Retry",
+  unknown: "Unknown",
+  inviteFailed: "Failed to send invite",
+  inviteFailedRetry: "Failed to send invite. Please try again.",
+  updateRoleFailed: "Failed to update role",
+  updateRoleFailedRetry: "Failed to update role. Please try again.",
+  cannotRemoveOwner: "Cannot remove the account owner.",
+  removeConfirm: (name: string) =>
+    `Are you sure you want to remove ${name} from the team?`,
+  removeFailed: "Failed to remove member",
+  removeFailedAlert: "Failed to remove team member.",
+  // Empty state
+  emptyTitle: "No team members",
+  emptyDescription: "Invite team members to help manage your reputation.",
+  // Table
+  colMember: "Member",
+  colRole: "Role",
+  colJoined: "Joined",
+  roleLabels: {
+    OWNER: "Owner",
+    ADMIN: "Admin",
+    MEMBER: "Member",
+  } as Record<string, string>,
+  changeRoleTooltip: "Change role",
+  removeMemberTooltip: "Remove member",
+  // Invite modal
+  inviteModalTitle: "Invite Team Member",
+  emailLabel: "Email Address",
+  roleLabel: "Role",
+  rolePermsHeading: "Role permissions:",
+  memberPerms: "View data, manage customers, respond to feedback",
+  adminPerms: "All member permissions + manage team, settings, and billing",
+  cancel: "Cancel",
+  sendInvite: "Send Invite",
+  // Change role modal
+  changeRoleTitle: "Change Role",
+  memberLabel: "Member",
+  newRoleLabel: "New Role",
+  updateRole: "Update Role",
+};
+export type TeamCopy = typeof teamEn;
+
+export const TEAM_COPY: Record<DashLocale, TeamCopy> = {
+  en: teamEn,
+  fr: {
+    title: "Équipe",
+    subtitle: "Gérez les membres de votre équipe et leurs rôles.",
+    inviteMember: "Inviter un membre",
+    // Errors / alerts
+    loadFailed: "Échec du chargement des membres de l'équipe",
+    somethingWrong: "Une erreur est survenue",
+    retry: "Réessayer",
+    unknown: "Inconnu",
+    inviteFailed: "Échec de l'envoi de l'invitation",
+    inviteFailedRetry: "Échec de l'envoi de l'invitation. Veuillez réessayer.",
+    updateRoleFailed: "Échec de la mise à jour du rôle",
+    updateRoleFailedRetry: "Échec de la mise à jour du rôle. Veuillez réessayer.",
+    cannotRemoveOwner: "Impossible de retirer le propriétaire du compte.",
+    removeConfirm: (name: string) =>
+      `Voulez-vous vraiment retirer ${name} de l'équipe?`,
+    removeFailed: "Échec du retrait du membre",
+    removeFailedAlert: "Échec du retrait du membre de l'équipe.",
+    // Empty state
+    emptyTitle: "Aucun membre dans l'équipe",
+    emptyDescription:
+      "Invitez des membres d'équipe pour vous aider à gérer votre réputation.",
+    // Table
+    colMember: "Membre",
+    colRole: "Rôle",
+    colJoined: "Date d'adhésion",
+    roleLabels: {
+      OWNER: "Propriétaire",
+      ADMIN: "Administrateur",
+      MEMBER: "Membre",
+    } as Record<string, string>,
+    changeRoleTooltip: "Changer le rôle",
+    removeMemberTooltip: "Retirer le membre",
+    // Invite modal
+    inviteModalTitle: "Inviter un membre de l'équipe",
+    emailLabel: "Adresse courriel",
+    roleLabel: "Rôle",
+    rolePermsHeading: "Permissions des rôles :",
+    memberPerms: "Consulter les données, gérer les clients, répondre à la rétroaction",
+    adminPerms:
+      "Toutes les permissions des membres + gestion de l'équipe, des paramètres et de la facturation",
+    cancel: "Annuler",
+    sendInvite: "Envoyer l'invitation",
+    // Change role modal
+    changeRoleTitle: "Changer le rôle",
+    memberLabel: "Membre",
+    newRoleLabel: "Nouveau rôle",
+    updateRole: "Mettre à jour le rôle",
+  },
+  "de-CH": {
+    title: "Team",
+    subtitle: "Verwalten Sie Ihre Teammitglieder und deren Rollen.",
+    inviteMember: "Mitglied einladen",
+    // Errors / alerts
+    loadFailed: "Teammitglieder konnten nicht geladen werden",
+    somethingWrong: "Etwas ist schiefgelaufen",
+    retry: "Erneut versuchen",
+    unknown: "Unbekannt",
+    inviteFailed: "Einladung konnte nicht gesendet werden",
+    inviteFailedRetry:
+      "Einladung konnte nicht gesendet werden. Bitte versuchen Sie es erneut.",
+    updateRoleFailed: "Rolle konnte nicht aktualisiert werden",
+    updateRoleFailedRetry:
+      "Rolle konnte nicht aktualisiert werden. Bitte versuchen Sie es erneut.",
+    cannotRemoveOwner: "Der Kontoinhaber kann nicht entfernt werden.",
+    removeConfirm: (name: string) =>
+      `Möchten Sie ${name} wirklich aus dem Team entfernen?`,
+    removeFailed: "Mitglied konnte nicht entfernt werden",
+    removeFailedAlert: "Teammitglied konnte nicht entfernt werden.",
+    // Empty state
+    emptyTitle: "Keine Teammitglieder",
+    emptyDescription:
+      "Laden Sie Teammitglieder ein, um Ihre Reputation gemeinsam zu verwalten.",
+    // Table
+    colMember: "Mitglied",
+    colRole: "Rolle",
+    colJoined: "Beigetreten",
+    roleLabels: {
+      OWNER: "Inhaber",
+      ADMIN: "Administrator",
+      MEMBER: "Mitglied",
+    } as Record<string, string>,
+    changeRoleTooltip: "Rolle ändern",
+    removeMemberTooltip: "Mitglied entfernen",
+    // Invite modal
+    inviteModalTitle: "Teammitglied einladen",
+    emailLabel: "E-Mail-Adresse",
+    roleLabel: "Rolle",
+    rolePermsHeading: "Rollenberechtigungen:",
+    memberPerms: "Daten einsehen, Kunden verwalten, auf Feedback antworten",
+    adminPerms:
+      "Alle Mitgliederberechtigungen + Verwaltung von Team, Einstellungen und Abrechnung",
+    cancel: "Abbrechen",
+    sendInvite: "Einladung senden",
+    // Change role modal
+    changeRoleTitle: "Rolle ändern",
+    memberLabel: "Mitglied",
+    newRoleLabel: "Neue Rolle",
+    updateRole: "Rolle aktualisieren",
+  },
+};
+
+// ─── /templates ─────────────────────────────────────────────────────────────
+const templatesEn = {
+  title: "Templates",
+  subtitle: "Manage your email and SMS templates for feedback and review requests.",
+  helpButton: "Help",
+  createTemplate: "Create Template",
+  loadFailed: "Failed to load templates",
+  genericError: "Something went wrong",
+  errorTitle: "Failed to load templates",
+  retry: "Retry",
+  tabEmail: "Email Templates",
+  tabSms: "SMS Templates",
+  emptyTitle: (channel: string): string =>
+    channel === "SMS" ? "No sms templates" : "No email templates",
+  emptyDescription:
+    "Customize the emails and texts your customers receive when you request feedback.",
+  typeLabels: {
+    feedback_request: "Feedback Request",
+    review_request: "Review Request",
+    recovery: "Recovery",
+  } as Record<string, string>,
+  channelLabels: {
+    EMAIL: "Email",
+    SMS: "SMS",
+  } as Record<string, string>,
+  subjectLine: (subject: string) => `Subject: ${subject}`,
+  lastModified: (date: string) => `Last modified: ${date}`,
+  modalEditTitle: "Edit Template",
+  modalCreateTitle: "Create Template",
+  nameLabel: "Template Name",
+  namePlaceholder: "e.g. Post-Purchase Feedback",
+  typeLabel: "Type",
+  channelLabel: "Channel",
+  subjectLabel: "Subject",
+  subjectPlaceholder: "We'd love your feedback, {{customer_name}}!",
+  bodyLabel: "Body",
+  bodyPlaceholder: "Hi {{customer_name}}, thank you for choosing {{business_name}}...",
+  placeholdersTitle: "Available placeholders:",
+  cancel: "Cancel",
+  saveChanges: "Save Changes",
+  saveFailed: "Failed to save template. Please try again.",
+  deleteConfirm: "Are you sure you want to delete this template?",
+  deleteFailed: "Failed to delete template. Please try again.",
+  help: {
+    title: "How templates work",
+    intro:
+      "Templates are reusable messages sent to your customers through campaigns. Your account includes ready-made defaults covering the full review journey — edit them freely or create your own.",
+    includedTitle: "Your included templates",
+    sent: (when: string) => `Sent: ${when}`,
+    templates: [
+      {
+        name: "Private Pulse Check",
+        channel: "EMAIL",
+        typeKey: "feedback_request",
+        when: "~24h after the visit",
+        what: "A quiet check-in asking how things went. Catches problems early so you can fix them before asking for a public review.",
+      },
+      {
+        name: "Initial Review Request",
+        channel: "EMAIL",
+        typeKey: "review_request",
+        when: "~72h after the visit",
+        what: "The main ask. Invites the customer to leave a Google review, with the private feedback link offered as a secondary option.",
+      },
+      {
+        name: "Friendly Reminder",
+        channel: "EMAIL",
+        typeKey: "review_request",
+        when: "5 days later, only if no click",
+        what: "A single, gentle nudge. It tells the customer it is the only reminder they will receive — and it is.",
+      },
+      {
+        name: "Thank You - Review Received",
+        channel: "EMAIL",
+        typeKey: "review_request",
+        when: "After a review is detected",
+        what: "Closes the loop with genuine thanks. Small touch, big retention effect.",
+      },
+      {
+        name: "Service Recovery Follow-Up",
+        channel: "EMAIL",
+        typeKey: "recovery",
+        when: "After you resolve a reported issue",
+        what: "Confirms the fix, invites a reply if anything is still wrong, and mentions — without pressure — that a public review is welcome.",
+      },
+      {
+        name: "Initial Review Request (SMS)",
+        channel: "SMS",
+        typeKey: "review_request",
+        when: "~72h after the visit",
+        what: "Short-form version of the main ask. One line, one link, STOP opt-out.",
+      },
+      {
+        name: "Reminder (SMS)",
+        channel: "SMS",
+        typeKey: "review_request",
+        when: "5 days later, only if no click",
+        what: "One-time nudge, clearly labelled as the only reminder.",
+      },
+      {
+        name: "Thank You (SMS)",
+        channel: "SMS",
+        typeKey: "review_request",
+        when: "After a review is detected",
+        what: "Two-sentence thank-you to the customer.",
+      },
+    ] as Array<{
+      name: string;
+      channel: "EMAIL" | "SMS";
+      typeKey: string;
+      when: string;
+      what: string;
+    }>,
+    variablesTitle: "Variables",
+    variablesIntro:
+      "Variables are replaced with real values when each message is sent. Type them anywhere in a subject or body:",
+    colVariable: "Variable",
+    colBecomes: "What it becomes",
+    colExample: "Example",
+    placeholders: [
+      { tag: "{{customer_name}}", desc: "Customer's first name", example: "Marie" },
+      { tag: "{{business_name}}", desc: "Your business name", example: "ABC Dental" },
+      {
+        tag: "{{location_name}}",
+        desc: "Location the customer visited",
+        example: "ABC Dental - Downtown",
+      },
+      {
+        tag: "{{review_link}}",
+        desc: "Public Google review link (same link for every customer)",
+        example: "g.page/r/...",
+      },
+      {
+        tag: "{{feedback_link}}",
+        desc: "Private feedback form, goes only to your team",
+        example: "echorank360.com/f/...",
+      },
+      {
+        tag: "{{unsubscribe_link}}",
+        desc: "Required opt-out link in every email",
+        example: "echorank360.com/u/...",
+      },
+    ] as Array<{ tag: string; desc: string; example: string }>,
+    bestPracticesTitle: "Best practices",
+    bestPractices: [
+      "Give every customer the same public review link — never filter who gets asked based on how happy they seem.",
+      "Offer the private feedback link as an extra option, not a replacement.",
+      "Send one reminder at most, and say so in the message.",
+      "Never offer incentives in exchange for reviews.",
+      "SMS: stay under ~160 characters before the link and always include “Reply STOP to opt out”.",
+    ] as string[],
+  },
+};
+export type TemplatesCopy = typeof templatesEn;
+
+export const TEMPLATES_COPY: Record<DashLocale, TemplatesCopy> = {
+  en: templatesEn,
+  fr: {
+    title: "Modèles",
+    subtitle:
+      "Gérez vos modèles de courriel et de SMS pour les demandes de rétroaction et d'avis.",
+    helpButton: "Aide",
+    createTemplate: "Créer un modèle",
+    loadFailed: "Échec du chargement des modèles",
+    genericError: "Une erreur s'est produite",
+    errorTitle: "Échec du chargement des modèles",
+    retry: "Réessayer",
+    tabEmail: "Modèles courriel",
+    tabSms: "Modèles SMS",
+    emptyTitle: (channel: string) =>
+      channel === "SMS" ? "Aucun modèle SMS" : "Aucun modèle courriel",
+    emptyDescription:
+      "Personnalisez les courriels et les textos que vos clients reçoivent lorsque vous demandez une rétroaction.",
+    typeLabels: {
+      feedback_request: "Demande de rétroaction",
+      review_request: "Demande d'avis",
+      recovery: "Récupération",
+    } as Record<string, string>,
+    channelLabels: {
+      EMAIL: "Courriel",
+      SMS: "SMS",
+    } as Record<string, string>,
+    subjectLine: (subject: string) => `Objet : ${subject}`,
+    lastModified: (date: string) => `Dernière modification : ${date}`,
+    modalEditTitle: "Modifier le modèle",
+    modalCreateTitle: "Créer un modèle",
+    nameLabel: "Nom du modèle",
+    namePlaceholder: "p. ex. Rétroaction après achat",
+    typeLabel: "Type",
+    channelLabel: "Canal",
+    subjectLabel: "Objet",
+    subjectPlaceholder: "Nous aimerions avoir votre rétroaction, {{customer_name}}!",
+    bodyLabel: "Corps du message",
+    bodyPlaceholder: "Bonjour {{customer_name}}, merci d'avoir choisi {{business_name}}...",
+    placeholdersTitle: "Variables disponibles :",
+    cancel: "Annuler",
+    saveChanges: "Enregistrer les modifications",
+    saveFailed: "Échec de l'enregistrement du modèle. Veuillez réessayer.",
+    deleteConfirm: "Voulez-vous vraiment supprimer ce modèle?",
+    deleteFailed: "Échec de la suppression du modèle. Veuillez réessayer.",
+    help: {
+      title: "Comment fonctionnent les modèles",
+      intro:
+        "Les modèles sont des messages réutilisables envoyés à vos clients par l'entremise des campagnes. Votre compte comprend des modèles par défaut prêts à l'emploi qui couvrent tout le parcours d'avis — modifiez-les librement ou créez les vôtres.",
+      includedTitle: "Vos modèles inclus",
+      sent: (when: string) => `Envoi : ${when}`,
+      templates: [
+        {
+          name: "Prise de pouls privée",
+          channel: "EMAIL",
+          typeKey: "feedback_request",
+          when: "~24 h après la visite",
+          what: "Un suivi discret pour savoir comment ça s'est passé. Détecte les problèmes tôt afin que vous puissiez les corriger avant de demander un avis public.",
+        },
+        {
+          name: "Demande d'avis initiale",
+          channel: "EMAIL",
+          typeKey: "review_request",
+          when: "~72 h après la visite",
+          what: "La demande principale. Invite le client à laisser un avis Google, avec le lien de rétroaction privé offert comme option secondaire.",
+        },
+        {
+          name: "Rappel amical",
+          channel: "EMAIL",
+          typeKey: "review_request",
+          when: "5 jours plus tard, seulement s'il n'y a pas eu de clic",
+          what: "Un seul rappel, tout en douceur. Il indique au client que c'est le seul rappel qu'il recevra — et c'est le cas.",
+        },
+        {
+          name: "Merci - Avis reçu",
+          channel: "EMAIL",
+          typeKey: "review_request",
+          when: "Après la détection d'un avis",
+          what: "Boucle la boucle avec des remerciements sincères. Petit geste, grand effet sur la fidélisation.",
+        },
+        {
+          name: "Suivi de récupération de service",
+          channel: "EMAIL",
+          typeKey: "recovery",
+          when: "Après la résolution d'un problème signalé",
+          what: "Confirme la correction, invite à répondre si quelque chose ne va toujours pas et mentionne — sans pression — qu'un avis public est bienvenu.",
+        },
+        {
+          name: "Demande d'avis initiale (SMS)",
+          channel: "SMS",
+          typeKey: "review_request",
+          when: "~72 h après la visite",
+          what: "Version courte de la demande principale. Une ligne, un lien, désinscription par STOP.",
+        },
+        {
+          name: "Rappel (SMS)",
+          channel: "SMS",
+          typeKey: "review_request",
+          when: "5 jours plus tard, seulement s'il n'y a pas eu de clic",
+          what: "Rappel unique, clairement présenté comme le seul rappel.",
+        },
+        {
+          name: "Merci (SMS)",
+          channel: "SMS",
+          typeKey: "review_request",
+          when: "Après la détection d'un avis",
+          what: "Un merci en deux phrases adressé au client.",
+        },
+      ] as Array<{
+        name: string;
+        channel: "EMAIL" | "SMS";
+        typeKey: string;
+        when: string;
+        what: string;
+      }>,
+      variablesTitle: "Variables",
+      variablesIntro:
+        "Les variables sont remplacées par des valeurs réelles au moment de l'envoi de chaque message. Saisissez-les n'importe où dans un objet ou un corps de message :",
+      colVariable: "Variable",
+      colBecomes: "Ce qu'elle devient",
+      colExample: "Exemple",
+      placeholders: [
+        { tag: "{{customer_name}}", desc: "Prénom du client", example: "Marie" },
+        { tag: "{{business_name}}", desc: "Le nom de votre entreprise", example: "ABC Dental" },
+        {
+          tag: "{{location_name}}",
+          desc: "L'emplacement visité par le client",
+          example: "ABC Dental - Centre-ville",
+        },
+        {
+          tag: "{{review_link}}",
+          desc: "Lien public d'avis Google (le même lien pour chaque client)",
+          example: "g.page/r/...",
+        },
+        {
+          tag: "{{feedback_link}}",
+          desc: "Formulaire de rétroaction privé, transmis uniquement à votre équipe",
+          example: "echorank360.com/f/...",
+        },
+        {
+          tag: "{{unsubscribe_link}}",
+          desc: "Lien de désabonnement obligatoire dans chaque courriel",
+          example: "echorank360.com/u/...",
+        },
+      ] as Array<{ tag: string; desc: string; example: string }>,
+      bestPracticesTitle: "Bonnes pratiques",
+      bestPractices: [
+        "Donnez à chaque client le même lien d'avis public — ne filtrez jamais qui reçoit la demande selon son niveau de satisfaction apparent.",
+        "Offrez le lien de rétroaction privé comme option supplémentaire, pas comme remplacement.",
+        "Envoyez au plus un rappel, et dites-le dans le message.",
+        "N'offrez jamais d'incitatifs en échange d'avis.",
+        "SMS : restez sous ~160 caractères avant le lien et incluez toujours «Répondez STOP pour vous désabonner».",
+      ] as string[],
+    },
+  },
+  "de-CH": {
+    title: "Vorlagen",
+    subtitle:
+      "Verwalten Sie Ihre E-Mail- und SMS-Vorlagen für Feedback- und Bewertungsanfragen.",
+    helpButton: "Hilfe",
+    createTemplate: "Vorlage erstellen",
+    loadFailed: "Vorlagen konnten nicht geladen werden",
+    genericError: "Etwas ist schiefgelaufen",
+    errorTitle: "Vorlagen konnten nicht geladen werden",
+    retry: "Erneut versuchen",
+    tabEmail: "E-Mail-Vorlagen",
+    tabSms: "SMS-Vorlagen",
+    emptyTitle: (channel: string) =>
+      channel === "SMS" ? "Keine SMS-Vorlagen" : "Keine E-Mail-Vorlagen",
+    emptyDescription:
+      "Passen Sie die E-Mails und SMS an, die Ihre Kunden erhalten, wenn Sie um Feedback bitten.",
+    typeLabels: {
+      feedback_request: "Feedback-Anfrage",
+      review_request: "Bewertungsanfrage",
+      recovery: "Rückgewinnung",
+    } as Record<string, string>,
+    channelLabels: {
+      EMAIL: "E-Mail",
+      SMS: "SMS",
+    } as Record<string, string>,
+    subjectLine: (subject: string) => `Betreff: ${subject}`,
+    lastModified: (date: string) => `Zuletzt geändert: ${date}`,
+    modalEditTitle: "Vorlage bearbeiten",
+    modalCreateTitle: "Vorlage erstellen",
+    nameLabel: "Vorlagenname",
+    namePlaceholder: "z. B. Feedback nach dem Kauf",
+    typeLabel: "Typ",
+    channelLabel: "Kanal",
+    subjectLabel: "Betreff",
+    subjectPlaceholder: "Wir würden uns über Ihr Feedback freuen, {{customer_name}}!",
+    bodyLabel: "Nachrichtentext",
+    bodyPlaceholder:
+      "Hallo {{customer_name}}, vielen Dank, dass Sie sich für {{business_name}} entschieden haben...",
+    placeholdersTitle: "Verfügbare Variablen:",
+    cancel: "Abbrechen",
+    saveChanges: "Änderungen speichern",
+    saveFailed: "Vorlage konnte nicht gespeichert werden. Bitte versuchen Sie es erneut.",
+    deleteConfirm: "Möchten Sie diese Vorlage wirklich löschen?",
+    deleteFailed: "Vorlage konnte nicht gelöscht werden. Bitte versuchen Sie es erneut.",
+    help: {
+      title: "So funktionieren Vorlagen",
+      intro:
+        "Vorlagen sind wiederverwendbare Nachrichten, die über Kampagnen an Ihre Kunden gesendet werden. Ihr Konto enthält fertige Standardvorlagen, die den gesamten Bewertungsprozess abdecken — bearbeiten Sie sie frei oder erstellen Sie eigene.",
+      includedTitle: "Ihre enthaltenen Vorlagen",
+      sent: (when: string) => `Versand: ${when}`,
+      templates: [
+        {
+          name: "Privater Puls-Check",
+          channel: "EMAIL",
+          typeKey: "feedback_request",
+          when: "~24 Std. nach dem Besuch",
+          what: "Eine diskrete Nachfrage, wie es gelaufen ist. Erkennt Probleme früh, damit Sie sie beheben können, bevor Sie um eine öffentliche Bewertung bitten.",
+        },
+        {
+          name: "Erste Bewertungsanfrage",
+          channel: "EMAIL",
+          typeKey: "review_request",
+          when: "~72 Std. nach dem Besuch",
+          what: "Die Hauptanfrage. Lädt den Kunden ein, eine Google-Bewertung zu hinterlassen, mit dem privaten Feedback-Link als sekundärer Option.",
+        },
+        {
+          name: "Freundliche Erinnerung",
+          channel: "EMAIL",
+          typeKey: "review_request",
+          when: "5 Tage später, nur wenn kein Klick erfolgt ist",
+          what: "Ein einziger, sanfter Anstoss. Er teilt dem Kunden mit, dass dies die einzige Erinnerung ist, die er erhält — und das stimmt.",
+        },
+        {
+          name: "Danke - Bewertung erhalten",
+          channel: "EMAIL",
+          typeKey: "review_request",
+          when: "Nachdem eine Bewertung erkannt wurde",
+          what: "Schliesst den Kreis mit einem aufrichtigen Dankeschön. Kleine Geste, grosse Wirkung auf die Kundenbindung.",
+        },
+        {
+          name: "Nachfassen zur Service-Rückgewinnung",
+          channel: "EMAIL",
+          typeKey: "recovery",
+          when: "Nachdem Sie ein gemeldetes Problem gelöst haben",
+          what: "Bestätigt die Behebung, lädt zu einer Antwort ein, falls noch etwas nicht stimmt, und erwähnt — ohne Druck —, dass eine öffentliche Bewertung willkommen ist.",
+        },
+        {
+          name: "Erste Bewertungsanfrage (SMS)",
+          channel: "SMS",
+          typeKey: "review_request",
+          when: "~72 Std. nach dem Besuch",
+          what: "Kurzversion der Hauptanfrage. Eine Zeile, ein Link, Abmeldung per STOP.",
+        },
+        {
+          name: "Erinnerung (SMS)",
+          channel: "SMS",
+          typeKey: "review_request",
+          when: "5 Tage später, nur wenn kein Klick erfolgt ist",
+          what: "Einmaliger Anstoss, klar als einzige Erinnerung gekennzeichnet.",
+        },
+        {
+          name: "Danke (SMS)",
+          channel: "SMS",
+          typeKey: "review_request",
+          when: "Nachdem eine Bewertung erkannt wurde",
+          what: "Ein Dankeschön in zwei Sätzen an den Kunden.",
+        },
+      ] as Array<{
+        name: string;
+        channel: "EMAIL" | "SMS";
+        typeKey: string;
+        when: string;
+        what: string;
+      }>,
+      variablesTitle: "Variablen",
+      variablesIntro:
+        "Variablen werden beim Versand jeder Nachricht durch echte Werte ersetzt. Geben Sie sie an beliebiger Stelle in Betreff oder Text ein:",
+      colVariable: "Variable",
+      colBecomes: "Wozu sie wird",
+      colExample: "Beispiel",
+      placeholders: [
+        { tag: "{{customer_name}}", desc: "Vorname des Kunden", example: "Marie" },
+        { tag: "{{business_name}}", desc: "Name Ihres Unternehmens", example: "ABC Dental" },
+        {
+          tag: "{{location_name}}",
+          desc: "Der vom Kunden besuchte Standort",
+          example: "ABC Dental - Innenstadt",
+        },
+        {
+          tag: "{{review_link}}",
+          desc: "Öffentlicher Google-Bewertungslink (derselbe Link für jeden Kunden)",
+          example: "g.page/r/...",
+        },
+        {
+          tag: "{{feedback_link}}",
+          desc: "Privates Feedback-Formular, geht nur an Ihr Team",
+          example: "echorank360.com/f/...",
+        },
+        {
+          tag: "{{unsubscribe_link}}",
+          desc: "Obligatorischer Abmeldelink in jeder E-Mail",
+          example: "echorank360.com/u/...",
+        },
+      ] as Array<{ tag: string; desc: string; example: string }>,
+      bestPracticesTitle: "Bewährte Praktiken",
+      bestPractices: [
+        "Geben Sie jedem Kunden denselben öffentlichen Bewertungslink — filtern Sie nie danach, wer gefragt wird, je nachdem, wie zufrieden jemand wirkt.",
+        "Bieten Sie den privaten Feedback-Link als zusätzliche Option an, nicht als Ersatz.",
+        "Senden Sie höchstens eine Erinnerung, und sagen Sie das in der Nachricht.",
+        "Bieten Sie nie Anreize im Austausch für Bewertungen an.",
+        "SMS: Bleiben Sie unter ~160 Zeichen vor dem Link und fügen Sie immer «Antworten Sie STOP, um sich abzumelden» hinzu.",
+      ] as string[],
+    },
+  },
+};
+
+// ─── visibility cards: MonitorCard ──────────────────────────────────────────
+const monitorCardEn = {
+  title: "Scheduled monitoring",
+  lockedDescription:
+    "Weekly re-audits with instant alerts when your score drops or an AI crawler gets blocked. Part of the Growth plan and up.",
+  upgrade: "Upgrade",
+  empty:
+    "No sites monitored yet. Run an audit, then add the site here — EchoRank will re-audit it on schedule and email you if the score drops or a crawler gets blocked.",
+  lastScore: (score: number, grade: string) => `last score ${score} (${grade})`,
+  nextRun: (date: string) => `next run ${date}`,
+  sparklineHint: "history builds after 2 runs",
+  weekly: "Weekly",
+  daily: "Daily (Agency)",
+  pause: "Pause",
+  resume: "Resume",
+  deleteMonitor: "Delete monitor",
+  monitorPromptBefore: "Monitor ",
+  monitorPromptAfter: "",
+  saving: "Saving…",
+  startMonitoring: "Start monitoring",
+  requestFailed: (status: number) => `Request failed (${status})`,
+  loadFailed: "Could not load monitors",
+  saveFailed: "Could not save monitor",
+  updateFailed: "Update failed",
+  dailyRequiresAgency: "Daily cadence requires the Agency plan.",
+};
+export type MonitorCardCopy = typeof monitorCardEn;
+
+export const MONITOR_CARD_COPY: Record<DashLocale, MonitorCardCopy> = {
+  en: monitorCardEn,
+  fr: {
+    title: "Surveillance planifiée",
+    lockedDescription:
+      "Réaudits hebdomadaires avec alertes instantanées lorsque votre score baisse ou qu'un robot d'IA est bloqué. Inclus dans le forfait Growth et les forfaits supérieurs.",
+    upgrade: "Passer au forfait supérieur",
+    empty:
+      "Aucun site surveillé pour l'instant. Lancez un audit, puis ajoutez le site ici — EchoRank le réauditera selon l'horaire et vous enverra un courriel si le score baisse ou si un robot d'exploration est bloqué.",
+    lastScore: (score: number, grade: string) => `dernier score ${score} (${grade})`,
+    nextRun: (date: string) => `prochaine exécution ${date}`,
+    sparklineHint: "l'historique apparaît après 2 exécutions",
+    weekly: "Hebdomadaire",
+    daily: "Quotidien (Agency)",
+    pause: "Suspendre",
+    resume: "Reprendre",
+    deleteMonitor: "Supprimer la surveillance",
+    monitorPromptBefore: "Surveiller ",
+    monitorPromptAfter: "",
+    saving: "Enregistrement…",
+    startMonitoring: "Démarrer la surveillance",
+    requestFailed: (status: number) => `Échec de la requête (${status})`,
+    loadFailed: "Impossible de charger les surveillances",
+    saveFailed: "Impossible d'enregistrer la surveillance",
+    updateFailed: "Échec de la mise à jour",
+    dailyRequiresAgency: "La cadence quotidienne nécessite le forfait Agency.",
+  },
+  "de-CH": {
+    title: "Geplante Überwachung",
+    lockedDescription:
+      "Wöchentliche erneute Audits mit sofortigen Benachrichtigungen, wenn Ihr Score sinkt oder ein KI-Crawler blockiert wird. Teil des Growth-Plans und höher.",
+    upgrade: "Upgrade durchführen",
+    empty:
+      "Noch keine überwachten Websites. Führen Sie ein Audit durch und fügen Sie die Website hier hinzu — EchoRank auditiert sie nach Zeitplan erneut und benachrichtigt Sie per E-Mail, wenn der Score sinkt oder ein Crawler blockiert wird.",
+    lastScore: (score: number, grade: string) => `letzter Score ${score} (${grade})`,
+    nextRun: (date: string) => `nächster Lauf ${date}`,
+    sparklineHint: "Verlauf erscheint nach 2 Läufen",
+    weekly: "Wöchentlich",
+    daily: "Täglich (Agency)",
+    pause: "Pausieren",
+    resume: "Fortsetzen",
+    deleteMonitor: "Überwachung löschen",
+    monitorPromptBefore: "",
+    monitorPromptAfter: " überwachen",
+    saving: "Wird gespeichert…",
+    startMonitoring: "Überwachung starten",
+    requestFailed: (status: number) => `Anfrage fehlgeschlagen (${status})`,
+    loadFailed: "Überwachungen konnten nicht geladen werden",
+    saveFailed: "Überwachung konnte nicht gespeichert werden",
+    updateFailed: "Aktualisierung fehlgeschlagen",
+    dailyRequiresAgency: "Tägliche Ausführung erfordert den Agency-Plan.",
+  },
+};
+
+// ─── visibility cards: BenchmarkCard ────────────────────────────────────────
+const benchmarkCardEn = {
+  title: "Competitor benchmark",
+  lockedDescription:
+    "See how your AI visibility stacks up against competitors, side by side. Part of the Growth plan and up.",
+  upgrade: "Upgrade",
+  competitorsToday: (used: number, limit: number) =>
+    `${used} / ${limit} competitor${limit === 1 ? "" : "s"} today`,
+  colSite: "Site",
+  colScore: "Score",
+  colBlocked: "Crawlers blocked",
+  youBadge: "(you)",
+  placeholder: "competitor.com",
+  auditing: "Auditing…",
+  compare: "Compare",
+  growthLimitBefore: "Growth includes 1 competitor per day — ",
+  growthLimitLink: "Agency includes 5",
+  growthLimitAfter: ".",
+  requestFailed: (status: number) => `Request failed (${status})`,
+  comparisonFailed: "Comparison failed",
+};
+export type BenchmarkCardCopy = typeof benchmarkCardEn;
+
+export const BENCHMARK_CARD_COPY: Record<DashLocale, BenchmarkCardCopy> = {
+  en: benchmarkCardEn,
+  fr: {
+    title: "Analyse comparative des concurrents",
+    lockedDescription:
+      "Voyez comment votre visibilité IA se compare à celle de vos concurrents, côte à côte. Inclus dans le forfait Growth et les forfaits supérieurs.",
+    upgrade: "Passer au forfait supérieur",
+    competitorsToday: (used: number, limit: number) =>
+      `${used} / ${limit} concurrent${limit === 1 ? "" : "s"} aujourd'hui`,
+    colSite: "Site",
+    colScore: "Score",
+    colBlocked: "Robots bloqués",
+    youBadge: "(vous)",
+    placeholder: "competitor.com",
+    auditing: "Audit en cours…",
+    compare: "Comparer",
+    growthLimitBefore: "Growth inclut 1 concurrent par jour — ",
+    growthLimitLink: "Agency en inclut 5",
+    growthLimitAfter: ".",
+    requestFailed: (status: number) => `Échec de la requête (${status})`,
+    comparisonFailed: "Échec de la comparaison",
+  },
+  "de-CH": {
+    title: "Wettbewerber-Benchmark",
+    lockedDescription:
+      "Sehen Sie im direkten Vergleich, wie Ihre KI-Sichtbarkeit gegenüber Wettbewerbern abschneidet. Teil des Growth-Plans und höher.",
+    upgrade: "Upgrade durchführen",
+    competitorsToday: (used: number, limit: number) =>
+      `${used} / ${limit} Wettbewerber heute`,
+    colSite: "Website",
+    colScore: "Score",
+    colBlocked: "Blockierte Crawler",
+    youBadge: "(Sie)",
+    placeholder: "competitor.com",
+    auditing: "Audit läuft…",
+    compare: "Vergleichen",
+    growthLimitBefore: "Growth umfasst 1 Wettbewerber pro Tag — ",
+    growthLimitLink: "Agency umfasst 5",
+    growthLimitAfter: ".",
+    requestFailed: (status: number) => `Anfrage fehlgeschlagen (${status})`,
+    comparisonFailed: "Vergleich fehlgeschlagen",
+  },
+};
+
+// ─── visibility cards: AnswerTrackingCard ───────────────────────────────────
+const answerTrackingEn = {
+  title: "Answer tracking",
+  lockedDescription:
+    "When customers ask ChatGPT or Claude for a recommendation, are you the answer? Track the exact questions daily and know the moment you appear — or a competitor does. The headline of the Agency plan.",
+  upgrade: "Upgrade",
+  mentionRateBadge: (rate: number) => `mentioned in ${rate}% of answers (14d)`,
+  promptsUsed: (used: number, limit: number) => `${used} / ${limit} prompts`,
+  queuing: "Queuing…",
+  runNow: "Run now",
+  empty:
+    "Add the questions your customers actually ask an AI — “best [what you do] in [your city]” — and EchoRank runs them every day, flagging whether you were the answer.",
+  mentioned: (rank: number | null) => `Mentioned${rank ? ` · #${rank}` : ""}`,
+  notMentioned: "Not mentioned",
+  firstRunPending: "first run pending",
+  deletePrompt: "Delete prompt",
+  placeholder: "best plumber in Mérida",
+  adding: "Adding…",
+  trackPrompt: "Track prompt",
+  runningNotice: (n: number) =>
+    `Running ${n} prompt${n === 1 ? "" : "s"} — results land here in about a minute.`,
+  requestFailed: (status: number) => `Request failed (${status})`,
+  loadFailed: "Could not load prompts",
+  addFailed: "Could not add prompt",
+};
+export type AnswerTrackingCopy = typeof answerTrackingEn;
+
+export const ANSWER_TRACKING_COPY: Record<DashLocale, AnswerTrackingCopy> = {
+  en: answerTrackingEn,
+  fr: {
+    title: "Suivi des réponses",
+    lockedDescription:
+      "Quand des clients demandent une recommandation à ChatGPT ou Claude, êtes-vous la réponse? Suivez ces questions exactes chaque jour et sachez dès l'instant où vous apparaissez — ou qu'un concurrent apparaît. Le point fort du forfait Agency.",
+    upgrade: "Passer au forfait supérieur",
+    mentionRateBadge: (rate: number) => `mentionné dans ${rate} % des réponses (14 j)`,
+    promptsUsed: (used: number, limit: number) => `${used} / ${limit} requêtes`,
+    queuing: "Mise en file…",
+    runNow: "Exécuter maintenant",
+    empty:
+      "Ajoutez les questions que vos clients posent réellement à une IA — « meilleur [votre métier] à [votre ville] » — et EchoRank les exécute chaque jour en signalant si vous étiez la réponse.",
+    mentioned: (rank: number | null) => `Mentionné${rank ? ` · #${rank}` : ""}`,
+    notMentioned: "Non mentionné",
+    firstRunPending: "première exécution en attente",
+    deletePrompt: "Supprimer la requête",
+    placeholder: "meilleur plombier à Mérida",
+    adding: "Ajout…",
+    trackPrompt: "Suivre la requête",
+    runningNotice: (n: number) =>
+      `Exécution de ${n} requête${n === 1 ? "" : "s"} — les résultats apparaîtront ici dans environ une minute.`,
+    requestFailed: (status: number) => `Échec de la requête (${status})`,
+    loadFailed: "Impossible de charger les requêtes",
+    addFailed: "Impossible d'ajouter la requête",
+  },
+  "de-CH": {
+    title: "Antwort-Tracking",
+    lockedDescription:
+      "Wenn Kunden ChatGPT oder Claude um eine Empfehlung bitten — sind Sie die Antwort? Verfolgen Sie genau diese Fragen täglich und erfahren Sie sofort, wenn Sie erscheinen — oder ein Wettbewerber. Das Kernstück des Agency-Plans.",
+    upgrade: "Upgrade durchführen",
+    mentionRateBadge: (rate: number) => `in ${rate}% der Antworten erwähnt (14 Tage)`,
+    promptsUsed: (used: number, limit: number) => `${used} / ${limit} Prompts`,
+    queuing: "Wird eingereiht…",
+    runNow: "Jetzt ausführen",
+    empty:
+      "Fügen Sie die Fragen hinzu, die Ihre Kunden einer KI tatsächlich stellen — «beste/r [Ihre Branche] in [Ihre Stadt]» — und EchoRank führt sie täglich aus und zeigt an, ob Sie die Antwort waren.",
+    mentioned: (rank: number | null) => `Erwähnt${rank ? ` · #${rank}` : ""}`,
+    notMentioned: "Nicht erwähnt",
+    firstRunPending: "erster Lauf ausstehend",
+    deletePrompt: "Prompt löschen",
+    placeholder: "bester Sanitärinstallateur in Mérida",
+    adding: "Wird hinzugefügt…",
+    trackPrompt: "Prompt verfolgen",
+    runningNotice: (n: number) =>
+      n === 1
+        ? "1 Prompt wird ausgeführt — die Ergebnisse erscheinen hier in etwa einer Minute."
+        : `${n} Prompts werden ausgeführt — die Ergebnisse erscheinen hier in etwa einer Minute.`,
+    requestFailed: (status: number) => `Anfrage fehlgeschlagen (${status})`,
+    loadFailed: "Prompts konnten nicht geladen werden",
+    addFailed: "Prompt konnte nicht hinzugefügt werden",
+  },
+};
+
+// ─── visibility cards: PromptTrends ─────────────────────────────────────────
+const promptTrendsEn = {
+  loading: "Loading prompt trends…",
+  loadFailed: "Could not load prompt history.",
+  title: (days: number) => `Mention trend — last ${days} days`,
+  noRunsYet: "no runs yet",
+  mentionedTooltip: (date: string, rank: number | null) =>
+    `${date} — mentioned${rank ? ` #${rank}` : ""}`,
+  notMentionedTooltip: (date: string) => `${date} — not mentioned`,
+};
+export type PromptTrendsCopy = typeof promptTrendsEn;
+
+export const PROMPT_TRENDS_COPY: Record<DashLocale, PromptTrendsCopy> = {
+  en: promptTrendsEn,
+  fr: {
+    loading: "Chargement des tendances de requêtes…",
+    loadFailed: "Impossible de charger l'historique des requêtes.",
+    title: (days: number) => `Tendance des mentions — ${days} derniers jours`,
+    noRunsYet: "aucune exécution pour l'instant",
+    mentionedTooltip: (date: string, rank: number | null) =>
+      `${date} — mentionné${rank ? ` #${rank}` : ""}`,
+    notMentionedTooltip: (date: string) => `${date} — non mentionné`,
+  },
+  "de-CH": {
+    loading: "Prompt-Trends werden geladen…",
+    loadFailed: "Prompt-Verlauf konnte nicht geladen werden.",
+    title: (days: number) => `Erwähnungstrend — letzte ${days} Tage`,
+    noRunsYet: "noch keine Läufe",
+    mentionedTooltip: (date: string, rank: number | null) =>
+      `${date} — erwähnt${rank ? ` #${rank}` : ""}`,
+    notMentionedTooltip: (date: string) => `${date} — nicht erwähnt`,
+  },
+};
+
+// ─── /visibility ────────────────────────────────────────────────────────────
+const visibilityEn = {
+  title: "AI Visibility",
+  subtitle: "Can AI answer engines find, crawl, and cite your site?",
+  // search
+  urlPlaceholder: "example.com",
+  auditing: "Auditing…",
+  runAudit: "Run audit",
+  // errors
+  requestFailed: (status: number) => `Request failed (${status})`,
+  somethingWrong: "Something went wrong",
+  fixesFailed: "Could not generate fixes",
+  pasteLogAndDate: "Paste an access log and a deploy date.",
+  attrFailed: "Could not measure impact",
+  auditFailed: "Audit failed",
+  // stat cards
+  statScore: "Visibility Score",
+  statGrade: "Grade",
+  statCrawlersOpen: "AI Crawlers Open",
+  statRendering: "Rendering",
+  clientSide: "Client-side",
+  serverSide: "Server-side",
+  // reachability
+  reachabilityTitle: "Answer-engine reachability",
+  openDataset: "open dataset",
+  openBadge: "OPEN",
+  blockedBadge: "BLOCKED",
+  // scored checks
+  checksTitle: "Scored checks",
+  // fixes
+  fixesTitle: "Generated fixes",
+  mockBadge: "mock copy — set ANTHROPIC_API_KEY",
+  fixesIntro:
+    "Turn the findings into paste-ready artifacts: schema markup, FAQ content, and a robots.txt patch, written from your live page.",
+  generating: "Generating…",
+  generateFixes: "Generate fixes",
+  lockedFixesA: "AI-written schema, FAQ, and metadata are a ",
+  lockedFixesB:
+    " feature. Upgrade your plan to generate paste-ready fixes grounded in your page.",
+  upgradePlan: "Upgrade plan",
+  fixLabels: {
+    schema_jsonld: "Schema markup (JSON-LD)",
+    faq_html: "FAQ content (visible HTML)",
+    robots_patch: "robots.txt patch",
+    meta_description: "Meta description",
+  } as Record<string, string>,
+  copy: "Copy",
+  copied: "Copied",
+  // attribution
+  attrTitle: "AI impact — prove the fix paid off",
+  attrIntro:
+    "Paste a web-server access log and the date you deployed fixes. Measures AI crawler hits and AI referral traffic, before vs after.",
+  logPlaceholder: `1.2.3.4 - - [02/Jun/2026:10:00:00 +0000] "GET /about HTTP/1.1" 200 1200 "-" "GPTBot/1.0"\n... or Caddy JSON lines`,
+  deployPlaceholder: "Deploy date, e.g. 2026-06-01",
+  measuring: "Measuring…",
+  measureImpact: "Measure AI impact",
+  lockedAttr:
+    "ROI attribution is a Growth feature. Upgrade to connect your access logs and prove the fixes drove AI crawlers and referrals.",
+  deltaNa: "n/a",
+  deltaNew: "new",
+  totalRow: "TOTAL",
+  deploySummary: (deploy: string, before: number, after: number, parsed: number) =>
+    `Deploy ${deploy} · ${before}d before vs ${after}d after · parsed ${parsed} lines`,
+  crawlerActivity: "AI crawler activity (hits/day)",
+  referralTraffic: "AI referral traffic (views/day)",
+  noneDetected: "none detected (many AI surfaces send no Referer — see caveats)",
+  caveatsTitle: "Caveats",
+};
+export type VisibilityCopy = typeof visibilityEn;
+
+export const VISIBILITY_COPY: Record<DashLocale, VisibilityCopy> = {
+  en: visibilityEn,
+  fr: {
+    title: "Visibilité IA",
+    subtitle: "Les moteurs de réponse IA peuvent-ils trouver, explorer et citer votre site?",
+    urlPlaceholder: "example.com",
+    auditing: "Audit en cours…",
+    runAudit: "Lancer l'audit",
+    requestFailed: (status: number) => `Échec de la requête (${status})`,
+    somethingWrong: "Une erreur est survenue",
+    fixesFailed: "Impossible de générer les correctifs",
+    pasteLogAndDate: "Collez un journal d'accès et une date de déploiement.",
+    attrFailed: "Impossible de mesurer l'impact",
+    auditFailed: "Échec de l'audit",
+    statScore: "Score de visibilité",
+    statGrade: "Note",
+    statCrawlersOpen: "Robots d'IA ouverts",
+    statRendering: "Rendu",
+    clientSide: "Côté client",
+    serverSide: "Côté serveur",
+    reachabilityTitle: "Accessibilité aux moteurs de réponse",
+    openDataset: "ensemble de données ouvert",
+    openBadge: "OUVERT",
+    blockedBadge: "BLOQUÉ",
+    checksTitle: "Vérifications notées",
+    fixesTitle: "Correctifs générés",
+    mockBadge: "contenu factice — définissez ANTHROPIC_API_KEY",
+    fixesIntro:
+      "Transformez les constats en éléments prêts à coller : balisage Schema, contenu FAQ et correctif robots.txt, rédigés à partir de votre page en ligne.",
+    generating: "Génération…",
+    generateFixes: "Générer les correctifs",
+    lockedFixesA: "Le schéma, la FAQ et les métadonnées rédigés par l'IA sont une fonctionnalité ",
+    lockedFixesB:
+      ". Passez au forfait supérieur pour générer des correctifs prêts à coller, ancrés dans votre page.",
+    upgradePlan: "Passer au forfait supérieur",
+    fixLabels: {
+      schema_jsonld: "Balisage Schema (JSON-LD)",
+      faq_html: "Contenu FAQ (HTML visible)",
+      robots_patch: "Correctif robots.txt",
+      meta_description: "Méta-description",
+    } as Record<string, string>,
+    copy: "Copier",
+    copied: "Copié",
+    attrTitle: "Impact IA — prouvez que les correctifs ont porté fruit",
+    attrIntro:
+      "Collez un journal d'accès de votre serveur web et la date de déploiement des correctifs. Mesure les requêtes des robots d'IA et le trafic référé par l'IA, avant et après.",
+    logPlaceholder: `1.2.3.4 - - [02/Jun/2026:10:00:00 +0000] "GET /about HTTP/1.1" 200 1200 "-" "GPTBot/1.0"\n... ou des lignes JSON Caddy`,
+    deployPlaceholder: "Date de déploiement, p. ex. 2026-06-01",
+    measuring: "Mesure en cours…",
+    measureImpact: "Mesurer l'impact IA",
+    lockedAttr:
+      "L'attribution du ROI est une fonctionnalité Growth. Passez au forfait supérieur pour connecter vos journaux d'accès et prouver que les correctifs ont attiré robots d'IA et références.",
+    deltaNa: "s. o.",
+    deltaNew: "nouveau",
+    totalRow: "TOTAL",
+    deploySummary: (deploy: string, before: number, after: number, parsed: number) =>
+      `Déploiement ${deploy} · ${before} j avant vs ${after} j après · ${parsed} lignes analysées`,
+    crawlerActivity: "Activité des robots d'IA (requêtes/jour)",
+    referralTraffic: "Trafic référé par l'IA (vues/jour)",
+    noneDetected:
+      "aucun détecté (plusieurs surfaces d'IA n'envoient pas d'en-tête Referer — voir les mises en garde)",
+    caveatsTitle: "Mises en garde",
+  },
+  "de-CH": {
+    title: "KI-Sichtbarkeit",
+    subtitle: "Können KI-Antwortmaschinen Ihre Website finden, crawlen und zitieren?",
+    urlPlaceholder: "example.com",
+    auditing: "Audit läuft…",
+    runAudit: "Audit starten",
+    requestFailed: (status: number) => `Anfrage fehlgeschlagen (${status})`,
+    somethingWrong: "Etwas ist schiefgelaufen",
+    fixesFailed: "Korrekturen konnten nicht generiert werden",
+    pasteLogAndDate: "Fügen Sie ein Zugriffsprotokoll und ein Deploy-Datum ein.",
+    attrFailed: "Wirkung konnte nicht gemessen werden",
+    auditFailed: "Audit fehlgeschlagen",
+    statScore: "Sichtbarkeits-Score",
+    statGrade: "Note",
+    statCrawlersOpen: "Offene KI-Crawler",
+    statRendering: "Rendering",
+    clientSide: "Clientseitig",
+    serverSide: "Serverseitig",
+    reachabilityTitle: "Erreichbarkeit für Antwortmaschinen",
+    openDataset: "offener Datensatz",
+    openBadge: "OFFEN",
+    blockedBadge: "BLOCKIERT",
+    checksTitle: "Bewertete Prüfungen",
+    fixesTitle: "Generierte Korrekturen",
+    mockBadge: "Platzhaltertext — ANTHROPIC_API_KEY setzen",
+    fixesIntro:
+      "Verwandeln Sie die Ergebnisse in einsatzbereite Artefakte: Schema-Markup, FAQ-Inhalte und einen robots.txt-Patch, erstellt aus Ihrer Live-Seite.",
+    generating: "Wird generiert…",
+    generateFixes: "Korrekturen generieren",
+    lockedFixesA: "KI-generierte Schema-, FAQ- und Metadaten sind eine ",
+    lockedFixesB:
+      "-Funktion. Führen Sie ein Upgrade durch, um einsatzbereite, auf Ihrer Seite basierende Korrekturen zu generieren.",
+    upgradePlan: "Upgrade durchführen",
+    fixLabels: {
+      schema_jsonld: "Schema-Markup (JSON-LD)",
+      faq_html: "FAQ-Inhalt (sichtbares HTML)",
+      robots_patch: "robots.txt-Patch",
+      meta_description: "Meta-Beschreibung",
+    } as Record<string, string>,
+    copy: "Kopieren",
+    copied: "Kopiert",
+    attrTitle: "KI-Wirkung — belegen Sie, dass sich die Korrekturen ausgezahlt haben",
+    attrIntro:
+      "Fügen Sie ein Webserver-Zugriffsprotokoll und das Datum ein, an dem Sie die Korrekturen bereitgestellt haben. Misst KI-Crawler-Zugriffe und KI-Referral-Traffic, vorher vs. nachher.",
+    logPlaceholder: `1.2.3.4 - - [02/Jun/2026:10:00:00 +0000] "GET /about HTTP/1.1" 200 1200 "-" "GPTBot/1.0"\n... oder Caddy-JSON-Zeilen`,
+    deployPlaceholder: "Deploy-Datum, z. B. 2026-06-01",
+    measuring: "Wird gemessen…",
+    measureImpact: "KI-Wirkung messen",
+    lockedAttr:
+      "ROI-Attribution ist eine Growth-Funktion. Führen Sie ein Upgrade durch, um Ihre Zugriffsprotokolle zu verbinden und zu belegen, dass die Korrekturen KI-Crawler und Referrals gebracht haben.",
+    deltaNa: "k. A.",
+    deltaNew: "neu",
+    totalRow: "TOTAL",
+    deploySummary: (deploy: string, before: number, after: number, parsed: number) =>
+      `Deployment ${deploy} · ${before} Tage davor vs. ${after} Tage danach · ${parsed} Zeilen analysiert`,
+    crawlerActivity: "KI-Crawler-Aktivität (Zugriffe/Tag)",
+    referralTraffic: "KI-Referral-Traffic (Aufrufe/Tag)",
+    noneDetected:
+      "keine erkannt (viele KI-Oberflächen senden keinen Referer — siehe Vorbehalte)",
+    caveatsTitle: "Vorbehalte",
+  },
+};
+
+// ─── VisibilityHelpButton (src/components/help/VisibilityHelpButton.tsx) ────
+const visibilityHelpEn = {
+  fullGuide: "Full guide",
+  howItWorks: "How it works",
+  modalTitle: "How AI visibility works",
+  iframeTitle: "AI visibility — guide",
+  openFullPage: "Open as a full page →",
+};
+export type VisibilityHelpCopy = typeof visibilityHelpEn;
+
+export const VISIBILITY_HELP_COPY: Record<DashLocale, VisibilityHelpCopy> = {
+  en: visibilityHelpEn,
+  fr: {
+    fullGuide: "Guide complet",
+    howItWorks: "Comment ça marche",
+    modalTitle: "Comment fonctionne la visibilité IA",
+    iframeTitle: "Visibilité IA — guide",
+    openFullPage: "Ouvrir en pleine page →",
+  },
+  "de-CH": {
+    fullGuide: "Vollständiger Leitfaden",
+    howItWorks: "So funktioniert es",
+    modalTitle: "So funktioniert die KI-Sichtbarkeit",
+    iframeTitle: "KI-Sichtbarkeit — Leitfaden",
+    openFullPage: "Als ganze Seite öffnen →",
   },
 };

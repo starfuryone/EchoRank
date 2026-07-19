@@ -2,9 +2,11 @@
 
 import { Bell, LogOut, Menu } from "lucide-react";
 import { cn, getInitials } from "@/lib/utils";
+import { dashChrome, type DashLocale } from "@/lib/i18n/dashboard";
 
 interface HeaderProps {
   title: string;
+  locale?: DashLocale;
   user?: {
     name?: string | null;
     email?: string | null;
@@ -14,8 +16,9 @@ interface HeaderProps {
   onSignOut?: () => void;
 }
 
-export function Header({ title, user, onMenuToggle, onSignOut }: HeaderProps) {
-  const displayName = user?.name || user?.email || "User";
+export function Header({ title, locale = "en", user, onMenuToggle, onSignOut }: HeaderProps) {
+  const chrome = dashChrome[locale];
+  const displayName = user?.name || user?.email || chrome.user;
   const initials = getInitials(displayName);
 
   return (
@@ -26,7 +29,7 @@ export function Header({ title, user, onMenuToggle, onSignOut }: HeaderProps) {
           type="button"
           onClick={onMenuToggle}
           className="rounded-lg p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-700 lg:hidden"
-          aria-label="Toggle sidebar"
+          aria-label={chrome.toggleSidebar}
         >
           <Menu className="h-5 w-5" />
         </button>
@@ -41,7 +44,7 @@ export function Header({ title, user, onMenuToggle, onSignOut }: HeaderProps) {
         <button
           type="button"
           className="relative rounded-lg p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-700"
-          aria-label="Notifications"
+          aria-label={chrome.notifications}
         >
           <Bell className="h-5 w-5" />
           <span className="absolute right-1.5 top-1.5 h-2 w-2 rounded-full bg-red-500" />
@@ -77,7 +80,7 @@ export function Header({ title, user, onMenuToggle, onSignOut }: HeaderProps) {
             type="button"
             onClick={onSignOut}
             className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-700"
-            aria-label="Sign out"
+            aria-label={chrome.signOut}
           >
             <LogOut className="h-4 w-4" />
           </button>

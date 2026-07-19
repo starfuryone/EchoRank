@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Activity, Lock, Trash2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { MONITOR_CARD_COPY, type DashLocale } from "@/lib/i18n/dashboard";
 
 /**
  * Scheduled monitoring panel for the AI Visibility page (GROWTH+).
@@ -36,9 +37,9 @@ function canon(u: string): string {
   return u.trim().toLowerCase().replace(/^https?:\/\//, "").replace(/\/+$/, "");
 }
 
-function Sparkline({ points }: { points: number[] }) {
+function Sparkline({ points, hint }: { points: number[]; hint: string }) {
   if (points.length < 2) {
-    return <span className="text-xs text-gray-400">history builds after 2 runs</span>;
+    return <span className="text-xs text-gray-400">{hint}</span>;
   }
   const w = 120;
   const h = 28;
@@ -60,7 +61,14 @@ function Sparkline({ points }: { points: number[] }) {
   );
 }
 
-export function MonitorCard({ suggestedUrl }: { suggestedUrl: string | null }) {
+export function MonitorCard({
+  suggestedUrl,
+  locale = "en",
+}: {
+  suggestedUrl: string | null;
+  locale?: DashLocale;
+}) {
+  const t = MONITOR_CARD_COPY[locale];
   const [locked, setLocked] = useState(false);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
@@ -77,16 +85,16 @@ export function MonitorCard({ suggestedUrl }: { suggestedUrl: string | null }) {
         return;
       }
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || `Request failed (${res.status})`);
+      if (!res.ok) throw new Error(data.error || t.requestFailed(res.status));
       setMonitors(data.monitors ?? []);
       setAudits(data.audits ?? []);
       setLocked(false);
     } catch (e) {
-      setErr(e instanceof Error ? e.message : "Could not load monitors");
+      setErr(e instanceof Error ? e.message : t.loadFailed);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     void load();
@@ -104,13 +112,13 @@ export function MonitorCard({ suggestedUrl }: { suggestedUrl: string | null }) {
       });
       const data = await res.json();
       if (res.status === 403) {
-        setErr(data.error || "Daily cadence requires the Agency plan.");
+        setErr(data.error || t.dailyRequiresAgency);
         return;
       }
-      if (!res.ok) throw new Error(data.error || `Request failed (${res.status})`);
+      if (!res.ok) throw new Error(data.error || t.requestFailed(res.status));
       await load();
     } catch (e) {
-      setErr(e instanceof Error ? e.message : "Could not save monitor");
+      setErr(e instanceof Error ? e.message : t.saveFailed);
     } finally {
       setSaving(false);
     }
@@ -125,7 +133,7 @@ export function MonitorCard({ suggestedUrl }: { suggestedUrl: string | null }) {
     });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
-      setErr(data.error || "Update failed");
+      setErr(data.error || t.updateFailed);
       return;
     }
     await load();
@@ -149,14 +157,11 @@ export function MonitorCard({ suggestedUrl }: { suggestedUrl: string | null }) {
         <CardContent className="flex items-center gap-3 py-5">
           <Lock className="h-5 w-5 shrink-0 text-gray-400" />
           <div className="flex-1">
-            <p className="text-sm font-medium text-gray-900">Scheduled monitoring</p>
-            <p className="text-sm text-gray-500">
-              Weekly re-audits with instant alerts when your score drops or an AI crawler gets
-              blocked. Part of the Growth plan and up.
-            </p>
+            <p className="text-sm font-medium text-gray-900">{t.title}</p>
+            <p className="text-sm text-gray-500">{t.lockedDescription}</p>
           </div>
           <Button variant="outline" size="sm" onClick={() => (window.location.href = "/billing")}>
-            Upgrade
+            {t.upgrade}
           </Button>
         </CardContent>
       </Card>
@@ -179,15 +184,10 @@ export function MonitorCard({ suggestedUrl }: { suggestedUrl: string | null }) {
       <CardContent className="space-y-4 py-5">
         <div className="flex items-center gap-2">
           <Activity className="h-4 w-4 text-blue-600" />
-          <h3 className="text-sm font-semibold text-gray-900">Scheduled monitoring</h3>
+          <h3 className="text-sm font-semibold text-gray-900">{t.title}</h3>
         </div>
 
-        {monitors.length === 0 && (
-          <p className="text-sm text-gray-500">
-            No sites monitored yet. Run an audit, then add the site here — EchoRank will re-audit
-            it on schedule and email you if the score drops or a crawler gets blocked.
-          </p>
-        )}
+        {monitors.length === 0 && <p className="text-sm text-gray-500">{t.empty}</p>}
 
         {monitors.map((m) => (
           <div
@@ -199,27 +199,27 @@ export function MonitorCard({ suggestedUrl }: { suggestedUrl: string | null }) {
               <p className="text-xs text-gray-500">
                 {m.lastScore !== null ? (
                   <>
-                    last score {m.lastScore} ({m.lastGrade}) ·{" "}
+                    {t.lastScore(m.lastScore, m.lastGrade ?? "")} ·{" "}
                   </>
                 ) : null}
-                next run {new Date(m.nextRunAt).toLocaleDateString()}
+                {t.nextRun(new Date(m.nextRunAt).toLocaleDateString(locale))}
               </p>
             </div>
-            <Sparkline points={pointsFor(m)} />
+            <Sparkline points={pointsFor(m)} hint={t.sparklineHint} />
             <select
               value={m.cadence}
               onChange={(e) => void patch(m.id, { cadence: e.target.value })}
               className="rounded-lg border border-gray-300 px-2 py-1.5 text-sm text-gray-700"
             >
-              <option value="WEEKLY">Weekly</option>
-              <option value="DAILY">Daily (Agency)</option>
+              <option value="WEEKLY">{t.weekly}</option>
+              <option value="DAILY">{t.daily}</option>
             </select>
             <Button variant="outline" size="sm" onClick={() => void patch(m.id, { active: !m.active })}>
-              {m.active ? "Pause" : "Resume"}
+              {m.active ? t.pause : t.resume}
             </Button>
             <button
               type="button"
-              aria-label="Delete monitor"
+              aria-label={t.deleteMonitor}
               onClick={() => void remove(m.id)}
               className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-red-600"
             >
@@ -231,18 +231,20 @@ export function MonitorCard({ suggestedUrl }: { suggestedUrl: string | null }) {
         {suggestedUrl && !alreadyMonitored && (
           <div className="flex flex-wrap items-center gap-3 rounded-lg bg-blue-50 px-4 py-3">
             <p className="min-w-0 flex-1 truncate text-sm text-blue-900">
-              Monitor <span className="font-medium">{suggestedUrl}</span>
+              {t.monitorPromptBefore}
+              <span className="font-medium">{suggestedUrl}</span>
+              {t.monitorPromptAfter}
             </p>
             <select
               value={cadence}
               onChange={(e) => setCadence(e.target.value as Cadence)}
               className="rounded-lg border border-blue-200 bg-white px-2 py-1.5 text-sm text-gray-700"
             >
-              <option value="WEEKLY">Weekly</option>
-              <option value="DAILY">Daily (Agency)</option>
+              <option value="WEEKLY">{t.weekly}</option>
+              <option value="DAILY">{t.daily}</option>
             </select>
             <Button size="sm" onClick={() => void addMonitor()} disabled={saving}>
-              {saving ? "Saving…" : "Start monitoring"}
+              {saving ? t.saving : t.startMonitoring}
             </Button>
           </div>
         )}

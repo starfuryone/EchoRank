@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { COMPETITORS_PANEL_COPY, type DashLocale } from '@/lib/i18n/dashboard';
 
 interface Deltas {
   rating: number | null;
@@ -36,7 +37,8 @@ function DeltaTag({ v, suffix = '' }: { v: number | null; suffix?: string }) {
   );
 }
 
-export default function CompetitorsPanel() {
+export default function CompetitorsPanel({ locale = 'en' }: { locale?: DashLocale }) {
+  const t = COMPETITORS_PANEL_COPY[locale];
   const [rows, setRows] = useState<Competitor[]>([]);
   const [own7, setOwn7] = useState(0);
   const [placesOn, setPlacesOn] = useState(false);
@@ -72,10 +74,10 @@ export default function CompetitorsPanel() {
         credentials: 'include',
       });
       const j = (await res.json()) as { candidates: Candidate[]; error?: string };
-      if (j.error === 'places_not_configured') setError('Places search unavailable — add manually below.');
+      if (j.error === 'places_not_configured') setError(t.placesUnavailable);
       setCandidates(j.candidates ?? []);
     } catch {
-      setError('Search failed.');
+      setError(t.searchFailed);
     } finally {
       setBusy(false);
     }
@@ -93,7 +95,7 @@ export default function CompetitorsPanel() {
       });
       if (!res.ok) {
         const j = (await res.json().catch(() => null)) as { error?: string } | null;
-        throw new Error(j?.error ?? `HTTP ${res.status}`);
+        throw new Error(j?.error ?? t.httpError(res.status));
       }
       setQuery('');
       setCandidates(null);
@@ -116,7 +118,7 @@ export default function CompetitorsPanel() {
   };
 
   const remove = async (id: string, name: string) => {
-    if (!window.confirm(`Remove ${name} and its snapshot history?`)) return;
+    if (!window.confirm(t.removeConfirm(name))) return;
     await fetch(`/api/competitors/${id}`, { method: 'DELETE', credentials: 'include' });
     await load();
   };
@@ -138,10 +140,10 @@ export default function CompetitorsPanel() {
   if (state === 'error') {
     return (
       <div className="rounded-lg border border-zinc-800 bg-zinc-900/60 p-8 text-center">
-        <p className="text-sm text-zinc-300">Competitor data didn't load.</p>
+        <p className="text-sm text-zinc-300">{t.loadFailed}</p>
         <button onClick={() => void load()}
           className="mt-3 rounded-md border border-zinc-700 px-4 py-1.5 text-sm text-zinc-200 hover:border-teal-500/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-400">
-          Retry
+          {t.retry}
         </button>
       </div>
     );
@@ -154,32 +156,32 @@ export default function CompetitorsPanel() {
       {/* Add */}
       <section className="rounded-lg border border-zinc-800 bg-zinc-900/60 p-5">
         <div className="flex items-center justify-between">
-          <h2 className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400">Track a competitor</h2>
+          <h2 className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400">{t.trackTitle}</h2>
           <span className="font-mono text-[10px] text-zinc-500">
-            your review pace (7d): <span className="text-zinc-300">{own7}</span>
+            {t.ownPace} <span className="text-zinc-300">{own7}</span>
           </span>
         </div>
         <div className="mt-3 flex gap-2">
           <input type="text" value={query} onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter') void (placesOn ? search() : add({ name: query.trim() })); }}
-            placeholder={placesOn ? 'Business name + city (Places search)' : 'Competitor name (manual — no Places key set)'}
+            placeholder={placesOn ? t.searchPlaceholderPlaces : t.searchPlaceholderManual}
             className="flex-1 rounded-md border border-zinc-800 bg-zinc-950 px-3 py-1.5 text-sm text-zinc-100 placeholder-zinc-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-400" />
           {placesOn ? (
             <button onClick={() => void search()} disabled={busy || query.trim().length < 3}
               className="rounded-md border border-teal-500/50 bg-teal-500/10 px-4 py-1.5 text-xs font-semibold text-teal-300 hover:bg-teal-500/20 disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-400">
-              {busy ? 'Searching…' : 'Search'}
+              {busy ? t.searching : t.search}
             </button>
           ) : (
             <button onClick={() => void add({ name: query.trim() })} disabled={busy || query.trim().length < 2}
               className="rounded-md border border-teal-500/50 bg-teal-500/10 px-4 py-1.5 text-xs font-semibold text-teal-300 hover:bg-teal-500/20 disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-400">
-              Add
+              {t.add}
             </button>
           )}
         </div>
         {error && <p className="mt-2 text-xs text-rose-400">{error}</p>}
         {candidates && (
           <ul className="mt-3 divide-y divide-zinc-800/80 rounded-md border border-zinc-800">
-            {candidates.length === 0 && <li className="p-3 text-xs text-zinc-500">No matches.</li>}
+            {candidates.length === 0 && <li className="p-3 text-xs text-zinc-500">{t.noMatches}</li>}
             {candidates.map((c) => (
               <li key={c.placeId} className="flex items-center justify-between gap-3 p-3">
                 <div className="min-w-0">
@@ -187,12 +189,12 @@ export default function CompetitorsPanel() {
                   <p className="truncate font-mono text-[10px] text-zinc-500">
                     {c.address ?? c.placeId}
                     {c.rating !== undefined && ` · ★${c.rating.toFixed(1)}`}
-                    {c.reviewCount !== undefined && ` · ${c.reviewCount} reviews`}
+                    {c.reviewCount !== undefined && ` · ${t.reviewsCount(c.reviewCount)}`}
                   </p>
                 </div>
                 <button onClick={() => void add({ name: c.name, placeId: c.placeId })} disabled={busy}
                   className="shrink-0 rounded-md border border-zinc-700 px-3 py-1 text-xs text-zinc-200 hover:border-teal-500/60 disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-400">
-                  Track
+                  {t.track}
                 </button>
               </li>
             ))}
@@ -204,17 +206,17 @@ export default function CompetitorsPanel() {
       <section className="rounded-lg border border-zinc-800 bg-zinc-900/60 p-5">
         <div className="flex items-center justify-between">
           <h2 className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
-            Competitors — daily snapshots
+            {t.tableTitle}
           </h2>
           <button onClick={() => void refresh()} disabled={busy || rows.length === 0}
             className="rounded-md border border-zinc-800 px-3 py-1 text-xs text-zinc-400 hover:border-teal-500/60 hover:text-zinc-200 disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-400">
-            {busy ? 'Refreshing…' : 'Refresh now'}
+            {busy ? t.refreshing : t.refreshNow}
           </button>
         </div>
 
         {rows.length === 0 ? (
           <p className="mt-4 text-xs text-zinc-500">
-            No competitors tracked yet. Add one above — snapshots run daily at 06:30 UTC.
+            {t.emptyTable}
           </p>
         ) : (
           <ul className="mt-3 divide-y divide-zinc-800/80">
@@ -227,41 +229,41 @@ export default function CompetitorsPanel() {
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm text-zinc-200">{c.name}</p>
                       <p className="mt-0.5 font-mono text-[10px] text-zinc-500">
-                        {c.placeId ? 'places · auto' : 'manual snapshots'}
-                        {c.deltas.lastSnapshotDay ? ` · last ${c.deltas.lastSnapshotDay}` : ' · no data yet'}
+                        {c.placeId ? t.placesAuto : t.manualSnapshots}
+                        {c.deltas.lastSnapshotDay ? ` · ${t.lastDay(c.deltas.lastSnapshotDay)}` : ` · ${t.noDataYet}`}
                       </p>
                     </div>
                     <div className="w-24 text-right">
                       <p className="font-mono text-sm text-zinc-200">
                         {c.deltas.rating !== null ? `★${c.deltas.rating.toFixed(1)}` : '—'}
                       </p>
-                      <DeltaTag v={c.deltas.dRating30} suffix=" 30d" />
+                      <DeltaTag v={c.deltas.dRating30} suffix={t.suffix30d} />
                     </div>
                     <div className="w-28 text-right">
                       <p className="font-mono text-sm text-zinc-200">
-                        {c.deltas.reviewCount !== null ? c.deltas.reviewCount.toLocaleString() : '—'}
-                        <span className="text-[10px] text-zinc-500"> rev</span>
+                        {c.deltas.reviewCount !== null ? c.deltas.reviewCount.toLocaleString(locale) : '—'}
+                        <span className="text-[10px] text-zinc-500"> {t.revAbbrev}</span>
                       </p>
                       <p className="space-x-2">
-                        <DeltaTag v={c.deltas.dReviews7} suffix=" 7d" />
-                        <DeltaTag v={c.deltas.dReviews30} suffix=" 30d" />
+                        <DeltaTag v={c.deltas.dReviews7} suffix={t.suffix7d} />
+                        <DeltaTag v={c.deltas.dReviews30} suffix={t.suffix30d} />
                       </p>
                     </div>
-                    <div className="hidden w-28 sm:block" title={`Momentum vs your pace — alert at +${momentumDenominator} reviews/7d`}>
+                    <div className="hidden w-28 sm:block" title={t.momentumTitle(momentumDenominator)}>
                       <div className="h-1.5 overflow-hidden rounded-full bg-zinc-800">
                         <div className={`h-full rounded-full ${momentum >= 1 ? 'bg-rose-500' : 'bg-teal-500/80'}`}
                           style={{ width: `${momentum * 100}%` }} />
                       </div>
-                      <p className="mt-1 text-right font-mono text-[9px] text-zinc-600">momentum</p>
+                      <p className="mt-1 text-right font-mono text-[9px] text-zinc-600">{t.momentum}</p>
                     </div>
                     <div className="flex shrink-0 gap-1.5">
                       <button onClick={() => void patch(c.id, { active: !c.active })}
                         className="rounded-md border border-zinc-800 px-2 py-1 text-[10px] text-zinc-400 hover:border-teal-500/60 hover:text-zinc-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-400">
-                        {c.active ? 'Pause' : 'Resume'}
+                        {c.active ? t.pause : t.resume}
                       </button>
                       <button onClick={() => void remove(c.id, c.name)}
                         className="rounded-md border border-zinc-800 px-2 py-1 text-[10px] text-zinc-500 hover:border-rose-500/60 hover:text-rose-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-rose-400">
-                        Remove
+                        {t.remove}
                       </button>
                     </div>
                   </div>
