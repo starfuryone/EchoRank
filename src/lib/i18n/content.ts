@@ -911,3 +911,233 @@ export const TAX_LINES: Record<Locale, Partial<Record<Currency, string>>> = {
     CHF: "14 Tage kostenlos testen. Keine Kreditkarte erforderlich. Abrechnung in Schweizer Franken. MwSt. 8,1 % exkl.",
   },
 };
+
+// ─── About page ──────────────────────────────────────────────────────────────
+// Company story + platform overview for /{locale}/about. Every factual claim
+// below restates something already published elsewhere on the site (the
+// homepage sections, the pricing table, the legal pages). No metrics, customer
+// counts or funding details are asserted — none are documented in this repo.
+//
+// privacy@echorank360.com is the only contact address of record in the
+// codebase (see the legal pages); no general support alias is invented here.
+
+export interface AboutContent {
+  meta: { title: string; titleShort: string; description: string };
+  h1: string;
+  lede: string;
+  sections: { h2: string; body: string[] }[];
+  contact: { h2: string; body: string; email: string };
+  backHome: string;
+}
+
+export const ABOUT: Record<Locale, AboutContent> = {
+  en: {
+    meta: {
+      title: "About EchoRank 360 — AI Visibility Management",
+      titleShort: "About",
+      description:
+        "EchoRank 360 is an AI Visibility Management platform built by ChatLogic Insights Ltd. Learn what we measure, which AI engines we track, and how to reach us.",
+    },
+    h1: "About EchoRank 360",
+    lede:
+      "EchoRank 360 is an AI Visibility Management platform built by ChatLogic Insights Ltd. We measure whether AI assistants recommend your business — and show you what to change when they don't.",
+    sections: [
+      {
+        h2: "Why we built it",
+        body: [
+          "Search engines gave businesses a list of links to compete for. AI assistants give their users a verdict: a short list of names, delivered with the confidence of a recommendation from someone you trust. That shift changed what being findable means. A business can rank respectably on a results page and still never be named when a customer asks an assistant who to hire.",
+          "ChatLogic Insights Ltd built EchoRank 360 to make that new surface measurable. Instead of guessing whether AI mentions you, you get a number, the evidence behind it, and a prioritized list of things to fix.",
+        ],
+      },
+      {
+        h2: "What the platform does",
+        body: [
+          "EchoRank 360 runs your customers' real questions against the major AI engines and records what comes back — whether you appear, where you place, how you are described, and when you vanish. Those observations roll up into an AI Visibility Score out of 100, supported by five component scores: AI Citation Score, Authority Score, Review Health, Citation Consistency and Competitor Gap.",
+          "Underneath sit the signals engines weigh when they decide who to recommend: reviews, website quality, citations, trust, authority, freshness, structured data and brand mentions. The platform also carries the classic reputation stack — review campaigns by email, SMS and QR, private feedback routing, AI-drafted responses and suspicious review detection — because the review platforms you already manage are among the sources AI engines learn from.",
+          "Every audit ends in a roadmap rather than a report: prioritized fixes, each with an estimated score lift and an expected level of effort.",
+        ],
+      },
+      {
+        h2: "The engines we track",
+        body: [
+          "We monitor six engines continuously: ChatGPT, Google AI, Perplexity, Claude, Gemini and Microsoft Copilot. Answers are tracked daily and risk is recalculated hourly, so a quiet disappearance from one engine does not go unnoticed for a quarter. Alerts fire the moment your coverage flips.",
+        ],
+      },
+    ],
+    contact: {
+      h2: "Contact",
+      body:
+        "EchoRank 360 is operated by ChatLogic Insights Ltd. For privacy and data-protection requests, including access and deletion, write to us at:",
+      email: "privacy@echorank360.com",
+    },
+    backHome: "← Back to home",
+  },
+
+  "en-CA": {
+    meta: {
+      title: "About EchoRank 360 — AI Visibility Management",
+      titleShort: "About",
+      description:
+        "EchoRank 360 is an AI Visibility Management platform built by ChatLogic Insights Ltd. Learn what we measure, which AI engines we track, and how to reach us.",
+    },
+    h1: "About EchoRank 360",
+    lede:
+      "EchoRank 360 is an AI Visibility Management platform built by ChatLogic Insights Ltd. We measure whether AI assistants recommend your business — and show you what to change when they don't.",
+    sections: [
+      {
+        h2: "Why we built it",
+        body: [
+          "Search engines gave businesses a list of links to compete for. AI assistants give their users a verdict: a short list of names, delivered with the confidence of a recommendation from someone you trust. That shift changed what being findable means. A business can rank respectably on a results page and still never be named when a customer asks an assistant who to hire.",
+          "ChatLogic Insights Ltd built EchoRank 360 to make that new surface measurable. Instead of guessing whether AI mentions you, you get a number, the evidence behind it, and a prioritized list of things to fix.",
+        ],
+      },
+      {
+        h2: "What the platform does",
+        body: [
+          "EchoRank 360 runs your customers' real questions against the major AI engines and records what comes back — whether you appear, where you place, how you are described, and when you vanish. Those observations roll up into an AI Visibility Score out of 100, supported by five component scores: AI Citation Score, Authority Score, Review Health, Citation Consistency and Competitor Gap.",
+          "Underneath sit the signals engines weigh when they decide who to recommend: reviews, website quality, citations, trust, authority, freshness, structured data and brand mentions. The platform also carries the classic reputation stack — review campaigns by email, SMS and QR, private feedback routing, AI-drafted responses and suspicious review detection — because the review platforms you already manage are among the sources AI engines learn from.",
+          "Every audit ends in a roadmap rather than a report: prioritized fixes, each with an estimated score lift and an expected level of effort.",
+        ],
+      },
+      {
+        h2: "The engines we track",
+        body: [
+          "We monitor six engines continuously: ChatGPT, Google AI, Perplexity, Claude, Gemini and Microsoft Copilot. Answers are tracked daily and risk is recalculated hourly, so a quiet disappearance from one engine does not go unnoticed for a quarter. Alerts fire the moment your coverage flips.",
+        ],
+      },
+    ],
+    contact: {
+      h2: "Contact",
+      body:
+        "EchoRank 360 is operated by ChatLogic Insights Ltd. Canadian plans are billed in Canadian dollars. For privacy and data-protection requests, including access and deletion, write to us at:",
+      email: "privacy@echorank360.com",
+    },
+    backHome: "← Back to home",
+  },
+
+  fr: {
+    meta: {
+      title: "À propos d'EchoRank 360 — Visibilité IA",
+      titleShort: "À propos",
+      description:
+        "EchoRank 360 est une plateforme de gestion de visibilité IA développée par ChatLogic Insights Ltd. Découvrez ce que nous mesurons, les moteurs IA suivis et comment nous joindre.",
+    },
+    h1: "À propos d'EchoRank 360",
+    lede:
+      "EchoRank 360 est une plateforme de gestion de visibilité IA développée par ChatLogic Insights Ltd. Nous mesurons si les assistants IA recommandent votre entreprise — et vous montrons quoi changer quand ce n'est pas le cas.",
+    sections: [
+      {
+        h2: "Pourquoi nous l'avons créée",
+        body: [
+          "Les moteurs de recherche offraient aux entreprises une liste de liens à disputer. Les assistants IA livrent un verdict : une courte liste de noms, énoncée avec l'assurance d'une recommandation venant d'un proche. Ce basculement a changé le sens même d'être trouvable. Une entreprise peut être bien classée sur une page de résultats et n'être jamais nommée quand un client demande à un assistant qui embaucher.",
+          "ChatLogic Insights Ltd a créé EchoRank 360 pour rendre cette nouvelle surface mesurable. Au lieu de deviner si l'IA vous mentionne, vous obtenez un chiffre, les preuves qui le sous-tendent et une liste priorisée de correctifs.",
+        ],
+      },
+      {
+        h2: "Ce que fait la plateforme",
+        body: [
+          "EchoRank 360 soumet les vraies questions de vos clients aux principaux moteurs IA et consigne ce qui revient : si vous apparaissez, à quelle position, comment vous êtes décrit et à quel moment vous disparaissez. Ces observations se synthétisent en un score de visibilité IA sur 100, appuyé par cinq scores composants : score de citation IA, score d'autorité, santé des avis, cohérence des citations et écart concurrentiel.",
+          "En dessous se trouvent les signaux que les moteurs pèsent pour décider qui recommander : avis, qualité du site, citations, confiance, autorité, fraîcheur, données structurées et mentions de marque. La plateforme intègre aussi la gestion de réputation classique — campagnes d'avis par courriel, SMS et QR, routage de la rétroaction privée, réponses rédigées par IA et détection d'avis suspects — parce que les plateformes d'avis que vous gérez déjà comptent parmi les sources dont les moteurs IA apprennent.",
+          "Chaque audit se termine par une feuille de route plutôt qu'un rapport : des correctifs priorisés, chacun avec un gain de score estimé et un effort attendu.",
+        ],
+      },
+      {
+        h2: "Les moteurs que nous suivons",
+        body: [
+          "Nous surveillons six moteurs en continu : ChatGPT, Google AI, Perplexity, Claude, Gemini et Microsoft Copilot. Les réponses sont suivies chaque jour et le risque est recalculé chaque heure, afin qu'une disparition silencieuse sur un moteur ne passe pas inaperçue pendant un trimestre. Les alertes se déclenchent dès que votre couverture bascule.",
+        ],
+      },
+    ],
+    contact: {
+      h2: "Nous joindre",
+      body:
+        "EchoRank 360 est exploitée par ChatLogic Insights Ltd. Pour toute demande relative à la vie privée et à la protection des données, y compris l'accès et la suppression, écrivez-nous à :",
+      email: "privacy@echorank360.com",
+    },
+    backHome: "← Retour à l'accueil",
+  },
+
+  "fr-CA": {
+    meta: {
+      title: "À propos d'EchoRank 360 — Visibilité IA",
+      titleShort: "À propos",
+      description:
+        "EchoRank 360 est une plateforme de gestion de visibilité IA développée par ChatLogic Insights Ltd. Découvrez ce que nous mesurons, les moteurs IA suivis et comment nous joindre.",
+    },
+    h1: "À propos d'EchoRank 360",
+    lede:
+      "EchoRank 360 est une plateforme de gestion de visibilité IA développée par ChatLogic Insights Ltd. Nous mesurons si les assistants IA recommandent votre entreprise — et vous montrons quoi changer quand ce n'est pas le cas.",
+    sections: [
+      {
+        h2: "Pourquoi nous l'avons créée",
+        body: [
+          "Les moteurs de recherche offraient aux entreprises une liste de liens à disputer. Les assistants IA livrent un verdict : une courte liste de noms, énoncée avec l'assurance d'une recommandation venant d'un proche. Ce basculement a changé le sens même d'être trouvable. Une entreprise peut être bien classée dans une page de résultats et n'être jamais nommée quand un client demande à un assistant qui embaucher.",
+          "ChatLogic Insights Ltd a créé EchoRank 360 pour rendre cette nouvelle surface mesurable. Au lieu de deviner si l'IA vous mentionne, vous obtenez un chiffre, les preuves qui le sous-tendent et une liste priorisée de correctifs.",
+        ],
+      },
+      {
+        h2: "Ce que fait la plateforme",
+        body: [
+          "EchoRank 360 soumet les vraies questions de vos clients aux principaux moteurs IA et consigne ce qui revient : si vous apparaissez, à quel rang, comment vous êtes décrit et à quel moment vous disparaissez. Ces observations se synthétisent en un score de visibilité IA sur 100, appuyé par cinq scores composants : score de citation IA, score d'autorité, santé des avis, cohérence des citations et écart concurrentiel.",
+          "En dessous se trouvent les signaux que les moteurs pèsent pour décider qui recommander : avis, qualité du site, citations, confiance, autorité, fraîcheur, données structurées et mentions de marque. La plateforme intègre aussi la gestion de réputation classique — campagnes d'avis par courriel, SMS et code QR, routage de la rétroaction privée, réponses rédigées par IA et détection d'avis suspects — parce que les plateformes d'avis que vous gérez déjà comptent parmi les sources dont les moteurs IA apprennent.",
+          "Chaque audit se termine par une feuille de route plutôt qu'un rapport : des correctifs priorisés, chacun avec un gain de score estimé et un effort attendu.",
+        ],
+      },
+      {
+        h2: "Les moteurs que nous suivons",
+        body: [
+          "Nous surveillons six moteurs en continu : ChatGPT, Google AI, Perplexity, Claude, Gemini et Microsoft Copilot. Les réponses sont suivies chaque jour et le risque est recalculé chaque heure, afin qu'une disparition silencieuse sur un moteur ne passe pas inaperçue pendant un trimestre. Les alertes se déclenchent dès que votre couverture bascule.",
+        ],
+      },
+    ],
+    contact: {
+      h2: "Nous joindre",
+      body:
+        "EchoRank 360 est exploitée par ChatLogic Insights Ltd. Les forfaits canadiens sont facturés en dollars canadiens. Pour toute demande relative à la vie privée et à la protection des renseignements personnels, y compris l'accès et la suppression, écrivez-nous à :",
+      email: "privacy@echorank360.com",
+    },
+    backHome: "← Retour à l'accueil",
+  },
+
+  "de-CH": {
+    meta: {
+      title: "Über EchoRank 360 — KI-Sichtbarkeit",
+      titleShort: "Über uns",
+      description:
+        "EchoRank 360 ist eine Plattform für KI-Sichtbarkeitsmanagement von ChatLogic Insights Ltd. Erfahren Sie, was wir messen, welche KI-Engines wir verfolgen und wie Sie uns erreichen.",
+    },
+    h1: "Über EchoRank 360",
+    lede:
+      "EchoRank 360 ist eine Plattform für KI-Sichtbarkeitsmanagement, entwickelt von ChatLogic Insights Ltd. Wir messen, ob KI-Assistenten Ihr Unternehmen empfehlen — und zeigen Ihnen, was zu ändern ist, wenn sie es nicht tun.",
+    sections: [
+      {
+        h2: "Warum wir sie gebaut haben",
+        body: [
+          "Suchmaschinen boten Unternehmen eine Liste von Links, um die man konkurrieren konnte. KI-Assistenten liefern ein Urteil: eine kurze Liste von Namen, vorgetragen mit der Selbstverständlichkeit einer Empfehlung aus dem Bekanntenkreis. Diese Verschiebung hat verändert, was Auffindbarkeit überhaupt bedeutet. Ein Unternehmen kann auf einer Ergebnisseite ordentlich ranken und trotzdem nie genannt werden, wenn eine Kundin einen Assistenten fragt, wen sie beauftragen soll.",
+          "ChatLogic Insights Ltd hat EchoRank 360 entwickelt, um diese neue Oberfläche messbar zu machen. Statt zu raten, ob die KI Sie erwähnt, erhalten Sie eine Zahl, die Belege dahinter und eine priorisierte Liste von Massnahmen.",
+        ],
+      },
+      {
+        h2: "Was die Plattform leistet",
+        body: [
+          "EchoRank 360 stellt den grossen KI-Engines die echten Fragen Ihrer Kundinnen und Kunden und protokolliert, was zurückkommt: ob Sie erscheinen, an welcher Stelle, wie Sie beschrieben werden und wann Sie verschwinden. Diese Beobachtungen verdichten sich zu einem KI-Sichtbarkeits-Score von 0 bis 100, gestützt auf fünf Teilscores: KI-Zitations-Score, Autoritäts-Score, Bewertungsgesundheit, Zitationskonsistenz und Wettbewerbsabstand.",
+          "Darunter liegen die Signale, die Engines gewichten, wenn sie entscheiden, wen sie empfehlen: Bewertungen, Website-Qualität, Zitationen, Vertrauen, Autorität, Aktualität, strukturierte Daten und Markenerwähnungen. Die Plattform enthält ausserdem das klassische Reputations-Instrumentarium — Bewertungskampagnen per E-Mail, SMS und QR-Code, Weiterleitung privater Rückmeldungen, KI-formulierte Antworten und Erkennung verdächtiger Bewertungen — denn die Bewertungsplattformen, die Sie ohnehin pflegen, gehören zu den Quellen, aus denen KI-Engines lernen.",
+          "Jedes Audit endet mit einem Fahrplan statt mit einem Bericht: priorisierte Massnahmen, jeweils mit geschätztem Score-Gewinn und erwartetem Aufwand.",
+        ],
+      },
+      {
+        h2: "Die Engines, die wir verfolgen",
+        body: [
+          "Wir überwachen sechs Engines fortlaufend: ChatGPT, Google AI, Perplexity, Claude, Gemini und Microsoft Copilot. Antworten werden täglich verfolgt und das Risiko wird stündlich neu berechnet, damit ein stilles Verschwinden bei einer Engine nicht ein Quartal lang unbemerkt bleibt. Warnungen werden ausgelöst, sobald Ihre Abdeckung kippt.",
+        ],
+      },
+    ],
+    contact: {
+      h2: "Kontakt",
+      body:
+        "EchoRank 360 wird von ChatLogic Insights Ltd betrieben. Schweizer Abonnements werden in Schweizer Franken abgerechnet. Für Anfragen zum Datenschutz, einschliesslich Auskunft und Löschung, schreiben Sie uns an:",
+      email: "privacy@echorank360.com",
+    },
+    backHome: "← Zurück zur Startseite",
+  },
+};

@@ -14,29 +14,36 @@ const geistMono = Geist_Mono({
 
 const SITE_URL = "https://echorank360.com";
 const SITE_NAME = "EchoRank 360";
+// Positioning matches the homepage meta description: AI visibility, not the
+// older "collect reviews" reputation framing.
 const SITE_DESC =
-  "Collect customer feedback, generate more authentic reviews, and identify service issues with AI-powered reputation management.";
+  "EchoRank 360 is an AI Visibility Management platform. Measure how ChatGPT, Google AI, Perplexity, Claude, Gemini and Copilot see your business, track recommendations daily, and get a prioritized roadmap to become the business AI recommends.";
+const SITE_TITLE = "EchoRank 360 — AI Visibility Management Platform";
+const OG_IMAGE = `${SITE_URL}/og-home.png`;
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "EchoRank — Reputation Management & Customer Feedback Automation",
+    default: SITE_TITLE,
     template: "%s | EchoRank 360",
   },
   description: SITE_DESC,
   alternates: { canonical: "/" },
-  verification: { google: "paste_the_real_token_between_these_quotes" },
+  // GSC verification lives on the homepage (root domain) only — see
+  // [locale]/page.tsx. A site-wide placeholder here leaked on every page.
   openGraph: {
     type: "website",
     url: SITE_URL,
     siteName: SITE_NAME,
-    title: "EchoRank — Reputation Management & Customer Feedback Automation",
+    title: SITE_TITLE,
     description: SITE_DESC,
+    images: [{ url: OG_IMAGE, width: 1200, height: 630, alt: SITE_NAME }],
   },
   twitter: {
     card: "summary_large_image",
-    title: "EchoRank — Reputation Management & Customer Feedback Automation",
+    title: SITE_TITLE,
     description: SITE_DESC,
+    images: [OG_IMAGE],
   },
 };
 
@@ -61,14 +68,19 @@ export default function RootLayout({
                   "@type": "Organization",
                   "@id": SITE_URL + "/#organization",
                   name: SITE_NAME,
+                  legalName: "ChatLogic Insights Ltd",
                   url: SITE_URL,
                   description: SITE_DESC,
+                  logo: SITE_URL + "/echorank-logo.svg",
+                  // No sameAs: the codebase carries no verified social profile
+                  // URLs. Adding unverified ones would be fabricated data.
                 },
                 {
                   "@type": "WebSite",
                   "@id": SITE_URL + "/#website",
                   url: SITE_URL,
                   name: SITE_NAME,
+                  description: SITE_DESC,
                   publisher: { "@id": SITE_URL + "/#organization" },
                 },
               ],

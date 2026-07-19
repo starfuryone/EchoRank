@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import s from "./home2.module.css";
+import { FAQ } from "./faq-data";
 
 /* ---------- copy ---------- */
 
@@ -49,6 +50,7 @@ const T = {
     },
     shots: {
       label: "THE PLATFORM", h2: "See the product, not the pitch.",
+      more: "More details →",
       items: [
         { tag: "AI VISIBILITY AUDITOR", h: "One score for how AI sees you", p: "Crawlability, structured data, llms.txt, citations, authority — audited across 6 engines, recalculated on schedule, alerted on every drop." },
         { tag: "REPUTATION RISK ENGINE", h: "Revenue at risk, hourly", p: "Every review, rating drop and competitor surge feeds one explainable risk score — with the dollar impact attached to each alert." },
@@ -158,7 +160,7 @@ const T = {
       sub: "Run your AI Visibility Audit in under 60 seconds. See exactly what AI says about your business — and exactly what to do next.",
       cta1: "Run My Free AI Visibility Audit ↗", cta2: "Watch a 2-Minute Demo",
     },
-    foot: { links: [["guide", "GUIDE"], ["guide-visibilite-ia", "AI VISIBILITY GUIDE"], ["legal/privacy", "PRIVACY"], ["legal/terms", "TERMS"], ["legal/disclaimer", "DISCLAIMER"]] },
+    foot: { links: [["about", "ABOUT"], ["guide", "GUIDE"], ["guide-visibilite-ia", "AI VISIBILITY GUIDE"], ["legal/privacy", "PRIVACY"], ["legal/terms", "TERMS"], ["legal/disclaimer", "DISCLAIMER"]] },
   },
 
   fr: {
@@ -200,6 +202,7 @@ const T = {
     },
     shots: {
       label: "LA PLATEFORME", h2: "Voyez le produit, pas le discours.",
+      more: "Plus de détails →",
       items: [
         { tag: "AUDITEUR DE VISIBILITÉ IA", h: "Un score pour votre image auprès de l'IA", p: "Explorabilité, données structurées, llms.txt, citations, autorité — audités sur 6 moteurs, recalculés selon un horaire, avec alerte à chaque baisse." },
         { tag: "MOTEUR DE RISQUE RÉPUTATIONNEL", h: "Le revenu à risque, chaque heure", p: "Chaque avis, chaque baisse de note et chaque poussée d'un concurrent alimente un score de risque explicable — avec l'impact en dollars rattaché à chaque alerte." },
@@ -309,7 +312,7 @@ const T = {
       sub: "Lancez votre audit de visibilité IA en moins de 60 secondes. Voyez exactement ce que l'IA dit de votre entreprise — et exactement quoi faire ensuite.",
       cta1: "Lancer mon audit de visibilité IA gratuit ↗", cta2: "Voir la démo de 2 minutes",
     },
-    foot: { links: [["guide", "GUIDE"], ["guide-visibilite-ia", "GUIDE VISIBILITÉ IA"], ["legal/privacy", "CONFIDENTIALITÉ"], ["legal/terms", "CONDITIONS"], ["legal/disclaimer", "AVIS"]] },
+    foot: { links: [["about", "À PROPOS"], ["guide", "GUIDE"], ["guide-visibilite-ia", "GUIDE VISIBILITÉ IA"], ["legal/privacy", "CONFIDENTIALITÉ"], ["legal/terms", "CONDITIONS"], ["legal/disclaimer", "AVIS"]] },
   },
 } as const;
 
@@ -339,6 +342,7 @@ const CARD_COLOR: Record<string, string> = {
 
 export default function HomeClient({ locale }: { locale: string }) {
   const t = T[baseOf(locale)];
+  const faq = FAQ[baseOf(locale)];
   const L = (p: string) => `/${locale}${p.startsWith("/") ? p : `/${p}`}`;
 
   /* hero score animation */
@@ -541,6 +545,9 @@ export default function HomeClient({ locale }: { locale: string }) {
                   <p className={s.label}>{it.tag}<Tm /></p>
                   <h3>{it.h}</h3>
                   <p>{it.p}</p>
+                  {i === 0 && (
+                    <Link className={s.shotlink} href={L("/ai-visibility")}>{t.shots.more}</Link>
+                  )}
                 </div>
                 <div className={s.frame}>
                   <div className={s.framebar}><i /><i /><i /></div>
@@ -765,10 +772,29 @@ export default function HomeClient({ locale }: { locale: string }) {
         </div>
       </section>
 
-      {/* 13. CLOSE */}
+      {/* 13. FAQ — rendered from faq-data.ts, the same source the FAQPage
+           JSON-LD in page.tsx reads. Answers are always visible (not collapsed)
+           so the structured data matches what a crawler sees. */}
+      <section id="faq" className={s.section}>
+        <div className={s.container}>
+          <p className={s.label}><b>/ 13</b> — {faq.label}</p>
+          <h2 className={s.h2}>{faq.h2}</h2>
+          <p className={s.sub}>{faq.sub}</p>
+          <div className={s.faq}>
+            {faq.items.map((it) => (
+              <div className={`${s.faqItem} ${s.reveal}`} key={it.q}>
+                <h3 className={s.faqQ}>{it.q}</h3>
+                <p className={s.faqA}>{it.a}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* 14. CLOSE */}
       <section className={s.close}>
         <div className={s.container}>
-          <p className={s.label}><b>/ 13</b> — {t.close.label}</p>
+          <p className={s.label}><b>/ 14</b> — {t.close.label}</p>
           <h2 className={s.h2c}>{t.close.h2a}<span className={s.goldtext}>{t.close.h2b}</span></h2>
           <p className={s.closesub} style={{ maxWidth: 560 }}>{t.close.sub}</p>
           <div className={s.closebtns}>
