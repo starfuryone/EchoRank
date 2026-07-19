@@ -7,6 +7,7 @@ import home from "../home.module.css";
 import lp from "./how-to.module.css";
 import BackButton from "../legal/back-button";
 import { StepsArt } from "../hero-art";
+import { buildMetadata } from "@/lib/seo";
 
 export function generateStaticParams() {
   return SUPPORTED_LOCALES.map((locale) => ({ locale }));
@@ -218,7 +219,12 @@ export async function generateMetadata({
   const { locale } = await params;
   if (!isSupportedLocale(locale)) return {};
   const { meta } = C[locale];
-  return { title: meta.title, description: meta.description };
+  return buildMetadata({
+    locale,
+    path: "/how-to",
+    title: meta.title,
+    description: meta.description,
+  });
 }
 
 export default async function HowToPage({

@@ -7,6 +7,7 @@ import BackButton from "../legal/back-button";
 import home from "../home.module.css";
 import { RiskArt } from "../hero-art";
 import lp from "./reputation-risk.module.css";
+import { buildMetadata } from "@/lib/seo";
 
 export function generateStaticParams() {
   return SUPPORTED_LOCALES.map((locale) => ({ locale }));
@@ -238,7 +239,12 @@ export async function generateMetadata({
   const { locale } = await params;
   if (!isSupportedLocale(locale)) return {};
   const { meta } = C[locale];
-  return { title: meta.title, description: meta.description };
+  return buildMetadata({
+    locale,
+    path: "/reputation-risk",
+    title: meta.title,
+    description: meta.description,
+  });
 }
 
 export default async function ReputationRiskPage({

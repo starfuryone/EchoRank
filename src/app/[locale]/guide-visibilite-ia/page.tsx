@@ -11,6 +11,7 @@ import EnGuide, { TITLE_EN, DESC_EN } from "./en";
 import BackButton from "../legal/back-button";
 import { GuideHeroArt, SerpToAnswerArt, ChecklistArt, CrawlerGateArt, ReviewPulseArt } from "./art";
 import RevenueCalculator from "./calculator";
+import { JsonLd, buildMetadata } from "@/lib/seo";
 
 export function generateStaticParams() {
   return SUPPORTED_LOCALES.map((locale) => ({ locale }));
@@ -24,29 +25,13 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   const { locale } = await params;
   if (!isSupportedLocale(locale)) return {};
   const fr = locale.startsWith("fr");
-  const langs = {
-    fr: "https://echorank360.com/fr/guide-visibilite-ia",
-    "fr-CA": "https://echorank360.com/fr-CA/guide-visibilite-ia",
-    en: "https://echorank360.com/en/guide-visibilite-ia",
-    "en-CA": "https://echorank360.com/en-CA/guide-visibilite-ia",
-    "x-default": "https://echorank360.com/en/guide-visibilite-ia",
-  };
-  return {
-    title: `${fr ? TITLE : TITLE_EN} | EchoRank`,
+  return buildMetadata({
+    locale,
+    path: "/guide-visibilite-ia",
+    title: fr ? TITLE : TITLE_EN,
     description: fr ? DESC : DESC_EN,
-    alternates: {
-      canonical: fr ? langs.fr : langs.en,
-      languages: langs,
-    },
-    openGraph: {
-      title: fr ? TITLE : TITLE_EN,
-      description: fr ? DESC : DESC_EN,
-      url: fr ? langs.fr : langs.en,
-      type: "article",
-      siteName: "EchoRank 360",
-    },
-    twitter: { card: "summary_large_image", title: fr ? TITLE : TITLE_EN, description: fr ? DESC : DESC_EN },
-  };
+    ogType: "article",
+  });
 }
 
 /* ── building blocks ─────────────────────────────────────────────────── */
@@ -282,7 +267,7 @@ export default async function GuideIaPage({ params }: { params: Promise<{ locale
 
   return (
     <div className={s.page}>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <JsonLd graph={jsonLd["@graph"]} />
       <div className={s.wrap}>
         <header className={s.navbar}>
           <Link href={`/${locale}`} className={s.logoLink} aria-label="EchoRank 360, home">

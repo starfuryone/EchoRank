@@ -7,6 +7,7 @@ import BackButton from "../legal/back-button";
 import home from "../home.module.css";
 import { FeedbackArt } from "../hero-art";
 import lp from "./customer-feedback.module.css";
+import { buildMetadata } from "@/lib/seo";
 
 export function generateStaticParams() {
   return SUPPORTED_LOCALES.map((locale) => ({ locale }));
@@ -227,7 +228,12 @@ export async function generateMetadata({
   const { locale } = await params;
   if (!isSupportedLocale(locale)) return {};
   const { meta } = C[locale];
-  return { title: meta.title, description: meta.description };
+  return buildMetadata({
+    locale,
+    path: "/customer-feedback",
+    title: meta.title,
+    description: meta.description,
+  });
 }
 
 export default async function CustomerFeedbackPage({

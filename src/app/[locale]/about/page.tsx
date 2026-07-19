@@ -10,8 +10,14 @@ import Link from "next/link";
 import { SUPPORTED_LOCALES, isSupportedLocale } from "@/lib/i18n/config";
 import { ABOUT, CONTENT } from "@/lib/i18n/content";
 import lp from "../legal/legal.module.css";
-
-const SITE = "https://echorank360.com";
+import {
+  JsonLd,
+  SITE_URL as SITE,
+  buildMetadata,
+  normalizeLocale,
+  organization,
+  webSite,
+} from "@/lib/seo";
 
 export function generateStaticParams() {
   return SUPPORTED_LOCALES.map((locale) => ({ locale }));
@@ -23,36 +29,12 @@ export async function generateMetadata(
   const { locale } = await params;
   if (!isSupportedLocale(locale)) return {};
   const a = ABOUT[locale];
-  const url = `${SITE}/${locale}/about`;
-
-  return {
-    // `absolute` — the copy already carries the brand, so the root layout's
-    // "%s | EchoRank 360" template would double it.
-    title: { absolute: a.meta.title },
+  return buildMetadata({
+    locale,
+    path: "/about",
+    title: a.meta.title,
     description: a.meta.description,
-    alternates: {
-      canonical: url,
-      languages: Object.fromEntries([
-        ...SUPPORTED_LOCALES.map((l) => [l, `${SITE}/${l}/about`]),
-        ["x-default", `${SITE}/en/about`],
-      ]),
-    },
-    openGraph: {
-      title: a.meta.title,
-      description: a.meta.description,
-      url,
-      siteName: "EchoRank 360",
-      type: "website",
-      locale: locale.replace("-", "_"),
-      images: [{ url: `${SITE}/og-home.png`, width: 1200, height: 630, alt: a.meta.title }],
-    },
-    twitter: {
-      card: "summary_large_image",
-      title: a.meta.title,
-      description: a.meta.description,
-      images: [`${SITE}/og-home.png`],
-    },
-  };
+  });
 }
 
 export default async function Page({ params }: { params: Promise<{ locale: string }> }) {
@@ -63,40 +45,24 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
   const nav = CONTENT[locale].nav;
   const foot = CONTENT[locale].footer;
 
-  // Organization node, referencing the site-wide entity from the root layout by
-  // @id. No sameAs — the codebase holds no verified social profile URLs, and
-  // inventing them would be fabricated structured data.
-  const graph = {
-    "@context": "https://schema.org",
-    "@graph": [
-      {
-        "@type": "Organization",
-        "@id": `${SITE}/#organization`,
-        name: "EchoRank 360",
-        legalName: "ChatLogic Insights Ltd",
-        url: SITE,
-        logo: `${SITE}/echorank-logo.svg`,
-        // No `description` here: the root layout already publishes one under
-        // this same @id, and two different values for one entity is ambiguous.
-        email: a.contact.email,
-      },
-      {
-        "@type": "AboutPage",
-        "@id": `${SITE}/${locale}/about#page`,
-        url: `${SITE}/${locale}/about`,
-        name: a.meta.title,
-        description: a.meta.description,
-        about: { "@id": `${SITE}/#organization` },
-        inLanguage: locale,
-      },
-    ],
-  };
+  const l = normalizeLocale(locale);
 
   return (
     <div className={lp.page}>
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(graph) }}
+      <JsonLd
+        graph={[
+          { ...organization(l), email: a.contact.email },
+          webSite(l),
+          {
+            "@type": "AboutPage",
+            "@id": `${SITE}/${l}/about#page`,
+            url: `${SITE}/${l}/about`,
+            name: a.meta.title,
+            description: a.meta.description,
+            about: { "@id": `${SITE}/#organization` },
+            inLanguage: l,
+          },
+        ]}
       />
       <div className={lp.wrap}>
         <div className={lp.top}>

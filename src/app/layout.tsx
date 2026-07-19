@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { BRAND_DESCRIPTION, BRAND_TITLE, SITE_NAME, SITE_URL } from "@/lib/seo";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -12,39 +13,26 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-const SITE_URL = "https://echorank360.com";
-const SITE_NAME = "EchoRank 360";
-// Positioning matches the homepage meta description: AI visibility, not the
-// older "collect reviews" reputation framing.
-const SITE_DESC =
-  "EchoRank 360 is an AI Visibility Management platform. Measure how ChatGPT, Google AI, Perplexity, Claude, Gemini and Copilot see your business, track recommendations daily, and get a prioritized roadmap to become the business AI recommends.";
-const SITE_TITLE = "EchoRank 360 — AI Visibility Management Platform";
-const OG_IMAGE = `${SITE_URL}/og-home.png`;
-
+// The root layout carries only what genuinely applies app-wide: metadataBase,
+// the title template + default, and a fallback description. Per-page metadata
+// (canonical, hreflang, og:locale, images) is built by buildMetadata() in
+// src/lib/seo — pages must not duplicate it here.
+//
+// JSON-LD is NOT emitted here. It used to be, which meant every authenticated
+// dashboard route shipped marketing Organization/WebSite markup. Structured
+// data now belongs to the pages that actually warrant it, via <JsonLd/>.
+//
+// No google-site-verification meta: verification is file-based at
+// public/google53f8cfb2ee070790.html.
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: SITE_TITLE,
-    template: "%s | EchoRank 360",
+    default: BRAND_TITLE.en,
+    // Marketing pages emit title.absolute and bypass this template. It remains
+    // for app routes that set a bare string title.
+    template: `%s | ${SITE_NAME}`,
   },
-  description: SITE_DESC,
-  alternates: { canonical: "/" },
-  // GSC verification lives on the homepage (root domain) only — see
-  // [locale]/page.tsx. A site-wide placeholder here leaked on every page.
-  openGraph: {
-    type: "website",
-    url: SITE_URL,
-    siteName: SITE_NAME,
-    title: SITE_TITLE,
-    description: SITE_DESC,
-    images: [{ url: OG_IMAGE, width: 1200, height: 630, alt: SITE_NAME }],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: SITE_TITLE,
-    description: SITE_DESC,
-    images: [OG_IMAGE],
-  },
+  description: BRAND_DESCRIPTION.en,
 };
 
 export default function RootLayout({
@@ -57,38 +45,7 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">
-        <script
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              "@context": "https://schema.org",
-              "@graph": [
-                {
-                  "@type": "Organization",
-                  "@id": SITE_URL + "/#organization",
-                  name: SITE_NAME,
-                  legalName: "ChatLogic Insights Ltd",
-                  url: SITE_URL,
-                  description: SITE_DESC,
-                  logo: SITE_URL + "/echorank-logo.svg",
-                  // No sameAs: the codebase carries no verified social profile
-                  // URLs. Adding unverified ones would be fabricated data.
-                },
-                {
-                  "@type": "WebSite",
-                  "@id": SITE_URL + "/#website",
-                  url: SITE_URL,
-                  name: SITE_NAME,
-                  description: SITE_DESC,
-                  publisher: { "@id": SITE_URL + "/#organization" },
-                },
-              ],
-            }),
-          }}
-        />
-        {children}
-      </body>
+      <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );
 }

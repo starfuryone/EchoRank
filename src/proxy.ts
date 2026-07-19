@@ -2,6 +2,10 @@ import { auth } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import { csrfProtection } from "@/lib/csrf-protection";
 import { isSupportedLocale, resolveTarget, type Locale } from "@/lib/i18n/config";
+// Import the registry directly, not the "@/lib/seo" barrel — the barrel
+// re-exports JsonLd.tsx, and pulling React into the middleware bundle is a
+// needless edge-runtime cost.
+import { KNOWN_MARKETING_PATHS } from "@/lib/seo/registry";
 
 const LOCALE_COOKIE = "echorank_locale";
 
@@ -27,6 +31,17 @@ const publicExactPaths = new Set(["/api/av/audit", "/api/av/audit/report"]);
 /** First path segment, e.g. "/fr/x" -> "fr". */
 function firstSegment(pathname: string): string {
   return pathname.split("/")[1] ?? "";
+}
+
+/** "/xx/legal/terms" -> "/legal/terms". "/about" -> "". */
+function dropFirstSegment(pathname: string): string {
+  const rest = pathname.split("/").slice(2).join("/");
+  return rest ? `/${rest}` : "";
+}
+
+/** "/about/" -> "/about". Leaves "/" alone. */
+function stripTrailingSlash(pathname: string): string {
+  return pathname.length > 1 ? pathname.replace(/\/+$/, "") : pathname;
 }
 
 /**
@@ -114,6 +129,29 @@ export default auth((req) => {
       sameSite: "lax",
     });
     return res;
+  }
+
+  // ── Locale guard for marketing pages ─────────────────────────────────
+  // Canonicalize marketing URLs that carry no locale ("/about") or a bogus one
+  // ("/xx/about") onto the English locale with a 308, so the same content is
+  // never reachable under an unbounded set of prefixes.
+  //
+  // Deliberately scoped to paths in the SEO registry. The catch-all branch
+  // below is the AUTH GATE — every real app route (/dashboard, /customers,
+  // /settings, …) also has a non-locale first segment and falls through there.
+  // Redirecting on "unknown first segment" alone would rewrite /customers to
+  // /en/customers and break the authenticated app.
+  {
+    const marketingTarget = KNOWN_MARKETING_PATHS.includes(stripTrailingSlash(pathname))
+      ? stripTrailingSlash(pathname) // "/about"
+      : KNOWN_MARKETING_PATHS.includes(stripTrailingSlash(dropFirstSegment(pathname)))
+        ? stripTrailingSlash(dropFirstSegment(pathname)) // "/xx/about"
+        : null;
+    if (marketingTarget) {
+      const url = req.nextUrl.clone();
+      url.pathname = `/en${marketingTarget}`;
+      return NextResponse.redirect(url, 308);
+    }
   }
 
   const isPublic =

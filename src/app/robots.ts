@@ -15,6 +15,7 @@ const AI_CRAWLERS = [
   "Claude-User",      // Claude live browsing
   "PerplexityBot",    // Perplexity index
   "Google-Extended",  // Gemini / Vertex grounding opt-in
+  "Bingbot",          // Bing index — backs Copilot answers
   "Applebot-Extended",
   "CCBot",            // Common Crawl — feeds several model corpora
 ];

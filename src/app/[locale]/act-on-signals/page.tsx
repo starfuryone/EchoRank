@@ -7,6 +7,7 @@ import home from "../home.module.css";
 import lp from "./act-on-signals.module.css";
 import BackButton from "../legal/back-button";
 import { ActArt } from "../hero-art";
+import { buildMetadata } from "@/lib/seo";
 
 export function generateStaticParams() {
   return SUPPORTED_LOCALES.map((locale) => ({ locale }));
@@ -221,7 +222,12 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   const { locale } = await params;
   if (!isSupportedLocale(locale)) return {};
   const { meta } = C[locale];
-  return { title: meta.title, description: meta.description };
+  return buildMetadata({
+    locale,
+    path: "/act-on-signals",
+    title: meta.title,
+    description: meta.description,
+  });
 }
 
 export default async function ActOnSignalsPage({ params }: { params: Promise<{ locale: string }> }) {

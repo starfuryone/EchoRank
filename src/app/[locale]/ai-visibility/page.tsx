@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation';
 import { SUPPORTED_LOCALES, isSupportedLocale, type Locale } from '@/lib/i18n/config';
 import { CONTENT } from '@/lib/i18n/content';
 import { AuditWidget, type AuditWidgetContent } from '@/components/AuditWidget';
+import { JsonLd, SITE_URL, buildMetadata, faqPage, normalizeLocale, organization, webSite } from "@/lib/seo";
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://echorank360.com';
 
@@ -369,33 +370,12 @@ export async function generateMetadata({
   const { locale } = await params;
   if (!isSupportedLocale(locale)) return {};
   const { meta } = C[locale];
-  const url = `${SITE}/${locale}/ai-visibility`;
-  return {
-    // Bare title — the root layout template appends " | EchoRank 360".
+  return buildMetadata({
+    locale,
+    path: "/ai-visibility",
     title: meta.titleShort,
     description: meta.description,
-    alternates: {
-      canonical: url,
-      languages: Object.fromEntries([
-        ...SUPPORTED_LOCALES.map((l) => [l, `${SITE}/${l}/ai-visibility`]),
-        ['x-default', `${SITE}/en/ai-visibility`],
-      ]),
-    },
-    openGraph: {
-      title: meta.title,
-      description: meta.description,
-      url,
-      siteName: 'EchoRank 360',
-      type: 'website',
-      locale: locale.replace('-', '_'),
-    },
-    // Set explicitly so the page copy wins over the root-layout twitter default.
-    twitter: {
-      card: 'summary_large_image',
-      title: meta.title,
-      description: meta.description,
-    },
-  };
+  });
 }
 
 export default async function AIVisibilityPage({
@@ -413,8 +393,18 @@ export default async function AIVisibilityPage({
   // public pages) — translated labels + the exact homepage copyright.
   const foot = CONTENT[locale].footer;
 
+  const l = normalizeLocale(locale);
+
   return (
     <main className="av">
+      {/* FAQPage built from c.faq.items — the same array rendered below. */}
+      <JsonLd
+        graph={[
+          organization(l),
+          webSite(l),
+          faqPage(c.faq.items, `${SITE_URL}/${l}/ai-visibility`),
+        ]}
+      />
       <header className="av-header">
         <a href="/" aria-label="EchoRank home" className="av-brand">
           {/* eslint-disable-next-line @next/next/no-img-element */}

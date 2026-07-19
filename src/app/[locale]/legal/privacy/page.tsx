@@ -5,6 +5,7 @@ import { SUPPORTED_LOCALES, isSupportedLocale, type Locale } from "@/lib/i18n/co
 import { CONTENT } from "@/lib/i18n/content";
 import lp from "../legal.module.css";
 import BackButton from "../back-button";
+import { buildMetadata } from "@/lib/seo";
 
 export function generateStaticParams() {
   return SUPPORTED_LOCALES.map((locale) => ({ locale }));
@@ -146,7 +147,13 @@ function pick(locale: Locale): Doc { return locale.startsWith("fr") ? FR : EN; }
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
   if (!isSupportedLocale(locale)) return {};
-  return { title: `${pick(locale).title} | EchoRank` };
+  const d = pick(locale);
+  return buildMetadata({
+    locale,
+    path: "/legal/privacy",
+    title: d.title,
+    description: d.sections[0]?.ps[0],
+  });
 }
 
 export default async function Page({ params }: { params: Promise<{ locale: string }> }) {
