@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import s from "./home2.module.css";
 import { FAQ } from "./faq-data";
+import { DemoVideoModal } from "@/components/demo-video";
 
 /* ---------- copy ---------- */
 
@@ -392,6 +393,9 @@ export default function HomeClient({ locale }: { locale: string }) {
     return () => io.disconnect();
   }, []);
 
+  /* demo video modal */
+  const [demoOpen, setDemoOpen] = useState(false);
+
   /* simulator */
   const [engKey, setEngKey] = useState<"chatgpt" | "perplexity" | "google">("chatgpt");
   const sim = t.sim.data[engKey];
@@ -448,7 +452,7 @@ export default function HomeClient({ locale }: { locale: string }) {
             <p className={s.heroSub}>{t.hero.sub}</p>
             <div className={s.ctarow}>
               <Link className={`${s.btn} ${s.btnPrimary}`} href="/register">{t.hero.cta1}</Link>
-              <a className={`${s.btn} ${s.btnGhost}`} href="/EchorankIntroVid.mp4" target="_blank" rel="noopener">{t.hero.cta2}</a>
+              <button type="button" className={`${s.btn} ${s.btnGhost}`} onClick={() => setDemoOpen(true)}>{t.hero.cta2}</button>
             </div>
             <p className={s.label} style={{ marginTop: 22 }}>{t.hero.note}</p>
           </div>
@@ -799,10 +803,12 @@ export default function HomeClient({ locale }: { locale: string }) {
           <p className={s.closesub} style={{ maxWidth: 560 }}>{t.close.sub}</p>
           <div className={s.closebtns}>
             <Link className={`${s.btn} ${s.btnPrimary}`} href="/register">{t.close.cta1}</Link>
-            <a className={`${s.btn} ${s.btnGhost}`} href="/EchorankIntroVid.mp4" target="_blank" rel="noopener">{t.close.cta2}</a>
+            <button type="button" className={`${s.btn} ${s.btnGhost}`} onClick={() => setDemoOpen(true)}>{t.close.cta2}</button>
           </div>
         </div>
       </section>
+
+      <DemoVideoModal locale={locale} open={demoOpen} onClose={() => setDemoOpen(false)} />
 
       <footer className={s.footer}>
         <div className={`${s.container} ${s.footin}`}>

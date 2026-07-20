@@ -1141,3 +1141,96 @@ export const ABOUT: Record<Locale, AboutContent> = {
     backHome: "← Zurück zur Startseite",
   },
 };
+
+// ---------------------------------------------------------------------------
+// Demo video (modal on the homepage + /demo page)
+// ---------------------------------------------------------------------------
+
+export interface DemoVideoCopy {
+  meta: { title: string; description: string };
+  h1: string;
+  sub: string;
+  /** aria-label for the modal dialog */
+  dialogLabel: string;
+  /** aria-label for the <video> element */
+  videoLabel: string;
+  ctaPrimary: string;
+  ctaSecondary: string;
+  endHeadline: string;
+  endSub: string;
+  replay: string;
+  close: string;
+  backHome: string;
+}
+
+const demoEn: DemoVideoCopy = {
+  meta: {
+    title: "Watch the 2-Minute Demo",
+    description:
+      "See how EchoRank measures the way ChatGPT, Perplexity, Google AI and other engines see your business — and turns it into a score you can move.",
+  },
+  h1: "See EchoRank in action",
+  sub: "Two minutes: how we measure the way AI engines see your business — and how you become the answer.",
+  dialogLabel: "EchoRank product demo",
+  videoLabel: "EchoRank 2-minute product demo video",
+  ctaPrimary: "Run My Free AI Visibility Audit ↗",
+  ctaSecondary: "See pricing",
+  endHeadline: "Ready to become the answer?",
+  endSub: "Run your free audit — no card required, results in 60 seconds.",
+  replay: "Watch again",
+  close: "Close",
+  backHome: "← Back to homepage",
+};
+
+const demoFr: DemoVideoCopy = {
+  meta: {
+    title: "Regardez la démo de 2 minutes",
+    description:
+      "Découvrez comment EchoRank mesure la façon dont ChatGPT, Perplexity, Google AI et les autres moteurs voient votre entreprise — et la transforme en un score que vous pouvez faire progresser.",
+  },
+  h1: "EchoRank en action",
+  sub: "Deux minutes : comment nous mesurons la façon dont les moteurs d'IA voient votre entreprise — et comment devenir la réponse.",
+  dialogLabel: "Démo du produit EchoRank",
+  videoLabel: "Vidéo de démonstration EchoRank (2 minutes)",
+  ctaPrimary: "Lancer mon audit de visibilité IA gratuit ↗",
+  ctaSecondary: "Voir les tarifs",
+  endHeadline: "Prêt à devenir la réponse ?",
+  endSub: "Lancez votre audit gratuit — sans carte, résultats en 60 secondes.",
+  replay: "Revoir la vidéo",
+  close: "Fermer",
+  backHome: "← Retour à l'accueil",
+};
+
+export const DEMO_VIDEO: Record<Locale, DemoVideoCopy> = {
+  en: demoEn,
+  "en-CA": { ...demoEn },
+  fr: demoFr,
+  // Québec French — same register as the frCA homepage catalogue.
+  "fr-CA": {
+    ...demoFr,
+    meta: {
+      title: "Regardez la démo de 2 minutes",
+      description:
+        "Découvrez comment EchoRank mesure la façon dont ChatGPT, Perplexity, Google AI et les autres moteurs voient votre entreprise — et la transforme en un score que vous pouvez améliorer.",
+    },
+  },
+  // Swiss German — "ss", never "ß".
+  "de-CH": {
+    meta: {
+      title: "Sehen Sie die 2-Minuten-Demo",
+      description:
+        "Sehen Sie, wie EchoRank misst, wie ChatGPT, Perplexity, Google AI und weitere Engines Ihr Unternehmen sehen — und daraus einen Score macht, den Sie verbessern können.",
+    },
+    h1: "EchoRank in Aktion",
+    sub: "Zwei Minuten: wie wir messen, wie KI-Engines Ihr Unternehmen sehen — und wie Sie zur Antwort werden.",
+    dialogLabel: "EchoRank Produktdemo",
+    videoLabel: "EchoRank Produktdemo-Video (2 Minuten)",
+    ctaPrimary: "Meinen kostenlosen KI-Sichtbarkeits-Audit starten ↗",
+    ctaSecondary: "Preise ansehen",
+    endHeadline: "Bereit, zur Antwort zu werden?",
+    endSub: "Starten Sie Ihren kostenlosen Audit — keine Karte nötig, Resultate in 60 Sekunden.",
+    replay: "Nochmals ansehen",
+    close: "Schliessen",
+    backHome: "← Zurück zur Startseite",
+  },
+};

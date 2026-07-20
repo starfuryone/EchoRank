@@ -95,6 +95,36 @@ export function faqPage(questions: readonly FaqEntry[], pageUrl: string): JsonLd
   };
 }
 
+export interface VideoObjectInput {
+  name: string;
+  description: string;
+  /** Site-relative or absolute poster image. */
+  thumbnailUrl: string;
+  /** Site-relative or absolute video file URL. */
+  contentUrl: string;
+  /** ISO date (YYYY-MM-DD). Derive from the file's mtime — never invent. */
+  uploadDate: string;
+  /** Page the video is embedded on; used for a stable @id. */
+  pageUrl: string;
+  inLanguage?: string;
+}
+
+/** VideoObject with only verifiable fields — no duration, views or ratings,
+ * because the codebase holds no reliable source for them. */
+export function videoObject(input: VideoObjectInput): JsonLdNode {
+  return {
+    "@type": "VideoObject",
+    "@id": `${input.pageUrl}#video`,
+    name: input.name,
+    description: input.description,
+    thumbnailUrl: abs(input.thumbnailUrl),
+    contentUrl: abs(input.contentUrl),
+    uploadDate: input.uploadDate,
+    ...(input.inLanguage ? { inLanguage: input.inLanguage } : {}),
+    publisher: { "@id": ORGANIZATION_ID },
+  };
+}
+
 export interface Crumb {
   name: string;
   url: string;
