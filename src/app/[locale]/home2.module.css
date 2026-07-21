@@ -413,6 +413,9 @@
 .trajVideoWrap {
   position: sticky;
   top: 96px;
+  margin-top: 64px;   /* align with WEEK 0 item */
+  max-width: 420px;   /* smaller on page */
+  justify-self: start;
 }
 @media (max-width: 900px) {
   .trajLayout { grid-template-columns: 1fr; }

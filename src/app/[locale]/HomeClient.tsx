@@ -594,7 +594,7 @@ export default function HomeClient({ locale }: { locale: string }) {
                 <div className={it.hot ? s.tlmGold : s.tlm}>{it.m}</div>
               </div>
             ))}
-          </div><div className={s.trajVideoWrap}><video className={s.foundVideo} src="/videos/90-Days-AI-Visibility_1080p_caption.mp4" controls muted loop playsInline preload="metadata" /></div></div>
+          </div><div className={s.trajVideoWrap}><video className={s.foundVideo} src="/videos/90-Days-AI-Visibility_1080p_caption.mp4" controls muted autoPlay loop playsInline preload="metadata" /></div></div>
         </div>
       </section>
 
