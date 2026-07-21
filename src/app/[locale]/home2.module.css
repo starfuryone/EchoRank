@@ -339,7 +339,6 @@
 }
 .faqVideo {
   width: 100%;
-  max-width: 360px;          /* 1080x1920 scaled down */
   aspect-ratio: 9 / 16;
   border-radius: 14px;
   border: 1px solid var(--lineSoft);
@@ -353,7 +352,7 @@
   gap: 44px;
   align-items: flex-start;
 }
-.faqLayout > .faq {
+.faqLayout > :first-child {
   flex: 1;
   min-width: 0;
 }
