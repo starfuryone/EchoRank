@@ -372,3 +372,33 @@
     justify-content: center;
   }
 }
+
+/* ---------- Foundation video (homepage, section 08) ---------- */
+.foundLayout {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 48px;
+  align-items: start;
+}
+.foundVideoWrap {
+  position: sticky;
+  top: 90px;
+}
+.foundVideo {
+  width: 100%;
+  aspect-ratio: 9 / 16;
+  object-fit: cover;
+  border-radius: 14px;
+  border: 1px solid var(--lineSoft);
+  background: var(--surface);
+  display: block;
+}
+@media (max-width: 860px) {
+  .foundLayout { grid-template-columns: 1fr; }
+  .foundVideoWrap {
+    position: static;
+    max-width: 300px;
+    margin-inline: auto;
+    width: 100%;
+  }
+}

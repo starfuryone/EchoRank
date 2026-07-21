@@ -668,14 +668,29 @@ export default function HomeClient({ locale }: { locale: string }) {
       <section className={s.section}>
         <div className={s.container}>
           <p className={s.label}><b>/ 08</b> — {t.trad.label}</p>
-          <h2 className={s.h2}>{t.trad.h2}</h2>
-          <p className={s.sub}>{t.trad.sub}</p>
-          <div className={s.englogos}>
-            {t.trad.platforms.map(([n, role]) => (
-              <div className={`${s.elogo} ${s.reveal}`} key={n}><span className={s.edot} />{n} <span className={s.est}>{role}</span></div>
-            ))}
+          <div className={s.foundLayout}>
+            <div className={s.foundVideoWrap}>
+              <video
+                className={s.foundVideo}
+                src="/videos/Avatar_Video_with_captions.mp4"
+                controls
+                playsInline
+                muted
+                loop
+                preload="metadata"
+              />
+            </div>
+            <div>
+              <h2 className={s.h2}>{t.trad.h2}</h2>
+              <p className={s.sub}>{t.trad.sub}</p>
+              <div className={s.englogos}>
+                {t.trad.platforms.map(([n, role]) => (
+                  <div className={`${s.elogo} ${s.reveal}`} key={n}><span className={s.edot} />{n} <span className={s.est}>{role}</span></div>
+                ))}
+              </div>
+              <p className={s.label} style={{ marginTop: 22, lineHeight: 1.8 }}>{t.trad.feats}</p>
+            </div>
           </div>
-          <p className={s.label} style={{ marginTop: 22, lineHeight: 1.8 }}>{t.trad.feats}</p>
         </div>
       </section>
 
