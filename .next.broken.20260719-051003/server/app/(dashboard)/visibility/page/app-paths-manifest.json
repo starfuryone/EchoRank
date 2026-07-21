@@ -1,0 +1,3 @@
+{
+  "/(dashboard)/visibility/page": "app/(dashboard)/visibility/page.js"
+}

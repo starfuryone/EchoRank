@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "functions": {
+    "/_middleware": {
+      "runtime": "nodejs",
+      "matchers": [
+        {
+          "regexp": "^(?:\\/(_next\\/data\\/[^/]{1,}))?(?:\\/((?!_next\\/static|_next\\/image|favicon.ico|.*\\..*).*))(\\.json|\\.rsc|\\.segments\\/.+\\.segment\\.rsc)?[\\/#\\?]?$",
+          "originalSource": "/((?!_next/static|_next/image|favicon.ico|.*\\..*).*)"
+        }
+      ]
+    },
+    "/api/competitors": {},
+    "/api/competitors/[id]": {},
+    "/api/competitors/[id]/snapshots": {},
+    "/api/competitors/refresh": {},
+    "/api/competitors/search": {},
+    "/api/reputation/alerts": {},
+    "/api/reputation/config": {},
+    "/api/reputation/risk": {},
+    "/api/signals": {}
+  }
+}

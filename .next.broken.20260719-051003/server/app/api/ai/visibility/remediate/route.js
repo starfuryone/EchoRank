@@ -1,0 +1,10 @@
+var R=require("../../../../../chunks/[turbopack]_runtime.js")("server/app/api/ai/visibility/remediate/route.js")
+R.c("server/chunks/[root-of-the-server]__004rndv._.js")
+R.c("server/chunks/_0isv7-9._.js")
+R.c("server/chunks/[root-of-the-server]__0j2~4y-._.js")
+R.c("server/chunks/_0k0ysmc._.js")
+R.c("server/chunks/[root-of-the-server]__0vxxedz._.js")
+R.c("server/chunks/_03ejtys._.js")
+R.c("server/chunks/_next-internal_server_app_api_ai_visibility_remediate_route_actions_0-t9~ye.js")
+R.m(550981)
+module.exports=R.m(550981).exports

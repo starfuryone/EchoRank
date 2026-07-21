@@ -159,8 +159,6 @@ const en: HomeContent = {
   pricing: {
     label: "/ 05 — PRICING",
     altLinks: [
-      { href: "/en-CA#pricing", label: "See pricing in Canadian dollars →", hideWhenCurrency: "CAD" },
-      { href: "/en?currency=USD#pricing", label: "See pricing in US dollars →", hideWhenCurrency: "USD" },
     ],
     tiers: [
       {
@@ -479,7 +477,6 @@ const fr: HomeContent = {
   pricing: {
     label: "/ 05 — TARIFS",
     altLinks: [
-      { href: "/fr-CA#pricing", label: "Voir les tarifs en dollars canadiens →", hideWhenCurrency: "CAD" },
       { href: "/fr?currency=EUR#pricing", label: "Voir les tarifs en euros →", hideWhenCurrency: "EUR" },
     ],
     tiers: [

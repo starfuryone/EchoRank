@@ -331,3 +331,44 @@
 .shotlink{display:inline-block;margin-top:14px;font-family:var(--mono);font-size:11px;letter-spacing:.08em;
   text-transform:uppercase;color:var(--gold);border-bottom:1px solid rgba(216,167,61,.35);padding-bottom:2px}
 .shotlink:hover{border-bottom-color:var(--gold)}
+
+.faqVideoWrap {
+  display: flex;
+  justify-content: center;
+  margin: 28px 0 36px;
+}
+.faqVideo {
+  width: 100%;
+  max-width: 360px;          /* 1080x1920 scaled down */
+  aspect-ratio: 9 / 16;
+  border-radius: 14px;
+  border: 1px solid var(--lineSoft);
+  background: var(--surface);
+  object-fit: cover;
+  display: block;
+}
+
+.faqLayout {
+  display: flex;
+  gap: 44px;
+  align-items: flex-start;
+}
+.faqLayout > .faq {
+  flex: 1;
+  min-width: 0;
+}
+.faqLayout .faqVideoWrap {
+  flex: 0 0 300px;
+  margin: 0;
+  position: sticky;
+  top: 90px;
+}
+@media (max-width: 900px) {
+  .faqLayout { flex-direction: column; }
+  .faqLayout .faqVideoWrap {
+    position: static;
+    flex: none;
+    width: 100%;
+    justify-content: center;
+  }
+}

@@ -784,6 +784,17 @@ export default function HomeClient({ locale }: { locale: string }) {
           <p className={s.label}><b>/ 13</b> — {faq.label}</p>
           <h2 className={s.h2}>{faq.h2}</h2>
           <p className={s.sub}>{faq.sub}</p>
+          {locale === 'en' && (
+            <div className={s.faqVideoWrap}>
+              <video
+                className={s.faqVideo}
+                src="/videos/faq-intro.mp4"
+                controls
+                playsInline
+                preload="metadata"
+              />
+            </div>
+          )}
           <div className={s.faq}>
             {faq.items.map((it) => (
               <div className={`${s.faqItem} ${s.reveal}`} key={it.q}>
