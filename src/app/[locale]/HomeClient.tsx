@@ -585,7 +585,7 @@ export default function HomeClient({ locale }: { locale: string }) {
         <div className={s.container}>
           <p className={s.label}><b>/ 04</b> — {t.tlx.label}</p>
           <h2 className={s.h2}>{t.tlx.h2}</h2>
-          <div className={s.timeline}>
+          <div className={s.trajLayout}><div className={s.timeline}>
             {t.tlx.items.map((it) => (
               <div className={`${s.tl} ${it.hot ? s.tlHot : ""} ${s.reveal}`} key={it.w}>
                 <span className={s.tlw}>{it.w}</span>
@@ -594,7 +594,7 @@ export default function HomeClient({ locale }: { locale: string }) {
                 <div className={it.hot ? s.tlmGold : s.tlm}>{it.m}</div>
               </div>
             ))}
-          </div>
+          </div><div className={s.trajVideoWrap}><video className={s.foundVideo} src="/videos/90-Days-AI-Visibility_1080p_caption.mp4" controls muted loop playsInline preload="metadata" /></div></div>
         </div>
       </section>
 

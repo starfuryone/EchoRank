@@ -401,3 +401,20 @@
     width: 100%;
   }
 }
+
+
+/* / 04 trajectory: timeline + video (added 20260721-204851) */
+.trajLayout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 56px;
+  align-items: start;
+}
+.trajVideoWrap {
+  position: sticky;
+  top: 96px;
+}
+@media (max-width: 900px) {
+  .trajLayout { grid-template-columns: 1fr; }
+  .trajVideoWrap { position: static; }
+}
