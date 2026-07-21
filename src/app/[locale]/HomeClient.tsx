@@ -73,7 +73,7 @@ const T = {
     sim: {
       label: "WHAT AI SEES", h2: "Ask what your customers ask.",
       sub: "This is the diagnostic every audit produces: the real prompt, the real answer, and exactly why you're in it — or not.",
-      prompt: "\u201CWho is the best plumber in Calgary?\u201D",
+      prompt: "\u201CWho is the best plumber in Milwaukee?\u201D",
       promptLbl: "PROMPT →",
       missRow: "Acme Plumbing (your business) — not mentioned",
       whyMiss: "Why you're missing", whyNot1: "Why you're not #1", fixes: "Recommended fixes",
@@ -225,7 +225,7 @@ const T = {
     sim: {
       label: "CE QUE L'IA VOIT", h2: "Posez la question que vos clients posent.",
       sub: "C'est le diagnostic que chaque audit produit : la vraie question, la vraie réponse, et exactement pourquoi vous y êtes — ou pas.",
-      prompt: "« Quel est le meilleur plombier à Calgary? »",
+      prompt: "« Quel est le meilleur plombier à Milwaukee? »",
       promptLbl: "QUESTION →",
       missRow: "Plomberie Acme (votre entreprise) — non mentionnée",
       whyMiss: "Pourquoi vous êtes absent", whyNot1: "Pourquoi vous n'êtes pas no 1", fixes: "Correctifs recommandés",
