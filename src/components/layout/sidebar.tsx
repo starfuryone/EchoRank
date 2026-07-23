@@ -23,6 +23,7 @@ import {
 import { cn } from "@/lib/utils";
 import { dashNav, type DashLocale } from "@/lib/i18n/dashboard";
 import { canAccessPath } from "@/lib/plan-routing";
+import { SidebarProducts } from "./sidebar-products";
 import type { PlanType } from "@/generated/prisma";
 
 const navItems = [
@@ -115,6 +116,10 @@ export function Sidebar({ open, onClose, locale = "en", plan }: SidebarProps) {
               );
             })}
           </ul>
+
+          {/* Products groups — mobile drawer only; desktop uses the header
+              mega-menu. Same typed config drives both. */}
+          <SidebarProducts locale={locale} plan={plan} onNavigate={onClose} />
         </nav>
 
         {/* Footer */}

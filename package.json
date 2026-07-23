@@ -16,6 +16,7 @@
     "workers": "npx tsx src/infrastructure/queue/start-workers.ts",
     "workers:dev": "npx tsx --watch src/infrastructure/queue/start-workers.ts",
     "test:imports": "node --test --import tsx src/monitoring/import/__tests__/csv-parser.test.ts",
+    "test:nav": "node --test --import tsx src/lib/__tests__/product-nav.test.ts",
     "test:extension": "node --test --import tsx src/monitoring/ingestion/__tests__/extension-ingest.test.ts"
   },
   "dependencies": {

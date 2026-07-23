@@ -54,6 +54,7 @@ export function DashboardShell({ children, user, locale = "en", plan }: Dashboar
         <Header
           title={title}
           locale={locale}
+          plan={plan}
           user={user}
           onMenuToggle={handleMenuToggle}
           onSignOut={handleSignOut}

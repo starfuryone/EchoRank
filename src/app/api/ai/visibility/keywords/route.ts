@@ -1,14 +1,17 @@
 // src/app/api/ai/visibility/keywords/route.ts
-// Dashboard keyword suggester — full sidecar response, site depth, optional
-// AI enhancement. Gated on the ai_visibility feature (AI_VISIBILITY, GROWTH,
-// AGENCY, ENTERPRISE plans), caller's own tenant only.
+// Dashboard keyword suggester ("Keywords Explorer" in the Products menu) —
+// full sidecar response, site depth, optional AI enhancement. Available to
+// ALL plan tiers by product decision (the suggester is the cross-tier entry
+// point into the SEO toolset); auth is requireTenant only, caller's own
+// tenant. The page lives at /visibility/keywords, which every tier's route
+// allowlist can reach.
 //
 // v1 does not persist results: there is no keyword-shaped model in the schema
 // (VisibilityAudit stores score/checks) — results are returned to the client
 // only. Revisit if a KeywordScan model is added.
 import { NextRequest, NextResponse } from "next/server";
 import { requireTenant } from "@/lib/tenant";
-import { requireFeature, enforcementErrorResponse } from "@/lib/plan-enforcement";
+import { enforcementErrorResponse } from "@/lib/plan-enforcement";
 import { sidecarPost } from "@/lib/av-sidecar";
 
 interface KeywordsResponse {
@@ -19,7 +22,6 @@ interface KeywordsResponse {
 export async function POST(request: NextRequest) {
   try {
     await requireTenant();
-    await requireFeature("ai_visibility");
 
     const body = await request.json();
     const url = typeof body?.url === "string" ? body.url.trim() : "";

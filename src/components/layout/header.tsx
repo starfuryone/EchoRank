@@ -3,10 +3,13 @@
 import { Bell, LogOut, Menu } from "lucide-react";
 import { cn, getInitials } from "@/lib/utils";
 import { dashChrome, type DashLocale } from "@/lib/i18n/dashboard";
+import { ProductsMenu } from "./products-menu";
+import type { PlanType } from "@/generated/prisma";
 
 interface HeaderProps {
   title: string;
   locale?: DashLocale;
+  plan?: PlanType | null;
   user?: {
     name?: string | null;
     email?: string | null;
@@ -16,7 +19,7 @@ interface HeaderProps {
   onSignOut?: () => void;
 }
 
-export function Header({ title, locale = "en", user, onMenuToggle, onSignOut }: HeaderProps) {
+export function Header({ title, locale = "en", plan, user, onMenuToggle, onSignOut }: HeaderProps) {
   const chrome = dashChrome[locale];
   const displayName = user?.name || user?.email || chrome.user;
   const initials = getInitials(displayName);
@@ -37,6 +40,10 @@ export function Header({ title, locale = "en", user, onMenuToggle, onSignOut }: 
         <h1 className="text-lg font-semibold text-gray-900 sm:text-xl">
           {title}
         </h1>
+
+        {/* Products mega-menu (desktop; the mobile drawer renders the same
+            config via SidebarProducts) */}
+        <ProductsMenu locale={locale} plan={plan} />
       </div>
 
       <div className="flex items-center gap-2">

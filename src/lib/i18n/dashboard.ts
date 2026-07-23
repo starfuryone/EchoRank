@@ -3,6 +3,11 @@
  * Cookie mapping: fr* → fr (Québec French, shared by fr and fr-CA),
  * de* → de-CH (Swiss German, "ss" never "ß"), everything else (incl. en-CA) → en.
  */
+import type {
+  ProductNavGroupId,
+  ProductNavItemId,
+  ScaffoldId,
+} from "@/lib/product-nav";
 export type DashLocale = "en" | "fr" | "de-CH";
 
 export function dashboardLocale(cookieValue?: string | null): DashLocale {
@@ -29,6 +34,20 @@ export const dashNav: Record<DashLocale, Record<string, string>> = {
     "/team": "Team",
     "/settings": "Settings",
     "/billing": "Billing",
+    // Products menu surfaces (header titles; not in the sidebar list)
+    "/visibility/keywords": "Keywords Explorer",
+    "/visibility/brand-radar": "Brand Radar",
+    "/site-explorer": "Site Explorer",
+    "/rank-tracker": "Rank Tracker",
+    "/gsc-insights": "GSC Insights",
+    "/web-analytics": "Web Analytics",
+    "/bot-analytics": "Bot Analytics",
+    "/content-explorer": "Content Explorer",
+    "/ai-content-helper": "AI Content Helper",
+    "/social-media-manager": "Social Media Manager",
+    "/portfolios": "Portfolios",
+    "/report-builder": "Report Builder",
+    "/gbp-monitor": "GBP Monitor",
   },
   "de-CH": {
     "/dashboard": "Dashboard",
@@ -47,6 +66,19 @@ export const dashNav: Record<DashLocale, Record<string, string>> = {
     "/team": "Team",
     "/settings": "Einstellungen",
     "/billing": "Abrechnung",
+    "/visibility/keywords": "Keywords Explorer",
+    "/visibility/brand-radar": "Brand Radar",
+    "/site-explorer": "Site Explorer",
+    "/rank-tracker": "Rank Tracker",
+    "/gsc-insights": "GSC Insights",
+    "/web-analytics": "Web-Analytics",
+    "/bot-analytics": "Bot-Analytics",
+    "/content-explorer": "Content Explorer",
+    "/ai-content-helper": "KI-Content-Assistent",
+    "/social-media-manager": "Social-Media-Manager",
+    "/portfolios": "Portfolios",
+    "/report-builder": "Report Builder",
+    "/gbp-monitor": "GBP-Monitor",
   },
   fr: {
     "/dashboard": "Tableau de bord",
@@ -65,6 +97,19 @@ export const dashNav: Record<DashLocale, Record<string, string>> = {
     "/team": "Équipe",
     "/settings": "Paramètres",
     "/billing": "Facturation",
+    "/visibility/keywords": "Explorateur de mots-clés",
+    "/visibility/brand-radar": "Radar de marque",
+    "/site-explorer": "Explorateur de sites",
+    "/rank-tracker": "Suivi des positions",
+    "/gsc-insights": "Analyses GSC",
+    "/web-analytics": "Analytique web",
+    "/bot-analytics": "Analytique des robots",
+    "/content-explorer": "Explorateur de contenu",
+    "/ai-content-helper": "Assistant de contenu IA",
+    "/social-media-manager": "Gestionnaire de médias sociaux",
+    "/portfolios": "Portefeuilles",
+    "/report-builder": "Générateur de rapports",
+    "/gbp-monitor": "Suivi GBP",
   },
 };
 
@@ -4725,5 +4770,307 @@ export const ONBOARDING_COPY: Record<DashLocale, OnboardingCopy> = {
     addClientNamePlaceholder: "Kunde AG",
     addClientCta: "Arbeitsbereich erstellen",
     addClientSuccess: "Arbeitsbereich erstellt — Sie wurden dorthin gewechselt.",
+  },
+};
+
+// ─── Products menu + feature scaffolds ──────────────────────────────────────
+// Typed against the nav config's id unions (imported at the top of this
+// file): adding an item/group/scaffold in src/lib/product-nav.ts without copy
+// in ALL THREE catalogs is a type error.
+const productNavEn = {
+  menuLabel: "Products",
+  closeMenu: "Close products menu",
+  newBadge: "New",
+  newBadgeSr: "new feature",
+  comingSoon: "Coming soon",
+  scaffoldIntro:
+    "This workspace is coming to Echorank360. Nothing is tracked yet — once the module launches, your projects and data will appear here.",
+  groups: {
+    search_marketing: "Search Marketing",
+    website_performance: "Website Performance",
+    content_marketing: "Content Marketing",
+    reporting: "Reporting",
+    local_seo: "Local SEO",
+  } satisfies Record<ProductNavGroupId, string>,
+  items: {
+    site_explorer: {
+      name: "Site Explorer",
+      description: "Analyze websites, competitors, backlinks, and organic search performance.",
+    },
+    keywords_explorer: {
+      name: "Keywords Explorer",
+      description: "Discover keywords, search demand, difficulty, and ranking opportunities.",
+    },
+    rank_tracker: {
+      name: "Rank Tracker",
+      description: "Monitor keyword rankings and search visibility over time.",
+    },
+    gsc_insights: {
+      name: "GSC Insights",
+      description: "Analyze Google Search Console performance and uncover search opportunities.",
+    },
+    brand_radar: {
+      name: "Brand Radar",
+      description: "Track brand visibility, mentions, and presence across search and AI platforms.",
+    },
+    custom_prompts: {
+      name: "Custom Prompts",
+      description: "Create and monitor the AI prompts that matter to your brand.",
+    },
+    site_audit: {
+      name: "Site Audit",
+      description: "Crawl your website and identify technical SEO issues.",
+    },
+    web_analytics: {
+      name: "Web Analytics",
+      description: "Understand website traffic, acquisition, engagement, and conversions.",
+    },
+    bot_analytics: {
+      name: "Bot Analytics",
+      description: "Monitor search-engine and AI crawler activity across your website.",
+    },
+    content_explorer: {
+      name: "Content Explorer",
+      description: "Research successful content, trends, mentions, and link opportunities.",
+    },
+    ai_content_helper: {
+      name: "AI Content Helper",
+      description: "Plan, create, optimize, and improve content with AI.",
+    },
+    social_media_manager: {
+      name: "Social Media Manager",
+      description: "Plan, edit, schedule, and manage social media content.",
+    },
+    dashboard: {
+      name: "Dashboard",
+      description: "Track key marketing and SEO performance across projects.",
+    },
+    portfolios: {
+      name: "Portfolios",
+      description: "Monitor combined performance across multiple websites and projects.",
+    },
+    report_builder: {
+      name: "Report Builder",
+      description: "Create customizable reports that demonstrate marketing impact.",
+    },
+    gbp_monitor: {
+      name: "GBP Monitor",
+      description: "Monitor and manage Google Business Profile performance at scale.",
+    },
+  } satisfies Record<ProductNavItemId, { name: string; description: string }>,
+  scaffolds: {
+    site_explorer: { cta: "Analyze a domain", related: "Open competitor intelligence →" },
+    rank_tracker: { cta: "Create a tracking project", related: "Find keywords to track →" },
+    gsc_insights: { cta: "Connect Google Search Console" },
+    brand_radar: { cta: "Add a brand", related: "Track AI prompts now →" },
+    web_analytics: { cta: "Connect analytics", related: "Open reputation analytics →" },
+    bot_analytics: { cta: "Add a website", related: "Measure AI crawler impact →" },
+    content_explorer: { cta: "Explore content" },
+    ai_content_helper: { cta: "Create content", related: "Open message templates →" },
+    social_media_manager: { cta: "Create a post" },
+    portfolios: { cta: "Create a portfolio" },
+    report_builder: { cta: "Create a report", related: "Download existing PDF reports →" },
+    gbp_monitor: { cta: "Connect Google Business Profile", related: "Open review monitoring →" },
+  } satisfies Record<ScaffoldId, { cta: string; related?: string }>,
+};
+// Widen scaffolds so `related` is uniformly optional (the `satisfies` check
+// above still enforces per-key completeness on the English source catalog).
+export type ProductNavCopy = Omit<typeof productNavEn, "scaffolds"> & {
+  scaffolds: Record<ScaffoldId, { cta: string; related?: string }>;
+};
+
+export const PRODUCT_NAV_COPY: Record<DashLocale, ProductNavCopy> = {
+  en: productNavEn,
+  fr: {
+    menuLabel: "Produits",
+    closeMenu: "Fermer le menu des produits",
+    newBadge: "Nouveau",
+    newBadgeSr: "nouvelle fonctionnalité",
+    comingSoon: "Bientôt offert",
+    scaffoldIntro:
+      "Cet espace de travail s'en vient dans Echorank360. Rien n'est encore suivi — au lancement du module, vos projets et vos données apparaîtront ici.",
+    groups: {
+      search_marketing: "Marketing de recherche",
+      website_performance: "Performance du site web",
+      content_marketing: "Marketing de contenu",
+      reporting: "Rapports",
+      local_seo: "SEO local",
+    },
+    items: {
+      site_explorer: {
+        name: "Explorateur de sites",
+        description: "Analysez les sites web, les concurrents, les liens retour et la performance en recherche organique.",
+      },
+      keywords_explorer: {
+        name: "Explorateur de mots-clés",
+        description: "Découvrez les mots-clés, la demande de recherche, la difficulté et les occasions de classement.",
+      },
+      rank_tracker: {
+        name: "Suivi des positions",
+        description: "Surveillez le classement de vos mots-clés et votre visibilité de recherche au fil du temps.",
+      },
+      gsc_insights: {
+        name: "Analyses GSC",
+        description: "Analysez la performance Google Search Console et découvrez des occasions de recherche.",
+      },
+      brand_radar: {
+        name: "Radar de marque",
+        description: "Suivez la visibilité, les mentions et la présence de votre marque dans la recherche et les plateformes d'IA.",
+      },
+      custom_prompts: {
+        name: "Requêtes personnalisées",
+        description: "Créez et surveillez les requêtes d'IA qui comptent pour votre marque.",
+      },
+      site_audit: {
+        name: "Audit de site",
+        description: "Explorez votre site web et identifiez les problèmes techniques de SEO.",
+      },
+      web_analytics: {
+        name: "Analytique web",
+        description: "Comprenez le trafic, l'acquisition, l'engagement et les conversions de votre site web.",
+      },
+      bot_analytics: {
+        name: "Analytique des robots",
+        description: "Surveillez l'activité des robots des moteurs de recherche et d'IA sur votre site web.",
+      },
+      content_explorer: {
+        name: "Explorateur de contenu",
+        description: "Recherchez les contenus performants, les tendances, les mentions et les occasions de liens.",
+      },
+      ai_content_helper: {
+        name: "Assistant de contenu IA",
+        description: "Planifiez, créez, optimisez et améliorez votre contenu avec l'IA.",
+      },
+      social_media_manager: {
+        name: "Gestionnaire de médias sociaux",
+        description: "Planifiez, modifiez, programmez et gérez le contenu de vos médias sociaux.",
+      },
+      dashboard: {
+        name: "Tableau de bord",
+        description: "Suivez la performance marketing et SEO clé de tous vos projets.",
+      },
+      portfolios: {
+        name: "Portefeuilles",
+        description: "Surveillez la performance combinée de plusieurs sites web et projets.",
+      },
+      report_builder: {
+        name: "Générateur de rapports",
+        description: "Créez des rapports personnalisables qui démontrent l'impact marketing.",
+      },
+      gbp_monitor: {
+        name: "Suivi GBP",
+        description: "Surveillez et gérez la performance de vos fiches Google Business Profile à grande échelle.",
+      },
+    },
+    scaffolds: {
+      site_explorer: { cta: "Analyser un domaine", related: "Ouvrir l'intelligence concurrentielle →" },
+      rank_tracker: { cta: "Créer un projet de suivi", related: "Trouver des mots-clés à suivre →" },
+      gsc_insights: { cta: "Connecter Google Search Console" },
+      brand_radar: { cta: "Ajouter une marque", related: "Suivre des requêtes d'IA →" },
+      web_analytics: { cta: "Connecter l'analytique", related: "Ouvrir l'analytique de réputation →" },
+      bot_analytics: { cta: "Ajouter un site web", related: "Mesurer l'impact des robots d'IA →" },
+      content_explorer: { cta: "Explorer le contenu" },
+      ai_content_helper: { cta: "Créer du contenu", related: "Ouvrir les modèles de messages →" },
+      social_media_manager: { cta: "Créer une publication" },
+      portfolios: { cta: "Créer un portefeuille" },
+      report_builder: { cta: "Créer un rapport", related: "Télécharger les rapports PDF existants →" },
+      gbp_monitor: { cta: "Connecter Google Business Profile", related: "Ouvrir la surveillance des avis →" },
+    },
+  },
+  "de-CH": {
+    menuLabel: "Produkte",
+    closeMenu: "Produktmenü schliessen",
+    newBadge: "Neu",
+    newBadgeSr: "neue Funktion",
+    comingSoon: "Bald verfügbar",
+    scaffoldIntro:
+      "Dieser Arbeitsbereich kommt in Echorank360. Noch wird nichts erfasst — sobald das Modul startet, erscheinen hier Ihre Projekte und Daten.",
+    groups: {
+      search_marketing: "Suchmaschinenmarketing",
+      website_performance: "Website-Leistung",
+      content_marketing: "Content-Marketing",
+      reporting: "Berichte",
+      local_seo: "Lokales SEO",
+    },
+    items: {
+      site_explorer: {
+        name: "Site Explorer",
+        description: "Analysieren Sie Websites, Wettbewerber, Backlinks und die organische Suchleistung.",
+      },
+      keywords_explorer: {
+        name: "Keywords Explorer",
+        description: "Entdecken Sie Keywords, Suchnachfrage, Schwierigkeit und Ranking-Chancen.",
+      },
+      rank_tracker: {
+        name: "Rank Tracker",
+        description: "Überwachen Sie Keyword-Rankings und Suchsichtbarkeit im Zeitverlauf.",
+      },
+      gsc_insights: {
+        name: "GSC Insights",
+        description: "Analysieren Sie die Google-Search-Console-Leistung und decken Sie Suchchancen auf.",
+      },
+      brand_radar: {
+        name: "Brand Radar",
+        description: "Verfolgen Sie Markensichtbarkeit, Erwähnungen und Präsenz in Suche und KI-Plattformen.",
+      },
+      custom_prompts: {
+        name: "Eigene Prompts",
+        description: "Erstellen und überwachen Sie die KI-Prompts, die für Ihre Marke zählen.",
+      },
+      site_audit: {
+        name: "Site-Audit",
+        description: "Crawlen Sie Ihre Website und identifizieren Sie technische SEO-Probleme.",
+      },
+      web_analytics: {
+        name: "Web-Analytics",
+        description: "Verstehen Sie Traffic, Akquise, Engagement und Conversions Ihrer Website.",
+      },
+      bot_analytics: {
+        name: "Bot-Analytics",
+        description: "Überwachen Sie die Aktivität von Suchmaschinen- und KI-Crawlern auf Ihrer Website.",
+      },
+      content_explorer: {
+        name: "Content Explorer",
+        description: "Recherchieren Sie erfolgreiche Inhalte, Trends, Erwähnungen und Link-Chancen.",
+      },
+      ai_content_helper: {
+        name: "KI-Content-Assistent",
+        description: "Planen, erstellen, optimieren und verbessern Sie Inhalte mit KI.",
+      },
+      social_media_manager: {
+        name: "Social-Media-Manager",
+        description: "Planen, bearbeiten, terminieren und verwalten Sie Social-Media-Inhalte.",
+      },
+      dashboard: {
+        name: "Dashboard",
+        description: "Verfolgen Sie zentrale Marketing- und SEO-Leistung über alle Projekte.",
+      },
+      portfolios: {
+        name: "Portfolios",
+        description: "Überwachen Sie die kombinierte Leistung mehrerer Websites und Projekte.",
+      },
+      report_builder: {
+        name: "Report Builder",
+        description: "Erstellen Sie anpassbare Berichte, die den Marketing-Impact belegen.",
+      },
+      gbp_monitor: {
+        name: "GBP-Monitor",
+        description: "Überwachen und verwalten Sie die Leistung von Google-Business-Profilen im grossen Massstab.",
+      },
+    },
+    scaffolds: {
+      site_explorer: { cta: "Domain analysieren", related: "Wettbewerbs-Intelligence öffnen →" },
+      rank_tracker: { cta: "Tracking-Projekt erstellen", related: "Keywords zum Verfolgen finden →" },
+      gsc_insights: { cta: "Google Search Console verbinden" },
+      brand_radar: { cta: "Marke hinzufügen", related: "KI-Prompts verfolgen →" },
+      web_analytics: { cta: "Analytics verbinden", related: "Reputations-Analytics öffnen →" },
+      bot_analytics: { cta: "Website hinzufügen", related: "KI-Crawler-Wirkung messen →" },
+      content_explorer: { cta: "Inhalte erkunden" },
+      ai_content_helper: { cta: "Inhalt erstellen", related: "Nachrichtenvorlagen öffnen →" },
+      social_media_manager: { cta: "Beitrag erstellen" },
+      portfolios: { cta: "Portfolio erstellen" },
+      report_builder: { cta: "Bericht erstellen", related: "Vorhandene PDF-Berichte herunterladen →" },
+      gbp_monitor: { cta: "Google Business Profile verbinden", related: "Bewertungsüberwachung öffnen →" },
+    },
   },
 };
