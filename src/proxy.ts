@@ -26,7 +26,16 @@ const publicPaths = ["/login", "/register", "/api/auth", "/api/feedback", "/f/",
 // as /api/av/audit, so it is opted in here as a deliberate exact-match entry.
 //
 // CSRF is unaffected either way: the origin check above runs before this list.
-const publicExactPaths = new Set(["/api/av/audit", "/api/av/audit/report"]);
+//
+// /api/av/keywords backs the free keyword-scan widget on the same landing
+// page: anonymous by design, Redis-rate-limited per IP in the route itself
+// (2/24h, cf-connecting-ip required). Exact-match for the same reason as
+// /api/av/audit — nothing under /api/av/keywords/* inherits anonymity.
+const publicExactPaths = new Set([
+  "/api/av/audit",
+  "/api/av/audit/report",
+  "/api/av/keywords",
+]);
 
 /** First path segment, e.g. "/fr/x" -> "fr". */
 function firstSegment(pathname: string): string {

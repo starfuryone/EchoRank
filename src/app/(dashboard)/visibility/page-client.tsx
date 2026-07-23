@@ -232,6 +232,9 @@ export function VisibilityPageClient({
           </p>
         </div>
         <div className="flex items-center gap-3">
+          <a href="/visibility/keywords">
+            <Button variant="outline">{t.keywordsLink}</Button>
+          </a>
           <VisibilityReportButton />
           <VisibilityHelpButton locale={locale} />
         </div>

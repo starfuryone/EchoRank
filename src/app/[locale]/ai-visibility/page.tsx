@@ -5,11 +5,12 @@ import { notFound } from 'next/navigation';
 import { SUPPORTED_LOCALES, isSupportedLocale, type Locale } from '@/lib/i18n/config';
 import { CONTENT } from '@/lib/i18n/content';
 import { AuditWidget, type AuditWidgetContent } from '@/components/AuditWidget';
+import { KeywordWidget, type KeywordWidgetContent } from '@/components/KeywordWidget';
 import { JsonLd, SITE_URL, buildMetadata, faqPage, normalizeLocale, organization, webSite } from "@/lib/seo";
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://echorank360.com';
 
-// Brand/product terms kept verbatim across locales: EchoRank360, Trust Score,
+// Brand/product terms kept verbatim across locales: Echorank360, Trust Score,
 // the engine names (ChatGPT/Claude/Gemini/Perplexity), the plan names
 // (Growth/Agency), the mock-answer example brands (LedgerKit/Countable), and
 // the price token "$29". Prices are not currency-switched (task scope).
@@ -51,12 +52,13 @@ interface AvContent {
   faq: { h2: string; items: { q: string; a: string }[] };
   final: { h2: string; cta: string };
   widget: AuditWidgetContent;
+  kw: { h2: string; p: string; widget: KeywordWidgetContent };
 }
 
 const C: Record<Locale, AvContent> = {
   en: {
     meta: {
-      title: 'AI Visibility — EchoRank360',
+      title: 'AI Visibility — Echorank360',
       titleShort: 'AI Visibility',
       description:
         'Track whether ChatGPT, Claude, Gemini and Perplexity recommend your business. Prompt tracking, lost-recommendation alerts and an AI Trust Score for $29/month.',
@@ -66,7 +68,7 @@ const C: Record<Locale, AvContent> = {
       eyebrow: 'AI Visibility · $29/mo',
       h1a: 'When someone asks ChatGPT for a recommendation,',
       h1b: ' are you in the answer?',
-      sub: 'Millions of buying decisions now start as a prompt, not a search. EchoRank360 tracks the prompts that matter to your business, alerts you the moment an AI stops recommending you, and scores your standing across the major assistants.',
+      sub: 'Millions of buying decisions now start as a prompt, not a search. Echorank360 tracks the prompts that matter to your business, alerts you the moment an AI stops recommending you, and scores your standing across the major assistants.',
       engines: 'Tracks answers from',
       answerAria: 'Example of a tracked AI answer',
     },
@@ -150,13 +152,41 @@ const C: Record<Locale, AvContent> = {
       pdfErr: 'The report could not be generated.',
       pdfRetry: 'Try again',
     },
+    kw: {
+      h2: 'What keywords should your site own?',
+      p: 'Free scan: we read your homepage and extract the keywords, question searches and AI prompts it should be winning — no account needed.',
+      widget: {
+        label: 'Run a free keyword scan',
+        placeholder: 'yourdomain.com',
+        runIdle: 'Scan keywords',
+        runBusy: 'Scanning…',
+        note: 'Reading your page and extracting keywords — takes a few seconds.',
+        errLimit: 'Free scan limit reached (2 per day). Sign up for unlimited scans.',
+        errGeneric: 'The scan could not run. Check the URL and try again in a minute.',
+        fine: 'No account needed. 2 scans per day.',
+        seedsTitle: 'Seed keywords',
+        questionsTitle: 'Question keywords',
+        promptsTitle: 'AI prompts you should be recommended in',
+        techTitle: 'Technical SEO',
+        techSummaryTemplate:
+          '{pass} checks passed · {warn} warnings · {fail} failed — full details on the full plan.',
+        diffLow: 'easy',
+        diffMedium: 'medium',
+        diffHigh: 'hard',
+        lockedTemplate: '+{n} more on the full plan',
+        upsell:
+          'This scan read your homepage only, heuristics only. The full plan scans up to 5 pages, adds AI-suggested keywords and title/meta rewrites, and tracks whether AIs actually recommend you.',
+        cta: 'Unlock full keyword insights — $29/mo',
+        again: 'Scan another site',
+      },
+    },
   },
 
   'en-CA': null as unknown as AvContent,
 
   fr: {
     meta: {
-      title: 'Visibilité IA — EchoRank360',
+      title: 'Visibilité IA — Echorank360',
       titleShort: 'Visibilité IA',
       description:
         'Suivez si ChatGPT, Claude, Gemini et Perplexity recommandent votre entreprise. Suivi des requêtes, alertes de perte de recommandation et un AI Trust Score pour $29/mois.',
@@ -166,7 +196,7 @@ const C: Record<Locale, AvContent> = {
       eyebrow: 'Visibilité IA · $29/mo',
       h1a: 'Quand quelqu’un demande une recommandation à ChatGPT,',
       h1b: ' êtes-vous dans la réponse ?',
-      sub: 'Des millions de décisions d’achat commencent désormais par une requête, pas une recherche. EchoRank360 suit les requêtes qui comptent pour votre entreprise, vous alerte dès qu’une IA cesse de vous recommander, et évalue votre position auprès des principaux assistants.',
+      sub: 'Des millions de décisions d’achat commencent désormais par une requête, pas une recherche. Echorank360 suit les requêtes qui comptent pour votre entreprise, vous alerte dès qu’une IA cesse de vous recommander, et évalue votre position auprès des principaux assistants.',
       engines: 'Suit les réponses de',
       answerAria: 'Exemple de réponse d’IA suivie',
     },
@@ -250,13 +280,41 @@ const C: Record<Locale, AvContent> = {
       pdfErr: 'Le rapport n’a pas pu être généré.',
       pdfRetry: 'Réessayer',
     },
+    kw: {
+      h2: 'Quels mots-clés votre site devrait-il dominer ?',
+      p: 'Analyse gratuite : nous lisons votre page d’accueil et en extrayons les mots-clés, les recherches en question et les requêtes IA que vous devriez gagner — aucun compte requis.',
+      widget: {
+        label: 'Lancez une analyse de mots-clés gratuite',
+        placeholder: 'votredomaine.com',
+        runIdle: 'Analyser les mots-clés',
+        runBusy: 'Analyse en cours…',
+        note: 'Lecture de votre page et extraction des mots-clés — quelques secondes.',
+        errLimit: 'Limite d’analyses gratuites atteinte (2 par jour). Inscrivez-vous pour des analyses illimitées.',
+        errGeneric: 'L’analyse n’a pas pu s’exécuter. Vérifiez l’URL et réessayez dans une minute.',
+        fine: 'Aucun compte requis. 2 analyses par jour.',
+        seedsTitle: 'Mots-clés de base',
+        questionsTitle: 'Mots-clés en question',
+        promptsTitle: 'Requêtes IA où vous devriez être recommandé',
+        techTitle: 'SEO technique',
+        techSummaryTemplate:
+          '{pass} vérifications réussies · {warn} avertissements · {fail} échecs — détails complets avec le forfait complet.',
+        diffLow: 'facile',
+        diffMedium: 'moyen',
+        diffHigh: 'difficile',
+        lockedTemplate: '+{n} de plus avec le forfait complet',
+        upsell:
+          'Cette analyse n’a lu que votre page d’accueil, heuristiques seulement. Le forfait complet analyse jusqu’à 5 pages, ajoute des mots-clés suggérés par IA et des réécritures de titre/méta, et suit si les IA vous recommandent vraiment.',
+        cta: 'Débloquer l’analyse complète — $29/mo',
+        again: 'Analyser un autre site',
+      },
+    },
   },
 
   'fr-CA': null as unknown as AvContent,
 
   'de-CH': {
     meta: {
-      title: 'KI-Sichtbarkeit — EchoRank360',
+      title: 'KI-Sichtbarkeit — Echorank360',
       titleShort: 'KI-Sichtbarkeit',
       description:
         'Verfolgen Sie, ob ChatGPT, Claude, Gemini und Perplexity Ihr Unternehmen empfehlen. Prompt-Tracking, Benachrichtigungen bei verlorenen Empfehlungen und ein AI Trust Score für $29/Monat.',
@@ -266,7 +324,7 @@ const C: Record<Locale, AvContent> = {
       eyebrow: 'KI-Sichtbarkeit · $29/mo',
       h1a: 'Wenn jemand ChatGPT um eine Empfehlung bittet,',
       h1b: ' sind Sie in der Antwort?',
-      sub: 'Millionen von Kaufentscheidungen beginnen heute als Prompt, nicht als Suche. EchoRank360 verfolgt die Prompts, die für Ihr Unternehmen zählen, benachrichtigt Sie in dem Moment, in dem eine KI Sie nicht mehr empfiehlt, und bewertet Ihre Stellung bei den grossen Assistenten.',
+      sub: 'Millionen von Kaufentscheidungen beginnen heute als Prompt, nicht als Suche. Echorank360 verfolgt die Prompts, die für Ihr Unternehmen zählen, benachrichtigt Sie in dem Moment, in dem eine KI Sie nicht mehr empfiehlt, und bewertet Ihre Stellung bei den grossen Assistenten.',
       engines: 'Verfolgt Antworten von',
       answerAria: 'Beispiel einer verfolgten KI-Antwort',
     },
@@ -350,6 +408,34 @@ const C: Record<Locale, AvContent> = {
       pdfErr: 'Der Bericht konnte nicht erstellt werden.',
       pdfRetry: 'Erneut versuchen',
     },
+    kw: {
+      h2: 'Welche Keywords sollte Ihre Website besitzen?',
+      p: 'Gratis-Scan: Wir lesen Ihre Startseite und extrahieren die Keywords, Fragesuchen und KI-Prompts, die Sie gewinnen sollten — kein Konto nötig.',
+      widget: {
+        label: 'Kostenlosen Keyword-Scan starten',
+        placeholder: 'ihredomain.com',
+        runIdle: 'Keywords scannen',
+        runBusy: 'Scan läuft…',
+        note: 'Ihre Seite wird gelesen und Keywords werden extrahiert — dauert wenige Sekunden.',
+        errLimit: 'Gratis-Scan-Limit erreicht (2 pro Tag). Registrieren Sie sich für unbegrenzte Scans.',
+        errGeneric: 'Der Scan konnte nicht ausgeführt werden. Prüfen Sie die URL und versuchen Sie es in einer Minute erneut.',
+        fine: 'Kein Konto nötig. 2 Scans pro Tag.',
+        seedsTitle: 'Basis-Keywords',
+        questionsTitle: 'Frage-Keywords',
+        promptsTitle: 'KI-Prompts, in denen Sie empfohlen werden sollten',
+        techTitle: 'Technisches SEO',
+        techSummaryTemplate:
+          '{pass} Prüfungen bestanden · {warn} Warnungen · {fail} fehlgeschlagen — alle Details im vollen Plan.',
+        diffLow: 'leicht',
+        diffMedium: 'mittel',
+        diffHigh: 'schwer',
+        lockedTemplate: '+{n} weitere im vollen Plan',
+        upsell:
+          'Dieser Scan hat nur Ihre Startseite gelesen, nur Heuristiken. Der volle Plan scannt bis zu 5 Seiten, ergänzt KI-vorgeschlagene Keywords sowie Titel-/Meta-Vorschläge und verfolgt, ob KIs Sie wirklich empfehlen.',
+        cta: 'Volle Keyword-Analyse freischalten — $29/mo',
+        again: 'Weitere Website scannen',
+      },
+    },
   },
 };
 
@@ -406,9 +492,9 @@ export default async function AIVisibilityPage({
         ]}
       />
       <header className="av-header">
-        <a href="/" aria-label="EchoRank home" className="av-brand">
+        <a href="/" aria-label="Echorank home" className="av-brand">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/echorank-logo-light.svg" alt="EchoRank" width={180} height={34} />
+          <img src="/echorank-logo-light.svg" alt="Echorank" width={180} height={34} />
         </a>
         <nav className="av-nav" aria-label="Primary">
           <a href="#how">{c.nav.features}</a>
@@ -463,6 +549,12 @@ export default async function AIVisibilityPage({
       <section className="av-band">
         <h2>{c.band1.h2}</h2>
         <p>{c.band1.p}</p>
+      </section>
+
+      <section className="av-band-alt av-kw-section" id="keywords">
+        <h2>{c.kw.h2}</h2>
+        <p>{c.kw.p}</p>
+        <KeywordWidget c={c.kw.widget} />
       </section>
 
       <section className="av-features" id="how">
@@ -719,6 +811,48 @@ const css = `
 }
 .av-audit-upsell { color: #b8b4aa; font-size: 0.9rem; }
 .av-audit-again {
+  display: block; text-align: center; margin-top: 0.7rem;
+  color: #8b877e; font-size: 0.85rem;
+}
+/* ---- Keyword widget ---- */
+.av-kw-section { text-align: center; background: var(--surface, #16181d); }
+.av-kw-section > p { max-width: 40rem; margin: 0 auto; color: #b8b4aa; }
+.av-kw { margin: 2rem auto 0; max-width: 36rem; text-align: left; }
+.av-kw-label { display: block; font-weight: 650; margin-bottom: 0.6rem; }
+.av-kw-row { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+.av-kw-row input {
+  flex: 1; min-width: 220px; padding: 0.8rem 1rem; border-radius: 10px;
+  border: 1px solid var(--surface2, #2a2c33);
+  background: var(--bg, #0c0d10); color: #e9e6df; font-size: 0.95rem;
+}
+.av-kw-row input:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.av-kw-note { color: #b8b4aa; font-size: 0.85rem; margin-top: 0.6rem; }
+.av-kw-err { color: #e0a184; font-size: 0.9rem; margin-top: 0.6rem; }
+.av-kw-fine { color: #8b877e; font-size: 0.78rem; margin-top: 0.5rem; }
+.av-kw-result {
+  background: var(--bg, #0c0d10);
+  border: 1px solid var(--gold); border-radius: 14px; padding: 1.5rem;
+}
+.av-kw-result .av-kw-h { margin: 1.1rem 0 0.4rem; }
+.av-kw-result .av-kw-h:first-child { margin-top: 0; }
+.av-kw-list { list-style: none; padding: 0; margin: 0; }
+.av-kw-list li {
+  display: flex; justify-content: space-between; align-items: center;
+  gap: 0.75rem; padding: 0.45rem 0.1rem; font-size: 0.92rem;
+  border-bottom: 1px solid var(--surface2, #2a2c33);
+}
+.av-kw-diff {
+  font-size: 0.72rem; border-radius: 999px; padding: 0.12rem 0.6rem;
+  border: 1px solid; white-space: nowrap;
+}
+.av-kw-diff-low { color: #9ad17b; border-color: #4f7a3a; }
+.av-kw-diff-med { color: #e5c46f; border-color: #8a6d2c; }
+.av-kw-diff-high { color: #e0a184; border-color: #a4552f; }
+.av-kw-blur { filter: blur(5px); user-select: none; }
+.av-kw-lock { color: #8b877e; font-size: 0.8rem; white-space: nowrap; }
+.av-kw-tech { color: #b8b4aa; font-size: 0.9rem; margin: 0.2rem 0 0; }
+.av-kw-upsell { color: #b8b4aa; font-size: 0.9rem; margin-top: 1.2rem; }
+.av-kw-again {
   display: block; text-align: center; margin-top: 0.7rem;
   color: #8b877e; font-size: 0.85rem;
 }

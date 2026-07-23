@@ -4165,6 +4165,7 @@ export const PROMPT_TRENDS_COPY: Record<DashLocale, PromptTrendsCopy> = {
 const visibilityEn = {
   title: "AI Visibility",
   subtitle: "Can AI answer engines find, crawl, and cite your site?",
+  keywordsLink: "Keyword suggester",
   // search
   urlPlaceholder: "example.com",
   auditing: "Auditing…",
@@ -4236,6 +4237,7 @@ export const VISIBILITY_COPY: Record<DashLocale, VisibilityCopy> = {
   fr: {
     title: "Visibilité IA",
     subtitle: "Les moteurs de réponse IA peuvent-ils trouver, explorer et citer votre site?",
+    keywordsLink: "Suggesteur de mots-clés",
     urlPlaceholder: "example.com",
     auditing: "Audit en cours…",
     runAudit: "Lancer l'audit",
@@ -4297,6 +4299,7 @@ export const VISIBILITY_COPY: Record<DashLocale, VisibilityCopy> = {
   "de-CH": {
     title: "KI-Sichtbarkeit",
     subtitle: "Können KI-Antwortmaschinen Ihre Website finden, crawlen und zitieren?",
+    keywordsLink: "Keyword-Vorschläge",
     urlPlaceholder: "example.com",
     auditing: "Audit läuft…",
     runAudit: "Audit starten",
@@ -4382,6 +4385,188 @@ export const VISIBILITY_HELP_COPY: Record<DashLocale, VisibilityHelpCopy> = {
     modalTitle: "So funktioniert die KI-Sichtbarkeit",
     iframeTitle: "KI-Sichtbarkeit — Leitfaden",
     openFullPage: "Als ganze Seite öffnen →",
+  },
+};
+
+// ─── /visibility/keywords (SEO keyword suggester) ───────────────────────────
+const keywordsEn = {
+  title: "Keyword Suggester",
+  subtitle:
+    "Crawl your site, extract the keywords it should own, and see the AI prompts you should be recommended in.",
+  backToVisibility: "← AI Visibility",
+  urlPlaceholder: "example.com",
+  scanning: "Scanning…",
+  runScan: "Scan keywords",
+  regenerateAi: "Regenerate with AI",
+  regeneratingAi: "Regenerating…",
+  aiBadge: "AI-enhanced",
+  aiUnavailable: (note: string) => `AI enhancement unavailable — showing heuristic results (${note})`,
+  requestFailed: (status: number) => `Request failed (${status})`,
+  somethingWrong: "Something went wrong",
+  scanFailed: "Scan failed",
+  lockedPage:
+    "The keyword suggester is part of AI Visibility. Upgrade your plan to scan your site.",
+  upgradePlan: "Upgrade plan",
+  pagesCrawled: (n: number) => `${n} page${n === 1 ? "" : "s"} crawled`,
+  // tabs (the four benchmark classes)
+  tabSeeds: "Keywords",
+  tabContent: "Content optimization",
+  tabPrompts: "AI visibility",
+  tabTechnical: "Technical",
+  // seeds tab
+  seedsIntro: "Seed and question keywords, weighted by where they appear on your pages.",
+  questionHeading: "Question keywords",
+  difficulty: "Difficulty",
+  diffLabels: { low: "easy", medium: "medium", high: "hard" } as Record<string, string>,
+  sourceLabels: { heuristic: "heuristic", ai: "AI" } as Record<string, string>,
+  copy: "Copy",
+  copied: "Copied",
+  // content tab
+  presentTitle: "Terms already prominent (title / H1 / meta)",
+  missingTitle: "Terms on the page but not in your title, H1 or meta",
+  titleSuggestion: "Suggested title",
+  metaSuggestion: "Suggested meta description",
+  flagsTitle: "Flags",
+  flagLabels: {
+    missing_title: "Missing <title>",
+    title_too_long: "Title longer than 60 characters",
+    missing_meta_description: "Missing meta description",
+    meta_description_too_long: "Meta description longer than 160 characters",
+    meta_description_too_short: "Meta description shorter than 50 characters",
+    missing_h1: "Missing H1",
+    multiple_h1: "More than one H1",
+  } as Record<string, string>,
+  stuffingFlag: (term: string) => `Possible keyword stuffing: "${term}"`,
+  noFlags: "No content flags — nice.",
+  noSuggestions: "Title and meta description already carry your top keyword.",
+  // prompts tab
+  promptsIntro:
+    "Recommendation-style prompts an AI user would type where your site should appear in the answer. Track them on the AI Visibility page.",
+  trackPrompt: "Track this prompt →",
+  // technical tab
+  techIntro: "SEO-relevant technical checks from the last scan.",
+  statusLabels: { pass: "PASS", warn: "WARN", fail: "FAIL" } as Record<string, string>,
+  emptyTitle: "No scan yet",
+  emptyDescription: "Enter your domain above to extract keyword suggestions.",
+};
+export type KeywordsCopy = typeof keywordsEn;
+
+export const KEYWORDS_COPY: Record<DashLocale, KeywordsCopy> = {
+  en: keywordsEn,
+  fr: {
+    title: "Suggesteur de mots-clés",
+    subtitle:
+      "Explorez votre site, extrayez les mots-clés qu'il devrait dominer et voyez les requêtes IA où vous devriez être recommandé.",
+    backToVisibility: "← Visibilité IA",
+    urlPlaceholder: "example.com",
+    scanning: "Analyse en cours…",
+    runScan: "Analyser les mots-clés",
+    regenerateAi: "Régénérer avec l'IA",
+    regeneratingAi: "Régénération…",
+    aiBadge: "Enrichi par l'IA",
+    aiUnavailable: (note: string) =>
+      `Enrichissement IA indisponible — résultats heuristiques affichés (${note})`,
+    requestFailed: (status: number) => `Échec de la requête (${status})`,
+    somethingWrong: "Une erreur est survenue",
+    scanFailed: "Échec de l'analyse",
+    lockedPage:
+      "Le suggesteur de mots-clés fait partie de la Visibilité IA. Passez au forfait supérieur pour analyser votre site.",
+    upgradePlan: "Passer au forfait supérieur",
+    pagesCrawled: (n: number) => `${n} page${n === 1 ? "" : "s"} explorée${n === 1 ? "" : "s"}`,
+    tabSeeds: "Mots-clés",
+    tabContent: "Optimisation du contenu",
+    tabPrompts: "Visibilité IA",
+    tabTechnical: "Technique",
+    seedsIntro:
+      "Mots-clés de base et en question, pondérés selon leur emplacement sur vos pages.",
+    questionHeading: "Mots-clés en question",
+    difficulty: "Difficulté",
+    diffLabels: { low: "facile", medium: "moyen", high: "difficile" } as Record<string, string>,
+    sourceLabels: { heuristic: "heuristique", ai: "IA" } as Record<string, string>,
+    copy: "Copier",
+    copied: "Copié",
+    presentTitle: "Termes déjà bien en vue (titre / H1 / méta)",
+    missingTitle: "Termes présents sur la page mais absents du titre, du H1 ou de la méta",
+    titleSuggestion: "Titre suggéré",
+    metaSuggestion: "Méta-description suggérée",
+    flagsTitle: "Signalements",
+    flagLabels: {
+      missing_title: "Balise <title> manquante",
+      title_too_long: "Titre de plus de 60 caractères",
+      missing_meta_description: "Méta-description manquante",
+      meta_description_too_long: "Méta-description de plus de 160 caractères",
+      meta_description_too_short: "Méta-description de moins de 50 caractères",
+      missing_h1: "H1 manquant",
+      multiple_h1: "Plus d'un H1",
+    } as Record<string, string>,
+    stuffingFlag: (term: string) => `Bourrage de mots-clés possible : « ${term} »`,
+    noFlags: "Aucun signalement de contenu — bravo.",
+    noSuggestions: "Le titre et la méta-description portent déjà votre mot-clé principal.",
+    promptsIntro:
+      "Requêtes de recommandation qu'un utilisateur d'IA taperait et où votre site devrait figurer dans la réponse. Suivez-les sur la page Visibilité IA.",
+    trackPrompt: "Suivre cette requête →",
+    techIntro: "Vérifications techniques pertinentes pour le SEO de la dernière analyse.",
+    statusLabels: { pass: "RÉUSSI", warn: "ATTENTION", fail: "ÉCHEC" } as Record<string, string>,
+    emptyTitle: "Aucune analyse pour l'instant",
+    emptyDescription: "Saisissez votre domaine ci-dessus pour extraire des suggestions de mots-clés.",
+  },
+  "de-CH": {
+    title: "Keyword-Vorschläge",
+    subtitle:
+      "Crawlen Sie Ihre Website, extrahieren Sie die Keywords, die sie besitzen sollte, und sehen Sie die KI-Prompts, in denen Sie empfohlen werden sollten.",
+    backToVisibility: "← KI-Sichtbarkeit",
+    urlPlaceholder: "example.com",
+    scanning: "Scan läuft…",
+    runScan: "Keywords scannen",
+    regenerateAi: "Mit KI neu generieren",
+    regeneratingAi: "Wird neu generiert…",
+    aiBadge: "KI-erweitert",
+    aiUnavailable: (note: string) =>
+      `KI-Erweiterung nicht verfügbar — heuristische Ergebnisse werden angezeigt (${note})`,
+    requestFailed: (status: number) => `Anfrage fehlgeschlagen (${status})`,
+    somethingWrong: "Etwas ist schiefgelaufen",
+    scanFailed: "Scan fehlgeschlagen",
+    lockedPage:
+      "Der Keyword-Vorschlag ist Teil der KI-Sichtbarkeit. Führen Sie ein Upgrade durch, um Ihre Website zu scannen.",
+    upgradePlan: "Upgrade durchführen",
+    pagesCrawled: (n: number) => `${n} Seite${n === 1 ? "" : "n"} gecrawlt`,
+    tabSeeds: "Keywords",
+    tabContent: "Content-Optimierung",
+    tabPrompts: "KI-Sichtbarkeit",
+    tabTechnical: "Technik",
+    seedsIntro:
+      "Basis- und Frage-Keywords, gewichtet danach, wo sie auf Ihren Seiten erscheinen.",
+    questionHeading: "Frage-Keywords",
+    difficulty: "Schwierigkeit",
+    diffLabels: { low: "leicht", medium: "mittel", high: "schwer" } as Record<string, string>,
+    sourceLabels: { heuristic: "heuristisch", ai: "KI" } as Record<string, string>,
+    copy: "Kopieren",
+    copied: "Kopiert",
+    presentTitle: "Bereits prominente Begriffe (Titel / H1 / Meta)",
+    missingTitle: "Begriffe auf der Seite, aber nicht in Titel, H1 oder Meta",
+    titleSuggestion: "Vorgeschlagener Titel",
+    metaSuggestion: "Vorgeschlagene Meta-Beschreibung",
+    flagsTitle: "Hinweise",
+    flagLabels: {
+      missing_title: "Fehlender <title>",
+      title_too_long: "Titel länger als 60 Zeichen",
+      missing_meta_description: "Fehlende Meta-Beschreibung",
+      meta_description_too_long: "Meta-Beschreibung länger als 160 Zeichen",
+      meta_description_too_short: "Meta-Beschreibung kürzer als 50 Zeichen",
+      missing_h1: "Fehlendes H1",
+      multiple_h1: "Mehr als ein H1",
+    } as Record<string, string>,
+    stuffingFlag: (term: string) => `Mögliches Keyword-Stuffing: «${term}»`,
+    noFlags: "Keine Content-Hinweise — gut.",
+    noSuggestions: "Titel und Meta-Beschreibung tragen Ihr Top-Keyword bereits.",
+    promptsIntro:
+      "Empfehlungs-Prompts, die ein KI-Nutzer eingeben würde und in deren Antwort Ihre Website erscheinen sollte. Verfolgen Sie sie auf der Seite KI-Sichtbarkeit.",
+    trackPrompt: "Diesen Prompt verfolgen →",
+    techIntro: "SEO-relevante technische Prüfungen aus dem letzten Scan.",
+    statusLabels: { pass: "OK", warn: "WARNUNG", fail: "FEHLER" } as Record<string, string>,
+    emptyTitle: "Noch kein Scan",
+    emptyDescription:
+      "Geben Sie oben Ihre Domain ein, um Keyword-Vorschläge zu extrahieren.",
   },
 };
 
