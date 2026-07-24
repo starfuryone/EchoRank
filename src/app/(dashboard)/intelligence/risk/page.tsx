@@ -1,5 +1,5 @@
 import { cookies } from 'next/headers';
-import RiskDashboard from '../../../components/intelligence/RiskDashboard';
+import RiskDashboard from '@/components/intelligence/RiskDashboard';
 import { ReportDownloadButton } from '@/components/reports/ReportDownloadButton';
 import { RISK_PAGE_COPY, dashboardLocale } from '@/lib/i18n/dashboard';
 

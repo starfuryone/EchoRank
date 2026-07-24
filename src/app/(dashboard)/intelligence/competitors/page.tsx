@@ -1,5 +1,5 @@
 import { cookies } from 'next/headers';
-import CompetitorsPanel from '../../../components/intelligence/CompetitorsPanel';
+import CompetitorsPanel from '@/components/intelligence/CompetitorsPanel';
 import { ReportDownloadButton } from '@/components/reports/ReportDownloadButton';
 import { COMPETITORS_PAGE_COPY, dashboardLocale } from '@/lib/i18n/dashboard';
 
