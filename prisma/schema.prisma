@@ -193,6 +193,7 @@ model Tenant {
   externalReviews     ExternalReview[]
   importJobs          ImportJob[]
   extensionTokens     ExtensionToken[]
+  apiKeys             ApiKey[]
 
   @@map("tenants")
 }
@@ -1172,4 +1173,27 @@ model CompetitorSnapshot {
 
   @@unique([competitorId, day])
   @@index([competitorId, day(sort: Desc)])
+}
+
+/// Tenant-scoped public-API keys (SEO Tools "API access"). Mirrors the
+/// ExtensionToken design: opaque bearer `er_api_<id>.<secret>`, SHA-256 of
+/// the secret stored (never plaintext), instant revocation via revokedAt.
+model ApiKey {
+  id         String    @id @default(cuid())
+  tenantId   String
+  /// Human label set at creation, e.g. "CI pipeline".
+  label      String
+  /// SHA-256 (hex) of the secret segment. Never store plaintext.
+  keyHash    String    @unique
+  /// First 8 chars of the public id segment, surfaced for identification.
+  prefix     String
+  lastUsedAt DateTime?
+  revokedAt  DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@map("api_keys")
 }

@@ -49,6 +49,8 @@ export const dashNav: Record<DashLocale, Record<string, string>> = {
     "/visibility/tools/portfolios": "Portfolios",
     "/visibility/tools/report-builder": "Report Builder",
     "/visibility/tools/gbp-monitor": "GBP Monitor",
+    "/visibility/tools/api-access": "API access",
+    "/visibility/tools/mcp-server": "MCP Server",
   },
   "de-CH": {
     "/dashboard": "Dashboard",
@@ -81,6 +83,8 @@ export const dashNav: Record<DashLocale, Record<string, string>> = {
     "/visibility/tools/portfolios": "Portfolios",
     "/visibility/tools/report-builder": "Report Builder",
     "/visibility/tools/gbp-monitor": "GBP-Monitor",
+    "/visibility/tools/api-access": "API-Zugriff",
+    "/visibility/tools/mcp-server": "MCP-Server",
   },
   fr: {
     "/dashboard": "Tableau de bord",
@@ -113,6 +117,8 @@ export const dashNav: Record<DashLocale, Record<string, string>> = {
     "/visibility/tools/portfolios": "Portefeuilles",
     "/visibility/tools/report-builder": "Générateur de rapports",
     "/visibility/tools/gbp-monitor": "Suivi GBP",
+    "/visibility/tools/api-access": "Accès API",
+    "/visibility/tools/mcp-server": "Serveur MCP",
   },
 };
 
@@ -4798,6 +4804,7 @@ const seoToolsEn = {
     content_marketing: "Content Marketing",
     reporting: "Reporting",
     local_seo: "Local SEO",
+    developers: "Developers",
   } satisfies Record<SeoToolGroupId, string>,
   items: {
     site_explorer: {
@@ -4864,6 +4871,14 @@ const seoToolsEn = {
       name: "GBP Monitor",
       description: "Monitor and manage Google Business Profile performance at scale.",
     },
+    api_access: {
+      name: "API access",
+      description: "Query your Echorank360 data — keywords, audits, visibility — from your own code with tenant API keys.",
+    },
+    mcp_server: {
+      name: "MCP Server",
+      description: "Connect Claude and other AI assistants to your Echorank360 data via the Model Context Protocol.",
+    },
   } satisfies Record<SeoToolId, { name: string; description: string }>,
   scaffolds: {
     site_explorer: { cta: "Analyze a domain", related: "Open competitor intelligence →" },
@@ -4906,6 +4921,7 @@ export const SEO_TOOLS_COPY: Record<DashLocale, SeoToolsCopy> = {
       content_marketing: "Marketing de contenu",
       reporting: "Rapports",
       local_seo: "SEO local",
+      developers: "Développeurs",
     },
     items: {
       site_explorer: {
@@ -4972,6 +4988,14 @@ export const SEO_TOOLS_COPY: Record<DashLocale, SeoToolsCopy> = {
         name: "Suivi GBP",
         description: "Surveillez et gérez la performance de vos fiches Google Business Profile à grande échelle.",
       },
+      api_access: {
+        name: "Accès API",
+        description: "Interrogez vos données Echorank360 — mots-clés, audits, visibilité — depuis votre propre code avec des clés API.",
+      },
+      mcp_server: {
+        name: "Serveur MCP",
+        description: "Connectez Claude et d'autres assistants IA à vos données Echorank360 via le Model Context Protocol.",
+      },
     },
     scaffolds: {
       site_explorer: { cta: "Analyser un domaine", related: "Ouvrir l'intelligence concurrentielle →" },
@@ -5006,6 +5030,7 @@ export const SEO_TOOLS_COPY: Record<DashLocale, SeoToolsCopy> = {
       content_marketing: "Content-Marketing",
       reporting: "Berichte",
       local_seo: "Lokales SEO",
+      developers: "Entwickler",
     },
     items: {
       site_explorer: {
@@ -5071,6 +5096,14 @@ export const SEO_TOOLS_COPY: Record<DashLocale, SeoToolsCopy> = {
       gbp_monitor: {
         name: "GBP-Monitor",
         description: "Überwachen und verwalten Sie die Leistung von Google-Business-Profilen im grossen Massstab.",
+      },
+      api_access: {
+        name: "API-Zugriff",
+        description: "Fragen Sie Ihre Echorank360-Daten — Keywords, Audits, Sichtbarkeit — mit Mandanten-API-Schlüsseln aus eigenem Code ab.",
+      },
+      mcp_server: {
+        name: "MCP-Server",
+        description: "Verbinden Sie Claude und andere KI-Assistenten über das Model Context Protocol mit Ihren Echorank360-Daten.",
       },
     },
     scaffolds: {
@@ -5301,5 +5334,193 @@ export const BOT_ANALYTICS_COPY: Record<DashLocale, BotAnalyticsCopy> = {
       "Bot-Analytics liest die Website, die Ihr Arbeitsbereich bereits verfolgt. Starten Sie ein erstes KI-Sichtbarkeits-Audit, damit Echorank360 weiss, welche Website zu prüfen ist.",
     loadFailed: "Crawler-Zugriff konnte nicht geprüft werden. Versuchen Sie es in einer Minute erneut.",
     loading: "Crawler-Zugriff wird geprüft…",
+  },
+};
+
+// ─── /visibility/tools/api-access ───────────────────────────────────────────
+const apiAccessEn = {
+  intro:
+    "Tenant API keys for the Echorank360 public API. Keys are shown once at creation and stored only as a hash — treat them like passwords.",
+  createTitle: "Create an API key",
+  labelLabel: "Label",
+  labelPlaceholder: "CI pipeline",
+  createButton: "Create key",
+  creating: "Creating…",
+  keyOnce: "Copy your key now — it is shown only once.",
+  copy: "Copy",
+  copied: "Copied",
+  done: "Done",
+  yourKeys: "Your keys",
+  emptyKeys: "No keys yet. Create one above to call the API.",
+  statusActive: "Active",
+  statusRevoked: "Revoked",
+  createdLabel: "Created",
+  lastUsedLabel: "Last used",
+  neverUsed: "never",
+  revoke: "Revoke",
+  revokeConfirm: "Revoke this key? Requests using it will fail immediately.",
+  loading: "Loading…",
+  loadFailed: "Failed to load keys",
+  actionFailed: "Action failed",
+  docsTitle: "API reference",
+  docsIntro:
+    "All endpoints are GET, authenticated with `Authorization: Bearer <key>`, scoped to your workspace, and rate-limited to 60 requests/minute per key. This is the complete v1 surface — nothing else exists yet.",
+  docsEndpoints: {
+    suggest:
+      "Run the SEO keyword suggester against a URL. Params: url (required), depth=single|site.",
+    audit: "Your workspace's most recent stored AI-visibility audit (404 if none yet).",
+    summary:
+      "Visibility summary: latest audit score, 30-day AI mention rate, per-engine coverage, recent alerts.",
+  },
+  mcpHint: "These same capabilities are exposed to AI assistants via the MCP Server tool.",
+};
+export type ApiAccessCopy = typeof apiAccessEn;
+
+export const API_ACCESS_COPY: Record<DashLocale, ApiAccessCopy> = {
+  en: apiAccessEn,
+  fr: {
+    intro:
+      "Clés API de votre espace de travail pour l'API publique d'Echorank360. Les clés sont affichées une seule fois à la création et stockées uniquement sous forme de hachage — traitez-les comme des mots de passe.",
+    createTitle: "Créer une clé API",
+    labelLabel: "Étiquette",
+    labelPlaceholder: "Pipeline CI",
+    createButton: "Créer la clé",
+    creating: "Création…",
+    keyOnce: "Copiez votre clé maintenant — elle n'est affichée qu'une seule fois.",
+    copy: "Copier",
+    copied: "Copié",
+    done: "Terminé",
+    yourKeys: "Vos clés",
+    emptyKeys: "Aucune clé pour l'instant. Créez-en une ci-dessus pour appeler l'API.",
+    statusActive: "Active",
+    statusRevoked: "Révoquée",
+    createdLabel: "Créée",
+    lastUsedLabel: "Dernière utilisation",
+    neverUsed: "jamais",
+    revoke: "Révoquer",
+    revokeConfirm: "Révoquer cette clé? Les requêtes qui l'utilisent échoueront immédiatement.",
+    loading: "Chargement…",
+    loadFailed: "Échec du chargement des clés",
+    actionFailed: "Échec de l'action",
+    docsTitle: "Référence de l'API",
+    docsIntro:
+      "Tous les points de terminaison sont en GET, authentifiés avec `Authorization: Bearer <clé>`, limités à votre espace de travail et à 60 requêtes/minute par clé. C'est la surface v1 complète — rien d'autre n'existe encore.",
+    docsEndpoints: {
+      suggest:
+        "Lance le suggesteur de mots-clés SEO sur une URL. Paramètres : url (requis), depth=single|site.",
+      audit: "Le plus récent audit de visibilité IA stocké de votre espace de travail (404 s'il n'y en a pas encore).",
+      summary:
+        "Résumé de visibilité : score du dernier audit, taux de mention IA sur 30 jours, couverture par moteur, alertes récentes.",
+    },
+    mcpHint: "Ces mêmes capacités sont exposées aux assistants IA via l'outil Serveur MCP.",
+  },
+  "de-CH": {
+    intro:
+      "API-Schlüssel Ihres Arbeitsbereichs für die öffentliche Echorank360-API. Schlüssel werden nur einmal bei der Erstellung angezeigt und ausschliesslich als Hash gespeichert — behandeln Sie sie wie Passwörter.",
+    createTitle: "API-Schlüssel erstellen",
+    labelLabel: "Bezeichnung",
+    labelPlaceholder: "CI-Pipeline",
+    createButton: "Schlüssel erstellen",
+    creating: "Wird erstellt…",
+    keyOnce: "Kopieren Sie Ihren Schlüssel jetzt — er wird nur einmal angezeigt.",
+    copy: "Kopieren",
+    copied: "Kopiert",
+    done: "Fertig",
+    yourKeys: "Ihre Schlüssel",
+    emptyKeys: "Noch keine Schlüssel. Erstellen Sie oben einen, um die API aufzurufen.",
+    statusActive: "Aktiv",
+    statusRevoked: "Widerrufen",
+    createdLabel: "Erstellt",
+    lastUsedLabel: "Zuletzt verwendet",
+    neverUsed: "nie",
+    revoke: "Widerrufen",
+    revokeConfirm: "Diesen Schlüssel widerrufen? Anfragen damit schlagen sofort fehl.",
+    loading: "Wird geladen…",
+    loadFailed: "Schlüssel konnten nicht geladen werden",
+    actionFailed: "Aktion fehlgeschlagen",
+    docsTitle: "API-Referenz",
+    docsIntro:
+      "Alle Endpunkte sind GET, authentifiziert mit `Authorization: Bearer <Schlüssel>`, auf Ihren Arbeitsbereich beschränkt und auf 60 Anfragen/Minute pro Schlüssel limitiert. Das ist die vollständige v1-Oberfläche — mehr existiert noch nicht.",
+    docsEndpoints: {
+      suggest:
+        "Führt den SEO-Keyword-Vorschlag für eine URL aus. Parameter: url (erforderlich), depth=single|site.",
+      audit: "Das zuletzt gespeicherte KI-Sichtbarkeits-Audit Ihres Arbeitsbereichs (404, falls noch keines existiert).",
+      summary:
+        "Sichtbarkeits-Zusammenfassung: letzter Audit-Score, KI-Erwähnungsrate über 30 Tage, Abdeckung pro Engine, aktuelle Alerts.",
+    },
+    mcpHint: "Dieselben Fähigkeiten stehen KI-Assistenten über das MCP-Server-Tool zur Verfügung.",
+  },
+};
+
+// ─── /visibility/tools/mcp-server ───────────────────────────────────────────
+const mcpServerEn = {
+  intro:
+    "Echorank360 runs a Model Context Protocol server (Streamable HTTP). Connect Claude or any MCP client and it can query your keywords, audits, and visibility data directly — authenticated with your tenant API key.",
+  endpointLabel: "Server endpoint",
+  toolsTitle: "Available tools",
+  toolDescs: {
+    suggest_keywords: "Run the SEO keyword suggester against any URL.",
+    get_latest_audit: "Fetch your latest stored AI-visibility audit.",
+    get_visibility_summary: "Fetch your visibility summary (score, mention rate, alerts).",
+  } as Record<string, string>,
+  setupTitle: "Connect a client",
+  step1: "Create an API key in the API access tool, then substitute it for the placeholder below.",
+  step1Link: "Open API access →",
+  step2: "Claude Code — one command:",
+  step3: "Claude Desktop — Settings → Connectors → Add custom connector, or via mcp-remote:",
+  keysActive: (n: number) => `${n} active key${n === 1 ? "" : "s"} in this workspace`,
+  noKeys: "No active API keys yet — create one first.",
+  copy: "Copy",
+  copied: "Copied",
+  securityNote:
+    "The server is read-only, scoped to your workspace, and rate-limited per key. Revoking the key disconnects every client using it.",
+};
+export type McpServerCopy = typeof mcpServerEn;
+
+export const MCP_SERVER_COPY: Record<DashLocale, McpServerCopy> = {
+  en: mcpServerEn,
+  fr: {
+    intro:
+      "Echorank360 exploite un serveur Model Context Protocol (Streamable HTTP). Connectez Claude ou tout client MCP pour interroger directement vos mots-clés, audits et données de visibilité — avec votre clé API comme authentification.",
+    endpointLabel: "Point de terminaison du serveur",
+    toolsTitle: "Outils offerts",
+    toolDescs: {
+      suggest_keywords: "Lancer le suggesteur de mots-clés SEO sur n'importe quelle URL.",
+      get_latest_audit: "Récupérer votre plus récent audit de visibilité IA stocké.",
+      get_visibility_summary: "Récupérer votre résumé de visibilité (score, taux de mention, alertes).",
+    } as Record<string, string>,
+    setupTitle: "Connecter un client",
+    step1: "Créez une clé API dans l'outil Accès API, puis remplacez l'espace réservé ci-dessous.",
+    step1Link: "Ouvrir l'accès API →",
+    step2: "Claude Code — une seule commande :",
+    step3: "Claude Desktop — Réglages → Connecteurs → Ajouter un connecteur personnalisé, ou via mcp-remote :",
+    keysActive: (n: number) => `${n} clé${n === 1 ? "" : "s"} active${n === 1 ? "" : "s"} dans cet espace de travail`,
+    noKeys: "Aucune clé API active pour l'instant — créez-en une d'abord.",
+    copy: "Copier",
+    copied: "Copié",
+    securityNote:
+      "Le serveur est en lecture seule, limité à votre espace de travail et à un débit par clé. Révoquer la clé déconnecte tous les clients qui l'utilisent.",
+  },
+  "de-CH": {
+    intro:
+      "Echorank360 betreibt einen Model-Context-Protocol-Server (Streamable HTTP). Verbinden Sie Claude oder einen beliebigen MCP-Client, um Ihre Keywords, Audits und Sichtbarkeitsdaten direkt abzufragen — authentifiziert mit Ihrem API-Schlüssel.",
+    endpointLabel: "Server-Endpunkt",
+    toolsTitle: "Verfügbare Tools",
+    toolDescs: {
+      suggest_keywords: "Den SEO-Keyword-Vorschlag für eine beliebige URL ausführen.",
+      get_latest_audit: "Ihr zuletzt gespeichertes KI-Sichtbarkeits-Audit abrufen.",
+      get_visibility_summary: "Ihre Sichtbarkeits-Zusammenfassung abrufen (Score, Erwähnungsrate, Alerts).",
+    } as Record<string, string>,
+    setupTitle: "Client verbinden",
+    step1: "Erstellen Sie im Tool API-Zugriff einen API-Schlüssel und ersetzen Sie damit den Platzhalter unten.",
+    step1Link: "API-Zugriff öffnen →",
+    step2: "Claude Code — ein Befehl:",
+    step3: "Claude Desktop — Einstellungen → Connectors → Eigenen Connector hinzufügen, oder via mcp-remote:",
+    keysActive: (n: number) => `${n} aktive${n === 1 ? "r" : ""} Schlüssel in diesem Arbeitsbereich`,
+    noKeys: "Noch keine aktiven API-Schlüssel — erstellen Sie zuerst einen.",
+    copy: "Kopieren",
+    copied: "Kopiert",
+    securityNote:
+      "Der Server ist schreibgeschützt, auf Ihren Arbeitsbereich beschränkt und pro Schlüssel ratenlimitiert. Das Widerrufen des Schlüssels trennt alle Clients, die ihn verwenden.",
   },
 };

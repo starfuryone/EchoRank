@@ -39,12 +39,14 @@ const EXPECTED_HREFS: Record<string, string> = {
   portfolios: "/visibility/tools/portfolios",
   report_builder: "/visibility/tools/report-builder",
   gbp_monitor: "/visibility/tools/gbp-monitor",
+  api_access: "/visibility/tools/api-access",
+  mcp_server: "/visibility/tools/mcp-server",
 };
 
 test("all five groups present with tools", () => {
   assert.deepEqual(
     SEO_TOOL_GROUPS.map((g) => g.id),
-    ["search_marketing", "website_performance", "content_marketing", "reporting", "local_seo"],
+    ["search_marketing", "website_performance", "content_marketing", "reporting", "local_seo", "developers"],
   );
   for (const g of SEO_TOOL_GROUPS) assert.ok(g.tools.length >= 1, g.id);
 });

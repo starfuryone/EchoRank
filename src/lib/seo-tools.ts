@@ -31,6 +31,8 @@ import {
   FolderKanban,
   FileBarChart2,
   Store,
+  Code2,
+  Plug,
 } from "lucide-react";
 import { canAccessPath } from "@/lib/plan-routing";
 import type { PlanType } from "@/generated/prisma";
@@ -42,7 +44,8 @@ export type SeoToolGroupId =
   | "website_performance"
   | "content_marketing"
   | "reporting"
-  | "local_seo";
+  | "local_seo"
+  | "developers";
 
 export type SeoToolId =
   | "site_explorer"
@@ -60,12 +63,17 @@ export type SeoToolId =
   | "dashboard"
   | "portfolios"
   | "report_builder"
-  | "gbp_monitor";
+  | "gbp_monitor"
+  | "api_access"
+  | "mcp_server";
 
 /** Tools that render a scaffold page under /visibility/tools/<slug>. */
+// Note: brand_radar/bot_analytics remain ScaffoldIds although their pages are
+// real now — their scaffold copy (CTA/related labels) still feeds their empty
+// states. api_access/mcp_server never had scaffold copy.
 export type ScaffoldId = Exclude<
   SeoToolId,
-  "keywords_explorer" | "custom_prompts" | "site_audit" | "dashboard"
+  "keywords_explorer" | "custom_prompts" | "site_audit" | "dashboard" | "api_access" | "mcp_server"
 >;
 
 export interface SeoTool {
@@ -147,6 +155,13 @@ export const SEO_TOOL_GROUPS: SeoToolGroup[] = [
   {
     id: "local_seo",
     tools: [t("gbp_monitor", "gbp-monitor", Store, { badge: "new" })],
+  },
+  {
+    id: "developers",
+    tools: [
+      t("api_access", "api-access", Code2),
+      t("mcp_server", "mcp-server", Plug),
+    ],
   },
 ];
 

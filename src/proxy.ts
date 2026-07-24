@@ -11,7 +11,13 @@ const LOCALE_COOKIE = "echorank_locale";
 
 // Path *prefixes* that never require auth. The localized homepages (/, /en,
 // /fr, …) are public and handled by the locale logic below.
-const publicPaths = ["/login", "/register", "/api/auth", "/api/feedback", "/f/", "/api/extension/import"];
+// /api/public/v1/ is the tenant public API + MCP server: public by design,
+// authenticated per-request with hashed bearer API keys (src/lib/api-keys.ts,
+// paid-plan-gated + per-key rate limit) — the browser session never applies.
+// CSRF origin checks don't interfere: v1 data routes are GET-only, and the
+// MCP POST endpoint is called by non-browser clients that authenticate via
+// the Authorization header, never via cookies.
+const publicPaths = ["/login", "/register", "/api/auth", "/api/feedback", "/f/", "/api/extension/import", "/api/public/v1/"];
 
 // Exactly-public paths — matched whole, never by prefix.
 //
@@ -102,6 +108,9 @@ export default auth((req) => {
     pathname.startsWith("/api/") &&
     !pathname.startsWith("/api/webhooks/") &&
     !pathname.startsWith("/api/extension/import") &&
+    // Bearer-key-authenticated public API/MCP: cookies are never consulted,
+    // so origin checks add nothing and would block non-browser clients.
+    !pathname.startsWith("/api/public/v1/") &&
     method !== "GET" &&
     method !== "HEAD" &&
     method !== "OPTIONS"
