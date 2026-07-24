@@ -13,7 +13,6 @@ import { saveConnection } from "@/lib/gsc/service";
 
 const PAGE = "/visibility/tools/gsc-insights";
 const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://echorank360.com";
-const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://echorank360.com";
 
 function back(req: NextRequest, params: string): NextResponse {
   return NextResponse.redirect(new URL(`${PAGE}?${params}`, BASE));
