@@ -5,6 +5,7 @@ import { FeatureScaffold } from "@/components/scaffold/feature-scaffold";
 // INTEGRATION POINT: AI content generation. Existing adjacent surfaces:
 // message templates (/templates) and the sidecar's Anthropic remediation
 // (av-service remediate.py) show the established AI-call pattern.
+// Paid-subscription gating is enforced by ../layout.tsx for all tool pages.
 export default async function Page() {
   const cookieStore = await cookies();
   const locale = dashboardLocale(cookieStore.get("echorank_locale")?.value);

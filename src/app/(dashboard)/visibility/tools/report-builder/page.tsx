@@ -5,6 +5,7 @@ import { FeatureScaffold } from "@/components/scaffold/feature-scaffold";
 // INTEGRATION POINT: custom report composition. PDF rendering already
 // exists in the sidecar (pdf_report.py: /report, /monitoring-report,
 // /intelligence-report) — a builder would assemble payloads for it.
+// Paid-subscription gating is enforced by ../layout.tsx for all tool pages.
 export default async function Page() {
   const cookieStore = await cookies();
   const locale = dashboardLocale(cookieStore.get("echorank_locale")?.value);

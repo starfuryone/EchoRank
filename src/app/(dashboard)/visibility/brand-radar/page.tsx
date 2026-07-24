@@ -1,12 +1,7 @@
-import { cookies } from "next/headers";
-import { dashboardLocale } from "@/lib/i18n/dashboard";
-import { FeatureScaffold } from "@/components/scaffold/feature-scaffold";
+// Moved: Brand Radar now lives in the SEO Tools hub. This stub preserves the
+// short-lived /visibility/brand-radar URL (shipped 2026-07-23).
+import { redirect } from "next/navigation";
 
-// INTEGRATION POINT: brand mentions across search + AI platforms. AI-answer
-// mention tracking already exists (TrackedPrompt + answer_track sidecar,
-// surfaced at /visibility#prompts); search-side mention tracking does not.
-export default async function Page() {
-  const cookieStore = await cookies();
-  const locale = dashboardLocale(cookieStore.get("echorank_locale")?.value);
-  return <FeatureScaffold locale={locale} id="brand_radar" />;
+export default function BrandRadarMoved() {
+  redirect("/visibility/tools/brand-radar");
 }

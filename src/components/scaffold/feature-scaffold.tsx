@@ -1,31 +1,46 @@
-// Shared starter-state for product-nav modules whose backend has not shipped.
-// Server component: static content only, no data fetching, and deliberately
-// ZERO invented metrics — a disabled primary CTA plus a "coming soon" badge
-// is honest; fake analytics are not.
+// Shared starter-state for SEO Tools whose backend has not shipped.
+// Server component: static content only, no data fetching of metrics, and
+// deliberately ZERO invented numbers — a disabled primary CTA plus a "coming
+// soon" badge is honest; fake analytics are not.
 //
-// Auth: pages using this render inside the (dashboard) route group, whose
-// layout enforces the session + per-plan route allowlist (plan-routing.ts);
-// proxy.ts additionally redirects unauthenticated hits before rendering.
+// Auth: every page using this lives under /visibility/tools, whose layout
+// enforces the paid-subscription gate ON TOP of the (dashboard) layout's
+// session + plan-routing checks and the proxy's auth redirect.
 
 import Link from "next/link";
-import { PRODUCT_NAV, SCAFFOLD_RELATED, type ScaffoldId } from "@/lib/product-nav";
-import { PRODUCT_NAV_COPY, type DashLocale } from "@/lib/i18n/dashboard";
+import {
+  SEO_TOOL_GROUPS,
+  SCAFFOLD_RELATED,
+  navPath,
+  type ScaffoldId,
+} from "@/lib/seo-tools";
+import { SEO_TOOLS_COPY, type DashLocale } from "@/lib/i18n/dashboard";
+import { canAccessPath } from "@/lib/plan-routing";
+import { getCurrentTenant } from "@/lib/tenant";
 
-const ITEMS = PRODUCT_NAV.flatMap((g) => g.items);
+const TOOLS = SEO_TOOL_GROUPS.flatMap((g) => g.tools);
 
-export function FeatureScaffold({
+export async function FeatureScaffold({
   locale,
   id,
 }: {
   locale: DashLocale;
   id: ScaffoldId;
 }) {
-  const copy = PRODUCT_NAV_COPY[locale];
-  const item = ITEMS.find((i) => i.id === id);
+  const copy = SEO_TOOLS_COPY[locale];
+  const tool = TOOLS.find((i) => i.id === id);
   const it = copy.items[id];
   const scaffold = copy.scaffolds[id];
-  const related = SCAFFOLD_RELATED[id];
-  const Icon = item?.icon;
+  const Icon = tool?.icon;
+
+  // Related-surface link, only when this tenant's plan can actually reach it
+  // (e.g. /analytics or /templates are outside the AI_VISIBILITY allowlist).
+  const relatedHref = SCAFFOLD_RELATED[id];
+  const plan = (await getCurrentTenant())?.tenant.planType;
+  const related =
+    relatedHref && (!plan || canAccessPath(plan, navPath(relatedHref)))
+      ? relatedHref
+      : undefined;
 
   return (
     <div className="space-y-6">

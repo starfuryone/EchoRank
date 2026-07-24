@@ -12,6 +12,8 @@ interface DashboardShellProps {
   children: React.ReactNode;
   locale?: DashLocale;
   plan?: PlanType | null;
+  /** Tenant billing status is ACTIVE (computed in the (dashboard) layout). */
+  paid?: boolean;
   user?: {
     name?: string | null;
     email?: string | null;
@@ -19,7 +21,7 @@ interface DashboardShellProps {
   };
 }
 
-export function DashboardShell({ children, user, locale = "en", plan }: DashboardShellProps) {
+export function DashboardShell({ children, user, locale = "en", plan, paid }: DashboardShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
 
@@ -47,14 +49,13 @@ export function DashboardShell({ children, user, locale = "en", plan }: Dashboar
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Sidebar open={sidebarOpen} onClose={handleSidebarClose} locale={locale} plan={plan} />
+      <Sidebar open={sidebarOpen} onClose={handleSidebarClose} locale={locale} plan={plan} paid={paid} />
 
       {/* Main content area offset by sidebar width on desktop */}
       <div className="lg:pl-64">
         <Header
           title={title}
           locale={locale}
-          plan={plan}
           user={user}
           onMenuToggle={handleMenuToggle}
           onSignOut={handleSignOut}

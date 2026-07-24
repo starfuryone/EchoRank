@@ -4,10 +4,10 @@
  * de* → de-CH (Swiss German, "ss" never "ß"), everything else (incl. en-CA) → en.
  */
 import type {
-  ProductNavGroupId,
-  ProductNavItemId,
+  SeoToolGroupId,
+  SeoToolId,
   ScaffoldId,
-} from "@/lib/product-nav";
+} from "@/lib/seo-tools";
 export type DashLocale = "en" | "fr" | "de-CH";
 
 export function dashboardLocale(cookieValue?: string | null): DashLocale {
@@ -34,20 +34,21 @@ export const dashNav: Record<DashLocale, Record<string, string>> = {
     "/team": "Team",
     "/settings": "Settings",
     "/billing": "Billing",
-    // Products menu surfaces (header titles; not in the sidebar list)
+    // SEO Tools hub surfaces (sidebar label + header titles)
     "/visibility/keywords": "Keywords Explorer",
-    "/visibility/brand-radar": "Brand Radar",
-    "/site-explorer": "Site Explorer",
-    "/rank-tracker": "Rank Tracker",
-    "/gsc-insights": "GSC Insights",
-    "/web-analytics": "Web Analytics",
-    "/bot-analytics": "Bot Analytics",
-    "/content-explorer": "Content Explorer",
-    "/ai-content-helper": "AI Content Helper",
-    "/social-media-manager": "Social Media Manager",
-    "/portfolios": "Portfolios",
-    "/report-builder": "Report Builder",
-    "/gbp-monitor": "GBP Monitor",
+    "/visibility/tools": "SEO Tools",
+    "/visibility/tools/site-explorer": "Site Explorer",
+    "/visibility/tools/rank-tracker": "Rank Tracker",
+    "/visibility/tools/gsc-insights": "GSC Insights",
+    "/visibility/tools/brand-radar": "Brand Radar",
+    "/visibility/tools/web-analytics": "Web Analytics",
+    "/visibility/tools/bot-analytics": "Bot Analytics",
+    "/visibility/tools/content-explorer": "Content Explorer",
+    "/visibility/tools/ai-content-helper": "AI Content Helper",
+    "/visibility/tools/social-media-manager": "Social Media Manager",
+    "/visibility/tools/portfolios": "Portfolios",
+    "/visibility/tools/report-builder": "Report Builder",
+    "/visibility/tools/gbp-monitor": "GBP Monitor",
   },
   "de-CH": {
     "/dashboard": "Dashboard",
@@ -67,18 +68,19 @@ export const dashNav: Record<DashLocale, Record<string, string>> = {
     "/settings": "Einstellungen",
     "/billing": "Abrechnung",
     "/visibility/keywords": "Keywords Explorer",
-    "/visibility/brand-radar": "Brand Radar",
-    "/site-explorer": "Site Explorer",
-    "/rank-tracker": "Rank Tracker",
-    "/gsc-insights": "GSC Insights",
-    "/web-analytics": "Web-Analytics",
-    "/bot-analytics": "Bot-Analytics",
-    "/content-explorer": "Content Explorer",
-    "/ai-content-helper": "KI-Content-Assistent",
-    "/social-media-manager": "Social-Media-Manager",
-    "/portfolios": "Portfolios",
-    "/report-builder": "Report Builder",
-    "/gbp-monitor": "GBP-Monitor",
+    "/visibility/tools": "SEO-Tools",
+    "/visibility/tools/site-explorer": "Site Explorer",
+    "/visibility/tools/rank-tracker": "Rank Tracker",
+    "/visibility/tools/gsc-insights": "GSC Insights",
+    "/visibility/tools/brand-radar": "Brand Radar",
+    "/visibility/tools/web-analytics": "Web-Analytics",
+    "/visibility/tools/bot-analytics": "Bot-Analytics",
+    "/visibility/tools/content-explorer": "Content Explorer",
+    "/visibility/tools/ai-content-helper": "KI-Content-Assistent",
+    "/visibility/tools/social-media-manager": "Social-Media-Manager",
+    "/visibility/tools/portfolios": "Portfolios",
+    "/visibility/tools/report-builder": "Report Builder",
+    "/visibility/tools/gbp-monitor": "GBP-Monitor",
   },
   fr: {
     "/dashboard": "Tableau de bord",
@@ -98,18 +100,19 @@ export const dashNav: Record<DashLocale, Record<string, string>> = {
     "/settings": "Paramètres",
     "/billing": "Facturation",
     "/visibility/keywords": "Explorateur de mots-clés",
-    "/visibility/brand-radar": "Radar de marque",
-    "/site-explorer": "Explorateur de sites",
-    "/rank-tracker": "Suivi des positions",
-    "/gsc-insights": "Analyses GSC",
-    "/web-analytics": "Analytique web",
-    "/bot-analytics": "Analytique des robots",
-    "/content-explorer": "Explorateur de contenu",
-    "/ai-content-helper": "Assistant de contenu IA",
-    "/social-media-manager": "Gestionnaire de médias sociaux",
-    "/portfolios": "Portefeuilles",
-    "/report-builder": "Générateur de rapports",
-    "/gbp-monitor": "Suivi GBP",
+    "/visibility/tools": "Outils SEO",
+    "/visibility/tools/site-explorer": "Explorateur de sites",
+    "/visibility/tools/rank-tracker": "Suivi des positions",
+    "/visibility/tools/gsc-insights": "Analyses GSC",
+    "/visibility/tools/brand-radar": "Radar de marque",
+    "/visibility/tools/web-analytics": "Analytique web",
+    "/visibility/tools/bot-analytics": "Analytique des robots",
+    "/visibility/tools/content-explorer": "Explorateur de contenu",
+    "/visibility/tools/ai-content-helper": "Assistant de contenu IA",
+    "/visibility/tools/social-media-manager": "Gestionnaire de médias sociaux",
+    "/visibility/tools/portfolios": "Portefeuilles",
+    "/visibility/tools/report-builder": "Générateur de rapports",
+    "/visibility/tools/gbp-monitor": "Suivi GBP",
   },
 };
 
@@ -4450,7 +4453,7 @@ const keywordsEn = {
   somethingWrong: "Something went wrong",
   scanFailed: "Scan failed",
   lockedPage:
-    "The keyword suggester is part of AI Visibility. Upgrade your plan to scan your site.",
+    "The keyword suggester is part of your paid Echorank360 plan. Activate a subscription to scan your site.",
   upgradePlan: "Upgrade plan",
   pagesCrawled: (n: number) => `${n} page${n === 1 ? "" : "s"} crawled`,
   // tabs (the four benchmark classes)
@@ -4515,7 +4518,7 @@ export const KEYWORDS_COPY: Record<DashLocale, KeywordsCopy> = {
     somethingWrong: "Une erreur est survenue",
     scanFailed: "Échec de l'analyse",
     lockedPage:
-      "Le suggesteur de mots-clés fait partie de la Visibilité IA. Passez au forfait supérieur pour analyser votre site.",
+      "Le suggesteur de mots-clés fait partie de votre forfait payant Echorank360. Activez un abonnement pour analyser votre site.",
     upgradePlan: "Passer au forfait supérieur",
     pagesCrawled: (n: number) => `${n} page${n === 1 ? "" : "s"} explorée${n === 1 ? "" : "s"}`,
     tabSeeds: "Mots-clés",
@@ -4572,7 +4575,7 @@ export const KEYWORDS_COPY: Record<DashLocale, KeywordsCopy> = {
     somethingWrong: "Etwas ist schiefgelaufen",
     scanFailed: "Scan fehlgeschlagen",
     lockedPage:
-      "Der Keyword-Vorschlag ist Teil der KI-Sichtbarkeit. Führen Sie ein Upgrade durch, um Ihre Website zu scannen.",
+      "Die Keyword-Vorschläge sind Teil Ihres bezahlten Echorank360-Plans. Aktivieren Sie ein Abonnement, um Ihre Website zu scannen.",
     upgradePlan: "Upgrade durchführen",
     pagesCrawled: (n: number) => `${n} Seite${n === 1 ? "" : "n"} gecrawlt`,
     tabSeeds: "Keywords",
@@ -4775,11 +4778,15 @@ export const ONBOARDING_COPY: Record<DashLocale, OnboardingCopy> = {
 
 // ─── Products menu + feature scaffolds ──────────────────────────────────────
 // Typed against the nav config's id unions (imported at the top of this
-// file): adding an item/group/scaffold in src/lib/product-nav.ts without copy
+// file): adding an item/group/scaffold in src/lib/seo-tools.ts without copy
 // in ALL THREE catalogs is a type error.
-const productNavEn = {
-  menuLabel: "Products",
-  closeMenu: "Close products menu",
+const seoToolsEn = {
+  hubTitle: "SEO Tools",
+  hubSubtitle: "Every Echorank360 search, content, and reporting tool in one place.",
+  upgradeTitle: "SEO Tools are part of your paid plan",
+  upgradeBody:
+    "Your workspace does not have an active subscription yet. Activate any Echorank360 plan to open the SEO Tools hub — keyword research, site analysis, content and reporting tools included.",
+  upgradeCta: "Go to billing",
   newBadge: "New",
   newBadgeSr: "new feature",
   comingSoon: "Coming soon",
@@ -4791,7 +4798,7 @@ const productNavEn = {
     content_marketing: "Content Marketing",
     reporting: "Reporting",
     local_seo: "Local SEO",
-  } satisfies Record<ProductNavGroupId, string>,
+  } satisfies Record<SeoToolGroupId, string>,
   items: {
     site_explorer: {
       name: "Site Explorer",
@@ -4857,7 +4864,7 @@ const productNavEn = {
       name: "GBP Monitor",
       description: "Monitor and manage Google Business Profile performance at scale.",
     },
-  } satisfies Record<ProductNavItemId, { name: string; description: string }>,
+  } satisfies Record<SeoToolId, { name: string; description: string }>,
   scaffolds: {
     site_explorer: { cta: "Analyze a domain", related: "Open competitor intelligence →" },
     rank_tracker: { cta: "Create a tracking project", related: "Find keywords to track →" },
@@ -4875,15 +4882,19 @@ const productNavEn = {
 };
 // Widen scaffolds so `related` is uniformly optional (the `satisfies` check
 // above still enforces per-key completeness on the English source catalog).
-export type ProductNavCopy = Omit<typeof productNavEn, "scaffolds"> & {
+export type SeoToolsCopy = Omit<typeof seoToolsEn, "scaffolds"> & {
   scaffolds: Record<ScaffoldId, { cta: string; related?: string }>;
 };
 
-export const PRODUCT_NAV_COPY: Record<DashLocale, ProductNavCopy> = {
-  en: productNavEn,
+export const SEO_TOOLS_COPY: Record<DashLocale, SeoToolsCopy> = {
+  en: seoToolsEn,
   fr: {
-    menuLabel: "Produits",
-    closeMenu: "Fermer le menu des produits",
+    hubTitle: "Outils SEO",
+    hubSubtitle: "Tous les outils de recherche, de contenu et de rapports d'Echorank360, réunis au même endroit.",
+    upgradeTitle: "Les outils SEO font partie de votre forfait payant",
+    upgradeBody:
+      "Votre espace de travail n'a pas encore d'abonnement actif. Activez n'importe quel forfait Echorank360 pour ouvrir le centre d'outils SEO — recherche de mots-clés, analyse de site, outils de contenu et de rapports inclus.",
+    upgradeCta: "Aller à la facturation",
     newBadge: "Nouveau",
     newBadgeSr: "nouvelle fonctionnalité",
     comingSoon: "Bientôt offert",
@@ -4978,8 +4989,12 @@ export const PRODUCT_NAV_COPY: Record<DashLocale, ProductNavCopy> = {
     },
   },
   "de-CH": {
-    menuLabel: "Produkte",
-    closeMenu: "Produktmenü schliessen",
+    hubTitle: "SEO-Tools",
+    hubSubtitle: "Alle Such-, Content- und Berichtstools von Echorank360 an einem Ort.",
+    upgradeTitle: "SEO-Tools sind Teil Ihres bezahlten Plans",
+    upgradeBody:
+      "Ihr Arbeitsbereich hat noch kein aktives Abonnement. Aktivieren Sie einen beliebigen Echorank360-Plan, um das SEO-Tools-Hub zu öffnen — Keyword-Recherche, Website-Analyse, Content- und Berichtstools inklusive.",
+    upgradeCta: "Zur Abrechnung",
     newBadge: "Neu",
     newBadgeSr: "neue Funktion",
     comingSoon: "Bald verfügbar",

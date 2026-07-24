@@ -3,6 +3,7 @@ import { requireTenant } from "@/lib/tenant";
 import { meteringService } from "@/infrastructure/metering/service";
 import { QuotaExceededError } from "@/infrastructure/metering/quota";
 import { hasFeature, type Feature } from "@/lib/feature-flags";
+import { PaidPlanRequiredError } from "@/lib/paid-plan";
 import type { PlanType, MeterType } from "@/generated/prisma";
 
 export { QuotaExceededError };
@@ -115,6 +116,7 @@ export function enforcementErrorResponse(
   if (
     error instanceof PlanRequiredError ||
     error instanceof FeatureNotAvailableError ||
+    error instanceof PaidPlanRequiredError ||
     error instanceof QuotaExceededError
   ) {
     return NextResponse.json(
