@@ -143,6 +143,8 @@ export interface VisibilityMonitoringJob {
   sweep?: boolean;
   promptSweep?: boolean;
   promptTenantId?: string;
+  /** Nightly GSC query-stat sync across all connected tenants. */
+  gscSweep?: boolean;
   correlationId?: string;
 }
 

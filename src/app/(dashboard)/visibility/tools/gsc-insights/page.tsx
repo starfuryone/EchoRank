@@ -1,12 +1,17 @@
+import { Suspense } from "react";
 import { cookies } from "next/headers";
 import { dashboardLocale } from "@/lib/i18n/dashboard";
-import { FeatureScaffold } from "@/components/scaffold/feature-scaffold";
+import { GscInsightsClient } from "@/components/seo-tools/gsc-insights-client";
 
-// INTEGRATION POINT: Google Search Console OAuth + Search Analytics API
-// ingestion (no existing service).
-// Paid-subscription gating is enforced by ../layout.tsx for all tool pages.
-export default async function Page() {
+// Real data page (replaced the scaffold): per-tenant Google Search Console
+// OAuth + performance. Paid gating enforced by ../layout.tsx. Suspense is
+// required because the client reads callback query params (useSearchParams).
+export default async function GscInsightsPage() {
   const cookieStore = await cookies();
   const locale = dashboardLocale(cookieStore.get("echorank_locale")?.value);
-  return <FeatureScaffold locale={locale} id="gsc_insights" />;
+  return (
+    <Suspense fallback={null}>
+      <GscInsightsClient locale={locale} />
+    </Suspense>
+  );
 }

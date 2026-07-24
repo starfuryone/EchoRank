@@ -194,6 +194,8 @@ model Tenant {
   importJobs          ImportJob[]
   extensionTokens     ExtensionToken[]
   apiKeys             ApiKey[]
+  gscConnection       GscConnection?
+  gscQueryStats       GscQueryStat[]
 
   @@map("tenants")
 }
@@ -1196,4 +1198,55 @@ model ApiKey {
 
   @@index([tenantId])
   @@map("api_keys")
+}
+
+/// Google Search Console connection (SEO Tools "GSC Insights"). One per
+/// tenant. The OAuth refresh token is stored AES-256-GCM-encrypted
+/// (src/lib/gsc/crypto.ts, key derived from GSC_TOKEN_ENCRYPTION_KEY) —
+/// never in plaintext, never logged.
+model GscConnection {
+  id              String              @id @default(cuid())
+  tenantId        String              @unique
+  /// v1:<iv>:<tag>:<ciphertext> (base64url segments)
+  refreshTokenEnc String
+  googleEmail     String?
+  /// Chosen GSC property (e.g. "sc-domain:example.com"); null until picked.
+  siteUrl         String?
+  status          GscConnectionStatus @default(ACTIVE)
+  connectedAt     DateTime            @default(now())
+  lastSyncAt      DateTime?
+  updatedAt       DateTime            @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("gsc_connections")
+}
+
+enum GscConnectionStatus {
+  ACTIVE
+  NEEDS_REAUTH
+}
+
+/// Daily query-level Search Console rows (nightly sync + manual sync). The
+/// Rank Tracker foundation: page = "" marks the query-only aggregate row —
+/// an empty-string sentinel rather than NULL so the composite unique key
+/// works (Postgres treats NULLs as distinct in unique constraints).
+model GscQueryStat {
+  id          String   @id @default(cuid())
+  tenantId    String
+  siteUrl     String
+  date        DateTime @db.Date
+  query       String
+  page        String   @default("")
+  clicks      Int
+  impressions Int
+  ctr         Float
+  position    Float
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, date, query, page])
+  @@index([tenantId, query, date])
+  @@index([tenantId, date])
+  @@map("gsc_query_stats")
 }

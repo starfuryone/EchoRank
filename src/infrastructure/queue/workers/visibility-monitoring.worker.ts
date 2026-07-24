@@ -26,6 +26,7 @@ const SCORE_DROP_THRESHOLD = 5; // alert when score falls by more than this
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 const PROMPT_SWEEP_JOB_NAME = "prompt-sweep";
+const GSC_SWEEP_JOB_NAME = "gsc-sweep";
 const PROMPT_BATCH_JOB_NAME = "run-prompt-batch";
 const PROMPT_BATCH_SIZE = 25; // sidecar MAX_PROMPTS_PER_CALL
 const RANK_DROP_THRESHOLD = 2; // alert when brandRank worsens by this many
@@ -376,10 +377,37 @@ async function processPromptBatch(tenantId: string): Promise<void> {
   }
 }
 
+// ─── GSC nightly sync ─────────────────────────────────────────────────────────
+
+/**
+ * Pulls the latest available day of query-level Search Console rows into
+ * GscQueryStat for every ACTIVE connection with a selected property.
+ * Per-tenant failures are logged and skipped — one dead connection must not
+ * starve the rest. Reauth failures are already marked NEEDS_REAUTH by the
+ * service layer and surface on the GSC Insights page.
+ */
+async function processGscSweep(): Promise<void> {
+  const { prisma } = await import("@/lib/prisma");
+  const { syncDay, latestAvailableDay } = await import("@/lib/gsc/service");
+  const connections = await prisma.gscConnection.findMany({
+    where: { status: "ACTIVE", siteUrl: { not: null } },
+  });
+  const day = latestAvailableDay();
+  for (const conn of connections) {
+    try {
+      const rows = await syncDay(conn, day);
+      logger.info({ tenantId: conn.tenantId, day, rows, queue: QUEUE_NAME }, "GSC sync done");
+    } catch (err) {
+      logger.error({ tenantId: conn.tenantId, day, err, queue: QUEUE_NAME }, "GSC sync failed");
+    }
+  }
+}
+
 async function processVisibilityJob(job: Job<VisibilityMonitoringJob>): Promise<void> {
   await withSpan("visibility-monitoring.process", async () => {
     if (job.data.sweep) return processSweep();
     if (job.data.promptSweep) return processPromptSweep();
+    if (job.data.gscSweep) return processGscSweep();
     if (job.data.promptTenantId) return processPromptBatch(job.data.promptTenantId);
     if (job.data.monitorId) return processMonitorRun(job.data.monitorId);
     logger.warn({ jobId: job.id, queue: QUEUE_NAME }, "Job without sweep flag or monitorId");
@@ -426,6 +454,21 @@ export function startVisibilityMonitoringWorker(): Worker<VisibilityMonitoringJo
     )
     .catch((err) => {
       logger.error({ err, queue: QUEUE_NAME }, "Failed to schedule prompt sweep");
+    });
+
+  // Nightly GSC query-stat sync (05:10 UTC — after Google finalizes the day).
+  getQueue(QUEUE_NAME)
+    .add(
+      GSC_SWEEP_JOB_NAME,
+      { gscSweep: true },
+      {
+        repeat: { pattern: "10 5 * * *" },
+        removeOnComplete: true,
+        removeOnFail: { count: 50 },
+      },
+    )
+    .catch((err) => {
+      logger.error({ err, queue: QUEUE_NAME }, "Failed to schedule GSC sweep");
     });
 
   worker.on("completed", (job) => {
