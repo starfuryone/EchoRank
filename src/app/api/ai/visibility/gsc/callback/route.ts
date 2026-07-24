@@ -12,9 +12,10 @@ import { exchangeCode, listSites } from "@/lib/gsc/client";
 import { saveConnection } from "@/lib/gsc/service";
 
 const PAGE = "/visibility/tools/gsc-insights";
+const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://echorank360.com";
 
 function back(req: NextRequest, params: string): NextResponse {
-  return NextResponse.redirect(new URL(`${PAGE}?${params}`, req.url));
+  return NextResponse.redirect(new URL(`${PAGE}?${params}`, BASE));
 }
 
 export async function GET(req: NextRequest) {
@@ -22,7 +23,7 @@ export async function GET(req: NextRequest) {
   try {
     tenantId = (await requirePaidPlan()).tenantId;
   } catch {
-    return NextResponse.redirect(new URL("/login", req.url));
+    return NextResponse.redirect(new URL("/login", BASE));
   }
 
   const url = req.nextUrl;
