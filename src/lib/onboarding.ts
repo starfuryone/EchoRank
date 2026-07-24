@@ -2,8 +2,8 @@ import { prisma } from "@/lib/prisma";
 import { hasFeature } from "@/lib/feature-flags";
 import type { PlanType, Prisma } from "@/generated/prisma";
 
-/** Checklist is only shown during the first two weeks of a tenant's life. */
-export const ONBOARDING_WINDOW_DAYS = 14;
+/** Checklist shows until all steps are done, capped at 6 months of tenant age. */
+export const ONBOARDING_WINDOW_DAYS = 180;
 
 export type OnboardingIntent = "business" | "agency";
 
@@ -215,12 +215,13 @@ export async function getOnboardingSnapshot(
     },
   });
 
+  const allDone = steps.every((s) => s.done);
   const ageMs = Date.now() - tenant.createdAt.getTime();
   const tooOld = ageMs > ONBOARDING_WINDOW_DAYS * 24 * 60 * 60 * 1000;
   // Tenants that were already auditing before this feature shipped have no
   // onboarding JSON — never resurface the checklist for them.
   const preExisting = tenant.onboarding == null && audits > 0;
-  const hidden = tooOld || preExisting;
+  const hidden = allDone || tooOld || preExisting;
 
   return {
     tenant: { ...tenant, onboarding: json },
