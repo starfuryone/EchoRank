@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type ChangeEvent, type KeyboardEvent } from "react";
+import Link from "next/link";
 import {
   Search,
   Copy,
@@ -8,12 +9,14 @@ import {
   Sparkles,
   AlertCircle,
   KeyRound,
+  Wrench,
 } from "lucide-react";
+import { BackLink, BackLinkRow } from "@/components/ui/back-link";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { KEYWORDS_COPY, type DashLocale, type KeywordsCopy } from "@/lib/i18n/dashboard";
+import { KEYWORDS_COPY, dashNav, type DashLocale, type KeywordsCopy } from "@/lib/i18n/dashboard";
 
 // ─── Types (the sidecar's /keywords response shape) ─────────────────────────
 interface KeywordItem {
@@ -128,20 +131,20 @@ export function KeywordsPageClient({ locale }: { locale: DashLocale }) {
 
   return (
     <div className="space-y-6">
+      {/* Back navigation (shared BackLink pattern, above the heading) */}
+      <BackLinkRow>
+        <BackLink href="/visibility">{t.backToVisibility}</BackLink>
+        <BackLink href="/visibility/tools" icon={Wrench}>
+          {dashNav[locale]["/visibility/tools"]}
+        </BackLink>
+      </BackLinkRow>
+
       {/* Title */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-sm font-medium uppercase tracking-wide text-gray-500">
-            {t.title}
-          </h2>
-          <p className="mt-1 text-sm text-gray-500">{t.subtitle}</p>
-        </div>
-        <a
-          href="/visibility"
-          className="text-sm text-gray-500 hover:text-gray-700"
-        >
-          {t.backToVisibility}
-        </a>
+      <div>
+        <h2 className="text-sm font-medium uppercase tracking-wide text-gray-500">
+          {t.title}
+        </h2>
+        <p className="mt-1 text-sm text-gray-500">{t.subtitle}</p>
       </div>
 
       {/* Search */}
@@ -180,9 +183,9 @@ export function KeywordsPageClient({ locale }: { locale: DashLocale }) {
         <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-gray-200 bg-gray-50 py-10 text-center">
           <Lock className="h-6 w-6 text-gray-400" />
           <p className="max-w-md text-sm text-gray-500">{t.lockedPage}</p>
-          <a href="/billing">
+          <Link href="/billing">
             <Button>{t.upgradePlan}</Button>
-          </a>
+          </Link>
         </div>
       )}
 
@@ -432,12 +435,12 @@ export function KeywordsPageClient({ locale }: { locale: DashLocale }) {
                           <Copy className="mr-1.5 h-3.5 w-3.5" />
                           {copiedKw === p ? t.copied : t.copy}
                         </Button>
-                        <a
+                        <Link
                           href="/visibility#prompts"
                           className="text-xs font-medium text-gray-500 hover:text-gray-800"
                         >
                           {t.trackPrompt}
-                        </a>
+                        </Link>
                       </div>
                     </li>
                   ))}

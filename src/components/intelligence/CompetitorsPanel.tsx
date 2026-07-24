@@ -27,11 +27,11 @@ interface Candidate {
 }
 
 function DeltaTag({ v, suffix = '' }: { v: number | null; suffix?: string }) {
-  if (v === null) return <span className="font-mono text-[10px] text-zinc-600">—</span>;
-  if (v === 0) return <span className="font-mono text-[10px] text-zinc-500">0{suffix}</span>;
+  if (v === null) return <span className="font-mono text-[10px] text-gray-400">—</span>;
+  if (v === 0) return <span className="font-mono text-[10px] text-gray-400">0{suffix}</span>;
   const up = v > 0;
   return (
-    <span className={`font-mono text-[10px] ${up ? 'text-rose-400' : 'text-emerald-400'}`}>
+    <span className={`font-mono text-[10px] ${up ? 'text-red-600' : 'text-green-600'}`}>
       {up ? '+' : ''}{Number.isInteger(v) ? v : v.toFixed(1)}{suffix}
     </span>
   );
@@ -135,14 +135,14 @@ export default function CompetitorsPanel({ locale = 'en' }: { locale?: DashLocal
   };
 
   if (state === 'loading' && !rows.length) {
-    return <div className="h-72 animate-pulse rounded-lg border border-zinc-800 bg-zinc-900/40" aria-busy="true" />;
+    return <div className="h-72 animate-pulse rounded-xl bg-gray-200" aria-busy="true" />;
   }
   if (state === 'error') {
     return (
-      <div className="rounded-lg border border-zinc-800 bg-zinc-900/60 p-8 text-center">
-        <p className="text-sm text-zinc-300">{t.loadFailed}</p>
+      <div className="rounded-xl border border-gray-200 bg-white p-8 text-center shadow-sm">
+        <p className="text-sm text-gray-700">{t.loadFailed}</p>
         <button onClick={() => void load()}
-          className="mt-3 rounded-md border border-zinc-700 px-4 py-1.5 text-sm text-zinc-200 hover:border-teal-500/60 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-400">
+          className="mt-3 rounded-lg border border-gray-300 bg-white px-4 py-1.5 text-sm text-gray-700 hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
           {t.retry}
         </button>
       </div>
@@ -154,46 +154,46 @@ export default function CompetitorsPanel({ locale = 'en' }: { locale?: DashLocal
   return (
     <div className="space-y-4">
       {/* Add */}
-      <section className="rounded-lg border border-zinc-800 bg-zinc-900/60 p-5">
+      <section className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
         <div className="flex items-center justify-between">
-          <h2 className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400">{t.trackTitle}</h2>
-          <span className="font-mono text-[10px] text-zinc-500">
-            {t.ownPace} <span className="text-zinc-300">{own7}</span>
+          <h2 className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">{t.trackTitle}</h2>
+          <span className="font-mono text-[10px] text-gray-400">
+            {t.ownPace} <span className="text-gray-700">{own7}</span>
           </span>
         </div>
         <div className="mt-3 flex gap-2">
           <input type="text" value={query} onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter') void (placesOn ? search() : add({ name: query.trim() })); }}
             placeholder={placesOn ? t.searchPlaceholderPlaces : t.searchPlaceholderManual}
-            className="flex-1 rounded-md border border-zinc-800 bg-zinc-950 px-3 py-1.5 text-sm text-zinc-100 placeholder-zinc-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-400" />
+            className="flex-1 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm text-gray-900 shadow-sm placeholder:text-gray-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500" />
           {placesOn ? (
             <button onClick={() => void search()} disabled={busy || query.trim().length < 3}
-              className="rounded-md border border-teal-500/50 bg-teal-500/10 px-4 py-1.5 text-xs font-semibold text-teal-300 hover:bg-teal-500/20 disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-400">
+              className="rounded-lg bg-blue-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-blue-700 disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
               {busy ? t.searching : t.search}
             </button>
           ) : (
             <button onClick={() => void add({ name: query.trim() })} disabled={busy || query.trim().length < 2}
-              className="rounded-md border border-teal-500/50 bg-teal-500/10 px-4 py-1.5 text-xs font-semibold text-teal-300 hover:bg-teal-500/20 disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-400">
+              className="rounded-lg bg-blue-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-blue-700 disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
               {t.add}
             </button>
           )}
         </div>
-        {error && <p className="mt-2 text-xs text-rose-400">{error}</p>}
+        {error && <p className="mt-2 text-xs text-red-600">{error}</p>}
         {candidates && (
-          <ul className="mt-3 divide-y divide-zinc-800/80 rounded-md border border-zinc-800">
-            {candidates.length === 0 && <li className="p-3 text-xs text-zinc-500">{t.noMatches}</li>}
+          <ul className="mt-3 divide-y divide-gray-100 rounded-md border border-gray-200">
+            {candidates.length === 0 && <li className="p-3 text-xs text-gray-400">{t.noMatches}</li>}
             {candidates.map((c) => (
               <li key={c.placeId} className="flex items-center justify-between gap-3 p-3">
                 <div className="min-w-0">
-                  <p className="truncate text-xs text-zinc-200">{c.name}</p>
-                  <p className="truncate font-mono text-[10px] text-zinc-500">
+                  <p className="truncate text-xs text-gray-900">{c.name}</p>
+                  <p className="truncate font-mono text-[10px] text-gray-400">
                     {c.address ?? c.placeId}
                     {c.rating !== undefined && ` · ★${c.rating.toFixed(1)}`}
                     {c.reviewCount !== undefined && ` · ${t.reviewsCount(c.reviewCount)}`}
                   </p>
                 </div>
                 <button onClick={() => void add({ name: c.name, placeId: c.placeId })} disabled={busy}
-                  className="shrink-0 rounded-md border border-zinc-700 px-3 py-1 text-xs text-zinc-200 hover:border-teal-500/60 disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-400">
+                  className="shrink-0 rounded-lg border border-gray-300 bg-white px-3 py-1 text-xs text-gray-700 hover:bg-gray-50 disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
                   {t.track}
                 </button>
               </li>
@@ -203,23 +203,23 @@ export default function CompetitorsPanel({ locale = 'en' }: { locale?: DashLocal
       </section>
 
       {/* Table */}
-      <section className="rounded-lg border border-zinc-800 bg-zinc-900/60 p-5">
+      <section className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
         <div className="flex items-center justify-between">
-          <h2 className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
+          <h2 className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">
             {t.tableTitle}
           </h2>
           <button onClick={() => void refresh()} disabled={busy || rows.length === 0}
-            className="rounded-md border border-zinc-800 px-3 py-1 text-xs text-zinc-400 hover:border-teal-500/60 hover:text-zinc-200 disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-400">
+            className="rounded-lg border border-gray-300 bg-white px-3 py-1 text-xs text-gray-600 hover:bg-gray-50 hover:text-gray-900 disabled:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
             {busy ? t.refreshing : t.refreshNow}
           </button>
         </div>
 
         {rows.length === 0 ? (
-          <p className="mt-4 text-xs text-zinc-500">
+          <p className="mt-4 text-xs text-gray-400">
             {t.emptyTable}
           </p>
         ) : (
-          <ul className="mt-3 divide-y divide-zinc-800/80">
+          <ul className="mt-3 divide-y divide-gray-100">
             {rows.map((c) => {
               const gained = c.deltas.dReviews7 ?? 0;
               const momentum = Math.min(1, Math.max(0, gained / momentumDenominator));
@@ -227,22 +227,22 @@ export default function CompetitorsPanel({ locale = 'en' }: { locale?: DashLocal
                 <li key={c.id} className={`py-3 ${c.active ? '' : 'opacity-50'}`}>
                   <div className="flex items-center justify-between gap-3">
                     <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm text-zinc-200">{c.name}</p>
-                      <p className="mt-0.5 font-mono text-[10px] text-zinc-500">
+                      <p className="truncate text-sm text-gray-900">{c.name}</p>
+                      <p className="mt-0.5 font-mono text-[10px] text-gray-400">
                         {c.placeId ? t.placesAuto : t.manualSnapshots}
                         {c.deltas.lastSnapshotDay ? ` · ${t.lastDay(c.deltas.lastSnapshotDay)}` : ` · ${t.noDataYet}`}
                       </p>
                     </div>
                     <div className="w-24 text-right">
-                      <p className="font-mono text-sm text-zinc-200">
+                      <p className="font-mono text-sm text-gray-900">
                         {c.deltas.rating !== null ? `★${c.deltas.rating.toFixed(1)}` : '—'}
                       </p>
                       <DeltaTag v={c.deltas.dRating30} suffix={t.suffix30d} />
                     </div>
                     <div className="w-28 text-right">
-                      <p className="font-mono text-sm text-zinc-200">
+                      <p className="font-mono text-sm text-gray-900">
                         {c.deltas.reviewCount !== null ? c.deltas.reviewCount.toLocaleString(locale) : '—'}
-                        <span className="text-[10px] text-zinc-500"> {t.revAbbrev}</span>
+                        <span className="text-[10px] text-gray-400"> {t.revAbbrev}</span>
                       </p>
                       <p className="space-x-2">
                         <DeltaTag v={c.deltas.dReviews7} suffix={t.suffix7d} />
@@ -250,19 +250,19 @@ export default function CompetitorsPanel({ locale = 'en' }: { locale?: DashLocal
                       </p>
                     </div>
                     <div className="hidden w-28 sm:block" title={t.momentumTitle(momentumDenominator)}>
-                      <div className="h-1.5 overflow-hidden rounded-full bg-zinc-800">
-                        <div className={`h-full rounded-full ${momentum >= 1 ? 'bg-rose-500' : 'bg-teal-500/80'}`}
+                      <div className="h-1.5 overflow-hidden rounded-full bg-gray-100">
+                        <div className={`h-full rounded-full ${momentum >= 1 ? 'bg-red-500' : 'bg-blue-500'}`}
                           style={{ width: `${momentum * 100}%` }} />
                       </div>
-                      <p className="mt-1 text-right font-mono text-[9px] text-zinc-600">{t.momentum}</p>
+                      <p className="mt-1 text-right font-mono text-[9px] text-gray-400">{t.momentum}</p>
                     </div>
                     <div className="flex shrink-0 gap-1.5">
                       <button onClick={() => void patch(c.id, { active: !c.active })}
-                        className="rounded-md border border-zinc-800 px-2 py-1 text-[10px] text-zinc-400 hover:border-teal-500/60 hover:text-zinc-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-teal-400">
+                        className="rounded-lg border border-gray-300 bg-white px-2 py-1 text-[10px] text-gray-600 hover:bg-gray-50 hover:text-gray-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
                         {c.active ? t.pause : t.resume}
                       </button>
                       <button onClick={() => void remove(c.id, c.name)}
-                        className="rounded-md border border-zinc-800 px-2 py-1 text-[10px] text-zinc-500 hover:border-rose-500/60 hover:text-rose-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-rose-400">
+                        className="rounded-lg border border-gray-300 bg-white px-2 py-1 text-[10px] text-gray-500 hover:border-red-300 hover:text-red-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500">
                         {t.remove}
                       </button>
                     </div>

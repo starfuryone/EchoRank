@@ -1860,6 +1860,7 @@ export const IMPORTS_HELP_COPY: Record<DashLocale, ImportsHelpCopy> = {
 
 // ─── /intelligence/competitors (server page header) ─────────────────────────
 const competitorsPageEn = {
+  back: "← Back to Intelligence",
   eyebrow: "Intelligence",
   title: "Competitors",
   subtitle:
@@ -1870,12 +1871,14 @@ export type CompetitorsPageCopy = typeof competitorsPageEn;
 export const COMPETITORS_PAGE_COPY: Record<DashLocale, CompetitorsPageCopy> = {
   en: competitorsPageEn,
   fr: {
+    back: "← Retour à l'intelligence",
     eyebrow: "Intelligence",
     title: "Concurrents",
     subtitle:
       "Instantanés quotidiens des notes et du nombre d'avis. Des alertes de momentum se déclenchent lorsqu'un concurrent dépasse clairement votre propre rythme d'avis.",
   },
   "de-CH": {
+    back: "← Zurück zu Intelligence",
     eyebrow: "Intelligence",
     title: "Mitbewerber",
     subtitle:
@@ -1885,6 +1888,7 @@ export const COMPETITORS_PAGE_COPY: Record<DashLocale, CompetitorsPageCopy> = {
 
 // ─── /intelligence/risk (server page header) ────────────────────────────────
 const riskPageEn = {
+  back: "← Back to Intelligence",
   eyebrow: "Intelligence",
   title: "Reputation risk",
   subtitle:
@@ -1895,12 +1899,14 @@ export type RiskPageCopy = typeof riskPageEn;
 export const RISK_PAGE_COPY: Record<DashLocale, RiskPageCopy> = {
   en: riskPageEn,
   fr: {
+    back: "← Retour à l'intelligence",
     eyebrow: "Intelligence",
     title: "Risque de réputation",
     subtitle:
       "Score unifié combinant les avis, la rétroaction privée et la visibilité IA — recalculé toutes les heures.",
   },
   "de-CH": {
+    back: "← Zurück zu Intelligence",
     eyebrow: "Intelligence",
     title: "Reputationsrisiko",
     subtitle:
