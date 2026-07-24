@@ -1,13 +1,12 @@
 import { cookies } from "next/headers";
 import { dashboardLocale } from "@/lib/i18n/dashboard";
-import { FeatureScaffold } from "@/components/scaffold/feature-scaffold";
+import { BotAnalyticsClient } from "@/components/seo-tools/bot-analytics-client";
 
-// INTEGRATION POINT: continuous crawler-activity ingestion. A one-shot
-// version already exists: the av-visibility sidecar POST /attribute
-// parses access logs into AI-crawler hit deltas (surfaced on /visibility).
-// Paid-subscription gating is enforced by ../layout.tsx for all tool pages.
-export default async function Page() {
+// Real data page (replaced the scaffold): crawler access posture from the
+// sidecar's robots.txt/sitemap/llms.txt evaluation. Honest labeling — no
+// traffic numbers exist. Paid gating enforced by ../layout.tsx.
+export default async function BotAnalyticsPage() {
   const cookieStore = await cookies();
   const locale = dashboardLocale(cookieStore.get("echorank_locale")?.value);
-  return <FeatureScaffold locale={locale} id="bot_analytics" />;
+  return <BotAnalyticsClient locale={locale} />;
 }

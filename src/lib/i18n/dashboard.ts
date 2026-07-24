@@ -5089,3 +5089,217 @@ export const SEO_TOOLS_COPY: Record<DashLocale, SeoToolsCopy> = {
     },
   },
 };
+
+// ─── /visibility/tools/brand-radar ──────────────────────────────────────────
+const brandRadarEn = {
+  domainLabel: "Tracked site",
+  statScore: "AI Visibility Score",
+  statGrade: "Grade",
+  statMentionRate: (days: number) => `Mention rate (${days}d)`,
+  statActivePrompts: "Active prompts",
+  auditAt: (date: string) => `Last audit: ${date}`,
+  enginesTitle: "Engine coverage",
+  enginesIntro: (days: number) =>
+    `Share of tracking runs in the last ${days} days where an assistant mentioned your brand.`,
+  engineRuns: (n: number) => `${n} run${n === 1 ? "" : "s"}`,
+  noRuns:
+    "No tracking runs in this window yet. Runs happen on your prompt schedule — results appear here after the next sweep.",
+  trendsNote:
+    "Per-prompt trends below come from the same tracking runs shown on the AI Visibility page.",
+  alertsTitle: "Recent visibility alerts",
+  noAlerts: "No visibility alerts recorded — no lost recommendations or rank drops detected.",
+  promptsCta: "Create a prompt →",
+  auditCta: "Run an audit →",
+  emptyTitle: "No brand data yet",
+  emptyBody:
+    "Brand Radar reads the data your workspace already tracks: AI-visibility audits, tracked prompts, and alerts. Run a first audit or create a tracked prompt to start filling this page.",
+  loadFailed: "Could not load brand data. Try again in a minute.",
+  loading: "Loading brand data…",
+  severityLabels: { warning: "Warning", critical: "Critical" } as Record<string, string>,
+};
+export type BrandRadarCopy = typeof brandRadarEn;
+
+export const BRAND_RADAR_COPY: Record<DashLocale, BrandRadarCopy> = {
+  en: brandRadarEn,
+  fr: {
+    domainLabel: "Site suivi",
+    statScore: "Score de visibilité IA",
+    statGrade: "Note",
+    statMentionRate: (days: number) => `Taux de mention (${days} j)`,
+    statActivePrompts: "Requêtes actives",
+    auditAt: (date: string) => `Dernier audit : ${date}`,
+    enginesTitle: "Couverture par moteur",
+    enginesIntro: (days: number) =>
+      `Part des exécutions de suivi des ${days} derniers jours où un assistant a mentionné votre marque.`,
+    engineRuns: (n: number) => `${n} exécution${n === 1 ? "" : "s"}`,
+    noRuns:
+      "Aucune exécution de suivi dans cette fenêtre pour l'instant. Les exécutions suivent le calendrier de vos requêtes — les résultats apparaîtront ici après le prochain passage.",
+    trendsNote:
+      "Les tendances par requête ci-dessous proviennent des mêmes exécutions de suivi que la page Visibilité IA.",
+    alertsTitle: "Alertes de visibilité récentes",
+    noAlerts:
+      "Aucune alerte de visibilité enregistrée — aucune recommandation perdue ni chute de rang détectée.",
+    promptsCta: "Créer une requête →",
+    auditCta: "Lancer un audit →",
+    emptyTitle: "Aucune donnée de marque pour l'instant",
+    emptyBody:
+      "Le radar de marque lit les données que votre espace de travail suit déjà : audits de visibilité IA, requêtes suivies et alertes. Lancez un premier audit ou créez une requête suivie pour alimenter cette page.",
+    loadFailed: "Impossible de charger les données de marque. Réessayez dans une minute.",
+    loading: "Chargement des données de marque…",
+    severityLabels: { warning: "Avertissement", critical: "Critique" } as Record<string, string>,
+  },
+  "de-CH": {
+    domainLabel: "Verfolgte Website",
+    statScore: "KI-Sichtbarkeits-Score",
+    statGrade: "Note",
+    statMentionRate: (days: number) => `Erwähnungsrate (${days} T.)`,
+    statActivePrompts: "Aktive Prompts",
+    auditAt: (date: string) => `Letztes Audit: ${date}`,
+    enginesTitle: "Abdeckung pro Engine",
+    enginesIntro: (days: number) =>
+      `Anteil der Tracking-Läufe der letzten ${days} Tage, in denen ein Assistent Ihre Marke erwähnt hat.`,
+    engineRuns: (n: number) => `${n} Lauf${n === 1 ? "" : "läufe"}`,
+    noRuns:
+      "Noch keine Tracking-Läufe in diesem Zeitfenster. Läufe folgen Ihrem Prompt-Zeitplan — Ergebnisse erscheinen hier nach dem nächsten Durchgang.",
+    trendsNote:
+      "Die Trends pro Prompt unten stammen aus denselben Tracking-Läufen wie auf der Seite KI-Sichtbarkeit.",
+    alertsTitle: "Aktuelle Sichtbarkeits-Alerts",
+    noAlerts:
+      "Keine Sichtbarkeits-Alerts erfasst — keine verlorenen Empfehlungen oder Rangverluste erkannt.",
+    promptsCta: "Prompt erstellen →",
+    auditCta: "Audit starten →",
+    emptyTitle: "Noch keine Markendaten",
+    emptyBody:
+      "Brand Radar liest die Daten, die Ihr Arbeitsbereich bereits erfasst: KI-Sichtbarkeits-Audits, verfolgte Prompts und Alerts. Starten Sie ein erstes Audit oder erstellen Sie einen Prompt, um diese Seite zu füllen.",
+    loadFailed: "Markendaten konnten nicht geladen werden. Versuchen Sie es in einer Minute erneut.",
+    loading: "Markendaten werden geladen…",
+    severityLabels: { warning: "Warnung", critical: "Kritisch" } as Record<string, string>,
+  },
+};
+
+// ─── /visibility/tools/bot-analytics ────────────────────────────────────────
+const botAnalyticsEn = {
+  postureNote:
+    "This page shows access posture — what your site permits each crawler to do — based on your live robots.txt. It is not traffic data; Echorank360 does not collect crawler hit logs for your site yet.",
+  checkedAt: (date: string) => `Checked ${date}`,
+  staleNote: (date: string) =>
+    `Live check unavailable — showing the robots.txt snapshot from your last audit (${date}).`,
+  siteLabel: "Site",
+  robotsPresent: "robots.txt found",
+  robotsMissing: "No robots.txt — all crawlers allowed by default",
+  sitemapFound: "Sitemap found",
+  sitemapMissing: "No sitemap found",
+  llmsFound: "llms.txt present",
+  llmsMissing: "No llms.txt",
+  statusOpen: "ALLOWED",
+  statusBlocked: "BLOCKED",
+  categoryLabels: {
+    search: "Search index",
+    ai_training: "AI training",
+    ai_answers: "AI answers",
+  } as Record<string, string>,
+  botDesc: {
+    Googlebot: "Feeds Google Search results — blocking it removes you from Google.",
+    Bingbot: "Feeds Bing search results and Microsoft Copilot answers.",
+    "Google-Extended": "Opt-out token for Google's Gemini model training.",
+    GPTBot: "Collects pages for OpenAI model training.",
+    "OAI-SearchBot": "Feeds ChatGPT Search — blocking it keeps you out of ChatGPT's cited answers.",
+    ClaudeBot: "Collects pages for Anthropic's Claude models.",
+    "anthropic-ai": "Legacy Anthropic crawler token; some sites still rule on it.",
+    PerplexityBot: "Indexes pages for Perplexity's cited answers.",
+    CCBot: "Builds the Common Crawl dataset, used to train many AI models.",
+    Bytespider: "ByteDance's crawler for AI training data.",
+    Amazonbot: "Feeds Alexa and Amazon AI answers.",
+    "Applebot-Extended": "Opt-out token for Apple Intelligence model training.",
+  } as Record<string, string>,
+  emptyTitle: "No website configured",
+  emptyBody:
+    "Bot Analytics reads the site your workspace already tracks. Run a first AI-visibility audit so Echorank360 knows which site to check.",
+  loadFailed: "Could not check crawler access. Try again in a minute.",
+  loading: "Checking crawler access…",
+};
+export type BotAnalyticsCopy = typeof botAnalyticsEn;
+
+export const BOT_ANALYTICS_COPY: Record<DashLocale, BotAnalyticsCopy> = {
+  en: botAnalyticsEn,
+  fr: {
+    postureNote:
+      "Cette page montre la posture d'accès — ce que votre site permet à chaque robot — d'après votre robots.txt en direct. Ce ne sont pas des données de trafic; Echorank360 ne collecte pas encore les journaux de visites des robots pour votre site.",
+    checkedAt: (date: string) => `Vérifié le ${date}`,
+    staleNote: (date: string) =>
+      `Vérification en direct indisponible — affichage de l'instantané robots.txt de votre dernier audit (${date}).`,
+    siteLabel: "Site",
+    robotsPresent: "robots.txt trouvé",
+    robotsMissing: "Aucun robots.txt — tous les robots sont permis par défaut",
+    sitemapFound: "Plan de site trouvé",
+    sitemapMissing: "Aucun plan de site trouvé",
+    llmsFound: "llms.txt présent",
+    llmsMissing: "Aucun llms.txt",
+    statusOpen: "PERMIS",
+    statusBlocked: "BLOQUÉ",
+    categoryLabels: {
+      search: "Index de recherche",
+      ai_training: "Entraînement d'IA",
+      ai_answers: "Réponses d'IA",
+    } as Record<string, string>,
+    botDesc: {
+      Googlebot: "Alimente les résultats de recherche Google — le bloquer vous retire de Google.",
+      Bingbot: "Alimente les résultats Bing et les réponses de Microsoft Copilot.",
+      "Google-Extended": "Jeton de retrait pour l'entraînement du modèle Gemini de Google.",
+      GPTBot: "Collecte des pages pour l'entraînement des modèles d'OpenAI.",
+      "OAI-SearchBot": "Alimente ChatGPT Search — le bloquer vous exclut des réponses citées de ChatGPT.",
+      ClaudeBot: "Collecte des pages pour les modèles Claude d'Anthropic.",
+      "anthropic-ai": "Ancien jeton du robot d'Anthropic; certains sites le règlent encore.",
+      PerplexityBot: "Indexe des pages pour les réponses citées de Perplexity.",
+      CCBot: "Constitue l'ensemble de données Common Crawl, utilisé pour entraîner de nombreux modèles d'IA.",
+      Bytespider: "Robot de ByteDance pour les données d'entraînement d'IA.",
+      Amazonbot: "Alimente Alexa et les réponses d'IA d'Amazon.",
+      "Applebot-Extended": "Jeton de retrait pour l'entraînement des modèles Apple Intelligence.",
+    } as Record<string, string>,
+    emptyTitle: "Aucun site web configuré",
+    emptyBody:
+      "L'analytique des robots lit le site que votre espace de travail suit déjà. Lancez un premier audit de visibilité IA pour qu'Echorank360 sache quel site vérifier.",
+    loadFailed: "Impossible de vérifier l'accès des robots. Réessayez dans une minute.",
+    loading: "Vérification de l'accès des robots…",
+  },
+  "de-CH": {
+    postureNote:
+      "Diese Seite zeigt die Zugriffslage — was Ihre Website jedem Crawler erlaubt — auf Basis Ihrer aktuellen robots.txt. Das sind keine Traffic-Daten; Echorank360 erfasst für Ihre Website noch keine Crawler-Zugriffsprotokolle.",
+    checkedAt: (date: string) => `Geprüft am ${date}`,
+    staleNote: (date: string) =>
+      `Live-Prüfung nicht verfügbar — angezeigt wird der robots.txt-Schnappschuss aus Ihrem letzten Audit (${date}).`,
+    siteLabel: "Website",
+    robotsPresent: "robots.txt gefunden",
+    robotsMissing: "Keine robots.txt — alle Crawler standardmässig erlaubt",
+    sitemapFound: "Sitemap gefunden",
+    sitemapMissing: "Keine Sitemap gefunden",
+    llmsFound: "llms.txt vorhanden",
+    llmsMissing: "Keine llms.txt",
+    statusOpen: "ERLAUBT",
+    statusBlocked: "BLOCKIERT",
+    categoryLabels: {
+      search: "Suchindex",
+      ai_training: "KI-Training",
+      ai_answers: "KI-Antworten",
+    } as Record<string, string>,
+    botDesc: {
+      Googlebot: "Speist die Google-Suchergebnisse — eine Blockierung entfernt Sie aus Google.",
+      Bingbot: "Speist Bing-Suchergebnisse und Microsoft-Copilot-Antworten.",
+      "Google-Extended": "Opt-out-Token für das Training von Googles Gemini-Modellen.",
+      GPTBot: "Sammelt Seiten für das Training der OpenAI-Modelle.",
+      "OAI-SearchBot": "Speist ChatGPT Search — eine Blockierung hält Sie aus ChatGPTs zitierten Antworten heraus.",
+      ClaudeBot: "Sammelt Seiten für Anthropics Claude-Modelle.",
+      "anthropic-ai": "Älteres Anthropic-Crawler-Token; manche Websites regeln es noch.",
+      PerplexityBot: "Indexiert Seiten für Perplexitys zitierte Antworten.",
+      CCBot: "Erstellt den Common-Crawl-Datensatz, mit dem viele KI-Modelle trainiert werden.",
+      Bytespider: "ByteDance-Crawler für KI-Trainingsdaten.",
+      Amazonbot: "Speist Alexa und Amazons KI-Antworten.",
+      "Applebot-Extended": "Opt-out-Token für das Training von Apple-Intelligence-Modellen.",
+    } as Record<string, string>,
+    emptyTitle: "Keine Website konfiguriert",
+    emptyBody:
+      "Bot-Analytics liest die Website, die Ihr Arbeitsbereich bereits verfolgt. Starten Sie ein erstes KI-Sichtbarkeits-Audit, damit Echorank360 weiss, welche Website zu prüfen ist.",
+    loadFailed: "Crawler-Zugriff konnte nicht geprüft werden. Versuchen Sie es in einer Minute erneut.",
+    loading: "Crawler-Zugriff wird geprüft…",
+  },
+};

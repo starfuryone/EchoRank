@@ -147,3 +147,53 @@ test("paid predicate: ACTIVE only", () => {
   assert.ok(!isPaidStatus(null));
   assert.ok(!isPaidStatus(undefined));
 });
+
+// ─── Brand Radar / Bot Analytics (real-data pages) ──────────────────────────
+import { BRAND_RADAR_COPY, BOT_ANALYTICS_COPY } from "../i18n/dashboard";
+import { BOT_CATALOG, BOT_TOKENS } from "../bot-catalog";
+
+test("bot catalog covers the required crawler tokens exactly once", () => {
+  const required = [
+    "Googlebot", "Google-Extended", "Bingbot", "GPTBot", "OAI-SearchBot",
+    "ClaudeBot", "anthropic-ai", "PerplexityBot", "CCBot", "Bytespider",
+    "Amazonbot", "Applebot-Extended",
+  ];
+  assert.deepEqual([...BOT_TOKENS].sort(), [...required].sort());
+  assert.equal(new Set(BOT_TOKENS).size, BOT_TOKENS.length);
+  for (const b of BOT_CATALOG) {
+    assert.ok(["search", "ai_training", "ai_answers"].includes(b.category), b.token);
+    assert.ok(b.org.length, b.token);
+  }
+});
+
+test("bot-analytics copy complete in all locales (per-bot descriptions included)", () => {
+  for (const locale of LOCALES) {
+    const c = BOT_ANALYTICS_COPY[locale];
+    assert.ok(c.postureNote.length && c.emptyTitle.length && c.emptyBody.length);
+    assert.ok(c.statusOpen.length && c.statusBlocked.length && c.loadFailed.length);
+    for (const cat of ["search", "ai_training", "ai_answers"]) {
+      assert.ok(c.categoryLabels[cat]?.length, `${locale} category ${cat}`);
+    }
+    for (const token of BOT_TOKENS) {
+      assert.ok(c.botDesc[token]?.length, `${locale} botDesc ${token}`);
+    }
+    assert.ok(c.checkedAt("2026-01-01").includes("2026-01-01"));
+    assert.ok(c.staleNote("2026-01-01").includes("2026-01-01"));
+  }
+});
+
+test("brand-radar copy complete in all locales", () => {
+  for (const locale of LOCALES) {
+    const c = BRAND_RADAR_COPY[locale];
+    assert.ok(c.emptyTitle.length && c.emptyBody.length && c.alertsTitle.length);
+    assert.ok(c.enginesTitle.length && c.noAlerts.length && c.noRuns.length);
+    assert.ok(c.statMentionRate(30).includes("30"));
+    assert.ok(c.engineRuns(1).length && c.engineRuns(2).length);
+    assert.ok(c.severityLabels.warning?.length && c.severityLabels.critical?.length);
+  }
+});
+
+test("real-data pages' copy never uses CamelCase branding", () => {
+  const json = JSON.stringify({ BRAND_RADAR_COPY, BOT_ANALYTICS_COPY });
+  assert.ok(!json.includes("EchoRank"));
+});
