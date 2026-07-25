@@ -4,7 +4,12 @@ import CompetitorsPanel from '@/components/intelligence/CompetitorsPanel';
 import { ReportDownloadButton } from '@/components/reports/ReportDownloadButton';
 import { COMPETITORS_PAGE_COPY, dashboardLocale } from '@/lib/i18n/dashboard';
 
-export const metadata = { title: 'Competitor Intelligence — Echorank360' };
+export const metadata = {
+  // Bare title — the root layout template appends "| Echorank360".
+  title: 'Competitor Intelligence',
+  description:
+    'Track competitor ratings, review velocity, and momentum alerts for your market.',
+};
 
 export default async function CompetitorsPage() {
   const locale = dashboardLocale((await cookies()).get('echorank_locale')?.value);

@@ -45,7 +45,7 @@ export function DashboardShell({ children, user, locale = "en", plan, paid }: Da
       Object.keys(pageTitles).find((key) => pathname.startsWith(key + "/")) ??
         ""
     ] ??
-    "EchoRank";
+    "Echorank";
 
   return (
     <div className="min-h-screen bg-gray-50">

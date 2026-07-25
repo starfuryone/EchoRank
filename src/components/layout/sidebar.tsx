@@ -94,7 +94,7 @@ export function Sidebar({ open, onClose, locale = "en", plan, paid = false }: Si
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src="/echorank-logo-light.svg"
-            alt="EchoRank 360"
+            alt="Echorank360"
             className="h-7 w-auto"
           />
         </div>
@@ -133,7 +133,7 @@ export function Sidebar({ open, onClose, locale = "en", plan, paid = false }: Si
         {/* Footer */}
         <div className="border-t border-gray-800 px-3 py-4">
           <p className="px-3 text-xs text-gray-500">
-            &copy; {new Date().getFullYear()} EchoRank
+            &copy; {new Date().getFullYear()} Echorank
           </p>
         </div>
       </aside>

@@ -4,7 +4,12 @@ import RiskDashboard from '@/components/intelligence/RiskDashboard';
 import { ReportDownloadButton } from '@/components/reports/ReportDownloadButton';
 import { RISK_PAGE_COPY, dashboardLocale } from '@/lib/i18n/dashboard';
 
-export const metadata = { title: 'Reputation Risk — Echorank360' };
+export const metadata = {
+  // Bare title — the root layout template appends "| Echorank360".
+  title: 'Reputation Risk',
+  description:
+    'Unified reputation risk score across reviews, private feedback, and AI visibility.',
+};
 
 export default async function RiskPage() {
   const locale = dashboardLocale((await cookies()).get('echorank_locale')?.value);

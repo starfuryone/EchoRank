@@ -4,7 +4,7 @@
 // description or an OG image, it goes through buildMetadata() — see README.md.
 
 export const SITE_URL = "https://echorank360.com";
-export const SITE_NAME = "EchoRank 360";
+export const SITE_NAME = "Echorank360";
 export const LEGAL_NAME = "ChatLogic Insights Ltd";
 
 export const LOCALES = ["en", "en-CA", "fr", "fr-CA", "de-CH"] as const;
@@ -58,11 +58,11 @@ export const BRAND_DESCRIPTION: Record<SeoLocale, string> = {
 
 /** Brand-level title per locale (used by the homepage and as a last resort). */
 export const BRAND_TITLE: Record<SeoLocale, string> = {
-  en: "EchoRank 360 — AI Visibility Management Platform",
-  "en-CA": "EchoRank 360 — AI Visibility Management Platform",
-  fr: "EchoRank 360 — Plateforme de visibilité IA",
-  "fr-CA": "EchoRank 360 — Plateforme de visibilité IA",
-  "de-CH": "EchoRank 360 — Plattform für KI-Sichtbarkeit",
+  en: "Echorank360 — AI Visibility Management Platform",
+  "en-CA": "Echorank360 — AI Visibility Management Platform",
+  fr: "Echorank360 — Plateforme de visibilité IA",
+  "fr-CA": "Echorank360 — Plateforme de visibilité IA",
+  "de-CH": "Echorank360 — Plattform für KI-Sichtbarkeit",
 };
 
 // Subscription plans, USD list price. Mirrors the pricing section on the
