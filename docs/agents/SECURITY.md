@@ -95,3 +95,49 @@ outage today was only visible because we were looking).
   one commit, all in-repo code.
 - **Operator window (30 min, low risk):** L1 now; M3 lockfile+audit now;
   H2 and Node 22 scheduled deliberately (each can break process startup).
+
+## D — PostgreSQL (assessed 2026-07-26)
+
+Verified healthy: PG 16.14 current; localhost-only (conf + ss); pg_hba
+textbook (peer local, scram loopback, no trust/md5/remote); SCRAM for all 9
+roles; no remote superuser path; PUBLIC cannot CREATE in schema; plpgsql only;
+per-service roles incl. read-only variants; SSL on. Strongest layer on box.
+
+### D1 — Backups UNVERIFIED (potentially Critical)
+No pg_dump/WAL-archive evidence checked yet. If absent: single-disk VPS holds
+the only copy of all tenant data. VERIFY FIRST (see runbook below), then if
+absent: nightly pg_dumpall via cron + off-box copy (rclone/B2 or even
+Cloudflare R2), test a restore once.
+
+### D2 — Zero database logging (A09)
+log_connections/log_disconnections off, log_statement none: no forensic trail
+for auth events or DDL. Fix (reload only, no restart):
+  ALTER SYSTEM SET log_connections=on;
+  ALTER SYSTEM SET log_disconnections=on;
+  ALTER SYSTEM SET log_statement='ddl';
+  SELECT pg_reload_conf();
+
+### D3 — No statement timeout
+statement_timeout=0 globally and for echorank_app: one runaway query can hold
+a connection forever (100-conn cap). Fix at role level:
+  ALTER ROLE echorank_app SET statement_timeout='30s';
+CAUTION: migrate deploy runs as echorank_app via DATABASE_URL — long
+migrations would abort. Either run migrations with a session-level
+`SET statement_timeout=0` prefix or as postgres.
+
+### D4 — CREATEDB on two app roles (extends L1)
+echorank_app AND agoraiq carry CREATEDB. Revoke both:
+  ALTER ROLE echorank_app NOCREATEDB; ALTER ROLE agoraiq NOCREATEDB;
+
+### D5 — PUBLIC CONNECT across databases (cross-service isolation)
+Db ACLs show =Tc (PUBLIC connect+temp), so any service role can connect to any
+sibling database (echorank_app → agoraiq etc.); pg_hba `local all all peer`
+compounds it. Per database:
+  REVOKE CONNECT, TEMPORARY ON DATABASE <db> FROM PUBLIC;
+  GRANT CONNECT ON DATABASE <db> TO <its role>;
+Low urgency (requires a role compromise first), tidy during H2's user split.
+
+### D6 — RLS interaction note (for H4)
+No role has BYPASSRLS except postgres. Under FORCE RLS, migrations executed as
+echorank_app remain subject to policies — run schema migrations as postgres or
+create a dedicated migration role before H4 rollout.
