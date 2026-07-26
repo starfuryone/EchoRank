@@ -19,8 +19,7 @@ import {
   Database,
   Puzzle,
   ScanEye,
-  Wrench,
-} from "lucide-react";
+  Wrench, TrendingUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { dashNav, type DashLocale } from "@/lib/i18n/dashboard";
 import { canAccessPath } from "@/lib/plan-routing";
@@ -38,6 +37,7 @@ const navItems = [
   { href: "/monitoring", icon: Radar },
   { href: "/visibility", icon: ScanEye },
   { href: "/visibility/tools", icon: Wrench },
+  { href: "/visibility/tools/classic", icon: TrendingUp },
   { href: "/imports", icon: Database },
   { href: "/extension", icon: Puzzle },
   { href: "/templates", icon: FileText },
@@ -67,7 +67,7 @@ export function Sidebar({ open, onClose, locale = "en", plan, paid = false }: Si
   const items = navItems.filter(
     (item) =>
       (plan ? canAccessPath(plan, item.href) : true) &&
-      (item.href !== SEO_TOOLS_HUB || paid),
+      (!item.href.startsWith(SEO_TOOLS_HUB) || paid),
   );
 
   return (

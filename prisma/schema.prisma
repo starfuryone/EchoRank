@@ -78,18 +78,18 @@ enum CampaignStatus {
 }
 
 model User {
-  id             String         @id @default(cuid())
-  name           String?
-  email          String         @unique
-  emailVerified  DateTime?
-  passwordHash   String?
-  image          String?
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
-  memberships    TenantMember[]
-  accounts       Account[]
-  sessions       Session[]
-  auditLogs      AuditLog[]
+  id              String           @id @default(cuid())
+  name            String?
+  email           String           @unique
+  emailVerified   DateTime?
+  passwordHash    String?
+  image           String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  memberships     TenantMember[]
+  accounts        Account[]
+  sessions        Session[]
+  auditLogs       AuditLog[]
   extensionTokens ExtensionToken[]
 
   @@map("users")
@@ -136,66 +136,66 @@ model VerificationToken {
 }
 
 model Tenant {
-  id                  String        @id @default(cuid())
-  name                String
-  slug                String        @unique
-  logo                String?
-  brandPrimaryColor   String        @default("#2563eb")
-  brandSecondaryColor String        @default("#1e40af")
-  supportEmail        String?
-  googleReviewLink    String?
-  facebookReviewLink  String?
-  trustpilotLink      String?
-  defaultLanguage     String        @default("en")
-  timezone            String        @default("America/New_York")
-  planType            PlanType      @default(STARTER)
-  monthlyRequestLimit Int           @default(300)
-  billingStatus       BillingStatus @default(TRIALING)
-  stripeCustomerId    String?
-  stripeSubscriptionId String?
-  whitelabel          Boolean       @default(false)
-  customDomain        String?
-  createdAt           DateTime      @default(now())
-  updatedAt           DateTime      @updatedAt
+  id                    String        @id @default(cuid())
+  name                  String
+  slug                  String        @unique
+  logo                  String?
+  brandPrimaryColor     String        @default("#2563eb")
+  brandSecondaryColor   String        @default("#1e40af")
+  supportEmail          String?
+  googleReviewLink      String?
+  facebookReviewLink    String?
+  trustpilotLink        String?
+  defaultLanguage       String        @default("en")
+  timezone              String        @default("America/New_York")
+  planType              PlanType      @default(STARTER)
+  monthlyRequestLimit   Int           @default(300)
+  billingStatus         BillingStatus @default(TRIALING)
+  stripeCustomerId      String?
+  stripeSubscriptionId  String?
+  whitelabel            Boolean       @default(false)
+  customDomain          String?
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
   welcomeSeenAt         DateTime?
   onboardingDismissedAt DateTime?
   onboardingIntent      String? // "business" | "agency"
   auditDomain           String? // domain captured from the landing audit widget or the welcome modal
   onboarding            Json? // { pdfDownloadedAt?, roadmapViewedAt?, firstAuditScore?, firstAuditAt?, profileCompletedAt? }
-  marketingConsent      Boolean @default(true)
+  marketingConsent      Boolean       @default(true)
 
-  members             TenantMember[]
-  visibilityMonitors  VisibilityMonitor[]
-  visibilityAudits    VisibilityAudit[]
-  trackedPrompts      TrackedPrompt[]
-  promptRuns          PromptRun[]
-  customers           Customer[]
-  feedback            Feedback[]
-  reviewLinks         ReviewLink[]
-  emailTemplates      EmailTemplate[]
-  smsTemplates        SmsTemplate[]
-  recoveryTickets     RecoveryTicket[]
-  emailLogs           EmailLog[]
-  smsLogs             SmsLog[]
-  campaigns           Campaign[]
-  subscription        Subscription?
-  auditLogs           AuditLog[]
-  domainEvents        DomainEvent[]
-  usageMeters         UsageMeter[]
-  usageSnapshots      UsageSnapshot[]
-  quota               TenantQuota?
-  retentionPolicy     DataRetentionPolicy?
-  deletionLogs        DeletionLog[]
-  reputationScores    ReputationScore[]
-  aiAnalyses          AiAnalysis[]
-  escalationAlerts    EscalationAlert[]
-  monitoringSources   MonitoringSource[]
-  externalReviews     ExternalReview[]
-  importJobs          ImportJob[]
-  extensionTokens     ExtensionToken[]
-  apiKeys             ApiKey[]
-  gscConnection       GscConnection?
-  gscQueryStats       GscQueryStat[]
+  members            TenantMember[]
+  visibilityMonitors VisibilityMonitor[]
+  visibilityAudits   VisibilityAudit[]
+  trackedPrompts     TrackedPrompt[]
+  promptRuns         PromptRun[]
+  customers          Customer[]
+  feedback           Feedback[]
+  reviewLinks        ReviewLink[]
+  emailTemplates     EmailTemplate[]
+  smsTemplates       SmsTemplate[]
+  recoveryTickets    RecoveryTicket[]
+  emailLogs          EmailLog[]
+  smsLogs            SmsLog[]
+  campaigns          Campaign[]
+  subscription       Subscription?
+  auditLogs          AuditLog[]
+  domainEvents       DomainEvent[]
+  usageMeters        UsageMeter[]
+  usageSnapshots     UsageSnapshot[]
+  quota              TenantQuota?
+  retentionPolicy    DataRetentionPolicy?
+  deletionLogs       DeletionLog[]
+  reputationScores   ReputationScore[]
+  aiAnalyses         AiAnalysis[]
+  escalationAlerts   EscalationAlert[]
+  monitoringSources  MonitoringSource[]
+  externalReviews    ExternalReview[]
+  importJobs         ImportJob[]
+  extensionTokens    ExtensionToken[]
+  apiKeys            ApiKey[]
+  gscConnection      GscConnection?
+  gscQueryStats      GscQueryStat[]
 
   @@map("tenants")
 }
@@ -215,21 +215,21 @@ model TenantMember {
 }
 
 model Customer {
-  id              String         @id @default(cuid())
+  id              String           @id @default(cuid())
   tenantId        String
   name            String
   email           String?
   phone           String?
-  status          CustomerStatus @default(NEW)
+  status          CustomerStatus   @default(NEW)
   tags            String[]
   location        String?
   metadata        Json?
   deletedAt       DateTime?
   archivedAt      DateTime?
-  legalHold       Boolean        @default(false)
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
-  tenant          Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  legalHold       Boolean          @default(false)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  tenant          Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   feedback        Feedback[]
   emailLogs       EmailLog[]
   smsLogs         SmsLog[]
@@ -241,24 +241,24 @@ model Customer {
 }
 
 model Feedback {
-  id             String         @id @default(cuid())
+  id             String          @id @default(cuid())
   tenantId       String
   customerId     String
   campaignId     String?
   rating         Int?
   comment        String?
-  status         FeedbackStatus @default(PENDING)
-  token          String         @unique
+  status         FeedbackStatus  @default(PENDING)
+  token          String          @unique
   submittedAt    DateTime?
   routedAt       DateTime?
   expiresAt      DateTime?
   deletedAt      DateTime?
-  legalHold      Boolean        @default(false)
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
-  tenant         Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  customer       Customer       @relation(fields: [customerId], references: [id], onDelete: Cascade)
-  campaign       Campaign?      @relation(fields: [campaignId], references: [id])
+  legalHold      Boolean         @default(false)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  tenant         Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customer       Customer        @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  campaign       Campaign?       @relation(fields: [campaignId], references: [id])
   reviewRequest  ReviewRequest?
   recoveryTicket RecoveryTicket?
 
@@ -359,13 +359,13 @@ model RecoveryTicket {
 }
 
 model EmailLog {
-  id                String        @id @default(cuid())
+  id                String         @id @default(cuid())
   tenantId          String
   customerId        String
   to                String
   subject           String
   body              String
-  status            MessageStatus @default(QUEUED)
+  status            MessageStatus  @default(QUEUED)
   channel           MessageChannel @default(EMAIL)
   // Brevo's message-id (Message-Id header it assigns at relay time). Captured
   // at send for debugging/joins. NOTE: Brevo's SMTP relay rewrites Message-Id,
@@ -380,9 +380,9 @@ model EmailLog {
   deliveredAt       DateTime?
   failedAt          DateTime?
   errorMessage      String?
-  createdAt         DateTime      @default(now())
-  tenant            Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  customer          Customer      @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  createdAt         DateTime       @default(now())
+  tenant            Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  customer          Customer       @relation(fields: [customerId], references: [id], onDelete: Cascade)
 
   @@index([tenantId])
   @@index([tenantId, status])
@@ -507,6 +507,7 @@ model DomainEvent {
   createdAt     DateTime          @default(now())
   tenant        Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
+  @@unique([tenantId, eventType, aggregateId, correlationId], name: "event_idempotency_key")
   @@index([tenantId])
   @@index([eventType])
   @@index([status])
@@ -514,7 +515,6 @@ model DomainEvent {
   @@index([createdAt])
   @@index([tenantId, eventType])
   @@index([tenantId, createdAt])
-  @@unique([tenantId, eventType, aggregateId, correlationId], name: "event_idempotency_key")
   @@map("domain_events")
 }
 
@@ -550,24 +550,24 @@ model UsageMeter {
 }
 
 model UsageSnapshot {
-  id                  String   @id @default(cuid())
-  tenantId            String
-  periodStart         DateTime
-  periodEnd           DateTime
-  emailsSent          Int      @default(0)
-  smsSent             Int      @default(0)
-  webhookCalls        Int      @default(0)
-  apiRequests         Int      @default(0)
-  aiTokensUsed        Int      @default(0)
-  aiInferences        Int      @default(0)
-  aiCost              Float    @default(0)
-  feedbackRequests    Int      @default(0)
-  reviewConversions   Int      @default(0)
-  escalationEvents    Int      @default(0)
-  monitoringChecks    Int      @default(0)
-  totalCost           Float    @default(0)
-  createdAt           DateTime @default(now())
-  tenant              Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  id                String   @id @default(cuid())
+  tenantId          String
+  periodStart       DateTime
+  periodEnd         DateTime
+  emailsSent        Int      @default(0)
+  smsSent           Int      @default(0)
+  webhookCalls      Int      @default(0)
+  apiRequests       Int      @default(0)
+  aiTokensUsed      Int      @default(0)
+  aiInferences      Int      @default(0)
+  aiCost            Float    @default(0)
+  feedbackRequests  Int      @default(0)
+  reviewConversions Int      @default(0)
+  escalationEvents  Int      @default(0)
+  monitoringChecks  Int      @default(0)
+  totalCost         Float    @default(0)
+  createdAt         DateTime @default(now())
+  tenant            Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@unique([tenantId, periodStart, periodEnd])
   @@index([tenantId])
@@ -575,21 +575,21 @@ model UsageSnapshot {
 }
 
 model TenantQuota {
-  id                  String   @id @default(cuid())
-  tenantId            String   @unique
-  maxEmailsPerMonth   Int      @default(300)
-  maxSmsPerMonth      Int      @default(0)
-  maxWebhooksPerMonth Int      @default(1000)
-  maxApiRequestsPerDay Int     @default(10000)
-  maxAiInferencesPerMonth Int  @default(100)
-  maxMonitoringChecks Int      @default(0)
-  overageAllowed      Boolean  @default(false)
-  overageRateEmail    Float    @default(0.01)
-  overageRateSms      Float    @default(0.05)
-  overageRateAi       Float    @default(0.02)
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
-  tenant              Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  id                      String   @id @default(cuid())
+  tenantId                String   @unique
+  maxEmailsPerMonth       Int      @default(300)
+  maxSmsPerMonth          Int      @default(0)
+  maxWebhooksPerMonth     Int      @default(1000)
+  maxApiRequestsPerDay    Int      @default(10000)
+  maxAiInferencesPerMonth Int      @default(100)
+  maxMonitoringChecks     Int      @default(0)
+  overageAllowed          Boolean  @default(false)
+  overageRateEmail        Float    @default(0.01)
+  overageRateSms          Float    @default(0.05)
+  overageRateAi           Float    @default(0.02)
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+  tenant                  Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@map("tenant_quotas")
 }
@@ -613,18 +613,18 @@ model DataRetentionPolicy {
 }
 
 model DeletionLog {
-  id           String   @id @default(cuid())
+  id           String    @id @default(cuid())
   tenantId     String
   entityType   String
   entityId     String
   deletedBy    String?
   reason       String?
-  legalHold    Boolean  @default(false)
-  restorable   Boolean  @default(true)
+  legalHold    Boolean   @default(false)
+  restorable   Boolean   @default(true)
   snapshotData Json?
-  deletedAt    DateTime @default(now())
+  deletedAt    DateTime  @default(now())
   expiresAt    DateTime?
-  tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant       Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([tenantId])
   @@index([entityType, entityId])
@@ -641,23 +641,23 @@ enum RiskLevel {
 }
 
 model ReputationScore {
-  id                      String    @id @default(cuid())
-  tenantId                String
-  location                String?
-  overallScore            Float
-  sentimentScore          Float
-  responseRateScore       Float
-  recoveryScore           Float
-  reviewVelocityScore     Float
-  volatilityIndex         Float     @default(0)
-  riskLevel               RiskLevel @default(LOW)
-  trendDirection          String    @default("stable")
-  periodStart             DateTime
-  periodEnd               DateTime
-  sampleSize              Int       @default(0)
-  confidence              Float     @default(0)
-  createdAt               DateTime  @default(now())
-  tenant                  Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  id                  String    @id @default(cuid())
+  tenantId            String
+  location            String?
+  overallScore        Float
+  sentimentScore      Float
+  responseRateScore   Float
+  recoveryScore       Float
+  reviewVelocityScore Float
+  volatilityIndex     Float     @default(0)
+  riskLevel           RiskLevel @default(LOW)
+  trendDirection      String    @default("stable")
+  periodStart         DateTime
+  periodEnd           DateTime
+  sampleSize          Int       @default(0)
+  confidence          Float     @default(0)
+  createdAt           DateTime  @default(now())
+  tenant              Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([tenantId])
   @@index([tenantId, location])
@@ -699,23 +699,23 @@ model AiAnalysis {
 }
 
 model EscalationAlert {
-  id              String    @id @default(cuid())
-  tenantId        String
-  customerId      String?
-  feedbackId      String?
+  id               String    @id @default(cuid())
+  tenantId         String
+  customerId       String?
+  feedbackId       String?
   externalReviewId String?
-  alertType       String
-  riskLevel       RiskLevel
-  probability     Float
-  title           String
-  description     String
-  suggestedAction String?
-  acknowledged    Boolean   @default(false)
-  acknowledgedBy  String?
-  acknowledgedAt  DateTime?
-  resolvedAt      DateTime?
-  createdAt       DateTime  @default(now())
-  tenant          Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  alertType        String
+  riskLevel        RiskLevel
+  probability      Float
+  title            String
+  description      String
+  suggestedAction  String?
+  acknowledged     Boolean   @default(false)
+  acknowledgedBy   String?
+  acknowledgedAt   DateTime?
+  resolvedAt       DateTime?
+  createdAt        DateTime  @default(now())
+  tenant           Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([tenantId])
   @@index([tenantId, riskLevel])
@@ -739,21 +739,21 @@ enum MonitoringPlatform {
 }
 
 model MonitoringSource {
-  id           String             @id @default(cuid())
-  tenantId     String
-  platform     MonitoringPlatform
-  externalId   String
-  name         String
-  url          String?
-  credentials  Json?
-  isActive     Boolean            @default(true)
+  id            String             @id @default(cuid())
+  tenantId      String
+  platform      MonitoringPlatform
+  externalId    String
+  name          String
+  url           String?
+  credentials   Json?
+  isActive      Boolean            @default(true)
   lastCheckedAt DateTime?
-  checkInterval Int               @default(3600)
-  createdAt    DateTime           @default(now())
-  updatedAt    DateTime           @updatedAt
-  tenant       Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  reviews      ExternalReview[]
-  importJobs   ImportJob[]
+  checkInterval Int                @default(3600)
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+  tenant        Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  reviews       ExternalReview[]
+  importJobs    ImportJob[]
 
   @@unique([tenantId, platform, externalId])
   @@index([tenantId])
@@ -814,11 +814,11 @@ model SystemMetric {
 // ─── Processed Webhooks (Stripe idempotency) ──────────────────────────
 
 model ProcessedWebhook {
-  id              String   @id @default(cuid())
-  stripeEventId   String   @unique
-  eventType       String
-  processedAt     DateTime @default(now())
-  payload         Json?
+  id            String   @id @default(cuid())
+  stripeEventId String   @unique
+  eventType     String
+  processedAt   DateTime @default(now())
+  payload       Json?
 
   @@index([eventType])
   @@map("processed_webhooks")
@@ -830,18 +830,18 @@ model ProcessedWebhook {
 // type, and event timestamp. The unique constraint makes replays no-ops, the
 // same way ProcessedWebhook.stripeEventId does for Stripe.
 model MessageEvent {
-  id           String   @id @default(cuid())
-  tenantId     String?
-  channel      String // EMAIL | SMS
-  event        String // delivered | opened | click | hard_bounce | ...
-  recipient    String?
-  messageId    String?
-  emailLogId   String?
-  smsLogId     String?
-  dedupeKey    String   @unique
-  payload      Json?
-  occurredAt   DateTime
-  receivedAt   DateTime @default(now())
+  id         String   @id @default(cuid())
+  tenantId   String?
+  channel    String // EMAIL | SMS
+  event      String // delivered | opened | click | hard_bounce | ...
+  recipient  String?
+  messageId  String?
+  emailLogId String?
+  smsLogId   String?
+  dedupeKey  String   @unique
+  payload    Json?
+  occurredAt DateTime
+  receivedAt DateTime @default(now())
 
   @@index([tenantId])
   @@index([emailLogId])
@@ -882,12 +882,12 @@ model StripePrice {
 // store for the raw uploaded text between the preview and commit steps.
 enum ImportStatus {
   PENDING_MAPPING // uploaded + parsed headers; awaiting column-mapping confirmation
-  QUEUED          // mapping confirmed; csv-import job enqueued
-  PROCESSING      // worker is ingesting rows
-  COMPLETED       // all rows ingested (some may have been duplicates)
-  PARTIAL         // completed, but one or more rows failed validation
-  FAILED          // job-level failure (parse error, etc.)
-  CANCELLED       // user discarded before commit
+  QUEUED // mapping confirmed; csv-import job enqueued
+  PROCESSING // worker is ingesting rows
+  COMPLETED // all rows ingested (some may have been duplicates)
+  PARTIAL // completed, but one or more rows failed validation
+  FAILED // job-level failure (parse error, etc.)
+  CANCELLED // user discarded before commit
 }
 
 enum ImportSourceFormat {
@@ -948,24 +948,24 @@ model ImportJob {
 /// creation. Tokens are tenant-scoped, revocable, and rotatable (rotation =
 /// revoke old + issue new, preserving label/scopes).
 model ExtensionToken {
-  id          String    @id @default(cuid())
-  tenantId    String
-  userId      String
+  id         String    @id @default(cuid())
+  tenantId   String
+  userId     String
   /// Human label set at creation, e.g. "Chrome on work laptop".
-  label       String
+  label      String
   /// SHA-256 (hex) of the token secret. Never store plaintext.
-  tokenHash   String    @unique
+  tokenHash  String    @unique
   /// First 8 chars of the public token id, surfaced in the UI for identification.
-  prefix      String
+  prefix     String
   /// Reserved for future per-token scoping (e.g. ["import:write"]).
-  scopes      String[]  @default([])
-  lastUsedAt  DateTime?
+  scopes     String[]  @default([])
+  lastUsedAt DateTime?
   /// Optional hard expiry. Null = no expiry (revoke to disable).
-  expiresAt   DateTime?
+  expiresAt  DateTime?
   /// Set when revoked; a non-null value disables the token.
-  revokedAt   DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  revokedAt  DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
 
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -1004,7 +1004,7 @@ model VisibilityMonitor {
 }
 
 model VisibilityAudit {
-  id        String  @id @default(cuid())
+  id        String   @id @default(cuid())
   tenantId  String
   monitorId String?
   url       String
@@ -1025,14 +1025,14 @@ model VisibilityAudit {
 }
 
 model TrackedPrompt {
-  id        String   @id @default(cuid())
+  id        String    @id @default(cuid())
   tenantId  String
   text      String
-  active    Boolean  @default(true)
+  active    Boolean   @default(true)
   lastRunAt DateTime?
-  nextRunAt DateTime @default(now())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  nextRunAt DateTime  @default(now())
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 
   tenant Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   runs   PromptRun[]
@@ -1043,16 +1043,16 @@ model TrackedPrompt {
 }
 
 model PromptRun {
-  id             String  @id @default(cuid())
+  id             String   @id @default(cuid())
   tenantId       String
   promptId       String
-  engine         String  @default("claude")
+  engine         String   @default("claude")
   model          String
   brandMentioned Boolean
   brandRank      Int?
   // [{name, mentioned}] snapshot at run time.
   competitors    Json
-  excerpt        String? @db.Text
+  excerpt        String?  @db.Text
   error          String?
   createdAt      DateTime @default(now())
 
@@ -1063,6 +1063,7 @@ model PromptRun {
   @@index([promptId, createdAt])
   @@map("prompt_runs")
 }
+
 // ─────────────────────────────────────────────────────────────
 // SIGNAL SPINE — paste these two models into prisma/schema.prisma
 // then: npx prisma db push  (or use prisma/migration.sql manually)
@@ -1073,15 +1074,15 @@ model PromptRun {
 model Signal {
   id         String   @id @default(cuid())
   tenantId   String
-  source     String   // review | feedback | visibility | support | social | news | competitor | manual
-  externalId String?  // stable id in the source system (review id, audit id…)
+  source     String // review | feedback | visibility | support | social | news | competitor | manual
+  externalId String? // stable id in the source system (review id, audit id…)
   dedupeHash String   @unique
-  entityType String?  // location | customer | …
+  entityType String? // location | customer | …
   entityId   String?
   occurredAt DateTime
   ingestedAt DateTime @default(now())
-  sentiment  Float    // -1..1
-  severity   Float    // 0..1
+  sentiment  Float // -1..1
+  severity   Float // 0..1
   magnitude  Float    @default(0.5) // 0..1 reach/weight of the signal
   title      String?
   body       String?  @db.Text
@@ -1098,8 +1099,8 @@ model RiskSnapshot {
   id          String   @id @default(cuid())
   tenantId    String
   day         DateTime @db.Date
-  score       Int      // 0..100, higher = more risk
-  grade       String   // A..F
+  score       Int // 0..100, higher = more risk
+  grade       String // A..F
   components  Json
   drivers     Json
   signalCount Int
@@ -1109,6 +1110,7 @@ model RiskSnapshot {
   @@unique([tenantId, day])
   @@index([tenantId, day(sort: Desc)])
 }
+
 // ─────────────────────────────────────────────────────────────
 // PHASE 2 — AlertEvent + TenantRiskConfig
 // deploy-phase2.sh appends this automatically (with backup).
@@ -1117,8 +1119,8 @@ model RiskSnapshot {
 model AlertEvent {
   id         String    @id @default(cuid())
   tenantId   String
-  kind       String    // risk_threshold | risk_spike | critical_signal
-  severity   String    // warning | critical
+  kind       String // risk_threshold | risk_spike | critical_signal
+  severity   String // warning | critical
   title      String
   body       String?
   dedupeKey  String    @unique
@@ -1135,11 +1137,12 @@ model TenantRiskConfig {
   monthlyRevenue Float?
   currency       String   @default("USD")
   riskElasticity Float    @default(0.10)
-  alertEmails    String?  // comma-separated; falls back to ALERT_FALLBACK_EMAIL
+  alertEmails    String? // comma-separated; falls back to ALERT_FALLBACK_EMAIL
   alertsEnabled  Boolean  @default(true)
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 }
+
 // ─────────────────────────────────────────────────────────────
 // PHASE 3 — Competitor + CompetitorSnapshot
 // deploy-phase3.sh appends this automatically (with backup).
@@ -1149,7 +1152,8 @@ model Competitor {
   id        String   @id @default(cuid())
   tenantId  String
   name      String
-  placeId   String?  // Google Places (v1) id → automated daily snapshots
+  placeId   String? // Google Places (v1) id → automated daily snapshots
+  address   String? // formatted address / vicinity — disambiguates chains
   platform  String   @default("google")
   notes     String?
   active    Boolean  @default(true)
@@ -1249,4 +1253,46 @@ model GscQueryStat {
   @@index([tenantId, query, date])
   @@index([tenantId, date])
   @@map("gsc_query_stats")
+}
+
+// -----------------------------------------------------------------------------
+// Classic SEO Tools — Phase 0 models (metering + caches).
+// NOTE: migration history is unreplayable (docs/agents/BLOCKERS.md §5) —
+// use `prisma migrate diff` + `migrate deploy`, not `migrate dev`.
+// -----------------------------------------------------------------------------
+
+model SeoApiCall {
+  id        String   @id @default(cuid())
+  tenantId  String
+  feature   String // domain_overview | keyword_research | backlinks | rank_tracking | site_audit | local_seo
+  path      String // "v3/dataforseo_labs/google/ranked_keywords/live"
+  costUsd   Decimal  @db.Decimal(10, 6)
+  ok        Boolean
+  createdAt DateTime @default(now())
+
+  @@index([tenantId, createdAt])
+}
+
+model SeoDomainSnapshot {
+  id           String   @id @default(cuid())
+  tenantId     String
+  target       String
+  locationCode Int
+  languageCode String
+  payload      Json
+  fetchedAt    DateTime @default(now())
+
+  @@unique([tenantId, target, locationCode, languageCode])
+}
+
+model SeoKeywordOverviewCache {
+  id           String   @id @default(cuid())
+  tenantId     String
+  keyword      String
+  locationCode Int
+  languageCode String
+  payload      Json
+  fetchedAt    DateTime @default(now()) // 7 d TTL, enforced in code
+
+  @@unique([tenantId, keyword, locationCode, languageCode])
 }

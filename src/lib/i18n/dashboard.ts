@@ -51,6 +51,10 @@ export const dashNav: Record<DashLocale, Record<string, string>> = {
     "/visibility/tools/gbp-monitor": "GBP Monitor",
     "/visibility/tools/api-access": "API access",
     "/visibility/tools/mcp-server": "MCP Server",
+    "/visibility/tools/classic": "Classic SEO Tools",
+    "/visibility/tools/serp-checker": "SERP Checker",
+    "/visibility/tools/backlinks": "Backlinks",
+    "/visibility/tools/lighthouse": "Lighthouse",
   },
   "de-CH": {
     "/dashboard": "Dashboard",
@@ -85,6 +89,10 @@ export const dashNav: Record<DashLocale, Record<string, string>> = {
     "/visibility/tools/gbp-monitor": "GBP-Monitor",
     "/visibility/tools/api-access": "API-Zugriff",
     "/visibility/tools/mcp-server": "MCP-Server",
+    "/visibility/tools/classic": "Klassische SEO-Tools",
+    "/visibility/tools/serp-checker": "SERP-Checker",
+    "/visibility/tools/backlinks": "Backlinks",
+    "/visibility/tools/lighthouse": "Lighthouse",
   },
   fr: {
     "/dashboard": "Tableau de bord",
@@ -119,6 +127,10 @@ export const dashNav: Record<DashLocale, Record<string, string>> = {
     "/visibility/tools/gbp-monitor": "Suivi GBP",
     "/visibility/tools/api-access": "Accès API",
     "/visibility/tools/mcp-server": "Serveur MCP",
+    "/visibility/tools/classic": "Outils SEO classiques",
+    "/visibility/tools/serp-checker": "Vérificateur SERP",
+    "/visibility/tools/backlinks": "Liens retour",
+    "/visibility/tools/lighthouse": "Lighthouse",
   },
 };
 
@@ -1865,6 +1877,10 @@ const competitorsPageEn = {
   title: "Competitors",
   subtitle:
     "Daily rating and review-count snapshots. Momentum alerts fire when a competitor clearly outpaces your own review velocity.",
+  // <head> metadata — bare title, the root layout template appends "| Echorank360".
+  metaTitle: "Competitor Intelligence",
+  metaDescription:
+    "Track competitor ratings, review velocity, and momentum alerts for your market.",
 };
 export type CompetitorsPageCopy = typeof competitorsPageEn;
 
@@ -1876,6 +1892,9 @@ export const COMPETITORS_PAGE_COPY: Record<DashLocale, CompetitorsPageCopy> = {
     title: "Concurrents",
     subtitle:
       "Instantanés quotidiens des notes et du nombre d'avis. Des alertes de momentum se déclenchent lorsqu'un concurrent dépasse clairement votre propre rythme d'avis.",
+    metaTitle: "Intelligence concurrentielle",
+    metaDescription:
+      "Suivez les notes des concurrents, le rythme des avis et les alertes de momentum pour votre marché.",
   },
   "de-CH": {
     back: "← Zurück zu Intelligence",
@@ -1883,6 +1902,191 @@ export const COMPETITORS_PAGE_COPY: Record<DashLocale, CompetitorsPageCopy> = {
     title: "Mitbewerber",
     subtitle:
       "Tägliche Momentaufnahmen von Note und Bewertungsanzahl. Momentum-Alarme werden ausgelöst, wenn ein Mitbewerber Ihr eigenes Bewertungstempo deutlich übertrifft.",
+    metaTitle: "Mitbewerber-Intelligence",
+    metaDescription:
+      "Verfolgen Sie Mitbewerber-Bewertungen, das Bewertungstempo und Momentum-Alarme für Ihren Markt.",
+  },
+};
+
+// ─── Competitors help modal (src/components/help/CompetitorsHelp.tsx) ──────
+const competitorsHelpEn = {
+  button: "Help",
+  buttonAria: "Open help: how this page works",
+  modalTitle: "Competitor tracking, explained",
+  close: "Close help",
+  labels: {
+    meaning: "What it means",
+    why: "Why it matters",
+    action: "What to do",
+  },
+  s1Heading: "What this page does",
+  s1Text:
+    "It keeps a daily eye on your competitors' Google ratings and review counts, so you can spot who is gaining ground without visiting their listings yourself.",
+  s2Heading: "Adding a competitor",
+  s2Text:
+    "Search for the business name plus its city — for example “Super C Boucherville” — then pick the right listing from the results. The address under each result helps you tell apart branches of the same chain.",
+  s2Note:
+    "Added by name only? That's a manual entry: it has no Google listing attached, so it can't update itself. Use “Link to Places” on its row to connect the real listing — its history is kept.",
+  s3Heading: "The numbers, decoded",
+  metrics: [
+    {
+      title: "Star rating",
+      meaning:
+        "The competitor's average Google score out of 5. The small number under it is the change over the last 30 days.",
+      why: "It's the first thing potential customers compare when they choose between you.",
+      action:
+        "If a rival's rating climbs while yours stands still, read their newest reviews to see what customers are praising.",
+    },
+    {
+      title: "Review count",
+      meaning:
+        "How many Google reviews they have in total, plus how many they gained in the last 7 and 30 days.",
+      why: "A fast-growing count shows they are actively asking for reviews — and Google notices that activity too.",
+      action: "Keep pace by inviting your own recent, happy customers to leave a review.",
+    },
+    {
+      title: "Your review pace (7d)",
+      meaning:
+        "How many new reviews your own business collected in the last 7 days (“7d” just means the last seven days).",
+      why: "It's the yardstick everything else is measured against — the momentum bar compares each competitor to this number.",
+      action:
+        "If it shows 0, connect your review sources on the Data Sources page so Echorank360 can count them.",
+    },
+    {
+      title: "Momentum bar",
+      meaning: "It fills up as a competitor gains reviews faster than you do.",
+      why: "A full bar means they are clearly pulling ahead — we send you an alert when that happens.",
+      action:
+        "Treat the alert as a friendly nudge: ask your happy customers for reviews before the gap grows.",
+    },
+  ],
+  s4Heading: "What to expect",
+  s4Bullets: [
+    "New competitors picked from search show their rating and review count right away.",
+    "Every day at 06:30 UTC we save a snapshot — a dated copy of each competitor's numbers.",
+    "Trends, sparklines and the momentum bar need a few days of snapshots before they have a story to tell.",
+  ],
+};
+export type CompetitorsHelpCopy = typeof competitorsHelpEn;
+
+export const COMPETITORS_HELP_COPY: Record<DashLocale, CompetitorsHelpCopy> = {
+  en: competitorsHelpEn,
+  fr: {
+    button: "Aide",
+    buttonAria: "Ouvrir l'aide : comment fonctionne cette page",
+    modalTitle: "Le suivi des concurrents, expliqué",
+    close: "Fermer l'aide",
+    labels: {
+      meaning: "Ce que ça veut dire",
+      why: "Pourquoi c'est important",
+      action: "Quoi faire",
+    },
+    s1Heading: "À quoi sert cette page",
+    s1Text:
+      "Elle surveille chaque jour les notes Google et le nombre d'avis de vos concurrents, pour que vous voyiez qui gagne du terrain sans devoir visiter leurs fiches vous-même.",
+    s2Heading: "Ajouter un concurrent",
+    s2Text:
+      "Cherchez le nom de l'entreprise suivi de sa ville — par exemple « Super C Boucherville » — puis choisissez la bonne fiche dans les résultats. L'adresse sous chaque résultat aide à distinguer les succursales d'une même chaîne.",
+    s2Note:
+      "Ajouté seulement par son nom? C'est une entrée manuelle : aucune fiche Google n'y est rattachée, elle ne peut donc pas se mettre à jour toute seule. Utilisez « Lier à Places » sur sa ligne pour rattacher la vraie fiche — l'historique est conservé.",
+    s3Heading: "Les chiffres, décodés",
+    metrics: [
+      {
+        title: "Note en étoiles",
+        meaning:
+          "La note Google moyenne du concurrent, sur 5. Le petit chiffre en dessous indique le changement des 30 derniers jours.",
+        why: "C'est la première chose que les clients potentiels comparent avant de choisir.",
+        action:
+          "Si la note d'un rival grimpe pendant que la vôtre stagne, lisez ses avis récents pour voir ce que les clients apprécient.",
+      },
+      {
+        title: "Nombre d'avis",
+        meaning:
+          "Le total d'avis Google, plus le nombre gagné dans les 7 et 30 derniers jours.",
+        why: "Un total qui grimpe vite montre qu'ils sollicitent activement des avis — et Google le remarque aussi.",
+        action: "Gardez le rythme en invitant vos clients récents et satisfaits à laisser un avis.",
+      },
+      {
+        title: "Votre rythme d'avis (7 j)",
+        meaning:
+          "Le nombre de nouveaux avis que votre entreprise a reçus dans les 7 derniers jours (« 7 j » veut simplement dire les sept derniers jours).",
+        why: "C'est l'étalon de mesure : la barre de momentum compare chaque concurrent à ce chiffre.",
+        action:
+          "S'il affiche 0, connectez vos sources d'avis sur la page Sources de données pour qu'Echorank360 puisse les compter.",
+      },
+      {
+        title: "Barre de momentum",
+        meaning: "Elle se remplit quand un concurrent gagne des avis plus vite que vous.",
+        why: "Une barre pleine signifie qu'il prend clairement les devants — nous vous envoyons une alerte à ce moment-là.",
+        action:
+          "Voyez l'alerte comme un rappel amical : demandez des avis à vos clients satisfaits avant que l'écart se creuse.",
+      },
+    ],
+    s4Heading: "À quoi s'attendre",
+    s4Bullets: [
+      "Les concurrents choisis dans la recherche affichent leur note et leur nombre d'avis immédiatement.",
+      "Chaque jour à 6 h 30 UTC, nous enregistrons un instantané — une copie datée des chiffres de chaque concurrent.",
+      "Les tendances, les mini-graphiques et la barre de momentum ont besoin de quelques jours d'instantanés avant de raconter quelque chose.",
+    ],
+  },
+  "de-CH": {
+    button: "Hilfe",
+    buttonAria: "Hilfe öffnen: So funktioniert diese Seite",
+    modalTitle: "Mitbewerber-Tracking, einfach erklärt",
+    close: "Hilfe schliessen",
+    labels: {
+      meaning: "Was es bedeutet",
+      why: "Warum es wichtig ist",
+      action: "Was Sie tun können",
+    },
+    s1Heading: "Was diese Seite macht",
+    s1Text:
+      "Sie behält täglich die Google-Noten und Bewertungszahlen Ihrer Mitbewerber im Blick — so sehen Sie, wer aufholt, ohne deren Einträge selbst besuchen zu müssen.",
+    s2Heading: "Einen Mitbewerber hinzufügen",
+    s2Text:
+      "Suchen Sie nach dem Firmennamen plus Stadt — zum Beispiel «Super C Boucherville» — und wählen Sie den passenden Eintrag aus den Resultaten. Die Adresse unter jedem Resultat hilft, Filialen derselben Kette auseinanderzuhalten.",
+    s2Note:
+      "Nur mit dem Namen hinzugefügt? Das ist ein manueller Eintrag: Ohne verknüpften Google-Eintrag kann er sich nicht selbst aktualisieren. Nutzen Sie «Mit Places verknüpfen» in seiner Zeile — der Verlauf bleibt erhalten.",
+    s3Heading: "Die Zahlen, entschlüsselt",
+    metrics: [
+      {
+        title: "Sterne-Note",
+        meaning:
+          "Die durchschnittliche Google-Note des Mitbewerbers (von 5). Die kleine Zahl darunter zeigt die Veränderung der letzten 30 Tage.",
+        why: "Sie ist das Erste, was potenzielle Kundinnen und Kunden vergleichen.",
+        action:
+          "Steigt die Note eines Rivalen, während Ihre stehen bleibt, lesen Sie seine neusten Bewertungen — was loben die Leute?",
+      },
+      {
+        title: "Bewertungsanzahl",
+        meaning:
+          "Wie viele Google-Bewertungen insgesamt vorliegen, plus der Zuwachs der letzten 7 und 30 Tage.",
+        why: "Eine schnell wachsende Zahl zeigt: Dort wird aktiv um Bewertungen gebeten — und auch Google registriert diese Aktivität.",
+        action:
+          "Halten Sie mit, indem Sie Ihre zufriedenen Kundinnen und Kunden um eine Bewertung bitten.",
+      },
+      {
+        title: "Ihr Bewertungstempo (7 T)",
+        meaning:
+          "Wie viele neue Bewertungen Ihr eigenes Geschäft in den letzten 7 Tagen erhalten hat («7 T» heisst: die letzten sieben Tage).",
+        why: "Das ist der Massstab: Die Momentum-Leiste vergleicht jeden Mitbewerber mit dieser Zahl.",
+        action:
+          "Steht hier 0, verbinden Sie Ihre Bewertungsquellen auf der Seite Datenquellen, damit Echorank360 sie zählen kann.",
+      },
+      {
+        title: "Momentum-Leiste",
+        meaning: "Sie füllt sich, wenn ein Mitbewerber schneller Bewertungen gewinnt als Sie.",
+        why: "Eine volle Leiste heisst: Er zieht klar davon — genau dann alarmieren wir Sie.",
+        action:
+          "Nehmen Sie den Alarm als freundlichen Anstoss: Bitten Sie Ihre zufriedene Kundschaft um Bewertungen, bevor der Abstand wächst.",
+      },
+    ],
+    s4Heading: "Was Sie erwarten können",
+    s4Bullets: [
+      "Aus der Suche gewählte Mitbewerber zeigen Note und Bewertungsanzahl sofort an.",
+      "Jeden Tag um 06:30 UTC speichern wir eine Momentaufnahme — eine datierte Kopie der Zahlen jedes Mitbewerbers.",
+      "Trends, Mini-Diagramme und die Momentum-Leiste brauchen ein paar Tage Momentaufnahmen, bevor sie etwas erzählen können.",
+    ],
   },
 };
 
@@ -1923,9 +2127,15 @@ const competitorsPanelEn = {
   removeConfirm: (name: string) => `Remove ${name} and its snapshot history?`,
   loadFailed: "Competitor data didn't load.",
   retry: "Retry",
+  alreadyTracked: "This competitor is already tracked.",
+  alreadyTrackedManual:
+    "Already tracked as a manual entry — use “Link to Places” on that row instead.",
+  limitReached: (n: number) => `Limit of ${n} competitors reached.`,
   // add section
   trackTitle: "Track a competitor",
   ownPace: "your review pace (7d):",
+  paceHint: "No review data in the last 7 days —",
+  paceHintLink: "connect your review sources",
   searchPlaceholderPlaces: "Business name + city (Places search)",
   searchPlaceholderManual: "Competitor name (manual — no Places key set)",
   searching: "Searching…",
@@ -1934,14 +2144,26 @@ const competitorsPanelEn = {
   noMatches: "No matches.",
   reviewsCount: (n: number) => `${n} review${n === 1 ? "" : "s"}`,
   track: "Track",
+  linkAction: "Link",
+  linkingNotice: (name: string) => `Linking “${name}” — search and pick its Google listing.`,
+  cancel: "Cancel",
   // table section
   tableTitle: "Competitors — daily snapshots",
   refreshing: "Refreshing…",
   refreshNow: "Refresh now",
+  refreshFailed: "Refresh failed.",
+  refreshSummary: (ok: number, failed: number) =>
+    failed > 0 ? `Updated ${ok}, failed ${failed}.` : `Updated ${ok} competitor${ok === 1 ? "" : "s"}.`,
+  updatedTag: "updated ✓",
+  placesErrorTag: (code: string) => `Places error (${code})`,
   emptyTable:
     "No competitors tracked yet. Add one above — snapshots run daily at 06:30 UTC.",
   placesAuto: "places · auto",
-  manualSnapshots: "manual snapshots",
+  manualSnapshots: "manual — not auto-updated",
+  linkToPlaces: "Link to Places",
+  mapsLinkTitle: "Open the Google Maps listing",
+  sparkRatingLabel: "rating trend",
+  sparkReviewsLabel: "review-count trend",
   lastDay: (day: string) => `last ${day}`,
   noDataYet: "no data yet",
   suffix7d: " 7d",
@@ -1966,8 +2188,14 @@ export const COMPETITORS_PANEL_COPY: Record<DashLocale, CompetitorsPanelCopy> = 
       `Retirer ${name} et son historique d'instantanés?`,
     loadFailed: "Les données des concurrents n'ont pas pu être chargées.",
     retry: "Réessayer",
+    alreadyTracked: "Ce concurrent est déjà suivi.",
+    alreadyTrackedManual:
+      "Déjà suivi comme entrée manuelle — utilisez plutôt « Lier à Places » sur cette ligne.",
+    limitReached: (n: number) => `Limite de ${n} concurrents atteinte.`,
     trackTitle: "Suivre un concurrent",
     ownPace: "votre rythme d'avis (7 j) :",
+    paceHint: "Aucune donnée d'avis dans les 7 derniers jours —",
+    paceHintLink: "connectez vos sources d'avis",
     searchPlaceholderPlaces: "Nom de l'entreprise + ville (recherche Places)",
     searchPlaceholderManual: "Nom du concurrent (manuel — aucune clé Places configurée)",
     searching: "Recherche…",
@@ -1976,13 +2204,26 @@ export const COMPETITORS_PANEL_COPY: Record<DashLocale, CompetitorsPanelCopy> = 
     noMatches: "Aucun résultat.",
     reviewsCount: (n: number) => `${n} avis`,
     track: "Suivre",
+    linkAction: "Lier",
+    linkingNotice: (name: string) =>
+      `Liaison de « ${name} » — recherchez et choisissez sa fiche Google.`,
+    cancel: "Annuler",
     tableTitle: "Concurrents — instantanés quotidiens",
     refreshing: "Actualisation…",
     refreshNow: "Actualiser maintenant",
+    refreshFailed: "Échec de l'actualisation.",
+    refreshSummary: (ok: number, failed: number) =>
+      failed > 0 ? `${ok} mis à jour, ${failed} en échec.` : `${ok} concurrent${ok === 1 ? "" : "s"} mis à jour.`,
+    updatedTag: "mis à jour ✓",
+    placesErrorTag: (code: string) => `Erreur Places (${code})`,
     emptyTable:
       "Aucun concurrent suivi pour le moment. Ajoutez-en un ci-dessus — les instantanés sont pris chaque jour à 06:30 UTC.",
     placesAuto: "places · auto",
-    manualSnapshots: "instantanés manuels",
+    manualSnapshots: "manuel — sans mise à jour auto",
+    linkToPlaces: "Lier à Places",
+    mapsLinkTitle: "Ouvrir la fiche Google Maps",
+    sparkRatingLabel: "tendance de la note",
+    sparkReviewsLabel: "tendance du nombre d'avis",
     lastDay: (day: string) => `dernier ${day}`,
     noDataYet: "aucune donnée pour le moment",
     suffix7d: " 7 j",
@@ -2003,8 +2244,14 @@ export const COMPETITORS_PANEL_COPY: Record<DashLocale, CompetitorsPanelCopy> = 
       `${name} und den zugehörigen Verlauf der Momentaufnahmen entfernen?`,
     loadFailed: "Mitbewerberdaten konnten nicht geladen werden.",
     retry: "Erneut versuchen",
+    alreadyTracked: "Dieser Mitbewerber wird bereits verfolgt.",
+    alreadyTrackedManual:
+      "Bereits als manueller Eintrag erfasst — nutzen Sie stattdessen «Mit Places verknüpfen» in dieser Zeile.",
+    limitReached: (n: number) => `Limite von ${n} Mitbewerbern erreicht.`,
     trackTitle: "Einen Mitbewerber verfolgen",
     ownPace: "Ihr Bewertungstempo (7 T):",
+    paceHint: "Keine Bewertungsdaten in den letzten 7 Tagen —",
+    paceHintLink: "verbinden Sie Ihre Bewertungsquellen",
     searchPlaceholderPlaces: "Firmenname + Stadt (Places-Suche)",
     searchPlaceholderManual: "Name des Mitbewerbers (manuell — kein Places-Schlüssel hinterlegt)",
     searching: "Suche läuft…",
@@ -2013,13 +2260,28 @@ export const COMPETITORS_PANEL_COPY: Record<DashLocale, CompetitorsPanelCopy> = 
     noMatches: "Keine Treffer.",
     reviewsCount: (n: number) => `${n} Bewertung${n === 1 ? "" : "en"}`,
     track: "Verfolgen",
+    linkAction: "Verknüpfen",
+    linkingNotice: (name: string) =>
+      `«${name}» wird verknüpft — suchen Sie den passenden Google-Eintrag aus.`,
+    cancel: "Abbrechen",
     tableTitle: "Mitbewerber — tägliche Momentaufnahmen",
     refreshing: "Wird aktualisiert…",
     refreshNow: "Jetzt aktualisieren",
+    refreshFailed: "Aktualisierung fehlgeschlagen.",
+    refreshSummary: (ok: number, failed: number) =>
+      failed > 0
+        ? `${ok} aktualisiert, ${failed} fehlgeschlagen.`
+        : `${ok} Mitbewerber aktualisiert.`,
+    updatedTag: "aktualisiert ✓",
+    placesErrorTag: (code: string) => `Places-Fehler (${code})`,
     emptyTable:
       "Noch keine Mitbewerber erfasst. Fügen Sie oben einen hinzu — Momentaufnahmen laufen täglich um 06:30 UTC.",
     placesAuto: "places · auto",
-    manualSnapshots: "manuelle Momentaufnahmen",
+    manualSnapshots: "manuell — keine automatische Aktualisierung",
+    linkToPlaces: "Mit Places verknüpfen",
+    mapsLinkTitle: "Google-Maps-Eintrag öffnen",
+    sparkRatingLabel: "Trend der Note",
+    sparkReviewsLabel: "Trend der Bewertungsanzahl",
     lastDay: (day: string) => `zuletzt ${day}`,
     noDataYet: "noch keine Daten",
     suffix7d: " 7 T",
@@ -4795,6 +5057,8 @@ export const ONBOARDING_COPY: Record<DashLocale, OnboardingCopy> = {
 const seoToolsEn = {
   hubTitle: "SEO Tools",
   hubSubtitle: "Every Echorank360 search, content, and reporting tool in one place.",
+  classicTitle: "Classic SEO Tools",
+  classicSubtitle: "Traditional search data — rankings, keywords, backlinks and technical health.",
   upgradeTitle: "SEO Tools are part of your paid plan",
   upgradeBody:
     "Your workspace does not have an active subscription yet. Activate any Echorank360 plan to open the SEO Tools hub — keyword research, site analysis, content and reporting tools included.",
@@ -4813,6 +5077,18 @@ const seoToolsEn = {
     developers: "Developers",
   } satisfies Record<SeoToolGroupId, string>,
   items: {
+    serp_checker: {
+      name: "SERP Checker",
+      description: "Live top-100 organic results for any keyword, location, and device.",
+    },
+    backlinks: {
+      name: "Backlinks",
+      description: "Referring domains, link profile breakdown, top linked pages, and growth history.",
+    },
+    lighthouse: {
+      name: "Lighthouse",
+      description: "Core Web Vitals, performance, accessibility, best-practices, and SEO scores for any URL.",
+    },
     site_explorer: {
       name: "Site Explorer",
       description: "Analyze websites, competitors, backlinks, and organic search performance.",
@@ -4887,6 +5163,9 @@ const seoToolsEn = {
     },
   } satisfies Record<SeoToolId, { name: string; description: string }>,
   scaffolds: {
+    serp_checker: { cta: "Check a SERP", related: "Find keywords to check →" },
+    backlinks: { cta: "Analyze backlinks" },
+    lighthouse: { cta: "Run a Lighthouse audit", related: "Open Site Audit →" },
     site_explorer: { cta: "Analyze a domain", related: "Open competitor intelligence →" },
     rank_tracker: { cta: "Create a tracking project", related: "Find keywords to track →" },
     gsc_insights: { cta: "Connect Google Search Console" },
@@ -4912,6 +5191,8 @@ export const SEO_TOOLS_COPY: Record<DashLocale, SeoToolsCopy> = {
   fr: {
     hubTitle: "Outils SEO",
     hubSubtitle: "Tous les outils de recherche, de contenu et de rapports d'Echorank360, réunis au même endroit.",
+    classicTitle: "Outils SEO classiques",
+    classicSubtitle: "Données de recherche traditionnelles — positions, mots-clés, liens retour et santé technique.",
     upgradeTitle: "Les outils SEO font partie de votre forfait payant",
     upgradeBody:
       "Votre espace de travail n'a pas encore d'abonnement actif. Activez n'importe quel forfait Echorank360 pour ouvrir le centre d'outils SEO — recherche de mots-clés, analyse de site, outils de contenu et de rapports inclus.",
@@ -4930,6 +5211,18 @@ export const SEO_TOOLS_COPY: Record<DashLocale, SeoToolsCopy> = {
       developers: "Développeurs",
     },
     items: {
+      serp_checker: {
+        name: "Vérificateur SERP",
+        description: "Top 100 des résultats organiques en direct pour tout mot-clé, lieu et appareil.",
+      },
+      backlinks: {
+        name: "Liens retour",
+        description: "Domaines référents, répartition du profil de liens, pages les plus liées et historique de croissance.",
+      },
+      lighthouse: {
+        name: "Lighthouse",
+        description: "Core Web Vitals, performance, accessibilité, bonnes pratiques et scores SEO pour toute URL.",
+      },
       site_explorer: {
         name: "Explorateur de sites",
         description: "Analysez les sites web, les concurrents, les liens retour et la performance en recherche organique.",
@@ -5004,6 +5297,9 @@ export const SEO_TOOLS_COPY: Record<DashLocale, SeoToolsCopy> = {
       },
     },
     scaffolds: {
+      serp_checker: { cta: "Vérifier une SERP", related: "Trouver des mots-clés à vérifier →" },
+      backlinks: { cta: "Analyser les liens retour" },
+      lighthouse: { cta: "Lancer un audit Lighthouse", related: "Ouvrir l'audit de site →" },
       site_explorer: { cta: "Analyser un domaine", related: "Ouvrir l'intelligence concurrentielle →" },
       rank_tracker: { cta: "Créer un projet de suivi", related: "Trouver des mots-clés à suivre →" },
       gsc_insights: { cta: "Connecter Google Search Console" },
@@ -5021,6 +5317,8 @@ export const SEO_TOOLS_COPY: Record<DashLocale, SeoToolsCopy> = {
   "de-CH": {
     hubTitle: "SEO-Tools",
     hubSubtitle: "Alle Such-, Content- und Berichtstools von Echorank360 an einem Ort.",
+    classicTitle: "Klassische SEO-Tools",
+    classicSubtitle: "Traditionelle Suchdaten — Rankings, Keywords, Backlinks und technische Gesundheit.",
     upgradeTitle: "SEO-Tools sind Teil Ihres bezahlten Plans",
     upgradeBody:
       "Ihr Arbeitsbereich hat noch kein aktives Abonnement. Aktivieren Sie einen beliebigen Echorank360-Plan, um das SEO-Tools-Hub zu öffnen — Keyword-Recherche, Website-Analyse, Content- und Berichtstools inklusive.",
@@ -5039,6 +5337,18 @@ export const SEO_TOOLS_COPY: Record<DashLocale, SeoToolsCopy> = {
       developers: "Entwickler",
     },
     items: {
+      serp_checker: {
+        name: "SERP-Checker",
+        description: "Live-Top-100 der organischen Ergebnisse für jedes Keyword, jeden Standort und jedes Gerät.",
+      },
+      backlinks: {
+        name: "Backlinks",
+        description: "Verweisende Domains, Linkprofil-Aufschlüsselung, meistverlinkte Seiten und Wachstumsverlauf.",
+      },
+      lighthouse: {
+        name: "Lighthouse",
+        description: "Core Web Vitals, Performance, Barrierefreiheit, Best Practices und SEO-Scores für jede URL.",
+      },
       site_explorer: {
         name: "Site Explorer",
         description: "Analysieren Sie Websites, Wettbewerber, Backlinks und die organische Suchleistung.",
@@ -5113,6 +5423,9 @@ export const SEO_TOOLS_COPY: Record<DashLocale, SeoToolsCopy> = {
       },
     },
     scaffolds: {
+      serp_checker: { cta: "SERP prüfen", related: "Keywords zum Prüfen finden →" },
+      backlinks: { cta: "Backlinks analysieren" },
+      lighthouse: { cta: "Lighthouse-Audit ausführen", related: "Site-Audit öffnen →" },
       site_explorer: { cta: "Domain analysieren", related: "Wettbewerbs-Intelligence öffnen →" },
       rank_tracker: { cta: "Tracking-Projekt erstellen", related: "Keywords zum Verfolgen finden →" },
       gsc_insights: { cta: "Google Search Console verbinden" },

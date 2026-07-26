@@ -33,6 +33,9 @@ import {
   Store,
   Code2,
   Plug,
+  ListOrdered,
+  Link2,
+  Gauge,
 } from "lucide-react";
 import { canAccessPath } from "@/lib/plan-routing";
 import type { PlanType } from "@/generated/prisma";
@@ -65,7 +68,10 @@ export type SeoToolId =
   | "report_builder"
   | "gbp_monitor"
   | "api_access"
-  | "mcp_server";
+  | "mcp_server"
+  | "serp_checker"
+  | "backlinks"
+  | "lighthouse";
 
 /** Tools that render a scaffold page under /visibility/tools/<slug>. */
 // Note: brand_radar/bot_analytics remain ScaffoldIds although their pages are
@@ -119,6 +125,8 @@ export const SEO_TOOL_GROUPS: SeoToolGroup[] = [
       }),
       t("rank_tracker", "rank-tracker", LineChart),
       t("gsc_insights", "gsc-insights", SearchCheck),
+      t("serp_checker", "serp-checker", ListOrdered),
+      t("backlinks", "backlinks", Link2),
       t("brand_radar", "brand-radar", RadarIcon),
       // Tracked prompts (AnswerTrackingCard) on the AI Visibility page.
       t("custom_prompts", "custom-prompts", MessageSquareText, {
@@ -132,6 +140,7 @@ export const SEO_TOOL_GROUPS: SeoToolGroup[] = [
     tools: [
       // The av-visibility sidecar audit surface on /visibility.
       t("site_audit", "site-audit", ScanSearch, { href: "/visibility", existing: true }),
+      t("lighthouse", "lighthouse", Gauge),
       t("web_analytics", "web-analytics", AreaChart),
       t("bot_analytics", "bot-analytics", Bot, { badge: "new" }),
     ],
@@ -180,7 +189,26 @@ export const SCAFFOLD_RELATED: Partial<Record<ScaffoldId, string>> = {
   ai_content_helper: "/templates",
   report_builder: "/visibility",
   gbp_monitor: "/monitoring",
+  serp_checker: "/visibility/keywords",
+  lighthouse: "/visibility",
 };
+
+/**
+ * Classic SEO Tools — curated cross-cutting view rendered ONLY on the
+ * dedicated sub-hub at /visibility/tools/classic (second sidebar entry).
+ * Deliberately NOT a SeoToolGroup: the main hub grid stays as-is, so no
+ * card appears twice there.
+ */
+export const CLASSIC_SEO_TOOL_IDS: readonly SeoToolId[] = [
+  "site_explorer", // Domain Overview ships here (Phase 1)
+  "keywords_explorer",
+  "serp_checker",
+  "rank_tracker",
+  "backlinks",
+  "lighthouse",
+  "site_audit",
+  "gsc_insights",
+];
 
 /** Strip a #fragment before consulting plan-routing (it matches path prefixes). */
 export function navPath(href: string): string {
