@@ -103,11 +103,18 @@ textbook (peer local, scram loopback, no trust/md5/remote); SCRAM for all 9
 roles; no remote superuser path; PUBLIC cannot CREATE in schema; plpgsql only;
 per-service roles incl. read-only variants; SSL on. Strongest layer on box.
 
-### D1 — Backups UNVERIFIED (potentially Critical)
-No pg_dump/WAL-archive evidence checked yet. If absent: single-disk VPS holds
-the only copy of all tenant data. VERIFY FIRST (see runbook below), then if
-absent: nightly pg_dumpall via cron + off-box copy (rclone/B2 or even
-Cloudflare R2), test a restore once.
+### D1 — WAS CRITICAL, remediated 2026-07-26 (off-box copy still open)
+Found: script covered only agoraiq DBs — echorank had NEVER been backed up —
+and had been failing nightly regardless (pg auth broken, dead S3 keys, reused
+hardcoded password identical to the old Redis one).
+Fixed: script rewritten — dumps ALL PG databases + globals via peer auth,
+local rotation 7d in /opt/backups/pg (600/700), loud failures, exit code;
+dead Mongo section removed (no mongodump on box). Verified clean run:
+agoraiq 59M, agoraiq_signals 507M, echorank 48K, globals — 1.6GB on disk.
+Nightly cron unchanged (04:00); check /var/log/db-backup.log after first
+unattended run.
+OPEN (operator): off-box copy — S3 keys dead; issue new keys or point at
+Cloudflare R2, then verify one upload and test-restore echorank once.
 
 ### D2 — Zero database logging (A09)
 log_connections/log_disconnections off, log_statement none: no forensic trail
