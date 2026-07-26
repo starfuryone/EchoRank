@@ -17,7 +17,7 @@ const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://echorank360.com';
 
 interface AvContent {
   // `title` is the branded form for og/twitter; `titleShort` is bare and the
-  // root layout's "%s | EchoRank 360" template appends the brand to it.
+  // root layout's "%s | Echorank360" template appends the brand to it.
   meta: { title: string; titleShort: string; description: string };
   nav: { features: string; pricing: string; login: string; cta: string };
   hero: {

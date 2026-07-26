@@ -18,8 +18,8 @@ const EN: Doc = {
   updated: "Last updated: July 5, 2026",
   sections: [
     { h: "1. Who we are", ps: [
-      "EchoRank (echorank360.com, the \"Service\") is operated by ChatLogic Insights Ltd, a company registered in England and Wales under company number 15593166 (\"ChatLogic\", \"we\", \"us\"). Registered office: as recorded on the Companies House register for company 15593166.",
-      "EchoRank is not available to residents of the United Kingdom (England, Scotland, Wales and Northern Ireland).",
+      "Echorank (echorank360.com, the \"Service\") is operated by ChatLogic Insights Ltd, a company registered in England and Wales under company number 15593166 (\"ChatLogic\", \"we\", \"us\"). Registered office: as recorded on the Companies House register for company 15593166.",
+      "Echorank is not available to residents of the United Kingdom (England, Scotland, Wales and Northern Ireland).",
       "For any privacy matter, contact privacy@echorank360.com.",
     ]},
     { h: "2. Our two roles", ps: [
@@ -83,8 +83,8 @@ const FR: Doc = {
   updated: "Dernière mise à jour : 5 juillet 2026",
   sections: [
     { h: "1. Qui nous sommes", ps: [
-      "EchoRank (echorank360.com, le « Service ») est exploité par ChatLogic Insights Ltd, société immatriculée en Angleterre et au Pays de Galles sous le numéro 15593166 (« ChatLogic », « nous »). Siège social : tel qu'inscrit au registre Companies House pour la société 15593166.",
-      "EchoRank n'est pas offert aux résidents du Royaume-Uni (Angleterre, Écosse, pays de Galles et Irlande du Nord).",
+      "Echorank (echorank360.com, le « Service ») est exploité par ChatLogic Insights Ltd, société immatriculée en Angleterre et au Pays de Galles sous le numéro 15593166 (« ChatLogic », « nous »). Siège social : tel qu'inscrit au registre Companies House pour la société 15593166.",
+      "Echorank n'est pas offert aux résidents du Royaume-Uni (Angleterre, Écosse, pays de Galles et Irlande du Nord).",
       "Pour toute question relative à la vie privée : privacy@echorank360.com.",
     ]},
     { h: "2. Nos deux rôles", ps: [
@@ -167,7 +167,7 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
     <div className={lp.page}>
       <div className={lp.wrap}>
         <div className={lp.top}>
-          <Link href={`/${locale}`} aria-label="EchoRank 360, home">
+          <Link href={`/${locale}`} aria-label="Echorank360, home">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/echorank-logo-dark.svg" alt="ECHORANK 360" className={lp.logo} />
           </Link>

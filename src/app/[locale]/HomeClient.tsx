@@ -824,7 +824,7 @@ export default function HomeClient({ locale }: { locale: string }) {
       </section>
 
       {/* 14. CLOSE */}
-      <section className={s.section}><div className={s.container}><p className={s.label}><b>/ 14</b> — RESOURCES</p><h2 className={s.h2}>Reputation Intelligence, Made Simple</h2><p className={s.sub}>The plain-English guide to running EchoRank: the 30-minute setup, daily operating rhythm, AI visibility and answer tracking, and risk &amp; competitor intelligence. Free PDF, no email required.</p><a className={`${s.btn} ${s.btnPrimary}`} href="/whitepapers/Echorank_Reputation_Intelligence_Whitepaper.pdf" download target="_blank" rel="noopener">Download the Whitepaper (PDF) ↓</a></div></section><section className={s.close}>
+      <section className={s.section}><div className={s.container}><p className={s.label}><b>/ 14</b> — RESOURCES</p><h2 className={s.h2}>Reputation Intelligence, Made Simple</h2><p className={s.sub}>The plain-English guide to running Echorank: the 30-minute setup, daily operating rhythm, AI visibility and answer tracking, and risk &amp; competitor intelligence. Free PDF, no email required.</p><a className={`${s.btn} ${s.btnPrimary}`} href="/whitepapers/Echorank_Reputation_Intelligence_Whitepaper.pdf" download target="_blank" rel="noopener">Download the Whitepaper (PDF) ↓</a></div></section><section className={s.close}>
         <div className={s.container}>
           <p className={s.label}><b>/ 15</b> — {t.close.label}</p>
           <h2 className={s.h2c}>{t.close.h2a}<span className={s.goldtext}>{t.close.h2b}</span></h2>

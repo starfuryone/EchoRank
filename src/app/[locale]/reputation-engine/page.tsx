@@ -26,7 +26,7 @@ interface LpContent {
 const C: Record<Locale, LpContent> = {
   en: {
     meta: {
-      title: "Reputation Engine, Automation | EchoRank",
+      title: "Reputation Engine, Automation | Echorank",
       description:
         "Compliant SMS, email and QR feedback campaigns, multi-platform monitoring, white-label tools and workflows that keep fresh customer signals flowing.",
     },
@@ -34,7 +34,7 @@ const C: Record<Locale, LpContent> = {
       label: "/ REPUTATION ENGINE",
       h1a: "A reputation that works while you sleep.",
       h1b: "Not luck. A system.",
-      sub: "Great reputations are built by consistent feedback, continuous monitoring and quick action, not by hoping. EchoRank automates the heavy lifting so fresh customer signals keep flowing in, get read, and turn into visible responses, without another hour of your week.",
+      sub: "Great reputations are built by consistent feedback, continuous monitoring and quick action, not by hoping. Echorank automates the heavy lifting so fresh customer signals keep flowing in, get read, and turn into visible responses, without another hour of your week.",
       cta1: "Start the engine →",
       cta2: "Book a demo ↗",
     },
@@ -86,7 +86,7 @@ const C: Record<Locale, LpContent> = {
 
   fr: {
     meta: {
-      title: "Moteur de réputation, automatisation | EchoRank",
+      title: "Moteur de réputation, automatisation | Echorank",
       description:
         "Campagnes de retours conformes par SMS, e-mail et QR, surveillance multi-plateformes, marque blanche et flux qui alimentent en continu des signaux clients frais.",
     },
@@ -94,7 +94,7 @@ const C: Record<Locale, LpContent> = {
       label: "/ MOTEUR DE RÉPUTATION",
       h1a: "Une réputation qui travaille pendant que vous dormez.",
       h1b: "Pas de la chance. Un système.",
-      sub: "Les grandes réputations se construisent par des retours réguliers, une surveillance continue et des actions rapides, pas en espérant. EchoRank automatise le gros du travail : des signaux clients frais arrivent en continu, sont lus, et deviennent des réponses visibles, sans une heure de plus dans votre semaine.",
+      sub: "Les grandes réputations se construisent par des retours réguliers, une surveillance continue et des actions rapides, pas en espérant. Echorank automatise le gros du travail : des signaux clients frais arrivent en continu, sont lus, et deviennent des réponses visibles, sans une heure de plus dans votre semaine.",
       cta1: "Démarrer le moteur →",
       cta2: "Réserver une démo ↗",
     },
@@ -146,7 +146,7 @@ const C: Record<Locale, LpContent> = {
 
   "de-CH": {
     meta: {
-      title: "Reputations-Motor, Automatisierung | EchoRank",
+      title: "Reputations-Motor, Automatisierung | Echorank",
       description:
         "Konforme Feedback-Kampagnen per SMS, E-Mail und QR, Multi-Plattform-Überwachung, White-Label-Werkzeuge und Abläufe, die laufend frische Kundensignale liefern.",
     },
@@ -154,7 +154,7 @@ const C: Record<Locale, LpContent> = {
       label: "/ REPUTATIONS-MOTOR",
       h1a: "Eine Reputation, die arbeitet, während Sie schlafen.",
       h1b: "Kein Glück. Ein System.",
-      sub: "Starke Reputationen entstehen durch regelmässiges Feedback, laufende Überwachung und schnelles Handeln, nicht durch Hoffen. EchoRank automatisiert die Schwerarbeit: frische Kundensignale fliessen laufend ein, werden gelesen und werden zu sichtbaren Antworten, ohne eine zusätzliche Stunde Ihrer Woche.",
+      sub: "Starke Reputationen entstehen durch regelmässiges Feedback, laufende Überwachung und schnelles Handeln, nicht durch Hoffen. Echorank automatisiert die Schwerarbeit: frische Kundensignale fliessen laufend ein, werden gelesen und werden zu sichtbaren Antworten, ohne eine zusätzliche Stunde Ihrer Woche.",
       cta1: "Motor starten →",
       cta2: "Demo buchen ↗",
     },
@@ -252,7 +252,7 @@ export default async function ReputationEnginePage({
     <div className={lp.page}>
       <div className={home.container}>
         <header className={lp.navbar}>
-          <Link href={`/${locale}`} className={lp.logoLink} aria-label="EchoRank 360, home">
+          <Link href={`/${locale}`} className={lp.logoLink} aria-label="Echorank360, home">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/echorank-logo-dark.svg" alt="ECHORANK 360" className={lp.logo} />
           </Link>

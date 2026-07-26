@@ -14,9 +14,9 @@ export function generateStaticParams() {
 type Doc = { title: string; updated: string; intro: string; sections: { h: string; ps: string[]; bullets?: string[] }[] };
 
 const EN: Doc = {
-  title: "EchoRank User Guide",
+  title: "Echorank User Guide",
   updated: "Last updated: July 6, 2026",
-  intro: "By the end of this guide you will have connected your Google Business Profile, imported your review history, launched your first review campaign, set up alerts, and run your first AI visibility audit. The full setup takes under 30 minutes. This guide covers every feature of EchoRank in plain language: what it does, where to find it, and how to get value from it on day one. Feature availability by plan is noted where it applies.",
+  intro: "By the end of this guide you will have connected your Google Business Profile, imported your review history, launched your first review campaign, set up alerts, and run your first AI visibility audit. The full setup takes under 30 minutes. This guide covers every feature of Echorank in plain language: what it does, where to find it, and how to get value from it on day one. Feature availability by plan is noted where it applies.",
   sections: [
     { h: "Your first 30 minutes", ps: [
       "The full setup, in order. When every box is ticked, the platform is watching your reputation around the clock.",
@@ -71,7 +71,7 @@ const EN: Doc = {
       "Two import paths exist. The browser extension imports reviews directly from platforms while you browse them. The CSV importer on the Imports page handles bulk history: upload, map the columns, review the preview, and commit.",
     ]},
     { h: "8. AI response drafting", ps: [
-      "Every review deserves an answer, and drafting them is the part most owners skip. EchoRank drafts a professional reply in your voice: it thanks positive reviewers concretely, acknowledges problems without arguing, and invites unhappy customers to continue offline. You review, edit if needed, and publish. Nothing is ever posted without your approval.",
+      "Every review deserves an answer, and drafting them is the part most owners skip. Echorank drafts a professional reply in your voice: it thanks positive reviewers concretely, acknowledges problems without arguing, and invites unhappy customers to continue offline. You review, edit if needed, and publish. Nothing is ever posted without your approval.",
     ]},
     { h: "9. AI visibility audit (Growth and above)", ps: [
       "When a customer asks ChatGPT, Google AI or Perplexity which business to hire, those systems do not pick at random. They evaluate signals: crawler access, structured data, review freshness, information consistency. The audit measures exactly those signals and tells you what to fix, in order of impact. The audit checks every factor that decides whether AI assistants can see, trust and cite your business: crawler access, machine readability, structure, and trust signals. You get a 0 to 100 score, a grade, and a fix roadmap ordered by impact.",
@@ -117,12 +117,12 @@ const EN: Doc = {
       "Most review platforms let business owners export their own reviews. On Google, request an export of your Google Business Profile data through Google Takeout: select the Google Business Profile product, and the archive you receive includes your reviews. Other platforms offer a CSV or spreadsheet export in their business dashboard, often under settings or reports. If a platform offers no export at all, the browser extension in section 23 is usually the faster path.",
       "Whatever the source, aim for one row per review with columns such as author, rating, date and text. The importer maps your columns, so exact column names do not matter.",
     ]},
-    { h: "22. Upload a review CSV into EchoRank", ps: [
-      "Open the Imports page and upload your file. On the mapping screen, match your columns to EchoRank fields: the importer suggests matches and you correct anything it got wrong. Check the preview, which shows exactly what will be created and flags problem rows. Then commit.",
+    { h: "22. Upload a review CSV into Echorank", ps: [
+      "Open the Imports page and upload your file. On the mapping screen, match your columns to Echorank fields: the importer suggests matches and you correct anything it got wrong. Check the preview, which shows exactly what will be created and flags problem rows. Then commit.",
       "The import runs in the background; large files are processed in batches and you can keep working while it runs. Imported reviews join your monitored feed, are scored for sentiment, and count toward your risk history like any other signal.",
     ]},
     { h: "23. Use the browser extension, in Chrome and in Brave", ps: [
-      "The EchoRank extension imports reviews directly from pages you can already see in your browser. It is built for Chromium browsers, so it works in Google Chrome and in Brave the same way. Install it from the link on the Extension page of your dashboard; the Chrome Web Store works natively in Brave, so click Add and confirm.",
+      "The Echorank extension imports reviews directly from pages you can already see in your browser. It is built for Chromium browsers, so it works in Google Chrome and in Brave the same way. Install it from the link on the Extension page of your dashboard; the Chrome Web Store works natively in Brave, so click Add and confirm.",
       "Connect it once: open the extension, sign in, and it links to your account with a secure token from the Extension page. Then browse to your reviews on a supported source, for example your Google Business listing in Search or Maps, or your public business page on platforms such as Facebook from Meta, and click Import. The extension reads the reviews visible on the page and sends them to your account, where they are deduplicated and scored like any other import.",
       "Import only reviews of your own business or reviews you have the right to process, and respect each platform's terms of use. If a page is not recognized as a supported source, the import stays disabled; the CSV path in sections 21 and 22 is the fallback.",
     ]},
@@ -145,7 +145,7 @@ const EN: Doc = {
       "Treat recurring complaint themes as operations problems, not communications problems: fix the cause, and the reviews follow.",
     ] },
     { h: "Frequently asked questions", ps: [
-      "Can EchoRank respond to reviews automatically? It drafts; you approve. Every reply is generated in your voice, but nothing is published without your explicit approval. That is deliberate: a wrong automated reply costs more than a slow human one.",
+      "Can Echorank respond to reviews automatically? It drafts; you approve. Every reply is generated in your voice, but nothing is published without your explicit approval. That is deliberate: a wrong automated reply costs more than a slow human one.",
       "Can I monitor multiple locations? Yes. Multi location management is a core use case, and agencies on the Agency plan can run separate client workspaces with white label branding.",
       "How often should I run an AI Visibility Audit? On Growth and above, scheduled re-audits run automatically and alert you on score drops and crawler flips. Manually, re-run after any website change. For the full picture of what the audit checks and why, see the AI Visibility Guide.",
       "Do Google reviews affect AI recommendations? Yes, strongly. Review freshness, volume and your replies are among the signals AI assistants weigh. The AI Visibility Guide covers the mechanics in detail.",
@@ -158,9 +158,9 @@ const EN: Doc = {
 };
 
 const FR: Doc = {
-  title: "Guide d'utilisation EchoRank",
+  title: "Guide d'utilisation Echorank",
   updated: "Dernière mise à jour : 6 juillet 2026",
-  intro: "Ce guide couvre chaque fonction d'EchoRank en langage simple : ce qu'elle fait, où la trouver, et comment en tirer de la valeur dès le premier jour. La disponibilité par forfait est indiquée quand elle s'applique.",
+  intro: "Ce guide couvre chaque fonction d'Echorank en langage simple : ce qu'elle fait, où la trouver, et comment en tirer de la valeur dès le premier jour. La disponibilité par forfait est indiquée quand elle s'applique.",
   sections: [
     { h: "Vos 30 premières minutes", ps: [
       "Le parcours complet, dans l'ordre. Quand chaque case est cochée, la plateforme surveille votre réputation en continu.",
@@ -215,7 +215,7 @@ const FR: Doc = {
       "Deux voies d'import existent. L'extension de navigateur importe les avis directement depuis les plateformes pendant que vous les consultez. L'importateur CSV, sur la page Imports, gère l'historique en masse : téléversez, associez les colonnes, vérifiez l'aperçu, puis validez.",
     ]},
     { h: "8. Réponses rédigées par IA", ps: [
-      "Chaque avis mérite une réponse, et c'est l'étape que la plupart des propriétaires sautent. EchoRank rédige une réponse professionnelle dans votre ton : elle remercie concrètement les clients satisfaits, reconnaît les problèmes sans argumenter, et invite les clients mécontents à poursuivre hors ligne. Vous relisez, ajustez au besoin, puis publiez. Rien n'est jamais publié sans votre approbation.",
+      "Chaque avis mérite une réponse, et c'est l'étape que la plupart des propriétaires sautent. Echorank rédige une réponse professionnelle dans votre ton : elle remercie concrètement les clients satisfaits, reconnaît les problèmes sans argumenter, et invite les clients mécontents à poursuivre hors ligne. Vous relisez, ajustez au besoin, puis publiez. Rien n'est jamais publié sans votre approbation.",
     ]},
     { h: "9. Audit de visibilité IA (Croissance et plus)", ps: [
       "L'audit vérifie chaque facteur qui détermine si les assistants d'IA peuvent voir votre entreprise, lui faire confiance et la citer : accès des robots, lisibilité machine, structure et signaux de confiance. Vous obtenez un score sur 100, une note et une feuille de route de correctifs classés par impact.",
@@ -261,12 +261,12 @@ const FR: Doc = {
       "La plupart des plateformes d'avis permettent aux propriétaires d'exporter leurs propres avis. Chez Google, demandez un export de vos données de fiche Google via Google Takeout : sélectionnez le produit Google Business Profile, et l'archive reçue inclut vos avis. D'autres plateformes offrent un export CSV ou tableur dans leur tableau de bord entreprise, souvent sous réglages ou rapports. Si une plateforme n'offre aucun export, l'extension de navigateur de la section 23 est généralement la voie la plus rapide.",
       "Quelle que soit la source, visez une ligne par avis avec des colonnes comme auteur, note, date et texte. L'importateur associe vos colonnes, alors les noms exacts importent peu.",
     ]},
-    { h: "22. Téléversez un CSV d'avis dans EchoRank", ps: [
-      "Ouvrez la page Imports et téléversez votre fichier. Sur l'écran d'association, faites correspondre vos colonnes aux champs EchoRank : l'importateur propose des correspondances et vous corrigez ce qu'il a mal deviné. Vérifiez l'aperçu, qui montre exactement ce qui sera créé et signale les lignes problématiques. Puis validez.",
+    { h: "22. Téléversez un CSV d'avis dans Echorank", ps: [
+      "Ouvrez la page Imports et téléversez votre fichier. Sur l'écran d'association, faites correspondre vos colonnes aux champs Echorank : l'importateur propose des correspondances et vous corrigez ce qu'il a mal deviné. Vérifiez l'aperçu, qui montre exactement ce qui sera créé et signale les lignes problématiques. Puis validez.",
       "L'import tourne en arrière-plan; les gros fichiers sont traités par lots et vous pouvez continuer à travailler pendant ce temps. Les avis importés rejoignent votre fil surveillé, sont notés en sentiment et comptent dans votre historique de risque comme tout autre signal.",
     ]},
     { h: "23. Utilisez l'extension de navigateur, dans Chrome et dans Brave", ps: [
-      "L'extension EchoRank importe les avis directement depuis les pages que vous voyez déjà dans votre navigateur. Elle est conçue pour les navigateurs Chromium, donc elle fonctionne de la même façon dans Google Chrome et dans Brave. Installez-la depuis le lien de la page Extension de votre tableau de bord; le Chrome Web Store fonctionne nativement dans Brave, cliquez Ajouter et confirmez.",
+      "L'extension Echorank importe les avis directement depuis les pages que vous voyez déjà dans votre navigateur. Elle est conçue pour les navigateurs Chromium, donc elle fonctionne de la même façon dans Google Chrome et dans Brave. Installez-la depuis le lien de la page Extension de votre tableau de bord; le Chrome Web Store fonctionne nativement dans Brave, cliquez Ajouter et confirmez.",
       "Connectez-la une seule fois : ouvrez l'extension, connectez-vous, et elle se lie à votre compte avec un jeton sécurisé depuis la page Extension. Naviguez ensuite vers vos avis sur une source prise en charge, par exemple votre fiche Google dans la recherche ou dans Maps, ou votre page d'entreprise publique sur des plateformes comme Facebook de Meta, puis cliquez Importer. L'extension lit les avis visibles sur la page et les envoie vers votre compte, où ils sont dédupliqués et notés comme tout autre import.",
       "N'importez que les avis de votre propre entreprise ou ceux que vous avez le droit de traiter, et respectez les conditions d'utilisation de chaque plateforme. Si une page n'est pas reconnue comme source prise en charge, l'import reste désactivé; la voie CSV des sections 21 et 22 est la solution de repli.",
     ]},
@@ -289,7 +289,7 @@ const FR: Doc = {
       "Traitez les thèmes de plaintes récurrents comme des problèmes d'exploitation, pas de communication : corrigez la cause, et les avis suivront.",
     ] },
     { h: "Foire aux questions", ps: [
-      "EchoRank peut-il répondre automatiquement aux avis? Il rédige; vous approuvez. Chaque réponse est générée dans votre ton, mais rien n'est publié sans votre approbation explicite. C'est voulu : une mauvaise réponse automatique coûte plus cher qu'une réponse humaine lente.",
+      "Echorank peut-il répondre automatiquement aux avis? Il rédige; vous approuvez. Chaque réponse est générée dans votre ton, mais rien n'est publié sans votre approbation explicite. C'est voulu : une mauvaise réponse automatique coûte plus cher qu'une réponse humaine lente.",
       "Puis-je surveiller plusieurs établissements? Oui. La gestion multi-établissements est un cas d'usage central, et les agences du forfait Agency peuvent gérer des espaces clients distincts en marque blanche.",
       "À quelle fréquence lancer un audit de visibilité IA? À partir de Growth, les ré-audits planifiés s'exécutent automatiquement et vous alertent en cas de baisse de score ou de bascule d'accès des robots. Manuellement, relancez après tout changement de site. Pour le détail des vérifications, consultez le Guide de visibilité IA.",
       "Les avis Google influencent-ils les recommandations des IA? Oui, fortement. La fraîcheur des avis, leur volume et vos réponses comptent parmi les signaux que pèsent les assistants IA. Le Guide de visibilité IA en couvre les mécanismes en détail.",
@@ -302,9 +302,9 @@ const FR: Doc = {
 };
 
 const DE: Doc = {
-  title: "EchoRank Benutzerhandbuch",
+  title: "Echorank Benutzerhandbuch",
   updated: "Zuletzt aktualisiert: 6. Juli 2026",
-  intro: "Dieses Handbuch erklärt jede Funktion von EchoRank in einfacher Sprache: was sie tut, wo sie zu finden ist und wie sie ab dem ersten Tag Nutzen bringt. Die Verfügbarkeit nach Plan ist angegeben, wo sie gilt.",
+  intro: "Dieses Handbuch erklärt jede Funktion von Echorank in einfacher Sprache: was sie tut, wo sie zu finden ist und wie sie ab dem ersten Tag Nutzen bringt. Die Verfügbarkeit nach Plan ist angegeben, wo sie gilt.",
   sections: [
     { h: "Ihre ersten 30 Minuten", ps: [
       "Der komplette Einstieg, in der richtigen Reihenfolge. Sind alle Punkte abgehakt, überwacht die Plattform Ihre Reputation rund um die Uhr.",
@@ -359,7 +359,7 @@ const DE: Doc = {
       "Zwei Importwege: Die Browser Erweiterung importiert Bewertungen direkt von den Plattformen, während Sie sie ansehen. Der CSV Importer auf der Importseite übernimmt Masse und Historie: hochladen, Spalten zuordnen, Vorschau prüfen, bestätigen.",
     ]},
     { h: "8. KI Antwortentwürfe", ps: [
-      "Jede Bewertung verdient eine Antwort, und genau das überspringen die meisten Inhaber. EchoRank entwirft eine professionelle Antwort in Ihrem Ton: konkreter Dank an zufriedene Kunden, Anerkennung von Problemen ohne Streit, Einladung an Unzufriedene, offline weiterzusprechen. Sie prüfen, passen bei Bedarf an und veröffentlichen. Nichts erscheint ohne Ihre Freigabe.",
+      "Jede Bewertung verdient eine Antwort, und genau das überspringen die meisten Inhaber. Echorank entwirft eine professionelle Antwort in Ihrem Ton: konkreter Dank an zufriedene Kunden, Anerkennung von Problemen ohne Streit, Einladung an Unzufriedene, offline weiterzusprechen. Sie prüfen, passen bei Bedarf an und veröffentlichen. Nichts erscheint ohne Ihre Freigabe.",
     ]},
     { h: "9. KI Sichtbarkeits Audit (ab Wachstum)", ps: [
       "Der Audit prüft jeden Faktor, der entscheidet, ob KI Assistenten Ihr Unternehmen sehen, ihm vertrauen und es zitieren: Crawler Zugriff, Maschinenlesbarkeit, Struktur und Vertrauenssignale. Sie erhalten einen Score von 0 bis 100, eine Note und einen nach Wirkung geordneten Fahrplan.",
@@ -405,12 +405,12 @@ const DE: Doc = {
       "Die meisten Bewertungsplattformen erlauben Inhabern den Export der eigenen Bewertungen. Bei Google fordern Sie einen Export Ihrer Unternehmensprofil Daten über Google Takeout an: wählen Sie das Produkt Google Business Profile, und das erhaltene Archiv enthält Ihre Bewertungen. Andere Plattformen bieten einen CSV oder Tabellen Export im Unternehmens Dashboard, oft unter Einstellungen oder Berichte. Bietet eine Plattform gar keinen Export, ist die Browser Erweiterung aus Abschnitt 23 meist der schnellere Weg.",
       "Unabhängig von der Quelle: eine Zeile pro Bewertung mit Spalten wie Autor, Note, Datum und Text. Der Importer ordnet Ihre Spalten zu, exakte Spaltennamen sind unwichtig.",
     ]},
-    { h: "22. Ein Bewertungs CSV in EchoRank hochladen", ps: [
-      "Öffnen Sie die Importseite und laden Sie Ihre Datei hoch. Auf dem Zuordnungsbildschirm verbinden Sie Ihre Spalten mit den EchoRank Feldern: der Importer schlägt Zuordnungen vor, Sie korrigieren, was er falsch geraten hat. Prüfen Sie die Vorschau, die genau zeigt, was angelegt wird, und Problemzeilen markiert. Dann bestätigen.",
+    { h: "22. Ein Bewertungs CSV in Echorank hochladen", ps: [
+      "Öffnen Sie die Importseite und laden Sie Ihre Datei hoch. Auf dem Zuordnungsbildschirm verbinden Sie Ihre Spalten mit den Echorank Feldern: der Importer schlägt Zuordnungen vor, Sie korrigieren, was er falsch geraten hat. Prüfen Sie die Vorschau, die genau zeigt, was angelegt wird, und Problemzeilen markiert. Dann bestätigen.",
       "Der Import läuft im Hintergrund; grosse Dateien werden in Stapeln verarbeitet, und Sie können währenddessen weiterarbeiten. Importierte Bewertungen erscheinen im überwachten Feed, werden nach Stimmung bewertet und zählen zum Risikoverlauf wie jedes andere Signal.",
     ]},
     { h: "23. Die Browser Erweiterung nutzen, in Chrome und in Brave", ps: [
-      "Die EchoRank Erweiterung importiert Bewertungen direkt von Seiten, die Sie bereits im Browser sehen. Sie ist für Chromium Browser gebaut und funktioniert in Google Chrome und in Brave gleich. Installieren Sie sie über den Link auf der Erweiterungsseite Ihres Dashboards; der Chrome Web Store funktioniert in Brave nativ, also Hinzufügen klicken und bestätigen.",
+      "Die Echorank Erweiterung importiert Bewertungen direkt von Seiten, die Sie bereits im Browser sehen. Sie ist für Chromium Browser gebaut und funktioniert in Google Chrome und in Brave gleich. Installieren Sie sie über den Link auf der Erweiterungsseite Ihres Dashboards; der Chrome Web Store funktioniert in Brave nativ, also Hinzufügen klicken und bestätigen.",
       "Einmal verbinden: Erweiterung öffnen, anmelden, und sie koppelt sich mit einem sicheren Token von der Erweiterungsseite an Ihr Konto. Dann zu Ihren Bewertungen auf einer unterstützten Quelle navigieren, zum Beispiel Ihrem Google Eintrag in der Suche oder in Maps, oder Ihrer öffentlichen Unternehmensseite auf Plattformen wie Facebook von Meta, und Importieren klicken. Die Erweiterung liest die sichtbaren Bewertungen und sendet sie an Ihr Konto, wo sie dedupliziert und wie jeder andere Import bewertet werden.",
       "Importieren Sie nur Bewertungen Ihres eigenen Unternehmens oder solche, die Sie verarbeiten dürfen, und respektieren Sie die Nutzungsbedingungen jeder Plattform. Wird eine Seite nicht als unterstützte Quelle erkannt, bleibt der Import deaktiviert; der CSV Weg aus den Abschnitten 21 und 22 ist die Rückfalloption.",
     ]},
@@ -433,7 +433,7 @@ const DE: Doc = {
       "Behandeln Sie wiederkehrende Beschwerdethemen als Betriebsprobleme, nicht als Kommunikationsprobleme: Beheben Sie die Ursache, die Bewertungen folgen.",
     ] },
     { h: "Häufige Fragen", ps: [
-      "Kann EchoRank automatisch auf Bewertungen antworten? Es entwirft; Sie geben frei. Jede Antwort wird in Ihrem Ton erstellt, aber nichts wird ohne Ihre ausdrückliche Freigabe veröffentlicht. Das ist Absicht: Eine falsche automatische Antwort kostet mehr als eine langsame menschliche.",
+      "Kann Echorank automatisch auf Bewertungen antworten? Es entwirft; Sie geben frei. Jede Antwort wird in Ihrem Ton erstellt, aber nichts wird ohne Ihre ausdrückliche Freigabe veröffentlicht. Das ist Absicht: Eine falsche automatische Antwort kostet mehr als eine langsame menschliche.",
       "Kann ich mehrere Standorte überwachen? Ja. Multi-Standort-Verwaltung ist ein Kernanwendungsfall, und Agenturen im Agency-Plan führen getrennte Kunden-Arbeitsbereiche mit White-Label-Branding.",
       "Wie oft sollte ich einen KI-Sichtbarkeits-Audit ausführen? Ab Growth laufen geplante Re-Audits automatisch und melden Score-Einbrüche und Crawler-Zugriffswechsel. Manuell: nach jeder Website-Änderung. Die vollständige Methodik steht im KI-Sichtbarkeits-Guide.",
       "Beeinflussen Google-Bewertungen KI-Empfehlungen? Ja, stark. Frische, Volumen und Ihre Antworten gehören zu den Signalen, die KI-Assistenten gewichten. Der KI-Sichtbarkeits-Guide erklärt die Mechanik im Detail.",
@@ -476,7 +476,7 @@ export default async function GuidePage({ params }: { params: Promise<{ locale: 
     <div className={lp.page}>
       <div className={lp.wrap}>
         <div className={lp.top}>
-          <Link href={`/${locale}`} aria-label="EchoRank 360, home">
+          <Link href={`/${locale}`} aria-label="Echorank360, home">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/echorank-logo-dark.svg" alt="ECHORANK 360" className={lp.logo} />
           </Link>

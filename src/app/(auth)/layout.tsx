@@ -30,7 +30,7 @@ export default async function AuthLayout({
       </div>
 
       <p className="mt-8 text-center text-xs text-zinc-500">
-        &copy; {new Date().getFullYear()} EchoRank. {c.rights}
+        &copy; {new Date().getFullYear()} Echorank. {c.rights}
       </p>
       <p className="mt-2 text-center text-[11px] tracking-wide text-zinc-600">
         {foot.links.map((l) => (

@@ -51,7 +51,7 @@ function registerEventConsumers(): void {
 }
 
 async function startWorkers() {
-  console.log("[Workers] Starting EchoRank worker processes...");
+  console.log("[Workers] Starting Echorank worker processes...");
 
   // Start OpenTelemetry so worker spans (withSpan) are exported too.
   initTelemetry();

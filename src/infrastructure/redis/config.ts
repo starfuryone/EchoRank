@@ -1,5 +1,5 @@
 /**
- * Redis configuration constants for the EchoRank platform.
+ * Redis configuration constants for the Echorank platform.
  */
 
 export const REDIS_CONFIG = {

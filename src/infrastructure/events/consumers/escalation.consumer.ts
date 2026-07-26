@@ -121,7 +121,7 @@ function buildNotificationBody(params: {
       </div>
       <div style="padding: 20px; border: 1px solid #e5e7eb; border-top: none; border-radius: 0 0 8px 8px;">
         <p>Hi ${ownerName},</p>
-        <p>An escalation has been detected in your EchoRank account that requires your attention.</p>
+        <p>An escalation has been detected in your Echorank account that requires your attention.</p>
         <div style="background-color: #f9fafb; padding: 16px; border-radius: 6px; margin: 16px 0;">
           <p style="margin: 0 0 8px 0;"><strong>Risk Level:</strong> ${riskLevel}</p>
           <p style="margin: 0 0 8px 0;"><strong>Probability:</strong> ${(probability * 100).toFixed(1)}%</p>
@@ -131,7 +131,7 @@ function buildNotificationBody(params: {
         <div style="background-color: #eff6ff; padding: 16px; border-radius: 6px; margin: 16px 0;">
           <p style="margin: 0;"><strong>Suggested Action:</strong> ${suggestedAction}</p>
         </div>
-        <p style="color: #6b7280; font-size: 12px;">This is an automated alert from EchoRank. Please do not reply to this email.</p>
+        <p style="color: #6b7280; font-size: 12px;">This is an automated alert from Echorank. Please do not reply to this email.</p>
       </div>
     </div>
   `.trim();

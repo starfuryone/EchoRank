@@ -163,7 +163,7 @@ export const dashChrome: Record<
 const extensionEn = {
   title: "Browser Extension",
   subtitle:
-    "Import reviews from Google, Facebook, and Trustpilot pages directly into EchoRank.",
+    "Import reviews from Google, Facebook, and Trustpilot pages directly into Echorank.",
   loadFailed: "Failed to load tokens",
   createFailed: "Failed to create token",
   actionFailed: "Action failed",
@@ -201,7 +201,7 @@ export const EXTENSION_COPY: Record<DashLocale, ExtensionCopy> = {
   fr: {
     title: "Extension de navigateur",
     subtitle:
-      "Importez des avis depuis les pages Google, Facebook et Trustpilot directement dans EchoRank.",
+      "Importez des avis depuis les pages Google, Facebook et Trustpilot directement dans Echorank.",
     loadFailed: "Échec du chargement des jetons",
     createFailed: "Échec de la création du jeton",
     actionFailed: "Échec de l'action",
@@ -235,7 +235,7 @@ export const EXTENSION_COPY: Record<DashLocale, ExtensionCopy> = {
   "de-CH": {
     title: "Browser-Erweiterung",
     subtitle:
-      "Importieren Sie Bewertungen von Google-, Facebook- und Trustpilot-Seiten direkt in EchoRank.",
+      "Importieren Sie Bewertungen von Google-, Facebook- und Trustpilot-Seiten direkt in Echorank.",
     loadFailed: "Tokens konnten nicht geladen werden",
     createFailed: "Token konnte nicht erstellt werden",
     actionFailed: "Aktion fehlgeschlagen",
@@ -1256,15 +1256,15 @@ export const DASHBOARD_COPY: Record<DashLocale, DashboardCopy> = {
 
 // ─── GettingStarted (shared onboarding component) ───────────────────────────
 const gettingStartedEn = {
-  welcomeTitle: "Welcome to EchoRank 360",
+  welcomeTitle: "Welcome to Echorank360",
   welcomeP1:
-    "EchoRank helps you collect customer feedback, turn happy customers into public reviews, and catch unhappy ones before they post — plus see how visible your business is to AI answer engines.",
+    "Echorank helps you collect customer feedback, turn happy customers into public reviews, and catch unhappy ones before they post — plus see how visible your business is to AI answer engines.",
   welcomeStartStrong: "Start here:",
   welcomeStartRest:
     " add a customer, then send your first feedback request. The checklist on your dashboard walks you through the rest — it checks itself off as you go.",
   exploreButton: "Explore on my own",
   addFirstCustomer: "Add my first customer",
-  cardTitle: "Get started with EchoRank",
+  cardTitle: "Get started with Echorank",
   progress: (done: number, total: number) =>
     `${done} of ${total} done — finish setup to start collecting reviews.`,
   dismissAria: "Dismiss getting started",
@@ -1275,30 +1275,30 @@ export type GettingStartedCopy = typeof gettingStartedEn;
 export const GETTING_STARTED_COPY: Record<DashLocale, GettingStartedCopy> = {
   en: gettingStartedEn,
   fr: {
-    welcomeTitle: "Bienvenue dans EchoRank 360",
+    welcomeTitle: "Bienvenue dans Echorank360",
     welcomeP1:
-      "EchoRank vous aide à recueillir la rétroaction de vos clients, à transformer les clients satisfaits en avis publics et à intercepter les clients insatisfaits avant qu'ils publient — en plus de voir la visibilité de votre entreprise auprès des moteurs de réponse IA.",
+      "Echorank vous aide à recueillir la rétroaction de vos clients, à transformer les clients satisfaits en avis publics et à intercepter les clients insatisfaits avant qu'ils publient — en plus de voir la visibilité de votre entreprise auprès des moteurs de réponse IA.",
     welcomeStartStrong: "Commencez ici :",
     welcomeStartRest:
       " ajoutez un client, puis envoyez votre première demande de rétroaction. La liste de vérification de votre tableau de bord vous guide pour la suite — elle se coche au fur et à mesure.",
     exploreButton: "Explorer par moi-même",
     addFirstCustomer: "Ajouter mon premier client",
-    cardTitle: "Premiers pas avec EchoRank",
+    cardTitle: "Premiers pas avec Echorank",
     progress: (done: number, total: number) =>
       `${done} sur ${total} terminées — terminez la configuration pour commencer à recueillir des avis.`,
     dismissAria: "Masquer les premiers pas",
     optional: "(facultatif)",
   },
   "de-CH": {
-    welcomeTitle: "Willkommen bei EchoRank 360",
+    welcomeTitle: "Willkommen bei Echorank360",
     welcomeP1:
-      "EchoRank hilft Ihnen, Kundenfeedback zu sammeln, zufriedene Kunden in öffentliche Bewertungen zu verwandeln und unzufriedene abzufangen, bevor sie etwas veröffentlichen — und zu sehen, wie sichtbar Ihr Unternehmen für KI-Antwortmaschinen ist.",
+      "Echorank hilft Ihnen, Kundenfeedback zu sammeln, zufriedene Kunden in öffentliche Bewertungen zu verwandeln und unzufriedene abzufangen, bevor sie etwas veröffentlichen — und zu sehen, wie sichtbar Ihr Unternehmen für KI-Antwortmaschinen ist.",
     welcomeStartStrong: "Starten Sie hier:",
     welcomeStartRest:
       " Fügen Sie einen Kunden hinzu und senden Sie dann Ihre erste Feedback-Anfrage. Die Checkliste auf Ihrem Dashboard führt Sie durch den Rest — sie hakt sich von selbst ab.",
     exploreButton: "Selbst erkunden",
     addFirstCustomer: "Meinen ersten Kunden hinzufügen",
-    cardTitle: "Erste Schritte mit EchoRank",
+    cardTitle: "Erste Schritte mit Echorank",
     progress: (done: number, total: number) =>
       `${done} von ${total} erledigt — schliessen Sie die Einrichtung ab, um Bewertungen zu sammeln.`,
     dismissAria: "Erste Schritte ausblenden",
@@ -1311,18 +1311,18 @@ const extensionHelpEn = {
   label: "How to use it",
   modalTitle: "How to import your reviews",
   intro:
-    "The Review Importer is a small add-on for your browser. When you're looking at your reviews on Google, Facebook, or Trustpilot, it copies them into EchoRank with one click. You don't type anything in — it does the work for you.",
+    "The Review Importer is a small add-on for your browser. When you're looking at your reviews on Google, Facebook, or Trustpilot, it copies them into Echorank with one click. You don't type anything in — it does the work for you.",
   setupHeading: "First-time setup (you only do this once)",
   step1Title: "Install the importer",
   step1Body:
-    "Add it to Microsoft Edge, Brave, Opera, or Vivaldi. You'll then see a small EchoRank button near the top-right of your browser, by the address bar. If it's hidden, click the puzzle-piece icon up there and pin it.",
+    "Add it to Microsoft Edge, Brave, Opera, or Vivaldi. You'll then see a small Echorank button near the top-right of your browser, by the address bar. If it's hidden, click the puzzle-piece icon up there and pin it.",
   step2Title: "Create your connection key",
   step2a:
     "On this Extension page, give a key a name you'll recognise (like “My laptop”) and create it. A code starting with ",
   step2b:
     " appears. Copy it right away — for your security it's shown only once. Lost it? Just make a new one.",
   step3Title: "Paste the key into the importer",
-  step3a: "Click the EchoRank button in your browser, then ",
+  step3a: "Click the Echorank button in your browser, then ",
   step3strongSettings: "Settings",
   step3b: ". Paste your key, leave the web address as it is, and click ",
   step3strongSave: "Save",
@@ -1335,7 +1335,7 @@ const extensionHelpEn = {
   step4b:
     ", search your business by name, and click it so the full listing with reviews opens.",
   step5Title: "Click Scan & Import Reviews",
-  step5a: "Open the EchoRank button again. On the right kind of page, the ",
+  step5a: "Open the Echorank button again. On the right kind of page, the ",
   step5strong: "Scan & Import Reviews",
   step5b:
     " button comes to life — click it. The Found / Imported counters will move, and you're done.",
@@ -1352,7 +1352,7 @@ const extensionHelpEn = {
   light2Text:
     " — you're not on a review page it recognises yet. A regular search results page won't work, even if it shows reviews. Go to your business's actual page and this turns green.",
   reassurance:
-    "Your login is safe — the importer never sees your Google, Facebook, or Trustpilot password. It only reads the reviews already shown on the page, and sends them to your own EchoRank account. Scanning the same page again later brings in new reviews and skips ones you already have.",
+    "Your login is safe — the importer never sees your Google, Facebook, or Trustpilot password. It only reads the reviews already shown on the page, and sends them to your own Echorank account. Scanning the same page again later brings in new reviews and skips ones you already have.",
   gotIt: "Got it",
 };
 export type ExtensionHelpCopy = typeof extensionHelpEn;
@@ -1363,18 +1363,18 @@ export const EXTENSION_HELP_COPY: Record<DashLocale, ExtensionHelpCopy> = {
     label: "Comment l'utiliser",
     modalTitle: "Comment importer vos avis",
     intro:
-      "L'importateur d'avis est un petit module complémentaire pour votre navigateur. Quand vous consultez vos avis sur Google, Facebook ou Trustpilot, il les copie dans EchoRank en un clic. Vous n'avez rien à saisir — il fait le travail pour vous.",
+      "L'importateur d'avis est un petit module complémentaire pour votre navigateur. Quand vous consultez vos avis sur Google, Facebook ou Trustpilot, il les copie dans Echorank en un clic. Vous n'avez rien à saisir — il fait le travail pour vous.",
     setupHeading: "Configuration initiale (à faire une seule fois)",
     step1Title: "Installer l'importateur",
     step1Body:
-      "Ajoutez-le à Microsoft Edge, Brave, Opera ou Vivaldi. Vous verrez ensuite un petit bouton EchoRank en haut à droite de votre navigateur, près de la barre d'adresse. S'il est masqué, cliquez sur l'icône de pièce de casse-tête et épinglez-le.",
+      "Ajoutez-le à Microsoft Edge, Brave, Opera ou Vivaldi. Vous verrez ensuite un petit bouton Echorank en haut à droite de votre navigateur, près de la barre d'adresse. S'il est masqué, cliquez sur l'icône de pièce de casse-tête et épinglez-le.",
     step2Title: "Créer votre clé de connexion",
     step2a:
       "Sur cette page Extension, donnez à une clé un nom que vous reconnaîtrez (comme Mon portable) et créez-la. Un code commençant par ",
     step2b:
       " apparaît. Copiez-le tout de suite — pour votre sécurité, il n'est affiché qu'une seule fois. Vous l'avez perdue? Créez-en simplement une nouvelle.",
     step3Title: "Coller la clé dans l'importateur",
-    step3a: "Cliquez sur le bouton EchoRank dans votre navigateur, puis sur ",
+    step3a: "Cliquez sur le bouton Echorank dans votre navigateur, puis sur ",
     step3strongSettings: "Paramètres",
     step3b:
       ". Collez votre clé, laissez l'adresse Web telle quelle, puis cliquez sur ",
@@ -1390,7 +1390,7 @@ export const EXTENSION_HELP_COPY: Record<DashLocale, ExtensionHelpCopy> = {
       ", recherchez votre entreprise par son nom et cliquez dessus pour ouvrir la fiche complète avec les avis.",
     step5Title: "Cliquer sur Scan & Import Reviews",
     step5a:
-      "Ouvrez de nouveau le bouton EchoRank. Sur le bon type de page, le bouton ",
+      "Ouvrez de nouveau le bouton Echorank. Sur le bon type de page, le bouton ",
     step5strong: "Scan & Import Reviews",
     step5b:
       " s'active — cliquez dessus. Les compteurs Found / Imported avanceront, et c'est terminé.",
@@ -1408,18 +1408,18 @@ export const EXTENSION_HELP_COPY: Record<DashLocale, ExtensionHelpCopy> = {
     light2Text:
       " — vous n'êtes pas encore sur une page d'avis reconnue. Une page de résultats de recherche ne fonctionnera pas, même si elle affiche des avis. Allez sur la vraie page de votre entreprise et ce voyant deviendra vert.",
     reassurance:
-      "Vos identifiants sont en sécurité — l'importateur ne voit jamais votre mot de passe Google, Facebook ou Trustpilot. Il lit seulement les avis déjà affichés sur la page et les envoie dans votre propre compte EchoRank. Scanner la même page plus tard importe les nouveaux avis et ignore ceux que vous avez déjà.",
+      "Vos identifiants sont en sécurité — l'importateur ne voit jamais votre mot de passe Google, Facebook ou Trustpilot. Il lit seulement les avis déjà affichés sur la page et les envoie dans votre propre compte Echorank. Scanner la même page plus tard importe les nouveaux avis et ignore ceux que vous avez déjà.",
     gotIt: "Compris",
   },
   "de-CH": {
     label: "So funktioniert es",
     modalTitle: "So importieren Sie Ihre Bewertungen",
     intro:
-      "Der Review Importer ist ein kleines Add-on für Ihren Browser. Wenn Sie Ihre Bewertungen auf Google, Facebook oder Trustpilot ansehen, kopiert er sie mit einem Klick in EchoRank. Sie müssen nichts eintippen — er erledigt die Arbeit für Sie.",
+      "Der Review Importer ist ein kleines Add-on für Ihren Browser. Wenn Sie Ihre Bewertungen auf Google, Facebook oder Trustpilot ansehen, kopiert er sie mit einem Klick in Echorank. Sie müssen nichts eintippen — er erledigt die Arbeit für Sie.",
     setupHeading: "Erstmalige Einrichtung (nur einmal nötig)",
     step1Title: "Importer installieren",
     step1Body:
-      "Fügen Sie ihn zu Microsoft Edge, Brave, Opera oder Vivaldi hinzu. Danach sehen Sie oben rechts in Ihrem Browser, neben der Adressleiste, eine kleine EchoRank-Schaltfläche. Ist sie ausgeblendet, klicken Sie dort auf das Puzzleteil-Symbol und heften Sie sie an.",
+      "Fügen Sie ihn zu Microsoft Edge, Brave, Opera oder Vivaldi hinzu. Danach sehen Sie oben rechts in Ihrem Browser, neben der Adressleiste, eine kleine Echorank-Schaltfläche. Ist sie ausgeblendet, klicken Sie dort auf das Puzzleteil-Symbol und heften Sie sie an.",
     step2Title: "Ihren Verbindungsschlüssel erstellen",
     step2a:
       "Geben Sie auf dieser Erweiterungsseite einem Schlüssel einen Namen, den Sie wiedererkennen (z. B. «Mein Laptop»), und erstellen Sie ihn. Ein Code, der mit ",
@@ -1427,7 +1427,7 @@ export const EXTENSION_HELP_COPY: Record<DashLocale, ExtensionHelpCopy> = {
       " beginnt, wird angezeigt. Kopieren Sie ihn sofort — aus Sicherheitsgründen wird er nur einmal angezeigt. Verloren? Erstellen Sie einfach einen neuen.",
     step3Title: "Schlüssel in den Importer einfügen",
     step3a:
-      "Klicken Sie auf die EchoRank-Schaltfläche in Ihrem Browser und dann auf ",
+      "Klicken Sie auf die Echorank-Schaltfläche in Ihrem Browser und dann auf ",
     step3strongSettings: "Einstellungen",
     step3b:
       ". Fügen Sie Ihren Schlüssel ein, lassen Sie die Webadresse unverändert und klicken Sie auf ",
@@ -1443,7 +1443,7 @@ export const EXTENSION_HELP_COPY: Record<DashLocale, ExtensionHelpCopy> = {
       ", suchen Sie Ihr Unternehmen nach Namen und klicken Sie darauf, damit der vollständige Eintrag mit den Bewertungen erscheint.",
     step5Title: "Auf Scan & Import Reviews klicken",
     step5a:
-      "Öffnen Sie die EchoRank-Schaltfläche erneut. Auf der richtigen Seite wird die Schaltfläche ",
+      "Öffnen Sie die Echorank-Schaltfläche erneut. Auf der richtigen Seite wird die Schaltfläche ",
     step5strong: "Scan & Import Reviews",
     step5b:
       " aktiv — klicken Sie darauf. Die Zähler Found / Imported bewegen sich, und Sie sind fertig.",
@@ -1462,7 +1462,7 @@ export const EXTENSION_HELP_COPY: Record<DashLocale, ExtensionHelpCopy> = {
     light2Text:
       " — Sie befinden sich noch nicht auf einer erkannten Bewertungsseite. Eine normale Suchergebnisseite funktioniert nicht, auch wenn sie Bewertungen anzeigt. Gehen Sie auf die eigentliche Seite Ihres Unternehmens, dann wird diese Anzeige grün.",
     reassurance:
-      "Ihre Anmeldedaten sind sicher — der Importer sieht Ihr Google-, Facebook- oder Trustpilot-Passwort nie. Er liest nur die Bewertungen, die bereits auf der Seite angezeigt werden, und sendet sie an Ihr eigenes EchoRank-Konto. Wenn Sie dieselbe Seite später erneut scannen, werden neue Bewertungen importiert und bereits vorhandene übersprungen.",
+      "Ihre Anmeldedaten sind sicher — der Importer sieht Ihr Google-, Facebook- oder Trustpilot-Passwort nie. Er liest nur die Bewertungen, die bereits auf der Seite angezeigt werden, und sendet sie an Ihr eigenes Echorank-Konto. Wenn Sie dieselbe Seite später erneut scannen, werden neue Bewertungen importiert und bereits vorhandene übersprungen.",
     gotIt: "Verstanden",
   },
 };
@@ -3433,7 +3433,7 @@ const settingsEn = {
   whitelabelTitle: "White-label",
   agencyRequired: "Agency Plan Required",
   customDomainLabel: "Custom Domain",
-  whitelabelCheckbox: "Enable white-label branding (removes EchoRank branding)",
+  whitelabelCheckbox: "Enable white-label branding (removes Echorank branding)",
   helpModal: {
     title: "Settings help",
     businessBody:
@@ -3445,7 +3445,7 @@ const settingsEn = {
     localizationBody:
       "Timezone affects when scheduled requests are sent and how times are displayed. Default language sets the language of customer-facing emails and pages for new requests.",
     whitelabelBody:
-      "On the Agency plan you can serve feedback pages from your own custom domain and remove EchoRank branding. These options are disabled on other plans.",
+      "On the Agency plan you can serve feedback pages from your own custom domain and remove Echorank branding. These options are disabled on other plans.",
     gotIt: "Got it",
   },
 };
@@ -3509,7 +3509,7 @@ export const SETTINGS_COPY: Record<DashLocale, SettingsCopy> = {
     agencyRequired: "Forfait Agency requis",
     customDomainLabel: "Domaine personnalisé",
     whitelabelCheckbox:
-      "Activer la marque blanche (retire l'image de marque EchoRank)",
+      "Activer la marque blanche (retire l'image de marque Echorank)",
     helpModal: {
       title: "Aide sur les paramètres",
       businessBody:
@@ -3521,7 +3521,7 @@ export const SETTINGS_COPY: Record<DashLocale, SettingsCopy> = {
       localizationBody:
         "Le fuseau horaire détermine le moment de l'envoi des demandes planifiées et l'affichage des heures. La langue par défaut définit la langue des courriels et des pages destinés aux clients pour les nouvelles demandes.",
       whitelabelBody:
-        "Avec le forfait Agency, vous pouvez servir les pages de rétroaction depuis votre propre domaine personnalisé et retirer l'image de marque EchoRank. Ces options sont désactivées avec les autres forfaits.",
+        "Avec le forfait Agency, vous pouvez servir les pages de rétroaction depuis votre propre domaine personnalisé et retirer l'image de marque Echorank. Ces options sont désactivées avec les autres forfaits.",
       gotIt: "Compris",
     },
   },
@@ -3581,7 +3581,7 @@ export const SETTINGS_COPY: Record<DashLocale, SettingsCopy> = {
     agencyRequired: "Agency-Plan erforderlich",
     customDomainLabel: "Eigene Domain",
     whitelabelCheckbox:
-      "White-Label-Branding aktivieren (entfernt das EchoRank-Branding)",
+      "White-Label-Branding aktivieren (entfernt das Echorank-Branding)",
     helpModal: {
       title: "Hilfe zu den Einstellungen",
       businessBody:
@@ -3593,7 +3593,7 @@ export const SETTINGS_COPY: Record<DashLocale, SettingsCopy> = {
       localizationBody:
         "Die Zeitzone beeinflusst, wann geplante Anfragen gesendet werden und wie Zeiten angezeigt werden. Die Standardsprache legt die Sprache der kundenseitigen E-Mails und Seiten für neue Anfragen fest.",
       whitelabelBody:
-        "Mit dem Agency-Plan können Sie Feedback-Seiten über Ihre eigene Domain bereitstellen und das EchoRank-Branding entfernen. Bei anderen Plänen sind diese Optionen deaktiviert.",
+        "Mit dem Agency-Plan können Sie Feedback-Seiten über Ihre eigene Domain bereitstellen und das Echorank-Branding entfernen. Bei anderen Plänen sind diese Optionen deaktiviert.",
       gotIt: "Verstanden",
     },
   },
@@ -4226,7 +4226,7 @@ const monitorCardEn = {
     "Weekly re-audits with instant alerts when your score drops or an AI crawler gets blocked. Part of the Growth plan and up.",
   upgrade: "Upgrade",
   empty:
-    "No sites monitored yet. Run an audit, then add the site here — EchoRank will re-audit it on schedule and email you if the score drops or a crawler gets blocked.",
+    "No sites monitored yet. Run an audit, then add the site here — Echorank will re-audit it on schedule and email you if the score drops or a crawler gets blocked.",
   lastScore: (score: number, grade: string) => `last score ${score} (${grade})`,
   nextRun: (date: string) => `next run ${date}`,
   sparklineHint: "history builds after 2 runs",
@@ -4255,7 +4255,7 @@ export const MONITOR_CARD_COPY: Record<DashLocale, MonitorCardCopy> = {
       "Réaudits hebdomadaires avec alertes instantanées lorsque votre score baisse ou qu'un robot d'IA est bloqué. Inclus dans le forfait Growth et les forfaits supérieurs.",
     upgrade: "Passer au forfait supérieur",
     empty:
-      "Aucun site surveillé pour l'instant. Lancez un audit, puis ajoutez le site ici — EchoRank le réauditera selon l'horaire et vous enverra un courriel si le score baisse ou si un robot d'exploration est bloqué.",
+      "Aucun site surveillé pour l'instant. Lancez un audit, puis ajoutez le site ici — Echorank le réauditera selon l'horaire et vous enverra un courriel si le score baisse ou si un robot d'exploration est bloqué.",
     lastScore: (score: number, grade: string) => `dernier score ${score} (${grade})`,
     nextRun: (date: string) => `prochaine exécution ${date}`,
     sparklineHint: "l'historique apparaît après 2 exécutions",
@@ -4280,7 +4280,7 @@ export const MONITOR_CARD_COPY: Record<DashLocale, MonitorCardCopy> = {
       "Wöchentliche erneute Audits mit sofortigen Benachrichtigungen, wenn Ihr Score sinkt oder ein KI-Crawler blockiert wird. Teil des Growth-Plans und höher.",
     upgrade: "Upgrade durchführen",
     empty:
-      "Noch keine überwachten Websites. Führen Sie ein Audit durch und fügen Sie die Website hier hinzu — EchoRank auditiert sie nach Zeitplan erneut und benachrichtigt Sie per E-Mail, wenn der Score sinkt oder ein Crawler blockiert wird.",
+      "Noch keine überwachten Websites. Führen Sie ein Audit durch und fügen Sie die Website hier hinzu — Echorank auditiert sie nach Zeitplan erneut und benachrichtigt Sie per E-Mail, wenn der Score sinkt oder ein Crawler blockiert wird.",
     lastScore: (score: number, grade: string) => `letzter Score ${score} (${grade})`,
     nextRun: (date: string) => `nächster Lauf ${date}`,
     sparklineHint: "Verlauf erscheint nach 2 Läufen",
@@ -4379,7 +4379,7 @@ const answerTrackingEn = {
   queuing: "Queuing…",
   runNow: "Run now",
   empty:
-    "Add the questions your customers actually ask an AI — “best [what you do] in [your city]” — and EchoRank runs them every day, flagging whether you were the answer.",
+    "Add the questions your customers actually ask an AI — “best [what you do] in [your city]” — and Echorank runs them every day, flagging whether you were the answer.",
   mentioned: (rank: number | null) => `Mentioned${rank ? ` · #${rank}` : ""}`,
   notMentioned: "Not mentioned",
   firstRunPending: "first run pending",
@@ -4407,7 +4407,7 @@ export const ANSWER_TRACKING_COPY: Record<DashLocale, AnswerTrackingCopy> = {
     queuing: "Mise en file…",
     runNow: "Exécuter maintenant",
     empty:
-      "Ajoutez les questions que vos clients posent réellement à une IA — « meilleur [votre métier] à [votre ville] » — et EchoRank les exécute chaque jour en signalant si vous étiez la réponse.",
+      "Ajoutez les questions que vos clients posent réellement à une IA — « meilleur [votre métier] à [votre ville] » — et Echorank les exécute chaque jour en signalant si vous étiez la réponse.",
     mentioned: (rank: number | null) => `Mentionné${rank ? ` · #${rank}` : ""}`,
     notMentioned: "Non mentionné",
     firstRunPending: "première exécution en attente",
@@ -4431,7 +4431,7 @@ export const ANSWER_TRACKING_COPY: Record<DashLocale, AnswerTrackingCopy> = {
     queuing: "Wird eingereiht…",
     runNow: "Jetzt ausführen",
     empty:
-      "Fügen Sie die Fragen hinzu, die Ihre Kunden einer KI tatsächlich stellen — «beste/r [Ihre Branche] in [Ihre Stadt]» — und EchoRank führt sie täglich aus und zeigt an, ob Sie die Antwort waren.",
+      "Fügen Sie die Fragen hinzu, die Ihre Kunden einer KI tatsächlich stellen — «beste/r [Ihre Branche] in [Ihre Stadt]» — und Echorank führt sie täglich aus und zeigt an, ob Sie die Antwort waren.",
     mentioned: (rank: number | null) => `Erwähnt${rank ? ` · #${rank}` : ""}`,
     notMentioned: "Nicht erwähnt",
     firstRunPending: "erster Lauf ausstehend",
@@ -4895,7 +4895,7 @@ export const KEYWORDS_COPY: Record<DashLocale, KeywordsCopy> = {
 // ─── Onboarding (welcome setup, first-audit banner, checklist) ──────────────
 const onboardingEn = {
   // Welcome setup modal
-  welcomeTitle: "Welcome to EchoRank 360",
+  welcomeTitle: "Welcome to Echorank360",
   welcomeIntro:
     "Two quick questions and we'll run your first AI Visibility audit — it shows how your business appears in AI answers today.",
   intentQuestion: "Which best describes you?",
@@ -4951,7 +4951,7 @@ export type OnboardingCopy = typeof onboardingEn;
 export const ONBOARDING_COPY: Record<DashLocale, OnboardingCopy> = {
   en: onboardingEn,
   fr: {
-    welcomeTitle: "Bienvenue dans EchoRank 360",
+    welcomeTitle: "Bienvenue dans Echorank360",
     welcomeIntro:
       "Deux petites questions et nous lancerons votre premier audit de visibilité IA — il montre comment votre entreprise apparaît aujourd'hui dans les réponses des IA.",
     intentQuestion: "Qu'est-ce qui vous décrit le mieux?",
@@ -5000,7 +5000,7 @@ export const ONBOARDING_COPY: Record<DashLocale, OnboardingCopy> = {
     addClientSuccess: "Espace créé — vous y avez été basculé.",
   },
   "de-CH": {
-    welcomeTitle: "Willkommen bei EchoRank 360",
+    welcomeTitle: "Willkommen bei Echorank360",
     welcomeIntro:
       "Zwei kurze Fragen, dann starten wir Ihr erstes KI-Sichtbarkeits-Audit — es zeigt, wie Ihr Unternehmen heute in KI-Antworten erscheint.",
     intentQuestion: "Was beschreibt Sie am besten?",

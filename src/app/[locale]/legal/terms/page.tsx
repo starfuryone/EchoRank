@@ -18,7 +18,7 @@ const EN: Doc = {
   updated: "Last updated: July 5, 2026",
   sections: [
     { h: "1. Agreement", ps: [
-      "These Terms govern access to and use of EchoRank (echorank360.com, the \"Service\"), operated by ChatLogic Insights Ltd, registered in England and Wales, company number 15593166 (\"ChatLogic\", \"we\"). By creating an account or using the Service you agree to these Terms and to the Privacy Policy. If you use the Service for an organisation, you represent that you can bind it.",
+      "These Terms govern access to and use of Echorank (echorank360.com, the \"Service\"), operated by ChatLogic Insights Ltd, registered in England and Wales, company number 15593166 (\"ChatLogic\", \"we\"). By creating an account or using the Service you agree to these Terms and to the Privacy Policy. If you use the Service for an organisation, you represent that you can bind it.",
       "The Service is provided for business use. You must be at least 18 years old.",
     ]},
     { h: "2. Subscriptions, trials and billing", ps: [
@@ -74,7 +74,7 @@ const FR: Doc = {
   updated: "Dernière mise à jour : 5 juillet 2026",
   sections: [
     { h: "1. Accord", ps: [
-      "Les présentes Conditions régissent l'accès et l'utilisation d'EchoRank (echorank360.com, le « Service »), exploité par ChatLogic Insights Ltd, société d'Angleterre et du Pays de Galles, numéro 15593166 (« ChatLogic », « nous »). En créant un compte ou en utilisant le Service, vous acceptez ces Conditions et la Politique de confidentialité. Si vous utilisez le Service pour une organisation, vous déclarez pouvoir l'engager.",
+      "Les présentes Conditions régissent l'accès et l'utilisation d'Echorank (echorank360.com, le « Service »), exploité par ChatLogic Insights Ltd, société d'Angleterre et du Pays de Galles, numéro 15593166 (« ChatLogic », « nous »). En créant un compte ou en utilisant le Service, vous acceptez ces Conditions et la Politique de confidentialité. Si vous utilisez le Service pour une organisation, vous déclarez pouvoir l'engager.",
       "Le Service est destiné à un usage professionnel. Vous devez avoir au moins 18 ans.",
     ]},
     { h: "2. Abonnements, essai et facturation", ps: [
@@ -150,7 +150,7 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
     <div className={lp.page}>
       <div className={lp.wrap}>
         <div className={lp.top}>
-          <Link href={`/${locale}`} aria-label="EchoRank 360, home">
+          <Link href={`/${locale}`} aria-label="Echorank360, home">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/echorank-logo-dark.svg" alt="ECHORANK 360" className={lp.logo} />
           </Link>

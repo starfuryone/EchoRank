@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
-import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
+import { hashPassword } from "@/lib/password";
+import { getClientIp } from "@/lib/client-ip";
 import { slugify } from "@/lib/tenant";
 import { planQuotaDefaults } from "@/lib/plan-config";
 import { planFromParam } from "@/lib/plan-routing";
@@ -39,9 +40,7 @@ function resolveSignupPlan(planParam: string | undefined): PlanType {
 export async function POST(request: Request) {
   try {
     // Throttle account/tenant creation per IP to prevent spam signups.
-    const ip =
-      request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-      "unknown";
+    const ip = getClientIp(request.headers);
     const limit = await rateLimit(`register-ip:${ip}`, 10, 3_600_000);
     if (!limit.success) {
       return NextResponse.json(
@@ -85,7 +84,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const passwordHash = await bcrypt.hash(password, 10);
+    const passwordHash = await hashPassword(password);
 
     const result = await prisma.$transaction(async (tx) => {
       const user = await tx.user.create({

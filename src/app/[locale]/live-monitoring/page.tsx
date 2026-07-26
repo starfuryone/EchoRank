@@ -26,14 +26,14 @@ interface LpContent {
 const C: Record<Locale, LpContent> = {
   en: {
     meta: {
-      title: "Always-on monitoring | EchoRank",
+      title: "Always-on monitoring | Echorank",
       description: "Risk recalculated hourly, AI answers tracked daily, competitor snapshots every morning, reviews synced as they land. One feed, watched around the clock.",
     },
     hero: {
       label: "/ LIVE MONITORING",
       h1a: "Watched around the clock.",
       h1b: "So you don't have to be.",
-      sub: "Reputation moves whether you're looking or not. EchoRank keeps the watch running: risk recalculated hourly, AI answers checked daily, competitor snapshots every morning, and every new review scored the moment it lands, all in one feed.",
+      sub: "Reputation moves whether you're looking or not. Echorank keeps the watch running: risk recalculated hourly, AI answers checked daily, competitor snapshots every morning, and every new review scored the moment it lands, all in one feed.",
       cta1: "Put it on watch →",
       cta2: "Book a demo ↗",
     },
@@ -86,14 +86,14 @@ const C: Record<Locale, LpContent> = {
 
   fr: {
     meta: {
-      title: "Surveillance en continu | EchoRank",
+      title: "Surveillance en continu | Echorank",
       description: "Risque recalculé chaque heure, réponses IA suivies chaque jour, instantanés concurrents chaque matin, avis synchronisés dès leur arrivée. Un seul fil, surveillé jour et nuit.",
     },
     hero: {
       label: "/ SURVEILLANCE EN CONTINU",
       h1a: "Surveillé jour et nuit.",
       h1b: "Pour que vous n'ayez pas à l'être.",
-      sub: "La réputation bouge, que vous regardiez ou non. EchoRank monte la garde : risque recalculé chaque heure, réponses IA vérifiées chaque jour, instantanés concurrents chaque matin, et chaque nouvel avis noté dès son arrivée, le tout dans un seul fil.",
+      sub: "La réputation bouge, que vous regardiez ou non. Echorank monte la garde : risque recalculé chaque heure, réponses IA vérifiées chaque jour, instantanés concurrents chaque matin, et chaque nouvel avis noté dès son arrivée, le tout dans un seul fil.",
       cta1: "Mettez-le en veille active →",
       cta2: "Réserver une démo ↗",
     },
@@ -146,14 +146,14 @@ const C: Record<Locale, LpContent> = {
 
   "de-CH": {
     meta: {
-      title: "Laufende Überwachung | EchoRank",
+      title: "Laufende Überwachung | Echorank",
       description: "Risiko stündlich neu berechnet, KI-Antworten täglich verfolgt, Konkurrenz-Momentaufnahmen jeden Morgen, Bewertungen bei Eingang synchronisiert. Ein Feed, rund um die Uhr bewacht.",
     },
     hero: {
       label: "/ LAUFENDE ÜBERWACHUNG",
       h1a: "Rund um die Uhr bewacht.",
       h1b: "Damit Sie es nicht sein müssen.",
-      sub: "Reputation bewegt sich, ob Sie hinschauen oder nicht. EchoRank hält Wache: Risiko stündlich neu berechnet, KI-Antworten täglich geprüft, Konkurrenz-Momentaufnahmen jeden Morgen, und jede neue Bewertung bei Eingang bewertet, alles in einem Feed.",
+      sub: "Reputation bewegt sich, ob Sie hinschauen oder nicht. Echorank hält Wache: Risiko stündlich neu berechnet, KI-Antworten täglich geprüft, Konkurrenz-Momentaufnahmen jeden Morgen, und jede neue Bewertung bei Eingang bewertet, alles in einem Feed.",
       cta1: "Auf Wache stellen →",
       cta2: "Demo buchen ↗",
     },
@@ -240,7 +240,7 @@ export default async function LiveMonitoringPage({ params }: { params: Promise<{
     <div className={lp.page}>
       <div className={home.container}>
         <header className={lp.navbar}>
-          <Link href={`/${locale}`} className={lp.logoLink} aria-label="EchoRank 360, home">
+          <Link href={`/${locale}`} className={lp.logoLink} aria-label="Echorank360, home">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/echorank-logo-dark.svg" alt="ECHORANK 360" className={lp.logo} />
           </Link>

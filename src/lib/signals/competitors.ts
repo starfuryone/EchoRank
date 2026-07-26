@@ -29,29 +29,48 @@ export function placesConfigured(): boolean {
   return !!placesKey();
 }
 
-async function fetchPlace(placeId: string): Promise<{ name?: string; rating?: number; reviewCount?: number } | null> {
+export interface PlaceDetails {
+  name?: string;
+  address?: string;
+  rating?: number;
+  reviewCount?: number;
+}
+export type PlaceFetchResult = { ok: true; place: PlaceDetails } | { ok: false; error: string };
+
+// Same SKU tier as before (rating/userRatingCount are already Pro);
+// formattedAddress is Essentials and does not raise the billing tier.
+export async function fetchPlace(placeId: string): Promise<PlaceFetchResult> {
   const key = placesKey();
-  if (!key) return null;
+  if (!key) return { ok: false, error: 'places_not_configured' };
   try {
     const res = await fetch(`${PLACES_BASE}/places/${encodeURIComponent(placeId)}`, {
       headers: {
         'X-Goog-Api-Key': key,
-        'X-Goog-FieldMask': 'id,displayName,rating,userRatingCount',
+        'X-Goog-FieldMask': 'id,displayName,formattedAddress,rating,userRatingCount',
       },
     });
     if (!res.ok) {
       console.error(`[competitors] places ${res.status} for ${placeId}: ${(await res.text()).slice(0, 200)}`);
-      return null;
+      return { ok: false, error: `http_${res.status}` };
     }
     const j = (await res.json()) as {
       displayName?: { text?: string };
+      formattedAddress?: string;
       rating?: number;
       userRatingCount?: number;
     };
-    return { name: j.displayName?.text, rating: j.rating, reviewCount: j.userRatingCount };
+    return {
+      ok: true,
+      place: {
+        name: j.displayName?.text,
+        address: j.formattedAddress,
+        rating: j.rating,
+        reviewCount: j.userRatingCount,
+      },
+    };
   } catch (err) {
     console.error('[competitors] places fetch failed:', (err as Error).message);
-    return null;
+    return { ok: false, error: 'network' };
   }
 }
 
@@ -164,6 +183,83 @@ export async function competitorDeltas(competitorId: string): Promise<Competitor
   };
 }
 
+/** Last `take` daily snapshots, oldest → newest, for row sparklines. */
+export async function snapshotHistory(
+  competitorId: string,
+  take = 30,
+): Promise<{ day: string; rating: number | null; reviewCount: number | null }[]> {
+  const rows = await prisma.competitorSnapshot.findMany({
+    where: { competitorId },
+    orderBy: { day: 'desc' },
+    take,
+    select: { day: true, rating: true, reviewCount: true },
+  });
+  return rows
+    .reverse()
+    .map((s) => ({ day: s.day.toISOString().slice(0, 10), rating: s.rating, reviewCount: s.reviewCount }));
+}
+
+/**
+ * Take a Places snapshot for one competitor and keep its stored address
+ * fresh. Returns the snapshot values or a machine-readable error code.
+ */
+export async function snapshotPlacesCompetitor(
+  competitorId: string,
+  placeId: string,
+): Promise<{ ok: true; rating: number | null; reviewCount: number | null } | { ok: false; error: string }> {
+  const r = await fetchPlace(placeId);
+  if (!r.ok) return r;
+  await upsertSnapshot(competitorId, {
+    rating: r.place.rating ?? null,
+    reviewCount: r.place.reviewCount ?? null,
+    raw: r.place,
+  });
+  if (r.place.address) {
+    await prisma.competitor.update({ where: { id: competitorId }, data: { address: r.place.address } });
+  }
+  return { ok: true, rating: r.place.rating ?? null, reviewCount: r.place.reviewCount ?? null };
+}
+
+export interface RefreshResult {
+  id: string;
+  name: string;
+  status: 'ok' | 'error' | 'manual' | 'paused';
+  rating?: number | null;
+  reviewCount?: number | null;
+  error?: string;
+}
+
+/**
+ * Synchronous "Refresh now": snapshot every Places-linked competitor of one
+ * tenant and report per-competitor success/error. Signals + momentum alerts
+ * stay with the nightly sweep; this only refreshes the numbers.
+ */
+export async function refreshTenantSnapshots(tenantId: string): Promise<RefreshResult[]> {
+  const comps = await prisma.competitor.findMany({
+    where: { tenantId },
+    orderBy: { createdAt: 'asc' },
+    select: { id: true, name: true, placeId: true, active: true },
+  });
+  const results: RefreshResult[] = [];
+  for (const c of comps) {
+    if (!c.placeId) {
+      results.push({ id: c.id, name: c.name, status: 'manual' });
+      continue;
+    }
+    if (!c.active) {
+      results.push({ id: c.id, name: c.name, status: 'paused' });
+      continue;
+    }
+    const r = await snapshotPlacesCompetitor(c.id, c.placeId);
+    results.push(
+      r.ok
+        ? { id: c.id, name: c.name, status: 'ok', rating: r.rating, reviewCount: r.reviewCount }
+        : { id: c.id, name: c.name, status: 'error', error: r.error },
+    );
+  }
+  return results;
+}
+
 /** Tenant's own review pace: spine review signals in the last 7 days. */
 export async function ownReviewPace7d(tenantId: string): Promise<number> {
   return prisma.signal.count({
@@ -217,8 +313,8 @@ export async function runCompetitorSweep(onlyTenantId?: string): Promise<number>
     for (const comp of list) {
       // 1) automated snapshot when possible
       if (comp.placeId && placesConfigured()) {
-        const p = await fetchPlace(comp.placeId);
-        if (p) await upsertSnapshot(comp.id, { rating: p.rating ?? null, reviewCount: p.reviewCount ?? null, raw: p }, day);
+        const r = await snapshotPlacesCompetitor(comp.id, comp.placeId);
+        if (!r.ok) console.error(`[competitors] sweep snapshot failed for ${comp.name} (${comp.id}): ${r.error}`);
       }
 
       // 2) deltas from whatever snapshots exist (automated or manual)

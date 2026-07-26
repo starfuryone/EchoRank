@@ -65,8 +65,8 @@ export async function sendVisibilityAlert(input: VisibilityAlertInput): Promise<
   const delta = input.newScore - input.prevScore;
   const subject =
     input.flippedBlocked.length > 0
-      ? `[EchoRank] AI crawler blocked on ${input.url}`
-      : `[EchoRank] AI visibility score dropped: ${input.prevScore} -> ${input.newScore} (${input.url})`;
+      ? `[Echorank] AI crawler blocked on ${input.url}`
+      : `[Echorank] AI visibility score dropped: ${input.prevScore} -> ${input.newScore} (${input.url})`;
 
   const lines: string[] = [
     `AI visibility change detected for ${input.url}`,
@@ -167,10 +167,10 @@ export async function recordPromptAlerts(
 
   const subject =
     lost.length > 0
-      ? `[EchoRank] AI stopped recommending you for ${lost.length} prompt${lost.length > 1 ? "s" : ""}`
+      ? `[Echorank] AI stopped recommending you for ${lost.length} prompt${lost.length > 1 ? "s" : ""}`
       : drops.length > 0
-        ? `[EchoRank] AI recommendation rank dropped on ${drops.length} prompt${drops.length > 1 ? "s" : ""}`
-        : `[EchoRank] AI is recommending you again (${regained.length} prompt${regained.length > 1 ? "s" : ""})`;
+        ? `[Echorank] AI recommendation rank dropped on ${drops.length} prompt${drops.length > 1 ? "s" : ""}`
+        : `[Echorank] AI is recommending you again (${regained.length} prompt${regained.length > 1 ? "s" : ""})`;
 
   const lines: string[] = [`AI recommendation changes detected in today's tracking run:`];
   if (lost.length > 0) {

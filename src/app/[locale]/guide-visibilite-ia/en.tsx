@@ -21,7 +21,7 @@ function Cta({ label }: { label?: string }) {
     <div className={s.ctaBand}>
       <span className={s.ctaText}>
         <b>Assess your business for free</b>
-        <span>Get your EchoRank score in under 60 seconds.</span>
+        <span>Get your Echorank score in under 60 seconds.</span>
       </span>
       <Link href="/register" className={s.ctaBtn}>{label ?? "Run my AI visibility audit →"}</Link>
     </div>
@@ -143,7 +143,7 @@ const FAQ: [string, string][] = [
   ["Is classic SEO enough to get recommended by AI?", "No. SEO optimizes a ranking of links; AI visibility optimizes a recommendation. Backlinks matter less than trust, information consistency, and reputation measurable through reviews."],
   ["What is GEO (Generative Engine Optimization)?", "The discipline of optimizing your presence for generative engines. It covers technical access (crawlers, structure), reputation (reviews, consistency) and content (FAQ, service pages, freshness)."],
   ["How long before results show?", "Technical fixes (robots, structured data, NAP) are read on the crawlers' next passes, often within weeks. Reputation builds continuously; that is why daily tracking of AI answers beats a one-off check."],
-  ["How do I know whether an AI already recommends me?", "Ask the questions your customers ask, on every assistant, regularly. Or let a platform do it daily for you: EchoRank runs your key queries against the AI engines and alerts you when you appear, are misrepresented, or disappear."],
+  ["How do I know whether an AI already recommends me?", "Ask the questions your customers ask, on every assistant, regularly. Or let a platform do it daily for you: Echorank runs your key queries against the AI engines and alerts you when you appear, are misrepresented, or disappear."],
   ["Why does ChatGPT not recommend my business?", "The most frequent causes: AI crawlers blocked by robots.txt, inconsistent information across your listings, rare or old reviews, missing structured data, pages that do not answer real questions. An AI visibility audit identifies them one by one, each with a prioritized fix."],
   ["Do Google reviews influence ChatGPT?", "Indirectly, but strongly. Assistants rely on sources that reflect your reputation: listings, review platforms, press, directories. Fresh, numerous, answered reviews strengthen the evidence file the AI consults before citing you; abandoned reviews weaken it."],
   ["How do I appear in Google AI Overview?", "The prerequisites: healthy Google indexing, content that answers questions directly, clean structured data, and not blocking Google-Extended. Nobody can guarantee placement in AI Overview, but without these foundations even eligibility is missing."],
@@ -157,10 +157,10 @@ export function jsonLdEn() {
     "@context": "https://schema.org",
     "@graph": [
       { "@type": "Article", headline: TITLE_EN, description: DESC_EN, inLanguage: "en",
-        dateModified: "2026-07-06", author: { "@type": "Organization", name: "EchoRank" },
+        dateModified: "2026-07-06", author: { "@type": "Organization", name: "Echorank" },
         publisher: { "@type": "Organization", name: "ChatLogic Insights Ltd" } },
       { "@type": "BreadcrumbList", itemListElement: [
-        { "@type": "ListItem", position: 1, name: "EchoRank", item: "https://echorank360.com/en" },
+        { "@type": "ListItem", position: 1, name: "Echorank", item: "https://echorank360.com/en" },
         { "@type": "ListItem", position: 2, name: TITLE_EN, item: "https://echorank360.com/en/guide-visibilite-ia" } ] },
       { "@type": "DefinedTermSet", name: "AI visibility glossary",
         hasDefinedTerm: GLOSSARY.map(([term, def]) => ({ "@type": "DefinedTerm", name: term, description: def })) },
@@ -194,7 +194,7 @@ export default function EnGuide({ locale, foot }: { locale: string; foot: Foot }
       <JsonLd graph={jsonLdEn()["@graph"]} />
       <div className={s.wrap}>
         <header className={s.navbar}>
-          <Link href={`/${locale}`} className={s.logoLink} aria-label="EchoRank 360, home">
+          <Link href={`/${locale}`} className={s.logoLink} aria-label="Echorank360, home">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/echorank-logo-dark.svg" alt="ECHORANK 360" className={s.logo} />
           </Link>
@@ -227,7 +227,7 @@ export default function EnGuide({ locale, foot }: { locale: string; foot: Foot }
 
         <h1 className={s.h1}>{TITLE_EN}</h1>
         <p className={s.subtitle}>{SUBTITLE_EN}</p>
-        <p className={s.updated}>Updated July 6, 2026 · EchoRank, AI reputation intelligence platform · <Link href="/fr/guide-visibilite-ia">Version française</Link></p>
+        <p className={s.updated}>Updated July 6, 2026 · Echorank, AI reputation intelligence platform · <Link href="/fr/guide-visibilite-ia">Version française</Link></p>
         <GuideHeroArt label="An AI answer highlighting one recommendation" />
 
         <nav className={s.toc} aria-label="Contents">
@@ -263,7 +263,7 @@ export default function EnGuide({ locale, foot }: { locale: string; foot: Foot }
         <RecoFlowDiagram />
         <Figure file="chatgpt-reco.png" caption="ChatGPT recommending businesses: the answer replaces the results list." />
         <Figure file="google-ai-overview.png" caption="Google AI Overview: the generative summary captures attention before the classic links." />
-        <p className={s.p}>Each of these ten signals can be verified. That is exactly what the <Link href={`/${locale}/ai-visibility`}>EchoRank AI visibility audit</Link> does: check by check, with a score and a fix roadmap.</p>
+        <p className={s.p}>Each of these ten signals can be verified. That is exactly what the <Link href={`/${locale}/ai-visibility`}>Echorank AI visibility audit</Link> does: check by check, with a score and a fix roadmap.</p>
         <Cta />
 
         <h2 id="sources" className={s.h2}>3. The sources AI systems read</h2>
@@ -295,7 +295,7 @@ export default function EnGuide({ locale, foot }: { locale: string; foot: Foot }
           <li className={s.li}>Distinct service pages: one precise page per service brings your content closer to real questions (semantic search).</li>
           <li className={s.li}>Freshness: exact hours, dated content, recent reviews. Stale information costs more than missing information.</li>
         </ul>
-        <Callout>A crawler block in a robots.txt file triggers no alert anywhere. That is precisely why the EchoRank audit checks access for every AI crawler, and why monitoring alerts you if access flips overnight.</Callout>
+        <Callout>A crawler block in a robots.txt file triggers no alert anywhere. That is precisely why the Echorank audit checks access for every AI crawler, and why monitoring alerts you if access flips overnight.</Callout>
         <Cta />
 
         <h2 id="reputation" className={s.h2}>6. Reputation and reviews: the raw material of trust</h2>
@@ -310,7 +310,7 @@ export default function EnGuide({ locale, foot }: { locale: string; foot: Foot }
           rows={[["A score out of five", "Score, volume, freshness and trend combined"], ["An isolated text", "Recurring themes extracted from all texts"], ["One platform", "Consistency across all platforms"], ["One event", "A dated history, with the business's replies"]]} />
         <ReviewPulseArt label="The pulse of reviews over time" />
         <p className={s.p}>Turning reviews into usable signals is continuous reading work: that is what <Link href={`/${locale}/customer-feedback`}>customer feedback intelligence</Link> does, and the <Link href={`/${locale}/reputation-risk`}>Reputation Risk Score</Link> turns it into a single, explainable measure.</p>
-        <Figure file="dashboard-echorank.png" caption="The EchoRank dashboard: reviews, feedback and reputation intelligence in one place." />
+        <Figure file="dashboard-echorank.png" caption="The Echorank dashboard: reviews, feedback and reputation intelligence in one place." />
         <Figure file="score-visibilite.png" caption="The AI visibility score out of 100, with every check detailed." />
         <Figure file="dashboard-reputation.png" caption="The reputation risk score: five components, every driver named." />
         <Figure file="comparaison-concurrents.png" caption="Competitive comparison: who is gaining ground, and at what pace." />
@@ -343,9 +343,9 @@ export default function EnGuide({ locale, foot }: { locale: string; foot: Foot }
         <Cta />
 
         <h2 id="analyse" className={s.h2}>8. What we analyzed</h2>
-        <p className={s.p}>EchoRank runs AI visibility audits on the websites of service businesses, shops and clinics. Every audit verifies the same families of criteria: AI crawler access (GPTBot, ClaudeBot, PerplexityBot, Google-Extended), technical foundations (HTTPS, sitemap, response time), machine readability (structured data, page semantics), trust signals (legal pages, verifiable contact details, NAP consistency) and reputation surface (Google profile, review freshness). The result is a score out of 100 and a grade, reproducible from one audit to the next.</p>
+        <p className={s.p}>Echorank runs AI visibility audits on the websites of service businesses, shops and clinics. Every audit verifies the same families of criteria: AI crawler access (GPTBot, ClaudeBot, PerplexityBot, Google-Extended), technical foundations (HTTPS, sitemap, response time), machine readability (structured data, page semantics), trust signals (legal pages, verifiable contact details, NAP consistency) and reputation surface (Google profile, review freshness). The result is a score out of 100 and a grade, reproducible from one audit to the next.</p>
         <p className={s.p}>Our tracking methodology completes the snapshot: a business's key queries are asked daily to the AI engines, and every answer is archived. It is this time series, not a single capture, that makes it possible to state that a business appeared, was misrepresented or disappeared from recommendations, and to date the change.</p>
-        <h3 className={s.h3}>The EchoRank framework: five components, published weights</h3>
+        <h3 className={s.h3}>The Echorank framework: five components, published weights</h3>
         <p className={s.p}>Our Reputation Risk Score is not a black box, and we publish its structure. Five weighted components, with the current model version's weights:</p>
         <CompareTable head={["Component", "Weight"]}
           rows={[["Negative pressure (unfavourable reviews and feedback, recency-weighted)", "0.40"], ["Review velocity (pace compared to your own history)", "0.25"], ["Recent critical signals (high-severity incidents)", "0.15"], ["AI visibility (crawler access, readability, presence in answers)", "0.15"], ["Stagnation (prolonged absence of fresh signals)", "0.05"]]} />
@@ -413,9 +413,9 @@ export default function EnGuide({ locale, foot }: { locale: string; foot: Foot }
         </div>
 
         <h2 className={s.h2}>About this resource</h2>
-        <p className={s.p}>This guide is written and maintained by EchoRank, the AI reputation intelligence platform operated by ChatLogic Insights Ltd. It documents a methodology in production: the weights, cadences and checks described are those of the live system, updated release by release. Reports and corrections: privacy@echorank360.com.</p>
+        <p className={s.p}>This guide is written and maintained by Echorank, the AI reputation intelligence platform operated by ChatLogic Insights Ltd. It documents a methodology in production: the weights, cadences and checks described are those of the live system, updated release by release. Reports and corrections: privacy@echorank360.com.</p>
         <h3 className={s.h3}>How to cite this guide</h3>
-        <p className={s.p} style={{ fontFamily: "ui-monospace, monospace", fontSize: 13 }}>EchoRank (2026). The complete guide to AI visibility in 2026. ChatLogic Insights Ltd. https://echorank360.com/en/guide-visibilite-ia</p>
+        <p className={s.p} style={{ fontFamily: "ui-monospace, monospace", fontSize: 13 }}>Echorank (2026). The complete guide to AI visibility in 2026. ChatLogic Insights Ltd. https://echorank360.com/en/guide-visibilite-ia</p>
 
         <div className={s.backRow}>
           <BackButton locale={locale} label={backLabel} className={s.backBtnGrey} />

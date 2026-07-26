@@ -18,7 +18,7 @@ const EN: Doc = {
   updated: "Last updated: July 5, 2026",
   sections: [
     { h: "No warranty", ps: [
-      "EchoRank is provided \"as is\" and \"as available\". To the maximum extent permitted by law, ChatLogic Insights Ltd disclaims all warranties, express or implied, including merchantability, fitness for a particular purpose, non-infringement and accuracy.",
+      "Echorank is provided \"as is\" and \"as available\". To the maximum extent permitted by law, ChatLogic Insights Ltd disclaims all warranties, express or implied, including merchantability, fitness for a particular purpose, non-infringement and accuracy.",
     ]},
     { h: "Not professional advice", ps: [
       "Nothing on this site or in the Service constitutes legal, financial, tax or other professional advice. Revenue-at-risk figures, risk scores and similar outputs are estimates intended to help you prioritise; consult a qualified professional before making decisions that depend on them.",
@@ -43,7 +43,7 @@ const FR: Doc = {
   updated: "Dernière mise à jour : 5 juillet 2026",
   sections: [
     { h: "Absence de garantie", ps: [
-      "EchoRank est fourni « tel quel » et « selon disponibilité ». Dans toute la mesure permise par la loi, ChatLogic Insights Ltd décline toute garantie, expresse ou implicite, y compris de qualité marchande, d'adéquation à un usage particulier, d'absence de contrefaçon et d'exactitude.",
+      "Echorank est fourni « tel quel » et « selon disponibilité ». Dans toute la mesure permise par la loi, ChatLogic Insights Ltd décline toute garantie, expresse ou implicite, y compris de qualité marchande, d'adéquation à un usage particulier, d'absence de contrefaçon et d'exactitude.",
     ]},
     { h: "Pas un conseil professionnel", ps: [
       "Rien sur ce site ni dans le Service ne constitue un conseil juridique, financier, fiscal ou autre conseil professionnel. Le chiffre d'affaires à risque, les scores de risque et résultats similaires sont des estimations destinées à la priorisation ; consultez un professionnel qualifié avant toute décision qui en dépendrait.",
@@ -88,7 +88,7 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
     <div className={lp.page}>
       <div className={lp.wrap}>
         <div className={lp.top}>
-          <Link href={`/${locale}`} aria-label="EchoRank 360, home">
+          <Link href={`/${locale}`} aria-label="Echorank360, home">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/echorank-logo-dark.svg" alt="ECHORANK 360" className={lp.logo} />
           </Link>

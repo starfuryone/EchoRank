@@ -46,7 +46,7 @@ const en: AuthContent = {
   layout: { rights: "All rights reserved." },
   login: {
     h2: "Welcome back",
-    sub: "Sign in to your EchoRank account",
+    sub: "Sign in to your Echorank account",
     emailLabel: "Email",
     emailPh: "you@company.com",
     passwordLabel: "Password",
@@ -82,7 +82,7 @@ const fr: AuthContent = {
   layout: { rights: "Tous droits réservés." },
   login: {
     h2: "Heureux de vous revoir",
-    sub: "Connectez-vous à votre compte EchoRank",
+    sub: "Connectez-vous à votre compte Echorank",
     emailLabel: "E-mail",
     emailPh: "vous@entreprise.com",
     passwordLabel: "Mot de passe",
@@ -118,7 +118,7 @@ const frCA: AuthContent = {
   layout: { rights: "Tous droits réservés." },
   login: {
     h2: "Bon retour !",
-    sub: "Connectez-vous à votre compte EchoRank",
+    sub: "Connectez-vous à votre compte Echorank",
     emailLabel: "Courriel",
     emailPh: "vous@entreprise.com",
     passwordLabel: "Mot de passe",
@@ -154,7 +154,7 @@ const deCH: AuthContent = {
   layout: { rights: "Alle Rechte vorbehalten." },
   login: {
     h2: "Willkommen zurück",
-    sub: "Melden Sie sich bei Ihrem EchoRank-Konto an",
+    sub: "Melden Sie sich bei Ihrem Echorank-Konto an",
     emailLabel: "E-Mail",
     emailPh: "sie@firma.ch",
     passwordLabel: "Passwort",

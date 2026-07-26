@@ -133,7 +133,7 @@ export default function FeedbackPage({ params }: { params: Promise<{ id: string 
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/echorank-logo-dark.svg"
-              alt="EchoRank 360"
+              alt="Echorank360"
               className="h-4 w-auto"
             />
           </div>

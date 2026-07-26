@@ -1,11 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { resolveTenant, requirePlan } from '../../../../lib/signals/auth-adapter';
-import { riskQueue } from '../../../../lib/signals/queue';
+import { refreshTenantSnapshots } from '../../../../lib/signals/competitors';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-/** POST /api/competitors/refresh — enqueue an immediate sweep for this tenant */
+/**
+ * POST /api/competitors/refresh — snapshot every Places-linked competitor
+ * synchronously and report per-competitor success/error. (Previously this
+ * enqueued a fire-and-forget sweep job: the UI could never tell whether it
+ * ran, and a stale failed job under the fixed jobId silently blocked
+ * re-enqueues. Momentum alerts still run with the nightly sweep.)
+ */
 export async function POST(req: NextRequest) {
   const auth = await resolveTenant(req);
   if (!auth) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
@@ -14,14 +20,10 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    await riskQueue().add(
-      'competitor-sweep-tenant',
-      { tenantId: auth.tenantId },
-      { jobId: `compsweep-${auth.tenantId}`, removeOnComplete: true, removeOnFail: 20 },
-    );
-    return NextResponse.json({ queued: true });
+    const results = await refreshTenantSnapshots(auth.tenantId);
+    return NextResponse.json({ results });
   } catch (err) {
-    console.error('[competitors] refresh enqueue failed:', (err as Error).message);
-    return NextResponse.json({ error: 'enqueue_failed' }, { status: 500 });
+    console.error('[competitors] refresh failed:', (err as Error).message);
+    return NextResponse.json({ error: 'refresh_failed' }, { status: 500 });
   }
 }

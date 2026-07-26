@@ -41,7 +41,7 @@ function Cta({ label }: { label?: string }) {
     <div className={s.ctaBand}>
       <span className={s.ctaText}>
         <b>Évaluez votre entreprise gratuitement</b>
-        <span>Obtenez votre score EchoRank en moins de 60 secondes.</span>
+        <span>Obtenez votre score Echorank en moins de 60 secondes.</span>
       </span>
       <Link href="/register" className={s.ctaBtn}>{label ?? "Lancer mon audit IA →"}</Link>
     </div>
@@ -173,7 +173,7 @@ const FAQ: [string, string][] = [
   ["Le SEO classique suffit-il pour être recommandé par l'IA ?", "Non. Le SEO optimise un classement de liens; la visibilité IA optimise une recommandation. Les backlinks comptent moins que la confiance, la cohérence des informations et la réputation mesurable par les avis."],
   ["Qu'est-ce que le GEO (Generative Engine Optimization) ?", "La discipline qui consiste à optimiser sa présence pour les moteurs génératifs. Elle couvre l'accès technique (crawlers, structure), la réputation (avis, cohérence) et le contenu (FAQ, pages de services, fraîcheur)."],
   ["Combien de temps avant de voir des résultats ?", "Les corrections techniques (robots, données structurées, NAP) sont lues dès les prochains passages des robots, souvent en quelques semaines. La réputation se construit en continu; c'est pour cela qu'un suivi quotidien des réponses IA vaut mieux qu'une vérification ponctuelle."],
-  ["Comment savoir si une IA me recommande déjà ?", "Posez les questions que vos clients posent, sur chaque assistant, régulièrement. Ou laissez une plateforme le faire chaque jour à votre place : EchoRank suit vos requêtes clés sur les moteurs IA et vous alerte quand vous apparaissez, êtes déformé ou disparaissez."],
+  ["Comment savoir si une IA me recommande déjà ?", "Posez les questions que vos clients posent, sur chaque assistant, régulièrement. Ou laissez une plateforme le faire chaque jour à votre place : Echorank suit vos requêtes clés sur les moteurs IA et vous alerte quand vous apparaissez, êtes déformé ou disparaissez."],
   ["Pourquoi ChatGPT ne recommande-t-il pas mon entreprise ?", "Les causes les plus fréquentes : robots des IA bloqués par le robots.txt, informations incohérentes entre vos fiches, avis rares ou anciens, absence de données structurées, pages qui ne répondent pas aux questions réelles. Un audit de visibilité IA les identifie une par une, avec un correctif priorisé pour chacune."],
   ["Les avis Google influencent-ils ChatGPT ?", "Indirectement, mais fortement. Les assistants s'appuient sur des sources qui reflètent votre réputation : fiches, plateformes d'avis, presse, annuaires. Des avis frais, nombreux et répondus renforcent le dossier de preuve que l'IA consulte avant de vous citer; des avis abandonnés l'affaiblissent."],
   ["Comment apparaître dans Google AI Overview ?", "Les prérequis : une indexation Google saine, du contenu qui répond directement aux questions, des données structurées propres, et ne pas bloquer Google-Extended. Personne ne peut garantir un placement dans AI Overview, mais sans ces fondations l'éligibilité même fait défaut."],
@@ -202,13 +202,13 @@ export default async function GuideIaPage({ params }: { params: Promise<{ locale
         description: DESC,
         inLanguage: "fr",
         dateModified: "2026-07-06",
-        author: { "@type": "Organization", name: "EchoRank" },
+        author: { "@type": "Organization", name: "Echorank" },
         publisher: { "@type": "Organization", name: "ChatLogic Insights Ltd" },
       },
       {
         "@type": "BreadcrumbList",
         itemListElement: [
-          { "@type": "ListItem", position: 1, name: "EchoRank", item: "https://echorank360.com/fr" },
+          { "@type": "ListItem", position: 1, name: "Echorank", item: "https://echorank360.com/fr" },
           { "@type": "ListItem", position: 2, name: TITLE, item: "https://echorank360.com/fr/guide-visibilite-ia" },
         ],
       },
@@ -270,7 +270,7 @@ export default async function GuideIaPage({ params }: { params: Promise<{ locale
       <JsonLd graph={jsonLd["@graph"]} />
       <div className={s.wrap}>
         <header className={s.navbar}>
-          <Link href={`/${locale}`} className={s.logoLink} aria-label="EchoRank 360, home">
+          <Link href={`/${locale}`} className={s.logoLink} aria-label="Echorank360, home">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/echorank-logo-dark.svg" alt="ECHORANK 360" className={s.logo} />
           </Link>
@@ -307,7 +307,7 @@ export default async function GuideIaPage({ params }: { params: Promise<{ locale
 
         <h1 className={s.h1}>{TITLE}</h1>
         <p className={s.subtitle}>{SUBTITLE}</p>
-        <p className={s.updated}>Mis à jour le 6 juillet 2026 · EchoRank, plateforme d'intelligence de réputation IA</p>
+        <p className={s.updated}>Mis à jour le 6 juillet 2026 · Echorank, plateforme d'intelligence de réputation IA</p>
         <GuideHeroArt label="Une réponse d'IA mettant une recommandation en avant" />
 
         <nav className={s.toc} aria-label="Sommaire">
@@ -360,7 +360,7 @@ export default async function GuideIaPage({ params }: { params: Promise<{ locale
         <RecoFlowDiagram />
         <Figure file="chatgpt-reco.png" caption="ChatGPT recommandant des entreprises : la réponse remplace la liste de résultats." />
         <Figure file="google-ai-overview.png" caption="Google AI Overview : le résumé génératif capte l'attention avant les liens classiques." />
-        <p className={s.p}>Chacun de ces dix signaux se vérifie. C'est exactement ce que fait l'<Link href={`/${locale}/ai-visibility`}>audit de visibilité IA d'EchoRank</Link> : contrôle par contrôle, avec un score et une feuille de route.</p>
+        <p className={s.p}>Chacun de ces dix signaux se vérifie. C'est exactement ce que fait l'<Link href={`/${locale}/ai-visibility`}>audit de visibilité IA d'Echorank</Link> : contrôle par contrôle, avec un score et une feuille de route.</p>
         <Cta />
 
         {/* 3 ─────────────────────────────────────────────────────────── */}
@@ -402,7 +402,7 @@ export default async function GuideIaPage({ params }: { params: Promise<{ locale
           <li className={s.li}>Pages de services distinctes : une page précise par prestation rapproche vos contenus des questions réelles (recherche sémantique).</li>
           <li className={s.li}>Fraîcheur : horaires exacts, contenus datés, avis récents. Une information périmée coûte plus cher qu'une information absente.</li>
         </ul>
-        <Callout>Un blocage de robots dans un fichier robots.txt ne déclenche aucune alerte nulle part. C'est précisément pour cela que l'audit EchoRank vérifie l'accès de chaque robot d'IA, et que la surveillance alerte si un accès bascule du jour au lendemain.</Callout>
+        <Callout>Un blocage de robots dans un fichier robots.txt ne déclenche aucune alerte nulle part. C'est précisément pour cela que l'audit Echorank vérifie l'accès de chaque robot d'IA, et que la surveillance alerte si un accès bascule du jour au lendemain.</Callout>
         <Cta />
 
         {/* 6 ─────────────────────────────────────────────────────────── */}
@@ -425,7 +425,7 @@ export default async function GuideIaPage({ params }: { params: Promise<{ locale
         />
         <ReviewPulseArt label="Le pouls des avis dans le temps" />
         <p className={s.p}>Transformer les avis en signaux exploitables est un travail de lecture continue : c'est ce que fait l'<Link href={`/${locale}/customer-feedback`}>intelligence des retours clients</Link>, et le <Link href={`/${locale}/reputation-risk`}>score de risque de réputation</Link> en fait une mesure unique et explicable.</p>
-        <Figure file="dashboard-echorank.png" caption="Le tableau de bord EchoRank : avis, rétroaction et intelligence de réputation au même endroit." />
+        <Figure file="dashboard-echorank.png" caption="Le tableau de bord Echorank : avis, rétroaction et intelligence de réputation au même endroit." />
         <Figure file="score-visibilite.png" caption="Le score de visibilité IA sur 100, avec chaque vérification détaillée." />
         <Figure file="dashboard-reputation.png" caption="Le score de risque de réputation : cinq composantes, chaque facteur nommé." />
         <Figure file="comparaison-concurrents.png" caption="Comparaison concurrentielle : qui gagne du terrain, et à quel rythme." />
@@ -466,9 +466,9 @@ export default async function GuideIaPage({ params }: { params: Promise<{ locale
         <Cta />
 
         <h2 id="analyse" className={s.h2}>8. Ce que nous avons analysé</h2>
-        <p className={s.p}>EchoRank exécute des audits de visibilité IA sur des sites d'entreprises de services, de commerces et de cliniques. Chaque audit vérifie les mêmes familles de critères : accès des robots d'IA (GPTBot, ClaudeBot, PerplexityBot, Google-Extended), fondations techniques (HTTPS, sitemap, temps de réponse), lisibilité machine (données structurées, sémantique des pages), signaux de confiance (mentions légales, coordonnées vérifiables, cohérence NAP) et surface de réputation (fiche Google, fraîcheur des avis). Le résultat est un score sur 100 et une note, reproductibles d'un audit à l'autre.</p>
+        <p className={s.p}>Echorank exécute des audits de visibilité IA sur des sites d'entreprises de services, de commerces et de cliniques. Chaque audit vérifie les mêmes familles de critères : accès des robots d'IA (GPTBot, ClaudeBot, PerplexityBot, Google-Extended), fondations techniques (HTTPS, sitemap, temps de réponse), lisibilité machine (données structurées, sémantique des pages), signaux de confiance (mentions légales, coordonnées vérifiables, cohérence NAP) et surface de réputation (fiche Google, fraîcheur des avis). Le résultat est un score sur 100 et une note, reproductibles d'un audit à l'autre.</p>
         <p className={s.p}>Notre méthodologie de suivi complète l'instantané : les requêtes clés d'une entreprise sont posées chaque jour aux moteurs IA, et chaque réponse est archivée. C'est cette série temporelle, et non une capture unique, qui permet d'affirmer qu'une entreprise est apparue, a été déformée ou a disparu des recommandations, et de dater le changement.</p>
-        <h3 className={s.h3}>Le cadre EchoRank : cinq composantes, des pondérations publiées</h3>
+        <h3 className={s.h3}>Le cadre Echorank : cinq composantes, des pondérations publiées</h3>
         <p className={s.p}>Notre score de risque de réputation n'est pas une boîte noire, et nous publions sa structure. Cinq composantes pondérées, dont les poids de la version actuelle du modèle sont les suivants :</p>
         <CompareTable
           head={["Composante", "Poids"]}
@@ -547,9 +547,9 @@ export default async function GuideIaPage({ params }: { params: Promise<{ locale
         </div>
 
         <h2 className={s.h2}>À propos de cette ressource</h2>
-        <p className={s.p}>Ce guide est rédigé et maintenu par EchoRank, plateforme d'intelligence de réputation IA exploitée par ChatLogic Insights Ltd. Il documente une méthodologie en production : les pondérations, cadences et contrôles décrits sont ceux du système réel, mis à jour au fil des versions. Signalements et corrections : privacy@echorank360.com.</p>
+        <p className={s.p}>Ce guide est rédigé et maintenu par Echorank, plateforme d'intelligence de réputation IA exploitée par ChatLogic Insights Ltd. Il documente une méthodologie en production : les pondérations, cadences et contrôles décrits sont ceux du système réel, mis à jour au fil des versions. Signalements et corrections : privacy@echorank360.com.</p>
         <h3 className={s.h3}>Comment citer ce guide</h3>
-        <p className={s.p} style={{ fontFamily: "ui-monospace, monospace", fontSize: 13 }}>EchoRank (2026). Le guide complet de la visibilité dans l'IA en 2026. ChatLogic Insights Ltd. https://echorank360.com/fr/guide-visibilite-ia</p>
+        <p className={s.p} style={{ fontFamily: "ui-monospace, monospace", fontSize: 13 }}>Echorank (2026). Le guide complet de la visibilité dans l'IA en 2026. ChatLogic Insights Ltd. https://echorank360.com/fr/guide-visibilite-ia</p>
 
         <div className={s.backRow}>
           <BackButton locale={locale} label={backLabel} className={s.backBtnGrey} />

@@ -66,7 +66,7 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
       />
       <div className={lp.wrap}>
         <div className={lp.top}>
-          <Link href={`/${locale}`} aria-label="EchoRank 360, home">
+          <Link href={`/${locale}`} aria-label="Echorank360, home">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/echorank-logo-dark.svg" alt="ECHORANK 360" className={lp.logo} />
           </Link>

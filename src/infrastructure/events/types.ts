@@ -1,5 +1,5 @@
 /**
- * Domain event type definitions for the EchoRank event-driven architecture.
+ * Domain event type definitions for the Echorank event-driven architecture.
  */
 
 // ─── Event Type Constants ─────────────────────────────────────────────────────

@@ -26,7 +26,7 @@ interface LpContent {
 const C: Record<Locale, LpContent> = {
   en: {
     meta: {
-      title: "Reputation Risk Score. EchoRank",
+      title: "Reputation Risk Score. Echorank",
       description:
         "One explainable 0–100 Reputation Risk Score across reviews, feedback, AI visibility and competitors, with alerts and revenue-at-risk, so you prevent instead of react.",
     },
@@ -34,7 +34,7 @@ const C: Record<Locale, LpContent> = {
       label: "/ REPUTATION RISK",
       h1a: "Stop losing customers before you know they're leaving.",
       h1b: "Most damage happens in silence.",
-      sub: "One unhappy customer. One unanswered review. One competitor gaining momentum. One AI answer that gets your business wrong. By the time sales decline, the damage is done. EchoRank turns every signal into one explainable Reputation Risk Score, so you prevent instead of react.",
+      sub: "One unhappy customer. One unanswered review. One competitor gaining momentum. One AI answer that gets your business wrong. By the time sales decline, the damage is done. Echorank turns every signal into one explainable Reputation Risk Score, so you prevent instead of react.",
       cta1: "Get your Risk Score →",
       cta2: "Book a demo ↗",
     },
@@ -87,7 +87,7 @@ const C: Record<Locale, LpContent> = {
 
   fr: {
     meta: {
-      title: "Score de risque de réputation. EchoRank",
+      title: "Score de risque de réputation. Echorank",
       description:
         "Un score de risque 0–100 explicable, couvrant avis, retours privés, visibilité IA et concurrents, avec alertes et chiffre d'affaires à risque, pour prévenir au lieu de réagir.",
     },
@@ -95,7 +95,7 @@ const C: Record<Locale, LpContent> = {
       label: "/ RISQUE DE RÉPUTATION",
       h1a: "Cessez de perdre des clients sans le savoir.",
       h1b: "L'essentiel des dégâts se fait en silence.",
-      sub: "Un client mécontent. Un avis sans réponse. Un concurrent qui prend de l'élan. Une réponse d'IA qui se trompe sur votre entreprise. Quand les ventes baissent, le mal est déjà fait. EchoRank transforme chaque signal en un Score de risque de réputation explicable, pour prévenir au lieu de réagir.",
+      sub: "Un client mécontent. Un avis sans réponse. Un concurrent qui prend de l'élan. Une réponse d'IA qui se trompe sur votre entreprise. Quand les ventes baissent, le mal est déjà fait. Echorank transforme chaque signal en un Score de risque de réputation explicable, pour prévenir au lieu de réagir.",
       cta1: "Obtenez votre Score de risque →",
       cta2: "Réserver une démo ↗",
     },
@@ -148,7 +148,7 @@ const C: Record<Locale, LpContent> = {
 
   "de-CH": {
     meta: {
-      title: "Reputations-Risiko-Score. EchoRank",
+      title: "Reputations-Risiko-Score. Echorank",
       description:
         "Ein erklärbarer 0–100-Risiko-Score über Bewertungen, Feedback, KI-Sichtbarkeit und Konkurrenz, mit Alarmen und Umsatz im Risiko, damit Sie vorbeugen statt reagieren.",
     },
@@ -156,7 +156,7 @@ const C: Record<Locale, LpContent> = {
       label: "/ REPUTATIONSRISIKO",
       h1a: "Verlieren Sie keine Kunden mehr, ohne es zu merken.",
       h1b: "Der grösste Schaden entsteht in der Stille.",
-      sub: "Ein unzufriedener Kunde. Eine unbeantwortete Bewertung. Ein Konkurrent im Aufwind. Eine KI-Antwort, die Ihr Geschäft falsch darstellt. Wenn der Umsatz sinkt, ist der Schaden längst da. EchoRank verwandelt jedes Signal in einen erklärbaren Reputations-Risiko-Score, damit Sie vorbeugen statt reagieren.",
+      sub: "Ein unzufriedener Kunde. Eine unbeantwortete Bewertung. Ein Konkurrent im Aufwind. Eine KI-Antwort, die Ihr Geschäft falsch darstellt. Wenn der Umsatz sinkt, ist der Schaden längst da. Echorank verwandelt jedes Signal in einen erklärbaren Reputations-Risiko-Score, damit Sie vorbeugen statt reagieren.",
       cta1: "Risiko-Score anfordern →",
       cta2: "Demo buchen ↗",
     },
@@ -264,7 +264,7 @@ export default async function ReputationRiskPage({
       <div className={home.container}>
         {/* navbar */}
         <header className={lp.navbar}>
-          <Link href={`/${locale}`} className={lp.logoLink} aria-label="EchoRank 360 — home">
+          <Link href={`/${locale}`} className={lp.logoLink} aria-label="Echorank360 — home">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/echorank-logo-dark.svg" alt="ECHORANK 360" className={lp.logo} />
           </Link>

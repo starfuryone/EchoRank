@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '../../../../lib/signals/db';
 import { resolveTenant, requirePlan } from '../../../../lib/signals/auth-adapter';
+import { upsertSnapshot, snapshotPlacesCompetitor } from '../../../../lib/signals/competitors';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -13,7 +14,13 @@ async function owned(tenantId: string, id: string) {
   return !!c;
 }
 
-/** PATCH /api/competitors/[id] — { name?, placeId?, active?, notes? } */
+/**
+ * PATCH /api/competitors/[id] — { name?, placeId?, address?, active?, notes?,
+ * rating?, reviewCount? }. Setting placeId on a manual row is the "link to
+ * Places" upgrade: snapshot history is kept and a first snapshot is recorded
+ * immediately (from the passed search-candidate numbers when present,
+ * otherwise one details fetch).
+ */
 export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: string }> }) {
   const auth = await resolveTenant(req);
   if (!auth) return NextResponse.json({ error: 'unauthorized' }, { status: 401 });
@@ -40,6 +47,10 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
     else if (typeof body.placeId === 'string') data.placeId = body.placeId.trim().slice(0, 200);
     else return NextResponse.json({ error: 'placeId invalid' }, { status: 400 });
   }
+  if ('address' in body) {
+    data.address =
+      typeof body.address === 'string' && body.address.trim() ? body.address.trim().slice(0, 300) : null;
+  }
   if ('active' in body) {
     if (typeof body.active === 'boolean') data.active = body.active;
     else return NextResponse.json({ error: 'active must be boolean' }, { status: 400 });
@@ -49,11 +60,38 @@ export async function PATCH(req: NextRequest, ctx: { params: Promise<{ id: strin
   }
   if (!Object.keys(data).length) return NextResponse.json({ error: 'nothing to update' }, { status: 400 });
 
+  if (typeof data.placeId === 'string') {
+    const dup = await prisma.competitor.findFirst({
+      where: { tenantId: auth.tenantId, placeId: data.placeId, NOT: { id } },
+      select: { id: true },
+    });
+    if (dup) return NextResponse.json({ error: 'duplicate_place' }, { status: 409 });
+  }
+
   const competitor = await prisma.competitor.update({
     where: { id },
     data,
-    select: { id: true, name: true, placeId: true, platform: true, active: true, notes: true },
+    select: { id: true, name: true, placeId: true, address: true, platform: true, active: true, notes: true },
   });
+
+  // Linked to Places just now → record a first snapshot so the row shows data
+  // immediately. Candidate numbers from the search response cost nothing.
+  if (typeof data.placeId === 'string') {
+    const rating =
+      typeof body.rating === 'number' && Number.isFinite(body.rating) && body.rating >= 0 && body.rating <= 5
+        ? body.rating
+        : null;
+    const reviewCount =
+      typeof body.reviewCount === 'number' && Number.isInteger(body.reviewCount) && body.reviewCount >= 0
+        ? body.reviewCount
+        : null;
+    if (rating !== null || reviewCount !== null) {
+      await upsertSnapshot(id, { rating, reviewCount, raw: { source: 'link', address: data.address ?? null } });
+    } else {
+      await snapshotPlacesCompetitor(id, data.placeId);
+    }
+  }
+
   return NextResponse.json({ competitor });
 }
 

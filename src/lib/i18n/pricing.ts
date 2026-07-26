@@ -1,4 +1,4 @@
-// EchoRank pricing — source of truth for locale -> currency and the price ladder.
+// Echorank pricing — source of truth for locale -> currency and the price ladder.
 // MXN is a deliberate market price (Inicio/Crecimiento are NOT FX-of-USD; they
 // carry a ~40% Mexico discount). Do not "fix" them back to FX parity on the
 // semi-annual currency review — only USD/EUR/GBP/CAD/CHF track FX.

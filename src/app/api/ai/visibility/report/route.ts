@@ -188,7 +188,7 @@ async function assemble(tenantId: string, brand: string) {
     primary_opportunity: primaryOpportunity,
     methodology: {
       sources:
-        "EchoRank 360 audit signals (robots.txt, rendered HTML, structured data, metadata, sitemaps) and scheduled prompt runs against major AI assistants",
+        "Echorank360 audit signals (robots.txt, rendered HTML, structured data, metadata, sitemaps) and scheduled prompt runs against major AI assistants",
       prompt_count: prompts.length,
     },
   };

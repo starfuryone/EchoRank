@@ -33,12 +33,12 @@ export interface BuildMetadataInput {
  * Compose the final <title>, guaranteeing the brand appears exactly once.
  *
  * A page passes its bare title ("Privacy Policy") and gets
- * "Privacy Policy | EchoRank 360". A title that already carries the brand
- * ("EchoRank 360 — AI Visibility Management Platform") is used verbatim, so we
- * never produce "… | EchoRank 360 | EchoRank 360".
+ * "Privacy Policy | Echorank360". A title that already carries the brand
+ * ("Echorank360 — AI Visibility Management Platform") is used verbatim, so we
+ * never produce "… | Echorank360 | Echorank360".
  *
  * This is why buildMetadata always emits title.absolute: the root layout's
- * "%s | EchoRank 360" template would append a second brand on top of whatever
+ * "%s | Echorank360" template would append a second brand on top of whatever
  * we return here.
  */
 export function brandTitle(title: string | undefined, locale: SeoLocale): string {
@@ -46,7 +46,7 @@ export function brandTitle(title: string | undefined, locale: SeoLocale): string
   if (!raw) return BRAND_TITLE[locale];
 
   // Strip a trailing brand tail first. Pages historically embedded their own
-  // suffix ("Privacy Policy | EchoRank", "Reputation Risk Score. EchoRank"),
+  // suffix ("Privacy Policy | Echorank", "Reputation Risk Score. Echorank"),
   // which the layout template then doubled. Removing it here means a stale
   // caller can't reintroduce the bug.
   const stripped = raw.replace(/[\s|–—\-.,·]*echorank\s*(?:360)?\s*$/i, "").trim();

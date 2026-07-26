@@ -55,7 +55,7 @@ const COPYRIGHT = "© 2026 ECHORANK / CHATLOGIC INSIGHTS LTD";
 // ─── en (US / international default) ────────────────────────────────────────
 const en: HomeContent = {
   meta: {
-    title: "EchoRank. AI Reputation Intelligence Platform",
+    title: "Echorank. AI Reputation Intelligence Platform",
     description:
       "When customers ask AI who to hire, does AI send them to you, or to your competitor? Audit your AI visibility, track answers daily, and act on an explainable reputation risk score.",
   },
@@ -72,7 +72,7 @@ const en: HomeContent = {
     h1a: "When customers ask AI about your business…",
     h1b: "does AI send them to you, or to your competitor?",
     subhead:
-      "Every day, potential customers ask ChatGPT, Perplexity, and Google AI who to hire, where to eat, which contractor to trust, or which company to call. If AI doesn't recommend you, you never even get the chance to compete. EchoRank helps you become the business AI recommends, bringing you more qualified leads, protecting your reputation, and uncovering hidden revenue before it's lost.",
+      "Every day, potential customers ask ChatGPT, Perplexity, and Google AI who to hire, where to eat, which contractor to trust, or which company to call. If AI doesn't recommend you, you never even get the chance to compete. Echorank helps you become the business AI recommends, bringing you more qualified leads, protecting your reputation, and uncovering hidden revenue before it's lost.",
     cta1: "Check your AI visibility →",
     cta2: "Start free trial ↗",
   },
@@ -95,25 +95,25 @@ const en: HomeContent = {
       {
         key: "visibility",
         title: "Become the business AI recommends",
-        body: "Every day AI decides which businesses get mentioned, most owners have no idea if they're recommended or overlooked. EchoRank audits every factor behind AI visibility and hands you a step-by-step roadmap into AI answers. Know the day AI starts recommending you, and the moment you disappear.",
+        body: "Every day AI decides which businesses get mentioned, most owners have no idea if they're recommended or overlooked. Echorank audits every factor behind AI visibility and hands you a step-by-step roadmap into AI answers. Know the day AI starts recommending you, and the moment you disappear.",
         link: { href: "/ai-visibility", label: "More details →" },
       },
       {
         key: "risk",
         title: "Stop losing customers before you know they're leaving",
-        body: "Reputation problems grow quietly, one unhappy customer, one unanswered review, one competitor gaining momentum. EchoRank connects every signal into one explainable Reputation Risk Score: what's costing you customers, and how much revenue is at risk each month. Prevent instead of react; know where to act first.",
+        body: "Reputation problems grow quietly, one unhappy customer, one unanswered review, one competitor gaining momentum. Echorank connects every signal into one explainable Reputation Risk Score: what's costing you customers, and how much revenue is at risk each month. Prevent instead of react; know where to act first.",
         link: { href: "/reputation-risk", label: "More details →" },
       },
       {
         key: "feedback",
         title: "Turn customer feedback into more sales",
-        body: "Every review contains valuable information, most businesses never have time to find it. EchoRank reads every review and comment, flags recurring complaints before they become crises, detects suspicious review activity, and drafts responses in your own voice. Happier customers, stronger credibility.",
+        body: "Every review contains valuable information, most businesses never have time to find it. Echorank reads every review and comment, flags recurring complaints before they become crises, detects suspicious review activity, and drafts responses in your own voice. Happier customers, stronger credibility.",
         link: { href: "/customer-feedback", label: "More details →" },
       },
       {
         key: "engine",
         title: "A reputation that keeps working while you sleep",
-        body: "A great reputation isn't luck, it's a system. EchoRank automates the heavy lifting: compliant SMS, email and QR campaigns, multi-platform monitoring, white-label tools for agencies, and workflows that keep fresh customer signals flowing. More trust, more referrals, more customers choosing you first.",
+        body: "A great reputation isn't luck, it's a system. Echorank automates the heavy lifting: compliant SMS, email and QR campaigns, multi-platform monitoring, white-label tools for agencies, and workflows that keep fresh customer signals flowing. More trust, more referrals, more customers choosing you first.",
         link: { href: "/reputation-engine", label: "More details →" },
       },
       {
@@ -212,7 +212,7 @@ const en: HomeContent = {
 // ─── en-CA (Canada. English) ───────────────────────────────────────────────
 const enCA: HomeContent = {
   meta: {
-    title: "EchoRank. AI Reputation Intelligence Platform",
+    title: "Echorank. AI Reputation Intelligence Platform",
     description:
       "When customers ask AI who to hire, does AI send them to you, or to your competitor? Audit your AI visibility, track answers daily, and act on an explainable reputation risk score.",
   },
@@ -229,7 +229,7 @@ const enCA: HomeContent = {
     h1a: "When customers ask AI about your business…",
     h1b: "does AI send them to you, or to your competitor?",
     subhead:
-      "Every day, potential customers ask ChatGPT, Perplexity, and Google AI who to hire, where to eat, which contractor to trust, or which company to call. If AI doesn't recommend you, you never even get the chance to compete. EchoRank helps you become the business AI recommends, bringing you more qualified leads, protecting your reputation, and uncovering hidden revenue before it's lost.",
+      "Every day, potential customers ask ChatGPT, Perplexity, and Google AI who to hire, where to eat, which contractor to trust, or which company to call. If AI doesn't recommend you, you never even get the chance to compete. Echorank helps you become the business AI recommends, bringing you more qualified leads, protecting your reputation, and uncovering hidden revenue before it's lost.",
     cta1: "Check your AI visibility →",
     cta2: "Start free trial ↗",
   },
@@ -252,25 +252,25 @@ const enCA: HomeContent = {
       {
         key: "visibility",
         title: "Become the business AI recommends",
-        body: "Every day AI decides which businesses get mentioned, most owners have no idea if they're recommended or overlooked. EchoRank audits every factor behind AI visibility and hands you a step-by-step roadmap into AI answers. Know the day AI starts recommending you, and the moment you disappear.",
+        body: "Every day AI decides which businesses get mentioned, most owners have no idea if they're recommended or overlooked. Echorank audits every factor behind AI visibility and hands you a step-by-step roadmap into AI answers. Know the day AI starts recommending you, and the moment you disappear.",
         link: { href: "/ai-visibility", label: "More details →" },
       },
       {
         key: "risk",
         title: "Stop losing customers before you know they're leaving",
-        body: "Reputation problems grow quietly, one unhappy customer, one unanswered review, one competitor gaining momentum. EchoRank connects every signal into one explainable Reputation Risk Score: what's costing you customers, and how much revenue is at risk each month. Prevent instead of react; know where to act first.",
+        body: "Reputation problems grow quietly, one unhappy customer, one unanswered review, one competitor gaining momentum. Echorank connects every signal into one explainable Reputation Risk Score: what's costing you customers, and how much revenue is at risk each month. Prevent instead of react; know where to act first.",
         link: { href: "/reputation-risk", label: "More details →" },
       },
       {
         key: "feedback",
         title: "Turn customer feedback into more sales",
-        body: "Every review contains valuable information, most businesses never have time to find it. EchoRank reads every review and comment, flags recurring complaints before they become crises, detects suspicious review activity, and drafts responses in your own voice. Happier customers, stronger credibility.",
+        body: "Every review contains valuable information, most businesses never have time to find it. Echorank reads every review and comment, flags recurring complaints before they become crises, detects suspicious review activity, and drafts responses in your own voice. Happier customers, stronger credibility.",
         link: { href: "/customer-feedback", label: "More details →" },
       },
       {
         key: "engine",
         title: "A reputation that keeps working while you sleep",
-        body: "A great reputation isn't luck, it's a system. EchoRank automates the heavy lifting: compliant SMS, email and QR campaigns, multi-platform monitoring, white-label tools for agencies, and workflows that keep fresh customer signals flowing. More trust, more referrals, more customers choosing you first.",
+        body: "A great reputation isn't luck, it's a system. Echorank automates the heavy lifting: compliant SMS, email and QR campaigns, multi-platform monitoring, white-label tools for agencies, and workflows that keep fresh customer signals flowing. More trust, more referrals, more customers choosing you first.",
         link: { href: "/reputation-engine", label: "More details →" },
       },
       {
@@ -367,7 +367,7 @@ const enCA: HomeContent = {
 // ─── fr (Europe. EUR; also Swiss-Romandie with CHF) ─────────────────────────
 const fr: HomeContent = {
   meta: {
-    title: "EchoRank. Plateforme d'intelligence de réputation IA",
+    title: "Echorank. Plateforme d'intelligence de réputation IA",
     description:
       "Quand vos clients interrogent l'IA, vous envoie-t-elle chez vous, ou chez votre concurrent ? Auditez votre visibilité IA, suivez les réponses chaque jour et agissez sur un score de risque explicable.",
   },
@@ -384,7 +384,7 @@ const fr: HomeContent = {
     h1a: "Quand vos clients interrogent l'IA à votre sujet…",
     h1b: "vous envoie-t-elle chez vous, ou chez votre concurrent ?",
     subhead:
-      "Chaque jour, des clients potentiels demandent à ChatGPT, Perplexity et Google AI qui embaucher, où manger, à quel artisan faire confiance ou quelle entreprise appeler. Si l'IA ne vous recommande pas, vous n'avez même pas la chance de concourir. EchoRank fait de vous l'entreprise que l'IA recommande, plus de prospects qualifiés, une réputation protégée et des revenus cachés récupérés avant qu'ils ne soient perdus.",
+      "Chaque jour, des clients potentiels demandent à ChatGPT, Perplexity et Google AI qui embaucher, où manger, à quel artisan faire confiance ou quelle entreprise appeler. Si l'IA ne vous recommande pas, vous n'avez même pas la chance de concourir. Echorank fait de vous l'entreprise que l'IA recommande, plus de prospects qualifiés, une réputation protégée et des revenus cachés récupérés avant qu'ils ne soient perdus.",
     cta1: "Vérifiez votre visibilité IA →",
     cta2: "Essai gratuit ↗",
   },
@@ -408,28 +408,28 @@ const fr: HomeContent = {
         key: "visibility",
         tag: "visibilité",
         title: "Devenez l'entreprise que l'IA recommande",
-        body: "Chaque jour, l'IA décide quelles entreprises méritent d'être citées, la plupart des dirigeants n'en savent rien. EchoRank audite chaque facteur de votre visibilité IA et vous remet une feuille de route pas à pas vers les réponses générées. Sachez quand l'IA commence à vous recommander, et à l'instant où vous disparaissez.",
+        body: "Chaque jour, l'IA décide quelles entreprises méritent d'être citées, la plupart des dirigeants n'en savent rien. Echorank audite chaque facteur de votre visibilité IA et vous remet une feuille de route pas à pas vers les réponses générées. Sachez quand l'IA commence à vous recommander, et à l'instant où vous disparaissez.",
         link: { href: "/ai-visibility", label: "Plus de détails →" },
       },
       {
         key: "risk",
         tag: "risque",
         title: "Cessez de perdre des clients sans le savoir",
-        body: "Les problèmes de réputation grandissent en silence, un client mécontent, un avis sans réponse, un concurrent qui prend de l'élan. EchoRank relie chaque signal en un Score de risque explicable : ce qui vous coûte des clients et combien de chiffre d'affaires est menacé chaque mois. Prévenez au lieu de réagir ; sachez où agir en premier.",
+        body: "Les problèmes de réputation grandissent en silence, un client mécontent, un avis sans réponse, un concurrent qui prend de l'élan. Echorank relie chaque signal en un Score de risque explicable : ce qui vous coûte des clients et combien de chiffre d'affaires est menacé chaque mois. Prévenez au lieu de réagir ; sachez où agir en premier.",
         link: { href: "/reputation-risk", label: "Plus de détails →" },
       },
       {
         key: "feedback",
         tag: "retours",
         title: "Transformez les retours clients en ventes",
-        body: "Chaque avis contient une information précieuse, la plupart des entreprises n'ont jamais le temps de la trouver. EchoRank lit chaque avis et commentaire, repère les plaintes récurrentes avant la crise, détecte les activités d'avis suspectes et rédige des réponses dans votre ton. Clients plus satisfaits, crédibilité renforcée.",
+        body: "Chaque avis contient une information précieuse, la plupart des entreprises n'ont jamais le temps de la trouver. Echorank lit chaque avis et commentaire, repère les plaintes récurrentes avant la crise, détecte les activités d'avis suspectes et rédige des réponses dans votre ton. Clients plus satisfaits, crédibilité renforcée.",
         link: { href: "/customer-feedback", label: "Plus de détails →" },
       },
       {
         key: "engine",
         tag: "moteur",
         title: "Une réputation qui travaille pendant que vous dormez",
-        body: "Une grande réputation n'est pas un hasard : c'est un système. EchoRank automatise le gros du travail : campagnes conformes par SMS, e-mail et QR, surveillance multi-plateformes, marque blanche pour agences et flux qui alimentent en continu des signaux clients frais. Plus de confiance, plus de recommandations, plus de clients qui vous choisissent en premier.",
+        body: "Une grande réputation n'est pas un hasard : c'est un système. Echorank automatise le gros du travail : campagnes conformes par SMS, e-mail et QR, surveillance multi-plateformes, marque blanche pour agences et flux qui alimentent en continu des signaux clients frais. Plus de confiance, plus de recommandations, plus de clients qui vous choisissent en premier.",
         link: { href: "/reputation-engine", label: "Plus de détails →" },
       },
       {
@@ -531,7 +531,7 @@ const fr: HomeContent = {
 // ─── fr-CA (Quebec), fr with Quebec vocabulary overrides ─────────────────────
 const frCA: HomeContent = {
   meta: {
-    title: "EchoRank. Plateforme d'intelligence de réputation IA",
+    title: "Echorank. Plateforme d'intelligence de réputation IA",
     description:
       "Quand vos clients interrogent l'IA, vous envoie-t-elle chez vous, ou chez votre concurrent ? Auditez votre visibilité IA, suivez les réponses chaque jour et agissez sur un score de risque explicable.",
   },
@@ -548,7 +548,7 @@ const frCA: HomeContent = {
     h1a: "Quand vos clients interrogent l'IA à propos de votre entreprise…",
     h1b: "est-ce qu'elle les envoie chez vous, ou chez votre concurrent ?",
     subhead:
-      "Chaque jour, des clients potentiels demandent à ChatGPT, Perplexity et Google AI qui embaucher, où manger, à quel entrepreneur faire confiance ou quelle entreprise appeler. Si l'IA ne vous recommande pas, vous n'avez même pas la chance de compétitionner. EchoRank fait de vous l'entreprise que l'IA recommande, plus de clients potentiels qualifiés, une réputation protégée et des revenus cachés récupérés avant qu'ils soient perdus.",
+      "Chaque jour, des clients potentiels demandent à ChatGPT, Perplexity et Google AI qui embaucher, où manger, à quel entrepreneur faire confiance ou quelle entreprise appeler. Si l'IA ne vous recommande pas, vous n'avez même pas la chance de compétitionner. Echorank fait de vous l'entreprise que l'IA recommande, plus de clients potentiels qualifiés, une réputation protégée et des revenus cachés récupérés avant qu'ils soient perdus.",
     cta1: "Vérifiez votre visibilité IA →",
     cta2: "Essai gratuit ↗",
   },
@@ -572,28 +572,28 @@ const frCA: HomeContent = {
         key: "visibility",
         tag: "visibilité",
         title: "Devenez l'entreprise que l'IA recommande",
-        body: "Chaque jour, l'IA décide quelles entreprises méritent d'être mentionnées, la plupart des propriétaires n'en ont aucune idée. EchoRank audite chaque facteur de votre visibilité IA et vous remet une feuille de route étape par étape vers les réponses générées. Sachez quand l'IA commence à vous recommander, et à l'instant où vous disparaissez.",
+        body: "Chaque jour, l'IA décide quelles entreprises méritent d'être mentionnées, la plupart des propriétaires n'en ont aucune idée. Echorank audite chaque facteur de votre visibilité IA et vous remet une feuille de route étape par étape vers les réponses générées. Sachez quand l'IA commence à vous recommander, et à l'instant où vous disparaissez.",
         link: { href: "/ai-visibility", label: "Plus de détails →" },
       },
       {
         key: "risk",
         tag: "risque",
         title: "Arrêtez de perdre des clients sans le savoir",
-        body: "Les problèmes de réputation grandissent en silence, un client insatisfait, un avis sans réponse, un concurrent qui prend de l'élan. EchoRank relie chaque signal en un Score de risque facile à comprendre : ce qui vous coûte des clients et combien de revenus sont à risque chaque mois. Prévenez au lieu de réagir; sachez où agir en premier.",
+        body: "Les problèmes de réputation grandissent en silence, un client insatisfait, un avis sans réponse, un concurrent qui prend de l'élan. Echorank relie chaque signal en un Score de risque facile à comprendre : ce qui vous coûte des clients et combien de revenus sont à risque chaque mois. Prévenez au lieu de réagir; sachez où agir en premier.",
         link: { href: "/reputation-risk", label: "Plus de détails →" },
       },
       {
         key: "feedback",
         tag: "rétroaction",
         title: "Transformez les commentaires clients en ventes",
-        body: "Chaque avis contient de l'information précieuse, la plupart des entreprises n'ont jamais le temps de la trouver. EchoRank lit chaque avis et commentaire, repère les plaintes récurrentes avant la crise, détecte les activités d'avis suspectes et rédige des réponses dans votre ton. Des clients plus satisfaits, une crédibilité renforcée.",
+        body: "Chaque avis contient de l'information précieuse, la plupart des entreprises n'ont jamais le temps de la trouver. Echorank lit chaque avis et commentaire, repère les plaintes récurrentes avant la crise, détecte les activités d'avis suspectes et rédige des réponses dans votre ton. Des clients plus satisfaits, une crédibilité renforcée.",
         link: { href: "/customer-feedback", label: "Plus de détails →" },
       },
       {
         key: "engine",
         tag: "moteur",
         title: "Une réputation qui travaille pendant que vous dormez",
-        body: "Une bonne réputation, ce n'est pas de la chance : c'est un système. EchoRank automatise le gros du travail : campagnes conformes par texto, courriel et code QR, surveillance multiplateforme, marque blanche pour agences et flux qui gardent les signaux clients bien frais. Plus de confiance, plus de références, plus de clients qui vous choisissent en premier.",
+        body: "Une bonne réputation, ce n'est pas de la chance : c'est un système. Echorank automatise le gros du travail : campagnes conformes par texto, courriel et code QR, surveillance multiplateforme, marque blanche pour agences et flux qui gardent les signaux clients bien frais. Plus de confiance, plus de références, plus de clients qui vous choisissent en premier.",
         link: { href: "/reputation-engine", label: "Plus de détails →" },
       },
       {
@@ -695,7 +695,7 @@ const frCA: HomeContent = {
 // ─── de-CH (Switzerland. German) ─────────────────────────────────────────────
 const deCH: HomeContent = {
   meta: {
-    title: "EchoRank. KI-Reputationsintelligenz-Plattform",
+    title: "Echorank. KI-Reputationsintelligenz-Plattform",
     description:
       "Wenn Kunden die KI fragen, schickt sie diese zu Ihnen, oder zur Konkurrenz? Prüfen Sie Ihre KI-Sichtbarkeit, verfolgen Sie Antworten täglich und handeln Sie auf Basis eines erklärbaren Risiko-Scores.",
   },
@@ -712,7 +712,7 @@ const deCH: HomeContent = {
     h1a: "Wenn Kunden die KI nach Ihrem Geschäft fragen…",
     h1b: "schickt sie diese zu Ihnen, oder zur Konkurrenz?",
     subhead:
-      "Jeden Tag fragen potenzielle Kunden ChatGPT, Perplexity und Google AI, wen sie beauftragen, wo sie essen, welchem Handwerker sie vertrauen oder welche Firma sie anrufen sollen. Wenn die KI Sie nicht empfiehlt, bekommen Sie nicht einmal die Chance, mitzubieten. EchoRank macht Sie zum Unternehmen, das die KI empfiehlt, mehr qualifizierte Anfragen, eine geschützte Reputation und verborgener Umsatz, der gesichert wird, bevor er verloren geht.",
+      "Jeden Tag fragen potenzielle Kunden ChatGPT, Perplexity und Google AI, wen sie beauftragen, wo sie essen, welchem Handwerker sie vertrauen oder welche Firma sie anrufen sollen. Wenn die KI Sie nicht empfiehlt, bekommen Sie nicht einmal die Chance, mitzubieten. Echorank macht Sie zum Unternehmen, das die KI empfiehlt, mehr qualifizierte Anfragen, eine geschützte Reputation und verborgener Umsatz, der gesichert wird, bevor er verloren geht.",
     cta1: "KI-Sichtbarkeit prüfen →",
     cta2: "Kostenlos testen ↗",
   },
@@ -736,28 +736,28 @@ const deCH: HomeContent = {
         key: "visibility",
         tag: "sichtbarkeit",
         title: "Werden Sie das Unternehmen, das die KI empfiehlt",
-        body: "Jeden Tag entscheidet die KI, welche Unternehmen erwähnt werden, die meisten Inhaber wissen nicht, ob sie empfohlen oder übersehen werden. EchoRank prüft jeden Faktor Ihrer KI-Sichtbarkeit und liefert einen Schritt-für-Schritt-Fahrplan in die KI-Antworten. Sie wissen, wann die KI Sie zu empfehlen beginnt, und sofort, wenn Sie verschwinden.",
+        body: "Jeden Tag entscheidet die KI, welche Unternehmen erwähnt werden, die meisten Inhaber wissen nicht, ob sie empfohlen oder übersehen werden. Echorank prüft jeden Faktor Ihrer KI-Sichtbarkeit und liefert einen Schritt-für-Schritt-Fahrplan in die KI-Antworten. Sie wissen, wann die KI Sie zu empfehlen beginnt, und sofort, wenn Sie verschwinden.",
         link: { href: "/ai-visibility", label: "Mehr erfahren →" },
       },
       {
         key: "risk",
         tag: "risiko",
         title: "Verlieren Sie keine Kunden mehr, ohne es zu merken",
-        body: "Reputationsprobleme wachsen leise, ein unzufriedener Kunde, eine unbeantwortete Bewertung, ein Konkurrent im Aufwind. EchoRank verbindet jedes Signal zu einem erklärbaren Risiko-Score: was Sie Kunden kostet und wie viel Umsatz jeden Monat auf dem Spiel steht. Vorbeugen statt reagieren; wissen, wo zuerst zu handeln ist.",
+        body: "Reputationsprobleme wachsen leise, ein unzufriedener Kunde, eine unbeantwortete Bewertung, ein Konkurrent im Aufwind. Echorank verbindet jedes Signal zu einem erklärbaren Risiko-Score: was Sie Kunden kostet und wie viel Umsatz jeden Monat auf dem Spiel steht. Vorbeugen statt reagieren; wissen, wo zuerst zu handeln ist.",
         link: { href: "/reputation-risk", label: "Mehr erfahren →" },
       },
       {
         key: "feedback",
         tag: "feedback",
         title: "Machen Sie aus Kundenfeedback mehr Umsatz",
-        body: "Jede Bewertung enthält wertvolle Informationen, den meisten Unternehmen fehlt die Zeit, sie zu finden. EchoRank liest jede Bewertung und jeden Kommentar, erkennt wiederkehrende Beschwerden vor der Krise, entdeckt verdächtige Bewertungsaktivitäten und entwirft Antworten in Ihrem Ton. Zufriedenere Kunden, stärkere Glaubwürdigkeit.",
+        body: "Jede Bewertung enthält wertvolle Informationen, den meisten Unternehmen fehlt die Zeit, sie zu finden. Echorank liest jede Bewertung und jeden Kommentar, erkennt wiederkehrende Beschwerden vor der Krise, entdeckt verdächtige Bewertungsaktivitäten und entwirft Antworten in Ihrem Ton. Zufriedenere Kunden, stärkere Glaubwürdigkeit.",
         link: { href: "/customer-feedback", label: "Mehr erfahren →" },
       },
       {
         key: "engine",
         tag: "motor",
         title: "Eine Reputation, die arbeitet, während Sie schlafen",
-        body: "Eine starke Reputation ist kein Glück, sondern ein System. EchoRank automatisiert die Schwerarbeit: konforme Kampagnen per SMS, E-Mail und QR, Multi-Plattform-Überwachung, White-Label für Agenturen und Abläufe, die laufend frische Kundensignale liefern. Mehr Vertrauen, mehr Empfehlungen, mehr Kunden, die Sie zuerst wählen.",
+        body: "Eine starke Reputation ist kein Glück, sondern ein System. Echorank automatisiert die Schwerarbeit: konforme Kampagnen per SMS, E-Mail und QR, Multi-Plattform-Überwachung, White-Label für Agenturen und Abläufe, die laufend frische Kundensignale liefern. Mehr Vertrauen, mehr Empfehlungen, mehr Kunden, die Sie zuerst wählen.",
         link: { href: "/reputation-engine", label: "Mehr erfahren →" },
       },
       {
@@ -930,26 +930,26 @@ export interface AboutContent {
 export const ABOUT: Record<Locale, AboutContent> = {
   en: {
     meta: {
-      title: "About EchoRank 360 — AI Visibility Management",
+      title: "About Echorank360 — AI Visibility Management",
       titleShort: "About",
       description:
-        "EchoRank 360 is an AI Visibility Management platform built by ChatLogic Insights Ltd. Learn what we measure, which AI engines we track, and how to reach us.",
+        "Echorank360 is an AI Visibility Management platform built by ChatLogic Insights Ltd. Learn what we measure, which AI engines we track, and how to reach us.",
     },
-    h1: "About EchoRank 360",
+    h1: "About Echorank360",
     lede:
-      "EchoRank 360 is an AI Visibility Management platform built by ChatLogic Insights Ltd. We measure whether AI assistants recommend your business — and show you what to change when they don't.",
+      "Echorank360 is an AI Visibility Management platform built by ChatLogic Insights Ltd. We measure whether AI assistants recommend your business — and show you what to change when they don't.",
     sections: [
       {
         h2: "Why we built it",
         body: [
           "Search engines gave businesses a list of links to compete for. AI assistants give their users a verdict: a short list of names, delivered with the confidence of a recommendation from someone you trust. That shift changed what being findable means. A business can rank respectably on a results page and still never be named when a customer asks an assistant who to hire.",
-          "ChatLogic Insights Ltd built EchoRank 360 to make that new surface measurable. Instead of guessing whether AI mentions you, you get a number, the evidence behind it, and a prioritized list of things to fix.",
+          "ChatLogic Insights Ltd built Echorank360 to make that new surface measurable. Instead of guessing whether AI mentions you, you get a number, the evidence behind it, and a prioritized list of things to fix.",
         ],
       },
       {
         h2: "What the platform does",
         body: [
-          "EchoRank 360 runs your customers' real questions against the major AI engines and records what comes back — whether you appear, where you place, how you are described, and when you vanish. Those observations roll up into an AI Visibility Score out of 100, supported by five component scores: AI Citation Score, Authority Score, Review Health, Citation Consistency and Competitor Gap.",
+          "Echorank360 runs your customers' real questions against the major AI engines and records what comes back — whether you appear, where you place, how you are described, and when you vanish. Those observations roll up into an AI Visibility Score out of 100, supported by five component scores: AI Citation Score, Authority Score, Review Health, Citation Consistency and Competitor Gap.",
           "Underneath sit the signals engines weigh when they decide who to recommend: reviews, website quality, citations, trust, authority, freshness, structured data and brand mentions. The platform also carries the classic reputation stack — review campaigns by email, SMS and QR, private feedback routing, AI-drafted responses and suspicious review detection — because the review platforms you already manage are among the sources AI engines learn from.",
           "Every audit ends in a roadmap rather than a report: prioritized fixes, each with an estimated score lift and an expected level of effort.",
         ],
@@ -964,7 +964,7 @@ export const ABOUT: Record<Locale, AboutContent> = {
     contact: {
       h2: "Contact",
       body:
-        "EchoRank 360 is operated by ChatLogic Insights Ltd. For privacy and data-protection requests, including access and deletion, write to us at:",
+        "Echorank360 is operated by ChatLogic Insights Ltd. For privacy and data-protection requests, including access and deletion, write to us at:",
       email: "privacy@echorank360.com",
     },
     backHome: "← Back to home",
@@ -972,26 +972,26 @@ export const ABOUT: Record<Locale, AboutContent> = {
 
   "en-CA": {
     meta: {
-      title: "About EchoRank 360 — AI Visibility Management",
+      title: "About Echorank360 — AI Visibility Management",
       titleShort: "About",
       description:
-        "EchoRank 360 is an AI Visibility Management platform built by ChatLogic Insights Ltd. Learn what we measure, which AI engines we track, and how to reach us.",
+        "Echorank360 is an AI Visibility Management platform built by ChatLogic Insights Ltd. Learn what we measure, which AI engines we track, and how to reach us.",
     },
-    h1: "About EchoRank 360",
+    h1: "About Echorank360",
     lede:
-      "EchoRank 360 is an AI Visibility Management platform built by ChatLogic Insights Ltd. We measure whether AI assistants recommend your business — and show you what to change when they don't.",
+      "Echorank360 is an AI Visibility Management platform built by ChatLogic Insights Ltd. We measure whether AI assistants recommend your business — and show you what to change when they don't.",
     sections: [
       {
         h2: "Why we built it",
         body: [
           "Search engines gave businesses a list of links to compete for. AI assistants give their users a verdict: a short list of names, delivered with the confidence of a recommendation from someone you trust. That shift changed what being findable means. A business can rank respectably on a results page and still never be named when a customer asks an assistant who to hire.",
-          "ChatLogic Insights Ltd built EchoRank 360 to make that new surface measurable. Instead of guessing whether AI mentions you, you get a number, the evidence behind it, and a prioritized list of things to fix.",
+          "ChatLogic Insights Ltd built Echorank360 to make that new surface measurable. Instead of guessing whether AI mentions you, you get a number, the evidence behind it, and a prioritized list of things to fix.",
         ],
       },
       {
         h2: "What the platform does",
         body: [
-          "EchoRank 360 runs your customers' real questions against the major AI engines and records what comes back — whether you appear, where you place, how you are described, and when you vanish. Those observations roll up into an AI Visibility Score out of 100, supported by five component scores: AI Citation Score, Authority Score, Review Health, Citation Consistency and Competitor Gap.",
+          "Echorank360 runs your customers' real questions against the major AI engines and records what comes back — whether you appear, where you place, how you are described, and when you vanish. Those observations roll up into an AI Visibility Score out of 100, supported by five component scores: AI Citation Score, Authority Score, Review Health, Citation Consistency and Competitor Gap.",
           "Underneath sit the signals engines weigh when they decide who to recommend: reviews, website quality, citations, trust, authority, freshness, structured data and brand mentions. The platform also carries the classic reputation stack — review campaigns by email, SMS and QR, private feedback routing, AI-drafted responses and suspicious review detection — because the review platforms you already manage are among the sources AI engines learn from.",
           "Every audit ends in a roadmap rather than a report: prioritized fixes, each with an estimated score lift and an expected level of effort.",
         ],
@@ -1006,7 +1006,7 @@ export const ABOUT: Record<Locale, AboutContent> = {
     contact: {
       h2: "Contact",
       body:
-        "EchoRank 360 is operated by ChatLogic Insights Ltd. Canadian plans are billed in Canadian dollars. For privacy and data-protection requests, including access and deletion, write to us at:",
+        "Echorank360 is operated by ChatLogic Insights Ltd. Canadian plans are billed in Canadian dollars. For privacy and data-protection requests, including access and deletion, write to us at:",
       email: "privacy@echorank360.com",
     },
     backHome: "← Back to home",
@@ -1014,26 +1014,26 @@ export const ABOUT: Record<Locale, AboutContent> = {
 
   fr: {
     meta: {
-      title: "À propos d'EchoRank 360 — Visibilité IA",
+      title: "À propos d'Echorank360 — Visibilité IA",
       titleShort: "À propos",
       description:
-        "EchoRank 360 est une plateforme de gestion de visibilité IA développée par ChatLogic Insights Ltd. Découvrez ce que nous mesurons, les moteurs IA suivis et comment nous joindre.",
+        "Echorank360 est une plateforme de gestion de visibilité IA développée par ChatLogic Insights Ltd. Découvrez ce que nous mesurons, les moteurs IA suivis et comment nous joindre.",
     },
-    h1: "À propos d'EchoRank 360",
+    h1: "À propos d'Echorank360",
     lede:
-      "EchoRank 360 est une plateforme de gestion de visibilité IA développée par ChatLogic Insights Ltd. Nous mesurons si les assistants IA recommandent votre entreprise — et vous montrons quoi changer quand ce n'est pas le cas.",
+      "Echorank360 est une plateforme de gestion de visibilité IA développée par ChatLogic Insights Ltd. Nous mesurons si les assistants IA recommandent votre entreprise — et vous montrons quoi changer quand ce n'est pas le cas.",
     sections: [
       {
         h2: "Pourquoi nous l'avons créée",
         body: [
           "Les moteurs de recherche offraient aux entreprises une liste de liens à disputer. Les assistants IA livrent un verdict : une courte liste de noms, énoncée avec l'assurance d'une recommandation venant d'un proche. Ce basculement a changé le sens même d'être trouvable. Une entreprise peut être bien classée sur une page de résultats et n'être jamais nommée quand un client demande à un assistant qui embaucher.",
-          "ChatLogic Insights Ltd a créé EchoRank 360 pour rendre cette nouvelle surface mesurable. Au lieu de deviner si l'IA vous mentionne, vous obtenez un chiffre, les preuves qui le sous-tendent et une liste priorisée de correctifs.",
+          "ChatLogic Insights Ltd a créé Echorank360 pour rendre cette nouvelle surface mesurable. Au lieu de deviner si l'IA vous mentionne, vous obtenez un chiffre, les preuves qui le sous-tendent et une liste priorisée de correctifs.",
         ],
       },
       {
         h2: "Ce que fait la plateforme",
         body: [
-          "EchoRank 360 soumet les vraies questions de vos clients aux principaux moteurs IA et consigne ce qui revient : si vous apparaissez, à quelle position, comment vous êtes décrit et à quel moment vous disparaissez. Ces observations se synthétisent en un score de visibilité IA sur 100, appuyé par cinq scores composants : score de citation IA, score d'autorité, santé des avis, cohérence des citations et écart concurrentiel.",
+          "Echorank360 soumet les vraies questions de vos clients aux principaux moteurs IA et consigne ce qui revient : si vous apparaissez, à quelle position, comment vous êtes décrit et à quel moment vous disparaissez. Ces observations se synthétisent en un score de visibilité IA sur 100, appuyé par cinq scores composants : score de citation IA, score d'autorité, santé des avis, cohérence des citations et écart concurrentiel.",
           "En dessous se trouvent les signaux que les moteurs pèsent pour décider qui recommander : avis, qualité du site, citations, confiance, autorité, fraîcheur, données structurées et mentions de marque. La plateforme intègre aussi la gestion de réputation classique — campagnes d'avis par courriel, SMS et QR, routage de la rétroaction privée, réponses rédigées par IA et détection d'avis suspects — parce que les plateformes d'avis que vous gérez déjà comptent parmi les sources dont les moteurs IA apprennent.",
           "Chaque audit se termine par une feuille de route plutôt qu'un rapport : des correctifs priorisés, chacun avec un gain de score estimé et un effort attendu.",
         ],
@@ -1048,7 +1048,7 @@ export const ABOUT: Record<Locale, AboutContent> = {
     contact: {
       h2: "Nous joindre",
       body:
-        "EchoRank 360 est exploitée par ChatLogic Insights Ltd. Pour toute demande relative à la vie privée et à la protection des données, y compris l'accès et la suppression, écrivez-nous à :",
+        "Echorank360 est exploitée par ChatLogic Insights Ltd. Pour toute demande relative à la vie privée et à la protection des données, y compris l'accès et la suppression, écrivez-nous à :",
       email: "privacy@echorank360.com",
     },
     backHome: "← Retour à l'accueil",
@@ -1056,26 +1056,26 @@ export const ABOUT: Record<Locale, AboutContent> = {
 
   "fr-CA": {
     meta: {
-      title: "À propos d'EchoRank 360 — Visibilité IA",
+      title: "À propos d'Echorank360 — Visibilité IA",
       titleShort: "À propos",
       description:
-        "EchoRank 360 est une plateforme de gestion de visibilité IA développée par ChatLogic Insights Ltd. Découvrez ce que nous mesurons, les moteurs IA suivis et comment nous joindre.",
+        "Echorank360 est une plateforme de gestion de visibilité IA développée par ChatLogic Insights Ltd. Découvrez ce que nous mesurons, les moteurs IA suivis et comment nous joindre.",
     },
-    h1: "À propos d'EchoRank 360",
+    h1: "À propos d'Echorank360",
     lede:
-      "EchoRank 360 est une plateforme de gestion de visibilité IA développée par ChatLogic Insights Ltd. Nous mesurons si les assistants IA recommandent votre entreprise — et vous montrons quoi changer quand ce n'est pas le cas.",
+      "Echorank360 est une plateforme de gestion de visibilité IA développée par ChatLogic Insights Ltd. Nous mesurons si les assistants IA recommandent votre entreprise — et vous montrons quoi changer quand ce n'est pas le cas.",
     sections: [
       {
         h2: "Pourquoi nous l'avons créée",
         body: [
           "Les moteurs de recherche offraient aux entreprises une liste de liens à disputer. Les assistants IA livrent un verdict : une courte liste de noms, énoncée avec l'assurance d'une recommandation venant d'un proche. Ce basculement a changé le sens même d'être trouvable. Une entreprise peut être bien classée dans une page de résultats et n'être jamais nommée quand un client demande à un assistant qui embaucher.",
-          "ChatLogic Insights Ltd a créé EchoRank 360 pour rendre cette nouvelle surface mesurable. Au lieu de deviner si l'IA vous mentionne, vous obtenez un chiffre, les preuves qui le sous-tendent et une liste priorisée de correctifs.",
+          "ChatLogic Insights Ltd a créé Echorank360 pour rendre cette nouvelle surface mesurable. Au lieu de deviner si l'IA vous mentionne, vous obtenez un chiffre, les preuves qui le sous-tendent et une liste priorisée de correctifs.",
         ],
       },
       {
         h2: "Ce que fait la plateforme",
         body: [
-          "EchoRank 360 soumet les vraies questions de vos clients aux principaux moteurs IA et consigne ce qui revient : si vous apparaissez, à quel rang, comment vous êtes décrit et à quel moment vous disparaissez. Ces observations se synthétisent en un score de visibilité IA sur 100, appuyé par cinq scores composants : score de citation IA, score d'autorité, santé des avis, cohérence des citations et écart concurrentiel.",
+          "Echorank360 soumet les vraies questions de vos clients aux principaux moteurs IA et consigne ce qui revient : si vous apparaissez, à quel rang, comment vous êtes décrit et à quel moment vous disparaissez. Ces observations se synthétisent en un score de visibilité IA sur 100, appuyé par cinq scores composants : score de citation IA, score d'autorité, santé des avis, cohérence des citations et écart concurrentiel.",
           "En dessous se trouvent les signaux que les moteurs pèsent pour décider qui recommander : avis, qualité du site, citations, confiance, autorité, fraîcheur, données structurées et mentions de marque. La plateforme intègre aussi la gestion de réputation classique — campagnes d'avis par courriel, SMS et code QR, routage de la rétroaction privée, réponses rédigées par IA et détection d'avis suspects — parce que les plateformes d'avis que vous gérez déjà comptent parmi les sources dont les moteurs IA apprennent.",
           "Chaque audit se termine par une feuille de route plutôt qu'un rapport : des correctifs priorisés, chacun avec un gain de score estimé et un effort attendu.",
         ],
@@ -1090,7 +1090,7 @@ export const ABOUT: Record<Locale, AboutContent> = {
     contact: {
       h2: "Nous joindre",
       body:
-        "EchoRank 360 est exploitée par ChatLogic Insights Ltd. Les forfaits canadiens sont facturés en dollars canadiens. Pour toute demande relative à la vie privée et à la protection des renseignements personnels, y compris l'accès et la suppression, écrivez-nous à :",
+        "Echorank360 est exploitée par ChatLogic Insights Ltd. Les forfaits canadiens sont facturés en dollars canadiens. Pour toute demande relative à la vie privée et à la protection des renseignements personnels, y compris l'accès et la suppression, écrivez-nous à :",
       email: "privacy@echorank360.com",
     },
     backHome: "← Retour à l'accueil",
@@ -1098,26 +1098,26 @@ export const ABOUT: Record<Locale, AboutContent> = {
 
   "de-CH": {
     meta: {
-      title: "Über EchoRank 360 — KI-Sichtbarkeit",
+      title: "Über Echorank360 — KI-Sichtbarkeit",
       titleShort: "Über uns",
       description:
-        "EchoRank 360 ist eine Plattform für KI-Sichtbarkeitsmanagement von ChatLogic Insights Ltd. Erfahren Sie, was wir messen, welche KI-Engines wir verfolgen und wie Sie uns erreichen.",
+        "Echorank360 ist eine Plattform für KI-Sichtbarkeitsmanagement von ChatLogic Insights Ltd. Erfahren Sie, was wir messen, welche KI-Engines wir verfolgen und wie Sie uns erreichen.",
     },
-    h1: "Über EchoRank 360",
+    h1: "Über Echorank360",
     lede:
-      "EchoRank 360 ist eine Plattform für KI-Sichtbarkeitsmanagement, entwickelt von ChatLogic Insights Ltd. Wir messen, ob KI-Assistenten Ihr Unternehmen empfehlen — und zeigen Ihnen, was zu ändern ist, wenn sie es nicht tun.",
+      "Echorank360 ist eine Plattform für KI-Sichtbarkeitsmanagement, entwickelt von ChatLogic Insights Ltd. Wir messen, ob KI-Assistenten Ihr Unternehmen empfehlen — und zeigen Ihnen, was zu ändern ist, wenn sie es nicht tun.",
     sections: [
       {
         h2: "Warum wir sie gebaut haben",
         body: [
           "Suchmaschinen boten Unternehmen eine Liste von Links, um die man konkurrieren konnte. KI-Assistenten liefern ein Urteil: eine kurze Liste von Namen, vorgetragen mit der Selbstverständlichkeit einer Empfehlung aus dem Bekanntenkreis. Diese Verschiebung hat verändert, was Auffindbarkeit überhaupt bedeutet. Ein Unternehmen kann auf einer Ergebnisseite ordentlich ranken und trotzdem nie genannt werden, wenn eine Kundin einen Assistenten fragt, wen sie beauftragen soll.",
-          "ChatLogic Insights Ltd hat EchoRank 360 entwickelt, um diese neue Oberfläche messbar zu machen. Statt zu raten, ob die KI Sie erwähnt, erhalten Sie eine Zahl, die Belege dahinter und eine priorisierte Liste von Massnahmen.",
+          "ChatLogic Insights Ltd hat Echorank360 entwickelt, um diese neue Oberfläche messbar zu machen. Statt zu raten, ob die KI Sie erwähnt, erhalten Sie eine Zahl, die Belege dahinter und eine priorisierte Liste von Massnahmen.",
         ],
       },
       {
         h2: "Was die Plattform leistet",
         body: [
-          "EchoRank 360 stellt den grossen KI-Engines die echten Fragen Ihrer Kundinnen und Kunden und protokolliert, was zurückkommt: ob Sie erscheinen, an welcher Stelle, wie Sie beschrieben werden und wann Sie verschwinden. Diese Beobachtungen verdichten sich zu einem KI-Sichtbarkeits-Score von 0 bis 100, gestützt auf fünf Teilscores: KI-Zitations-Score, Autoritäts-Score, Bewertungsgesundheit, Zitationskonsistenz und Wettbewerbsabstand.",
+          "Echorank360 stellt den grossen KI-Engines die echten Fragen Ihrer Kundinnen und Kunden und protokolliert, was zurückkommt: ob Sie erscheinen, an welcher Stelle, wie Sie beschrieben werden und wann Sie verschwinden. Diese Beobachtungen verdichten sich zu einem KI-Sichtbarkeits-Score von 0 bis 100, gestützt auf fünf Teilscores: KI-Zitations-Score, Autoritäts-Score, Bewertungsgesundheit, Zitationskonsistenz und Wettbewerbsabstand.",
           "Darunter liegen die Signale, die Engines gewichten, wenn sie entscheiden, wen sie empfehlen: Bewertungen, Website-Qualität, Zitationen, Vertrauen, Autorität, Aktualität, strukturierte Daten und Markenerwähnungen. Die Plattform enthält ausserdem das klassische Reputations-Instrumentarium — Bewertungskampagnen per E-Mail, SMS und QR-Code, Weiterleitung privater Rückmeldungen, KI-formulierte Antworten und Erkennung verdächtiger Bewertungen — denn die Bewertungsplattformen, die Sie ohnehin pflegen, gehören zu den Quellen, aus denen KI-Engines lernen.",
           "Jedes Audit endet mit einem Fahrplan statt mit einem Bericht: priorisierte Massnahmen, jeweils mit geschätztem Score-Gewinn und erwartetem Aufwand.",
         ],
@@ -1132,7 +1132,7 @@ export const ABOUT: Record<Locale, AboutContent> = {
     contact: {
       h2: "Kontakt",
       body:
-        "EchoRank 360 wird von ChatLogic Insights Ltd betrieben. Schweizer Abonnements werden in Schweizer Franken abgerechnet. Für Anfragen zum Datenschutz, einschliesslich Auskunft und Löschung, schreiben Sie uns an:",
+        "Echorank360 wird von ChatLogic Insights Ltd betrieben. Schweizer Abonnements werden in Schweizer Franken abgerechnet. Für Anfragen zum Datenschutz, einschliesslich Auskunft und Löschung, schreiben Sie uns an:",
       email: "privacy@echorank360.com",
     },
     backHome: "← Zurück zur Startseite",
@@ -1164,12 +1164,12 @@ const demoEn: DemoVideoCopy = {
   meta: {
     title: "Watch the 2-Minute Demo",
     description:
-      "See how EchoRank measures the way ChatGPT, Perplexity, Google AI and other engines see your business — and turns it into a score you can move.",
+      "See how Echorank measures the way ChatGPT, Perplexity, Google AI and other engines see your business — and turns it into a score you can move.",
   },
-  h1: "See EchoRank in action",
+  h1: "See Echorank in action",
   sub: "Two minutes: how we measure the way AI engines see your business — and how you become the answer.",
-  dialogLabel: "EchoRank product demo",
-  videoLabel: "EchoRank 2-minute product demo video",
+  dialogLabel: "Echorank product demo",
+  videoLabel: "Echorank 2-minute product demo video",
   ctaPrimary: "Run My Free AI Visibility Audit ↗",
   ctaSecondary: "See pricing",
   endHeadline: "Ready to become the answer?",
@@ -1183,12 +1183,12 @@ const demoFr: DemoVideoCopy = {
   meta: {
     title: "Regardez la démo de 2 minutes",
     description:
-      "Découvrez comment EchoRank mesure la façon dont ChatGPT, Perplexity, Google AI et les autres moteurs voient votre entreprise — et la transforme en un score que vous pouvez faire progresser.",
+      "Découvrez comment Echorank mesure la façon dont ChatGPT, Perplexity, Google AI et les autres moteurs voient votre entreprise — et la transforme en un score que vous pouvez faire progresser.",
   },
-  h1: "EchoRank en action",
+  h1: "Echorank en action",
   sub: "Deux minutes : comment nous mesurons la façon dont les moteurs d'IA voient votre entreprise — et comment devenir la réponse.",
-  dialogLabel: "Démo du produit EchoRank",
-  videoLabel: "Vidéo de démonstration EchoRank (2 minutes)",
+  dialogLabel: "Démo du produit Echorank",
+  videoLabel: "Vidéo de démonstration Echorank (2 minutes)",
   ctaPrimary: "Lancer mon audit de visibilité IA gratuit ↗",
   ctaSecondary: "Voir les tarifs",
   endHeadline: "Prêt à devenir la réponse ?",
@@ -1208,7 +1208,7 @@ export const DEMO_VIDEO: Record<Locale, DemoVideoCopy> = {
     meta: {
       title: "Regardez la démo de 2 minutes",
       description:
-        "Découvrez comment EchoRank mesure la façon dont ChatGPT, Perplexity, Google AI et les autres moteurs voient votre entreprise — et la transforme en un score que vous pouvez améliorer.",
+        "Découvrez comment Echorank mesure la façon dont ChatGPT, Perplexity, Google AI et les autres moteurs voient votre entreprise — et la transforme en un score que vous pouvez améliorer.",
     },
   },
   // Swiss German — "ss", never "ß".
@@ -1216,12 +1216,12 @@ export const DEMO_VIDEO: Record<Locale, DemoVideoCopy> = {
     meta: {
       title: "Sehen Sie die 2-Minuten-Demo",
       description:
-        "Sehen Sie, wie EchoRank misst, wie ChatGPT, Perplexity, Google AI und weitere Engines Ihr Unternehmen sehen — und daraus einen Score macht, den Sie verbessern können.",
+        "Sehen Sie, wie Echorank misst, wie ChatGPT, Perplexity, Google AI und weitere Engines Ihr Unternehmen sehen — und daraus einen Score macht, den Sie verbessern können.",
     },
-    h1: "EchoRank in Aktion",
+    h1: "Echorank in Aktion",
     sub: "Zwei Minuten: wie wir messen, wie KI-Engines Ihr Unternehmen sehen — und wie Sie zur Antwort werden.",
-    dialogLabel: "EchoRank Produktdemo",
-    videoLabel: "EchoRank Produktdemo-Video (2 Minuten)",
+    dialogLabel: "Echorank Produktdemo",
+    videoLabel: "Echorank Produktdemo-Video (2 Minuten)",
     ctaPrimary: "Meinen kostenlosen KI-Sichtbarkeits-Audit starten ↗",
     ctaSecondary: "Preise ansehen",
     endHeadline: "Bereit, zur Antwort zu werden?",

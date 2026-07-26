@@ -11,7 +11,7 @@ const T = {
     out: "Revenus potentiellement perdus :", per: "par mois",
     note: "Calcul transparent : recherches × part perdue × taux de conversion × valeur client. Une estimation pour dimensionner l'enjeu, pas une prévision.",
     ctaTitle: "Remplacez l'estimation par une mesure",
-    ctaSub: "L'audit EchoRank identifie où et pourquoi les IA vous ignorent.",
+    ctaSub: "L'audit Echorank identifie où et pourquoi les IA vous ignorent.",
     ctaBtn: "Lancer mon audit IA →", locale: "fr-CA",
   },
   en: {
@@ -21,7 +21,7 @@ const T = {
     out: "Revenue potentially lost:", per: "per month",
     note: "Transparent math: searches × missed share × conversion rate × customer value. An estimate to size the stakes, not a forecast.",
     ctaTitle: "Replace the estimate with a measurement",
-    ctaSub: "The EchoRank audit identifies exactly where and why AI systems ignore you.",
+    ctaSub: "The Echorank audit identifies exactly where and why AI systems ignore you.",
     ctaBtn: "Run my AI audit →", locale: "en-CA",
   },
 };

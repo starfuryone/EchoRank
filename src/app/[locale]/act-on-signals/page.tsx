@@ -26,14 +26,14 @@ interface LpContent {
 const C: Record<Locale, LpContent> = {
   en: {
     meta: {
-      title: "From alert to action | EchoRank",
+      title: "From alert to action | Echorank",
       description: "Alerts that arrive with the cause named and the dollar impact attached, plus responses already drafted, so fixing starts the moment you open the email.",
     },
     hero: {
       label: "/ ACT ON SIGNALS",
       h1a: "Alerts that arrive with the answer.",
       h1b: "Cause named. Cost attached.",
-      sub: "Most alerts are just sirens. EchoRank's arrive with the trigger, the exact drivers behind it, the estimated revenue at stake, and a response already drafted in your voice, so acting takes minutes, not meetings.",
+      sub: "Most alerts are just sirens. Echorank's arrive with the trigger, the exact drivers behind it, the estimated revenue at stake, and a response already drafted in your voice, so acting takes minutes, not meetings.",
       cta1: "Get actionable alerts →",
       cta2: "Book a demo ↗",
     },
@@ -84,14 +84,14 @@ const C: Record<Locale, LpContent> = {
 
   fr: {
     meta: {
-      title: "De l'alerte à l'action | EchoRank",
+      title: "De l'alerte à l'action | Echorank",
       description: "Des alertes qui arrivent avec la cause nommée et l'impact en euros, plus des réponses déjà rédigées : corriger commence dès l'ouverture du courriel.",
     },
     hero: {
       label: "/ AGIR SUR LES SIGNAUX",
       h1a: "Des alertes qui arrivent avec la réponse.",
       h1b: "Cause nommée. Coût chiffré.",
-      sub: "La plupart des alertes ne sont que des sirènes. Celles d'EchoRank arrivent avec le déclencheur, les facteurs exacts derrière, le chiffre d'affaires estimé en jeu, et une réponse déjà rédigée dans votre ton : agir prend des minutes, pas des réunions.",
+      sub: "La plupart des alertes ne sont que des sirènes. Celles d'Echorank arrivent avec le déclencheur, les facteurs exacts derrière, le chiffre d'affaires estimé en jeu, et une réponse déjà rédigée dans votre ton : agir prend des minutes, pas des réunions.",
       cta1: "Recevez des alertes actionnables →",
       cta2: "Réserver une démo ↗",
     },
@@ -142,14 +142,14 @@ const C: Record<Locale, LpContent> = {
 
   "de-CH": {
     meta: {
-      title: "Vom Alarm zur Aktion | EchoRank",
+      title: "Vom Alarm zur Aktion | Echorank",
       description: "Alarme mit benannter Ursache und beziffertem Umsatzeffekt, plus fertig entworfene Antworten: Beheben beginnt beim Öffnen der E-Mail.",
     },
     hero: {
       label: "/ AUF SIGNALE HANDELN",
       h1a: "Alarme, die mit der Antwort ankommen.",
       h1b: "Ursache benannt. Kosten beziffert.",
-      sub: "Die meisten Alarme sind nur Sirenen. Die von EchoRank kommen mit dem Auslöser, den exakten Treibern dahinter, dem geschätzten Umsatz auf dem Spiel und einer bereits entworfenen Antwort in Ihrem Ton: Handeln dauert Minuten, nicht Sitzungen.",
+      sub: "Die meisten Alarme sind nur Sirenen. Die von Echorank kommen mit dem Auslöser, den exakten Treibern dahinter, dem geschätzten Umsatz auf dem Spiel und einer bereits entworfenen Antwort in Ihrem Ton: Handeln dauert Minuten, nicht Sitzungen.",
       cta1: "Handlungsfähige Alarme erhalten →",
       cta2: "Demo buchen ↗",
     },
@@ -242,7 +242,7 @@ export default async function ActOnSignalsPage({ params }: { params: Promise<{ l
     <div className={lp.page}>
       <div className={home.container}>
         <header className={lp.navbar}>
-          <Link href={`/${locale}`} className={lp.logoLink} aria-label="EchoRank 360, home">
+          <Link href={`/${locale}`} className={lp.logoLink} aria-label="Echorank360, home">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/echorank-logo-dark.svg" alt="ECHORANK 360" className={lp.logo} />
           </Link>

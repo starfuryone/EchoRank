@@ -26,7 +26,7 @@ interface LpContent {
 const C: Record<Locale, LpContent> = {
   en: {
     meta: {
-      title: "How to get started | EchoRank",
+      title: "How to get started | Echorank",
       description: "From zero to your first AI-visibility audit and risk baseline in under ten minutes: what to connect, what happens next, and the best first moves.",
     },
     hero: {
@@ -83,7 +83,7 @@ const C: Record<Locale, LpContent> = {
 
   fr: {
     meta: {
-      title: "Comment démarrer | EchoRank",
+      title: "Comment démarrer | Echorank",
       description: "De zéro à votre premier audit de visibilité IA et score de risque en moins de dix minutes : quoi relier, ce qui se passe ensuite, et les meilleurs premiers gestes.",
     },
     hero: {
@@ -140,7 +140,7 @@ const C: Record<Locale, LpContent> = {
 
   "de-CH": {
     meta: {
-      title: "So starten Sie | EchoRank",
+      title: "So starten Sie | Echorank",
       description: "Von null zum ersten KI-Sichtbarkeits-Audit und Risiko-Basiswert in unter zehn Minuten: was zu verbinden ist, was danach passiert, und die besten ersten Schritte.",
     },
     hero: {
@@ -243,7 +243,7 @@ export default async function HowToPage({
     <div className={lp.page}>
       <div className={home.container}>
         <header className={lp.navbar}>
-          <Link href={`/${locale}`} className={lp.logoLink} aria-label="EchoRank 360, home">
+          <Link href={`/${locale}`} className={lp.logoLink} aria-label="Echorank360, home">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/echorank-logo-dark.svg" alt="ECHORANK 360" className={lp.logo} />
           </Link>

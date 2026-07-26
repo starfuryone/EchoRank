@@ -33,7 +33,7 @@ export const FAQ: Record<FaqBase, { label: string; h2: string; sub: string; item
         a: "A search ranking is a list of links; an AI answer is a verdict. SEO optimizes for position on a results page so someone can click you, while AI visibility optimizes for being the business the assistant actually names. The signals differ too: where SEO tracks keywords, backlinks and SERP position, AI visibility tracks citations, trust signals and your share of AI answers.",
       },
       {
-        q: "Which AI engines does EchoRank track?",
+        q: "Which AI engines does Echorank track?",
         a: "We monitor six engines: ChatGPT, Google AI, Perplexity, Claude, Gemini and Microsoft Copilot. Coverage is continuous rather than a one-time audit — answers are tracked daily and risk is recalculated hourly. You get an alert the moment your coverage on any engine flips.",
       },
       {
@@ -65,7 +65,7 @@ export const FAQ: Record<FaqBase, { label: string; h2: string; sub: string; item
         a: "Un classement de recherche est une liste de liens; une réponse d'IA est un verdict. Le SEO optimise votre position sur une page de résultats pour qu'on puisse vous cliquer, tandis que la visibilité IA optimise le fait d'être l'entreprise que l'assistant nomme réellement. Les signaux diffèrent aussi : là où le SEO suit les mots-clés, les backlinks et la position SERP, la visibilité IA suit les citations, les signaux de confiance et votre part des réponses IA.",
       },
       {
-        q: "Quels moteurs IA EchoRank surveille-t-il?",
+        q: "Quels moteurs IA Echorank surveille-t-il?",
         a: "Nous surveillons six moteurs : ChatGPT, Google AI, Perplexity, Claude, Gemini et Microsoft Copilot. La couverture est continue plutôt qu'un audit ponctuel — les réponses sont suivies chaque jour et le risque est recalculé chaque heure. Vous recevez une alerte dès que votre couverture bascule sur un moteur.",
       },
       {

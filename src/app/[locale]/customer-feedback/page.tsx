@@ -26,15 +26,15 @@ interface LpContent {
 const C: Record<Locale, LpContent> = {
   en: {
     meta: {
-      title: "Customer Feedback Intelligence. EchoRank",
+      title: "Customer Feedback Intelligence. Echorank",
       description:
-        "EchoRank reads every review and comment: recurring complaints surfaced before they become crises, suspicious activity flagged, responses drafted in your own voice.",
+        "Echorank reads every review and comment: recurring complaints surfaced before they become crises, suspicious activity flagged, responses drafted in your own voice.",
     },
     hero: {
       label: "/ CUSTOMER FEEDBACK",
       h1a: "Turn customer feedback into more sales.",
       h1b: "Every review is unread revenue.",
-      sub: "Reviews, private feedback, comments, every one contains something worth acting on, and almost nobody has time to find it. EchoRank reads all of it for you: recurring complaints surface before they become crises, suspicious review activity gets flagged, and professional responses arrive drafted in your own voice.",
+      sub: "Reviews, private feedback, comments, every one contains something worth acting on, and almost nobody has time to find it. Echorank reads all of it for you: recurring complaints surface before they become crises, suspicious review activity gets flagged, and professional responses arrive drafted in your own voice.",
       cta1: "Put your reviews to work →",
       cta2: "Book a demo ↗",
     },
@@ -85,15 +85,15 @@ const C: Record<Locale, LpContent> = {
 
   fr: {
     meta: {
-      title: "Intelligence des retours clients. EchoRank",
+      title: "Intelligence des retours clients. Echorank",
       description:
-        "EchoRank lit chaque avis et commentaire : plaintes récurrentes repérées avant la crise, activités suspectes signalées, réponses rédigées dans votre ton.",
+        "Echorank lit chaque avis et commentaire : plaintes récurrentes repérées avant la crise, activités suspectes signalées, réponses rédigées dans votre ton.",
     },
     hero: {
       label: "/ RETOURS CLIENTS",
       h1a: "Transformez les commentaires de vos clients en croissance.",
       h1b: "Chaque avis que vous ne lisez pas peut vous coûter des ventes.",
-      sub: "Les avis, les commentaires sur des plateformes comme Avis Google et les retours privés de vos clients renferment tous des informations précieuses… mais presque personne n'a le temps de les analyser. EchoRank s'en charge pour vous. Les problèmes récurrents sont détectés avant qu'ils ne deviennent des crises, les activités suspectes dans les avis sont automatiquement signalées, et des réponses professionnelles sont rédigées dans le ton et le style de votre entreprise.",
+      sub: "Les avis, les commentaires sur des plateformes comme Avis Google et les retours privés de vos clients renferment tous des informations précieuses… mais presque personne n'a le temps de les analyser. Echorank s'en charge pour vous. Les problèmes récurrents sont détectés avant qu'ils ne deviennent des crises, les activités suspectes dans les avis sont automatiquement signalées, et des réponses professionnelles sont rédigées dans le ton et le style de votre entreprise.",
       cta1: "Mettez vos avis au travail →",
       cta2: "Réserver une démo ↗",
     },
@@ -144,15 +144,15 @@ const C: Record<Locale, LpContent> = {
 
   "de-CH": {
     meta: {
-      title: "Kundenfeedback-Intelligenz. EchoRank",
+      title: "Kundenfeedback-Intelligenz. Echorank",
       description:
-        "EchoRank liest jede Bewertung und jeden Kommentar: wiederkehrende Beschwerden vor der Krise erkannt, verdächtige Aktivitäten gemeldet, Antworten in Ihrem Ton entworfen.",
+        "Echorank liest jede Bewertung und jeden Kommentar: wiederkehrende Beschwerden vor der Krise erkannt, verdächtige Aktivitäten gemeldet, Antworten in Ihrem Ton entworfen.",
     },
     hero: {
       label: "/ KUNDENFEEDBACK",
       h1a: "Machen Sie aus Kundenfeedback mehr Umsatz.",
       h1b: "Jede Bewertung ist ungelesener Umsatz.",
-      sub: "Bewertungen, privates Feedback, Kommentare, jedes enthält etwas, das eine Handlung verdient, und fast niemand hat Zeit, es zu finden. EchoRank liest alles für Sie: wiederkehrende Beschwerden tauchen auf, bevor sie zur Krise werden, verdächtige Bewertungsaktivitäten werden gemeldet, und professionelle Antworten liegen bereits in Ihrem Ton entworfen bereit.",
+      sub: "Bewertungen, privates Feedback, Kommentare, jedes enthält etwas, das eine Handlung verdient, und fast niemand hat Zeit, es zu finden. Echorank liest alles für Sie: wiederkehrende Beschwerden tauchen auf, bevor sie zur Krise werden, verdächtige Bewertungsaktivitäten werden gemeldet, und professionelle Antworten liegen bereits in Ihrem Ton entworfen bereit.",
       cta1: "Bewertungen arbeiten lassen →",
       cta2: "Demo buchen ↗",
     },
@@ -216,7 +216,7 @@ C["fr-CA"] = {
   hero: {
     ...C.fr.hero,
     h1b: "Chaque avis que vous ne lisez pas peut vous coûter des ventes.",
-    sub: "Les avis, les commentaires sur des plateformes comme Avis Google et les retours privés de vos clients renferment tous des informations précieuses… mais presque personne n'a le temps de les analyser. EchoRank s'en charge pour vous. Les problèmes récurrents sont détectés avant qu'ils ne deviennent des crises, les activités suspectes dans les avis sont automatiquement signalées, et des réponses professionnelles sont rédigées dans le ton et le style de votre entreprise.",
+    sub: "Les avis, les commentaires sur des plateformes comme Avis Google et les retours privés de vos clients renferment tous des informations précieuses… mais presque personne n'a le temps de les analyser. Echorank s'en charge pour vous. Les problèmes récurrents sont détectés avant qu'ils ne deviennent des crises, les activités suspectes dans les avis sont automatiquement signalées, et des réponses professionnelles sont rédigées dans le ton et le style de votre entreprise.",
   },
 };
 
@@ -252,7 +252,7 @@ export default async function CustomerFeedbackPage({
     <div className={lp.page}>
       <div className={home.container}>
         <header className={lp.navbar}>
-          <Link href={`/${locale}`} className={lp.logoLink} aria-label="EchoRank 360 — home">
+          <Link href={`/${locale}`} className={lp.logoLink} aria-label="Echorank360 — home">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/echorank-logo-dark.svg" alt="ECHORANK 360" className={lp.logo} />
           </Link>
