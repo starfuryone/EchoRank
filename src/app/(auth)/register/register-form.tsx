@@ -7,6 +7,7 @@ import Link from "next/link";
 import { Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Modal } from "@/components/ui/modal";
 import type { AuthContent } from "@/lib/i18n/auth-content";
 import { postSignupRedirect } from "@/lib/plan-routing";
 
@@ -14,10 +15,12 @@ export default function RegisterForm({
   c,
   plan,
   brand,
+  locale,
 }: {
   c: AuthContent["register"];
   plan?: string;
   brand?: string;
+  locale: string;
 }) {
   const router = useRouter();
   const [name, setName] = useState("");
@@ -28,6 +31,7 @@ export default function RegisterForm({
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [showTerms, setShowTerms] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -141,9 +145,13 @@ export default function RegisterForm({
           />
           <span>
             {c.termsLabelPre}
-            <Link href="/legal/terms" target="_blank" className="text-blue-600 hover:text-blue-700 underline">
+            <button
+              type="button"
+              onClick={() => setShowTerms(true)}
+              className="text-blue-600 hover:text-blue-700 underline"
+            >
               {c.termsLinkText}
-            </Link>
+            </button>
             {c.termsLabelPost}
           </span>
         </label>
@@ -163,6 +171,38 @@ export default function RegisterForm({
       <p className="mt-4 text-center text-xs text-gray-400">
         {c.trialNote}
       </p>
+
+      <Modal
+        open={showTerms}
+        onClose={() => setShowTerms(false)}
+        title={c.termsModalTitle}
+        className="max-w-3xl"
+      >
+        <iframe
+          src={`/${locale}/legal/terms`}
+          title={c.termsModalTitle}
+          className="h-[60vh] w-full rounded border border-gray-200 bg-white"
+        />
+        <div className="mt-4 flex items-center justify-between">
+          <a
+            href={`/${locale}/legal/terms`}
+            target="_blank"
+            rel="noreferrer"
+            className="text-sm text-blue-600 hover:text-blue-700 underline"
+          >
+            {c.termsOpenFull}
+          </a>
+          <Button
+            type="button"
+            onClick={() => {
+              setAcceptedTerms(true);
+              setShowTerms(false);
+            }}
+          >
+            {c.termsAgree}
+          </Button>
+        </div>
+      </Modal>
     </div>
   );
 }

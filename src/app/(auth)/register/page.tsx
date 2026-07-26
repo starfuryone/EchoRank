@@ -9,5 +9,5 @@ export default async function RegisterPage({
 }) {
   const locale = await resolveRequestLocale();
   const { plan, brand } = await searchParams;
-  return <RegisterForm c={AUTH_CONTENT[locale].register} plan={plan} brand={brand} />;
+  return <RegisterForm c={AUTH_CONTENT[locale].register} plan={plan} brand={brand} locale={locale} />;
 }

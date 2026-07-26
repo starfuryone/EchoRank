@@ -38,6 +38,9 @@ export interface AuthContent {
     termsLabelPre: string;
     termsLinkText: string;
     termsLabelPost: string;
+    termsModalTitle: string;
+    termsAgree: string;
+    termsOpenFull: string;
     errFallback: string;
     errCreatedSigninFailed: string;
     errUnexpected: string;
@@ -79,6 +82,9 @@ const en: AuthContent = {
     termsLabelPre: "I agree to the ",
     termsLinkText: "Terms of Service",
     termsLabelPost: "",
+    termsModalTitle: "Terms of Use",
+    termsAgree: "Agree and continue",
+    termsOpenFull: "Open in full page",
     errFallback: "Registration failed",
     errCreatedSigninFailed: "Account created but sign-in failed. Please log in.",
     errUnexpected: "An unexpected error occurred",
@@ -120,6 +126,9 @@ const fr: AuthContent = {
     termsLabelPre: "J'accepte les ",
     termsLinkText: "conditions d'utilisation",
     termsLabelPost: "",
+    termsModalTitle: "Conditions d'utilisation",
+    termsAgree: "Accepter et continuer",
+    termsOpenFull: "Ouvrir en pleine page",
     errFallback: "Échec de l'inscription",
     errCreatedSigninFailed: "Compte créé, mais la connexion a échoué. Veuillez vous connecter.",
     errUnexpected: "Une erreur inattendue s'est produite",
@@ -161,6 +170,9 @@ const frCA: AuthContent = {
     termsLabelPre: "J'accepte les ",
     termsLinkText: "conditions d'utilisation",
     termsLabelPost: "",
+    termsModalTitle: "Conditions d'utilisation",
+    termsAgree: "Accepter et continuer",
+    termsOpenFull: "Ouvrir en pleine page",
     errFallback: "Échec de l'inscription",
     errCreatedSigninFailed: "Compte créé, mais la connexion a échoué. Veuillez vous connecter.",
     errUnexpected: "Une erreur inattendue s'est produite",
@@ -202,6 +214,9 @@ const deCH: AuthContent = {
     termsLabelPre: "Ich akzeptiere die ",
     termsLinkText: "Nutzungsbedingungen",
     termsLabelPost: "",
+    termsModalTitle: "Nutzungsbedingungen",
+    termsAgree: "Akzeptieren und fortfahren",
+    termsOpenFull: "In voller Seite öffnen",
     errFallback: "Registrierung fehlgeschlagen",
     errCreatedSigninFailed: "Konto erstellt, aber die Anmeldung ist fehlgeschlagen. Bitte melden Sie sich an.",
     errUnexpected: "Ein unerwarteter Fehler ist aufgetreten",
