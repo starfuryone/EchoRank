@@ -52,3 +52,6 @@ compliance_refactor.py
 *.bak.*
 .next.broken*/
 public/videos/
+
+# local Claude Code settings — contains credentials in permission rules
+.claude/settings.local.json
