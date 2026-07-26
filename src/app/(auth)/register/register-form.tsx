@@ -4,6 +4,7 @@ import { useState } from "react";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import type { AuthContent } from "@/lib/i18n/auth-content";
@@ -25,6 +26,8 @@ export default function RegisterForm({
   const [businessName, setBusinessName] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,7 +38,7 @@ export default function RegisterForm({
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password, businessName, plan, brand }),
+        body: JSON.stringify({ name, email, password, businessName, plan, brand, acceptedTerms }),
       });
 
       const data = await res.json();
@@ -106,18 +109,46 @@ export default function RegisterForm({
           required
         />
 
-        <Input
-          id="password"
-          label={c.passwordLabel}
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder={c.passwordPh}
-          minLength={8}
-          required
-        />
+        <div className="relative">
+          <Input
+            id="password"
+            label={c.passwordLabel}
+            type={showPassword ? "text" : "password"}
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder={c.passwordPh}
+            minLength={8}
+            required
+          />
+          <button
+            type="button"
+            tabIndex={-1}
+            onClick={() => setShowPassword((v) => !v)}
+            aria-label={showPassword ? c.hidePassword : c.showPassword}
+            className="absolute right-3 top-[38px] text-gray-400 hover:text-gray-600"
+          >
+            {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+          </button>
+        </div>
 
-        <Button type="submit" loading={loading} className="w-full" size="lg">
+        <label className="flex items-start gap-2 text-sm text-gray-600">
+          <input
+            type="checkbox"
+            checked={acceptedTerms}
+            onChange={(e) => setAcceptedTerms(e.target.checked)}
+            required
+            className="mt-0.5 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+          />
+          <span>
+            {c.termsLabelPre}
+            <Link href="/legal/terms" target="_blank" className="text-blue-600 hover:text-blue-700 underline">
+              {c.termsLinkText}
+            </Link>
+            {c.termsLabelPost}
+          </span>
+        </label>
+
+        <Button type="submit" loading={loading} disabled={!acceptedTerms} className="w-full" size="lg">
           {c.submit}
         </Button>
       </form>

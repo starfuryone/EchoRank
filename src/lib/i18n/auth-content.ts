@@ -33,6 +33,11 @@ export interface AuthContent {
     passwordLabel: string;
     passwordPh: string;
     submit: string;
+    showPassword: string;
+    hidePassword: string;
+    termsLabelPre: string;
+    termsLinkText: string;
+    termsLabelPost: string;
     errFallback: string;
     errCreatedSigninFailed: string;
     errUnexpected: string;
@@ -69,6 +74,11 @@ const en: AuthContent = {
     passwordLabel: "Password",
     passwordPh: "At least 8 characters",
     submit: "Create Account",
+    showPassword: "Show password",
+    hidePassword: "Hide password",
+    termsLabelPre: "I agree to the ",
+    termsLinkText: "Terms of Service",
+    termsLabelPost: "",
     errFallback: "Registration failed",
     errCreatedSigninFailed: "Account created but sign-in failed. Please log in.",
     errUnexpected: "An unexpected error occurred",
@@ -105,6 +115,11 @@ const fr: AuthContent = {
     passwordLabel: "Mot de passe",
     passwordPh: "Au moins 8 caractères",
     submit: "Créer mon compte",
+    showPassword: "Afficher le mot de passe",
+    hidePassword: "Masquer le mot de passe",
+    termsLabelPre: "J'accepte les ",
+    termsLinkText: "conditions d'utilisation",
+    termsLabelPost: "",
     errFallback: "Échec de l'inscription",
     errCreatedSigninFailed: "Compte créé, mais la connexion a échoué. Veuillez vous connecter.",
     errUnexpected: "Une erreur inattendue s'est produite",
@@ -141,6 +156,11 @@ const frCA: AuthContent = {
     passwordLabel: "Mot de passe",
     passwordPh: "Au moins 8 caractères",
     submit: "Créer mon compte",
+    showPassword: "Afficher le mot de passe",
+    hidePassword: "Masquer le mot de passe",
+    termsLabelPre: "J'accepte les ",
+    termsLinkText: "conditions d'utilisation",
+    termsLabelPost: "",
     errFallback: "Échec de l'inscription",
     errCreatedSigninFailed: "Compte créé, mais la connexion a échoué. Veuillez vous connecter.",
     errUnexpected: "Une erreur inattendue s'est produite",
@@ -177,6 +197,11 @@ const deCH: AuthContent = {
     passwordLabel: "Passwort",
     passwordPh: "Mindestens 8 Zeichen",
     submit: "Konto erstellen",
+    showPassword: "Passwort anzeigen",
+    hidePassword: "Passwort ausblenden",
+    termsLabelPre: "Ich akzeptiere die ",
+    termsLinkText: "Nutzungsbedingungen",
+    termsLabelPost: "",
     errFallback: "Registrierung fehlgeschlagen",
     errCreatedSigninFailed: "Konto erstellt, aber die Anmeldung ist fehlgeschlagen. Bitte melden Sie sich an.",
     errUnexpected: "Ein unerwarteter Fehler ist aufgetreten",

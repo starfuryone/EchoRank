@@ -50,7 +50,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { name, email, password, businessName, plan, brand } = validate(
+    const { name, email, password, businessName, plan, brand, acceptedTerms } = validate(
       registerSchema,
       body,
     );
@@ -89,6 +89,7 @@ export async function POST(request: Request) {
     const result = await prisma.$transaction(async (tx) => {
       const user = await tx.user.create({
         data: {
+          termsAcceptedAt: acceptedTerms ? new Date() : null,
           name: name.trim(),
           email: email.toLowerCase().trim(),
           passwordHash,
