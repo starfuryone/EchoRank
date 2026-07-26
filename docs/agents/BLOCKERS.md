@@ -52,3 +52,11 @@ Updated: 2026-07-25 (session: package build, claude.ai sandbox)
 - Whether a shared card-grid component already exists at `/visibility/tools`
   (if yes, delete the fallback `SeoToolCardGrid.tsx` and reuse theirs).
 - Repo test runner (`npm test`) — tests here are vitest; adapt if it's jest.
+
+## CLOSED 2026-07-26 — Blockers #2 (DataForSEO creds) and #1 partially
+
+DATAFORSEO_LOGIN/PASSWORD live in .env (account marketing@echorank360.com,
+delivered via the new Cloudflare catch-all). Live gate met: metered
+keyword_overview call → cost 0.01212 billed from response → SeoApiCall row
+written (feature keyword_research) → fixture recorded at
+fixtures/dataforseo/. Balance check: v3/appendix/user_data returns 20000.
