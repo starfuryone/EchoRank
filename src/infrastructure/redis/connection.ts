@@ -31,7 +31,8 @@ function createConnection(name: string): Redis {
   });
 
   conn.on("connect", () => {
-    console.log(`[Redis:${name}] Connected to ${url}`);
+    const safeUrl = url.replace(/\/\/([^:@\/]*):[^@]+@/, "//$1:***@");
+    console.log(`[Redis:${name}] Connected to ${safeUrl}`);
   });
 
   conn.on("error", (err) => {
