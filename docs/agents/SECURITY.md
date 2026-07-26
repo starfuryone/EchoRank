@@ -20,12 +20,10 @@ them = full compromise incl. .env (file perms moot when reader is root).
 dump, `pm2 startup -u echorank`); repeat per service or isolate services onto
 separate users. Largest single risk-reducer on this box.
 
-### H3 — auth/register over-fetch may echo passwordHash (A02/leak)
-`api/auth/register/route.ts` uses the User model (which has `passwordHash`)
-without `select`. If the created/found user object is returned, the bcrypt
-hash reaches the client.
-**Fix:** verify response shape; add `select: { id, email, name }` on every
-User query in the route. Then sweep H4's list.
+### H3 — RESOLVED (false positive, verified 2026-07-26)
+auth/register's transaction returns only `{ userId, tenantId, planType }` —
+passwordHash never reaches the response. Queries still over-fetch server-side
+(cosmetic); fold into the M1 sweep, no urgency.
 
 ## MEDIUM
 
@@ -53,10 +51,9 @@ past EOL (Apr 2026); Prisma deps already warn for >=22.
 **Fix:** `npm install` to rebuild lockfile → `npm audit` → remediate; plan
 Node 22 LTS upgrade (test build + pm2 interpreter path).
 
-### M4 — feedback/[token] echoes raw error.message (A09/leak)
-Line ~181 returns `error.message` verbatim (can include Prisma internals).
-**Fix:** map to typed codes as done in newer routes (`seoErrorResponse`
-pattern).
+### M4 — RESOLVED (verified 2026-07-26)
+feedback/[token] only echoes messages from deliberately-thrown errors carrying
+a statusCode; everything else maps to a generic 500. Correct pattern.
 
 ## LOW
 
