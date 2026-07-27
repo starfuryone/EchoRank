@@ -1,18 +1,33 @@
 // ---------------------------------------------------------------------------
-// Stripe multi-currency price resolution
+// Stripe price resolution (USD only)
 // ---------------------------------------------------------------------------
-// 4 tiers x 5 currencies = 20 single-currency Stripe Price objects. Rather than
-// fanning those out as env vars, they live in the `stripe_prices` table and are
-// resolved here: forward (tier+currency -> priceId) for checkout, and reverse
-// (priceId -> tier) for webhook handling.
+// 5 tiers, USD only as of 2026-07-27. Rather than fanning price ids out as env
+// vars, they live in the `stripe_prices` table and are resolved here: forward
+// (tier -> priceId) for checkout, and reverse (priceId -> tier) for webhook
+// handling.
 
 import { prisma } from "@/lib/prisma";
 
-export type PlanTierKey = "starter" | "growth" | "agency" | "enterprise";
-export type CurrencyCode = "USD" | "EUR" | "GBP" | "CAD" | "CHF";
-export type PlanType = "STARTER" | "GROWTH" | "AGENCY" | "ENTERPRISE";
+export type PlanTierKey =
+  | "ai_visibility"
+  | "starter"
+  | "growth"
+  | "agency"
+  | "enterprise";
+/** USD-only: Echorank360 bills all locales in US dollars. */
+export type CurrencyCode = "USD";
+export type PlanType =
+  | "AI_VISIBILITY"
+  | "STARTER"
+  | "GROWTH"
+  | "AGENCY"
+  | "ENTERPRISE";
 
 const TIER_TO_PLAN: Record<PlanTierKey, PlanType> = {
+  // AI_VISIBILITY is a sellable tier with its own Stripe prices; without this
+  // entry resolvePlanFromPriceId returns null and the webhook never sets
+  // planType for those subscriptions.
+  ai_visibility: "AI_VISIBILITY",
   starter: "STARTER",
   growth: "GROWTH",
   agency: "AGENCY",
@@ -25,7 +40,7 @@ const TIER_TO_PLAN: Record<PlanTierKey, PlanType> = {
  */
 export async function getStripePriceId(
   tier: PlanTierKey,
-  currency: CurrencyCode,
+  currency: CurrencyCode = "USD",
   interval: "month" | "year" = "month",
 ): Promise<string | null> {
   const row = await prisma.stripePrice.findFirst({

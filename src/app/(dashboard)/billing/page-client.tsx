@@ -14,7 +14,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { PLAN_PRICES } from "@/lib/plan-config";
+import { PLAN_PRICES, PLAN_CONFIGS, isUpgrade as isPlanUpgrade } from "@/lib/plan-config";
+import type { PlanType } from "@/generated/prisma";
 import { BILLING_COPY, type DashLocale } from "@/lib/i18n/dashboard";
 
 interface BillingData {
@@ -73,10 +74,14 @@ export function BillingPageClient({ locale }: { locale: DashLocale }) {
 
   const handlePlanChange = async (plan: string) => {
     if (!billing || plan === billing.plan) return;
-    const currentPrice =
-      PLAN_PRICES[billing.plan as keyof typeof PLAN_PRICES] ?? 0;
     const newPrice = PLAN_PRICES[plan as keyof typeof PLAN_PRICES] ?? 0;
-    const isUpgrade = newPrice > currentPrice;
+    // Rank, not price: ENTERPRISE is custom-priced and its placeholder
+    // monthlyPrice sits below AGENCY, so a price comparison would call the
+    // top tier a downgrade.
+    const isUpgrade = isPlanUpgrade(
+      billing.plan as PlanType,
+      plan as PlanType,
+    );
     if (!confirm(t.confirmChange(isUpgrade, PLAN_LABELS[plan], newPrice)))
       return;
     setUpgrading(plan);
@@ -176,9 +181,9 @@ export function BillingPageClient({ locale }: { locale: DashLocale }) {
                   </Badge>
                 </div>
                 <p className="text-sm text-gray-500">
-                  $
-                  {PLAN_PRICES[billing.plan as keyof typeof PLAN_PRICES] ?? 0}
-                  {t.perMonth}
+                  {PLAN_CONFIGS[billing.plan as PlanType]?.isCustomPricing
+                    ? t.contactUs
+                    : `$${PLAN_PRICES[billing.plan as keyof typeof PLAN_PRICES] ?? 0}${t.perMonth}`}
                   {billing.currentPeriodEnd && (
                     <span>
                       {" "}
@@ -239,6 +244,7 @@ export function BillingPageClient({ locale }: { locale: DashLocale }) {
         <h3 className="mb-4 text-lg font-semibold text-gray-900">
           {t.plansTitle}
         </h3>
+        <p className="mb-3 text-sm text-gray-500">{t.pricesInUsd}</p>
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
           {(["AI_VISIBILITY", "STARTER", "GROWTH", "AGENCY"] as const).map((plan) => {
             const isCurrent = billing.plan === plan;
@@ -310,10 +316,7 @@ export function BillingPageClient({ locale }: { locale: DashLocale }) {
                       loading={upgrading === plan}
                       onClick={() => handlePlanChange(plan)}
                     >
-                      {PLAN_PRICES[plan] >
-                      PLAN_PRICES[
-                        billing.plan as keyof typeof PLAN_PRICES
-                      ]
+                      {isPlanUpgrade(billing.plan as PlanType, plan as PlanType)
                         ? t.upgradeTo(PLAN_LABELS[plan])
                         : t.downgradeTo(PLAN_LABELS[plan])}
                     </Button>

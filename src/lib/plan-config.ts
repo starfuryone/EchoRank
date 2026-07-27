@@ -62,8 +62,8 @@ export const PLAN_CONFIGS: Record<PlanType, PlanConfig> = {
     name: "Starter",
     slug: "starter",
     description: "For small businesses getting started with reputation management",
-    monthlyPrice: 49,
-    annualPrice: 39,
+    monthlyPrice: 79,
+    annualPrice: 63,
     isCustomPricing: false,
     features: [
       "1 location",
@@ -92,8 +92,8 @@ export const PLAN_CONFIGS: Record<PlanType, PlanConfig> = {
     name: "Growth",
     slug: "growth",
     description: "For growing businesses that need AI-powered insights",
-    monthlyPrice: 149,
-    annualPrice: 129,
+    monthlyPrice: 199,
+    annualPrice: 159,
     isCustomPricing: false,
     features: [
       "5 locations",
@@ -124,8 +124,8 @@ export const PLAN_CONFIGS: Record<PlanType, PlanConfig> = {
     name: "Agency",
     slug: "agency",
     description: "For agencies managing multiple client accounts",
-    monthlyPrice: 349,
-    annualPrice: 299,
+    monthlyPrice: 499,
+    annualPrice: 399,
     isCustomPricing: false,
     features: [
       "25 locations",
@@ -156,9 +156,9 @@ export const PLAN_CONFIGS: Record<PlanType, PlanConfig> = {
     name: "Enterprise",
     slug: "enterprise",
     description: "For organizations that need full reputation intelligence at scale",
-    monthlyPrice: 999,
-    annualPrice: 0, // Custom pricing for annual
-    isCustomPricing: false,
+    monthlyPrice: 0,
+    annualPrice: 0, // Custom pricing — see isCustomPricing; render "Contact us"
+    isCustomPricing: true,
     features: [
       "Unlimited locations",
       "Custom request volume",
@@ -286,6 +286,21 @@ export function getEnterpriseContact() {
  * ai_visibility/answer_tracking, which STARTER does not. Gate AI-visibility
  * surfaces on hasFeature(), not on this ordering.
  */
+/** Canonical tier ordering, low to high. Enterprise is custom-priced, so
+ *  rank — not monthlyPrice — decides what counts as an upgrade. */
+export const PLAN_ORDER: PlanType[] = [
+  "AI_VISIBILITY",
+  "STARTER",
+  "GROWTH",
+  "AGENCY",
+  "ENTERPRISE",
+];
+
+/** True when `target` is a higher tier than `current`. */
+export function isUpgrade(current: PlanType, target: PlanType): boolean {
+  return PLAN_ORDER.indexOf(target) > PLAN_ORDER.indexOf(current);
+}
+
 export function isPlanAtLeast(
   currentPlan: PlanType,
   targetPlan: PlanType

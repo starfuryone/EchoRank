@@ -490,6 +490,8 @@ const billingEn = {
   feedbackRequests: "Feedback Requests",
   usagePct: (pct: number) => `${pct}% of your monthly limit used`,
   plansTitle: "Plans",
+  pricesInUsd: "All prices are in US dollars",
+  contactUs: "Contact us",
   popular: "Popular",
   currentPlan: "Current Plan",
   upgradeTo: (plan: string) => `Upgrade to ${plan}`,
@@ -565,6 +567,8 @@ export const BILLING_COPY: Record<DashLocale, BillingCopy> = {
     usagePct: (pct: number) =>
       `${pct} % de votre limite mensuelle utilisée`,
     plansTitle: "Forfaits",
+    pricesInUsd: "Tous les prix sont en dollars américains",
+    contactUs: "Contactez-nous",
     popular: "Populaire",
     currentPlan: "Forfait actuel",
     upgradeTo: (plan: string) => `Passer au forfait ${plan}`,
@@ -638,6 +642,8 @@ export const BILLING_COPY: Record<DashLocale, BillingCopy> = {
     usagePct: (pct: number) =>
       `${pct} % Ihres monatlichen Limits verbraucht`,
     plansTitle: "Pläne",
+    pricesInUsd: "Alle Preise verstehen sich in US-Dollar",
+    contactUs: "Kontaktieren Sie uns",
     popular: "Beliebt",
     currentPlan: "Aktueller Plan",
     upgradeTo: (plan: string) => `Upgrade auf ${plan}`,

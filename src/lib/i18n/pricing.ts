@@ -19,7 +19,9 @@ export const LOCALE_CURRENCY: Record<string, Currency> = {
 
 // Monthly amounts in major units (no cents). Stripe Prices are created from these.
 export const PRICE_LADDER: Record<Currency, Record<Tier, number>> = {
-  USD: { starter: 49,  growth: 149,   agency: 349,   enterprise: 999 },
+  // USD is authoritative (Stripe seed). Non-USD rows below are STALE:
+  // they still reflect the pre-alignment ladder and have no consumers yet.
+  USD: { starter: 79,  growth: 199,   agency: 499,   enterprise: 0 },
   EUR: { starter: 49,  growth: 149,   agency: 349,   enterprise: 999 },
   GBP: { starter: 49,  growth: 149,   agency: 349,   enterprise: 999 },
   CAD: { starter: 69,  growth: 209,   agency: 479,   enterprise: 1379 },
@@ -27,6 +29,13 @@ export const PRICE_LADDER: Record<Currency, Record<Tier, number>> = {
   MXN: { starter: 499, growth: 1549,  agency: 5999,  enterprise: 17299 },
 };
 
-export function currencyForLocale(locale: string): Currency {
-  return LOCALE_CURRENCY[locale] ?? 'USD';
+/**
+ * USD-only as of 2026-07-27: Echorank360 bills every locale in US dollars.
+ * LOCALE_CURRENCY and the non-USD rows of PRICE_LADDER are retained as
+ * historical reference (notably the deliberate ~40% MXN market discount, which
+ * was a pricing decision rather than an FX conversion) but are NOT used for
+ * resolution. Reinstating multi-currency means changing this function first.
+ */
+export function currencyForLocale(_locale: string): Currency {
+  return 'USD';
 }
