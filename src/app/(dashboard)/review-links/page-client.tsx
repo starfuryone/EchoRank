@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState, useCallback } from "react";
 import {
   ExternalLink,
@@ -56,6 +57,34 @@ const PLATFORM_BADGE: Record<string, "default" | "success" | "warning" | "danger
   Other: "default",
 };
 
+/** Link shapes are identical in every locale, so they live here, not in i18n. */
+const PLACE_ID_FINDER_URL =
+  "https://developers.google.com/maps/documentation/places/web-service/place-id";
+const EXT_DOWNLOAD_URL = "https://echorank360.com/extension/download.html";
+const EXT_HOWTO_URL =
+  "https://echorank360.com/extension/howto-import-reviews.html";
+const WRITE_REVIEW_URL =
+  "https://search.google.com/local/writereview?placeid=<PLACE_ID>";
+const VIEW_REVIEWS_URL =
+  "https://search.google.com/local/reviews?placeid=<PLACE_ID>";
+
+const extLinkProps = {
+  target: "_blank",
+  rel: "noopener noreferrer",
+  className: "text-blue-600 hover:underline",
+} as const;
+
+function UrlCard({ label, url }: { label: string; url: string }) {
+  return (
+    <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+      <p className="mb-1 text-xs font-semibold text-gray-900">{label}</p>
+      <code className="block break-all font-mono text-xs text-gray-600">
+        {url}
+      </code>
+    </div>
+  );
+}
+
 function ReviewLinksHelpModal({
   open,
   onClose,
@@ -66,73 +95,67 @@ function ReviewLinksHelpModal({
   copy: ReviewLinksCopy["helpModal"];
 }) {
   return (
-    <Modal open={open} onClose={onClose} title={copy.title}>
-      {/* Animated flow graphic */}
-      <style>{`
-        @keyframes erTravel {
-          0% { transform: translateX(0); opacity: 0; }
-          8% { opacity: 1; }
-          46% { transform: translateX(190px); opacity: 1; }
-          54% { transform: translateX(190px); opacity: 1; }
-          92% { opacity: 1; }
-          100% { transform: translateX(380px); opacity: 0; }
-        }
-        .er-star { animation: erTravel 3.2s ease-in-out infinite; }
-        @media (prefers-reduced-motion: reduce) {
-          .er-star { animation: none; transform: translateX(190px); }
-        }
-      `}</style>
-      <div className="rounded-lg bg-gray-50 p-4">
-        <svg viewBox="0 0 520 170" className="w-full" role="img" aria-label={copy.diagramAria}>
-          <defs>
-            <marker id="erAh" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
-              <path d="M0,0 L6,3 L0,6 Z" fill="#cbd5e1" />
-            </marker>
-          </defs>
-          <line x1="120" y1="85" x2="218" y2="85" stroke="#e2e8f0" strokeWidth="2" markerEnd="url(#erAh)" />
-          <line x1="302" y1="85" x2="400" y2="85" stroke="#e2e8f0" strokeWidth="2" markerEnd="url(#erAh)" />
-          <g>
-            <rect x="20" y="55" width="100" height="60" rx="10" fill="#f1f5f9" stroke="#e2e8f0" />
-            <text x="70" y="80" textAnchor="middle" fontSize="11" fontWeight="600" fill="#0f172a">{copy.nodeCustomer}</text>
-            <text x="70" y="97" textAnchor="middle" fontSize="11" fill="#64748b">{copy.nodeFeedback}</text>
-          </g>
-          <g>
-            <rect x="220" y="53" width="80" height="64" rx="10" fill="#eff6ff" stroke="#2563eb" strokeWidth="2" />
-            <text x="260" y="79" textAnchor="middle" fontSize="11" fontWeight="700" fill="#2563eb">{copy.nodeYour}</text>
-            <text x="260" y="95" textAnchor="middle" fontSize="11" fontWeight="700" fill="#2563eb">{copy.nodeLink}</text>
-          </g>
-          <g>
-            <rect x="400" y="55" width="100" height="60" rx="10" fill="#f0fdf4" stroke="#86efac" />
-            <text x="450" y="80" textAnchor="middle" fontSize="11" fontWeight="600" fill="#15803d">{copy.nodeGoogle}</text>
-            <text x="450" y="97" textAnchor="middle" fontSize="11" fill="#16a34a">{copy.nodeFacebook}</text>
-          </g>
-          <text x="120" y="91" fontSize="18" fill="#f59e0b" className="er-star">★</text>
-        </svg>
+    <Modal open={open} onClose={onClose} title={copy.title} closeLabel={copy.close}>
+      <div className="space-y-5 text-sm leading-relaxed text-gray-600">
+        <div className="space-y-3">
+          <p>{copy.intro}</p>
+          <UrlCard label={copy.writeLabel} url={WRITE_REVIEW_URL} />
+          <UrlCard label={copy.viewLabel} url={VIEW_REVIEWS_URL} />
+        </div>
+
+        <section>
+          <h3 className="mb-2 text-sm font-semibold text-gray-900">
+            {copy.placeIdTitle}
+          </h3>
+          <ol className="list-decimal space-y-2 pl-5">
+            <li>
+              <strong className="text-gray-900">{copy.finderStrong}</strong>{" "}
+              <a href={PLACE_ID_FINDER_URL} {...extLinkProps}>
+                {copy.finderLink}
+              </a>
+              {copy.finderAfter}
+              <code className="rounded bg-gray-100 px-1 py-0.5 text-xs">
+                ChIJ&hellip;
+              </code>
+            </li>
+            <li>
+              <strong className="text-gray-900">{copy.ownStrong}</strong>
+              {copy.ownTextA}
+              <code className="rounded bg-gray-100 px-1 py-0.5 text-xs">
+                g.page/r/&hellip;/review
+              </code>
+              {copy.ownTextB}
+            </li>
+          </ol>
+        </section>
+
+        <section>
+          <h3 className="mb-2 text-sm font-semibold text-gray-900">
+            {copy.importTitle}
+          </h3>
+          <p>{copy.importIntro}</p>
+          <p className="mt-2">
+            <a href={EXT_DOWNLOAD_URL} {...extLinkProps}>
+              <span className="break-all">{EXT_DOWNLOAD_URL}</span>
+            </a>
+          </p>
+          <p className="mt-2">
+            {copy.guideLabel}{" "}
+            <a href={EXT_HOWTO_URL} {...extLinkProps}>
+              {copy.guideLink}
+            </a>
+          </p>
+          <p className="mt-2">
+            <Link href="/extension" className="text-blue-600 hover:underline">
+              {copy.extensionInApp}
+            </Link>
+          </p>
+        </section>
       </div>
 
-      <div className="mt-4 space-y-3 text-sm leading-relaxed text-gray-600">
-        <p>
-          {copy.p1a}
-          <strong>{copy.p1strong}</strong>
-          {copy.p1b}
-        </p>
-        <p>
-          <strong>{copy.p2strong}</strong>
-          {copy.p2a}
-          <code className="mx-1 rounded bg-gray-100 px-1 py-0.5 text-xs">https://g.page/r/&hellip;/review</code>
-          {copy.p2b}
-        </p>
-        <p>
-          <strong>{copy.p3strong1}</strong>
-          {copy.p3a}
-          <strong>{copy.p3strong2}</strong>
-          {copy.p3b}
-        </p>
-      </div>
-
-      <div className="mt-4 flex justify-end border-t border-gray-100 pt-4">
-        <Button type="button" onClick={onClose}>
-          {copy.gotIt}
+      <div className="mt-6 flex justify-end border-t border-gray-100 pt-4">
+        <Button type="button" variant="outline" onClick={onClose}>
+          {copy.close}
         </Button>
       </div>
     </Modal>
