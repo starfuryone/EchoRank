@@ -11,10 +11,16 @@ import {
   BarChart3,
   CheckCircle2,
   XCircle,
+  Puzzle,
+  Info,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
-import { EXTENSION_HELP_COPY, type DashLocale } from "@/lib/i18n/dashboard";
+import {
+  EXTENSION_HELP_COPY,
+  type DashLocale,
+  type ExtensionHelpCopy,
+} from "@/lib/i18n/dashboard";
 
 /**
  * Drop-in help trigger for the browser extension. Renders a small "How to use
@@ -47,6 +53,40 @@ function Step({ n, icon, title, children }: StepProps) {
         </div>
         <div className="mt-1 text-sm leading-relaxed text-gray-600">{children}</div>
       </div>
+    </div>
+  );
+}
+
+/** One browser's load-unpacked steps. Browser names and address-bar URLs are
+ *  product identifiers and stay untranslated; the surrounding prose does not. */
+function BrowserRow({
+  name,
+  url,
+  hint,
+  tail,
+  c,
+}: {
+  name: string;
+  url: string;
+  hint: string;
+  tail: string;
+  c: ExtensionHelpCopy;
+}) {
+  return (
+    <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+      <p className="mb-1 text-sm font-semibold text-gray-900">{name}</p>
+      <p className="text-sm leading-relaxed text-gray-600">
+        {c.instGoTo}
+        <code className="rounded bg-gray-100 px-1.5 py-0.5 text-xs font-semibold text-gray-800">
+          {url}
+        </code>
+        {c.instAfterUrl}
+        <strong className="font-medium text-gray-800">{c.instDevMode}</strong>{" "}
+        {hint}
+        {c.instThenClick}
+        <strong className="font-medium text-gray-800">{c.instLoadUnpacked}</strong>
+        {tail}
+      </p>
     </div>
   );
 }
@@ -160,6 +200,43 @@ export function ExtensionHelpButton({
                 </p>
               </div>
             </div>
+          </div>
+
+          {/* Installing (developer mode) */}
+          <div>
+            <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-gray-400">
+              {c.installHeading}
+            </h3>
+            <p className="mb-3 text-sm leading-relaxed text-gray-600">
+              {c.installLeadA}
+              <a
+                href="https://echorank360.com/extension/download.html"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:underline"
+              >
+                {c.installLeadLink}
+              </a>
+              {c.installLeadB}
+            </p>
+
+            <div className="space-y-2">
+              <BrowserRow name="Chrome" url="chrome://extensions" hint={c.hintTopRightToggle} tail={c.tailFull} c={c} />
+              <BrowserRow name="Brave" url="brave://extensions" hint={c.hintTopRight} tail={c.tailShort} c={c} />
+              <BrowserRow name="Edge" url="edge://extensions" hint={c.hintEdgeSidebar} tail={c.tailShort} c={c} />
+              <BrowserRow name="Opera" url="opera://extensions" hint={c.hintTopRight} tail={c.tailShort} c={c} />
+              <BrowserRow name="Vivaldi" url="vivaldi://extensions" hint={c.hintTopRight} tail={c.tailShort} c={c} />
+            </div>
+
+            <div className="mt-3 flex items-start gap-2.5 rounded-lg border border-gray-200 bg-gray-50 p-3">
+              <Info className="mt-0.5 h-4 w-4 flex-none text-gray-400" />
+              <p className="text-xs leading-relaxed text-gray-500">{c.installNote}</p>
+            </div>
+
+            <p className="mt-3 flex items-start gap-2 text-sm leading-relaxed text-gray-600">
+              <Puzzle className="mt-0.5 h-4 w-4 flex-none text-gray-400" />
+              <span>{c.installClosing}</span>
+            </p>
           </div>
 
           {/* Reassurance */}
