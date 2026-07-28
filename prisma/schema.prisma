@@ -1360,3 +1360,78 @@ model SiteExplorerAnalysis {
   // History list.
   @@index([tenantId, createdAt])
 }
+
+/// Rank Tracker — a tracking project: one domain, a set of keywords, one
+/// market, checked on a schedule. Keywords are checked through the SAME
+/// DataForSEO standard queue as the SERP Checker ($0.0006/keyword); the shared
+/// sweep in serp-check.worker.ts routes finished task ids to RankSnapshot.
+///
+/// `active=false` is a soft pause: the project and its history stay, but the
+/// scheduler skips it. `overCap` is set BY THE SCHEDULER when a downgrade
+/// leaves a project holding more keywords than its plan now allows — the run
+/// is skipped rather than silently truncated, and the UI explains why.
+model RankProject {
+  id           String    @id @default(cuid())
+  tenantId     String
+  name         String
+  domain       String // normalized: no scheme, no www., no path
+  locationCode Int
+  languageCode String
+  device       String // desktop | mobile
+  frequency    String // daily | weekly
+  active       Boolean   @default(true)
+  /// Scheduler-set: plan cap exceeded (e.g. after a downgrade). Blocks runs.
+  overCap      Boolean   @default(false)
+  lastRunAt    DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  keywords RankKeyword[]
+
+  // Project list, newest first.
+  @@index([tenantId, createdAt])
+  // Scheduler sweep: active projects, cheapest possible scan.
+  @@index([active, frequency])
+}
+
+/// One tracked keyword inside a project. Unique per project so re-submitting
+/// the same textarea cannot create duplicates that would each cost $0.0006.
+model RankKeyword {
+  id        String   @id @default(cuid())
+  projectId String
+  keyword   String
+  createdAt DateTime @default(now())
+
+  project   RankProject    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  snapshots RankSnapshot[]
+
+  @@unique([projectId, keyword])
+  @@index([projectId])
+}
+
+/// One keyword, one run. `position` is null when the domain did not appear in
+/// the top 100 — a real, meaningful result, NOT missing data, which is why the
+/// column is nullable rather than defaulting to 0 or 101.
+///
+/// `status` mirrors SerpCheck's queue-status pattern: rows are written `queued`
+/// at task_post time and completed by the shared sweep.
+model RankSnapshot {
+  id               String    @id @default(cuid())
+  keywordId        String
+  runDate          DateTime  @default(now())
+  status           String    @default("queued") // queued | completed | failed
+  position         Int? // null = not in the top 100
+  url              String? // best-ranking URL for the tracked domain
+  serpFeatures     Json? // string[] of non-organic element types present
+  dataforseoTaskId String?   @unique
+  costUsd          Decimal   @default(0) @db.Decimal(10, 6)
+  error            String?
+  completedAt      DateTime?
+
+  keyword RankKeyword @relation(fields: [keywordId], references: [id], onDelete: Cascade)
+
+  // History chart + latest-position lookup for one keyword.
+  @@index([keywordId, runDate])
+  // Shared sweep: queued rows with a task id, oldest first.
+  @@index([status, runDate])
+}

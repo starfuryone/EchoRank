@@ -383,3 +383,130 @@ test("domain normalization collapses the forms users actually paste", () => {
   assert.ok(!isValidDomain("localhost"));
   assert.ok(!isValidDomain("10.0.0.1"));
 });
+
+// ─── Rank Tracker (real-data page) ──────────────────────────────────────────
+import { RANK_TRACKER_COPY } from "../i18n/dashboard";
+import {
+  RANK_TRACKED_KEYWORDS,
+  RANK_CHECKS_PER_MONTH,
+  RANK_ALLOWED_FREQUENCIES,
+  RANK_FREQUENCIES,
+  RANK_DEVICES,
+  COST_PER_KEYWORD_USD,
+  SCHEDULE_HOUR_UTC,
+  planCanTrack,
+  planAllowsFrequency,
+} from "../rank-tracker/options";
+
+test("rank-tracker copy complete in all locales (list, detail, modal, locked)", () => {
+  for (const locale of LOCALES) {
+    const c = RANK_TRACKER_COPY[locale];
+    assert.ok(c.listTitle.length && c.listIntro.length && c.newProject.length, locale);
+    assert.ok(c.emptyTitle.length && c.emptyBody.length);
+    assert.ok(c.colProject.length && c.colDomain.length && c.colKeywords.length);
+    assert.ok(c.colAvgPosition.length && c.colFrequency.length && c.colLastRun.length);
+    assert.ok(c.neverRun.length && c.open.length);
+
+    // The STARTER/AI_VISIBILITY locked card has no other copy source.
+    assert.ok(c.lockedTitle.length && c.lockedBody.length && c.lockedCta.length);
+
+    assert.ok(c.backToList.length && c.runNow.length && c.running.length);
+    assert.ok(c.runQueued.length && c.editProject.length && c.deleteProject.length);
+    assert.ok(c.deleteConfirm.length && c.overCapTitle.length && c.overCapBody.length);
+    assert.ok(c.chartTitle.length && c.chartEmpty.length && c.chartAxisNote.length);
+
+    assert.ok(c.keywordsTitle.length && c.colKeyword.length && c.colPosition.length);
+    assert.ok(c.colChange.length && c.col30d.length && c.colBestUrl.length && c.colTrend.length);
+    assert.ok(c.notRanked.length && c.noData.length && c.unchanged.length);
+    assert.ok(c.keywordsEmpty.length);
+
+    assert.ok(c.createTitle.length && c.editTitle.length && c.save.length && c.cancel.length);
+    assert.ok(c.nameLabel.length && c.nameHint.length && c.domainLabel.length);
+    assert.ok(c.invalidDomain.length && c.keywordsLabel.length && c.keywordsHint.length);
+    assert.ok(c.locationLabel.length && c.languageLabel.length && c.deviceLabel.length);
+    assert.ok(c.deviceDesktop.length && c.deviceMobile.length && c.frequencyLabel.length);
+    assert.ok(c.freqDaily.length && c.freqWeekly.length && c.frequencyLockedNote.length);
+
+    assert.ok(c.quotaTitle.length && c.quotaCta.length && c.capTitle.length);
+    assert.ok(c.saveFailed.length && c.runFailed.length && c.loadFailed.length);
+
+    // Interpolated strings must actually interpolate.
+    assert.ok(c.weeklyAnchor("Tuesday").includes("Tuesday"), `${locale} weeklyAnchor`);
+    assert.ok(c.pendingNote(1).length && c.pendingNote(4).includes("4"), `${locale} pendingNote`);
+    assert.ok(c.keywordCounter(3, 50).includes("3") && c.keywordCounter(3, 50).includes("50"));
+    assert.ok(c.duplicatesIgnored(1).length && c.duplicatesIgnored(2).includes("2"));
+    assert.ok(c.overLimit(60, 50).includes("60") && c.overLimit(60, 50).includes("50"));
+    assert.ok(c.usageKeywords(10, 50).includes("10") && c.usageKeywords(10, 50).includes("50"));
+    assert.ok(c.usageChecks(4, 400).includes("400"), `${locale} usageChecks`);
+    assert.ok(c.quotaBody(400).includes("400"), `${locale} quotaBody`);
+    assert.ok(c.capBody(50).includes("50"), `${locale} capBody`);
+    assert.ok(c.improvedBy(3).includes("3") && c.droppedBy(3).includes("3"));
+    assert.ok(c.spend("0.0180").includes("0.0180"), `${locale} spend`);
+  }
+});
+
+test("rank-tracker copy never uses CamelCase branding or names the data vendor", () => {
+  const json = JSON.stringify(RANK_TRACKER_COPY);
+  assert.ok(!json.includes("EchoRank"), "found CamelCase 'EchoRank'");
+  assert.ok(!/dataforseo/i.test(json), "user-facing copy must not name the upstream vendor");
+});
+
+test("rank-tracker plan caps match the pricing sheet", () => {
+  // STARTER is locked by product decision — it sees the upsell card, not a form.
+  assert.equal(RANK_TRACKED_KEYWORDS.STARTER, 0);
+  assert.equal(RANK_TRACKED_KEYWORDS.GROWTH, 50);
+  assert.equal(RANK_TRACKED_KEYWORDS.AGENCY, 250);
+  assert.equal(RANK_TRACKED_KEYWORDS.AI_VISIBILITY, 0);
+  assert.ok(RANK_TRACKED_KEYWORDS.ENTERPRISE >= RANK_TRACKED_KEYWORDS.AGENCY);
+
+  assert.ok(!planCanTrack("STARTER"));
+  assert.ok(!planCanTrack("AI_VISIBILITY"));
+  assert.ok(planCanTrack("GROWTH"));
+  assert.ok(planCanTrack("AGENCY"));
+});
+
+test("daily tracking is an AGENCY-and-up differentiator", () => {
+  assert.deepEqual([...RANK_ALLOWED_FREQUENCIES.GROWTH], ["weekly"]);
+  assert.ok(!planAllowsFrequency("GROWTH", "daily"));
+  assert.ok(planAllowsFrequency("AGENCY", "daily"));
+  assert.ok(planAllowsFrequency("AGENCY", "weekly"));
+  // A locked plan may choose nothing at all.
+  assert.deepEqual([...RANK_ALLOWED_FREQUENCIES.STARTER], []);
+});
+
+test("monthly check allowance covers each plan's scheduled load", () => {
+  // GROWTH: 50 kw weekly ~= 220 checks/mo. AGENCY: 250 kw daily ~= 7750/mo.
+  assert.ok(RANK_CHECKS_PER_MONTH.GROWTH >= 50 * 4.5, "GROWTH cannot complete its own schedule");
+  assert.ok(
+    RANK_CHECKS_PER_MONTH.AGENCY >= 250 * 31,
+    "AGENCY cannot complete its own daily schedule",
+  );
+  assert.equal(RANK_CHECKS_PER_MONTH.STARTER, 0);
+});
+
+test("worst-case monthly spend matches the depth-100 cost model", () => {
+  // Depth 100 costs $0.006/keyword (depth 10 would be $0.0006 but reports
+  // nothing below position 10). AGENCY 250 kw daily = 250 * 31 * $0.006.
+  assert.equal(COST_PER_KEYWORD_USD, 0.006);
+  const agencyScheduled = RANK_TRACKED_KEYWORDS.AGENCY * 31 * COST_PER_KEYWORD_USD;
+  assert.ok(
+    agencyScheduled > 46 && agencyScheduled < 47,
+    `AGENCY scheduled spend ${agencyScheduled}`,
+  );
+  const growthScheduled = RANK_TRACKED_KEYWORDS.GROWTH * 4.5 * COST_PER_KEYWORD_USD;
+  assert.ok(growthScheduled < 2, `GROWTH scheduled spend ${growthScheduled}`);
+
+  // The hard ceiling the Redis counter enforces, manual runs included. This is
+  // the number that actually bounds a tenant's bill.
+  const agencyCeiling = RANK_CHECKS_PER_MONTH.AGENCY * COST_PER_KEYWORD_USD;
+  assert.ok(agencyCeiling <= 54, `AGENCY ceiling ${agencyCeiling}`);
+  // The ceiling must clear the schedule, or daily projects stall mid-month.
+  assert.ok(agencyCeiling >= agencyScheduled, "AGENCY ceiling below its own schedule");
+});
+
+test("rank-tracker enums are what the schema and UI agree on", () => {
+  assert.deepEqual([...RANK_FREQUENCIES], ["daily", "weekly"]);
+  assert.deepEqual([...RANK_DEVICES], ["desktop", "mobile"]);
+  assert.ok(SCHEDULE_HOUR_UTC >= 0 && SCHEDULE_HOUR_UTC <= 23);
+  assert.equal(COST_PER_KEYWORD_USD, 0.006);
+});

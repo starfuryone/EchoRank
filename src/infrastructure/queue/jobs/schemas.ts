@@ -164,6 +164,16 @@ export interface SerpCheckJob {
   correlationId?: string;
 }
 
+// ─── Rank Tracker ─────────────────────────────────────────────────────────────
+
+export interface RankTrackerJob {
+  /** The daily tick that selects due projects and posts their keywords. */
+  schedule?: boolean;
+  /** Present on a manual "Run now" — the project to post immediately. */
+  projectId?: string;
+  correlationId?: string;
+}
+
 export type AllJobTypes =
   | EmailDeliveryJob
   | SmsDeliveryJob
@@ -178,7 +188,8 @@ export type AllJobTypes =
   | ExtensionImportJob
   | VisibilityMonitoringJob
   | OnboardingEmailJob
-  | SerpCheckJob;
+  | SerpCheckJob
+  | RankTrackerJob;
 
 // ─── Queue → Job Type mapping ─────────────────────────────────────────────────
 
@@ -197,4 +208,5 @@ export interface QueueJobMap {
   "visibility-monitoring": VisibilityMonitoringJob;
   "onboarding-email": OnboardingEmailJob;
   "serp-checks": SerpCheckJob;
+  "rank-tracker": RankTrackerJob;
 }

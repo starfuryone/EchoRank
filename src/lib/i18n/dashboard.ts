@@ -6547,3 +6547,319 @@ export const SITE_EXPLORER_COPY: Record<DashLocale, SiteExplorerCopy> = {
     loadFailed: "Ihre Analysen konnten nicht geladen werden. Versuchen Sie es in einer Minute erneut.",
   },
 };
+
+// ─── Rank Tracker ───────────────────────────────────────────────────────────
+// Scheduled tool: projects run on a cadence, so most of this copy is about
+// state the user did not trigger just now — when it last ran, what changed
+// since, and why a run was skipped. Deltas are phrased as "up/down" rather
+// than "+/-" because a FALLING position number is an IMPROVEMENT, and the
+// sign convention confuses everyone at least once.
+const rankTrackerEn = {
+  // ── Page + list ──
+  listTitle: "Tracking projects",
+  listIntro:
+    "Track where your domain ranks for a set of keywords, and watch the positions move over time.",
+  newProject: "New project",
+  emptyTitle: "No tracking projects yet",
+  emptyBody:
+    "Create a project to track a domain against a list of keywords. Positions are checked on your schedule and charted over time.",
+  colProject: "Project",
+  colDomain: "Domain",
+  colKeywords: "Keywords",
+  colAvgPosition: "Avg. position",
+  colFrequency: "Schedule",
+  colLastRun: "Last run",
+  neverRun: "Never",
+  open: "Open",
+  freqDaily: "Daily",
+  freqWeekly: "Weekly",
+  weeklyAnchor: (weekday: string) => `Weekly, every ${weekday}`,
+
+  // ── Locked (STARTER / AI_VISIBILITY) ──
+  lockedTitle: "Rank Tracker is not in your plan",
+  lockedBody:
+    "Rank tracking is available on Growth and Agency plans. Upgrade to track keyword positions on a schedule and see how they move.",
+  lockedCta: "See plans",
+
+  // ── Project detail ──
+  backToList: "All projects",
+  runNow: "Run now",
+  runQueued: "Run queued — positions will update as results arrive.",
+  running: "Checking…",
+  pendingNote: (n: number) =>
+    n === 1 ? "1 keyword is being checked" : `${n} keywords are being checked`,
+  editProject: "Edit",
+  deleteProject: "Delete",
+  deleteConfirm: "Delete this project and all of its position history?",
+  overCapTitle: "This project is paused",
+  overCapBody:
+    "It tracks more keywords than your current plan allows, so scheduled runs are being skipped. Remove keywords or upgrade to resume.",
+  chartTitle: "Average position over time",
+  chartEmpty: "No completed runs yet. Positions will appear here after the first run.",
+  chartAxisNote: "Lower is better — position 1 is the top of page one.",
+
+  // ── Keywords table ──
+  keywordsTitle: "Keywords",
+  colKeyword: "Keyword",
+  colPosition: "Position",
+  colChange: "Change",
+  col30d: "30 days",
+  colBestUrl: "Ranking URL",
+  colTrend: "Trend",
+  notRanked: "Not in top 100",
+  notRankedShort: "—",
+  noData: "—",
+  improvedBy: (n: number) => `up ${n}`,
+  droppedBy: (n: number) => `down ${n}`,
+  unchanged: "no change",
+  keywordsEmpty: "This project has no keywords yet. Edit it to add some.",
+
+  // ── Create / edit modal ──
+  createTitle: "New tracking project",
+  editTitle: "Edit project",
+  nameLabel: "Project name",
+  namePlaceholder: "Main site",
+  nameHint: "Optional — defaults to the domain.",
+  domainLabel: "Domain",
+  domainPlaceholder: "example.com",
+  invalidDomain: "Enter a domain like example.com",
+  keywordsLabel: "Keywords",
+  keywordsPlaceholder: "plumber toronto\nemergency plumber toronto\ndrain cleaning toronto",
+  keywordsHint: "One per line. Duplicates and blank lines are ignored.",
+  keywordCounter: (count: number, limit: number) => `${count} of ${limit} keywords`,
+  duplicatesIgnored: (n: number) =>
+    n === 1 ? "1 duplicate ignored" : `${n} duplicates ignored`,
+  overLimit: (count: number, limit: number) =>
+    `${count} keywords entered — your plan allows ${limit} in total.`,
+  locationLabel: "Location",
+  languageLabel: "Language",
+  deviceLabel: "Device",
+  deviceDesktop: "Desktop",
+  deviceMobile: "Mobile",
+  frequencyLabel: "Check frequency",
+  frequencyDailyLocked: "Daily (Agency plan)",
+  save: "Save project",
+  saving: "Saving…",
+  cancel: "Cancel",
+
+  // ── Usage / quota / errors ──
+  usageKeywords: (used: number, limit: number) => `${used} of ${limit} keywords tracked`,
+  usageChecks: (used: number, limit: number) => `${used} of ${limit} checks used this month`,
+  quotaTitle: "Monthly check limit reached",
+  quotaBody: (limit: number) =>
+    `Your plan includes ${limit} keyword checks per month. Upgrade to run more, or wait for the counter to reset next month.`,
+  quotaCta: "See plans",
+  capTitle: "Keyword limit reached",
+  capBody: (limit: number) =>
+    `Your plan allows ${limit} tracked keywords in total. Remove some, or upgrade to track more.`,
+  frequencyLockedNote: "Daily checks are available on the Agency plan.",
+  spend: (usd: string) => `Rank data cost for this project: $${usd} USD`,
+  saveFailed: "Could not save the project. Try again in a minute.",
+  runFailed: "Could not start the run. Try again in a minute.",
+  loadFailed: "Could not load your projects. Try again in a minute.",
+};
+export type RankTrackerCopy = typeof rankTrackerEn;
+
+export const RANK_TRACKER_COPY: Record<DashLocale, RankTrackerCopy> = {
+  en: rankTrackerEn,
+  fr: {
+    listTitle: "Projets de suivi",
+    listIntro:
+      "Suivez le classement de votre domaine pour une liste de mots-clés et observez l'évolution des positions.",
+    newProject: "Nouveau projet",
+    emptyTitle: "Aucun projet de suivi",
+    emptyBody:
+      "Créez un projet pour suivre un domaine sur une liste de mots-clés. Les positions sont vérifiées selon votre horaire et illustrées dans le temps.",
+    colProject: "Projet",
+    colDomain: "Domaine",
+    colKeywords: "Mots-clés",
+    colAvgPosition: "Position moyenne",
+    colFrequency: "Horaire",
+    colLastRun: "Dernière exécution",
+    neverRun: "Jamais",
+    open: "Ouvrir",
+    freqDaily: "Quotidien",
+    freqWeekly: "Hebdomadaire",
+    weeklyAnchor: (weekday: string) => `Hebdomadaire, chaque ${weekday}`,
+
+    lockedTitle: "Le suivi de positions n'est pas inclus dans votre forfait",
+    lockedBody:
+      "Le suivi de positions est offert avec les forfaits Croissance et Agence. Passez à un forfait supérieur pour suivre vos positions selon un horaire et voir leur évolution.",
+    lockedCta: "Voir les forfaits",
+
+    backToList: "Tous les projets",
+    runNow: "Lancer maintenant",
+    runQueued: "Exécution lancée — les positions se mettront à jour à mesure des résultats.",
+    running: "Vérification…",
+    pendingNote: (n: number) =>
+      n === 1 ? "1 mot-clé est en cours de vérification" : `${n} mots-clés sont en cours de vérification`,
+    editProject: "Modifier",
+    deleteProject: "Supprimer",
+    deleteConfirm: "Supprimer ce projet et tout son historique de positions ?",
+    overCapTitle: "Ce projet est en pause",
+    overCapBody:
+      "Il suit plus de mots-clés que votre forfait actuel ne le permet, donc les exécutions planifiées sont ignorées. Retirez des mots-clés ou changez de forfait pour reprendre.",
+    chartTitle: "Position moyenne dans le temps",
+    chartEmpty:
+      "Aucune exécution terminée. Les positions apparaîtront ici après la première exécution.",
+    chartAxisNote: "Plus bas est meilleur — la position 1 est en haut de la première page.",
+
+    keywordsTitle: "Mots-clés",
+    colKeyword: "Mot-clé",
+    colPosition: "Position",
+    colChange: "Variation",
+    col30d: "30 jours",
+    colBestUrl: "URL classée",
+    colTrend: "Tendance",
+    notRanked: "Hors du top 100",
+    notRankedShort: "—",
+    noData: "—",
+    improvedBy: (n: number) => `+${n} places`,
+    droppedBy: (n: number) => `−${n} places`,
+    unchanged: "stable",
+    keywordsEmpty: "Ce projet n'a aucun mot-clé. Modifiez-le pour en ajouter.",
+
+    createTitle: "Nouveau projet de suivi",
+    editTitle: "Modifier le projet",
+    nameLabel: "Nom du projet",
+    namePlaceholder: "Site principal",
+    nameHint: "Facultatif — le domaine est utilisé par défaut.",
+    domainLabel: "Domaine",
+    domainPlaceholder: "exemple.com",
+    invalidDomain: "Entrez un domaine comme exemple.com",
+    keywordsLabel: "Mots-clés",
+    keywordsPlaceholder: "plombier montréal\nplombier urgence montréal\ndébouchage de drain montréal",
+    keywordsHint: "Un par ligne. Les doublons et les lignes vides sont ignorés.",
+    keywordCounter: (count: number, limit: number) => `${count} mots-clés sur ${limit}`,
+    duplicatesIgnored: (n: number) =>
+      n === 1 ? "1 doublon ignoré" : `${n} doublons ignorés`,
+    overLimit: (count: number, limit: number) =>
+      `${count} mots-clés saisis — votre forfait en permet ${limit} au total.`,
+    locationLabel: "Lieu",
+    languageLabel: "Langue",
+    deviceLabel: "Appareil",
+    deviceDesktop: "Ordinateur",
+    deviceMobile: "Mobile",
+    frequencyLabel: "Fréquence de vérification",
+    frequencyDailyLocked: "Quotidien (forfait Agence)",
+    save: "Enregistrer le projet",
+    saving: "Enregistrement…",
+    cancel: "Annuler",
+
+    usageKeywords: (used: number, limit: number) => `${used} mots-clés suivis sur ${limit}`,
+    usageChecks: (used: number, limit: number) =>
+      `${used} vérifications sur ${limit} utilisées ce mois-ci`,
+    quotaTitle: "Limite mensuelle de vérifications atteinte",
+    quotaBody: (limit: number) =>
+      `Votre forfait comprend ${limit} vérifications de mots-clés par mois. Passez à un forfait supérieur pour en faire plus, ou attendez la remise à zéro le mois prochain.`,
+    quotaCta: "Voir les forfaits",
+    capTitle: "Limite de mots-clés atteinte",
+    capBody: (limit: number) =>
+      `Votre forfait permet ${limit} mots-clés suivis au total. Retirez-en, ou passez à un forfait supérieur.`,
+    frequencyLockedNote: "Les vérifications quotidiennes sont offertes avec le forfait Agence.",
+    spend: (usd: string) => `Coût des données de positions pour ce projet : ${usd} $ US`,
+    saveFailed: "Impossible d'enregistrer le projet. Réessayez dans une minute.",
+    runFailed: "Impossible de lancer l'exécution. Réessayez dans une minute.",
+    loadFailed: "Impossible de charger vos projets. Réessayez dans une minute.",
+  },
+  "de-CH": {
+    listTitle: "Tracking-Projekte",
+    listIntro:
+      "Verfolgen Sie, wo Ihre Domain für eine Liste von Keywords rankt, und beobachten Sie die Positionen über die Zeit.",
+    newProject: "Neues Projekt",
+    emptyTitle: "Noch keine Tracking-Projekte",
+    emptyBody:
+      "Erstellen Sie ein Projekt, um eine Domain gegen eine Keyword-Liste zu verfolgen. Positionen werden nach Ihrem Zeitplan geprüft und über die Zeit dargestellt.",
+    colProject: "Projekt",
+    colDomain: "Domain",
+    colKeywords: "Keywords",
+    colAvgPosition: "Ø Position",
+    colFrequency: "Zeitplan",
+    colLastRun: "Letzter Lauf",
+    neverRun: "Nie",
+    open: "Öffnen",
+    freqDaily: "Täglich",
+    freqWeekly: "Wöchentlich",
+    weeklyAnchor: (weekday: string) => `Wöchentlich, jeden ${weekday}`,
+
+    lockedTitle: "Rank Tracker ist nicht in Ihrem Plan enthalten",
+    lockedBody:
+      "Positions-Tracking ist in den Plänen Growth und Agency enthalten. Wechseln Sie den Plan, um Keyword-Positionen nach Zeitplan zu verfolgen und ihre Entwicklung zu sehen.",
+    lockedCta: "Pläne ansehen",
+
+    backToList: "Alle Projekte",
+    runNow: "Jetzt starten",
+    runQueued: "Lauf gestartet — Positionen aktualisieren sich, sobald Ergebnisse eintreffen.",
+    running: "Wird geprüft…",
+    pendingNote: (n: number) =>
+      n === 1 ? "1 Keyword wird geprüft" : `${n} Keywords werden geprüft`,
+    editProject: "Bearbeiten",
+    deleteProject: "Löschen",
+    deleteConfirm: "Dieses Projekt und seinen gesamten Positionsverlauf löschen?",
+    overCapTitle: "Dieses Projekt pausiert",
+    overCapBody:
+      "Es verfolgt mehr Keywords, als Ihr aktueller Plan erlaubt, daher werden geplante Läufe übersprungen. Entfernen Sie Keywords oder wechseln Sie den Plan, um fortzufahren.",
+    chartTitle: "Durchschnittliche Position über die Zeit",
+    chartEmpty:
+      "Noch keine abgeschlossenen Läufe. Positionen erscheinen hier nach dem ersten Lauf.",
+    chartAxisNote: "Niedriger ist besser — Position 1 ist zuoberst auf Seite eins.",
+
+    keywordsTitle: "Keywords",
+    colKeyword: "Keyword",
+    colPosition: "Position",
+    colChange: "Veränderung",
+    col30d: "30 Tage",
+    colBestUrl: "Rankende URL",
+    colTrend: "Trend",
+    notRanked: "Nicht in den Top 100",
+    notRankedShort: "—",
+    noData: "—",
+    improvedBy: (n: number) => `+${n} Plätze`,
+    droppedBy: (n: number) => `−${n} Plätze`,
+    unchanged: "unverändert",
+    keywordsEmpty: "Dieses Projekt hat noch keine Keywords. Bearbeiten Sie es, um welche hinzuzufügen.",
+
+    createTitle: "Neues Tracking-Projekt",
+    editTitle: "Projekt bearbeiten",
+    nameLabel: "Projektname",
+    namePlaceholder: "Hauptseite",
+    nameHint: "Optional — standardmässig die Domain.",
+    domainLabel: "Domain",
+    domainPlaceholder: "beispiel.ch",
+    invalidDomain: "Geben Sie eine Domain wie beispiel.ch ein",
+    keywordsLabel: "Keywords",
+    keywordsPlaceholder: "sanitär zürich\nnotfall sanitär zürich\nrohrreinigung zürich",
+    keywordsHint: "Eines pro Zeile. Duplikate und Leerzeilen werden ignoriert.",
+    keywordCounter: (count: number, limit: number) => `${count} von ${limit} Keywords`,
+    duplicatesIgnored: (n: number) =>
+      n === 1 ? "1 Duplikat ignoriert" : `${n} Duplikate ignoriert`,
+    overLimit: (count: number, limit: number) =>
+      `${count} Keywords eingegeben — Ihr Plan erlaubt insgesamt ${limit}.`,
+    locationLabel: "Standort",
+    languageLabel: "Sprache",
+    deviceLabel: "Gerät",
+    deviceDesktop: "Desktop",
+    deviceMobile: "Mobil",
+    frequencyLabel: "Prüffrequenz",
+    frequencyDailyLocked: "Täglich (Agency-Plan)",
+    save: "Projekt speichern",
+    saving: "Wird gespeichert…",
+    cancel: "Abbrechen",
+
+    usageKeywords: (used: number, limit: number) => `${used} von ${limit} Keywords verfolgt`,
+    usageChecks: (used: number, limit: number) =>
+      `${used} von ${limit} Prüfungen diesen Monat verwendet`,
+    quotaTitle: "Monatliches Prüfungslimit erreicht",
+    quotaBody: (limit: number) =>
+      `Ihr Plan enthält ${limit} Keyword-Prüfungen pro Monat. Wechseln Sie den Plan für mehr, oder warten Sie auf die Rücksetzung im nächsten Monat.`,
+    quotaCta: "Pläne ansehen",
+    capTitle: "Keyword-Limit erreicht",
+    capBody: (limit: number) =>
+      `Ihr Plan erlaubt insgesamt ${limit} verfolgte Keywords. Entfernen Sie einige, oder wechseln Sie den Plan.`,
+    frequencyLockedNote: "Tägliche Prüfungen sind im Agency-Plan enthalten.",
+    spend: (usd: string) => `Positionsdatenkosten für dieses Projekt: ${usd} USD`,
+    saveFailed: "Das Projekt konnte nicht gespeichert werden. Versuchen Sie es in einer Minute erneut.",
+    runFailed: "Der Lauf konnte nicht gestartet werden. Versuchen Sie es in einer Minute erneut.",
+    loadFailed: "Ihre Projekte konnten nicht geladen werden. Versuchen Sie es in einer Minute erneut.",
+  },
+};
