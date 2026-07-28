@@ -156,6 +156,14 @@ export interface OnboardingEmailJob extends BaseJob {
   stage: OnboardingEmailStage;
 }
 
+// ─── SERP Checks (DataForSEO standard queue) ──────────────────────────────────
+
+export interface SerpCheckJob {
+  /** The repeatable 60 s tick that drains DataForSEO's ready-task list. */
+  sweep?: boolean;
+  correlationId?: string;
+}
+
 export type AllJobTypes =
   | EmailDeliveryJob
   | SmsDeliveryJob
@@ -169,7 +177,8 @@ export type AllJobTypes =
   | CsvImportJob
   | ExtensionImportJob
   | VisibilityMonitoringJob
-  | OnboardingEmailJob;
+  | OnboardingEmailJob
+  | SerpCheckJob;
 
 // ─── Queue → Job Type mapping ─────────────────────────────────────────────────
 
@@ -187,4 +196,5 @@ export interface QueueJobMap {
   "extension-import": ExtensionImportJob;
   "visibility-monitoring": VisibilityMonitoringJob;
   "onboarding-email": OnboardingEmailJob;
+  "serp-checks": SerpCheckJob;
 }

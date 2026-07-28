@@ -1297,3 +1297,34 @@ model SeoKeywordOverviewCache {
 
   @@unique([tenantId, keyword, locationCode, languageCode])
 }
+
+/// SERP Checker — one row per submitted DataForSEO standard-queue task.
+/// The POST route writes it as `queued`; the serp-checks worker polls
+/// tasks_ready and fills `results` + `serpFeatures`, or `error`.
+///
+/// The search params are columns rather than a JSON blob because the 24 h
+/// cache lookup queries on all four of them together (see the composite index).
+model SerpCheck {
+  id               String    @id @default(cuid())
+  tenantId         String
+  keyword          String
+  locationCode     Int
+  languageCode     String
+  device           String // desktop | mobile
+  dataforseoTaskId String?   @unique
+  status           String    @default("queued") // queued | completed | failed
+  costUsd          Decimal   @default(0) @db.Decimal(10, 6)
+  results          Json? // { items: SerpResultItem[] } — top 100 organic
+  serpFeatures     Json? // string[] of non-organic element types present
+  itemCount        Int?
+  error            String?
+  createdAt        DateTime  @default(now())
+  completedAt      DateTime?
+
+  // Cache lookup: newest completed check for this exact query.
+  @@index([tenantId, keyword, locationCode, languageCode, device, status, createdAt])
+  // History list.
+  @@index([tenantId, createdAt])
+  // Worker sweep: queued rows, oldest first.
+  @@index([status, createdAt])
+}

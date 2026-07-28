@@ -13,6 +13,8 @@
 import { prisma } from "@/lib/prisma";
 import {
   meteredCall,
+  meteredCallResult,
+  type ApiResult,
   type CreditFeature,
   DataforseoError,
 } from "./client";
@@ -68,6 +70,22 @@ export async function seoMeteredCall<T>(
 ): Promise<T> {
   const cap = await monthlyCapUsd(tenantId);
   return meteredCall<T>({ tenantId, monthlyCapUsd: cap }, path, task, {
+    spentThisMonth,
+    record: recordCall,
+  });
+}
+
+/**
+ * seoMeteredCall that keeps the envelope. Async-queue task_post callers need
+ * the DataForSEO task id and the billed cost to persist alongside their row.
+ */
+export async function seoMeteredCallResult<T>(
+  tenantId: string,
+  path: string,
+  task: Record<string, unknown>,
+): Promise<ApiResult<T>> {
+  const cap = await monthlyCapUsd(tenantId);
+  return meteredCallResult<T>({ tenantId, monthlyCapUsd: cap }, path, task, {
     spentThisMonth,
     record: recordCall,
   });

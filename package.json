@@ -15,6 +15,8 @@
     "db:studio": "prisma studio",
     "workers": "npx tsx src/infrastructure/queue/start-workers.ts",
     "workers:dev": "npx tsx --watch src/infrastructure/queue/start-workers.ts",
+    "test": "npm run test:imports && npm run test:seo-tools && npm run test:devtools && npm run test:gsc && npm run test:account && npm run test:extension && npm run test:vitest",
+    "test:vitest": "vitest run",
     "test:imports": "node --test --import tsx src/monitoring/import/__tests__/csv-parser.test.ts",
     "test:seo-tools": "node --test --import tsx src/lib/__tests__/seo-tools.test.ts",
     "test:devtools": "node --test --import tsx src/lib/__tests__/devtools.test.ts",

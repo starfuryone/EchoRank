@@ -1,0 +1,42 @@
+{
+  "version": "0.1.20260717",
+  "status_code": 20000,
+  "status_message": "Ok.",
+  "time": "0.0529 sec.",
+  "cost": 0,
+  "tasks_count": 1,
+  "tasks_error": 1,
+  "tasks": [
+    {
+      "id": "07282241-2159-0066-0000-d33f5a303490",
+      "status_code": 40602,
+      "status_message": "Task In Queue.",
+      "time": "0.0015 sec.",
+      "cost": 0,
+      "result_count": 0,
+      "path": [
+        "v3",
+        "serp",
+        "google",
+        "organic",
+        "task_get",
+        "advanced",
+        "07282241-2159-0066-0000-d33f5a303490"
+      ],
+      "data": {
+        "api": "serp",
+        "function": "task_get",
+        "se": "google",
+        "se_type": "organic",
+        "keyword": "reputation management software",
+        "location_code": 2124,
+        "language_code": "en",
+        "device": "desktop",
+        "os": "windows",
+        "priority": 1,
+        "depth": 100
+      },
+      "result": null
+    }
+  ]
+}

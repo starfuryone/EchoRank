@@ -1,11 +1,12 @@
 import { cookies } from "next/headers";
 import { dashboardLocale } from "@/lib/i18n/dashboard";
-import { FeatureScaffold } from "@/components/scaffold/feature-scaffold";
+import { SerpCheckerClient } from "@/components/seo-tools/serp-checker-client";
 
-// INTEGRATION POINT: DataForSEO serp/google/organic/live/advanced (port spec Phase 4).
-// Paid-subscription gating is enforced by ../layout.tsx for all tool pages.
-export default async function Page() {
+// Real data page (replaced the scaffold): DataForSEO standard-queue SERP
+// checks via /api/seo/v1/serp/check, completed by the serp-checks worker.
+// Paid gating enforced by ../layout.tsx.
+export default async function SerpCheckerPage() {
   const cookieStore = await cookies();
   const locale = dashboardLocale(cookieStore.get("echorank_locale")?.value);
-  return <FeatureScaffold locale={locale} id="serp_checker" />;
+  return <SerpCheckerClient locale={locale} />;
 }

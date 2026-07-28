@@ -10,7 +10,7 @@
  * Env: DATAFORSEO_LOGIN, DATAFORSEO_PASSWORD
  */
 
-import { fixturesEnabled, loadFixture } from "./fixtures";
+import { fixturesEnabled, loadFixture, recordingEnabled, saveFixture } from "./fixtures";
 
 const API_BASE = "https://api.dataforseo.com";
 const REQUEST_TIMEOUT_MS = 60_000;
@@ -20,6 +20,13 @@ const MAX_ERROR_PAYLOAD = 1600;
 
 // DataForSEO task-level status codes: 20000 = ok. 40501/40502 = invalid field.
 const STATUS_OK = 20000;
+// 20100 "Task Created." — the success code for every *_task_post endpoint.
+// The task is accepted, billed, and has an id; `result` is null by design.
+const STATUS_TASK_CREATED = 20100;
+
+function isTaskSuccess(code: number | undefined): boolean {
+  return code === STATUS_OK || code === STATUS_TASK_CREATED;
+}
 
 export type CreditFeature =
   | "keyword_research"
@@ -30,7 +37,9 @@ export type CreditFeature =
   | "local_seo";
 
 export type ApiCallCost = { path: string[]; costUsd: number };
-export type ApiResult<T> = { data: T; billing: ApiCallCost };
+/** `taskId` is DataForSEO's own task uuid — set on every envelope, and the
+ * handle the async queue (tasks_ready / task_get) is polled with. */
+export type ApiResult<T> = { data: T; billing: ApiCallCost; taskId?: string };
 
 export class DataforseoError extends Error {
   constructor(
@@ -70,6 +79,7 @@ function truncate(text: string): string {
 }
 
 type RawTask = {
+  id?: string;
   status_code?: number;
   status_message?: string;
   path?: string[];
@@ -133,12 +143,43 @@ export async function postTask<T = unknown>(
   task: Record<string, unknown>,
   opts?: { signal?: AbortSignal },
 ): Promise<ApiResult<T>> {
+  return request<T>("POST", path, {
+    body: JSON.stringify([task]),
+    signal: opts?.signal,
+  });
+}
+
+/**
+ * GET a v3 endpoint that takes no task body — the async-queue reads
+ * (`tasks_ready`, `task_get/advanced/<id>`). Both are FREE at DataForSEO, so
+ * callers use these directly instead of going through meteredCall.
+ *
+ * `fixtureKey` overrides the fixture filename: `task_get/advanced/<id>` embeds
+ * a per-task id in the path, which would otherwise never replay.
+ */
+export async function getEndpoint<T = unknown>(
+  path: string,
+  opts?: { signal?: AbortSignal; fixtureKey?: string },
+): Promise<ApiResult<T>> {
+  return request<T>("GET", path, {
+    signal: opts?.signal,
+    fixtureKey: opts?.fixtureKey,
+  });
+}
+
+async function request<T>(
+  method: "GET" | "POST",
+  path: string,
+  opts: { body?: string; signal?: AbortSignal; fixtureKey?: string },
+): Promise<ApiResult<T>> {
+  const fixtureKey = opts.fixtureKey ?? path;
+
   // DATAFORSEO_FIXTURES=1 — serve recorded envelopes, zero live spend.
   if (fixturesEnabled()) {
-    const envelope = loadFixture(path);
+    const envelope = loadFixture(fixtureKey);
     if (envelope) return parseEnvelope<T>(envelope as RawResponse, path);
     throw new DataforseoError(
-      `DATAFORSEO_FIXTURES=1 but no fixture recorded for /${path}`,
+      `DATAFORSEO_FIXTURES=1 but no fixture recorded for /${fixtureKey}`,
       "INTERNAL",
       undefined,
       path,
@@ -146,16 +187,15 @@ export async function postTask<T = unknown>(
   }
 
   const url = `${API_BASE}/${path}`;
-  const signal = opts?.signal ?? AbortSignal.timeout(REQUEST_TIMEOUT_MS);
+  const signal = opts.signal ?? AbortSignal.timeout(REQUEST_TIMEOUT_MS);
   const headers = {
     Authorization: authHeader(),
     "Content-Type": "application/json",
   };
-  const body = JSON.stringify([task]);
 
   let response: Response | undefined;
   for (let attempt = 0; ; attempt++) {
-    response = await fetch(url, { method: "POST", headers, body, signal });
+    response = await fetch(url, { method, headers, body: opts.body, signal });
     if (response.ok) break;
     if (response.status >= 500 && attempt < MAX_RETRIES) {
       await new Promise((r) => setTimeout(r, RETRY_BACKOFF_MS * (attempt + 1)));
@@ -177,6 +217,20 @@ export async function postTask<T = unknown>(
   }
 
   const json = (await response.json()) as RawResponse;
+
+  // DATAFORSEO_RECORD=1 — persist the live envelope for later replay. Written
+  // before parsing so a failing envelope is still inspectable on disk.
+  if (recordingEnabled()) {
+    try {
+      saveFixture(fixtureKey, json);
+    } catch (err) {
+      console.error(
+        `[dataforseo] fixture record failed for /${fixtureKey}:`,
+        err instanceof Error ? err.message : err,
+      );
+    }
+  }
+
   return parseEnvelope<T>(json, path);
 }
 
@@ -193,7 +247,7 @@ function parseEnvelope<T>(json: RawResponse, path: string): ApiResult<T> {
     );
   }
 
-  if (t.status_code !== STATUS_OK) {
+  if (!isTaskSuccess(t.status_code)) {
     const message = t.status_message ?? "unknown task failure";
     const invalidField = /invalid field/i.test(message);
     const billed = typeof t.cost === "number" && t.cost > 0;
@@ -210,6 +264,7 @@ function parseEnvelope<T>(json: RawResponse, path: string): ApiResult<T> {
   return {
     data: (t.result ?? []) as T,
     billing: buildBilling(t, path),
+    taskId: t.id,
   };
 }
 
@@ -221,17 +276,33 @@ export async function meteredCall<T>(
   ctx: { tenantId: string; monthlyCapUsd: number },
   path: string,
   task: Record<string, unknown>,
-  deps: {
-    spentThisMonth: (tenantId: string) => Promise<number>;
-    record: (row: {
-      tenantId: string;
-      feature: CreditFeature;
-      path: string;
-      costUsd: number;
-      ok: boolean;
-    }) => Promise<void>;
-  },
+  deps: MeteringDeps,
 ): Promise<T> {
+  return (await meteredCallResult<T>(ctx, path, task, deps)).data;
+}
+
+export type MeteringDeps = {
+  spentThisMonth: (tenantId: string) => Promise<number>;
+  record: (row: {
+    tenantId: string;
+    feature: CreditFeature;
+    path: string;
+    costUsd: number;
+    ok: boolean;
+  }) => Promise<void>;
+};
+
+/**
+ * Same guarantees as meteredCall, but hands back the whole envelope result —
+ * async-queue callers need `billing.costUsd` and `taskId` to persist the row
+ * they will later poll.
+ */
+export async function meteredCallResult<T>(
+  ctx: { tenantId: string; monthlyCapUsd: number },
+  path: string,
+  task: Record<string, unknown>,
+  deps: MeteringDeps,
+): Promise<ApiResult<T>> {
   const spent = await deps.spentThisMonth(ctx.tenantId);
   if (spent >= ctx.monthlyCapUsd) {
     throw new DataforseoError(
@@ -241,7 +312,8 @@ export async function meteredCall<T>(
   }
 
   try {
-    const { data, billing } = await postTask<T>(path, task);
+    const result = await postTask<T>(path, task);
+    const { billing } = result;
     await deps.record({
       tenantId: ctx.tenantId,
       feature: pathToFeature(billing.path),
@@ -249,7 +321,7 @@ export async function meteredCall<T>(
       costUsd: billing.costUsd,
       ok: true,
     });
-    return data;
+    return result;
   } catch (err) {
     // Charged-but-failed tasks still cost money — record them. Uncharged
     // failures (our malformed request) are not billed and not recorded.

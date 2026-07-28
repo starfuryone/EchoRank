@@ -1,10 +1,20 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { mkdirSync, writeFileSync, rmSync } from "node:fs";
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { mkdirSync, mkdtempSync, writeFileSync, readFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
+import { tmpdir } from "node:os";
+
+// Fixture tests write and delete files. Point them at a scratch directory:
+// they used to rm -rf <cwd>/fixtures, which deleted the COMMITTED envelopes
+// and quietly sent the next fixtures-mode run to the live, billed API.
+const SCRATCH_FIXTURES = mkdtempSync(join(tmpdir(), "dfs-fixtures-"));
+process.env.DATAFORSEO_FIXTURE_DIR = SCRATCH_FIXTURES;
+afterAll(() => rmSync(SCRATCH_FIXTURES, { recursive: true, force: true }));
 import {
   pathToFeature,
   postTask,
+  getEndpoint,
   meteredCall,
+  meteredCallResult,
   DataforseoError,
 } from "../src/lib/dataforseo/client";
 import { fixturePathFor } from "../src/lib/dataforseo/fixtures";
@@ -211,7 +221,7 @@ describe("fixtures", () => {
   const path = "v3/dataforseo_labs/google/keyword_overview/live";
 
   afterEach(() => {
-    rmSync(join(process.cwd(), "fixtures"), { recursive: true, force: true });
+    rmSync(SCRATCH_FIXTURES, { recursive: true, force: true });
   });
 
   it("serves recorded envelopes with zero fetches", async () => {
@@ -237,5 +247,131 @@ describe("fixtures", () => {
       code: "INTERNAL",
     });
     expect(spy).not.toHaveBeenCalled();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Async queue (task_post / tasks_ready / task_get) — added for SERP Checker.
+// ---------------------------------------------------------------------------
+
+/** What a real task_post envelope looks like: 20100, no result, an id. */
+const TASK_CREATED = {
+  status_code: 20000,
+  tasks: [
+    {
+      id: "07282241-2159-0066-0000-d33f5a303490",
+      status_code: 20100,
+      status_message: "Task Created.",
+      path: ["v3", "serp", "google", "organic", "task_post"],
+      cost: 0.006,
+      result: null,
+    },
+  ],
+};
+
+describe("task_post envelopes", () => {
+  it("treats 20100 Task Created as success, not a failure", async () => {
+    mockFetchOnce(200, TASK_CREATED);
+    const res = await postTask("v3/serp/google/organic/task_post", {});
+    expect(res.taskId).toBe("07282241-2159-0066-0000-d33f5a303490");
+    expect(res.billing.costUsd).toBe(0.006);
+    expect(res.data).toEqual([]); // result is null until the task finishes
+  });
+
+  it("meteredCallResult hands the task id and cost to the caller", async () => {
+    mockFetchOnce(200, TASK_CREATED);
+    const record = vi.fn(async () => {});
+    const res = await meteredCallResult(
+      { tenantId: "t1", monthlyCapUsd: 25 },
+      "v3/serp/google/organic/task_post",
+      {},
+      { spentThisMonth: async () => 0, record },
+    );
+    expect(res.taskId).toBe("07282241-2159-0066-0000-d33f5a303490");
+    expect(record).toHaveBeenCalledWith(
+      expect.objectContaining({ costUsd: 0.006, ok: true, feature: "keyword_research" }),
+    );
+  });
+});
+
+describe("getEndpoint", () => {
+  const OK_GET = {
+    status_code: 20000,
+    tasks: [
+      {
+        id: "t",
+        status_code: 20000,
+        path: ["v3", "serp", "google", "organic", "tasks_ready"],
+        cost: 0,
+        result: [{ id: "ready_1" }],
+      },
+    ],
+  };
+
+  it("issues a GET with no body and parses the same envelope", async () => {
+    const fetchSpy = vi.fn(async () => new Response(JSON.stringify(OK_GET), { status: 200 }));
+    vi.stubGlobal("fetch", fetchSpy);
+
+    const res = await getEndpoint("v3/serp/google/organic/tasks_ready");
+
+    expect(res.data).toEqual([{ id: "ready_1" }]);
+    expect(res.billing.costUsd).toBe(0); // free endpoint
+    const [, init] = fetchSpy.mock.calls[0] as unknown as [string, RequestInit];
+    expect(init.method).toBe("GET");
+    expect(init.body).toBeUndefined();
+  });
+
+  it("replays a per-task path from the stable fixtureKey", async () => {
+    const key = "v3/serp/google/organic/task_get/advanced";
+    const file = fixturePathFor(key);
+    mkdirSync(join(file, ".."), { recursive: true });
+    writeFileSync(file, JSON.stringify(OK_GET));
+
+    process.env.DATAFORSEO_FIXTURES = "1";
+    const spy = vi.fn();
+    vi.stubGlobal("fetch", spy);
+
+    // The live path carries an id that would never match a fixture filename.
+    const res = await getEndpoint(`${key}/07282241-2159-0066-0000-d33f5a303490`, {
+      fixtureKey: key,
+    });
+
+    expect(res.data).toEqual([{ id: "ready_1" }]);
+    expect(spy).not.toHaveBeenCalled();
+    rmSync(SCRATCH_FIXTURES, { recursive: true, force: true });
+  });
+});
+
+describe("DATAFORSEO_RECORD=1", () => {
+  afterEach(() => {
+    delete process.env.DATAFORSEO_RECORD;
+    rmSync(SCRATCH_FIXTURES, { recursive: true, force: true });
+  });
+
+  it("writes the live envelope to disk under the fixture key", async () => {
+    process.env.DATAFORSEO_RECORD = "1";
+    mockFetchOnce(200, TASK_CREATED);
+
+    await postTask("v3/serp/google/organic/task_post", {});
+
+    const written = JSON.parse(
+      readFileSync(fixturePathFor("v3/serp/google/organic/task_post"), "utf8"),
+    );
+    expect(written).toEqual(TASK_CREATED);
+  });
+
+  it("does not record while replaying — fixtures must not overwrite themselves", async () => {
+    process.env.DATAFORSEO_RECORD = "1";
+    process.env.DATAFORSEO_FIXTURES = "1";
+    const path = "v3/serp/google/organic/task_post";
+    const file = fixturePathFor(path);
+    mkdirSync(join(file, ".."), { recursive: true });
+    writeFileSync(file, JSON.stringify(TASK_CREATED));
+    const before = readFileSync(file, "utf8");
+
+    vi.stubGlobal("fetch", vi.fn());
+    await postTask(path, {});
+
+    expect(readFileSync(file, "utf8")).toBe(before);
   });
 });

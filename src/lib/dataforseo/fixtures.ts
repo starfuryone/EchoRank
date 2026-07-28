@@ -13,14 +13,32 @@
 import { readFileSync, existsSync, mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 
-const FIXTURE_DIR = join(process.cwd(), "fixtures", "dataforseo");
+/**
+ * Where fixtures live. Resolved per call, and overridable with
+ * DATAFORSEO_FIXTURE_DIR so tests can write to a scratch directory — the
+ * suite used to clean up by deleting <cwd>/fixtures outright, which silently
+ * removed the committed envelopes and pushed the next fixtures-mode run back
+ * onto the live (billed) API.
+ */
+function fixtureDir(): string {
+  return process.env.DATAFORSEO_FIXTURE_DIR ?? join(process.cwd(), "fixtures", "dataforseo");
+}
 
 export function fixturesEnabled(): boolean {
   return process.env.DATAFORSEO_FIXTURES === "1";
 }
 
+/**
+ * DATAFORSEO_RECORD=1 writes every live envelope to fixtures/ as it comes
+ * back, so one live call per endpoint is enough to seed replay. Ignored when
+ * DATAFORSEO_FIXTURES=1 (replay wins — recording from a replay is a no-op).
+ */
+export function recordingEnabled(): boolean {
+  return process.env.DATAFORSEO_RECORD === "1" && !fixturesEnabled();
+}
+
 export function fixturePathFor(apiPath: string): string {
-  return join(FIXTURE_DIR, `${apiPath.replace(/\//g, "-")}.json`);
+  return join(fixtureDir(), `${apiPath.replace(/\//g, "-")}.json`);
 }
 
 /** Returns the raw envelope JSON for a path, or null when no fixture exists. */
@@ -32,6 +50,6 @@ export function loadFixture(apiPath: string): unknown | null {
 
 /** Record a live envelope for later fixture use (call once per endpoint). */
 export function saveFixture(apiPath: string, envelope: unknown): void {
-  mkdirSync(FIXTURE_DIR, { recursive: true });
+  mkdirSync(fixtureDir(), { recursive: true });
   writeFileSync(fixturePathFor(apiPath), JSON.stringify(envelope, null, 2));
 }

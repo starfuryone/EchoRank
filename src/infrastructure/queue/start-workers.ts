@@ -27,6 +27,7 @@ import { startCsvImportWorker } from "./workers/csv-import.worker";
 import { startExtensionImportWorker } from "./workers/extension-import.worker";
 import { startVisibilityMonitoringWorker } from "./workers/visibility-monitoring.worker";
 import { startOnboardingEmailWorker } from "./workers/onboarding-email.worker";
+import { startSerpCheckWorker } from "./workers/serp-check.worker";
 
 /**
  * How often to drain domain events that are still PENDING/FAILED in the DB.
@@ -90,6 +91,7 @@ async function startWorkers() {
     { name: "extension-import", start: startExtensionImportWorker },
     { name: "visibility-monitoring", start: startVisibilityMonitoringWorker },
     { name: "onboarding-email", start: startOnboardingEmailWorker },
+    { name: "serp-checks", start: startSerpCheckWorker },
   ];
 
   const loaded: string[] = [];

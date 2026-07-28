@@ -1,0 +1,33 @@
+{
+  "version": "0.1.20260717",
+  "status_code": 20000,
+  "status_message": "Ok.",
+  "time": "0.1204 sec.",
+  "cost": 0,
+  "tasks_count": 1,
+  "tasks_error": 0,
+  "tasks": [
+    {
+      "id": "07282247-2159-0087-0000-98602b71e5fb",
+      "status_code": 20000,
+      "status_message": "Ok.",
+      "time": "0.0550 sec.",
+      "cost": 0,
+      "result_count": 0,
+      "path": [
+        "v3",
+        "serp",
+        "google",
+        "organic",
+        "tasks_ready"
+      ],
+      "data": {
+        "api": "serp",
+        "function": "tasks_ready",
+        "se": "google",
+        "se_type": "organic"
+      },
+      "result": null
+    }
+  ]
+}

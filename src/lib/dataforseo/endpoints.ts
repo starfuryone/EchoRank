@@ -8,7 +8,7 @@
  * SDK method -> v3 path mapping verified against open-seo @ HEAD (Jul 2026).
  */
 
-import { postTask, type ApiResult } from "./client";
+import { postTask, getEndpoint, type ApiResult } from "./client";
 
 // ---------------------------------------------------------------------------
 // DataForSEO Labs — keyword research + domain analytics
@@ -48,9 +48,12 @@ export const ADS = {
 export const SERP = {
   /** googleOrganicLiveAdvanced — SERP Checker */
   organicLive: "v3/serp/google/organic/live/advanced",
-  /** googleOrganicTaskPost — rank tracking (cheaper, async) */
+  /** googleOrganicTaskPost — SERP Checker + rank tracking (cheaper, async) */
   organicTaskPost: "v3/serp/google/organic/task_post",
-  /** googleOrganicTaskGetAdvanced — FREE at DataForSEO, skip metering */
+  /** googleOrganicTasksReady — FREE at DataForSEO, skip metering */
+  organicTasksReady: "v3/serp/google/organic/tasks_ready",
+  /** googleOrganicTaskGetAdvanced — FREE at DataForSEO, skip metering.
+   * The live path appends `/<taskId>`; this constant is the fixture key. */
   organicTaskGet: "v3/serp/google/organic/task_get/advanced",
   /** googleMapsLiveAdvanced */
   mapsLive: "v3/serp/google/maps/live/advanced",
@@ -278,7 +281,8 @@ export function lighthouse(input: {
   });
 }
 
-/** Free — account balance. Use for the ops dashboard, never metered. */
+/** Free — account balance. Use for the ops dashboard, never metered.
+ * user_data is a GET endpoint; POSTing it returns 40400 Not Found. */
 export function accountBalance(): Promise<ApiResult<unknown[]>> {
-  return postTask<unknown[]>(ACCOUNT.userData, {});
+  return getEndpoint<unknown[]>(ACCOUNT.userData);
 }

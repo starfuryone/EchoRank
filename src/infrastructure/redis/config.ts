@@ -87,6 +87,8 @@ export const REDIS_CONFIG = {
     "feedback-routing": { max: 200, duration: 60_000 },
     "csv-import": { max: 10, duration: 60_000 },
     "visibility-monitoring": { max: 6, duration: 60_000 },
+    // One sweep tick a minute; the limiter is a backstop, not the schedule.
+    "serp-checks": { max: 4, duration: 60_000 },
   } as Record<string, { max: number; duration: number }>,
 } as const;
 
@@ -104,7 +106,8 @@ export type QueueName =
   | "csv-import"
   | "extension-import"
   | "visibility-monitoring"
-  | "onboarding-email";
+  | "onboarding-email"
+  | "serp-checks";
 
 /** All valid queue names */
 export const QUEUE_NAMES: QueueName[] = [
@@ -122,4 +125,5 @@ export const QUEUE_NAMES: QueueName[] = [
 
   "visibility-monitoring",
   "onboarding-email",
+  "serp-checks",
 ];

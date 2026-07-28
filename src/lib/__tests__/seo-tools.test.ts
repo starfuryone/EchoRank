@@ -23,6 +23,9 @@ const ALL_TOOLS = SEO_TOOL_GROUPS.flatMap((g) => g.tools);
 const LOCALES = ["en", "fr", "de-CH"] as const;
 
 const EXPECTED_HREFS: Record<string, string> = {
+  serp_checker: "/visibility/tools/serp-checker",
+  backlinks: "/visibility/tools/backlinks",
+  lighthouse: "/visibility/tools/lighthouse",
   site_explorer: "/visibility/tools/site-explorer",
   keywords_explorer: "/visibility/keywords",
   rank_tracker: "/visibility/tools/rank-tracker",
@@ -198,4 +201,75 @@ test("brand-radar copy complete in all locales", () => {
 test("real-data pages' copy never uses CamelCase branding", () => {
   const json = JSON.stringify({ BRAND_RADAR_COPY, BOT_ANALYTICS_COPY });
   assert.ok(!json.includes("EchoRank"));
+});
+
+// ─── SERP Checker (real-data page) ──────────────────────────────────────────
+import { SERP_CHECKER_COPY } from "../i18n/dashboard";
+import {
+  SERP_LOCATION_CODES,
+  SERP_LANGUAGE_CODES,
+  DEFAULT_LOCATION_CODE,
+  DEFAULT_LANGUAGE_CODE,
+  DEFAULT_DEVICE,
+} from "../serp/options";
+import { SERP_CHECKS_PER_MONTH } from "../serp/quota";
+
+test("serp-checker copy complete in all locales (form, states, table, history)", () => {
+  for (const locale of LOCALES) {
+    const c = SERP_CHECKER_COPY[locale];
+    assert.ok(c.formTitle.length && c.formIntro.length && c.submit.length, locale);
+    assert.ok(c.keywordLabel.length && c.locationLabel.length && c.languageLabel.length);
+    assert.ok(c.deviceLabel.length && c.deviceDesktop.length && c.deviceMobile.length);
+    assert.ok(c.checkingTitle.length && c.checkingBody.length && c.cachedNote.length);
+    assert.ok(c.failedTitle.length && c.failedBody.length && c.emptyResults.length);
+    assert.ok(c.featuresTitle.length && c.noFeatures.length && c.untitled.length);
+    assert.ok(c.historyTitle.length && c.historyEmpty.length && c.view.length);
+    assert.ok(c.statusQueued.length && c.statusCompleted.length && c.statusFailed.length);
+    assert.ok(c.colPosition.length && c.colTitle.length && c.colDomain.length);
+    assert.ok(c.colKeyword.length && c.colDevice.length && c.colStatus.length);
+    assert.ok(c.colResults.length && c.colWhen.length);
+    assert.ok(c.submitFailed.length && c.loadFailed.length);
+    assert.ok(c.quotaTitle.length && c.quotaCta.length);
+
+    // Interpolated strings must actually interpolate.
+    assert.ok(c.resultsFor("pizza").includes("pizza"), `${locale} resultsFor`);
+    assert.ok(c.resultCount(7).includes("7"), `${locale} resultCount`);
+    assert.ok(c.usage(3, 25).includes("3") && c.usage(3, 25).includes("25"), `${locale} usage`);
+    assert.ok(c.quotaBody(25).includes("25"), `${locale} quotaBody`);
+    assert.ok(c.spend("0.0012").includes("0.0012"), `${locale} spend`);
+
+    // Every code the form offers needs a label in every catalog.
+    for (const code of SERP_LOCATION_CODES) {
+      assert.ok(c.locationLabels[code]?.length, `${locale} location ${code}`);
+    }
+    for (const code of SERP_LANGUAGE_CODES) {
+      assert.ok(c.languageLabels[code]?.length, `${locale} language ${code}`);
+    }
+  }
+});
+
+test("serp-checker copy never uses CamelCase branding or names the data vendor", () => {
+  const json = JSON.stringify(SERP_CHECKER_COPY);
+  assert.ok(!json.includes("EchoRank"), "found CamelCase 'EchoRank'");
+  assert.ok(!/dataforseo/i.test(json), "user-facing copy must not name the upstream vendor");
+});
+
+test("serp check defaults match the keywords/overview route", () => {
+  // 2124 = Canada. Drifting apart would silently change which SERP users see.
+  assert.equal(DEFAULT_LOCATION_CODE, 2124);
+  assert.equal(DEFAULT_LANGUAGE_CODE, "en");
+  assert.equal(DEFAULT_DEVICE, "desktop");
+  // The default location must be offered by the form, or it can't be re-run.
+  assert.ok((SERP_LOCATION_CODES as readonly number[]).includes(DEFAULT_LOCATION_CODE));
+});
+
+test("every plan has a monthly SERP check limit, ordered by tier", () => {
+  for (const plan of ["AI_VISIBILITY", "STARTER", "GROWTH", "AGENCY", "ENTERPRISE"] as const) {
+    assert.ok(SERP_CHECKS_PER_MONTH[plan] > 0, plan);
+  }
+  assert.equal(SERP_CHECKS_PER_MONTH.STARTER, 25);
+  assert.equal(SERP_CHECKS_PER_MONTH.GROWTH, 200);
+  assert.equal(SERP_CHECKS_PER_MONTH.AGENCY, 1000);
+  assert.ok(SERP_CHECKS_PER_MONTH.AI_VISIBILITY <= SERP_CHECKS_PER_MONTH.STARTER);
+  assert.ok(SERP_CHECKS_PER_MONTH.ENTERPRISE >= SERP_CHECKS_PER_MONTH.AGENCY);
 });
