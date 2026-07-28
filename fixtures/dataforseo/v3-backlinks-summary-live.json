@@ -1,0 +1,127 @@
+{
+  "version": "0.1.20260717",
+  "status_code": 20000,
+  "status_message": "Ok.",
+  "time": "2.2553 sec.",
+  "cost": 0.024036,
+  "tasks_count": 1,
+  "tasks_error": 0,
+  "tasks": [
+    {
+      "id": "07282315-2159-0265-0000-814b1b621292",
+      "status_code": 20000,
+      "status_message": "Ok.",
+      "time": "2.2088 sec.",
+      "cost": 0.024036,
+      "result_count": 1,
+      "path": [
+        "v3",
+        "backlinks",
+        "summary",
+        "live"
+      ],
+      "data": {
+        "api": "backlinks",
+        "function": "summary",
+        "target": "birdeye.com",
+        "internal_list_limit": 10,
+        "backlinks_status_type": "live",
+        "include_subdomains": true
+      },
+      "result": [
+        {
+          "target": "birdeye.com",
+          "first_seen": "2019-01-15 23:22:06 +00:00",
+          "lost_date": null,
+          "rank": 530,
+          "backlinks": 1467392,
+          "backlinks_spam_score": 7,
+          "crawled_pages": 1483032,
+          "info": {
+            "server": "nginx",
+            "cms": "wordpress",
+            "platform_type": [
+              "unknown"
+            ],
+            "ip_address": "54.177.71.127",
+            "country": "US",
+            "is_ip": false,
+            "target_spam_score": 0
+          },
+          "internal_links_count": 32356686,
+          "external_links_count": 102374584,
+          "broken_backlinks": 13820,
+          "broken_pages": 5105,
+          "referring_domains": 24492,
+          "referring_domains_nofollow": 5865,
+          "referring_main_domains": 21020,
+          "referring_main_domains_nofollow": 4053,
+          "referring_ips": 11266,
+          "referring_subnets": 5676,
+          "referring_pages": 1201411,
+          "referring_pages_nofollow": 135640,
+          "referring_links_tld": {
+            "com": 659605,
+            "com.au": 378801,
+            "biz": 24957,
+            "info": 19773,
+            "net": 18651,
+            "ca": 16761,
+            "uk": 14456,
+            "online": 9587,
+            "blogspot.com": 9046,
+            "xyz": 6351
+          },
+          "referring_links_types": {
+            "anchor": 1012357,
+            "image": 188279,
+            "redirect": 558,
+            "canonical": 217
+          },
+          "referring_links_attributes": {
+            "noopener": 169053,
+            "nofollow": 135608,
+            "noreferrer": 85020,
+            "external": 25799,
+            "ugc": 2029,
+            "sponsored": 757
+          },
+          "referring_links_platform_types": {
+            "unknown": 709119,
+            "organization": 261838,
+            "cms": 228167,
+            "blogs": 214857,
+            "ecommerce": 76559,
+            "message-boards": 4482,
+            "news": 3057,
+            "wikis": 277
+          },
+          "referring_links_semantic_locations": {
+            "section": 552413,
+            "footer": 244483,
+            "": 153497,
+            "nav": 103779,
+            "main": 52634,
+            "header": 37207,
+            "article": 35933,
+            "aside": 17887,
+            "figure": 2939,
+            "details": 554
+          },
+          "referring_links_countries": {
+            "US": 410954,
+            "AU": 385865,
+            "": 281364,
+            "WW": 54453,
+            "CA": 32959,
+            "GB": 17296,
+            "IO": 2623,
+            "TO": 2588,
+            "CO": 1927,
+            "DE": 1256
+          }
+        }
+      ]
+    }
+  ]
+}

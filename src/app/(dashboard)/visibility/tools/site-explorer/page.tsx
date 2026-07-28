@@ -1,12 +1,13 @@
 import { cookies } from "next/headers";
 import { dashboardLocale } from "@/lib/i18n/dashboard";
-import { FeatureScaffold } from "@/components/scaffold/feature-scaffold";
+import { SiteExplorerClient } from "@/components/seo-tools/site-explorer-client";
 
-// INTEGRATION POINT: competitor/site analysis backend. Related existing
-// surface today: /intelligence/competitors (competitor benchmarks).
-// Paid-subscription gating is enforced by ../layout.tsx for all tool pages.
-export default async function Page() {
+// Real data page (replaced the scaffold): four live DataForSEO calls behind
+// /api/seo/v1/site-explorer/analyze — domain overview, ranked keywords,
+// competitors, and the backlink summary, cached 24 h per domain.
+// Paid gating enforced by ../layout.tsx.
+export default async function SiteExplorerPage() {
   const cookieStore = await cookies();
   const locale = dashboardLocale(cookieStore.get("echorank_locale")?.value);
-  return <FeatureScaffold locale={locale} id="site_explorer" />;
+  return <SiteExplorerClient locale={locale} />;
 }

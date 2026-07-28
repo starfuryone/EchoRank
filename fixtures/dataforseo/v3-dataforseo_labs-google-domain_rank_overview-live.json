@@ -1,0 +1,102 @@
+{
+  "version": "0.1.20260717",
+  "status_code": 20000,
+  "status_message": "Ok.",
+  "time": "0.1479 sec.",
+  "cost": 0.01212,
+  "tasks_count": 1,
+  "tasks_error": 0,
+  "tasks": [
+    {
+      "id": "07282315-2159-0388-0000-99f4fdf716f2",
+      "status_code": 20000,
+      "status_message": "Ok.",
+      "time": "0.0699 sec.",
+      "cost": 0.01212,
+      "result_count": 1,
+      "path": [
+        "v3",
+        "dataforseo_labs",
+        "google",
+        "domain_rank_overview",
+        "live"
+      ],
+      "data": {
+        "api": "dataforseo_labs",
+        "function": "domain_rank_overview",
+        "se_type": "google",
+        "target": "birdeye.com",
+        "location_code": 2124,
+        "language_code": "en",
+        "limit": 1
+      },
+      "result": [
+        {
+          "se_type": "google",
+          "target": "birdeye.com",
+          "location_code": 2124,
+          "language_code": "en",
+          "total_count": 1,
+          "items_count": 1,
+          "items": [
+            {
+              "se_type": "google",
+              "location_code": 2124,
+              "language_code": "en",
+              "metrics": {
+                "organic": {
+                  "pos_1": 293,
+                  "pos_2_3": 2176,
+                  "pos_4_10": 30689,
+                  "pos_11_20": 59732,
+                  "pos_21_30": 40491,
+                  "pos_31_40": 27593,
+                  "pos_41_50": 17920,
+                  "pos_51_60": 11573,
+                  "pos_61_70": 7082,
+                  "pos_71_80": 3584,
+                  "pos_81_90": 1304,
+                  "pos_91_100": 378,
+                  "etv": 928926.0017776303,
+                  "count": 202815,
+                  "estimated_paid_traffic_cost": 1392062.6528621677,
+                  "is_new": 99737,
+                  "is_up": 65162,
+                  "is_down": 29618,
+                  "is_lost": 65977,
+                  "clickstream_etv": null,
+                  "clickstream_gender_distribution": null,
+                  "clickstream_age_distribution": null
+                },
+                "paid": {
+                  "pos_1": 4,
+                  "pos_2_3": 2,
+                  "pos_4_10": 0,
+                  "pos_11_20": 0,
+                  "pos_21_30": 0,
+                  "pos_31_40": 0,
+                  "pos_41_50": 0,
+                  "pos_51_60": 0,
+                  "pos_61_70": 0,
+                  "pos_71_80": 0,
+                  "pos_81_90": 0,
+                  "pos_91_100": 0,
+                  "etv": 54.458998918533325,
+                  "count": 6,
+                  "estimated_paid_traffic_cost": 1257.4911975860596,
+                  "is_new": 6,
+                  "is_up": 0,
+                  "is_down": 0,
+                  "is_lost": 2,
+                  "clickstream_etv": null,
+                  "clickstream_gender_distribution": null,
+                  "clickstream_age_distribution": null
+                }
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -273,3 +273,113 @@ test("every plan has a monthly SERP check limit, ordered by tier", () => {
   assert.ok(SERP_CHECKS_PER_MONTH.AI_VISIBILITY <= SERP_CHECKS_PER_MONTH.STARTER);
   assert.ok(SERP_CHECKS_PER_MONTH.ENTERPRISE >= SERP_CHECKS_PER_MONTH.AGENCY);
 });
+
+// ─── Site Explorer (real-data page) ─────────────────────────────────────────
+import { SITE_EXPLORER_COPY } from "../i18n/dashboard";
+import {
+  SITE_EXPLORER_ANALYSES_PER_MONTH,
+  SITE_EXPLORER_CACHE_TTL_MS,
+  RANKED_KEYWORDS_LIMIT,
+  COMPETITORS_LIMIT,
+  DEFAULT_LOCATION_CODE as SE_DEFAULT_LOCATION_CODE,
+  DEFAULT_LANGUAGE_CODE as SE_DEFAULT_LANGUAGE_CODE,
+} from "../site-explorer/options";
+import { SITE_EXPLORER_SECTIONS } from "../site-explorer/types";
+import { normalizeDomain, isValidDomain } from "../site-explorer/domain";
+
+test("site-explorer copy complete in all locales (form, four cards, history)", () => {
+  for (const locale of LOCALES) {
+    const c = SITE_EXPLORER_COPY[locale];
+    assert.ok(c.formTitle.length && c.formIntro.length, locale);
+    assert.ok(c.domainLabel.length && c.domainPlaceholder.length && c.domainHint.length);
+    assert.ok(c.invalidDomain.length && c.analyzing.length);
+    assert.ok(c.analyzingTitle.length && c.analyzingBody.length && c.cachedIntro.length);
+    assert.ok(c.partialNote.length && c.sectionFailedTitle.length && c.sectionFailedBody.length);
+
+    // One card title per persisted section, so no section can render untitled.
+    assert.ok(c.overviewTitle.length && c.keywordsTitle.length);
+    assert.ok(c.competitorsTitle.length && c.backlinksTitle.length);
+
+    assert.ok(c.metricTraffic.length && c.metricKeywords.length && c.metricTrafficValue.length);
+    assert.ok(c.metricTrafficUnit.length && c.metricKeywordsUnit.length && c.metricTrafficValueUnit.length);
+    assert.ok(c.distributionTitle.length && c.noDistribution.length);
+    assert.ok(c.metricBacklinks.length && c.metricReferringDomains.length);
+    assert.ok(c.metricRank.length && c.metricRankUnit.length && c.metricBroken.length);
+    assert.ok(c.metricDofollow.length && c.noDofollowData.length);
+
+    assert.ok(c.sortHint.length && c.emptyKeywords.length && c.emptyCompetitors.length);
+    assert.ok(c.colKeyword.length && c.colPosition.length && c.colVolume.length);
+    assert.ok(c.colEtv.length && c.colUrl.length && c.colDomain.length);
+    assert.ok(c.colIntersections.length && c.colAvgPosition.length);
+    assert.ok(c.competitorsSubtitle.length);
+
+    assert.ok(c.historyTitle.length && c.historyEmpty.length && c.view.length);
+    assert.ok(c.colStatus.length && c.colCost.length && c.colWhen.length);
+    assert.ok(c.statusCompleted.length && c.statusPartial.length);
+    assert.ok(c.quotaTitle.length && c.quotaCta.length);
+    assert.ok(c.submitFailed.length && c.loadFailed.length);
+
+    // Every rank bucket the overview card renders needs a label.
+    for (const key of ["pos1", "pos2_3", "pos4_10", "pos11_20", "pos21_100"] as const) {
+      assert.ok(c.distributionLabels[key]?.length, `${locale} bucket ${key}`);
+    }
+
+    // Interpolated strings must actually interpolate.
+    assert.ok(c.analyzedAgo("3 hours ago").includes("3 hours ago"), `${locale} analyzedAgo`);
+    assert.ok(c.reRunIn(21).includes("21"), `${locale} reRunIn`);
+    assert.ok(c.reRunIn(1).length, `${locale} reRunIn singular`);
+    assert.ok(c.keywordsSubtitle(100, 5000).includes("100"), `${locale} keywordsSubtitle`);
+    assert.ok(c.usage(3, 5).includes("3") && c.usage(3, 5).includes("5"), `${locale} usage`);
+    assert.ok(c.remaining(1).length && c.remaining(4).includes("4"), `${locale} remaining`);
+    assert.ok(c.quotaBody(5).includes("5"), `${locale} quotaBody`);
+    assert.ok(c.spend("0.0746").includes("0.0746"), `${locale} spend`);
+    assert.ok(c.dofollowRatio("76.1").includes("76.1"), `${locale} dofollowRatio`);
+  }
+});
+
+test("site-explorer copy never uses CamelCase branding or names the data vendor", () => {
+  const json = JSON.stringify(SITE_EXPLORER_COPY);
+  assert.ok(!json.includes("EchoRank"), "found CamelCase 'EchoRank'");
+  assert.ok(!/dataforseo/i.test(json), "user-facing copy must not name the upstream vendor");
+});
+
+test("site explorer defaults match the keywords/overview route", () => {
+  // 2124 = Canada. Drifting apart would silently change which market users see.
+  assert.equal(SE_DEFAULT_LOCATION_CODE, 2124);
+  assert.equal(SE_DEFAULT_LANGUAGE_CODE, "en");
+});
+
+test("cost levers are the specified caps: 100 keywords, 20 competitors, 24 h cache", () => {
+  // ranked_keywords is billed per row returned, so this limit IS the price.
+  assert.equal(RANKED_KEYWORDS_LIMIT, 100);
+  assert.equal(COMPETITORS_LIMIT, 20);
+  assert.equal(SITE_EXPLORER_CACHE_TTL_MS, 24 * 60 * 60 * 1000);
+});
+
+test("every plan has a monthly analysis limit, ordered by tier", () => {
+  for (const plan of ["AI_VISIBILITY", "STARTER", "GROWTH", "AGENCY", "ENTERPRISE"] as const) {
+    assert.ok(SITE_EXPLORER_ANALYSES_PER_MONTH[plan] > 0, plan);
+  }
+  assert.equal(SITE_EXPLORER_ANALYSES_PER_MONTH.STARTER, 5);
+  assert.equal(SITE_EXPLORER_ANALYSES_PER_MONTH.GROWTH, 50);
+  assert.equal(SITE_EXPLORER_ANALYSES_PER_MONTH.AGENCY, 200);
+  assert.ok(SITE_EXPLORER_ANALYSES_PER_MONTH.AI_VISIBILITY <= SITE_EXPLORER_ANALYSES_PER_MONTH.STARTER);
+  assert.ok(SITE_EXPLORER_ANALYSES_PER_MONTH.ENTERPRISE >= SITE_EXPLORER_ANALYSES_PER_MONTH.AGENCY);
+});
+
+test("the four sections are the four cards the page renders", () => {
+  assert.deepEqual([...SITE_EXPLORER_SECTIONS], [
+    "overview",
+    "rankedKeywords",
+    "competitors",
+    "backlinks",
+  ]);
+});
+
+test("domain normalization collapses the forms users actually paste", () => {
+  assert.equal(normalizeDomain("HTTPS://WWW.Example.com/pricing?a=1"), "example.com");
+  assert.equal(normalizeDomain("example.com"), "example.com");
+  assert.ok(isValidDomain("sub.example.co.uk"));
+  assert.ok(!isValidDomain("localhost"));
+  assert.ok(!isValidDomain("10.0.0.1"));
+});

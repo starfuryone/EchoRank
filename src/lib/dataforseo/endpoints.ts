@@ -30,6 +30,8 @@ export const LABS = {
   relevantPages: "v3/dataforseo_labs/google/relevant_pages/live",
   /** googleSerpCompetitorsLive */
   serpCompetitors: "v3/dataforseo_labs/google/serp_competitors/live",
+  /** googleCompetitorsDomainLive — Site Explorer's competitors card */
+  competitorsDomain: "v3/dataforseo_labs/google/competitors_domain/live",
 } as const;
 
 // ---------------------------------------------------------------------------
@@ -93,6 +95,12 @@ export const ACCOUNT = { userData: "v3/appendix/user_data" } as const;
 // DataForSEO types almost everything as optional.
 // ---------------------------------------------------------------------------
 
+/**
+ * ONE ITEM of domain_rank_overview, i.e. `result[0].items[0]` — the metrics
+ * live a level below the result element, not on it (verified against the
+ * recorded envelope, Jul 2026). Call sites type the result as
+ * `{ items?: DomainRankOverviewItem[] }[]`.
+ */
 export type DomainRankOverviewItem = {
   se_type?: string;
   location_code?: number;
@@ -143,6 +151,31 @@ export type RankedKeywordItem = {
   };
 };
 
+/**
+ * competitors_domain returns the target itself as one of the rows (100 %
+ * intersection with itself), so callers filter on `domain`.
+ *
+ * Three metric blocks, easy to mix up (semantics verified against the recorded
+ * envelope, Jul 2026):
+ *  - `metrics`            — the TARGET's numbers on the intersecting keywords
+ *  - `competitor_metrics` — the COMPETITOR's numbers on those same keywords
+ *  - `full_domain_metrics`— the competitor's entire organic footprint
+ *
+ * The competitors table wants `competitor_metrics` — "what they pull from the
+ * keywords you share", not how big they are overall and not your own traffic
+ * (which is near-identical on every row and therefore useless as a column).
+ */
+export type CompetitorsDomainItem = {
+  se_type?: string;
+  domain?: string;
+  avg_position?: number;
+  sum_position?: number;
+  intersections?: number;
+  metrics?: { organic?: { count?: number; etv?: number; pos_1?: number } };
+  competitor_metrics?: { organic?: { count?: number; etv?: number; pos_1?: number } };
+  full_domain_metrics?: { organic?: { count?: number; etv?: number } };
+};
+
 export type RelevantPageItem = {
   page_address?: string;
   metrics?: { organic?: { count?: number; etv?: number; pos_1?: number } };
@@ -153,10 +186,20 @@ export type BacklinksSummaryItem = {
   rank?: number;
   backlinks?: number;
   referring_domains?: number;
+  /** Directly reported — the same base as referring_domains, so the pair can
+   * be differenced into a dofollow count without inference. */
+  referring_domains_nofollow?: number;
   referring_main_domains?: number;
+  referring_main_domains_nofollow?: number;
   referring_ips?: number;
+  referring_pages?: number;
+  referring_pages_nofollow?: number;
   broken_backlinks?: number;
+  broken_pages?: number;
+  backlinks_spam_score?: number;
   referring_links_types?: Record<string, number>;
+  /** Per-attribute counts against `referring_pages`, NOT against `backlinks` —
+   * differencing them from the backlink total mixes bases. */
   referring_links_attributes?: Record<string, number>;
 };
 
@@ -179,7 +222,7 @@ export type SerpOrganicItem = {
 type Loc = { locationCode: number; languageCode: string };
 
 export function domainRankOverview(input: { target: string } & Loc) {
-  return postTask<DomainRankOverviewItem[]>(LABS.domainRankOverview, {
+  return postTask<{ items?: DomainRankOverviewItem[] }[]>(LABS.domainRankOverview, {
     target: input.target,
     location_code: input.locationCode,
     language_code: input.languageCode,
@@ -208,6 +251,18 @@ export function rankedKeywords(
       order_by: input.orderBy,
       filters: input.filters,
       include_subdomains: input.includeSubdomains,
+    },
+  );
+}
+
+export function competitorsDomain(input: { target: string; limit: number } & Loc) {
+  return postTask<{ items?: CompetitorsDomainItem[]; total_count?: number }[]>(
+    LABS.competitorsDomain,
+    {
+      target: input.target,
+      location_code: input.locationCode,
+      language_code: input.languageCode,
+      limit: input.limit,
     },
   );
 }

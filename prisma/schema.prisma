@@ -1328,3 +1328,35 @@ model SerpCheck {
   // Worker sweep: queued rows, oldest first.
   @@index([status, createdAt])
 }
+
+/// Site Explorer — one row per domain analysis. An analysis is FOUR live
+/// DataForSEO calls (domain_rank_overview, ranked_keywords, competitors_domain,
+/// backlinks/summary) run in sequence inside a single POST; each is sub-second,
+/// so there is no worker and no `queued` state.
+///
+/// Sections are stored independently and `failedSections` names the ones that
+/// did not come back: a partial analysis is worth keeping (and worth showing)
+/// rather than discarding three good sections because one endpoint 500'd.
+///
+/// locationCode/languageCode are columns, not a params blob, because the 24 h
+/// per-(tenant, domain) cache lookup queries on them (see the composite index).
+model SiteExplorerAnalysis {
+  id             String   @id @default(cuid())
+  tenantId       String
+  domain         String // normalized: no scheme, no www., no path, lowercase
+  locationCode   Int
+  languageCode   String
+  status         String   @default("completed") // completed | partial
+  costUsd        Decimal  @default(0) @db.Decimal(10, 6)
+  overview       Json? // OverviewSection — traffic, keyword count, rank spread
+  rankedKeywords Json? // RankedKeywordsSection — top 100 rows
+  competitors    Json? // CompetitorsSection — top 20 rows
+  backlinks      Json? // BacklinksSection — link profile headline metrics
+  failedSections Json? // string[] of section keys that did not load
+  createdAt      DateTime @default(now())
+
+  // Cache lookup: newest analysis for this exact target.
+  @@index([tenantId, domain, locationCode, languageCode, createdAt])
+  // History list.
+  @@index([tenantId, createdAt])
+}

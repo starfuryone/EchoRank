@@ -6256,3 +6256,294 @@ export const SERP_CHECKER_COPY: Record<DashLocale, SerpCheckerCopy> = {
     },
   },
 };
+
+// ─── Site Explorer ──────────────────────────────────────────────────────────
+// Synchronous tool: one submit runs four live upstream calls and the four
+// cards fill in together (~3-5 s). Copy is written for that — a short wait, a
+// cache note that explains why a re-run is unavailable, and per-section
+// failure text, because one section can be down while the other three render.
+const siteExplorerEn = {
+  formTitle: "Analyze a domain",
+  formIntro:
+    "Organic traffic, top keywords, competitors, and the backlink profile for any domain — one analysis, four data sets.",
+  domainLabel: "Domain",
+  domainPlaceholder: "example.com",
+  domainHint: "Paste any URL — the scheme, www., and path are stripped.",
+  invalidDomain: "Enter a domain like example.com",
+  analyzing: "Analyzing…",
+  analyzingTitle: "Analyzing the domain…",
+  // Measured 8-12 s live for a large domain (Jul 2026), not "a few seconds".
+  analyzingBody: "Four data sets are collected in sequence — usually 10 to 15 seconds.",
+  analyzedAgo: (ago: string) => `Analyzed ${ago}`,
+  reRunIn: (hours: number) =>
+    hours <= 1 ? "Re-run available in under an hour" : `Re-run available in ${hours}h`,
+  cachedIntro: "Showing your saved analysis — no new data was pulled.",
+  partialNote: "Some sections did not load. Everything else below is complete.",
+
+  // ── Overview card ──
+  overviewTitle: "Overview",
+  metricTraffic: "Est. organic traffic",
+  metricTrafficUnit: "visits / month",
+  metricKeywords: "Organic keywords",
+  metricKeywordsUnit: "in the top 100",
+  metricTrafficValue: "Traffic value",
+  metricTrafficValueUnit: "per month, if paid",
+  distributionTitle: "Position spread",
+  distributionLabels: {
+    pos1: "#1",
+    pos2_3: "#2–3",
+    pos4_10: "#4–10",
+    pos11_20: "#11–20",
+    pos21_100: "#21–100",
+  },
+  noDistribution: "This domain does not rank in the top 100 for any tracked keyword.",
+
+  // ── Keywords card ──
+  keywordsTitle: "Top keywords",
+  keywordsSubtitle: (shown: number, total: number) =>
+    `Showing ${shown} of ${total.toLocaleString("en-US")} organic keywords`,
+  sortHint: "Click a column header to sort.",
+  colKeyword: "Keyword",
+  colPosition: "Pos.",
+  colVolume: "Volume",
+  colEtv: "Traffic",
+  colUrl: "Ranking URL",
+  emptyKeywords: "This domain does not rank in the top 100 for any keyword in this market.",
+
+  // ── Competitors card ──
+  competitorsTitle: "Competitors",
+  competitorsSubtitle: "Domains competing for the same keywords.",
+  colDomain: "Domain",
+  colIntersections: "Shared keywords",
+  colAvgPosition: "Avg. position",
+  emptyCompetitors: "No competing domains were found for this market.",
+
+  // ── Backlinks card ──
+  backlinksTitle: "Backlinks",
+  metricBacklinks: "Backlinks",
+  metricReferringDomains: "Referring domains",
+  metricRank: "Domain rank",
+  metricRankUnit: "0–1000",
+  metricBroken: "Broken backlinks",
+  metricDofollow: "Dofollow domains",
+  dofollowRatio: (percent: string) =>
+    `${percent}% of referring domains link without rel=nofollow`,
+  noDofollowData: "No referring domains were reported for this domain.",
+
+  // ── Per-section failure ──
+  sectionFailedTitle: "Couldn't load this section",
+  sectionFailedBody: "The data provider did not return this part of the analysis. Run the analysis again later — the other sections are unaffected.",
+
+  // ── History ──
+  historyTitle: "Recent analyses",
+  historyEmpty: "No analyses yet. Analyze your first domain above.",
+  colStatus: "Status",
+  colCost: "Cost",
+  colWhen: "Run",
+  statusCompleted: "Complete",
+  statusPartial: "Partial",
+  view: "View",
+
+  // ── Quota / errors ──
+  usage: (used: number, limit: number) => `${used} of ${limit} analyses used this month`,
+  remaining: (left: number) =>
+    left === 1 ? "1 analysis left this month" : `${left} analyses left this month`,
+  quotaTitle: "Monthly analysis limit reached",
+  quotaBody: (limit: number) =>
+    `Your plan includes ${limit} site analyses per month. Upgrade to run more, or wait for the counter to reset next month.`,
+  quotaCta: "See plans",
+  spend: (usd: string) => `Site data cost for this workspace: $${usd} USD`,
+  submitFailed: "Could not analyze that domain. Try again in a minute.",
+  loadFailed: "Could not load your analyses. Try again in a minute.",
+};
+export type SiteExplorerCopy = typeof siteExplorerEn;
+
+export const SITE_EXPLORER_COPY: Record<DashLocale, SiteExplorerCopy> = {
+  en: siteExplorerEn,
+  fr: {
+    formTitle: "Analyser un domaine",
+    formIntro:
+      "Trafic organique, meilleurs mots-clés, concurrents et profil de liens pour n'importe quel domaine — une analyse, quatre jeux de données.",
+    domainLabel: "Domaine",
+    domainPlaceholder: "exemple.com",
+    domainHint: "Collez n'importe quelle URL — le protocole, le www. et le chemin sont retirés.",
+    invalidDomain: "Entrez un domaine comme exemple.com",
+    analyzing: "Analyse en cours…",
+    analyzingTitle: "Analyse du domaine…",
+    analyzingBody:
+      "Quatre jeux de données sont collectés à la suite — habituellement de 10 à 15 secondes.",
+    analyzedAgo: (ago: string) => `Analysé ${ago}`,
+    reRunIn: (hours: number) =>
+      hours <= 1
+        ? "Relance possible dans moins d'une heure"
+        : `Relance possible dans ${hours} h`,
+    cachedIntro: "Affichage de votre analyse enregistrée — aucune nouvelle donnée n'a été tirée.",
+    partialNote: "Certaines sections ne se sont pas chargées. Tout le reste ci-dessous est complet.",
+
+    overviewTitle: "Aperçu",
+    metricTraffic: "Trafic organique estimé",
+    metricTrafficUnit: "visites / mois",
+    metricKeywords: "Mots-clés organiques",
+    metricKeywordsUnit: "dans le top 100",
+    metricTrafficValue: "Valeur du trafic",
+    metricTrafficValueUnit: "par mois, en équivalent payant",
+    distributionTitle: "Répartition des positions",
+    distributionLabels: {
+      pos1: "no 1",
+      pos2_3: "no 2–3",
+      pos4_10: "no 4–10",
+      pos11_20: "no 11–20",
+      pos21_100: "no 21–100",
+    },
+    noDistribution:
+      "Ce domaine ne se classe dans le top 100 pour aucun mot-clé suivi.",
+
+    keywordsTitle: "Meilleurs mots-clés",
+    keywordsSubtitle: (shown: number, total: number) =>
+      `Affichage de ${shown} mots-clés organiques sur ${total.toLocaleString("fr-CA")}`,
+    sortHint: "Cliquez sur un en-tête de colonne pour trier.",
+    colKeyword: "Mot-clé",
+    colPosition: "Pos.",
+    colVolume: "Volume",
+    colEtv: "Trafic",
+    colUrl: "URL classée",
+    emptyKeywords:
+      "Ce domaine ne se classe dans le top 100 pour aucun mot-clé de ce marché.",
+
+    competitorsTitle: "Concurrents",
+    competitorsSubtitle: "Domaines en concurrence sur les mêmes mots-clés.",
+    colDomain: "Domaine",
+    colIntersections: "Mots-clés partagés",
+    colAvgPosition: "Position moyenne",
+    emptyCompetitors: "Aucun domaine concurrent trouvé pour ce marché.",
+
+    backlinksTitle: "Liens entrants",
+    metricBacklinks: "Liens entrants",
+    metricReferringDomains: "Domaines référents",
+    metricRank: "Rang du domaine",
+    metricRankUnit: "0–1000",
+    metricBroken: "Liens brisés",
+    metricDofollow: "Domaines dofollow",
+    dofollowRatio: (percent: string) =>
+      `${percent} % des domaines référents pointent sans rel=nofollow`,
+    noDofollowData: "Aucun domaine référent n'a été rapporté pour ce domaine.",
+
+    sectionFailedTitle: "Impossible de charger cette section",
+    sectionFailedBody:
+      "Le fournisseur de données n'a pas retourné cette partie de l'analyse. Relancez l'analyse plus tard — les autres sections ne sont pas touchées.",
+
+    historyTitle: "Analyses récentes",
+    historyEmpty: "Aucune analyse pour l'instant. Analysez votre premier domaine ci-dessus.",
+    colStatus: "Statut",
+    colCost: "Coût",
+    colWhen: "Lancée",
+    statusCompleted: "Complète",
+    statusPartial: "Partielle",
+    view: "Voir",
+
+    usage: (used: number, limit: number) => `${used} analyses sur ${limit} utilisées ce mois-ci`,
+    remaining: (left: number) =>
+      left === 1 ? "1 analyse restante ce mois-ci" : `${left} analyses restantes ce mois-ci`,
+    quotaTitle: "Limite mensuelle d'analyses atteinte",
+    quotaBody: (limit: number) =>
+      `Votre forfait comprend ${limit} analyses de site par mois. Passez à un forfait supérieur pour en faire plus, ou attendez la remise à zéro le mois prochain.`,
+    quotaCta: "Voir les forfaits",
+    spend: (usd: string) => `Coût des données de site pour cet espace de travail : ${usd} $ US`,
+    submitFailed: "Impossible d'analyser ce domaine. Réessayez dans une minute.",
+    loadFailed: "Impossible de charger vos analyses. Réessayez dans une minute.",
+  },
+  "de-CH": {
+    formTitle: "Domain analysieren",
+    formIntro:
+      "Organischer Traffic, Top-Keywords, Wettbewerber und Backlink-Profil für jede Domain — eine Analyse, vier Datensätze.",
+    domainLabel: "Domain",
+    domainPlaceholder: "beispiel.ch",
+    domainHint: "Fügen Sie eine beliebige URL ein — Protokoll, www. und Pfad werden entfernt.",
+    invalidDomain: "Geben Sie eine Domain wie beispiel.ch ein",
+    analyzing: "Wird analysiert…",
+    analyzingTitle: "Domain wird analysiert…",
+    analyzingBody:
+      "Vier Datensätze werden nacheinander erhoben — normalerweise 10 bis 15 Sekunden.",
+    analyzedAgo: (ago: string) => `Analysiert ${ago}`,
+    reRunIn: (hours: number) =>
+      hours <= 1
+        ? "Neue Analyse in weniger als einer Stunde möglich"
+        : `Neue Analyse in ${hours} Std. möglich`,
+    cachedIntro:
+      "Ihre gespeicherte Analyse wird angezeigt — es wurden keine neuen Daten abgerufen.",
+    partialNote:
+      "Einige Abschnitte konnten nicht geladen werden. Alles Übrige unten ist vollständig.",
+
+    overviewTitle: "Übersicht",
+    metricTraffic: "Geschätzter organischer Traffic",
+    metricTrafficUnit: "Besuche / Monat",
+    metricKeywords: "Organische Keywords",
+    metricKeywordsUnit: "in den Top 100",
+    metricTrafficValue: "Traffic-Wert",
+    metricTrafficValueUnit: "pro Monat, als bezahlter Traffic",
+    distributionTitle: "Positionsverteilung",
+    distributionLabels: {
+      pos1: "Nr. 1",
+      pos2_3: "Nr. 2–3",
+      pos4_10: "Nr. 4–10",
+      pos11_20: "Nr. 11–20",
+      pos21_100: "Nr. 21–100",
+    },
+    noDistribution:
+      "Diese Domain rankt für kein erfasstes Keyword in den Top 100.",
+
+    keywordsTitle: "Top-Keywords",
+    keywordsSubtitle: (shown: number, total: number) =>
+      `${shown} von ${total.toLocaleString("de-CH")} organischen Keywords angezeigt`,
+    sortHint: "Klicken Sie auf eine Spaltenüberschrift zum Sortieren.",
+    colKeyword: "Keyword",
+    colPosition: "Pos.",
+    colVolume: "Volumen",
+    colEtv: "Traffic",
+    colUrl: "Rankende URL",
+    emptyKeywords:
+      "Diese Domain rankt in diesem Markt für kein Keyword in den Top 100.",
+
+    competitorsTitle: "Wettbewerber",
+    competitorsSubtitle: "Domains, die um dieselben Keywords konkurrieren.",
+    colDomain: "Domain",
+    colIntersections: "Gemeinsame Keywords",
+    colAvgPosition: "Ø Position",
+    emptyCompetitors: "Für diesen Markt wurden keine konkurrierenden Domains gefunden.",
+
+    backlinksTitle: "Backlinks",
+    metricBacklinks: "Backlinks",
+    metricReferringDomains: "Verweisende Domains",
+    metricRank: "Domain-Rang",
+    metricRankUnit: "0–1000",
+    metricBroken: "Defekte Backlinks",
+    metricDofollow: "Dofollow-Domains",
+    dofollowRatio: (percent: string) =>
+      `${percent} % der verweisenden Domains verlinken ohne rel=nofollow`,
+    noDofollowData: "Für diese Domain wurden keine verweisenden Domains gemeldet.",
+
+    sectionFailedTitle: "Dieser Abschnitt konnte nicht geladen werden",
+    sectionFailedBody:
+      "Der Datenanbieter hat diesen Teil der Analyse nicht geliefert. Starten Sie die Analyse später erneut — die anderen Abschnitte sind nicht betroffen.",
+
+    historyTitle: "Letzte Analysen",
+    historyEmpty: "Noch keine Analysen. Analysieren Sie oben Ihre erste Domain.",
+    colStatus: "Status",
+    colCost: "Kosten",
+    colWhen: "Gestartet",
+    statusCompleted: "Vollständig",
+    statusPartial: "Teilweise",
+    view: "Ansehen",
+
+    usage: (used: number, limit: number) => `${used} von ${limit} Analysen diesen Monat verwendet`,
+    remaining: (left: number) =>
+      left === 1 ? "Noch 1 Analyse diesen Monat" : `Noch ${left} Analysen diesen Monat`,
+    quotaTitle: "Monatliches Analyselimit erreicht",
+    quotaBody: (limit: number) =>
+      `Ihr Plan enthält ${limit} Site-Analysen pro Monat. Wechseln Sie den Plan für mehr, oder warten Sie auf die Rücksetzung im nächsten Monat.`,
+    quotaCta: "Pläne ansehen",
+    spend: (usd: string) => `Site-Datenkosten für diesen Arbeitsbereich: ${usd} USD`,
+    submitFailed: "Diese Domain konnte nicht analysiert werden. Versuchen Sie es in einer Minute erneut.",
+    loadFailed: "Ihre Analysen konnten nicht geladen werden. Versuchen Sie es in einer Minute erneut.",
+  },
+};
