@@ -37,6 +37,7 @@ import { formatDateTime } from "@/lib/utils";
 import { isValidDomain } from "@/lib/site-explorer/domain";
 import { SCAFFOLD_RELATED } from "@/lib/seo-tools";
 import { parseKeywords } from "@/lib/rank-tracker/keywords";
+import { RankTrackerHelpButton } from "@/components/seo-tools/rank-tracker-help";
 import {
   RANK_DEVICES,
   RANK_LANGUAGE_CODES,
@@ -598,10 +599,18 @@ export function RankTrackerClient({ locale }: { locale: DashLocale }) {
     });
   }
 
+  // Page header carries Help on the right (the Review Links pattern), so it is
+  // reachable from every view — including the locked card, where a STARTER
+  // tenant most needs to know what the tool actually does before upgrading.
   const header = (
-    <div>
-      <h2 className="text-sm font-medium uppercase tracking-wide text-gray-500">{it.name}</h2>
-      <p className="mt-1 text-sm text-gray-500">{it.description}</p>
+    <div className="flex items-start justify-between gap-4">
+      <div className="min-w-0">
+        <h2 className="text-sm font-medium uppercase tracking-wide text-gray-500">{it.name}</h2>
+        <p className="mt-1 text-sm text-gray-500">{it.description}</p>
+      </div>
+      <div className="shrink-0">
+        <RankTrackerHelpButton locale={locale} />
+      </div>
     </div>
   );
 

@@ -510,3 +510,43 @@ test("rank-tracker enums are what the schema and UI agree on", () => {
   assert.ok(SCHEDULE_HOUR_UTC >= 0 && SCHEDULE_HOUR_UTC <= 23);
   assert.equal(COST_PER_KEYWORD_USD, 0.006);
 });
+
+// ─── Rank Tracker help modal ────────────────────────────────────────────────
+import { RANK_TRACKER_HELP_COPY } from "../i18n/dashboard";
+
+test("rank-tracker help copy complete in all locales", () => {
+  for (const locale of LOCALES) {
+    const c = RANK_TRACKER_HELP_COPY[locale];
+    assert.ok(c.button.length && c.buttonAria.length, `${locale} trigger`);
+    assert.ok(c.title.length && c.close.length, `${locale} chrome`);
+    for (const n of [1, 2, 3, 4] as const) {
+      assert.ok(c[`step${n}Title`].length, `${locale} step${n} title`);
+    }
+    assert.ok(c.step1Body.length && c.step2Body.length && c.step3Body.length);
+    assert.ok(c.findKeywordsIntro.length && c.findKeywordsLink.length);
+
+    // Four tips, all non-empty — the modal renders the array as-is.
+    assert.equal(c.tips.length, 3, `${locale} tips count`);
+    for (const tip of c.tips) assert.ok(tip.length, `${locale} tip`);
+
+    // Plan numbers are injected, never hardcoded, so they cannot drift from
+    // the config that enforces them.
+    const plans = c.step1Plans(RANK_TRACKED_KEYWORDS.GROWTH, RANK_TRACKED_KEYWORDS.AGENCY);
+    assert.ok(plans.includes(String(RANK_TRACKED_KEYWORDS.GROWTH)), `${locale} growth cap`);
+    assert.ok(plans.includes(String(RANK_TRACKED_KEYWORDS.AGENCY)), `${locale} agency cap`);
+  }
+});
+
+test("help copy states the plan gating the code actually enforces", () => {
+  // Guards against the help text and RANK_ALLOWED_FREQUENCIES drifting apart:
+  // the copy claims weekly-only on Growth and daily on Agency.
+  assert.ok(!planAllowsFrequency("GROWTH", "daily"), "copy says Growth is weekly-only");
+  assert.ok(planAllowsFrequency("AGENCY", "daily"), "copy says Agency can go daily");
+  assert.ok(!planCanTrack("STARTER"), "copy says Starter has no Rank Tracker");
+});
+
+test("rank-tracker help copy never uses CamelCase branding or names the vendor", () => {
+  const json = JSON.stringify(RANK_TRACKER_HELP_COPY);
+  assert.ok(!json.includes("EchoRank"), "found CamelCase 'EchoRank'");
+  assert.ok(!/dataforseo/i.test(json), "user-facing copy must not name the upstream vendor");
+});

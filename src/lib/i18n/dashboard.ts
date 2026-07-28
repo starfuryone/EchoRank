@@ -6863,3 +6863,108 @@ export const RANK_TRACKER_COPY: Record<DashLocale, RankTrackerCopy> = {
     loadFailed: "Ihre Projekte konnten nicht geladen werden. Versuchen Sie es in einer Minute erneut.",
   },
 };
+
+// ─── Rank Tracker help modal ────────────────────────────────────────────────
+// The plan numbers are NOT written into these strings — they arrive as
+// arguments from RANK_TRACKED_KEYWORDS so the help text cannot drift out of
+// sync with the config that actually enforces them.
+//
+// The timing line deliberately says "usually minutes, sometimes up to an hour"
+// rather than just "minutes": a live 2-keyword run on 2026-07-28 took roughly
+// an hour to come back from the standard queue, so promising minutes would be
+// a claim we have already watched fail.
+const rankTrackerHelpEn = {
+  button: "Help",
+  buttonAria: "How Rank Tracker works",
+  title: "How Rank Tracker works",
+  close: "Close",
+
+  step1Title: "Create a tracking project",
+  step1Body:
+    "Add your domain and the keywords you want to watch (one per line), pick country, language, device, and how often to check: daily or weekly.",
+  step1Plans: (growth: number, agency: number) =>
+    `Growth tracks up to ${growth} keywords and checks weekly. Agency tracks up to ${agency} and can also check daily. Rank Tracker is not included on Starter.`,
+
+  step2Title: "Checks run automatically",
+  step2Body:
+    "On schedule, each keyword is checked against Google's top 100 results. Results usually arrive within a few minutes, though a busy queue can take up to an hour; the page updates as they land. You can also use “Run now” on any project.",
+
+  step3Title: "Read the results",
+  step3Body:
+    "Each keyword shows its latest position, how it changed since the last check and over 30 days, and the page that ranks. “Not ranked” means the domain was not in the top 100 for that keyword.",
+
+  step4Title: "Tips",
+  tips: [
+    "Track the keywords customers actually search for, not just your brand name.",
+    "Weekly is enough for most businesses. Daily matters when you are actively working on rankings.",
+    "Keyword changes take effect at the next scheduled run.",
+  ],
+
+  findKeywordsIntro: "Not sure which keywords to track?",
+  findKeywordsLink: "Find ideas in Keywords Explorer",
+};
+export type RankTrackerHelpCopy = typeof rankTrackerHelpEn;
+
+export const RANK_TRACKER_HELP_COPY: Record<DashLocale, RankTrackerHelpCopy> = {
+  en: rankTrackerHelpEn,
+  fr: {
+    button: "Aide",
+    buttonAria: "Comment fonctionne le suivi de positions",
+    title: "Comment fonctionne le suivi de positions",
+    close: "Fermer",
+
+    step1Title: "Créez un projet de suivi",
+    step1Body:
+      "Ajoutez votre domaine et les mots-clés à surveiller (un par ligne), puis choisissez le pays, la langue, l'appareil et la fréquence de vérification : quotidienne ou hebdomadaire.",
+    step1Plans: (growth: number, agency: number) =>
+      `Le forfait Croissance suit jusqu'à ${growth} mots-clés avec une vérification hebdomadaire. Le forfait Agence en suit jusqu'à ${agency} et permet aussi la vérification quotidienne. Le suivi de positions n'est pas inclus dans le forfait Démarrage.`,
+
+    step2Title: "Les vérifications se font automatiquement",
+    step2Body:
+      "Selon votre horaire, chaque mot-clé est vérifié dans les 100 premiers résultats de Google. Les résultats arrivent habituellement en quelques minutes, mais une file d'attente chargée peut prendre jusqu'à une heure ; la page se met à jour au fur et à mesure. Vous pouvez aussi utiliser « Lancer maintenant » sur n'importe quel projet.",
+
+    step3Title: "Lisez les résultats",
+    step3Body:
+      "Chaque mot-clé affiche sa position actuelle, sa variation depuis la dernière vérification et sur 30 jours, ainsi que la page qui se classe. « Hors du top 100 » signifie que le domaine ne figurait pas dans les 100 premiers résultats pour ce mot-clé.",
+
+    step4Title: "Conseils",
+    tips: [
+      "Suivez les mots-clés que vos clients recherchent réellement, pas seulement le nom de votre marque.",
+      "L'hebdomadaire suffit à la plupart des entreprises. Le quotidien devient utile quand vous travaillez activement vos positions.",
+      "Les changements de mots-clés prennent effet à la prochaine exécution planifiée.",
+    ],
+
+    findKeywordsIntro: "Vous ne savez pas quels mots-clés suivre ?",
+    findKeywordsLink: "Trouvez des idées dans l'explorateur de mots-clés",
+  },
+  "de-CH": {
+    button: "Hilfe",
+    buttonAria: "So funktioniert der Rank Tracker",
+    title: "So funktioniert der Rank Tracker",
+    close: "Schliessen",
+
+    step1Title: "Tracking-Projekt erstellen",
+    step1Body:
+      "Fügen Sie Ihre Domain und die zu beobachtenden Keywords hinzu (eines pro Zeile) und wählen Sie Land, Sprache, Gerät und Prüfhäufigkeit: täglich oder wöchentlich.",
+    step1Plans: (growth: number, agency: number) =>
+      `Growth verfolgt bis zu ${growth} Keywords und prüft wöchentlich. Agency verfolgt bis zu ${agency} und kann zusätzlich täglich prüfen. Im Starter-Plan ist der Rank Tracker nicht enthalten.`,
+
+    step2Title: "Prüfungen laufen automatisch",
+    step2Body:
+      "Nach Ihrem Zeitplan wird jedes Keyword gegen die Top-100-Ergebnisse von Google geprüft. Ergebnisse treffen meist innerhalb weniger Minuten ein, bei ausgelasteter Warteschlange kann es bis zu einer Stunde dauern; die Seite aktualisiert sich laufend. Sie können bei jedem Projekt auch «Jetzt starten» verwenden.",
+
+    step3Title: "Ergebnisse lesen",
+    step3Body:
+      "Jedes Keyword zeigt seine aktuelle Position, die Veränderung seit der letzten Prüfung und über 30 Tage sowie die rankende Seite. «Nicht in den Top 100» bedeutet, dass die Domain für dieses Keyword nicht unter den ersten 100 Ergebnissen war.",
+
+    step4Title: "Tipps",
+    tips: [
+      "Verfolgen Sie die Keywords, nach denen Kundinnen und Kunden tatsächlich suchen — nicht nur Ihren Markennamen.",
+      "Wöchentlich reicht für die meisten Unternehmen. Täglich lohnt sich, wenn Sie aktiv an Ihren Rankings arbeiten.",
+      "Keyword-Änderungen werden beim nächsten geplanten Lauf wirksam.",
+    ],
+
+    findKeywordsIntro: "Unsicher, welche Keywords Sie verfolgen sollen?",
+    findKeywordsLink: "Ideen im Keywords Explorer finden",
+  },
+};
