@@ -19,7 +19,7 @@ import {
   Database,
   Puzzle,
   ScanEye,
-  Wrench, TrendingUp, UserCircle } from "lucide-react";
+  Wrench, UserCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { dashNav, type DashLocale } from "@/lib/i18n/dashboard";
 import { canAccessPath } from "@/lib/plan-routing";
@@ -37,7 +37,6 @@ const navItems = [
   { href: "/monitoring", icon: Radar },
   { href: "/visibility", icon: ScanEye },
   { href: "/visibility/tools", icon: Wrench },
-  { href: "/visibility/tools/classic", icon: TrendingUp },
   { href: "/imports", icon: Database },
   { href: "/extension", icon: Puzzle },
   { href: "/templates", icon: FileText },
