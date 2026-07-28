@@ -48,6 +48,7 @@ interface AvContent {
     cta: string;
     finePre: string;
     fineLink: string;
+    currency: string;
   };
   faq: { h2: string; items: { q: string; a: string }[] };
   final: { h2: string; cta: string };
@@ -118,6 +119,7 @@ const C: Record<Locale, AvContent> = {
       cta: 'Start tracking — $29/mo',
       finePre: 'Cancel anytime. Need more brands, seats or nightly refresh? ',
       fineLink: 'Compare plans',
+      currency: 'All prices are in US dollars (USD). If you pay with a card in another currency, your bank converts the charge at its own exchange rate.',
     },
     faq: {
       h2: 'Questions',
@@ -246,6 +248,7 @@ const C: Record<Locale, AvContent> = {
       cta: 'Commencer le suivi — $29/mo',
       finePre: 'Annulable à tout moment. Besoin de plus de marques, de sièges ou d’une actualisation nocturne ? ',
       fineLink: 'Comparer les forfaits',
+      currency: 'Tous les prix sont en dollars américains (USD). Si vous payez avec une carte dans une autre devise, votre banque effectue la conversion à son propre taux de change.',
     },
     faq: {
       h2: 'Questions',
@@ -374,6 +377,7 @@ const C: Record<Locale, AvContent> = {
       cta: 'Jetzt starten — $29/mo',
       finePre: 'Jederzeit kündbar. Mehr Marken, Sitze oder nächtliche Aktualisierung nötig? ',
       fineLink: 'Pläne vergleichen',
+      currency: 'Alle Preise in US-Dollar (USD). Bei Zahlung mit einer Karte in einer anderen Währung rechnet Ihre Bank den Betrag zu ihrem eigenen Wechselkurs um.',
     },
     faq: {
       h2: 'Fragen',
@@ -595,6 +599,7 @@ export default async function AIVisibilityPage({
             {c.pricing.finePre}
             <a href="/#pricing">{c.pricing.fineLink}</a>.
           </p>
+          <p className="av-fine">{c.pricing.currency}</p>
         </div>
       </section>
 

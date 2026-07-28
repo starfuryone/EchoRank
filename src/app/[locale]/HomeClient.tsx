@@ -154,6 +154,7 @@ const T = {
         { n: "ENTERPRISE", a: "Contact us", hi: false, f: ["Unlimited everything", "Custom volume", "SSO / SAML", "99.9% SLA"] },
       ],
       mo: "/mo", tax: "14-day free trial on all plans. No card required.",
+      currency: "All prices are in US dollars (USD). If you pay with a card in another currency, your bank converts the charge at its own exchange rate.",
     },
     close: {
       label: "START",
@@ -306,6 +307,7 @@ const T = {
         { n: "ENTERPRISE", a: "Contactez-nous", hi: false, f: ["Tout illimité", "Volume sur mesure", "SSO / SAML", "SLA 99,9 %"] },
       ],
       mo: "/mois", tax: "Essai gratuit de 14 jours sur tous les forfaits. Aucune carte requise.",
+      currency: "Tous les prix sont en dollars américains (USD). Si vous payez avec une carte dans une autre devise, votre banque effectue la conversion à son propre taux de change.",
     },
     close: {
       label: "COMMENCER",
@@ -788,6 +790,7 @@ export default function HomeClient({ locale }: { locale: string }) {
             ))}
           </div>
           <p className={s.taxline}>{t.pricing.tax}</p>
+          <p className={s.taxline}>{t.pricing.currency}</p>
         </div>
       </section>
 

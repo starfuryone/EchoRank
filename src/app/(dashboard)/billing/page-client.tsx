@@ -244,7 +244,6 @@ export function BillingPageClient({ locale }: { locale: DashLocale }) {
         <h3 className="mb-4 text-lg font-semibold text-gray-900">
           {t.plansTitle}
         </h3>
-        <p className="mb-3 text-sm text-gray-500">{t.pricesInUsd}</p>
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
           {(["AI_VISIBILITY", "STARTER", "GROWTH", "AGENCY"] as const).map((plan) => {
             const isCurrent = billing.plan === plan;
@@ -326,6 +325,7 @@ export function BillingPageClient({ locale }: { locale: DashLocale }) {
             );
           })}
         </div>
+        <p className="mt-4 text-sm text-gray-500">{t.pricesInUsd}</p>
       </div>
     </div>
   );

@@ -493,7 +493,7 @@ const billingEn = {
   feedbackRequests: "Feedback Requests",
   usagePct: (pct: number) => `${pct}% of your monthly limit used`,
   plansTitle: "Plans",
-  pricesInUsd: "All prices are in US dollars",
+  pricesInUsd: "All prices are in US dollars (USD). If you pay with a card in another currency, your bank converts the charge at its own exchange rate.",
   contactUs: "Contact us",
   popular: "Popular",
   currentPlan: "Current Plan",
@@ -570,7 +570,7 @@ export const BILLING_COPY: Record<DashLocale, BillingCopy> = {
     usagePct: (pct: number) =>
       `${pct} % de votre limite mensuelle utilisée`,
     plansTitle: "Forfaits",
-    pricesInUsd: "Tous les prix sont en dollars américains",
+    pricesInUsd: "Tous les prix sont en dollars américains (USD). Si vous payez avec une carte dans une autre devise, votre banque effectue la conversion à son propre taux de change.",
     contactUs: "Contactez-nous",
     popular: "Populaire",
     currentPlan: "Forfait actuel",
@@ -645,7 +645,7 @@ export const BILLING_COPY: Record<DashLocale, BillingCopy> = {
     usagePct: (pct: number) =>
       `${pct} % Ihres monatlichen Limits verbraucht`,
     plansTitle: "Pläne",
-    pricesInUsd: "Alle Preise verstehen sich in US-Dollar",
+    pricesInUsd: "Alle Preise in US-Dollar (USD). Bei Zahlung mit einer Karte in einer anderen Währung rechnet Ihre Bank den Betrag zu ihrem eigenen Wechselkurs um.",
     contactUs: "Kontaktieren Sie uns",
     popular: "Beliebt",
     currentPlan: "Aktueller Plan",
