@@ -45,10 +45,12 @@ be readable by it — see [gotchas.md](gotchas.md).
 
 ## App
 
-- **Next.js 16.2.6, App Router.** Turbopack is the default for `next dev`; `next build` is
-  **opt-in** and this repo does not opt in, so production builds use webpack. (Confirmed
-  against `node_modules/next/dist/docs/`.) Read the bundled docs before writing Next code
-  — see `AGENTS.md`.
+- **Next.js 16.2.6, App Router.** Turbopack is the default bundler for **both** `next dev`
+  and `next build` — a plain `npm run build` prints `▲ Next.js 16.2.6 (Turbopack)`, and
+  `next build --help` offers `--webpack` as the opt-*out*. Note the bundled prose in
+  `node_modules/next/dist/docs/` still says Turbopack is merely "available for
+  `next build`"; the CLI is authoritative and the docs lag. Read the bundled docs before
+  writing Next code anyway — see `AGENTS.md` — but verify build behaviour against the CLI.
 - **Prisma 7.8** with `@prisma/adapter-pg`. Client is generated to **`src/generated/prisma`**,
   not `node_modules/.prisma`. Import types from `@/generated/prisma`. Run `npx prisma generate`
   after schema edits; `npx prisma migrate deploy` to apply.
