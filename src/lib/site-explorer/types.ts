@@ -70,25 +70,12 @@ export interface CompetitorsSection {
 /**
  * backlinks/summary/live headline metrics.
  *
- * The dofollow split is reported at the REFERRING-DOMAIN level, not the link
- * level: `referring_domains` / `referring_domains_nofollow` is a directly
- * reported pair on the same base, whereas the per-link `nofollow` figure lives
- * in an attributes block counted against referring pages. Differencing across
- * those two bases would produce a plausible number that means nothing.
+ * Aliased to the shared shape in dataforseo/backlinks-summary.ts, which the
+ * dedicated Backlinks tool also uses. Persisted rows depend on these field
+ * names, so they cannot be renamed without a data migration.
  */
-export interface BacklinksSection {
-  backlinks: number;
-  referringDomains: number;
-  referringMainDomains: number;
-  /** DataForSEO domain rank, 0–1000. */
-  rank: number;
-  brokenBacklinks: number;
-  /** Referring domains linking without rel=nofollow. */
-  dofollowDomains: number;
-  nofollowDomains: number;
-  /** dofollowDomains / referringDomains, 0–1. Null when there are no domains. */
-  dofollowRatio: number | null;
-}
+import type { BacklinksSummary } from "@/lib/dataforseo/backlinks-summary";
+export type BacklinksSection = BacklinksSummary;
 
 /** Shape returned by all three Site Explorer routes. */
 export interface SiteExplorerAnalysisDto {

@@ -1,0 +1,1950 @@
+{
+  "version": "0.1.20260717",
+  "status_code": 20000,
+  "status_message": "Ok.",
+  "time": "2.9191 sec.",
+  "cost": 0.0258,
+  "tasks_count": 1,
+  "tasks_error": 0,
+  "tasks": [
+    {
+      "id": "07290444-2159-0273-0000-551e45a5b594",
+      "status_code": 20000,
+      "status_message": "Ok.",
+      "time": "2.9143 sec.",
+      "cost": 0.0258,
+      "result_count": 1,
+      "path": [
+        "v3",
+        "backlinks",
+        "referring_domains",
+        "live"
+      ],
+      "data": {
+        "api": "backlinks",
+        "function": "referring_domains",
+        "target": "birdeye.com",
+        "limit": 50,
+        "include_subdomains": true,
+        "backlinks_status_type": "live",
+        "order_by": [
+          "rank,desc"
+        ]
+      },
+      "result": [
+        {
+          "target": "birdeye.com",
+          "total_count": 21046,
+          "items_count": 50,
+          "items": [
+            {
+              "type": "backlinks_referring_domain",
+              "domain": "agrusslawfirm.com",
+              "rank": 475,
+              "backlinks": 105573,
+              "first_seen": "2022-01-06 22:35:29 +00:00",
+              "lost_date": null,
+              "backlinks_spam_score": 0,
+              "broken_backlinks": 0,
+              "broken_pages": 0,
+              "referring_domains": 1,
+              "referring_domains_nofollow": 0,
+              "referring_main_domains": 1,
+              "referring_main_domains_nofollow": 0,
+              "referring_ips": 2,
+              "referring_subnets": 2,
+              "referring_pages": 105573,
+              "referring_pages_nofollow": 1,
+              "referring_links_tld": {
+                "com": 105573
+              },
+              "referring_links_types": {
+                "anchor": 105573
+              },
+              "referring_links_attributes": {
+                "noopener": 2,
+                "noreferrer": 2,
+                "nofollow": 1
+              },
+              "referring_links_platform_types": {
+                "blogs": 105573,
+                "cms": 105573
+              },
+              "referring_links_semantic_locations": {
+                "section": 105570,
+                "main": 2,
+                "article": 1
+              },
+              "referring_links_countries": {
+                "US": 105571,
+                "WW": 2
+              }
+            },
+            {
+              "type": "backlinks_referring_domain",
+              "domain": "google.com",
+              "rank": 409,
+              "backlinks": 29,
+              "first_seen": "2025-02-27 19:52:22 +00:00",
+              "lost_date": null,
+              "backlinks_spam_score": 6,
+              "broken_backlinks": 0,
+              "broken_pages": 0,
+              "referring_domains": 4,
+              "referring_domains_nofollow": 0,
+              "referring_main_domains": 1,
+              "referring_main_domains_nofollow": 0,
+              "referring_ips": 15,
+              "referring_subnets": 13,
+              "referring_pages": 28,
+              "referring_pages_nofollow": 0,
+              "referring_links_tld": {
+                "com": 28
+              },
+              "referring_links_types": {
+                "anchor": 28
+              },
+              "referring_links_attributes": {
+                "noopener": 9
+              },
+              "referring_links_platform_types": {
+                "unknown": 26,
+                "ecommerce": 2
+              },
+              "referring_links_semantic_locations": {
+                "section": 28
+              },
+              "referring_links_countries": {
+                "US": 26,
+                "WW": 2
+              }
+            },
+            {
+              "type": "backlinks_referring_domain",
+              "domain": "getbirdeye.com.au",
+              "rank": 399,
+              "backlinks": 373775,
+              "first_seen": "2022-09-10 04:41:13 +00:00",
+              "lost_date": null,
+              "backlinks_spam_score": 7,
+              "broken_backlinks": 22,
+              "broken_pages": 12,
+              "referring_domains": 1,
+              "referring_domains_nofollow": 0,
+              "referring_main_domains": 1,
+              "referring_main_domains_nofollow": 0,
+              "referring_ips": 67,
+              "referring_subnets": 67,
+              "referring_pages": 354478,
+              "referring_pages_nofollow": 7864,
+              "referring_links_tld": {
+                "com.au": 354478
+              },
+              "referring_links_types": {
+                "anchor": 354421,
+                "redirect": 57
+              },
+              "referring_links_attributes": {
+                "nofollow": 7864,
+                "noopener": 7864,
+                "noreferrer": 7864
+              },
+              "referring_links_platform_types": {
+                "unknown": 354342,
+                "organization": 79
+              },
+              "referring_links_semantic_locations": {
+                "section": 323168,
+                "nav": 31252,
+                "": 57,
+                "aside": 1
+              },
+              "referring_links_countries": {
+                "AU": 354478
+              }
+            },
+            {
+              "type": "backlinks_referring_domain",
+              "domain": "alanross.biz",
+              "rank": 395,
+              "backlinks": 49556,
+              "first_seen": "2025-10-12 15:40:08 +00:00",
+              "lost_date": null,
+              "backlinks_spam_score": 0,
+              "broken_backlinks": 0,
+              "broken_pages": 0,
+              "referring_domains": 1,
+              "referring_domains_nofollow": 0,
+              "referring_main_domains": 1,
+              "referring_main_domains_nofollow": 0,
+              "referring_ips": 1,
+              "referring_subnets": 1,
+              "referring_pages": 24778,
+              "referring_pages_nofollow": 0,
+              "referring_links_tld": {
+                "biz": 24778
+              },
+              "referring_links_types": {
+                "anchor": 24778
+              },
+              "referring_links_attributes": null,
+              "referring_links_platform_types": {
+                "organization": 24778
+              },
+              "referring_links_semantic_locations": {
+                "nav": 24778
+              },
+              "referring_links_countries": {
+                "US": 24778
+              }
+            },
+            {
+              "type": "backlinks_referring_domain",
+              "domain": "brainerdhotsheet.com",
+              "rank": 390,
+              "backlinks": 21444,
+              "first_seen": "2020-04-01 08:17:46 +00:00",
+              "lost_date": null,
+              "backlinks_spam_score": 11,
+              "broken_backlinks": 0,
+              "broken_pages": 0,
+              "referring_domains": 1,
+              "referring_domains_nofollow": 0,
+              "referring_main_domains": 1,
+              "referring_main_domains_nofollow": 0,
+              "referring_ips": 1,
+              "referring_subnets": 1,
+              "referring_pages": 21442,
+              "referring_pages_nofollow": 0,
+              "referring_links_tld": {
+                "com": 21442
+              },
+              "referring_links_types": {
+                "anchor": 21441,
+                "image": 1
+              },
+              "referring_links_attributes": null,
+              "referring_links_platform_types": {
+                "unknown": 21442
+              },
+              "referring_links_semantic_locations": {
+                "footer": 21440,
+                "": 2
+              },
+              "referring_links_countries": {
+                "": 21442
+              }
+            },
+            {
+              "type": "backlinks_referring_domain",
+              "domain": "kombr.ink",
+              "rank": 379,
+              "backlinks": 1,
+              "first_seen": "2024-03-10 06:10:59 +00:00",
+              "lost_date": null,
+              "backlinks_spam_score": 0,
+              "broken_backlinks": 0,
+              "broken_pages": 0,
+              "referring_domains": 1,
+              "referring_domains_nofollow": 0,
+              "referring_main_domains": 1,
+              "referring_main_domains_nofollow": 0,
+              "referring_ips": 1,
+              "referring_subnets": 1,
+              "referring_pages": 1,
+              "referring_pages_nofollow": 0,
+              "referring_links_tld": {
+                "ink": 1
+              },
+              "referring_links_types": {
+                "redirect": 1
+              },
+              "referring_links_attributes": null,
+              "referring_links_platform_types": null,
+              "referring_links_semantic_locations": {
+                "": 1
+              },
+              "referring_links_countries": {
+                "": 1
+              }
+            },
+            {
+              "type": "backlinks_referring_domain",
+              "domain": "spicylingerie.com",
+              "rank": 368,
+              "backlinks": 24756,
+              "first_seen": "2024-07-24 20:18:54 +00:00",
+              "lost_date": null,
+              "backlinks_spam_score": 0,
+              "broken_backlinks": 0,
+              "broken_pages": 0,
+              "referring_domains": 1,
+              "referring_domains_nofollow": 0,
+              "referring_main_domains": 1,
+              "referring_main_domains_nofollow": 0,
+              "referring_ips": 1,
+              "referring_subnets": 1,
+              "referring_pages": 24756,
+              "referring_pages_nofollow": 0,
+              "referring_links_tld": {
+                "com": 24756
+              },
+              "referring_links_types": {
+                "image": 24755,
+                "anchor": 1
+              },
+              "referring_links_attributes": null,
+              "referring_links_platform_types": {
+                "ecommerce": 22426,
+                "unknown": 2329,
+                "organization": 1
+              },
+              "referring_links_semantic_locations": {
+                "footer": 24755,
+                "section": 1
+              },
+              "referring_links_countries": {
+                "US": 21376,
+                "WW": 3380
+              }
+            },
+            {
+              "type": "backlinks_referring_domain",
+              "domain": "profoam.com",
+              "rank": 368,
+              "backlinks": 9315,
+              "first_seen": "2021-11-29 01:47:56 +00:00",
+              "lost_date": null,
+              "backlinks_spam_score": 0,
+              "broken_backlinks": 0,
+              "broken_pages": 0,
+              "referring_domains": 1,
+              "referring_domains_nofollow": 0,
+              "referring_main_domains": 1,
+              "referring_main_domains_nofollow": 0,
+              "referring_ips": 1,
+              "referring_subnets": 1,
+              "referring_pages": 9315,
+              "referring_pages_nofollow": 0,
+              "referring_links_tld": {
+                "com": 9315
+              },
+              "referring_links_types": {
+                "anchor": 9315
+              },
+              "referring_links_attributes": null,
+              "referring_links_platform_types": {
+                "unknown": 7307,
+                "ecommerce": 1276,
+                "organization": 732,
+                "news": 70
+              },
+              "referring_links_semantic_locations": {
+                "footer": 9315
+              },
+              "referring_links_countries": {
+                "US": 9315
+              }
+            },
+            {
+              "type": "backlinks_referring_domain",
+              "domain": "manzanitakidsdds.com",
+              "rank": 367,
+              "backlinks": 31,
+              "first_seen": "2023-10-28 15:37:50 +00:00",
+              "lost_date": null,
+              "backlinks_spam_score": 0,
+              "broken_backlinks": 0,
+              "broken_pages": 0,
+              "referring_domains": 1,
+              "referring_domains_nofollow": 0,
+              "referring_main_domains": 1,
+              "referring_main_domains_nofollow": 0,
+              "referring_ips": 1,
+              "referring_subnets": 1,
+              "referring_pages": 31,
+              "referring_pages_nofollow": 0,
+              "referring_links_tld": {
+                "com": 31
+              },
+              "referring_links_types": {
+                "anchor": 31
+              },
+              "referring_links_attributes": null,
+              "referring_links_platform_types": {
+                "unknown": 31
+              },
+              "referring_links_semantic_locations": {
+                "": 31
+              },
+              "referring_links_countries": {
+                "": 31
+              }
+            },
+            {
+              "type": "backlinks_referring_domain",
+              "domain": "footbridgemedia.com",
+              "rank": 366,
+              "backlinks": 165,
+              "first_seen": "2021-04-14 13:25:04 +00:00",
+              "lost_date": null,
+              "backlinks_spam_score": 0,
+              "broken_backlinks": 14,
+              "broken_pages": 14,
+              "referring_domains": 1,
+              "referring_domains_nofollow": 0,
+              "referring_main_domains": 1,
+              "referring_main_domains_nofollow": 0,
+              "referring_ips": 1,
+              "referring_subnets": 1,
+              "referring_pages": 165,
+              "referring_pages_nofollow": 0,
+              "referring_links_tld": {
+                "com": 165
+              },
+              "referring_links_types": {
+                "redirect": 165
+              },
+              "referring_links_attributes": null,
+              "referring_links_platform_types": null,
+              "referring_links_semantic_locations": {
+                "": 165
+              },
+              "referring_links_countries": {
+                "": 165
+              }
+            },
+            {
+              "type": "backlinks_referring_domain",
+              "domain": "shouselaw.com",
+              "rank": 366,
+              "backlinks": 18120,
+              "first_seen": "2020-07-07 22:35:15 +00:00",
+              "lost_date": null,
+              "backlinks_spam_score": 0,
+              "broken_backlinks": 0,
+              "broken_pages": 0,
+              "referring_domains": 1,
+              "referring_domains_nofollow": 0,
+              "referring_main_domains": 1,
+              "referring_main_domains_nofollow": 0,
+              "referring_ips": 1,
+              "referring_subnets": 1,
+              "referring_pages": 9271,
+              "referring_pages_nofollow": 422,
+              "referring_links_tld": {
+                "com": 9271
+              },
+              "referring_links_types": {
+                "anchor": 9270,
+                "image": 1
+              },
+              "referring_links_attributes": {
+                "external": 9271,
+                "noopener": 9271,
+                "noreferrer": 9271,
+                "nofollow": 422
+              },
+              "referring_links_platform_types": {
+                "unknown": 8569,
+                "organization": 627,
+                "message-boards": 75,
+                "ecommerce": 15
+              },
+              "referring_links_semantic_locations": {
+                "header": 8848,
+                "footer": 422,
+                "article": 1
+              },
+              "referring_links_countries": {
+                "US": 7737,
+                "WW": 1534
+              }
+            },
+            {
+              "type": "backlinks_referring_domain",
+              "domain": "wpengine.com",
+              "rank": 355,
+              "backlinks": 17459,
+              "first_seen": "2025-05-14 18:55:59 +00:00",
+              "lost_date": null,
+              "backlinks_spam_score": 0,
+              "broken_backlinks": 0,
+              "broken_pages": 0,
+              "referring_domains": 1,
+              "referring_domains_nofollow": 0,
+              "referring_main_domains": 1,
+              "referring_main_domains_nofollow": 0,
+              "referring_ips": 1,
+              "referring_subnets": 1,
+              "referring_pages": 8933,
+              "referring_pages_nofollow": 407,
+              "referring_links_tld": {
+                "com": 8933
+              },
+              "referring_links_types": {
+                "anchor": 8932,
+                "image": 1
+              },
+              "referring_links_attributes": {
+                "external": 8933,
+                "noopener": 8933,
+                "noreferrer": 8933,
+                "nofollow": 407
+              },
+              "referring_links_platform_types": {
+                "unknown": 8910,
+                "organization": 23,
+                "ecommerce": 20
+              },
+              "referring_links_semantic_locations": {
+                "header": 8525,
+                "footer": 407,
+                "article": 1
+              },
+              "referring_links_countries": {
+                "": 8931,
+                "US": 2
+              }
+            },
+            {
+              "type": "backlinks_referring_domain",
+              "domain": "lowbrowcustoms.com",
+              "rank": 355,
+              "backlinks": 9257,
+              "first_seen": "2023-04-10 21:20:05 +00:00",
+              "lost_date": null,
+              "backlinks_spam_score": 0,
+              "broken_backlinks": 0,
+              "broken_pages": 0,
+              "referring_domains": 1,
+              "referring_domains_nofollow": 0,
+              "referring_main_domains": 1,
+              "referring_main_domains_nofollow": 0,
+              "referring_ips": 1,
+              "referring_subnets": 1,
+              "referring_pages": 9256,
+              "referring_pages_nofollow": 1,
+              "referring_links_tld": {
+                "com": 9256
+              },
+              "referring_links_types": {
+                "anchor": 9256
+              },
+              "referring_links_attributes": null,
+              "referring_links_platform_types": {
+                "organization": 8341,
+                "ecommerce": 8166,
+                "unknown": 682,
+                "message-boards": 1
+              },
+              "referring_links_semantic_locations": {
+                "footer": 9255,
+                "section": 1
+              },
+              "referring_links_countries": {
+                "US": 9242,
+                "WW": 14
+              }
+            },
+            {
+              "type": "backlinks_referring_domain",
+              "domain": "newmexicocarpetrepair.com",
+              "rank": 355,
+              "backlinks": 3806,
+              "first_seen": "2020-07-10 21:07:25 +00:00",
+              "lost_date": null,
+              "backlinks_spam_score": 0,
+              "broken_backlinks": 0,
+              "broken_pages": 0,
+              "referring_domains": 1,
+              "referring_domains_nofollow": 0,
+              "referring_main_domains": 1,
+              "referring_main_domains_nofollow": 0,
+              "referring_ips": 1,
+              "referring_subnets": 1,
+              "referring_pages": 1904,
+              "referring_pages_nofollow": 0,
+              "referring_links_tld": {
+                "com": 1904
+              },
+              "referring_links_types": {
+                "anchor": 1904
+              },
+              "referring_links_attributes": {
+                "noopener": 2,
+                "noreferrer": 2
+              },
+              "referring_links_platform_types": {
+                "unknown": 1904
+              },
+              "referring_links_semantic_locations": {
+                "": 1891,
+                "article": 13
+              },
+              "referring_links_countries": {
+                "": 1904
+              }
+            },
+            {
+              "type": "backlinks_referring_domain",
+              "domain": "maxcash.com",
+              "rank": 341,
+              "backlinks": 24225,
+              "first_seen": "2024-07-23 20:07:33 +00:00",
+              "lost_date": null,
+              "backlinks_spam_score": 0,
+              "broken_backlinks": 0,
+              "broken_pages": 0,
+              "referring_domains": 1,
+              "referring_domains_nofollow": 0,
+              "referring_main_domains": 1,
+              "referring_main_domains_nofollow": 0,
+              "referring_ips": 1,
+              "referring_subnets": 1,
+              "referring_pages": 24225,
+              "referring_pages_nofollow": 0,
+              "referring_links_tld": {
+                "com": 24225
+              },
+              "referring_links_types": {
+                "image": 24225
+              },
+              "referring_links_attributes": {
+                "noopener": 24225,
+                "noreferrer": 24225
+              },
+              "referring_links_platform_types": {
+                "unknown": 24173,
+                "message-boards": 50,
+                "ecommerce": 2
+              },
+              "referring_links_semantic_locations": {
+                "main": 24225
+              },
+              "referring_links_countries": {
+                "US": 24225
+              }
+            },
+            {
+              "type": "backlinks_referring_domain",
+              "domain": "medinaautomall.net",
+              "rank": 333,
+              "backlinks": 9376,
+              "first_seen": "2025-07-31 19:36:42 +00:00",
+              "lost_date": null,
+              "backlinks_spam_score": 0,
+              "broken_backlinks": 0,
+              "broken_pages": 0,
+              "referring_domains": 1,
+              "referring_domains_nofollow": 0,
+              "referring_main_domains": 1,
+              "referring_main_domains_nofollow": 0,
+              "referring_ips": 1,
+              "referring_subnets": 1,
+              "referring_pages": 9376,
+              "referring_pages_nofollow": 0,
+              "referring_links_tld": {
+                "net": 9376
+              },
+              "referring_links_types": {
+                "anchor": 9376
+              },
+              "referring_links_attributes": {
+                "noopener": 9376
+              },
+              "referring_links_platform_types": {
+                "ecommerce": 6989,
+                "organization": 5659,
+                "message-boards": 2336,
+                "unknown": 9
+              },
+              "referring_links_semantic_locations": {
+                "section": 9376
+              },
+              "referring_links_countries": {
+                "US": 7978,
+                "WW": 1398
+              }
+            },
+            {
+              "type": "backlinks_referring_domain",
+              "domain": "fusionautofinance.com",
+              "rank": 330,
+              "backlinks": 169,
+              "first_seen": "2021-08-28 03:27:17 +00:00",
+              "lost_date": null,
+              "backlinks_spam_score": 6,
+              "broken_backlinks": 0,
+              "broken_pages": 0,
+              "referring_domains": 1,
+              "referring_domains_nofollow": 0,
+              "referring_main_domains": 1,
+              "referring_main_domains_nofollow": 0,
+              "referring_ips": 2,
+              "referring_subnets": 2,
+              "referring_pages": 97,
+              "referring_pages_nofollow": 0,
+              "referring_links_tld": {
+                "com": 97
+              },
+              "referring_links_types": {
+                "anchor": 97
+              },
+              "referring_links_attributes": null,
+              "referring_links_platform_types": {
+                "cms": 97,
+                "organization": 95,
+                "blogs": 27
+              },
+              "referring_links_semantic_locations": {
+                "nav": 97
+              },
+              "referring_links_countries": {
+                "": 97
+              }
+            },
+            {
+              "type": "backlinks_referring_domain",
+              "domain": "cubeonline.com.au",
+              "rank": 330,
+              "backlinks": 145,
+              "first_seen": "2019-01-20 07:33:38 +00:00",
+              "lost_date": null,
+              "backlinks_spam_score": 0,
+              "broken_backlinks": 0,
+              "broken_pages": 0,
+              "referring_domains": 2,
+              "referring_domains_nofollow": 0,
+              "referring_main_domains": 1,
+              "referring_main_domains_nofollow": 0,
+              "referring_ips": 1,
+              "referring_subnets": 1,
+              "referring_pages": 145,
+              "referring_pages_nofollow": 0,
+              "referring_links_tld": {
+                "com.au": 145
+              },
+              "referring_links_types": {
+                "anchor": 120,
+                "redirect": 25
+              },
+              "referring_links_attributes": null,
+              "referring_links_platform_types": {
+                "unknown": 85,
+                "organization": 35
+              },
+              "referring_links_semantic_locations": {
+                "footer": 120,
+                "": 25
+              },
+              "referring_links_countries": {
+                "AU": 145
+              }
+            },
+            {
+              "type": "backlinks_referring_domain",
+              "domain": "sportsgearswag.com",
+              "rank": 326,
+              "backlinks": 30672,
+              "first_seen": "2023-11-28 09:30:54 +00:00",
+              "lost_date": null,
+              "backlinks_spam_score": 12,
+              "broken_backlinks": 0,
+              "broken_pages": 0,
+              "referring_domains": 1,
+              "referring_domains_nofollow": 0,
+              "referring_main_domains": 1,
+              "referring_main_domains_nofollow": 0,
+              "referring_ips": 7,
+              "referring_subnets": 7,
+              "referring_pages": 15336,
+              "referring_pages_nofollow": 0,
+              "referring_links_tld": {
+                "com": 15336
+              },
+              "referring_links_types": {
+                "image": 15336
+              },
+              "referring_links_attributes": null,
+              "referring_links_platform_types": {
+                "organization": 12211,
+                "unknown": 2167,
+                "ecommerce": 958
+              },
+              "referring_links_semantic_locations": {
+                "footer": 15336
+              },
+              "referring_links_countries": {
+                "US": 15279,
+                "WW": 57
+              }
+            },
+            {
+              "type": "backlinks_referring_domain",
+              "domain": "australiasportsgearswag.com",
+              "rank": 323,
+              "backlinks": 29644,
+              "first_seen": "2024-02-24 20:40:51 +00:00",
+              "lost_date": null,
+              "backlinks_spam_score": 12,
+              "broken_backlinks": 0,
+              "broken_pages": 0,
+              "referring_domains": 1,
+              "referring_domains_nofollow": 0,
+              "referring_main_domains": 1,
+              "referring_main_domains_nofollow": 0,
+              "referring_ips": 7,
+              "referring_subnets": 7,
+              "referring_pages": 14822,
+              "referring_pages_nofollow": 0,
+              "referring_links_tld": {
+                "com": 14822
+              },
+              "referring_links_types": {
+                "image": 14822
+              },
+              "referring_links_attributes": null,
+              "referring_links_platform_types": {
+                "organization": 12328,
+                "ecommerce": 1494,
+                "unknown": 1000
+              },
+              "referring_links_semantic_locations": {
+                "footer": 14822
+              },
+              "referring_links_countries": {
+                "WW": 14344,
+                "AU": 478
+              }
+            },
+            {
+              "type": "backlinks_referring_domain",
+              "domain": "dreamexoticrentals.com",
+              "rank": 322,
+              "backlinks": 6071,
+              "first_seen": "2025-10-28 05:58:07 +00:00",
+              "lost_date": null,
+              "backlinks_spam_score": 0,
+              "broken_backlinks": 0,
+              "broken_pages": 0,
+              "referring_domains": 1,
+              "referring_domains_nofollow": 0,
+              "referring_main_domains": 1,
+              "referring_main_domains_nofollow": 0,
+              "referring_ips": 3,
+              "referring_subnets": 3,
+              "referring_pages": 6071,
+              "referring_pages_nofollow": 0,
+              "referring_links_tld": {
+                "com": 6071
+              },
+              "referring_links_types": {
+                "anchor": 6071
+              },
+              "referring_links_attributes": null,
+              "referring_links_platform_types": {
+                "organization": 6071
+              },
+              "referring_links_semantic_locations": {
+                "": 6068,
+                "section": 3
+              },
+              "referring_links_countries": {
+                "US": 6034,
+                "WW": 37
+              }
+            },
+            {
+              "type": "backlinks_referring_domain",
+              "domain": "sportsgearswag.uk",
+              "rank": 322,
+              "backlinks": 28780,
+              "first_seen": "2025-01-29 09:17:40 +00:00",
+              "lost_date": null,
+              "backlinks_spam_score": 12,
+              "broken_backlinks": 0,
+              "broken_pages": 0,
+              "referring_domains": 1,
+              "referring_domains_nofollow": 0,
+              "referring_main_domains": 1,
+              "referring_main_domains_nofollow": 0,
+              "referring_ips": 8,
+              "referring_subnets": 8,
+              "referring_pages": 14390,
+              "referring_pages_nofollow": 0,
+              "referring_links_tld": {
+                "uk": 14390
+              },
+              "referring_links_types": {
+                "image": 14390
+              },
+              "referring_links_attributes": null,
+              "referring_links_platform_types": {
+                "organization": 11951,
+                "unknown": 1940,
+                "ecommerce": 499
+              },
+              "referring_links_semantic_locations": {
+                "footer": 14390
+              },
+              "referring_links_countries": {
+                "GB": 14390
+              }
+            },
+            {
+              "type": "backlinks_referring_domain",
+              "domain": "sportsgearswag.ca",
+              "rank": 321,
+              "backlinks": 28202,
+              "first_seen": "2025-10-05 18:05:38 +00:00",
+              "lost_date": null,
+              "backlinks_spam_score": 12,
+              "broken_backlinks": 0,
+              "broken_pages": 0,
+              "referring_domains": 1,
+              "referring_domains_nofollow": 0,
+              "referring_main_domains": 1,
+              "referring_main_domains_nofollow": 0,
+              "referring_ips": 3,
+              "referring_subnets": 3,
+              "referring_pages": 14101,
+              "referring_pages_nofollow": 0,
+              "referring_links_tld": {
+                "ca": 14101
+              },
+              "referring_links_types": {
+                "image": 14101
+              },
+              "referring_links_attributes": null,
+              "referring_links_platform_types": {
+                "organization": 11823,
+                "unknown": 1895,
+                "ecommerce": 383
+              },
+              "referring_links_semantic_locations": {
+                "footer": 14101
+              },
+              "referring_links_countries": {
+                "CA": 14101
+              }
+            },
+            {
+              "type": "backlinks_referring_domain",
+              "domain": "labelsbythesheet.com",
+              "rank": 320,
+              "backlinks": 5498,
+              "first_seen": "2019-03-20 15:41:51 +00:00",
+              "lost_date": null,
+              "backlinks_spam_score": 0,
+              "broken_backlinks": 0,
+              "broken_pages": 0,
+              "referring_domains": 1,
+              "referring_domains_nofollow": 0,
+              "referring_main_domains": 1,
+              "referring_main_domains_nofollow": 0,
+              "referring_ips": 1,
+              "referring_subnets": 1,
+              "referring_pages": 5498,
+              "referring_pages_nofollow": 0,
+              "referring_links_tld": {
+                "com": 5498
+              },
+              "referring_links_types": {
+                "anchor": 5498
+              },
+              "referring_links_attributes": null,
+              "referring_links_platform_types": {
+                "unknown": 5498
+              },
+              "referring_links_semantic_locations": {
+                "footer": 5497,
+                "main": 1
+              },
+              "referring_links_countries": {
+                "US": 5498
+              }
+            },
+            {
+              "type": "backlinks_referring_domain",
+              "domain": "canadasportsgearswag.com",
+              "rank": 316,
+              "backlinks": 28800,
+              "first_seen": "2024-04-17 04:51:16 +00:00",
+              "lost_date": null,
+              "backlinks_spam_score": 12,
+              "broken_backlinks": 0,
+              "broken_pages": 0,
+              "referring_domains": 1,
+              "referring_domains_nofollow": 0,
+              "referring_main_domains": 1,
+              "referring_main_domains_nofollow": 0,
+              "referring_ips": 4,
+              "referring_subnets": 4,
+              "referring_pages": 14400,
+              "referring_pages_nofollow": 0,
+              "referring_links_tld": {
+                "com": 14400
+              },
+              "referring_links_types": {
+                "image": 14400
+              },
+              "referring_links_attributes": null,
+              "referring_links_platform_types": {
+                "organization": 12389,
+                "ecommerce": 1465,
+                "unknown": 546
+              },
+              "referring_links_semantic_locations": {
+                "footer": 14400
+              },
+              "referring_links_countries": {
+                "CA": 14400
+              }
+            },
+            {
+              "type": "backlinks_referring_domain",
+              "domain": "fhamortgageprograms.com",
+              "rank": 311,
+              "backlinks": 3745,
+              "first_seen": "2020-10-20 08:04:17 +00:00",
+              "lost_date": null,
+              "backlinks_spam_score": 3,
+              "broken_backlinks": 0,
+              "broken_pages": 0,
+              "referring_domains": 1,
+              "referring_domains_nofollow": 0,
+              "referring_main_domains": 1,
+              "referring_main_domains_nofollow": 0,
+              "referring_ips": 1,
+              "referring_subnets": 1,
+              "referring_pages": 3742,
+              "referring_pages_nofollow": 0,
+              "referring_links_tld": {
+                "com": 3742
+              },
+              "referring_links_types": {
+                "anchor": 3742
+              },
+              "referring_links_attributes": null,
+              "referring_links_platform_types": {
+                "blogs": 3742,
+                "cms": 3742
+              },
+              "referring_links_semantic_locations": {
+                "": 3742
+              },
+              "referring_links_countries": {
+                "US": 3634,
+                "": 108
+              }
+            },
+            {
+              "type": "backlinks_referring_domain",
+              "domain": "neuromics.com",
+              "rank": 311,
+              "backlinks": 4362,
+              "first_seen": "2019-01-16 05:33:55 +00:00",
+              "lost_date": null,
+              "backlinks_spam_score": 0,
+              "broken_backlinks": 0,
+              "broken_pages": 0,
+              "referring_domains": 1,
+              "referring_domains_nofollow": 0,
+              "referring_main_domains": 1,
+              "referring_main_domains_nofollow": 0,
+              "referring_ips": 1,
+              "referring_subnets": 1,
+              "referring_pages": 4361,
+              "referring_pages_nofollow": 0,
+              "referring_links_tld": {
+                "com": 4361
+              },
+              "referring_links_types": {
+                "anchor": 4361
+              },
+              "referring_links_attributes": {
+                "noopener": 1
+              },
+              "referring_links_platform_types": {
+                "unknown": 4361
+              },
+              "referring_links_semantic_locations": {
+                "section": 4357,
+                "article": 4
+              },
+              "referring_links_countries": {
+                "US": 3778,
+                "WW": 583
+              }
+            },
+            {
+              "type": "backlinks_referring_domain",
+              "domain": "augusthaven.com",
+              "rank": 305,
+              "backlinks": 1965,
+              "first_seen": "2025-06-20 15:33:35 +00:00",
+              "lost_date": null,
+              "backlinks_spam_score": 4,
+              "broken_backlinks": 0,
+              "broken_pages": 0,
+              "referring_domains": 1,
+              "referring_domains_nofollow": 0,
+              "referring_main_domains": 1,
+              "referring_main_domains_nofollow": 0,
+              "referring_ips": 27,
+              "referring_subnets": 16,
+              "referring_pages": 1965,
+              "referring_pages_nofollow": 0,
+              "referring_links_tld": {
+                "com": 1965
+              },
+              "referring_links_types": {
+                "anchor": 1965
+              },
+              "referring_links_attributes": null,
+              "referring_links_platform_types": {
+                "ecommerce": 1896,
+                "unknown": 69
+              },
+              "referring_links_semantic_locations": {
+                "footer": 1965
+              },
+              "referring_links_countries": {
+                "US": 1965
+              }
+            },
+            {
+              "type": "backlinks_referring_domain",
+              "domain": "sportsgearswagpromo.com",
+              "rank": 304,
+              "backlinks": 21906,
+              "first_seen": "2024-04-17 04:54:00 +00:00",
+              "lost_date": null,
+              "backlinks_spam_score": 11,
+              "broken_backlinks": 0,
+              "broken_pages": 0,
+              "referring_domains": 1,
+              "referring_domains_nofollow": 0,
+              "referring_main_domains": 1,
+              "referring_main_domains_nofollow": 0,
+              "referring_ips": 7,
+              "referring_subnets": 7,
+              "referring_pages": 10953,
+              "referring_pages_nofollow": 0,
+              "referring_links_tld": {
+                "com": 10953
+              },
+              "referring_links_types": {
+                "image": 10953
+              },
+              "referring_links_attributes": null,
+              "referring_links_platform_types": {
+                "ecommerce": 9052,
+                "unknown": 1901
+              },
+              "referring_links_semantic_locations": {
+                "footer": 10953
+              },
+              "referring_links_countries": {
+                "": 9229,
+                "US": 1724
+              }
+            },
+            {
+              "type": "backlinks_referring_domain",
+              "domain": "townsquareinteractive.com",
+              "rank": 301,
+              "backlinks": 1682,
+              "first_seen": "2025-01-21 22:30:29 +00:00",
+              "lost_date": null,
+              "backlinks_spam_score": 0,
+              "broken_backlinks": 0,
+              "broken_pages": 0,
+              "referring_domains": 1,
+              "referring_domains_nofollow": 0,
+              "referring_main_domains": 1,
+              "referring_main_domains_nofollow": 0,
+              "referring_ips": 1,
+              "referring_subnets": 1,
+              "referring_pages": 1681,
+              "referring_pages_nofollow": 0,
+              "referring_links_tld": {
+                "com": 1681
+              },
+              "referring_links_types": {
+                "anchor": 1681
+              },
+              "referring_links_attributes": null,
+              "referring_links_platform_types": {
+                "blogs": 1681,
+                "cms": 1681,
+                "organization": 1681
+              },
+              "referring_links_semantic_locations": {
+                "footer": 1680,
+                "article": 1
+              },
+              "referring_links_countries": {
+                "WW": 1000,
+                "US": 681
+              }
+            },
+            {
+              "type": "backlinks_referring_domain",
+              "domain": "cazlemortgage.com",
+              "rank": 296,
+              "backlinks": 104,
+              "first_seen": "2024-08-24 02:26:25 +00:00",
+              "lost_date": null,
+              "backlinks_spam_score": 0,
+              "broken_backlinks": 0,
+              "broken_pages": 0,
+              "referring_domains": 2,
+              "referring_domains_nofollow": 0,
+              "referring_main_domains": 1,
+              "referring_main_domains_nofollow": 0,
+              "referring_ips": 1,
+              "referring_subnets": 1,
+              "referring_pages": 44,
+              "referring_pages_nofollow": 0,
+              "referring_links_tld": {
+                "com": 44
+              },
+              "referring_links_types": {
+                "anchor": 44
+              },
+              "referring_links_attributes": null,
+              "referring_links_platform_types": {
+                "unknown": 44
+              },
+              "referring_links_semantic_locations": {
+                "main": 30,
+                "footer": 14
+              },
+              "referring_links_countries": {
+                "": 44
+              }
+            },
+            {
+              "type": "backlinks_referring_domain",
+              "domain": "wgrfurniture.com",
+              "rank": 293,
+              "backlinks": 3051,
+              "first_seen": "2022-01-06 21:49:18 +00:00",
+              "lost_date": null,
+              "backlinks_spam_score": 14,
+              "broken_backlinks": 0,
+              "broken_pages": 0,
+              "referring_domains": 1,
+              "referring_domains_nofollow": 0,
+              "referring_main_domains": 1,
+              "referring_main_domains_nofollow": 0,
+              "referring_ips": 51,
+              "referring_subnets": 27,
+              "referring_pages": 3051,
+              "referring_pages_nofollow": 0,
+              "referring_links_tld": {
+                "com": 3051
+              },
+              "referring_links_types": {
+                "anchor": 3051
+              },
+              "referring_links_attributes": null,
+              "referring_links_platform_types": {
+                "ecommerce": 2985,
+                "unknown": 66
+              },
+              "referring_links_semantic_locations": {
+                "footer": 3051
+              },
+              "referring_links_countries": {
+                "WW": 2318,
+                "US": 733
+              }
+            },
+            {
+              "type": "backlinks_referring_domain",
+              "domain": "staugustinemarinesurveyor.com",
+              "rank": 290,
+              "backlinks": 3100,
+              "first_seen": "2024-02-12 14:23:21 +00:00",
+              "lost_date": null,
+              "backlinks_spam_score": 17,
+              "broken_backlinks": 0,
+              "broken_pages": 0,
+              "referring_domains": 1,
+              "referring_domains_nofollow": 0,
+              "referring_main_domains": 1,
+              "referring_main_domains_nofollow": 0,
+              "referring_ips": 1,
+              "referring_subnets": 1,
+              "referring_pages": 1550,
+              "referring_pages_nofollow": 0,
+              "referring_links_tld": {
+                "com": 1550
+              },
+              "referring_links_types": {
+                "anchor": 1550
+              },
+              "referring_links_attributes": null,
+              "referring_links_platform_types": {
+                "blogs": 1550,
+                "cms": 1550,
+                "organization": 1550
+              },
+              "referring_links_semantic_locations": {
+                "nav": 1550
+              },
+              "referring_links_countries": {
+                "": 1540,
+                "US": 10
+              }
+            },
+            {
+              "type": "backlinks_referring_domain",
+              "domain": "naplesflooring.com",
+              "rank": 290,
+              "backlinks": 1814,
+              "first_seen": "2020-05-29 05:50:42 +00:00",
+              "lost_date": null,
+              "backlinks_spam_score": 0,
+              "broken_backlinks": 0,
+              "broken_pages": 0,
+              "referring_domains": 1,
+              "referring_domains_nofollow": 0,
+              "referring_main_domains": 1,
+              "referring_main_domains_nofollow": 0,
+              "referring_ips": 1,
+              "referring_subnets": 1,
+              "referring_pages": 1814,
+              "referring_pages_nofollow": 0,
+              "referring_links_tld": {
+                "com": 1814
+              },
+              "referring_links_types": {
+                "anchor": 1814
+              },
+              "referring_links_attributes": {
+                "noopener": 1814,
+                "noreferrer": 1814
+              },
+              "referring_links_platform_types": {
+                "blogs": 1814,
+                "cms": 1814,
+                "organization": 1814
+              },
+              "referring_links_semantic_locations": {
+                "": 1814
+              },
+              "referring_links_countries": {
+                "": 1814
+              }
+            },
+            {
+              "type": "backlinks_referring_domain",
+              "domain": "smithdouglas.com",
+              "rank": 289,
+              "backlinks": 4550,
+              "first_seen": "2024-06-13 12:31:47 +00:00",
+              "lost_date": null,
+              "backlinks_spam_score": 0,
+              "broken_backlinks": 0,
+              "broken_pages": 0,
+              "referring_domains": 1,
+              "referring_domains_nofollow": 0,
+              "referring_main_domains": 1,
+              "referring_main_domains_nofollow": 0,
+              "referring_ips": 1,
+              "referring_subnets": 1,
+              "referring_pages": 4550,
+              "referring_pages_nofollow": 0,
+              "referring_links_tld": {
+                "com": 4550
+              },
+              "referring_links_types": {
+                "image": 4550
+              },
+              "referring_links_attributes": {
+                "noopener": 4550,
+                "noreferrer": 4550
+              },
+              "referring_links_platform_types": {
+                "organization": 3798,
+                "unknown": 744,
+                "blogs": 31
+              },
+              "referring_links_semantic_locations": {
+                "footer": 4550
+              },
+              "referring_links_countries": {
+                "WW": 3617,
+                "US": 933
+              }
+            },
+            {
+              "type": "backlinks_referring_domain",
+              "domain": "drseckin.com",
+              "rank": 289,
+              "backlinks": 640,
+              "first_seen": "2021-06-24 05:02:02 +00:00",
+              "lost_date": null,
+              "backlinks_spam_score": 0,
+              "broken_backlinks": 0,
+              "broken_pages": 0,
+              "referring_domains": 1,
+              "referring_domains_nofollow": 0,
+              "referring_main_domains": 1,
+              "referring_main_domains_nofollow": 0,
+              "referring_ips": 2,
+              "referring_subnets": 2,
+              "referring_pages": 629,
+              "referring_pages_nofollow": 0,
+              "referring_links_tld": {
+                "com": 629
+              },
+              "referring_links_types": {
+                "anchor": 629
+              },
+              "referring_links_attributes": {
+                "noopener": 1,
+                "noreferrer": 1
+              },
+              "referring_links_platform_types": {
+                "organization": 569,
+                "unknown": 60,
+                "ecommerce": 1
+              },
+              "referring_links_semantic_locations": {
+                "nav": 628,
+                "main": 1
+              },
+              "referring_links_countries": {
+                "US": 629
+              }
+            },
+            {
+              "type": "backlinks_referring_domain",
+              "domain": "royalswimmingpools.com",
+              "rank": 288,
+              "backlinks": 10629,
+              "first_seen": "2019-03-21 12:36:26 +00:00",
+              "lost_date": null,
+              "backlinks_spam_score": 0,
+              "broken_backlinks": 0,
+              "broken_pages": 0,
+              "referring_domains": 2,
+              "referring_domains_nofollow": 0,
+              "referring_main_domains": 1,
+              "referring_main_domains_nofollow": 0,
+              "referring_ips": 2,
+              "referring_subnets": 2,
+              "referring_pages": 10629,
+              "referring_pages_nofollow": 0,
+              "referring_links_tld": {
+                "com": 10629
+              },
+              "referring_links_types": {
+                "anchor": 10629
+              },
+              "referring_links_attributes": {
+                "noopener": 4
+              },
+              "referring_links_platform_types": {
+                "unknown": 10629
+              },
+              "referring_links_semantic_locations": {
+                "section": 10625,
+                "": 4
+              },
+              "referring_links_countries": {
+                "US": 10629
+              }
+            },
+            {
+              "type": "backlinks_referring_domain",
+              "domain": "woodstocksiv.com",
+              "rank": 286,
+              "backlinks": 1932,
+              "first_seen": "2019-01-18 07:53:11 +00:00",
+              "lost_date": null,
+              "backlinks_spam_score": 0,
+              "broken_backlinks": 0,
+              "broken_pages": 0,
+              "referring_domains": 1,
+              "referring_domains_nofollow": 0,
+              "referring_main_domains": 1,
+              "referring_main_domains_nofollow": 0,
+              "referring_ips": 1,
+              "referring_subnets": 1,
+              "referring_pages": 1932,
+              "referring_pages_nofollow": 0,
+              "referring_links_tld": {
+                "com": 1932
+              },
+              "referring_links_types": {
+                "anchor": 1932
+              },
+              "referring_links_attributes": null,
+              "referring_links_platform_types": {
+                "blogs": 1932,
+                "cms": 1932
+              },
+              "referring_links_semantic_locations": {
+                "": 1932
+              },
+              "referring_links_countries": {
+                "US": 1932
+              }
+            },
+            {
+              "type": "backlinks_referring_domain",
+              "domain": "revivifymedicalspa.com",
+              "rank": 285,
+              "backlinks": 862,
+              "first_seen": "2021-04-23 16:18:37 +00:00",
+              "lost_date": null,
+              "backlinks_spam_score": 0,
+              "broken_backlinks": 0,
+              "broken_pages": 0,
+              "referring_domains": 1,
+              "referring_domains_nofollow": 0,
+              "referring_main_domains": 1,
+              "referring_main_domains_nofollow": 0,
+              "referring_ips": 1,
+              "referring_subnets": 1,
+              "referring_pages": 862,
+              "referring_pages_nofollow": 0,
+              "referring_links_tld": {
+                "com": 862
+              },
+              "referring_links_types": {
+                "anchor": 862
+              },
+              "referring_links_attributes": null,
+              "referring_links_platform_types": {
+                "blogs": 862,
+                "cms": 862
+              },
+              "referring_links_semantic_locations": {
+                "section": 862
+              },
+              "referring_links_countries": {
+                "US": 859,
+                "WW": 3
+              }
+            },
+            {
+              "type": "backlinks_referring_domain",
+              "domain": "funtastikonline.com",
+              "rank": 283,
+              "backlinks": 1246,
+              "first_seen": "2024-02-11 20:35:03 +00:00",
+              "lost_date": null,
+              "backlinks_spam_score": 24,
+              "broken_backlinks": 0,
+              "broken_pages": 0,
+              "referring_domains": 1,
+              "referring_domains_nofollow": 0,
+              "referring_main_domains": 1,
+              "referring_main_domains_nofollow": 0,
+              "referring_ips": 1,
+              "referring_subnets": 1,
+              "referring_pages": 1246,
+              "referring_pages_nofollow": 0,
+              "referring_links_tld": {
+                "com": 1246
+              },
+              "referring_links_types": {
+                "anchor": 1246
+              },
+              "referring_links_attributes": null,
+              "referring_links_platform_types": {
+                "organization": 1246
+              },
+              "referring_links_semantic_locations": {
+                "footer": 1246
+              },
+              "referring_links_countries": {
+                "US": 1190,
+                "WW": 56
+              }
+            },
+            {
+              "type": "backlinks_referring_domain",
+              "domain": "palmbeachmarinesurveyorinc.com",
+              "rank": 282,
+              "backlinks": 1284,
+              "first_seen": "2022-12-15 16:09:54 +00:00",
+              "lost_date": null,
+              "backlinks_spam_score": 0,
+              "broken_backlinks": 0,
+              "broken_pages": 0,
+              "referring_domains": 1,
+              "referring_domains_nofollow": 0,
+              "referring_main_domains": 1,
+              "referring_main_domains_nofollow": 0,
+              "referring_ips": 1,
+              "referring_subnets": 1,
+              "referring_pages": 1284,
+              "referring_pages_nofollow": 0,
+              "referring_links_tld": {
+                "com": 1284
+              },
+              "referring_links_types": {
+                "anchor": 1284
+              },
+              "referring_links_attributes": null,
+              "referring_links_platform_types": {
+                "blogs": 1284,
+                "cms": 1284,
+                "organization": 1284
+              },
+              "referring_links_semantic_locations": {
+                "header": 1284
+              },
+              "referring_links_countries": {
+                "": 794,
+                "US": 490
+              }
+            },
+            {
+              "type": "backlinks_referring_domain",
+              "domain": "woodstocksdavis.com",
+              "rank": 282,
+              "backlinks": 2025,
+              "first_seen": "2019-01-22 06:01:31 +00:00",
+              "lost_date": null,
+              "backlinks_spam_score": 0,
+              "broken_backlinks": 0,
+              "broken_pages": 0,
+              "referring_domains": 1,
+              "referring_domains_nofollow": 0,
+              "referring_main_domains": 1,
+              "referring_main_domains_nofollow": 0,
+              "referring_ips": 1,
+              "referring_subnets": 1,
+              "referring_pages": 2025,
+              "referring_pages_nofollow": 0,
+              "referring_links_tld": {
+                "com": 2025
+              },
+              "referring_links_types": {
+                "anchor": 2025
+              },
+              "referring_links_attributes": null,
+              "referring_links_platform_types": {
+                "blogs": 2025,
+                "cms": 2025
+              },
+              "referring_links_semantic_locations": {
+                "": 2025
+              },
+              "referring_links_countries": {
+                "US": 2025
+              }
+            },
+            {
+              "type": "backlinks_referring_domain",
+              "domain": "goodshepherdroofing.com",
+              "rank": 281,
+              "backlinks": 343,
+              "first_seen": "2023-10-03 06:28:55 +00:00",
+              "lost_date": null,
+              "backlinks_spam_score": 0,
+              "broken_backlinks": 0,
+              "broken_pages": 0,
+              "referring_domains": 1,
+              "referring_domains_nofollow": 0,
+              "referring_main_domains": 1,
+              "referring_main_domains_nofollow": 0,
+              "referring_ips": 1,
+              "referring_subnets": 1,
+              "referring_pages": 343,
+              "referring_pages_nofollow": 0,
+              "referring_links_tld": {
+                "com": 343
+              },
+              "referring_links_types": {
+                "image": 343
+              },
+              "referring_links_attributes": null,
+              "referring_links_platform_types": {
+                "blogs": 343,
+                "cms": 343,
+                "organization": 321
+              },
+              "referring_links_semantic_locations": {
+                "footer": 342,
+                "article": 1
+              },
+              "referring_links_countries": {
+                "": 343
+              }
+            },
+            {
+              "type": "backlinks_referring_domain",
+              "domain": "woodstockssd.com",
+              "rank": 281,
+              "backlinks": 1983,
+              "first_seen": "2019-01-16 02:36:32 +00:00",
+              "lost_date": null,
+              "backlinks_spam_score": 0,
+              "broken_backlinks": 0,
+              "broken_pages": 0,
+              "referring_domains": 1,
+              "referring_domains_nofollow": 0,
+              "referring_main_domains": 1,
+              "referring_main_domains_nofollow": 0,
+              "referring_ips": 1,
+              "referring_subnets": 1,
+              "referring_pages": 1982,
+              "referring_pages_nofollow": 0,
+              "referring_links_tld": {
+                "com": 1982
+              },
+              "referring_links_types": {
+                "anchor": 1982
+              },
+              "referring_links_attributes": null,
+              "referring_links_platform_types": {
+                "blogs": 1982,
+                "cms": 1982
+              },
+              "referring_links_semantic_locations": {
+                "": 1982
+              },
+              "referring_links_countries": {
+                "US": 1982
+              }
+            },
+            {
+              "type": "backlinks_referring_domain",
+              "domain": "mygoodreviews.com",
+              "rank": 280,
+              "backlinks": 364,
+              "first_seen": "2023-08-13 16:20:46 +00:00",
+              "lost_date": null,
+              "backlinks_spam_score": 21,
+              "broken_backlinks": 4,
+              "broken_pages": 1,
+              "referring_domains": 1,
+              "referring_domains_nofollow": 0,
+              "referring_main_domains": 1,
+              "referring_main_domains_nofollow": 0,
+              "referring_ips": 1,
+              "referring_subnets": 1,
+              "referring_pages": 348,
+              "referring_pages_nofollow": 8,
+              "referring_links_tld": {
+                "com": 348
+              },
+              "referring_links_types": {
+                "anchor": 348
+              },
+              "referring_links_attributes": {
+                "nofollow": 8,
+                "noopener": 8,
+                "noreferrer": 8
+              },
+              "referring_links_platform_types": {
+                "unknown": 348
+              },
+              "referring_links_semantic_locations": {
+                "section": 320,
+                "nav": 24,
+                "header": 4
+              },
+              "referring_links_countries": {
+                "": 348
+              }
+            },
+            {
+              "type": "backlinks_referring_domain",
+              "domain": "trustlaw.com",
+              "rank": 280,
+              "backlinks": 2389,
+              "first_seen": "2019-08-22 04:50:50 +00:00",
+              "lost_date": null,
+              "backlinks_spam_score": 0,
+              "broken_backlinks": 0,
+              "broken_pages": 0,
+              "referring_domains": 1,
+              "referring_domains_nofollow": 0,
+              "referring_main_domains": 1,
+              "referring_main_domains_nofollow": 0,
+              "referring_ips": 2,
+              "referring_subnets": 2,
+              "referring_pages": 2278,
+              "referring_pages_nofollow": 0,
+              "referring_links_tld": {
+                "com": 2278
+              },
+              "referring_links_types": {
+                "anchor": 2278
+              },
+              "referring_links_attributes": null,
+              "referring_links_platform_types": {
+                "unknown": 2278
+              },
+              "referring_links_semantic_locations": {
+                "": 2167,
+                "section": 111
+              },
+              "referring_links_countries": {
+                "WW": 2274,
+                "US": 4
+              }
+            },
+            {
+              "type": "backlinks_referring_domain",
+              "domain": "woodstockscruz.com",
+              "rank": 280,
+              "backlinks": 1948,
+              "first_seen": "2019-01-18 10:10:52 +00:00",
+              "lost_date": null,
+              "backlinks_spam_score": 0,
+              "broken_backlinks": 0,
+              "broken_pages": 0,
+              "referring_domains": 1,
+              "referring_domains_nofollow": 0,
+              "referring_main_domains": 1,
+              "referring_main_domains_nofollow": 0,
+              "referring_ips": 1,
+              "referring_subnets": 1,
+              "referring_pages": 1948,
+              "referring_pages_nofollow": 0,
+              "referring_links_tld": {
+                "com": 1948
+              },
+              "referring_links_types": {
+                "anchor": 1948
+              },
+              "referring_links_attributes": null,
+              "referring_links_platform_types": {
+                "blogs": 1948,
+                "cms": 1948
+              },
+              "referring_links_semantic_locations": {
+                "": 1948
+              },
+              "referring_links_countries": {
+                "US": 1948
+              }
+            },
+            {
+              "type": "backlinks_referring_domain",
+              "domain": "alekoproducts.com",
+              "rank": 279,
+              "backlinks": 2749,
+              "first_seen": "2024-04-15 11:55:55 +00:00",
+              "lost_date": null,
+              "backlinks_spam_score": 0,
+              "broken_backlinks": 0,
+              "broken_pages": 0,
+              "referring_domains": 2,
+              "referring_domains_nofollow": 0,
+              "referring_main_domains": 1,
+              "referring_main_domains_nofollow": 0,
+              "referring_ips": 1,
+              "referring_subnets": 1,
+              "referring_pages": 2749,
+              "referring_pages_nofollow": 0,
+              "referring_links_tld": {
+                "com": 2749
+              },
+              "referring_links_types": {
+                "anchor": 2749
+              },
+              "referring_links_attributes": null,
+              "referring_links_platform_types": {
+                "unknown": 2749
+              },
+              "referring_links_semantic_locations": {
+                "footer": 2749
+              },
+              "referring_links_countries": {
+                "US": 1980,
+                "WW": 687,
+                "": 82
+              }
+            },
+            {
+              "type": "backlinks_referring_domain",
+              "domain": "healthywaynj.com",
+              "rank": 278,
+              "backlinks": 1970,
+              "first_seen": "2025-08-21 20:13:52 +00:00",
+              "lost_date": null,
+              "backlinks_spam_score": 0,
+              "broken_backlinks": 0,
+              "broken_pages": 0,
+              "referring_domains": 2,
+              "referring_domains_nofollow": 0,
+              "referring_main_domains": 1,
+              "referring_main_domains_nofollow": 0,
+              "referring_ips": 2,
+              "referring_subnets": 2,
+              "referring_pages": 1970,
+              "referring_pages_nofollow": 0,
+              "referring_links_tld": {
+                "com": 1970
+              },
+              "referring_links_types": {
+                "image": 1970
+              },
+              "referring_links_attributes": null,
+              "referring_links_platform_types": {
+                "unknown": 1572,
+                "organization": 364,
+                "cms": 123,
+                "ecommerce": 49
+              },
+              "referring_links_semantic_locations": {
+                "footer": 1970
+              },
+              "referring_links_countries": {
+                "": 1970
+              }
+            },
+            {
+              "type": "backlinks_referring_domain",
+              "domain": "goldenbear.net",
+              "rank": 278,
+              "backlinks": 1770,
+              "first_seen": "2021-10-19 00:21:57 +00:00",
+              "lost_date": null,
+              "backlinks_spam_score": 5,
+              "broken_backlinks": 0,
+              "broken_pages": 0,
+              "referring_domains": 1,
+              "referring_domains_nofollow": 0,
+              "referring_main_domains": 1,
+              "referring_main_domains_nofollow": 0,
+              "referring_ips": 1,
+              "referring_subnets": 1,
+              "referring_pages": 1770,
+              "referring_pages_nofollow": 0,
+              "referring_links_tld": {
+                "net": 1770
+              },
+              "referring_links_types": {
+                "anchor": 1770
+              },
+              "referring_links_attributes": null,
+              "referring_links_platform_types": {
+                "unknown": 1770
+              },
+              "referring_links_semantic_locations": {
+                "": 1770
+              },
+              "referring_links_countries": {
+                "": 1770
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -28,6 +28,7 @@ import {
   type RankedKeywordItem,
 } from "@/lib/dataforseo/endpoints";
 import { seoMeteredCallResult } from "@/lib/dataforseo/metering";
+import { backlinksSummaryTask } from "@/lib/dataforseo/backlinks-summary";
 import { parseBacklinks, parseCompetitors, parseOverview, parseRankedKeywords } from "./parse";
 import {
   COMPETITORS_LIMIT,
@@ -217,12 +218,7 @@ export async function runAnalysis(
     "backlinks",
     tenantId,
     BACKLINKS.summary,
-    {
-      target: params.domain,
-      internal_list_limit: 10,
-      backlinks_status_type: "live",
-      include_subdomains: true,
-    },
+    backlinksSummaryTask(params.domain, { includeSubdomains: true }),
     parseBacklinks,
   );
 

@@ -9,13 +9,11 @@
 // Zero invented numbers: a missing metric becomes 0 / "" / null, never a guess.
 
 import type {
-  BacklinksSummaryItem,
   CompetitorsDomainItem,
   DomainRankOverviewItem,
   RankedKeywordItem,
 } from "@/lib/dataforseo/endpoints";
 import type {
-  BacklinksSection,
   CompetitorRow,
   CompetitorsSection,
   OverviewSection,
@@ -112,25 +110,11 @@ export function parseCompetitors(
   return { items };
 }
 
-export function parseBacklinks(result: BacklinksSummaryItem[] | undefined): BacklinksSection {
-  const item = result?.[0] ?? {};
-  const referringDomains = num(item.referring_domains);
-
-  // There is no "dofollow" count upstream; it is the complement of the
-  // nofollow figure on the SAME base. referring_domains /
-  // referring_domains_nofollow is that pair — the per-link attributes block is
-  // counted against referring PAGES and cannot be differenced from `backlinks`.
-  const nofollowDomains = Math.min(num(item.referring_domains_nofollow), referringDomains);
-  const dofollowDomains = Math.max(referringDomains - nofollowDomains, 0);
-
-  return {
-    backlinks: num(item.backlinks),
-    referringDomains,
-    referringMainDomains: num(item.referring_main_domains),
-    rank: num(item.rank),
-    brokenBacklinks: num(item.broken_backlinks),
-    dofollowDomains,
-    nofollowDomains,
-    dofollowRatio: referringDomains > 0 ? dofollowDomains / referringDomains : null,
-  };
-}
+/**
+ * Site Explorer's Backlinks card. The parser itself lives in
+ * dataforseo/backlinks-summary.ts because the dedicated Backlinks tool reads
+ * the same endpoint — one definition, so the two tools can never disagree
+ * about the same domain. Re-exported under the original name to keep this
+ * module's public surface stable.
+ */
+export { parseBacklinksSummary as parseBacklinks } from "@/lib/dataforseo/backlinks-summary";

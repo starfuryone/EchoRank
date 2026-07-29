@@ -9,6 +9,7 @@
  */
 
 import { postTask, getEndpoint, type ApiResult } from "./client";
+import { backlinksSummaryTask } from "./backlinks-summary";
 
 // ---------------------------------------------------------------------------
 // DataForSEO Labs — keyword research + domain analytics
@@ -70,6 +71,10 @@ export const BACKLINKS = {
   summary: "v3/backlinks/summary/live",
   list: "v3/backlinks/backlinks/live",
   referringDomains: "v3/backlinks/referring_domains/live",
+  /** Anchor texts pointing at the target — Backlinks tool. */
+  anchors: "v3/backlinks/anchors/live",
+  /** Most-linked pages OF the target — Backlinks tool. */
+  domainPages: "v3/backlinks/domain_pages/live",
   domainPagesSummary: "v3/backlinks/domain_pages_summary/live",
   history: "v3/backlinks/history/live",
 } as const;
@@ -181,27 +186,11 @@ export type RelevantPageItem = {
   metrics?: { organic?: { count?: number; etv?: number; pos_1?: number } };
 };
 
-export type BacklinksSummaryItem = {
-  target?: string;
-  rank?: number;
-  backlinks?: number;
-  referring_domains?: number;
-  /** Directly reported — the same base as referring_domains, so the pair can
-   * be differenced into a dofollow count without inference. */
-  referring_domains_nofollow?: number;
-  referring_main_domains?: number;
-  referring_main_domains_nofollow?: number;
-  referring_ips?: number;
-  referring_pages?: number;
-  referring_pages_nofollow?: number;
-  broken_backlinks?: number;
-  broken_pages?: number;
-  backlinks_spam_score?: number;
-  referring_links_types?: Record<string, number>;
-  /** Per-attribute counts against `referring_pages`, NOT against `backlinks` —
-   * differencing them from the backlink total mixes bases. */
-  referring_links_attributes?: Record<string, number>;
-};
+/** Canonical shape + parser live in ./backlinks-summary (shared by Site
+ * Explorer and the Backlinks tool). Re-exported so existing importers of
+ * `BacklinksSummaryItem` from this module keep working. */
+import type { BacklinksSummaryItem } from "./backlinks-summary";
+export type { BacklinksSummaryItem };
 
 export type SerpOrganicItem = {
   type?: string;
@@ -283,12 +272,10 @@ export function relevantPages(
 }
 
 export function backlinksSummary(input: { target: string }) {
-  return postTask<BacklinksSummaryItem[]>(BACKLINKS.summary, {
-    target: input.target,
-    internal_list_limit: 10,
-    backlinks_status_type: "live",
-    include_subdomains: true,
-  });
+  return postTask<BacklinksSummaryItem[]>(
+    BACKLINKS.summary,
+    backlinksSummaryTask(input.target, { includeSubdomains: true }),
+  );
 }
 
 export function serpOrganicLive(

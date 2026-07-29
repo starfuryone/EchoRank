@@ -1435,3 +1435,36 @@ model RankSnapshot {
   // Shared sweep: queued rows with a task id, oldest first.
   @@index([status, runDate])
 }
+
+/// Backlinks tool — one row per analysis. An analysis is FIVE live DataForSEO
+/// Backlinks calls (summary, history, referring_domains, anchors, domain_pages)
+/// run in sequence inside a single POST; the family has no standard queue, so
+/// there is no worker and no `queued` state.
+///
+/// Sections are stored independently and `failedSections` names the ones that
+/// did not come back: a partial analysis is worth keeping (and worth showing)
+/// rather than discarding four good sections because one endpoint 500'd.
+///
+/// `mode` is part of the cache key, not decoration: "example.com" in domain
+/// mode and "https://example.com/pricing" in exact-URL mode are different
+/// questions with different answers and must never share a cached row.
+model BacklinksAnalysis {
+  id               String   @id @default(cuid())
+  tenantId         String
+  target           String // normalized: bare host (domain) or absolute URL (exact_url)
+  mode             String // domain | exact_url
+  status           String   @default("completed") // completed | partial
+  costUsd          Decimal  @default(0) @db.Decimal(10, 6)
+  summary          Json? // SummarySection — totals, rank, dofollow split
+  history          Json? // HistorySection — monthly growth series
+  referringDomains Json? // ReferringDomainsSection — top 50
+  anchors          Json? // AnchorsSection — top 30 anchor texts
+  pages            Json? // PagesSection — top 20 most-linked pages
+  failedSections   Json? // string[] of section keys that did not load
+  createdAt        DateTime @default(now())
+
+  // Cache lookup: newest analysis for this exact target + mode.
+  @@index([tenantId, target, mode, createdAt])
+  // History list.
+  @@index([tenantId, createdAt])
+}

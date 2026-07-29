@@ -6968,3 +6968,425 @@ export const RANK_TRACKER_HELP_COPY: Record<DashLocale, RankTrackerHelpCopy> = {
     findKeywordsLink: "Ideen im Keywords Explorer finden",
   },
 };
+
+// ─── Backlinks ──────────────────────────────────────────────────────────────
+// Sibling of SITE_EXPLORER_COPY: same synchronous run-and-render shape, five
+// sections instead of four. Plan numbers arrive as arguments rather than being
+// written into the strings, so the copy cannot claim a cap the code does not
+// enforce.
+const backlinksToolEn = {
+  formTitle: "Analyze a link profile",
+  formIntro:
+    "See who links to a site, which pages they point at, what text they use, and how the profile has grown.",
+  targetLabel: "Domain or page URL",
+  targetPlaceholderDomain: "example.com",
+  targetPlaceholderUrl: "https://example.com/pricing",
+  invalidDomain: "Enter a domain like example.com",
+  invalidUrl: "Enter a full page URL like https://example.com/pricing",
+  modeLabel: "Analyze",
+  modeDomain: "Whole domain",
+  modeExactUrl: "Exact URL",
+  modeDomainHint: "Links to any page on the domain, including subdomains.",
+  modeExactUrlHint: "Links to this one page only.",
+  analyze: "Analyze",
+  analyzing: "Analyzing…",
+  analyzingTitle: "Checking the link profile…",
+  analyzingBody: "Five data sets are collected in sequence — usually 10 to 20 seconds.",
+  analyzedAgo: (ago: string) => `Analyzed ${ago}`,
+  reRunIn: (hours: number) =>
+    hours <= 1 ? "Re-run available in under an hour" : `Re-run available in ${hours}h`,
+  cachedIntro: "Showing your saved analysis — no new data was pulled.",
+  partialNote: "Some sections did not load. Everything else below is complete.",
+
+  // ── Locked (STARTER / AI_VISIBILITY) ──
+  lockedTitle: "Backlinks is not in your plan",
+  lockedBody:
+    "Backlink analysis is available on Growth and Agency plans. Upgrade to see who links to any site and how its link profile is changing.",
+  lockedCta: "See plans",
+
+  // ── Summary ──
+  summaryTitle: "Overview",
+  metricBacklinks: "Backlinks",
+  metricReferringDomains: "Referring domains",
+  metricRank: "Domain rank",
+  metricRankUnit: "0–1000",
+  metricBroken: "Broken backlinks",
+  metricDofollow: "Dofollow domains",
+  metricSpam: "Spam score",
+  metricSpamUnit: "0–100, lower is better",
+  dofollowRatio: (percent: string) => `${percent}% of referring domains link without rel=nofollow`,
+  noDofollowData: "No referring domains were reported for this target.",
+
+  // ── History / growth chart ──
+  historyTitle: "Growth over time",
+  historySubtitle: "Backlinks and referring domains, month by month.",
+  historyEmpty: "No history is available for this target yet.",
+  legendBacklinks: "Backlinks",
+  legendReferringDomains: "Referring domains",
+
+  // ── Referring domains ──
+  domainsTitle: "Referring domains",
+  domainsSubtitle: (shown: number, total: number) =>
+    `Strongest ${shown} of ${total.toLocaleString("en-US")} linking domains`,
+  colDomain: "Domain",
+  colRank: "Rank",
+  colBacklinks: "Backlinks",
+  colSpam: "Spam",
+  colFirstSeen: "First seen",
+  domainsEmpty: "No referring domains were found for this target.",
+  lostLabel: "lost",
+
+  // ── Anchors ──
+  anchorsTitle: "Anchor text",
+  anchorsSubtitle: (shown: number, total: number) =>
+    `Top ${shown} of ${total.toLocaleString("en-US")} anchors`,
+  colAnchor: "Anchor",
+  colRefDomains: "Domains",
+  noAnchorText: "(no text — image link)",
+  anchorsEmpty: "No anchor text was found for this target.",
+
+  // ── Pages ──
+  pagesTitle: "Most linked pages",
+  pagesSubtitle: (shown: number, total: number) =>
+    `Top ${shown} of ${total.toLocaleString("en-US")} pages`,
+  colPage: "Page",
+  colStatus: "Status",
+  pagesEmpty: "No linked pages were found for this target.",
+
+  // ── Per-section failure ──
+  sectionFailedTitle: "Couldn't load this section",
+  sectionFailedBody:
+    "The data provider did not return this part of the analysis. Run the analysis again later — the other sections are unaffected.",
+
+  // ── History list ──
+  recentTitle: "Recent analyses",
+  recentEmpty: "No analyses yet. Analyze your first target above.",
+  colTarget: "Target",
+  colMode: "Scope",
+  colCost: "Cost",
+  colWhen: "Run",
+  statusCompleted: "Complete",
+  statusPartial: "Partial",
+  view: "View",
+
+  // ── Quota / errors ──
+  usage: (used: number, limit: number) => `${used} of ${limit} analyses used this month`,
+  remaining: (left: number) =>
+    left === 1 ? "1 analysis left this month" : `${left} analyses left this month`,
+  quotaTitle: "Monthly analysis limit reached",
+  quotaBody: (limit: number) =>
+    `Your plan includes ${limit} backlink analyses per month. Upgrade to run more, or wait for the counter to reset next month.`,
+  quotaCta: "See plans",
+  spend: (usd: string) => `Backlink data cost for this workspace: $${usd} USD`,
+  submitFailed: "Could not analyze that target. Try again in a minute.",
+  loadFailed: "Could not load your analyses. Try again in a minute.",
+};
+export type BacklinksToolCopy = typeof backlinksToolEn;
+
+export const BACKLINKS_TOOL_COPY: Record<DashLocale, BacklinksToolCopy> = {
+  en: backlinksToolEn,
+  fr: {
+    formTitle: "Analyser un profil de liens",
+    formIntro:
+      "Voyez qui pointe vers un site, vers quelles pages, avec quel texte d'ancrage, et comment le profil a évolué.",
+    targetLabel: "Domaine ou URL de page",
+    targetPlaceholderDomain: "exemple.com",
+    targetPlaceholderUrl: "https://exemple.com/tarifs",
+    invalidDomain: "Entrez un domaine comme exemple.com",
+    invalidUrl: "Entrez une URL complète comme https://exemple.com/tarifs",
+    modeLabel: "Analyser",
+    modeDomain: "Tout le domaine",
+    modeExactUrl: "URL exacte",
+    modeDomainHint: "Les liens vers n'importe quelle page du domaine, sous-domaines inclus.",
+    modeExactUrlHint: "Les liens vers cette seule page.",
+    analyze: "Analyser",
+    analyzing: "Analyse en cours…",
+    analyzingTitle: "Vérification du profil de liens…",
+    analyzingBody:
+      "Cinq jeux de données sont collectés à la suite — habituellement de 10 à 20 secondes.",
+    analyzedAgo: (ago: string) => `Analysé ${ago}`,
+    reRunIn: (hours: number) =>
+      hours <= 1
+        ? "Relance possible dans moins d'une heure"
+        : `Relance possible dans ${hours} h`,
+    cachedIntro: "Affichage de votre analyse enregistrée — aucune nouvelle donnée n'a été tirée.",
+    partialNote: "Certaines sections ne se sont pas chargées. Tout le reste ci-dessous est complet.",
+
+    lockedTitle: "L'analyse de liens n'est pas incluse dans votre forfait",
+    lockedBody:
+      "L'analyse de liens est offerte avec les forfaits Croissance et Agence. Passez à un forfait supérieur pour voir qui pointe vers un site et comment son profil de liens évolue.",
+    lockedCta: "Voir les forfaits",
+
+    summaryTitle: "Aperçu",
+    metricBacklinks: "Liens entrants",
+    metricReferringDomains: "Domaines référents",
+    metricRank: "Rang du domaine",
+    metricRankUnit: "0–1000",
+    metricBroken: "Liens brisés",
+    metricDofollow: "Domaines dofollow",
+    metricSpam: "Score de pourriel",
+    metricSpamUnit: "0–100, plus bas est mieux",
+    dofollowRatio: (percent: string) =>
+      `${percent} % des domaines référents pointent sans rel=nofollow`,
+    noDofollowData: "Aucun domaine référent n'a été rapporté pour cette cible.",
+
+    historyTitle: "Évolution dans le temps",
+    historySubtitle: "Liens entrants et domaines référents, mois par mois.",
+    historyEmpty: "Aucun historique n'est disponible pour cette cible.",
+    legendBacklinks: "Liens entrants",
+    legendReferringDomains: "Domaines référents",
+
+    domainsTitle: "Domaines référents",
+    domainsSubtitle: (shown: number, total: number) =>
+      `Les ${shown} domaines les plus forts sur ${total.toLocaleString("fr-CA")}`,
+    colDomain: "Domaine",
+    colRank: "Rang",
+    colBacklinks: "Liens",
+    colSpam: "Pourriel",
+    colFirstSeen: "Vu la première fois",
+    domainsEmpty: "Aucun domaine référent trouvé pour cette cible.",
+    lostLabel: "perdu",
+
+    anchorsTitle: "Texte d'ancrage",
+    anchorsSubtitle: (shown: number, total: number) =>
+      `Les ${shown} premières ancres sur ${total.toLocaleString("fr-CA")}`,
+    colAnchor: "Ancre",
+    colRefDomains: "Domaines",
+    noAnchorText: "(sans texte — lien image)",
+    anchorsEmpty: "Aucun texte d'ancrage trouvé pour cette cible.",
+
+    pagesTitle: "Pages les plus liées",
+    pagesSubtitle: (shown: number, total: number) =>
+      `Les ${shown} premières pages sur ${total.toLocaleString("fr-CA")}`,
+    colPage: "Page",
+    colStatus: "Statut",
+    pagesEmpty: "Aucune page liée trouvée pour cette cible.",
+
+    sectionFailedTitle: "Impossible de charger cette section",
+    sectionFailedBody:
+      "Le fournisseur de données n'a pas retourné cette partie de l'analyse. Relancez l'analyse plus tard — les autres sections ne sont pas touchées.",
+
+    recentTitle: "Analyses récentes",
+    recentEmpty: "Aucune analyse pour l'instant. Analysez votre première cible ci-dessus.",
+    colTarget: "Cible",
+    colMode: "Portée",
+    colCost: "Coût",
+    colWhen: "Lancée",
+    statusCompleted: "Complète",
+    statusPartial: "Partielle",
+    view: "Voir",
+
+    usage: (used: number, limit: number) => `${used} analyses sur ${limit} utilisées ce mois-ci`,
+    remaining: (left: number) =>
+      left === 1 ? "1 analyse restante ce mois-ci" : `${left} analyses restantes ce mois-ci`,
+    quotaTitle: "Limite mensuelle d'analyses atteinte",
+    quotaBody: (limit: number) =>
+      `Votre forfait comprend ${limit} analyses de liens par mois. Passez à un forfait supérieur pour en faire plus, ou attendez la remise à zéro le mois prochain.`,
+    quotaCta: "Voir les forfaits",
+    spend: (usd: string) => `Coût des données de liens pour cet espace de travail : ${usd} $ US`,
+    submitFailed: "Impossible d'analyser cette cible. Réessayez dans une minute.",
+    loadFailed: "Impossible de charger vos analyses. Réessayez dans une minute.",
+  },
+  "de-CH": {
+    formTitle: "Linkprofil analysieren",
+    formIntro:
+      "Sehen Sie, wer auf eine Website verlinkt, auf welche Seiten, mit welchem Ankertext und wie sich das Profil entwickelt hat.",
+    targetLabel: "Domain oder Seiten-URL",
+    targetPlaceholderDomain: "beispiel.ch",
+    targetPlaceholderUrl: "https://beispiel.ch/preise",
+    invalidDomain: "Geben Sie eine Domain wie beispiel.ch ein",
+    invalidUrl: "Geben Sie eine vollständige URL wie https://beispiel.ch/preise ein",
+    modeLabel: "Analysieren",
+    modeDomain: "Ganze Domain",
+    modeExactUrl: "Genaue URL",
+    modeDomainHint: "Links auf jede Seite der Domain, Subdomains eingeschlossen.",
+    modeExactUrlHint: "Nur Links auf diese eine Seite.",
+    analyze: "Analysieren",
+    analyzing: "Wird analysiert…",
+    analyzingTitle: "Linkprofil wird geprüft…",
+    analyzingBody:
+      "Fünf Datensätze werden nacheinander erhoben — normalerweise 10 bis 20 Sekunden.",
+    analyzedAgo: (ago: string) => `Analysiert ${ago}`,
+    reRunIn: (hours: number) =>
+      hours <= 1
+        ? "Neue Analyse in weniger als einer Stunde möglich"
+        : `Neue Analyse in ${hours} Std. möglich`,
+    cachedIntro:
+      "Ihre gespeicherte Analyse wird angezeigt — es wurden keine neuen Daten abgerufen.",
+    partialNote:
+      "Einige Abschnitte konnten nicht geladen werden. Alles Übrige unten ist vollständig.",
+
+    lockedTitle: "Backlinks ist nicht in Ihrem Plan enthalten",
+    lockedBody:
+      "Die Backlink-Analyse ist in den Plänen Growth und Agency enthalten. Wechseln Sie den Plan, um zu sehen, wer auf eine Website verlinkt und wie sich ihr Linkprofil verändert.",
+    lockedCta: "Pläne ansehen",
+
+    summaryTitle: "Übersicht",
+    metricBacklinks: "Backlinks",
+    metricReferringDomains: "Verweisende Domains",
+    metricRank: "Domain-Rang",
+    metricRankUnit: "0–1000",
+    metricBroken: "Defekte Backlinks",
+    metricDofollow: "Dofollow-Domains",
+    metricSpam: "Spam-Score",
+    metricSpamUnit: "0–100, tiefer ist besser",
+    dofollowRatio: (percent: string) =>
+      `${percent} % der verweisenden Domains verlinken ohne rel=nofollow`,
+    noDofollowData: "Für dieses Ziel wurden keine verweisenden Domains gemeldet.",
+
+    historyTitle: "Entwicklung über die Zeit",
+    historySubtitle: "Backlinks und verweisende Domains, Monat für Monat.",
+    historyEmpty: "Für dieses Ziel ist noch kein Verlauf verfügbar.",
+    legendBacklinks: "Backlinks",
+    legendReferringDomains: "Verweisende Domains",
+
+    domainsTitle: "Verweisende Domains",
+    domainsSubtitle: (shown: number, total: number) =>
+      `Die ${shown} stärksten von ${total.toLocaleString("de-CH")} verlinkenden Domains`,
+    colDomain: "Domain",
+    colRank: "Rang",
+    colBacklinks: "Backlinks",
+    colSpam: "Spam",
+    colFirstSeen: "Zuerst gesehen",
+    domainsEmpty: "Für dieses Ziel wurden keine verweisenden Domains gefunden.",
+    lostLabel: "verloren",
+
+    anchorsTitle: "Ankertext",
+    anchorsSubtitle: (shown: number, total: number) =>
+      `Top ${shown} von ${total.toLocaleString("de-CH")} Ankern`,
+    colAnchor: "Anker",
+    colRefDomains: "Domains",
+    noAnchorText: "(ohne Text — Bildlink)",
+    anchorsEmpty: "Für dieses Ziel wurde kein Ankertext gefunden.",
+
+    pagesTitle: "Meistverlinkte Seiten",
+    pagesSubtitle: (shown: number, total: number) =>
+      `Top ${shown} von ${total.toLocaleString("de-CH")} Seiten`,
+    colPage: "Seite",
+    colStatus: "Status",
+    pagesEmpty: "Für dieses Ziel wurden keine verlinkten Seiten gefunden.",
+
+    sectionFailedTitle: "Dieser Abschnitt konnte nicht geladen werden",
+    sectionFailedBody:
+      "Der Datenanbieter hat diesen Teil der Analyse nicht geliefert. Starten Sie die Analyse später erneut — die anderen Abschnitte sind nicht betroffen.",
+
+    recentTitle: "Letzte Analysen",
+    recentEmpty: "Noch keine Analysen. Analysieren Sie oben Ihr erstes Ziel.",
+    colTarget: "Ziel",
+    colMode: "Bereich",
+    colCost: "Kosten",
+    colWhen: "Gestartet",
+    statusCompleted: "Vollständig",
+    statusPartial: "Teilweise",
+    view: "Ansehen",
+
+    usage: (used: number, limit: number) => `${used} von ${limit} Analysen diesen Monat verwendet`,
+    remaining: (left: number) =>
+      left === 1 ? "Noch 1 Analyse diesen Monat" : `Noch ${left} Analysen diesen Monat`,
+    quotaTitle: "Monatliches Analyselimit erreicht",
+    quotaBody: (limit: number) =>
+      `Ihr Plan enthält ${limit} Backlink-Analysen pro Monat. Wechseln Sie den Plan für mehr, oder warten Sie auf die Rücksetzung im nächsten Monat.`,
+    quotaCta: "Pläne ansehen",
+    spend: (usd: string) => `Backlink-Datenkosten für diesen Arbeitsbereich: ${usd} USD`,
+    submitFailed: "Dieses Ziel konnte nicht analysiert werden. Versuchen Sie es in einer Minute erneut.",
+    loadFailed: "Ihre Analysen konnten nicht geladen werden. Versuchen Sie es in einer Minute erneut.",
+  },
+};
+
+// ─── Backlinks help modal ───────────────────────────────────────────────────
+// Same shape as RANK_TRACKER_HELP_COPY. One plain-language line per section,
+// plus the index-freshness caveat: DataForSEO recrawls continuously, so this
+// tool and any other backlink checker will disagree slightly on the same
+// domain. Saying so up front is cheaper than answering the support ticket.
+const backlinksHelpEn = {
+  button: "Help",
+  buttonAria: "How the Backlinks tool works",
+  title: "How Backlinks works",
+  close: "Close",
+
+  intro:
+    "Enter a domain to see every site linking to it, or switch to Exact URL to look at a single page.",
+
+  backlinksTitle: "Backlinks vs referring domains",
+  backlinksBody:
+    "A backlink is one link. A referring domain is one website, however many links it sends. Ten links from one blog is one referring domain — usually worth less than ten links from ten different sites.",
+
+  dofollowTitle: "Dofollow and nofollow",
+  dofollowBody:
+    "A nofollow link tells search engines not to pass ranking credit. Dofollow links are the ones that count toward rankings, so the split matters more than the raw total.",
+
+  anchorsTitle: "Anchor text",
+  anchorsBody:
+    "The clickable words other sites use to link to you. It tells search engines what your page is about — and a profile where almost every anchor is the same phrase can look manipulated.",
+
+  historyTitle: "Why growth history matters",
+  historyBody:
+    "A steady climb suggests links earned over time. A sudden spike, or a sharp drop, is worth investigating — it can mean a viral mention, a lost partnership, or links that were removed.",
+
+  freshnessTitle: "About the numbers",
+  freshnessBody:
+    "The link index is refreshed continuously, so totals move day to day and will differ slightly from other backlink tools. Use the trend rather than the exact figure.",
+};
+export type BacklinksHelpCopy = typeof backlinksHelpEn;
+
+export const BACKLINKS_HELP_COPY: Record<DashLocale, BacklinksHelpCopy> = {
+  en: backlinksHelpEn,
+  fr: {
+    button: "Aide",
+    buttonAria: "Comment fonctionne l'outil d'analyse de liens",
+    title: "Comment fonctionne l'analyse de liens",
+    close: "Fermer",
+
+    intro:
+      "Entrez un domaine pour voir tous les sites qui pointent vers lui, ou choisissez « URL exacte » pour examiner une seule page.",
+
+    backlinksTitle: "Liens entrants et domaines référents",
+    backlinksBody:
+      "Un lien entrant est un seul lien. Un domaine référent est un site web, peu importe le nombre de liens qu'il envoie. Dix liens d'un même blogue comptent pour un domaine référent — généralement moins utile que dix liens provenant de dix sites différents.",
+
+    dofollowTitle: "Dofollow et nofollow",
+    dofollowBody:
+      "Un lien nofollow indique aux moteurs de recherche de ne pas transmettre de valeur de classement. Ce sont les liens dofollow qui comptent pour le référencement, donc la répartition importe plus que le total brut.",
+
+    anchorsTitle: "Texte d'ancrage",
+    anchorsBody:
+      "Les mots cliquables que les autres sites utilisent pour vous lier. Ils indiquent aux moteurs de recherche le sujet de votre page — et un profil où presque toutes les ancres sont identiques peut sembler manipulé.",
+
+    historyTitle: "Pourquoi l'historique compte",
+    historyBody:
+      "Une hausse régulière suggère des liens gagnés au fil du temps. Une pointe soudaine, ou une chute marquée, mérite d'être examinée : mention virale, partenariat perdu ou liens retirés.",
+
+    freshnessTitle: "À propos des chiffres",
+    freshnessBody:
+      "L'index de liens est rafraîchi en continu : les totaux bougent d'un jour à l'autre et différeront légèrement de ceux d'autres outils. Fiez-vous à la tendance plutôt qu'au chiffre exact.",
+  },
+  "de-CH": {
+    button: "Hilfe",
+    buttonAria: "So funktioniert das Backlinks-Tool",
+    title: "So funktioniert Backlinks",
+    close: "Schliessen",
+
+    intro:
+      "Geben Sie eine Domain ein, um alle darauf verlinkenden Websites zu sehen, oder wechseln Sie zu «Genaue URL», um eine einzelne Seite zu betrachten.",
+
+    backlinksTitle: "Backlinks und verweisende Domains",
+    backlinksBody:
+      "Ein Backlink ist ein einzelner Link. Eine verweisende Domain ist eine Website, egal wie viele Links sie sendet. Zehn Links von einem Blog sind eine verweisende Domain — meist weniger wert als zehn Links von zehn verschiedenen Seiten.",
+
+    dofollowTitle: "Dofollow und Nofollow",
+    dofollowBody:
+      "Ein Nofollow-Link sagt Suchmaschinen, keine Ranking-Wertung weiterzugeben. Dofollow-Links sind die, die fürs Ranking zählen — die Aufteilung ist daher wichtiger als die reine Gesamtzahl.",
+
+    anchorsTitle: "Ankertext",
+    anchorsBody:
+      "Die anklickbaren Wörter, mit denen andere Seiten auf Sie verlinken. Sie sagen Suchmaschinen, worum es auf Ihrer Seite geht — und ein Profil, in dem fast jeder Anker gleich lautet, kann manipuliert wirken.",
+
+    historyTitle: "Warum der Verlauf zählt",
+    historyBody:
+      "Ein stetiger Anstieg deutet auf über die Zeit verdiente Links hin. Ein plötzlicher Ausschlag oder ein starker Einbruch lohnt eine Prüfung: virale Erwähnung, verlorene Partnerschaft oder entfernte Links.",
+
+    freshnessTitle: "Zu den Zahlen",
+    freshnessBody:
+      "Der Link-Index wird laufend aktualisiert. Die Summen bewegen sich von Tag zu Tag und weichen leicht von anderen Backlink-Tools ab. Achten Sie auf den Trend statt auf die exakte Zahl.",
+  },
+};

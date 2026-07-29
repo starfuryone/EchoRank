@@ -550,3 +550,136 @@ test("rank-tracker help copy never uses CamelCase branding or names the vendor",
   assert.ok(!json.includes("EchoRank"), "found CamelCase 'EchoRank'");
   assert.ok(!/dataforseo/i.test(json), "user-facing copy must not name the upstream vendor");
 });
+
+// ─── Backlinks (real-data page) ─────────────────────────────────────────────
+import { BACKLINKS_TOOL_COPY, BACKLINKS_HELP_COPY } from "../i18n/dashboard";
+import {
+  BACKLINKS_ANALYSES_PER_MONTH,
+  BACKLINKS_CACHE_TTL_MS,
+  REFERRING_DOMAINS_LIMIT,
+  ANCHORS_LIMIT,
+  DOMAIN_PAGES_LIMIT,
+  HISTORY_MONTHS,
+  planCanAnalyzeBacklinks,
+} from "../backlinks/options";
+import { BACKLINKS_SECTIONS } from "../backlinks/types";
+import { BACKLINKS_MODES, normalizeTarget, includeSubdomainsFor } from "../backlinks/target";
+
+test("backlinks copy complete in all locales (form, five sections, history)", () => {
+  for (const locale of LOCALES) {
+    const c = BACKLINKS_TOOL_COPY[locale];
+    assert.ok(c.formTitle.length && c.formIntro.length && c.analyze.length, locale);
+    assert.ok(c.targetLabel.length && c.invalidDomain.length && c.invalidUrl.length);
+    assert.ok(c.modeLabel.length && c.modeDomain.length && c.modeExactUrl.length);
+    assert.ok(c.modeDomainHint.length && c.modeExactUrlHint.length);
+    assert.ok(c.analyzingTitle.length && c.analyzingBody.length && c.cachedIntro.length);
+    assert.ok(c.partialNote.length && c.sectionFailedTitle.length && c.sectionFailedBody.length);
+    assert.ok(c.lockedTitle.length && c.lockedBody.length && c.lockedCta.length);
+
+    // One title per persisted section, so no section can render untitled.
+    assert.ok(c.summaryTitle.length && c.historyTitle.length && c.domainsTitle.length);
+    assert.ok(c.anchorsTitle.length && c.pagesTitle.length);
+
+    assert.ok(c.metricBacklinks.length && c.metricReferringDomains.length);
+    assert.ok(c.metricRank.length && c.metricBroken.length && c.metricDofollow.length);
+    assert.ok(c.metricSpam.length && c.metricSpamUnit.length && c.noDofollowData.length);
+    assert.ok(c.legendBacklinks.length && c.legendReferringDomains.length && c.historyEmpty.length);
+    assert.ok(c.colDomain.length && c.colRank.length && c.colBacklinks.length && c.colSpam.length);
+    assert.ok(c.colFirstSeen.length && c.colAnchor.length && c.colRefDomains.length);
+    assert.ok(c.colPage.length && c.colStatus.length && c.noAnchorText.length);
+    assert.ok(c.domainsEmpty.length && c.anchorsEmpty.length && c.pagesEmpty.length);
+    assert.ok(c.recentTitle.length && c.recentEmpty.length && c.view.length);
+    assert.ok(c.statusCompleted.length && c.statusPartial.length && c.lostLabel.length);
+    assert.ok(c.quotaTitle.length && c.quotaCta.length);
+    assert.ok(c.submitFailed.length && c.loadFailed.length);
+
+    // Interpolated strings must actually interpolate.
+    assert.ok(c.analyzedAgo("3 hours ago").includes("3 hours ago"), `${locale} analyzedAgo`);
+    assert.ok(c.reRunIn(21).includes("21") && c.reRunIn(1).length, `${locale} reRunIn`);
+    assert.ok(c.domainsSubtitle(50, 21046).includes("50"), `${locale} domainsSubtitle`);
+    assert.ok(c.anchorsSubtitle(30, 67118).includes("30"), `${locale} anchorsSubtitle`);
+    assert.ok(c.pagesSubtitle(20, 1457807).includes("20"), `${locale} pagesSubtitle`);
+    assert.ok(c.usage(3, 25).includes("3") && c.usage(3, 25).includes("25"), `${locale} usage`);
+    assert.ok(c.remaining(1).length && c.remaining(4).includes("4"), `${locale} remaining`);
+    assert.ok(c.quotaBody(25).includes("25"), `${locale} quotaBody`);
+    assert.ok(c.dofollowRatio("76.1").includes("76.1"), `${locale} dofollowRatio`);
+    assert.ok(c.spend("0.1241").includes("0.1241"), `${locale} spend`);
+  }
+});
+
+test("backlinks help copy complete in all locales", () => {
+  for (const locale of LOCALES) {
+    const c = BACKLINKS_HELP_COPY[locale];
+    assert.ok(c.button.length && c.buttonAria.length && c.title.length && c.close.length);
+    assert.ok(c.intro.length, `${locale} intro`);
+    // One plain-language line per concept the modal promises to explain.
+    for (const key of ["backlinks", "dofollow", "anchors", "history", "freshness"] as const) {
+      assert.ok(c[`${key}Title`].length, `${locale} ${key} title`);
+      assert.ok(c[`${key}Body`].length > 40, `${locale} ${key} body`);
+    }
+  }
+});
+
+test("backlinks copy never uses CamelCase branding or names the data vendor", () => {
+  const json = JSON.stringify({ BACKLINKS_TOOL_COPY, BACKLINKS_HELP_COPY });
+  assert.ok(!json.includes("EchoRank"), "found CamelCase 'EchoRank'");
+  assert.ok(!/dataforseo/i.test(json), "user-facing copy must not name the upstream vendor");
+});
+
+test("backlinks plan caps match the pricing sheet", () => {
+  // STARTER is locked by product decision — it sees the upsell card.
+  assert.equal(BACKLINKS_ANALYSES_PER_MONTH.STARTER, 0);
+  assert.equal(BACKLINKS_ANALYSES_PER_MONTH.AI_VISIBILITY, 0);
+  assert.equal(BACKLINKS_ANALYSES_PER_MONTH.GROWTH, 25);
+  assert.equal(BACKLINKS_ANALYSES_PER_MONTH.AGENCY, 100);
+  assert.ok(BACKLINKS_ANALYSES_PER_MONTH.ENTERPRISE >= BACKLINKS_ANALYSES_PER_MONTH.AGENCY);
+
+  assert.ok(!planCanAnalyzeBacklinks("STARTER"));
+  assert.ok(!planCanAnalyzeBacklinks("AI_VISIBILITY"));
+  assert.ok(planCanAnalyzeBacklinks("GROWTH"));
+  assert.ok(planCanAnalyzeBacklinks("AGENCY"));
+});
+
+test("backlinks row limits are the cost levers, and are pinned", () => {
+  // This API bills per request AND per row, so these four numbers ARE the
+  // price of an analysis (measured $0.124068/run on 2026-07-29).
+  assert.equal(REFERRING_DOMAINS_LIMIT, 50);
+  assert.equal(ANCHORS_LIMIT, 30);
+  assert.equal(DOMAIN_PAGES_LIMIT, 20);
+  assert.equal(HISTORY_MONTHS, 12);
+  assert.equal(BACKLINKS_CACHE_TTL_MS, 24 * 60 * 60 * 1000);
+});
+
+test("worst-case monthly backlinks spend, at the measured per-run cost", () => {
+  const COST_PER_RUN = 0.124068; // measured live, 2026-07-29
+  const growth = BACKLINKS_ANALYSES_PER_MONTH.GROWTH * COST_PER_RUN;
+  const agency = BACKLINKS_ANALYSES_PER_MONTH.AGENCY * COST_PER_RUN;
+  assert.ok(growth < 3.2, `GROWTH worst case ${growth}`);
+  assert.ok(agency < 12.5, `AGENCY worst case ${agency}`);
+});
+
+test("the five sections are the five cards the page renders", () => {
+  assert.deepEqual([...BACKLINKS_SECTIONS], [
+    "summary",
+    "history",
+    "referringDomains",
+    "anchors",
+    "pages",
+  ]);
+});
+
+test("the two target modes never share a cache key", () => {
+  assert.deepEqual([...BACKLINKS_MODES], ["domain", "exact_url"]);
+  assert.notEqual(
+    normalizeTarget("example.com", "domain"),
+    normalizeTarget("example.com", "exact_url"),
+  );
+  assert.equal(normalizeTarget("https://WWW.Example.com/a?b=1#top", "domain"), "example.com");
+  assert.equal(
+    normalizeTarget("https://WWW.Example.com/a?b=1#top", "exact_url"),
+    "https://www.example.com/a?b=1",
+  );
+  // include_subdomains only means something for domain targets.
+  assert.ok(includeSubdomainsFor("domain"));
+  assert.ok(!includeSubdomainsFor("exact_url"));
+});

@@ -1,0 +1,1501 @@
+{
+  "version": "0.1.20260717",
+  "status_code": 20000,
+  "status_message": "Ok.",
+  "time": "3.3059 sec.",
+  "cost": 0.02508,
+  "tasks_count": 1,
+  "tasks_error": 0,
+  "tasks": [
+    {
+      "id": "07290444-2159-0272-0000-d008c29968bd",
+      "status_code": 20000,
+      "status_message": "Ok.",
+      "time": "3.3008 sec.",
+      "cost": 0.02508,
+      "result_count": 1,
+      "path": [
+        "v3",
+        "backlinks",
+        "anchors",
+        "live"
+      ],
+      "data": {
+        "api": "backlinks",
+        "function": "anchors",
+        "target": "birdeye.com",
+        "limit": 30,
+        "include_subdomains": true,
+        "backlinks_status_type": "live",
+        "order_by": [
+          "backlinks,desc"
+        ]
+      },
+      "result": [
+        {
+          "target": "birdeye.com",
+          "total_count": 67118,
+          "items_count": 30,
+          "items": [
+            {
+              "type": "backlinks_anchor",
+              "anchor": null,
+              "rank": 457,
+              "backlinks": 320594,
+              "first_seen": "2019-01-16 03:33:56 +00:00",
+              "lost_date": null,
+              "backlinks_spam_score": 6,
+              "broken_backlinks": 1790,
+              "broken_pages": 166,
+              "referring_domains": 6058,
+              "referring_domains_nofollow": 174,
+              "referring_main_domains": 5964,
+              "referring_main_domains_nofollow": 173,
+              "referring_ips": 1390,
+              "referring_subnets": 1010,
+              "referring_pages": 215423,
+              "referring_pages_nofollow": 7361,
+              "referring_links_tld": {
+                "com": 169126,
+                "ca": 15095,
+                "uk": 14390,
+                "blogspot.com": 5800,
+                "com.au": 4420,
+                "web.app": 1902,
+                "co.uk": 1268,
+                "net": 1084,
+                "ru": 260,
+                "kh": 259
+              },
+              "referring_links_types": {
+                "image": 181468,
+                "anchor": 33178,
+                "redirect": 560,
+                "canonical": 217
+              },
+              "referring_links_attributes": {
+                "noopener": 39451,
+                "noreferrer": 34216,
+                "nofollow": 7353,
+                "external": 404,
+                "sponsored": 28,
+                "ugc": 1
+              },
+              "referring_links_platform_types": {
+                "organization": 94262,
+                "unknown": 73115,
+                "ecommerce": 39146,
+                "cms": 19662,
+                "blogs": 19316,
+                "news": 229,
+                "message-boards": 200
+              },
+              "referring_links_semantic_locations": {
+                "footer": 129408,
+                "main": 27631,
+                "section": 21767,
+                "": 14778,
+                "header": 5712,
+                "nav": 5389,
+                "aside": 4742,
+                "article": 4436,
+                "figure": 1560
+              },
+              "referring_links_countries": {
+                "US": 96126,
+                "": 39545,
+                "CA": 29883,
+                "WW": 27440,
+                "GB": 15669,
+                "AU": 4929,
+                "DE": 341,
+                "RU": 260,
+                "KH": 259,
+                "IN": 166
+              }
+            },
+            {
+              "type": "backlinks_anchor",
+              "anchor": "see all 1756 reviews",
+              "rank": 475,
+              "backlinks": 105570,
+              "first_seen": "2022-02-05 18:14:57 +00:00",
+              "lost_date": null,
+              "backlinks_spam_score": 0,
+              "broken_backlinks": 0,
+              "broken_pages": 0,
+              "referring_domains": 1,
+              "referring_domains_nofollow": 0,
+              "referring_main_domains": 1,
+              "referring_main_domains_nofollow": 0,
+              "referring_ips": 2,
+              "referring_subnets": 2,
+              "referring_pages": 105570,
+              "referring_pages_nofollow": 0,
+              "referring_links_tld": {
+                "com": 105570
+              },
+              "referring_links_types": {
+                "anchor": 105570
+              },
+              "referring_links_attributes": null,
+              "referring_links_platform_types": {
+                "blogs": 105570,
+                "cms": 105570
+              },
+              "referring_links_semantic_locations": {
+                "section": 105570
+              },
+              "referring_links_countries": {
+                "US": 105568,
+                "WW": 2
+              }
+            },
+            {
+              "type": "backlinks_anchor",
+              "anchor": "ARM Birdseye Reviews",
+              "rank": 395,
+              "backlinks": 49556,
+              "first_seen": "2025-10-12 15:40:08 +00:00",
+              "lost_date": null,
+              "backlinks_spam_score": 0,
+              "broken_backlinks": 0,
+              "broken_pages": 0,
+              "referring_domains": 1,
+              "referring_domains_nofollow": 0,
+              "referring_main_domains": 1,
+              "referring_main_domains_nofollow": 0,
+              "referring_ips": 1,
+              "referring_subnets": 1,
+              "referring_pages": 24778,
+              "referring_pages_nofollow": 0,
+              "referring_links_tld": {
+                "biz": 24778
+              },
+              "referring_links_types": {
+                "anchor": 24778
+              },
+              "referring_links_attributes": null,
+              "referring_links_platform_types": {
+                "organization": 24778
+              },
+              "referring_links_semantic_locations": {
+                "nav": 24778
+              },
+              "referring_links_countries": {
+                "US": 24778
+              }
+            },
+            {
+              "type": "backlinks_anchor",
+              "anchor": "Our Reviews",
+              "rank": 349,
+              "backlinks": 43056,
+              "first_seen": "2020-10-28 15:09:12 +00:00",
+              "lost_date": null,
+              "backlinks_spam_score": 1,
+              "broken_backlinks": 0,
+              "broken_pages": 0,
+              "referring_domains": 15,
+              "referring_domains_nofollow": 0,
+              "referring_main_domains": 15,
+              "referring_main_domains_nofollow": 0,
+              "referring_ips": 11,
+              "referring_subnets": 11,
+              "referring_pages": 23075,
+              "referring_pages_nofollow": 0,
+              "referring_links_tld": {
+                "com": 22627,
+                "co.uk": 292,
+                "ca": 156
+              },
+              "referring_links_types": {
+                "anchor": 23075
+              },
+              "referring_links_attributes": {
+                "noopener": 809
+              },
+              "referring_links_platform_types": {
+                "unknown": 16764,
+                "blogs": 6064,
+                "cms": 6063,
+                "organization": 5787,
+                "ecommerce": 247
+              },
+              "referring_links_semantic_locations": {
+                "nav": 18982,
+                "header": 4093
+              },
+              "referring_links_countries": {
+                "US": 17898,
+                "": 4602,
+                "GB": 292,
+                "CA": 156,
+                "WW": 127
+              }
+            },
+            {
+              "type": "backlinks_anchor",
+              "anchor": "Client reviews",
+              "rank": 392,
+              "backlinks": 38756,
+              "first_seen": "2020-07-07 22:35:15 +00:00",
+              "lost_date": null,
+              "backlinks_spam_score": 0,
+              "broken_backlinks": 0,
+              "broken_pages": 0,
+              "referring_domains": 7,
+              "referring_domains_nofollow": 1,
+              "referring_main_domains": 7,
+              "referring_main_domains_nofollow": 1,
+              "referring_ips": 13,
+              "referring_subnets": 6,
+              "referring_pages": 19384,
+              "referring_pages_nofollow": 1,
+              "referring_links_tld": {
+                "com": 18576,
+                "legal": 808
+              },
+              "referring_links_types": {
+                "anchor": 19384
+              },
+              "referring_links_attributes": {
+                "noopener": 19383,
+                "noreferrer": 19382,
+                "external": 19370,
+                "nofollow": 1
+              },
+              "referring_links_platform_types": {
+                "unknown": 16649,
+                "organization": 2647,
+                "cms": 2010,
+                "message-boards": 74,
+                "ecommerce": 35,
+                "blogs": 14
+              },
+              "referring_links_semantic_locations": {
+                "header": 19370,
+                "article": 12,
+                "section": 2
+              },
+              "referring_links_countries": {
+                "": 10520,
+                "US": 7333,
+                "WW": 1531
+              }
+            },
+            {
+              "type": "backlinks_anchor",
+              "anchor": "BirdEye",
+              "rank": 409,
+              "backlinks": 38330,
+              "first_seen": "2019-01-16 00:07:36 +00:00",
+              "lost_date": null,
+              "backlinks_spam_score": 2,
+              "broken_backlinks": 31,
+              "broken_pages": 20,
+              "referring_domains": 1928,
+              "referring_domains_nofollow": 161,
+              "referring_main_domains": 1844,
+              "referring_main_domains_nofollow": 149,
+              "referring_ips": 1211,
+              "referring_subnets": 878,
+              "referring_pages": 34121,
+              "referring_pages_nofollow": 602,
+              "referring_links_tld": {
+                "com": 30958,
+                "net": 2128,
+                "ca": 283,
+                "blogspot.com": 234,
+                "": 165,
+                "org": 109,
+                "us": 65,
+                "io": 24,
+                "ai": 20,
+                "co": 20
+              },
+              "referring_links_types": {
+                "anchor": 34021,
+                "image": 100
+              },
+              "referring_links_attributes": {
+                "noopener": 8527,
+                "noreferrer": 4691,
+                "external": 950,
+                "nofollow": 599,
+                "sponsored": 4,
+                "ugc": 3
+              },
+              "referring_links_platform_types": {
+                "cms": 19041,
+                "blogs": 16762,
+                "organization": 13043,
+                "unknown": 11031,
+                "ecommerce": 420,
+                "news": 371,
+                "message-boards": 3
+              },
+              "referring_links_semantic_locations": {
+                "": 12512,
+                "footer": 7357,
+                "section": 5945,
+                "aside": 5918,
+                "article": 1217,
+                "main": 1033,
+                "header": 118,
+                "nav": 16,
+                "figcaption": 3,
+                "details": 1
+              },
+              "referring_links_countries": {
+                "": 18749,
+                "US": 11123,
+                "WW": 2573,
+                "CA": 903,
+                "FR": 561,
+                "UA": 36,
+                "GB": 33,
+                "IO": 24,
+                "CO": 21,
+                "AI": 20
+              }
+            },
+            {
+              "type": "backlinks_anchor",
+              "anchor": "Birdeye",
+              "rank": 426,
+              "backlinks": 36096,
+              "first_seen": "2019-01-16 12:45:10 +00:00",
+              "lost_date": null,
+              "backlinks_spam_score": 2,
+              "broken_backlinks": 703,
+              "broken_pages": 65,
+              "referring_domains": 2456,
+              "referring_domains_nofollow": 621,
+              "referring_main_domains": 2319,
+              "referring_main_domains_nofollow": 580,
+              "referring_ips": 1633,
+              "referring_subnets": 1111,
+              "referring_pages": 29661,
+              "referring_pages_nofollow": 1470,
+              "referring_links_tld": {
+                "com": 26599,
+                "net": 1289,
+                "blogspot.com": 883,
+                "org": 288,
+                "one": 91,
+                "io": 68,
+                "com.au": 63,
+                "ai": 52,
+                "co": 45,
+                "co.uk": 26
+              },
+              "referring_links_types": {
+                "anchor": 29149,
+                "image": 512
+              },
+              "referring_links_attributes": {
+                "noopener": 7628,
+                "noreferrer": 2690,
+                "nofollow": 1466,
+                "external": 458,
+                "sponsored": 235,
+                "ugc": 13
+              },
+              "referring_links_platform_types": {
+                "organization": 16996,
+                "cms": 10620,
+                "blogs": 9885,
+                "unknown": 6292,
+                "ecommerce": 547,
+                "news": 537,
+                "message-boards": 170
+              },
+              "referring_links_semantic_locations": {
+                "footer": 8036,
+                "section": 6956,
+                "aside": 4845,
+                "": 4511,
+                "article": 1989,
+                "nav": 1199,
+                "main": 1080,
+                "header": 999,
+                "figcaption": 25,
+                "figure": 17
+              },
+              "referring_links_countries": {
+                "US": 15311,
+                "": 8868,
+                "WW": 4817,
+                "AU": 162,
+                "CA": 69,
+                "IO": 69,
+                "UA": 62,
+                "AI": 53,
+                "CO": 45,
+                "GB": 42
+              }
+            },
+            {
+              "type": "backlinks_anchor",
+              "anchor": "Leave a Review",
+              "rank": 422,
+              "backlinks": 36010,
+              "first_seen": "2019-01-16 11:58:38 +00:00",
+              "lost_date": null,
+              "backlinks_spam_score": 0,
+              "broken_backlinks": 1,
+              "broken_pages": 1,
+              "referring_domains": 426,
+              "referring_domains_nofollow": 1,
+              "referring_main_domains": 418,
+              "referring_main_domains_nofollow": 1,
+              "referring_ips": 56,
+              "referring_subnets": 53,
+              "referring_pages": 35782,
+              "referring_pages_nofollow": 1,
+              "referring_links_tld": {
+                "com": 34355,
+                "com.au": 400,
+                "net": 284,
+                "org": 275,
+                "ca": 265,
+                "pro": 56,
+                "us": 54,
+                "llc": 45,
+                "site": 44,
+                "edu": 4
+              },
+              "referring_links_types": {
+                "anchor": 35782
+              },
+              "referring_links_attributes": {
+                "noopener": 24034,
+                "noreferrer": 79,
+                "nofollow": 1
+              },
+              "referring_links_platform_types": {
+                "unknown": 33326,
+                "ecommerce": 1315,
+                "organization": 1062,
+                "cms": 171,
+                "blogs": 166,
+                "news": 133
+              },
+              "referring_links_semantic_locations": {
+                "footer": 35295,
+                "nav": 217,
+                "": 134,
+                "section": 65,
+                "header": 62,
+                "main": 5,
+                "article": 4
+              },
+              "referring_links_countries": {
+                "": 25208,
+                "US": 9773,
+                "AU": 400,
+                "CA": 277,
+                "WW": 124
+              }
+            },
+            {
+              "type": "backlinks_anchor",
+              "anchor": "Testimonials",
+              "rank": 394,
+              "backlinks": 33785,
+              "first_seen": "2019-01-23 08:35:42 +00:00",
+              "lost_date": null,
+              "backlinks_spam_score": 9,
+              "broken_backlinks": 1,
+              "broken_pages": 1,
+              "referring_domains": 15,
+              "referring_domains_nofollow": 1,
+              "referring_main_domains": 15,
+              "referring_main_domains_nofollow": 1,
+              "referring_ips": 37,
+              "referring_subnets": 27,
+              "referring_pages": 27512,
+              "referring_pages_nofollow": 229,
+              "referring_links_tld": {
+                "com": 27309,
+                "com.au": 198,
+                "online": 5
+              },
+              "referring_links_types": {
+                "anchor": 27512
+              },
+              "referring_links_attributes": {
+                "noopener": 254,
+                "noreferrer": 254,
+                "nofollow": 229
+              },
+              "referring_links_platform_types": {
+                "unknown": 22873,
+                "organization": 4335,
+                "cms": 2215,
+                "blogs": 242,
+                "ecommerce": 161
+              },
+              "referring_links_semantic_locations": {
+                "footer": 21440,
+                "nav": 2566,
+                "section": 1998,
+                "": 971,
+                "header": 537
+              },
+              "referring_links_countries": {
+                "": 21910,
+                "US": 4839,
+                "WW": 565,
+                "AU": 198
+              }
+            },
+            {
+              "type": "backlinks_anchor",
+              "anchor": "https://www.reviews.birdeye.com/schulte-scottish-terriers-170948313374380",
+              "rank": 0,
+              "backlinks": 32816,
+              "first_seen": "2024-03-25 07:47:23 +00:00",
+              "lost_date": null,
+              "backlinks_spam_score": 54,
+              "broken_backlinks": 0,
+              "broken_pages": 0,
+              "referring_domains": 5,
+              "referring_domains_nofollow": 3,
+              "referring_main_domains": 5,
+              "referring_main_domains_nofollow": 3,
+              "referring_ips": 5,
+              "referring_subnets": 5,
+              "referring_pages": 16410,
+              "referring_pages_nofollow": 16407,
+              "referring_links_tld": {
+                "com": 16405,
+                "org": 2,
+                "com.my": 1,
+                "host": 1,
+                "kr": 1
+              },
+              "referring_links_types": {
+                "anchor": 16410
+              },
+              "referring_links_attributes": {
+                "nofollow": 16407,
+                "ugc": 2,
+                "noreferrer": 1
+              },
+              "referring_links_platform_types": {
+                "unknown": 16410
+              },
+              "referring_links_semantic_locations": {
+                "section": 16406,
+                "": 2,
+                "main": 2
+              },
+              "referring_links_countries": {
+                "": 16406,
+                "US": 2,
+                "KR": 1,
+                "MY": 1
+              }
+            },
+            {
+              "type": "backlinks_anchor",
+              "anchor": "Reviews",
+              "rank": 387,
+              "backlinks": 30368,
+              "first_seen": "2019-01-18 09:41:00 +00:00",
+              "lost_date": null,
+              "backlinks_spam_score": 4,
+              "broken_backlinks": 19,
+              "broken_pages": 2,
+              "referring_domains": 136,
+              "referring_domains_nofollow": 2,
+              "referring_main_domains": 131,
+              "referring_main_domains_nofollow": 2,
+              "referring_ips": 238,
+              "referring_subnets": 169,
+              "referring_pages": 27429,
+              "referring_pages_nofollow": 8,
+              "referring_links_tld": {
+                "com": 23112,
+                "com.au": 3933,
+                "net": 322,
+                "myshopify.com": 57,
+                "org": 2,
+                "co.uk": 1,
+                "health": 1,
+                "page": 1
+              },
+              "referring_links_types": {
+                "anchor": 27428,
+                "image": 1
+              },
+              "referring_links_attributes": {
+                "noopener": 1027,
+                "noreferrer": 9,
+                "nofollow": 6,
+                "ugc": 1
+              },
+              "referring_links_platform_types": {
+                "organization": 10999,
+                "unknown": 10212,
+                "ecommerce": 6590,
+                "cms": 2166,
+                "blogs": 1285,
+                "news": 1
+              },
+              "referring_links_semantic_locations": {
+                "": 10489,
+                "footer": 6101,
+                "nav": 5351,
+                "section": 4986,
+                "header": 487,
+                "article": 14,
+                "main": 1
+              },
+              "referring_links_countries": {
+                "US": 12828,
+                "": 6264,
+                "WW": 4402,
+                "AU": 3933,
+                "GB": 2
+              }
+            },
+            {
+              "type": "backlinks_anchor",
+              "anchor": "Submit Feedback",
+              "rank": 276,
+              "backlinks": 19858,
+              "first_seen": "2021-04-12 22:33:35 +00:00",
+              "lost_date": null,
+              "backlinks_spam_score": 0,
+              "broken_backlinks": 628,
+              "broken_pages": 9,
+              "referring_domains": 126,
+              "referring_domains_nofollow": 3,
+              "referring_main_domains": 122,
+              "referring_main_domains_nofollow": 3,
+              "referring_ips": 50,
+              "referring_subnets": 35,
+              "referring_pages": 10616,
+              "referring_pages_nofollow": 340,
+              "referring_links_tld": {
+                "com": 9772,
+                "net": 326,
+                "us": 236,
+                "ca": 175,
+                "org": 107
+              },
+              "referring_links_types": {
+                "anchor": 10616
+              },
+              "referring_links_attributes": {
+                "noopener": 1873,
+                "nofollow": 340
+              },
+              "referring_links_platform_types": {
+                "unknown": 10277,
+                "blogs": 230,
+                "cms": 229,
+                "organization": 107,
+                "ecommerce": 3
+              },
+              "referring_links_semantic_locations": {
+                "": 6964,
+                "nav": 3488,
+                "footer": 100,
+                "section": 64
+              },
+              "referring_links_countries": {
+                "": 9152,
+                "US": 1174,
+                "CA": 175,
+                "PA": 106,
+                "WW": 9
+              }
+            },
+            {
+              "type": "backlinks_anchor",
+              "anchor": "Read All Customer Reviews",
+              "rank": 342,
+              "backlinks": 14695,
+              "first_seen": "2025-07-31 19:36:42 +00:00",
+              "lost_date": null,
+              "backlinks_spam_score": 1,
+              "broken_backlinks": 0,
+              "broken_pages": 0,
+              "referring_domains": 3,
+              "referring_domains_nofollow": 0,
+              "referring_main_domains": 3,
+              "referring_main_domains_nofollow": 0,
+              "referring_ips": 1,
+              "referring_subnets": 1,
+              "referring_pages": 14695,
+              "referring_pages_nofollow": 0,
+              "referring_links_tld": {
+                "net": 9376,
+                "com": 5319
+              },
+              "referring_links_types": {
+                "anchor": 14695
+              },
+              "referring_links_attributes": {
+                "noopener": 14695
+              },
+              "referring_links_platform_types": {
+                "ecommerce": 10968,
+                "organization": 9166,
+                "message-boards": 3598,
+                "unknown": 11
+              },
+              "referring_links_semantic_locations": {
+                "section": 14695
+              },
+              "referring_links_countries": {
+                "US": 13296,
+                "WW": 1398,
+                "": 1
+              }
+            },
+            {
+              "type": "backlinks_anchor",
+              "anchor": "TELEGRAM @SEO_ANOMALY - SEO BACKLINKS, BLACK-LINKS, TRAFFIC BOOST, LINK INDEXING",
+              "rank": 0,
+              "backlinks": 12837,
+              "first_seen": "2025-05-14 11:36:57 +00:00",
+              "lost_date": null,
+              "backlinks_spam_score": 61,
+              "broken_backlinks": 0,
+              "broken_pages": 0,
+              "referring_domains": 1145,
+              "referring_domains_nofollow": 1145,
+              "referring_main_domains": 316,
+              "referring_main_domains_nofollow": 316,
+              "referring_ips": 234,
+              "referring_subnets": 138,
+              "referring_pages": 12837,
+              "referring_pages_nofollow": 12837,
+              "referring_links_tld": {
+                "online": 7167,
+                "website": 2103,
+                "site": 1948,
+                "space": 1619
+              },
+              "referring_links_types": {
+                "anchor": 12837
+              },
+              "referring_links_attributes": {
+                "nofollow": 12837
+              },
+              "referring_links_platform_types": {
+                "unknown": 12837
+              },
+              "referring_links_semantic_locations": {
+                "main": 12837
+              },
+              "referring_links_countries": {
+                "": 12837
+              }
+            },
+            {
+              "type": "backlinks_anchor",
+              "anchor": "5 stars of quality\n                \n                  \n                  \n                  \n                  \n                  \n                  4.9",
+              "rank": 355,
+              "backlinks": 9255,
+              "first_seen": "2023-04-10 21:20:05 +00:00",
+              "lost_date": null,
+              "backlinks_spam_score": 0,
+              "broken_backlinks": 0,
+              "broken_pages": 0,
+              "referring_domains": 1,
+              "referring_domains_nofollow": 0,
+              "referring_main_domains": 1,
+              "referring_main_domains_nofollow": 0,
+              "referring_ips": 1,
+              "referring_subnets": 1,
+              "referring_pages": 9255,
+              "referring_pages_nofollow": 1,
+              "referring_links_tld": {
+                "com": 9255
+              },
+              "referring_links_types": {
+                "anchor": 9255
+              },
+              "referring_links_attributes": null,
+              "referring_links_platform_types": {
+                "organization": 8340,
+                "ecommerce": 8166,
+                "unknown": 682,
+                "message-boards": 1
+              },
+              "referring_links_semantic_locations": {
+                "footer": 9255
+              },
+              "referring_links_countries": {
+                "US": 9241,
+                "WW": 14
+              }
+            },
+            {
+              "type": "backlinks_anchor",
+              "anchor": "Wellness",
+              "rank": 243,
+              "backlinks": 8953,
+              "first_seen": "2023-07-24 18:32:46 +00:00",
+              "lost_date": null,
+              "backlinks_spam_score": 7,
+              "broken_backlinks": 1,
+              "broken_pages": 1,
+              "referring_domains": 10,
+              "referring_domains_nofollow": 0,
+              "referring_main_domains": 10,
+              "referring_main_domains_nofollow": 0,
+              "referring_ips": 65,
+              "referring_subnets": 65,
+              "referring_pages": 8416,
+              "referring_pages_nofollow": 0,
+              "referring_links_tld": {
+                "com.au": 8386,
+                "com": 26,
+                "net": 4
+              },
+              "referring_links_types": {
+                "anchor": 8416
+              },
+              "referring_links_attributes": null,
+              "referring_links_platform_types": {
+                "unknown": 8415,
+                "organization": 1
+              },
+              "referring_links_semantic_locations": {
+                "section": 7890,
+                "nav": 526
+              },
+              "referring_links_countries": {
+                "AU": 8386,
+                "": 30
+              }
+            },
+            {
+              "type": "backlinks_anchor",
+              "anchor": "Dental",
+              "rank": 243,
+              "backlinks": 8778,
+              "first_seen": "2022-09-10 12:21:40 +00:00",
+              "lost_date": null,
+              "backlinks_spam_score": 7,
+              "broken_backlinks": 12,
+              "broken_pages": 2,
+              "referring_domains": 12,
+              "referring_domains_nofollow": 0,
+              "referring_main_domains": 12,
+              "referring_main_domains_nofollow": 0,
+              "referring_ips": 67,
+              "referring_subnets": 67,
+              "referring_pages": 8330,
+              "referring_pages_nofollow": 0,
+              "referring_links_tld": {
+                "com.au": 8291,
+                "com": 35,
+                "net": 4
+              },
+              "referring_links_types": {
+                "anchor": 8330
+              },
+              "referring_links_attributes": null,
+              "referring_links_platform_types": {
+                "unknown": 8328,
+                "cms": 1,
+                "organization": 1
+              },
+              "referring_links_semantic_locations": {
+                "section": 7894,
+                "nav": 428,
+                "footer": 8
+              },
+              "referring_links_countries": {
+                "AU": 8291,
+                "": 39
+              }
+            },
+            {
+              "type": "backlinks_anchor",
+              "anchor": "Healthcare",
+              "rank": 242,
+              "backlinks": 8471,
+              "first_seen": "2022-09-10 12:21:40 +00:00",
+              "lost_date": null,
+              "backlinks_spam_score": 7,
+              "broken_backlinks": 1,
+              "broken_pages": 1,
+              "referring_domains": 12,
+              "referring_domains_nofollow": 0,
+              "referring_main_domains": 12,
+              "referring_main_domains_nofollow": 0,
+              "referring_ips": 67,
+              "referring_subnets": 67,
+              "referring_pages": 8182,
+              "referring_pages_nofollow": 0,
+              "referring_links_tld": {
+                "com.au": 8143,
+                "com": 35,
+                "net": 4
+              },
+              "referring_links_types": {
+                "anchor": 8182
+              },
+              "referring_links_attributes": null,
+              "referring_links_platform_types": {
+                "unknown": 8180,
+                "cms": 1,
+                "organization": 1
+              },
+              "referring_links_semantic_locations": {
+                "section": 7892,
+                "nav": 282,
+                "footer": 8
+              },
+              "referring_links_countries": {
+                "AU": 8143,
+                "": 39
+              }
+            },
+            {
+              "type": "backlinks_anchor",
+              "anchor": "Automotive",
+              "rank": 242,
+              "backlinks": 8306,
+              "first_seen": "2022-09-10 12:21:40 +00:00",
+              "lost_date": null,
+              "backlinks_spam_score": 7,
+              "broken_backlinks": 0,
+              "broken_pages": 0,
+              "referring_domains": 11,
+              "referring_domains_nofollow": 0,
+              "referring_main_domains": 11,
+              "referring_main_domains_nofollow": 0,
+              "referring_ips": 66,
+              "referring_subnets": 66,
+              "referring_pages": 8096,
+              "referring_pages_nofollow": 0,
+              "referring_links_tld": {
+                "com.au": 8065,
+                "com": 27,
+                "net": 4
+              },
+              "referring_links_types": {
+                "anchor": 8096
+              },
+              "referring_links_attributes": null,
+              "referring_links_platform_types": {
+                "unknown": 8094,
+                "cms": 1,
+                "organization": 1
+              },
+              "referring_links_semantic_locations": {
+                "section": 7892,
+                "nav": 204
+              },
+              "referring_links_countries": {
+                "AU": 8065,
+                "": 31
+              }
+            },
+            {
+              "type": "backlinks_anchor",
+              "anchor": "Legal",
+              "rank": 242,
+              "backlinks": 8223,
+              "first_seen": "2022-09-10 12:21:40 +00:00",
+              "lost_date": null,
+              "backlinks_spam_score": 7,
+              "broken_backlinks": 1,
+              "broken_pages": 1,
+              "referring_domains": 12,
+              "referring_domains_nofollow": 0,
+              "referring_main_domains": 12,
+              "referring_main_domains_nofollow": 0,
+              "referring_ips": 67,
+              "referring_subnets": 67,
+              "referring_pages": 8050,
+              "referring_pages_nofollow": 0,
+              "referring_links_tld": {
+                "com.au": 8011,
+                "com": 35,
+                "net": 4
+              },
+              "referring_links_types": {
+                "anchor": 8050
+              },
+              "referring_links_attributes": null,
+              "referring_links_platform_types": {
+                "unknown": 8048,
+                "cms": 1,
+                "organization": 1
+              },
+              "referring_links_semantic_locations": {
+                "section": 7883,
+                "nav": 159,
+                "footer": 8
+              },
+              "referring_links_countries": {
+                "AU": 8011,
+                "": 39
+              }
+            },
+            {
+              "type": "backlinks_anchor",
+              "anchor": "Retail",
+              "rank": 242,
+              "backlinks": 7960,
+              "first_seen": "2022-09-10 12:21:40 +00:00",
+              "lost_date": null,
+              "backlinks_spam_score": 7,
+              "broken_backlinks": 2,
+              "broken_pages": 2,
+              "referring_domains": 12,
+              "referring_domains_nofollow": 0,
+              "referring_main_domains": 12,
+              "referring_main_domains_nofollow": 0,
+              "referring_ips": 67,
+              "referring_subnets": 67,
+              "referring_pages": 7934,
+              "referring_pages_nofollow": 0,
+              "referring_links_tld": {
+                "com.au": 7887,
+                "com": 43,
+                "net": 4
+              },
+              "referring_links_types": {
+                "anchor": 7934
+              },
+              "referring_links_attributes": null,
+              "referring_links_platform_types": {
+                "unknown": 7932,
+                "cms": 1,
+                "organization": 1
+              },
+              "referring_links_semantic_locations": {
+                "section": 7894,
+                "nav": 32,
+                "footer": 8
+              },
+              "referring_links_countries": {
+                "AU": 7887,
+                "": 47
+              }
+            },
+            {
+              "type": "backlinks_anchor",
+              "anchor": "Birdeye Support",
+              "rank": 0,
+              "backlinks": 7895,
+              "first_seen": "2022-09-10 12:21:40 +00:00",
+              "lost_date": null,
+              "backlinks_spam_score": 7,
+              "broken_backlinks": 1,
+              "broken_pages": 1,
+              "referring_domains": 11,
+              "referring_domains_nofollow": 10,
+              "referring_main_domains": 11,
+              "referring_main_domains_nofollow": 10,
+              "referring_ips": 66,
+              "referring_subnets": 66,
+              "referring_pages": 3948,
+              "referring_pages_nofollow": 3947,
+              "referring_links_tld": {
+                "com.au": 3932,
+                "com": 14,
+                "net": 2
+              },
+              "referring_links_types": {
+                "anchor": 3948
+              },
+              "referring_links_attributes": {
+                "noopener": 3948,
+                "noreferrer": 3948,
+                "nofollow": 3947
+              },
+              "referring_links_platform_types": {
+                "unknown": 3946,
+                "cms": 1,
+                "organization": 1
+              },
+              "referring_links_semantic_locations": {
+                "section": 3948
+              },
+              "referring_links_countries": {
+                "AU": 3932,
+                "": 16
+              }
+            },
+            {
+              "type": "backlinks_anchor",
+              "anchor": "Google Partnership",
+              "rank": 221,
+              "backlinks": 7894,
+              "first_seen": "2024-04-16 12:21:12 +00:00",
+              "lost_date": null,
+              "backlinks_spam_score": 7,
+              "broken_backlinks": 0,
+              "broken_pages": 0,
+              "referring_domains": 10,
+              "referring_domains_nofollow": 0,
+              "referring_main_domains": 10,
+              "referring_main_domains_nofollow": 0,
+              "referring_ips": 65,
+              "referring_subnets": 65,
+              "referring_pages": 3947,
+              "referring_pages_nofollow": 0,
+              "referring_links_tld": {
+                "com.au": 3932,
+                "com": 13,
+                "net": 2
+              },
+              "referring_links_types": {
+                "anchor": 3947
+              },
+              "referring_links_attributes": null,
+              "referring_links_platform_types": {
+                "unknown": 3946,
+                "organization": 1
+              },
+              "referring_links_semantic_locations": {
+                "section": 3947
+              },
+              "referring_links_countries": {
+                "AU": 3932,
+                "": 15
+              }
+            },
+            {
+              "type": "backlinks_anchor",
+              "anchor": "Legal Resources",
+              "rank": 221,
+              "backlinks": 7894,
+              "first_seen": "2023-09-22 11:50:57 +00:00",
+              "lost_date": null,
+              "backlinks_spam_score": 7,
+              "broken_backlinks": 0,
+              "broken_pages": 0,
+              "referring_domains": 10,
+              "referring_domains_nofollow": 0,
+              "referring_main_domains": 10,
+              "referring_main_domains_nofollow": 0,
+              "referring_ips": 65,
+              "referring_subnets": 65,
+              "referring_pages": 3947,
+              "referring_pages_nofollow": 0,
+              "referring_links_tld": {
+                "com.au": 3932,
+                "com": 13,
+                "net": 2
+              },
+              "referring_links_types": {
+                "anchor": 3947
+              },
+              "referring_links_attributes": null,
+              "referring_links_platform_types": {
+                "unknown": 3946,
+                "organization": 1
+              },
+              "referring_links_semantic_locations": {
+                "section": 3947
+              },
+              "referring_links_countries": {
+                "AU": 3932,
+                "": 15
+              }
+            },
+            {
+              "type": "backlinks_anchor",
+              "anchor": "Birdeye Reviews",
+              "rank": 258,
+              "backlinks": 6698,
+              "first_seen": "2019-01-17 16:09:08 +00:00",
+              "lost_date": null,
+              "backlinks_spam_score": 6,
+              "broken_backlinks": 7,
+              "broken_pages": 3,
+              "referring_domains": 138,
+              "referring_domains_nofollow": 64,
+              "referring_main_domains": 136,
+              "referring_main_domains_nofollow": 64,
+              "referring_ips": 169,
+              "referring_subnets": 125,
+              "referring_pages": 5028,
+              "referring_pages_nofollow": 64,
+              "referring_links_tld": {
+                "com.au": 3932,
+                "com": 1059,
+                "net": 11,
+                "org": 10,
+                "us": 3,
+                "shop": 2,
+                "app": 1,
+                "blogspot.com": 1,
+                "ca": 1,
+                "co.uk": 1
+              },
+              "referring_links_types": {
+                "anchor": 5028
+              },
+              "referring_links_attributes": {
+                "nofollow": 64,
+                "noopener": 59,
+                "noreferrer": 25,
+                "external": 3
+              },
+              "referring_links_platform_types": {
+                "unknown": 3985,
+                "cms": 918,
+                "organization": 438,
+                "blogs": 432,
+                "ecommerce": 17,
+                "news": 9
+              },
+              "referring_links_semantic_locations": {
+                "section": 4292,
+                "nav": 616,
+                "main": 70,
+                "article": 21,
+                "": 12,
+                "aside": 12,
+                "footer": 5
+              },
+              "referring_links_countries": {
+                "AU": 3932,
+                "WW": 441,
+                "US": 383,
+                "": 266,
+                "AR": 1,
+                "CA": 1,
+                "GB": 1,
+                "IE": 1,
+                "MG": 1,
+                "ST": 1
+              }
+            },
+            {
+              "type": "backlinks_anchor",
+              "anchor": "TG @BHS_LINKS - BEST SEO LINKS - https://t.me/bhs_links",
+              "rank": 0,
+              "backlinks": 6404,
+              "first_seen": "2025-07-02 07:40:36 +00:00",
+              "lost_date": null,
+              "backlinks_spam_score": 56,
+              "broken_backlinks": 0,
+              "broken_pages": 0,
+              "referring_domains": 751,
+              "referring_domains_nofollow": 751,
+              "referring_main_domains": 308,
+              "referring_main_domains_nofollow": 308,
+              "referring_ips": 252,
+              "referring_subnets": 149,
+              "referring_pages": 6404,
+              "referring_pages_nofollow": 6404,
+              "referring_links_tld": {
+                "online": 2270,
+                "xyz": 2120,
+                "site": 778,
+                "space": 688,
+                "website": 548
+              },
+              "referring_links_types": {
+                "anchor": 6404
+              },
+              "referring_links_attributes": {
+                "nofollow": 6404
+              },
+              "referring_links_platform_types": {
+                "unknown": 6404
+              },
+              "referring_links_semantic_locations": {
+                "": 6404
+              },
+              "referring_links_countries": {
+                "": 6404
+              }
+            },
+            {
+              "type": "backlinks_anchor",
+              "anchor": "Real Estate",
+              "rank": 227,
+              "backlinks": 5708,
+              "first_seen": "2022-09-10 12:21:40 +00:00",
+              "lost_date": null,
+              "backlinks_spam_score": 7,
+              "broken_backlinks": 0,
+              "broken_pages": 0,
+              "referring_domains": 13,
+              "referring_domains_nofollow": 0,
+              "referring_main_domains": 13,
+              "referring_main_domains_nofollow": 0,
+              "referring_ips": 68,
+              "referring_subnets": 68,
+              "referring_pages": 5100,
+              "referring_pages_nofollow": 0,
+              "referring_links_tld": {
+                "com.au": 5072,
+                "com": 22,
+                "blogspot.com": 4,
+                "net": 2
+              },
+              "referring_links_types": {
+                "anchor": 5100
+              },
+              "referring_links_attributes": null,
+              "referring_links_platform_types": {
+                "unknown": 5094,
+                "blogs": 4,
+                "cms": 1,
+                "organization": 1
+              },
+              "referring_links_semantic_locations": {
+                "section": 4516,
+                "nav": 572,
+                "footer": 8,
+                "": 4
+              },
+              "referring_links_countries": {
+                "AU": 5072,
+                "": 28
+              }
+            },
+            {
+              "type": "backlinks_anchor",
+              "anchor": "Review Me",
+              "rank": 313,
+              "backlinks": 5497,
+              "first_seen": "2019-06-19 01:30:55 +00:00",
+              "lost_date": null,
+              "backlinks_spam_score": 0,
+              "broken_backlinks": 0,
+              "broken_pages": 0,
+              "referring_domains": 1,
+              "referring_domains_nofollow": 0,
+              "referring_main_domains": 1,
+              "referring_main_domains_nofollow": 0,
+              "referring_ips": 1,
+              "referring_subnets": 1,
+              "referring_pages": 5497,
+              "referring_pages_nofollow": 0,
+              "referring_links_tld": {
+                "com": 5497
+              },
+              "referring_links_types": {
+                "anchor": 5497
+              },
+              "referring_links_attributes": null,
+              "referring_links_platform_types": {
+                "unknown": 5497
+              },
+              "referring_links_semantic_locations": {
+                "footer": 5497
+              },
+              "referring_links_countries": {
+                "US": 5497
+              }
+            },
+            {
+              "type": "backlinks_anchor",
+              "anchor": "https://reviews.birdeye.com/dispatch-pest-control-156231116944968",
+              "rank": 257,
+              "backlinks": 5296,
+              "first_seen": "2025-12-18 01:12:14 +00:00",
+              "lost_date": null,
+              "backlinks_spam_score": 41,
+              "broken_backlinks": 0,
+              "broken_pages": 0,
+              "referring_domains": 184,
+              "referring_domains_nofollow": 2,
+              "referring_main_domains": 53,
+              "referring_main_domains_nofollow": 2,
+              "referring_ips": 49,
+              "referring_subnets": 46,
+              "referring_pages": 5204,
+              "referring_pages_nofollow": 105,
+              "referring_links_tld": {
+                "com": 4369,
+                "net": 711,
+                "ph": 54,
+                "win": 52,
+                "cloud": 12,
+                "org": 3,
+                "ru": 3
+              },
+              "referring_links_types": {
+                "anchor": 5204
+              },
+              "referring_links_attributes": {
+                "noopener": 5055,
+                "nofollow": 105
+              },
+              "referring_links_platform_types": {
+                "unknown": 5136,
+                "wikis": 55,
+                "organization": 13
+              },
+              "referring_links_semantic_locations": {
+                "article": 4992,
+                "": 199,
+                "section": 11,
+                "main": 2
+              },
+              "referring_links_countries": {
+                "": 5002,
+                "US": 93,
+                "PH": 54,
+                "WW": 52,
+                "RU": 3
+              }
+            },
+            {
+              "type": "backlinks_anchor",
+              "anchor": "Home Services",
+              "rank": 225,
+              "backlinks": 4989,
+              "first_seen": "2022-09-10 12:21:40 +00:00",
+              "lost_date": null,
+              "backlinks_spam_score": 7,
+              "broken_backlinks": 0,
+              "broken_pages": 0,
+              "referring_domains": 12,
+              "referring_domains_nofollow": 0,
+              "referring_main_domains": 12,
+              "referring_main_domains_nofollow": 0,
+              "referring_ips": 67,
+              "referring_subnets": 67,
+              "referring_pages": 4590,
+              "referring_pages_nofollow": 0,
+              "referring_links_tld": {
+                "com.au": 4566,
+                "com": 22,
+                "net": 2
+              },
+              "referring_links_types": {
+                "anchor": 4590
+              },
+              "referring_links_attributes": null,
+              "referring_links_platform_types": {
+                "unknown": 4588,
+                "cms": 1,
+                "organization": 1
+              },
+              "referring_links_semantic_locations": {
+                "section": 4238,
+                "nav": 344,
+                "footer": 8
+              },
+              "referring_links_countries": {
+                "AU": 4566,
+                "": 24
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
