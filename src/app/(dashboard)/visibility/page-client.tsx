@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, type ChangeEvent, type KeyboardEvent } from "react";
+import Link from "next/link";
 import {
   Search,
   Gauge,
@@ -24,8 +25,6 @@ import { OnboardingChecklist } from "@/components/onboarding/onboarding-checklis
 import { VisibilityReportButton } from "@/components/visibility/VisibilityReportButton";
 import { MonitorCard } from "@/components/visibility/MonitorCard";
 import { BenchmarkCard } from "@/components/visibility/BenchmarkCard";
-import { AnswerTrackingCard } from "@/components/visibility/AnswerTrackingCard";
-import { PromptTrends } from "@/components/visibility/prompt-trends";
 import { VISIBILITY_COPY, type DashLocale, type VisibilityCopy } from "@/lib/i18n/dashboard";
 
 // ─── Types (the sidecar's serialized audit shape) ───────────────────────────
@@ -278,15 +277,24 @@ export function VisibilityPageClient({
       {/* Scheduled monitoring (GROWTH+) */}
       <MonitorCard locale={locale} suggestedUrl={audit && !loading && !error ? url : null} />
 
-      {/* Answer tracking (AGENCY+). #prompts is the target of the SEO Tools
-          "Custom Prompts" card, the onboarding "Add 3 tracked prompts" step,
-          Brand Radar and the Keywords page. scroll-mt-20 (5rem) clears the
-          sticky h-16 (4rem) header in layout/header.tsx — without it the
-          browser scrolls the heading exactly under the header. */}
-      <div id="prompts" className="scroll-mt-20">
-        <AnswerTrackingCard locale={locale} />
-      </div>
-      <PromptTrends locale={locale} />
+      {/* Answer tracking moved to /visibility/tools/custom-prompts. It used to
+          sit here behind an id="prompts" anchor that four other surfaces linked
+          into — a tool reachable only by scrolling into the middle of another
+          page. This signpost keeps the audit → tracked prompts path intact. */}
+      <Card>
+        <CardContent className="flex flex-wrap items-center justify-between gap-3 py-5">
+          <div className="min-w-0">
+            <h3 className="text-base font-semibold text-gray-900">{t.promptsCardTitle}</h3>
+            <p className="mt-1 text-sm text-gray-500">{t.promptsCardBody}</p>
+          </div>
+          <Link
+            href="/visibility/tools/custom-prompts"
+            className="shrink-0 text-sm font-medium text-blue-600 hover:text-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+          >
+            {t.promptsCardLink}
+          </Link>
+        </CardContent>
+      </Card>
 
       {/* Competitor benchmark (GROWTH+) */}
       {audit && !loading && !error && (
@@ -418,8 +426,11 @@ export function VisibilityPageClient({
             </Card>
           </div>
 
-          {/* Fixes */}
-          <div id="fixes">
+          {/* Fixes. #fixes is the target of the onboarding "explore roadmap"
+              step and needs the same scroll-mt-20 the #prompts anchor carried:
+              5rem clears the sticky h-16 header in layout/header.tsx, without
+              which the browser parks this heading underneath it. */}
+          <div id="fixes" className="scroll-mt-20">
           <Card>
             <CardHeader>
               <div className="flex items-center justify-between">

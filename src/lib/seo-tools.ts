@@ -128,11 +128,7 @@ export const SEO_TOOL_GROUPS: SeoToolGroup[] = [
       t("serp_checker", "serp-checker", ListOrdered),
       t("backlinks", "backlinks", Link2),
       t("brand_radar", "brand-radar", RadarIcon),
-      // Tracked prompts (AnswerTrackingCard) on the AI Visibility page.
-      t("custom_prompts", "custom-prompts", MessageSquareText, {
-        href: "/visibility#prompts",
-        existing: true,
-      }),
+      t("custom_prompts", "custom-prompts", MessageSquareText),
     ],
   },
   {
@@ -185,7 +181,7 @@ export const SEO_TOOL_GROUPS: SeoToolGroup[] = [
 export const SCAFFOLD_RELATED: Partial<Record<ScaffoldId, string>> = {
   site_explorer: "/intelligence/competitors",
   rank_tracker: "/visibility/keywords",
-  brand_radar: "/visibility#prompts",
+  brand_radar: "/visibility/tools/custom-prompts",
   web_analytics: "/analytics",
   bot_analytics: "/visibility",
   ai_content_helper: "/templates",

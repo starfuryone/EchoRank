@@ -32,7 +32,7 @@ const EXPECTED_HREFS: Record<string, string> = {
   rank_tracker: "/visibility/tools/rank-tracker",
   gsc_insights: "/visibility/tools/gsc-insights",
   brand_radar: "/visibility/tools/brand-radar",
-  custom_prompts: "/visibility#prompts",
+  custom_prompts: "/visibility/tools/custom-prompts",
   site_audit: "/visibility/tools/site-audit",
   web_analytics: "/visibility/tools/web-analytics",
   bot_analytics: "/visibility/tools/bot-analytics",

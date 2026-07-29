@@ -92,7 +92,7 @@ export function buildOnboardingSteps(input: {
   if (hasFeature(plan, "answer_tracking")) {
     steps.push({
       key: "add_prompts",
-      href: "/visibility#prompts",
+      href: "/visibility/tools/custom-prompts",
       done: counts.prompts >= 3,
     });
   } else {

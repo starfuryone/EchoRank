@@ -442,7 +442,7 @@ export function KeywordsPageClient({ locale }: { locale: DashLocale }) {
                           {copiedKw === p ? t.copied : t.copy}
                         </Button>
                         <Link
-                          href="/visibility#prompts"
+                          href="/visibility/tools/custom-prompts"
                           className="text-xs font-medium text-gray-500 hover:text-gray-800"
                         >
                           {t.trackPrompt}

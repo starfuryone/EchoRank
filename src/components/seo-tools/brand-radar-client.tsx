@@ -109,7 +109,7 @@ export function BrandRadarClient({ locale }: { locale: DashLocale }) {
             </Link>
             {data.prompts.feature && (
               <Link
-                href="/visibility#prompts"
+                href="/visibility/tools/custom-prompts"
                 className="text-sm font-medium text-blue-600 hover:text-blue-700"
               >
                 {t.promptsCta}

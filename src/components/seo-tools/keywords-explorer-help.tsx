@@ -27,7 +27,7 @@ export function KeywordsExplorerHelpButton({ locale }: { locale: DashLocale }) {
         {
           title: t.promptsTitle,
           body: t.promptsBody,
-          link: { href: "/visibility#prompts", label: t.promptsLink },
+          link: { href: "/visibility/tools/custom-prompts", label: t.promptsLink },
         },
         { tone: "note", title: t.aiTitle, body: t.aiBody },
       ]}

@@ -58,6 +58,7 @@ export const dashNav: Record<DashLocale, Record<string, string>> = {
     "/visibility/tools/backlinks": "Backlinks",
     "/visibility/tools/lighthouse": "Lighthouse",
     "/visibility/tools/site-audit": "Site Audit",
+    "/visibility/tools/custom-prompts": "Custom Prompts",
   },
   "de-CH": {
     "/dashboard": "Dashboard",
@@ -98,6 +99,7 @@ export const dashNav: Record<DashLocale, Record<string, string>> = {
     "/visibility/tools/backlinks": "Backlinks",
     "/visibility/tools/lighthouse": "Lighthouse",
     "/visibility/tools/site-audit": "Site-Audit",
+    "/visibility/tools/custom-prompts": "Eigene Prompts",
   },
   fr: {
     "/dashboard": "Tableau de bord",
@@ -138,6 +140,7 @@ export const dashNav: Record<DashLocale, Record<string, string>> = {
     "/visibility/tools/backlinks": "Liens retour",
     "/visibility/tools/lighthouse": "Lighthouse",
     "/visibility/tools/site-audit": "Audit de site",
+    "/visibility/tools/custom-prompts": "Requêtes personnalisées",
   },
 };
 
@@ -4540,6 +4543,12 @@ const visibilityEn = {
   title: "AI Visibility",
   subtitle: "Can AI answer engines find, crawl, and cite your site?",
   keywordsLink: "Keyword suggester",
+  // Answer tracking moved to its own tool page; this is the signpost left in
+  // its place so the flow from an audit to tracked prompts still exists.
+  promptsCardTitle: "Tracked prompts",
+  promptsCardBody:
+    "Answer tracking now has its own page, with the per-prompt trends beside it.",
+  promptsCardLink: "Open Custom Prompts →",
   // search
   urlPlaceholder: "example.com",
   auditing: "Auditing…",
@@ -4612,6 +4621,10 @@ export const VISIBILITY_COPY: Record<DashLocale, VisibilityCopy> = {
     title: "Visibilité IA",
     subtitle: "Les moteurs de réponse IA peuvent-ils trouver, explorer et citer votre site?",
     keywordsLink: "Suggesteur de mots-clés",
+    promptsCardTitle: "Requêtes suivies",
+    promptsCardBody:
+      "Le suivi des réponses dispose désormais de sa propre page, avec les tendances par requête à côté.",
+    promptsCardLink: "Ouvrir les requêtes personnalisées →",
     urlPlaceholder: "example.com",
     auditing: "Audit en cours…",
     runAudit: "Lancer l'audit",
@@ -4674,6 +4687,10 @@ export const VISIBILITY_COPY: Record<DashLocale, VisibilityCopy> = {
     title: "KI-Sichtbarkeit",
     subtitle: "Können KI-Antwortmaschinen Ihre Website finden, crawlen und zitieren?",
     keywordsLink: "Keyword-Vorschläge",
+    promptsCardTitle: "Verfolgte Prompts",
+    promptsCardBody:
+      "Das Antwort-Tracking hat jetzt eine eigene Seite, mit den Trends je Prompt daneben.",
+    promptsCardLink: "Eigene Prompts öffnen →",
     urlPlaceholder: "example.com",
     auditing: "Audit läuft…",
     runAudit: "Audit starten",
