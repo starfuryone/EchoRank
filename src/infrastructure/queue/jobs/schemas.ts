@@ -174,6 +174,14 @@ export interface RankTrackerJob {
   correlationId?: string;
 }
 
+// ─── Site Audit ───────────────────────────────────────────────────────────────
+
+export interface SiteAuditJob {
+  /** The repeatable tick that polls in-flight OnPage crawls. */
+  sweep?: boolean;
+  correlationId?: string;
+}
+
 export type AllJobTypes =
   | EmailDeliveryJob
   | SmsDeliveryJob
@@ -189,7 +197,8 @@ export type AllJobTypes =
   | VisibilityMonitoringJob
   | OnboardingEmailJob
   | SerpCheckJob
-  | RankTrackerJob;
+  | RankTrackerJob
+  | SiteAuditJob;
 
 // ─── Queue → Job Type mapping ─────────────────────────────────────────────────
 
@@ -209,4 +218,5 @@ export interface QueueJobMap {
   "onboarding-email": OnboardingEmailJob;
   "serp-checks": SerpCheckJob;
   "rank-tracker": RankTrackerJob;
+  "site-audit": SiteAuditJob;
 }

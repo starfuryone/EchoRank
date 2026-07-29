@@ -83,8 +83,22 @@ export const BACKLINKS = {
 // OnPage / Lighthouse + Business Data (local SEO) + account
 // ---------------------------------------------------------------------------
 export const ONPAGE = {
-  /** lighthouseLiveJson */
+  /** lighthouseLiveJson. NOTE: the Lighthouse TOOL uses Google PageSpeed
+   * Insights instead (free, and the only source of CrUX field data) — see
+   * src/lib/pagespeed/client.ts. This constant is unused by that feature. */
   lighthouse: "v3/on_page/lighthouse/live/json",
+
+  // ── Site Audit: an ASYNC CRAWL, not a standard-queue task. ──────────────
+  // The lifecycle is task_post -> poll summary until crawl_progress
+  // "finished" -> read pages. It does NOT go through serp tasks_ready, and
+  // summary must be polled DURING the crawl because pages_crawled is what the
+  // progress UI shows. See src/lib/site-audit/poll.ts.
+  /** Starts a crawl. Billed per page actually crawled. */
+  taskPost: "v3/on_page/task_post",
+  /** Crawl progress + totals. Path is `${summary}/${taskId}`. FREE. */
+  summary: "v3/on_page/summary",
+  /** Per-page results with their failed checks. FREE (POST with the task id). */
+  pages: "v3/on_page/pages",
 } as const;
 
 export const BUSINESS = {

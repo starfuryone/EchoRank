@@ -12,6 +12,7 @@ import {
   SEO_TOOL_GROUPS,
   SEO_TOOLS_HUB,
   SCAFFOLD_RELATED,
+  CLASSIC_SEO_TOOL_IDS,
   visibleSeoToolGroups,
   navPath,
 } from "../seo-tools";
@@ -32,7 +33,7 @@ const EXPECTED_HREFS: Record<string, string> = {
   gsc_insights: "/visibility/tools/gsc-insights",
   brand_radar: "/visibility/tools/brand-radar",
   custom_prompts: "/visibility#prompts",
-  site_audit: "/visibility",
+  site_audit: "/visibility/tools/site-audit",
   web_analytics: "/visibility/tools/web-analytics",
   bot_analytics: "/visibility/tools/bot-analytics",
   content_explorer: "/visibility/tools/content-explorer",
@@ -805,4 +806,154 @@ test("Core Web Vitals thresholds match web.dev", () => {
   assert.deepEqual(METRIC_THRESHOLDS.LCP, { good: 2500, poor: 4000 });
   assert.deepEqual(METRIC_THRESHOLDS.INP, { good: 200, poor: 500 });
   assert.deepEqual(METRIC_THRESHOLDS.CLS, { good: 0.1, poor: 0.25 });
+});
+
+// ─── Site Audit (real-data page) ────────────────────────────────────────────
+import { SITE_AUDIT_COPY, SITE_AUDIT_HELP_COPY } from "../i18n/dashboard";
+import {
+  CRAWL_PAGES_PER_PLAN,
+  AUDITS_PER_MONTH,
+  SITE_AUDIT_CACHE_TTL_MS,
+  MAX_PAGE_ROWS,
+  crawlPageLimit,
+  auditLimit,
+} from "../site-audit/options";
+import { PROBLEM_CHECKS, METRIC_ISSUES, SEVERITY_ORDER, checkDefinition } from "../site-audit/checks";
+
+test("site audit is its own tool page, not a link to /visibility", () => {
+  // The hub card used to point at /visibility, which is the AI Visibility
+  // audit — a different product that happens to share the word "audit".
+  const tool = ALL_TOOLS.find((t) => t.id === "site_audit")!;
+  assert.equal(tool.href, "/visibility/tools/site-audit");
+  assert.ok(!tool.existing, "site_audit now has a real page of its own");
+  assert.equal(tool.href, `${SEO_TOOLS_HUB}/${tool.slug}`);
+  // The classic grid renders from the same SEO_TOOL_GROUPS data, so it moves
+  // with the hub automatically.
+  assert.ok(CLASSIC_SEO_TOOL_IDS.includes("site_audit"));
+});
+
+test("site-audit copy complete in all locales", () => {
+  for (const locale of LOCALES) {
+    const c = SITE_AUDIT_COPY[locale];
+    assert.ok(c.formTitle.length && c.formIntro.length && c.start.length, locale);
+    assert.ok(c.domainLabel.length && c.invalidDomain.length);
+    // The distinction from the AI Visibility audit must exist in every locale.
+    assert.ok(c.vsVisibilityNote.length > 40, `${locale} vsVisibilityNote`);
+    assert.ok(c.vsVisibilityLink.length, `${locale} vsVisibilityLink`);
+
+    assert.ok(c.crawlingTitle.length && c.crawlingBody.length);
+    assert.ok(c.statusQueued.length && c.statusCrawling.length);
+    assert.ok(c.statusCompleted.length && c.statusFailed.length);
+    assert.ok(c.failedTitle.length && c.failedBody.length && c.cachedIntro.length);
+
+    assert.ok(c.scoreTitle.length && c.scoreUnit.length && c.summaryTitle.length);
+    assert.ok(c.metricPagesCrawled.length && c.metricBrokenLinks.length);
+    assert.ok(c.metricDuplicateTitles.length && c.metric4xx.length && c.metric5xx.length);
+
+    assert.ok(c.issuesTitle.length && c.issuesEmpty.length);
+    assert.ok(c.severityError.length && c.severityWarning.length && c.severityNotice.length);
+    assert.ok(c.severityErrorHint.length && c.severityWarningHint.length && c.severityNoticeHint.length);
+    assert.ok(c.showAffected.length && c.hideAffected.length && c.noAffectedListed.length);
+    // One label per group in checks.ts, or a group renders as a raw key.
+    assert.ok(c.groupAvailability.length && c.groupLinks.length && c.groupContent.length);
+    assert.ok(c.groupMeta.length && c.groupPerformance.length && c.groupCanonical.length);
+    assert.ok(c.groupSecurity.length);
+
+    assert.ok(c.pagesTitle.length && c.pagesEmpty.length && c.colPage.length);
+    assert.ok(c.recentTitle.length && c.recentEmpty.length && c.view.length);
+    assert.ok(c.quotaTitle.length && c.quotaCta.length);
+    assert.ok(c.startFailed.length && c.loadFailed.length);
+
+    // Interpolated strings must actually interpolate.
+    assert.ok(c.pageCapNote(25).includes("25"), `${locale} pageCapNote`);
+    assert.ok(c.progress(6, 25).includes("6") && c.progress(6, 25).includes("25"));
+    assert.ok(c.affectedPages(1).length && c.affectedPages(20).includes("20"));
+    assert.ok(c.auditedAgo("3 hours ago").includes("3 hours ago"));
+    assert.ok(c.reRunIn(21).includes("21") && c.reRunIn(1).length);
+    assert.ok(c.usage(1, 10).includes("1") && c.usage(1, 10).includes("10"));
+    assert.ok(c.quotaBody(10).includes("10"));
+    assert.ok(c.pagesSubtitle(25, 25).includes("25"));
+  }
+});
+
+test("site-audit help copy complete in all locales", () => {
+  for (const locale of LOCALES) {
+    const c = SITE_AUDIT_HELP_COPY[locale];
+    assert.ok(c.button.length && c.buttonAria.length && c.title.length && c.close.length);
+    assert.ok(c.intro.length);
+    for (const key of ["score", "severity", "vsVisibility"] as const) {
+      assert.ok(c[`${key}Title`].length, `${locale} ${key} title`);
+      assert.ok(c[`${key}Body`].length > 40, `${locale} ${key} body`);
+    }
+    // Plan caps are injected, never hardcoded, so the help cannot claim a
+    // limit the code does not enforce.
+    assert.ok(c.limitsTitle.length);
+    const limits = c.limitsBody(
+      CRAWL_PAGES_PER_PLAN.STARTER,
+      CRAWL_PAGES_PER_PLAN.GROWTH,
+      CRAWL_PAGES_PER_PLAN.AGENCY,
+    );
+    assert.ok(limits.includes(String(CRAWL_PAGES_PER_PLAN.STARTER)), `${locale} starter cap`);
+    assert.ok(limits.includes(String(CRAWL_PAGES_PER_PLAN.AGENCY)), `${locale} agency cap`);
+  }
+});
+
+test("site-audit copy never uses CamelCase branding or names the data vendor", () => {
+  const json = JSON.stringify({ SITE_AUDIT_COPY, SITE_AUDIT_HELP_COPY });
+  assert.ok(!json.includes("EchoRank"), "found CamelCase 'EchoRank'");
+  assert.ok(!/dataforseo/i.test(json), "user-facing copy must not name the upstream vendor");
+});
+
+test("site-audit plan caps match the pricing sheet", () => {
+  assert.equal(CRAWL_PAGES_PER_PLAN.STARTER, 25);
+  assert.equal(CRAWL_PAGES_PER_PLAN.GROWTH, 100);
+  assert.equal(CRAWL_PAGES_PER_PLAN.AGENCY, 500);
+  assert.equal(AUDITS_PER_MONTH.STARTER, 2);
+  assert.equal(AUDITS_PER_MONTH.GROWTH, 10);
+  assert.equal(AUDITS_PER_MONTH.AGENCY, 50);
+  assert.equal(crawlPageLimit("GROWTH"), 100);
+  assert.equal(auditLimit("AGENCY"), 50);
+  assert.equal(SITE_AUDIT_CACHE_TTL_MS, 24 * 60 * 60 * 1000);
+  assert.equal(MAX_PAGE_ROWS, 100);
+});
+
+test("worst-case monthly crawl spend, at the measured per-page cost", () => {
+  // Measured live 2026-07-29: 25 pages cost $0.011250 = $0.00045/page.
+  const PER_PAGE = 0.00045;
+  const worst = (plan: "STARTER" | "GROWTH" | "AGENCY") =>
+    CRAWL_PAGES_PER_PLAN[plan] * AUDITS_PER_MONTH[plan] * PER_PAGE;
+  assert.ok(worst("STARTER") < 0.03, `STARTER ${worst("STARTER")}`);
+  assert.ok(worst("GROWTH") < 0.5, `GROWTH ${worst("GROWTH")}`);
+  assert.ok(worst("AGENCY") < 12, `AGENCY ${worst("AGENCY")}`);
+});
+
+test("the check catalogue never classifies a POSITIVE OnPage check", () => {
+  // seo_friendly_url and friends are true when the page PASSES; treating them
+  // as problems reported 24 healthy pages as issues in the first live crawl.
+  for (const key of [
+    "seo_friendly_url",
+    "seo_friendly_url_characters_check",
+    "seo_friendly_url_dynamic_check",
+    "seo_friendly_url_keywords_check",
+    "seo_friendly_url_relative_length_check",
+    "canonical",
+    "is_https",
+    "has_html_doctype",
+  ]) {
+    assert.equal(checkDefinition(key), null, `${key} is a POSITIVE check`);
+  }
+});
+
+test("every catalogued check has a known severity and group", () => {
+  const groups = new Set([
+    "availability", "links", "content", "meta", "performance", "canonical", "security",
+  ]);
+  for (const [key, def] of Object.entries({ ...PROBLEM_CHECKS, ...METRIC_ISSUES })) {
+    assert.ok(SEVERITY_ORDER.includes(def.severity), `${key} severity`);
+    assert.ok(groups.has(def.group), `${key} group ${def.group}`);
+  }
+  // Duplicates arrive as page_metrics, not checks — they must be catalogued
+  // there or they vanish from the issue list entirely.
+  assert.ok(METRIC_ISSUES.duplicate_title, "duplicate_title must be a metric issue");
+  assert.equal(METRIC_ISSUES.duplicate_title.severity, "error");
 });

@@ -57,6 +57,7 @@ export const dashNav: Record<DashLocale, Record<string, string>> = {
     "/visibility/tools/serp-checker": "SERP Checker",
     "/visibility/tools/backlinks": "Backlinks",
     "/visibility/tools/lighthouse": "Lighthouse",
+    "/visibility/tools/site-audit": "Site Audit",
   },
   "de-CH": {
     "/dashboard": "Dashboard",
@@ -96,6 +97,7 @@ export const dashNav: Record<DashLocale, Record<string, string>> = {
     "/visibility/tools/serp-checker": "SERP-Checker",
     "/visibility/tools/backlinks": "Backlinks",
     "/visibility/tools/lighthouse": "Lighthouse",
+    "/visibility/tools/site-audit": "Site-Audit",
   },
   fr: {
     "/dashboard": "Tableau de bord",
@@ -135,6 +137,7 @@ export const dashNav: Record<DashLocale, Record<string, string>> = {
     "/visibility/tools/serp-checker": "Vérificateur SERP",
     "/visibility/tools/backlinks": "Liens retour",
     "/visibility/tools/lighthouse": "Lighthouse",
+    "/visibility/tools/site-audit": "Audit de site",
   },
 };
 
@@ -7688,5 +7691,371 @@ export const LIGHTHOUSE_HELP_COPY: Record<DashLocale, LighthouseHelpCopy> = {
     fluctuationTitle: "Scores schwanken zwischen Läufen",
     fluctuationBody:
       "Dieselbe Seite kann von Minute zu Minute mehrere Punkte anders abschneiden — Netzbedingungen, Werbeskripte und Serverlast schwanken alle. Achten Sie auf den Trend über mehrere Audits statt auf eine einzelne Zahl.",
+  },
+};
+
+// ─── Site Audit ─────────────────────────────────────────────────────────────
+// The technical-SEO crawl. Copy repeatedly distinguishes it from the audit on
+// /visibility, which measures AI-engine readability — two different products
+// with the word "audit" in both, and users WILL conflate them otherwise.
+// Crawls take minutes, so the copy is written for leaving and coming back.
+const siteAuditEn = {
+  formTitle: "Audit a site",
+  formIntro:
+    "Crawl a site and find the technical problems holding it back in search: broken links, duplicate titles, missing meta, redirect and canonical issues.",
+  vsVisibilityNote:
+    "This checks technical SEO. To measure how AI assistants read your site, use the AI Visibility audit.",
+  vsVisibilityLink: "Open AI Visibility →",
+  domainLabel: "Domain",
+  domainPlaceholder: "example.com",
+  invalidDomain: "Enter a domain like example.com",
+  start: "Start audit",
+  starting: "Starting…",
+  pageCapNote: (pages: number) => `Your plan crawls up to ${pages} pages per audit.`,
+
+  // ── In flight ──
+  crawlingTitle: "Crawling the site…",
+  crawlingBody:
+    "This takes a few minutes. You can leave this page — the crawl keeps running and the result appears in your history.",
+  progress: (crawled: number, total: number) => `${crawled} of ${total} pages crawled`,
+  statusQueued: "Starting",
+  statusCrawling: "Crawling",
+  statusCompleted: "Done",
+  statusFailed: "Failed",
+  failedTitle: "This audit did not finish",
+  failedBody: "The crawl stopped before it completed. Start a new audit — nothing further was charged.",
+
+  auditedAgo: (ago: string) => `Audited ${ago}`,
+  reRunIn: (hours: number) =>
+    hours <= 1 ? "Re-run available in under an hour" : `Re-run available in ${hours}h`,
+  cachedIntro: "Showing your saved audit — the site was not re-crawled.",
+
+  // ── Score + summary ──
+  scoreTitle: "OnPage score",
+  scoreUnit: "out of 100",
+  scoreNotAvailable: "Not scored",
+  summaryTitle: "Crawl summary",
+  metricPagesCrawled: "Pages crawled",
+  metricBrokenLinks: "Broken links",
+  metricBrokenResources: "Broken resources",
+  metricDuplicateTitles: "Duplicate titles",
+  metricDuplicateDescriptions: "Duplicate descriptions",
+  metric4xx: "4xx pages",
+  metric5xx: "5xx pages",
+  metricRedirects: "Redirects",
+
+  // ── Issues ──
+  issuesTitle: "Issues found",
+  issuesEmpty: "No catalogued issues were found on the crawled pages. Nice.",
+  severityError: "Errors",
+  severityWarning: "Warnings",
+  severityNotice: "Notices",
+  severityErrorHint: "Broken, or invisible to search engines",
+  severityWarningHint: "Works, but costing you rankings",
+  severityNoticeHint: "Worth tidying up",
+  affectedPages: (n: number) => (n === 1 ? "1 page" : `${n} pages`),
+  showAffected: "Show pages",
+  hideAffected: "Hide pages",
+  noAffectedListed: "Affected pages are not listed for this check.",
+  groupAvailability: "Availability",
+  groupLinks: "Links and resources",
+  groupContent: "Content",
+  groupMeta: "Titles and meta",
+  groupPerformance: "Speed",
+  groupCanonical: "Canonical",
+  groupSecurity: "HTTPS",
+
+  // ── Pages ──
+  pagesTitle: "Top problem pages",
+  pagesSubtitle: (shown: number, total: number) =>
+    `${shown} of ${total.toLocaleString("en-US")} crawled pages, most issues first`,
+  colPage: "Page",
+  colIssues: "Issues",
+  colScore: "Score",
+  colStatusCode: "Status",
+  pagesEmpty: "No pages with issues were found.",
+
+  // ── History ──
+  recentTitle: "Recent audits",
+  recentEmpty: "No audits yet. Start your first one above.",
+  colDomain: "Domain",
+  colPagesCol: "Pages",
+  colWhen: "Started",
+  view: "View",
+
+  // ── Quota / errors ──
+  usage: (used: number, limit: number) => `${used} of ${limit} audits used this month`,
+  quotaTitle: "Monthly audit limit reached",
+  quotaBody: (limit: number) =>
+    `Your plan includes ${limit} site audits per month. Upgrade to run more, or wait for the counter to reset next month.`,
+  quotaCta: "See plans",
+  startFailed: "Could not start the audit. Try again in a minute.",
+  loadFailed: "Could not load your audits. Try again in a minute.",
+};
+export type SiteAuditCopy = typeof siteAuditEn;
+
+export const SITE_AUDIT_COPY: Record<DashLocale, SiteAuditCopy> = {
+  en: siteAuditEn,
+  fr: {
+    formTitle: "Auditer un site",
+    formIntro:
+      "Explorez un site et trouvez les problèmes techniques qui freinent son référencement : liens brisés, titres en double, métadonnées manquantes, problèmes de redirection et de canonique.",
+    vsVisibilityNote:
+      "Ceci vérifie le référencement technique. Pour mesurer la façon dont les assistants IA lisent votre site, utilisez l'audit de visibilité IA.",
+    vsVisibilityLink: "Ouvrir la visibilité IA →",
+    domainLabel: "Domaine",
+    domainPlaceholder: "exemple.com",
+    invalidDomain: "Entrez un domaine comme exemple.com",
+    start: "Lancer l'audit",
+    starting: "Démarrage…",
+    pageCapNote: (pages: number) =>
+      `Votre forfait explore jusqu'à ${pages} pages par audit.`,
+
+    crawlingTitle: "Exploration du site…",
+    crawlingBody:
+      "Cela prend quelques minutes. Vous pouvez quitter cette page — l'exploration continue et le résultat apparaîtra dans votre historique.",
+    progress: (crawled: number, total: number) => `${crawled} pages explorées sur ${total}`,
+    statusQueued: "Démarrage",
+    statusCrawling: "Exploration",
+    statusCompleted: "Terminé",
+    statusFailed: "Échoué",
+    failedTitle: "Cet audit ne s'est pas terminé",
+    failedBody:
+      "L'exploration s'est arrêtée avant la fin. Lancez un nouvel audit — rien de plus n'a été facturé.",
+
+    auditedAgo: (ago: string) => `Audité ${ago}`,
+    reRunIn: (hours: number) =>
+      hours <= 1
+        ? "Relance possible dans moins d'une heure"
+        : `Relance possible dans ${hours} h`,
+    cachedIntro: "Affichage de votre audit enregistré — le site n'a pas été réexploré.",
+
+    scoreTitle: "Score OnPage",
+    scoreUnit: "sur 100",
+    scoreNotAvailable: "Non évalué",
+    summaryTitle: "Résumé de l'exploration",
+    metricPagesCrawled: "Pages explorées",
+    metricBrokenLinks: "Liens brisés",
+    metricBrokenResources: "Ressources brisées",
+    metricDuplicateTitles: "Titres en double",
+    metricDuplicateDescriptions: "Descriptions en double",
+    metric4xx: "Pages 4xx",
+    metric5xx: "Pages 5xx",
+    metricRedirects: "Redirections",
+
+    issuesTitle: "Problèmes détectés",
+    issuesEmpty: "Aucun problème répertorié sur les pages explorées. Bravo.",
+    severityError: "Erreurs",
+    severityWarning: "Avertissements",
+    severityNotice: "Remarques",
+    severityErrorHint: "Brisé, ou invisible pour les moteurs de recherche",
+    severityWarningHint: "Fonctionne, mais nuit à votre classement",
+    severityNoticeHint: "À nettoyer",
+    affectedPages: (n: number) => (n === 1 ? "1 page" : `${n} pages`),
+    showAffected: "Voir les pages",
+    hideAffected: "Masquer les pages",
+    noAffectedListed: "Les pages concernées ne sont pas listées pour cette vérification.",
+    groupAvailability: "Disponibilité",
+    groupLinks: "Liens et ressources",
+    groupContent: "Contenu",
+    groupMeta: "Titres et métadonnées",
+    groupPerformance: "Vitesse",
+    groupCanonical: "Canonique",
+    groupSecurity: "HTTPS",
+
+    pagesTitle: "Pages les plus problématiques",
+    pagesSubtitle: (shown: number, total: number) =>
+      `${shown} pages sur ${total.toLocaleString("fr-CA")} explorées, les plus problématiques d'abord`,
+    colPage: "Page",
+    colIssues: "Problèmes",
+    colScore: "Score",
+    colStatusCode: "Statut",
+    pagesEmpty: "Aucune page problématique trouvée.",
+
+    recentTitle: "Audits récents",
+    recentEmpty: "Aucun audit pour l'instant. Lancez le premier ci-dessus.",
+    colDomain: "Domaine",
+    colPagesCol: "Pages",
+    colWhen: "Lancé",
+    view: "Voir",
+
+    usage: (used: number, limit: number) => `${used} audits sur ${limit} utilisés ce mois-ci`,
+    quotaTitle: "Limite mensuelle d'audits atteinte",
+    quotaBody: (limit: number) =>
+      `Votre forfait comprend ${limit} audits de site par mois. Passez à un forfait supérieur pour en faire plus, ou attendez la remise à zéro le mois prochain.`,
+    quotaCta: "Voir les forfaits",
+    startFailed: "Impossible de lancer l'audit. Réessayez dans une minute.",
+    loadFailed: "Impossible de charger vos audits. Réessayez dans une minute.",
+  },
+  "de-CH": {
+    formTitle: "Website auditieren",
+    formIntro:
+      "Crawlen Sie eine Website und finden Sie die technischen Probleme, die sie in der Suche bremsen: defekte Links, doppelte Titel, fehlende Meta-Angaben, Weiterleitungs- und Canonical-Probleme.",
+    vsVisibilityNote:
+      "Dies prüft technisches SEO. Um zu messen, wie KI-Assistenten Ihre Website lesen, nutzen Sie das AI-Visibility-Audit.",
+    vsVisibilityLink: "AI Visibility öffnen →",
+    domainLabel: "Domain",
+    domainPlaceholder: "beispiel.ch",
+    invalidDomain: "Geben Sie eine Domain wie beispiel.ch ein",
+    start: "Audit starten",
+    starting: "Wird gestartet…",
+    pageCapNote: (pages: number) => `Ihr Plan crawlt bis zu ${pages} Seiten pro Audit.`,
+
+    crawlingTitle: "Website wird gecrawlt…",
+    crawlingBody:
+      "Das dauert einige Minuten. Sie können die Seite verlassen — der Crawl läuft weiter und das Ergebnis erscheint in Ihrem Verlauf.",
+    progress: (crawled: number, total: number) => `${crawled} von ${total} Seiten gecrawlt`,
+    statusQueued: "Startet",
+    statusCrawling: "Crawlt",
+    statusCompleted: "Fertig",
+    statusFailed: "Fehlgeschlagen",
+    failedTitle: "Dieses Audit wurde nicht abgeschlossen",
+    failedBody:
+      "Der Crawl wurde vor dem Ende gestoppt. Starten Sie ein neues Audit — es wurde nichts Weiteres verrechnet.",
+
+    auditedAgo: (ago: string) => `Auditiert ${ago}`,
+    reRunIn: (hours: number) =>
+      hours <= 1
+        ? "Neues Audit in weniger als einer Stunde möglich"
+        : `Neues Audit in ${hours} Std. möglich`,
+    cachedIntro: "Ihr gespeichertes Audit wird angezeigt — die Website wurde nicht neu gecrawlt.",
+
+    scoreTitle: "OnPage-Score",
+    scoreUnit: "von 100",
+    scoreNotAvailable: "Nicht bewertet",
+    summaryTitle: "Crawl-Zusammenfassung",
+    metricPagesCrawled: "Gecrawlte Seiten",
+    metricBrokenLinks: "Defekte Links",
+    metricBrokenResources: "Defekte Ressourcen",
+    metricDuplicateTitles: "Doppelte Titel",
+    metricDuplicateDescriptions: "Doppelte Beschreibungen",
+    metric4xx: "4xx-Seiten",
+    metric5xx: "5xx-Seiten",
+    metricRedirects: "Weiterleitungen",
+
+    issuesTitle: "Gefundene Probleme",
+    issuesEmpty: "Auf den gecrawlten Seiten wurden keine erfassten Probleme gefunden. Sehr gut.",
+    severityError: "Fehler",
+    severityWarning: "Warnungen",
+    severityNotice: "Hinweise",
+    severityErrorHint: "Defekt oder für Suchmaschinen unsichtbar",
+    severityWarningHint: "Funktioniert, kostet aber Rankings",
+    severityNoticeHint: "Sollte aufgeräumt werden",
+    affectedPages: (n: number) => (n === 1 ? "1 Seite" : `${n} Seiten`),
+    showAffected: "Seiten anzeigen",
+    hideAffected: "Seiten ausblenden",
+    noAffectedListed: "Für diese Prüfung sind keine betroffenen Seiten aufgeführt.",
+    groupAvailability: "Verfügbarkeit",
+    groupLinks: "Links und Ressourcen",
+    groupContent: "Inhalt",
+    groupMeta: "Titel und Meta",
+    groupPerformance: "Geschwindigkeit",
+    groupCanonical: "Canonical",
+    groupSecurity: "HTTPS",
+
+    pagesTitle: "Problematischste Seiten",
+    pagesSubtitle: (shown: number, total: number) =>
+      `${shown} von ${total.toLocaleString("de-CH")} gecrawlten Seiten, meiste Probleme zuerst`,
+    colPage: "Seite",
+    colIssues: "Probleme",
+    colScore: "Score",
+    colStatusCode: "Status",
+    pagesEmpty: "Es wurden keine problematischen Seiten gefunden.",
+
+    recentTitle: "Letzte Audits",
+    recentEmpty: "Noch keine Audits. Starten Sie oben Ihr erstes.",
+    colDomain: "Domain",
+    colPagesCol: "Seiten",
+    colWhen: "Gestartet",
+    view: "Ansehen",
+
+    usage: (used: number, limit: number) => `${used} von ${limit} Audits diesen Monat verwendet`,
+    quotaTitle: "Monatliches Auditlimit erreicht",
+    quotaBody: (limit: number) =>
+      `Ihr Plan enthält ${limit} Website-Audits pro Monat. Wechseln Sie den Plan für mehr, oder warten Sie auf die Rücksetzung im nächsten Monat.`,
+    quotaCta: "Pläne ansehen",
+    startFailed: "Das Audit konnte nicht gestartet werden. Versuchen Sie es in einer Minute erneut.",
+    loadFailed: "Ihre Audits konnten nicht geladen werden. Versuchen Sie es in einer Minute erneut.",
+  },
+};
+
+// ─── Site Audit help modal ──────────────────────────────────────────────────
+const siteAuditHelpEn = {
+  button: "Help",
+  buttonAria: "How the site audit works",
+  title: "How the site audit works",
+  close: "Close",
+
+  intro: "Each audit crawls your site page by page and reports what search engines would trip over.",
+
+  scoreTitle: "What the OnPage score means",
+  scoreBody:
+    "A single 0-100 summary of how clean the crawled pages are. It weighs broken pages and missing basics heavily, so a handful of 4xx pages drags it down fast. Treat it as a direction of travel, not a grade.",
+
+  severityTitle: "Errors, warnings and notices",
+  severityBody:
+    "Errors mean a page is broken or invisible to search engines — fix these first. Warnings work but cost you rankings, like a missing description or a duplicate title. Notices are tidy-ups with little direct impact.",
+
+  limitsTitle: "How many pages get crawled",
+  limitsBody: (starter: number, growth: number, agency: number) =>
+    `Crawl size depends on your plan: Starter ${starter} pages, Growth ${growth}, Agency ${agency}. The crawler starts at your home page and follows internal links, so the most important pages are covered first.`,
+
+  vsVisibilityTitle: "This is not the AI Visibility audit",
+  vsVisibilityBody:
+    "This tool checks classic technical SEO — the things Google's crawler cares about. The AI Visibility audit on the Visibility page measures something different: how readable and quotable your site is to AI assistants. Most sites need both.",
+};
+export type SiteAuditHelpCopy = typeof siteAuditHelpEn;
+
+export const SITE_AUDIT_HELP_COPY: Record<DashLocale, SiteAuditHelpCopy> = {
+  en: siteAuditHelpEn,
+  fr: {
+    button: "Aide",
+    buttonAria: "Comment fonctionne l'audit de site",
+    title: "Comment fonctionne l'audit de site",
+    close: "Fermer",
+
+    intro:
+      "Chaque audit explore votre site page par page et signale ce sur quoi les moteurs de recherche buteraient.",
+
+    scoreTitle: "Ce que signifie le score OnPage",
+    scoreBody:
+      "Un résumé unique de 0 à 100 de la propreté des pages explorées. Il pénalise fortement les pages brisées et les éléments de base manquants : quelques pages 4xx le font chuter rapidement. Voyez-le comme une tendance, pas comme une note.",
+
+    severityTitle: "Erreurs, avertissements et remarques",
+    severityBody:
+      "Une erreur signifie qu'une page est brisée ou invisible pour les moteurs de recherche — corrigez-les en premier. Les avertissements fonctionnent mais nuisent à votre classement, comme une description manquante ou un titre en double. Les remarques sont des nettoyages à faible impact direct.",
+
+    limitsTitle: "Combien de pages sont explorées",
+    limitsBody: (starter: number, growth: number, agency: number) =>
+      `La taille de l'exploration dépend de votre forfait : Démarrage ${starter} pages, Croissance ${growth}, Agence ${agency}. L'explorateur part de votre page d'accueil et suit les liens internes, donc les pages les plus importantes sont couvertes en premier.`,
+
+    vsVisibilityTitle: "Ce n'est pas l'audit de visibilité IA",
+    vsVisibilityBody:
+      "Cet outil vérifie le référencement technique classique — ce qui compte pour l'explorateur de Google. L'audit de visibilité IA, sur la page Visibilité, mesure autre chose : à quel point votre site est lisible et citable par les assistants IA. La plupart des sites ont besoin des deux.",
+  },
+  "de-CH": {
+    button: "Hilfe",
+    buttonAria: "So funktioniert das Website-Audit",
+    title: "So funktioniert das Website-Audit",
+    close: "Schliessen",
+
+    intro:
+      "Jedes Audit crawlt Ihre Website Seite für Seite und meldet, worüber Suchmaschinen stolpern würden.",
+
+    scoreTitle: "Was der OnPage-Score bedeutet",
+    scoreBody:
+      "Eine einzelne Zusammenfassung von 0 bis 100, wie sauber die gecrawlten Seiten sind. Defekte Seiten und fehlende Grundlagen wiegen schwer — schon einige 4xx-Seiten drücken ihn deutlich. Betrachten Sie ihn als Richtung, nicht als Note.",
+
+    severityTitle: "Fehler, Warnungen und Hinweise",
+    severityBody:
+      "Ein Fehler bedeutet, dass eine Seite defekt oder für Suchmaschinen unsichtbar ist — zuerst beheben. Warnungen funktionieren, kosten aber Rankings, etwa eine fehlende Beschreibung oder ein doppelter Titel. Hinweise sind Aufräumarbeiten mit geringer direkter Wirkung.",
+
+    limitsTitle: "Wie viele Seiten gecrawlt werden",
+    limitsBody: (starter: number, growth: number, agency: number) =>
+      `Die Crawl-Grösse hängt vom Plan ab: Starter ${starter} Seiten, Growth ${growth}, Agency ${agency}. Der Crawler startet auf Ihrer Startseite und folgt internen Links, sodass die wichtigsten Seiten zuerst abgedeckt sind.`,
+
+    vsVisibilityTitle: "Das ist nicht das AI-Visibility-Audit",
+    vsVisibilityBody:
+      "Dieses Tool prüft klassisches technisches SEO — das, was Googles Crawler interessiert. Das AI-Visibility-Audit auf der Visibility-Seite misst etwas anderes: wie lesbar und zitierfähig Ihre Website für KI-Assistenten ist. Die meisten Websites brauchen beides.",
   },
 };

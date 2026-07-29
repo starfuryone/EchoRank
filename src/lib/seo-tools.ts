@@ -138,8 +138,10 @@ export const SEO_TOOL_GROUPS: SeoToolGroup[] = [
   {
     id: "website_performance",
     tools: [
-      // The av-visibility sidecar audit surface on /visibility.
-      t("site_audit", "site-audit", ScanSearch, { href: "/visibility", existing: true }),
+      // Technical-SEO crawl (DataForSEO OnPage). NOT the audit on /visibility:
+      // that one measures AI-engine readability and is a different product.
+      // Both are linked from each other's copy so the split is explicit.
+      t("site_audit", "site-audit", ScanSearch),
       t("lighthouse", "lighthouse", Gauge),
       t("web_analytics", "web-analytics", AreaChart),
       t("bot_analytics", "bot-analytics", Bot, { badge: "new" }),

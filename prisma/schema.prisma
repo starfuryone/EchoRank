@@ -1497,3 +1497,43 @@ model LighthouseAudit {
   // History list.
   @@index([tenantId, fetchedAt])
 }
+
+/// Site Audit — one row per technical-SEO crawl of a domain.
+///
+/// DISTINCT FROM the audit on /visibility: that one measures AI-engine
+/// readability (the AI Visibility product). This one is DataForSEO's OnPage
+/// crawler checking classic technical SEO — broken links, duplicate titles,
+/// 4xx/5xx, canonical and https problems. Both exist on purpose; the copy on
+/// each page says so.
+///
+/// An ASYNC CRAWL, not a standard-queue task: OnPage is posted once and then
+/// polled via on_page/summary/<taskId> until crawl_progress is "finished",
+/// which can take minutes. `status` therefore has a real `crawling` state that
+/// the UI polls, and the row is safe to leave and come back to.
+///
+/// Billed per page CRAWLED, so `maxPages` is the cost lever and is clamped to
+/// the tenant's plan at start time.
+model SiteAudit {
+  id               String    @id @default(cuid())
+  tenantId         String
+  domain           String // normalized: no scheme, no www., no path
+  maxPages         Int
+  dataforseoTaskId String?   @unique
+  status           String    @default("queued") // queued | crawling | completed | failed
+  /// Pages crawled so far — drives the progress bar during the crawl.
+  pagesCrawled     Int       @default(0)
+  summary          Json? // SummarySection — onpage_score, page/request totals
+  issues           Json? // IssuesSection — problem checks grouped by severity
+  pages            Json? // PagesSection — worst pages, up to 100 rows
+  costUsd          Decimal   @default(0) @db.Decimal(10, 6)
+  error            String?
+  createdAt        DateTime  @default(now())
+  finishedAt       DateTime?
+
+  // Cache lookup: newest audit for this domain.
+  @@index([tenantId, domain, createdAt])
+  // History list.
+  @@index([tenantId, createdAt])
+  // Poller sweep: unfinished rows with a task id, oldest first.
+  @@index([status, createdAt])
+}

@@ -91,6 +91,8 @@ export const REDIS_CONFIG = {
     "serp-checks": { max: 4, duration: 60_000 },
     // A daily schedule tick plus manual "Run now" jobs — never bursty.
     "rank-tracker": { max: 20, duration: 60_000 },
+    // One crawl-progress sweep a minute; the limiter is a backstop.
+    "site-audit": { max: 4, duration: 60_000 },
   } as Record<string, { max: number; duration: number }>,
 } as const;
 
@@ -110,7 +112,8 @@ export type QueueName =
   | "visibility-monitoring"
   | "onboarding-email"
   | "serp-checks"
-  | "rank-tracker";
+  | "rank-tracker"
+  | "site-audit";
 
 /** All valid queue names */
 export const QUEUE_NAMES: QueueName[] = [
@@ -130,4 +133,5 @@ export const QUEUE_NAMES: QueueName[] = [
   "onboarding-email",
   "serp-checks",
   "rank-tracker",
+  "site-audit",
 ];
