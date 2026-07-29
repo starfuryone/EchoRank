@@ -21,10 +21,12 @@ import { SiteExplorerArt } from "@/components/seo-tools/help-illustrations/site-
 import { KeywordsExplorerArt } from "@/components/seo-tools/help-illustrations/keywords-explorer";
 import { GscInsightsArt } from "@/components/seo-tools/help-illustrations/gsc-insights";
 import { BrandRadarArt } from "@/components/seo-tools/help-illustrations/brand-radar";
+import { CustomPromptsArt } from "@/components/seo-tools/help-illustrations/custom-prompts";
 
 import {
   BACKLINKS_HELP_COPY,
   BRAND_RADAR_HELP_COPY,
+  CUSTOM_PROMPTS_HELP_COPY,
   GSC_HELP_COPY,
   KEYWORDS_EXPLORER_HELP_COPY,
   LIGHTHOUSE_HELP_COPY,
@@ -46,6 +48,7 @@ const ILLUSTRATIONS = [
   ["keywords-explorer", KeywordsExplorerArt],
   ["gsc-insights", GscInsightsArt],
   ["brand-radar", BrandRadarArt],
+  ["custom-prompts", CustomPromptsArt],
 ] as const;
 
 describe.each(ILLUSTRATIONS)("%s illustration", (name, Art) => {
@@ -107,6 +110,7 @@ const MIGRATED = [
   ["keywords-explorer", KEYWORDS_EXPLORER_HELP_COPY, ["crawlTitle", "scoringTitle", "contentTitle", "promptsTitle", "promptsLink", "aiTitle"]],
   ["gsc-insights", GSC_HELP_COPY, ["connectTitle", "metricsTitle", "timingTitle", "syncTitle"]],
   ["brand-radar", BRAND_RADAR_HELP_COPY, ["scoreTitle", "scoreLink", "mentionTitle", "enginesTitle", "alertsTitle", "emptyTitle"]],
+  ["custom-prompts", CUSTOM_PROMPTS_HELP_COPY, ["trackTitle", "runsTitle", "trendTitle", "writeTitle", "auditTitle", "auditLink"]],
 ] as const;
 
 describe("migrated help copy", () => {
@@ -141,6 +145,24 @@ describe("migrated help copy", () => {
           `gsc timingBody.${locale} no longer states ${claim}`,
         ).toMatch(claim);
       }
+    }
+  });
+
+  // The prompt allowance is per plan and per tenant, so the copy interpolates
+  // it rather than stating a number. A locale that dropped one of the two
+  // placeholders would read as a confident wrong figure.
+  it("custom-prompts quotes the live prompt allowance, not a hardcoded one", () => {
+    for (const locale of LOCALES) {
+      const line = CUSTOM_PROMPTS_HELP_COPY[locale].trackQuota(3, 25);
+      expect(line, `${locale} trackQuota lost the used count`).toContain("3");
+      expect(line, `${locale} trackQuota lost the limit`).toContain("25");
+    }
+    // ...and the static body must not smuggle a number back in.
+    for (const locale of LOCALES) {
+      expect(
+        CUSTOM_PROMPTS_HELP_COPY[locale].trackBody,
+        `${locale} trackBody hardcodes an allowance`,
+      ).not.toMatch(/\b\d+\s*(prompts|requêtes|Prompts)\b/);
     }
   });
 

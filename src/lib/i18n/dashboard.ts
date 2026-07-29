@@ -8857,3 +8857,117 @@ export const BRAND_RADAR_HELP_COPY: Record<DashLocale, BrandRadarHelpCopy> = {
       "Ohne Audit und ohne verfolgte Prompts gibt es tatsächlich nichts zu zeigen — die Seite sagt das, statt den Platz zu füllen. Starten Sie ein Audit, verfolgen Sie einige Prompts, und die Karten füllen sich ab den nächsten Läufen.",
   },
 };
+
+// ─── Custom Prompts help modal ──────────────────────────────────────────────
+// Written from what the page actually does: prompts run once a day (the
+// visibility-monitoring sweep advances nextRunAt by 24 h), "Run now" re-queues
+// every active prompt for an immediate batch, each run stores the full answer
+// with a Mentioned / Not mentioned verdict, and the trend strip covers 90 days
+// (prompts/history?days=90).
+//
+// Deliberately does NOT claim a number of AI engines. PromptRun.engine defaults
+// to "claude" and every stored run today is that one engine, so "we ask the
+// engines" would be copy ahead of the product. The wording survives more being
+// added without becoming a lie either way.
+const customPromptsHelpEn = {
+  button: "Help",
+  buttonAria: "How Custom Prompts works",
+  title: "How Custom Prompts works",
+  close: "Close",
+
+  intro:
+    "These are the questions your customers ask AI. Track whether the answers mention you.",
+
+  trackTitle: "Track a prompt",
+  trackBody:
+    "Add the questions that matter, phrased the way a real customer would ask — “best plumber in montreal”, not “plumber montreal seo”. Nobody types keywords at an assistant.",
+  /** Live, from the same payload the card's counter reads. */
+  trackQuota: (used: number, limit: number) =>
+    `You are tracking ${used} of ${limit} prompts on your plan.`,
+
+  runsTitle: "Runs and results",
+  runsBody:
+    "Every active prompt runs once a day. Run now re-queues all of them immediately and the results land in about a minute. Each run asks your question, stores the full answer, and marks it Mentioned or Not mentioned for your brand — with the position you were named in when there is one.",
+
+  trendTitle: "The trend",
+  trendBody:
+    "The 90-day line shows whether you are entering the answers or fading from them. Going from absent to mentioned on a buying-intent prompt beats most ranking wins.",
+
+  writeTitle: "Write better prompts",
+  writeBody:
+    "Cover the funnel: “best X in [city]”, “X vs Y”, “is X worth it”. Three angles beat ten rephrasings of one.",
+
+  auditTitle: "Not mentioned anywhere?",
+  auditBody:
+    "Run the AI Visibility audit. If the engines cannot read your site, they cannot cite you.",
+  auditLink: "Open AI Visibility →",
+};
+export type CustomPromptsHelpCopy = typeof customPromptsHelpEn;
+
+export const CUSTOM_PROMPTS_HELP_COPY: Record<DashLocale, CustomPromptsHelpCopy> = {
+  en: customPromptsHelpEn,
+  fr: {
+    button: "Aide",
+    buttonAria: "Comment fonctionnent les requêtes personnalisées",
+    title: "Comment fonctionnent les requêtes personnalisées",
+    close: "Fermer",
+
+    intro:
+      "Ce sont les questions que vos clients posent à l'IA. Vérifiez si les réponses vous mentionnent.",
+
+    trackTitle: "Suivre une requête",
+    trackBody:
+      "Ajoutez les questions qui comptent, formulées comme un vrai client les poserait — « meilleur plombier à montréal », et non « plombier montréal seo ». Personne ne tape des mots-clés à un assistant.",
+    trackQuota: (used: number, limit: number) =>
+      `Vous suivez ${used} requêtes sur les ${limit} incluses dans votre forfait.`,
+
+    runsTitle: "Exécutions et résultats",
+    runsBody:
+      "Chaque requête active s'exécute une fois par jour. « Lancer maintenant » les relance toutes immédiatement et les résultats arrivent en une minute environ. Chaque exécution pose votre question, enregistre la réponse complète et la marque « Mentionné » ou « Non mentionné » pour votre marque — avec la position à laquelle vous avez été cité le cas échéant.",
+
+    trendTitle: "La tendance",
+    trendBody:
+      "La courbe sur 90 jours montre si vous entrez dans les réponses ou si vous en disparaissez. Passer d'absent à mentionné sur une requête à intention d'achat vaut mieux que la plupart des gains de position.",
+
+    writeTitle: "Rédiger de meilleures requêtes",
+    writeBody:
+      "Couvrez tout le parcours : « meilleur X à [ville] », « X ou Y », « est-ce que X en vaut la peine ». Trois angles valent mieux que dix reformulations d'un seul.",
+
+    auditTitle: "Mentionné nulle part ?",
+    auditBody:
+      "Lancez l'audit de visibilité IA. Si les moteurs ne peuvent pas lire votre site, ils ne peuvent pas vous citer.",
+    auditLink: "Ouvrir Visibilité IA →",
+  },
+  "de-CH": {
+    button: "Hilfe",
+    buttonAria: "So funktionieren eigene Prompts",
+    title: "So funktionieren eigene Prompts",
+    close: "Schliessen",
+
+    intro:
+      "Das sind die Fragen, die Ihre Kundschaft der KI stellt. Verfolgen Sie, ob die Antworten Sie erwähnen.",
+
+    trackTitle: "Einen Prompt verfolgen",
+    trackBody:
+      "Nehmen Sie die Fragen auf, die zählen — so formuliert, wie eine echte Kundin sie stellen würde: «bester Sanitär in Zürich», nicht «sanitär zürich seo». Niemand tippt Keywords in einen Assistenten.",
+    trackQuota: (used: number, limit: number) =>
+      `Sie verfolgen ${used} von ${limit} Prompts in Ihrem Abo.`,
+
+    runsTitle: "Läufe und Ergebnisse",
+    runsBody:
+      "Jeder aktive Prompt läuft einmal täglich. «Jetzt ausführen» stellt alle sofort erneut in die Warteschlange, die Ergebnisse treffen in etwa einer Minute ein. Jeder Lauf stellt Ihre Frage, speichert die vollständige Antwort und markiert sie für Ihre Marke als «Erwähnt» oder «Nicht erwähnt» — mit der Position, an der Sie genannt wurden, sofern vorhanden.",
+
+    trendTitle: "Der Verlauf",
+    trendBody:
+      "Die 90-Tage-Linie zeigt, ob Sie in die Antworten hineinkommen oder daraus verschwinden. Bei einem Prompt mit Kaufabsicht von «nicht erwähnt» zu «erwähnt» zu wechseln, wiegt schwerer als die meisten Ranking-Erfolge.",
+
+    writeTitle: "Bessere Prompts schreiben",
+    writeBody:
+      "Decken Sie den ganzen Funnel ab: «bestes X in [Stadt]», «X oder Y», «lohnt sich X». Drei Blickwinkel bringen mehr als zehn Umformulierungen eines einzigen.",
+
+    auditTitle: "Nirgends erwähnt?",
+    auditBody:
+      "Starten Sie das KI-Sichtbarkeits-Audit. Wenn die Engines Ihre Website nicht lesen können, können sie Sie auch nicht zitieren.",
+    auditLink: "KI-Sichtbarkeit öffnen →",
+  },
+};

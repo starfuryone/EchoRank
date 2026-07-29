@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState, type ChangeEvent, type KeyboardEvent } from "react";
+import { useCallback, useEffect, useRef, useState, type ChangeEvent, type KeyboardEvent } from "react";
 import { Lock, MessageSquareText, Play, Trash2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -25,7 +25,18 @@ interface PromptRow {
   } | null;
 }
 
-export function AnswerTrackingCard({ locale = "en" }: { locale?: DashLocale }) {
+export function AnswerTrackingCard({
+  locale = "en",
+  onQuota,
+}: {
+  locale?: DashLocale;
+  /**
+   * Reports the plan allowance upward after each load, so the page header can
+   * show it (the help modal does) without issuing a second identical GET.
+   * Not called when the tenant is locked out — there is no allowance to report.
+   */
+  onQuota?: (quota: { used: number; limit: number }) => void;
+}) {
   const t = ANSWER_TRACKING_COPY[locale];
   const [locked, setLocked] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -38,6 +49,14 @@ export function AnswerTrackingCard({ locale = "en" }: { locale?: DashLocale }) {
   const [running, setRunning] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
+
+  // Held in a ref, not a dependency: `load` is a useCallback keyed on `t`, and
+  // a caller passing an inline lambda would otherwise change its identity every
+  // render and re-fetch forever.
+  const onQuotaRef = useRef(onQuota);
+  useEffect(() => {
+    onQuotaRef.current = onQuota;
+  });
 
   const load = useCallback(async () => {
     try {
@@ -52,6 +71,7 @@ export function AnswerTrackingCard({ locale = "en" }: { locale?: DashLocale }) {
       setLimit(data.limit ?? 25);
       setUsed(data.used ?? 0);
       setMentionRate(data.mentionRate ?? null);
+      onQuotaRef.current?.({ used: data.used ?? 0, limit: data.limit ?? 25 });
     } catch (e) {
       setErr(e instanceof Error ? e.message : t.loadFailed);
     } finally {
