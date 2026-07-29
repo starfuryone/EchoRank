@@ -1,0 +1,90 @@
+{
+  "_comment": "SYNTHETIC \u2014 built from Google's documented GA4 Data API v1beta runReport response shape, NOT a recorded response. No GA4 property was available to the author (the feature had never been connected). Re-record with a real property once connected and reconcile tests/web-analytics-parse.test.ts.",
+  "dimensionHeaders": [],
+  "metricHeaders": [
+    {
+      "name": "sessions",
+      "type": "TYPE_INTEGER"
+    },
+    {
+      "name": "totalUsers",
+      "type": "TYPE_INTEGER"
+    },
+    {
+      "name": "newUsers",
+      "type": "TYPE_INTEGER"
+    },
+    {
+      "name": "engagementRate",
+      "type": "TYPE_FLOAT"
+    },
+    {
+      "name": "averageSessionDuration",
+      "type": "TYPE_SECONDS"
+    },
+    {
+      "name": "keyEvents",
+      "type": "TYPE_INTEGER"
+    }
+  ],
+  "rows": [
+    {
+      "dimensionValues": [],
+      "metricValues": [
+        {
+          "value": "4820"
+        },
+        {
+          "value": "3915"
+        },
+        {
+          "value": "2604"
+        },
+        {
+          "value": "0.6431"
+        },
+        {
+          "value": "94.27"
+        },
+        {
+          "value": "137"
+        }
+      ]
+    }
+  ],
+  "rowCount": 1,
+  "metadata": {
+    "currencyCode": "USD",
+    "timeZone": "America/Toronto"
+  },
+  "kind": "analyticsData#runReport",
+  "totals": [
+    {
+      "dimensionValues": [
+        {
+          "value": "RESERVED_TOTAL"
+        }
+      ],
+      "metricValues": [
+        {
+          "value": "4820"
+        },
+        {
+          "value": "3915"
+        },
+        {
+          "value": "2604"
+        },
+        {
+          "value": "0.6431"
+        },
+        {
+          "value": "94.27"
+        },
+        {
+          "value": "137"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,446 @@
+{
+  "_comment": "SYNTHETIC \u2014 built from Google's documented GA4 Data API v1beta runReport response shape, NOT a recorded response. No GA4 property was available to the author (the feature had never been connected). Re-record with a real property once connected and reconcile tests/web-analytics-parse.test.ts.",
+  "dimensionHeaders": [
+    {
+      "name": "date"
+    }
+  ],
+  "metricHeaders": [
+    {
+      "name": "sessions",
+      "type": "TYPE_INTEGER"
+    },
+    {
+      "name": "totalUsers",
+      "type": "TYPE_INTEGER"
+    }
+  ],
+  "rows": [
+    {
+      "dimensionValues": [
+        {
+          "value": "20260701"
+        }
+      ],
+      "metricValues": [
+        {
+          "value": "202"
+        },
+        {
+          "value": "176"
+        }
+      ]
+    },
+    {
+      "dimensionValues": [
+        {
+          "value": "20260702"
+        }
+      ],
+      "metricValues": [
+        {
+          "value": "221"
+        },
+        {
+          "value": "182"
+        }
+      ]
+    },
+    {
+      "dimensionValues": [
+        {
+          "value": "20260703"
+        }
+      ],
+      "metricValues": [
+        {
+          "value": "138"
+        },
+        {
+          "value": "117"
+        }
+      ]
+    },
+    {
+      "dimensionValues": [
+        {
+          "value": "20260704"
+        }
+      ],
+      "metricValues": [
+        {
+          "value": "144"
+        },
+        {
+          "value": "112"
+        }
+      ]
+    },
+    {
+      "dimensionValues": [
+        {
+          "value": "20260705"
+        }
+      ],
+      "metricValues": [
+        {
+          "value": "134"
+        },
+        {
+          "value": "115"
+        }
+      ]
+    },
+    {
+      "dimensionValues": [
+        {
+          "value": "20260706"
+        }
+      ],
+      "metricValues": [
+        {
+          "value": "174"
+        },
+        {
+          "value": "126"
+        }
+      ]
+    },
+    {
+      "dimensionValues": [
+        {
+          "value": "20260707"
+        }
+      ],
+      "metricValues": [
+        {
+          "value": "231"
+        },
+        {
+          "value": "181"
+        }
+      ]
+    },
+    {
+      "dimensionValues": [
+        {
+          "value": "20260708"
+        }
+      ],
+      "metricValues": [
+        {
+          "value": "181"
+        },
+        {
+          "value": "132"
+        }
+      ]
+    },
+    {
+      "dimensionValues": [
+        {
+          "value": "20260709"
+        }
+      ],
+      "metricValues": [
+        {
+          "value": "228"
+        },
+        {
+          "value": "166"
+        }
+      ]
+    },
+    {
+      "dimensionValues": [
+        {
+          "value": "20260710"
+        }
+      ],
+      "metricValues": [
+        {
+          "value": "151"
+        },
+        {
+          "value": "131"
+        }
+      ]
+    },
+    {
+      "dimensionValues": [
+        {
+          "value": "20260711"
+        }
+      ],
+      "metricValues": [
+        {
+          "value": "135"
+        },
+        {
+          "value": "109"
+        }
+      ]
+    },
+    {
+      "dimensionValues": [
+        {
+          "value": "20260712"
+        }
+      ],
+      "metricValues": [
+        {
+          "value": "221"
+        },
+        {
+          "value": "160"
+        }
+      ]
+    },
+    {
+      "dimensionValues": [
+        {
+          "value": "20260713"
+        }
+      ],
+      "metricValues": [
+        {
+          "value": "0"
+        },
+        {
+          "value": "0"
+        }
+      ]
+    },
+    {
+      "dimensionValues": [
+        {
+          "value": "20260714"
+        }
+      ],
+      "metricValues": [
+        {
+          "value": "0"
+        },
+        {
+          "value": "0"
+        }
+      ]
+    },
+    {
+      "dimensionValues": [
+        {
+          "value": "20260715"
+        }
+      ],
+      "metricValues": [
+        {
+          "value": "176"
+        },
+        {
+          "value": "128"
+        }
+      ]
+    },
+    {
+      "dimensionValues": [
+        {
+          "value": "20260716"
+        }
+      ],
+      "metricValues": [
+        {
+          "value": "154"
+        },
+        {
+          "value": "118"
+        }
+      ]
+    },
+    {
+      "dimensionValues": [
+        {
+          "value": "20260717"
+        }
+      ],
+      "metricValues": [
+        {
+          "value": "156"
+        },
+        {
+          "value": "125"
+        }
+      ]
+    },
+    {
+      "dimensionValues": [
+        {
+          "value": "20260718"
+        }
+      ],
+      "metricValues": [
+        {
+          "value": "198"
+        },
+        {
+          "value": "160"
+        }
+      ]
+    },
+    {
+      "dimensionValues": [
+        {
+          "value": "20260719"
+        }
+      ],
+      "metricValues": [
+        {
+          "value": "166"
+        },
+        {
+          "value": "122"
+        }
+      ]
+    },
+    {
+      "dimensionValues": [
+        {
+          "value": "20260720"
+        }
+      ],
+      "metricValues": [
+        {
+          "value": "168"
+        },
+        {
+          "value": "130"
+        }
+      ]
+    },
+    {
+      "dimensionValues": [
+        {
+          "value": "20260721"
+        }
+      ],
+      "metricValues": [
+        {
+          "value": "260"
+        },
+        {
+          "value": "216"
+        }
+      ]
+    },
+    {
+      "dimensionValues": [
+        {
+          "value": "20260722"
+        }
+      ],
+      "metricValues": [
+        {
+          "value": "135"
+        },
+        {
+          "value": "110"
+        }
+      ]
+    },
+    {
+      "dimensionValues": [
+        {
+          "value": "20260723"
+        }
+      ],
+      "metricValues": [
+        {
+          "value": "247"
+        },
+        {
+          "value": "204"
+        }
+      ]
+    },
+    {
+      "dimensionValues": [
+        {
+          "value": "20260724"
+        }
+      ],
+      "metricValues": [
+        {
+          "value": "229"
+        },
+        {
+          "value": "193"
+        }
+      ]
+    },
+    {
+      "dimensionValues": [
+        {
+          "value": "20260725"
+        }
+      ],
+      "metricValues": [
+        {
+          "value": "239"
+        },
+        {
+          "value": "194"
+        }
+      ]
+    },
+    {
+      "dimensionValues": [
+        {
+          "value": "20260726"
+        }
+      ],
+      "metricValues": [
+        {
+          "value": "236"
+        },
+        {
+          "value": "183"
+        }
+      ]
+    },
+    {
+      "dimensionValues": [
+        {
+          "value": "20260727"
+        }
+      ],
+      "metricValues": [
+        {
+          "value": "183"
+        },
+        {
+          "value": "155"
+        }
+      ]
+    },
+    {
+      "dimensionValues": [
+        {
+          "value": "20260728"
+        }
+      ],
+      "metricValues": [
+        {
+          "value": "182"
+        },
+        {
+          "value": "133"
+        }
+      ]
+    }
+  ],
+  "rowCount": 28,
+  "metadata": {
+    "currencyCode": "USD",
+    "timeZone": "America/Toronto"
+  },
+  "kind": "analyticsData#runReport"
+}

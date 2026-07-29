@@ -196,6 +196,7 @@ model Tenant {
   extensionTokens    ExtensionToken[]
   apiKeys            ApiKey[]
   gscConnection      GscConnection?
+  gaConnection       GaConnection?
   gscQueryStats      GscQueryStat[]
 
   @@map("tenants")
@@ -1536,4 +1537,38 @@ model SiteAudit {
   @@index([tenantId, createdAt])
   // Poller sweep: unfinished rows with a task id, oldest first.
   @@index([status, createdAt])
+}
+
+enum GaConnectionStatus {
+  ACTIVE
+  NEEDS_REAUTH
+}
+
+/// Web Analytics — one GA4 connection per tenant.
+///
+/// A SEPARATE token set from GscConnection rather than incremental scope on
+/// it. The two integrations are independently connectable and disconnectable,
+/// and widening the GSC token to carry analytics.readonly would mean
+/// disconnecting Search Console also killed Analytics. Same shape, same
+/// crypto (lib/gsc/crypto.ts), same 401 -> retry -> NEEDS_REAUTH contract.
+///
+/// No report data is stored: GA4 already holds the history, so reports are
+/// queried live and cached in Redis for an hour. This row is the whole
+/// persistence footprint of the feature.
+model GaConnection {
+  id              String             @id @default(cuid())
+  tenantId        String             @unique
+  /// v1:<iv>:<tag>:<ciphertext> (base64url segments), same format as GSC.
+  refreshTokenEnc String
+  /// Chosen GA4 property, "properties/123456789"; null until picked.
+  propertyId      String?
+  /// Human label for the picked property, so the UI need not re-query.
+  propertyName    String?
+  status          GaConnectionStatus @default(ACTIVE)
+  connectedAt     DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("ga_connections")
 }

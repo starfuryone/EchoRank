@@ -1,0 +1,174 @@
+{
+  "_comment": "SYNTHETIC \u2014 built from Google's documented GA4 Data API v1beta runReport response shape, NOT a recorded response. No GA4 property was available to the author (the feature had never been connected). Re-record with a real property once connected and reconcile tests/web-analytics-parse.test.ts.",
+  "dimensionHeaders": [
+    {
+      "name": "pagePath"
+    }
+  ],
+  "metricHeaders": [
+    {
+      "name": "screenPageViews",
+      "type": "TYPE_INTEGER"
+    },
+    {
+      "name": "sessions",
+      "type": "TYPE_INTEGER"
+    },
+    {
+      "name": "engagementRate",
+      "type": "TYPE_FLOAT"
+    }
+  ],
+  "rows": [
+    {
+      "dimensionValues": [
+        {
+          "value": "/"
+        }
+      ],
+      "metricValues": [
+        {
+          "value": "1800"
+        },
+        {
+          "value": "1400"
+        },
+        {
+          "value": "0.5371"
+        }
+      ]
+    },
+    {
+      "dimensionValues": [
+        {
+          "value": "/pricing"
+        }
+      ],
+      "metricValues": [
+        {
+          "value": "1610"
+        },
+        {
+          "value": "1240"
+        },
+        {
+          "value": "0.6131"
+        }
+      ]
+    },
+    {
+      "dimensionValues": [
+        {
+          "value": "/ai-visibility"
+        }
+      ],
+      "metricValues": [
+        {
+          "value": "1420"
+        },
+        {
+          "value": "1080"
+        },
+        {
+          "value": "0.554"
+        }
+      ]
+    },
+    {
+      "dimensionValues": [
+        {
+          "value": "/demo"
+        }
+      ],
+      "metricValues": [
+        {
+          "value": "1230"
+        },
+        {
+          "value": "920"
+        },
+        {
+          "value": "0.595"
+        }
+      ]
+    },
+    {
+      "dimensionValues": [
+        {
+          "value": "/blog/local-seo-guide"
+        }
+      ],
+      "metricValues": [
+        {
+          "value": "1040"
+        },
+        {
+          "value": "760"
+        },
+        {
+          "value": "0.6575"
+        }
+      ]
+    },
+    {
+      "dimensionValues": [
+        {
+          "value": "/features"
+        }
+      ],
+      "metricValues": [
+        {
+          "value": "850"
+        },
+        {
+          "value": "600"
+        },
+        {
+          "value": "0.4485"
+        }
+      ]
+    },
+    {
+      "dimensionValues": [
+        {
+          "value": "/blog/review-management"
+        }
+      ],
+      "metricValues": [
+        {
+          "value": "660"
+        },
+        {
+          "value": "440"
+        },
+        {
+          "value": "0.6197"
+        }
+      ]
+    },
+    {
+      "dimensionValues": [
+        {
+          "value": "/contact"
+        }
+      ],
+      "metricValues": [
+        {
+          "value": "470"
+        },
+        {
+          "value": "280"
+        },
+        {
+          "value": "0.4843"
+        }
+      ]
+    }
+  ],
+  "rowCount": 8,
+  "metadata": {
+    "currencyCode": "USD",
+    "timeZone": "America/Toronto"
+  },
+  "kind": "analyticsData#runReport"
+}

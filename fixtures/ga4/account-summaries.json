@@ -1,0 +1,37 @@
+{
+  "_comment": "SYNTHETIC \u2014 built from Google's documented GA4 Data API v1beta runReport response shape, NOT a recorded response. No GA4 property was available to the author (the feature had never been connected). Re-record with a real property once connected and reconcile tests/web-analytics-parse.test.ts.",
+  "accountSummaries": [
+    {
+      "name": "accountSummaries/1001",
+      "account": "accounts/1001",
+      "displayName": "Echorank360",
+      "propertySummaries": [
+        {
+          "property": "properties/300000001",
+          "displayName": "echorank360.com \u2014 Web",
+          "propertyType": "PROPERTY_TYPE_ORDINARY",
+          "parent": "accounts/1001"
+        },
+        {
+          "property": "properties/300000002",
+          "displayName": "echorank360.com \u2014 Staging",
+          "propertyType": "PROPERTY_TYPE_ORDINARY",
+          "parent": "accounts/1001"
+        }
+      ]
+    },
+    {
+      "name": "accountSummaries/1002",
+      "account": "accounts/1002",
+      "displayName": "Client Accounts",
+      "propertySummaries": [
+        {
+          "property": "properties/300000003",
+          "displayName": "acme.example",
+          "propertyType": "PROPERTY_TYPE_ORDINARY",
+          "parent": "accounts/1002"
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,82 @@
+{
+  "_comment": "SYNTHETIC \u2014 built from Google's documented GA4 Data API v1beta runReport response shape, NOT a recorded response. No GA4 property was available to the author (the feature had never been connected). Re-record with a real property once connected and reconcile tests/web-analytics-parse.test.ts.",
+  "dimensionHeaders": [
+    {
+      "name": "sessionSource"
+    }
+  ],
+  "metricHeaders": [
+    {
+      "name": "sessions",
+      "type": "TYPE_INTEGER"
+    }
+  ],
+  "rows": [
+    {
+      "dimensionValues": [
+        {
+          "value": "reddit.com"
+        }
+      ],
+      "metricValues": [
+        {
+          "value": "181"
+        }
+      ]
+    },
+    {
+      "dimensionValues": [
+        {
+          "value": "news.ycombinator.com"
+        }
+      ],
+      "metricValues": [
+        {
+          "value": "142"
+        }
+      ]
+    },
+    {
+      "dimensionValues": [
+        {
+          "value": "producthunt.com"
+        }
+      ],
+      "metricValues": [
+        {
+          "value": "97"
+        }
+      ]
+    },
+    {
+      "dimensionValues": [
+        {
+          "value": "linkedin.com"
+        }
+      ],
+      "metricValues": [
+        {
+          "value": "88"
+        }
+      ]
+    },
+    {
+      "dimensionValues": [
+        {
+          "value": "partner-agency.example"
+        }
+      ],
+      "metricValues": [
+        {
+          "value": "54"
+        }
+      ]
+    }
+  ],
+  "rowCount": 5,
+  "metadata": {
+    "currencyCode": "USD",
+    "timeZone": "America/Toronto"
+  },
+  "kind": "analyticsData#runReport"
+}

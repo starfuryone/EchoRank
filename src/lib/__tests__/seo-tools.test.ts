@@ -957,3 +957,113 @@ test("every catalogued check has a known severity and group", () => {
   assert.ok(METRIC_ISSUES.duplicate_title, "duplicate_title must be a metric issue");
   assert.equal(METRIC_ISSUES.duplicate_title.severity, "error");
 });
+
+// ─── Web Analytics (GA4) ────────────────────────────────────────────────────
+import { WEB_ANALYTICS_COPY } from "../i18n/dashboard";
+import {
+  GA_RANGES,
+  DEFAULT_RANGE,
+  REPORTS_PER_HOUR,
+  REPORT_CACHE_TTL_SECONDS,
+  isGaRange,
+  windowsFor,
+  percentChange,
+} from "../ga/options";
+import { HEADLINE_METRICS } from "../ga/types";
+
+test("web analytics is its own tool page and keeps the reputation-analytics link", () => {
+  const tool = ALL_TOOLS.find((t) => t.id === "web_analytics")!;
+  assert.equal(tool.href, "/visibility/tools/web-analytics");
+  assert.ok(!tool.existing);
+  // The internal reputation analytics page is a DIFFERENT feature; the tool
+  // links across to it rather than replacing it.
+  assert.equal(SCAFFOLD_RELATED.web_analytics, "/analytics");
+});
+
+test("web-analytics copy complete in all locales", () => {
+  for (const locale of LOCALES) {
+    const c = WEB_ANALYTICS_COPY[locale];
+    // Connection states carry the feature before any data exists.
+    assert.ok(c.connectTitle.length && c.connectBody.length && c.connectCta.length, locale);
+    assert.ok(c.connectPrivacy.length, `${locale} connectPrivacy`);
+    assert.ok(c.pickTitle.length && c.pickBody.length && c.pickCta.length);
+    assert.ok(c.noProperties.length && c.picking.length);
+    assert.ok(c.reauthTitle.length && c.reauthBody.length && c.reauthCta.length);
+    assert.ok(c.missingScopeTitle.length && c.missingScopeBody.length);
+    assert.ok(c.quotaTitle.length && c.quotaBody.length && c.rateLimitTitle.length);
+
+    // The one-line distinction from the internal reputation analytics page.
+    assert.ok(c.vsInternalNote.length > 40, `${locale} vsInternalNote`);
+    assert.ok(c.vsInternalLink.length, `${locale} vsInternalLink`);
+
+    // Every callback error code the route can emit needs a message.
+    assert.ok(c.errorDenied.length && c.errorBadState.length);
+    assert.ok(c.errorNoRefreshToken.length && c.errorNoProperties.length);
+    assert.ok(c.errorExchangeFailed.length && c.connectFailed.length && c.loadFailed.length);
+
+    assert.ok(c.changeProperty.length && c.disconnect.length && c.disconnectConfirm.length);
+    assert.ok(c.refresh.length && c.refreshing.length && c.cachedNote.length);
+    assert.ok(c.rangeLabel.length && c.range7.length && c.range28.length && c.range90.length);
+    assert.ok(c.loading.length && c.emptyTitle.length && c.emptyBody.length);
+
+    assert.ok(c.headlineTitle.length && c.metricUnavailable.length && c.metricUnavailableHint.length);
+    assert.ok(c.metricSessions.length && c.metricTotalUsers.length && c.metricNewUsers.length);
+    assert.ok(c.metricEngagementRate.length && c.metricAvgEngagementTime.length && c.metricConversions.length);
+    assert.ok(c.trafficTitle.length && c.legendSessions.length && c.legendUsers.length);
+    assert.ok(c.channelsTitle.length && c.colChannel.length && c.colShare.length && c.channelsEmpty.length);
+    assert.ok(c.pagesTitle.length && c.colPage.length && c.colViews.length && c.pagesEmpty.length);
+    assert.ok(c.referrersTitle.length && c.colSource.length && c.referrersEmpty.length);
+
+    // Interpolated strings must actually interpolate.
+    assert.ok(c.connectedTo("My Site").includes("My Site"), `${locale} connectedTo`);
+    assert.ok(c.updatedAgo("3 minutes ago").includes("3 minutes ago"));
+    assert.ok(c.comparedTo("2026-06-01", "2026-06-28").includes("2026-06-01"));
+    assert.ok(c.rateLimitBody(10).includes("10"), `${locale} rateLimitBody`);
+  }
+});
+
+test("web-analytics copy never uses CamelCase branding or leaks GA4 field names", () => {
+  const json = JSON.stringify(WEB_ANALYTICS_COPY);
+  assert.ok(!json.includes("EchoRank"), "found CamelCase 'EchoRank'");
+  // GA4's raw API field names must never reach the UI.
+  for (const field of ["sessionDefaultChannelGroup", "screenPageViews", "sessionSource", "keyEvents"]) {
+    assert.ok(!json.includes(field), `raw GA4 field ${field} in user-facing copy`);
+  }
+});
+
+test("web-analytics ranges, cache and rate limit", () => {
+  assert.deepEqual([...GA_RANGES], [7, 28, 90]);
+  assert.equal(DEFAULT_RANGE, 28);
+  assert.ok(isGaRange(90) && !isGaRange(30));
+  // Free API, so the limit protects the property's shared quota, not revenue.
+  assert.equal(REPORTS_PER_HOUR, 10);
+  assert.equal(REPORT_CACHE_TTL_SECONDS, 3600);
+});
+
+test("the comparison window is equal-length and ends before the current one", () => {
+  const now = new Date("2026-07-29T09:00:00Z");
+  const { current, previous } = windowsFor(28, now);
+  // Today is partial in GA4; including it makes every metric look collapsed.
+  assert.equal(current.endDate, "2026-07-28");
+  assert.ok(previous.endDate < current.startDate);
+  const span = (w: { startDate: string; endDate: string }) =>
+    (Date.parse(w.endDate) - Date.parse(w.startDate)) / 86_400_000;
+  assert.equal(span(current), span(previous));
+});
+
+test("percent change refuses to divide by a zero baseline", () => {
+  // "First traffic ever" is not "+infinity%".
+  assert.equal(percentChange(50, 0), null);
+  assert.ok(Math.abs(percentChange(120, 100)! - 20) < 1e-9);
+});
+
+test("six headline metrics, in render order", () => {
+  assert.deepEqual([...HEADLINE_METRICS], [
+    "sessions",
+    "totalUsers",
+    "newUsers",
+    "engagementRate",
+    "avgEngagementTime",
+    "conversions",
+  ]);
+});

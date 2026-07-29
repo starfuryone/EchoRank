@@ -8059,3 +8059,301 @@ export const SITE_AUDIT_HELP_COPY: Record<DashLocale, SiteAuditHelpCopy> = {
       "Dieses Tool prüft klassisches technisches SEO — das, was Googles Crawler interessiert. Das AI-Visibility-Audit auf der Visibility-Seite misst etwas anderes: wie lesbar und zitierfähig Ihre Website für KI-Assistenten ist. Die meisten Websites brauchen beides.",
   },
 };
+
+// ─── Web Analytics (GA4) ────────────────────────────────────────────────────
+// A CONNECTION-first tool: most of this copy is states the user is in before
+// any data exists (disconnected, picking a property, needing to reconnect),
+// which is where an integration actually lives or dies.
+// Metric names stay in plain language; GA4's own field names (sessionSource,
+// engagementRate) never reach the UI.
+const webAnalyticsEn = {
+  // ── Connect ──
+  connectTitle: "Connect Google Analytics",
+  connectBody:
+    "See how people find and use your site — sessions, traffic sources, top pages and conversions — without leaving Echorank360.",
+  connectCta: "Connect analytics",
+  connectPrivacy: "We request read-only access. Echorank360 can never change anything in your Analytics account.",
+  vsInternalNote:
+    "This is your website traffic from Google Analytics. Reputation analytics — reviews, ratings and feedback — lives on its own page.",
+  vsInternalLink: "Open reputation analytics →",
+
+  // ── Property picker ──
+  pickTitle: "Choose a property",
+  pickBody: "Pick the Analytics property you want to report on. You can change it later.",
+  pickCta: "Use this property",
+  picking: "Saving…",
+  noProperties:
+    "This Google account has no Analytics properties. Connect an account with access to a GA4 property.",
+
+  // ── Reconnect / errors ──
+  reauthTitle: "Reconnect Google Analytics",
+  reauthBody:
+    "Your connection expired or access was withdrawn in Google. Reconnect to keep reporting.",
+  reauthCta: "Reconnect",
+  missingScopeTitle: "Analytics access is not enabled",
+  missingScopeBody:
+    "The Google connection is missing permission to read Analytics. Your administrator needs to enable it before this tool can load data.",
+  quotaTitle: "Google is rate limiting this property",
+  quotaBody: "Google's Analytics quota is temporarily used up. Try again in a few minutes.",
+  rateLimitTitle: "Too many refreshes",
+  rateLimitBody: (limit: number) =>
+    `You can refresh ${limit} times an hour. The data updates hourly anyway, so this is rarely a limit worth hitting.`,
+  loadFailed: "Could not load your analytics. Try again in a minute.",
+  connectFailed: "Could not complete the connection. Try again.",
+  errorDenied: "The Google connection was cancelled.",
+  errorBadState: "That connection link expired. Start again.",
+  errorNoRefreshToken: "Google did not return a lasting connection. Try connecting again.",
+  errorNoProperties: "That Google account has no Analytics properties.",
+  errorExchangeFailed: "Could not complete the connection. Try again.",
+
+  // ── Connected chrome ──
+  connectedTo: (property: string) => `Reporting on ${property}`,
+  changeProperty: "Change property",
+  disconnect: "Disconnect",
+  disconnectConfirm: "Disconnect Google Analytics? Your reports will stop loading until you reconnect.",
+  refresh: "Refresh",
+  refreshing: "Refreshing…",
+  updatedAgo: (ago: string) => `Updated ${ago}`,
+  cachedNote: "Cached for up to an hour.",
+  rangeLabel: "Date range",
+  range7: "Last 7 days",
+  range28: "Last 28 days",
+  range90: "Last 90 days",
+  comparedTo: (start: string, end: string) => `compared to ${start} – ${end}`,
+  loading: "Loading your analytics…",
+
+  // ── Empty ──
+  emptyTitle: "No data for this period",
+  emptyBody:
+    "This property has not recorded any traffic in the selected range. If you just installed the tag, data can take up to 48 hours to appear.",
+
+  // ── Headline ──
+  headlineTitle: "Overview",
+  metricSessions: "Sessions",
+  metricTotalUsers: "Total users",
+  metricNewUsers: "New users",
+  metricEngagementRate: "Engagement rate",
+  metricAvgEngagementTime: "Avg. session length",
+  metricConversions: "Key events",
+  metricUnavailable: "Not configured",
+  metricUnavailableHint: "This property does not report this metric.",
+
+  // ── Traffic ──
+  trafficTitle: "Traffic over time",
+  trafficSubtitle: "Sessions and users, day by day.",
+  legendSessions: "Sessions",
+  legendUsers: "Users",
+
+  // ── Channels ──
+  channelsTitle: "Where visitors come from",
+  channelsSubtitle: "Sessions by channel.",
+  colChannel: "Channel",
+  colSessions: "Sessions",
+  colShare: "Share",
+  channelsEmpty: "No channel data for this period.",
+
+  // ── Pages ──
+  pagesTitle: "Top pages",
+  colPage: "Page",
+  colViews: "Views",
+  colEngagement: "Engagement",
+  pagesEmpty: "No page data for this period.",
+
+  // ── Referrers ──
+  referrersTitle: "Top referrers",
+  referrersSubtitle: "Sites sending you referral traffic.",
+  colSource: "Source",
+  referrersEmpty: "No referral traffic in this period.",
+};
+export type WebAnalyticsCopy = typeof webAnalyticsEn;
+
+export const WEB_ANALYTICS_COPY: Record<DashLocale, WebAnalyticsCopy> = {
+  en: webAnalyticsEn,
+  fr: {
+    connectTitle: "Connecter Google Analytics",
+    connectBody:
+      "Découvrez comment les gens trouvent et utilisent votre site — sessions, sources de trafic, pages populaires et conversions — sans quitter Echorank360.",
+    connectCta: "Connecter Analytics",
+    connectPrivacy:
+      "Nous demandons un accès en lecture seule. Echorank360 ne peut jamais rien modifier dans votre compte Analytics.",
+    vsInternalNote:
+      "Il s'agit du trafic de votre site web, provenant de Google Analytics. L'analyse de réputation — avis, notes et commentaires — se trouve sur sa propre page.",
+    vsInternalLink: "Ouvrir l'analyse de réputation →",
+
+    pickTitle: "Choisissez une propriété",
+    pickBody:
+      "Sélectionnez la propriété Analytics sur laquelle porteront les rapports. Vous pourrez la changer plus tard.",
+    pickCta: "Utiliser cette propriété",
+    picking: "Enregistrement…",
+    noProperties:
+      "Ce compte Google ne possède aucune propriété Analytics. Connectez un compte ayant accès à une propriété GA4.",
+
+    reauthTitle: "Reconnecter Google Analytics",
+    reauthBody:
+      "Votre connexion a expiré ou l'accès a été retiré dans Google. Reconnectez-vous pour continuer à voir vos rapports.",
+    reauthCta: "Reconnecter",
+    missingScopeTitle: "L'accès à Analytics n'est pas activé",
+    missingScopeBody:
+      "La connexion Google n'a pas la permission de lire Analytics. Votre administrateur doit l'activer avant que cet outil puisse charger des données.",
+    quotaTitle: "Google limite temporairement cette propriété",
+    quotaBody:
+      "Le quota Analytics de Google est temporairement épuisé. Réessayez dans quelques minutes.",
+    rateLimitTitle: "Trop d'actualisations",
+    rateLimitBody: (limit: number) =>
+      `Vous pouvez actualiser ${limit} fois par heure. Les données se mettent de toute façon à jour chaque heure.`,
+    loadFailed: "Impossible de charger vos données. Réessayez dans une minute.",
+    connectFailed: "Impossible de terminer la connexion. Réessayez.",
+    errorDenied: "La connexion Google a été annulée.",
+    errorBadState: "Ce lien de connexion a expiré. Recommencez.",
+    errorNoRefreshToken: "Google n'a pas retourné de connexion durable. Essayez de vous reconnecter.",
+    errorNoProperties: "Ce compte Google ne possède aucune propriété Analytics.",
+    errorExchangeFailed: "Impossible de terminer la connexion. Réessayez.",
+
+    connectedTo: (property: string) => `Rapports pour ${property}`,
+    changeProperty: "Changer de propriété",
+    disconnect: "Déconnecter",
+    disconnectConfirm:
+      "Déconnecter Google Analytics ? Vos rapports cesseront de se charger jusqu'à une nouvelle connexion.",
+    refresh: "Actualiser",
+    refreshing: "Actualisation…",
+    updatedAgo: (ago: string) => `Mis à jour ${ago}`,
+    cachedNote: "Mis en cache jusqu'à une heure.",
+    rangeLabel: "Période",
+    range7: "7 derniers jours",
+    range28: "28 derniers jours",
+    range90: "90 derniers jours",
+    comparedTo: (start: string, end: string) => `par rapport au ${start} – ${end}`,
+    loading: "Chargement de vos données…",
+
+    emptyTitle: "Aucune donnée pour cette période",
+    emptyBody:
+      "Cette propriété n'a enregistré aucun trafic sur la période choisie. Si vous venez d'installer la balise, les données peuvent prendre jusqu'à 48 heures à apparaître.",
+
+    headlineTitle: "Aperçu",
+    metricSessions: "Sessions",
+    metricTotalUsers: "Utilisateurs totaux",
+    metricNewUsers: "Nouveaux utilisateurs",
+    metricEngagementRate: "Taux d'engagement",
+    metricAvgEngagementTime: "Durée moyenne des sessions",
+    metricConversions: "Événements clés",
+    metricUnavailable: "Non configuré",
+    metricUnavailableHint: "Cette propriété ne fournit pas cette mesure.",
+
+    trafficTitle: "Trafic dans le temps",
+    trafficSubtitle: "Sessions et utilisateurs, jour par jour.",
+    legendSessions: "Sessions",
+    legendUsers: "Utilisateurs",
+
+    channelsTitle: "D'où viennent les visiteurs",
+    channelsSubtitle: "Sessions par canal.",
+    colChannel: "Canal",
+    colSessions: "Sessions",
+    colShare: "Part",
+    channelsEmpty: "Aucune donnée de canal pour cette période.",
+
+    pagesTitle: "Pages les plus vues",
+    colPage: "Page",
+    colViews: "Vues",
+    colEngagement: "Engagement",
+    pagesEmpty: "Aucune donnée de page pour cette période.",
+
+    referrersTitle: "Principaux sites référents",
+    referrersSubtitle: "Sites qui vous envoient du trafic de référence.",
+    colSource: "Source",
+    referrersEmpty: "Aucun trafic de référence sur cette période.",
+  },
+  "de-CH": {
+    connectTitle: "Google Analytics verbinden",
+    connectBody:
+      "Sehen Sie, wie Menschen Ihre Website finden und nutzen — Sitzungen, Traffic-Quellen, Top-Seiten und Conversions — ohne Echorank360 zu verlassen.",
+    connectCta: "Analytics verbinden",
+    connectPrivacy:
+      "Wir fragen nur Lesezugriff an. Echorank360 kann in Ihrem Analytics-Konto nichts verändern.",
+    vsInternalNote:
+      "Dies ist Ihr Website-Traffic aus Google Analytics. Die Reputationsanalyse — Bewertungen, Sterne und Feedback — hat ihre eigene Seite.",
+    vsInternalLink: "Reputationsanalyse öffnen →",
+
+    pickTitle: "Property auswählen",
+    pickBody:
+      "Wählen Sie die Analytics-Property für Ihre Berichte. Sie können sie später ändern.",
+    pickCta: "Diese Property verwenden",
+    picking: "Wird gespeichert…",
+    noProperties:
+      "Dieses Google-Konto hat keine Analytics-Properties. Verbinden Sie ein Konto mit Zugriff auf eine GA4-Property.",
+
+    reauthTitle: "Google Analytics neu verbinden",
+    reauthBody:
+      "Ihre Verbindung ist abgelaufen oder der Zugriff wurde in Google entzogen. Verbinden Sie neu, um weiter Berichte zu sehen.",
+    reauthCta: "Neu verbinden",
+    missingScopeTitle: "Analytics-Zugriff ist nicht aktiviert",
+    missingScopeBody:
+      "Der Google-Verbindung fehlt die Berechtigung, Analytics zu lesen. Ihre Administration muss sie aktivieren, bevor dieses Tool Daten laden kann.",
+    quotaTitle: "Google drosselt diese Property gerade",
+    quotaBody:
+      "Das Analytics-Kontingent von Google ist vorübergehend aufgebraucht. Versuchen Sie es in einigen Minuten erneut.",
+    rateLimitTitle: "Zu viele Aktualisierungen",
+    rateLimitBody: (limit: number) =>
+      `Sie können ${limit}-mal pro Stunde aktualisieren. Die Daten werden ohnehin stündlich aktualisiert.`,
+    loadFailed: "Ihre Daten konnten nicht geladen werden. Versuchen Sie es in einer Minute erneut.",
+    connectFailed: "Die Verbindung konnte nicht abgeschlossen werden. Versuchen Sie es erneut.",
+    errorDenied: "Die Google-Verbindung wurde abgebrochen.",
+    errorBadState: "Dieser Verbindungslink ist abgelaufen. Beginnen Sie neu.",
+    errorNoRefreshToken:
+      "Google hat keine dauerhafte Verbindung zurückgegeben. Versuchen Sie es erneut.",
+    errorNoProperties: "Dieses Google-Konto hat keine Analytics-Properties.",
+    errorExchangeFailed: "Die Verbindung konnte nicht abgeschlossen werden. Versuchen Sie es erneut.",
+
+    connectedTo: (property: string) => `Berichte für ${property}`,
+    changeProperty: "Property wechseln",
+    disconnect: "Trennen",
+    disconnectConfirm:
+      "Google Analytics trennen? Ihre Berichte laden erst nach einer neuen Verbindung wieder.",
+    refresh: "Aktualisieren",
+    refreshing: "Wird aktualisiert…",
+    updatedAgo: (ago: string) => `Aktualisiert ${ago}`,
+    cachedNote: "Bis zu eine Stunde zwischengespeichert.",
+    rangeLabel: "Zeitraum",
+    range7: "Letzte 7 Tage",
+    range28: "Letzte 28 Tage",
+    range90: "Letzte 90 Tage",
+    comparedTo: (start: string, end: string) => `verglichen mit ${start} – ${end}`,
+    loading: "Ihre Daten werden geladen…",
+
+    emptyTitle: "Keine Daten für diesen Zeitraum",
+    emptyBody:
+      "Diese Property hat im gewählten Zeitraum keinen Traffic erfasst. Wenn Sie das Tag gerade erst eingebaut haben, kann es bis zu 48 Stunden dauern, bis Daten erscheinen.",
+
+    headlineTitle: "Übersicht",
+    metricSessions: "Sitzungen",
+    metricTotalUsers: "Nutzende gesamt",
+    metricNewUsers: "Neue Nutzende",
+    metricEngagementRate: "Interaktionsrate",
+    metricAvgEngagementTime: "Ø Sitzungsdauer",
+    metricConversions: "Schlüsselereignisse",
+    metricUnavailable: "Nicht konfiguriert",
+    metricUnavailableHint: "Diese Property liefert diese Kennzahl nicht.",
+
+    trafficTitle: "Traffic über die Zeit",
+    trafficSubtitle: "Sitzungen und Nutzende, Tag für Tag.",
+    legendSessions: "Sitzungen",
+    legendUsers: "Nutzende",
+
+    channelsTitle: "Woher die Besuchenden kommen",
+    channelsSubtitle: "Sitzungen nach Kanal.",
+    colChannel: "Kanal",
+    colSessions: "Sitzungen",
+    colShare: "Anteil",
+    channelsEmpty: "Keine Kanaldaten für diesen Zeitraum.",
+
+    pagesTitle: "Top-Seiten",
+    colPage: "Seite",
+    colViews: "Aufrufe",
+    colEngagement: "Interaktion",
+    pagesEmpty: "Keine Seitendaten für diesen Zeitraum.",
+
+    referrersTitle: "Top-Verweisquellen",
+    referrersSubtitle: "Websites, die Ihnen Verweis-Traffic senden.",
+    colSource: "Quelle",
+    referrersEmpty: "Kein Verweis-Traffic in diesem Zeitraum.",
+  },
+};
