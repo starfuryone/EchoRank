@@ -278,8 +278,12 @@ export function VisibilityPageClient({
       {/* Scheduled monitoring (GROWTH+) */}
       <MonitorCard locale={locale} suggestedUrl={audit && !loading && !error ? url : null} />
 
-      {/* Answer tracking (AGENCY+) */}
-      <div id="prompts">
+      {/* Answer tracking (AGENCY+). #prompts is the target of the SEO Tools
+          "Custom Prompts" card, the onboarding "Add 3 tracked prompts" step,
+          Brand Radar and the Keywords page. scroll-mt-20 (5rem) clears the
+          sticky h-16 (4rem) header in layout/header.tsx — without it the
+          browser scrolls the heading exactly under the header. */}
+      <div id="prompts" className="scroll-mt-20">
         <AnswerTrackingCard locale={locale} />
       </div>
       <PromptTrends locale={locale} />
