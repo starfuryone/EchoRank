@@ -5913,6 +5913,13 @@ const gscEn = {
   propertyLabel: "Property",
   lastSync: (d: string) => `Last sync: ${d}`,
   neverSynced: "Not synced yet",
+  // "Last sync" alone cannot distinguish a sync that ran and stored rows from
+  // one that ran and stored none — the second looks identical to a broken
+  // sync. lastRowsSynced makes the difference visible.
+  syncedRows: (rows: number) => (rows === 1 ? "1 row stored" : `${rows} rows stored`),
+  syncedNoRows: "0 rows stored",
+  syncedNoRowsHint:
+    "The sync ran and Google returned no query rows. That is normal on a low-traffic property: Google withholds queries searched by too few people to stay anonymous.",
   syncNow: "Sync now",
   syncing: "Syncing…",
   syncDone: (n: number) => `Synced ${n} query rows.`,
@@ -5967,6 +5974,11 @@ export const GSC_COPY: Record<DashLocale, GscCopy> = {
     propertyLabel: "Propriété",
     lastSync: (d: string) => `Dernière synchronisation : ${d}`,
     neverSynced: "Pas encore synchronisé",
+    syncedRows: (rows: number) =>
+      rows === 1 ? "1 ligne enregistrée" : `${rows} lignes enregistrées`,
+    syncedNoRows: "0 ligne enregistrée",
+    syncedNoRowsHint:
+      "La synchronisation a bien eu lieu et Google n'a renvoyé aucune ligne de requête. C'est normal sur une propriété à faible trafic : Google masque les requêtes effectuées par trop peu de personnes pour rester anonymes.",
     syncNow: "Synchroniser maintenant",
     syncing: "Synchronisation…",
     syncDone: (n: number) => `${n} lignes de requêtes synchronisées.`,
@@ -6017,6 +6029,11 @@ export const GSC_COPY: Record<DashLocale, GscCopy> = {
     propertyLabel: "Property",
     lastSync: (d: string) => `Letzte Synchronisierung: ${d}`,
     neverSynced: "Noch nicht synchronisiert",
+    syncedRows: (rows: number) =>
+      rows === 1 ? "1 Zeile gespeichert" : `${rows} Zeilen gespeichert`,
+    syncedNoRows: "0 Zeilen gespeichert",
+    syncedNoRowsHint:
+      "Die Synchronisierung lief und Google lieferte keine Suchanfragen-Zeilen. Bei einer Property mit wenig Traffic ist das normal: Google hält Suchanfragen zurück, die von zu wenigen Personen gestellt wurden, um anonym zu bleiben.",
     syncNow: "Jetzt synchronisieren",
     syncing: "Wird synchronisiert…",
     syncDone: (n: number) => `${n} Suchanfragen-Zeilen synchronisiert.`,
@@ -8355,5 +8372,471 @@ export const WEB_ANALYTICS_COPY: Record<DashLocale, WebAnalyticsCopy> = {
     referrersSubtitle: "Websites, die Ihnen Verweis-Traffic senden.",
     colSource: "Quelle",
     referrersEmpty: "Kein Verweis-Traffic in diesem Zeitraum.",
+  },
+};
+
+// ─── SERP Checker help modal ────────────────────────────────────────────────
+// Same shape as the other tool help catalogs. The single thing users get wrong
+// here is expecting an instant answer: the check is queued and a worker fills
+// it in, so the wait is a first-class part of the explanation, not a footnote.
+const serpCheckerHelpEn = {
+  button: "Help",
+  buttonAria: "How the SERP checker works",
+  title: "How the SERP checker works",
+  close: "Close",
+
+  intro: "Each check captures Google's live results page for one keyword, exactly as it looked at that moment.",
+
+  snapshotTitle: "A check is a snapshot, not a tracker",
+  snapshotBody:
+    "You get the top 100 organic results for that keyword at the moment the check ran — position, title, URL and domain. It is a photograph of one search. To watch a position change over time, add the keyword to Rank Tracker instead.",
+
+  targetingTitle: "Location, language and device change the answer",
+  targetingBody:
+    "Google returns different results for the same keyword depending on where the searcher is, what language they search in, and whether they are on a phone. Set these to match the customer you are trying to reach — a desktop check from the wrong country tells you very little.",
+
+  featuresTitle: "SERP features push organic results down",
+  featuresBody:
+    "The chips above the table are the non-organic blocks Google put on the page: ads, featured snippets, People Also Ask, local packs, videos. Position 1 organic can still sit below the fold when enough of them are present, which is why two keywords at the same position perform differently.",
+
+  timingTitle: "Results take a minute or two",
+  timingBody:
+    "The check is queued and completed by a background worker, so it appears as Queued first. You can leave this page — the result lands in your history either way. Re-running the same keyword and settings shortly after reuses the stored result rather than spending your quota again.",
+};
+export type SerpCheckerHelpCopy = typeof serpCheckerHelpEn;
+
+export const SERP_CHECKER_HELP_COPY: Record<DashLocale, SerpCheckerHelpCopy> = {
+  en: serpCheckerHelpEn,
+  fr: {
+    button: "Aide",
+    buttonAria: "Comment fonctionne le vérificateur de SERP",
+    title: "Comment fonctionne le vérificateur de SERP",
+    close: "Fermer",
+
+    intro:
+      "Chaque vérification capture la page de résultats de Google pour un mot-clé, telle qu'elle était à cet instant.",
+
+    snapshotTitle: "Une vérification est un instantané, pas un suivi",
+    snapshotBody:
+      "Vous obtenez les 100 premiers résultats organiques pour ce mot-clé au moment de la vérification : position, titre, URL et domaine. C'est la photographie d'une seule recherche. Pour suivre l'évolution d'une position dans le temps, ajoutez plutôt le mot-clé au suivi de positions.",
+
+    targetingTitle: "Lieu, langue et appareil changent la réponse",
+    targetingBody:
+      "Google renvoie des résultats différents pour un même mot-clé selon l'endroit d'où l'on cherche, la langue utilisée et l'usage d'un téléphone. Réglez ces champs sur le client que vous visez : une vérification sur ordinateur depuis le mauvais pays vous apprend peu de choses.",
+
+    featuresTitle: "Les fonctionnalités SERP repoussent l'organique vers le bas",
+    featuresBody:
+      "Les étiquettes au-dessus du tableau sont les blocs non organiques que Google a placés sur la page : annonces, extraits optimisés, questions fréquentes, packs locaux, vidéos. La première position organique peut rester sous la ligne de flottaison quand ils sont nombreux — d'où deux mots-clés à la même position qui ne performent pas pareil.",
+
+    timingTitle: "Les résultats prennent une à deux minutes",
+    timingBody:
+      "La vérification est mise en file d'attente puis complétée par un processus en arrière-plan : elle apparaît donc d'abord comme « En attente ». Vous pouvez quitter cette page — le résultat arrive dans votre historique dans tous les cas. Relancer le même mot-clé avec les mêmes réglages peu après réutilise le résultat stocké au lieu de consommer votre quota.",
+  },
+  "de-CH": {
+    button: "Hilfe",
+    buttonAria: "So funktioniert die SERP-Prüfung",
+    title: "So funktioniert die SERP-Prüfung",
+    close: "Schliessen",
+
+    intro:
+      "Jede Prüfung erfasst die Google-Ergebnisseite für ein Keyword genau so, wie sie in diesem Moment aussah.",
+
+    snapshotTitle: "Eine Prüfung ist eine Momentaufnahme, kein Monitoring",
+    snapshotBody:
+      "Sie erhalten die ersten 100 organischen Ergebnisse für dieses Keyword zum Zeitpunkt der Prüfung — Position, Titel, URL und Domain. Es ist die Aufnahme einer einzelnen Suche. Um eine Position über die Zeit zu beobachten, nehmen Sie das Keyword stattdessen ins Rank Tracking auf.",
+
+    targetingTitle: "Standort, Sprache und Gerät ändern das Ergebnis",
+    targetingBody:
+      "Google liefert für dasselbe Keyword unterschiedliche Ergebnisse — je nachdem, von wo gesucht wird, in welcher Sprache und ob am Mobilgerät. Stellen Sie diese Felder auf die Kundschaft ein, die Sie erreichen wollen: eine Desktop-Prüfung aus dem falschen Land sagt wenig aus.",
+
+    featuresTitle: "SERP-Features drängen organische Treffer nach unten",
+    featuresBody:
+      "Die Chips über der Tabelle sind die nicht-organischen Blöcke, die Google auf der Seite platziert hat: Anzeigen, hervorgehobene Snippets, «Ähnliche Fragen», lokale Packs, Videos. Position 1 organisch kann trotzdem unterhalb des sichtbaren Bereichs liegen, wenn genügend davon vorhanden sind — deshalb liefern zwei Keywords auf derselben Position unterschiedliche Ergebnisse.",
+
+    timingTitle: "Ergebnisse brauchen ein bis zwei Minuten",
+    timingBody:
+      "Die Prüfung wird eingereiht und von einem Hintergrundprozess abgeschlossen, erscheint also zuerst als «In Warteschlange». Sie können diese Seite verlassen — das Ergebnis landet ohnehin in Ihrem Verlauf. Dasselbe Keyword mit denselben Einstellungen kurz darauf erneut zu prüfen nutzt das gespeicherte Ergebnis, statt Ihr Kontingent nochmals zu belasten.",
+  },
+};
+
+// ─── Site Explorer help modal ───────────────────────────────────────────────
+// The recurring support question is "why doesn't this match Analytics?" — the
+// answer (these are modelled estimates for ANY domain, including ones you do
+// not own) leads the modal rather than hiding in a caveat at the bottom.
+const siteExplorerHelpEn = {
+  button: "Help",
+  buttonAria: "How Site Explorer works",
+  title: "How Site Explorer works",
+  close: "Close",
+
+  intro: "Enter any domain — yours or a competitor's — and see what it ranks for, who it competes with, and who links to it.",
+
+  estimatesTitle: "The traffic numbers are estimates",
+  estimatesBody:
+    "Monthly traffic and traffic value are modelled from each keyword's search volume and the typical click-through rate at the position the domain holds. They will not match Google Analytics, and they are not meant to — the point is that the same model is applied to every domain, so you can compare them fairly.",
+
+  distributionTitle: "Read the position distribution first",
+  distributionBody:
+    "The five buckets show how many keywords sit at position 1, 2–3, 4–10, 11–20 and 21–100. Positions 4–10 and 11–20 are where the work pays off fastest: those pages already rank and a few places of movement changes real traffic.",
+
+  competitorsTitle: "Competitors means shared rankings",
+  competitorsBody:
+    "These are the domains that appear alongside this one for the most keywords — intersections is how many keywords they share. They are search competitors, not necessarily business rivals, and that difference is often the useful part.",
+
+  backlinksTitle: "The backlink summary",
+  backlinksBody:
+    "Referring domains matters more than raw backlink count: a thousand links from one site is one relationship. Dofollow domains are the ones passing ranking signals, and broken backlinks are links pointing at pages that no longer resolve — the cheapest wins on the page.",
+
+  quotaTitle: "Each analysis spends quota",
+  quotaBody:
+    "Running a domain makes four live calls, so it counts against your monthly allowance; opening a stored analysis from your history never does. If one section shows as unavailable the rest still render — the analysis is marked partial rather than thrown away.",
+};
+export type SiteExplorerHelpCopy = typeof siteExplorerHelpEn;
+
+export const SITE_EXPLORER_HELP_COPY: Record<DashLocale, SiteExplorerHelpCopy> = {
+  en: siteExplorerHelpEn,
+  fr: {
+    button: "Aide",
+    buttonAria: "Comment fonctionne l'explorateur de site",
+    title: "Comment fonctionne l'explorateur de site",
+    close: "Fermer",
+
+    intro:
+      "Saisissez n'importe quel domaine — le vôtre ou celui d'un concurrent — et voyez sur quoi il se positionne, face à qui, et qui pointe vers lui.",
+
+    estimatesTitle: "Les chiffres de trafic sont des estimations",
+    estimatesBody:
+      "Le trafic mensuel et sa valeur sont modélisés à partir du volume de recherche de chaque mot-clé et du taux de clic habituel à la position occupée. Ils ne correspondront pas à Google Analytics, et ce n'est pas le but : le même modèle s'applique à tous les domaines, ce qui permet de les comparer équitablement.",
+
+    distributionTitle: "Lisez d'abord la répartition des positions",
+    distributionBody:
+      "Les cinq tranches indiquent combien de mots-clés se situent en position 1, 2–3, 4–10, 11–20 et 21–100. Les positions 4–10 et 11–20 sont celles où le travail paie le plus vite : ces pages se positionnent déjà, et quelques places gagnées changent le trafic réel.",
+
+    competitorsTitle: "« Concurrents » signifie positions partagées",
+    competitorsBody:
+      "Ce sont les domaines qui apparaissent aux côtés de celui-ci sur le plus de mots-clés — les intersections indiquent combien de mots-clés sont communs. Ce sont des concurrents dans les résultats de recherche, pas nécessairement des rivaux commerciaux, et cette différence est souvent la partie utile.",
+
+    backlinksTitle: "Le résumé des backlinks",
+    backlinksBody:
+      "Le nombre de domaines référents compte plus que le nombre brut de liens : mille liens depuis un seul site, c'est une seule relation. Les domaines dofollow sont ceux qui transmettent des signaux de classement, et les backlinks cassés pointent vers des pages qui ne répondent plus — les gains les plus faciles de la page.",
+
+    quotaTitle: "Chaque analyse consomme du quota",
+    quotaBody:
+      "Analyser un domaine déclenche quatre appels en direct et compte donc dans votre allocation mensuelle ; rouvrir une analyse depuis votre historique ne coûte rien. Si une section est indisponible, les autres s'affichent quand même — l'analyse est marquée comme partielle plutôt que jetée.",
+  },
+  "de-CH": {
+    button: "Hilfe",
+    buttonAria: "So funktioniert der Site Explorer",
+    title: "So funktioniert der Site Explorer",
+    close: "Schliessen",
+
+    intro:
+      "Geben Sie eine beliebige Domain ein — Ihre eigene oder die der Konkurrenz — und sehen Sie, wofür sie rankt, mit wem sie konkurriert und wer auf sie verlinkt.",
+
+    estimatesTitle: "Die Traffic-Zahlen sind Schätzungen",
+    estimatesBody:
+      "Monatlicher Traffic und Traffic-Wert werden aus dem Suchvolumen jedes Keywords und der üblichen Klickrate auf der belegten Position modelliert. Sie stimmen nicht mit Google Analytics überein und sollen es auch nicht — entscheidend ist, dass dasselbe Modell auf jede Domain angewendet wird und ein fairer Vergleich möglich ist.",
+
+    distributionTitle: "Lesen Sie zuerst die Positionsverteilung",
+    distributionBody:
+      "Die fünf Gruppen zeigen, wie viele Keywords auf Position 1, 2–3, 4–10, 11–20 und 21–100 liegen. Bei 4–10 und 11–20 zahlt sich Arbeit am schnellsten aus: Diese Seiten ranken bereits, und wenige Plätze Bewegung verändern echten Traffic.",
+
+    competitorsTitle: "«Mitbewerber» heisst geteilte Rankings",
+    competitorsBody:
+      "Das sind die Domains, die bei den meisten Keywords neben dieser erscheinen — Überschneidungen zeigt, wie viele Keywords sie teilen. Es sind Suchmaschinen-Mitbewerber, nicht zwingend geschäftliche Konkurrenz, und genau dieser Unterschied ist oft das Nützliche daran.",
+
+    backlinksTitle: "Die Backlink-Übersicht",
+    backlinksBody:
+      "Verweisende Domains zählen mehr als die reine Zahl der Backlinks: tausend Links von einer Website sind eine Beziehung. Dofollow-Domains geben Ranking-Signale weiter, und defekte Backlinks zeigen auf Seiten, die nicht mehr erreichbar sind — die günstigsten Erfolge auf dieser Seite.",
+
+    quotaTitle: "Jede Analyse verbraucht Kontingent",
+    quotaBody:
+      "Eine Domain zu analysieren löst vier Live-Abfragen aus und zählt daher gegen Ihr Monatskontingent; eine gespeicherte Analyse aus dem Verlauf zu öffnen nie. Ist ein Abschnitt nicht verfügbar, werden die übrigen trotzdem dargestellt — die Analyse gilt als unvollständig statt als verworfen.",
+  },
+};
+
+// ─── Keywords Explorer help modal ───────────────────────────────────────────
+// This tool crawls the page you give it rather than querying a keyword index,
+// which is the opposite of what the name leads people to expect. The modal
+// says so in the first line.
+const keywordsExplorerHelpEn = {
+  button: "Help",
+  buttonAria: "How the keyword suggester works",
+  title: "How the keyword suggester works",
+  close: "Close",
+
+  intro: "Point it at one of your pages. It reads the page and suggests the keywords that page could realistically win.",
+
+  crawlTitle: "It reads your page, not a keyword database",
+  crawlBody:
+    "Enter a URL and the scan crawls that page and a few linked ones, then works from the words actually on them. Suggestions are therefore grounded in what you already publish — which is why a thin page produces thin suggestions, and the fix is the page rather than the tool.",
+
+  scoringTitle: "Score and difficulty are estimates",
+  scoringBody:
+    "Score ranks the suggestions against each other for this page; difficulty is a low / medium / high band, not a competitor count. Treat them as an ordering to work through, not as absolute numbers to report.",
+
+  contentTitle: "Present and missing terms",
+  contentBody:
+    "Present terms are the relevant words the page already uses. Missing terms are ones closely related pages tend to cover and this one does not — each is a paragraph you could add. The title and meta suggestions are drafts to edit, not text to paste unread.",
+
+  promptsTitle: "AI visibility prompts are the handoff",
+  promptsBody:
+    "The prompts tab turns the same analysis into questions a customer might ask an AI assistant. Track the ones that matter and you can watch whether your brand gets mentioned in the answers over time.",
+  promptsLink: "Open Custom Prompts →",
+
+  aiTitle: "The AI pass is optional",
+  aiBody:
+    "Regenerate with AI re-runs the analysis through a language model for broader suggestions. Without a provider configured, the scan still works — it falls back to the built-in heuristics and tells you so instead of failing.",
+};
+export type KeywordsExplorerHelpCopy = typeof keywordsExplorerHelpEn;
+
+export const KEYWORDS_EXPLORER_HELP_COPY: Record<DashLocale, KeywordsExplorerHelpCopy> = {
+  en: keywordsExplorerHelpEn,
+  fr: {
+    button: "Aide",
+    buttonAria: "Comment fonctionne le suggesteur de mots-clés",
+    title: "Comment fonctionne le suggesteur de mots-clés",
+    close: "Fermer",
+
+    intro:
+      "Indiquez-lui une de vos pages. Il la lit et propose les mots-clés que cette page pourrait réellement gagner.",
+
+    crawlTitle: "Il lit votre page, pas une base de mots-clés",
+    crawlBody:
+      "Saisissez une URL : l'analyse explore cette page et quelques pages liées, puis travaille à partir des mots qui s'y trouvent réellement. Les suggestions sont donc ancrées dans ce que vous publiez déjà — une page pauvre produit des suggestions pauvres, et c'est la page qu'il faut corriger, pas l'outil.",
+
+    scoringTitle: "Le score et la difficulté sont des estimations",
+    scoringBody:
+      "Le score classe les suggestions les unes par rapport aux autres pour cette page ; la difficulté est une tranche faible / moyenne / élevée, pas un nombre de concurrents. Voyez-y un ordre de travail, pas des valeurs absolues à reporter.",
+
+    contentTitle: "Termes présents et termes manquants",
+    contentBody:
+      "Les termes présents sont les mots pertinents que la page utilise déjà. Les termes manquants sont ceux que les pages proches traitent généralement et que celle-ci ignore — chacun est un paragraphe à ajouter. Les suggestions de titre et de méta-description sont des brouillons à retravailler, pas du texte à coller sans le lire.",
+
+    promptsTitle: "Les requêtes d'IA sont le prolongement",
+    promptsBody:
+      "L'onglet des requêtes transforme la même analyse en questions qu'un client pourrait poser à un assistant IA. Suivez celles qui comptent et vous verrez si votre marque est citée dans les réponses au fil du temps.",
+    promptsLink: "Ouvrir les requêtes personnalisées →",
+
+    aiTitle: "Le passage par l'IA est facultatif",
+    aiBody:
+      "« Régénérer avec l'IA » relance l'analyse via un modèle de langage pour élargir les suggestions. Sans fournisseur configuré, l'analyse fonctionne quand même : elle revient aux heuristiques intégrées et vous le signale au lieu d'échouer.",
+  },
+  "de-CH": {
+    button: "Hilfe",
+    buttonAria: "So funktioniert der Keyword-Vorschlag",
+    title: "So funktioniert der Keyword-Vorschlag",
+    close: "Schliessen",
+
+    intro:
+      "Geben Sie eine Ihrer Seiten an. Das Tool liest die Seite und schlägt die Keywords vor, die diese Seite realistisch gewinnen kann.",
+
+    crawlTitle: "Es liest Ihre Seite, keine Keyword-Datenbank",
+    crawlBody:
+      "Geben Sie eine URL ein: Der Scan crawlt diese Seite und einige verlinkte Seiten und arbeitet dann mit den Wörtern, die tatsächlich darauf stehen. Die Vorschläge beruhen also auf dem, was Sie bereits veröffentlichen — eine dünne Seite liefert dünne Vorschläge, und zu korrigieren ist die Seite, nicht das Tool.",
+
+    scoringTitle: "Score und Schwierigkeit sind Schätzungen",
+    scoringBody:
+      "Der Score ordnet die Vorschläge für diese Seite untereinander; die Schwierigkeit ist eine Einstufung tief / mittel / hoch, keine Anzahl Mitbewerber. Nutzen Sie beides als Reihenfolge zum Abarbeiten, nicht als absolute Kennzahl für einen Bericht.",
+
+    contentTitle: "Vorhandene und fehlende Begriffe",
+    contentBody:
+      "Vorhandene Begriffe sind die relevanten Wörter, welche die Seite bereits verwendet. Fehlende Begriffe decken vergleichbare Seiten üblicherweise ab, diese jedoch nicht — jeder davon ist ein Absatz, den Sie ergänzen könnten. Die Titel- und Meta-Vorschläge sind Entwürfe zum Überarbeiten, kein Text zum ungelesenen Einfügen.",
+
+    promptsTitle: "Die KI-Prompts sind die Übergabe",
+    promptsBody:
+      "Der Prompt-Tab übersetzt dieselbe Analyse in Fragen, die Kundschaft einem KI-Assistenten stellen könnte. Verfolgen Sie die relevanten, und Sie sehen über die Zeit, ob Ihre Marke in den Antworten erwähnt wird.",
+    promptsLink: "Eigene Prompts öffnen →",
+
+    aiTitle: "Der KI-Durchlauf ist optional",
+    aiBody:
+      "«Mit KI neu erzeugen» lässt die Analyse zusätzlich durch ein Sprachmodell laufen. Ohne konfigurierten Anbieter funktioniert der Scan weiterhin — er fällt auf die eingebauten Heuristiken zurück und weist Sie darauf hin, statt fehlzuschlagen.",
+  },
+};
+
+// ─── GSC Insights help modal ────────────────────────────────────────────────
+// The data-timing section exists because of a real support case: a connected,
+// healthy property synced on schedule and stored zero query rows, which looks
+// exactly like a broken sync. It is not — Google withholds queries below its
+// anonymity threshold, and a low-traffic property can legitimately have none.
+// That sentence is the reason this modal was written; do not soften it away.
+const gscHelpEn = {
+  button: "Help",
+  buttonAria: "How Search Console insights work",
+  title: "How Search Console insights work",
+  close: "Close",
+
+  intro: "This is your own Search Console data, read directly from Google for the property you connect.",
+
+  connectTitle: "Connect once, pick a property",
+  connectBody:
+    "Sign in with the Google account that already has access in Search Console and choose one property. Access is read-only — nothing is ever written back to your Search Console account, and you can disconnect at any time.",
+
+  metricsTitle: "What the four numbers mean",
+  metricsBody:
+    "Clicks are visits from Google. Impressions are times you appeared in results, whether or not anyone clicked. CTR is clicks divided by impressions. Average position is weighted by impressions, so a keyword you appear for constantly moves it far more than a rare one.",
+
+  timingTitle: "Data lags, and low-traffic sites show no queries",
+  timingBody:
+    "Search Console data is roughly two days behind, so the most recent days are always missing and the 28-day window ends where Google's data ends. Separately, Google withholds any query searched by too few people to stay anonymous. On a low-traffic property that can mean real clicks and impressions in the totals but no query rows at all — that is Google's anonymity threshold, not a failed sync or a bug on our side.",
+
+  syncTitle: "Sync now stores the daily rows",
+  syncBody:
+    "The totals and charts read live from Google every time you open the page. Sync now is separate: it saves that day's query rows so Rank Tracker has history to draw from. The property line shows both when the sync last ran and how many rows it stored, so a sync that ran and legitimately found nothing is visible rather than looking like a failure.",
+};
+export type GscHelpCopy = typeof gscHelpEn;
+
+export const GSC_HELP_COPY: Record<DashLocale, GscHelpCopy> = {
+  en: gscHelpEn,
+  fr: {
+    button: "Aide",
+    buttonAria: "Comment fonctionnent les données Search Console",
+    title: "Comment fonctionnent les données Search Console",
+    close: "Fermer",
+
+    intro:
+      "Ce sont vos propres données Search Console, lues directement chez Google pour la propriété que vous connectez.",
+
+    connectTitle: "Connectez-vous une fois, choisissez une propriété",
+    connectBody:
+      "Identifiez-vous avec le compte Google qui a déjà accès dans Search Console et choisissez une propriété. L'accès est en lecture seule — rien n'est jamais écrit dans votre compte Search Console, et vous pouvez vous déconnecter à tout moment.",
+
+    metricsTitle: "Ce que signifient les quatre chiffres",
+    metricsBody:
+      "Les clics sont les visites venues de Google. Les impressions sont les fois où vous êtes apparu dans les résultats, avec ou sans clic. Le CTR est le rapport des clics aux impressions. La position moyenne est pondérée par les impressions : un mot-clé sur lequel vous apparaissez constamment pèse bien plus qu'un mot-clé rare.",
+
+    timingTitle: "Les données ont du retard, et les sites peu visités n'affichent aucune requête",
+    timingBody:
+      "Les données de Search Console accusent environ deux jours de retard : les jours les plus récents manquent toujours et la fenêtre de 28 jours s'arrête là où s'arrêtent les données de Google. Par ailleurs, Google masque toute requête effectuée par trop peu de personnes pour rester anonyme. Sur une propriété à faible trafic, cela peut donner de vrais clics et impressions dans les totaux mais aucune ligne de requête — c'est le seuil d'anonymat de Google, pas une synchronisation en échec ni un défaut de notre côté.",
+
+    syncTitle: "« Synchroniser » enregistre les lignes du jour",
+    syncBody:
+      "Les totaux et les graphiques sont lus en direct chez Google à chaque ouverture de la page. « Synchroniser » est autre chose : cela enregistre les lignes de requêtes du jour pour que le suivi de positions dispose d'un historique. La ligne de la propriété indique à la fois la date de la dernière synchronisation et le nombre de lignes enregistrées — ainsi, une synchronisation qui n'a légitimement rien trouvé se voit au lieu de ressembler à une panne.",
+  },
+  "de-CH": {
+    button: "Hilfe",
+    buttonAria: "So funktionieren die Search-Console-Daten",
+    title: "So funktionieren die Search-Console-Daten",
+    close: "Schliessen",
+
+    intro:
+      "Das sind Ihre eigenen Search-Console-Daten, direkt bei Google für die verbundene Property abgerufen.",
+
+    connectTitle: "Einmal verbinden, eine Property wählen",
+    connectBody:
+      "Melden Sie sich mit dem Google-Konto an, das in der Search Console bereits Zugriff hat, und wählen Sie eine Property. Der Zugriff erfolgt nur lesend — es wird nie etwas in Ihr Search-Console-Konto zurückgeschrieben, und Sie können die Verbindung jederzeit trennen.",
+
+    metricsTitle: "Was die vier Zahlen bedeuten",
+    metricsBody:
+      "Klicks sind Besuche über Google. Impressionen sind die Male, die Sie in den Ergebnissen erschienen sind — mit oder ohne Klick. Die CTR ist Klicks geteilt durch Impressionen. Die durchschnittliche Position ist nach Impressionen gewichtet: Ein Keyword, für das Sie ständig erscheinen, bewegt sie weit stärker als ein seltenes.",
+
+    timingTitle: "Daten hinken nach, und Seiten mit wenig Traffic zeigen keine Suchanfragen",
+    timingBody:
+      "Search-Console-Daten hinken rund zwei Tage hinterher: Die jüngsten Tage fehlen immer, und das 28-Tage-Fenster endet dort, wo Googles Daten enden. Zusätzlich hält Google jede Suchanfrage zurück, die von zu wenigen Personen gestellt wurde, um anonym zu bleiben. Bei einer Property mit wenig Traffic kann das echte Klicks und Impressionen in den Summen bedeuten, aber gar keine Zeilen mit Suchanfragen — das ist Googles Anonymitätsschwelle, keine fehlgeschlagene Synchronisation und kein Fehler auf unserer Seite.",
+
+    syncTitle: "«Jetzt synchronisieren» speichert die Tageszeilen",
+    syncBody:
+      "Summen und Diagramme werden bei jedem Öffnen der Seite live bei Google gelesen. «Jetzt synchronisieren» ist etwas anderes: Es speichert die Suchanfragen-Zeilen des Tages, damit das Rank Tracking auf einen Verlauf zurückgreifen kann. Die Property-Zeile zeigt sowohl den Zeitpunkt der letzten Synchronisation als auch die Anzahl gespeicherter Zeilen — so ist eine Synchronisation, die berechtigterweise nichts gefunden hat, sichtbar, statt wie ein Fehler auszusehen.",
+  },
+};
+
+// ─── Brand Radar help modal ─────────────────────────────────────────────────
+// Written from the fields the visibility summary actually returns: the latest
+// VisibilityAudit score/grade, PromptRun aggregates (mention rate, per-engine
+// coverage) and visibility_* AlertEvents. There is deliberately no "trust
+// score" section — nothing persists one, and inventing copy for it would be
+// the first fake number on the page.
+const brandRadarHelpEn = {
+  button: "Help",
+  buttonAria: "How Brand Radar works",
+  title: "How Brand Radar works",
+  close: "Close",
+
+  intro: "Everything here is your own stored data — your audits, your prompt runs, your alerts. Nothing on this page is modelled or estimated.",
+
+  scoreTitle: "Score and grade come from your latest audit",
+  scoreBody:
+    "The two leading cards are the score and grade of the most recent AI Visibility audit for your domain, with the date it ran beside them. They do not change until you run another audit, so a stale date means a stale score rather than a stable one.",
+  scoreLink: "Run an audit →",
+
+  mentionTitle: "Mention rate is measured, not estimated",
+  mentionBody:
+    "It is the share of prompt runs in the window where an AI assistant actually named your brand in its answer. It only exists once your tracked prompts have run, and a small number of runs makes it jump around — read it alongside the run count rather than on its own.",
+
+  enginesTitle: "Engine coverage compares assistants",
+  enginesBody:
+    "Each row is one AI assistant: how many times your prompts ran against it, and how often you were mentioned. Assistants differ a lot on the same question, so a low rate on one and a high rate on another is normal and tells you where the gap is.",
+
+  alertsTitle: "Alerts are the things worth reacting to",
+  alertsBody:
+    "Visibility alerts are raised when something moves enough to matter — a score drop, a prompt you stopped being mentioned in. Critical and warning are separated so a quiet week reads as quiet rather than empty.",
+
+  emptyTitle: "An empty radar is a real answer",
+  emptyBody:
+    "With no audit and no tracked prompts there is genuinely nothing to show, so the page says so instead of filling the space. Run an audit and track a few prompts, and the cards populate from the next runs onward.",
+};
+export type BrandRadarHelpCopy = typeof brandRadarHelpEn;
+
+export const BRAND_RADAR_HELP_COPY: Record<DashLocale, BrandRadarHelpCopy> = {
+  en: brandRadarHelpEn,
+  fr: {
+    button: "Aide",
+    buttonAria: "Comment fonctionne le radar de marque",
+    title: "Comment fonctionne le radar de marque",
+    close: "Fermer",
+
+    intro:
+      "Tout ici provient de vos propres données enregistrées — vos audits, vos exécutions de requêtes, vos alertes. Rien sur cette page n'est modélisé ni estimé.",
+
+    scoreTitle: "Le score et la note viennent de votre dernier audit",
+    scoreBody:
+      "Les deux premières cartes reprennent le score et la note du dernier audit de visibilité IA de votre domaine, avec sa date à côté. Ils ne changent qu'après un nouvel audit : une date ancienne signifie un score périmé, pas un score stable.",
+    scoreLink: "Lancer un audit →",
+
+    mentionTitle: "Le taux de mention est mesuré, pas estimé",
+    mentionBody:
+      "C'est la part des exécutions de requêtes de la période où un assistant IA a réellement nommé votre marque dans sa réponse. Il n'existe qu'une fois vos requêtes suivies exécutées, et un faible nombre d'exécutions le fait fortement varier — lisez-le avec le nombre d'exécutions, jamais seul.",
+
+    enginesTitle: "La couverture par moteur compare les assistants",
+    enginesBody:
+      "Chaque ligne correspond à un assistant IA : combien de fois vos requêtes y ont été exécutées, et à quelle fréquence vous avez été mentionné. Les assistants divergent beaucoup sur une même question ; un taux faible sur l'un et élevé sur l'autre est normal et vous montre où se situe l'écart.",
+
+    alertsTitle: "Les alertes signalent ce qui mérite une réaction",
+    alertsBody:
+      "Une alerte de visibilité se déclenche quand quelque chose bouge suffisamment : une chute de score, une requête où vous n'êtes plus cité. Les niveaux critique et avertissement sont distingués, pour qu'une semaine calme se lise comme calme et non comme vide.",
+
+    emptyTitle: "Un radar vide est une vraie réponse",
+    emptyBody:
+      "Sans audit ni requête suivie, il n'y a réellement rien à montrer : la page le dit plutôt que de remplir l'espace. Lancez un audit, suivez quelques requêtes, et les cartes se remplissent dès les exécutions suivantes.",
+  },
+  "de-CH": {
+    button: "Hilfe",
+    buttonAria: "So funktioniert Brand Radar",
+    title: "So funktioniert Brand Radar",
+    close: "Schliessen",
+
+    intro:
+      "Alles hier stammt aus Ihren eigenen gespeicherten Daten — Ihren Audits, Ihren Prompt-Läufen, Ihren Warnungen. Nichts auf dieser Seite ist modelliert oder geschätzt.",
+
+    scoreTitle: "Score und Note stammen aus Ihrem letzten Audit",
+    scoreBody:
+      "Die beiden ersten Karten zeigen Score und Note des jüngsten KI-Sichtbarkeits-Audits Ihrer Domain, mit dem Datum daneben. Sie ändern sich erst mit einem neuen Audit — ein altes Datum bedeutet also einen veralteten Score, keinen stabilen.",
+    scoreLink: "Audit starten →",
+
+    mentionTitle: "Die Erwähnungsrate ist gemessen, nicht geschätzt",
+    mentionBody:
+      "Sie ist der Anteil der Prompt-Läufe im Zeitraum, in denen ein KI-Assistent Ihre Marke tatsächlich in der Antwort genannt hat. Sie entsteht erst, wenn Ihre verfolgten Prompts gelaufen sind, und bei wenigen Läufen schwankt sie stark — lesen Sie sie zusammen mit der Anzahl Läufe, nie allein.",
+
+    enginesTitle: "Die Engine-Abdeckung vergleicht die Assistenten",
+    enginesBody:
+      "Jede Zeile steht für einen KI-Assistenten: wie oft Ihre Prompts dort liefen und wie oft Sie erwähnt wurden. Assistenten unterscheiden sich bei derselben Frage stark; eine tiefe Rate beim einen und eine hohe beim anderen ist normal und zeigt Ihnen, wo die Lücke liegt.",
+
+    alertsTitle: "Warnungen zeigen, worauf es zu reagieren lohnt",
+    alertsBody:
+      "Eine Sichtbarkeitswarnung entsteht, wenn sich etwas spürbar bewegt — ein Score-Einbruch, ein Prompt, in dem Sie nicht mehr erwähnt werden. Kritisch und Warnung sind getrennt, damit eine ruhige Woche als ruhig und nicht als leer erscheint.",
+
+    emptyTitle: "Ein leeres Radar ist eine echte Antwort",
+    emptyBody:
+      "Ohne Audit und ohne verfolgte Prompts gibt es tatsächlich nichts zu zeigen — die Seite sagt das, statt den Platz zu füllen. Starten Sie ein Audit, verfolgen Sie einige Prompts, und die Karten füllen sich ab den nächsten Läufen.",
   },
 };

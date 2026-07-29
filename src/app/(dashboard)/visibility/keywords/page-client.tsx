@@ -16,6 +16,7 @@ import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { KeywordsExplorerHelpButton } from "@/components/seo-tools/keywords-explorer-help";
 import { KEYWORDS_COPY, dashNav, type DashLocale, type KeywordsCopy } from "@/lib/i18n/dashboard";
 
 // ─── Types (the sidecar's /keywords response shape) ─────────────────────────
@@ -140,11 +141,16 @@ export function KeywordsPageClient({ locale }: { locale: DashLocale }) {
       </BackLinkRow>
 
       {/* Title */}
-      <div>
-        <h2 className="text-sm font-medium uppercase tracking-wide text-gray-500">
-          {t.title}
-        </h2>
-        <p className="mt-1 text-sm text-gray-500">{t.subtitle}</p>
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <h2 className="text-sm font-medium uppercase tracking-wide text-gray-500">
+            {t.title}
+          </h2>
+          <p className="mt-1 text-sm text-gray-500">{t.subtitle}</p>
+        </div>
+        <div className="shrink-0">
+          <KeywordsExplorerHelpButton locale={locale} />
+        </div>
       </div>
 
       {/* Search */}

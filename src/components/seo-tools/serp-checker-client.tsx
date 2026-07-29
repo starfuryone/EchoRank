@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { formatDateTime } from "@/lib/utils";
+import { SerpCheckerHelpButton } from "@/components/seo-tools/serp-checker-help";
 import { SERP_LANGUAGE_CODES, SERP_LOCATION_CODES } from "@/lib/serp/options";
 import type { SerpCheckDto, SerpDevice } from "@/lib/serp/types";
 import {
@@ -204,9 +205,14 @@ export function SerpCheckerClient({ locale }: { locale: DashLocale }) {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-sm font-medium uppercase tracking-wide text-gray-500">{it.name}</h2>
-        <p className="mt-1 text-sm text-gray-500">{it.description}</p>
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <h2 className="text-sm font-medium uppercase tracking-wide text-gray-500">{it.name}</h2>
+          <p className="mt-1 text-sm text-gray-500">{it.description}</p>
+        </div>
+        <div className="shrink-0">
+          <SerpCheckerHelpButton locale={locale} />
+        </div>
       </div>
 
       {/* ── Form ─────────────────────────────────────────────────────── */}

@@ -15,6 +15,7 @@ import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { SiteExplorerHelpButton } from "@/components/seo-tools/site-explorer-help";
 import { formatDateTime } from "@/lib/utils";
 import { isValidDomain } from "@/lib/site-explorer/domain";
 import { SCAFFOLD_RELATED } from "@/lib/seo-tools";
@@ -374,9 +375,14 @@ export function SiteExplorerClient({ locale }: { locale: DashLocale }) {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-sm font-medium uppercase tracking-wide text-gray-500">{it.name}</h2>
-        <p className="mt-1 text-sm text-gray-500">{it.description}</p>
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <h2 className="text-sm font-medium uppercase tracking-wide text-gray-500">{it.name}</h2>
+          <p className="mt-1 text-sm text-gray-500">{it.description}</p>
+        </div>
+        <div className="shrink-0">
+          <SiteExplorerHelpButton locale={locale} />
+        </div>
       </div>
 
       {/* ── Form ─────────────────────────────────────────────────────── */}

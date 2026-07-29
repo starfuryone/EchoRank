@@ -16,12 +16,22 @@ import { RankTrackerArt } from "@/components/seo-tools/help-illustrations/rank-t
 import { BacklinksArt } from "@/components/seo-tools/help-illustrations/backlinks";
 import { LighthouseArt } from "@/components/seo-tools/help-illustrations/lighthouse";
 import { SiteAuditArt } from "@/components/seo-tools/help-illustrations/site-audit";
+import { SerpCheckerArt } from "@/components/seo-tools/help-illustrations/serp-checker";
+import { SiteExplorerArt } from "@/components/seo-tools/help-illustrations/site-explorer";
+import { KeywordsExplorerArt } from "@/components/seo-tools/help-illustrations/keywords-explorer";
+import { GscInsightsArt } from "@/components/seo-tools/help-illustrations/gsc-insights";
+import { BrandRadarArt } from "@/components/seo-tools/help-illustrations/brand-radar";
 
 import {
   BACKLINKS_HELP_COPY,
+  BRAND_RADAR_HELP_COPY,
+  GSC_HELP_COPY,
+  KEYWORDS_EXPLORER_HELP_COPY,
   LIGHTHOUSE_HELP_COPY,
   RANK_TRACKER_HELP_COPY,
+  SERP_CHECKER_HELP_COPY,
   SITE_AUDIT_HELP_COPY,
+  SITE_EXPLORER_HELP_COPY,
 } from "@/lib/i18n/dashboard";
 
 const LOCALES = ["en", "fr", "de-CH"] as const;
@@ -31,6 +41,11 @@ const ILLUSTRATIONS = [
   ["backlinks", BacklinksArt],
   ["lighthouse", LighthouseArt],
   ["site-audit", SiteAuditArt],
+  ["serp-checker", SerpCheckerArt],
+  ["site-explorer", SiteExplorerArt],
+  ["keywords-explorer", KeywordsExplorerArt],
+  ["gsc-insights", GscInsightsArt],
+  ["brand-radar", BrandRadarArt],
 ] as const;
 
 describe.each(ILLUSTRATIONS)("%s illustration", (name, Art) => {
@@ -87,6 +102,11 @@ const MIGRATED = [
   ["backlinks", BACKLINKS_HELP_COPY, ["backlinksTitle", "dofollowTitle", "anchorsTitle", "historyTitle", "freshnessTitle"]],
   ["lighthouse", LIGHTHOUSE_HELP_COPY, ["labFieldTitle", "scoresTitle", "devicesTitle", "fluctuationTitle"]],
   ["site-audit", SITE_AUDIT_HELP_COPY, ["scoreTitle", "severityTitle", "limitsTitle", "vsVisibilityTitle"]],
+  ["serp-checker", SERP_CHECKER_HELP_COPY, ["snapshotTitle", "targetingTitle", "featuresTitle", "timingTitle"]],
+  ["site-explorer", SITE_EXPLORER_HELP_COPY, ["estimatesTitle", "distributionTitle", "competitorsTitle", "backlinksTitle", "quotaTitle"]],
+  ["keywords-explorer", KEYWORDS_EXPLORER_HELP_COPY, ["crawlTitle", "scoringTitle", "contentTitle", "promptsTitle", "promptsLink", "aiTitle"]],
+  ["gsc-insights", GSC_HELP_COPY, ["connectTitle", "metricsTitle", "timingTitle", "syncTitle"]],
+  ["brand-radar", BRAND_RADAR_HELP_COPY, ["scoreTitle", "scoreLink", "mentionTitle", "enginesTitle", "alertsTitle", "emptyTitle"]],
 ] as const;
 
 describe("migrated help copy", () => {
@@ -101,6 +121,25 @@ describe("migrated help copy", () => {
       for (const key of keys) {
         expect(typeof t[key], `${name}.${locale}.${key}`).toBe("string");
         expect((t[key] as string).length).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  // The reason the GSC modal was written: a healthy sync on a low-traffic
+  // property stores zero query rows, which reads as a broken integration. If
+  // this section ever loses that explanation the page starts lying by omission.
+  it("gsc-insights explains the reporting lag AND the empty-query case", () => {
+    const CLAIMS: Record<(typeof LOCALES)[number], RegExp[]> = {
+      en: [/two days/i, /anonym/i, /no query rows|query rows at all/i],
+      fr: [/deux jours/i, /anonym/i, /aucune ligne de requête/i],
+      "de-CH": [/zwei Tage/i, /anonym/i, /keine Zeilen mit Suchanfragen/i],
+    };
+    for (const locale of LOCALES) {
+      for (const claim of CLAIMS[locale]) {
+        expect(
+          GSC_HELP_COPY[locale].timingBody,
+          `gsc timingBody.${locale} no longer states ${claim}`,
+        ).toMatch(claim);
       }
     }
   });

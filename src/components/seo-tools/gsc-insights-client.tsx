@@ -22,6 +22,7 @@ import {
 import { StatCard } from "@/components/ui/stat-card";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { GscInsightsHelpButton } from "@/components/seo-tools/gsc-insights-help";
 import { formatDate } from "@/lib/utils";
 import { GSC_COPY, SEO_TOOLS_COPY, type DashLocale, type GscCopy } from "@/lib/i18n/dashboard";
 
@@ -31,6 +32,8 @@ interface Status {
   siteUrl?: string | null;
   googleEmail?: string | null;
   lastSyncAt?: string | null;
+  /** Rows the last sync stored. Null = never synced; 0 is a real answer. */
+  lastRowsSynced?: number | null;
   sites?: { siteUrl: string }[];
   error?: string;
 }
@@ -223,9 +226,14 @@ export function GscInsightsClient({ locale }: { locale: DashLocale }) {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-sm font-medium uppercase tracking-wide text-gray-500">{it.name}</h2>
-        <p className="mt-1 text-sm text-gray-500">{it.description}</p>
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <h2 className="text-sm font-medium uppercase tracking-wide text-gray-500">{it.name}</h2>
+          <p className="mt-1 text-sm text-gray-500">{it.description}</p>
+        </div>
+        <div className="shrink-0">
+          <GscInsightsHelpButton locale={locale} />
+        </div>
       </div>
 
       {urlError && (
@@ -314,6 +322,21 @@ export function GscInsightsClient({ locale }: { locale: DashLocale }) {
             <span className="text-xs text-gray-400">
               {status.lastSyncAt ? t.lastSync(formatDate(status.lastSyncAt, locale)) : t.neverSynced}
             </span>
+            {/* Row count sits beside the timestamp so "the sync ran" and "the
+                sync stored rows" are two visibly different facts. */}
+            {typeof status.lastRowsSynced === "number" && (
+              <span
+                className={
+                  status.lastRowsSynced === 0
+                    ? "text-xs font-medium text-amber-700"
+                    : "text-xs text-gray-400"
+                }
+              >
+                {status.lastRowsSynced === 0
+                  ? t.syncedNoRows
+                  : t.syncedRows(status.lastRowsSynced)}
+              </span>
+            )}
             <span className="ml-auto flex gap-2">
               <Button variant="outline" size="sm" onClick={syncNow} disabled={busy}>
                 <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
@@ -325,6 +348,14 @@ export function GscInsightsClient({ locale }: { locale: DashLocale }) {
               </Button>
             </span>
           </div>
+
+          {/* A sync that stored nothing looks exactly like a broken one, so it
+              gets the explanation rather than leaving the user to guess. */}
+          {status.lastRowsSynced === 0 && (
+            <p className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-2 text-sm text-amber-800">
+              {t.syncedNoRowsHint}
+            </p>
+          )}
 
           {!perf && !error && <p className="text-sm text-gray-400">{t.loading}</p>}
 

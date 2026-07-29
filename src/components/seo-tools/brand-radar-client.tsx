@@ -14,6 +14,7 @@ import { StatCard } from "@/components/ui/stat-card";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { PromptTrends } from "@/components/visibility/prompt-trends";
+import { BrandRadarHelpButton } from "@/components/seo-tools/brand-radar-help";
 import { formatDate } from "@/lib/utils";
 import {
   BRAND_RADAR_COPY,
@@ -61,11 +62,16 @@ export function BrandRadarClient({ locale }: { locale: DashLocale }) {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-sm font-medium uppercase tracking-wide text-gray-500">
-          {it.name}
-        </h2>
-        <p className="mt-1 text-sm text-gray-500">{it.description}</p>
+      <div className="flex items-start justify-between gap-4">
+        <div className="min-w-0">
+          <h2 className="text-sm font-medium uppercase tracking-wide text-gray-500">
+            {it.name}
+          </h2>
+          <p className="mt-1 text-sm text-gray-500">{it.description}</p>
+        </div>
+        <div className="shrink-0">
+          <BrandRadarHelpButton locale={locale} />
+        </div>
       </div>
 
       {error && (

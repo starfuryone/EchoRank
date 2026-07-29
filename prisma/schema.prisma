@@ -1221,6 +1221,11 @@ model GscConnection {
   status          GscConnectionStatus @default(ACTIVE)
   connectedAt     DateTime            @default(now())
   lastSyncAt      DateTime?
+  /// Rows the last sync stored. lastSyncAt alone cannot tell "the sync ran and
+  /// saved rows" apart from "the sync ran and saved none" — and the second is
+  /// the normal outcome on a low-traffic property, where Google withholds
+  /// queries below its anonymity threshold. Null means never synced.
+  lastRowsSynced  Int?
   updatedAt       DateTime            @updatedAt
 
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)

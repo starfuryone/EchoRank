@@ -192,9 +192,13 @@ export async function syncDay(conn: GscConnection, day: string): Promise<number>
       },
     });
   }
+  // lastRowsSynced is written on every sync, zero included: a sync that ran and
+  // stored nothing is a legitimate outcome (Google withholds queries below its
+  // anonymity threshold), and without this column it is indistinguishable from
+  // a sync that never wrote anywhere.
   await prisma.gscConnection.updateMany({
     where: { tenantId: conn.tenantId },
-    data: { lastSyncAt: new Date() },
+    data: { lastSyncAt: new Date(), lastRowsSynced: rows.length },
   });
   return rows.length;
 }

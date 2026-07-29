@@ -29,6 +29,7 @@ export async function GET() {
       googleEmail: conn.googleEmail,
       connectedAt: conn.connectedAt,
       lastSyncAt: conn.lastSyncAt,
+      lastRowsSynced: conn.lastRowsSynced,
       sites,
     });
   } catch (error) {
