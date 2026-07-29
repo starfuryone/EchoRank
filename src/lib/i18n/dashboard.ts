@@ -24,7 +24,7 @@ export const dashNav: Record<DashLocale, Record<string, string>> = {
     "/feedback": "Feedback",
     "/campaigns": "Campaigns",
     "/recovery": "Recovery",
-    "/analytics": "Analytics",
+    "/analytics": "Reputation Analytics",
     "/intelligence": "Intelligence",
     "/monitoring": "Monitoring",
     "/visibility": "AI Visibility",
@@ -66,7 +66,7 @@ export const dashNav: Record<DashLocale, Record<string, string>> = {
     "/feedback": "Feedback",
     "/campaigns": "Kampagnen",
     "/recovery": "Rückgewinnung",
-    "/analytics": "Analysen",
+    "/analytics": "Reputationsanalyse",
     "/intelligence": "Intelligence",
     "/monitoring": "Überwachung",
     "/visibility": "KI-Sichtbarkeit",
@@ -107,7 +107,7 @@ export const dashNav: Record<DashLocale, Record<string, string>> = {
     "/feedback": "Rétroaction",
     "/campaigns": "Campagnes",
     "/recovery": "Récupération",
-    "/analytics": "Analytique",
+    "/analytics": "Analyses de réputation",
     "/intelligence": "Intelligence",
     "/monitoring": "Surveillance",
     "/visibility": "Visibilité IA",
@@ -280,7 +280,7 @@ export const EXTENSION_COPY: Record<DashLocale, ExtensionCopy> = {
 
 // ─── /analytics ─────────────────────────────────────────────────────────────
 const analyticsEn = {
-  title: "Analytics",
+  title: "Reputation Analytics",
   subtitle: "Track your reputation performance over time.",
   loadFailed: "Failed to load analytics",
   genericError: "Something went wrong",
@@ -344,7 +344,7 @@ export type AnalyticsCopy = typeof analyticsEn;
 export const ANALYTICS_COPY: Record<DashLocale, AnalyticsCopy> = {
   en: analyticsEn,
   fr: {
-    title: "Analytique",
+    title: "Analyses de réputation",
     subtitle: "Suivez la performance de votre réputation au fil du temps.",
     loadFailed: "Échec du chargement de l'analytique",
     genericError: "Une erreur s'est produite",
@@ -412,7 +412,7 @@ export const ANALYTICS_COPY: Record<DashLocale, AnalyticsCopy> = {
     gotIt: "Compris",
   },
   "de-CH": {
-    title: "Analysen",
+    title: "Reputationsanalyse",
     subtitle: "Verfolgen Sie die Entwicklung Ihrer Reputation im Zeitverlauf.",
     loadFailed: "Analysen konnten nicht geladen werden",
     genericError: "Etwas ist schiefgelaufen",
