@@ -33,6 +33,7 @@ const EXPECTED_HREFS: Record<string, string> = {
   gsc_insights: "/visibility/tools/gsc-insights",
   brand_radar: "/visibility/tools/brand-radar",
   custom_prompts: "/visibility/tools/custom-prompts",
+  ai_lens: "/visibility/tools/ai-lens",
   site_audit: "/visibility/tools/site-audit",
   web_analytics: "/visibility/tools/web-analytics",
   bot_analytics: "/visibility/tools/bot-analytics",
@@ -67,9 +68,9 @@ test("tool ids unique, hrefs match the route table, slugs consistent", () => {
   }
 });
 
-test('"New" badges exactly on Bot Analytics and GBP Monitor', () => {
+test('"New" badges exactly on AI Lens, Bot Analytics and GBP Monitor', () => {
   const badged = ALL_TOOLS.filter((i) => i.badge === "new").map((i) => i.id).sort();
-  assert.deepEqual(badged, ["bot_analytics", "gbp_monitor"]);
+  assert.deepEqual(badged, ["ai_lens", "bot_analytics", "gbp_monitor"]);
 });
 
 test("every locale catalog covers every group, tool, and scaffold", () => {

@@ -198,6 +198,7 @@ model Tenant {
   gscConnection      GscConnection?
   gaConnection       GaConnection?
   gscQueryStats      GscQueryStat[]
+  aiLensAnalyses     AiLensAnalysis[]
 
   @@map("tenants")
 }
@@ -1365,6 +1366,37 @@ model SiteExplorerAnalysis {
   @@index([tenantId, domain, locationCode, languageCode, createdAt])
   // History list.
   @@index([tenantId, createdAt])
+}
+
+/// AI Lens — one measurement of what an AI answer engine sees on one URL.
+/// The sidecar fetches the page twice (raw HTTP as GPTBot, then rendered in
+/// chromium) and diffs the two markdown renderings; this row is the result.
+///
+/// url is stored as submitted-then-normalized (scheme + host + path, no
+/// fragment), NOT reduced to a domain: the whole point is per-page, and two
+/// pages on one site routinely have very different gaps.
+model AiLensAnalysis {
+  id                String   @id @default(cuid())
+  tenantId          String
+  url               String
+  /// Percent of RENDERED words absent from the raw fetch. 0 = fully readable.
+  /// One decimal, so Decimal not Int — 0.4% and 0% are different answers.
+  gapPercent        Decimal  @db.Decimal(5, 1)
+  rawWordCount      Int
+  renderedWordCount Int
+  /// [{text_excerpt, approx_location, word_count}] — capped by the sidecar.
+  missingBlocks     Json
+  /// Status codes, fetch timings, redirects, robots/noindex flags, the UA used.
+  meta              Json
+  createdAt         DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  // Cache lookup: newest analysis for this exact URL.
+  @@index([tenantId, url, createdAt])
+  // History list.
+  @@index([tenantId, createdAt])
+  @@map("ai_lens_analyses")
 }
 
 /// Rank Tracker — a tracking project: one domain, a set of keywords, one

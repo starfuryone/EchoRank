@@ -36,6 +36,7 @@ import {
   ListOrdered,
   Link2,
   Gauge,
+  ScanEye,
 } from "lucide-react";
 import { canAccessPath } from "@/lib/plan-routing";
 import type { PlanType } from "@/generated/prisma";
@@ -71,15 +72,23 @@ export type SeoToolId =
   | "mcp_server"
   | "serp_checker"
   | "backlinks"
-  | "lighthouse";
+  | "lighthouse"
+  | "ai_lens";
 
 /** Tools that render a scaffold page under /visibility/tools/<slug>. */
 // Note: brand_radar/bot_analytics remain ScaffoldIds although their pages are
 // real now — their scaffold copy (CTA/related labels) still feeds their empty
-// states. api_access/mcp_server never had scaffold copy.
+// states. api_access/mcp_server never had scaffold copy, and ai_lens ships with
+// its own empty/error states in AI_LENS_COPY so it never had any either.
 export type ScaffoldId = Exclude<
   SeoToolId,
-  "keywords_explorer" | "custom_prompts" | "site_audit" | "dashboard" | "api_access" | "mcp_server"
+  | "keywords_explorer"
+  | "custom_prompts"
+  | "site_audit"
+  | "dashboard"
+  | "api_access"
+  | "mcp_server"
+  | "ai_lens"
 >;
 
 export interface SeoTool {
@@ -128,6 +137,10 @@ export const SEO_TOOL_GROUPS: SeoToolGroup[] = [
       t("serp_checker", "serp-checker", ListOrdered),
       t("backlinks", "backlinks", Link2),
       t("brand_radar", "brand-radar", RadarIcon),
+      // What an AI crawler actually receives for one page. Sits beside Brand
+      // Radar because both answer "are we in the answers"; this one answers
+      // "can they even read us".
+      t("ai_lens", "ai-lens", ScanEye, { badge: "new" }),
       t("custom_prompts", "custom-prompts", MessageSquareText),
     ],
   },
@@ -206,6 +219,7 @@ export const CLASSIC_SEO_TOOL_IDS: readonly SeoToolId[] = [
   "lighthouse",
   "site_audit",
   "gsc_insights",
+  "ai_lens",
 ];
 
 /** Strip a #fragment before consulting plan-routing (it matches path prefixes). */

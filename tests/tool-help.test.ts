@@ -22,8 +22,10 @@ import { KeywordsExplorerArt } from "@/components/seo-tools/help-illustrations/k
 import { GscInsightsArt } from "@/components/seo-tools/help-illustrations/gsc-insights";
 import { BrandRadarArt } from "@/components/seo-tools/help-illustrations/brand-radar";
 import { CustomPromptsArt } from "@/components/seo-tools/help-illustrations/custom-prompts";
+import { AiLensArt } from "@/components/seo-tools/help-illustrations/ai-lens";
 
 import {
+  AI_LENS_HELP_COPY,
   BACKLINKS_HELP_COPY,
   BRAND_RADAR_HELP_COPY,
   CUSTOM_PROMPTS_HELP_COPY,
@@ -49,6 +51,7 @@ const ILLUSTRATIONS = [
   ["gsc-insights", GscInsightsArt],
   ["brand-radar", BrandRadarArt],
   ["custom-prompts", CustomPromptsArt],
+  ["ai-lens", AiLensArt],
 ] as const;
 
 describe.each(ILLUSTRATIONS)("%s illustration", (name, Art) => {
@@ -111,6 +114,7 @@ const MIGRATED = [
   ["gsc-insights", GSC_HELP_COPY, ["connectTitle", "metricsTitle", "timingTitle", "syncTitle"]],
   ["brand-radar", BRAND_RADAR_HELP_COPY, ["scoreTitle", "scoreLink", "mentionTitle", "enginesTitle", "alertsTitle", "emptyTitle"]],
   ["custom-prompts", CUSTOM_PROMPTS_HELP_COPY, ["trackTitle", "runsTitle", "trendTitle", "writeTitle", "auditTitle", "auditLink"]],
+  ["ai-lens", AI_LENS_HELP_COPY, ["whyTitle", "gapTitle", "fixTitle", "goalTitle"]],
 ] as const;
 
 describe("migrated help copy", () => {

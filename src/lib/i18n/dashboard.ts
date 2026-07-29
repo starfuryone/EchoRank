@@ -59,6 +59,7 @@ export const dashNav: Record<DashLocale, Record<string, string>> = {
     "/visibility/tools/lighthouse": "Lighthouse",
     "/visibility/tools/site-audit": "Site Audit",
     "/visibility/tools/custom-prompts": "Custom Prompts",
+    "/visibility/tools/ai-lens": "AI Lens",
   },
   "de-CH": {
     "/dashboard": "Dashboard",
@@ -100,6 +101,7 @@ export const dashNav: Record<DashLocale, Record<string, string>> = {
     "/visibility/tools/lighthouse": "Lighthouse",
     "/visibility/tools/site-audit": "Site-Audit",
     "/visibility/tools/custom-prompts": "Eigene Prompts",
+    "/visibility/tools/ai-lens": "AI Lens",
   },
   fr: {
     "/dashboard": "Tableau de bord",
@@ -141,6 +143,7 @@ export const dashNav: Record<DashLocale, Record<string, string>> = {
     "/visibility/tools/lighthouse": "Lighthouse",
     "/visibility/tools/site-audit": "Audit de site",
     "/visibility/tools/custom-prompts": "Requêtes personnalisées",
+    "/visibility/tools/ai-lens": "AI Lens",
   },
 };
 
@@ -5182,6 +5185,10 @@ const seoToolsEn = {
       name: "Custom Prompts",
       description: "Create and monitor the AI prompts that matter to your brand.",
     },
+    ai_lens: {
+      name: "AI Lens",
+      description: "See what AI crawlers see on a page — and what they miss.",
+    },
     site_audit: {
       name: "Site Audit",
       description: "Crawl your website and identify technical SEO issues.",
@@ -5316,6 +5323,10 @@ export const SEO_TOOLS_COPY: Record<DashLocale, SeoToolsCopy> = {
         name: "Requêtes personnalisées",
         description: "Créez et surveillez les requêtes d'IA qui comptent pour votre marque.",
       },
+      ai_lens: {
+        name: "AI Lens",
+        description: "Voyez ce que les robots d'IA voient sur une page — et ce qui leur échappe.",
+      },
       site_audit: {
         name: "Audit de site",
         description: "Explorez votre site web et identifiez les problèmes techniques de SEO.",
@@ -5441,6 +5452,10 @@ export const SEO_TOOLS_COPY: Record<DashLocale, SeoToolsCopy> = {
       custom_prompts: {
         name: "Eigene Prompts",
         description: "Erstellen und überwachen Sie die KI-Prompts, die für Ihre Marke zählen.",
+      },
+      ai_lens: {
+        name: "AI Lens",
+        description: "Sehen Sie, was KI-Crawler auf einer Seite sehen — und was nicht.",
       },
       site_audit: {
         name: "Site-Audit",
@@ -8969,5 +8984,358 @@ export const CUSTOM_PROMPTS_HELP_COPY: Record<DashLocale, CustomPromptsHelpCopy>
     auditBody:
       "Starten Sie das KI-Sichtbarkeits-Audit. Wenn die Engines Ihre Website nicht lesen können, können sie Sie auch nicht zitieren.",
     auditLink: "KI-Sichtbarkeit öffnen →",
+  },
+};
+
+// ─── AI Lens ────────────────────────────────────────────────────────────────
+// Copy for the crawler-visibility gap tool. The headline number is the product,
+// so its wording is unusually load-bearing: it has to be honest at 0% (the good
+// case, which most SSR sites will hit) without reading like a broken measurement.
+const aiLensEn = {
+  formTitle: "Analyze a page",
+  formIntro:
+    "AI answer engines fetch your pages without running JavaScript. This fetches one URL twice — once as an AI crawler, once as a real browser — and shows you the difference.",
+  ownDomainNote: "Your plan analyzes pages on your own site.",
+  crossDomainNote: "Your plan analyzes any URL, including a competitor's.",
+  urlLabel: "Page URL",
+  urlPlaceholder: "https://example.com/pricing",
+  invalidUrl: "Enter a full URL like https://example.com/pricing",
+  submit: "Analyze page",
+  submitting: "Analyzing…",
+  usage: (used: number, limit: number) => `${used} of ${limit} analyses used this month`,
+  remaining: (left: number) => `${left} left`,
+
+  // ── In flight ──
+  progressTitle: "Looking at your page twice",
+  progressRaw: "Fetching as an AI crawler…",
+  progressRender: "Rendering as a browser…",
+  progressNote: "A full render takes around 15 seconds. Leave this page open.",
+
+  // ── Headline ──
+  gapHeadline: (pct: string) => `${pct}% of this page is invisible to AI engines`,
+  gapHeadlineClean: "This page is fully visible to AI engines",
+  gapLabel: "Visibility gap",
+  verdictReadable: "AI-readable",
+  verdictReadableBody:
+    "An AI crawler sees essentially everything a visitor sees. Nothing to fix here.",
+  verdictPartial: "Partially visible",
+  verdictPartialBody:
+    "Some content only exists after JavaScript runs. An AI engine answering about this page is working from an incomplete copy.",
+  verdictSubstantial: "Substantially invisible",
+  verdictSubstantialBody:
+    "Most of this page does not exist for an AI crawler. Answers about it will be wrong or absent, however good the content is.",
+
+  wordsTitle: "Word counts",
+  wordsRaw: "Seen by an AI crawler",
+  wordsRendered: "Seen in a browser",
+  wordsMissing: "Missing",
+  wordsUnit: "words",
+
+  // ── Missing content ──
+  missingTitle: "What AI crawlers cannot see",
+  missingIntro: "Largest missing blocks first. Location is the heading each block sits under.",
+  missingEmpty: "Nothing is missing — the raw fetch and the rendered page match.",
+  missingUnder: (location: string) => `under ${location}`,
+  missingWords: (n: number) => (n === 1 ? "1 word" : `${n} words`),
+  missingTruncated: (n: number) =>
+    n === 1 ? "1 more block not shown" : `${n} more blocks not shown`,
+
+  // ── Fetch detail ──
+  metaTitle: "Fetch detail",
+  metaRawStatus: "Raw fetch",
+  metaRenderStatus: "Rendered fetch",
+  metaRenderTime: "Render time",
+  metaCrawler: "Requested as",
+  metaNoindex: "This page asks search engines not to index it (noindex).",
+  metaRedirected: (to: string) => `Redirected to ${to}`,
+  seconds: (s: string) => `${s}s`,
+
+  cachedNote: "Showing a result from the last 24 hours. It did not use an analysis.",
+
+  // ── History ──
+  historyTitle: "Recent analyses",
+  historyEmpty: "No analyses yet. Check your most important page first.",
+  colUrl: "Page",
+  colGap: "Gap",
+  colVerdict: "Verdict",
+  colWhen: "Analyzed",
+  view: "View",
+
+  // ── Errors ──
+  quotaTitle: "Monthly analysis limit reached",
+  quotaBody: (limit: number) =>
+    `Your plan includes ${limit} AI Lens analyses per month. Each one renders the page in a real browser, which is why it is capped.`,
+  quotaCta: "See plans →",
+  foreignTitle: "That page is not on your site",
+  foreignBody:
+    "Your plan analyzes pages on domains you have audited. Analyzing any URL — including a competitor's — is an Agency feature.",
+  foreignCta: "See plans →",
+  busyTitle: "All render slots are busy",
+  busyBody:
+    "Two pages can render at once. Try again in a few seconds — this did not use an analysis.",
+  failedTitle: "Could not analyze that page",
+  failedBody:
+    "The page did not respond, redirected off its own domain, or took too long to render. Check the URL and try again.",
+  loadFailed: "Could not load your analyses. Try again in a minute.",
+};
+export type AiLensCopy = typeof aiLensEn;
+
+export const AI_LENS_COPY: Record<DashLocale, AiLensCopy> = {
+  en: aiLensEn,
+  fr: {
+    formTitle: "Analyser une page",
+    formIntro:
+      "Les moteurs de réponse IA récupèrent vos pages sans exécuter le JavaScript. Cet outil récupère une URL deux fois — une fois comme un robot d'IA, une fois comme un vrai navigateur — et vous montre l'écart.",
+    ownDomainNote: "Votre forfait analyse les pages de votre propre site.",
+    crossDomainNote: "Votre forfait analyse n'importe quelle URL, y compris celle d'un concurrent.",
+    urlLabel: "URL de la page",
+    urlPlaceholder: "https://exemple.com/tarifs",
+    invalidUrl: "Saisissez une URL complète, par exemple https://exemple.com/tarifs",
+    submit: "Analyser la page",
+    submitting: "Analyse en cours…",
+    usage: (used: number, limit: number) => `${used} analyses sur ${limit} utilisées ce mois-ci`,
+    remaining: (left: number) => `${left} restantes`,
+
+    progressTitle: "Nous regardons votre page deux fois",
+    progressRaw: "Récupération comme un robot d'IA…",
+    progressRender: "Rendu comme un navigateur…",
+    progressNote:
+      "Un rendu complet prend environ 15 secondes. Laissez cette page ouverte.",
+
+    gapHeadline: (pct: string) => `${pct} % de cette page est invisible pour les moteurs d'IA`,
+    gapHeadlineClean: "Cette page est entièrement visible pour les moteurs d'IA",
+    gapLabel: "Écart de visibilité",
+    verdictReadable: "Lisible par l'IA",
+    verdictReadableBody:
+      "Un robot d'IA voit pratiquement tout ce que voit un visiteur. Rien à corriger ici.",
+    verdictPartial: "Partiellement visible",
+    verdictPartialBody:
+      "Une partie du contenu n'existe qu'après l'exécution du JavaScript. Un moteur d'IA qui répond au sujet de cette page travaille sur une copie incomplète.",
+    verdictSubstantial: "Largement invisible",
+    verdictSubstantialBody:
+      "L'essentiel de cette page n'existe pas pour un robot d'IA. Les réponses la concernant seront fausses ou absentes, quelle que soit la qualité du contenu.",
+
+    wordsTitle: "Nombre de mots",
+    wordsRaw: "Vu par un robot d'IA",
+    wordsRendered: "Vu dans un navigateur",
+    wordsMissing: "Manquants",
+    wordsUnit: "mots",
+
+    missingTitle: "Ce que les robots d'IA ne peuvent pas voir",
+    missingIntro:
+      "Les blocs manquants les plus importants d'abord. L'emplacement correspond au titre sous lequel se trouve chaque bloc.",
+    missingEmpty: "Rien ne manque — la récupération brute et la page rendue correspondent.",
+    missingUnder: (location: string) => `sous ${location}`,
+    missingWords: (n: number) => (n === 1 ? "1 mot" : `${n} mots`),
+    missingTruncated: (n: number) =>
+      n === 1 ? "1 bloc supplémentaire non affiché" : `${n} blocs supplémentaires non affichés`,
+
+    metaTitle: "Détail de la récupération",
+    metaRawStatus: "Récupération brute",
+    metaRenderStatus: "Récupération avec rendu",
+    metaRenderTime: "Temps de rendu",
+    metaCrawler: "Demandé en tant que",
+    metaNoindex:
+      "Cette page demande aux moteurs de recherche de ne pas l'indexer (noindex).",
+    metaRedirected: (to: string) => `Redirigée vers ${to}`,
+    seconds: (s: string) => `${s} s`,
+
+    cachedNote:
+      "Résultat des dernières 24 heures. Il n'a pas consommé d'analyse.",
+
+    historyTitle: "Analyses récentes",
+    historyEmpty: "Aucune analyse pour l'instant. Commencez par votre page la plus importante.",
+    colUrl: "Page",
+    colGap: "Écart",
+    colVerdict: "Verdict",
+    colWhen: "Analysée",
+    view: "Voir",
+
+    quotaTitle: "Limite mensuelle d'analyses atteinte",
+    quotaBody: (limit: number) =>
+      `Votre forfait comprend ${limit} analyses AI Lens par mois. Chacune effectue le rendu de la page dans un vrai navigateur, d'où le plafond.`,
+    quotaCta: "Voir les forfaits →",
+    foreignTitle: "Cette page n'appartient pas à votre site",
+    foreignBody:
+      "Votre forfait analyse les pages des domaines que vous avez audités. Analyser n'importe quelle URL — y compris celle d'un concurrent — est une fonctionnalité Agence.",
+    foreignCta: "Voir les forfaits →",
+    busyTitle: "Tous les emplacements de rendu sont occupés",
+    busyBody:
+      "Deux pages peuvent être rendues à la fois. Réessayez dans quelques secondes — aucune analyse n'a été consommée.",
+    failedTitle: "Impossible d'analyser cette page",
+    failedBody:
+      "La page n'a pas répondu, a redirigé hors de son propre domaine, ou a mis trop de temps à s'afficher. Vérifiez l'URL et réessayez.",
+    loadFailed: "Impossible de charger vos analyses. Réessayez dans une minute.",
+  },
+  "de-CH": {
+    formTitle: "Eine Seite analysieren",
+    formIntro:
+      "KI-Antwortmaschinen rufen Ihre Seiten ab, ohne JavaScript auszuführen. Dieses Tool ruft eine URL zweimal ab — einmal als KI-Crawler, einmal als echter Browser — und zeigt Ihnen den Unterschied.",
+    ownDomainNote: "Ihr Abo analysiert Seiten Ihrer eigenen Website.",
+    crossDomainNote:
+      "Ihr Abo analysiert jede beliebige URL, auch die der Konkurrenz.",
+    urlLabel: "Seiten-URL",
+    urlPlaceholder: "https://beispiel.ch/preise",
+    invalidUrl: "Geben Sie eine vollständige URL ein, z. B. https://beispiel.ch/preise",
+    submit: "Seite analysieren",
+    submitting: "Wird analysiert…",
+    usage: (used: number, limit: number) =>
+      `${used} von ${limit} Analysen in diesem Monat verwendet`,
+    remaining: (left: number) => `${left} übrig`,
+
+    progressTitle: "Wir sehen uns Ihre Seite zweimal an",
+    progressRaw: "Abruf als KI-Crawler…",
+    progressRender: "Rendering als Browser…",
+    progressNote:
+      "Ein vollständiges Rendering dauert rund 15 Sekunden. Lassen Sie diese Seite offen.",
+
+    gapHeadline: (pct: string) => `${pct} % dieser Seite sind für KI-Engines unsichtbar`,
+    gapHeadlineClean: "Diese Seite ist für KI-Engines vollständig sichtbar",
+    gapLabel: "Sichtbarkeitslücke",
+    verdictReadable: "KI-lesbar",
+    verdictReadableBody:
+      "Ein KI-Crawler sieht praktisch alles, was auch Besuchende sehen. Hier gibt es nichts zu korrigieren.",
+    verdictPartial: "Teilweise sichtbar",
+    verdictPartialBody:
+      "Ein Teil des Inhalts entsteht erst, wenn JavaScript läuft. Eine KI-Engine, die über diese Seite Auskunft gibt, arbeitet mit einer unvollständigen Kopie.",
+    verdictSubstantial: "Weitgehend unsichtbar",
+    verdictSubstantialBody:
+      "Der Grossteil dieser Seite existiert für einen KI-Crawler nicht. Antworten dazu werden falsch oder gar nicht erfolgen — unabhängig davon, wie gut der Inhalt ist.",
+
+    wordsTitle: "Wortzahlen",
+    wordsRaw: "Von einem KI-Crawler gesehen",
+    wordsRendered: "Im Browser gesehen",
+    wordsMissing: "Fehlend",
+    wordsUnit: "Wörter",
+
+    missingTitle: "Was KI-Crawler nicht sehen können",
+    missingIntro:
+      "Die grössten fehlenden Blöcke zuerst. Der Ort ist die Überschrift, unter der ein Block steht.",
+    missingEmpty:
+      "Es fehlt nichts — der Rohabruf und die gerenderte Seite stimmen überein.",
+    missingUnder: (location: string) => `unter ${location}`,
+    missingWords: (n: number) => (n === 1 ? "1 Wort" : `${n} Wörter`),
+    missingTruncated: (n: number) =>
+      n === 1 ? "1 weiterer Block nicht angezeigt" : `${n} weitere Blöcke nicht angezeigt`,
+
+    metaTitle: "Abrufdetails",
+    metaRawStatus: "Rohabruf",
+    metaRenderStatus: "Gerenderter Abruf",
+    metaRenderTime: "Rendering-Dauer",
+    metaCrawler: "Angefragt als",
+    metaNoindex:
+      "Diese Seite bittet Suchmaschinen, sie nicht zu indexieren (noindex).",
+    metaRedirected: (to: string) => `Weitergeleitet zu ${to}`,
+    seconds: (s: string) => `${s} s`,
+
+    cachedNote:
+      "Ergebnis aus den letzten 24 Stunden. Es hat keine Analyse verbraucht.",
+
+    historyTitle: "Letzte Analysen",
+    historyEmpty:
+      "Noch keine Analysen. Prüfen Sie zuerst Ihre wichtigste Seite.",
+    colUrl: "Seite",
+    colGap: "Lücke",
+    colVerdict: "Urteil",
+    colWhen: "Analysiert",
+    view: "Ansehen",
+
+    quotaTitle: "Monatliches Analyse-Limit erreicht",
+    quotaBody: (limit: number) =>
+      `Ihr Abo umfasst ${limit} AI-Lens-Analysen pro Monat. Jede rendert die Seite in einem echten Browser — daher die Obergrenze.`,
+    quotaCta: "Abos ansehen →",
+    foreignTitle: "Diese Seite gehört nicht zu Ihrer Website",
+    foreignBody:
+      "Ihr Abo analysiert Seiten von Domains, die Sie auditiert haben. Beliebige URLs — auch die der Konkurrenz — zu analysieren ist eine Agency-Funktion.",
+    foreignCta: "Abos ansehen →",
+    busyTitle: "Alle Rendering-Plätze sind belegt",
+    busyBody:
+      "Zwei Seiten können gleichzeitig gerendert werden. Versuchen Sie es in einigen Sekunden erneut — es wurde keine Analyse verbraucht.",
+    failedTitle: "Diese Seite konnte nicht analysiert werden",
+    failedBody:
+      "Die Seite hat nicht geantwortet, auf eine andere Domain weitergeleitet oder zu lange zum Rendern gebraucht. Prüfen Sie die URL und versuchen Sie es erneut.",
+    loadFailed: "Ihre Analysen konnten nicht geladen werden. Versuchen Sie es in einer Minute erneut.",
+  },
+};
+
+// ─── AI Lens help modal ─────────────────────────────────────────────────────
+const aiLensHelpEn = {
+  button: "Help",
+  buttonAria: "How AI Lens works",
+  title: "How AI Lens works",
+  close: "Close",
+
+  intro:
+    "AI answer engines read your pages with JavaScript switched off. AI Lens shows you what they get.",
+
+  whyTitle: "AI crawlers do not run JavaScript",
+  whyBody:
+    "GPTBot, ClaudeBot and PerplexityBot request your page over plain HTTP and read whatever the server sends back. They do not wait for scripts, they do not click, and they do not scroll. Anything your site builds in the browser after that response simply is not there as far as they are concerned.",
+
+  gapTitle: "What the gap number means",
+  gapBody:
+    "We fetch your page twice — once with an AI crawler's user agent, once in a real browser — turn both into plain text, and compare them block by block. The gap is the share of the browser's words that never appeared in the crawler's copy. Under 5% is AI-readable, 5-25% is partial, above 25% means most of the page is invisible.",
+
+  fixTitle: "How to close it",
+  fixBody:
+    "Send the important content in the server's first response: server-side rendering or static generation for headings, body copy, prices and FAQs. Client-side rendering is fine for things that are not the point of the page — a map widget, a chat launcher, a carousel's controls. The test is whether an answer about your page would be wrong without that text.",
+
+  goalTitle: "Identical is the goal",
+  goalBody:
+    "A 0% gap is not a boring result — it is the target. It means an AI engine citing your page is working from the same words your customers read.",
+};
+export type AiLensHelpCopy = typeof aiLensHelpEn;
+
+export const AI_LENS_HELP_COPY: Record<DashLocale, AiLensHelpCopy> = {
+  en: aiLensHelpEn,
+  fr: {
+    button: "Aide",
+    buttonAria: "Comment fonctionne AI Lens",
+    title: "Comment fonctionne AI Lens",
+    close: "Fermer",
+
+    intro:
+      "Les moteurs de réponse IA lisent vos pages avec le JavaScript désactivé. AI Lens vous montre ce qu'ils obtiennent.",
+
+    whyTitle: "Les robots d'IA n'exécutent pas le JavaScript",
+    whyBody:
+      "GPTBot, ClaudeBot et PerplexityBot demandent votre page en HTTP simple et lisent ce que le serveur renvoie. Ils n'attendent aucun script, ne cliquent pas et ne défilent pas. Tout ce que votre site construit ensuite dans le navigateur n'existe tout simplement pas pour eux.",
+
+    gapTitle: "Ce que signifie le chiffre de l'écart",
+    gapBody:
+      "Nous récupérons votre page deux fois — une fois avec l'agent utilisateur d'un robot d'IA, une fois dans un vrai navigateur — nous convertissons les deux en texte brut, puis nous les comparons bloc par bloc. L'écart correspond à la part des mots du navigateur qui n'apparaissent jamais dans la copie du robot. Moins de 5 % : lisible par l'IA ; 5 à 25 % : partiel ; au-delà de 25 %, l'essentiel de la page est invisible.",
+
+    fixTitle: "Comment le réduire",
+    fixBody:
+      "Envoyez le contenu important dès la première réponse du serveur : rendu côté serveur ou génération statique pour les titres, le corps du texte, les prix et les questions fréquentes. Le rendu côté client convient pour ce qui n'est pas l'objet de la page — une carte, un lanceur de discussion, les commandes d'un carrousel. Le test : une réponse sur votre page serait-elle fausse sans ce texte ?",
+
+    goalTitle: "L'objectif est l'identité",
+    goalBody:
+      "Un écart de 0 % n'est pas un résultat ennuyeux : c'est la cible. Cela signifie qu'un moteur d'IA qui cite votre page travaille sur les mêmes mots que ceux lus par vos clients.",
+  },
+  "de-CH": {
+    button: "Hilfe",
+    buttonAria: "So funktioniert AI Lens",
+    title: "So funktioniert AI Lens",
+    close: "Schliessen",
+
+    intro:
+      "KI-Antwortmaschinen lesen Ihre Seiten mit abgeschaltetem JavaScript. AI Lens zeigt Ihnen, was dabei ankommt.",
+
+    whyTitle: "KI-Crawler führen kein JavaScript aus",
+    whyBody:
+      "GPTBot, ClaudeBot und PerplexityBot fordern Ihre Seite über einfaches HTTP an und lesen, was der Server zurückschickt. Sie warten auf keine Skripte, klicken nicht und scrollen nicht. Alles, was Ihre Website danach im Browser aufbaut, existiert für sie einfach nicht.",
+
+    gapTitle: "Was die Lückenzahl bedeutet",
+    gapBody:
+      "Wir rufen Ihre Seite zweimal ab — einmal mit dem User-Agent eines KI-Crawlers, einmal in einem echten Browser —, wandeln beides in reinen Text um und vergleichen Block für Block. Die Lücke ist der Anteil der Browser-Wörter, die in der Crawler-Kopie nie vorkamen. Unter 5 % gilt als KI-lesbar, 5–25 % als teilweise, über 25 % heisst, der Grossteil der Seite ist unsichtbar.",
+
+    fixTitle: "So schliessen Sie sie",
+    fixBody:
+      "Liefern Sie die wichtigen Inhalte schon mit der ersten Serverantwort: serverseitiges Rendering oder statische Generierung für Überschriften, Fliesstext, Preise und FAQ. Clientseitiges Rendering ist in Ordnung für alles, was nicht der Zweck der Seite ist — eine Karte, ein Chat-Starter, die Steuerung eines Karussells. Die Prüffrage: Wäre eine Antwort über Ihre Seite ohne diesen Text falsch?",
+
+    goalTitle: "Identisch ist das Ziel",
+    goalBody:
+      "Eine Lücke von 0 % ist kein langweiliges Ergebnis, sondern das Ziel. Sie bedeutet, dass eine KI-Engine, die Ihre Seite zitiert, mit denselben Worten arbeitet, die Ihre Kundschaft liest.",
   },
 };

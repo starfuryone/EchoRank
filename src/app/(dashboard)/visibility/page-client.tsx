@@ -25,6 +25,7 @@ import { OnboardingChecklist } from "@/components/onboarding/onboarding-checklis
 import { VisibilityReportButton } from "@/components/visibility/VisibilityReportButton";
 import { MonitorCard } from "@/components/visibility/MonitorCard";
 import { BenchmarkCard } from "@/components/visibility/BenchmarkCard";
+import { AiLensAuditPanel } from "@/components/visibility/AiLensAuditPanel";
 import { VISIBILITY_COPY, type DashLocale, type VisibilityCopy } from "@/lib/i18n/dashboard";
 
 // ─── Types (the sidecar's serialized audit shape) ───────────────────────────
@@ -295,6 +296,13 @@ export function VisibilityPageClient({
           </Link>
         </CardContent>
       </Card>
+
+      {/* AI Lens — this audit says whether engines are ALLOWED to read the site;
+          this says whether anything is there to read once they do. It never
+          renders on its own: see the component for why it does not auto-spend. */}
+      {audit && !loading && !error && (
+        <AiLensAuditPanel locale={locale} auditUrl={url} />
+      )}
 
       {/* Competitor benchmark (GROWTH+) */}
       {audit && !loading && !error && (
