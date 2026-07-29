@@ -1,0 +1,119 @@
+// Shared help-modal convention: the illustrations render, and every tool's
+// help copy maps onto ToolHelpModal without a hole in it.
+//
+// These are SERVER-RENDER smoke tests (react-dom/server), deliberately not DOM
+// tests: this repo has no jsdom/testing-library setup, and adding one for a
+// handful of decorative SVGs would be a larger change than the thing it tests.
+// What can break here without a browser — a missing aria-hidden, translatable
+// text sneaking into a graphic, a copy key that is undefined — is exactly what
+// these cover.
+
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { describe, expect, it } from "vitest";
+
+import { RankTrackerArt } from "@/components/seo-tools/help-illustrations/rank-tracker";
+import { BacklinksArt } from "@/components/seo-tools/help-illustrations/backlinks";
+import { LighthouseArt } from "@/components/seo-tools/help-illustrations/lighthouse";
+import { SiteAuditArt } from "@/components/seo-tools/help-illustrations/site-audit";
+
+import {
+  BACKLINKS_HELP_COPY,
+  LIGHTHOUSE_HELP_COPY,
+  RANK_TRACKER_HELP_COPY,
+  SITE_AUDIT_HELP_COPY,
+} from "@/lib/i18n/dashboard";
+
+const LOCALES = ["en", "fr", "de-CH"] as const;
+
+const ILLUSTRATIONS = [
+  ["rank-tracker", RankTrackerArt],
+  ["backlinks", BacklinksArt],
+  ["lighthouse", LighthouseArt],
+  ["site-audit", SiteAuditArt],
+] as const;
+
+describe.each(ILLUSTRATIONS)("%s illustration", (name, Art) => {
+  const html = renderToStaticMarkup(createElement(Art));
+
+  it("renders", () => {
+    expect(html.startsWith("<svg")).toBe(true);
+    expect(html.length).toBeGreaterThan(200);
+  });
+
+  it("is decorative: aria-hidden and not focusable", () => {
+    // The numbered steps beside it carry the same information as text, so a
+    // screen reader must skip the graphic entirely rather than read coordinates.
+    expect(html).toMatch(/^<svg[^>]*aria-hidden="true"/);
+    expect(html).toMatch(/^<svg[^>]*focusable="false"/);
+  });
+
+  it("uses the shared 480x150 canvas", () => {
+    expect(html).toContain('viewBox="0 0 480 150"');
+  });
+
+  it("honours prefers-reduced-motion wherever it animates", () => {
+    if (!html.includes("er-help-flow")) return; // no motion in this one
+    expect(html).toContain("prefers-reduced-motion");
+    expect(html).toContain("@keyframes erHelpFlow");
+  });
+
+  it("carries no translatable text", () => {
+    // Only digits, "#", metric abbreviations and arrows are allowed — glyphs
+    // that read identically in en / fr / de-CH.
+    const texts = [...html.matchAll(/<text[^>]*>([^<]*)<\/text>/g)].map((m) => m[1].trim());
+    for (const text of texts) {
+      expect(
+        /^[#\d\s.,%↑↓→–-]*$/u.test(text),
+        `${name} illustration contains translatable text: "${text}"`,
+      ).toBe(true);
+    }
+  });
+
+  it("stays inside the size budget", () => {
+    // ~6 KB rendered; these ship in the client bundle of every tool page.
+    expect(html.length).toBeLessThan(6144);
+  });
+});
+
+// ─── Copy completeness ──────────────────────────────────────────────────────
+
+/**
+ * Every string a migrated modal reads. A missing key renders as `undefined` in
+ * the dialog rather than throwing, so this is the only thing that catches it.
+ */
+const MIGRATED = [
+  ["rank-tracker", RANK_TRACKER_HELP_COPY, ["step1Title", "step2Title", "step3Title", "step4Title"]],
+  ["backlinks", BACKLINKS_HELP_COPY, ["backlinksTitle", "dofollowTitle", "anchorsTitle", "historyTitle", "freshnessTitle"]],
+  ["lighthouse", LIGHTHOUSE_HELP_COPY, ["labFieldTitle", "scoresTitle", "devicesTitle", "fluctuationTitle"]],
+  ["site-audit", SITE_AUDIT_HELP_COPY, ["scoreTitle", "severityTitle", "limitsTitle", "vsVisibilityTitle"]],
+] as const;
+
+describe("migrated help copy", () => {
+  it.each(MIGRATED)("%s has every section title in every locale", (name, copy, keys) => {
+    for (const locale of LOCALES) {
+      const t = copy[locale] as unknown as Record<string, unknown>;
+      // Chrome the shared modal always renders.
+      for (const key of ["title", "close", "button", "buttonAria"]) {
+        expect(typeof t[key], `${name}.${locale}.${key}`).toBe("string");
+        expect((t[key] as string).length).toBeGreaterThan(0);
+      }
+      for (const key of keys) {
+        expect(typeof t[key], `${name}.${locale}.${key}`).toBe("string");
+        expect((t[key] as string).length).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  it("never renders a raw translation key as visible copy", () => {
+    // A key that leaked instead of its value looks like "step1Title" on screen.
+    for (const [name, copy] of MIGRATED) {
+      for (const locale of LOCALES) {
+        for (const [key, value] of Object.entries(copy[locale])) {
+          if (typeof value !== "string") continue;
+          expect(value, `${name}.${locale}.${key} looks like a raw key`).not.toBe(key);
+        }
+      }
+    }
+  });
+});
