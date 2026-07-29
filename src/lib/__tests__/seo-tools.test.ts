@@ -683,3 +683,126 @@ test("the two target modes never share a cache key", () => {
   assert.ok(includeSubdomainsFor("domain"));
   assert.ok(!includeSubdomainsFor("exact_url"));
 });
+
+// ─── Lighthouse (real-data page) ────────────────────────────────────────────
+import { LIGHTHOUSE_TOOL_COPY, LIGHTHOUSE_HELP_COPY } from "../i18n/dashboard";
+import {
+  LIGHTHOUSE_STRATEGIES,
+  DEFAULT_STRATEGY,
+  LIGHTHOUSE_CACHE_TTL_MS,
+  AUDITS_PER_HOUR,
+  AUDIT_WINDOW_MS,
+  MAX_OPPORTUNITIES,
+  METRIC_THRESHOLDS,
+  scoreBand,
+} from "../lighthouse/options";
+import { LIGHTHOUSE_CATEGORIES, LAB_METRICS } from "../lighthouse/types";
+
+test("lighthouse copy complete in all locales", () => {
+  for (const locale of LOCALES) {
+    const c = LIGHTHOUSE_TOOL_COPY[locale];
+    assert.ok(c.formTitle.length && c.formIntro.length && c.run.length, locale);
+    assert.ok(c.urlLabel.length && c.invalidUrl.length && c.notPublicUrl.length);
+    assert.ok(c.strategyLabel.length && c.strategyMobile.length && c.strategyDesktop.length);
+    assert.ok(c.strategyHint.length && c.runningTitle.length && c.runningBody.length);
+    assert.ok(c.cachedIntro.length);
+
+    assert.ok(c.scoresTitle.length && c.scoreNotAvailable.length);
+    assert.ok(c.scorePerformance.length && c.scoreAccessibility.length);
+    assert.ok(c.scoreBestPractices.length && c.scoreSeo.length);
+    assert.ok(c.bandGood.length && c.bandAverage.length && c.bandPoor.length);
+
+    assert.ok(c.vitalsTitle.length && c.fieldDataTitle.length && c.fieldDataIntro.length);
+    assert.ok(c.fieldDataOriginNote.length && c.labDataTitle.length && c.labDataIntro.length);
+    // The no-field-data state is the COMMON case; it must never be missing.
+    assert.ok(c.noFieldDataTitle.length && c.noFieldDataBody.length, `${locale} no-field-data`);
+
+    assert.ok(c.opportunitiesTitle.length && c.opportunitiesIntro.length);
+    assert.ok(c.opportunitiesEmpty.length);
+    assert.ok(c.recentTitle.length && c.recentEmpty.length && c.view.length);
+    assert.ok(c.colUrl.length && c.colDevice.length && c.colWhen.length);
+    assert.ok(c.limitTitle.length && c.runFailed.length && c.loadFailed.length);
+
+    // Interpolated strings must actually interpolate.
+    assert.ok(c.auditedAgo("3 hours ago").includes("3 hours ago"), `${locale} auditedAgo`);
+    assert.ok(c.reRunIn(4).includes("4") && c.reRunIn(1).length, `${locale} reRunIn`);
+    assert.ok(c.usage(3, 20).includes("3") && c.usage(3, 20).includes("20"), `${locale} usage`);
+    assert.ok(c.limitBody(20).includes("20"), `${locale} limitBody`);
+    assert.ok(c.savingsMs(1500).includes("1.5"), `${locale} savingsMs`);
+    assert.ok(c.savingsBytes("312").includes("312"), `${locale} savingsBytes`);
+    assert.ok(c.versionNote("12.2.1").includes("12.2.1"), `${locale} versionNote`);
+    assert.ok(c.finalUrlNote("https://x.test/").includes("https://x.test/"));
+  }
+});
+
+test("lighthouse help copy complete in all locales", () => {
+  for (const locale of LOCALES) {
+    const c = LIGHTHOUSE_HELP_COPY[locale];
+    assert.ok(c.button.length && c.buttonAria.length && c.title.length && c.close.length);
+    assert.ok(c.intro.length, `${locale} intro`);
+    for (const key of ["labField", "scores", "devices", "fluctuation"] as const) {
+      assert.ok(c[`${key}Title`].length, `${locale} ${key} title`);
+      assert.ok(c[`${key}Body`].length > 40, `${locale} ${key} body`);
+    }
+  }
+});
+
+test("lighthouse copy never uses CamelCase branding", () => {
+  const json = JSON.stringify({ LIGHTHOUSE_TOOL_COPY, LIGHTHOUSE_HELP_COPY });
+  assert.ok(!json.includes("EchoRank"), "found CamelCase 'EchoRank'");
+  // This tool is powered by Google, not DataForSEO — naming the wrong vendor
+  // would be worse than naming none.
+  assert.ok(!/dataforseo/i.test(json), "Lighthouse copy must not mention DataForSEO");
+});
+
+test("metric abbreviations are NOT translated", () => {
+  // LCP/CLS/TBT are the names of the things, identical in every locale and in
+  // every other tool the user reads. They must live in code, not catalogs.
+  const json = JSON.stringify(LIGHTHOUSE_TOOL_COPY);
+  for (const metric of LAB_METRICS) {
+    assert.ok(
+      !new RegExp(`"${metric}"`).test(json),
+      `metric ${metric} must not appear as a translatable string`,
+    );
+  }
+});
+
+test("lighthouse limits and cache window", () => {
+  // PSI is free, so this is not a monetization lever — it protects the shared
+  // Google quota every tenant on this server draws from.
+  assert.equal(AUDITS_PER_HOUR, 20);
+  assert.equal(AUDIT_WINDOW_MS, 60 * 60 * 1000);
+  assert.equal(LIGHTHOUSE_CACHE_TTL_MS, 6 * 60 * 60 * 1000);
+  assert.equal(MAX_OPPORTUNITIES, 8);
+});
+
+test("the two strategies are separate audits, mobile first", () => {
+  assert.deepEqual([...LIGHTHOUSE_STRATEGIES], ["mobile", "desktop"]);
+  // Google indexes mobile first and it is the harsher of the two.
+  assert.equal(DEFAULT_STRATEGY, "mobile");
+});
+
+test("four categories and six lab metrics, in render order", () => {
+  assert.deepEqual([...LIGHTHOUSE_CATEGORIES], [
+    "performance",
+    "accessibility",
+    "bestPractices",
+    "seo",
+  ]);
+  assert.deepEqual([...LAB_METRICS], ["FCP", "LCP", "TBT", "CLS", "SI", "TTI"]);
+});
+
+test("score bands are Google's published boundaries, not ours", () => {
+  // 0-49 / 50-89 / 90-100 — so a score here matches Chrome DevTools exactly.
+  assert.equal(scoreBand(49), "poor");
+  assert.equal(scoreBand(50), "average");
+  assert.equal(scoreBand(89), "average");
+  assert.equal(scoreBand(90), "good");
+  assert.equal(scoreBand(null), null);
+});
+
+test("Core Web Vitals thresholds match web.dev", () => {
+  assert.deepEqual(METRIC_THRESHOLDS.LCP, { good: 2500, poor: 4000 });
+  assert.deepEqual(METRIC_THRESHOLDS.INP, { good: 200, poor: 500 });
+  assert.deepEqual(METRIC_THRESHOLDS.CLS, { good: 0.1, poor: 0.25 });
+});

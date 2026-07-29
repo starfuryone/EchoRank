@@ -7390,3 +7390,303 @@ export const BACKLINKS_HELP_COPY: Record<DashLocale, BacklinksHelpCopy> = {
       "Der Link-Index wird laufend aktualisiert. Die Summen bewegen sich von Tag zu Tag und weichen leicht von anderen Backlink-Tools ab. Achten Sie auf den Trend statt auf die exakte Zahl.",
   },
 };
+
+// ─── Lighthouse ─────────────────────────────────────────────────────────────
+// Metric ABBREVIATIONS (LCP, CLS, TBT, INP…) are deliberately absent from
+// these catalogs: they are the names of the things, identical in every locale
+// and in every other tool the user reads. Only the surrounding prose is
+// translated. Lighthouse's own formatted values ("2.4 s") come from the API.
+const lighthouseToolEn = {
+  formTitle: "Run a speed audit",
+  formIntro:
+    "Check how fast a page loads and how it scores on performance, accessibility, best practices and SEO.",
+  urlLabel: "Page URL",
+  urlPlaceholder: "https://example.com/pricing",
+  invalidUrl: "Enter a full URL like https://example.com/pricing",
+  notPublicUrl: "That address is not reachable from the public internet",
+  strategyLabel: "Device",
+  strategyMobile: "Mobile",
+  strategyDesktop: "Desktop",
+  strategyHint: "Mobile is throttled harder and usually scores lower — it is what Google indexes.",
+  run: "Run audit",
+  running: "Auditing…",
+  runningTitle: "Auditing the page…",
+  runningBody: "This takes up to 30 seconds. The page is loaded and measured in a real browser.",
+  auditedAgo: (ago: string) => `Audited ${ago}`,
+  reRunIn: (hours: number) =>
+    hours <= 1 ? "Re-run available in under an hour" : `Re-run available in ${hours}h`,
+  cachedIntro: "Showing your saved audit — the page was not re-tested.",
+  finalUrlNote: (url: string) => `Redirected to ${url}`,
+  versionNote: (version: string) => `Lighthouse ${version}`,
+
+  // ── Scores ──
+  scoresTitle: "Scores",
+  scorePerformance: "Performance",
+  scoreAccessibility: "Accessibility",
+  scoreBestPractices: "Best practices",
+  scoreSeo: "SEO",
+  scoreNotAvailable: "Not scored",
+  bandGood: "Good",
+  bandAverage: "Needs work",
+  bandPoor: "Poor",
+
+  // ── Core Web Vitals ──
+  vitalsTitle: "Core Web Vitals",
+  fieldDataTitle: "Field data",
+  fieldDataIntro: "What real Chrome users experienced over the last 28 days.",
+  fieldDataOriginNote:
+    "Not enough data for this exact page, so these figures describe the whole site.",
+  noFieldDataTitle: "No field data available",
+  noFieldDataBody:
+    "Google only reports real-user data for pages with enough Chrome traffic. The lab measurements below still apply.",
+  labDataTitle: "Lab data",
+  labDataIntro: "Measured in a single simulated load, on a throttled connection.",
+  metricNoValue: "—",
+
+  // ── Opportunities ──
+  opportunitiesTitle: "Opportunities",
+  opportunitiesIntro: "Estimated time savings if each item is addressed.",
+  opportunitiesEmpty: "No significant opportunities were found. Nice.",
+  savingsMs: (ms: number) => `~${(ms / 1000).toFixed(1)}s faster`,
+  savingsBytes: (kib: string) => `${kib} KiB smaller`,
+
+  // ── History ──
+  recentTitle: "Recent audits",
+  recentEmpty: "No audits yet. Run your first one above.",
+  colUrl: "Page",
+  colDevice: "Device",
+  colWhen: "Run",
+  view: "View",
+
+  // ── Limiter / errors ──
+  usage: (used: number, limit: number) => `${used} of ${limit} audits used this hour`,
+  limitTitle: "Hourly audit limit reached",
+  limitBody: (limit: number) =>
+    `You can run ${limit} audits an hour. Wait a few minutes and try again — this keeps the speed-test service responsive for everyone.`,
+  runFailed: "Could not complete the audit. Try again in a minute.",
+  loadFailed: "Could not load your audits. Try again in a minute.",
+};
+export type LighthouseToolCopy = typeof lighthouseToolEn;
+
+export const LIGHTHOUSE_TOOL_COPY: Record<DashLocale, LighthouseToolCopy> = {
+  en: lighthouseToolEn,
+  fr: {
+    formTitle: "Lancer un audit de vitesse",
+    formIntro:
+      "Vérifiez la vitesse de chargement d'une page et ses scores de performance, d'accessibilité, de bonnes pratiques et de référencement.",
+    urlLabel: "URL de la page",
+    urlPlaceholder: "https://exemple.com/tarifs",
+    invalidUrl: "Entrez une URL complète comme https://exemple.com/tarifs",
+    notPublicUrl: "Cette adresse n'est pas accessible depuis l'internet public",
+    strategyLabel: "Appareil",
+    strategyMobile: "Mobile",
+    strategyDesktop: "Ordinateur",
+    strategyHint:
+      "Le mobile est plus fortement bridé et obtient généralement un score plus bas — c'est ce que Google indexe.",
+    run: "Lancer l'audit",
+    running: "Audit en cours…",
+    runningTitle: "Audit de la page…",
+    runningBody:
+      "Cela prend jusqu'à 30 secondes. La page est chargée et mesurée dans un vrai navigateur.",
+    auditedAgo: (ago: string) => `Audité ${ago}`,
+    reRunIn: (hours: number) =>
+      hours <= 1
+        ? "Relance possible dans moins d'une heure"
+        : `Relance possible dans ${hours} h`,
+    cachedIntro: "Affichage de votre audit enregistré — la page n'a pas été retestée.",
+    finalUrlNote: (url: string) => `Redirigé vers ${url}`,
+    versionNote: (version: string) => `Lighthouse ${version}`,
+
+    scoresTitle: "Scores",
+    scorePerformance: "Performance",
+    scoreAccessibility: "Accessibilité",
+    scoreBestPractices: "Bonnes pratiques",
+    scoreSeo: "Référencement",
+    scoreNotAvailable: "Non évalué",
+    bandGood: "Bon",
+    bandAverage: "À améliorer",
+    bandPoor: "Faible",
+
+    vitalsTitle: "Signaux web essentiels",
+    fieldDataTitle: "Données terrain",
+    fieldDataIntro: "Ce qu'ont vécu de vrais utilisateurs de Chrome au cours des 28 derniers jours.",
+    fieldDataOriginNote:
+      "Pas assez de données pour cette page précise : ces chiffres décrivent l'ensemble du site.",
+    noFieldDataTitle: "Aucune donnée terrain disponible",
+    noFieldDataBody:
+      "Google ne publie des données d'utilisateurs réels que pour les pages ayant assez de trafic Chrome. Les mesures en laboratoire ci-dessous restent valables.",
+    labDataTitle: "Données de laboratoire",
+    labDataIntro: "Mesurées lors d'un seul chargement simulé, sur une connexion bridée.",
+    metricNoValue: "—",
+
+    opportunitiesTitle: "Pistes d'amélioration",
+    opportunitiesIntro: "Gains de temps estimés si chaque élément est corrigé.",
+    opportunitiesEmpty: "Aucune piste significative trouvée. Bravo.",
+    savingsMs: (ms: number) => `~${(ms / 1000).toFixed(1)} s plus rapide`,
+    savingsBytes: (kib: string) => `${kib} Kio de moins`,
+
+    recentTitle: "Audits récents",
+    recentEmpty: "Aucun audit pour l'instant. Lancez le premier ci-dessus.",
+    colUrl: "Page",
+    colDevice: "Appareil",
+    colWhen: "Lancé",
+    view: "Voir",
+
+    usage: (used: number, limit: number) => `${used} audits sur ${limit} utilisés cette heure`,
+    limitTitle: "Limite d'audits horaire atteinte",
+    limitBody: (limit: number) =>
+      `Vous pouvez lancer ${limit} audits par heure. Attendez quelques minutes et réessayez — cela garde le service de test de vitesse réactif pour tout le monde.`,
+    runFailed: "Impossible de terminer l'audit. Réessayez dans une minute.",
+    loadFailed: "Impossible de charger vos audits. Réessayez dans une minute.",
+  },
+  "de-CH": {
+    formTitle: "Geschwindigkeitsaudit starten",
+    formIntro:
+      "Prüfen Sie, wie schnell eine Seite lädt und wie sie bei Performance, Barrierefreiheit, Best Practices und SEO abschneidet.",
+    urlLabel: "Seiten-URL",
+    urlPlaceholder: "https://beispiel.ch/preise",
+    invalidUrl: "Geben Sie eine vollständige URL wie https://beispiel.ch/preise ein",
+    notPublicUrl: "Diese Adresse ist aus dem öffentlichen Internet nicht erreichbar",
+    strategyLabel: "Gerät",
+    strategyMobile: "Mobil",
+    strategyDesktop: "Desktop",
+    strategyHint:
+      "Mobil wird stärker gedrosselt und schneidet meist schlechter ab — und ist das, was Google indexiert.",
+    run: "Audit starten",
+    running: "Audit läuft…",
+    runningTitle: "Seite wird geprüft…",
+    runningBody:
+      "Das dauert bis zu 30 Sekunden. Die Seite wird in einem echten Browser geladen und gemessen.",
+    auditedAgo: (ago: string) => `Geprüft ${ago}`,
+    reRunIn: (hours: number) =>
+      hours <= 1
+        ? "Neues Audit in weniger als einer Stunde möglich"
+        : `Neues Audit in ${hours} Std. möglich`,
+    cachedIntro: "Ihr gespeichertes Audit wird angezeigt — die Seite wurde nicht neu getestet.",
+    finalUrlNote: (url: string) => `Weitergeleitet zu ${url}`,
+    versionNote: (version: string) => `Lighthouse ${version}`,
+
+    scoresTitle: "Scores",
+    scorePerformance: "Performance",
+    scoreAccessibility: "Barrierefreiheit",
+    scoreBestPractices: "Best Practices",
+    scoreSeo: "SEO",
+    scoreNotAvailable: "Nicht bewertet",
+    bandGood: "Gut",
+    bandAverage: "Verbesserungswürdig",
+    bandPoor: "Schlecht",
+
+    vitalsTitle: "Core Web Vitals",
+    fieldDataTitle: "Felddaten",
+    fieldDataIntro: "Was echte Chrome-Nutzende in den letzten 28 Tagen erlebt haben.",
+    fieldDataOriginNote:
+      "Zu wenig Daten für genau diese Seite — diese Werte beschreiben die ganze Website.",
+    noFieldDataTitle: "Keine Felddaten verfügbar",
+    noFieldDataBody:
+      "Google meldet Daten echter Nutzender nur für Seiten mit genügend Chrome-Traffic. Die Labormessungen unten gelten trotzdem.",
+    labDataTitle: "Labordaten",
+    labDataIntro: "Gemessen in einem einzelnen simulierten Ladevorgang, über eine gedrosselte Verbindung.",
+    metricNoValue: "—",
+
+    opportunitiesTitle: "Verbesserungspotenzial",
+    opportunitiesIntro: "Geschätzte Zeitersparnis, wenn der jeweilige Punkt behoben wird.",
+    opportunitiesEmpty: "Kein nennenswertes Potenzial gefunden. Sehr gut.",
+    savingsMs: (ms: number) => `~${(ms / 1000).toFixed(1)} s schneller`,
+    savingsBytes: (kib: string) => `${kib} KiB kleiner`,
+
+    recentTitle: "Letzte Audits",
+    recentEmpty: "Noch keine Audits. Starten Sie oben Ihr erstes.",
+    colUrl: "Seite",
+    colDevice: "Gerät",
+    colWhen: "Gestartet",
+    view: "Ansehen",
+
+    usage: (used: number, limit: number) => `${used} von ${limit} Audits in dieser Stunde verwendet`,
+    limitTitle: "Stündliches Audit-Limit erreicht",
+    limitBody: (limit: number) =>
+      `Sie können ${limit} Audits pro Stunde starten. Warten Sie einige Minuten und versuchen Sie es erneut — das hält den Geschwindigkeitstest für alle reaktionsfähig.`,
+    runFailed: "Das Audit konnte nicht abgeschlossen werden. Versuchen Sie es in einer Minute erneut.",
+    loadFailed: "Ihre Audits konnten nicht geladen werden. Versuchen Sie es in einer Minute erneut.",
+  },
+};
+
+// ─── Lighthouse help modal ──────────────────────────────────────────────────
+const lighthouseHelpEn = {
+  button: "Help",
+  buttonAria: "How the speed audit works",
+  title: "How the speed audit works",
+  close: "Close",
+
+  intro: "Each audit loads your page in a real browser and scores it the way Google does.",
+
+  labFieldTitle: "Lab data vs field data",
+  labFieldBody:
+    "Lab data is one simulated load on a throttled connection — repeatable, and available for any page. Field data is what real Chrome users actually experienced over the last 28 days, and only exists for pages with enough traffic. Google ranks on field data; lab data is how you debug it.",
+
+  scoresTitle: "What each score covers",
+  scoresBody:
+    "Performance is how fast the page loads and responds. Accessibility checks things like contrast, labels and keyboard use. Best practices covers security and modern web standards. SEO checks that search engines can crawl and understand the page.",
+
+  devicesTitle: "Why mobile and desktop differ",
+  devicesBody:
+    "Mobile runs on a deliberately slow simulated connection and a weaker CPU, so it almost always scores lower. Google indexes the mobile version first, so treat the mobile score as the real one.",
+
+  fluctuationTitle: "Scores move between runs",
+  fluctuationBody:
+    "The same page can score several points differently minute to minute — network conditions, ad scripts and server load all vary. Look at the trend across several audits rather than reacting to one number.",
+};
+export type LighthouseHelpCopy = typeof lighthouseHelpEn;
+
+export const LIGHTHOUSE_HELP_COPY: Record<DashLocale, LighthouseHelpCopy> = {
+  en: lighthouseHelpEn,
+  fr: {
+    button: "Aide",
+    buttonAria: "Comment fonctionne l'audit de vitesse",
+    title: "Comment fonctionne l'audit de vitesse",
+    close: "Fermer",
+
+    intro:
+      "Chaque audit charge votre page dans un vrai navigateur et la note de la même façon que Google.",
+
+    labFieldTitle: "Données de laboratoire et données terrain",
+    labFieldBody:
+      "Les données de laboratoire proviennent d'un seul chargement simulé sur une connexion bridée : reproductibles, et disponibles pour n'importe quelle page. Les données terrain correspondent à ce qu'ont réellement vécu les utilisateurs de Chrome au cours des 28 derniers jours, et n'existent que pour les pages ayant assez de trafic. Google classe selon les données terrain ; le laboratoire sert à les déboguer.",
+
+    scoresTitle: "Ce que couvre chaque score",
+    scoresBody:
+      "La performance mesure la vitesse de chargement et de réaction. L'accessibilité vérifie le contraste, les libellés et l'utilisation au clavier. Les bonnes pratiques couvrent la sécurité et les standards web modernes. Le référencement vérifie que les moteurs de recherche peuvent explorer et comprendre la page.",
+
+    devicesTitle: "Pourquoi mobile et ordinateur diffèrent",
+    devicesBody:
+      "Le mobile s'exécute sur une connexion simulée volontairement lente et un processeur plus faible : il obtient donc presque toujours un score inférieur. Google indexe d'abord la version mobile — considérez le score mobile comme le vrai.",
+
+    fluctuationTitle: "Les scores varient d'une exécution à l'autre",
+    fluctuationBody:
+      "Une même page peut perdre ou gagner plusieurs points d'une minute à l'autre : conditions réseau, scripts publicitaires et charge du serveur varient tous. Regardez la tendance sur plusieurs audits plutôt que de réagir à un seul chiffre.",
+  },
+  "de-CH": {
+    button: "Hilfe",
+    buttonAria: "So funktioniert das Geschwindigkeitsaudit",
+    title: "So funktioniert das Geschwindigkeitsaudit",
+    close: "Schliessen",
+
+    intro:
+      "Jedes Audit lädt Ihre Seite in einem echten Browser und bewertet sie so, wie Google es tut.",
+
+    labFieldTitle: "Labordaten und Felddaten",
+    labFieldBody:
+      "Labordaten stammen aus einem einzelnen simulierten Ladevorgang über eine gedrosselte Verbindung — wiederholbar und für jede Seite verfügbar. Felddaten sind das, was echte Chrome-Nutzende in den letzten 28 Tagen tatsächlich erlebt haben, und existieren nur für Seiten mit genügend Traffic. Google bewertet anhand der Felddaten; Labordaten dienen der Fehlersuche.",
+
+    scoresTitle: "Was die einzelnen Scores abdecken",
+    scoresBody:
+      "Performance misst, wie schnell die Seite lädt und reagiert. Barrierefreiheit prüft Dinge wie Kontrast, Beschriftungen und Tastaturbedienung. Best Practices deckt Sicherheit und moderne Webstandards ab. SEO prüft, ob Suchmaschinen die Seite crawlen und verstehen können.",
+
+    devicesTitle: "Warum Mobil und Desktop abweichen",
+    devicesBody:
+      "Mobil läuft auf einer bewusst langsamen simulierten Verbindung und schwächerer CPU und schneidet deshalb fast immer schlechter ab. Google indexiert zuerst die mobile Version — behandeln Sie den Mobil-Score als den massgebenden.",
+
+    fluctuationTitle: "Scores schwanken zwischen Läufen",
+    fluctuationBody:
+      "Dieselbe Seite kann von Minute zu Minute mehrere Punkte anders abschneiden — Netzbedingungen, Werbeskripte und Serverlast schwanken alle. Achten Sie auf den Trend über mehrere Audits statt auf eine einzelne Zahl.",
+  },
+};

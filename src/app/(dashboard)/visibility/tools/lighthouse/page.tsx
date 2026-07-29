@@ -1,11 +1,16 @@
 import { cookies } from "next/headers";
 import { dashboardLocale } from "@/lib/i18n/dashboard";
-import { FeatureScaffold } from "@/components/scaffold/feature-scaffold";
+import { LighthouseClient } from "@/components/seo-tools/lighthouse-client";
 
-// INTEGRATION POINT: DataForSEO on_page/lighthouse/live/json (port spec Phase 7).
-// Paid-subscription gating is enforced by ../layout.tsx for all tool pages.
-export default async function Page() {
+// Real data page (replaced the scaffold). Source is Google's PageSpeed
+// Insights API v5 — NOT DataForSEO's on_page/lighthouse endpoint: PSI is free,
+// it is Google's own Lighthouse runner, and it is the only source of CrUX
+// field data. See src/lib/pagespeed/client.ts.
+// Paid gating enforced by ../layout.tsx. There is no plan gate: PSI costs
+// nothing, so the only limit is an hourly per-tenant cap protecting the shared
+// Google quota.
+export default async function LighthousePage() {
   const cookieStore = await cookies();
   const locale = dashboardLocale(cookieStore.get("echorank_locale")?.value);
-  return <FeatureScaffold locale={locale} id="lighthouse" />;
+  return <LighthouseClient locale={locale} />;
 }

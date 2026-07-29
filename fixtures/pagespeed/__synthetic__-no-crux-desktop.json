@@ -1,0 +1,164 @@
+{
+  "_comment": "SYNTHETIC \u2014 same provenance caveat as the mobile fixture. This one has NO loadingExperience/originLoadingExperience block, which is what PSI returns for a page with too little real-world Chrome traffic. It exercises the 'no field data' path.",
+  "captchaResult": "CAPTCHA_NOT_NEEDED",
+  "kind": "pagespeedonline#result",
+  "id": "https://echorank360.com/",
+  "lighthouseResult": {
+    "requestedUrl": "https://echorank360.com/",
+    "finalUrl": "https://echorank360.com/",
+    "lighthouseVersion": "12.2.1",
+    "fetchTime": "2026-07-29T02:10:44.123Z",
+    "categories": {
+      "performance": {
+        "id": "performance",
+        "title": "Performance",
+        "score": 0.93
+      },
+      "accessibility": {
+        "id": "accessibility",
+        "title": "Accessibility",
+        "score": 0.94
+      },
+      "best-practices": {
+        "id": "best-practices",
+        "title": "Best Practices",
+        "score": 0.96
+      },
+      "seo": {
+        "id": "seo",
+        "title": "SEO",
+        "score": 1
+      }
+    },
+    "audits": {
+      "first-contentful-paint": {
+        "id": "first-contentful-paint",
+        "title": "First Contentful Paint",
+        "description": "First Contentful Paint marks the time at which the first text or image is painted.",
+        "score": 0.98,
+        "scoreDisplayMode": "numeric",
+        "displayValue": "0.7 s",
+        "numericValue": 702.5,
+        "numericUnit": "millisecond"
+      },
+      "largest-contentful-paint": {
+        "id": "largest-contentful-paint",
+        "title": "Largest Contentful Paint",
+        "description": "Largest Contentful Paint marks the time at which the largest text or image is painted.",
+        "score": 0.95,
+        "scoreDisplayMode": "numeric",
+        "displayValue": "1.2 s",
+        "numericValue": 1188.2,
+        "numericUnit": "millisecond"
+      },
+      "total-blocking-time": {
+        "id": "total-blocking-time",
+        "title": "Total Blocking Time",
+        "description": "Sum of all time periods between FCP and Time to Interactive.",
+        "score": 0.99,
+        "scoreDisplayMode": "numeric",
+        "displayValue": "20 ms",
+        "numericValue": 21,
+        "numericUnit": "millisecond"
+      },
+      "cumulative-layout-shift": {
+        "id": "cumulative-layout-shift",
+        "title": "Cumulative Layout Shift",
+        "description": "Cumulative Layout Shift measures the movement of visible elements.",
+        "score": 1,
+        "scoreDisplayMode": "numeric",
+        "displayValue": "0.041",
+        "numericValue": 0.0412,
+        "numericUnit": "unitless"
+      },
+      "speed-index": {
+        "id": "speed-index",
+        "title": "Speed Index",
+        "description": "Speed Index shows how quickly the contents of a page are visibly populated.",
+        "score": 0.96,
+        "scoreDisplayMode": "numeric",
+        "displayValue": "1.4 s",
+        "numericValue": 1401.0,
+        "numericUnit": "millisecond"
+      },
+      "interactive": {
+        "id": "interactive",
+        "title": "Time to Interactive",
+        "description": "Time to Interactive is the amount of time it takes for the page to become fully interactive.",
+        "score": 0.97,
+        "scoreDisplayMode": "numeric",
+        "displayValue": "1.5 s",
+        "numericValue": 1502.9,
+        "numericUnit": "millisecond"
+      },
+      "render-blocking-resources": {
+        "id": "render-blocking-resources",
+        "title": "Eliminate render-blocking resources",
+        "description": "Resources are blocking the first paint of your page.",
+        "score": 0.41,
+        "scoreDisplayMode": "metricSavings",
+        "displayValue": "Potential savings of 620 ms",
+        "details": {
+          "type": "opportunity",
+          "overallSavingsMs": 620,
+          "overallSavingsBytes": 48210,
+          "headings": [],
+          "items": []
+        }
+      },
+      "unused-javascript": {
+        "id": "unused-javascript",
+        "title": "Reduce unused JavaScript",
+        "description": "Reduce unused JavaScript and defer loading scripts until they are required.",
+        "score": 0.33,
+        "scoreDisplayMode": "metricSavings",
+        "displayValue": "Potential savings of 312 KiB",
+        "details": {
+          "type": "opportunity",
+          "overallSavingsMs": 1150,
+          "overallSavingsBytes": 319488,
+          "headings": [],
+          "items": []
+        }
+      },
+      "modern-image-formats": {
+        "id": "modern-image-formats",
+        "title": "Serve images in next-gen formats",
+        "description": "Image formats like WebP and AVIF often provide better compression than PNG or JPEG.",
+        "score": 0.6,
+        "scoreDisplayMode": "metricSavings",
+        "displayValue": "Potential savings of 74 KiB",
+        "details": {
+          "type": "opportunity",
+          "overallSavingsMs": 0,
+          "overallSavingsBytes": 75776,
+          "headings": [],
+          "items": []
+        }
+      },
+      "uses-long-cache-ttl": {
+        "id": "uses-long-cache-ttl",
+        "title": "Serve static assets with an efficient cache policy",
+        "description": "A long cache lifetime can speed up repeat visits to your page.",
+        "score": 1,
+        "scoreDisplayMode": "numeric",
+        "displayValue": "0 resources found",
+        "details": {
+          "type": "opportunity",
+          "overallSavingsMs": 0,
+          "overallSavingsBytes": 0,
+          "headings": [],
+          "items": []
+        }
+      },
+      "viewport": {
+        "id": "viewport",
+        "title": "Has a `<meta name=\"viewport\">` tag",
+        "description": "A viewport tag optimizes your page for mobile screens.",
+        "score": 1,
+        "scoreDisplayMode": "binary"
+      }
+    }
+  },
+  "analysisUTCTimestamp": "2026-07-29T02:10:44.123Z"
+}

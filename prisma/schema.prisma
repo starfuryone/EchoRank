@@ -1468,3 +1468,32 @@ model BacklinksAnalysis {
   // History list.
   @@index([tenantId, createdAt])
 }
+
+/// Lighthouse tool — one row per audit. An audit is ONE PageSpeed Insights
+/// call (Google's own Lighthouse runner), not DataForSEO, and it is free.
+///
+/// Mobile and desktop are separate audits, not two halves of one: Lighthouse
+/// throttles them differently and they routinely differ by 30+ points, so
+/// `strategy` is part of both the row identity and the 6 h cache key.
+///
+/// `crux` is nullable because most pages have no field data: CrUX only reports
+/// URLs with enough real Chrome traffic. Null means "Google has no field data",
+/// which the UI must say out loud rather than render as zeros.
+model LighthouseAudit {
+  id                String   @id @default(cuid())
+  tenantId          String
+  url               String // normalized absolute URL, fragment stripped
+  strategy          String // mobile | desktop
+  scores            Json // CategoryScores — performance/a11y/best-practices/seo
+  metrics           Json // LabMetric[] — FCP, LCP, TBT, CLS, SI, TTI
+  opportunities     Json // Opportunity[] — sorted by estimated saving
+  crux              Json? // CruxData — null when the page has no field data
+  /// Lighthouse version, so an odd score can be traced to a scoring change.
+  lighthouseVersion String?
+  fetchedAt         DateTime @default(now())
+
+  // Cache lookup: newest audit for this exact URL + strategy.
+  @@index([tenantId, url, strategy, fetchedAt])
+  // History list.
+  @@index([tenantId, fetchedAt])
+}
