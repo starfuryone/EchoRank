@@ -18,6 +18,7 @@
 // inside its own try/catch and its key is recorded in `failedSections`.
 
 import type { PlanType, SiteExplorerAnalysis } from "@/generated/prisma";
+import { requireSeoQuota } from "@/lib/seo-quota";
 import { prisma } from "@/lib/prisma";
 import {
   BACKLINKS,
@@ -169,6 +170,13 @@ export async function runAnalysis(
   if (cached) {
     return { analysis: toAnalysisDto(cached, { cached: true }), cached: true };
   }
+
+  // Pooled monthly search quota (Postgres). Runs alongside the per-tool
+  // reservation below and the USD cap inside the metered call — any of the
+  // three can deny. Placed after the cache check on purpose: serving a
+  // stored result costs nothing, so an exhausted tenant can still reopen
+  // what they already paid for.
+  await requireSeoQuota(tenantId, plan, "domain_overview");
 
   const quota = await reserveSiteExplorerAnalysis(tenantId, plan);
   if (!quota.allowed) {

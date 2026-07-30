@@ -5,6 +5,7 @@
 // serp/http.ts, site-explorer/http.ts and rank-tracker/http.ts establish.
 
 import { NextResponse } from "next/server";
+import { SeoQuotaExceededError, TrackedKeywordLimitError } from "@/lib/seo-quota";
 import { enforcementErrorResponse } from "@/lib/plan-enforcement";
 import { seoErrorResponse } from "@/lib/dataforseo/metering";
 import { InvalidTargetError } from "./target";
@@ -19,6 +20,12 @@ export function backlinksRouteError(err: unknown): NextResponse {
   // PaidPlanRequiredError -> 403, plan errors -> their own statuses.
   const enforcement = enforcementErrorResponse(err);
   if (enforcement) return enforcement;
+
+  // Pooled monthly search quota / tracked-keyword cap. Typed body so the UI can
+  // render the banner (limit, used, resetsAt) without parsing a message string.
+  if (err instanceof SeoQuotaExceededError || err instanceof TrackedKeywordLimitError) {
+    return NextResponse.json(err.toBody(), { status: err.statusCode });
+  }
 
   if (err instanceof InvalidTargetError) {
     return NextResponse.json(

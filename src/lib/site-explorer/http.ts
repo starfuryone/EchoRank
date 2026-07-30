@@ -5,6 +5,7 @@
 // 500 — the same shape src/lib/serp/http.ts and the /api/imports routes use.
 
 import { NextResponse } from "next/server";
+import { SeoQuotaExceededError, TrackedKeywordLimitError } from "@/lib/seo-quota";
 import { enforcementErrorResponse } from "@/lib/plan-enforcement";
 import { seoErrorResponse } from "@/lib/dataforseo/metering";
 import { InvalidDomainError } from "./domain";
@@ -18,6 +19,12 @@ export function siteExplorerRouteError(err: unknown): NextResponse {
   // PaidPlanRequiredError -> 403, plan errors -> their own statuses.
   const enforcement = enforcementErrorResponse(err);
   if (enforcement) return enforcement;
+
+  // Pooled monthly search quota / tracked-keyword cap. Typed body so the UI can
+  // render the banner (limit, used, resetsAt) without parsing a message string.
+  if (err instanceof SeoQuotaExceededError || err instanceof TrackedKeywordLimitError) {
+    return NextResponse.json(err.toBody(), { status: err.statusCode });
+  }
 
   if (err instanceof InvalidDomainError) {
     return NextResponse.json(

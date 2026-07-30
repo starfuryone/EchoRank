@@ -43,8 +43,43 @@ export async function recordCall(row: {
   path: string;
   costUsd: number;
   ok: boolean;
+  /**
+   * DataForSEO's task uuid, for standard-queue (task_post) calls. Supplying it
+   * marks the row as awaiting a result: `resultAt` stays null until the poller
+   * stamps it, so the call bills against the USD cap immediately but does not
+   * consume a search until the tenant has something to look at.
+   */
+  dataforseoTaskId?: string | null;
 }): Promise<void> {
-  await prisma.seoApiCall.create({ data: row });
+  const { dataforseoTaskId = null, ...rest } = row;
+  await prisma.seoApiCall.create({
+    data: {
+      ...rest,
+      dataforseoTaskId,
+      // Live endpoints return their result in the same call, so success is
+      // known now. Standard-queue rows wait for markSeoCallResult().
+      resultAt: dataforseoTaskId === null && row.ok ? new Date() : null,
+    },
+  });
+}
+
+/**
+ * Stamp a standard-queue row as having produced a usable result.
+ *
+ * Called by the poller once task_get returns content. Idempotent by the
+ * `resultAt: null` filter — a task collected twice (a duplicate id in one
+ * tasks_ready page, or a retry across ticks) updates zero rows the second time,
+ * so a tenant can never be charged two searches for one keyword.
+ */
+export async function markSeoCallResult(
+  dataforseoTaskId: string,
+  at = new Date(),
+): Promise<number> {
+  const { count } = await prisma.seoApiCall.updateMany({
+    where: { dataforseoTaskId, resultAt: null },
+    data: { resultAt: at },
+  });
+  return count;
 }
 
 /**

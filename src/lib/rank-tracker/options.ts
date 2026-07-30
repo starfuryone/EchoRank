@@ -6,6 +6,7 @@
 // and site-explorer/options.ts.
 
 import type { PlanType } from "@/generated/prisma";
+import { PLAN_CONFIGS } from "@/lib/plan-config";
 
 export const RANK_FREQUENCIES = ["daily", "weekly"] as const;
 export type RankFrequency = (typeof RANK_FREQUENCIES)[number];
@@ -31,13 +32,20 @@ export {
  * STARTER sees a locked card with an upgrade path rather than an empty form.
  * AI_VISIBILITY (the AI-only tier) is likewise 0.
  */
-export const RANK_TRACKED_KEYWORDS: Record<PlanType, number> = {
-  AI_VISIBILITY: 0,
-  STARTER: 0,
-  GROWTH: 50,
-  AGENCY: 250,
-  ENTERPRISE: 1000,
-};
+/// DERIVED, NOT DECLARED. The numbers live in plan-config.ts alongside every
+/// other per-tier limit so there is exactly one place to change a plan. This
+/// export stays because a dozen call sites already read it, but it is now a view
+/// over that config rather than a second copy that can drift from it.
+///
+/// plan-config models "unlimited" as null; this map is `number` for its existing
+/// callers, so null collapses to Number.MAX_SAFE_INTEGER — no current tier is
+/// unlimited, and a comparison against it behaves the same either way.
+export const RANK_TRACKED_KEYWORDS: Record<PlanType, number> = Object.fromEntries(
+  (Object.keys(PLAN_CONFIGS) as PlanType[]).map((plan) => [
+    plan,
+    PLAN_CONFIGS[plan].trackedKeywords ?? Number.MAX_SAFE_INTEGER,
+  ]),
+) as Record<PlanType, number>;
 
 /**
  * Frequencies each plan may choose. GROWTH is weekly-only; daily is the

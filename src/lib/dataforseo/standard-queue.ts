@@ -16,6 +16,7 @@
 // The only billed call in these features is the task_post that created the row.
 
 import { getEndpoint, DataforseoError } from "./client";
+import { markSeoCallResult } from "./metering";
 import { SERP } from "./endpoints";
 import { logger } from "@/infrastructure/observability/logger";
 
@@ -92,6 +93,11 @@ async function collectTask(
       { fixtureKey: SERP.organicTaskGet },
     );
     await owner.complete(rowId, data);
+    // The tenant now has something to look at, so this is the moment the search
+    // becomes chargeable against the pooled monthly quota. Idempotent: the
+    // update filters on resultAt IS NULL, so a task collected twice credits one
+    // search, never two.
+    await markSeoCallResult(taskId);
     return true;
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);

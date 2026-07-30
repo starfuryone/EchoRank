@@ -22,6 +22,7 @@
 // otherwise invisible inside the total.
 
 import type { BacklinksAnalysis, PlanType } from "@/generated/prisma";
+import { requireSeoQuota } from "@/lib/seo-quota";
 import { prisma } from "@/lib/prisma";
 import { BACKLINKS } from "@/lib/dataforseo/endpoints";
 import {
@@ -178,6 +179,13 @@ export async function runAnalysis(
   if (cached) {
     return { analysis: toAnalysisDto(cached, { cached: true, now }), cached: true };
   }
+
+  // Pooled monthly search quota (Postgres). Runs alongside the per-tool
+  // reservation below and the USD cap inside the metered call — any of the
+  // three can deny. Placed after the cache check on purpose: serving a
+  // stored result costs nothing, so an exhausted tenant can still reopen
+  // what they already paid for.
+  await requireSeoQuota(tenantId, plan, "backlinks", now);
 
   const quota = await reserveBacklinksAnalysis(tenantId, plan, now);
   if (!quota.allowed) {

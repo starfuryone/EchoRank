@@ -5,6 +5,7 @@
 // serp/http.ts and site-explorer/http.ts already establish.
 
 import { NextResponse } from "next/server";
+import { SeoQuotaExceededError, TrackedKeywordLimitError, monthReset } from "@/lib/seo-quota";
 import { enforcementErrorResponse } from "@/lib/plan-enforcement";
 import { seoErrorResponse } from "@/lib/dataforseo/metering";
 import { InvalidDomainError } from "@/lib/site-explorer/domain";
@@ -23,6 +24,12 @@ export function rankTrackerRouteError(err: unknown): NextResponse {
   // PaidPlanRequiredError -> 403, plan errors -> their own statuses.
   const enforcement = enforcementErrorResponse(err);
   if (enforcement) return enforcement;
+
+  // Pooled monthly search quota / tracked-keyword cap. Typed body so the UI can
+  // render the banner (limit, used, resetsAt) without parsing a message string.
+  if (err instanceof SeoQuotaExceededError || err instanceof TrackedKeywordLimitError) {
+    return NextResponse.json(err.toBody(), { status: err.statusCode });
+  }
 
   if (err instanceof InvalidDomainError) {
     return NextResponse.json({ error: err.message, code: "INVALID_REQUEST" }, { status: 400 });
@@ -54,11 +61,23 @@ export function rankTrackerRouteError(err: unknown): NextResponse {
   }
 
   if (err instanceof RankKeywordCapExceededError) {
+    // Same typed shape as the pooled search quota so one UI banner renders both:
+    // `error: "quota_exceeded"`, limit, used, resetsAt, upgradeUrl. The older
+    // keys are kept alongside because existing clients read `code` and
+    // `upgradeHref`, and removing them would be a silent breaking change.
+    //
+    // resetsAt is the month boundary for shape consistency only — this cap is on
+    // CURRENT STATE, so deleting keywords frees room immediately rather than
+    // waiting for the reset.
     return NextResponse.json(
       {
-        error: err.message,
-        code: "KEYWORD_CAP_EXCEEDED",
+        error: "quota_exceeded",
         limit: err.limit,
+        used: err.requested,
+        resetsAt: monthReset().toISOString(),
+        upgradeUrl: "/billing",
+        message: err.message,
+        code: "KEYWORD_CAP_EXCEEDED",
         requested: err.requested,
         plan: err.plan,
         upgradeHref: "/billing",

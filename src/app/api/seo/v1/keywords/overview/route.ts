@@ -14,6 +14,7 @@
  */
 
 import { NextResponse } from "next/server";
+import { requireSeoQuota, SeoQuotaExceededError } from "@/lib/seo-quota";
 import { z } from "zod";
 import { requirePaidPlan } from "@/lib/paid-plan";
 import { prisma } from "@/lib/prisma";
@@ -55,6 +56,11 @@ export async function POST(request: Request) {
   let fetched: unknown[] = [];
   if (misses.length > 0) {
     try {
+      // Pooled monthly search quota. Checked only when there are cache misses:
+      // a fully-cached request spends nothing upstream, so an exhausted tenant
+      // still gets the keywords they already paid for.
+      await requireSeoQuota(tenant.tenantId, tenant.tenant.planType, "keyword_research");
+
       const result = await seoMeteredCall<{ items?: unknown[] }[]>(
         tenant.tenantId,
         LABS.keywordOverview,
@@ -93,6 +99,9 @@ export async function POST(request: Request) {
         }),
       );
     } catch (err) {
+      if (err instanceof SeoQuotaExceededError) {
+        return NextResponse.json(err.toBody(), { status: err.statusCode });
+      }
       const { status, body } = seoErrorResponse(err);
       // Partial success: return whatever the cache had alongside the error.
       return NextResponse.json(

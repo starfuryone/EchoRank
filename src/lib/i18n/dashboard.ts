@@ -6576,6 +6576,57 @@ export const CONTENT_EXPLORER_HELP_COPY: Record<DashLocale, ContentExplorerHelpC
   },
 };
 
+// ─── Pooled SEO search quota — counter + exhausted banner ───────────────────
+// Rendered on every DataForSEO tool page. The numbers are injected from live
+// usage (src/lib/seo-quota.ts) and never written into the copy: a hardcoded
+// "250" here would be wrong for four of the five tiers.
+const seoQuotaEn = {
+  counter: (used: number, limit: number) =>
+    `${used} of ${limit} searches used this month`,
+  unlimited: "Unlimited searches on this plan",
+  runningLow: "running low",
+  exceededTitle: (used: number, limit: number) =>
+    `Monthly search quota reached (${used} of ${limit} used)`,
+  resets: (date: string) => `Your allowance resets on ${date}. Upgrade for more.`,
+  notIncludedTitle: "SEO searches are not included in this plan",
+  notIncludedBody:
+    "This tier covers AI visibility tracking. Upgrade to run SEO searches.",
+  upgrade: "Upgrade",
+};
+export type SeoQuotaCopy = typeof seoQuotaEn;
+
+export const SEO_QUOTA_COPY: Record<DashLocale, SeoQuotaCopy> = {
+  en: seoQuotaEn,
+  fr: {
+    counter: (used: number, limit: number) =>
+      `${used} recherches sur ${limit} utilisées ce mois-ci`,
+    unlimited: "Recherches illimitées avec ce forfait",
+    runningLow: "bientôt épuisées",
+    exceededTitle: (used: number, limit: number) =>
+      `Quota de recherches mensuel atteint (${used} sur ${limit} utilisées)`,
+    resets: (date: string) =>
+      `Votre allocation se renouvelle le ${date}. Passez à un forfait supérieur pour en obtenir davantage.`,
+    notIncludedTitle: "Les recherches SEO ne sont pas incluses dans ce forfait",
+    notIncludedBody:
+      "Ce palier couvre le suivi de visibilité IA. Passez à un forfait supérieur pour lancer des recherches SEO.",
+    upgrade: "Améliorer",
+  },
+  "de-CH": {
+    counter: (used: number, limit: number) =>
+      `${used} von ${limit} Suchen diesen Monat genutzt`,
+    unlimited: "Unbegrenzte Suchen in diesem Abo",
+    runningLow: "bald aufgebraucht",
+    exceededTitle: (used: number, limit: number) =>
+      `Monatliches Suchkontingent erreicht (${used} von ${limit} genutzt)`,
+    resets: (date: string) =>
+      `Ihr Guthaben erneuert sich am ${date}. Für mehr bitte das Abo erweitern.`,
+    notIncludedTitle: "SEO-Suchen sind in diesem Abo nicht enthalten",
+    notIncludedBody:
+      "Diese Stufe deckt die KI-Sichtbarkeit ab. Erweitern Sie das Abo, um SEO-Suchen auszuführen.",
+    upgrade: "Erweitern",
+  },
+};
+
 // ─── /visibility/tools/api-access ───────────────────────────────────────────
 const apiAccessEn = {
   intro:
@@ -6956,7 +7007,7 @@ const serpCheckerEn = {
   submit: "Run check",
   submitting: "Queueing…",
   checkingTitle: "Checking…",
-  checkingBody: "Results take 1–5 minutes. You can leave this page — the check keeps running.",
+  checkingBody: "Results usually take a few minutes. You can leave this page — the check keeps running.",
   cachedNote: "Shown from a matching check run in the last 24 hours. No new check was used.",
   resultsFor: (keyword: string) => `Results for “${keyword}”`,
   resultCount: (n: number) => (n === 1 ? "1 organic result" : `${n} organic results`),
@@ -9267,7 +9318,7 @@ const serpCheckerHelpEn = {
   featuresBody:
     "The chips above the table are the non-organic blocks Google put on the page: ads, featured snippets, People Also Ask, local packs, videos. Position 1 organic can still sit below the fold when enough of them are present, which is why two keywords at the same position perform differently.",
 
-  timingTitle: "Results take a minute or two",
+  timingTitle: "Results usually take a few minutes",
   timingBody:
     "The check is queued and completed by a background worker, so it appears as Queued first. You can leave this page — the result lands in your history either way. Re-running the same keyword and settings shortly after reuses the stored result rather than spending your quota again.",
 };
@@ -9296,7 +9347,7 @@ export const SERP_CHECKER_HELP_COPY: Record<DashLocale, SerpCheckerHelpCopy> = {
     featuresBody:
       "Les étiquettes au-dessus du tableau sont les blocs non organiques que Google a placés sur la page : annonces, extraits optimisés, questions fréquentes, packs locaux, vidéos. La première position organique peut rester sous la ligne de flottaison quand ils sont nombreux — d'où deux mots-clés à la même position qui ne performent pas pareil.",
 
-    timingTitle: "Les résultats prennent une à deux minutes",
+    timingTitle: "Les résultats prennent généralement quelques minutes",
     timingBody:
       "La vérification est mise en file d'attente puis complétée par un processus en arrière-plan : elle apparaît donc d'abord comme « En attente ». Vous pouvez quitter cette page — le résultat arrive dans votre historique dans tous les cas. Relancer le même mot-clé avec les mêmes réglages peu après réutilise le résultat stocké au lieu de consommer votre quota.",
   },
@@ -9321,7 +9372,7 @@ export const SERP_CHECKER_HELP_COPY: Record<DashLocale, SerpCheckerHelpCopy> = {
     featuresBody:
       "Die Chips über der Tabelle sind die nicht-organischen Blöcke, die Google auf der Seite platziert hat: Anzeigen, hervorgehobene Snippets, «Ähnliche Fragen», lokale Packs, Videos. Position 1 organisch kann trotzdem unterhalb des sichtbaren Bereichs liegen, wenn genügend davon vorhanden sind — deshalb liefern zwei Keywords auf derselben Position unterschiedliche Ergebnisse.",
 
-    timingTitle: "Ergebnisse brauchen ein bis zwei Minuten",
+    timingTitle: "Ergebnisse dauern meist einige Minuten",
     timingBody:
       "Die Prüfung wird eingereiht und von einem Hintergrundprozess abgeschlossen, erscheint also zuerst als «In Warteschlange». Sie können diese Seite verlassen — das Ergebnis landet ohnehin in Ihrem Verlauf. Dasselbe Keyword mit denselben Einstellungen kurz darauf erneut zu prüfen nutzt das gespeicherte Ergebnis, statt Ihr Kontingent nochmals zu belasten.",
   },

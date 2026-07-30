@@ -1276,16 +1276,43 @@ model GscQueryStat {
 // use `prisma migrate diff` + `migrate deploy`, not `migrate dev`.
 // -----------------------------------------------------------------------------
 
+/// One billed DataForSEO call. Carries TWO different aggregates, and conflating
+/// them is the mistake this comment exists to prevent:
+///
+///   SPEND  — SUM(costUsd) WHERE ok, over the calendar month. Bills what
+///            DataForSEO actually charged, which happens at task_post: a
+///            standard-queue task that is posted and later fails was still
+///            paid for, so it must stay in this sum.
+///   QUOTA  — COUNT(*) WHERE resultAt IS NOT NULL, over the same window. The
+///            user-facing "searches used" number, which may only count calls
+///            that produced something the tenant can look at.
+///
+/// `ok` therefore means "DataForSEO accepted and billed the call", NOT "the
+/// tenant got an answer". For live endpoints the two coincide and resultAt is
+/// stamped at insert. For the standard queue they are minutes apart, and a task
+/// can be billed at post and still never return a result.
 model SeoApiCall {
   id        String   @id @default(cuid())
   tenantId  String
-  feature   String // domain_overview | keyword_research | backlinks | rank_tracking | site_audit | local_seo
+  feature   String // domain_overview | keyword_research | backlinks | rank_tracking | site_audit | local_seo | content_research
   path      String // "v3/dataforseo_labs/google/ranked_keywords/live"
   costUsd   Decimal  @db.Decimal(10, 6)
+  /// Billed by DataForSEO. Drives the USD cap; never the search quota.
   ok        Boolean
+  /// Set when a usable result exists — at insert for live calls, by the
+  /// standard-queue poller for task_post calls. NULL means posted-but-unresolved
+  /// or failed, and is excluded from the search quota by design.
+  resultAt  DateTime?
+  /// DataForSEO's task uuid, for standard-queue calls only. The poller has the
+  /// task id and nothing else, so this is how it finds the row to stamp.
+  dataforseoTaskId String?
   createdAt DateTime @default(now())
 
   @@index([tenantId, createdAt])
+  /// The quota aggregate: one tenant, one month, successful rows only.
+  @@index([tenantId, resultAt])
+  /// Poller lookup by task id.
+  @@index([dataforseoTaskId])
 }
 
 model SeoDomainSnapshot {

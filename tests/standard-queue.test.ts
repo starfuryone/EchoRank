@@ -28,10 +28,20 @@ vi.mock("@/lib/dataforseo/client", async (importOriginal) => ({
 
 const seoMeteredCall = vi.fn();
 const seoMeteredCallResult = vi.fn();
-vi.mock("@/lib/dataforseo/metering", async (importOriginal) => ({
-  ...(await importOriginal<typeof import("@/lib/dataforseo/metering")>()),
+/** Stamps the SeoApiCall row as having produced a result -> consumes a search. */
+const markSeoCallResult = vi.fn(async (..._a: unknown[]) => 1);
+// Declared explicitly rather than spread from the real module: metering imports
+// prisma at module scope, which needs DATABASE_URL this suite has no business
+// requiring. The poller only ever reaches markSeoCallResult; the other two are
+// here so the test can assert it never reaches THEM.
+vi.mock("@/lib/dataforseo/metering", () => ({
   seoMeteredCall: (...a: unknown[]) => seoMeteredCall(...a),
   seoMeteredCallResult: (...a: unknown[]) => seoMeteredCallResult(...a),
+  markSeoCallResult: (...a: unknown[]) => markSeoCallResult(...a),
+  recordCall: vi.fn(),
+  spentThisMonth: vi.fn(async () => 0),
+  monthlyCapUsd: vi.fn(async () => 25),
+  seoErrorResponse: vi.fn(),
 }));
 
 vi.mock("@/infrastructure/observability/logger", () => ({
@@ -264,5 +274,58 @@ describe("failures and timeouts", () => {
     await sweepStandardQueue([broken, ok], NOW);
 
     expect(ok.complete).toHaveBeenCalledTimes(1);
+  });
+});
+
+// ─── Search-quota credit ────────────────────────────────────────────────────
+describe("crediting the pooled search quota", () => {
+  it("credits the search only when a result actually lands", async () => {
+    const o = owner("serp", [{ rowId: "r1", taskId: "t1", createdAt: stale }]);
+    getEndpoint.mockImplementation(async (path: string) =>
+      path === SERP.organicTasksReady ? readyList(["t1"]) : taskGetResult(),
+    );
+
+    await sweepStandardQueue([o], NOW);
+
+    expect(markSeoCallResult).toHaveBeenCalledTimes(1);
+    expect(markSeoCallResult).toHaveBeenCalledWith("t1");
+  });
+
+  it("does NOT credit a task that is still queued", async () => {
+    // Billed at task_post, but the tenant has no answer yet — charging a search
+    // now would take one for something they may never receive.
+    const o = owner("serp", [{ rowId: "r1", taskId: "t1", createdAt: stale }]);
+    getEndpoint.mockImplementation(async (path: string) => {
+      if (path === SERP.organicTasksReady) return readyList(["t1"]);
+      throw new DataforseoError("Task In Queue.", "TASK_FAILED");
+    });
+
+    await sweepStandardQueue([o], NOW);
+
+    expect(markSeoCallResult).not.toHaveBeenCalled();
+  });
+
+  it("does NOT credit a task that failed outright", async () => {
+    const o = owner("serp", [{ rowId: "r1", taskId: "t1", createdAt: stale }]);
+    getEndpoint.mockImplementation(async (path: string) => {
+      if (path === SERP.organicTasksReady) return readyList(["t1"]);
+      throw new DataforseoError("Invalid Field: keyword", "INVALID_FIELD");
+    });
+
+    await sweepStandardQueue([o], NOW);
+
+    expect(o.failed).toHaveLength(1);
+    expect(markSeoCallResult).not.toHaveBeenCalled();
+  });
+
+  it("credits once when a duplicate id appears in one ready list", async () => {
+    const o = owner("serp", [{ rowId: "r1", taskId: "t1", createdAt: eligible }]);
+    getEndpoint.mockImplementation(async (path: string) =>
+      path === SERP.organicTasksReady ? readyList(["t1", "t1"]) : taskGetResult(),
+    );
+
+    await sweepStandardQueue([o], NOW);
+
+    expect(markSeoCallResult).toHaveBeenCalledTimes(1);
   });
 });

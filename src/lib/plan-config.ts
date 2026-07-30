@@ -19,6 +19,30 @@ export interface PlanConfig {
     maxMonitoringChecks: number;
     maxApiRequestsPerDay: number;
   };
+  /**
+   * Successful DataForSEO SEARCH results per calendar month (UTC), pooled
+   * across Site Explorer, SERP Checker, Backlinks and Keyword Research.
+   * `null` = unlimited.
+   *
+   * This is a CEILING OVER the existing per-tool allowances, not a replacement
+   * for them: a request is denied if the per-tool cap, this pool, or the
+   * per-tenant USD cap says so. It cannot grant a tier access its per-tool cap
+   * withholds — STARTER's Backlinks allowance is 0 and stays 0 whatever this
+   * number is.
+   *
+   * Site Audit and Content Explorer are deliberately outside the pool: the
+   * first is priced per crawled page rather than per search, and the second
+   * already carries its own tighter monthly cap.
+   */
+  seoSearchesPerMonth: number | null;
+  /**
+   * Active tracked keywords allowed at once. `null` = unlimited.
+   *
+   * A cap on CURRENT STATE, not on spend — it is the figure that falls again
+   * when a tenant deletes keywords. Spend is bounded separately by the monthly
+   * check counter in rank-tracker/options.ts.
+   */
+  trackedKeywords: number | null;
   highlighted: boolean;
   cta: string;
   ctaLink: string;
@@ -53,6 +77,8 @@ export const PLAN_CONFIGS: Record<PlanType, PlanConfig> = {
       maxMonitoringChecks: 120,
       maxApiRequestsPerDay: 0,
     },
+    seoSearchesPerMonth: 0,
+    trackedKeywords: 0,
     highlighted: false,
     cta: "Start tracking",
     ctaLink: "/register?plan=ai_visibility",
@@ -72,6 +98,7 @@ export const PLAN_CONFIGS: Record<PlanType, PlanConfig> = {
       "Basic dashboard",
       "Email support",
       "Review authenticity verification",
+      "250 SEO searches/mo",
     ],
     quotaDefaults: {
       maxLocations: 1,
@@ -83,6 +110,8 @@ export const PLAN_CONFIGS: Record<PlanType, PlanConfig> = {
       maxMonitoringChecks: 0,
       maxApiRequestsPerDay: 0,
     },
+    seoSearchesPerMonth: 250,
+    trackedKeywords: 0,
     highlighted: false,
     cta: "Start Free Trial",
     ctaLink: "/register?plan=starter",
@@ -103,6 +132,7 @@ export const PLAN_CONFIGS: Record<PlanType, PlanConfig> = {
       "Recovery tickets & workflows",
       "Advanced analytics",
       "Escalation prediction",
+      "1,000 SEO searches/mo",
       "Priority support",
     ],
     quotaDefaults: {
@@ -115,6 +145,8 @@ export const PLAN_CONFIGS: Record<PlanType, PlanConfig> = {
       maxMonitoringChecks: 60,
       maxApiRequestsPerDay: 1000,
     },
+    seoSearchesPerMonth: 1000,
+    trackedKeywords: 50,
     highlighted: true,
     cta: "Start Free Trial",
     ctaLink: "/register?plan=growth",
@@ -135,6 +167,7 @@ export const PLAN_CONFIGS: Record<PlanType, PlanConfig> = {
       "Custom domain support",
       "Full API access",
       "All AI features",
+      "5,000 SEO searches/mo",
       "Priority support",
     ],
     quotaDefaults: {
@@ -147,6 +180,8 @@ export const PLAN_CONFIGS: Record<PlanType, PlanConfig> = {
       maxMonitoringChecks: 500,
       maxApiRequestsPerDay: 10000,
     },
+    seoSearchesPerMonth: 5000,
+    trackedKeywords: 250,
     highlighted: false,
     cta: "Start Free Trial",
     ctaLink: "/register?plan=agency",
@@ -182,6 +217,8 @@ export const PLAN_CONFIGS: Record<PlanType, PlanConfig> = {
       maxMonitoringChecks: 5000,
       maxApiRequestsPerDay: 100000,
     },
+    seoSearchesPerMonth: null,
+    trackedKeywords: 1000,
     highlighted: false,
     cta: "Book Enterprise Demo",
     ctaLink: "/enterprise",

@@ -295,6 +295,8 @@ export type MeteringDeps = {
     path: string;
     costUsd: number;
     ok: boolean;
+    /** Standard-queue task uuid; absent for live calls. */
+    dataforseoTaskId?: string | null;
   }) => Promise<void>;
 };
 
@@ -326,6 +328,10 @@ export async function meteredCallResult<T>(
       path: billing.path.join("/"),
       costUsd: billing.costUsd,
       ok: true,
+      // Present only for task_post. Passing it defers the search-quota credit
+      // until the poller confirms a result — the call is billed now, but the
+      // tenant is not charged a search for an answer that has not arrived.
+      dataforseoTaskId: result.taskId ?? null,
     });
     return result;
   } catch (err) {

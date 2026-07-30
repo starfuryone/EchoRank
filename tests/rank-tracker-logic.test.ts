@@ -184,6 +184,20 @@ vi.mock("@/lib/dataforseo/client", async (importOriginal) => {
   };
 });
 
+// standard-queue now imports metering (to credit the pooled search quota when a
+// result lands), and metering imports prisma at module scope. This suite is pure
+// logic with no database, so metering is stubbed rather than dragging a
+// DATABASE_URL requirement into it.
+vi.mock("@/lib/dataforseo/metering", () => ({
+  markSeoCallResult: vi.fn(async () => 1),
+  recordCall: vi.fn(),
+  spentThisMonth: vi.fn(async () => 0),
+  monthlyCapUsd: vi.fn(async () => 25),
+  seoMeteredCall: vi.fn(),
+  seoMeteredCallResult: vi.fn(),
+  seoErrorResponse: vi.fn(),
+}));
+
 const { sweepStandardQueue } = await import("@/lib/dataforseo/standard-queue");
 type Owner = Parameters<typeof sweepStandardQueue>[0][number];
 

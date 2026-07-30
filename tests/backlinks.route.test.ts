@@ -24,7 +24,11 @@ const backlinksAnalysis = {
   create: vi.fn(),
   aggregate: vi.fn(),
 };
-vi.mock("@/lib/prisma", () => ({ prisma: { backlinksAnalysis } }));
+// seoApiCall backs the pooled monthly search quota, which every DataForSEO
+// service now checks before spending. Default 0 used = quota available, so
+// these suites keep testing their own per-tool gate rather than this one.
+const seoApiCall = { count: vi.fn(async () => 0), updateMany: vi.fn(), create: vi.fn() };
+vi.mock("@/lib/prisma", () => ({ prisma: { backlinksAnalysis, seoApiCall } }));
 
 const seoMeteredCallResult = vi.fn();
 vi.mock("@/lib/dataforseo/metering", async (importOriginal) => ({

@@ -13,6 +13,7 @@
 // src/infrastructure/queue/workers/serp-check.worker.ts.
 
 import type { PlanType, SerpCheck } from "@/generated/prisma";
+import { requireSeoQuota } from "@/lib/seo-quota";
 import { prisma } from "@/lib/prisma";
 import { SERP } from "@/lib/dataforseo/endpoints";
 import { seoMeteredCallResult } from "@/lib/dataforseo/metering";
@@ -121,6 +122,13 @@ export async function submitSerpCheck(
   if (cached) {
     return { check: toSerpCheckDto(cached, { cached: true }), cached: true };
   }
+
+  // Pooled monthly search quota (Postgres). Runs alongside the per-tool
+  // reservation below and the USD cap inside the metered call — any of the
+  // three can deny. Placed after the cache check on purpose: serving a
+  // stored result costs nothing, so an exhausted tenant can still reopen
+  // what they already paid for.
+  await requireSeoQuota(tenantId, plan, "keyword_research");
 
   const quota = await reserveSerpCheck(tenantId, plan);
   if (!quota.allowed) {
