@@ -6203,6 +6203,379 @@ export const BOT_ANALYTICS_HELP_COPY: Record<DashLocale, BotAnalyticsHelpCopy> =
   },
 };
 
+// ─── /visibility/tools/content-explorer ─────────────────────────────────────
+// Web mentions from DataForSEO Content Analysis. Two honesty constraints run
+// through this copy: sentiment is an automated distribution rather than a
+// verdict, and every search costs the same whether it finds 1.5 million pages or
+// none — so the empty state is a real answer, not a failure.
+const contentExplorerEn = {
+  intro:
+    "Find the pages across the web that mention a phrase — your brand, a competitor, or a topic. Each result is a real page with its own domain authority, so the list doubles as an outreach shortlist.",
+  mentionNote:
+    "A mention is a page whose text contains your phrase. It is not a link to you, and not every mention is about you — a phrase that doubles as a common word will pick up pages that have nothing to do with your brand.",
+
+  angleLabel: "Search angle",
+  angleBrand: "My brand",
+  angleCompetitor: "Competitor",
+  angleTopic: "Topic",
+  angleHint: "Presets only fill the box — every angle runs the same search.",
+
+  queryLabel: "Phrase to find",
+  queryPlaceholder: "your brand, a competitor, or a topic",
+  searchBtn: "Search mentions",
+  searching: "Searching…",
+  usageLine: (used: number, limit: number) =>
+    `${used} of ${limit} searches used this month`,
+  costNote: (cost: string) =>
+    `Each new search costs about ${cost} in provider fees, whether or not it finds anything. Repeating a phrase within 24 hours is free.`,
+  capReached:
+    "You have used this month's searches. The allowance resets on the 1st.",
+  rateLimited: "Too many searches at once — try again in a minute.",
+  searchFailed: "Could not search mentions right now. Try again in a minute.",
+  cachedNote: (date: string) =>
+    `Showing your saved search from ${date}. Searching again after 24 hours costs a new search.`,
+
+  planLockedTitle: "Content Explorer is on Starter and above",
+  planLockedBody:
+    "Web mention research is included from the Starter plan up. Your current plan covers AI visibility auditing only.",
+  upgradeCta: "Compare plans",
+
+  // Summary band
+  totalMentions: (n: string) => `${n} pages mention this phrase`,
+  totalMentionsOne: "1 page mentions this phrase",
+  showingTop: (n: number) => `Showing the top ${n}`,
+  sentimentTitle: "Sentiment across all matches",
+  sentimentPositive: "Positive",
+  sentimentNegative: "Negative",
+  sentimentNeutral: "Neutral",
+  sentimentCaveat:
+    "Sentiment is scored automatically from page text. Treat it as directional, not as a verdict — sarcasm, comparisons and quoted complaints all read badly to a machine.",
+  topDomainsTitle: "Domains publishing most often",
+  languagesTitle: "Languages",
+  countriesTitle: "Countries",
+  unknownValue: "Unknown",
+
+  // Mentions table
+  mentionsTitle: "Pages mentioning this phrase",
+  colPage: "Page",
+  colDomain: "Domain",
+  colDate: "Date",
+  colSentiment: "Sentiment",
+  sortDate: "Newest first",
+  sortRank: "Highest authority first",
+  sortLabel: "Sort",
+  highAuthority: "High authority",
+  highAuthorityTip:
+    "Domain rank at or above the high-authority threshold and a low spam score — worth approaching for a link.",
+  rankLabel: (rank: number) => `Rank ${rank}`,
+  crawlDateNote: "crawl date",
+  noDate: "No date",
+  openPage: "Open page",
+
+  // Verdict callouts
+  verdictMostlyPositive: (n: string) =>
+    `${n} mentions found, and the overall tone leans positive. The high-authority domains below are your best link-outreach targets.`,
+  verdictMixed: (n: string) =>
+    `${n} mentions found, with a mixed tone. Worth reading the negative ones before you plan outreach.`,
+  verdictMostlyNegative: (n: string) =>
+    `${n} mentions found, and the overall tone leans negative. Read these before anything else — automated scoring is rough, but a negative lean on a brand phrase is worth a human look.`,
+  emptyTitle: "No mentions found",
+  emptyBody:
+    "Nothing on the web mentions this phrase yet. For a brand name that is a real answer, not an error — it means nobody is writing about you, which is the thing to change.",
+  emptyCampaigns: "Run a review campaign",
+  emptyReviewLinks: "Set up review links",
+  emptyCross:
+    "Reviews are the fastest way to get your name onto pages that AI engines and search engines read.",
+
+  // History
+  historyTitle: "Your past searches",
+  noHistory: "No searches yet.",
+  viewBtn: "View",
+  freeToOpen: "Reopening a past search is free.",
+  historyMeta: (mentions: number, total: string) =>
+    `${mentions} pages shown of ${total} matches`,
+  historyEmptyResult: "No mentions",
+
+  loading: "Loading…",
+  loadFailed: "Could not load Content Explorer. Try again in a minute.",
+};
+export type ContentExplorerCopy = typeof contentExplorerEn;
+
+export const CONTENT_EXPLORER_COPY: Record<DashLocale, ContentExplorerCopy> = {
+  en: contentExplorerEn,
+  fr: {
+    intro:
+      "Trouvez les pages du web qui mentionnent une expression — votre marque, un concurrent ou un sujet. Chaque résultat est une page réelle avec son autorité de domaine, si bien que la liste sert aussi de liste de prospection.",
+    mentionNote:
+      "Une mention est une page dont le texte contient votre expression. Ce n'est pas un lien vers vous, et toutes les mentions ne vous concernent pas — une expression qui est aussi un mot courant ramènera des pages sans rapport avec votre marque.",
+
+    angleLabel: "Angle de recherche",
+    angleBrand: "Ma marque",
+    angleCompetitor: "Concurrent",
+    angleTopic: "Sujet",
+    angleHint:
+      "Les préréglages ne font que remplir le champ — tous les angles lancent la même recherche.",
+
+    queryLabel: "Expression à trouver",
+    queryPlaceholder: "votre marque, un concurrent ou un sujet",
+    searchBtn: "Rechercher les mentions",
+    searching: "Recherche…",
+    usageLine: (used: number, limit: number) =>
+      `${used} recherches sur ${limit} utilisées ce mois-ci`,
+    costNote: (cost: string) =>
+      `Chaque nouvelle recherche coûte environ ${cost} en frais de fournisseur, qu'elle trouve quelque chose ou non. Répéter une expression dans les 24 heures est gratuit.`,
+    capReached:
+      "Vous avez utilisé les recherches de ce mois. L'allocation se renouvelle le 1er.",
+    rateLimited: "Trop de recherches à la fois — réessayez dans une minute.",
+    searchFailed:
+      "Impossible de rechercher les mentions pour l'instant. Réessayez dans une minute.",
+    cachedNote: (date: string) =>
+      `Affichage de votre recherche enregistrée du ${date}. Relancer après 24 heures consomme une nouvelle recherche.`,
+
+    planLockedTitle: "Content Explorer est inclus à partir de Starter",
+    planLockedBody:
+      "La recherche de mentions web est incluse à partir du forfait Starter. Votre forfait actuel ne couvre que l'audit de visibilité IA.",
+    upgradeCta: "Comparer les forfaits",
+
+    totalMentions: (n: string) => `${n} pages mentionnent cette expression`,
+    totalMentionsOne: "1 page mentionne cette expression",
+    showingTop: (n: number) => `Affichage des ${n} premières`,
+    sentimentTitle: "Tonalité sur l'ensemble des résultats",
+    sentimentPositive: "Positive",
+    sentimentNegative: "Négative",
+    sentimentNeutral: "Neutre",
+    sentimentCaveat:
+      "La tonalité est évaluée automatiquement à partir du texte des pages. Considérez-la comme indicative, non comme un verdict — l'ironie, les comparaisons et les plaintes citées sont toutes mal interprétées par une machine.",
+    topDomainsTitle: "Domaines qui publient le plus souvent",
+    languagesTitle: "Langues",
+    countriesTitle: "Pays",
+    unknownValue: "Inconnu",
+
+    mentionsTitle: "Pages mentionnant cette expression",
+    colPage: "Page",
+    colDomain: "Domaine",
+    colDate: "Date",
+    colSentiment: "Tonalité",
+    sortDate: "Plus récentes d'abord",
+    sortRank: "Autorité la plus forte d'abord",
+    sortLabel: "Trier",
+    highAuthority: "Forte autorité",
+    highAuthorityTip:
+      "Rang de domaine au-dessus du seuil de forte autorité et faible score de spam — vaut la peine d'être contacté pour un lien.",
+    rankLabel: (rank: number) => `Rang ${rank}`,
+    crawlDateNote: "date d'exploration",
+    noDate: "Sans date",
+    openPage: "Ouvrir la page",
+
+    verdictMostlyPositive: (n: string) =>
+      `${n} mentions trouvées, avec une tonalité plutôt positive. Les domaines à forte autorité ci-dessous sont vos meilleures cibles de prospection de liens.`,
+    verdictMixed: (n: string) =>
+      `${n} mentions trouvées, avec une tonalité mitigée. Lisez les mentions négatives avant de planifier votre prospection.`,
+    verdictMostlyNegative: (n: string) =>
+      `${n} mentions trouvées, avec une tonalité plutôt négative. Lisez-les en priorité — l'évaluation automatique reste grossière, mais une tendance négative sur une expression de marque mérite un regard humain.`,
+    emptyTitle: "Aucune mention trouvée",
+    emptyBody:
+      "Rien sur le web ne mentionne encore cette expression. Pour un nom de marque, c'est une vraie réponse et non une erreur — cela signifie que personne n'écrit à votre sujet, et c'est précisément ce qu'il faut changer.",
+    emptyCampaigns: "Lancer une campagne d'avis",
+    emptyReviewLinks: "Configurer les liens d'avis",
+    emptyCross:
+      "Les avis sont le moyen le plus rapide de faire apparaître votre nom sur des pages que les moteurs d'IA et de recherche lisent.",
+
+    historyTitle: "Vos recherches précédentes",
+    noHistory: "Aucune recherche pour l'instant.",
+    viewBtn: "Voir",
+    freeToOpen: "Réouvrir une recherche précédente est gratuit.",
+    historyMeta: (mentions: number, total: string) =>
+      `${mentions} pages affichées sur ${total} résultats`,
+    historyEmptyResult: "Aucune mention",
+
+    loading: "Chargement…",
+    loadFailed:
+      "Impossible de charger Content Explorer. Réessayez dans une minute.",
+  },
+  "de-CH": {
+    intro:
+      "Finden Sie die Seiten im Web, die einen Begriff erwähnen — Ihre Marke, einen Mitbewerber oder ein Thema. Jedes Ergebnis ist eine echte Seite mit eigener Domain-Autorität, damit die Liste gleich als Outreach-Liste dient.",
+    mentionNote:
+      "Eine Erwähnung ist eine Seite, deren Text Ihren Begriff enthält. Es ist kein Link zu Ihnen, und nicht jede Erwähnung betrifft Sie — ein Begriff, der auch ein Alltagswort ist, bringt Seiten ohne Bezug zu Ihrer Marke mit.",
+
+    angleLabel: "Suchwinkel",
+    angleBrand: "Meine Marke",
+    angleCompetitor: "Mitbewerber",
+    angleTopic: "Thema",
+    angleHint:
+      "Vorlagen füllen nur das Feld — jeder Winkel startet dieselbe Suche.",
+
+    queryLabel: "Zu suchender Begriff",
+    queryPlaceholder: "Ihre Marke, ein Mitbewerber oder ein Thema",
+    searchBtn: "Erwähnungen suchen",
+    searching: "Suche läuft…",
+    usageLine: (used: number, limit: number) =>
+      `${used} von ${limit} Suchen diesen Monat genutzt`,
+    costNote: (cost: string) =>
+      `Jede neue Suche kostet rund ${cost} an Anbietergebühren — unabhängig davon, ob sie etwas findet. Denselben Begriff innerhalb von 24 Stunden zu wiederholen ist kostenlos.`,
+    capReached:
+      "Sie haben die Suchen dieses Monats aufgebraucht. Das Guthaben erneuert sich am 1.",
+    rateLimited: "Zu viele Suchen gleichzeitig — versuchen Sie es in einer Minute erneut.",
+    searchFailed:
+      "Erwähnungen konnten derzeit nicht gesucht werden. Versuchen Sie es in einer Minute erneut.",
+    cachedNote: (date: string) =>
+      `Angezeigt wird Ihre gespeicherte Suche vom ${date}. Ein erneuter Lauf nach 24 Stunden verbraucht eine neue Suche.`,
+
+    planLockedTitle: "Content Explorer gibt es ab Starter",
+    planLockedBody:
+      "Die Recherche von Web-Erwähnungen ist ab dem Starter-Abo enthalten. Ihr aktuelles Abo deckt nur das KI-Sichtbarkeits-Audit ab.",
+    upgradeCta: "Abos vergleichen",
+
+    totalMentions: (n: string) => `${n} Seiten erwähnen diesen Begriff`,
+    totalMentionsOne: "1 Seite erwähnt diesen Begriff",
+    showingTop: (n: number) => `Angezeigt werden die ersten ${n}`,
+    sentimentTitle: "Tonalität über alle Treffer",
+    sentimentPositive: "Positiv",
+    sentimentNegative: "Negativ",
+    sentimentNeutral: "Neutral",
+    sentimentCaveat:
+      "Die Tonalität wird automatisch aus dem Seitentext bewertet. Nehmen Sie sie als Richtung, nicht als Urteil — Ironie, Vergleiche und zitierte Beschwerden liest eine Maschine alle als negativ.",
+    topDomainsTitle: "Domains, die am häufigsten publizieren",
+    languagesTitle: "Sprachen",
+    countriesTitle: "Länder",
+    unknownValue: "Unbekannt",
+
+    mentionsTitle: "Seiten, die diesen Begriff erwähnen",
+    colPage: "Seite",
+    colDomain: "Domain",
+    colDate: "Datum",
+    colSentiment: "Tonalität",
+    sortDate: "Neueste zuerst",
+    sortRank: "Höchste Autorität zuerst",
+    sortLabel: "Sortieren",
+    highAuthority: "Hohe Autorität",
+    highAuthorityTip:
+      "Domain-Rang auf oder über der Schwelle für hohe Autorität und niedriger Spam-Wert — lohnt eine Anfrage für einen Link.",
+    rankLabel: (rank: number) => `Rang ${rank}`,
+    crawlDateNote: "Crawl-Datum",
+    noDate: "Kein Datum",
+    openPage: "Seite öffnen",
+
+    verdictMostlyPositive: (n: string) =>
+      `${n} Erwähnungen gefunden, die Tonalität tendiert positiv. Die Domains mit hoher Autorität unten sind Ihre besten Ziele für Link-Outreach.`,
+    verdictMixed: (n: string) =>
+      `${n} Erwähnungen gefunden, mit gemischter Tonalität. Lesen Sie die negativen, bevor Sie Outreach planen.`,
+    verdictMostlyNegative: (n: string) =>
+      `${n} Erwähnungen gefunden, die Tonalität tendiert negativ. Lesen Sie diese zuerst — die automatische Bewertung ist grob, aber eine negative Tendenz bei einem Markenbegriff verdient einen menschlichen Blick.`,
+    emptyTitle: "Keine Erwähnungen gefunden",
+    emptyBody:
+      "Noch nichts im Web erwähnt diesen Begriff. Bei einem Markennamen ist das eine echte Antwort und kein Fehler — es heisst, dass niemand über Sie schreibt, und genau das gilt es zu ändern.",
+    emptyCampaigns: "Bewertungskampagne starten",
+    emptyReviewLinks: "Bewertungslinks einrichten",
+    emptyCross:
+      "Bewertungen sind der schnellste Weg, Ihren Namen auf Seiten zu bringen, die KI- und Suchmaschinen lesen.",
+
+    historyTitle: "Ihre früheren Suchen",
+    noHistory: "Noch keine Suchen.",
+    viewBtn: "Ansehen",
+    freeToOpen: "Eine frühere Suche erneut zu öffnen ist kostenlos.",
+    historyMeta: (mentions: number, total: string) =>
+      `${mentions} Seiten angezeigt von ${total} Treffern`,
+    historyEmptyResult: "Keine Erwähnungen",
+
+    loading: "Wird geladen…",
+    loadFailed:
+      "Content Explorer konnte nicht geladen werden. Versuchen Sie es in einer Minute erneut.",
+  },
+};
+
+// ─── /visibility/tools/content-explorer — help modal ────────────────────────
+const contentExplorerHelpEn = {
+  button: "Help",
+  buttonAria: "How Content Explorer works",
+  title: "How Content Explorer works",
+  close: "Close",
+
+  intro:
+    "One search asks the web index: which pages contain this phrase? Everything on the page comes from that answer.",
+
+  mentionTitle: "What counts as a mention",
+  mentionBody:
+    "A page whose text contains your phrase. That is the whole test. It is not a link to your site, it is not a review, and it does not mean the page is about you — searching a brand name that is also an ordinary word will return pages with no connection to your business. Read the domains before drawing conclusions from the count.",
+
+  sentimentTitle: "Sentiment is automated and directional",
+  sentimentBody:
+    "The provider scores each page's text as a mix of positive, negative and neutral rather than labelling it. We show the dominant one. It is machine scoring on page text, so sarcasm reads as praise, a comparison article that mentions a competitor's failure reads as negative about everyone, and a page quoting a complaint reads as a complaint. Use it to decide what to read first, never as a finding on its own.",
+
+  outreachTitle: "Mining the list for link outreach",
+  outreachBody:
+    "Every row carries the domain's authority rank, and rows above the high-authority threshold with a low spam score get a badge. Those are publishers already writing about your topic on sites worth a link — a far warmer approach than a cold list. The summary band's top-domain chips show who publishes on this phrase most often, which is where a repeatable relationship is worth building.",
+
+  costTitle: "What a search costs, and why repeats are free",
+  costBody:
+    "Every search runs live against the provider and is billed whether it finds a million pages or none — the price is almost entirely fixed. So repeating a phrase within 24 hours serves your saved search instead, reopening anything in your history costs nothing, and a phrase with no mentions is charged once and then remembered.",
+  quotaLine: (used: number, limit: number, plan: string) =>
+    `Your ${plan} plan includes ${limit} searches per month. You have used ${used}.`,
+  fixLink: "Open review campaigns",
+};
+export type ContentExplorerHelpCopy = typeof contentExplorerHelpEn;
+
+export const CONTENT_EXPLORER_HELP_COPY: Record<DashLocale, ContentExplorerHelpCopy> = {
+  en: contentExplorerHelpEn,
+  fr: {
+    button: "Aide",
+    buttonAria: "Fonctionnement de Content Explorer",
+    title: "Fonctionnement de Content Explorer",
+    close: "Fermer",
+
+    intro:
+      "Une recherche pose une question à l'index du web : quelles pages contiennent cette expression ? Tout ce qui s'affiche découle de cette réponse.",
+
+    mentionTitle: "Ce qui compte comme une mention",
+    mentionBody:
+      "Une page dont le texte contient votre expression. C'est tout le critère. Ce n'est pas un lien vers votre site, ce n'est pas un avis, et cela ne signifie pas que la page vous concerne — rechercher un nom de marque qui est aussi un mot courant ramènera des pages sans lien avec votre activité. Lisez les domaines avant de tirer des conclusions du nombre.",
+
+    sentimentTitle: "La tonalité est automatique et indicative",
+    sentimentBody:
+      "Le fournisseur évalue le texte de chaque page comme un mélange de positif, négatif et neutre plutôt que de lui attribuer une étiquette. Nous affichons la dominante. C'est une évaluation machine sur du texte : l'ironie passe pour un éloge, un article comparatif mentionnant l'échec d'un concurrent paraît négatif envers tout le monde, et une page citant une plainte est lue comme une plainte. Servez-vous-en pour décider quoi lire en premier, jamais comme d'un constat en soi.",
+
+    outreachTitle: "Exploiter la liste pour la prospection de liens",
+    outreachBody:
+      "Chaque ligne porte le rang d'autorité du domaine, et les lignes au-dessus du seuil de forte autorité avec un faible score de spam reçoivent un badge. Ce sont des éditeurs qui écrivent déjà sur votre sujet, sur des sites où un lien vaut la peine — une approche bien plus chaleureuse qu'une liste froide. Les pastilles de domaines du bandeau de synthèse montrent qui publie le plus souvent sur cette expression, et c'est là qu'une relation durable mérite d'être construite.",
+
+    costTitle: "Ce que coûte une recherche, et pourquoi les répétitions sont gratuites",
+    costBody:
+      "Chaque recherche interroge le fournisseur en direct et est facturée qu'elle trouve un million de pages ou aucune — le prix est presque entièrement fixe. Répéter une expression dans les 24 heures affiche donc votre recherche enregistrée, réouvrir n'importe quel élément de votre historique ne coûte rien, et une expression sans mention est facturée une fois puis mémorisée.",
+    quotaLine: (used: number, limit: number, plan: string) =>
+      `Votre forfait ${plan} inclut ${limit} recherches par mois. Vous en avez utilisé ${used}.`,
+    fixLink: "Ouvrir les campagnes d'avis",
+  },
+  "de-CH": {
+    button: "Hilfe",
+    buttonAria: "So funktioniert Content Explorer",
+    title: "So funktioniert Content Explorer",
+    close: "Schliessen",
+
+    intro:
+      "Eine Suche stellt dem Web-Index eine Frage: Welche Seiten enthalten diesen Begriff? Alles auf der Seite stammt aus dieser Antwort.",
+
+    mentionTitle: "Was als Erwähnung gilt",
+    mentionBody:
+      "Eine Seite, deren Text Ihren Begriff enthält. Das ist der ganze Test. Es ist kein Link zu Ihrer Website, keine Bewertung, und es heisst nicht, dass die Seite von Ihnen handelt — die Suche nach einem Markennamen, der auch ein gewöhnliches Wort ist, liefert Seiten ohne Bezug zu Ihrem Geschäft. Lesen Sie die Domains, bevor Sie aus der Zahl Schlüsse ziehen.",
+
+    sentimentTitle: "Die Tonalität ist automatisch und richtungsweisend",
+    sentimentBody:
+      "Der Anbieter bewertet den Text jeder Seite als Mischung aus positiv, negativ und neutral, statt ihn zu etikettieren. Wir zeigen den dominanten Anteil. Es ist maschinelle Bewertung von Seitentext: Ironie liest sich als Lob, ein Vergleichsartikel über das Scheitern eines Mitbewerbers wirkt gegenüber allen negativ, und eine Seite, die eine Beschwerde zitiert, liest sich als Beschwerde. Nutzen Sie sie, um zu entscheiden, was Sie zuerst lesen, nie als Befund für sich.",
+
+    outreachTitle: "Die Liste für Link-Outreach nutzen",
+    outreachBody:
+      "Jede Zeile trägt den Autoritätsrang der Domain, und Zeilen über der Schwelle für hohe Autorität mit niedrigem Spam-Wert erhalten ein Abzeichen. Das sind Publisher, die schon über Ihr Thema schreiben, auf Websites, bei denen ein Link etwas wert ist — ein viel wärmerer Zugang als eine kalte Liste. Die Domain-Chips im Übersichtsband zeigen, wer zu diesem Begriff am häufigsten publiziert, und dort lohnt sich eine dauerhafte Beziehung.",
+
+    costTitle: "Was eine Suche kostet, und warum Wiederholungen gratis sind",
+    costBody:
+      "Jede Suche läuft live gegen den Anbieter und wird verrechnet, ob sie eine Million Seiten findet oder keine — der Preis ist fast vollständig fix. Denselben Begriff innerhalb von 24 Stunden zu wiederholen zeigt deshalb Ihre gespeicherte Suche, das erneute Öffnen aus dem Verlauf kostet nichts, und ein Begriff ohne Erwähnungen wird einmal verrechnet und danach behalten.",
+    quotaLine: (used: number, limit: number, plan: string) =>
+      `Ihr ${plan}-Abo enthält ${limit} Suchen pro Monat. Sie haben ${used} genutzt.`,
+    fixLink: "Bewertungskampagnen öffnen",
+  },
+};
+
 // ─── /visibility/tools/api-access ───────────────────────────────────────────
 const apiAccessEn = {
   intro:

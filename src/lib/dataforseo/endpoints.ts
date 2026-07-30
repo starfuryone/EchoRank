@@ -36,6 +36,22 @@ export const LABS = {
 } as const;
 
 // ---------------------------------------------------------------------------
+// Content Analysis — web mentions of a phrase (Content Explorer)
+// ---------------------------------------------------------------------------
+// A different pricing model from Labs, and worth stating where the paths live:
+// each of these bills a FIXED $0.024036 per call plus ~$0.0000353 per returned
+// item (measured Jul 2026 from the recorded envelopes). Cost is therefore ~96%
+// independent of how much comes back — a phrase with zero mentions costs almost
+// exactly what a phrase with fifty does. Callers must treat every call as
+// expensive regardless of the expected result size.
+export const CONTENT_ANALYSIS = {
+  /** Recent pages mentioning a phrase — the mentions table. */
+  search: "v3/content_analysis/search/live",
+  /** Totals for the same phrase — the summary band. Skip when total_count is 0. */
+  summary: "v3/content_analysis/summary/live",
+} as const;
+
+// ---------------------------------------------------------------------------
 // Keywords Data (Google Ads) — true search volume / CPC
 // ---------------------------------------------------------------------------
 export const ADS = {

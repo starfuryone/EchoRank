@@ -34,7 +34,8 @@ export type CreditFeature =
   | "backlinks"
   | "site_audit"
   | "rank_tracking"
-  | "local_seo";
+  | "local_seo"
+  | "content_research";
 
 export type ApiCallCost = { path: string[]; costUsd: number };
 /** `taskId` is DataForSEO's own task uuid — set on every envelope, and the
@@ -119,6 +120,11 @@ export function pathToFeature(path: readonly string[]): CreditFeature {
       return "local_seo";
     case "keywords_data":
       return "keyword_research";
+    // Content Explorer. Without this case content_analysis fell through to the
+    // default and every mention search was metered as "site_audit", which makes
+    // per-feature spend reporting quietly wrong.
+    case "content_analysis":
+      return "content_research";
     case "dataforseo_labs": {
       const endpoint = p[3] ?? "";
       return endpoint.startsWith("domain_") ||

@@ -22,6 +22,7 @@ import { KeywordsExplorerArt } from "@/components/seo-tools/help-illustrations/k
 import { GscInsightsArt } from "@/components/seo-tools/help-illustrations/gsc-insights";
 import { BrandRadarArt } from "@/components/seo-tools/help-illustrations/brand-radar";
 import { CustomPromptsArt } from "@/components/seo-tools/help-illustrations/custom-prompts";
+import { ContentExplorerArt } from "@/components/seo-tools/help-illustrations/content-explorer";
 import { AiLensArt } from "@/components/seo-tools/help-illustrations/ai-lens";
 
 import {
@@ -52,6 +53,7 @@ const ILLUSTRATIONS = [
   ["brand-radar", BrandRadarArt],
   ["custom-prompts", CustomPromptsArt],
   ["ai-lens", AiLensArt],
+  ["content-explorer", ContentExplorerArt],
 ] as const;
 
 describe.each(ILLUSTRATIONS)("%s illustration", (name, Art) => {

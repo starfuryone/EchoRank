@@ -1,0 +1,317 @@
+{
+  "version": "0.1.20260717",
+  "status_code": 20000,
+  "status_message": "Ok.",
+  "time": "5.9901 sec.",
+  "cost": 0.024036,
+  "tasks_count": 1,
+  "tasks_error": 0,
+  "tasks": [
+    {
+      "id": "07300631-2159-0464-0000-0b342335b029",
+      "status_code": 20000,
+      "status_message": "Ok.",
+      "time": "5.9796 sec.",
+      "cost": 0.024036,
+      "result_count": 1,
+      "path": [
+        "v3",
+        "content_analysis",
+        "summary",
+        "live"
+      ],
+      "data": {
+        "api": "content_analysis",
+        "function": "summary",
+        "keyword": "reputation management software"
+      },
+      "result": [
+        {
+          "type": "content_analysis_summary",
+          "total_count": 1557864,
+          "rank": 599,
+          "top_domains": [
+            {
+              "domain": "onerileriniz.com",
+              "count": 99080
+            },
+            {
+              "domain": "mach1design.com",
+              "count": 17496
+            },
+            {
+              "domain": "financialcontent.com",
+              "count": 13952
+            },
+            {
+              "domain": "marketminute.com",
+              "count": 13272
+            },
+            {
+              "domain": "studysmarter.co.uk",
+              "count": 10512
+            },
+            {
+              "domain": "theartofservice.com",
+              "count": 9672
+            },
+            {
+              "domain": "ssvpusa.org",
+              "count": 8888
+            },
+            {
+              "domain": "internshala.com",
+              "count": 7608
+            },
+            {
+              "domain": "hrtoday.in",
+              "count": 6960
+            },
+            {
+              "domain": "mediabistro.com",
+              "count": 5880
+            }
+          ],
+          "sentiment_connotations": {
+            "anger": 8,
+            "happiness": 11352,
+            "love": 144,
+            "sadness": 0,
+            "share": 360,
+            "fun": 0
+          },
+          "connotation_types": {
+            "positive": 745920,
+            "negative": 304712,
+            "neutral": 447008
+          },
+          "text_categories": [
+            {
+              "category": [
+                10108,
+                10013,
+                10017,
+                10142,
+                10769,
+                12067
+              ],
+              "count": 105360
+            },
+            {
+              "category": [
+                10108,
+                10013,
+                13691
+              ],
+              "count": 119088
+            },
+            {
+              "category": null,
+              "count": 126672
+            },
+            {
+              "category": [
+                10013,
+                10108,
+                13691
+              ],
+              "count": 56640
+            },
+            {
+              "category": [
+                10004,
+                10276,
+                10007,
+                13418,
+                10019,
+                10168,
+                12156
+              ],
+              "count": 36368
+            },
+            {
+              "category": [
+                10013,
+                10108,
+                13691,
+                10007,
+                13418
+              ],
+              "count": 34024
+            },
+            {
+              "category": [
+                10007,
+                13418,
+                10013,
+                10019,
+                10167
+              ],
+              "count": 21568
+            },
+            {
+              "category": [
+                10108,
+                13691,
+                10013,
+                10103,
+                10556
+              ],
+              "count": 16688
+            },
+            {
+              "category": [
+                10108,
+                13691,
+                10013
+              ],
+              "count": 16592
+            },
+            {
+              "category": [
+                10013,
+                10007,
+                13418,
+                10108,
+                13691
+              ],
+              "count": 13400
+            }
+          ],
+          "page_categories": [
+            {
+              "category": null,
+              "count": 634920
+            },
+            {
+              "category": [
+                10137,
+                10015,
+                12017
+              ],
+              "count": 7224
+            },
+            {
+              "category": [
+                10016,
+                10139,
+                10746
+              ],
+              "count": 6808
+            },
+            {
+              "category": [
+                10019,
+                10167,
+                10002,
+                10028,
+                10222,
+                13813,
+                10004,
+                10276,
+                11088
+              ],
+              "count": 6128
+            },
+            {
+              "category": [
+                10137,
+                10015
+              ],
+              "count": 5128
+            },
+            {
+              "category": [
+                10017,
+                10142,
+                10769,
+                12067,
+                10145,
+                13582,
+                10151
+              ],
+              "count": 4880
+            },
+            {
+              "category": [
+                10007,
+                13418,
+                11493,
+                10004,
+                10273,
+                11068,
+                10013,
+                13388
+              ],
+              "count": 4808
+            },
+            {
+              "category": [
+                10108,
+                13691,
+                10013,
+                10103,
+                10556
+              ],
+              "count": 4440
+            },
+            {
+              "category": [
+                10007,
+                13418,
+                13088,
+                10019,
+                10168,
+                10885,
+                12204,
+                13092,
+                10883,
+                12184,
+                13059
+              ],
+              "count": 3920
+            },
+            {
+              "category": [
+                10015,
+                10137
+              ],
+              "count": 3600
+            }
+          ],
+          "page_types": {
+            "blogs": 1092408,
+            "organization": 596648,
+            "news": 367728,
+            "message-boards": 46544,
+            "ecommerce": 124960
+          },
+          "countries": {
+            "US": 286232,
+            "IN": 131528,
+            "WW": 87352,
+            "GB": 56752,
+            "AU": 18016,
+            "CO": 17472,
+            "BR": 14736,
+            "CA": 14312,
+            "DE": 12520,
+            "IO": 8648
+          },
+          "languages": {
+            "en": 1528744,
+            "it": 12664,
+            "de": 6104,
+            "id": 2888,
+            "nl": 936,
+            "hi": 1792,
+            "es": 1216,
+            "fr": 808,
+            "pt": 656,
+            "ms": 496
+          }
+        }
+      ]
+    }
+  ]
+}

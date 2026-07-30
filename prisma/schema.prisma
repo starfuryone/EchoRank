@@ -205,6 +205,7 @@ model Tenant {
   aiLensAnalyses     AiLensAnalysis[]
   botAccessChecks    BotAccessCheck[]
   botLogAnalyses     BotLogAnalysis[]
+  contentSearches    ContentSearch[]
 
   @@map("tenants")
 }
@@ -1588,6 +1589,49 @@ model BacklinksAnalysis {
   @@index([tenantId, target, mode, createdAt])
   // History list.
   @@index([tenantId, createdAt])
+}
+
+/// Content Explorer — one search for a phrase across DataForSEO's Content
+/// Analysis index. A "search" is one or two live calls: search/live always, and
+/// summary/live only when the first reports a non-zero total.
+///
+/// COST IS ~96% FIXED, which shapes this table. Measured Jul 2026: each call
+/// bills $0.024036 regardless of how much it returns, plus roughly $0.0000353
+/// per returned item — so a search that finds NOTHING costs $0.024 and a search
+/// returning 50 rows costs $0.0258. That is why the row is persisted even when
+/// it found zero mentions (re-running would cost the same again, so the empty
+/// answer is worth caching) and why `summary` is nullable rather than assumed.
+///
+/// `costUsd` is the sum of the envelope `cost` fields for this search, never a
+/// price-table estimate — see the note at the top of dataforseo/metering.ts.
+model ContentSearch {
+  id       String @id @default(cuid())
+  tenantId String
+  /// The phrase as searched: trimmed and lowercased, so the cache key and the
+  /// history list do not treat "Echorank360" and "echorank360" as two searches.
+  query    String
+  /// The angle preset the query came from (brand | competitor | topic). Purely
+  /// a UI label — every preset runs the identical code path.
+  angle    String @default("topic")
+  /// { limit, offset, search_mode } as sent, so a stored row can be explained.
+  params   Json
+  /// content_analysis/search/live: total_count + the page items we kept.
+  results  Json
+  /// content_analysis/summary/live: totals, sentiment split, top domains,
+  /// countries, languages. Null when the search found nothing — the summary
+  /// endpoint returns all-zero fields for a zero-result phrase, so calling it
+  /// would spend $0.024 to learn nothing.
+  summary  Json?
+  costUsd  Decimal  @default(0) @db.Decimal(10, 6)
+  createdAt DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  // Cache lookup: newest search for this exact phrase.
+  @@index([tenantId, query, createdAt])
+  // History list.
+  @@index([tenantId, createdAt])
+  @@map("content_searches")
 }
 
 /// Lighthouse tool — one row per audit. An audit is ONE PageSpeed Insights
