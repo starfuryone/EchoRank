@@ -1,10 +1,29 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import s from "./home2.module.css";
 import { FAQ } from "./faq-data";
 import { DemoVideoModal } from "@/components/demo-video";
+import type { HomePricingChrome } from "@/lib/i18n/content";
+
+/**
+ * One pricing card, built server-side from PLAN_CONFIGS. Prices and feature
+ * bullets are NOT authored here — see pricingTiers() in page.tsx for why.
+ */
+export interface HomePricingTier {
+  id: string;
+  name: string;
+  /** Null for the custom-priced tier, which renders `customLabel` instead. */
+  monthly: number | null;
+  annual: number | null;
+  customLabel: string | null;
+  savePct: number | null;
+  features: string[];
+  ctaLink: string | null;
+  cta: string | null;
+  highlighted: boolean;
+}
 
 /* ---------- copy ---------- */
 
@@ -20,6 +39,9 @@ const T = {
       h1b: "wins.",
       sub: "Echorank is the AI Visibility Management platform. We measure how ChatGPT, Google AI, Perplexity, Claude, Gemini and Copilot see your business — then tell you exactly how to become the answer.",
       cta1: "Run My Free AI Visibility Audit ↗",
+      // Secondary path for visitors who already want an account. The primary
+      // CTA runs the anonymous audit instead — no signup, no card.
+      cta3: "Create an account",
       cta2: "Watch a 2-minute demo",
       note: "NO CARD REQUIRED · RESULTS IN 60 SECONDS",
       dashTitle: "AI VISIBILITY AUDITOR",
@@ -147,13 +169,7 @@ const T = {
     pricing: {
       label: "PRICING", h2: "Plans",
       cadLink: "See pricing in Canadian dollars →",
-      tiers: [
-        { n: "STARTER", a: "$79", hi: false, f: ["Review campaigns (email, SMS, QR)", "Private feedback & routing", "Multi-source review monitoring", "AI response drafting"] },
-        { n: "GROWTH", a: "$199", hi: true, f: ["Everything in Starter", "AI Visibility Auditor + fix roadmap", "Reputation Risk Score & alerts", "Revenue-at-risk"] },
-        { n: "AGENCY", a: "$499", hi: false, f: ["Everything in Growth", "AI answer tracking (daily)", "Competitor momentum monitoring", "White-label & multi-client"] },
-        { n: "ENTERPRISE", a: "Contact us", hi: false, f: ["Unlimited everything", "Custom volume", "SSO / SAML", "99.9% SLA"] },
-      ],
-      mo: "/mo", tax: "14-day free trial on all plans. No card required.",
+      tax: "14-day free trial on all plans. No card required.",
       currency: "All prices are in US dollars (USD). If you pay with a card in another currency, your bank converts the charge at its own exchange rate.",
     },
     close: {
@@ -173,6 +189,7 @@ const T = {
       h1b: "gagne.",
       sub: "Echorank est la plateforme de gestion de visibilité IA. Nous mesurons comment ChatGPT, Google AI, Perplexity, Claude, Gemini et Copilot perçoivent votre entreprise — puis nous vous montrons exactement comment devenir la réponse.",
       cta1: "Lancer mon audit de visibilité IA gratuit ↗",
+      cta3: "Créer un compte",
       cta2: "Voir la démo de 2 minutes",
       note: "SANS CARTE · RÉSULTATS EN 60 SECONDES",
       dashTitle: "AUDITEUR DE VISIBILITÉ IA",
@@ -300,13 +317,7 @@ const T = {
     pricing: {
       label: "TARIFS", h2: "Forfaits",
       cadLink: "Voir les tarifs en dollars canadiens →",
-      tiers: [
-        { n: "STARTER", a: "79 $", hi: false, f: ["Campagnes d'avis (courriel, SMS, QR)", "Rétroaction privée et routage", "Surveillance d'avis multi-sources", "Rédaction de réponses par IA"] },
-        { n: "GROWTH", a: "199 $", hi: true, f: ["Tout Starter", "Auditeur de visibilité IA + feuille de route", "Score de risque réputationnel et alertes", "Revenu à risque"] },
-        { n: "AGENCY", a: "499 $", hi: false, f: ["Tout Growth", "Suivi des réponses IA (quotidien)", "Surveillance de la vélocité concurrente", "Marque blanche et multi-clients"] },
-        { n: "ENTERPRISE", a: "Contactez-nous", hi: false, f: ["Tout illimité", "Volume sur mesure", "SSO / SAML", "SLA 99,9 %"] },
-      ],
-      mo: "/mois", tax: "Essai gratuit de 14 jours sur tous les forfaits. Aucune carte requise.",
+      tax: "Essai gratuit de 14 jours sur tous les forfaits. Aucune carte requise.",
       currency: "Tous les prix sont en dollars américains (USD). Si vous payez avec une carte dans une autre devise, votre banque effectue la conversion à son propre taux de change.",
     },
     close: {
@@ -343,10 +354,28 @@ const CARD_COLOR: Record<string, string> = {
 
 /* ---------- component ---------- */
 
-export default function HomeClient({ locale }: { locale: string }) {
+export default function HomeClient({
+  locale,
+  pricing,
+  priceChrome,
+  liveToolCount,
+  toolsSection,
+}: {
+  locale: string;
+  pricing: HomePricingTier[];
+  priceChrome: HomePricingChrome;
+  liveToolCount: number;
+  /** Server-rendered Classic SEO Tools section, slotted in after /03. */
+  toolsSection: ReactNode;
+}) {
   const t = T[baseOf(locale)];
   const faq = FAQ[baseOf(locale)];
   const L = (p: string) => `/${locale}${p.startsWith("/") ? p : `/${p}`}`;
+
+  /* Monthly vs annual pricing. Annual shows the per-month equivalent with a
+     "billed annually" line, so the number under the tier name is always the
+     same unit and the two modes are directly comparable. */
+  const [annual, setAnnual] = useState(false);
 
   /* hero score animation */
   const numRef = useRef<HTMLSpanElement>(null);
@@ -452,8 +481,13 @@ export default function HomeClient({ locale }: { locale: string }) {
             <span className={s.livechip}><span className={s.pulse} />{t.hero.live}</span>
             <h1 className={s.h1}>{t.hero.h1a}<span className={s.goldtext}>{t.hero.h1b}</span></h1>
             <p className={s.heroSub}>{t.hero.sub}</p>
+            {/* Primary CTA runs the real audit with no account: the widget on
+                /ai-visibility is anonymous and rate-limited to 1/IP/day, so the
+                "no card required" promise below is literally true. /register is
+                the secondary path for people who already want an account. */}
             <div className={s.ctarow}>
-              <Link className={`${s.btn} ${s.btnPrimary}`} href="/register">{t.hero.cta1}</Link>
+              <Link className={`${s.btn} ${s.btnPrimary}`} href={L("/ai-visibility#audit")}>{t.hero.cta1}</Link>
+              <Link className={`${s.btn} ${s.btnGhost}`} href="/register">{t.hero.cta3}</Link>
               <button type="button" className={`${s.btn} ${s.btnGhost}`} onClick={() => setDemoOpen(true)}>{t.hero.cta2}</button>
             </div>
             <p className={s.label} style={{ marginTop: 22 }}>{t.hero.note}</p>
@@ -582,10 +616,15 @@ export default function HomeClient({ locale }: { locale: string }) {
         </div>
       </section>
 
+      {/* 4. CLASSIC SEO TOOLS — server-rendered from src/lib/seo-tools.ts,
+           the same config the paid hub at /visibility/tools renders. */}
+      {toolsSection}
+
+
       {/* 5. TIMELINE */}
       <section className={s.section}>
         <div className={s.container}>
-          <p className={s.label}><b>/ 04</b> — {t.tlx.label}</p>
+          <p className={s.label}><b>/ 05</b> — {t.tlx.label}</p>
           <h2 className={s.h2}>{t.tlx.h2}</h2>
           <div className={s.trajLayout}><div className={s.timeline}>
             {t.tlx.items.map((it) => (
@@ -603,7 +642,7 @@ export default function HomeClient({ locale }: { locale: string }) {
       {/* 6. SIMULATOR */}
       <section id="simulator" className={s.section}>
         <div className={s.container}>
-          <p className={s.label}><b>/ 05</b> — {t.sim.label}</p>
+          <p className={s.label}><b>/ 06</b> — {t.sim.label}</p>
           <h2 className={s.h2}>{t.sim.h2}</h2>
           <p className={s.sub}>{t.sim.sub}</p>
           <div className={s.sim}>
@@ -640,7 +679,7 @@ export default function HomeClient({ locale }: { locale: string }) {
       {/* 7. SEO VS AIV */}
       <section className={s.section}>
         <div className={s.container}>
-          <p className={s.label}><b>/ 06</b> — {t.cmp.label}</p>
+          <p className={s.label}><b>/ 07</b> — {t.cmp.label}</p>
           <h2 className={s.h2}>{t.cmp.h2a}<span className={s.goldtext}>{t.cmp.h2b}</span></h2>
           <p className={s.sub}>{t.cmp.sub}</p>
           <div className={s.cmp}>
@@ -655,7 +694,7 @@ export default function HomeClient({ locale }: { locale: string }) {
       {/* 8. ENGINES */}
       <section className={s.section}>
         <div className={s.container}>
-          <p className={s.label}><b>/ 07</b> — {t.eng.label}</p>
+          <p className={s.label}><b>/ 08</b> — {t.eng.label}</p>
           <h2 className={s.h2}>{t.eng.h2}</h2>
           <p className={s.sub}>{t.eng.sub}</p>
           <div className={s.englogos}>
@@ -669,7 +708,7 @@ export default function HomeClient({ locale }: { locale: string }) {
       {/* 8b. TRADITIONAL REPUTATION STACK */}
       <section className={s.section}>
         <div className={s.container}>
-          <p className={s.label}><b>/ 08</b> — {t.trad.label}</p>
+          <p className={s.label}><b>/ 09</b> — {t.trad.label}</p>
           <div className={s.foundLayout}>
             <div className={s.foundVideoWrap}>
               <video
@@ -699,7 +738,7 @@ export default function HomeClient({ locale }: { locale: string }) {
       {/* 9. HISTORY */}
       <section className={s.section}>
         <div className={s.container}>
-          <p className={s.label}><b>/ 09</b> — {t.hist.label}<Tm /></p>
+          <p className={s.label}><b>/ 10</b> — {t.hist.label}<Tm /></p>
           <h2 className={s.h2}>{t.hist.h2}</h2>
           <p className={s.sub}>{t.hist.sub}</p>
           <div className={s.hist}>
@@ -719,7 +758,7 @@ export default function HomeClient({ locale }: { locale: string }) {
       {/* 10. ROADMAP */}
       <section className={s.section}>
         <div className={s.container}>
-          <p className={s.label}><b>/ 10</b> — {t.rmx.label}</p>
+          <p className={s.label}><b>/ 11</b> — {t.rmx.label}</p>
           <h2 className={s.h2}>{t.rmx.h2}</h2>
           <p className={s.sub}>{t.rmx.sub}</p>
           <div className={s.roadmap}>
@@ -738,7 +777,7 @@ export default function HomeClient({ locale }: { locale: string }) {
       {/* 11. ROI */}
       <section id="roi" className={s.section}>
         <div className={s.container}>
-          <p className={s.label}><b>/ 11</b> — {t.roi.label}<Tm /></p>
+          <p className={s.label}><b>/ 12</b> — {t.roi.label}<Tm /></p>
           <h2 className={s.h2}>{t.roi.h2}</h2>
           <p className={s.sub}>{t.roi.sub}</p>
           <div className={s.roi}>
@@ -776,18 +815,68 @@ export default function HomeClient({ locale }: { locale: string }) {
       {/* 12. PRICING (compact, keeps #pricing anchor) */}
       <section id="pricing" className={s.section}>
         <div className={s.container}>
-          <p className={s.label}><b>/ 12</b> — {t.pricing.label}</p>
+          <p className={s.label}><b>/ 13</b> — {t.pricing.label}</p>
           {baseOf(locale) === "en" && locale !== "en-CA" && (
             <p><Link className={s.label} href="/en-CA#pricing">{t.pricing.cadLink}</Link></p>
           )}
+          {/* Monthly / annual. Annual renders the per-month equivalent so the
+              two modes are comparable at a glance, with the billing period
+              spelled out underneath. */}
+          <div className={s.priceToggle} role="group" aria-label={priceChrome.monthly + " / " + priceChrome.annual}>
+            <button
+              type="button"
+              aria-pressed={!annual}
+              className={`${s.priceToggleBtn} ${!annual ? s.priceToggleOn : ""}`}
+              onClick={() => setAnnual(false)}
+            >
+              {priceChrome.monthly}
+            </button>
+            <button
+              type="button"
+              aria-pressed={annual}
+              className={`${s.priceToggleBtn} ${annual ? s.priceToggleOn : ""}`}
+              onClick={() => setAnnual(true)}
+            >
+              {priceChrome.annual}
+            </button>
+          </div>
+
           <div className={s.priceGrid}>
-            {t.pricing.tiers.map((p) => (
-              <div className={p.hi ? s.priceHi : s.price} key={p.n}>
-                <div className={s.pname}>/ {p.n}</div>
-                <div className={s.pamount}>{p.a}<span>{t.pricing.mo}</span></div>
-                <ul>{p.f.map((f) => <li key={f}>{f}</li>)}</ul>
-              </div>
-            ))}
+            {pricing.map((p) => {
+              const amount = annual ? p.annual : p.monthly;
+              return (
+                <div className={p.highlighted ? s.priceHi : s.price} key={p.id}>
+                  <div className={s.pname}>/ {p.name}</div>
+                  {amount === null ? (
+                    <div className={s.pamount}>{p.customLabel}</div>
+                  ) : (
+                    <>
+                      <div className={s.pamount}>
+                        ${amount}
+                        <span>{priceChrome.perMonth}</span>
+                        {annual && p.savePct ? (
+                          <span className={s.priceSave}>{priceChrome.save.replace("{pct}", String(p.savePct))}</span>
+                        ) : null}
+                      </div>
+                      {annual && <div className={s.pbilled}>{priceChrome.billedAnnually}</div>}
+                    </>
+                  )}
+                  <ul>{p.features.map((f) => <li key={f}>{f}</li>)}</ul>
+                  {/* Every paid tier reaches the tools hub — canAccessPath()
+                      admits all five — so the line is not tier-gated. */}
+                  {amount !== null && (
+                    <a className={s.ptools} href="#tools">
+                      {priceChrome.toolsLine.replace("{n}", String(liveToolCount))} · {priceChrome.toolsAnchor}
+                    </a>
+                  )}
+                  {/* Only AI Visibility is self-serve by URL; the other tiers
+                      keep whatever ctaLink the plan config gives them. */}
+                  {p.ctaLink && p.cta && (
+                    <Link className={s.pcta} href={p.ctaLink}>{p.cta} →</Link>
+                  )}
+                </div>
+              );
+            })}
           </div>
           <p className={s.taxline}>{t.pricing.tax}</p>
           <p className={s.taxline}>{t.pricing.currency}</p>
@@ -799,7 +888,7 @@ export default function HomeClient({ locale }: { locale: string }) {
            so the structured data matches what a crawler sees. */}
       <section id="faq" className={s.section}>
         <div className={s.container}>
-          <p className={s.label}><b>/ 13</b> — {faq.label}</p>
+          <p className={s.label}><b>/ 14</b> — {faq.label}</p>
           <h2 className={s.h2}>{faq.h2}</h2>
           <p className={s.sub}>{faq.sub}</p>
           <div className={s.faqLayout}>
@@ -827,9 +916,9 @@ export default function HomeClient({ locale }: { locale: string }) {
       </section>
 
       {/* 14. CLOSE */}
-      <section className={s.section}><div className={s.container}><p className={s.label}><b>/ 14</b> — RESOURCES</p><h2 className={s.h2}>Reputation Intelligence, Made Simple</h2><p className={s.sub}>The plain-English guide to running Echorank: the 30-minute setup, daily operating rhythm, AI visibility and answer tracking, and risk &amp; competitor intelligence. Free PDF, no email required.</p><a className={`${s.btn} ${s.btnPrimary}`} href="/whitepapers/Echorank_Reputation_Intelligence_Whitepaper.pdf" download target="_blank" rel="noopener">Download the Whitepaper (PDF) ↓</a></div></section><section className={s.close}>
+      <section className={s.section}><div className={s.container}><p className={s.label}><b>/ 15</b> — RESOURCES</p><h2 className={s.h2}>Reputation Intelligence, Made Simple</h2><p className={s.sub}>The plain-English guide to running Echorank: the 30-minute setup, daily operating rhythm, AI visibility and answer tracking, and risk &amp; competitor intelligence. Free PDF, no email required.</p><a className={`${s.btn} ${s.btnPrimary}`} href="/whitepapers/Echorank_Reputation_Intelligence_Whitepaper.pdf" download target="_blank" rel="noopener">Download the Whitepaper (PDF) ↓</a></div></section><section className={s.close}>
         <div className={s.container}>
-          <p className={s.label}><b>/ 15</b> — {t.close.label}</p>
+          <p className={s.label}><b>/ 16</b> — {t.close.label}</p>
           <h2 className={s.h2c}>{t.close.h2a}<span className={s.goldtext}>{t.close.h2b}</span></h2>
           <p className={s.closesub} style={{ maxWidth: 560 }}>{t.close.sub}</p>
           <div className={s.closebtns}>

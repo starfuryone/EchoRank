@@ -8,6 +8,8 @@
 // verified manually (SSR smoke + curl).
 import { test } from "node:test";
 import assert from "node:assert/strict";
+import { existsSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 import {
   SEO_TOOL_GROUPS,
   SEO_TOOLS_HUB,
@@ -71,6 +73,50 @@ test("tool ids unique, hrefs match the route table, slugs consistent", () => {
 test('"New" badges exactly on AI Lens, Bot Analytics and GBP Monitor', () => {
   const badged = ALL_TOOLS.filter((i) => i.badge === "new").map((i) => i.id).sort();
   assert.deepEqual(badged, ["ai_lens", "bot_analytics", "gbp_monitor"]);
+});
+
+// The public homepage badges every tool LIVE or COMING SOON from the
+// `comingSoon` flag. Marketing therefore asserts something about the product to
+// logged-out visitors, and the two ways to get it wrong are both bad: promising a
+// placeholder, or telling the world a shipped, paid feature is not available yet.
+// (The second nearly happened — a brief described SERP Checker, Backlinks,
+// Lighthouse and Rank Tracker as scaffolds months after all four shipped.)
+//
+// So the flag is checked against the route files themselves rather than trusted.
+// A page is a placeholder iff it renders FeatureScaffold.
+test("comingSoon flags match the actual route files", () => {
+  const appDir = join(process.cwd(), "src", "app", "(dashboard)");
+  const wrong: string[] = [];
+
+  for (const tool of ALL_TOOLS) {
+    const page = join(appDir, tool.href, "page.tsx");
+    assert.ok(existsSync(page), `${tool.id}: no route at ${tool.href}`);
+    const isScaffold = readFileSync(page, "utf8").includes(
+      "@/components/scaffold/feature-scaffold",
+    );
+    const flagged = tool.comingSoon === true;
+    if (isScaffold !== flagged) {
+      wrong.push(
+        `${tool.id}: route is ${isScaffold ? "a scaffold" : "real"} but comingSoon is ${flagged}`,
+      );
+    }
+  }
+
+  assert.deepEqual(wrong, [], wrong.join("\n"));
+});
+
+test("the live/coming-soon split is what the marketing copy claims", () => {
+  // The homepage prints a tool count. If this number moves, the copy in
+  // src/lib/i18n/content.ts (toolsSection.count) has to move with it.
+  const live = ALL_TOOLS.filter((t) => !t.comingSoon);
+  const soon = ALL_TOOLS.filter((t) => t.comingSoon);
+  assert.equal(ALL_TOOLS.length, 22, "tool count changed");
+  assert.equal(live.length, 17, "live tool count changed — update the homepage copy");
+  assert.equal(soon.length, 5);
+  assert.deepEqual(
+    soon.map((t) => t.id).sort(),
+    ["ai_content_helper", "gbp_monitor", "portfolios", "report_builder", "social_media_manager"],
+  );
 });
 
 test("every locale catalog covers every group, tool, and scaffold", () => {

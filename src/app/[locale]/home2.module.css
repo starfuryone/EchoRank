@@ -480,3 +480,44 @@
   .signals span { transition: none; }
   .signals span:hover { transform: none; }
 }
+
+/* ---------- Classic SEO Tools (/04) ---------- */
+/* Renders from SEO_TOOL_GROUPS, so the grid must survive an arbitrary number of
+   tools per group — everything below is auto-fit rather than a fixed column
+   count. Dark/gold tokens only; no new colours introduced. */
+.toolsCount{font-family:var(--mono);font-size:12px;letter-spacing:.08em;color:var(--gold);margin-top:14px}
+
+.toolsFeaturedLabel{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);margin:40px 0 14px}
+.toolsFeatured{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+.toolsFeatureCard{background:var(--surface2);border:1px solid var(--line);border-radius:var(--radius);padding:22px}
+.toolsFeatureTag{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold)}
+.toolsFeatureH{font-size:17px;font-weight:600;line-height:1.25;margin:10px 0 8px;color:var(--text)}
+.toolsFeatureP{font-size:14px;line-height:1.5;color:var(--muted);margin:0}
+
+.toolsGroup{margin-top:44px}
+.toolsGroupName{font-size:13px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text);margin:0 0 14px;padding-bottom:10px;border-bottom:1px solid var(--lineSoft)}
+.toolsGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px}
+.toolCard{background:var(--surface);border:1px solid var(--lineSoft);border-radius:12px;padding:16px 18px}
+.toolCardHead{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.toolIcon{width:16px;height:16px;color:var(--gold);flex:none}
+.toolName{font-size:14px;font-weight:580;color:var(--text)}
+.toolDesc{font-size:13px;line-height:1.45;color:var(--muted);margin:8px 0 0}
+
+/* Status badges. COMING SOON is deliberately quiet — it is an honesty marker,
+   not a feature. LIVE carries the accent because 17 of 22 tools are shipped and
+   that is the point the section is making. */
+.toolBadgeLive{margin-left:auto;font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;padding:3px 7px;border-radius:999px;color:var(--green);background:rgba(74,222,128,.10);border:1px solid rgba(74,222,128,.28)}
+.toolBadgeSoon{margin-left:auto;font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;padding:3px 7px;border-radius:999px;color:var(--faint);background:transparent;border:1px solid var(--line)}
+
+.toolsIncluded{color:var(--muted);max-width:680px;font-size:14px;margin:36px 0 20px}
+
+/* ---------- Pricing: monthly/annual toggle + tools line ---------- */
+.priceToggle{display:inline-flex;gap:4px;margin:16px 0 26px;padding:4px;background:var(--surface2);border:1px solid var(--line);border-radius:999px}
+.priceToggleBtn{font-family:var(--mono);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;padding:8px 16px;border-radius:999px;border:0;background:transparent;color:var(--muted);cursor:pointer;transition:background .15s,color .15s}
+.priceToggleOn{background:var(--goldGrad);color:#1a1408;font-weight:600}
+.priceSave{font-family:var(--mono);font-size:10px;letter-spacing:.06em;color:var(--gold);margin-left:6px}
+.pbilled{font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;color:var(--faint);margin-top:-2px}
+.ptools{font-family:var(--mono);font-size:10.5px;letter-spacing:.05em;color:var(--gold);margin-top:12px;display:block;text-decoration:none;border-top:1px solid var(--lineSoft);padding-top:12px}
+.ptools:hover{text-decoration:underline}
+.pcta{display:inline-block;margin-top:14px;font-size:13px;font-weight:560;color:var(--gold);text-decoration:none}
+.pcta:hover{text-decoration:underline}

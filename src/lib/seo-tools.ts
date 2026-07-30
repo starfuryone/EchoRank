@@ -105,6 +105,19 @@ export interface SeoTool {
   badge?: "new";
   /** True when the card links to an already-shipped surface (vs a scaffold). */
   existing?: boolean;
+  /**
+   * True while the tool's page is still a FeatureScaffold placeholder.
+   *
+   * This exists for the PUBLIC homepage, which showcases the hub to logged-out
+   * visitors and must not advertise a placeholder as shipped — or, worse, badge
+   * a shipped tool as unreleased. It is asserted against the actual route files
+   * by `seo-tools.test.ts`, so flipping a scaffold to a real page without
+   * clearing this flag fails the suite rather than quietly mislabelling a live
+   * feature on the marketing site.
+   *
+   * Absent = live. Only the five remaining scaffolds carry it.
+   */
+  comingSoon?: true;
 }
 
 export interface SeoToolGroup {
@@ -164,21 +177,21 @@ export const SEO_TOOL_GROUPS: SeoToolGroup[] = [
     id: "content_marketing",
     tools: [
       t("content_explorer", "content-explorer", Compass),
-      t("ai_content_helper", "ai-content-helper", PenTool),
-      t("social_media_manager", "social-media-manager", Share2),
+      t("ai_content_helper", "ai-content-helper", PenTool, { comingSoon: true }),
+      t("social_media_manager", "social-media-manager", Share2, { comingSoon: true }),
     ],
   },
   {
     id: "reporting",
     tools: [
       t("dashboard", "dashboard", LayoutDashboard, { href: "/dashboard", existing: true }),
-      t("portfolios", "portfolios", FolderKanban),
-      t("report_builder", "report-builder", FileBarChart2),
+      t("portfolios", "portfolios", FolderKanban, { comingSoon: true }),
+      t("report_builder", "report-builder", FileBarChart2, { comingSoon: true }),
     ],
   },
   {
     id: "local_seo",
-    tools: [t("gbp_monitor", "gbp-monitor", Store, { badge: "new" })],
+    tools: [t("gbp_monitor", "gbp-monitor", Store, { badge: "new", comingSoon: true })],
   },
   {
     id: "developers",

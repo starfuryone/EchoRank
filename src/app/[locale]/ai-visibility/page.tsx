@@ -522,7 +522,13 @@ export default async function AIVisibilityPage({
             <span className="av-gold">{c.hero.h1b}</span>
           </h1>
           <p className="av-sub">{c.hero.sub}</p>
-          <AuditWidget c={c.widget} />
+          {/* The homepage hero's primary CTA points at /{locale}/ai-visibility#audit,
+              so this id is a cross-page contract — the anonymous audit widget is
+              what "Run My Free AI Visibility Audit" is promising. Renaming it
+              silently turns that button into a scroll to the top of the page. */}
+          <div id="audit" style={{ scrollMarginTop: "96px" }}>
+            <AuditWidget c={c.widget} />
+          </div>
           <p className="av-engines">
             {c.hero.engines} ChatGPT · Claude · Gemini · Perplexity
           </p>

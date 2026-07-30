@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
-import HomeClient from "./HomeClient";
+import HomeClient, { type HomePricingTier } from "./HomeClient";
+import { ClassicSeoTools } from "./ClassicSeoTools";
 import { FAQ } from "./faq-data";
+import { PLAN_CONFIGS, PLAN_ORDER } from "@/lib/plan-config";
+import { HOME_PRICING_CHROME } from "@/lib/i18n/content";
+import { SEO_TOOL_GROUPS } from "@/lib/seo-tools";
 import {
   BRAND_TITLE,
   JsonLd,
@@ -23,6 +27,41 @@ export async function generateMetadata(
   return buildMetadata({ locale: l, path: "", title: BRAND_TITLE[l] });
 }
 
+/**
+ * Pricing rows for the /13 grid, read from PLAN_CONFIGS rather than retyped.
+ *
+ * The marketing page is allowed to hold price COPY, but the numbers and the
+ * feature bullets are the plan config's job — they drive Stripe, entitlements
+ * and the in-app upgrade paths, and a homepage that disagrees with them is a
+ * billing dispute waiting to happen. Enterprise carries isCustomPricing, so its
+ * "Contact us" label comes from the locale chrome instead of a price.
+ */
+function pricingTiers(locale: string): HomePricingTier[] {
+  const chrome = HOME_PRICING_CHROME[normalizeLocale(locale)];
+  return PLAN_ORDER.map((plan) => {
+    const c = PLAN_CONFIGS[plan];
+    const monthly = c.isCustomPricing ? null : c.monthlyPrice;
+    const annual = c.isCustomPricing ? null : c.annualPrice;
+    return {
+      id: plan,
+      name: c.name.toUpperCase(),
+      monthly,
+      annual,
+      customLabel: c.isCustomPricing ? chrome.contactUs : null,
+      // Annual is billed as 12 x annualPrice; the saving is what the tenant
+      // avoids versus paying monthly for a year.
+      savePct:
+        monthly && annual && monthly > 0
+          ? Math.round(((monthly - annual) / monthly) * 100)
+          : null,
+      features: c.features,
+      ctaLink: c.ctaLink ?? null,
+      cta: c.cta ?? null,
+      highlighted: c.highlighted === true,
+    };
+  });
+}
+
 export default async function Page(
   { params }: { params: Promise<{ locale: string }> },
 ) {
@@ -30,6 +69,10 @@ export default async function Page(
   const l = normalizeLocale(locale);
   // FAQ copy is en/fr only, matching the rest of HomeClient's catalogue.
   const faq = FAQ[baseOf(l)];
+
+  const liveToolCount = SEO_TOOL_GROUPS.flatMap((g) => g.tools).filter(
+    (t) => !t.comingSoon,
+  ).length;
 
   return (
     <>
@@ -43,7 +86,17 @@ export default async function Page(
           faqPage(faq.items, `${SITE_URL}/${l}`),
         ]}
       />
-      <HomeClient locale={locale} />
+      <HomeClient
+        locale={locale}
+        pricing={pricingTiers(locale)}
+        priceChrome={HOME_PRICING_CHROME[l]}
+        liveToolCount={liveToolCount}
+        // Passed in as a slot rather than imported by HomeClient: the grid is a
+        // server component so the whole seo-tools config (and its lucide icon
+        // set) stays out of the client bundle, and the marketing copy stays
+        // derived from the same source the product hub uses.
+        toolsSection={<ClassicSeoTools locale={l} sectionNumber="04" />}
+      />
     </>
   );
 }

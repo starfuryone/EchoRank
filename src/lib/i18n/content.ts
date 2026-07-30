@@ -1231,3 +1231,281 @@ export const DEMO_VIDEO: Record<Locale, DemoVideoCopy> = {
     backHome: "← Zurück zur Startseite",
   },
 };
+
+// ---------------------------------------------------------------------------
+// Homepage — "Classic SEO Tools" section + pricing chrome (added Jul 2026)
+// ---------------------------------------------------------------------------
+// SECTION CHROME ONLY. The tool names and one-line benefits are NOT here: they
+// come from SEO_TOOLS_COPY in ./dashboard.ts, keyed by the same SeoToolId the
+// hub renders, so the marketing grid and the product hub cannot drift. The
+// dashboard catalog has three locales (en / fr / de-CH) which cover all five
+// marketing locales through the documented fold — en-CA reads en, fr-CA reads
+// fr, de-CH reads itself.
+//
+// TRANSLATION STATUS: en and en-CA are authored. fr, fr-CA and de-CH below are
+// MACHINE-TRANSLATED and awaiting human review — see docs/agents/STATUS.md.
+// de-CH follows the house rule of "ss", never "ß".
+
+export interface HomeToolsCopy {
+  label: string;
+  h2: string;
+  sub: string;
+  /** "17 tools live today, 5 more on the way" — counts are injected. */
+  count: (live: number, soon: number) => string;
+  included: string;
+  cta: string;
+  badgeLive: string;
+  badgeSoon: string;
+  featuredLabel: string;
+  featured: Array<{ k: string; h: string; p: string }>;
+}
+
+export const HOME_TOOLS: Record<Locale, HomeToolsCopy> = {
+  en: {
+    label: "CLASSIC SEO TOOLS",
+    h2: "The SEO stack, in the same workspace.",
+    sub: "AI visibility is the new layer, not a replacement — the rankings, links and crawl health underneath it still decide what AI has to read. Every tool below lives in one workspace, on your plan.",
+    count: (live, soon) =>
+      `${live} tools live today · ${soon} more in build`,
+    included:
+      "Included with a paid plan. Monthly allowances scale with your tier, and a few of the heavier tools start at Starter or Growth.",
+    cta: "Start free trial",
+    badgeLive: "LIVE",
+    badgeSoon: "COMING SOON",
+    featuredLabel: "WORTH A CLOSER LOOK",
+    featured: [
+      {
+        k: "AI Lens",
+        h: "See your site the way AI sees it",
+        p: "Fetches one page twice — once as an AI crawler, once as a real browser — and reports the gap. Anything only a browser can see is content AI engines never read.",
+      },
+      {
+        k: "Search Performance",
+        h: "Your real Search Console data",
+        p: "A live Google Search Console connection: the queries, clicks and impressions Google actually recorded, next to the AI-visibility numbers for the same site.",
+      },
+      {
+        k: "API + MCP server",
+        h: "Plug your visibility data into AI agents",
+        p: "Tenant-scoped API keys, plus an MCP server that lets Claude and other assistants query your audits and rankings directly.",
+      },
+      {
+        k: "PDF reports",
+        h: "Branded downloads, agency-ready",
+        p: "Audit, monitoring and intelligence reports as PDFs you can hand to a client without re-typing anything.",
+      },
+    ],
+  },
+  "en-CA": {
+    label: "CLASSIC SEO TOOLS",
+    h2: "The SEO stack, in the same workspace.",
+    sub: "AI visibility is the new layer, not a replacement — the rankings, links and crawl health underneath it still decide what AI has to read. Every tool below lives in one workspace, on your plan.",
+    count: (live, soon) => `${live} tools live today · ${soon} more in build`,
+    included:
+      "Included with a paid plan. Monthly allowances scale with your tier, and a few of the heavier tools start at Starter or Growth.",
+    cta: "Start free trial",
+    badgeLive: "LIVE",
+    badgeSoon: "COMING SOON",
+    featuredLabel: "WORTH A CLOSER LOOK",
+    featured: [
+      {
+        k: "AI Lens",
+        h: "See your site the way AI sees it",
+        p: "Fetches one page twice — once as an AI crawler, once as a real browser — and reports the gap. Anything only a browser can see is content AI engines never read.",
+      },
+      {
+        k: "Search Performance",
+        h: "Your real Search Console data",
+        p: "A live Google Search Console connection: the queries, clicks and impressions Google actually recorded, next to the AI-visibility numbers for the same site.",
+      },
+      {
+        k: "API + MCP server",
+        h: "Plug your visibility data into AI agents",
+        p: "Tenant-scoped API keys, plus an MCP server that lets Claude and other assistants query your audits and rankings directly.",
+      },
+      {
+        k: "PDF reports",
+        h: "Branded downloads, agency-ready",
+        p: "Audit, monitoring and intelligence reports as PDFs you can hand to a client without re-typing anything.",
+      },
+    ],
+  },
+  fr: {
+    label: "OUTILS SEO CLASSIQUES",
+    h2: "La panoplie SEO, dans le même espace de travail.",
+    sub: "La visibilité IA est une nouvelle couche, pas un remplacement — les classements, les liens et la santé d'exploration en dessous décident encore de ce que l'IA aura à lire. Tous les outils ci-dessous vivent dans un seul espace de travail, inclus dans votre forfait.",
+    count: (live, soon) => `${live} outils disponibles · ${soon} en construction`,
+    included:
+      "Inclus avec un forfait payant. Les quotas mensuels augmentent avec votre palier, et quelques outils plus lourds démarrent à Starter ou Growth.",
+    cta: "Démarrer l'essai gratuit",
+    badgeLive: "DISPONIBLE",
+    badgeSoon: "BIENTÔT",
+    featuredLabel: "À REGARDER DE PLUS PRÈS",
+    featured: [
+      {
+        k: "AI Lens",
+        h: "Voyez votre site comme l'IA le voit",
+        p: "Récupère une page deux fois — une fois comme robot d'IA, une fois comme navigateur réel — et signale l'écart. Tout ce que seul un navigateur voit est du contenu que les moteurs d'IA ne lisent jamais.",
+      },
+      {
+        k: "Search Performance",
+        h: "Vos vraies données Search Console",
+        p: "Une connexion Google Search Console en direct : les requêtes, clics et impressions réellement enregistrés par Google, à côté des chiffres de visibilité IA du même site.",
+      },
+      {
+        k: "API + serveur MCP",
+        h: "Branchez vos données de visibilité sur des agents IA",
+        p: "Des clés d'API limitées à votre espace de travail, plus un serveur MCP qui permet à Claude et à d'autres assistants d'interroger directement vos audits et vos classements.",
+      },
+      {
+        k: "Rapports PDF",
+        h: "Téléchargements personnalisés, prêts pour les agences",
+        p: "Rapports d'audit, de surveillance et d'intelligence en PDF, à remettre à un client sans rien ressaisir.",
+      },
+    ],
+  },
+  "fr-CA": {
+    label: "OUTILS SEO CLASSIQUES",
+    h2: "La panoplie SEO, dans le même espace de travail.",
+    sub: "La visibilité IA est une nouvelle couche, pas un remplacement — les classements, les liens et la santé d'exploration en dessous décident encore de ce que l'IA aura à lire. Tous les outils ci-dessous vivent dans un seul espace de travail, inclus dans votre forfait.",
+    count: (live, soon) => `${live} outils disponibles · ${soon} en construction`,
+    included:
+      "Inclus avec un forfait payant. Les quotas mensuels augmentent avec votre palier, et quelques outils plus lourds démarrent à Starter ou Growth.",
+    cta: "Démarrer l'essai gratuit",
+    badgeLive: "DISPONIBLE",
+    badgeSoon: "BIENTÔT",
+    featuredLabel: "À REGARDER DE PLUS PRÈS",
+    featured: [
+      {
+        k: "AI Lens",
+        h: "Voyez votre site comme l'IA le voit",
+        p: "Récupère une page deux fois — une fois comme robot d'IA, une fois comme navigateur réel — et signale l'écart. Tout ce que seul un navigateur voit est du contenu que les moteurs d'IA ne lisent jamais.",
+      },
+      {
+        k: "Search Performance",
+        h: "Vos vraies données Search Console",
+        p: "Une connexion Google Search Console en direct : les requêtes, clics et impressions réellement enregistrés par Google, à côté des chiffres de visibilité IA du même site.",
+      },
+      {
+        k: "API + serveur MCP",
+        h: "Branchez vos données de visibilité sur des agents IA",
+        p: "Des clés d'API limitées à votre espace de travail, plus un serveur MCP qui permet à Claude et à d'autres assistants d'interroger directement vos audits et vos classements.",
+      },
+      {
+        k: "Rapports PDF",
+        h: "Téléchargements personnalisés, prêts pour les agences",
+        p: "Rapports d'audit, de surveillance et d'intelligence en PDF, à remettre à un client sans rien ressaisir.",
+      },
+    ],
+  },
+  "de-CH": {
+    label: "KLASSISCHE SEO-WERKZEUGE",
+    h2: "Der SEO-Werkzeugkasten, im selben Arbeitsbereich.",
+    sub: "KI-Sichtbarkeit ist eine neue Schicht, kein Ersatz — Rankings, Links und Crawl-Gesundheit darunter entscheiden weiterhin, was die KI überhaupt zu lesen bekommt. Alle Werkzeuge unten liegen in einem Arbeitsbereich, in Ihrem Abo enthalten.",
+    count: (live, soon) => `${live} Werkzeuge verfügbar · ${soon} in Arbeit`,
+    included:
+      "In einem kostenpflichtigen Abo enthalten. Die monatlichen Kontingente wachsen mit Ihrer Stufe, und einige der schwereren Werkzeuge beginnen bei Starter oder Growth.",
+    cta: "Kostenlos testen",
+    badgeLive: "VERFÜGBAR",
+    badgeSoon: "DEMNÄCHST",
+    featuredLabel: "EINEN GENAUEREN BLICK WERT",
+    featured: [
+      {
+        k: "AI Lens",
+        h: "Sehen Sie Ihre Website so, wie die KI sie sieht",
+        p: "Ruft eine Seite zweimal ab — einmal als KI-Crawler, einmal als echter Browser — und meldet die Differenz. Alles, was nur ein Browser sieht, ist Inhalt, den KI-Maschinen nie lesen.",
+      },
+      {
+        k: "Search Performance",
+        h: "Ihre echten Search-Console-Daten",
+        p: "Eine Live-Verbindung zur Google Search Console: die Suchanfragen, Klicks und Impressionen, die Google tatsächlich erfasst hat, neben den KI-Sichtbarkeitszahlen derselben Website.",
+      },
+      {
+        k: "API + MCP-Server",
+        h: "Verbinden Sie Ihre Sichtbarkeitsdaten mit KI-Agenten",
+        p: "Auf Ihren Arbeitsbereich beschränkte API-Schlüssel, dazu ein MCP-Server, über den Claude und andere Assistenten Ihre Audits und Rankings direkt abfragen.",
+      },
+      {
+        k: "PDF-Berichte",
+        h: "Berichte im eigenen Branding, agenturtauglich",
+        p: "Audit-, Monitoring- und Intelligence-Berichte als PDF, die Sie einer Kundschaft ohne Abtippen weitergeben können.",
+      },
+    ],
+  },
+};
+
+/**
+ * EVERY FIELD MUST BE A PLAIN STRING.
+ *
+ * This object is handed from the server page to HomeClient, a client component,
+ * and the server->client boundary cannot carry functions — passing one throws
+ * "Functions cannot be passed directly to Client Components" at render time, not
+ * at build time, so it takes the page down rather than failing the build. The
+ * two interpolated strings therefore use {pct} / {n} placeholders substituted at
+ * render time, exactly as AuditWidgetContent does for {brand}.
+ */
+export interface HomePricingChrome {
+  monthly: string;
+  annual: string;
+  perMonth: string;
+  billedAnnually: string;
+  /** Contains "{pct}". */
+  save: string;
+  /** Contains "{n}". */
+  toolsLine: string;
+  toolsAnchor: string;
+  contactUs: string;
+}
+
+export const HOME_PRICING_CHROME: Record<Locale, HomePricingChrome> = {
+  en: {
+    monthly: "Monthly",
+    annual: "Annual",
+    perMonth: "/mo",
+    billedAnnually: "billed annually",
+    save: "save {pct}%",
+    toolsLine: "{n}+ SEO & AI tools included",
+    toolsAnchor: "See the tools ↓",
+    contactUs: "Contact us",
+  },
+  "en-CA": {
+    monthly: "Monthly",
+    annual: "Annual",
+    perMonth: "/mo",
+    billedAnnually: "billed annually",
+    save: "save {pct}%",
+    toolsLine: "{n}+ SEO & AI tools included",
+    toolsAnchor: "See the tools ↓",
+    contactUs: "Contact us",
+  },
+  fr: {
+    monthly: "Mensuel",
+    annual: "Annuel",
+    perMonth: "/mois",
+    billedAnnually: "facturé annuellement",
+    save: "économisez {pct} %",
+    toolsLine: "{n}+ outils SEO et IA inclus",
+    toolsAnchor: "Voir les outils ↓",
+    contactUs: "Nous contacter",
+  },
+  "fr-CA": {
+    monthly: "Mensuel",
+    annual: "Annuel",
+    perMonth: "/mois",
+    billedAnnually: "facturé annuellement",
+    save: "économisez {pct} %",
+    toolsLine: "{n}+ outils SEO et IA inclus",
+    toolsAnchor: "Voir les outils ↓",
+    contactUs: "Nous contacter",
+  },
+  "de-CH": {
+    monthly: "Monatlich",
+    annual: "Jährlich",
+    perMonth: "/Mt.",
+    billedAnnually: "jährlich verrechnet",
+    save: "{pct}% sparen",
+    toolsLine: "{n}+ SEO- und KI-Werkzeuge inklusive",
+    toolsAnchor: "Werkzeuge ansehen ↓",
+    contactUs: "Kontakt aufnehmen",
+  },
+};
