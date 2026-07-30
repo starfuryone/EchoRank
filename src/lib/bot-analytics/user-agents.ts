@@ -92,6 +92,12 @@ export const BOT_PROBE_SPECS: Record<string, BotProbeSpec> = {
     "Amazonbot",
     "Mozilla/5.0 (Linux; like Mac OS X) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Amazonbot/0.1 Mobile Safari/537.36",
   ),
+  // Meta's AI crawler, added after this tool first shipped. It is a real
+  // fetching crawler (unlike the two -Extended tokens below), so it is probed.
+  "meta-externalagent": p(
+    "meta-externalagent",
+    "meta-externalagent/1.1 (+https://developers.facebook.com/docs/sharing/webmasters/crawler)",
+  ),
   "Google-Extended": pref("Google-Extended"),
   "Applebot-Extended": pref("Applebot-Extended"),
 };

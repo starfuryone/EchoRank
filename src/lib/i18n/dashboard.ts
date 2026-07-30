@@ -5615,20 +5615,72 @@ export const BRAND_RADAR_COPY: Record<DashLocale, BrandRadarCopy> = {
 
 // ─── /visibility/tools/bot-analytics ────────────────────────────────────────
 const botAnalyticsEn = {
-  postureNote:
-    "This page shows access posture — what your site permits each crawler to do — based on your live robots.txt. It is not traffic data; Echorank360 does not collect crawler hit logs for your site yet.",
-  checkedAt: (date: string) => `Checked ${date}`,
-  staleNote: (date: string) =>
-    `Live check unavailable — showing the robots.txt snapshot from your last audit (${date}).`,
+  // Two sections now, so the old "posture, not traffic" banner would be wrong:
+  // section B IS traffic. The honest line is that each half answers a different
+  // question and only the logs are ground truth.
+  introNote:
+    "Two questions, two answers. The access check asks whether AI crawlers are permitted and able to reach your site. Log analysis asks whether they actually came. Only your server logs can answer the second one — AI and search crawlers do not run JavaScript, so no page tag can ever see them.",
   siteLabel: "Site",
+  auditLinkLabel: "Open the AI Visibility audit",
+
+  // ─── Domain ───────────────────────────────────────────────────────────────
+  domainTitle: "Which site should we check?",
+  domainIntro:
+    "Enter the domain you want checked. Echorank360 uses the site your workspace already audits when there is one, and you can override it here at any time.",
+  domainPlaceholder: "yourdomain.com",
+  domainSave: "Save domain",
+  domainSaving: "Saving…",
+  domainChange: "Change",
+  domainCancel: "Cancel",
+  domainInvalid: "Enter a domain like yourdomain.com — no path, no port, no IP address.",
+  domainSaveFailed: "Could not save that domain. Try again.",
+  domainSourceMonitor: "the site your workspace audits",
+  domainSourceSettings: "your workspace settings",
+  domainSourceManual: "set on this page",
+  domainSourceLabel: (source: string) => `Using ${source}`,
+
+  // ─── Section A: access check ───────────────────────────────────────────────
+  accessTitle: "Can AI crawlers reach you?",
+  accessIntro:
+    "We read your robots.txt, then request your homepage once as each crawler using its real User-Agent. The second step catches the case robots.txt cannot show: a site that says every crawler is welcome while its firewall quietly returns 403 to GPTBot.",
+  runCheck: "Run check",
+  runningCheck: "Checking…",
+  runCheckAgain: "Run check again",
+  checkedAt: (date: string) => `Checked ${date}`,
+  neverChecked: "Not checked yet",
+  staleNote: (date: string) =>
+    `This check ran ${date}. Run it again to see your current posture.`,
+  checksUsed: (used: number, limit: number) =>
+    `${used} of ${limit} checks used this month`,
+  capReached:
+    "You have used this month's access checks. The allowance resets on the 1st.",
+  checkFailed: "Could not complete the access check. Try again in a minute.",
   robotsPresent: "robots.txt found",
   robotsMissing: "No robots.txt — all crawlers allowed by default",
   sitemapFound: "Sitemap found",
   sitemapMissing: "No sitemap found",
   llmsFound: "llms.txt present",
   llmsMissing: "No llms.txt",
-  statusOpen: "ALLOWED",
-  statusBlocked: "BLOCKED",
+  verdictLabels: {
+    allowed: "REACHABLE",
+    blocked_robots: "BLOCKED BY ROBOTS.TXT",
+    blocked_http: "BLOCKED BY SERVER",
+    challenged: "CHALLENGED",
+    unknown: "UNKNOWN",
+  } as Record<string, string>,
+  verdictHelp: {
+    allowed: "robots.txt permits it and your server answered its request.",
+    blocked_robots:
+      "Your robots.txt tells this crawler to stay out, so a well-behaved one never asks.",
+    blocked_http:
+      "robots.txt permits it, but your server refused the request — usually a firewall or bot-management rule.",
+    challenged:
+      "Your server answered with a rate limit or a human-verification page instead of your content.",
+    unknown: "The request did not complete, so we cannot say either way.",
+  } as Record<string, string>,
+  preferenceOnly: "robots.txt preference token — no crawler sends it",
+  probeStatus: (status: number) => `Homepage returned ${status}`,
+  probeUnreachable: "Homepage request did not complete",
   categoryLabels: {
     search: "Search index",
     ai_training: "AI training",
@@ -5647,32 +5699,140 @@ const botAnalyticsEn = {
     Bytespider: "ByteDance's crawler for AI training data.",
     Amazonbot: "Feeds Alexa and Amazon AI answers.",
     "Applebot-Extended": "Opt-out token for Apple Intelligence model training.",
+    "meta-externalagent": "Collects pages for Meta's AI model training.",
   } as Record<string, string>,
-  emptyTitle: "No website configured",
-  emptyBody:
-    "Bot Analytics reads the site your workspace already tracks. Run a first AI-visibility audit so Echorank360 knows which site to check.",
-  loadFailed: "Could not check crawler access. Try again in a minute.",
-  loading: "Checking crawler access…",
+  problemSummary: (n: number) =>
+    n === 1
+      ? "1 crawler cannot reach your content."
+      : `${n} crawlers cannot reach your content.`,
+  allClear: "Every crawler we check can reach your content.",
+  fixLink: "See what to change",
+
+  // ─── Section B: log analysis ───────────────────────────────────────────────
+  logsTitle: "Who's actually crawling you?",
+  logsIntro:
+    "Upload a server access log and we count the crawler visits in it: which bots came, when, and which pages they read. This is the only source that shows what actually happened rather than what is permitted.",
+  piiNote:
+    "Access logs contain visitor IP addresses. We parse your file, store only the counts below, and delete the file itself as soon as parsing finishes — no raw log lines and no IP addresses are kept.",
+  dropzoneLabel: "Choose an access log",
+  dropzoneHint: ".log, .txt or .gz — up to 50 MB",
+  dropzoneDrop: "Drop the file to upload",
+  uploading: "Uploading…",
+  uploadFailed: "Upload failed. Check the file and try again.",
+  uploadTooLarge: "That file is over the 50 MB limit.",
+  uploadBadType: "Upload a .log, .txt or .gz access log.",
+  uploadsUsed: (used: number, limit: number) =>
+    `${used} of ${limit} uploads used this month`,
+  uploadCapReached:
+    "You have used this month's uploads. The allowance resets on the 1st.",
+  historyTitle: "Past analyses",
+  noAnalyses: "No logs analyzed yet.",
+  statusLabels: {
+    PENDING: "Queued",
+    PROCESSING: "Parsing…",
+    COMPLETE: "Done",
+    FAILED: "Failed",
+  } as Record<string, string>,
+  processingNote: "Parsing your log. This page updates when it finishes.",
+  periodLabel: (start: string, end: string) => `${start} – ${end}`,
+  linesLabel: (parsed: number, skipped: number) =>
+    `${parsed} lines parsed, ${skipped} skipped`,
+  hitsChartTitle: "Crawler hits per day",
+  topPathsTitle: "Most crawled pages",
+  statusSplitTitle: "Response codes",
+  botHeader: "Crawler",
+  pathHeader: "Page",
+  hitsHeader: "Hits",
+  statusHeader: "Status",
+  firstSeenLabel: "First seen",
+  lastSeenLabel: "Last seen",
+  verifiedLabel: "IP verified",
+  unverifiedLabel: "UA claim only",
+  unverifiedNote:
+    "Googlebot and Bingbot hits are checked against each operator's published IP ranges. Other crawlers are counted on their User-Agent alone, which anything can send — treat those totals as a ceiling.",
+  aiVisitSummary: (bot: string, n: number) =>
+    `${bot} visited ${n} times — your content is being read by that crawler.`,
+  noAiVisits:
+    "No AI crawler visits in this log. Either they have not come yet, or something is turning them away — the access check above will say which.",
+  totalBotHits: (n: number) => `${n} crawler hits`,
+
+  // ─── STARTER upsell (section B only) ───────────────────────────────────────
+  upsellTitle: "Log analysis is on Growth and Agency",
+  upsellBody:
+    "The access check above is included on your plan. Log analysis adds the other half: which crawlers actually visited, how often, and which pages they read.",
+  upsellCta: "Compare plans",
+
+  loading: "Loading…",
+  loadFailed: "Could not load Bot Analytics. Try again in a minute.",
 };
 export type BotAnalyticsCopy = typeof botAnalyticsEn;
 
 export const BOT_ANALYTICS_COPY: Record<DashLocale, BotAnalyticsCopy> = {
   en: botAnalyticsEn,
   fr: {
-    postureNote:
-      "Cette page montre la posture d'accès — ce que votre site permet à chaque robot — d'après votre robots.txt en direct. Ce ne sont pas des données de trafic; Echorank360 ne collecte pas encore les journaux de visites des robots pour votre site.",
-    checkedAt: (date: string) => `Vérifié le ${date}`,
-    staleNote: (date: string) =>
-      `Vérification en direct indisponible — affichage de l'instantané robots.txt de votre dernier audit (${date}).`,
+    introNote:
+      "Deux questions, deux réponses. La vérification d'accès demande si les robots d'IA sont autorisés à atteindre votre site et le peuvent réellement. L'analyse des journaux demande s'ils sont venus. Seuls les journaux de votre serveur répondent à la seconde : les robots d'IA et de recherche n'exécutent pas de JavaScript, donc aucune balise de page ne pourra jamais les voir.",
     siteLabel: "Site",
+    auditLinkLabel: "Ouvrir l'audit de visibilité IA",
+
+    domainTitle: "Quel site devons-nous vérifier ?",
+    domainIntro:
+      "Indiquez le domaine à vérifier. Echorank360 utilise le site que votre espace de travail audite déjà lorsqu'il en existe un, et vous pouvez le remplacer ici à tout moment.",
+    domainPlaceholder: "votredomaine.com",
+    domainSave: "Enregistrer le domaine",
+    domainSaving: "Enregistrement…",
+    domainChange: "Modifier",
+    domainCancel: "Annuler",
+    domainInvalid:
+      "Saisissez un domaine tel que votredomaine.com — sans chemin, sans port, sans adresse IP.",
+    domainSaveFailed: "Impossible d'enregistrer ce domaine. Réessayez.",
+    domainSourceMonitor: "le site que votre espace de travail audite",
+    domainSourceSettings: "les paramètres de votre espace de travail",
+    domainSourceManual: "défini sur cette page",
+    domainSourceLabel: (source: string) => `Utilise ${source}`,
+
+    accessTitle: "Les robots d'IA peuvent-ils vous atteindre ?",
+    accessIntro:
+      "Nous lisons votre robots.txt, puis demandons votre page d'accueil une fois pour chaque robot avec son véritable User-Agent. Cette seconde étape révèle ce que robots.txt ne peut pas montrer : un site qui déclare accueillir tous les robots alors que son pare-feu renvoie discrètement un 403 à GPTBot.",
+    runCheck: "Lancer la vérification",
+    runningCheck: "Vérification…",
+    runCheckAgain: "Relancer la vérification",
+    checkedAt: (date: string) => `Vérifié le ${date}`,
+    neverChecked: "Pas encore vérifié",
+    staleNote: (date: string) =>
+      `Cette vérification date du ${date}. Relancez-la pour connaître votre posture actuelle.`,
+    checksUsed: (used: number, limit: number) =>
+      `${used} vérifications sur ${limit} utilisées ce mois-ci`,
+    capReached:
+      "Vous avez utilisé les vérifications de ce mois. L'allocation se renouvelle le 1er.",
+    checkFailed:
+      "Impossible de terminer la vérification d'accès. Réessayez dans une minute.",
     robotsPresent: "robots.txt trouvé",
     robotsMissing: "Aucun robots.txt — tous les robots sont permis par défaut",
     sitemapFound: "Plan de site trouvé",
     sitemapMissing: "Aucun plan de site trouvé",
     llmsFound: "llms.txt présent",
     llmsMissing: "Aucun llms.txt",
-    statusOpen: "PERMIS",
-    statusBlocked: "BLOQUÉ",
+    verdictLabels: {
+      allowed: "ACCESSIBLE",
+      blocked_robots: "BLOQUÉ PAR ROBOTS.TXT",
+      blocked_http: "BLOQUÉ PAR LE SERVEUR",
+      challenged: "MIS AU DÉFI",
+      unknown: "INDÉTERMINÉ",
+    } as Record<string, string>,
+    verdictHelp: {
+      allowed: "robots.txt l'autorise et votre serveur a répondu à sa requête.",
+      blocked_robots:
+        "Votre robots.txt demande à ce robot de rester à l'écart; un robot bien élevé ne demande donc rien.",
+      blocked_http:
+        "robots.txt l'autorise, mais votre serveur a refusé la requête — généralement un pare-feu ou une règle anti-robots.",
+      challenged:
+        "Votre serveur a répondu par une limite de débit ou une page de vérification humaine au lieu de votre contenu.",
+      unknown: "La requête n'a pas abouti; nous ne pouvons donc rien affirmer.",
+    } as Record<string, string>,
+    preferenceOnly: "jeton de préférence robots.txt — aucun robot ne l'envoie",
+    probeStatus: (status: number) => `La page d'accueil a renvoyé ${status}`,
+    probeUnreachable: "La requête vers la page d'accueil n'a pas abouti",
     categoryLabels: {
       search: "Index de recherche",
       ai_training: "Entraînement d'IA",
@@ -5691,28 +5851,135 @@ export const BOT_ANALYTICS_COPY: Record<DashLocale, BotAnalyticsCopy> = {
       Bytespider: "Robot de ByteDance pour les données d'entraînement d'IA.",
       Amazonbot: "Alimente Alexa et les réponses d'IA d'Amazon.",
       "Applebot-Extended": "Jeton de retrait pour l'entraînement des modèles Apple Intelligence.",
+      "meta-externalagent": "Collecte des pages pour l'entraînement des modèles d'IA de Meta.",
     } as Record<string, string>,
-    emptyTitle: "Aucun site web configuré",
-    emptyBody:
-      "L'analytique des robots lit le site que votre espace de travail suit déjà. Lancez un premier audit de visibilité IA pour qu'Echorank360 sache quel site vérifier.",
-    loadFailed: "Impossible de vérifier l'accès des robots. Réessayez dans une minute.",
-    loading: "Vérification de l'accès des robots…",
+    problemSummary: (n: number) =>
+      n === 1
+        ? "1 robot ne peut pas atteindre votre contenu."
+        : `${n} robots ne peuvent pas atteindre votre contenu.`,
+    allClear: "Tous les robots vérifiés peuvent atteindre votre contenu.",
+    fixLink: "Voir quoi corriger",
+
+    logsTitle: "Qui vous explore réellement ?",
+    logsIntro:
+      "Téléversez un journal d'accès de serveur et nous comptons les visites de robots qu'il contient : lesquels sont venus, quand, et quelles pages ils ont lues. C'est la seule source qui montre ce qui s'est réellement passé plutôt que ce qui est permis.",
+    piiNote:
+      "Les journaux d'accès contiennent les adresses IP des visiteurs. Nous analysons votre fichier, ne conservons que les totaux ci-dessous, et supprimons le fichier dès la fin de l'analyse — aucune ligne brute ni adresse IP n'est conservée.",
+    dropzoneLabel: "Choisir un journal d'accès",
+    dropzoneHint: ".log, .txt ou .gz — jusqu'à 50 Mo",
+    dropzoneDrop: "Déposez le fichier pour le téléverser",
+    uploading: "Téléversement…",
+    uploadFailed: "Le téléversement a échoué. Vérifiez le fichier et réessayez.",
+    uploadTooLarge: "Ce fichier dépasse la limite de 50 Mo.",
+    uploadBadType: "Téléversez un journal d'accès .log, .txt ou .gz.",
+    uploadsUsed: (used: number, limit: number) =>
+      `${used} téléversements sur ${limit} utilisés ce mois-ci`,
+    uploadCapReached:
+      "Vous avez utilisé les téléversements de ce mois. L'allocation se renouvelle le 1er.",
+    historyTitle: "Analyses précédentes",
+    noAnalyses: "Aucun journal analysé pour l'instant.",
+    statusLabels: {
+      PENDING: "En file",
+      PROCESSING: "Analyse…",
+      COMPLETE: "Terminé",
+      FAILED: "Échec",
+    } as Record<string, string>,
+    processingNote:
+      "Analyse de votre journal en cours. Cette page se met à jour dès la fin.",
+    periodLabel: (start: string, end: string) => `${start} – ${end}`,
+    linesLabel: (parsed: number, skipped: number) =>
+      `${parsed} lignes analysées, ${skipped} ignorées`,
+    hitsChartTitle: "Visites de robots par jour",
+    topPathsTitle: "Pages les plus explorées",
+    statusSplitTitle: "Codes de réponse",
+    botHeader: "Robot",
+    pathHeader: "Page",
+    hitsHeader: "Visites",
+    statusHeader: "Statut",
+    firstSeenLabel: "Première visite",
+    lastSeenLabel: "Dernière visite",
+    verifiedLabel: "IP vérifiée",
+    unverifiedLabel: "User-Agent seul",
+    unverifiedNote:
+      "Les visites de Googlebot et Bingbot sont confrontées aux plages d'adresses IP publiées par chaque exploitant. Les autres robots sont comptés sur leur seul User-Agent, que n'importe qui peut envoyer — considérez ces totaux comme un plafond.",
+    aiVisitSummary: (bot: string, n: number) =>
+      `${bot} est venu ${n} fois — ce robot lit bien votre contenu.`,
+    noAiVisits:
+      "Aucune visite de robot d'IA dans ce journal. Soit ils ne sont pas encore venus, soit quelque chose les repousse — la vérification d'accès ci-dessus vous dira laquelle.",
+    totalBotHits: (n: number) => `${n} visites de robots`,
+
+    upsellTitle: "L'analyse des journaux est incluse dans Growth et Agency",
+    upsellBody:
+      "La vérification d'accès ci-dessus est incluse dans votre forfait. L'analyse des journaux ajoute l'autre moitié : quels robots sont réellement venus, à quelle fréquence, et quelles pages ils ont lues.",
+    upsellCta: "Comparer les forfaits",
+
+    loading: "Chargement…",
+    loadFailed: "Impossible de charger Bot Analytics. Réessayez dans une minute.",
   },
   "de-CH": {
-    postureNote:
-      "Diese Seite zeigt die Zugriffslage — was Ihre Website jedem Crawler erlaubt — auf Basis Ihrer aktuellen robots.txt. Das sind keine Traffic-Daten; Echorank360 erfasst für Ihre Website noch keine Crawler-Zugriffsprotokolle.",
-    checkedAt: (date: string) => `Geprüft am ${date}`,
-    staleNote: (date: string) =>
-      `Live-Prüfung nicht verfügbar — angezeigt wird der robots.txt-Schnappschuss aus Ihrem letzten Audit (${date}).`,
+    introNote:
+      "Zwei Fragen, zwei Antworten. Die Zugriffsprüfung fragt, ob KI-Crawler Ihre Website erreichen dürfen und können. Die Protokollanalyse fragt, ob sie tatsächlich gekommen sind. Nur Ihre Server-Protokolle beantworten die zweite Frage: KI- und Such-Crawler führen kein JavaScript aus, deshalb kann kein Seiten-Tag sie jemals sehen.",
     siteLabel: "Website",
+    auditLinkLabel: "KI-Sichtbarkeits-Audit öffnen",
+
+    domainTitle: "Welche Website sollen wir prüfen?",
+    domainIntro:
+      "Geben Sie die zu prüfende Domain ein. Echorank360 verwendet die Website, die Ihr Arbeitsbereich bereits auditiert, sofern vorhanden — Sie können sie hier jederzeit überschreiben.",
+    domainPlaceholder: "ihredomain.com",
+    domainSave: "Domain speichern",
+    domainSaving: "Wird gespeichert…",
+    domainChange: "Ändern",
+    domainCancel: "Abbrechen",
+    domainInvalid:
+      "Geben Sie eine Domain wie ihredomain.com ein — ohne Pfad, ohne Port, ohne IP-Adresse.",
+    domainSaveFailed: "Diese Domain konnte nicht gespeichert werden. Versuchen Sie es erneut.",
+    domainSourceMonitor: "die Website, die Ihr Arbeitsbereich auditiert",
+    domainSourceSettings: "Ihre Arbeitsbereich-Einstellungen",
+    domainSourceManual: "auf dieser Seite festgelegt",
+    domainSourceLabel: (source: string) => `Verwendet ${source}`,
+
+    accessTitle: "Können KI-Crawler Sie erreichen?",
+    accessIntro:
+      "Wir lesen Ihre robots.txt und rufen dann Ihre Startseite je Crawler einmal mit dessen echtem User-Agent ab. Der zweite Schritt zeigt, was robots.txt nicht zeigen kann: eine Website, die alle Crawler willkommen heisst, während ihre Firewall GPTBot stillschweigend ein 403 zurückgibt.",
+    runCheck: "Prüfung starten",
+    runningCheck: "Prüfung läuft…",
+    runCheckAgain: "Prüfung erneut starten",
+    checkedAt: (date: string) => `Geprüft am ${date}`,
+    neverChecked: "Noch nicht geprüft",
+    staleNote: (date: string) =>
+      `Diese Prüfung stammt vom ${date}. Starten Sie sie erneut für Ihre aktuelle Lage.`,
+    checksUsed: (used: number, limit: number) =>
+      `${used} von ${limit} Prüfungen diesen Monat genutzt`,
+    capReached:
+      "Sie haben die Prüfungen dieses Monats aufgebraucht. Das Guthaben erneuert sich am 1.",
+    checkFailed:
+      "Die Zugriffsprüfung konnte nicht abgeschlossen werden. Versuchen Sie es in einer Minute erneut.",
     robotsPresent: "robots.txt gefunden",
     robotsMissing: "Keine robots.txt — alle Crawler standardmässig erlaubt",
     sitemapFound: "Sitemap gefunden",
     sitemapMissing: "Keine Sitemap gefunden",
     llmsFound: "llms.txt vorhanden",
     llmsMissing: "Keine llms.txt",
-    statusOpen: "ERLAUBT",
-    statusBlocked: "BLOCKIERT",
+    verdictLabels: {
+      allowed: "ERREICHBAR",
+      blocked_robots: "DURCH ROBOTS.TXT BLOCKIERT",
+      blocked_http: "VOM SERVER BLOCKIERT",
+      challenged: "ABGEFRAGT",
+      unknown: "UNBEKANNT",
+    } as Record<string, string>,
+    verdictHelp: {
+      allowed: "robots.txt erlaubt ihn und Ihr Server hat seine Anfrage beantwortet.",
+      blocked_robots:
+        "Ihre robots.txt weist diesen Crawler ab, ein gut erzogener fragt deshalb nie an.",
+      blocked_http:
+        "robots.txt erlaubt ihn, aber Ihr Server hat die Anfrage abgelehnt — meist eine Firewall- oder Bot-Management-Regel.",
+      challenged:
+        "Ihr Server hat mit einer Ratenbegrenzung oder einer Personenprüfung geantwortet statt mit Ihrem Inhalt.",
+      unknown: "Die Anfrage kam nicht zustande, wir können es deshalb nicht sagen.",
+    } as Record<string, string>,
+    preferenceOnly: "robots.txt-Präferenz-Token — kein Crawler sendet es",
+    probeStatus: (status: number) => `Startseite antwortete mit ${status}`,
+    probeUnreachable: "Anfrage an die Startseite kam nicht zustande",
     categoryLabels: {
       search: "Suchindex",
       ai_training: "KI-Training",
@@ -5731,12 +5998,208 @@ export const BOT_ANALYTICS_COPY: Record<DashLocale, BotAnalyticsCopy> = {
       Bytespider: "ByteDance-Crawler für KI-Trainingsdaten.",
       Amazonbot: "Speist Alexa und Amazons KI-Antworten.",
       "Applebot-Extended": "Opt-out-Token für das Training von Apple-Intelligence-Modellen.",
+      "meta-externalagent": "Sammelt Seiten für das Training der KI-Modelle von Meta.",
     } as Record<string, string>,
-    emptyTitle: "Keine Website konfiguriert",
-    emptyBody:
-      "Bot-Analytics liest die Website, die Ihr Arbeitsbereich bereits verfolgt. Starten Sie ein erstes KI-Sichtbarkeits-Audit, damit Echorank360 weiss, welche Website zu prüfen ist.",
-    loadFailed: "Crawler-Zugriff konnte nicht geprüft werden. Versuchen Sie es in einer Minute erneut.",
-    loading: "Crawler-Zugriff wird geprüft…",
+    problemSummary: (n: number) =>
+      n === 1
+        ? "1 Crawler kann Ihren Inhalt nicht erreichen."
+        : `${n} Crawler können Ihren Inhalt nicht erreichen.`,
+    allClear: "Alle geprüften Crawler können Ihren Inhalt erreichen.",
+    fixLink: "Sehen, was zu ändern ist",
+
+    logsTitle: "Wer crawlt Sie tatsächlich?",
+    logsIntro:
+      "Laden Sie ein Server-Zugriffsprotokoll hoch und wir zählen die Crawler-Besuche darin: welche Bots kamen, wann, und welche Seiten sie gelesen haben. Das ist die einzige Quelle, die zeigt, was wirklich geschah, statt was erlaubt ist.",
+    piiNote:
+      "Zugriffsprotokolle enthalten IP-Adressen von Besuchern. Wir analysieren Ihre Datei, speichern nur die Zahlen unten und löschen die Datei selbst, sobald die Analyse fertig ist — es werden keine Rohzeilen und keine IP-Adressen behalten.",
+    dropzoneLabel: "Zugriffsprotokoll auswählen",
+    dropzoneHint: ".log, .txt oder .gz — bis 50 MB",
+    dropzoneDrop: "Datei zum Hochladen hier ablegen",
+    uploading: "Wird hochgeladen…",
+    uploadFailed: "Hochladen fehlgeschlagen. Prüfen Sie die Datei und versuchen Sie es erneut.",
+    uploadTooLarge: "Diese Datei liegt über der Grenze von 50 MB.",
+    uploadBadType: "Laden Sie ein .log-, .txt- oder .gz-Zugriffsprotokoll hoch.",
+    uploadsUsed: (used: number, limit: number) =>
+      `${used} von ${limit} Uploads diesen Monat genutzt`,
+    uploadCapReached:
+      "Sie haben die Uploads dieses Monats aufgebraucht. Das Guthaben erneuert sich am 1.",
+    historyTitle: "Frühere Analysen",
+    noAnalyses: "Noch keine Protokolle analysiert.",
+    statusLabels: {
+      PENDING: "In Warteschlange",
+      PROCESSING: "Analyse läuft…",
+      COMPLETE: "Fertig",
+      FAILED: "Fehlgeschlagen",
+    } as Record<string, string>,
+    processingNote:
+      "Ihr Protokoll wird analysiert. Diese Seite aktualisiert sich, sobald es fertig ist.",
+    periodLabel: (start: string, end: string) => `${start} – ${end}`,
+    linesLabel: (parsed: number, skipped: number) =>
+      `${parsed} Zeilen analysiert, ${skipped} übersprungen`,
+    hitsChartTitle: "Crawler-Zugriffe pro Tag",
+    topPathsTitle: "Am häufigsten gecrawlte Seiten",
+    statusSplitTitle: "Antwortcodes",
+    botHeader: "Crawler",
+    pathHeader: "Seite",
+    hitsHeader: "Zugriffe",
+    statusHeader: "Status",
+    firstSeenLabel: "Zuerst gesehen",
+    lastSeenLabel: "Zuletzt gesehen",
+    verifiedLabel: "IP geprüft",
+    unverifiedLabel: "nur User-Agent",
+    unverifiedNote:
+      "Zugriffe von Googlebot und Bingbot werden gegen die veröffentlichten IP-Bereiche des jeweiligen Betreibers geprüft. Andere Crawler werden allein anhand ihres User-Agents gezählt, den jeder senden kann — behandeln Sie diese Zahlen als Obergrenze.",
+    aiVisitSummary: (bot: string, n: number) =>
+      `${bot} war ${n} Mal da — dieser Crawler liest Ihren Inhalt.`,
+    noAiVisits:
+      "Keine KI-Crawler-Besuche in diesem Protokoll. Entweder waren sie noch nicht da, oder etwas weist sie ab — die Zugriffsprüfung oben sagt Ihnen, was davon zutrifft.",
+    totalBotHits: (n: number) => `${n} Crawler-Zugriffe`,
+
+    upsellTitle: "Die Protokollanalyse gehört zu Growth und Agency",
+    upsellBody:
+      "Die Zugriffsprüfung oben ist in Ihrem Abo enthalten. Die Protokollanalyse ergänzt die andere Hälfte: welche Crawler tatsächlich kamen, wie oft, und welche Seiten sie gelesen haben.",
+    upsellCta: "Abos vergleichen",
+
+    loading: "Wird geladen…",
+    loadFailed: "Bot Analytics konnte nicht geladen werden. Versuchen Sie es in einer Minute erneut.",
+  },
+};
+
+// ─── /visibility/tools/bot-analytics — help modal ───────────────────────────
+// The modal has one job the rest of the page cannot do: explain why a crawler is
+// not a visitor. Every other misunderstanding of this tool follows from that one.
+const botAnalyticsHelpEn = {
+  button: "Help",
+  buttonAria: "How Bot Analytics works",
+  title: "How Bot Analytics works",
+  close: "Close",
+
+  intro:
+    "This page answers two different questions, and only the second one is about what actually happened.",
+
+  noJsTitle: "Crawlers are not visitors",
+  noJsBody:
+    "AI and search crawlers fetch your HTML and leave. They do not run JavaScript, so no analytics tag on your page can ever see them — that is why crawler traffic is missing from every dashboard that relies on a page script, and why this tool asks your server instead of your browser.",
+
+  checkTitle: "The access check asks whether they can reach you",
+  checkBody:
+    "We read your robots.txt and evaluate it per crawler, then request your homepage once as each one using its real User-Agent. The second step is what makes this more than a robots.txt reader: a site can say every crawler is welcome while its firewall returns 403 to GPTBot, and only an actual request reveals that.",
+
+  verdictsTitle: "What each verdict means",
+  verdictsBullets: [
+    "Reachable — robots.txt permits it and your server answered its request.",
+    "Blocked by robots.txt — you are telling it to stay out, so a well-behaved crawler never asks.",
+    "Blocked by server — robots.txt permits it but your server refused. Usually a firewall or bot-management rule, and usually a surprise.",
+    "Challenged — your server returned a rate limit or a human-verification page instead of your content. A crawler cannot solve either.",
+    "Unknown — the request did not complete, so we will not guess.",
+  ],
+
+  preferenceTitle: "Two of the tokens are not crawlers",
+  preferenceBody:
+    "Google-Extended and Applebot-Extended are robots.txt preference signals, not fetching crawlers: they control whether Gemini and Apple Intelligence may train on content those companies already fetched. Nothing sends them as a User-Agent, so they are never probed and their verdict comes from robots.txt alone.",
+
+  logsTitle: "Only your logs are ground truth",
+  logsBody:
+    "The access check tells you a crawler could reach you. It cannot tell you that one did. Your server access log is the only record of actual visits, which is why the second half of this page takes an upload — and why the counts there can differ sharply from what the access check would lead you to expect.",
+
+  verifyTitle: "Some crawler names are verified, most cannot be",
+  verifyBody:
+    "Googlebot and Bingbot hits are checked against each operator's published IP ranges, because impersonating Googlebot is common and easy. Other crawlers publish no usable ranges, so those totals rest on the User-Agent alone — treat them as a ceiling rather than a count.",
+
+  piiTitle: "Your log file is deleted, not stored",
+  piiBody:
+    "Access logs contain visitor IP addresses. We parse your upload, keep only the aggregate counts you see here, and delete the file as soon as parsing finishes. No raw log lines and no IP addresses are retained.",
+  fixLink: "Open the AI Visibility audit",
+};
+export type BotAnalyticsHelpCopy = typeof botAnalyticsHelpEn;
+
+export const BOT_ANALYTICS_HELP_COPY: Record<DashLocale, BotAnalyticsHelpCopy> = {
+  en: botAnalyticsHelpEn,
+  fr: {
+    button: "Aide",
+    buttonAria: "Fonctionnement de Bot Analytics",
+    title: "Fonctionnement de Bot Analytics",
+    close: "Fermer",
+
+    intro:
+      "Cette page répond à deux questions distinctes, et seule la seconde porte sur ce qui s'est réellement produit.",
+
+    noJsTitle: "Les robots ne sont pas des visiteurs",
+    noJsBody:
+      "Les robots d'IA et de recherche récupèrent votre HTML puis repartent. Ils n'exécutent pas de JavaScript, donc aucune balise d'analyse sur votre page ne pourra jamais les voir — c'est pourquoi le trafic des robots est absent de tous les tableaux de bord fondés sur un script de page, et pourquoi cet outil interroge votre serveur plutôt que votre navigateur.",
+
+    checkTitle: "La vérification d'accès demande s'ils peuvent vous atteindre",
+    checkBody:
+      "Nous lisons votre robots.txt et l'évaluons robot par robot, puis demandons votre page d'accueil une fois pour chacun avec son véritable User-Agent. Cette seconde étape fait toute la différence avec un simple lecteur de robots.txt : un site peut déclarer accueillir tous les robots alors que son pare-feu renvoie un 403 à GPTBot, et seule une vraie requête le révèle.",
+
+    verdictsTitle: "Ce que signifie chaque verdict",
+    verdictsBullets: [
+      "Accessible — robots.txt l'autorise et votre serveur a répondu à sa requête.",
+      "Bloqué par robots.txt — vous lui demandez de rester à l'écart, un robot bien élevé ne demande donc rien.",
+      "Bloqué par le serveur — robots.txt l'autorise mais votre serveur a refusé. Généralement un pare-feu ou une règle anti-robots, et généralement une surprise.",
+      "Mis au défi — votre serveur a renvoyé une limite de débit ou une page de vérification humaine au lieu de votre contenu. Un robot ne peut résoudre ni l'une ni l'autre.",
+      "Indéterminé — la requête n'a pas abouti, nous ne devinerons pas.",
+    ],
+
+    preferenceTitle: "Deux des jetons ne sont pas des robots",
+    preferenceBody:
+      "Google-Extended et Applebot-Extended sont des signaux de préférence robots.txt, non des robots qui récupèrent des pages : ils contrôlent si Gemini et Apple Intelligence peuvent s'entraîner sur du contenu que ces entreprises ont déjà récupéré. Rien ne les envoie comme User-Agent, ils ne sont donc jamais sondés et leur verdict provient du seul robots.txt.",
+
+    logsTitle: "Seuls vos journaux constituent la vérité de terrain",
+    logsBody:
+      "La vérification d'accès vous dit qu'un robot pouvait vous atteindre. Elle ne peut pas vous dire qu'il l'a fait. Le journal d'accès de votre serveur est le seul relevé des visites réelles, d'où le téléversement dans la seconde moitié de cette page — et d'où le fait que ces totaux peuvent différer nettement de ce que la vérification d'accès laisserait attendre.",
+
+    verifyTitle: "Certains noms de robots sont vérifiés, la plupart ne peuvent pas l'être",
+    verifyBody:
+      "Les visites de Googlebot et Bingbot sont confrontées aux plages d'adresses IP publiées par chaque exploitant, car usurper Googlebot est courant et facile. Les autres robots ne publient aucune plage exploitable; ces totaux reposent donc sur le seul User-Agent — considérez-les comme un plafond plutôt qu'un décompte.",
+
+    piiTitle: "Votre fichier journal est supprimé, non conservé",
+    piiBody:
+      "Les journaux d'accès contiennent les adresses IP des visiteurs. Nous analysons votre téléversement, ne conservons que les totaux affichés ici, et supprimons le fichier dès la fin de l'analyse. Aucune ligne brute ni adresse IP n'est conservée.",
+    fixLink: "Ouvrir l'audit de visibilité IA",
+  },
+  "de-CH": {
+    button: "Hilfe",
+    buttonAria: "So funktioniert Bot Analytics",
+    title: "So funktioniert Bot Analytics",
+    close: "Schliessen",
+
+    intro:
+      "Diese Seite beantwortet zwei verschiedene Fragen, und nur die zweite handelt davon, was tatsächlich geschehen ist.",
+
+    noJsTitle: "Crawler sind keine Besucher",
+    noJsBody:
+      "KI- und Such-Crawler holen Ihr HTML und gehen wieder. Sie führen kein JavaScript aus, deshalb kann kein Analyse-Tag auf Ihrer Seite sie jemals sehen — darum fehlt Crawler-Traffic in jedem Dashboard, das auf einem Seitenskript beruht, und darum fragt dieses Werkzeug Ihren Server statt Ihren Browser.",
+
+    checkTitle: "Die Zugriffsprüfung fragt, ob sie Sie erreichen können",
+    checkBody:
+      "Wir lesen Ihre robots.txt und bewerten sie je Crawler, dann rufen wir Ihre Startseite je Crawler einmal mit dessen echtem User-Agent ab. Der zweite Schritt macht den Unterschied zu einem reinen robots.txt-Leser: Eine Website kann alle Crawler willkommen heissen, während ihre Firewall GPTBot ein 403 zurückgibt — nur eine echte Anfrage zeigt das.",
+
+    verdictsTitle: "Was jedes Urteil bedeutet",
+    verdictsBullets: [
+      "Erreichbar — robots.txt erlaubt ihn und Ihr Server hat seine Anfrage beantwortet.",
+      "Durch robots.txt blockiert — Sie weisen ihn ab, ein gut erzogener Crawler fragt deshalb nie an.",
+      "Vom Server blockiert — robots.txt erlaubt ihn, aber Ihr Server hat abgelehnt. Meist eine Firewall- oder Bot-Management-Regel, und meist eine Überraschung.",
+      "Abgefragt — Ihr Server hat eine Ratenbegrenzung oder eine Personenprüfung zurückgegeben statt Ihres Inhalts. Ein Crawler kann beides nicht lösen.",
+      "Unbekannt — die Anfrage kam nicht zustande, wir raten nicht.",
+    ],
+
+    preferenceTitle: "Zwei der Token sind keine Crawler",
+    preferenceBody:
+      "Google-Extended und Applebot-Extended sind robots.txt-Präferenzsignale, keine abrufenden Crawler: Sie steuern, ob Gemini und Apple Intelligence mit Inhalten trainieren dürfen, die diese Firmen schon geholt haben. Nichts sendet sie als User-Agent, sie werden deshalb nie geprüft und ihr Urteil stammt allein aus der robots.txt.",
+
+    logsTitle: "Nur Ihre Protokolle sind die Wahrheit",
+    logsBody:
+      "Die Zugriffsprüfung sagt Ihnen, dass ein Crawler Sie erreichen konnte. Sie kann nicht sagen, dass einer es getan hat. Das Zugriffsprotokoll Ihres Servers ist der einzige Nachweis echter Besuche — daher der Upload in der zweiten Hälfte dieser Seite, und daher können diese Zahlen deutlich von dem abweichen, was die Zugriffsprüfung erwarten liesse.",
+
+    verifyTitle: "Einige Crawler-Namen sind geprüft, die meisten nicht",
+    verifyBody:
+      "Zugriffe von Googlebot und Bingbot werden gegen die veröffentlichten IP-Bereiche des Betreibers geprüft, denn Googlebot zu imitieren ist verbreitet und einfach. Andere Crawler veröffentlichen keine brauchbaren Bereiche; diese Zahlen beruhen allein auf dem User-Agent — behandeln Sie sie als Obergrenze statt als Zählung.",
+
+    piiTitle: "Ihre Protokolldatei wird gelöscht, nicht gespeichert",
+    piiBody:
+      "Zugriffsprotokolle enthalten IP-Adressen von Besuchern. Wir analysieren Ihren Upload, behalten nur die hier gezeigten Summen und löschen die Datei, sobald die Analyse fertig ist. Es werden keine Rohzeilen und keine IP-Adressen aufbewahrt.",
+    fixLink: "KI-Sichtbarkeits-Audit öffnen",
   },
 };
 

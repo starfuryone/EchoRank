@@ -108,6 +108,14 @@ const DEFAULT_JOB_OPTIONS: Record<QueueName, JobsOptions> = {
     removeOnComplete: { age: REDIS_CONFIG.ttl.completedJobs },
     removeOnFail: { age: REDIS_CONFIG.ttl.failedJobs },
   },
+  // One attempt, deliberately. The job DELETES the uploaded log once it has
+  // parsed it, so attempt 2 would find no file and fail differently for a
+  // confusing reason. A failed parse is recorded on the row and re-uploadable.
+  "bot-log-analysis": {
+    attempts: 1,
+    removeOnComplete: { age: REDIS_CONFIG.ttl.completedJobs },
+    removeOnFail: { age: REDIS_CONFIG.ttl.failedJobs },
+  },
 };
 
 // ─── Queue registry ───────────────────────────────────────────────────────────

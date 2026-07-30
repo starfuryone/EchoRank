@@ -182,6 +182,18 @@ export interface SiteAuditJob {
   correlationId?: string;
 }
 
+/**
+ * Bot Analytics log parse. Carries the analysis row id and the path of the
+ * uploaded file; the worker reads the file, writes aggregates to the row, and
+ * deletes the file. `path` is produced by the upload route, never by a client.
+ */
+export interface BotLogAnalysisJob {
+  analysisId: string;
+  tenantId: string;
+  path: string;
+  gzipped: boolean;
+}
+
 export type AllJobTypes =
   | EmailDeliveryJob
   | SmsDeliveryJob
@@ -198,7 +210,8 @@ export type AllJobTypes =
   | OnboardingEmailJob
   | SerpCheckJob
   | RankTrackerJob
-  | SiteAuditJob;
+  | SiteAuditJob
+  | BotLogAnalysisJob;
 
 // ─── Queue → Job Type mapping ─────────────────────────────────────────────────
 
@@ -219,4 +232,5 @@ export interface QueueJobMap {
   "serp-checks": SerpCheckJob;
   "rank-tracker": RankTrackerJob;
   "site-audit": SiteAuditJob;
+  "bot-log-analysis": BotLogAnalysisJob;
 }

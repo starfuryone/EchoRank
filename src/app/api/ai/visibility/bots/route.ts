@@ -1,116 +1,186 @@
 // src/app/api/ai/visibility/bots/route.ts
-// Bot Analytics v1: crawler ACCESS POSTURE (what the tenant's site permits),
-// not traffic — the app stores no crawler hit logs, so no traffic numbers
-// are shown anywhere. Live robots.txt/sitemap/llms.txt evaluation comes from
-// the sidecar's secret-gated POST /bots (which reuses the audit engine's
-// fetch + robots parser). If the live check fails, we fall back to the bot
-// snapshot stored with the tenant's latest VisibilityAudit, marked stale.
 //
-// The site URL is resolved from the tenant's own data only (active monitor →
-// latest audit → onboarding auditDomain) — no URL parameter is accepted, so
-// the route cannot be pointed at another tenant's (or an arbitrary) site
-// beyond what the tenant already configured.
+// GET  — everything the Bot Analytics page needs in one call: the resolved
+//        domain and where it came from, the latest stored access check (with a
+//        freshness flag), this month's allowances, and the log-analysis history.
+// POST — runs a new access check against the tenant's own domain.
 //
-// INTEGRATION POINT: log-based crawler analytics (real hit counts per bot)
-// would slot in here once tenant access logs are ingested; the sidecar's
-// /attribute endpoint already parses pasted logs one-off on /visibility.
+// The tool no longer gates on /visibility. It used to return {url: null} when
+// the workspace had no audited site, and the page turned that into a dead-end
+// button pointing at another product surface. Now a null domain is a prompt to
+// enter one, and this route reports which of the three sources answered so the
+// UI can say so.
+//
+// No URL parameter is accepted on either verb. The domain always comes from
+// tenant-owned rows via resolveBotAnalyticsDomain(), and runAccessCheck() runs
+// the SSRF guard again before anything leaves the box.
+
 import { NextResponse } from "next/server";
 import { requirePaidPlan } from "@/lib/paid-plan";
 import { enforcementErrorResponse } from "@/lib/plan-enforcement";
-import { sidecarPost } from "@/lib/av-sidecar";
-import { BOT_TOKENS } from "@/lib/bot-catalog";
 import { prisma } from "@/lib/prisma";
+import { resolveBotAnalyticsDomain } from "@/lib/bot-analytics/domain";
+import { runAccessCheck } from "@/lib/bot-analytics/check";
+import { isCheckFresh } from "@/lib/bot-analytics/verdict";
+import {
+  BOT_CHECK_MONTHLY_LIMIT,
+  BotCheckQuotaUnavailableError,
+  botChecksUsed,
+  releaseBotCheck,
+  reserveBotCheck,
+} from "@/lib/bot-analytics/quota";
+import { canUploadLogs, uploadLimit, uploadsUsed } from "@/lib/bot-analytics/upload";
 
-interface BotState {
-  status: "ALLOWED" | "BLOCKED";
-  detail: string;
-}
-interface BotsResponse {
-  url?: string;
-  robots_present?: boolean;
-  bots?: Record<string, BotState>;
-  sitemap?: { found: boolean; urls: string[] };
-  llms_txt?: boolean;
-  error?: string;
-}
+const HISTORY_LIMIT = 10;
 
-async function resolveSiteUrl(tenantId: string): Promise<string | null> {
-  const monitor = await prisma.visibilityMonitor.findFirst({
-    where: { tenantId, active: true },
-    orderBy: { updatedAt: "desc" },
-    select: { url: true },
-  });
-  if (monitor) return monitor.url;
-  const audit = await prisma.visibilityAudit.findFirst({
-    where: { tenantId },
-    orderBy: { createdAt: "desc" },
-    select: { url: true },
-  });
-  if (audit) return audit.url;
-  const tenant = await prisma.tenant.findUnique({
-    where: { id: tenantId },
-    select: { auditDomain: true },
-  });
-  return tenant?.auditDomain ?? null;
+function unauthorized(error: unknown): NextResponse | null {
+  if (error instanceof Error && error.message === "Not authenticated or no tenant access") {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+  return null;
 }
 
 export async function GET() {
   try {
     const membership = await requirePaidPlan();
     const tenantId = membership.tenantId;
+    const plan = membership.tenant.planType;
 
-    const url = await resolveSiteUrl(tenantId);
-    if (!url) {
-      // Honest empty state: nothing configured that identifies the tenant's site.
-      return NextResponse.json({ url: null });
-    }
+    const { domain, source } = await resolveBotAnalyticsDomain(tenantId);
 
-    const { status, data } = await sidecarPost<BotsResponse>("/bots", {
-      url,
-      bots: BOT_TOKENS,
+    const [latest, analyses, checksUsedCount, uploadsUsedCount] = await Promise.all([
+      prisma.botAccessCheck.findFirst({
+        where: { tenantId },
+        orderBy: { checkedAt: "desc" },
+      }),
+      prisma.botLogAnalysis.findMany({
+        where: { tenantId },
+        orderBy: { createdAt: "desc" },
+        take: HISTORY_LIMIT,
+      }),
+      botChecksUsed(tenantId),
+      uploadsUsed(tenantId),
+    ]);
+
+    // A stored check for a domain the tenant has since changed is not this
+    // domain's posture, so it is not served as if it were.
+    const checkMatchesDomain = latest && domain && latest.domain === domain;
+
+    return NextResponse.json({
+      domain,
+      domainSource: source,
+      check: checkMatchesDomain
+        ? {
+            domain: latest.domain,
+            results: latest.results,
+            robotsPresent: latest.robotsPresent,
+            sitemapFound: latest.sitemapFound,
+            llmsTxt: latest.llmsTxt,
+            checkedAt: latest.checkedAt.toISOString(),
+            fresh: isCheckFresh(latest.checkedAt),
+            error: latest.error,
+          }
+        : null,
+      checks: { used: checksUsedCount, limit: BOT_CHECK_MONTHLY_LIMIT },
+      logs: {
+        enabled: canUploadLogs(plan),
+        used: uploadsUsedCount,
+        limit: uploadLimit(plan),
+        analyses: analyses.map((a) => ({
+          id: a.id,
+          filename: a.filename,
+          sizeBytes: a.sizeBytes,
+          status: a.status,
+          error: a.error,
+          periodStart: a.periodStart?.toISOString() ?? null,
+          periodEnd: a.periodEnd?.toISOString() ?? null,
+          linesParsed: a.linesParsed,
+          linesSkipped: a.linesSkipped,
+          botHits: a.botHits,
+          aggregates: a.aggregates,
+          createdAt: a.createdAt.toISOString(),
+        })),
+      },
     });
+  } catch (error) {
+    const resp = enforcementErrorResponse(error) ?? unauthorized(error);
+    if (resp) return resp;
+    console.error("[visibility/bots GET]", error);
+    return NextResponse.json({ error: "Failed to load Bot Analytics." }, { status: 500 });
+  }
+}
 
-    if (status === 200 && data.bots && !data.error) {
-      return NextResponse.json({
-        url: data.url ?? url,
-        source: "live",
-        checkedAt: new Date().toISOString(),
-        robotsPresent: data.robots_present ?? false,
-        bots: data.bots,
-        sitemap: data.sitemap ?? { found: false, urls: [] },
-        llmsTxt: data.llms_txt ?? false,
-      });
+export async function POST() {
+  let tenantId: string | null = null;
+  let reserved = false;
+  try {
+    const membership = await requirePaidPlan();
+    tenantId = membership.tenantId;
+
+    const { domain } = await resolveBotAnalyticsDomain(tenantId);
+    if (!domain) {
+      return NextResponse.json(
+        { error: "Set a domain before running a check." },
+        { status: 400 },
+      );
     }
 
-    // Live check failed → stored snapshot from the latest audit, marked stale.
-    const audit = await prisma.visibilityAudit.findFirst({
-      where: { tenantId },
-      orderBy: { createdAt: "desc" },
-      select: { url: true, bots: true, createdAt: true },
+    // Reserve before probing: the cost we are capping is the dozen requests we
+    // are about to aim at the customer's origin, so the counter has to move
+    // first or two concurrent clicks both get through.
+    const quota = await reserveBotCheck(tenantId);
+    if (!quota.allowed) {
+      return NextResponse.json(
+        {
+          error: `Monthly access-check limit reached (${quota.limit}).`,
+          code: "BotCheckQuotaExceededError",
+          checks: { used: quota.used, limit: quota.limit },
+        },
+        { status: 429 },
+      );
+    }
+    reserved = true;
+
+    const result = await runAccessCheck(domain);
+
+    const stored = await prisma.botAccessCheck.create({
+      data: {
+        tenantId,
+        domain: result.domain,
+        results: result.results as unknown as object,
+        robotsPresent: result.robotsPresent,
+        sitemapFound: result.sitemapFound,
+        llmsTxt: result.llmsTxt,
+      },
     });
-    if (audit && audit.bots && typeof audit.bots === "object") {
-      return NextResponse.json({
-        url: audit.url,
-        source: "audit_snapshot",
-        checkedAt: audit.createdAt,
-        robotsPresent: true,
-        bots: audit.bots as unknown as Record<string, BotState>,
-        sitemap: null, // not part of the stored snapshot — omitted, not guessed
-        llmsTxt: null,
-      });
-    }
+    reserved = false; // the check ran and is stored; the reservation is earned
 
+    return NextResponse.json({
+      check: {
+        domain: stored.domain,
+        results: stored.results,
+        robotsPresent: stored.robotsPresent,
+        sitemapFound: stored.sitemapFound,
+        llmsTxt: stored.llmsTxt,
+        checkedAt: stored.checkedAt.toISOString(),
+        fresh: true,
+        error: null,
+      },
+      checks: { used: quota.used, limit: quota.limit },
+    });
+  } catch (error) {
+    const resp = enforcementErrorResponse(error) ?? unauthorized(error);
+    if (resp) return resp;
+    if (error instanceof BotCheckQuotaUnavailableError) {
+      return NextResponse.json({ error: error.message }, { status: error.statusCode });
+    }
+    console.error("[visibility/bots POST]", error);
     return NextResponse.json(
-      { error: data.error || "Bot check failed." },
+      { error: "Could not complete the access check." },
       { status: 502 },
     );
-  } catch (error) {
-    const resp = enforcementErrorResponse(error);
-    if (resp) return resp;
-    if (error instanceof Error && error.message === "Not authenticated or no tenant access") {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
-    console.error("[visibility/bots GET]", error);
-    return NextResponse.json({ error: "Failed to load bot posture." }, { status: 500 });
+  } finally {
+    // Nothing was stored, so the tenant should not have paid for it.
+    if (reserved && tenantId) await releaseBotCheck(tenantId);
   }
 }

@@ -163,7 +163,7 @@ test("bot catalog covers the required crawler tokens exactly once", () => {
   const required = [
     "Googlebot", "Google-Extended", "Bingbot", "GPTBot", "OAI-SearchBot",
     "ClaudeBot", "anthropic-ai", "PerplexityBot", "CCBot", "Bytespider",
-    "Amazonbot", "Applebot-Extended",
+    "Amazonbot", "Applebot-Extended", "meta-externalagent",
   ];
   assert.deepEqual([...BOT_TOKENS].sort(), [...required].sort());
   assert.equal(new Set(BOT_TOKENS).size, BOT_TOKENS.length);
@@ -176,16 +176,35 @@ test("bot catalog covers the required crawler tokens exactly once", () => {
 test("bot-analytics copy complete in all locales (per-bot descriptions included)", () => {
   for (const locale of LOCALES) {
     const c = BOT_ANALYTICS_COPY[locale];
-    assert.ok(c.postureNote.length && c.emptyTitle.length && c.emptyBody.length);
-    assert.ok(c.statusOpen.length && c.statusBlocked.length && c.loadFailed.length);
+    // Both sections plus the domain form must be translated — the tool no
+    // longer gates on /visibility, so its own copy is the only copy there is.
+    assert.ok(c.introNote.length && c.accessTitle.length && c.logsTitle.length);
+    assert.ok(c.domainTitle.length && c.domainIntro.length && c.domainInvalid.length);
+    assert.ok(c.loadFailed.length && c.piiNote.length && c.upsellTitle.length);
     for (const cat of ["search", "ai_training", "ai_answers"]) {
       assert.ok(c.categoryLabels[cat]?.length, `${locale} category ${cat}`);
+    }
+    // Every verdict the API can return needs a label AND an explanation; a
+    // missing one renders as an empty chip that reads like "no problem".
+    for (const v of ["allowed", "blocked_robots", "blocked_http", "challenged", "unknown"]) {
+      assert.ok(c.verdictLabels[v]?.length, `${locale} verdictLabel ${v}`);
+      assert.ok(c.verdictHelp[v]?.length, `${locale} verdictHelp ${v}`);
+    }
+    for (const s of ["PENDING", "PROCESSING", "COMPLETE", "FAILED"]) {
+      assert.ok(c.statusLabels[s]?.length, `${locale} statusLabel ${s}`);
     }
     for (const token of BOT_TOKENS) {
       assert.ok(c.botDesc[token]?.length, `${locale} botDesc ${token}`);
     }
     assert.ok(c.checkedAt("2026-01-01").includes("2026-01-01"));
     assert.ok(c.staleNote("2026-01-01").includes("2026-01-01"));
+    assert.ok(c.checksUsed(1, 10).includes("10"));
+    assert.ok(c.uploadsUsed(1, 5).includes("5"));
+    assert.ok(c.aiVisitSummary("GPTBot", 47).includes("47"));
+    assert.ok(c.periodLabel("a", "b").includes("a"));
+    assert.ok(c.linesLabel(10, 2).includes("10"));
+    assert.ok(c.problemSummary(2).includes("2"));
+    assert.ok(c.probeStatus(403).includes("403"));
   }
 });
 

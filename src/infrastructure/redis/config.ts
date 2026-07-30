@@ -113,7 +113,8 @@ export type QueueName =
   | "onboarding-email"
   | "serp-checks"
   | "rank-tracker"
-  | "site-audit";
+  | "site-audit"
+  | "bot-log-analysis";
 
 /** All valid queue names */
 export const QUEUE_NAMES: QueueName[] = [
@@ -134,4 +135,5 @@ export const QUEUE_NAMES: QueueName[] = [
   "serp-checks",
   "rank-tracker",
   "site-audit",
+  "bot-log-analysis",
 ];

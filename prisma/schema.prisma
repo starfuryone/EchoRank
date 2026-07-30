@@ -162,6 +162,10 @@ model Tenant {
   onboardingDismissedAt DateTime?
   onboardingIntent      String? // "business" | "agency"
   auditDomain           String? // domain captured from the landing audit widget or the welcome modal
+  // Explicit domain for Bot Analytics, set on the tool page itself. Separate
+  // from auditDomain so the tool is self-sufficient for a tenant that never ran
+  // an AI Visibility audit, and so overriding it here cannot disturb onboarding.
+  botAnalyticsDomain    String?
   onboarding            Json? // { pdfDownloadedAt?, roadmapViewedAt?, firstAuditScore?, firstAuditAt?, profileCompletedAt? }
   marketingConsent      Boolean       @default(true)
 
@@ -199,6 +203,8 @@ model Tenant {
   gaConnection       GaConnection?
   gscQueryStats      GscQueryStat[]
   aiLensAnalyses     AiLensAnalysis[]
+  botAccessChecks    BotAccessCheck[]
+  botLogAnalyses     BotLogAnalysis[]
 
   @@map("tenants")
 }
@@ -1397,6 +1403,83 @@ model AiLensAnalysis {
   // History list.
   @@index([tenantId, createdAt])
   @@map("ai_lens_analyses")
+}
+
+/// Bot Analytics — one active access check for one domain.
+///
+/// Two signals per bot, and the pair is the point: `robotsRule` is what the site
+/// SAYS, `httpStatus` is what the edge actually DID when we asked as that bot.
+/// A site can publish "Allow: /" and still have its WAF return 403 to GPTBot;
+/// robots.txt-only reporting calls that site open to ChatGPT when it is not.
+///
+/// `results` is per-bot rather than columns because the bot list is config
+/// (src/lib/bot-catalog.ts) and grows — Meta added meta-externalagent after this
+/// tool shipped. A column per crawler would mean a migration per crawler.
+model BotAccessCheck {
+  id       String @id @default(cuid())
+  tenantId String
+  /// Hostname checked, normalized. Stored per row so history stays readable
+  /// after the tenant points the tool at a different site.
+  domain   String
+  /// { "<token>": { robotsRule, httpStatus, verdict, detail, probed } }
+  /// verdict: allowed | blocked_robots | blocked_http | challenged | unknown
+  results  Json
+  robotsPresent Boolean @default(false)
+  sitemapFound  Boolean @default(false)
+  llmsTxt       Boolean @default(false)
+  /// Set when the sidecar could not complete the check at all; `results` is
+  /// then the robots-only partial rather than a silent green.
+  error     String?
+  checkedAt DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, checkedAt])
+  @@map("bot_access_checks")
+}
+
+enum BotLogStatus {
+  PENDING
+  PROCESSING
+  COMPLETE
+  FAILED
+}
+
+/// Bot Analytics — aggregates from one uploaded access log.
+///
+/// AGGREGATES ONLY, BY DESIGN. Access logs carry visitor IP addresses, which are
+/// personal data we have no reason to hold: the worker parses the upload, writes
+/// the counts below, and deletes the file. There is deliberately no column that
+/// could hold a raw line or an IP, so a future "just keep a sample for
+/// debugging" change has to add one and argue for it.
+///
+/// This is the ground-truth half of the tool. The access check says whether a
+/// crawler COULD reach the site; only the logs say whether it DID.
+model BotLogAnalysis {
+  id       String @id @default(cuid())
+  tenantId String
+  /// Original upload name, for the history list. Never a path on disk.
+  filename String
+  sizeBytes Int
+  status   BotLogStatus @default(PENDING)
+  /// Human-readable reason when status is FAILED (unparseable, empty, too big).
+  error    String?
+  /// Detected from the log's own timestamps, not from the upload time.
+  periodStart DateTime?
+  periodEnd   DateTime?
+  linesParsed  Int @default(0)
+  linesSkipped Int @default(0)
+  botHits      Int @default(0)
+  /// { perBotPerDay, topPaths, statusSplit, firstLastSeen, verified } — counts
+  /// and paths only. See src/lib/bot-analytics/log-parser.ts for the shape.
+  aggregates Json?
+  createdAt   DateTime  @default(now())
+  completedAt DateTime?
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId, createdAt])
+  @@map("bot_log_analyses")
 }
 
 /// Rank Tracker — a tracking project: one domain, a set of keywords, one
