@@ -31,7 +31,11 @@ import { withSpan } from "@/infrastructure/observability/telemetry";
 
 const QUEUE_NAME = "serp-checks";
 const SWEEP_JOB_NAME = "sweep";
-const SWEEP_INTERVAL_MS = 60_000;
+// 30s. The sweep's own reads are unbilled — tasks_ready costs $0 and task_get
+// only echoes the charge already taken at task_post — so halving the interval
+// halves the wait a SERP Checker user stares at without adding a cent. The floor
+// is DataForSEO's own turnaround (minutes, not seconds), not our polling rate.
+const SWEEP_INTERVAL_MS = 30_000;
 
 /** Everything that parks rows on DataForSEO's standard queue. */
 const OWNERS: readonly StandardQueueOwner[] = [serpCheckOwner, rankSnapshotOwner];
@@ -64,20 +68,43 @@ export function startSerpCheckWorker(): Worker<SerpCheckJob> {
     concurrency: 1,
   });
 
-  // Repeatable sweep. BullMQ dedupes the repeat config across restarts.
-  getQueue(QUEUE_NAME)
-    .add(
-      SWEEP_JOB_NAME,
-      { sweep: true },
-      {
-        repeat: { every: SWEEP_INTERVAL_MS },
-        removeOnComplete: true,
-        removeOnFail: { count: 50 },
-      },
-    )
-    .catch((err) => {
+  // Repeatable sweep.
+  //
+  // BullMQ dedupes a repeat config that is IDENTICAL across restarts, but its
+  // repeat key includes the interval — so changing SWEEP_INTERVAL_MS does not
+  // replace the old schedule, it ADDS a second one and the queue quietly sweeps
+  // on both. That happened moving this from 60s to 30s: both were live until the
+  // stale entry was deleted by hand. Pruning first makes the interval a normal
+  // thing to edit instead of a two-step deploy.
+  //
+  // `every` comes back from Redis as a STRING, so compare it as a number —
+  // `r.every !== SWEEP_INTERVAL_MS` is true for "30000" and deletes the schedule
+  // it was meant to keep.
+  void (async () => {
+    const queue = getQueue(QUEUE_NAME);
+    try {
+      for (const r of await queue.getRepeatableJobs()) {
+        if (r.name !== SWEEP_JOB_NAME) continue;
+        if (Number(r.every) === SWEEP_INTERVAL_MS) continue;
+        await queue.removeRepeatableByKey(r.key);
+        logger.warn(
+          { queue: QUEUE_NAME, staleEvery: r.every, every: SWEEP_INTERVAL_MS },
+          "removed stale standard-queue sweep schedule",
+        );
+      }
+      await queue.add(
+        SWEEP_JOB_NAME,
+        { sweep: true },
+        {
+          repeat: { every: SWEEP_INTERVAL_MS },
+          removeOnComplete: true,
+          removeOnFail: { count: 50 },
+        },
+      );
+    } catch (err) {
       logger.error({ err, queue: QUEUE_NAME }, "Failed to schedule standard-queue sweep");
-    });
+    }
+  })();
 
   worker.on("failed", (job, err) => {
     logger.error({ jobId: job?.id, err, queue: QUEUE_NAME }, "Standard-queue sweep failed");

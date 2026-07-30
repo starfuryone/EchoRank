@@ -166,8 +166,13 @@ export async function sweepStandardQueue(
     const { data } = await getEndpoint<ReadyTask[]>(SERP.organicTasksReady);
     for (const ready of data) {
       const entry = ready.id ? byTaskId.get(ready.id) : undefined;
-      if (!entry) continue; // not ours (or already handled this tick)
+      if (!entry) continue; // not ours
       const key = `${entry.owner.name}:${entry.row.rowId}`;
+      // A repeated id in one ready list would otherwise be fetched twice and
+      // written twice. task_get is unbilled so the cost is zero, but the second
+      // write is pure noise and the guard below was always meant to cover this
+      // loop as well as the direct-get pass.
+      if (attempted.has(key)) continue;
       attempted.add(key);
       if (await collectTask(entry.owner, entry.row.rowId, ready.id as string)) {
         collected.add(key);

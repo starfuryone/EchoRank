@@ -65,14 +65,22 @@ export const ADS = {
 // SERP
 // ---------------------------------------------------------------------------
 export const SERP = {
-  /** googleOrganicLiveAdvanced — SERP Checker */
-  organicLive: "v3/serp/google/organic/live/advanced",
   /** googleOrganicTaskPost — SERP Checker + rank tracking (cheaper, async) */
   organicTaskPost: "v3/serp/google/organic/task_post",
-  /** googleOrganicTasksReady — FREE at DataForSEO, skip metering */
+  /** googleOrganicTasksReady — genuinely free ($0 envelope); skip metering. */
   organicTasksReady: "v3/serp/google/organic/tasks_ready",
-  /** googleOrganicTaskGetAdvanced — FREE at DataForSEO, skip metering.
-   * The live path appends `/<taskId>`; this constant is the fixture key. */
+  /**
+   * googleOrganicTaskGetAdvanced. The live path appends `/<taskId>`; this
+   * constant is the fixture key.
+   *
+   * NOT metered, and NOT because it is free — its envelope reports the same
+   * `cost` as the task_post that created it ($0.006 at depth 100 in the
+   * recorded fixtures). That figure is an ECHO of the charge already made when
+   * the task was posted, not a second charge. Metering here as well would
+   * double-bill every keyword. The single charge is taken at task_post in
+   * serp/service.ts and rank-tracker/service.ts; the poller reads with the
+   * unmetered getEndpoint() on purpose.
+   */
   organicTaskGet: "v3/serp/google/organic/task_get/advanced",
   /** googleMapsLiveAdvanced */
   mapsLive: "v3/serp/google/maps/live/advanced",
@@ -222,17 +230,6 @@ export type RelevantPageItem = {
 import type { BacklinksSummaryItem } from "./backlinks-summary";
 export type { BacklinksSummaryItem };
 
-export type SerpOrganicItem = {
-  type?: string;
-  rank_group?: number;
-  rank_absolute?: number;
-  domain?: string;
-  title?: string;
-  url?: string;
-  description?: string;
-  breadcrumb?: string;
-};
-
 // ---------------------------------------------------------------------------
 // Thin call helpers. Location/language codes come from the ported
 // keyword-locations.ts table (open-seo src/shared/keyword-locations.ts).
@@ -306,18 +303,6 @@ export function backlinksSummary(input: { target: string }) {
     BACKLINKS.summary,
     backlinksSummaryTask(input.target, { includeSubdomains: true }),
   );
-}
-
-export function serpOrganicLive(
-  input: { keyword: string; device?: "desktop" | "mobile"; depth?: number } & Loc,
-) {
-  return postTask<{ items?: SerpOrganicItem[] }[]>(SERP.organicLive, {
-    keyword: input.keyword,
-    location_code: input.locationCode,
-    language_code: input.languageCode,
-    device: input.device ?? "desktop",
-    depth: input.depth ?? 100,
-  });
 }
 
 export function keywordSuggestions(
