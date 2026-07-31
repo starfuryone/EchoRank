@@ -55,18 +55,35 @@ export function ClassicSeoTools({
   return (
     <section id="tools" className={s.section}>
       <div className={s.container}>
-        <div className={s.toolsLayout}>
-          <div>
-            <p className={s.label}>
-              <b>/ {sectionNumber}</b> — {t.label}
-            </p>
-            <h2 className={s.h2}>{t.h2}</h2>
-            <p className={s.sub}>{t.sub}</p>
-            <p className={s.toolsCount}>{t.count(liveCount, soonCount)}</p>
+        <p className={s.label}>
+          <b>/ {sectionNumber}</b> — {t.label}
+        </p>
+        <h2 className={s.h2}>{t.h2}</h2>
+        <p className={s.sub}>{t.sub}</p>
+        <p className={s.toolsCount}>{t.count(liveCount, soonCount)}</p>
+
+        {/* Featured row — the four that are hardest to infer from a name —
+            paired with the overview video. The label sits ABOVE the split
+            rather than inside the left column, which is what actually makes
+            the video top-align with the first row of cards instead of with
+            the label. All five locales carry exactly four cards, so the 2x2
+            never leaves a ragged last row. */}
+        <p className={s.toolsFeaturedLabel}>{t.featuredLabel}</p>
+        <div className={s.toolsFeaturedRow}>
+          <div className={s.toolsFeatured}>
+            {t.featured.map((f) => (
+              <div className={s.toolsFeatureCard} key={f.k}>
+                <div className={s.toolsFeatureTag}>{f.k}</div>
+                <h3 className={s.toolsFeatureH}>{f.h}</h3>
+                <p className={s.toolsFeatureP}>{f.p}</p>
+              </div>
+            ))}
           </div>
           {/* No autoplay: this is a 57s narrated overview, not the short
               muted loops elsewhere on the page, and it weighs 34 MB.
-              preload="none" keeps that off the initial page load. */}
+              preload="none" keeps that off the initial page load.
+              Second in the DOM, so the mobile single-column stack puts it
+              after the cards without needing an order override. */}
           <div className={s.toolsVideoWrap}>
             <video
               className={s.foundVideo}
@@ -77,18 +94,6 @@ export function ClassicSeoTools({
               aria-label={t.videoLabel}
             />
           </div>
-        </div>
-
-        {/* Featured row — the four that are hardest to infer from a name. */}
-        <p className={s.toolsFeaturedLabel}>{t.featuredLabel}</p>
-        <div className={s.toolsFeatured}>
-          {t.featured.map((f) => (
-            <div className={s.toolsFeatureCard} key={f.k}>
-              <div className={s.toolsFeatureTag}>{f.k}</div>
-              <h3 className={s.toolsFeatureH}>{f.h}</h3>
-              <p className={s.toolsFeatureP}>{f.p}</p>
-            </div>
-          ))}
         </div>
 
         {/* The full grid, group by group, in hub order. */}

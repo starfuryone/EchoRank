@@ -487,25 +487,38 @@
    count. Dark/gold tokens only; no new colours introduced. */
 .toolsCount{font-family:var(--mono);font-size:12px;letter-spacing:.08em;color:var(--gold);margin-top:14px}
 
-/* / 04 intro + overview video. Two columns for the heading block only — the
-   tool grid below stays full width, because it is already auto-fit and
-   squeezing it into half the page would drop it to one card per row.
+/* / 04 featured cards + overview video. The heading block above this is full
+   width; only the "WORTH A CLOSER LOOK" row splits, and the tool-group grids
+   below stay full width too — they are auto-fit, so half a page would drop
+   them to one card per row.
+   Ratio is fr units, not 58%/42%: percentages plus the gap overflow the
+   container, whereas 1.38fr/1fr resolves to the same 58/42 split of the space
+   that remains after the gap.
    The clip is 1080x1920, so it reuses .foundVideo's 9/16 box rather than
    introducing a second portrait treatment. */
-.toolsLayout {
+.toolsFeaturedRow {
   display: grid;
-  grid-template-columns: 1fr 300px;
-  gap: 48px;
+  grid-template-columns: 1.38fr 1fr;
+  gap: 40px;
   align-items: start;
+}
+/* 2x2 inside the left column. The base .toolsFeatured is auto-fit with a
+   240px floor, which in a 58% column would reflow to a single column on
+   mid-size screens. */
+.toolsFeaturedRow .toolsFeatured {
+  grid-template-columns: repeat(2, 1fr);
 }
 .toolsVideoWrap {
   justify-self: end;
   width: 100%;
-  max-width: 300px;
+  max-width: 360px;
 }
 @media (max-width: 860px) {
-  .toolsLayout { grid-template-columns: 1fr; }
-  .toolsVideoWrap { justify-self: start; margin-inline: auto; }
+  .toolsFeaturedRow { grid-template-columns: 1fr; }
+  .toolsFeaturedRow .toolsFeatured {
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  }
+  .toolsVideoWrap { justify-self: start; max-width: 300px; margin-inline: auto; }
 }
 
 .toolsFeaturedLabel{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);margin:40px 0 14px}
