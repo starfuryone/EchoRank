@@ -5129,6 +5129,7 @@ export const ONBOARDING_COPY: Record<DashLocale, OnboardingCopy> = {
 const seoToolsEn = {
   hubTitle: "SEO Tools",
   hubSubtitle: "Every Echorank360 search, content, and reporting tool in one place.",
+  hubWhitepaper: "Download the white paper (PDF)",
   classicTitle: "Classic SEO Tools",
   classicSubtitle: "Traditional search data — rankings, keywords, backlinks and technical health.",
   upgradeTitle: "SEO Tools are part of your paid plan",
@@ -5267,6 +5268,7 @@ export const SEO_TOOLS_COPY: Record<DashLocale, SeoToolsCopy> = {
   fr: {
     hubTitle: "Outils SEO",
     hubSubtitle: "Tous les outils de recherche, de contenu et de rapports d'Echorank360, réunis au même endroit.",
+    hubWhitepaper: "Télécharger le livre blanc (PDF)",
     classicTitle: "Outils SEO classiques",
     classicSubtitle: "Données de recherche traditionnelles — positions, mots-clés, liens retour et santé technique.",
     upgradeTitle: "Les outils SEO font partie de votre forfait payant",
@@ -5397,6 +5399,10 @@ export const SEO_TOOLS_COPY: Record<DashLocale, SeoToolsCopy> = {
   "de-CH": {
     hubTitle: "SEO-Tools",
     hubSubtitle: "Alle Such-, Content- und Berichtstools von Echorank360 an einem Ort.",
+    // MACHINE-TRANSLATED, needs a native de-CH review before it is trusted.
+    // (Requested as such; "ss" not "ß" per the house rule, though this string
+    // happens to contain neither.)
+    hubWhitepaper: "Whitepaper herunterladen (PDF)",
     classicTitle: "Klassische SEO-Tools",
     classicSubtitle: "Traditionelle Suchdaten — Rankings, Keywords, Backlinks und technische Gesundheit.",
     upgradeTitle: "SEO-Tools sind Teil Ihres bezahlten Plans",

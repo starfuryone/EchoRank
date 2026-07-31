@@ -178,6 +178,9 @@ const T = {
       sub: "Run your AI Visibility Audit in under 60 seconds. See exactly what AI says about your business — and exactly what to do next.",
       cta1: "Run My Free AI Visibility Audit ↗", cta2: "Watch a 2-Minute Demo",
     },
+    // Section /15. Only the SEO-tools paper's label is catalogued; the rest of
+    // that section is still hardcoded English in the JSX.
+    resources: { seoPaper: "Download the white paper (PDF)" },
     foot: { links: [["about", "ABOUT"], ["guide", "GUIDE"], ["guide-visibilite-ia", "AI VISIBILITY GUIDE"], ["legal/privacy", "PRIVACY"], ["legal/terms", "TERMS"], ["legal/disclaimer", "DISCLAIMER"]] },
   },
 
@@ -326,6 +329,7 @@ const T = {
       sub: "Lancez votre audit de visibilité IA en moins de 60 secondes. Voyez exactement ce que l'IA dit de votre entreprise — et exactement quoi faire ensuite.",
       cta1: "Lancer mon audit de visibilité IA gratuit ↗", cta2: "Voir la démo de 2 minutes",
     },
+    resources: { seoPaper: "Télécharger le livre blanc (PDF)" },
     foot: { links: [["about", "À PROPOS"], ["guide", "GUIDE"], ["guide-visibilite-ia", "GUIDE VISIBILITÉ IA"], ["legal/privacy", "CONFIDENTIALITÉ"], ["legal/terms", "CONDITIONS"], ["legal/disclaimer", "AVIS"]] },
   },
 } as const;
@@ -916,7 +920,7 @@ export default function HomeClient({
       </section>
 
       {/* 14. CLOSE */}
-      <section className={s.section}><div className={s.container}><p className={s.label}><b>/ 15</b> — RESOURCES</p><h2 className={s.h2}>Reputation Intelligence, Made Simple</h2><p className={s.sub}>The plain-English guide to running Echorank: the 30-minute setup, daily operating rhythm, AI visibility and answer tracking, and risk &amp; competitor intelligence. Free PDF, no email required.</p><a className={`${s.btn} ${s.btnPrimary}`} href="/whitepapers/Echorank_Reputation_Intelligence_Whitepaper.pdf" download target="_blank" rel="noopener">Download the Whitepaper (PDF) ↓</a></div></section><section className={s.close}>
+      <section className={s.section}><div className={s.container}><p className={s.label}><b>/ 15</b> — RESOURCES</p><h2 className={s.h2}>Reputation Intelligence, Made Simple</h2><p className={s.sub}>The plain-English guide to running Echorank: the 30-minute setup, daily operating rhythm, AI visibility and answer tracking, and risk &amp; competitor intelligence. Free PDF, no email required.</p><a className={`${s.btn} ${s.btnPrimary}`} href="/whitepapers/Echorank_Reputation_Intelligence_Whitepaper.pdf" download target="_blank" rel="noopener">Download the Whitepaper (PDF) ↓</a> <a className={s.btn} href="/whitepapers/echorank360-seo-tools-whitepaper.pdf" download target="_blank" rel="noopener">{t.resources.seoPaper} ↓</a></div></section><section className={s.close}>
         <div className={s.container}>
           <p className={s.label}><b>/ 16</b> — {t.close.label}</p>
           <h2 className={s.h2c}>{t.close.h2a}<span className={s.goldtext}>{t.close.h2b}</span></h2>

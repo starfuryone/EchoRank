@@ -25,6 +25,15 @@ export default async function SeoToolsHubPage() {
           {copy.hubTitle}
         </h2>
         <p className="mt-1 text-sm text-gray-500">{copy.hubSubtitle}</p>
+        <a
+          href="/whitepapers/echorank360-seo-tools-whitepaper.pdf"
+          download
+          target="_blank"
+          rel="noopener"
+          className="mt-2 inline-block text-sm font-medium text-blue-600 underline-offset-2 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+        >
+          {copy.hubWhitepaper} ↓
+        </a>
       </div>
 
       {groups.map((group, gi) => (
