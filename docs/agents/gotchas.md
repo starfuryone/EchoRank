@@ -97,6 +97,25 @@ with its own task, not an oversight to fix in passing. See [integrations.md](int
 ## Secrets
 
 `/opt/echorank/av-service/ecosystem.av-visibility.config.js` holds `INTERNAL_API_SECRET` and
-an Anthropic API key inline. It is `chmod 600` and its header says to keep it out of git —
-**it is currently tracked in the av-service repo anyway.** Do not print it, copy it into
-docs, or echo it into a transcript.
+`ANTHROPIC_API_KEY` inline. It is `chmod 600`. Do not print it, copy it into docs, or echo
+it into a transcript — that last one has already happened, see below.
+
+**No longer tracked in git** (fixed 2026-07-30): the av-service history was destroyed and
+re-initialised, and `ecosystem*.config.js` / `.env*` are now in that repo's `.gitignore`.
+Pre-purge history is bundled at `/home/deploy/av-service-prepurge-20260730-154326.bundle`
+(chmod 600). That repo has no remote and never did, so the exposure was always local.
+
+Re-init is not rotation, and only one of the two secrets was rotated:
+
+- `INTERNAL_API_SECRET` — **rotated.** The live value differs from the committed one, and
+  `/opt/echorank/app/.env` carries the same new value, so app→sidecar auth is consistent.
+- `ANTHROPIC_API_KEY` — **NOT rotated.** Byte-identical to the value that was committed.
+  Still live, still billable. See SECURITY.md M5.
+
+Copies of the un-rotated key on this box: the config itself, its
+`.bak.20260730-062532` sibling, the root-owned `/opt/echorank/av-service/.env`, the
+pre-purge bundle, and — the one that is easy to forget — four Claude Code session
+transcripts under `/home/deploy/.claude/projects/-opt-echorank-app/`. Those are `600` but
+the enclosing directories are world-readable (`755`), and an agent asked to grep its own
+history will surface the key in plaintext. Revoking the old key is what makes every one of
+those copies inert; deleting files is not a substitute.

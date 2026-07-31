@@ -44,6 +44,32 @@ logs flushed.
 **Remaining fix:** split REDIS_HOST/PORT/PASSWORD env vars, assemble URL in
 code; adopt the rotation runbook below for every secret.
 
+### M5 — av-service ANTHROPIC_API_KEY never rotated after being committed (A05)
+The av-service repo carried `ecosystem.av-visibility.config.js` — with both secrets
+inline — in its only commit. On 2026-07-30 the history was purged and re-initialised
+and the file was gitignored, but **re-init is not rotation.** Verified 2026-07-31 by
+hashing the live values against the ones in the pre-purge bundle:
+`INTERNAL_API_SECRET` was rotated (and `/opt/echorank/app/.env` matches, so app→sidecar
+auth is consistent); `ANTHROPIC_API_KEY` is byte-identical to the committed value and is
+still live and billable.
+
+Copies on this box: the config, its `.bak.20260730-062532` sibling, root-owned
+`/opt/echorank/av-service/.env`, `/home/deploy/av-service-prepurge-20260730-154326.bundle`,
+and four Claude Code transcripts under `/home/deploy/.claude/projects/-opt-echorank-app/`
+(mode 600 inside 755 directories). No git remote ever existed, so exposure is local — but
+"local" includes every agent session that can read those transcripts.
+
+**Fix (needs the operator — new keys cannot be issued from this box):**
+1. Frederic issues a new key at console.anthropic.com and **revokes the old one**.
+   Revocation is the step that matters; it neutralises every copy above at once.
+2. Swap the value in `ecosystem.av-visibility.config.js` (chmod 600, keep it ignored).
+3. `pm2 delete av-visibility && pm2 start ecosystem.av-visibility.config.js && pm2 save`
+   — delete+start, not restart: the running process's env predates the change (runbook §4).
+4. Verify: `/bots` and a live `/remediate` call still work; check billing shows the old
+   key idle.
+5. Then `rm` the `.bak.20260730-062532` config and re-evaluate whether the pre-purge
+   bundle still needs keeping.
+
 ### M3 — Dependency posture (A06)
 `npm audit` cannot run: lockfile out of sync ("Invalid package tree"). Last
 known count: 42 vulns (2 critical) — stale, unverifiable. Node v20.20.0 is
