@@ -3,6 +3,8 @@
 // Nothing here may be duplicated in a page file. If a page needs a title, a
 // description or an OG image, it goes through buildMetadata() — see README.md.
 
+import { PLAN_CONFIGS } from "@/lib/plan-config";
+
 export const SITE_URL = "https://echorank360.com";
 export const SITE_NAME = "Echorank360";
 export const LEGAL_NAME = "ChatLogic Insights Ltd";
@@ -65,12 +67,17 @@ export const BRAND_TITLE: Record<SeoLocale, string> = {
   "de-CH": "Echorank360 — Plattform für KI-Sichtbarkeit",
 };
 
-// Subscription plans, USD list price. Mirrors the pricing section on the
-// homepage; used to build SoftwareApplication offers.
-export const PLANS: { name: string; price: string }[] = [
-  { name: "Starter", price: "49" },
-  { name: "Growth", price: "149" },
-  { name: "Agency", price: "349" },
-  { name: "Enterprise", price: "999" },
-];
+// Subscription plans, USD list price, for SoftwareApplication offers.
+//
+// DERIVED, NOT MIRRORED. This was a hand-kept copy and it drifted: it published
+// 49/149/349 against real prices of 79/199/499, and an Enterprise offer at 999
+// for a plan that is custom-priced. Wrong prices in structured data are the
+// kind Google shows in a rich result, so the duplicate is now gone.
+//
+// Custom-priced plans are filtered out rather than given a number: Enterprise
+// carries monthlyPrice 0 and isCustomPricing true, and an Offer of "0" or an
+// invented 999 both misstate it. A plan with no list price has no Offer.
+export const PLANS: { name: string; price: string }[] = Object.values(PLAN_CONFIGS)
+  .filter((p) => !p.isCustomPricing && p.monthlyPrice > 0)
+  .map((p) => ({ name: p.name, price: String(p.monthlyPrice) }));
 export const PRICE_CURRENCY = "USD";

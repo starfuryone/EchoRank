@@ -55,12 +55,29 @@ export function ClassicSeoTools({
   return (
     <section id="tools" className={s.section}>
       <div className={s.container}>
-        <p className={s.label}>
-          <b>/ {sectionNumber}</b> — {t.label}
-        </p>
-        <h2 className={s.h2}>{t.h2}</h2>
-        <p className={s.sub}>{t.sub}</p>
-        <p className={s.toolsCount}>{t.count(liveCount, soonCount)}</p>
+        <div className={s.toolsLayout}>
+          <div>
+            <p className={s.label}>
+              <b>/ {sectionNumber}</b> — {t.label}
+            </p>
+            <h2 className={s.h2}>{t.h2}</h2>
+            <p className={s.sub}>{t.sub}</p>
+            <p className={s.toolsCount}>{t.count(liveCount, soonCount)}</p>
+          </div>
+          {/* No autoplay: this is a 57s narrated overview, not the short
+              muted loops elsewhere on the page, and it weighs 34 MB.
+              preload="none" keeps that off the initial page load. */}
+          <div className={s.toolsVideoWrap}>
+            <video
+              className={s.foundVideo}
+              src="/videos/echorank-classic-seo-tools-overview.mp4"
+              controls
+              playsInline
+              preload="none"
+              aria-label={t.videoLabel}
+            />
+          </div>
+        </div>
 
         {/* Featured row — the four that are hardest to infer from a name. */}
         <p className={s.toolsFeaturedLabel}>{t.featuredLabel}</p>

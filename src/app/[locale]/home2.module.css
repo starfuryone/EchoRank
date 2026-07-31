@@ -487,6 +487,27 @@
    count. Dark/gold tokens only; no new colours introduced. */
 .toolsCount{font-family:var(--mono);font-size:12px;letter-spacing:.08em;color:var(--gold);margin-top:14px}
 
+/* / 04 intro + overview video. Two columns for the heading block only — the
+   tool grid below stays full width, because it is already auto-fit and
+   squeezing it into half the page would drop it to one card per row.
+   The clip is 1080x1920, so it reuses .foundVideo's 9/16 box rather than
+   introducing a second portrait treatment. */
+.toolsLayout {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 48px;
+  align-items: start;
+}
+.toolsVideoWrap {
+  justify-self: end;
+  width: 100%;
+  max-width: 300px;
+}
+@media (max-width: 860px) {
+  .toolsLayout { grid-template-columns: 1fr; }
+  .toolsVideoWrap { justify-self: start; margin-inline: auto; }
+}
+
 .toolsFeaturedLabel{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);margin:40px 0 14px}
 .toolsFeatured{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
 .toolsFeatureCard{background:var(--surface2);border:1px solid var(--line);border-radius:var(--radius);padding:22px}
