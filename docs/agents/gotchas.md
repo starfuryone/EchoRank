@@ -105,17 +105,25 @@ re-initialised, and `ecosystem*.config.js` / `.env*` are now in that repo's `.gi
 Pre-purge history is bundled at `/home/deploy/av-service-prepurge-20260730-154326.bundle`
 (chmod 600). That repo has no remote and never did, so the exposure was always local.
 
-Re-init is not rotation, and only one of the two secrets was rotated:
+Re-init is not rotation. The 2026-07-30 purge rotated `INTERNAL_API_SECRET` but left
+`ANTHROPIC_API_KEY` byte-identical to the committed value; both are now rotated as of
+2026-07-31 (SECURITY.md M5). **The old Anthropic key still needs revoking at
+console.anthropic.com** — until then the copies below are live credentials.
 
-- `INTERNAL_API_SECRET` — **rotated.** The live value differs from the committed one, and
-  `/opt/echorank/app/.env` carries the same new value, so app→sidecar auth is consistent.
-- `ANTHROPIC_API_KEY` — **NOT rotated.** Byte-identical to the value that was committed.
-  Still live, still billable. See SECURITY.md M5.
+Copies of the old key on this box: two `ecosystem.av-visibility.config.js.bak.*` siblings,
+the root-owned `/opt/echorank/av-service/.env`, the pre-purge bundle, and — the one that is
+easy to forget — several Claude Code session transcripts under
+`/home/deploy/.claude/projects/-opt-echorank-app/`. Those are `600` but the enclosing
+directories are world-readable (`755`), and an agent asked to grep its own history will
+surface the key in plaintext. Revoking is what makes every copy inert at once; deleting
+files one at a time is not a substitute.
 
-Copies of the un-rotated key on this box: the config itself, its
-`.bak.20260730-062532` sibling, the root-owned `/opt/echorank/av-service/.env`, the
-pre-purge bundle, and — the one that is easy to forget — four Claude Code session
-transcripts under `/home/deploy/.claude/projects/-opt-echorank-app/`. Those are `600` but
-the enclosing directories are world-readable (`755`), and an agent asked to grep its own
-history will surface the key in plaintext. Revoking the old key is what makes every one of
-those copies inert; deleting files is not a substitute.
+Two traps worth keeping, both paid for once already:
+
+- **`pm2 restart` will not pick up an env change.** The process keeps the env it booted
+  with, so the rotation looks applied and changes nothing. Always `pm2 delete` then
+  `pm2 start <config>`, then `pm2 save`.
+- **`/health` returning 200 does not mean the Anthropic key works.** `keyword_suggest.py`
+  catches AI failures into `meta.ai_error` and returns success anyway — by design, so AI
+  never breaks the tool. To actually test a key, `POST /keywords {"ai":true}` and check
+  `meta.ai_used`.

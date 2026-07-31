@@ -59,16 +59,29 @@ and four Claude Code transcripts under `/home/deploy/.claude/projects/-opt-echor
 (mode 600 inside 755 directories). No git remote ever existed, so exposure is local — but
 "local" includes every agent session that can read those transcripts.
 
-**Fix (needs the operator — new keys cannot be issued from this box):**
-1. Frederic issues a new key at console.anthropic.com and **revokes the old one**.
-   Revocation is the step that matters; it neutralises every copy above at once.
-2. Swap the value in `ecosystem.av-visibility.config.js` (chmod 600, keep it ignored).
-3. `pm2 delete av-visibility && pm2 start ecosystem.av-visibility.config.js && pm2 save`
-   — delete+start, not restart: the running process's env predates the change (runbook §4).
-4. Verify: `/bots` and a live `/remediate` call still work; check billing shows the old
-   key idle.
-5. Then `rm` the `.bak.20260730-062532` config and re-evaluate whether the pre-purge
-   bundle still needs keeping.
+**ROTATED 2026-07-31.** New key in `ecosystem.av-visibility.config.js` (still 600, still
+ignored); `INTERNAL_API_SECRET` verified unchanged in the same pass, so app→sidecar auth
+never moved. Applied with `pm2 delete av-visibility && pm2 start … && pm2 save` —
+delete+start, because `pm2 restart` reuses the env the process booted with and the swap
+would have been a silent no-op, which is how M2's first Redis rotation burned itself.
+Proven live, not just healthy: `POST /keywords {ai:true}` returned `meta.ai_used: true`
+with 15 AI keywords and no `ai_error`. That probe matters because **an Anthropic failure
+never fails the request** (`keyword_suggest.py` catches it into `meta.ai_error`) — the
+sidecar degrades silently, so `/health` returning 200 says nothing about the key.
+
+**Still open, both operator-side:**
+1. **Revoke the old key** at console.anthropic.com. Until then nothing about the exposure
+   has changed — the two `.bak.*` configs, the root-owned `.env`, the pre-purge bundle and
+   the transcripts all still carry a live credential. Then re-run the `/keywords` probe:
+   it is the only check that distinguishes *the new key is loaded* from *some working key
+   is loaded*, since the old key still authenticates today. Process start (21:48:47)
+   postdating the config write (21:43:58) is strong evidence, not proof.
+2. **The replacement key was pasted into a Claude Code session**, so it inherits exactly
+   the weakness that opened M5. Rotate once more via file handoff
+   (`umask 077; cat > keyfile`, never argv, never chat) to close it properly.
+
+Then `rm` both `ecosystem.av-visibility.config.js.bak.*` and re-evaluate whether the
+pre-purge bundle still needs keeping.
 
 ### M3 — Dependency posture (A06)
 `npm audit` cannot run: lockfile out of sync ("Invalid package tree"). Last
