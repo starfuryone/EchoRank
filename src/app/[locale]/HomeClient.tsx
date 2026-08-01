@@ -5,7 +5,6 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import s from "./home2.module.css";
 import { FAQ } from "./faq-data";
 import { DemoVideoModal } from "@/components/demo-video";
-import { HoverVideo } from "@/components/hover-video";
 import { HomeVideo, type HomeVideoLabels } from "./HomeVideo";
 import type { HomePricingChrome } from "@/lib/i18n/content";
 
@@ -751,13 +750,16 @@ export default function HomeClient({
         <div className={s.container}>
           <p className={s.label}><b>/ 09</b> — {t.trad.label}</p>
           <div className={s.foundLayout}>
-            <HoverVideo
+            {/* This one used to loop. HomeVideo does not, and a clip the
+                visitor deliberately started should end rather than restart
+                behind them — same behaviour as the other three now. */}
+            <HomeVideo
               wrapClassName={s.foundVideoWrap}
               className={s.foundVideo}
               src="/videos/Avatar_Video_with_captions.mp4"
               poster="/videos/Avatar_Video_with_captions-poster.jpg"
               ariaLabel={t.trad.videoLabel}
-              loop
+              labels={playerLabels}
             />
             <div>
               <h2 className={s.h2}>{t.trad.h2}</h2>
@@ -938,13 +940,16 @@ export default function HomeClient({
               </div>
             ))}
           </div>
+            {/* .faqVideo is its own class but the same 9/16 box as
+                .foundVideo, so the className passthrough is all this needs. */}
             {locale === 'en' && (
-              <HoverVideo
+              <HomeVideo
                 wrapClassName={s.faqVideoWrap}
                 className={s.faqVideo}
                 src="/videos/faq-intro.mp4"
                 poster="/videos/faq-intro-poster.jpg"
                 ariaLabel={t.faqVideoLabel}
+                labels={playerLabels}
               />
             )}
           </div>

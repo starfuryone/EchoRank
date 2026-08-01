@@ -87,11 +87,7 @@ export function ClassicSeoTools({
               No autoplay and preload="none": it weighs 34 MB and must stay
               off the initial page load.
               Second in the DOM, so the mobile single-column stack puts it
-              after the cards without needing an order override.
-              The other three homepage videos stay on HoverVideo: swapping
-              them would drop their native scrub bar, and /09's loop, which
-              is a behaviour change rather than the pure upgrade this was
-              scoped to. */}
+              after the cards without needing an order override. */}
           <HomeVideo
             wrapClassName={s.toolsVideoWrap}
             className={s.foundVideo}
