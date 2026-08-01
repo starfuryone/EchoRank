@@ -69,7 +69,7 @@ const C: Record<Locale, LpContent> = {
     },
     plans: {
       label: "/ 04 — PLANS",
-      note: "Alerts, revenue-at-risk and drafted responses ship with GROWTH. Competitor momentum alerts ship with AGENCY. 14-day free trial.",
+      note: "Alerts, revenue-at-risk and drafted responses ship with GROWTH. Competitor momentum alerts ship with AGENCY. 7-day free trial.",
       cta: "See pricing →",
     },
     final: {
@@ -127,7 +127,7 @@ const C: Record<Locale, LpContent> = {
     },
     plans: {
       label: "/ 04 — FORFAITS",
-      note: "Alertes, chiffre d'affaires à risque et réponses rédigées arrivent avec CROISSANCE. Les alertes d'élan concurrentiel arrivent avec AGENCE. Essai gratuit de 14 jours.",
+      note: "Alertes, chiffre d'affaires à risque et réponses rédigées arrivent avec CROISSANCE. Les alertes d'élan concurrentiel arrivent avec AGENCE. Essai gratuit de 7 jours.",
       cta: "Voir les tarifs →",
     },
     final: {
@@ -185,7 +185,7 @@ const C: Record<Locale, LpContent> = {
     },
     plans: {
       label: "/ 04 — PLÄNE",
-      note: "Alarme, Umsatz im Risiko und Antwortentwürfe kommen mit WACHSTUM. Konkurrenz-Momentum-Alarme mit AGENTUR. 14 Tage kostenlos testen.",
+      note: "Alarme, Umsatz im Risiko und Antwortentwürfe kommen mit WACHSTUM. Konkurrenz-Momentum-Alarme mit AGENTUR. 7 Tage kostenlos testen.",
       cta: "Preise ansehen →",
     },
     final: {

@@ -71,7 +71,7 @@ const C: Record<Locale, LpContent> = {
     },
     plans: {
       label: "/ 04 — PLANS",
-      note: "Campaigns, private feedback routing, monitoring and AI response drafting ship with every plan, starting at STARTER. White-label and multi-client tools ship with AGENCY. 14-day free trial.",
+      note: "Campaigns, private feedback routing, monitoring and AI response drafting ship with every plan, starting at STARTER. White-label and multi-client tools ship with AGENCY. 7-day free trial.",
       cta: "See pricing →",
     },
     final: {
@@ -131,7 +131,7 @@ const C: Record<Locale, LpContent> = {
     },
     plans: {
       label: "/ 04 — FORFAITS",
-      note: "Campagnes, routage des retours privés, surveillance et réponses rédigées par IA sont inclus dans tous les forfaits, dès STARTER. La marque blanche et le multi-clients arrivent avec AGENCE. Essai gratuit de 14 jours.",
+      note: "Campagnes, routage des retours privés, surveillance et réponses rédigées par IA sont inclus dans tous les forfaits, dès STARTER. La marque blanche et le multi-clients arrivent avec AGENCE. Essai gratuit de 7 jours.",
       cta: "Voir les tarifs →",
     },
     final: {
@@ -191,7 +191,7 @@ const C: Record<Locale, LpContent> = {
     },
     plans: {
       label: "/ 04 — PLÄNE",
-      note: "Kampagnen, privates Feedback-Routing, Überwachung und KI-Antwortentwürfe sind in jedem Plan enthalten, ab STARTER. White-Label und Mandantenfähigkeit kommen mit AGENTUR. 14 Tage kostenlos testen.",
+      note: "Kampagnen, privates Feedback-Routing, Überwachung und KI-Antwortentwürfe sind in jedem Plan enthalten, ab STARTER. White-Label und Mandantenfähigkeit kommen mit AGENTUR. 7 Tage kostenlos testen.",
       cta: "Preise ansehen →",
     },
     final: {
@@ -216,7 +216,7 @@ C["fr-CA"] = {
   },
   plans: {
     ...C.fr.plans,
-    note: "Campagnes, routage de la rétroaction privée, surveillance et réponses rédigées par IA sont inclus dans tous les forfaits, dès STARTER. La marque blanche et le multi-clients arrivent avec AGENCE. Essai gratuit de 14 jours.",
+    note: "Campagnes, routage de la rétroaction privée, surveillance et réponses rédigées par IA sont inclus dans tous les forfaits, dès STARTER. La marque blanche et le multi-clients arrivent avec AGENCE. Essai gratuit de 7 jours.",
   },
 };
 

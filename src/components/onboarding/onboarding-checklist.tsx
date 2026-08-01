@@ -25,7 +25,9 @@ interface OnboardingState {
 /**
  * The 5-item first-steps checklist (dismissible), shown on /dashboard and
  * /visibility. Done-detection is entirely server-side (/api/onboarding GET);
- * hidden for tenants older than 14 days or with audits predating onboarding.
+ * hidden for tenants older than ONBOARDING_WINDOW_DAYS (180) or with audits
+ * predating onboarding. This said 14 days, which was never the trial length
+ * and no longer matches the constant either.
  */
 export function OnboardingChecklist({ locale = "en" }: { locale?: DashLocale }) {
   const t = ONBOARDING_COPY[locale];

@@ -21,7 +21,7 @@ const EN: Doc = {
     { h: "Your first 30 minutes", ps: [
       "The full setup, in order. When every box is ticked, the platform is watching your reputation around the clock.",
     ], bullets: [
-      "☐ Create your account (14 day trial, no card)",
+      "☐ Create your account (7 day trial, no card)",
       "☐ Connect your Google Business Profile",
       "☐ Connect your website domain",
       "☐ Import historical reviews (extension or CSV)",
@@ -45,7 +45,7 @@ const EN: Doc = {
       "Competitive intelligence: daily competitor snapshots show who is gaining ground and when.",
     ]},
     { h: "1. Create your account", ps: [
-      "Go to the register page, enter your name, work email, business name and a password of at least 8 characters. Every new account starts a 14 day free trial with no credit card required. Nothing is charged unless you subscribe.",
+      "Go to the register page, enter your name, work email, business name and a password of at least 8 characters. Every new account starts a 7 day free trial with no credit card required. Nothing is charged unless you subscribe.",
       "You can invite teammates later from the Team page. The person who creates the account is the owner.",
     ]},
     { h: "2. Connect your sources", ps: [
@@ -165,7 +165,7 @@ const FR: Doc = {
     { h: "Vos 30 premières minutes", ps: [
       "Le parcours complet, dans l'ordre. Quand chaque case est cochée, la plateforme surveille votre réputation en continu.",
     ], bullets: [
-      "☐ Créez votre compte (essai de 14 jours, sans carte)",
+      "☐ Créez votre compte (essai de 7 jours, sans carte)",
       "☐ Connectez votre profil d'entreprise Google",
       "☐ Connectez le domaine de votre site web",
       "☐ Importez vos avis historiques (extension ou CSV)",
@@ -189,7 +189,7 @@ const FR: Doc = {
       "Intelligence concurrentielle : les instantanés quotidiens des concurrents montrent qui gagne du terrain, et quand.",
     ]},
     { h: "1. Créez votre compte", ps: [
-      "Rendez-vous sur la page d'inscription, entrez votre nom, votre courriel professionnel, le nom de votre entreprise et un mot de passe d'au moins 8 caractères. Chaque nouveau compte démarre un essai gratuit de 14 jours, sans carte de crédit. Rien n'est facturé sans souscription.",
+      "Rendez-vous sur la page d'inscription, entrez votre nom, votre courriel professionnel, le nom de votre entreprise et un mot de passe d'au moins 8 caractères. Chaque nouveau compte démarre un essai gratuit de 7 jours, sans carte de crédit. Rien n'est facturé sans souscription.",
       "Vous pourrez inviter des collègues plus tard depuis la page Équipe. La personne qui crée le compte en est propriétaire.",
     ]},
     { h: "2. Reliez vos sources", ps: [
@@ -309,7 +309,7 @@ const DE: Doc = {
     { h: "Ihre ersten 30 Minuten", ps: [
       "Der komplette Einstieg, in der richtigen Reihenfolge. Sind alle Punkte abgehakt, überwacht die Plattform Ihre Reputation rund um die Uhr.",
     ], bullets: [
-      "☐ Konto erstellen (14 Tage Testphase, ohne Karte)",
+      "☐ Konto erstellen (7 Tage Testphase, ohne Karte)",
       "☐ Google Unternehmensprofil verbinden",
       "☐ Website-Domain verbinden",
       "☐ Bisherige Bewertungen importieren (Erweiterung oder CSV)",
@@ -333,7 +333,7 @@ const DE: Doc = {
       "Wettbewerbsintelligenz: tägliche Konkurrenz Momentaufnahmen zeigen, wer aufholt, und wann.",
     ]},
     { h: "1. Konto erstellen", ps: [
-      "Gehen Sie zur Registrierungsseite, geben Sie Name, geschäftliche E-Mail, Firmenname und ein Passwort mit mindestens 8 Zeichen ein. Jedes neue Konto startet eine 14 Tage Testphase ohne Kreditkarte. Ohne Abo wird nichts berechnet.",
+      "Gehen Sie zur Registrierungsseite, geben Sie Name, geschäftliche E-Mail, Firmenname und ein Passwort mit mindestens 8 Zeichen ein. Jedes neue Konto startet eine 7 Tage Testphase ohne Kreditkarte. Ohne Abo wird nichts berechnet.",
       "Teammitglieder laden Sie später über die Team Seite ein. Wer das Konto erstellt, ist Inhaber.",
     ]},
     { h: "2. Quellen verbinden", ps: [

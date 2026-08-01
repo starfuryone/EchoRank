@@ -71,7 +71,7 @@ const C: Record<Locale, LpContent> = {
     },
     plans: {
       label: "/ 04 — PLANS",
-      note: "Review monitoring and the hourly Risk Score ship with GROWTH. Daily AI answer tracking and competitor snapshots ship with AGENCY. 14-day free trial.",
+      note: "Review monitoring and the hourly Risk Score ship with GROWTH. Daily AI answer tracking and competitor snapshots ship with AGENCY. 7-day free trial.",
       cta: "See pricing →",
     },
     final: {
@@ -131,7 +131,7 @@ const C: Record<Locale, LpContent> = {
     },
     plans: {
       label: "/ 04 — FORFAITS",
-      note: "La surveillance des avis et le Score de risque horaire arrivent avec CROISSANCE. Le suivi quotidien des réponses IA et les instantanés concurrents arrivent avec AGENCE. Essai gratuit de 14 jours.",
+      note: "La surveillance des avis et le Score de risque horaire arrivent avec CROISSANCE. Le suivi quotidien des réponses IA et les instantanés concurrents arrivent avec AGENCE. Essai gratuit de 7 jours.",
       cta: "Voir les tarifs →",
     },
     final: {
@@ -191,7 +191,7 @@ const C: Record<Locale, LpContent> = {
     },
     plans: {
       label: "/ 04 — PLÄNE",
-      note: "Bewertungs-Überwachung und der stündliche Risiko-Score kommen mit WACHSTUM. Tägliches KI-Antwort-Tracking und Konkurrenz-Momentaufnahmen mit AGENTUR. 14 Tage kostenlos testen.",
+      note: "Bewertungs-Überwachung und der stündliche Risiko-Score kommen mit WACHSTUM. Tägliches KI-Antwort-Tracking und Konkurrenz-Momentaufnahmen mit AGENTUR. 7 Tage kostenlos testen.",
       cta: "Preise ansehen →",
     },
     final: {

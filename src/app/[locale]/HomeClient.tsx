@@ -173,7 +173,7 @@ const T = {
     pricing: {
       label: "PRICING", h2: "Plans",
       cadLink: "See pricing in Canadian dollars →",
-      tax: "14-day free trial on all plans. No card required.",
+      tax: "Try Echorank free for 7 days. Cancel anytime. No card required.",
       currency: "All prices are in US dollars (USD). If you pay with a card in another currency, your bank converts the charge at its own exchange rate.",
     },
     close: {
@@ -330,7 +330,7 @@ const T = {
     pricing: {
       label: "TARIFS", h2: "Forfaits",
       cadLink: "Voir les tarifs en dollars canadiens →",
-      tax: "Essai gratuit de 14 jours sur tous les forfaits. Aucune carte requise.",
+      tax: "Essayez Echorank gratuitement pendant 7 jours. Annulez à tout moment. Aucune carte requise.",
       currency: "Tous les prix sont en dollars américains (USD). Si vous payez avec une carte dans une autre devise, votre banque effectue la conversion à son propre taux de change.",
     },
     close: {

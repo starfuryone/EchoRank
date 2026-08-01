@@ -1,6 +1,23 @@
 import type { PlanType } from "@/generated/prisma";
 import { hasFeature } from "./feature-flags";
 
+/**
+ * Free-trial length in days. THE source for the number — marketing copy,
+ * legal terms and any future trial-expiry logic all mean this value.
+ *
+ * There is no code that enforces it today: Stripe checkout does not exist in
+ * this app (see docs/agents/integrations.md), so nothing sets
+ * trial_period_days and nothing computes a trial end date. Tenants are created
+ * with billingStatus TRIALING and no length attached. If a trial is configured
+ * on a Stripe price or product, that is a dashboard setting and this constant
+ * cannot reach it — they have to be changed together.
+ *
+ * Catalog strings are prose in five locales and are not templated, so they
+ * cannot interpolate this. tests/trial-days.test.ts asserts they agree with it
+ * instead, which is what stops the two drifting apart.
+ */
+export const TRIAL_DAYS = 7;
+
 export interface PlanConfig {
   name: string;
   slug: string;

@@ -72,7 +72,7 @@ const C: Record<Locale, LpContent> = {
     },
     plans: {
       label: "/ 04 — PLANS",
-      note: "The Reputation Risk Score, alerts and revenue-at-risk ship with GROWTH. Competitor momentum monitoring ships with AGENCY. 14-day free trial on both.",
+      note: "The Reputation Risk Score, alerts and revenue-at-risk ship with GROWTH. Competitor momentum monitoring ships with AGENCY. 7-day free trial on both.",
       cta: "See pricing →",
     },
     final: {
@@ -133,7 +133,7 @@ const C: Record<Locale, LpContent> = {
     },
     plans: {
       label: "/ 04 — FORFAITS",
-      note: "Le Score de risque, les alertes et le chiffre d'affaires à risque sont inclus dès CROISSANCE. La veille concurrentielle arrive avec AGENCE. Essai gratuit de 14 jours sur les deux.",
+      note: "Le Score de risque, les alertes et le chiffre d'affaires à risque sont inclus dès CROISSANCE. La veille concurrentielle arrive avec AGENCE. Essai gratuit de 7 jours sur les deux.",
       cta: "Voir les tarifs →",
     },
     final: {
@@ -194,7 +194,7 @@ const C: Record<Locale, LpContent> = {
     },
     plans: {
       label: "/ 04 — PLÄNE",
-      note: "Risiko-Score, Alarme und Umsatz im Risiko sind ab WACHSTUM enthalten. Konkurrenz-Monitoring kommt mit AGENTUR. 14 Tage kostenlos testen.",
+      note: "Risiko-Score, Alarme und Umsatz im Risiko sind ab WACHSTUM enthalten. Konkurrenz-Monitoring kommt mit AGENTUR. 7 Tage kostenlos testen.",
       cta: "Preise ansehen →",
     },
     final: {
@@ -227,7 +227,7 @@ C["fr-CA"] = {
   },
   plans: {
     ...C.fr.plans,
-    note: "Le Score de risque, les alertes et les revenus à risque sont inclus dès CROISSANCE. La veille concurrentielle arrive avec AGENCE. Essai gratuit de 14 jours sur les deux forfaits.",
+    note: "Le Score de risque, les alertes et les revenus à risque sont inclus dès CROISSANCE. La veille concurrentielle arrive avec AGENCE. Essai gratuit de 7 jours sur les deux forfaits.",
   },
 };
 

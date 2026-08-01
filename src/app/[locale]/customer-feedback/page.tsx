@@ -70,7 +70,7 @@ const C: Record<Locale, LpContent> = {
     },
     plans: {
       label: "/ 04 — PLANS",
-      note: "Review reading, sentiment, escalation detection, private feedback routing and AI response drafting ship with every plan, starting at STARTER. 14-day free trial.",
+      note: "Review reading, sentiment, escalation detection, private feedback routing and AI response drafting ship with every plan, starting at STARTER. 7-day free trial.",
       cta: "See pricing →",
     },
     final: {
@@ -129,7 +129,7 @@ const C: Record<Locale, LpContent> = {
     },
     plans: {
       label: "/ 04 — FORFAITS",
-      note: "Lecture des avis, sentiment, détection d'escalade, routage des retours privés et réponses rédigées par IA sont inclus dans tous les forfaits, dès STARTER. Essai gratuit de 14 jours.",
+      note: "Lecture des avis, sentiment, détection d'escalade, routage des retours privés et réponses rédigées par IA sont inclus dans tous les forfaits, dès STARTER. Essai gratuit de 7 jours.",
       cta: "Voir les tarifs →",
     },
     final: {
@@ -188,7 +188,7 @@ const C: Record<Locale, LpContent> = {
     },
     plans: {
       label: "/ 04 — PLÄNE",
-      note: "Bewertungs-Lektüre, Stimmung, Eskalationserkennung, privates Feedback-Routing und KI-Antwortentwürfe sind in jedem Plan enthalten, ab STARTER. 14 Tage kostenlos testen.",
+      note: "Bewertungs-Lektüre, Stimmung, Eskalationserkennung, privates Feedback-Routing und KI-Antwortentwürfe sind in jedem Plan enthalten, ab STARTER. 7 Tage kostenlos testen.",
       cta: "Preise ansehen →",
     },
     final: {

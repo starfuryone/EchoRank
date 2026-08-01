@@ -68,7 +68,7 @@ const C: Record<Locale, LpContent> = {
     },
     plans: {
       label: "/ 04 — PLANS",
-      note: "Everything above ships within the 14-day free trial. The AI Visibility Auditor and Risk Score ship with GROWTH; daily answer tracking and competitor monitoring with AGENCY.",
+      note: "Everything above ships within the 7-day free trial. The AI Visibility Auditor and Risk Score ship with GROWTH; daily answer tracking and competitor monitoring with AGENCY.",
       cta: "See pricing →",
     },
     final: {
@@ -125,7 +125,7 @@ const C: Record<Locale, LpContent> = {
     },
     plans: {
       label: "/ 04 — FORFAITS",
-      note: "Tout ce qui précède est inclus dans l'essai gratuit de 14 jours. L'Audit de visibilité IA et le Score de risque arrivent avec CROISSANCE ; le suivi quotidien des réponses et la veille concurrentielle avec AGENCE.",
+      note: "Tout ce qui précède est inclus dans l'essai gratuit de 7 jours. L'Audit de visibilité IA et le Score de risque arrivent avec CROISSANCE ; le suivi quotidien des réponses et la veille concurrentielle avec AGENCE.",
       cta: "Voir les tarifs →",
     },
     final: {
@@ -182,7 +182,7 @@ const C: Record<Locale, LpContent> = {
     },
     plans: {
       label: "/ 04 — PLÄNE",
-      note: "Alles oben ist in den 14 Tagen Gratis-Test enthalten. KI-Sichtbarkeits-Audit und Risiko-Score kommen mit WACHSTUM; tägliches Antwort-Tracking und Konkurrenz-Monitoring mit AGENTUR.",
+      note: "Alles oben ist in den 7 Tagen Gratis-Test enthalten. KI-Sichtbarkeits-Audit und Risiko-Score kommen mit WACHSTUM; tägliches Antwort-Tracking und Konkurrenz-Monitoring mit AGENTUR.",
       cta: "Preise ansehen →",
     },
     final: {
