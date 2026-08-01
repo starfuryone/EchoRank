@@ -6,6 +6,7 @@ import s from "./home2.module.css";
 import { FAQ } from "./faq-data";
 import { DemoVideoModal } from "@/components/demo-video";
 import { HomeVideo, type HomeVideoLabels } from "./HomeVideo";
+import { PublicNav } from "./PublicNav";
 import type { HomePricingChrome } from "@/lib/i18n/content";
 
 /**
@@ -33,7 +34,6 @@ const baseOf = (locale: string): Base => (locale.startsWith("fr") ? "fr" : "en")
 
 const T = {
   en: {
-    nav: { how: "How it works", platform: "Platform", sim: "Simulator", roi: "ROI", pricing: "Pricing", login: "Login", cta: "Run free audit ↗" },
     hero: {
       live: "LIVE — MONITORING 6 AI ENGINES",
       h1a: "The business AI recommends ",
@@ -189,11 +189,10 @@ const T = {
       repPaper: "Reputation Intelligence guide (PDF)",
       seoPaper: "The SEO tools, explained (PDF)",
     },
-    foot: { links: [["about", "ABOUT"], ["guide", "GUIDE"], ["guide-visibilite-ia", "AI VISIBILITY GUIDE"], ["legal/privacy", "PRIVACY"], ["legal/terms", "TERMS"], ["legal/disclaimer", "DISCLAIMER"]] },
+    foot: { links: [["about", "ABOUT"], ["resources", "RESOURCES"], ["guide", "GUIDE"], ["guide-visibilite-ia", "AI VISIBILITY GUIDE"], ["legal/privacy", "PRIVACY"], ["legal/terms", "TERMS"], ["legal/disclaimer", "DISCLAIMER"]] },
   },
 
   fr: {
-    nav: { how: "Fonctionnement", platform: "Plateforme", sim: "Simulateur", roi: "ROI", pricing: "Tarifs", login: "Connexion", cta: "Audit gratuit ↗" },
     hero: {
       live: "EN DIRECT — 6 MOTEURS IA SURVEILLÉS",
       h1a: "L'entreprise que l'IA recommande ",
@@ -344,7 +343,7 @@ const T = {
       repPaper: "Guide Reputation Intelligence (PDF)",
       seoPaper: "Les outils SEO, expliqués (PDF)",
     },
-    foot: { links: [["about", "À PROPOS"], ["guide", "GUIDE"], ["guide-visibilite-ia", "GUIDE VISIBILITÉ IA"], ["legal/privacy", "CONFIDENTIALITÉ"], ["legal/terms", "CONDITIONS"], ["legal/disclaimer", "AVIS"]] },
+    foot: { links: [["about", "À PROPOS"], ["resources", "RESSOURCES"], ["guide", "GUIDE"], ["guide-visibilite-ia", "GUIDE VISIBILITÉ IA"], ["legal/privacy", "CONFIDENTIALITÉ"], ["legal/terms", "CONDITIONS"], ["legal/disclaimer", "AVIS"]] },
   },
 } as const;
 
@@ -476,30 +475,10 @@ export default function HomeClient({
 
   return (
     <div className={s.page} ref={rootRef}>
-      {/* NAV */}
-      <nav className={s.nav}>
-        <div className={`${s.container} ${s.navin}`}>
-          <Link className={s.brand} href={L("/")}>
-            <span className={s.diamond} aria-hidden />ECHORANK
-          </Link>
-          <div className={s.navlinks}>
-            <a href="#how">{t.nav.how}</a>
-            <a href="#platform">{t.nav.platform}</a>
-            <a href="#simulator">{t.nav.sim}</a>
-            <a href="#roi">{t.nav.roi}</a>
-            <a href="#pricing">{t.nav.pricing}</a>
-            <Link href="/login">{t.nav.login}</Link>
-          </div>
-          <div className={s.navright}>
-            <span className={s.toggle}>
-              <Link href="/en" className={baseOf(locale) === "en" ? s.toggleOn : undefined}>EN</Link>
-              <span>/</span>
-              <Link href="/fr" className={baseOf(locale) === "fr" ? s.toggleOn : undefined}>FR</Link>
-            </span>
-            <Link className={s.navcta} href="/register">{t.nav.cta}</Link>
-          </div>
-        </div>
-      </nav>
+      {/* NAV — shared with /resources and any future public page. Extracted
+          from here, so its section links are absolute now: the homepage is
+          just one of the pages it renders on. */}
+      <PublicNav locale={locale} />
 
       {/* 1. HERO */}
       <header className={s.hero}>

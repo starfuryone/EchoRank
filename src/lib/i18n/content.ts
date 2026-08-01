@@ -200,6 +200,7 @@ const en: HomeContent = {
   footer: {
     copyright: COPYRIGHT,
     links: [
+      { label: "RESOURCES", href: "/resources" },
       { label: "GUIDE", href: "/guide" },
       { label: "AI VISIBILITY GUIDE", href: "/guide-visibilite-ia" },
       { label: "PRIVACY", href: "/legal/privacy" },
@@ -355,6 +356,7 @@ const enCA: HomeContent = {
   footer: {
     copyright: COPYRIGHT,
     links: [
+      { label: "RESOURCES", href: "/resources" },
       { label: "GUIDE", href: "/guide" },
       { label: "AI VISIBILITY GUIDE", href: "/guide-visibilite-ia" },
       { label: "PRIVACY", href: "/legal/privacy" },
@@ -519,6 +521,7 @@ const fr: HomeContent = {
   footer: {
     copyright: COPYRIGHT,
     links: [
+      { label: "RESSOURCES", href: "/resources" },
       { label: "GUIDE", href: "/guide" },
       { label: "GUIDE VISIBILITÉ IA", href: "/guide-visibilite-ia" },
       { label: "CONFIDENTIALITÉ", href: "/legal/privacy" },
@@ -683,6 +686,7 @@ const frCA: HomeContent = {
   footer: {
     copyright: COPYRIGHT,
     links: [
+      { label: "RESSOURCES", href: "/resources" },
       { label: "GUIDE", href: "/guide" },
       { label: "GUIDE VISIBILITÉ IA", href: "/guide-visibilite-ia" },
       { label: "CONFIDENTIALITÉ", href: "/legal/privacy" },
@@ -844,6 +848,7 @@ const deCH: HomeContent = {
   footer: {
     copyright: COPYRIGHT,
     links: [
+      { label: "RESSOURCEN", href: "/resources" },
       { label: "ANLEITUNG", href: "/guide" },
       { label: "KI-GUIDE (EN)", href: "/guide-visibilite-ia" },
       { label: "DATENSCHUTZ", href: "/legal/privacy" },
