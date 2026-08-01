@@ -1,0 +1,107 @@
+/* Custom player chrome for HomeVideo. Deliberately a separate module from
+   home2.module.css: the video's own box (.foundVideo, 9/16) and its column
+   (.toolsVideoWrap, ~42%) still come from there and are not touched here, so
+   the layout is unchanged by anything in this file. */
+
+.wrap {
+  position: relative;
+  display: block;
+  line-height: 0; /* kills the inline-descender gap under the <video> */
+}
+
+/* The click target for play/pause. The mute chip is a sibling of this, not a
+   child, so a <button> never ends up nested inside a role="button". */
+.hit {
+  position: relative;
+  display: block;
+  cursor: pointer;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.circle {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  background: rgba(10, 10, 12, 0.62);
+  border: 2px solid #c9a227;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  backdrop-filter: blur(2px);
+  transition: transform 160ms ease, background 160ms ease;
+}
+
+.overlay:hover .circle,
+.overlay:focus-visible .circle {
+  background: rgba(10, 10, 12, 0.78);
+  transform: scale(1.04);
+}
+
+.overlay:focus-visible {
+  outline: 2px solid #c9a227;
+  outline-offset: 4px;
+}
+
+/* Triangle drawn with borders rather than a "▶" glyph: that character renders
+   at different sizes and baselines per platform and some fonts substitute an
+   emoji. Nudged right because a triangle's optical centre sits left of its
+   bounding box. */
+.triangle {
+  width: 0;
+  height: 0;
+  margin-left: 6px;
+  border-style: solid;
+  border-width: 15px 0 15px 26px;
+  border-color: transparent transparent transparent #c9a227;
+}
+
+/* Pinned inside the video box, bottom-right. */
+.chip {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border-radius: 50%;
+  background: rgba(10, 10, 12, 0.62);
+  border: 2px solid #c9a227;
+  color: #c9a227;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  backdrop-filter: blur(2px);
+  line-height: 0;
+}
+
+.chip:hover,
+.chip:focus-visible {
+  background: rgba(10, 10, 12, 0.82);
+}
+
+.chip:focus-visible {
+  outline: 2px solid #c9a227;
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .circle {
+    transition: none;
+  }
+  .overlay:hover .circle,
+  .overlay:focus-visible .circle {
+    transform: none;
+  }
+}

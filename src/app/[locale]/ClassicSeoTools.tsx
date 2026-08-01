@@ -24,7 +24,7 @@
 // learned nothing. The section carries a single CTA to /register instead.
 
 import Link from "next/link";
-import { HoverVideo } from "@/components/hover-video";
+import { HomeVideo } from "./HomeVideo";
 import { SEO_TOOL_GROUPS } from "@/lib/seo-tools";
 import { SEO_TOOLS_COPY, type DashLocale } from "@/lib/i18n/dashboard";
 import { HOME_TOOLS } from "@/lib/i18n/content";
@@ -80,17 +80,26 @@ export function ClassicSeoTools({
               </div>
             ))}
           </div>
-          {/* No autoplay: this is a 57s narrated overview, not the short
-              muted loops elsewhere on the page, and it weighs 34 MB.
-              preload="none" keeps that off the initial page load.
+          {/* Click to play, not hover. Hover-play started this 57s narrated
+              overview for a mouse that was only passing through, and it could
+              not carry sound, which is most of what the clip is. Plays
+              unmuted — safe only because playback starts from a click, so
+              autoplay policy never applies. See HomeVideo.tsx.
+              No autoplay and preload="none": it weighs 34 MB and must stay
+              off the initial page load.
               Second in the DOM, so the mobile single-column stack puts it
-              after the cards without needing an order override. */}
-          <HoverVideo
+              after the cards without needing an order override.
+              The other three homepage videos stay on HoverVideo: swapping
+              them would drop their native scrub bar, and /09's loop, which
+              is a behaviour change rather than the pure upgrade this was
+              scoped to. */}
+          <HomeVideo
             wrapClassName={s.toolsVideoWrap}
             className={s.foundVideo}
             src="/videos/echorank-classic-seo-tools-overview.mp4"
             poster="/videos/echorank-classic-seo-tools-overview-poster.jpg"
             ariaLabel={t.videoLabel}
+            labels={t.player}
           />
         </div>
 

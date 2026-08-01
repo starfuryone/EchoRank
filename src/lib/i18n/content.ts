@@ -1260,6 +1260,13 @@ export interface HomeToolsCopy {
   featured: Array<{ k: string; h: string; p: string }>;
   /** Accessible name for the section's overview video. */
   videoLabel: string;
+  /** Control labels for the overview video's custom player (HomeVideo). */
+  player: {
+    play: string;
+    pause: string;
+    mute: string;
+    unmute: string;
+  };
 }
 
 export const HOME_TOOLS: Record<Locale, HomeToolsCopy> = {
@@ -1267,6 +1274,7 @@ export const HOME_TOOLS: Record<Locale, HomeToolsCopy> = {
     label: "CLASSIC SEO TOOLS",
     h2: "The SEO stack, in the same workspace.",
     videoLabel: "Video: an overview of the Classic SEO Tools",
+    player: { play: "Play video", pause: "Pause video", mute: "Mute", unmute: "Unmute" },
     sub: "AI visibility is the new layer, not a replacement — the rankings, links and crawl health underneath it still decide what AI has to read. Every tool below lives in one workspace, on your plan.",
     count: (live, soon) =>
       `${live} tools live today · ${soon} more in build`,
@@ -1303,6 +1311,7 @@ export const HOME_TOOLS: Record<Locale, HomeToolsCopy> = {
     label: "CLASSIC SEO TOOLS",
     h2: "The SEO stack, in the same workspace.",
     videoLabel: "Video: an overview of the Classic SEO Tools",
+    player: { play: "Play video", pause: "Pause video", mute: "Mute", unmute: "Unmute" },
     sub: "AI visibility is the new layer, not a replacement — the rankings, links and crawl health underneath it still decide what AI has to read. Every tool below lives in one workspace, on your plan.",
     count: (live, soon) => `${live} tools live today · ${soon} more in build`,
     included:
@@ -1338,6 +1347,7 @@ export const HOME_TOOLS: Record<Locale, HomeToolsCopy> = {
     label: "OUTILS SEO CLASSIQUES",
     h2: "La panoplie SEO, dans le même espace de travail.",
     videoLabel: "Vidéo : aperçu des outils SEO classiques",
+    player: { play: "Lire la vidéo", pause: "Mettre en pause", mute: "Couper le son", unmute: "Activer le son" },
     sub: "La visibilité IA est une nouvelle couche, pas un remplacement — les classements, les liens et la santé d'exploration en dessous décident encore de ce que l'IA aura à lire. Tous les outils ci-dessous vivent dans un seul espace de travail, inclus dans votre forfait.",
     count: (live, soon) => `${live} outils disponibles · ${soon} en construction`,
     included:
@@ -1373,6 +1383,7 @@ export const HOME_TOOLS: Record<Locale, HomeToolsCopy> = {
     label: "OUTILS SEO CLASSIQUES",
     h2: "La panoplie SEO, dans le même espace de travail.",
     videoLabel: "Vidéo : aperçu des outils SEO classiques",
+    player: { play: "Lire la vidéo", pause: "Mettre en pause", mute: "Couper le son", unmute: "Activer le son" },
     sub: "La visibilité IA est une nouvelle couche, pas un remplacement — les classements, les liens et la santé d'exploration en dessous décident encore de ce que l'IA aura à lire. Tous les outils ci-dessous vivent dans un seul espace de travail, inclus dans votre forfait.",
     count: (live, soon) => `${live} outils disponibles · ${soon} en construction`,
     included:
@@ -1408,6 +1419,7 @@ export const HOME_TOOLS: Record<Locale, HomeToolsCopy> = {
     label: "KLASSISCHE SEO-WERKZEUGE",
     h2: "Der SEO-Werkzeugkasten, im selben Arbeitsbereich.",
     videoLabel: "Video: Überblick über die klassischen SEO-Tools",
+    player: { play: "Video abspielen", pause: "Video pausieren", mute: "Ton aus", unmute: "Ton ein" },
     sub: "KI-Sichtbarkeit ist eine neue Schicht, kein Ersatz — Rankings, Links und Crawl-Gesundheit darunter entscheiden weiterhin, was die KI überhaupt zu lesen bekommt. Alle Werkzeuge unten liegen in einem Arbeitsbereich, in Ihrem Abo enthalten.",
     count: (live, soon) => `${live} Werkzeuge verfügbar · ${soon} in Arbeit`,
     included:
