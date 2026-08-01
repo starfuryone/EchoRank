@@ -85,14 +85,14 @@ export function ClassicSeoTools({
               Second in the DOM, so the mobile single-column stack puts it
               after the cards without needing an order override. */}
           <div className={s.toolsVideoWrap}>
-            <video
+            <div style={{position:"relative"}} onMouseEnter={(e) => { const v = e.currentTarget.querySelector("video"); const o = e.currentTarget.querySelector("[data-arrow]"); if (v) { v.muted = true; void v.play(); } if (o) (o as HTMLElement).style.opacity = "0"; }} onMouseLeave={(e) => { const v = e.currentTarget.querySelector("video"); const o = e.currentTarget.querySelector("[data-arrow]"); if (v) v.pause(); if (o) (o as HTMLElement).style.opacity = "1"; }}><video
               className={s.foundVideo}
               poster="/videos/echorank-classic-seo-tools-overview-poster.jpg" src="/videos/echorank-classic-seo-tools-overview.mp4"
               controls
               playsInline
               preload="none"
               aria-label={t.videoLabel}
-            />
+            /><div data-arrow="1" style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center",pointerEvents:"none",transition:"opacity .25s ease",opacity:1}}><div style={{width:96,height:96,borderRadius:"50%",background:"rgba(10,10,12,.55)",border:"2px solid #C9A227",display:"flex",alignItems:"center",justifyContent:"center"}}><svg width="40" height="40" viewBox="0 0 24 24" fill="#C9A227"><path d="M8 5v14l11-7z"/></svg></div></div></div>
           </div>
         </div>
 
