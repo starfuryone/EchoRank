@@ -7,10 +7,10 @@
  * video. Hover-play was wrong for a 57-second narrated clip: it started on a
  * mouse that was only passing through, and it could not carry sound.
  *
- * PLAYS UNMUTED. There is no `muted` attribute and none is set programmatically.
- * That is safe here only because playback never begins without a click —
- * autoplay policy is never involved, so the browser has no reason to refuse.
- * Adding autoplay to this component later would break that and force a mute.
+ * STARTS MUTED, and says so in a caption under the box. Sound is one click away
+ * on the chip. Muted-by-default means playback can never surprise anyone with
+ * audio, and it keeps the component safe to reuse somewhere that does autoplay
+ * later — an unmuted autoplay would simply be refused by the browser.
  *
  * Native controls are off (`controls={false}`); play/pause is the whole surface
  * and mute is the chip. A visitor who wants a scrub bar is not served by this
@@ -25,6 +25,8 @@ export interface HomeVideoLabels {
   pause: string;
   mute: string;
   unmute: string;
+  /** Rendered under the box: "Video plays muted — tap the speaker to unmute." */
+  caption: string;
 }
 
 export interface HomeVideoProps {
@@ -50,7 +52,7 @@ export function HomeVideo({
 }: HomeVideoProps) {
   const ref = useRef<HTMLVideoElement>(null);
   const [playing, setPlaying] = useState(false);
-  const [muted, setMuted] = useState(false);
+  const [muted, setMuted] = useState(true);
 
   const toggle = useCallback(() => {
     const el = ref.current;
@@ -107,6 +109,7 @@ export function HomeVideo({
           poster={poster}
           controls={false}
           playsInline
+          muted
           preload="none"
           aria-label={ariaLabel}
           onPlay={() => setPlaying(true)}
@@ -138,6 +141,8 @@ export function HomeVideo({
           {muted ? <SpeakerOffIcon /> : <SpeakerOnIcon />}
         </button>
       )}
+
+      <p className={v.caption}>{labels.caption}</p>
     </div>
   );
 }

@@ -81,10 +81,9 @@ export function ClassicSeoTools({
             ))}
           </div>
           {/* Click to play, not hover. Hover-play started this 57s narrated
-              overview for a mouse that was only passing through, and it could
-              not carry sound, which is most of what the clip is. Plays
-              unmuted — safe only because playback starts from a click, so
-              autoplay policy never applies. See HomeVideo.tsx.
+              overview for a mouse that was only passing through. Starts muted
+              with a caption saying so, and the chip turns sound on in one
+              click. See HomeVideo.tsx.
               No autoplay and preload="none": it weighs 34 MB and must stay
               off the initial page load.
               Second in the DOM, so the mobile single-column stack puts it

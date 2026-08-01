@@ -96,6 +96,21 @@
   outline-offset: 3px;
 }
 
+/* One-line hint under the 9/16 box. No existing class in home2.module.css fits
+   — the small ones there are all mono, letter-spaced, uppercase label styles
+   built for data, not for a sentence — so this lives in the module the
+   component already owns rather than a new one. --muted (#8f8fa3) is inherited
+   from .page, so the colour stays a token instead of a literal.
+   line-height must be restored explicitly: .wrap sets it to 0 to kill the
+   inline-descender gap under the <video>, and that would collapse this line. */
+.caption {
+  margin: 8px 0 0;
+  font-size: 10px;
+  line-height: 1.45;
+  color: var(--muted, #8f8fa3);
+  text-align: center;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .circle {
     transition: none;
