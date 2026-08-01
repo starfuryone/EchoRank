@@ -17,8 +17,33 @@
  * component — see the note in ClassicSeoTools.tsx about the other videos.
  */
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import v from "./HomeVideo.module.css";
+
+/**
+ * Cross-instance audio exclusivity: at most one HomeVideo has sound.
+ *
+ * Every mounted instance registers a silencer here. Unmuting one calls every
+ * other instance's silencer, which mutes the element AND updates that
+ * instance's own state — so a silenced video never keeps a speaker-on icon.
+ *
+ * A module-scoped Set rather than a context or a window event: the instances
+ * do not share a parent worth threading a provider through, and a Set needs no
+ * serialisation, no id scheme and no listener teardown beyond delete(). It is
+ * module state in a "use client" file, so it lives per browser tab and is
+ * never touched during SSR.
+ *
+ * Only SOUND is exclusive. Playback is not — videos may play simultaneously,
+ * muted, exactly as before.
+ */
+type Silencer = () => void;
+const instances = new Set<Silencer>();
+
+function claimAudio(self: Silencer): void {
+  for (const other of instances) {
+    if (other !== self) other();
+  }
+}
 
 export interface HomeVideoLabels {
   play: string;
@@ -76,15 +101,36 @@ export function HomeVideo({
     [toggle],
   );
 
-  const toggleMute = useCallback((e: React.MouseEvent) => {
-    // Without this the click bubbles to the wrapper and pauses the video —
-    // the chip sits on top of the play/pause surface.
-    e.stopPropagation();
+  /** Muted from the outside, because another instance took the audio. */
+  const silence = useCallback(() => {
     const el = ref.current;
-    if (!el) return;
-    el.muted = !el.muted;
-    setMuted(el.muted);
+    if (el) el.muted = true;
+    setMuted(true);
   }, []);
+
+  useEffect(() => {
+    instances.add(silence);
+    return () => {
+      instances.delete(silence);
+    };
+  }, [silence]);
+
+  const toggleMute = useCallback(
+    (e: React.MouseEvent) => {
+      // Without this the click bubbles to the wrapper and pauses the video —
+      // the chip sits on top of the play/pause surface.
+      e.stopPropagation();
+      const el = ref.current;
+      if (!el) return;
+      const next = !el.muted;
+      el.muted = next;
+      setMuted(next);
+      // Only claiming sound silences the others. Muting yourself is your own
+      // business and leaves everyone else alone.
+      if (!next) claimAudio(silence);
+    },
+    [silence],
+  );
 
   return (
     <div className={wrapClassName ? `${v.wrap} ${wrapClassName}` : v.wrap}>
