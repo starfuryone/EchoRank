@@ -3,7 +3,7 @@ import HomeClient, { type HomePricingTier } from "./HomeClient";
 import { ClassicSeoTools } from "./ClassicSeoTools";
 import { FAQ } from "./faq-data";
 import { PLAN_CONFIGS, PLAN_ORDER } from "@/lib/plan-config";
-import { HOME_PRICING_CHROME } from "@/lib/i18n/content";
+import { HOME_PRICING_CHROME, HOME_TOOLS } from "@/lib/i18n/content";
 import { SEO_TOOL_GROUPS } from "@/lib/seo-tools";
 import {
   BRAND_TITLE,
@@ -90,6 +90,10 @@ export default async function Page(
         locale={locale}
         pricing={pricingTiers(locale)}
         priceChrome={HOME_PRICING_CHROME[l]}
+        // Five-locale player chrome for the /05 video. Resolved here so
+        // HomeClient, whose own copy table is en/fr only, does not have to
+        // import the whole content catalog to render a mute button.
+        playerLabels={HOME_TOOLS[l].player}
         liveToolCount={liveToolCount}
         // Passed in as a slot rather than imported by HomeClient: the grid is a
         // server component so the whole seo-tools config (and its lucide icon

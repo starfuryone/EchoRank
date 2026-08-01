@@ -6,6 +6,7 @@ import s from "./home2.module.css";
 import { FAQ } from "./faq-data";
 import { DemoVideoModal } from "@/components/demo-video";
 import { HoverVideo } from "@/components/hover-video";
+import { HomeVideo, type HomeVideoLabels } from "./HomeVideo";
 import type { HomePricingChrome } from "@/lib/i18n/content";
 
 /**
@@ -378,6 +379,7 @@ export default function HomeClient({
   priceChrome,
   liveToolCount,
   toolsSection,
+  playerLabels,
 }: {
   locale: string;
   pricing: HomePricingTier[];
@@ -385,6 +387,14 @@ export default function HomeClient({
   liveToolCount: number;
   /** Server-rendered Classic SEO Tools section, slotted in after /03. */
   toolsSection: ReactNode;
+  /**
+   * HomeVideo's control labels, from HOME_TOOLS[locale].player. Passed in
+   * rather than imported: HOME_TOOLS is a five-locale catalog and this file's
+   * own T table only has en and fr, so importing it here would both bloat the
+   * client bundle and give de-CH English chrome. Same reason priceChrome is
+   * a prop.
+   */
+  playerLabels: HomeVideoLabels;
 }) {
   const t = T[baseOf(locale)];
   const faq = FAQ[baseOf(locale)];
@@ -653,7 +663,20 @@ export default function HomeClient({
                 <div className={it.hot ? s.tlmGold : s.tlm}>{it.m}</div>
               </div>
             ))}
-          </div><HoverVideo wrapClassName={s.trajVideoWrap} className={s.foundVideo} src="/videos/90-Days-AI-Visibility_1080p_caption.mp4" poster="/videos/90-Days-AI-Visibility_1080p_caption-poster.jpg" ariaLabel={t.tlx.videoLabel} /></div>
+          </div>
+          {/* Same player as the /04 overview: click to toggle, arrow overlay,
+              mute chip while playing, caption under the box. Already sized by
+              .foundVideo (9/16), the same box HomeVideo is used with there, so
+              className passthrough was all this needed — no aspect override. */}
+          <HomeVideo
+            wrapClassName={s.trajVideoWrap}
+            className={s.foundVideo}
+            src="/videos/90-Days-AI-Visibility_1080p_caption.mp4"
+            poster="/videos/90-Days-AI-Visibility_1080p_caption-poster.jpg"
+            ariaLabel={t.tlx.videoLabel}
+            labels={playerLabels}
+          />
+        </div>
         </div>
       </section>
 
