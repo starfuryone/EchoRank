@@ -1,0 +1,161 @@
+/* Knowledge-base article chrome. Dark/gold tokens (--surface, --gold, --muted…)
+   are inherited from .page in home2.module.css, which wraps every guide. */
+
+.article {
+  max-width: 760px;
+}
+
+/* "What you'll need" — the box a reader checks before starting. */
+.needsBox {
+  margin: 28px 0 0;
+  padding: 20px 22px;
+  background: var(--surface2, #15151d);
+  border: 1px solid var(--line, #232330);
+  border-left: 2px solid #c9a227;
+  border-radius: 12px;
+}
+.needsTitle {
+  margin: 0 0 10px;
+  font-size: 13px;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--gold, #e8c565);
+}
+.needsList {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 6px;
+  font-size: 14.5px;
+  line-height: 1.5;
+  color: var(--muted, #8f8fa3);
+}
+
+.uiNote {
+  margin: 16px 0 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--faint, #5c5c70);
+}
+
+.step {
+  margin-top: 44px;
+}
+.stepH {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  font-size: 21px;
+  font-weight: 620;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  margin: 0 0 12px;
+  color: var(--text, #eceaf2);
+}
+.stepNum {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: var(--surface2, #15151d);
+  border: 1px solid rgba(201, 162, 39, 0.45);
+  color: #c9a227;
+  font-family: var(--mono, ui-monospace, monospace);
+  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: center;
+}
+.para {
+  margin: 0 0 12px;
+  font-size: 15.5px;
+  line-height: 1.65;
+  color: var(--muted, #8f8fa3);
+}
+
+/* Screenshot placeholder — a dashed box and a caption, never a fake image. */
+.shot {
+  margin: 18px 0;
+}
+.shotBox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 16 / 9;
+  max-height: 260px;
+  border: 1px dashed var(--line, #232330);
+  border-radius: 12px;
+  background: var(--surface, #101016);
+  color: var(--faint, #5c5c70);
+  font-family: var(--mono, ui-monospace, monospace);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.shotCap {
+  margin: 8px 0 0;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--faint, #5c5c70);
+  text-align: center;
+}
+
+.callout {
+  margin: 16px 0 0;
+  padding: 14px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--line, #232330);
+  background: var(--surface, #101016);
+}
+.calloutLabel {
+  display: block;
+  font-family: var(--mono, ui-monospace, monospace);
+  font-size: 10.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.calloutBody {
+  margin: 0;
+  font-size: 14.5px;
+  line-height: 1.6;
+  color: var(--muted, #8f8fa3);
+}
+.tip {
+  border-left: 2px solid #c9a227;
+}
+.tip .calloutLabel {
+  color: #c9a227;
+}
+.warning {
+  border-left: 2px solid var(--red, #f87171);
+  background: rgba(248, 113, 113, 0.05);
+}
+.warning .calloutLabel {
+  color: var(--red, #f87171);
+}
+.note {
+  border-left: 2px solid var(--blue, #7aa7ff);
+}
+.note .calloutLabel {
+  color: var(--blue, #7aa7ff);
+}
+
+.nextList {
+  margin: 0;
+  padding-left: 18px;
+  display: grid;
+  gap: 8px;
+  font-size: 15px;
+  line-height: 1.5;
+}
+.nextList a {
+  color: var(--gold, #e8c565);
+  transition: color 150ms ease;
+}
+.nextList a:hover,
+.nextList a:focus-visible {
+  color: #fff1a8;
+}
