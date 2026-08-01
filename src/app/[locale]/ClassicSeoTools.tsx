@@ -87,7 +87,7 @@ export function ClassicSeoTools({
           <div className={s.toolsVideoWrap}>
             <video
               className={s.foundVideo}
-              src="/videos/echorank-classic-seo-tools-overview.mp4"
+              poster="/videos/echorank-classic-seo-tools-overview-poster.jpg" src="/videos/echorank-classic-seo-tools-overview.mp4"
               controls
               playsInline
               preload="none"
