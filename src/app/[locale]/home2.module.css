@@ -46,10 +46,12 @@
 .brand{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:.04em;font-size:15px}
 .diamond{width:22px;height:22px;background:var(--goldGrad);transform:rotate(45deg);border-radius:4px;flex:none}
 .navlinks{display:flex;gap:26px;font-size:14px;color:var(--muted)}
-.navlinks a:hover{color:var(--text)}
+.navlinks a{transition:color 150ms ease}
+.navlinks a:hover,.navlinks a:focus-visible{color:var(--gold)}
 .navright{display:flex;align-items:center;gap:16px}
 .toggle{font-family:var(--mono);font-size:12px;color:var(--muted);display:inline-flex;gap:8px}
-.toggle a:hover{color:var(--text)}
+.toggle a{transition:color 150ms ease}
+.toggle a:hover,.toggle a:focus-visible{color:var(--gold)}
 .toggleOn{color:var(--gold)}
 .navcta{background:var(--goldGrad);color: #fff;font-size:13.5px;font-weight: 700;padding:9px 16px;border-radius:9px;
   letter-spacing: 0.2px;
@@ -267,7 +269,9 @@
 .footer{border-top:1px solid var(--lineSoft);padding:30px 0}
 .footin{display:flex;justify-content:space-between;flex-wrap:wrap;gap:14px;font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--faint)}
 .footlinks{display:flex;gap:20px;flex-wrap:wrap}
-.footlinks a:hover{color:var(--text)}
+.footlinks a,.footin a{transition:color 150ms ease}
+.footlinks a:hover,.footlinks a:focus-visible,
+.footin a:hover,.footin a:focus-visible{color:var(--gold)}
 
 /* reveal */
 .reveal{opacity:0;transform:translateY(18px);transition:opacity .6s ease,transform .6s ease}
@@ -555,3 +559,39 @@
 .ptools:hover{text-decoration:underline}
 .pcta{display:inline-block;margin-top:14px;font-size:13px;font-weight:560;color:var(--gold);text-decoration:none}
 .pcta:hover{text-decoration:underline}
+
+/* ── Hover + focus states, public pages ─────────────────────────────────────
+   Cards genuinely had none. Nav links, footer links and buttons already did,
+   so those were extended in place above rather than given a second competing
+   rule. Nothing here escapes this module, so dashboard styling is untouched. */
+
+/* Only cards that are actually clickable lift. :has(a) is doing real work:
+   the homepage Classic SEO Tools cards deliberately are NOT links (every
+   /visibility/tools route is paid-gated), and lifting them would promise a
+   click that goes nowhere. The /resources cards contain an <a> and do lift.
+   Browsers without :has() simply get no lift — nothing breaks. */
+.toolCard:has(a) {
+  transition: border-color 150ms ease, background 150ms ease,
+              transform 150ms ease, box-shadow 150ms ease;
+}
+.toolCard:has(a):hover,
+.toolCard:has(a:focus-visible) {
+  border-color: rgba(201, 162, 39, 0.6);
+  background: var(--surface2);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px -16px rgba(0, 0, 0, 0.75);
+}
+
+/* transform only — no margin or size change, so nothing reflows on hover. */
+.btn { transition: transform 150ms ease, filter 150ms ease, background 150ms ease, color 150ms ease; }
+/* .btnGhost and .navcta already define their own hover fills, so only the
+   primary takes the brightness lift; stacking both would double-treat them. */
+.btnPrimary:hover,
+.btnPrimary:focus-visible { filter: brightness(1.1); }
+
+@media (prefers-reduced-motion: reduce) {
+  /* Colour changes stay, movement goes. */
+  .toolCard:has(a):hover,
+  .toolCard:has(a:focus-visible) { transform: none; }
+  .btn:hover { transform: none; }
+}

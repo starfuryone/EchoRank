@@ -146,3 +146,31 @@
   text-decoration: none;
   cursor: pointer;
 }
+
+/* ── Hover + focus, modal chrome ──────────────────────────────────────────
+   .closeBtn and .chip already define their own gold hover above; these are
+   the two that had none. One treatment, matching .btnPrimary on the rest of
+   the public pages. */
+.primaryBtn {
+  transition: filter 150ms ease, transform 150ms ease;
+}
+.primaryBtn:hover,
+.primaryBtn:focus-visible {
+  filter: brightness(1.1);
+}
+.primaryBtn:disabled:hover {
+  filter: none; /* a disabled button must not look live */
+}
+
+.directLink {
+  transition: color 150ms ease;
+}
+.directLink:hover,
+.directLink:focus-visible {
+  color: #c9a227;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .primaryBtn:hover,
+  .primaryBtn:focus-visible { transform: none; }
+}
