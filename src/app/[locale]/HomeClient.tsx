@@ -646,7 +646,7 @@ export default function HomeClient({
                 <div className={it.hot ? s.tlmGold : s.tlm}>{it.m}</div>
               </div>
             ))}
-          </div><div className={s.trajVideoWrap}><video className={s.foundVideo} src="/videos/90-Days-AI-Visibility_1080p_caption.mp4" controls muted autoPlay loop playsInline preload="metadata" /></div></div>
+          </div><div className={s.trajVideoWrap}><video className={s.foundVideo} poster="/videos/90-Days-AI-Visibility_1080p_caption-poster.jpg" src="/videos/90-Days-AI-Visibility_1080p_caption.mp4" controls muted autoPlay loop playsInline preload="metadata" /></div></div>
         </div>
       </section>
 
@@ -724,7 +724,7 @@ export default function HomeClient({
             <div className={s.foundVideoWrap}>
               <video
                 className={s.foundVideo}
-                src="/videos/Avatar_Video_with_captions.mp4"
+                poster="/videos/Avatar_Video_with_captions-poster.jpg" src="/videos/Avatar_Video_with_captions.mp4"
                 controls
                 playsInline
                 muted
@@ -915,7 +915,7 @@ export default function HomeClient({
               <div className={s.faqVideoWrap}>
                 <video
                   className={s.faqVideo}
-                  src="/videos/faq-intro.mp4"
+                  poster="/videos/faq-intro-poster.jpg" src="/videos/faq-intro.mp4"
                   controls
                   playsInline
                   preload="metadata"
