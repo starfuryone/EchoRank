@@ -36,9 +36,19 @@ export async function generateMetadata(
  * billing dispute waiting to happen. Enterprise carries isCustomPricing, so its
  * "Contact us" label comes from the locale chrome instead of a price.
  */
+/**
+ * Homepage price cards.
+ *
+ * CUSTOM-PRICED TIERS ARE FILTERED OUT HERE, not removed from PLAN_CONFIGS.
+ * Enterprise is still a real plan everywhere it matters — billing, the account
+ * page tier comparison, upgrade ordering — it simply has no card on the
+ * homepage grid, which is sized for four. Filtering on the isCustomPricing
+ * flag rather than on the plan id means a future custom-priced tier drops out
+ * on its own, the same way the JSON-LD offers already work.
+ */
 function pricingTiers(locale: string): HomePricingTier[] {
   const chrome = HOME_PRICING_CHROME[normalizeLocale(locale)];
-  return PLAN_ORDER.map((plan) => {
+  return PLAN_ORDER.filter((plan) => !PLAN_CONFIGS[plan].isCustomPricing).map((plan) => {
     const c = PLAN_CONFIGS[plan];
     const monthly = c.isCustomPricing ? null : c.monthlyPrice;
     const annual = c.isCustomPricing ? null : c.annualPrice;
