@@ -5,6 +5,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import s from "./home2.module.css";
 import { FAQ } from "./faq-data";
 import { DemoVideoModal } from "@/components/demo-video";
+import { HoverVideo } from "@/components/hover-video";
 import type { HomePricingChrome } from "@/lib/i18n/content";
 
 /**
@@ -142,7 +143,9 @@ const T = {
         ["TripAdvisor", "MONITORING"],
       ],
       feats: "Review campaigns by email, SMS and QR · Private feedback & routing · AI response drafting in your voice · Suspicious review detection",
+      videoLabel: "Video: the classic reputation stack, explained",
     },
+    faqVideoLabel: "Video: an introduction to Echorank",
     hist: {
       label: "AI RECOMMENDATION TRACKER", h2: "Recommendations, on the record",
       sub: "Last 30 days of mentions across engines — so a quiet disappearance never goes unnoticed.",
@@ -297,7 +300,9 @@ const T = {
         ["TripAdvisor", "SURVEILLANCE"],
       ],
       feats: "Campagnes d'avis par courriel, SMS et QR · Rétroaction privée et routage · Réponses IA dans votre ton · Détection d'avis suspects",
+      videoLabel: "Vidéo : la panoplie de réputation classique, expliquée",
     },
+    faqVideoLabel: "Vidéo : une introduction à Echorank",
     hist: {
       label: "SUIVI DES RECOMMANDATIONS IA", h2: "Les recommandations, consignées",
       sub: "30 derniers jours de mentions par moteur — pour qu'une disparition silencieuse ne passe jamais inaperçue.",
@@ -721,17 +726,14 @@ export default function HomeClient({
         <div className={s.container}>
           <p className={s.label}><b>/ 09</b> — {t.trad.label}</p>
           <div className={s.foundLayout}>
-            <div className={s.foundVideoWrap}>
-              <video
-                className={s.foundVideo}
-                poster="/videos/Avatar_Video_with_captions-poster.jpg" src="/videos/Avatar_Video_with_captions.mp4"
-                controls
-                playsInline
-                muted
-                loop
-                preload="metadata"
-              />
-            </div>
+            <HoverVideo
+              wrapClassName={s.foundVideoWrap}
+              className={s.foundVideo}
+              src="/videos/Avatar_Video_with_captions.mp4"
+              poster="/videos/Avatar_Video_with_captions-poster.jpg"
+              ariaLabel={t.trad.videoLabel}
+              loop
+            />
             <div>
               <h2 className={s.h2}>{t.trad.h2}</h2>
               <p className={s.sub}>{t.trad.sub}</p>
@@ -912,15 +914,13 @@ export default function HomeClient({
             ))}
           </div>
             {locale === 'en' && (
-              <div className={s.faqVideoWrap}>
-                <video
-                  className={s.faqVideo}
-                  poster="/videos/faq-intro-poster.jpg" src="/videos/faq-intro.mp4"
-                  controls
-                  playsInline
-                  preload="metadata"
-                />
-              </div>
+              <HoverVideo
+                wrapClassName={s.faqVideoWrap}
+                className={s.faqVideo}
+                src="/videos/faq-intro.mp4"
+                poster="/videos/faq-intro-poster.jpg"
+                ariaLabel={t.faqVideoLabel}
+              />
             )}
           </div>
         </div>
