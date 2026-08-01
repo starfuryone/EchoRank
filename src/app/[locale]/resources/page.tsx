@@ -3,11 +3,16 @@
 //
 // LOCALE MODEL: en/fr bases, exactly like the homepage. en-CA folds to en,
 // fr-CA to fr, de-CH shows English. Writing a third catalog here would be
-// unreachable code.
+// unreachable code. The modal's chrome (buttons, aria, form labels) is a
+// different matter and lives in CONTENT, which is a real five-locale catalog.
 //
 // METADATA IS SET PER LOCALE ON THIS PAGE via buildMetadata(), rather than
 // inheriting the root layout's, so title/description/canonical are correct
 // instead of duplicated.
+//
+// The page stays a server component. Only the grid is client, so the cards can
+// open the modal — and every card is still a real <a href> underneath, which
+// is what keeps the hrefs in the SSR HTML.
 
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
@@ -16,6 +21,8 @@ import { SUPPORTED_LOCALES, isSupportedLocale, type Locale } from "@/lib/i18n/co
 import { CONTENT } from "@/lib/i18n/content";
 import { buildMetadata } from "@/lib/seo";
 import { PublicNav } from "../PublicNav";
+import { ResourceGrid, type ResourceGroup } from "./ResourceGrid";
+import type { Resource, ResourceKind } from "./ResourceModal";
 import s from "../home2.module.css";
 
 export function generateStaticParams() {
@@ -28,9 +35,12 @@ const baseOf = (locale: string): Base => (locale.startsWith("fr") ? "fr" : "en")
 interface Item {
   label: string;
   desc: string;
+  /** "PDF · 34 pages" — per-resource, so it is authored with the copy. */
+  meta: string;
   href: string;
-  /** Served by Caddy or a static asset — not a Next route, so no <Link>. */
-  external?: boolean;
+  kind: ResourceKind;
+  /** Next route needing the locale prefix. Caddy pages and PDFs do not. */
+  internal?: boolean;
 }
 interface Group {
   h: string;
@@ -43,8 +53,8 @@ interface Doc {
 }
 
 // TODO: /[locale]/ebooks (the email-gated funnel page) does not exist in this
-// branch. The two complete guides link straight to their PDFs meanwhile —
-// swap both hrefs to `/${locale}/ebooks` when that page merges.
+// branch. The two complete guides are gated by the modal's own placeholder
+// form meanwhile; point them at the funnel page when it merges.
 const GUIDE_EN_PDF =
   "/whitepapers/From-Zero-Visibility-to-a-Trusted-Online-Reputation-The-Complete-Echorank-Guide.pdf";
 const GUIDE_FR_PDF =
@@ -61,28 +71,32 @@ const EN: Doc = {
       h: "Free guides & ebooks",
       items: [
         {
-          label: "The Complete Echorank Guide (EN, 34 p.)",
+          label: "The Complete Echorank Guide",
           desc: "The full playbook: setup, review campaigns, AI visibility and competitor intelligence.",
+          meta: "PDF · 34 pages",
           href: GUIDE_EN_PDF,
-          external: true,
+          kind: "gated",
         },
         {
-          label: "Le guide complet Echorank (FR, 35 p.)",
+          label: "Le guide complet Echorank",
           desc: "The same playbook in French, written in French rather than translated.",
+          meta: "PDF · 35 pages · French",
           href: GUIDE_FR_PDF,
-          external: true,
+          kind: "gated",
         },
         {
-          label: "Reputation Intelligence whitepaper (PDF)",
+          label: "Reputation Intelligence whitepaper",
           desc: "How review signals, risk scoring and AI answers connect — the thinking behind the platform.",
+          meta: "PDF · 40 pages",
           href: WP_REPUTATION,
-          external: true,
+          kind: "pdf",
         },
         {
-          label: "The SEO tools, explained (PDF)",
+          label: "The SEO tools, explained",
           desc: "What each tool in the classic SEO stack does, and when to reach for it.",
+          meta: "PDF · 3 pages",
           href: WP_SEO_TOOLS,
-          external: true,
+          kind: "pdf",
         },
       ],
     },
@@ -92,26 +106,30 @@ const EN: Doc = {
         {
           label: "Install the browser extension",
           desc: "Download and install, one page, no account required.",
+          meta: "Guide · web page",
           href: "/extension/download.html",
-          external: true,
+          kind: "guide",
         },
         {
           label: "Extension help, step by step",
           desc: "What each button does, and what to do when something looks wrong.",
+          meta: "Guide · web page",
           href: "/extension/help.html",
-          external: true,
+          kind: "guide",
         },
         {
           label: "Import reviews from a CSV",
           desc: "Bring review history in from a spreadsheet or another platform's export.",
+          meta: "Guide · web page",
           href: "/extension/howto-import-reviews.html",
-          external: true,
+          kind: "guide",
         },
         {
           label: "All the ways to get reviews in",
           desc: "Every import route compared, so you can pick the one that fits your history.",
+          meta: "Guide · web page",
           href: "/extension/getting-reviews-in.html",
-          external: true,
+          kind: "guide",
         },
       ],
     },
@@ -121,12 +139,18 @@ const EN: Doc = {
         {
           label: "Echorank user guide",
           desc: "Every feature in plain language, including the first-30-minutes checklist.",
+          meta: "Guide · web page",
           href: "/guide",
+          kind: "guide",
+          internal: true,
         },
         {
           label: "What people ask before they start",
           desc: "The questions that come up most, answered on the homepage.",
+          meta: "FAQ · web page",
           href: "/#faq",
+          kind: "guide",
+          internal: true,
         },
       ],
     },
@@ -136,7 +160,10 @@ const EN: Doc = {
         {
           label: "AI Visibility audit",
           desc: "Run a real audit with no account and no card — one per day, per address.",
+          meta: "Free tool · no account",
           href: "/ai-visibility#audit",
+          kind: "guide",
+          internal: true,
         },
       ],
     },
@@ -152,28 +179,32 @@ const FR: Doc = {
       h: "Guides et livres numériques gratuits",
       items: [
         {
-          label: "Le guide complet Echorank (FR, 35 p.)",
+          label: "Le guide complet Echorank",
           desc: "Le manuel complet : configuration, campagnes d'avis, visibilité IA et veille concurrentielle.",
+          meta: "PDF · 35 pages",
           href: GUIDE_FR_PDF,
-          external: true,
+          kind: "gated",
         },
         {
-          label: "The Complete Echorank Guide (EN, 34 p.)",
+          label: "The Complete Echorank Guide",
           desc: "La version anglaise du même manuel.",
+          meta: "PDF · 34 pages · en anglais",
           href: GUIDE_EN_PDF,
-          external: true,
+          kind: "gated",
         },
         {
-          label: "Livre blanc Reputation Intelligence (PDF, en anglais)",
+          label: "Livre blanc Reputation Intelligence",
           desc: "Comment les signaux d'avis, le score de risque et les réponses des IA se rejoignent.",
+          meta: "PDF · 40 pages · en anglais",
           href: WP_REPUTATION,
-          external: true,
+          kind: "pdf",
         },
         {
-          label: "Les outils SEO, expliqués (PDF, en anglais)",
+          label: "Les outils SEO, expliqués",
           desc: "Ce que fait chaque outil de la panoplie SEO classique, et quand l'utiliser.",
+          meta: "PDF · 3 pages · en anglais",
           href: WP_SEO_TOOLS,
-          external: true,
+          kind: "pdf",
         },
       ],
     },
@@ -183,26 +214,30 @@ const FR: Doc = {
         {
           label: "Installer l'extension de navigateur",
           desc: "Téléchargement et installation, une seule page, sans compte.",
+          meta: "Guide · page web",
           href: "/extension/download.html",
-          external: true,
+          kind: "guide",
         },
         {
           label: "Aide sur l'extension, étape par étape",
           desc: "Ce que fait chaque bouton, et quoi faire quand quelque chose cloche.",
+          meta: "Guide · page web",
           href: "/extension/help.html",
-          external: true,
+          kind: "guide",
         },
         {
           label: "Importer des avis depuis un CSV",
           desc: "Reprenez votre historique d'avis depuis un tableur ou l'export d'une autre plateforme.",
+          meta: "Guide · page web",
           href: "/extension/howto-import-reviews.html",
-          external: true,
+          kind: "guide",
         },
         {
           label: "Toutes les façons d'importer vos avis",
           desc: "Chaque méthode d'import comparée, pour choisir celle qui convient à votre historique.",
+          meta: "Guide · page web",
           href: "/extension/getting-reviews-in.html",
-          external: true,
+          kind: "guide",
         },
       ],
     },
@@ -212,12 +247,18 @@ const FR: Doc = {
         {
           label: "Guide d'utilisation Echorank",
           desc: "Chaque fonctionnalité en langage clair, avec la liste des 30 premières minutes.",
+          meta: "Guide · page web",
           href: "/guide",
+          kind: "guide",
+          internal: true,
         },
         {
           label: "Les questions fréquentes avant de commencer",
           desc: "Les questions qui reviennent le plus, répondues sur la page d'accueil.",
+          meta: "FAQ · page web",
           href: "/#faq",
+          kind: "guide",
+          internal: true,
         },
       ],
     },
@@ -227,7 +268,10 @@ const FR: Doc = {
         {
           label: "Audit de visibilité IA",
           desc: "Lancez un vrai audit sans compte et sans carte — un par jour et par adresse.",
+          meta: "Outil gratuit · sans compte",
           href: "/ai-visibility#audit",
+          kind: "guide",
+          internal: true,
         },
       ],
     },
@@ -270,7 +314,27 @@ export default async function ResourcesPage(
   if (!isSupportedLocale(locale)) notFound();
   const doc = DOCS[baseOf(locale)];
   const foot = CONTENT[locale as Locale].footer;
+  const modal = CONTENT[locale as Locale].resourceModal;
   const L = (p: string) => `/${locale}${p.startsWith("/") ? p : `/${p}`}`;
+
+  // Resolve hrefs server-side so the grid receives final URLs and the SSR
+  // markup carries exactly what a crawler should follow.
+  const groups: ResourceGroup[] = doc.groups.map((g) => ({
+    h: g.h,
+    items: g.items.map<Resource>((it) => ({
+      label: it.label,
+      desc: it.desc,
+      meta: it.meta,
+      kind: it.kind,
+      // "/#faq" must become "/fr#faq", not "/fr/#faq" — the latter is a
+      // different path and takes a 308.
+      href: it.internal
+        ? it.href.startsWith("/#")
+          ? `/${locale}${it.href.slice(1)}`
+          : L(it.href)
+        : it.href,
+    })),
+  }));
 
   return (
     <div className={s.page}>
@@ -284,30 +348,7 @@ export default async function ResourcesPage(
           <h1 className={s.h2}>{doc.title}</h1>
           <p className={s.sub}>{doc.intro}</p>
 
-          {doc.groups.map((g) => (
-            <div className={s.toolsGroup} key={g.h}>
-              <h2 className={s.toolsGroupName}>{g.h}</h2>
-              <div className={s.toolsGrid}>
-                {g.items.map((it) => (
-                  <div className={s.toolCard} key={it.href + it.label}>
-                    {/* External here means "not a Next route" — the extension
-                        pages are static HTML served by Caddy and the PDFs are
-                        assets, so <Link> prefetching would be wrong for both. */}
-                    {it.external ? (
-                      <a className={s.toolName} href={it.href}>
-                        {it.label}
-                      </a>
-                    ) : (
-                      <Link className={s.toolName} href={L(it.href)}>
-                        {it.label}
-                      </Link>
-                    )}
-                    <p className={s.toolDesc}>{it.desc}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
+          <ResourceGrid groups={groups} locale={locale} labels={modal} />
         </div>
       </section>
 

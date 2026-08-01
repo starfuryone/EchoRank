@@ -46,6 +46,23 @@ export interface HomeContent {
   field: { label: string; quoteA: string; quoteB: string; attribution: string };
   start: { label: string; h2: string; cta1: string; cta2: string };
   footer: { copyright: string; links: { label: string; href: string }[] };
+  /** Chrome for the /resources download modal. Per-resource copy (titles,
+   *  descriptions, "PDF · 34 pages") lives with the page, which is en/fr. */
+  resourceModal: {
+    close: string;
+    downloadPdf: string;
+    openGuide: string;
+    openDirectly: string;
+    /** Lead form. */
+    emailLabel: string;
+    emailPlaceholder: string;
+    emailInvalid: string;
+    optIn: string;
+    privacy: string;
+    submit: string;
+    submitting: string;
+    ready: string;
+  };
 }
 
 export type TierPrices = Record<PricingTier["key"], string>;
@@ -196,6 +213,20 @@ const en: HomeContent = {
     h2: "Find out if AI recommends you.",
     cta1: "Check your AI visibility →",
     cta2: "Book a demo ↗",
+  },
+  resourceModal: {
+    close: "Close",
+    downloadPdf: "Download PDF",
+    openGuide: "Open guide",
+    openDirectly: "or open it directly",
+    emailLabel: "Email address",
+    emailPlaceholder: "you@company.com",
+    emailInvalid: "Enter a valid email address.",
+    optIn: "Send me occasional Echorank tips. No spam, unsubscribe anytime.",
+    privacy: "We use your address to send the guide. Nothing else.",
+    submit: "Get the guide",
+    submitting: "Sending…",
+    ready: "Your guide is ready.",
   },
   footer: {
     copyright: COPYRIGHT,
@@ -352,6 +383,20 @@ const enCA: HomeContent = {
     h2: "Find out if AI recommends you.",
     cta1: "Check your AI visibility →",
     cta2: "Book a demo ↗",
+  },
+  resourceModal: {
+    close: "Close",
+    downloadPdf: "Download PDF",
+    openGuide: "Open guide",
+    openDirectly: "or open it directly",
+    emailLabel: "Email address",
+    emailPlaceholder: "you@company.com",
+    emailInvalid: "Enter a valid email address.",
+    optIn: "Send me occasional Echorank tips. No spam, unsubscribe anytime.",
+    privacy: "We use your address to send the guide. Nothing else.",
+    submit: "Get the guide",
+    submitting: "Sending…",
+    ready: "Your guide is ready.",
   },
   footer: {
     copyright: COPYRIGHT,
@@ -518,6 +563,20 @@ const fr: HomeContent = {
     cta1: "Vérifiez votre visibilité IA →",
     cta2: "Réserver une démo ↗",
   },
+  resourceModal: {
+    close: "Fermer",
+    downloadPdf: "Télécharger le PDF",
+    openGuide: "Ouvrir le guide",
+    openDirectly: "ou l'ouvrir directement",
+    emailLabel: "Adresse courriel",
+    emailPlaceholder: "vous@entreprise.com",
+    emailInvalid: "Saisissez une adresse courriel valide.",
+    optIn: "Envoyez-moi de temps en temps des conseils Echorank. Aucun pourriel, désabonnement en tout temps.",
+    privacy: "Nous utilisons votre adresse pour vous envoyer le guide. Rien d'autre.",
+    submit: "Recevoir le guide",
+    submitting: "Envoi…",
+    ready: "Votre guide est prêt.",
+  },
   footer: {
     copyright: COPYRIGHT,
     links: [
@@ -683,6 +742,20 @@ const frCA: HomeContent = {
     cta1: "Vérifiez votre visibilité IA →",
     cta2: "Réserver une démo ↗",
   },
+  resourceModal: {
+    close: "Fermer",
+    downloadPdf: "Télécharger le PDF",
+    openGuide: "Ouvrir le guide",
+    openDirectly: "ou l'ouvrir directement",
+    emailLabel: "Adresse courriel",
+    emailPlaceholder: "vous@entreprise.com",
+    emailInvalid: "Saisissez une adresse courriel valide.",
+    optIn: "Envoyez-moi de temps en temps des conseils Echorank. Aucun pourriel, désabonnement en tout temps.",
+    privacy: "Nous utilisons votre adresse pour vous envoyer le guide. Rien d'autre.",
+    submit: "Recevoir le guide",
+    submitting: "Envoi…",
+    ready: "Votre guide est prêt.",
+  },
   footer: {
     copyright: COPYRIGHT,
     links: [
@@ -844,6 +917,20 @@ const deCH: HomeContent = {
     h2: "Finden Sie heraus, ob die KI Sie empfiehlt.",
     cta1: "KI-Sichtbarkeit prüfen →",
     cta2: "Demo buchen ↗",
+  },
+  resourceModal: {
+    close: "Schliessen",
+    downloadPdf: "PDF herunterladen",
+    openGuide: "Anleitung öffnen",
+    openDirectly: "oder direkt öffnen",
+    emailLabel: "E-Mail-Adresse",
+    emailPlaceholder: "sie@firma.com",
+    emailInvalid: "Geben Sie eine gültige E-Mail-Adresse ein.",
+    optIn: "Senden Sie mir gelegentlich Echorank-Tipps. Kein Spam, jederzeit abbestellbar.",
+    privacy: "Wir verwenden Ihre Adresse, um Ihnen die Anleitung zu senden. Sonst nichts.",
+    submit: "Anleitung erhalten",
+    submitting: "Wird gesendet…",
+    ready: "Ihre Anleitung ist bereit.",
   },
   footer: {
     copyright: COPYRIGHT,
