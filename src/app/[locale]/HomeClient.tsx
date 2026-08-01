@@ -84,6 +84,7 @@ const T = {
     },
     tlx: {
       label: "THE TRAJECTORY", h2: "What 90 days of AI visibility work looks like",
+      videoLabel: "Video: what 90 days of AI visibility work looks like",
       items: [
         { w: "WEEK 0", t: "Baseline audit", d: "First AI Visibility Score, engine coverage map, and full signal inventory.", m: "Score 47 · cited by 2/6 engines", hot: false },
         { w: "WEEK 2", t: "Review velocity climbs", d: "SMS, email and QR campaigns bring fresh, authentic reviews online.", m: "+38 reviews · reply rate 91%", hot: false },
@@ -241,6 +242,7 @@ const T = {
     },
     tlx: {
       label: "LA TRAJECTOIRE", h2: "À quoi ressemblent 90 jours de travail sur la visibilité IA",
+      videoLabel: "Vidéo : à quoi ressemblent 90 jours de travail sur la visibilité IA",
       items: [
         { w: "SEMAINE 0", t: "Audit de référence", d: "Premier score de visibilité IA, carte de couverture des moteurs et inventaire complet des signaux.", m: "Score 47 · cité par 2/6 moteurs", hot: false },
         { w: "SEMAINE 2", t: "La vélocité d'avis grimpe", d: "Les campagnes SMS, courriel et QR ramènent des avis frais et authentiques.", m: "+38 avis · taux de réponse 91 %", hot: false },
@@ -651,7 +653,7 @@ export default function HomeClient({
                 <div className={it.hot ? s.tlmGold : s.tlm}>{it.m}</div>
               </div>
             ))}
-          </div><div className={s.trajVideoWrap}><video className={s.foundVideo} poster="/videos/90-Days-AI-Visibility_1080p_caption-poster.jpg" src="/videos/90-Days-AI-Visibility_1080p_caption.mp4" controls muted autoPlay loop playsInline preload="metadata" /></div></div>
+          </div><HoverVideo wrapClassName={s.trajVideoWrap} className={s.foundVideo} src="/videos/90-Days-AI-Visibility_1080p_caption.mp4" poster="/videos/90-Days-AI-Visibility_1080p_caption-poster.jpg" ariaLabel={t.tlx.videoLabel} /></div>
         </div>
       </section>
 

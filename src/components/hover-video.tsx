@@ -5,11 +5,12 @@
  *
  * Replaces the inline onMouseEnter/onMouseLeave handlers that were being
  * patched into the homepage video tags one sed at a time. The behaviour is
- * identical for every caller, which is the point: three copies of it drifted.
+ * identical for every caller, which is the point: the copies of it drifted.
  *
- * NOT for autoplaying videos. Section /05 loops muted on its own and must keep
- * using a plain <video> — hover-pausing a decorative loop is worse than
- * leaving it alone.
+ * All four homepage videos (/04, /05, /09, /14) go through this. /05 used to
+ * autoplay a muted loop and was deliberately excluded; that exclusion was
+ * dropped in favour of one consistent behaviour across the page, so nothing
+ * on the homepage plays until a visitor asks for it.
  */
 
 import { useCallback, useRef, useState } from "react";
