@@ -981,23 +981,23 @@ export const PRICE_STRINGS: Record<Locale, Partial<Record<Currency, TierPrices>>
 // ─── Tax / trial disclosure per (locale, currency) ────────────────────────────
 export const TAX_LINES: Record<Locale, Partial<Record<Currency, string>>> = {
   en: {
-    USD: "Try Echorank free for 7 days. Cancel anytime. No card required.",
-    GBP: "Try Echorank free for 7 days. Cancel anytime. No card required.",
-    CAD: "7-day free trial. No credit card required. Billed in Canadian dollars. GST/HST/PST extra.",
+    USD: "Try Echorank free for 7 days. Cancel anytime. Card required.",
+    GBP: "Try Echorank free for 7 days. Cancel anytime. Card required.",
+    CAD: "7-day free trial, card required. Cancel anytime. Billed in Canadian dollars. GST/HST/PST extra.",
   },
   "en-CA": {
-    CAD: "7-day free trial. No credit card required. Billed in Canadian dollars. GST/HST/PST extra.",
+    CAD: "7-day free trial, card required. Cancel anytime. Billed in Canadian dollars. GST/HST/PST extra.",
   },
   fr: {
-    EUR: "Essayez Echorank gratuitement pendant 7 jours. Annulez à tout moment. Aucune carte requise.",
-    CHF: "Essai gratuit de 7 jours. Sans carte bancaire. Facturation en francs suisses. TVA 8,1 % en sus.",
-    CAD: "Essai gratuit de 7 jours. Sans carte de crédit. Facturation en dollars canadiens. Toutes taxes en sus (TPS/TVQ).",
+    EUR: "Essayez Echorank gratuitement pendant 7 jours. Annulez à tout moment. Carte requise.",
+    CHF: "Essai gratuit de 7 jours, carte requise. Annulez à tout moment. Facturation en francs suisses. TVA 8,1 % en sus.",
+    CAD: "Essai gratuit de 7 jours, carte requise. Annulez à tout moment. Facturation en dollars canadiens. Toutes taxes en sus (TPS/TVQ).",
   },
   "fr-CA": {
-    CAD: "Essai gratuit de 7 jours. Sans carte de crédit. Facturation en dollars canadiens. Toutes taxes en sus (TPS/TVQ).",
+    CAD: "Essai gratuit de 7 jours, carte requise. Annulez à tout moment. Facturation en dollars canadiens. Toutes taxes en sus (TPS/TVQ).",
   },
   "de-CH": {
-    CHF: "7 Tage kostenlos testen. Keine Kreditkarte erforderlich. Abrechnung in Schweizer Franken. MwSt. 8,1 % exkl.",
+    CHF: "7 Tage kostenlos testen, Karte erforderlich. Jederzeit kündbar. Abrechnung in Schweizer Franken. MwSt. 8,1 % exkl.",
   },
 };
 

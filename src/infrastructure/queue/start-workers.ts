@@ -15,6 +15,7 @@ import { registerCampaignConsumer } from "@/infrastructure/events/consumers/camp
 import { registerReviewConsumer } from "@/infrastructure/events/consumers/review.consumer";
 import { registerAiConsumer } from "@/infrastructure/events/consumers/ai.consumer";
 import { startEmailDeliveryWorker } from "./workers/email-delivery.worker";
+import { startTrialNoticeWorker } from "./workers/trial-notice.worker";
 import { startSmsDeliveryWorker } from "./workers/sms-delivery.worker";
 import { startWebhookDeliveryWorker } from "./workers/webhook-delivery.worker";
 import { startAiProcessingWorker } from "./workers/ai-processing.worker";
@@ -82,6 +83,7 @@ async function startWorkers() {
 
   const workers: Array<{ name: string; start: () => unknown }> = [
     { name: "email-delivery", start: startEmailDeliveryWorker },
+    { name: "trial-notice", start: startTrialNoticeWorker },
     { name: "sms-delivery", start: startSmsDeliveryWorker },
     { name: "webhook-delivery", start: startWebhookDeliveryWorker },
     { name: "ai-processing", start: startAiProcessingWorker },

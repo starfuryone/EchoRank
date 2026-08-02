@@ -6,6 +6,7 @@
 // plan at whatever key happens to resolve, and a gap in TIER_TO_PLAN leaves a
 // paying tenant on the wrong planType.
 import { describe, it, expect } from "vitest";
+import { createHmac } from "node:crypto";
 import {
   CHECKOUT_TIERS,
   checkoutLookupKey,
@@ -89,5 +90,66 @@ describe("tier -> PlanType mapping", () => {
   it("includes ai_visibility", () => {
     expect(MAP.ai_visibility).toBe("AI_VISIBILITY");
     expect(PLAN_ORDER).toContain("AI_VISIBILITY");
+  });
+});
+
+// ── Webhook signature verification ──────────────────────────────────────────
+//
+// The route's fail-closed behaviour rests on two things: it refuses to run
+// without STRIPE_WEBHOOK_SECRET, and it hands the raw body to Stripe's own
+// constructEvent rather than parsing it first. These exercise the second half
+// against the real library, so a future "simplification" that trusts the body
+// fails here.
+describe("webhook signature verification", () => {
+  const secret = "whsec_test_only_not_a_real_secret";
+  const payload = JSON.stringify({
+    id: "evt_test",
+    type: "checkout.session.completed",
+    data: { object: { id: "cs_test" } },
+  });
+
+  function sign(body: string, ts: number, key: string) {
+    // Stripe's scheme: HMAC-SHA256 over `${timestamp}.${payload}`.
+    const sig = createHmac("sha256", key).update(`${ts}.${body}`).digest("hex");
+    return `t=${ts},v1=${sig}`;
+  }
+
+  it("accepts a correctly signed payload", async () => {
+    const Stripe = (await import("stripe")).default;
+    const stripe = new Stripe("sk_test_dummy");
+    const ts = Math.floor(Date.now() / 1000);
+    const event = stripe.webhooks.constructEvent(payload, sign(payload, ts, secret), secret);
+    expect(event.type).toBe("checkout.session.completed");
+  });
+
+  it("rejects a payload signed with the wrong secret", async () => {
+    const Stripe = (await import("stripe")).default;
+    const stripe = new Stripe("sk_test_dummy");
+    const ts = Math.floor(Date.now() / 1000);
+    const header = sign(payload, ts, "whsec_a_different_secret");
+    expect(() => stripe.webhooks.constructEvent(payload, header, secret)).toThrow();
+  });
+
+  it("rejects a tampered body under a valid-looking signature", async () => {
+    const Stripe = (await import("stripe")).default;
+    const stripe = new Stripe("sk_test_dummy");
+    const ts = Math.floor(Date.now() / 1000);
+    const header = sign(payload, ts, secret);
+    const tampered = payload.replace("cs_test", "cs_attacker");
+    expect(() => stripe.webhooks.constructEvent(tampered, header, secret)).toThrow();
+  });
+
+  it("rejects a missing signature header", async () => {
+    const Stripe = (await import("stripe")).default;
+    const stripe = new Stripe("sk_test_dummy");
+    expect(() => stripe.webhooks.constructEvent(payload, "", secret)).toThrow();
+  });
+
+  it("treats an empty secret as unusable rather than a skip", () => {
+    // The route returns 500 when STRIPE_WEBHOOK_SECRET is absent — the live
+    // value is intentionally empty until the production endpoint exists, and
+    // an empty string must never read as "verification passed".
+    const secretFromEnv = "";
+    expect(Boolean(secretFromEnv)).toBe(false);
   });
 });

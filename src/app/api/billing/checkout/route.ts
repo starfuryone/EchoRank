@@ -1,11 +1,18 @@
 // POST /api/billing/checkout — create a Stripe Checkout Session.
 //
-// ANONYMOUS CHECKOUT IS ALLOWED. The trial takes no card, so requiring an
-// account before the trial starts would put the signup wall in front of the
-// thing that is supposed to remove it. Signed-in visitors are stamped with
-// client_reference_id (tenantId) so the webhook can reconcile; anonymous ones
-// are reconciled by email when they later register. See the note in
-// src/app/api/webhooks/route.ts.
+// AUTHENTICATION IS REQUIRED. An anonymous caller gets 401 and the client
+// sends them to /register?plan=…, which resumes checkout once the account
+// exists. The 401 is deliberate rather than leaving the proxy to redirect:
+// a redirect to /login is followed by fetch() and arrives as HTML with a 200,
+// which the caller cannot distinguish from success.
+//
+// Every session is stamped with client_reference_id (tenantId) — that is what
+// lets the webhook find a tenant that has no Stripe customer yet, which is
+// every tenant until its first checkout completes.
+//
+// The card is collected up front. Stripe's defaults do that, so this route
+// deliberately sets neither payment_method_collection nor trial_settings:
+// naming them is what switches the trial to card-optional.
 //
 // Prices are NOT defined here. The eight lookup keys already exist in Stripe
 // and are resolved live — this app never creates or edits a price, and there
@@ -58,6 +65,33 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Interval must be month or year." }, { status: 400 });
   }
 
+  // Auth gate. 401 carries the tier back so the client can build the
+  // /register?plan=… link without re-deriving it.
+  let tenantId: string;
+  let customerId: string | null = null;
+  let customerEmail: string | null = null;
+  try {
+    const [membership, session] = await Promise.all([getCurrentTenant(), auth()]);
+    if (!membership) {
+      return NextResponse.json(
+        { error: "Sign in required.", reason: "unauthenticated", tier, interval },
+        { status: 401 },
+      );
+    }
+    tenantId = membership.tenant.id;
+    customerId = membership.tenant.stripeCustomerId ?? null;
+    // The email comes from the session: getCurrentTenant returns the membership
+    // and its tenant, not the user.
+    customerEmail = session?.user?.email ?? null;
+  } catch {
+    log.warn("Session lookup failed during checkout");
+    return NextResponse.json(
+      { error: "Sign in required.", reason: "unauthenticated", tier, interval },
+      { status: 401 },
+    );
+  }
+
+
   const lookupKey = checkoutLookupKey(tier, interval);
   const loc = normalizeLocale(typeof locale === "string" ? locale : "en");
 
@@ -79,25 +113,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "That plan is not available." }, { status: 404 });
   }
 
-  // Signed-in visitors get their tenant stamped on the session. Anonymous ones
-  // are fine — getCurrentTenant returns null and we simply omit the linkage.
-  let tenantId: string | null = null;
-  let customerId: string | null = null;
-  let customerEmail: string | null = null;
-  try {
-    const [membership, session] = await Promise.all([getCurrentTenant(), auth()]);
-    if (membership) {
-      tenantId = membership.tenant.id;
-      customerId = membership.tenant.stripeCustomerId ?? null;
-    }
-    // The email comes from the session: getCurrentTenant returns the membership
-    // and its tenant, not the user.
-    customerEmail = session?.user?.email ?? null;
-  } catch {
-    // Never block checkout on a session lookup problem.
-    log.warn("Session lookup failed during checkout; continuing anonymously");
-  }
-
   const base = `${SITE_URL}/${loc}`;
   const metadata = { app: "echorank", tier, interval };
 
@@ -105,20 +120,19 @@ export async function POST(req: NextRequest) {
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       line_items: [{ price: price.id, quantity: 1 }],
-      // The trial takes no card. Collecting one anyway is the single biggest
-      // drop-off in a no-card-required funnel.
-      payment_method_collection: "if_required",
       allow_promotion_codes: true,
+      // No payment_method_collection and no trial_settings on purpose: Stripe's
+      // defaults collect the card up front and charge automatically when the
+      // trial ends. Setting either one is what makes the card optional.
       subscription_data: {
         trial_period_days: TRIAL_DAYS,
-        trial_settings: { end_behavior: { missing_payment_method: "cancel" } },
         metadata,
       },
       metadata,
       // client_reference_id is how the webhook links a session to a tenant
       // that has no Stripe customer yet — which is every tenant today, since
       // no checkout has ever run in this app.
-      ...(tenantId ? { client_reference_id: tenantId } : {}),
+      client_reference_id: tenantId,
       ...(customerId
         ? { customer: customerId }
         : customerEmail

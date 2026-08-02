@@ -6,6 +6,10 @@ import { rateLimit } from "@/lib/rate-limit";
 import { logger } from "@/infrastructure/observability/logger";
 import { resolvePlanFromPriceId } from "@/lib/stripe/prices";
 import { quotaEnforcer } from "@/infrastructure/metering/quota";
+import {
+  cancelTrialEndingNotice,
+  scheduleTrialEndingNotice,
+} from "@/lib/billing/trial-notice";
 
 const log = logger.child({ module: "stripe-webhook" });
 
@@ -92,18 +96,18 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       : null;
 
   if (!tenant) {
-    // Anonymous checkout is allowed, so this is an expected state rather than
-    // an error: there is no tenant to attach to yet. The subscription exists
-    // in Stripe and is reconciled when the visitor registers with the same
-    // email. Logged at info with the email so that reconciliation is
-    // traceable if it does not happen.
-    log.info(
+    // Our checkout route requires an account and always stamps
+    // client_reference_id, so this should not happen for sessions we created.
+    // It still can for a session started elsewhere (a payment link, the Stripe
+    // dashboard), which is why it warns and returns rather than throwing —
+    // there is simply no tenant to attach to.
+    log.warn(
       {
         sessionId: session.id,
         customerId,
         email: session.customer_details?.email ?? session.customer_email ?? null,
       },
-      "Checkout completed with no tenant to attach — anonymous signup, pending reconciliation",
+      "Checkout completed with no tenant to attach — session not created by this app",
     );
     return;
   }
@@ -126,6 +130,23 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     where: { id: tenant.id },
     data: updateData,
   });
+
+  // 24h trial-ending notice. Stripe's own trial_will_end fires 3 days out, so
+  // the exact timing has to come from trial_end on the subscription itself.
+  if (subscriptionId) {
+    try {
+      const sub = await getStripe().subscriptions.retrieve(subscriptionId);
+      await scheduleTrialEndingNotice({
+        tenantId: tenant.id,
+        stripeSubscriptionId: subscriptionId,
+        trialEnd: sub.trial_end,
+      });
+    } catch (err) {
+      // Never fail the webhook over the reminder: Stripe would retry the whole
+      // event, and the subscription itself is already recorded.
+      log.warn({ err, subscriptionId }, "Could not schedule trial-ending notice");
+    }
+  }
 
   log.info(
     { tenantId: tenant.id, customerId, subscriptionId },
@@ -219,6 +240,10 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
 }
 
 async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
+  // Drop any queued 24h trial notice: there is no charge coming now, and a
+  // warning about one would be worse than silence.
+  await cancelTrialEndingNotice(subscription.id);
+
   const customerId =
     typeof subscription.customer === "string"
       ? subscription.customer
@@ -403,6 +428,21 @@ export async function POST(request: NextRequest) {
             event.data.object as Stripe.Subscription
           );
           break;
+
+        // Logged only. Stripe fires this 3 days out; the 24h notice customers
+        // actually get is the delayed trial-notice job scheduled at checkout.
+        case "customer.subscription.trial_will_end": {
+          const sub = event.data.object as Stripe.Subscription;
+          log.info(
+            {
+              subscriptionId: sub.id,
+              customerId: typeof sub.customer === "string" ? sub.customer : sub.customer?.id,
+              trialEnd: sub.trial_end,
+            },
+            "Stripe trial_will_end (3-day) — informational; 24h notice is queued separately"
+          );
+          break;
+        }
 
         case "invoice.payment_succeeded":
           await handleInvoicePaymentSucceeded(

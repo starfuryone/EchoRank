@@ -22,7 +22,7 @@ const EN: Doc = {
       "The Service is provided for business use. You must be at least 18 years old.",
     ]},
     { h: "2. Subscriptions, trials and billing", ps: [
-      "Plans are billed in advance on a recurring basis at the prices shown at purchase. New accounts include a 7-day free trial; no card is required for the trial, and nothing is charged unless you subscribe.",
+      "Plans are billed in advance on a recurring basis at the prices shown at purchase. New accounts include a 7-day free trial. A payment card is required to start it, and the card is charged automatically when the trial ends unless you cancel first.",
       "Subscriptions renew automatically until cancelled. You can cancel at any time, effective at the end of the current billing period; amounts already paid are non-refundable except where the law requires otherwise. We may change prices with at least 30 days' notice, effective at your next renewal. Taxes are your responsibility where applicable.",
     ]},
     { h: "3. Acceptable use", ps: [
@@ -78,7 +78,7 @@ const FR: Doc = {
       "Le Service est destiné à un usage professionnel. Vous devez avoir au moins 18 ans.",
     ]},
     { h: "2. Abonnements, essai et facturation", ps: [
-      "Les forfaits sont facturés d'avance, de façon récurrente, aux prix affichés lors de l'achat. Les nouveaux comptes bénéficient d'un essai gratuit de 7 jours ; aucune carte n'est requise pour l'essai et rien n'est facturé sans souscription.",
+      "Les forfaits sont facturés d'avance, de façon récurrente, aux prix affichés lors de l'achat. Les nouveaux comptes bénéficient d'un essai gratuit de 7 jours. Une carte de paiement est requise pour le démarrer et elle est débitée automatiquement à la fin de l'essai, sauf annulation préalable.",
       "Les abonnements se renouvellent automatiquement jusqu'à annulation. Vous pouvez annuler à tout moment, avec effet à la fin de la période en cours ; les sommes déjà payées ne sont pas remboursables, sauf lorsque la loi l'exige. Nous pouvons modifier les prix avec un préavis d'au moins 30 jours, applicable au prochain renouvellement. Les taxes applicables sont à votre charge.",
     ]},
     { h: "3. Utilisation acceptable", ps: [

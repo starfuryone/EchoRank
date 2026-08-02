@@ -173,7 +173,7 @@ const T = {
     pricing: {
       label: "PRICING", h2: "Plans",
       cadLink: "See pricing in Canadian dollars →",
-      tax: "Try Echorank free for 7 days. Cancel anytime. No card required.",
+      tax: "Try Echorank free for 7 days. Cancel anytime. Card required.",
       currency: "All prices are in US dollars (USD). If you pay with a card in another currency, your bank converts the charge at its own exchange rate.",
     },
     close: {
@@ -330,7 +330,7 @@ const T = {
     pricing: {
       label: "TARIFS", h2: "Forfaits",
       cadLink: "Voir les tarifs en dollars canadiens →",
-      tax: "Essayez Echorank gratuitement pendant 7 jours. Annulez à tout moment. Aucune carte requise.",
+      tax: "Essayez Echorank gratuitement pendant 7 jours. Annulez à tout moment. Carte requise.",
       currency: "Tous les prix sont en dollars américains (USD). Si vous payez avec une carte dans une autre devise, votre banque effectue la conversion à son propre taux de change.",
     },
     close: {
@@ -415,6 +415,16 @@ function CheckoutButton({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ tier, interval, locale }),
       });
+      // Not signed in: go and make an account, then come straight back into
+      // checkout for the tier and interval that were clicked. Carrying the
+      // interval matters — losing it silently drops an annual buyer onto a
+      // monthly price.
+      if (res.status === 401) {
+        window.location.assign(
+          `/register?plan=${encodeURIComponent(tier)}&interval=${encodeURIComponent(interval)}&checkout=1`,
+        );
+        return;
+      }
       const data = (await res.json()) as { url?: string };
       if (!res.ok || !data.url) throw new Error("checkout failed");
       // Full navigation, not router.push: this leaves the app for Stripe.

@@ -14,11 +14,17 @@ import { postSignupRedirect } from "@/lib/plan-routing";
 export default function RegisterForm({
   c,
   plan,
+  interval,
+  resumeCheckout,
   brand,
   locale,
 }: {
   c: AuthContent["register"];
   plan?: string;
+  /** Billing interval carried over from the pricing card. */
+  interval?: string;
+  /** Arrived from a pricing card — continue into Stripe after signup. */
+  resumeCheckout?: boolean;
   brand?: string;
   locale: string;
 }) {
@@ -60,6 +66,30 @@ export default function RegisterForm({
 
       if (result?.error) {
         setError(c.errCreatedSigninFailed);
+      } else if (resumeCheckout && plan) {
+        // Came from a pricing card: finish what they clicked rather than
+        // dropping them on a dashboard and making them find pricing again.
+        // Any failure here falls through to the normal destination — a new
+        // account is not worth stranding over a checkout hiccup.
+        try {
+          const r = await fetch("/api/billing/checkout", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              tier: plan,
+              interval: interval === "year" ? "year" : "month",
+              locale,
+            }),
+          });
+          const d = (await r.json()) as { url?: string };
+          if (r.ok && d.url) {
+            window.location.assign(d.url);
+            return;
+          }
+        } catch {
+          // fall through
+        }
+        router.push(postSignupRedirect(data.planType ?? plan));
       } else {
         // AI_VISIBILITY signups land on /visibility; everyone else /dashboard.
         router.push(postSignupRedirect(data.planType ?? plan));

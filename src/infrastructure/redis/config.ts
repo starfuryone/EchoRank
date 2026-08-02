@@ -111,6 +111,7 @@ export type QueueName =
   | "extension-import"
   | "visibility-monitoring"
   | "onboarding-email"
+  | "trial-notice"
   | "serp-checks"
   | "rank-tracker"
   | "site-audit"
@@ -132,6 +133,7 @@ export const QUEUE_NAMES: QueueName[] = [
 
   "visibility-monitoring",
   "onboarding-email",
+  "trial-notice",
   "serp-checks",
   "rank-tracker",
   "site-audit",

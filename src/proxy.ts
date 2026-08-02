@@ -37,24 +37,35 @@ const publicPaths = ["/login", "/register", "/api/auth", "/api/feedback", "/f/",
 // page: anonymous by design, Redis-rate-limited per IP in the route itself
 // (2/24h, cf-connecting-ip required). Exact-match for the same reason as
 // /api/av/audit — nothing under /api/av/keywords/* inherits anonymity.
-// /api/billing/checkout creates a Stripe Checkout Session for the homepage
-// pricing cards. It is anonymous BY NECESSITY, not by preference: the trial
-// takes no card, and gating checkout behind a login puts the signup wall in
-// front of the thing meant to remove it. Verified empirically — without this
-// entry an anonymous POST is redirected to /login by the auth check below, so
-// the route never runs.
+// /api/billing/checkout is listed here so it can REFUSE anonymous callers
+// itself, not so it can serve them. Checkout requires an account; the route
+// returns 401 and the pricing card sends the visitor to /register?plan=… ,
+// which resumes checkout after signup.
 //
-// It creates nothing of value to an attacker: a Checkout Session is a URL,
-// prices come from Stripe's own catalog by lookup key, and no tenant state
-// changes until the signed webhook fires. CSRF still applies (the origin check
-// above runs first and is not affected by this list), so this is not an open
-// endpoint — just an unauthenticated one. Exact-match, so nothing added later
-// under /api/billing/* inherits anonymous access.
+// Without this entry the auth check below redirects the POST to /login, and a
+// redirect is followed by fetch() and arrives as HTML with status 200 — which
+// the caller cannot tell apart from success, so the button would appear to do
+// nothing. Verified empirically: the sibling path /api/billing/other returns
+// 307 while this one reaches the route.
+//
+// CSRF is unaffected (the origin check above runs first and does not consult
+// this list). Exact-match, so nothing added later under /api/billing/ inherits
+// the exemption.
+// /api/webhooks is the Stripe delivery endpoint. It carries no session cookie
+// — Stripe is not a browser — so the auth check below was redirecting every
+// signed delivery to /login. Together with the CSRF prefix that never matched
+// the un-suffixed path, that made the endpoint unreachable by design. It went
+// unnoticed because no checkout existed to generate an event.
+//
+// This is not an open door: the route verifies the Stripe signature against
+// STRIPE_WEBHOOK_SECRET before it reads anything, and refuses outright when
+// that secret is absent.
 const publicExactPaths = new Set([
   "/api/av/audit",
   "/api/av/audit/report",
   "/api/av/keywords",
   "/api/billing/checkout",
+  "/api/webhooks",
 ]);
 
 /** First path segment, e.g. "/fr/x" -> "fr". */
@@ -120,6 +131,11 @@ export default auth((req) => {
   // Exclude /api/webhooks/ since those come from external services (e.g. Stripe)
   if (
     pathname.startsWith("/api/") &&
+    // Both forms: the Stripe endpoint IS /api/webhooks with no trailing
+    // segment, and the prefix test alone never matched it — so every signed
+    // Stripe delivery was rejected 403 for a missing Origin before signature
+    // verification ever ran. Stripe sends no Origin header and never will.
+    pathname !== "/api/webhooks" &&
     !pathname.startsWith("/api/webhooks/") &&
     !pathname.startsWith("/api/extension/import") &&
     // Bearer-key-authenticated public API/MCP: cookies are never consulted,

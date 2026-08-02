@@ -21,7 +21,7 @@ const EN: GuideDoc = {
     {
       h: "Create your account",
       paras: [
-        "Sign up with your name, work email, business name and a password. New accounts start on a 7-day free trial and no card is required, so you can complete this entire guide before deciding anything.",
+        "Sign up with your name, work email, business name and a password. New accounts start on a 7-day free trial. A payment card is required to start it and is charged when the trial ends unless you cancel first.",
         "Use the email you actually read. Alerts, review notifications and the reports you set up later all land there by default, and changing it afterwards means re-checking every destination.",
       ],
     },
@@ -95,7 +95,7 @@ const FR: GuideDoc = {
     {
       h: "Créez votre compte",
       paras: [
-        "Inscrivez-vous avec votre nom, votre courriel professionnel, le nom de votre entreprise et un mot de passe. Les nouveaux comptes démarrent un essai gratuit de 7 jours, sans carte : vous pouvez donc suivre ce guide en entier avant de décider quoi que ce soit.",
+        "Inscrivez-vous avec votre nom, votre courriel professionnel, le nom de votre entreprise et un mot de passe. Les nouveaux comptes démarrent un essai gratuit de 7 jours. Une carte de paiement est requise pour le démarrer et elle est débitée à la fin de l'essai, sauf annulation préalable.",
         "Utilisez le courriel que vous consultez vraiment. Les alertes, les notifications d'avis et les rapports que vous configurerez ensuite y arrivent par défaut, et le changer plus tard oblige à vérifier chaque destination.",
       ],
     },

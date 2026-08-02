@@ -156,6 +156,21 @@ export interface OnboardingEmailJob extends BaseJob {
   stage: OnboardingEmailStage;
 }
 
+// ─── Trial ending notice ──────────────────────────────────────────────────────
+
+/**
+ * Scheduled 24h before a Stripe trial converts to a charge. Stripe's own
+ * trial_will_end fires 3 days out, which is why this is a delayed job of ours
+ * rather than a webhook handler.
+ */
+export interface TrialNoticeJob {
+  tenantId: string;
+  stripeSubscriptionId: string;
+  /** Unix seconds, as Stripe reports it. Re-checked before sending. */
+  trialEnd: number;
+  correlationId?: string;
+}
+
 // ─── SERP Checks (DataForSEO standard queue) ──────────────────────────────────
 
 export interface SerpCheckJob {
@@ -208,6 +223,7 @@ export type AllJobTypes =
   | ExtensionImportJob
   | VisibilityMonitoringJob
   | OnboardingEmailJob
+  | TrialNoticeJob
   | SerpCheckJob
   | RankTrackerJob
   | SiteAuditJob
@@ -216,6 +232,7 @@ export type AllJobTypes =
 // ─── Queue → Job Type mapping ─────────────────────────────────────────────────
 
 export interface QueueJobMap {
+  "trial-notice": TrialNoticeJob;
   "email-delivery": EmailDeliveryJob;
   "sms-delivery": SmsDeliveryJob;
   "webhook-delivery": WebhookDeliveryJob;
