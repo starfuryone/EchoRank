@@ -78,23 +78,45 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
       ? session.subscription
       : session.subscription?.id;
 
-  if (!customerId) {
-    log.warn({ sessionId: session.id }, "Checkout session missing customer");
-    return;
-  }
-
-  const tenant = await prisma.tenant.findFirst({
-    where: { stripeCustomerId: customerId },
-  });
+  // Resolve the tenant by client_reference_id FIRST, then by customer id.
+  //
+  // Looking up by stripeCustomerId alone only works for a tenant that already
+  // has one — which no tenant does until a checkout has completed, so on its
+  // own it never matches the first time and billing silently never activates.
+  // /api/billing/checkout stamps client_reference_id with the tenant id
+  // precisely so this handler can close that loop.
+  const tenant = session.client_reference_id
+    ? await prisma.tenant.findUnique({ where: { id: session.client_reference_id } })
+    : customerId
+      ? await prisma.tenant.findFirst({ where: { stripeCustomerId: customerId } })
+      : null;
 
   if (!tenant) {
-    log.warn({ customerId }, "No tenant found for Stripe customer");
+    // Anonymous checkout is allowed, so this is an expected state rather than
+    // an error: there is no tenant to attach to yet. The subscription exists
+    // in Stripe and is reconciled when the visitor registers with the same
+    // email. Logged at info with the email so that reconciliation is
+    // traceable if it does not happen.
+    log.info(
+      {
+        sessionId: session.id,
+        customerId,
+        email: session.customer_details?.email ?? session.customer_email ?? null,
+      },
+      "Checkout completed with no tenant to attach — anonymous signup, pending reconciliation",
+    );
     return;
   }
 
   const updateData: Record<string, unknown> = {
     billingStatus: "ACTIVE",
   };
+
+  // Persist the customer id when we matched by client_reference_id, otherwise
+  // the next event has nothing to match on and we are back to the same gap.
+  if (customerId && tenant.stripeCustomerId !== customerId) {
+    updateData.stripeCustomerId = customerId;
+  }
 
   if (subscriptionId) {
     updateData.stripeSubscriptionId = subscriptionId;

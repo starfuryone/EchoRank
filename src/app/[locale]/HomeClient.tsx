@@ -369,6 +369,78 @@ const CARD_COLOR: Record<string, string> = {
   red: "#f87171",
 };
 
+/* ---------- checkout ---------- */
+
+/**
+ * PlanType (as it comes from PLAN_CONFIGS via pricingTiers) -> Stripe tier key.
+ * Enterprise maps to null on purpose: it is custom priced, has no Stripe
+ * lookup key, and must never render a checkout button.
+ */
+function checkoutTierFor(planId: string): "ai_visibility" | "starter" | "growth" | "agency" | null {
+  switch (planId) {
+    case "AI_VISIBILITY":
+      return "ai_visibility";
+    case "STARTER":
+      return "starter";
+    case "GROWTH":
+      return "growth";
+    case "AGENCY":
+      return "agency";
+    default:
+      return null;
+  }
+}
+
+function CheckoutButton({
+  tier,
+  interval,
+  locale,
+  chrome,
+}: {
+  tier: "ai_visibility" | "starter" | "growth" | "agency";
+  interval: "month" | "year";
+  locale: string;
+  chrome: HomePricingChrome;
+}) {
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState(false);
+
+  async function start() {
+    if (busy) return;
+    setBusy(true);
+    setError(false);
+    try {
+      const res = await fetch("/api/billing/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ tier, interval, locale }),
+      });
+      const data = (await res.json()) as { url?: string };
+      if (!res.ok || !data.url) throw new Error("checkout failed");
+      // Full navigation, not router.push: this leaves the app for Stripe.
+      window.location.assign(data.url);
+      // Deliberately stay disabled — the page is on its way out, and
+      // re-enabling here invites a second session on a slow redirect.
+    } catch {
+      setError(true);
+      setBusy(false);
+    }
+  }
+
+  return (
+    <>
+      <button type="button" className={s.pbuy} onClick={start} disabled={busy} aria-busy={busy}>
+        {busy ? chrome.checkoutBusy : chrome.checkoutCta}
+      </button>
+      {error && (
+        <p className={s.pbuyErr} role="alert">
+          {chrome.checkoutError}
+        </p>
+      )}
+    </>
+  );
+}
+
 /* ---------- component ---------- */
 
 export default function HomeClient({
@@ -890,6 +962,18 @@ export default function HomeClient({
                   )}
                   {/* Only AI Visibility is self-serve by URL; the other tiers
                       keep whatever ctaLink the plan config gives them. */}
+                  {/* Primary action: real Stripe Checkout. Rendered above the
+                      register link, which stays as the secondary path for
+                      people who would rather make an account first. Enterprise
+                      never gets one — it is custom priced and contact-only. */}
+                  {checkoutTierFor(p.id) && (
+                    <CheckoutButton
+                      tier={checkoutTierFor(p.id)!}
+                      interval={annual ? "year" : "month"}
+                      locale={locale}
+                      chrome={priceChrome}
+                    />
+                  )}
                   {p.ctaLink && p.cta && (
                     <Link className={s.pcta} href={p.ctaLink}>{p.cta} →</Link>
                   )}

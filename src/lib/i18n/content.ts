@@ -1567,6 +1567,10 @@ export interface HomePricingChrome {
   toolsLine: string;
   toolsAnchor: string;
   contactUs: string;
+  /** Primary checkout button on each paid pricing card. */
+  checkoutCta: string;
+  checkoutBusy: string;
+  checkoutError: string;
 }
 
 export const HOME_PRICING_CHROME: Record<Locale, HomePricingChrome> = {
@@ -1579,6 +1583,9 @@ export const HOME_PRICING_CHROME: Record<Locale, HomePricingChrome> = {
     toolsLine: "{n}+ SEO & AI tools included",
     toolsAnchor: "See the tools ↓",
     contactUs: "Contact us",
+    checkoutCta: "Start free trial",
+    checkoutBusy: "Starting\u2026",
+    checkoutError: "Could not start checkout. Please try again.",
   },
   "en-CA": {
     monthly: "Monthly",
@@ -1589,6 +1596,9 @@ export const HOME_PRICING_CHROME: Record<Locale, HomePricingChrome> = {
     toolsLine: "{n}+ SEO & AI tools included",
     toolsAnchor: "See the tools ↓",
     contactUs: "Contact us",
+    checkoutCta: "Start free trial",
+    checkoutBusy: "Starting\u2026",
+    checkoutError: "Could not start checkout. Please try again.",
   },
   fr: {
     monthly: "Mensuel",
@@ -1599,6 +1609,9 @@ export const HOME_PRICING_CHROME: Record<Locale, HomePricingChrome> = {
     toolsLine: "{n}+ outils SEO et IA inclus",
     toolsAnchor: "Voir les outils ↓",
     contactUs: "Nous contacter",
+    checkoutCta: "D\u00e9marrer l'essai gratuit",
+    checkoutBusy: "D\u00e9marrage\u2026",
+    checkoutError: "Impossible de d\u00e9marrer le paiement. R\u00e9essayez.",
   },
   "fr-CA": {
     monthly: "Mensuel",
@@ -1609,6 +1622,9 @@ export const HOME_PRICING_CHROME: Record<Locale, HomePricingChrome> = {
     toolsLine: "{n}+ outils SEO et IA inclus",
     toolsAnchor: "Voir les outils ↓",
     contactUs: "Nous contacter",
+    checkoutCta: "D\u00e9marrer l'essai gratuit",
+    checkoutBusy: "D\u00e9marrage\u2026",
+    checkoutError: "Impossible de d\u00e9marrer le paiement. R\u00e9essayez.",
   },
   "de-CH": {
     monthly: "Monatlich",
@@ -1619,5 +1635,8 @@ export const HOME_PRICING_CHROME: Record<Locale, HomePricingChrome> = {
     toolsLine: "{n}+ SEO- und KI-Werkzeuge inklusive",
     toolsAnchor: "Werkzeuge ansehen ↓",
     contactUs: "Kontakt aufnehmen",
+    checkoutCta: "Gratis-Test starten",
+    checkoutBusy: "Wird gestartet\u2026",
+    checkoutError: "Zahlung konnte nicht gestartet werden. Bitte erneut versuchen.",
   },
 };

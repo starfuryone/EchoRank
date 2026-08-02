@@ -37,10 +37,24 @@ const publicPaths = ["/login", "/register", "/api/auth", "/api/feedback", "/f/",
 // page: anonymous by design, Redis-rate-limited per IP in the route itself
 // (2/24h, cf-connecting-ip required). Exact-match for the same reason as
 // /api/av/audit — nothing under /api/av/keywords/* inherits anonymity.
+// /api/billing/checkout creates a Stripe Checkout Session for the homepage
+// pricing cards. It is anonymous BY NECESSITY, not by preference: the trial
+// takes no card, and gating checkout behind a login puts the signup wall in
+// front of the thing meant to remove it. Verified empirically — without this
+// entry an anonymous POST is redirected to /login by the auth check below, so
+// the route never runs.
+//
+// It creates nothing of value to an attacker: a Checkout Session is a URL,
+// prices come from Stripe's own catalog by lookup key, and no tenant state
+// changes until the signed webhook fires. CSRF still applies (the origin check
+// above runs first and is not affected by this list), so this is not an open
+// endpoint — just an unauthenticated one. Exact-match, so nothing added later
+// under /api/billing/* inherits anonymous access.
 const publicExactPaths = new Set([
   "/api/av/audit",
   "/api/av/audit/report",
   "/api/av/keywords",
+  "/api/billing/checkout",
 ]);
 
 /** First path segment, e.g. "/fr/x" -> "fr". */
