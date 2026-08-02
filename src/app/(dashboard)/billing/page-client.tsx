@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import {
   CreditCard,
   AlertCircle,
-  Check,
   Zap,
   Building2,
   Rocket,
@@ -14,9 +13,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { PLAN_PRICES, PLAN_CONFIGS, isUpgrade as isPlanUpgrade } from "@/lib/plan-config";
+import { PLAN_PRICES, PLAN_CONFIGS } from "@/lib/plan-config";
 import type { PlanType } from "@/generated/prisma";
 import { BILLING_COPY, type DashLocale } from "@/lib/i18n/dashboard";
+import { PlanCards } from "@/components/billing/plan-cards";
 
 interface BillingData {
   plan: string;
@@ -42,12 +42,22 @@ const PLAN_LABELS: Record<string, string> = {
   AGENCY: "Agency",
 };
 
-export function BillingPageClient({ locale }: { locale: DashLocale }) {
+/** Tiers drawn on this page, in order. ENTERPRISE is not among them — it has
+ *  never had a card here, and adding one would change a four-column grid. */
+const PLAN_CARD_ORDER = ["AI_VISIBILITY", "STARTER", "GROWTH", "AGENCY"] as const;
+
+export function BillingPageClient({
+  locale,
+  currentPlan,
+}: {
+  locale: DashLocale;
+  /** Tenant.planType, resolved server-side in page.tsx. */
+  currentPlan: PlanType | null;
+}) {
   const t = BILLING_COPY[locale];
   const [billing, setBilling] = useState<BillingData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [upgrading, setUpgrading] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchBilling() {
@@ -72,45 +82,6 @@ export function BillingPageClient({ locale }: { locale: DashLocale }) {
     fetchBilling();
   }, [t.loadFailed, t.genericError]);
 
-  const handlePlanChange = async (plan: string) => {
-    if (!billing || plan === billing.plan) return;
-    const newPrice = PLAN_PRICES[plan as keyof typeof PLAN_PRICES] ?? 0;
-    // Rank, not price: ENTERPRISE is custom-priced and its placeholder
-    // monthlyPrice sits below AGENCY, so a price comparison would call the
-    // top tier a downgrade.
-    const isUpgrade = isPlanUpgrade(
-      billing.plan as PlanType,
-      plan as PlanType,
-    );
-    if (!confirm(t.confirmChange(isUpgrade, PLAN_LABELS[plan], newPrice)))
-      return;
-    setUpgrading(plan);
-    try {
-      const res = await fetch("/api/billing", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan }),
-      });
-      if (!res.ok) throw new Error("Failed to change plan");
-      const json = await res.json();
-      setBilling((prev) =>
-        prev
-          ? {
-              ...prev,
-              plan: json.plan?.type ?? plan,
-              status: json.plan?.status ?? prev.status,
-              requestsLimit: json.usage?.feedbackLimit ?? prev.requestsLimit,
-              cancelAtPeriodEnd:
-                json.subscription?.cancelAtPeriodEnd ?? prev.cancelAtPeriodEnd,
-            }
-          : prev,
-      );
-    } catch {
-      alert(t.changeFailed);
-    } finally {
-      setUpgrading(null);
-    }
-  };
 
   if (loading) {
     return (
@@ -244,87 +215,14 @@ export function BillingPageClient({ locale }: { locale: DashLocale }) {
         <h3 className="mb-4 text-lg font-semibold text-gray-900">
           {t.plansTitle}
         </h3>
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-4">
-          {(["AI_VISIBILITY", "STARTER", "GROWTH", "AGENCY"] as const).map((plan) => {
-            const isCurrent = billing.plan === plan;
-            const price = PLAN_PRICES[plan];
-            const isPopular = plan === "GROWTH";
-
-            return (
-              <Card
-                key={plan}
-                className={cn(
-                  "relative overflow-hidden",
-                  isCurrent && "ring-2 ring-blue-600",
-                  isPopular && !isCurrent && "ring-1 ring-blue-200"
-                )}
-              >
-                {isPopular && (
-                  <div className="absolute top-0 right-0 rounded-bl-lg bg-blue-600 px-3 py-1 text-xs font-medium text-white">
-                    {t.popular}
-                  </div>
-                )}
-                <CardContent className="py-6">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div
-                      className={cn(
-                        "flex h-10 w-10 items-center justify-center rounded-lg",
-                        isCurrent
-                          ? "bg-blue-100 text-blue-600"
-                          : "bg-gray-100 text-gray-500"
-                      )}
-                    >
-                      {PLAN_ICONS[plan]}
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-gray-900">
-                        {PLAN_LABELS[plan]}
-                      </h4>
-                      {isCurrent && (
-                        <Badge variant="info" className="mt-0.5">
-                          {t.currentPlan}
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-                  <div className="mb-6">
-                    <span className="text-4xl font-bold text-gray-900">
-                      ${price}
-                    </span>
-                    <span className="text-gray-500">{t.perMonth}</span>
-                  </div>
-                  <ul className="mb-6 space-y-2.5">
-                    {(t.planFeatures[plan] ?? []).map((feature) => (
-                      <li
-                        key={feature}
-                        className="flex items-start gap-2 text-sm text-gray-600"
-                      >
-                        <Check className="mt-0.5 h-4 w-4 shrink-0 text-green-500" />
-                        {feature}
-                      </li>
-                    ))}
-                  </ul>
-                  {isCurrent ? (
-                    <Button variant="outline" className="w-full" disabled>
-                      {t.currentPlan}
-                    </Button>
-                  ) : (
-                    <Button
-                      variant={isPopular ? "primary" : "outline"}
-                      className="w-full"
-                      loading={upgrading === plan}
-                      onClick={() => handlePlanChange(plan)}
-                    >
-                      {isPlanUpgrade(billing.plan as PlanType, plan as PlanType)
-                        ? t.upgradeTo(PLAN_LABELS[plan])
-                        : t.downgradeTo(PLAN_LABELS[plan])}
-                    </Button>
-                  )}
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
+        <PlanCards
+          currentPlan={currentPlan}
+          locale={locale}
+          t={t}
+          plans={PLAN_CARD_ORDER}
+          icons={PLAN_ICONS}
+          features={t.planFeatures as Record<string, string[]>}
+        />
         <p className="mt-4 text-sm text-gray-500">{t.pricesInUsd}</p>
       </div>
     </div>

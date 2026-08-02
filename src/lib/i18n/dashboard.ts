@@ -507,6 +507,7 @@ const billingEn = {
   contactUs: "Contact us",
   popular: "Popular",
   currentPlan: "Current Plan",
+  contactSales: "Contact us",
   upgradeTo: (plan: string) => `Upgrade to ${plan}`,
   downgradeTo: (plan: string) => `Downgrade to ${plan}`,
   confirmChange: (isUpgrade: boolean, plan: string, price: number) =>
@@ -584,6 +585,7 @@ export const BILLING_COPY: Record<DashLocale, BillingCopy> = {
     contactUs: "Contactez-nous",
     popular: "Populaire",
     currentPlan: "Forfait actuel",
+    contactSales: "Nous contacter",
     upgradeTo: (plan: string) => `Passer au forfait ${plan}`,
     downgradeTo: (plan: string) => `Rétrograder vers ${plan}`,
     confirmChange: (isUpgrade: boolean, plan: string, price: number) =>
@@ -659,6 +661,7 @@ export const BILLING_COPY: Record<DashLocale, BillingCopy> = {
     contactUs: "Kontaktieren Sie uns",
     popular: "Beliebt",
     currentPlan: "Aktueller Plan",
+    contactSales: "Kontakt aufnehmen",
     upgradeTo: (plan: string) => `Upgrade auf ${plan}`,
     downgradeTo: (plan: string) => `Downgrade auf ${plan}`,
     confirmChange: (isUpgrade: boolean, plan: string, price: number) =>
