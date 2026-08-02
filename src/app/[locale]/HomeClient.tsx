@@ -22,8 +22,6 @@ export interface HomePricingTier {
   customLabel: string | null;
   savePct: number | null;
   features: string[];
-  ctaLink: string | null;
-  cta: string | null;
   highlighted: boolean;
 }
 
@@ -972,10 +970,12 @@ export default function HomeClient({
                   )}
                   {/* Only AI Visibility is self-serve by URL; the other tiers
                       keep whatever ctaLink the plan config gives them. */}
-                  {/* Primary action: real Stripe Checkout. Rendered above the
-                      register link, which stays as the secondary path for
-                      people who would rather make an account first. Enterprise
-                      never gets one — it is custom priced and contact-only. */}
+                  {/* The card's ONE action. The old "Start Free Trial →" link
+                      to /register?plan=… is gone: two CTAs on a card that only
+                      does one thing just split the click. The route still
+                      exists — /api/billing/checkout redirects unauthenticated
+                      visitors to it — it is simply not a visible card link.
+                      Enterprise never renders a button; it is custom priced. */}
                   {checkoutTierFor(p.id) && (
                     <CheckoutButton
                       tier={checkoutTierFor(p.id)!}
@@ -983,9 +983,6 @@ export default function HomeClient({
                       locale={locale}
                       chrome={priceChrome}
                     />
-                  )}
-                  {p.ctaLink && p.cta && (
-                    <Link className={s.pcta} href={p.ctaLink}>{p.cta} →</Link>
                   )}
                 </div>
               );

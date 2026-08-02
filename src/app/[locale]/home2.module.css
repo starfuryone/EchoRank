@@ -557,8 +557,6 @@
 .pbilled{font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;color:var(--faint);margin-top:-2px}
 .ptools{font-family:var(--mono);font-size:10.5px;letter-spacing:.05em;color:var(--gold);margin-top:12px;display:block;text-decoration:none;border-top:1px solid var(--lineSoft);padding-top:12px}
 .ptools:hover{text-decoration:underline}
-.pcta{display:inline-block;margin-top:14px;font-size:13px;font-weight:560;color:var(--gold);text-decoration:none}
-.pcta:hover{text-decoration:underline}
 
 /* ── Hover + focus states, public pages ─────────────────────────────────────
    Cards genuinely had none. Nav links, footer links and buttons already did,
@@ -597,7 +595,8 @@
 }
 
 /* Primary checkout button inside a pricing card. Full width so it reads as
-   the card's main action, with the existing .pcta link demoted beneath it. */
+   the card's only action — the secondary .pcta link it used to sit above was
+   removed with the rule itself. */
 .pbuy{display:block;width:100%;margin-top:16px;padding:12px 18px;border-radius:10px;border:0;
   background:var(--goldGrad);color:#1a1408;font-size:14px;font-weight:700;text-align:center;
   cursor:pointer;transition:filter 150ms ease}

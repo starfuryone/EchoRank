@@ -65,8 +65,9 @@ function pricingTiers(locale: string): HomePricingTier[] {
           ? Math.round(((monthly - annual) / monthly) * 100)
           : null,
       features: c.features,
-      ctaLink: c.ctaLink ?? null,
-      cta: c.cta ?? null,
+      // cta / ctaLink are deliberately NOT passed through. The cards have a
+      // single action now (Stripe Checkout), and PLAN_CONFIGS keeps both
+      // fields because FeatureGate still reads them.
       highlighted: c.highlighted === true,
     };
   });
