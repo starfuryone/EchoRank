@@ -5213,7 +5213,7 @@ const seoToolsEn = {
       description: "Research successful content, trends, mentions, and link opportunities.",
     },
     ai_content_helper: {
-      name: "AI Content Helper",
+      name: "Marketing Studio",
       description: "Plan, create, optimize, and improve content with AI.",
     },
     historical: {
@@ -5356,7 +5356,7 @@ export const SEO_TOOLS_COPY: Record<DashLocale, SeoToolsCopy> = {
         description: "Recherchez les contenus performants, les tendances, les mentions et les occasions de liens.",
       },
       ai_content_helper: {
-        name: "Assistant de contenu IA",
+        name: "Studio marketing",
         description: "Planifiez, créez, optimisez et améliorez votre contenu avec l'IA.",
       },
       historical: {
@@ -5495,7 +5495,7 @@ export const SEO_TOOLS_COPY: Record<DashLocale, SeoToolsCopy> = {
         description: "Recherchieren Sie erfolgreiche Inhalte, Trends, Erwähnungen und Link-Chancen.",
       },
       ai_content_helper: {
-        name: "KI-Content-Assistent",
+        name: "Marketing Studio",
         description: "Planen, erstellen, optimieren und verbessern Sie Inhalte mit KI.",
       },
       historical: {
@@ -10257,11 +10257,12 @@ export const AI_LENS_HELP_COPY: Record<DashLocale, AiLensHelpCopy> = {
    Marketing Studio (tool page: /visibility/tools/ai-content-helper)
    ═══════════════════════════════════════════════════════════════════════════
 
-   The card is still called "AI Content Helper" in SEO_TOOL_GROUPS and the tool
-   catalogs above — that id is wired into dashNav, the homepage tool grid and
-   the route table in seo-tools.test.ts. The PAGE calls itself Marketing Studio.
-   A label and a slug do not have to match, and renaming the slug would orphan
-   every link that already points at it.
+   Everything a user reads now says Marketing Studio: the hub card, the sidebar
+   row and the page itself. Only the INTERNAL identifiers still say
+   ai_content_helper — the tool id, the /visibility/tools/ai-content-helper
+   slug, the dashNav key and the route table in seo-tools.test.ts. A label and a
+   slug do not have to match, and renaming the slug would orphan every link that
+   already points at it.
 
    Category names and variable labels are resolved from the dotted keys in
    marketing-templates.ts via marketingLabel() below, so the config stays the
