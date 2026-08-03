@@ -42,7 +42,7 @@ const T = {
       // CTA runs the anonymous audit instead — no signup, no card.
       cta3: "Create an account",
       cta2: "Watch a 2-minute demo",
-      note: "NO CARD REQUIRED · RESULTS IN 60 SECONDS",
+      note: "RESULTS IN 60 SECONDS",
       dashTitle: "AI VISIBILITY AUDITOR",
       dashBiz: "ACME PLUMBING",
       score: "AI Visibility Score",
@@ -199,7 +199,7 @@ const T = {
       cta1: "Lancer mon audit de visibilité IA gratuit ↗",
       cta3: "Créer un compte",
       cta2: "Voir la démo de 2 minutes",
-      note: "SANS CARTE · RÉSULTATS EN 60 SECONDES",
+      note: "RÉSULTATS EN 60 SECONDES",
       dashTitle: "AUDITEUR DE VISIBILITÉ IA",
       dashBiz: "PLOMBERIE ACME",
       score: "Score de visibilité IA",
@@ -568,9 +568,12 @@ export default function HomeClient({
             <h1 className={s.h1}>{t.hero.h1a}<span className={s.goldtext}>{t.hero.h1b}</span></h1>
             <p className={s.heroSub}>{t.hero.sub}</p>
             {/* Primary CTA runs the real audit with no account: the widget on
-                /ai-visibility is anonymous and rate-limited to 1/IP/day, so the
-                "no card required" promise below is literally true. /register is
-                the secondary path for people who already want an account. */}
+                /ai-visibility is anonymous and rate-limited to 1/IP/day.
+                /register is the secondary path for people who already want an
+                account — and that path DOES take a card, which is why the hero
+                label no longer promises otherwise. The "no card" claims on
+                /ai-visibility itself stay: they describe the anonymous widget,
+                where they are still true. */}
             <div className={s.ctarow}>
               <Link className={`${s.btn} ${s.btnPrimary}`} href={L("/ai-visibility#audit")}>{t.hero.cta1}</Link>
               <Link className={`${s.btn} ${s.btnGhost}`} href="/register">{t.hero.cta3}</Link>

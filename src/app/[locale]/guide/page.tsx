@@ -333,7 +333,7 @@ const DE: Doc = {
       "Wettbewerbsintelligenz: tägliche Konkurrenz Momentaufnahmen zeigen, wer aufholt, und wann.",
     ]},
     { h: "1. Konto erstellen", ps: [
-      "Gehen Sie zur Registrierungsseite, geben Sie Name, geschäftliche E-Mail, Firmenname und ein Passwort mit mindestens 8 Zeichen ein. Jedes neue Konto startet eine 7 Tage Testphase ohne Kreditkarte. Ohne Abo wird nichts berechnet.",
+      "Gehen Sie zur Registrierungsseite, geben Sie Name, geschäftliche E-Mail, Firmenname und ein Passwort mit mindestens 8 Zeichen ein. Jedes neue Konto startet eine 7 Tage Testphase. Eine Zahlungskarte ist von Anfang an erforderlich und wird am Ende der Testphase belastet, sofern Sie nicht vorher kündigen.",
       "Teammitglieder laden Sie später über die Team Seite ein. Wer das Konto erstellt, ist Inhaber.",
     ]},
     { h: "2. Quellen verbinden", ps: [
