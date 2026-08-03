@@ -171,6 +171,11 @@ export const MARKETING_CATEGORIES: MarketingCategory[] = [
       v("PLATFORM", "marketing.var.platform"),
       " content calendar for ",
       v("BUSINESS", "marketing.var.business"),
+      " starting ",
+      // buildCalendar takes the start date rather than defaulting to today, so
+      // the same brief always yields the same schedule and the result cache
+      // stays meaningful. That contract needs a field to read it from.
+      v("START_DATE", "marketing.var.startDate"),
       " over ",
       v("DAYS", "marketing.var.days"),
       " days, with content pillars ",

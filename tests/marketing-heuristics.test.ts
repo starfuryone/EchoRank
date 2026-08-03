@@ -117,10 +117,23 @@ describe("voc heuristic", () => {
   it("counts repeated phrases across entries", () => {
     const phrases = extractPhrases(splitEntries(FEEDBACK), 30).map((p) => p.phrase);
     expect(phrases).toContain("setup process was confusing");
+    expect(phrases).toContain("support never responded");
     // n tops out at 4, so the longest form of the pricing complaint that can
     // surface is a 4-gram, not the full "price is hard to justify".
-    expect(phrases).toContain("price is hard to");
     expect(phrases).not.toContain("price is hard to justify");
+    expect(phrases.some((p) => p.includes("hard to justify"))).toBe(true);
+  });
+
+  it("returns one phrase per complaint, not every window over it", () => {
+    // Each of these is a slice of "the setup process was confusing" and appears
+    // in exactly the same entries, so all of them are the same complaint. Only
+    // the longest survives — the AI step is asked for N distinct headlines and
+    // cannot produce them from N slices of one sentence.
+    const phrases = extractPhrases(splitEntries(FEEDBACK), 30).map((p) => p.phrase);
+    for (const fragment of ["setup process", "setup process was", "the setup process", "process was confusing"]) {
+      expect(phrases, `${fragment} should have been deduped`).not.toContain(fragment);
+    }
+    expect(phrases.filter((p) => p.includes("setup")).length).toBe(1);
   });
 
   it("ranks by document spread, not raw repetition", () => {
@@ -128,8 +141,8 @@ describe("voc heuristic", () => {
     // separate customers used — breadth is the signal worth acting on.
     const shouty = ["red flag red flag red flag red flag red flag", "slow support here", "slow support here"];
     const top = extractPhrases(shouty, 5);
-    const slow = top.find((p) => p.phrase === "slow support");
-    const red = top.find((p) => p.phrase === "red flag");
+    const slow = top.find((p) => p.phrase.includes("slow support"));
+    const red = top.find((p) => p.phrase.includes("red flag"));
     expect(slow?.documents).toBe(2);
     expect(red?.documents).toBe(1);
     expect(top.indexOf(slow!)).toBeLessThan(top.indexOf(red!));

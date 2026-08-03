@@ -83,12 +83,62 @@ export function extractPhrases(entries: string[], limit = 10): PhraseCount[] {
     }
   });
 
-  return [...counts.entries()]
-    .map(([phrase, count]) => ({ phrase, count, documents: docs.get(phrase)?.size ?? 0 }))
+  const ranked = [...counts.entries()]
+    .map(([phrase, count]) => {
+      const docSet = docs.get(phrase) ?? new Set<number>();
+      return { phrase, count, documents: docSet.size, docSet };
+    })
     .filter((p) => p.documents > 1 || p.count > 2)
-    // Document spread first: breadth beats one loud voice.
-    .sort((a, b) => b.documents - a.documents || b.count - a.count || a.phrase.localeCompare(b.phrase))
-    .slice(0, limit);
+    .sort(
+      (a, b) =>
+        // Document spread first: breadth beats one loud voice.
+        b.documents - a.documents ||
+        b.count - a.count ||
+        // Then the LONGER phrase. Every sub-phrase of a repeated complaint has
+        // identical counts by construction ("setup process" appears exactly
+        // wherever "setup process was confusing" does), so an alphabetical
+        // tiebreak here handed the model "process was" and kept the sentence
+        // the customer actually said further down the list.
+        b.phrase.length - a.phrase.length ||
+        a.phrase.localeCompare(b.phrase),
+    );
+
+  // Drop near-duplicates of a higher-ranked phrase. Without this the top 5 is
+  // five overlapping slices of the same two complaints rather than five
+  // complaints — and five slices is what the AI step would be asked to turn
+  // into five distinct headlines.
+  //
+  // Substring containment alone is not enough: "the setup process was" and
+  // "setup process was confusing" overlap almost entirely, yet neither contains
+  // the other. The precise signal is that overlapping grams of one complaint
+  // come from exactly the SAME entries — every window over "the setup process
+  // was confusing" appears in precisely the entries that sentence appears in.
+  // So an identical document set plus any shared vocabulary means one complaint
+  // counted several ways, and only the longest form survives. Word overlap is
+  // kept as a backstop for phrases whose document sets merely happen to differ.
+  const OVERLAP_THRESHOLD = 0.75;
+  const kept: PhraseCount[] = [];
+  const keptMeta: Array<{ words: Set<string>; docSet: Set<number> }> = [];
+
+  const sameDocs = (a: Set<number>, b: Set<number>) =>
+    a.size === b.size && [...a].every((d) => b.has(d));
+
+  for (const candidate of ranked) {
+    if (kept.length >= limit) break;
+    const words = new Set(candidate.phrase.split(" "));
+
+    const duplicate = keptMeta.some((prior) => {
+      let shared = 0;
+      for (const w of words) if (prior.words.has(w)) shared++;
+      if (shared > 0 && sameDocs(prior.docSet, candidate.docSet)) return true;
+      return shared / words.size >= OVERLAP_THRESHOLD;
+    });
+    if (duplicate) continue;
+
+    kept.push({ phrase: candidate.phrase, count: candidate.count, documents: candidate.documents });
+    keptMeta.push({ words, docSet: candidate.docSet });
+  }
+  return kept;
 }
 
 export function bucketObjections(entries: string[]): VocAnalysis["buckets"] {

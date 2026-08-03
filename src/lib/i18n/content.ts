@@ -1342,7 +1342,7 @@ export interface HomeToolsCopy {
   label: string;
   h2: string;
   sub: string;
-  /** "17 tools live today, 5 more on the way" — counts are injected. */
+  /** "18 tools live today, 4 more on the way" — counts are injected. */
   count: (live: number, soon: number) => string;
   included: string;
   cta: string;

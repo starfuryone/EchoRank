@@ -177,7 +177,12 @@ export const SEO_TOOL_GROUPS: SeoToolGroup[] = [
     id: "content_marketing",
     tools: [
       t("content_explorer", "content-explorer", Compass),
-      t("ai_content_helper", "ai-content-helper", PenTool, { comingSoon: true }),
+      // Marketing Studio. The card keeps the ai_content_helper id and the
+      // ai-content-helper slug — both are wired into dashNav, the homepage grid
+      // and the route table in seo-tools.test.ts — while the page titles itself
+      // Marketing Studio. It keeps its scaffold copy per the ScaffoldId note
+      // above; that union means "has scaffold copy", not "is unimplemented".
+      t("ai_content_helper", "ai-content-helper", PenTool),
       t("social_media_manager", "social-media-manager", Share2, { comingSoon: true }),
     ],
   },

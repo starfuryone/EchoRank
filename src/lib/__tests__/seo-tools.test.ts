@@ -111,11 +111,11 @@ test("the live/coming-soon split is what the marketing copy claims", () => {
   const live = ALL_TOOLS.filter((t) => !t.comingSoon);
   const soon = ALL_TOOLS.filter((t) => t.comingSoon);
   assert.equal(ALL_TOOLS.length, 22, "tool count changed");
-  assert.equal(live.length, 17, "live tool count changed — update the homepage copy");
-  assert.equal(soon.length, 5);
+  assert.equal(live.length, 18, "live tool count changed — update the homepage copy");
+  assert.equal(soon.length, 4);
   assert.deepEqual(
     soon.map((t) => t.id).sort(),
-    ["ai_content_helper", "gbp_monitor", "portfolios", "report_builder", "social_media_manager"],
+    ["gbp_monitor", "portfolios", "report_builder", "social_media_manager"],
   );
 });
 

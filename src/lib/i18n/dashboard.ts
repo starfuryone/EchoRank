@@ -10235,3 +10235,548 @@ export const AI_LENS_HELP_COPY: Record<DashLocale, AiLensHelpCopy> = {
       "Eine Lücke von 0 % ist kein langweiliges Ergebnis, sondern das Ziel. Sie bedeutet, dass eine KI-Engine, die Ihre Seite zitiert, mit denselben Worten arbeitet, die Ihre Kundschaft liest.",
   },
 };
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Marketing Studio (tool page: /visibility/tools/ai-content-helper)
+   ═══════════════════════════════════════════════════════════════════════════
+
+   The card is still called "AI Content Helper" in SEO_TOOL_GROUPS and the tool
+   catalogs above — that id is wired into dashNav, the homepage tool grid and
+   the route table in seo-tools.test.ts. The PAGE calls itself Marketing Studio.
+   A label and a slug do not have to match, and renaming the slug would orphan
+   every link that already points at it.
+
+   Category names and variable labels are resolved from the dotted keys in
+   marketing-templates.ts via marketingLabel() below, so the config stays the
+   single source of which fields exist and this file stays the single source of
+   what they are called.
+*/
+
+const marketingEn = {
+  hubTitle: "Marketing Studio",
+  hubIntro:
+    "Twelve briefs that turn a few facts about your business into a finished marketing asset. Pick the one that matches what you need today.",
+  hubPickPrompt: "What are you working on?",
+
+  // Mode chips on each card. These are user-facing promises about cost and
+  // privacy, not internal jargon — the whole doctrine is visible here.
+  modeGenerate: "Written for you",
+  modeHybrid: "Computed, then written",
+  modeHeuristic: "Computed on this server",
+  modeHeuristicNote:
+    "No AI call at all. Everything is measured from what you paste, and what you paste never leaves this server.",
+  modeHybridNote:
+    "The analysis runs here. Only the summary it produces is sent to be written up — never the data you pasted.",
+
+  backToStudio: "← All briefs",
+  requiredField: "Required",
+
+  generateBtn: "Generate",
+  generating: "Generating…",
+  computeBtn: "Analyse",
+  computing: "Analysing…",
+  writeUpBtn: "Write it up",
+  writeUpHint:
+    "Optional. This is the only step that costs anything, and it sends the summary above — nothing else.",
+
+  resultTitle: "Your draft",
+  computedTitle: "What the analysis found",
+  payloadTitle: "Exactly what would be sent",
+  payloadNote:
+    "This is the whole payload. Your pasted text is not in it, and there is no second request that includes it.",
+  copyBtn: "Copy",
+  copied: "Copied",
+  cachedNote:
+    "You already generated this exact brief today, so this is your saved draft — it cost nothing. Change a field to generate a new one.",
+
+  usageLine: (used: string, limit: string) => `${used} of ${limit} generation tokens used this month`,
+  usageUnlimited: (used: string) => `${used} generation tokens used this month`,
+  usageResets: "Resets on the 1st.",
+  usageFree: "Analysis is free and does not count against this.",
+
+  lockedTitle: "Marketing Studio is on Starter and above",
+  lockedBody:
+    "Your current plan covers AI visibility monitoring. Marketing Studio is included from the Starter plan up.",
+  upgradeCta: "Compare plans",
+
+  // Brand voice
+  voiceTitle: "Brand voice",
+  voiceIntro:
+    "Paste a few things you have already written. We measure the rhythm, vocabulary and punctuation habits and write you a style guide — no AI call, and the samples are never stored.",
+  voiceSaveBtn: "Use this voice everywhere",
+  voiceSaved: "Saved. Every other brief will now be written in this voice.",
+  voiceClearBtn: "Stop using it",
+  voiceCleared: "Cleared. Briefs will use a neutral voice.",
+  voiceActive: "Your saved brand voice is being applied to this brief.",
+  voiceNone: "No brand voice saved yet.",
+  voiceEditHint:
+    "Edit it before saving if anything is wrong — it is plain text, and your edits are kept exactly as written.",
+  voiceSamplesNotStored: "Only the guide is saved. The writing samples are discarded.",
+
+  // Errors
+  errRateLimited: "Too many at once — try again in a minute.",
+  errBudget: "You have used this month's generation budget. Analysis still works, and the budget resets on the 1st.",
+  errNotConfigured: "Content generation is not switched on for this deployment yet.",
+  errUpstream: "That could not be generated right now. Try again in a minute.",
+  errGeneric: "Something went wrong. Try again.",
+  errTooShort: "That is too short to work from. Add a few more sentences.",
+
+  loading: "Loading…",
+
+  categories: {
+    positioning: {
+      name: "Positioning angles",
+      role: "Five ways to stand somewhere your competitor is not already standing.",
+    },
+    ads: {
+      name: "Ad variations",
+      role: "Ten angles on one product, then the three worth testing first.",
+    },
+    email: {
+      name: "Welcome sequence",
+      role: "A sequence that earns the ask before it makes one.",
+    },
+    seo: {
+      name: "Content cluster",
+      role: "The subtopics that each deserve their own article, and how they link back.",
+    },
+    social: {
+      name: "Content calendar",
+      role: "A pillar-balanced schedule built here, with one hook written per slot.",
+    },
+    landing: {
+      name: "Landing page",
+      role: "Benefit-led sections, objection handling, and what to A/B test first.",
+    },
+    video: {
+      name: "Video script",
+      role: "A script with a shot list, not just the words.",
+    },
+    voice: {
+      name: "Brand voice",
+      role: "Measured from your own writing. No AI call, and nothing is sent anywhere.",
+    },
+    analytics: {
+      name: "Analytics readout",
+      role: "What moved and what to do about it. The arithmetic runs here.",
+    },
+    campaign: {
+      name: "Full campaign",
+      role: "Every asset for one campaign, all aligned to one success metric.",
+    },
+    outreach: {
+      name: "Partnership outreach",
+      role: "Five cold openers that lead with something specific to them.",
+    },
+    voc: {
+      name: "Voice of customer",
+      role: "Your customers' own words, counted here and turned into copy.",
+    },
+  },
+
+  vars: {
+    product: "Product or service",
+    audience: "Who it is for",
+    competitor: "Main competitor",
+    theirAngle: "How they position themselves",
+    platform: "Platform",
+    characterLimit: "Character limit per ad",
+    number: "How many emails",
+    business: "Business name",
+    goal: "Goal of the sequence",
+    keyword: "Seed keyword",
+    conversionPage: "Page you want people to reach",
+    startDate: "Start date",
+    days: "How many days",
+    pillar1: "Content pillar 1",
+    pillar2: "Content pillar 2",
+    pillar3: "Content pillar 3",
+    maxConsecutive: "Max days in a row on one pillar",
+    offer: "What you are offering",
+    lengthSeconds: "Length in seconds",
+    topic: "Topic",
+    writingSamples: "Things you have written",
+    data: "Your analytics rows",
+    campaignSubject: "What the campaign is for",
+    timeframe: "Over what period",
+    partnerType: "Who you want to partner with",
+    partnershipGoal: "What you want out of it",
+    rawFeedback: "Customer feedback",
+  },
+
+  /** Format guidance for the fields where the shape is not obvious. */
+  varHints: {
+    startDate: "YYYY-MM-DD",
+    days: "1 to 90",
+    maxConsecutive: "2 is a good default",
+    characterLimit: "e.g. 90",
+    number: "e.g. 5",
+    lengthSeconds: "e.g. 45",
+    writingSamples: "Paste a few paragraphs — blog posts, emails, anything in your own voice.",
+    data: "Paste rows from any analytics export: a label, this period, last period. CSV or tab-separated.",
+    rawFeedback: "One review, ticket or survey answer per line.",
+  } as Record<string, string>,
+};
+
+export type MarketingCopy = typeof marketingEn;
+
+export const MARKETING_COPY: Record<DashLocale, MarketingCopy> = {
+  en: marketingEn,
+  fr: {
+    hubTitle: "Studio marketing",
+    hubIntro:
+      "Douze briefs qui transforment quelques informations sur votre entreprise en un support marketing fini. Choisissez celui qui correspond à ce dont vous avez besoin aujourd'hui.",
+    hubPickPrompt: "Sur quoi travaillez-vous ?",
+
+    modeGenerate: "Rédigé pour vous",
+    modeHybrid: "Calculé, puis rédigé",
+    modeHeuristic: "Calculé sur ce serveur",
+    modeHeuristicNote:
+      "Aucun appel à l'IA. Tout est mesuré à partir de ce que vous collez, et ce que vous collez ne quitte jamais ce serveur.",
+    modeHybridNote:
+      "L'analyse s'exécute ici. Seul le résumé qu'elle produit est envoyé pour rédaction — jamais les données que vous avez collées.",
+
+    backToStudio: "← Tous les briefs",
+    requiredField: "Obligatoire",
+
+    generateBtn: "Générer",
+    generating: "Génération…",
+    computeBtn: "Analyser",
+    computing: "Analyse…",
+    writeUpBtn: "Rédiger",
+    writeUpHint:
+      "Facultatif. C'est la seule étape payante, et elle envoie le résumé ci-dessus — rien d'autre.",
+
+    resultTitle: "Votre brouillon",
+    computedTitle: "Ce que l'analyse a trouvé",
+    payloadTitle: "Exactement ce qui serait envoyé",
+    payloadNote:
+      "Voici la totalité du contenu envoyé. Votre texte collé n'y figure pas, et aucune seconde requête ne l'inclut.",
+    copyBtn: "Copier",
+    copied: "Copié",
+    cachedNote:
+      "Vous avez déjà généré ce brief exact aujourd'hui : voici votre brouillon enregistré, il n'a rien coûté. Modifiez un champ pour en générer un nouveau.",
+
+    usageLine: (used: string, limit: string) => `${used} jetons de génération sur ${limit} utilisés ce mois-ci`,
+    usageUnlimited: (used: string) => `${used} jetons de génération utilisés ce mois-ci`,
+    usageResets: "Remise à zéro le 1er.",
+    usageFree: "L'analyse est gratuite et n'est pas décomptée.",
+
+    lockedTitle: "Le Studio marketing est inclus à partir de Starter",
+    lockedBody:
+      "Votre forfait actuel couvre la surveillance de la visibilité IA. Le Studio marketing est inclus à partir du forfait Starter.",
+    upgradeCta: "Comparer les forfaits",
+
+    voiceTitle: "Voix de marque",
+    voiceIntro:
+      "Collez quelques textes que vous avez déjà écrits. Nous mesurons le rythme, le vocabulaire et les habitudes de ponctuation, puis nous rédigeons votre guide de style — sans appel à l'IA, et les échantillons ne sont jamais conservés.",
+    voiceSaveBtn: "Utiliser cette voix partout",
+    voiceSaved: "Enregistré. Tous les autres briefs seront désormais rédigés dans cette voix.",
+    voiceClearBtn: "Ne plus l'utiliser",
+    voiceCleared: "Supprimé. Les briefs utiliseront une voix neutre.",
+    voiceActive: "Votre voix de marque enregistrée est appliquée à ce brief.",
+    voiceNone: "Aucune voix de marque enregistrée pour l'instant.",
+    voiceEditHint:
+      "Corrigez-le avant d'enregistrer si quelque chose ne va pas — c'est du texte brut, et vos modifications sont conservées telles quelles.",
+    voiceSamplesNotStored: "Seul le guide est enregistré. Les échantillons sont supprimés.",
+
+    errRateLimited: "Trop de demandes à la fois — réessayez dans une minute.",
+    errBudget:
+      "Vous avez épuisé votre budget de génération du mois. L'analyse reste disponible, et le budget est remis à zéro le 1er.",
+    errNotConfigured: "La génération de contenu n'est pas encore activée sur ce déploiement.",
+    errUpstream: "Impossible de générer pour le moment. Réessayez dans une minute.",
+    errGeneric: "Une erreur est survenue. Réessayez.",
+    errTooShort: "C'est trop court pour en tirer quelque chose. Ajoutez quelques phrases.",
+
+    loading: "Chargement…",
+
+    categories: {
+      positioning: {
+        name: "Angles de positionnement",
+        role: "Cinq façons de vous placer là où votre concurrent ne se trouve pas déjà.",
+      },
+      ads: {
+        name: "Variantes publicitaires",
+        role: "Dix angles pour un même produit, puis les trois à tester en premier.",
+      },
+      email: {
+        name: "Séquence de bienvenue",
+        role: "Une séquence qui mérite la demande avant de la formuler.",
+      },
+      seo: {
+        name: "Cluster de contenu",
+        role: "Les sous-thèmes qui méritent chacun leur article, et comment les relier.",
+      },
+      social: {
+        name: "Calendrier de contenu",
+        role: "Un calendrier équilibré entre piliers, construit ici, avec une accroche par créneau.",
+      },
+      landing: {
+        name: "Page d'atterrissage",
+        role: "Des sections centrées sur les bénéfices, le traitement des objections et quoi tester en A/B.",
+      },
+      video: {
+        name: "Script vidéo",
+        role: "Un script accompagné d'un découpage visuel, pas seulement du texte.",
+      },
+      voice: {
+        name: "Voix de marque",
+        role: "Mesurée à partir de vos propres écrits. Aucun appel à l'IA, rien n'est envoyé.",
+      },
+      analytics: {
+        name: "Lecture des statistiques",
+        role: "Ce qui a bougé et quoi en faire. Les calculs se font ici.",
+      },
+      campaign: {
+        name: "Campagne complète",
+        role: "Tous les supports d'une campagne, alignés sur un seul indicateur de réussite.",
+      },
+      outreach: {
+        name: "Prospection de partenariats",
+        role: "Cinq messages d'approche qui commencent par quelque chose qui leur est propre.",
+      },
+      voc: {
+        name: "Voix du client",
+        role: "Les mots de vos clients, comptés ici et transformés en accroches.",
+      },
+    },
+
+    vars: {
+      product: "Produit ou service",
+      audience: "À qui cela s'adresse",
+      competitor: "Concurrent principal",
+      theirAngle: "Comment il se positionne",
+      platform: "Plateforme",
+      characterLimit: "Limite de caractères par annonce",
+      number: "Combien de courriels",
+      business: "Nom de l'entreprise",
+      goal: "Objectif de la séquence",
+      keyword: "Mot-clé de départ",
+      conversionPage: "Page vers laquelle diriger",
+      startDate: "Date de début",
+      days: "Combien de jours",
+      pillar1: "Pilier de contenu 1",
+      pillar2: "Pilier de contenu 2",
+      pillar3: "Pilier de contenu 3",
+      maxConsecutive: "Jours consécutifs maximum sur un pilier",
+      offer: "Ce que vous proposez",
+      lengthSeconds: "Durée en secondes",
+      topic: "Sujet",
+      writingSamples: "Des textes que vous avez écrits",
+      data: "Vos lignes de statistiques",
+      campaignSubject: "Objet de la campagne",
+      timeframe: "Sur quelle période",
+      partnerType: "Avec qui vous voulez vous associer",
+      partnershipGoal: "Ce que vous en attendez",
+      rawFeedback: "Retours clients",
+    },
+
+    varHints: {
+      startDate: "AAAA-MM-JJ",
+      days: "1 à 90",
+      maxConsecutive: "2 est une bonne valeur par défaut",
+      characterLimit: "par ex. 90",
+      number: "par ex. 5",
+      lengthSeconds: "par ex. 45",
+      writingSamples:
+        "Collez quelques paragraphes — articles, courriels, tout ce qui est écrit de votre main.",
+      data:
+        "Collez des lignes issues de n'importe quel export : un libellé, la période actuelle, la précédente. CSV ou séparé par des tabulations.",
+      rawFeedback: "Un avis, un ticket ou une réponse d'enquête par ligne.",
+    },
+  },
+  "de-CH": {
+    hubTitle: "Marketing Studio",
+    hubIntro:
+      "Zwölf Briefings, die einige Angaben zu Ihrem Unternehmen in ein fertiges Marketingmittel verwandeln. Wählen Sie das passende für Ihre heutige Aufgabe.",
+    hubPickPrompt: "Woran arbeiten Sie?",
+
+    modeGenerate: "Für Sie geschrieben",
+    modeHybrid: "Berechnet, dann geschrieben",
+    modeHeuristic: "Auf diesem Server berechnet",
+    modeHeuristicNote:
+      "Kein KI-Aufruf. Alles wird aus dem berechnet, was Sie einfügen — und das verlässt diesen Server nie.",
+    modeHybridNote:
+      "Die Auswertung läuft hier. Nur die daraus entstehende Zusammenfassung wird zum Ausformulieren gesendet — nie Ihre eingefügten Daten.",
+
+    backToStudio: "← Alle Briefings",
+    requiredField: "Pflichtfeld",
+
+    generateBtn: "Erstellen",
+    generating: "Wird erstellt…",
+    computeBtn: "Auswerten",
+    computing: "Wird ausgewertet…",
+    writeUpBtn: "Ausformulieren",
+    writeUpHint:
+      "Optional. Nur dieser Schritt kostet etwas, und er sendet die Zusammenfassung oben — sonst nichts.",
+
+    resultTitle: "Ihr Entwurf",
+    computedTitle: "Was die Auswertung ergeben hat",
+    payloadTitle: "Genau das würde gesendet",
+    payloadNote:
+      "Das ist der vollständige Inhalt. Ihr eingefügter Text steht nicht darin, und es gibt keine zweite Anfrage, die ihn enthält.",
+    copyBtn: "Kopieren",
+    copied: "Kopiert",
+    cachedNote:
+      "Sie haben genau dieses Briefing heute schon erstellt — das ist Ihr gespeicherter Entwurf und hat nichts gekostet. Ändern Sie ein Feld für einen neuen.",
+
+    usageLine: (used: string, limit: string) => `${used} von ${limit} Generierungs-Tokens diesen Monat genutzt`,
+    usageUnlimited: (used: string) => `${used} Generierungs-Tokens diesen Monat genutzt`,
+    usageResets: "Zurückgesetzt am 1.",
+    usageFree: "Auswertungen sind kostenlos und zählen nicht mit.",
+
+    lockedTitle: "Marketing Studio gibt es ab Starter",
+    lockedBody:
+      "Ihr aktuelles Abo umfasst die Überwachung der KI-Sichtbarkeit. Marketing Studio ist ab dem Starter-Abo enthalten.",
+    upgradeCta: "Abos vergleichen",
+
+    voiceTitle: "Markenstimme",
+    voiceIntro:
+      "Fügen Sie einige Texte ein, die Sie bereits geschrieben haben. Wir messen Rhythmus, Wortschatz und Zeichensetzung und schreiben Ihnen daraus einen Styleguide — ohne KI-Aufruf, und die Textproben werden nie gespeichert.",
+    voiceSaveBtn: "Diese Stimme überall verwenden",
+    voiceSaved: "Gespeichert. Alle weiteren Briefings werden nun in dieser Stimme geschrieben.",
+    voiceClearBtn: "Nicht mehr verwenden",
+    voiceCleared: "Entfernt. Briefings verwenden wieder eine neutrale Stimme.",
+    voiceActive: "Ihre gespeicherte Markenstimme wird auf dieses Briefing angewendet.",
+    voiceNone: "Noch keine Markenstimme gespeichert.",
+    voiceEditHint:
+      "Passen Sie ihn vor dem Speichern an, falls etwas nicht stimmt — es ist reiner Text, und Ihre Änderungen bleiben genau so erhalten.",
+    voiceSamplesNotStored: "Nur der Styleguide wird gespeichert. Die Textproben werden verworfen.",
+
+    errRateLimited: "Zu viele Anfragen auf einmal — versuchen Sie es in einer Minute erneut.",
+    errBudget:
+      "Sie haben das Generierungsbudget dieses Monats aufgebraucht. Auswertungen funktionieren weiterhin, und das Budget wird am 1. zurückgesetzt.",
+    errNotConfigured: "Die Inhaltserstellung ist auf dieser Installation noch nicht aktiviert.",
+    errUpstream: "Das konnte gerade nicht erstellt werden. Versuchen Sie es in einer Minute erneut.",
+    errGeneric: "Etwas ist schiefgelaufen. Versuchen Sie es erneut.",
+    errTooShort: "Das ist zu kurz, um damit zu arbeiten. Ergänzen Sie ein paar Sätze.",
+
+    loading: "Wird geladen…",
+
+    categories: {
+      positioning: {
+        name: "Positionierungs-Ansätze",
+        role: "Fünf Möglichkeiten, dort zu stehen, wo Ihre Konkurrenz nicht schon steht.",
+      },
+      ads: {
+        name: "Anzeigenvarianten",
+        role: "Zehn Ansätze für ein Produkt und die drei, die Sie zuerst testen sollten.",
+      },
+      email: {
+        name: "Willkommensstrecke",
+        role: "Eine Strecke, die sich die Bitte verdient, bevor sie sie ausspricht.",
+      },
+      seo: {
+        name: "Themencluster",
+        role: "Die Unterthemen, die je einen eigenen Artikel verdienen, und wie sie zurückverlinken.",
+      },
+      social: {
+        name: "Redaktionsplan",
+        role: "Ein hier erstellter Plan mit ausgewogenen Säulen und einem Aufhänger pro Slot.",
+      },
+      landing: {
+        name: "Landingpage",
+        role: "Nutzenorientierte Abschnitte, Einwandbehandlung und was Sie zuerst A/B-testen sollten.",
+      },
+      video: {
+        name: "Videoskript",
+        role: "Ein Skript mit Einstellungsliste, nicht nur der gesprochene Text.",
+      },
+      voice: {
+        name: "Markenstimme",
+        role: "Aus Ihren eigenen Texten gemessen. Kein KI-Aufruf, nichts wird gesendet.",
+      },
+      analytics: {
+        name: "Auswertung der Kennzahlen",
+        role: "Was sich bewegt hat und was zu tun ist. Gerechnet wird hier.",
+      },
+      campaign: {
+        name: "Komplette Kampagne",
+        role: "Alle Mittel einer Kampagne, ausgerichtet auf eine einzige Erfolgskennzahl.",
+      },
+      outreach: {
+        name: "Partnerschaftsanfragen",
+        role: "Fünf Erstkontakte, die mit etwas Konkretem über das Gegenüber beginnen.",
+      },
+      voc: {
+        name: "Stimme der Kundschaft",
+        role: "Die Worte Ihrer Kundschaft, hier ausgezählt und zu Texten gemacht.",
+      },
+    },
+
+    vars: {
+      product: "Produkt oder Dienstleistung",
+      audience: "Für wen es gedacht ist",
+      competitor: "Wichtigste Konkurrenz",
+      theirAngle: "Wie sie sich positioniert",
+      platform: "Plattform",
+      characterLimit: "Zeichenlimit pro Anzeige",
+      number: "Wie viele E-Mails",
+      business: "Firmenname",
+      goal: "Ziel der Strecke",
+      keyword: "Ausgangs-Keyword",
+      conversionPage: "Zielseite",
+      startDate: "Startdatum",
+      days: "Wie viele Tage",
+      pillar1: "Inhaltssäule 1",
+      pillar2: "Inhaltssäule 2",
+      pillar3: "Inhaltssäule 3",
+      maxConsecutive: "Maximale Tage am Stück auf einer Säule",
+      offer: "Was Sie anbieten",
+      lengthSeconds: "Länge in Sekunden",
+      topic: "Thema",
+      writingSamples: "Texte, die Sie geschrieben haben",
+      data: "Ihre Kennzahlen-Zeilen",
+      campaignSubject: "Worum es in der Kampagne geht",
+      timeframe: "Über welchen Zeitraum",
+      partnerType: "Mit wem Sie zusammenarbeiten möchten",
+      partnershipGoal: "Was Sie sich davon versprechen",
+      rawFeedback: "Kundenrückmeldungen",
+    },
+
+    varHints: {
+      startDate: "JJJJ-MM-TT",
+      days: "1 bis 90",
+      maxConsecutive: "2 ist ein guter Standardwert",
+      characterLimit: "z. B. 90",
+      number: "z. B. 5",
+      lengthSeconds: "z. B. 45",
+      writingSamples:
+        "Fügen Sie ein paar Absätze ein — Blogbeiträge, E-Mails, alles in Ihrer eigenen Sprache.",
+      data:
+        "Fügen Sie Zeilen aus einem beliebigen Export ein: Bezeichnung, aktueller Zeitraum, vorheriger. CSV oder tabgetrennt.",
+      rawFeedback: "Eine Bewertung, ein Ticket oder eine Umfrageantwort pro Zeile.",
+    },
+  },
+};
+
+/**
+ * Resolve a dotted key from marketing-templates.ts against a copy catalog.
+ *
+ * "marketing.positioning.name" -> categories.positioning.name
+ * "marketing.voice.role"       -> categories.voice.role
+ * "marketing.var.product"      -> vars.product
+ *
+ * An unresolved key returns the key itself rather than an empty string, so a
+ * missing translation shows up as visible garbage in the UI instead of a blank
+ * label nobody notices. tests/marketing-i18n.test.ts asserts none of the keys
+ * the config actually declares takes that path, in any of the three locales.
+ */
+export function marketingLabel(copy: MarketingCopy, key: string): string {
+  const parts = key.split(".");
+  if (parts[0] !== "marketing" || parts.length < 3) return key;
+
+  if (parts[1] === "var") {
+    return copy.vars[parts[2] as keyof MarketingCopy["vars"]] ?? key;
+  }
+
+  const category = copy.categories[parts[1] as keyof MarketingCopy["categories"]];
+  if (!category) return key;
+  return parts[2] === "role" ? category.role : category.name;
+}
+
+/** Format hint for a variable, or null when the field speaks for itself. */
+export function marketingVarHint(copy: MarketingCopy, labelKey: string): string | null {
+  const name = labelKey.startsWith("marketing.var.") ? labelKey.slice("marketing.var.".length) : "";
+  return copy.varHints[name] ?? null;
+}
