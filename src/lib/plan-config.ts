@@ -18,6 +18,27 @@ import { hasFeature } from "./feature-flags";
  */
 export const TRIAL_DAYS = 7;
 
+/**
+ * Monthly Marketing Studio output-token budget, per tenant, by tier.
+ *
+ * An abuse guard, not a margin lever. Every generation runs on Haiku with a
+ * 1500-2500 token ceiling, so a tenant would have to sit on the button all
+ * month to approach even the STARTER cap — at Haiku rates the worst case is
+ * comfortably under a dollar. The cap exists so a scripted loop cannot run up
+ * a bill unnoticed, and it counts OUTPUT tokens because that is the expensive
+ * half and the half a caller controls.
+ *
+ * null = unlimited (ENTERPRISE is contract-priced; a hard stop would be the
+ * wrong failure mode there).
+ */
+export const MARKETING_MONTHLY_OUTPUT_TOKENS: Record<PlanType, number | null> = {
+  AI_VISIBILITY: 100_000,
+  STARTER: 200_000,
+  GROWTH: 500_000,
+  AGENCY: 2_000_000,
+  ENTERPRISE: null,
+};
+
 export interface PlanConfig {
   name: string;
   slug: string;

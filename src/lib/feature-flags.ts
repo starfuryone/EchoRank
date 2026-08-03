@@ -16,7 +16,8 @@ export type Feature =
   | "escalation_prediction"
   | "review_authenticity"
   | "multi_location_intelligence"
-  | "answer_tracking";
+  | "answer_tracking"
+  | "marketing_studio";
 
 const ALL_FEATURES: Feature[] = [
   "review_authenticity",
@@ -35,6 +36,7 @@ const ALL_FEATURES: Feature[] = [
   "custom_integrations",
   "answer_tracking",
   "multi_location_intelligence",
+  "marketing_studio",
 ];
 
 const PLAN_FEATURES: Record<PlanType, Set<Feature>> = {
@@ -42,13 +44,18 @@ const PLAN_FEATURES: Record<PlanType, Set<Feature>> = {
   // review_authenticity and everything reputation-side — it is not a rung on
   // the STARTER→ENTERPRISE ladder, it is a separate product.
   AI_VISIBILITY: new Set<Feature>(["ai_visibility", "answer_tracking"]),
-  STARTER: new Set<Feature>(["review_authenticity"]),
+  // marketing_studio starts at STARTER. AI_VISIBILITY is deliberately excluded
+  // above: it is a standalone product, not the bottom rung of the ladder, and
+  // the studio is reputation/content-side. Those tenants still reach the
+  // landing page — it renders locked cards as the upsell rather than a 404.
+  STARTER: new Set<Feature>(["review_authenticity", "marketing_studio"]),
   GROWTH: new Set<Feature>([
     "review_authenticity",
     "ai_analysis",
     "ai_visibility",
     "advanced_analytics",
     "escalation_prediction",
+    "marketing_studio",
   ]),
   AGENCY: new Set<Feature>(ALL_FEATURES),
   ENTERPRISE: new Set<Feature>(ALL_FEATURES),

@@ -152,6 +152,10 @@ model Tenant {
   planType              PlanType      @default(STARTER)
   monthlyRequestLimit   Int           @default(300)
   billingStatus         BillingStatus @default(TRIALING)
+  /// Marketing Studio brand voice, produced by category 08's heuristic and
+  /// saved by the tenant. Prepended to every generation's system prompt when
+  /// set. Text, not JSON: it is written straight into a prompt.
+  brandVoiceGuide       String?       @db.Text @map("brand_voice_guide")
   stripeCustomerId      String?
   stripeSubscriptionId  String?
   whitelabel            Boolean       @default(false)
@@ -865,6 +869,29 @@ model MessageEvent {
 // fanning these out as env vars (4 tiers x 5 currencies = 20), they are
 // resolved from this table at checkout/webhook time. `active` lets old prices
 // be retired without deletion; lookups always filter on active = true.
+/// One row per SUCCESSFUL Anthropic call from Marketing Studio.
+///
+/// Heuristic-only work writes nothing here — it costs nothing, so metering it
+/// would overstate spend and make the monthly budget deny work that was free.
+/// Cache-served results write nothing either, for the same reason.
+model AiApiCall {
+  id               String   @id @default(cuid())
+  tenantId         String   @map("tenant_id")
+  categoryId       String   @map("category_id")
+  model            String
+  inputTokens      Int      @default(0) @map("input_tokens")
+  outputTokens     Int      @default(0) @map("output_tokens")
+  /// From the API usage block. Expected to stay 0 on Haiku 4.5 — the shared
+  /// prefix is ~500 tokens against a 4096-token minimum, so nothing caches.
+  /// Recorded anyway so the assumption is measurable rather than asserted.
+  cacheReadTokens  Int      @default(0) @map("cache_read_tokens")
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  /// The budget query is "output tokens for this tenant this month".
+  @@index([tenantId, createdAt])
+  @@map("ai_api_calls")
+}
+
 model StripePrice {
   id            String   @id @default(cuid())
   stripePriceId String   @unique @map("stripe_price_id")
