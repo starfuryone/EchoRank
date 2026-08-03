@@ -4,7 +4,17 @@
 
 import { AiProvider, type InferenceRequest, type InferenceResult } from "./base";
 
-const DEFAULT_MODEL = "claude-sonnet-4-6"; // refreshed; override with ANTHROPIC_MODEL
+// House policy: claude-haiku-4-5 for every Anthropic call, everywhere.
+//
+// This is a LIVE path, not the dead fallback it looks like. registry.ts picks
+// OpenAI first, but OPENAI_API_KEY is set to the empty string on this box —
+// falsy — so the registry falls through to this provider, and the sentiment
+// pipeline (orchestrator -> /api/ai/analyze) reaches Anthropic through it. It
+// was running Sonnet at ~5x Haiku's input price and ~3x its output price for
+// classification work Haiku does fine.
+//
+// ANTHROPIC_MODEL still overrides, for a one-off experiment. Nothing sets it.
+const DEFAULT_MODEL = "claude-haiku-4-5";
 const API_BASE = "https://api.anthropic.com/v1";
 const API_VERSION = "2023-06-01";
 const TIMEOUT_MS = 30_000;

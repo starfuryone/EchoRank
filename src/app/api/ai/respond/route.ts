@@ -1,7 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { resolveTenant } from "@/lib/signals/auth-adapter";
+import { cachedAiCall } from "@/lib/ai-cache";
 
-const MODEL = process.env.AI_RESPOND_MODEL || "claude-sonnet-4-6";
+// House policy: claude-haiku-4-5 for every Anthropic call.
+// AI_RESPOND_MODEL still overrides; nothing sets it.
+const MODEL = process.env.AI_RESPOND_MODEL || "claude-haiku-4-5";
 
 export async function POST(req: NextRequest) {
   const auth = await resolveTenant(req);
@@ -49,35 +52,74 @@ export async function POST(req: NextRequest) {
     (body.reviewerName ? `Reviewer: ${body.reviewerName}\n` : "") +
     `Review:\n${reviewText}`;
 
-  const r = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      "x-api-key": key,
-      "anthropic-version": "2023-06-01",
+  // Deterministic inputs -> cacheable. Drafting a reply to the SAME review with
+  // the same tone is the same request, and the obvious way to spend twice is a
+  // user clicking "draft" again on a reply they already generated. `fresh: true`
+  // asks for a genuinely new wording.
+  let draft: string;
+  let cached: boolean;
+  try {
+    ({ value: draft, cached } = await cachedAiCall<string>(
+    {
+      namespace: "respond",
+      tenantId: auth.tenantId,
+      inputs: {
+        reviewText,
+        rating: body.rating ?? null,
+        reviewerName: body.reviewerName ?? null,
+        businessName: body.businessName ?? null,
+        tone: body.tone ?? null,
+        model: MODEL,
+      },
+      fresh: (body as { fresh?: boolean }).fresh === true,
     },
-    body: JSON.stringify({
-      model: MODEL,
-      max_tokens: 500,
-      system,
-      messages: [{ role: "user", content: user }],
-    }),
-  });
+    async () => {
+    const r = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-api-key": key,
+        "anthropic-version": "2023-06-01",
+      },
+      body: JSON.stringify({
+        model: MODEL,
+        max_tokens: 500,
+        system,
+        messages: [{ role: "user", content: user }],
+      }),
+    });
 
-  if (!r.ok) {
-    const detail = await r.text();
-    return NextResponse.json(
-      { error: "AI provider error", detail: detail.slice(0, 300) },
-      { status: 502 },
-    );
+    if (!r.ok) {
+      // Thrown, not returned: a provider blip must not be cached for 24 hours.
+      throw new ProviderError((await r.text()).slice(0, 300));
+    }
+    const data = (await r.json()) as { content?: { type: string; text?: string }[] };
+    const draft = (data.content || [])
+      .filter((c) => c.type === "text" && c.text)
+      .map((c) => c.text)
+      .join("\n")
+      .trim();
+      return draft;
+      },
+    ));
+  } catch (err) {
+    if (err instanceof ProviderError) {
+      return NextResponse.json(
+        { error: "AI provider error", detail: err.detail },
+        { status: 502 },
+      );
+    }
+    throw err;
   }
-  const data = (await r.json()) as { content?: { type: string; text?: string }[] };
-  const draft = (data.content || [])
-    .filter((c) => c.type === "text" && c.text)
-    .map((c) => c.text)
-    .join("\n")
-    .trim();
 
-  return NextResponse.json({ draft, model: MODEL });
+  return NextResponse.json({ draft, model: MODEL, cached });
+}
+
+/** Carries a provider failure out past the cache without storing it. */
+class ProviderError extends Error {
+  constructor(readonly detail: string) {
+    super("anthropic returned non-200");
+    this.name = "ProviderError";
+  }
 }
 // EOF-ai-respond

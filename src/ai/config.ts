@@ -127,6 +127,11 @@ export const COST_PER_1K_TOKENS: Record<
   "claude-opus-4-7": { prompt: 0.015, completion: 0.075 },
   "claude-opus-4-6": { prompt: 0.015, completion: 0.075 },
   "claude-haiku-4-5-20251001": { prompt: 0.001, completion: 0.005 },
+  // The undated id, which is what every call site now sends and what the API
+  // echoes back. resolveRates would already reach the dated key by stripping
+  // the suffix, but the house model should not depend on that fallback to be
+  // costed — a table miss silently prices usage at $0.
+  "claude-haiku-4-5": { prompt: 0.001, completion: 0.005 },
 };
 
 /** Strip a trailing YYYYMMDD snapshot suffix (e.g. `-20250514`) from a model id. */
