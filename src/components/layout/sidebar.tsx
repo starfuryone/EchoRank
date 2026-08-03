@@ -4,43 +4,39 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
-  Users,
-  MessageSquare,
-  Send,
-  HeartHandshake,
-  BarChart3,
-  FileText,
-  ExternalLink,
+  Sparkles,
+  PenTool,
   UserPlus,
   Settings,
   CreditCard,
-  Brain,
-  Radar,
-  Database,
-  Puzzle,
   ScanEye,
-  Wrench, UserCircle } from "lucide-react";
+  Wrench,
+  UserCircle,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { dashNav, type DashLocale } from "@/lib/i18n/dashboard";
 import { canAccessPath } from "@/lib/plan-routing";
 import { SEO_TOOLS_HUB } from "@/lib/seo-tools";
 import type { PlanType } from "@/generated/prisma";
 
+// Eleven reputation surfaces used to sit here as eleven rows, which made the
+// sidebar the product's table of contents. They now live behind /reputation as
+// a grouped hub; the routes did not move, so every bookmark still works.
+//
+// Team stays OUT of that hub deliberately: seat and role management is
+// administration, not a reputation tool, and it belongs next to Settings and
+// Billing where someone goes to administer an account rather than to work.
+//
+// Marketing Studio gets a row of its own even though it lives under
+// /visibility/tools/*. It is a destination people go to directly and repeatedly,
+// unlike the other tools in that hub, and its dashNav label is what the page
+// calls itself.
 const navItems = [
   { href: "/dashboard", icon: LayoutDashboard },
-  { href: "/customers", icon: Users },
-  { href: "/feedback", icon: MessageSquare },
-  { href: "/campaigns", icon: Send },
-  { href: "/recovery", icon: HeartHandshake },
-  { href: "/analytics", icon: BarChart3 },
-  { href: "/intelligence", icon: Brain },
-  { href: "/monitoring", icon: Radar },
+  { href: "/reputation", icon: Sparkles },
   { href: "/visibility", icon: ScanEye },
   { href: "/visibility/tools", icon: Wrench },
-  { href: "/imports", icon: Database },
-  { href: "/extension", icon: Puzzle },
-  { href: "/templates", icon: FileText },
-  { href: "/review-links", icon: ExternalLink },
+  { href: "/visibility/tools/ai-content-helper", icon: PenTool },
   { href: "/team", icon: UserPlus },
   { href: "/settings", icon: Settings },
   { href: "/settings/account", icon: UserCircle },

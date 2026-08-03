@@ -20,6 +20,7 @@ export function dashboardLocale(cookieValue?: string | null): DashLocale {
 export const dashNav: Record<DashLocale, Record<string, string>> = {
   en: {
     "/dashboard": "Dashboard",
+    "/reputation": "Reputation Tools",
     "/customers": "Customers",
     "/feedback": "Feedback",
     "/campaigns": "Campaigns",
@@ -46,7 +47,7 @@ export const dashNav: Record<DashLocale, Record<string, string>> = {
     "/visibility/tools/web-analytics": "Web Analytics",
     "/visibility/tools/bot-analytics": "Bot Analytics",
     "/visibility/tools/content-explorer": "Content Explorer",
-    "/visibility/tools/ai-content-helper": "AI Content Helper",
+    "/visibility/tools/ai-content-helper": "Marketing Studio",
     "/visibility/tools/social-media-manager": "Social Media Manager",
     "/visibility/tools/portfolios": "Portfolios",
     "/visibility/tools/report-builder": "Report Builder",
@@ -63,6 +64,7 @@ export const dashNav: Record<DashLocale, Record<string, string>> = {
   },
   "de-CH": {
     "/dashboard": "Dashboard",
+    "/reputation": "Reputations-Tools",
     "/customers": "Kunden",
     "/feedback": "Feedback",
     "/campaigns": "Kampagnen",
@@ -88,7 +90,7 @@ export const dashNav: Record<DashLocale, Record<string, string>> = {
     "/visibility/tools/web-analytics": "Web-Analytics",
     "/visibility/tools/bot-analytics": "Bot-Analytics",
     "/visibility/tools/content-explorer": "Content Explorer",
-    "/visibility/tools/ai-content-helper": "KI-Content-Assistent",
+    "/visibility/tools/ai-content-helper": "Marketing Studio",
     "/visibility/tools/social-media-manager": "Social-Media-Manager",
     "/visibility/tools/portfolios": "Portfolios",
     "/visibility/tools/report-builder": "Report Builder",
@@ -105,6 +107,7 @@ export const dashNav: Record<DashLocale, Record<string, string>> = {
   },
   fr: {
     "/dashboard": "Tableau de bord",
+    "/reputation": "Outils de réputation",
     "/customers": "Clients",
     "/feedback": "Rétroaction",
     "/campaigns": "Campagnes",
@@ -130,7 +133,7 @@ export const dashNav: Record<DashLocale, Record<string, string>> = {
     "/visibility/tools/web-analytics": "Analytique web",
     "/visibility/tools/bot-analytics": "Analytique des robots",
     "/visibility/tools/content-explorer": "Explorateur de contenu",
-    "/visibility/tools/ai-content-helper": "Assistant de contenu IA",
+    "/visibility/tools/ai-content-helper": "Studio marketing",
     "/visibility/tools/social-media-manager": "Gestionnaire de médias sociaux",
     "/visibility/tools/portfolios": "Portefeuilles",
     "/visibility/tools/report-builder": "Générateur de rapports",
@@ -11116,5 +11119,209 @@ export const HISTORICAL_COPY: Record<DashLocale, HistoricalCopy> = {
     errCapture: "Diese Seite konnte gerade nicht erfasst werden.",
     errGeneric: "Etwas ist schiefgelaufen. Versuchen Sie es erneut.",
     loading: "Wird geladen…",
+  },
+};
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Reputation Tools hub (/reputation)
+   ═══════════════════════════════════════════════════════════════════════════
+
+   The eleven reputation surfaces, grouped. Every card points at the route that
+   already existed — this is navigation copy, not a new product surface.
+*/
+
+const reputationEn = {
+  hubTitle: "Reputation Tools",
+  hubSubtitle:
+    "Everything that turns customer experience into reviews, and reviews into something you can act on.",
+
+  lockedBadge: "Not on your plan",
+  lockedHint: (plan: string) => `Included from ${plan}`,
+  upgradeCta: "Compare plans",
+
+  groups: {
+    customer_feedback: "Customer feedback",
+    risk_recovery: "Risk and recovery",
+    analytics: "Analytics",
+    data: "Data",
+  } as Record<string, string>,
+
+  items: {
+    customers: {
+      name: "Customers",
+      description: "Everyone you can ask for a review, and what you already know about them.",
+    },
+    feedback: {
+      name: "Feedback",
+      description: "What customers said, sentiment-scored and sorted by what needs a reply.",
+    },
+    campaigns: {
+      name: "Campaigns",
+      description: "Ask for reviews on a schedule, by email or SMS, without asking twice.",
+    },
+    review_links: {
+      name: "Review links",
+      description: "One short link per platform, so a happy customer lands where it counts.",
+    },
+    templates: {
+      name: "Templates",
+      description: "Reusable request and reply wording, per channel and per locale.",
+    },
+    recovery: {
+      name: "Recovery",
+      description: "Unhappy customers caught before they post, with the fix routed to someone.",
+    },
+    intelligence: {
+      name: "Intelligence",
+      description: "Competitor movement, escalation risk and review authenticity in one read.",
+    },
+    monitoring: {
+      name: "Monitoring",
+      description: "New reviews across every source you connect, alerted the day they land.",
+    },
+    reputation_analytics: {
+      name: "Reputation analytics",
+      description: "Rating, volume and response time over time — and what moved them.",
+    },
+    data_sources: {
+      name: "Data sources",
+      description: "Import customers and reviews, or connect a platform to keep them current.",
+    },
+    extension: {
+      name: "Browser extension",
+      description: "Capture reviews and customers from a platform tab, without an export.",
+    },
+  } as Record<string, { name: string; description: string }>,
+};
+
+export type ReputationCopy = typeof reputationEn;
+
+export const REPUTATION_COPY: Record<DashLocale, ReputationCopy> = {
+  en: reputationEn,
+  fr: {
+    hubTitle: "Outils de réputation",
+    hubSubtitle:
+      "Tout ce qui transforme l'expérience client en avis, et les avis en décisions concrètes.",
+
+    lockedBadge: "Non inclus dans votre forfait",
+    lockedHint: (plan: string) => `Inclus à partir de ${plan}`,
+    upgradeCta: "Comparer les forfaits",
+
+    groups: {
+      customer_feedback: "Retours clients",
+      risk_recovery: "Risque et rattrapage",
+      analytics: "Analytique",
+      data: "Données",
+    },
+
+    items: {
+      customers: {
+        name: "Clients",
+        description: "Toutes les personnes à qui demander un avis, et ce que vous savez déjà d'elles.",
+      },
+      feedback: {
+        name: "Retours",
+        description: "Ce que vos clients ont dit, avec le sentiment analysé et les réponses à traiter en premier.",
+      },
+      campaigns: {
+        name: "Campagnes",
+        description: "Demandez des avis automatiquement, par courriel ou SMS, sans jamais relancer deux fois.",
+      },
+      review_links: {
+        name: "Liens d'avis",
+        description: "Un lien court par plateforme, pour que le client satisfait arrive au bon endroit.",
+      },
+      templates: {
+        name: "Modèles",
+        description: "Formulations réutilisables pour les demandes et les réponses, par canal et par langue.",
+      },
+      recovery: {
+        name: "Rattrapage",
+        description: "Les clients mécontents interceptés avant publication, avec un responsable assigné.",
+      },
+      intelligence: {
+        name: "Intelligence",
+        description: "Mouvements des concurrents, risque d'escalade et authenticité des avis, en une lecture.",
+      },
+      monitoring: {
+        name: "Surveillance",
+        description: "Les nouveaux avis de chaque source connectée, signalés le jour même.",
+      },
+      reputation_analytics: {
+        name: "Analytique de réputation",
+        description: "Note, volume et délai de réponse dans le temps — et ce qui les a fait bouger.",
+      },
+      data_sources: {
+        name: "Sources de données",
+        description: "Importez clients et avis, ou connectez une plateforme pour les tenir à jour.",
+      },
+      extension: {
+        name: "Extension de navigateur",
+        description: "Récupérez avis et clients depuis un onglet de plateforme, sans export.",
+      },
+    },
+  },
+  "de-CH": {
+    hubTitle: "Reputations-Tools",
+    hubSubtitle:
+      "Alles, was Kundenerlebnisse in Bewertungen verwandelt — und Bewertungen in Entscheidungen.",
+
+    lockedBadge: "Nicht in Ihrem Abo",
+    lockedHint: (plan: string) => `Enthalten ab ${plan}`,
+    upgradeCta: "Abos vergleichen",
+
+    groups: {
+      customer_feedback: "Kundenfeedback",
+      risk_recovery: "Risiko und Rückgewinnung",
+      analytics: "Auswertungen",
+      data: "Daten",
+    },
+
+    items: {
+      customers: {
+        name: "Kundschaft",
+        description: "Alle, die Sie um eine Bewertung bitten können — und was Sie über sie wissen.",
+      },
+      feedback: {
+        name: "Rückmeldungen",
+        description: "Was Ihre Kundschaft gesagt hat, mit Stimmungsanalyse und nach Antwortbedarf sortiert.",
+      },
+      campaigns: {
+        name: "Kampagnen",
+        description: "Bitten Sie planmässig um Bewertungen, per E-Mail oder SMS, ohne doppelt nachzufassen.",
+      },
+      review_links: {
+        name: "Bewertungslinks",
+        description: "Ein Kurzlink pro Plattform, damit zufriedene Kundschaft dort landet, wo es zählt.",
+      },
+      templates: {
+        name: "Vorlagen",
+        description: "Wiederverwendbare Texte für Anfragen und Antworten, pro Kanal und Sprache.",
+      },
+      recovery: {
+        name: "Rückgewinnung",
+        description: "Unzufriedene Kundschaft abgefangen, bevor sie postet — mit zuständiger Person.",
+      },
+      intelligence: {
+        name: "Intelligence",
+        description: "Bewegungen der Konkurrenz, Eskalationsrisiko und Echtheit von Bewertungen auf einen Blick.",
+      },
+      monitoring: {
+        name: "Überwachung",
+        description: "Neue Bewertungen aus jeder verbundenen Quelle, am selben Tag gemeldet.",
+      },
+      reputation_analytics: {
+        name: "Reputations-Auswertung",
+        description: "Bewertung, Menge und Antwortzeit im Verlauf — und was sie bewegt hat.",
+      },
+      data_sources: {
+        name: "Datenquellen",
+        description: "Importieren Sie Kundschaft und Bewertungen oder verbinden Sie eine Plattform.",
+      },
+      extension: {
+        name: "Browser-Erweiterung",
+        description: "Erfassen Sie Bewertungen und Kundschaft direkt aus einem Plattform-Tab, ohne Export.",
+      },
+    },
   },
 };

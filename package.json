@@ -15,14 +15,15 @@
     "db:studio": "prisma studio",
     "workers": "npx tsx src/infrastructure/queue/start-workers.ts",
     "workers:dev": "npx tsx --watch src/infrastructure/queue/start-workers.ts",
-    "test": "npm run test:imports && npm run test:seo-tools && npm run test:devtools && npm run test:gsc && npm run test:account && npm run test:extension && npm run test:vitest",
+    "test": "npm run test:imports && npm run test:seo-tools && npm run test:reputation && npm run test:devtools && npm run test:gsc && npm run test:account && npm run test:extension && npm run test:vitest",
     "test:vitest": "vitest run",
     "test:imports": "node --test --import tsx src/monitoring/import/__tests__/csv-parser.test.ts",
     "test:seo-tools": "node --test --import tsx src/lib/__tests__/seo-tools.test.ts",
     "test:devtools": "node --test --import tsx src/lib/__tests__/devtools.test.ts",
     "test:gsc": "node --test --import tsx src/lib/__tests__/gsc.test.ts",
     "test:account": "node --test --import tsx src/lib/__tests__/account-validation.test.ts",
-    "test:extension": "node --test --import tsx src/monitoring/ingestion/__tests__/extension-ingest.test.ts"
+    "test:extension": "node --test --import tsx src/monitoring/ingestion/__tests__/extension-ingest.test.ts",
+    "test:reputation": "node --test --import tsx src/lib/__tests__/reputation-tools.test.ts"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.2",
