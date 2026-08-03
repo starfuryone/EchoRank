@@ -57,4 +57,46 @@ describe("SoftwareApplication offers", () => {
       expect(offer["@type"]).toBe("Offer");
     }
   });
+
+  // ── Anchor pricing must not reach structured data ────────────────────────
+  //
+  // The homepage cards show a struck-through anchor on the ANNUAL toggle. It is
+  // the plan's real monthly price, so unlike a computed "was" figure it is a
+  // number Google may legitimately see — but only ever as the MONTHLY offer it
+  // actually is. What must never appear is the annual per-month rate published
+  // as the price of the plan: that is a number nobody can pay on its own, and
+  // emitting it would advertise $24/mo for a plan that bills $29 monthly.
+  //
+  // Still named no price. The assertions derive both sides from PLAN_CONFIGS.
+  it("publishes the monthly price, never the annual per-month rate", () => {
+    for (const offer of offers()) {
+      const plan = listed.find((p) => p.name === offer.name)!;
+      expect(offer.price).toBe(String(plan.monthlyPrice));
+      // annualPrice is ALREADY the per-month figure (see plan-config.ts), so
+      // there is no /12 here — dividing would compare against a number nothing
+      // renders and pass for the wrong reason.
+      if (plan.annualPrice && plan.annualPrice !== plan.monthlyPrice) {
+        expect(offer.price, `${offer.name} published its annual rate`).not.toBe(
+          String(plan.annualPrice),
+        );
+      }
+    }
+  });
+
+  it("emits no offer priced below the plan's monthly rate", () => {
+    // A discounted-looking figure in structured data is the drift that matters:
+    // rich results would quote a price the checkout does not honour.
+    for (const offer of offers()) {
+      const plan = listed.find((p) => p.name === offer.name)!;
+      expect(Number(offer.price)).toBeGreaterThanOrEqual(plan.monthlyPrice);
+    }
+  });
+
+  it("carries no anchor, strike or discount markup of any kind", () => {
+    // The anchor is presentational and belongs to the card, not the graph.
+    const serialized = JSON.stringify(softwareApplication("en"));
+    for (const term of ["<s>", "priceAnchor", "anchorLabel", "strikethrough", "wasPrice"]) {
+      expect(serialized).not.toContain(term);
+    }
+  });
 });

@@ -954,6 +954,19 @@ export default function HomeClient({
                   ) : (
                     <>
                       <div className={s.pamount}>
+                        {/* Anchor: the REAL monthly price, struck through beside
+                            the annual per-month rate. Annual toggle only, and
+                            derived from the same pricing array the card renders
+                            — never a computed "was" figure, because nobody has
+                            ever been charged one and a struck-through price
+                            that was never charged is what pricing law is about.
+                            $29 IS what a monthly subscriber pays, so "$29 $24"
+                            is a comparison rather than a claim. */}
+                        {annual && p.monthly !== null && p.annual !== null && p.monthly > p.annual ? (
+                          <s className={s.priceAnchor} aria-label={priceChrome.anchorLabel}>
+                            ${p.monthly}
+                          </s>
+                        ) : null}
                         ${amount}
                         <span>{priceChrome.perMonth}</span>
                         {annual && p.savePct ? (

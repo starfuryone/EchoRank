@@ -1561,6 +1561,9 @@ export interface HomePricingChrome {
   annual: string;
   perMonth: string;
   billedAnnually: string;
+  /** Screen-reader label for the struck-through monthly price on the annual
+   *  toggle. The strike is meaningless read aloud without it. */
+  anchorLabel: string;
   /** Contains "{pct}". */
   save: string;
   /** Contains "{n}". */
@@ -1579,6 +1582,7 @@ export const HOME_PRICING_CHROME: Record<Locale, HomePricingChrome> = {
     annual: "Annual",
     perMonth: "/mo",
     billedAnnually: "billed annually",
+    anchorLabel: "regular monthly price",
     save: "save {pct}%",
     toolsLine: "{n}+ SEO & AI tools included",
     toolsAnchor: "See the tools ↓",
@@ -1592,6 +1596,7 @@ export const HOME_PRICING_CHROME: Record<Locale, HomePricingChrome> = {
     annual: "Annual",
     perMonth: "/mo",
     billedAnnually: "billed annually",
+    anchorLabel: "regular monthly price",
     save: "save {pct}%",
     toolsLine: "{n}+ SEO & AI tools included",
     toolsAnchor: "See the tools ↓",
@@ -1605,6 +1610,7 @@ export const HOME_PRICING_CHROME: Record<Locale, HomePricingChrome> = {
     annual: "Annuel",
     perMonth: "/mois",
     billedAnnually: "facturé annuellement",
+    anchorLabel: "prix mensuel normal",
     save: "économisez {pct} %",
     toolsLine: "{n}+ outils SEO et IA inclus",
     toolsAnchor: "Voir les outils ↓",
@@ -1618,6 +1624,7 @@ export const HOME_PRICING_CHROME: Record<Locale, HomePricingChrome> = {
     annual: "Annuel",
     perMonth: "/mois",
     billedAnnually: "facturé annuellement",
+    anchorLabel: "prix mensuel normal",
     save: "économisez {pct} %",
     toolsLine: "{n}+ outils SEO et IA inclus",
     toolsAnchor: "Voir les outils ↓",
@@ -1631,6 +1638,7 @@ export const HOME_PRICING_CHROME: Record<Locale, HomePricingChrome> = {
     annual: "Jährlich",
     perMonth: "/Mt.",
     billedAnnually: "jährlich verrechnet",
+    anchorLabel: "regulärer Monatspreis",
     save: "{pct}% sparen",
     toolsLine: "{n}+ SEO- und KI-Werkzeuge inklusive",
     toolsAnchor: "Werkzeuge ansehen ↓",
