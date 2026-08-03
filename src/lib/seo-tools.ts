@@ -37,6 +37,7 @@ import {
   Link2,
   Gauge,
   ScanEye,
+  History,
 } from "lucide-react";
 import { canAccessPath } from "@/lib/plan-routing";
 import type { PlanType } from "@/generated/prisma";
@@ -73,7 +74,8 @@ export type SeoToolId =
   | "serp_checker"
   | "backlinks"
   | "lighthouse"
-  | "ai_lens";
+  | "ai_lens"
+  | "historical";
 
 /** Tools that render a scaffold page under /visibility/tools/<slug>. */
 // Note: brand_radar/bot_analytics/content_explorer remain ScaffoldIds although
@@ -93,6 +95,10 @@ export type ScaffoldId = Exclude<
   | "api_access"
   | "mcp_server"
   | "ai_lens"
+  // Same reason as ai_lens: Historical shipped as a real page with its own
+  // empty and error states in HISTORICAL_COPY, so it never had scaffold copy
+  // to inherit.
+  | "historical"
 >;
 
 export interface SeoTool {
@@ -159,6 +165,11 @@ export const SEO_TOOL_GROUPS: SeoToolGroup[] = [
       // "can they even read us".
       t("ai_lens", "ai-lens", ScanEye, { badge: "new" }),
       t("custom_prompts", "custom-prompts", MessageSquareText),
+      // Historical. Sits in Search Marketing because its primary axis is SERP
+      // movement over time; the page-snapshot half is the "why did it move"
+      // companion to that. Reads history the other tools already produced —
+      // v1 makes no DataForSEO call of its own.
+      t("historical", "historical", History, { badge: "new" }),
     ],
   },
   {

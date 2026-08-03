@@ -5213,6 +5213,10 @@ const seoToolsEn = {
       name: "AI Content Helper",
       description: "Plan, create, optimize, and improve content with AI.",
     },
+    historical: {
+      name: "Historical",
+      description: "Investigate historical SERP results and page snapshots over time.",
+    },
     social_media_manager: {
       name: "Social Media Manager",
       description: "Plan, edit, schedule, and manage social media content.",
@@ -5352,6 +5356,11 @@ export const SEO_TOOLS_COPY: Record<DashLocale, SeoToolsCopy> = {
         name: "Assistant de contenu IA",
         description: "Planifiez, créez, optimisez et améliorez votre contenu avec l'IA.",
       },
+      historical: {
+        name: "Historique",
+        description:
+          "Explorez l'historique des résultats de recherche et les archives de vos pages.",
+      },
       social_media_manager: {
         name: "Gestionnaire de médias sociaux",
         description: "Planifiez, modifiez, programmez et gérez le contenu de vos médias sociaux.",
@@ -5485,6 +5494,11 @@ export const SEO_TOOLS_COPY: Record<DashLocale, SeoToolsCopy> = {
       ai_content_helper: {
         name: "KI-Content-Assistent",
         description: "Planen, erstellen, optimieren und verbessern Sie Inhalte mit KI.",
+      },
+      historical: {
+        name: "Verlauf",
+        description:
+          "Untersuchen Sie frühere Suchergebnisse und Seitenstände im Zeitverlauf.",
       },
       social_media_manager: {
         name: "Social-Media-Manager",
@@ -10780,3 +10794,306 @@ export function marketingVarHint(copy: MarketingCopy, labelKey: string): string 
   const name = labelKey.startsWith("marketing.var.") ? labelKey.slice("marketing.var.".length) : "";
   return copy.varHints[name] ?? null;
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Historical (tool page: /visibility/tools/historical)
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+const historicalEn = {
+  title: "Historical",
+  intro:
+    "How your search results and your pages have changed over time. SERP history reads checks you have already run — it costs nothing and makes no new call.",
+
+  serpTitle: "SERP history",
+  serpIntro:
+    "Every completed SERP check is kept. Pick a keyword to see how the results moved between checks.",
+  keywordLabel: "Keyword",
+  domainLabel: "Track domain",
+  noSerpTitle: "No SERP history yet",
+  noSerpBody:
+    "Run your first SERP check and it will appear here. Two checks of the same keyword are enough to see what moved.",
+  runFirstCheck: "Run a SERP check",
+  needTwoChecks:
+    "One check so far. Run this keyword again — from a different day — and the movement between the two shows up here.",
+  checksCounted: (n: number) => (n === 1 ? "1 check" : `${n} checks`),
+  positionChartTitle: "Position over time",
+  positionAxis: "Position",
+  offChart: "Not in the top 100",
+  deltaTitle: (a: string, b: string) => `What changed between ${a} and ${b}`,
+  entered: "Entered",
+  dropped: "Dropped out",
+  moved: "Moved",
+  held: "Held",
+  colDomain: "Domain",
+  colWas: "Was",
+  colNow: "Now",
+  colChange: "Change",
+  noChange: "Nothing moved in the top 10 between these two checks.",
+  runFresh: "Run a fresh check",
+  freshNote: "A new check costs one from your monthly allowance. Reading history is free.",
+
+  snapshotsTitle: "Page snapshots",
+  snapshotsIntro:
+    "A copy of the readable text of a page, kept so you can see exactly what changed and when.",
+  captureLabel: "Page URL",
+  capturePlaceholder: "https://example.com/page",
+  captureBtn: "Capture now",
+  capturing: "Capturing…",
+  captureDuplicate: "No change since the last snapshot — nothing new was stored.",
+  captureStored: "Snapshot stored.",
+  noSnapshotsTitle: "No snapshots yet",
+  noSnapshotsBody:
+    "Capture a page above to start. Every AI Lens run also saves a snapshot automatically.",
+  snapshotCount: (n: number) => (n === 1 ? "1 snapshot" : `${n} snapshots`),
+  compareTitle: "Compare two snapshots",
+  compareOlder: "Older",
+  compareNewer: "Newer",
+  compareBtn: "Compare",
+  comparing: "Comparing…",
+  pickTwo: "Pick two snapshots to compare.",
+  wordsAdded: (n: number) => `${n} words added`,
+  wordsRemoved: (n: number) => `${n} words removed`,
+  noTextChange: "The readable text is identical between these two snapshots.",
+  diffTruncated:
+    "These pages are too long for a word-level diff, so they are shown whole.",
+  sourceAiLens: "AI Lens",
+  sourceManual: "Manual",
+  sourceWayback: "Internet Archive",
+
+  waybackTitle: "Import history",
+  waybackIntro:
+    "The Internet Archive may already hold older copies of this page. Import them to backfill history you never captured yourself.",
+  waybackNote: "Source: Internet Archive — coverage varies.",
+  waybackLookupBtn: "Find archived copies",
+  waybackLooking: "Searching the archive…",
+  waybackNone:
+    "No archived copies found for that URL. The Archive may not have crawled it, or may be unreachable right now.",
+  waybackFound: (n: number) => `${n} archived copies available`,
+  waybackImportBtn: (n: number) => (n === 1 ? "Import 1 snapshot" : `Import ${n} snapshots`),
+  waybackImporting: "Importing…",
+  waybackMax: (n: number) => `Up to ${n} at a time.`,
+  waybackResult: (ok: number, dup: number, failed: number) =>
+    `Imported ${ok}. ${dup} already matched what you had. ${failed} could not be fetched.`,
+
+  keywordHistoryTitle: "Keyword history",
+  keywordHistoryIntro:
+    "Search volume and ranking history from DataForSEO. Unlike the timeline above, this is a paid lookup and counts against your monthly allowance.",
+  keywordHistoryBtn: "Look up keyword history",
+  keywordHistoryLoading: "Looking up…",
+  keywordHistoryEmpty: "No historical data returned for that keyword.",
+  colMonth: "Month",
+  colVolume: "Search volume",
+
+  storageUnavailable:
+    "Snapshot storage is temporarily unavailable. SERP history below is unaffected.",
+  storageNotConfigured:
+    "Snapshot storage is not configured on this deployment. SERP history still works.",
+  errRateLimited: "Too many requests — try again in a minute.",
+  errInvalidUrl: "That URL cannot be captured. Use a public http:// or https:// address.",
+  errTooLarge: "That page is too long to snapshot.",
+  errCapture: "Could not capture that page right now.",
+  errGeneric: "Something went wrong. Try again.",
+  loading: "Loading…",
+};
+
+export type HistoricalCopy = typeof historicalEn;
+
+export const HISTORICAL_COPY: Record<DashLocale, HistoricalCopy> = {
+  en: historicalEn,
+  fr: {
+    title: "Historique",
+    intro:
+      "L'évolution de vos résultats de recherche et de vos pages. L'historique SERP relit des vérifications déjà effectuées — il ne coûte rien et ne lance aucun nouvel appel.",
+
+    serpTitle: "Historique SERP",
+    serpIntro:
+      "Chaque vérification SERP terminée est conservée. Choisissez un mot-clé pour voir comment les résultats ont bougé.",
+    keywordLabel: "Mot-clé",
+    domainLabel: "Suivre le domaine",
+    noSerpTitle: "Pas encore d'historique SERP",
+    noSerpBody:
+      "Lancez votre première vérification SERP et elle apparaîtra ici. Deux vérifications du même mot-clé suffisent pour voir ce qui a changé.",
+    runFirstCheck: "Lancer une vérification SERP",
+    needTwoChecks:
+      "Une seule vérification pour l'instant. Relancez ce mot-clé un autre jour et l'écart entre les deux s'affichera ici.",
+    checksCounted: (n: number) => (n === 1 ? "1 vérification" : `${n} vérifications`),
+    positionChartTitle: "Position dans le temps",
+    positionAxis: "Position",
+    offChart: "Hors du top 100",
+    deltaTitle: (a: string, b: string) => `Ce qui a changé entre le ${a} et le ${b}`,
+    entered: "Entrés",
+    dropped: "Sortis",
+    moved: "Déplacés",
+    held: "Stables",
+    colDomain: "Domaine",
+    colWas: "Avant",
+    colNow: "Après",
+    colChange: "Écart",
+    noChange: "Rien n'a bougé dans le top 10 entre ces deux vérifications.",
+    runFresh: "Lancer une nouvelle vérification",
+    freshNote:
+      "Une nouvelle vérification est décomptée de votre forfait mensuel. Consulter l'historique est gratuit.",
+
+    snapshotsTitle: "Archives de pages",
+    snapshotsIntro:
+      "Une copie du texte lisible d'une page, conservée pour voir exactement ce qui a changé et quand.",
+    captureLabel: "URL de la page",
+    capturePlaceholder: "https://exemple.com/page",
+    captureBtn: "Capturer maintenant",
+    capturing: "Capture en cours…",
+    captureDuplicate: "Aucun changement depuis la dernière archive — rien n'a été enregistré.",
+    captureStored: "Archive enregistrée.",
+    noSnapshotsTitle: "Pas encore d'archives",
+    noSnapshotsBody:
+      "Capturez une page ci-dessus pour commencer. Chaque analyse AI Lens enregistre aussi une archive automatiquement.",
+    snapshotCount: (n: number) => (n === 1 ? "1 archive" : `${n} archives`),
+    compareTitle: "Comparer deux archives",
+    compareOlder: "Plus ancienne",
+    compareNewer: "Plus récente",
+    compareBtn: "Comparer",
+    comparing: "Comparaison…",
+    pickTwo: "Choisissez deux archives à comparer.",
+    wordsAdded: (n: number) => `${n} mots ajoutés`,
+    wordsRemoved: (n: number) => `${n} mots supprimés`,
+    noTextChange: "Le texte lisible est identique entre ces deux archives.",
+    diffTruncated:
+      "Ces pages sont trop longues pour une comparaison mot à mot : elles sont affichées en entier.",
+    sourceAiLens: "AI Lens",
+    sourceManual: "Manuelle",
+    sourceWayback: "Internet Archive",
+
+    waybackTitle: "Importer l'historique",
+    waybackIntro:
+      "L'Internet Archive conserve peut-être déjà d'anciennes copies de cette page. Importez-les pour reconstituer un historique que vous n'avez jamais capturé.",
+    waybackNote: "Source : Internet Archive — la couverture varie.",
+    waybackLookupBtn: "Chercher des copies archivées",
+    waybackLooking: "Recherche dans l'archive…",
+    waybackNone:
+      "Aucune copie archivée trouvée pour cette URL. L'Archive ne l'a peut-être jamais explorée, ou est momentanément injoignable.",
+    waybackFound: (n: number) => `${n} copies archivées disponibles`,
+    waybackImportBtn: (n: number) => (n === 1 ? "Importer 1 archive" : `Importer ${n} archives`),
+    waybackImporting: "Importation…",
+    waybackMax: (n: number) => `Jusqu'à ${n} à la fois.`,
+    waybackResult: (ok: number, dup: number, failed: number) =>
+      `${ok} importées. ${dup} correspondaient déjà à ce que vous aviez. ${failed} n'ont pas pu être récupérées.`,
+
+    keywordHistoryTitle: "Historique du mot-clé",
+    keywordHistoryIntro:
+      "Volume de recherche et historique de positionnement depuis DataForSEO. Contrairement à la chronologie ci-dessus, il s'agit d'une requête payante décomptée de votre forfait mensuel.",
+    keywordHistoryBtn: "Consulter l'historique du mot-clé",
+    keywordHistoryLoading: "Consultation…",
+    keywordHistoryEmpty: "Aucune donnée historique pour ce mot-clé.",
+    colMonth: "Mois",
+    colVolume: "Volume de recherche",
+
+    storageUnavailable:
+      "Le stockage des archives est momentanément indisponible. L'historique SERP ci-dessous n'est pas affecté.",
+    storageNotConfigured:
+      "Le stockage des archives n'est pas configuré sur ce déploiement. L'historique SERP fonctionne toujours.",
+    errRateLimited: "Trop de requêtes — réessayez dans une minute.",
+    errInvalidUrl:
+      "Cette URL ne peut pas être capturée. Utilisez une adresse publique en http:// ou https://.",
+    errTooLarge: "Cette page est trop longue pour être archivée.",
+    errCapture: "Impossible de capturer cette page pour le moment.",
+    errGeneric: "Une erreur est survenue. Réessayez.",
+    loading: "Chargement…",
+  },
+  "de-CH": {
+    title: "Verlauf",
+    intro:
+      "Wie sich Ihre Suchergebnisse und Ihre Seiten über die Zeit verändert haben. Der SERP-Verlauf liest bereits durchgeführte Prüfungen — das kostet nichts und löst keinen neuen Aufruf aus.",
+
+    serpTitle: "SERP-Verlauf",
+    serpIntro:
+      "Jede abgeschlossene SERP-Prüfung bleibt erhalten. Wählen Sie ein Keyword, um zu sehen, wie sich die Ergebnisse bewegt haben.",
+    keywordLabel: "Keyword",
+    domainLabel: "Domain verfolgen",
+    noSerpTitle: "Noch kein SERP-Verlauf",
+    noSerpBody:
+      "Führen Sie Ihre erste SERP-Prüfung durch, dann erscheint sie hier. Zwei Prüfungen desselben Keywords genügen, um Bewegung zu sehen.",
+    runFirstCheck: "SERP-Prüfung starten",
+    needTwoChecks:
+      "Bisher eine Prüfung. Prüfen Sie dieses Keyword an einem anderen Tag erneut, dann erscheint der Unterschied hier.",
+    checksCounted: (n: number) => (n === 1 ? "1 Prüfung" : `${n} Prüfungen`),
+    positionChartTitle: "Position im Zeitverlauf",
+    positionAxis: "Position",
+    offChart: "Nicht in den Top 100",
+    deltaTitle: (a: string, b: string) => `Was sich zwischen ${a} und ${b} geändert hat`,
+    entered: "Neu",
+    dropped: "Herausgefallen",
+    moved: "Verschoben",
+    held: "Unverändert",
+    colDomain: "Domain",
+    colWas: "Vorher",
+    colNow: "Jetzt",
+    colChange: "Differenz",
+    noChange: "In den Top 10 hat sich zwischen diesen beiden Prüfungen nichts bewegt.",
+    runFresh: "Neue Prüfung starten",
+    freshNote:
+      "Eine neue Prüfung wird von Ihrem Monatskontingent abgezogen. Den Verlauf zu lesen ist gratis.",
+
+    snapshotsTitle: "Seitenstände",
+    snapshotsIntro:
+      "Eine Kopie des lesbaren Textes einer Seite, aufbewahrt, damit Sie genau sehen, was sich wann geändert hat.",
+    captureLabel: "Seiten-URL",
+    capturePlaceholder: "https://beispiel.ch/seite",
+    captureBtn: "Jetzt erfassen",
+    capturing: "Wird erfasst…",
+    captureDuplicate: "Keine Änderung seit dem letzten Stand — es wurde nichts Neues gespeichert.",
+    captureStored: "Stand gespeichert.",
+    noSnapshotsTitle: "Noch keine Seitenstände",
+    noSnapshotsBody:
+      "Erfassen Sie oben eine Seite, um zu beginnen. Jede AI-Lens-Analyse speichert ebenfalls automatisch einen Stand.",
+    snapshotCount: (n: number) => (n === 1 ? "1 Stand" : `${n} Stände`),
+    compareTitle: "Zwei Stände vergleichen",
+    compareOlder: "Älter",
+    compareNewer: "Neuer",
+    compareBtn: "Vergleichen",
+    comparing: "Wird verglichen…",
+    pickTwo: "Wählen Sie zwei Stände zum Vergleich.",
+    wordsAdded: (n: number) => `${n} Wörter ergänzt`,
+    wordsRemoved: (n: number) => `${n} Wörter entfernt`,
+    noTextChange: "Der lesbare Text ist in beiden Ständen identisch.",
+    diffTruncated:
+      "Diese Seiten sind für einen wortweisen Vergleich zu lang und werden vollständig angezeigt.",
+    sourceAiLens: "AI Lens",
+    sourceManual: "Manuell",
+    sourceWayback: "Internet Archive",
+
+    waybackTitle: "Verlauf importieren",
+    waybackIntro:
+      "Das Internet Archive hat womöglich ältere Kopien dieser Seite. Importieren Sie sie, um Verlauf nachzutragen, den Sie nie selbst erfasst haben.",
+    waybackNote: "Quelle: Internet Archive — die Abdeckung schwankt.",
+    waybackLookupBtn: "Archivierte Kopien suchen",
+    waybackLooking: "Archiv wird durchsucht…",
+    waybackNone:
+      "Keine archivierten Kopien für diese URL gefunden. Das Archiv hat sie vielleicht nie erfasst oder ist gerade nicht erreichbar.",
+    waybackFound: (n: number) => `${n} archivierte Kopien verfügbar`,
+    waybackImportBtn: (n: number) => (n === 1 ? "1 Stand importieren" : `${n} Stände importieren`),
+    waybackImporting: "Wird importiert…",
+    waybackMax: (n: number) => `Bis zu ${n} auf einmal.`,
+    waybackResult: (ok: number, dup: number, failed: number) =>
+      `${ok} importiert. ${dup} entsprachen bereits Vorhandenem. ${failed} konnten nicht geladen werden.`,
+
+    keywordHistoryTitle: "Keyword-Verlauf",
+    keywordHistoryIntro:
+      "Suchvolumen und Ranking-Verlauf von DataForSEO. Anders als die Zeitachse oben ist dies eine kostenpflichtige Abfrage und zählt gegen Ihr Monatskontingent.",
+    keywordHistoryBtn: "Keyword-Verlauf abrufen",
+    keywordHistoryLoading: "Wird abgerufen…",
+    keywordHistoryEmpty: "Für dieses Keyword wurden keine historischen Daten geliefert.",
+    colMonth: "Monat",
+    colVolume: "Suchvolumen",
+
+    storageUnavailable:
+      "Der Speicher für Seitenstände ist vorübergehend nicht verfügbar. Der SERP-Verlauf unten ist nicht betroffen.",
+    storageNotConfigured:
+      "Der Speicher für Seitenstände ist auf dieser Installation nicht konfiguriert. Der SERP-Verlauf funktioniert weiterhin.",
+    errRateLimited: "Zu viele Anfragen — versuchen Sie es in einer Minute erneut.",
+    errInvalidUrl:
+      "Diese URL kann nicht erfasst werden. Verwenden Sie eine öffentliche http://- oder https://-Adresse.",
+    errTooLarge: "Diese Seite ist zu lang, um sie zu archivieren.",
+    errCapture: "Diese Seite konnte gerade nicht erfasst werden.",
+    errGeneric: "Etwas ist schiefgelaufen. Versuchen Sie es erneut.",
+    loading: "Wird geladen…",
+  },
+};

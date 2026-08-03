@@ -160,6 +160,30 @@ export async function runLensAnalysis(
     },
   });
 
+  // Capture path A for the Historical tool. The rendered markdown is already in
+  // hand and was about to be discarded; persisting it costs one hash and, only
+  // when the page actually changed, one object upload. Dedupe means a tenant
+  // re-running Lens on an unchanged page writes nothing.
+  //
+  // Deliberately after the row is created and deliberately swallowed: an AI Lens
+  // analysis must not fail because snapshot storage is unconfigured or briefly
+  // down. Historical is a passenger here, not the point of the request.
+  try {
+    const { storeSnapshot } = await import("@/lib/historical/snapshots");
+    const { isSpacesConfigured } = await import("@/lib/historical/spaces");
+    if (isSpacesConfigured() && result.rendered_markdown?.trim()) {
+      await storeSnapshot({
+        tenantId,
+        url,
+        markdown: result.rendered_markdown,
+        source: "ai_lens",
+        capturedAt: row.createdAt,
+      });
+    }
+  } catch (err) {
+    console.error("[ai-lens] snapshot capture skipped:", err instanceof Error ? err.name : typeof err);
+  }
+
   return {
     analysis: toDto(row),
     cached: false,
