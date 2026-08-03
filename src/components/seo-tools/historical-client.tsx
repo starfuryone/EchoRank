@@ -32,6 +32,7 @@ import type { WordDiff } from "@/lib/historical/diff";
 import type { HistoricalCheck, HistoricalPageData } from "@/lib/historical/page-data";
 import type { SnapshotListItem } from "@/lib/historical/snapshots";
 import { MAX_WAYBACK_IMPORT } from "@/lib/historical/options";
+import { normalizeSnapshotUrl, rejectionCopyKey } from "@/lib/historical/url";
 import { HISTORICAL_COPY, type DashLocale } from "@/lib/i18n/dashboard";
 
 const CTA_CLASS =
@@ -45,6 +46,7 @@ interface Props {
 interface ApiError {
   error?: string;
   code?: string;
+  reason?: string;
 }
 
 type Busy = null | "timeline" | "capture" | "compare" | "wayback" | "import";
@@ -79,7 +81,11 @@ export function HistoricalClient({ locale, data }: Props) {
     (payload: ApiError): string => {
       switch (payload.code) {
         case "RATE_LIMITED": return t.errRateLimited;
-        case "INVALID_URL": return t.errInvalidUrl;
+        case "INVALID_URL": {
+          const key = rejectionCopyKey(payload.reason as never) as keyof typeof t;
+          const copy = t[key];
+          return typeof copy === "string" ? copy : t.errInvalidUrl;
+        }
         case "SNAPSHOT_TOO_LARGE": return t.errTooLarge;
         case "CAPTURE_FAILED": return payload.error ?? t.errCapture;
         case "STORAGE_UNAVAILABLE": return t.storageUnavailable;
@@ -186,15 +192,30 @@ export function HistoricalClient({ locale, data }: Props) {
   );
 
   const capture = useCallback(async () => {
-    if (!captureUrl.trim()) return;
+    const raw = captureUrl.trim();
+    if (!raw) return;
+
+    // Same normalizer the route uses, so "cnn.com" is accepted here rather than
+    // making a round trip to be told about a scheme the user never typed.
+    const normalized = normalizeSnapshotUrl(raw);
+    if (!normalized.ok || !normalized.url) {
+      const key = rejectionCopyKey(normalized.reason) as keyof typeof t;
+      const copy = t[key];
+      setError(typeof copy === "string" ? copy : t.errInvalidUrl);
+      return;
+    }
+
     setBusy("capture");
     setNotice(null);
+    setError(null);
     const payload = await call<{ created: boolean; url: string }>(
       "/api/ai/visibility/historical/capture",
-      { url: captureUrl.trim() },
+      { url: normalized.url },
     );
     if (payload) {
-      setNotice(payload.created ? t.captureStored : t.captureDuplicate);
+      const base = payload.created ? t.captureStored : t.captureDuplicate;
+      // Only worth saying when we changed what they typed.
+      setNotice(payload.url !== raw ? `${base} ${t.captureNormalized(payload.url)}` : base);
       const listed = await call<{ urls: HistoricalPageData["snapshotUrls"] }>(
         "/api/ai/visibility/historical/list",
       );
@@ -220,8 +241,16 @@ export function HistoricalClient({ locale, data }: Props) {
   // ── Wayback ───────────────────────────────────────────────────────────────
 
   const lookupWayback = useCallback(async () => {
-    const url = (activeUrl ?? captureUrl).trim();
-    if (!url) return;
+    const typed = (activeUrl ?? captureUrl).trim();
+    if (!typed) return;
+    const normalized = normalizeSnapshotUrl(typed);
+    if (!normalized.ok || !normalized.url) {
+      const key = rejectionCopyKey(normalized.reason) as keyof typeof t;
+      const copy = t[key];
+      setError(typeof copy === "string" ? copy : t.errInvalidUrl);
+      return;
+    }
+    const url = normalized.url;
     setBusy("wayback");
     setWaybackLookedUp(false);
     const payload = await call<{ captures: Array<{ timestamp: string; capturedAt: string }> }>(
@@ -237,8 +266,11 @@ export function HistoricalClient({ locale, data }: Props) {
   }, [activeUrl, call, captureUrl]);
 
   const importWayback = useCallback(async () => {
-    const url = (activeUrl ?? captureUrl).trim();
-    if (!url || waybackPicked.length === 0) return;
+    const typed = (activeUrl ?? captureUrl).trim();
+    if (!typed || waybackPicked.length === 0) return;
+    const normalized = normalizeSnapshotUrl(typed);
+    if (!normalized.ok || !normalized.url) return;
+    const url = normalized.url;
     setBusy("import");
     const payload = await call<{ imported: number; duplicates: number; failed: number }>(
       "/api/ai/visibility/historical/wayback/import",
@@ -403,6 +435,7 @@ export function HistoricalClient({ locale, data }: Props) {
                     placeholder={t.capturePlaceholder}
                     className="mt-1 w-full rounded-md border border-gray-300 p-2 text-sm"
                   />
+                  <p className="mt-1 text-xs text-gray-500">{t.captureAnyUrlNote}</p>
                 </div>
                 <Button onClick={capture} disabled={busy !== null || !captureUrl.trim()}>
                   {busy === "capture" ? (

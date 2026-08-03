@@ -15,6 +15,7 @@
 // otherwise be discarded.
 
 import { sidecarPost } from "@/lib/av-sidecar";
+import { CAPTURE_TIMEOUT_MS } from "./options";
 import { storeSnapshot, type StoreSnapshotResult } from "./snapshots";
 import {
   fetchWaybackCapture,
@@ -38,11 +39,14 @@ export async function fetchLiveMarkdown(url: string): Promise<string> {
     rendered_markdown?: string;
     raw_markdown?: string;
     error?: string;
-  }>("/internal/ai-lens", { url }, { timeoutMs: 60_000 });
+  }>("/internal/ai-lens", { url }, { timeoutMs: CAPTURE_TIMEOUT_MS });
 
   if (status !== 200 || !data) {
+    // sidecarPost turns an aborted request into a 502 with its own message; say
+    // plainly that it was slow rather than implying the page is broken, since
+    // a third-party origin timing out is the expected case here.
     throw new CaptureFailedError(
-      data?.error ?? "Could not fetch that page right now.",
+      data?.error ?? "That page took too long to load. Try again, or try a different page.",
       status === 429 ? 429 : 502,
     );
   }

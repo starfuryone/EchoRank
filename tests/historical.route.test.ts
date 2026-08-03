@@ -154,6 +154,45 @@ describe("SSRF guard on capture", () => {
     expect(res.status).toBe(200);
     expect(sidecarPost).toHaveBeenCalledTimes(1);
   });
+
+  it("accepts a THIRD-PARTY url — no ownership check", async () => {
+    // Capturing a competitor's page is the point of the tool. The tenant here
+    // owns echorank360.com and is capturing something else entirely.
+    for (const url of ["https://cnn.com/", "https://competitor-site.com/pricing"]) {
+      sidecarPost.mockClear();
+      const res = await CAPTURE(post("/api/ai/visibility/historical/capture", { url }));
+      expect(res.status, url).toBe(200);
+      expect(sidecarPost).toHaveBeenCalledTimes(1);
+    }
+  });
+
+  it("normalizes scheme-less input before fetching", async () => {
+    const res = await CAPTURE(post("/api/ai/visibility/historical/capture", { url: "cnn.com" }));
+    expect(res.status).toBe(200);
+    expect(sidecarPost.mock.calls[0][1]).toEqual({ url: "https://cnn.com/" });
+    // And the stored url is the normalized one, so the list shows what was captured.
+    expect((await res.json()).url).toBe("https://cnn.com/");
+  });
+
+  it("preserves a query string, which is a different page", async () => {
+    await CAPTURE(post("/api/ai/visibility/historical/capture", { url: "example.org/search?q=plumbers" }));
+    expect(sidecarPost.mock.calls[0][1]).toEqual({ url: "https://example.org/search?q=plumbers" });
+  });
+
+  it("bounds the capture with a timeout", async () => {
+    await CAPTURE(post("/api/ai/visibility/historical/capture", { url: "https://cnn.com/" }));
+    const opts = sidecarPost.mock.calls[0][2] as { timeoutMs?: number };
+    expect(opts.timeoutMs).toBe(10_000);
+  });
+
+  it("reports a timeout as a retryable failure, not a broken page", async () => {
+    // sidecarPost turns an aborted request into a 502 with its own message.
+    sidecarPost.mockResolvedValue({ status: 502, data: { error: "AI Visibility service is unavailable." } });
+    const res = await CAPTURE(post("/api/ai/visibility/historical/capture", { url: "https://slow-site.com/" }));
+    expect(res.status).toBe(502);
+    expect((await res.json()).code).toBe("CAPTURE_FAILED");
+    expect(pageSnapshot.create).not.toHaveBeenCalled();
+  });
 });
 
 // ── Rate limits ─────────────────────────────────────────────────────────────
@@ -243,6 +282,13 @@ describe("wayback lookup", () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
     await WAYBACK(post("/api/ai/visibility/historical/wayback", { url: "https://echorank360.com/" }));
     expect(fetchMock).toHaveBeenCalledTimes(1); // served from Redis
+  });
+
+  it("accepts a third-party, scheme-less url", async () => {
+    fetchMock.mockResolvedValue(new Response(JSON.stringify(cdxRows), { status: 200 }));
+    const res = await WAYBACK(post("/api/ai/visibility/historical/wayback", { url: "cnn.com" }));
+    expect(res.status).toBe(200);
+    expect((await res.json()).url).toBe("https://cnn.com/");
   });
 
   it("returns an empty list, not an error, when the Archive is down", async () => {

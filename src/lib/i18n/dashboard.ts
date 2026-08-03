@@ -10836,7 +10836,14 @@ const historicalEn = {
   snapshotsIntro:
     "A copy of the readable text of a page, kept so you can see exactly what changed and when.",
   captureLabel: "Page URL",
-  capturePlaceholder: "https://example.com/page",
+  capturePlaceholder: "any page — yours or a competitor's",
+  captureAnyUrlNote:
+    "Capture any public page. Scheme optional — \"cnn.com\" works.",
+  captureNormalized: (url: string) => `Captured as ${url}`,
+  errUrlScheme: "Only http:// and https:// pages can be captured.",
+  errUrlCredentials: "Remove the username and password from that URL.",
+  errUrlPort: "Only standard web ports (80 and 443) can be captured.",
+  errUrlPrivate: "That address is not a public website.",
   captureBtn: "Capture now",
   capturing: "Capturing…",
   captureDuplicate: "No change since the last snapshot — nothing new was stored.",
@@ -10938,7 +10945,14 @@ export const HISTORICAL_COPY: Record<DashLocale, HistoricalCopy> = {
     snapshotsIntro:
       "Une copie du texte lisible d'une page, conservée pour voir exactement ce qui a changé et quand.",
     captureLabel: "URL de la page",
-    capturePlaceholder: "https://exemple.com/page",
+    capturePlaceholder: "n'importe quelle page — la vôtre ou celle d'un concurrent",
+    captureAnyUrlNote:
+      "Capturez n'importe quelle page publique. Le protocole est facultatif — « cnn.com » suffit.",
+    captureNormalized: (url: string) => `Capturé sous ${url}`,
+    errUrlScheme: "Seules les pages en http:// ou https:// peuvent être capturées.",
+    errUrlCredentials: "Retirez le nom d'utilisateur et le mot de passe de cette URL.",
+    errUrlPort: "Seuls les ports web standards (80 et 443) peuvent être capturés.",
+    errUrlPrivate: "Cette adresse n'est pas un site web public.",
     captureBtn: "Capturer maintenant",
     capturing: "Capture en cours…",
     captureDuplicate: "Aucun changement depuis la dernière archive — rien n'a été enregistré.",
@@ -11036,7 +11050,14 @@ export const HISTORICAL_COPY: Record<DashLocale, HistoricalCopy> = {
     snapshotsIntro:
       "Eine Kopie des lesbaren Textes einer Seite, aufbewahrt, damit Sie genau sehen, was sich wann geändert hat.",
     captureLabel: "Seiten-URL",
-    capturePlaceholder: "https://beispiel.ch/seite",
+    capturePlaceholder: "eine beliebige Seite — Ihre oder die der Konkurrenz",
+    captureAnyUrlNote:
+      "Erfassen Sie jede öffentliche Seite. Das Protokoll ist optional — «cnn.com» genügt.",
+    captureNormalized: (url: string) => `Erfasst als ${url}`,
+    errUrlScheme: "Nur Seiten mit http:// oder https:// können erfasst werden.",
+    errUrlCredentials: "Entfernen Sie Benutzername und Passwort aus dieser URL.",
+    errUrlPort: "Nur die Standard-Webports (80 und 443) können erfasst werden.",
+    errUrlPrivate: "Diese Adresse ist keine öffentliche Website.",
     captureBtn: "Jetzt erfassen",
     capturing: "Wird erfasst…",
     captureDuplicate: "Keine Änderung seit dem letzten Stand — es wurde nichts Neues gespeichert.",

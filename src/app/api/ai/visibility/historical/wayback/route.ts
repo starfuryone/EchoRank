@@ -14,7 +14,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requirePaidPlan } from "@/lib/paid-plan";
 import { rateLimit } from "@/lib/rate-limit";
-import { guardCheckUrl } from "@/lib/bot-analytics/url-guard";
+import { normalizeSnapshotUrl } from "@/lib/historical/url";
 import { listWaybackCaptures } from "@/lib/historical/wayback";
 import { historicalRouteError } from "@/lib/historical/http";
 import { IMPORT_RATE_LIMIT, IMPORT_RATE_WINDOW_MS } from "@/lib/historical/options";
@@ -33,10 +33,14 @@ export async function POST(request: Request) {
       );
     }
 
-    const guarded = guardCheckUrl(parsed.data.url);
+    const guarded = normalizeSnapshotUrl(parsed.data.url);
     if (!guarded.ok || !guarded.url) {
       return NextResponse.json(
-        { error: "That URL cannot be looked up.", code: "INVALID_URL", reason: guarded.reason },
+        {
+          error: "That URL cannot be looked up. Use a public http:// or https:// address.",
+          code: "INVALID_URL",
+          reason: guarded.reason,
+        },
         { status: 400 },
       );
     }
