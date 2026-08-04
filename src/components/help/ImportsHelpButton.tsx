@@ -5,6 +5,7 @@ import { ExternalLink, HelpCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Modal } from "@/components/ui/modal";
 import { IMPORTS_HELP_COPY, type DashLocale } from "@/lib/i18n/dashboard";
+import { KnowledgeBaseLinks } from "@/components/help/KnowledgeBaseLinks";
 
 const GUIDE_URL = "/extension/howto-import-reviews.html";
 
@@ -57,6 +58,7 @@ export function ImportsHelpButton({ locale = "en" }: { locale?: DashLocale }) {
             {t.openFullPage}
           </a>
         </div>
+        <KnowledgeBaseLinks locale={locale} route="/imports" />
       </Modal>
     </div>
   );

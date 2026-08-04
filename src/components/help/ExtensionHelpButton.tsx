@@ -21,6 +21,7 @@ import {
   type DashLocale,
   type ExtensionHelpCopy,
 } from "@/lib/i18n/dashboard";
+import { KnowledgeBaseLinks } from "@/components/help/KnowledgeBaseLinks";
 
 /**
  * Drop-in help trigger for the browser extension. Renders a small "How to use
@@ -241,6 +242,8 @@ export function ExtensionHelpButton({
 
           {/* Reassurance */}
           <p className="text-xs leading-relaxed text-gray-500">{c.reassurance}</p>
+
+          <KnowledgeBaseLinks locale={locale} route="/extension" className="" />
 
           <div className="flex justify-end border-t border-gray-200 pt-4">
             <Button variant="primary" size="sm" onClick={() => setOpen(false)}>

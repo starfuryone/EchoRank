@@ -13,6 +13,7 @@ import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { formatDate } from "@/lib/utils";
 import { CAMPAIGNS_COPY, type CampaignsCopy, type DashLocale } from "@/lib/i18n/dashboard";
+import { KnowledgeBaseLinks } from "@/components/help/KnowledgeBaseLinks";
 
 interface Campaign {
   id: string;
@@ -301,6 +302,9 @@ export function CampaignsPageClient({ locale }: { locale: DashLocale }) {
                 {t.helpLocationBody}
               </li>
             </ul>
+            {/* The templates guide covers the copy and the timing rules this
+                banner can only gesture at. */}
+            <KnowledgeBaseLinks locale={locale} route="/campaigns" className="mt-2" />
           </div>
           <Input
             label={t.nameLabel}

@@ -11447,3 +11447,176 @@ export const REPUTATION_HELP_COPY: Record<DashLocale, ReputationHelpCopy> = {
     s5Note: "Überwachung gibt es ab Agency, Intelligence ab Growth.",
   },
 };
+
+// ─── Help hub (/help) ──────────────────────────────────────────────────────
+//
+// CHROME ONLY. Article titles, descriptions and reading times come from
+// src/lib/learn-content.ts via src/lib/help-content.ts — the same strings the
+// public Knowledge Hub renders. What lives here is what the hub adds: group
+// headings, the labels for the handful of cards that are not Knowledge Hub
+// pages, and the two link labels the per-page Help modals reuse.
+//
+// Three locales, not five: dashboardLocale() folds fr* to fr, de* to de-CH and
+// everything else (en-CA included) to en, so a fourth catalog is unreachable.
+const helpEn = {
+  hubTitle: "Help",
+  hubSubtitle:
+    "Every guide, chapter and definition behind Echorank — the same knowledge base that is public on the site, indexed here for the product.",
+
+  groups: {
+    getting_started: "Getting started",
+    course: "The course",
+    guides: "In-depth guides",
+    reference: "Reference",
+  },
+
+  /** Cards that are not Knowledge Hub articles and so carry their own copy. */
+  cards: {
+    first_steps: {
+      name: "Your first steps",
+      description: "The setup checklist on your dashboard: connect a source, import history, ask for the first review.",
+    },
+    echopedia: {
+      name: "Echopedia",
+      description: "Every term used across the guides, defined in one place.",
+    },
+    pdf: {
+      name: "The complete Echorank guide",
+      description: "The whole field guide as a PDF — checklists, templates and case studies.",
+    },
+    ext_download: {
+      name: "Extension download",
+      description: "Get the extension and install it, on one page.",
+    },
+    ext_help: {
+      name: "Extension help",
+      description: "What each button does, and what to do when something looks wrong.",
+    },
+    ext_import: {
+      name: "Importing reviews, step by step",
+      description: "The operational walkthrough for bringing review history in.",
+    },
+    ext_reviews_in: {
+      name: "All the ways to get reviews in",
+      description: "Every import route compared, so you can pick the one that fits.",
+    },
+  } as Record<string, { name: string; description: string }>,
+
+  minRead: (n: number) => `${n} min read`,
+  videoBadge: "2-min video",
+  /** Appended to a link's accessible name when it opens a new tab. */
+  newTab: "opens in a new tab",
+  closeLabel: "Close",
+
+  /** Reused by the per-page Help modals — see components/help/. */
+  readFullGuide: "Read the full guide →",
+  browseAll: "Browse all help →",
+} ;
+
+export type HelpCopy = typeof helpEn;
+
+export const HELP_COPY: Record<DashLocale, HelpCopy> = {
+  en: helpEn,
+  fr: {
+    hubTitle: "Aide",
+    hubSubtitle:
+      "Tous les guides, chapitres et définitions qui sous-tendent Echorank — la même base de connaissances que celle publiée sur le site, rassemblée ici pour le produit.",
+
+    groups: {
+      getting_started: "Pour démarrer",
+      course: "Le cours",
+      guides: "Guides approfondis",
+      reference: "Référence",
+    },
+
+    cards: {
+      first_steps: {
+        name: "Vos premières étapes",
+        description: "La liste de mise en route de votre tableau de bord : connecter une source, importer l'historique, demander le premier avis.",
+      },
+      echopedia: {
+        name: "Echopedia",
+        description: "Tous les termes employés dans les guides, définis au même endroit.",
+      },
+      pdf: {
+        name: "Le guide complet Echorank",
+        description: "L'intégralité du guide de terrain en PDF — listes de contrôle, modèles et études de cas.",
+      },
+      ext_download: {
+        name: "Télécharger l'extension",
+        description: "Obtenir l'extension et l'installer, sur une seule page.",
+      },
+      ext_help: {
+        name: "Aide sur l'extension",
+        description: "Ce que fait chaque bouton, et quoi faire quand quelque chose cloche.",
+      },
+      ext_import: {
+        name: "Importer des avis, étape par étape",
+        description: "La marche à suivre concrète pour récupérer votre historique d'avis.",
+      },
+      ext_reviews_in: {
+        name: "Toutes les façons d'importer vos avis",
+        description: "Chaque méthode comparée, pour choisir celle qui vous convient.",
+      },
+    },
+
+    minRead: (n: number) => `${n} min de lecture`,
+    videoBadge: "Vidéo de 2 min",
+    newTab: "s'ouvre dans un nouvel onglet",
+    closeLabel: "Fermer",
+
+    readFullGuide: "Lire le guide complet →",
+    browseAll: "Voir toute l'aide →",
+  },
+  "de-CH": {
+    hubTitle: "Hilfe",
+    hubSubtitle:
+      "Alle Anleitungen, Kapitel und Begriffe hinter Echorank — dieselbe Wissensdatenbank, die auf der Website öffentlich ist, hier für das Produkt gebündelt.",
+
+    groups: {
+      getting_started: "Erste Schritte",
+      course: "Der Kurs",
+      guides: "Vertiefende Anleitungen",
+      reference: "Nachschlagen",
+    },
+
+    cards: {
+      first_steps: {
+        name: "Ihre ersten Schritte",
+        description: "Die Einrichtungsliste auf Ihrem Dashboard: Quelle verbinden, Verlauf importieren, erste Bewertung anfragen.",
+      },
+      echopedia: {
+        name: "Echopedia",
+        description: "Alle in den Anleitungen verwendeten Begriffe, an einem Ort erklärt.",
+      },
+      pdf: {
+        name: "Der vollständige Echorank-Leitfaden",
+        description: "Der gesamte Praxisleitfaden als PDF — Checklisten, Vorlagen und Fallbeispiele.",
+      },
+      ext_download: {
+        name: "Erweiterung herunterladen",
+        description: "Die Erweiterung holen und installieren, auf einer Seite.",
+      },
+      ext_help: {
+        name: "Hilfe zur Erweiterung",
+        description: "Was jede Schaltfläche tut und was zu tun ist, wenn etwas nicht stimmt.",
+      },
+      ext_import: {
+        name: "Bewertungen importieren, Schritt für Schritt",
+        description: "Die praktische Anleitung, um Ihren Bewertungsverlauf hereinzuholen.",
+      },
+      ext_reviews_in: {
+        name: "Alle Wege, Bewertungen zu importieren",
+        description: "Jeder Importweg im Vergleich, damit Sie den passenden wählen.",
+      },
+    },
+
+    minRead: (n: number) => `${n} Min. Lesezeit`,
+    videoBadge: "2-Min-Video",
+    newTab: "wird in einem neuen Tab geöffnet",
+    closeLabel: "Schliessen",
+
+    readFullGuide: "Vollständige Anleitung lesen →",
+    browseAll: "Gesamte Hilfe durchsuchen →",
+  },
+};

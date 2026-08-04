@@ -17,7 +17,9 @@ export const PLAN_HOME: Record<PlanType, string> = {
 const PLAN_ALLOWED_PREFIXES: Record<PlanType, string[] | null> = {
   // /team is included so AI_VISIBILITY tenants can invite teammates (the
   // onboarding checklist links there); team management is plan-agnostic.
-  AI_VISIBILITY: ["/visibility", "/settings", "/billing", "/team"],
+  // /help is included because help is never plan-gated: the one tier that is
+  // confined to a subset of the app is the tier most likely to need the manual.
+  AI_VISIBILITY: ["/visibility", "/settings", "/billing", "/team", "/help"],
   STARTER: null,
   GROWTH: null,
   AGENCY: null,
