@@ -55,3 +55,4 @@ public/videos/
 
 # local Claude Code settings — contains credentials in permission rules
 .claude/settings.local.json
+learn-content/
