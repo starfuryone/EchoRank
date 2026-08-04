@@ -30,6 +30,7 @@ const NAV = {
     sim: "Simulator",
     roi: "ROI",
     pricing: "Pricing",
+    learn: "Learn",
     resources: "Resources",
     login: "Login",
     join: "Join Now",
@@ -41,6 +42,7 @@ const NAV = {
     sim: "Simulateur",
     roi: "ROI",
     pricing: "Tarifs",
+    learn: "Apprendre",
     resources: "Ressources",
     login: "Connexion",
     join: "S'inscrire",
@@ -95,7 +97,7 @@ export function PublicNav({
 }: {
   locale: string;
   /** Marks the active page so its nav item can be styled like the others. */
-  current?: "resources";
+  current?: "resources" | "learn";
 }) {
   const b = baseOf(locale);
   const t = NAV[b];
@@ -122,6 +124,13 @@ export function PublicNav({
           <a href={anchor("simulator")}>{t.sim}</a>
           <a href={anchor("roi")}>{t.roi}</a>
           <a href={anchor("pricing")}>{t.pricing}</a>
+          <Link
+            href={L("/learn")}
+            className={current === "learn" ? s.toggleOn : undefined}
+            aria-current={current === "learn" ? "page" : undefined}
+          >
+            {t.learn}
+          </Link>
           <Link
             href={L("/resources")}
             className={current === "resources" ? s.toggleOn : undefined}

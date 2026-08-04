@@ -68,6 +68,27 @@ const EN: Doc = {
     "Every Echorank guide, whitepaper and free tool in one place. No account needed for anything on this page.",
   groups: [
     {
+      h: "Learn",
+      items: [
+        {
+          label: "The Echorank Knowledge Hub",
+          desc: "A free ten-chapter course, five deep-dive guides and a glossary — the complete guide, readable on the web.",
+          meta: "Course · web pages",
+          href: "/learn",
+          kind: "guide",
+          internal: true,
+        },
+        {
+          label: "Echopedia — the glossary",
+          desc: "Every term from the Echorank guides, defined in one place.",
+          meta: "Glossary · web page",
+          href: "/learn/echopedia",
+          kind: "guide",
+          internal: true,
+        },
+      ],
+    },
+    {
       h: "Free guides & ebooks",
       items: [
         {
@@ -175,6 +196,27 @@ const FR: Doc = {
   intro:
     "Tous les guides, livres blancs et outils gratuits d'Echorank au même endroit. Aucun compte n'est requis pour quoi que ce soit sur cette page.",
   groups: [
+    {
+      h: "Apprendre",
+      items: [
+        {
+          label: "Le centre de connaissances Echorank",
+          desc: "Un cours gratuit en dix chapitres, cinq guides approfondis et un glossaire — le guide complet, lisible sur le web. Articles en anglais.",
+          meta: "Cours · pages web",
+          href: "/learn",
+          kind: "guide",
+          internal: true,
+        },
+        {
+          label: "Echopedia — le glossaire",
+          desc: "Tous les termes des guides Echorank, définis au même endroit.",
+          meta: "Glossaire · page web · en anglais",
+          href: "/learn/echopedia",
+          kind: "guide",
+          internal: true,
+        },
+      ],
+    },
     {
       h: "Guides et livres numériques gratuits",
       items: [

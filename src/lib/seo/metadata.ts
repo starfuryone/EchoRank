@@ -27,6 +27,18 @@ export interface BuildMetadataInput {
   /** og:type. Long-form guides are "article"; everything else is "website". */
   ogType?: "website" | "article";
   noIndex?: boolean;
+  /**
+   * Point the canonical at this locale instead of the page's own.
+   *
+   * For surfaces whose BODY is one language in every locale — the Knowledge Hub
+   * ships English prose under /fr and /de-CH — five URLs serve the same article,
+   * and self-canonicalising all five asks Google to rank duplicates against each
+   * other. The hreflang map still lists every locale, so a French visitor is
+   * still routed to the French chrome.
+   *
+   * Omit it for genuinely localized pages: they must canonical to themselves.
+   */
+  canonicalLocale?: string;
 }
 
 /**
@@ -76,6 +88,9 @@ export function buildMetadata(input: BuildMetadataInput): Metadata {
   const locale = normalizeLocale(input.locale);
   const path = input.path ?? "";
   const url = `${SITE_URL}/${locale}${path}`;
+  const canonical = input.canonicalLocale
+    ? `${SITE_URL}/${normalizeLocale(input.canonicalLocale)}${path}`
+    : url;
   const title = brandTitle(input.title, locale);
   const description = input.description?.trim() || BRAND_DESCRIPTION[locale];
   const image = abs(input.ogImage ?? OG_IMAGE_PATH);
@@ -85,7 +100,7 @@ export function buildMetadata(input: BuildMetadataInput): Metadata {
     title: { absolute: title },
     description,
     alternates: {
-      canonical: url,
+      canonical,
       languages: languagesFor(path),
     },
     ...(input.noIndex ? { robots: { index: false, follow: false } } : {}),

@@ -3,6 +3,7 @@
 //
 // See README.md.
 
+import { learnRoutes } from "@/lib/learn-content";
 import { LOCALES, SITE_URL } from "./constants";
 
 export interface LocalizedRoute {
@@ -41,6 +42,15 @@ export const LOCALIZED_ROUTES: LocalizedRoute[] = [
   { path: "/legal/privacy", priority: 0.3, changeFrequency: "yearly" },
   { path: "/legal/terms", priority: 0.3, changeFrequency: "yearly" },
   { path: "/legal/disclaimer", priority: 0.3, changeFrequency: "yearly" },
+  // The Knowledge Hub — DERIVED, not listed. Seventeen paths (hub, ten
+  // chapters, five guides, Echopedia) come straight from learn-content.ts, so
+  // adding a chapter to the config puts it in the sitemap and nowhere else has
+  // to be touched. A hand-kept copy here would drift the moment one did.
+  ...learnRoutes().map((path) => ({
+    path,
+    priority: path === "/learn" ? 0.8 : 0.6,
+    changeFrequency: "monthly" as const,
+  })),
 ];
 
 /** Single-URL routes with no locale variants. */

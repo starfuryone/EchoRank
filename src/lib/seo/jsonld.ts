@@ -125,6 +125,119 @@ export function videoObject(input: VideoObjectInput): JsonLdNode {
   };
 }
 
+export interface ArticleInput {
+  headline: string;
+  description: string;
+  /** Absolute URL of the page this node describes. */
+  pageUrl: string;
+  /** Minutes. Emitted as ISO 8601 duration — a real number from frontmatter. */
+  readingTime?: number;
+  inLanguage?: string;
+}
+
+/**
+ * Article node for a knowledge-base page.
+ *
+ * NO datePublished / dateModified. Google likes both, and we have no verifiable
+ * source for either: a file mtime is when the box last touched the file, not
+ * when the piece was written, and a build timestamp would re-date every article
+ * on every deploy. Per this file's header rule, absent beats invented.
+ */
+export function article(input: ArticleInput): JsonLdNode {
+  return {
+    "@type": "Article",
+    "@id": `${input.pageUrl}#article`,
+    headline: input.headline,
+    description: input.description,
+    url: input.pageUrl,
+    ...(input.inLanguage ? { inLanguage: input.inLanguage } : {}),
+    ...(input.readingTime ? { timeRequired: `PT${input.readingTime}M` } : {}),
+    isPartOf: { "@id": WEBSITE_ID },
+    author: { "@id": ORGANIZATION_ID },
+    publisher: { "@id": ORGANIZATION_ID },
+  };
+}
+
+export interface CoursePart {
+  headline: string;
+  description: string;
+  pageUrl: string;
+}
+
+export interface CourseInput {
+  name: string;
+  description: string;
+  /** Absolute URL of the hub page. */
+  pageUrl: string;
+  parts: readonly CoursePart[];
+  inLanguage?: string;
+}
+
+/**
+ * Course node with one hasPart per chapter.
+ *
+ * The parts carry the SAME @id the chapter pages emit for their own Article
+ * node, so a crawler reading both merges them into one entity instead of two
+ * competing descriptions of the same URL.
+ *
+ * Callers must build `parts` from the chapter config, never from a second list:
+ * a hand-kept copy is exactly how the Jul 31 stale-prices incident happened.
+ */
+export function course(input: CourseInput): JsonLdNode {
+  return {
+    "@type": "Course",
+    "@id": `${input.pageUrl}#course`,
+    name: input.name,
+    description: input.description,
+    url: input.pageUrl,
+    ...(input.inLanguage ? { inLanguage: input.inLanguage } : {}),
+    provider: { "@id": ORGANIZATION_ID },
+    hasPart: input.parts.map((p) => ({
+      "@type": "Article",
+      "@id": `${p.pageUrl}#article`,
+      headline: p.headline,
+      description: p.description,
+      url: p.pageUrl,
+    })),
+  };
+}
+
+export interface DefinedTermInput {
+  name: string;
+  description: string;
+  /** Fragment id of the term's anchor on the glossary page. */
+  anchor: string;
+}
+
+export interface DefinedTermSetInput {
+  name: string;
+  description: string;
+  pageUrl: string;
+  terms: readonly DefinedTermInput[];
+  inLanguage?: string;
+}
+
+/** Glossary. One DefinedTerm per anchor the page actually renders. */
+export function definedTermSet(input: DefinedTermSetInput): JsonLdNode {
+  const setId = `${input.pageUrl}#glossary`;
+  return {
+    "@type": "DefinedTermSet",
+    "@id": setId,
+    name: input.name,
+    description: input.description,
+    url: input.pageUrl,
+    ...(input.inLanguage ? { inLanguage: input.inLanguage } : {}),
+    publisher: { "@id": ORGANIZATION_ID },
+    hasDefinedTerm: input.terms.map((t) => ({
+      "@type": "DefinedTerm",
+      "@id": `${input.pageUrl}#${t.anchor}`,
+      name: t.name,
+      description: t.description,
+      inDefinedTermSet: { "@id": setId },
+    })),
+  };
+}
+
 export interface Crumb {
   name: string;
   url: string;
