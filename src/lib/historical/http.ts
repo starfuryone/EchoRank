@@ -8,7 +8,7 @@ import { NextResponse } from "next/server";
 import { enforcementErrorResponse } from "@/lib/plan-enforcement";
 import { SnapshotTooLargeError } from "./snapshots";
 import { SpacesNotConfiguredError, SpacesUnavailableError } from "./spaces";
-import { CaptureFailedError } from "./capture";
+import { CaptureBlockedError, CaptureFailedError } from "./capture";
 
 export function historicalRouteError(err: unknown): NextResponse {
   const enforcement = enforcementErrorResponse(err);
@@ -35,6 +35,13 @@ export function historicalRouteError(err: unknown): NextResponse {
     return NextResponse.json(
       { error: "Snapshot storage is temporarily unavailable. Try again in a minute.", code: "STORAGE_UNAVAILABLE" },
       { status: 503 },
+    );
+  }
+
+  if (err instanceof CaptureBlockedError) {
+    return NextResponse.json(
+      { error: err.message, code: "CAPTURE_BLOCKED" },
+      { status: 422 },
     );
   }
 

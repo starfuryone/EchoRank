@@ -24,6 +24,18 @@ import {
   type WaybackCapture,
 } from "./wayback";
 
+/**
+ * The target site refused us. 422: the request was well-formed and we reached
+ * the page — it simply will not be captured, and no retry changes that.
+ */
+export class CaptureBlockedError extends Error {
+  readonly statusCode = 422;
+  constructor(message: string) {
+    super(message);
+    this.name = "CaptureBlockedError";
+  }
+}
+
 export class CaptureFailedError extends Error {
   readonly statusCode: number;
   constructor(message: string, statusCode = 502) {
@@ -42,12 +54,30 @@ export async function fetchLiveMarkdown(url: string): Promise<string> {
   }>("/internal/ai-lens", { url }, { timeoutMs: CAPTURE_TIMEOUT_MS });
 
   if (status !== 200 || !data) {
+    const upstream = data?.error ?? "";
+
+    // A SITE REFUSING US IS NOT A BAD GATEWAY. Now that any public URL can be
+    // captured, the most common failure is a third party declining the AI
+    // crawler user-agent — cnn.com answers 451, plenty of others answer 403.
+    // Reporting that as 502 makes someone else's access policy look like our
+    // outage, and sends the reader hunting for a bug on our side.
+    if (/\b(401|403|451)\b/.test(upstream) || /blocked|forbidden|denied/i.test(upstream)) {
+      throw new CaptureBlockedError(
+        "That site blocks automated capture, so its text cannot be archived here.",
+      );
+    }
+
+    // The sidecar's render queue is full — a retry, not a failure.
+    if (status === 429) {
+      throw new CaptureFailedError("Capture is busy right now. Try again in a moment.", 429);
+    }
+
     // sidecarPost turns an aborted request into a 502 with its own message; say
     // plainly that it was slow rather than implying the page is broken, since
     // a third-party origin timing out is the expected case here.
     throw new CaptureFailedError(
-      data?.error ?? "That page took too long to load. Try again, or try a different page.",
-      status === 429 ? 429 : 502,
+      upstream || "That page took too long to load. Try again, or try a different page.",
+      502,
     );
   }
   const markdown = (data.rendered_markdown ?? data.raw_markdown ?? "").trim();
@@ -129,8 +159,13 @@ export async function importWaybackCaptures(
   timestamps: string[],
 ): Promise<ImportResult> {
   const wanted = limitImportSelection(timestamps);
-  const available = await listWaybackCaptures(url);
-  const byStamp = new Map(available.map((c) => [c.timestamp, c]));
+  const lookup = await listWaybackCaptures(url);
+  if (lookup.status === "unreachable") {
+    // Do not report ten "not found" outcomes when the Archive simply did not
+    // answer — that reads as ten missing pages rather than one outage.
+    throw new CaptureFailedError("The Internet Archive did not respond. Try again in a minute.", 503);
+  }
+  const byStamp = new Map(lookup.captures.map((c) => [c.timestamp, c]));
 
   const selected: WaybackCapture[] = wanted
     .map((t) => byStamp.get(t))

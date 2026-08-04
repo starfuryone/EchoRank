@@ -87,6 +87,8 @@ export function HistoricalClient({ locale, data }: Props) {
           return typeof copy === "string" ? copy : t.errInvalidUrl;
         }
         case "SNAPSHOT_TOO_LARGE": return t.errTooLarge;
+        case "CAPTURE_BLOCKED": return t.errCaptureBlocked;
+        case "ARCHIVE_UNREACHABLE": return t.waybackUnreachable;
         case "CAPTURE_FAILED": return payload.error ?? t.errCapture;
         case "STORAGE_UNAVAILABLE": return t.storageUnavailable;
         case "STORAGE_NOT_CONFIGURED": return t.storageNotConfigured;
@@ -260,6 +262,9 @@ export function HistoricalClient({ locale, data }: Props) {
     if (payload) {
       setWaybackCaptures(payload.captures);
       setWaybackPicked(payload.captures.slice(0, MAX_WAYBACK_IMPORT).map((c) => c.timestamp));
+      // Only a real answer flips this. On an outage `call` already set the
+      // error banner and returned null, so "never archived" is never shown for
+      // a lookup that did not actually complete.
       setWaybackLookedUp(true);
     }
     setBusy(null);

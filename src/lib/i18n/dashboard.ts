@@ -10878,7 +10878,9 @@ const historicalEn = {
   waybackLookupBtn: "Find archived copies",
   waybackLooking: "Searching the archive…",
   waybackNone:
-    "No archived copies found for that URL. The Archive may not have crawled it, or may be unreachable right now.",
+    "No archived copies found for that URL — the Internet Archive has never crawled it.",
+  waybackUnreachable:
+    "The Internet Archive did not respond, so we do not know what it has. Try again in a minute.",
   waybackFound: (n: number) => `${n} archived copies available`,
   waybackImportBtn: (n: number) => (n === 1 ? "Import 1 snapshot" : `Import ${n} snapshots`),
   waybackImporting: "Importing…",
@@ -10903,6 +10905,8 @@ const historicalEn = {
   errInvalidUrl: "That URL cannot be captured. Use a public http:// or https:// address.",
   errTooLarge: "That page is too long to snapshot.",
   errCapture: "Could not capture that page right now.",
+  errCaptureBlocked:
+    "That site blocks automated capture, so its text cannot be archived here.",
   errGeneric: "Something went wrong. Try again.",
   loading: "Loading…",
 };
@@ -10987,7 +10991,9 @@ export const HISTORICAL_COPY: Record<DashLocale, HistoricalCopy> = {
     waybackLookupBtn: "Chercher des copies archivées",
     waybackLooking: "Recherche dans l'archive…",
     waybackNone:
-      "Aucune copie archivée trouvée pour cette URL. L'Archive ne l'a peut-être jamais explorée, ou est momentanément injoignable.",
+      "Aucune copie archivée pour cette URL — Internet Archive ne l'a jamais explorée.",
+    waybackUnreachable:
+      "Internet Archive n'a pas répondu : impossible de savoir ce qu'il contient. Réessayez dans une minute.",
     waybackFound: (n: number) => `${n} copies archivées disponibles`,
     waybackImportBtn: (n: number) => (n === 1 ? "Importer 1 archive" : `Importer ${n} archives`),
     waybackImporting: "Importation…",
@@ -11013,6 +11019,8 @@ export const HISTORICAL_COPY: Record<DashLocale, HistoricalCopy> = {
       "Cette URL ne peut pas être capturée. Utilisez une adresse publique en http:// ou https://.",
     errTooLarge: "Cette page est trop longue pour être archivée.",
     errCapture: "Impossible de capturer cette page pour le moment.",
+    errCaptureBlocked:
+      "Ce site bloque la capture automatisée : son texte ne peut pas être archivé ici.",
     errGeneric: "Une erreur est survenue. Réessayez.",
     loading: "Chargement…",
   },
@@ -11092,7 +11100,9 @@ export const HISTORICAL_COPY: Record<DashLocale, HistoricalCopy> = {
     waybackLookupBtn: "Archivierte Kopien suchen",
     waybackLooking: "Archiv wird durchsucht…",
     waybackNone:
-      "Keine archivierten Kopien für diese URL gefunden. Das Archiv hat sie vielleicht nie erfasst oder ist gerade nicht erreichbar.",
+      "Keine archivierten Kopien für diese URL — das Internet Archive hat sie nie erfasst.",
+    waybackUnreachable:
+      "Das Internet Archive hat nicht geantwortet, wir wissen also nicht, was dort liegt. Versuchen Sie es in einer Minute erneut.",
     waybackFound: (n: number) => `${n} archivierte Kopien verfügbar`,
     waybackImportBtn: (n: number) => (n === 1 ? "1 Stand importieren" : `${n} Stände importieren`),
     waybackImporting: "Wird importiert…",
@@ -11118,6 +11128,8 @@ export const HISTORICAL_COPY: Record<DashLocale, HistoricalCopy> = {
       "Diese URL kann nicht erfasst werden. Verwenden Sie eine öffentliche http://- oder https://-Adresse.",
     errTooLarge: "Diese Seite ist zu lang, um sie zu archivieren.",
     errCapture: "Diese Seite konnte gerade nicht erfasst werden.",
+    errCaptureBlocked:
+      "Diese Website blockiert automatisierte Erfassung, ihr Text kann hier nicht archiviert werden.",
     errGeneric: "Etwas ist schiefgelaufen. Versuchen Sie es erneut.",
     loading: "Wird geladen…",
   },

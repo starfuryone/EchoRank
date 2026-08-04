@@ -57,10 +57,29 @@ export async function POST(request: Request) {
       );
     }
 
-    const captures = await listWaybackCaptures(guarded.url);
+    const lookup = await listWaybackCaptures(guarded.url);
+
+    // An outage is reported as an outage. Answering 200 with an empty list —
+    // which this route used to do for every failure mode — told the user their
+    // page has no archived history when the truth was that the Archive did not
+    // answer. Still not fatal: the page renders either way.
+    if (lookup.status === "unreachable") {
+      return NextResponse.json(
+        {
+          url: guarded.url,
+          captures: [],
+          code: "ARCHIVE_UNREACHABLE",
+          reason: lookup.reason,
+          error: "The Internet Archive did not respond.",
+        },
+        { status: 503 },
+      );
+    }
+
     return NextResponse.json({
       url: guarded.url,
-      captures: captures.map((c) => ({
+      code: lookup.status === "empty" ? "ARCHIVE_EMPTY" : "OK",
+      captures: lookup.captures.map((c) => ({
         timestamp: c.timestamp,
         capturedAt: c.capturedAt.toISOString(),
         statusCode: c.statusCode,

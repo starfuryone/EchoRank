@@ -242,6 +242,30 @@ describe("capture", () => {
     expect(pageSnapshot.create).not.toHaveBeenCalled();
   });
 
+  it("maps a site that BLOCKS us to 422, not 502", async () => {
+    // cnn.com answers 451 to the AI crawler user-agent. That is someone else's
+    // access policy, not our bad gateway, and 502 sends the reader hunting for
+    // a bug on our side.
+    for (const upstream of [
+      "The page returned HTTP 451 to an AI crawler.",
+      "The page returned HTTP 403 to an AI crawler.",
+      "Request was blocked by the origin.",
+    ]) {
+      sidecarPost.mockResolvedValue({ status: 502, data: { error: upstream } });
+      const res = await CAPTURE(post("/api/ai/visibility/historical/capture", { url: "https://cnn.com/" }));
+      expect(res.status, upstream).toBe(422);
+      expect((await res.json()).code).toBe("CAPTURE_BLOCKED");
+    }
+    expect(pageSnapshot.create).not.toHaveBeenCalled();
+  });
+
+  it("still reports a genuine upstream fault as 502", async () => {
+    sidecarPost.mockResolvedValue({ status: 502, data: { error: "AI Visibility service is unavailable." } });
+    const res = await CAPTURE(post("/api/ai/visibility/historical/capture", { url: "https://example.org/" }));
+    expect(res.status).toBe(502);
+    expect((await res.json()).code).toBe("CAPTURE_FAILED");
+  });
+
   it("maps a sidecar 429 to a retryable error, not a 500", async () => {
     sidecarPost.mockResolvedValue({ status: 429, data: { error: "All render slots busy" } });
     const res = await CAPTURE(post("/api/ai/visibility/historical/capture", { url: "https://echorank360.com/" }));
@@ -291,11 +315,75 @@ describe("wayback lookup", () => {
     expect((await res.json()).url).toBe("https://cnn.com/");
   });
 
-  it("returns an empty list, not an error, when the Archive is down", async () => {
+  // ── error vs empty ───────────────────────────────────────────────────────
+  //
+  // These two are the whole point. Both produce zero captures, and telling a
+  // user their page was never archived when the Archive simply did not answer
+  // is a false statement about their history.
+
+  it("reports an outage as an outage, not as 'never archived'", async () => {
     fetchMock.mockRejectedValue(new Error("ETIMEDOUT"));
     const res = await WAYBACK(post("/api/ai/visibility/historical/wayback", { url: "https://echorank360.com/" }));
+    expect(res.status).toBe(503);
+    const payload = await res.json();
+    expect(payload.code).toBe("ARCHIVE_UNREACHABLE");
+    expect(payload.captures).toEqual([]);
+  });
+
+  it("distinguishes a timeout from a network error", async () => {
+    const abort = new Error("aborted");
+    abort.name = "AbortError";
+    fetchMock.mockRejectedValue(abort);
+    const res = await WAYBACK(post("/api/ai/visibility/historical/wayback", { url: "https://echorank360.com/" }));
+    expect((await res.json()).reason).toBe("timeout");
+  });
+
+  it("treats a CDX 5xx as unreachable", async () => {
+    fetchMock.mockResolvedValue(new Response("busy", { status: 503 }));
+    const res = await WAYBACK(post("/api/ai/visibility/historical/wayback", { url: "https://echorank360.com/" }));
+    expect(res.status).toBe(503);
+    expect((await res.json()).reason).toBe("http");
+  });
+
+  it("treats a malformed CDX payload as unreachable, not as empty", async () => {
+    fetchMock.mockResolvedValue(new Response(JSON.stringify({ oops: true }), { status: 200 }));
+    const res = await WAYBACK(post("/api/ai/visibility/historical/wayback", { url: "https://echorank360.com/" }));
+    expect(res.status).toBe(503);
+    expect((await res.json()).reason).toBe("malformed");
+  });
+
+  it("reports a genuine zero-coverage answer as empty, with 200", async () => {
+    // Header row only — CDX answered, and the answer is "nothing".
+    fetchMock.mockResolvedValue(
+      new Response(JSON.stringify([["timestamp", "original", "statuscode", "digest"]]), { status: 200 }),
+    );
+    const res = await WAYBACK(post("/api/ai/visibility/historical/wayback", { url: "https://echorank360.com/" }));
     expect(res.status).toBe(200);
-    expect((await res.json()).captures).toEqual([]);
+    const payload = await res.json();
+    expect(payload.code).toBe("ARCHIVE_EMPTY");
+    expect(payload.captures).toEqual([]);
+  });
+
+  it("does not cache an outage as zero coverage", async () => {
+    // A cached outage would report "never archived" for 24h after one bad
+    // minute, which is the original bug with a longer memory.
+    fetchMock.mockRejectedValue(new Error("ETIMEDOUT"));
+    await WAYBACK(post("/api/ai/visibility/historical/wayback", { url: "https://echorank360.com/" }));
+
+    fetchMock.mockResolvedValue(new Response(JSON.stringify(cdxRows), { status: 200 }));
+    const res = await WAYBACK(post("/api/ai/visibility/historical/wayback", { url: "https://echorank360.com/" }));
+    expect(res.status).toBe(200);
+    expect((await res.json()).captures.length).toBe(2);
+  });
+
+  it("fails an import loudly when the Archive is down", async () => {
+    fetchMock.mockRejectedValue(new Error("ETIMEDOUT"));
+    const res = await IMPORT(post("/api/ai/visibility/historical/wayback/import", {
+      url: "https://echorank360.com/", timestamps: ["20190412031545"],
+    }));
+    // Not "1 failed snapshot" — one outage.
+    expect(res.status).toBe(503);
+    expect((await res.json()).code).toBe("CAPTURE_FAILED");
   });
 });
 

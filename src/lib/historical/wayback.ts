@@ -58,17 +58,36 @@ function cdxCacheKey(url: string): string {
 }
 
 /**
- * Available captures for a URL, newest first.
+ * Outcome of a CDX lookup.
  *
- * Cached 24h in Redis. Returns [] on any failure — an import that finds nothing
- * because the Archive is down looks the same to the user as one that finds
- * nothing because the page was never archived, and both are "try again later".
+ * "The Archive did not answer" and "this page was never archived" are
+ * different facts and the user can act on only one of them. Collapsing both to
+ * an empty list — which this function used to do on four separate paths — told
+ * someone their page has no history when the truth was that a third party was
+ * having a bad minute. `unreachable` exists so the UI can tell them to try
+ * again instead.
  */
-export async function listWaybackCaptures(url: string, limit = 50): Promise<WaybackCapture[]> {
+export type WaybackLookup =
+  | { status: "ok"; captures: WaybackCapture[] }
+  | { status: "empty"; captures: [] }
+  | { status: "unreachable"; captures: []; reason: "timeout" | "http" | "malformed" | "network" };
+
+/**
+ * Available captures for a URL, newest first. Cached 24h in Redis.
+ *
+ * Only a genuine answer is cached. Caching an outage would serve "no coverage"
+ * for 24 hours after a single slow minute.
+ */
+export async function listWaybackCaptures(url: string, limit = 50): Promise<WaybackLookup> {
   const key = cdxCacheKey(url);
   try {
     const cached = await getRedisConnection().get(key);
-    if (cached) return reviveCaptures(JSON.parse(cached));
+    if (cached) {
+      const captures = reviveCaptures(JSON.parse(cached));
+      return captures.length
+        ? { status: "ok", captures }
+        : { status: "empty", captures: [] };
+    }
   } catch {
     // Cache miss and broken cache are the same to the caller.
   }
@@ -95,16 +114,27 @@ export async function listWaybackCaptures(url: string, limit = 50): Promise<Wayb
         signal: controller.signal,
         headers: { "user-agent": "Echorank360/1.0 (+https://echorank360.com)" },
       });
-      if (!res.ok) return [];
+      if (!res.ok) {
+        return { status: "unreachable", captures: [], reason: "http" };
+      }
       rows = (await res.json()) as string[][];
     } finally {
       clearTimeout(timer);
     }
-  } catch {
-    return [];
+  } catch (err) {
+    // An abort is our own 45s ceiling firing, which is worth distinguishing:
+    // the Archive is up but slow, and retrying often works.
+    const timedOut = err instanceof Error && err.name === "AbortError";
+    return { status: "unreachable", captures: [], reason: timedOut ? "timeout" : "network" };
   }
 
-  if (!Array.isArray(rows) || rows.length < 2) return [];
+  // A well-formed empty answer is exactly one row: the header. Anything that is
+  // not an array at all is CDX returning something we do not understand, which
+  // is an outage symptom rather than a statement about coverage.
+  if (!Array.isArray(rows)) {
+    return { status: "unreachable", captures: [], reason: "malformed" };
+  }
+  if (rows.length < 2) return { status: "empty", captures: [] };
 
   // Row 0 is the header.
   const captures: WaybackCapture[] = [];
@@ -127,7 +157,7 @@ export async function listWaybackCaptures(url: string, limit = 50): Promise<Wayb
     // Best-effort.
   }
 
-  return captures;
+  return captures.length ? { status: "ok", captures } : { status: "empty", captures: [] };
 }
 
 function reviveCaptures(raw: unknown): WaybackCapture[] {
