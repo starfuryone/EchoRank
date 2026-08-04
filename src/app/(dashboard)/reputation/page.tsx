@@ -17,6 +17,7 @@ import { dashboardLocale, REPUTATION_COPY } from "@/lib/i18n/dashboard";
 import { getCurrentTenant } from "@/lib/tenant";
 import { PLAN_CONFIGS } from "@/lib/plan-config";
 import { visibleReputationGroups, toolLockState } from "@/lib/reputation-tools";
+import { ReputationHelpButton } from "@/components/help/ReputationHelp";
 
 export default async function ReputationHubPage() {
   const cookieStore = await cookies();
@@ -27,11 +28,16 @@ export default async function ReputationHubPage() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h2 className="text-sm font-medium uppercase tracking-wide text-gray-500">
-          {copy.hubTitle}
-        </h2>
-        <p className="mt-1 max-w-3xl text-sm text-gray-500">{copy.hubSubtitle}</p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h2 className="text-sm font-medium uppercase tracking-wide text-gray-500">
+            {copy.hubTitle}
+          </h2>
+          <p className="mt-1 max-w-3xl text-sm text-gray-500">{copy.hubSubtitle}</p>
+        </div>
+        {/* Beside the title, not fixed-position — the same placement the other
+            help triggers use. */}
+        <ReputationHelpButton locale={locale} />
       </div>
 
       {groups.map((group, gi) => (

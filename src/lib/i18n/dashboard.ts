@@ -11326,3 +11326,112 @@ export const REPUTATION_COPY: Record<DashLocale, ReputationCopy> = {
     },
   },
 };
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Reputation Tools help modal (/reputation)
+   ═══════════════════════════════════════════════════════════════════════════
+
+   Content describes what the page ACTUALLY renders: four groups, eleven cards
+   linking to routes that already existed, and lock states mirroring each
+   destination's own gate. Nothing here promises a feature the hub does not
+   link to.
+*/
+
+const reputationHelpEn = {
+  buttonLabel: "How this works",
+  buttonAria: "Open help for Reputation Tools",
+  title: "Reputation Tools",
+  close: "Close",
+
+  s1Heading: "One page instead of eleven menu rows",
+  s1Text:
+    "These eleven tools used to sit in the sidebar as eleven separate links. They are the same tools at the same addresses — only the way you reach them changed, so any link you had bookmarked still works.",
+  s1Note:
+    "Grouped by what you are trying to do: collect feedback, deal with risk, read the numbers, get data in.",
+
+  s2Heading: "Customer feedback",
+  s2Text:
+    "Customers holds everyone you can ask for a review. Campaigns does the asking on a schedule by email or SMS, Review links send a happy customer to the platform that matters, and Templates keeps the wording reusable per channel and locale.",
+  s2Note: "Feedback is where the replies land, sentiment-scored and sorted by what needs an answer.",
+
+  s3Heading: "Risk and recovery",
+  s3Text:
+    "Recovery catches an unhappy customer before they post and routes it to a person. Monitoring watches every source you connect and flags new reviews the day they appear. Intelligence covers competitor movement, escalation risk and review authenticity.",
+
+  s4Heading: "Analytics and data",
+  s4Text:
+    "Reputation analytics tracks rating, review volume and response time over time. Data sources imports customers and reviews or connects a platform to keep them current, and the browser extension captures both straight from a platform tab.",
+
+  s5Heading: "Why some cards are locked",
+  s5Text:
+    "A greyed-out card means the tool behind it needs a higher plan — the card shows which one. Nothing is hidden from you: locking rather than hiding is deliberate, so you can see what exists before deciding whether it is worth upgrading for.",
+  s5Note: "Monitoring is on Agency and above. Intelligence is on Growth and above.",
+};
+
+export type ReputationHelpCopy = typeof reputationHelpEn;
+
+export const REPUTATION_HELP_COPY: Record<DashLocale, ReputationHelpCopy> = {
+  en: reputationHelpEn,
+  fr: {
+    buttonLabel: "Comment ça marche",
+    buttonAria: "Ouvrir l'aide des outils de réputation",
+    title: "Outils de réputation",
+    close: "Fermer",
+
+    s1Heading: "Une page au lieu de onze entrées de menu",
+    s1Text:
+      "Ces onze outils occupaient autrefois onze liens distincts dans le menu latéral. Ce sont les mêmes outils aux mêmes adresses : seule la façon d'y accéder a changé, donc tous vos favoris continuent de fonctionner.",
+    s1Note:
+      "Regroupés selon votre objectif : recueillir des avis, gérer le risque, lire les chiffres, importer vos données.",
+
+    s2Heading: "Retours clients",
+    s2Text:
+      "Clients regroupe toutes les personnes à qui demander un avis. Campagnes s'en charge automatiquement par courriel ou SMS, les Liens d'avis dirigent un client satisfait vers la bonne plateforme, et les Modèles gardent vos formulations réutilisables par canal et par langue.",
+    s2Note:
+      "Retours est l'endroit où arrivent les réponses, avec le sentiment analysé et le tri par urgence de réponse.",
+
+    s3Heading: "Risque et rattrapage",
+    s3Text:
+      "Rattrapage intercepte un client mécontent avant publication et confie le dossier à une personne. Surveillance observe chaque source connectée et signale les nouveaux avis le jour même. Intelligence couvre les mouvements des concurrents, le risque d'escalade et l'authenticité des avis.",
+
+    s4Heading: "Analytique et données",
+    s4Text:
+      "L'analytique de réputation suit la note, le volume d'avis et le délai de réponse dans le temps. Sources de données importe clients et avis ou connecte une plateforme pour les tenir à jour, et l'extension de navigateur récupère les deux directement depuis un onglet.",
+
+    s5Heading: "Pourquoi certaines cartes sont verrouillées",
+    s5Text:
+      "Une carte grisée signifie que l'outil nécessite un forfait supérieur — la carte indique lequel. Rien ne vous est caché : verrouiller plutôt que masquer est volontaire, pour que vous voyiez ce qui existe avant de juger si cela vaut une mise à niveau.",
+    s5Note: "Surveillance est disponible à partir d'Agency. Intelligence à partir de Growth.",
+  },
+  "de-CH": {
+    buttonLabel: "So funktioniert es",
+    buttonAria: "Hilfe zu den Reputations-Tools öffnen",
+    title: "Reputations-Tools",
+    close: "Schliessen",
+
+    s1Heading: "Eine Seite statt elf Menüzeilen",
+    s1Text:
+      "Diese elf Werkzeuge waren früher elf einzelne Einträge in der Seitenleiste. Es sind dieselben Werkzeuge unter denselben Adressen — nur der Weg dorthin hat sich geändert, gespeicherte Links funktionieren also weiterhin.",
+    s1Note:
+      "Gruppiert nach Ihrem Ziel: Rückmeldungen sammeln, Risiken bearbeiten, Zahlen lesen, Daten hereinholen.",
+
+    s2Heading: "Kundenfeedback",
+    s2Text:
+      "Kundschaft umfasst alle, die Sie um eine Bewertung bitten können. Kampagnen übernehmen das planmässig per E-Mail oder SMS, Bewertungslinks führen zufriedene Kundschaft zur richtigen Plattform, und Vorlagen halten Ihre Texte pro Kanal und Sprache wiederverwendbar.",
+    s2Note:
+      "Bei Rückmeldungen laufen die Antworten ein — mit Stimmungsanalyse und nach Antwortbedarf sortiert.",
+
+    s3Heading: "Risiko und Rückgewinnung",
+    s3Text:
+      "Rückgewinnung fängt unzufriedene Kundschaft ab, bevor sie postet, und übergibt den Fall an eine zuständige Person. Überwachung beobachtet jede verbundene Quelle und meldet neue Bewertungen am selben Tag. Intelligence deckt Bewegungen der Konkurrenz, Eskalationsrisiko und die Echtheit von Bewertungen ab.",
+
+    s4Heading: "Auswertungen und Daten",
+    s4Text:
+      "Die Reputations-Auswertung verfolgt Bewertung, Menge und Antwortzeit im Verlauf. Datenquellen importiert Kundschaft und Bewertungen oder verbindet eine Plattform, und die Browser-Erweiterung erfasst beides direkt aus einem Plattform-Tab.",
+
+    s5Heading: "Warum manche Karten gesperrt sind",
+    s5Text:
+      "Eine ausgegraute Karte bedeutet, dass das Werkzeug ein höheres Abo braucht — die Karte nennt welches. Nichts wird Ihnen vorenthalten: Sperren statt Verbergen ist Absicht, damit Sie sehen, was es gibt, bevor Sie entscheiden, ob sich ein Wechsel lohnt.",
+    s5Note: "Überwachung gibt es ab Agency, Intelligence ab Growth.",
+  },
+};
