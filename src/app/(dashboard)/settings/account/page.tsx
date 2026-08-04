@@ -3,6 +3,9 @@ import { dashboardLocale } from "@/lib/i18n/dashboard";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { requireTenant } from "@/lib/tenant";
+import { hasFeature } from "@/lib/feature-flags";
+import { activeMatrixAccount } from "@/lib/matrix-accounts";
+import { ELEMENT_URL } from "@/app/api/account/matrix/provision/route";
 import { AccountPageClient } from "./page-client";
 
 export const dynamic = "force-dynamic";
@@ -44,6 +47,13 @@ export default async function AccountPage() {
     if (row) price = { currency: row.currency, interval: row.interval };
   }
 
+  // Team chat eligibility and any existing account, resolved server-side so
+  // the client never has to ask whether the plan qualifies.
+  const chatEligible = tenant ? hasFeature(tenant.planType, "matrix_chat") : false;
+  const chatAccount = chatEligible
+    ? await activeMatrixAccount(membership.tenantId, membership.userId)
+    : null;
+
   return (
     <AccountPageClient
       locale={locale}
@@ -60,6 +70,11 @@ export default async function AccountPage() {
           : null
       }
       price={price}
+      chat={{
+        eligible: chatEligible,
+        existingMxid: chatAccount?.mxid ?? null,
+        elementUrl: ELEMENT_URL,
+      }}
     />
   );
 }

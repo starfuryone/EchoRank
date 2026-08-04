@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import type { Prisma } from "@/generated/prisma";
 import { prisma } from "@/lib/prisma";
+import { reconcileTenantMatrixAccounts } from "@/lib/matrix-accounts";
 import { rateLimit } from "@/lib/rate-limit";
 import { logger } from "@/infrastructure/observability/logger";
 import { resolvePlanFromPriceId } from "@/lib/stripe/prices";
@@ -231,6 +232,36 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
       tenant.id,
       quotaEnforcer.getDefaultQuotas(planType)
     );
+  }
+
+  // Matrix chat is GROWTH+. A downgrade has to take the chat accounts with it,
+  // or a cancelled customer keeps a working login on our homeserver forever.
+  //
+  // THIS RUNS AFTER the tenant row is already updated, and it is wrapped so it
+  // can never throw: Stripe retries a webhook that returns non-2xx, and a
+  // Synapse blip must not replay a plan change that has already been applied.
+  // reconcileTenantMatrixAccounts logs and counts its own per-account
+  // failures; reconcileMatrixAccounts() finishes the job by hand.
+  if (planType) {
+    try {
+      const reconciled = await reconcileTenantMatrixAccounts(tenant.id, planType);
+      if (reconciled.checked > 0) {
+        log.info(
+          {
+            tenantId: tenant.id,
+            planType,
+            deactivated: reconciled.deactivated,
+            failed: reconciled.failed,
+          },
+          "Matrix accounts reconciled after plan change"
+        );
+      }
+    } catch (err) {
+      log.error(
+        { tenantId: tenant.id, planType, err: err instanceof Error ? err.name : typeof err },
+        "Matrix reconcile threw — plan change stands, run reconcileMatrixAccounts()"
+      );
+    }
   }
 
   log.info(

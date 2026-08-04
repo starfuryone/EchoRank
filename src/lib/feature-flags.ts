@@ -17,7 +17,8 @@ export type Feature =
   | "review_authenticity"
   | "multi_location_intelligence"
   | "answer_tracking"
-  | "marketing_studio";
+  | "marketing_studio"
+  | "matrix_chat";
 
 const ALL_FEATURES: Feature[] = [
   "review_authenticity",
@@ -37,6 +38,7 @@ const ALL_FEATURES: Feature[] = [
   "answer_tracking",
   "multi_location_intelligence",
   "marketing_studio",
+  "matrix_chat",
 ];
 
 const PLAN_FEATURES: Record<PlanType, Set<Feature>> = {
@@ -54,6 +56,9 @@ const PLAN_FEATURES: Record<PlanType, Set<Feature>> = {
     "ai_analysis",
     "ai_visibility",
     "advanced_analytics",
+    // Matrix team chat: GROWTH and up. AGENCY/ENTERPRISE inherit it through
+    // ALL_FEATURES, so this is the only tier that has to name it.
+    "matrix_chat",
     "escalation_prediction",
     "marketing_studio",
   ]),

@@ -1826,3 +1826,30 @@ model PageSnapshot {
   @@index([tenantId, contentHash])
   @@map("page_snapshots")
 }
+
+/// A Synapse (Matrix) account provisioned for one app user on one tenant.
+///
+/// The PASSWORD IS NOT HERE and must never be. It is generated per provision,
+/// returned in that one HTTP response, and forgotten — Synapse holds the hash,
+/// we hold only the identifier. A password column would turn a database read
+/// into account takeover for every chat account we have ever issued.
+///
+/// Rows are kept after deactivation rather than deleted: `deactivatedAt` is
+/// what makes a downgrade auditable, and what stops a re-upgrade silently
+/// reusing an mxid whose history belongs to a deactivated account.
+model MatrixAccount {
+  id            String    @id @default(cuid())
+  tenantId      String
+  /// The Echorank user this account belongs to.
+  appUserId     String
+  /// Full Matrix ID, e.g. @acme.jane:echorank360.com
+  mxid          String    @unique
+  createdAt     DateTime  @default(now())
+  /// Null while the account is live. Set when a downgrade deactivates it.
+  deactivatedAt DateTime?
+
+  /// One account per user per tenant. The same person on two tenants gets two.
+  @@unique([tenantId, appUserId])
+  @@index([tenantId, deactivatedAt])
+  @@map("matrix_accounts")
+}

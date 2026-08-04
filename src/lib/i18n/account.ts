@@ -37,6 +37,25 @@ export interface AccountCopy {
   errorEmpty: string;
   errorTooLong: string;
   errorGeneric: string;
+
+  // Team chat (Matrix). GROWTH and up.
+  chatTitle: string;
+  chatIntro: string;
+  chatProvision: string;
+  chatProvisioning: string;
+  chatAccountLabel: string;
+  chatPasswordLabel: string;
+  chatOnceWarning: string;
+  chatCopy: string;
+  chatCopied: string;
+  chatOpenElement: string;
+  chatExisting: string;
+  chatLockedTitle: string;
+  chatLockedBody: string;
+  chatUpgrade: string;
+  chatErrExists: string;
+  chatErrRate: string;
+  chatErrGeneric: string;
 }
 
 export const ACCOUNT_COPY: Record<DashLocale, AccountCopy> = {
@@ -67,6 +86,27 @@ export const ACCOUNT_COPY: Record<DashLocale, AccountCopy> = {
     errorEmpty: "Name cannot be empty.",
     errorTooLong: "Name must be 200 characters or fewer.",
     errorGeneric: "Could not save. Please try again.",
+
+    chatTitle: "Team chat",
+    chatIntro:
+      "A private chat account on Echorank's own server, for your team. Messages stay on our infrastructure — no third-party workspace, no per-seat fee.",
+    chatProvision: "Create my chat account",
+    chatProvisioning: "Creating…",
+    chatAccountLabel: "Your chat address",
+    chatPasswordLabel: "One-time password",
+    chatOnceWarning:
+      "This password is shown once and is never stored. Copy it somewhere safe before leaving this page — we cannot show it again, only reset it.",
+    chatCopy: "Copy",
+    chatCopied: "Copied",
+    chatOpenElement: "Open chat",
+    chatExisting: "Your chat account is active.",
+    chatLockedTitle: "Team chat is on Growth and above",
+    chatLockedBody:
+      "Private chat for your team, hosted by Echorank. Included from the Growth plan up.",
+    chatUpgrade: "Compare plans",
+    chatErrExists: "You already have a chat account.",
+    chatErrRate: "Too many attempts. Try again later.",
+    chatErrGeneric: "Could not create a chat account right now. Try again in a minute.",
   },
   fr: {
     title: "Compte",
@@ -94,7 +134,28 @@ export const ACCOUNT_COPY: Record<DashLocale, AccountCopy> = {
     readOnly: "Lecture seule",
     errorEmpty: "Le nom ne peut pas être vide.",
     errorTooLong: "Le nom doit contenir au plus 200 caractères.",
-    errorGeneric: "Enregistrement impossible. Veuillez réessayer.",
+    errorGeneric: "Impossible d'enregistrer. Veuillez réessayer.",
+
+    chatTitle: "Messagerie d'équipe",
+    chatIntro:
+      "Un compte de messagerie privé sur le serveur d'Echorank, pour votre équipe. Les messages restent sur notre infrastructure — aucun espace tiers, aucun coût par utilisateur.",
+    chatProvision: "Créer mon compte de messagerie",
+    chatProvisioning: "Création…",
+    chatAccountLabel: "Votre adresse de messagerie",
+    chatPasswordLabel: "Mot de passe à usage unique",
+    chatOnceWarning:
+      "Ce mot de passe s'affiche une seule fois et n'est jamais conservé. Copiez-le en lieu sûr avant de quitter cette page : nous ne pouvons pas le réafficher, seulement le réinitialiser.",
+    chatCopy: "Copier",
+    chatCopied: "Copié",
+    chatOpenElement: "Ouvrir la messagerie",
+    chatExisting: "Votre compte de messagerie est actif.",
+    chatLockedTitle: "La messagerie d'équipe est incluse à partir de Growth",
+    chatLockedBody:
+      "Une messagerie privée pour votre équipe, hébergée par Echorank. Incluse à partir du forfait Growth.",
+    chatUpgrade: "Comparer les forfaits",
+    chatErrExists: "Vous avez déjà un compte de messagerie.",
+    chatErrRate: "Trop de tentatives. Réessayez plus tard.",
+    chatErrGeneric: "Impossible de créer un compte pour le moment. Réessayez dans une minute.",
   },
   "de-CH": {
     title: "Konto",
@@ -122,6 +183,27 @@ export const ACCOUNT_COPY: Record<DashLocale, AccountCopy> = {
     readOnly: "Schreibgeschützt",
     errorEmpty: "Der Name darf nicht leer sein.",
     errorTooLong: "Der Name darf höchstens 200 Zeichen lang sein.",
-    errorGeneric: "Speichern nicht möglich. Bitte versuchen Sie es erneut.",
+    errorGeneric: "Konnte nicht gespeichert werden. Bitte versuchen Sie es erneut.",
+
+    chatTitle: "Team-Chat",
+    chatIntro:
+      "Ein privates Chat-Konto auf dem eigenen Server von Echorank, für Ihr Team. Die Nachrichten bleiben auf unserer Infrastruktur — kein fremder Arbeitsbereich, keine Gebühr pro Person.",
+    chatProvision: "Mein Chat-Konto erstellen",
+    chatProvisioning: "Wird erstellt…",
+    chatAccountLabel: "Ihre Chat-Adresse",
+    chatPasswordLabel: "Einmal-Passwort",
+    chatOnceWarning:
+      "Dieses Passwort wird nur einmal angezeigt und nie gespeichert. Kopieren Sie es an einen sicheren Ort, bevor Sie die Seite verlassen — wir können es nicht erneut anzeigen, nur zurücksetzen.",
+    chatCopy: "Kopieren",
+    chatCopied: "Kopiert",
+    chatOpenElement: "Chat öffnen",
+    chatExisting: "Ihr Chat-Konto ist aktiv.",
+    chatLockedTitle: "Team-Chat gibt es ab Growth",
+    chatLockedBody:
+      "Privater Chat für Ihr Team, von Echorank gehostet. Enthalten ab dem Growth-Abo.",
+    chatUpgrade: "Abos vergleichen",
+    chatErrExists: "Sie haben bereits ein Chat-Konto.",
+    chatErrRate: "Zu viele Versuche. Versuchen Sie es später erneut.",
+    chatErrGeneric: "Das Chat-Konto konnte gerade nicht erstellt werden. Versuchen Sie es in einer Minute erneut.",
   },
 };

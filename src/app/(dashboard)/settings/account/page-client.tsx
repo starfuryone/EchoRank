@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { InitialsAvatar } from "@/components/ui/initials-avatar";
 import { ACCOUNT_COPY } from "@/lib/i18n/account";
 import type { DashLocale } from "@/lib/i18n/dashboard";
+import { TeamChatSection } from "@/components/account/TeamChatSection";
 import { updateTenantNameAction, type UpdateTenantNameState } from "./actions";
 
 interface Props {
@@ -22,6 +23,7 @@ interface Props {
   };
   subscription: { planType: string; status: string } | null;
   price: { currency: string; interval: string } | null;
+  chat: { eligible: boolean; existingMxid: string | null; elementUrl: string };
 }
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
@@ -33,7 +35,7 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
   );
 }
 
-export function AccountPageClient({ locale, user, tenant, subscription, price }: Props) {
+export function AccountPageClient({ locale, user, tenant, subscription, price, chat }: Props) {
   const t = ACCOUNT_COPY[locale];
 
   const [state, formAction, pending] = useActionState<UpdateTenantNameState, FormData>(
@@ -149,6 +151,13 @@ export function AccountPageClient({ locale, user, tenant, subscription, price }:
           </div>
         </CardContent>
       </Card>
+
+      <TeamChatSection
+        copy={t}
+        eligible={chat.eligible}
+        existingMxid={chat.existingMxid}
+        elementUrl={chat.elementUrl}
+      />
     </div>
   );
 }
