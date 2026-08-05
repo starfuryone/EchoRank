@@ -29,6 +29,8 @@ import {
   WRITE_BATCH_SIZE,
   crawlKeys,
 } from "./constants";
+import { collectSitemapUrls, type SitemapResult } from "./sitemap";
+import { aggregateCrawl } from "./aggregate";
 import { RateLimiter, fetchPage, isHtmlContentType } from "./fetch";
 import {
   detectIssues,
@@ -65,8 +67,16 @@ interface PendingPage {
   parsed: ParsedPage | null;
   issues: DetectedIssue[];
   contentHash: string | null;
+  /** Null when the crawl found no sitemap at all. */
+  inSitemap: boolean | null;
   /** Links to enqueue once the row is written. */
   discovered: { url: string; depth: number }[];
+  /**
+   * Distinct in-scope link targets on this page — the inlink credit it gives.
+   * DEDUPED PER SOURCE PAGE: a nav that links the homepage from every page
+   * should count once per page, not once per anchor.
+   */
+  linkTargets: string[];
 }
 
 export async function runCrawl({
@@ -87,6 +97,11 @@ export async function runCrawl({
   let issueCount = 0;
   let stoppedReason: string | null = null;
   let status: CrawlOutcome["status"] = "COMPLETED";
+  let sitemap: SitemapResult = { found: false, urls: [], filesFetched: 0, truncated: false };
+  let isInSitemap: ((url: string) => Promise<boolean>) | null = null;
+  /** URLs the sitemap put in the frontier — an orphan candidate is one of these. */
+  const sitemapSeeded = new Set<string>();
+  let summary: unknown = undefined;
 
   try {
     await prisma.crawlJob.update({
@@ -117,6 +132,52 @@ export async function runCrawl({
     await redis.expire(keys.seen, REDIS_KEY_TTL_SECONDS);
     await redis.expire(keys.queue, REDIS_KEY_TTL_SECONDS);
 
+    // ── Sitemap ─────────────────────────────────────────────────────────
+    // Fetched after robots.txt because robots is where the Sitemap: lines
+    // live. Failure is not fatal: a site with no sitemap crawls exactly as it
+    // did in Phase 1, and the summary records that none was found.
+    sitemap = await collectSitemapUrls({
+      rootUrl,
+      declared: robots.sitemaps,
+      limiter,
+    });
+
+    if (sitemap.urls.length > 0) {
+      // Stored as a SET so membership is one SISMEMBER per page rather than a
+      // list held in Node for the length of the crawl.
+      for (let i = 0; i < sitemap.urls.length; i += 1000) {
+        await redis.sadd(keys.sitemap, ...sitemap.urls.slice(i, i + 1000));
+      }
+      await redis.expire(keys.sitemap, REDIS_KEY_TTL_SECONDS);
+      isInSitemap = async (url: string) => (await redis.sismember(keys.sitemap, url)) === 1;
+
+      // Seed sitemap URLs at depth 0, AFTER the root, so BFS from the root
+      // still decides order — these only fill in what nothing links to.
+      // Capped so seeding alone can never exceed the plan's URL ceiling.
+      const seedRoom = Math.max(0, job.urlCap - 1);
+      const seeds: string[] = [];
+      for (const url of sitemap.urls) {
+        if (seeds.length >= seedRoom) break;
+        if (!isFetchableUrl(url)) continue;
+        if ((await redis.sadd(keys.seen, url)) === 1) {
+          seeds.push(JSON.stringify({ url, depth: 0 }));
+          sitemapSeeded.add(url);
+        }
+      }
+      if (seeds.length > 0) await redis.rpush(keys.queue, ...seeds);
+    }
+
+    logger.info(
+      {
+        jobId,
+        sitemapFound: sitemap.found,
+        sitemapUrls: sitemap.urls.length,
+        sitemapFiles: sitemap.filesFetched,
+        sitemapTruncated: sitemap.truncated,
+      },
+      "site-crawl sitemap ingested",
+    );
+
     for (;;) {
       if (await redis.exists(keys.cancel)) {
         status = "CANCELLED";
@@ -137,7 +198,7 @@ export async function runCrawl({
       const batch = await popBatch(redis, keys.queue, batchSize);
       if (batch.length === 0) break; // frontier exhausted — the clean ending
 
-      const results = await processBatch(batch, rootUrl, robots, limiter);
+      const results = await processBatch(batch, rootUrl, robots, limiter, isInSitemap);
       const written = await writeBatch(jobId, results, redis, keys.seen, job.urlCap, pagesCrawled);
 
       pagesCrawled += written.pages;
@@ -148,6 +209,31 @@ export async function runCrawl({
         where: { id: jobId },
         data: { pagesCrawled, issueCount },
       });
+    }
+    // ── Site-wide aggregation ───────────────────────────────────────────
+    // Runs for every crawl that produced pages, INCLUDING cap- and
+    // time-capped ones — a partial crawl's findings are still findings.
+    // Skipped for CANCELLED, where the page set is arbitrary.
+    //
+    // Wrapped separately from the crawl: the page rows are already good, so an
+    // aggregation failure must not turn a COMPLETED crawl into a FAILED one.
+    // The reason lands in summary.aggregationError instead.
+    if (status === "COMPLETED" && pagesCrawled > 0) {
+      try {
+        const result = await aggregateCrawl({
+          jobId,
+          redis,
+          sitemap,
+          sitemapSeeded,
+        });
+        summary = result.summary;
+        issueCount = result.issueCount;
+      } catch (err) {
+        logger.error({ jobId, err }, "site-crawl aggregation failed");
+        summary = {
+          aggregationError: truncate(err instanceof Error ? err.message : String(err), 300),
+        };
+      }
     }
   } catch (err) {
     status = "FAILED";
@@ -165,13 +251,16 @@ export async function runCrawl({
           issueCount,
           stoppedReason,
           finishedAt: new Date(),
+          ...(summary === undefined ? {} : { summary: summary as never }),
         },
       })
       .catch((err) => logger.error({ jobId, err }, "site-crawl: final status write failed"));
 
     // The frontier is worthless once the crawl ends; TTL is the backstop for
     // a process that dies before reaching this line.
-    await redis.del(keys.queue, keys.seen, keys.cancel).catch(() => {});
+    await redis
+      .del(keys.queue, keys.seen, keys.cancel, keys.inlinks, keys.sitemap)
+      .catch(() => {});
   }
 
   logger.info({ jobId, status, pagesCrawled, issueCount, stoppedReason }, "site-crawl finished");
@@ -209,6 +298,7 @@ async function processBatch(
   rootUrl: string,
   robots: RobotsRules,
   limiter: RateLimiter,
+  isInSitemap: ((url: string) => Promise<boolean>) | null,
 ): Promise<PendingPage[]> {
   const results: PendingPage[] = [];
   let cursor = 0;
@@ -218,7 +308,7 @@ async function processBatch(
       const index = cursor++;
       if (index >= batch.length) return;
       const item = batch[index]!;
-      results.push(await crawlOne(item, rootUrl, robots, limiter));
+      results.push(await crawlOne(item, rootUrl, robots, limiter, isInSitemap));
     }
   };
 
@@ -233,6 +323,8 @@ async function crawlOne(
   rootUrl: string,
   robots: RobotsRules,
   limiter: RateLimiter,
+  /** Null when the crawl found no sitemap; otherwise membership per URL. */
+  isInSitemap: ((url: string) => Promise<boolean>) | null,
 ): Promise<PendingPage> {
   const base: PendingPage = {
     url: item.url,
@@ -244,7 +336,9 @@ async function crawlOne(
     parsed: null,
     issues: [],
     contentHash: null,
+    inSitemap: null,
     discovered: [],
+    linkTargets: [],
   };
 
   // Disallowed URLs are RECORDED, never fetched. The row exists so the tenant
@@ -267,6 +361,8 @@ async function crawlOne(
   // Second line behind scope: never open a socket to a private address.
   if (!isFetchableUrl(item.url)) return base;
 
+  const inSitemap = isInSitemap ? await isInSitemap(item.url) : null;
+
   await limiter.acquire();
   const res = await fetchPage(item.url);
 
@@ -282,11 +378,16 @@ async function crawlOne(
     isHtml,
   });
 
-  const discovered = (parsed?.links ?? [])
-    .map((url) => normalizeCrawlUrl(url))
-    .filter((url): url is string => Boolean(url))
-    .filter((url) => isInScope(url, rootUrl) && isFetchableUrl(url))
-    .map((url) => ({ url, depth: item.depth + 1 }));
+  // parsePage already dedupes hrefs per page, so this set is the "one credit
+  // per source page" rule the inlink count needs.
+  const linkTargets = [
+    ...new Set(
+      (parsed?.links ?? [])
+        .map((url) => normalizeCrawlUrl(url))
+        .filter((url): url is string => Boolean(url))
+        .filter((url) => isInScope(url, rootUrl) && isFetchableUrl(url)),
+    ),
+  ];
 
   return {
     ...base,
@@ -297,7 +398,9 @@ async function crawlOne(
     parsed,
     issues,
     contentHash: parsed?.contentHash ?? null,
-    discovered,
+    inSitemap,
+    discovered: linkTargets.map((url) => ({ url, depth: item.depth + 1 })),
+    linkTargets,
   };
 }
 
@@ -358,6 +461,7 @@ async function writeBatch(
           internalLinks: result.parsed?.internalLinks ?? null,
           fetchMs: result.fetchMs,
           contentType: result.contentType,
+          inSitemap: result.inSitemap,
           issues: {
             create: issues.map((i) => ({
               type: i.type,
@@ -371,6 +475,18 @@ async function writeBatch(
       issuesWritten += issues.length;
     }
   });
+
+  // Credit inlinks in Redis rather than a link-edge table. One HINCRBY per
+  // distinct (source page, target) pair — an edge table would carry an order
+  // of magnitude more rows than the pages themselves.
+  const credits = results.flatMap((r) => r.linkTargets);
+  if (credits.length > 0) {
+    const pipeline = redis.pipeline();
+    const inlinksKey = seenKey.replace(/:seen$/, ":inlinks");
+    for (const target of credits) pipeline.hincrby(inlinksKey, target, 1);
+    pipeline.expire(inlinksKey, REDIS_KEY_TTL_SECONDS);
+    await pipeline.exec();
+  }
 
   // Enqueue after the write, and only up to the cap: a crawl that has already
   // reached its ceiling should not grow a frontier nobody will pop.

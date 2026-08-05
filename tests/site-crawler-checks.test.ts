@@ -80,10 +80,13 @@ describe("issue catalogue", () => {
         .sort();
 
     expect(bySeverity("ERROR")).toEqual(
-      ["HTTP_4XX", "HTTP_5XX", "TITLE_MISSING", "H1_MISSING", "NOINDEX"].sort(),
+      // REDIRECT_LOOP joined in Phase 2; it is written by aggregation, not by
+      // detectIssues, but it shares the same severity table.
+      ["HTTP_4XX", "HTTP_5XX", "TITLE_MISSING", "H1_MISSING", "NOINDEX", "REDIRECT_LOOP"].sort(),
     );
     expect(bySeverity("NOTICE")).toEqual(
-      ["BLOCKED_BY_ROBOTS", "CANONICAL_MISSING", "DUPLICATE_CONTENT"].sort(),
+      // NO_INLINKS joined in Phase 2, from aggregation.
+      ["BLOCKED_BY_ROBOTS", "CANONICAL_MISSING", "DUPLICATE_CONTENT", "NO_INLINKS"].sort(),
     );
   });
 });

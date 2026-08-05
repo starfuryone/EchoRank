@@ -39,6 +39,15 @@ export const ISSUE_TYPES = [
   "BLOCKED_BY_ROBOTS",
   "CANONICAL_MISSING",
   "DUPLICATE_CONTENT",
+  // ── Phase 2: site-wide findings ──────────────────────────────────────────
+  // These cannot be derived from one page in isolation. They are written by
+  // the aggregation step (aggregate.ts) once every page row exists, which is
+  // why nothing in detectIssues() emits them.
+  "DUPLICATE_TITLE",
+  "DUPLICATE_META_DESC",
+  "REDIRECT_LOOP",
+  "NO_INLINKS",
+  "ORPHAN_PAGE",
 ] as const;
 
 export type IssueType = (typeof ISSUE_TYPES)[number];
@@ -61,7 +70,37 @@ export const ISSUE_SEVERITY: Record<IssueType, Severity> = {
   BLOCKED_BY_ROBOTS: "NOTICE",
   CANONICAL_MISSING: "NOTICE",
   DUPLICATE_CONTENT: "NOTICE",
+  DUPLICATE_TITLE: "WARNING",
+  DUPLICATE_META_DESC: "WARNING",
+  REDIRECT_LOOP: "ERROR",
+  NO_INLINKS: "NOTICE",
+  ORPHAN_PAGE: "WARNING",
 };
+
+/**
+ * The findings the aggregation step DELETES AND REWRITES on every run.
+ *
+ * This is what makes aggregation idempotent: re-running it cannot double any
+ * of these. DUPLICATE_CONTENT is here because Phase 2 recomputes it from
+ * complete data — the crawl-time check could only ever see members written
+ * before the current page.
+ *
+ * REDIRECT_CHAIN IS DELIBERATELY ABSENT. The crawl writes it from the hop
+ * count of a single fetch (http -> https -> slash is one request, three hops,
+ * and extremely common); aggregation finds a different thing, a chain spanning
+ * several crawled pages. Deleting job-wide would throw the first kind away,
+ * because the intermediate hops of one fetch never become page rows. So
+ * aggregation ADDS a chain warning only to pages that do not already carry
+ * one, which is stable across re-runs without losing the per-fetch finding.
+ */
+export const AGGREGATED_ISSUE_TYPES = [
+  "DUPLICATE_TITLE",
+  "DUPLICATE_META_DESC",
+  "DUPLICATE_CONTENT",
+  "REDIRECT_LOOP",
+  "NO_INLINKS",
+  "ORPHAN_PAGE",
+] as const satisfies readonly IssueType[];
 
 export interface ParsedPage {
   title: string | null;

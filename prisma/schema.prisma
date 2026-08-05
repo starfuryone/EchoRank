@@ -1885,6 +1885,11 @@ model CrawlJob {
   pagesCrawled  Int         @default(0)
   issueCount    Int         @default(0)
   stoppedReason String?
+  /// Site-wide aggregation output: distributions, duplicate/redirect counts,
+  /// sitemap and inlink stats. COUNTS AND CAPPED SAMPLES ONLY — never full
+  /// lists, so the column stays well under 100 KB on a 25,000-URL crawl.
+  /// Written once, at the end of the crawl, before the status goes COMPLETED.
+  summary       Json?
   startedAt     DateTime?
   finishedAt    DateTime?
   createdAt     DateTime    @default(now())
@@ -1901,7 +1906,7 @@ model CrawlJob {
 /// content, which is what makes duplicate detection possible without keeping
 /// the text that would let anyone reconstruct the page.
 model CrawlPage {
-  id              String  @id @default(cuid())
+  id              String   @id @default(cuid())
   crawlJobId      String
   url             String
   statusCode      Int?
@@ -1921,6 +1926,14 @@ model CrawlPage {
   internalLinks   Int?
   fetchMs         Int?
   contentType     String?
+  /// Internal links pointing AT this page, counted per source page (a page
+  /// linking five times to the same URL counts once). Filled at aggregation
+  /// from a Redis hash — there is deliberately no link-edge table, because an
+  /// edge row per link would dwarf the page rows on any real site.
+  inlinkCount     Int?
+  /// Whether this URL appeared in the site's sitemap. Null when the crawl
+  /// found no sitemap at all, which is different from "absent from it".
+  inSitemap       Boolean?
 
   crawlJob CrawlJob     @relation(fields: [crawlJobId], references: [id], onDelete: Cascade)
   issues   CrawlIssue[]

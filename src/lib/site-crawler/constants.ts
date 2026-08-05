@@ -44,9 +44,33 @@ export const TITLE_MAX_LENGTH = 60;
 export const TITLE_MIN_LENGTH = 15;
 export const META_DESC_MAX_LENGTH = 160;
 
-/** Redis key names for one crawl's frontier state. */
+/** Sitemap files followed, including nested index files. */
+export const MAX_SITEMAP_FILES = 10;
+
+/** URLs taken from the sitemap across all files, before we stop reading. */
+export const MAX_SITEMAP_URLS = 50_000;
+
+/** Per sitemap file. Same shape as a page fetch, tighter body cap. */
+export const SITEMAP_TIMEOUT_MS = 15_000;
+export const MAX_SITEMAP_BYTES = 5 * 1024 * 1024;
+
+/** Hops walked before a redirect chain is called a loop. */
+export const MAX_CHAIN_WALK = 10;
+
+/** Rows read per batch by the aggregation queries. Never the whole table. */
+export const AGGREGATION_BATCH_SIZE = 1_000;
+
+/** Sample sizes in the summary JSON. Counts are exact; lists are capped. */
+export const SUMMARY_SAMPLE_LIMIT = 500;
+export const SUMMARY_DEEPEST_LIMIT = 10;
+
+/** Redis key names for one crawl's transient state. */
 export const crawlKeys = (jobId: string) => ({
   queue: `crawl:${jobId}:queue`,
   seen: `crawl:${jobId}:seen`,
   cancel: `crawl:${jobId}:cancel`,
+  /** HASH normalizedUrl -> inlink count. Flushed into CrawlPage at the end. */
+  inlinks: `crawl:${jobId}:inlinks`,
+  /** SET of normalized in-scope sitemap URLs. */
+  sitemap: `crawl:${jobId}:sitemap`,
 });

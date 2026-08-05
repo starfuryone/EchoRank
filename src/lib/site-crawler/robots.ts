@@ -26,6 +26,14 @@ export interface RobotsRules {
   isAllowed(url: string): boolean;
   /** Seconds between requests requested by the site, already clamped. */
   crawlDelaySeconds: number;
+  /**
+   * Absolute URLs from `Sitemap:` lines, in file order.
+   *
+   * Phase 2 reads these to seed the crawl and to detect orphans. Empty when
+   * robots.txt was absent, unreadable, or simply listed none — the sitemap
+   * fetcher falls back to {origin}/sitemap.xml in that case.
+   */
+  sitemaps: string[];
 }
 
 /**
@@ -43,12 +51,12 @@ export function clampCrawlDelay(raw: unknown): number {
 
 /** Rules that permit everything — used when robots.txt is absent (404/410). */
 export function allowAllRules(): RobotsRules {
-  return { allowAll: true, isAllowed: () => true, crawlDelaySeconds: 0 };
+  return { allowAll: true, isAllowed: () => true, crawlDelaySeconds: 0, sitemaps: [] };
 }
 
 /** Rules that permit nothing — used when robots.txt could not be read. */
 export function denyAllRules(): RobotsRules {
-  return { allowAll: false, isAllowed: () => false, crawlDelaySeconds: 0 };
+  return { allowAll: false, isAllowed: () => false, crawlDelaySeconds: 0, sitemaps: [] };
 }
 
 /** Wrap a parsed robots.txt body in the interface the crawler consumes. */
@@ -58,8 +66,13 @@ export function rulesFromBody(body: string, robotsUrl: string): RobotsRules {
   // falls back to `*` itself, which is exactly the precedence we want.
   const delay = clampCrawlDelay(parsed.getCrawlDelay(CRAWLER_USER_AGENT));
 
+  // getSitemaps() returns whatever the file declared, absolute per the spec.
+  // Filtered to http(s) here so a junk line cannot reach the fetcher.
+  const sitemaps = (parsed.getSitemaps() ?? []).filter((s) => /^https?:\/\//i.test(s.trim()));
+
   return {
     allowAll: false,
+    sitemaps,
     isAllowed(url: string): boolean {
       // isAllowed returns undefined for a URL on a different host than the
       // robots.txt. Scope already prevents that; treat it as allowed rather

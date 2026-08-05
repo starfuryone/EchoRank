@@ -22,13 +22,38 @@ import { Select } from "@/components/ui/select";
 import { formatDateTime } from "@/lib/utils";
 import { ISSUE_TYPES, type Severity } from "@/lib/site-crawler/checks";
 import {
+  EMPTY_PAGE_FILTERS,
   isInFlight,
   type CrawlDto,
   type CrawlIssuePage,
   type CrawlListResponse,
+  type CrawlPagesPage,
   type CrawlQuotaDto,
+  type CrawlSummaryDto,
+  type DuplicateKind,
+  type DuplicatePage,
+  type PageFilters,
+  type RedirectPage,
 } from "@/lib/site-crawler/types";
+import {
+  DuplicatesPanel,
+  OverviewPanel,
+  PagesPanel,
+  RedirectsPanel,
+} from "@/components/seo-tools/site-crawler-panels";
 import { SITE_CRAWLER_COPY, type DashLocale, type SiteCrawlerCopy } from "@/lib/i18n/dashboard";
+
+type TabId = "overview" | "issues" | "duplicates" | "redirects" | "pages";
+
+const TABS: TabId[] = ["overview", "issues", "duplicates", "redirects", "pages"];
+
+function tabLabel(id: TabId, t: SiteCrawlerCopy): string {
+  if (id === "overview") return t.tabOverview;
+  if (id === "issues") return t.tabIssues;
+  if (id === "duplicates") return t.tabDuplicates;
+  if (id === "redirects") return t.tabRedirects;
+  return t.tabPages;
+}
 
 /** Poll cadence while a crawl is in flight, per spec. */
 const POLL_MS = 3_000;
@@ -88,6 +113,21 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
   const [severity, setSeverity] = useState("");
   const [type, setType] = useState("");
   const [page, setPage] = useState(1);
+
+  // ── Phase 2 tabs ────────────────────────────────────────────────────────
+  // Each panel's data is fetched when its tab is first opened, not up front:
+  // a crawl of 25,000 pages has four more endpoints behind it and nobody
+  // opens all of them.
+  const [tab, setTab] = useState<TabId>("overview");
+  const [summary, setSummary] = useState<CrawlSummaryDto | null>(null);
+  const [duplicates, setDuplicates] = useState<DuplicatePage | null>(null);
+  const [dupKind, setDupKind] = useState<DuplicateKind>("title");
+  const [dupPage, setDupPage] = useState(1);
+  const [redirects, setRedirects] = useState<RedirectPage | null>(null);
+  const [redirectPage, setRedirectPage] = useState(1);
+  const [pageRows, setPageRows] = useState<CrawlPagesPage | null>(null);
+  const [pageFilters, setPageFilters] = useState<PageFilters>(EMPTY_PAGE_FILTERS);
+  const [pagesPage, setPagesPage] = useState(1);
 
   /** Fetches; never sets state itself, so effects can decide when to apply. */
   const loadList = useCallback(async (): Promise<CrawlListResponse | null> => {
@@ -165,6 +205,47 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
       cancelled = true;
     };
   }, [active, page, severity, type, loadIssues]);
+
+  /** Fetch whichever tab is open. A 404 summary is a real answer, not an error. */
+  const loadTab = useCallback(
+    async (crawlId: string, which: TabId): Promise<unknown | null> => {
+      const url =
+        which === "overview"
+          ? `/api/seo/v1/crawl/${crawlId}/summary`
+          : which === "duplicates"
+            ? `/api/seo/v1/crawl/${crawlId}/duplicates?type=${dupKind}&page=${dupPage}`
+            : which === "redirects"
+              ? `/api/seo/v1/crawl/${crawlId}/redirects?page=${redirectPage}`
+              : (() => {
+                  const params = new URLSearchParams({ page: String(pagesPage), pageSize: "50" });
+                  if (pageFilters.inSitemap) params.set("inSitemap", pageFilters.inSitemap);
+                  if (pageFilters.depth) params.set("depth", pageFilters.depth);
+                  if (pageFilters.minInlinks) params.set("minInlinks", pageFilters.minInlinks);
+                  return `/api/seo/v1/crawl/${crawlId}/pages?${params}`;
+                })();
+
+      const res = await fetch(url);
+      if (!res.ok) return null;
+      return res.json();
+    },
+    [dupKind, dupPage, redirectPage, pagesPage, pageFilters],
+  );
+
+  useEffect(() => {
+    if (!active || isInFlight(active.status) || tab === "issues") return;
+    let cancelled = false;
+    void (async () => {
+      const data = await loadTab(active.id, tab);
+      if (cancelled) return;
+      if (tab === "overview") setSummary((data as CrawlSummaryDto | null) ?? null);
+      if (tab === "duplicates") setDuplicates((data as DuplicatePage | null) ?? null);
+      if (tab === "redirects") setRedirects((data as RedirectPage | null) ?? null);
+      if (tab === "pages") setPageRows((data as CrawlPagesPage | null) ?? null);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [active, tab, loadTab]);
 
   async function start(event: React.FormEvent) {
     event.preventDefault();
@@ -326,6 +407,78 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
       )}
 
       {active && !running && (
+        <div className="flex flex-wrap gap-2 border-b border-gray-200 pb-2">
+          {TABS.map((id) => (
+            <button
+              key={id}
+              type="button"
+              onClick={() => setTab(id)}
+              aria-current={tab === id ? "page" : undefined}
+              className={
+                tab === id
+                  ? "rounded-lg bg-gray-900 px-3 py-1.5 text-sm font-medium text-white"
+                  : "rounded-lg px-3 py-1.5 text-sm font-medium text-gray-500 hover:bg-gray-100"
+              }
+            >
+              {tabLabel(id, t)}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {active && !running && tab === "overview" && (
+        <OverviewPanel summary={summary} t={t} int={int} />
+      )}
+
+      {active && !running && tab === "duplicates" && (
+        <DuplicatesPanel
+          data={duplicates}
+          kind={dupKind}
+          onKind={(k) => {
+            setDupKind(k);
+            setDupPage(1);
+            setDuplicates(null);
+          }}
+          onPage={(p) => {
+            setDupPage(p);
+            setDuplicates(null);
+          }}
+          t={t}
+          int={int}
+        />
+      )}
+
+      {active && !running && tab === "redirects" && (
+        <RedirectsPanel
+          data={redirects}
+          onPage={(p) => {
+            setRedirectPage(p);
+            setRedirects(null);
+          }}
+          t={t}
+          int={int}
+        />
+      )}
+
+      {active && !running && tab === "pages" && (
+        <PagesPanel
+          data={pageRows}
+          filters={pageFilters}
+          onFilters={(f) => {
+            setPageFilters(f);
+            setPagesPage(1);
+            setPageRows(null);
+          }}
+          onPage={(p) => {
+            setPagesPage(p);
+            setPageRows(null);
+          }}
+          t={t}
+          int={int}
+        />
+      )}
+
+      {active && !running && tab === "issues" && (
         <Card>
           <CardHeader>
             <div className="flex flex-wrap items-center justify-between gap-3">
@@ -453,6 +606,15 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
                     onClick={() => {
                       setActive(crawl);
                       setPage(1);
+                      setTab("overview");
+                      setSummary(null);
+                      setDuplicates(null);
+                      setRedirects(null);
+                      setPageRows(null);
+                      setDupPage(1);
+                      setRedirectPage(1);
+                      setPagesPage(1);
+                      setPageFilters(EMPTY_PAGE_FILTERS);
                     }}
                     className="flex w-full flex-wrap items-center justify-between gap-3 py-3 text-left hover:bg-gray-50"
                   >

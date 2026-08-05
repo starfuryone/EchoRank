@@ -39,6 +39,26 @@ vi.mock("@/lib/site-crawler/robots", async (importOriginal) => ({
   fetchRobots: (...a: unknown[]) => fetchRobots(...a),
 }));
 
+// Phase 2 collaborators. Both have their own suites; here they are stubbed so
+// this file stays about the crawl's control flow.
+const collectSitemapUrls = vi.fn(async () => ({
+  found: false,
+  urls: [] as string[],
+  filesFetched: 0,
+  truncated: false,
+}));
+vi.mock("@/lib/site-crawler/sitemap", () => ({
+  collectSitemapUrls: (...a: unknown[]) => collectSitemapUrls(...(a as [])),
+}));
+
+const aggregateCrawl = vi.fn(async () => ({
+  summary: { aggregationMs: 1 },
+  issueCount: 0,
+}));
+vi.mock("@/lib/site-crawler/aggregate", () => ({
+  aggregateCrawl: (...a: unknown[]) => aggregateCrawl(...(a as [])),
+}));
+
 const { runCrawl } = await import("@/lib/site-crawler/runner");
 
 // ─── Fake Redis ─────────────────────────────────────────────────────────────
@@ -73,6 +93,23 @@ function fakeRedis(opts: { cancelled?: boolean } = {}) {
     },
     async exists(key: string) {
       return flags.has(key) ? 1 : 0;
+    },
+    async sismember(key: string, member: string) {
+      return sets.get(key)?.has(member) ? 1 : 0;
+    },
+    /** Enough of a pipeline for the inlink HINCRBY batch. */
+    pipeline() {
+      return {
+        hincrby() {
+          return this;
+        },
+        expire() {
+          return this;
+        },
+        async exec() {
+          return [];
+        },
+      };
     },
     async expire() {
       return 1;
@@ -127,6 +164,13 @@ beforeEach(() => {
     crawlDelaySeconds: 0,
   });
   fetchPage.mockImplementation(async (url: string) => htmlResponse(url));
+  collectSitemapUrls.mockResolvedValue({
+    found: false,
+    urls: [],
+    filesFetched: 0,
+    truncated: false,
+  });
+  aggregateCrawl.mockResolvedValue({ summary: { aggregationMs: 1 }, issueCount: 0 });
 });
 
 describe("clean completion", () => {

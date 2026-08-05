@@ -30,7 +30,10 @@ const crawlJob = {
 };
 const crawlPage = { findMany: vi.fn(), count: vi.fn() };
 const crawlIssue = { findMany: vi.fn(), count: vi.fn(), groupBy: vi.fn() };
-vi.mock("@/lib/prisma", () => ({ prisma: { crawlJob, crawlPage, crawlIssue } }));
+const queryRaw = vi.fn();
+vi.mock("@/lib/prisma", () => ({
+  prisma: { crawlJob, crawlPage, crawlIssue, $queryRaw: (...a: unknown[]) => queryRaw(...a) },
+}));
 
 vi.mock("@/lib/rate-limit", () => ({
   rateLimit: vi.fn(async () => ({ success: true, remaining: 2 })),
@@ -54,6 +57,9 @@ const { GET: getIssues } = await import("@/app/api/seo/v1/crawl/[id]/issues/rout
 const { GET: getPages } = await import("@/app/api/seo/v1/crawl/[id]/pages/route");
 const { POST: cancel } = await import("@/app/api/seo/v1/crawl/[id]/cancel/route");
 const { GET: exportCsv } = await import("@/app/api/seo/v1/crawl/[id]/export/route");
+const { GET: getSummary } = await import("@/app/api/seo/v1/crawl/[id]/summary/route");
+const { GET: getDuplicates } = await import("@/app/api/seo/v1/crawl/[id]/duplicates/route");
+const { GET: getRedirects } = await import("@/app/api/seo/v1/crawl/[id]/redirects/route");
 
 const TENANT = "tenant_a";
 const params = (id: string) => ({ params: Promise.resolve({ id }) });
@@ -98,6 +104,7 @@ beforeEach(() => {
   crawlIssue.findMany.mockResolvedValue([]);
   crawlPage.count.mockResolvedValue(0);
   crawlPage.findMany.mockResolvedValue([]);
+  queryRaw.mockResolvedValue([]);
 });
 
 // ─── Auth ───────────────────────────────────────────────────────────────────
@@ -116,6 +123,18 @@ describe("authentication", () => {
     [
       "GET /crawl/[id]/export",
       () => exportCsv(new Request("https://app.test/x"), params("crawl_1")),
+    ],
+    [
+      "GET /crawl/[id]/summary",
+      () => getSummary(new Request("https://app.test/x"), params("crawl_1")),
+    ],
+    [
+      "GET /crawl/[id]/duplicates",
+      () => getDuplicates(new Request("https://app.test/x"), params("crawl_1")),
+    ],
+    [
+      "GET /crawl/[id]/redirects",
+      () => getRedirects(new Request("https://app.test/x"), params("crawl_1")),
     ],
   ];
 
@@ -148,6 +167,18 @@ describe("tenant isolation", () => {
     [
       "GET /crawl/[id]/export",
       () => exportCsv(new Request("https://app.test/x"), params("other_tenant")),
+    ],
+    [
+      "GET /crawl/[id]/summary",
+      () => getSummary(new Request("https://app.test/x"), params("other_tenant")),
+    ],
+    [
+      "GET /crawl/[id]/duplicates",
+      () => getDuplicates(new Request("https://app.test/x"), params("other_tenant")),
+    ],
+    [
+      "GET /crawl/[id]/redirects",
+      () => getRedirects(new Request("https://app.test/x"), params("other_tenant")),
     ],
   ];
 
@@ -384,5 +415,143 @@ describe("POST /crawl/[id]/cancel", () => {
     const res = await cancel(new Request("https://app.test/x"), params("crawl_1"));
     expect(res.status).toBe(200);
     expect(redisSet).not.toHaveBeenCalled();
+  });
+});
+
+// ─── Phase 2 endpoints ──────────────────────────────────────────────────────
+
+describe("GET /crawl/[id]/summary", () => {
+  it("returns the stored summary for a completed crawl", async () => {
+    authed();
+    crawlJob.findFirst.mockResolvedValue({
+      id: "crawl_1",
+      status: "COMPLETED",
+      summary: { statusCodes: { "200": 5 }, aggregationMs: 12 },
+    });
+
+    const res = await getSummary(new Request("https://app.test/x"), params("crawl_1"));
+    expect(res.status).toBe(200);
+    expect((await res.json()).statusCodes["200"]).toBe(5);
+  });
+
+  it("404s while the crawl is still running", async () => {
+    // A half-built summary would make the Overview flicker between wrong numbers.
+    authed();
+    crawlJob.findFirst.mockResolvedValue({ id: "crawl_1", status: "RUNNING", summary: null });
+    const res = await getSummary(new Request("https://app.test/x"), params("crawl_1"));
+    expect(res.status).toBe(404);
+  });
+
+  it("404s when aggregation never wrote one", async () => {
+    authed();
+    crawlJob.findFirst.mockResolvedValue({ id: "crawl_1", status: "COMPLETED", summary: null });
+    const res = await getSummary(new Request("https://app.test/x"), params("crawl_1"));
+    expect(res.status).toBe(404);
+  });
+});
+
+describe("GET /crawl/[id]/duplicates", () => {
+  beforeEach(() => {
+    authed();
+    crawlJob.findFirst.mockResolvedValue({ id: "crawl_1" });
+  });
+
+  it("rejects an unknown duplicate type", async () => {
+    const res = await getDuplicates(
+      new Request("https://app.test/x?type=colour"),
+      params("crawl_1"),
+    );
+    expect(res.status).toBe(400);
+  });
+
+  it("accepts each supported type", async () => {
+    for (const kind of ["title", "meta", "content"]) {
+      const res = await getDuplicates(
+        new Request(`https://app.test/x?type=${kind}`),
+        params("crawl_1"),
+      );
+      expect(res.status, kind).toBe(200);
+    }
+  });
+
+  it("hides the content hash — the URLs are what a reader needs", async () => {
+    queryRaw.mockResolvedValue([
+      { value: "abc123hash", members: 3, urls: ["https://e.com/a", "https://e.com/b"] },
+    ]);
+    const res = await getDuplicates(
+      new Request("https://app.test/x?type=content"),
+      params("crawl_1"),
+    );
+    const body = await res.json();
+    expect(body.groups[0].value).toBeNull();
+    expect(body.groups[0].urls).toHaveLength(2);
+    // 3 members but 2 URLs returned: the list is a capped sample.
+    expect(body.groups[0].truncated).toBe(true);
+  });
+});
+
+describe("GET /crawl/[id]/redirects", () => {
+  it("parses the hop list out of the stored detail", async () => {
+    authed();
+    crawlJob.findFirst.mockResolvedValue({ id: "crawl_1" });
+    crawlIssue.count.mockResolvedValue(1);
+    crawlIssue.findMany.mockResolvedValue([
+      {
+        id: "i1",
+        type: "REDIRECT_CHAIN",
+        severity: "WARNING",
+        detail: "2 hops: https://e.com/a → https://e.com/b → https://e.com/c",
+        crawlPage: { url: "https://e.com/a", statusCode: 301, redirectTarget: "https://e.com/b" },
+      },
+    ]);
+
+    const res = await getRedirects(new Request("https://app.test/x"), params("crawl_1"));
+    const body = await res.json();
+    expect(body.redirects[0].hops).toEqual([
+      "https://e.com/a",
+      "https://e.com/b",
+      "https://e.com/c",
+    ]);
+  });
+});
+
+describe("GET /crawl/[id]/pages — Phase 2 filters", () => {
+  beforeEach(() => {
+    authed();
+    crawlJob.findFirst.mockResolvedValue({ id: "crawl_1" });
+  });
+
+  it("filters on inSitemap", async () => {
+    await getPages(new Request("https://app.test/x?inSitemap=true"), params("crawl_1"));
+    expect(crawlPage.findMany.mock.calls[0]![0]!.where).toMatchObject({ inSitemap: true });
+  });
+
+  it("filters on depth and an inlink range", async () => {
+    await getPages(
+      new Request("https://app.test/x?depth=2&minInlinks=1&maxInlinks=5"),
+      params("crawl_1"),
+    );
+    expect(crawlPage.findMany.mock.calls[0]![0]!.where).toMatchObject({
+      depth: 2,
+      inlinkCount: { gte: 1, lte: 5 },
+    });
+  });
+
+  it("rejects a non-boolean inSitemap rather than ignoring it", async () => {
+    // Silently dropping the filter would look like it matched everything.
+    const res = await getPages(new Request("https://app.test/x?inSitemap=maybe"), params("crawl_1"));
+    expect(res.status).toBe(400);
+  });
+
+  it("rejects a negative or fractional numeric filter", async () => {
+    for (const q of ["depth=-1", "minInlinks=1.5", "depth=abc"]) {
+      const res = await getPages(new Request(`https://app.test/x?${q}`), params("crawl_1"));
+      expect(res.status, q).toBe(400);
+    }
+  });
+
+  it("applies no filters when none are given", async () => {
+    await getPages(new Request("https://app.test/x"), params("crawl_1"));
+    expect(crawlPage.findMany.mock.calls[0]![0]!.where).toEqual({ crawlJobId: "crawl_1" });
   });
 });
