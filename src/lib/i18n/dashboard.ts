@@ -37,6 +37,7 @@ export const dashNav: Record<DashLocale, Record<string, string>> = {
     "/settings": "Settings",
     "/settings/account": "Account",
     "/billing": "Billing",
+    "/help": "Help",
     // SEO Tools hub surfaces (sidebar label + header titles)
     "/visibility/keywords": "Keywords Explorer",
     "/visibility/tools": "SEO Tools",
@@ -81,6 +82,7 @@ export const dashNav: Record<DashLocale, Record<string, string>> = {
     "/settings": "Einstellungen",
     "/settings/account": "Konto",
     "/billing": "Abrechnung",
+    "/help": "Hilfe",
     "/visibility/keywords": "Keywords Explorer",
     "/visibility/tools": "SEO-Tools",
     "/visibility/tools/site-explorer": "Site Explorer",
@@ -124,6 +126,7 @@ export const dashNav: Record<DashLocale, Record<string, string>> = {
     "/settings": "Paramètres",
     "/settings/account": "Compte",
     "/billing": "Facturation",
+    "/help": "Aide",
     "/visibility/keywords": "Explorateur de mots-clés",
     "/visibility/tools": "Outils SEO",
     "/visibility/tools/site-explorer": "Explorateur de sites",

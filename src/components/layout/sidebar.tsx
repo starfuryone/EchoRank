@@ -12,6 +12,7 @@ import {
   ScanEye,
   Wrench,
   UserCircle,
+  HelpCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { dashNav, type DashLocale } from "@/lib/i18n/dashboard";
@@ -41,6 +42,10 @@ const navItems = [
   { href: "/settings", icon: Settings },
   { href: "/settings/account", icon: UserCircle },
   { href: "/billing", icon: CreditCard },
+  // Last row, below the administration block. Help is never plan-gated, so
+  // unlike every row above it this one survives the canAccessPath filter on
+  // every tier — /help is on the AI_VISIBILITY allowlist for that reason.
+  { href: "/help", icon: HelpCircle },
 ] as const;
 
 interface SidebarProps {

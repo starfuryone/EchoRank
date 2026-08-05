@@ -235,6 +235,11 @@ test("the sidebar order is the agreed one", () => {
     "/settings",
     "/settings/account",
     "/billing",
+    // Help is the tenth row, added deliberately after the nine-row
+    // consolidation. It is not a reputation surface and does not reopen the
+    // "one row per feature" pattern this suite guards against: it is a single
+    // link to the knowledge-base hub, ungated on every tier.
+    "/help",
   ]);
 });
 
