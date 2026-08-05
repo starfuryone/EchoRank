@@ -4,7 +4,7 @@
 import type { LearnBlock, LearnFaqEntry } from "@/lib/learn-content";
 import { headingId } from "@/lib/learn-content";
 import { inline } from "./inline";
-import type { ReactNode } from "react";
+import { Fragment, type ReactNode } from "react";
 import b from "./learn.module.css";
 
 export interface BlocksProps {
@@ -14,15 +14,36 @@ export interface BlocksProps {
   video?: ReactNode;
   /** Rendered where the prose carries a {k:"faq"} marker. */
   faq?: readonly LearnFaqEntry[];
+  /**
+   * Rendered once, immediately after the intro — the run of prose before the
+   * article's first section heading.
+   *
+   * Anchored to STRUCTURE, not to the text of any sentence: an article's intro
+   * is "everything before the first heading", which stays true when the copy is
+   * edited. Matching on a closing sentence would make the video's position a
+   * hostage to a comma.
+   */
+  afterIntro?: ReactNode;
 }
 
-export function Blocks({ body, locale, video, faq }: BlocksProps) {
-  return (
-    <>
-      {body.map((block, i) => {
-        const key = `b${i}`;
+/**
+ * Index of the first section heading — the end of the intro.
+ *
+ * An article with no headings has no such boundary, and the whole body is
+ * intro; `afterIntro` then renders last rather than vanishing.
+ */
+function introEndIndex(body: readonly LearnBlock[]): number {
+  const i = body.findIndex((b) => b.k === "h2" || b.k === "h3");
+  return i === -1 ? body.length : i;
+}
 
-        switch (block.k) {
+export function Blocks({ body, locale, video, faq, afterIntro }: BlocksProps) {
+  const introEnd = afterIntro ? introEndIndex(body) : -1;
+
+  const renderBlock = (block: LearnBlock, i: number): ReactNode => {
+    const key = `b${i}`;
+
+    switch (block.k) {
           case "h2":
             // id from the heading text, matching tableOfContents() — the TOC
             // links and these anchors are the same pure function, so they
@@ -132,8 +153,28 @@ export function Blocks({ body, locale, video, faq }: BlocksProps) {
                 ))}
               </dl>
             ) : null;
-        }
+    }
+  };
+
+  return (
+    <>
+      {body.map((block, i) => {
+        const node = renderBlock(block, i);
+        // The intro slot sits BEFORE the block that ends the intro — i.e.
+        // before the first heading — so it lands after the last intro
+        // paragraph without depending on what that paragraph says.
+        return i === introEnd ? (
+          <Fragment key={`intro-${i}`}>
+            {afterIntro}
+            {node}
+          </Fragment>
+        ) : (
+          node
+        );
       })}
+      {/* An article with no headings: the intro is the whole body, so the slot
+          renders after it rather than being dropped. */}
+      {introEnd === body.length ? afterIntro : null}
     </>
   );
 }

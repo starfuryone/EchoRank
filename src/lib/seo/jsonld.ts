@@ -95,6 +95,28 @@ export function faqPage(questions: readonly FaqEntry[], pageUrl: string): JsonLd
   };
 }
 
+/**
+ * Whole seconds as an ISO 8601 duration: 248 -> "PT4M8S".
+ *
+ * Zero-valued components are omitted rather than padded, because "PT0H4M8S" is
+ * legal but reads as though an hours figure were measured. A duration of zero
+ * is "PT0S" and not the empty "PT", which is invalid.
+ */
+export function isoDuration(totalSeconds: number): string {
+  const s = Math.max(0, Math.floor(totalSeconds));
+  const hours = Math.floor(s / 3600);
+  const minutes = Math.floor((s % 3600) / 60);
+  const seconds = s % 60;
+
+  const parts = [
+    hours ? `${hours}H` : "",
+    minutes ? `${minutes}M` : "",
+    seconds ? `${seconds}S` : "",
+  ].join("");
+
+  return parts ? `PT${parts}` : "PT0S";
+}
+
 export interface VideoObjectInput {
   name: string;
   description: string;
@@ -107,6 +129,11 @@ export interface VideoObjectInput {
   /** Page the video is embedded on; used for a stable @id. */
   pageUrl: string;
   inLanguage?: string;
+  /**
+   * Whole seconds, MEASURED from the file. Omitted when unknown: a guessed
+   * runtime is exactly the kind of fabricated field this module refuses.
+   */
+  durationSeconds?: number;
 }
 
 /** VideoObject with only verifiable fields — no duration, views or ratings,
@@ -120,6 +147,7 @@ export function videoObject(input: VideoObjectInput): JsonLdNode {
     thumbnailUrl: abs(input.thumbnailUrl),
     contentUrl: abs(input.contentUrl),
     uploadDate: input.uploadDate,
+    ...(input.durationSeconds ? { duration: isoDuration(input.durationSeconds) } : {}),
     ...(input.inLanguage ? { inLanguage: input.inLanguage } : {}),
     publisher: { "@id": ORGANIZATION_ID },
   };

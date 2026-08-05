@@ -40,16 +40,57 @@ export interface LearnFaqEntry {
   a: string;
 }
 
-export interface LearnVideo {
-  /** Absolute: this mp4 is served by Caddy from /opt/echorank/extension-dist,
-   *  outside the app repo. No build ships it and it must not be copied into
-   *  public/videos/. */
+/**
+ * Fields every video carries, whatever its placement.
+ *
+ * `uploadDate` is the mp4's own date and feeds VideoObject.uploadDate. Like
+ * everything else in structured data here it is never invented — see the rule
+ * at the top of src/lib/seo/jsonld.ts.
+ */
+interface LearnVideoBase {
   src: string;
   poster: string;
   title: string;
-  /** The mp4's mtime. Feeds VideoObject.uploadDate — never invented. */
   uploadDate: string;
 }
+
+/**
+ * A video the PROSE places, at its own `{k:"video"}` marker.
+ *
+ * Currently only the extension install walkthrough, which is why the src is
+ * absolute: that mp4 is served by Caddy from /opt/echorank/extension-dist,
+ * outside this repo. No build ships it and it must not be copied into
+ * public/videos/.
+ */
+export interface InlineVideo extends LearnVideoBase {
+  placement: "inline";
+}
+
+/**
+ * A CHAPTER'S OWN video — the chapter presented in video form.
+ *
+ * Rendered once, in a fixed structural position (after the intro prose, before
+ * the first section heading), with the browser's native controls. It is not
+ * placed by the prose and carries no `{k:"video"}` marker.
+ *
+ * `description` and `durationSeconds` are required here and absent on
+ * InlineVideo because a chapter video is the page's primary media and gets a
+ * full VideoObject; both fields must be real, measured values.
+ */
+export interface ChapterVideo extends LearnVideoBase {
+  placement: "chapter";
+  description: string;
+  /** Whole seconds, floored from the file's actual duration. */
+  durationSeconds: number;
+}
+
+/**
+ * The two are one field and two behaviours, discriminated explicitly rather
+ * than inferred from whether the body happens to carry a marker. Guessing the
+ * player from the prose would make the rendering of a config entry depend on
+ * something a copy edit could silently change.
+ */
+export type LearnVideo = InlineVideo | ChapterVideo;
 
 export interface LearnLink {
   href: string;
@@ -116,6 +157,21 @@ export const LEARN_CHAPTERS: LearnChapter[] = [
     title: "What is online reputation management?",
     description: "Why reviews, ratings, and owner responses decide who gets found — in Google, in local search, and now in AI answers.",
     readingTime: 5,
+    // Bundled under public/videos/ like the other marketing videos — NOT the
+    // Caddy-served extension mp4, so this src is site-relative. Title and
+    // description are the chapter's own H1 and summary, read from above rather
+    // than restated, so the VideoObject can never describe a different page
+    // than the one it sits on.
+    video: {
+      placement: "chapter",
+      src: "/videos/echorank-what-is-reputation-management.mp4",
+      poster: "/videos/echorank-what-is-reputation-management-poster.jpg",
+      title: "What is online reputation management?",
+      description: "Why reviews, ratings, and owner responses decide who gets found — in Google, in local search, and now in AI answers.",
+      uploadDate: "2026-08-04",
+      // Floored from the file's real 248.49s. Serialized as PT4M8S.
+      durationSeconds: 248,
+    },
     cta: "audit",
     related: [
       {
@@ -297,6 +353,7 @@ export const LEARN_CHAPTERS: LearnChapter[] = [
     description: "Four routes to get every existing review into one place: browser extension, CSV, Google Business Profile connection, and Takeout.",
     readingTime: 7,
     video: {
+      placement: "inline",
       src: "https://echorank360.com/extension/echorank-extension-install.mp4",
       poster: "https://echorank360.com/extension/install-video-poster.jpg",
       title: "See the install, start to finish (2 min)",
@@ -1572,6 +1629,7 @@ export const LEARN_GUIDES: LearnGuide[] = [
     tag: "Extension",
     blurb: "Five steps in any Chromium browser, token setup, updates — with the 2-minute video.",
     video: {
+      placement: "inline",
       src: "https://echorank360.com/extension/echorank-extension-install.mp4",
       poster: "https://echorank360.com/extension/install-video-poster.jpg",
       title: "Watch the whole install in two minutes",
@@ -1825,6 +1883,24 @@ export function chapterBySlug(slug: string): LearnChapter | undefined {
 
 export function guideBySlug(slug: string): LearnGuide | undefined {
   return LEARN_GUIDES.find((g) => g.slug === slug);
+}
+
+/**
+ * The article's own chapter video, if it has one.
+ *
+ * Narrows the union in ONE place so no page or test branches on `placement`
+ * itself. An article whose video is prose-placed returns undefined here — it is
+ * rendered by its marker instead.
+ */
+export function chapterVideoOf(article: {
+  video?: LearnVideo;
+}): ChapterVideo | undefined {
+  return article.video?.placement === "chapter" ? article.video : undefined;
+}
+
+/** The article's prose-placed video, if it has one. Counterpart of the above. */
+export function inlineVideoOf(article: { video?: LearnVideo }): InlineVideo | undefined {
+  return article.video?.placement === "inline" ? article.video : undefined;
 }
 
 /** Previous/next in course order. Undefined at the ends — no wrap-around. */

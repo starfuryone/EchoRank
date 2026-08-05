@@ -13,8 +13,6 @@ import { notFound } from "next/navigation";
 import { SUPPORTED_LOCALES, isSupportedLocale } from "@/lib/i18n/config";
 import { buildMetadata } from "@/lib/seo";
 import { JsonLd } from "@/lib/seo/JsonLd";
-import { article, breadcrumbList, organization, videoObject, webSite } from "@/lib/seo/jsonld";
-import { SITE_URL } from "@/lib/seo/constants";
 import {
   LEARN_BASE,
   LEARN_CHAPTERS,
@@ -22,6 +20,7 @@ import {
   chapterNeighbours,
 } from "@/lib/learn-content";
 import { ArticleShell, baseOf } from "../_shared/ArticleShell";
+import { chapterGraph } from "../_shared/graph";
 
 /** Every locale × every chapter — both segments are dynamic on this route. */
 export function generateStaticParams() {
@@ -74,37 +73,10 @@ export default async function ChapterPage({
   const b = baseOf(locale);
   const { prev, next } = chapterNeighbours(ch.slug);
   const L = (p: string) => `/${locale}${p}`;
-  const pageUrl = `${SITE_URL}/en${LEARN_BASE}/${ch.slug}`;
 
-  const graph = [
-    organization(locale),
-    webSite(locale),
-    article({
-      headline: ch.title,
-      description: ch.description,
-      pageUrl,
-      readingTime: ch.readingTime,
-      inLanguage: "en",
-    }),
-    breadcrumbList([
-      { name: CRUMB[b].home, url: `${SITE_URL}/en` },
-      { name: CRUMB[b].hub, url: `${SITE_URL}/en${LEARN_BASE}` },
-      { name: ch.title, url: pageUrl },
-    ]),
-    ...(ch.video
-      ? [
-          videoObject({
-            name: ch.video.title,
-            description: ch.description,
-            thumbnailUrl: ch.video.poster,
-            contentUrl: ch.video.src,
-            uploadDate: ch.video.uploadDate,
-            pageUrl,
-            inLanguage: "en",
-          }),
-        ]
-      : []),
-  ];
+  // Built in _shared/graph.ts so it can be asserted without rendering the
+  // route — including "a VideoObject appears only for chapters that have one".
+  const graph = chapterGraph(ch, locale, CRUMB[b]);
 
   return (
     <>

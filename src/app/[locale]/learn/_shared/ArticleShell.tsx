@@ -18,6 +18,8 @@ import { HomeVideo } from "../../HomeVideo";
 import { CONTENT, HOME_TOOLS } from "@/lib/i18n/content";
 import type { Locale } from "@/lib/i18n/config";
 import {
+  chapterVideoOf,
+  inlineVideoOf,
   tableOfContents,
   type LearnBlock,
   type LearnCta,
@@ -26,6 +28,7 @@ import {
   type LearnVideo,
 } from "@/lib/learn-content";
 import { Blocks } from "./Blocks";
+import { ChapterVideo } from "./ChapterVideo";
 import { resolveHref } from "./inline";
 import s from "../../home2.module.css";
 import c from "./learn.module.css";
@@ -121,6 +124,11 @@ export function ArticleShell({
   const toc = tableOfContents(body);
   const ctaCopy = cta === "audit" ? t.ctaAudit : t.ctaRegister;
   const notice = ENGLISH_BODY_NOTICE[b];
+  // One field, two placements — narrowed here so the JSX below never inspects
+  // the discriminant itself. A chapter video goes to the fixed slot after the
+  // intro; a prose-placed one goes to its marker, through HomeVideo.
+  const chapterVideo = chapterVideoOf({ video });
+  const inlineVideo = inlineVideoOf({ video });
 
   return (
     <div className={s.page}>
@@ -148,17 +156,20 @@ export function ArticleShell({
                 body={body}
                 locale={locale}
                 faq={faq}
+                // A chapter's own video, in a fixed structural position: after
+                // the intro prose, before the first section heading.
+                afterIntro={chapterVideo ? <ChapterVideo video={chapterVideo} /> : undefined}
                 video={
-                  video ? (
+                  inlineVideo ? (
                     // The mp4 is Caddy-served from /opt/echorank/extension-dist,
                     // outside this repo — referenced absolutely, never copied
                     // into public/videos/. Same player as the homepage: muted by
                     // default, arrow overlay, mute chip, caption in every locale.
                     <HomeVideo
                       className={c.video}
-                      src={video.src}
-                      poster={video.poster}
-                      ariaLabel={video.title}
+                      src={inlineVideo.src}
+                      poster={inlineVideo.poster}
+                      ariaLabel={inlineVideo.title}
                       labels={player}
                     />
                   ) : undefined

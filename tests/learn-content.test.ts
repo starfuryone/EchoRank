@@ -9,7 +9,7 @@
 // is not derived from it, because a hand-kept expectation would drift the same
 // way the thing it is guarding does.
 import { describe, it, expect } from "vitest";
-import { existsSync, readdirSync } from "node:fs";
+import { existsSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
 import {
   ECHOPEDIA_DESCRIPTION,
@@ -22,7 +22,9 @@ import {
   LEARN_PDF,
   chapterBySlug,
   chapterNeighbours,
+  chapterVideoOf,
   guideBySlug,
+  inlineVideoOf,
   headingId,
   learnRoutes,
   tableOfContents,
@@ -262,29 +264,51 @@ describe("internal links", () => {
 });
 
 describe("video", () => {
-  const withVideo = ALL.filter((a) => a.video);
+  const inlineVideos = ALL.filter((a) => inlineVideoOf(a));
+  const chapterVideos = ALL.filter((a) => chapterVideoOf(a));
 
-  it("carries the install walkthrough on chapter 3 and the extension guide only", () => {
-    expect(withVideo.map((a) => a.slug).sort()).toEqual(
+  it("keeps the install walkthrough prose-placed, on chapter 3 and the extension guide only", () => {
+    expect(inlineVideos.map((a) => a.slug).sort()).toEqual(
       ["import-your-review-history", "install-browser-extension"].sort(),
     );
   });
 
-  it("references the mp4 absolutely — it is Caddy-served, not bundled", () => {
-    for (const a of withVideo) {
+  it("references the walkthrough mp4 absolutely — it is Caddy-served, not bundled", () => {
+    for (const a of inlineVideos) {
       // Copying this into public/videos/ is the mistake this guards: no build
       // ships the file, and a relative path would 404 in the app.
-      expect(a.video!.src).toBe("https://echorank360.com/extension/echorank-extension-install.mp4");
-      expect(a.video!.poster).toBe("https://echorank360.com/extension/install-video-poster.jpg");
-      expect(a.video!.uploadDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
-      expect(a.video!.title.trim().length).toBeGreaterThan(0);
+      const v = inlineVideoOf(a)!;
+      expect(v.src).toBe("https://echorank360.com/extension/echorank-extension-install.mp4");
+      expect(v.poster).toBe("https://echorank360.com/extension/install-video-poster.jpg");
+      expect(v.uploadDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+      expect(v.title.trim().length).toBeGreaterThan(0);
     }
   });
 
-  it("puts a video marker in the prose of every article that has a video, and only those", () => {
+  it("serves chapter videos from public/videos/, and ships the files", () => {
+    for (const a of chapterVideos) {
+      const v = chapterVideoOf(a)!;
+      // Site-relative, unlike the Caddy-served walkthrough above. These are
+      // bundled assets, so the files must actually be on disk.
+      expect(v.src.startsWith("/videos/"), a.slug).toBe(true);
+      expect(v.poster.startsWith("/videos/"), a.slug).toBe(true);
+      expect(v.durationSeconds, a.slug).toBeGreaterThan(0);
+      expect(v.description.trim().length, a.slug).toBeGreaterThan(0);
+      for (const asset of [v.src, v.poster]) {
+        const file = join(process.cwd(), "public", asset);
+        expect(existsSync(file), `${a.slug}: ${asset} is missing`).toBe(true);
+        expect(statSync(file).size, `${a.slug}: ${asset} is empty`).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  it("marks the prose only for prose-placed videos", () => {
+    // A chapter video is positioned structurally (after the intro) and carries
+    // no marker; a prose-placed one is nothing BUT its marker. Getting this
+    // backwards renders a video twice or not at all.
     for (const a of ALL) {
       const marked = a.body.some((b) => b.k === "video");
-      expect(marked, `${a.slug}`).toBe(Boolean(a.video));
+      expect(marked, `${a.slug}`).toBe(Boolean(inlineVideoOf(a)));
     }
   });
 

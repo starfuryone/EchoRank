@@ -427,6 +427,26 @@
   max-width: 620px;
 }
 
+/* A chapter's own video. The frame reserves its 16:9 height before the poster
+   loads, so nothing below it moves — the whole point of doing this with
+   aspect-ratio rather than letting the element size itself to its metadata. */
+.chapterVideo {
+  margin: 26px 0;
+}
+.chapterVideoFrame {
+  aspect-ratio: 16 / 9;
+  width: 100%;
+  border: 1px solid var(--line, #232330);
+  border-radius: 12px;
+  overflow: hidden;
+  background: #000;
+}
+.chapterVideoEl {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
 /* ── FAQ (rendered from the same array the FAQPage markup is built from) ── */
 
 .faq {
