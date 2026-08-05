@@ -93,6 +93,9 @@ export const REDIS_CONFIG = {
     "rank-tracker": { max: 20, duration: 60_000 },
     // One crawl-progress sweep a minute; the limiter is a backstop.
     "site-audit": { max: 4, duration: 60_000 },
+    // Site Crawler runs are long (up to an hour) and started by hand. The
+    // real concurrency control is the worker's concurrency: 2, not this.
+    "site-crawl": { max: 10, duration: 60_000 },
   } as Record<string, { max: number; duration: number }>,
 } as const;
 
@@ -115,7 +118,8 @@ export type QueueName =
   | "serp-checks"
   | "rank-tracker"
   | "site-audit"
-  | "bot-log-analysis";
+  | "bot-log-analysis"
+  | "site-crawl";
 
 /** All valid queue names */
 export const QUEUE_NAMES: QueueName[] = [
@@ -138,4 +142,5 @@ export const QUEUE_NAMES: QueueName[] = [
   "rank-tracker",
   "site-audit",
   "bot-log-analysis",
+  "site-crawl",
 ];

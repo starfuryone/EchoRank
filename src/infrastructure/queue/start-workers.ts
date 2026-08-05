@@ -32,6 +32,7 @@ import { startSerpCheckWorker } from "./workers/serp-check.worker";
 import { startRankTrackerWorker } from "./workers/rank-tracker.worker";
 import { startSiteAuditWorker } from "./workers/site-audit.worker";
 import { startBotLogAnalysisWorker } from "./workers/bot-log-analysis.worker";
+import { startSiteCrawlWorker } from "./workers/site-crawl.worker";
 
 /**
  * How often to drain domain events that are still PENDING/FAILED in the DB.
@@ -100,6 +101,7 @@ async function startWorkers() {
     { name: "rank-tracker", start: startRankTrackerWorker },
     { name: "site-audit", start: startSiteAuditWorker },
     { name: "bot-log-analysis", start: startBotLogAnalysisWorker },
+    { name: "site-crawl", start: startSiteCrawlWorker },
   ];
 
   const loaded: string[] = [];

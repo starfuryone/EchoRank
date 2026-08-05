@@ -211,6 +211,8 @@ model Tenant {
   botLogAnalyses     BotLogAnalysis[]
   contentSearches    ContentSearch[]
 
+  crawlJobs CrawlJob[]
+
   @@map("tenants")
 }
 
@@ -1852,4 +1854,95 @@ model MatrixAccount {
   @@unique([tenantId, appUserId])
   @@index([tenantId, deactivatedAt])
   @@map("matrix_accounts")
+}
+
+// ─── Site Crawler ────────────────────────────────────────────────────────────
+
+enum CrawlStatus {
+  QUEUED
+  RUNNING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+/// One full-site crawl. Raw-HTML only — no JavaScript rendering, no external
+/// API: the worker fetches and parses in-process.
+///
+/// `urlCap` is COPIED FROM THE PLAN AT CREATION rather than read at display
+/// time, so a crawl that ran under one tier keeps reporting the ceiling it
+/// actually ran under after an upgrade or downgrade.
+///
+/// `stoppedReason` distinguishes the ways a COMPLETED crawl can end early —
+/// "url_cap", "time_cap" — from a clean exhaustion of the frontier, which
+/// leaves it null. A FAILED crawl carries a truncated error here instead.
+model CrawlJob {
+  id            String      @id @default(cuid())
+  tenantId      String
+  rootUrl       String
+  status        CrawlStatus @default(QUEUED)
+  urlCap        Int
+  pagesCrawled  Int         @default(0)
+  issueCount    Int         @default(0)
+  stoppedReason String?
+  startedAt     DateTime?
+  finishedAt    DateTime?
+  createdAt     DateTime    @default(now())
+
+  tenant Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  pages  CrawlPage[]
+
+  @@index([tenantId, createdAt])
+  @@map("crawl_jobs")
+}
+
+/// One crawled URL. The HTML BODY IS NEVER STORED — fields are extracted and
+/// the body is discarded. `contentHash` is a SHA-256 of the normalized main
+/// content, which is what makes duplicate detection possible without keeping
+/// the text that would let anyone reconstruct the page.
+model CrawlPage {
+  id              String  @id @default(cuid())
+  crawlJobId      String
+  url             String
+  statusCode      Int?
+  /// Target of the FIRST redirect hop only; the chain length drives
+  /// REDIRECT_CHAIN rather than being stored hop by hop.
+  redirectTarget  String?
+  title           String?
+  titleLength     Int?
+  metaDescription String?
+  metaDescLength  Int?
+  h1Count         Int?
+  canonical       String?
+  metaRobots      String?
+  wordCount       Int?
+  contentHash     String?
+  depth           Int
+  internalLinks   Int?
+  fetchMs         Int?
+  contentType     String?
+
+  crawlJob CrawlJob     @relation(fields: [crawlJobId], references: [id], onDelete: Cascade)
+  issues   CrawlIssue[]
+
+  @@index([crawlJobId])
+  /// Duplicate detection reads this at write time: same hash, same crawl.
+  @@index([crawlJobId, contentHash])
+  @@map("crawl_pages")
+}
+
+/// One finding on one page. `type` and `severity` are enum-like strings rather
+/// than Prisma enums so a new check ships without a migration — the closed set
+/// lives in src/lib/site-crawler/checks.ts and is asserted in its tests.
+model CrawlIssue {
+  id          String  @id @default(cuid())
+  crawlPageId String
+  type        String
+  severity    String
+  detail      String?
+
+  crawlPage CrawlPage @relation(fields: [crawlPageId], references: [id], onDelete: Cascade)
+
+  @@index([crawlPageId])
+  @@map("crawl_issues")
 }

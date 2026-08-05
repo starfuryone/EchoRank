@@ -227,7 +227,14 @@ export type AllJobTypes =
   | SerpCheckJob
   | RankTrackerJob
   | SiteAuditJob
-  | BotLogAnalysisJob;
+  | BotLogAnalysisJob
+  | SiteCrawlJob;
+
+/** Site Crawler: one full-site BFS crawl. */
+export interface SiteCrawlJob {
+  crawlJobId: string;
+  tenantId: string;
+}
 
 // ─── Queue → Job Type mapping ─────────────────────────────────────────────────
 
@@ -250,4 +257,5 @@ export interface QueueJobMap {
   "rank-tracker": RankTrackerJob;
   "site-audit": SiteAuditJob;
   "bot-log-analysis": BotLogAnalysisJob;
+  "site-crawl": SiteCrawlJob;
 }

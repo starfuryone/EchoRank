@@ -81,6 +81,25 @@ export interface PlanConfig {
    * check counter in rank-tracker/options.ts.
    */
   trackedKeywords: number | null;
+  /**
+   * URLs a single Site Crawler run may fetch. 0 = the tool is locked.
+   *
+   * A per-RUN ceiling, not a monthly pool: the cost of a crawl is our own
+   * bandwidth and worker time, both of which are bounded per run rather than
+   * accumulated. Copied onto the CrawlJob row at creation so a crawl keeps
+   * reporting the cap it actually ran under after a tier change.
+   */
+  crawlUrlCap: number;
+  /**
+   * Site Crawler runs per calendar month (UTC). `null` = unlimited.
+   *
+   * Counted from CrawlJob rows rather than a counter, for the same reason
+   * seo-quota.ts counts SeoApiCall rows: this box restarts several times a day
+   * and an in-process tally would hand every tenant a fresh allowance.
+   * CANCELLED and FAILED runs are excluded from the count — see
+   * src/lib/site-crawler/quota.ts.
+   */
+  crawlsPerMonth: number | null;
   highlighted: boolean;
   cta: string;
   ctaLink: string;
@@ -117,6 +136,10 @@ export const PLAN_CONFIGS: Record<PlanType, PlanConfig> = {
     },
     seoSearchesPerMonth: 0,
     trackedKeywords: 0,
+    // Site Crawler is a classic-SEO tool; this tier is the AI-visibility
+    // product and gets the locked upsell state instead.
+    crawlUrlCap: 0,
+    crawlsPerMonth: 0,
     highlighted: false,
     cta: "Start tracking",
     ctaLink: "/register?plan=ai_visibility",
@@ -150,6 +173,8 @@ export const PLAN_CONFIGS: Record<PlanType, PlanConfig> = {
     },
     seoSearchesPerMonth: 250,
     trackedKeywords: 0,
+    crawlUrlCap: 500,
+    crawlsPerMonth: 4,
     highlighted: false,
     cta: "Start Free Trial",
     ctaLink: "/register?plan=starter",
@@ -185,6 +210,8 @@ export const PLAN_CONFIGS: Record<PlanType, PlanConfig> = {
     },
     seoSearchesPerMonth: 1000,
     trackedKeywords: 50,
+    crawlUrlCap: 5_000,
+    crawlsPerMonth: 20,
     highlighted: true,
     cta: "Start Free Trial",
     ctaLink: "/register?plan=growth",
@@ -220,6 +247,8 @@ export const PLAN_CONFIGS: Record<PlanType, PlanConfig> = {
     },
     seoSearchesPerMonth: 5000,
     trackedKeywords: 250,
+    crawlUrlCap: 25_000,
+    crawlsPerMonth: null,
     highlighted: false,
     cta: "Start Free Trial",
     ctaLink: "/register?plan=agency",
@@ -257,6 +286,8 @@ export const PLAN_CONFIGS: Record<PlanType, PlanConfig> = {
     },
     seoSearchesPerMonth: null,
     trackedKeywords: 1000,
+    crawlUrlCap: 25_000,
+    crawlsPerMonth: null,
     highlighted: false,
     cta: "Book Enterprise Demo",
     ctaLink: "/enterprise",

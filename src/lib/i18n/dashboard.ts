@@ -5203,6 +5203,10 @@ const seoToolsEn = {
       name: "Site Audit",
       description: "Crawl your website and identify technical SEO issues.",
     },
+    site_crawler: {
+      name: "Site Crawler",
+      description: "Crawl every page on your site and list the on-page SEO issues it finds.",
+    },
     web_analytics: {
       name: "Web Analytics",
       description: "Understand website traffic, acquisition, engagement, and conversions.",
@@ -5346,6 +5350,10 @@ export const SEO_TOOLS_COPY: Record<DashLocale, SeoToolsCopy> = {
         name: "Audit de site",
         description: "Explorez votre site web et identifiez les problèmes techniques de SEO.",
       },
+      site_crawler: {
+        name: "Explorateur de site",
+        description: "Parcourez chaque page de votre site et listez les problèmes SEO on-page détectés.",
+      },
       web_analytics: {
         name: "Analytique web",
         description: "Comprenez le trafic, l'acquisition, l'engagement et les conversions de votre site web.",
@@ -5484,6 +5492,10 @@ export const SEO_TOOLS_COPY: Record<DashLocale, SeoToolsCopy> = {
       site_audit: {
         name: "Site-Audit",
         description: "Crawlen Sie Ihre Website und identifizieren Sie technische SEO-Probleme.",
+      },
+      site_crawler: {
+        name: "Site Crawler",
+        description: "Crawlen Sie jede Seite Ihrer Website und erhalten Sie alle gefundenen On-Page-SEO-Probleme.",
       },
       web_analytics: {
         name: "Web-Analytics",
@@ -11621,5 +11633,282 @@ export const HELP_COPY: Record<DashLocale, HelpCopy> = {
 
     readFullGuide: "Vollständige Anleitung lesen →",
     browseAll: "Gesamte Hilfe durchsuchen →",
+  },
+};
+
+// ─── Site Crawler (/visibility/tools/site-crawler) ──────────────────────────
+//
+// Three locales, not five: dashboardLocale() folds fr* to fr, de* to de-CH and
+// everything else to en. Every string the page renders lives here — the known
+// regression on this surface is a translated sidebar above an English body.
+//
+// Issue TYPE labels are keyed by the same strings checks.ts emits, so a new
+// rule that ships without copy is a missing key the tests catch rather than a
+// raw "META_DESC_TOO_LONG" shown to a customer.
+const siteCrawlerEn = {
+  title: "Site Crawler",
+  subtitle:
+    "Crawl every page on your site and see the on-page SEO issues, page by page. Raw HTML only — no JavaScript rendering in this version.",
+
+  urlLabel: "Site URL",
+  urlPlaceholder: "https://example.com",
+  startCta: "Start crawl",
+  starting: "Starting…",
+  capNote: (cap: string) => `Up to ${cap} URLs per crawl on your plan.`,
+  quotaNote: (used: string, limit: string) => `${used} of ${limit} crawls used this month.`,
+  quotaUnlimited: (used: string) => `${used} crawls this month. No monthly limit on your plan.`,
+  politeNote:
+    "We identify ourselves as Echorank360Bot, obey robots.txt, and stay under 2 requests a second.",
+
+  lockedTitle: "Site Crawler is not part of your plan",
+  lockedBody:
+    "Your workspace is on the AI Visibility plan, which covers answer tracking rather than classic SEO. Upgrade to crawl your site and get the full on-page issue list.",
+  lockedCta: "Compare plans",
+
+  statusQueued: "Queued",
+  statusRunning: "Crawling",
+  statusCompleted: "Completed",
+  statusFailed: "Failed",
+  statusCancelled: "Cancelled",
+
+  progress: (done: string, cap: string) => `${done} of up to ${cap} pages`,
+  cancelCta: "Stop crawl",
+  cancelling: "Stopping…",
+  crawlingNote: "This keeps running if you leave the page. Come back any time.",
+
+  stoppedUrlCap: "Stopped at your plan's URL limit.",
+  stoppedTimeCap: "Stopped at the one-hour limit.",
+  stoppedCancelled: "Stopped by you.",
+
+  summaryPages: "Pages crawled",
+  summaryErrors: "Errors",
+  summaryWarnings: "Warnings",
+  summaryNotices: "Notices",
+
+  issuesTitle: "Issues",
+  filterSeverity: "Severity",
+  filterType: "Issue type",
+  filterAll: "All",
+  exportCsv: "Export CSV",
+  colSeverity: "Severity",
+  colType: "Issue",
+  colUrl: "URL",
+  colDetail: "Detail",
+  noIssues: "No issues found. Every page crawled passed all checks.",
+  noIssuesFiltered: "No issues match this filter.",
+
+  pastTitle: "Past crawls",
+  noCrawls: "No crawls yet. Enter your site URL above to run the first one.",
+
+  prevPage: "Previous",
+  nextPage: "Next",
+  pageOf: (page: string, total: string) => `Page ${page} of ${total}`,
+
+  errInvalidUrl: "Enter a public URL starting with http:// or https://",
+  errQuota: "You have used all the crawls included in your plan this month.",
+  errGeneric: "Something went wrong. Try again.",
+
+  severityError: "Error",
+  severityWarning: "Warning",
+  severityNotice: "Notice",
+
+  issueTypes: {
+    HTTP_4XX: "Page not found or refused (4xx)",
+    HTTP_5XX: "Server error (5xx)",
+    TITLE_MISSING: "Missing title",
+    H1_MISSING: "Missing H1",
+    NOINDEX: "Blocked from indexing (noindex)",
+    TITLE_TOO_LONG: "Title too long",
+    TITLE_TOO_SHORT: "Title too short",
+    META_DESC_MISSING: "Missing meta description",
+    META_DESC_TOO_LONG: "Meta description too long",
+    MULTIPLE_H1: "More than one H1",
+    CANONICAL_MISMATCH: "Canonical points elsewhere",
+    REDIRECT_CHAIN: "Redirect chain",
+    THIN_CONTENT: "Thin content",
+    BLOCKED_BY_ROBOTS: "Blocked by robots.txt",
+    CANONICAL_MISSING: "No canonical tag",
+    DUPLICATE_CONTENT: "Duplicate content",
+  } as Record<string, string>,
+};
+
+export type SiteCrawlerCopy = typeof siteCrawlerEn;
+
+export const SITE_CRAWLER_COPY: Record<DashLocale, SiteCrawlerCopy> = {
+  en: siteCrawlerEn,
+  fr: {
+    title: "Explorateur de site",
+    subtitle:
+      "Parcourez chaque page de votre site et consultez les problèmes SEO on-page, page par page. HTML brut uniquement — pas de rendu JavaScript dans cette version.",
+
+    urlLabel: "URL du site",
+    urlPlaceholder: "https://exemple.com",
+    startCta: "Lancer l'exploration",
+    starting: "Lancement…",
+    capNote: (cap: string) => `Jusqu'à ${cap} URL par exploration avec votre forfait.`,
+    quotaNote: (used: string, limit: string) =>
+      `${used} exploration(s) sur ${limit} utilisée(s) ce mois-ci.`,
+    quotaUnlimited: (used: string) =>
+      `${used} exploration(s) ce mois-ci. Aucune limite mensuelle avec votre forfait.`,
+    politeNote:
+      "Nous nous identifions comme Echorank360Bot, respectons robots.txt et restons sous 2 requêtes par seconde.",
+
+    lockedTitle: "L'explorateur de site n'est pas inclus dans votre forfait",
+    lockedBody:
+      "Votre espace de travail est sur le forfait Visibilité IA, qui couvre le suivi des réponses plutôt que le SEO classique. Passez à un forfait supérieur pour explorer votre site et obtenir la liste complète des problèmes on-page.",
+    lockedCta: "Comparer les forfaits",
+
+    statusQueued: "En attente",
+    statusRunning: "Exploration en cours",
+    statusCompleted: "Terminée",
+    statusFailed: "Échec",
+    statusCancelled: "Annulée",
+
+    progress: (done: string, cap: string) => `${done} pages sur ${cap} maximum`,
+    cancelCta: "Arrêter l'exploration",
+    cancelling: "Arrêt…",
+    crawlingNote: "L'exploration continue même si vous quittez la page. Revenez quand vous voulez.",
+
+    stoppedUrlCap: "Arrêtée à la limite d'URL de votre forfait.",
+    stoppedTimeCap: "Arrêtée à la limite d'une heure.",
+    stoppedCancelled: "Arrêtée par vous.",
+
+    summaryPages: "Pages explorées",
+    summaryErrors: "Erreurs",
+    summaryWarnings: "Avertissements",
+    summaryNotices: "Remarques",
+
+    issuesTitle: "Problèmes",
+    filterSeverity: "Gravité",
+    filterType: "Type de problème",
+    filterAll: "Tous",
+    exportCsv: "Exporter en CSV",
+    colSeverity: "Gravité",
+    colType: "Problème",
+    colUrl: "URL",
+    colDetail: "Détail",
+    noIssues: "Aucun problème détecté. Toutes les pages explorées ont passé les contrôles.",
+    noIssuesFiltered: "Aucun problème ne correspond à ce filtre.",
+
+    pastTitle: "Explorations précédentes",
+    noCrawls: "Aucune exploration pour l'instant. Saisissez l'URL de votre site ci-dessus.",
+
+    prevPage: "Précédent",
+    nextPage: "Suivant",
+    pageOf: (page: string, total: string) => `Page ${page} sur ${total}`,
+
+    errInvalidUrl: "Saisissez une URL publique commençant par http:// ou https://",
+    errQuota: "Vous avez utilisé toutes les explorations incluses dans votre forfait ce mois-ci.",
+    errGeneric: "Une erreur est survenue. Réessayez.",
+
+    severityError: "Erreur",
+    severityWarning: "Avertissement",
+    severityNotice: "Remarque",
+
+    issueTypes: {
+      HTTP_4XX: "Page introuvable ou refusée (4xx)",
+      HTTP_5XX: "Erreur serveur (5xx)",
+      TITLE_MISSING: "Balise title manquante",
+      H1_MISSING: "H1 manquant",
+      NOINDEX: "Indexation bloquée (noindex)",
+      TITLE_TOO_LONG: "Title trop long",
+      TITLE_TOO_SHORT: "Title trop court",
+      META_DESC_MISSING: "Méta description manquante",
+      META_DESC_TOO_LONG: "Méta description trop longue",
+      MULTIPLE_H1: "Plusieurs H1",
+      CANONICAL_MISMATCH: "La canonique pointe ailleurs",
+      REDIRECT_CHAIN: "Chaîne de redirections",
+      THIN_CONTENT: "Contenu trop léger",
+      BLOCKED_BY_ROBOTS: "Bloquée par robots.txt",
+      CANONICAL_MISSING: "Pas de balise canonique",
+      DUPLICATE_CONTENT: "Contenu dupliqué",
+    },
+  },
+  "de-CH": {
+    title: "Site Crawler",
+    subtitle:
+      "Crawlen Sie jede Seite Ihrer Website und sehen Sie die On-Page-SEO-Probleme Seite für Seite. Nur rohes HTML — kein JavaScript-Rendering in dieser Version.",
+
+    urlLabel: "Website-URL",
+    urlPlaceholder: "https://beispiel.ch",
+    startCta: "Crawl starten",
+    starting: "Wird gestartet…",
+    capNote: (cap: string) => `Bis zu ${cap} URLs pro Crawl in Ihrem Abo.`,
+    quotaNote: (used: string, limit: string) => `${used} von ${limit} Crawls diesen Monat genutzt.`,
+    quotaUnlimited: (used: string) =>
+      `${used} Crawls diesen Monat. Keine monatliche Begrenzung in Ihrem Abo.`,
+    politeNote:
+      "Wir weisen uns als Echorank360Bot aus, beachten robots.txt und bleiben unter 2 Anfragen pro Sekunde.",
+
+    lockedTitle: "Site Crawler ist nicht Teil Ihres Abos",
+    lockedBody:
+      "Ihr Arbeitsbereich nutzt das KI-Sichtbarkeits-Abo, das Antwortverfolgung statt klassisches SEO abdeckt. Wechseln Sie das Abo, um Ihre Website zu crawlen und die vollständige Liste der On-Page-Probleme zu erhalten.",
+    lockedCta: "Abos vergleichen",
+
+    statusQueued: "In Warteschlange",
+    statusRunning: "Crawlt",
+    statusCompleted: "Abgeschlossen",
+    statusFailed: "Fehlgeschlagen",
+    statusCancelled: "Abgebrochen",
+
+    progress: (done: string, cap: string) => `${done} von maximal ${cap} Seiten`,
+    cancelCta: "Crawl stoppen",
+    cancelling: "Wird gestoppt…",
+    crawlingNote: "Der Crawl läuft weiter, wenn Sie die Seite verlassen. Kommen Sie jederzeit zurück.",
+
+    stoppedUrlCap: "Beim URL-Limit Ihres Abos gestoppt.",
+    stoppedTimeCap: "Bei der Ein-Stunden-Grenze gestoppt.",
+    stoppedCancelled: "Von Ihnen gestoppt.",
+
+    summaryPages: "Gecrawlte Seiten",
+    summaryErrors: "Fehler",
+    summaryWarnings: "Warnungen",
+    summaryNotices: "Hinweise",
+
+    issuesTitle: "Probleme",
+    filterSeverity: "Schweregrad",
+    filterType: "Problemtyp",
+    filterAll: "Alle",
+    exportCsv: "CSV exportieren",
+    colSeverity: "Schweregrad",
+    colType: "Problem",
+    colUrl: "URL",
+    colDetail: "Detail",
+    noIssues: "Keine Probleme gefunden. Alle gecrawlten Seiten haben die Prüfungen bestanden.",
+    noIssuesFiltered: "Keine Probleme entsprechen diesem Filter.",
+
+    pastTitle: "Frühere Crawls",
+    noCrawls: "Noch keine Crawls. Geben Sie oben die URL Ihrer Website ein.",
+
+    prevPage: "Zurück",
+    nextPage: "Weiter",
+    pageOf: (page: string, total: string) => `Seite ${page} von ${total}`,
+
+    errInvalidUrl: "Geben Sie eine öffentliche URL ein, die mit http:// oder https:// beginnt",
+    errQuota: "Sie haben alle in Ihrem Abo enthaltenen Crawls diesen Monat aufgebraucht.",
+    errGeneric: "Etwas ist schiefgelaufen. Versuchen Sie es erneut.",
+
+    severityError: "Fehler",
+    severityWarning: "Warnung",
+    severityNotice: "Hinweis",
+
+    issueTypes: {
+      HTTP_4XX: "Seite nicht gefunden oder abgelehnt (4xx)",
+      HTTP_5XX: "Serverfehler (5xx)",
+      TITLE_MISSING: "Title fehlt",
+      H1_MISSING: "H1 fehlt",
+      NOINDEX: "Indexierung blockiert (noindex)",
+      TITLE_TOO_LONG: "Title zu lang",
+      TITLE_TOO_SHORT: "Title zu kurz",
+      META_DESC_MISSING: "Meta-Description fehlt",
+      META_DESC_TOO_LONG: "Meta-Description zu lang",
+      MULTIPLE_H1: "Mehr als ein H1",
+      CANONICAL_MISMATCH: "Canonical zeigt woanders hin",
+      REDIRECT_CHAIN: "Weiterleitungskette",
+      THIN_CONTENT: "Zu wenig Inhalt",
+      BLOCKED_BY_ROBOTS: "Durch robots.txt blockiert",
+      CANONICAL_MISSING: "Kein Canonical-Tag",
+      DUPLICATE_CONTENT: "Doppelter Inhalt",
+    },
   },
 };

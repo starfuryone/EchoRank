@@ -120,6 +120,14 @@ const DEFAULT_JOB_OPTIONS: Record<QueueName, JobsOptions> = {
   // One attempt, deliberately. The job DELETES the uploaded log once it has
   // parsed it, so attempt 2 would find no file and fail differently for a
   // confusing reason. A failed parse is recorded on the row and re-uploadable.
+  // One attempt, deliberately. A crawl writes rows as it goes, so a retry
+  // would re-crawl a site that already has partial results and double every
+  // page row. A failed crawl is visible in the UI and re-runnable by hand.
+  "site-crawl": {
+    attempts: 1,
+    removeOnComplete: { age: REDIS_CONFIG.ttl.completedJobs },
+    removeOnFail: { age: REDIS_CONFIG.ttl.failedJobs },
+  },
   "bot-log-analysis": {
     attempts: 1,
     removeOnComplete: { age: REDIS_CONFIG.ttl.completedJobs },

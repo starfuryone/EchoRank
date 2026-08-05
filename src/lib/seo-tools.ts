@@ -38,6 +38,7 @@ import {
   Gauge,
   ScanEye,
   History,
+  Network,
 } from "lucide-react";
 import { canAccessPath } from "@/lib/plan-routing";
 import type { PlanType } from "@/generated/prisma";
@@ -75,7 +76,8 @@ export type SeoToolId =
   | "backlinks"
   | "lighthouse"
   | "ai_lens"
-  | "historical";
+  | "historical"
+  | "site_crawler";
 
 /** Tools that render a scaffold page under /visibility/tools/<slug>. */
 // Note: brand_radar/bot_analytics/content_explorer remain ScaffoldIds although
@@ -99,6 +101,9 @@ export type ScaffoldId = Exclude<
   // empty and error states in HISTORICAL_COPY, so it never had scaffold copy
   // to inherit.
   | "historical"
+  // Site Crawler shipped as a real page in one go — its empty, running and
+  // locked states live in SITE_CRAWLER_COPY, so there was never a scaffold.
+  | "site_crawler"
 >;
 
 export interface SeoTool {
@@ -179,6 +184,10 @@ export const SEO_TOOL_GROUPS: SeoToolGroup[] = [
       // that one measures AI-engine readability and is a different product.
       // Both are linked from each other's copy so the split is explicit.
       t("site_audit", "site-audit", ScanSearch),
+      // Our own BFS crawler: raw HTML, no external API, no JS rendering. Sits
+      // beside Site Audit because both answer "what is wrong across the site",
+      // but this one is first-party and priced by URLs rather than per page.
+      t("site_crawler", "site-crawler", Network),
       t("lighthouse", "lighthouse", Gauge),
       t("web_analytics", "web-analytics", AreaChart),
       t("bot_analytics", "bot-analytics", Bot, { badge: "new" }),

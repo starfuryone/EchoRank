@@ -37,6 +37,7 @@ const EXPECTED_HREFS: Record<string, string> = {
   custom_prompts: "/visibility/tools/custom-prompts",
   ai_lens: "/visibility/tools/ai-lens",
   site_audit: "/visibility/tools/site-audit",
+  site_crawler: "/visibility/tools/site-crawler",
   web_analytics: "/visibility/tools/web-analytics",
   bot_analytics: "/visibility/tools/bot-analytics",
   content_explorer: "/visibility/tools/content-explorer",
@@ -111,8 +112,8 @@ test("the live/coming-soon split is what the marketing copy claims", () => {
   // src/lib/i18n/content.ts (toolsSection.count) has to move with it.
   const live = ALL_TOOLS.filter((t) => !t.comingSoon);
   const soon = ALL_TOOLS.filter((t) => t.comingSoon);
-  assert.equal(ALL_TOOLS.length, 23, "tool count changed");
-  assert.equal(live.length, 19, "live tool count changed — update the homepage copy");
+  assert.equal(ALL_TOOLS.length, 24, "tool count changed");
+  assert.equal(live.length, 20, "live tool count changed — update the homepage copy");
   assert.equal(soon.length, 4);
   assert.deepEqual(
     soon.map((t) => t.id).sort(),
