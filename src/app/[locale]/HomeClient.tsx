@@ -186,6 +186,7 @@ const T = {
     resources: {
       repPaper: "Reputation Intelligence guide (PDF)",
       seoPaper: "The SEO tools, explained (PDF)",
+      extension: "Browser extension",
     },
     foot: { links: [["about", "ABOUT"], ["resources", "RESOURCES"], ["guide", "GUIDE"], ["guide-visibilite-ia", "AI VISIBILITY GUIDE"], ["legal/privacy", "PRIVACY"], ["legal/terms", "TERMS"], ["legal/disclaimer", "DISCLAIMER"]] },
   },
@@ -340,6 +341,7 @@ const T = {
     resources: {
       repPaper: "Guide Reputation Intelligence (PDF)",
       seoPaper: "Les outils SEO, expliqués (PDF)",
+      extension: "Extension navigateur",
     },
     foot: { links: [["about", "À PROPOS"], ["resources", "RESSOURCES"], ["guide", "GUIDE"], ["guide-visibilite-ia", "GUIDE VISIBILITÉ IA"], ["legal/privacy", "CONFIDENTIALITÉ"], ["legal/terms", "CONDITIONS"], ["legal/disclaimer", "AVIS"]] },
   },
@@ -1043,7 +1045,30 @@ export default function HomeClient({
       </section>
 
       {/* 14. CLOSE */}
-      <section className={s.section}><div className={s.container}><p className={s.label}><b>/ 15</b> — RESOURCES</p><h2 className={s.h2}>Reputation Intelligence, Made Simple</h2><p className={s.sub}>The plain-English guide to running Echorank: the 30-minute setup, daily operating rhythm, AI visibility and answer tracking, and risk &amp; competitor intelligence. Free PDF, no email required.</p><a className={`${s.btn} ${s.btnPrimary}`} href="/whitepapers/Echorank_Reputation_Intelligence_Whitepaper.pdf" download target="_blank" rel="noopener">{t.resources.repPaper} ↓</a> <a className={s.btn} href="/whitepapers/echorank360-seo-tools-whitepaper.pdf" download target="_blank" rel="noopener">{t.resources.seoPaper} ↓</a></div></section><section className={s.close}>
+      <section className={s.section}><div className={s.container}><p className={s.label}><b>/ 15</b> — RESOURCES</p><h2 className={s.h2}>Reputation Intelligence, Made Simple</h2><p className={s.sub}>The plain-English guide to running Echorank: the 30-minute setup, daily operating rhythm, AI visibility and answer tracking, and risk &amp; competitor intelligence. Free PDF, no email required.</p><a className={`${s.btn} ${s.btnPrimary}`} href="/whitepapers/Echorank_Reputation_Intelligence_Whitepaper.pdf" download target="_blank" rel="noopener">{t.resources.repPaper} ↓</a> <a className={s.btn} href="/whitepapers/echorank360-seo-tools-whitepaper.pdf" download target="_blank" rel="noopener">{t.resources.seoPaper} ↓</a> {/*
+        A plain <a>, and a plain path, for two separate reasons.
+
+        NOT <Link>: /extension is served by Caddy from /opt/echorank/extension-dist
+        (handle_path /extension/*), outside the Next app entirely. next/link would
+        try a client-side route transition to a route that does not exist in the
+        router and land on the 404 rather than the install page.
+
+        NO LOCALE PREFIX: same reason. Caddy serves one copy of that directory;
+        L() would produce /en/extension, which the locale routing owns and Caddy
+        never sees.
+
+        The glyph is ↗, not the ↓ its two neighbours carry: they download a file,
+        this navigates to the install page. Pointing it at the .crx directly is
+        exactly what the guide modal and video exist to prevent, so promising a
+        download here would be the wrong signal.
+
+        The lint rule below assumes any bare path is a Next page and wants
+        <Link>. Here that assumption is false and following it would break the
+        link, so it is disabled at this one line rather than left to grow the
+        repo's no-html-link-for-pages baseline.
+      */}
+      {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
+      <a className={s.btn} href="/extension">{t.resources.extension} ↗</a></div></section><section className={s.close}>
         <div className={s.container}>
           <p className={s.label}><b>/ 16</b> — {t.close.label}</p>
           <h2 className={s.h2c}>{t.close.h2a}<span className={s.goldtext}>{t.close.h2b}</span></h2>
