@@ -1,0 +1,193 @@
+/* Free-tools chrome. Dark/gold tokens (--bg, --surface, --surface2, --line,
+   --gold, --muted…) are inherited from .page in home2.module.css, which wraps
+   every page here — this is the MARKETING theme, not the dashboard's light
+   Tailwind one. #c9a227 is the same accent the Knowledge Hub and the workflow
+   guides use. */
+
+.hero { padding: 64px 0 8px; text-align: center; }
+.heroH1 {
+  font-size: clamp(28px, 4vw, 40px);
+  font-weight: 660;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  margin: 14px auto 12px;
+  max-width: 780px;
+}
+.heroSub {
+  color: var(--muted, #8f8fa3);
+  max-width: 620px;
+  margin: 0 auto 24px;
+  font-size: 16.5px;
+  line-height: 1.6;
+}
+
+/* ── Hub grid ─────────────────────────────────────────────────────────── */
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+}
+.card {
+  display: block;
+  position: relative;
+  background: var(--surface, #101016);
+  border: 1px solid var(--line, #232330);
+  border-radius: 12px;
+  padding: 20px;
+  transition: border-color 150ms ease, transform 150ms ease;
+}
+.card:hover, .card:focus-visible { border-color: #c9a227; transform: translateY(-1px); }
+.cardH { font-size: 16px; font-weight: 620; line-height: 1.35; margin: 0 0 7px; }
+.cardP { font-size: 13px; line-height: 1.55; color: var(--muted, #8f8fa3); margin: 0; }
+.badge {
+  position: absolute;
+  top: 14px; right: 14px;
+  font-family: var(--mono, ui-monospace, monospace);
+  font-size: 9.5px;
+  letter-spacing: 0.14em;
+  color: #c9a227;
+  border: 1px solid rgba(201, 162, 39, 0.5);
+  border-radius: 4px;
+  padding: 2px 6px;
+}
+
+/* ── Tool page ────────────────────────────────────────────────────────── */
+
+.tool { max-width: 760px; }
+.panel {
+  background: var(--surface, #101016);
+  border: 1px solid var(--line, #232330);
+  border-radius: 14px;
+  padding: 24px;
+}
+.label {
+  display: block;
+  font-size: 13px;
+  font-weight: 560;
+  color: var(--text, #eceaf2);
+  margin-bottom: 6px;
+}
+.input, .textarea, .select {
+  width: 100%;
+  background: var(--bg, #0B0E11);
+  border: 1px solid var(--line, #232330);
+  border-radius: 9px;
+  padding: 11px 13px;
+  color: var(--text, #eceaf2);
+  font: inherit;
+  font-size: 14.5px;
+}
+.input:focus, .textarea:focus, .select:focus {
+  outline: none;
+  border-color: #c9a227;
+}
+.textarea { min-height: 200px; resize: vertical; line-height: 1.6; }
+.row { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end; }
+.grow { flex: 1 1 220px; }
+.note { margin: 12px 0 0; font-size: 12.5px; color: var(--faint, #5c5c70); }
+.error { margin: 12px 0 0; font-size: 13.5px; color: var(--red, #f87171); }
+
+/* ── Results ──────────────────────────────────────────────────────────── */
+
+.results { margin-top: 22px; display: grid; gap: 10px; }
+.result {
+  background: var(--surface2, #15151d);
+  border: 1px solid var(--line, #232330);
+  border-radius: 10px;
+  padding: 13px 15px;
+}
+.resultH { font-size: 14.5px; font-weight: 560; margin: 0 0 4px; }
+.resultMeta {
+  font-family: var(--mono, ui-monospace, monospace);
+  font-size: 11.5px;
+  color: var(--faint, #5c5c70);
+}
+.resultLink { color: var(--gold, #e8c565); }
+
+/* A locked row carries no data at all — the server withheld it. The blur is
+   presentation for something that genuinely is not here. */
+.locked { position: relative; overflow: hidden; }
+.lockedBar {
+  height: 12px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, var(--line, #232330), var(--surface, #101016));
+  margin: 6px 0;
+}
+.lockedBar:nth-child(2) { width: 72%; }
+.lockedBar:nth-child(3) { width: 48%; }
+
+.upsell {
+  margin-top: 18px;
+  text-align: center;
+  background: var(--surface2, #15151d);
+  border: 1px dashed rgba(201, 162, 39, 0.45);
+  border-radius: 12px;
+  padding: 22px;
+}
+.upsellP { color: var(--muted, #8f8fa3); font-size: 14px; margin: 0 0 14px; }
+
+/* ── Score + checks ───────────────────────────────────────────────────── */
+
+.scoreRow { display: flex; align-items: center; gap: 18px; margin-bottom: 18px; }
+.scoreBig { font-size: 44px; font-weight: 680; line-height: 1; }
+.checks { display: grid; gap: 8px; }
+.check {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  background: var(--surface2, #15151d);
+  border-left: 2px solid var(--line, #232330);
+  font-size: 13.5px;
+}
+.pass { border-left-color: var(--green, #4ade80); }
+.warn { border-left-color: #c9a227; }
+.fail { border-left-color: var(--red, #f87171); }
+.checkValue { font-family: var(--mono, ui-monospace, monospace); font-size: 12px; color: var(--muted, #8f8fa3); }
+
+/* ── Bars (volatility, share of search) ───────────────────────────────── */
+
+.bars { display: grid; gap: 9px; }
+.bar { display: flex; align-items: center; gap: 11px; }
+.barLabel { width: 108px; flex: none; font-size: 12.5px; color: var(--muted, #8f8fa3); }
+.barTrack { flex: 1; height: 9px; border-radius: 99px; background: var(--surface2, #15151d); overflow: hidden; }
+.barFill { height: 100%; border-radius: 99px; background: #c9a227; }
+.barValue {
+  width: 54px; flex: none; text-align: right;
+  font-family: var(--mono, ui-monospace, monospace); font-size: 12px;
+  color: var(--text, #eceaf2);
+}
+
+/* ── SERP snippet preview ─────────────────────────────────────────────── */
+
+.snippet {
+  background: #fff;
+  border-radius: 10px;
+  padding: 18px 20px;
+  color: #202124;
+}
+.snippetCrumb { font-size: 12.5px; color: #4d5156; margin-bottom: 3px; }
+.snippetTitle { font-size: 20px; line-height: 1.3; color: #1a0dab; margin: 0 0 4px; }
+.snippetDesc { font-size: 14px; line-height: 1.58; color: #4d5156; margin: 0; }
+.deviceTabs { display: flex; gap: 8px; margin-bottom: 14px; }
+.deviceTab {
+  border: 1px solid var(--line, #232330);
+  background: transparent;
+  color: var(--muted, #8f8fa3);
+  border-radius: 8px;
+  padding: 6px 13px;
+  font-size: 13px;
+}
+.deviceTabOn { border-color: #c9a227; color: var(--gold, #e8c565); }
+
+/* ── FAQ ──────────────────────────────────────────────────────────────── */
+
+.faq { margin-top: 40px; display: grid; gap: 4px; }
+.faqItem { padding: 15px 0; border-bottom: 1px solid var(--line, #232330); }
+.faqQ { font-size: 15px; font-weight: 620; margin: 0 0 6px; }
+.faqA { margin: 0; font-size: 14.5px; line-height: 1.65; color: var(--muted, #8f8fa3); }
+
+@media (max-width: 720px) {
+  .barLabel { width: 84px; }
+  .row { flex-direction: column; align-items: stretch; }
+}

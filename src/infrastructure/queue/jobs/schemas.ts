@@ -228,7 +228,13 @@ export type AllJobTypes =
   | RankTrackerJob
   | SiteAuditJob
   | BotLogAnalysisJob
-  | SiteCrawlJob;
+  | SiteCrawlJob
+  | FreeToolsVolatilityJob;
+
+/** Free tools: the hourly SERP-volatility basket tick. */
+export interface FreeToolsVolatilityJob {
+  tick: boolean;
+}
 
 /** Site Crawler: one full-site BFS crawl. */
 export interface SiteCrawlJob {
@@ -258,4 +264,5 @@ export interface QueueJobMap {
   "site-audit": SiteAuditJob;
   "bot-log-analysis": BotLogAnalysisJob;
   "site-crawl": SiteCrawlJob;
+  "free-tools-volatility": FreeToolsVolatilityJob;
 }

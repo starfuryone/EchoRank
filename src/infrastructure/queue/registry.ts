@@ -128,6 +128,13 @@ const DEFAULT_JOB_OPTIONS: Record<QueueName, JobsOptions> = {
     removeOnComplete: { age: REDIS_CONFIG.ttl.completedJobs },
     removeOnFail: { age: REDIS_CONFIG.ttl.failedJobs },
   },
+  // Tick-only queue: a failed tick is retried by the next one an hour later,
+  // and a retry that posted the basket twice would double the day's spend.
+  "free-tools-volatility": {
+    attempts: 1,
+    removeOnComplete: { age: REDIS_CONFIG.ttl.completedJobs },
+    removeOnFail: { age: REDIS_CONFIG.ttl.failedJobs },
+  },
   "bot-log-analysis": {
     attempts: 1,
     removeOnComplete: { age: REDIS_CONFIG.ttl.completedJobs },

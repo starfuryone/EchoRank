@@ -4,6 +4,7 @@
 // See README.md.
 
 import { learnRoutes } from "@/lib/learn-content";
+import { freeToolRoutes } from "@/lib/free-tools";
 import { LOCALES, SITE_URL } from "./constants";
 
 export interface LocalizedRoute {
@@ -50,6 +51,14 @@ export const LOCALIZED_ROUTES: LocalizedRoute[] = [
     path,
     priority: path === "/learn" ? 0.8 : 0.6,
     changeFrequency: "monthly" as const,
+  })),
+  // Free tools — DERIVED from src/lib/free-tools.ts, same as the Knowledge Hub
+  // above. Adding a tool to that config puts it in the sitemap and nowhere
+  // else has to be edited.
+  ...freeToolRoutes().map((path) => ({
+    path,
+    priority: path === "/free-tools" ? 0.8 : 0.7,
+    changeFrequency: "weekly" as const,
   })),
 ];
 

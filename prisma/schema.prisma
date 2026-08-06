@@ -1959,3 +1959,36 @@ model CrawlIssue {
   @@index([crawlPageId])
   @@map("crawl_issues")
 }
+
+// ─── Free tools: SERP volatility ─────────────────────────────────────────────
+
+/// One day's top-10 for one basket keyword.
+///
+/// The basket is fixed (30 keywords × 5 categories × 1 location) and sampled by
+/// a daily worker, NOT by visitors: the public endpoint only reads. That is why
+/// there is no tenant column — this data belongs to nobody and is the same for
+/// every reader.
+///
+/// The volatility SCORE is not stored. It is a pure function of two consecutive
+/// days' rows (see src/lib/free-tools/volatility.ts) and is computed on read
+/// behind a 1h cache — storing it would mean a second thing to backfill when
+/// the formula changes, and the formula is the part most likely to change.
+model SerpVolatilitySample {
+  id           String   @id @default(cuid())
+  /// UTC day this sample represents.
+  sampledOn    DateTime @db.Date
+  /// ecommerce | local | finance | health | tech
+  category     String
+  keyword      String
+  locationCode Int
+  /// Ordered array of the top-10 domains. Domains, not URLs: a site changing
+  /// its own URL structure is not SERP volatility.
+  topDomains   Json
+  createdAt    DateTime @default(now())
+
+  /// One sample per keyword per day — makes the worker's upsert idempotent, so
+  /// a retried tick cannot double-count a day.
+  @@unique([sampledOn, keyword, locationCode])
+  @@index([category, sampledOn])
+  @@map("serp_volatility_samples")
+}

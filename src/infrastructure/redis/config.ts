@@ -96,6 +96,8 @@ export const REDIS_CONFIG = {
     // Site Crawler runs are long (up to an hour) and started by hand. The
     // real concurrency control is the worker's concurrency: 2, not this.
     "site-crawl": { max: 10, duration: 60_000 },
+    // One hourly tick; the limiter is a backstop, not the schedule.
+    "free-tools-volatility": { max: 4, duration: 60_000 },
   } as Record<string, { max: number; duration: number }>,
 } as const;
 
@@ -119,7 +121,8 @@ export type QueueName =
   | "rank-tracker"
   | "site-audit"
   | "bot-log-analysis"
-  | "site-crawl";
+  | "site-crawl"
+  | "free-tools-volatility";
 
 /** All valid queue names */
 export const QUEUE_NAMES: QueueName[] = [
@@ -143,4 +146,5 @@ export const QUEUE_NAMES: QueueName[] = [
   "site-audit",
   "bot-log-analysis",
   "site-crawl",
+  "free-tools-volatility",
 ];

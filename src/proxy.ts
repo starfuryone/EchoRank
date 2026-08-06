@@ -17,7 +17,16 @@ const LOCALE_COOKIE = "echorank_locale";
 // CSRF origin checks don't interfere: v1 data routes are GET-only, and the
 // MCP POST endpoint is called by non-browser clients that authenticate via
 // the Authorization header, never via cookies.
-const publicPaths = ["/login", "/register", "/api/auth", "/api/feedback", "/f/", "/api/extension/import", "/api/public/v1/"];
+// /api/free/v1/ is the anonymous free-tools namespace: no session, no tenant.
+// It is a PREFIX entry rather than an exact-match one because the namespace is
+// designed to grow, and every route under it is written to the same contract —
+// Redis-backed per-IP limits, a shared daily USD cap, and no database write
+// that is not a metering row.
+//
+// CSRF IS UNAFFECTED. The origin check above runs before this list and applies
+// to every mutating request, so a POST from another site is still refused. That
+// is the same posture /api/av/audit has.
+const publicPaths = ["/login", "/register", "/api/auth", "/api/feedback", "/f/", "/api/extension/import", "/api/public/v1/", "/api/free/v1/"];
 
 // Exactly-public paths — matched whole, never by prefix.
 //
