@@ -42,8 +42,11 @@ export function DemoVideoPlayer({
   return (
     <div>
       <div className={s.playerWrap}>
-        {/* Captions are omitted because no caption track exists for this
-            asset; the surrounding page copy summarizes the content. */}
+        {/* No <track>: the captions are burned into the video itself, so a
+            caption track would double them on screen. preload="metadata"
+            fetches the header for the duration and nothing more — the poster
+            is what the homepage actually renders until someone presses play,
+            which is why the mp4 is not pulled on page load. */}
         <video
           ref={videoRef}
           className={s.video}
