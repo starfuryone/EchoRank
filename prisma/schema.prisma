@@ -213,6 +213,10 @@ model Tenant {
 
   crawlJobs CrawlJob[]
 
+  brandProfiles   BrandProfile[]
+  checkups        Checkup[]
+  aiProviderCalls AiProviderCall[]
+
   @@map("tenants")
 }
 
@@ -1068,16 +1072,39 @@ model TrackedPrompt {
   tenantId  String
   text      String
   active    Boolean   @default(true)
+  /// Least-recently-run ordering is what rotates prompts across checkups when
+  /// a brand selects more than its tier's per-checkup cap allows.
   lastRunAt DateTime?
   nextRunAt DateTime  @default(now())
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
 
-  tenant Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  runs   PromptRun[]
+  // ── Setup wizard (nullable: prompts predating the wizard have none) ──
+  /// Null until a brand profile exists; the wizard sets it.
+  brandProfileId String?
+  /// DISCOVERY | RECOMMENDATION | COMPARISON | ALTERNATIVES | PRICING |
+  /// USE_CASE | FEATURES | TRUST | PURCHASE | BRAND_AWARENESS
+  category       String?
+  /// commercial | research | navigational
+  intent         String?
+  audience       String?
+  market         String?
+  language       String?       @default("en")
+  source         PromptSource?
+  /// 0-100, deterministic. Null for prompts that predate the scorer.
+  relevanceScore Int?
+  /// Chosen in the wizard. `active` stays the tracking switch; this is the
+  /// wizard's own selection state, so deselecting in the wizard and pausing
+  /// tracking remain different actions.
+  selected       Boolean       @default(false)
+
+  tenant       Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  brandProfile BrandProfile? @relation(fields: [brandProfileId], references: [id], onDelete: Cascade)
+  runs         PromptRun[]
 
   @@unique([tenantId, text])
   @@index([active, nextRunAt])
+  @@index([brandProfileId, selected])
   @@map("tracked_prompts")
 }
 
@@ -1095,11 +1122,21 @@ model PromptRun {
   error          String?
   createdAt      DateTime @default(now())
 
-  tenant Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  prompt TrackedPrompt @relation(fields: [promptId], references: [id], onDelete: Cascade)
+  /// Null for runs from the pre-checkup scheduler, which still writes here.
+  checkupId  String?
+  /// Which repetition this is, 1-based. Repeatability compares runs that share
+  /// (checkup, prompt, provider) and differ only by this.
+  repetition Int     @default(1)
+
+  tenant   Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  prompt   TrackedPrompt    @relation(fields: [promptId], references: [id], onDelete: Cascade)
+  checkup  Checkup?         @relation(fields: [checkupId], references: [id], onDelete: Cascade)
+  analysis MentionAnalysis?
 
   @@index([tenantId, createdAt])
   @@index([promptId, createdAt])
+  /// Dashboard read: one checkup's responses, grouped by provider.
+  @@index([checkupId, engine])
   @@map("prompt_runs")
 }
 
@@ -1991,4 +2028,210 @@ model SerpVolatilitySample {
   @@unique([sampledOn, keyword, locationCode])
   @@index([category, sampledOn])
   @@map("serp_volatility_samples")
+}
+
+// ─── AI Visibility Monitor ───────────────────────────────────────────────────
+//
+// Multi-provider brand checkups. Extends the existing AI-visibility stack
+// rather than paralleling it: TrackedPrompt keeps being the prompt of record
+// and PromptRun keeps being one provider's answer — both gain columns here
+// instead of getting a twin table.
+
+enum CheckupStatus {
+  QUEUED
+  RUNNING
+  COMPLETED
+  FAILED
+  /// Stopped because the tenant hit its monthly AI spend cap. Distinct from
+  /// FAILED: nothing went wrong, we simply refused to spend more.
+  CAPPED
+}
+
+/// Where a tracked prompt came from. Drives the wizard's badges and lets
+/// "regenerate ideas" exclude what a brand has already seen.
+enum PromptSource {
+  SUGGESTED
+  CUSTOM
+  EDITED
+}
+
+/// The brand a checkup is about.
+///
+/// NOT folded onto Tenant. Tenant already carries 67 columns, and its existing
+/// `brand*` fields are visual identity and Marketing Studio voice — a different
+/// concern. A separate entity also matches the spec's (brand_id, completed_at)
+/// index: an agency tenant can hold more than one brand without reshaping
+/// anything.
+model BrandProfile {
+  id       String  @id @default(cuid())
+  tenantId String
+  name     String
+  /// Public site, used by the setup wizard's context inference.
+  website  String?
+  industry String?
+
+  /// Other spellings that count as a mention: "Echorank360", "Echo rank".
+  aliases     String[] @default([])
+  competitors String[] @default([])
+  /// Country/market names the prompts are localised for.
+  markets     String[] @default([])
+  audiences   String[] @default([])
+  topics      String[] @default([])
+
+  /// False until the setup wizard finishes. /visibility routes brands without
+  /// an active config to the wizard, so this is the flag it reads.
+  trackingActive Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  tenant   Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  prompts  TrackedPrompt[]
+  checkups Checkup[]
+  trends   CheckupTrend[]
+
+  @@index([tenantId])
+  @@map("brand_profiles")
+}
+
+/// One scheduled (or manual) run across providers and prompts.
+///
+/// The tier's shape is COPIED ONTO THE ROW at creation — providers, prompts and
+/// reps — so a checkup keeps reporting the shape it actually ran under after an
+/// upgrade, downgrade or config edit. Same reasoning as CrawlJob.urlCap.
+model Checkup {
+  id             String        @id @default(cuid())
+  tenantId       String
+  brandProfileId String
+  status         CheckupStatus @default(QUEUED)
+  /// True for "Run checkup now". Counts against the same monthly cap.
+  manual         Boolean       @default(false)
+
+  /// Shape this checkup ran under, snapshotted from plan-config at creation.
+  providers   String[] @default([])
+  promptCount Int      @default(0)
+  repetitions Int      @default(1)
+
+  /// Rolled up when the checkup completes; null while it runs.
+  visibilityScore    Float?
+  repeatabilityScore Float?
+  /// Total USD across every provider + analysis call in this checkup.
+  costUsd            Decimal @default(0) @db.Decimal(10, 6)
+
+  /// "cap_reached" | a truncated error. Null on a clean finish.
+  stoppedReason String?
+  startedAt     DateTime?
+  completedAt   DateTime?
+  createdAt     DateTime  @default(now())
+
+  tenant       Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  brandProfile BrandProfile     @relation(fields: [brandProfileId], references: [id], onDelete: Cascade)
+  runs         PromptRun[]
+  calls        AiProviderCall[]
+
+  /// Dashboard reads: this brand's checkups, newest first.
+  @@index([brandProfileId, completedAt])
+  @@index([tenantId, createdAt])
+  @@map("checkups")
+}
+
+/// What one provider said about one prompt, analysed.
+///
+/// Split from PromptRun rather than widened into it: PromptRun is the raw
+/// answer (kept even when analysis fails), and this is the interpretation. One
+/// row per run, so a re-analysis replaces rather than accumulates.
+model MentionAnalysis {
+  id          String @id @default(cuid())
+  promptRunId String @unique
+
+  // ── Deterministic pass (no LLM, always present) ──
+  brandMentioned  Boolean
+  mentionCount    Int      @default(0)
+  /// 1-based position in the answer's first list, if the brand appears in one.
+  listPosition    Int?
+  competitorNames String[] @default([])
+  /// Registrable domains cited in the answer that match the brand's site.
+  citedOwnDomain  Boolean  @default(false)
+  citedDomains    String[] @default([])
+  /// Text around each mention, for the dashboard's context panel.
+  contextSnippets String[] @default([])
+
+  // ── LLM pass (Haiku, only when brandMentioned) ──
+  recommended            Boolean?
+  /// 0-1. Multiplies the recommendation weight in the score.
+  recommendationStrength Float?
+  /// positive | neutral | negative
+  sentiment              String?
+  quotedDescription      String?  @db.Text
+  factualClaims          String[] @default([])
+  possibleInaccuracies   String[] @default([])
+  /// 0-1. The whole weighted score is multiplied by this.
+  confidence             Float?
+
+  /// Weighted visibility score for this single response, 0-100.
+  visibilityScore Float    @default(0)
+  createdAt       DateTime @default(now())
+
+  promptRun PromptRun @relation(fields: [promptRunId], references: [id], onDelete: Cascade)
+
+  @@map("mention_analyses")
+}
+
+/// One day's rolled-up scores per brand, for the trend chart.
+model CheckupTrend {
+  id             String   @id @default(cuid())
+  brandProfileId String
+  /// UTC day.
+  day            DateTime @db.Date
+
+  visibilityScore    Float
+  repeatabilityScore Float?
+  mentionRate        Float?
+  /// { provider: score } — small, so JSON rather than a row per provider.
+  byProvider         Json?
+  createdAt          DateTime @default(now())
+
+  brandProfile BrandProfile @relation(fields: [brandProfileId], references: [id], onDelete: Cascade)
+
+  /// One row per brand per day; the writer upserts, so a re-run cannot double.
+  @@unique([brandProfileId, day])
+  @@index([brandProfileId, day])
+  @@map("checkup_trends")
+}
+
+/// Every LLM call the monitor makes, metered.
+///
+/// The SeoApiCall pattern, for AI spend: one row per provider call and per
+/// analysis call, with the token counts the price was computed from. Costs are
+/// DERIVED from tokens at write time and stored — a price table that changed
+/// later must not silently restate what a tenant was already charged.
+model AiProviderCall {
+  id        String  @id @default(cuid())
+  tenantId  String
+  /// Null for calls outside a checkup (the wizard's brand-context inference).
+  checkupId String?
+
+  /// CLAUDE | CHATGPT | GOOGLE_AI_OVERVIEWS | GEMINI | GROK | MISTRAL | LLAMA
+  provider String
+  model    String
+  /// analysis | answer | inference — what the call was for.
+  purpose  String @default("answer")
+
+  inputTokens       Int     @default(0)
+  outputTokens      Int     @default(0)
+  /// Cache reads are billed at a fraction of input; kept so the cost is
+  /// reproducible from the row alone.
+  cachedInputTokens Int     @default(0)
+  costUsd           Decimal @db.Decimal(10, 6)
+  ok                Boolean @default(true)
+  error             String?
+
+  createdAt DateTime @default(now())
+
+  tenant  Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  checkup Checkup? @relation(fields: [checkupId], references: [id], onDelete: SetNull)
+
+  /// The monthly cap aggregate: one tenant, one month.
+  @@index([tenantId, createdAt])
+  @@index([checkupId, provider])
+  @@map("ai_provider_calls")
 }

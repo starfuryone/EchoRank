@@ -39,6 +39,34 @@ export const MARKETING_MONTHLY_OUTPUT_TOKENS: Record<PlanType, number | null> = 
   ENTERPRISE: null,
 };
 
+/**
+ * How often a brand's checkup runs. "none" = the tier has no monitor at all.
+ *
+ * STARTER is "none" deliberately, and that is not an oversight: STARTER does
+ * not carry the `ai_visibility` feature (see feature-flags.ts), so there is no
+ * tier-shape to give it. Selling the monitor into STARTER is a packaging
+ * decision — it needs a feature-flag change, not a number here.
+ */
+export type CheckupFrequency = "none" | "weekly" | "twice_weekly" | "daily" | "custom";
+
+export interface AiCheckupShape {
+  frequency: CheckupFrequency;
+  /**
+   * How many providers a checkup queries. `null` = every provider that is
+   * currently AVAILABLE, which is a runtime fact (an adapter is available when
+   * its API key is set), not a number we can pin here.
+   */
+  providers: number | null;
+  /** Prompts selected for the brand. */
+  prompts: number;
+  /**
+   * Times each prompt is asked, per provider. >1 is what makes the
+   * repeatability score meaningful: the same question asked twice and answered
+   * differently is the signal.
+   */
+  repetitions: number;
+}
+
 export interface PlanConfig {
   name: string;
   slug: string;
@@ -100,6 +128,32 @@ export interface PlanConfig {
    * src/lib/site-crawler/quota.ts.
    */
   crawlsPerMonth: number | null;
+  /** Shape of one AI Visibility checkup for this tier. */
+  aiCheckup: AiCheckupShape;
+  /**
+   * Per-tenant AI provider spend per calendar month (UTC), in USD.
+   * `null` = uncapped (ENTERPRISE is contract-priced). 0 = no monitor.
+   *
+   * THE ARITHMETIC, so these stay adjustable with the reasoning visible.
+   * One prompt-run costs an answer call plus an analysis call. Measured
+   * against Anthropic's published rates (Haiku 4.5 at $1/$5 per MTok) a
+   * ~300-in/600-out answer is $0.0033 on Haiku and ~5x that on an Opus-class
+   * model; the ~1200-in/400-out analysis pass is $0.0032 on Haiku. Blended
+   * across the provider mix that is roughly **$0.013 per prompt-run**.
+   *
+   * Runs per month = frequency x prompts x repetitions x providers:
+   *   AI_VISIBILITY  4.3 x 10 x 1 x 2 =    87  ~= $1.13/mo
+   *   GROWTH         8.7 x 15 x 2 x 4 = 1,040  ~= $13.50/mo
+   *   AGENCY          30 x 20 x 3 x 6 = 10,800 ~= $140/mo
+   *
+   * AI_VISIBILITY and GROWTH carry 3-4x headroom over the modelled cost, so
+   * the cap only bites on abuse. AGENCY's does NOT: $150 is about what one
+   * fully-provisioned brand costs, so an agency tracking several brands will
+   * reach it and later checkups stop with CAPPED. That is the intended
+   * guardrail on a $499 tier, but it is a pricing decision — raising it raises
+   * the worst-case monthly bill dollar for dollar.
+   */
+  aiMonthlyCapUsd: number | null;
   highlighted: boolean;
   cta: string;
   ctaLink: string;
@@ -140,6 +194,10 @@ export const PLAN_CONFIGS: Record<PlanType, PlanConfig> = {
     // product and gets the locked upsell state instead.
     crawlUrlCap: 0,
     crawlsPerMonth: 0,
+    // The tier the monitor exists for. Two providers and one repetition keep
+    // it inside a $29 price; repeatability needs >1 and is a GROWTH feature.
+    aiCheckup: { frequency: "weekly", providers: 2, prompts: 10, repetitions: 1 },
+    aiMonthlyCapUsd: 5,
     highlighted: false,
     cta: "Start tracking",
     ctaLink: "/register?plan=ai_visibility",
@@ -175,6 +233,9 @@ export const PLAN_CONFIGS: Record<PlanType, PlanConfig> = {
     trackedKeywords: 0,
     crawlUrlCap: 500,
     crawlsPerMonth: 4,
+    // No ai_visibility feature on this tier — see CheckupFrequency.
+    aiCheckup: { frequency: "none", providers: 0, prompts: 0, repetitions: 0 },
+    aiMonthlyCapUsd: 0,
     highlighted: false,
     cta: "Start Free Trial",
     ctaLink: "/register?plan=starter",
@@ -212,6 +273,8 @@ export const PLAN_CONFIGS: Record<PlanType, PlanConfig> = {
     trackedKeywords: 50,
     crawlUrlCap: 5_000,
     crawlsPerMonth: 20,
+    aiCheckup: { frequency: "twice_weekly", providers: 4, prompts: 15, repetitions: 2 },
+    aiMonthlyCapUsd: 40,
     highlighted: true,
     cta: "Start Free Trial",
     ctaLink: "/register?plan=growth",
@@ -249,6 +312,8 @@ export const PLAN_CONFIGS: Record<PlanType, PlanConfig> = {
     trackedKeywords: 250,
     crawlUrlCap: 25_000,
     crawlsPerMonth: null,
+    aiCheckup: { frequency: "daily", providers: null, prompts: 20, repetitions: 3 },
+    aiMonthlyCapUsd: 150,
     highlighted: false,
     cta: "Start Free Trial",
     ctaLink: "/register?plan=agency",
@@ -288,6 +353,10 @@ export const PLAN_CONFIGS: Record<PlanType, PlanConfig> = {
     trackedKeywords: 1000,
     crawlUrlCap: 25_000,
     crawlsPerMonth: null,
+    // "custom": the schedule is set per contract, so the scheduler reads the
+    // brand profile rather than a cadence baked in here.
+    aiCheckup: { frequency: "custom", providers: null, prompts: 20, repetitions: 3 },
+    aiMonthlyCapUsd: null,
     highlighted: false,
     cta: "Book Enterprise Demo",
     ctaLink: "/enterprise",
