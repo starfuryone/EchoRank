@@ -16,10 +16,14 @@ import { requirePaidPlan } from "@/lib/paid-plan";
 import { prisma } from "@/lib/prisma";
 import { ISSUE_TYPES, type IssueType, type Severity } from "@/lib/site-crawler/checks";
 import { crawlRouteError } from "@/lib/site-crawler/http";
+import { csvFilename } from "@/lib/csv-export";
+import { ISSUE_COLUMNS, type CrawlIssueRow } from "@/lib/site-crawler/csv-columns";
+import { csvStreamResponse, wantsCsv } from "@/lib/csv-stream";
 
 const DEFAULT_PAGE_SIZE = 50;
 const MAX_PAGE_SIZE = 200;
 const SEVERITIES: Severity[] = ["ERROR", "WARNING", "NOTICE"];
+
 
 export async function GET(
   request: Request,
@@ -65,6 +69,33 @@ export async function GET(
       ...(severity ? { severity } : {}),
       ...(type ? { type: type as IssueType } : {}),
     };
+
+    // CSV branches AFTER validation and after the tenant-scoped crawl lookup,
+    // so it inherits both unchanged: same requirePaidPlan, same 404, same 400
+    // on an unknown severity or type. It is a response format, not a second
+    // access surface.
+    if (wantsCsv(url)) {
+      return csvStreamResponse<CrawlIssueRow>({
+        columns: ISSUE_COLUMNS,
+        filename: csvFilename("site-crawler-issues"),
+        cursorOf: (row) => row.id,
+        fetchPage: (cursor, take) =>
+          prisma.crawlIssue.findMany({
+            // Same `where` object the JSON path uses — the filters cannot
+            // drift between the two formats because there is only one of them.
+            where: { ...where, ...(cursor ? { id: { gt: cursor } } : {}) },
+            orderBy: { id: "asc" },
+            take,
+            select: {
+              id: true,
+              type: true,
+              severity: true,
+              detail: true,
+              crawlPage: { select: { url: true, statusCode: true } },
+            },
+          }),
+      });
+    }
 
     const [total, rows] = await Promise.all([
       prisma.crawlIssue.count({ where }),

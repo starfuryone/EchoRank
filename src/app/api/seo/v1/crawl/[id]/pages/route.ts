@@ -12,6 +12,9 @@
 
 import { NextResponse } from "next/server";
 import { requirePaidPlan } from "@/lib/paid-plan";
+import { csvFilename } from "@/lib/csv-export";
+import { PAGE_COLUMNS, type CrawlPageRow } from "@/lib/site-crawler/csv-columns";
+import { csvStreamResponse, wantsCsv } from "@/lib/csv-stream";
 import { prisma } from "@/lib/prisma";
 import { crawlRouteError } from "@/lib/site-crawler/http";
 
@@ -86,6 +89,42 @@ export async function GET(
       ...(depth.value !== undefined ? { depth: depth.value } : {}),
       ...(Object.keys(inlinkRange).length > 0 ? { inlinkCount: inlinkRange } : {}),
     };
+
+    // CSV branches after validation and the tenant-scoped crawl lookup, so it
+    // inherits the same requirePaidPlan, the same 404 and the same 400 on an
+    // unparseable filter. A response format, not a second access surface.
+    if (wantsCsv(url)) {
+      return csvStreamResponse<CrawlPageRow>({
+        columns: PAGE_COLUMNS,
+        filename: csvFilename("site-crawler-pages"),
+        cursorOf: (row) => row.id,
+        fetchPage: (cursor, take) =>
+          prisma.crawlPage.findMany({
+            // The same `where` the JSON path built, so the two formats cannot
+            // disagree about which rows a filter selects.
+            where: { ...where, ...(cursor ? { id: { gt: cursor } } : {}) },
+            orderBy: { id: "asc" },
+            take,
+            select: {
+              id: true,
+              url: true,
+              statusCode: true,
+              title: true,
+              titleLength: true,
+              metaDescLength: true,
+              h1Count: true,
+              wordCount: true,
+              depth: true,
+              internalLinks: true,
+              inlinkCount: true,
+              inSitemap: true,
+              canonical: true,
+              redirectTarget: true,
+              contentType: true,
+            },
+          }),
+      });
+    }
 
     const [total, rows] = await Promise.all([
       prisma.crawlPage.count({ where }),

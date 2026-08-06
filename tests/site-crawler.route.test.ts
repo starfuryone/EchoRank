@@ -358,8 +358,14 @@ describe("GET /crawl/[id]/export", () => {
     expect(res.headers.get("content-disposition")).toContain("attachment");
 
     const text = await res.text();
-    expect(text.split("\n")[0]).toBe("severity,type,url,status_code,detail");
-    expect(text).toContain('"ERROR","TITLE_MISSING","https://example.com/a"');
+    // The header row and the quoting style both CHANGED when this endpoint was
+    // moved onto the shared serializer (src/lib/csv-export.ts): headers are now
+    // human-readable rather than snake_case, and fields are quoted only when
+    // RFC 4180 requires it rather than unconditionally. Both are deliberate —
+    // every other export in the app looks like this, and the file is opened in
+    // a spreadsheet rather than parsed by a documented API contract.
+    expect(text.split("\r\n")[0]).toBe("Severity,Type,URL,Status code,Detail");
+    expect(text).toContain("ERROR,TITLE_MISSING,https://example.com/a");
   });
 
   it("quotes fields so a comma in a detail cannot shift columns", async () => {
