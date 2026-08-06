@@ -7,23 +7,17 @@ import { FAQ } from "./faq-data";
 import { DemoVideoModal } from "@/components/demo-video";
 import { HomeVideo, type HomeVideoLabels } from "./HomeVideo";
 import { PublicNav } from "./PublicNav";
+import { PricingSection, type HomePricingTier } from "./PricingSection";
 import type { HomePricingChrome } from "@/lib/i18n/content";
 
 /**
  * One pricing card, built server-side from PLAN_CONFIGS. Prices and feature
  * bullets are NOT authored here — see pricingTiers() in page.tsx for why.
  */
-export interface HomePricingTier {
-  id: string;
-  name: string;
-  /** Null for the custom-priced tier, which renders `customLabel` instead. */
-  monthly: number | null;
-  annual: number | null;
-  customLabel: string | null;
-  savePct: number | null;
-  features: string[];
-  highlighted: boolean;
-}
+// The pricing grid lives in PricingSection so /pricing can render the very same
+// cards from the very same numbers. Re-exported here because page.tsx has
+// always imported the type from this module.
+export type { HomePricingTier } from "./PricingSection";
 
 /* ---------- copy ---------- */
 
@@ -188,7 +182,7 @@ const T = {
       seoPaper: "The SEO tools, explained (PDF)",
       extension: "Browser extension",
     },
-    foot: { links: [["about", "ABOUT"], ["resources", "RESOURCES"], ["guide", "GUIDE"], ["guide-visibilite-ia", "AI VISIBILITY GUIDE"], ["legal/privacy", "PRIVACY"], ["legal/terms", "TERMS"], ["legal/disclaimer", "DISCLAIMER"]] },
+    foot: { links: [["pricing", "PRICING"], ["about", "ABOUT"], ["resources", "RESOURCES"], ["guide", "GUIDE"], ["guide-visibilite-ia", "AI VISIBILITY GUIDE"], ["legal/privacy", "PRIVACY"], ["legal/terms", "TERMS"], ["legal/disclaimer", "DISCLAIMER"]] },
   },
 
   fr: {
@@ -343,7 +337,7 @@ const T = {
       seoPaper: "Les outils SEO, expliqués (PDF)",
       extension: "Extension navigateur",
     },
-    foot: { links: [["about", "À PROPOS"], ["resources", "RESSOURCES"], ["guide", "GUIDE"], ["guide-visibilite-ia", "GUIDE VISIBILITÉ IA"], ["legal/privacy", "CONFIDENTIALITÉ"], ["legal/terms", "CONDITIONS"], ["legal/disclaimer", "AVIS"]] },
+    foot: { links: [["pricing", "TARIFS"], ["about", "À PROPOS"], ["resources", "RESSOURCES"], ["guide", "GUIDE"], ["guide-visibilite-ia", "GUIDE VISIBILITÉ IA"], ["legal/privacy", "CONFIDENTIALITÉ"], ["legal/terms", "CONDITIONS"], ["legal/disclaimer", "AVIS"]] },
   },
 } as const;
 
@@ -368,88 +362,6 @@ const CARD_COLOR: Record<string, string> = {
   blue: "#7aa7ff",
   red: "#f87171",
 };
-
-/* ---------- checkout ---------- */
-
-/**
- * PlanType (as it comes from PLAN_CONFIGS via pricingTiers) -> Stripe tier key.
- * Enterprise maps to null on purpose: it is custom priced, has no Stripe
- * lookup key, and must never render a checkout button.
- */
-function checkoutTierFor(planId: string): "ai_visibility" | "starter" | "growth" | "agency" | null {
-  switch (planId) {
-    case "AI_VISIBILITY":
-      return "ai_visibility";
-    case "STARTER":
-      return "starter";
-    case "GROWTH":
-      return "growth";
-    case "AGENCY":
-      return "agency";
-    default:
-      return null;
-  }
-}
-
-function CheckoutButton({
-  tier,
-  interval,
-  locale,
-  chrome,
-}: {
-  tier: "ai_visibility" | "starter" | "growth" | "agency";
-  interval: "month" | "year";
-  locale: string;
-  chrome: HomePricingChrome;
-}) {
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState(false);
-
-  async function start() {
-    if (busy) return;
-    setBusy(true);
-    setError(false);
-    try {
-      const res = await fetch("/api/billing/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tier, interval, locale }),
-      });
-      // Not signed in: go and make an account, then come straight back into
-      // checkout for the tier and interval that were clicked. Carrying the
-      // interval matters — losing it silently drops an annual buyer onto a
-      // monthly price.
-      if (res.status === 401) {
-        window.location.assign(
-          `/register?plan=${encodeURIComponent(tier)}&interval=${encodeURIComponent(interval)}&checkout=1`,
-        );
-        return;
-      }
-      const data = (await res.json()) as { url?: string };
-      if (!res.ok || !data.url) throw new Error("checkout failed");
-      // Full navigation, not router.push: this leaves the app for Stripe.
-      window.location.assign(data.url);
-      // Deliberately stay disabled — the page is on its way out, and
-      // re-enabling here invites a second session on a slow redirect.
-    } catch {
-      setError(true);
-      setBusy(false);
-    }
-  }
-
-  return (
-    <>
-      <button type="button" className={s.pbuy} onClick={start} disabled={busy} aria-busy={busy}>
-        {busy ? chrome.checkoutBusy : chrome.checkoutCta}
-      </button>
-      {error && (
-        <p className={s.pbuyErr} role="alert">
-          {chrome.checkoutError}
-        </p>
-      )}
-    </>
-  );
-}
 
 /* ---------- component ---------- */
 
@@ -578,7 +490,7 @@ export default function HomeClient({
                 where they are still true. */}
             <div className={s.ctarow}>
               <Link className={`${s.btn} ${s.btnPrimary}`} href={L("/ai-visibility#audit")}>{t.hero.cta1}</Link>
-              <Link className={`${s.btn} ${s.btnGhost}`} href="/register">{t.hero.cta3}</Link>
+              <Link className={`${s.btn} ${s.btnGhost}`} href={L("/pricing")}>{t.hero.cta3}</Link>
               <button type="button" className={`${s.btn} ${s.btnGhost}`} onClick={() => setDemoOpen(true)}>{t.hero.cta2}</button>
             </div>
             <p className={s.label} style={{ marginTop: 22 }}>{t.hero.note}</p>
@@ -923,91 +835,15 @@ export default function HomeClient({
           {baseOf(locale) === "en" && locale !== "en-CA" && (
             <p><Link className={s.label} href="/en-CA#pricing">{t.pricing.cadLink}</Link></p>
           )}
-          {/* Monthly / annual. Annual renders the per-month equivalent so the
-              two modes are comparable at a glance, with the billing period
-              spelled out underneath. */}
-          <div className={s.priceToggle} role="group" aria-label={priceChrome.monthly + " / " + priceChrome.annual}>
-            <button
-              type="button"
-              aria-pressed={!annual}
-              className={`${s.priceToggleBtn} ${!annual ? s.priceToggleOn : ""}`}
-              onClick={() => setAnnual(false)}
-            >
-              {priceChrome.monthly}
-            </button>
-            <button
-              type="button"
-              aria-pressed={annual}
-              className={`${s.priceToggleBtn} ${annual ? s.priceToggleOn : ""}`}
-              onClick={() => setAnnual(true)}
-            >
-              {priceChrome.annual}
-            </button>
-          </div>
-
-          <div className={s.priceGrid}>
-            {pricing.map((p) => {
-              const amount = annual ? p.annual : p.monthly;
-              return (
-                <div className={p.highlighted ? s.priceHi : s.price} key={p.id}>
-                  <div className={s.pname}>/ {p.name}</div>
-                  {amount === null ? (
-                    <div className={s.pamount}>{p.customLabel}</div>
-                  ) : (
-                    <>
-                      <div className={s.pamount}>
-                        {/* Anchor: the REAL monthly price, struck through beside
-                            the annual per-month rate. Annual toggle only, and
-                            derived from the same pricing array the card renders
-                            — never a computed "was" figure, because nobody has
-                            ever been charged one and a struck-through price
-                            that was never charged is what pricing law is about.
-                            $29 IS what a monthly subscriber pays, so "$29 $24"
-                            is a comparison rather than a claim. */}
-                        {annual && p.monthly !== null && p.annual !== null && p.monthly > p.annual ? (
-                          <s className={s.priceAnchor} aria-label={priceChrome.anchorLabel}>
-                            ${p.monthly}
-                          </s>
-                        ) : null}
-                        ${amount}
-                        <span>{priceChrome.perMonth}</span>
-                        {annual && p.savePct ? (
-                          <span className={s.priceSave}>{priceChrome.save.replace("{pct}", String(p.savePct))}</span>
-                        ) : null}
-                      </div>
-                      {annual && <div className={s.pbilled}>{priceChrome.billedAnnually}</div>}
-                    </>
-                  )}
-                  <ul>{p.features.map((f) => <li key={f}>{f}</li>)}</ul>
-                  {/* Every paid tier reaches the tools hub — canAccessPath()
-                      admits all five — so the line is not tier-gated. */}
-                  {amount !== null && (
-                    <a className={s.ptools} href="#tools">
-                      {priceChrome.toolsLine.replace("{n}", String(liveToolCount))} · {priceChrome.toolsAnchor}
-                    </a>
-                  )}
-                  {/* Only AI Visibility is self-serve by URL; the other tiers
-                      keep whatever ctaLink the plan config gives them. */}
-                  {/* The card's ONE action. The old "Start Free Trial →" link
-                      to /register?plan=… is gone: two CTAs on a card that only
-                      does one thing just split the click. The route still
-                      exists — /api/billing/checkout redirects unauthenticated
-                      visitors to it — it is simply not a visible card link.
-                      Enterprise never renders a button; it is custom priced. */}
-                  {checkoutTierFor(p.id) && (
-                    <CheckoutButton
-                      tier={checkoutTierFor(p.id)!}
-                      interval={annual ? "year" : "month"}
-                      locale={locale}
-                      chrome={priceChrome}
-                    />
-                  )}
-                </div>
-              );
-            })}
-          </div>
-          <p className={s.taxline}>{t.pricing.tax}</p>
-          <p className={s.taxline}>{t.pricing.currency}</p>
+          <PricingSection
+            locale={locale}
+            pricing={pricing}
+            priceChrome={priceChrome}
+            liveToolCount={liveToolCount}
+            tax={t.pricing.tax}
+            currency={t.pricing.currency}
+            header={null}
+          />
         </div>
       </section>
 

@@ -58,10 +58,11 @@ const NAV = {
  * page itself stays fully static and public: no auth() call, no redirect, no
  * gate, and the HTML is identical for a logged-out visitor and a bot.
  *
- * /register is the same target the pricing cards use (plan-config ctaLink is
- * /register?plan=...), not a new route.
+ * Signed OUT this points at /pricing, not /register: every marketing CTA now
+ * routes through the pricing page, and this button is a marketing CTA like any
+ * other. Signed IN it points at /dashboard, which is an in-app link and stays.
  */
-function AuthCta({ labels }: { labels: (typeof NAV)[Base] }) {
+function AuthCta({ labels, pricingHref }: { labels: (typeof NAV)[Base]; pricingHref: string }) {
   const [signedIn, setSignedIn] = useState(false);
 
   useEffect(() => {
@@ -85,7 +86,7 @@ function AuthCta({ labels }: { labels: (typeof NAV)[Base] }) {
       {labels.dashboard}
     </Link>
   ) : (
-    <Link className={s.navcta} href="/register">
+    <Link className={s.navcta} href={pricingHref}>
       {labels.join}
     </Link>
   );
@@ -123,7 +124,8 @@ export function PublicNav({
           <a href={anchor("platform")}>{t.platform}</a>
           <a href={anchor("simulator")}>{t.sim}</a>
           <a href={anchor("roi")}>{t.roi}</a>
-          <a href={anchor("pricing")}>{t.pricing}</a>
+          {/* A real page now, not a homepage anchor. */}
+          <Link href={L("/pricing")}>{t.pricing}</Link>
           <Link
             href={L("/learn")}
             className={current === "learn" ? s.toggleOn : undefined}
@@ -150,7 +152,7 @@ export function PublicNav({
               FR
             </Link>
           </span>
-          <AuthCta labels={t} />
+          <AuthCta labels={t} pricingHref={L("/pricing")} />
         </div>
       </div>
     </nav>

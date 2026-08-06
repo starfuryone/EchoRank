@@ -64,7 +64,7 @@ export function DemoVideoPlayer({
             <p className={s.endHeadline}>{t.endHeadline}</p>
             <p className={s.endSub}>{t.endSub}</p>
             <div className={s.ctaRow}>
-              <a className={s.btnPrimary} href="/register" onClick={onNavigate}>
+              <a className={s.btnPrimary} href={`/${locale}/pricing`} onClick={onNavigate}>
                 {t.ctaPrimary}
               </a>
               <a className={s.btnGhost} href={pricingHref} onClick={onNavigate}>
@@ -79,7 +79,7 @@ export function DemoVideoPlayer({
       </div>
 
       <div className={s.belowCtas}>
-        <a className={s.btnPrimary} href="/register" onClick={onNavigate}>
+        <a className={s.btnPrimary} href={`/${locale}/pricing`} onClick={onNavigate}>
           {t.ctaPrimary}
         </a>
         <a className={s.btnGhost} href={pricingHref} onClick={onNavigate}>

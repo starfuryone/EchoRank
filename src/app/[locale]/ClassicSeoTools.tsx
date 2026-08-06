@@ -21,7 +21,7 @@
 //
 // CARDS ARE NOT LINKS. Every /visibility/tools/* route is behind the paid gate,
 // so linking a logged-out visitor to one lands them on a login screen having
-// learned nothing. The section carries a single CTA to /register instead.
+// learned nothing. The section carries a single CTA to /pricing instead.
 
 import Link from "next/link";
 import { HomeVideo } from "./HomeVideo";
@@ -124,7 +124,7 @@ export function ClassicSeoTools({
         ))}
 
         <p className={s.toolsIncluded}>{t.included}</p>
-        <Link className={`${s.btn} ${s.btnPrimary}`} href="/register">
+        <Link className={`${s.btn} ${s.btnPrimary}`} href={`/${locale}/pricing`}>
           {t.cta}
         </Link>
       </div>

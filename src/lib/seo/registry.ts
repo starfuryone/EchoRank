@@ -24,6 +24,9 @@ export interface PlainRoute {
 /** Locale-prefixed marketing routes — emitted once per locale, with alternates. */
 export const LOCALIZED_ROUTES: LocalizedRoute[] = [
   { path: "", priority: 1.0, changeFrequency: "weekly" },
+  // Every marketing CTA on the site routes here, so it is the second most
+  // important page after the homepage.
+  { path: "/pricing", priority: 0.9, changeFrequency: "monthly" },
   { path: "/about", priority: 0.7, changeFrequency: "monthly" },
   { path: "/ai-visibility", priority: 0.8, changeFrequency: "weekly" },
   { path: "/demo", priority: 0.6, changeFrequency: "monthly" },

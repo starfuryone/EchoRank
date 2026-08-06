@@ -94,3 +94,33 @@ describe("RESOURCES section — browser extension button", () => {
     expect(home("fr")).not.toContain("Browser extension");
   });
 });
+
+describe("Phase 1 — homepage CTAs route through pricing", () => {
+  it("no CTA on the homepage links to /register", () => {
+    // The pricing cards' checkout is a <button> that only reaches /register
+    // from JS on a 401, so nothing here should render a /register href at all.
+    for (const locale of ["en", "fr"] as const) {
+      const found = [...home(locale).matchAll(/href="([^"]*)"/g)]
+        .map((m) => m[1])
+        .filter((h) => h.startsWith("/register"));
+      expect(found).toEqual([]);
+    }
+  });
+
+  it("the hero secondary CTA points at the locale's pricing page", () => {
+    expect(anchor(home("en"), "/en/pricing")).not.toBe("");
+    expect(anchor(home("fr"), "/fr/pricing")).not.toBe("");
+  });
+
+  it("the header Create Account button points at pricing", () => {
+    // Signed out only — the signed-in swap to /dashboard is an in-app link and
+    // is deliberately untouched.
+    const html = home("en");
+    expect(html).toContain('href="/en/pricing"');
+  });
+
+  it("keeps Pricing in the footer nav", () => {
+    expect(home("en")).toContain('href="/en/pricing"');
+    expect(home("fr")).toContain('href="/fr/pricing"');
+  });
+});

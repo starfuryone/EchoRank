@@ -115,9 +115,10 @@ describe("public top nav", () => {
   it("places it among the primary links, before the login and signup CTAs", () => {
     const html = render("en");
     const learn = html.indexOf('href="/en/learn"');
-    expect(learn).toBeGreaterThan(html.indexOf("#pricing"));
+    // Pricing is a real page now, not a homepage anchor, and the signup CTA
+    // routes through it — every marketing CTA does. Login is untouched.
+    expect(learn).toBeGreaterThan(html.indexOf('href="/en/pricing"'));
     expect(learn).toBeLessThan(html.indexOf('href="/login"'));
-    expect(learn).toBeLessThan(html.indexOf('href="/register"'));
   });
 
   it("marks it current on the Learn pages themselves", () => {
@@ -131,6 +132,8 @@ describe("public top nav", () => {
     // The nav's only auth-aware piece is the right-hand CTA, which server-
     // renders as the logged-out "Join Now". Learn is a plain link either way.
     expect(render("en")).toContain('href="/en/learn"');
-    expect(render("en")).toContain('href="/register"');
+    // Signed out, the CTA is "Join Now" -> /pricing (it was /register before
+    // the CTAs were rerouted). Signed in it swaps to /dashboard.
+    expect(render("en")).toContain('href="/en/pricing"');
   });
 });
