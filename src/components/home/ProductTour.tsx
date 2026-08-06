@@ -15,7 +15,7 @@ const SHOTS = [
   { slug: "help",             title: "Help",             desc: "The full knowledge base, indexed inside the product.", w: 1400, h: 719 },
 ] as const;
 
-const DELAY = 5000;
+const DELAY = 3500;
 
 export default function ProductTour() {
   const [index, setIndex] = useState(0);
