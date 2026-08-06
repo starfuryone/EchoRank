@@ -64,6 +64,9 @@ const { runCrawl } = await import("@/lib/site-crawler/runner");
 // ─── Fake Redis ─────────────────────────────────────────────────────────────
 
 /** Minimal list+set semantics — enough for the frontier and the seen-set. */
+/** Every HINCRBY the crawl issued, in order. Reset per test. */
+const credits: { field: string; by: number }[] = [];
+
 function fakeRedis(opts: { cancelled?: boolean } = {}) {
   const lists = new Map<string, string[]>();
   const sets = new Map<string, Set<string>>();
@@ -97,19 +100,21 @@ function fakeRedis(opts: { cancelled?: boolean } = {}) {
     async sismember(key: string, member: string) {
       return sets.get(key)?.has(member) ? 1 : 0;
     },
-    /** Enough of a pipeline for the inlink HINCRBY batch. */
+    /** Records the inlink HINCRBY batch so the dedupe rule can be asserted. */
     pipeline() {
-      return {
-        hincrby() {
-          return this;
+      const chain = {
+        hincrby(_key: string, field: string, by: number) {
+          credits.push({ field, by });
+          return chain;
         },
         expire() {
-          return this;
+          return chain;
         },
         async exec() {
           return [];
         },
       };
+      return chain;
     },
     async expire() {
       return 1;
@@ -149,6 +154,7 @@ function terminalWrite() {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  credits.length = 0;
   crawlJob.findUnique.mockResolvedValue({
     id: "job_1",
     rootUrl: "https://example.com/",
@@ -332,5 +338,64 @@ describe("progress and cleanup", () => {
       (c) => c[0].data.issues.create as { type: string }[],
     );
     expect(written.some((i) => i.type === "DUPLICATE_CONTENT")).toBe(true);
+  });
+});
+
+// ─── Inlink credit ──────────────────────────────────────────────────────────
+
+describe("inlink counting", () => {
+  it("credits a repeatedly-linked URL once per source page", async () => {
+    // THE RULE: a nav that links the homepage five times from one page is one
+    // vote from that page, not five. Without this the count measures markup
+    // repetition rather than how well-linked a page is.
+    fetchPage.mockImplementation(async (url: string) =>
+      url === "https://example.com/"
+        ? htmlResponse(url, ["/a", "/a", "/a", "/a", "/a"])
+        : htmlResponse(url),
+    );
+
+    await runCrawl({ jobId: "job_1", redis: fakeRedis() as never });
+
+    const forA = credits.filter((c) => c.field === "https://example.com/a");
+    expect(forA).toHaveLength(1);
+    expect(forA[0]!.by).toBe(1);
+  });
+
+  it("counts the same target once from each of two source pages", async () => {
+    // Two different pages linking /shared is two votes — the dedupe is
+    // per source page, not global.
+    fetchPage.mockImplementation(async (url: string) => {
+      if (url === "https://example.com/") return htmlResponse(url, ["/one", "/two"]);
+      // Only /one and /two link to /shared; /shared itself links nowhere, so
+      // the expected count is exactly the two source pages.
+      if (url === "https://example.com/shared") return htmlResponse(url);
+      return htmlResponse(url, ["/shared", "/shared"]);
+    });
+
+    await runCrawl({ jobId: "job_1", redis: fakeRedis() as never });
+
+    const forShared = credits.filter((c) => c.field === "https://example.com/shared");
+    expect(forShared).toHaveLength(2);
+  });
+
+  it("credits links that differ only by tracking params once", async () => {
+    // They normalize to one URL, so they are one link.
+    fetchPage.mockImplementation(async (url: string) =>
+      url === "https://example.com/"
+        ? htmlResponse(url, ["/a?utm_source=nav", "/a?utm_source=footer", "/a"])
+        : htmlResponse(url),
+    );
+
+    await runCrawl({ jobId: "job_1", redis: fakeRedis() as never });
+    expect(credits.filter((c) => c.field === "https://example.com/a")).toHaveLength(1);
+  });
+
+  it("credits nothing for external links", async () => {
+    fetchPage.mockImplementation(async (url: string) =>
+      url === "https://example.com/" ? htmlResponse(url, ["https://elsewhere.com/x"]) : htmlResponse(url),
+    );
+
+    await runCrawl({ jobId: "job_1", redis: fakeRedis() as never });
+    expect(credits.some((c) => c.field.includes("elsewhere.com"))).toBe(false);
   });
 });
