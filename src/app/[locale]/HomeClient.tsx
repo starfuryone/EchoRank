@@ -10,6 +10,7 @@ import { PublicNav } from "./PublicNav";
 import { PricingSection, type HomePricingTier } from "./PricingSection";
 import type { HomePricingChrome } from "@/lib/i18n/content";
 
+import ProductTour from "@/components/home/ProductTour";
 /**
  * One pricing card, built server-side from PLAN_CONFIGS. Prices and feature
  * bullets are NOT authored here — see pricingTiers() in page.tsx for why.
@@ -835,6 +836,7 @@ export default function HomeClient({
           {baseOf(locale) === "en" && locale !== "en-CA" && (
             <p><Link className={s.label} href="/en-CA#pricing">{t.pricing.cadLink}</Link></p>
           )}
+          <ProductTour />
           <PricingSection
             locale={locale}
             pricing={pricing}
