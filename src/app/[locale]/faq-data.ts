@@ -48,6 +48,10 @@ export const FAQ: Record<FaqBase, { label: string; h2: string; sub: string; item
         q: "Do I need to replace my SEO tools?",
         a: "No. Echorank measures a different outcome — being recommended rather than being ranked — so it sits alongside your existing SEO stack rather than replacing it. Much of the work overlaps in your favour: the structured data, citations and reputation signals that improve AI visibility are the same foundations good SEO already cares about.",
       },
+      {
+        q: "My CSV file isn't displaying correctly in Excel, why?",
+        a: "Exports are UTF-8 with comma separators. If Excel shows everything in one column or garbles accents, use Data → From Text/CSV and pick UTF-8 — or open the file in Google Sheets, which detects it automatically.",
+      },
     ],
   },
 
@@ -79,6 +83,10 @@ export const FAQ: Record<FaqBase, { label: string; h2: string; sub: string; item
       {
         q: "Dois-je remplacer mes outils SEO?",
         a: "Non. Echorank mesure un résultat différent — être recommandé plutôt qu'être classé — et s'ajoute donc à votre outillage SEO existant au lieu de le remplacer. Une bonne partie du travail se recoupe à votre avantage : les données structurées, les citations et les signaux de réputation qui améliorent la visibilité IA sont les mêmes fondations dont le bon SEO se soucie déjà.",
+      },
+      {
+        q: "Mon fichier CSV ne s'affiche pas correctement dans Excel, pourquoi ?",
+        a: "Les exports sont en UTF-8 avec des virgules comme séparateurs. Si Excel affiche tout dans une seule colonne ou déforme les accents, utilisez Données → À partir d'un fichier texte/CSV et choisissez UTF-8 — ou ouvrez le fichier dans Google Sheets, qui le détecte automatiquement.",
       },
     ],
   },

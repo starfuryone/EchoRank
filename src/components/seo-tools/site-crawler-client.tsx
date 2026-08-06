@@ -511,7 +511,13 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
                   ]}
                 />
                 <a
-                  href={`/api/seo/v1/crawl/${active.id}/export`}
+                  // ?format=csv on the issues route rather than /export: this
+                  // one honours the severity and type filters above, so the
+                  // file matches the table the user is looking at. /export
+                  // still exists for the whole crawl, unfiltered.
+                  href={`/api/seo/v1/crawl/${active.id}/issues?format=csv${
+                    severity ? `&severity=${encodeURIComponent(severity)}` : ""
+                  }${type ? `&type=${encodeURIComponent(type)}` : ""}`}
                   className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-700 hover:border-gray-300"
                 >
                   <Download className="h-4 w-4" aria-hidden="true" />

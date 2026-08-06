@@ -12072,3 +12072,24 @@ export const SITE_CRAWLER_COPY: Record<DashLocale, SiteCrawlerCopy> = {
     },
   },
 };
+
+/**
+ * Copy shared by every exportable data table.
+ *
+ * ONE KEY, NOT ONE PER TOOL. The Export CSV button is a single shared
+ * component (components/seo-tools/export-csv-button.tsx), so its label is a
+ * single shared string rather than an `exportCsv` added to a dozen per-tool
+ * copy interfaces. SITE_CRAWLER_COPY keeps its own `exportCsv` because that
+ * button predates this and its markup is the crawler's own.
+ *
+ * de-CH uses ss, never ß — see CLAUDE.md.
+ */
+export interface TableCopy {
+  exportCsv: string;
+}
+
+export const TABLE_COPY: Record<DashLocale, TableCopy> = {
+  en: { exportCsv: "Export CSV" },
+  fr: { exportCsv: "Exporter en CSV" },
+  "de-CH": { exportCsv: "CSV exportieren" },
+};

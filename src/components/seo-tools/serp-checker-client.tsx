@@ -12,6 +12,8 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { ListOrdered, AlertCircle, Loader2, Search } from "lucide-react";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
+import { ExportCsvButton } from "@/components/seo-tools/export-csv-button";
+import type { CsvColumn } from "@/lib/csv-export";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,10 +21,11 @@ import { Select } from "@/components/ui/select";
 import { formatDateTime } from "@/lib/utils";
 import { SerpCheckerHelpButton } from "@/components/seo-tools/serp-checker-help";
 import { SERP_LANGUAGE_CODES, SERP_LOCATION_CODES } from "@/lib/serp/options";
-import type { SerpCheckDto, SerpDevice } from "@/lib/serp/types";
+import type { SerpCheckDto, SerpDevice, SerpResultItem } from "@/lib/serp/types";
 import {
   SERP_CHECKER_COPY,
   SEO_TOOLS_COPY,
+  TABLE_COPY,
   type DashLocale,
   type SerpCheckerCopy,
 } from "@/lib/i18n/dashboard";
@@ -47,7 +50,28 @@ function featureLabel(feature: string): string {
   return feature.replace(/_/g, " ");
 }
 
-function ResultsTable({ check, t }: { check: SerpCheckDto; t: SerpCheckerCopy }) {
+/**
+ * Export columns for a SERP result set.
+ *
+ * The title and URL come straight from the search engine, so they are exactly
+ * the untrusted strings the serializer's formula guard exists for.
+ */
+const SERP_COLUMNS: CsvColumn<SerpResultItem>[] = [
+  { header: "Position", value: (r) => r.position },
+  { header: "Title", value: (r) => r.title },
+  { header: "URL", value: (r) => r.url },
+  { header: "Domain", value: (r) => r.domain },
+];
+
+function ResultsTable({
+  check,
+  t,
+  locale,
+}: {
+  check: SerpCheckDto;
+  t: SerpCheckerCopy;
+  locale: DashLocale;
+}) {
   const items = check.results?.items ?? [];
   if (items.length === 0) {
     return <p className="text-sm text-gray-500">{t.emptyResults}</p>;
@@ -55,6 +79,14 @@ function ResultsTable({ check, t }: { check: SerpCheckDto; t: SerpCheckerCopy })
 
   return (
     <div className="overflow-x-auto">
+      <div className="mb-3 flex justify-end">
+        <ExportCsvButton
+          rows={items}
+          columns={SERP_COLUMNS}
+          tool="serp-checker"
+          label={TABLE_COPY[locale].exportCsv}
+        />
+      </div>
       <table className="w-full text-sm">
         <thead>
           <tr className="border-b border-gray-200 text-left text-xs uppercase tracking-wide text-gray-400">
@@ -349,7 +381,7 @@ export function SerpCheckerClient({ locale }: { locale: DashLocale }) {
                     <p className="text-sm text-gray-500">{t.noFeatures}</p>
                   )}
                 </div>
-                <ResultsTable check={active} t={t} />
+                <ResultsTable check={active} t={t} locale={locale} />
               </>
             )}
           </CardContent>
