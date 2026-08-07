@@ -47,6 +47,7 @@ export const LOCALIZED_ROUTES: LocalizedRoute[] = [
   { path: "/legal/privacy", priority: 0.3, changeFrequency: "yearly" },
   { path: "/legal/cookies", priority: 0.3, changeFrequency: "yearly" },
   { path: "/legal/terms", priority: 0.3, changeFrequency: "yearly" },
+  { path: "/legal/no-financial-advice", priority: 0.3, changeFrequency: "yearly" },
   { path: "/legal/disclaimer", priority: 0.3, changeFrequency: "yearly" },
   // The Knowledge Hub — DERIVED, not listed. Seventeen paths (hub, ten
   // chapters, five guides, Echopedia) come straight from learn-content.ts, so

@@ -11,11 +11,30 @@ export function generateStaticParams() {
   return SUPPORTED_LOCALES.map((locale) => ({ locale }));
 }
 
-type Doc = { title: string; updated: string; sections: { h: string; ps: string[] }[] };
+/**
+ * `ps` widened to ReactNode so section 10 can carry a link to the No Financial
+ * Advice Disclaimer; every other paragraph is still a plain string.
+ * `description` is separate because generateMetadata needs text, and a JSX
+ * paragraph cannot serve as one.
+ */
+type Doc = {
+  title: string;
+  updated: string;
+  description: string;
+  sections: { h: string; ps: React.ReactNode[] }[];
+};
 
-const EN: Doc = {
+/** Cross-reference only — NOT one of the four consent documents. */
+function NfaLink({ locale, label }: { locale: string; label: string }) {
+  return <Link href={`/${locale}/legal/no-financial-advice`}>{label}</Link>;
+}
+
+function buildEn(locale: string): Doc {
+  return {
   title: "Terms of Use",
-  updated: "Last updated: August 7, 2026",
+  updated: "Last updated: August 8, 2026",
+  description:
+    "These Terms govern access to and use of Echorank (echorank360.com), operated by ChatLogic Insights Ltd.",
   sections: [
     { h: "1. Agreement", ps: [
       "These Terms govern access to and use of Echorank (echorank360.com, the \"Service\"), operated by ChatLogic Insights Ltd, registered in England and Wales, company number 15593166 (\"ChatLogic\", \"we\"). By creating an account or using the Service you agree to these Terms and to the Privacy Policy. If you use the Service for an organisation, you represent that you can bind it.",
@@ -52,6 +71,10 @@ const EN: Doc = {
     ]},
     { h: "10. Disclaimer of warranties", ps: [
       "The Service is provided \"as is\" and \"as available\", without warranties of any kind, express or implied, including merchantability, fitness for a particular purpose, non-infringement, accuracy, and uninterrupted or error-free operation, to the maximum extent permitted by law.",
+      <>
+        Use of the Service is also subject to our{" "}
+        <NfaLink locale={locale} label="No Financial Advice Disclaimer" />.
+      </>,
     ]},
     { h: "11. Limitation of liability", ps: [
       "To the maximum extent permitted by law, ChatLogic will not be liable for indirect, incidental, special, consequential or punitive damages, or for lost profits, revenue, goodwill or data, and our total aggregate liability arising out of or relating to the Service is limited to the amounts you paid us in the 12 months preceding the event giving rise to the claim.",
@@ -70,11 +93,15 @@ const EN: Doc = {
       "If a provision is unenforceable, the rest remains in effect. These Terms and the Privacy Policy are the entire agreement between you and ChatLogic regarding the Service. You may not assign these Terms without our consent; we may assign them as part of a corporate transaction. Contact: privacy@echorank360.com.",
     ]},
   ],
-};
+  };
+}
 
-const FR: Doc = {
+function buildFr(locale: string): Doc {
+  return {
   title: "Conditions d'utilisation",
-  updated: "Dernière mise à jour : 7 août 2026",
+  updated: "Dernière mise à jour : 8 août 2026",
+  description:
+    "Les présentes Conditions régissent l'accès au service Echorank (echorank360.com), exploité par ChatLogic Insights Ltd.",
   sections: [
     { h: "1. Accord", ps: [
       "Les présentes Conditions régissent l'accès et l'utilisation d'Echorank (echorank360.com, le « Service »), exploité par ChatLogic Insights Ltd, société d'Angleterre et du Pays de Galles, numéro 15593166 (« ChatLogic », « nous »). En créant un compte ou en utilisant le Service, vous acceptez ces Conditions et la Politique de confidentialité. Si vous utilisez le Service pour une organisation, vous déclarez pouvoir l'engager.",
@@ -111,6 +138,10 @@ const FR: Doc = {
     ]},
     { h: "10. Exclusion de garanties", ps: [
       "Le Service est fourni « tel quel » et « selon disponibilité », sans garantie d'aucune sorte, expresse ou implicite, y compris de qualité marchande, d'adéquation à un usage particulier, d'absence de contrefaçon, d'exactitude ou de fonctionnement ininterrompu et sans erreur, dans toute la mesure permise par la loi.",
+      <>
+        L&apos;utilisation du Service est également soumise à notre{" "}
+        <NfaLink locale={locale} label="Avis d'absence de conseil financier" />.
+      </>,
     ]},
     { h: "11. Limitation de responsabilité", ps: [
       "Dans toute la mesure permise par la loi, ChatLogic n'est pas responsable des dommages indirects, accessoires, spéciaux, consécutifs ou punitifs, ni des pertes de profits, de revenus, de clientèle ou de données, et notre responsabilité totale cumulée liée au Service est limitée aux sommes que vous nous avez payées au cours des 12 mois précédant le fait générateur.",
@@ -129,9 +160,12 @@ const FR: Doc = {
       "Si une clause est inapplicable, le reste demeure en vigueur. Ces Conditions et la Politique de confidentialité constituent l'intégralité de l'accord relatif au Service. Vous ne pouvez céder ces Conditions sans notre accord ; nous pouvons les céder dans le cadre d'une opération d'entreprise. Contact : privacy@echorank360.com.",
     ]},
   ],
-};
+  };
+}
 
-function pick(locale: Locale): Doc { return locale.startsWith("fr") ? FR : EN; }
+function pick(locale: Locale): Doc {
+  return locale.startsWith("fr") ? buildFr(locale) : buildEn(locale);
+}
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
@@ -141,7 +175,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
     locale,
     path: "/legal/terms",
     title: d.title,
-    description: d.sections[0]?.ps[0],
+    description: d.description,
   });
 }
 

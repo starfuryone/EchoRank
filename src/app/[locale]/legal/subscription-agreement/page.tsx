@@ -29,7 +29,23 @@ export function generateStaticParams() {
   return SUPPORTED_LOCALES.map((locale) => ({ locale }));
 }
 
-type Doc = { title: string; updated: string; sections: { h: string; ps: string[] }[] };
+/**
+ * `ps` is ReactNode, not string: two sentences here have to carry a link to the
+ * No Financial Advice Disclaimer, and the shared renderer only ever emitted
+ * plain text. `description` exists because generateMetadata cannot use a JSX
+ * paragraph — it needs the sentence as text.
+ */
+type Doc = {
+  title: string;
+  updated: string;
+  description: string;
+  sections: { h: string; ps: React.ReactNode[] }[];
+};
+
+/** The cross-referenced document. Not a consent document — see consent-config. */
+function NfaLink({ locale, label }: { locale: string; label: string }) {
+  return <Link href={`/${locale}/legal/no-financial-advice`}>{label}</Link>;
+}
 
 /** One line per plan, from the config the checkout actually charges from. */
 function planLines(): string[] {
@@ -40,12 +56,23 @@ function planLines(): string[] {
   });
 }
 
-const EN: Doc = {
+function buildEn(locale: string): Doc {
+  return {
   title: "Subscription Agreement",
   updated: "Last updated: August 7, 2026",
+  description:
+    "This Subscription Agreement governs your subscription to Echorank360, operated by ChatLogic Insights LTD.",
   sections: [
     { h: "Overview", ps: [
-      "This Subscription Agreement (\"Agreement\") governs your subscription to Echorank360 (\"Service\"), operated by ChatLogic Insights LTD (\"we,\" \"us,\" \"our\"). By starting a free trial or subscribing, you agree to the terms below in addition to our Terms of Use. A subscription (with an active trial or paid status) is required to access the dashboard, reputation tools, AI visibility monitoring, SEO tools, and all other platform features.",
+      <>
+        This Subscription Agreement (&quot;Agreement&quot;) governs your subscription to
+        Echorank360 (&quot;Service&quot;), operated by ChatLogic Insights LTD (&quot;we,&quot;
+        &quot;us,&quot; &quot;our&quot;). By starting a free trial or subscribing, you agree to
+        the terms below in addition to our Terms of Use and our{" "}
+        <NfaLink locale={locale} label="No Financial Advice Disclaimer" />. A subscription (with an
+        active trial or paid status) is required to access the dashboard, reputation tools, AI
+        visibility monitoring, SEO tools, and all other platform features.
+      </>,
     ]},
     { h: "1. Plans and Pricing", ps: [
       "1.1 Available Plans. Echorank360 offers the following subscription tiers:",
@@ -93,6 +120,9 @@ const EN: Doc = {
     ]},
     { h: "9. Third-Party Data and AI Outputs", ps: [
       "The Service aggregates data from third-party platforms (including search engines, review platforms, and AI model providers) and generates analysis using artificial intelligence. Third-party data availability is outside our control, and AI-generated scores, rankings, and recommendations are informational estimates, not guarantees of business outcomes. Interruptions or changes in third-party data sources do not entitle you to refunds or billing credits.",
+      <>
+        See also our <NfaLink locale={locale} label="No Financial Advice Disclaimer" />.
+      </>,
     ]},
     { h: "10. Service Level", ps: [
       "Echorank360 aims to provide continuous service availability but does not guarantee specific uptime. Planned maintenance is performed during low-usage hours when possible. Service interruptions do not entitle you to refunds or billing credits.",
@@ -107,23 +137,25 @@ const EN: Doc = {
       "ChatLogic Insights LTD — support@echorank360.com",
     ]},
   ],
-};
+  };
+}
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
   if (!isSupportedLocale(locale)) return {};
+  const d = buildEn(locale);
   return buildMetadata({
     locale,
     path: "/legal/subscription-agreement",
-    title: EN.title,
-    description: EN.sections[0]?.ps[0],
+    title: d.title,
+    description: d.description,
   });
 }
 
 export default async function Page({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   if (!isSupportedLocale(locale)) notFound();
-  const d = EN;
+  const d = buildEn(locale);
   const nav = CONTENT[locale as Locale].nav;
   const foot = CONTENT[locale as Locale].footer;
   const backLabel = locale.startsWith("fr") ? "← Retour" : locale === "de-CH" ? "← Zurück" : "← Back";
