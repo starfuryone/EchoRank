@@ -158,3 +158,80 @@ describe("nav integration", () => {
     expect(html).toContain('aria-current="page"');
   });
 });
+
+describe("optional long-form sections", () => {
+  it("covers the eight goals items and nothing else", async () => {
+    const { longformSlugs } = await import("@/lib/solutions-longform");
+    const slugs = longformSlugs();
+    expect(slugs).toHaveLength(8);
+    const goals = SOLUTION_CATEGORIES.find((c) => c.slug === "goals")!;
+    expect([...slugs].sort()).toEqual(goals.items.map((i) => i.slug).sort());
+  });
+
+  it("is optional — an item without it returns null, not an empty shell", async () => {
+    // The template branches on null. An empty object would render a section
+    // heading with no prose under it.
+    const { longformFor } = await import("@/lib/solutions-longform");
+    expect(longformFor("agencies", "en")).toBeNull();
+    expect(longformFor("healthcare", "fr")).toBeNull();
+    expect(longformFor("not-a-slug", "en")).toBeNull();
+  });
+
+  it("gives every covered item two sections in both locales", async () => {
+    const { longformFor, longformSlugs } = await import("@/lib/solutions-longform");
+    for (const slug of longformSlugs()) {
+      for (const base of ["en", "fr"] as const) {
+        const lf = longformFor(slug, base);
+        expect(lf, `${slug}.${base}`).not.toBeNull();
+        expect(lf!.sections).toHaveLength(2);
+        for (const sec of lf!.sections) {
+          expect(sec.h2, `${slug}.${base} h2`).toBeTruthy();
+          expect(sec.paras.length, `${slug}.${base} paras`).toBeGreaterThanOrEqual(1);
+          for (const p of sec.paras) expect(p.length).toBeGreaterThan(40);
+        }
+      }
+    }
+  });
+
+  it("does not leave English prose in the French copy", async () => {
+    const { longformFor, longformSlugs } = await import("@/lib/solutions-longform");
+    for (const slug of longformSlugs()) {
+      const en = longformFor(slug, "en")!;
+      const fr = longformFor(slug, "fr")!;
+      for (let i = 0; i < en.sections.length; i++) {
+        expect(fr.sections[i].h2, `${slug} h2 ${i} untranslated`).not.toBe(en.sections[i].h2);
+        expect(fr.sections[i].paras[0], `${slug} para untranslated`).not.toBe(en.sections[i].paras[0]);
+      }
+    }
+  });
+
+  it("renders the sections on a page that has them, numbered after the cards", async () => {
+    const Page = (await import("@/app/[locale]/solutions/[category]/[slug]/page")).default;
+    const html = renderToStaticMarkup(
+      await Page({ params: Promise.resolve({ locale: "en", category: "goals", slug: "get-cited-by-ai" }) }),
+    );
+    expect(html).toContain("AI assistants are the new front page");
+    expect(html).toContain("Measure it, then move it");
+    // Cards are /02, so long-form starts at /03.
+    expect(html).toContain("/ 03");
+    expect(html).toContain("/ 04");
+  });
+
+  it("omits the block cleanly on a page without long-form", async () => {
+    const Page = (await import("@/app/[locale]/solutions/[category]/[slug]/page")).default;
+    const html = renderToStaticMarkup(
+      await Page({ params: Promise.resolve({ locale: "en", category: "roles", slug: "seo-professionals" }) }),
+    );
+    // No stray section label, and the closing CTA still renders.
+    expect(html).not.toContain("/ 03");
+    expect(html).toContain("Not sure where to start?");
+  });
+
+  it("renders the French prose on a French page", async () => {
+    const Page = (await import("@/app/[locale]/solutions/[category]/[slug]/page")).default;
+    const html = renderToStaticMarkup(
+      await Page({ params: Promise.resolve({ locale: "fr", category: "goals", slug: "win-local-customers" }) }),
+    );
+    expect(html).toContain("Les clients locaux décident");
+  });
+});

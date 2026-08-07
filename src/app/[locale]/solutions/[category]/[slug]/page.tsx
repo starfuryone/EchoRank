@@ -24,6 +24,7 @@ import {
   itemBySlug,
   solutionBase,
 } from "@/lib/solutions-taxonomy";
+import { longformFor } from "@/lib/solutions-longform";
 import { PublicNav } from "../../../PublicNav";
 import s from "../../../home2.module.css";
 
@@ -71,6 +72,9 @@ export default async function Page({ params }: { params: Params }) {
   const c = item[base];
   const t = COPY[base];
   const link = (href: string) => `/${l}${href}`;
+  // Optional. Items without it render exactly as they did before — the whole
+  // block is skipped rather than emitting an empty section.
+  const longform = longformFor(item.slug, base);
 
   return (
     <div className={s.page}>
@@ -102,6 +106,21 @@ export default async function Page({ params }: { params: Params }) {
           </div>
         </div>
       </section>
+
+      {/* Section numbering continues from the cards: /03, /04, … */}
+      {longform?.sections.map((sec, i) => (
+        <section key={sec.h2} className={s.section}>
+          <div className={s.container}>
+            <p className={s.label}><b>/ {String(i + 3).padStart(2, "0")}</b></p>
+            <h2 className={s.h2}>{sec.h2}</h2>
+            {sec.paras.map((para, j) => (
+              <p key={j} className={s.sub} style={{ maxWidth: 760, marginTop: j === 0 ? 10 : 14 }}>
+                {para}
+              </p>
+            ))}
+          </div>
+        </section>
+      ))}
 
       <section className={s.section}>
         <div className={s.container}>
