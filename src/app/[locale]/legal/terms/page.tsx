@@ -32,7 +32,7 @@ function NfaLink({ locale, label }: { locale: string; label: string }) {
 function buildEn(locale: string): Doc {
   return {
   title: "Terms of Use",
-  updated: "Last updated: August 8, 2026",
+  updated: "Last updated: August 7, 2026",
   description:
     "These Terms govern access to and use of Echorank (echorank360.com), operated by ChatLogic Insights Ltd.",
   sections: [
@@ -99,7 +99,7 @@ function buildEn(locale: string): Doc {
 function buildFr(locale: string): Doc {
   return {
   title: "Conditions d'utilisation",
-  updated: "Dernière mise à jour : 8 août 2026",
+  updated: "Dernière mise à jour : 7 août 2026",
   description:
     "Les présentes Conditions régissent l'accès au service Echorank (echorank360.com), exploité par ChatLogic Insights Ltd.",
   sections: [
