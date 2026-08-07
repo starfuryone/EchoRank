@@ -112,20 +112,25 @@ describe("public top nav", () => {
     expect(caHtml).toContain(">Learn<");
   });
 
-  it("places it among the primary links, before the login and signup CTAs", () => {
+  it("sits inside the Resources panel, ahead of the flat links", () => {
+    // Learn is no longer a top-level item: the mega-menu groups it under
+    // Resources. The panel is rendered (hidden, not unmounted) so the link is
+    // still in the server HTML for crawlers.
     const html = render("en");
     const learn = html.indexOf('href="/en/learn"');
-    // Pricing is a real page now, not a homepage anchor, and the signup CTA
-    // routes through it — every marketing CTA does. Login is untouched.
-    expect(learn).toBeGreaterThan(html.indexOf('href="/en/pricing"'));
+    expect(learn).toBeGreaterThan(-1);
+    expect(learn).toBeLessThan(html.indexOf('href="/en/pricing"'));
     expect(learn).toBeLessThan(html.indexOf('href="/login"'));
   });
 
-  it("marks it current on the Learn pages themselves", () => {
+  it("marks the Resources trigger current on the Learn pages", () => {
+    // The highlight moved with the link: a page that names itself "learn"
+    // lights up the group that now contains it.
     const html = renderToStaticMarkup(
       createElement(PublicNav, { locale: "en", current: "learn" }),
     );
-    expect(html).toMatch(/href="\/en\/learn"[^>]*aria-current="page"|aria-current="page"[^>]*href="\/en\/learn"/);
+    expect(html).toMatch(/aria-current="page"[^>]*>Resources|Resources<\/button>/);
+    expect(html).toContain('aria-current="page"');
   });
 
   it("needs no auth to render the link", () => {
