@@ -7,8 +7,14 @@ import { fileURLToPath } from "node:url";
 // harness, and picking them up makes a bare `vitest run` red for no reason.
 export default defineConfig({
   test: {
-    include: ["tests/**/*.test.ts"],
+    include: ["tests/**/*.test.ts", "tests/**/*.test.tsx"],
+    // node by default; a suite that needs a document opts in with a
+    // `@vitest-environment jsdom` docblock (see mega-nav.dom.test.tsx).
+    // environmentMatchGlobs was the old way to do this and was removed in
+    // Vitest 4 — it fails silently, leaving `document is not defined`.
+    // Per-file is better anyway: the opt-in is visible in the file that needs it.
     environment: "node",
+    setupFiles: ["tests/setup-dom.ts"],
     server: {
       deps: {
         // next-auth ships extensionless ESM imports ("next/server") that
