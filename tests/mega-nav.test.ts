@@ -35,8 +35,16 @@ describe("every menu destination exists", () => {
     }
   });
 
-  it("covers the new use-cases page", () => {
-    expect(navHrefs()).toContain("/use-cases");
+  it("keeps /use-cases as a flat top-level link, not a panel item", () => {
+    // It moved out of the Solutions panel when that panel became the 25-item
+    // taxonomy; the flat link is what keeps the page reachable.
+    expect(navHrefs()).not.toContain("/use-cases");
+    expect(nav("en")).toContain('href="/en/use-cases"');
+  });
+
+  it("carries every taxonomy item in the Solutions panel", () => {
+    const hrefs = navHrefs();
+    expect(hrefs.filter((h) => h.startsWith("/solutions/"))).toHaveLength(25);
   });
 });
 

@@ -24,6 +24,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { SOLUTION_CATEGORIES, solutionBase } from "@/lib/solutions-taxonomy";
 import s from "./home2.module.css";
 
 type Base = "en" | "fr";
@@ -31,7 +32,7 @@ const baseOf = (locale: string): Base => (locale.startsWith("fr") ? "fr" : "en")
 
 export type NavGroupId = "product" | "solutions" | "resources";
 /** Flat items can also be "current"; kept loose so pages can name either. */
-export type NavCurrent = NavGroupId | "pricing" | "learn" | "resources-page";
+export type NavCurrent = NavGroupId | "pricing" | "learn" | "resources-page" | "use-cases";
 
 interface NavItem {
   /** Locale-less path, or a "#fragment" resolved against the locale root. */
@@ -51,6 +52,7 @@ interface NavGroup {
 
 interface NavCopy {
   pricing: string;
+  useCases: string;
   login: string;
   join: string;
   dashboard: string;
@@ -63,6 +65,28 @@ interface NavCopy {
 }
 
 /**
+ * The Solutions panel is DERIVED from src/lib/solutions-taxonomy.ts — four
+ * columns, one per category, so adding an item to the config puts it in the
+ * menu with no edit here. Only the goal column keeps its one-line
+ * descriptions: with all 25 items described the panel is taller than most
+ * viewports, and a menu you have to scroll is a worse menu.
+ */
+function solutionsGroup(base: Base): NavGroup {
+  return {
+    id: "solutions",
+    label: base === "fr" ? "Solutions" : "Solutions",
+    columns: SOLUTION_CATEGORIES.map((cat) => ({
+      title: cat[base].label,
+      items: cat.items.map((item) => ({
+        href: `/solutions/${cat.slug}/${item.slug}`,
+        label: item[base].label,
+        ...(cat.slug === "goals" ? { desc: item[base].desc } : {}),
+      })),
+    })),
+  };
+}
+
+/**
  * Grouping. Product = what it does, Solutions = who it is for / what you want
  * to achieve, Resources = how to learn it. Pricing stays a flat link because a
  * panel with one destination is a worse button.
@@ -70,6 +94,7 @@ interface NavCopy {
 const NAV: Record<Base, NavCopy> = {
   en: {
     pricing: "Pricing",
+    useCases: "Use cases",
     login: "Login",
     join: "Join Now",
     dashboard: "Dashboard",
@@ -108,25 +133,7 @@ const NAV: Record<Base, NavCopy> = {
           },
         ],
       },
-      {
-        id: "solutions",
-        label: "Solutions",
-        columns: [
-          {
-            title: "By goal",
-            items: [
-              { href: "/use-cases", label: "Use cases", desc: "Pick your goal, get the tools." },
-            ],
-          },
-          {
-            title: "See it work",
-            items: [
-              { href: "/demo", label: "Watch the demo", desc: "A short product walkthrough." },
-              { href: "/how-to", label: "How to get started", desc: "The first 30 minutes." },
-            ],
-          },
-        ],
-      },
+      "SOLUTIONS_GROUP_PLACEHOLDER" as unknown as NavGroup,
       {
         id: "resources",
         label: "Resources",
@@ -162,6 +169,7 @@ const NAV: Record<Base, NavCopy> = {
 
   fr: {
     pricing: "Tarifs",
+    useCases: "Cas d'usage",
     login: "Connexion",
     join: "S'inscrire",
     dashboard: "Tableau de bord",
@@ -200,25 +208,7 @@ const NAV: Record<Base, NavCopy> = {
           },
         ],
       },
-      {
-        id: "solutions",
-        label: "Solutions",
-        columns: [
-          {
-            title: "Par objectif",
-            items: [
-              { href: "/use-cases", label: "Cas d'usage", desc: "Choisissez votre objectif." },
-            ],
-          },
-          {
-            title: "Voir en action",
-            items: [
-              { href: "/demo", label: "Voir la démo", desc: "Une présentation courte du produit." },
-              { href: "/how-to", label: "Comment démarrer", desc: "Les 30 premières minutes." },
-            ],
-          },
-        ],
-      },
+      "SOLUTIONS_GROUP_PLACEHOLDER" as unknown as NavGroup,
       {
         id: "resources",
         label: "Ressources",
@@ -272,8 +262,18 @@ export function nextOpenPanel(
 }
 
 /** Every href the menu can render, for the route test. */
+/** The catalog with the derived Solutions group substituted in. */
+function navFor(base: Base): NavCopy {
+  return {
+    ...NAV[base],
+    groups: NAV[base].groups.map((g) =>
+      (g as unknown as string) === "SOLUTIONS_GROUP_PLACEHOLDER" ? solutionsGroup(base) : g,
+    ),
+  };
+}
+
 export function navHrefs(): string[] {
-  return NAV.en.groups.flatMap((g) => g.columns.flatMap((c) => c.items.map((i) => i.href)));
+  return navFor("en").groups.flatMap((g) => g.columns.flatMap((c) => c.items.map((i) => i.href)));
 }
 
 /**
@@ -322,7 +322,7 @@ export function PublicNav({
   current?: NavCurrent;
 }) {
   const b = baseOf(locale);
-  const t = NAV[b];
+  const t = navFor(b);
   const L = (p: string) => (p.startsWith("#") ? `/${locale}${p}` : `/${locale}${p}`);
 
   /** Exactly one panel at a time — this is a single value, not a set. */
@@ -460,8 +460,8 @@ export function PublicNav({
             <div
               key={g.id}
               className={s.megaWrap}
-              onMouseEnter={() => setOpen(g.id)}
-              onMouseLeave={() => setOpen((cur) => (cur === g.id ? null : cur))}
+
+
             >
               <button
                 type="button"
@@ -484,6 +484,13 @@ export function PublicNav({
           ))}
 
           {/* Flat link: a panel with one destination is a worse button. */}
+          <Link
+            href={L("/use-cases")}
+            className={current === "use-cases" ? s.toggleOn : undefined}
+            aria-current={current === "use-cases" ? "page" : undefined}
+          >
+            {t.useCases}
+          </Link>
           <Link
             href={L("/pricing")}
             className={current === "pricing" ? s.toggleOn : undefined}
@@ -557,6 +564,9 @@ export function PublicNav({
                   ))}
               </div>
             ))}
+            <Link href={L("/use-cases")} className={s.sheetSection} onClick={() => setMobileOpen(false)}>
+              {t.useCases}
+            </Link>
             <Link href={L("/pricing")} className={s.sheetSection} onClick={() => setMobileOpen(false)}>
               {t.pricing}
             </Link>

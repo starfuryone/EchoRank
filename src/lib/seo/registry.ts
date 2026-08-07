@@ -5,6 +5,7 @@
 
 import { learnRoutes } from "@/lib/learn-content";
 import { freeToolRoutes } from "@/lib/free-tools";
+import { solutionRoutes } from "@/lib/solutions-taxonomy";
 import { LOCALES, SITE_URL } from "./constants";
 
 export interface LocalizedRoute {
@@ -58,6 +59,13 @@ export const LOCALIZED_ROUTES: LocalizedRoute[] = [
   ...learnRoutes().map((path) => ({
     path,
     priority: path === "/learn" ? 0.8 : 0.6,
+    changeFrequency: "monthly" as const,
+  })),
+  // Solutions taxonomy — DERIVED from src/lib/solutions-taxonomy.ts: four
+  // category indexes plus 25 item pages, registered by adding to that config.
+  ...solutionRoutes().map((path) => ({
+    path,
+    priority: path.split("/").length === 3 ? 0.7 : 0.6,
     changeFrequency: "monthly" as const,
   })),
   // Free tools — DERIVED from src/lib/free-tools.ts, same as the Knowledge Hub
