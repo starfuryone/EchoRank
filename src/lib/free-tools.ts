@@ -19,7 +19,6 @@
 export const FREE_TOOLS_BASE = "/free-tools";
 
 export type FreeToolId =
-  | "serp_location"
   | "reddit_threads"
   | "serp_volatility"
   | "ai_search_grader"
@@ -56,15 +55,6 @@ export interface FreeTool {
 }
 
 export const FREE_TOOLS: FreeTool[] = [
-  {
-    id: "serp_location",
-    slug: "serp-location",
-    cost: "paid_api",
-    dailyLimit: 3,
-    apiPath: "/api/free/v1/serp-location",
-    isNew: true,
-    jsonLd: "software",
-  },
   {
     id: "reddit_threads",
     slug: "reddit-threads",

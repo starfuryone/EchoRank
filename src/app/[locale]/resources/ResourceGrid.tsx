@@ -49,21 +49,21 @@ export function ResourceGrid({
           <h2 className={s.toolsGroupName}>{g.h}</h2>
           <div className={s.toolsGrid}>
             {g.items.map((it) => (
-              <div className={s.toolCard} key={it.href + it.label}>
-                <a
-                  className={`${s.toolName} ${f.cardLink}`}
-                  href={it.href}
-                  onClick={(e) => {
-                    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
-                    e.preventDefault();
-                    triggerRef.current = e.currentTarget;
-                    setOpen(it);
-                  }}
-                >
-                  {it.label}
-                </a>
+              
+              <a
+                className={`${s.toolCard} ${f.cardLink}`}
+                key={it.href + it.label}
+                href={it.href}
+                onClick={(e) => {
+                  if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+                  e.preventDefault();
+                  triggerRef.current = e.currentTarget;
+                  setOpen(it);
+                }}
+              >
+                <span className={s.toolName}>{it.label}</span>
                 <p className={s.toolDesc}>{it.desc}</p>
-              </div>
+              </a>
             ))}
           </div>
         </div>

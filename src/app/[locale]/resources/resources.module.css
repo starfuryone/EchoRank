@@ -174,3 +174,19 @@
   .primaryBtn:hover,
   .primaryBtn:focus-visible { transform: none; }
 }
+
+/* Whole-card link (Aug 7): the <a> is now the card itself. */
+.cardLink {
+  color: inherit;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+.cardLink:hover,
+.cardLink:focus-visible {
+  transform: translateY(-4px);
+  border-color: #c9a227;
+  box-shadow: 0 12px 32px -8px rgba(201, 162, 39, 0.3);
+}
+@media (prefers-reduced-motion: reduce) {
+  .cardLink:hover,
+  .cardLink:focus-visible { transform: none; }
+}

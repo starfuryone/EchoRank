@@ -320,7 +320,7 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
 
   return (
     <div className={s.page}>
-      <PublicNav locale={l} />
+      <PublicNav locale={l} current="use-cases" />
 
       <section className={s.section}>
         <div className={s.container}>

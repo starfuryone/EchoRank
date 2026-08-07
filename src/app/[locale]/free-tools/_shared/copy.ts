@@ -44,31 +44,6 @@ export const HUB_COPY = {
 } as const;
 
 export const TOOL_COPY: Record<FreeToolId, ToolCopy> = {
-  serp_location: {
-    name: "SERP Location Changer",
-    blurb: "See the top 10 for any keyword, as searched from another country.",
-    intro:
-      "Search results differ by country. Enter a keyword, pick a market, and see what Google actually returns there — not what your own location shows you.",
-    metaTitle: "Free SERP location checker — see Google results by country",
-    metaDescription:
-      "Check the top 10 Google results for any keyword as searched from another country. Free, no account needed.",
-    limitNote: "3 free checks a day. Results usually take a few minutes.",
-    cta: "Track rankings daily",
-    faq: [
-      {
-        q: "Why do results take a few minutes?",
-        a: "The check is queued with our search data provider rather than run live, which is what keeps it free. The page updates itself when the results land — you can leave and come back.",
-      },
-      {
-        q: "Why can I only see the first three results?",
-        a: "The full top 10 is available on a paid plan. The free tool shows the first three positions and how many results were found.",
-      },
-      {
-        q: "Which countries can I check?",
-        a: "The seven markets we hold verified location data for. City-level checks are a paid feature.",
-      },
-    ],
-  },
   reddit_threads: {
     name: "Reddit Threads Finder",
     blurb: "Find the Reddit discussions ranking for a keyword, with scores and comment counts.",
