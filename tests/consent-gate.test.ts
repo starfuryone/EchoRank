@@ -145,3 +145,39 @@ describe("server-side consent validation", () => {
     ]);
   });
 });
+
+describe("document links open the modal instead of navigating", () => {
+  it("keeps a real href on every link", () => {
+    // The interception is an enhancement over a working link. Middle-click,
+    // ctrl-click, no-JS and crawlers all need the real page, which is also what
+    // keeps the sitemap entries honest.
+    const html = gate();
+    for (const doc of CONSENT_DOCUMENTS) {
+      expect(html).toContain(`href="/en${doc.href}"`);
+    }
+  });
+
+  it("loads each document body from the same builder the route renders", async () => {
+    // No second copy of the text and no iframe: if these diverged, the modal
+    // could show a document the /legal route does not.
+    const { loadLegalDoc } = await import("@/app/[locale]/legal/_content/registry");
+    for (const doc of CONSENT_DOCUMENTS) {
+      const d = await loadLegalDoc(doc.id, "en");
+      expect(d.title.length).toBeGreaterThan(0);
+      expect(d.sections.length).toBeGreaterThan(0);
+    }
+  });
+
+  it("serves the French body for a French locale", async () => {
+    const { loadLegalDoc } = await import("@/app/[locale]/legal/_content/registry");
+    const fr = await loadLegalDoc("terms", "fr");
+    expect(fr.title).toBe("Conditions d'utilisation");
+  });
+
+  it("has a loader for every consent document, and only those", async () => {
+    // Exhaustive by type; asserted at runtime too, so a document added to the
+    // config without a loader fails here rather than at click time.
+    const { LEGAL_DOC_LOADERS } = await import("@/app/[locale]/legal/_content/registry");
+    expect(Object.keys(LEGAL_DOC_LOADERS).sort()).toEqual([...CONSENT_DOCUMENT_IDS].sort());
+  });
+});

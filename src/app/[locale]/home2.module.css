@@ -661,3 +661,40 @@
 .consentDialogList{color:var(--muted);font-size:14px;margin:0 0 18px 18px}
 .consentDialogList a{color:var(--gold);text-decoration:underline}
 .consentDialogBtns{display:flex;gap:10px;justify-content:flex-end}
+
+/* == legal document modal (consent gate) == */
+.legalOverlay{
+  position:fixed;inset:0;z-index:110;background:rgba(0,0,0,.68);
+  display:flex;align-items:center;justify-content:center;padding:20px;
+}
+.legalDialog{
+  display:flex;flex-direction:column;
+  width:min(760px,100%);max-height:min(82vh,760px);
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+}
+.legalHead{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:18px 20px;border-bottom:1px solid var(--lineSoft);flex:none;
+}
+.legalTitle{font-size:17px;font-weight:650}
+.legalClose{
+  background:none;border:0;color:var(--muted);font-size:26px;line-height:1;
+  padding:0 4px;cursor:pointer;
+}
+.legalClose:hover,.legalClose:focus-visible{color:var(--text)}
+.legalTabs{
+  display:flex;gap:6px;flex-wrap:wrap;padding:12px 20px;
+  border-bottom:1px solid var(--lineSoft);flex:none;
+}
+.legalTab{
+  background:none;border:1px solid var(--line);border-radius:99px;
+  color:var(--muted);font-size:12px;padding:5px 11px;cursor:pointer;
+}
+.legalTab:hover,.legalTab:focus-visible{color:var(--text);border-color:var(--gold)}
+.legalTabOn{composes:legalTab;color:var(--bg);background:var(--gold);border-color:var(--gold)}
+/* The one scrolling region: the header and tabs stay put while the body moves. */
+.legalBody{overflow-y:auto;padding:18px 20px 24px;-webkit-overflow-scrolling:touch}
+.legalUpdated{color:var(--faint);font-size:12px;margin-bottom:14px}
+.legalH2{font-size:15px;font-weight:650;margin:18px 0 6px}
+.legalP{color:var(--muted);font-size:14px;line-height:1.6;margin-bottom:8px}
+.legalP a{color:var(--gold);text-decoration:underline}

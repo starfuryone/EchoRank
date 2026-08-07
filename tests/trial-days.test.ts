@@ -78,8 +78,10 @@ describe("trial length copy", () => {
   });
 
   it("leaves non-trial uses of 14 days alone", () => {
+    // The body moved to legal/_content/terms.tsx when the legal documents were
+    // extracted so the consent modal could render the same text the route does.
     const terms = readFileSync(
-      join(ROOT, "app/[locale]/legal/terms/page.tsx"),
+      join(ROOT, "app/[locale]/legal/_content/terms.tsx"),
       "utf8",
     );
     // Notice period before Terms changes take effect — not the trial.
