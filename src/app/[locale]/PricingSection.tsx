@@ -19,6 +19,8 @@
 import { useState, type ReactNode } from "react";
 import s from "./home2.module.css";
 import type { HomePricingChrome } from "@/lib/i18n/content";
+import type { Locale } from "@/lib/i18n/config";
+import { ConsentGate, consentPayload } from "./ConsentGate";
 
 export interface HomePricingTier {
   id: string;
@@ -59,24 +61,36 @@ function CheckoutButton({
   interval,
   locale,
   chrome,
+  requireConsent,
 }: {
   tier: "ai_visibility" | "starter" | "growth" | "agency";
   interval: "month" | "year";
   locale: string;
   chrome: HomePricingChrome;
+  /**
+   * Returns true when consent is on record. Returns false AND opens the
+   * modal when it is not — so the caller just bails.
+   */
+  requireConsent: () => boolean;
 }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(false);
 
   async function start() {
     if (busy) return;
+    // Gate BEFORE any network call. Every plan CTA reaches Stripe through this
+    // one function, so this is the single place consent has to be enforced on
+    // the client — and the checkout route re-checks it regardless.
+    if (!requireConsent()) return;
     setBusy(true);
     setError(false);
     try {
       const res = await fetch("/api/billing/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tier, interval, locale }),
+        // The server re-validates this against CONSENT_DOCUMENTS and
+        // CONSENT_VERSION; sending it is not what authorizes the checkout.
+        body: JSON.stringify({ tier, interval, locale, consent: consentPayload() }),
       });
       // Not signed in: go and make an account, then come straight back into
       // checkout for the tier and interval that were clicked. Carrying the
@@ -145,6 +159,16 @@ export function PricingSection({
   toolsHref?: string;
 }) {
   const [annual, setAnnual] = useState(false);
+  // Consent state lives here, not in the button: one checkbox governs every
+  // card, and the modal has to be able to scroll back to that one checkbox.
+  const [consented, setConsented] = useState(false);
+  const [consentModal, setConsentModal] = useState(false);
+
+  const requireConsent = () => {
+    if (consented) return true;
+    setConsentModal(true);
+    return false;
+  };
 
   return (
     <>
@@ -229,12 +253,20 @@ export function PricingSection({
                   interval={annual ? "year" : "month"}
                   locale={locale}
                   chrome={priceChrome}
+                  requireConsent={requireConsent}
                 />
               )}
             </div>
           );
         })}
       </div>
+      <ConsentGate
+        locale={locale as Locale}
+        accepted={consented}
+        onChange={setConsented}
+        modalOpen={consentModal}
+        onCloseModal={() => setConsentModal(false)}
+      />
       <p className={s.taxline}>{tax}</p>
       <p className={s.taxline}>{currency}</p>
     </>

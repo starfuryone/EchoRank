@@ -21,6 +21,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe/client";
+import { prisma } from "@/lib/prisma";
 import {
   checkoutLookupKey,
   isBillingInterval,
@@ -35,6 +36,7 @@ const log = logger.child({ module: "billing-checkout" });
 
 /** Trial length. Single source — see TRIAL_DAYS in src/lib/plan-config.ts. */
 import { TRIAL_DAYS } from "@/lib/plan-config";
+import { CONSENT_VERSION, checkConsent } from "@/lib/consent-config";
 
 export async function POST(req: NextRequest) {
   let body: unknown;
@@ -44,10 +46,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON body." }, { status: 400 });
   }
 
-  const { tier, interval, locale } = (body ?? {}) as {
+  const { tier, interval, locale, consent } = (body ?? {}) as {
     tier?: unknown;
     interval?: unknown;
     locale?: unknown;
+    consent?: unknown;
   };
 
   // Enterprise is rejected by the type guard as well as by name: it is custom
@@ -65,11 +68,32 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Interval must be month or year." }, { status: 400 });
   }
 
+  // CONSENT GATE — before the auth branch, deliberately.
+  //
+  // Placing it here means it applies to every flow through this route, present
+  // and future: the logged-in upgrade below, and the guest branch when that
+  // lands. A check inside one branch is a check the other branch forgets.
+  //
+  // §8.1 of the Subscription Agreement requires explicit consent before any
+  // purchase or plan change, so a request without it is refused outright rather
+  // than defaulted. The client's own gate is a courtesy; this is the rule.
+  const consentCheck = checkConsent(consent);
+  if (!consentCheck.ok) {
+    log.warn(
+      { reason: consentCheck.reason, expected: CONSENT_VERSION },
+      "checkout refused: consent invalid",
+    );
+    // One opaque code for every reason. A caller does not need to be told
+    // which document it forgot, and the client already knows the full list.
+    return NextResponse.json({ error: "consent_required" }, { status: 400 });
+  }
+
   // Auth gate. 401 carries the tier back so the client can build the
   // /register?plan=… link without re-deriving it.
   let tenantId: string;
   let customerId: string | null = null;
   let customerEmail: string | null = null;
+  let userId: string | null = null;
   try {
     const [membership, session] = await Promise.all([getCurrentTenant(), auth()]);
     if (!membership) {
@@ -83,6 +107,9 @@ export async function POST(req: NextRequest) {
     // The email comes from the session: getCurrentTenant returns the membership
     // and its tenant, not the user.
     customerEmail = session?.user?.email ?? null;
+    // Recorded on the ConsentEvent: §8.2 names the user id as part of a
+    // consent record, and the tenant id alone cannot say who clicked.
+    userId = (session?.user as { id?: string } | undefined)?.id ?? null;
   } catch {
     log.warn("Session lookup failed during checkout");
     return NextResponse.json(
@@ -114,7 +141,19 @@ export async function POST(req: NextRequest) {
   }
 
   const base = `${SITE_URL}/${loc}`;
-  const metadata = { app: "echorank", tier, interval };
+  const consentPayload = consent as { timestamp?: string; version?: string; documents?: string[] };
+  // Consent rides in the session metadata as well as the ConsentEvent row. On
+  // the logged-in path the row is written below and the metadata is belt and
+  // braces; when the guest branch lands it is the ONLY carrier, because there
+  // is no tenant to attach a row to until the webhook provisions one.
+  const metadata = {
+    app: "echorank",
+    tier,
+    interval,
+    consent_version: String(consentPayload.version ?? ""),
+    consent_ts: String(consentPayload.timestamp ?? ""),
+    consent_docs: (consentPayload.documents ?? []).join(","),
+  };
 
   try {
     const session = await stripe.checkout.sessions.create({
@@ -145,6 +184,30 @@ export async function POST(req: NextRequest) {
     if (!session.url) {
       log.error({ sessionId: session.id }, "Checkout session created without a url");
       return NextResponse.json({ error: "Could not start checkout." }, { status: 502 });
+    }
+
+    // Record the consent now that the session exists, so the row can carry the
+    // session id and be deduped against a webhook replay by the unique index.
+    // A failure here must NOT fail the checkout: the buyer has a valid session
+    // and the metadata above still carries the consent, so losing the row is a
+    // compliance-log gap to alert on, not a reason to refuse a paying customer.
+    try {
+      await prisma.consentEvent.create({
+        data: {
+          tenantId,
+          userId,
+          email: customerEmail,
+          stripeSessionId: session.id,
+          version: CONSENT_VERSION,
+          documents: consentPayload.documents ?? [],
+          plan: tier,
+          interval,
+          flow: "upgrade",
+          consentedAt: consentPayload.timestamp ? new Date(consentPayload.timestamp) : null,
+        },
+      });
+    } catch (err) {
+      log.error({ err, sessionId: session.id, tenantId }, "ConsentEvent write failed");
     }
 
     log.info({ tier, interval, tenantId, sessionId: session.id }, "Checkout session created");

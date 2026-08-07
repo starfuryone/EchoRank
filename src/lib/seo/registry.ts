@@ -43,7 +43,9 @@ export const LOCALIZED_ROUTES: LocalizedRoute[] = [
   { path: "/customer-feedback", priority: 0.6, changeFrequency: "monthly" },
   { path: "/reputation-engine", priority: 0.6, changeFrequency: "monthly" },
   { path: "/reputation-risk", priority: 0.6, changeFrequency: "monthly" },
+  { path: "/legal/subscription-agreement", priority: 0.3, changeFrequency: "yearly" },
   { path: "/legal/privacy", priority: 0.3, changeFrequency: "yearly" },
+  { path: "/legal/cookies", priority: 0.3, changeFrequency: "yearly" },
   { path: "/legal/terms", priority: 0.3, changeFrequency: "yearly" },
   { path: "/legal/disclaimer", priority: 0.3, changeFrequency: "yearly" },
   // The Knowledge Hub — DERIVED, not listed. Seventeen paths (hub, ten

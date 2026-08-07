@@ -2235,3 +2235,39 @@ model AiProviderCall {
   @@index([checkupId, provider])
   @@map("ai_provider_calls")
 }
+
+/// Consent captured at checkout, per §8.2 of the Subscription Agreement.
+///
+/// Every field the agreement names is stored: version, document ids, timestamp,
+/// and the plan the consent was given for. Kept as its own append-only table
+/// rather than columns on Tenant — a tenant consents once per checkout, not
+/// once ever, and a compliance answer needs the history, not the latest value.
+model ConsentEvent {
+  id String @id @default(cuid())
+
+  /// All nullable: a guest consents BEFORE any user or tenant exists. The
+  /// webhook backfills them when it provisions the account.
+  tenantId String?
+  userId   String?
+  email    String?
+
+  /// The Stripe Checkout Session this consent belongs to. UNIQUE — a replayed
+  /// webhook must not write a second row for one act of consent.
+  stripeSessionId String? @unique
+
+  version     String
+  /// The document ids as sent, so a later config change cannot rewrite what
+  /// someone actually agreed to.
+  documents   Json
+  plan        String
+  interval    String
+  /// "upgrade" | "guest_signup"
+  flow        String
+  /// Client-supplied moment of the click. Recorded, never trusted for auth.
+  consentedAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  @@index([tenantId, createdAt])
+  @@index([email])
+  @@map("consent_events")
+}

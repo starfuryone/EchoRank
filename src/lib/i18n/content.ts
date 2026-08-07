@@ -1653,3 +1653,99 @@ export const HOME_PRICING_CHROME: Record<Locale, HomePricingChrome> = {
     checkoutError: "Zahlung konnte nicht gestartet werden. Bitte erneut versuchen.",
   },
 };
+
+/**
+ * Checkout consent gate. Document NAMES only — the list itself and its order
+ * come from CONSENT_DOCUMENTS in src/lib/consent-config.ts, so adding a
+ * document there does not need a new sentence written here.
+ *
+ * de-CH uses ss, never ß.
+ */
+export interface ConsentCopy {
+  /** Sentence prefix, before the linked document names. */
+  agreePrefix: string;
+  /** Joins all but the last document name. */
+  separator: string;
+  /** Joins the final document name. */
+  lastSeparator: string;
+  subscriptionAgreement: string;
+  terms: string;
+  privacy: string;
+  cookies: string;
+  /** "Agreement Required" modal. */
+  modalTitle: string;
+  modalBody: string;
+  modalCta: string;
+  modalClose: string;
+}
+
+export const CONSENT_COPY: Record<Locale, ConsentCopy> = {
+  en: {
+    agreePrefix: "I agree to the",
+    separator: ", ",
+    lastSeparator: ", and ",
+    subscriptionAgreement: "Subscription Agreement",
+    terms: "Terms of Use",
+    privacy: "Privacy Policy",
+    cookies: "Cookie Policy",
+    modalTitle: "Agreement required",
+    modalBody:
+      "Before starting a trial you need to accept these documents:",
+    modalCta: "Review and accept",
+    modalClose: "Close",
+  },
+  "en-CA": {
+    agreePrefix: "I agree to the",
+    separator: ", ",
+    lastSeparator: ", and ",
+    subscriptionAgreement: "Subscription Agreement",
+    terms: "Terms of Use",
+    privacy: "Privacy Policy",
+    cookies: "Cookie Policy",
+    modalTitle: "Agreement required",
+    modalBody: "Before starting a trial you need to accept these documents:",
+    modalCta: "Review and accept",
+    modalClose: "Close",
+  },
+  fr: {
+    agreePrefix: "J'accepte le",
+    separator: ", ",
+    lastSeparator: " et ",
+    subscriptionAgreement: "Contrat d'abonnement",
+    terms: "Conditions d'utilisation",
+    privacy: "Politique de confidentialité",
+    cookies: "Politique relative aux cookies",
+    modalTitle: "Acceptation requise",
+    modalBody:
+      "Avant de démarrer un essai, vous devez accepter ces documents :",
+    modalCta: "Consulter et accepter",
+    modalClose: "Fermer",
+  },
+  "fr-CA": {
+    agreePrefix: "J'accepte le",
+    separator: ", ",
+    lastSeparator: " et ",
+    subscriptionAgreement: "Contrat d'abonnement",
+    terms: "Conditions d'utilisation",
+    privacy: "Politique de confidentialité",
+    cookies: "Politique relative aux cookies",
+    modalTitle: "Acceptation requise",
+    modalBody: "Avant de démarrer un essai, vous devez accepter ces documents :",
+    modalCta: "Consulter et accepter",
+    modalClose: "Fermer",
+  },
+  "de-CH": {
+    agreePrefix: "Ich akzeptiere die",
+    separator: ", ",
+    lastSeparator: " und die ",
+    subscriptionAgreement: "Abonnementvereinbarung",
+    terms: "Nutzungsbedingungen",
+    privacy: "Datenschutzerklärung",
+    cookies: "Cookie-Richtlinie",
+    modalTitle: "Zustimmung erforderlich",
+    modalBody:
+      "Bevor Sie eine Testphase starten, müssen Sie diese Dokumente akzeptieren:",
+    modalCta: "Prüfen und akzeptieren",
+    modalClose: "Schliessen",
+  },
+};

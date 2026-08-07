@@ -625,3 +625,39 @@
 .pbuy:hover,.pbuy:focus-visible{filter:brightness(1.1)}
 .pbuy:disabled{opacity:.65;cursor:default;filter:none}
 .pbuyErr{margin:8px 0 0;font-size:12px;line-height:1.4;color:var(--red)}
+
+/* == checkout consent gate ==
+   One full-width card spanning the pricing grid, directly under the cards.
+   Built from the page's own tokens so the pending re-theme restyles it for
+   free — no palette literals here. */
+.consentCard{
+  margin-top:22px;padding:16px 20px;
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+  display:flex;align-items:center;justify-content:center;gap:12px;
+  /* Wraps on narrow screens instead of forcing a horizontal scroll. */
+  flex-wrap:wrap;text-align:center;
+}
+.consentBox{
+  width:18px;height:18px;flex:none;cursor:pointer;
+  /* accent-color paints the native checkbox, so it keeps the platform's own
+     focus ring and keyboard behaviour rather than a re-implementation. */
+  accent-color:var(--gold);
+}
+.consentText{color:var(--muted);font-size:14px;line-height:1.5}
+.consentText a{color:var(--gold);text-decoration:underline;text-underline-offset:2px}
+.consentText a:hover,.consentText a:focus-visible{color:var(--goldDeep)}
+
+/* "Agreement required" modal */
+.consentOverlay{
+  position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.6);
+  display:flex;align-items:center;justify-content:center;padding:20px;
+}
+.consentDialog{
+  max-width:420px;width:100%;padding:24px;
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+}
+.consentDialogTitle{font-size:18px;font-weight:650;margin-bottom:8px}
+.consentDialogBody{color:var(--muted);font-size:14px;margin-bottom:12px}
+.consentDialogList{color:var(--muted);font-size:14px;margin:0 0 18px 18px}
+.consentDialogList a{color:var(--gold);text-decoration:underline}
+.consentDialogBtns{display:flex;gap:10px;justify-content:flex-end}
