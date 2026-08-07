@@ -698,3 +698,26 @@
 .legalH2{font-size:15px;font-weight:650;margin:18px 0 6px}
 .legalP{color:var(--muted);font-size:14px;line-height:1.6;margin-bottom:8px}
 .legalP a{color:var(--gold);text-decoration:underline}
+
+/* == use-cases page == */
+.ucGrid{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:26px;
+}
+@media(max-width:1080px){.ucGrid{grid-template-columns:repeat(2,1fr)}}
+@media(max-width:620px){.ucGrid{grid-template-columns:1fr}}
+.ucCard{
+  display:flex;flex-direction:column;gap:8px;padding:20px;
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+  transition:border-color .15s,transform .15s;
+}
+.ucCard:hover,.ucCard:focus-visible{border-color:var(--gold);transform:translateY(-2px)}
+.ucTitle{font-size:15px;font-weight:650;color:var(--text)}
+.ucBody{font-size:13.5px;line-height:1.55;color:var(--muted)}
+.ucSizes{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:22px}
+@media(max-width:820px){.ucSizes{grid-template-columns:1fr}}
+.ucSize{
+  display:flex;flex-direction:column;gap:8px;padding:22px;
+  background:var(--surface2);border:1px solid var(--line);border-radius:var(--radius);
+  transition:border-color .15s;
+}
+.ucSize:hover,.ucSize:focus-visible{border-color:var(--gold)}

@@ -27,6 +27,8 @@ export const LOCALIZED_ROUTES: LocalizedRoute[] = [
   // Every marketing CTA on the site routes here, so it is the second most
   // important page after the homepage.
   { path: "/pricing", priority: 0.9, changeFrequency: "monthly" },
+  // Goal-led entry page; every card links to a route already in this list.
+  { path: "/use-cases", priority: 0.8, changeFrequency: "monthly" },
   { path: "/about", priority: 0.7, changeFrequency: "monthly" },
   { path: "/ai-visibility", priority: 0.8, changeFrequency: "weekly" },
   { path: "/demo", priority: 0.6, changeFrequency: "monthly" },
