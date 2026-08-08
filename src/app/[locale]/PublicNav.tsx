@@ -96,6 +96,14 @@ function solutionsGroup(base: Base): NavGroup {
                 ? "Parcourir tous les cas d'usage"
                 : "Browse every use case in one place",
           },
+          {
+            href: "/technical-geo",
+            label: base === "fr" ? "GEO technique Echorank" : "Echorank Technical GEO",
+            desc:
+              base === "fr"
+                ? "Corrigez ce qui vous exclut des réponses IA"
+                : "Fix what keeps you out of AI answers",
+          },
         ],
       },
     ],
