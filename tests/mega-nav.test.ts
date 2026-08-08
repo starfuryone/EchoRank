@@ -93,8 +93,12 @@ describe("markup and aria", () => {
     expect([...html.matchAll(/role="region"/g)]).toHaveLength(3);
   });
 
-  it("points the promo at the existing free-audit funnel", () => {
-    expect(nav("en")).toContain('href="/en/ai-visibility#audit"');
+  it("points the promo at the standalone free-audit page", () => {
+    // It pointed at /ai-visibility#audit until the audit got a page of its own.
+    // The promo is rendered once and reused by all three panels, so this single
+    // assertion covers Product, Solutions and Resources.
+    expect(nav("en")).toContain('href="/en/free-audit"');
+    expect(nav("en")).not.toContain("ai-visibility#audit");
   });
 
   it("keeps the right-hand side unchanged", () => {

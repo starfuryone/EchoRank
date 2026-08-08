@@ -175,7 +175,7 @@ export const LEARN_CHAPTERS: LearnChapter[] = [
     cta: "audit",
     related: [
       {
-        href: "/ai-visibility#audit",
+        href: "/free-audit",
         label: "Run the free audit — no account needed",
         internal: true,
       },
@@ -254,7 +254,7 @@ export const LEARN_CHAPTERS: LearnChapter[] = [
     cta: "audit",
     related: [
       {
-        href: "/ai-visibility#audit",
+        href: "/free-audit",
         label: "Run the free audit and save your day-zero PDF",
         internal: true,
       },
@@ -822,7 +822,7 @@ export const LEARN_CHAPTERS: LearnChapter[] = [
     cta: "audit",
     related: [
       {
-        href: "/ai-visibility#audit",
+        href: "/free-audit",
         label: "Check your AI-visibility signals free",
         internal: true,
       },
@@ -895,7 +895,7 @@ export const LEARN_CHAPTERS: LearnChapter[] = [
     cta: "audit",
     related: [
       {
-        href: "/ai-visibility#audit",
+        href: "/free-audit",
         label: "Baseline your site with the free audit",
         internal: true,
       },
@@ -1442,7 +1442,7 @@ export const LEARN_GUIDES: LearnGuide[] = [
     cta: "register",
     related: [
       {
-        href: "/ai-visibility#audit",
+        href: "/free-audit",
         label: "Check your own gap with the free audit",
         internal: true,
       },

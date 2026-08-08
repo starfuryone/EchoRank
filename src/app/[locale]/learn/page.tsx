@@ -81,7 +81,7 @@ const ROW = {
   tools: "/visibility/tools",
   mcp: "/visibility/tools/mcp-server",
   echopedia: `${LEARN_BASE}/${ECHOPEDIA_SLUG}`,
-  audit: "/ai-visibility#audit",
+  audit: "/free-audit",
 } as const;
 
 const CHROME: Record<Base, HubChrome> = {

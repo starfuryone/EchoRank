@@ -60,7 +60,7 @@ interface Copy {
  */
 const HREF = {
   aiVisibility: "/ai-visibility",
-  audit: "/ai-visibility#audit",
+  audit: "/free-audit",
   monitoring: "/live-monitoring",
   feedback: "/customer-feedback",
   signals: "/act-on-signals",

@@ -181,7 +181,7 @@ export default async function Page({ params }: { params: Params }) {
           <h2 className={s.h2}>{t.closeH2}</h2>
           <p className={s.sub}>{t.closeSub}</p>
           <div className={s.ctarow} style={{ marginTop: 22 }}>
-            <Link className={`${s.btn} ${s.btnPrimary}`} href={link("/ai-visibility#audit")}>{t.ctaAudit}</Link>
+            <Link className={`${s.btn} ${s.btnPrimary}`} href={link("/free-audit")}>{t.ctaAudit}</Link>
             <Link className={`${s.btn} ${s.btnGhost}`} href={link("/pricing")}>{t.ctaTrial}</Link>
           </div>
         </div>

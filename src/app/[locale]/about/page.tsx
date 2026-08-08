@@ -188,7 +188,7 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
           <h2 className={s.h2}>{c.closeH2}</h2>
           <p className={s.sub}>{c.closeSub}</p>
           <div className={s.ctarow} style={{ marginTop: 22 }}>
-            <Link className={`${s.btn} ${s.btnPrimary}`} href={L("/ai-visibility#audit")}>{c.ctaAudit}</Link>
+            <Link className={`${s.btn} ${s.btnPrimary}`} href={L("/free-audit")}>{c.ctaAudit}</Link>
             <Link className={`${s.btn} ${s.btnGhost}`} href={L("/pricing")}>{c.ctaTrial}</Link>
           </div>
         </div>

@@ -34,6 +34,13 @@ export interface AuditWidgetContent {
   trustScore: string;
   upsell: string;
   ctaTemplate: string;    // contains "{brand}"
+  /**
+   * Where the post-result CTA goes. Locale-prefixed pricing, per the house
+   * rule that a marketing CTA lands on /pricing and never on /register — the
+   * visitor picks a plan before they are asked for an account. Passed in for
+   * the same reason the copy is: this component never sees the locale.
+   */
+  ctaHref: string;
   again: string;
   pdfIdle: string;
   pdfBusy: string;
@@ -165,10 +172,7 @@ export function AuditWidget({ c }: { c: AuditWidgetContent }) {
             <blockquote className="av-audit-sample">{result.sampleAnswer}</blockquote>
           )}
           <p className="av-audit-upsell">{c.upsell}</p>
-          <a
-            className="av-btn av-btn-gold av-btn-block"
-            href={`/register?plan=ai_visibility&brand=${encodeURIComponent(result.brand)}`}
-          >
+          <a className="av-btn av-btn-gold av-btn-block" href={c.ctaHref}>
             {c.ctaTemplate.replace('{brand}', result.brand)}
           </a>
           <button

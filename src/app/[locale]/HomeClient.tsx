@@ -489,7 +489,7 @@ export default function HomeClient({
                 /ai-visibility itself stay: they describe the anonymous widget,
                 where they are still true. */}
             <div className={s.ctarow}>
-              <Link className={`${s.btn} ${s.btnPrimary}`} href={L("/ai-visibility#audit")}>{t.hero.cta1}</Link>
+              <Link className={`${s.btn} ${s.btnPrimary}`} href={L("/free-audit")}>{t.hero.cta1}</Link>
               <Link className={`${s.btn} ${s.btnGhost}`} href={L("/pricing")}>{t.hero.cta3}</Link>
               <button type="button" className={`${s.btn} ${s.btnGhost}`} onClick={() => setDemoOpen(true)}>{t.hero.cta2}</button>
             </div>
@@ -913,7 +913,7 @@ export default function HomeClient({
             {/* Same target as the hero's identical CTA (line ~493). This said
                 /register, which asked for a signup for the one thing the
                 product deliberately does without one. */}
-            <Link className={`${s.btn} ${s.btnPrimary}`} href={L("/ai-visibility#audit")}>{t.close.cta1}</Link>
+            <Link className={`${s.btn} ${s.btnPrimary}`} href={L("/free-audit")}>{t.close.cta1}</Link>
             <button type="button" className={`${s.btn} ${s.btnGhost}`} onClick={() => setDemoOpen(true)}>{t.close.cta2}</button>
           </div>
         </div>

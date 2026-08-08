@@ -454,7 +454,7 @@ export function PublicNav({
           </div>
         ))}
         {/* Promo: the existing free-audit funnel, no invented route. */}
-        <Link href={L("/ai-visibility#audit")} className={s.megaPromo}>
+        <Link href={L("/free-audit")} className={s.megaPromo}>
           <span className={s.megaColTitle}>{t.promoTitle}</span>
           <span className={s.megaLinkDesc}>{t.promoBody}</span>
           <span className={s.megaPromoCta}>{t.promoCta}</span>

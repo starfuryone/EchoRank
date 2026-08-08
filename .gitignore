@@ -50,6 +50,9 @@ install_*.py
 compliance_refactor.py
 *.zip
 *.bak.*
+# Same class as *.bak.*: a timestamped copy an agent left behind mid-edit.
+# One of these reached a commit (a solutions page), which is what added it here.
+*.broken.*
 .next.broken*/
 public/videos/
 

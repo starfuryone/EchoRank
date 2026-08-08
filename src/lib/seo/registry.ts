@@ -28,6 +28,10 @@ export const LOCALIZED_ROUTES: LocalizedRoute[] = [
   // Every marketing CTA on the site routes here, so it is the second most
   // important page after the homepage.
   { path: "/pricing", priority: 0.9, changeFrequency: "monthly" },
+  // The anonymous audit funnel. Every "run the free audit" CTA on the site
+  // lands here — nav promo, homepage hero, learn chapters, solutions pages —
+  // so it ranks with /pricing rather than with the content pages below.
+  { path: "/free-audit", priority: 0.9, changeFrequency: "monthly" },
   // Goal-led entry page; every card links to a route already in this list.
   { path: "/use-cases", priority: 0.8, changeFrequency: "monthly" },
   { path: "/ai-visibility", priority: 0.8, changeFrequency: "weekly" },

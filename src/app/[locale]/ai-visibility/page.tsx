@@ -52,7 +52,9 @@ interface AvContent {
   };
   faq: { h2: string; items: { q: string; a: string }[] };
   final: { h2: string; cta: string };
-  widget: AuditWidgetContent;
+  // ctaHref is locale-dependent, so it is injected at render rather than
+  // written into each of the three static copy blocks.
+  widget: Omit<AuditWidgetContent, "ctaHref">;
   kw: { h2: string; p: string; widget: KeywordWidgetContent };
 }
 
@@ -522,12 +524,14 @@ export default async function AIVisibilityPage({
             <span className="av-gold">{c.hero.h1b}</span>
           </h1>
           <p className="av-sub">{c.hero.sub}</p>
-          {/* The homepage hero's primary CTA points at /{locale}/ai-visibility#audit,
-              so this id is a cross-page contract — the anonymous audit widget is
-              what "Run My Free AI Visibility Audit" is promising. Renaming it
-              silently turns that button into a scroll to the top of the page. */}
+          {/* The site's "run the free audit" CTAs used to point at
+              /{locale}/ai-visibility#audit; they now go to /{locale}/free-audit,
+              which mounts this same widget on a page of its own. The id stays:
+              it is a published URL that external links and older PDFs still
+              carry, and dropping it turns those into a scroll to the top of the
+              page rather than a 404 anyone would notice. */}
           <div id="audit" style={{ scrollMarginTop: "96px" }}>
-            <AuditWidget c={c.widget} />
+            <AuditWidget c={{ ...c.widget, ctaHref: `/${locale}/pricing` }} />
           </div>
           <p className="av-engines">
             {c.hero.engines} ChatGPT · Claude · Gemini · Perplexity

@@ -180,7 +180,7 @@ export function ArticleShell({
                 <h2 className={c.ctaH}>{ctaCopy.h}</h2>
                 <p className={c.ctaP}>{ctaCopy.p}</p>
                 {cta === "audit" ? (
-                  <Link className={`${s.btn} ${s.btnPrimary}`} href={L("/ai-visibility#audit")}>
+                  <Link className={`${s.btn} ${s.btnPrimary}`} href={L("/free-audit")}>
                     {ctaCopy.btn}
                   </Link>
                 ) : (

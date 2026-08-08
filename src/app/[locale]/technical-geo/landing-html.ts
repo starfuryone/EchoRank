@@ -358,7 +358,7 @@ export const TECHNICAL_GEO_HTML = `<!DOCTYPE html>
 
       <div class="nav-actions">
         <a class="btn btn-secondary btn-sm" href="/en/pricing">See plans</a>
-        <a class="btn btn-primary btn-sm" href="/en/ai-visibility#audit">Run free audit</a>
+        <a class="btn btn-primary btn-sm" href="/en/free-audit">Run free audit</a>
       </div>
     </div>
   </header>
@@ -375,7 +375,7 @@ export const TECHNICAL_GEO_HTML = `<!DOCTYPE html>
         </p>
 
         <div class="hero-actions" id="audit">
-          <a class="btn btn-primary" href="/en/ai-visibility#audit">Run your free AI visibility audit</a>
+          <a class="btn btn-primary" href="/en/free-audit">Run your free AI visibility audit</a>
           <a class="btn btn-secondary" href="/en/pricing">See plans</a>
         </div>
         <div class="micro">One free audit every day &middot; No account needed &middot; Downloadable PDF report</div>
@@ -472,7 +472,7 @@ export const TECHNICAL_GEO_HTML = `<!DOCTYPE html>
             </div>
 
             <div class="dash-cta">
-              <a class="btn btn-primary btn-sm" href="/en/ai-visibility#audit">Audit your own site free →</a>
+              <a class="btn btn-primary btn-sm" href="/en/free-audit">Audit your own site free →</a>
             </div>
           </div>
         </div>
@@ -551,7 +551,7 @@ export const TECHNICAL_GEO_HTML = `<!DOCTYPE html>
         </div>
 
         <div class="cta-inline">
-          <a class="btn btn-primary" href="/en/ai-visibility#audit">Start with a free audit</a>
+          <a class="btn btn-primary" href="/en/free-audit">Start with a free audit</a>
           <a class="btn btn-secondary" href="/en/pricing">Compare plans</a>
         </div>
       </div>
@@ -807,7 +807,7 @@ export const TECHNICAL_GEO_HTML = `<!DOCTYPE html>
         </div>
 
         <div class="cta-inline">
-          <a class="btn btn-primary" href="/en/ai-visibility#audit">See your gaps — run a free audit</a>
+          <a class="btn btn-primary" href="/en/free-audit">See your gaps — run a free audit</a>
         </div>
       </div>
     </section>
@@ -849,7 +849,7 @@ export const TECHNICAL_GEO_HTML = `<!DOCTYPE html>
             </p>
             <div class="hero-actions" style="justify-content:flex-start;margin-top:24px">
               <a class="btn btn-primary" href="/en/pricing">See plans &amp; start trial</a>
-              <a class="btn btn-secondary" href="/en/ai-visibility#audit">Run a free audit first</a>
+              <a class="btn btn-secondary" href="/en/free-audit">Run a free audit first</a>
             </div>
           </div>
 
@@ -997,7 +997,7 @@ export const TECHNICAL_GEO_HTML = `<!DOCTYPE html>
             a prioritized roadmap&mdash;starting with a free audit.
           </p>
           <div class="hero-actions">
-            <a class="btn btn-primary" href="/en/ai-visibility#audit">Run my free audit</a>
+            <a class="btn btn-primary" href="/en/free-audit">Run my free audit</a>
             <a class="btn btn-secondary" href="/en/pricing">See plans</a>
           </div>
         </div>
@@ -1024,7 +1024,7 @@ export const TECHNICAL_GEO_HTML = `<!DOCTYPE html>
   </footer>
 
   <div class="sticky-cta" aria-hidden="false">
-    <a class="btn btn-primary" href="/en/ai-visibility#audit">Run your free AI visibility audit</a>
+    <a class="btn btn-primary" href="/en/free-audit">Run your free AI visibility audit</a>
   </div>
 </body>
 </html>`;
