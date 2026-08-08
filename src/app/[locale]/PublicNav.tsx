@@ -75,14 +75,30 @@ function solutionsGroup(base: Base): NavGroup {
   return {
     id: "solutions",
     label: base === "fr" ? "Solutions" : "Solutions",
-    columns: SOLUTION_CATEGORIES.map((cat) => ({
-      title: cat[base].label,
-      items: cat.items.map((item) => ({
-        href: `/solutions/${cat.slug}/${item.slug}`,
-        label: item[base].label,
-        ...(cat.slug === "goals" ? { desc: item[base].desc } : {}),
+    columns: [
+      ...SOLUTION_CATEGORIES.map((cat) => ({
+        title: cat[base].label,
+        items: cat.items.map((item) => ({
+          href: `/solutions/${cat.slug}/${item.slug}`,
+          label: item[base].label,
+          ...(cat.slug === "goals" ? { desc: item[base].desc } : {}),
+        })),
       })),
-    })),
+      // "Use cases" as its own category, not a flat top-level link.
+      {
+        title: base === "fr" ? "Cas d'usage" : "Use cases",
+        items: [
+          {
+            href: "/use-cases",
+            label: base === "fr" ? "Tous les cas d'usage" : "All use cases",
+            desc:
+              base === "fr"
+                ? "Parcourir tous les cas d'usage"
+                : "Browse every use case in one place",
+          },
+        ],
+      },
+    ],
   };
 }
 
@@ -332,7 +348,9 @@ export function PublicNav({
   const activeGroup: NavGroupId | null =
     current === "learn" || current === "resources-page" || current === "resources"
       ? "resources"
-      : current === "product" || current === "solutions"
+      : current === "use-cases"
+        ? "solutions"
+        : current === "product" || current === "solutions"
         ? current
         : null;
 
@@ -485,13 +503,6 @@ export function PublicNav({
 
           {/* Flat link: a panel with one destination is a worse button. */}
           <Link
-            href={L("/use-cases")}
-            className={current === "use-cases" ? s.toggleOn : undefined}
-            aria-current={current === "use-cases" ? "page" : undefined}
-          >
-            {t.useCases}
-          </Link>
-          <Link
             href={L("/pricing")}
             className={current === "pricing" ? s.toggleOn : undefined}
             aria-current={current === "pricing" ? "page" : undefined}
@@ -564,9 +575,6 @@ export function PublicNav({
                   ))}
               </div>
             ))}
-            <Link href={L("/use-cases")} className={s.sheetSection} onClick={() => setMobileOpen(false)}>
-              {t.useCases}
-            </Link>
             <Link href={L("/pricing")} className={s.sheetSection} onClick={() => setMobileOpen(false)}>
               {t.pricing}
             </Link>

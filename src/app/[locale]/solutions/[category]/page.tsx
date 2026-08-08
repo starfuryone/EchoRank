@@ -10,6 +10,7 @@ import { SUPPORTED_LOCALES, isSupportedLocale, type Locale } from "@/lib/i18n/co
 import { buildMetadata } from "@/lib/seo";
 import { SOLUTION_CATEGORIES, categoryBySlug, solutionBase } from "@/lib/solutions-taxonomy";
 import { PublicNav } from "../../PublicNav";
+import { PublicFooter } from "@/components/PublicFooter";
 import s from "../../home2.module.css";
 
 export function generateStaticParams() {
@@ -74,6 +75,8 @@ export default async function Page({ params }: { params: Params }) {
           </div>
         </div>
       </section>
+
+      <PublicFooter locale={l} />
     </div>
   );
 }

@@ -176,6 +176,10 @@ export default async function Page({ params }: { params: Params }) {
         </section>
       )}
 
+          </div>
+        </section>
+      )}
+
       <section className={s.section}>
         <div className={s.container}>
           <h2 className={s.h2}>{t.closeH2}</h2>

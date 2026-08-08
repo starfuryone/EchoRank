@@ -1,0 +1,66 @@
+<svg viewBox="0 0 1200 630" xmlns="http://www.w3.org/2000/svg" font-family="Inter,Segoe UI,Arial,sans-serif">
+  <defs>
+    <linearGradient id="bg2" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#181A20"/>
+      <stop offset="1" stop-color="#1E2329"/>
+    </linearGradient>
+    <filter id="glow2" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="8" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="630" fill="url(#bg2)"/>
+
+  <!-- headline -->
+  <text x="80" y="80" fill="#EAECEF" font-size="34" font-weight="700">Own the result that matters</text>
+  <text x="80" y="112" fill="#848E9C" font-size="17">Research the term, fix the page, watch it climb</text>
+
+  <!-- SERP panel -->
+  <rect x="80" y="150" width="700" height="430" rx="16" fill="#1E2329" stroke="#2B3139"/>
+
+  <!-- search bar -->
+  <rect x="110" y="180" width="560" height="46" rx="23" fill="#181A20" stroke="#2B3139"/>
+  <circle cx="136" cy="203" r="8" fill="none" stroke="#848E9C" stroke-width="2"/>
+  <line x1="142" y1="209" x2="149" y2="216" stroke="#848E9C" stroke-width="2" stroke-linecap="round"/>
+  <text x="160" y="209" fill="#EAECEF" font-size="16">best crm for small agencies</text>
+
+  <!-- result 1: YOU, highlighted -->
+  <rect x="110" y="248" width="640" height="108" rx="12" fill="#181A20" stroke="#FCD535" stroke-width="2" filter="url(#glow2)"/>
+  <rect x="632" y="262" width="102" height="26" rx="13" fill="#FCD535"/>
+  <text x="683" y="280" fill="#181A20" font-size="13" font-weight="700" text-anchor="middle">YOU · #1</text>
+  <text x="132" y="280" fill="#848E9C" font-size="13">youragency.com</text>
+  <text x="132" y="306" fill="#FCD535" font-size="19" font-weight="600">The CRM built for 5-person agencies</text>
+  <text x="132" y="332" fill="#EAECEF" font-size="14">Pipeline, invoicing and client portal in one tool. Free 7-day trial…</text>
+
+  <!-- result 2 -->
+  <rect x="110" y="372" width="640" height="90" rx="12" fill="#181A20" stroke="#2B3139"/>
+  <text x="132" y="400" fill="#848E9C" font-size="13">competitor-one.com</text>
+  <text x="132" y="424" fill="#5E6673" font-size="17" font-weight="600">CRM software — plans and pricing</text>
+  <text x="132" y="446" fill="#5E6673" font-size="13">Compare our plans for teams of any size…</text>
+
+  <!-- result 3 -->
+  <rect x="110" y="478" width="640" height="82" rx="12" fill="#181A20" stroke="#2B3139"/>
+  <text x="132" y="506" fill="#848E9C" font-size="13">bigdirectory.com</text>
+  <text x="132" y="530" fill="#5E6673" font-size="17" font-weight="600">17 best CRMs reviewed</text>
+
+  <!-- right column: how it happened -->
+  <g font-size="15">
+    <rect x="820" y="150" width="300" height="120" rx="14" fill="#1E2329" stroke="#2B3139"/>
+    <text x="844" y="184" fill="#FCD535" font-size="13" font-weight="700" letter-spacing="1">RESEARCHED</text>
+    <text x="844" y="212" fill="#EAECEF">1,900 searches / month</text>
+    <text x="844" y="238" fill="#848E9C">Difficulty: winnable</text>
+
+    <rect x="820" y="286" width="300" height="120" rx="14" fill="#1E2329" stroke="#2B3139"/>
+    <text x="844" y="320" fill="#FCD535" font-size="13" font-weight="700" letter-spacing="1">FIXED</text>
+    <text x="844" y="348" fill="#EAECEF">12 audit issues cleared</text>
+    <text x="844" y="374" fill="#848E9C">Core Web Vitals: pass</text>
+
+    <rect x="820" y="422" width="300" height="120" rx="14" fill="#1E2329" stroke="#2B3139"/>
+    <text x="844" y="456" fill="#FCD535" font-size="13" font-weight="700" letter-spacing="1">TRACKED</text>
+    <text x="844" y="484" fill="#EAECEF">#11 → #1 in 9 weeks</text>
+    <text x="844" y="510" fill="#0ECB81" font-weight="700">▲ 10 positions</text>
+  </g>
+
+  <text x="80" y="608" fill="#848E9C" font-size="14" letter-spacing="1">echorank360.com</text>
+</svg>
