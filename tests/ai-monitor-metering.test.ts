@@ -225,6 +225,25 @@ describe("per-tier checkup shape", () => {
     }
   });
 
+  it("gives every running tier at least one brand to track", () => {
+    // A tier that runs checkups but allows zero projects sells a monitor with
+    // nothing to point it at. null = unlimited.
+    for (const plan of plans) {
+      const { aiCheckup, aiProjects } = PLAN_CONFIGS[plan];
+      if (aiCheckup.frequency === "none") continue;
+      expect(aiProjects === null || aiProjects > 0).toBe(true);
+    }
+  });
+
+  it("never shrinks the brand allowance as the tier goes up", () => {
+    const ladder: SellablePlanType[] = ["STARTER", "GROWTH", "AGENCY", "ENTERPRISE"];
+    for (let i = 1; i < ladder.length; i++) {
+      const lower = PLAN_CONFIGS[ladder[i - 1]].aiProjects ?? Number.POSITIVE_INFINITY;
+      const upper = PLAN_CONFIGS[ladder[i]].aiProjects ?? Number.POSITIVE_INFINITY;
+      expect(upper).toBeGreaterThanOrEqual(lower);
+    }
+  });
+
   it("never shrinks the checkup as the tier goes up", () => {
     // Every sellable tier carries the monitor now, so the ladder is the whole
     // tier list — STARTER included, since it absorbed the retired $29 tier.

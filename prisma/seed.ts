@@ -182,6 +182,45 @@ async function main() {
     },
   });
 
+  // The AI engine catalogue. Idempotent, and it deliberately does NOT touch
+  // `enabled` on an existing row — that column is an operator's kill switch and
+  // a re-seed must not quietly switch an engine back on. See
+  // src/lib/ai-monitor/engine-registry.ts, which holds the same rule; the
+  // catalogue is duplicated here rather than imported because this script runs
+  // outside the Next.js path aliases.
+  const engines = [
+    ["CHATGPT", "gpt-5", "ChatGPT", true, true, 10],
+    ["GOOGLE_AI_OVERVIEWS", "serp-ai-overview", "Google AI Overviews", true, true, 20],
+    ["GEMINI", "gemini-3-pro", "Gemini", true, true, 30],
+    ["CLAUDE", "claude-sonnet-5", "Claude", true, true, 40],
+    ["PERPLEXITY", "sonar-pro", "Perplexity", true, true, 50],
+    ["GROK", "grok-4", "Grok", true, false, 60],
+    ["MISTRAL", "mistral-large-latest", "Mistral", false, false, 70],
+    ["LLAMA", "llama-4-maverick", "Llama", false, false, 80],
+  ] as const;
+
+  for (const [provider, modelName, displayName, search, citations, sortOrder] of engines) {
+    await prisma.aIEngine.upsert({
+      where: { provider_modelName: { provider, modelName } },
+      update: {
+        displayName,
+        supportsSearch: search,
+        supportsCitations: citations,
+        sortOrder,
+      },
+      create: {
+        provider,
+        modelName,
+        displayName,
+        supportsSearch: search,
+        supportsCitations: citations,
+        sortOrder,
+        enabled: true,
+      },
+    });
+  }
+
+  console.log(`Seeded ${engines.length} AI engines.`);
   console.log("Seed data created successfully!");
   console.log("Login with: demo@echorank.io / password123");
 }

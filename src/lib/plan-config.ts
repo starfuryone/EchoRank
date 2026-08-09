@@ -158,6 +158,17 @@ export interface PlanConfig {
   /** Shape of one AI Visibility checkup for this tier. */
   aiCheckup: AiCheckupShape;
   /**
+   * Brands ("projects") one tenant may track at once. `null` = unlimited.
+   *
+   * A cap on CURRENT STATE, like trackedKeywords — it falls again when a brand
+   * is deleted. It is NOT the spend guardrail; aiMonthlyCapUsd is, and it binds
+   * regardless of how the brands are split. This exists because an agency
+   * tracking twelve clients on a $79 tier is a packaging problem, not a cost
+   * problem: the cap would stop them anyway, but at 3am mid-checkup with a
+   * CAPPED row rather than at the moment they tried to add the twelfth brand.
+   */
+  aiProjects: number | null;
+  /**
    * Per-tenant AI provider spend per calendar month (UTC), in USD.
    * `null` = uncapped (ENTERPRISE is contract-priced). 0 = no monitor.
    *
@@ -230,6 +241,7 @@ export const PLAN_CONFIGS: Record<SellablePlanType, PlanConfig> = {
     // The shape the retired AI Visibility tier sold: two providers and one
     // repetition. Repeatability needs >1 and stays a GROWTH feature.
     aiCheckup: { frequency: "weekly", providers: 2, prompts: 10, repetitions: 1 },
+    aiProjects: 1,
     aiMonthlyCapUsd: 5,
     highlighted: false,
     cta: "Start Free Trial",
@@ -270,6 +282,7 @@ export const PLAN_CONFIGS: Record<SellablePlanType, PlanConfig> = {
     crawlUrlCap: 5_000,
     crawlsPerMonth: 20,
     aiCheckup: { frequency: "twice_weekly", providers: 4, prompts: 15, repetitions: 2 },
+    aiProjects: 3,
     aiMonthlyCapUsd: 40,
     highlighted: true,
     cta: "Start Free Trial",
@@ -310,6 +323,7 @@ export const PLAN_CONFIGS: Record<SellablePlanType, PlanConfig> = {
     crawlUrlCap: 25_000,
     crawlsPerMonth: null,
     aiCheckup: { frequency: "daily", providers: null, prompts: 20, repetitions: 3 },
+    aiProjects: 25,
     aiMonthlyCapUsd: 150,
     highlighted: false,
     cta: "Start Free Trial",
@@ -354,6 +368,7 @@ export const PLAN_CONFIGS: Record<SellablePlanType, PlanConfig> = {
     // "custom": the schedule is set per contract, so the scheduler reads the
     // brand profile rather than a cadence baked in here.
     aiCheckup: { frequency: "custom", providers: null, prompts: 20, repetitions: 3 },
+    aiProjects: null,
     aiMonthlyCapUsd: null,
     highlighted: false,
     cta: "Book Enterprise Demo",

@@ -30,6 +30,7 @@ export const AI_PROVIDERS = [
   "GOOGLE_AI_OVERVIEWS",
   "GEMINI",
   "GROK",
+  "PERPLEXITY",
   "MISTRAL",
   "LLAMA",
 ] as const;

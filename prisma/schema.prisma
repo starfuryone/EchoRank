@@ -217,6 +217,12 @@ model Tenant {
   checkups        Checkup[]
   aiProviderCalls AiProviderCall[]
 
+  citations          Citation[]
+  competitorMentions CompetitorMention[]
+  sources            Source[]
+  recommendations    Recommendation[]
+  experiments        Experiment[]
+
   @@map("tenants")
 }
 
@@ -1091,6 +1097,9 @@ model TrackedPrompt {
   market         String?
   language       String?       @default("en")
   source         PromptSource?
+  /// ISO-3166-1 alpha-2, for provider calls that take a location. `market` is
+  /// the free-text label the wizard renders; this is the machine-readable one.
+  country        String?
   /// 0-100, deterministic. Null for prompts that predate the scorer.
   relevanceScore Int?
   /// Chosen in the wizard. `active` stays the tracking switch; this is the
@@ -1098,13 +1107,33 @@ model TrackedPrompt {
   /// tracking remain different actions.
   selected       Boolean       @default(false)
 
-  tenant       Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  brandProfile BrandProfile? @relation(fields: [brandProfileId], references: [id], onDelete: Cascade)
-  runs         PromptRun[]
+  /// 0-100. How much money sits behind this question, judged at discovery time
+  /// from intent plus (where available) search demand. DISTINCT FROM
+  /// relevanceScore, which asks whether the question is about this brand at
+  /// all: "best free CRM" is highly relevant to a CRM vendor and commercially
+  /// weak, and collapsing the two would rank the freebie hunters top.
+  commercialValue   Int?
+  /// Multiplier on this prompt's contribution to the brand's rolled-up
+  /// visibility. Defaults to 1 — a prompt counts once until someone says
+  /// otherwise. Lets a brand weight its two flagship questions above the
+  /// eighteen long-tail ones without deleting the long tail.
+  importanceWeight  Float           @default(1)
+  /// How often the scheduler asks this prompt. Raised automatically when a
+  /// prompt turns out to be volatile (Phase 5) — an answer that changes daily
+  /// has to be sampled daily or the trend line is noise.
+  trackingFrequency PromptFrequency @default(WEEKLY)
+
+  tenant          Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  brandProfile    BrandProfile?    @relation(fields: [brandProfileId], references: [id], onDelete: Cascade)
+  runs            PromptRun[]
+  recommendations Recommendation[]
+  experiments     Experiment[]
 
   @@unique([tenantId, text])
   @@index([active, nextRunAt])
   @@index([brandProfileId, selected])
+  /// Scheduler read: what is due, cheapest first.
+  @@index([active, trackingFrequency, nextRunAt])
   @@map("tracked_prompts")
 }
 
@@ -1128,15 +1157,48 @@ model PromptRun {
   /// (checkup, prompt, provider) and differ only by this.
   repetition Int     @default(1)
 
-  tenant   Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  prompt   TrackedPrompt    @relation(fields: [promptId], references: [id], onDelete: Cascade)
-  checkup  Checkup?         @relation(fields: [checkupId], references: [id], onDelete: Cascade)
-  analysis MentionAnalysis?
+  /// The answer exactly as the provider returned it. `excerpt` predates this
+  /// and stays: it is the short form the list views render without pulling a
+  /// multi-kilobyte column across the wire.
+  rawResponse        String?  @db.Text
+  /// Whitespace-collapsed, markdown-stripped. What the hash and the analysis
+  /// passes read, so that a provider reflowing its own formatting does not
+  /// register as a changed answer.
+  normalizedResponse String?  @db.Text
+  /// SHA-256 of normalizedResponse. Change detection compares this run to the
+  /// previous one for the same (prompt, engine): equal hash, nothing moved,
+  /// and the trend worker can skip the comparison entirely.
+  responseHash       String?
+  /// Wall-clock milliseconds for the provider call.
+  latencyMs          Int?
+  inputTokens        Int      @default(0)
+  outputTokens       Int      @default(0)
+  cachedInputTokens  Int      @default(0)
+  /// USD for this run's answer call. DERIVED AT WRITE TIME from the tokens, by
+  /// the same pricing table AiProviderCall uses — see the note there on why a
+  /// stored cost must never be recomputed from a later price list. The
+  /// AiProviderCall row remains the ledger; this is the per-run attribution.
+  costUsd            Decimal  @default(0) @db.Decimal(10, 6)
+
+  /// Phase 8. Null means the project's own market and no persona wrapper —
+  /// which is the baseline every geo/persona comparison is measured against,
+  /// so it must stay distinguishable from "we asked as a consumer in Paris".
+  location String?
+  persona  String?
+
+  tenant             Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  prompt             TrackedPrompt       @relation(fields: [promptId], references: [id], onDelete: Cascade)
+  checkup            Checkup?            @relation(fields: [checkupId], references: [id], onDelete: Cascade)
+  analysis           MentionAnalysis?
+  citations          Citation[]
+  competitorMentions CompetitorMention[]
 
   @@index([tenantId, createdAt])
   @@index([promptId, createdAt])
   /// Dashboard read: one checkup's responses, grouped by provider.
   @@index([checkupId, engine])
+  /// Change detection: the previous run of this prompt on this engine.
+  @@index([promptId, engine, createdAt])
   @@map("prompt_runs")
 }
 
@@ -2070,6 +2132,25 @@ model BrandProfile {
   website  String?
   industry String?
 
+  /// What the business does, in a paragraph. Written by the onboarding pass
+  /// from the site crawl, then editable. Feeds every prompt-generation and
+  /// analysis system prompt, so it is the single highest-leverage field on the
+  /// row: a vague description produces prompts nobody would ask.
+  description        String?   @db.Text
+  /// ISO-3166-1 alpha-2 primary market. `markets` carries the rest; this is
+  /// the one used when a provider call needs a single location.
+  country            String?
+  /// BCP-47. Prompts are generated and asked in this language by default.
+  language           String    @default("en")
+  /// Set when the onboarding crawl + inference completed. Null means the
+  /// project exists but was never enriched — the wizard resumes from there.
+  onboardedAt        DateTime?
+  /// { pages: [{url, title, chars}], robotsBlocked: bool, detectedIndustry,
+  /// competitorEvidence: [...] } — what the crawl actually read. Kept so the
+  /// UI can answer "why did you say we sell X?" rather than asking the user to
+  /// trust an LLM summary with no provenance.
+  onboardingEvidence Json?
+
   /// Other spellings that count as a mention: "Echorank360", "Echo rank".
   aliases     String[] @default([])
   competitors String[] @default([])
@@ -2088,6 +2169,11 @@ model BrandProfile {
   prompts  TrackedPrompt[]
   checkups Checkup[]
   trends   CheckupTrend[]
+
+  visibilityMetrics VisibilityMetric[]
+  sources           Source[]
+  recommendations   Recommendation[]
+  experiments       Experiment[]
 
   @@index([tenantId])
   @@map("brand_profiles")
@@ -2171,8 +2257,39 @@ model MentionAnalysis {
   visibilityScore Float    @default(0)
   createdAt       DateTime @default(now())
 
+  /// Character offset of the first mention in the normalized answer. A brand
+  /// named in the opening sentence and one named in a closing footnote are not
+  /// equally visible, and listPosition cannot tell them apart — it is null for
+  /// both when the answer has no list.
+  firstPosition          Int?
+  /// 1-based place in the answer's recommendation list, when the answer makes
+  /// one. Distinct from listPosition: an answer can enumerate six vendors and
+  /// then recommend the third, and the prominence score pays for the second.
+  recommendationPosition Int?
+  /// 0-100, the spec's additive prominence ladder (appears / recommended /
+  /// cited / described positively). NOT the same number as visibilityScore,
+  /// which is the weighted multiplicative score in scoring.ts. Both are kept:
+  /// the ladder is legible to a customer ("+40 because you were the first
+  /// recommendation"), the weighted score is what the trend line uses.
+  prominenceScore        Int      @default(0)
+  /// { strengths[], weaknesses[], pricePosition, quality, trust, innovation,
+  /// targetCustomer, categoryAssociations[] } — what the model believes about
+  /// the brand. JSON rather than columns: this is evidence for the
+  /// recommendation engine, never a filter or a sort key.
+  attributes             Json?
+
+  /// Set when the strict-JSON pass failed twice. The run is parked for review
+  /// rather than retried forever or dropped — a queue that crashes on one bad
+  /// response takes the whole checkup with it, and a response silently
+  /// discarded is a visibility score quietly computed from less data than it
+  /// claims.
+  quarantinedAt    DateTime?
+  quarantineReason String?
+
   promptRun PromptRun @relation(fields: [promptRunId], references: [id], onDelete: Cascade)
 
+  /// Review queue read: what failed to parse, oldest first.
+  @@index([quarantinedAt])
   @@map("mention_analyses")
 }
 
@@ -2270,4 +2387,403 @@ model ConsentEvent {
   @@index([tenantId, createdAt])
   @@index([email])
   @@map("consent_events")
+}
+
+// ─────────────────────────────────────────────────────────────
+// AI SEARCH INTELLIGENCE — engines, citations, sources, actions
+//
+// Built ON the AI Visibility Monitor above rather than beside it: BrandProfile
+// is the project, TrackedPrompt is the prompt, PromptRun is the run, Tenant is
+// the organization. A parallel Project/Organization pair would have meant a
+// second tenancy path, a second plan-limit check and a second cost ledger, and
+// the first bug would have been a route that scoped to the wrong one.
+// ─────────────────────────────────────────────────────────────
+
+/// How often the scheduler asks a prompt.
+///
+/// An enum rather than an interval column because the scheduler sweeps by
+/// bucket, and because "every 37 hours" is a support ticket waiting to happen.
+enum PromptFrequency {
+  DAILY
+  WEEKLY
+  BIWEEKLY
+  MONTHLY
+}
+
+/// What kind of page a citation points at.
+///
+/// Drives the recommendation engine more than the dashboard: a competitor
+/// winning on COMPARISON pages needs a comparison page built, one winning on
+/// FORUM threads needs a community presence, and those are different projects.
+enum CitationType {
+  EDITORIAL
+  COMPARISON
+  REVIEW
+  DOCS
+  FORUM
+  SOCIAL
+  OTHER
+}
+
+enum SourceType {
+  PUBLISHER
+  VENDOR
+  MARKETPLACE
+  COMMUNITY
+  DOCS
+  SOCIAL
+  OTHER
+}
+
+enum RecommendationType {
+  CONTENT_GAP
+  CITATION_OPPORTUNITY
+  WEAK_ASSOCIATION
+  NEGATIVE_SENTIMENT
+  STRUCTURED_DATA
+  ENTITY_SIGNAL
+  AUTHORITY_SIGNAL
+  HIGH_VALUE_PROMPT
+}
+
+enum RecommendationStatus {
+  OPEN
+  IN_PROGRESS
+  DONE
+  DISMISSED
+  /// Superseded by a newer generation of the same finding. Kept rather than
+  /// deleted so a brand can see that an action it never took has gone stale.
+  STALE
+}
+
+enum ExperimentStatus {
+  RUNNING
+  SUCCEEDED
+  /// Ran to its horizon without a statistically meaningful improvement.
+  INCONCLUSIVE
+  ABANDONED
+}
+
+/// One (provider, model) the monitor can query.
+///
+/// A TABLE, not a constant, even though the catalogue in
+/// src/lib/ai-monitor/engines.ts seeds it. Two things have to be true at once:
+/// the code must know each engine's capabilities to build a request, and an
+/// operator must be able to switch one off at 3am when a vendor breaks without
+/// a rebuild on a box that serves production from its working tree. The
+/// catalogue supplies the first, this row supplies the second.
+///
+/// GLOBAL, NOT TENANT-SCOPED. Availability is a property of our API keys, not
+/// of a customer's plan; what a tier may use is `aiCheckup.providers` in
+/// plan-config.ts.
+model AIEngine {
+  id String @id @default(cuid())
+
+  /// Matches AI_PROVIDERS in src/lib/ai-monitor/pricing.ts.
+  provider          String
+  modelName         String
+  /// Human label for the dashboard's per-engine table.
+  displayName       String
+  /// Whether the engine actually searches the live web. An engine answering
+  /// from training data alone cannot be moved by publishing a page this week,
+  /// so the recommendation engine must not promise that it can.
+  supportsSearch    Boolean @default(false)
+  /// Whether it returns citations. Without them, citationRate for this engine
+  /// is not zero — it is unmeasurable, and the rollup records null, not 0.
+  supportsCitations Boolean @default(false)
+  /// Operator kill switch. An engine whose API key is missing is disabled at
+  /// runtime regardless of this flag; this turns off one that works.
+  enabled           Boolean @default(true)
+  /// Display order in the per-engine table.
+  sortOrder         Int     @default(100)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([provider, modelName])
+  @@index([enabled, sortOrder])
+  @@map("ai_engines")
+}
+
+/// One URL an answer cited.
+///
+/// Rows, not a JSON array on PromptRun, because this table is the input to the
+/// influence graph: "which domains cite my competitors and never me" is a
+/// GROUP BY over millions of these, and a JSON column would make it a table
+/// scan with a parse per row.
+model Citation {
+  id          String @id @default(cuid())
+  tenantId    String
+  promptRunId String
+
+  url    String  @db.Text
+  /// Registrable domain, via src/lib/registrable-domain.ts. The join key to
+  /// Source, so it must be computed the same way in both places.
+  domain String
+  title  String?
+
+  /// 1-based order of appearance in the answer. Earlier citations carry the
+  /// claim the answer leads with.
+  citationPosition   Int?
+  /// Whether the sentence this citation supports is about the brand.
+  supportsBrand      Boolean      @default(false)
+  /// The competitor whose claim it supports, if any. A name rather than a FK:
+  /// competitors are strings on BrandProfile, and a citation naming a company
+  /// the brand never listed is still worth recording.
+  supportsCompetitor String?
+  citationType       CitationType @default(OTHER)
+
+  // ── Verification pass (Phase 4) ──
+  /// Null until VerifyCitationsTask has run. A model citing a URL that 404s,
+  /// or that never mentions the brand it was cited for, is a hallucinated
+  /// citation — which is a finding, not a data error.
+  verifiedAt       DateTime?
+  httpStatus       Int?
+  /// Whether the page's <title> resembles the title the model claimed.
+  titleMatches     Boolean?
+  brandOnPage      Boolean?
+  competitorOnPage Boolean?
+  verifyError      String?
+
+  /// Set by the Source aggregator. Null until a domain has been rolled up.
+  sourceId String?
+
+  createdAt DateTime @default(now())
+
+  tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  promptRun PromptRun @relation(fields: [promptRunId], references: [id], onDelete: Cascade)
+  source    Source?   @relation(fields: [sourceId], references: [id], onDelete: SetNull)
+
+  /// A model can cite the same URL twice in one answer; that is one citation.
+  @@unique([promptRunId, url])
+  @@index([tenantId, domain, createdAt])
+  @@index([sourceId, createdAt])
+  /// Verification sweep: what has not been checked yet.
+  @@index([verifiedAt])
+  @@map("citations")
+}
+
+/// A competitor's appearance in one answer.
+///
+/// Mirrors MentionAnalysis for the brand, one row per competitor per run. Share
+/// of voice is a sum over these against the brand's own prominence, so they
+/// have to be measured on the same scale — hence prominenceScore here too.
+model CompetitorMention {
+  id          String @id @default(cuid())
+  tenantId    String
+  promptRunId String
+
+  name                   String
+  mentionCount           Int     @default(0)
+  firstPosition          Int?
+  recommendationPosition Int?
+  prominenceScore        Int     @default(0)
+  /// positive | neutral | negative
+  sentiment              String?
+  context                String? @db.Text
+
+  createdAt DateTime @default(now())
+
+  tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  promptRun PromptRun @relation(fields: [promptRunId], references: [id], onDelete: Cascade)
+
+  @@unique([promptRunId, name])
+  @@index([tenantId, name, createdAt])
+  @@map("competitor_mentions")
+}
+
+/// One day's rolled-up numbers for one project on one engine.
+///
+/// SEPARATE FROM CheckupTrend, which is one row per brand per day with a
+/// `byProvider` JSON blob. That shape answers "how are we doing?" and cannot
+/// answer "has Perplexity moved while ChatGPT stood still?" without parsing
+/// JSON in the database. This table is the per-engine grain the spec's
+/// dashboard, alerts and trend detection all read; CheckupTrend stays as the
+/// brand-level summary the existing chart already uses.
+model VisibilityMetric {
+  id             String   @id @default(cuid())
+  brandProfileId String
+  engine         String
+  day            DateTime @db.Date
+
+  /// 0-100, the weighted formula in src/lib/ai-monitor/metrics.ts.
+  visibilityScore     Float
+  /// Share of runs that cited any source supporting the brand. NULL — not 0 —
+  /// on an engine that does not return citations at all.
+  citationScore       Float?
+  recommendationScore Float
+  /// Mean sentiment, -1..1.
+  sentimentScore      Float?
+  /// 0-100. The brand's prominence as a share of all entities named.
+  shareOfVoice        Float?
+  /// Mean list position across runs that ranked the brand. Null when none did.
+  averagePosition     Float?
+  mentionRate         Float
+  top3Rate            Float
+  /// Runs this row was computed from. A score off two runs and one off two
+  /// hundred should not be read the same way, and the chart dims the former.
+  runCount            Int      @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  brandProfile BrandProfile @relation(fields: [brandProfileId], references: [id], onDelete: Cascade)
+
+  /// The rollup upserts, so a re-run cannot double a day.
+  @@unique([brandProfileId, engine, day])
+  @@index([brandProfileId, day(sort: Desc)])
+  @@map("visibility_metrics")
+}
+
+/// A domain that AI answers cite, aggregated across every run for one project.
+///
+/// PER PROJECT, not global. The same domain is a different asset to different
+/// brands: g2.com citing four of your competitors and none of you is a specific,
+/// actionable gap for you and a non-event for the brand it already features.
+model Source {
+  id             String @id @default(cuid())
+  tenantId       String
+  brandProfileId String
+
+  domain String
+  /// Total citations of this domain across the project's runs.
+  citationCount Int @default(0)
+  /// Distinct brand/competitor names whose claims this domain has supported.
+  brandsSupported String[] @default([])
+  /// Citations supporting the brand, and supporting any competitor. The ratio
+  /// is what makes a citation opportunity: high competitor, zero brand.
+  brandCitations      Int @default(0)
+  competitorCitations Int @default(0)
+  /// How many distinct engines cite it. A domain three engines trust is worth
+  /// more than one cited three times by the same engine.
+  distinctEngines     Int @default(0)
+  /// Citations arising from prompts with commercialValue >= the threshold in
+  /// src/lib/ai-monitor/influence.ts.
+  commercialPromptCount Int @default(0)
+
+  /// 0-100. From the SEO API adapter where available, else the heuristic in
+  /// influence.ts. Null means neither could speak — which the influence score
+  /// treats as a neutral midpoint rather than as zero, so an unrated domain is
+  /// not silently ranked below a bad one.
+  authorityScore    Float?
+  topicalCategories String[]   @default([])
+  sourceType        SourceType @default(OTHER)
+
+  /// citationFrequency x distinctEngines x commercialPromptCount x authority.
+  /// Stored so the ranked list is an index scan, recomputed by the aggregator.
+  influenceScore Float @default(0)
+
+  firstSeenAt DateTime @default(now())
+  lastSeenAt  DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenant       Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  brandProfile BrandProfile @relation(fields: [brandProfileId], references: [id], onDelete: Cascade)
+
+  citations       Citation[]
+  recommendations Recommendation[]
+
+  @@unique([brandProfileId, domain])
+  @@index([brandProfileId, influenceScore(sort: Desc)])
+  @@index([tenantId, domain])
+  @@map("sources")
+}
+
+/// One prioritised action, with the evidence that produced it.
+///
+/// EVIDENCE IS NOT OPTIONAL. A recommendation a customer cannot audit is a
+/// horoscope: the "Why competitors win" card is rendered entirely from this
+/// JSON, so a generator that cannot produce evidence must not produce a row.
+model Recommendation {
+  id             String @id @default(cuid())
+  tenantId       String
+  brandProfileId String
+
+  type RecommendationType
+  /// Short imperative title: "Create a Foo vs Bar comparison page".
+  title           String
+  /// What to do, concretely — the slug to create, the entities to strengthen.
+  suggestedAction String             @db.Text
+  /// Estimated visibility points gained, 0-100.
+  estimatedImpact Float
+  /// 1 (an afternoon) to 5 (a quarter). The denominator of the priority.
+  effort          Float
+  /// estimatedImpact / effort. Stored so the list sorts on an index.
+  priority        Float
+  /// HIGH | MEDIUM | LOW, banded from `priority` at write time so the badge
+  /// and the sort order can never disagree.
+  priorityBand    String
+  /// { prompts: [...], competitors: [...], sources: [...], reasons: [...] } —
+  /// the numbered "why" list, verbatim.
+  evidence        Json
+  status          RecommendationStatus @default(OPEN)
+
+  /// The prompt or source this finding is about, when it is about one.
+  promptId String?
+  sourceId String?
+
+  /// Stable identity of the FINDING, not of the row: type + prompt/source +
+  /// competitor. A nightly regeneration upserts on this, so an unchanged gap
+  /// keeps its id, its status and any note a customer left on it instead of
+  /// reappearing every morning as a brand-new task.
+  dedupeKey String @unique
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  dismissedAt DateTime?
+
+  tenant       Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  brandProfile BrandProfile   @relation(fields: [brandProfileId], references: [id], onDelete: Cascade)
+  prompt       TrackedPrompt? @relation(fields: [promptId], references: [id], onDelete: SetNull)
+  source       Source?        @relation(fields: [sourceId], references: [id], onDelete: SetNull)
+
+  experiments Experiment[]
+
+  @@index([brandProfileId, status, priority(sort: Desc)])
+  @@index([tenantId, createdAt])
+  @@map("recommendations")
+}
+
+/// Did acting on a recommendation actually move the number?
+///
+/// The baseline is SNAPSHOTTED onto the row at the start, for the same reason
+/// Checkup copies its tier shape: the comparison has to be against what was
+/// true when the experiment began, not against whatever the rollup says today.
+model Experiment {
+  id               String  @id @default(cuid())
+  tenantId         String
+  brandProfileId   String
+  promptId         String
+  recommendationId String?
+
+  status     ExperimentStatus @default(RUNNING)
+  hypothesis String           @db.Text
+
+  /// { runs, mentions, top3, mentionRate, top3Rate, visibilityScore } as of
+  /// the start. Frozen.
+  baseline Json
+  /// The same shape, as of the last evaluation.
+  result   Json?
+
+  /// Two-proportion z-test on the mention rate, baseline vs current.
+  pValue     Float?
+  /// Set when pValue crosses the threshold in experiments.ts AND the direction
+  /// is an improvement. A significant DROP is not a success.
+  successful Boolean?
+
+  startedAt   DateTime  @default(now())
+  /// When the experiment stops accruing runs. Null = open-ended.
+  endsAt      DateTime?
+  evaluatedAt DateTime?
+  endedAt     DateTime?
+
+  tenant         Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  brandProfile   BrandProfile    @relation(fields: [brandProfileId], references: [id], onDelete: Cascade)
+  prompt         TrackedPrompt   @relation(fields: [promptId], references: [id], onDelete: Cascade)
+  recommendation Recommendation? @relation(fields: [recommendationId], references: [id], onDelete: SetNull)
+
+  @@index([brandProfileId, status])
+  @@index([tenantId, startedAt])
+  @@map("experiments")
 }
