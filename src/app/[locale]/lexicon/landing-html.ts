@@ -53,7 +53,7 @@ a{color:inherit}
 
 <header class="header">
   <div class="container header-inner">
-    <a href="/en" class="brand" aria-label="Echorank home"><span class="mark">E</span><span>Echorank</span></a>
+    <a href="/en" class="brand" aria-label="Echorank home"><svg width="30" height="30" viewBox="0 0 40 40" style="display:block" aria-hidden="true"><defs><linearGradient id="eg-lex" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FDE38A"/><stop offset="1" stop-color="#F0B90B"/></linearGradient></defs><rect x="9" y="9" width="22" height="22" rx="5" transform="rotate(45 20 20)" fill="url(#eg-lex)"/></svg><span style="letter-spacing:.06em">ECHORANK</span></a>
     <nav class="nav" aria-label="Main navigation">
       <a href="#lexicon">Lexicon</a>
       <a href="/en/learn">Learn</a>
@@ -145,7 +145,7 @@ a{color:inherit}
 </main>
 
 <footer class="footer">
-  <div class="container">&copy; 2026 ECHORANK / CHATLOGIC INSIGHTS LTD &middot; <a href="/en/pricing">Pricing</a></div>
+  <div class="container">&copy; 2026 ECHORANK &middot; ChatLogic Insights Ltd &middot; Registered in England &amp; Wales No. 15593166<br><a href="/en/pricing">Pricing</a> &middot; <a href="/en/keyword-research">Keyword guide</a></div>
 </footer>
 
 <script>
