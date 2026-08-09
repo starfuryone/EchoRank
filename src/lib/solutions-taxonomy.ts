@@ -331,7 +331,7 @@ export const SOLUTION_CATEGORIES: SolutionCategory[] = [
         en: {
           label: "Mid-market companies",
           desc: "Enough locations to need process, not enough to need a department.",
-          h1: "Echorank360 for mid-market companies",
+          h1: "Echorank for mid-market companies",
           intro: "You have outgrown doing this by hand but do not want a tool per problem. One platform covering reputation, AI visibility and search.",
           features: [
             { href: ENG, why: "Automate requests and responses instead of adding headcount." },

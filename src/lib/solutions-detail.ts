@@ -38,6 +38,66 @@ export interface SolutionDetail {
 }
 
 const DETAILS: Record<string, Record<SolutionBase, SolutionDetail>> = {
+  "mid-market": {
+    en: {
+      prose: [
+        {
+          h2: "Process, not headcount",
+          paras: [
+            "At your size the failure mode isn't ignorance, it's inconsistency. Someone answers reviews when they have time. Someone checks rankings when a client mentions them. Nobody checks what AI assistants say at all. The fix isn't hiring a reputation team — it's turning each of those into a process that runs whether or not anyone remembered.",
+            "Echorank automates the repetitive layer: review requests go out on schedule, responses follow the standard you set once, monitoring runs daily and only interrupts you when something moves. What's left for humans is the part that needs judgment.",
+          ],
+        },
+        {
+          h2: "One platform, not a stack",
+          paras: [
+            "The alternative is a tool per problem: one for reviews, one for rank tracking, one for audits, a spreadsheet gluing them together. Five subscriptions, five logins, and data that never joins — the review dip and the ranking dip that are obviously the same story stay in separate tabs.",
+            "One platform means one place where reputation, AI visibility and search sit against each other, one bill, and one dashboard your team actually opens. When you add a location or enter a new market, you add it once.",
+          ],
+          image: {
+            src: "/solutions/midmarket-en.svg",
+            alt: "Five separate tools consolidated into one platform with a single dashboard and workflow",
+          },
+        },
+      ],
+      eyebrow: "IN BETWEEN",
+      h2: "Built for the size you actually are",
+      cards: [
+        { title: "Automation first", body: "Requests, responses and monitoring run on schedule — headcount stays on work that needs judgment." },
+        { title: "One subscription", body: "Reputation, AI visibility and the SEO toolkit in one bill, replacing a stack of single-purpose tools." },
+        { title: "Grows with you", body: "New locations and markets are added, not re-implemented — the standards you set carry over." },
+      ],
+    },
+    fr: {
+      prose: [
+        {
+          h2: "Du processus, pas des effectifs",
+          paras: [
+            "À votre taille, le problème n'est pas l'ignorance mais l'irrégularité. Quelqu'un répond aux avis quand il a le temps. Quelqu'un vérifie les positions quand un client en parle. Personne ne vérifie ce que disent les assistants IA. La solution n'est pas de recruter une équipe réputation — c'est de transformer chacune de ces tâches en processus qui tourne, qu'on y pense ou non.",
+            "Echorank automatise la couche répétitive : les demandes d'avis partent selon le calendrier, les réponses suivent le standard défini une fois, la surveillance tourne chaque jour et ne vous interrompt que quand quelque chose bouge. Ce qui reste aux humains, c'est la part qui demande du jugement.",
+          ],
+        },
+        {
+          h2: "Une plateforme, pas une pile d'outils",
+          paras: [
+            "L'alternative, c'est un outil par problème : un pour les avis, un pour le suivi de positions, un pour les audits, et un tableur pour faire le lien. Cinq abonnements, cinq connexions, et des données qui ne se croisent jamais — la baisse d'avis et la baisse de positions qui racontent manifestement la même histoire restent dans des onglets séparés.",
+            "Une seule plateforme, c'est un endroit où réputation, visibilité IA et référencement se lisent côte à côte, une seule facture, et un tableau de bord que votre équipe ouvre vraiment. Quand vous ajoutez un établissement ou un marché, vous l'ajoutez une fois.",
+          ],
+          image: {
+            src: "/solutions/midmarket-fr.svg",
+            alt: "Cinq outils distincts consolidés en une seule plateforme avec un tableau de bord et un flux de travail uniques",
+          },
+        },
+      ],
+      eyebrow: "ENTRE-DEUX",
+      h2: "Conçu pour la taille que vous avez vraiment",
+      cards: [
+        { title: "L'automatisation d'abord", body: "Demandes, réponses et surveillance tournent selon le calendrier — vos effectifs restent sur ce qui demande du jugement." },
+        { title: "Un seul abonnement", body: "Réputation, visibilité IA et boîte à outils SEO sur une seule facture, à la place d'une pile d'outils spécialisés." },
+        { title: "Évolue avec vous", body: "Les nouveaux établissements et marchés s'ajoutent sans tout refaire — vos standards s'appliquent d'office." },
+      ],
+    },
+  },
   "large-organizations": {
     en: {
       prose: [
