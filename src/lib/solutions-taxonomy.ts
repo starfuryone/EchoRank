@@ -469,7 +469,7 @@ export const SOLUTION_CATEGORIES: SolutionCategory[] = [
         en: {
           label: "Business owners",
           desc: "One number that tells you whether this is working.",
-          h1: "Echorank360 for business owners",
+          h1: "Echorank for business owners",
           intro: "You do not need a dashboard you have to study. You need to know whether people find you, what they say, and what to fix first.",
           features: [
             { href: AI, why: "A single scored view of how you show up, tracked over time." },

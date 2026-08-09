@@ -38,6 +38,66 @@ export interface SolutionDetail {
 }
 
 const DETAILS: Record<string, Record<SolutionBase, SolutionDetail>> = {
+  "business-owners": {
+    en: {
+      prose: [
+        {
+          h2: "Your reputation sells while you work",
+          paras: [
+            "Before a customer ever calls, they've checked. They've read your reviews, seen your star rating on Maps, or asked ChatGPT who to hire — and by the time the phone rings, the decision is mostly made. That checking happens every day, whether you watch it or not; the only question is whether you find out what it concluded.",
+            "Echorank watches those moments for you: what your reviews say, where your rating is drifting, and what AI assistants answer when someone asks for a business like yours. No jargon, no analyst screens — a plain read of how you look to the people deciding whether to call.",
+          ],
+        },
+        {
+          h2: "Run the business, not the dashboards",
+          paras: [
+            "You didn't open a business to monitor software. So the platform is built to leave you alone: review requests go to customers automatically, replies follow the tone you approved, and alerts arrive only when something needs an owner's decision — a bad review to respond to, a competitor overtaking you in AI recommendations, a rating slide worth stopping early.",
+            "Ten minutes a week is the honest cost. What you get back is the assurance that the moment something starts hurting the business's name, you'll hear about it that day — not discover it in a slow month.",
+          ],
+          image: {
+            src: "/solutions/businessowners-en.svg",
+            alt: "The places customers check a business, watched in one place, ending with the business recommended first",
+          },
+        },
+      ],
+      eyebrow: "OWNER-OPERATED",
+      h2: "Built for people with a business to run",
+      cards: [
+        { title: "Plain language", body: "Scores and alerts written for an owner, not an analyst — what changed, why it matters, what to do." },
+        { title: "Automatic follow-up", body: "Review requests and responses run on your approved tone — happy customers get asked, every review gets answered." },
+        { title: "Owner-level alerts", body: "You're interrupted only for decisions worth an owner's time; everything else waits in the weekly read." },
+      ],
+    },
+    fr: {
+      prose: [
+        {
+          h2: "Votre réputation vend pendant que vous travaillez",
+          paras: [
+            "Avant d'appeler, le client a vérifié. Il a lu vos avis, vu votre note sur Maps, ou demandé à ChatGPT qui engager — et quand le téléphone sonne, la décision est déjà presque prise. Cette vérification a lieu tous les jours, que vous la regardiez ou non ; la seule question est de savoir si vous apprenez ce qu'elle a conclu.",
+            "Echorank surveille ces moments pour vous : ce que disent vos avis, où glisse votre note, et ce que répondent les assistants IA quand on cherche une entreprise comme la vôtre. Pas de jargon, pas d'écrans d'analyste — une lecture claire de l'image que vous renvoyez aux gens qui décident d'appeler ou non.",
+          ],
+        },
+        {
+          h2: "Gérez l'entreprise, pas les tableaux de bord",
+          paras: [
+            "Vous n'avez pas ouvert une entreprise pour surveiller un logiciel. La plateforme est donc conçue pour vous laisser tranquille : les demandes d'avis partent automatiquement, les réponses suivent le ton que vous avez approuvé, et les alertes n'arrivent que quand une décision de patron s'impose — un mauvais avis à traiter, un concurrent qui vous dépasse dans les recommandations IA, une note qui glisse et qu'il vaut mieux arrêter tôt.",
+            "Dix minutes par semaine, c'est le coût honnête. En échange, vous avez l'assurance que le jour où quelque chose commence à nuire au nom de l'entreprise, vous l'apprendrez le jour même — pas au détour d'un mois creux.",
+          ],
+          image: {
+            src: "/solutions/businessowners-fr.svg",
+            alt: "Les endroits où les clients vérifient une entreprise, surveillés au même endroit, jusqu'à la recommandation en premier",
+          },
+        },
+      ],
+      eyebrow: "PATRON AUX COMMANDES",
+      h2: "Conçu pour ceux qui ont une entreprise à gérer",
+      cards: [
+        { title: "Langage clair", body: "Scores et alertes écrits pour un patron, pas un analyste — ce qui a changé, pourquoi c'est important, quoi faire." },
+        { title: "Relances automatiques", body: "Demandes et réponses aux avis tournent sur le ton approuvé — les clients satisfaits sont sollicités, chaque avis reçoit une réponse." },
+        { title: "Alertes de niveau patron", body: "Vous n'êtes interrompu que pour les décisions qui valent votre temps ; le reste attend la lecture hebdomadaire." },
+      ],
+    },
+  },
   "small-teams": {
     en: {
       prose: [
