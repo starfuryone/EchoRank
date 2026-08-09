@@ -562,7 +562,7 @@ export const KEYWORD_GUIDE_HTML: string = String.raw`<!DOCTYPE html>
   <footer class="footer">
     <div class="container">
       <strong>Echorank</strong>
-      <p class="small">&copy; 2026 ECHORANK &middot; ChatLogic Insights Ltd &middot; Registered in England &amp; Wales No. 15593166<br><a href="/en/pricing">Pricing</a> &middot; <a href="/en/lexicon">Lexicon</a></p>
+      <p class="small">&copy; 2026 ECHORANK &middot; ChatLogic Insights Ltd &middot; Registered in England &amp; Wales No. 15593166<br><a href="/en/pricing">Pricing</a> &middot; <a href="/en/glossary">Glossary</a></p>
     </div>
   </footer>
 

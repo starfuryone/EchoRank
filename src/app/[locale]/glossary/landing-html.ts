@@ -1,11 +1,11 @@
-export const LEXICON_HTML: string = String.raw`<!DOCTYPE html>
+export const GLOSSARY_HTML: string = String.raw`<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Echorank Lexicon — search, ranking &amp; AI visibility terms</title>
-<meta name="description" content="The Echorank Lexicon: definitions and concepts for search, ranking, AI visibility, and digital discovery.">
-<link rel="canonical" href="https://echorank360.com/en/lexicon">
+<title>Echorank Glossary — search, ranking &amp; AI visibility terms</title>
+<meta name="description" content="The Echorank Glossary: definitions and concepts for search, ranking, AI visibility, and digital discovery.">
+<link rel="canonical" href="https://echorank360.com/en/glossary">
 <style>
 :root{--bg:#181A20;--surface:#1E2329;--surface2:#2B3139;--text:#EAECEF;--muted:#848E9C;--border:#2B3139;--accent:#FCD535;--accent2:#F0B90B;--highlight:rgba(252,213,53,.28);--radius:14px;--width:1100px}
 *{box-sizing:border-box}
@@ -37,7 +37,7 @@ a{color:inherit}
 .alphabet a{min-width:32px;padding:6px 7px;text-align:center;border-radius:7px;color:var(--muted);text-decoration:none;font-size:.88rem;font-weight:700}
 .alphabet a:hover,.alphabet a.active{background:var(--accent);color:#181A20}
 .alphabet a.disabled{opacity:.32;pointer-events:none}
-.lexicon{padding-bottom:90px}
+.glossary{padding-bottom:90px}
 .glossary-letter{scroll-margin-top:150px;margin-bottom:56px}
 .glossary-letter > h2{margin:0 0 20px;padding-bottom:10px;border-bottom:2px solid var(--accent);font-size:2rem}
 .glossary-letter ul{margin:0;padding:0;list-style:none}
@@ -56,7 +56,7 @@ a{color:inherit}
   <div class="container header-inner">
     <a href="/en" class="brand" aria-label="Echorank home"><svg width="30" height="30" viewBox="0 0 40 40" style="display:block" aria-hidden="true"><defs><linearGradient id="eg-lex" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FDE38A"/><stop offset="1" stop-color="#F0B90B"/></linearGradient></defs><rect x="9" y="9" width="22" height="22" rx="5" transform="rotate(45 20 20)" fill="url(#eg-lex)"/></svg><span style="letter-spacing:.06em">ECHORANK</span></a>
     <nav class="nav" aria-label="Main navigation">
-      <a href="#lexicon">Lexicon</a>
+      <a href="#glossary">Glossary</a>
       <a href="/en/learn">Learn</a>
       <a href="/en/pricing" class="cta">See pricing</a>
     </nav>
@@ -68,20 +68,20 @@ a{color:inherit}
 <section class="hero">
   <div class="container">
     <p class="eyebrow">Search intelligence</p>
-    <h1>Echorank Lexicon</h1>
+    <h1>Echorank Glossary</h1>
     <p>A structured dictionary of concepts used across search, ranking, AI visibility and digital discovery.</p>
   </div>
 </section>
 
-<section id="lexicon" class="container lexicon">
+<section id="glossary" class="container glossary">
 
   <div class="search-wrapper">
-    <input id="glossary-search" class="search" type="search" placeholder="Search the Echorank Lexicon" autocomplete="off" aria-label="Search the Echorank Lexicon">
+    <input id="glossary-search" class="search" type="search" placeholder="Search the Echorank Glossary" autocomplete="off" aria-label="Search the Echorank Glossary">
     <button id="clear-search" class="clear-search" type="button" aria-label="Clear search">&times;</button>
     <ul id="search-suggestions" class="suggestions"></ul>
   </div>
 
-  <nav id="alphabet-nav" class="alphabet" aria-label="Lexicon alphabet">
+  <nav id="alphabet-nav" class="alphabet" aria-label="Glossary alphabet">
     <a href="#A">A</a><a href="#B">B</a><a href="#C">C</a><a href="#D">D</a><a href="#E">E</a><a href="#F">F</a><a href="#G">G</a><a href="#H">H</a><a href="#I">I</a><a href="#J">J</a><a href="#K">K</a><a href="#L">L</a><a href="#M">M</a><a href="#N">N</a><a href="#O">O</a><a href="#P">P</a><a href="#Q">Q</a><a href="#R">R</a><a href="#S">S</a><a href="#T">T</a><a href="#U">U</a><a href="#V">V</a><a href="#W">W</a><a href="#X">X</a><a href="#Y">Y</a><a href="#Z">Z</a>
   </nav>
 
@@ -556,7 +556,7 @@ a{color:inherit}
 
   </div>
 
-  <div id="no-results" class="no-results">No matching Echorank Lexicon entries were found.</div>
+  <div id="no-results" class="no-results">No matching Echorank Glossary entries were found.</div>
 
 </section>
 
@@ -586,7 +586,7 @@ document.addEventListener("DOMContentLoaded", function () {
     return text.replace(/[.*+?^$()|[\]{}\\]/g, "\\$&");
   }
 
-  function resetLexicon() {
+  function resetGlossary() {
     glossaryItems.forEach(function (item) {
       item.style.display = "list-item";
       var term = item.querySelector("h3");
@@ -600,7 +600,7 @@ document.addEventListener("DOMContentLoaded", function () {
     suggestionsList.style.display = "none";
   }
 
-  function filterLexicon() {
+  function filterGlossary() {
     var searchTerm = searchInput.value.trim().toLowerCase();
     var matchCount = 0;
 
@@ -666,7 +666,7 @@ document.addEventListener("DOMContentLoaded", function () {
       item.textContent = suggestion;
       item.addEventListener("click", function () {
         searchInput.value = suggestion;
-        filterLexicon();
+        filterGlossary();
         suggestionsList.innerHTML = "";
         suggestionsList.style.display = "none";
       });
@@ -689,13 +689,13 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   searchInput.addEventListener("input", function () {
-    if (searchInput.value.trim() === "") { resetLexicon(); return; }
-    filterLexicon();
+    if (searchInput.value.trim() === "") { resetGlossary(); return; }
+    filterGlossary();
   });
 
   clearSearchButton.addEventListener("click", function () {
     searchInput.value = "";
-    resetLexicon();
+    resetGlossary();
     searchInput.focus();
   });
 
@@ -704,7 +704,7 @@ document.addEventListener("DOMContentLoaded", function () {
     if (!link || link.classList.contains("disabled")) { return; }
     if (searchInput.value.trim() !== "") {
       searchInput.value = "";
-      resetLexicon();
+      resetGlossary();
     }
     alphabetLinks.forEach(function (alphabetLink) { alphabetLink.classList.remove("active"); });
     link.classList.add("active");
@@ -712,7 +712,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   window.addEventListener("scroll", updateActiveLetter, { passive: true });
 
-  resetLexicon();
+  resetGlossary();
 });
 </script>
 

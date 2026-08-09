@@ -1,9 +1,11 @@
-import { LEXICON_HTML } from "./landing-html";
+import { permanentRedirect } from "next/navigation";
 
-export const dynamic = "force-static";
+export const dynamic = "force-dynamic";
 
-export function GET() {
-  return new Response(LEXICON_HTML, {
-    headers: { "content-type": "text/html; charset=utf-8" },
-  });
+export async function GET(
+  _req: Request,
+  ctx: { params: Promise<{ locale: string }> }
+) {
+  const { locale } = await ctx.params;
+  permanentRedirect(`/${locale}/glossary`);
 }
