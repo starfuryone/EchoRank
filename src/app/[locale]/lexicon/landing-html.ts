@@ -36,6 +36,7 @@ a{color:inherit}
 .alphabet{position:sticky;top:70px;z-index:40;display:flex;flex-wrap:wrap;justify-content:center;gap:4px;padding:12px;margin-bottom:42px;border:1px solid var(--border);border-radius:var(--radius);background:rgba(30,35,41,.96);backdrop-filter:blur(12px)}
 .alphabet a{min-width:32px;padding:6px 7px;text-align:center;border-radius:7px;color:var(--muted);text-decoration:none;font-size:.88rem;font-weight:700}
 .alphabet a:hover,.alphabet a.active{background:var(--accent);color:#181A20}
+.alphabet a.disabled{opacity:.32;pointer-events:none}
 .lexicon{padding-bottom:90px}
 .glossary-letter{scroll-margin-top:150px;margin-bottom:56px}
 .glossary-letter > h2{margin:0 0 20px;padding-bottom:10px;border-bottom:2px solid var(--accent);font-size:2rem}
@@ -159,6 +160,11 @@ document.addEventListener("DOMContentLoaded", function () {
   var alphabetNav = document.getElementById("alphabet-nav");
   var alphabetLinks = alphabetNav.querySelectorAll("a");
 
+  alphabetLinks.forEach(function (link) {
+    var id = (link.getAttribute("href") || "").slice(1);
+    if (!document.getElementById(id)) { link.classList.add("disabled"); }
+  });
+
   function escapeRegExp(text) {
     return text.replace(/[.*+?^$()|[\]{}\\]/g, "\\$&");
   }
@@ -278,7 +284,11 @@ document.addEventListener("DOMContentLoaded", function () {
 
   alphabetNav.addEventListener("click", function (event) {
     var link = event.target.closest("a");
-    if (!link) { return; }
+    if (!link || link.classList.contains("disabled")) { return; }
+    if (searchInput.value.trim() !== "") {
+      searchInput.value = "";
+      resetLexicon();
+    }
     alphabetLinks.forEach(function (alphabetLink) { alphabetLink.classList.remove("active"); });
     link.classList.add("active");
   });
