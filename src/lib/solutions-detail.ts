@@ -38,6 +38,66 @@ export interface SolutionDetail {
 }
 
 const DETAILS: Record<string, Record<SolutionBase, SolutionDetail>> = {
+  "solo-founders": {
+    en: {
+      prose: [
+        {
+          h2: "Marketing in the gaps",
+          paras: [
+            "As a solo founder you are the product team, the support desk and the marketing department — and marketing is the hat that falls first, because it's the one where nothing breaks visibly when you skip it. Except things do break: a review goes unanswered, a competitor takes your spot in an AI recommendation, and you find out months later as slower signups.",
+            "Echorank is the marketing person you haven't hired. It watches rankings, reviews and what AI assistants say about your product every day, and compresses all of it into the short list of things worth your reaction. You spend minutes deciding, not hours checking.",
+          ],
+        },
+        {
+          h2: "Distribution you can't skip anymore",
+          paras: [
+            "Your next customers increasingly don't browse ten sites — they ask ChatGPT or Perplexity what to use, and buy from the shortlist in the answer. Whether your product appears in that answer is now as consequential as your Google position, and most founders have never once checked it.",
+            "Check it in a minute with the free audit — no account, just what assistants currently say about your product and who they name instead of you. From there, the platform tracks the prompts that matter for your category and tells you when the answer changes, in either direction.",
+          ],
+          image: {
+            src: "/solutions/solofounders-en.svg",
+            alt: "A founder's six hats consolidated into one platform that watches, freeing time to build",
+          },
+        },
+      ],
+      eyebrow: "FOUNDER-LED",
+      h2: "Built for a company of one",
+      cards: [
+        { title: "The hat you can drop", body: "Monitoring, review flows and alerts run daily without you — marketing stops being the thing that slips." },
+        { title: "AI answers, watched", body: "Know when assistants recommend you, drop you, or name a competitor — the day it happens." },
+        { title: "Minutes, not mornings", body: "One short read of what moved replaces the tab-cycle of dashboards, profiles and search results." },
+      ],
+    },
+    fr: {
+      prose: [
+        {
+          h2: "Le marketing dans les interstices",
+          paras: [
+            "En fondateur solo, vous êtes l'équipe produit, le support et le service marketing — et le marketing est la casquette qui tombe en premier, parce que c'est celle où rien ne casse visiblement quand on la saute. Sauf que si : un avis reste sans réponse, un concurrent prend votre place dans une recommandation IA, et vous l'apprenez des mois plus tard sous forme d'inscriptions en baisse.",
+            "Echorank est le marketeur que vous n'avez pas embauché. Il surveille chaque jour les positions, les avis et ce que les assistants IA disent de votre produit, et compresse le tout en une courte liste de points qui méritent votre réaction. Vous passez des minutes à décider, pas des heures à vérifier.",
+          ],
+        },
+        {
+          h2: "Une distribution qu'on ne peut plus ignorer",
+          paras: [
+            "Vos prochains clients ne parcourent plus dix sites — ils demandent à ChatGPT ou Perplexity quoi utiliser, et achètent dans la liste de la réponse. Que votre produit figure dans cette réponse compte désormais autant que votre position Google, et la plupart des fondateurs ne l'ont jamais vérifié une seule fois.",
+            "Vérifiez-le en une minute avec l'audit gratuit — sans compte, juste ce que les assistants disent aujourd'hui de votre produit et qui ils citent à votre place. Ensuite, la plateforme suit les requêtes qui comptent pour votre catégorie et vous prévient quand la réponse change, dans un sens comme dans l'autre.",
+          ],
+          image: {
+            src: "/solutions/solofounders-fr.svg",
+            alt: "Les six casquettes d'un fondateur consolidées en une plateforme qui surveille, libérant du temps pour construire",
+          },
+        },
+      ],
+      eyebrow: "MENÉ PAR LE FONDATEUR",
+      h2: "Conçu pour une entreprise d'une personne",
+      cards: [
+        { title: "La casquette à poser", body: "Surveillance, flux d'avis et alertes tournent chaque jour sans vous — le marketing cesse d'être ce qui glisse." },
+        { title: "Réponses IA surveillées", body: "Sachez quand les assistants vous recommandent, vous retirent ou citent un concurrent — le jour même." },
+        { title: "Des minutes, pas des matinées", body: "Une courte lecture de ce qui a bougé remplace le défilé d'onglets, de profils et de résultats de recherche." },
+      ],
+    },
+  },
   "freelancers": {
     en: {
       prose: [

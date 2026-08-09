@@ -383,7 +383,7 @@ export const SOLUTION_CATEGORIES: SolutionCategory[] = [
         en: {
           label: "Solo founders",
           desc: "You are the marketing team. Start with what moves the needle.",
-          h1: "Echorank360 for solo founders",
+          h1: "Echorank for solo founders",
           intro: "One person cannot run every channel. Find out where you actually stand, then pick the two things worth doing this month.",
           features: [
             { href: AI, why: "A scored baseline in about a minute, with no account needed." },
