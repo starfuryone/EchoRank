@@ -38,6 +38,64 @@ export interface SolutionDetail {
 }
 
 const DETAILS: Record<string, Record<SolutionBase, SolutionDetail>> = {
+  "large-organizations": {
+    en: {
+      prose: [
+        {
+          h2: "One standard, applied everywhere",
+          paras: [
+            "One location with a weak review profile is a management problem. Two hundred locations each measured differently is a data problem, and data problems don't get fixed in quarterly meetings. Echorank applies one definition of visibility, one trust score, and one alert threshold across every location, brand, and market you track — so a score of 62 in Dallas means the same thing as a score of 62 in Manchester.",
+            "The standard is set once, centrally. What changes by location is only what should: the local competitors, the local prompts, the local answers.",
+          ],
+        },
+        {
+          h2: "Roll-up that needs no spreadsheet",
+          paras: [
+            "Roll-up is built in, not exported. Region leads see their locations, head office sees the whole estate, and both are looking at the same numbers at the same time. No monthly collation, no version-conflicted spreadsheet, no \"whose figure is right.\" When an AI assistant stops recommending one of your locations, the alert reaches the person who owns that location — and the drop shows up in the aggregate view the moment it happens.",
+          ],
+          image: {
+            src: "/solutions/rollup-en.svg",
+            alt: "Nine locations measured to one standard, rolling up into a single estate view",
+          },
+        },
+      ],
+      eyebrow: "AT SCALE",
+      h2: "Built for estates, not single sites",
+      cards: [
+        { title: "Central governance", body: "Thresholds, scoring and response standards defined once at head office, inherited by every location." },
+        { title: "Roll-up reporting", body: "Location, region and estate views from the same live data — no exports, no collation." },
+        { title: "Routed alerts", body: "A drop reaches the owner of that location, with severity deciding who else gets pulled in." },
+      ],
+    },
+    fr: {
+      prose: [
+        {
+          h2: "Un même standard, appliqué partout",
+          paras: [
+            "Un établissement au profil d'avis fragile est un problème de management. Deux cents établissements mesurés chacun différemment, c'est un problème de données — et les problèmes de données ne se règlent pas en réunion trimestrielle. Echorank applique une seule définition de la visibilité, un seul score de confiance et un seul seuil d'alerte à chaque établissement, marque et marché suivis : un score de 62 à Dallas signifie la même chose qu'un 62 à Manchester.",
+            "Le standard est défini une fois, au niveau central. Ce qui varie par établissement est uniquement ce qui doit varier : les concurrents locaux, les requêtes locales, les réponses locales.",
+          ],
+        },
+        {
+          h2: "Une consolidation sans tableur",
+          paras: [
+            "La consolidation est intégrée, pas exportée. Les responsables régionaux voient leurs établissements, le siège voit l'ensemble, et tous regardent les mêmes chiffres au même moment. Pas de compilation mensuelle, pas de tableur en conflit de versions, pas de « quel chiffre est le bon ». Quand un assistant IA cesse de recommander un de vos établissements, l'alerte atteint la personne qui en a la charge — et la baisse apparaît dans la vue agrégée à l'instant même.",
+          ],
+          image: {
+            src: "/solutions/rollup-fr.svg",
+            alt: "Neuf établissements mesurés selon une même norme, consolidés en une vue globale unique",
+          },
+        },
+      ],
+      eyebrow: "À GRANDE ÉCHELLE",
+      h2: "Conçu pour les réseaux, pas pour un site isolé",
+      cards: [
+        { title: "Gouvernance centrale", body: "Seuils, scores et standards de réponse définis une fois au siège, hérités par chaque établissement." },
+        { title: "Reporting consolidé", body: "Vues établissement, région et réseau à partir des mêmes données en direct — sans exports ni compilation." },
+        { title: "Alertes routées", body: "Une baisse atteint le responsable de l'établissement concerné, la gravité décidant qui d'autre est impliqué." },
+      ],
+    },
+  },
   "boost-search-rankings": {
     en: {
       prose: [

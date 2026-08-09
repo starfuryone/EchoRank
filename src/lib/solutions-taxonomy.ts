@@ -305,7 +305,7 @@ export const SOLUTION_CATEGORIES: SolutionCategory[] = [
         en: {
           label: "Large organizations",
           desc: "Many locations, many stakeholders, one source of truth.",
-          h1: "Echorank360 for large organizations",
+          h1: "Echorank for large organizations",
           intro: "At scale the problem is consistency: the same standard applied everywhere, and reporting that rolls up without a spreadsheet.",
           features: [
             { href: MON, why: "Monitoring across every location, with alerts routed by severity." },
