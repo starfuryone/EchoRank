@@ -167,6 +167,7 @@ const NAV: Record<Base, NavCopy> = {
             items: [
               { href: "/learn", label: "Knowledge hub", desc: "Course, guides and Echopedia." },
               { href: "/lexicon", label: "Echorank Lexicon", desc: "Search, ranking and AI visibility terms." },
+              { href: "/keyword-research", label: "Keyword research guide", desc: "Find, analyze and use keywords." },
               { href: "/guide", label: "The complete guide", desc: "Reputation intelligence, end to end." },
               { href: "/guide-visibilite-ia", label: "AI visibility guide", desc: "In French." },
             ],
@@ -243,6 +244,7 @@ const NAV: Record<Base, NavCopy> = {
             items: [
               { href: "/learn", label: "Centre de connaissances", desc: "Cours, guides et Echopedia." },
               { href: "/lexicon", label: "Lexique Echorank", desc: "Termes de recherche, ranking et visibilité IA." },
+              { href: "/keyword-research", label: "Guide recherche de mots-clés", desc: "Trouver, analyser et utiliser les mots-clés." },
               { href: "/guide", label: "Le guide complet", desc: "La réputation, de bout en bout." },
               { href: "/guide-visibilite-ia", label: "Guide visibilité IA", desc: "En français." },
             ],
