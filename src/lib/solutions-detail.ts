@@ -47,6 +47,10 @@ const DETAILS: Record<string, Record<SolutionBase, SolutionDetail>> = {
             "Before a customer ever calls, they've checked. They've read your reviews, seen your star rating on Maps, or asked ChatGPT who to hire — and by the time the phone rings, the decision is mostly made. That checking happens every day, whether you watch it or not; the only question is whether you find out what it concluded.",
             "Echorank watches those moments for you: what your reviews say, where your rating is drifting, and what AI assistants answer when someone asks for a business like yours. No jargon, no analyst screens — a plain read of how you look to the people deciding whether to call.",
           ],
+          image: {
+            src: "/solutions/business-owner-photo.webp",
+            alt: "A business owner outside their workshop beside a branded service van",
+          },
         },
         {
           h2: "Run the business, not the dashboards",
@@ -76,6 +80,10 @@ const DETAILS: Record<string, Record<SolutionBase, SolutionDetail>> = {
             "Avant d'appeler, le client a vérifié. Il a lu vos avis, vu votre note sur Maps, ou demandé à ChatGPT qui engager — et quand le téléphone sonne, la décision est déjà presque prise. Cette vérification a lieu tous les jours, que vous la regardiez ou non ; la seule question est de savoir si vous apprenez ce qu'elle a conclu.",
             "Echorank surveille ces moments pour vous : ce que disent vos avis, où glisse votre note, et ce que répondent les assistants IA quand on cherche une entreprise comme la vôtre. Pas de jargon, pas d'écrans d'analyste — une lecture claire de l'image que vous renvoyez aux gens qui décident d'appeler ou non.",
           ],
+          image: {
+            src: "/solutions/business-owner-photo.webp",
+            alt: "Un chef d'entreprise devant son atelier, à côté de son véhicule de service",
+          },
         },
         {
           h2: "Gérez l'entreprise, pas les tableaux de bord",
