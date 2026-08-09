@@ -357,7 +357,7 @@ export const SOLUTION_CATEGORIES: SolutionCategory[] = [
         en: {
           label: "Small teams",
           desc: "A few people, no specialist, limited time.",
-          h1: "Echorank360 for small teams",
+          h1: "Echorank for small teams",
           intro: "Nobody here does this full time. The value is in what runs on a schedule and what tells you when something needs attention.",
           features: [
             { href: MON, why: "Scheduled checks and an email when something drops." },

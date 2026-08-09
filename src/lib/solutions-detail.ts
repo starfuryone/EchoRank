@@ -38,6 +38,66 @@ export interface SolutionDetail {
 }
 
 const DETAILS: Record<string, Record<SolutionBase, SolutionDetail>> = {
+  "small-teams": {
+    en: {
+      prose: [
+        {
+          h2: "Minutes a week, not a role",
+          paras: [
+            "In a small team, reputation work belongs to nobody — which means it happens when someone remembers and stops when things get busy. The weeks it stops are exactly the weeks a bad review sits unanswered or an AI assistant quietly drops you from its recommendations.",
+            "Echorank shrinks the job to minutes. Review requests go out by themselves, monitoring runs daily, and you only hear about it when something actually changed. The weekly routine is a short read of what moved and one or two decisions — not an afternoon of checking dashboards that mostly say nothing happened.",
+          ],
+        },
+        {
+          h2: "Useful on day one",
+          paras: [
+            "You don't have a spare week to configure software. The defaults are chosen so tracking, alerts and review flows work out of the box for a single-location business — you adjust them if you want to, not because you have to.",
+            "Start with the free AI visibility audit: it shows what assistants currently say about you before you've created an account. From there, the setup is your business details and a connected review profile — the platform does the rest on schedule.",
+          ],
+          image: {
+            src: "/solutions/smallteams-en.svg",
+            alt: "A full weekly task list automated on schedule, leaving only two items that need a person",
+          },
+        },
+      ],
+      eyebrow: "SMALL BY DESIGN",
+      h2: "Built to be nobody's full-time job",
+      cards: [
+        { title: "Runs unattended", body: "Requests, monitoring and alerts happen on schedule — the platform works the weeks you're slammed." },
+        { title: "Interrupts rarely", body: "Alerts fire on real changes, not noise, so opening the dashboard is a choice, not a chore." },
+        { title: "No setup project", body: "Sensible defaults for a single location; the free audit shows value before the account exists." },
+      ],
+    },
+    fr: {
+      prose: [
+        {
+          h2: "Quelques minutes par semaine, pas un poste",
+          paras: [
+            "Dans une petite équipe, la réputation n'appartient à personne — donc on s'en occupe quand on y pense, et on arrête dès que ça s'accélère. Or les semaines où ça s'arrête sont exactement celles où un mauvais avis reste sans réponse, ou où un assistant IA vous retire discrètement de ses recommandations.",
+            "Echorank réduit la tâche à quelques minutes. Les demandes d'avis partent toutes seules, la surveillance tourne chaque jour, et vous n'êtes prévenu que quand quelque chose a réellement changé. La routine hebdomadaire, c'est une lecture rapide de ce qui a bougé et une ou deux décisions — pas un après-midi de tableaux de bord qui disent surtout que rien ne s'est passé.",
+          ],
+        },
+        {
+          h2: "Utile dès le premier jour",
+          paras: [
+            "Vous n'avez pas une semaine à consacrer à configurer un logiciel. Les réglages par défaut sont pensés pour qu'un commerce à établissement unique ait le suivi, les alertes et les flux d'avis opérationnels d'emblée — vous les ajustez si vous le souhaitez, pas parce qu'il le faut.",
+            "Commencez par l'audit de visibilité IA gratuit : il montre ce que les assistants disent de vous avant même la création d'un compte. Ensuite, l'installation se résume à vos informations d'entreprise et un profil d'avis connecté — la plateforme fait le reste selon le calendrier.",
+          ],
+          image: {
+            src: "/solutions/smallteams-fr.svg",
+            alt: "Une liste de tâches hebdomadaire automatisée selon le calendrier, ne laissant que deux éléments nécessitant une personne",
+          },
+        },
+      ],
+      eyebrow: "PETIT PAR CONCEPTION",
+      h2: "Conçu pour n'être le poste à plein temps de personne",
+      cards: [
+        { title: "Tourne sans surveillance", body: "Demandes, suivi et alertes s'exécutent selon le calendrier — la plateforme travaille même les semaines où vous êtes débordé." },
+        { title: "Interrompt rarement", body: "Les alertes se déclenchent sur de vrais changements, pas du bruit : ouvrir le tableau de bord devient un choix, pas une corvée." },
+        { title: "Aucun projet d'installation", body: "Des réglages par défaut adaptés à un établissement unique ; l'audit gratuit montre la valeur avant même le compte." },
+      ],
+    },
+  },
   "solo-founders": {
     en: {
       prose: [
