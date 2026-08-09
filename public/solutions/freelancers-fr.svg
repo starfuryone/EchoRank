@@ -1,0 +1,31 @@
+<svg viewBox="0 0 680 230" width="680" height="230" xmlns="http://www.w3.org/2000/svg" font-family="Geist, system-ui, sans-serif">
+  <defs><marker id="a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="#eaecef" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+  <rect x="0" y="0" width="680" height="230" fill="#14181d"/>
+  <rect x="70" y="86" width="120" height="60" rx="8" fill="#1a1f26" stroke="#333a43"/>
+  <circle cx="102" cy="116" r="14" fill="#4a525c"/>
+  <g fill="#4a525c">
+    <rect x="126" y="106" width="48" height="4" rx="2"/>
+    <rect x="126" y="120" width="34" height="4" rx="2"/>
+  </g>
+  <text x="130" y="212" text-anchor="middle" font-size="12" fill="#9aa4af">Vous, seul</text>
+  <line x1="198" y1="116" x2="240" y2="116" stroke="#eaecef" stroke-width="1.5" marker-end="url(#a)"/>
+  <polygon points="290,82 324,116 290,150 256,116" fill="#eaecef"/>
+  <text x="290" y="212" text-anchor="middle" font-size="12" fill="#9aa4af">Une seule plateforme</text>
+  <line x1="332" y1="116" x2="398" y2="116" stroke="#eaecef" stroke-width="1.5" marker-end="url(#a)"/>
+  <g fill="#1f242b" stroke="#333a43">
+    <rect x="408" y="48" width="200" height="38" rx="4"/>
+    <rect x="408" y="96" width="200" height="38" rx="4"/>
+    <rect x="408" y="144" width="200" height="38" rx="4"/>
+  </g>
+  <g fill="#4a525c">
+    <rect x="424" y="60" width="80" height="4" rx="2"/>
+    <rect x="424" y="108" width="104" height="4" rx="2"/>
+    <rect x="424" y="156" width="66" height="4" rx="2"/>
+  </g>
+  <g fill="#f0b90b">
+    <rect x="424" y="72" width="130" height="5" rx="2"/>
+    <rect x="424" y="120" width="112" height="5" rx="2"/>
+    <rect x="424" y="168" width="144" height="5" rx="2"/>
+  </g>
+  <text x="508" y="212" text-anchor="middle" font-size="12" fill="#9aa4af">Chaque client couvert</text>
+</svg>

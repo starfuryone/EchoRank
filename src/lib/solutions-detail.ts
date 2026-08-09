@@ -38,6 +38,66 @@ export interface SolutionDetail {
 }
 
 const DETAILS: Record<string, Record<SolutionBase, SolutionDetail>> = {
+  "freelancers": {
+    en: {
+      prose: [
+        {
+          h2: "Deliver like a team of five",
+          paras: [
+            "Your clients don't grade you on effort — they grade you against agencies with account managers and reporting departments. The gap was never skill; it's the hours those agencies can throw at monitoring, collation and slide-making that you have to bill somewhere.",
+            "Echorank closes that gap by doing the unbillable layer for you. Rankings, reviews and AI visibility are tracked continuously for every client; findings arrive ready to forward. The deliverable that used to eat a Sunday — the monthly report — assembles itself from data that was collected all along.",
+          ],
+        },
+        {
+          h2: "Win the client before the contract",
+          paras: [
+            "The free AI visibility audit is a pitch that runs in a minute: show a prospect what ChatGPT and Perplexity actually say about their business, next to what those assistants say about the competitor down the street. Few sales conversations open better than that gap on screen.",
+            "Then the pitch becomes the plan. The audit's findings turn into the tracked prompts, the fixes and the baseline you report progress against — so from the first invoice, the client can see the line move on something they watched you measure.",
+          ],
+          image: {
+            src: "/solutions/freelancers-en.svg",
+            alt: "One freelancer supported by one platform, delivering tracked results across every client",
+          },
+        },
+      ],
+      eyebrow: "SOLO PRACTICE",
+      h2: "Priced and shaped for one",
+      cards: [
+        { title: "The unbillable hours, automated", body: "Monitoring, collation and reporting run by themselves — your billed hours stay on the work clients pay for." },
+        { title: "A pitch in a minute", body: "The free audit shows prospects their AI visibility gap on screen, before you've written a proposal." },
+        { title: "Per-client clarity", body: "Each client tracked separately with its own competitors and prompts — nothing bleeds between accounts." },
+      ],
+    },
+    fr: {
+      prose: [
+        {
+          h2: "Livrez comme une équipe de cinq",
+          paras: [
+            "Vos clients ne vous jugent pas à l'effort — ils vous comparent à des agences avec chargés de compte et service reporting. L'écart n'a jamais été le talent : ce sont les heures que ces agences peuvent consacrer à la surveillance, à la compilation et aux slides, des heures que vous devez bien facturer quelque part.",
+            "Echorank comble cet écart en prenant en charge la couche non facturable. Positions, avis et visibilité IA sont suivis en continu pour chaque client ; les constats arrivent prêts à transférer. Le livrable qui mangeait un dimanche — le rapport mensuel — s'assemble tout seul à partir de données collectées au fil de l'eau.",
+          ],
+        },
+        {
+          h2: "Gagnez le client avant le contrat",
+          paras: [
+            "L'audit de visibilité IA gratuit est un argumentaire qui tourne en une minute : montrez à un prospect ce que ChatGPT et Perplexity disent réellement de son entreprise, à côté de ce que ces assistants disent du concurrent d'en face. Peu de conversations commerciales s'ouvrent mieux que cet écart à l'écran.",
+            "Ensuite, l'argumentaire devient le plan. Les constats de l'audit se transforment en requêtes suivies, en corrections et en référence de départ pour mesurer les progrès — dès la première facture, le client voit la courbe bouger sur ce qu'il vous a vu mesurer.",
+          ],
+          image: {
+            src: "/solutions/freelancers-fr.svg",
+            alt: "Un indépendant appuyé par une seule plateforme, livrant des résultats suivis pour chaque client",
+          },
+        },
+      ],
+      eyebrow: "EN INDÉPENDANT",
+      h2: "Pensé et tarifé pour une seule personne",
+      cards: [
+        { title: "Les heures non facturables, automatisées", body: "Surveillance, compilation et reporting tournent seuls — vos heures facturées restent sur le travail que les clients paient." },
+        { title: "Un argumentaire en une minute", body: "L'audit gratuit montre au prospect son écart de visibilité IA à l'écran, avant même la proposition." },
+        { title: "Clarté par client", body: "Chaque client suivi séparément avec ses concurrents et ses requêtes — rien ne se mélange entre les comptes." },
+      ],
+    },
+  },
   "agencies": {
     en: {
       prose: [

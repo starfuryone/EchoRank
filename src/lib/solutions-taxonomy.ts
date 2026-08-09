@@ -409,7 +409,7 @@ export const SOLUTION_CATEGORIES: SolutionCategory[] = [
         en: {
           label: "Freelancers",
           desc: "Client-ready numbers without an agency toolstack.",
-          h1: "Echorank360 for freelancers",
+          h1: "Echorank for freelancers",
           intro: "You need defensible figures for a proposal and a report at the end, without paying for seats you will not use.",
           features: [
             { href: AI, why: "An audit you can attach to a proposal." },
