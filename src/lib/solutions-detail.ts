@@ -38,6 +38,66 @@ export interface SolutionDetail {
 }
 
 const DETAILS: Record<string, Record<SolutionBase, SolutionDetail>> = {
+  "agencies": {
+    en: {
+      prose: [
+        {
+          h2: "Retainers are kept with proof",
+          paras: [
+            "An agency's real product is confidence: the client's belief that the retainer is working. That belief dies in the gap between the work you did and the evidence you can show — and it dies fastest when the monthly report is an afternoon of screenshots assembled by whoever had time.",
+            "Echorank keeps the evidence current by itself. Rankings, reviews, AI visibility and audit fixes accumulate per client as the month runs, so the report is a read-out of what moved and why, not a reconstruction. When a client asks how it's going on a Tuesday, the answer is already on screen.",
+          ],
+        },
+        {
+          h2: "Your brand on every screen",
+          paras: [
+            "The white-label dashboard runs under your name and your domain. Clients log into your tool, read your reports, and associate the results with you — the platform underneath is invisible.",
+            "Client management keeps the estate clean: every client is a separate workspace with its own locations, competitors and tracked prompts, while your team works across all of them from one login. One subscription covers the roster; adding the next client is minutes, not an onboarding project — and the same audit that closes the pitch becomes their baseline on day one.",
+          ],
+          image: {
+            src: "/solutions/agencies-en.svg",
+            alt: "Multiple client workspaces managed in one place, producing white-labeled client-ready reports",
+          },
+        },
+      ],
+      eyebrow: "FOR AGENCIES",
+      h2: "Built to be resold",
+      cards: [
+        { title: "White-label", body: "Your logo, your domain, your reports — clients see your brand, not a vendor's." },
+        { title: "Client workspaces", body: "Each client isolated with its own tracking; your team works across all of them from one login." },
+        { title: "Pitch to baseline", body: "The free audit that wins the deal becomes the client's day-one baseline and the retainer's yardstick." },
+      ],
+    },
+    fr: {
+      prose: [
+        {
+          h2: "Les contrats se conservent avec des preuves",
+          paras: [
+            "Le vrai produit d'une agence, c'est la confiance : la conviction du client que le contrat porte ses fruits. Cette conviction meurt dans l'écart entre le travail accompli et les preuves que vous pouvez montrer — et elle meurt d'autant plus vite quand le rapport mensuel est un après-midi de captures d'écran assemblées par la personne disponible.",
+            "Echorank maintient les preuves à jour tout seul. Positions, avis, visibilité IA et corrections d'audit s'accumulent par client au fil du mois : le rapport devient une lecture de ce qui a bougé et pourquoi, pas une reconstruction. Quand un client demande où on en est un mardi, la réponse est déjà à l'écran.",
+          ],
+        },
+        {
+          h2: "Votre marque sur chaque écran",
+          paras: [
+            "Le tableau de bord en marque blanche tourne sous votre nom et votre domaine. Les clients se connectent à votre outil, lisent vos rapports et vous attribuent les résultats — la plateforme en dessous est invisible.",
+            "La gestion de clients garde l'ensemble propre : chaque client est un espace de travail distinct avec ses établissements, ses concurrents et ses requêtes suivies, tandis que votre équipe travaille sur tous depuis une seule connexion. Un abonnement couvre le portefeuille ; ajouter le client suivant prend quelques minutes, pas un projet d'intégration — et l'audit qui conclut la vente devient sa référence dès le premier jour.",
+          ],
+          image: {
+            src: "/solutions/agencies-fr.svg",
+            alt: "Plusieurs espaces clients gérés au même endroit, produisant des rapports en marque blanche prêts à livrer",
+          },
+        },
+      ],
+      eyebrow: "POUR LES AGENCES",
+      h2: "Conçu pour être revendu",
+      cards: [
+        { title: "Marque blanche", body: "Votre logo, votre domaine, vos rapports — les clients voient votre marque, pas celle d'un fournisseur." },
+        { title: "Espaces par client", body: "Chaque client isolé avec son propre suivi ; votre équipe travaille sur tous depuis une seule connexion." },
+        { title: "Du pitch à la référence", body: "L'audit gratuit qui remporte le contrat devient la référence du premier jour et l'étalon du contrat." },
+      ],
+    },
+  },
   "mid-market": {
     en: {
       prose: [

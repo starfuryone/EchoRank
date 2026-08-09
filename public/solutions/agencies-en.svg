@@ -1,0 +1,31 @@
+<svg viewBox="0 0 680 230" width="680" height="230" xmlns="http://www.w3.org/2000/svg" font-family="Geist, system-ui, sans-serif">
+  <defs><marker id="a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="#eaecef" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+  <rect x="0" y="0" width="680" height="230" fill="#14181d"/>
+  <g fill="#1f242b" stroke="#333a43">
+    <rect x="55" y="48" width="150" height="38" rx="4"/>
+    <rect x="55" y="96" width="150" height="38" rx="4"/>
+    <rect x="55" y="144" width="150" height="38" rx="4"/>
+  </g>
+  <g fill="#4a525c">
+    <rect x="69" y="60" width="60" height="4" rx="2"/><rect x="69" y="72" width="96" height="4" rx="2"/>
+    <rect x="69" y="108" width="76" height="4" rx="2"/><rect x="69" y="120" width="52" height="4" rx="2"/>
+    <rect x="69" y="156" width="88" height="4" rx="2"/><rect x="69" y="168" width="64" height="4" rx="2"/>
+  </g>
+  <text x="130" y="212" text-anchor="middle" font-size="12" fill="#9aa4af">Every client</text>
+  <line x1="214" y1="116" x2="256" y2="116" stroke="#eaecef" stroke-width="1.5" marker-end="url(#a)"/>
+  <polygon points="306,82 340,116 306,150 272,116" fill="#eaecef"/>
+  <text x="306" y="212" text-anchor="middle" font-size="12" fill="#9aa4af">One workspace</text>
+  <line x1="348" y1="116" x2="414" y2="116" stroke="#eaecef" stroke-width="1.5" marker-end="url(#a)"/>
+  <rect x="424" y="44" width="206" height="144" rx="8" fill="#1a1f26" stroke="#333a43"/>
+  <rect x="440" y="60" width="28" height="10" rx="2" fill="#f0b90b"/>
+  <text x="476" y="69" font-size="11" fill="#9aa4af">Your logo</text>
+  <g fill="#4a525c">
+    <rect x="440" y="86" width="130" height="4" rx="2"/>
+    <rect x="440" y="102" width="100" height="4" rx="2"/>
+    <rect x="440" y="118" width="144" height="4" rx="2"/>
+  </g>
+  <line x1="440" y1="136" x2="614" y2="136" stroke="#2a3038"/>
+  <rect x="440" y="150" width="152" height="6" rx="3" fill="#f0b90b"/>
+  <rect x="440" y="164" width="98" height="6" rx="3" fill="#f0b90b" opacity=".55"/>
+  <text x="527" y="212" text-anchor="middle" font-size="12" fill="#9aa4af">Client-ready reports</text>
+</svg>

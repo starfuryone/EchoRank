@@ -435,7 +435,7 @@ export const SOLUTION_CATEGORIES: SolutionCategory[] = [
         en: {
           label: "Agencies & consultancies",
           desc: "Many clients, white-label reporting, one login.",
-          h1: "Echorank360 for agencies and consultancies",
+          h1: "Echorank for agencies and consultancies",
           intro: "Client work needs separation and presentation: each brand tracked on its own, and reports that carry your name rather than ours.",
           features: [
             { href: TOOLS, why: "Portfolios and Report Builder, white-labelled on Agency." },
