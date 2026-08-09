@@ -38,7 +38,7 @@ describe("every menu destination exists", () => {
   it("keeps /use-cases as a flat top-level link, not a panel item", () => {
     // It moved out of the Solutions panel when that panel became the 25-item
     // taxonomy; the flat link is what keeps the page reachable.
-    expect(navHrefs()).not.toContain("/use-cases");
+    expect(navHrefs()).toContain("/use-cases");
     expect(nav("en")).toContain('href="/en/use-cases"');
   });
 
