@@ -8,18 +8,18 @@ export const KEYWORD_GUIDE_HTML: string = String.raw`<!DOCTYPE html>
   <link rel="canonical" href="https://echorank360.com/en/keyword-research" />
   <style>
     :root{
-      --bg:#f7f8fb;
-      --surface:#ffffff;
-      --surface-soft:#f1f4f9;
-      --text:#15171a;
-      --muted:#667085;
-      --line:#e4e7ec;
-      --accent:#3157d5;
-      --accent-soft:#eaf0ff;
-      --success:#176b45;
-      --warning:#8a5a00;
+      --bg:#181A20;
+      --surface:#1E2329;
+      --surface-soft:#2B3139;
+      --text:#EAECEF;
+      --muted:#848E9C;
+      --line:#2B3139;
+      --accent:#FCD535;
+      --accent-soft:rgba(252,213,53,.12);
+      --success:#0ECB81;
+      --warning:#F0B90B;
       --radius:18px;
-      --shadow:0 16px 45px rgba(18, 31, 53, .08);
+      --shadow:0 16px 45px rgba(0,0,0,.45);
       --max:1180px;
     }
     *{box-sizing:border-box}
@@ -35,7 +35,7 @@ export const KEYWORD_GUIDE_HTML: string = String.raw`<!DOCTYPE html>
     .container{width:min(calc(100% - 32px),var(--max));margin:auto}
     .topbar{
       position:sticky;top:0;z-index:100;
-      background:rgba(255,255,255,.92);
+      background:rgba(24,26,32,.92);
       backdrop-filter:blur(12px);
       border-bottom:1px solid var(--line);
     }
@@ -45,7 +45,7 @@ export const KEYWORD_GUIDE_HTML: string = String.raw`<!DOCTYPE html>
     .brand{display:flex;align-items:center;gap:10px;font-weight:850;text-decoration:none}
     .mark{
       width:36px;height:36px;border-radius:11px;background:var(--accent);
-      color:#fff;display:grid;place-items:center;font-weight:900
+      color:#181A20;display:grid;place-items:center;font-weight:900
     }
     .topnav{display:flex;gap:18px;color:var(--muted);font-size:.95rem}
     .topnav a{text-decoration:none}
@@ -89,7 +89,7 @@ export const KEYWORD_GUIDE_HTML: string = String.raw`<!DOCTYPE html>
     .toc a:hover,.toc a.active{background:var(--accent-soft);color:var(--accent)}
     .chapter{
       background:var(--surface);border:1px solid var(--line);border-radius:24px;
-      padding:clamp(24px,5vw,52px);margin-bottom:28px;box-shadow:0 10px 32px rgba(18,31,53,.045)
+      padding:clamp(24px,5vw,52px);margin-bottom:28px;box-shadow:0 10px 32px rgba(0,0,0,.35)
     }
     .chapter-number{
       display:inline-flex;align-items:center;gap:8px;color:var(--accent);font-weight:800;
@@ -99,19 +99,19 @@ export const KEYWORD_GUIDE_HTML: string = String.raw`<!DOCTYPE html>
     h3{font-size:1.45rem;line-height:1.25;margin:34px 0 12px}
     h4{font-size:1.1rem;margin:24px 0 8px}
     p{margin:12px 0}
-    .lede{font-size:1.08rem;color:#344054}
+    .lede{font-size:1.08rem;color:#B7BDC6}
     .note,.tip,.warning{
       border-radius:14px;padding:16px 18px;margin:22px 0;border:1px solid var(--line)
     }
     .note{background:var(--surface-soft)}
-    .tip{background:#edf9f2;border-color:#cee9d8}
-    .warning{background:#fff8e8;border-color:#f0dfb5}
+    .tip{background:rgba(14,203,129,.08);border-color:rgba(14,203,129,.35)}
+    .warning{background:rgba(240,185,11,.08);border-color:rgba(240,185,11,.35)}
     .label{font-weight:800;display:block;margin-bottom:4px}
     .grid-2,.grid-3{display:grid;gap:16px;margin:20px 0}
     .grid-2{grid-template-columns:repeat(2,minmax(0,1fr))}
     .grid-3{grid-template-columns:repeat(3,minmax(0,1fr))}
     .card{
-      border:1px solid var(--line);border-radius:15px;padding:18px;background:#fff
+      border:1px solid var(--line);border-radius:15px;padding:18px;background:var(--surface)
     }
     .card h4{margin-top:0}
     .card p:last-child{margin-bottom:0;color:var(--muted)}
@@ -122,13 +122,13 @@ export const KEYWORD_GUIDE_HTML: string = String.raw`<!DOCTYPE html>
     }
     .step:before{
       content:counter(step);width:44px;height:44px;border-radius:12px;display:grid;place-items:center;
-      background:var(--accent);color:#fff;font-weight:850
+      background:var(--accent);color:#181A20;font-weight:850
     }
     .step strong{display:block;margin-bottom:4px}
     ul,ol{padding-left:1.35rem}
     li+li{margin-top:7px}
     .table-wrap{overflow:auto;border:1px solid var(--line);border-radius:14px;margin:20px 0}
-    table{width:100%;border-collapse:collapse;min-width:680px;background:#fff}
+    table{width:100%;border-collapse:collapse;min-width:680px;background:var(--surface)}
     th,td{padding:14px 16px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
     th{background:var(--surface-soft);font-size:.9rem}
     tr:last-child td{border-bottom:0}
@@ -149,11 +149,11 @@ export const KEYWORD_GUIDE_HTML: string = String.raw`<!DOCTYPE html>
     button{
       appearance:none;border:0;border-radius:11px;padding:12px 16px;font:inherit;font-weight:800;cursor:pointer
     }
-    .primary{background:var(--accent);color:#fff}
+    .primary{background:var(--accent);color:#181A20}
     .secondary{background:var(--surface-soft);color:var(--text)}
     #quiz-result{font-weight:800}
     .footer{
-      border-top:1px solid var(--line);padding:38px 0 50px;color:var(--muted);background:#fff
+      border-top:1px solid var(--line);padding:38px 0 50px;color:var(--muted);background:var(--surface)
     }
     .small{font-size:.9rem;color:var(--muted)}
     @media (max-width:900px){
