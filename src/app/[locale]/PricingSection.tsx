@@ -34,14 +34,16 @@ export interface HomePricingTier {
   highlighted: boolean;
 }
 
+/** The Stripe tier keys a card can check out with. */
+export type CheckoutTier = "starter" | "growth" | "agency";
+export type CheckoutInterval = "month" | "year";
+
 /**
  * PlanType (as it comes from PLAN_CONFIGS via pricingTiers) -> Stripe tier key.
  * Enterprise maps to null on purpose: it is custom priced, has no Stripe
  * lookup key, and must never render a checkout button.
  */
-export function checkoutTierFor(
-  planId: string,
-): "starter" | "growth" | "agency" | null {
+export function checkoutTierFor(planId: string): CheckoutTier | null {
   switch (planId) {
     case "STARTER":
       return "starter";
@@ -54,72 +56,36 @@ export function checkoutTierFor(
   }
 }
 
+/**
+ * A card's checkout CTA. PRESENTATIONAL: the request itself lives in
+ * PricingSection, because the consent modal's own button has to start the very
+ * same checkout for the very same plan. A second copy of the fetch there is how
+ * the two paths end up sending different bodies.
+ */
 function CheckoutButton({
   tier,
   interval,
-  locale,
   chrome,
-  requireConsent,
+  busy,
+  error,
+  onStart,
 }: {
-  tier: "starter" | "growth" | "agency";
-  interval: "month" | "year";
-  locale: string;
+  tier: CheckoutTier;
+  interval: CheckoutInterval;
   chrome: HomePricingChrome;
-  /**
-   * Returns true when consent is on record. Returns false AND opens the
-   * modal when it is not — so the caller just bails.
-   */
-  requireConsent: () => boolean;
+  busy: boolean;
+  error: boolean;
+  onStart: (tier: CheckoutTier, interval: CheckoutInterval) => void;
 }) {
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState(false);
-
-  async function start() {
-    if (busy) return;
-    // Gate BEFORE any network call. Every plan CTA reaches Stripe through this
-    // one function, so this is the single place consent has to be enforced on
-    // the client — and the checkout route re-checks it regardless.
-    if (!requireConsent()) return;
-    setBusy(true);
-    setError(false);
-    try {
-      const res = await fetch("/api/billing/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        // The server re-validates this against CONSENT_DOCUMENTS and
-        // CONSENT_VERSION; sending it is not what authorizes the checkout.
-        body: JSON.stringify({ tier, interval, locale, consent: consentPayload() }),
-      });
-      // Not signed in: go and make an account, then come straight back into
-      // checkout for the tier and interval that were clicked. Carrying the
-      // interval matters — losing it silently drops an annual buyer onto a
-      // monthly price.
-      //
-      // THIS /register IS DELIBERATE AND STAYS. The marketing CTAs now route to
-      // /pricing instead, but a card's own checkout has already chosen a plan —
-      // sending it to /pricing would loop the buyer back to the page they just
-      // acted on, which is how a funnel dead-ends.
-      if (res.status === 401) {
-        window.location.assign(
-          `/register?plan=${encodeURIComponent(tier)}&interval=${encodeURIComponent(interval)}&checkout=1`,
-        );
-        return;
-      }
-      const data = (await res.json()) as { url?: string };
-      if (!res.ok || !data.url) throw new Error("checkout failed");
-      // Full navigation, not router.push: this leaves the app for Stripe.
-      window.location.assign(data.url);
-      // Deliberately stay disabled — the page is on its way out, and
-      // re-enabling here invites a second session on a slow redirect.
-    } catch {
-      setError(true);
-      setBusy(false);
-    }
-  }
-
   return (
     <>
-      <button type="button" className={s.pbuy} onClick={start} disabled={busy} aria-busy={busy}>
+      <button
+        type="button"
+        className={s.pbuy}
+        onClick={() => onStart(tier, interval)}
+        disabled={busy}
+        aria-busy={busy}
+      >
         {busy ? chrome.checkoutBusy : chrome.checkoutCta}
       </button>
       {error && (
@@ -158,15 +124,91 @@ export function PricingSection({
 }) {
   const [annual, setAnnual] = useState(false);
   // Consent state lives here, not in the button: one checkbox governs every
-  // card, and the modal has to be able to scroll back to that one checkbox.
+  // card, and the page row and the modal row are two views of THIS boolean.
   const [consented, setConsented] = useState(false);
   const [consentModal, setConsentModal] = useState(false);
+  /**
+   * The card whose CTA the modal interrupted. Held so accepting inside the
+   * dialog resumes THAT plan and interval — asking the buyer to find their card
+   * again after they have already chosen is where an annual buyer quietly
+   * restarts on monthly.
+   */
+  const [pending, setPending] = useState<{ tier: CheckoutTier; interval: CheckoutInterval } | null>(
+    null,
+  );
+  // One checkout at a time, tracked by tier so the busy label and the error line
+  // land on the card that was clicked. Lifted out of CheckoutButton with the
+  // request itself.
+  const [busyTier, setBusyTier] = useState<CheckoutTier | null>(null);
+  const [errorTier, setErrorTier] = useState<CheckoutTier | null>(null);
 
-  const requireConsent = () => {
-    if (consented) return true;
-    setConsentModal(true);
-    return false;
-  };
+  async function startCheckout(tier: CheckoutTier, interval: CheckoutInterval) {
+    if (busyTier) return;
+    setBusyTier(tier);
+    setErrorTier(null);
+    try {
+      const res = await fetch("/api/billing/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        // The server re-validates this against CONSENT_DOCUMENTS and
+        // CONSENT_VERSION; sending it is not what authorizes the checkout.
+        body: JSON.stringify({ tier, interval, locale, consent: consentPayload() }),
+      });
+      // Not signed in: go and make an account, then come straight back into
+      // checkout for the tier and interval that were clicked. Carrying the
+      // interval matters — losing it silently drops an annual buyer onto a
+      // monthly price.
+      //
+      // THIS /register IS DELIBERATE AND STAYS. The marketing CTAs now route to
+      // /pricing instead, but a card's own checkout has already chosen a plan —
+      // sending it to /pricing would loop the buyer back to the page they just
+      // acted on, which is how a funnel dead-ends.
+      if (res.status === 401) {
+        window.location.assign(
+          `/register?plan=${encodeURIComponent(tier)}&interval=${encodeURIComponent(interval)}&checkout=1`,
+        );
+        return;
+      }
+      const data = (await res.json()) as { url?: string };
+      if (!res.ok || !data.url) throw new Error("checkout failed");
+      // Full navigation, not router.push: this leaves the app for Stripe.
+      window.location.assign(data.url);
+      // Deliberately stay busy — the page is on its way out, and re-enabling
+      // here invites a second session on a slow redirect.
+    } catch {
+      setErrorTier(tier);
+      setBusyTier(null);
+    }
+  }
+
+  /**
+   * Every plan CTA enters here. Gate BEFORE any network call: this is the
+   * single place consent is enforced on the client, and the checkout route
+   * re-checks it regardless.
+   */
+  function requestCheckout(tier: CheckoutTier, interval: CheckoutInterval) {
+    if (!consented) {
+      setPending({ tier, interval });
+      setConsentModal(true);
+      return;
+    }
+    void startCheckout(tier, interval);
+  }
+
+  /** The modal's primary button: the box is ticked, so finish what it blocked. */
+  function acceptAndCheckout() {
+    const resume = pending;
+    setConsentModal(false);
+    setPending(null);
+    if (resume) void startCheckout(resume.tier, resume.interval);
+  }
+
+  /** Close/Esc/backdrop. Drops the pending plan and NOT the consent — a box
+   *  ticked in the dialog is still ticked on the page. */
+  function closeConsentModal() {
+    setConsentModal(false);
+    setPending(null);
+  }
 
   return (
     <>
@@ -249,9 +291,10 @@ export function PricingSection({
                 <CheckoutButton
                   tier={checkoutTierFor(p.id)!}
                   interval={annual ? "year" : "month"}
-                  locale={locale}
                   chrome={priceChrome}
-                  requireConsent={requireConsent}
+                  busy={busyTier === checkoutTierFor(p.id)}
+                  error={errorTier === checkoutTierFor(p.id)}
+                  onStart={requestCheckout}
                 />
               )}
             </div>
@@ -263,7 +306,9 @@ export function PricingSection({
         accepted={consented}
         onChange={setConsented}
         modalOpen={consentModal}
-        onCloseModal={() => setConsentModal(false)}
+        onCloseModal={closeConsentModal}
+        ctaLabel={priceChrome.checkoutCta}
+        onAccept={acceptAndCheckout}
       />
       <p className={s.taxline}>{tax}</p>
       <p className={s.taxline}>{currency}</p>

@@ -1675,7 +1675,6 @@ export interface ConsentCopy {
   /** "Agreement Required" modal. */
   modalTitle: string;
   modalBody: string;
-  modalCta: string;
   modalClose: string;
 }
 
@@ -1691,7 +1690,6 @@ export const CONSENT_COPY: Record<Locale, ConsentCopy> = {
     modalTitle: "Agreement required",
     modalBody:
       "Before starting a trial you need to accept these documents:",
-    modalCta: "Review and accept",
     modalClose: "Close",
   },
   "en-CA": {
@@ -1704,7 +1702,6 @@ export const CONSENT_COPY: Record<Locale, ConsentCopy> = {
     cookies: "Cookie Policy",
     modalTitle: "Agreement required",
     modalBody: "Before starting a trial you need to accept these documents:",
-    modalCta: "Review and accept",
     modalClose: "Close",
   },
   fr: {
@@ -1718,7 +1715,6 @@ export const CONSENT_COPY: Record<Locale, ConsentCopy> = {
     modalTitle: "Acceptation requise",
     modalBody:
       "Avant de démarrer un essai, vous devez accepter ces documents :",
-    modalCta: "Consulter et accepter",
     modalClose: "Fermer",
   },
   "fr-CA": {
@@ -1731,7 +1727,6 @@ export const CONSENT_COPY: Record<Locale, ConsentCopy> = {
     cookies: "Politique relative aux cookies",
     modalTitle: "Acceptation requise",
     modalBody: "Avant de démarrer un essai, vous devez accepter ces documents :",
-    modalCta: "Consulter et accepter",
     modalClose: "Fermer",
   },
   "de-CH": {
@@ -1745,7 +1740,6 @@ export const CONSENT_COPY: Record<Locale, ConsentCopy> = {
     modalTitle: "Zustimmung erforderlich",
     modalBody:
       "Bevor Sie eine Testphase starten, müssen Sie diese Dokumente akzeptieren:",
-    modalCta: "Prüfen und akzeptieren",
     modalClose: "Schliessen",
   },
 };

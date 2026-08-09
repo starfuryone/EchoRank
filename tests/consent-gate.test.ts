@@ -18,14 +18,16 @@ import { ConsentGate } from "@/app/[locale]/ConsentGate";
 import { CONSENT_COPY } from "@/lib/i18n/content";
 import { SUPPORTED_LOCALES } from "@/lib/i18n/config";
 
-function gate(locale: "en" | "fr" = "en", modalOpen = false): string {
+function gate(locale: "en" | "fr" = "en", modalOpen = false, accepted = false): string {
   return renderToStaticMarkup(
     createElement(ConsentGate, {
       locale,
-      accepted: false,
+      accepted,
       onChange: () => {},
       modalOpen,
       onCloseModal: () => {},
+      ctaLabel: "Start free trial",
+      onAccept: () => {},
     }),
   );
 }
@@ -64,8 +66,64 @@ describe("the sentence is built from config, not written in JSX", () => {
 
   it("lists the same documents in the modal", () => {
     const links = hrefs(gate("en", true)).filter((h) => h.startsWith("/en/legal/"));
-    // Sentence + modal, so twice the config length.
+    // Sentence + modal, so twice the config length — no more. The modal used to
+    // carry a second, plain list beside the sentence; the checkbox row replaced
+    // it, and three copies of the same four links in one dialog is the drift
+    // this count is here to catch.
     expect(links).toHaveLength(CONSENT_DOCUMENTS.length * 2);
+  });
+
+  it("renders the identical sentence in the modal, from the same catalog", () => {
+    const html = gate("fr", true).replace(/&#x27;/g, "'");
+    const t = CONSENT_COPY.fr;
+    // Twice: once under the grid, once in the dialog.
+    expect(html.split(t.agreePrefix)).toHaveLength(3);
+    expect(html.split(t.subscriptionAgreement)).toHaveLength(3);
+  });
+
+  it("opens the modal's document links in a new tab too", () => {
+    const anchors = [...gate("en", true).matchAll(/<a[^>]*>/g)].map((m) => m[0]);
+    expect(anchors).toHaveLength(CONSENT_DOCUMENTS.length * 2);
+    expect(anchors.every((a) => a.includes('target="_blank"'))).toBe(true);
+    expect(anchors.every((a) => a.includes('rel="noopener noreferrer"'))).toBe(true);
+  });
+});
+
+describe("the modal's checkbox row", () => {
+  it("gives the dialog checkbox its own id, and a label bound to it", () => {
+    const html = gate("en", true);
+    const boxes = [...html.matchAll(/<input[^>]*type="checkbox"[^>]*>/g)].map((m) => m[0]);
+    expect(boxes).toHaveLength(2);
+    const ids = [...html.matchAll(/<input[^>]*id="([^"]+)"/g)].map((m) => m[1]);
+    // Two rows on one document: sharing an id would point both labels at the
+    // first checkbox and leave the dialog's unclickable by its own text.
+    expect(new Set(ids).size).toBe(2);
+    for (const id of ids) expect(html).toContain(`for="${id}"`);
+  });
+
+  it("reflects the shared state rather than a local one", () => {
+    // The prop is the only source: unchecked in, unchecked in BOTH rows.
+    expect([...gate("en", true).matchAll(/checked=""/g)]).toHaveLength(0);
+    expect([...gate("en", true, true).matchAll(/checked=""/g)]).toHaveLength(2);
+  });
+
+  it("disables the dialog's checkout button until the box is ticked", () => {
+    const closed = gate("en", true).match(/<button[^>]*>Start free trial<\/button>/);
+    expect(closed).not.toBeNull();
+    expect(closed![0]).toContain("disabled");
+    const open = gate("en", true, true).match(/<button[^>]*>Start free trial<\/button>/);
+    expect(open![0]).not.toContain("disabled");
+  });
+
+  it("is a dialog labelled by its own title", () => {
+    const html = gate("en", true);
+    expect(html).toContain('role="dialog"');
+    expect(html).toContain('aria-modal="true"');
+    const labelledBy = html.match(/aria-labelledby="([^"]+)"/);
+    expect(labelledBy).not.toBeNull();
+    // The id it names must be the element carrying the title text.
+    const title = new RegExp(`id="${labelledBy![1]}"[^>]*>${CONSENT_COPY.en.modalTitle}<`);
+    expect(html).toMatch(title);
   });
 
   it("is translated, and locale-prefixes the document links", () => {
