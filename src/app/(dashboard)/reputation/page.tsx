@@ -3,9 +3,9 @@
 //
 // Cards render from the typed config in src/lib/reputation-tools.ts and point
 // at the routes that already exist: nothing moved, so every bookmark and deep
-// link still works. Groups are filtered by canAccessPath (AI_VISIBILITY is
-// confined to /visibility and never reaches this page at all), and individual
-// cards render LOCKED — not hidden — when the destination's own feature gate
+// link still works. Every tier sees every group — no tier is confined to a
+// route subset — and individual cards render LOCKED, not hidden, when the
+// destination's own feature gate
 // would turn the visitor away. That mirrors the Marketing Studio landing: a
 // hidden feature cannot be wanted, a locked one names the plan that unlocks it.
 //
@@ -15,7 +15,7 @@ import { cookies } from "next/headers";
 import { Lock } from "lucide-react";
 import { dashboardLocale, REPUTATION_COPY } from "@/lib/i18n/dashboard";
 import { getCurrentTenant } from "@/lib/tenant";
-import { PLAN_CONFIGS } from "@/lib/plan-config";
+import { planConfig } from "@/lib/plan-config";
 import { visibleReputationGroups, toolLockState } from "@/lib/reputation-tools";
 import { ReputationHelpButton } from "@/components/help/ReputationHelp";
 
@@ -56,7 +56,7 @@ export default async function ReputationHubPage() {
             {group.tools.map((tool) => {
               const item = copy.items[tool.id];
               const lock = toolLockState(tool, plan);
-              const planName = lock.requiredPlan ? PLAN_CONFIGS[lock.requiredPlan].name : "";
+              const planName = lock.requiredPlan ? planConfig(lock.requiredPlan).name : "";
 
               if (lock.locked) {
                 return (

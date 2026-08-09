@@ -3,7 +3,7 @@
 // Marketing Studio orchestration.
 //
 // GATE ORDER, cheapest first, every one of them before a token is spent:
-//   1. plan gate     — marketing_studio feature flag (AI_VISIBILITY is locked)
+//   1. plan gate     — marketing_studio feature flag (STARTER and up)
 //   2. validation    — required fields present, values within length
 //   3. heuristics    — free, local, and for category 08 the entire answer
 //   4. result cache  — Redis, 24 h, free, and never touches the budget

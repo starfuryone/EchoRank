@@ -1,7 +1,7 @@
 // ---------------------------------------------------------------------------
 // Stripe price resolution (USD only)
 // ---------------------------------------------------------------------------
-// 5 tiers, USD only as of 2026-07-27. Rather than fanning price ids out as env
+// 4 sellable tiers, USD only. Rather than fanning price ids out as env
 // vars, they live in the `stripe_prices` table and are resolved here: forward
 // (tier -> priceId) for checkout, and reverse (priceId -> tier) for webhook
 // handling.
@@ -9,7 +9,6 @@
 import { prisma } from "@/lib/prisma";
 
 export type PlanTierKey =
-  | "ai_visibility"
   | "starter"
   | "growth"
   | "agency"
@@ -17,6 +16,7 @@ export type PlanTierKey =
 /** USD-only: Echorank360 bills all locales in US dollars. */
 export type CurrencyCode = "USD";
 export type PlanType =
+  /** @deprecated Retired tier; kept because Subscription rows may carry it. */
   | "AI_VISIBILITY"
   | "STARTER"
   | "GROWTH"
@@ -24,10 +24,6 @@ export type PlanType =
   | "ENTERPRISE";
 
 const TIER_TO_PLAN: Record<PlanTierKey, PlanType> = {
-  // AI_VISIBILITY is a sellable tier with its own Stripe prices; without this
-  // entry resolvePlanFromPriceId returns null and the webhook never sets
-  // planType for those subscriptions.
-  ai_visibility: "AI_VISIBILITY",
   starter: "STARTER",
   growth: "GROWTH",
   agency: "AGENCY",

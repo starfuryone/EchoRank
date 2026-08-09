@@ -19,7 +19,7 @@
 
 import type { PlanType } from "@/generated/prisma";
 import { prisma } from "@/lib/prisma";
-import { PLAN_CONFIGS } from "@/lib/plan-config";
+import { planConfig } from "@/lib/plan-config";
 
 /** Statuses that consume a monthly slot. */
 export const QUOTA_CONSUMING_STATUSES = ["QUEUED", "RUNNING", "COMPLETED"] as const;
@@ -39,11 +39,11 @@ export interface CrawlQuota {
 }
 
 export function urlCapForPlan(plan: PlanType): number {
-  return PLAN_CONFIGS[plan].crawlUrlCap;
+  return planConfig(plan).crawlUrlCap;
 }
 
 export function monthlyLimitForPlan(plan: PlanType): number | null {
-  return PLAN_CONFIGS[plan].crawlsPerMonth;
+  return planConfig(plan).crawlsPerMonth;
 }
 
 /** First instant of the current UTC calendar month. */

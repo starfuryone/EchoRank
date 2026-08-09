@@ -2,6 +2,33 @@ import type { PlanType } from "@/generated/prisma";
 import { hasFeature } from "./feature-flags";
 
 /**
+ * The tiers that actually exist as products.
+ *
+ * PlanType still carries AI_VISIBILITY because the Prisma enum value survives
+ * for legacy rows — dropping an enum value needs a migration, and there is
+ * nothing to gain from one. But it is not sellable, has no price, no card and
+ * no config, so every pricing/config surface is keyed by this narrower type.
+ * Anything holding a raw PlanType goes through sellablePlan() first.
+ */
+export type SellablePlanType = Exclude<PlanType, "AI_VISIBILITY">;
+
+/**
+ * Fold a stored plan value onto a sellable tier.
+ *
+ * AI_VISIBILITY maps to STARTER, which absorbed its capabilities wholesale
+ * (ai_visibility + answer_tracking, same checkup shape, same AI allowances).
+ * No tenant is on it, so this is belt-and-braces for stale rows.
+ */
+export function sellablePlan(plan: PlanType): SellablePlanType {
+  return plan === "AI_VISIBILITY" ? "STARTER" : plan;
+}
+
+/** PLAN_CONFIGS lookup that tolerates a legacy AI_VISIBILITY value. */
+export function planConfig(plan: PlanType): PlanConfig {
+  return PLAN_CONFIGS[sellablePlan(plan)];
+}
+
+/**
  * Free-trial length in days. THE source for the number — marketing copy,
  * legal terms and any future trial-expiry logic all mean this value.
  *
@@ -31,8 +58,7 @@ export const TRIAL_DAYS = 7;
  * null = unlimited (ENTERPRISE is contract-priced; a hard stop would be the
  * wrong failure mode there).
  */
-export const MARKETING_MONTHLY_OUTPUT_TOKENS: Record<PlanType, number | null> = {
-  AI_VISIBILITY: 100_000,
+export const MARKETING_MONTHLY_OUTPUT_TOKENS: Record<SellablePlanType, number | null> = {
   STARTER: 200_000,
   GROWTH: 500_000,
   AGENCY: 2_000_000,
@@ -42,10 +68,11 @@ export const MARKETING_MONTHLY_OUTPUT_TOKENS: Record<PlanType, number | null> = 
 /**
  * How often a brand's checkup runs. "none" = the tier has no monitor at all.
  *
- * STARTER is "none" deliberately, and that is not an oversight: STARTER does
- * not carry the `ai_visibility` feature (see feature-flags.ts), so there is no
- * tier-shape to give it. Selling the monitor into STARTER is a packaging
- * decision — it needs a feature-flag change, not a number here.
+ * Every sellable tier carries the `ai_visibility` feature, so every tier has a
+ * real checkup shape. "none" is reserved for a tier that genuinely has no
+ * monitor; none currently does. STARTER inherits the shape the retired $29 AI
+ * Visibility tier used to sell, which is what makes "everything in the old AI
+ * Visibility plan" true rather than marketing.
  */
 export type CheckupFrequency = "none" | "weekly" | "twice_weekly" | "daily" | "custom";
 
@@ -142,11 +169,11 @@ export interface PlanConfig {
    * across the provider mix that is roughly **$0.013 per prompt-run**.
    *
    * Runs per month = frequency x prompts x repetitions x providers:
-   *   AI_VISIBILITY  4.3 x 10 x 1 x 2 =    87  ~= $1.13/mo
+   *   STARTER        4.3 x 10 x 1 x 2 =    87  ~= $1.13/mo
    *   GROWTH         8.7 x 15 x 2 x 4 = 1,040  ~= $13.50/mo
    *   AGENCY          30 x 20 x 3 x 6 = 10,800 ~= $140/mo
    *
-   * AI_VISIBILITY and GROWTH carry 3-4x headroom over the modelled cost, so
+   * STARTER and GROWTH carry 3-4x headroom over the modelled cost, so
    * the cap only bites on abuse. AGENCY's does NOT: $150 is about what one
    * fully-provisioned brand costs, so an agency tracking several brands will
    * reach it and later checkups stop with CAPPED. That is the intended
@@ -159,59 +186,22 @@ export interface PlanConfig {
   ctaLink: string;
 }
 
-export const PLAN_CONFIGS: Record<PlanType, PlanConfig> = {
-  AI_VISIBILITY: {
-    name: "AI Visibility",
-    slug: "ai_visibility",
-    description:
-      "Track whether ChatGPT, Claude, Gemini and Perplexity recommend your business",
-    monthlyPrice: 29,
-    annualPrice: 24,
-    isCustomPricing: false,
-    features: [
-      "1 location",
-      "AI answer tracking across 4 engines",
-      "Prompt trends over time",
-      "Lost-recommendation alerts",
-      "AI Trust Score",
-      "Email support",
-    ],
-    // AI visibility only — no feedback requests, SMS, campaigns or API. The
-    // AI inference budget is what powers the weekly prompt sweeps.
-    quotaDefaults: {
-      maxLocations: 1,
-      maxRequestsPerMonth: 0,
-      maxEmailsPerMonth: 0,
-      maxSmsPerMonth: 0,
-      maxWebhooksPerMonth: 0,
-      maxAiInferencesPerMonth: 200,
-      maxMonitoringChecks: 120,
-      maxApiRequestsPerDay: 0,
-    },
-    seoSearchesPerMonth: 0,
-    trackedKeywords: 0,
-    // Site Crawler is a classic-SEO tool; this tier is the AI-visibility
-    // product and gets the locked upsell state instead.
-    crawlUrlCap: 0,
-    crawlsPerMonth: 0,
-    // The tier the monitor exists for. Two providers and one repetition keep
-    // it inside a $29 price; repeatability needs >1 and is a GROWTH feature.
-    aiCheckup: { frequency: "weekly", providers: 2, prompts: 10, repetitions: 1 },
-    aiMonthlyCapUsd: 5,
-    highlighted: false,
-    cta: "Start tracking",
-    ctaLink: "/register?plan=ai_visibility",
-  },
-
+export const PLAN_CONFIGS: Record<SellablePlanType, PlanConfig> = {
   STARTER: {
     name: "Starter",
     slug: "starter",
-    description: "For small businesses getting started with reputation management",
+    // Positioned as a strict superset of the retired $29 AI Visibility tier:
+    // it carries that tier's whole feature set plus the reputation engine.
+    description:
+      "AI answer tracking plus the reputation engine, for small businesses getting started",
     monthlyPrice: 79,
     annualPrice: 63,
     isCustomPricing: false,
     features: [
       "1 location",
+      "AI answer tracking across 4 engines",
+      "Lost-recommendation alerts",
+      "AI Trust Score",
       "500 feedback requests/month",
       "Email review requests",
       "Basic dashboard",
@@ -225,17 +215,22 @@ export const PLAN_CONFIGS: Record<PlanType, PlanConfig> = {
       maxEmailsPerMonth: 500,
       maxSmsPerMonth: 0,
       maxWebhooksPerMonth: 1000,
-      maxAiInferencesPerMonth: 0,
-      maxMonitoringChecks: 0,
+      // AI inference + monitoring allowances inherited from the retired $29 AI
+      // Visibility tier, whose capabilities STARTER now absorbs. Granting the
+      // ai_visibility feature without these would gate every monitor route on
+      // a zero budget.
+      maxAiInferencesPerMonth: 200,
+      maxMonitoringChecks: 120,
       maxApiRequestsPerDay: 0,
     },
     seoSearchesPerMonth: 250,
     trackedKeywords: 0,
     crawlUrlCap: 500,
     crawlsPerMonth: 4,
-    // No ai_visibility feature on this tier — see CheckupFrequency.
-    aiCheckup: { frequency: "none", providers: 0, prompts: 0, repetitions: 0 },
-    aiMonthlyCapUsd: 0,
+    // The shape the retired AI Visibility tier sold: two providers and one
+    // repetition. Repeatability needs >1 and stays a GROWTH feature.
+    aiCheckup: { frequency: "weekly", providers: 2, prompts: 10, repetitions: 1 },
+    aiMonthlyCapUsd: 5,
     highlighted: false,
     cta: "Start Free Trial",
     ctaLink: "/register?plan=starter",
@@ -250,6 +245,7 @@ export const PLAN_CONFIGS: Record<PlanType, PlanConfig> = {
     isCustomPricing: false,
     features: [
       "5 locations",
+      "AI answer tracking across 4 engines",
       "5,000 feedback requests/month",
       "Email + SMS channels",
       "AI risk scoring & sentiment analysis",
@@ -289,6 +285,7 @@ export const PLAN_CONFIGS: Record<PlanType, PlanConfig> = {
     isCustomPricing: false,
     features: [
       "25 locations",
+      "AI answer tracking across 4 engines",
       "15,000 feedback requests/month",
       "White-label dashboard",
       "Client management",
@@ -328,6 +325,7 @@ export const PLAN_CONFIGS: Record<PlanType, PlanConfig> = {
     isCustomPricing: true,
     features: [
       "Unlimited locations",
+      "AI answer tracking across 4 engines",
       "Custom request volume",
       "Full AI intelligence suite",
       "Real-time reputation monitoring",
@@ -365,7 +363,7 @@ export const PLAN_CONFIGS: Record<PlanType, PlanConfig> = {
 
 // ─── Derived views (single source of truth lives in PLAN_CONFIGS above) ──────
 
-const ALL_PLANS = Object.keys(PLAN_CONFIGS) as PlanType[];
+const ALL_PLANS = Object.keys(PLAN_CONFIGS) as SellablePlanType[];
 
 export interface PlanLimit {
   locations: number;
@@ -377,7 +375,7 @@ export interface PlanLimit {
 }
 
 /** Feature/limit summary per plan, derived from PLAN_CONFIGS + the feature matrix. */
-export const PLAN_LIMITS: Record<PlanType, PlanLimit> = Object.fromEntries(
+export const PLAN_LIMITS: Record<SellablePlanType, PlanLimit> = Object.fromEntries(
   ALL_PLANS.map((plan) => {
     const q = PLAN_CONFIGS[plan].quotaDefaults;
     return [
@@ -392,12 +390,12 @@ export const PLAN_LIMITS: Record<PlanType, PlanLimit> = Object.fromEntries(
       } satisfies PlanLimit,
     ];
   }),
-) as Record<PlanType, PlanLimit>;
+) as Record<SellablePlanType, PlanLimit>;
 
 /** Monthly USD price per plan, derived from PLAN_CONFIGS. */
-export const PLAN_PRICES: Record<PlanType, number> = Object.fromEntries(
+export const PLAN_PRICES: Record<SellablePlanType, number> = Object.fromEntries(
   ALL_PLANS.map((plan) => [plan, PLAN_CONFIGS[plan].monthlyPrice]),
-) as Record<PlanType, number>;
+) as Record<SellablePlanType, number>;
 
 /**
  * The metering-relevant subset of a plan's quota defaults, in the shape the
@@ -414,7 +412,7 @@ export interface MeteringQuotaDefaults {
 }
 
 export function planQuotaDefaults(planType: PlanType): MeteringQuotaDefaults {
-  const q = PLAN_CONFIGS[planType].quotaDefaults;
+  const q = planConfig(planType).quotaDefaults;
   return {
     maxEmailsPerMonth: q.maxEmailsPerMonth,
     maxSmsPerMonth: q.maxSmsPerMonth,
@@ -430,9 +428,8 @@ export function planQuotaDefaults(planType: PlanType): MeteringQuotaDefaults {
  */
 export function getUpgradePath(currentPlan: PlanType): PlanType | null {
   const upgradeMap: Record<PlanType, PlanType | null> = {
-    // AI_VISIBILITY upgrades to GROWTH, not STARTER: STARTER lacks the
-    // ai_visibility feature, so it would be a downgrade in practice.
-    AI_VISIBILITY: "GROWTH",
+    // Legacy rows only; STARTER is a strict superset of the retired tier.
+    AI_VISIBILITY: "STARTER",
     STARTER: "GROWTH",
     GROWTH: "AGENCY",
     AGENCY: "ENTERPRISE",
@@ -453,18 +450,11 @@ export function getEnterpriseContact() {
   };
 }
 
-/**
- * Check if a plan is at or above a target plan.
- *
- * Note: AI_VISIBILITY sits below STARTER by price ($29 vs $49) and that is how
- * it ranks here, but the ladder does not describe it well — it carries
- * ai_visibility/answer_tracking, which STARTER does not. Gate AI-visibility
- * surfaces on hasFeature(), not on this ordering.
- */
-/** Canonical tier ordering, low to high. Enterprise is custom-priced, so
- *  rank — not monthlyPrice — decides what counts as an upgrade. */
-export const PLAN_ORDER: PlanType[] = [
-  "AI_VISIBILITY",
+/** Canonical tier ordering, low to high. The retired AI_VISIBILITY tier is
+ *  absent — it is not sellable, so it must never appear in a pricing surface
+ *  or be the answer to "what do I upgrade to?". Enterprise is custom-priced,
+ *  so rank, not monthlyPrice, decides what counts as an upgrade. */
+export const PLAN_ORDER: SellablePlanType[] = [
   "STARTER",
   "GROWTH",
   "AGENCY",
@@ -473,19 +463,18 @@ export const PLAN_ORDER: PlanType[] = [
 
 /** True when `target` is a higher tier than `current`. */
 export function isUpgrade(current: PlanType, target: PlanType): boolean {
-  return PLAN_ORDER.indexOf(target) > PLAN_ORDER.indexOf(current);
+  return (
+    PLAN_ORDER.indexOf(sellablePlan(target)) >
+    PLAN_ORDER.indexOf(sellablePlan(current))
+  );
 }
 
 export function isPlanAtLeast(
   currentPlan: PlanType,
   targetPlan: PlanType
 ): boolean {
-  const order: PlanType[] = [
-    "AI_VISIBILITY",
-    "STARTER",
-    "GROWTH",
-    "AGENCY",
-    "ENTERPRISE",
-  ];
-  return order.indexOf(currentPlan) >= order.indexOf(targetPlan);
+  return (
+    PLAN_ORDER.indexOf(sellablePlan(currentPlan)) >=
+    PLAN_ORDER.indexOf(sellablePlan(targetPlan))
+  );
 }

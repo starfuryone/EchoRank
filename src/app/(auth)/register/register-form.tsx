@@ -91,7 +91,7 @@ export default function RegisterForm({
         }
         router.push(postSignupRedirect(data.planType ?? plan));
       } else {
-        // AI_VISIBILITY signups land on /visibility; everyone else /dashboard.
+        // Every plan lands on /dashboard; ?plan=ai_visibility folds to STARTER.
         router.push(postSignupRedirect(data.planType ?? plan));
       }
     } catch {

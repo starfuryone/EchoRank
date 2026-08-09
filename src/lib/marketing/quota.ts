@@ -20,7 +20,7 @@
 
 import type { PlanType } from "@/generated/prisma";
 import { getRedisConnection } from "@/infrastructure/redis/connection";
-import { MARKETING_MONTHLY_OUTPUT_TOKENS } from "@/lib/plan-config";
+import { MARKETING_MONTHLY_OUTPUT_TOKENS, sellablePlan } from "@/lib/plan-config";
 import { hasFeature } from "@/lib/feature-flags";
 
 /** 40 days — comfortably past the longest month, so the key self-cleans. */
@@ -44,7 +44,7 @@ export function marketingBudgetKey(tenantId: string, now = new Date()): string {
  * to 0, which is the correct fail-closed answer for a plan nobody has costed.
  */
 export function marketingTokenLimit(plan: PlanType): number | null {
-  const limit = MARKETING_MONTHLY_OUTPUT_TOKENS[plan];
+  const limit = MARKETING_MONTHLY_OUTPUT_TOKENS[sellablePlan(plan)];
   return limit === undefined ? 0 : limit;
 }
 

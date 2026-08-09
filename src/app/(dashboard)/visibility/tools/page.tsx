@@ -1,9 +1,8 @@
 // SEO Tools hub — the single navigation surface for all SEO tools, grouped
 // Ahrefs-style (information architecture only; visual identity is native
-// Echorank). Cards render from the typed config in src/lib/seo-tools.ts and
-// are filtered by canAccessPath so no tier sees a card its route allowlist
-// would bounce (e.g. Dashboard is hidden for AI_VISIBILITY). The paid gate
-// lives in ./layout.tsx.
+// Echorank). Cards render from the typed config in src/lib/seo-tools.ts;
+// every tier sees every card, since no tier is confined to a route subset.
+// The paid gate lives in ./layout.tsx.
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { dashboardLocale, SEO_TOOLS_COPY } from "@/lib/i18n/dashboard";

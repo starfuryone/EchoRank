@@ -38,7 +38,6 @@ import {
 } from "lucide-react";
 import type { PlanType } from "@/generated/prisma";
 import { hasFeature, getMinimumPlan, type Feature } from "@/lib/feature-flags";
-import { canAccessPath } from "@/lib/plan-routing";
 
 export const REPUTATION_HUB = "/reputation";
 
@@ -136,24 +135,24 @@ export function toolLockState(tool: ReputationTool, plan: PlanType | null | unde
 }
 
 /**
- * Groups this plan may see at all.
+ * Groups this plan may see at all — every group, for every signed-in tier.
  *
- * Distinct from the lock state: canAccessPath is a ROUTE allowlist, and
- * AI_VISIBILITY is confined to /visibility, /settings, /billing and /team. For
- * that plan every reputation surface is off-limits, so the hub shows nothing
- * and the sidebar link is filtered out — a locked card offering an upgrade to
- * a product they did not buy would be noise, not an upsell.
+ * This used to drop reputation surfaces for AI_VISIBILITY, the one tier
+ * confined to a route allowlist. That tier is retired and no tier is confined,
+ * so the hub shows the full set and per-tool lock state (see toolLockState) is
+ * the only thing that varies by tier.
+ *
+ * A null/undefined plan still sees NOTHING: that is a signed-out visitor or a
+ * tenant we could not resolve, and the hub is not a public surface.
  */
 export function visibleReputationGroups(
   plan: PlanType | null | undefined,
 ): ReputationToolGroup[] {
-  return REPUTATION_TOOL_GROUPS.map((group) => ({
-    ...group,
-    tools: group.tools.filter((t) => canAccessPath(plan, t.href)),
-  })).filter((group) => group.tools.length > 0);
+  if (!plan) return [];
+  return REPUTATION_TOOL_GROUPS;
 }
 
 /** True when this plan can reach the hub at all. Drives the sidebar link. */
 export function canSeeReputationHub(plan: PlanType | null | undefined): boolean {
-  return canAccessPath(plan, REPUTATION_HUB);
+  return Boolean(plan);
 }

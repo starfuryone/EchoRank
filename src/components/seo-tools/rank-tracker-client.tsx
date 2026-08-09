@@ -614,7 +614,7 @@ export function RankTrackerClient({ locale }: { locale: DashLocale }) {
     </div>
   );
 
-  // ── Locked plan (STARTER / AI_VISIBILITY) ───────────────────────────────
+  // ── Locked plan (STARTER) ───────────────────────────────────────────────
   if (usage && !usage.canTrack) {
     return (
       <div className="space-y-6">

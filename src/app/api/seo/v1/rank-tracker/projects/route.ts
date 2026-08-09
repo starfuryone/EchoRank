@@ -3,7 +3,7 @@
  * POST /api/seo/v1/rank-tracker/projects — create one.
  *
  * Guard chain on POST: requirePaidPlan (session + tenant + ACTIVE billing) →
- * zod → domain normalization → plan gate (STARTER/AI_VISIBILITY are locked) →
+ * zod → domain normalization → plan gate (STARTER is locked) →
  * frequency gate → tracked-keyword cap. Creating a project costs nothing; the
  * spend gate is the monthly check quota, enforced when a run is posted.
  *

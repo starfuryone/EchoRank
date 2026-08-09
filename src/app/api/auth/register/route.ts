@@ -28,7 +28,7 @@ const ONBOARDING_DRIP_DELAYS: Record<OnboardingEmailStage, number> = {
  * anyone who edits the URL. Those keep landing on STARTER's trial, exactly as
  * before this parameter existed; upgrades go through /billing.
  */
-const SELF_SERVE_PLANS: readonly PlanType[] = ["AI_VISIBILITY"];
+const SELF_SERVE_PLANS: readonly PlanType[] = ["STARTER"];
 
 function resolveSignupPlan(planParam: string | undefined): PlanType {
   const requested = planFromParam(planParam);

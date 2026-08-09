@@ -41,20 +41,31 @@ const ALL_FEATURES: Feature[] = [
   "matrix_chat",
 ];
 
+// STARTER's set, named because the retired AI_VISIBILITY key aliases it.
+// ai_visibility and answer_tracking are baseline from STARTER up: the
+// standalone $29 AI Visibility tier was retired and its capabilities folded
+// into every tier, so the ladder is STARTER→ENTERPRISE with no side product.
+const STARTER_FEATURES: Feature[] = [
+  "review_authenticity",
+  "marketing_studio",
+  "ai_visibility",
+  "answer_tracking",
+];
+
 const PLAN_FEATURES: Record<PlanType, Set<Feature>> = {
-  // Standalone $29/mo tier: AI visibility only. Deliberately excludes
-  // review_authenticity and everything reputation-side — it is not a rung on
-  // the STARTER→ENTERPRISE ladder, it is a separate product.
-  AI_VISIBILITY: new Set<Feature>(["ai_visibility", "answer_tracking"]),
-  // marketing_studio starts at STARTER. AI_VISIBILITY is deliberately excluded
-  // above: it is a standalone product, not the bottom rung of the ladder, and
-  // the studio is reputation/content-side. Those tenants still reach the
-  // landing page — it renders locked cards as the upsell rather than a 404.
-  STARTER: new Set<Feature>(["review_authenticity", "marketing_studio"]),
+  /**
+   * @deprecated The AI_VISIBILITY tier is retired. The enum value survives for
+   * legacy rows only — nothing sells it (see plan-config.ts) and no tenant is
+   * on it. It resolves to STARTER's set so a stray row keeps working rather
+   * than losing every feature.
+   */
+  AI_VISIBILITY: new Set<Feature>(STARTER_FEATURES),
+  STARTER: new Set<Feature>(STARTER_FEATURES),
   GROWTH: new Set<Feature>([
     "review_authenticity",
     "ai_analysis",
     "ai_visibility",
+    "answer_tracking",
     "advanced_analytics",
     // Matrix team chat: GROWTH and up. AGENCY/ENTERPRISE inherit it through
     // ALL_FEATURES, so this is the only tier that has to name it.
@@ -79,10 +90,9 @@ export function getFeaturesForPlan(planType: PlanType): Feature[] {
 }
 
 export function getMinimumPlan(feature: Feature): PlanType {
-  // Cheapest-first, so the AI-visibility features resolve to the $29 tier
-  // rather than to GROWTH ($149), which also carries them.
+  // Cheapest-first. The retired AI_VISIBILITY tier is absent: it is not
+  // sellable, so it must never be the answer to "what do I upgrade to?".
   const planOrder: PlanType[] = [
-    "AI_VISIBILITY",
     "STARTER",
     "GROWTH",
     "AGENCY",

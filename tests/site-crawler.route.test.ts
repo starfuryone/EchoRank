@@ -247,12 +247,12 @@ describe("POST /crawl", () => {
     expect(addJob).not.toHaveBeenCalled();
   });
 
-  it("refuses a locked tier with 403 before it validates the URL", async () => {
+  it("accepts a legacy AI_VISIBILITY row, folded onto STARTER", async () => {
+    // The tier is retired and no sellable tier is crawl-locked, so the
+    // PLAN_LOCKED branch is a retained guard rather than a reachable state.
     authed("AI_VISIBILITY");
     const res = await startCrawl(postRequest({ url: "https://example.com" }));
-    expect(res.status).toBe(403);
-    expect((await res.json()).code).toBe("PLAN_LOCKED");
-    expect(crawlJob.create).not.toHaveBeenCalled();
+    expect(res.status).toBe(202);
   });
 
   it("refuses once the monthly allowance is spent, with 429", async () => {

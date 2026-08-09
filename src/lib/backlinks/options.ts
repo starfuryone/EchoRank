@@ -35,13 +35,14 @@ export const BACKLINKS_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
  *
  * STARTER is 0 by product decision: the tool is a GROWTH-and-up feature, so
  * STARTER sees a locked card with an upgrade path rather than an empty form.
- * AI_VISIBILITY (the AI-only tier) is likewise 0. ENTERPRISE is not on the
- * classic-SEO pricing sheet and gets a generous ceiling.
+ * ENTERPRISE is not on the classic-SEO pricing sheet and gets a generous
+ * ceiling.
  *
  * These are COUNT limits. One analysis is five billed calls, so the USD cap in
  * dataforseo/metering.ts still applies underneath and can bite first.
  */
 export const BACKLINKS_ANALYSES_PER_MONTH: Record<PlanType, number> = {
+  /** @deprecated Retired tier; pinned to STARTER's value for legacy rows. */
   AI_VISIBILITY: 0,
   STARTER: 0,
   GROWTH: 25,
@@ -53,7 +54,7 @@ export function backlinksAnalysisLimit(plan: PlanType): number {
   return BACKLINKS_ANALYSES_PER_MONTH[plan] ?? 0;
 }
 
-/** False for STARTER / AI_VISIBILITY — they get the locked upsell card. */
+/** False for STARTER — it gets the locked upsell card. */
 export function planCanAnalyzeBacklinks(plan: PlanType): boolean {
   return backlinksAnalysisLimit(plan) > 0;
 }

@@ -137,7 +137,7 @@ describe("guards", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it("403s AI_VISIBILITY — the plan gate, not just the paywall", async () => {
+  it("lets a legacy AI_VISIBILITY row generate, folded onto STARTER", async () => {
     requirePaidPlan.mockResolvedValue(membership("AI_VISIBILITY"));
     const res = await GENERATE(
       post({
@@ -145,9 +145,7 @@ describe("guards", () => {
         values: { PRODUCT: "p", AUDIENCE: "a", COMPETITOR: "c", THEIR_ANGLE: "t" },
       }),
     );
-    expect(res.status).toBe(403);
-    expect((await res.json()).code).toBe("PLAN_LOCKED");
-    expect(fetchMock).not.toHaveBeenCalled();
+    expect(res.status).toBe(200);
   });
 
   it("400s an unknown category before the rate limiter is spent", async () => {
@@ -449,11 +447,10 @@ describe("voice route", () => {
     expect(tenant.updateMany).not.toHaveBeenCalled();
   });
 
-  it("403s a locked plan", async () => {
-    requirePaidPlan.mockResolvedValue(membership("AI_VISIBILITY"));
+  it("saves for every tier — marketing_studio is baseline from STARTER up", async () => {
+    requirePaidPlan.mockResolvedValue(membership("STARTER"));
     const res = await SAVE_VOICE(post({ guide: "x" }));
-    expect(res.status).toBe(403);
-    expect(tenant.updateMany).not.toHaveBeenCalled();
+    expect(res.status).toBe(200);
   });
 
   it("reads the saved guide back with a tenant-scoped findFirst", async () => {

@@ -13,7 +13,8 @@ const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://echorank360.com';
 // Brand/product terms kept verbatim across locales: Echorank360, Trust Score,
 // the engine names (ChatGPT/Claude/Gemini/Perplexity), the plan names
 // (Growth/Agency), the mock-answer example brands (LedgerKit/Countable), and
-// the price token "$29". Prices are not currency-switched (task scope).
+// Prices are not written into this page: AI visibility is baseline on every
+// tier now, so every CTA points at /pricing rather than naming a number.
 
 interface AvContent {
   // `title` is the branded form for og/twitter; `titleShort` is bare and the
@@ -43,7 +44,6 @@ interface AvContent {
   prompts: { h2: string; list: string[]; more: string };
   pricing: {
     eyebrow: string;
-    perMonth: string;
     features: string[];
     cta: string;
     finePre: string;
@@ -64,11 +64,11 @@ const C: Record<Locale, AvContent> = {
       title: 'AI Visibility — Echorank360',
       titleShort: 'AI Visibility',
       description:
-        'Track whether ChatGPT, Claude, Gemini and Perplexity recommend your business. Prompt tracking, lost-recommendation alerts and an AI Trust Score for $29/month.',
+        'Track whether ChatGPT, Claude, Gemini and Perplexity recommend your business. Prompt tracking, lost-recommendation alerts and an AI Trust Score, included in every Echorank360 plan.',
     },
     nav: { features: 'Features', pricing: 'Pricing', login: 'Login', cta: 'Start tracking' },
     hero: {
-      eyebrow: 'AI Visibility · $29/mo',
+      eyebrow: 'AI Visibility · in every plan',
       h1a: 'When someone asks ChatGPT for a recommendation,',
       h1b: ' are you in the answer?',
       sub: 'Millions of buying decisions now start as a prompt, not a search. Echorank360 tracks the prompts that matter to your business, alerts you the moment an AI stops recommending you, and scores your standing across the major assistants.',
@@ -90,7 +90,7 @@ const C: Record<Locale, AvContent> = {
       p: 'An AI answer names three or four businesses. Everyone else is invisible — and nothing tells you when you fall out. Rankings you could watch in Google happen silently inside models. AI Visibility makes that layer observable.',
     },
     features: {
-      h2: 'What $29 a month watches for you',
+      h2: 'What Echorank watches for you',
       items: [
         { h3: 'Answer tracking', p: 'We run your tracked prompts against the major assistants every week and record exactly how each one answers — who gets named, in what order, and with what reasoning.' },
         { h3: 'Prompt trends', p: 'A sparkline per prompt shows your mention rate over time, so a slow slide is visible weeks before it costs you customers.' },
@@ -108,8 +108,7 @@ const C: Record<Locale, AvContent> = {
       more: '…up to 25 prompts of your own',
     },
     pricing: {
-      eyebrow: 'AI Visibility',
-      perMonth: '/month',
+      eyebrow: 'Included in every plan',
       features: [
         '1 brand',
         '25 tracked prompts',
@@ -118,7 +117,7 @@ const C: Record<Locale, AvContent> = {
         'AI Trust Score',
         'ChatGPT, Claude, Gemini & Perplexity coverage',
       ],
-      cta: 'Start tracking — $29/mo',
+      cta: 'See plans',
       finePre: 'Cancel anytime. Need more brands, seats or nightly refresh? ',
       fineLink: 'Compare plans',
       currency: 'All prices are in US dollars (USD). If you pay with a card in another currency, your bank converts the charge at its own exchange rate.',
@@ -134,7 +133,7 @@ const C: Record<Locale, AvContent> = {
     },
     final: {
       h2: 'Find out what the AIs say about you',
-      cta: 'Start tracking — $29/mo',
+      cta: 'Start tracking',
     },
     widget: {
       label: 'Run a free basic audit',
@@ -149,7 +148,7 @@ const C: Record<Locale, AvContent> = {
       resultOfPrompts: 'of test prompts',
       trustScore: 'Trust Score',
       upsell: 'This was 3 generic prompts, one engine pass. The full plan tracks 25 prompts of your choosing, weekly, with alerts when you drop out.',
-      ctaTemplate: 'Track {brand} — $29/mo',
+      ctaTemplate: 'Track {brand} with Echorank',
       again: 'Run another audit',
       pdfIdle: 'Download PDF report',
       pdfBusy: 'Generating…',
@@ -180,7 +179,7 @@ const C: Record<Locale, AvContent> = {
         lockedTemplate: '+{n} more on the full plan',
         upsell:
           'This scan read your homepage only, heuristics only. The full plan scans up to 5 pages, adds AI-suggested keywords and title/meta rewrites, and tracks whether AIs actually recommend you.',
-        cta: 'Unlock full keyword insights — $29/mo',
+        cta: 'Unlock full keyword insights',
         again: 'Scan another site',
       },
     },
@@ -193,11 +192,11 @@ const C: Record<Locale, AvContent> = {
       title: 'Visibilité IA — Echorank360',
       titleShort: 'Visibilité IA',
       description:
-        'Suivez si ChatGPT, Claude, Gemini et Perplexity recommandent votre entreprise. Suivi des requêtes, alertes de perte de recommandation et un AI Trust Score pour $29/mois.',
+        'Suivez si ChatGPT, Claude, Gemini et Perplexity recommandent votre entreprise. Suivi des requêtes, alertes de perte de recommandation et un AI Trust Score, inclus dans tous les forfaits Echorank360.',
     },
     nav: { features: 'Fonctionnalités', pricing: 'Tarifs', login: 'Connexion', cta: 'Commencer le suivi' },
     hero: {
-      eyebrow: 'Visibilité IA · $29/mo',
+      eyebrow: 'Visibilité IA · dans tous les forfaits',
       h1a: 'Quand quelqu’un demande une recommandation à ChatGPT,',
       h1b: ' êtes-vous dans la réponse ?',
       sub: 'Des millions de décisions d’achat commencent désormais par une requête, pas une recherche. Echorank360 suit les requêtes qui comptent pour votre entreprise, vous alerte dès qu’une IA cesse de vous recommander, et évalue votre position auprès des principaux assistants.',
@@ -219,7 +218,7 @@ const C: Record<Locale, AvContent> = {
       p: 'Une réponse d’IA nomme trois ou quatre entreprises. Toutes les autres sont invisibles — et rien ne vous avertit quand vous en sortez. Les classements que vous pouviez suivre dans Google se jouent en silence à l’intérieur des modèles. La Visibilité IA rend cette couche observable.',
     },
     features: {
-      h2: 'Ce que $29 par mois surveille pour vous',
+      h2: 'Ce qu’Echorank surveille pour vous',
       items: [
         { h3: 'Suivi des réponses', p: 'Nous exécutons vos requêtes suivies contre les principaux assistants chaque semaine et enregistrons exactement comment chacun répond — qui est nommé, dans quel ordre et avec quel raisonnement.' },
         { h3: 'Tendances des requêtes', p: 'Une courbe par requête montre votre taux de mention dans le temps, de sorte qu’un lent déclin est visible des semaines avant qu’il ne vous coûte des clients.' },
@@ -237,8 +236,7 @@ const C: Record<Locale, AvContent> = {
       more: '…jusqu’à 25 requêtes bien à vous',
     },
     pricing: {
-      eyebrow: 'Visibilité IA',
-      perMonth: '/mois',
+      eyebrow: 'Inclus dans tous les forfaits',
       features: [
         '1 marque',
         '25 requêtes suivies',
@@ -247,7 +245,7 @@ const C: Record<Locale, AvContent> = {
         'AI Trust Score',
         'Couverture ChatGPT, Claude, Gemini et Perplexity',
       ],
-      cta: 'Commencer le suivi — $29/mo',
+      cta: 'Voir les forfaits',
       finePre: 'Annulable à tout moment. Besoin de plus de marques, de sièges ou d’une actualisation nocturne ? ',
       fineLink: 'Comparer les forfaits',
       currency: 'Tous les prix sont en dollars américains (USD). Si vous payez avec une carte dans une autre devise, votre banque effectue la conversion à son propre taux de change.',
@@ -263,7 +261,7 @@ const C: Record<Locale, AvContent> = {
     },
     final: {
       h2: 'Découvrez ce que les IA disent de vous',
-      cta: 'Commencer le suivi — $29/mo',
+      cta: 'Commencer le suivi',
     },
     widget: {
       label: 'Lancez un audit de base gratuit',
@@ -278,7 +276,7 @@ const C: Record<Locale, AvContent> = {
       resultOfPrompts: 'des requêtes testées',
       trustScore: 'Trust Score',
       upsell: 'Il s’agissait de 3 requêtes génériques, un seul passage moteur. Le forfait complet suit 25 requêtes de votre choix, chaque semaine, avec des alertes quand vous décrochez.',
-      ctaTemplate: 'Suivre {brand} — $29/mo',
+      ctaTemplate: 'Suivre {brand} avec Echorank',
       again: 'Lancer un autre audit',
       pdfIdle: 'Télécharger le rapport PDF',
       pdfBusy: 'Génération…',
@@ -309,7 +307,7 @@ const C: Record<Locale, AvContent> = {
         lockedTemplate: '+{n} de plus avec le forfait complet',
         upsell:
           'Cette analyse n’a lu que votre page d’accueil, heuristiques seulement. Le forfait complet analyse jusqu’à 5 pages, ajoute des mots-clés suggérés par IA et des réécritures de titre/méta, et suit si les IA vous recommandent vraiment.',
-        cta: 'Débloquer l’analyse complète — $29/mo',
+        cta: 'Débloquer l’analyse complète',
         again: 'Analyser un autre site',
       },
     },
@@ -322,11 +320,11 @@ const C: Record<Locale, AvContent> = {
       title: 'KI-Sichtbarkeit — Echorank360',
       titleShort: 'KI-Sichtbarkeit',
       description:
-        'Verfolgen Sie, ob ChatGPT, Claude, Gemini und Perplexity Ihr Unternehmen empfehlen. Prompt-Tracking, Benachrichtigungen bei verlorenen Empfehlungen und ein AI Trust Score für $29/Monat.',
+        'Verfolgen Sie, ob ChatGPT, Claude, Gemini und Perplexity Ihr Unternehmen empfehlen. Prompt-Tracking, Benachrichtigungen bei verlorenen Empfehlungen und ein AI Trust Score — in jedem Echorank360-Abo enthalten.',
     },
     nav: { features: 'Funktionen', pricing: 'Preise', login: 'Anmelden', cta: 'Jetzt starten' },
     hero: {
-      eyebrow: 'KI-Sichtbarkeit · $29/mo',
+      eyebrow: 'KI-Sichtbarkeit · in jedem Abo',
       h1a: 'Wenn jemand ChatGPT um eine Empfehlung bittet,',
       h1b: ' sind Sie in der Antwort?',
       sub: 'Millionen von Kaufentscheidungen beginnen heute als Prompt, nicht als Suche. Echorank360 verfolgt die Prompts, die für Ihr Unternehmen zählen, benachrichtigt Sie in dem Moment, in dem eine KI Sie nicht mehr empfiehlt, und bewertet Ihre Stellung bei den grossen Assistenten.',
@@ -348,7 +346,7 @@ const C: Record<Locale, AvContent> = {
       p: 'Eine KI-Antwort nennt drei oder vier Unternehmen. Alle anderen sind unsichtbar — und nichts sagt Ihnen, wann Sie herausfallen. Rankings, die Sie in Google beobachten konnten, geschehen still in den Modellen. KI-Sichtbarkeit macht diese Ebene sichtbar.',
     },
     features: {
-      h2: 'Was $29 im Monat für Sie beobachtet',
+      h2: 'Was Echorank für Sie beobachtet',
       items: [
         { h3: 'Antwort-Tracking', p: 'Wir führen Ihre verfolgten Prompts wöchentlich gegen die grossen Assistenten aus und erfassen genau, wie jeder antwortet — wer genannt wird, in welcher Reihenfolge und mit welcher Begründung.' },
         { h3: 'Prompt-Trends', p: 'Eine Sparkline pro Prompt zeigt Ihre Nennungsrate über die Zeit, sodass ein langsamer Rückgang Wochen sichtbar wird, bevor er Sie Kunden kostet.' },
@@ -366,8 +364,7 @@ const C: Record<Locale, AvContent> = {
       more: '…bis zu 25 eigene Prompts',
     },
     pricing: {
-      eyebrow: 'KI-Sichtbarkeit',
-      perMonth: '/Monat',
+      eyebrow: 'In jedem Abo enthalten',
       features: [
         '1 Marke',
         '25 verfolgte Prompts',
@@ -376,7 +373,7 @@ const C: Record<Locale, AvContent> = {
         'AI Trust Score',
         'Abdeckung von ChatGPT, Claude, Gemini und Perplexity',
       ],
-      cta: 'Jetzt starten — $29/mo',
+      cta: 'Abos ansehen',
       finePre: 'Jederzeit kündbar. Mehr Marken, Sitze oder nächtliche Aktualisierung nötig? ',
       fineLink: 'Pläne vergleichen',
       currency: 'Alle Preise in US-Dollar (USD). Bei Zahlung mit einer Karte in einer anderen Währung rechnet Ihre Bank den Betrag zu ihrem eigenen Wechselkurs um.',
@@ -392,7 +389,7 @@ const C: Record<Locale, AvContent> = {
     },
     final: {
       h2: 'Finden Sie heraus, was die KIs über Sie sagen',
-      cta: 'Jetzt starten — $29/mo',
+      cta: 'Jetzt starten',
     },
     widget: {
       label: 'Kostenlosen Basis-Audit starten',
@@ -407,7 +404,7 @@ const C: Record<Locale, AvContent> = {
       resultOfPrompts: 'der Testfragen',
       trustScore: 'Trust Score',
       upsell: 'Das waren 3 generische Prompts, ein Engine-Durchlauf. Der volle Plan verfolgt 25 Prompts Ihrer Wahl, wöchentlich, mit Benachrichtigungen, wenn Sie herausfallen.',
-      ctaTemplate: '{brand} verfolgen — $29/mo',
+      ctaTemplate: '{brand} mit Echorank verfolgen',
       again: 'Weiteren Audit starten',
       pdfIdle: 'PDF-Bericht herunterladen',
       pdfBusy: 'Wird erstellt…',
@@ -438,7 +435,7 @@ const C: Record<Locale, AvContent> = {
         lockedTemplate: '+{n} weitere im vollen Plan',
         upsell:
           'Dieser Scan hat nur Ihre Startseite gelesen, nur Heuristiken. Der volle Plan scannt bis zu 5 Seiten, ergänzt KI-vorgeschlagene Keywords sowie Titel-/Meta-Vorschläge und verfolgt, ob KIs Sie wirklich empfehlen.',
-        cta: 'Volle Keyword-Analyse freischalten — $29/mo',
+        cta: 'Volle Keyword-Analyse freischalten',
         again: 'Weitere Website scannen',
       },
     },
@@ -511,7 +508,7 @@ export default async function AIVisibilityPage({
             <span aria-hidden="true">/</span>
             <a className={base === 'fr' ? 'av-toggle-on' : undefined} href="/fr/ai-visibility">FR</a>
           </span>
-          <a href="/register?plan=ai_visibility" className="av-btn av-btn-gold av-nav-cta">
+          <a href={`/${locale}/pricing`} className="av-btn av-btn-gold av-nav-cta">
             {c.nav.cta}
           </a>
         </nav>
@@ -568,7 +565,7 @@ export default async function AIVisibilityPage({
       <section className="av-band-alt av-kw-section" id="keywords">
         <h2>{c.kw.h2}</h2>
         <p>{c.kw.p}</p>
-        <KeywordWidget c={c.kw.widget} />
+        <KeywordWidget c={c.kw.widget} ctaHref={`/${locale}/pricing`} />
       </section>
 
       <section className="av-features" id="how">
@@ -596,13 +593,12 @@ export default async function AIVisibilityPage({
       <section className="av-pricing" id="pricing">
         <div className="av-price-card">
           <p className="av-eyebrow">{c.pricing.eyebrow}</p>
-          <p className="av-price">$29<span>{c.pricing.perMonth}</span></p>
           <ul>
             {c.pricing.features.map((f) => (
               <li key={f}>{f}</li>
             ))}
           </ul>
-          <a className="av-btn av-btn-gold av-btn-block" href="/register?plan=ai_visibility">
+          <a className="av-btn av-btn-gold av-btn-block" href={`/${locale}/pricing`}>
             {c.pricing.cta}
           </a>
           <p className="av-fine">
@@ -625,7 +621,7 @@ export default async function AIVisibilityPage({
 
       <section className="av-final">
         <h2>{c.final.h2}</h2>
-        <a className="av-btn av-btn-gold" href="/register?plan=ai_visibility">
+        <a className="av-btn av-btn-gold" href={`/${locale}/pricing`}>
           {c.final.cta}
         </a>
       </section>

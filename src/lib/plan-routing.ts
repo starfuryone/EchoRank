@@ -1,8 +1,16 @@
 import type { PlanType } from "@/generated/prisma";
 
-/** Where each plan lands after login / when redirected off a forbidden path. */
+/**
+ * Where each plan lands after login / when redirected off a forbidden path.
+ *
+ * Every tier lands on /dashboard. The retired AI_VISIBILITY tier used to land
+ * on /visibility because it was confined to that subtree; no tier is confined
+ * any more, so there is nothing left to vary. The key survives only because
+ * the enum value does — see feature-flags.ts.
+ */
 export const PLAN_HOME: Record<PlanType, string> = {
-  AI_VISIBILITY: "/visibility",
+  /** @deprecated AI_VISIBILITY is retired; legacy rows land on /dashboard. */
+  AI_VISIBILITY: "/dashboard",
   STARTER: "/dashboard",
   GROWTH: "/dashboard",
   AGENCY: "/dashboard",
@@ -10,38 +18,18 @@ export const PLAN_HOME: Record<PlanType, string> = {
 };
 
 /**
- * Dashboard path prefixes each plan may reach. `null` means unrestricted.
- * Only AI_VISIBILITY is confined: it is a standalone product, so the
- * reputation surfaces (customers, campaigns, feedback, …) are not part of it.
+ * Maps a `?plan=` query value (e.g. "starter") to a PlanType.
+ *
+ * `ai_visibility` normalizes to STARTER rather than resolving to the retired
+ * tier or falling through to null: live external links still carry it, and
+ * STARTER is what replaced it (it now includes ai_visibility + answer_tracking).
  */
-const PLAN_ALLOWED_PREFIXES: Record<PlanType, string[] | null> = {
-  // /team is included so AI_VISIBILITY tenants can invite teammates (the
-  // onboarding checklist links there); team management is plan-agnostic.
-  // /help is included because help is never plan-gated: the one tier that is
-  // confined to a subset of the app is the tier most likely to need the manual.
-  AI_VISIBILITY: ["/visibility", "/settings", "/billing", "/team", "/help"],
-  STARTER: null,
-  GROWTH: null,
-  AGENCY: null,
-  ENTERPRISE: null,
-};
-
-export function canAccessPath(
-  plan: PlanType | null | undefined,
-  pathname: string,
-): boolean {
-  if (!plan) return false;
-  const allowed = PLAN_ALLOWED_PREFIXES[plan];
-  if (allowed === null) return true;
-  return allowed.some((p) => pathname === p || pathname.startsWith(p + "/"));
-}
-
-/** Maps a `?plan=` query value (e.g. "ai_visibility") to a PlanType. */
 export function planFromParam(
   planParam: string | null | undefined,
 ): PlanType | null {
   if (!planParam) return null;
   const normalized = planParam.trim().toUpperCase();
+  if (normalized === "AI_VISIBILITY") return "STARTER";
   return Object.prototype.hasOwnProperty.call(PLAN_HOME, normalized)
     ? (normalized as PlanType)
     : null;

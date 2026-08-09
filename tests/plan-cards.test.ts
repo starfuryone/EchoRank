@@ -10,7 +10,7 @@ import {
 } from "@/components/billing/plan-actions";
 import type { PlanType } from "@/generated/prisma";
 
-const CARDS: PlanType[] = ["AI_VISIBILITY", "STARTER", "GROWTH", "AGENCY"];
+const CARDS: PlanType[] = ["STARTER", "GROWTH", "AGENCY"];
 const ALL: PlanType[] = [...CARDS, "ENTERPRISE"];
 
 describe("current-plan badge", () => {
@@ -60,9 +60,6 @@ describe("upgrade buttons", () => {
 describe("each rendered button hits checkout with the right lookup key", () => {
   it("builds the monthly key per tier", () => {
     // Tenant on ENTERPRISE: every self-serve card shows a button.
-    expect(planCheckoutLookupKey("AI_VISIBILITY", "ENTERPRISE", "month")).toBe(
-      "echorank_ai_visibility_usd_month",
-    );
     expect(planCheckoutLookupKey("STARTER", "ENTERPRISE", "month")).toBe(
       "echorank_starter_usd_month",
     );
@@ -85,8 +82,6 @@ describe("each rendered button hits checkout with the right lookup key", () => {
 
   it("only ever builds keys that exist in Stripe", () => {
     const EXISTING = new Set([
-      "echorank_ai_visibility_usd_month",
-      "echorank_ai_visibility_usd_year",
       "echorank_starter_usd_month",
       "echorank_starter_usd_year",
       "echorank_growth_usd_month",

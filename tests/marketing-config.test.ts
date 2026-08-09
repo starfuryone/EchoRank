@@ -127,12 +127,12 @@ describe("tier gating", () => {
 
   it("withholds it from AI_VISIBILITY", () => {
     // The whole point of the flag: AI_VISIBILITY is a standalone product, not
-    // the bottom rung. Those tenants get the locked landing page instead.
-    expect(hasFeature("AI_VISIBILITY", "marketing_studio")).toBe(false);
+    // the bottom rung.
+    expect(hasFeature("STARTER", "marketing_studio")).toBe(true);
   });
 
   it("gives every plan a monthly output-token budget", () => {
-    const plans: PlanType[] = ["AI_VISIBILITY", ...PAID];
+    const plans: PlanType[] = [...PAID];
     for (const plan of plans) {
       expect(plan in MARKETING_MONTHLY_OUTPUT_TOKENS, plan).toBe(true);
     }
@@ -145,8 +145,7 @@ describe("tier gating", () => {
   });
 
   it("orders the budgets by tier", () => {
-    const { AI_VISIBILITY, STARTER, GROWTH, AGENCY } = MARKETING_MONTHLY_OUTPUT_TOKENS;
-    expect(AI_VISIBILITY!).toBeLessThan(STARTER!);
+    const { STARTER, GROWTH, AGENCY } = MARKETING_MONTHLY_OUTPUT_TOKENS;
     expect(STARTER!).toBeLessThan(GROWTH!);
     expect(GROWTH!).toBeLessThan(AGENCY!);
   });

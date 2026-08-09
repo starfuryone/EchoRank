@@ -3,7 +3,7 @@
 
 import type { ReactNode } from 'react';
 import { hasFeature, getMinimumPlan, type Feature } from '@/lib/feature-flags';
-import { PLAN_CONFIGS } from '@/lib/plan-config';
+import { planConfig } from '@/lib/plan-config';
 import type { PlanType } from '@/generated/prisma';
 
 interface FeatureGateProps {
@@ -19,7 +19,7 @@ export function FeatureGate({ plan, feature, children, fallback }: FeatureGatePr
   if (fallback !== undefined) return <>{fallback}</>;
 
   const needed = getMinimumPlan(feature);
-  const config = PLAN_CONFIGS[needed];
+  const config = planConfig(needed);
   return (
     <div
       style={{

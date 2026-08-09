@@ -3,7 +3,7 @@
 // One search = up to two DataForSEO Content Analysis live calls.
 //
 // GATE ORDER, cheapest first, every one of them before a cent is spent:
-//   1. plan gate      — the tool is absent from AI_VISIBILITY entirely
+//   1. plan gate      — every sellable tier carries a nonzero allowance
 //   2. 24 h cache     — free, and never touches the monthly allowance
 //   3. monthly count  — Redis, per plan (10 / 50 / 200)
 //   4. monthly USD    — inside seoMeteredCall

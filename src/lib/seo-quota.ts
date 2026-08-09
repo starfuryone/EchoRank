@@ -35,7 +35,7 @@
 
 import type { PlanType } from "@/generated/prisma";
 import { prisma } from "@/lib/prisma";
-import { PLAN_CONFIGS } from "@/lib/plan-config";
+import { planConfig } from "@/lib/plan-config";
 import type { CreditFeature } from "@/lib/dataforseo/client";
 
 /**
@@ -82,12 +82,12 @@ export function monthReset(now = new Date()): Date {
 
 /** null = unlimited. Read from plan-config; never duplicated. */
 export function seoSearchLimit(plan: PlanType): number | null {
-  return PLAN_CONFIGS[plan].seoSearchesPerMonth;
+  return planConfig(plan).seoSearchesPerMonth;
 }
 
 /** null = unlimited. Read from plan-config; never duplicated. */
 export function trackedKeywordLimit(plan: PlanType): number | null {
-  return PLAN_CONFIGS[plan].trackedKeywords;
+  return planConfig(plan).trackedKeywords;
 }
 
 // ─── Usage ──────────────────────────────────────────────────────────────────

@@ -15,13 +15,13 @@ import { getRedisConnection } from "@/infrastructure/redis/connection";
 /**
  * Checks per calendar month, by plan.
  *
- * STARTER / GROWTH / AGENCY are the specified product limits. AI_VISIBILITY
- * (the $29 AI-only tier, priced below STARTER) and ENTERPRISE are not part of
- * the classic-SEO pricing sheet yet — they get a conservative floor and a
- * generous ceiling respectively. Retune here; nothing else reads these.
+ * STARTER / GROWTH / AGENCY are the specified product limits. ENTERPRISE is
+ * not part of the classic-SEO pricing sheet yet and gets a generous ceiling.
+ * Retune here; nothing else reads these.
  */
 export const SERP_CHECKS_PER_MONTH: Record<PlanType, number> = {
-  AI_VISIBILITY: 10,
+  /** @deprecated Retired tier; pinned to STARTER's value for legacy rows. */
+  AI_VISIBILITY: 25,
   STARTER: 25,
   GROWTH: 200,
   AGENCY: 1000,

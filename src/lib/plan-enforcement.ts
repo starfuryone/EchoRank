@@ -10,12 +10,13 @@ export { QuotaExceededError };
 
 // ─── Plan hierarchy ─────────────────────────────────────────────────────────
 
-// Ranked by price. AI_VISIBILITY ($29) sits below STARTER, so requirePlan()
-// denies it the reputation tiers — but it is a side tier, not a rung: it holds
-// ai_visibility/answer_tracking that STARTER lacks. Gate AI-visibility
-// surfaces with requireFeature(), never with requirePlan().
+// Ranked by price, low to high. The retired AI_VISIBILITY tier shares
+// STARTER's rank rather than sitting below it: STARTER absorbed it wholesale,
+// so a legacy row should carry exactly STARTER's authority. AI-visibility
+// surfaces are gated with requireFeature(), never with requirePlan().
 const PLAN_RANK: Record<PlanType, number> = {
-  AI_VISIBILITY: 0,
+  /** @deprecated Retired tier; ranks as STARTER for legacy rows. */
+  AI_VISIBILITY: 1,
   STARTER: 1,
   GROWTH: 2,
   AGENCY: 3,

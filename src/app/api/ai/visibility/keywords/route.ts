@@ -2,8 +2,7 @@
 // Dashboard keyword suggester ("Keywords Explorer" in the SEO Tools hub) —
 // full sidecar response, site depth, optional AI enhancement. Gated on an
 // ACTIVE paid subscription (requirePaidPlan) like the rest of the hub: every
-// paid tier — including STARTER, which lacks the ai_visibility feature —
-// can use it; trial/canceled tenants get 403. The anonymous landing widget
+// paid tier can use it; trial/canceled tenants get 403. The anonymous landing widget
 // (/api/av/keywords) is a separate, untouched public surface.
 //
 // v1 does not persist results: there is no keyword-shaped model in the schema

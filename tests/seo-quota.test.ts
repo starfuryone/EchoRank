@@ -32,6 +32,7 @@ const {
   trackedKeywordLimit,
 } = await import("@/lib/seo-quota");
 const { PLAN_CONFIGS } = await import("@/lib/plan-config");
+type SellablePlanType = Exclude<PlanType, "AI_VISIBILITY">;
 
 const NOW = new Date("2026-07-30T15:00:00Z");
 
@@ -43,14 +44,13 @@ beforeEach(() => {
 // ─── Limits come from plan-config, nowhere else ─────────────────────────────
 describe("limits are single-sourced", () => {
   it("reads every tier straight from plan-config", () => {
-    for (const plan of Object.keys(PLAN_CONFIGS) as PlanType[]) {
+    for (const plan of Object.keys(PLAN_CONFIGS) as SellablePlanType[]) {
       expect(seoSearchLimit(plan)).toBe(PLAN_CONFIGS[plan].seoSearchesPerMonth);
       expect(trackedKeywordLimit(plan)).toBe(PLAN_CONFIGS[plan].trackedKeywords);
     }
   });
 
   it("carries the agreed per-tier numbers", () => {
-    expect(seoSearchLimit("AI_VISIBILITY")).toBe(0);
     expect(seoSearchLimit("STARTER")).toBe(250);
     expect(seoSearchLimit("GROWTH")).toBe(1000);
     expect(seoSearchLimit("AGENCY")).toBe(5000);
@@ -59,8 +59,8 @@ describe("limits are single-sourced", () => {
 
   it("states each tier's pricing bullet with the same number it enforces", () => {
     // The marketing bullet and the guard must never disagree.
-    const bullet = (plan: PlanType) =>
-      PLAN_CONFIGS[plan].features.find((f) => /SEO searches\/mo/.test(f));
+    const bullet = (plan: SellablePlanType) =>
+      PLAN_CONFIGS[plan].features.find((f: string) => /SEO searches\/mo/.test(f));
     expect(bullet("STARTER")).toContain("250");
     expect(bullet("GROWTH")).toContain("1,000");
     expect(bullet("AGENCY")).toContain("5,000");
@@ -131,12 +131,14 @@ describe("requireSeoQuota", () => {
     expect(seoApiCall.count).not.toHaveBeenCalled();
   });
 
-  it("denies AI_VISIBILITY at zero without querying", async () => {
-    // A count can never make a 0 limit pass, so the database is not asked.
-    await expect(
-      requireSeoQuota("t1", "AI_VISIBILITY", "backlinks", NOW),
-    ).rejects.toBeInstanceOf(SeoQuotaExceededError);
-    expect(seoApiCall.count).not.toHaveBeenCalled();
+  it("gives every sellable tier a nonzero pool", () => {
+    // The zero-limit short circuit below is retained as a guard, but no tier
+    // exercises it now: selling ai_visibility on a tier with no pool would be
+    // a broken sale, so this asserts that can't happen silently.
+    for (const plan of ["STARTER", "GROWTH", "AGENCY"] as const) {
+      expect(seoSearchLimit(plan), plan).toBeGreaterThan(0);
+    }
+    expect(seoSearchLimit("ENTERPRISE")).toBeNull();
   });
 
   it("says 'not included' rather than 'used up' at a zero limit", async () => {
@@ -217,10 +219,10 @@ describe("seoQuotaUsage", () => {
     expect(u.exceeded).toBe(false);
   });
 
-  it("marks a zero tier as exceeded from the start", async () => {
+  it("reports a legacy AI_VISIBILITY row against STARTER's pool", async () => {
     const u = await seoQuotaUsage("t1", "AI_VISIBILITY", NOW);
-    expect(u.exceeded).toBe(true);
-    expect(u.limit).toBe(0);
+    expect(u.limit).toBe(seoSearchLimit("STARTER"));
+    expect(u.exceeded).toBe(false);
   });
 });
 

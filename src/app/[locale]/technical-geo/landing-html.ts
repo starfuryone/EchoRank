@@ -842,7 +842,7 @@ export const TECHNICAL_GEO_HTML = `<!DOCTYPE html>
         <div class="pricing-band">
           <div>
             <div class="eyebrow">Simple pricing</div>
-            <h2 style="margin-top:20px">Start at $29/mo. Scale when you&rsquo;re ready.</h2>
+            <h2 style="margin-top:20px">Start at $79/mo. Scale when you&rsquo;re ready.</h2>
             <p class="lead">
               Every paid plan starts with a 7-day free trial. Cancel any time during the trial
               at no charge. Save up to 20% on annual billing.
@@ -855,16 +855,10 @@ export const TECHNICAL_GEO_HTML = `<!DOCTYPE html>
 
           <div class="price-cards">
             <div class="price-card hot">
-              <span class="tag">AI Visibility</span>
-              <b>$29<small>/mo</small></b>
-              <small>$24/mo billed annually &middot; audits, AI Lens, prompts</small>
-              <a class="btn btn-primary" href="/en/pricing">Start free trial</a>
-            </div>
-            <div class="price-card">
               <span class="tag">Starter</span>
               <b>$79<small>/mo</small></b>
-              <small>$63/mo billed annually &middot; full reputation suite</small>
-              <a class="btn btn-secondary" href="/en/pricing">Start free trial</a>
+              <small>$63/mo billed annually &middot; AI visibility + full reputation suite</small>
+              <a class="btn btn-primary" href="/en/pricing">Start free trial</a>
             </div>
             <div class="price-card">
               <span class="tag">Growth</span>

@@ -73,7 +73,7 @@ export interface RankUsage {
   checksUsed: number;
   checksLimit: number;
   plan: string;
-  /** False for STARTER / AI_VISIBILITY — the locked upsell card. */
+  /** False for STARTER — the locked upsell card. */
   canTrack: boolean;
   allowedFrequencies: readonly RankFrequency[];
 }

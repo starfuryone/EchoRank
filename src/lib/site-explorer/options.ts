@@ -24,16 +24,16 @@ export const SITE_EXPLORER_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
 /**
  * Analyses per calendar month, by plan.
  *
- * STARTER / GROWTH / AGENCY are the specified product limits. AI_VISIBILITY
- * (the $29 AI-only tier, priced below STARTER) and ENTERPRISE are not on the
- * classic-SEO pricing sheet — they get a conservative floor and a generous
- * ceiling respectively. Retune here; nothing else reads these.
+ * STARTER / GROWTH / AGENCY are the specified product limits. ENTERPRISE is
+ * not on the classic-SEO pricing sheet and gets a generous ceiling. Retune
+ * here; nothing else reads these.
  *
  * These are COUNT limits. One analysis is four billed calls, so the USD cap in
  * dataforseo/metering.ts still applies underneath and can bite first.
  */
 export const SITE_EXPLORER_ANALYSES_PER_MONTH: Record<PlanType, number> = {
-  AI_VISIBILITY: 2,
+  /** @deprecated Retired tier; pinned to STARTER's value for legacy rows. */
+  AI_VISIBILITY: 5,
   STARTER: 5,
   GROWTH: 50,
   AGENCY: 200,

@@ -1,9 +1,8 @@
 // Stripe lookup-key construction, kept separate from the route so it can be
 // unit-tested without a Stripe client or a request.
 //
-// The eight active keys already exist in both live and sandbox and are NOT
+// The six active keys already exist in both live and sandbox and are NOT
 // created or modified by this app:
-//   echorank_ai_visibility_usd_month | _year
 //   echorank_starter_usd_month       | _year
 //   echorank_growth_usd_month        | _year
 //   echorank_agency_usd_month        | _year
@@ -19,7 +18,6 @@ export type BillingInterval = "month" | "year";
 export type CheckoutTier = Exclude<PlanTierKey, "enterprise">;
 
 export const CHECKOUT_TIERS: readonly CheckoutTier[] = [
-  "ai_visibility",
   "starter",
   "growth",
   "agency",

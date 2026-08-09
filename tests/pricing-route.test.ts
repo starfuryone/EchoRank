@@ -35,7 +35,8 @@ describe("/pricing renders in every locale", () => {
       const html = await page(locale);
       expect(html.length).toBeGreaterThan(500);
       // The grid actually rendered, not just the shell.
-      expect(html).toContain("$29");
+      // STARTER is the entry tier now that the $29 AI Visibility card is gone.
+      expect(html).toContain("$79");
     }
   });
 

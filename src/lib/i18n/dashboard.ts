@@ -520,16 +520,9 @@ const billingEn = {
     `Are you sure you want to ${isUpgrade ? "upgrade" : "downgrade"} to the ${plan} plan ($${price}/mo)?`,
   changeFailed: "Failed to change plan. Please try again.",
   planFeatures: {
-    AI_VISIBILITY: [
-      "1 location",
-      "AI answer tracking across 4 engines",
-      "Prompt trends over time",
-      "Lost-recommendation alerts",
-      "AI Trust Score",
-      "Email support",
-    ],
     STARTER: [
       "1 location",
+      "AI visibility across 4 answer engines",
       "300 feedback requests/mo",
       "Email channel only",
       "Basic analytics",
@@ -537,6 +530,7 @@ const billingEn = {
     ],
     GROWTH: [
       "3 locations",
+      "AI visibility across 4 answer engines",
       "2,000 feedback requests/mo",
       "Email + SMS channels",
       "Advanced analytics",
@@ -546,6 +540,7 @@ const billingEn = {
     ],
     AGENCY: [
       "20 locations",
+      "AI visibility across 4 answer engines",
       "10,000 feedback requests/mo",
       "Email + SMS channels",
       "Full analytics suite",
@@ -600,16 +595,9 @@ export const BILLING_COPY: Record<DashLocale, BillingCopy> = {
         : `Voulez-vous vraiment rétrograder vers le forfait ${plan} (${price} $/mois)?`,
     changeFailed: "Échec du changement de forfait. Veuillez réessayer.",
     planFeatures: {
-      AI_VISIBILITY: [
-        "1 emplacement",
-        "Suivi des réponses IA sur 4 moteurs",
-        "Tendances des requêtes au fil du temps",
-        "Alertes de recommandations perdues",
-        "AI Trust Score",
-        "Soutien par courriel",
-      ],
       STARTER: [
         "1 emplacement",
+        "Visibilité IA sur 4 moteurs de réponse",
         "300 demandes de rétroaction/mois",
         "Canal courriel seulement",
         "Analytique de base",
@@ -617,6 +605,7 @@ export const BILLING_COPY: Record<DashLocale, BillingCopy> = {
       ],
       GROWTH: [
         "3 emplacements",
+        "Visibilité IA sur 4 moteurs de réponse",
         "2 000 demandes de rétroaction/mois",
         "Canaux courriel + SMS",
         "Analytique avancée",
@@ -626,6 +615,7 @@ export const BILLING_COPY: Record<DashLocale, BillingCopy> = {
       ],
       AGENCY: [
         "20 emplacements",
+        "Visibilité IA sur 4 moteurs de réponse",
         "10 000 demandes de rétroaction/mois",
         "Canaux courriel + SMS",
         "Suite analytique complète",
@@ -677,16 +667,9 @@ export const BILLING_COPY: Record<DashLocale, BillingCopy> = {
     changeFailed:
       "Planwechsel fehlgeschlagen. Bitte versuchen Sie es erneut.",
     planFeatures: {
-      AI_VISIBILITY: [
-        "1 Standort",
-        "KI-Antwort-Tracking über 4 Engines",
-        "Prompt-Trends im Zeitverlauf",
-        "Warnungen bei verlorenen Empfehlungen",
-        "AI Trust Score",
-        "E-Mail-Support",
-      ],
       STARTER: [
         "1 Standort",
+        "KI-Sichtbarkeit über 4 Antwort-Engines",
         "300 Feedback-Anfragen/Monat",
         "Nur E-Mail-Kanal",
         "Basis-Analysen",
@@ -694,6 +677,7 @@ export const BILLING_COPY: Record<DashLocale, BillingCopy> = {
       ],
       GROWTH: [
         "3 Standorte",
+        "KI-Sichtbarkeit über 4 Antwort-Engines",
         "2'000 Feedback-Anfragen/Monat",
         "E-Mail- + SMS-Kanäle",
         "Erweiterte Analysen",
@@ -703,6 +687,7 @@ export const BILLING_COPY: Record<DashLocale, BillingCopy> = {
       ],
       AGENCY: [
         "20 Standorte",
+        "KI-Sichtbarkeit über 4 Antwort-Engines",
         "10'000 Feedback-Anfragen/Monat",
         "E-Mail- + SMS-Kanäle",
         "Komplette Analyse-Suite",
@@ -6278,7 +6263,7 @@ const contentExplorerEn = {
 
   planLockedTitle: "Content Explorer is on Starter and above",
   planLockedBody:
-    "Web mention research is included from the Starter plan up. Your current plan covers AI visibility auditing only.",
+    "Web mention research is included from the Starter plan up. Your current plan does not include it.",
   upgradeCta: "Compare plans",
 
   // Summary band
@@ -6375,7 +6360,7 @@ export const CONTENT_EXPLORER_COPY: Record<DashLocale, ContentExplorerCopy> = {
 
     planLockedTitle: "Content Explorer est inclus à partir de Starter",
     planLockedBody:
-      "La recherche de mentions web est incluse à partir du forfait Starter. Votre forfait actuel ne couvre que l'audit de visibilité IA.",
+      "La recherche de mentions web est incluse à partir du forfait Starter. Votre forfait actuel ne l'inclut pas.",
     upgradeCta: "Comparer les forfaits",
 
     totalMentions: (n: string) => `${n} pages mentionnent cette expression`,
@@ -6465,7 +6450,7 @@ export const CONTENT_EXPLORER_COPY: Record<DashLocale, ContentExplorerCopy> = {
 
     planLockedTitle: "Content Explorer gibt es ab Starter",
     planLockedBody:
-      "Die Recherche von Web-Erwähnungen ist ab dem Starter-Abo enthalten. Ihr aktuelles Abo deckt nur das KI-Sichtbarkeits-Audit ab.",
+      "Die Recherche von Web-Erwähnungen ist ab dem Starter-Abo enthalten. Ihr aktuelles Abo umfasst sie nicht.",
     upgradeCta: "Abos vergleichen",
 
     totalMentions: (n: string) => `${n} Seiten erwähnen diesen Begriff`,
@@ -6631,7 +6616,7 @@ const seoQuotaEn = {
   resets: (date: string) => `Your allowance resets on ${date}. Upgrade for more.`,
   notIncludedTitle: "SEO searches are not included in this plan",
   notIncludedBody:
-    "This tier covers AI visibility tracking. Upgrade to run SEO searches.",
+    "SEO searches are not part of this tier. Upgrade to run them.",
   upgrade: "Upgrade",
 };
 export type SeoQuotaCopy = typeof seoQuotaEn;
@@ -6649,7 +6634,7 @@ export const SEO_QUOTA_COPY: Record<DashLocale, SeoQuotaCopy> = {
       `Votre allocation se renouvelle le ${date}. Passez à un forfait supérieur pour en obtenir davantage.`,
     notIncludedTitle: "Les recherches SEO ne sont pas incluses dans ce forfait",
     notIncludedBody:
-      "Ce palier couvre le suivi de visibilité IA. Passez à un forfait supérieur pour lancer des recherches SEO.",
+      "Les recherches SEO ne font pas partie de ce palier. Passez à un forfait supérieur pour en lancer.",
     upgrade: "Améliorer",
   },
   "de-CH": {
@@ -6663,7 +6648,7 @@ export const SEO_QUOTA_COPY: Record<DashLocale, SeoQuotaCopy> = {
       `Ihr Guthaben erneuert sich am ${date}. Für mehr bitte das Abo erweitern.`,
     notIncludedTitle: "SEO-Suchen sind in diesem Abo nicht enthalten",
     notIncludedBody:
-      "Diese Stufe deckt die KI-Sichtbarkeit ab. Erweitern Sie das Abo, um SEO-Suchen auszuführen.",
+      "SEO-Suchen gehören nicht zu dieser Stufe. Erweitern Sie das Abo, um sie auszuführen.",
     upgrade: "Erweitern",
   },
 };
@@ -7555,7 +7540,7 @@ const rankTrackerEn = {
   freqWeekly: "Weekly",
   weeklyAnchor: (weekday: string) => `Weekly, every ${weekday}`,
 
-  // ── Locked (STARTER / AI_VISIBILITY) ──
+  // ── Locked (STARTER) ──
   lockedTitle: "Rank Tracker is not in your plan",
   lockedBody:
     "Rank tracking is available on Growth and Agency plans. Upgrade to track keyword positions on a schedule and see how they move.",
@@ -7978,7 +7963,7 @@ const backlinksToolEn = {
   cachedIntro: "Showing your saved analysis — no new data was pulled.",
   partialNote: "Some sections did not load. Everything else below is complete.",
 
-  // ── Locked (STARTER / AI_VISIBILITY) ──
+  // ── Locked (STARTER) ──
   lockedTitle: "Backlinks is not in your plan",
   lockedBody:
     "Backlink analysis is available on Growth and Agency plans. Upgrade to see who links to any site and how its link profile is changing.",
@@ -10329,7 +10314,7 @@ const marketingEn = {
 
   lockedTitle: "Marketing Studio is on Starter and above",
   lockedBody:
-    "Your current plan covers AI visibility monitoring. Marketing Studio is included from the Starter plan up.",
+    "Marketing Studio is included from the Starter plan up. Your current plan does not include it.",
   upgradeCta: "Compare plans",
 
   // Brand voice
@@ -10497,7 +10482,7 @@ export const MARKETING_COPY: Record<DashLocale, MarketingCopy> = {
 
     lockedTitle: "Le Studio marketing est inclus à partir de Starter",
     lockedBody:
-      "Votre forfait actuel couvre la surveillance de la visibilité IA. Le Studio marketing est inclus à partir du forfait Starter.",
+      "Le Studio marketing est inclus à partir du forfait Starter. Votre forfait actuel ne l'inclut pas.",
     upgradeCta: "Comparer les forfaits",
 
     voiceTitle: "Voix de marque",
@@ -10660,7 +10645,7 @@ export const MARKETING_COPY: Record<DashLocale, MarketingCopy> = {
 
     lockedTitle: "Marketing Studio gibt es ab Starter",
     lockedBody:
-      "Ihr aktuelles Abo umfasst die Überwachung der KI-Sichtbarkeit. Marketing Studio ist ab dem Starter-Abo enthalten.",
+      "Marketing Studio ist ab dem Starter-Abo enthalten. Ihr aktuelles Abo umfasst es nicht.",
     upgradeCta: "Abos vergleichen",
 
     voiceTitle: "Markenstimme",
@@ -11662,7 +11647,7 @@ const siteCrawlerEn = {
 
   lockedTitle: "Site Crawler is not part of your plan",
   lockedBody:
-    "Your workspace is on the AI Visibility plan, which covers answer tracking rather than classic SEO. Upgrade to crawl your site and get the full on-page issue list.",
+    "Your current plan does not include classic-SEO crawling. Upgrade to crawl your site and get the full on-page issue list.",
   lockedCta: "Compare plans",
 
   statusQueued: "Queued",
@@ -11809,7 +11794,7 @@ export const SITE_CRAWLER_COPY: Record<DashLocale, SiteCrawlerCopy> = {
 
     lockedTitle: "L'explorateur de site n'est pas inclus dans votre forfait",
     lockedBody:
-      "Votre espace de travail est sur le forfait Visibilité IA, qui couvre le suivi des réponses plutôt que le SEO classique. Passez à un forfait supérieur pour explorer votre site et obtenir la liste complète des problèmes on-page.",
+      "Votre forfait actuel n'inclut pas l'exploration SEO classique. Passez à un forfait supérieur pour explorer votre site et obtenir la liste complète des problèmes on-page.",
     lockedCta: "Comparer les forfaits",
 
     statusQueued: "En attente",
@@ -11949,7 +11934,7 @@ export const SITE_CRAWLER_COPY: Record<DashLocale, SiteCrawlerCopy> = {
 
     lockedTitle: "Site Crawler ist nicht Teil Ihres Abos",
     lockedBody:
-      "Ihr Arbeitsbereich nutzt das KI-Sichtbarkeits-Abo, das Antwortverfolgung statt klassisches SEO abdeckt. Wechseln Sie das Abo, um Ihre Website zu crawlen und die vollständige Liste der On-Page-Probleme zu erhalten.",
+      "Ihr aktuelles Abo umfasst kein klassisches SEO-Crawling. Wechseln Sie das Abo, um Ihre Website zu crawlen und die vollständige Liste der On-Page-Probleme zu erhalten.",
     lockedCta: "Abos vergleichen",
 
     statusQueued: "In Warteschlange",

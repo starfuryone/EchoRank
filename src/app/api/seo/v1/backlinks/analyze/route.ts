@@ -7,7 +7,7 @@
  * finished analysis rather than a job id.
  *
  * Guard chain: requirePaidPlan (session + tenant + ACTIVE billing) → zod →
- * target normalization → plan gate (STARTER/AI_VISIBILITY are locked) →
+ * target normalization → plan gate (STARTER is locked) →
  * request rate limit → 24 h cache → monthly per-plan quota (Redis) → monthly
  * USD cap (inside seoMeteredCall) → DataForSEO → meter.
  *

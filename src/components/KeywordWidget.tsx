@@ -56,7 +56,15 @@ const DIFF_CLASS: Record<string, string> = {
   high: 'av-kw-diff-high',
 };
 
-export function KeywordWidget({ c }: { c: KeywordWidgetContent }) {
+export function KeywordWidget({
+  c,
+  ctaHref,
+}: {
+  c: KeywordWidgetContent;
+  /** Where the upsell CTA points. Required and locale-dependent, so the caller
+   *  supplies it rather than this component hardcoding a plan-scoped path. */
+  ctaHref: string;
+}) {
   const [url, setUrl] = useState('');
   const [status, setStatus] = useState<Status>('idle');
   const [result, setResult] = useState<KeywordResult | null>(null);
@@ -197,7 +205,7 @@ export function KeywordWidget({ c }: { c: KeywordWidgetContent }) {
           <p className="av-kw-upsell">{c.upsell}</p>
           <a
             className="av-btn av-btn-gold av-btn-block"
-            href="/register?plan=ai_visibility"
+            href={ctaHref}
           >
             {c.cta}
           </a>

@@ -229,10 +229,14 @@ describe("plan caps against measured provider cost", () => {
     }
   });
 
-  it("locks the tool out of AI_VISIBILITY entirely", () => {
-    expect(planCanSearchContent("AI_VISIBILITY")).toBe(false);
-    expect(contentSearchLimit("AI_VISIBILITY")).toBe(0);
-    expect(worstCaseMonthlyUsd("AI_VISIBILITY")).toBe(0);
+  it("gives every sellable tier a real allowance", () => {
+    // The retired AI Visibility tier was the only one locked out. It folds to
+    // STARTER now, so no tier sits at zero and none is locked.
+    for (const plan of ["STARTER", "GROWTH", "AGENCY", "ENTERPRISE"] as const) {
+      expect(planCanSearchContent(plan), plan).toBe(true);
+      expect(contentSearchLimit(plan), plan).toBeGreaterThan(0);
+      expect(worstCaseMonthlyUsd(plan), plan).toBeGreaterThan(0);
+    }
   });
 
   it("sets the high-authority badge thresholds where the data supports them", () => {

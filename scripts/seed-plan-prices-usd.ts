@@ -39,13 +39,12 @@ const BRAND = "Echorank360";
 // ENTERPRISE is deliberately absent: sales-led, no price rows, renders
 // "Contact us" wherever tiers are compared.
 const TIERS: TierSpec[] = [
-  { planTier: "ai_visibility", label: "AI Visibility", monthlyCents: 2_900, annualCents: 28_800 },
   { planTier: "starter", label: "Starter", monthlyCents: 7_900, annualCents: 75_600 },
   { planTier: "growth", label: "Growth", monthlyCents: 19_900, annualCents: 190_800 },
   { planTier: "agency", label: "Agency", monthlyCents: 49_900, annualCents: 478_800 },
 ];
 
-const EXPECTED_ROWS = TIERS.length * 2; // 4 tiers x 2 intervals = 8
+const EXPECTED_ROWS = TIERS.length * 2; // 3 tiers x 2 intervals = 6
 
 interface ResultRow {
   tier: string;

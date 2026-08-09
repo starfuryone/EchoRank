@@ -60,9 +60,10 @@ export function normalizeDomain(input: string | null | undefined): string | null
 
 /**
  * The five onboarding steps, tailored by plan capabilities and stated intent.
- * Substitutions: STARTER cannot reach the PDF report (feature-gated), so it
- * gets the review-link step; the AI_VISIBILITY plan cannot reach /monitoring
- * or /imports (path-confined), so it gets a second-audit step instead.
+ * Substitutions are feature-driven: a tier without `ai_visibility` gets the
+ * review-link step instead of the PDF one, and one without `answer_tracking`
+ * gets the roadmap step instead of prompts. Every current tier carries both,
+ * so the substitutions are dormant — they stay because packaging changes.
  */
 export function buildOnboardingSteps(input: {
   plan: PlanType;
@@ -103,15 +104,13 @@ export function buildOnboardingSteps(input: {
     });
   }
 
-  if (plan === "AI_VISIBILITY") {
-    steps.push({ key: "second_audit", href: "/visibility", done: counts.audits >= 2 });
-  } else {
-    steps.push({
-      key: "connect_source",
-      href: "/monitoring",
-      done: counts.monitoringSources > 0 || counts.importJobs > 0,
-    });
-  }
+  // Every tier reaches /monitoring and /imports now that no tier is confined
+  // to a route subset, so the second-audit substitution is gone.
+  steps.push({
+    key: "connect_source",
+    href: "/monitoring",
+    done: counts.monitoringSources > 0 || counts.importJobs > 0,
+  });
 
   if (intent === "agency") {
     steps.push({

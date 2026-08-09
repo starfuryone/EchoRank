@@ -15,8 +15,6 @@ import {
   type ScaffoldId,
 } from "@/lib/seo-tools";
 import { SEO_TOOLS_COPY, type DashLocale } from "@/lib/i18n/dashboard";
-import { canAccessPath } from "@/lib/plan-routing";
-import { getCurrentTenant } from "@/lib/tenant";
 
 const TOOLS = SEO_TOOL_GROUPS.flatMap((g) => g.tools);
 
@@ -33,14 +31,9 @@ export async function FeatureScaffold({
   const scaffold = copy.scaffolds[id];
   const Icon = tool?.icon;
 
-  // Related-surface link, only when this tenant's plan can actually reach it
-  // (e.g. /analytics or /templates are outside the AI_VISIBILITY allowlist).
-  const relatedHref = SCAFFOLD_RELATED[id];
-  const plan = (await getCurrentTenant())?.tenant.planType;
-  const related =
-    relatedHref && (!plan || canAccessPath(plan, navPath(relatedHref)))
-      ? relatedHref
-      : undefined;
+  // Related-surface link. Unconditional: no tier is confined to a route
+  // subset any more, so every tenant can reach every scaffold's related page.
+  const related = SCAFFOLD_RELATED[id];
 
   return (
     <div className="space-y-6">

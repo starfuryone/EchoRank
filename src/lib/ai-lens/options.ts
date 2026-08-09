@@ -14,11 +14,9 @@ import type { PlanType } from "@/generated/prisma";
  * These caps are about render load on a single box, not upstream billing —
  * there is no per-call vendor cost here.
  *
- * AI_VISIBILITY sits at the STARTER allowance: it is a $29 plan whose whole
- * pitch is AI answer-engine visibility, so the tool belongs on it, but it does
- * not buy Agency's render budget.
  */
 export const AI_LENS_ANALYSES_PER_MONTH: Record<PlanType, number> = {
+  /** @deprecated Retired tier; pinned to STARTER's value for legacy rows. */
   AI_VISIBILITY: 10,
   STARTER: 10,
   GROWTH: 50,

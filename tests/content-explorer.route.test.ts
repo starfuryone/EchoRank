@@ -212,12 +212,12 @@ describe("validation", () => {
 
 // ─── Plan gating ────────────────────────────────────────────────────────────
 describe("plan gating", () => {
-  it("403s AI_VISIBILITY with PLAN_LOCKED and spends nothing", async () => {
+  it("lets a legacy AI_VISIBILITY row search, folded onto STARTER", async () => {
+    // The tier is retired; a stale row must behave as STARTER, not be locked
+    // out of a tool STARTER can use.
     requirePaidPlan.mockResolvedValue(asTenant("t1", "AI_VISIBILITY"));
     const res = await SEARCH(post({ query: "acme" }));
-    expect(res.status).toBe(403);
-    expect((await res.json()).code).toBe("PLAN_LOCKED");
-    expect(seoMeteredCallResult).not.toHaveBeenCalled();
+    expect(res.status).toBe(200);
   });
 
   it("lets STARTER search", async () => {

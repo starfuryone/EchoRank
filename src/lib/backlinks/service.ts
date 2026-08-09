@@ -4,7 +4,7 @@
 // tests. Sibling of site-explorer/service.ts and deliberately the same shape.
 //
 // Order of operations matters and is deliberate:
-//   1. plan gate       — free; STARTER/AI_VISIBILITY never reach the API
+//   1. plan gate       — free; STARTER never reaches the API
 //   2. 24 h cache      — free, and never touches the monthly allowance
 //   3. monthly quota   — Redis reservation, rolled back if nothing was billed
 //   4. five live calls — sequential, each metered (USD cap inside seoMeteredCall)

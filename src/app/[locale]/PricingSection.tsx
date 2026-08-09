@@ -41,10 +41,8 @@ export interface HomePricingTier {
  */
 export function checkoutTierFor(
   planId: string,
-): "ai_visibility" | "starter" | "growth" | "agency" | null {
+): "starter" | "growth" | "agency" | null {
   switch (planId) {
-    case "AI_VISIBILITY":
-      return "ai_visibility";
     case "STARTER":
       return "starter";
     case "GROWTH":
@@ -63,7 +61,7 @@ function CheckoutButton({
   chrome,
   requireConsent,
 }: {
-  tier: "ai_visibility" | "starter" | "growth" | "agency";
+  tier: "starter" | "growth" | "agency";
   interval: "month" | "year";
   locale: string;
   chrome: HomePricingChrome;
@@ -235,8 +233,8 @@ export function PricingSection({
                 </>
               )}
               <ul>{p.features.map((f) => <li key={f}>{f}</li>)}</ul>
-              {/* Every paid tier reaches the tools hub — canAccessPath()
-                  admits all five — so the line is not tier-gated. */}
+              {/* Every paid tier reaches the tools hub, so the line is not
+                  tier-gated. */}
               {amount !== null && (
                 <a className={s.ptools} href={toolsHref}>
                   {priceChrome.toolsLine.replace("{n}", String(liveToolCount))} ·{" "}

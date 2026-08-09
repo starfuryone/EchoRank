@@ -124,7 +124,7 @@ const COPY: Record<Base, Copy> = {
       trustScore: "Trust Score",
       upsell:
         "This was 3 generic prompts, one engine pass. The full plan tracks 25 prompts of your choosing, weekly, with alerts when you drop out.",
-      ctaTemplate: "Track {brand} — $29/mo",
+      ctaTemplate: "Track {brand} with Echorank",
       again: "Run another audit",
       pdfIdle: "Download PDF report",
       pdfBusy: "Generating…",
@@ -208,7 +208,7 @@ const COPY: Record<Base, Copy> = {
       trustScore: "Trust Score",
       upsell:
         "Il s’agissait de 3 requêtes génériques, un seul passage moteur. Le forfait complet suit 25 requêtes de votre choix, chaque semaine, avec des alertes quand vous décrochez.",
-      ctaTemplate: "Suivre {brand} — $29/mo",
+      ctaTemplate: "Suivre {brand} avec Echorank",
       again: "Lancer un autre audit",
       pdfIdle: "Télécharger le rapport PDF",
       pdfBusy: "Génération…",

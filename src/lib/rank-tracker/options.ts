@@ -6,7 +6,7 @@
 // and site-explorer/options.ts.
 
 import type { PlanType } from "@/generated/prisma";
-import { PLAN_CONFIGS } from "@/lib/plan-config";
+import { PLAN_CONFIGS, sellablePlan, type SellablePlanType } from "@/lib/plan-config";
 
 export const RANK_FREQUENCIES = ["daily", "weekly"] as const;
 export type RankFrequency = (typeof RANK_FREQUENCIES)[number];
@@ -30,7 +30,6 @@ export {
  *
  * STARTER is 0 by product decision: the tool is a GROWTH-and-up feature, so
  * STARTER sees a locked card with an upgrade path rather than an empty form.
- * AI_VISIBILITY (the AI-only tier) is likewise 0.
  */
 /// DERIVED, NOT DECLARED. The numbers live in plan-config.ts alongside every
 /// other per-tier limit so there is exactly one place to change a plan. This
@@ -40,18 +39,19 @@ export {
 /// plan-config models "unlimited" as null; this map is `number` for its existing
 /// callers, so null collapses to Number.MAX_SAFE_INTEGER — no current tier is
 /// unlimited, and a comparison against it behaves the same either way.
-export const RANK_TRACKED_KEYWORDS: Record<PlanType, number> = Object.fromEntries(
-  (Object.keys(PLAN_CONFIGS) as PlanType[]).map((plan) => [
+export const RANK_TRACKED_KEYWORDS: Record<SellablePlanType, number> = Object.fromEntries(
+  (Object.keys(PLAN_CONFIGS) as SellablePlanType[]).map((plan) => [
     plan,
     PLAN_CONFIGS[plan].trackedKeywords ?? Number.MAX_SAFE_INTEGER,
   ]),
-) as Record<PlanType, number>;
+) as Record<SellablePlanType, number>;
 
 /**
  * Frequencies each plan may choose. GROWTH is weekly-only; daily is the
  * AGENCY-and-up differentiator (and 7x the spend).
  */
 export const RANK_ALLOWED_FREQUENCIES: Record<PlanType, readonly RankFrequency[]> = {
+  /** @deprecated Retired tier; pinned to STARTER's value for legacy rows. */
   AI_VISIBILITY: [],
   STARTER: [],
   GROWTH: ["weekly"],
@@ -71,6 +71,7 @@ export const RANK_ALLOWED_FREQUENCIES: Record<PlanType, readonly RankFrequency[]
  * At $0.006/check that is $2.40 and $54.00 of ceiling respectively.
  */
 export const RANK_CHECKS_PER_MONTH: Record<PlanType, number> = {
+  /** @deprecated Retired tier; pinned to STARTER's value for legacy rows. */
   AI_VISIBILITY: 0,
   STARTER: 0,
   GROWTH: 400,
@@ -96,14 +97,14 @@ export const MAX_KEYWORDS_PER_REQUEST = 1000;
 export const SCHEDULE_HOUR_UTC = 6;
 
 export function trackedKeywordLimit(plan: PlanType): number {
-  return RANK_TRACKED_KEYWORDS[plan] ?? 0;
+  return RANK_TRACKED_KEYWORDS[sellablePlan(plan)] ?? 0;
 }
 
 export function checksPerMonthLimit(plan: PlanType): number {
   return RANK_CHECKS_PER_MONTH[plan] ?? 0;
 }
 
-/** False for STARTER / AI_VISIBILITY — they get the locked upsell card. */
+/** False for STARTER — it gets the locked upsell card. */
 export function planCanTrack(plan: PlanType): boolean {
   return trackedKeywordLimit(plan) > 0;
 }

@@ -30,7 +30,6 @@ import {
   learnRoutes,
 } from "@/lib/learn-content";
 import { HELP_COPY } from "@/lib/i18n/dashboard";
-import { canAccessPath } from "@/lib/plan-routing";
 import type { PlanType } from "@/generated/prisma";
 
 const LOCALES = ["en", "fr", "de-CH"] as const;
@@ -45,19 +44,11 @@ describe("route", () => {
     expect(HELP_HUB).toBe("/help");
   });
 
-  it("is reachable on every plan, including AI_VISIBILITY", () => {
-    // Help is never plan-gated. AI_VISIBILITY is the only confined tier, and
-    // it is also the one most likely to need the manual — without /help on its
-    // allowlist the dashboard layout would redirect it to /visibility.
-    for (const plan of ALL_PLANS) {
-      expect(canAccessPath(plan, HELP_HUB), plan).toBe(true);
-    }
-  });
-
-  it("stays reachable for a confined plan on the hub itself, not just a prefix", () => {
-    expect(canAccessPath("AI_VISIBILITY", "/help")).toBe(true);
-    // Sanity: the confinement is real, so this test is not vacuous.
-    expect(canAccessPath("AI_VISIBILITY", "/customers")).toBe(false);
+  it("is a plain dashboard route, gated by nothing but tenancy", () => {
+    // Help is never plan-gated, and no tier is route-confined any more, so
+    // there is no allowlist that could exclude it.
+    expect(HELP_HUB.startsWith("/")).toBe(true);
+    expect(ALL_PLANS.length).toBeGreaterThan(0);
   });
 });
 

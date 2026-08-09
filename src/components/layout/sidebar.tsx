@@ -16,7 +16,6 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { dashNav, type DashLocale } from "@/lib/i18n/dashboard";
-import { canAccessPath } from "@/lib/plan-routing";
 import { SEO_TOOLS_HUB } from "@/lib/seo-tools";
 import type { PlanType } from "@/generated/prisma";
 
@@ -42,9 +41,7 @@ const navItems = [
   { href: "/settings", icon: Settings },
   { href: "/settings/account", icon: UserCircle },
   { href: "/billing", icon: CreditCard },
-  // Last row, below the administration block. Help is never plan-gated, so
-  // unlike every row above it this one survives the canAccessPath filter on
-  // every tier — /help is on the AI_VISIBILITY allowlist for that reason.
+  // Last row, below the administration block. Help is never plan-gated.
   { href: "/help", icon: HelpCircle },
 ] as const;
 
@@ -60,15 +57,11 @@ interface SidebarProps {
 export function Sidebar({ open, onClose, locale = "en", plan, paid = false }: SidebarProps) {
   const labels = dashNav[locale];
   const pathname = usePathname();
-  // Hide what this plan can't reach. The (dashboard) layout enforces the same
-  // rule, but it only re-runs on hard loads — a <Link> soft-navigation skips
-  // it — so the nav must not offer the link in the first place.
-  // The SEO Tools hub additionally requires a paid (ACTIVE) subscription —
-  // visibility only; the tools layout enforces the same predicate server-side.
+  // No plan-based route filtering: every tier reaches every dashboard path.
+  // The SEO Tools hub still requires a paid (ACTIVE) subscription — visibility
+  // only; the tools layout enforces the same predicate server-side.
   const items = navItems.filter(
-    (item) =>
-      (plan ? canAccessPath(plan, item.href) : true) &&
-      (!item.href.startsWith(SEO_TOOLS_HUB) || paid),
+    (item) => !item.href.startsWith(SEO_TOOLS_HUB) || paid,
   );
 
   return (

@@ -5,9 +5,8 @@
 // and stuck on a specific screen.
 //
 // GATING: requireTenant only. Help is NEVER plan-gated — not by tier, not by
-// billing status. AI_VISIBILITY is the one plan confined to a subset of the
-// dashboard, and it is also the plan most likely to need the manual, so /help
-// is on its allowlist in plan-routing.ts rather than being 307'd away.
+// billing status. No tier is confined to a subset of the dashboard any more,
+// so there is no allowlist for /help to be exempted from either.
 //
 // NO NEW SIDEBAR ROW. The ruled nine-row sidebar stands; this page is reached
 // from the per-page Help buttons, which now carry a "Browse all help" link.

@@ -7,7 +7,7 @@
 // silently.
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import type { PlanType } from "@/generated/prisma";
-import { PLAN_CONFIGS } from "@/lib/plan-config";
+import { PLAN_CONFIGS, type SellablePlanType } from "@/lib/plan-config";
 
 const counts = { value: 0 };
 vi.mock("@/lib/prisma", () => ({
@@ -28,7 +28,7 @@ const {
 } = await import("@/lib/site-crawler/quota");
 const { prisma } = await import("@/lib/prisma");
 
-const ALL_PLANS: PlanType[] = ["AI_VISIBILITY", "STARTER", "GROWTH", "AGENCY", "ENTERPRISE"];
+const ALL_PLANS: SellablePlanType[] = ["STARTER", "GROWTH", "AGENCY", "ENTERPRISE"];
 
 beforeEach(() => {
   counts.value = 0;
@@ -49,7 +49,6 @@ describe("per-tier caps", () => {
     expect(urlCapForPlan("GROWTH")).toBe(5_000);
     expect(urlCapForPlan("AGENCY")).toBe(25_000);
     expect(urlCapForPlan("ENTERPRISE")).toBe(urlCapForPlan("AGENCY"));
-    expect(urlCapForPlan("AI_VISIBILITY")).toBe(0);
 
     expect(monthlyLimitForPlan("STARTER")).toBe(4);
     expect(monthlyLimitForPlan("GROWTH")).toBe(20);
@@ -100,12 +99,10 @@ describe("which statuses consume quota", () => {
 });
 
 describe("getCrawlQuota", () => {
-  it("locks AI_VISIBILITY without touching the database", async () => {
+  it("unlocks a legacy AI_VISIBILITY row, folded onto STARTER", async () => {
     const quota = await getCrawlQuota("tenant_1", "AI_VISIBILITY");
-    expect(quota.locked).toBe(true);
-    expect(quota.allowed).toBe(false);
-    expect(quota.urlCap).toBe(0);
-    expect(prisma.crawlJob.count).not.toHaveBeenCalled();
+    expect(quota.locked).toBe(false);
+    expect(quota.urlCap).toBe(urlCapForPlan("STARTER"));
   });
 
   it("allows a tier with allowance left", async () => {

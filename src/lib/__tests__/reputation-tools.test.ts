@@ -178,14 +178,7 @@ test("no plan means locked, not open", () => {
 
 // ── Route allowlist ─────────────────────────────────────────────────────────
 
-test("AI_VISIBILITY sees no reputation cards and no hub link", () => {
-  // That plan is confined to /visibility, /settings, /billing and /team. A
-  // locked card upselling a product they did not buy would be noise.
-  assert.deepEqual(visibleReputationGroups("AI_VISIBILITY"), []);
-  assert.equal(canSeeReputationHub("AI_VISIBILITY"), false);
-});
-
-test("every full-access plan sees every group and every card", () => {
+test("every plan sees every group and every card", () => {
   for (const plan of ["STARTER", "GROWTH", "AGENCY", "ENTERPRISE"] as PlanType[]) {
     const groups = visibleReputationGroups(plan);
     assert.equal(groups.length, REPUTATION_TOOL_GROUPS.length, `${plan} group count`);

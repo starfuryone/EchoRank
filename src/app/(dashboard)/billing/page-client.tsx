@@ -13,7 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { PLAN_PRICES, PLAN_CONFIGS } from "@/lib/plan-config";
+import { PLAN_PRICES, planConfig, sellablePlan } from "@/lib/plan-config";
 import type { PlanType } from "@/generated/prisma";
 import { BILLING_COPY, type DashLocale } from "@/lib/i18n/dashboard";
 import { PlanCards } from "@/components/billing/plan-cards";
@@ -28,7 +28,6 @@ interface BillingData {
 }
 
 const PLAN_ICONS: Record<string, React.ReactNode> = {
-  AI_VISIBILITY: <Eye className="h-6 w-6" />,
   STARTER: <Zap className="h-6 w-6" />,
   GROWTH: <Rocket className="h-6 w-6" />,
   AGENCY: <Building2 className="h-6 w-6" />,
@@ -36,7 +35,6 @@ const PLAN_ICONS: Record<string, React.ReactNode> = {
 
 // Product names — intentionally kept English in every locale.
 const PLAN_LABELS: Record<string, string> = {
-  AI_VISIBILITY: "AI Visibility",
   STARTER: "Starter",
   GROWTH: "Growth",
   AGENCY: "Agency",
@@ -44,7 +42,7 @@ const PLAN_LABELS: Record<string, string> = {
 
 /** Tiers drawn on this page, in order. ENTERPRISE is not among them — it has
  *  never had a card here, and adding one would change a four-column grid. */
-const PLAN_CARD_ORDER = ["AI_VISIBILITY", "STARTER", "GROWTH", "AGENCY"] as const;
+const PLAN_CARD_ORDER = ["STARTER", "GROWTH", "AGENCY"] as const;
 
 export function BillingPageClient({
   locale,
@@ -152,9 +150,9 @@ export function BillingPageClient({
                   </Badge>
                 </div>
                 <p className="text-sm text-gray-500">
-                  {PLAN_CONFIGS[billing.plan as PlanType]?.isCustomPricing
+                  {planConfig(billing.plan as PlanType).isCustomPricing
                     ? t.contactUs
-                    : `$${PLAN_PRICES[billing.plan as keyof typeof PLAN_PRICES] ?? 0}${t.perMonth}`}
+                    : `$${PLAN_PRICES[sellablePlan(billing.plan as PlanType)] ?? 0}${t.perMonth}`}
                   {billing.currentPeriodEnd && (
                     <span>
                       {" "}

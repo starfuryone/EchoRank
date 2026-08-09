@@ -10,7 +10,7 @@
 // for the same reason and was written after a production build failed on it.
 
 import type { PlanType } from "@/generated/prisma";
-import { PLAN_CONFIGS } from "@/lib/plan-config";
+import { planConfig } from "@/lib/plan-config";
 import { roundUsd } from "./pricing";
 
 /** First instant of the current billing month, UTC — matches SeoApiCall's. */
@@ -20,7 +20,7 @@ export function startOfAiBillingMonth(now: Date = new Date()): Date {
 
 /** The tier's monthly USD ceiling. `null` = uncapped. */
 export function aiMonthlyCapUsd(plan: PlanType): number | null {
-  return PLAN_CONFIGS[plan].aiMonthlyCapUsd;
+  return planConfig(plan).aiMonthlyCapUsd;
 }
 
 export interface CapState {

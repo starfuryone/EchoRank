@@ -156,6 +156,6 @@ export interface BacklinksUsage {
   used: number;
   limit: number;
   plan: string;
-  /** False for STARTER / AI_VISIBILITY — the locked upsell card. */
+  /** False for STARTER — the locked upsell card. */
   canAnalyze: boolean;
 }

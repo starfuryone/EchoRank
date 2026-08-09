@@ -1,10 +1,9 @@
 import { redirect } from "next/navigation";
-import { cookies, headers } from "next/headers";
+import { cookies } from "next/headers";
 import { dashboardLocale } from "@/lib/i18n/dashboard";
 import { auth } from "@/lib/auth";
 import { getCurrentTenant } from "@/lib/tenant";
 import { hasPaidPlan } from "@/lib/paid-plan";
-import { canAccessPath, PLAN_HOME } from "@/lib/plan-routing";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { OnboardingGate } from "@/components/onboarding/welcome-setup-modal";
 
@@ -21,16 +20,11 @@ export default async function DashboardLayout({
     redirect("/login");
   }
 
-  // ── Plan guard ────────────────────────────────────────────────────────
-  // Restricted plans (AI_VISIBILITY) only reach a subset of the dashboard.
-  // `x-pathname` is set by proxy.ts; a layout can't read the path itself.
+  // No route allowlist: every tier reaches every dashboard path. The retired
+  // AI_VISIBILITY tier was the only confined one, and feature gates
+  // (requireFeature) rather than path prefixes are what guard capability now.
   const membership = await getCurrentTenant();
   const plan = membership?.tenant.planType;
-  const pathname = (await headers()).get("x-pathname");
-
-  if (plan && pathname && !canAccessPath(plan, pathname)) {
-    redirect(PLAN_HOME[plan]);
-  }
 
   // Paid (ACTIVE billing) drives SEO Tools visibility in the sidebar; the
   // tools layout re-checks server-side, so this is presentation only.

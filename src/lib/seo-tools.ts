@@ -8,10 +8,10 @@
 // below — the typed equivalent of nameKey/descriptionKey. Adding a tool here
 // without copy in all three DashLocale catalogs is a type error.
 //
-// Visibility is NOT authorization: the hub filters cards by canAccessPath()
-// purely so no tier is offered a link its route allowlist would bounce; the
-// hub and every /visibility/tools/* page are additionally paid-gated server-
-// side (src/lib/paid-plan.ts via the tools layout).
+// Visibility is NOT authorization. No tier is confined to a route subset any
+// more, so every tier sees every card; the hub and every /visibility/tools/*
+// page are paid-gated server-side (src/lib/paid-plan.ts via the tools layout),
+// and capability is gated per-feature by requireFeature.
 
 import type { ComponentType } from "react";
 import {
@@ -40,7 +40,6 @@ import {
   History,
   Network,
 } from "lucide-react";
-import { canAccessPath } from "@/lib/plan-routing";
 import type { PlanType } from "@/generated/prisma";
 
 export const SEO_TOOLS_HUB = "/visibility/tools";
@@ -229,9 +228,7 @@ export const SEO_TOOL_GROUPS: SeoToolGroup[] = [
 
 /**
  * Real existing surfaces a scaffold can point at today (secondary link on the
- * starter state). Labels live in SEO_TOOLS_COPY.scaffolds[id].related. These
- * are ALSO filtered by canAccessPath at render time — several live outside
- * the AI_VISIBILITY allowlist.
+ * starter state). Labels live in SEO_TOOLS_COPY.scaffolds[id].related.
  */
 export const SCAFFOLD_RELATED: Partial<Record<ScaffoldId, string>> = {
   site_explorer: "/intelligence/competitors",
@@ -264,20 +261,21 @@ export const CLASSIC_SEO_TOOL_IDS: readonly SeoToolId[] = [
   "ai_lens",
 ];
 
-/** Strip a #fragment before consulting plan-routing (it matches path prefixes). */
+/** Strip a #fragment from an href, leaving a comparable path. */
 export function navPath(href: string): string {
   return href.split("#")[0];
 }
 
 /**
- * Groups filtered to what this plan's route allowlist can reach (e.g. the
- * Dashboard card is dropped for AI_VISIBILITY). Empty groups are dropped.
- * `plan` null/undefined shows everything — server-side guards still apply.
+ * Groups this plan may see — now every group, for every tier.
+ *
+ * This used to drop cards outside the caller's route allowlist (the Dashboard
+ * card was hidden from AI_VISIBILITY). That tier is retired and no tier is
+ * confined to a route subset, so nothing is filtered. Paid-gating still
+ * happens server-side in the tools layout; this was never authorization.
  */
-export function visibleSeoToolGroups(plan: PlanType | null | undefined): SeoToolGroup[] {
-  if (!plan) return SEO_TOOL_GROUPS;
-  return SEO_TOOL_GROUPS.map((group) => ({
-    ...group,
-    tools: group.tools.filter((tool) => canAccessPath(plan, navPath(tool.href))),
-  })).filter((group) => group.tools.length > 0);
+export function visibleSeoToolGroups(
+  _plan: PlanType | null | undefined,
+): SeoToolGroup[] {
+  return SEO_TOOL_GROUPS;
 }

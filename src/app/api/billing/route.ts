@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireTenant } from "@/lib/tenant";
-import { PLAN_LIMITS, PLAN_PRICES } from "@/lib/plan-config";
+import { PLAN_LIMITS, PLAN_PRICES, sellablePlan } from "@/lib/plan-config";
 import type { PlanType } from "@/generated/prisma";
 
 export async function GET() {
@@ -32,7 +32,7 @@ export async function GET() {
       where: { tenantId },
     });
 
-    const planKey = tenant.planType as PlanType;
+    const planKey = sellablePlan(tenant.planType as PlanType);
     const limits = PLAN_LIMITS[planKey];
     const price = PLAN_PRICES[planKey];
 

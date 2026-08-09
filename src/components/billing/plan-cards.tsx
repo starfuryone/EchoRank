@@ -14,6 +14,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { PLAN_CONFIGS, PLAN_PRICES } from "@/lib/plan-config";
 import type { PlanType } from "@/generated/prisma";
+import type { SellablePlanType } from "@/lib/plan-config";
 import type { BillingCopy, DashLocale } from "@/lib/i18n/dashboard";
 import type { BillingInterval } from "@/lib/stripe/lookup-keys";
 import { planCardAction, tierKeyFor } from "./plan-actions";
@@ -21,7 +22,6 @@ import s from "./plan-cards.module.css";
 
 /** Product names stay English in every locale, as elsewhere in the app. */
 const PLAN_LABELS: Record<string, string> = {
-  AI_VISIBILITY: "AI Visibility",
   STARTER: "Starter",
   GROWTH: "Growth",
   AGENCY: "Agency",
@@ -34,7 +34,7 @@ export interface PlanCardsProps {
   locale: DashLocale;
   t: BillingCopy;
   /** Which tiers to draw, in order. */
-  plans: readonly PlanType[];
+  plans: readonly SellablePlanType[];
   /** Icons are the caller's business — /billing already has a set. */
   icons?: Record<string, React.ReactNode>;
   features?: Record<string, string[]>;

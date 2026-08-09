@@ -7,7 +7,7 @@
  * than a job id.
  *
  * Guard chain: requirePaidPlan (session + tenant + ACTIVE billing) → zod →
- * plan gate (AI_VISIBILITY is locked) → request rate limit → 24 h cache →
+ * plan gate (every sellable tier has an allowance) → request rate limit → 24 h cache →
  * monthly per-plan quota (Redis) → monthly USD cap (inside seoMeteredCall) →
  * DataForSEO → meter.
  *

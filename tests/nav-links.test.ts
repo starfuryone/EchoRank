@@ -82,11 +82,12 @@ describe("dashboard sidebar", () => {
     }
   });
 
-  it("still hides rows a plan cannot reach, so the test above means something", () => {
-    // AI_VISIBILITY is confined to /visibility, /settings, /billing, /team and
-    // /help — Reputation Tools must not appear for it.
-    expect(sidebar({ plan: "AI_VISIBILITY" })).not.toContain('href="/reputation"');
-    expect(sidebar({ plan: "GROWTH" })).toContain('href="/reputation"');
+  it("shows every row on every tier — no tier is route-confined", () => {
+    // The route allowlist is gone with the AI_VISIBILITY tier. Paid status,
+    // not plan, is the only thing the sidebar still filters on.
+    for (const plan of ["STARTER", "GROWTH", "AGENCY", "ENTERPRISE"] as const) {
+      expect(sidebar({ plan }), plan).toContain('href="/reputation"');
+    }
   });
 });
 

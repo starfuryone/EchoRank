@@ -28,7 +28,7 @@ export const ALLOWED_EXTENSIONS = [".log", ".txt", ".gz"] as const;
 /**
  * Monthly upload allowance. STARTER is absent on purpose — it has no access to
  * this half at all and sees an upsell card instead, so there is no number to
- * enforce. AI_VISIBILITY sits below STARTER by price and likewise gets none.
+ * enforce.
  */
 const UPLOADS_PER_MONTH: Partial<Record<PlanType, number>> = {
   GROWTH: 5,

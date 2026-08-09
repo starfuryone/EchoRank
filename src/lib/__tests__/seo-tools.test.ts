@@ -19,7 +19,6 @@ import {
   navPath,
 } from "../seo-tools";
 import { SEO_TOOLS_COPY, dashNav } from "../i18n/dashboard";
-import { canAccessPath } from "../plan-routing";
 import { isPaidStatus } from "../paid-plan";
 
 const ALL_TOOLS = SEO_TOOL_GROUPS.flatMap((g) => g.tools);
@@ -166,32 +165,20 @@ test("sidebar label + header titles exist for hub and every tool route", () => {
   }
 });
 
-test("AI_VISIBILITY sees every card except Dashboard (outside its allowlist)", () => {
-  const groups = visibleSeoToolGroups("AI_VISIBILITY");
-  const ids = groups.flatMap((g) => g.tools.map((i) => i.id));
-  assert.equal(ids.length, ALL_TOOLS.length - 1);
-  assert.ok(!ids.includes("dashboard"));
-  assert.ok(canAccessPath("AI_VISIBILITY", "/visibility/tools/site-explorer"));
-  assert.ok(!canAccessPath("AI_VISIBILITY", "/dashboard"));
-});
-
-test("unrestricted tiers see every group and card", () => {
+test("every tier sees every group and card — no tier is route-confined", () => {
   for (const plan of ["STARTER", "GROWTH", "AGENCY", "ENTERPRISE"] as const) {
     const groups = visibleSeoToolGroups(plan);
     assert.equal(groups.flatMap((g) => g.tools).length, ALL_TOOLS.length, plan);
   }
 });
 
-test("scaffold related links each tier can't reach are filterable via canAccessPath", () => {
-  // The scaffold component filters these at render time; assert the data
-  // actually contains cases on both sides for AI_VISIBILITY.
-  const reachable = Object.values(SCAFFOLD_RELATED).filter((href) =>
-    canAccessPath("AI_VISIBILITY", navPath(href!)),
-  );
-  const blocked = Object.values(SCAFFOLD_RELATED).filter(
-    (href) => !canAccessPath("AI_VISIBILITY", navPath(href!)),
-  );
-  assert.ok(reachable.length > 0 && blocked.length > 0);
+test("every scaffold related link points at a real tool route", () => {
+  // These used to be filtered per-tier by a route allowlist. No tier is
+  // confined now, so the only remaining invariant is that they are well-formed.
+  for (const href of Object.values(SCAFFOLD_RELATED)) {
+    assert.ok(href!.startsWith("/"), href);
+    assert.equal(navPath(href!), href!.split("#")[0]);
+  }
 });
 
 test("paid predicate: ACTIVE only", () => {
@@ -525,11 +512,9 @@ test("rank-tracker plan caps match the pricing sheet", () => {
   assert.equal(RANK_TRACKED_KEYWORDS.STARTER, 0);
   assert.equal(RANK_TRACKED_KEYWORDS.GROWTH, 50);
   assert.equal(RANK_TRACKED_KEYWORDS.AGENCY, 250);
-  assert.equal(RANK_TRACKED_KEYWORDS.AI_VISIBILITY, 0);
   assert.ok(RANK_TRACKED_KEYWORDS.ENTERPRISE >= RANK_TRACKED_KEYWORDS.AGENCY);
 
   assert.ok(!planCanTrack("STARTER"));
-  assert.ok(!planCanTrack("AI_VISIBILITY"));
   assert.ok(planCanTrack("GROWTH"));
   assert.ok(planCanTrack("AGENCY"));
 });

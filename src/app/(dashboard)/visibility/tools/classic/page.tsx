@@ -7,8 +7,7 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 import { dashboardLocale, SEO_TOOLS_COPY } from "@/lib/i18n/dashboard";
 import { getCurrentTenant } from "@/lib/tenant";
-import { CLASSIC_SEO_TOOL_IDS, SEO_TOOL_GROUPS, navPath } from "@/lib/seo-tools";
-import { canAccessPath } from "@/lib/plan-routing";
+import { CLASSIC_SEO_TOOL_IDS, SEO_TOOL_GROUPS } from "@/lib/seo-tools";
 import { NewBadge } from "@/components/layout/new-badge";
 
 const ALL_TOOLS = SEO_TOOL_GROUPS.flatMap((g) => g.tools);
@@ -17,10 +16,9 @@ export default async function ClassicSeoToolsPage() {
   const cookieStore = await cookies();
   const locale = dashboardLocale(cookieStore.get("echorank_locale")?.value);
   const copy = SEO_TOOLS_COPY[locale];
-  const plan = (await getCurrentTenant())?.tenant.planType;
-
+  // No plan filtering: no tier is confined to a route subset any more.
   const tools = CLASSIC_SEO_TOOL_IDS.map((id) => ALL_TOOLS.find((t) => t.id === id)).filter(
-    (t): t is NonNullable<typeof t> => !!t && (!plan || canAccessPath(plan, navPath(t.href))),
+    (t): t is NonNullable<typeof t> => !!t,
   );
 
   return (

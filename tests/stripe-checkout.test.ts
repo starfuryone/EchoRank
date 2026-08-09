@@ -15,10 +15,8 @@ import {
 } from "@/lib/stripe/lookup-keys";
 import { PLAN_ORDER } from "@/lib/plan-config";
 
-/** The eight keys that exist in Stripe. Nothing else may be constructed. */
+/** The six keys that exist in Stripe. Nothing else may be constructed. */
 const EXPECTED_KEYS = [
-  "echorank_ai_visibility_usd_month",
-  "echorank_ai_visibility_usd_year",
   "echorank_starter_usd_month",
   "echorank_starter_usd_year",
   "echorank_growth_usd_month",
@@ -28,7 +26,7 @@ const EXPECTED_KEYS = [
 ];
 
 describe("checkout lookup keys", () => {
-  it("builds exactly the eight keys that exist in Stripe", () => {
+  it("builds exactly the six keys that exist in Stripe", () => {
     const built = CHECKOUT_TIERS.flatMap((t) => [
       checkoutLookupKey(t, "month"),
       checkoutLookupKey(t, "year"),
@@ -38,8 +36,8 @@ describe("checkout lookup keys", () => {
 
   it("uses the echorank_<tier>_usd_<interval> shape", () => {
     expect(checkoutLookupKey("growth", "year")).toBe("echorank_growth_usd_year");
-    expect(checkoutLookupKey("ai_visibility", "month")).toBe(
-      "echorank_ai_visibility_usd_month",
+    expect(checkoutLookupKey("starter", "month")).toBe(
+      "echorank_starter_usd_month",
     );
   });
 
@@ -87,9 +85,9 @@ describe("tier -> PlanType mapping", () => {
     }
   });
 
-  it("includes ai_visibility", () => {
-    expect(MAP.ai_visibility).toBe("AI_VISIBILITY");
-    expect(PLAN_ORDER).toContain("AI_VISIBILITY");
+  it("never maps the retired ai_visibility tier", () => {
+    expect(CHECKOUT_TIERS).not.toContain("ai_visibility");
+    expect(PLAN_ORDER).not.toContain("AI_VISIBILITY");
   });
 });
 

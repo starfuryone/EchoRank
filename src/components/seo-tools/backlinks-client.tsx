@@ -513,7 +513,7 @@ export function BacklinksClient({ locale }: { locale: DashLocale }) {
     </div>
   );
 
-  // ── Locked plan (STARTER / AI_VISIBILITY) ───────────────────────────────
+  // ── Locked plan (STARTER) ───────────────────────────────────────────────
   if (usage && !usage.canAnalyze) {
     return (
       <div className="space-y-6">

@@ -21,7 +21,7 @@ import {
   type AiProvider,
 } from "@/lib/ai-monitor/pricing";
 import { capState } from "@/lib/ai-monitor/cap";
-import { PLAN_CONFIGS } from "@/lib/plan-config";
+import { PLAN_CONFIGS, type SellablePlanType } from "@/lib/plan-config";
 import { hasFeature } from "@/lib/feature-flags";
 
 /** An env with nothing configured — the built-in table only. */
@@ -193,7 +193,7 @@ describe("monthly cap", () => {
 });
 
 describe("per-tier checkup shape", () => {
-  const plans = Object.keys(PLAN_CONFIGS) as PlanType[];
+  const plans = Object.keys(PLAN_CONFIGS) as SellablePlanType[];
 
   it("gives a monitor to exactly the tiers that carry ai_visibility", () => {
     for (const plan of plans) {
@@ -226,9 +226,9 @@ describe("per-tier checkup shape", () => {
   });
 
   it("never shrinks the checkup as the tier goes up", () => {
-    // AI_VISIBILITY is a standalone product below STARTER by price, so compare
-    // only the tiers that actually form the monitor's ladder.
-    const ladder: PlanType[] = ["AI_VISIBILITY", "GROWTH", "AGENCY", "ENTERPRISE"];
+    // Every sellable tier carries the monitor now, so the ladder is the whole
+    // tier list — STARTER included, since it absorbed the retired $29 tier.
+    const ladder: SellablePlanType[] = ["STARTER", "GROWTH", "AGENCY", "ENTERPRISE"];
     for (let i = 1; i < ladder.length; i++) {
       const lower = PLAN_CONFIGS[ladder[i - 1]].aiCheckup;
       const upper = PLAN_CONFIGS[ladder[i]].aiCheckup;
