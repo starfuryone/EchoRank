@@ -342,7 +342,7 @@ export const SOLUTION_CATEGORIES: SolutionCategory[] = [
         fr: {
           label: "Grandes organisations",
           desc: "Beaucoup d'établissements, beaucoup d'interlocuteurs, une seule référence.",
-          h1: "Echorank360 pour les grandes organisations",
+          h1: "Echorank pour les grandes organisations",
           intro: "À grande échelle, le problème est la cohérence : un même standard partout et un reporting qui se consolide sans tableur.",
           features: [
             { href: MON, why: "Surveillance de tous les établissements, alertes routées par gravité." },
@@ -368,7 +368,7 @@ export const SOLUTION_CATEGORIES: SolutionCategory[] = [
         fr: {
           label: "Entreprises de taille intermédiaire",
           desc: "Assez d'établissements pour avoir besoin de méthode, pas assez pour un service dédié.",
-          h1: "Echorank360 pour les entreprises de taille intermédiaire",
+          h1: "Echorank pour les entreprises de taille intermédiaire",
           intro: "Vous avez dépassé le travail manuel sans vouloir un outil par problème. Une plateforme pour la réputation, la visibilité IA et la recherche.",
           features: [
             { href: ENG, why: "Automatisez demandes et réponses plutôt que de recruter." },
@@ -394,7 +394,7 @@ export const SOLUTION_CATEGORIES: SolutionCategory[] = [
         fr: {
           label: "Petites équipes",
           desc: "Quelques personnes, pas de spécialiste, peu de temps.",
-          h1: "Echorank360 pour les petites équipes",
+          h1: "Echorank pour les petites équipes",
           intro: "Personne ici n'y consacre son temps plein. L'intérêt est dans ce qui tourne tout seul et ce qui vous prévient quand il faut agir.",
           features: [
             { href: MON, why: "Contrôles programmés et courriel si quelque chose baisse." },
@@ -420,7 +420,7 @@ export const SOLUTION_CATEGORIES: SolutionCategory[] = [
         fr: {
           label: "Fondateurs solos",
           desc: "Vous êtes l'équipe marketing. Commencez par ce qui compte.",
-          h1: "Echorank360 pour les fondateurs solos",
+          h1: "Echorank pour les fondateurs solos",
           intro: "Une personne seule ne peut pas tenir tous les canaux. Sachez où vous en êtes, puis choisissez les deux actions du mois.",
           features: [
             { href: AI, why: "Une base chiffrée en une minute, sans compte." },
@@ -446,7 +446,7 @@ export const SOLUTION_CATEGORIES: SolutionCategory[] = [
         fr: {
           label: "Indépendants",
           desc: "Des chiffres présentables sans la panoplie d'une agence.",
-          h1: "Echorank360 pour les indépendants",
+          h1: "Echorank pour les indépendants",
           intro: "Il vous faut des chiffres solides pour une proposition et un rapport à la fin, sans payer des sièges inutilisés.",
           features: [
             { href: AI, why: "Un audit à joindre à votre proposition." },
@@ -472,7 +472,7 @@ export const SOLUTION_CATEGORIES: SolutionCategory[] = [
         fr: {
           label: "Agences et cabinets de conseil",
           desc: "Beaucoup de clients, rapports en marque blanche, un seul accès.",
-          h1: "Echorank360 pour les agences et cabinets de conseil",
+          h1: "Echorank pour les agences et cabinets de conseil",
           intro: "Le travail client demande séparation et présentation : chaque marque suivie à part et des rapports à votre nom, pas au nôtre.",
           features: [
             { href: TOOLS, why: "Portfolios et Report Builder, en marque blanche sur Agency." },
@@ -506,7 +506,7 @@ export const SOLUTION_CATEGORIES: SolutionCategory[] = [
         fr: {
           label: "Dirigeants d'entreprise",
           desc: "Un chiffre qui vous dit si tout cela fonctionne.",
-          h1: "Echorank360 pour les dirigeants",
+          h1: "Echorank pour les dirigeants",
           intro: "Vous n'avez pas besoin d'un tableau de bord à décrypter, mais de savoir si l'on vous trouve, ce que l'on dit de vous et par quoi commencer.",
           features: [
             { href: AI, why: "Une vue chiffrée unique de votre présence, suivie dans le temps." },
@@ -532,7 +532,7 @@ export const SOLUTION_CATEGORIES: SolutionCategory[] = [
         fr: {
           label: "Dirigeants d'agence",
           desc: "Gagnez l'appel d'offres, justifiez le forfait.",
-          h1: "Echorank360 pour les dirigeants d'agence",
+          h1: "Echorank pour les dirigeants d'agence",
           intro: "Les deux moments difficiles sont la présentation et le renouvellement. Les deux exigent des chiffres parlants et un rapport transmissible.",
           features: [
             { href: AI, why: "Un audit chiffré qui rend la présentation concrète." },
@@ -547,7 +547,7 @@ export const SOLUTION_CATEGORIES: SolutionCategory[] = [
         en: {
           label: "SEO professionals",
           desc: "The classic toolkit, plus the AI layer nobody else covers.",
-          h1: "Echorank360 for SEO professionals",
+          h1: "Echorank for SEO professionals",
           intro: "Rank tracking and crawls are table stakes. The new work is whether assistants quote the page at all, and that needs measuring too.",
           features: [
             { href: TOOLS, why: "Rank tracking, crawls, backlinks and GSC in one hub." },
@@ -558,7 +558,7 @@ export const SOLUTION_CATEGORIES: SolutionCategory[] = [
         fr: {
           label: "Professionnels du SEO",
           desc: "La boîte à outils classique, plus la couche IA que personne ne couvre.",
-          h1: "Echorank360 pour les professionnels du SEO",
+          h1: "Echorank pour les professionnels du SEO",
           intro: "Le suivi de positions et les crawls sont acquis. Le nouveau travail est de savoir si les assistants citent la page, et cela se mesure aussi.",
           features: [
             { href: TOOLS, why: "Positions, crawls, backlinks et GSC au même endroit." },
@@ -573,7 +573,7 @@ export const SOLUTION_CATEGORIES: SolutionCategory[] = [
         en: {
           label: "Content marketers",
           desc: "From gap to brief to a page that gets quoted.",
-          h1: "Echorank360 for content marketers",
+          h1: "Echorank for content marketers",
           intro: "The measure of a page is changing. Ranking still matters, but so does whether an assistant reaches for your wording when it answers.",
           features: [
             { href: TOOLS, why: "Content Explorer, briefs and the AI Content Helper." },
@@ -584,7 +584,7 @@ export const SOLUTION_CATEGORIES: SolutionCategory[] = [
         fr: {
           label: "Responsables de contenu",
           desc: "De l'écart au brief, jusqu'à une page qui se fait citer.",
-          h1: "Echorank360 pour les responsables de contenu",
+          h1: "Echorank pour les responsables de contenu",
           intro: "La mesure d'une page change. Le positionnement compte toujours, mais aussi le fait qu'un assistant reprenne votre formulation.",
           features: [
             { href: TOOLS, why: "Content Explorer, briefs et assistant de contenu IA." },
@@ -599,7 +599,7 @@ export const SOLUTION_CATEGORIES: SolutionCategory[] = [
         en: {
           label: "Growth marketers",
           desc: "Find the channel that is quietly working, and the one that is not.",
-          h1: "Echorank360 for growth marketers",
+          h1: "Echorank for growth marketers",
           intro: "Attribution is hard enough without a blind spot. AI answers are now a discovery channel, and most teams have no read on it at all.",
           features: [
             { href: AI, why: "A measurable read on a channel most teams cannot see." },
@@ -610,7 +610,7 @@ export const SOLUTION_CATEGORIES: SolutionCategory[] = [
         fr: {
           label: "Responsables growth",
           desc: "Repérez le canal qui fonctionne discrètement, et celui qui ne fonctionne pas.",
-          h1: "Echorank360 pour les responsables growth",
+          h1: "Echorank pour les responsables growth",
           intro: "L'attribution est déjà difficile sans angle mort. Les réponses IA sont devenues un canal de découverte que la plupart des équipes ne mesurent pas.",
           features: [
             { href: AI, why: "Une lecture chiffrée d'un canal que la plupart ne voient pas." },
@@ -633,7 +633,7 @@ export const SOLUTION_CATEGORIES: SolutionCategory[] = [
         en: {
           label: "Professional services",
           desc: "Trust decides the engagement before the first call.",
-          h1: "Echorank360 for professional services",
+          h1: "Echorank for professional services",
           intro: "Clients check you before they contact you. What an assistant says about your firm, and what your reviews say, is the shortlist.",
           features: [
             { href: AI, why: "Know how assistants describe your firm to a prospective client." },
@@ -644,7 +644,7 @@ export const SOLUTION_CATEGORIES: SolutionCategory[] = [
         fr: {
           label: "Services professionnels",
           desc: "La confiance décide de la mission avant le premier appel.",
-          h1: "Echorank360 pour les services professionnels",
+          h1: "Echorank pour les services professionnels",
           intro: "Vos clients vous vérifient avant de vous contacter. Ce qu'un assistant dit de votre cabinet et ce que disent vos avis font la présélection.",
           features: [
             { href: AI, why: "Sachez comment les assistants décrivent votre cabinet." },
@@ -659,7 +659,7 @@ export const SOLUTION_CATEGORIES: SolutionCategory[] = [
         en: {
           label: "Ecommerce & retail",
           desc: "Product discovery now starts in an answer, not a listing.",
-          h1: "Echorank360 for ecommerce and retail",
+          h1: "Echorank for ecommerce and retail",
           intro: "Shoppers ask assistants what to buy. Whether your product is named — and how it is described — is now part of the funnel.",
           features: [
             { href: AI, why: "Track whether assistants recommend your products by name." },
@@ -670,7 +670,7 @@ export const SOLUTION_CATEGORIES: SolutionCategory[] = [
         fr: {
           label: "E-commerce et distribution",
           desc: "La découverte produit commence dans une réponse, plus dans une liste.",
-          h1: "Echorank360 pour l'e-commerce et la distribution",
+          h1: "Echorank pour l'e-commerce et la distribution",
           intro: "Les acheteurs demandent aux assistants quoi acheter. Que votre produit soit nommé, et comment il est décrit, fait désormais partie du tunnel.",
           features: [
             { href: AI, why: "Suivez si les assistants recommandent vos produits par leur nom." },
@@ -685,7 +685,7 @@ export const SOLUTION_CATEGORIES: SolutionCategory[] = [
         en: {
           label: "Marketing agencies",
           desc: "A service line your clients are already asking about.",
-          h1: "Echorank360 for marketing agencies",
+          h1: "Echorank for marketing agencies",
           intro: "Clients have started asking what AI says about them. Answering that with data, per client, is a service you can bill for.",
           features: [
             { href: AI, why: "Per-client AI visibility, with a number that moves." },
@@ -696,7 +696,7 @@ export const SOLUTION_CATEGORIES: SolutionCategory[] = [
         fr: {
           label: "Agences marketing",
           desc: "Une offre que vos clients réclament déjà.",
-          h1: "Echorank360 pour les agences marketing",
+          h1: "Echorank pour les agences marketing",
           intro: "Vos clients commencent à demander ce que l'IA dit d'eux. Y répondre avec des données, client par client, est une prestation facturable.",
           features: [
             { href: AI, why: "Visibilité IA par client, avec un chiffre qui évolue." },
@@ -711,7 +711,7 @@ export const SOLUTION_CATEGORIES: SolutionCategory[] = [
         en: {
           label: "SaaS & B2B tech",
           desc: "Get named in the comparison, not just the category.",
-          h1: "Echorank360 for SaaS and B2B tech",
+          h1: "Echorank for SaaS and B2B tech",
           intro: "Buyers ask assistants for alternatives and comparisons. Being absent from that answer costs more than a ranking drop.",
           features: [
             { href: AI, why: "Track alternatives and comparison prompts, not just your brand." },
@@ -722,7 +722,7 @@ export const SOLUTION_CATEGORIES: SolutionCategory[] = [
         fr: {
           label: "SaaS et tech B2B",
           desc: "Être nommé dans la comparaison, pas seulement dans la catégorie.",
-          h1: "Echorank360 pour le SaaS et la tech B2B",
+          h1: "Echorank pour le SaaS et la tech B2B",
           intro: "Les acheteurs demandent aux assistants des alternatives et des comparatifs. Être absent de cette réponse coûte plus qu'une perte de position.",
           features: [
             { href: AI, why: "Suivez les requêtes d'alternatives et de comparaison, pas que votre marque." },
@@ -737,7 +737,7 @@ export const SOLUTION_CATEGORIES: SolutionCategory[] = [
         en: {
           label: "Healthcare practices",
           desc: "Patients choose on reviews, and read them closely.",
-          h1: "Echorank360 for healthcare practices",
+          h1: "Echorank for healthcare practices",
           intro: "Few decisions are researched as carefully as choosing a practice. Reviews, accuracy and response tone all carry more weight here.",
           features: [
             { href: FB, why: "Ask for feedback at the right moment, by email or SMS." },
@@ -748,7 +748,7 @@ export const SOLUTION_CATEGORIES: SolutionCategory[] = [
         fr: {
           label: "Cabinets de santé",
           desc: "Les patients choisissent sur les avis, et les lisent attentivement.",
-          h1: "Echorank360 pour les cabinets de santé",
+          h1: "Echorank pour les cabinets de santé",
           intro: "Peu de décisions sont autant vérifiées que le choix d'un praticien. Les avis, l'exactitude et le ton des réponses pèsent davantage ici.",
           features: [
             { href: FB, why: "Demandez un retour au bon moment, par courriel ou SMS." },
@@ -763,7 +763,7 @@ export const SOLUTION_CATEGORIES: SolutionCategory[] = [
         en: {
           label: "Local businesses",
           desc: "Be the one recommended nearby.",
-          h1: "Echorank360 for local businesses",
+          h1: "Echorank for local businesses",
           intro: "Local demand is decided on proximity, reviews and whether your details are right. All three are fixable and all three are measurable.",
           features: [
             { href: FB, why: "A steady flow of reviews from the customers you already serve." },
@@ -774,7 +774,7 @@ export const SOLUTION_CATEGORIES: SolutionCategory[] = [
         fr: {
           label: "Commerces de proximité",
           desc: "Être celui que l'on recommande dans le quartier.",
-          h1: "Echorank360 pour les commerces de proximité",
+          h1: "Echorank pour les commerces de proximité",
           intro: "La demande locale se décide sur la proximité, les avis et l'exactitude de vos informations. Ces trois points se corrigent et se mesurent.",
           features: [
             { href: FB, why: "Un flux régulier d'avis venant de vos clients actuels." },

@@ -42,8 +42,8 @@ export function generateStaticParams() {
 type Params = Promise<{ locale: string; category: string; slug: string }>;
 
 const COPY = {
-  en: { ctaTrial: "Start 7-day trial ↗", helps: "HOW ECHORANK360 HELPS", closeH2: "Not sure where to start?", closeSub: "Run the free AI visibility audit. No account needed, and it takes about a minute.", ctaAudit: "Run my free audit ↗" },
-  fr: { ctaTrial: "Essai gratuit de 7 jours ↗", helps: "COMMENT ECHORANK360 VOUS AIDE", closeH2: "Vous ne savez pas par où commencer ?", closeSub: "Lancez l'audit de visibilité IA gratuit. Sans compte, en une minute environ.", ctaAudit: "Lancer mon audit gratuit ↗" },
+  en: { ctaTrial: "Start 7-day trial ↗", helps: "HOW ECHORANK HELPS", closeH2: "Not sure where to start?", closeSub: "Run the free AI visibility audit. No account needed, and it takes about a minute.", ctaAudit: "Run my free audit ↗" },
+  fr: { ctaTrial: "Essai gratuit de 7 jours ↗", helps: "COMMENT ECHORANK VOUS AIDE", closeH2: "Vous ne savez pas par où commencer ?", closeSub: "Lancez l'audit de visibilité IA gratuit. Sans compte, en une minute environ.", ctaAudit: "Lancer mon audit gratuit ↗" },
 } as const;
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
