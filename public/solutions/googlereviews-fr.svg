@@ -1,0 +1,29 @@
+<svg viewBox="0 0 680 230" width="680" height="230" xmlns="http://www.w3.org/2000/svg" font-family="Geist, system-ui, sans-serif">
+  <defs><marker id="a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="#eaecef" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+  <rect x="0" y="0" width="680" height="230" fill="#14181d"/>
+  <rect x="55" y="52" width="178" height="128" rx="8" fill="#1a1f26" stroke="#333a43"/>
+  <text x="71" y="76" font-size="14" font-weight="500" fill="#eaecef">Après la prestation</text>
+  <g fill="#4a525c">
+    <rect x="71" y="92" width="110" height="4" rx="2"/>
+    <rect x="71" y="108" width="130" height="4" rx="2"/>
+    <rect x="71" y="124" width="90" height="4" rx="2"/>
+  </g>
+  <rect x="71" y="146" width="104" height="18" rx="9" fill="#f0b90b" opacity=".18"/>
+  <text x="123" y="159" text-anchor="middle" font-size="10" fill="#f0b90b">Demande d'avis</text>
+  <text x="144" y="208" text-anchor="middle" font-size="12" fill="#9aa4af">Sollicité, à chaque fois</text>
+  <line x1="242" y1="116" x2="274" y2="116" stroke="#eaecef" stroke-width="1.5" marker-end="url(#a)"/>
+  <polygon points="320,82 354,116 320,150 286,116" fill="#eaecef"/>
+  <text x="320" y="208" text-anchor="middle" font-size="12" fill="#9aa4af">Sur un système</text>
+  <line x1="362" y1="116" x2="422" y2="116" stroke="#eaecef" stroke-width="1.5" marker-end="url(#a)"/>
+  <rect x="432" y="52" width="198" height="128" rx="8" fill="#1a1f26" stroke="#333a43"/>
+  <g fill="#f0b90b">
+    <path d="M452 74l4.7 9.5 10.5 1.5-7.6 7.4 1.8 10.4-9.4-4.9-9.4 4.9 1.8-10.4-7.6-7.4 10.5-1.5z"/>
+    <path d="M492 74l4.7 9.5 10.5 1.5-7.6 7.4 1.8 10.4-9.4-4.9-9.4 4.9 1.8-10.4-7.6-7.4 10.5-1.5z"/>
+    <path d="M532 74l4.7 9.5 10.5 1.5-7.6 7.4 1.8 10.4-9.4-4.9-9.4 4.9 1.8-10.4-7.6-7.4 10.5-1.5z"/>
+    <path d="M572 74l4.7 9.5 10.5 1.5-7.6 7.4 1.8 10.4-9.4-4.9-9.4 4.9 1.8-10.4-7.6-7.4 10.5-1.5z"/>
+    <path d="M612 74l4.7 9.5 10.5 1.5-7.6 7.4 1.8 10.4-9.4-4.9-9.4 4.9 1.8-10.4-7.6-7.4 10.5-1.5z" opacity=".35"/>
+  </g>
+  <text x="452" y="128" font-size="20" font-weight="600" fill="#eaecef">4.8</text>
+  <polyline points="452,166 490,160 528,162 566,150 604,144" fill="none" stroke="#f0b90b" stroke-width="2"/>
+  <text x="531" y="208" text-anchor="middle" font-size="12" fill="#9aa4af">Une note qui monte</text>
+</svg>

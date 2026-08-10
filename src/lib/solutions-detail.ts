@@ -42,6 +42,66 @@ export interface SolutionDetail {
 }
 
 const DETAILS: Record<string, Record<SolutionBase, SolutionDetail>> = {
+  "google-reviews": {
+    en: {
+      prose: [
+        {
+          h2: "Your rating is read before your website",
+          paras: [
+            "For a local search, the map pack loads first — three businesses, three star ratings. Most customers never scroll past it, and among the three, the rating and the last handful of reviews decide who gets the call. Quantity, recency, rating and owner responses are documented factors in Google's local ranking; the text of your reviews even feeds the snippets Google shows under your listing.",
+            "That makes your review profile a storefront you don't fully control — but one you can systematically influence. The businesses with 4.8 and eighty recent reviews are rarely luckier than yours; they ask more consistently and answer everything.",
+          ],
+        },
+        {
+          h2: "A system, not a scramble",
+          paras: [
+            "Improvement is mechanical once it's a workflow. After every job, the customer gets a review request — timed, polite, compliant, and only ever asking for honest feedback. Every incoming review triggers a response drafted in your approved tone: specific and signed for the good ones, calm and factual for the bad ones, because that reply is read by a hundred prospects for every one reviewer.",
+            "Monitoring closes the loop: a negative review raises an alert the day it lands, rating drift is visible as a trend rather than a surprise, and review authenticity checks flag patterns worth disputing. Ten minutes a week of decisions; the platform does the asking, drafting and watching.",
+          ],
+          image: {
+            src: "/solutions/googlereviews-en.svg",
+            alt: "Review requests sent after every job through one system, producing a climbing Google rating",
+          },
+        },
+      ],
+      eyebrow: "GOOGLE REVIEWS",
+      h2: "Everything the rating depends on",
+      cards: [
+        { title: "Get more reviews", body: "Automatic, compliant requests after every job — volume and recency stop depending on memory." },
+        { title: "Answer every review", body: "Responses drafted in your tone for approval — the reply prospects read is never missing." },
+        { title: "Watch the rating", body: "Alerts on negative reviews and rating drift, plus authenticity checks on suspicious patterns." },
+      ],
+    },
+    fr: {
+      prose: [
+        {
+          h2: "Votre note est lue avant votre site",
+          paras: [
+            "Pour une recherche locale, le pack local s'affiche en premier — trois entreprises, trois notes. La plupart des clients ne défilent jamais plus bas, et parmi les trois, la note et les derniers avis décident qui reçoit l'appel. Volume, fraîcheur, note et réponses du propriétaire sont des facteurs documentés du classement local de Google ; le texte de vos avis alimente même les extraits affichés sous votre fiche.",
+            "Votre profil d'avis est donc une vitrine que vous ne contrôlez pas entièrement — mais que vous pouvez influencer méthodiquement. Les entreprises à 4,8 avec quatre-vingts avis récents ont rarement plus de chance que vous ; elles sollicitent plus régulièrement et répondent à tout.",
+          ],
+        },
+        {
+          h2: "Un système, pas de l'improvisation",
+          paras: [
+            "L'amélioration devient mécanique dès qu'elle est un flux de travail. Après chaque prestation, le client reçoit une demande d'avis — au bon moment, polie, conforme, et ne demandant jamais qu'un retour honnête. Chaque avis entrant déclenche une réponse rédigée sur votre ton approuvé : précise et signée pour les bons, calme et factuelle pour les mauvais — car cette réponse est lue par cent prospects pour un seul auteur d'avis.",
+            "La surveillance boucle la boucle : un avis négatif déclenche une alerte le jour même, la dérive de la note se lit en tendance plutôt qu'en surprise, et les contrôles d'authenticité signalent les schémas à contester. Dix minutes de décisions par semaine ; la plateforme sollicite, rédige et surveille.",
+          ],
+          image: {
+            src: "/solutions/googlereviews-fr.svg",
+            alt: "Des demandes d'avis envoyées après chaque prestation via un système, produisant une note Google qui monte",
+          },
+        },
+      ],
+      eyebrow: "AVIS GOOGLE",
+      h2: "Tout ce dont la note dépend",
+      cards: [
+        { title: "Obtenez plus d'avis", body: "Demandes automatiques et conformes après chaque prestation — volume et fraîcheur ne dépendent plus de la mémoire." },
+        { title: "Répondez à chaque avis", body: "Réponses rédigées sur votre ton, soumises à validation — la réponse que lisent les prospects n'est jamais absente." },
+        { title: "Surveillez la note", body: "Alertes sur avis négatifs et dérive de la note, plus contrôles d'authenticité sur les schémas suspects." },
+      ],
+    },
+  },
   "business-owners": {
     en: {
       prose: [

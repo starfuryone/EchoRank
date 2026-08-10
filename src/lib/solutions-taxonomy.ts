@@ -291,6 +291,32 @@ export const SOLUTION_CATEGORIES: SolutionCategory[] = [
           ],
         },
       },
+      {
+        slug: "google-reviews",
+        category: "goals",
+        en: {
+          label: "Google Reviews",
+          desc: "More reviews, a better rating, and every review answered.",
+          h1: "Improve and manage your Google reviews",
+          intro: "Your rating decides who calls before your website ever loads. Get more reviews, keep the rating climbing, and answer everything — on a system, not on memory.",
+          features: [
+            { href: ENG, why: "Requests and replies run automatically, on the tone you approved." },
+            { href: MON, why: "An alert the moment a negative review lands, not a week later." },
+            { href: AI, why: "Your review corpus feeds AI answers — a managed rating carries into ChatGPT." },
+          ],
+        },
+        fr: {
+          label: "Avis Google",
+          desc: "Plus d'avis, une meilleure note, et une réponse à chaque avis.",
+          h1: "Améliorez et gérez vos avis Google",
+          intro: "Votre note décide qui appelle avant même que votre site ne charge. Obtenez plus d'avis, faites monter la note et répondez à tout — avec un système, pas de mémoire.",
+          features: [
+            { href: ENG, why: "Demandes et réponses tournent automatiquement, sur le ton que vous avez approuvé." },
+            { href: MON, why: "Une alerte dès qu'un avis négatif tombe, pas une semaine plus tard." },
+            { href: AI, why: "Votre corpus d'avis alimente les réponses IA — une note gérée se retrouve dans ChatGPT." },
+          ],
+        },
+      },
     ],
   },
 
