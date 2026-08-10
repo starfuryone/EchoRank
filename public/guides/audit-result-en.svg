@@ -1,0 +1,16 @@
+<svg viewBox="0 0 760 400" width="760" height="400" xmlns="http://www.w3.org/2000/svg" font-family="Geist, system-ui, sans-serif">
+  <rect x="0" y="0" width="760" height="400" fill="#14181d"/>
+  <rect x="60" y="36" width="640" height="332" rx="12" fill="#1a1f26" stroke="#333a43"/>
+  <text x="92" y="86" font-size="44" font-weight="700" fill="#f0b90b">62</text>
+  <text x="150" y="86" font-size="14" fill="#9aa4af">/ 100 — day-zero baseline</text>
+  <rect x="92" y="102" width="576" height="6" rx="3" fill="#2a3038"/>
+  <rect x="92" y="102" width="357" height="6" rx="3" fill="#f0b90b"/>
+  <text x="92" y="146" font-size="11" fill="#9aa4af" letter-spacing="1">CRAWLABILITY</text>
+  <circle cx="100" cy="168" r="5" fill="#30a46c"/><text x="116" y="173" font-size="13" fill="#eaecef">HTTPS valid and redirecting cleanly</text>
+  <circle cx="100" cy="194" r="5" fill="#e5484d"/><text x="116" y="199" font-size="13" fill="#eaecef">robots.txt blocks /services/ directory</text>
+  <text x="92" y="234" font-size="11" fill="#9aa4af" letter-spacing="1">STRUCTURED DATA</text>
+  <circle cx="100" cy="256" r="5" fill="#e5484d"/><text x="116" y="261" font-size="13" fill="#eaecef">No LocalBusiness markup found</text>
+  <circle cx="100" cy="282" r="5" fill="#f0b90b"/><text x="116" y="287" font-size="13" fill="#eaecef">FAQPage present on 1 of 9 eligible pages</text>
+  <text x="92" y="322" font-size="11" fill="#9aa4af" letter-spacing="1">AI VISIBILITY SIGNALS</text>
+  <circle cx="100" cy="344" r="5" fill="#30a46c"/><text x="116" y="349" font-size="13" fill="#eaecef">Content readable without JavaScript</text>
+</svg>

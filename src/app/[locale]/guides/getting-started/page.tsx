@@ -43,6 +43,7 @@ const EN: GuideDoc = {
         "You will be asked to authorise access through Google and then pick a listing. If your account manages several locations, take the extra few seconds to confirm you are choosing the right one.",
       ],
       shot: "The Google Business Profile connection screen, with the listing picker open.",
+      shotSrc: "/guides/gbp-connect-en.svg",
       callout: {
         kind: "warning",
         body: "Verify the listing before you confirm. If you manage multiple locations with similar names, connecting the wrong one imports the wrong review history — and the fix is disconnecting and starting over.",
@@ -55,6 +56,7 @@ const EN: GuideDoc = {
         "The audit covers what crawlers and AI assistants can actually see on your site — technical basics, structured data, and the signals that decide whether an assistant can quote you at all. Read the itemised checks rather than just the score.",
       ],
       shot: "The audit result, showing the overall score with the itemised checks beneath it.",
+      shotSrc: "/guides/audit-result-en.svg",
     },
     {
       h: "Install the browser extension and import your history",
@@ -129,6 +131,7 @@ const FR: GuideDoc = {
         "L'audit couvre ce que les robots et les assistants IA voient réellement de votre site : les bases techniques, les données structurées et les signaux qui déterminent si un assistant peut vous citer. Lisez les vérifications détaillées, pas seulement le score.",
       ],
       shot: "Le résultat de l'audit : le score global et, en dessous, les vérifications détaillées.",
+      shotSrc: "/guides/audit-result-fr.svg",
     },
     {
       h: "Installez l'extension et importez votre historique",
