@@ -42,6 +42,80 @@ export interface SolutionDetail {
 }
 
 const DETAILS: Record<string, Record<SolutionBase, SolutionDetail>> = {
+  "marketing-agencies": {
+    en: {
+      prose: [
+        {
+          h2: "You sell visibility. Are you visible?",
+          paras: [
+            "Every agency faces the cobbler's-children test, and it has moved: prospects now ask ChatGPT and Perplexity for 'the best marketing agency in <city>' or 'top B2B SaaS agencies' — and the answer is a pre-made shortlist you're either on or not. An agency that pitches search and AI expertise while being absent from those answers is making its competitors' argument for them; one that shows up is closing before the first call.",
+            "Track the prompts your own prospects ask, the way you would for a client. The gaps — the directory you're not on, the comparison article that skips you, the thin review profile the assistants read — are the same fixes you sell, applied to yourself. Nothing demonstrates the craft like being its best case study.",
+          ],
+        },
+        {
+          h2: "The service line your clients are about to ask for",
+          paras: [
+            "Your clients are hearing about AI search from their boards, their peers and their inboxes — and they'll ask someone to handle it. The agencies that answer first with a concrete offer will take that budget; the rest will watch it go to whoever did. Reputation and AI visibility management is a natural extension of what you already sell: same clients, same retainer motion, new deliverable.",
+            "Echorank productizes it for you: tracked prompts, review management, visibility scores and citation analysis per client, delivered under your brand through the white-label dashboard. The free audit is the sales tool — run it live on a prospect's brand and their competitor's, and the gap on screen writes the proposal. Pricing the line is yours; the platform cost is one subscription across the roster.",
+          ],
+          image: {
+            src: "/solutions/marketingagencies-en.svg",
+            alt: "A buyer asks an assistant for the best agency; the answer shortlists three, and the absent agency never learns it was skipped",
+          },
+        },
+        {
+          h2: "Retainers that renew on evidence",
+          paras: [
+            "Marketing retainers churn where results feel abstract. Visibility work has the opposite property when it's measured: the client can watch their brand enter answers it was absent from, their rating climb, their share of voice move against named competitors. Those are numbers a CFO accepts, attached to work you did.",
+            "Each client runs in its own workspace with its own prompts, competitors and baselines; your team spans all of them from one login, and month-end reporting assembles itself from the data that accumulated. The result is the agency math that matters: services sold at agency rates, delivered on platform time.",
+          ],
+        },
+      ],
+      eyebrow: "MARKETING AGENCIES",
+      h2: "Built to be sold twice",
+      cards: [
+        { title: "Practice it on yourself", body: "Track the prompts your prospects ask — and be the agency the assistants name." },
+        { title: "A productized new line", body: "Reputation + AI visibility as a white-label service: your brand, your pricing, one platform cost." },
+        { title: "Evidence-backed renewals", body: "Per-client baselines and visible movement — retainers defended with numbers, not narratives." },
+      ],
+    },
+    fr: {
+      prose: [
+        {
+          h2: "Vous vendez de la visibilité. Êtes-vous visible ?",
+          paras: [
+            "Chaque agence affronte le test du cordonnier mal chaussé, et il a changé de terrain : les prospects demandent désormais à ChatGPT et Perplexity « la meilleure agence marketing à <ville> » ou « les meilleures agences B2B SaaS » — et la réponse est une liste restreinte toute faite, sur laquelle vous êtes ou non. Une agence qui vend une expertise recherche et IA tout en étant absente de ces réponses plaide pour ses concurrents ; celle qui y figure a conclu avant le premier appel.",
+            "Suivez les requêtes que posent vos propres prospects, comme vous le feriez pour un client. Les manques — l'annuaire où vous n'êtes pas, l'article comparatif qui vous oublie, le profil d'avis mince que lisent les assistants — sont les corrections mêmes que vous vendez, appliquées à vous. Rien ne démontre le métier comme en être la meilleure étude de cas.",
+          ],
+        },
+        {
+          h2: "La ligne de service que vos clients vont réclamer",
+          paras: [
+            "Vos clients entendent parler de recherche IA par leurs conseils d'administration, leurs pairs et leurs boîtes mail — et ils demanderont à quelqu'un de s'en charger. Les agences qui répondront les premières avec une offre concrète prendront ce budget ; les autres le regarderont partir. La gestion de réputation et de visibilité IA prolonge naturellement ce que vous vendez déjà : mêmes clients, même mécanique de contrat, nouveau livrable.",
+            "Echorank la productise pour vous : requêtes suivies, gestion des avis, scores de visibilité et analyse de citations par client, livrés sous votre marque via le tableau de bord en marque blanche. L'audit gratuit est l'outil de vente — lancez-le en direct sur la marque d'un prospect et celle de son concurrent : l'écart à l'écran écrit la proposition. Le prix de la ligne vous appartient ; le coût plateforme est un abonnement pour tout le portefeuille.",
+          ],
+          image: {
+            src: "/solutions/marketingagencies-fr.svg",
+            alt: "Un acheteur demande à un assistant la meilleure agence ; la réponse en retient trois, et l'agence absente ne l'apprend jamais",
+          },
+        },
+        {
+          h2: "Des contrats qui se renouvellent sur des preuves",
+          paras: [
+            "Les contrats marketing se perdent là où les résultats semblent abstraits. Le travail de visibilité a la propriété inverse quand il est mesuré : le client peut voir sa marque entrer dans des réponses dont elle était absente, sa note monter, sa part de voix progresser contre des concurrents nommés. Ce sont des chiffres qu'un directeur financier accepte, rattachés à un travail que vous avez fait.",
+            "Chaque client tourne dans son espace propre avec ses requêtes, ses concurrents et ses références ; votre équipe couvre l'ensemble depuis une seule connexion, et le reporting de fin de mois s'assemble depuis les données accumulées. Il en sort l'équation d'agence qui compte : des services vendus au tarif agence, livrés au temps plateforme.",
+          ],
+        },
+      ],
+      eyebrow: "AGENCES MARKETING",
+      h2: "Conçu pour être vendu deux fois",
+      cards: [
+        { title: "Appliquez-le à vous-même", body: "Suivez les requêtes de vos prospects — et soyez l'agence que les assistants nomment." },
+        { title: "Une nouvelle ligne productisée", body: "Réputation + visibilité IA en marque blanche : votre marque, vos prix, un seul coût plateforme." },
+        { title: "Des renouvellements étayés", body: "Références par client et progression visible — des contrats défendus par des chiffres, pas des récits." },
+      ],
+    },
+  },
   "ecommerce-retail": {
     en: {
       prose: [
