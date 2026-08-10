@@ -98,6 +98,11 @@ export const REDIS_CONFIG = {
     "site-crawl": { max: 10, duration: 60_000 },
     // One hourly tick; the limiter is a backstop, not the schedule.
     "free-tools-volatility": { max: 4, duration: 60_000 },
+    // One CHECKUP a job, and a checkup is many provider calls. This bounds how
+    // fast jobs start; what protects a vendor's rate limit is the per-provider
+    // limiter inside the worker (createProviderLimiter), because the vendors
+    // count concurrent requests, not our job starts.
+    "ai-checkup": { max: 10, duration: 60_000 },
   } as Record<string, { max: number; duration: number }>,
 } as const;
 
@@ -122,7 +127,8 @@ export type QueueName =
   | "site-audit"
   | "bot-log-analysis"
   | "site-crawl"
-  | "free-tools-volatility";
+  | "free-tools-volatility"
+  | "ai-checkup";
 
 /** All valid queue names */
 export const QUEUE_NAMES: QueueName[] = [
@@ -147,4 +153,5 @@ export const QUEUE_NAMES: QueueName[] = [
   "bot-log-analysis",
   "site-crawl",
   "free-tools-volatility",
+  "ai-checkup",
 ];

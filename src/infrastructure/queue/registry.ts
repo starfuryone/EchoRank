@@ -135,6 +135,17 @@ const DEFAULT_JOB_OPTIONS: Record<QueueName, JobsOptions> = {
     removeOnComplete: { age: REDIS_CONFIG.ttl.completedJobs },
     removeOnFail: { age: REDIS_CONFIG.ttl.failedJobs },
   },
+  "ai-checkup": {
+    // Retries are SAFE here and that is not incidental: runs are keyed on
+    // (checkupId, promptId, engine, repetition), so a second attempt resumes
+    // the slots the first never reached instead of re-buying the answers it
+    // already paid for. Backoff is long because the usual reason a checkup
+    // fails is an upstream provider having a bad minute.
+    attempts: 3,
+    backoff: { type: "exponential", delay: 30_000 },
+    removeOnComplete: { age: REDIS_CONFIG.ttl.completedJobs },
+    removeOnFail: { age: REDIS_CONFIG.ttl.failedJobs },
+  },
   "bot-log-analysis": {
     attempts: 1,
     removeOnComplete: { age: REDIS_CONFIG.ttl.completedJobs },
