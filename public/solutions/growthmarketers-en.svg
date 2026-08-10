@@ -1,0 +1,23 @@
+<svg viewBox="0 0 680 230" width="680" height="230" xmlns="http://www.w3.org/2000/svg" font-family="Geist, system-ui, sans-serif">
+  <rect x="0" y="0" width="680" height="230" fill="#14181d"/>
+  <rect x="55" y="40" width="570" height="152" rx="8" fill="#1a1f26" stroke="#333a43"/>
+  <text x="75" y="66" font-size="14" font-weight="500" fill="#eaecef">Acquisition channels</text>
+  <line x1="75" y1="76" x2="605" y2="76" stroke="#2a3038"/>
+  <g font-size="11" fill="#9aa4af">
+    <text x="75" y="98">Paid search</text>
+    <text x="75" y="124">Organic search</text>
+    <text x="75" y="150">Social</text>
+    <text x="75" y="176">AI answers</text>
+  </g>
+  <rect x="220" y="90" width="180" height="8" rx="3" fill="#4a525c"/>
+  <rect x="220" y="116" width="230" height="8" rx="3" fill="#4a525c"/>
+  <rect x="220" y="142" width="120" height="8" rx="3" fill="#4a525c"/>
+  <rect x="220" y="168" width="190" height="8" rx="3" fill="#f0b90b"/>
+  <g font-size="10">
+    <text x="560" y="98" fill="#9aa4af">measured</text>
+    <text x="560" y="124" fill="#9aa4af">measured</text>
+    <text x="560" y="150" fill="#9aa4af">measured</text>
+    <text x="560" y="176" fill="#f0b90b">now measured</text>
+  </g>
+  <text x="340" y="216" text-anchor="middle" font-size="12" fill="#9aa4af">The channel that was growing unwatched</text>
+</svg>

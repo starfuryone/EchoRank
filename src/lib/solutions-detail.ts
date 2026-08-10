@@ -42,6 +42,198 @@ export interface SolutionDetail {
 }
 
 const DETAILS: Record<string, Record<SolutionBase, SolutionDetail>> = {
+  "growth-marketers": {
+    en: {
+      prose: [
+        {
+          h2: "There's a channel missing from your dashboard",
+          paras: [
+            "Your reporting covers paid, organic, social, email — every channel with a pixel. Meanwhile a growing share of buyers ask ChatGPT or Perplexity what to use and go straight to whatever the answer names. No referrer, no UTM, often no click at all: it shows up in your numbers as 'direct' or as brand searches you can't explain, which means a channel is growing or shrinking under your targets without a row in the sheet.",
+            "Echorank gives it the row. The prompts your buyers ask are executed across the major assistants on schedule; mentions, positions and recommendations are recorded per answer; and the result is a visibility trend and share-of-voice you can put next to every other channel — the same way you'd never run paid without impression data.",
+          ],
+        },
+        {
+          h2: "Share of voice you can act against",
+          paras: [
+            "Growth work starts from relative position: who's winning the demand you want, and where. The competitor matrix scores every rival on the prompts that matter — visibility, average position, citation frequency, sentiment — and shows where they're strong, where they're absent, and which sources earned them their slots.",
+            "That turns fuzzy 'AI strategy' into targeting. A prompt where a competitor dominates on the strength of two publisher citations is an outreach target. One where nobody is consistently recommended is open ground. The opportunity score ranks them by commercial value times gap, so the backlog orders itself.",
+          ],
+          image: {
+            src: "/solutions/growthmarketers-en.svg",
+            alt: "An acquisition channel dashboard with AI answers added as a measured channel alongside paid, organic and social",
+          },
+        },
+        {
+          h2: "Run it like the experiments you already run",
+          paras: [
+            "You don't ship landing pages without a control, and AI visibility shouldn't be different. Pick a high-value losing prompt, snapshot the baseline, ship one intervention — the comparison page, the entity fixes, the review push — and let daily tracking record what happens against the baseline.",
+            "Because the assistants are probabilistic, single checks lie; repeated runs and volatility tracking separate a real shift from noise. When the lift is real you have an attributable win — 'this page took us from 12% to 31% visibility on this prompt' — which is the kind of sentence that survives a growth review.",
+          ],
+          image: {
+            src: "/solutions/growthmarketers-loop-en.svg",
+            alt: "An experiment loop: snapshotted baseline, one shipped intervention, daily tracking showing attributable lift",
+          },
+        },
+        {
+          h2: "Compounding, not campaigns",
+          paras: [
+            "Paid stops when the budget stops. AI visibility behaves more like SEO with a steeper compounding curve: a page that earns its way into an answer keeps getting served for every phrasing of the question, and each citation makes the next one more likely. Early position is cheap; displacing an incumbent later is not.",
+            "The operating rhythm fits a growth team as it is: alerts when a competitor takes a top recommendation or your visibility drops past threshold, weekly movement reads, monthly share-of-voice against targets. One more channel in the review — except this one most of your competitors aren't measuring yet.",
+          ],
+        },
+      ],
+      eyebrow: "FOR GROWTH TEAMS",
+      h2: "A channel, treated like one",
+      cards: [
+        { title: "Measured like a channel", body: "Visibility, share of voice and trend per prompt — AI answers get a row next to paid and organic." },
+        { title: "Experiments with baselines", body: "Snapshot, intervene, track daily — lifts are attributable, not anecdotal." },
+        { title: "Targets from the matrix", body: "Competitor strength and open prompts scored by opportunity — the backlog orders itself." },
+      ],
+    },
+    fr: {
+      prose: [
+        {
+          h2: "Il manque un canal à votre tableau de bord",
+          paras: [
+            "Votre reporting couvre le paid, l'organique, le social, l'email — tous les canaux à pixel. Pendant ce temps, une part croissante d'acheteurs demande à ChatGPT ou Perplexity quoi utiliser et va directement vers ce que la réponse nomme. Pas de référent, pas d'UTM, souvent pas de clic du tout : cela apparaît dans vos chiffres en « direct » ou en recherches de marque inexpliquées — un canal grandit ou rétrécit sous vos objectifs sans ligne dans le tableau.",
+            "Echorank lui donne sa ligne. Les requêtes de vos acheteurs sont exécutées sur les principaux assistants selon un calendrier ; mentions, positions et recommandations sont enregistrées par réponse ; il en sort une tendance de visibilité et une part de voix à poser à côté de chaque autre canal — comme vous ne piloteriez jamais le paid sans données d'impressions.",
+          ],
+        },
+        {
+          h2: "Une part de voix sur laquelle agir",
+          paras: [
+            "Le travail de croissance part de la position relative : qui gagne la demande que vous visez, et où. La matrice concurrentielle note chaque rival sur les requêtes qui comptent — visibilité, position moyenne, fréquence de citation, sentiment — et montre où il est fort, où il est absent, et quelles sources lui ont valu ses places.",
+            "La « stratégie IA » floue devient du ciblage. Une requête qu'un concurrent domine grâce à deux citations d'éditeurs est une cible de relations presse. Une requête où personne n'est recommandé de façon constante est un terrain libre. Le score d'opportunité les classe par valeur commerciale multipliée par l'écart : le backlog s'ordonne tout seul.",
+          ],
+          image: {
+            src: "/solutions/growthmarketers-fr.svg",
+            alt: "Un tableau de bord des canaux d'acquisition avec les réponses IA ajoutées comme canal mesuré aux côtés du paid, de l'organique et du social",
+          },
+        },
+        {
+          h2: "Pilotez-le comme vos expérimentations",
+          paras: [
+            "Vous ne lancez pas de landing page sans témoin ; la visibilité IA ne devrait pas faire exception. Choisissez une requête à forte valeur que vous perdez, figez la référence, livrez une seule intervention — la page comparative, les corrections d'entités, la campagne d'avis — et laissez le suivi quotidien enregistrer l'écart à la référence.",
+            "Les assistants étant probabilistes, les vérifications isolées mentent ; les exécutions répétées et le suivi de volatilité séparent un vrai déplacement du bruit. Quand le gain est réel, vous tenez une victoire attribuable — « cette page nous a fait passer de 12 % à 31 % de visibilité sur cette requête » — le genre de phrase qui survit à une revue growth.",
+          ],
+          image: {
+            src: "/solutions/growthmarketers-loop-fr.svg",
+            alt: "Une boucle d'expérimentation : référence figée, une intervention livrée, suivi quotidien montrant un gain attribuable",
+          },
+        },
+        {
+          h2: "Du cumul, pas des campagnes",
+          paras: [
+            "Le paid s'arrête quand le budget s'arrête. La visibilité IA se comporte plutôt comme le SEO avec une courbe de cumul plus raide : une page qui gagne sa place dans une réponse est resservie pour chaque formulation de la question, et chaque citation rend la suivante plus probable. La position précoce coûte peu ; déloger un installé plus tard, non.",
+            "Le rythme opérationnel s'insère dans une équipe growth telle quelle : alertes quand un concurrent prend une recommandation de tête ou que votre visibilité franchit un seuil, lectures hebdomadaires des mouvements, part de voix mensuelle contre objectifs. Un canal de plus dans la revue — sauf que celui-ci, la plupart de vos concurrents ne le mesurent pas encore.",
+          ],
+        },
+      ],
+      eyebrow: "POUR LES ÉQUIPES GROWTH",
+      h2: "Un canal, traité comme tel",
+      cards: [
+        { title: "Mesuré comme un canal", body: "Visibilité, part de voix et tendance par requête — les réponses IA ont leur ligne à côté du paid et de l'organique." },
+        { title: "Des expérimentations avec référence", body: "Figer, intervenir, suivre au quotidien — les gains sont attribuables, pas anecdotiques." },
+        { title: "Des cibles issues de la matrice", body: "Forces concurrentes et requêtes libres notées par opportunité — le backlog s'ordonne tout seul." },
+      ],
+    },
+  },
+  "content-marketers": {
+    en: {
+      prose: [
+        {
+          h2: "Write what two audiences will quote",
+          paras: [
+            "Every piece you publish now performs for two readers: the buyer skimming for an answer, and the AI assistant deciding whether your page is worth quoting when someone asks it the same question. They reward the same things — a direct answer near the top, specifics instead of throat-clearing, structure a machine can parse, claims a citation can hang on — but almost no content calendar is built with the second reader in mind.",
+            "That second reader is worth planning for, because its output is compounding: a page an assistant starts citing gets surfaced for every variant of the question, indefinitely, without another dollar of distribution. The skill isn't new writing; it's knowing which questions are being asked of the assistants and what their current answers are missing.",
+          ],
+        },
+        {
+          h2: "Briefs from evidence, not brainstorms",
+          paras: [
+            "The weakest link in most content operations is how topics get chosen: a keyword list, a competitor's blog, a brainstorm. Echorank replaces that with observed demand. Content gap analysis starts from the prompts where competitors get named and you don't, pulls the pages that earned their citations, and itemizes the topics those pages cover that yours don't.",
+            "What lands in your queue is a brief with its justification attached: the prompt at stake, the missing topics, the sources currently winning it, and the search demand behind it. Prioritization stops being taste — it's the size of the prompt times the size of the gap.",
+          ],
+          image: {
+            src: "/solutions/contentmarketers-en.svg",
+            alt: "A losing prompt broken into itemized topic gaps, producing an evidence-backed content brief",
+          },
+        },
+        {
+          h2: "Measure pieces where they actually perform",
+          paras: [
+            "Traffic is a lagging, partial measure — a piece can drive zero clicks and still be doing its best work as the source an assistant quotes. Every published piece gets tracked on three surfaces: its rank in classic results, whether it's cited in AI answers on the prompts it targets, and what it contributes to how assistants describe your brand.",
+            "That changes retrospectives. Instead of 'this post got 400 visits,' you can say 'this comparison page is now cited in four of the six answers where we used to be absent' — which is a sentence budget owners understand, and a much better guide to what to write next.",
+          ],
+          image: {
+            src: "/solutions/contentmarketers-quoted-en.svg",
+            alt: "One published piece tracked across three surfaces: SERP rank, AI answer quotes, and source citations",
+          },
+        },
+        {
+          h2: "A calendar that closes its own loop",
+          paras: [
+            "The rhythm becomes circular: tracked prompts reveal gaps, gaps become briefs, published pieces get measured on the prompts that motivated them, and the results reorder the queue. New prompt discovery keeps the pool fresh — questions pulled from search data, People-Also-Ask and the assistants themselves, so the calendar tracks what the market is asking this quarter, not last year.",
+            "None of it requires more writing than you're doing now. It requires aiming the same output at questions with evidence behind them — and being able to show, piece by piece, that the aim was right.",
+          ],
+        },
+      ],
+      eyebrow: "FOR CONTENT TEAMS",
+      h2: "Content strategy with receipts",
+      cards: [
+        { title: "Gap-driven briefs", body: "Topics chosen from prompts you're losing, with the winning sources and missing subjects itemized." },
+        { title: "Per-piece tracking", body: "Every piece measured on rank, AI citations and brand contribution — not traffic alone." },
+        { title: "Fresh demand", body: "New prompts discovered continuously from search data and the assistants — the calendar follows the market." },
+      ],
+    },
+    fr: {
+      prose: [
+        {
+          h2: "Écrire ce que deux publics vont citer",
+          paras: [
+            "Chaque contenu publié joue désormais devant deux lecteurs : l'acheteur qui survole en cherchant une réponse, et l'assistant IA qui décide si votre page mérite d'être reprise quand on lui pose la même question. Les deux récompensent les mêmes choses — une réponse directe dès le haut de page, du concret plutôt que des préambules, une structure qu'une machine peut analyser, des affirmations auxquelles accrocher une citation — mais presque aucun calendrier éditorial n'est construit pour le second lecteur.",
+            "Ce second lecteur mérite pourtant qu'on planifie pour lui, car son effet se compose : une page qu'un assistant se met à citer ressort pour chaque variante de la question, indéfiniment, sans un euro de diffusion supplémentaire. La compétence n'est pas une nouvelle écriture ; c'est savoir quelles questions sont posées aux assistants et ce qui manque à leurs réponses actuelles.",
+          ],
+        },
+        {
+          h2: "Des briefs issus de preuves, pas de brainstormings",
+          paras: [
+            "Le maillon faible de la plupart des équipes contenu, c'est le choix des sujets : une liste de mots-clés, le blog d'un concurrent, un brainstorming. Echorank y substitue la demande observée. L'analyse des manques part des requêtes où les concurrents sont nommés et pas vous, récupère les pages qui leur ont valu leurs citations, et détaille les sujets couverts par ces pages que les vôtres ignorent.",
+            "Ce qui arrive dans votre file, c'est un brief avec sa justification jointe : la requête en jeu, les sujets manquants, les sources qui la gagnent actuellement, et la demande de recherche derrière. La priorisation cesse d'être une affaire de goût — c'est la taille de la requête multipliée par la taille du manque.",
+          ],
+          image: {
+            src: "/solutions/contentmarketers-fr.svg",
+            alt: "Une requête perdue décomposée en manques de sujets détaillés, produisant un brief étayé par des preuves",
+          },
+        },
+        {
+          h2: "Mesurer les contenus là où ils performent vraiment",
+          paras: [
+            "Le trafic est une mesure tardive et partielle — un contenu peut générer zéro clic et faire pourtant son meilleur travail comme source citée par un assistant. Chaque contenu publié est suivi sur trois surfaces : sa position dans les résultats classiques, sa présence dans les réponses IA sur les requêtes qu'il vise, et sa contribution à la façon dont les assistants décrivent votre marque.",
+            "Cela change les bilans. Au lieu de « cet article a fait 400 visites », vous pouvez dire « cette page comparative est désormais citée dans quatre des six réponses où nous étions absents » — une phrase que les détenteurs de budget comprennent, et un bien meilleur guide pour la suite.",
+          ],
+          image: {
+            src: "/solutions/contentmarketers-quoted-fr.svg",
+            alt: "Un contenu publié suivi sur trois surfaces : position SERP, reprises dans les réponses IA et citations comme source",
+          },
+        },
+        {
+          h2: "Un calendrier qui boucle sa propre boucle",
+          paras: [
+            "Le rythme devient circulaire : les requêtes suivies révèlent des manques, les manques deviennent des briefs, les contenus publiés sont mesurés sur les requêtes qui les ont motivés, et les résultats réordonnent la file. La découverte continue de requêtes garde le vivier frais — questions tirées des données de recherche, des People Also Ask et des assistants eux-mêmes, pour que le calendrier suive ce que le marché demande ce trimestre, pas l'an dernier.",
+            "Rien de tout cela n'exige d'écrire plus qu'aujourd'hui. Cela exige de viser, avec la même production, des questions étayées par des preuves — et de pouvoir montrer, contenu par contenu, que la visée était juste.",
+          ],
+        },
+      ],
+      eyebrow: "POUR LES ÉQUIPES CONTENU",
+      h2: "Une stratégie de contenu avec pièces à l'appui",
+      cards: [
+        { title: "Briefs pilotés par les manques", body: "Des sujets choisis à partir des requêtes que vous perdez, avec sources gagnantes et sujets absents détaillés." },
+        { title: "Suivi par contenu", body: "Chaque contenu mesuré sur position, citations IA et contribution à la marque — pas seulement le trafic." },
+        { title: "Demande fraîche", body: "De nouvelles requêtes découvertes en continu depuis les données de recherche et les assistants — le calendrier suit le marché." },
+      ],
+    },
+  },
   "agency-leaders": {
     en: {
       prose: [
