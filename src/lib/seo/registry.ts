@@ -46,6 +46,7 @@ export const LOCALIZED_ROUTES: LocalizedRoute[] = [
   { path: "/guides/audit-your-website", priority: 0.6, changeFrequency: "monthly" },
   { path: "/guides/keyword-research", priority: 0.6, changeFrequency: "monthly" },
   { path: "/guides/track-rankings", priority: 0.6, changeFrequency: "monthly" },
+  { path: "/guides/ai-visibility", priority: 0.6, changeFrequency: "monthly" },
   { path: "/guide-visibilite-ia", priority: 0.7, changeFrequency: "monthly" },
   { path: "/how-to", priority: 0.6, changeFrequency: "monthly" },
   { path: "/live-monitoring", priority: 0.6, changeFrequency: "monthly" },
