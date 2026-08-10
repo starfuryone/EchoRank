@@ -16,6 +16,8 @@ export interface SolutionDetailImage {
   alt: string;
   /** Optional CSS max-width in px; image stays full-width below it. */
   maxWidth?: number;
+  /** "right" floats the image beside the text instead of below it. */
+  position?: "right";
 }
 
 export interface SolutionProseSection {
@@ -51,7 +53,8 @@ const DETAILS: Record<string, Record<SolutionBase, SolutionDetail>> = {
           ],
           image: {
             src: "/solutions/business-owner-photo.webp",
-            maxWidth: 480,
+            maxWidth: 420,
+            position: "right",
             alt: "A business owner outside their workshop beside a branded service van",
           },
         },
@@ -85,7 +88,8 @@ const DETAILS: Record<string, Record<SolutionBase, SolutionDetail>> = {
           ],
           image: {
             src: "/solutions/business-owner-photo.webp",
-            maxWidth: 480,
+            maxWidth: 420,
+            position: "right",
             alt: "Un chef d'entreprise devant son atelier, à côté de son véhicule de service",
           },
         },

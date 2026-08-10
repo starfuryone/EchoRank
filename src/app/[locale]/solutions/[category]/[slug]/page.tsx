@@ -133,18 +133,38 @@ export default async function Page({ params }: { params: Params }) {
               <b>/ {String((longform?.sections.length ?? 0) + 3 + i).padStart(2, "0")}</b>
             </p>
             <h2 className={s.h2}>{sec.h2}</h2>
-            {sec.paras.map((para, j) => (
-              <p key={j} className={s.sub} style={{ maxWidth: 760, marginTop: j === 0 ? 10 : 14 }}>
-                {para}
-              </p>
-            ))}
-            {sec.image && (
-              <img
-                src={sec.image.src}
-                alt={sec.image.alt}
-                loading="lazy"
-                style={{ width: "100%", maxWidth: sec.image.maxWidth ?? "100%", borderRadius: 14, marginTop: 24, border: "1px solid rgba(255,255,255,.08)" }}
-              />
+            {sec.image?.position === "right" ? (
+              <div style={{ display: "flex", gap: 32, alignItems: "flex-start", flexWrap: "wrap" }}>
+                <div style={{ flex: "1 1 420px", maxWidth: 760 }}>
+                  {sec.paras.map((para, j) => (
+                    <p key={j} className={s.sub} style={{ marginTop: j === 0 ? 10 : 14 }}>
+                      {para}
+                    </p>
+                  ))}
+                </div>
+                <img
+                  src={sec.image.src}
+                  alt={sec.image.alt}
+                  loading="lazy"
+                  style={{ width: "100%", maxWidth: sec.image.maxWidth ?? 380, borderRadius: 14, marginTop: 10, border: "1px solid rgba(255,255,255,.08)" }}
+                />
+              </div>
+            ) : (
+              <>
+                {sec.paras.map((para, j) => (
+                  <p key={j} className={s.sub} style={{ maxWidth: 760, marginTop: j === 0 ? 10 : 14 }}>
+                    {para}
+                  </p>
+                ))}
+                {sec.image && (
+                  <img
+                    src={sec.image.src}
+                    alt={sec.image.alt}
+                    loading="lazy"
+                    style={{ width: "100%", maxWidth: sec.image.maxWidth ?? "100%", borderRadius: 14, marginTop: 24, border: "1px solid rgba(255,255,255,.08)" }}
+                  />
+                )}
+              </>
             )}
           </div>
         </section>
