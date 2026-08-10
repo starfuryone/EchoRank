@@ -1,0 +1,25 @@
+<svg viewBox="0 0 760 400" width="760" height="400" xmlns="http://www.w3.org/2000/svg" font-family="Geist, system-ui, sans-serif">
+  <rect x="0" y="0" width="760" height="400" fill="#14181d"/>
+  <rect x="60" y="36" width="640" height="332" rx="12" fill="#1a1f26" stroke="#333a43"/>
+  <text x="92" y="78" font-size="16" font-weight="600" fill="#eaecef">Visibilité IA — requêtes suivies</text>
+  <text x="628" y="78" font-size="11" fill="#9aa4af" text-anchor="end">vérifié chaque jour</text>
+  <line x1="92" y1="94" x2="668" y2="94" stroke="#2a3038"/>
+  <g font-size="10" fill="#9aa4af">
+    <text x="92" y="114">REQUÊTE</text><text x="420" y="114">CHATGPT</text><text x="510" y="114">PERPLEXITY</text><text x="610" y="114">GEMINI</text>
+  </g>
+  <g font-size="13" fill="#eaecef">
+    <text x="92" y="146">best plumber in austin</text>
+    <text x="92" y="182">emergency plumber near me</text>
+    <text x="92" y="218">who should replace my water heater</text>
+    <text x="92" y="254">is miller plumbing any good</text>
+  </g>
+  <g font-size="12">
+    <text x="420" y="146" fill="#30a46c">mentionné #2</text><text x="510" y="146" fill="#30a46c">cité</text><text x="610" y="146" fill="#e5484d">absent</text>
+    <text x="420" y="182" fill="#e5484d">absent</text><text x="510" y="182" fill="#30a46c">mentionné #4</text><text x="610" y="182" fill="#e5484d">absent</text>
+    <text x="420" y="218" fill="#f0b90b">mentionné</text><text x="510" y="218" fill="#e5484d">absent</text><text x="610" y="218" fill="#30a46c">cité</text>
+    <text x="420" y="254" fill="#30a46c">positif</text><text x="510" y="254" fill="#30a46c">positif</text><text x="610" y="254" fill="#f0b90b">neutre</text>
+  </g>
+  <rect x="86" y="168" width="560" height="26" rx="6" fill="#e5484d" opacity=".1"/>
+  <text x="92" y="296" font-size="11" fill="#f0b90b">En surbrillance : une requête d'achat où vous êtes absent de deux assistants sur trois.</text>
+  <text x="92" y="336" font-size="11" fill="#9aa4af">Les assistants sont probabilistes — le statut reflète des exécutions répétées, pas une vérification isolée.</text>
+</svg>
