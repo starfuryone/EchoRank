@@ -42,6 +42,66 @@ export interface SolutionDetail {
 }
 
 const DETAILS: Record<string, Record<SolutionBase, SolutionDetail>> = {
+  "seo-professionals": {
+    en: {
+      prose: [
+        {
+          h2: "The SERP is no longer the whole job",
+          paras: [
+            "You already run the classic discipline: keyword research, rank tracking, technical audits, link analysis. But a growing share of the queries you optimize for are now answered before the click — in AI Overviews, in ChatGPT, in Perplexity — and those answers have their own ranking logic: entity clarity, citable sources, review corpora, crawlable structure. A page can hold #3 in the SERP and be invisible in the answer above it.",
+            "Echorank treats both as one surface. The rank tracker tells you where you stand in classic results; AI visibility tracking runs the prompts your clients' customers actually ask across the major assistants and records who gets named, cited and recommended. Same keywords, both result pages, one trend line each.",
+          ],
+        },
+        {
+          h2: "Recommendations that survive scrutiny",
+          paras: [
+            "Every recommendation you make gets challenged — by a client, a dev team, or a stakeholder who read a different blog. The defensible ones come with receipts: the crawl that shows the duplication, the SERP snapshot that shows who overtook you and with what, the AI answer that cites a competitor's comparison page you don't have.",
+            "The toolkit is built for that evidence chain: site audits with itemized issues, daily rank movement with the changed SERP attached, citation sources behind AI answers, and Search Console cross-checks for the near-miss queries where the push is cheapest. You spend your hours on judgment; collection is automated.",
+          ],
+          image: {
+            src: "/solutions/seopros-en.svg",
+            alt: "The classic SERP and the AI answer tracked together in one workbench with daily evidence",
+          },
+        },
+      ],
+      eyebrow: "FOR PRACTITIONERS",
+      h2: "A working toolkit, not a dashboard tour",
+      cards: [
+        { title: "Both result pages", body: "Classic rank tracking and AI answer tracking on the same keywords — one view of where visibility actually is." },
+        { title: "Evidence attached", body: "Audits, SERP snapshots and citation sources behind every finding — recommendations ship with receipts." },
+        { title: "Daily, not quarterly", body: "Movement lands the day it happens, with what changed — recoveries start while they're still cheap." },
+      ],
+    },
+    fr: {
+      prose: [
+        {
+          h2: "La SERP n'est plus tout le métier",
+          paras: [
+            "Vous pratiquez déjà la discipline classique : recherche de mots-clés, suivi de positions, audits techniques, analyse de liens. Mais une part croissante des requêtes que vous optimisez trouve désormais réponse avant le clic — dans les AI Overviews, dans ChatGPT, dans Perplexity — et ces réponses ont leur propre logique de classement : clarté des entités, sources citables, corpus d'avis, structure explorable. Une page peut tenir la position 3 dans la SERP et rester invisible dans la réponse au-dessus.",
+            "Echorank traite les deux comme une seule surface. Le suivi de positions vous dit où vous êtes dans les résultats classiques ; le suivi de visibilité IA exécute les requêtes que posent réellement les clients de vos clients sur les principaux assistants et enregistre qui est nommé, cité et recommandé. Mêmes mots-clés, deux pages de résultats, une courbe chacune.",
+          ],
+        },
+        {
+          h2: "Des recommandations qui résistent à l'examen",
+          paras: [
+            "Chacune de vos recommandations est contestée — par un client, une équipe de dev, ou un décideur qui a lu un autre blog. Celles qui tiennent arrivent avec des pièces : le crawl qui montre la duplication, l'instantané de SERP qui montre qui vous a dépassé et avec quoi, la réponse IA qui cite la page comparative d'un concurrent que vous n'avez pas.",
+            "La boîte à outils est construite pour cette chaîne de preuves : audits avec anomalies détaillées, mouvements quotidiens avec la SERP modifiée en pièce jointe, sources de citation derrière les réponses IA, et recoupements Search Console pour les requêtes en position 8-20 où l'effort est le moins cher. Vos heures vont au jugement ; la collecte est automatisée.",
+          ],
+          image: {
+            src: "/solutions/seopros-fr.svg",
+            alt: "La SERP classique et la réponse IA suivies ensemble dans un même plan de travail, avec des preuves quotidiennes",
+          },
+        },
+      ],
+      eyebrow: "POUR LES PRATICIENS",
+      h2: "Une boîte à outils de travail, pas une visite guidée",
+      cards: [
+        { title: "Les deux pages de résultats", body: "Suivi de positions classique et suivi des réponses IA sur les mêmes mots-clés — une seule vue de la visibilité réelle." },
+        { title: "Preuves jointes", body: "Audits, instantanés de SERP et sources de citation derrière chaque constat — vos recommandations arrivent avec pièces." },
+        { title: "Quotidien, pas trimestriel", body: "Les mouvements tombent le jour même, avec ce qui a changé — les récupérations commencent quand elles coûtent encore peu." },
+      ],
+    },
+  },
   "google-reviews": {
     en: {
       prose: [
