@@ -124,6 +124,19 @@ export interface EngineAggregate {
 }
 
 /**
+ * How much of the checkup's plan actually ran.
+ *
+ * Carried onto every row of the day rather than derived at read time: the runs
+ * a checkup skipped are not visible from the runs it kept, so a chart reading
+ * only this table would have no way to tell a quiet week from a week we could
+ * not afford to ask about.
+ */
+export interface CoverageFlags {
+  partialCoverage: boolean;
+  skippedRuns: number;
+}
+
+/**
  * Upsert one day's per-engine rows for a project.
  *
  * UPSERT, because (brandProfileId, engine, day) is unique and a checkup can run
@@ -139,6 +152,7 @@ export async function writeVisibilityMetrics(
   brandProfileId: string,
   day: Date,
   engines: readonly EngineAggregate[],
+  coverage: CoverageFlags = { partialCoverage: false, skippedRuns: 0 },
 ): Promise<number> {
   if (engines.length === 0) {
     logger.warn(
@@ -151,7 +165,7 @@ export async function writeVisibilityMetrics(
   for (const { engine, aggregate, supportsCitations } of engines) {
     // The row carries `engine` and `day`; on the update branch they are the key
     // being matched, so writing them back is a no-op rather than a change.
-    const row = toVisibilityMetricRow(engine, day, aggregate, { supportsCitations });
+    const row = { ...toVisibilityMetricRow(engine, day, aggregate, { supportsCitations }), ...coverage };
     await prisma.visibilityMetric.upsert({
       where: { brandProfileId_engine_day: { brandProfileId, engine, day } },
       create: { brandProfileId, ...row },

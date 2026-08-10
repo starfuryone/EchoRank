@@ -1154,8 +1154,12 @@ model PromptRun {
   /// Null for runs from the pre-checkup scheduler, which still writes here.
   checkupId  String?
   /// Which repetition this is, 1-based. Repeatability compares runs that share
-  /// (checkup, prompt, provider) and differ only by this.
+  /// (checkup, prompt, provider) and differ only by this. This is the
+  /// `run_number` half of the runner's idempotency key.
   repetition Int     @default(1)
+  /// How this run ended. Defaults to OK so the 66 pre-checkup rows, which were
+  /// all answered, keep meaning what they meant.
+  status     RunStatus @default(OK)
 
   /// The answer exactly as the provider returned it. `excerpt` predates this
   /// and stays: it is the short form the list views render without pulling a
@@ -1193,6 +1197,16 @@ model PromptRun {
   citations          Citation[]
   competitorMentions CompetitorMention[]
 
+  /// THE RUNNER'S IDEMPOTENCY KEY. Re-running a checkup id must not double its
+  /// runs, and the only defence that survives two workers racing on the same
+  /// job is the database refusing the second write — a read-then-write check in
+  /// the runner cannot.
+  ///
+  /// Safe despite `checkupId` being nullable: Postgres treats NULLs as distinct
+  /// in a unique index, so the 66 pre-checkup rows (every one of them with a
+  /// null checkupId) cannot collide with each other or with anything the runner
+  /// writes. Verified against the table before this was added.
+  @@unique([checkupId, promptId, engine, repetition])
   @@index([tenantId, createdAt])
   @@index([promptId, createdAt])
   /// Dashboard read: one checkup's responses, grouped by provider.
@@ -2100,13 +2114,35 @@ model SerpVolatilitySample {
 // instead of getting a twin table.
 
 enum CheckupStatus {
-  QUEUED
+  /// Created, not yet picked up by a runner.
+  PENDING
   RUNNING
-  COMPLETED
+  /// Every planned run produced an answer. The metrics row is complete.
+  READY
+  /// Ran to the end with gaps: some runs were skipped at the spend cap or
+  /// failed upstream. The metrics row EXISTS and is flagged partialCoverage —
+  /// a score computed from two thirds of the plan is still the best available
+  /// answer, and withholding it would show the customer nothing at all.
+  PARTIAL
+  /// Zero successful runs. Nothing worth scoring, so no metrics row.
   FAILED
-  /// Stopped because the tenant hit its monthly AI spend cap. Distinct from
-  /// FAILED: nothing went wrong, we simply refused to spend more.
-  CAPPED
+}
+
+/// How one planned run ended.
+///
+/// A RUN ROW EXISTS EVEN WHEN NOTHING WAS ASKED. The runner writes a row for
+/// every slot in the plan, including the ones it refused to spend on, because
+/// "we did not ask" and "we asked and you were absent" are different facts and
+/// only the first must be kept out of the mention rate. A plan slot with no row
+/// at all would be indistinguishable from a run that was never planned.
+enum RunStatus {
+  /// Answered. The only status that contributes to a score.
+  OK
+  /// Refused before the provider call: the tenant was at its monthly USD cap.
+  /// Nothing went wrong and nothing was spent.
+  SKIPPED_CAP
+  /// The provider was asked and did not answer.
+  FAILED
 }
 
 /// Where a tracked prompt came from. Drives the wizard's badges and lets
@@ -2188,7 +2224,7 @@ model Checkup {
   id             String        @id @default(cuid())
   tenantId       String
   brandProfileId String
-  status         CheckupStatus @default(QUEUED)
+  status         CheckupStatus @default(PENDING)
   /// True for "Run checkup now". Counts against the same monthly cap.
   manual         Boolean       @default(false)
 
@@ -2633,6 +2669,15 @@ model VisibilityMetric {
   /// Runs this row was computed from. A score off two runs and one off two
   /// hundred should not be read the same way, and the chart dims the former.
   runCount            Int      @default(0)
+  /// True when the checkup behind this row did not complete its whole plan —
+  /// runs were skipped at the spend cap or failed upstream. The score is still
+  /// the best available answer, but it is NOT comparable to a full day's, and a
+  /// trend line that dips because we asked less must say so rather than letting
+  /// the customer read it as lost visibility.
+  partialCoverage     Boolean  @default(false)
+  /// Planned runs that produced no answer. `runCount` counts the ones that did,
+  /// so runCount + skippedRuns is the size of the plan.
+  skippedRuns         Int      @default(0)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
