@@ -42,6 +42,80 @@ export interface SolutionDetail {
 }
 
 const DETAILS: Record<string, Record<SolutionBase, SolutionDetail>> = {
+  "ecommerce-retail": {
+    en: {
+      prose: [
+        {
+          h2: "Trust is the last field in the checkout",
+          paras: [
+            "Every store loses buyers at the same invisible moment: card in hand, a flicker of doubt, a new tab — 'is this store legit', '<brand> reviews', '<brand> reddit'. What that tab returns decides whether the order completes. A thin review profile, an unanswered complaint thread, or an AI answer that hedges about you is a conversion leak no amount of ad spend patches, because the doubt happens after the click you paid for.",
+            "The leak is measurable and fixable. Growing review volume, recent positives, and visible responses to complaints are exactly what that verification tab wants to find — and they compound: the store that passes the check converts the traffic it already has, which beats buying more of it.",
+          ],
+        },
+        {
+          h2: "Reviews are operations, not vibes",
+          paras: [
+            "Post-purchase review requests run on delivery timing, not memory — the ask lands when the product has arrived and the experience is fresh, which is when happy customers actually convert into reviewers. Volume and recency stop depending on whoever remembered to send a campaign.",
+            "Every review gets answered in your brand's voice: thanks that don't read templated for the good ones, and calm, concrete resolution for the bad ones — because the response to a one-star review is read by a hundred hesitating shoppers for every one reviewer. Sudden rating drift or a spike of negatives raises an alert the same day, while the pattern is still one bad batch or one courier problem, not a reputation.",
+          ],
+          image: {
+            src: "/solutions/ecommerce-en.svg",
+            alt: "A shopper pauses at checkout to verify the store; reviews, answered complaints and an AI recommendation confirm the order",
+          },
+        },
+        {
+          h2: "Be in the answer when nobody names a store",
+          paras: [
+            "A growing slice of purchases starts brandless: 'best running headphones under $100', 'where should I buy ceramic cookware'. Assistants answer with specific brands and stores, assembled from reviews, comparison content and the sources they trust. Whoever is in that answer gets the visit; everyone else never learns the question was asked.",
+            "Echorank tracks the buying prompts for your categories across the major assistants, records when your store or products are named and which sources put them there, and turns absences into a fix list — the comparison page missing for your hero product, the review platform the assistants cite where your profile is thin, the inconsistent brand description that keeps you out of clean answers. One weekly read tells you whether the answers are moving your way.",
+          ],
+        },
+      ],
+      eyebrow: "ECOMMERCE & RETAIL",
+      h2: "Built for stores that convert on trust",
+      cards: [
+        { title: "Pass the checkout check", body: "Volume, recency and answered complaints — the profile a hesitating buyer verifies before paying." },
+        { title: "Review ops on autopilot", body: "Delivery-timed requests and on-brand responses at ecommerce volume, with same-day drift alerts." },
+        { title: "Named in buying answers", body: "Category prompts tracked across assistants — with the sources that decide which stores get named." },
+      ],
+    },
+    fr: {
+      prose: [
+        {
+          h2: "La confiance est le dernier champ du paiement",
+          paras: [
+            "Chaque boutique perd des acheteurs au même moment invisible : carte en main, un doute, un nouvel onglet — « cette boutique est-elle fiable », « avis <marque> », « <marque> reddit ». Ce que renvoie cet onglet décide si la commande aboutit. Un profil d'avis mince, un fil de réclamations sans réponse ou une réponse IA qui hésite à votre sujet est une fuite de conversion qu'aucun budget publicitaire ne colmate, car le doute survient après le clic que vous avez payé.",
+            "Cette fuite se mesure et se répare. Un volume d'avis qui croît, des avis récents positifs et des réponses visibles aux réclamations sont exactement ce que cet onglet de vérification cherche — et l'effet se cumule : la boutique qui passe le contrôle convertit le trafic qu'elle a déjà, ce qui vaut mieux que d'en acheter davantage.",
+          ],
+        },
+        {
+          h2: "Les avis sont de l'exploitation, pas de l'ambiance",
+          paras: [
+            "Les demandes d'avis post-achat se calent sur la livraison, pas sur la mémoire — la sollicitation arrive quand le produit est reçu et l'expérience fraîche, c'est-à-dire quand les clients satisfaits deviennent réellement des auteurs d'avis. Volume et fraîcheur cessent de dépendre de qui a pensé à lancer une campagne.",
+            "Chaque avis reçoit une réponse dans la voix de votre marque : des remerciements qui ne sentent pas le gabarit pour les bons, une résolution calme et concrète pour les mauvais — car la réponse à un avis une étoile est lue par cent acheteurs hésitants pour un seul auteur. Une dérive soudaine de la note ou une pointe de négatifs déclenche une alerte le jour même, tant que le motif est encore un lot défectueux ou un problème de transporteur, pas une réputation.",
+          ],
+          image: {
+            src: "/solutions/ecommerce-fr.svg",
+            alt: "Un acheteur s'arrête au paiement pour vérifier la boutique ; avis, réclamations traitées et recommandation IA confirment la commande",
+          },
+        },
+        {
+          h2: "Être dans la réponse quand personne ne nomme de boutique",
+          paras: [
+            "Une part croissante des achats démarre sans marque : « meilleur casque de course à moins de 100 € », « où acheter des ustensiles en céramique ». Les assistants répondent avec des marques et des boutiques précises, assemblées depuis les avis, les contenus comparatifs et les sources qu'ils jugent fiables. Qui figure dans cette réponse reçoit la visite ; les autres n'apprennent jamais que la question a été posée.",
+            "Echorank suit les requêtes d'achat de vos catégories sur les principaux assistants, enregistre quand votre boutique ou vos produits sont nommés et quelles sources les y ont mis, et transforme les absences en liste de corrections — la page comparative manquante pour votre produit phare, la plateforme d'avis citée par les assistants où votre profil est mince, la description de marque incohérente qui vous tient hors des réponses nettes. Une lecture hebdomadaire vous dit si les réponses tournent en votre faveur.",
+          ],
+        },
+      ],
+      eyebrow: "E-COMMERCE ET COMMERCE",
+      h2: "Conçu pour les boutiques qui convertissent sur la confiance",
+      cards: [
+        { title: "Passer le contrôle du paiement", body: "Volume, fraîcheur et réclamations traitées — le profil qu'un acheteur hésitant vérifie avant de payer." },
+        { title: "Des avis en pilote automatique", body: "Demandes calées sur la livraison et réponses à la voix de la marque, au volume e-commerce, avec alertes de dérive le jour même." },
+        { title: "Nommé dans les réponses d'achat", body: "Les requêtes de catégorie suivies sur les assistants — avec les sources qui décident quelles boutiques sont nommées." },
+      ],
+    },
+  },
   "professional-services": {
     en: {
       prose: [
