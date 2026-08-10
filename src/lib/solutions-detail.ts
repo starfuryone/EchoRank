@@ -42,6 +42,102 @@ export interface SolutionDetail {
 }
 
 const DETAILS: Record<string, Record<SolutionBase, SolutionDetail>> = {
+  "agency-leaders": {
+    en: {
+      prose: [
+        {
+          h2: "Retention is the business model",
+          paras: [
+            "New logos get the applause, but the P&L is made by the clients who stay. A retainer survives on one belief — that the work is visibly working — and that belief is rebuilt every month or quietly eroded. The agencies that churn least aren't always the ones with the best results; they're the ones whose results are easiest to see.",
+            "Echorank makes the proof continuous instead of monthly. Rankings, reviews and AI visibility accumulate per client as the month runs, so account managers walk into every call with the trend already on screen — and the quarterly review is a summary of what the client has been watching, not a reveal.",
+          ],
+        },
+        {
+          h2: "Margin lives in the unbillable hours",
+          paras: [
+            "Look at where a retainer's hours actually go: strategy earns its rate, but monitoring, collation and report assembly are cost dressed as diligence. Every hour a senior spends screenshotting dashboards is margin leaving the building — and it scales linearly with every client you add, which is why growth so often makes agencies less profitable.",
+            "Automating that layer changes the unit economics. Collection runs continuously, reports assemble from data that was gathered all along, and responses to routine reviews draft themselves for approval. The retainer price stays; the hours behind it shrink; the same team carries more accounts without the quality sag that usually comes with it.",
+          ],
+          image: {
+            src: "/solutions/agencyleaders-en.svg",
+            alt: "Hours per client before and after automation: reporting, monitoring and collation shrink, strategy grows",
+          },
+        },
+        {
+          h2: "A pipeline that demos itself",
+          paras: [
+            "The free AI visibility audit is a pitch that runs in a minute of the first meeting: what ChatGPT and Perplexity say about the prospect, next to what they say about the competitor the prospect hates most. That gap on screen does what a capabilities deck can't — it makes the problem theirs before you've proposed anything.",
+            "And the pitch converts into delivery without a handoff: the audit's findings become the tracked prompts, the fix list and the day-one baseline. The first monthly report shows movement against numbers the client saw before they signed — which is the cleanest expectation-setting an agency can buy.",
+          ],
+        },
+        {
+          h2: "Oversight without micromanaging",
+          paras: [
+            "Past a handful of accounts, the leader's job stops being doing the work and becomes knowing where the work is slipping. The book-of-clients view gives you that in one read: every account's visibility trend, review health and open alerts side by side, with the slipping one surfacing itself instead of hiding inside an AM's status update.",
+            "Your team works from the same data — client workspaces keep accounts isolated, one login spans them all, and white-label means everything a client sees carries your brand. You find out about problems from the platform, and clients find out about them from you. That ordering is most of what agency reputation is.",
+          ],
+          image: {
+            src: "/solutions/agencyleaders-book-en.svg",
+            alt: "A book-of-clients view with visibility trends per account, one slipping account flagged with an alert",
+          },
+        },
+      ],
+      eyebrow: "RUNNING THE AGENCY",
+      h2: "Built for the person who owns the number",
+      cards: [
+        { title: "Proof, continuously", body: "Every account accumulates evidence as the month runs — retention stops depending on the reporting scramble." },
+        { title: "Margin by automation", body: "Monitoring, collation and reporting come off the clock — more accounts per head at the same quality." },
+        { title: "The whole book, one read", body: "Trends and alerts across every client side by side — slipping accounts surface before clients call." },
+      ],
+    },
+    fr: {
+      prose: [
+        {
+          h2: "La rétention est le modèle économique",
+          paras: [
+            "Les nouveaux logos récoltent les applaudissements, mais le compte de résultat se fait avec les clients qui restent. Un contrat survit sur une seule conviction — que le travail porte visiblement ses fruits — et cette conviction se reconstruit chaque mois ou s'érode en silence. Les agences qui perdent le moins de clients ne sont pas toujours celles qui ont les meilleurs résultats ; ce sont celles dont les résultats sont les plus faciles à voir.",
+            "Echorank rend la preuve continue plutôt que mensuelle. Positions, avis et visibilité IA s'accumulent par client au fil du mois : les chargés de compte arrivent à chaque appel avec la tendance déjà à l'écran — et la revue trimestrielle résume ce que le client observait, au lieu de le lui révéler.",
+          ],
+        },
+        {
+          h2: "La marge vit dans les heures non facturables",
+          paras: [
+            "Regardez où vont réellement les heures d'un contrat : la stratégie vaut son taux, mais la surveillance, la compilation et l'assemblage de rapports sont du coût déguisé en rigueur. Chaque heure qu'un senior passe à capturer des tableaux de bord, c'est de la marge qui sort du bâtiment — et cela croît linéairement avec chaque client ajouté, ce qui explique pourquoi la croissance rend si souvent les agences moins rentables.",
+            "Automatiser cette couche change l'équation unitaire. La collecte tourne en continu, les rapports s'assemblent à partir de données recueillies au fil de l'eau, et les réponses aux avis courants se rédigent seules pour validation. Le prix du contrat reste ; les heures derrière fondent ; la même équipe porte plus de comptes sans l'affaissement de qualité qui l'accompagne d'habitude.",
+          ],
+          image: {
+            src: "/solutions/agencyleaders-fr.svg",
+            alt: "Heures par client avant et après automatisation : reporting, surveillance et compilation fondent, la stratégie grandit",
+          },
+        },
+        {
+          h2: "Un pipeline qui fait sa propre démonstration",
+          paras: [
+            "L'audit de visibilité IA gratuit est un argumentaire qui tourne pendant la première minute du premier rendez-vous : ce que ChatGPT et Perplexity disent du prospect, à côté de ce qu'ils disent du concurrent qu'il déteste le plus. Cet écart à l'écran fait ce qu'aucune plaquette ne fait — il rend le problème sien avant toute proposition.",
+            "Et l'argumentaire se convertit en prestation sans passage de témoin : les constats de l'audit deviennent les requêtes suivies, la liste de corrections et la référence du premier jour. Le premier rapport mensuel montre le mouvement par rapport à des chiffres que le client a vus avant de signer — le cadrage d'attentes le plus propre qu'une agence puisse s'offrir.",
+          ],
+        },
+        {
+          h2: "Superviser sans microgérer",
+          paras: [
+            "Au-delà d'une poignée de comptes, le métier du dirigeant cesse d'être de faire le travail et devient de savoir où le travail glisse. La vue portefeuille vous le donne en une lecture : tendance de visibilité, santé des avis et alertes ouvertes de chaque compte côte à côte, le compte qui décroche se signalant de lui-même au lieu de se cacher dans le point d'étape d'un chargé de compte.",
+            "Votre équipe travaille sur les mêmes données — les espaces clients isolent les comptes, une seule connexion les couvre tous, et la marque blanche fait que tout ce que voit un client porte votre marque. Vous apprenez les problèmes par la plateforme, et vos clients les apprennent par vous. Cet ordre-là, c'est l'essentiel de la réputation d'une agence.",
+          ],
+          image: {
+            src: "/solutions/agencyleaders-book-fr.svg",
+            alt: "Une vue portefeuille avec la tendance de visibilité par compte, un compte en baisse signalé par une alerte",
+          },
+        },
+      ],
+      eyebrow: "DIRIGER L'AGENCE",
+      h2: "Conçu pour la personne qui répond du chiffre",
+      cards: [
+        { title: "La preuve, en continu", body: "Chaque compte accumule ses preuves au fil du mois — la rétention ne dépend plus du sprint de reporting." },
+        { title: "La marge par l'automatisation", body: "Surveillance, compilation et reporting sortent du compteur — plus de comptes par personne, à qualité égale." },
+        { title: "Tout le portefeuille, une lecture", body: "Tendances et alertes de tous les clients côte à côte — les comptes qui glissent se signalent avant l'appel du client." },
+      ],
+    },
+  },
   "seo-professionals": {
     en: {
       prose: [

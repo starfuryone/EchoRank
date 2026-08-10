@@ -1,0 +1,16 @@
+<svg viewBox="0 0 680 230" width="680" height="230" xmlns="http://www.w3.org/2000/svg" font-family="Geist, system-ui, sans-serif">
+  <rect x="0" y="0" width="680" height="230" fill="#14181d"/>
+  <rect x="55" y="40" width="570" height="152" rx="8" fill="#1a1f26" stroke="#333a43"/>
+  <text x="75" y="66" font-size="14" font-weight="500" fill="#eaecef">Le portefeuille clients</text>
+  <g font-size="10" fill="#9aa4af">
+    <text x="470" y="66">Visibilité</text>
+    <text x="556" y="66">Cette semaine</text>
+  </g>
+  <line x1="75" y1="76" x2="605" y2="76" stroke="#2a3038"/>
+  <circle cx="85" cy="94" r="4" fill="#30a46c"/><rect x="99" y="90" width="88" height="5" rx="2" fill="#4a525c"/><rect x="460" y="90" width="60" height="5" rx="2" fill="#30a46c" opacity=".8"/><text x="556" y="97" font-size="10" fill="#9aa4af">stable</text>
+  <circle cx="85" cy="118" r="4" fill="#30a46c"/><rect x="99" y="114" width="70" height="5" rx="2" fill="#4a525c"/><rect x="460" y="114" width="72" height="5" rx="2" fill="#30a46c" opacity=".8"/><text x="556" y="121" font-size="10" fill="#f0b90b">+ hausse</text>
+  <rect x="70" y="132" width="540" height="24" rx="6" fill="#e5484d" opacity=".12"/>
+  <circle cx="85" cy="144" r="4" fill="#e5484d"/><rect x="99" y="140" width="96" height="5" rx="2" fill="#4a525c"/><rect x="460" y="140" width="34" height="5" rx="2" fill="#e5484d"/><text x="556" y="147" font-size="10" fill="#e5484d">alerte →</text>
+  <circle cx="85" cy="170" r="4" fill="#30a46c"/><rect x="99" y="166" width="80" height="5" rx="2" fill="#4a525c"/><rect x="460" y="166" width="64" height="5" rx="2" fill="#30a46c" opacity=".8"/><text x="556" y="173" font-size="10" fill="#9aa4af">stable</text>
+  <text x="340" y="216" text-anchor="middle" font-size="12" fill="#9aa4af">Le compte qui glisse se signale de lui-même — avant l'appel du client</text>
+</svg>

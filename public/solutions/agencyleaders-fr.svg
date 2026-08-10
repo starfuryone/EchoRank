@@ -1,0 +1,32 @@
+<svg viewBox="0 0 680 230" width="680" height="230" xmlns="http://www.w3.org/2000/svg" font-family="Geist, system-ui, sans-serif">
+  <defs><marker id="a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="#eaecef" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+  <rect x="0" y="0" width="680" height="230" fill="#14181d"/>
+  <rect x="55" y="44" width="180" height="144" rx="8" fill="#1a1f26" stroke="#333a43"/>
+  <text x="71" y="68" font-size="12" font-weight="500" fill="#eaecef">Heures par client</text>
+  <g font-size="10" fill="#9aa4af">
+    <text x="71" y="92">Stratégie</text>
+    <text x="71" y="120">Reporting</text>
+    <text x="71" y="148">Surveillance</text>
+    <text x="71" y="176">Compilation</text>
+  </g>
+  <rect x="140" y="84" width="60" height="8" rx="3" fill="#f0b90b"/>
+  <rect x="140" y="112" width="80" height="8" rx="3" fill="#4a525c"/>
+  <rect x="140" y="140" width="70" height="8" rx="3" fill="#4a525c"/>
+  <rect x="140" y="168" width="56" height="8" rx="3" fill="#4a525c"/>
+  <text x="145" y="212" text-anchor="middle" font-size="12" fill="#9aa4af">Où fuit la marge</text>
+  <line x1="244" y1="116" x2="276" y2="116" stroke="#eaecef" stroke-width="1.5" marker-end="url(#a)"/>
+  <polygon points="322,82 356,116 322,150 288,116" fill="#eaecef"/>
+  <text x="322" y="212" text-anchor="middle" font-size="12" fill="#9aa4af">Automatisé</text>
+  <line x1="364" y1="116" x2="424" y2="116" stroke="#eaecef" stroke-width="1.5" marker-end="url(#a)"/>
+  <rect x="434" y="44" width="196" height="144" rx="8" fill="#1a1f26" stroke="#333a43"/>
+  <text x="450" y="68" font-size="12" font-weight="500" fill="#eaecef">Heures par client</text>
+  <g font-size="10" fill="#9aa4af">
+    <text x="450" y="92">Stratégie</text>
+    <text x="450" y="120">Tout le reste</text>
+  </g>
+  <rect x="530" y="84" width="84" height="8" rx="3" fill="#f0b90b"/>
+  <rect x="530" y="112" width="22" height="8" rx="3" fill="#4a525c"/>
+  <text x="450" y="160" font-size="11" fill="#9aa4af">Même contrat.</text>
+  <text x="450" y="176" font-size="11" fill="#f0b90b">Plus de clients par personne.</text>
+  <text x="532" y="212" text-anchor="middle" font-size="12" fill="#9aa4af">Où revient la marge</text>
+</svg>
