@@ -42,6 +42,80 @@ export interface SolutionDetail {
 }
 
 const DETAILS: Record<string, Record<SolutionBase, SolutionDetail>> = {
+  "saas-b2b": {
+    en: {
+      prose: [
+        {
+          h2: "The eval list is written before you're contacted",
+          paras: [
+            "B2B buying starts long before a demo request: someone on the committee asks an assistant for 'alternatives to <incumbent>' or 'best <category> for mid-market', reads the three names that come back, and the shortlist hardens from there. By the time a form is filled, most of the market has already been excluded — and the excluded vendors never see the question in any funnel report. It's the dark part of the dark funnel: no referrer, no intent signal, no second chance.",
+            "Being on that list is winnable, because the answers aren't oracular — they're assembled from sources you can influence: review platforms, comparison content, documentation, community threads. The vendors who treat those answers as a surface to manage are quietly taking evaluation slots from the ones still optimizing only for the SERP.",
+          ],
+        },
+        {
+          h2: "How you're framed decides which deals you see",
+          paras: [
+            "Assistants don't just name vendors — they characterize them: 'best for enterprises', 'cheaper but limited', 'strong for developers'. That framing routes buyers before positioning decks ever load. If the answers call you the budget option while you're moving upmarket, your pipeline will keep telling you the same story, and no one on the team will know why.",
+            "Echorank records how each assistant describes you and your competitors across the prompts that matter — categories, alternatives, comparisons, 'is <product> good' — with sentiment, position and the exact framing language, tracked over time. When the description shifts, or a competitor's framing improves after a content push, you see it the week it happens and can trace it to the sources that caused it.",
+          ],
+          image: {
+            src: "/solutions/saasb2b-en.svg",
+            alt: "A buyer asks for alternatives to an incumbent; the assistant's shortlist, with framing, assembled from reviews and comparison content",
+          },
+        },
+        {
+          h2: "The sources are a backlog, not a mystery",
+          paras: [
+            "Citation analysis shows which sources put each vendor into each answer: the G2 profile with 400 recent reviews, the '<competitor> vs <competitor>' page you never wrote, the migration guide that gets quoted verbatim. Each is a concrete work item with an owner — reviews to product marketing, comparison pages to content, docs structure to DevRel — and an expected effect on a named prompt.",
+            "The rhythm fits how SaaS teams already ship: pick the highest-value losing prompt, snapshot the baseline, land the intervention, watch the repeated daily runs. Wins are attributable ('the comparison hub took us from absent to #2 on alternatives prompts'), which makes the next quarter's investment case write itself.",
+          ],
+        },
+      ],
+      eyebrow: "SAAS & B2B",
+      h2: "Built for the dark part of the funnel",
+      cards: [
+        { title: "In the eval list", body: "Category, alternatives and comparison prompts tracked across assistants — presence measured, not assumed." },
+        { title: "Framing, recorded", body: "How each assistant describes you and every competitor — sentiment and positioning language over time." },
+        { title: "Source-level backlog", body: "The reviews, pages and docs behind each answer, turned into owned work items with expected impact." },
+      ],
+    },
+    fr: {
+      prose: [
+        {
+          h2: "La liste d'évaluation s'écrit avant qu'on vous contacte",
+          paras: [
+            "L'achat B2B commence bien avant une demande de démo : quelqu'un du comité demande à un assistant des « alternatives à <leader> » ou « meilleur <catégorie> pour le mid-market », lit les trois noms qui reviennent, et la liste restreinte se fige à partir de là. Quand un formulaire est rempli, l'essentiel du marché a déjà été écarté — et les écartés ne voient jamais la question dans aucun rapport de funnel. C'est la part sombre du dark funnel : pas de référent, pas de signal d'intention, pas de seconde chance.",
+            "Figurer sur cette liste se gagne, car les réponses n'ont rien d'oraculaire — elles sont assemblées depuis des sources que vous pouvez travailler : plateformes d'avis, contenus comparatifs, documentation, fils communautaires. Les éditeurs qui traitent ces réponses comme une surface à gérer prennent en silence des places d'évaluation à ceux qui n'optimisent encore que la SERP.",
+          ],
+        },
+        {
+          h2: "Votre cadrage décide des affaires que vous voyez",
+          paras: [
+            "Les assistants ne se contentent pas de nommer des éditeurs — ils les caractérisent : « idéal grandes entreprises », « moins cher mais limité », « fort côté développeurs ». Ce cadrage oriente les acheteurs avant que vos slides de positionnement ne se chargent. Si les réponses font de vous l'option économique alors que vous montez en gamme, votre pipeline continuera de raconter la même histoire, et personne dans l'équipe ne saura pourquoi.",
+            "Echorank enregistre la façon dont chaque assistant vous décrit, vous et vos concurrents, sur les requêtes qui comptent — catégories, alternatives, comparaisons, « <produit>, c'est bien ? » — avec sentiment, position et les termes exacts du cadrage, suivis dans le temps. Quand la description bascule, ou que le cadrage d'un concurrent s'améliore après une offensive de contenu, vous le voyez la semaine même et pouvez remonter aux sources qui l'ont causé.",
+          ],
+          image: {
+            src: "/solutions/saasb2b-fr.svg",
+            alt: "Un acheteur demande des alternatives à un leader ; la liste de l'assistant, avec cadrage, assemblée depuis avis et contenus comparatifs",
+          },
+        },
+        {
+          h2: "Les sources sont un backlog, pas un mystère",
+          paras: [
+            "L'analyse des citations montre quelles sources placent chaque éditeur dans chaque réponse : le profil G2 aux 400 avis récents, la page « <concurrent> vs <concurrent> » que vous n'avez jamais écrite, le guide de migration cité mot pour mot. Chacune est une tâche concrète avec un responsable — les avis au product marketing, les pages comparatives au contenu, la structure des docs au DevRel — et un effet attendu sur une requête nommée.",
+            "Le rythme épouse la façon dont les équipes SaaS livrent déjà : choisir la requête perdue à plus forte valeur, figer la référence, livrer l'intervention, regarder les exécutions quotidiennes répétées. Les gains sont attribuables (« le hub comparatif nous a fait passer d'absents à #2 sur les requêtes d'alternatives »), et le dossier d'investissement du trimestre suivant s'écrit tout seul.",
+          ],
+        },
+      ],
+      eyebrow: "SAAS ET B2B",
+      h2: "Conçu pour la part sombre du funnel",
+      cards: [
+        { title: "Dans la liste d'évaluation", body: "Requêtes de catégorie, d'alternatives et de comparaison suivies sur les assistants — une présence mesurée, pas supposée." },
+        { title: "Le cadrage, enregistré", body: "Comment chaque assistant vous décrit, vous et chaque concurrent — sentiment et termes de positionnement dans le temps." },
+        { title: "Un backlog par source", body: "Les avis, pages et docs derrière chaque réponse, transformés en tâches attribuées avec impact attendu." },
+      ],
+    },
+  },
   "marketing-agencies": {
     en: {
       prose: [
