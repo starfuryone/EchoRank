@@ -49,19 +49,37 @@ const DETAILS: Record<string, Record<SolutionBase, SolutionDetail>> = {
           h2: "The SERP is no longer the whole job",
           paras: [
             "You already run the classic discipline: keyword research, rank tracking, technical audits, link analysis. But a growing share of the queries you optimize for are now answered before the click — in AI Overviews, in ChatGPT, in Perplexity — and those answers have their own ranking logic: entity clarity, citable sources, review corpora, crawlable structure. A page can hold #3 in the SERP and be invisible in the answer above it.",
-            "Echorank treats both as one surface. The rank tracker tells you where you stand in classic results; AI visibility tracking runs the prompts your clients' customers actually ask across the major assistants and records who gets named, cited and recommended. Same keywords, both result pages, one trend line each.",
+            "That second surface is measurable. The assistants can be queried on the prompts your clients' customers actually ask; the answers can be parsed for who gets named, cited and recommended; and the citations point at exactly which pages earned each brand its slot. Which means AI visibility stops being a talking point and becomes a column in your tracking — with the same weekly cadence and the same accountability as positions.",
           ],
         },
         {
-          h2: "Recommendations that survive scrutiny",
+          h2: "Two disciplines, one workflow",
           paras: [
-            "Every recommendation you make gets challenged — by a client, a dev team, or a stakeholder who read a different blog. The defensible ones come with receipts: the crawl that shows the duplication, the SERP snapshot that shows who overtook you and with what, the AI answer that cites a competitor's comparison page you don't have.",
-            "The toolkit is built for that evidence chain: site audits with itemized issues, daily rank movement with the changed SERP attached, citation sources behind AI answers, and Search Console cross-checks for the near-miss queries where the push is cheapest. You spend your hours on judgment; collection is automated.",
+            "Echorank runs both from the same keyword set. Classic side: rank tracking with daily movement, SERP snapshots, share-of-search, site audits, backlink analysis and Search Console cross-checks. AI side: the same intents phrased as prompts, executed across the major assistants, with mentions, positions, sentiment and citation sources recorded per answer.",
+            "The overlap is where the leverage is. The comparison pages and review corpora that win AI citations are usually the same assets that lift classic rankings; the technical fixes that make a site crawlable feed both. Instead of running a GEO project next to an SEO retainer, you run one prioritized backlog where every item shows which surface it moves — and the near-miss queries at position 8–20 with an AI answer naming nobody yet are flagged as the cheapest wins on the board.",
           ],
           image: {
             src: "/solutions/seopros-en.svg",
             alt: "The classic SERP and the AI answer tracked together in one workbench with daily evidence",
           },
+        },
+        {
+          h2: "Recommendations that survive scrutiny",
+          paras: [
+            "Every recommendation you make gets challenged — by a client, a dev team, or a stakeholder who read a different blog. The defensible ones come with receipts: the crawl that shows the duplication, the SERP snapshot that shows who overtook you and with what, the AI answer that cites a competitor's comparison page you don't have.",
+            "The toolkit is built for that evidence chain. Findings arrive with the artifact attached, not a summary of it — so the recommendation, the proof and the expected effect travel together into whatever document the decision gets made in. Fewer meetings arguing about whether the problem exists; more sign-offs on the fix.",
+          ],
+          image: {
+            src: "/solutions/seopros-evidence-en.svg",
+            alt: "A ranking drop backed by crawl report, SERP snapshot and AI citations, ending in a signed-off recommendation",
+          },
+        },
+        {
+          h2: "The daily read, the weekly move",
+          paras: [
+            "The working rhythm is short: a daily read of what moved — positions, new AI answers, review shifts — with the changed artifact one click away, then a weekly decision about where the next unit of effort goes. Volatile prompts and slipping pages surface themselves; stable ones stay out of your way.",
+            "Everything rolls up per project, so the same data serves the practitioner view and the client-facing one: the report your client reads is assembled from the evidence you worked from, not rebuilt for the occasion. When something jumps or breaks, you knew before they asked — which is, in the end, most of what a retainer buys.",
+          ],
         },
       ],
       eyebrow: "FOR PRACTITIONERS",
@@ -78,19 +96,37 @@ const DETAILS: Record<string, Record<SolutionBase, SolutionDetail>> = {
           h2: "La SERP n'est plus tout le métier",
           paras: [
             "Vous pratiquez déjà la discipline classique : recherche de mots-clés, suivi de positions, audits techniques, analyse de liens. Mais une part croissante des requêtes que vous optimisez trouve désormais réponse avant le clic — dans les AI Overviews, dans ChatGPT, dans Perplexity — et ces réponses ont leur propre logique de classement : clarté des entités, sources citables, corpus d'avis, structure explorable. Une page peut tenir la position 3 dans la SERP et rester invisible dans la réponse au-dessus.",
-            "Echorank traite les deux comme une seule surface. Le suivi de positions vous dit où vous êtes dans les résultats classiques ; le suivi de visibilité IA exécute les requêtes que posent réellement les clients de vos clients sur les principaux assistants et enregistre qui est nommé, cité et recommandé. Mêmes mots-clés, deux pages de résultats, une courbe chacune.",
+            "Cette seconde surface se mesure. On peut interroger les assistants sur les requêtes que posent réellement les clients de vos clients ; analyser les réponses pour savoir qui est nommé, cité et recommandé ; et remonter les citations jusqu'aux pages qui ont valu sa place à chaque marque. La visibilité IA cesse d'être un sujet de conférence et devient une colonne de votre suivi — avec la même cadence hebdomadaire et la même redevabilité que les positions.",
           ],
         },
         {
-          h2: "Des recommandations qui résistent à l'examen",
+          h2: "Deux disciplines, un seul flux de travail",
           paras: [
-            "Chacune de vos recommandations est contestée — par un client, une équipe de dev, ou un décideur qui a lu un autre blog. Celles qui tiennent arrivent avec des pièces : le crawl qui montre la duplication, l'instantané de SERP qui montre qui vous a dépassé et avec quoi, la réponse IA qui cite la page comparative d'un concurrent que vous n'avez pas.",
-            "La boîte à outils est construite pour cette chaîne de preuves : audits avec anomalies détaillées, mouvements quotidiens avec la SERP modifiée en pièce jointe, sources de citation derrière les réponses IA, et recoupements Search Console pour les requêtes en position 8-20 où l'effort est le moins cher. Vos heures vont au jugement ; la collecte est automatisée.",
+            "Echorank exécute les deux à partir du même jeu de mots-clés. Côté classique : suivi de positions quotidien, instantanés de SERP, part de recherche, audits de site, analyse de backlinks et recoupements Search Console. Côté IA : les mêmes intentions formulées en requêtes, exécutées sur les principaux assistants, avec mentions, positions, sentiment et sources de citation enregistrés par réponse.",
+            "Le levier est dans le recouvrement. Les pages comparatives et les corpus d'avis qui gagnent des citations IA sont généralement les mêmes actifs qui font monter les positions classiques ; les corrections techniques qui rendent un site explorable nourrissent les deux. Au lieu de mener un projet GEO à côté d'un contrat SEO, vous gérez un seul backlog priorisé où chaque élément indique quelle surface il fait bouger — et les requêtes en position 8-20 dont la réponse IA ne nomme encore personne sont signalées comme les gains les moins chers du tableau.",
           ],
           image: {
             src: "/solutions/seopros-fr.svg",
             alt: "La SERP classique et la réponse IA suivies ensemble dans un même plan de travail, avec des preuves quotidiennes",
           },
+        },
+        {
+          h2: "Des recommandations qui résistent à l'examen",
+          paras: [
+            "Chacune de vos recommandations est contestée — par un client, une équipe de dev, ou un décideur qui a lu un autre blog. Celles qui tiennent arrivent avec des pièces : le crawl qui montre la duplication, l'instantané de SERP qui montre qui vous a dépassé et avec quoi, la réponse IA qui cite la page comparative d'un concurrent que vous n'avez pas.",
+            "La boîte à outils est construite pour cette chaîne de preuves. Les constats arrivent avec l'artefact joint, pas son résumé — la recommandation, la preuve et l'effet attendu voyagent ensemble jusqu'au document où la décision se prend. Moins de réunions à débattre de l'existence du problème ; plus de validations de la correction.",
+          ],
+          image: {
+            src: "/solutions/seopros-evidence-fr.svg",
+            alt: "Une baisse de positions étayée par rapport de crawl, instantané SERP et citations IA, aboutissant à une recommandation validée",
+          },
+        },
+        {
+          h2: "La lecture quotidienne, la décision hebdomadaire",
+          paras: [
+            "Le rythme de travail est court : une lecture quotidienne de ce qui a bougé — positions, nouvelles réponses IA, évolutions d'avis — avec l'artefact modifié à un clic, puis une décision hebdomadaire sur la destination du prochain effort. Les requêtes volatiles et les pages qui glissent se signalent d'elles-mêmes ; les stables ne vous encombrent pas.",
+            "Tout se consolide par projet : les mêmes données servent la vue praticien et la vue client — le rapport que lit votre client est assemblé à partir des preuves sur lesquelles vous avez travaillé, pas reconstruit pour l'occasion. Quand quelque chose saute ou casse, vous le saviez avant qu'on vous le demande — ce qui est, au fond, l'essentiel de ce qu'achète un contrat.",
+          ],
         },
       ],
       eyebrow: "POUR LES PRATICIENS",
