@@ -1,0 +1,33 @@
+<svg viewBox="0 0 760 400" width="760" height="400" xmlns="http://www.w3.org/2000/svg" font-family="Geist, system-ui, sans-serif">
+  <rect x="0" y="0" width="760" height="400" fill="#14181d"/>
+  <rect x="60" y="36" width="640" height="332" rx="12" fill="#1a1f26" stroke="#333a43"/>
+  <text x="92" y="78" font-size="16" font-weight="600" fill="#eaecef">Rank Tracker</text>
+  <text x="628" y="78" font-size="11" fill="#9aa4af" text-anchor="end">14 terms · daily checks</text>
+  <line x1="92" y1="94" x2="668" y2="94" stroke="#2a3038"/>
+  <g font-size="10" fill="#9aa4af">
+    <text x="92" y="114">KEYWORD</text><text x="460" y="114">POSITION</text><text x="560" y="114">30-DAY</text>
+  </g>
+  <g font-size="13" fill="#eaecef">
+    <text x="92" y="142">miller plumbing austin</text>
+    <text x="92" y="174">emergency plumber austin</text>
+    <text x="92" y="206">water heater replacement austin</text>
+    <text x="92" y="238">drain cleaning round rock</text>
+    <text x="92" y="270">tankless water heater install</text>
+    <text x="92" y="302">plumber near me austin tx</text>
+  </g>
+  <g font-size="13" font-weight="600">
+    <text x="460" y="142" fill="#30a46c">#1</text>
+    <text x="460" y="174" fill="#eaecef">#6</text>
+    <text x="460" y="206" fill="#eaecef">#9</text>
+    <text x="460" y="238" fill="#f0b90b">#14</text>
+  </g>
+  <g font-size="11" fill="#9aa4af">
+    <text x="460" y="270">checking…</text>
+    <text x="460" y="302">checking…</text>
+  </g>
+  <polyline points="560,140 580,139 600,138 620,138 640,137" fill="none" stroke="#30a46c" stroke-width="2"/>
+  <polyline points="560,172 580,170 600,171 620,168 640,166" fill="none" stroke="#30a46c" stroke-width="2"/>
+  <polyline points="560,204 580,205 600,203 620,202 640,203" fill="none" stroke="#9aa4af" stroke-width="2"/>
+  <polyline points="560,236 580,237 600,239 620,240 640,242" fill="none" stroke="#e5484d" stroke-width="2"/>
+  <text x="92" y="344" font-size="11" fill="#9aa4af">New terms show "checking…" until the first queued result lands — usually within minutes.</text>
+</svg>

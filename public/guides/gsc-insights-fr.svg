@@ -1,0 +1,26 @@
+<svg viewBox="0 0 760 380" width="760" height="380" xmlns="http://www.w3.org/2000/svg" font-family="Geist, system-ui, sans-serif">
+  <rect x="0" y="0" width="760" height="380" fill="#14181d"/>
+  <rect x="60" y="36" width="640" height="312" rx="12" fill="#1a1f26" stroke="#333a43"/>
+  <text x="92" y="78" font-size="16" font-weight="600" fill="#eaecef">GSC Insights</text>
+  <text x="628" y="78" font-size="11" fill="#9aa4af" text-anchor="end">connecté : votre-domaine.com · 28 derniers jours</text>
+  <line x1="92" y1="94" x2="668" y2="94" stroke="#2a3038"/>
+  <g font-size="10" fill="#9aa4af">
+    <text x="92" y="114">REQUÊTE</text><text x="430" y="114">IMPRESSIONS</text><text x="545" y="114">CLICS</text><text x="620" y="114">POSITION</text>
+  </g>
+  <g font-size="13" fill="#eaecef">
+    <text x="92" y="142">plumber austin</text>
+    <text x="92" y="174">water heater leaking what to do</text>
+    <text x="92" y="206">cost to replace water heater</text>
+    <text x="92" y="238">plumber open sunday austin</text>
+  </g>
+  <g font-size="13" fill="#9aa4af">
+    <text x="430" y="142">4,120</text><text x="545" y="142">208</text><text x="620" y="142">5.2</text>
+    <text x="430" y="174">2,873</text><text x="545" y="174">31</text><text x="620" y="174">11.4</text>
+    <text x="430" y="206">1,940</text><text x="545" y="206">12</text><text x="620" y="206">14.8</text>
+    <text x="430" y="238">1,214</text><text x="545" y="238">96</text><text x="620" y="238">3.1</text>
+  </g>
+  <rect x="86" y="156" width="560" height="26" rx="6" fill="#f0b90b" opacity=".1"/>
+  <rect x="86" y="188" width="560" height="26" rx="6" fill="#f0b90b" opacity=".1"/>
+  <text x="92" y="280" font-size="11" fill="#f0b90b">En surbrillance : fortes impressions, position 8-20 — les requêtes proches du but qui méritent un effort.</text>
+  <text x="92" y="322" font-size="11" fill="#9aa4af">Les requêtes jamais ajoutées au panier apparaissent ici — c'est de là que vient le prochain panier.</text>
+</svg>

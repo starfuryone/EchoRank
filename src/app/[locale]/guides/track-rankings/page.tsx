@@ -32,6 +32,7 @@ const EN: GuideDoc = {
         "An empty result immediately after adding a term is normal. It means the check has not come back yet, not that you do not rank.",
       ],
       shot: "Rank Tracker with a basket of terms added, some still awaiting first results.",
+      shotSrc: "/guides/rank-tracker-en.svg",
     },
     {
       h: "Read trends, not days",
@@ -51,6 +52,7 @@ const EN: GuideDoc = {
         "Connect it and use GSC Insights. The two together answer different halves of the same question: your basket says whether you are winning the terms you targeted, Search Console says whether you targeted the right ones.",
       ],
       shot: "GSC Insights showing queries, impressions and clicks for the connected property.",
+      shotSrc: "/guides/gsc-insights-en.svg",
       callout: {
         kind: "note",
         body: "A newly connected property will look almost empty at first. Google withholds data below its own reporting thresholds and backfills slowly — that is Google's behaviour, not a fault in the connection.",
@@ -95,6 +97,7 @@ const FR: GuideDoc = {
         "Un résultat vide juste après l'ajout est normal. Cela signifie que la vérification n'est pas encore revenue, pas que vous n'êtes pas positionné.",
       ],
       shot: "Le Rank Tracker avec un panier de termes ajoutés, certains en attente de premier résultat.",
+      shotSrc: "/guides/rank-tracker-fr.svg",
     },
     {
       h: "Lisez des tendances, pas des journées",
@@ -114,6 +117,7 @@ const FR: GuideDoc = {
         "Connectez-le et utilisez GSC Insights. Les deux répondent à des moitiés différentes de la même question : votre panier dit si vous gagnez les termes visés, Search Console dit si vous avez visé les bons.",
       ],
       shot: "GSC Insights : requêtes, impressions et clics pour la propriété connectée.",
+      shotSrc: "/guides/gsc-insights-fr.svg",
       callout: {
         kind: "note",
         body: "Une propriété fraîchement connectée paraîtra presque vide au début. Google masque les données sous ses propres seuils de reporting et les complète lentement — c'est le comportement de Google, pas un défaut de la connexion.",
