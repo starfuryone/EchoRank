@@ -42,6 +42,80 @@ export interface SolutionDetail {
 }
 
 const DETAILS: Record<string, Record<SolutionBase, SolutionDetail>> = {
+  "local-businesses": {
+    en: {
+      prose: [
+        {
+          h2: "The ten-second decision happens on a phone",
+          paras: [
+            "For a local business, the decisive moment is brutally short: someone types 'coffee shop near me' or asks their assistant on the way out the door, gets three names, and picks in about ten seconds. What decides it is right there on the card — the rating, how many reviews, how recent, whether the owner replies, and the phrases the latest reviews lead with. Distance matters less than owners assume; trust at a glance matters more.",
+            "That comparison happens dozens of times a day whether you watch it or not, against the same two or three rivals. The compounding is local too: the business that wins it grows its review count faster, which makes the next ten-second decision easier to win — which is why the gap between #1 and #3 in a neighborhood tends to widen, not close.",
+          ],
+        },
+        {
+          h2: "Win it with recency, replies, and one clean identity",
+          paras: [
+            "Three unglamorous things swing the glance. Recency: a wall of great reviews from last year loses to a steady trickle from this month, so requests go out after every visit, automatically. Replies: an owner who answers everything — warmly for praise, calmly for complaints — reads as someone who cares, and that reply is written for the hundred readers, not the one reviewer. Identity: one exact name, address, phone and set of hours everywhere, because mismatched listings quietly cost both map ranking and customer trust.",
+            "Echorank runs all three as routines: delivery-timed review requests, responses drafted in your voice for a tap-to-approve, and listing consistency checks across the places customers and machines look you up. A rating dip or a nasty review alerts you the same day — while it's a Tuesday problem, not a trend.",
+          ],
+          image: {
+            src: "/solutions/localbusinesses-en.svg",
+            alt: "A near-me search compares three local businesses in seconds; the one with fresh reviews and owner replies gets the visit",
+          },
+        },
+        {
+          h2: "Your town's assistants have opinions about you",
+          paras: [
+            "The 'near me' habit is migrating into chat: people ask assistants for 'the best barber around here' or 'a plumber open on Sunday', and the answer names two or three local businesses — pulled from review profiles, local directories, and what's written about you around the web. It's the map pack all over again, one layer up, and most local businesses have never seen what it says.",
+            "The platform asks those questions for your category and neighborhood on schedule, records whether you're named and how you're described, and points at what the answers lean on — so the fix is always concrete: the unclaimed profile, the stale directory entry, the missing service page. The weekly read takes minutes; being the name your town's assistants give is the part that compounds for years.",
+          ],
+        },
+      ],
+      eyebrow: "LOCAL BUSINESSES",
+      h2: "Built for the near-me economy",
+      cards: [
+        { title: "Fresh by default", body: "Automatic post-visit requests keep volume and recency climbing — the glance test stops being luck." },
+        { title: "Every review answered", body: "Replies in your voice, drafted for approval — the owner who responds wins the comparison." },
+        { title: "The local answer", body: "Near-me and category prompts tracked across assistants — with the listing gaps that decide the names." },
+      ],
+    },
+    fr: {
+      prose: [
+        {
+          h2: "La décision de dix secondes se joue sur un téléphone",
+          paras: [
+            "Pour un commerce de proximité, le moment décisif est brutalement court : quelqu'un tape « café près de chez moi » ou pose la question à son assistant en sortant, reçoit trois noms, et choisit en une dizaine de secondes. Ce qui tranche est là, sur la fiche — la note, le nombre d'avis, leur fraîcheur, si le gérant répond, et les formules des derniers avis. La distance compte moins que les gérants ne le croient ; la confiance au premier coup d'œil compte davantage.",
+            "Cette comparaison se rejoue des dizaines de fois par jour, que vous la regardiez ou non, contre les deux ou trois mêmes rivaux. Et le cumul est local lui aussi : le commerce qui la gagne fait croître son volume d'avis plus vite, ce qui rend la prochaine décision de dix secondes plus facile à gagner — voilà pourquoi l'écart entre le n°1 et le n°3 d'un quartier tend à se creuser, pas à se refermer.",
+          ],
+        },
+        {
+          h2: "Gagnez-la par la fraîcheur, les réponses et une identité nette",
+          paras: [
+            "Trois choses peu spectaculaires font basculer le coup d'œil. La fraîcheur : un mur d'excellents avis de l'an dernier perd contre un filet régulier de ce mois-ci — les demandes partent donc après chaque visite, automatiquement. Les réponses : un gérant qui répond à tout — chaleureusement aux éloges, calmement aux plaintes — se lit comme quelqu'un d'attentif, et cette réponse s'écrit pour les cent lecteurs, pas pour l'auteur seul. L'identité : un nom, une adresse, un téléphone et des horaires identiques partout, car des fiches discordantes coûtent en silence du classement local et de la confiance.",
+            "Echorank fait tourner les trois en routine : demandes d'avis calées sur la visite, réponses rédigées dans votre voix à valider d'un geste, et contrôles de cohérence des fiches partout où clients et machines vous cherchent. Une note qui fléchit ou un avis dur vous alerte le jour même — tant que c'est un problème de mardi, pas une tendance.",
+          ],
+          image: {
+            src: "/solutions/localbusinesses-fr.svg",
+            alt: "Une recherche « près de chez moi » compare trois commerces en quelques secondes ; celui aux avis frais et aux réponses du gérant reçoit la visite",
+          },
+        },
+        {
+          h2: "Les assistants de votre ville ont un avis sur vous",
+          paras: [
+            "L'habitude du « près de chez moi » migre vers le chat : on demande aux assistants « le meilleur coiffeur du coin » ou « un plombier ouvert le dimanche », et la réponse nomme deux ou trois commerces — tirés des profils d'avis, des annuaires locaux et de ce qui s'écrit sur vous en ligne. C'est le pack local, un étage plus haut — et la plupart des commerces n'ont jamais vu ce qu'il dit.",
+            "La plateforme pose ces questions pour votre catégorie et votre quartier selon un calendrier, enregistre si vous êtes nommé et comment vous êtes décrit, et désigne ce sur quoi les réponses s'appuient — la correction est donc toujours concrète : le profil non revendiqué, l'entrée d'annuaire périmée, la page de service manquante. La lecture hebdomadaire prend quelques minutes ; être le nom que donnent les assistants de votre ville, c'est la part qui se cumule pendant des années.",
+          ],
+        },
+      ],
+      eyebrow: "COMMERCES DE PROXIMITÉ",
+      h2: "Conçu pour l'économie du « près de chez moi »",
+      cards: [
+        { title: "Frais par défaut", body: "Des demandes automatiques après chaque visite font monter volume et fraîcheur — le test du coup d'œil cesse d'être une loterie." },
+        { title: "Chaque avis a sa réponse", body: "Des réponses dans votre voix, à valider d'un geste — le gérant qui répond gagne la comparaison." },
+        { title: "La réponse locale", body: "Les requêtes « près de chez moi » et de catégorie suivies sur les assistants — avec les manques de fiches qui décident des noms." },
+      ],
+    },
+  },
   "healthcare": {
     en: {
       prose: [
