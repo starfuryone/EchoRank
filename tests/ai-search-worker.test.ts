@@ -20,6 +20,10 @@ const findUniqueBrand = vi.fn();
 const findManyPrompts = vi.fn();
 const updateManyPrompts = vi.fn();
 const createCheckup = vi.fn();
+const findManyCheckups = vi.fn();
+const updateCheckup = vi.fn();
+const findManyRuns = vi.fn();
+const writeMetricsMock = vi.fn();
 const runCheckupMock = vi.fn();
 const prismaPortsMock = vi.fn();
 
@@ -33,7 +37,12 @@ vi.mock("@/lib/prisma", () => ({
       findMany: (...a: unknown[]) => findManyPrompts(...a),
       updateMany: (...a: unknown[]) => updateManyPrompts(...a),
     },
-    checkup: { create: (...a: unknown[]) => createCheckup(...a) },
+    checkup: {
+      create: (...a: unknown[]) => createCheckup(...a),
+      findMany: (...a: unknown[]) => findManyCheckups(...a),
+      update: (...a: unknown[]) => updateCheckup(...a),
+    },
+    promptRun: { findMany: (...a: unknown[]) => findManyRuns(...a) },
   },
 }));
 
@@ -58,6 +67,10 @@ vi.mock("@/lib/ai-monitor/runner/checkup-runner", () => ({
   runCheckup: (...a: unknown[]) => runCheckupMock(...a),
 }));
 
+vi.mock("@/lib/ai-monitor/metrics-store", () => ({
+  writeVisibilityMetrics: (...a: unknown[]) => writeMetricsMock(...a),
+}));
+
 const NOW = new Date("2026-08-10T09:00:00Z");
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -78,6 +91,10 @@ beforeEach(async () => {
   });
   prismaPortsMock.mockReturnValue({ ask: vi.fn(async () => ({ answer: "hi" })) });
   createCheckup.mockResolvedValue({ id: "checkup_1" });
+  // Nothing running and nothing to reap, unless a test says otherwise.
+  findManyCheckups.mockResolvedValue([]);
+  findManyRuns.mockResolvedValue([]);
+  updateCheckup.mockResolvedValue({});
   mod = await import("@/infrastructure/queue/workers/ai-checkup.worker");
 });
 
@@ -106,13 +123,45 @@ describe("the sweep", () => {
     expect(data).toEqual({ brandProfileId: "brand_1", tenantId: "tenant_1" });
   });
 
-  it("gives each brand a stable job id, so a slow checkup is not re-enqueued", async () => {
-    // The sweep runs every 15 minutes. Without this, a checkup taking longer
-    // than that is queued again and again — the runner's idempotency key stops
-    // the RUNS doubling, but each duplicate job still creates a Checkup row.
+  it("buckets the job id by interval so retention cannot mute a brand", async () => {
+    // A bare `checkup:<brand>` inherits this queue's retention: BullMQ ignores
+    // `add` for an id that still exists, failed jobs are kept 7 days and
+    // completed ones 24h, so one exhausted checkup would silence the brand for
+    // a week and a successful one would clip the daily tier.
     findManyBrands.mockResolvedValue([brandRow()]);
     await mod.__testing.sweep(NOW);
-    expect(addJob.mock.calls[0][3]).toEqual({ jobId: "checkup:brand_1" });
+
+    // GROWTH is twice_weekly, so the interval is 3.5 days.
+    const bucket = Math.floor(NOW.getTime() / (3.5 * DAY_MS));
+    expect(addJob.mock.calls[0][3]).toEqual({ jobId: `checkup:brand_1:${bucket}` });
+
+    // A sweep in the NEXT interval gets a different id, so the enqueue lands
+    // even if Redis is still holding the previous record.
+    addJob.mockClear();
+    findManyBrands.mockResolvedValue([brandRow({ checkups: [] })]);
+    await mod.__testing.sweep(new Date(NOW.getTime() + 8 * DAY_MS));
+    expect(addJob.mock.calls[0][3].jobId).not.toBe(`checkup:brand_1:${bucket}`);
+  });
+
+  it("collapses two sweeps inside one interval onto the same job id", async () => {
+    findManyBrands.mockResolvedValue([brandRow()]);
+    await mod.__testing.sweep(NOW);
+    const first = addJob.mock.calls[0][3].jobId;
+    addJob.mockClear();
+    await mod.__testing.sweep(new Date(NOW.getTime() + 20 * 60_000));
+    expect(addJob.mock.calls[0][3].jobId).toBe(first);
+  });
+
+  it("skips a brand whose checkup is genuinely still running", async () => {
+    // The real guard against starting a second checkup on a live one; the job
+    // id is a first line that lives in Redis, this lives in the same table the
+    // runner writes.
+    findManyBrands.mockResolvedValue([brandRow()]);
+    findManyCheckups.mockResolvedValue([
+      { id: "c_live", brandProfileId: "brand_1", startedAt: NOW, promptCount: 2, repetitions: 2, providers: ["CLAUDE"] },
+    ]);
+    expect(await mod.__testing.sweep(NOW)).toBe(0);
+    expect(addJob).not.toHaveBeenCalled();
   });
 
   it("skips a tenant the rollout flag does not cover", async () => {
@@ -328,5 +377,120 @@ describe("the per-provider limiter", () => {
     }
     await Promise.all(calls);
     expect(peak).toBe(2);
+  });
+});
+
+describe("reaping an abandoned checkup", () => {
+  // GROWTH: 2 prompts x 1 engine x 2 reps = 4 slots -> 80s expected, so the
+  // 15-minute floor is what actually governs here.
+  const stale = (over: Record<string, unknown> = {}) => ({
+    id: "c_dead",
+    brandProfileId: "brand_1",
+    startedAt: new Date(NOW.getTime() - 3 * 60 * 60_000),
+    promptCount: 2,
+    repetitions: 2,
+    providers: ["CLAUDE"],
+    ...over,
+  });
+
+  const okRun = (promptId: string) => ({
+    engine: "CLAUDE",
+    promptId,
+    status: "OK",
+    brandMentioned: true,
+    analysis: { mentionCount: 1, recommendationPosition: 1, sentiment: "positive" },
+    citations: [{ domain: "echorank360.com", citationPosition: 1, supportsBrand: true }],
+    competitorMentions: [{ name: "Ahrefs", recommendationPosition: 2 }],
+  });
+
+  it("leaves a checkup that is merely slow alone", async () => {
+    // Reaping a live checkup would throw away the answers it is still
+    // collecting, which is worse than a row that looks stuck for a while.
+    findManyCheckups.mockResolvedValue([stale({ startedAt: new Date(NOW.getTime() - 60_000) })]);
+    expect(await mod.__testing.reapStale(NOW)).toBe(0);
+    expect(updateCheckup).not.toHaveBeenCalled();
+  });
+
+  it("finishes a dead checkup as PARTIAL and scores what it paid for", async () => {
+    findManyCheckups.mockResolvedValue([stale()]);
+    findManyRuns.mockResolvedValue([okRun("p1"), okRun("p2")]);
+
+    expect(await mod.__testing.reapStale(NOW)).toBe(1);
+
+    // The answers were bought; scoring them is the same call the runner makes
+    // when a cap cuts a checkup short.
+    expect(writeMetricsMock).toHaveBeenCalledTimes(1);
+    const [, , engines, coverage] = writeMetricsMock.mock.calls[0];
+    expect(engines.map((e: { engine: string }) => e.engine)).toEqual(["CLAUDE"]);
+    expect(coverage).toEqual({ partialCoverage: true, skippedRuns: 2 });
+
+    const update = updateCheckup.mock.calls[0][0];
+    expect(update.data.status).toBe("PARTIAL");
+    expect(update.data.stoppedReason).toMatch(/abandoned: 2 of 4/);
+    expect(update.data.completedAt).toEqual(NOW);
+  });
+
+  it("finishes a dead checkup that got nothing as FAILED, with no metrics row", async () => {
+    // A row of zeroes would put "you are invisible" on the chart for a day the
+    // worker died before asking.
+    findManyCheckups.mockResolvedValue([stale()]);
+    findManyRuns.mockResolvedValue([]);
+
+    expect(await mod.__testing.reapStale(NOW)).toBe(1);
+    expect(writeMetricsMock).not.toHaveBeenCalled();
+    expect(updateCheckup.mock.calls[0][0].data.status).toBe("FAILED");
+  });
+
+  it("counts the PLAN as what was owed, not the rows that happen to exist", async () => {
+    // A worker killed before writing a slot left no row at all. Counting only
+    // what is there would report full coverage over a third of a checkup.
+    findManyCheckups.mockResolvedValue([stale()]);
+    findManyRuns.mockResolvedValue([okRun("p1")]);
+
+    await mod.__testing.reapStale(NOW);
+    expect(writeMetricsMock.mock.calls[0][3]).toEqual({
+      partialCoverage: true,
+      skippedRuns: 3,
+    });
+  });
+
+  it("never scores a run that was skipped or failed", async () => {
+    findManyCheckups.mockResolvedValue([stale()]);
+    findManyRuns.mockResolvedValue([
+      okRun("p1"),
+      { ...okRun("p2"), status: "SKIPPED_CAP", brandMentioned: false, analysis: null },
+    ]);
+
+    await mod.__testing.reapStale(NOW);
+    // One scoreable run of a four-slot plan.
+    expect(writeMetricsMock.mock.calls[0][3].skippedRuns).toBe(3);
+  });
+
+  it("dates the salvaged metrics to the day the checkup began", async () => {
+    // Not the day the reaper happened to run — a checkup that died on Tuesday
+    // is Tuesday's data however long the corpse sat there.
+    findManyCheckups.mockResolvedValue([
+      stale({ startedAt: new Date("2026-08-07T22:00:00Z") }),
+    ]);
+    findManyRuns.mockResolvedValue([okRun("p1")]);
+
+    await mod.__testing.reapStale(NOW);
+    expect((writeMetricsMock.mock.calls[0][1] as Date).toISOString()).toBe(
+      "2026-08-07T00:00:00.000Z",
+    );
+  });
+
+  it("runs before the sweep decides what is due", async () => {
+    // So a brand whose checkup died is eligible again on THIS tick rather than
+    // waiting another fifteen minutes to be noticed.
+    findManyCheckups
+      .mockResolvedValueOnce([stale()]) // the reaper's read
+      .mockResolvedValueOnce([]); // nothing still in flight afterwards
+    findManyRuns.mockResolvedValue([]);
+    findManyBrands.mockResolvedValue([brandRow()]);
+
+    expect(await mod.__testing.sweep(NOW)).toBe(1);
+    expect(updateCheckup).toHaveBeenCalled();
+    expect(addJob).toHaveBeenCalledTimes(1);
   });
 });

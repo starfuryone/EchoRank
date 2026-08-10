@@ -34,6 +34,17 @@ import {
 } from "@/lib/ai-monitor/runner/status";
 import { answerHash, normalizeAnswer } from "@/lib/ai-monitor/runner/normalize";
 import { refusalFor, refusals, runnableEngines } from "@/lib/ai-monitor/runner/providers";
+import {
+  MIN_STALE_MS,
+  PER_SLOT_BUDGET_MS,
+  expectedDurationMs,
+  isStaleRunning,
+} from "@/lib/ai-monitor/runner/scheduler";
+import {
+  salvageScoredRuns,
+  scoredRunFromPersisted,
+  type PersistedRun,
+} from "@/lib/ai-monitor/runner/salvage";
 import type { EngineSpec } from "@/lib/ai-monitor/engines";
 import type { BrandContext, RunAnalysis } from "@/lib/ai-monitor/analysis/analyze-response";
 
@@ -497,5 +508,90 @@ describe("normalising an answer for change detection", () => {
   it("survives an empty answer", () => {
     expect(normalizeAnswer("")).toBe("");
     expect(answerHash("")).toHaveLength(64);
+  });
+});
+
+// ──────────────────────── staleness and salvage ────────────────────────
+
+describe("declaring a checkup abandoned", () => {
+  const started = new Date("2026-08-10T09:00:00Z");
+  const after = (ms: number) => new Date(started.getTime() + ms);
+
+  it("scales the budget with the size of the plan", () => {
+    expect(expectedDurationMs(0)).toBe(0);
+    expect(expectedDurationMs(10)).toBe(10 * PER_SLOT_BUDGET_MS);
+  });
+
+  it("waits twice the expected duration before giving up", () => {
+    // 100 slots -> 2000s expected -> 4000s before it counts as dead.
+    expect(isStaleRunning(started, 100, after(3_999_000))).toBe(false);
+    expect(isStaleRunning(started, 100, after(4_001_000))).toBe(true);
+  });
+
+  it("never reaps inside the floor, however small the plan", () => {
+    // A two-slot checkup expects 40s; without the floor it would be declared
+    // dead 80 seconds in, while the first provider was still answering.
+    expect(isStaleRunning(started, 2, after(5 * 60_000))).toBe(false);
+    expect(isStaleRunning(started, 2, after(MIN_STALE_MS + 1_000))).toBe(true);
+  });
+
+  it("says nothing about a checkup that never started", () => {
+    expect(isStaleRunning(null, 10, after(999_999_999))).toBe(false);
+  });
+});
+
+describe("salvaging a dead checkup's runs", () => {
+  const persisted = (over: Partial<PersistedRun> = {}): PersistedRun => ({
+    engine: "CLAUDE",
+    promptId: "p1",
+    status: "OK",
+    brandMentioned: true,
+    analysis: { mentionCount: 2, recommendationPosition: 3, sentiment: "positive" },
+    citations: [{ domain: "echorank360.com", citationPosition: 1, supportsBrand: true }],
+    competitorMentions: [{ name: "Ahrefs", recommendationPosition: 2 }],
+    ...over,
+  });
+
+  it("inverts exactly what ports.ts wrote", () => {
+    // The three places the stored shape and the scored shape disagree. Each is
+    // a silent wrong answer rather than a crash, which is why this is pinned.
+    const scored = scoredRunFromPersisted(persisted());
+    expect(scored.sentiment).toBe("POSITIVE");
+    expect(scored.brandPosition).toBe(3);
+    expect(scored.citations[0].isMonitoredDomain).toBe(true);
+    expect(scored.competitors).toEqual([{ name: "Ahrefs", position: 2 }]);
+  });
+
+  it("keeps a missing judgement missing rather than calling it neutral", () => {
+    // metrics.ts drops a mentioned run with no reading from the sentiment
+    // average on purpose; inventing NEUTRAL here would defeat that.
+    expect(scoredRunFromPersisted(persisted({ analysis: null })).sentiment).toBeNull();
+    expect(
+      scoredRunFromPersisted(
+        persisted({ analysis: { mentionCount: 1, recommendationPosition: null, sentiment: null } }),
+      ).sentiment,
+    ).toBeNull();
+  });
+
+  it("scores only the runs that answered", () => {
+    // A SKIPPED_CAP row records that we never asked; scoring it would count
+    // that as the brand being absent.
+    const runs = [
+      persisted({ promptId: "p1" }),
+      persisted({ promptId: "p2", status: "SKIPPED_CAP", brandMentioned: false, analysis: null }),
+      persisted({ promptId: "p3", status: "FAILED", brandMentioned: false, analysis: null }),
+    ];
+    const salvaged = salvageScoredRuns(runs);
+    expect(salvaged).toHaveLength(1);
+    expect(salvaged[0].promptId).toBe("p1");
+  });
+
+  it("survives a run with no analysis row at all", () => {
+    const scored = scoredRunFromPersisted(
+      persisted({ analysis: null, citations: [], competitorMentions: [] }),
+    );
+    expect(scored.mentionCount).toBe(0);
+    expect(scored.brandPosition).toBeNull();
+    expect(scored.citations).toEqual([]);
   });
 });

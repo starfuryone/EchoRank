@@ -41,8 +41,14 @@ import { prismaPorts } from "@/lib/ai-monitor/runner/ports";
 import {
   createProviderLimiter,
   dueBrands,
+  enqueueBucket,
+  isStaleRunning,
   type SchedulableBrand,
 } from "@/lib/ai-monitor/runner/scheduler";
+import { salvageScoredRuns } from "@/lib/ai-monitor/runner/salvage";
+import { aggregateCheckup } from "@/lib/ai-monitor/metrics";
+import { writeVisibilityMetrics } from "@/lib/ai-monitor/metrics-store";
+import { isPartialCoverage } from "@/lib/ai-monitor/runner/status";
 
 const QUEUE_NAME = "ai-checkup" as const;
 const SWEEP_JOB_NAME = "sweep";
@@ -76,12 +82,111 @@ export interface AiCheckupJob {
 
 /**
  * One limiter for the whole process. See the header — per-job would defeat it.
+ *
+ * PER PROCESS IS THE RESIDUAL LIMIT, and it is worth naming. Run two worker
+ * processes and the effective ceiling at each vendor doubles, because neither
+ * process can see the other's in-flight calls. That is fine at one worker and
+ * is not worth a Redis-backed distributed semaphore today; it becomes wrong the
+ * moment this queue is scaled horizontally, and the fix at that point is to
+ * divide AI_CONCURRENCY_<PROVIDER> by the replica count or move the limiter
+ * into Redis.
  */
 const limiter = createProviderLimiter();
 
 /** UTC midnight for the day a metrics row belongs to. */
 function utcDay(now: Date): Date {
   return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+}
+
+/**
+ * Finish checkups whose worker died.
+ *
+ * A run persists each answer as it gets it but writes the metrics row once, at
+ * the end. A process killed halfway therefore leaves a RUNNING row over a set
+ * of answers that were paid for and never scored. Nothing else notices: the
+ * cadence sweep ignores unfinished checkups by design, so the brand carries on
+ * being scheduled while the corpse sits there saying "running" forever.
+ *
+ * SALVAGES RATHER THAN DISCARDS. The runs are already analysed and stored, so
+ * the money is spent either way; scoring them is the same call the runner makes
+ * when a cap cuts a checkup short, and for the same reason. A dead checkup with
+ * usable answers lands PARTIAL with a flagged metrics row, one with none lands
+ * FAILED — exactly the rule in runner/status.ts, so a reaped checkup is
+ * indistinguishable from one that ended that way on its own.
+ */
+async function reapStale(now: Date): Promise<number> {
+  const running = await prisma.checkup.findMany({
+    where: { status: "RUNNING" },
+    select: {
+      id: true,
+      brandProfileId: true,
+      startedAt: true,
+      promptCount: true,
+      repetitions: true,
+      providers: true,
+    },
+  });
+
+  let reaped = 0;
+
+  for (const checkup of running) {
+    const planned =
+      checkup.promptCount * Math.max(1, checkup.providers.length) * checkup.repetitions;
+    if (!isStaleRunning(checkup.startedAt, planned, now)) continue;
+
+    const runs = await prisma.promptRun.findMany({
+      where: { checkupId: checkup.id },
+      select: {
+        engine: true,
+        promptId: true,
+        status: true,
+        brandMentioned: true,
+        analysis: {
+          select: { mentionCount: true, recommendationPosition: true, sentiment: true },
+        },
+        citations: { select: { domain: true, citationPosition: true, supportsBrand: true } },
+        competitorMentions: { select: { name: true, recommendationPosition: true } },
+      },
+    });
+
+    const scored = salvageScoredRuns(runs);
+    // The plan is the authority on how much was owed, not the rows that exist:
+    // a worker killed before it wrote a slot left no row at all, and counting
+    // only what is there would report full coverage over a third of a checkup.
+    const counts = {
+      planned,
+      ok: scored.length,
+      skippedCap: runs.filter((run) => run.status === "SKIPPED_CAP").length,
+      failed: planned - scored.length - runs.filter((r) => r.status === "SKIPPED_CAP").length,
+    };
+
+    if (scored.length > 0) {
+      const { byEngine } = aggregateCheckup(scored);
+      await writeVisibilityMetrics(
+        checkup.brandProfileId,
+        utcDay(checkup.startedAt ?? now),
+        Object.entries(byEngine).map(([engine, aggregate]) => ({ engine, aggregate })),
+        { partialCoverage: isPartialCoverage(counts), skippedRuns: planned - scored.length },
+      );
+    }
+
+    await prisma.checkup.update({
+      where: { id: checkup.id },
+      data: {
+        status: scored.length === 0 ? "FAILED" : "PARTIAL",
+        stoppedReason: `abandoned: ${scored.length} of ${planned} runs completed before the worker stopped`,
+        completedAt: now,
+      },
+    });
+
+    reaped += 1;
+    logger.warn(
+      { checkupId: checkup.id, brandProfileId: checkup.brandProfileId, planned, ok: scored.length },
+      "reaped an abandoned checkup",
+    );
+  }
+
+  return reaped;
 }
 
 /**
@@ -93,6 +198,24 @@ function utcDay(now: Date): Date {
  * brand's coverage for a whole interval.
  */
 async function sweep(now: Date): Promise<number> {
+  // Before deciding what is due: finish anything abandoned. Doing it first
+  // means a brand whose last checkup died is eligible again on THIS tick rather
+  // than waiting another fifteen minutes to be noticed.
+  await reapStale(now);
+
+  // Whatever is still RUNNING after that is genuinely in flight. Skipping those
+  // brands is the real guard against starting a second checkup on top of a live
+  // one; the job id below is a cheaper first line, but it lives in Redis and
+  // this lives in the same table the runner writes.
+  const inFlight = new Set(
+    (
+      await prisma.checkup.findMany({
+        where: { status: "RUNNING" },
+        select: { brandProfileId: true },
+      })
+    ).map((checkup) => checkup.brandProfileId),
+  );
+
   const brands = await prisma.brandProfile.findMany({
     where: { trackingActive: true },
     select: {
@@ -123,18 +246,25 @@ async function sweep(now: Date): Promise<number> {
       };
     });
 
-  const due = dueBrands(schedulable, now).slice(0, SWEEP_BATCH);
+  const due = dueBrands(
+    schedulable.filter((brand) => !inFlight.has(brand.brandProfileId)),
+    now,
+  ).slice(0, SWEEP_BATCH);
 
   for (const brand of due) {
+    // BUCKETED BY INTERVAL, not just by brand. BullMQ silently ignores `add`
+    // for a job id that still exists, and this queue keeps failed jobs for
+    // seven days and completed ones for a day — so a bare `checkup:<brand>`
+    // would mute a brand for a week after one exhausted checkup, and clip the
+    // daily tier for the 24h a successful record is retained. The bucket
+    // collapses repeat sweeps inside one interval and always gives the next
+    // interval a fresh id, whatever Redis is still holding.
+    const bucket = enqueueBucket(brand.frequency, now);
     await addJob<AiCheckupJob>(
       QUEUE_NAME,
       RUN_JOB_NAME,
       { brandProfileId: brand.brandProfileId, tenantId: brand.tenantId },
-      // One queued checkup per brand at a time. Without this a slow checkup
-      // plus a 15-minute sweep enqueues the same brand repeatedly, and while
-      // the runner's idempotency key stops the RUNS doubling, each duplicate
-      // job would still create a fresh Checkup row.
-      { jobId: `checkup:${brand.brandProfileId}` },
+      { jobId: `checkup:${brand.brandProfileId}:${bucket}` },
     );
   }
 
@@ -319,4 +449,4 @@ export function startAiCheckupWorker(): Worker<AiCheckupJob> {
   return worker;
 }
 
-export const __testing = { sweep, runOne, utcDay, QUEUE_NAME, SWEEP_BATCH };
+export const __testing = { sweep, runOne, reapStale, utcDay, QUEUE_NAME, SWEEP_BATCH };

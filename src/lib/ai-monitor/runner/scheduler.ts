@@ -133,6 +133,70 @@ export function nextCheckupAt(
   return due.getTime() <= now.getTime() ? now : due;
 }
 
+/**
+ * Rough wall-clock budget for one slot: a provider answer plus its analysis
+ * call, with the network in between.
+ *
+ * Deliberately generous. This number only ever decides when a checkup is
+ * declared DEAD, so erring high costs a stuck row a little more time on the
+ * dashboard, while erring low reaps a checkup that was merely slow and throws
+ * away the answers it was still collecting.
+ */
+export const PER_SLOT_BUDGET_MS = 20_000;
+
+/** Below this, nothing is reaped however small the plan. */
+export const MIN_STALE_MS = 15 * 60_000;
+
+/** How far past its expected duration a checkup must be to count as dead. */
+export const STALE_MULTIPLIER = 2;
+
+/** What a plan of this size should take, at worst. */
+export function expectedDurationMs(plannedSlots: number): number {
+  return Math.max(0, plannedSlots) * PER_SLOT_BUDGET_MS;
+}
+
+/**
+ * Has this RUNNING checkup been abandoned?
+ *
+ * A worker killed mid-checkup leaves its row RUNNING with no one to finish it.
+ * Nothing else notices: the cadence sweep ignores unfinished checkups by
+ * design, so the brand keeps being scheduled, and the corpse simply sits there
+ * saying "running" while the answers it already paid for never reach a metrics
+ * row. That is the failure this predicate exists to detect.
+ */
+export function isStaleRunning(
+  startedAt: Date | null,
+  plannedSlots: number,
+  now: Date = new Date(),
+): boolean {
+  if (!startedAt) return false;
+  const budget = Math.max(MIN_STALE_MS, STALE_MULTIPLIER * expectedDurationMs(plannedSlots));
+  return now.getTime() - startedAt.getTime() > budget;
+}
+
+/**
+ * The interval-aligned window a checkup belongs to.
+ *
+ * USED AS THE ENQUEUE JOB ID, and the alignment is the whole point. A job id of
+ * just the brand would dedupe correctly while a checkup is in flight and then
+ * keep deduping long after: BullMQ silently ignores `add` for an id that still
+ * exists, and this queue keeps failed jobs for seven days. One exhausted
+ * checkup would therefore mute that brand for a week, and a completed one would
+ * clip the daily tier for the 24h its record is retained. Bucketing by interval
+ * means two sweeps inside one window collapse into a single job while the next
+ * window always gets its own id, whatever Redis is still holding.
+ *
+ * Null for a tier that runs no checkups.
+ */
+export function enqueueBucket(
+  frequency: CheckupFrequency,
+  now: Date = new Date(),
+): number | null {
+  const days = CHECKUP_INTERVAL_DAYS[frequency];
+  if (days === null) return null;
+  return Math.floor(now.getTime() / (days * DAY_MS));
+}
+
 export interface SchedulableBrand {
   brandProfileId: string;
   tenantId: string;
