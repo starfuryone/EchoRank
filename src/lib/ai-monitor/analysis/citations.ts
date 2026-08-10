@@ -33,7 +33,17 @@ export interface AnalyzedCitation {
   title: string | null;
   /** 1-based order of appearance, renumbered after de-duplication. */
   citationPosition: number;
-  /** Registrable-domain match against the monitored site. www- and subdomain-insensitive. */
+  /**
+   * Registrable-domain match against the monitored site. www- and
+   * subdomain-insensitive.
+   *
+   * IN MEMORY ONLY — there is deliberately no is_monitored_domain column on
+   * Citation. It is a pure function of `domain`, and Citation's
+   * (tenantId, domain, createdAt) index already serves "how often was my own
+   * site cited". Storing it would buy nothing on read and would add a write-path
+   * invariant: a brand that changes its website would silently leave every
+   * historical row asserting the wrong thing.
+   */
   isMonitoredDomain: boolean;
 }
 

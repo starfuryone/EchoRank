@@ -14,9 +14,14 @@
 // that does the arithmetic is what lets the arithmetic be tested without a
 // database.
 //
-// NOTHING CALLS THIS YET. The checkup runner is step 3; until it exists these
-// are the writers it will use, and the shapes they expect are pinned by the
-// tests on the pure functions they consume.
+// NOTHING CALLS THIS YET, AND SO NOTHING HAS RUN IT AGAINST A DATABASE. The
+// checkup runner is step 3; until it exists these are the writers it will use,
+// and the shapes they expect are pinned by the tests on the pure functions they
+// consume. What those tests CANNOT catch is a column that does not exist, a
+// unique constraint that fires, or a transaction that deadlocks — so step 3
+// owes this file one integration test that round-trips a synthetic checkup
+// through both writers against the test database. Until that exists, treat
+// every line below as unverified against Postgres.
 
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/infrastructure/observability/logger";

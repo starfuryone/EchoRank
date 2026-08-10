@@ -16,6 +16,15 @@
 // most needs — "these five were recommended and you were not" is the finding.
 // `NOT_MENTIONED` exists as a sentiment value for exactly this case.
 //
+// AND IT STAYS THAT WAY. The competitive picture from answers that omit the
+// brand is the thing customers are buying, and the cost is one Haiku call per
+// run already metered against the tier's USD cap. Do NOT add a gate on
+// speculation. The one condition that would justify one is real metering
+// showing AGENCY approaching its cap in production, and the gate would then be
+// tier-dependent — SOLO skips, PRO and AGENCY always — never a blanket
+// "unmentioned responses are cheap to skip", which is what would delete the
+// finding above.
+//
 // POSITION COMES FROM ARRAY ORDER, NOT FROM A NUMBER THE MODEL EMITS. Asked for
 // an index alongside each name, models duplicate them, skip them and restart at
 // one after a nested list. The order of the array is the thing they actually

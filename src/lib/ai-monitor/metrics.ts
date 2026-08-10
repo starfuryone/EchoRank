@@ -5,15 +5,24 @@
 // COHORT-LEVEL, AND DELIBERATELY NOT ./scoring.ts. That module scores ONE
 // response (0-100) and then averages per provider; this one computes four
 // components across a SET of runs — how often we were named, how high, how
-// often cited, how warmly. Both are 0-100 and both are real, but they answer
-// different questions and must never be shown as the same number:
+// often cited, how warmly.
 //
 //   ./scoring.ts    mentionVisibilityScore  -> MentionAnalysis.visibilityScore
 //                   checkupVisibilityScore  -> Checkup.visibilityScore
 //   this module     computeScoreV1          -> VisibilityMetric.visibilityScore
 //
+// THOSE ARE TWO PRODUCTS' NUMBERS, NOT TWO VERSIONS OF ONE.
+// VisibilityMetric.visibilityScore IS the AI Search Score, and it is the only
+// score the watcher UI shows. Checkup.visibilityScore belongs to the audit:
+// never rendered on a watcher screen, never renamed to match this, and never
+// averaged with or mapped onto it. They are both 0-100 and both correct, which
+// is exactly why someone will eventually try to reconcile them — there is
+// nothing to reconcile, and a "fix" that relates them invents a number neither
+// product measured.
+//
 // VisibilityMetric's schema comment has pointed at this file since the table
-// was added; this is that file.
+// was added; this is that file. The COLUMN CONTRACT block further down is the
+// authority on which aggregate lands in which column and on what scale.
 //
 // PURE. No Prisma, no clock, no env, no logger — every input is passed in. The
 // zero-run case therefore returns null rather than logging: the caller writing
@@ -503,15 +512,74 @@ export function aggregateCheckup(
   };
 }
 
-/** One VisibilityMetric row, ready to upsert. */
+// ───────────────────────────── COLUMN CONTRACT ─────────────────────────────
+//
+// What lands in each VisibilityMetric column, and ON WHICH SCALE. The table was
+// created before this module existed, so several of its columns were named
+// without a definition; these are the definitions. Read this rather than
+// inferring a column's meaning from its name — three of them are not what a
+// reader would assume, and two scales share the row.
+//
+//   visibilityScore      0-100  THE AI Search Score. The only score the watcher
+//                               UI shows. Not related to Checkup.visibilityScore
+//                               — see the header.
+//   scoreVersion         int    Which formula produced visibilityScore.
+//                               Historical rows are never recomputed; a version
+//                               2 is written beside them.
+//   recommendationScore  0-100  The POSITION component: how high the answers
+//                               placed the brand in what they recommended.
+//                               Nothing else on the row is a candidate for this
+//                               name, and it is NOT a second overall score.
+//   citationScore        0-100  The CITATION component — OR NULL on an engine
+//                        or null that does not return citations at all.
+//                               NULL IS NOT ZERO HERE. Zero means "could have
+//                               cited you and never did", which is a finding;
+//                               null means "this engine cannot be measured this
+//                               way", which is not. Charts must skip nulls
+//                               rather than plot them at the axis. The caller
+//                               supplies the capability from
+//                               AIEngine.supportsCitations — it is not derivable
+//                               from the runs, because an engine that CAN cite
+//                               and did not is a genuine zero.
+//   sentimentScore      -1..1   The RAW SIGNED MEAN, stored as it is measured.
+//                        or null POSITIVE/NEUTRAL/NEGATIVE map to +1/0/-1 here.
+//                               The 0-100 form (100/50/0) exists ONLY inside
+//                               computeScoreV1, where it has to share a scale
+//                               with the other three components. Do not store
+//                               the 0-100 form and do not convert on read: a
+//                               -1..1 column rendered as a percentage puts a
+//                               neutral brand at 0% and a disliked one below
+//                               the axis. Null when no mentioned run carried a
+//                               reading.
+//   shareOfVoice         0-100  Brand appearances as a share of all entity
+//                               appearances. Null when nothing was named at all.
+//   averagePosition      1..n   Mean rank over the runs that ranked the brand —
+//                               a PLACE, not a score, so lower is better and it
+//                               is the one number here that must never be shown
+//                               on a 0-100 axis. Null when none ranked it.
+//   mentionRate          0-1    FRACTION. 0.8 means 80%.
+//   top3Rate             0-1    FRACTION.
+//   runCount             int    Runs the row was computed from. A score off two
+//                               runs and one off two hundred are not the same
+//                               claim; the chart dims the former.
+//
+// ───────────────────────────────────────────────────────────────────────────
+
+/** One VisibilityMetric row, ready to upsert. See the COLUMN CONTRACT above. */
 export interface VisibilityMetricRow {
   engine: string;
   day: Date;
+  /** 0-100. */
   visibilityScore: number;
+  /** 0-100, or null on an engine that cannot cite. Null is not zero. */
   citationScore: number | null;
+  /** 0-100, the position component. */
   recommendationScore: number;
+  /** -1..1 raw mean, NOT the 0-100 component. */
   sentimentScore: number | null;
+  /** 0-100. */
   shareOfVoice: number | null;
+  /** A place, 1..n — lower is better. */
   averagePosition: number | null;
   /** 0-1. */
   mentionRate: number;
@@ -524,22 +592,9 @@ export interface VisibilityMetricRow {
 /**
  * Map an aggregate onto the VisibilityMetric columns.
  *
- * PURE AND TESTED because three of those columns predate this module and their
- * meaning had to be decided rather than read off:
- *
- *   recommendationScore <- the POSITION component. It is the score derived from
- *     where the answer placed the brand in what it recommended, which is what
- *     the column name describes. Nothing else on the row is a candidate.
- *   citationScore       <- the CITATION component, but NULL when the engine
- *     does not return citations at all. The column's own comment insists on
- *     that distinction, and 0 would read as "never cited" when the truth is
- *     "unmeasurable here". The caller supplies the capability from
- *     AIEngine.supportsCitations; it is not guessable from the runs, because an
- *     engine that CAN cite and did not is a genuine zero.
- *   sentimentScore      <- meanSentiment on -1..1, not the 0-100 component.
- *
- * Doing the mapping in one visible function rather than inline at the call site
- * is what makes those three decisions reviewable when the dashboard is built.
+ * PURE AND TESTED, and the single place the COLUMN CONTRACT above is applied.
+ * Doing it here rather than inline at the call site is what keeps those
+ * decisions in one reviewable diff when the dashboard is built.
  */
 export function toVisibilityMetricRow(
   engine: string,
