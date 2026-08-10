@@ -36,6 +36,7 @@ const EN: GuideDoc = {
         "Searches count against your plan's monthly pool: 250 a month on Starter, 1,000 on Growth, and 5,000 on Agency. That is generous for deliberate research and easy to waste on idle typing, so batch your lookups.",
       ],
       shot: "Keywords Explorer with a seed phrase entered and expansions listed beneath.",
+      shotSrc: "/guides/keywords-explorer-en.svg",
       callout: {
         kind: "note",
         body: "A search only counts against the quota when a result actually comes back. A query that returns nothing is not billed to your pool.",
@@ -56,6 +57,7 @@ const EN: GuideDoc = {
         "If two of your pages genuinely deserve the same term, that is a sign they should be one page.",
       ],
       shot: "A simple mapping of pages to their assigned primary keywords.",
+      shotSrc: "/guides/keyword-mapping-en.svg",
     },
     {
       h: "Add ten to twenty-five terms to Rank Tracker",
@@ -100,6 +102,7 @@ const FR: GuideDoc = {
         "Les recherches sont décomptées du pool mensuel de votre forfait : 250 par mois sur Starter, 1 000 sur Croissance et 5 000 sur Agence. C'est généreux pour une recherche réfléchie et facile à gaspiller en saisies distraites : regroupez vos requêtes.",
       ],
       shot: "Keywords Explorer, une expression de départ saisie et les expansions listées en dessous.",
+      shotSrc: "/guides/keywords-explorer-fr.svg",
       callout: {
         kind: "note",
         body: "Une recherche n'est décomptée du quota que lorsqu'un résultat revient réellement. Une requête sans résultat n'est pas facturée à votre pool.",
@@ -119,6 +122,7 @@ const FR: GuideDoc = {
         "Si deux de vos pages méritent vraiment le même terme, c'est le signe qu'elles devraient n'en faire qu'une.",
       ],
       shot: "Une correspondance simple entre les pages et leur mot-clé principal.",
+      shotSrc: "/guides/keyword-mapping-fr.svg",
     },
     {
       h: "Ajoutez dix à vingt-cinq termes au Rank Tracker",

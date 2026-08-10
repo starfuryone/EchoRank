@@ -1,0 +1,28 @@
+<svg viewBox="0 0 760 340" width="760" height="340" xmlns="http://www.w3.org/2000/svg" font-family="Geist, system-ui, sans-serif">
+  <rect x="0" y="0" width="760" height="340" fill="#14181d"/>
+  <rect x="60" y="36" width="640" height="272" rx="12" fill="#1a1f26" stroke="#333a43"/>
+  <text x="92" y="78" font-size="16" font-weight="600" fill="#eaecef">Page → primary keyword</text>
+  <line x1="92" y1="94" x2="668" y2="94" stroke="#2a3038"/>
+  <g font-size="10" fill="#9aa4af">
+    <text x="92" y="114">PAGE</text><text x="420" y="114">PRIMARY KEYWORD</text>
+  </g>
+  <g font-size="13" fill="#9aa4af">
+    <text x="92" y="146">/emergency-plumbing</text>
+    <text x="92" y="182">/water-heaters</text>
+    <text x="92" y="218">/drain-cleaning</text>
+    <text x="92" y="254">/service-areas/round-rock</text>
+  </g>
+  <g font-size="13" fill="#eaecef">
+    <text x="420" y="146">emergency plumber austin</text>
+    <text x="420" y="182">water heater replacement austin</text>
+    <text x="420" y="218">drain cleaning austin</text>
+    <text x="420" y="254">plumber round rock</text>
+  </g>
+  <g stroke="#f0b90b" stroke-width="1.5">
+    <line x1="300" y1="142" x2="408" y2="142"/>
+    <line x1="300" y1="178" x2="408" y2="178"/>
+    <line x1="300" y1="214" x2="408" y2="214"/>
+    <line x1="300" y1="250" x2="408" y2="250"/>
+  </g>
+  <text x="92" y="290" font-size="11" fill="#9aa4af">One term per page. Two pages wanting the same term is one page waiting to be merged.</text>
+</svg>
