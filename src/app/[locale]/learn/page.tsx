@@ -90,7 +90,7 @@ const CHROME: Record<Base, HubChrome> = {
     metaDescription:
       "A free ten-chapter course, five deep-dive guides and a glossary: audit your baseline, import your review history, generate and answer reviews, and get recommended by AI assistants.",
     kicker: "ECHORANK KNOWLEDGE HUB",
-    h1a: "From beginner to trusted brand —",
+    h1a: "From beginner to trusted brand",
     h1b: "learn reputation & AI visibility step by step",
     intro:
       "Free, practical, and built from the field. Ten chapters, five deep-dive guides, and a glossary — everything in the complete Echorank guide, readable on the web.",
@@ -127,7 +127,7 @@ const CHROME: Record<Base, HubChrome> = {
     metaDescription:
       "Un cours gratuit en dix chapitres, cinq guides approfondis et un glossaire : faites votre état des lieux, importez vos avis, sollicitez et répondez, et faites-vous recommander par les assistants IA.",
     kicker: "CENTRE DE CONNAISSANCES ECHORANK",
-    h1a: "Du point de départ à une marque de confiance —",
+    h1a: "Du point de départ à une marque de confiance",
     h1b: "la réputation et la visibilité IA, étape par étape",
     intro:
       "Gratuit, concret, et issu du terrain. Dix chapitres, cinq guides approfondis et un glossaire — tout le guide complet Echorank, lisible sur le web.",
