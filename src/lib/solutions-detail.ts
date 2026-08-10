@@ -14,6 +14,8 @@ export interface SolutionDetailImage {
   /** Served from public/solutions/. */
   src: string;
   alt: string;
+  /** Optional CSS max-width in px; image stays full-width below it. */
+  maxWidth?: number;
 }
 
 export interface SolutionProseSection {
@@ -49,6 +51,7 @@ const DETAILS: Record<string, Record<SolutionBase, SolutionDetail>> = {
           ],
           image: {
             src: "/solutions/business-owner-photo.webp",
+            maxWidth: 480,
             alt: "A business owner outside their workshop beside a branded service van",
           },
         },
@@ -82,6 +85,7 @@ const DETAILS: Record<string, Record<SolutionBase, SolutionDetail>> = {
           ],
           image: {
             src: "/solutions/business-owner-photo.webp",
+            maxWidth: 480,
             alt: "Un chef d'entreprise devant son atelier, à côté de son véhicule de service",
           },
         },

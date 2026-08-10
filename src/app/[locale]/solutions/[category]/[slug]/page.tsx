@@ -143,7 +143,7 @@ export default async function Page({ params }: { params: Params }) {
                 src={sec.image.src}
                 alt={sec.image.alt}
                 loading="lazy"
-                style={{ width: "100%", borderRadius: 14, marginTop: 24, border: "1px solid rgba(255,255,255,.08)" }}
+                style={{ width: "100%", maxWidth: sec.image.maxWidth ?? "100%", borderRadius: 14, marginTop: 24, border: "1px solid rgba(255,255,255,.08)" }}
               />
             )}
           </div>
