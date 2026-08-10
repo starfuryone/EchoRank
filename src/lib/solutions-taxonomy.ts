@@ -521,7 +521,7 @@ export const SOLUTION_CATEGORIES: SolutionCategory[] = [
         en: {
           label: "Agency leaders",
           desc: "Win the pitch, prove the retainer.",
-          h1: "Echorank360 for agency leaders",
+          h1: "Echorank for agency leaders",
           intro: "The two hard moments are the pitch and the renewal. Both need numbers a client recognises and a report they can forward.",
           features: [
             { href: AI, why: "A scored audit that makes the pitch concrete." },
