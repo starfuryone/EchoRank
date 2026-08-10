@@ -2608,6 +2608,12 @@ model VisibilityMetric {
 
   /// 0-100, the weighted formula in src/lib/ai-monitor/metrics.ts.
   visibilityScore     Float
+  /// WHICH formula produced `visibilityScore` — SCORE_VERSION in that module.
+  /// Rows are NEVER recomputed when the weights change: a new version is
+  /// written beside the old, and a row keeps the number the customer was shown
+  /// on the day. A trend line that silently restates last quarter is worse than
+  /// no trend line, because nothing on the chart says it happened.
+  scoreVersion        Int      @default(1)
   /// Share of runs that cited any source supporting the brand. NULL — not 0 —
   /// on an engine that does not return citations at all.
   citationScore       Float?
@@ -2618,6 +2624,10 @@ model VisibilityMetric {
   shareOfVoice        Float?
   /// Mean list position across runs that ranked the brand. Null when none did.
   averagePosition     Float?
+  /// FRACTIONS, 0-1 — not percentages. `visibilityScore` and the component
+  /// scores beside it are 0-100, so the two conventions sit on one row; the
+  /// writer (toVisibilityMetricRow) is the single place that decides which is
+  /// which, and a chart multiplying the wrong one by 100 is a silent 100x.
   mentionRate         Float
   top3Rate            Float
   /// Runs this row was computed from. A score off two runs and one off two

@@ -165,9 +165,19 @@ export function firstListPosition(answer: string, names: readonly string[]): num
   return null;
 }
 
-const URL_RE = /https?:\/\/[^\s<>()[\]"']+/gi;
+/**
+ * Exported for ./citations.ts, which needs the same two patterns with the
+ * match POSITIONS rather than just the domains. Two copies of a URL regex is
+ * two definitions of what counts as a citation, and they would drift.
+ *
+ * Safe to share despite the `g` flag: every use here and there is `matchAll`,
+ * which operates on an internal clone and never advances this object's
+ * lastIndex.
+ */
+export const URL_RE = /https?:\/\/[^\s<>()[\]"']+/gi;
 /** Bare domains: "see example.com/docs" — models cite these as often as URLs. */
-const BARE_DOMAIN_RE = /(?<![\w@/.-])((?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,})(?![\w@-])/gi;
+export const BARE_DOMAIN_RE =
+  /(?<![\w@/.-])((?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z]{2,})(?![\w@-])/gi;
 
 /**
  * Blank out URLs and bare domains, preserving the string's length.
