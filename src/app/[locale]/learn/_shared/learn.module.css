@@ -13,12 +13,13 @@
   text-align: center;
 }
 .heroH1 {
-  font-size: clamp(28px, 4.2vw, 42px);
-  font-weight: 660;
-  letter-spacing: -0.02em;
-  line-height: 1.14;
+  font-size: clamp(2.4rem, 5vw, 4.2rem);
+  font-weight: 700;
+  letter-spacing: -0.055em;
+  line-height: 0.98;
+  color: #EAECEF;
   margin: 14px auto 12px;
-  max-width: 860px;
+  max-width: 980px;
 }
 .heroSub {
   color: var(--muted, #8f8fa3);
