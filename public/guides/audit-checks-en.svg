@@ -1,0 +1,20 @@
+<svg viewBox="0 0 760 420" width="760" height="420" xmlns="http://www.w3.org/2000/svg" font-family="Geist, system-ui, sans-serif">
+  <rect x="0" y="0" width="760" height="420" fill="#14181d"/>
+  <rect x="60" y="36" width="640" height="352" rx="12" fill="#1a1f26" stroke="#333a43"/>
+  <text x="92" y="76" font-size="16" font-weight="600" fill="#eaecef">Itemised checks</text>
+  <text x="612" y="76" font-size="24" font-weight="600" fill="#f0b90b" text-anchor="end">62</text>
+  <text x="640" y="76" font-size="12" fill="#9aa4af">/ 100</text>
+
+  <text x="92" y="112" font-size="11" fill="#9aa4af" letter-spacing="1">CRAWLABILITY</text>
+  <circle cx="100" cy="134" r="5" fill="#30a46c"/><text x="116" y="139" font-size="13" fill="#eaecef">HTTPS valid and redirecting cleanly</text>
+  <circle cx="100" cy="160" r="5" fill="#e5484d"/><text x="116" y="165" font-size="13" fill="#eaecef">robots.txt blocks /services/ directory</text>
+  <circle cx="100" cy="186" r="5" fill="#e5484d"/><text x="116" y="191" font-size="13" fill="#eaecef">12 pages unreachable from any internal link</text>
+
+  <text x="92" y="224" font-size="11" fill="#9aa4af" letter-spacing="1">STRUCTURED DATA</text>
+  <circle cx="100" cy="246" r="5" fill="#e5484d"/><text x="116" y="251" font-size="13" fill="#eaecef">No LocalBusiness markup found</text>
+  <circle cx="100" cy="272" r="5" fill="#f0b90b"/><text x="116" y="277" font-size="13" fill="#eaecef">FAQPage present on 1 of 9 eligible pages</text>
+
+  <text x="92" y="310" font-size="11" fill="#9aa4af" letter-spacing="1">AI VISIBILITY SIGNALS</text>
+  <circle cx="100" cy="332" r="5" fill="#30a46c"/><text x="116" y="337" font-size="13" fill="#eaecef">Content readable without JavaScript</text>
+  <circle cx="100" cy="358" r="5" fill="#e5484d"/><text x="116" y="363" font-size="13" fill="#eaecef">Entity mismatch: 3 name variants across pages</text>
+</svg>

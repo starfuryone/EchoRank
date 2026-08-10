@@ -21,6 +21,7 @@ const EN: GuideDoc = {
         "Enter the page you actually want people to land on. Auditing your homepage when your money page is a service page tells you about the wrong page.",
       ],
       shot: "The homepage audit widget with a URL entered, before running.",
+      shotSrc: "/guides/audit-widget-en.svg",
     },
     {
       h: "Read the score, then ignore it",
@@ -29,6 +30,7 @@ const EN: GuideDoc = {
         "Read the failures in full before you touch anything. A single robots rule blocking a directory can produce a dozen downstream failures that all disappear when you fix the one line.",
       ],
       shot: "The itemised check list, with passes and failures grouped by category.",
+      shotSrc: "/guides/audit-checks-en.svg",
     },
     {
       h: "Fix in the right order",
@@ -85,6 +87,7 @@ const FR: GuideDoc = {
         "Saisissez la page sur laquelle vous voulez vraiment que les gens arrivent. Auditer votre accueil alors que votre page décisive est une page de service vous renseigne sur la mauvaise page.",
       ],
       shot: "Le widget d'audit de la page d'accueil, une URL saisie, avant lancement.",
+      shotSrc: "/guides/audit-widget-fr.svg",
     },
     {
       h: "Lisez le score, puis oubliez-le",
@@ -93,6 +96,7 @@ const FR: GuideDoc = {
         "Lisez les échecs en entier avant de toucher à quoi que ce soit. Une seule règle robots bloquant un répertoire peut produire une douzaine d'échecs en cascade qui disparaissent tous en corrigeant la ligne d'origine.",
       ],
       shot: "La liste détaillée des vérifications, réussites et échecs groupés par catégorie.",
+      shotSrc: "/guides/audit-checks-fr.svg",
     },
     {
       h: "Corrigez dans le bon ordre",

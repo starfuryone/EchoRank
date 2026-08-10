@@ -1,0 +1,11 @@
+<svg viewBox="0 0 760 300" width="760" height="300" xmlns="http://www.w3.org/2000/svg" font-family="Geist, system-ui, sans-serif">
+  <rect x="0" y="0" width="760" height="300" fill="#14181d"/>
+  <rect x="60" y="46" width="640" height="208" rx="12" fill="#1a1f26" stroke="#333a43"/>
+  <text x="92" y="96" font-size="20" font-weight="600" fill="#eaecef">Audit de visibilité IA gratuit</text>
+  <text x="92" y="122" font-size="13" fill="#9aa4af">Sans compte. Sans carte. Un lancement par adresse et par jour.</text>
+  <rect x="92" y="148" width="416" height="48" rx="8" fill="#14181d" stroke="#333a43"/>
+  <text x="112" y="177" font-size="14" fill="#eaecef">https://votre-page-service.com/plomberie</text>
+  <rect x="522" y="148" width="146" height="48" rx="8" fill="#f0b90b"/>
+  <text x="595" y="177" text-anchor="middle" font-size="14" font-weight="600" fill="#14181d">Lancer l'audit</text>
+  <text x="92" y="228" font-size="12" fill="#9aa4af">Auditez la page où vous voulez que les gens arrivent — pas forcément l'accueil.</text>
+</svg>

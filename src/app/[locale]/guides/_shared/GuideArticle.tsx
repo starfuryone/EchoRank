@@ -29,6 +29,8 @@ export interface Step {
   callout?: Callout;
   /** Caption for a screenshot placeholder. No image is invented. */
   shot?: string;
+  /** Optional real image (from public/) rendered instead of the placeholder box. */
+  shotSrc?: string;
 }
 
 export interface GuideLink {
@@ -118,9 +120,18 @@ export function GuideArticle({ locale, doc }: { locale: string; doc: GuideDoc })
 
               {step.shot && (
                 <figure className={g.shot} aria-label={`${c.shot}: ${step.shot}`}>
-                  <div className={g.shotBox} aria-hidden="true">
-                    {c.shot}
-                  </div>
+                  {step.shotSrc ? (
+                    <img
+                      src={step.shotSrc}
+                      alt={step.shot}
+                      loading="lazy"
+                      style={{ width: "100%", borderRadius: 12, border: "1px solid rgba(255,255,255,.08)" }}
+                    />
+                  ) : (
+                    <div className={g.shotBox} aria-hidden="true">
+                      {c.shot}
+                    </div>
+                  )}
                   <figcaption className={g.shotCap}>{step.shot}</figcaption>
                 </figure>
               )}
