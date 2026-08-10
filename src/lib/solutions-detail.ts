@@ -42,6 +42,80 @@ export interface SolutionDetail {
 }
 
 const DETAILS: Record<string, Record<SolutionBase, SolutionDetail>> = {
+  "healthcare": {
+    en: {
+      prose: [
+        {
+          h2: "Patients choose the way they shop — with higher stakes",
+          paras: [
+            "Before a new patient calls, they've researched you like a major purchase: read the reviews, compared ratings across the practices nearby, and increasingly asked an AI assistant who to see — 'best pediatric dentist in <city>', 'is Dr. <name> good'. Referrals from other physicians get the same treatment; insurance directories start the list, but reviews decide the call. For a practice, the review profile isn't marketing — it's the front door.",
+            "What patients read for is also specific: not clinical outcomes they can't judge, but bedside manner, wait times, billing clarity, whether the front desk picks up. Those are the phrases that recur in reviews, the phrases assistants quote — and the operational signals a practice can actually improve when it sees them aggregated.",
+          ],
+        },
+        {
+          h2: "Reviews and responses, inside the rules",
+          paras: [
+            "Healthcare review management has a constraint no other industry carries: privacy law. A response that confirms someone was ever a patient — even a warm thank-you — can be a violation. The discipline is responding to every review in a voice that's human and specific about the practice while never acknowledging a care relationship: policies can be explained, standards restated, offline contact offered, and nothing about any individual confirmed.",
+            "Echorank operationalizes that discipline. Review requests go out after visits through compliant channels; responses are drafted for approval with the confidentiality constraint built into their voice; and a negative review — often the visible tip of a scheduling or billing issue — raises an alert the day it lands, while it's one incident and not a pattern in your rating.",
+          ],
+          image: {
+            src: "/solutions/healthcare-en.svg",
+            alt: "A patient weighs a practice's rating, review themes and response record before booking an appointment",
+          },
+        },
+        {
+          h2: "Be the practice the assistants name",
+          paras: [
+            "When someone new to a city, a symptom or an insurance plan asks an assistant where to go, the answer names a handful of practices — assembled from directories, review profiles, hospital affiliations and practice websites. Presence in that answer compounds like a referral network that never sleeps; absence is invisible, because no one reports the question to you.",
+            "The platform tracks the specialty-and-location prompts that matter to your practice, records when you're named and how you're described, and traces the answers to their sources — the directory profile with the outdated address, the review platform where your rating is strong but the profile unclaimed, the service page that doesn't exist for a procedure patients ask about. Minutes a week for the practice manager; the watching is continuous.",
+          ],
+        },
+      ],
+      eyebrow: "HEALTHCARE",
+      h2: "Built for practices that run on trust",
+      cards: [
+        { title: "Privacy-safe responses", body: "Every review answered in a compliant voice — human and specific, never confirming a care relationship." },
+        { title: "Operational early warning", body: "Wait-time, billing and front-desk themes surfaced from reviews — with same-day alerts on negatives." },
+        { title: "Named for your specialty", body: "Specialty and location prompts tracked across assistants — with the directory and profile gaps that decide the names." },
+      ],
+    },
+    fr: {
+      prose: [
+        {
+          h2: "Les patients choisissent comme ils achètent — avec plus d'enjeu",
+          paras: [
+            "Avant d'appeler, un nouveau patient vous a étudié comme un achat important : il a lu les avis, comparé les notes des cabinets voisins, et demandé de plus en plus à un assistant IA qui consulter — « meilleur dentiste pédiatrique à <ville> », « le Dr <nom> est-il bien ». Les adressages entre confrères subissent le même examen ; les annuaires d'assurance ouvrent la liste, mais les avis décident de l'appel. Pour un cabinet, le profil d'avis n'est pas du marketing — c'est la porte d'entrée.",
+            "Ce que les patients y lisent est d'ailleurs précis : pas des résultats cliniques qu'ils ne peuvent juger, mais l'écoute, les délais d'attente, la clarté de la facturation, la réactivité de l'accueil. Ce sont les formules qui reviennent dans les avis, celles que citent les assistants — et les signaux opérationnels qu'un cabinet peut réellement améliorer quand il les voit agrégés.",
+          ],
+        },
+        {
+          h2: "Avis et réponses, dans le cadre des règles",
+          paras: [
+            "La gestion d'avis en santé porte une contrainte qu'aucun autre secteur ne connaît : le secret médical. Une réponse qui confirme qu'une personne a été patiente — même un simple remerciement chaleureux — peut constituer une violation. La discipline consiste à répondre à chaque avis d'une voix humaine et précise sur le cabinet, sans jamais reconnaître une relation de soin : on peut expliquer des règles, rappeler des standards, proposer un contact hors ligne, et ne rien confirmer sur quiconque.",
+            "Echorank rend cette discipline opérationnelle. Les demandes d'avis partent après les visites par des canaux conformes ; les réponses sont rédigées pour validation avec la contrainte de confidentialité intégrée à leur voix ; et un avis négatif — souvent la partie visible d'un problème de planning ou de facturation — déclenche une alerte le jour même, tant qu'il s'agit d'un incident et pas d'une tendance dans votre note.",
+          ],
+          image: {
+            src: "/solutions/healthcare-fr.svg",
+            alt: "Un patient évalue la note d'un cabinet, les thèmes des avis et les réponses avant de prendre rendez-vous",
+          },
+        },
+        {
+          h2: "Être le cabinet que nomment les assistants",
+          paras: [
+            "Quand une personne nouvelle dans une ville, face à un symptôme ou à une mutuelle, demande à un assistant où aller, la réponse nomme une poignée de cabinets — assemblés depuis des annuaires, des profils d'avis, des affiliations hospitalières et des sites de cabinets. La présence dans cette réponse se cumule comme un réseau d'adressage qui ne dort jamais ; l'absence est invisible, car personne ne vous rapporte la question.",
+            "La plateforme suit les requêtes spécialité-et-lieu qui comptent pour votre cabinet, enregistre quand vous êtes nommé et comment vous êtes décrit, et remonte les réponses à leurs sources — le profil d'annuaire à l'adresse périmée, la plateforme d'avis où votre note est solide mais le profil non revendiqué, la page de service absente pour un acte que les patients demandent. Quelques minutes par semaine pour le gestionnaire du cabinet ; la surveillance, elle, est continue.",
+          ],
+        },
+      ],
+      eyebrow: "SANTÉ",
+      h2: "Conçu pour les cabinets qui vivent de la confiance",
+      cards: [
+        { title: "Réponses conformes au secret", body: "Chaque avis reçoit une réponse humaine et précise — sans jamais confirmer une relation de soin." },
+        { title: "Alerte opérationnelle précoce", body: "Délais, facturation et accueil ressortent des avis — avec alertes le jour même sur les négatifs." },
+        { title: "Nommé pour votre spécialité", body: "Les requêtes spécialité et lieu suivies sur les assistants — avec les manques d'annuaires et de profils qui décident des noms." },
+      ],
+    },
+  },
   "saas-b2b": {
     en: {
       prose: [
