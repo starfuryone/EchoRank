@@ -42,6 +42,80 @@ export interface SolutionDetail {
 }
 
 const DETAILS: Record<string, Record<SolutionBase, SolutionDetail>> = {
+  "professional-services": {
+    en: {
+      prose: [
+        {
+          h2: "The referral still comes — but now it gets checked",
+          paras: [
+            "Professional services grew on word of mouth, and word of mouth still starts the journey. What changed is the second step: before calling the firm a colleague recommended, the prospect checks. They read the reviews, scan the rating, and increasingly ask an AI assistant to confirm the choice — 'best employment lawyer in Denver', 'is <firm> reputable'. A warm referral with a thin or mixed online profile quietly dies between the recommendation and the call, and you never learn it happened.",
+            "For a firm, that check is high stakes precisely because the purchase is high trust: nobody hires an accountant or a law firm the way they order lunch. The profile the prospect finds either confirms the referral or contradicts it — there is no neutral outcome.",
+          ],
+        },
+        {
+          h2: "Reputation as evidence of expertise",
+          paras: [
+            "Clients can't evaluate your work product before hiring you, so they evaluate proxies: what past clients say, how the firm responds to criticism, how consistently it's described across the sources they check. A review corpus that names specific matters — responsiveness, clarity on fees, outcomes — reads as evidence in a way a website's own claims never can.",
+            "Echorank builds that corpus deliberately. Review requests go out after matters close, timed and worded for a professional context; every review receives a response in the firm's voice — measured, specific, and mindful that confidentiality limits what can be said publicly. A calm, factual reply to an unfair review is read by every prospect who finds it, and it does more for the firm than the review did against it.",
+          ],
+          image: {
+            src: "/solutions/professionalservices-en.svg",
+            alt: "A word-of-mouth referral verified online: rating, reviews and an AI answer deciding whether the call happens",
+          },
+        },
+        {
+          h2: "Be the name the assistants give",
+          paras: [
+            "The newest referrer isn't a person. When someone with no network in your specialty asks ChatGPT or Perplexity who to engage, the answer names two or three firms — assembled from directories, review profiles, rankings and the firm's own site. Being in that answer is a referral at scale; being absent from it is invisible, because no one tells you they asked.",
+            "The platform tracks the prompts that matter for your practice areas and locations, records when your firm is named, how it's described, and which sources the assistants lean on — then turns the gaps into a fix list: the directory entry that's inconsistent, the practice-area page that doesn't exist, the review profile that's strong but unclaimed. Ten minutes a week for the partner who owns the firm's name; the watching runs by itself.",
+          ],
+        },
+      ],
+      eyebrow: "PROFESSIONAL SERVICES",
+      h2: "Built for firms that live on trust",
+      cards: [
+        { title: "Referral-proof profile", body: "Reviews, rating and responses that confirm the recommendation a prospect arrived with." },
+        { title: "Discreet by design", body: "Requests and responses worded for professional contexts — specific without breaching confidentiality." },
+        { title: "Named by assistants", body: "Practice-area prompts tracked across the AI assistants — with the source gaps that decide who gets named." },
+      ],
+    },
+    fr: {
+      prose: [
+        {
+          h2: "La recommandation arrive toujours — mais elle est désormais vérifiée",
+          paras: [
+            "Les services professionnels ont grandi sur le bouche-à-oreille, et le bouche-à-oreille amorce toujours le parcours. Ce qui a changé, c'est la deuxième étape : avant d'appeler le cabinet qu'un collègue recommande, le prospect vérifie. Il lit les avis, regarde la note, et demande de plus en plus à un assistant IA de confirmer le choix — « meilleur avocat en droit du travail à Lyon », « le cabinet <nom> est-il sérieux ». Une recommandation chaleureuse doublée d'un profil en ligne mince ou mitigé meurt en silence entre la recommandation et l'appel — et vous ne l'apprenez jamais.",
+            "Pour un cabinet, cette vérification pèse lourd précisément parce que l'achat repose sur la confiance : personne n'engage un expert-comptable ou un cabinet d'avocats comme on commande un déjeuner. Le profil que trouve le prospect confirme la recommandation ou la contredit — il n'y a pas d'issue neutre.",
+          ],
+        },
+        {
+          h2: "La réputation comme preuve d'expertise",
+          paras: [
+            "Les clients ne peuvent pas évaluer votre travail avant de vous engager ; ils évaluent donc des indices : ce que disent les anciens clients, la façon dont le cabinet répond à la critique, la cohérence de sa description sur les sources qu'ils consultent. Un corpus d'avis qui nomme des choses précises — réactivité, clarté des honoraires, résultats — se lit comme une preuve, ce que les affirmations d'un site ne seront jamais.",
+            "Echorank construit ce corpus méthodiquement. Les demandes d'avis partent après la clôture des dossiers, au bon moment et dans des termes adaptés au contexte professionnel ; chaque avis reçoit une réponse dans la voix du cabinet — mesurée, précise, et attentive à ce que la confidentialité limite ce qui peut se dire publiquement. Une réponse calme et factuelle à un avis injuste est lue par chaque prospect qui la trouve, et elle sert davantage le cabinet que l'avis ne l'a desservi.",
+          ],
+          image: {
+            src: "/solutions/professionalservices-fr.svg",
+            alt: "Une recommandation de bouche-à-oreille vérifiée en ligne : note, avis et réponse IA décident si l'appel a lieu",
+          },
+        },
+        {
+          h2: "Être le nom que donnent les assistants",
+          paras: [
+            "Le plus récent des prescripteurs n'est pas une personne. Quand quelqu'un sans réseau dans votre spécialité demande à ChatGPT ou Perplexity qui engager, la réponse nomme deux ou trois cabinets — assemblés depuis des annuaires, des profils d'avis, des classements et le site du cabinet lui-même. Figurer dans cette réponse, c'est une recommandation à grande échelle ; en être absent, c'est être invisible, car personne ne vous dit qu'il a posé la question.",
+            "La plateforme suit les requêtes qui comptent pour vos domaines et vos implantations, enregistre quand votre cabinet est nommé, comment il est décrit, et sur quelles sources s'appuient les assistants — puis transforme les manques en liste de corrections : l'entrée d'annuaire incohérente, la page de domaine d'expertise qui n'existe pas, le profil d'avis solide mais non revendiqué. Dix minutes par semaine pour l'associé qui répond du nom du cabinet ; la surveillance tourne seule.",
+          ],
+        },
+      ],
+      eyebrow: "SERVICES PROFESSIONNELS",
+      h2: "Conçu pour les cabinets qui vivent de la confiance",
+      cards: [
+        { title: "Un profil à l'épreuve de la recommandation", body: "Avis, note et réponses qui confirment la recommandation avec laquelle le prospect arrive." },
+        { title: "Discret par conception", body: "Des demandes et réponses formulées pour le contexte professionnel — précises sans rompre la confidentialité." },
+        { title: "Nommé par les assistants", body: "Les requêtes par domaine d'expertise suivies sur les assistants IA — avec les manques de sources qui décident des noms cités." },
+      ],
+    },
+  },
   "growth-marketers": {
     en: {
       prose: [

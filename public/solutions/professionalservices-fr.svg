@@ -1,0 +1,27 @@
+<svg viewBox="0 0 680 230" width="680" height="230" xmlns="http://www.w3.org/2000/svg" font-family="Geist, system-ui, sans-serif">
+  <defs><marker id="a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="#eaecef" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+  <rect x="0" y="0" width="680" height="230" fill="#14181d"/>
+  <rect x="55" y="66" width="160" height="98" rx="8" fill="#1a1f26" stroke="#333a43"/>
+  <text x="71" y="92" font-size="12" font-weight="500" fill="#eaecef">« Appelez ce cabinet —</text>
+  <text x="71" y="110" font-size="12" font-weight="500" fill="#eaecef">ils sont excellents. »</text>
+  <text x="71" y="136" font-size="10" fill="#9aa4af">un collègue de confiance</text>
+  <text x="135" y="204" text-anchor="middle" font-size="12" fill="#9aa4af">La recommandation</text>
+  <line x1="224" y1="115" x2="256" y2="115" stroke="#eaecef" stroke-width="1.5" marker-end="url(#a)"/>
+  <polygon points="302,81 336,115 302,149 268,115" fill="#eaecef"/>
+  <text x="302" y="204" text-anchor="middle" font-size="12" fill="#9aa4af">La vérification</text>
+  <line x1="344" y1="115" x2="404" y2="115" stroke="#eaecef" stroke-width="1.5" marker-end="url(#a)"/>
+  <rect x="414" y="42" width="216" height="146" rx="8" fill="#1a1f26" stroke="#333a43"/>
+  <g fill="#f0b90b">
+    <path d="M434 60l3.8 7.6 8.4 1.2-6.1 5.9 1.4 8.3-7.5-3.9-7.5 3.9 1.4-8.3-6.1-5.9 8.4-1.2z"/>
+  </g>
+  <text x="456" y="74" font-size="13" font-weight="600" fill="#eaecef">4,9 · 87 avis</text>
+  <line x1="430" y1="88" x2="614" y2="88" stroke="#2a3038"/>
+  <text x="430" y="108" font-size="10" fill="#9aa4af">« meilleur avocat d'affaires près de chez moi »</text>
+  <rect x="430" y="116" width="140" height="6" rx="3" fill="#f0b90b"/>
+  <text x="430" y="140" font-size="10" fill="#30a46c">Nommé par l'assistant</text>
+  <g fill="#4a525c">
+    <rect x="430" y="152" width="160" height="4" rx="2"/>
+    <rect x="430" y="166" width="120" height="4" rx="2"/>
+  </g>
+  <text x="522" y="204" text-anchor="middle" font-size="12" fill="#9aa4af">Ce qu'ils trouvent décide</text>
+</svg>
