@@ -15,6 +15,7 @@ import {
   CLASSIFIER_VERSION,
   GENERIC_TERMS,
   PLATFORM_DENYLIST,
+  SOURCE_DENYLIST,
   RIVAL_THRESHOLD,
   WEIGHTS,
   classifyEntity,
@@ -61,6 +62,62 @@ describe("the platform denylist", () => {
 
   it("explains itself in words a customer can read", () => {
     expect(classifyEntity("Perplexity", {}).trace[0].why).toMatch(/assistant or platform/i);
+  });
+});
+
+describe("the source denylist", () => {
+  it("classifies publishers and communities as platforms", () => {
+    // These were scoring RIVAL off genuine ranked recommendations: an answer
+    // saying "check Reddit and G2" really has ranked them, so every weighted
+    // signal fired correctly and the verdict was still wrong.
+    for (const source of [
+      "Wikipedia",
+      "Reddit",
+      "Quora",
+      "YouTube",
+      "Medium",
+      "LinkedIn",
+      "Forbes",
+      "G2",
+      "Capterra",
+      "Trustpilot",
+      "Gartner",
+    ]) {
+      expect(classifyEntity(source, RANKED_COMMERCIAL).classification, source).toBe("PLATFORM");
+    }
+  });
+
+  it("is a hard rule the strongest rival signals cannot out-argue", () => {
+    // Being a publisher is a fact about the entity, not a judgement about one
+    // sentence, so no threshold should be able to overturn it.
+    expect(
+      classifyEntity("Reddit", {
+        position: 1,
+        promptCategory: "COMPARISON",
+        rankedInPrompts: 9,
+        brandName: "Echorank360",
+        context: "A great alternative to Echorank360 is Reddit.",
+      }).classification,
+    ).toBe("PLATFORM");
+  });
+
+  it("says which sublist matched, because the sentences differ", () => {
+    expect(classifyEntity("Reddit", {}).trace[0].signal).toBe("source_denylist");
+    expect(classifyEntity("Reddit", {}).trace[0].why).toMatch(/publisher or community/i);
+    expect(classifyEntity("ChatGPT", {}).trace[0].signal).toBe("platform_denylist");
+    expect(classifyEntity("ChatGPT", {}).trace[0].why).toMatch(/assistant or platform/i);
+  });
+
+  it("catches spacing and case variants through the same matcher", () => {
+    for (const variant of ["reddit", "You Tube", "Linked In", "g2"]) {
+      expect(classifyEntity(variant, RANKED_COMMERCIAL).classification, variant).toBe("PLATFORM");
+    }
+  });
+
+  it("does not swallow a product whose name merely resembles one", () => {
+    // "Mediumly" is not Medium; the 0.90 threshold has to hold here.
+    expect(classifyEntity("Rankscale", RANKED_COMMERCIAL).classification).toBe("RIVAL");
+    expect(classifyEntity("Profound", RANKED_COMMERCIAL).classification).toBe("RIVAL");
   });
 });
 
@@ -289,7 +346,7 @@ describe("the record it leaves", () => {
     // Same lesson as scoreVersion: rows written under old rules keep meaning
     // what they meant, and re-classifying is an explicit new version.
     expect(classifyEntity("Profound", {}).classifierVersion).toBe(CLASSIFIER_VERSION);
-    expect(CLASSIFIER_VERSION).toBe(2);
+    expect(CLASSIFIER_VERSION).toBe(3);
     expect(classifyEntity("ChatGPT", {}).classifierVersion).toBe(CLASSIFIER_VERSION);
   });
 
@@ -324,6 +381,10 @@ describe("the lists are config, in one place", () => {
       PLATFORM_DENYLIST.length,
     );
     expect(new Set(GENERIC_TERMS.map((t) => t.toLowerCase())).size).toBe(GENERIC_TERMS.length);
+    expect(new Set(SOURCE_DENYLIST.map((t) => t.toLowerCase())).size).toBe(SOURCE_DENYLIST.length);
+    // The two sublists must not overlap, or the trace would depend on order.
+    const platforms = new Set(PLATFORM_DENYLIST.map((t) => t.toLowerCase()));
+    expect(SOURCE_DENYLIST.filter((s) => platforms.has(s.toLowerCase()))).toEqual([]);
   });
 
   it("only rivals reach the rollup", () => {

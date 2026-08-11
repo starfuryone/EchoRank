@@ -34,8 +34,12 @@ import { matchesAlias } from "./similarity";
  * 2: added the "like <brand>" comparison cue, and the cross-prompt signal now
  *    counts DISTINCT prompts rather than mentions — with repetitions above 1 a
  *    single prompt ranking an entity twice used to read as two.
+ * 3: publishers and community sites (Wikipedia, Reddit, G2, …) join the hard
+ *    denylist. They were scoring RIVAL off genuine ranked recommendations,
+ *    which the weighted signals cannot fix: whether Reddit is a publisher is a
+ *    fact about Reddit, not a judgement about one sentence.
  */
-export const CLASSIFIER_VERSION = 2;
+export const CLASSIFIER_VERSION = 3;
 
 export type EntityClassification = "RIVAL" | "PLATFORM" | "GENERIC";
 
@@ -71,6 +75,34 @@ export const PLATFORM_DENYLIST: readonly string[] = [
   "Anthropic",
   "Google",
   "Microsoft",
+];
+
+/**
+ * Publishers, communities and review sites.
+ *
+ * A HARD RULE, NOT A WEIGHTED SIGNAL, and that distinction is the point. An
+ * answer recommending "check Reddit and G2" has genuinely ranked them, so every
+ * rival signal fires correctly and the score is right — the entity is simply
+ * not a product. Being a publisher is a fact about the entity, and facts belong
+ * in a list rather than in a threshold that a strong enough sentence could
+ * out-argue.
+ *
+ * Kept as its own sublist rather than folded into PLATFORM_DENYLIST so the
+ * trace can say WHICH kind of non-competitor it matched — "a publisher, not a
+ * product" and "an AI assistant" are different sentences to show a customer.
+ */
+export const SOURCE_DENYLIST: readonly string[] = [
+  "Wikipedia",
+  "Reddit",
+  "Quora",
+  "YouTube",
+  "Medium",
+  "LinkedIn",
+  "Forbes",
+  "G2",
+  "Capterra",
+  "Trustpilot",
+  "Gartner",
 ];
 
 /**
@@ -259,7 +291,8 @@ export function classifyEntity(entity: string, ctx: ClassifyContext = {}): Class
     };
   }
 
-  // 1. Platform denylist — hard, via the fuzzy matcher so spacing variants land.
+  // 1. The hard denylists — via the fuzzy matcher, so spacing variants land.
+  //    Two sublists, one verdict, different explanations.
   if (matchesAlias(name, PLATFORM_DENYLIST)) {
     return {
       entity: name,
@@ -271,6 +304,21 @@ export function classifyEntity(entity: string, ctx: ClassifyContext = {}): Class
           signal: "platform_denylist",
           delta: 0,
           why: `"${name}" is an AI assistant or platform, not a competing product.`,
+        },
+      ],
+    };
+  }
+  if (matchesAlias(name, SOURCE_DENYLIST)) {
+    return {
+      entity: name,
+      classification: "PLATFORM",
+      score: 0,
+      classifierVersion: CLASSIFIER_VERSION,
+      trace: [
+        {
+          signal: "source_denylist",
+          delta: 0,
+          why: `"${name}" is a publisher or community site, not a competing product.`,
         },
       ],
     };
