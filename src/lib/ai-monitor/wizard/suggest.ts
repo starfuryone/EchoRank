@@ -21,7 +21,7 @@
 // write prompts by hand.
 
 import type { PlanType } from "@/generated/prisma";
-import { planConfig } from "@/lib/plan-config";
+import type { AiCheckupShape } from "@/lib/plan-config";
 import { AiCapReachedError } from "../cap";
 import { JSON_CALL_MODEL } from "../json-call";
 import { generatePrompts, type GeneratedPrompt } from "../prompts/generate";
@@ -97,6 +97,12 @@ export interface SuggestRequest {
 export interface SuggestContext {
   tenantId: string;
   plan: PlanType;
+  /**
+   * The tenant's resolved checkup shape. Passed in rather than looked up: a
+   * standalone watcher holder has a shape their tier does not describe, and
+   * resolveWatcherShape() is the one place that decides which applies.
+   */
+  shape: AiCheckupShape;
 }
 
 export interface WizardSuggestion {
@@ -213,11 +219,7 @@ export async function suggestPrompts(
   const generate = deps.generate ?? generatePrompts;
   const meter = deps.meter ?? (await import("../metering")).meteredAiCall;
 
-  // Straight from the tier shape, not through ../limits.ts: that module wraps
-  // the same value but imports Prisma at module scope for its quota queries,
-  // which would put a database requirement behind a pure suggestion step. Same
-  // reason runner/plan.ts reads planConfig directly.
-  const limit = planConfig(ctx.plan).aiCheckup.prompts;
+  const limit = ctx.shape.prompts;
   const site = await analyse(request.domain);
 
   if (limit <= 0) {

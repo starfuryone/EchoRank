@@ -27,6 +27,10 @@ import {
   isBillingInterval,
   isCheckoutTier,
 } from "@/lib/stripe/lookup-keys";
+import {
+  isWatcherLookupKey,
+  watcherCheckoutBlock,
+} from "@/lib/ai-monitor/watcher-entitlement";
 import { getCurrentTenant } from "@/lib/tenant";
 import { auth } from "@/lib/auth";
 import { logger } from "@/infrastructure/observability/logger";
@@ -120,6 +124,28 @@ export async function POST(req: NextRequest) {
 
 
   const lookupKey = checkoutLookupKey(tier, interval);
+
+  // A tenant on a plan cannot buy the standalone watcher. Server-side because
+  // hiding the button leaves the endpoint open, and the failure mode is a
+  // customer paying twice for one capability — the plan row is the single
+  // subscription row, so the purchase would also overwrite it.
+  if (isWatcherLookupKey(lookupKey)) {
+    const existing = await prisma.subscription.findUnique({
+      where: { tenantId },
+      select: { productKind: true, status: true },
+    });
+    const guard = watcherCheckoutBlock(
+      existing
+        ? {
+            productKind: existing.productKind,
+            active: existing.status === "ACTIVE" || existing.status === "TRIALING",
+          }
+        : null,
+    );
+    if (guard.blocked) {
+      return NextResponse.json({ error: guard.reason, reason: "plan_includes_watcher" }, { status: 400 });
+    }
+  }
   const loc = normalizeLocale(typeof locale === "string" ? locale : "en");
 
   let stripe;

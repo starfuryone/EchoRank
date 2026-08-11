@@ -16,6 +16,7 @@
 
 import { describe, expect, it, vi } from "vitest";
 import type { PlanType } from "@/generated/prisma";
+import { planConfig } from "@/lib/plan-config";
 import {
   brandVariations,
   isValidBrand,
@@ -515,7 +516,7 @@ const SITE = async () => ({
 });
 
 describe("generating suggestions", () => {
-  const ctx = { tenantId: "t1", plan: "GROWTH" as PlanType };
+  const ctx = { tenantId: "t1", plan: "GROWTH" as PlanType, shape: planConfig("GROWTH").aiCheckup };
   const request = { brand: "Acme", domain: "acme.com", industry: "analytics" };
 
   it("makes exactly one metered model call", async () => {
@@ -667,11 +668,15 @@ describe("generating suggestions", () => {
     // but the ceiling has to come from the tier either way.
     const generate = vi.fn<(req: GenerateArgs) => Promise<never>>(async () => GENERATED as never);
     const { meter } = meterSpy();
-    const result = await suggestPrompts(request, { tenantId: "t1", plan: "STARTER" }, {
+    const result = await suggestPrompts(
+      request,
+      { tenantId: "t1", plan: "STARTER", shape: planConfig("STARTER").aiCheckup },
+      {
       analyse: SITE as never,
-      generate,
-      meter,
-    });
+        generate,
+        meter,
+      },
+    );
     expect(result.limit).toBe(10);
     expect(generate.mock.calls[0][0].count).toBe(20);
   });

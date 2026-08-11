@@ -5,6 +5,7 @@ import { aiSearchEnabledFor } from "@/lib/ai-monitor/rollout";
 import { wizardEngineOptions } from "@/lib/ai-monitor/wizard/engines";
 import { normalizeDomain, isValidBrand, normalizeBrand } from "@/lib/ai-monitor/wizard/validation";
 import { suggestPrompts } from "@/lib/ai-monitor/wizard/suggest";
+import { resolveShapeForTenant } from "@/lib/ai-monitor/limits";
 
 /**
  * The wizard's analyse-and-suggest step.
@@ -56,7 +57,13 @@ export async function POST(request: Request) {
           ? body.competitors.filter((c): c is string => typeof c === "string")
           : [],
       },
-      { tenantId: membership.tenantId, plan: membership.tenant.planType },
+      {
+        tenantId: membership.tenantId,
+        plan: membership.tenant.planType,
+        // Resolved once, here: a standalone watcher holder has a shape their
+        // tier does not describe.
+        shape: await resolveShapeForTenant(membership.tenantId, membership.tenant.planType),
+      },
     );
 
     return NextResponse.json({

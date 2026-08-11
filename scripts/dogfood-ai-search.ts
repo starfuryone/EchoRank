@@ -59,7 +59,7 @@ async function setup() {
       competitors: ["Profound", "Peec AI", "Otterly"],
       language: "en",
     },
-    { tenantId, plan: PLAN },
+    { tenantId, plan: PLAN, shape: planConfig(PLAN).aiCheckup },
   );
 
   console.log("site read ok:", suggested.site.ok, "|", suggested.site.summary.slice(0, 120));

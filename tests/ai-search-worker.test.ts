@@ -24,6 +24,7 @@ const findManyCheckups = vi.fn();
 const updateCheckup = vi.fn();
 const findManyRuns = vi.fn();
 const writeMetricsMock = vi.fn();
+const findSubscription = vi.fn();
 const runCheckupMock = vi.fn();
 const prismaPortsMock = vi.fn();
 
@@ -43,6 +44,7 @@ vi.mock("@/lib/prisma", () => ({
       update: (...a: unknown[]) => updateCheckup(...a),
     },
     promptRun: { findMany: (...a: unknown[]) => findManyRuns(...a) },
+    subscription: { findUnique: (...a: unknown[]) => findSubscription(...a) },
   },
 }));
 
@@ -95,6 +97,8 @@ beforeEach(async () => {
   findManyCheckups.mockResolvedValue([]);
   findManyRuns.mockResolvedValue([]);
   updateCheckup.mockResolvedValue({});
+  // No standalone watcher unless a test says so: the tier's shape applies.
+  findSubscription.mockResolvedValue(null);
   mod = await import("@/infrastructure/queue/workers/ai-checkup.worker");
 });
 
@@ -492,5 +496,57 @@ describe("reaping an abandoned checkup", () => {
     expect(await mod.__testing.sweep(NOW)).toBe(1);
     expect(updateCheckup).toHaveBeenCalled();
     expect(addJob).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("the checkup shape the worker runs", () => {
+  beforeEach(() => {
+    findUniqueBrand.mockResolvedValue({
+      id: "brand_1",
+      tenantId: "tenant_1",
+      name: "Echorank360",
+      website: "https://echorank360.com",
+      aliases: [],
+      competitors: [],
+      tenant: { planType: "GROWTH" },
+    });
+    findManyPrompts.mockResolvedValue([{ id: "p1", text: "q", category: "COMPARISON" }]);
+  });
+
+  it("uses the tier's shape for a plan tenant", async () => {
+    await mod.__testing.runOne({ brandProfileId: "brand_1" }, NOW);
+    // GROWTH: 15 prompts, 2 repetitions.
+    expect(findManyPrompts.mock.calls[0][0].take).toBe(15);
+    expect(createCheckup.mock.calls[0][0].data.repetitions).toBe(2);
+  });
+
+  it("prefers the tier's shape whenever the tier schedules anything", async () => {
+    // Every current tier schedules checkups, so `plan wins` means the standalone
+    // shape is only ever reached by a tier that schedules none. Worth pinning
+    // because the first predicate tried here — hasFeature(plan,"ai_visibility")
+    // — is baseline from STARTER up and made the entitlement branch dead code.
+    findUniqueBrand.mockResolvedValue({
+      id: "brand_1",
+      tenantId: "tenant_1",
+      name: "Echorank360",
+      website: "https://echorank360.com",
+      aliases: [],
+      competitors: [],
+      tenant: { planType: "STARTER" },
+    });
+    findSubscription.mockResolvedValue({ productKind: "WATCHER", status: "ACTIVE" });
+
+    await mod.__testing.runOne({ brandProfileId: "brand_1" }, NOW);
+    // STARTER's own shape: 10 prompts, 1 repetition.
+    expect(findManyPrompts.mock.calls[0][0].take).toBe(10);
+    expect(createCheckup.mock.calls[0][0].data.repetitions).toBe(1);
+  });
+
+  it("keeps the plan's shape when a plan tenant also holds a watcher row", async () => {
+    findSubscription.mockResolvedValue({ productKind: "WATCHER", status: "ACTIVE" });
+    await mod.__testing.runOne({ brandProfileId: "brand_1" }, NOW);
+    // GROWTH includes the watcher, so the plan wins and nothing is downgraded.
+    expect(createCheckup.mock.calls[0][0].data.repetitions).toBe(2);
+    expect(findManyPrompts.mock.calls[0][0].take).toBe(15);
   });
 });

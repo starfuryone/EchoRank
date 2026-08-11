@@ -74,7 +74,14 @@ export function hasWatcherEntitlement(subscription: SubscriptionFacts | null): b
 export interface WatcherShapeInput {
   /** The tenant's tier. */
   plan: PlanType;
-  /** True when the TIER itself includes the watcher (its ai_visibility feature). */
+  /**
+   * True when the TIER itself schedules checkups.
+   *
+   * NOT hasFeature(plan, "ai_visibility"): that flag is baseline from STARTER
+   * up, so it is true for every tier and would make the standalone entitlement
+   * dead code. What actually distinguishes a tier that includes a watcher is
+   * its SHAPE scheduling something — see planSchedulesCheckups().
+   */
   planIncludesWatcher: boolean;
   /** The tenant's subscription, when it has one. */
   subscription: SubscriptionFacts | null;
@@ -121,4 +128,41 @@ export function resolveWatcherShape(input: WatcherShapeInput): ResolvedWatcherSh
     capUsd: planConfig(input.plan).aiMonthlyCapUsd,
     source: "none",
   };
+}
+
+/**
+ * May this tenant start a standalone watcher checkout?
+ *
+ * NO IF THEY ALREADY HAVE A PLAN SUBSCRIPTION. Subscription.tenantId is unique,
+ * so a watcher purchase would overwrite the plan row — and even if it did not,
+ * a tier that includes the watcher already grants a shape at least as generous,
+ * so the $9 buys nothing. Enforced on the SERVER because hiding the button
+ * leaves the endpoint open, and the failure is a customer paying twice for one
+ * capability.
+ */
+export function watcherCheckoutBlock(
+  subscription: SubscriptionFacts | null,
+): { blocked: boolean; reason: string | null } {
+  if (subscription?.productKind === "PLAN" && subscription.active) {
+    return {
+      blocked: true,
+      reason:
+        "Your plan already includes AI Search monitoring, so there is nothing to add. " +
+        "Manage it from your dashboard.",
+    };
+  }
+  return { blocked: false, reason: null };
+}
+
+/**
+ * Does this tier schedule checkups of its own?
+ *
+ * The honest form of "does the plan include a watcher". The ai_visibility
+ * feature flag cannot answer it — that is baseline from STARTER up — so the
+ * question is whether the tier's own shape asks anything: a cadence and at
+ * least one prompt.
+ */
+export function planSchedulesCheckups(plan: PlanType): boolean {
+  const shape = planConfig(plan).aiCheckup;
+  return shape.frequency !== "none" && shape.prompts > 0;
 }

@@ -19,7 +19,7 @@
 // allows 1 brand" at the moment they try, rather than a CAPPED checkup at 3am.
 
 import type { PlanType } from "@/generated/prisma";
-import { planConfig } from "@/lib/plan-config";
+import { planConfig, type AiCheckupShape } from "@/lib/plan-config";
 import { prisma } from "@/lib/prisma";
 import { enginesForCheckup, type EngineSpec } from "./engines";
 
@@ -45,14 +45,21 @@ export function maxProjects(plan: PlanType): number | null {
   return planConfig(plan).aiProjects;
 }
 
-/** Prompts one brand may have selected. Always a number; 0 locks the tool. */
-export function maxPrompts(plan: PlanType): number {
-  return planConfig(plan).aiCheckup.prompts;
+/**
+ * Prompts one brand may have selected. Always a number; 0 locks the tool.
+ *
+ * TAKES A SHAPE, NOT A PLAN. A tenant's checkup shape is not always its tier's:
+ * a standalone watcher entitlement has its own, and resolveWatcherShape() is
+ * the one place that decides which applies. Reading planConfig(plan).aiCheckup
+ * here would silently give a $9 watcher holder their tier's allowance.
+ */
+export function maxPrompts(shape: AiCheckupShape): number {
+  return shape.prompts;
 }
 
-/** Repetitions per prompt per engine, from the tier. */
-export function repetitions(plan: PlanType): number {
-  return planConfig(plan).aiCheckup.repetitions;
+/** Repetitions per prompt per engine. */
+export function repetitions(shape: AiCheckupShape): number {
+  return shape.repetitions;
 }
 
 /**
@@ -63,11 +70,11 @@ export function repetitions(plan: PlanType): number {
  * dashboard says so rather than showing four silent zeros.
  */
 export function enginesFor(
-  plan: PlanType,
+  shape: AiCheckupShape,
   env: NodeJS.ProcessEnv = process.env,
   disabled: ReadonlySet<string> = new Set(),
 ): EngineSpec[] {
-  return enginesForCheckup(planConfig(plan).aiCheckup.providers, env, disabled);
+  return enginesForCheckup(shape.providers, env, disabled);
 }
 
 export interface LimitState {
@@ -122,12 +129,12 @@ export async function assertCanCreateProject(
 /** Where a brand stands on its prompt allowance. */
 export async function promptLimitState(
   brandProfileId: string,
-  plan: PlanType,
+  shape: AiCheckupShape,
 ): Promise<LimitState> {
   const current = await prisma.trackedPrompt.count({
     where: { brandProfileId, selected: true },
   });
-  return state(current, maxPrompts(plan));
+  return state(current, maxPrompts(shape));
 }
 
 /**
@@ -139,8 +146,37 @@ export async function promptLimitState(
  */
 export async function promptHeadroom(
   brandProfileId: string,
-  plan: PlanType,
+  shape: AiCheckupShape,
 ): Promise<number> {
-  const { remaining } = await promptLimitState(brandProfileId, plan);
-  return Number.isFinite(remaining) ? remaining : maxPrompts(plan);
+  const { remaining } = await promptLimitState(brandProfileId, shape);
+  return Number.isFinite(remaining) ? remaining : maxPrompts(shape);
+}
+
+/**
+ * Resolve a tenant's checkup shape, reading the one subscription row.
+ *
+ * The DB-backed companion to the pure resolveWatcherShape(). Routes and workers
+ * call this; everything downstream takes the shape as a value. It lives here
+ * rather than in watcher-entitlement.ts so that module stays pure and the
+ * Stripe webhook can import its discriminator without a database.
+ */
+export async function resolveShapeForTenant(
+  tenantId: string,
+  plan: PlanType,
+): Promise<AiCheckupShape> {
+  const { resolveWatcherShape, planSchedulesCheckups } = await import("./watcher-entitlement");
+  const subscription = await prisma.subscription.findUnique({
+    where: { tenantId },
+    select: { productKind: true, status: true },
+  });
+  return resolveWatcherShape({
+    plan,
+    planIncludesWatcher: planSchedulesCheckups(plan),
+    subscription: subscription
+      ? {
+          productKind: subscription.productKind,
+          active: subscription.status === "ACTIVE" || subscription.status === "TRIALING",
+        }
+      : null,
+  }).shape;
 }

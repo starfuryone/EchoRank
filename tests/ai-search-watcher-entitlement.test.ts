@@ -26,6 +26,7 @@ import {
   isWatcherLookupKey,
   productKindFor,
   resolveWatcherShape,
+  watcherCheckoutBlock,
 } from "@/lib/ai-monitor/watcher-entitlement";
 
 describe("a watcher subscription is not a paid plan", () => {
@@ -137,6 +138,21 @@ describe("resolveWatcherShape — one choke point", () => {
     expect(resolved.shape.prompts).toBeGreaterThan(WATCHER_SOLO.prompts);
   });
 
+  it("cannot be answered by the ai_visibility feature flag", async () => {
+    // The first predicate tried here was hasFeature(plan, "ai_visibility"),
+    // which is baseline from STARTER up — true for every tier, so the
+    // standalone branch was unreachable. planSchedulesCheckups asks the
+    // question the shape can actually answer.
+    const { planSchedulesCheckups } = await import("@/lib/ai-monitor/watcher-entitlement");
+    const { hasFeature } = await import("@/lib/feature-flags");
+    expect(hasFeature("STARTER", "ai_visibility")).toBe(true);
+    expect(planSchedulesCheckups("STARTER")).toBe(true);
+    // Which means, today, EVERY tier schedules — so the solo shape is reached
+    // only by a tier that does not, and the entitlement is what makes a
+    // watcher-only tenant possible at all rather than what resizes an existing
+    // one.
+  });
+
   it("grants nothing when neither applies, without throwing", () => {
     const resolved = resolveWatcherShape({
       plan: STARTER,
@@ -162,5 +178,80 @@ describe("resolveWatcherShape — one choke point", () => {
     });
     expect(once.shape).toEqual(twice.shape);
     expect(once.shape).toBe(WATCHER_SOLO);
+  });
+});
+
+// ── the choke point, enforced ────────────────────────────────────────────────
+
+describe("nothing bypasses resolveWatcherShape", () => {
+  const read = async (path: string) => {
+    const source = await (await import("node:fs/promises")).readFile(path, "utf8");
+    return source
+      .replace(/\/\*[\s\S]*?\*\//g, "")
+      .split("\n")
+      .filter((line) => !line.trim().startsWith("//"))
+      .join("\n");
+  };
+
+  /**
+   * Files that decide what a checkup looks like. Reading the tier's shape
+   * directly here is the bug the resolver exists to prevent: a standalone
+   * watcher holder would silently get their TIER's allowance, which for a
+   * STARTER tenant is ten prompts they did not buy and for a GROWTH tenant is
+   * fifteen. The resolver is only a choke point if nothing walks around it.
+   */
+  const MUST_NOT_READ_TIER_SHAPE = [
+    "src/lib/ai-monitor/limits.ts",
+    "src/lib/ai-monitor/runner/plan.ts",
+    "src/lib/ai-monitor/wizard/suggest.ts",
+    "src/infrastructure/queue/workers/ai-checkup.worker.ts",
+  ];
+
+  it("keeps planConfig(...).aiCheckup out of every shape-deciding call site", async () => {
+    for (const path of MUST_NOT_READ_TIER_SHAPE) {
+      const source = await read(path);
+      expect(source, path).not.toMatch(/planConfig\([^)]*\)\.aiCheckup/);
+    }
+  });
+
+  it("has the worker resolve it exactly once", async () => {
+    const source = await read("src/infrastructure/queue/workers/ai-checkup.worker.ts");
+    expect(source).toContain("resolveWatcherShape");
+    expect(source.match(/resolveWatcherShape\(/g) ?? []).toHaveLength(1);
+  });
+
+  it("blocks a plan tenant from watcher checkout, server-side", async () => {
+    // Hiding the button leaves the endpoint open.
+    const source = await read("src/app/api/billing/checkout/route.ts");
+    expect(source).toContain("watcherCheckoutBlock");
+    expect(source).toContain("isWatcherLookupKey");
+  });
+
+  it("has the webhook stamp productKind and cancel before it flips", async () => {
+    const source = await read("src/app/api/webhooks/route.ts");
+    expect(source).toContain("productKindFor");
+    expect(source).toContain("productKind,");
+    // Cancel must precede the upsert, or a flipped row can outlive a live
+    // Stripe subscription that is still charging.
+    expect(source.indexOf("subscriptions.cancel")).toBeLessThan(
+      source.indexOf("prisma.subscription.upsert"),
+    );
+  });
+});
+
+describe("the checkout guard", () => {
+  it("blocks a tenant with a live plan subscription", () => {
+    const guard = watcherCheckoutBlock({ productKind: "PLAN", active: true });
+    expect(guard.blocked).toBe(true);
+    expect(guard.reason).toMatch(/already includes/i);
+  });
+
+  it("allows a tenant with no subscription, or a lapsed plan", () => {
+    expect(watcherCheckoutBlock(null).blocked).toBe(false);
+    expect(watcherCheckoutBlock({ productKind: "PLAN", active: false }).blocked).toBe(false);
+  });
+
+  it("allows a watcher holder to renew or re-subscribe", () => {
+    expect(watcherCheckoutBlock({ productKind: "WATCHER", active: true }).blocked).toBe(false);
   });
 });

@@ -25,9 +25,8 @@
 // prompt_runs. Re-running a checkup regenerates exactly the same slots, so the
 // second attempt collides with the first instead of doubling it.
 
-import type { PlanType } from "@/generated/prisma";
 import type { EngineSpec } from "../engines";
-import { planConfig } from "@/lib/plan-config";
+import type { AiCheckupShape } from "@/lib/plan-config";
 
 /** One provider call the checkup intends to make. */
 export interface RunSlot {
@@ -93,14 +92,20 @@ export function buildRunPlan(
   return slots;
 }
 
-/** The plan a tier implies, for a checkup that has not been built yet. */
-export function planForTier(
+/**
+ * The plan a SHAPE implies, for a checkup that has not been built yet.
+ *
+ * Takes the resolved shape rather than a tier: a standalone watcher holder's
+ * repetitions come from WATCHER_SOLO, not from planConfig, and
+ * resolveWatcherShape() is the one place that knows which.
+ */
+export function planForShape(
   checkupId: string,
-  plan: PlanType,
+  shape: AiCheckupShape,
   prompts: readonly PlannedPrompt[],
   engines: readonly EngineSpec[],
 ): RunSlot[] {
-  return buildRunPlan(checkupId, prompts, engines, planConfig(plan).aiCheckup.repetitions);
+  return buildRunPlan(checkupId, prompts, engines, shape.repetitions);
 }
 
 /** The slot's identity, for logs and for de-duplicating in memory. */

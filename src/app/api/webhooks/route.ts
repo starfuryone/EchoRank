@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import type { Prisma } from "@/generated/prisma";
 import { prisma } from "@/lib/prisma";
+import { productKindFor } from "@/lib/ai-monitor/watcher-entitlement";
 import { reconcileTenantMatrixAccounts } from "@/lib/matrix-accounts";
 import { rateLimit } from "@/lib/rate-limit";
 import { logger } from "@/infrastructure/observability/logger";
@@ -178,7 +179,18 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
   // Prefer the DB price catalog (multi-currency, no code change to add prices);
   // fall back to the env-var mapping for backwards compatibility.
   const dbPlan = priceId ? await resolvePlanFromPriceId(priceId) : null;
-  const planType = dbPlan?.planType ?? mapStripePlan(priceId);
+
+  // PLAN or WATCHER, from the price's lookup key — ours and stable, unlike the
+  // price id. A watcher subscription must never promote tenant.planType or
+  // satisfy requirePaidPlan: Subscription.tenantId is unique, so it occupies
+  // the same single row a tier would, and the `planType ?? tenant.planType`
+  // fallback below would otherwise stamp it with whatever tier the tenant
+  // already had.
+  const lookupKey = (firstItem?.price as { lookup_key?: string | null } | undefined)?.lookup_key;
+  const productKind = productKindFor(lookupKey);
+  const isWatcher = productKind === "WATCHER";
+
+  const planType = isWatcher ? null : (dbPlan?.planType ?? mapStripePlan(priceId));
 
   // Period dates live on the subscription item in current Stripe API versions
   const periodStart = firstItem?.current_period_start
@@ -189,9 +201,14 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
     : null;
 
   const tenantUpdate: Record<string, unknown> = {
-    billingStatus,
     stripeSubscriptionId: subscription.id,
   };
+  // A watcher purchase does not move the tenant's billing status either. The
+  // paid gate falls back to this column when the row is not a plan, so writing
+  // ACTIVE here would reopen the hole one level down.
+  if (!isWatcher) {
+    tenantUpdate.billingStatus = billingStatus;
+  }
   if (planType) {
     tenantUpdate.planType = planType;
   }
@@ -201,11 +218,43 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
     data: tenantUpdate,
   });
 
+  // WATCHER -> PLAN is a REPLACEMENT, not a second subscription.
+  //
+  // One row per tenant, so the upgrade flips this row. Stripe is cancelled
+  // FIRST and the row flipped only if that succeeded: the reverse order leaves
+  // a row saying PLAN while the old watcher subscription keeps charging, which
+  // is a double bill the customer sees and we do not. Cancelling first can at
+  // worst leave a cancelled watcher and an un-flipped row, which the next
+  // webhook or a retry repairs.
+  const existing = await prisma.subscription.findUnique({
+    where: { tenantId: tenant.id },
+    select: { productKind: true, stripeSubscriptionId: true },
+  });
+  if (
+    !isWatcher &&
+    existing?.productKind === "WATCHER" &&
+    existing.stripeSubscriptionId &&
+    existing.stripeSubscriptionId !== subscription.id
+  ) {
+    try {
+      await getStripe().subscriptions.cancel(existing.stripeSubscriptionId);
+      log.info({ tenantId: tenant.id }, "cancelled standalone watcher on plan upgrade");
+    } catch (err) {
+      // Already cancelled is fine; anything else must stop the flip.
+      const message = err instanceof Error ? err.message : String(err);
+      if (!/No such subscription|already canceled/i.test(message)) {
+        log.error({ tenantId: tenant.id, err: message }, "watcher cancel failed; not flipping row");
+        throw err;
+      }
+    }
+  }
+
   // Upsert subscription record
   await prisma.subscription.upsert({
     where: { tenantId: tenant.id },
     update: {
       status: billingStatus,
+      productKind,
       planType: planType ?? tenant.planType,
       stripeSubscriptionId: subscription.id,
       stripePriceId: priceId ?? undefined,
@@ -215,6 +264,7 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
     },
     create: {
       tenantId: tenant.id,
+      productKind,
       planType: planType ?? tenant.planType,
       status: billingStatus,
       stripeSubscriptionId: subscription.id,

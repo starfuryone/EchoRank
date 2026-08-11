@@ -315,7 +315,10 @@ export async function createProject(
   });
 
   // ── 5. First prompts ──
-  const limit = maxPrompts(ctx.plan);
+  // The legacy background onboarding path, which predates the standalone
+  // watcher and only ever runs for a tenant on a tier. resolveWatcherShape is
+  // the choke point for anything a watcher holder can reach; this is not one.
+  const limit = maxPrompts(planConfig(ctx.plan).aiCheckup);
   let promptsCreated = 0;
 
   if (limit > 0 && description && industry) {

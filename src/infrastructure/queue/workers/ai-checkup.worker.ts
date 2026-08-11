@@ -33,6 +33,10 @@ import { logger } from "@/infrastructure/observability/logger";
 import { planConfig } from "@/lib/plan-config";
 import { aiSearchEnabledFor } from "@/lib/ai-monitor/rollout";
 import { enginesFor } from "@/lib/ai-monitor/limits";
+import {
+  planSchedulesCheckups,
+  resolveWatcherShape,
+} from "@/lib/ai-monitor/watcher-entitlement";
 import { disabledProviders } from "@/lib/ai-monitor/engine-registry";
 import { runnableEngines, refusals } from "@/lib/ai-monitor/runner/providers";
 import { buildRunPlan, snapshotShape } from "@/lib/ai-monitor/runner/plan";
@@ -298,12 +302,30 @@ async function runOne(job: AiCheckupJob, now: Date): Promise<void> {
   }
 
   const planType = brand.tenant.planType;
-  const config = planConfig(planType);
+
+  // THE ONE PLACE THE SHAPE IS RESOLVED. Everything below takes it as a value;
+  // nothing downstream reads planConfig(plan).aiCheckup, so a standalone
+  // watcher holder gets the solo shape everywhere rather than in whichever
+  // call site remembered to ask.
+  const subscription = await prisma.subscription.findUnique({
+    where: { tenantId: brand.tenantId },
+    select: { productKind: true, status: true },
+  });
+  const { shape, source } = resolveWatcherShape({
+    plan: planType,
+    planIncludesWatcher: planSchedulesCheckups(planType),
+    subscription: subscription
+      ? {
+          productKind: subscription.productKind,
+          active: subscription.status === "ACTIVE" || subscription.status === "TRIALING",
+        }
+      : null,
+  });
 
   // Both halves of "which engines": what the tier allows AND what can actually
   // be reached and billed. refusals() is logged rather than swallowed, so an
   // engine missing from a report reads as configuration and not as an outage.
-  const allowed = enginesFor(planType, process.env, await disabledProviders());
+  const allowed = enginesFor(shape, process.env, await disabledProviders());
   const engines = runnableEngines(allowed);
   const excluded = refusals(allowed);
   if (excluded.length > 0) {
@@ -317,7 +339,7 @@ async function runOne(job: AiCheckupJob, now: Date): Promise<void> {
   const prompts = await prisma.trackedPrompt.findMany({
     where: { brandProfileId, active: true, selected: true },
     orderBy: [{ lastRunAt: "asc" }, { createdAt: "asc" }],
-    take: config.aiCheckup.prompts,
+    take: shape.prompts,
     select: { id: true, text: true, category: true },
   });
   if (prompts.length === 0) {
@@ -325,7 +347,7 @@ async function runOne(job: AiCheckupJob, now: Date): Promise<void> {
     return;
   }
 
-  const shape = snapshotShape(prompts, engines, config.aiCheckup.repetitions);
+  const snapshot = snapshotShape(prompts, engines, shape.repetitions);
   const checkup = await prisma.checkup.create({
     data: {
       tenantId: brand.tenantId,
@@ -333,9 +355,9 @@ async function runOne(job: AiCheckupJob, now: Date): Promise<void> {
       manual: job.manual ?? false,
       // The shape is copied onto the row at creation so the checkup keeps
       // reporting what it actually ran under after an upgrade or a config edit.
-      providers: shape.providers,
-      promptCount: shape.promptCount,
-      repetitions: shape.repetitions,
+      providers: snapshot.providers,
+      promptCount: snapshot.promptCount,
+      repetitions: snapshot.repetitions,
     },
     select: { id: true },
   });
@@ -364,7 +386,7 @@ async function runOne(job: AiCheckupJob, now: Date): Promise<void> {
         brandVariations: brand.aliases,
         competitors: brand.competitors,
       },
-      slots: buildRunPlan(checkup.id, prompts, engines, config.aiCheckup.repetitions),
+      slots: buildRunPlan(checkup.id, prompts, engines, shape.repetitions),
       citationCapableEngines: new Set(
         engines.filter((engine) => engine.supportsCitations).map((engine) => engine.provider),
       ),
@@ -391,7 +413,15 @@ async function runOne(job: AiCheckupJob, now: Date): Promise<void> {
   }
 
   logger.info(
-    { checkupId: checkup.id, brandProfileId, status: result.status, ...result.tally },
+    {
+      checkupId: checkup.id,
+      brandProfileId,
+      status: result.status,
+      // Which shape applied, and why. The first question on a "why did I only
+      // get ten prompts" ticket.
+      shapeSource: source,
+      ...result.tally,
+    },
     "AI checkup finished",
   );
 }
