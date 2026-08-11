@@ -75,6 +75,23 @@ export interface PriorRun {
   scored: ScoredRun | null;
 }
 
+/** Cross-run context the classifier needs, gathered as the checkup proceeds. */
+export interface AnalysisSignals {
+  /** The prompt's category, from the slot. */
+  promptCategory: string | null;
+  /**
+   * Lowercased entity name -> DISTINCT prompts that have ranked it so far.
+   *
+   * Distinct PROMPTS, not mentions: with repetitions above 1 the same prompt
+   * ranks the same entity several times, and counting those would let one
+   * question look like a consensus. The count grows as the checkup proceeds, so
+   * an entity first seen late scores conservatively here — the authority for a
+   * finished checkup is a re-classification pass over the stored rows, which is
+   * free by design.
+   */
+  rankedInPrompts: Record<string, number>;
+}
+
 export interface CapReading {
   capped: boolean;
   spent: number;
@@ -95,8 +112,21 @@ export interface RunnerPorts {
    * metering.meteredAiCall so the row reaches the ledger.
    */
   ask: (slot: RunSlot) => Promise<AskOutcome>;
-  /** Analyse one answer, metered. */
-  analyze: (slot: RunSlot, answer: string, sources: { url: string; title?: string | null }[] | null) => Promise<RunAnalysis>;
+  /**
+   * Analyse one answer, metered.
+   *
+   * `context` carries the two signals the entity classifier cannot work out
+   * from one answer in isolation. They were dead in production for a release —
+   * the port took only (slot, answer, sources), so prompt intent and
+   * cross-prompt consistency always evaluated neutral on the real path while
+   * passing every test that hand-supplied them.
+   */
+  analyze: (
+    slot: RunSlot,
+    answer: string,
+    sources: { url: string; title?: string | null }[] | null,
+    context: AnalysisSignals,
+  ) => Promise<RunAnalysis>;
   /**
    * Write one run and its analysis.
    *
@@ -197,6 +227,11 @@ export async function runCheckup(
   const prior = await ports.priorRuns(checkupId);
   const alreadyDone = new Set(prior.map((run) => run.key));
 
+  // entity -> the distinct prompts that ranked it, this checkup.
+  const rankedBy = new Map<string, Set<string>>();
+  const rankedTally = (): Record<string, number> =>
+    Object.fromEntries([...rankedBy].map(([name, prompts]) => [name, prompts.size]));
+
   const outcomes: SlotOutcome[] = [];
   // Seeded with what earlier passes already collected, so both the status and
   // the metrics row describe the WHOLE checkup rather than this attempt.
@@ -224,7 +259,19 @@ export async function runCheckup(
 
     try {
       const ask = await ports.ask(slot);
-      const analysis = await ports.analyze(slot, ask.answer, ask.sources ?? null);
+      const analysis = await ports.analyze(slot, ask.answer, ask.sources ?? null, {
+        promptCategory: slot.promptCategory,
+        rankedInPrompts: rankedTally(),
+      });
+
+      for (const competitor of analysis.competitors) {
+        if (competitor.position === null) continue;
+        const key = competitor.name.trim().toLowerCase();
+        if (!key) continue;
+        const prompts = rankedBy.get(key) ?? new Set<string>();
+        prompts.add(slot.promptId);
+        rankedBy.set(key, prompts);
+      }
       const outcome: SlotOutcome = { slot, status: "OK", analysis, ask };
       outcomes.push(outcome);
       scored.push(toScoredRun(slot, analysis));

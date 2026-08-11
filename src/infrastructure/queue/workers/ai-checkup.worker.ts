@@ -318,7 +318,7 @@ async function runOne(job: AiCheckupJob, now: Date): Promise<void> {
     where: { brandProfileId, active: true, selected: true },
     orderBy: [{ lastRunAt: "asc" }, { createdAt: "asc" }],
     take: config.aiCheckup.prompts,
-    select: { id: true, text: true },
+    select: { id: true, text: true, category: true },
   });
   if (prompts.length === 0) {
     logger.warn({ brandProfileId }, "no selected prompts — checkup not created");

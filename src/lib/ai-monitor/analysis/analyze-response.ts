@@ -204,6 +204,7 @@ export async function analyzeResponse(
         promptCategory: response.promptCategory ?? null,
         rankedInPrompts: response.rankedInPrompts?.[competitor.name.toLowerCase()] ?? 0,
         categoryVocabulary: brand.categoryVocabulary,
+        brandName: brand.brand,
       }),
     })),
     sentiment: extraction.extraction?.sentiment ?? null,

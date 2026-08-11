@@ -90,9 +90,18 @@ export function prismaPorts(ctx: PortContext): RunnerPorts {
       };
     },
 
-    async analyze(slot, answer, sources) {
+    async analyze(slot, answer, sources, context) {
       return analyzeResponse(
-        { answer, promptText: slot.promptText, sources },
+        {
+          answer,
+          promptText: slot.promptText,
+          sources,
+          // The two signals that were dead on this path until they were
+          // threaded here: without them the entity classifier scored prompt
+          // intent and cross-prompt consistency as neutral on every real run.
+          promptCategory: context.promptCategory,
+          rankedInPrompts: context.rankedInPrompts,
+        },
         ctx.brand,
         { tenantId: ctx.tenantId, plan: ctx.plan, checkupId: ctx.checkupId },
       );
@@ -188,6 +197,7 @@ export function prismaPorts(ctx: PortContext): RunnerPorts {
           checkupId,
           promptId: row.promptId,
           promptText: "",
+          promptCategory: null,
           engine: row.engine,
           model: "",
           repetition: row.repetition,

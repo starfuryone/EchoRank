@@ -20,6 +20,7 @@ import type { PlanType } from "@/generated/prisma";
 import type { AnthropicProvider } from "@/ai/providers/anthropic";
 import type { InferenceRequest } from "@/ai/providers/base";
 import type { AiCallOutcome, AiCallSpec } from "@/lib/ai-monitor/metering";
+import { CLASSIFIER_VERSION } from "@/lib/ai-monitor/analysis/competitor-filter";
 import {
   NAME_MATCH_THRESHOLD,
   bestAliasMatch,
@@ -373,7 +374,11 @@ describe("analysing one response", () => {
       ["Ahrefs", 1],
       ["Semrush", 3],
     ]);
-    expect(analysis.competitors.every((c) => c.classification.classifierVersion === 1)).toBe(true);
+    // The constant, not a literal: a version bump is a deliberate act and
+    // should not also require editing an unrelated assertion.
+    expect(
+      analysis.competitors.every((c) => c.classification.classifierVersion === CLASSIFIER_VERSION),
+    ).toBe(true);
     expect(analysis.citations).toHaveLength(1);
     expect(analysis.citations[0].isMonitoredDomain).toBe(true);
     expect(analysis.extraction.ok).toBe(true);

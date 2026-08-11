@@ -38,13 +38,26 @@ async function main() {
   console.log(`${mentions.length} mentions below version ${CLASSIFIER_VERSION}`);
   if (mentions.length === 0) return;
 
-  // Cross-prompt consistency: how many distinct prompts ranked each entity.
-  const ranked = await prisma.competitorMention.groupBy({
-    by: ["name"],
+  // Cross-prompt consistency: DISTINCT PROMPTS that ranked each entity.
+  //
+  // A groupBy on name counts MENTIONS, and with repetitions above 1 the same
+  // prompt ranks the same entity several times — one question would look like a
+  // consensus and could promote a stray tool to rival on its own. Deduped by
+  // (entity, promptId) instead.
+  const rankedRows = await prisma.competitorMention.findMany({
     where: { recommendationPosition: { not: null } },
-    _count: true,
+    select: { name: true, promptRun: { select: { promptId: true } } },
   });
-  const rankedInPrompts = new Map(ranked.map((r) => [r.name.toLowerCase(), r._count]));
+  const promptsByEntity = new Map<string, Set<string>>();
+  for (const row of rankedRows) {
+    const key = row.name.trim().toLowerCase();
+    const set = promptsByEntity.get(key) ?? new Set<string>();
+    set.add(row.promptRun.promptId);
+    promptsByEntity.set(key, set);
+  }
+  const rankedInPrompts = new Map(
+    [...promptsByEntity].map(([name, prompts]) => [name, prompts.size]),
+  );
 
   const counts: Record<string, number> = { RIVAL: 0, PLATFORM: 0, GENERIC: 0 };
   const examples: Record<string, string[]> = { RIVAL: [], PLATFORM: [], GENERIC: [] };
@@ -56,6 +69,7 @@ async function main() {
       promptCategory: mention.promptRun.prompt.category,
       rankedInPrompts: rankedInPrompts.get(mention.name.toLowerCase()) ?? 0,
       categoryVocabulary: ["AI visibility", "AI visibility management"],
+      brandName: "EchoRank360",
     });
     counts[result.classification] += 1;
     if (examples[result.classification].length < 8 && !examples[result.classification].includes(mention.name)) {
@@ -67,7 +81,8 @@ async function main() {
         data: {
           classification: result.classification,
           classifierVersion: result.classifierVersion,
-          classificationTrace: result.trace,
+          // Prisma wants a JSON object shape; the trace is an array of them.
+          classificationTrace: result.trace as unknown as object[],
         },
       });
     }

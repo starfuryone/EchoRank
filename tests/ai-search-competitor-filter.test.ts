@@ -117,6 +117,36 @@ describe("context cues", () => {
     }
   });
 
+  it('counts "like <brand>" as comparison language', () => {
+    // The answer offering something as a substitute for the monitored brand is
+    // the relationship stated outright, same as "alternative to".
+    const result = classifyEntity("Profound", {
+      ...base,
+      brandName: "Echorank360",
+      context: "For something like Echorank360, Profound is the closest.",
+    });
+    expect(result.score).toBe(WEIGHTS.comparisonLanguage);
+    expect(result.trace[0].why).toContain("Echorank360");
+  });
+
+  it('does not fire on a bare "like" simile', () => {
+    // "like a spreadsheet" is not a comparison to the brand, and a bare `like`
+    // would fire on every simile in every answer.
+    expect(
+      classifyEntity("Profound", {
+        ...base,
+        brandName: "Echorank360",
+        context: "It works like a spreadsheet for your rankings.",
+      }).score,
+    ).toBe(0);
+  });
+
+  it('needs a brand name before "like" can mean anything', () => {
+    expect(
+      classifyEntity("Profound", { ...base, context: "something like Echorank360" }).score,
+    ).toBe(0);
+  });
+
   it("subtracts when the entity is the instrument, not the option", () => {
     // "using Semrush" is an instruction. Without this, every tool a reader is
     // told to use would be counted as a rival.
@@ -259,6 +289,7 @@ describe("the record it leaves", () => {
     // Same lesson as scoreVersion: rows written under old rules keep meaning
     // what they meant, and re-classifying is an explicit new version.
     expect(classifyEntity("Profound", {}).classifierVersion).toBe(CLASSIFIER_VERSION);
+    expect(CLASSIFIER_VERSION).toBe(2);
     expect(classifyEntity("ChatGPT", {}).classifierVersion).toBe(CLASSIFIER_VERSION);
   });
 

@@ -21,6 +21,7 @@ import type { PlanType } from "@/generated/prisma";
 import {
   runCheckup,
   toScoredRun,
+  type AnalysisSignals,
   type CapReading,
   type RunnerPorts,
   type SlotOutcome,
@@ -253,6 +254,7 @@ interface Harness {
   ports: RunnerPorts;
   persisted: SlotOutcome[];
   asked: RunSlot[];
+  analysisContext: AnalysisSignals[];
   capReads: number;
   statuses: { status: string; stoppedReason?: string | null }[];
   metrics: { partialCoverage: boolean; skippedRuns: number; engines: string[] }[];
@@ -270,12 +272,15 @@ function harness(
     alreadyDone?: string[];
     failOn?: (slot: RunSlot) => boolean;
     cap?: number;
+    /** Name the analysis should report as ranked, for the tally tests. */
+    rankCompetitor?: string | null;
   } = {},
 ): Harness {
   const allowance = opts.allowance ?? Number.POSITIVE_INFINITY;
   const state: Harness = {
     persisted: [],
     asked: [],
+    analysisContext: [],
     capReads: 0,
     statuses: [],
     metrics: [],
@@ -299,8 +304,28 @@ function harness(
         outputTokens: 10,
       };
     },
-    async analyze() {
-      return fakeAnalysis();
+    async analyze(_slot, _answer, _sources, context) {
+      state.analysisContext.push(context);
+      const ranked = opts.rankCompetitor;
+      return fakeAnalysis(
+        ranked === undefined || ranked === null
+          ? {}
+          : {
+              competitors: [
+                {
+                  name: ranked,
+                  position: 1,
+                  classification: {
+                    entity: ranked,
+                    classification: "RIVAL",
+                    score: 2,
+                    classifierVersion: 2,
+                    trace: [],
+                  },
+                },
+              ],
+            },
+      );
     },
     async persistRun(outcome) {
       state.persisted.push(outcome);
@@ -615,5 +640,65 @@ describe("salvaging a dead checkup's runs", () => {
     expect(scored.mentionCount).toBe(0);
     expect(scored.brandPosition).toBeNull();
     expect(scored.citations).toEqual([]);
+  });
+});
+
+// ───────────── the signals the classifier needs, on the REAL path ─────────────
+//
+// These exist because the two cross-run signals were dead in production for a
+// release. Every classifier test passed, because every classifier test supplied
+// the context by hand — the gap was that ports.analyze never received it, so on
+// a real checkup prompt intent and cross-prompt consistency always evaluated
+// neutral. A test that hand-supplies context cannot see that; only one that
+// drives runCheckup and inspects what the ANALYZE PORT was handed can.
+
+describe("what the analysis port is actually given", () => {
+  const withCategories = [
+    { id: "p1", text: "best tools?", category: "COMPARISON" },
+    { id: "p2", text: "alternatives?", category: "ALTERNATIVES" },
+  ];
+
+  it("passes the prompt's category through, never a neutral null", async () => {
+    const slots = buildRunPlan("c1", withCategories, [CLAUDE], 1);
+    const h = harness();
+    await runCheckup(runArgs(slots), h.ports);
+
+    expect(h.analysisContext).toHaveLength(2);
+    expect(h.analysisContext.map((c) => c.promptCategory)).toEqual([
+      "COMPARISON",
+      "ALTERNATIVES",
+    ]);
+    // The regression: every context arriving with a null category means the
+    // prompt-intent signal can never fire on a real run.
+    expect(h.analysisContext.every((c) => c.promptCategory === null)).toBe(false);
+  });
+
+  it("passes a cross-prompt tally that actually grows", async () => {
+    // fakeAnalysis() ranks "Ahrefs" at position 1 on every run, so by the second
+    // prompt the tally must know a previous prompt ranked it.
+    const slots = buildRunPlan("c1", withCategories, [CLAUDE], 1);
+    const h = harness({ rankCompetitor: "Ahrefs" });
+    await runCheckup(runArgs(slots), h.ports);
+
+    expect(h.analysisContext[0].rankedInPrompts).toEqual({});
+    expect(h.analysisContext[1].rankedInPrompts.ahrefs).toBe(1);
+  });
+
+  it("counts DISTINCT prompts, not mentions, across repetitions", async () => {
+    // Two repetitions of ONE prompt is one prompt. Counting mentions would make
+    // a single question look like a consensus and promote a stray tool to rival.
+    const slots = buildRunPlan("c1", [withCategories[0]], [CLAUDE], 3);
+    const h = harness({ rankCompetitor: "Ahrefs" });
+    await runCheckup(runArgs(slots), h.ports);
+
+    expect(slots).toHaveLength(3);
+    expect(h.analysisContext.at(-1)!.rankedInPrompts.ahrefs).toBe(1);
+  });
+
+  it("does not count an entity the answer never ranked", async () => {
+    const slots = buildRunPlan("c1", withCategories, [CLAUDE], 1);
+    const h = harness({ rankCompetitor: null });
+    await runCheckup(runArgs(slots), h.ports);
+    expect(h.analysisContext[1].rankedInPrompts).toEqual({});
   });
 });

@@ -28,8 +28,14 @@
 
 import { matchesAlias } from "./similarity";
 
-/** Bump when a weight, a threshold or a list below changes. */
-export const CLASSIFIER_VERSION = 1;
+/**
+ * Bump when a weight, a threshold or a list below changes.
+ *
+ * 2: added the "like <brand>" comparison cue, and the cross-prompt signal now
+ *    counts DISTINCT prompts rather than mentions — with repetitions above 1 a
+ *    single prompt ranking an entity twice used to read as two.
+ */
+export const CLASSIFIER_VERSION = 2;
 
 export type EntityClassification = "RIVAL" | "PLATFORM" | "GENERIC";
 
@@ -140,6 +146,19 @@ const COMPARISON_CUES =
   /\b(alternatives?\s+to|competitors?|competing|similar\s+to|vs\.?|versus|instead\s+of|compared\s+to|rather\s+than|switch\s+(?:to|from))\b/i;
 
 /**
+ * "like Echorank360" — the answer positioning this entity against the brand.
+ *
+ * Needs the brand's own name, so it is built per call rather than living in the
+ * constant above. Only the brand: "like a spreadsheet" is a simile, and a bare
+ * `like` would fire on every one of them.
+ */
+function likeBrandCue(brandName: string | undefined): RegExp | null {
+  const name = (brandName ?? "").trim();
+  if (!name) return null;
+  return new RegExp(`\\blike\\s+${name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i");
+}
+
+/**
  * Prepositions that put the entity in the role of instrument or source.
  *
  * Matched only when they sit IMMEDIATELY BEFORE the entity — "using Semrush" is
@@ -175,6 +194,8 @@ export interface ClassifyContext {
    * category, not a competitor in it.
    */
   categoryVocabulary?: readonly string[];
+  /** The monitored brand's name, for the "like <brand>" comparison cue. */
+  brandName?: string;
 }
 
 export interface SignalTrace {
@@ -285,11 +306,14 @@ export function classifyEntity(entity: string, ctx: ClassifyContext = {}): Class
 
   // 3. Context cues.
   const window = ctx.context ?? "";
-  if (window && COMPARISON_CUES.test(window)) {
+  const likeBrand = likeBrandCue(ctx.brandName);
+  if (window && (COMPARISON_CUES.test(window) || (likeBrand?.test(window) ?? false))) {
     add(
       WEIGHTS.comparisonLanguage,
       "comparison_language",
-      "The answer compares it with other options.",
+      likeBrand?.test(window)
+        ? `The answer offers it as something like ${ctx.brandName}.`
+        : "The answer compares it with other options.",
     );
   }
   if (hasToolPreposition(window, name)) {

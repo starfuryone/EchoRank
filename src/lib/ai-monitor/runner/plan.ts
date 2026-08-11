@@ -39,11 +39,20 @@ export interface RunSlot {
   model: string;
   /** 1-based. The `run_number` half of the idempotency key. */
   repetition: number;
+  /**
+   * The prompt's category, carried onto the slot so the analysis step has it
+   * without a second query. The entity classifier reads it: a tool named in a
+   * "how do I fix this" answer is an instruction, the same tool named in a
+   * "which should I buy" answer is an option.
+   */
+  promptCategory: string | null;
 }
 
 export interface PlannedPrompt {
   id: string;
   text: string;
+  /** The wizard's stored category. A signal for the entity classifier. */
+  category?: string | null;
 }
 
 /**
@@ -72,6 +81,7 @@ export function buildRunPlan(
           checkupId,
           promptId: prompt.id,
           promptText: prompt.text,
+          promptCategory: prompt.category ?? null,
           engine: engine.provider,
           model: engine.modelName,
           repetition,
