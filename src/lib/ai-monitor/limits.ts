@@ -160,23 +160,29 @@ export async function promptHeadroom(
  * rather than in watcher-entitlement.ts so that module stays pure and the
  * Stripe webhook can import its discriminator without a database.
  */
-export async function resolveShapeForTenant(
-  tenantId: string,
-  plan: PlanType,
-): Promise<AiCheckupShape> {
-  const { resolveWatcherShape, planSchedulesCheckups } = await import("./watcher-entitlement");
+export async function resolveShapeForTenant(tenantId: string, plan: PlanType) {
+  const { resolveWatcherShape } = await import("./watcher-entitlement");
+  const { getBillingContext, isPaidStatus } = await import("@/lib/paid-plan");
+
   const subscription = await prisma.subscription.findUnique({
     where: { tenantId },
     select: { productKind: true, status: true },
   });
+
+  // "Is the plan paid" is the same question requirePaidPlan asks, and asked the
+  // same way — getBillingContext already returns a PLAN status only, so a
+  // watcher row falls through to the tenant column exactly as no row would.
+  const billing = await getBillingContext(tenantId);
+  const planIsPaid = isPaidStatus(billing.status, billing.hasSubscriptionRow);
+
   return resolveWatcherShape({
     plan,
-    planIncludesWatcher: planSchedulesCheckups(plan),
+    planIsPaid,
     subscription: subscription
       ? {
           productKind: subscription.productKind,
           active: subscription.status === "ACTIVE" || subscription.status === "TRIALING",
         }
       : null,
-  }).shape;
+  });
 }

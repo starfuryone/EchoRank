@@ -32,11 +32,8 @@ import { prisma } from "@/lib/prisma";
 import { logger } from "@/infrastructure/observability/logger";
 import { planConfig } from "@/lib/plan-config";
 import { aiSearchEnabledFor } from "@/lib/ai-monitor/rollout";
-import { enginesFor } from "@/lib/ai-monitor/limits";
-import {
-  planSchedulesCheckups,
-  resolveWatcherShape,
-} from "@/lib/ai-monitor/watcher-entitlement";
+import { enginesFor, resolveShapeForTenant } from "@/lib/ai-monitor/limits";
+
 import { disabledProviders } from "@/lib/ai-monitor/engine-registry";
 import { runnableEngines, refusals } from "@/lib/ai-monitor/runner/providers";
 import { buildRunPlan, snapshotShape } from "@/lib/ai-monitor/runner/plan";
@@ -307,20 +304,7 @@ async function runOne(job: AiCheckupJob, now: Date): Promise<void> {
   // nothing downstream reads planConfig(plan).aiCheckup, so a standalone
   // watcher holder gets the solo shape everywhere rather than in whichever
   // call site remembered to ask.
-  const subscription = await prisma.subscription.findUnique({
-    where: { tenantId: brand.tenantId },
-    select: { productKind: true, status: true },
-  });
-  const { shape, source } = resolveWatcherShape({
-    plan: planType,
-    planIncludesWatcher: planSchedulesCheckups(planType),
-    subscription: subscription
-      ? {
-          productKind: subscription.productKind,
-          active: subscription.status === "ACTIVE" || subscription.status === "TRIALING",
-        }
-      : null,
-  });
+  const { shape, source } = await resolveShapeForTenant(brand.tenantId, planType);
 
   // Both halves of "which engines": what the tier allows AND what can actually
   // be reached and billed. refusals() is logged rather than swallowed, so an

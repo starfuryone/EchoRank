@@ -53,7 +53,7 @@ async function grant() {
     create: { tenantId: id, productKind: "WATCHER", status: "ACTIVE", planType: PLAN },
   });
 
-  const shape = await resolveShapeForTenant(id, PLAN);
+  const { shape } = await resolveShapeForTenant(id, PLAN);
   console.log("tenantId:", id);
   console.log("resolved shape:", JSON.stringify(shape));
   console.log("WATCHER_SOLO  :", JSON.stringify(WATCHER_SOLO), "cap $" + WATCHER_SOLO_CAP_USD);
@@ -109,7 +109,7 @@ async function checkup() {
     where: { tenantId: id },
     select: { id: true },
   });
-  const shape = await resolveShapeForTenant(id, PLAN);
+  const { shape } = await resolveShapeForTenant(id, PLAN);
   console.log(`running ${shape.prompts} prompts x ${shape.repetitions} reps`);
   console.log("start:", new Date().toISOString());
   const worker = await import("@/infrastructure/queue/workers/ai-checkup.worker");

@@ -77,14 +77,21 @@ export interface WatcherShapeInput {
   /** The tenant's tier. */
   plan: PlanType;
   /**
-   * True when the TIER itself schedules checkups.
+   * Is the tenant actually PAYING for its tier?
    *
-   * NOT hasFeature(plan, "ai_visibility"): that flag is baseline from STARTER
-   * up, so it is true for every tier and would make the standalone entitlement
-   * dead code. What actually distinguishes a tier that includes a watcher is
-   * its SHAPE scheduling something — see planSchedulesCheckups().
+   * NOT "does tenant.planType name a tier that schedules". planType is an enum
+   * column with a default, so an unpaid tenant carries one regardless — and a
+   * live run proved the cost: a watcher-only tenant whose hasPaidPlan was false
+   * throughout still took STARTER's contribution to the composite, because the
+   * predicate read the column rather than the payment. That is the same class
+   * of bug as the requirePaidPlan hole this module was written to close: an
+   * unpaid enum value leaking value.
+   *
+   * The caller computes this from billing status (see resolveShapeForTenant),
+   * because deciding it needs the Subscription row AND the tenant's own
+   * billingStatus fallback for tenants that predate Stripe.
    */
-  planIncludesWatcher: boolean;
+  planIsPaid: boolean;
   /** The tenant's subscription, when it has one. */
   subscription: SubscriptionFacts | null;
 }
@@ -159,8 +166,10 @@ function maxUnlimited(a: number | null, b: number | null): number | null {
 export function resolveWatcherShape(input: WatcherShapeInput): ResolvedWatcherShape {
   const config = planConfig(input.plan);
   const entitled = hasWatcherEntitlement(input.subscription);
+  // A tier contributes only when it is BOTH paid for and actually schedules.
+  const planContributes = input.planIsPaid && planSchedulesCheckups(input.plan);
 
-  if (input.planIncludesWatcher && entitled) {
+  if (planContributes && entitled) {
     // FIELD-WISE MAX, not "plan wins". The premise that any plan shape is at
     // least as generous as solo does not hold: STARTER runs one repetition
     // where solo runs three, so preferring the plan would hand a customer who
@@ -176,7 +185,13 @@ export function resolveWatcherShape(input: WatcherShapeInput): ResolvedWatcherSh
     return {
       shape: {
         frequency: maxFrequency(config.aiCheckup.frequency, WATCHER_SOLO.frequency),
-        providers: maxUnlimited(config.aiCheckup.providers, WATCHER_SOLO.providers),
+        // PROVIDERS IS THE ONE EXCEPTION TO THE MAX. A watcher entitlement may
+        // never RAISE the engine count above what the plan itself sells — the
+        // $9 SKU buys one engine, and letting it lift a tier's ceiling would
+        // hand a tenant more engines than either product was priced for the
+        // moment a second adapter ships. The plan's own number stands, and the
+        // watcher's contribution is pinned at solo's 1.
+        providers: config.aiCheckup.providers,
         prompts: Math.max(config.aiCheckup.prompts, WATCHER_SOLO.prompts),
         repetitions: Math.max(config.aiCheckup.repetitions, WATCHER_SOLO.repetitions),
       },
@@ -186,7 +201,7 @@ export function resolveWatcherShape(input: WatcherShapeInput): ResolvedWatcherSh
     };
   }
 
-  if (input.planIncludesWatcher) {
+  if (planContributes) {
     return {
       shape: config.aiCheckup,
       capUsd: config.aiMonthlyCapUsd,

@@ -106,7 +106,7 @@ describe("resolveWatcherShape — one choke point", () => {
   it("uses the tier's shape when the tier includes the watcher", () => {
     const resolved = resolveWatcherShape({
       plan: GROWTH,
-      planIncludesWatcher: true,
+      planIsPaid: true,
       subscription: null,
     });
     expect(resolved.source).toBe("plan");
@@ -116,7 +116,7 @@ describe("resolveWatcherShape — one choke point", () => {
   it("uses the solo shape for a standalone entitlement", () => {
     const resolved = resolveWatcherShape({
       plan: STARTER,
-      planIncludesWatcher: false,
+      planIsPaid: false,
       subscription: { productKind: "WATCHER", active: true },
     });
     expect(resolved.source).toBe("watcher_solo");
@@ -142,7 +142,7 @@ describe("resolveWatcherShape — one choke point", () => {
     const starter = planConfig(STARTER);
     const resolved = resolveWatcherShape({
       plan: STARTER,
-      planIncludesWatcher: true,
+      planIsPaid: true,
       subscription: { productKind: "WATCHER", active: true },
     });
 
@@ -171,7 +171,7 @@ describe("resolveWatcherShape — one choke point", () => {
     expect(growth.aiMonthlyCapUsd).toBe(40);
     const resolved = resolveWatcherShape({
       plan: GROWTH,
-      planIncludesWatcher: true,
+      planIsPaid: true,
       subscription: { productKind: "WATCHER", active: true },
     });
     expect(resolved.capUsd).toBe(40);
@@ -184,7 +184,7 @@ describe("resolveWatcherShape — one choke point", () => {
     expect(
       resolveWatcherShape({
         plan: "AGENCY",
-        planIncludesWatcher: true,
+        planIsPaid: true,
         subscription: { productKind: "WATCHER", active: true },
       }).shape.frequency,
     ).toBe("daily");
@@ -213,7 +213,7 @@ describe("resolveWatcherShape — one choke point", () => {
     // allows — a downgrade bought by an upgrade.
     const resolved = resolveWatcherShape({
       plan: "ENTERPRISE",
-      planIncludesWatcher: true,
+      planIsPaid: true,
       subscription: { productKind: "WATCHER", active: true },
     });
     expect(resolved.shape.providers).toBeNull();
@@ -228,7 +228,7 @@ describe("resolveWatcherShape — one choke point", () => {
       const config = planConfig(plan);
       const { capUsd, maxBrands, shape: s } = resolveWatcherShape({
         plan,
-        planIncludesWatcher: true,
+        planIsPaid: true,
         subscription: { productKind: "WATCHER", active: true },
       });
 
@@ -240,13 +240,69 @@ describe("resolveWatcherShape — one choke point", () => {
       // only prompts and repetitions left four of the six untested.
       const atLeast = (got: number | null, a: number | null, b: number) =>
         got === null || (a !== null && got >= Math.max(a, b));
-      expect(atLeast(s.providers, tier.providers, WATCHER_SOLO.providers ?? 1), plan).toBe(true);
+      // providers is deliberately NOT a max — see the exception test above.
+      expect(s.providers, plan).toBe(tier.providers);
       expect(atLeast(capUsd, config.aiMonthlyCapUsd, WATCHER_SOLO_CAP_USD), plan).toBe(true);
       expect(atLeast(maxBrands, config.aiProjects, 1), plan).toBe(true);
       expect(FREQ_RANK[s.frequency], plan).toBeGreaterThanOrEqual(
         Math.max(FREQ_RANK[tier.frequency], FREQ_RANK[WATCHER_SOLO.frequency]),
       );
     }
+  });
+
+  it("ignores an unpaid planType — the bug a live run exposed", async () => {
+    // The watcher-only tenant carried planType STARTER as a column default and
+    // had never paid for it; hasPaidPlan was false for the whole checkup. The
+    // old predicate read the column, so STARTER contributed to the composite
+    // anyway. Same class as the requirePaidPlan hole: an unpaid enum leaking
+    // value.
+    const resolved = resolveWatcherShape({
+      plan: STARTER,
+      planIsPaid: false,
+      subscription: { productKind: "WATCHER", active: true },
+    });
+    expect(resolved.source).toBe("watcher_solo");
+    expect(resolved.shape).toEqual(WATCHER_SOLO);
+    expect(resolved.capUsd).toBe(WATCHER_SOLO_CAP_USD);
+  });
+
+  it("gives an unpaid tenant with no entitlement nothing extra", () => {
+    const resolved = resolveWatcherShape({
+      plan: "AGENCY",
+      planIsPaid: false,
+      subscription: null,
+    });
+    expect(resolved.source).toBe("none");
+  });
+
+  it("never lets a watcher raise the engine count above what the plan sells", () => {
+    // The one exception to the field-wise max. The $9 SKU buys one engine, so
+    // the entitlement must not lift a tier's ceiling — otherwise the day a
+    // second adapter ships, a tenant gets more engines than either product was
+    // priced for.
+    for (const plan of ["STARTER", "GROWTH", "AGENCY", "ENTERPRISE"] as const) {
+      const tier = planConfig(plan).aiCheckup;
+      const { shape } = resolveWatcherShape({
+        plan,
+        planIsPaid: true,
+        subscription: { productKind: "WATCHER", active: true },
+      });
+      expect(shape.providers, plan).toBe(tier.providers);
+    }
+  });
+
+  it("still gives a paid plan its own provider count, not solo's", () => {
+    // STARTER alone promises 2 engines when the adapter ships; the watcher
+    // must not reduce that either.
+    const { shape } = resolveWatcherShape({
+      plan: STARTER,
+      planIsPaid: true,
+      subscription: { productKind: "WATCHER", active: true },
+    });
+    expect(shape.providers).toBe(planConfig(STARTER).aiCheckup.providers);
+    expect(shape.providers).toBeGreaterThan(WATCHER_SOLO.providers as number);
+    // And the other dimensions still take the max.
+    expect(shape.repetitions).toBe(3);
   });
 
   it("cannot be answered by the ai_visibility feature flag", async () => {
@@ -267,7 +323,7 @@ describe("resolveWatcherShape — one choke point", () => {
   it("grants nothing when neither applies, without throwing", () => {
     const resolved = resolveWatcherShape({
       plan: STARTER,
-      planIncludesWatcher: false,
+      planIsPaid: false,
       subscription: null,
     });
     expect(resolved.source).toBe("none");
@@ -279,12 +335,12 @@ describe("resolveWatcherShape — one choke point", () => {
     // input must be the same object shape, from the same constant.
     const once = resolveWatcherShape({
       plan: STARTER,
-      planIncludesWatcher: false,
+      planIsPaid: false,
       subscription: { productKind: "WATCHER", active: true },
     });
     const twice = resolveWatcherShape({
       plan: STARTER,
-      planIncludesWatcher: false,
+      planIsPaid: false,
       subscription: { productKind: "WATCHER", active: true },
     });
     expect(once.shape).toEqual(twice.shape);
@@ -325,10 +381,33 @@ describe("nothing bypasses resolveWatcherShape", () => {
     }
   });
 
-  it("has the worker resolve it exactly once", async () => {
+  it("has the worker resolve it exactly once, through the one impure entry point", async () => {
+    // The worker used to call the pure resolver itself and compute the
+    // "is the plan paid" input alongside limits.ts — two copies of a decision
+    // that must not diverge, and the one that read a planType column instead of
+    // a payment is what let an unpaid tier contribute to a composite. There is
+    // now a single impure resolver and the worker calls it once.
     const source = await read("src/infrastructure/queue/workers/ai-checkup.worker.ts");
-    expect(source).toContain("resolveWatcherShape");
-    expect(source.match(/resolveWatcherShape\(/g) ?? []).toHaveLength(1);
+    expect(source).toContain("resolveShapeForTenant");
+    expect(source.match(/resolveShapeForTenant\(/g) ?? []).toHaveLength(1);
+    expect(source).not.toContain("resolveWatcherShape");
+  });
+
+  it("keeps the pure resolver behind that one entry point", async () => {
+    // Anything calling resolveWatcherShape directly has to decide planIsPaid
+    // for itself, which is the decision that went wrong.
+    const { readdir } = await import("node:fs/promises");
+    const dirs = ["src/lib/ai-monitor", "src/app/api/ai-search", "src/infrastructure/queue/workers"];
+    const offenders: string[] = [];
+    for (const dir of dirs) {
+      for (const entry of await readdir(dir, { recursive: true, withFileTypes: true })) {
+        if (!entry.isFile() || !entry.name.endsWith(".ts")) continue;
+        const path = `${entry.parentPath ?? dir}/${entry.name}`;
+        if (path.includes("watcher-entitlement") || path.includes("/limits.ts")) continue;
+        if ((await read(path)).includes("resolveWatcherShape(")) offenders.push(path);
+      }
+    }
+    expect(offenders).toEqual([]);
   });
 
   it("blocks a plan tenant from watcher checkout, server-side", async () => {

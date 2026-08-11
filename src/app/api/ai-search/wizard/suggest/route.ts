@@ -62,7 +62,7 @@ export async function POST(request: Request) {
         plan: membership.tenant.planType,
         // Resolved once, here: a standalone watcher holder has a shape their
         // tier does not describe.
-        shape: await resolveShapeForTenant(membership.tenantId, membership.tenant.planType),
+        shape: (await resolveShapeForTenant(membership.tenantId, membership.tenant.planType)).shape,
       },
     );
 

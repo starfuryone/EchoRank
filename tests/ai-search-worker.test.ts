@@ -25,6 +25,7 @@ const updateCheckup = vi.fn();
 const findManyRuns = vi.fn();
 const writeMetricsMock = vi.fn();
 const findSubscription = vi.fn();
+const findTenant = vi.fn();
 const runCheckupMock = vi.fn();
 const prismaPortsMock = vi.fn();
 
@@ -45,6 +46,7 @@ vi.mock("@/lib/prisma", () => ({
     },
     promptRun: { findMany: (...a: unknown[]) => findManyRuns(...a) },
     subscription: { findUnique: (...a: unknown[]) => findSubscription(...a) },
+    tenant: { findUnique: (...a: unknown[]) => findTenant(...a) },
   },
 }));
 
@@ -99,6 +101,9 @@ beforeEach(async () => {
   updateCheckup.mockResolvedValue({});
   // No standalone watcher unless a test says so: the tier's shape applies.
   findSubscription.mockResolvedValue(null);
+  // A paying plan tenant unless a test says otherwise. getBillingContext falls
+  // back to this column when there is no PLAN subscription row.
+  findTenant.mockResolvedValue({ billingStatus: "ACTIVE" });
   mod = await import("@/infrastructure/queue/workers/ai-checkup.worker");
 });
 
@@ -520,10 +525,11 @@ describe("the checkup shape the worker runs", () => {
     expect(createCheckup.mock.calls[0][0].data.repetitions).toBe(2);
   });
 
-  it("composes the field-wise max when a tier tenant also holds a watcher", async () => {
-    // STARTER is the case that proves the max: 10 prompts from the tier, but 3
-    // repetitions from solo where the tier runs 1. "Plan wins" would have given
-    // a paying add-on customer fewer repetitions than the SKU promised.
+  it("gives a watcher-only tenant the solo shape, ignoring its planType column", async () => {
+    // The live-run bug: this tenant carries planType STARTER as a column
+    // default and has never paid for it. A WATCHER row means getBillingContext
+    // reports no plan status at all, so the tier contributes nothing and the
+    // shape is pure solo — 3 repetitions, not STARTER's 1.
     findUniqueBrand.mockResolvedValue({
       id: "brand_1",
       tenantId: "tenant_1",
@@ -540,12 +546,15 @@ describe("the checkup shape the worker runs", () => {
     expect(createCheckup.mock.calls[0][0].data.repetitions).toBe(3);
   });
 
-  it("never downgrades a plan tenant who also holds a watcher row", async () => {
+  it("does not let a GROWTH planType column pay for itself either", async () => {
+    // Subscription.tenantId is unique, so a tenant CANNOT hold both a PLAN row
+    // and a WATCHER row. A watcher row therefore always means "no plan is being
+    // paid for", whatever the planType column says — which is why the composite
+    // branch is unreachable through the database and survives only for an
+    // explicitly constructed administrative grant.
     findSubscription.mockResolvedValue({ productKind: "WATCHER", status: "ACTIVE" });
     await mod.__testing.runOne({ brandProfileId: "brand_1" }, NOW);
-    // GROWTH keeps its 15 prompts, and takes solo's 3 repetitions over its 2.
-    // The composite is never weaker than either input on any dimension.
-    expect(findManyPrompts.mock.calls[0][0].take).toBe(15);
+    expect(findManyPrompts.mock.calls[0][0].take).toBe(10);
     expect(createCheckup.mock.calls[0][0].data.repetitions).toBe(3);
   });
 });
