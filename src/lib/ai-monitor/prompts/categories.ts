@@ -34,6 +34,7 @@ export const PROMPT_CATEGORIES = [
   "HOW_TO",
   "PROBLEM_SOLVING",
   "EDUCATION",
+  "LOCAL",
 ] as const;
 
 export type PromptCategory = (typeof PROMPT_CATEGORIES)[number];
@@ -72,6 +73,18 @@ export interface CategorySpec {
 }
 
 export const CATEGORY_SPECS: Readonly<Record<PromptCategory, CategorySpec>> = {
+  LOCAL: {
+    category: "LOCAL",
+    label: "Local and near-me",
+    guidance:
+      'Someone asking for a provider in a named place: "near me", a city, a region. Only ' +
+      "worth asking when the business actually serves a geography rather than the whole web.",
+    // Below PURCHASE and RECOMMENDATION, above DISCOVERY: a local question is
+    // usually late-funnel — nobody asks who is nearby out of curiosity — but it
+    // is narrower than a national recommendation, so it wins fewer buyers.
+    baseValue: 88,
+    defaultIntent: "commercial",
+  },
   PURCHASE: {
     category: "PURCHASE",
     label: "Purchase intent",
@@ -247,6 +260,12 @@ export const INITIAL_CATEGORY_ORDER: readonly PromptCategory[] = [
   "COMPARISON",
   "ALTERNATIVES",
   "PURCHASE",
+  // Placed with the late-funnel block rather than at the end: a local question
+  // is where a nearby buyer decides. It costs a brand nothing to sit here when
+  // it has no geography — the generator is only asked for LOCAL candidates when
+  // the wizard judges the business to serve one, so with none produced the
+  // round-robin simply steps over it.
+  "LOCAL",
   "USE_CASE",
   "TRUST",
   "PRICING",

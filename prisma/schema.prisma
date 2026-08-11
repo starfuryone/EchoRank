@@ -1102,6 +1102,17 @@ model TrackedPrompt {
   country        String?
   /// 0-100, deterministic. Null for prompts that predate the scorer.
   relevanceScore Int?
+  /// 0-100. The score that ORDERED THE WIZARD'S SUGGESTIONS when this prompt
+  /// was proposed — see suggestionScore() in wizard/scoring.ts. Null for a
+  /// prompt the user wrote themselves, which was never ranked against anything.
+  ///
+  /// NOT `importanceScore`, deliberately: `importanceWeight` below is a
+  /// customer-set multiplier on this prompt's contribution to the rolled-up
+  /// score, and two fields called importance* on one row is how someone
+  /// autocompletes into the wrong one. Distinct from `relevanceScore` too —
+  /// that asks whether the question is about this brand, this asks which
+  /// twenty of forty candidates a new customer should start with.
+  suggestionScore Int?
   /// Chosen in the wizard. `active` stays the tracking switch; this is the
   /// wizard's own selection state, so deselecting in the wizard and pausing
   /// tracking remain different actions.
