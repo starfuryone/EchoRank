@@ -85,9 +85,24 @@ const SYSTEM_PROMPT = [
   "Reply with a single JSON object and nothing else:",
   "{",
   '  "prompts": [',
-  '    { "text": string, "category": string, "intent": string, "audience": string|null }',
+  "    {",
+  '      "text": string,',
+  '      "category": string,   // EXACTLY one of the category names listed below',
+  '      "intent": string,     // EXACTLY one of: "commercial", "research", "navigational"',
+  '      "audience": string|null',
+  "    }",
   "  ]",
   "}",
+  "",
+  // The legal values are spelled out because leaving them to inference cost a
+  // retry on EVERY call. A dogfood run against the real API showed the model
+  // returning its own vocabulary for `intent` on the first attempt, all eight
+  // prompts rejected by zod, and the repair attempt succeeding — so a step
+  // budgeted at one metered call was always making two. Enumerating a closed
+  // set is cheaper than paying a model to guess it.
+  'Use only those three intent values. "commercial" = ready to choose or buy;',
+  '"research" = still learning the space; "navigational" = looking for a',
+  "specific named thing.",
 ].join("\n");
 
 export interface GeneratePromptsRequest {

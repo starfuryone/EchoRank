@@ -49,10 +49,18 @@ export class AnthropicProvider extends AiProvider {
     const body: Record<string, unknown> = {
       model: requestedModel,
       max_tokens: request.maxTokens ?? 512,
-      temperature: request.temperature ?? 0.1,
       system: request.systemPrompt,
       messages: [{ role: "user", content: request.userPrompt }],
     };
+
+    // Only send a temperature when one is wanted. Explicit null means "leave it
+    // out": the newer Sonnet-class models reject the parameter with a 400, and a caller
+    // observing what a model says to an ordinary person wants the vendor's own
+    // default anyway. `undefined` keeps the historical 0.1, so every existing
+    // caller behaves exactly as before.
+    if (request.temperature !== null) {
+      body.temperature = request.temperature ?? 0.1;
+    }
 
     let lastError: Error | null = null;
 
