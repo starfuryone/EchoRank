@@ -115,8 +115,17 @@ const FREQUENCY_RANK: Readonly<Record<CheckupFrequency, number>> = {
   daily: 3,
 };
 
-/** The more frequent of two cadences; ties keep the first. */
-function maxFrequency(a: CheckupFrequency, b: CheckupFrequency): CheckupFrequency {
+/**
+ * The more frequent of two cadences; ties keep the first.
+ *
+ * EXPORTED FOR ITS OWN TEST because the composite path cannot exercise it: solo
+ * runs weekly and no current tier is less frequent than that, so the resolver
+ * always returns the tier's cadence whether it maxes or not. A mutation run
+ * showed replacing the max with `config.aiCheckup.frequency` changing nothing.
+ * The rule is verified directly instead; the day a tier ships with `none` or a
+ * fortnightly cadence, the resolver-level branch becomes observable too.
+ */
+export function maxFrequency(a: CheckupFrequency, b: CheckupFrequency): CheckupFrequency {
   return FREQUENCY_RANK[b] > FREQUENCY_RANK[a] ? b : a;
 }
 

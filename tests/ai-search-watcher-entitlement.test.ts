@@ -24,6 +24,7 @@ import {
 import {
   hasWatcherEntitlement,
   isWatcherLookupKey,
+  maxFrequency,
   productKindFor,
   resolveWatcherShape,
   watcherCheckoutBlock,
@@ -89,6 +90,15 @@ describe("the plan / watcher discriminator", () => {
   });
 });
 
+/** Mirrors the resolver's own ranking; `custom` sits at weekly, not the top. */
+const FREQ_RANK: Record<string, number> = {
+  none: 0,
+  custom: 1,
+  weekly: 1,
+  twice_weekly: 2,
+  daily: 3,
+};
+
 describe("resolveWatcherShape — one choke point", () => {
   const GROWTH: PlanType = "GROWTH";
   const STARTER: PlanType = "STARTER";
@@ -146,13 +156,31 @@ describe("resolveWatcherShape — one choke point", () => {
       Math.max(starter.aiCheckup.providers ?? 0, WATCHER_SOLO.providers ?? 0),
     );
     expect(resolved.shape.providers).toBeGreaterThan(WATCHER_SOLO.providers as number);
-    // And the cap is the larger of the two.
+    // STARTER's cap and solo's are BOTH 5, so this assertion cannot tell a max
+    // from a coin flip. It is kept because the spec named it, and the case that
+    // actually proves the cap max is the next test.
     expect(resolved.capUsd).toBe(Math.max(starter.aiMonthlyCapUsd ?? 0, WATCHER_SOLO_CAP_USD));
     expect(resolved.maxBrands).toBe(Math.max(starter.aiProjects ?? 0, 1));
   });
 
+  it("takes the larger cap where the two actually differ", () => {
+    // GROWTH caps at $40 against solo's $5. Picking the solo cap here would
+    // start skipping runs at an eighth of the spend the tenant paid for, and
+    // the STARTER case above cannot catch it because both its caps are 5.
+    const growth = planConfig(GROWTH);
+    expect(growth.aiMonthlyCapUsd).toBe(40);
+    const resolved = resolveWatcherShape({
+      plan: GROWTH,
+      planIncludesWatcher: true,
+      subscription: { productKind: "WATCHER", active: true },
+    });
+    expect(resolved.capUsd).toBe(40);
+    expect(resolved.maxBrands).toBe(Math.max(growth.aiProjects ?? 0, 1));
+  });
+
   it("takes the more frequent cadence", () => {
-    // AGENCY is daily, solo is weekly.
+    // AGENCY is daily, solo is weekly. Note this passes whether the resolver
+    // maxes or simply takes the plan's — see the direct test below for why.
     expect(
       resolveWatcherShape({
         plan: "AGENCY",
@@ -160,6 +188,23 @@ describe("resolveWatcherShape — one choke point", () => {
         subscription: { productKind: "WATCHER", active: true },
       }).shape.frequency,
     ).toBe("daily");
+  });
+
+  it("ranks cadences correctly, in both directions", () => {
+    // The composite path CANNOT exercise this: solo runs weekly and no current
+    // tier is less frequent, so the resolver returns the tier's cadence whether
+    // it maxes or not — a mutation replacing the max with the plan's value
+    // broke nothing. The rule is therefore tested where it can be observed.
+    expect(maxFrequency("weekly", "daily")).toBe("daily");
+    expect(maxFrequency("daily", "weekly")).toBe("daily");
+    expect(maxFrequency("weekly", "twice_weekly")).toBe("twice_weekly");
+    expect(maxFrequency("none", "weekly")).toBe("weekly");
+    expect(maxFrequency("weekly", "none")).toBe("weekly");
+    // `custom` is ENTERPRISE's contract term, which schedule.ts resolves to
+    // weekly until one is set. Ranking an unset contract as daily would
+    // multiply spend on the strength of a blank field.
+    expect(maxFrequency("custom", "daily")).toBe("daily");
+    expect(maxFrequency("custom", "weekly")).toBe("custom");
   });
 
   it("treats null as unlimited, not as zero", () => {
@@ -180,14 +225,26 @@ describe("resolveWatcherShape — one choke point", () => {
     // The property the field-wise max exists to guarantee, over every tier.
     for (const plan of ["STARTER", "GROWTH", "AGENCY", "ENTERPRISE"] as const) {
       const tier = planConfig(plan).aiCheckup;
-      const { shape } = resolveWatcherShape({
+      const config = planConfig(plan);
+      const { capUsd, maxBrands, shape: s } = resolveWatcherShape({
         plan,
         planIncludesWatcher: true,
         subscription: { productKind: "WATCHER", active: true },
       });
-      expect(shape.prompts, plan).toBeGreaterThanOrEqual(Math.max(tier.prompts, WATCHER_SOLO.prompts));
-      expect(shape.repetitions, plan).toBeGreaterThanOrEqual(
+
+      expect(s.prompts, plan).toBeGreaterThanOrEqual(Math.max(tier.prompts, WATCHER_SOLO.prompts));
+      expect(s.repetitions, plan).toBeGreaterThanOrEqual(
         Math.max(tier.repetitions, WATCHER_SOLO.repetitions),
+      );
+      // The three null-means-unlimited dimensions, and the cadence. Checking
+      // only prompts and repetitions left four of the six untested.
+      const atLeast = (got: number | null, a: number | null, b: number) =>
+        got === null || (a !== null && got >= Math.max(a, b));
+      expect(atLeast(s.providers, tier.providers, WATCHER_SOLO.providers ?? 1), plan).toBe(true);
+      expect(atLeast(capUsd, config.aiMonthlyCapUsd, WATCHER_SOLO_CAP_USD), plan).toBe(true);
+      expect(atLeast(maxBrands, config.aiProjects, 1), plan).toBe(true);
+      expect(FREQ_RANK[s.frequency], plan).toBeGreaterThanOrEqual(
+        Math.max(FREQ_RANK[tier.frequency], FREQ_RANK[WATCHER_SOLO.frequency]),
       );
     }
   });
