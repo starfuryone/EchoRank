@@ -37,7 +37,11 @@ export interface PersistedRun {
     sentiment: string | null;
   } | null;
   citations: { domain: string; citationPosition: number | null; supportsBrand: boolean }[];
-  competitorMentions: { name: string; recommendationPosition: number | null }[];
+  competitorMentions: {
+    name: string;
+    recommendationPosition: number | null;
+    classification?: "RIVAL" | "PLATFORM" | "GENERIC" | null;
+  }[];
 }
 
 /**
@@ -73,6 +77,7 @@ export function scoredRunFromPersisted(run: PersistedRun): ScoredRun {
     competitors: run.competitorMentions.map((competitor) => ({
       name: competitor.name,
       position: competitor.recommendationPosition,
+      ...(competitor.classification ? { classification: competitor.classification } : {}),
     })),
   };
 }

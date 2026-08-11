@@ -93,6 +93,15 @@ export interface ScoredCompetitor {
   name: string;
   /** 1-based place in the answer's ranked list, when it ranked them. */
   position: number | null;
+  /**
+   * From analysis/competitor-filter.ts. Only RIVAL is counted.
+   *
+   * Undefined means a row written before the classifier existed. Those are
+   * COUNTED, because dropping them would make every historical checkup lose its
+   * competitors the day this shipped — a silent rewrite of past results, which
+   * is what the versioning everywhere else in this module exists to prevent.
+   */
+  classification?: "RIVAL" | "PLATFORM" | "GENERIC";
 }
 
 /**
@@ -380,6 +389,9 @@ export function topCompetitors(
     for (const competitor of run.competitors) {
       const name = competitor.name.trim();
       if (name === "") continue;
+      // Platforms and category words were observed and stored, but they are not
+      // rivals and must not sit in a competitor panel.
+      if (competitor.classification && competitor.classification !== "RIVAL") continue;
       const key = name.toLowerCase();
       if (seen.has(key)) continue;
       seen.add(key);

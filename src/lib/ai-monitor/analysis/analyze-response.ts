@@ -29,6 +29,11 @@ import { JSON_CALL_MODEL } from "../json-call";
 import { analyseDeterministic, type DeterministicAnalysis } from "./deterministic";
 import { extractCitations, type AnalyzedCitation, type SourceLink } from "./citations";
 import {
+  classifyEntity,
+  sentenceWindow,
+  type Classification,
+} from "./competitor-filter";
+import {
   extractEntities,
   type EntityExtractionResult,
   type RankedCompetitor,
@@ -43,6 +48,8 @@ export interface BrandContext {
   brandVariations: string[];
   /** Known competitor names, for the deterministic name scan. */
   competitors?: string[];
+  /** The brand's own category words — an entity equal to one is not a rival. */
+  categoryVocabulary?: string[];
 }
 
 /** One provider answer, as the adapter hands it back. */
@@ -51,6 +58,13 @@ export interface ProviderResponse {
   promptText: string;
   /** Structured source links, when the engine returns them. */
   sources?: SourceLink[] | null;
+  /** The prompt's stored category, a signal for the entity classifier. */
+  promptCategory?: string | null;
+  /**
+   * Lowercased entity name -> how many distinct prompts in this checkup have
+   * ranked it. The cross-run consistency signal; absent on a first pass.
+   */
+  rankedInPrompts?: Record<string, number>;
 }
 
 /** Who is paying, so the call can be capped and billed. */
@@ -90,7 +104,13 @@ export interface RunAnalysis {
   // ── From the ranking pass; null/empty when it failed ──
   /** 1-based place in the answer's ranked list. Null when named but not ranked. */
   brandPosition: number | null;
-  competitors: RankedCompetitor[];
+  /**
+   * EVERY entity the ranking pass named, each carrying its verdict. Platforms
+   * and category words are kept, not dropped: the rollup filters to RIVAL at
+   * read time, so re-tuning the rules later is a re-run of a pure function over
+   * stored rows rather than another provider call.
+   */
+  competitors: (RankedCompetitor & { classification: Classification })[];
   sentiment: Sentiment | null;
 
   /** What the metered call cost and whether it worked. */
@@ -176,7 +196,16 @@ export async function analyzeResponse(
     citations,
     deterministic,
     brandPosition: extraction.extraction?.brandPosition ?? null,
-    competitors: extraction.extraction?.competitors ?? [],
+    competitors: (extraction.extraction?.competitors ?? []).map((competitor) => ({
+      ...competitor,
+      classification: classifyEntity(competitor.name, {
+        position: competitor.position,
+        context: sentenceWindow(response.answer, competitor.name),
+        promptCategory: response.promptCategory ?? null,
+        rankedInPrompts: response.rankedInPrompts?.[competitor.name.toLowerCase()] ?? 0,
+        categoryVocabulary: brand.categoryVocabulary,
+      }),
+    })),
     sentiment: extraction.extraction?.sentiment ?? null,
     extraction: {
       ok: extraction.extraction !== null,

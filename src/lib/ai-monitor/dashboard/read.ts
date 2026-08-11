@@ -139,6 +139,13 @@ export async function readTopCompetitors(
     where: {
       createdAt: { gte: since },
       promptRun: { checkup: { brandProfileId }, status: "OK" },
+      // Rivals, and rows from before the classifier existed. Platforms and
+      // category words were observed and stored but are not competitors; a
+      // panel listing ChatGPT as a rival of an AI-visibility product is the
+      // failure this filter removes. Unclassified rows still count, because
+      // dropping them would erase every historical checkup's competitors the
+      // day this shipped.
+      OR: [{ classification: "RIVAL" }, { classification: null }],
     },
     select: { name: true, promptRunId: true, recommendationPosition: true },
   });

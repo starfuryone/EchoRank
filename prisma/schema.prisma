@@ -2616,6 +2616,22 @@ model Citation {
   @@map("citations")
 }
 
+/// What a named entity turned out to be, per analysis/competitor-filter.ts.
+///
+/// Stored beside the raw mention rather than used to filter at write time: a
+/// classification is a LENS over an observation, so tuning the rules later is a
+/// re-run of a pure function over rows we already hold, not a re-run of the
+/// provider calls that produced them.
+enum EntityClass {
+  /// A product that competes with the brand. The only class the rollup counts.
+  RIVAL
+  /// An assistant, cloud or console the answer names because it IS one, or
+  /// because it is telling the reader where to look.
+  PLATFORM
+  /// A bare category word, or the brand's own category vocabulary.
+  GENERIC
+}
+
 /// A competitor's appearance in one answer.
 ///
 /// Mirrors MentionAnalysis for the brand, one row per competitor per run. Share
@@ -2635,11 +2651,28 @@ model CompetitorMention {
   sentiment              String?
   context                String? @db.Text
 
+  /// Null for a row written before the classifier existed. NOT defaulted to
+  /// RIVAL: claiming an unexamined entity is a competitor is the error this
+  /// whole module exists to stop, and null is honestly "not yet judged".
+  classification         EntityClass?
+  /// Which rule set produced `classification`. 0 means never classified.
+  /// Same contract as VisibilityMetric.scoreVersion: rows keep the verdict
+  /// they were given, and re-judging is an explicit new version rather than a
+  /// silent restatement.
+  classifierVersion      Int         @default(0)
+  /// The signals that fired, with their weights and a sentence each. Rendered
+  /// in the UI so a customer can see WHY something was called a platform,
+  /// which is what makes a deterministic rule table defensible where an
+  /// unexplainable model call would not be.
+  classificationTrace    Json?
+
   createdAt DateTime @default(now())
 
   tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   promptRun PromptRun @relation(fields: [promptRunId], references: [id], onDelete: Cascade)
 
+  /// Rollup read: this tenant's rivals, excluding platforms and categories.
+  @@index([tenantId, classification, createdAt])
   @@unique([promptRunId, name])
   @@index([tenantId, name, createdAt])
   @@map("competitor_mentions")

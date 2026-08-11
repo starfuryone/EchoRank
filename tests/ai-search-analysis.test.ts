@@ -367,10 +367,13 @@ describe("analysing one response", () => {
     expect(analysis.mentionCount).toBe(1);
     expect(analysis.brandPosition).toBe(2);
     expect(analysis.sentiment).toBe("POSITIVE");
-    expect(analysis.competitors).toEqual([
-      { name: "Ahrefs", position: 1 },
-      { name: "Semrush", position: 3 },
+    // Each entity now carries its verdict, and the raw observation is kept
+    // whatever that verdict is.
+    expect(analysis.competitors.map((c) => [c.name, c.position])).toEqual([
+      ["Ahrefs", 1],
+      ["Semrush", 3],
     ]);
+    expect(analysis.competitors.every((c) => c.classification.classifierVersion === 1)).toBe(true);
     expect(analysis.citations).toHaveLength(1);
     expect(analysis.citations[0].isMonitoredDomain).toBe(true);
     expect(analysis.extraction.ok).toBe(true);
@@ -491,10 +494,33 @@ describe("analysing one response", () => {
 
     expect(calls).toHaveLength(1);
     expect(analysis.brandMentioned).toBe(false);
-    expect(analysis.competitors).toEqual([
-      { name: "Ahrefs", position: 1 },
-      { name: "Semrush", position: 2 },
+    expect(analysis.competitors.map((c) => [c.name, c.position])).toEqual([
+      ["Ahrefs", 1],
+      ["Semrush", 2],
     ]);
+  });
+
+  it("keeps a platform on the row rather than dropping it", async () => {
+    // Store, do not delete: the rollup filters to RIVAL on read, so re-tuning
+    // the rules later is a pure function over stored rows rather than another
+    // provider call.
+    const { provider } = scriptedProvider([
+      JSON.stringify({ entities: ["ChatGPT", "Ahrefs"], sentiment: "NOT_MENTIONED" }),
+    ]);
+    const { meter } = recordingMeter();
+    const analysis = await analyzeResponse(
+      { answer: "Try ChatGPT and Ahrefs.", promptText: "q", promptCategory: "COMPARISON" },
+      BRAND,
+      CTX,
+      { meter, provider },
+    );
+
+    expect(analysis.competitors.map((c) => c.name)).toEqual(["ChatGPT", "Ahrefs"]);
+    const byName = Object.fromEntries(
+      analysis.competitors.map((c) => [c.name, c.classification.classification]),
+    );
+    expect(byName.ChatGPT).toBe("PLATFORM");
+    expect(byName.Ahrefs).toBe("RIVAL");
   });
 
   it("does not throw when the provider itself fails", async () => {
