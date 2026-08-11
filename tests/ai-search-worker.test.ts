@@ -520,11 +520,10 @@ describe("the checkup shape the worker runs", () => {
     expect(createCheckup.mock.calls[0][0].data.repetitions).toBe(2);
   });
 
-  it("prefers the tier's shape whenever the tier schedules anything", async () => {
-    // Every current tier schedules checkups, so `plan wins` means the standalone
-    // shape is only ever reached by a tier that schedules none. Worth pinning
-    // because the first predicate tried here — hasFeature(plan,"ai_visibility")
-    // — is baseline from STARTER up and made the entitlement branch dead code.
+  it("composes the field-wise max when a tier tenant also holds a watcher", async () => {
+    // STARTER is the case that proves the max: 10 prompts from the tier, but 3
+    // repetitions from solo where the tier runs 1. "Plan wins" would have given
+    // a paying add-on customer fewer repetitions than the SKU promised.
     findUniqueBrand.mockResolvedValue({
       id: "brand_1",
       tenantId: "tenant_1",
@@ -537,16 +536,16 @@ describe("the checkup shape the worker runs", () => {
     findSubscription.mockResolvedValue({ productKind: "WATCHER", status: "ACTIVE" });
 
     await mod.__testing.runOne({ brandProfileId: "brand_1" }, NOW);
-    // STARTER's own shape: 10 prompts, 1 repetition.
     expect(findManyPrompts.mock.calls[0][0].take).toBe(10);
-    expect(createCheckup.mock.calls[0][0].data.repetitions).toBe(1);
+    expect(createCheckup.mock.calls[0][0].data.repetitions).toBe(3);
   });
 
-  it("keeps the plan's shape when a plan tenant also holds a watcher row", async () => {
+  it("never downgrades a plan tenant who also holds a watcher row", async () => {
     findSubscription.mockResolvedValue({ productKind: "WATCHER", status: "ACTIVE" });
     await mod.__testing.runOne({ brandProfileId: "brand_1" }, NOW);
-    // GROWTH includes the watcher, so the plan wins and nothing is downgraded.
-    expect(createCheckup.mock.calls[0][0].data.repetitions).toBe(2);
+    // GROWTH keeps its 15 prompts, and takes solo's 3 repetitions over its 2.
+    // The composite is never weaker than either input on any dimension.
     expect(findManyPrompts.mock.calls[0][0].take).toBe(15);
+    expect(createCheckup.mock.calls[0][0].data.repetitions).toBe(3);
   });
 });

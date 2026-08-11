@@ -118,6 +118,9 @@ export const WATCHER_SOLO: AiCheckupShape = {
 /** Per-period USD ceiling for a standalone watcher. */
 export const WATCHER_SOLO_CAP_USD = 5;
 
+/** Brands a standalone watcher may track. */
+export const WATCHER_SOLO_BRANDS = 1;
+
 /**
  * Stripe lookup keys for the standalone watcher.
  *

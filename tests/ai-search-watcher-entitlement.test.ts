@@ -124,18 +124,72 @@ describe("resolveWatcherShape — one choke point", () => {
     expect(WATCHER_SOLO_CAP_USD).toBe(5);
   });
 
-  it("lets the plan win when both apply", () => {
-    // Any tier carrying the watcher is at least as generous as solo, so plan
-    // can only give more. The alternative — a GROWTH tenant silently dropped to
-    // one engine because they also bought a $9 add-on — is a downgrade nobody
-    // reports, because it looks like the product working.
+  it("takes the field-wise max when both apply", () => {
+    // STARTER is the case that proves it: its shape is NOT uniformly better
+    // than solo — one repetition against solo's three — so "plan wins" would
+    // hand a customer who paid for the add-on fewer repetitions than the SKU
+    // promised, while "solo wins" would cut their prompts and engines.
+    const starter = planConfig(STARTER);
     const resolved = resolveWatcherShape({
-      plan: GROWTH,
+      plan: STARTER,
       planIncludesWatcher: true,
       subscription: { productKind: "WATCHER", active: true },
     });
-    expect(resolved.source).toBe("plan");
-    expect(resolved.shape.prompts).toBeGreaterThan(WATCHER_SOLO.prompts);
+
+    expect(resolved.source).toBe("both");
+    // Solo's repetitions win.
+    expect(starter.aiCheckup.repetitions).toBe(1);
+    expect(resolved.shape.repetitions).toBe(3);
+    // STARTER's prompts and engines win.
+    expect(resolved.shape.prompts).toBe(Math.max(starter.aiCheckup.prompts, WATCHER_SOLO.prompts));
+    expect(resolved.shape.providers).toBe(
+      Math.max(starter.aiCheckup.providers ?? 0, WATCHER_SOLO.providers ?? 0),
+    );
+    expect(resolved.shape.providers).toBeGreaterThan(WATCHER_SOLO.providers as number);
+    // And the cap is the larger of the two.
+    expect(resolved.capUsd).toBe(Math.max(starter.aiMonthlyCapUsd ?? 0, WATCHER_SOLO_CAP_USD));
+    expect(resolved.maxBrands).toBe(Math.max(starter.aiProjects ?? 0, 1));
+  });
+
+  it("takes the more frequent cadence", () => {
+    // AGENCY is daily, solo is weekly.
+    expect(
+      resolveWatcherShape({
+        plan: "AGENCY",
+        planIncludesWatcher: true,
+        subscription: { productKind: "WATCHER", active: true },
+      }).shape.frequency,
+    ).toBe("daily");
+  });
+
+  it("treats null as unlimited, not as zero", () => {
+    // providers, aiProjects and the cap all use null for "no ceiling". Reading
+    // it as zero would silently cap an ENTERPRISE tenant at what the $9 add-on
+    // allows — a downgrade bought by an upgrade.
+    const resolved = resolveWatcherShape({
+      plan: "ENTERPRISE",
+      planIncludesWatcher: true,
+      subscription: { productKind: "WATCHER", active: true },
+    });
+    expect(resolved.shape.providers).toBeNull();
+    expect(resolved.capUsd).toBeNull();
+    expect(resolved.maxBrands).toBeNull();
+  });
+
+  it("never produces a composite weaker than either input", () => {
+    // The property the field-wise max exists to guarantee, over every tier.
+    for (const plan of ["STARTER", "GROWTH", "AGENCY", "ENTERPRISE"] as const) {
+      const tier = planConfig(plan).aiCheckup;
+      const { shape } = resolveWatcherShape({
+        plan,
+        planIncludesWatcher: true,
+        subscription: { productKind: "WATCHER", active: true },
+      });
+      expect(shape.prompts, plan).toBeGreaterThanOrEqual(Math.max(tier.prompts, WATCHER_SOLO.prompts));
+      expect(shape.repetitions, plan).toBeGreaterThanOrEqual(
+        Math.max(tier.repetitions, WATCHER_SOLO.repetitions),
+      );
+    }
   });
 
   it("cannot be answered by the ai_visibility feature flag", async () => {
