@@ -519,6 +519,92 @@ describe("generating suggestions", () => {
   const ctx = { tenantId: "t1", plan: "GROWTH" as PlanType, shape: planConfig("GROWTH").aiCheckup };
   const request = { brand: "Acme", domain: "acme.com", industry: "analytics" };
 
+  it("drops suggestions that name the brand, whatever the model returned", async () => {
+    // A LIVE RUN produced this: two of ten came back as COMPARISON questions
+    // naming the brand ("Profound vs EchoRank360 vs Otterly..."), and every
+    // mention the resulting checkup recorded came from them — a mention rate of
+    // 20% and a score of 24.7 that were measuring our own questions. The system
+    // prompt already forbids it; an instruction a model follows most of the
+    // time is not a guarantee.
+    const naming = {
+      ...GENERATED,
+      value: {
+        prompts: [
+          {
+            text: "Profound vs Acme vs Otterly, which should a SaaS company choose",
+            category: "COMPARISON" as const,
+            intent: "commercial" as const,
+            audience: null,
+          },
+          {
+            text: "which analytics tool is best for a small online shop?",
+            category: "DISCOVERY" as const,
+            intent: "commercial" as const,
+            audience: null,
+          },
+        ],
+      },
+    };
+    const { meter } = meterSpy();
+    const result = await suggestPrompts({ ...request, brand: "Acme" }, ctx, {
+      analyse: SITE as never,
+      generate: async () => naming as never,
+      meter,
+    });
+
+    expect(result.suggestions.map((s) => s.text)).toEqual([
+      "which analytics tool is best for a small online shop?",
+    ]);
+  });
+
+  it("keeps a BRAND_AWARENESS question, where naming the brand is the point", async () => {
+    const branded = {
+      ...GENERATED,
+      value: {
+        prompts: [
+          {
+            text: "what do people say about Acme?",
+            category: "BRAND_AWARENESS" as const,
+            intent: "research" as const,
+            audience: null,
+          },
+        ],
+      },
+    };
+    const { meter } = meterSpy();
+    const result = await suggestPrompts({ ...request, brand: "Acme" }, ctx, {
+      analyse: SITE as never,
+      generate: async () => branded as never,
+      meter,
+    });
+    expect(result.suggestions).toHaveLength(1);
+  });
+
+  it("matches whole words, so an innocent question survives", async () => {
+    // "Ada" must not match "Canada" — a substring test would drop real
+    // questions and quietly shrink the set below the tier's allowance.
+    const innocent = {
+      ...GENERATED,
+      value: {
+        prompts: [
+          {
+            text: "best analytics tool for a shop in Canada?",
+            category: "DISCOVERY" as const,
+            intent: "commercial" as const,
+            audience: null,
+          },
+        ],
+      },
+    };
+    const { meter } = meterSpy();
+    const result = await suggestPrompts({ ...request, brand: "Ada" }, ctx, {
+      analyse: SITE as never,
+      generate: async () => innocent as never,
+      meter,
+    });
+    expect(result.suggestions).toHaveLength(1);
+  });
+
   it("makes exactly one metered model call", async () => {
     // Constraint: a single metered Haiku call. Two would double the cost of a
     // step the tier pays for once.
@@ -565,9 +651,14 @@ describe("generating suggestions", () => {
       generate,
       meter,
     });
-    // GROWTH allows 15; only 3 candidates came back, so all survive ranking.
+    // GROWTH allows 15, so the limit is not what cuts here. Two of the three
+    // fixture candidates survive: the third — "is Acme better than Plausible
+    // for a small shop?" — names the brand outside BRAND_AWARENESS and is
+    // dropped. The fixture was written from real model output and contains the
+    // violation, which is the tidiest evidence that the filter earns its place.
     expect(result.limit).toBe(15);
-    expect(result.suggestions).toHaveLength(3);
+    expect(result.suggestions).toHaveLength(2);
+    expect(result.suggestions.some((s) => /acme/i.test(s.text))).toBe(false);
     // Asked for twice the allowance so the score has something to discard.
     expect(generate.mock.calls[0][0].count).toBe(30);
   });

@@ -8,12 +8,20 @@
 // module adds is the part that was missing: metering the call, ranking what
 // comes back, and cutting to what the tier bought.
 //
-// THE BRAND IS NOT PUT INTO THE QUESTIONS. That rule lives in the generator's
-// system prompt, where it has always been — "Most questions must NOT name the
-// brand ... only BRAND_AWARENESS names it directly" — and this module must not
-// undo it by post-processing the brand back in. The whole measurement is
-// whether an assistant volunteers the brand unprompted; a suggested question
-// containing the name measures nothing but our own ability to type it.
+// THE BRAND IS NOT PUT INTO THE QUESTIONS, AND THAT IS ENFORCED HERE.
+//
+// The rule has always been in the generator's system prompt — "Most questions
+// must NOT name the brand ... only BRAND_AWARENESS names it directly" — and a
+// live run showed the model ignoring it: two of ten suggestions came back as
+// COMPARISON questions naming the brand outright ("Profound vs EchoRank360
+// ..."). Every "mention" the resulting checkup recorded came from those two
+// prompts, so a mention rate of 20% and a score of 24.7 were measuring our own
+// questions rather than the brand's visibility. The customer would have read
+// that as organic reach they did not have.
+//
+// An instruction a model follows most of the time is not a guarantee, so the
+// rule is now a filter: a candidate naming the brand is dropped unless its
+// category is BRAND_AWARENESS, where naming it is the entire point.
 //
 // THE CALL IS METERED LIKE ANY OTHER. Suggestion generation spends the same
 // tenant's money as a checkup does, and a tenant at its ceiling gets no
@@ -22,6 +30,7 @@
 
 import type { PlanType } from "@/generated/prisma";
 import type { AiCheckupShape } from "@/lib/plan-config";
+import { logger } from "@/infrastructure/observability/logger";
 import { AiCapReachedError } from "../cap";
 import { JSON_CALL_MODEL } from "../json-call";
 import { generatePrompts, type GeneratedPrompt } from "../prompts/generate";
@@ -30,6 +39,7 @@ import {
   type PromptCategory,
   type PromptIntent,
 } from "../prompts/categories";
+import { fold, findNameHits } from "../analysis/deterministic";
 import { rankSuggestions, type RankedSuggestion, type ScorableCandidate } from "./scoring";
 import { analyseSite, type SiteAnalysis } from "./site-analysis";
 import type { AiCallOutcome, AiCallSpec } from "../metering";
@@ -85,6 +95,8 @@ export function categoriesFor(hasGeography: boolean): PromptCategory[] {
 
 export interface SuggestRequest {
   brand: string;
+  /** Other spellings that count as the brand, for the naming filter. */
+  aliases?: readonly string[];
   domain: string;
   /** Free text from the wizard, or "" — the site summary fills the gap. */
   description?: string;
@@ -135,6 +147,41 @@ export interface SuggestDeps {
     spec: AiCallSpec,
     fn: () => Promise<AiCallOutcome<T>>,
   ) => Promise<T>;
+}
+
+/**
+ * Does this question name the brand?
+ *
+ * Whole-word matching over the folded text, the same scan the analysis pass
+ * uses — so "Echorank360" and "Écho Rank 360" are caught while "Ada" does not
+ * match "Canada". A substring test would drop innocent questions.
+ */
+export function namesBrand(text: string, aliases: readonly string[]): boolean {
+  return findNameHits(fold(text), aliases).length > 0;
+}
+
+/**
+ * Drop candidates that name the brand, except where naming it is the point.
+ *
+ * BRAND_AWARENESS is the one category whose whole purpose is asking about the
+ * brand directly, so it is exempt. Everything else measures whether an
+ * assistant volunteers the name unprompted, and a question containing it
+ * measures nothing but our own typing.
+ */
+export function withoutBrandNaming<T extends { text: string; category: PromptCategory }>(
+  candidates: readonly T[],
+  aliases: readonly string[],
+): { kept: T[]; dropped: T[] } {
+  const kept: T[] = [];
+  const dropped: T[] = [];
+  for (const candidate of candidates) {
+    if (candidate.category !== "BRAND_AWARENESS" && namesBrand(candidate.text, aliases)) {
+      dropped.push(candidate);
+    } else {
+      kept.push(candidate);
+    }
+  }
+  return { kept, dropped };
 }
 
 /**
@@ -264,7 +311,20 @@ export async function suggestPrompts(
   }
 
   const context = [request.industry, description].filter(Boolean).join(" ");
-  const candidates: (ScorableCandidate & { source: GeneratedPrompt })[] = generated.value.prompts.map(
+
+  // Enforce the rule the system prompt asks for. Dropping rather than editing:
+  // a question with the brand cut out of it is a different question, and one
+  // nobody checked reads naturally.
+  const aliases = [request.brand, ...(request.aliases ?? [])].filter((a) => a?.trim());
+  const { kept, dropped } = withoutBrandNaming(generated.value.prompts, aliases);
+  if (dropped.length > 0) {
+    logger.warn(
+      { brand: request.brand, dropped: dropped.map((d) => d.text) },
+      "dropped suggestions that named the brand outside BRAND_AWARENESS",
+    );
+  }
+
+  const candidates: (ScorableCandidate & { source: GeneratedPrompt })[] = kept.map(
     (prompt) => ({
       text: prompt.text,
       category: prompt.category,
