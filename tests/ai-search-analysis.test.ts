@@ -262,6 +262,26 @@ describe("extracting citations", () => {
     expect(citations[0].citationPosition).toBe(1);
   });
 
+  it("does not mistake a filename for a cited domain", () => {
+    // A dogfood run put robots.txt in the citations table twice. The bare-domain
+    // pattern accepts any word.ext with a 2+ letter extension, and the answers
+    // this product analyses are about SEO — so robots.txt, sitemap.xml and
+    // llms.txt come up constantly and would each become a "cited source" on the
+    // dashboard and a node in the influence graph.
+    for (const junk of ["robots.txt", "sitemap.xml", "llms.txt", "package.json", "index.html"]) {
+      expect(extractCitations(`Check your ${junk} first.`, null, null)).toEqual([]);
+    }
+  });
+
+  it("still accepts a real domain with an unusual TLD", () => {
+    // The guard is a deny-list of file extensions, not an allow-list of TLDs: a
+    // missed citation is worse than a rare junk one.
+    expect(extractCitations("See otterly.ai and peec.ai", null, null).map((c) => c.domain)).toEqual([
+      "otterly.ai",
+      "peec.ai",
+    ]);
+  });
+
   it("finds nothing in an answer with no links", () => {
     expect(parseCitationsFromText("There are several good options.")).toEqual([]);
     expect(extractCitations("There are several good options.", [], null)).toEqual([]);

@@ -18,7 +18,7 @@
 // matches with their offsets. One definition, imported.
 
 import { registrableDomain } from "@/lib/registrable-domain";
-import { BARE_DOMAIN_RE, URL_RE } from "./deterministic";
+import { BARE_DOMAIN_RE, URL_RE, looksLikeDomain } from "./deterministic";
 
 /** A source link as a provider hands it back. */
 export interface SourceLink {
@@ -58,20 +58,6 @@ export function trimUrl(raw: string): string {
   return raw.trim().replace(/[.,;:!?]+$/, "");
 }
 
-/**
- * Does this actually look like a host?
- *
- * registrableDomain() is a PARSER, not a validator: handed "not a url" it
- * lowercases it, finds no dot to split on and hands the whole string back. That
- * is the right behaviour for its job and the wrong thing to store — an
- * unresolvable "domain" would sit in the citations table and never join to a
- * Source row, so the influence graph would be quietly incomplete rather than
- * visibly wrong. Structured links come from providers, so this guard is load
- * bearing: the text path can only produce strings the URL patterns matched.
- */
-export function looksLikeDomain(domain: string): boolean {
-  return /^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)+$/.test(domain);
-}
 
 interface RawCitation {
   url: string;

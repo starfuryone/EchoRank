@@ -204,6 +204,43 @@ export function maskCitations(folded: string): string {
   return masked;
 }
 
+/**
+ * Endings that look like a domain to the pattern above but are filenames.
+ *
+ * BARE_DOMAIN_RE accepts any `word.ext` whose extension is two or more
+ * letters, so "robots.txt" parses as a domain in the .txt TLD. For THIS
+ * product that is not a curiosity: the answers we analyse are about SEO and AI
+ * search, so they talk about robots.txt, sitemap.xml and llms.txt constantly. A
+ * dogfood run put robots.txt in the citations table twice, where it would have
+ * become a "cited source" on the dashboard and a row in the influence graph.
+ *
+ * A deny-list of file extensions rather than an allow-list of TLDs: the TLD set
+ * is thousands long and changes, while the handful of extensions that show up
+ * in prose about the web is short and stable. Erring toward accepting an odd
+ * TLD is right — a missed citation is worse than a rare junk one.
+ */
+export const NON_DOMAIN_SUFFIXES: ReadonlySet<string> = new Set([
+  "txt", "md", "json", "xml", "yml", "yaml", "html", "htm", "css", "js", "ts",
+  "jsx", "tsx", "py", "rb", "php", "sh", "log", "csv", "tsv", "pdf", "doc",
+  "docx", "xls", "xlsx", "ppt", "png", "jpg", "jpeg", "gif", "svg", "webp",
+  "ico", "zip", "gz", "tar", "env", "lock", "toml", "ini", "conf", "sql",
+]);
+
+/**
+ * Does this parse as an actual host rather than a filename?
+ *
+ * registrableDomain() is a PARSER, not a validator — handed "not a url" it
+ * hands it back — so the shape check is what makes this a validation. Shared
+ * with ./citations.ts so both agree on what counts as a cited domain.
+ */
+export function looksLikeDomain(domain: string): boolean {
+  if (!/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]*[a-z0-9])?)+$/.test(domain)) {
+    return false;
+  }
+  const suffix = domain.slice(domain.lastIndexOf(".") + 1);
+  return !NON_DOMAIN_SUFFIXES.has(suffix);
+}
+
 /** Registrable domains cited anywhere in the answer, deduped, in order. */
 export function citedDomainsIn(answer: string): string[] {
   const found: string[] = [];
@@ -211,7 +248,7 @@ export function citedDomainsIn(answer: string): string[] {
 
   const push = (candidate: string) => {
     const domain = registrableDomain(candidate);
-    if (!domain || seen.has(domain)) return;
+    if (!domain || !looksLikeDomain(domain) || seen.has(domain)) return;
     seen.add(domain);
     found.push(domain);
   };
