@@ -94,6 +94,48 @@ export interface AiCheckupShape {
   repetitions: number;
 }
 
+/**
+ * The standalone Watcher, sold on its own rather than as part of a tier.
+ *
+ * NOT A PlanType. Adding a sixth enum member would force a decision in all 22
+ * exhaustive plan-keyed records in this codebase — feature flags, quotas, plan
+ * routing, rank-tracker options — for a product that grants exactly one thing.
+ * It is an ENTITLEMENT: a subscription to the watcher, resolved separately from
+ * the tier a tenant is on.
+ *
+ * The SHAPE lives here, beside the tier shapes, because that is the one home
+ * for what a checkup looks like. Storing it on the subscription row would make
+ * it data that drifts from config and needs a migration every time a number
+ * changes.
+ */
+export const WATCHER_SOLO: AiCheckupShape = {
+  frequency: "weekly",
+  providers: 1,
+  prompts: 10,
+  repetitions: 3,
+};
+
+/** Per-period USD ceiling for a standalone watcher. */
+export const WATCHER_SOLO_CAP_USD = 5;
+
+/**
+ * Stripe lookup keys for the standalone watcher.
+ *
+ * THE DISCRIMINATOR between a plan purchase and a watcher purchase, and the
+ * reason it is a lookup key rather than a price id: lookup keys are ours and
+ * stable, price ids are Stripe's and change whenever a price is replaced.
+ */
+export const WATCHER_LOOKUP_KEYS = {
+  monthly: "echorank_watcher_pro_usd_month",
+  annual: "echorank_watcher_pro_usd_year",
+} as const;
+
+/** Cents, to match Stripe. Annual is $7.50/mo equivalent — 17% off. */
+export const WATCHER_PRICES_CENTS = {
+  monthly: 900,
+  annual: 9000,
+} as const;
+
 export interface PlanConfig {
   name: string;
   slug: string;

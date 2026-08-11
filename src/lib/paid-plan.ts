@@ -25,22 +25,31 @@
 import type { BillingStatus } from "@/generated/prisma";
 
 /**
- * @param hasSubscriptionRow whether a Stripe-written Subscription row exists.
- *   Defaults to false so a bare status check stays strict — TRIALING alone
- *   must never pass, which is also what the existing seo-tools test asserts.
+ * @param hasPlanSubscriptionRow whether a Stripe-written Subscription row for a
+ *   PLAN exists. A standalone WATCHER subscription must NOT count: it is a $9
+ *   add-on, not a tier, and counting it would hand its holder every paid tool
+ *   in the product. See ai-monitor/watcher-entitlement.ts for why the row alone
+ *   cannot be trusted — tenantId is unique, so a watcher purchase writes the
+ *   same single row a plan would, carrying whatever planType the tenant already
+ *   had.
+ *
+ *   Defaults to false so a bare status check stays strict — TRIALING alone must
+ *   never pass, which is also what the existing seo-tools test asserts.
  */
 export function isPaidStatus(
   status: BillingStatus | null | undefined,
-  hasSubscriptionRow: boolean = false,
+  hasPlanSubscriptionRow: boolean = false,
 ): boolean {
   if (status === "ACTIVE") return true;
-  return status === "TRIALING" && hasSubscriptionRow;
+  return status === "TRIALING" && hasPlanSubscriptionRow;
 }
 
 export interface BillingContext {
   status: BillingStatus | null;
-  /** True when a Stripe-written Subscription row backs this status. */
+  /** True when a Stripe-written Subscription row for a PLAN backs this status. */
   hasSubscriptionRow: boolean;
+  /** True when the tenant's only subscription is the standalone watcher. */
+  watcherOnly: boolean;
 }
 
 /** Effective billing status plus where it came from. The provenance matters:
@@ -51,14 +60,28 @@ export async function getBillingContext(tenantId: string): Promise<BillingContex
   const { prisma } = await import("@/lib/prisma");
   const sub = await prisma.subscription.findUnique({
     where: { tenantId },
-    select: { status: true },
+    select: { status: true, productKind: true },
   });
-  if (sub) return { status: sub.status, hasSubscriptionRow: true };
+  // A WATCHER subscription is deliberately NOT a plan status. Returning it here
+  // is what would let an ACTIVE $9 add-on satisfy requirePaidPlan and inherit
+  // whatever the tenant's default planType grants. The tenant's own
+  // billingStatus is consulted instead, exactly as for a tenant with no row.
+  if (sub && sub.productKind === "PLAN") {
+    return { status: sub.status, hasSubscriptionRow: true, watcherOnly: false };
+  }
+  const watcherOnly = sub?.productKind === "WATCHER";
   const tenant = await prisma.tenant.findUnique({
     where: { id: tenantId },
     select: { billingStatus: true },
   });
-  return { status: tenant?.billingStatus ?? null, hasSubscriptionRow: false };
+  return {
+    // A watcher-only tenant must not inherit a paid status from the tenant
+    // column either: the webhook sets billingStatus alongside the row, so
+    // trusting it here would reopen the same hole one level down.
+    status: watcherOnly ? null : (tenant?.billingStatus ?? null),
+    hasSubscriptionRow: false,
+    watcherOnly,
+  };
 }
 
 /** Effective billing status: Subscription row first, tenant field as fallback. */

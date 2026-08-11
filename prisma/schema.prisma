@@ -466,10 +466,28 @@ model Campaign {
   @@map("campaigns")
 }
 
+/// What a subscription is for.
+///
+/// Subscription.tenantId is UNIQUE, so a tenant gets one row. A standalone
+/// watcher purchase therefore occupies the same row a plan would, and without
+/// this column it is indistinguishable from a plan: the webhook resolves a
+/// PlanType from the price and falls back to the tenant's existing planType
+/// when it cannot, so a $9 watcher would have written an ACTIVE row carrying
+/// whatever tier the tenant defaulted to — and requirePaidPlan, which asks only
+/// "ACTIVE, with a row?", would have granted every paid tool in the product.
+enum ProductKind {
+  PLAN
+  WATCHER
+}
+
 model Subscription {
   id                   String        @id @default(cuid())
   tenantId             String        @unique
   planType             PlanType
+  /// PLAN by default: every row that existed before the standalone watcher was
+  /// sold is a plan, and a default of WATCHER would strip existing paying
+  /// customers of everything on the next request.
+  productKind          ProductKind   @default(PLAN)
   status               BillingStatus @default(TRIALING)
   currentPeriodStart   DateTime?
   currentPeriodEnd     DateTime?
