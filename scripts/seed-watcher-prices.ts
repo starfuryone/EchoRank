@@ -24,6 +24,9 @@ import { WATCHER_LOOKUP_KEYS, WATCHER_PRICES_CENTS } from "@/lib/plan-config";
 
 const PRODUCT_METADATA = { app: "echorank", product: "watcher" } as const;
 
+/** Fixed so idempotency does not depend on Stripe's eventually-consistent search. */
+const PRODUCT_ID = "echorank_watcher";
+
 function requireTestKey(): string {
   const key = process.env.STRIPE_TEST_SECRET_KEY?.trim();
   if (!key) {
@@ -54,22 +57,33 @@ async function main() {
   }
   console.log("connected to a test-mode account");
 
-  // ── product, by metadata ──
-  const existingProducts = await stripe.products.search({
-    query: `metadata['app']:'echorank' AND metadata['product']:'watcher'`,
-  });
-  let product = existingProducts.data[0];
-  if (product) {
+  // ── product, by DETERMINISTIC ID ──
+  //
+  // NOT products.search. The first run of this script created the product
+  // twice, because Stripe's search index is eventually consistent and a
+  // second --apply seconds later could not see what the first had just
+  // written. A fixed id is strongly consistent: retrieve tells the truth
+  // immediately, and a create that races loses with a clean duplicate error
+  // rather than silently making a second product. The prices were unaffected
+  // because lookup-key reads are strongly consistent, which is why only the
+  // product duplicated.
+  let product: Stripe.Product | undefined;
+  try {
+    product = await stripe.products.retrieve(PRODUCT_ID);
     console.log(`product exists: ${product.id} (${product.name})`);
-  } else if (apply) {
-    product = await stripe.products.create({
-      name: "Echorank Watcher",
-      description: "AI Search monitoring for one brand.",
-      metadata: { ...PRODUCT_METADATA },
-    });
-    console.log(`product created: ${product.id}`);
-  } else {
-    console.log("product would be created: Echorank Watcher");
+  } catch (err) {
+    if ((err as { statusCode?: number }).statusCode !== 404) throw err;
+    if (apply) {
+      product = await stripe.products.create({
+        id: PRODUCT_ID,
+        name: "Echorank Watcher",
+        description: "AI Search monitoring for one brand.",
+        metadata: { ...PRODUCT_METADATA },
+      });
+      console.log(`product created: ${product.id}`);
+    } else {
+      console.log(`product would be created: ${PRODUCT_ID}`);
+    }
   }
 
   // ── prices, by lookup key ──
@@ -101,12 +115,19 @@ async function main() {
       continue;
     }
     if (!product) throw new Error("cannot create a price without a product");
+    // transfer_lookup_key because Stripe RESERVES a lookup key even on an
+    // ARCHIVED price, and the search above deliberately only considers active
+    // ones. Reaching here therefore means no live price holds the key and any
+    // holder is retired, so moving it is safe — whereas without this a single
+    // archived price makes the seeder permanently unable to re-create its own
+    // key, which is exactly what happened on the first run.
     const price = await stripe.prices.create({
       product: product.id,
       currency: "usd",
       unit_amount: amount,
       recurring: { interval },
       lookup_key: lookupKey,
+      transfer_lookup_key: true,
       metadata: { ...PRODUCT_METADATA },
     });
     console.log(`  ${lookupKey}: created ${price.id} ${amount} usd / ${interval}`);
