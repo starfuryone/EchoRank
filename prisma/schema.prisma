@@ -1102,6 +1102,12 @@ model TrackedPrompt {
   country        String?
   /// 0-100, deterministic. Null for prompts that predate the scorer.
   relevanceScore Int?
+  /// Free-text labels a user puts on a prompt to group it — "brand", "EU",
+  /// "launch". The ONLY writable field on a prompt besides `active`, and
+  /// deliberately unvalidated: a taxonomy nobody chose is a taxonomy nobody
+  /// uses, and these are for the customer's own filtering rather than for any
+  /// query this product runs.
+  tags           String[] @default([])
   /// 0-100. The score that ORDERED THE WIZARD'S SUGGESTIONS when this prompt
   /// was proposed — see suggestionScore() in wizard/scoring.ts. Null for a
   /// prompt the user wrote themselves, which was never ranked against anything.
