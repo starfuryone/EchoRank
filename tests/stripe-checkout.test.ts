@@ -6,16 +6,25 @@
 // plan at whatever key happens to resolve, and a gap in TIER_TO_PLAN leaves a
 // paying tenant on the wrong planType.
 import { describe, it, expect } from "vitest";
+import { WATCHER_LOOKUP_KEYS } from "@/lib/plan-config";
+import { productKindFor } from "@/lib/ai-monitor/watcher-entitlement";
 import { createHmac } from "node:crypto";
 import {
   CHECKOUT_TIERS,
+  WATCHER_TIER,
   checkoutLookupKey,
   isBillingInterval,
   isCheckoutTier,
 } from "@/lib/stripe/lookup-keys";
 import { PLAN_ORDER } from "@/lib/plan-config";
 
-/** The six keys that exist in Stripe. Nothing else may be constructed. */
+/**
+ * Every key that exists in Stripe. Nothing else may be constructed.
+ *
+ * Six plan keys plus the two standalone-Watcher keys. The watcher is an
+ * ENTITLEMENT, not a tier — there is no WATCHER PlanType — so it widens this
+ * list and is deliberately excluded from the plan-shaped assertions below.
+ */
 const EXPECTED_KEYS = [
   "echorank_starter_usd_month",
   "echorank_starter_usd_year",
@@ -23,10 +32,15 @@ const EXPECTED_KEYS = [
   "echorank_growth_usd_year",
   "echorank_agency_usd_month",
   "echorank_agency_usd_year",
+  "echorank_watcher_pro_usd_month",
+  "echorank_watcher_pro_usd_year",
 ];
 
+/** The checkout tiers that are actually plans. */
+const PLAN_TIERS = CHECKOUT_TIERS.filter((t) => t !== WATCHER_TIER);
+
 describe("checkout lookup keys", () => {
-  it("builds exactly the six keys that exist in Stripe", () => {
+  it("builds exactly the keys that exist in Stripe", () => {
     const built = CHECKOUT_TIERS.flatMap((t) => [
       checkoutLookupKey(t, "month"),
       checkoutLookupKey(t, "year"),
@@ -61,8 +75,24 @@ describe("checkout lookup keys", () => {
   it("covers every sellable plan except enterprise", () => {
     // If a tier is added to PLAN_CONFIGS, it must either become buyable here
     // or be custom-priced like enterprise — silently missing is the bug.
+    // Compared against the PLAN tiers only: the watcher has no PLAN_CONFIGS
+    // entry, which is the whole reason it is an entitlement.
     const sellable = PLAN_ORDER.filter((p) => p !== "ENTERPRISE").map((p) => p.toLowerCase());
-    expect([...CHECKOUT_TIERS].sort()).toEqual(sellable.sort());
+    expect([...PLAN_TIERS].sort()).toEqual(sellable.sort());
+  });
+
+  it("builds the watcher keys the entitlement discriminator expects", () => {
+    // These two strings are what productKindFor() keys on, so a typo here would
+    // silently make a watcher purchase look like a plan.
+    expect(checkoutLookupKey(WATCHER_TIER, "month")).toBe(WATCHER_LOOKUP_KEYS.monthly);
+    expect(checkoutLookupKey(WATCHER_TIER, "year")).toBe(WATCHER_LOOKUP_KEYS.annual);
+    expect(productKindFor(checkoutLookupKey(WATCHER_TIER, "month"))).toBe("WATCHER");
+  });
+
+  it("keeps every plan key resolving to PLAN, not WATCHER", () => {
+    for (const tier of PLAN_TIERS) {
+      expect(productKindFor(checkoutLookupKey(tier, "month")), tier).toBe("PLAN");
+    }
   });
 });
 
@@ -77,8 +107,11 @@ describe("tier -> PlanType mapping", () => {
     agency: "AGENCY",
   };
 
-  it("maps every checkout tier to a real PlanType", () => {
-    for (const tier of CHECKOUT_TIERS) {
+  it("maps every PLAN checkout tier to a real PlanType", () => {
+    // The watcher is excluded deliberately: it grants an entitlement, not a
+    // tier, and the webhook must NOT resolve a PlanType for it — doing so is
+    // exactly what would let a $9 add-on inherit a plan's features.
+    for (const tier of PLAN_TIERS) {
       const planType = MAP[tier];
       expect(planType, `no PlanType for ${tier}`).toBeDefined();
       expect(PLAN_ORDER).toContain(planType);
