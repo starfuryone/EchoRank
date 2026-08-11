@@ -235,9 +235,16 @@ describe.skipIf(!TEST_DB)("a checkup round-trips through Postgres", () => {
     expect(row.runCount).toBe(4);
     expect(row.partialCoverage).toBe(false);
     expect(row.skippedRuns).toBe(0);
-    // 2 of 4 mentioned -> mention 50, position 100, citation 100, sentiment 100.
-    // 20 + 30 + 20 + 10 = 80.
-    expect(row.visibilityScore).toBe(80);
+    // 2 of 4 mentioned. Worked through, because the citation component is the
+    // one that is easy to get wrong by hand — only the MENTIONED runs carry
+    // citations, so its rate is 50%, not 100%:
+    //   mention   2/4            -> 50   x 0.40 = 20
+    //   position  100/1          -> 100  x 0.30 = 30
+    //   citation  0.7*50 + 0.3*100 -> 65 x 0.20 = 13
+    //   sentiment POSITIVE       -> 100  x 0.10 = 10
+    // = 73. A first run of this file expected 80 and was wrong; the database
+    // was right, which is the entire reason this test exists.
+    expect(row.visibilityScore).toBe(73);
     // Fractions, not percentages — the units the column contract fixes.
     expect(row.mentionRate).toBe(0.5);
     expect(row.top3Rate).toBe(0.5);
@@ -290,8 +297,20 @@ describe.skipIf(!TEST_DB)("a checkup round-trips through Postgres", () => {
     );
 
     expect(await prisma.promptRun.count({ where: { checkupId } })).toBe(before);
+
+    // The re-run describes the WHOLE checkup, not this pass. Reporting an empty
+    // pass was the bug this test found on its first real execution: with
+    // nothing left to do the runner counted zero successes and wrote FAILED
+    // over a READY checkup, which the cadence sweep then read as "this interval
+    // was never covered" and re-queued the brand forever.
+    expect(again.tally).toEqual({ planned: 4, ok: 4, skippedCap: 0, failed: 0 });
+    expect(again.status).toBe("READY");
+    expect((await prisma.checkup.findUniqueOrThrow({ where: { id: checkupId } })).status).toBe(
+      "READY",
+    );
+
     // Nothing new was asked, so nothing new was spent.
-    expect(again.tally.planned).toBe(0);
+    expect(await prisma.aiProviderCall.count({ where: { checkupId, purpose: "answer" } })).toBe(4);
     // And the day still has exactly one metrics row per engine.
     expect(await prisma.visibilityMetric.count({ where: { brandProfileId } })).toBe(1);
   });

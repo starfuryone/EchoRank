@@ -305,8 +305,23 @@ function harness(
     async persistRun(outcome) {
       state.persisted.push(outcome);
     },
-    async completedKeys() {
-      return new Set(opts.alreadyDone ?? []);
+    async priorRuns() {
+      // Prior runs come back with their outcome AND their scoreable form, so a
+      // resumed checkup tallies the whole plan rather than just this pass.
+      return (opts.alreadyDone ?? []).map((key) => ({
+        key,
+        status: "OK" as const,
+        scored: {
+          engine: "CLAUDE",
+          promptId: key.split(":")[1] ?? "p0",
+          brandMentioned: true,
+          mentionCount: 1,
+          brandPosition: 1,
+          sentiment: "POSITIVE" as const,
+          citations: [],
+          competitors: [],
+        },
+      }));
     },
     async writeMetrics(args) {
       state.metrics.push({
@@ -446,9 +461,11 @@ describe("idempotency", () => {
     expect(slots).toHaveLength(4);
     expect(h.asked).toHaveLength(2);
     expect(h.persisted).toHaveLength(2);
-    // The tally counts what THIS attempt did, so a resumed checkup does not
-    // report the completed half as missing.
-    expect(result.tally).toEqual({ planned: 2, ok: 2, skippedCap: 0, failed: 0 });
+    // The tally covers the WHOLE checkup — the two runs an earlier pass
+    // collected plus the two this one did. Counting only this pass would make a
+    // resumed checkup describe half of itself.
+    expect(result.tally).toEqual({ planned: 4, ok: 4, skippedCap: 0, failed: 0 });
+    expect(result.status).toBe("READY");
   });
 
   it("does nothing at all on a fully completed checkup", async () => {
@@ -459,8 +476,13 @@ describe("idempotency", () => {
     expect(h.asked).toHaveLength(0);
     expect(h.persisted).toHaveLength(0);
     expect(h.capReads).toBe(0);
-    // Nothing new was scoreable, so no row is rewritten.
-    expect(result.wroteMetrics).toBe(false);
+    // AND it stays READY. Re-running a finished checkup used to find nothing to
+    // do, count zero successes and write FAILED over a good result — which the
+    // cadence sweep then read as "this interval was never covered", so the
+    // brand was re-checked forever. Caught by the Postgres round-trip, not by
+    // these fakes, because the fakes never asserted the status that was stored.
+    expect(result.status).toBe("READY");
+    expect(h.statuses.at(-1)?.status).toBe("READY");
   });
 });
 

@@ -29,6 +29,7 @@ import type { AiProvider } from "../pricing";
 import { askEngine } from "./providers";
 import { answerHash, normalizeAnswer } from "./normalize";
 import { slotKey, type RunSlot } from "./plan";
+import { scoredRunFromPersisted } from "./salvage";
 import type { RunnerPorts, SlotOutcome } from "./checkup-runner";
 
 export interface PortContext {
@@ -162,23 +163,38 @@ export function prismaPorts(ctx: PortContext): RunnerPorts {
       }
     },
 
-    async completedKeys(checkupId: string) {
+    async priorRuns(checkupId: string) {
+      // The same shape the reaper salvages from, and mapped by the same pure
+      // function, so a resumed checkup and a reaped one agree about what its
+      // earlier runs were worth.
       const rows = await prisma.promptRun.findMany({
         where: { checkupId },
-        select: { checkupId: true, promptId: true, engine: true, repetition: true },
+        select: {
+          promptId: true,
+          engine: true,
+          repetition: true,
+          status: true,
+          brandMentioned: true,
+          analysis: {
+            select: { mentionCount: true, recommendationPosition: true, sentiment: true },
+          },
+          citations: { select: { domain: true, citationPosition: true, supportsBrand: true } },
+          competitorMentions: { select: { name: true, recommendationPosition: true } },
+        },
       });
-      return new Set(
-        rows.map((row) =>
-          slotKey({
-            checkupId: row.checkupId ?? checkupId,
-            promptId: row.promptId,
-            promptText: "",
-            engine: row.engine,
-            model: "",
-            repetition: row.repetition,
-          }),
-        ),
-      );
+
+      return rows.map((row) => ({
+        key: slotKey({
+          checkupId,
+          promptId: row.promptId,
+          promptText: "",
+          engine: row.engine,
+          model: "",
+          repetition: row.repetition,
+        }),
+        status: row.status,
+        scored: row.status === "OK" ? scoredRunFromPersisted(row) : null,
+      }));
     },
 
     async writeMetrics({ brandProfileId, day, engines, partialCoverage, skippedRuns }) {

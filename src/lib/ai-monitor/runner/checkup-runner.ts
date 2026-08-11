@@ -66,6 +66,15 @@ export interface SlotOutcome {
   error?: string;
 }
 
+/** One run this checkup recorded on an earlier pass. */
+export interface PriorRun {
+  /** slotKey() of the run. */
+  key: string;
+  status: RunStatus;
+  /** Null unless it answered — only OK runs are scoreable. */
+  scored: ScoredRun | null;
+}
+
 export interface CapReading {
   capped: boolean;
   spent: number;
@@ -96,8 +105,17 @@ export interface RunnerPorts {
    * prompt_runs is what enforces that when two workers race.
    */
   persistRun: (outcome: SlotOutcome) => Promise<void>;
-  /** Slot keys this checkup has already recorded, for a resumed run. */
-  completedKeys: (checkupId: string) => Promise<Set<string>>;
+  /**
+   * What this checkup has ALREADY recorded, for a resumed run.
+   *
+   * Returns the outcome and the scoreable form of each prior run, not just its
+   * key. Keys alone are enough to avoid re-asking, and that is the trap: a
+   * resumed checkup would then tally only the slots THIS pass ran, so finishing
+   * the last two runs of a four-run plan would write a metrics row computed
+   * from two, and re-running a complete checkup would find nothing to do,
+   * count zero successes and mark a READY checkup FAILED.
+   */
+  priorRuns: (checkupId: string) => Promise<PriorRun[]>;
   /** Upsert the day's per-engine metrics rows. */
   writeMetrics: (args: {
     brandProfileId: string;
@@ -176,10 +194,15 @@ export async function runCheckup(
   // as being refused by the unique index. Doing both is deliberate: the index
   // is what makes it correct under a race, this is what makes a retry cheap
   // rather than paying for every answer a second time to have it rejected.
-  const alreadyDone = await ports.completedKeys(checkupId);
+  const prior = await ports.priorRuns(checkupId);
+  const alreadyDone = new Set(prior.map((run) => run.key));
 
   const outcomes: SlotOutcome[] = [];
-  const scored: ScoredRun[] = [];
+  // Seeded with what earlier passes already collected, so both the status and
+  // the metrics row describe the WHOLE checkup rather than this attempt.
+  const scored: ScoredRun[] = prior
+    .map((run) => run.scored)
+    .filter((run): run is ScoredRun => run !== null);
 
   for (const slot of slots) {
     if (alreadyDone.has(slotKey(slot))) continue;
@@ -223,7 +246,7 @@ export async function runCheckup(
     }
   }
 
-  const counts = tally(outcomes);
+  const counts = tally([...prior.map((run) => ({ status: run.status })), ...outcomes]);
   const partial = isPartialCoverage(counts);
   let wroteMetrics = false;
 
