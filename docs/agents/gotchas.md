@@ -1,6 +1,6 @@
 # Gotchas
 
-Last verified: 2026-07-29 by Claude Opus 5 (1M context).
+Last verified: 2026-08-11 by Claude Opus 5 (1M context).
 
 Incident-derived. Each of these has already cost someone a day.
 
@@ -127,3 +127,51 @@ Two traps worth keeping, both paid for once already:
   catches AI failures into `meta.ai_error` and returns success anyway — by design, so AI
   never breaks the tool. To actually test a key, `POST /keywords {"ai":true}` and check
   `meta.ai_used`.
+
+## There is no test database, and the only DATABASE_URL is production
+
+Every suite in `tests/` mocks `@/lib/prisma`. That is not laziness — `.env` has exactly
+one `DATABASE_URL` and it points at the `echorank` database this box serves production
+from. A test that writes rows runs against production, on every `npx vitest run`, and the
+suite is run many times a day.
+
+So: **do not write a test that touches Prisma without gating it.** The pattern is
+`tests/ai-search-roundtrip.db.test.ts` — `describe.skipIf(!process.env.TEST_DATABASE_URL)`,
+with `process.env.DATABASE_URL` reassigned at the top of the file *before* any dynamic
+import, because `@/lib/prisma` reads it at module scope and builds a pool immediately.
+
+To actually run one you need a database that does not exist yet, and the app role cannot
+create it (`echorank_app` has `rolcreatedb = f`, and there is no passwordless sudo):
+
+```
+createdb echorank_test                                   # needs a superuser
+DATABASE_URL=<test url> npx prisma migrate deploy
+TEST_DATABASE_URL=<test url> npx vitest run tests/ai-search-roundtrip.db.test.ts
+```
+
+The same missing privilege blocks the other half of a drift check. `prisma migrate diff
+--from-config-datasource --to-schema` compares the live DB to `schema.prisma` and needs
+nothing extra; replaying the migration folder from empty and comparing THAT to production
+needs a shadow database, so a migration file that is wrong in a way the live DB has already
+absorbed cannot be caught here today.
+
+## prompt_runs stores three fields under names the scorer does not use
+
+`src/lib/ai-monitor/runner/salvage.ts` exists solely to invert this, and the mapping is not
+guessable from either side:
+
+| stored | scored | why they differ |
+| --- | --- | --- |
+| `MentionAnalysis.recommendationPosition` | `brandPosition` | `MentionAnalysis` predates the ranking pass; `listPosition` was already taken and means something else |
+| `Citation.supportsBrand` | `isMonitoredDomain` | `Citation` deliberately has no `is_monitored_domain` column — it is derivable from `domain` |
+| `MentionAnalysis.sentiment`, lowercase | `Sentiment`, uppercase enum | the column predates the enum and `analysis/llm.ts` still writes lowercase |
+
+`ports.ts` writes them; `salvage.ts` reads them back. **The two files must change together**,
+and nothing but a comment enforces that. Each disagreement produces a silently wrong score
+rather than a crash: a null `brandPosition` reads as "mentioned but never ranked", which is
+a legitimate state worth 0 for the position component.
+
+**Worth fixing properly** — rename the columns in one migration and delete the inverter,
+rather than maintaining it forever. The place this bites is a Step 5 dashboard PR that
+touches one file and not the other. It is safe to do while these tables are small; it will
+not be later.
