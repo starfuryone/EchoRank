@@ -505,6 +505,10 @@ const billingEn = {
   perMonth: "/month",
   renews: (date: string) => `Renews ${date}`,
   cancelsAtPeriodEnd: "Cancels at period end",
+  manageSubscription: "Manage subscription",
+  manageSubscriptionHint:
+    "Update your payment method or cancel. Cancelling keeps your access until the end of the period you have already paid for.",
+  manageSubscriptionError: "Could not open the billing portal. Please try again.",
   usageTitle: "Usage This Month",
   feedbackRequests: "Feedback Requests",
   usagePct: (pct: number) => `${pct}% of your monthly limit used`,
@@ -577,6 +581,11 @@ export const BILLING_COPY: Record<DashLocale, BillingCopy> = {
     perMonth: "/mois",
     renews: (date: string) => `Renouvellement le ${date}`,
     cancelsAtPeriodEnd: "S'annule à la fin de la période",
+    manageSubscription: "Gérer l'abonnement",
+    manageSubscriptionHint:
+      "Modifiez votre moyen de paiement ou résiliez. La résiliation conserve votre accès jusqu'à la fin de la période déjà payée.",
+    manageSubscriptionError:
+      "Impossible d'ouvrir le portail de facturation. Veuillez réessayer.",
     usageTitle: "Utilisation ce mois-ci",
     feedbackRequests: "Demandes de rétroaction",
     usagePct: (pct: number) =>
@@ -648,6 +657,11 @@ export const BILLING_COPY: Record<DashLocale, BillingCopy> = {
     perMonth: "/Monat",
     renews: (date: string) => `Verlängert sich am ${date}`,
     cancelsAtPeriodEnd: "Wird am Ende der Laufzeit gekündigt",
+    manageSubscription: "Abonnement verwalten",
+    manageSubscriptionHint:
+      "Zahlungsmittel ändern oder kündigen. Bei einer Kündigung bleibt der Zugang bis zum Ende der bereits bezahlten Laufzeit bestehen.",
+    manageSubscriptionError:
+      "Das Rechnungsportal konnte nicht geöffnet werden. Bitte erneut versuchen.",
     usageTitle: "Nutzung in diesem Monat",
     feedbackRequests: "Feedback-Anfragen",
     usagePct: (pct: number) =>

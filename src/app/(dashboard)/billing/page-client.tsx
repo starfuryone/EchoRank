@@ -56,6 +56,30 @@ export function BillingPageClient({
   const [billing, setBilling] = useState<BillingData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [portalBusy, setPortalBusy] = useState(false);
+  const [portalError, setPortalError] = useState(false);
+
+  /**
+   * Open Stripe's billing portal — where cancellation actually happens.
+   *
+   * A POST, so it cannot be a link: the route mints a Stripe object, and a
+   * prefetchable GET would create portal sessions for links the browser merely
+   * warmed. The Subscription Agreement names this path, so it has to exist.
+   */
+  async function openPortal() {
+    if (portalBusy) return;
+    setPortalBusy(true);
+    setPortalError(false);
+    try {
+      const res = await fetch("/api/billing/portal", { method: "POST" });
+      const data = (await res.json()) as { url?: string };
+      if (!res.ok || !data.url) throw new Error("portal failed");
+      window.location.assign(data.url);
+    } catch {
+      setPortalError(true);
+      setPortalBusy(false);
+    }
+  }
 
   useEffect(() => {
     async function fetchBilling() {
@@ -169,6 +193,23 @@ export function BillingPageClient({
             </div>
             {billing.cancelAtPeriodEnd && (
               <Badge variant="warning">{t.cancelsAtPeriodEnd}</Badge>
+            )}
+          </div>
+
+          {/* The cancellation route the Subscription Agreement promises.
+              Shown for any subscriber, plan or watcher alike — the portal is
+              Stripe's UI over Stripe's customer record and manages whatever
+              they hold. The route 400s a tenant with no Stripe customer, which
+              is the case this button should not be reached in. */}
+          <div className="mt-4 border-t border-gray-100 pt-4">
+            <Button variant="outline" onClick={openPortal} disabled={portalBusy}>
+              {t.manageSubscription}
+            </Button>
+            <p className="mt-2 text-xs text-gray-500">{t.manageSubscriptionHint}</p>
+            {portalError && (
+              <p className="mt-2 text-xs text-red-600" role="alert">
+                {t.manageSubscriptionError}
+              </p>
             )}
           </div>
         </CardContent>
