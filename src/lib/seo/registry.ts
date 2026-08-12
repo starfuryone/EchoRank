@@ -33,6 +33,9 @@ export const LOCALIZED_ROUTES: LocalizedRoute[] = [
   // so it ranks with /pricing rather than with the content pages below.
   { path: "/free-audit", priority: 0.9, changeFrequency: "monthly" },
   // Goal-led entry page; every card links to a route already in this list.
+  // The standalone Watcher's own page. Ranks with /pricing rather than the
+  // content pages: it is a second purchase path, not an article.
+  { path: "/watcher", priority: 0.9, changeFrequency: "monthly" },
   { path: "/use-cases", priority: 0.8, changeFrequency: "monthly" },
   { path: "/technical-geo", priority: 0.6, changeFrequency: "monthly" },
   { path: "/glossary", priority: 0.5, changeFrequency: "monthly" },

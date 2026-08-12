@@ -265,6 +265,12 @@
 .priceGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:44px}
 @media(max-width:1000px){.priceGrid{grid-template-columns:1fr 1fr}}
 @media(max-width:560px){.priceGrid{grid-template-columns:1fr}}
+/* Two-card variant, for the Watcher page's Free + Watcher pair. Composes the
+   four-column grid and overrides only the track count, so gap and margin stay
+   defined once — a second hand-written grid is how two pricing surfaces end up
+   with different spacing. */
+.priceGrid2{composes:priceGrid;grid-template-columns:repeat(2,1fr);max-width:760px;margin-left:auto;margin-right:auto}
+@media(max-width:760px){.priceGrid2{grid-template-columns:1fr}}
 .price{composes:card;padding:22px 20px}
 .priceHi{composes:price;border-color:rgba(252,213,53,.45);box-shadow:0 0 50px -20px rgba(240,185,11,.35)}
 .pname{font-family:var(--mono);font-size:11px;letter-spacing:.12em;color:var(--faint);text-transform:uppercase}
@@ -625,6 +631,16 @@
 .pbuy:hover,.pbuy:focus-visible{filter:brightness(1.1)}
 .pbuy:disabled{opacity:.65;cursor:default;filter:none}
 .pbuyErr{margin:8px 0 0;font-size:12px;line-height:1.4;color:var(--red)}
+/* Secondary card action — the free tool's link, and "Manage" for someone who
+   already subscribes. Same geometry as .pbuy so the two cards' buttons line up,
+   without the gold: only the card that takes money wears the accent. */
+.pbuyGhost{composes:pbuy;background:rgba(255,255,255,.02);border:1px solid var(--line);
+  color:#F5F5F5;text-decoration:none;font-weight:600}
+.pbuyGhost:hover,.pbuyGhost:focus-visible{filter:none;border-color:var(--gold)}
+/* The state where there is nothing to buy: a plan already includes this. Reads
+   as a statement rather than a disabled control, which explains nothing. */
+.pnote{margin-top:16px;padding:12px 14px;border-radius:10px;border:1px dashed var(--line);
+  font-size:12.5px;line-height:1.45;color:var(--muted);text-align:center}
 
 /* == checkout consent gate ==
    One full-width card spanning the pricing grid, directly under the cards.
