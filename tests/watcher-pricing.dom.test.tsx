@@ -136,11 +136,41 @@ describe("the CTA matches what checkout would answer", () => {
     expect(screen.queryByRole("button", { name: HOME_PRICING_CHROME.en.checkoutCta })).toBeNull();
   });
 
-  it("sends an existing watcher subscriber to billing instead of selling twice", async () => {
-    mountWith("manage");
-    await waitFor(() => expect(screen.getByText(COPY.manageCta)).toBeTruthy());
-    expect(screen.getByText(COPY.manageCta).getAttribute("href")).toBe("/billing");
+  it("sends an existing watcher subscriber to the Stripe portal, not a second purchase", async () => {
+    const fetchMock = vi.fn(async (...args: unknown[]) =>
+      String(args[0]).includes("watcher-status")
+        ? ({ ok: true, json: async () => ({ state: "manage" }) } as unknown as Response)
+        : ({ ok: true, json: async () => ({ url: "https://billing.stripe.com/s/1" }) } as unknown as Response),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    // jsdom refuses a real navigation; the assertion is the request, not the trip.
+    vi.stubGlobal("location", { assign: vi.fn() } as unknown as Location);
+
+    render(
+      <WatcherPricing
+        locale="en"
+        copy={COPY}
+        chrome={HOME_PRICING_CHROME.en}
+        monthly={WATCHER_MONTHLY_USD}
+        annualPerMonth={WATCHER_ANNUAL_PER_MONTH_USD}
+        savePct={WATCHER_SAVE_PCT}
+      />,
+    );
+
+    const manage = await screen.findByRole("button", { name: COPY.manageCta });
+    // Never a checkout button: they already pay for this.
     expect(screen.queryByRole("button", { name: HOME_PRICING_CHROME.en.checkoutCta })).toBeNull();
+
+    fireEvent.click(manage);
+    await waitFor(() =>
+      expect(
+        fetchMock.mock.calls.filter((c) => String(c[0]) === "/api/billing/portal"),
+      ).toHaveLength(1),
+    );
+    // Cancellation lives behind the portal, so Manage must reach it directly
+    // rather than landing on a page that merely links there.
+    const call = fetchMock.mock.calls.find((c) => String(c[0]) === "/api/billing/portal");
+    expect((call?.[1] as RequestInit | undefined)?.method).toBe("POST");
   });
 
   it("keeps the buy button when the status probe fails", async () => {
@@ -165,7 +195,10 @@ describe("the CTA matches what checkout would answer", () => {
 
 describe("consent gates the watcher checkout like it gates a plan", () => {
   it("opens the agreement modal instead of calling checkout when unticked", async () => {
-    const fetchMock = vi.fn(async () => ({ ok: true, json: async () => ({ state: "buy" }) }));
+    const fetchMock = vi.fn(async (...args: unknown[]) => {
+      void args;
+      return { ok: true, json: async () => ({ state: "buy" }) };
+    });
     vi.stubGlobal("fetch", fetchMock);
     render(
       <WatcherPricing

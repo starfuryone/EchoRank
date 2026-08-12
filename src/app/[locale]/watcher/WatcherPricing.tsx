@@ -130,6 +130,28 @@ export function WatcherPricing({
     }
   }
 
+  /**
+   * Open Stripe's portal — where cancellation actually happens.
+   *
+   * A POST, so it cannot be a Link: the route mints a Stripe object, and a
+   * prefetchable GET would create portal sessions for links the browser merely
+   * warmed. Same navigate-with-the-returned-url shape as checkout.
+   */
+  async function openPortal() {
+    if (busy) return;
+    setBusy(true);
+    setError(false);
+    try {
+      const res = await fetch("/api/billing/portal", { method: "POST" });
+      const data = (await res.json()) as { url?: string };
+      if (!res.ok || !data.url) throw new Error("portal failed");
+      window.location.assign(data.url);
+    } catch {
+      setError(true);
+      setBusy(false);
+    }
+  }
+
   /** Every watcher CTA enters here, so consent is enforced before any request. */
   function requestCheckout() {
     if (!consented) {
@@ -228,9 +250,26 @@ export function WatcherPricing({
             // so there is nothing to sell. Stated rather than disabled.
             <p className={s.pnote}>{copy.includedNote}</p>
           ) : cta === "manage" ? (
-            <Link className={s.pbuyGhost} href="/billing">
-              {copy.manageCta}
-            </Link>
+            // Straight into Stripe's portal, not to /billing. The Subscription
+            // Agreement promises cancellation there, and a subscriber clicking
+            // "Manage" wants the thing that can cancel, not a page that links
+            // to it.
+            <>
+              <button
+                type="button"
+                className={s.pbuyGhost}
+                onClick={openPortal}
+                disabled={busy}
+                aria-busy={busy}
+              >
+                {busy ? chrome.checkoutBusy : copy.manageCta}
+              </button>
+              {error && (
+                <p className={s.pbuyErr} role="alert">
+                  {chrome.checkoutError}
+                </p>
+              )}
+            </>
           ) : (
             <>
               <button
