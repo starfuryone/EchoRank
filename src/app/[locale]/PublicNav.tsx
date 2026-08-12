@@ -137,6 +137,7 @@ const NAV: Record<Base, NavCopy> = {
             items: [
               { href: "/ai-visibility", label: "AI Visibility", desc: "Track how assistants answer about you." },
               { href: "/live-monitoring", label: "Live monitoring", desc: "Always-on checks and alerts." },
+              { href: "/watcher", label: "AI Search Watcher", desc: "One brand, watched weekly. $9/mo." },
             ],
           },
           {
@@ -214,6 +215,7 @@ const NAV: Record<Base, NavCopy> = {
             items: [
               { href: "/ai-visibility", label: "Visibilité IA", desc: "Suivez ce que les assistants répondent." },
               { href: "/live-monitoring", label: "Surveillance continue", desc: "Contrôles et alertes en continu." },
+              { href: "/watcher", label: "AI Search Watcher", desc: "Une marque, surveillée chaque semaine. $9/mois." },
             ],
           },
           {
