@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import type { Prisma } from "@/generated/prisma";
 import { prisma } from "@/lib/prisma";
-import { productKindFor } from "@/lib/ai-monitor/watcher-entitlement";
+import { productKindFor, type ProductKind } from "@/lib/ai-monitor/watcher-entitlement";
 import { reconcileTenantMatrixAccounts } from "@/lib/matrix-accounts";
 import { rateLimit } from "@/lib/rate-limit";
 import { logger } from "@/infrastructure/observability/logger";
@@ -114,9 +114,50 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
     return;
   }
 
-  const updateData: Record<string, unknown> = {
-    billingStatus: "ACTIVE",
-  };
+  // PLAN or WATCHER, resolved BEFORE the tenant is written.
+  //
+  // The sibling handler reads the lookup key off the subscription item, but a
+  // checkout session carries no line-item price, so the subscription itself has
+  // to be fetched — the same retrieve the trial notice below already needed,
+  // now expanded and hoisted above the write rather than added to it.
+  let subscription: Stripe.Subscription | null = null;
+  let productKind: ProductKind | null = null;
+  if (subscriptionId) {
+    try {
+      subscription = await getStripe().subscriptions.retrieve(subscriptionId, {
+        expand: ["items.data.price"],
+      });
+      const lookupKey = (
+        subscription.items?.data?.[0]?.price as { lookup_key?: string | null } | undefined
+      )?.lookup_key;
+      productKind = productKindFor(lookupKey);
+    } catch (err) {
+      log.warn({ err, subscriptionId }, "Could not resolve product kind for checkout session");
+    }
+  }
+
+  // A WATCHER PURCHASE DOES NOT ACTIVATE THE TENANT.
+  //
+  // hasPaidPlan falls back to this column when the tenant has no PLAN
+  // subscription row — and at this point in the flow there is no row at all:
+  // the row is written by customer.subscription.*, a separate event. Promoting
+  // here unconditionally therefore handed a $9 add-on buyer every paid feature
+  // in the product for the whole window between the two events, and
+  // indefinitely whenever the second one is delayed, dropped or retried. It is
+  // the same hole productKind was introduced to close, reached through the
+  // handler that fires first.
+  //
+  // AN UNRESOLVED KIND FAILS CLOSED. If the retrieve above failed we do not
+  // promote: customer.subscription.created follows for every real purchase and
+  // sets billingStatus correctly there, so a plan customer activates a moment
+  // later, whereas assuming PLAN grants a watcher buyer the run of the product
+  // on the strength of a network error. A session with no subscription at all
+  // is not a watcher — that SKU is subscription-only — so it keeps the old
+  // behaviour.
+  const updateData: Record<string, unknown> = {};
+  if (subscriptionId ? productKind === "PLAN" : true) {
+    updateData.billingStatus = "ACTIVE";
+  }
 
   // Persist the customer id when we matched by client_reference_id, otherwise
   // the next event has nothing to match on and we are back to the same gap.
@@ -135,13 +176,12 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
 
   // 24h trial-ending notice. Stripe's own trial_will_end fires 3 days out, so
   // the exact timing has to come from trial_end on the subscription itself.
-  if (subscriptionId) {
+  if (subscription) {
     try {
-      const sub = await getStripe().subscriptions.retrieve(subscriptionId);
       await scheduleTrialEndingNotice({
         tenantId: tenant.id,
-        stripeSubscriptionId: subscriptionId,
-        trialEnd: sub.trial_end,
+        stripeSubscriptionId: subscription.id,
+        trialEnd: subscription.trial_end,
       });
     } catch (err) {
       // Never fail the webhook over the reminder: Stripe would retry the whole
@@ -151,8 +191,10 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   }
 
   log.info(
-    { tenantId: tenant.id, customerId, subscriptionId },
-    "Checkout completed — tenant activated"
+    { tenantId: tenant.id, customerId, subscriptionId, productKind },
+    updateData.billingStatus
+      ? "Checkout completed — tenant activated"
+      : "Checkout completed — watcher purchase, tenant not activated"
   );
 }
 
@@ -498,6 +540,15 @@ export async function POST(request: NextRequest) {
           );
           break;
 
+        // `created` shares the handler, which is an idempotent upsert.
+        //
+        // It was previously unhandled, so the Subscription row — and with it
+        // productKind — appeared only when Stripe next sent `updated`, which
+        // for a subscription that never changes may be the first renewal. That
+        // left the checkout/subscription window above open for far longer than
+        // the moment it looks like, which is why it is worth closing here
+        // rather than relying on a follow-up event that may not come.
+        case "customer.subscription.created":
         case "customer.subscription.updated":
           await handleSubscriptionUpdated(
             event.data.object as Stripe.Subscription
