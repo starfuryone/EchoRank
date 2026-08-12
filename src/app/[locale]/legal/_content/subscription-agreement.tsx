@@ -20,7 +20,7 @@ function planLines(): string[] {
 export function buildSubscriptionAgreement(locale: string): LegalDoc {
   return {
   title: "Subscription Agreement",
-  updated: "Last updated: August 7, 2026",
+  updated: "Last updated: August 12, 2026",
   description:
     "This Subscription Agreement governs your subscription to Echorank360, operated by ChatLogic Insights LTD.",
   sections: [
@@ -48,13 +48,33 @@ export function buildSubscriptionAgreement(locale: string): LegalDoc {
     { h: "3. Free Trial", ps: [
       "3.1 Trial Terms. New subscriptions begin with a 7-day free trial. A valid payment method is required to start the trial. You will not be charged during the trial period.",
       "3.2 Conversion to Paid. Unless you cancel before the trial ends, your payment method is automatically charged for your selected plan and billing interval on the day the trial expires, and your paid subscription begins. We send a reminder email to the address on your account before the trial ends.",
-      "3.3 Cancelling During the Trial. You may cancel at any time during the trial through the Stripe Customer Portal (see Section 7). Cancellation during the trial takes effect immediately and no charge is made.",
+      "3.3 Cancelling During the Trial. You may cancel at any time during the trial; see the “How to Cancel” section for the steps and for when cancellation takes effect.",
       "3.4 One Trial per Customer. The free trial is available once per customer and per organisation. We may decline or revoke trials created to circumvent this limit.",
     ]},
     { h: "4. Payment and Billing", ps: [
       "4.1 Payment Processing. All payments are processed securely through Stripe. Echorank360 does not store credit card numbers. By subscribing, you authorise Stripe to charge your payment method on a recurring basis according to your selected billing interval.",
       "4.2 Billing Cycle. Your billing cycle begins on the date your trial converts to a paid subscription (or the date of purchase if no trial applies). Subsequent charges occur on the same day each month (for monthly plans) or the same date each year (for yearly plans). If a charge fails, your subscription status becomes \"past due\" and access may be suspended after a 3-day grace period.",
       "4.3 Taxes. Prices are exclusive of applicable taxes unless otherwise stated. Stripe may collect taxes as required by your jurisdiction.",
+    ]},
+    // UNNUMBERED, AND DELIBERATELY SO. Only `h` renders as a heading — a
+    // "4.4 …" prefix would be a plain paragraph, which is exactly the buried
+    // disclosure this is meant not to be. Taking a number instead (a new "5.")
+    // would renumber Plan Changes through Contact and silently break §1.3's
+    // "Section 5" and §3.3's "Section 7". Unnumbered keeps both: a real <h2>
+    // for prominence, and every existing cross-reference still pointing where
+    // it says. The Overview section already sets that precedent.
+    { h: "Automatic Renewal and Recurring Charges", ps: [
+      "Your subscription renews automatically. After any free trial ends, the payment method on file is charged automatically at the start of each billing period — monthly or annually, at the price you selected — and charges continue on a recurring basis until you cancel. You will not receive a separate invoice or request for approval before each renewal charge.",
+    ]},
+    // THE ONE AUTHORITATIVE CANCELLATION DESCRIPTION. §3.3, §7.1 and §7.2 now
+    // point here instead of each carrying their own slightly different version;
+    // three descriptions of one process is how a document ends up promising
+    // three things. The click path names what the dashboard actually shows —
+    // /billing carries a "Manage subscription" button as of this change, and
+    // the Stripe portal is configured to cancel at period end, so every step
+    // below is a control a user can actually see.
+    { h: "How to Cancel", ps: [
+      "You can cancel at any time in a few clicks: log in to your account, open Billing (echorank360.com/billing), click “Manage subscription”, and choose “Cancel subscription” in the secure Stripe billing portal. If you cancel during a free trial, cancellation is immediate and you are not charged. Otherwise, cancellation takes effect at the end of your current billing period: you keep access until then and no further charges are made after it.",
     ]},
     { h: "5. Plan Changes", ps: [
       "Summary: Upgrades and switches to yearly billing take effect immediately. Downgrades and switches to monthly billing take effect at the end of your current billing period. You keep full access to your current plan until any scheduled change takes effect.",
@@ -70,8 +90,8 @@ export function buildSubscriptionAgreement(locale: string): LegalDoc {
       "Every billing event — including trial start, trial conversion, upgrades, downgrades, interval switches, and cancellations — generates a confirmation delivered by email to the address on your account. Confirmations include the transaction date, the plan and billing interval, the effective date (immediate or scheduled), and, for prorated changes, the charge amount. Stripe also issues receipts and invoices for all payments.",
     ]},
     { h: "7. Cancellation", ps: [
-      "7.1 How to Cancel. You may cancel your subscription at any time through the Manage Subscription / Billing section of your dashboard, which opens the Stripe Customer Portal. You may also contact support@echorank360.com.",
-      "7.2 Effect of Cancellation. During the free trial, cancellation takes effect immediately and no charge is made. After the trial, cancellation takes effect at the end of your current billing period. You retain full access to all features of your current plan until that date. After the billing period ends, your account reverts to an inactive state and dashboard access is suspended.",
+      "7.1 How to Cancel. The steps are set out in the “How to Cancel” section. You may also cancel by contacting support@echorank360.com.",
+      "7.2 Effect of Cancellation. When cancellation takes effect is set out in the “How to Cancel” section. Once your access ends, your account reverts to an inactive state and dashboard access is suspended.",
       "7.3 Data After Cancellation. Following cancellation, you may request an export of your data by contacting support before your access ends. We may delete account data after a reasonable retention period, in accordance with our Privacy Policy.",
       "7.4 No Refunds. No refunds are issued for partial billing periods, except where required by applicable law. If you upgrade and then cancel within the same billing period, the prorated charge for the upgrade is not refunded.",
     ]},

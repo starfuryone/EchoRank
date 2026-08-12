@@ -21,7 +21,10 @@
 // requests are rejected with 400.
 
 /** Date-stamped. Bump on a material change to any listed document. */
-export const CONSENT_VERSION = "2026-08";
+// Day-stamped from here on. The month-granular "2026-08" could not express a
+// second material change inside the same month, and the Subscription Agreement
+// was revised on 2026-08-12 after being published on 2026-08-07 — both August.
+export const CONSENT_VERSION = "2026-08-12";
 
 export type ConsentDocumentId =
   | "subscription_agreement"
