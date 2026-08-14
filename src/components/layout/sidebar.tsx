@@ -13,6 +13,7 @@ import {
   Wrench,
   UserCircle,
   HelpCircle,
+  Bell,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { dashNav, type DashLocale } from "@/lib/i18n/dashboard";
@@ -41,6 +42,7 @@ const navItems = [
   { href: "/settings", icon: Settings },
   { href: "/settings/account", icon: UserCircle },
   { href: "/billing", icon: CreditCard },
+  { href: "/notifications", icon: Bell },
   // Last row, below the administration block. Help is never plan-gated.
   { href: "/help", icon: HelpCircle },
 ] as const;

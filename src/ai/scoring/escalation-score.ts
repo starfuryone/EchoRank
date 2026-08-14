@@ -3,6 +3,7 @@
 // ---------------------------------------------------------------------------
 
 import { prisma } from "@/lib/prisma";
+import { notifyEscalationAlert } from "@/lib/notifications/adapters";
 import type { RiskLevel } from "@/generated/prisma";
 import {
   ESCALATION_THRESHOLDS,
@@ -266,7 +267,7 @@ export class EscalationScoreCalculator {
   }): Promise<void> {
     const riskLevel = this.scoreToRiskLevel(params.probability);
 
-    await prisma.escalationAlert.create({
+    const alert = await prisma.escalationAlert.create({
       data: {
         tenantId: params.tenantId,
         customerId: params.customerId,
@@ -279,6 +280,15 @@ export class EscalationScoreCalculator {
         description: params.description,
         suggestedAction: params.suggestedAction,
       },
+    });
+
+    await notifyEscalationAlert(params.tenantId, {
+      alertId: alert.id,
+      alertType: params.alertType,
+      riskLevel,
+      probability: params.probability,
+      title: params.title,
+      description: params.description,
     });
   }
 

@@ -4,6 +4,7 @@ import { EVENT_TYPES, type AiRiskDetectedEvent } from "@/infrastructure/events/t
 import { addJob } from "@/infrastructure/queue/registry";
 import { JOB_PRIORITY } from "@/infrastructure/queue/jobs/schemas";
 import { prisma } from "@/lib/prisma";
+import { notifyEscalationAlert } from "@/lib/notifications/adapters";
 
 const LOG_PREFIX = "[Consumer:ai]";
 
@@ -63,6 +64,15 @@ async function handleAiRiskDetected(
         console.log(
           `${LOG_PREFIX} Created escalation alert ${alert.id} for AI risk (${riskLevel})`,
         );
+
+        await notifyEscalationAlert(tenantId, {
+          alertId: alert.id,
+          alertType: "ai_risk",
+          riskLevel,
+          probability: analysis.escalationProbability ?? confidence,
+          title: alert.title,
+          description: alert.description,
+        });
 
         // Record usage
         await prisma.usageMeter.create({

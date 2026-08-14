@@ -5,6 +5,7 @@ import type { EscalationDetectionJob } from "@/infrastructure/queue/jobs/schemas
 import { eventBus } from "@/infrastructure/events/bus";
 import { EVENT_TYPES } from "@/infrastructure/events/types";
 import { prisma } from "@/lib/prisma";
+import { notifyEscalationAlert } from "@/lib/notifications/adapters";
 
 const QUEUE_NAME = "escalation-detection";
 const LOG_PREFIX = `[Worker:${QUEUE_NAME}]`;
@@ -202,6 +203,16 @@ async function processEscalationDetection(
         description,
         suggestedAction,
       },
+    });
+
+    // ── In-app notification ──────────────────────────────────────────
+    await notifyEscalationAlert(tenantId, {
+      alertId: alert.id,
+      alertType: "escalation_risk",
+      riskLevel,
+      probability,
+      title,
+      description,
     });
 
     // ── Record Usage Meter ───────────────────────────────────────────

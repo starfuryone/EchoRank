@@ -198,6 +198,7 @@ model Tenant {
   reputationScores   ReputationScore[]
   aiAnalyses         AiAnalysis[]
   escalationAlerts   EscalationAlert[]
+  notifications      Notification[]
   monitoringSources  MonitoringSource[]
   externalReviews    ExternalReview[]
   importJobs         ImportJob[]
@@ -2909,4 +2910,87 @@ model Experiment {
   @@index([brandProfileId, status])
   @@index([tenantId, startedAt])
   @@map("experiments")
+}
+
+// ─── In-app notifications ────────────────────────────────────────────────────
+
+/// The durable in-app record of an alert. One row per alert-worthy event, fanned
+/// in from every alert-producing surface (see src/lib/notifications/adapters.ts).
+///
+/// TENANT-SCOPED, NOT USER-SCOPED, and that is deliberate: not one of the seven
+/// alert sources knows which user an alert is for — they all resolve recipients
+/// at send time from tenant membership. `userId` exists for a future source that
+/// genuinely targets one person; null means "everyone on this tenant".
+///
+/// READ STATE LIVES IN NotificationRead, NEVER ON THIS ROW. A `readAt` column
+/// here would mean the first teammate to open the page clears the badge for the
+/// whole tenant — the exact flaw EscalationAlert.acknowledged already has. Do
+/// not add one.
+///
+/// `title`/`body` are stored in English as written by the emitting worker. They
+/// are a FALLBACK ONLY, for a `type` the display catalog does not know. Rendering
+/// goes through `type` + `payload` against the three dashboard catalogs, so a
+/// French user does not read English alert text. New emissions must always carry
+/// a typed payload — see NotificationPayloads in src/lib/notifications/types.ts.
+model Notification {
+  id       String  @id @default(cuid())
+  tenantId String
+  /// Null = tenant-wide (every current source). Set only by a source that
+  /// targets one person.
+  userId   String?
+
+  /// NotificationType in src/lib/notifications/types.ts — the catalog key.
+  type     String
+  /// "info" | "warning" | "critical".
+  severity String
+
+  /// English fallback, rendered only when `type` is absent from the catalog.
+  title String
+  body  String? @db.Text
+
+  /// Deep link to the tool page that explains the alert, e.g. "/visibility".
+  href String
+
+  /// Typed per `type`. What the catalog interpolates when rendering.
+  payload Json?
+
+  /// "<sourceModel>:<id>" of the row this was fanned in from, e.g.
+  /// "AlertEvent:clx…". Null for sources that store nothing of their own
+  /// (visibility_score_drop, reputation_score_change).
+  sourceRef String?
+
+  /// Per source+subject+day. Makes a retried sweep idempotent, exactly as the
+  /// AlertEvent.dedupeKey it usually mirrors.
+  dedupeKey String @unique
+
+  createdAt DateTime @default(now())
+
+  tenant Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  reads  NotificationRead[]
+
+  /// The page read: this tenant's notifications, newest first.
+  @@index([tenantId, createdAt(sort: Desc)])
+  @@index([tenantId, type, createdAt(sort: Desc)])
+  @@index([tenantId, severity, createdAt(sort: Desc)])
+  @@map("notifications")
+}
+
+/// One row per (notification, user) that has read it. Absence means unread.
+///
+/// Read state is per user because a tenant-wide notification is delivered to
+/// every member and each of them reads it separately. The unread badge counts
+/// notifications with no row here for the current user.
+model NotificationRead {
+  id             String   @id @default(cuid())
+  notificationId String
+  userId         String
+  readAt         DateTime @default(now())
+
+  notification Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+
+  /// Marking read twice is a no-op, not a duplicate row.
+  @@unique([notificationId, userId])
+  /// The badge read: "which of these has this user already seen".
+  @@index([userId, notificationId])
+  @@map("notification_reads")
 }

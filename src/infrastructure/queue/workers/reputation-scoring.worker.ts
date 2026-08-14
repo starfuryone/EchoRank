@@ -5,6 +5,7 @@ import type { ReputationScoringJob } from "@/infrastructure/queue/jobs/schemas";
 import { eventBus } from "@/infrastructure/events/bus";
 import { EVENT_TYPES } from "@/infrastructure/events/types";
 import { prisma } from "@/lib/prisma";
+import { notifyReputationScoreChange } from "@/lib/notifications/adapters";
 
 const QUEUE_NAME = "reputation-scoring";
 const LOG_PREFIX = `[Worker:${QUEUE_NAME}]`;
@@ -232,6 +233,16 @@ async function processReputationScoring(job: Job<ReputationScoringJob>): Promise
       console.log(
         `${LOG_PREFIX} Significant score change detected: ${previousScore.overallScore} -> ${overallScore} (${direction})`,
       );
+
+      // Until now this swing existed only as the log line above and a domain
+      // event nothing renders — a ±10 move reached no one. The notification is
+      // the first thing a user can actually see.
+      await notifyReputationScoreChange({
+        tenantId,
+        previousScore: previousScore.overallScore,
+        newScore: overallScore,
+        location: location ?? null,
+      });
     }
   } catch (err) {
     const errorMsg = err instanceof Error ? err.message : String(err);

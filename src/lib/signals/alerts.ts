@@ -1,5 +1,6 @@
 import { prisma } from './db';
 import { sendAlertDigest } from './notify';
+import { notifyRiskAlert } from '@/lib/notifications/adapters';
 import type { RiskResult } from './types';
 
 // ── Tunables ────────────────────────────────────────────────────────────────
@@ -66,6 +67,20 @@ export async function createEvent(e: {
       },
       select: { id: true, kind: true, severity: true, title: true, body: true },
     });
+
+    // In-app record for the alert we just created. Inside the try rather than
+    // after the call site, so every caller of createEvent gets it for free and
+    // a duplicate (P2002 below) does not write one.
+    await notifyRiskAlert(e.tenantId, {
+      id: row.id,
+      kind: e.kind,
+      severity: e.severity,
+      title: e.title,
+      body: e.body ?? null,
+      dedupeKey: e.dedupeKey,
+      payload: e.payload ?? null,
+    });
+
     return row as CreatedAlert;
   } catch (err) {
     if ((err as { code?: string }).code === 'P2002') return null; // already fired

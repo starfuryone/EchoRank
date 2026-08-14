@@ -1,6 +1,10 @@
 import nodemailer from "nodemailer";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/infrastructure/observability/logger";
+import {
+  notifyPromptTransitions,
+  notifyVisibilityAlert,
+} from "@/lib/notifications/adapters";
 
 /**
  * Direct SMTP alerting for visibility monitoring. Admin/owner alerts are not
@@ -56,6 +60,19 @@ async function resolveRecipients(tenantId: string): Promise<string[]> {
 }
 
 export async function sendVisibilityAlert(input: VisibilityAlertInput): Promise<void> {
+  // Durable in-app record, written before the email is even attempted: this
+  // alert had no storage of its own, so a tenant with no reachable recipients
+  // (or no SMTP configured) used to lose it entirely. Additive — the email
+  // below is unchanged and still sends.
+  await notifyVisibilityAlert({
+    tenantId: input.tenantId,
+    url: input.url,
+    prevScore: input.prevScore,
+    newScore: input.newScore,
+    newGrade: input.newGrade,
+    blockedBots: input.flippedBlocked.map((f) => f.bot),
+  });
+
   const recipients = await resolveRecipients(input.tenantId);
   if (recipients.length === 0) {
     logger.warn({ tenantId: input.tenantId, url: input.url }, "Visibility alert: no recipients");
@@ -117,6 +134,20 @@ export interface PromptTransition {
 }
 
 /**
+ * The English one-line summary of a transition. Shared by the AlertEvent row
+ * and the in-app notification's fallback title so the two cannot drift; the
+ * notification itself renders from its typed payload through the dashboard
+ * catalogs, and only falls back to this string for an unknown type.
+ */
+function promptAlertTitle(t: PromptTransition): string {
+  return t.kind === "visibility_lost"
+    ? `No longer recommended: "${t.promptText.slice(0, 80)}"`
+    : t.kind === "visibility_rank_drop"
+      ? `Rank dropped #${t.prevRank} -> #${t.newRank}: "${t.promptText.slice(0, 80)}"`
+      : `Recommended again: "${t.promptText.slice(0, 80)}"`;
+}
+
+/**
  * Persist AlertEvents for prompt mention transitions and send one digest
  * email per batch. dedupeKey is per prompt+kind+day, so retried batches
  * and overlapping sweeps cannot double-alert.
@@ -132,12 +163,7 @@ export async function recordPromptAlerts(
     tenantId,
     kind: t.kind,
     severity: t.kind === "visibility_regained" ? "warning" : "critical",
-    title:
-      t.kind === "visibility_lost"
-        ? `No longer recommended: "${t.promptText.slice(0, 80)}"`
-        : t.kind === "visibility_rank_drop"
-          ? `Rank dropped #${t.prevRank} -> #${t.newRank}: "${t.promptText.slice(0, 80)}"`
-          : `Recommended again: "${t.promptText.slice(0, 80)}"`,
+    title: promptAlertTitle(t),
     body: null as string | null,
     dedupeKey: `vis-${t.kind}-${t.promptId}-${day}`,
     payload: { promptId: t.promptId, prevRank: t.prevRank, newRank: t.newRank },
@@ -147,6 +173,14 @@ export async function recordPromptAlerts(
     data: rows,
     skipDuplicates: true,
   });
+
+  // In-app record, mirroring the AlertEvents above. Written before the
+  // count/alertsEnabled early-returns below on purpose: those two suppress the
+  // DIGEST EMAIL, and the durable in-app record is exactly what a tenant with
+  // email alerts turned off is meant to read instead. Its own dedupeKey makes a
+  // repeated sweep a no-op, so running this when created.count is 0 is free.
+  await notifyPromptTransitions(tenantId, transitions, promptAlertTitle);
+
   if (created.count === 0) return; // everything already alerted today
 
   const cfg = await prisma.tenantRiskConfig.findUnique({ where: { tenantId } });

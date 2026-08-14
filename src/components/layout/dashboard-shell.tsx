@@ -14,6 +14,8 @@ interface DashboardShellProps {
   plan?: PlanType | null;
   /** Tenant billing status is ACTIVE (computed in the (dashboard) layout). */
   paid?: boolean;
+  /** Unread notifications for this user (computed in the (dashboard) layout). */
+  unreadCount?: number;
   user?: {
     name?: string | null;
     email?: string | null;
@@ -21,7 +23,14 @@ interface DashboardShellProps {
   };
 }
 
-export function DashboardShell({ children, user, locale = "en", plan, paid }: DashboardShellProps) {
+export function DashboardShell({
+  children,
+  user,
+  locale = "en",
+  plan,
+  paid,
+  unreadCount,
+}: DashboardShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
 
@@ -57,6 +66,7 @@ export function DashboardShell({ children, user, locale = "en", plan, paid }: Da
           title={title}
           locale={locale}
           user={user}
+          unreadCount={unreadCount}
           onMenuToggle={handleMenuToggle}
           onSignOut={handleSignOut}
         />

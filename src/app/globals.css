@@ -17,3 +17,20 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
 }
+
+/* notifications bell ring — animates only while the unread badge exists */
+@keyframes er-bell-ring {
+  0%, 60%, 100% { transform: rotate(0); }
+  10% { transform: rotate(14deg); }
+  20% { transform: rotate(-12deg); }
+  30% { transform: rotate(9deg); }
+  40% { transform: rotate(-6deg); }
+  50% { transform: rotate(3deg); }
+}
+.er-bell-live svg {
+  animation: er-bell-ring 1.6s ease-in-out infinite;
+  transform-origin: 50% 4px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .er-bell-live svg { animation: none; }
+}

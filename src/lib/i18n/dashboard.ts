@@ -37,6 +37,7 @@ export const dashNav: Record<DashLocale, Record<string, string>> = {
     "/settings": "Settings",
     "/settings/account": "Account",
     "/billing": "Billing",
+    "/notifications": "Notifications",
     "/help": "Help",
     // SEO Tools hub surfaces (sidebar label + header titles)
     "/visibility/keywords": "Keywords Explorer",
@@ -82,6 +83,7 @@ export const dashNav: Record<DashLocale, Record<string, string>> = {
     "/settings": "Einstellungen",
     "/settings/account": "Konto",
     "/billing": "Abrechnung",
+    "/notifications": "Benachrichtigungen",
     "/help": "Hilfe",
     "/visibility/keywords": "Keywords Explorer",
     "/visibility/tools": "SEO-Tools",
@@ -126,6 +128,7 @@ export const dashNav: Record<DashLocale, Record<string, string>> = {
     "/settings": "Paramètres",
     "/settings/account": "Compte",
     "/billing": "Facturation",
+    "/notifications": "Notifications",
     "/help": "Aide",
     "/visibility/keywords": "Explorateur de mots-clés",
     "/visibility/tools": "Outils SEO",
@@ -12091,4 +12094,241 @@ export const TABLE_COPY: Record<DashLocale, TableCopy> = {
   en: { exportCsv: "Export CSV" },
   fr: { exportCsv: "Exporter en CSV" },
   "de-CH": { exportCsv: "CSV exportieren" },
+};
+
+// ─── /notifications ──────────────────────────────────────────────────────────
+//
+// `types` carries BOTH the filter label and the rendered title/body for each
+// notification type. The rows on that page are rendered from the stored `type`
+// and payload against this catalog — the English title the emitting worker
+// wrote is a fallback for unknown types only. That is the whole point: without
+// it a French user reads a translated page frame wrapped around English alert
+// text, which is the bug this catalog exists to prevent.
+//
+// {placeholders} are interpolated from the notification payload. A value the
+// payload does not carry renders as an em dash rather than "undefined".
+
+const notificationsEn = {
+  subtitle: "Everything Echorank has flagged for your team, newest first.",
+  empty: "Nothing yet. Alerts from monitoring, risk and AI visibility land here.",
+  emptyFiltered: "No notifications match these filters.",
+  markAllRead: "Mark all as read",
+  markRead: "Mark as read",
+  loadMore: "Load more",
+  loading: "Loading…",
+  allTypes: "All types",
+  allSeverities: "All severities",
+  unreadOnly: "Unread only",
+  unreadBadge: "{count} unread",
+  error: "Could not load notifications. Try again.",
+  severities: { info: "Info", warning: "Warning", critical: "Critical" },
+  types: {
+    visibility_lost: {
+      label: "No longer recommended",
+      title: "AI stopped recommending you for “{promptText}”",
+      body: "Previous rank: #{prevRank}.",
+    },
+    visibility_rank_drop: {
+      label: "Recommendation rank dropped",
+      title: "Rank dropped for “{promptText}”",
+      body: "#{prevRank} → #{newRank}.",
+    },
+    visibility_regained: {
+      label: "Recommended again",
+      title: "AI is recommending you again for “{promptText}”",
+      body: "Current rank: #{newRank}.",
+    },
+    risk_threshold: {
+      label: "Risk threshold crossed",
+      title: "Reputation risk score reached {score}",
+      body: "Grade {grade}.",
+    },
+    risk_spike: {
+      label: "Risk spike",
+      title: "Risk score jumped {delta} points to {score}",
+      body: "Previous score: {previousScore}.",
+    },
+    critical_signal: {
+      label: "Critical signal",
+      title: "Critical signal: {signalTitle}",
+      body: "Source: {source}.",
+    },
+    escalation_risk: {
+      label: "Escalation risk",
+      title: "{riskLevel} escalation risk detected",
+      body: "Estimated probability {probability}.",
+    },
+    ai_risk: {
+      label: "AI risk detection",
+      title: "AI flagged {riskLevel} risk",
+      body: "Estimated probability {probability}.",
+    },
+    visibility_score_drop: {
+      label: "AI visibility dropped",
+      title: "AI visibility score fell from {prevScore} to {newScore}",
+      body: "{url} — grade {grade}.",
+    },
+    visibility_crawler_blocked: {
+      label: "AI crawler blocked",
+      title: "AI crawlers are blocked on {url}",
+      body: "Blocked: {bots}. Check your CDN settings.",
+    },
+    reputation_score_change: {
+      label: "Reputation score moved",
+      title: "Reputation score moved from {previousScore} to {newScore}",
+      body: "Location: {location}.",
+    },
+  },
+};
+
+export type NotificationsCopy = typeof notificationsEn;
+
+export const NOTIFICATIONS_COPY: Record<DashLocale, NotificationsCopy> = {
+  en: notificationsEn,
+  fr: {
+    subtitle: "Tout ce qu'Echorank a signalé à votre équipe, du plus récent au plus ancien.",
+    empty:
+      "Rien pour l'instant. Les alertes de surveillance, de risque et de visibilité IA apparaissent ici.",
+    emptyFiltered: "Aucune notification ne correspond à ces filtres.",
+    markAllRead: "Tout marquer comme lu",
+    markRead: "Marquer comme lu",
+    loadMore: "Afficher plus",
+    loading: "Chargement…",
+    allTypes: "Tous les types",
+    allSeverities: "Toutes les gravités",
+    unreadOnly: "Non lues uniquement",
+    unreadBadge: "{count} non lues",
+    error: "Impossible de charger les notifications. Réessayez.",
+    severities: { info: "Information", warning: "Avertissement", critical: "Critique" },
+    types: {
+      visibility_lost: {
+        label: "Plus recommandé",
+        title: "L'IA ne vous recommande plus pour « {promptText} »",
+        body: "Rang précédent : n° {prevRank}.",
+      },
+      visibility_rank_drop: {
+        label: "Rang en baisse",
+        title: "Le rang a baissé pour « {promptText} »",
+        body: "N° {prevRank} → n° {newRank}.",
+      },
+      visibility_regained: {
+        label: "De nouveau recommandé",
+        title: "L'IA vous recommande à nouveau pour « {promptText} »",
+        body: "Rang actuel : n° {newRank}.",
+      },
+      risk_threshold: {
+        label: "Seuil de risque franchi",
+        title: "Le score de risque a atteint {score}",
+        body: "Note {grade}.",
+      },
+      risk_spike: {
+        label: "Pic de risque",
+        title: "Le score de risque a bondi de {delta} points, à {score}",
+        body: "Score précédent : {previousScore}.",
+      },
+      critical_signal: {
+        label: "Signal critique",
+        title: "Signal critique : {signalTitle}",
+        body: "Source : {source}.",
+      },
+      escalation_risk: {
+        label: "Risque d'escalade",
+        title: "Risque d'escalade {riskLevel} détecté",
+        body: "Probabilité estimée : {probability}.",
+      },
+      ai_risk: {
+        label: "Risque détecté par l'IA",
+        title: "L'IA a signalé un risque {riskLevel}",
+        body: "Probabilité estimée : {probability}.",
+      },
+      visibility_score_drop: {
+        label: "Visibilité IA en baisse",
+        title: "Le score de visibilité IA est passé de {prevScore} à {newScore}",
+        body: "{url} — note {grade}.",
+      },
+      visibility_crawler_blocked: {
+        label: "Robot d'IA bloqué",
+        title: "Les robots d'IA sont bloqués sur {url}",
+        body: "Bloqués : {bots}. Vérifiez les réglages de votre CDN.",
+      },
+      reputation_score_change: {
+        label: "Score de réputation modifié",
+        title: "Le score de réputation est passé de {previousScore} à {newScore}",
+        body: "Établissement : {location}.",
+      },
+    },
+  },
+  "de-CH": {
+    subtitle: "Alles, was Echorank für Ihr Team gemeldet hat, neueste zuerst.",
+    empty:
+      "Noch nichts vorhanden. Meldungen aus Monitoring, Risiko und KI-Sichtbarkeit erscheinen hier.",
+    emptyFiltered: "Keine Benachrichtigungen entsprechen diesen Filtern.",
+    markAllRead: "Alle als gelesen markieren",
+    markRead: "Als gelesen markieren",
+    loadMore: "Mehr laden",
+    loading: "Wird geladen…",
+    allTypes: "Alle Typen",
+    allSeverities: "Alle Stufen",
+    unreadOnly: "Nur ungelesene",
+    unreadBadge: "{count} ungelesen",
+    error: "Benachrichtigungen konnten nicht geladen werden. Bitte erneut versuchen.",
+    severities: { info: "Info", warning: "Warnung", critical: "Kritisch" },
+    types: {
+      visibility_lost: {
+        label: "Nicht mehr empfohlen",
+        title: "Die KI empfiehlt Sie nicht mehr für «{promptText}»",
+        body: "Vorheriger Rang: Nr. {prevRank}.",
+      },
+      visibility_rank_drop: {
+        label: "Rang gefallen",
+        title: "Der Rang ist für «{promptText}» gefallen",
+        body: "Nr. {prevRank} → Nr. {newRank}.",
+      },
+      visibility_regained: {
+        label: "Wieder empfohlen",
+        title: "Die KI empfiehlt Sie wieder für «{promptText}»",
+        body: "Aktueller Rang: Nr. {newRank}.",
+      },
+      risk_threshold: {
+        label: "Risikoschwelle überschritten",
+        title: "Der Risikowert hat {score} erreicht",
+        body: "Note {grade}.",
+      },
+      risk_spike: {
+        label: "Risikosprung",
+        title: "Der Risikowert stieg um {delta} Punkte auf {score}",
+        body: "Vorheriger Wert: {previousScore}.",
+      },
+      critical_signal: {
+        label: "Kritisches Signal",
+        title: "Kritisches Signal: {signalTitle}",
+        body: "Quelle: {source}.",
+      },
+      escalation_risk: {
+        label: "Eskalationsrisiko",
+        title: "Eskalationsrisiko {riskLevel} erkannt",
+        body: "Geschätzte Wahrscheinlichkeit: {probability}.",
+      },
+      ai_risk: {
+        label: "KI-Risikoerkennung",
+        title: "Die KI meldet ein Risiko der Stufe {riskLevel}",
+        body: "Geschätzte Wahrscheinlichkeit: {probability}.",
+      },
+      visibility_score_drop: {
+        label: "KI-Sichtbarkeit gefallen",
+        title: "Der KI-Sichtbarkeitswert fiel von {prevScore} auf {newScore}",
+        body: "{url} — Note {grade}.",
+      },
+      visibility_crawler_blocked: {
+        label: "KI-Crawler blockiert",
+        title: "KI-Crawler werden auf {url} blockiert",
+        body: "Blockiert: {bots}. Prüfen Sie Ihre CDN-Einstellungen.",
+      },
+      reputation_score_change: {
+        label: "Reputationswert verändert",
+        title: "Der Reputationswert ging von {previousScore} auf {newScore}",
+        body: "Standort: {location}.",
+      },
+    },
+  },
 };
