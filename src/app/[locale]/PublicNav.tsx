@@ -104,6 +104,7 @@ function solutionsGroup(base: Base): NavGroup {
                 ? "Corrigez ce qui vous exclut des réponses IA"
                 : "Fix what keeps you out of AI answers",
           },
+          { label: "AI Visibility Methodology", href: "/methodology" },
         ],
       },
     ],
