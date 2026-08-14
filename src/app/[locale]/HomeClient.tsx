@@ -9,6 +9,7 @@ import { HomeVideo, type HomeVideoLabels } from "./HomeVideo";
 import { PublicNav } from "./PublicNav";
 import { PricingSection, type HomePricingTier } from "./PricingSection";
 import type { HomePricingChrome } from "@/lib/i18n/content";
+import TestimonialSection from "@/app/[locale]/TestimonialSection";
 
 /**
  * One pricing card, built server-side from PLAN_CONFIGS. Prices and feature
@@ -827,6 +828,8 @@ export default function HomeClient({
           </div>
         </div>
       </section>
+
+      <TestimonialSection />
 
       {/* 12. PRICING (compact, keeps #pricing anchor) */}
       <section id="pricing" className={s.section}>
