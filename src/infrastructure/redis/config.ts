@@ -107,6 +107,10 @@ export const REDIS_CONFIG = {
     // work — no provider call, nothing to spend — so the limiter is a backstop
     // against a runaway sweep, not a cost control.
     "sov-aggregation": { max: 60, duration: 60_000 },
+    // Same shape as sov-aggregation: one nightly tick plus one job per brand
+    // profile, pure database work, nothing bought upstream. The limiter is a
+    // backstop against a runaway sweep, not a cost control.
+    "citation-aggregation": { max: 60, duration: 60_000 },
   } as Record<string, { max: number; duration: number }>,
 } as const;
 
@@ -133,7 +137,8 @@ export type QueueName =
   | "site-crawl"
   | "free-tools-volatility"
   | "ai-checkup"
-  | "sov-aggregation";
+  | "sov-aggregation"
+  | "citation-aggregation";
 
 /** All valid queue names */
 export const QUEUE_NAMES: QueueName[] = [
@@ -160,4 +165,5 @@ export const QUEUE_NAMES: QueueName[] = [
   "free-tools-volatility",
   "ai-checkup",
   "sov-aggregation",
+  "citation-aggregation",
 ];

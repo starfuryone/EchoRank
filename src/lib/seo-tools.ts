@@ -41,6 +41,7 @@ import {
   Network,
   MousePointerClick,
   PieChart,
+  Quote,
 } from "lucide-react";
 import type { PlanType } from "@/generated/prisma";
 
@@ -80,7 +81,8 @@ export type SeoToolId =
   | "historical"
   | "site_crawler"
   | "ai_attribution"
-  | "share_of_voice";
+  | "share_of_voice"
+  | "citation_finder";
 
 /** Tools that render a scaffold page under /visibility/tools/<slug>. */
 // Note: brand_radar/bot_analytics/content_explorer remain ScaffoldIds although
@@ -113,6 +115,9 @@ export type ScaffoldId = Exclude<
   // Same again: Share of Voice shipped real, with its locked and empty states
   // in SHARE_OF_VOICE_COPY.
   | "share_of_voice"
+  // And again: Citation Finder ships with its own locked, empty and no-match
+  // states in CITATION_FINDER_COPY.
+  | "citation_finder"
 >;
 
 export interface SeoTool {
@@ -179,6 +184,13 @@ export const SEO_TOOL_GROUPS: SeoToolGroup[] = [
       // "and how much of them is ours, against whom". Built entirely on the
       // Watcher runs those prompts already produced — it buys nothing upstream.
       t("share_of_voice", "share-of-voice", PieChart, { badge: "new" }),
+      // The third question about the same answers, after "are we in them" and
+      // "how much of them is ours": WHO DID THE ENGINE READ to write them.
+      // Sits here rather than in a content group because the action it drives
+      // is outreach and listings, which is the same motion as Backlinks two
+      // rows up. Built on citations the Watcher already stored — it buys
+      // nothing upstream.
+      t("citation_finder", "citation-finder", Quote, { badge: "new" }),
       // What an AI crawler actually receives for one page. Sits beside Brand
       // Radar because both answer "are we in the answers"; this one answers
       // "can they even read us".

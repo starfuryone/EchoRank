@@ -2512,6 +2512,37 @@ enum SourceType {
   OTHER
 }
 
+/// What KIND of site a citing domain is, for Citation Finder.
+///
+/// A SECOND TAXONOMY ALONGSIDE SourceType, deliberately, and the two are not
+/// merged. SourceType asks "what is this domain's relationship to the market"
+/// (a vendor, a marketplace, a community); this asks "what kind of publication
+/// is it" — the question a customer answers when deciding whether they can get
+/// listed on it. G2 is a VENDOR-adjacent MARKETPLACE under one lens and a
+/// REVIEW_SITE under the other, and both readings are useful. Collapsing them
+/// would have forced one of the two questions to go unanswered.
+///
+/// Assigned by src/lib/citations/classify.ts, which is a pure function of the
+/// domain — so re-classifying is a re-run over stored rows, never a re-run of
+/// the provider calls. Same principle EntityClass documents.
+enum CitationKind {
+  /// Listing sites and business directories: Yelp, Yellow Pages, Crunchbase.
+  DIRECTORY
+  /// Software and product review platforms: G2, Capterra, Trustpilot.
+  REVIEW_SITE
+  /// Newspapers, wires, and trade press.
+  NEWS
+  /// Independent blogs, Medium-style platforms, and company blogs.
+  BLOG
+  /// Government and public-sector domains, including .gov and .gc.ca.
+  GOV
+  /// Social networks and forums: LinkedIn, Reddit, X, YouTube.
+  SOCIAL
+  /// Nothing above matched. The honest default, never a wastebasket for
+  /// low-confidence guesses — an unknown domain is unknown.
+  OTHER
+}
+
 enum RecommendationType {
   CONTENT_GAP
   CITATION_OPPORTUNITY
@@ -2781,11 +2812,28 @@ model Source {
   brandsSupported       String[] @default([])
   /// Citations supporting the brand, and supporting any competitor. The ratio
   /// is what makes a citation opportunity: high competitor, zero brand.
+  ///
+  /// `brandCitations > 0` IS "cites you" — there is deliberately no citesYou
+  /// boolean. It would be a pure function of this column, and a stored copy is
+  /// an invariant the aggregator could break: a re-run that recounted the
+  /// citations but forgot the flag would leave a row asserting both at once.
+  /// The read model derives it; see src/lib/citations/read.ts.
   brandCitations        Int      @default(0)
   competitorCitations   Int      @default(0)
+  /// { "<rival name>": <citations> } — the per-rival split that
+  /// `competitorCitations` totals and `brandsSupported` only names. This is the
+  /// column that makes "who does this source cite instead of you" answerable,
+  /// which is the whole point of the Citation Finder's preset filter.
+  citesCompetitors      Json     @default("{}")
   /// How many distinct engines cite it. A domain three engines trust is worth
   /// more than one cited three times by the same engine.
   distinctEngines       Int      @default(0)
+  /// { "<engine>": <citations> } — the engine breakdown `distinctEngines` only
+  /// counts. Kept in lockstep with it by the aggregator (distinctEngines is
+  /// this object's key count) rather than replacing it: the Int is what an
+  /// index can sort on, and dropping a populated column to store the same fact
+  /// twice as slowly is not an improvement. Citation Finder renders the keys.
+  enginesSeen           Json     @default("{}")
   /// Citations arising from prompts with commercialValue >= the threshold in
   /// src/lib/ai-monitor/influence.ts.
   commercialPromptCount Int      @default(0)
@@ -2797,6 +2845,9 @@ model Source {
   authorityScore    Float?
   topicalCategories String[]   @default([])
   sourceType        SourceType @default(OTHER)
+  /// What kind of publication this domain is. See CitationKind for why this
+  /// sits beside sourceType rather than replacing it.
+  kind              CitationKind @default(OTHER)
 
   /// citationFrequency x distinctEngines x commercialPromptCount x authority.
   /// Stored so the ranked list is an index scan, recomputed by the aggregator.
@@ -2815,6 +2866,10 @@ model Source {
 
   @@unique([brandProfileId, domain])
   @@index([brandProfileId, influenceScore(sort: Desc)])
+  /// Citation Finder's default order. influenceScore is not a substitute: this
+  /// feature never writes it, so ordering the table by it would put every row
+  /// this aggregator created at 0 and sort them by cuid.
+  @@index([brandProfileId, citationCount(sort: Desc)])
   @@index([tenantId, domain])
   @@map("sources")
 }

@@ -36,6 +36,7 @@ import { startSiteCrawlWorker } from "./workers/site-crawl.worker";
 import { startFreeToolsVolatilityWorker } from "./workers/free-tools-volatility.worker";
 import { startAiCheckupWorker } from "./workers/ai-checkup.worker";
 import { startSovAggregationWorker } from "./workers/sov-aggregation.worker";
+import { startCitationAggregationWorker } from "./workers/citation-aggregation.worker";
 
 /**
  * How often to drain domain events that are still PENDING/FAILED in the DB.
@@ -108,6 +109,7 @@ async function startWorkers() {
     { name: "free-tools-volatility", start: startFreeToolsVolatilityWorker },
     { name: "ai-checkup", start: startAiCheckupWorker },
     { name: "sov-aggregation", start: startSovAggregationWorker },
+    { name: "citation-aggregation", start: startCitationAggregationWorker },
   ];
 
   const loaded: string[] = [];

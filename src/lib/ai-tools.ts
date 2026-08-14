@@ -33,14 +33,19 @@
 // file testable without either.
 
 import type { ComponentType } from "react";
-import { ScanEye, Telescope, MousePointerClick, MessageSquareText } from "lucide-react";
+import { ScanEye, Telescope, MousePointerClick, MessageSquareText, Quote } from "lucide-react";
 import type { PlanType } from "@/generated/prisma";
 
 export const AI_HUB = "/ai";
 
 export type AiGroupId = "answers" | "traffic";
 
-export type AiToolId = "ai_visibility" | "ai_search" | "custom_prompts" | "ai_attribution";
+export type AiToolId =
+  | "ai_visibility"
+  | "ai_search"
+  | "custom_prompts"
+  | "ai_attribution"
+  | "citation_finder";
 
 /**
  * Build-progress switches a card's destination enforces for itself. Named
@@ -81,6 +86,16 @@ export const AI_TOOL_GROUPS: AiToolGroup[] = [
       // off. Default off — see AI_SEARCH_ENABLED.
       { id: "ai_search", href: "/visibility/ai-search", icon: Telescope, rollout: "ai_search" },
       { id: "custom_prompts", href: "/visibility/tools/custom-prompts", icon: MessageSquareText },
+      // "Which sources did the engine read to write that answer" is a question
+      // about the answers, so it belongs in this group rather than in traffic —
+      // nobody arrives at your site because you are cited, they arrive because
+      // the answer recommended you.
+      //
+      // NO `rollout`: unlike ai_search, this card's destination does not
+      // notFound() for anyone. It renders a locked upgrade state below Growth,
+      // which is a reachable page, so hiding the card would be wrong — see the
+      // rollout-vs-plan note in this file's header.
+      { id: "citation_finder", href: "/visibility/tools/citation-finder", icon: Quote },
     ],
   },
   {

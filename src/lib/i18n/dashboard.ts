@@ -66,6 +66,7 @@ export const dashNav: Record<DashLocale, Record<string, string>> = {
     "/visibility/tools/ai-lens": "AI Lens",
     "/visibility/tools/ai-attribution": "AI Attribution",
     "/visibility/tools/share-of-voice": "Share of Voice",
+    "/visibility/tools/citation-finder": "Citation Finder",
   },
   "de-CH": {
     "/dashboard": "Dashboard",
@@ -114,6 +115,7 @@ export const dashNav: Record<DashLocale, Record<string, string>> = {
     "/visibility/tools/ai-lens": "AI Lens",
     "/visibility/tools/ai-attribution": "KI-Attribution",
     "/visibility/tools/share-of-voice": "Stimmanteil",
+    "/visibility/tools/citation-finder": "Quellenfinder",
   },
   fr: {
     "/dashboard": "Tableau de bord",
@@ -162,6 +164,7 @@ export const dashNav: Record<DashLocale, Record<string, string>> = {
     "/visibility/tools/ai-lens": "AI Lens",
     "/visibility/tools/ai-attribution": "Attribution IA",
     "/visibility/tools/share-of-voice": "Part de voix",
+    "/visibility/tools/citation-finder": "Détecteur de sources",
   },
 };
 
@@ -5247,6 +5250,11 @@ const seoToolsEn = {
       description:
         "How much of each AI engine's answers you own, who takes the rest, and how it is moving.",
     },
+    citation_finder: {
+      name: "Citation Finder",
+      description:
+        "The sources AI engines cite when they answer about your market — and which of them cite your rivals but never you.",
+    },
     social_media_manager: {
       name: "Social Media Manager",
       description: "Plan, edit, schedule, and manage social media content.",
@@ -5405,6 +5413,11 @@ export const SEO_TOOLS_COPY: Record<DashLocale, SeoToolsCopy> = {
         description:
           "Quelle part des réponses de chaque moteur d'IA vous revient, qui prend le reste, et comment cela évolue.",
       },
+      citation_finder: {
+        name: "Détecteur de sources",
+        description:
+          "Les sources que citent les moteurs d'IA lorsqu'ils parlent de votre marché — et celles qui citent vos concurrents sans jamais vous mentionner.",
+      },
       social_media_manager: {
         name: "Gestionnaire de médias sociaux",
         description: "Planifiez, modifiez, programmez et gérez le contenu de vos médias sociaux.",
@@ -5557,6 +5570,11 @@ export const SEO_TOOLS_COPY: Record<DashLocale, SeoToolsCopy> = {
         name: "Stimmanteil",
         description:
           "Welchen Anteil der Antworten jeder KI-Maschine Sie halten, wer den Rest nimmt und wohin es sich bewegt.",
+      },
+      citation_finder: {
+        name: "Quellenfinder",
+        description:
+          "Die Quellen, die KI-Maschinen zu Ihrem Markt zitieren — und welche davon Ihre Mitbewerber nennen, Sie aber nie.",
       },
       social_media_manager: {
         name: "Social-Media-Manager",
@@ -12611,7 +12629,7 @@ export const AI_ATTRIBUTION_COPY: Record<DashLocale, AiAttributionCopy> = {
 const aiHubEn = {
   hubTitle: "AI",
   hubSubtitle:
-    "Whether AI assistants know about you, what they say, and who they send. Four surfaces, one place.",
+    "Whether AI assistants know about you, what they say, and who they send. Five surfaces, one place.",
 
   groups: {
     answers: "In the answers",
@@ -12638,6 +12656,11 @@ const aiHubEn = {
       description:
         "Which assistants actually send visitors to your site, and which pages they land on.",
     },
+    citation_finder: {
+      name: "Citation Finder",
+      description:
+        "The sources the engines read to answer about your market, and which cite your rivals but never you.",
+    },
   },
 };
 export type AiHubCopy = typeof aiHubEn;
@@ -12647,7 +12670,7 @@ export const AI_HUB_COPY: Record<DashLocale, AiHubCopy> = {
   fr: {
     hubTitle: "IA",
     hubSubtitle:
-      "Si les assistants IA vous connaissent, ce qu'ils disent de vous et qui ils vous envoient. Quatre surfaces, un seul endroit.",
+      "Si les assistants IA vous connaissent, ce qu'ils disent de vous et qui ils vous envoient. Cinq surfaces, un seul endroit.",
 
     groups: {
       answers: "Dans les réponses",
@@ -12675,12 +12698,17 @@ export const AI_HUB_COPY: Record<DashLocale, AiHubCopy> = {
         description:
           "Quels assistants envoient réellement des visiteurs sur votre site, et sur quelles pages ils arrivent.",
       },
+      citation_finder: {
+        name: "Détecteur de sources",
+        description:
+          "Les sources que les moteurs lisent pour parler de votre marché, et celles qui citent vos concurrents sans jamais vous nommer.",
+      },
     },
   },
   "de-CH": {
     hubTitle: "KI",
     hubSubtitle:
-      "Ob KI-Assistenten Sie kennen, was sie sagen und wen sie schicken. Vier Oberflächen, ein Ort.",
+      "Ob KI-Assistenten Sie kennen, was sie sagen und wen sie schicken. Fünf Oberflächen, ein Ort.",
 
     groups: {
       answers: "In den Antworten",
@@ -12707,6 +12735,11 @@ export const AI_HUB_COPY: Record<DashLocale, AiHubCopy> = {
         name: "KI-Attribution",
         description:
           "Welche Assistenten tatsächlich Besucher auf Ihre Website schicken und wo diese landen.",
+      },
+      citation_finder: {
+        name: "Quellenfinder",
+        description:
+          "Die Quellen, welche die Maschinen zu Ihrem Markt lesen, und welche davon Ihre Mitbewerber nennen, Sie aber nie.",
       },
     },
   },
@@ -12844,5 +12877,183 @@ export const SHARE_OF_VOICE_COPY: Record<DashLocale, ShareOfVoiceCopy> = {
     methodTitle: "Wie gezählt wird",
     methodBody:
       "Eine Antwort nennt Sie einmal, so oft sie Sie auch wiederholt. Eine Empfehlung auf Platz eins zählt einen ganzen Punkt, Platz zwei einen halben, Platz drei einen Drittel, Platz vier und tiefer einen Fünftel. Genannt zu werden ohne Rangliste zählt 0,3 — wir wissen, dass Sie dabei waren, nicht wo. Ihr Anteil sind Ihre Punkte geteilt durch die aller.",
+  },
+};
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   AI Citation Finder (/visibility/tools/citation-finder)
+   ═══════════════════════════════════════════════════════════════════════════
+
+   THE COPY NEVER PROMISES A RANKING FACTOR. A source an engine cites is a
+   source an engine read; it is not a slot you can buy and it is not a backlink.
+   The method note says so, because the single most likely misreading of this
+   table is "get listed on these and you will be recommended" — which is a claim
+   we cannot support and would be selling if we implied it.
+
+   "Cites you" is measured on the ANSWER, not the sentence, and the method note
+   says that too: a customer comparing this count against the citation drilldown
+   in AI Search will otherwise find two numbers that disagree and conclude one
+   of them is broken.
+
+   {placeholders} are interpolated by the client, not by the notification
+   renderer, so they may carry any type the component formats.
+*/
+
+const citationFinderEn = {
+  lockedTitle: "Citation Finder is on Growth and above",
+  lockedBody:
+    "See every source the AI engines cite when they answer about your market, and which of them recommend your competitors without ever naming you. Upgrade to Growth to switch it on for your tracked prompts.",
+  lockedCta: "See plans",
+
+  emptyTitle: "No sources yet",
+  emptyBody:
+    "This table is built from the links your tracked prompts' answers cited. Once a checkup has run and the nightly rollup has passed, every source the engines used appears here.",
+  emptySetupCta: "Set up prompt tracking",
+
+  noMatches: "No sources match this filter.",
+
+  // ── Filters ──
+  brandLabel: "Brand",
+  kindLabel: "Source type",
+  allKinds: "All types",
+  presetOpportunity: "Trusted sources that never mention you ({count})",
+  presetExplainer:
+    "Sources the engines cite for your competitors, in answers where you were never named. These are the pages worth getting onto.",
+
+  // ── Table ──
+  tableCaption: "Sources cited by AI engines in answers about {brand}",
+  columns: {
+    domain: "Source",
+    kind: "Type",
+    engines: "Engines",
+    seen: "Citations",
+    citesYou: "Cites you",
+    rivals: "Cites instead",
+    lastSeen: "Last seen",
+  },
+  citesYouYes: "Yes ({count})",
+  citesYouNo: "Never",
+
+  kinds: {
+    DIRECTORY: "Directory",
+    REVIEW_SITE: "Review site",
+    NEWS: "News",
+    BLOG: "Blog",
+    GOV: "Government",
+    SOCIAL: "Social",
+    OTHER: "Other",
+  },
+
+  // ── Pagination ──
+  pageOf: "Page {page} of {pages} — {total} sources",
+  previous: "Previous",
+  next: "Next",
+
+  methodNote:
+    "A source is counted once per answer that cited it. “Cites you” means the answer named your brand somewhere, not that the link itself was about you. Being cited is evidence an engine read a page — it is not a ranking factor, and getting listed somewhere is no guarantee of being recommended.",
+};
+export type CitationFinderCopy = typeof citationFinderEn;
+
+export const CITATION_FINDER_COPY: Record<DashLocale, CitationFinderCopy> = {
+  en: citationFinderEn,
+  fr: {
+    lockedTitle: "Le détecteur de sources est inclus à partir de Growth",
+    lockedBody:
+      "Découvrez toutes les sources que les moteurs d'IA citent lorsqu'ils parlent de votre marché, et lesquelles recommandent vos concurrents sans jamais vous nommer. Passez à Growth pour l'activer sur vos requêtes suivies.",
+    lockedCta: "Voir les forfaits",
+
+    emptyTitle: "Pas encore de sources",
+    emptyBody:
+      "Ce tableau est construit à partir des liens cités dans les réponses à vos requêtes suivies. Dès qu'un contrôle aura été exécuté et que la consolidation nocturne sera passée, toutes les sources utilisées par les moteurs apparaîtront ici.",
+    emptySetupCta: "Configurer le suivi des requêtes",
+
+    noMatches: "Aucune source ne correspond à ce filtre.",
+
+    brandLabel: "Marque",
+    kindLabel: "Type de source",
+    allKinds: "Tous les types",
+    presetOpportunity: "Sources fiables qui ne vous mentionnent jamais ({count})",
+    presetExplainer:
+      "Les sources que les moteurs citent pour vos concurrents, dans des réponses où vous n'avez jamais été nommé. Ce sont les pages sur lesquelles il vaut la peine de figurer.",
+
+    tableCaption: "Sources citées par les moteurs d'IA dans les réponses concernant {brand}",
+    columns: {
+      domain: "Source",
+      kind: "Type",
+      engines: "Moteurs",
+      seen: "Citations",
+      citesYou: "Vous cite",
+      rivals: "Cite à la place",
+      lastSeen: "Vue le",
+    },
+    citesYouYes: "Oui ({count})",
+    citesYouNo: "Jamais",
+
+    kinds: {
+      DIRECTORY: "Annuaire",
+      REVIEW_SITE: "Site d'avis",
+      NEWS: "Presse",
+      BLOG: "Blogue",
+      GOV: "Administration",
+      SOCIAL: "Réseau social",
+      OTHER: "Autre",
+    },
+
+    pageOf: "Page {page} sur {pages} — {total} sources",
+    previous: "Précédent",
+    next: "Suivant",
+
+    methodNote:
+      "Une source est comptée une fois par réponse qui la cite. « Vous cite » signifie que la réponse a nommé votre marque quelque part, et non que le lien lui-même vous concernait. Être cité prouve qu'un moteur a lu une page : ce n'est pas un facteur de classement, et figurer quelque part ne garantit pas d'être recommandé.",
+  },
+  "de-CH": {
+    lockedTitle: "Der Quellenfinder ist ab Growth enthalten",
+    lockedBody:
+      "Sehen Sie jede Quelle, die KI-Maschinen zu Ihrem Markt zitieren, und welche davon Ihre Mitbewerber empfehlen, ohne Sie je zu nennen. Wechseln Sie zu Growth, um ihn für Ihre verfolgten Prompts einzuschalten.",
+    lockedCta: "Pläne ansehen",
+
+    emptyTitle: "Noch keine Quellen",
+    emptyBody:
+      "Diese Tabelle entsteht aus den Links, welche die Antworten auf Ihre verfolgten Prompts zitiert haben. Sobald ein Checkup gelaufen und die nächtliche Konsolidierung durch ist, erscheint hier jede Quelle, welche die Maschinen genutzt haben.",
+    emptySetupCta: "Prompt-Verfolgung einrichten",
+
+    noMatches: "Keine Quelle entspricht diesem Filter.",
+
+    brandLabel: "Marke",
+    kindLabel: "Quellenart",
+    allKinds: "Alle Arten",
+    presetOpportunity: "Vertrauenswürdige Quellen, die Sie nie nennen ({count})",
+    presetExplainer:
+      "Quellen, welche die Maschinen für Ihre Mitbewerber zitieren, in Antworten, in denen Sie nie genannt wurden. Das sind die Seiten, auf die zu kommen sich lohnt.",
+
+    tableCaption: "Von KI-Maschinen zitierte Quellen in Antworten zu {brand}",
+    columns: {
+      domain: "Quelle",
+      kind: "Art",
+      engines: "Maschinen",
+      seen: "Zitate",
+      citesYou: "Nennt Sie",
+      rivals: "Nennt stattdessen",
+      lastSeen: "Zuletzt",
+    },
+    citesYouYes: "Ja ({count})",
+    citesYouNo: "Nie",
+
+    kinds: {
+      DIRECTORY: "Verzeichnis",
+      REVIEW_SITE: "Bewertungsseite",
+      NEWS: "Presse",
+      BLOG: "Blog",
+      GOV: "Behörde",
+      SOCIAL: "Soziales Netz",
+      OTHER: "Anderes",
+    },
+
+    pageOf: "Seite {page} von {pages} — {total} Quellen",
+    previous: "Zurück",
+    next: "Weiter",
+
+    methodNote:
+      "Eine Quelle wird einmal pro Antwort gezählt, die sie zitiert. «Nennt Sie» heisst, dass die Antwort Ihre Marke irgendwo genannt hat, nicht dass der Link selbst von Ihnen handelte. Zitiert zu werden belegt, dass eine Maschine eine Seite gelesen hat — es ist kein Rankingfaktor, und irgendwo gelistet zu sein garantiert keine Empfehlung.",
   },
 };

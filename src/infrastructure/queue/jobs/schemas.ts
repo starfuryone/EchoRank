@@ -230,7 +230,8 @@ export type AllJobTypes =
   | BotLogAnalysisJob
   | SiteCrawlJob
   | FreeToolsVolatilityJob
-  | SovAggregationJob;
+  | SovAggregationJob
+  | CitationAggregationJob;
 
 /** Free tools: the hourly SERP-volatility basket tick. */
 export interface FreeToolsVolatilityJob {
@@ -260,6 +261,25 @@ export interface SovAggregationJob {
   date?: string;
 }
 
+/**
+ * Citation Finder: fold newly-seen citations into the `sources` rollup.
+ *
+ * Same sweep/rollup split as SovAggregationJob — a repeatable tick finds the
+ * brand profiles with work waiting and enqueues one job each, so a tenant with
+ * a citation backlog cannot hold up everybody else's night.
+ *
+ * Carries NO date. The job's scope is "every citation not yet stamped with a
+ * sourceId", which is a watermark rather than a window, so there is nothing for
+ * a date to select. See src/lib/citations/store.ts for why.
+ */
+export interface CitationAggregationJob {
+  /** The repeatable nightly tick. */
+  sweep?: boolean;
+  /** A single brand profile's rollup. BrandProfile.id. */
+  brandProfileId?: string;
+  tenantId?: string;
+}
+
 // ─── Queue → Job Type mapping ─────────────────────────────────────────────────
 
 export interface QueueJobMap {
@@ -284,4 +304,5 @@ export interface QueueJobMap {
   "site-crawl": SiteCrawlJob;
   "free-tools-volatility": FreeToolsVolatilityJob;
   "sov-aggregation": SovAggregationJob;
+  "citation-aggregation": CitationAggregationJob;
 }

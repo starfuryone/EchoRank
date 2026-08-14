@@ -46,6 +46,7 @@ const EXPECTED_HREFS: Record<string, string> = {
   ai_search: "/visibility/ai-search",
   custom_prompts: "/visibility/tools/custom-prompts",
   ai_attribution: "/visibility/tools/ai-attribution",
+  citation_finder: "/visibility/tools/citation-finder",
 };
 
 // ─── Cards and routes ───────────────────────────────────────────────────────
@@ -95,12 +96,23 @@ test("a rolled-out-but-off card is HIDDEN, never rendered", () => {
   // Its route calls notFound() in this state. A card would be a link to a 404.
   const shown = visibleAiGroups("GROWTH", ALL_OFF).flatMap((g) => g.tools).map((t) => t.id);
   assert.ok(!shown.includes("ai_search"), "AI Search card rendered while its rollout is off");
-  assert.deepEqual(shown, ["ai_visibility", "custom_prompts", "ai_attribution"]);
+  assert.deepEqual(shown, [
+    "ai_visibility",
+    "custom_prompts",
+    "citation_finder",
+    "ai_attribution",
+  ]);
 });
 
 test("the same card appears once its switch is on", () => {
   const shown = visibleAiGroups("GROWTH", ALL_ON).flatMap((g) => g.tools).map((t) => t.id);
-  assert.deepEqual(shown, ["ai_visibility", "ai_search", "custom_prompts", "ai_attribution"]);
+  assert.deepEqual(shown, [
+    "ai_visibility",
+    "ai_search",
+    "custom_prompts",
+    "citation_finder",
+    "ai_attribution",
+  ]);
 });
 
 test("every card with a rollout names one the config knows", () => {
@@ -122,7 +134,7 @@ test("a group that empties out is dropped, not rendered as a bare heading", () =
 
 test("no tier is route-confined, but a signed-out visitor sees nothing", () => {
   for (const plan of PLANS) {
-    assert.equal(visibleAiGroups(plan, ALL_ON).flatMap((g) => g.tools).length, 4, plan);
+    assert.equal(visibleAiGroups(plan, ALL_ON).flatMap((g) => g.tools).length, 5, plan);
     assert.ok(canSeeAiHub(plan), plan);
   }
   assert.deepEqual(visibleAiGroups(null, ALL_ON), []);
