@@ -12629,7 +12629,7 @@ export const AI_ATTRIBUTION_COPY: Record<DashLocale, AiAttributionCopy> = {
 const aiHubEn = {
   hubTitle: "AI",
   hubSubtitle:
-    "Whether AI assistants know about you, what they say, and who they send. Five surfaces, one place.",
+    "Whether AI assistants know about you, what they say, and who they send. Six surfaces, one place.",
 
   groups: {
     answers: "In the answers",
@@ -12646,6 +12646,11 @@ const aiHubEn = {
       name: "AI Search Intelligence",
       description:
         "How assistants answer the questions your buyers ask — who gets named, cited and recommended.",
+    },
+    share_of_voice: {
+      name: "Share of Voice",
+      description:
+        "How much of each engine's answers you own, who takes the rest, and how it is moving.",
     },
     custom_prompts: {
       name: "Custom Prompts",
@@ -12670,7 +12675,7 @@ export const AI_HUB_COPY: Record<DashLocale, AiHubCopy> = {
   fr: {
     hubTitle: "IA",
     hubSubtitle:
-      "Si les assistants IA vous connaissent, ce qu'ils disent de vous et qui ils vous envoient. Cinq surfaces, un seul endroit.",
+      "Si les assistants IA vous connaissent, ce qu'ils disent de vous et qui ils vous envoient. Six surfaces, un seul endroit.",
 
     groups: {
       answers: "Dans les réponses",
@@ -12687,6 +12692,11 @@ export const AI_HUB_COPY: Record<DashLocale, AiHubCopy> = {
         name: "Veille des recherches IA",
         description:
           "Comment les assistants répondent aux questions de vos acheteurs — qui est nommé, cité et recommandé.",
+      },
+      share_of_voice: {
+        name: "Part de voix",
+        description:
+          "Quelle part des réponses de chaque moteur vous revient, qui prend le reste, et comment cela évolue.",
       },
       custom_prompts: {
         name: "Requêtes personnalisées",
@@ -12708,7 +12718,7 @@ export const AI_HUB_COPY: Record<DashLocale, AiHubCopy> = {
   "de-CH": {
     hubTitle: "KI",
     hubSubtitle:
-      "Ob KI-Assistenten Sie kennen, was sie sagen und wen sie schicken. Fünf Oberflächen, ein Ort.",
+      "Ob KI-Assistenten Sie kennen, was sie sagen und wen sie schicken. Sechs Oberflächen, ein Ort.",
 
     groups: {
       answers: "In den Antworten",
@@ -12725,6 +12735,11 @@ export const AI_HUB_COPY: Record<DashLocale, AiHubCopy> = {
         name: "KI-Suchanalyse",
         description:
           "Wie Assistenten die Fragen Ihrer Kundschaft beantworten — wer genannt, zitiert und empfohlen wird.",
+      },
+      share_of_voice: {
+        name: "Stimmanteil",
+        description:
+          "Welchen Anteil der Antworten jeder Maschine Sie halten, wer den Rest nimmt und wohin es sich bewegt.",
       },
       custom_prompts: {
         name: "Eigene Prompts",

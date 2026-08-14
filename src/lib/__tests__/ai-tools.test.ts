@@ -44,6 +44,7 @@ const ALL_OFF: AiRolloutState = { ai_search: false };
 const EXPECTED_HREFS: Record<string, string> = {
   ai_visibility: "/visibility",
   ai_search: "/visibility/ai-search",
+  share_of_voice: "/visibility/tools/share-of-voice",
   custom_prompts: "/visibility/tools/custom-prompts",
   ai_attribution: "/visibility/tools/ai-attribution",
   citation_finder: "/visibility/tools/citation-finder",
@@ -98,6 +99,7 @@ test("a rolled-out-but-off card is HIDDEN, never rendered", () => {
   assert.ok(!shown.includes("ai_search"), "AI Search card rendered while its rollout is off");
   assert.deepEqual(shown, [
     "ai_visibility",
+    "share_of_voice",
     "custom_prompts",
     "citation_finder",
     "ai_attribution",
@@ -109,6 +111,7 @@ test("the same card appears once its switch is on", () => {
   assert.deepEqual(shown, [
     "ai_visibility",
     "ai_search",
+    "share_of_voice",
     "custom_prompts",
     "citation_finder",
     "ai_attribution",
@@ -134,7 +137,7 @@ test("a group that empties out is dropped, not rendered as a bare heading", () =
 
 test("no tier is route-confined, but a signed-out visitor sees nothing", () => {
   for (const plan of PLANS) {
-    assert.equal(visibleAiGroups(plan, ALL_ON).flatMap((g) => g.tools).length, 5, plan);
+    assert.equal(visibleAiGroups(plan, ALL_ON).flatMap((g) => g.tools).length, 6, plan);
     assert.ok(canSeeAiHub(plan), plan);
   }
   assert.deepEqual(visibleAiGroups(null, ALL_ON), []);

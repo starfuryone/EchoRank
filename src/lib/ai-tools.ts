@@ -33,7 +33,14 @@
 // file testable without either.
 
 import type { ComponentType } from "react";
-import { ScanEye, Telescope, MousePointerClick, MessageSquareText, Quote } from "lucide-react";
+import {
+  ScanEye,
+  Telescope,
+  MousePointerClick,
+  MessageSquareText,
+  Quote,
+  PieChart,
+} from "lucide-react";
 import type { PlanType } from "@/generated/prisma";
 
 export const AI_HUB = "/ai";
@@ -43,6 +50,7 @@ export type AiGroupId = "answers" | "traffic";
 export type AiToolId =
   | "ai_visibility"
   | "ai_search"
+  | "share_of_voice"
   | "custom_prompts"
   | "ai_attribution"
   | "citation_finder";
@@ -85,6 +93,16 @@ export const AI_TOOL_GROUPS: AiToolGroup[] = [
       // Gated by aiSearchEnabledFor() at its own route, which notFound()s when
       // off. Default off — see AI_SEARCH_ENABLED.
       { id: "ai_search", href: "/visibility/ai-search", icon: Telescope, rollout: "ai_search" },
+      // Directly after AI Search because it is the other half of the same
+      // question — that surface asks whether we are in the answers, this one
+      // asks how much of them is ours and against whom. Same adjacency
+      // SEO_TOOL_GROUPS gives it next to Brand Radar.
+      //
+      // NO `rollout`: its route renders a locked upgrade state below Growth
+      // rather than notFound()ing, so it is reachable by every tenant and
+      // hiding the card would be wrong. See this file's header on the
+      // hides-vs-locks split.
+      { id: "share_of_voice", href: "/visibility/tools/share-of-voice", icon: PieChart },
       { id: "custom_prompts", href: "/visibility/tools/custom-prompts", icon: MessageSquareText },
       // "Which sources did the engine read to write that answer" is a question
       // about the answers, so it belongs in this group rather than in traffic —
