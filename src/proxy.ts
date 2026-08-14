@@ -69,12 +69,26 @@ const publicPaths = ["/login", "/register", "/api/auth", "/api/feedback", "/f/",
 // This is not an open door: the route verifies the Stripe signature against
 // STRIPE_WEBHOOK_SECRET before it reads anything, and refuses outright when
 // that secret is absent.
+// /api/collect is the AI-attribution beacon endpoint. It is called by the
+// snippet at /api/public/attribution.js from the CUSTOMER's domain, so it never
+// carries our session cookie and would otherwise be 307'd to /login — which
+// fetch follows, returning HTML with status 200 that the caller reads as
+// success. Same failure shape as /api/billing/checkout above.
+//
+// Authorization is the publishable er_pub_ key in the body, verified in the
+// route (src/lib/attribution/keys.ts) and rate-limited per IP and per tenant.
+// That key grants exactly one verb — append a visit row to its own tenant.
+//
+// Exact-match, so nothing added later under /api/collect/ inherits anonymity.
+// The sibling snippet route needs NO entry here: its path contains a dot and
+// the matcher at the bottom of this file excludes those from the proxy outright.
 const publicExactPaths = new Set([
   "/api/av/audit",
   "/api/av/audit/report",
   "/api/av/keywords",
   "/api/billing/checkout",
   "/api/webhooks",
+  "/api/collect",
 ]);
 
 /** First path segment, e.g. "/fr/x" -> "fr". */
@@ -150,6 +164,14 @@ export default auth((req) => {
     // Bearer-key-authenticated public API/MCP: cookies are never consulted,
     // so origin checks add nothing and would block non-browser clients.
     !pathname.startsWith("/api/public/v1/") &&
+    // The attribution beacon. EVERY legitimate call is cross-origin — it comes
+    // from the customer's own domain — so the origin check would reject 100% of
+    // real traffic. Exempting it costs nothing that CSRF was protecting: the
+    // route reads no cookie and holds no session, so a forged request has no
+    // ambient authority to borrow. Its only credential is the publishable key
+    // in the body, and that key can do exactly one thing.
+    // Exact-match, deliberately: /api/collect/* keeps the origin check.
+    pathname !== "/api/collect" &&
     method !== "GET" &&
     method !== "HEAD" &&
     method !== "OPTIONS"

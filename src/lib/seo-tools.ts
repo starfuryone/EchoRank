@@ -39,6 +39,7 @@ import {
   ScanEye,
   History,
   Network,
+  MousePointerClick,
 } from "lucide-react";
 import type { PlanType } from "@/generated/prisma";
 
@@ -76,7 +77,8 @@ export type SeoToolId =
   | "lighthouse"
   | "ai_lens"
   | "historical"
-  | "site_crawler";
+  | "site_crawler"
+  | "ai_attribution";
 
 /** Tools that render a scaffold page under /visibility/tools/<slug>. */
 // Note: brand_radar/bot_analytics/content_explorer remain ScaffoldIds although
@@ -103,6 +105,9 @@ export type ScaffoldId = Exclude<
   // Site Crawler shipped as a real page in one go — its empty, running and
   // locked states live in SITE_CRAWLER_COPY, so there was never a scaffold.
   | "site_crawler"
+  // Same: AI Attribution shipped real, with its install, empty and results
+  // states in AI_ATTRIBUTION_COPY. No scaffold copy to inherit.
+  | "ai_attribution"
 >;
 
 export interface SeoTool {
@@ -190,6 +195,10 @@ export const SEO_TOOL_GROUPS: SeoToolGroup[] = [
       t("lighthouse", "lighthouse", Gauge),
       t("web_analytics", "web-analytics", AreaChart),
       t("bot_analytics", "bot-analytics", Bot, { badge: "new" }),
+      // The other half of Bot Analytics. That one answers "are AI crawlers
+      // reading us"; this one answers "are the humans they answered actually
+      // arriving". Phase 1 counts arrivals only — no conversions, no revenue.
+      t("ai_attribution", "ai-attribution", MousePointerClick, { badge: "new" }),
     ],
   },
   {

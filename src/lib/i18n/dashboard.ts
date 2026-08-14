@@ -63,6 +63,7 @@ export const dashNav: Record<DashLocale, Record<string, string>> = {
     "/visibility/tools/site-audit": "Site Audit",
     "/visibility/tools/custom-prompts": "Custom Prompts",
     "/visibility/tools/ai-lens": "AI Lens",
+    "/visibility/tools/ai-attribution": "AI Attribution",
   },
   "de-CH": {
     "/dashboard": "Dashboard",
@@ -108,6 +109,7 @@ export const dashNav: Record<DashLocale, Record<string, string>> = {
     "/visibility/tools/site-audit": "Site-Audit",
     "/visibility/tools/custom-prompts": "Eigene Prompts",
     "/visibility/tools/ai-lens": "AI Lens",
+    "/visibility/tools/ai-attribution": "KI-Attribution",
   },
   fr: {
     "/dashboard": "Tableau de bord",
@@ -153,6 +155,7 @@ export const dashNav: Record<DashLocale, Record<string, string>> = {
     "/visibility/tools/site-audit": "Audit de site",
     "/visibility/tools/custom-prompts": "Requêtes personnalisées",
     "/visibility/tools/ai-lens": "AI Lens",
+    "/visibility/tools/ai-attribution": "Attribution IA",
   },
 };
 
@@ -5229,6 +5232,10 @@ const seoToolsEn = {
       name: "Historical",
       description: "Investigate historical SERP results and page snapshots over time.",
     },
+    ai_attribution: {
+      name: "AI Attribution",
+      description: "See which AI assistants are sending visitors to your site, and where they land.",
+    },
     social_media_manager: {
       name: "Social Media Manager",
       description: "Plan, edit, schedule, and manage social media content.",
@@ -5377,6 +5384,11 @@ export const SEO_TOOLS_COPY: Record<DashLocale, SeoToolsCopy> = {
         description:
           "Explorez l'historique des résultats de recherche et les archives de vos pages.",
       },
+      ai_attribution: {
+        name: "Attribution IA",
+        description:
+          "Découvrez quels assistants IA envoient des visiteurs sur votre site, et sur quelles pages ils arrivent.",
+      },
       social_media_manager: {
         name: "Gestionnaire de médias sociaux",
         description: "Planifiez, modifiez, programmez et gérez le contenu de vos médias sociaux.",
@@ -5519,6 +5531,11 @@ export const SEO_TOOLS_COPY: Record<DashLocale, SeoToolsCopy> = {
         name: "Verlauf",
         description:
           "Untersuchen Sie frühere Suchergebnisse und Seitenstände im Zeitverlauf.",
+      },
+      ai_attribution: {
+        name: "KI-Attribution",
+        description:
+          "Sehen Sie, welche KI-Assistenten Besucher auf Ihre Website schicken und wo diese landen.",
       },
       social_media_manager: {
         name: "Social-Media-Manager",
@@ -12330,5 +12347,214 @@ export const NOTIFICATIONS_COPY: Record<DashLocale, NotificationsCopy> = {
         body: "Standort: {location}.",
       },
     },
+  },
+};
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   AI Attribution (tool page: /visibility/tools/ai-attribution)
+   ═══════════════════════════════════════════════════════════════════════════
+
+   Phase 1 measures ARRIVALS ONLY. Every string below is written to say
+   "visitors", never "leads", "conversions" or "revenue" — those are P2/P3 and
+   promising them in copy before they exist is how a dashboard starts lying.
+
+   The unit is a DISTINCT VISITOR per landing page, not a page view, because
+   that is what the ai_visits row actually is. `repeat` is the only place a
+   page-view-shaped number appears and it is labelled as one.
+*/
+const aiAttributionEn = {
+  intro:
+    "Which AI assistants send people to your site. Add one script tag and every visit arriving from ChatGPT, Perplexity, Gemini, Copilot or Claude is classified on arrival — server-side, from the referrer, not from anything the page can be told to claim.",
+
+  // ── Install ──────────────────────────────────────────────────────────
+  installTitle: "Install the tag",
+  installIntro:
+    "Paste this into the <head> of every page you want measured. It is about 2 KB, loads asynchronously, sets one first-party cookie, and sends nothing at all for visits that did not come from an AI assistant.",
+  installNoKey: "Create a site key to get your tag.",
+  createTitle: "Create a site key",
+  labelLabel: "Label",
+  labelPlaceholder: "example.com",
+  createButton: "Create site key",
+  creating: "Creating…",
+  keyOnce:
+    "Copy your tag now. The key is stored only as a hash, so we cannot show it again — though it is also in the page source of every site you install it on.",
+  publishableNote:
+    "This key is publishable: it is visible to anyone who views the source of your site. It can do exactly one thing — record a visit against this workspace. It grants no read access to anything.",
+  copy: "Copy",
+  copied: "Copied",
+  copyTag: "Copy tag",
+  done: "Done",
+
+  // ── Keys ─────────────────────────────────────────────────────────────
+  yourKeys: "Site keys",
+  emptyKeys: "No site key yet. Create one above to start measuring.",
+  statusActive: "Active",
+  statusRevoked: "Revoked",
+  createdLabel: "Created",
+  lastUsedLabel: "Last received",
+  neverUsed: "never",
+  revoke: "Revoke",
+  revokeConfirm:
+    "Revoke this key? Any page still carrying it stops being measured within a minute.",
+  loading: "Loading…",
+  loadFailed: "Failed to load site keys",
+  actionFailed: "Action failed",
+
+  // ── Results ──────────────────────────────────────────────────────────
+  windowLabel: (days: number) => `Last ${days} days`,
+  totalTitle: "AI-referred visitors",
+  totalHint: "Distinct visitors whose first arrival on a page came from an AI assistant.",
+  bySourceTitle: "By assistant",
+  trendTitle: "New AI-referred visitors per day",
+  landingTitle: "Landing pages",
+  colPage: "Page",
+  colVisitors: "Visitors",
+  colRepeat: "Repeat arrivals",
+  colSources: "From",
+  emptyResults:
+    "Nothing yet. Once the tag is live and someone reaches you from an AI assistant, they appear here — usually within a minute.",
+  emptyWindow: (days: number) =>
+    `No AI-referred visitors in the last ${days} days. Earlier visits are still counted in your totals.`,
+
+  sourceNames: {
+    chatgpt: "ChatGPT",
+    perplexity: "Perplexity",
+    gemini: "Gemini",
+    copilot: "Copilot",
+    claude: "Claude",
+    dark_ai: "Other AI",
+  } as Record<string, string>,
+  darkAiHint:
+    "“Other AI” is a visit we proved came from an assistant — You.com, Poe, Meta AI and similar — but not from one of the five reported separately. It is never a guess: traffic we cannot prove is AI is not counted at all.",
+};
+export type AiAttributionCopy = typeof aiAttributionEn;
+
+export const AI_ATTRIBUTION_COPY: Record<DashLocale, AiAttributionCopy> = {
+  en: aiAttributionEn,
+  fr: {
+    intro:
+      "Quels assistants IA vous envoient des visiteurs. Ajoutez une seule balise de script et chaque visite venant de ChatGPT, Perplexity, Gemini, Copilot ou Claude est classée à l'arrivée — côté serveur, à partir du référent, et non de ce que la page pourrait prétendre.",
+
+    installTitle: "Installer la balise",
+    installIntro:
+      "Collez ceci dans le <head> de chaque page à mesurer. Environ 2 Ko, chargement asynchrone, un seul témoin propriétaire, et rien n'est envoyé pour les visites qui ne proviennent pas d'un assistant IA.",
+    installNoKey: "Créez une clé de site pour obtenir votre balise.",
+    createTitle: "Créer une clé de site",
+    labelLabel: "Étiquette",
+    labelPlaceholder: "exemple.com",
+    createButton: "Créer la clé de site",
+    creating: "Création…",
+    keyOnce:
+      "Copiez votre balise maintenant. La clé n'est conservée que sous forme de hachage, nous ne pouvons donc pas l'afficher à nouveau — elle figure toutefois dans le code source de chaque site où vous l'installez.",
+    publishableNote:
+      "Cette clé est publiable : elle est visible par quiconque consulte le code source de votre site. Elle ne permet qu'une seule chose — enregistrer une visite dans cet espace de travail. Elle ne donne accès en lecture à rien.",
+    copy: "Copier",
+    copied: "Copié",
+    copyTag: "Copier la balise",
+    done: "Terminé",
+
+    yourKeys: "Clés de site",
+    emptyKeys: "Aucune clé de site. Créez-en une ci-dessus pour commencer à mesurer.",
+    statusActive: "Active",
+    statusRevoked: "Révoquée",
+    createdLabel: "Créée",
+    lastUsedLabel: "Dernière réception",
+    neverUsed: "jamais",
+    revoke: "Révoquer",
+    revokeConfirm:
+      "Révoquer cette clé ? Toute page qui la porte encore cesse d'être mesurée en moins d'une minute.",
+    loading: "Chargement…",
+    loadFailed: "Impossible de charger les clés de site",
+    actionFailed: "Échec de l'action",
+
+    windowLabel: (days: number) => `${days} derniers jours`,
+    totalTitle: "Visiteurs venus d'une IA",
+    totalHint:
+      "Visiteurs distincts dont la première arrivée sur une page provenait d'un assistant IA.",
+    bySourceTitle: "Par assistant",
+    trendTitle: "Nouveaux visiteurs venus d'une IA par jour",
+    landingTitle: "Pages d'arrivée",
+    colPage: "Page",
+    colVisitors: "Visiteurs",
+    colRepeat: "Retours",
+    colSources: "Provenance",
+    emptyResults:
+      "Rien pour l'instant. Dès que la balise est en ligne et qu'une personne vous rejoint depuis un assistant IA, elle apparaît ici — généralement en moins d'une minute.",
+    emptyWindow: (days: number) =>
+      `Aucun visiteur venu d'une IA au cours des ${days} derniers jours. Les visites antérieures restent comptées dans vos totaux.`,
+
+    sourceNames: {
+      chatgpt: "ChatGPT",
+      perplexity: "Perplexity",
+      gemini: "Gemini",
+      copilot: "Copilot",
+      claude: "Claude",
+      dark_ai: "Autre IA",
+    },
+    darkAiHint:
+      "« Autre IA » désigne une visite dont nous avons établi qu'elle vient d'un assistant — You.com, Poe, Meta AI et consorts — mais pas de l'un des cinq présentés séparément. Ce n'est jamais une supposition : un trafic dont nous ne pouvons pas prouver l'origine IA n'est pas compté.",
+  },
+  "de-CH": {
+    intro:
+      "Welche KI-Assistenten Ihnen Besucher schicken. Fügen Sie ein einziges Skript-Tag ein, und jeder Besuch aus ChatGPT, Perplexity, Gemini, Copilot oder Claude wird beim Eintreffen klassifiziert — serverseitig, anhand des Referrers und nicht anhand dessen, was die Seite behaupten könnte.",
+
+    installTitle: "Tag einbauen",
+    installIntro:
+      "Fügen Sie dies in den <head> jeder Seite ein, die gemessen werden soll. Rund 2 KB, asynchron geladen, ein einziges Erstanbieter-Cookie — und für Besuche ohne KI-Assistenten wird gar nichts gesendet.",
+    installNoKey: "Erstellen Sie einen Site-Schlüssel, um Ihr Tag zu erhalten.",
+    createTitle: "Site-Schlüssel erstellen",
+    labelLabel: "Bezeichnung",
+    labelPlaceholder: "beispiel.ch",
+    createButton: "Site-Schlüssel erstellen",
+    creating: "Wird erstellt…",
+    keyOnce:
+      "Kopieren Sie Ihr Tag jetzt. Der Schlüssel wird nur als Hash gespeichert, wir können ihn also nicht erneut anzeigen — er steht allerdings im Quelltext jeder Site, auf der Sie ihn einbauen.",
+    publishableNote:
+      "Dieser Schlüssel ist veröffentlichbar: Er ist für alle sichtbar, die den Quelltext Ihrer Site ansehen. Er kann genau eines — einen Besuch für diesen Arbeitsbereich erfassen. Lesezugriff gewährt er auf nichts.",
+    copy: "Kopieren",
+    copied: "Kopiert",
+    copyTag: "Tag kopieren",
+    done: "Fertig",
+
+    yourKeys: "Site-Schlüssel",
+    emptyKeys: "Noch kein Site-Schlüssel. Erstellen Sie oben einen, um mit dem Messen zu beginnen.",
+    statusActive: "Aktiv",
+    statusRevoked: "Widerrufen",
+    createdLabel: "Erstellt",
+    lastUsedLabel: "Zuletzt empfangen",
+    neverUsed: "nie",
+    revoke: "Widerrufen",
+    revokeConfirm:
+      "Diesen Schlüssel widerrufen? Jede Seite, die ihn noch trägt, wird binnen einer Minute nicht mehr gemessen.",
+    loading: "Wird geladen…",
+    loadFailed: "Site-Schlüssel konnten nicht geladen werden",
+    actionFailed: "Aktion fehlgeschlagen",
+
+    windowLabel: (days: number) => `Letzte ${days} Tage`,
+    totalTitle: "Besucher aus KI-Assistenten",
+    totalHint:
+      "Eindeutige Besucher, deren erste Ankunft auf einer Seite aus einem KI-Assistenten kam.",
+    bySourceTitle: "Nach Assistent",
+    trendTitle: "Neue Besucher aus KI-Assistenten pro Tag",
+    landingTitle: "Einstiegsseiten",
+    colPage: "Seite",
+    colVisitors: "Besucher",
+    colRepeat: "Wiederkehr",
+    colSources: "Herkunft",
+    emptyResults:
+      "Noch nichts. Sobald das Tag live ist und jemand über einen KI-Assistenten zu Ihnen kommt, erscheint das hier — meist innerhalb einer Minute.",
+    emptyWindow: (days: number) =>
+      `Keine Besucher aus KI-Assistenten in den letzten ${days} Tagen. Frühere Besuche zählen weiterhin zu Ihren Gesamtwerten.`,
+
+    sourceNames: {
+      chatgpt: "ChatGPT",
+      perplexity: "Perplexity",
+      gemini: "Gemini",
+      copilot: "Copilot",
+      claude: "Claude",
+      dark_ai: "Andere KI",
+    },
+    darkAiHint:
+      "«Andere KI» bezeichnet einen Besuch, bei dem wir nachweisen konnten, dass er aus einem Assistenten kam — You.com, Poe, Meta AI und ähnliche — aber nicht aus einem der fünf einzeln ausgewiesenen. Das ist nie geraten: Traffic, dessen KI-Herkunft wir nicht belegen können, wird gar nicht gezählt.",
   },
 };

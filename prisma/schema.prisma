@@ -204,6 +204,8 @@ model Tenant {
   importJobs         ImportJob[]
   extensionTokens    ExtensionToken[]
   apiKeys            ApiKey[]
+  attributionKeys    AttributionKey[]
+  aiVisits           AiVisit[]
   gscConnection      GscConnection?
   gaConnection       GaConnection?
   gscQueryStats      GscQueryStat[]
@@ -1106,27 +1108,27 @@ model TrackedPrompt {
 
   // ── Setup wizard (nullable: prompts predating the wizard have none) ──
   /// Null until a brand profile exists; the wizard sets it.
-  brandProfileId String?
+  brandProfileId  String?
   /// DISCOVERY | RECOMMENDATION | COMPARISON | ALTERNATIVES | PRICING |
   /// USE_CASE | FEATURES | TRUST | PURCHASE | BRAND_AWARENESS
-  category       String?
+  category        String?
   /// commercial | research | navigational
-  intent         String?
-  audience       String?
-  market         String?
-  language       String?       @default("en")
-  source         PromptSource?
+  intent          String?
+  audience        String?
+  market          String?
+  language        String?       @default("en")
+  source          PromptSource?
   /// ISO-3166-1 alpha-2, for provider calls that take a location. `market` is
   /// the free-text label the wizard renders; this is the machine-readable one.
-  country        String?
+  country         String?
   /// 0-100, deterministic. Null for prompts that predate the scorer.
-  relevanceScore Int?
+  relevanceScore  Int?
   /// Free-text labels a user puts on a prompt to group it — "brand", "EU",
   /// "launch". The ONLY writable field on a prompt besides `active`, and
   /// deliberately unvalidated: a taxonomy nobody chose is a taxonomy nobody
   /// uses, and these are for the customer's own filtering rather than for any
   /// query this product runs.
-  tags           String[] @default([])
+  tags            String[]      @default([])
   /// 0-100. The score that ORDERED THE WIZARD'S SUGGESTIONS when this prompt
   /// was proposed — see suggestionScore() in wizard/scoring.ts. Null for a
   /// prompt the user wrote themselves, which was never ranked against anything.
@@ -1141,7 +1143,7 @@ model TrackedPrompt {
   /// Chosen in the wizard. `active` stays the tracking switch; this is the
   /// wizard's own selection state, so deselecting in the wizard and pausing
   /// tracking remain different actions.
-  selected       Boolean       @default(false)
+  selected        Boolean       @default(false)
 
   /// 0-100. How much money sits behind this question, judged at discovery time
   /// from intent plus (where available) search demand. DISTINCT FROM
@@ -1192,7 +1194,7 @@ model PromptRun {
   /// Which repetition this is, 1-based. Repeatability compares runs that share
   /// (checkup, prompt, provider) and differ only by this. This is the
   /// `run_number` half of the runner's idempotency key.
-  repetition Int     @default(1)
+  repetition Int       @default(1)
   /// How this run ended. Defaults to OK so the 66 pre-checkup rows, which were
   /// all answered, keep meaning what they meant.
   status     RunStatus @default(OK)
@@ -1200,25 +1202,25 @@ model PromptRun {
   /// The answer exactly as the provider returned it. `excerpt` predates this
   /// and stays: it is the short form the list views render without pulling a
   /// multi-kilobyte column across the wire.
-  rawResponse        String?  @db.Text
+  rawResponse        String? @db.Text
   /// Whitespace-collapsed, markdown-stripped. What the hash and the analysis
   /// passes read, so that a provider reflowing its own formatting does not
   /// register as a changed answer.
-  normalizedResponse String?  @db.Text
+  normalizedResponse String? @db.Text
   /// SHA-256 of normalizedResponse. Change detection compares this run to the
   /// previous one for the same (prompt, engine): equal hash, nothing moved,
   /// and the trend worker can skip the comparison entirely.
   responseHash       String?
   /// Wall-clock milliseconds for the provider call.
   latencyMs          Int?
-  inputTokens        Int      @default(0)
-  outputTokens       Int      @default(0)
-  cachedInputTokens  Int      @default(0)
+  inputTokens        Int     @default(0)
+  outputTokens       Int     @default(0)
+  cachedInputTokens  Int     @default(0)
   /// USD for this run's answer call. DERIVED AT WRITE TIME from the tokens, by
   /// the same pricing table AiProviderCall uses — see the note there on why a
   /// stored cost must never be recomputed from a later price list. The
   /// AiProviderCall row remains the ledger; this is the per-run attribution.
-  costUsd            Decimal  @default(0) @db.Decimal(10, 6)
+  costUsd            Decimal @default(0) @db.Decimal(10, 6)
 
   /// Phase 8. Null means the project's own market and no persona wrapper —
   /// which is the baseline every geo/persona comparison is measured against,
@@ -2343,7 +2345,7 @@ model MentionAnalysis {
   /// which is the weighted multiplicative score in scoring.ts. Both are kept:
   /// the ladder is legible to a customer ("+40 because you were the first
   /// recommendation"), the weighted score is what the trend line uses.
-  prominenceScore        Int      @default(0)
+  prominenceScore        Int   @default(0)
   /// { strengths[], weaknesses[], pricePosition, quality, trust, innovation,
   /// targetCustomer, categoryAssociations[] } — what the model believes about
   /// the brand. JSON rather than columns: this is evidence for the
@@ -2673,26 +2675,26 @@ model CompetitorMention {
   /// Null for a row written before the classifier existed. NOT defaulted to
   /// RIVAL: claiming an unexamined entity is a competitor is the error this
   /// whole module exists to stop, and null is honestly "not yet judged".
-  classification         EntityClass?
+  classification      EntityClass?
   /// Which rule set produced `classification`. 0 means never classified.
   /// Same contract as VisibilityMetric.scoreVersion: rows keep the verdict
   /// they were given, and re-judging is an explicit new version rather than a
   /// silent restatement.
-  classifierVersion      Int         @default(0)
+  classifierVersion   Int          @default(0)
   /// The signals that fired, with their weights and a sentence each. Rendered
   /// in the UI so a customer can see WHY something was called a platform,
   /// which is what makes a deterministic rule table defensible where an
   /// unexplainable model call would not be.
-  classificationTrace    Json?
+  classificationTrace Json?
 
   createdAt DateTime @default(now())
 
   tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   promptRun PromptRun @relation(fields: [promptRunId], references: [id], onDelete: Cascade)
 
+  @@unique([promptRunId, name])
   /// Rollup read: this tenant's rivals, excluding platforms and categories.
   @@index([tenantId, classification, createdAt])
-  @@unique([promptRunId, name])
   @@index([tenantId, name, createdAt])
   @@map("competitor_mentions")
 }
@@ -2718,7 +2720,7 @@ model VisibilityMetric {
   /// written beside the old, and a row keeps the number the customer was shown
   /// on the day. A trend line that silently restates last quarter is worse than
   /// no trend line, because nothing on the chart says it happened.
-  scoreVersion        Int      @default(1)
+  scoreVersion        Int     @default(1)
   /// Share of runs that cited any source supporting the brand. NULL — not 0 —
   /// on an engine that does not return citations at all.
   citationScore       Float?
@@ -2737,16 +2739,16 @@ model VisibilityMetric {
   top3Rate            Float
   /// Runs this row was computed from. A score off two runs and one off two
   /// hundred should not be read the same way, and the chart dims the former.
-  runCount            Int      @default(0)
+  runCount            Int     @default(0)
   /// True when the checkup behind this row did not complete its whole plan —
   /// runs were skipped at the spend cap or failed upstream. The score is still
   /// the best available answer, but it is NOT comparable to a full day's, and a
   /// trend line that dips because we asked less must say so rather than letting
   /// the customer read it as lost visibility.
-  partialCoverage     Boolean  @default(false)
+  partialCoverage     Boolean @default(false)
   /// Planned runs that produced no answer. `runCount` counts the ones that did,
   /// so runCount + skippedRuns is the size of the plan.
-  skippedRuns         Int      @default(0)
+  skippedRuns         Int     @default(0)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -2769,21 +2771,21 @@ model Source {
   tenantId       String
   brandProfileId String
 
-  domain String
+  domain                String
   /// Total citations of this domain across the project's runs.
-  citationCount Int @default(0)
+  citationCount         Int      @default(0)
   /// Distinct brand/competitor names whose claims this domain has supported.
-  brandsSupported String[] @default([])
+  brandsSupported       String[] @default([])
   /// Citations supporting the brand, and supporting any competitor. The ratio
   /// is what makes a citation opportunity: high competitor, zero brand.
-  brandCitations      Int @default(0)
-  competitorCitations Int @default(0)
+  brandCitations        Int      @default(0)
+  competitorCitations   Int      @default(0)
   /// How many distinct engines cite it. A domain three engines trust is worth
   /// more than one cited three times by the same engine.
-  distinctEngines     Int @default(0)
+  distinctEngines       Int      @default(0)
   /// Citations arising from prompts with commercialValue >= the threshold in
   /// src/lib/ai-monitor/influence.ts.
-  commercialPromptCount Int @default(0)
+  commercialPromptCount Int      @default(0)
 
   /// 0-100. From the SEO API adapter where available, else the heuristic in
   /// influence.ts. Null means neither could speak — which the influence score
@@ -2824,11 +2826,11 @@ model Recommendation {
   tenantId       String
   brandProfileId String
 
-  type RecommendationType
+  type            RecommendationType
   /// Short imperative title: "Create a Foo vs Bar comparison page".
   title           String
   /// What to do, concretely — the slug to create, the entities to strengthen.
-  suggestedAction String             @db.Text
+  suggestedAction String               @db.Text
   /// Estimated visibility points gained, 0-100.
   estimatedImpact Float
   /// 1 (an afternoon) to 5 (a quarter). The denominator of the priority.
@@ -2993,4 +2995,98 @@ model NotificationRead {
   /// The badge read: "which of these has this user already seen".
   @@index([userId, notificationId])
   @@map("notification_reads")
+}
+
+/// Which AI assistant sent a visitor. Mirrors AI_VISIT_SOURCES in
+/// src/lib/attribution/sources.ts — adding a value here means adding a rule
+/// there, and the classification tests assert the two lists agree.
+///
+/// `dark_ai` is the residual, not a fallback: it means "we proved this was an
+/// AI assistant but not one of the five we report on individually" (You.com,
+/// Poe, Meta AI, …). Traffic we cannot prove is AI is never stored at all.
+enum AiVisitSource {
+  chatgpt
+  perplexity
+  gemini
+  copilot
+  claude
+  dark_ai
+}
+
+/// PUBLISHABLE site key for the attribution snippet: `er_pub_<id>.<secret>`.
+///
+/// Deliberately NOT a row in api_keys. That table holds er_api_ bearer keys,
+/// which are server-side secrets granting READ access to /api/public/v1/*.
+/// This key is pasted into a <script src> on a public page and is therefore
+/// visible to anyone who views source; its only capability is appending a visit
+/// row to its own tenant. Separate tables mean verifyApiKey() structurally
+/// cannot resolve a publishable key, and vice versa.
+///
+/// The secret is still SHA-256'd at rest and confirmed in constant time — it
+/// buys little for a key that is public by construction, but it keeps one habit
+/// across both key classes. See src/lib/attribution/keys.ts.
+model AttributionKey {
+  id         String    @id @default(cuid())
+  tenantId   String
+  /// Human label, e.g. "example.com" or "marketing site".
+  label      String
+  /// SHA-256 (hex) of the secret segment. Never store plaintext.
+  keyHash    String    @unique
+  /// First 8 chars of the public id segment, surfaced for identification.
+  prefix     String
+  lastUsedAt DateTime?
+  revokedAt  DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@map("attribution_keys")
+}
+
+/// One AI-referred visitor, per landing page, per source.
+///
+/// NOT an event log. The natural key below collapses a visitor's repeat arrivals
+/// on the same page from the same assistant into one row, so the table grows
+/// with distinct (visitor, page, source) rather than with traffic. firstSeen is
+/// written once and never moved; lastSeen and hits are what the upsert touches.
+/// That is what makes the 28-day trend "new AI-referred visitors per day" — an
+/// honest number — rather than a page-view count dressed up as one.
+///
+/// visitorId is the value of the first-party `er_vid` cookie the snippet sets on
+/// the CUSTOMER's domain. It is opaque and random: no IP, no fingerprint, no
+/// cross-site identity. We never see it on any domain but the one that set it.
+///
+/// Phase 1 stores arrivals only. Conversions and revenue are P2/P3 and this
+/// model deliberately carries no column for either.
+model AiVisit {
+  id          String        @id @default(cuid())
+  tenantId    String
+  /// Opaque first-party visitor id from the `er_vid` cookie.
+  visitorId   String
+  source      AiVisitSource
+  /// Path only — no query, no fragment. "/pricing", never "/pricing?utm_x=y".
+  landingPath String
+  /// Referrer as origin+path. Query stripped: it carries search terms and
+  /// occasionally session tokens, and we have no use for either.
+  referrer    String?
+  /// The utm_* parameters present on the landing URL, verbatim. Absent keys are
+  /// omitted rather than stored null.
+  utm         Json?
+  firstSeen   DateTime      @default(now())
+  lastSeen    DateTime      @default(now())
+  /// Arrivals collapsed into this row. Starts at 1.
+  hits        Int           @default(1)
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  /// The upsert target. Tenant-first so the constraint is also the isolation
+  /// boundary: a collector write can only ever land inside its own tenant.
+  @@unique([tenantId, visitorId, source, landingPath])
+  /// The dashboard read: this tenant's last 28 days, newest first.
+  @@index([tenantId, firstSeen(sort: Desc)])
+  /// Source breakdown and landing-page table over the same window.
+  @@index([tenantId, source, firstSeen(sort: Desc)])
+  @@map("ai_visits")
 }
