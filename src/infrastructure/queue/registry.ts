@@ -173,6 +173,20 @@ const DEFAULT_JOB_OPTIONS: Record<QueueName, JobsOptions> = {
     removeOnComplete: { age: REDIS_CONFIG.ttl.completedJobs },
     removeOnFail: { age: REDIS_CONFIG.ttl.failedJobs },
   },
+  // ONE ATTEMPT, unlike both of its siblings, and for the reason rank-tracker
+  // gives: this job posts real money upstream. Its two neighbours above spend
+  // nothing and retry freely; this one buys a DataForSEO referring-domains call
+  // per tenant per week, and a blind retry after a partial failure could buy it
+  // twice. The 7-day cache in citation-opportunities/listed.ts is written the
+  // instant the call returns, which shrinks that window to near zero — but
+  // "near zero" is not zero, and a missed week costs a customer nothing. The
+  // worklist is recomputed from scratch every Monday, so nothing is lost by
+  // skipping one; the rows from the previous sweep stay exactly as they were.
+  "citation-opportunities": {
+    attempts: 1,
+    removeOnComplete: { age: REDIS_CONFIG.ttl.completedJobs },
+    removeOnFail: { age: REDIS_CONFIG.ttl.failedJobs },
+  },
 };
 
 // ─── Queue registry ───────────────────────────────────────────────────────────

@@ -220,12 +220,13 @@ model Tenant {
   checkups        Checkup[]
   aiProviderCalls AiProviderCall[]
 
-  citations          Citation[]
-  competitorMentions CompetitorMention[]
-  sources            Source[]
-  recommendations    Recommendation[]
-  experiments        Experiment[]
-  sovSnapshots       SovSnapshot[]
+  citations            Citation[]
+  competitorMentions   CompetitorMention[]
+  sources              Source[]
+  citationOpportunities CitationOpportunity[]
+  recommendations      Recommendation[]
+  experiments          Experiment[]
+  sovSnapshots         SovSnapshot[]
 
   @@map("tenants")
 }
@@ -2872,6 +2873,83 @@ model Source {
   @@index([brandProfileId, citationCount(sort: Desc)])
   @@index([tenantId, domain])
   @@map("sources")
+}
+
+/// How much work getting listed on a source is. Three bands, not a 1-5 float:
+/// the input is a `kind` lookup with seven possible answers, so a continuous
+/// scale would be three distinct values wearing a decimal point.
+enum OpportunityEffort {
+  LOW
+  MED
+  HIGH
+}
+
+/// The customer's own state on one opportunity. `DONE` and `DISMISSED` both
+/// remove it from the worklist; only DONE is watched for the citation flip.
+enum OpportunityStatus {
+  OPEN
+  IN_PROGRESS
+  DONE
+  DISMISSED
+}
+
+/// One "get listed here" job, derived weekly from `sources`.
+///
+/// KEYED (tenantId, domain), NOT (brandProfileId, domain) like `sources`.
+/// Deliberate and not an oversight: getting onto g2.com is ONE piece of work
+/// however many brand profiles a tenant tracks, and a row per profile would
+/// hand the customer the same task three times with three different scores.
+/// The scorer therefore aggregates every `sources` row for the domain up to
+/// the tenant grain before it writes here — see src/lib/citation-opportunities.
+///
+/// NO citesYou COLUMN, for the reason `sources` gives at length: it is
+/// `brandCitations > 0` on the rows this was derived from, and a stored copy is
+/// an invariant a re-run could break. The "proof" badge on a DONE row is that
+/// same predicate, evaluated at read time.
+model CitationOpportunity {
+  id       String @id @default(cuid())
+  tenantId String
+
+  /// Registrable domain, the same normalisation `sources` and `citations` use.
+  domain String
+
+  /// log(1 + citations) x distinct engines x rival citations. The scale is
+  /// arbitrary and only meaningful against its siblings, which is why the UI
+  /// ranks rather than printing it.
+  impact Float
+  /// impact / effort weight. Stored so the worklist is an index scan, and so
+  /// the order the customer sees cannot drift from the order that produced the
+  /// p75 cut the notification fired on.
+  priority Float
+  effort   OpportunityEffort
+
+  /// What kind of publication this is, carried over from `sources`. Here for
+  /// ONE reason: it is the key into the localized how-to templates, so without
+  /// it a French dashboard could only render the English `howTo` below.
+  kind CitationKind @default(OTHER)
+  /// English how-to, written by the weekly job from a heuristic template.
+  ///
+  /// A FALLBACK, exactly like Notification.title: the UI renders from the
+  /// localized template catalog keyed on `kind`, and reads this only for a row
+  /// whose kind the catalog does not know. Stored anyway because it is what an
+  /// API consumer or an export gets, and because it records what the customer
+  /// was actually told the week the row was written.
+  howTo String @db.Text
+  /// The brand's own topic this row's pitch template interpolates, when its
+  /// kind has one. Null for kinds whose template needs no theme.
+  theme String?
+
+  status OpportunityStatus @default(OPEN)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, domain])
+  /// The worklist's only order: this tenant's rows, best first.
+  @@index([tenantId, priority(sort: Desc)])
+  @@map("citation_opportunities")
 }
 
 /// One prioritised action, with the evidence that produced it.

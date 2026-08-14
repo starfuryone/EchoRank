@@ -67,6 +67,7 @@ export const dashNav: Record<DashLocale, Record<string, string>> = {
     "/visibility/tools/ai-attribution": "AI Attribution",
     "/visibility/tools/share-of-voice": "Share of Voice",
     "/visibility/tools/citation-finder": "Citation Finder",
+    "/visibility/tools/citation-opportunities": "Citation Opportunities",
   },
   "de-CH": {
     "/dashboard": "Dashboard",
@@ -116,6 +117,7 @@ export const dashNav: Record<DashLocale, Record<string, string>> = {
     "/visibility/tools/ai-attribution": "KI-Attribution",
     "/visibility/tools/share-of-voice": "Stimmanteil",
     "/visibility/tools/citation-finder": "Quellenfinder",
+    "/visibility/tools/citation-opportunities": "Zitat-Chancen",
   },
   fr: {
     "/dashboard": "Tableau de bord",
@@ -165,6 +167,7 @@ export const dashNav: Record<DashLocale, Record<string, string>> = {
     "/visibility/tools/ai-attribution": "Attribution IA",
     "/visibility/tools/share-of-voice": "Part de voix",
     "/visibility/tools/citation-finder": "Détecteur de sources",
+    "/visibility/tools/citation-opportunities": "Opportunités de citation",
   },
 };
 
@@ -5255,6 +5258,11 @@ const seoToolsEn = {
       description:
         "The sources AI engines cite when they answer about your market — and which of them cite your rivals but never you.",
     },
+    citation_opportunities: {
+      name: "Citation Opportunities",
+      description:
+        "The sources worth getting listed on, ranked by what they are worth against what they cost you to win.",
+    },
     social_media_manager: {
       name: "Social Media Manager",
       description: "Plan, edit, schedule, and manage social media content.",
@@ -5418,6 +5426,11 @@ export const SEO_TOOLS_COPY: Record<DashLocale, SeoToolsCopy> = {
         description:
           "Les sources que citent les moteurs d'IA lorsqu'ils parlent de votre marché — et celles qui citent vos concurrents sans jamais vous mentionner.",
       },
+      citation_opportunities: {
+        name: "Opportunités de citation",
+        description:
+          "Les sources où il vaut la peine de se faire référencer, classées selon ce qu'elles rapportent face à ce qu'elles coûtent.",
+      },
       social_media_manager: {
         name: "Gestionnaire de médias sociaux",
         description: "Planifiez, modifiez, programmez et gérez le contenu de vos médias sociaux.",
@@ -5575,6 +5588,11 @@ export const SEO_TOOLS_COPY: Record<DashLocale, SeoToolsCopy> = {
         name: "Quellenfinder",
         description:
           "Die Quellen, die KI-Maschinen zu Ihrem Markt zitieren — und welche davon Ihre Mitbewerber nennen, Sie aber nie.",
+      },
+      citation_opportunities: {
+        name: "Zitat-Chancen",
+        description:
+          "Die Quellen, bei denen sich ein Eintrag lohnt — sortiert nach Ertrag gegenüber Aufwand.",
       },
       social_media_manager: {
         name: "Social-Media-Manager",
@@ -12239,6 +12257,14 @@ const notificationsEn = {
       title: "Your share of {engine} answers fell from {before}% to {after}%",
       body: "Measured week over week across your tracked prompts.",
     },
+    // No {priority}. The score is ordinal and unitless — see
+    // NotificationPayloads.citation_opportunity — so printing it would be a
+    // number the reader cannot act on. The domain is the actionable half.
+    citation_opportunity: {
+      label: "New citation opportunity",
+      title: "{domain} cites your competitors and has never named you",
+      body: "One of this week's best chances to get listed. Open the worklist for how.",
+    },
   },
 };
 
@@ -12322,6 +12348,11 @@ export const NOTIFICATIONS_COPY: Record<DashLocale, NotificationsCopy> = {
         title: "Votre part des réponses de {engine} est passée de {before} % à {after} %",
         body: "Mesurée d'une semaine sur l'autre, sur l'ensemble de vos requêtes suivies.",
       },
+      citation_opportunity: {
+        label: "Nouvelle source à conquérir",
+        title: "{domain} cite vos concurrents et ne vous a jamais nommé",
+        body: "L'une des meilleures occasions de la semaine de vous y faire référencer. Ouvrez la liste pour savoir comment.",
+      },
     },
   },
   "de-CH": {
@@ -12399,6 +12430,11 @@ export const NOTIFICATIONS_COPY: Record<DashLocale, NotificationsCopy> = {
         label: "KI-Stimmanteil gesunken",
         title: "Ihr Anteil an den Antworten von {engine} sank von {before} % auf {after} %",
         body: "Woche für Woche gemessen, über alle Ihre verfolgten Prompts.",
+      },
+      citation_opportunity: {
+        label: "Neue Quelle zum Erschliessen",
+        title: "{domain} zitiert Ihre Mitbewerber und hat Sie nie genannt",
+        body: "Eine der besten Gelegenheiten dieser Woche, dort gelistet zu werden. Öffnen Sie die Arbeitsliste für das Wie.",
       },
     },
   },
@@ -12629,7 +12665,7 @@ export const AI_ATTRIBUTION_COPY: Record<DashLocale, AiAttributionCopy> = {
 const aiHubEn = {
   hubTitle: "AI",
   hubSubtitle:
-    "Whether AI assistants know about you, what they say, and who they send. Six surfaces, one place.",
+    "Whether AI assistants know about you, what they say, and who they send. Seven surfaces, one place.",
 
   groups: {
     answers: "In the answers",
@@ -12666,6 +12702,11 @@ const aiHubEn = {
       description:
         "The sources the engines read to answer about your market, and which cite your rivals but never you.",
     },
+    citation_opportunities: {
+      name: "Citation Opportunities",
+      description:
+        "The same sources, turned into a ranked worklist: where to get listed next, and what to do there.",
+    },
   },
 };
 export type AiHubCopy = typeof aiHubEn;
@@ -12675,7 +12716,7 @@ export const AI_HUB_COPY: Record<DashLocale, AiHubCopy> = {
   fr: {
     hubTitle: "IA",
     hubSubtitle:
-      "Si les assistants IA vous connaissent, ce qu'ils disent de vous et qui ils vous envoient. Six surfaces, un seul endroit.",
+      "Si les assistants IA vous connaissent, ce qu'ils disent de vous et qui ils vous envoient. Sept surfaces, un seul endroit.",
 
     groups: {
       answers: "Dans les réponses",
@@ -12713,12 +12754,17 @@ export const AI_HUB_COPY: Record<DashLocale, AiHubCopy> = {
         description:
           "Les sources que les moteurs lisent pour parler de votre marché, et celles qui citent vos concurrents sans jamais vous nommer.",
       },
+      citation_opportunities: {
+        name: "Opportunités de citation",
+        description:
+          "Les mêmes sources, transformées en liste de travail classée : où se faire référencer ensuite, et comment.",
+      },
     },
   },
   "de-CH": {
     hubTitle: "KI",
     hubSubtitle:
-      "Ob KI-Assistenten Sie kennen, was sie sagen und wen sie schicken. Sechs Oberflächen, ein Ort.",
+      "Ob KI-Assistenten Sie kennen, was sie sagen und wen sie schicken. Sieben Oberflächen, ein Ort.",
 
     groups: {
       answers: "In den Antworten",
@@ -12755,6 +12801,11 @@ export const AI_HUB_COPY: Record<DashLocale, AiHubCopy> = {
         name: "Quellenfinder",
         description:
           "Die Quellen, welche die Maschinen zu Ihrem Markt lesen, und welche davon Ihre Mitbewerber nennen, Sie aber nie.",
+      },
+      citation_opportunities: {
+        name: "Zitat-Chancen",
+        description:
+          "Dieselben Quellen als sortierte Arbeitsliste: wo Sie als Nächstes gelistet werden sollten und wie.",
       },
     },
   },
@@ -13070,5 +13121,254 @@ export const CITATION_FINDER_COPY: Record<DashLocale, CitationFinderCopy> = {
 
     methodNote:
       "Eine Quelle wird einmal pro Antwort gezählt, die sie zitiert. «Nennt Sie» heisst, dass die Antwort Ihre Marke irgendwo genannt hat, nicht dass der Link selbst von Ihnen handelte. Zitiert zu werden belegt, dass eine Maschine eine Seite gelesen hat — es ist kein Rankingfaktor, und irgendwo gelistet zu sein garantiert keine Empfehlung.",
+  },
+};
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Citation Opportunity Engine (/visibility/tools/citation-opportunities)
+   ═══════════════════════════════════════════════════════════════════════════
+
+   THE HOW-TOS LIVE HERE, NOT IN THE DATABASE. CitationOpportunity.howTo stores
+   the English prose the weekly job wrote, for the same reason Notification
+   stores an English title: it is the durable record and the fallback for a row
+   whose `kind` this catalog does not know. What the dashboard RENDERS is the
+   template below, keyed on that same `kind` — otherwise a French customer would
+   read English advice forever, because the job that wrote it has no locale.
+
+   THE COPY NEVER PROMISES A RANKING FACTOR, and this tool is the one where the
+   temptation is strongest: it is a list of things to go and do, so it would be
+   very easy to imply that doing them causes a recommendation. Getting listed
+   makes you eligible to be read. That is all it does, and the method note says
+   so in every locale.
+
+   THE SCORE IS NEVER PRINTED. It has no unit (see
+   src/lib/citation-opportunities/score.ts) — the list is ranked by it and the
+   effort badge is the only number-adjacent thing on a card.
+*/
+
+const citationOpportunitiesEn = {
+  lockedTitle: "Citation Opportunities is on Growth and above",
+  lockedBody:
+    "Turn the sources that cite your competitors into a ranked list of places to get listed, with what to do on each one. Upgrade to Growth to switch it on for your tracked prompts.",
+  lockedCta: "See plans",
+
+  emptyTitle: "No opportunities yet",
+  emptyBody:
+    "This list is built from the sources the AI engines cite about your market. Once a checkup has run, the nightly rollup has passed and the weekly scoring job has scored them, every source that cites your rivals but never you appears here.",
+  emptyFinderCta: "See every source in Citation Finder",
+
+  // ── Header ──
+  sourcesCount: "{count} sources",
+  openCount: "{count} still to do",
+  provenCount: "{count} now citing you",
+
+  // ── Card ──
+  howToTitle: "What to do",
+  effortLabel: "Effort",
+  efforts: {
+    LOW: "Low",
+    MED: "Medium",
+    HIGH: "High",
+  },
+  kinds: {
+    DIRECTORY: "Directory",
+    REVIEW_SITE: "Review site",
+    NEWS: "News",
+    BLOG: "Blog",
+    GOV: "Government",
+    SOCIAL: "Social",
+    OTHER: "Other",
+  },
+  statuses: {
+    OPEN: "To do",
+    IN_PROGRESS: "In progress",
+    DONE: "Done",
+    DISMISSED: "Dismissed",
+  },
+  /** The buttons. Imperative, because clicking one is an act. */
+  actions: {
+    OPEN: "Reopen",
+    IN_PROGRESS: "Start",
+    DONE: "Mark done",
+    DISMISSED: "Dismiss",
+  },
+  statusSaving: "Saving…",
+  statusError: "Could not save that. Try again.",
+
+  provenBadge: "Now cites you",
+  provenTitle: "Confirmed: since you marked this done, this source has cited an answer that names you.",
+
+  // ── The how-tos. Keyed on CitationKind, same keys the job uses. ──
+  howTo: {
+    DIRECTORY:
+      "Claim or create your listing on {domain}. Use exactly the same name, address and phone number as your other listings — a directory that disagrees with the rest of the web is worse than no listing, because it splits the record of who you are.",
+    REVIEW_SITE:
+      "Claim your profile on {domain}, then ask recent customers to review you there. A profile with no reviews is rarely quoted.",
+    NEWS:
+      "Pitch {domain} a story, not a company. The angle with the best odds is the one your buyers already ask about — {theme} — told with a number or a case only you have. Find the reporter who covers that beat and mail them directly.",
+    BLOG:
+      "Offer {domain} a guest post or a contribution on {theme}. Independent blogs answer email far more often than newsrooms do, and a single post that genuinely answers the question is enough to become the page an engine reads.",
+    GOV:
+      "Check whether you qualify for a listing or register on {domain}. Public-sector sources are eligibility, not outreach: if you meet the criteria the listing is close to automatic, and if you do not, no amount of pitching will change it.",
+    SOCIAL:
+      "Create or complete your presence on {domain}, and make sure it describes what you actually sell. Engines quote these because they are public and current, so a profile that is three years stale is a source arguing against you.",
+    OTHER:
+      "Work out what {domain} is before you act on it. Open the page the engines cited, see whether it accepts submissions, listings, guest posts or corrections, and treat it as whichever of those it turns out to be.",
+  },
+  /** Appended to the REVIEW_SITE how-to, as a real link. */
+  campaignsCta: "Ask your customers for reviews",
+  /** Fallback for {theme} when the brand has no topics configured. */
+  themeFallback: "the questions your buyers ask",
+
+  methodNote:
+    "Ranked by how much this source is worth getting onto — how often the engines cite it, how many of them do, and how much of that goes to your competitors — divided by how hard it is. Sources that already link to your site are left out. Getting listed makes you eligible to be read; it is not a ranking factor and it is not a guarantee of being recommended.",
+};
+export type CitationOpportunitiesCopy = typeof citationOpportunitiesEn;
+
+export const CITATION_OPPORTUNITIES_COPY: Record<DashLocale, CitationOpportunitiesCopy> = {
+  en: citationOpportunitiesEn,
+  fr: {
+    lockedTitle: "Les opportunités de citation sont incluses à partir de Growth",
+    lockedBody:
+      "Transformez les sources qui citent vos concurrents en une liste classée d'endroits où vous faire référencer, avec la marche à suivre pour chacun. Passez à Growth pour l'activer sur vos requêtes suivies.",
+    lockedCta: "Voir les forfaits",
+
+    emptyTitle: "Pas encore d'opportunités",
+    emptyBody:
+      "Cette liste est construite à partir des sources que les moteurs d'IA citent au sujet de votre marché. Dès qu'un contrôle aura été exécuté, que la consolidation nocturne sera passée et que le calcul hebdomadaire les aura évaluées, toutes les sources qui citent vos concurrents sans jamais vous nommer apparaîtront ici.",
+    emptyFinderCta: "Voir toutes les sources dans le détecteur de sources",
+
+    sourcesCount: "{count} sources",
+    openCount: "{count} restent à traiter",
+    provenCount: "{count} vous citent désormais",
+
+    howToTitle: "Marche à suivre",
+    effortLabel: "Effort",
+    efforts: {
+      LOW: "Faible",
+      MED: "Moyen",
+      HIGH: "Élevé",
+    },
+    kinds: {
+      DIRECTORY: "Annuaire",
+      REVIEW_SITE: "Site d'avis",
+      NEWS: "Presse",
+      BLOG: "Blog",
+      GOV: "Administration",
+      SOCIAL: "Réseau social",
+      OTHER: "Autre",
+    },
+    statuses: {
+      OPEN: "À faire",
+      IN_PROGRESS: "En cours",
+      DONE: "Terminé",
+      DISMISSED: "Écarté",
+    },
+    actions: {
+      OPEN: "Rouvrir",
+      IN_PROGRESS: "Commencer",
+      DONE: "Marquer terminé",
+      DISMISSED: "Écarter",
+    },
+    statusSaving: "Enregistrement…",
+    statusError: "Impossible d'enregistrer. Réessayez.",
+
+    provenBadge: "Vous cite désormais",
+    provenTitle:
+      "Confirmé : depuis que vous avez marqué cette tâche terminée, cette source a cité une réponse qui vous nomme.",
+
+    howTo: {
+      DIRECTORY:
+        "Revendiquez ou créez votre fiche sur {domain}. Utilisez exactement les mêmes nom, adresse et téléphone que sur vos autres fiches — un annuaire qui contredit le reste du web est pire que pas de fiche du tout, car il divise la trace de qui vous êtes.",
+      REVIEW_SITE:
+        "Revendiquez votre profil sur {domain}, puis demandez à vos clients récents d'y laisser un avis. Un profil sans avis est rarement cité.",
+      NEWS:
+        "Proposez à {domain} un sujet, pas une entreprise. L'angle le plus prometteur est celui que vos acheteurs posent déjà — {theme} — raconté avec un chiffre ou un cas que vous seul détenez. Trouvez le journaliste qui couvre ce sujet et écrivez-lui directement.",
+      BLOG:
+        "Proposez à {domain} un article invité ou une contribution sur {theme}. Les blogs indépendants répondent aux courriels bien plus souvent que les rédactions, et un seul article qui répond vraiment à la question suffit à devenir la page qu'un moteur lit.",
+      GOV:
+        "Vérifiez si vous êtes éligible à une inscription ou à un enregistrement sur {domain}. Les sources publiques relèvent de l'éligibilité, pas de la prospection : si vous remplissez les critères, l'inscription est quasi automatique ; sinon, aucune relance n'y changera rien.",
+      SOCIAL:
+        "Créez ou complétez votre présence sur {domain}, et assurez-vous qu'elle décrive ce que vous vendez réellement. Les moteurs les citent parce qu'elles sont publiques et à jour ; un profil vieux de trois ans est donc une source qui plaide contre vous.",
+      OTHER:
+        "Déterminez ce qu'est {domain} avant d'agir. Ouvrez la page que les moteurs ont citée, voyez si elle accepte des soumissions, des inscriptions, des articles invités ou des corrections, et traitez-la en conséquence.",
+    },
+    campaignsCta: "Demander des avis à vos clients",
+    themeFallback: "les questions que posent vos acheteurs",
+
+    methodNote:
+      "Classées selon l'intérêt d'y figurer — la fréquence à laquelle les moteurs citent cette source, le nombre de moteurs concernés et la part qui profite à vos concurrents — divisé par la difficulté. Les sources qui pointent déjà vers votre site sont exclues. Être référencé vous rend éligible à la lecture ; ce n'est pas un facteur de classement, ni une garantie d'être recommandé.",
+  },
+  "de-CH": {
+    lockedTitle: "Zitat-Chancen gibt es ab Growth",
+    lockedBody:
+      "Machen Sie aus den Quellen, die Ihre Mitbewerber zitieren, eine sortierte Liste von Orten, an denen Sie gelistet werden sollten — samt Anleitung für jeden einzelnen. Wechseln Sie zu Growth, um das für Ihre verfolgten Prompts einzuschalten.",
+    lockedCta: "Pläne ansehen",
+
+    emptyTitle: "Noch keine Chancen",
+    emptyBody:
+      "Diese Liste entsteht aus den Quellen, die KI-Maschinen zu Ihrem Markt zitieren. Sobald eine Prüfung gelaufen ist, die nächtliche Verdichtung durch ist und der wöchentliche Lauf sie bewertet hat, erscheint hier jede Quelle, die Ihre Mitbewerber zitiert, Sie aber nie.",
+    emptyFinderCta: "Alle Quellen im Quellenfinder ansehen",
+
+    sourcesCount: "{count} Quellen",
+    openCount: "{count} noch offen",
+    provenCount: "{count} zitieren Sie jetzt",
+
+    howToTitle: "Was zu tun ist",
+    effortLabel: "Aufwand",
+    efforts: {
+      LOW: "Gering",
+      MED: "Mittel",
+      HIGH: "Hoch",
+    },
+    kinds: {
+      DIRECTORY: "Verzeichnis",
+      REVIEW_SITE: "Bewertungsseite",
+      NEWS: "Presse",
+      BLOG: "Blog",
+      GOV: "Behörde",
+      SOCIAL: "Soziales Netz",
+      OTHER: "Anderes",
+    },
+    statuses: {
+      OPEN: "Offen",
+      IN_PROGRESS: "In Arbeit",
+      DONE: "Erledigt",
+      DISMISSED: "Verworfen",
+    },
+    actions: {
+      OPEN: "Wieder öffnen",
+      IN_PROGRESS: "Beginnen",
+      DONE: "Als erledigt markieren",
+      DISMISSED: "Verwerfen",
+    },
+    statusSaving: "Wird gespeichert…",
+    statusError: "Konnte nicht gespeichert werden. Bitte nochmals versuchen.",
+
+    provenBadge: "Zitiert Sie jetzt",
+    provenTitle:
+      "Bestätigt: Seit Sie das als erledigt markiert haben, hat diese Quelle eine Antwort zitiert, die Sie nennt.",
+
+    howTo: {
+      DIRECTORY:
+        "Übernehmen oder erstellen Sie Ihren Eintrag auf {domain}. Verwenden Sie genau dieselben Angaben zu Name, Adresse und Telefon wie in Ihren anderen Einträgen — ein Verzeichnis, das dem übrigen Web widerspricht, ist schlechter als gar kein Eintrag, weil es die Spur dessen zerteilt, wer Sie sind.",
+      REVIEW_SITE:
+        "Übernehmen Sie Ihr Profil auf {domain} und bitten Sie danach Ihre jüngsten Kundinnen und Kunden um eine Bewertung dort. Ein Profil ohne Bewertungen wird selten zitiert.",
+      NEWS:
+        "Bieten Sie {domain} eine Geschichte an, keine Firma. Der aussichtsreichste Aufhänger ist der, nach dem Ihre Käufer ohnehin fragen — {theme} — erzählt mit einer Zahl oder einem Fall, den nur Sie haben. Finden Sie die Person, die dieses Thema betreut, und schreiben Sie ihr direkt.",
+      BLOG:
+        "Bieten Sie {domain} einen Gastbeitrag oder einen Beitrag zu {theme} an. Unabhängige Blogs antworten weit häufiger auf E-Mails als Redaktionen, und ein einziger Beitrag, der die Frage wirklich beantwortet, genügt, um die Seite zu werden, die eine Maschine liest.",
+      GOV:
+        "Prüfen Sie, ob Sie für einen Eintrag oder eine Registrierung auf {domain} in Frage kommen. Behördliche Quellen sind eine Frage der Berechtigung, nicht der Ansprache: Erfüllen Sie die Kriterien, ist der Eintrag fast automatisch; erfüllen Sie sie nicht, ändert auch Nachfassen nichts.",
+      SOCIAL:
+        "Legen Sie Ihre Präsenz auf {domain} an oder vervollständigen Sie sie, und achten Sie darauf, dass sie beschreibt, was Sie tatsächlich verkaufen. Maschinen zitieren diese Seiten, weil sie öffentlich und aktuell sind — ein drei Jahre altes Profil ist deshalb eine Quelle, die gegen Sie spricht.",
+      OTHER:
+        "Finden Sie zuerst heraus, was {domain} überhaupt ist. Öffnen Sie die Seite, welche die Maschinen zitiert haben, prüfen Sie, ob sie Einreichungen, Einträge, Gastbeiträge oder Korrekturen annimmt, und behandeln Sie sie als das, was sie tatsächlich ist.",
+    },
+    campaignsCta: "Kundinnen und Kunden um Bewertungen bitten",
+    themeFallback: "die Fragen, die Ihre Käufer stellen",
+
+    methodNote:
+      "Sortiert danach, wie viel es bringt, dort aufzutauchen — wie oft die Maschinen diese Quelle zitieren, wie viele davon es tun und wie viel davon Ihren Mitbewerbern zugutekommt — geteilt durch den Aufwand. Quellen, die bereits auf Ihre Website verlinken, bleiben aussen vor. Gelistet zu sein macht Sie lesbar; es ist kein Rankingfaktor und keine Garantie für eine Empfehlung.",
   },
 };

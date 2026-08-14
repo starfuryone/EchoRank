@@ -40,6 +40,7 @@ import {
   MessageSquareText,
   Quote,
   PieChart,
+  ListChecks,
 } from "lucide-react";
 import type { PlanType } from "@/generated/prisma";
 
@@ -53,7 +54,8 @@ export type AiToolId =
   | "share_of_voice"
   | "custom_prompts"
   | "ai_attribution"
-  | "citation_finder";
+  | "citation_finder"
+  | "citation_opportunities";
 
 /**
  * Build-progress switches a card's destination enforces for itself. Named
@@ -120,6 +122,21 @@ export const AI_TOOL_GROUPS: AiToolGroup[] = [
     id: "traffic",
     tools: [
       { id: "ai_attribution", href: "/visibility/tools/ai-attribution", icon: MousePointerClick },
+      // Placed in "From the answers" as specified, and the placement is worth a
+      // note because the group's other card is about visitors. Read the group
+      // label literally — what COMES OUT of the answers — and both fit: one is
+      // the traffic they send, the other is the work they hand you. Read it as
+      // "traffic" (the group id) and only one does. If the hub ever grows a
+      // third group for actions, this is the card that moves.
+      //
+      // NO `rollout`: its route renders a locked upgrade state below Growth
+      // rather than notFound()ing, so it is reachable by every tenant and
+      // hiding the card would be wrong — see the hides-vs-locks split above.
+      {
+        id: "citation_opportunities",
+        href: "/visibility/tools/citation-opportunities",
+        icon: ListChecks,
+      },
     ],
   },
 ];

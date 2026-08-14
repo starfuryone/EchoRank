@@ -42,6 +42,7 @@ import {
   MousePointerClick,
   PieChart,
   Quote,
+  ListChecks,
 } from "lucide-react";
 import type { PlanType } from "@/generated/prisma";
 
@@ -82,7 +83,8 @@ export type SeoToolId =
   | "site_crawler"
   | "ai_attribution"
   | "share_of_voice"
-  | "citation_finder";
+  | "citation_finder"
+  | "citation_opportunities";
 
 /** Tools that render a scaffold page under /visibility/tools/<slug>. */
 // Note: brand_radar/bot_analytics/content_explorer remain ScaffoldIds although
@@ -118,6 +120,9 @@ export type ScaffoldId = Exclude<
   // And again: Citation Finder ships with its own locked, empty and no-match
   // states in CITATION_FINDER_COPY.
   | "citation_finder"
+  // And its downstream tool, for the same reason: Citation Opportunities ships
+  // real, with its locked and empty states in CITATION_OPPORTUNITIES_COPY.
+  | "citation_opportunities"
 >;
 
 export interface SeoTool {
@@ -191,6 +196,14 @@ export const SEO_TOOL_GROUPS: SeoToolGroup[] = [
       // rows up. Built on citations the Watcher already stored — it buys
       // nothing upstream.
       t("citation_finder", "citation-finder", Quote, { badge: "new" }),
+      // Directly after Citation Finder because it is that tool's output turned
+      // into work. The Finder answers "who did the engine read"; this answers
+      // "and which of those can we do something about, in what order". Two
+      // cards rather than a tab on one, because the audience differs — the
+      // Finder is read by whoever is diagnosing, this is worked by whoever is
+      // doing outreach, and burying a worklist inside a diagnostic table is how
+      // worklists go unworked.
+      t("citation_opportunities", "citation-opportunities", ListChecks, { badge: "new" }),
       // What an AI crawler actually receives for one page. Sits beside Brand
       // Radar because both answer "are we in the answers"; this one answers
       // "can they even read us".

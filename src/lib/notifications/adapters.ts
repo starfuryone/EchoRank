@@ -375,3 +375,49 @@ export async function notifySovShareDrop(input: SovShareDropInput): Promise<void
     payload: { engine: input.engine, before, after },
   });
 }
+
+// ─── 9. Citation Opportunity Engine ─────────────────────────────────────────
+
+export interface CitationOpportunityInput {
+  tenantId: string;
+  domain: string;
+  /** The unitless opportunity score. Carried, never printed. */
+  priority: number;
+}
+
+/**
+ * One newly-found, top-quartile citation opportunity.
+ *
+ * `info`, and that is the whole point of the severity scale having three
+ * levels. Nothing is wrong. Nobody has lost anything. A source the engines
+ * already trust turns out to be reachable, which is good news arriving on a
+ * Monday — filing it `warning` would put a yellow badge on an opportunity and
+ * teach the customer to read the tray as a list of problems.
+ *
+ * ONLY ABOVE p75, and only for rows that did not exist before this sweep. The
+ * weekly job re-scores every open row every week; alerting on all of them would
+ * be a tray full of things the customer already knows about, which is how a
+ * notification surface stops being read. See the p75 note in
+ * src/lib/citation-opportunities/score.ts for why the percentile is
+ * nearest-rank rather than interpolated — it is what keeps a tenant with three
+ * opportunities from being alerted about all three.
+ *
+ * DEDUPED PER (DOMAIN, DAY). The domain, not the opportunity id: a row deleted
+ * by retireStaleOpportunities and re-created a week later is the same finding
+ * about the same domain wearing a new cuid, and the customer does not care that
+ * our primary key moved.
+ */
+export async function notifyCitationOpportunity(
+  input: CitationOpportunityInput,
+): Promise<void> {
+  const day = utcDay();
+
+  await recordNotification({
+    tenantId: input.tenantId,
+    type: "citation_opportunity",
+    severity: "info" satisfies NotificationSeverity,
+    title: `${input.domain} cites your competitors and has never named you`,
+    dedupeKey: `notif:citation-opp-${input.domain}-${day}`,
+    payload: { domain: input.domain, priority: input.priority },
+  });
+}

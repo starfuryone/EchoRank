@@ -280,6 +280,28 @@ export interface CitationAggregationJob {
   tenantId?: string;
 }
 
+/**
+ * Citation Opportunity Engine: turn the `sources` rollup into a get-listed
+ * worklist, weekly.
+ *
+ * Same sweep/score split as its siblings, but the grain is the TENANT, not the
+ * brand profile — a listing is one job per tenant however many brands it
+ * tracks, which is also the key of the table this writes (see
+ * src/lib/citation-opportunities/store.ts).
+ *
+ * Carries NO date and NO watermark. It reads `sources`, which the nightly
+ * citation rollup has already brought up to date, and recomputes the whole
+ * worklist from scratch each week — so there is no window to select and nothing
+ * to stamp. In particular it never reads or writes Citation.sourceId, which is
+ * the citation rollup's watermark and stays entirely that feature's business.
+ */
+export interface CitationOpportunityJob {
+  /** The repeatable weekly tick. */
+  sweep?: boolean;
+  /** A single tenant's scoring pass. */
+  tenantId?: string;
+}
+
 // ─── Queue → Job Type mapping ─────────────────────────────────────────────────
 
 export interface QueueJobMap {
@@ -305,4 +327,5 @@ export interface QueueJobMap {
   "free-tools-volatility": FreeToolsVolatilityJob;
   "sov-aggregation": SovAggregationJob;
   "citation-aggregation": CitationAggregationJob;
+  "citation-opportunities": CitationOpportunityJob;
 }

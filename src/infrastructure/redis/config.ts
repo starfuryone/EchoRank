@@ -111,6 +111,12 @@ export const REDIS_CONFIG = {
     // profile, pure database work, nothing bought upstream. The limiter is a
     // backstop against a runaway sweep, not a cost control.
     "citation-aggregation": { max: 60, duration: 60_000 },
+    // The one sweep on this list that BUYS something. At most one DataForSEO
+    // referring-domains call per tenant per week (~$0.026 observed), and the
+    // 7-day cache in citation-opportunities/listed.ts means most weeks buy
+    // nothing at all. 10/min is deliberately tighter than its siblings: a
+    // runaway loop here spends money rather than merely reading rows.
+    "citation-opportunities": { max: 10, duration: 60_000 },
   } as Record<string, { max: number; duration: number }>,
 } as const;
 
@@ -138,7 +144,8 @@ export type QueueName =
   | "free-tools-volatility"
   | "ai-checkup"
   | "sov-aggregation"
-  | "citation-aggregation";
+  | "citation-aggregation"
+  | "citation-opportunities";
 
 /** All valid queue names */
 export const QUEUE_NAMES: QueueName[] = [
@@ -166,4 +173,5 @@ export const QUEUE_NAMES: QueueName[] = [
   "ai-checkup",
   "sov-aggregation",
   "citation-aggregation",
+  "citation-opportunities",
 ];

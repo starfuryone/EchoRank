@@ -28,6 +28,8 @@ export const NOTIFICATION_TYPES = [
   "reputation_score_change",
   // AI Share of Voice — the nightly rollup's week-over-week drop check
   "sov_share_drop",
+  // Citation Opportunity Engine — the weekly sweep's top-quartile finds
+  "citation_opportunity",
 ] as const;
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
@@ -69,6 +71,14 @@ export interface NotificationPayloads {
    * share fell from 0.2 to 0.1" in the tray.
    */
   sov_share_drop: { engine: string; before: number; after: number };
+  /**
+   * `priority` is the OPPORTUNITY SCORE, which has no unit — see
+   * src/lib/citation-opportunities/score.ts. It is carried so a consumer can
+   * rank two of these against each other, and for exactly that reason the copy
+   * below never prints it. A number in the tray that the customer cannot
+   * interpret is worse than no number.
+   */
+  citation_opportunity: { domain: string; priority: number };
 }
 
 export type PayloadFor<T extends NotificationType> = NotificationPayloads[T];
@@ -95,6 +105,7 @@ export const NOTIFICATION_HREF: Record<NotificationType, string> = {
   visibility_crawler_blocked: "/visibility",
   reputation_score_change: "/analytics",
   sov_share_drop: "/visibility/tools/share-of-voice",
+  citation_opportunity: "/visibility/tools/citation-opportunities",
 };
 
 export function isNotificationType(value: string): value is NotificationType {

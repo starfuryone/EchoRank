@@ -48,6 +48,7 @@ const EXPECTED_HREFS: Record<string, string> = {
   custom_prompts: "/visibility/tools/custom-prompts",
   ai_attribution: "/visibility/tools/ai-attribution",
   citation_finder: "/visibility/tools/citation-finder",
+  citation_opportunities: "/visibility/tools/citation-opportunities",
 };
 
 // ─── Cards and routes ───────────────────────────────────────────────────────
@@ -103,6 +104,7 @@ test("a rolled-out-but-off card is HIDDEN, never rendered", () => {
     "custom_prompts",
     "citation_finder",
     "ai_attribution",
+    "citation_opportunities",
   ]);
 });
 
@@ -115,6 +117,7 @@ test("the same card appears once its switch is on", () => {
     "custom_prompts",
     "citation_finder",
     "ai_attribution",
+    "citation_opportunities",
   ]);
 });
 
@@ -137,7 +140,7 @@ test("a group that empties out is dropped, not rendered as a bare heading", () =
 
 test("no tier is route-confined, but a signed-out visitor sees nothing", () => {
   for (const plan of PLANS) {
-    assert.equal(visibleAiGroups(plan, ALL_ON).flatMap((g) => g.tools).length, 6, plan);
+    assert.equal(visibleAiGroups(plan, ALL_ON).flatMap((g) => g.tools).length, 7, plan);
     assert.ok(canSeeAiHub(plan), plan);
   }
   assert.deepEqual(visibleAiGroups(null, ALL_ON), []);
