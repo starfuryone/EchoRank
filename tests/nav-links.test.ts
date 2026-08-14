@@ -91,6 +91,51 @@ describe("dashboard sidebar", () => {
   });
 });
 
+// The config-level assertions for this live in src/lib/__tests__/ai-tools.test.ts.
+// These are the RENDERED half: the config being right and the markup being right
+// are two different claims, and the retarget is exactly the kind of change that
+// satisfies the first while leaving a route subtree with no lit row.
+describe("the AI row targets the hub", () => {
+  it("renders one AI row pointing at /ai, and none at /visibility", () => {
+    const html = sidebar();
+    expect(html).toContain('href="/ai"');
+    expect(html).toContain(dashNav.en["/ai"]);
+    expect(html).not.toContain('href="/visibility"');
+  });
+
+  it("keeps its position — third row, between Reputation and SEO Tools", () => {
+    const html = sidebar();
+    expect(html.indexOf('href="/ai"')).toBeGreaterThan(html.indexOf('href="/reputation"'));
+    expect(html.indexOf('href="/ai"')).toBeLessThan(html.indexOf('href="/visibility/tools"'));
+  });
+
+  it("labels it per locale", () => {
+    for (const locale of ["en", "fr", "de-CH"] as const) {
+      expect(sidebar({ locale }), locale).toContain(dashNav[locale]["/ai"]);
+    }
+  });
+
+  it("highlights on the hub itself", () => {
+    expect(anchor(sidebar({ path: "/ai" }), "/ai")).toContain("bg-gray-800");
+  });
+
+  it("stays lit across /visibility/*, which no longer has a row of its own", () => {
+    // Without activePrefixes these routes would light nothing at all — the
+    // quiet failure that makes a nav feel broken three levels deep.
+    for (const path of ["/visibility", "/visibility/ai-search", "/visibility/keywords"]) {
+      expect(anchor(sidebar({ path }), "/ai"), path).toContain("bg-gray-800");
+    }
+  });
+
+  it("yields the tool subtree to SEO Tools rather than double-lighting", () => {
+    const html = sidebar({ path: "/visibility/tools/ai-lens" });
+    expect(anchor(html, "/visibility/tools")).toContain("bg-gray-800");
+    const ai = anchor(html, "/ai");
+    expect(ai).toContain("text-gray-400");
+    expect(ai).not.toContain("bg-gray-800 text-white");
+  });
+});
+
 describe("public top nav", () => {
   const render = (locale: string) =>
     renderToStaticMarkup(createElement(PublicNav, { locale }));

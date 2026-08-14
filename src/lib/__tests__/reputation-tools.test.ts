@@ -221,14 +221,21 @@ test("the sidebar order is the agreed one", () => {
   assert.deepEqual(hrefs, [
     "/dashboard",
     "/reputation",
-    "/visibility",
+    // Was "/visibility". The AI surfaces got the same treatment the reputation
+    // ones did: one row, one hub at /ai. The row kept its position and its
+    // icon; only its target moved, and /visibility is now a card on that hub.
+    // The row still lights up for /visibility/* — see activePrefixes in
+    // sidebar.tsx and the render assertions in tests/nav-links.test.ts.
+    "/ai",
     "/visibility/tools",
     "/visibility/tools/ai-content-helper",
     "/team",
     "/settings",
     "/settings/account",
     "/billing",
-    // Help is the tenth row, added deliberately after the nine-row
+    // Notifications sits with the administration block, above Help.
+    "/notifications",
+    // Help is the last row, added deliberately after the nine-row
     // consolidation. It is not a reputation surface and does not reopen the
     // "one row per feature" pattern this suite guards against: it is a single
     // link to the knowledge-base hub, ungated on every tier.

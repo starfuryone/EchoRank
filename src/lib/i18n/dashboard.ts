@@ -28,6 +28,7 @@ export const dashNav: Record<DashLocale, Record<string, string>> = {
     "/analytics": "Reputation Analytics",
     "/intelligence": "Intelligence",
     "/monitoring": "Monitoring",
+    "/ai": "AI",
     "/visibility": "AI Visibility",
     "/imports": "Data Sources",
     "/extension": "Extension",
@@ -75,6 +76,7 @@ export const dashNav: Record<DashLocale, Record<string, string>> = {
     "/analytics": "Reputationsanalyse",
     "/intelligence": "Intelligence",
     "/monitoring": "Überwachung",
+    "/ai": "KI",
     "/visibility": "KI-Sichtbarkeit",
     "/imports": "Datenquellen",
     "/extension": "Erweiterung",
@@ -121,6 +123,7 @@ export const dashNav: Record<DashLocale, Record<string, string>> = {
     "/analytics": "Analyses de réputation",
     "/intelligence": "Intelligence",
     "/monitoring": "Surveillance",
+    "/ai": "IA",
     "/visibility": "Visibilité IA",
     "/imports": "Sources de données",
     "/extension": "Extension",
@@ -12556,5 +12559,122 @@ export const AI_ATTRIBUTION_COPY: Record<DashLocale, AiAttributionCopy> = {
     },
     darkAiHint:
       "«Andere KI» bezeichnet einen Besuch, bei dem wir nachweisen konnten, dass er aus einem Assistenten kam — You.com, Poe, Meta AI und ähnliche — aber nicht aus einem der fünf einzeln ausgewiesenen. Das ist nie geraten: Traffic, dessen KI-Herkunft wir nicht belegen können, wird gar nicht gezählt.",
+  },
+};
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   AI hub (/ai)
+   ═══════════════════════════════════════════════════════════════════════════
+
+   Card copy for the AI hub. Same shape as REPUTATION_COPY minus the lock
+   strings: this hub HIDES a card its rollout switch has not reached rather
+   than locking it, so there is no "not on your plan" state to describe.
+   See src/lib/ai-tools.ts for why those are different questions.
+
+   Descriptions say what the surface DOES, in the same register as the
+   reputation cards — a card that reads like a feature name teaches nobody
+   which of four AI surfaces they actually want.
+*/
+const aiHubEn = {
+  hubTitle: "AI",
+  hubSubtitle:
+    "Whether AI assistants know about you, what they say, and who they send. Four surfaces, one place.",
+
+  groups: {
+    answers: "In the answers",
+    traffic: "From the answers",
+  } as Record<string, string>,
+
+  items: {
+    ai_visibility: {
+      name: "AI Visibility",
+      description:
+        "Audit any page for how readable it is to AI engines, and watch the score on a schedule.",
+    },
+    ai_search: {
+      name: "AI Search Intelligence",
+      description:
+        "How assistants answer the questions your buyers ask — who gets named, cited and recommended.",
+    },
+    custom_prompts: {
+      name: "Custom Prompts",
+      description: "Track the exact questions that matter to you, and what the answers say over time.",
+    },
+    ai_attribution: {
+      name: "AI Attribution",
+      description:
+        "Which assistants actually send visitors to your site, and which pages they land on.",
+    },
+  },
+};
+export type AiHubCopy = typeof aiHubEn;
+
+export const AI_HUB_COPY: Record<DashLocale, AiHubCopy> = {
+  en: aiHubEn,
+  fr: {
+    hubTitle: "IA",
+    hubSubtitle:
+      "Si les assistants IA vous connaissent, ce qu'ils disent de vous et qui ils vous envoient. Quatre surfaces, un seul endroit.",
+
+    groups: {
+      answers: "Dans les réponses",
+      traffic: "Depuis les réponses",
+    },
+
+    items: {
+      ai_visibility: {
+        name: "Visibilité IA",
+        description:
+          "Analysez la lisibilité d'une page pour les moteurs IA et suivez le score de façon planifiée.",
+      },
+      ai_search: {
+        name: "Veille des recherches IA",
+        description:
+          "Comment les assistants répondent aux questions de vos acheteurs — qui est nommé, cité et recommandé.",
+      },
+      custom_prompts: {
+        name: "Requêtes personnalisées",
+        description:
+          "Suivez les questions qui comptent pour vous et l'évolution des réponses dans le temps.",
+      },
+      ai_attribution: {
+        name: "Attribution IA",
+        description:
+          "Quels assistants envoient réellement des visiteurs sur votre site, et sur quelles pages ils arrivent.",
+      },
+    },
+  },
+  "de-CH": {
+    hubTitle: "KI",
+    hubSubtitle:
+      "Ob KI-Assistenten Sie kennen, was sie sagen und wen sie schicken. Vier Oberflächen, ein Ort.",
+
+    groups: {
+      answers: "In den Antworten",
+      traffic: "Aus den Antworten",
+    },
+
+    items: {
+      ai_visibility: {
+        name: "KI-Sichtbarkeit",
+        description:
+          "Prüfen Sie, wie gut KI-Engines eine Seite lesen können, und verfolgen Sie den Wert nach Zeitplan.",
+      },
+      ai_search: {
+        name: "KI-Suchanalyse",
+        description:
+          "Wie Assistenten die Fragen Ihrer Kundschaft beantworten — wer genannt, zitiert und empfohlen wird.",
+      },
+      custom_prompts: {
+        name: "Eigene Prompts",
+        description:
+          "Verfolgen Sie genau die Fragen, die für Sie zählen, und wie sich die Antworten entwickeln.",
+      },
+      ai_attribution: {
+        name: "KI-Attribution",
+        description:
+          "Welche Assistenten tatsächlich Besucher auf Ihre Website schicken und wo diese landen.",
+      },
+    },
   },
 };

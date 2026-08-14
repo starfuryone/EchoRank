@@ -32,10 +32,20 @@ import type { PlanType } from "@/generated/prisma";
 // /visibility/tools/*. It is a destination people go to directly and repeatedly,
 // unlike the other tools in that hub, and its dashNav label is what the page
 // calls itself.
+//
+// The AI row points at /ai, the hub, NOT at /visibility. /visibility is still
+// the AI Visibility dashboard — it never moved, and it is linked from the
+// marketing site, the onboarding emails and the notification fan-in — it is
+// simply one card on the hub now. Same consolidation as /reputation.
+//
+// activePrefixes is why that retarget does not go dark: without it, every
+// /visibility/* route would light NO row, because the only thing that used to
+// match them left the list. It is deliberately NOT "/visibility/tools", which
+// has its own row and, being longer, wins the match below on its own.
 const navItems = [
   { href: "/dashboard", icon: LayoutDashboard },
   { href: "/reputation", icon: Sparkles },
-  { href: "/visibility", icon: ScanEye },
+  { href: "/ai", icon: ScanEye, activePrefixes: ["/visibility"] },
   { href: "/visibility/tools", icon: Wrench },
   { href: "/visibility/tools/ai-content-helper", icon: PenTool },
   { href: "/team", icon: UserPlus },
@@ -46,6 +56,42 @@ const navItems = [
   // Last row, below the administration block. Help is never plan-gated.
   { href: "/help", icon: HelpCircle },
 ] as const;
+
+interface NavItem {
+  href: string;
+  activePrefixes?: readonly string[];
+}
+
+/**
+ * How long a path this item claims for the current route, or -1 for no claim.
+ *
+ * An item claims its own href plus any activePrefixes, and the LONGEST claim
+ * across the whole list wins — which is what keeps /visibility/tools/ai-lens on
+ * the SEO Tools row rather than the AI row, even though the AI row also claims
+ * /visibility. Exported for tests: this is the one piece of sidebar behaviour
+ * with a wrong answer that looks fine until you are three levels deep.
+ */
+export function navMatchLength(item: NavItem, pathname: string): number {
+  const claims = [item.href, ...(item.activePrefixes ?? [])];
+  return claims.reduce((best, claim) => {
+    const matches = pathname === claim || pathname.startsWith(claim + "/");
+    return matches && claim.length > best ? claim.length : best;
+  }, -1);
+}
+
+/** The href of the row to highlight, or "" when nothing claims this route. */
+export function activeNavHref(items: readonly NavItem[], pathname: string): string {
+  let winner = "";
+  let best = -1;
+  for (const item of items) {
+    const length = navMatchLength(item, pathname);
+    if (length > best) {
+      best = length;
+      winner = item.href;
+    }
+  }
+  return best < 0 ? "" : winner;
+}
 
 interface SidebarProps {
   open?: boolean;
@@ -65,6 +111,9 @@ export function Sidebar({ open, onClose, locale = "en", plan, paid = false }: Si
   const items = navItems.filter(
     (item) => !item.href.startsWith(SEO_TOOLS_HUB) || paid,
   );
+  // Computed once for the whole list, not once per row: the winner is a
+  // property of the route, not of the row being drawn.
+  const activeHref = activeNavHref(items, pathname);
 
   return (
     <>
@@ -77,8 +126,9 @@ export function Sidebar({ open, onClose, locale = "en", plan, paid = false }: Si
         />
       )}
 
-      {/* Longest matching href wins so /visibility/tools/* highlights
-          "SEO Tools" and not also "AI Visibility". */}
+      {/* Longest claim wins (see activeNavHref), so /visibility/tools/*
+          highlights "SEO Tools" and not also "AI" — even though the AI row
+          claims /visibility as a prefix. */}
       <aside
         className={cn(
           "fixed inset-y-0 left-0 z-50 flex w-64 flex-col bg-gray-900 transition-transform duration-200 ease-in-out lg:translate-x-0",
@@ -99,10 +149,6 @@ export function Sidebar({ open, onClose, locale = "en", plan, paid = false }: Si
         <nav className="flex-1 overflow-y-auto px-3 py-4">
           <ul className="space-y-1">
             {items.map((item) => {
-              const activeHref = items
-                .map((i) => i.href)
-                .filter((h) => pathname === h || pathname.startsWith(h + "/"))
-                .reduce((a, b) => (b.length > a.length ? b : a), "");
               const isActive = item.href === activeHref;
 
               return (
