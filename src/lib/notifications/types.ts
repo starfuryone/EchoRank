@@ -26,6 +26,8 @@ export const NOTIFICATION_TYPES = [
   "visibility_crawler_blocked",
   // Reputation scoring — previously console.log only, no durable row
   "reputation_score_change",
+  // AI Share of Voice — the nightly rollup's week-over-week drop check
+  "sov_share_drop",
 ] as const;
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
@@ -60,6 +62,13 @@ export interface NotificationPayloads {
     direction: "up" | "down";
     location: string | null;
   };
+  /**
+   * PERCENTAGE POINTS, both of them — 12.4 means 12.4% of that engine's
+   * answers, not 0.124. SovSnapshot.share stores the 0..1 fraction and the
+   * adapter converts once; a payload carrying the fraction would render "your
+   * share fell from 0.2 to 0.1" in the tray.
+   */
+  sov_share_drop: { engine: string; before: number; after: number };
 }
 
 export type PayloadFor<T extends NotificationType> = NotificationPayloads[T];
@@ -85,6 +94,7 @@ export const NOTIFICATION_HREF: Record<NotificationType, string> = {
   visibility_score_drop: "/visibility",
   visibility_crawler_blocked: "/visibility",
   reputation_score_change: "/analytics",
+  sov_share_drop: "/visibility/tools/share-of-voice",
 };
 
 export function isNotificationType(value: string): value is NotificationType {

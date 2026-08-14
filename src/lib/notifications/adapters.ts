@@ -327,3 +327,51 @@ export async function notifyReputationScoreChange(
     },
   });
 }
+
+// ─── 8. AI Share of Voice ───────────────────────────────────────────────────
+
+export interface SovShareDropInput {
+  tenantId: string;
+  /** BrandProfile id — the prompt set. Part of the dedupe key, not the copy. */
+  promptSetId: string;
+  engine: string;
+  /** PERCENTAGE POINTS on both sides. See NotificationPayloads.sov_share_drop. */
+  before: number;
+  after: number;
+}
+
+/**
+ * One engine's week-over-week share drop, from the nightly rollup.
+ *
+ * `warning`, not `critical`. The spec calls this severity "warn"; this codebase's
+ * three levels are info/warning/critical (see the Notification model and
+ * NOTIFICATION_SEVERITIES), so it lands on the middle one — which is also where
+ * it belongs on the merits: losing five points of share in a week is a thing to
+ * look at this week, not a thing to wake someone for. `critical` is reserved for
+ * a site going invisible, as visibility_crawler_blocked documents.
+ *
+ * DEDUPED PER (PROMPT SET, ENGINE, DAY). The nightly job is retryable and the
+ * queue gives it three attempts, so the same drop must write one row however
+ * many times the sweep runs. Including the engine is what lets two engines
+ * dropping on the same night produce two rows rather than one: they are two
+ * separate facts with two separate numbers, and pooling them would report a
+ * share the customer cannot find on the chart.
+ *
+ * Shares are rounded to one decimal for the copy AND for the dedupe key's day
+ * stamp only — the stored payload keeps them as passed, so a future consumer is
+ * not stuck with our display precision.
+ */
+export async function notifySovShareDrop(input: SovShareDropInput): Promise<void> {
+  const day = utcDay();
+  const before = Math.round(input.before * 10) / 10;
+  const after = Math.round(input.after * 10) / 10;
+
+  await recordNotification({
+    tenantId: input.tenantId,
+    type: "sov_share_drop",
+    severity: "warning" satisfies NotificationSeverity,
+    title: `AI share of voice on ${input.engine} fell from ${before}% to ${after}%`,
+    dedupeKey: `notif:sov-drop-${input.promptSetId}-${input.engine}-${day}`,
+    payload: { engine: input.engine, before, after },
+  });
+}

@@ -40,6 +40,7 @@ import {
   History,
   Network,
   MousePointerClick,
+  PieChart,
 } from "lucide-react";
 import type { PlanType } from "@/generated/prisma";
 
@@ -78,7 +79,8 @@ export type SeoToolId =
   | "ai_lens"
   | "historical"
   | "site_crawler"
-  | "ai_attribution";
+  | "ai_attribution"
+  | "share_of_voice";
 
 /** Tools that render a scaffold page under /visibility/tools/<slug>. */
 // Note: brand_radar/bot_analytics/content_explorer remain ScaffoldIds although
@@ -108,6 +110,9 @@ export type ScaffoldId = Exclude<
   // Same: AI Attribution shipped real, with its install, empty and results
   // states in AI_ATTRIBUTION_COPY. No scaffold copy to inherit.
   | "ai_attribution"
+  // Same again: Share of Voice shipped real, with its locked and empty states
+  // in SHARE_OF_VOICE_COPY.
+  | "share_of_voice"
 >;
 
 export interface SeoTool {
@@ -169,6 +174,11 @@ export const SEO_TOOL_GROUPS: SeoToolGroup[] = [
       t("serp_checker", "serp-checker", ListOrdered),
       t("backlinks", "backlinks", Link2),
       t("brand_radar", "brand-radar", RadarIcon),
+      // Sits directly after Brand Radar because it is the other half of the
+      // same question. Brand Radar asks "are we in the answers"; this one asks
+      // "and how much of them is ours, against whom". Built entirely on the
+      // Watcher runs those prompts already produced — it buys nothing upstream.
+      t("share_of_voice", "share-of-voice", PieChart, { badge: "new" }),
       // What an AI crawler actually receives for one page. Sits beside Brand
       // Radar because both answer "are we in the answers"; this one answers
       // "can they even read us".

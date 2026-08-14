@@ -103,6 +103,10 @@ export const REDIS_CONFIG = {
     // limiter inside the worker (createProviderLimiter), because the vendors
     // count concurrent requests, not our job starts.
     "ai-checkup": { max: 10, duration: 60_000 },
+    // One nightly tick plus one job per prompt set behind it. Pure database
+    // work — no provider call, nothing to spend — so the limiter is a backstop
+    // against a runaway sweep, not a cost control.
+    "sov-aggregation": { max: 60, duration: 60_000 },
   } as Record<string, { max: number; duration: number }>,
 } as const;
 
@@ -128,7 +132,8 @@ export type QueueName =
   | "bot-log-analysis"
   | "site-crawl"
   | "free-tools-volatility"
-  | "ai-checkup";
+  | "ai-checkup"
+  | "sov-aggregation";
 
 /** All valid queue names */
 export const QUEUE_NAMES: QueueName[] = [
@@ -154,4 +159,5 @@ export const QUEUE_NAMES: QueueName[] = [
   "site-crawl",
   "free-tools-volatility",
   "ai-checkup",
+  "sov-aggregation",
 ];

@@ -65,6 +65,7 @@ export const dashNav: Record<DashLocale, Record<string, string>> = {
     "/visibility/tools/custom-prompts": "Custom Prompts",
     "/visibility/tools/ai-lens": "AI Lens",
     "/visibility/tools/ai-attribution": "AI Attribution",
+    "/visibility/tools/share-of-voice": "Share of Voice",
   },
   "de-CH": {
     "/dashboard": "Dashboard",
@@ -112,6 +113,7 @@ export const dashNav: Record<DashLocale, Record<string, string>> = {
     "/visibility/tools/custom-prompts": "Eigene Prompts",
     "/visibility/tools/ai-lens": "AI Lens",
     "/visibility/tools/ai-attribution": "KI-Attribution",
+    "/visibility/tools/share-of-voice": "Stimmanteil",
   },
   fr: {
     "/dashboard": "Tableau de bord",
@@ -159,6 +161,7 @@ export const dashNav: Record<DashLocale, Record<string, string>> = {
     "/visibility/tools/custom-prompts": "Requêtes personnalisées",
     "/visibility/tools/ai-lens": "AI Lens",
     "/visibility/tools/ai-attribution": "Attribution IA",
+    "/visibility/tools/share-of-voice": "Part de voix",
   },
 };
 
@@ -5239,6 +5242,11 @@ const seoToolsEn = {
       name: "AI Attribution",
       description: "See which AI assistants are sending visitors to your site, and where they land.",
     },
+    share_of_voice: {
+      name: "Share of Voice",
+      description:
+        "How much of each AI engine's answers you own, who takes the rest, and how it is moving.",
+    },
     social_media_manager: {
       name: "Social Media Manager",
       description: "Plan, edit, schedule, and manage social media content.",
@@ -5392,6 +5400,11 @@ export const SEO_TOOLS_COPY: Record<DashLocale, SeoToolsCopy> = {
         description:
           "Découvrez quels assistants IA envoient des visiteurs sur votre site, et sur quelles pages ils arrivent.",
       },
+      share_of_voice: {
+        name: "Part de voix",
+        description:
+          "Quelle part des réponses de chaque moteur d'IA vous revient, qui prend le reste, et comment cela évolue.",
+      },
       social_media_manager: {
         name: "Gestionnaire de médias sociaux",
         description: "Planifiez, modifiez, programmez et gérez le contenu de vos médias sociaux.",
@@ -5539,6 +5552,11 @@ export const SEO_TOOLS_COPY: Record<DashLocale, SeoToolsCopy> = {
         name: "KI-Attribution",
         description:
           "Sehen Sie, welche KI-Assistenten Besucher auf Ihre Website schicken und wo diese landen.",
+      },
+      share_of_voice: {
+        name: "Stimmanteil",
+        description:
+          "Welchen Anteil der Antworten jeder KI-Maschine Sie halten, wer den Rest nimmt und wohin es sich bewegt.",
       },
       social_media_manager: {
         name: "Social-Media-Manager",
@@ -12198,6 +12216,11 @@ const notificationsEn = {
       title: "Reputation score moved from {previousScore} to {newScore}",
       body: "Location: {location}.",
     },
+    sov_share_drop: {
+      label: "AI share of voice dropped",
+      title: "Your share of {engine} answers fell from {before}% to {after}%",
+      body: "Measured week over week across your tracked prompts.",
+    },
   },
 };
 
@@ -12276,6 +12299,11 @@ export const NOTIFICATIONS_COPY: Record<DashLocale, NotificationsCopy> = {
         title: "Le score de réputation est passé de {previousScore} à {newScore}",
         body: "Établissement : {location}.",
       },
+      sov_share_drop: {
+        label: "Part de voix IA en baisse",
+        title: "Votre part des réponses de {engine} est passée de {before} % à {after} %",
+        body: "Mesurée d'une semaine sur l'autre, sur l'ensemble de vos requêtes suivies.",
+      },
     },
   },
   "de-CH": {
@@ -12348,6 +12376,11 @@ export const NOTIFICATIONS_COPY: Record<DashLocale, NotificationsCopy> = {
         label: "Reputationswert verändert",
         title: "Der Reputationswert ging von {previousScore} auf {newScore}",
         body: "Standort: {location}.",
+      },
+      sov_share_drop: {
+        label: "KI-Stimmanteil gesunken",
+        title: "Ihr Anteil an den Antworten von {engine} sank von {before} % auf {after} %",
+        body: "Woche für Woche gemessen, über alle Ihre verfolgten Prompts.",
       },
     },
   },
@@ -12676,5 +12709,140 @@ export const AI_HUB_COPY: Record<DashLocale, AiHubCopy> = {
           "Welche Assistenten tatsächlich Besucher auf Ihre Website schicken und wo diese landen.",
       },
     },
+  },
+};
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   AI Share of Voice (/visibility/tools/share-of-voice)
+   ═══════════════════════════════════════════════════════════════════════════
+
+   Every number this page shows is a PERCENTAGE OF ONE ENGINE'S ANSWERS, and the
+   copy says so in as many places as it reasonably can. "You own 22%" with no
+   denominator is the single easiest thing to misread on the page — a customer
+   who thinks it means 22% of the market rather than 22% of the weighted
+   mentions on one engine has been misled by us, not by themselves.
+
+   {placeholders} are interpolated by the client, not by the notification
+   renderer, so they may carry any type the component formats.
+*/
+
+const shareOfVoiceEn = {
+  lockedTitle: "Share of Voice is on Growth and above",
+  lockedBody:
+    "See how much of each AI engine's answers you own, who is taking the rest, and how that has moved. Upgrade to Growth to switch it on for your tracked prompts.",
+  lockedCta: "See plans",
+
+  emptyTitle: "No share of voice yet",
+  emptyBody:
+    "This report is built from your tracked prompts' answers. Once a checkup has run and the nightly rollup has passed, your share on each engine appears here.",
+  emptySetupCta: "Set up prompt tracking",
+
+  // ── Headline ──
+  youOwn: "You own {share}",
+  rivalOwns: "{rival} owns {share}",
+  noRival: "No competitor was named beside you.",
+  deltaUp: "up {points} pts in {days} days",
+  deltaDown: "down {points} pts in {days} days",
+  deltaFlat: "unchanged over {days} days",
+  deltaUnavailable: "Not enough history for a trend yet",
+
+  // ── Filters ──
+  promptSetLabel: "Prompt set",
+  engineLabel: "Engine",
+  allEngines: "All engines",
+
+  // ── Charts ──
+  stackTitle: "Share by engine",
+  stackSubtitle:
+    "Each bar is one engine's answers over the last {days} days, split by who was named and how highly.",
+  trendTitle: "Your share over time",
+  trendSubtitle: "Your own share of {scope}, one point per nightly rollup.",
+  trendScopeAll: "all engines",
+  everyoneElse: "Everyone else",
+  promptCount: "{count} prompts",
+  asOf: "{days}-day window, as of {date}",
+
+  // ── Method note ──
+  methodTitle: "How this is counted",
+  methodBody:
+    "One answer names you once, however often it repeats you. A first-place recommendation counts for a full point, second for a half, third for a third, and fourth place and below for a fifth. Being named without a ranked list counts for 0.3 — we know you were there, not where. Your share is your points divided by everyone's.",
+};
+export type ShareOfVoiceCopy = typeof shareOfVoiceEn;
+
+export const SHARE_OF_VOICE_COPY: Record<DashLocale, ShareOfVoiceCopy> = {
+  en: shareOfVoiceEn,
+  fr: {
+    lockedTitle: "La part de voix est incluse à partir de Growth",
+    lockedBody:
+      "Voyez quelle part des réponses de chaque moteur d'IA vous revient, qui prend le reste, et comment cela a évolué. Passez à Growth pour l'activer sur vos requêtes suivies.",
+    lockedCta: "Voir les forfaits",
+
+    emptyTitle: "Pas encore de part de voix",
+    emptyBody:
+      "Ce rapport est construit à partir des réponses à vos requêtes suivies. Dès qu'un contrôle aura été exécuté et que la consolidation nocturne sera passée, votre part sur chaque moteur apparaîtra ici.",
+    emptySetupCta: "Configurer le suivi des requêtes",
+
+    youOwn: "Vous détenez {share}",
+    rivalOwns: "{rival} détient {share}",
+    noRival: "Aucun concurrent n'a été cité à vos côtés.",
+    deltaUp: "+{points} pts en {days} jours",
+    deltaDown: "−{points} pts en {days} jours",
+    deltaFlat: "stable sur {days} jours",
+    deltaUnavailable: "Historique encore insuffisant pour une tendance",
+
+    promptSetLabel: "Jeu de requêtes",
+    engineLabel: "Moteur",
+    allEngines: "Tous les moteurs",
+
+    stackTitle: "Part par moteur",
+    stackSubtitle:
+      "Chaque barre représente les réponses d'un moteur sur les {days} derniers jours, réparties selon qui a été cité et à quelle place.",
+    trendTitle: "Votre part au fil du temps",
+    trendSubtitle: "Votre part de {scope}, un point par consolidation nocturne.",
+    trendScopeAll: "tous les moteurs",
+    everyoneElse: "Tous les autres",
+    promptCount: "{count} requêtes",
+    asOf: "Fenêtre de {days} jours, au {date}",
+
+    methodTitle: "Comment le calcul est fait",
+    methodBody:
+      "Une réponse vous cite une fois, quel que soit le nombre de répétitions. Une recommandation en première place vaut un point entier, la deuxième un demi, la troisième un tiers, et la quatrième et au-delà un cinquième. Être cité sans classement vaut 0,3 — nous savons que vous y étiez, pas à quelle place. Votre part, c'est vos points divisés par ceux de tout le monde.",
+  },
+  "de-CH": {
+    lockedTitle: "Stimmanteil gibt es ab Growth",
+    lockedBody:
+      "Sehen Sie, welchen Anteil der Antworten jeder KI-Maschine Sie halten, wer sich den Rest nimmt und wie sich das entwickelt hat. Wechseln Sie zu Growth, um es für Ihre verfolgten Prompts einzuschalten.",
+    lockedCta: "Abos ansehen",
+
+    emptyTitle: "Noch kein Stimmanteil",
+    emptyBody:
+      "Dieser Bericht entsteht aus den Antworten auf Ihre verfolgten Prompts. Sobald eine Prüfung gelaufen und die nächtliche Konsolidierung durch ist, erscheint hier Ihr Anteil pro Maschine.",
+    emptySetupCta: "Prompt-Tracking einrichten",
+
+    youOwn: "Sie halten {share}",
+    rivalOwns: "{rival} hält {share}",
+    noRival: "Neben Ihnen wurde kein Mitbewerber genannt.",
+    deltaUp: "+{points} Pkt. in {days} Tagen",
+    deltaDown: "−{points} Pkt. in {days} Tagen",
+    deltaFlat: "unverändert über {days} Tage",
+    deltaUnavailable: "Noch zu wenig Verlauf für einen Trend",
+
+    promptSetLabel: "Prompt-Satz",
+    engineLabel: "Maschine",
+    allEngines: "Alle Maschinen",
+
+    stackTitle: "Anteil pro Maschine",
+    stackSubtitle:
+      "Jeder Balken steht für die Antworten einer Maschine der letzten {days} Tage, aufgeteilt danach, wer genannt wurde und wie weit oben.",
+    trendTitle: "Ihr Anteil im Zeitverlauf",
+    trendSubtitle: "Ihr Anteil an {scope}, ein Punkt pro nächtlicher Konsolidierung.",
+    trendScopeAll: "allen Maschinen",
+    everyoneElse: "Alle anderen",
+    promptCount: "{count} Prompts",
+    asOf: "{days}-Tage-Fenster, Stand {date}",
+
+    methodTitle: "Wie gezählt wird",
+    methodBody:
+      "Eine Antwort nennt Sie einmal, so oft sie Sie auch wiederholt. Eine Empfehlung auf Platz eins zählt einen ganzen Punkt, Platz zwei einen halben, Platz drei einen Drittel, Platz vier und tiefer einen Fünftel. Genannt zu werden ohne Rangliste zählt 0,3 — wir wissen, dass Sie dabei waren, nicht wo. Ihr Anteil sind Ihre Punkte geteilt durch die aller.",
   },
 };

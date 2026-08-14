@@ -151,6 +151,17 @@ const DEFAULT_JOB_OPTIONS: Record<QueueName, JobsOptions> = {
     removeOnComplete: { age: REDIS_CONFIG.ttl.completedJobs },
     removeOnFail: { age: REDIS_CONFIG.ttl.failedJobs },
   },
+  // Retries are SAFE and worth having: the rollup only ever upserts on
+  // (promptSetId, engine, date, brand) and the notification only ever upserts
+  // on its dedupeKey, so a second attempt restates the same night rather than
+  // doubling a share or re-alerting. Nothing upstream is bought, so there is
+  // no spend to protect — the only cost of a retry is a repeated read.
+  "sov-aggregation": {
+    attempts: 3,
+    backoff: { type: "exponential", delay: 30_000 },
+    removeOnComplete: { age: REDIS_CONFIG.ttl.completedJobs },
+    removeOnFail: { age: REDIS_CONFIG.ttl.failedJobs },
+  },
 };
 
 // ─── Queue registry ───────────────────────────────────────────────────────────

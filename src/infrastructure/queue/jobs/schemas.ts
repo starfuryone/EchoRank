@@ -229,7 +229,8 @@ export type AllJobTypes =
   | SiteAuditJob
   | BotLogAnalysisJob
   | SiteCrawlJob
-  | FreeToolsVolatilityJob;
+  | FreeToolsVolatilityJob
+  | SovAggregationJob;
 
 /** Free tools: the hourly SERP-volatility basket tick. */
 export interface FreeToolsVolatilityJob {
@@ -240,6 +241,23 @@ export interface FreeToolsVolatilityJob {
 export interface SiteCrawlJob {
   crawlJobId: string;
   tenantId: string;
+}
+
+/**
+ * AI Share of Voice: the nightly tick, or one prompt set's rollup.
+ *
+ * Two shapes on one queue, the same split ai-checkup uses: a repeatable SWEEP
+ * finds the prompt sets to roll up and enqueues one ROLLUP each, so a tenant
+ * with a large window cannot hold up everybody else's night.
+ */
+export interface SovAggregationJob {
+  /** The repeatable nightly tick. */
+  sweep?: boolean;
+  /** A single prompt set's rollup. BrandProfile.id. */
+  promptSetId?: string;
+  tenantId?: string;
+  /** ISO day to compute as-of. Defaults to today (UTC) when absent. */
+  date?: string;
 }
 
 // ─── Queue → Job Type mapping ─────────────────────────────────────────────────
@@ -265,4 +283,5 @@ export interface QueueJobMap {
   "bot-log-analysis": BotLogAnalysisJob;
   "site-crawl": SiteCrawlJob;
   "free-tools-volatility": FreeToolsVolatilityJob;
+  "sov-aggregation": SovAggregationJob;
 }

@@ -225,6 +225,7 @@ model Tenant {
   sources            Source[]
   recommendations    Recommendation[]
   experiments        Experiment[]
+  sovSnapshots       SovSnapshot[]
 
   @@map("tenants")
 }
@@ -2248,6 +2249,8 @@ model BrandProfile {
   sources           Source[]
   recommendations   Recommendation[]
   experiments       Experiment[]
+  /// AI Share of Voice. The brand profile IS the prompt set — see SovSnapshot.
+  sovSnapshots      SovSnapshot[]
 
   @@index([tenantId])
   @@map("brand_profiles")
@@ -3089,4 +3092,85 @@ model AiVisit {
   /// Source breakdown and landing-page table over the same window.
   @@index([tenantId, source, firstSeen(sort: Desc)])
   @@map("ai_visits")
+}
+
+// ─────────────────────────────────────────────────────────────
+// AI SHARE OF VOICE — who owns the answers, per engine, per day
+//
+// Built ON the Watcher run data (PromptRun → MentionAnalysis / CompetitorMention)
+// and writing only here. Nothing in src/lib/ai-monitor/ is modified by this
+// feature; the aggregator imports from it and writes this table.
+// ─────────────────────────────────────────────────────────────
+
+/// One entity's share of one engine's answers, for one prompt set, on one day.
+///
+/// THE PROMPT SET IS A BrandProfile. There is no PromptSet entity in this
+/// schema and adding one would have meant a second project identity beside the
+/// one TrackedPrompt already points at: a "prompt set" is exactly the selected,
+/// active prompts hanging off a brand profile. `promptSetId` is therefore a FK
+/// to BrandProfile, named for the concept the SoV product speaks in rather than
+/// for the table, because the two are the same row and the report is about the
+/// set of questions, not about the brand that owns them.
+///
+/// `brand` IS THE UNIVERSE, NOT THE CUSTOMER. One row exists for every entity
+/// observed in the window — the tracked brand and every rival named beside it —
+/// which is what makes `share` a distribution that sums to 1 across the rows of
+/// a (promptSet, engine, date) group rather than a single number floating on
+/// its own. A table holding only the customer's own share could never answer
+/// "who took it", which is the whole question.
+///
+/// DISTINCT FROM VisibilityMetric.shareOfVoice, deliberately. That column is
+/// the brand's appearances as a percentage of all appearances in ONE checkup's
+/// runs — unweighted, brand-only, and scoped to the day a checkup ran. This is
+/// a rank-weighted distribution over a 28-day rolling window with a row per
+/// competitor. Both are honest answers to different questions, and neither is
+/// computed from the other; the older column is untouched.
+model SovSnapshot {
+  id String @id @default(cuid())
+
+  tenantId    String
+  /// BrandProfile.id. See the note above on why this is not its own entity.
+  promptSetId String
+  /// Provider id as stored on PromptRun.engine, upper-cased by the aggregator
+  /// so the legacy lowercase "claude" rows from the pre-checkup scheduler do
+  /// not form a second engine beside "CLAUDE".
+  engine      String
+  /// UTC day the window CLOSED on — the snapshot's as-of date, not the day the
+  /// runs happened. Twenty-eight days of runs roll up into one dated row.
+  date        DateTime @db.Date
+
+  /// The observed entity, in the casing it was first seen in. Grouped
+  /// case-insensitively by the aggregator, exactly as topCompetitors() in
+  /// src/lib/ai-monitor/metrics.ts groups rivals, so the two panels cannot
+  /// disagree about how many rivals there are.
+  brand String
+
+  /// Sum of this entity's per-observation rank weights across the window.
+  /// 1/rank capped at the top 5, 0.3 for a mention with no position. NOT a
+  /// count: two first-place mentions and five sixth-place ones are different
+  /// facts and a count cannot tell them apart.
+  mentionWeighted Float
+  /// Distinct prompts the window's observations came from, for this
+  /// (promptSet, engine). THE SAME NUMBER ON EVERY ROW OF A GROUP — it
+  /// describes the sample, not the entity, and a share computed off four
+  /// prompts should not be read like one computed off forty.
+  promptCount     Int
+  /// mentionWeighted / (sum of mentionWeighted across the group). 0..1, and the
+  /// rows of one (promptSet, engine, date) group sum to 1.
+  share           Float
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant    Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  promptSet BrandProfile @relation(fields: [promptSetId], references: [id], onDelete: Cascade)
+
+  /// The nightly writer upserts on this, so re-running a night restates it
+  /// rather than doubling it — same contract as VisibilityMetric's key.
+  @@unique([promptSetId, engine, date, brand])
+  /// The page read: one prompt set's window, newest first.
+  @@index([promptSetId, date(sort: Desc)])
+  /// The week-over-week drop check, and every tenant-scoped read.
+  @@index([tenantId, date(sort: Desc)])
+  @@map("sov_snapshots")
 }
