@@ -1,10 +1,17 @@
 // The Solutions taxonomy: config integrity, the dynamic route's params, and
 // the nav columns derived from it.
 //
-// The config is the single source of truth for 25 pages, four category
-// indexes, four nav columns and 29 sitemap entries. Nothing else asserts that
+// The config is the single source of truth for 26 pages, four category
+// indexes, four nav columns and 30 sitemap entries. Nothing else asserts that
 // a French translation exists or that a feature href is real, so a gap here
 // ships as an "undefined" on a live page.
+//
+// ONE literal count, in "config integrity" below. Everything downstream —
+// route params, sitemap entries, nav hrefs — derives from SOLUTION_ITEMS
+// rather than repeating the number. Adding the ninth goals item (google-reviews,
+// 76ca8dd) left four hardcoded 25s and a 29 behind and the suite stayed red for
+// 59 commits, because each one had to be found separately. Now a new item moves
+// exactly one assertion, and that assertion is the canary it is supposed to be.
 import { describe, expect, it } from "vitest";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -24,10 +31,10 @@ import { generateStaticParams as itemParams } from "@/app/[locale]/solutions/[ca
 import { generateStaticParams as catParams } from "@/app/[locale]/solutions/[category]/page";
 
 describe("config integrity", () => {
-  it("has four categories totalling 25 items", () => {
+  it("has four categories totalling 26 items", () => {
     expect(SOLUTION_CATEGORIES).toHaveLength(4);
-    expect(SOLUTION_ITEMS).toHaveLength(25);
-    expect(SOLUTION_CATEGORIES.map((c) => c.items.length)).toEqual([8, 6, 5, 6]);
+    expect(SOLUTION_ITEMS).toHaveLength(26);
+    expect(SOLUTION_CATEGORIES.map((c) => c.items.length)).toEqual([9, 6, 5, 6]);
   });
 
   it("has globally unique slugs", () => {
@@ -88,10 +95,10 @@ describe("config integrity", () => {
 });
 
 describe("routing", () => {
-  it("emits 25 item pages per locale", () => {
+  it("emits one item page per item per locale", () => {
     const params = itemParams();
-    expect(params).toHaveLength(25 * SUPPORTED_LOCALES.length);
-    expect(new Set(params.map((p) => p.slug)).size).toBe(25);
+    expect(params).toHaveLength(SOLUTION_ITEMS.length * SUPPORTED_LOCALES.length);
+    expect(new Set(params.map((p) => p.slug)).size).toBe(SOLUTION_ITEMS.length);
   });
 
   it("emits one index per category per locale", () => {
@@ -113,10 +120,11 @@ describe("routing", () => {
     expect(categoryBySlug("nope")).toBeUndefined();
   });
 
-  it("registers 29 routes in the sitemap — 25 items plus 4 indexes", () => {
-    expect(solutionRoutes()).toHaveLength(29);
+  it("registers every item plus the four indexes in the sitemap", () => {
+    const expected = SOLUTION_ITEMS.length + SOLUTION_CATEGORIES.length;
+    expect(solutionRoutes()).toHaveLength(expected);
     const registered = LOCALIZED_ROUTES.filter((r) => r.path.startsWith("/solutions"));
-    expect(registered).toHaveLength(29);
+    expect(registered).toHaveLength(expected);
   });
 });
 
@@ -160,12 +168,23 @@ describe("nav integration", () => {
 });
 
 describe("optional long-form sections", () => {
-  it("covers the eight goals items and nothing else", async () => {
+  // Long-form lives only on goals pages, and every goals page has it EXCEPT the
+  // ones named here. The exception list is deliberate: google-reviews (76ca8dd)
+  // shipped without long-form prose, and that is a real content gap, not a
+  // config error. Naming it keeps the invariant enforceable in both directions —
+  // a tenth goals item added without prose fails, and writing the missing
+  // google-reviews prose also fails, which is the reminder to empty this list.
+  const GOALS_WITHOUT_LONGFORM = ["google-reviews"];
+
+  it("covers every goals item except the known gaps, and nothing outside goals", async () => {
     const { longformSlugs } = await import("@/lib/solutions-longform");
-    const slugs = longformSlugs();
-    expect(slugs).toHaveLength(8);
+    const slugs = [...longformSlugs()].sort();
     const goals = SOLUTION_CATEGORIES.find((c) => c.slug === "goals")!;
-    expect([...slugs].sort()).toEqual(goals.items.map((i) => i.slug).sort());
+    const expected = goals.items
+      .map((i) => i.slug)
+      .filter((s) => !GOALS_WITHOUT_LONGFORM.includes(s))
+      .sort();
+    expect(slugs).toEqual(expected);
   });
 
   it("is optional — an item without it returns null, not an empty shell", async () => {
@@ -218,12 +237,34 @@ describe("optional long-form sections", () => {
   });
 
   it("omits the block cleanly on a page without long-form", async () => {
+    // NOT "/ 03 is absent" any more. Every item now carries solutions-detail
+    // prose, which numbers itself from (longform.length + 3) — so on a page
+    // with no long-form, detail legitimately OCCUPIES /03. The invariant that
+    // still matters is that skipping the block leaves no hole and no empty
+    // shell: numbering runs straight from the cards into detail, and none of
+    // the long-form prose leaks onto a page that has none.
+    const { longformFor } = await import("@/lib/solutions-longform");
+    const { detailFor } = await import("@/lib/solutions-detail");
     const Page = (await import("@/app/[locale]/solutions/[category]/[slug]/page")).default;
+
+    expect(longformFor("seo-professionals", "en")).toBeNull();
+    const detail = detailFor("seo-professionals", "en")!;
+    expect(detail.prose?.length ?? 0).toBeGreaterThan(0);
+
     const html = renderToStaticMarkup(
       await Page({ params: Promise.resolve({ locale: "en", category: "roles", slug: "seo-professionals" }) }),
     );
-    // No stray section label, and the closing CTA still renders.
-    expect(html).not.toContain("/ 03");
+    // Detail's first prose section sits at /03 — the slot long-form would have
+    // taken — so the sequence has no gap.
+    expect(html).toContain("/ 03");
+    expect(html).toContain(detail.prose![0].h2);
+    // Nothing from any long-form entry appears on a page that has none.
+    const { longformSlugs } = await import("@/lib/solutions-longform");
+    for (const slug of longformSlugs()) {
+      for (const sec of longformFor(slug, "en")!.sections) {
+        expect(html, `${slug} long-form leaked`).not.toContain(sec.h2);
+      }
+    }
     expect(html).toContain("Not sure where to start?");
   });
 

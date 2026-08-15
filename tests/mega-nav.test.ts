@@ -13,6 +13,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { PublicNav, navHrefs, nextOpenPanel } from "@/app/[locale]/PublicNav";
 import { LOCALIZED_ROUTES } from "@/lib/seo/registry";
+import { SOLUTION_ITEMS } from "@/lib/solutions-taxonomy";
 
 const nav = (locale: string, current?: Parameters<typeof PublicNav>[0]["current"]) =>
   renderToStaticMarkup(createElement(PublicNav, { locale, current }));
@@ -43,8 +44,11 @@ describe("every menu destination exists", () => {
   });
 
   it("carries every taxonomy item in the Solutions panel", () => {
+    // Derived from the config, not a literal: the count lives in exactly one
+    // assertion (solutions-taxonomy.test.ts, "config integrity"), so a new
+    // taxonomy item does not leave a stale number stranded in the nav suite.
     const hrefs = navHrefs();
-    expect(hrefs.filter((h) => h.startsWith("/solutions/"))).toHaveLength(25);
+    expect(hrefs.filter((h) => h.startsWith("/solutions/"))).toHaveLength(SOLUTION_ITEMS.length);
   });
 });
 
