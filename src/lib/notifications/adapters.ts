@@ -421,3 +421,40 @@ export async function notifyCitationOpportunity(
     payload: { domain: input.domain, priority: input.priority },
   });
 }
+
+// ─── 14. Agency Opportunity Scanner: a bulk prospect batch finished ─────────
+
+export interface ScanCompleteInput {
+  tenantId: string;
+  batchId: string;
+  total: number;
+  done: number;
+}
+
+/**
+ * One notification per batch, when its last row reaches a terminal state.
+ *
+ * INFO, not warning, and that is a real decision rather than a default. Every
+ * other adapter here fires because something got worse — a score dropped, a
+ * crawler got blocked, a risk threshold tripped. This one fires because work
+ * the customer asked for is done. A batch of a thousand prospects that all
+ * grade F is a GOOD outcome for an agency; grading the notification on the
+ * prospects' scores would invert what the tool is for.
+ *
+ * DEDUPED ON THE BATCH ID ALONE, with no day stamp — unlike every sibling
+ * above. A batch completes exactly once in its life, and the store's status
+ * guard already makes the emitting path fire-once; the dedupeKey is the second
+ * belt on that, for the case where a worker retries after the transaction
+ * committed but before the notification was written. A day stamp would let the
+ * same batch notify twice if a replay ever crossed midnight UTC.
+ */
+export async function notifyScanComplete(input: ScanCompleteInput): Promise<void> {
+  await recordNotification({
+    tenantId: input.tenantId,
+    type: "scan_complete",
+    severity: "info" satisfies NotificationSeverity,
+    title: `Prospect scan finished — ${input.done} of ${input.total} domains`,
+    dedupeKey: `notif:scan-complete-${input.batchId}`,
+    payload: { batchId: input.batchId, total: input.total, done: input.done },
+  });
+}

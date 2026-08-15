@@ -24,6 +24,7 @@ import { BrandRadarArt } from "@/components/seo-tools/help-illustrations/brand-r
 import { CustomPromptsArt } from "@/components/seo-tools/help-illustrations/custom-prompts";
 import { ContentExplorerArt } from "@/components/seo-tools/help-illustrations/content-explorer";
 import { AiLensArt } from "@/components/seo-tools/help-illustrations/ai-lens";
+import { OpportunityScannerArt } from "@/components/seo-tools/help-illustrations/opportunity-scanner";
 
 import {
   AI_LENS_HELP_COPY,
@@ -37,6 +38,7 @@ import {
   SERP_CHECKER_HELP_COPY,
   SITE_AUDIT_HELP_COPY,
   SITE_EXPLORER_HELP_COPY,
+  OPPORTUNITY_SCANNER_HELP_COPY,
 } from "@/lib/i18n/dashboard";
 
 const LOCALES = ["en", "fr", "de-CH"] as const;
@@ -54,6 +56,7 @@ const ILLUSTRATIONS = [
   ["custom-prompts", CustomPromptsArt],
   ["ai-lens", AiLensArt],
   ["content-explorer", ContentExplorerArt],
+  ["opportunity-scanner", OpportunityScannerArt],
 ] as const;
 
 describe.each(ILLUSTRATIONS)("%s illustration", (name, Art) => {
@@ -117,6 +120,7 @@ const MIGRATED = [
   ["brand-radar", BRAND_RADAR_HELP_COPY, ["scoreTitle", "scoreLink", "mentionTitle", "enginesTitle", "alertsTitle", "emptyTitle"]],
   ["custom-prompts", CUSTOM_PROMPTS_HELP_COPY, ["trackTitle", "runsTitle", "trendTitle", "writeTitle", "auditTitle", "auditLink"]],
   ["ai-lens", AI_LENS_HELP_COPY, ["whyTitle", "gapTitle", "fixTitle", "goalTitle"]],
+  ["opportunity-scanner", OPPORTUNITY_SCANNER_HELP_COPY, ["listTitle", "scanTitle", "gradeTitle", "reportTitle", "googleTitle", "etiquetteTitle"]],
 ] as const;
 
 describe("migrated help copy", () => {

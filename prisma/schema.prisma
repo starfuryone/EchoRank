@@ -228,6 +228,7 @@ model Tenant {
   experiments          Experiment[]
   sovSnapshots         SovSnapshot[]
   explainReports       ExplainReport[]
+  scanBatches          ScanBatch[]
 
   @@map("tenants")
 }
@@ -3356,4 +3357,125 @@ model ExplainReport {
   /// tenant. Covers the report-view fetch and the 7-day staleness check both.
   @@index([tenantId, rivalDomain, createdAt(sort: Desc)])
   @@map("explain_reports")
+}
+
+// ─── Agency Opportunity Scanner ──────────────────────────────────────────────
+
+/// Where one prospect got to in a scan.
+///
+/// `failed` is a first-class outcome, not an error state to clean up. A cold
+/// prospect list contains parked domains, dead hosts and WAFs that refuse an
+/// unknown user agent, and an agency needs to see which ones those were —
+/// "we could not reach this site" is itself a sales signal, and silently
+/// dropping the row would make the batch's totals lie.
+enum ScanRowStatus {
+  queued
+  running
+  done
+  failed
+}
+
+/// One bulk prospect scan: a pasted list or an uploaded CSV, and its progress.
+///
+/// AGENCY-ONLY, and gated with requireFeature("whitelabel") — the AGENCY+ line
+/// in PLAN_FEATURES, and the honest key here because the deliverable this whole
+/// tool exists to produce is a white-labeled outreach PDF. See
+/// src/lib/opportunity-scanner/quota.ts for the monthly batch ceiling.
+///
+/// THIS TABLE HOLDS DOMAINS THE TENANT DOES NOT OWN. Every other domain-shaped
+/// column in this schema is a site the tenant registered and we verified; these
+/// are strangers' sites, typed in bulk. That difference is why the ingest path
+/// runs each one through the SSRF guard before a row is ever written, and why
+/// nothing downstream may treat a ScanRow.domain as trusted input.
+model ScanBatch {
+  id       String @id @default(cuid())
+  tenantId String
+
+  status ScanBatchStatus @default(running)
+
+  /// Rows accepted at submit, after normalisation, dedupe and SSRF rejection.
+  /// The denominator the UI shows; NOT the number of lines pasted.
+  total Int
+  /// Rows that have reached a terminal state — done OR failed. Incremented by
+  /// the worker, and the completion notification fires when it reaches `total`.
+  done  Int @default(0)
+
+  /// Whether this batch buys a Places lookup per domain.
+  ///
+  /// OFF BY DEFAULT and stored per batch rather than per tenant, because it is
+  /// the only thing here that spends money and the decision is made per list:
+  /// a list of local businesses is worth the lookup, a list of SaaS companies
+  /// is a thousand calls that all return nothing. The estimate shown at submit
+  /// is computed from this flag and the accepted row count.
+  placesEnabled Boolean @default(false)
+
+  createdAt   DateTime  @default(now())
+  completedAt DateTime?
+
+  tenant Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  rows   ScanRow[]
+
+  /// The batch list: this tenant's scans, newest first.
+  @@index([tenantId, createdAt(sort: Desc)])
+  @@map("scan_batches")
+}
+
+/// The batch's own lifecycle, distinct from any individual row's.
+enum ScanBatchStatus {
+  running
+  complete
+}
+
+/// One prospect domain inside a batch.
+model ScanRow {
+  id      String @id @default(cuid())
+  batchId String
+
+  /// Registrable domain, lowercased — the output of registrableDomain(), which
+  /// is also what the dedupe at submit is keyed on.
+  domain String
+
+  /// 0-100 from the sidecar's passive audit. NULL until the row runs, and
+  /// permanently NULL for a row that failed — which is why it is nullable and
+  /// the grade below is not defaulted.
+  score Int?
+  /// A-F, banded from `score` at write time.
+  ///
+  /// STORED, NOT DERIVED ON READ. The batch table is sorted by it and a CSV
+  /// export prints it, so recomputing on every read would make the band
+  /// definition a thing two code paths have to agree about forever. Null for
+  /// a row that never scored.
+  grade String? @db.Char(1)
+
+  /// The three checks that lost the most points, as
+  /// [{category, status, recommendation, lost}]. Denormalised out of the audit
+  /// response because it is the only part of it the outreach PDF and the CSV
+  /// need, and keeping the whole audit would make this table the largest in the
+  /// schema for data nobody reads twice.
+  topGaps Json?
+
+  /// Google Places standing, when the batch bought it: {rating, reviewCount}.
+  /// Null when placesEnabled was off, when no listing matched, or when the cap
+  /// stopped the call — three different silences that all render the same way,
+  /// which is correct: the report says nothing rather than guessing.
+  place Json?
+
+  status ScanRowStatus @default(queued)
+  /// Why a failed row failed, in English, for the agency to read. Not shown to
+  /// the prospect and never rendered into a PDF.
+  error  String?
+
+  createdAt   DateTime  @default(now())
+  completedAt DateTime?
+
+  batch ScanBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+
+  /// One row per domain per batch. The submit path dedupes before insert; this
+  /// is the backstop that makes a double-submit idempotent rather than
+  /// doubling the batch.
+  @@unique([batchId, domain])
+  /// The batch table's only order: worst grade first, so the best prospects to
+  /// call are at the top. Nulls (failed rows) sort last on read, not here.
+  @@index([batchId, grade])
+  @@map("scan_rows")
 }

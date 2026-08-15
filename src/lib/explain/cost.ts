@@ -38,6 +38,23 @@ export const BACKLINKS_SUMMARY_USD = 0.024585;
 export const PLACES_DETAILS_USD = 0.02;
 
 /**
+ * Google Places, Text Search, Pro SKU — $32 per 1,000 requests.
+ *
+ * A DIFFERENT AND HIGHER RATE THAN PLACE DETAILS, which is the whole reason
+ * this constant exists rather than the Agency Opportunity Scanner reusing the
+ * $0.02 above. Text Search is billed per REQUEST at the tier its field mask
+ * implies, and searchPlaces() in src/lib/signals/competitors.ts asks for
+ * `places.rating` and `places.userRatingCount` — Pro fields, same as Details,
+ * on the more expensive endpoint.
+ *
+ * The scanner shows a total built from this before the agency submits, so
+ * getting it wrong by 60% would be a quoted price that is wrong by 60%. Like
+ * the Details rate it is published rather than observed, because Places returns
+ * no cost in its response.
+ */
+export const PLACES_TEXTSEARCH_USD = 0.032;
+
+/**
  * The av-visibility sidecar and the entity HEAD checks cost nothing upstream.
  * Named rather than left implicit so the estimate below reads as a complete
  * accounting of all six gatherers rather than as four of them.

@@ -68,6 +68,7 @@ export const dashNav: Record<DashLocale, Record<string, string>> = {
     "/visibility/tools/share-of-voice": "Share of Voice",
     "/visibility/tools/citation-finder": "Citation Finder",
     "/visibility/tools/citation-opportunities": "Citation Opportunities",
+    "/visibility/tools/opportunity-scanner": "Opportunity Scanner",
   },
   "de-CH": {
     "/dashboard": "Dashboard",
@@ -118,6 +119,7 @@ export const dashNav: Record<DashLocale, Record<string, string>> = {
     "/visibility/tools/share-of-voice": "Stimmanteil",
     "/visibility/tools/citation-finder": "Quellenfinder",
     "/visibility/tools/citation-opportunities": "Zitat-Chancen",
+    "/visibility/tools/opportunity-scanner": "Chancen-Scanner",
   },
   fr: {
     "/dashboard": "Tableau de bord",
@@ -168,6 +170,7 @@ export const dashNav: Record<DashLocale, Record<string, string>> = {
     "/visibility/tools/share-of-voice": "Part de voix",
     "/visibility/tools/citation-finder": "Détecteur de sources",
     "/visibility/tools/citation-opportunities": "Opportunités de citation",
+    "/visibility/tools/opportunity-scanner": "Scanner d'opportunités",
   },
 };
 
@@ -5267,6 +5270,11 @@ const seoToolsEn = {
       name: "Social Media Manager",
       description: "Plan, edit, schedule, and manage social media content.",
     },
+    opportunity_scanner: {
+      name: "Opportunity Scanner",
+      description:
+        "Scan a list of prospects for AI visibility gaps, worst first, with a white-labeled report for each one.",
+    },
     dashboard: {
       name: "Dashboard",
       description: "Track key marketing and SEO performance across projects.",
@@ -5435,6 +5443,11 @@ export const SEO_TOOLS_COPY: Record<DashLocale, SeoToolsCopy> = {
         name: "Gestionnaire de médias sociaux",
         description: "Planifiez, modifiez, programmez et gérez le contenu de vos médias sociaux.",
       },
+      opportunity_scanner: {
+        name: "Scanner d'opportunités",
+        description:
+          "Analysez une liste de prospects à la recherche de lacunes de visibilité IA, les plus faibles en tête, avec un rapport en marque blanche pour chacun.",
+      },
       dashboard: {
         name: "Tableau de bord",
         description: "Suivez la performance marketing et SEO clé de tous vos projets.",
@@ -5597,6 +5610,11 @@ export const SEO_TOOLS_COPY: Record<DashLocale, SeoToolsCopy> = {
       social_media_manager: {
         name: "Social-Media-Manager",
         description: "Planen, bearbeiten, terminieren und verwalten Sie Social-Media-Inhalte.",
+      },
+      opportunity_scanner: {
+        name: "Chancen-Scanner",
+        description:
+          "Prüfen Sie eine Liste von Interessenten auf Lücken in der KI-Sichtbarkeit — die schwächsten zuoberst, mit einem Bericht im eigenen Label für jeden.",
       },
       dashboard: {
         name: "Dashboard",
@@ -12265,6 +12283,15 @@ const notificationsEn = {
       title: "{domain} cites your competitors and has never named you",
       body: "One of this week's best chances to get listed. Open the worklist for how.",
     },
+    // {done} COUNTS FAILED ROWS — see NotificationPayloads.scan_complete. So
+    // the title says "scanned", never "succeeded": on a batch where every
+    // prospect was unreachable, done still equals total, and copy claiming
+    // success would be a lie the table immediately contradicts.
+    scan_complete: {
+      label: "Prospect scan finished",
+      title: "Your prospect scan finished — {done} of {total} domains scanned",
+      body: "Sorted worst first, so the best prospects to call are at the top.",
+    },
   },
 };
 
@@ -12353,6 +12380,11 @@ export const NOTIFICATIONS_COPY: Record<DashLocale, NotificationsCopy> = {
         title: "{domain} cite vos concurrents et ne vous a jamais nommé",
         body: "L'une des meilleures occasions de la semaine de vous y faire référencer. Ouvrez la liste pour savoir comment.",
       },
+      scan_complete: {
+        label: "Analyse de prospects terminée",
+        title: "Votre analyse de prospects est terminée — {done} domaines sur {total} analysés",
+        body: "Classés du plus faible au plus solide : les meilleurs prospects à appeler sont en haut.",
+      },
     },
   },
   "de-CH": {
@@ -12435,6 +12467,11 @@ export const NOTIFICATIONS_COPY: Record<DashLocale, NotificationsCopy> = {
         label: "Neue Quelle zum Erschliessen",
         title: "{domain} zitiert Ihre Mitbewerber und hat Sie nie genannt",
         body: "Eine der besten Gelegenheiten dieser Woche, dort gelistet zu werden. Öffnen Sie die Arbeitsliste für das Wie.",
+      },
+      scan_complete: {
+        label: "Interessenten-Scan abgeschlossen",
+        title: "Ihr Interessenten-Scan ist fertig — {done} von {total} Domains geprüft",
+        body: "Schwächste zuerst sortiert: die lohnendsten Interessenten stehen zuoberst.",
       },
     },
   },
@@ -13546,5 +13583,371 @@ export const EXPLAIN_COPY: Record<DashLocale, ExplainCopy> = {
       cap_reached: "Ihr monatliches Datenbudget ist aufgebraucht, daher wurde dies nicht gekauft.",
       upstream_failed: "Die Datenquelle war nicht erreichbar.",
     },
+  },
+};
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Agency Opportunity Scanner (/visibility/tools/opportunity-scanner)
+   ═══════════════════════════════════════════════════════════════════════════
+
+   THE ONLY TOOL IN THIS CATALOG WHOSE SUBJECT IS NOT THE CUSTOMER. Every other
+   copy block here says "your score", "your prompts", "your competitors". This
+   one is about strangers, so it says "these sites" and "this prospect" — and
+   the difference is not cosmetic. A string that reads "your visibility dropped"
+   on a page listing a thousand other companies is simply wrong.
+
+   NO PLAN NUMBERS IN COPY. The monthly batch allowance and the row ceiling both
+   interpolate from the API response ({used}, {limit}, {max}), per CLAUDE.md.
+   BATCH_LIMITS lives in quota.ts and is the only place those numbers exist.
+
+   THE DOLLAR ESTIMATE IS ALWAYS SHOWN BEFORE THE SUBMIT BUTTON, never after,
+   and it is the only place in the dashboard where a customer is quoted a price
+   for an action they are about to take. estimatePrefix below is deliberately
+   plain about the fact that it is an estimate for an optional extra.
+*/
+
+const opportunityScannerEn = {
+  lockedTitle: "Opportunity Scanner is on Agency and above",
+  lockedBody:
+    "Paste a list of prospects and get every one of them graded for AI visibility, worst first, with a white-labeled report you can attach to an email. Upgrade to Agency to switch it on.",
+  lockedCta: "See plans",
+
+  emptyTitle: "No scans yet",
+  emptyBody:
+    "Paste up to {max} prospect domains, or upload a one-column CSV. Each one gets a passive AI-visibility audit — no crawling, nothing submitted — and a grade from A to F.",
+
+  // ── Submit form ──
+  submitTitle: "New scan",
+  submitLabel: "Prospect domains",
+  submitPlaceholder: "acme-dental.com\nnorthside-legal.co.uk\nexample.com",
+  submitHelp: "One per line, or comma-separated. A pasted CSV column works too.",
+  uploadCta: "Upload CSV",
+  submitCta: "Start scan",
+  submitting: "Starting…",
+  quotaLine: "{used} of {limit} scans used this month",
+  quotaExhausted: "You have used all {limit} scans this month.",
+  rowCount: "{count} domains ready",
+  rowCountOver: "{count} domains — only the first {max} will be scanned",
+
+  // ── Places opt-in ──
+  placesLabel: "Also look up each prospect's Google Business listing",
+  placesHelp:
+    "Adds their star rating and review count to the report. Costs extra and is off by default.",
+  estimatePrefix: "Estimated cost:",
+  estimateFree: "No upstream cost",
+  estimateNote: "Charged to your monthly data budget as the scan runs.",
+
+  // ── Rejections ──
+  rejectedTitle: "{count} lines were skipped",
+  rejectedShowAll: "Show all",
+  rejectedHide: "Hide",
+  reasons: {
+    duplicate: "Already in this list",
+    not_a_domain: "Not a domain",
+    not_a_url: "Could not be read",
+    bad_scheme: "Not a web address",
+    has_credentials: "Contains a username or password",
+    bad_port: "Unusual port",
+    ip_literal: "IP address, not a domain",
+    private_host: "Private or internal address",
+    domain_mismatch: "Wrong domain",
+    over_limit: "Past the {max}-domain limit",
+  },
+
+  // ── Batch list ──
+  batchesTitle: "Your scans",
+  batchProgress: "{done} of {total}",
+  batchRunning: "Scanning…",
+  batchComplete: "Complete",
+  batchPlaces: "with Google listings",
+  openBatch: "Open",
+
+  // ── Results table ──
+  colDomain: "Domain",
+  colGrade: "Grade",
+  colScore: "Score",
+  colGaps: "Biggest gaps",
+  colGoogle: "Google",
+  colActions: "",
+  exportCsv: "Export CSV",
+  outreachPdf: "Outreach PDF",
+  buildingPdf: "Building…",
+  /** Shown on a row that has not finished. The PDF button is disabled. */
+  rowPending: "Scanning",
+  rowFailed: "Could not reach",
+  noGoogleListing: "—",
+  reviewsSuffix: "reviews",
+
+  // ── Errors ──
+  errorLoad: "Could not load your scans. Try again.",
+  errorSubmit: "Could not start that scan.",
+  errorNoDomains: "No usable domains in that list.",
+  errorPdf: "Could not build that report.",
+
+  methodNote:
+    "Each prospect gets a passive audit of what their site already publishes — robots.txt, the HTML served to a crawler, structured data, metadata and sitemaps. Nothing is submitted and no page is crawled beyond the homepage. Grades use the same A-F bands as the AI Search Grader, so a prospect who runs the free tool themselves sees the same letter.",
+};
+export type OpportunityScannerCopy = typeof opportunityScannerEn;
+
+export const OPPORTUNITY_SCANNER_COPY: Record<DashLocale, OpportunityScannerCopy> = {
+  en: opportunityScannerEn,
+  fr: {
+    lockedTitle: "Le scanner d'opportunités est inclus à partir d'Agency",
+    lockedBody:
+      "Collez une liste de prospects et obtenez pour chacun une note de visibilité IA, les plus faibles en tête, avec un rapport en marque blanche à joindre à un courriel. Passez à Agency pour l'activer.",
+    lockedCta: "Voir les forfaits",
+
+    emptyTitle: "Aucune analyse pour l'instant",
+    emptyBody:
+      "Collez jusqu'à {max} domaines de prospects, ou téléversez un CSV d'une colonne. Chacun reçoit un audit passif de visibilité IA — sans exploration, sans rien soumettre — et une note de A à F.",
+
+    submitTitle: "Nouvelle analyse",
+    submitLabel: "Domaines des prospects",
+    submitPlaceholder: "cabinet-dentaire.fr\nnotaire-lyon.fr\nexemple.com",
+    submitHelp: "Un par ligne, ou séparés par des virgules. Une colonne de CSV collée fonctionne aussi.",
+    uploadCta: "Téléverser un CSV",
+    submitCta: "Lancer l'analyse",
+    submitting: "Lancement…",
+    quotaLine: "{used} analyses sur {limit} utilisées ce mois-ci",
+    quotaExhausted: "Vous avez utilisé vos {limit} analyses ce mois-ci.",
+    rowCount: "{count} domaines prêts",
+    rowCountOver: "{count} domaines — seuls les {max} premiers seront analysés",
+
+    placesLabel: "Consulter aussi la fiche Google Business de chaque prospect",
+    placesHelp:
+      "Ajoute au rapport leur note et leur nombre d'avis. Payant, et désactivé par défaut.",
+    estimatePrefix: "Coût estimé :",
+    estimateFree: "Aucun coût externe",
+    estimateNote: "Imputé à votre budget de données mensuel au fil de l'analyse.",
+
+    rejectedTitle: "{count} lignes ont été ignorées",
+    rejectedShowAll: "Tout afficher",
+    rejectedHide: "Masquer",
+    reasons: {
+      duplicate: "Déjà dans cette liste",
+      not_a_domain: "Pas un domaine",
+      not_a_url: "Illisible",
+      bad_scheme: "Pas une adresse web",
+      has_credentials: "Contient un identifiant ou un mot de passe",
+      bad_port: "Port inhabituel",
+      ip_literal: "Adresse IP, pas un domaine",
+      private_host: "Adresse privée ou interne",
+      domain_mismatch: "Mauvais domaine",
+      over_limit: "Au-delà de la limite de {max} domaines",
+    },
+
+    batchesTitle: "Vos analyses",
+    batchProgress: "{done} sur {total}",
+    batchRunning: "Analyse en cours…",
+    batchComplete: "Terminée",
+    batchPlaces: "avec fiches Google",
+    openBatch: "Ouvrir",
+
+    colDomain: "Domaine",
+    colGrade: "Note",
+    colScore: "Score",
+    colGaps: "Principales lacunes",
+    colGoogle: "Google",
+    colActions: "",
+    exportCsv: "Exporter en CSV",
+    outreachPdf: "Rapport de prospection",
+    buildingPdf: "Génération…",
+    rowPending: "En cours",
+    rowFailed: "Injoignable",
+    noGoogleListing: "—",
+    reviewsSuffix: "avis",
+
+    errorLoad: "Impossible de charger vos analyses. Réessayez.",
+    errorSubmit: "Impossible de lancer cette analyse.",
+    errorNoDomains: "Aucun domaine exploitable dans cette liste.",
+    errorPdf: "Impossible de générer ce rapport.",
+
+    methodNote:
+      "Chaque prospect fait l'objet d'un audit passif de ce que son site publie déjà — robots.txt, le HTML servi à un robot, les données structurées, les métadonnées et les sitemaps. Rien n'est soumis et aucune page n'est explorée au-delà de la page d'accueil. Les notes utilisent les mêmes tranches A-F que l'évaluateur de recherche IA : un prospect qui teste l'outil gratuit lui-même verra la même lettre.",
+  },
+  "de-CH": {
+    lockedTitle: "Der Chancen-Scanner ist ab Agency enthalten",
+    lockedBody:
+      "Fügen Sie eine Liste von Interessenten ein und erhalten Sie für jeden eine Note zur KI-Sichtbarkeit — die schwächsten zuoberst, mit einem Bericht im eigenen Label zum Anhängen an eine E-Mail. Wechseln Sie zu Agency, um ihn freizuschalten.",
+    lockedCta: "Pläne ansehen",
+
+    emptyTitle: "Noch keine Scans",
+    emptyBody:
+      "Fügen Sie bis zu {max} Interessenten-Domains ein oder laden Sie ein einspaltiges CSV hoch. Jede erhält einen passiven KI-Sichtbarkeits-Audit — ohne Crawling, ohne etwas zu übermitteln — und eine Note von A bis F.",
+
+    submitTitle: "Neuer Scan",
+    submitLabel: "Interessenten-Domains",
+    submitPlaceholder: "zahnarzt-bern.ch\nanwalt-zuerich.ch\nbeispiel.com",
+    submitHelp: "Eine pro Zeile oder kommagetrennt. Eine eingefügte CSV-Spalte funktioniert ebenfalls.",
+    uploadCta: "CSV hochladen",
+    submitCta: "Scan starten",
+    submitting: "Wird gestartet…",
+    quotaLine: "{used} von {limit} Scans diesen Monat genutzt",
+    quotaExhausted: "Sie haben diesen Monat alle {limit} Scans genutzt.",
+    rowCount: "{count} Domains bereit",
+    rowCountOver: "{count} Domains — nur die ersten {max} werden geprüft",
+
+    placesLabel: "Auch den Google-Business-Eintrag jedes Interessenten abfragen",
+    placesHelp:
+      "Ergänzt den Bericht um Bewertung und Anzahl Rezensionen. Kostet zusätzlich und ist standardmässig aus.",
+    estimatePrefix: "Geschätzte Kosten:",
+    estimateFree: "Keine externen Kosten",
+    estimateNote: "Wird während des Scans Ihrem monatlichen Datenbudget belastet.",
+
+    rejectedTitle: "{count} Zeilen wurden übersprungen",
+    rejectedShowAll: "Alle anzeigen",
+    rejectedHide: "Ausblenden",
+    reasons: {
+      duplicate: "Bereits in dieser Liste",
+      not_a_domain: "Keine Domain",
+      not_a_url: "Nicht lesbar",
+      bad_scheme: "Keine Web-Adresse",
+      has_credentials: "Enthält Benutzername oder Passwort",
+      bad_port: "Ungewöhnlicher Port",
+      ip_literal: "IP-Adresse statt Domain",
+      private_host: "Private oder interne Adresse",
+      domain_mismatch: "Falsche Domain",
+      over_limit: "Über der Grenze von {max} Domains",
+    },
+
+    batchesTitle: "Ihre Scans",
+    batchProgress: "{done} von {total}",
+    batchRunning: "Wird geprüft…",
+    batchComplete: "Abgeschlossen",
+    batchPlaces: "mit Google-Einträgen",
+    openBatch: "Öffnen",
+
+    colDomain: "Domain",
+    colGrade: "Note",
+    colScore: "Punkte",
+    colGaps: "Grösste Lücken",
+    colGoogle: "Google",
+    colActions: "",
+    exportCsv: "CSV exportieren",
+    outreachPdf: "Akquise-Bericht",
+    buildingPdf: "Wird erstellt…",
+    rowPending: "Läuft",
+    rowFailed: "Nicht erreichbar",
+    noGoogleListing: "—",
+    reviewsSuffix: "Rezensionen",
+
+    errorLoad: "Ihre Scans konnten nicht geladen werden. Versuchen Sie es erneut.",
+    errorSubmit: "Dieser Scan konnte nicht gestartet werden.",
+    errorNoDomains: "Keine brauchbaren Domains in dieser Liste.",
+    errorPdf: "Dieser Bericht konnte nicht erstellt werden.",
+
+    methodNote:
+      "Jeder Interessent erhält einen passiven Audit dessen, was seine Website bereits veröffentlicht — robots.txt, das an einen Crawler ausgelieferte HTML, strukturierte Daten, Metadaten und Sitemaps. Es wird nichts übermittelt und keine Seite über die Startseite hinaus gecrawlt. Die Noten verwenden dieselben A-F-Stufen wie der KI-Suchbewerter, damit ein Interessent, der das kostenlose Werkzeug selbst nutzt, denselben Buchstaben sieht.",
+  },
+};
+
+/* ── Opportunity Scanner help modal ──────────────────────────────────────────
+   Four steps and two caveats. The caveats are the reason this modal is longer
+   than most: this is the one tool that touches sites belonging to people who
+   are not customers, and it is the one tool that can spend money per row. An
+   agency that does not understand either of those before their first batch will
+   find out from an invoice or from a prospect. */
+const opportunityScannerHelpEn = {
+  button: "Help",
+  buttonAria: "How the Opportunity Scanner works",
+  title: "How the Opportunity Scanner works",
+  close: "Close",
+
+  intro:
+    "Paste a list of prospect domains and get every one of them graded for AI visibility, worst first, with a report you can send.",
+
+  listTitle: "Give it a list",
+  listBody:
+    "One domain per line, or a comma-separated paste, or a one-column CSV — all three are read the same way. Duplicates are removed and anything that is not a public domain is skipped and reported back to you, so you can see exactly what went in.",
+
+  scanTitle: "Each site gets a passive audit",
+  scanBody:
+    "We read what the site already publishes: robots.txt, the HTML served to a crawler, structured data, metadata and sitemaps. Nothing is submitted and no page beyond the homepage is fetched. Four checks per site, and they run in parallel — a large list takes minutes, not hours.",
+
+  gradeTitle: "Read the table worst first",
+  gradeBody:
+    "Grades run A to F on the same bands as the free AI Search Grader, and the table opens sorted with F at the top. That is the order you want: the sites that score worst are the ones with something to fix, which are the ones worth a call. Sites we could not reach sort to the bottom.",
+
+  reportTitle: "Send the report",
+  reportBody:
+    "Every finished row has an Outreach PDF: two pages, the grade, and the three biggest gaps with what it takes to fix each one. It carries your branding, not ours — your name, your colours, your logo, right down to the file name and the PDF's own properties. Export the whole table as CSV for a mail merge.",
+
+  googleTitle: "The Google lookup is optional and costs extra",
+  googleBody:
+    "Ticking the Google box adds each prospect's star rating and review count, and buys one lookup per domain from your monthly data budget. The estimate is shown before you submit. It is off by default and worth leaving off for a list of software companies — most of them have no listing to find.",
+
+  etiquetteTitle: "About scanning other people's sites",
+  etiquetteBody:
+    "This only reads pages that are already public to any crawler, and it identifies itself honestly while doing it. It is not a crawl, a scrape, or a penetration test. Still, the report is a sales document about someone who has not asked for it — the grade is a technical reading of a website, not a verdict on a business, and the copy is written to say so.",
+};
+export type OpportunityScannerHelpCopy = typeof opportunityScannerHelpEn;
+
+export const OPPORTUNITY_SCANNER_HELP_COPY: Record<DashLocale, OpportunityScannerHelpCopy> = {
+  en: opportunityScannerHelpEn,
+  fr: {
+    button: "Aide",
+    buttonAria: "Comment fonctionne le scanner d'opportunités",
+    title: "Comment fonctionne le scanner d'opportunités",
+    close: "Fermer",
+
+    intro:
+      "Collez une liste de domaines de prospects et obtenez pour chacun une note de visibilité IA, les plus faibles en tête, avec un rapport prêt à envoyer.",
+
+    listTitle: "Donnez-lui une liste",
+    listBody:
+      "Un domaine par ligne, un collage séparé par des virgules, ou un CSV d'une colonne — les trois sont lus de la même façon. Les doublons sont retirés et tout ce qui n'est pas un domaine public est écarté puis signalé, pour que vous voyiez exactement ce qui est entré.",
+
+    scanTitle: "Chaque site reçoit un audit passif",
+    scanBody:
+      "Nous lisons ce que le site publie déjà : robots.txt, le HTML servi à un robot, les données structurées, les métadonnées et les sitemaps. Rien n'est soumis et aucune page au-delà de l'accueil n'est récupérée. Quatre vérifications par site, exécutées en parallèle : une longue liste prend des minutes, pas des heures.",
+
+    gradeTitle: "Lisez le tableau en commençant par les pires",
+    gradeBody:
+      "Les notes vont de A à F, sur les mêmes tranches que l'évaluateur de recherche IA gratuit, et le tableau s'ouvre avec les F en haut. C'est l'ordre utile : les sites les plus faibles sont ceux qui ont quelque chose à corriger, donc ceux qui méritent un appel. Les sites injoignables passent en bas.",
+
+    reportTitle: "Envoyez le rapport",
+    reportBody:
+      "Chaque ligne terminée dispose d'un rapport de prospection : deux pages, la note, et les trois principales lacunes avec ce qu'il faut pour les corriger. Il porte votre marque, pas la nôtre — votre nom, vos couleurs, votre logo, jusqu'au nom du fichier et aux propriétés du PDF. Exportez tout le tableau en CSV pour un publipostage.",
+
+    googleTitle: "La recherche Google est facultative et payante",
+    googleBody:
+      "Cocher la case Google ajoute la note et le nombre d'avis de chaque prospect, et achète une recherche par domaine sur votre budget de données mensuel. L'estimation est affichée avant l'envoi. Cette option est désactivée par défaut et vaut la peine de le rester pour une liste d'éditeurs de logiciels : la plupart n'ont aucune fiche.",
+
+    etiquetteTitle: "À propos de l'analyse des sites d'autrui",
+    etiquetteBody:
+      "L'outil ne lit que des pages déjà publiques pour n'importe quel robot, et il s'identifie honnêtement en le faisant. Ce n'est ni une exploration, ni un moissonnage, ni un test d'intrusion. Reste que le rapport est un document commercial au sujet de quelqu'un qui n'a rien demandé : la note est une lecture technique d'un site web, pas un jugement sur une entreprise, et le texte est rédigé pour le dire.",
+  },
+  "de-CH": {
+    button: "Hilfe",
+    buttonAria: "So funktioniert der Chancen-Scanner",
+    title: "So funktioniert der Chancen-Scanner",
+    close: "Schliessen",
+
+    intro:
+      "Fügen Sie eine Liste von Interessenten-Domains ein und erhalten Sie für jede eine Note zur KI-Sichtbarkeit — die schwächsten zuoberst, mit einem versandfertigen Bericht.",
+
+    listTitle: "Geben Sie ihm eine Liste",
+    listBody:
+      "Eine Domain pro Zeile, kommagetrennt eingefügt oder als einspaltiges CSV — alle drei werden gleich gelesen. Duplikate werden entfernt, und alles, was keine öffentliche Domain ist, wird übersprungen und zurückgemeldet, damit Sie genau sehen, was eingegangen ist.",
+
+    scanTitle: "Jede Website erhält einen passiven Audit",
+    scanBody:
+      "Wir lesen, was die Website ohnehin veröffentlicht: robots.txt, das an einen Crawler ausgelieferte HTML, strukturierte Daten, Metadaten und Sitemaps. Es wird nichts übermittelt und keine Seite über die Startseite hinaus abgerufen. Vier Prüfungen pro Website, parallel ausgeführt — eine grosse Liste dauert Minuten, nicht Stunden.",
+
+    gradeTitle: "Lesen Sie die Tabelle von unten nach oben",
+    gradeBody:
+      "Die Noten reichen von A bis F, auf denselben Stufen wie der kostenlose KI-Suchbewerter, und die Tabelle öffnet mit den F zuoberst. Das ist die nützliche Reihenfolge: die schwächsten Websites haben etwas zu beheben und sind damit einen Anruf wert. Nicht erreichbare Websites stehen zuunterst.",
+
+    reportTitle: "Verschicken Sie den Bericht",
+    reportBody:
+      "Jede fertige Zeile hat einen Akquise-Bericht: zwei Seiten, die Note und die drei grössten Lücken samt dem, was ihre Behebung erfordert. Er trägt Ihre Marke, nicht unsere — Ihren Namen, Ihre Farben, Ihr Logo, bis hin zum Dateinamen und den PDF-Eigenschaften. Exportieren Sie die ganze Tabelle als CSV für einen Serienbrief.",
+
+    googleTitle: "Die Google-Abfrage ist freiwillig und kostet extra",
+    googleBody:
+      "Das Google-Kästchen ergänzt Bewertung und Anzahl Rezensionen jedes Interessenten und kauft eine Abfrage pro Domain aus Ihrem monatlichen Datenbudget. Die Schätzung erscheint vor dem Absenden. Standardmässig ist die Option aus — und bei einer Liste von Softwarefirmen lohnt es sich, sie aus zu lassen: die meisten haben gar keinen Eintrag.",
+
+    etiquetteTitle: "Zum Prüfen fremder Websites",
+    etiquetteBody:
+      "Gelesen wird nur, was für jeden Crawler ohnehin öffentlich ist, und der Scanner gibt sich dabei ehrlich zu erkennen. Es ist kein Crawling, kein Scraping und kein Penetrationstest. Dennoch ist der Bericht ein Verkaufsdokument über jemanden, der nicht darum gebeten hat: die Note ist eine technische Lesung einer Website, kein Urteil über ein Unternehmen — und der Text sagt das auch so.",
   },
 };

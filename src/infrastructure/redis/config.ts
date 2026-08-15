@@ -145,7 +145,8 @@ export type QueueName =
   | "ai-checkup"
   | "sov-aggregation"
   | "citation-aggregation"
-  | "citation-opportunities";
+  | "citation-opportunities"
+  | "opportunity-scan";
 
 /** All valid queue names */
 export const QUEUE_NAMES: QueueName[] = [
@@ -174,4 +175,5 @@ export const QUEUE_NAMES: QueueName[] = [
   "sov-aggregation",
   "citation-aggregation",
   "citation-opportunities",
+  "opportunity-scan",
 ];

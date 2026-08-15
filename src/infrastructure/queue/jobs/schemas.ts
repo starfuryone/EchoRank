@@ -302,6 +302,30 @@ export interface CitationOpportunityJob {
   tenantId?: string;
 }
 
+/**
+ * Agency Opportunity Scanner: one passive audit per prospect domain.
+ *
+ * ONE JOB PER ROW, not one per batch, and that is the whole reason this feature
+ * gets a queue rather than a loop. A batch is up to a thousand external sites
+ * that we do not control and cannot predict — a single job walking them would
+ * be one BullMQ job holding a worker for hours, invisible in the dashboard,
+ * un-retryable in part, and lost wholesale on a `pm2 restart` mid-batch. Per
+ * row, a restart loses at most four rows and the rest are still `queued`.
+ *
+ * There is no sweep tick. Batches are user-initiated; nothing here is
+ * scheduled.
+ */
+export interface OpportunityScanJob {
+  /** Fan a submitted batch out into one job per queued row. */
+  batchId?: string;
+  fanOut?: boolean;
+  /** A single prospect. */
+  rowId?: string;
+  domain?: string;
+  tenantId?: string;
+  placesEnabled?: boolean;
+}
+
 // ─── Queue → Job Type mapping ─────────────────────────────────────────────────
 
 export interface QueueJobMap {
@@ -328,4 +352,5 @@ export interface QueueJobMap {
   "sov-aggregation": SovAggregationJob;
   "citation-aggregation": CitationAggregationJob;
   "citation-opportunities": CitationOpportunityJob;
+  "opportunity-scan": OpportunityScanJob;
 }

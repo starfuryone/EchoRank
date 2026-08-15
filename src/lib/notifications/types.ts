@@ -30,6 +30,8 @@ export const NOTIFICATION_TYPES = [
   "sov_share_drop",
   // Citation Opportunity Engine — the weekly sweep's top-quartile finds
   "citation_opportunity",
+  // Agency Opportunity Scanner — a bulk prospect batch finished
+  "scan_complete",
 ] as const;
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
@@ -79,6 +81,16 @@ export interface NotificationPayloads {
    * interpret is worse than no number.
    */
   citation_opportunity: { domain: string; priority: number };
+  /**
+   * `done` COUNTS FAILED ROWS, because it counts rows that reached a terminal
+   * state — which is what ScanBatch.done increments on. So done === total on
+   * every completed batch, including one where every prospect was unreachable,
+   * and the copy must never read it as "succeeded". It is carried anyway: a
+   * batch that completed at 1,000 of 1,000 and one that completed at 1,000 of
+   * 1,000 having failed 400 look identical in the tray, and the second one is
+   * the reader's cue to open the table.
+   */
+  scan_complete: { batchId: string; total: number; done: number };
 }
 
 export type PayloadFor<T extends NotificationType> = NotificationPayloads[T];
@@ -106,6 +118,7 @@ export const NOTIFICATION_HREF: Record<NotificationType, string> = {
   reputation_score_change: "/analytics",
   sov_share_drop: "/visibility/tools/share-of-voice",
   citation_opportunity: "/visibility/tools/citation-opportunities",
+  scan_complete: "/visibility/tools/opportunity-scanner",
 };
 
 export function isNotificationType(value: string): value is NotificationType {

@@ -43,6 +43,7 @@ import {
   PieChart,
   Quote,
   ListChecks,
+  Crosshair,
 } from "lucide-react";
 import type { PlanType } from "@/generated/prisma";
 
@@ -84,7 +85,8 @@ export type SeoToolId =
   | "ai_attribution"
   | "share_of_voice"
   | "citation_finder"
-  | "citation_opportunities";
+  | "citation_opportunities"
+  | "opportunity_scanner";
 
 /** Tools that render a scaffold page under /visibility/tools/<slug>. */
 // Note: brand_radar/bot_analytics/content_explorer remain ScaffoldIds although
@@ -123,6 +125,9 @@ export type ScaffoldId = Exclude<
   // And its downstream tool, for the same reason: Citation Opportunities ships
   // real, with its locked and empty states in CITATION_OPPORTUNITIES_COPY.
   | "citation_opportunities"
+  // Same again: the Agency Opportunity Scanner ships real, with its locked,
+  // empty and submit states in OPPORTUNITY_SCANNER_COPY.
+  | "opportunity_scanner"
 >;
 
 export interface SeoTool {
@@ -253,6 +258,18 @@ export const SEO_TOOL_GROUPS: SeoToolGroup[] = [
     id: "reporting",
     tools: [
       t("dashboard", "dashboard", LayoutDashboard, { href: "/dashboard", existing: true }),
+      // Agency prospecting, and the only tool here pointed at sites the tenant
+      // does not own. It sits in Reporting rather than Search Marketing because
+      // its output is a deliverable an agency hands to someone else — the same
+      // job Report Builder does two rows down — not a diagnostic they read
+      // themselves. AGENCY+ only, gated at the route on
+      // requireFeature("whitelabel").
+      //
+      // DELIBERATELY NOT ON THE /ai HUB (src/lib/ai-tools.ts). That hub is
+      // about the answers engines give ABOUT YOU; this is a sales tool that
+      // happens to use the same audit. Putting it there would file a
+      // prospecting list under "your visibility".
+      t("opportunity_scanner", "opportunity-scanner", Crosshair, { badge: "new" }),
       t("portfolios", "portfolios", FolderKanban, { comingSoon: true }),
       t("report_builder", "report-builder", FileBarChart2, { comingSoon: true }),
     ],

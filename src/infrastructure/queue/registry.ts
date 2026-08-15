@@ -187,6 +187,29 @@ const DEFAULT_JOB_OPTIONS: Record<QueueName, JobsOptions> = {
     removeOnComplete: { age: REDIS_CONFIG.ttl.completedJobs },
     removeOnFail: { age: REDIS_CONFIG.ttl.failedJobs },
   },
+  // TWO ATTEMPTS, which is neither of the two policies above, and the middle
+  // ground is the right one here for a reason specific to what this job does.
+  //
+  // Most failures are a stranger's website being briefly unreachable — a DNS
+  // blip, a WAF rate-limiting an unfamiliar user agent, a slow origin past the
+  // sidecar's 12s. Those are exactly the failures a single retry fixes, and a
+  // batch that reports "failed" for a site that was up thirty seconds later is
+  // a prospect an agency does not call.
+  //
+  // Not three, because of the money. The worker runs the free audit FIRST and
+  // only buys a Places lookup for a row that already scored (see the ordering
+  // note in opportunity-scan.worker.ts), so the ordinary failure path — an
+  // unreachable site — costs nothing to retry. What retries can still re-buy is
+  // the narrow case of a crash after the Places call and before the row is
+  // committed. Two attempts caps that at 2x the quoted estimate; three would
+  // make the number shown at submit a third of what an unlucky batch could
+  // actually spend.
+  "opportunity-scan": {
+    attempts: 2,
+    backoff: { type: "exponential", delay: 15_000 },
+    removeOnComplete: { age: REDIS_CONFIG.ttl.completedJobs },
+    removeOnFail: { age: REDIS_CONFIG.ttl.failedJobs },
+  },
 };
 
 // ─── Queue registry ───────────────────────────────────────────────────────────

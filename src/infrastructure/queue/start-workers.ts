@@ -38,6 +38,7 @@ import { startAiCheckupWorker } from "./workers/ai-checkup.worker";
 import { startSovAggregationWorker } from "./workers/sov-aggregation.worker";
 import { startCitationAggregationWorker } from "./workers/citation-aggregation.worker";
 import { startCitationOpportunitiesWorker } from "./workers/citation-opportunities.worker";
+import { startOpportunityScanWorker } from "./workers/opportunity-scan.worker";
 
 /**
  * How often to drain domain events that are still PENDING/FAILED in the DB.
@@ -112,6 +113,7 @@ async function startWorkers() {
     { name: "sov-aggregation", start: startSovAggregationWorker },
     { name: "citation-aggregation", start: startCitationAggregationWorker },
     { name: "citation-opportunities", start: startCitationOpportunitiesWorker },
+    { name: "opportunity-scan", start: startOpportunityScanWorker },
   ];
 
   const loaded: string[] = [];
