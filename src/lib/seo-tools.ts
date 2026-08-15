@@ -44,6 +44,7 @@ import {
   Quote,
   ListChecks,
   Crosshair,
+  Megaphone,
 } from "lucide-react";
 import type { PlanType } from "@/generated/prisma";
 
@@ -86,7 +87,8 @@ export type SeoToolId =
   | "share_of_voice"
   | "citation_finder"
   | "citation_opportunities"
-  | "opportunity_scanner";
+  | "opportunity_scanner"
+  | "audit_funnels";
 
 /** Tools that render a scaffold page under /visibility/tools/<slug>. */
 // Note: brand_radar/bot_analytics/content_explorer remain ScaffoldIds although
@@ -128,6 +130,9 @@ export type ScaffoldId = Exclude<
   // Same again: the Agency Opportunity Scanner ships real, with its locked,
   // empty and submit states in OPPORTUNITY_SCANNER_COPY.
   | "opportunity_scanner"
+  // And the White-Label Audit Funnel, which ships real with its locked, empty
+  // and config states in FUNNELS_COPY.
+  | "audit_funnels"
 >;
 
 export interface SeoTool {
@@ -270,6 +275,18 @@ export const SEO_TOOL_GROUPS: SeoToolGroup[] = [
       // happens to use the same audit. Putting it there would file a
       // prospecting list under "your visibility".
       t("opportunity_scanner", "opportunity-scanner", Crosshair, { badge: "new" }),
+      // The agency's own lead generation, and the second tool here whose
+      // output is meant for somebody who is not the tenant. It sits beside the
+      // scanner for that reason: the scanner finds prospects, this one lets
+      // prospects find the agency, and both produce an artifact a stranger
+      // reads. AGENCY+ only, gated at the routes on requireFeature("whitelabel").
+      //
+      // DELIBERATELY NOT ON THE /ai HUB (src/lib/ai-tools.ts), the same ruling
+      // as the scanner. That hub is about the answers engines give ABOUT YOU;
+      // this is a lead-capture widget that happens to run the same audit.
+      // Filing it there would put an agency's marketing funnel under "your
+      // visibility".
+      t("audit_funnels", "funnels", Megaphone, { badge: "new" }),
       t("portfolios", "portfolios", FolderKanban, { comingSoon: true }),
       t("report_builder", "report-builder", FileBarChart2, { comingSoon: true }),
     ],

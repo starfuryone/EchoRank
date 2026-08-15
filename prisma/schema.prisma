@@ -220,15 +220,17 @@ model Tenant {
   checkups        Checkup[]
   aiProviderCalls AiProviderCall[]
 
-  citations            Citation[]
-  competitorMentions   CompetitorMention[]
-  sources              Source[]
+  citations             Citation[]
+  competitorMentions    CompetitorMention[]
+  sources               Source[]
   citationOpportunities CitationOpportunity[]
-  recommendations      Recommendation[]
-  experiments          Experiment[]
-  sovSnapshots         SovSnapshot[]
-  explainReports       ExplainReport[]
-  scanBatches          ScanBatch[]
+  recommendations       Recommendation[]
+  experiments           Experiment[]
+  sovSnapshots          SovSnapshot[]
+  explainReports        ExplainReport[]
+  scanBatches           ScanBatch[]
+  funnelConfigs         FunnelConfig[]
+  funnelLeads           FunnelLead[]
 
   @@map("tenants")
 }
@@ -2846,8 +2848,8 @@ model Source {
   /// treats as a neutral midpoint rather than as zero, so an unrated domain is
   /// not silently ranked below a bad one.
   authorityScore    Float?
-  topicalCategories String[]   @default([])
-  sourceType        SourceType @default(OTHER)
+  topicalCategories String[]     @default([])
+  sourceType        SourceType   @default(OTHER)
   /// What kind of publication this domain is. See CitationKind for why this
   /// sits beside sourceType rather than replacing it.
   kind              CitationKind @default(OTHER)
@@ -2918,7 +2920,7 @@ model CitationOpportunity {
   /// log(1 + citations) x distinct engines x rival citations. The scale is
   /// arbitrary and only meaningful against its siblings, which is why the UI
   /// ranks rather than printing it.
-  impact Float
+  impact   Float
   /// impact / effort weight. Stored so the worklist is an index scan, and so
   /// the order the customer sees cannot drift from the order that produced the
   /// p75 cut the notification fired on.
@@ -2928,7 +2930,7 @@ model CitationOpportunity {
   /// What kind of publication this is, carried over from `sources`. Here for
   /// ONE reason: it is the key into the localized how-to templates, so without
   /// it a French dashboard could only render the English `howTo` below.
-  kind CitationKind @default(OTHER)
+  kind  CitationKind @default(OTHER)
   /// English how-to, written by the weekly job from a heuristic template.
   ///
   /// A FALLBACK, exactly like Notification.title: the UI renders from the
@@ -2936,7 +2938,7 @@ model CitationOpportunity {
   /// whose kind the catalog does not know. Stored anyway because it is what an
   /// API consumer or an export gets, and because it records what the customer
   /// was actually told the week the row was written.
-  howTo String @db.Text
+  howTo String       @db.Text
   /// The brand's own topic this row's pitch template interpolates, when its
   /// kind has one. Null for kinds whose template needs no theme.
   theme String?
@@ -3327,11 +3329,11 @@ model ExplainReport {
   /// Registrable domain, via src/lib/registrable-domain.ts — the same
   /// normalisation `sources` and `citations` use, so a rival's own citation
   /// rows join to this without a second spelling of the same company.
-  rivalDomain String
+  rivalDomain    String
   /// The rival as the engines actually spelled it ("Otterly.AI"), which is the
   /// key `sources.citesCompetitors` and `sov_snapshots.brand` carry. Stored
   /// beside the domain because neither is derivable from the other.
-  rivalName String
+  rivalName      String
   /// The BrandProfile this comparison ran against. A tenant tracking two
   /// profiles gets two different answers about the same rival, and a report
   /// that could not say which one produced it would be unreadable.
@@ -3478,4 +3480,114 @@ model ScanRow {
   /// call are at the top. Nulls (failed rows) sort last on read, not here.
   @@index([batchId, grade])
   @@map("scan_rows")
+}
+
+/// One embeddable white-label audit funnel: the widget an AGENCY drops onto its
+/// own marketing site to capture leads.
+///
+/// ── `key` is public and travels in a <script src> on someone else's page ────
+/// It identifies the funnel and nothing else. It is NOT a credential and grants
+/// no read: the only verb it reaches is "run an audit against a domain the
+/// visitor typed and append a lead row to this funnel's tenant". There is
+/// deliberately no hashed-secret column like AttributionKey's — a secret that
+/// ships in page source is not a secret, and pretending otherwise invites
+/// somebody to trust it later. Authorization is `allowedOrigins` below.
+///
+/// ── `allowedOrigins` REPLACES the CSRF origin check ─────────────────────────
+/// Every legitimate call to POST /api/public/funnel/audit is cross-origin — it
+/// comes from the agency's own domain — so the app-wide host check would reject
+/// 100% of real traffic and is exempted for that path in src/proxy.ts. This
+/// column is what takes its place, and it is strictly narrower: not "same host
+/// as us" but "one of the exact https origins this agency listed". Empty means
+/// the funnel accepts nothing, which is the correct reading of "I have not
+/// configured where this runs yet" and is why a fresh config is inert.
+///
+/// ── `branding` is per-funnel, not per-tenant ────────────────────────────────
+/// {name, logoUrl, accentColor}. Tenant-level white-label (Tenant.whitelabel and
+/// friends, read by src/lib/opportunity-scanner/branding.ts) is the DEFAULT that
+/// fills these in, but an agency runs funnels for several of its own clients and
+/// each needs its client's mark, not the agency's. logoUrl is customer-typed and
+/// is never fetched by the sidecar — see src/lib/funnel/branding.ts.
+model FunnelConfig {
+  id       String @id @default(cuid())
+  tenantId String
+
+  /// Human label for the agency's own list. Never rendered to a visitor.
+  label String
+
+  /// Public embed key, `ef_<32 hex>`. Shape-validated everywhere it is read,
+  /// because it is interpolated into the JavaScript that /api/public/funnel.js
+  /// returns and into the iframe URL — that check is the XSS control, not a
+  /// nicety.
+  key String @unique
+
+  /// Exact https origins ("https://acme.com"), no wildcards, no paths. The
+  /// allowlist is compared against the request's Origin header verbatim after
+  /// normalisation; see src/lib/funnel/origins.ts.
+  allowedOrigins String[]
+
+  /// {name, logoUrl, accentColor}. Any field may be absent; the resolver falls
+  /// back to the tenant's white-label settings and then to neutral defaults.
+  branding Json?
+
+  /// Where a new lead is emailed. Null = the Notification row is the only
+  /// notice. Never the visitor's address — this is the agency's inbox.
+  notifyEmail String?
+
+  /// Off switch that does not destroy the lead history. An inactive funnel
+  /// serves the loader (so a stale <script> tag does not 404 on a live site)
+  /// but refuses the audit.
+  active Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  leads  FunnelLead[]
+
+  /// The agency's funnel list, newest first.
+  @@index([tenantId, createdAt(sort: Desc)])
+  @@map("funnel_configs")
+}
+
+/// One captured lead: somebody on the agency's site who typed their domain and
+/// their email to see a score.
+///
+/// THE EMAIL IS THE PRODUCT. It is collected before the score is revealed, which
+/// is the entire commercial point of the funnel, so this row is written even
+/// when the audit itself failed — `score` and `summary` are nullable for exactly
+/// that case. Dropping a captured email because the sidecar returned 502 would
+/// throw away the only thing the agency wanted.
+model FunnelLead {
+  id       String @id @default(cuid())
+  tenantId String
+  funnelId String
+
+  /// Visitor-supplied, syntax-checked only. Never verified, never mailed by us.
+  email  String
+  /// Registrable domain the visitor asked about, normalised at capture.
+  domain String
+
+  /// 0–100 audit score. Null when the audit failed after the email was taken.
+  score   Int?
+  /// The trimmed audit result the embed rendered: {grade, checks[], …}. Null on
+  /// a failed audit. Not the whole sidecar response — see the note on
+  /// ScanRow.topGaps for why the full payload is not worth storing twice.
+  summary Json?
+
+  /// cf-connecting-ip at capture. Retained for abuse triage on a public,
+  /// unauthenticated endpoint; it is the only identifier here that is not
+  /// self-declared.
+  ip String?
+
+  createdAt DateTime @default(now())
+
+  tenant Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  funnel FunnelConfig @relation(fields: [funnelId], references: [id], onDelete: Cascade)
+
+  /// The leads table: one funnel's captures, newest first.
+  @@index([funnelId, createdAt(sort: Desc)])
+  /// Tenant-wide export and the per-tenant counter.
+  @@index([tenantId, createdAt(sort: Desc)])
+  @@map("funnel_leads")
 }

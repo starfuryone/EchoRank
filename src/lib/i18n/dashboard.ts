@@ -69,6 +69,7 @@ export const dashNav: Record<DashLocale, Record<string, string>> = {
     "/visibility/tools/citation-finder": "Citation Finder",
     "/visibility/tools/citation-opportunities": "Citation Opportunities",
     "/visibility/tools/opportunity-scanner": "Opportunity Scanner",
+    "/visibility/tools/funnels": "Audit Funnels",
   },
   "de-CH": {
     "/dashboard": "Dashboard",
@@ -120,6 +121,7 @@ export const dashNav: Record<DashLocale, Record<string, string>> = {
     "/visibility/tools/citation-finder": "Quellenfinder",
     "/visibility/tools/citation-opportunities": "Zitat-Chancen",
     "/visibility/tools/opportunity-scanner": "Chancen-Scanner",
+    "/visibility/tools/funnels": "Audit-Funnels",
   },
   fr: {
     "/dashboard": "Tableau de bord",
@@ -171,6 +173,7 @@ export const dashNav: Record<DashLocale, Record<string, string>> = {
     "/visibility/tools/citation-finder": "Détecteur de sources",
     "/visibility/tools/citation-opportunities": "Opportunités de citation",
     "/visibility/tools/opportunity-scanner": "Scanner d'opportunités",
+    "/visibility/tools/funnels": "Formulaires d'audit",
   },
 };
 
@@ -5275,6 +5278,11 @@ const seoToolsEn = {
       description:
         "Scan a list of prospects for AI visibility gaps, worst first, with a white-labeled report for each one.",
     },
+    audit_funnels: {
+      name: "Audit Funnels",
+      description:
+        "Embed a lead-capturing AI visibility audit on your own site, under your own brand.",
+    },
     dashboard: {
       name: "Dashboard",
       description: "Track key marketing and SEO performance across projects.",
@@ -5448,6 +5456,11 @@ export const SEO_TOOLS_COPY: Record<DashLocale, SeoToolsCopy> = {
         description:
           "Analysez une liste de prospects à la recherche de lacunes de visibilité IA, les plus faibles en tête, avec un rapport en marque blanche pour chacun.",
       },
+      audit_funnels: {
+        name: "Formulaires d'audit",
+        description:
+          "Intégrez sur votre propre site un audit de visibilité IA qui capte des contacts, sous votre marque.",
+      },
       dashboard: {
         name: "Tableau de bord",
         description: "Suivez la performance marketing et SEO clé de tous vos projets.",
@@ -5615,6 +5628,11 @@ export const SEO_TOOLS_COPY: Record<DashLocale, SeoToolsCopy> = {
         name: "Chancen-Scanner",
         description:
           "Prüfen Sie eine Liste von Interessenten auf Lücken in der KI-Sichtbarkeit — die schwächsten zuoberst, mit einem Bericht im eigenen Label für jeden.",
+      },
+      audit_funnels: {
+        name: "Audit-Funnels",
+        description:
+          "Binden Sie auf Ihrer eigenen Website einen KI-Sichtbarkeits-Audit mit Kontakterfassung ein, unter Ihrer Marke.",
       },
       dashboard: {
         name: "Dashboard",
@@ -12292,6 +12310,17 @@ const notificationsEn = {
       title: "Your prospect scan finished — {done} of {total} domains scanned",
       body: "Sorted worst first, so the best prospects to call are at the top.",
     },
+    // NO EMAIL ADDRESS IN THIS COPY, because there is none in the payload —
+    // see NotificationPayloads.funnel_lead. The body points at the table
+    // instead. {score} renders as "—" when the audit did not complete, so the
+    // sentence is written to stay true either way: "scored {score}" would read
+    // "scored —", which is odd, while "Audit score: {score}" reads as an
+    // absence, which is what it is.
+    funnel_lead: {
+      label: "New funnel lead",
+      title: "New lead from {domain}",
+      body: "Audit score: {score}. Open the funnel to see who left it.",
+    },
   },
 };
 
@@ -12385,6 +12414,11 @@ export const NOTIFICATIONS_COPY: Record<DashLocale, NotificationsCopy> = {
         title: "Votre analyse de prospects est terminée — {done} domaines sur {total} analysés",
         body: "Classés du plus faible au plus solide : les meilleurs prospects à appeler sont en haut.",
       },
+      funnel_lead: {
+        label: "Nouveau contact via le formulaire",
+        title: "Nouveau contact venu de {domain}",
+        body: "Score de l'audit : {score}. Ouvrez le formulaire pour voir qui l'a laissé.",
+      },
     },
   },
   "de-CH": {
@@ -12472,6 +12506,11 @@ export const NOTIFICATIONS_COPY: Record<DashLocale, NotificationsCopy> = {
         label: "Interessenten-Scan abgeschlossen",
         title: "Ihr Interessenten-Scan ist fertig — {done} von {total} Domains geprüft",
         body: "Schwächste zuerst sortiert: die lohnendsten Interessenten stehen zuoberst.",
+      },
+      funnel_lead: {
+        label: "Neuer Kontakt aus dem Funnel",
+        title: "Neuer Kontakt von {domain}",
+        body: "Audit-Score: {score}. Öffnen Sie den Funnel, um zu sehen, wer ihn hinterlassen hat.",
       },
     },
   },
@@ -13949,5 +13988,356 @@ export const OPPORTUNITY_SCANNER_HELP_COPY: Record<DashLocale, OpportunityScanne
     etiquetteTitle: "Zum Prüfen fremder Websites",
     etiquetteBody:
       "Gelesen wird nur, was für jeden Crawler ohnehin öffentlich ist, und der Scanner gibt sich dabei ehrlich zu erkennen. Es ist kein Crawling, kein Scraping und kein Penetrationstest. Dennoch ist der Bericht ein Verkaufsdokument über jemanden, der nicht darum gebeten hat: die Note ist eine technische Lesung einer Website, kein Urteil über ein Unternehmen — und der Text sagt das auch so.",
+  },
+};
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   White-Label Audit Funnel — the EMBEDDED WIDGET (/embed/audit)
+   ═══════════════════════════════════════════════════════════════════════════
+
+   THE ONLY COPY IN THIS FILE A CUSTOMER OF OURS NEVER READS. It renders inside
+   an iframe on an AGENCY's marketing site and is read by THEIR visitors, so it
+   speaks to a stranger about their own website and never mentions us, our
+   plans, or our dashboard. Every other block here can say "your workspace";
+   this one cannot say anything that implies the reader has an account.
+
+   NOT A FOURTH LOCALE MODEL. CLAUDE.md is explicit that writing a fourth
+   catalog against DashLocale produces unreachable code, so this reuses the
+   dashboard's three and picks between them with dashboardLocale() applied to
+   the owning tenant's defaultLanguage — the agency chooses the language its
+   visitors read, which is the only party in the exchange who knows it. The
+   visitor's own Accept-Language is deliberately NOT consulted: a Swiss agency
+   running a German funnel does not want it flipping to English for a visitor
+   who happens to be travelling.
+
+   NO BRAND STRING ANYWHERE BELOW, in any locale. The absence is asserted in
+   tests/funnel.test.ts, which greps the rendered page. */
+
+const embedAuditEn = {
+  heading: "How visible is your website to AI?",
+  intro:
+    "Assistants like ChatGPT and Perplexity answer questions about businesses every day. See what they can find about yours.",
+
+  domainLabel: "Your website",
+  domainPlaceholder: "yourcompany.com",
+  emailLabel: "Where should we send the result?",
+  emailPlaceholder: "you@yourcompany.com",
+  /** The honest reason the address is required, stated before it is asked for. */
+  emailNote: "We'll email you the full breakdown.",
+
+  submitIdle: "Check my website",
+  submitBusy: "Checking…",
+
+  errDomain: "That doesn't look like a website address.",
+  errEmail: "Please enter a valid email address.",
+  errLimit: "You've run this a few times today. Try again tomorrow.",
+  errAudit: "We couldn't reach that website just now. Your details were saved and we'll follow up.",
+  errGeneric: "Something went wrong. Please try again.",
+
+  resultHeading: "{domain} scores {score} out of 100",
+  gradeLabel: "Grade",
+  gapsHeading: "The biggest things holding it back",
+  /** Points recoverable, from the audit. Never a promise about ranking. */
+  gapsSuffix: "points",
+  noGaps: "Nothing major stood out — a strong result.",
+  again: "Check another website",
+};
+export type EmbedAuditCopy = typeof embedAuditEn;
+
+export const EMBED_AUDIT_COPY: Record<DashLocale, EmbedAuditCopy> = {
+  en: embedAuditEn,
+  fr: {
+    heading: "Quelle est la visibilité de votre site auprès des IA ?",
+    intro:
+      "Chaque jour, des assistants comme ChatGPT et Perplexity répondent à des questions sur des entreprises. Découvrez ce qu'ils trouvent sur la vôtre.",
+
+    domainLabel: "Votre site web",
+    domainPlaceholder: "votreentreprise.com",
+    emailLabel: "Où devons-nous envoyer le résultat ?",
+    emailPlaceholder: "vous@votreentreprise.com",
+    emailNote: "Nous vous enverrons l'analyse complète par courriel.",
+
+    submitIdle: "Analyser mon site",
+    submitBusy: "Analyse en cours…",
+
+    errDomain: "Cette adresse de site ne semble pas valide.",
+    errEmail: "Veuillez saisir une adresse courriel valide.",
+    errLimit: "Vous avez déjà lancé plusieurs analyses aujourd'hui. Réessayez demain.",
+    errAudit:
+      "Nous n'avons pas pu joindre ce site pour le moment. Vos coordonnées ont été enregistrées et nous reviendrons vers vous.",
+    errGeneric: "Une erreur est survenue. Veuillez réessayer.",
+
+    resultHeading: "{domain} obtient {score} sur 100",
+    gradeLabel: "Note",
+    gapsHeading: "Les principaux freins",
+    gapsSuffix: "points",
+    noGaps: "Rien de majeur à signaler — un bon résultat.",
+    again: "Analyser un autre site",
+  },
+  "de-CH": {
+    heading: "Wie sichtbar ist Ihre Website für KI?",
+    intro:
+      "Assistenten wie ChatGPT und Perplexity beantworten täglich Fragen zu Unternehmen. Sehen Sie, was sie über Ihres finden.",
+
+    domainLabel: "Ihre Website",
+    domainPlaceholder: "ihrunternehmen.ch",
+    emailLabel: "Wohin sollen wir das Ergebnis senden?",
+    emailPlaceholder: "sie@ihrunternehmen.ch",
+    emailNote: "Wir senden Ihnen die vollständige Auswertung per E-Mail.",
+
+    submitIdle: "Website prüfen",
+    submitBusy: "Wird geprüft…",
+
+    errDomain: "Das sieht nicht nach einer Website-Adresse aus.",
+    errEmail: "Bitte geben Sie eine gültige E-Mail-Adresse ein.",
+    errLimit: "Sie haben das heute schon mehrfach ausgeführt. Versuchen Sie es morgen erneut.",
+    errAudit:
+      "Wir konnten diese Website gerade nicht erreichen. Ihre Angaben wurden gespeichert und wir melden uns.",
+    errGeneric: "Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut.",
+
+    resultHeading: "{domain} erreicht {score} von 100",
+    gradeLabel: "Note",
+    gapsHeading: "Die grössten Bremsen",
+    gapsSuffix: "Punkte",
+    noGaps: "Nichts Gravierendes aufgefallen — ein starkes Ergebnis.",
+    again: "Weitere Website prüfen",
+  },
+};
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   White-Label Audit Funnels (tool page: /visibility/tools/funnels)
+   ═══════════════════════════════════════════════════════════════════════════
+
+   The agency-facing half. Unlike EMBED_AUDIT_COPY above, this one DOES speak to
+   a customer of ours, so it says "your funnels" and "your leads" normally.
+
+   NO PLAN NUMBERS IN COPY, per CLAUDE.md: the monthly audit allowance
+   interpolates as {used}/{limit} from the API response, and the only place
+   those numbers exist is FUNNEL_AUDIT_LIMITS in src/lib/funnel/quota.ts. */
+
+const funnelsEn = {
+  lockedTitle: "Audit Funnels are on Agency and above",
+  lockedBody:
+    "Put a lead-capturing AI visibility audit on your own site, under your own brand. Visitors enter their website and their email to see a score; you get the lead. Upgrade to Agency to switch it on.",
+  lockedCta: "See plans",
+
+  emptyTitle: "No funnels yet",
+  emptyBody:
+    "Create a funnel, list the sites it may run on, and paste one line of JavaScript. Every visitor who asks for a score leaves you an email address.",
+
+  // ── Config form ──
+  createTitle: "New funnel",
+  labelLabel: "Name",
+  labelHint: "For your list only. Visitors never see it.",
+  originsLabel: "Sites it may run on",
+  originsHint:
+    "One https address per line, e.g. https://acme.com. No wildcards — list each site. A funnel with no sites listed will not run anywhere.",
+  notifyLabel: "Email new leads to",
+  notifyHint: "Optional. Leads always appear in your notifications regardless.",
+
+  brandingTitle: "Branding",
+  brandingHint: "This is all a visitor sees. Leave it blank to inherit your workspace settings.",
+  brandNameLabel: "Display name",
+  brandLogoLabel: "Logo URL",
+  brandLogoHint: "An SVG served over https. We fetch it once and inline it.",
+  brandAccentLabel: "Accent colour",
+
+  save: "Save funnel",
+  saving: "Saving…",
+  create: "Create funnel",
+  creating: "Creating…",
+  cancel: "Cancel",
+  edit: "Edit",
+  remove: "Delete",
+  removeConfirm: "Delete this funnel and every lead it captured? This cannot be undone.",
+
+  activeLabel: "Active",
+  inactiveLabel: "Paused",
+  toggleActivate: "Activate",
+  togglePause: "Pause",
+
+  // ── Embed snippet ──
+  snippetTitle: "Embed code",
+  snippetHint:
+    "Paste this where the widget should appear. It carries no branding of ours and loads nothing else.",
+  snippetCopy: "Copy",
+  snippetCopied: "Copied",
+
+  // ── Leads ──
+  leadsTitle: "Leads",
+  leadsEmpty: "No leads captured yet.",
+  colEmail: "Email",
+  colDomain: "Website",
+  colScore: "Score",
+  colCaptured: "Captured",
+  noScore: "—",
+  noScoreHint: "The audit did not complete, but the email was captured.",
+  exportCsv: "Export CSV",
+  loadMore: "Show more",
+  loading: "Loading…",
+  leadCountLabel: "leads",
+
+  // ── Quota ──
+  quotaLine: "{used} of {limit} funnel audits used this month",
+
+  // ── Errors ──
+  errorLoad: "Could not load your funnels. Try again.",
+  errorSave: "Could not save that funnel.",
+  errorOrigins: "Every site must be an https address with no wildcards and no path.",
+  errorNoOrigins: "List at least one site before activating this funnel.",
+  errorDelete: "Could not delete that funnel.",
+
+  methodNote:
+    "The widget runs the same passive audit as our own free tool: robots.txt, the HTML served to a crawler, structured data, metadata and sitemaps. Nothing is submitted and no page beyond the homepage is fetched. The visitor's email is required before the score is shown — that is the capture — and it is stored against your workspace only.",
+};
+export type FunnelsCopy = typeof funnelsEn;
+
+export const FUNNELS_COPY: Record<DashLocale, FunnelsCopy> = {
+  en: funnelsEn,
+  fr: {
+    lockedTitle: "Les formulaires d'audit sont inclus à partir d'Agency",
+    lockedBody:
+      "Placez sur votre propre site un audit de visibilité IA qui capte des contacts, sous votre marque. Le visiteur saisit son site et son courriel pour voir sa note ; le contact vous revient. Passez à Agency pour l'activer.",
+    lockedCta: "Voir les forfaits",
+
+    emptyTitle: "Aucun formulaire pour l'instant",
+    emptyBody:
+      "Créez un formulaire, indiquez les sites autorisés à l'afficher, puis collez une ligne de JavaScript. Chaque visiteur qui demande sa note vous laisse une adresse courriel.",
+
+    createTitle: "Nouveau formulaire",
+    labelLabel: "Nom",
+    labelHint: "Pour votre liste uniquement. Les visiteurs ne le voient jamais.",
+    originsLabel: "Sites autorisés",
+    originsHint:
+      "Une adresse https par ligne, par exemple https://acme.com. Pas de joker — indiquez chaque site. Un formulaire sans site listé ne s'affichera nulle part.",
+    notifyLabel: "Envoyer les nouveaux contacts à",
+    notifyHint: "Facultatif. Les contacts apparaissent de toute façon dans vos notifications.",
+
+    brandingTitle: "Identité visuelle",
+    brandingHint:
+      "C'est tout ce que voit un visiteur. Laissez vide pour reprendre les réglages de votre espace.",
+    brandNameLabel: "Nom affiché",
+    brandLogoLabel: "URL du logo",
+    brandLogoHint: "Un SVG servi en https. Nous le récupérons une fois et l'intégrons.",
+    brandAccentLabel: "Couleur d'accent",
+
+    save: "Enregistrer",
+    saving: "Enregistrement…",
+    create: "Créer le formulaire",
+    creating: "Création…",
+    cancel: "Annuler",
+    edit: "Modifier",
+    remove: "Supprimer",
+    removeConfirm:
+      "Supprimer ce formulaire et tous les contacts captés ? Cette action est irréversible.",
+
+    activeLabel: "Actif",
+    inactiveLabel: "En pause",
+    toggleActivate: "Activer",
+    togglePause: "Mettre en pause",
+
+    snippetTitle: "Code d'intégration",
+    snippetHint:
+      "Collez ceci à l'endroit où le widget doit apparaître. Il ne porte aucune de nos marques et ne charge rien d'autre.",
+    snippetCopy: "Copier",
+    snippetCopied: "Copié",
+
+    leadsTitle: "Contacts",
+    leadsEmpty: "Aucun contact capté pour l'instant.",
+    colEmail: "Courriel",
+    colDomain: "Site web",
+    colScore: "Note",
+    colCaptured: "Capté le",
+    noScore: "—",
+    noScoreHint: "L'audit n'a pas abouti, mais le courriel a bien été capté.",
+    exportCsv: "Exporter en CSV",
+    loadMore: "Afficher plus",
+    loading: "Chargement…",
+    leadCountLabel: "contacts",
+
+    quotaLine: "{used} audits sur {limit} utilisés ce mois-ci",
+
+    errorLoad: "Impossible de charger vos formulaires. Réessayez.",
+    errorSave: "Impossible d'enregistrer ce formulaire.",
+    errorOrigins:
+      "Chaque site doit être une adresse https, sans joker et sans chemin.",
+    errorNoOrigins: "Indiquez au moins un site avant d'activer ce formulaire.",
+    errorDelete: "Impossible de supprimer ce formulaire.",
+
+    methodNote:
+      "Le widget exécute le même audit passif que notre outil gratuit : robots.txt, le HTML servi à un robot, les données structurées, les métadonnées et les sitemaps. Rien n'est soumis et aucune page au-delà de la page d'accueil n'est récupérée. Le courriel du visiteur est exigé avant l'affichage de la note — c'est là que se fait la captation — et il n'est enregistré que dans votre espace.",
+  },
+  "de-CH": {
+    lockedTitle: "Audit-Funnels sind ab Agency enthalten",
+    lockedBody:
+      "Stellen Sie einen KI-Sichtbarkeits-Audit mit Kontakterfassung auf Ihre eigene Website, unter Ihrer Marke. Besucher geben ihre Website und ihre E-Mail-Adresse ein, um eine Note zu sehen; der Kontakt gehört Ihnen. Wechseln Sie zu Agency, um das freizuschalten.",
+    lockedCta: "Pläne ansehen",
+
+    emptyTitle: "Noch keine Funnels",
+    emptyBody:
+      "Legen Sie einen Funnel an, tragen Sie die erlaubten Websites ein und fügen Sie eine Zeile JavaScript ein. Jeder Besucher, der seine Note möchte, hinterlässt Ihnen eine E-Mail-Adresse.",
+
+    createTitle: "Neuer Funnel",
+    labelLabel: "Name",
+    labelHint: "Nur für Ihre Liste. Besucher sehen ihn nie.",
+    originsLabel: "Erlaubte Websites",
+    originsHint:
+      "Eine https-Adresse pro Zeile, z. B. https://acme.ch. Keine Platzhalter — tragen Sie jede Website einzeln ein. Ein Funnel ohne eingetragene Website läuft nirgends.",
+    notifyLabel: "Neue Kontakte senden an",
+    notifyHint: "Optional. Kontakte erscheinen ohnehin in Ihren Benachrichtigungen.",
+
+    brandingTitle: "Markenauftritt",
+    brandingHint:
+      "Mehr sieht ein Besucher nicht. Leer lassen, um die Einstellungen Ihres Arbeitsbereichs zu übernehmen.",
+    brandNameLabel: "Anzeigename",
+    brandLogoLabel: "Logo-URL",
+    brandLogoHint: "Ein SVG über https. Wir holen es einmal und binden es ein.",
+    brandAccentLabel: "Akzentfarbe",
+
+    save: "Funnel speichern",
+    saving: "Wird gespeichert…",
+    create: "Funnel erstellen",
+    creating: "Wird erstellt…",
+    cancel: "Abbrechen",
+    edit: "Bearbeiten",
+    remove: "Löschen",
+    removeConfirm:
+      "Diesen Funnel und alle erfassten Kontakte löschen? Das lässt sich nicht rückgängig machen.",
+
+    activeLabel: "Aktiv",
+    inactiveLabel: "Pausiert",
+    toggleActivate: "Aktivieren",
+    togglePause: "Pausieren",
+
+    snippetTitle: "Einbettungscode",
+    snippetHint:
+      "Fügen Sie dies dort ein, wo das Widget erscheinen soll. Es trägt keine unserer Marken und lädt nichts weiter.",
+    snippetCopy: "Kopieren",
+    snippetCopied: "Kopiert",
+
+    leadsTitle: "Kontakte",
+    leadsEmpty: "Noch keine Kontakte erfasst.",
+    colEmail: "E-Mail",
+    colDomain: "Website",
+    colScore: "Note",
+    colCaptured: "Erfasst am",
+    noScore: "—",
+    noScoreHint: "Der Audit kam nicht zustande, die E-Mail-Adresse wurde aber erfasst.",
+    exportCsv: "CSV exportieren",
+    loadMore: "Mehr laden",
+    loading: "Wird geladen…",
+    leadCountLabel: "Kontakte",
+
+    quotaLine: "{used} von {limit} Funnel-Audits diesen Monat genutzt",
+
+    errorLoad: "Ihre Funnels konnten nicht geladen werden. Versuchen Sie es erneut.",
+    errorSave: "Dieser Funnel konnte nicht gespeichert werden.",
+    errorOrigins:
+      "Jede Website muss eine https-Adresse ohne Platzhalter und ohne Pfad sein.",
+    errorNoOrigins: "Tragen Sie mindestens eine Website ein, bevor Sie den Funnel aktivieren.",
+    errorDelete: "Dieser Funnel konnte nicht gelöscht werden.",
+
+    methodNote:
+      "Das Widget führt denselben passiven Audit aus wie unser kostenloses Werkzeug: robots.txt, das an einen Crawler ausgelieferte HTML, strukturierte Daten, Metadaten und Sitemaps. Es wird nichts übermittelt und keine Seite über die Startseite hinaus abgerufen. Die E-Mail-Adresse des Besuchers ist vor der Anzeige der Note erforderlich — das ist die Erfassung — und sie wird ausschliesslich in Ihrem Arbeitsbereich gespeichert.",
   },
 };

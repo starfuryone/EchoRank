@@ -32,6 +32,8 @@ export const NOTIFICATION_TYPES = [
   "citation_opportunity",
   // Agency Opportunity Scanner — a bulk prospect batch finished
   "scan_complete",
+  // White-Label Audit Funnel — a visitor on the agency's own site left an email
+  "funnel_lead",
 ] as const;
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
@@ -91,6 +93,21 @@ export interface NotificationPayloads {
    * the reader's cue to open the table.
    */
   scan_complete: { batchId: string; total: number; done: number };
+  /**
+   * NO EMAIL ADDRESS. The lead's address is the captured asset and it is not
+   * put in a notification payload: this row is tenant-wide, so it renders in
+   * the tray for every member of the agency including ones with no business
+   * reading a prospect list, and it is the one payload here built entirely
+   * from strings a stranger typed into a public form. The domain identifies
+   * the lead well enough to decide whether to open the table, and the table is
+   * where the address lives.
+   *
+   * `score` is NULLABLE because the email is captured before the audit runs and
+   * the lead is stored either way — a funnel that captured an address for a
+   * site the sidecar could not reach is still a lead. Null renders as "—"
+   * through render.ts's MISSING, which is the honest reading.
+   */
+  funnel_lead: { funnelId: string; domain: string; score: number | null };
 }
 
 export type PayloadFor<T extends NotificationType> = NotificationPayloads[T];
@@ -119,6 +136,7 @@ export const NOTIFICATION_HREF: Record<NotificationType, string> = {
   sov_share_drop: "/visibility/tools/share-of-voice",
   citation_opportunity: "/visibility/tools/citation-opportunities",
   scan_complete: "/visibility/tools/opportunity-scanner",
+  funnel_lead: "/visibility/tools/funnels",
 };
 
 export function isNotificationType(value: string): value is NotificationType {

@@ -82,6 +82,24 @@ const publicPaths = ["/login", "/register", "/api/auth", "/api/feedback", "/f/",
 // Exact-match, so nothing added later under /api/collect/ inherits anonymity.
 // The sibling snippet route needs NO entry here: its path contains a dot and
 // the matcher at the bottom of this file excludes those from the proxy outright.
+// /api/public/funnel/audit is the white-label audit funnel's capture endpoint.
+// It is called by the loader at /api/public/funnel.js from the AGENCY's domain,
+// so it never carries our session cookie and would otherwise be 307'd to
+// /login — which fetch follows, returning HTML with status 200 that the caller
+// reads as success. Same failure shape as /api/collect above.
+//
+// Authorization is the funnel's own origin allowlist (FunnelConfig.allowedOrigins),
+// checked in the route, plus a Redis limit per key+IP and a monthly per-tenant
+// cap. The key in the query string is an identifier, not a credential.
+//
+// /embed/audit is the widget PAGE that loader drops into an iframe. It contains
+// no dot, so unlike /api/public/funnel.js it IS matched by the proxy, and
+// without this entry every visitor to an agency's site would see OUR login page
+// rendered inside the agency's own layout — the exact opposite of what a
+// white-label embed is for.
+//
+// Both are exact-match, so nothing added later under /api/public/funnel/ or
+// /embed/ inherits anonymous access. Opening a new one must be a deliberate edit.
 const publicExactPaths = new Set([
   "/api/av/audit",
   "/api/av/audit/report",
@@ -89,6 +107,8 @@ const publicExactPaths = new Set([
   "/api/billing/checkout",
   "/api/webhooks",
   "/api/collect",
+  "/api/public/funnel/audit",
+  "/embed/audit",
 ]);
 
 /** First path segment, e.g. "/fr/x" -> "fr". */
@@ -172,6 +192,18 @@ export default auth((req) => {
     // in the body, and that key can do exactly one thing.
     // Exact-match, deliberately: /api/collect/* keeps the origin check.
     pathname !== "/api/collect" &&
+    // The white-label funnel's capture endpoint. Same shape as the beacon
+    // above: every legitimate call is cross-origin because it is issued by a
+    // widget on the AGENCY's own site, so this check would reject 100% of real
+    // traffic and 0% of attacks.
+    //
+    // IT IS NOT UNCHECKED — it is checked against a NARROWER list. The route
+    // requires Origin to be one of the exact https origins that specific
+    // funnel's owner registered (FunnelConfig.allowedOrigins), refuses a
+    // missing Origin outright, and reads no cookie, so a forgery has no ambient
+    // authority to borrow. src/lib/funnel/origins.ts is the whole argument.
+    // Exact-match, deliberately: /api/public/funnel/* keeps the origin check.
+    pathname !== "/api/public/funnel/audit" &&
     method !== "GET" &&
     method !== "HEAD" &&
     method !== "OPTIONS"
