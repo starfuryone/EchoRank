@@ -89,10 +89,27 @@ days:
 
 Read it as **leads, not facts**. Verify against the code before acting on any line of it.
 
-## Stripe: no checkout on purpose
+## Stripe: the live account is shared with 7+ other products
 
-Changing `planType` takes no payment because checkout does not exist. This is a known gap
-with its own task, not an oversight to fix in passing. See [integrations.md](integrations.md).
+Checkout exists now (this section used to say it did not — see
+[integrations.md](integrations.md) for what shipped). The live-mode gotcha that replaced it
+is bigger:
+
+**The live Stripe account is shared by seven or more products.** On 2026-08-01 an unscoped
+`lookup_key` sweep archived AgoraIQ and AI Membership Hub prices — someone else's revenue,
+taken down by a query that was only ever meant to touch ours. The rules that came out of it:
+
+- Every Echorank product and price carries `metadata[app]=echorank`.
+- **Every sweep, list or query is scoped by that metadata.** A `lookup_key` filter alone is
+  not scoping — that is exactly what caused the incident.
+- Seeders guard on `test` appearing in the key, so a live key stops them.
+- **Seeders have no idempotency. Never re-run one against live.**
+- Sandbox first (the "Echorank Dome" account), then print the live create plan and get
+  explicit human approval before touching live.
+
+Sandbox credentials live at `/opt/echorank/.stripe-sandbox` (`STRIPE_API_KEY`, `sk_test`,
+owned by `deploy`). The app itself reads `STRIPE_SECRET_KEY`; the env split is `.env` live
+and `.env.sandbox` sandbox, and `.env.sandbox` is root-only.
 
 ## Secrets
 

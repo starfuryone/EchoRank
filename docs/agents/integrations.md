@@ -66,20 +66,35 @@ for any page; field data (CrUX) only exists for pages with enough real traffic, 
 absence is normal and the copy says so. Scores move several points between runs — the UI is
 written for trends, not single numbers.
 
-## Stripe — no checkout, deliberately
+## Stripe
 
-As of late July 2026 there is **no checkout and no billing portal**. `src/lib/stripe/`
-contains only `prices.ts`. There is no `checkout.sessions.create` and no
-`billingPortal.sessions.create` anywhere in `src/`.
+Checkout and the billing portal both ship. This section said the opposite until
+2026-08-15; it was written in late July and never updated when they landed, which is the
+failure mode CLAUDE.md's "the code wins — fix this file in the same commit" rule exists to
+stop. What is actually there:
 
-Consequence: the billing page's plan switch changes `planType` **without taking payment**.
+- `src/lib/stripe/` — `client.ts` (`getStripe()`, reads `STRIPE_SECRET_KEY` at call time so
+  the live/sandbox split is a deploy decision), `lookup-keys.ts`, `prices.ts`.
+- `POST /api/billing/checkout` — subscriptions only (`mode: "subscription"`, hardcoded),
+  eight tier/interval lookup keys, a §8.1 consent gate ahead of the auth branch, and a
+  `client_reference_id = tenantId` stamp that is how the webhook finds a tenant with no
+  Stripe customer yet.
+- `POST /api/billing/portal` — the billing portal.
+- `/api/webhooks` — signature verification, and `ProcessedWebhook.stripeEventId` (`@unique`)
+  as an idempotency marker that is deleted again if a handler throws, so Stripe's retry
+  re-runs a failed event rather than skipping it.
 
-Do **not** "helpfully" wire payments. Building checkout is its own task with its own
-explicit go-ahead. `scripts/seed-plan-prices-usd.ts` exists, is idempotent, and aborts on an
-empty key by design — it has never run.
+**Prices are never created or edited by the app.** They are resolved live by lookup key, and
+a missing key is a 404 rather than a fallback to some other price. The lookup keys are
+`echorank_<tier>_usd_<interval>` for plans and the standalone Watcher.
 
-Webhook signature verification is implemented and correct; the absence of
-`STRIPE_WEBHOOK_SECRET` is handled explicitly rather than silently.
+`scripts/seed-plan-prices-usd.ts` exists, is idempotent, and aborts on an empty key by
+design — it has never run.
+
+**Before touching Stripe at all, read the shared-account rules in
+[gotchas.md](gotchas.md#stripe-the-live-account-is-shared-with-7-other-products).** The live
+account carries seven or more products, an unscoped sweep has already archived another
+product's prices once, and every query must be scoped by `metadata[app]=echorank`.
 
 ## AI providers
 
