@@ -28,11 +28,21 @@ export function startOfBillingMonth(now = new Date()): Date {
   return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
 }
 
-/** Sum of billed USD for a tenant since the start of the current month. */
+/**
+ * Sum of PLAN-FUNDED billed USD for a tenant since the start of the month.
+ *
+ * CREDIT-FUNDED ROWS ARE EXCLUDED, and that exclusion is what the monthly cap
+ * means. The cap protects our spend on usage a plan includes; a credit-funded
+ * call was paid for in advance by the tenant, so counting it here would let a
+ * customer's own prepaid purchase exhaust the allowance they get for free — buy
+ * more lookups, get less of everything else. The rows are still written (see
+ * SeoApiCall.creditFunded), so total upstream cost remains fully accounted for;
+ * this aggregate is deliberately narrower than "everything we were charged".
+ */
 export async function spentThisMonth(tenantId: string): Promise<number> {
   const agg = await prisma.seoApiCall.aggregate({
     _sum: { costUsd: true },
-    where: { tenantId, createdAt: { gte: startOfBillingMonth() } },
+    where: { tenantId, creditFunded: false, createdAt: { gte: startOfBillingMonth() } },
   });
   return Number(agg._sum.costUsd ?? 0);
 }
@@ -50,6 +60,12 @@ export async function recordCall(row: {
    * consume a search until the tenant has something to look at.
    */
   dataforseoTaskId?: string | null;
+  /**
+   * Paid for by a prepaid credit rather than plan-included usage. Excluded from
+   * spentThisMonth() and therefore from the cap, but still recorded — see
+   * SeoApiCall.creditFunded.
+   */
+  creditFunded?: boolean;
 }): Promise<void> {
   const { dataforseoTaskId = null, ...rest } = row;
   await prisma.seoApiCall.create({

@@ -194,11 +194,24 @@ describe("when the product kind cannot be resolved", () => {
     expect(await hasPaidPlan(TENANT_ID)).toBe(false);
   });
 
-  it("keeps activating a session that has no subscription at all", async () => {
-    // Not a watcher: that SKU is subscription-only. A one-off payment session
-    // has no subscription to inspect, so the pre-existing behaviour stands
-    // rather than being caught by a guard aimed at something else.
+  it("NO LONGER activates a session that has no subscription at all", async () => {
+    // REVERSED 2026-08-15, deliberately, when prepaid credit packs shipped.
+    //
+    // This test used to assert the opposite, on the reasoning that a one-off
+    // payment session had no subscription to inspect so the pre-existing
+    // behaviour should stand. That was safe only while nothing in this app
+    // created a mode=payment session — and the credit-pack checkout now does.
+    // Under the old behaviour a $19 pack of prospect lookups set the tenant
+    // ACTIVE, granting every paid feature in the product.
+    //
+    // handleCheckoutCompleted now routes any mode=payment session to the credit
+    // handler and returns before the activation check. A session that is not a
+    // real credit pack — this fixture, a Stripe payment link, a dashboard
+    // charge — credits nothing and activates nothing, which is the same
+    // fail-closed direction the sibling test above argues for.
+    //
+    // tests/credit-webhook.test.ts owns the positive case.
     await deliverCheckoutSession({ withSubscription: false });
-    expect(tenantRow.billingStatus).toBe("ACTIVE");
+    expect(tenantRow.billingStatus).toBe("TRIALING");
   });
 });

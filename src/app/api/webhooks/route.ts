@@ -12,6 +12,7 @@ import {
   cancelTrialEndingNotice,
   scheduleTrialEndingNotice,
 } from "@/lib/billing/trial-notice";
+import { handleCreditPackCompleted, isCreditPackSession } from "@/lib/billing/credit-webhook";
 
 const log = logger.child({ module: "stripe-webhook" });
 
@@ -75,6 +76,16 @@ function mapStripePlan(
 // ─── Event handlers ─────────────────────────────────────────────────────────
 
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
+  // ── THE CREDIT BRANCH, FIRST, AND IT RETURNS ────────────────────────────
+  // Everything below this line assumes a subscription. In particular the
+  // activation check reads `subscriptionId ? productKind === "PLAN" : true`,
+  // which treats "no subscription" as "plan" — so a one-time credit purchase
+  // reaching it would set the tenant ACTIVE. See lib/billing/credit-webhook.ts.
+  if (isCreditPackSession(session)) {
+    await handleCreditPackCompleted(session);
+    return;
+  }
+
   const customerId =
     typeof session.customer === "string"
       ? session.customer

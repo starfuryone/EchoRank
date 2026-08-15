@@ -231,6 +231,7 @@ model Tenant {
   scanBatches           ScanBatch[]
   funnelConfigs         FunnelConfig[]
   funnelLeads           FunnelLead[]
+  creditLedger          CreditLedger[]
 
   @@map("tenants")
 }
@@ -1485,6 +1486,18 @@ model SeoApiCall {
   costUsd          Decimal   @db.Decimal(10, 6)
   /// Billed by DataForSEO. Drives the USD cap; never the search quota.
   ok               Boolean
+  /// Paid for by a prepaid credit rather than by plan-included usage.
+  ///
+  /// WHY THE ROW IS STILL WRITTEN. Credit-funded calls bypass the monthly USD
+  /// cap — the cap protects OUR spend on usage a plan includes, and a credit is
+  /// the tenant having already paid for this call — but the accounting has to
+  /// stay complete: this row is what tells us what Google actually charged us,
+  /// independently of who funded it. Excluding these rows would understate real
+  /// upstream cost and make the cap's own denominator a lie.
+  ///
+  /// The cap query filters on `creditFunded: false`; every other reader counts
+  /// both. Defaults false, so every historical row keeps meaning what it meant.
+  creditFunded     Boolean   @default(false)
   /// Set when a usable result exists — at insert for live calls, by the
   /// standard-queue poller for task_post calls. NULL means posted-but-unresolved
   /// or failed, and is excluded from the search quota by design.
@@ -1499,6 +1512,83 @@ model SeoApiCall {
   @@index([tenantId, resultAt])
   /// Poller lookup by task id.
   @@index([dataforseoTaskId])
+}
+
+/// Why a credit ledger row exists.
+///
+/// The set is deliberately small and closed. Every movement of a credit is one
+/// of these five, and a sixth reason should be a schema change someone has to
+/// argue for — not a free-text column that becomes five spellings of "refund".
+enum CreditReason {
+  /// A completed Stripe one-time checkout. `ref` is the session id. Positive.
+  PURCHASE
+  /// Held at batch submit, before any lookup runs. `ref` is the batch id.
+  /// NEGATIVE — the balance drops the moment a batch is accepted, so two
+  /// batches submitted at once cannot both spend the same credit.
+  RESERVE
+  /// Given back at batch completion for lookups the batch never actually made.
+  /// `ref` is the batch id. Positive, and never larger than the reserve.
+  CONSUME_RELEASE
+  /// A support-initiated give-back. Positive.
+  REFUND
+  /// A manual adjustment in either direction. `ref` must be an operator-chosen
+  /// token that is unique per tenant — see the unique constraint below.
+  ADMIN
+}
+
+/// Prepaid Places-lookup credits, as an append-only ledger.
+///
+/// ── BALANCE IS SUM(delta). THERE IS NO BALANCE COLUMN ───────────────────────
+/// A denormalised balance is a second source of truth that can disagree with
+/// the rows that produced it, and the disagreement is invisible until a
+/// customer counts. The aggregate is indexed (tenantId, createdAt) and this
+/// table sees a handful of rows per batch, so the sum is cheap and stays cheap;
+/// if it ever stops being cheap, the fix is a periodic snapshot row, not a
+/// mutable running total.
+///
+/// ── APPEND ONLY ─────────────────────────────────────────────────────────────
+/// Nothing updates or deletes a row here. A mistake is corrected by writing the
+/// compensating row, which is why REFUND and ADMIN exist. That is what makes
+/// the table an audit trail rather than a cache.
+///
+/// ── IDEMPOTENCY ─────────────────────────────────────────────────────────────
+/// (tenantId, reason, ref) is unique, which is what makes every writer safe to
+/// retry:
+///   - PURCHASE:         one credit per Stripe session, however many times the
+///                       webhook is replayed. This is the second of the two
+///                       idempotency layers — ProcessedWebhook.stripeEventId is
+///                       the first, and it is deliberately DELETED when a
+///                       handler throws so Stripe's retry re-runs, which is
+///                       exactly the window this constraint closes.
+///   - RESERVE:          one hold per batch, so a double-submitted job cannot
+///                       reserve twice.
+///   - CONSUME_RELEASE:  one give-back per batch, so a worker that finishes a
+///                       batch twice cannot refund the same credits twice.
+/// ADMIN rows must therefore carry an operator-chosen unique token as `ref`;
+/// a bare "adjustment" would collide with the next one.
+model CreditLedger {
+  id       String @id @default(cuid())
+  tenantId String
+
+  /// Signed. Positive adds credits, negative removes them. Never zero — a
+  /// zero-delta row records nothing and would only pad the audit trail.
+  delta  Int
+  reason CreditReason
+
+  /// What this movement is about: a Stripe checkout session id for PURCHASE, a
+  /// ScanBatch id for RESERVE and CONSUME_RELEASE, an operator token otherwise.
+  /// Not a foreign key — it points into three different tables depending on
+  /// `reason`, and a ledger row must outlive the batch it refers to.
+  ref String
+
+  createdAt DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, reason, ref])
+  /// The balance aggregate, and the /billing history list.
+  @@index([tenantId, createdAt(sort: Desc)])
+  @@map("credit_ledger")
 }
 
 model SeoDomainSnapshot {
@@ -3455,6 +3545,21 @@ model ScanRow {
   /// need, and keeping the whole audit would make this table the largest in the
   /// schema for data nobody reads twice.
   topGaps Json?
+
+  /// Whether this row's Places lookup actually cost money.
+  ///
+  /// NOT THE SAME QUESTION AS `place != null`, and that gap is the whole reason
+  /// this column exists. A lookup that ran and found nothing has a null `place`
+  /// and DID cost us a search — Google bills the query, not the answer — while
+  /// a lookup skipped because the batch had Places off, or the cap was reached,
+  /// costs nothing and also has a null `place`. Deciding the credit from
+  /// `place` would refund every prospect with no listing, which on a SaaS list
+  /// is most of them.
+  ///
+  /// Set from PlaceLookupResult.costUsd > 0, which is the upstream's own answer
+  /// to "did anything leave the building". The completion release counts these
+  /// rows and gives back the rest of the batch's hold.
+  placesCharged Boolean @default(false)
 
   /// Google Places standing, when the batch bought it: {rating, reviewCount}.
   /// Null when placesEnabled was off, when no listing matched, or when the cap

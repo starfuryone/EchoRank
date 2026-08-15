@@ -458,3 +458,43 @@ export async function notifyScanComplete(input: ScanCompleteInput): Promise<void
     payload: { batchId: input.batchId, total: input.total, done: input.done },
   });
 }
+
+// ─── 15. Prepaid lookup credits: a pack purchase landed ────────────────────
+
+export interface CreditsPurchasedInput {
+  tenantId: string;
+  /** Lookups this purchase added. */
+  credits: number;
+  /** Lookups held after it. */
+  balance: number;
+}
+
+/**
+ * One notification per completed credit-pack checkout.
+ *
+ * INFO, for the same reason notifyScanComplete is: nothing got worse. The
+ * customer bought something and it arrived.
+ *
+ * ONLY EVER CALLED WHEN THE CREDIT ACTUALLY LANDED. The webhook checks
+ * recordPurchase's `applied` flag first, so a replayed Stripe event credits
+ * nothing and notifies nobody — the ledger's unique constraint is what decides,
+ * and this adapter trusts it rather than re-deriving the answer.
+ *
+ * DEDUPED ON THE BALANCE AS WELL AS THE COUNT, deliberately. Two identical
+ * packs bought minutes apart are two real events a customer should see twice,
+ * and keying on `credits` alone would collapse them into one. The balance
+ * differs between them by construction — the second purchase is applied on top
+ * of the first — so it is what separates a genuine repeat from a replay. Not
+ * the session id: that is the ledger's business, and putting it in a dedupe key
+ * would make this row un-collapsible in the one case where collapsing is right.
+ */
+export async function notifyCreditsPurchased(input: CreditsPurchasedInput): Promise<void> {
+  await recordNotification({
+    tenantId: input.tenantId,
+    type: "credits_purchased",
+    severity: "info" satisfies NotificationSeverity,
+    title: `${input.credits} prospect lookups added — ${input.balance} available`,
+    dedupeKey: `notif:credits-${input.credits}-${input.balance}`,
+    payload: { credits: input.credits, balance: input.balance },
+  });
+}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import {
   CreditCard,
   AlertCircle,
@@ -17,6 +18,7 @@ import { PLAN_PRICES, planConfig, sellablePlan } from "@/lib/plan-config";
 import type { PlanType } from "@/generated/prisma";
 import { BILLING_COPY, type DashLocale } from "@/lib/i18n/dashboard";
 import { PlanCards } from "@/components/billing/plan-cards";
+import type { CreditHistoryRow } from "@/lib/credits/store";
 
 interface BillingData {
   plan: string;
@@ -47,10 +49,16 @@ const PLAN_CARD_ORDER = ["STARTER", "GROWTH", "AGENCY"] as const;
 export function BillingPageClient({
   locale,
   currentPlan,
+  credits,
+  creditHistory,
 }: {
   locale: DashLocale;
   /** Tenant.planType, resolved server-side in page.tsx. */
   currentPlan: PlanType | null;
+  /** Prepaid lookups held, SUM(delta) server-side. */
+  credits: number;
+  /** Newest first. Empty for a tenant that has never bought a pack. */
+  creditHistory: CreditHistoryRow[];
 }) {
   const t = BILLING_COPY[locale];
   const [billing, setBilling] = useState<BillingData | null>(null);
@@ -264,6 +272,85 @@ export function BillingPageClient({
         />
         <p className="mt-4 text-sm text-gray-500">{t.pricesInUsd}</p>
       </div>
+
+      {/* ── Prospect lookups ───────────────────────────────────────────────
+          Balance and ledger. Rendered for EVERY tenant, including one that has
+          never bought a pack: the zero state is where they learn the packs
+          exist, and hiding the section until after a purchase would make it
+          discoverable only to people who had already found it another way.
+
+          The ledger is shown in full rather than summarised. It is an
+          append-only record of money the customer spent, and "you have 340
+          lookups" with no way to see where the rest went is the kind of
+          balance people email support about. */}
+      <Card>
+        <CardHeader>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">{t.creditsTitle}</h3>
+              <p className="mt-1 text-sm text-gray-500">{t.creditsSubtitle}</p>
+            </div>
+            <Link
+              href="/credits"
+              className="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+            >
+              {t.creditsBuy}
+            </Link>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <p className="text-3xl font-semibold tabular-nums text-gray-900">
+            {credits.toLocaleString(locale === "en" ? "en" : locale)}
+          </p>
+          <p className="mt-1 text-sm text-gray-500">{t.creditsAvailable}</p>
+
+          {creditHistory.length === 0 ? (
+            <p className="mt-5 text-sm text-gray-500">{t.creditsEmpty}</p>
+          ) : (
+            <div className="mt-5 overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-gray-200 text-left">
+                    <th scope="col" className="py-2 text-xs font-medium uppercase tracking-wide text-gray-500">
+                      {t.creditsColDate}
+                    </th>
+                    <th scope="col" className="py-2 text-xs font-medium uppercase tracking-wide text-gray-500">
+                      {t.creditsColReason}
+                    </th>
+                    <th scope="col" className="py-2 text-right text-xs font-medium uppercase tracking-wide text-gray-500">
+                      {t.creditsColChange}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {creditHistory.map((row) => (
+                    <tr key={row.id} className="border-b border-gray-100 last:border-0">
+                      <td className="py-2 text-gray-500">
+                        {new Date(row.createdAt).toLocaleDateString(
+                          locale === "en" ? "en" : locale,
+                          { year: "numeric", month: "short", day: "numeric", timeZone: "UTC" },
+                        )}
+                      </td>
+                      <td className="py-2 text-gray-700">{t.creditsReasons[row.reason]}</td>
+                      {/* Sign is spelled out as well as coloured — a red number
+                          and a green number are the same number to a reader who
+                          cannot tell them apart. */}
+                      <td
+                        className={`py-2 text-right tabular-nums font-medium ${
+                          row.delta >= 0 ? "text-green-700" : "text-gray-900"
+                        }`}
+                      >
+                        {row.delta >= 0 ? "+" : "−"}
+                        {Math.abs(row.delta).toLocaleString(locale === "en" ? "en" : locale)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

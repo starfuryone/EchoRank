@@ -34,6 +34,8 @@ export const NOTIFICATION_TYPES = [
   "scan_complete",
   // White-Label Audit Funnel — a visitor on the agency's own site left an email
   "funnel_lead",
+  // Prepaid lookup credits — a Stripe one-time checkout completed
+  "credits_purchased",
 ] as const;
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
@@ -108,6 +110,18 @@ export interface NotificationPayloads {
    * through render.ts's MISSING, which is the honest reading.
    */
   funnel_lead: { funnelId: string; domain: string; score: number | null };
+  /**
+   * COUNTS OF LOOKUPS, NEVER DOLLARS. `credits` is what this purchase added and
+   * `balance` is what the tenant holds after it — both are lookup counts, and
+   * the copy renders them as such. A dollar figure here would be the only place
+   * in the whole credits feature that prices a lookup after the sale, and it
+   * would be wrong the moment a pack's price changes: this row is durable, the
+   * price is not.
+   *
+   * NO SESSION ID. It is the ledger's `ref` and it belongs in the audit trail,
+   * not in a tray row that every member of the tenant can read.
+   */
+  credits_purchased: { credits: number; balance: number };
 }
 
 export type PayloadFor<T extends NotificationType> = NotificationPayloads[T];
@@ -137,6 +151,10 @@ export const NOTIFICATION_HREF: Record<NotificationType, string> = {
   citation_opportunity: "/visibility/tools/citation-opportunities",
   scan_complete: "/visibility/tools/opportunity-scanner",
   funnel_lead: "/visibility/tools/funnels",
+  // /billing, not /credits: the marketing page sells packs, the billing page is
+  // where a buyer checks what they now hold and reads the ledger. Someone who
+  // has just bought is asking "did it land", not "shall I buy".
+  credits_purchased: "/billing",
 };
 
 export function isNotificationType(value: string): value is NotificationType {

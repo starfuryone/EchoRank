@@ -433,6 +433,10 @@ describe("lookupPlace", () => {
       path: "places.googleapis.com/v1/places:searchText",
       costUsd: PLACES_TEXTSEARCH_USD,
       ok: true,
+      // Plan-funded here — this call passed the monthly cap check. A
+      // credit-funded call skips that check and records `true`, which is what
+      // keeps it out of spentThisMonth() without hiding the real upstream cost.
+      creditFunded: false,
     });
     expect(result.place).toEqual({ name: "Acme Dental", rating: 4.3, reviewCount: 112 });
     expect(result.costUsd).toBe(PLACES_TEXTSEARCH_USD);

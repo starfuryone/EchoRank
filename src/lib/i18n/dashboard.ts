@@ -580,6 +580,27 @@ const billingEn = {
       "API access",
     ],
   } as Record<string, string[]>,
+
+  // ── Prospect lookups ──
+  // COUNTS, NEVER DOLLARS, like every other credits surface. What a pack cost
+  // is on the Stripe receipt; what the customer holds is a number of lookups.
+  creditsTitle: "Prospect lookups",
+  creditsSubtitle: "Prepaid credits for the Opportunity Scanner. They never expire.",
+  creditsBuy: "Buy lookups",
+  creditsAvailable: "available",
+  creditsEmpty: "No lookups bought yet.",
+  creditsColDate: "Date",
+  creditsColReason: "Reason",
+  creditsColChange: "Change",
+  creditsReasons: {
+    PURCHASE: "Pack purchased",
+    // Named for what the customer sees, not for the enum. "Reserve" is our
+    // word for it; theirs is that a scan took them.
+    RESERVE: "Held for a scan",
+    CONSUME_RELEASE: "Returned unused",
+    REFUND: "Refunded",
+    ADMIN: "Adjustment",
+  } as Record<string, string>,
 };
 export type BillingCopy = typeof billingEn;
 
@@ -660,6 +681,21 @@ export const BILLING_COPY: Record<DashLocale, BillingCopy> = {
         "Accès API",
       ],
     } as Record<string, string[]>,
+    creditsTitle: "Recherches de prospects",
+    creditsSubtitle: "Crédits prépayés pour le Scanner d'opportunités. Ils n'expirent jamais.",
+    creditsBuy: "Acheter des recherches",
+    creditsAvailable: "disponibles",
+    creditsEmpty: "Aucune recherche achetée pour l'instant.",
+    creditsColDate: "Date",
+    creditsColReason: "Motif",
+    creditsColChange: "Variation",
+    creditsReasons: {
+      PURCHASE: "Pack acheté",
+      RESERVE: "Réservées pour une analyse",
+      CONSUME_RELEASE: "Rendues, non utilisées",
+      REFUND: "Remboursées",
+      ADMIN: "Ajustement",
+    } as Record<string, string>,
   },
   "de-CH": {
     title: "Abrechnung",
@@ -737,6 +773,21 @@ export const BILLING_COPY: Record<DashLocale, BillingCopy> = {
         "API-Zugriff",
       ],
     } as Record<string, string[]>,
+    creditsTitle: "Prospect-Abfragen",
+    creditsSubtitle: "Vorausbezahltes Guthaben für den Opportunity Scanner. Es verfällt nie.",
+    creditsBuy: "Abfragen kaufen",
+    creditsAvailable: "verfügbar",
+    creditsEmpty: "Noch keine Abfragen gekauft.",
+    creditsColDate: "Datum",
+    creditsColReason: "Grund",
+    creditsColChange: "Änderung",
+    creditsReasons: {
+      PURCHASE: "Paket gekauft",
+      RESERVE: "Für einen Scan reserviert",
+      CONSUME_RELEASE: "Unbenutzt zurückgegeben",
+      REFUND: "Erstattet",
+      ADMIN: "Anpassung",
+    } as Record<string, string>,
   },
 };
 
@@ -12321,6 +12372,15 @@ const notificationsEn = {
       title: "New lead from {domain}",
       body: "Audit score: {score}. Open the funnel to see who left it.",
     },
+    // LOOKUPS, NEVER DOLLARS — the rule the whole credits feature follows. What
+    // the customer bought is a number of lookups; what they paid is on the
+    // Stripe receipt and in the ledger, and repeating it here would date badly
+    // the first time a pack is repriced.
+    credits_purchased: {
+      label: "Lookups added",
+      title: "{credits} prospect lookups added",
+      body: "You now have {balance} lookups available for the Opportunity Scanner.",
+    },
   },
 };
 
@@ -12419,6 +12479,11 @@ export const NOTIFICATIONS_COPY: Record<DashLocale, NotificationsCopy> = {
         title: "Nouveau contact venu de {domain}",
         body: "Score de l'audit : {score}. Ouvrez le formulaire pour voir qui l'a laissé.",
       },
+      credits_purchased: {
+        label: "Recherches ajoutées",
+        title: "{credits} recherches de prospects ajoutées",
+        body: "Vous disposez maintenant de {balance} recherches pour le Scanner d'opportunités.",
+      },
     },
   },
   "de-CH": {
@@ -12511,6 +12576,11 @@ export const NOTIFICATIONS_COPY: Record<DashLocale, NotificationsCopy> = {
         label: "Neuer Kontakt aus dem Funnel",
         title: "Neuer Kontakt von {domain}",
         body: "Audit-Score: {score}. Öffnen Sie den Funnel, um zu sehen, wer ihn hinterlassen hat.",
+      },
+      credits_purchased: {
+        label: "Abfragen hinzugefügt",
+        title: "{credits} Prospect-Abfragen hinzugefügt",
+        body: "Sie haben jetzt {balance} Abfragen für den Opportunity Scanner zur Verfügung.",
       },
     },
   },
@@ -13687,9 +13757,19 @@ const opportunityScannerEn = {
   placesLabel: "Also look up each prospect's Google Business listing",
   placesHelp:
     "Adds their star rating and review count to the report. Costs extra and is off by default.",
-  estimatePrefix: "Estimated cost:",
-  estimateFree: "No upstream cost",
+  estimatePrefix: "This batch uses:",
+  estimateFree: "No lookups — this batch is free",
+  // Kept for the {locale} parity test and any consumer still reading it. The
+  // client no longer renders it: the estimate is counted in lookups now.
   estimateNote: "Charged to your monthly data budget as the scan runs.",
+  // COUNTS, NEVER DOLLARS. The customer prepaid in lookups; pricing the batch
+  // in dollars would quote them a rate they may not have paid.
+  estimateLookups: "{count} lookups from your balance ({remaining} remaining after)",
+  balanceChip: "{count} lookups available",
+  insufficientBody:
+    "This batch needs {needed} lookups and you have {balance}. You can buy more, or run the scan without Google listings — everything else in the report is unaffected.",
+  buyLookups: "Buy lookups",
+  runWithoutPlaces: "Run without listings",
 
   // ── Rejections ──
   rejectedTitle: "{count} lines were skipped",
@@ -13770,9 +13850,15 @@ export const OPPORTUNITY_SCANNER_COPY: Record<DashLocale, OpportunityScannerCopy
     placesLabel: "Consulter aussi la fiche Google Business de chaque prospect",
     placesHelp:
       "Ajoute au rapport leur note et leur nombre d'avis. Payant, et désactivé par défaut.",
-    estimatePrefix: "Coût estimé :",
-    estimateFree: "Aucun coût externe",
+    estimatePrefix: "Ce lot utilise :",
+    estimateFree: "Aucune recherche — ce lot est gratuit",
     estimateNote: "Imputé à votre budget de données mensuel au fil de l'analyse.",
+    estimateLookups: "{count} recherches sur votre solde ({remaining} restantes ensuite)",
+    balanceChip: "{count} recherches disponibles",
+    insufficientBody:
+      "Ce lot nécessite {needed} recherches et vous en avez {balance}. Vous pouvez en acheter, ou lancer l'analyse sans les fiches Google — le reste du rapport est inchangé.",
+    buyLookups: "Acheter des recherches",
+    runWithoutPlaces: "Lancer sans les fiches",
 
     rejectedTitle: "{count} lignes ont été ignorées",
     rejectedShowAll: "Tout afficher",
@@ -13844,9 +13930,15 @@ export const OPPORTUNITY_SCANNER_COPY: Record<DashLocale, OpportunityScannerCopy
     placesLabel: "Auch den Google-Business-Eintrag jedes Interessenten abfragen",
     placesHelp:
       "Ergänzt den Bericht um Bewertung und Anzahl Rezensionen. Kostet zusätzlich und ist standardmässig aus.",
-    estimatePrefix: "Geschätzte Kosten:",
-    estimateFree: "Keine externen Kosten",
+    estimatePrefix: "Dieser Stapel benötigt:",
+    estimateFree: "Keine Abfragen — dieser Stapel ist gratis",
     estimateNote: "Wird während des Scans Ihrem monatlichen Datenbudget belastet.",
+    estimateLookups: "{count} Abfragen von Ihrem Guthaben ({remaining} danach übrig)",
+    balanceChip: "{count} Abfragen verfügbar",
+    insufficientBody:
+      "Dieser Stapel benötigt {needed} Abfragen und Sie haben {balance}. Sie können weitere kaufen oder den Scan ohne Google-Einträge starten — der Rest des Berichts bleibt unverändert.",
+    buyLookups: "Abfragen kaufen",
+    runWithoutPlaces: "Ohne Einträge starten",
 
     rejectedTitle: "{count} Zeilen wurden übersprungen",
     rejectedShowAll: "Alle anzeigen",

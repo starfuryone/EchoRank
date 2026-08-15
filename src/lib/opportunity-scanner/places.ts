@@ -72,6 +72,11 @@ export async function lookupPlace(input: {
   tenantId: string;
   domain: string;
   enabled: boolean;
+  /**
+   * This batch reserved prepaid credits at submit, so its lookups bypass the
+   * monthly USD cap. See the cap block below for why the two are independent.
+   */
+  creditFunded?: boolean;
   spent?: (tenantId: string) => Promise<number>;
   cap?: (tenantId: string) => Promise<number>;
   search?: typeof searchPlaces;
@@ -80,6 +85,7 @@ export async function lookupPlace(input: {
     tenantId,
     domain,
     enabled,
+    creditFunded = false,
     spent = defaultSpent,
     cap = defaultCap,
     search = searchPlaces,
@@ -92,13 +98,28 @@ export async function lookupPlace(input: {
   if (!query) return { ...NOTHING, reason: "no_match" };
 
   // ── The cap, checked BEFORE the request is built ────────────────────────
-  const [spentUsd, capUsd] = await Promise.all([spent(tenantId), cap(tenantId)]);
-  if (spentUsd >= capUsd) {
-    logger.warn(
-      { tenantId, domain, spentUsd, capUsd },
-      "opportunity-scanner: monthly budget reached, Places lookup skipped",
-    );
-    return { ...NOTHING, reason: "cap_reached" };
+  //
+  // CREDIT-FUNDED CALLS SKIP IT ENTIRELY, and the two limiters are independent
+  // by design. The monthly USD cap protects OUR spend on usage a plan includes;
+  // a credit is the tenant having already paid for this exact lookup. Letting
+  // the cap block a prepaid call would be selling something and then refusing
+  // to deliver it, and the customer would have no way to tell why. A tenant
+  // with credits is never blocked by the plan cap; a tenant without credits
+  // never reaches this function with `enabled` true, because the submit gate
+  // refused the batch.
+  //
+  // The call is still RECORDED below with creditFunded: true, so real upstream
+  // cost stays fully accounted for — it is only excluded from the cap's own
+  // denominator, which is what makes the cap mean "plan-included spend".
+  if (!creditFunded) {
+    const [spentUsd, capUsd] = await Promise.all([spent(tenantId), cap(tenantId)]);
+    if (spentUsd >= capUsd) {
+      logger.warn(
+        { tenantId, domain, spentUsd, capUsd },
+        "opportunity-scanner: monthly budget reached, Places lookup skipped",
+      );
+      return { ...NOTHING, reason: "cap_reached" };
+    }
   }
 
   let candidates: Awaited<ReturnType<typeof searchPlaces>>;
@@ -121,6 +142,10 @@ export async function lookupPlace(input: {
     path: "places.googleapis.com/v1/places:searchText",
     costUsd: PLACES_TEXTSEARCH_USD,
     ok,
+    // Recorded either way. The flag decides whether the CAP counts this row,
+    // not whether the row exists — accounting for what Google charged us stays
+    // complete regardless of who funded it.
+    creditFunded,
   });
 
   if (!ok) {

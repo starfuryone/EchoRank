@@ -40,6 +40,7 @@ const COPY: Record<Base, {
   tax: string;
   currency: string;
   toolsAnchor: string;
+  creditsLink: string;
   signupHeading: string;
   signupSub: string;
   signupCta: string;
@@ -55,6 +56,7 @@ const COPY: Record<Base, {
     currency:
       "All prices are in US dollars (USD). If you pay with a card in another currency, your bank converts the charge at its own exchange rate.",
     toolsAnchor: "See the tools included",
+    creditsLink: "Prospect lookups sold as credit packs \u2192",
     signupHeading: "Not sure which plan yet?",
     signupSub: "Create your account first and pick a plan when you are ready.",
     signupCta: "Create account",
@@ -70,6 +72,7 @@ const COPY: Record<Base, {
     currency:
       "Tous les prix sont en dollars américains (USD). Si vous payez avec une carte dans une autre devise, votre banque effectue la conversion à son propre taux de change.",
     toolsAnchor: "Voir les outils inclus",
+    creditsLink: "Recherches de prospects vendues en packs pr\u00e9pay\u00e9s \u2192",
     signupHeading: "Vous hésitez encore ?",
     signupSub: "Créez votre compte d'abord et choisissez un forfait quand vous serez prêt.",
     signupCta: "Créer un compte",
@@ -140,6 +143,17 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
               </>
             }
           />
+
+          {/* Prospect lookups. ONE LINE, NOT A FOURTH CARD, and the restraint
+              is the decision: this page sells plans, and a credit pack is an
+              add-on to one of them. A fourth column would invite the
+              comparison — "$79 vs $99/mo" — that it would lose, and would
+              imply lookups are an alternative to a subscription rather than
+              something you spend inside the Agency plan. Same argument
+              /watcher makes for not being a fifth column here. */}
+          <p className={s.sub} style={{ marginTop: "1.5rem" }}>
+            <Link href={`/${l}/credits`}>{c.creditsLink}</Link>
+          </p>
 
           {/* The one /register link on the marketing site that is not a plan
               card's own checkout. Someone who wants an account before choosing

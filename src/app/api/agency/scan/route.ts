@@ -35,7 +35,9 @@ import {
   ScanQuotaUnavailableError,
 } from "@/lib/opportunity-scanner/quota";
 import { estimateBatchUsd } from "@/lib/opportunity-scanner/places";
-import { createBatch, listBatches } from "@/lib/opportunity-scanner/store";
+import { createBatch, deleteBatch, listBatches } from "@/lib/opportunity-scanner/store";
+import { canAfford } from "@/lib/credits/ledger";
+import { creditBalance, releaseReservation, reserveCredits } from "@/lib/credits/store";
 import { enqueueBatch } from "@/infrastructure/queue/workers/opportunity-scan.worker";
 import { logger } from "@/infrastructure/observability/logger";
 
@@ -51,9 +53,10 @@ export async function GET() {
     const membership = await requireTenant();
     await requireFeature("whitelabel");
 
-    const [batches, used] = await Promise.all([
+    const [batches, used, credits] = await Promise.all([
       listBatches(membership.tenantId),
       scanBatchesUsed(membership.tenantId),
+      creditBalance(membership.tenantId),
     ]);
 
     return NextResponse.json({
@@ -63,7 +66,18 @@ export async function GET() {
         limit: batchLimit(membership.tenant.planType),
       },
       maxRows: MAX_BATCH_ROWS,
-      /** Per-domain Places rate, so the form can price any row count live. */
+      /**
+       * Lookups this tenant holds. The form renders the estimate against this
+       * — "N lookups (M remaining after)" — and never against a dollar figure.
+       */
+      credits,
+      /**
+       * Per-domain Places rate. NOT rendered any more: the estimate is counted
+       * in lookups now, because a customer who has prepaid should be told what
+       * a batch costs in the units they bought. Kept on the response because
+       * it is the honest per-row cost and removing it from the API would break
+       * any consumer reading it; the client simply stops showing it.
+       */
       placesUnitUsd: estimateBatchUsd(1, true),
     });
   } catch (error) {
@@ -76,6 +90,12 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   let reserved: { tenantId: string } | null = null;
+  // Mirrors `reserved` exactly, for the credit hold. Set once the ledger row
+  // is written, cleared once the batch is safely enqueued, and released in the
+  // catch if anything between the two throws — the same discipline this file's
+  // header describes for the Redis slot, and for the same reason: a stranded
+  // hold is invisible until a customer says "it says I have 0 and I've run 1".
+  let creditsHeld: { tenantId: string; batchId: string; rowCount: number } | null = null;
 
   try {
     const membership = await requireTenant();
@@ -108,6 +128,31 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // ── 3a. The credit gate, BEFORE the batch slot is spent. ───────────────
+    //
+    // Checked first because it is the cheaper refusal: a tenant who cannot
+    // afford the lookups should not burn one of their monthly batch slots
+    // finding that out. The hold itself cannot be written yet — it is keyed on
+    // the batch id, which does not exist until step 4 — so this is a read, and
+    // the authoritative check is the serializable transaction in reserveCredits
+    // below. Two batches racing are settled there, not here.
+    //
+    // PLACES OFF COSTS NOTHING AND IS NEVER GATED. A batch with the box
+    // unticked spends no credits, so a tenant with a zero balance can still run
+    // every scan they are entitled to — the dialog says so, and this is where
+    // that promise is kept.
+    const balance = placesEnabled ? await creditBalance(membership.tenantId) : 0;
+    if (placesEnabled && !canAfford(balance, parsed.domains.length)) {
+      return NextResponse.json(
+        {
+          error: `Not enough prospect lookups (${balance} available, ${parsed.domains.length} needed).`,
+          code: "InsufficientCreditsError",
+          credits: { balance, required: parsed.domains.length },
+        },
+        { status: 402 },
+      );
+    }
+
     // ── 3. Reserve. Everything below this releases on failure. ─────────────
     const decision = await reserveScanBatch(membership.tenantId, membership.tenant.planType);
     if (!decision.allowed) {
@@ -129,12 +174,53 @@ export async function POST(request: NextRequest) {
       placesEnabled,
     });
 
+    // ── 4a. Hold the credits, now that there is a batch id to key them on.
+    //
+    // AFTER createBatch and BEFORE enqueueBatch, which is the only window that
+    // works: the ledger row's `ref` is the batch id, and holding after the
+    // workers are running would let the first rows spend credits that were
+    // never reserved.
+    //
+    // A refusal here is the concurrent-batch case — another submit took the
+    // credits between the read above and this transaction. The batch row is
+    // already committed, so it is released back through `creditsHeld` in the
+    // catch along with the Redis slot, and the customer is told the same thing
+    // the pre-check would have told them.
+    if (placesEnabled) {
+      const hold = await reserveCredits({
+        tenantId: membership.tenantId,
+        batchId: batch.id,
+        rowCount: parsed.domains.length,
+      });
+      if (!hold.ok) {
+        await deleteBatch(batch.id, membership.tenantId);
+        await releaseScanBatch(membership.tenantId);
+        reserved = null;
+        return NextResponse.json(
+          {
+            error: `Not enough prospect lookups (${hold.balance} available, ${parsed.domains.length} needed).`,
+            code: "InsufficientCreditsError",
+            credits: { balance: hold.balance, required: parsed.domains.length },
+          },
+          { status: 402 },
+        );
+      }
+      creditsHeld = {
+        tenantId: membership.tenantId,
+        batchId: batch.id,
+        rowCount: parsed.domains.length,
+      };
+    }
+
     // Enqueued AFTER the rows are committed. The fan-out job reads `queued`
     // rows out of the database, so enqueueing first would race a worker against
     // the transaction that creates the rows it is looking for and fan out an
     // empty batch.
     await enqueueBatch(batch.id);
     reserved = null;
+    // The hold is now the workers' responsibility: settleBatchCredits gives
+    // back whatever the batch does not spend when it reaches a terminal state.
+    creditsHeld = null;
 
     logger.info(
       {
@@ -161,6 +247,9 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     if (reserved) await releaseScanBatch(reserved.tenantId);
+    // Released before the error is classified, so every failure path below —
+    // gated, quota, or an unexpected throw — gives the credits back.
+    if (creditsHeld) await releaseReservation(creditsHeld);
 
     const gated = enforcementErrorResponse(error);
     if (gated) return gated;

@@ -87,6 +87,26 @@ export async function createBatch(input: {
   });
 }
 
+/**
+ * Remove a batch that was created but never enqueued.
+ *
+ * THE SUBMIT PATH'S ROLLBACK, and its only caller: a batch has to exist before
+ * its credits can be held (the ledger row is keyed on the batch id), so a hold
+ * that loses the race leaves a committed batch with no workers behind it. That
+ * row would sit in the customer's list at 0 of N forever, so it is deleted
+ * rather than left as a permanently-running scan.
+ *
+ * TENANT-SCOPED via deleteMany rather than delete-by-id: a stray id must not be
+ * able to remove another tenant's batch even through a bug upstream, and
+ * deleteMany with no match is a no-op instead of a throw — which is what we
+ * want in a rollback path that is already handling a failure.
+ *
+ * ScanRow cascades from the batch, so the rows go with it.
+ */
+export async function deleteBatch(batchId: string, tenantId: string): Promise<void> {
+  await prisma.scanBatch.deleteMany({ where: { id: batchId, tenantId } });
+}
+
 /** This tenant's batches, newest first. The batch list. */
 export async function listBatches(
   tenantId: string,
@@ -227,6 +247,12 @@ export async function completeRow(input: {
   grade: string;
   topGaps: TopGap[];
   place: PlaceStanding | null;
+  /**
+   * Whether the Places lookup was billed — PlaceLookupResult.costUsd > 0, not
+   * `place != null`. See ScanRow.placesCharged for why the two differ and why
+   * using the wrong one refunds every prospect that has no listing.
+   */
+  placesCharged?: boolean;
 }): Promise<{ batchComplete: boolean; total: number; done: number }> {
   return finishRow(input.batchId, input.rowId, {
     status: "done",
@@ -234,8 +260,22 @@ export async function completeRow(input: {
     grade: input.grade,
     topGaps: input.topGaps as unknown as Prisma.InputJsonValue,
     place: (input.place ?? undefined) as unknown as Prisma.InputJsonValue | undefined,
+    placesCharged: input.placesCharged ?? false,
     error: null,
   });
+}
+
+/**
+ * How many of a batch's rows were billed for a Places lookup.
+ *
+ * The denominator of the completion release: the batch reserved one credit per
+ * row, and everything this does NOT count goes back. A failed row never reaches
+ * the Places step at all, so it is false here and refunded, which is the
+ * behaviour a customer would expect — they were not shown a listing, and they
+ * do not pay for one.
+ */
+export async function chargedRowCount(batchId: string): Promise<number> {
+  return prisma.scanRow.count({ where: { batchId, placesCharged: true } });
 }
 
 export async function failRow(input: {

@@ -36,6 +36,11 @@ export const LOCALIZED_ROUTES: LocalizedRoute[] = [
   // The standalone Watcher's own page. Ranks with /pricing rather than the
   // content pages: it is a second purchase path, not an article.
   { path: "/watcher", priority: 0.9, changeFrequency: "monthly" },
+  // Prepaid prospect lookups. A third purchase path, alongside /pricing and
+  // /watcher, and ranked just below them: it converts an existing Agency
+  // customer rather than acquiring one, so it earns less crawl attention than
+  // the pages that sell the plan itself.
+  { path: "/credits", priority: 0.7, changeFrequency: "monthly" },
   { path: "/use-cases", priority: 0.8, changeFrequency: "monthly" },
   { path: "/technical-geo", priority: 0.6, changeFrequency: "monthly" },
   { path: "/glossary", priority: 0.5, changeFrequency: "monthly" },

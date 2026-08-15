@@ -148,6 +148,10 @@ describe("scanRow", () => {
         { category: "Rendering", status: "CSR shell", recommendation: "Server-render it.", lost: 15 },
       ].sort((a, b) => b.lost - a.lost || a.category.localeCompare(b.category)),
       place: null,
+      // No lookup ran in this fixture, so nothing was billed and the row's
+      // credit goes back at batch completion. Distinct from `place: null`,
+      // which a lookup that ran and found nothing also produces.
+      placesCharged: false,
     });
   });
 

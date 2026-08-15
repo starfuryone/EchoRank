@@ -113,11 +113,14 @@ export function OpportunityScannerClient({
   const copy: Copy = OPPORTUNITY_SCANNER_COPY[locale];
   const item = SEO_TOOLS_COPY[locale].items.opportunity_scanner;
   const nf = new Intl.NumberFormat(INTL_LOCALE[locale]);
-  const cf = new Intl.NumberFormat(INTL_LOCALE[locale], { style: "currency", currency: "USD" });
+  // No currency formatter. Every figure on this page is a COUNT OF LOOKUPS
+  // now — the customer prepaid in lookups, so that is the unit they are quoted
+  // in. Re-adding a $ here is the change to argue about, not to make quietly.
 
   const [batches, setBatches] = useState<Batch[]>([]);
   const [quota, setQuota] = useState<{ used: number; limit: number } | null>(null);
-  const [placesUnitUsd, setPlacesUnitUsd] = useState(0);
+  /** Prepaid lookups this tenant holds. Refreshed with the batch list. */
+  const [credits, setCredits] = useState(0);
 
   const [openId, setOpenId] = useState<string | null>(null);
   const [openBatch, setOpenBatch] = useState<Batch | null>(null);
@@ -135,12 +138,23 @@ export function OpportunityScannerClient({
 
   // Rough count for the estimate line, computed the cheap way. The server's
   // parse is authoritative and its accepted count comes back on submit; this is
-  // only here so the dollar figure moves as you type.
+  // only here so the estimate moves as you type.
   const approxRows = text
     .split(/[\r\n,;\t|]+/)
     .map((t) => t.trim())
     .filter((t) => t.includes(".")).length;
-  const estimate = placesEnabled ? approxRows * placesUnitUsd : 0;
+
+  // ── LOOKUPS, NEVER DOLLARS ────────────────────────────────────────────────
+  // The estimate used to read "$8.32". It now reads "260 lookups from your
+  // balance (740 remaining after)", because the customer prepaid in lookups and
+  // that is the unit they hold. A dollar figure here would price something they
+  // have already bought — and it would be the price of a lookup at today's pack
+  // rate, which is not what they actually paid if they bought a bigger pack.
+  const lookupsNeeded = placesEnabled ? approxRows : 0;
+  const remainingAfter = credits - lookupsNeeded;
+  // Not `< 0`: the gate is `balance >= rowCount`, so a batch that lands exactly
+  // on the balance is affordable and must not warn. Mirrors canAfford().
+  const insufficient = placesEnabled && approxRows > 0 && credits < approxRows;
 
   // ── Fetchers are PURE of state ─────────────────────────────────────────
   // They return data or throw; nothing here calls setState. The effects below
@@ -177,7 +191,7 @@ export function OpportunityScannerClient({
         if (cancelled) return;
         setBatches(json.batches ?? []);
         setQuota(json.quota ?? null);
-        setPlacesUnitUsd(json.placesUnitUsd ?? 0);
+        setCredits(json.credits ?? 0);
       } catch {
         if (!cancelled) setError(copy.errorLoad);
       }
@@ -373,7 +387,9 @@ export function OpportunityScannerClient({
           </div>
 
           {/* Places opt-in. Unchecked by default; the estimate sits directly
-              beneath it so the price and the switch are never separated. */}
+              beneath it so the cost and the switch are never separated, and the
+              balance chip sits beside the label so "what will this cost me" and
+              "what do I have" are answerable without scrolling. */}
           <div className="mt-5 rounded-lg bg-gray-50 p-3 ring-1 ring-gray-200">
             <label className="flex items-start gap-2.5">
               <input
@@ -382,22 +398,61 @@ export function OpportunityScannerClient({
                 onChange={(e) => setPlacesEnabled(e.target.checked)}
                 className="mt-0.5 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
               />
-              <span className="min-w-0">
-                <span className="block text-sm font-medium text-gray-900">{copy.placesLabel}</span>
+              <span className="min-w-0 flex-1">
+                <span className="flex flex-wrap items-center gap-2">
+                  <span className="text-sm font-medium text-gray-900">{copy.placesLabel}</span>
+                  <span className="rounded-full bg-white px-2 py-0.5 text-xs font-medium text-gray-700 ring-1 ring-gray-300">
+                    {interpolate(copy.balanceChip, { count: nf.format(credits) })}
+                  </span>
+                </span>
                 <span className="mt-0.5 block text-xs text-gray-500">{copy.placesHelp}</span>
               </span>
             </label>
             <p className="mt-2.5 text-sm text-gray-700">
               <span className="font-medium">{copy.estimatePrefix}</span>{" "}
               {placesEnabled ? (
-                <>
-                  <span className="font-semibold text-gray-900">{cf.format(estimate)}</span>{" "}
-                  <span className="text-xs text-gray-500">{copy.estimateNote}</span>
-                </>
+                <span className="text-gray-900">
+                  {interpolate(copy.estimateLookups, {
+                    count: nf.format(lookupsNeeded),
+                    // Clamped at zero: "-40 remaining" is arithmetic, not a
+                    // sentence. The warning below is what tells them the real
+                    // story when the balance does not cover it.
+                    remaining: nf.format(Math.max(0, remainingAfter)),
+                  })}
+                </span>
               ) : (
                 <span className="text-gray-600">{copy.estimateFree}</span>
               )}
             </p>
+
+            {/* Insufficient balance. INLINE, not a dialog, and never a blocker
+                on the form itself: the batch can still run with Places off, so
+                the message says so and the submit button stays live. */}
+            {insufficient && (
+              <div className="mt-3 rounded-lg bg-amber-50 p-3 ring-1 ring-amber-200">
+                <p className="text-sm text-amber-900">
+                  {interpolate(copy.insufficientBody, {
+                    needed: nf.format(approxRows),
+                    balance: nf.format(credits),
+                  })}
+                </p>
+                <div className="mt-2 flex flex-wrap items-center gap-3">
+                  <Link
+                    href="/credits"
+                    className="inline-flex items-center rounded-lg bg-amber-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-amber-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
+                  >
+                    {copy.buyLookups}
+                  </Link>
+                  <button
+                    type="button"
+                    onClick={() => setPlacesEnabled(false)}
+                    className="text-sm font-medium text-amber-900 underline hover:text-amber-950"
+                  >
+                    {copy.runWithoutPlaces}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="mt-4 flex flex-wrap items-center justify-between gap-3">

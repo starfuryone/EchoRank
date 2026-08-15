@@ -51,6 +51,42 @@ import {
 } from "@/lib/opportunity-scanner/store";
 import { prisma } from "@/lib/prisma";
 import { notifyScanComplete } from "@/lib/notifications/adapters";
+import { chargedRowCount } from "@/lib/opportunity-scanner/store";
+import { consumedCredit } from "@/lib/credits/ledger";
+import { releaseUnconsumed, reservedFor } from "@/lib/credits/store";
+
+/**
+ * Give back the part of a finished batch's credit hold that was never spent.
+ *
+ * CALLED FROM BOTH TERMINAL PATHS — the last row succeeding and the last row
+ * failing — because either one ends the batch and both leave unspent credits
+ * held. It is idempotent through the ledger's (tenantId, reason, ref) unique,
+ * so the two paths racing, or a worker retrying after the batch was already
+ * settled, gives the credits back exactly once.
+ *
+ * NEVER THROWS INTO THE CALLER. A batch that finished has finished; turning a
+ * refund failure into a job failure would retry the whole row, re-run its
+ * audit, and still not fix the ledger. A stranded hold is a support ticket, and
+ * this logs loudly enough to raise one.
+ */
+async function settleBatchCredits(tenantId: string, batchId: string): Promise<void> {
+  try {
+    const reserved = await reservedFor(tenantId, batchId);
+    // Nothing held: a batch submitted with Places off never reserved, so there
+    // is nothing to give back and no ledger row worth writing.
+    if (reserved <= 0) return;
+
+    const consumed = await chargedRowCount(batchId);
+    const released = await releaseUnconsumed({ tenantId, batchId, reserved, consumed });
+
+    logger.info(
+      { queue: QUEUE_NAME, batchId, tenantId, reserved, consumed, released },
+      "batch credits settled",
+    );
+  } catch (err) {
+    logger.error({ err, batchId, tenantId }, "batch credit settlement FAILED — hold stranded");
+  }
+}
 
 const QUEUE_NAME = "opportunity-scan" as const;
 const FAN_OUT_JOB_NAME = "fan-out";
@@ -138,6 +174,10 @@ async function scanRow(job: OpportunityScanJob): Promise<void> {
     tenantId: batch.tenantId,
     domain,
     enabled: batch.placesEnabled,
+    // Every Places-enabled batch reserved one credit per row at submit — the
+    // route refuses the batch otherwise — so a lookup reaching this point is
+    // prepaid, and prepaid lookups are not subject to the plan's USD cap.
+    creditFunded: batch.placesEnabled,
   });
 
   const result = await completeRow({
@@ -147,9 +187,13 @@ async function scanRow(job: OpportunityScanJob): Promise<void> {
     grade: gradeFor(score),
     topGaps: gaps,
     place: place.place,
+    // costUsd, not `place != null`. A search that found no listing still cost a
+    // search; a skipped one cost nothing. See ScanRow.placesCharged.
+    placesCharged: consumedCredit(place.costUsd),
   });
 
   if (result.batchComplete) {
+    await settleBatchCredits(batch.tenantId, batchId);
     await notifyScanComplete({
       tenantId: batch.tenantId,
       batchId,
@@ -226,6 +270,11 @@ async function processOpportunityScanJob(job: Job<OpportunityScanJob>): Promise<
     if (result.batchComplete) {
       const batch = await batchContext(batchId);
       if (batch) {
+        // THE TERMINAL FAILURE PATH REFUNDS TOO. A batch whose last row failed
+        // is still finished, and the rows that never reached the Places step
+        // never spent a credit. Settling only on the success path would strand
+        // the whole hold of a batch that failed at its final row.
+        await settleBatchCredits(batch.tenantId, batchId);
         // A batch whose LAST row failed still completed. The notification says
         // how many finished, and the table shows which ones failed — silence
         // here would leave an agency watching a progress bar that never moves.
