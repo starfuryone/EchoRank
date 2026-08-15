@@ -12662,6 +12662,12 @@ const aiAttributionEn = {
   } as Record<string, string>,
   darkAiHint:
     "“Other AI” is a visit we proved came from an assistant — You.com, Poe, Meta AI and similar — but not from one of the five reported separately. It is never a guess: traffic we cannot prove is AI is not counted at all.",
+  // ALWAYS RENDERED. Every number on this page is a floor, not a census: a
+  // share of AI-referred visits never reaches us because a blocker dropped the
+  // tag. Undercounting is acceptable and honest; presenting the total without
+  // saying so would not be.
+  blockedHint:
+    "Counts are conservative. Visits where an ad or tracker blocker stopped the tag are not recorded, so your real number is this one or higher — never lower.",
 };
 export type AiAttributionCopy = typeof aiAttributionEn;
 
@@ -12729,6 +12735,8 @@ export const AI_ATTRIBUTION_COPY: Record<DashLocale, AiAttributionCopy> = {
     },
     darkAiHint:
       "« Autre IA » désigne une visite dont nous avons établi qu'elle vient d'un assistant — You.com, Poe, Meta AI et consorts — mais pas de l'un des cinq présentés séparément. Ce n'est jamais une supposition : un trafic dont nous ne pouvons pas prouver l'origine IA n'est pas compté.",
+    blockedHint:
+      "Les chiffres sont prudents. Les visites où un bloqueur de publicités ou de traqueurs a empêché le script ne sont pas enregistrées : votre chiffre réel est donc égal ou supérieur à celui-ci, jamais inférieur.",
   },
   "de-CH": {
     intro:
@@ -12792,6 +12800,8 @@ export const AI_ATTRIBUTION_COPY: Record<DashLocale, AiAttributionCopy> = {
     },
     darkAiHint:
       "«Andere KI» bezeichnet einen Besuch, bei dem wir nachweisen konnten, dass er aus einem Assistenten kam — You.com, Poe, Meta AI und ähnliche — aber nicht aus einem der fünf einzeln ausgewiesenen. Das ist nie geraten: Traffic, dessen KI-Herkunft wir nicht belegen können, wird gar nicht gezählt.",
+    blockedHint:
+      "Die Zahlen sind zurückhaltend. Besuche, bei denen ein Werbe- oder Tracker-Blocker das Skript verhindert hat, werden nicht erfasst — Ihre tatsächliche Zahl ist also gleich hoch oder höher, nie tiefer.",
   },
 };
 

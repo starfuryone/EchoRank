@@ -89,6 +89,34 @@ days:
 
 Read it as **leads, not facts**. Verify against the code before acting on any line of it.
 
+## AI Attribution undercounts, and its paths make that worse than it needs to be
+
+`/api/collect` and `/api/public/attribution.js` are the two halves of the first-party
+tag. Both sit on paths shaped exactly like the ones blocklists target, and
+`ERR_BLOCKED_BY_CLIENT` is confirmed against **Brave defaults** — no custom filter list
+required. A blocked visit is not a failed request we can retry; the script never runs, so
+nothing is ever sent and nothing appears in the tool.
+
+**This is not a bug and it cannot be fixed to zero.** Some share of every first-party
+analytics install is blocked, by design, and that is the ecosystem working as intended.
+Undercounting is the honest outcome. What is worth fixing is that the current paths
+*maximise* it.
+
+**Backlog, not scheduled:** serve both under neutral paths — `/t.js` and `/api/px` or
+similar — via Next rewrites, keeping `/api/public/attribution.js` and `/api/collect` as
+aliases so every tag already pasted into a customer's `<head>` keeps working. Aliases are
+not optional: the key is publishable and lives in page source we do not control, so a path
+we stop serving is a customer silently losing measurement.
+
+**Already done:** the tool says so on its face. `blockedHint` in `AI_ATTRIBUTION_COPY`
+renders under the headline total in all three locales — "counts are conservative … your
+real number is this one or higher, never lower". Before touching the paths, read that copy:
+if the rewrite lands, the caveat stays true and stays put, because the ceiling moves but
+never reaches 100%.
+
+Do not compare these numbers to GA4 and conclude either tool is broken. Both undercount,
+by different amounts, for the same reason.
+
 ## Migration filenames are hand-authored, and several land on the same day
 
 `prisma migrate deploy` applies in **lexical filename order**, and this repo writes those

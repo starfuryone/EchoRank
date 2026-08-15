@@ -354,6 +354,16 @@ export function AiAttributionClient({
               <p className="mt-1 text-3xl font-bold text-gray-900">{data.totalVisitors}</p>
               <p className="mt-1 text-xs text-gray-400">{t.windowLabel(data.windowDays)}</p>
               <p className="mt-2 text-xs text-gray-400">{t.totalHint}</p>
+              {/* ALWAYS SHOWN, unlike darkAiHint below, because it always
+                  applies. Some share of AI-referred visits never reach us at
+                  all: the tag is a third-party-looking script on a path shaped
+                  like the ones blocklists target, so ad blockers drop it before
+                  it can report. That is the ecosystem working as designed and
+                  no amount of engineering removes it — but a number presented
+                  without the caveat reads as a census, and this one is a floor.
+                  The tool's whole voice is "never a guess"; saying nothing here
+                  would be the one place it overclaimed. */}
+              <p className="mt-2 text-xs text-gray-400">{t.blockedHint}</p>
             </Card>
 
             <Card className="p-6 sm:col-span-2">
