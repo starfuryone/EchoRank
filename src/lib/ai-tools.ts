@@ -41,6 +41,7 @@ import {
   Quote,
   PieChart,
   ListChecks,
+  Crosshair,
 } from "lucide-react";
 import type { PlanType } from "@/generated/prisma";
 
@@ -52,6 +53,7 @@ export type AiToolId =
   | "ai_visibility"
   | "ai_search"
   | "share_of_voice"
+  | "opportunity_scanner"
   | "custom_prompts"
   | "ai_attribution"
   | "citation_finder"
@@ -136,6 +138,13 @@ export const AI_TOOL_GROUPS: AiToolGroup[] = [
         id: "citation_opportunities",
         href: "/visibility/tools/citation-opportunities",
         icon: ListChecks,
+      },
+      // AGENCY-locked at its own route (reachable upgrade state, never
+      // notFound) — so no `rollout`, per the hides-vs-locks split above.
+      {
+        id: "opportunity_scanner",
+        href: "/visibility/tools/opportunity-scanner",
+        icon: Crosshair,
       },
     ],
   },

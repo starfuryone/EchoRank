@@ -12783,6 +12783,11 @@ const aiHubEn = {
       description:
         "The same sources, turned into a ranked worklist: where to get listed next, and what to do there.",
     },
+    opportunity_scanner: {
+      name: "Agency Opportunity Scanner",
+      description:
+        "Grade prospect lists by AI visibility and export outreach-ready results.",
+    },
   },
 };
 export type AiHubCopy = typeof aiHubEn;
@@ -12835,6 +12840,11 @@ export const AI_HUB_COPY: Record<DashLocale, AiHubCopy> = {
         description:
           "Les mêmes sources, transformées en liste de travail classée : où se faire référencer ensuite, et comment.",
       },
+      opportunity_scanner: {
+        name: "Scanner d'opportunités",
+        description:
+          "Évaluez des listes de prospects selon leur visibilité IA et exportez des résultats prêts pour la prospection.",
+      },
     },
   },
   "de-CH": {
@@ -12882,6 +12892,11 @@ export const AI_HUB_COPY: Record<DashLocale, AiHubCopy> = {
         name: "Zitat-Chancen",
         description:
           "Dieselben Quellen als sortierte Arbeitsliste: wo Sie als Nächstes gelistet werden sollten und wie.",
+      },
+      opportunity_scanner: {
+        name: "Opportunitäten-Scanner",
+        description:
+          "Bewerten Sie Interessentenlisten nach KI-Sichtbarkeit und exportieren Sie kontaktfertige Ergebnisse.",
       },
     },
   },
