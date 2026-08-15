@@ -27,6 +27,7 @@ import { cookies } from "next/headers";
 import { dashboardLocale } from "@/lib/i18n/dashboard";
 import { getCurrentTenant } from "@/lib/tenant";
 import { hasFeature } from "@/lib/feature-flags";
+import { aiSearchEnabledFor } from "@/lib/ai-monitor/rollout";
 import { loadSovPageData, type SovPageData } from "@/lib/sov/read";
 import { SOV_WINDOW_DAYS } from "@/lib/sov/store";
 import { ShareOfVoiceClient } from "@/components/seo-tools/share-of-voice-client";
@@ -79,9 +80,21 @@ export default async function Page({
   // Rendered only when unlocked: it is a GROWTH+ surface and its own route
   // enforces that again server-side, but a locked page should not fire the
   // probe request at all.
+  // Resolved HERE, not in the client: the rollout is an env read plus a tenant
+  // allowlist, neither of which a browser can see. It decides whether the empty
+  // state may offer the setup link, whose route notFound()s when the rollout is
+  // off — see the client's empty-state comment.
+  const answerTrackingEnabled =
+    membership !== null && aiSearchEnabledFor(membership.tenantId);
+
   return (
     <>
-      <ShareOfVoiceClient locale={locale} data={data} locked={!unlocked} />
+      <ShareOfVoiceClient
+        locale={locale}
+        data={data}
+        locked={!unlocked}
+        answerTrackingEnabled={answerTrackingEnabled}
+      />
       {unlocked && (
         <CompetitorExplain locale={locale} brandProfileId={data.selectedPromptSetId} />
       )}

@@ -12996,6 +12996,13 @@ const shareOfVoiceEn = {
   emptyBody:
     "This report is built from your tracked prompts' answers. Once a checkup has run and the nightly rollup has passed, your share on each engine appears here.",
   emptySetupCta: "Set up prompt tracking",
+  // Shown INSTEAD of the CTA when answer tracking is not yet on for this
+  // tenant. There is deliberately nothing to click: without the rollout no
+  // checkup runs, so no amount of setup would fill this page. Saying so is the
+  // honest answer, and it is better than a link to a 404 or a link to a page
+  // that cannot help.
+  emptyRolloutNote:
+    "Answer tracking is still rolling out to accounts. This fills in on its own once it is switched on for yours — there is nothing to set up in the meantime.",
 
   // ── Headline ──
   youOwn: "You own {share}",
@@ -13041,6 +13048,8 @@ export const SHARE_OF_VOICE_COPY: Record<DashLocale, ShareOfVoiceCopy> = {
     emptyBody:
       "Ce rapport est construit à partir des réponses à vos requêtes suivies. Dès qu'un contrôle aura été exécuté et que la consolidation nocturne sera passée, votre part sur chaque moteur apparaîtra ici.",
     emptySetupCta: "Configurer le suivi des requêtes",
+    emptyRolloutNote:
+      "Le suivi des réponses est encore en cours de déploiement. Cette page se remplira d'elle-même dès qu'il sera activé pour votre compte — il n'y a rien à configurer d'ici là.",
 
     youOwn: "Vous détenez {share}",
     rivalOwns: "{rival} détient {share}",
@@ -13078,6 +13087,8 @@ export const SHARE_OF_VOICE_COPY: Record<DashLocale, ShareOfVoiceCopy> = {
     emptyBody:
       "Dieser Bericht entsteht aus den Antworten auf Ihre verfolgten Prompts. Sobald eine Prüfung gelaufen und die nächtliche Konsolidierung durch ist, erscheint hier Ihr Anteil pro Maschine.",
     emptySetupCta: "Prompt-Tracking einrichten",
+    emptyRolloutNote:
+      "Die Antwortverfolgung wird noch für die Konten ausgerollt. Diese Seite füllt sich von selbst, sobald sie für Ihres eingeschaltet ist — bis dahin gibt es nichts einzurichten.",
 
     youOwn: "Sie halten {share}",
     rivalOwns: "{rival} hält {share}",
@@ -13136,6 +13147,12 @@ const citationFinderEn = {
   emptyBody:
     "This table is built from the links your tracked prompts' answers cited. Once a checkup has run and the nightly rollup has passed, every source the engines used appears here.",
   emptySetupCta: "Set up prompt tracking",
+  // Shown INSTEAD of the CTA when answer tracking is not yet on for this
+  // tenant. Nothing to click, deliberately: citations are written only on the
+  // checkup path, and the checkup sweep skips tenants without the rollout, so
+  // no amount of prompt setup would produce a single row here.
+  emptyRolloutNote:
+    "Answer tracking is still rolling out to accounts. Sources appear here on their own once it is switched on for yours — there is nothing to set up in the meantime.",
 
   noMatches: "No sources match this filter.",
 
@@ -13193,6 +13210,8 @@ export const CITATION_FINDER_COPY: Record<DashLocale, CitationFinderCopy> = {
     emptyBody:
       "Ce tableau est construit à partir des liens cités dans les réponses à vos requêtes suivies. Dès qu'un contrôle aura été exécuté et que la consolidation nocturne sera passée, toutes les sources utilisées par les moteurs apparaîtront ici.",
     emptySetupCta: "Configurer le suivi des requêtes",
+    emptyRolloutNote:
+      "Le suivi des réponses est encore en cours de déploiement. Les sources apparaîtront d'elles-mêmes dès qu'il sera activé pour votre compte — il n'y a rien à configurer d'ici là.",
 
     noMatches: "Aucune source ne correspond à ce filtre.",
 
@@ -13243,6 +13262,8 @@ export const CITATION_FINDER_COPY: Record<DashLocale, CitationFinderCopy> = {
     emptyBody:
       "Diese Tabelle entsteht aus den Links, welche die Antworten auf Ihre verfolgten Prompts zitiert haben. Sobald ein Checkup gelaufen und die nächtliche Konsolidierung durch ist, erscheint hier jede Quelle, welche die Maschinen genutzt haben.",
     emptySetupCta: "Prompt-Verfolgung einrichten",
+    emptyRolloutNote:
+      "Die Antwortverfolgung wird noch für die Konten ausgerollt. Quellen erscheinen hier von selbst, sobald sie für Ihres eingeschaltet ist — bis dahin gibt es nichts einzurichten.",
 
     noMatches: "Keine Quelle entspricht diesem Filter.",
 

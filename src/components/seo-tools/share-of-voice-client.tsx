@@ -283,10 +283,18 @@ export function ShareOfVoiceClient({
   locale,
   data,
   locked,
+  answerTrackingEnabled,
 }: {
   locale: DashLocale;
   data: SovPageData;
   locked: boolean;
+  /**
+   * aiSearchEnabledFor(tenantId), resolved on the SERVER and passed in. The
+   * client cannot compute it — the rollout is an env read plus a tenant
+   * allowlist — and it must not guess, because the answer decides whether the
+   * empty state offers a link that would 404.
+   */
+  answerTrackingEnabled: boolean;
 }) {
   const copy = SHARE_OF_VOICE_COPY[locale];
   const item = SEO_TOOLS_COPY[locale].items.share_of_voice;
@@ -356,12 +364,29 @@ export function ShareOfVoiceClient({
               </div>
               <h3 className="text-base font-semibold text-gray-900">{copy.emptyTitle}</h3>
               <p className="mt-2 max-w-md text-sm text-gray-500">{copy.emptyBody}</p>
-              <Link
-                href="/visibility/ai-search/setup"
-                className="mt-6 text-sm font-medium text-blue-600 hover:text-blue-700"
-              >
-                {copy.emptySetupCta}
-              </Link>
+              {/* ── THE CTA IS CONDITIONAL ──────────────────────────────────
+                  /visibility/ai-search/setup notFound()s when the answer-
+                  tracking rollout is off for this tenant, so linking to it
+                  unconditionally sent every non-rolled-out tenant to a 404 —
+                  the same failure the hub's rollout-HIDES rule exists to stop.
+
+                  No fallback destination, because none would help. Share of
+                  voice is computed from MentionAnalysis and CompetitorMention,
+                  both written by persistRunAnalysis on the checkup path, and
+                  the checkup sweep filters brands through aiSearchEnabledFor()
+                  before enqueuing anything. Without the rollout this page
+                  cannot fill however many prompts are added, so a CTA would be
+                  a promise we cannot keep. */}
+              {answerTrackingEnabled ? (
+                <Link
+                  href="/visibility/ai-search/setup"
+                  className="mt-6 text-sm font-medium text-blue-600 hover:text-blue-700"
+                >
+                  {copy.emptySetupCta}
+                </Link>
+              ) : (
+                <p className="mt-6 max-w-md text-sm text-gray-400">{copy.emptyRolloutNote}</p>
+              )}
             </div>
           </CardContent>
         </Card>

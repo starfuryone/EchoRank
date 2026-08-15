@@ -67,10 +67,20 @@ export function CitationFinderClient({
   locale,
   data,
   locked,
+  answerTrackingEnabled,
 }: {
   locale: DashLocale;
   data: CitationPageData;
   locked: boolean;
+  /**
+   * aiSearchEnabledFor(tenantId), resolved on the SERVER and passed in.
+   *
+   * The client cannot compute it — the rollout is an env read plus a tenant
+   * allowlist — and it must not guess, because the answer decides whether the
+   * empty state offers a link that would 404. Same arrangement ai-tools.ts
+   * describes: the page resolves the switches, the component renders them.
+   */
+  answerTrackingEnabled: boolean;
 }) {
   const copy = CITATION_FINDER_COPY[locale];
   const item = SEO_TOOLS_COPY[locale].items.citation_finder;
@@ -137,12 +147,30 @@ export function CitationFinderClient({
               </div>
               <h3 className="text-base font-semibold text-gray-900">{copy.emptyTitle}</h3>
               <p className="mt-2 max-w-md text-sm text-gray-500">{copy.emptyBody}</p>
-              <Link
-                href="/visibility/ai-search/setup"
-                className="mt-6 text-sm font-medium text-blue-600 hover:text-blue-700"
-              >
-                {copy.emptySetupCta}
-              </Link>
+              {/* ── THE CTA IS CONDITIONAL, AND THE REASON IS NOT COSMETIC ──
+                  /visibility/ai-search/setup notFound()s when the answer-
+                  tracking rollout is off for this tenant, so linking to it
+                  unconditionally sent every non-rolled-out tenant to a 404 —
+                  the same failure the hub's rollout-HIDES rule exists to stop.
+
+                  There is no fallback destination, because there is nothing a
+                  fallback could achieve. Citation rows are written only by
+                  persistRunAnalysis on the checkup path, and the checkup sweep
+                  filters brands through aiSearchEnabledFor() before enqueuing
+                  anything. A tenant without the rollout cannot produce a single
+                  citation however many prompts they add, so pointing them at
+                  Custom Prompts would swap a 404 for a promise we cannot keep.
+                  It says what is actually true instead. */}
+              {answerTrackingEnabled ? (
+                <Link
+                  href="/visibility/ai-search/setup"
+                  className="mt-6 text-sm font-medium text-blue-600 hover:text-blue-700"
+                >
+                  {copy.emptySetupCta}
+                </Link>
+              ) : (
+                <p className="mt-6 max-w-md text-sm text-gray-400">{copy.emptyRolloutNote}</p>
+              )}
             </div>
           </CardContent>
         </Card>
