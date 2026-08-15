@@ -42,6 +42,7 @@ import {
   PieChart,
   ListChecks,
   Crosshair,
+  Banknote,
 } from "lucide-react";
 import type { PlanType } from "@/generated/prisma";
 
@@ -57,7 +58,8 @@ export type AiToolId =
   | "custom_prompts"
   | "ai_attribution"
   | "citation_finder"
-  | "citation_opportunities";
+  | "citation_opportunities"
+  | "ai_revenue";
 
 /**
  * Build-progress switches a card's destination enforces for itself. Named
@@ -145,6 +147,18 @@ export const AI_TOOL_GROUPS: AiToolGroup[] = [
         id: "opportunity_scanner",
         href: "/visibility/tools/opportunity-scanner",
         icon: Crosshair,
+      },
+      // "From the answers" in the most literal sense the group has: the money
+      // that came out of them. Sits beside AI Attribution because it is that
+      // card's arrivals priced — same rows, one multiplication further on.
+      //
+      // NO `rollout`: the route is paid-gated by the /visibility/tools layout,
+      // which renders a reachable upgrade state rather than notFound()ing, so
+      // hiding the card would be wrong per the hides-vs-locks split above.
+      {
+        id: "ai_revenue",
+        href: "/visibility/tools/revenue",
+        icon: Banknote,
       },
     ],
   },

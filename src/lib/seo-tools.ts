@@ -45,6 +45,7 @@ import {
   ListChecks,
   Crosshair,
   Megaphone,
+  Banknote,
 } from "lucide-react";
 import type { PlanType } from "@/generated/prisma";
 
@@ -88,7 +89,8 @@ export type SeoToolId =
   | "citation_finder"
   | "citation_opportunities"
   | "opportunity_scanner"
-  | "audit_funnels";
+  | "audit_funnels"
+  | "ai_revenue";
 
 /** Tools that render a scaffold page under /visibility/tools/<slug>. */
 // Note: brand_radar/bot_analytics/content_explorer remain ScaffoldIds although
@@ -133,6 +135,9 @@ export type ScaffoldId = Exclude<
   // And the White-Label Audit Funnel, which ships real with its locked, empty
   // and config states in FUNNELS_COPY.
   | "audit_funnels"
+  // And the AI Revenue dashboard, which ships real with its empty state and
+  // its two headline figures in REVENUE_COPY.
+  | "ai_revenue"
 >;
 
 export interface SeoTool {
@@ -242,8 +247,18 @@ export const SEO_TOOL_GROUPS: SeoToolGroup[] = [
       t("bot_analytics", "bot-analytics", Bot, { badge: "new" }),
       // The other half of Bot Analytics. That one answers "are AI crawlers
       // reading us"; this one answers "are the humans they answered actually
-      // arriving". Phase 1 counts arrivals only — no conversions, no revenue.
+      // arriving". Arrivals only — the money question is the card below.
       t("ai_attribution", "ai-attribution", MousePointerClick, { badge: "new" }),
+      // Directly after AI Attribution because it is that tool's arrivals priced.
+      // Attribution answers "who is arriving"; this answers "what was that
+      // worth, and what is the gap to our top rival costing". Two cards rather
+      // than a tab, because the audience differs: attribution is read by
+      // whoever is diagnosing traffic, this is read by whoever signs off the
+      // spend.
+      //
+      // Reads ai_visits and sov_snapshots and buys nothing upstream — there is
+      // no costUsd to log here.
+      t("ai_revenue", "revenue", Banknote, { badge: "new" }),
     ],
   },
   {

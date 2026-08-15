@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import { User, CreditCard, Building2 } from "lucide-react";
+import { User, CreditCard, Building2, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
@@ -10,7 +10,12 @@ import { InitialsAvatar } from "@/components/ui/initials-avatar";
 import { ACCOUNT_COPY } from "@/lib/i18n/account";
 import type { DashLocale } from "@/lib/i18n/dashboard";
 import { TeamChatSection } from "@/components/account/TeamChatSection";
-import { updateTenantNameAction, type UpdateTenantNameState } from "./actions";
+import {
+  updateTenantNameAction,
+  updateRevenueAssumptionsAction,
+  type UpdateTenantNameState,
+  type UpdateRevenueAssumptionsState,
+} from "./actions";
 
 interface Props {
   locale: DashLocale;
@@ -20,6 +25,8 @@ interface Props {
     createdAt: string | null;
     planType: string | null;
     billingStatus: string | null;
+    convRate: number;
+    avgSaleValue: number;
   };
   subscription: { planType: string; status: string } | null;
   price: { currency: string; interval: string } | null;
@@ -42,6 +49,11 @@ export function AccountPageClient({ locale, user, tenant, subscription, price, c
     updateTenantNameAction,
     { status: "idle" }
   );
+
+  const [revState, revAction, revPending] = useActionState<
+    UpdateRevenueAssumptionsState,
+    FormData
+  >(updateRevenueAssumptionsAction, { status: "idle" });
 
   const intervalLabel =
     price?.interval === "year"
@@ -149,6 +161,78 @@ export function AccountPageClient({ locale, user, tenant, subscription, price, c
               {tenant.createdAt ? dateFmt.format(new Date(tenant.createdAt)) : t.notSet}
             </Row>
           </div>
+        </CardContent>
+      </Card>
+
+      {/* ── AI revenue assumptions ──────────────────────────────────────── */}
+      {/* Both feed /visibility/tools/revenue and the nightly rollup. Bounds are
+          enforced server-side in account-validation.ts and by two CHECK
+          constraints; the input attributes here are a convenience, not the
+          gate. */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <TrendingUp className="h-4 w-4 text-amber-300" />
+            <h2 className="text-base font-medium text-gray-100">{t.revenueTitle}</h2>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <p className="mb-4 text-xs text-gray-500">{t.revenueIntro}</p>
+
+          <form action={revAction} className="space-y-4">
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-1">
+                <label htmlFor="convRate" className="block text-sm text-gray-400">
+                  {t.convRateLabel}
+                </label>
+                <Input
+                  id="convRate"
+                  name="convRate"
+                  type="number"
+                  inputMode="decimal"
+                  step="0.01"
+                  min="0.01"
+                  max="1"
+                  defaultValue={revState.convRate ?? tenant.convRate}
+                  required
+                />
+                <p className="text-xs text-gray-500">{t.convRateHint}</p>
+              </div>
+
+              <div className="space-y-1">
+                <label htmlFor="avgSaleValue" className="block text-sm text-gray-400">
+                  {t.avgSaleValueLabel}
+                </label>
+                <Input
+                  id="avgSaleValue"
+                  name="avgSaleValue"
+                  type="number"
+                  inputMode="decimal"
+                  step="0.01"
+                  min="0.01"
+                  defaultValue={revState.avgSaleValue ?? tenant.avgSaleValue}
+                  required
+                />
+                <p className="text-xs text-gray-500">{t.avgSaleValueHint}</p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <Button type="submit" disabled={revPending}>
+                {revPending ? t.saving : t.save}
+              </Button>
+              {revState.status === "error" && revState.errorKey && (
+                <p role="alert" className="text-sm text-red-400">
+                  {t[revState.errorKey]}
+                </p>
+              )}
+              {revState.status === "success" && (
+                <p role="status" className="text-sm text-emerald-400">
+                  {t.saved}
+                </p>
+              )}
+            </div>
+          </form>
         </CardContent>
       </Card>
 

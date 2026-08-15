@@ -38,6 +38,18 @@ export interface AccountCopy {
   errorTooLong: string;
   errorGeneric: string;
 
+  // AI revenue assumptions. Feed every figure on /visibility/tools/revenue and
+  // the nightly rollup, which is why the hint says so on the settings page
+  // rather than only on the tool.
+  revenueTitle: string;
+  revenueIntro: string;
+  convRateLabel: string;
+  convRateHint: string;
+  avgSaleValueLabel: string;
+  avgSaleValueHint: string;
+  errorConvRate: string;
+  errorAvgSaleValue: string;
+
   // Team chat (Matrix). GROWTH and up.
   chatTitle: string;
   chatIntro: string;
@@ -86,6 +98,16 @@ export const ACCOUNT_COPY: Record<DashLocale, AccountCopy> = {
     errorEmpty: "Name cannot be empty.",
     errorTooLong: "Name must be 200 characters or fewer.",
     errorGeneric: "Could not save. Please try again.",
+
+    revenueTitle: "AI revenue assumptions",
+    revenueIntro:
+      "We can see who arrives from an AI assistant. We cannot see what they buy — so these two numbers are yours to set. Every figure on the AI Revenue page is built from them, and changing them changes tonight's rollup, not the months already stored.",
+    convRateLabel: "Close rate on AI-referred leads",
+    convRateHint: "Between 0 and 1. 0.30 means three in ten become customers.",
+    avgSaleValueLabel: "Average sale value",
+    avgSaleValueHint: "What one closed sale is worth, in your billing currency.",
+    errorConvRate: "Close rate must be greater than 0 and no more than 1.",
+    errorAvgSaleValue: "Average sale value must be greater than 0.",
 
     chatTitle: "Team chat",
     chatIntro:
@@ -136,6 +158,16 @@ export const ACCOUNT_COPY: Record<DashLocale, AccountCopy> = {
     errorTooLong: "Le nom doit contenir au plus 200 caractères.",
     errorGeneric: "Impossible d'enregistrer. Veuillez réessayer.",
 
+    revenueTitle: "Hypothèses de revenus IA",
+    revenueIntro:
+      "Nous voyons qui arrive depuis un assistant IA. Nous ne voyons pas ce qu'il achète : ces deux valeurs vous appartiennent donc. Tous les chiffres de la page Revenus IA en découlent, et les modifier change le calcul de cette nuit, pas les mois déjà enregistrés.",
+    convRateLabel: "Taux de conversion des prospects venus d'une IA",
+    convRateHint: "Entre 0 et 1. 0,30 signifie que trois sur dix deviennent clients.",
+    avgSaleValueLabel: "Valeur moyenne d'une vente",
+    avgSaleValueHint: "Ce que rapporte une vente conclue, dans votre devise de facturation.",
+    errorConvRate: "Le taux de conversion doit être supérieur à 0 et au plus égal à 1.",
+    errorAvgSaleValue: "La valeur moyenne d'une vente doit être supérieure à 0.",
+
     chatTitle: "Messagerie d'équipe",
     chatIntro:
       "Un compte de messagerie privé sur le serveur d'Echorank, pour votre équipe. Les messages restent sur notre infrastructure — aucun espace tiers, aucun coût par utilisateur.",
@@ -184,6 +216,16 @@ export const ACCOUNT_COPY: Record<DashLocale, AccountCopy> = {
     errorEmpty: "Der Name darf nicht leer sein.",
     errorTooLong: "Der Name darf höchstens 200 Zeichen lang sein.",
     errorGeneric: "Konnte nicht gespeichert werden. Bitte versuchen Sie es erneut.",
+
+    revenueTitle: "Annahmen zum KI-Umsatz",
+    revenueIntro:
+      "Wir sehen, wer über einen KI-Assistenten kommt. Was diese Person kauft, sehen wir nicht — diese beiden Werte legen deshalb Sie fest. Alle Zahlen auf der Seite KI-Umsatz beruhen darauf, und eine Änderung wirkt auf die Auswertung dieser Nacht, nicht auf bereits gespeicherte Monate.",
+    convRateLabel: "Abschlussquote bei Leads aus KI-Assistenten",
+    convRateHint: "Zwischen 0 und 1. 0,30 heisst: drei von zehn werden Kundschaft.",
+    avgSaleValueLabel: "Durchschnittlicher Verkaufswert",
+    avgSaleValueHint: "Was ein abgeschlossener Verkauf wert ist, in Ihrer Abrechnungswährung.",
+    errorConvRate: "Die Abschlussquote muss grösser als 0 und höchstens 1 sein.",
+    errorAvgSaleValue: "Der durchschnittliche Verkaufswert muss grösser als 0 sein.",
 
     chatTitle: "Team-Chat",
     chatIntro:

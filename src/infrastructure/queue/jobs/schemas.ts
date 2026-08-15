@@ -231,6 +231,7 @@ export type AllJobTypes =
   | SiteCrawlJob
   | FreeToolsVolatilityJob
   | SovAggregationJob
+  | RevenueRollupJob
   | CitationAggregationJob;
 
 /** Free tools: the hourly SERP-volatility basket tick. */
@@ -259,6 +260,22 @@ export interface SovAggregationJob {
   tenantId?: string;
   /** ISO day to compute as-of. Defaults to today (UTC) when absent. */
   date?: string;
+}
+
+/**
+ * AI Revenue: the nightly tick, or one tenant's month.
+ *
+ * Same sweep/rollup split as SovAggregationJob. The sweep enqueues both the
+ * current month and the previous one — see the worker header for why the
+ * previous month keeps being restated for a few days after it ends.
+ */
+export interface RevenueRollupJob {
+  /** The repeatable nightly tick. */
+  sweep?: boolean;
+  /** A single tenant-month's rollup. */
+  tenantId?: string;
+  /** UTC calendar month, "YYYY-MM". Defaults to the current month when absent. */
+  month?: string;
 }
 
 /**

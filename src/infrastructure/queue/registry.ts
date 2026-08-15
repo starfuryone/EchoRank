@@ -162,6 +162,15 @@ const DEFAULT_JOB_OPTIONS: Record<QueueName, JobsOptions> = {
     removeOnComplete: { age: REDIS_CONFIG.ttl.completedJobs },
     removeOnFail: { age: REDIS_CONFIG.ttl.failedJobs },
   },
+  // Retryable and idempotent: every write is an upsert on
+  // (tenantId, month, model, mode), so a retry restates the same four rows
+  // rather than doubling them.
+  "revenue-rollup": {
+    attempts: 3,
+    backoff: { type: "exponential", delay: 30_000 },
+    removeOnComplete: { age: REDIS_CONFIG.ttl.completedJobs },
+    removeOnFail: { age: REDIS_CONFIG.ttl.failedJobs },
+  },
   // Retryable for the same reason, by a different mechanism: the rollup's scope
   // is "citations with no sourceId", and a successful attempt stamps the rows
   // it counted in the same transaction that counted them. A retry therefore

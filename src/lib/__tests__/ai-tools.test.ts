@@ -50,6 +50,7 @@ const EXPECTED_HREFS: Record<string, string> = {
   citation_finder: "/visibility/tools/citation-finder",
   citation_opportunities: "/visibility/tools/citation-opportunities",
   opportunity_scanner: "/visibility/tools/opportunity-scanner",
+  ai_revenue: "/visibility/tools/revenue",
 };
 
 // ─── Cards and routes ───────────────────────────────────────────────────────
@@ -107,6 +108,7 @@ test("a rolled-out-but-off card is HIDDEN, never rendered", () => {
     "ai_attribution",
     "citation_opportunities",
     "opportunity_scanner",
+    "ai_revenue",
   ]);
 });
 
@@ -121,6 +123,7 @@ test("the same card appears once its switch is on", () => {
     "ai_attribution",
     "citation_opportunities",
     "opportunity_scanner",
+    "ai_revenue",
   ]);
 });
 
@@ -143,7 +146,7 @@ test("a group that empties out is dropped, not rendered as a bare heading", () =
 
 test("no tier is route-confined, but a signed-out visitor sees nothing", () => {
   for (const plan of PLANS) {
-    assert.equal(visibleAiGroups(plan, ALL_ON).flatMap((g) => g.tools).length, 8, plan);
+    assert.equal(visibleAiGroups(plan, ALL_ON).flatMap((g) => g.tools).length, 9, plan);
     assert.ok(canSeeAiHub(plan), plan);
   }
   assert.deepEqual(visibleAiGroups(null, ALL_ON), []);

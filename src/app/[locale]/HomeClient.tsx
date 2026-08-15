@@ -10,6 +10,11 @@ import { PublicNav } from "./PublicNav";
 import { PricingSection, type HomePricingTier } from "./PricingSection";
 import type { HomePricingChrome } from "@/lib/i18n/content";
 import TestimonialSection from "@/app/[locale]/TestimonialSection";
+// The ROI calculator's note. Lifted out of this file so the AI Revenue
+// dashboard can carry the same promise without a second copy of the sentence
+// drifting away from this one — see src/lib/revenue/disclaimer.ts. The
+// "~35% / 30%" assumptions clause stays with the calculator that makes it.
+import { ROI_CALCULATOR_NOTE } from "@/lib/revenue/disclaimer";
 
 /**
  * One pricing card, built server-side from PLAN_CONFIGS. Prices and feature
@@ -161,7 +166,7 @@ const T = {
       leads: "Current monthly leads", sale: "Average sale value", cur: "Current AI Visibility Score™", tgt: "Target AI Visibility Score™",
       xleads: "Additional qualified leads / month", xmo: "Monthly revenue increase", xyr: "Annual business impact",
       leadsUnit: "leads", perMo: "/ mo", perYr: "/ yr",
-      note: "Estimate assumes ~35% of local purchase decisions now touch an AI answer, 30% close rate on AI-referred leads. Directional, not a guarantee.",
+      note: ROI_CALCULATOR_NOTE.en,
     },
     pricing: {
       label: "PRICING", h2: "Plans",
@@ -319,7 +324,7 @@ const T = {
       leads: "Prospects mensuels actuels", sale: "Valeur moyenne d'une vente", cur: "Score de visibilité IA™ actuel", tgt: "Score de visibilité IA™ cible",
       xleads: "Prospects qualifiés additionnels / mois", xmo: "Hausse de revenu mensuelle", xyr: "Impact annuel",
       leadsUnit: "prospects", perMo: "/ mois", perYr: "/ an",
-      note: "L'estimation suppose qu'environ 35 % des décisions d'achat locales passent par une réponse d'IA, avec un taux de conversion de 30 % sur les prospects référés. Indicatif, sans garantie.",
+      note: ROI_CALCULATOR_NOTE.fr,
     },
     pricing: {
       label: "TARIFS", h2: "Forfaits",

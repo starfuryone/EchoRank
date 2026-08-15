@@ -117,6 +117,11 @@ export const REDIS_CONFIG = {
     // nothing at all. 10/min is deliberately tighter than its siblings: a
     // runaway loop here spends money rather than merely reading rows.
     "citation-opportunities": { max: 10, duration: 60_000 },
+    // Same shape again: one nightly tick plus one job per tenant, reading
+    // ai_visits and sov_snapshots and writing four rollup rows. Pure database
+    // work — nothing bought upstream — so the limiter is a backstop against a
+    // runaway sweep, not a cost control.
+    "revenue-rollup": { max: 60, duration: 60_000 },
   } as Record<string, { max: number; duration: number }>,
 } as const;
 
@@ -146,7 +151,8 @@ export type QueueName =
   | "sov-aggregation"
   | "citation-aggregation"
   | "citation-opportunities"
-  | "opportunity-scan";
+  | "opportunity-scan"
+  | "revenue-rollup";
 
 /** All valid queue names */
 export const QUEUE_NAMES: QueueName[] = [
@@ -176,4 +182,5 @@ export const QUEUE_NAMES: QueueName[] = [
   "citation-aggregation",
   "citation-opportunities",
   "opportunity-scan",
+  "revenue-rollup",
 ];

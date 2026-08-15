@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { requireTenant } from "@/lib/tenant";
 import { hasFeature } from "@/lib/feature-flags";
+import { CONV_RATE_DEFAULT, AVG_SALE_VALUE_DEFAULT } from "@/lib/account-validation";
 import { activeMatrixAccount } from "@/lib/matrix-accounts";
 import { ELEMENT_URL } from "@/app/api/account/matrix/provision/route";
 import { AccountPageClient } from "./page-client";
@@ -26,6 +27,8 @@ export default async function AccountPage() {
       createdAt: true,
       planType: true,
       billingStatus: true,
+      convRate: true,
+      avgSaleValue: true,
     },
   });
 
@@ -63,6 +66,8 @@ export default async function AccountPage() {
         createdAt: tenant?.createdAt?.toISOString() ?? null,
         planType: tenant?.planType ?? null,
         billingStatus: tenant?.billingStatus ?? null,
+        convRate: tenant?.convRate ?? CONV_RATE_DEFAULT,
+        avgSaleValue: tenant?.avgSaleValue ?? AVG_SALE_VALUE_DEFAULT,
       }}
       subscription={
         subscription

@@ -173,6 +173,19 @@ model Tenant {
   onboarding            Json? // { pdfDownloadedAt?, roadmapViewedAt?, firstAuditScore?, firstAuditAt?, profileCompletedAt? }
   marketingConsent      Boolean       @default(true)
 
+  // ── AI revenue assumptions, editable on /settings/account ────────────────
+  // Both feed every figure on /visibility/tools/revenue and the nightly
+  // RevenueRollup job. They are stored per tenant rather than inferred because
+  // nobody can infer them: we see visits, never sales.
+  //
+  // The defaults are the homepage ROI calculator's, so a tenant who never opens
+  // the settings page gets the same arithmetic the marketing site quoted them.
+  /// Share of AI-attributed leads that close. 0 < convRate <= 1, enforced in
+  /// src/lib/account-validation.ts and again by a CHECK constraint.
+  convRate              Float         @default(0.30)
+  /// What one closed sale is worth, in the tenant's billing currency. > 0.
+  avgSaleValue          Float         @default(450)
+
   members            TenantMember[]
   visibilityMonitors VisibilityMonitor[]
   visibilityAudits   VisibilityAudit[]
@@ -206,6 +219,7 @@ model Tenant {
   apiKeys            ApiKey[]
   attributionKeys    AttributionKey[]
   aiVisits           AiVisit[]
+  revenueRollups     RevenueRollup[]
   gscConnection      GscConnection?
   gaConnection       GaConnection?
   gscQueryStats      GscQueryStat[]
@@ -3705,4 +3719,85 @@ model FunnelLead {
   /// Tenant-wide export and the per-tenant counter.
   @@index([tenantId, createdAt(sort: Desc)])
   @@map("funnel_leads")
+}
+
+// ─────────────────────────────────────────────────────────────
+// AI REVENUE — what the answers were worth, and what the gap costs
+//
+// Reads AiVisit (Prompt 1) and SovSnapshot (Prompt 2) and writes only here.
+// Nothing in src/lib/attribution/ or src/lib/sov/ is modified by this feature.
+// ─────────────────────────────────────────────────────────────
+
+/// How credit for one lead is spread across the assistants that touched it.
+/// Mirrors AttributionModel in src/lib/revenue/model.ts.
+enum RevenueAttributionModel {
+  first
+  last
+  influenced
+  linear
+}
+
+/// Where a month's leads came from. See RevenueRollup.mode — this is part of a
+/// row's identity, not a display flag.
+enum RevenueLeadMode {
+  /// AI-source conversions, counted. Binds to AiConversion (attribution P2),
+  /// which does not exist yet — so nothing writes this value today.
+  ///
+  /// FunnelLead IS NOT A MEASURED SOURCE and must never become one. It carries
+  /// no source, no visitorId and no referrer, and it is captured by an embed on
+  /// the agency's CLIENT's site while AiVisit.visitorId is an er_vid cookie on
+  /// the tenant's OWN domain. There is no join key between them, so counting
+  /// funnel captures here would book walk-in traffic as AI revenue.
+  measured
+  /// Distinct AI-attributed visitors in the month, standing in for conversions.
+  /// Every tenant is here today, and that is the honest state rather than a
+  /// degraded one.
+  proxy
+}
+
+/// One month's revenue rollup, for one attribution model, under one lead mode.
+///
+/// THE MODE IS IN THE UNIQUE KEY, DELIBERATELY. A tenant that gains
+/// AiConversion rows mid-run flips from proxy to measured, and that must write
+/// a NEW parallel row rather than silently restating a number somebody has
+/// already read, screenshotted or put in a client report. When both modes exist
+/// for a month the UI reads measured and keeps proxy as history — see
+/// preferMeasured() in src/lib/revenue/model.ts.
+///
+/// NO PER-SOURCE OR PER-ENGINE COLUMNS. The breakdowns on the page are derived
+/// at read time from the same ai_visits and sov_snapshots rows this row was
+/// computed from. Storing them would be a second copy of a distribution that
+/// can disagree with its own total after a re-run — the reason SovSnapshot's
+/// headline is derived rather than stored, one level up.
+model RevenueRollup {
+  id String @id @default(cuid())
+
+  tenantId String
+  /// UTC calendar month, "YYYY-MM". A 7-character string rather than a DATE
+  /// pinned to the 1st: this is a month, and a date column invites somebody to
+  /// write a day into it and then range-query a key that is not one.
+  month    String                  @db.VarChar(7)
+  model    RevenueAttributionModel
+  mode     RevenueLeadMode
+
+  /// leads x convRate x avgSaleValue, at the assumptions in force when the
+  /// nightly job ran. Rounded to cents on write.
+  wonRevenue     Float
+  /// max(topRivalShare - ownShare, 0) x addressable x convRate x avgSaleValue,
+  /// where addressable = leads / max(ownShare, 0.01). The floor is the
+  /// divide-by-zero guard; see SHARE_FLOOR.
+  lostRevenueEst Float
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  /// The nightly writer upserts on this, so re-running a night restates the
+  /// row rather than doubling it — and a mode flip lands beside its
+  /// predecessor instead of on top of it.
+  @@unique([tenantId, month, model, mode])
+  /// The page read: this tenant's months, newest first.
+  @@index([tenantId, month(sort: Desc)])
+  @@map("revenue_rollups")
 }

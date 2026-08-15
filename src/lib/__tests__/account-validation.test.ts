@@ -6,7 +6,12 @@ import assert from "node:assert/strict";
 import {
   parseTenantName,
   buildTenantNameUpdate,
+  parseRevenueAssumptions,
+  buildRevenueAssumptionsUpdate,
   TENANT_NAME_MAX,
+  AVG_SALE_VALUE_MAX,
+  CONV_RATE_DEFAULT,
+  AVG_SALE_VALUE_DEFAULT,
 } from "../account-validation";
 import { ACCOUNT_COPY } from "../i18n/account";
 
@@ -86,6 +91,106 @@ test("a tenant id in the payload cannot redirect the write", () => {
   const parsed = parseTenantName({ name: "Evil", id: "other_tenant" } as never);
   assert.equal(parsed.ok, true);
   const args = buildTenantNameUpdate("session_tenant", parsed.ok ? parsed.name : "");
+  assert.equal(args.where.id, "session_tenant");
+  assert.ok(!("id" in args.data));
+});
+
+// ─── AI revenue assumptions ─────────────────────────────────────────────────
+//
+// The bounds are not cosmetic. convRate = 0 makes `won` identically zero, which
+// a customer reads as a data outage rather than as their own input; avgSaleValue
+// = 0 does the same to both headline figures on /visibility/tools/revenue. Both
+// bounds exist again as Postgres CHECK constraints, as a backstop under any
+// future path that skips this parse.
+
+test("accepts assumptions inside the bounds", () => {
+  const r = parseRevenueAssumptions({ convRate: "0.35", avgSaleValue: "1250" });
+  assert.equal(r.ok, true);
+  assert.equal(r.ok && r.convRate, 0.35);
+  assert.equal(r.ok && r.avgSaleValue, 1250);
+});
+
+test("accepts the schema defaults unchanged", () => {
+  const r = parseRevenueAssumptions({
+    convRate: CONV_RATE_DEFAULT,
+    avgSaleValue: AVG_SALE_VALUE_DEFAULT,
+  });
+  assert.equal(r.ok, true);
+});
+
+test("accepts a close rate of exactly 1 but not 0", () => {
+  // 0 < convRate <= 1: everyone closing is unusual, nobody closing is a value
+  // that silently zeroes the whole page.
+  assert.equal(parseRevenueAssumptions({ convRate: "1", avgSaleValue: "10" }).ok, true);
+
+  const zero = parseRevenueAssumptions({ convRate: "0", avgSaleValue: "10" });
+  assert.equal(zero.ok, false);
+  assert.equal(!zero.ok && zero.errorKey, "errorConvRate");
+});
+
+test("rejects a close rate above 1", () => {
+  // Would claim more sales than leads.
+  for (const bad of ["1.01", "2", "100"]) {
+    const r = parseRevenueAssumptions({ convRate: bad, avgSaleValue: "10" });
+    assert.equal(r.ok, false, bad);
+    assert.equal(!r.ok && r.errorKey, "errorConvRate", bad);
+  }
+});
+
+test("rejects a negative or zero sale value", () => {
+  for (const bad of ["0", "-1", "-0.01"]) {
+    const r = parseRevenueAssumptions({ convRate: "0.3", avgSaleValue: bad });
+    assert.equal(r.ok, false, bad);
+    assert.equal(!r.ok && r.errorKey, "errorAvgSaleValue", bad);
+  }
+});
+
+test("rejects a sale value above the typo ceiling", () => {
+  const r = parseRevenueAssumptions({
+    convRate: "0.3",
+    avgSaleValue: String(AVG_SALE_VALUE_MAX + 1),
+  });
+  assert.equal(r.ok, false);
+  assert.equal(!r.ok && r.errorKey, "errorAvgSaleValue");
+});
+
+test("rejects non-numeric and non-finite input rather than storing NaN", () => {
+  for (const bad of ["", "abc", "Infinity", "NaN", null, undefined, {}]) {
+    const r = parseRevenueAssumptions({ convRate: bad, avgSaleValue: "10" });
+    assert.equal(r.ok, false, String(bad));
+  }
+});
+
+test("accepts a comma decimal separator", () => {
+  // fr and de-CH users type "0,35". Coercing with a bare Number() would yield
+  // NaN and blame the value rather than the separator.
+  const r = parseRevenueAssumptions({ convRate: "0,35", avgSaleValue: "1250,50" });
+  assert.equal(r.ok, true);
+  assert.equal(r.ok && r.convRate, 0.35);
+  assert.equal(r.ok && r.avgSaleValue, 1250.5);
+});
+
+// The security-relevant assertion, same as the rename above: scoped to the
+// caller's tenant id, and touching only the two assumption columns.
+test("assumptions update is scoped to the given tenant and writes only the two columns", () => {
+  const args = buildRevenueAssumptionsUpdate("tenant_abc", 0.4, 900);
+  assert.deepEqual(args.where, { id: "tenant_abc" });
+  assert.deepEqual(args.data, { convRate: 0.4, avgSaleValue: 900 });
+  assert.deepEqual(Object.keys(args.data).sort(), ["avgSaleValue", "convRate"]);
+});
+
+test("a tenant id in the assumptions payload cannot redirect the write", () => {
+  const parsed = parseRevenueAssumptions({
+    convRate: "0.4",
+    avgSaleValue: "900",
+    id: "other_tenant",
+  } as never);
+  assert.equal(parsed.ok, true);
+  const args = buildRevenueAssumptionsUpdate(
+    "session_tenant",
+    parsed.ok ? parsed.convRate : 0,
+    parsed.ok ? parsed.avgSaleValue : 0,
+  );
   assert.equal(args.where.id, "session_tenant");
   assert.ok(!("id" in args.data));
 });

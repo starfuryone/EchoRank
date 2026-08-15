@@ -45,6 +45,7 @@ const EXPECTED_HREFS: Record<string, string> = {
   citation_opportunities: "/visibility/tools/citation-opportunities",
   opportunity_scanner: "/visibility/tools/opportunity-scanner",
   audit_funnels: "/visibility/tools/funnels",
+  ai_revenue: "/visibility/tools/revenue",
   content_explorer: "/visibility/tools/content-explorer",
   ai_content_helper: "/visibility/tools/ai-content-helper",
   historical: "/visibility/tools/historical",
@@ -77,11 +78,12 @@ test("tool ids unique, hrefs match the route table, slugs consistent", () => {
   }
 });
 
-test('"New" badges exactly on AI Attribution, AI Lens, Audit Funnels, Bot Analytics, Citation Finder, Citation Opportunities, GBP Monitor, Historical, Opportunity Scanner and Share of Voice', () => {
+test('"New" badges exactly on AI Attribution, AI Lens, AI Revenue, Audit Funnels, Bot Analytics, Citation Finder, Citation Opportunities, GBP Monitor, Historical, Opportunity Scanner and Share of Voice', () => {
   const badged = ALL_TOOLS.filter((i) => i.badge === "new").map((i) => i.id).sort();
   assert.deepEqual(badged, [
     "ai_attribution",
     "ai_lens",
+    "ai_revenue",
     "audit_funnels",
     "bot_analytics",
     "citation_finder",
@@ -128,8 +130,8 @@ test("the live/coming-soon split is what the marketing copy claims", () => {
   // src/lib/i18n/content.ts (toolsSection.count) has to move with it.
   const live = ALL_TOOLS.filter((t) => !t.comingSoon);
   const soon = ALL_TOOLS.filter((t) => t.comingSoon);
-  assert.equal(ALL_TOOLS.length, 30, "tool count changed");
-  assert.equal(live.length, 26, "live tool count changed — update the homepage copy");
+  assert.equal(ALL_TOOLS.length, 31, "tool count changed");
+  assert.equal(live.length, 27, "live tool count changed — update the homepage copy");
   assert.equal(soon.length, 4);
   assert.deepEqual(
     soon.map((t) => t.id).sort(),

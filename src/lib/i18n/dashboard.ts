@@ -9,6 +9,10 @@ import type {
   ScaffoldId,
 } from "@/lib/seo-tools";
 import type { SerpLanguageCode, SerpLocationCode } from "@/lib/serp/options";
+// The homepage ROI calculator's estimate disclaimer, lifted so this catalog and
+// src/app/[locale]/HomeClient.tsx read one string instead of keeping two.
+// REVENUE_COPY.disclaimer is the only consumer here.
+import { ESTIMATE_DISCLAIMER } from "@/lib/revenue/disclaimer";
 export type DashLocale = "en" | "fr" | "de-CH";
 
 export function dashboardLocale(cookieValue?: string | null): DashLocale {
@@ -70,6 +74,7 @@ export const dashNav: Record<DashLocale, Record<string, string>> = {
     "/visibility/tools/citation-opportunities": "Citation Opportunities",
     "/visibility/tools/opportunity-scanner": "Opportunity Scanner",
     "/visibility/tools/funnels": "Audit Funnels",
+    "/visibility/tools/revenue": "AI Revenue",
   },
   "de-CH": {
     "/dashboard": "Dashboard",
@@ -122,6 +127,7 @@ export const dashNav: Record<DashLocale, Record<string, string>> = {
     "/visibility/tools/citation-opportunities": "Zitat-Chancen",
     "/visibility/tools/opportunity-scanner": "Chancen-Scanner",
     "/visibility/tools/funnels": "Audit-Funnels",
+    "/visibility/tools/revenue": "KI-Umsatz",
   },
   fr: {
     "/dashboard": "Tableau de bord",
@@ -174,6 +180,7 @@ export const dashNav: Record<DashLocale, Record<string, string>> = {
     "/visibility/tools/citation-opportunities": "Opportunités de citation",
     "/visibility/tools/opportunity-scanner": "Scanner d'opportunités",
     "/visibility/tools/funnels": "Formulaires d'audit",
+    "/visibility/tools/revenue": "Revenus IA",
   },
 };
 
@@ -5334,6 +5341,11 @@ const seoToolsEn = {
       description:
         "Embed a lead-capturing AI visibility audit on your own site, under your own brand.",
     },
+    ai_revenue: {
+      name: "AI Revenue",
+      description:
+        "What AI-referred visitors were worth this month, and what your top rival's share of the answers is costing you.",
+    },
     dashboard: {
       name: "Dashboard",
       description: "Track key marketing and SEO performance across projects.",
@@ -5512,6 +5524,11 @@ export const SEO_TOOLS_COPY: Record<DashLocale, SeoToolsCopy> = {
         description:
           "Intégrez sur votre propre site un audit de visibilité IA qui capte des contacts, sous votre marque.",
       },
+      ai_revenue: {
+        name: "Revenus IA",
+        description:
+          "Ce que valaient ce mois-ci les visiteurs venus d'une IA, et ce que vous coûte la part de réponses de votre principal concurrent.",
+      },
       dashboard: {
         name: "Tableau de bord",
         description: "Suivez la performance marketing et SEO clé de tous vos projets.",
@@ -5684,6 +5701,11 @@ export const SEO_TOOLS_COPY: Record<DashLocale, SeoToolsCopy> = {
         name: "Audit-Funnels",
         description:
           "Binden Sie auf Ihrer eigenen Website einen KI-Sichtbarkeits-Audit mit Kontakterfassung ein, unter Ihrer Marke.",
+      },
+      ai_revenue: {
+        name: "KI-Umsatz",
+        description:
+          "Was Besucher aus KI-Assistenten diesen Monat wert waren und was Sie der Antwortanteil der stärksten Konkurrenz kostet.",
       },
       dashboard: {
         name: "Dashboard",
@@ -12821,7 +12843,7 @@ export const AI_ATTRIBUTION_COPY: Record<DashLocale, AiAttributionCopy> = {
 const aiHubEn = {
   hubTitle: "AI",
   hubSubtitle:
-    "Whether AI assistants know about you, what they say, and who they send. Seven surfaces, one place.",
+    "Whether AI assistants know about you, what they say, and who they send. Nine surfaces, one place.",
 
   groups: {
     answers: "In the answers",
@@ -12868,6 +12890,11 @@ const aiHubEn = {
       description:
         "Grade prospect lists by AI visibility and export outreach-ready results.",
     },
+    ai_revenue: {
+      name: "AI Revenue",
+      description:
+        "What the answers earned you last month, and what the gap to your top rival costs.",
+    },
   },
 };
 export type AiHubCopy = typeof aiHubEn;
@@ -12877,7 +12904,7 @@ export const AI_HUB_COPY: Record<DashLocale, AiHubCopy> = {
   fr: {
     hubTitle: "IA",
     hubSubtitle:
-      "Si les assistants IA vous connaissent, ce qu'ils disent de vous et qui ils vous envoient. Sept surfaces, un seul endroit.",
+      "Si les assistants IA vous connaissent, ce qu'ils disent de vous et qui ils vous envoient. Neuf surfaces, un seul endroit.",
 
     groups: {
       answers: "Dans les réponses",
@@ -12925,12 +12952,17 @@ export const AI_HUB_COPY: Record<DashLocale, AiHubCopy> = {
         description:
           "Évaluez des listes de prospects selon leur visibilité IA et exportez des résultats prêts pour la prospection.",
       },
+      ai_revenue: {
+        name: "Revenus IA",
+        description:
+          "Ce que les réponses vous ont rapporté le mois dernier, et ce que coûte l'écart avec votre principal concurrent.",
+      },
     },
   },
   "de-CH": {
     hubTitle: "KI",
     hubSubtitle:
-      "Ob KI-Assistenten Sie kennen, was sie sagen und wen sie schicken. Sieben Oberflächen, ein Ort.",
+      "Ob KI-Assistenten Sie kennen, was sie sagen und wen sie schicken. Neun Oberflächen, ein Ort.",
 
     groups: {
       answers: "In den Antworten",
@@ -12977,6 +13009,11 @@ export const AI_HUB_COPY: Record<DashLocale, AiHubCopy> = {
         name: "Opportunitäten-Scanner",
         description:
           "Bewerten Sie Interessentenlisten nach KI-Sichtbarkeit und exportieren Sie kontaktfertige Ergebnisse.",
+      },
+      ai_revenue: {
+        name: "KI-Umsatz",
+        description:
+          "Was die Antworten letzten Monat eingebracht haben und was der Abstand zur stärksten Konkurrenz kostet.",
       },
     },
   },
@@ -14477,5 +14514,342 @@ export const FUNNELS_COPY: Record<DashLocale, FunnelsCopy> = {
 
     methodNote:
       "Das Widget führt denselben passiven Audit aus wie unser kostenloses Werkzeug: robots.txt, das an einen Crawler ausgelieferte HTML, strukturierte Daten, Metadaten und Sitemaps. Es wird nichts übermittelt und keine Seite über die Startseite hinaus abgerufen. Die E-Mail-Adresse des Besuchers ist vor der Anzeige der Note erforderlich — das ist die Erfassung — und sie wird ausschliesslich in Ihrem Arbeitsbereich gespeichert.",
+  },
+};
+
+// ── AI Revenue Dashboard (/visibility/tools/revenue) ─────────────────────────
+//
+// THE MODE LABEL IS NOT DECORATION. `modeMeasured` / `modeProxy` sit inline
+// beside every figure — not in a footnote, not in a tooltip — because a reader
+// who does not know whether a number was counted or inferred has been told
+// nothing useful. Both strings are short for that reason: they have to fit
+// beside a number without becoming the sentence.
+//
+// The disclaimer is the homepage ROI calculator's, lifted to
+// src/lib/revenue/disclaimer.ts and READ here rather than retyped, so the two
+// surfaces cannot drift. Only the promise travels; the calculator's hard-coded
+// "~35% / 30%" assumptions stay on the homepage, where they are true. This page
+// runs on the tenant's own convRate and avgSaleValue.
+const revenueEn = {
+  title: "AI Revenue",
+  subtitle:
+    "What being recommended was worth last month, and what the gap to your top rival costs.",
+
+  monthLabel: "Month",
+  modelLabel: "Attribution model",
+  modelFirst: "First touch",
+  modelLast: "Last touch",
+  modelLinear: "Linear",
+  modelInfluenced: "Influenced",
+  modelHintFirst: "Credit to the assistant that first sent this visitor.",
+  modelHintLast: "Credit to the assistant that sent them most recently.",
+  modelHintLinear: "Credit split evenly across every assistant that touched them.",
+  modelHintInfluenced:
+    "Full credit to every assistant that touched them, so the breakdown sums to more than the lead count.",
+
+  wonTitle: "Revenue won",
+  wonHint: "Leads from AI assistants this month, at your close rate and average sale value.",
+  lostTitle: "Lost to rivals, est.",
+  lostHint:
+    "What the same leads would have been worth at your top rival's share of the answers, minus your own.",
+
+  // The mode label. Rendered next to the number it describes.
+  modeMeasured: "measured",
+  modeProxy: "estimated from visits",
+  modeProxyHint:
+    "We can see who arrives from an AI assistant, not what they buy. Leads here are distinct AI-referred visitors — the count becomes measured conversions once conversion tracking is on.",
+  modeMeasuredHint: "Counted AI-source conversions, not inferred from visits.",
+  alsoHasProxyNote:
+    "This month also has an earlier visit-based estimate, kept as history. The measured figure is the one shown.",
+
+  leadsLabel: "Leads",
+  addressableLabel: "Leads at your rival's share",
+  addressableHint:
+    "Your leads divided by your share of the answers — what the same visibility gap would be worth if you owned as much of it as they do.",
+
+  bySourceTitle: "By assistant",
+  colSource: "Assistant",
+  colLeads: "Leads",
+  colWon: "Revenue won",
+
+  byEngineTitle: "By engine",
+  colEngine: "Engine",
+  colYourShare: "Your share",
+  colRivalShare: "Top rival",
+  colLost: "Lost, est.",
+  byEngineHint:
+    "Lost revenue is per engine because share of voice is measured per engine. Revenue won is per assistant because that is what the referral tells us. They are different measurements and are not split across each other.",
+
+  assumptionsTitle: "Your assumptions",
+  convRateLabel: "Close rate",
+  avgSaleValueLabel: "Average sale",
+  editAssumptions: "Edit in account settings →",
+
+  staleNote:
+    "Your assumptions changed since last night's rollup. Tonight's run will restate this month.",
+  liveNote: "Not rolled up yet — computed live from this month's visits.",
+
+  shareAsOf: (date: string) => `Share of voice as of ${date}`,
+  noShare: "No share-of-voice snapshot for this month, so the lost estimate is not available.",
+
+  emptyTitle: "Nothing to price yet",
+  emptyBody:
+    "This page needs two things: the attribution tag live on your site, and a share-of-voice snapshot. Once both are in place, last month's numbers appear here.",
+  emptyAttribution: "Set up AI Attribution →",
+  emptyShare: "Set up Share of Voice →",
+
+  sourceNames: {
+    chatgpt: "ChatGPT",
+    perplexity: "Perplexity",
+    gemini: "Gemini",
+    copilot: "Copilot",
+    claude: "Claude",
+    dark_ai: "Other AI",
+  } as Record<string, string>,
+
+  // Widened: ESTIMATE_DISCLAIMER is `as const`, so without this the inferred
+  // RevenueCopy would pin `disclaimer` to the English literal and reject the
+  // other two catalogs.
+  disclaimer: ESTIMATE_DISCLAIMER.en as string,
+};
+export type RevenueCopy = typeof revenueEn;
+
+export const REVENUE_COPY: Record<DashLocale, RevenueCopy> = {
+  en: revenueEn,
+  fr: {
+    title: "Revenus IA",
+    subtitle:
+      "Ce que valait le fait d'être recommandé le mois dernier, et ce que coûte l'écart avec votre principal concurrent.",
+
+    monthLabel: "Mois",
+    modelLabel: "Modèle d'attribution",
+    modelFirst: "Premier contact",
+    modelLast: "Dernier contact",
+    modelLinear: "Linéaire",
+    modelInfluenced: "Influencé",
+    modelHintFirst: "Crédit à l'assistant qui a envoyé ce visiteur en premier.",
+    modelHintLast: "Crédit à l'assistant qui l'a envoyé le plus récemment.",
+    modelHintLinear: "Crédit réparti également entre tous les assistants concernés.",
+    modelHintInfluenced:
+      "Crédit entier à chaque assistant concerné : la répartition dépasse donc le nombre de prospects.",
+
+    wonTitle: "Revenus acquis",
+    wonHint:
+      "Prospects venus d'assistants IA ce mois-ci, à votre taux de conversion et votre valeur moyenne de vente.",
+    lostTitle: "Perdu au profit des concurrents, est.",
+    lostHint:
+      "Ce que les mêmes prospects auraient valu à la part de réponses de votre principal concurrent, moins la vôtre.",
+
+    modeMeasured: "mesuré",
+    modeProxy: "estimé d'après les visites",
+    modeProxyHint:
+      "Nous voyons qui arrive depuis un assistant IA, pas ce qu'il achète. Les prospects comptés ici sont des visiteurs distincts venus d'une IA ; ce comptage deviendra celui des conversions dès que leur suivi sera actif.",
+    modeMeasuredHint: "Conversions venues d'une IA réellement comptées, non déduites des visites.",
+    alsoHasProxyNote:
+      "Ce mois comporte aussi une estimation antérieure fondée sur les visites, conservée comme historique. Le chiffre affiché est le chiffre mesuré.",
+
+    leadsLabel: "Prospects",
+    addressableLabel: "Prospects à la part de votre concurrent",
+    addressableHint:
+      "Vos prospects divisés par votre part des réponses — ce que vaudrait le même écart de visibilité si vous en déteniez autant que lui.",
+
+    bySourceTitle: "Par assistant",
+    colSource: "Assistant",
+    colLeads: "Prospects",
+    colWon: "Revenus acquis",
+
+    byEngineTitle: "Par moteur",
+    colEngine: "Moteur",
+    colYourShare: "Votre part",
+    colRivalShare: "Principal concurrent",
+    colLost: "Perdu, est.",
+    byEngineHint:
+      "Le revenu perdu est calculé par moteur parce que la part de voix se mesure par moteur. Le revenu acquis est calculé par assistant parce que c'est ce que le référencement nous indique. Ce sont deux mesures distinctes, jamais réparties l'une sur l'autre.",
+
+    assumptionsTitle: "Vos hypothèses",
+    convRateLabel: "Taux de conversion",
+    avgSaleValueLabel: "Vente moyenne",
+    editAssumptions: "Modifier dans les paramètres du compte →",
+
+    staleNote:
+      "Vos hypothèses ont changé depuis le calcul de la nuit dernière. Le calcul de cette nuit mettra ce mois à jour.",
+    liveNote: "Pas encore consolidé — calculé en direct à partir des visites de ce mois.",
+
+    shareAsOf: (date: string) => `Part de voix au ${date}`,
+    noShare:
+      "Aucun instantané de part de voix pour ce mois : l'estimation des pertes n'est pas disponible.",
+
+    emptyTitle: "Rien à chiffrer pour l'instant",
+    emptyBody:
+      "Cette page a besoin de deux choses : la balise d'attribution active sur votre site, et un instantané de part de voix. Dès que les deux sont en place, les chiffres du mois dernier apparaissent ici.",
+    emptyAttribution: "Configurer l'attribution IA →",
+    emptyShare: "Configurer la part de voix →",
+
+    sourceNames: {
+      chatgpt: "ChatGPT",
+      perplexity: "Perplexity",
+      gemini: "Gemini",
+      copilot: "Copilot",
+      claude: "Claude",
+      dark_ai: "Autre IA",
+    },
+
+    disclaimer: ESTIMATE_DISCLAIMER.fr,
+  },
+  "de-CH": {
+    title: "KI-Umsatz",
+    subtitle:
+      "Was es letzten Monat wert war, empfohlen zu werden — und was der Abstand zur stärksten Konkurrenz kostet.",
+
+    monthLabel: "Monat",
+    modelLabel: "Attributionsmodell",
+    modelFirst: "Erster Kontakt",
+    modelLast: "Letzter Kontakt",
+    modelLinear: "Linear",
+    modelInfluenced: "Beteiligt",
+    modelHintFirst: "Gutschrift an den Assistenten, der diese Person zuerst geschickt hat.",
+    modelHintLast: "Gutschrift an den Assistenten, der sie zuletzt geschickt hat.",
+    modelHintLinear: "Gutschrift gleichmässig auf alle beteiligten Assistenten verteilt.",
+    modelHintInfluenced:
+      "Volle Gutschrift an jeden beteiligten Assistenten — die Aufschlüsselung übersteigt daher die Zahl der Leads.",
+
+    wonTitle: "Erzielter Umsatz",
+    wonHint:
+      "Leads aus KI-Assistenten in diesem Monat, zu Ihrer Abschlussquote und Ihrem durchschnittlichen Verkaufswert.",
+    lostTitle: "An Konkurrenz verloren, gesch.",
+    lostHint:
+      "Was dieselben Leads bei der Antwortanteil der stärksten Konkurrenz wert gewesen wären, abzüglich Ihres eigenen.",
+
+    modeMeasured: "gemessen",
+    modeProxy: "aus Besuchen geschätzt",
+    modeProxyHint:
+      "Wir sehen, wer über einen KI-Assistenten kommt, nicht was diese Person kauft. Leads sind hier eindeutige Besucher aus KI-Assistenten; sobald die Conversion-Messung aktiv ist, wird daraus die Zahl gemessener Abschlüsse.",
+    modeMeasuredHint: "Tatsächlich gezählte Abschlüsse aus KI-Quellen, nicht aus Besuchen abgeleitet.",
+    alsoHasProxyNote:
+      "Für diesen Monat gibt es zusätzlich eine frühere, besuchsbasierte Schätzung; sie bleibt als Historie erhalten. Angezeigt wird der gemessene Wert.",
+
+    leadsLabel: "Leads",
+    addressableLabel: "Leads beim Anteil der Konkurrenz",
+    addressableHint:
+      "Ihre Leads geteilt durch Ihren Antwortanteil — was derselbe Sichtbarkeitsabstand wert wäre, wenn Sie so viel davon hielten wie die Konkurrenz.",
+
+    bySourceTitle: "Nach Assistent",
+    colSource: "Assistent",
+    colLeads: "Leads",
+    colWon: "Erzielter Umsatz",
+
+    byEngineTitle: "Nach Engine",
+    colEngine: "Engine",
+    colYourShare: "Ihr Anteil",
+    colRivalShare: "Stärkste Konkurrenz",
+    colLost: "Verloren, gesch.",
+    byEngineHint:
+      "Der verlorene Umsatz wird pro Engine ausgewiesen, weil der Antwortanteil pro Engine gemessen wird. Der erzielte Umsatz wird pro Assistent ausgewiesen, weil die Verweisung genau das sagt. Das sind zwei verschiedene Messungen und werden nie aufeinander verteilt.",
+
+    assumptionsTitle: "Ihre Annahmen",
+    convRateLabel: "Abschlussquote",
+    avgSaleValueLabel: "Durchschnittlicher Verkauf",
+    editAssumptions: "In den Kontoeinstellungen ändern →",
+
+    staleNote:
+      "Ihre Annahmen haben sich seit der Auswertung der letzten Nacht geändert. Die Auswertung dieser Nacht schreibt den Monat neu.",
+    liveNote: "Noch nicht ausgewertet — live aus den Besuchen dieses Monats berechnet.",
+
+    shareAsOf: (date: string) => `Antwortanteil per ${date}`,
+    noShare:
+      "Für diesen Monat liegt kein Antwortanteil-Snapshot vor, die Verlustschätzung ist deshalb nicht verfügbar.",
+
+    emptyTitle: "Noch nichts zu beziffern",
+    emptyBody:
+      "Diese Seite braucht zweierlei: das Attributions-Tag live auf Ihrer Website und einen Antwortanteil-Snapshot. Sobald beides vorliegt, erscheinen hier die Zahlen des letzten Monats.",
+    emptyAttribution: "KI-Attribution einrichten →",
+    emptyShare: "Antwortanteil einrichten →",
+
+    sourceNames: {
+      chatgpt: "ChatGPT",
+      perplexity: "Perplexity",
+      gemini: "Gemini",
+      copilot: "Copilot",
+      claude: "Claude",
+      dark_ai: "Andere KI",
+    },
+
+    disclaimer: ESTIMATE_DISCLAIMER["de-CH"],
+  },
+};
+
+// ── AI Revenue help modal ────────────────────────────────────────────────────
+const revenueHelpEn = {
+  button: "How this works",
+  buttonAria: "How the AI Revenue page works",
+  title: "How AI Revenue works",
+  close: "Close",
+  intro:
+    "Two numbers: what the answers earned you, and what the gap to your top rival is costing. Both are built from your own close rate and average sale value — we can see who arrives from an AI assistant, never what they buy.",
+  leadsTitle: "1. Count the leads",
+  leadsBody:
+    "Every distinct visitor an AI assistant sent you this month. When conversion tracking is on, this becomes counted conversions instead and the label beside each figure changes from “estimated from visits” to “measured”. The two are never mixed in one number.",
+  modelTitle: "2. Decide who gets the credit",
+  modelBody:
+    "A visitor who arrived from Perplexity and came back via ChatGPT is one lead, and four models disagree about which assistant earned it. First and last touch pick one; linear splits it; influenced credits both in full, which is why that breakdown sums to more than the lead count.",
+  wonTitle: "3. Price what you won",
+  wonBody:
+    "Leads × your close rate × your average sale value. Change either assumption in account settings and tonight's rollup restates this month — months already stored keep the numbers they were read with.",
+  lostTitle: "4. Price the gap",
+  lostBody:
+    "Your leads divided by your share of the answers gives what the whole question is worth. The share your top rival holds above yours, applied to that, is what their lead is costing you. A share we cannot measure is floored at 1% rather than dividing by zero.",
+  splitTitle: "Why won is per assistant and lost is per engine",
+  splitBody:
+    "A referral tells us which assistant sent someone. A share-of-voice snapshot tells us how much of an engine's answers you own. Those are different measurements that happen to share some names, so neither number is split across the other's axis.",
+};
+export type RevenueHelpCopy = typeof revenueHelpEn;
+
+export const REVENUE_HELP_COPY: Record<DashLocale, RevenueHelpCopy> = {
+  en: revenueHelpEn,
+  fr: {
+    button: "Comment ça marche",
+    buttonAria: "Fonctionnement de la page Revenus IA",
+    title: "Fonctionnement des Revenus IA",
+    close: "Fermer",
+    intro:
+      "Deux chiffres : ce que les réponses vous ont rapporté, et ce que l'écart avec votre principal concurrent vous coûte. Les deux reposent sur votre propre taux de conversion et votre valeur moyenne de vente — nous voyons qui arrive depuis un assistant IA, jamais ce qu'il achète.",
+    leadsTitle: "1. Compter les prospects",
+    leadsBody:
+      "Chaque visiteur distinct qu'un assistant IA vous a envoyé ce mois-ci. Dès que le suivi des conversions est actif, ce sont les conversions comptées qui prennent le relais et la mention à côté de chaque chiffre passe d'« estimé d'après les visites » à « mesuré ». Les deux ne sont jamais mélangés dans un même chiffre.",
+    modelTitle: "2. Décider à qui revient le crédit",
+    modelBody:
+      "Un visiteur arrivé par Perplexity puis revenu par ChatGPT est un seul prospect, et quatre modèles divergent sur l'assistant qui l'a gagné. Premier et dernier contact en choisissent un ; le linéaire partage ; l'influencé crédite les deux en entier, d'où une répartition supérieure au nombre de prospects.",
+    wonTitle: "3. Chiffrer ce qui est acquis",
+    wonBody:
+      "Prospects × votre taux de conversion × votre valeur moyenne de vente. Modifiez l'une de ces hypothèses dans les paramètres du compte et le calcul de cette nuit met le mois à jour — les mois déjà enregistrés conservent les chiffres avec lesquels ils ont été lus.",
+    lostTitle: "4. Chiffrer l'écart",
+    lostBody:
+      "Vos prospects divisés par votre part des réponses donnent ce que vaut l'ensemble de la question. La part que votre principal concurrent détient au-delà de la vôtre, appliquée à ce total, correspond à ce que son avance vous coûte. Une part non mesurable est plafonnée à 1 % plutôt que de diviser par zéro.",
+    splitTitle: "Pourquoi l'acquis est par assistant et le perdu par moteur",
+    splitBody:
+      "Une visite référée indique quel assistant a envoyé la personne. Un instantané de part de voix indique quelle proportion des réponses d'un moteur vous détenez. Ce sont deux mesures distinctes qui partagent quelques noms : aucun des deux chiffres n'est réparti sur l'axe de l'autre.",
+  },
+  "de-CH": {
+    button: "So funktioniert es",
+    buttonAria: "Funktionsweise der Seite KI-Umsatz",
+    title: "So funktioniert der KI-Umsatz",
+    close: "Schliessen",
+    intro:
+      "Zwei Zahlen: was die Antworten eingebracht haben und was der Abstand zur stärksten Konkurrenz kostet. Beide beruhen auf Ihrer eigenen Abschlussquote und Ihrem durchschnittlichen Verkaufswert — wir sehen, wer über einen KI-Assistenten kommt, nie was diese Person kauft.",
+    leadsTitle: "1. Die Leads zählen",
+    leadsBody:
+      "Jede eindeutige Person, die Ihnen ein KI-Assistent in diesem Monat geschickt hat. Sobald die Conversion-Messung aktiv ist, treten gezählte Abschlüsse an ihre Stelle, und die Angabe neben jeder Zahl wechselt von «aus Besuchen geschätzt» zu «gemessen». Beides wird nie in einer Zahl vermischt.",
+    modelTitle: "2. Entscheiden, wem die Gutschrift zusteht",
+    modelBody:
+      "Eine Person, die über Perplexity kam und über ChatGPT zurückkehrte, ist ein Lead — und vier Modelle sind sich uneinig, welcher Assistent ihn verdient hat. Erster und letzter Kontakt wählen einen aus, linear teilt auf, beteiligt schreibt beiden voll gut; deshalb übersteigt jene Aufschlüsselung die Zahl der Leads.",
+    wonTitle: "3. Beziffern, was erzielt wurde",
+    wonBody:
+      "Leads × Ihre Abschlussquote × Ihr durchschnittlicher Verkaufswert. Ändern Sie eine der Annahmen in den Kontoeinstellungen, schreibt die Auswertung dieser Nacht den Monat neu — bereits gespeicherte Monate behalten die Zahlen, mit denen sie gelesen wurden.",
+    lostTitle: "4. Den Abstand beziffern",
+    lostBody:
+      "Ihre Leads geteilt durch Ihren Antwortanteil ergeben, was die ganze Frage wert ist. Der Anteil, den die stärkste Konkurrenz über Ihrem hält, auf diesen Wert angewendet, ist der Preis ihres Vorsprungs. Ein nicht messbarer Anteil wird auf 1 % begrenzt, statt durch null zu teilen.",
+    splitTitle: "Warum Erzieltes pro Assistent und Verlorenes pro Engine gilt",
+    splitBody:
+      "Eine Verweisung sagt, welcher Assistent jemanden geschickt hat. Ein Antwortanteil-Snapshot sagt, wie viel der Antworten einer Engine Ihnen gehören. Das sind verschiedene Messungen mit teils gleichen Namen — keine der beiden Zahlen wird auf die Achse der anderen verteilt.",
   },
 };

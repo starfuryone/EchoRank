@@ -36,6 +36,7 @@ import { startSiteCrawlWorker } from "./workers/site-crawl.worker";
 import { startFreeToolsVolatilityWorker } from "./workers/free-tools-volatility.worker";
 import { startAiCheckupWorker } from "./workers/ai-checkup.worker";
 import { startSovAggregationWorker } from "./workers/sov-aggregation.worker";
+import { startRevenueRollupWorker } from "./workers/revenue-rollup.worker";
 import { startCitationAggregationWorker } from "./workers/citation-aggregation.worker";
 import { startCitationOpportunitiesWorker } from "./workers/citation-opportunities.worker";
 import { startOpportunityScanWorker } from "./workers/opportunity-scan.worker";
@@ -111,6 +112,9 @@ async function startWorkers() {
     { name: "free-tools-volatility", start: startFreeToolsVolatilityWorker },
     { name: "ai-checkup", start: startAiCheckupWorker },
     { name: "sov-aggregation", start: startSovAggregationWorker },
+    // After sov-aggregation in this list and twenty minutes after it on the
+    // clock: the revenue rollup prices the share gap that job writes.
+    { name: "revenue-rollup", start: startRevenueRollupWorker },
     { name: "citation-aggregation", start: startCitationAggregationWorker },
     { name: "citation-opportunities", start: startCitationOpportunitiesWorker },
     { name: "opportunity-scan", start: startOpportunityScanWorker },
