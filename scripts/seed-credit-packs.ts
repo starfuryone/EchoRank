@@ -105,11 +105,21 @@ const stripe = new Stripe(key);
 /** Stamped on every object, so the next team's scoped query can skip ours. */
 const APP_METADATA = { app: "echorank" } as const;
 
-async function existingPriceId(lookupKey: string): Promise<string | null> {
-  // Scoped and exact. A read by lookup key touches only the key named; it is
-  // not a prefix sweep and cannot reach another product's catalogue.
+/**
+ * The active price for one key, if the catalogue has one.
+ *
+ * RETURNS THE PRICE, NOT JUST ITS ID, so a skip can report what the customer is
+ * actually charged. An earlier version printed only "already exists (price_…)",
+ * which answers "is it seeded" but not "is it seeded CORRECTLY" — and against
+ * live those are different questions, with only the second one worth running a
+ * verification pass for.
+ *
+ * Scoped and exact. A read by lookup key touches only the key named; it is not
+ * a prefix sweep and cannot reach another product's catalogue.
+ */
+async function existingPrice(lookupKey: string): Promise<Stripe.Price | null> {
   const found = await stripe.prices.list({ lookup_keys: [lookupKey], active: true, limit: 1 });
-  return found.data[0]?.id ?? null;
+  return found.data[0] ?? null;
 }
 
 /**
@@ -183,9 +193,32 @@ async function resolveProductId(): Promise<string> {
 async function seedPack(pack: CreditPack, productId: string): Promise<"created" | "skipped"> {
   const lookupKey = creditPackLookupKey(pack.credits);
 
-  const existing = await existingPriceId(lookupKey);
+  const existing = await existingPrice(lookupKey);
   if (existing) {
-    console.log(`  ${lookupKey.padEnd(32)} SKIP — already exists (${existing})`);
+    // unit_amount is null for tiered/metered prices — which a credit pack must
+    // never be, so saying so is more useful than printing nothing.
+    const amount =
+      existing.unit_amount === null || existing.unit_amount === undefined
+        ? "NO FLAT AMOUNT — not a one-time price!"
+        : `$${existing.unit_amount / 100} ` +
+          `($${unitUsdFor(pack.credits, existing.unit_amount / 100).toFixed(3)}/lookup)`;
+    console.log(`  ${lookupKey.padEnd(32)} SKIP — exists at ${amount}`);
+
+    // A --price that disagrees with what is live is the thing worth shouting
+    // about: it means someone intended a change that this script will NOT make,
+    // because it never updates an existing price.
+    const intended = PRICES.get(pack.credits);
+    if (
+      intended !== undefined &&
+      existing.unit_amount !== null &&
+      existing.unit_amount !== undefined &&
+      Math.round(intended * 100) !== existing.unit_amount
+    ) {
+      console.log(
+        `  ⚠  ${lookupKey} is live at $${existing.unit_amount / 100} but --price said $${intended}.` +
+          "\n     This script never updates a price. Create a new one in Stripe and archive the old.",
+      );
+    }
     return "skipped";
   }
 
