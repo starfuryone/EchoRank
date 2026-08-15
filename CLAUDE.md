@@ -89,6 +89,27 @@ The suite ends **green**:
 npx tsc --noEmit && npx eslint src tests && npm test
 ```
 
-`eslint src tests` has a pre-existing error baseline (~143, mostly
-`no-html-link-for-pages` in marketing pages). Do not add to it; do not "fix" it as a side
-quest. Lint the files you touched and compare against `git stash`ed baseline if unsure.
+`eslint src tests` has a pre-existing error baseline: **173 errors, 57 warnings** as of
+2026-08-15 — `react/no-unescaped-entities` (101), `no-html-link-for-pages` (45),
+`react-hooks/set-state-in-effect` (19), then a long tail. Do not add to it; do not "fix"
+it as a side quest. Lint **only the files you touched** — a clean run there is the bar,
+and it is the check that actually works, because the repo-wide number drifts under you.
+
+**`npm test` does not run as `deploy`.** `.env` is `600 echorank`, and vitest's config
+load reads it through vite's `loadEnv` before a single test runs — so the documented
+command above dies on `EACCES: /opt/echorank/app/.env` for anyone but `echorank`/root.
+Point `envDir` at an empty directory to skip that read:
+
+```
+mkdir -p /tmp/noenv
+printf 'import base from "/opt/echorank/app/vitest.config.ts";\nexport default { ...base, envDir: "/tmp/noenv" };\n' > /tmp/vitest.noenv.config.ts
+npx vitest run --config /tmp/vitest.noenv.config.ts
+```
+
+The whole vitest suite (2559 tests) passes this way — nothing in it needs the real
+`.env`. The `node --test` scripts (`test:imports`, `test:seo-tools`, … ) never read it
+and run as-is; only `test:vitest`, the last link in `npm test`, is affected.
+
+The same 600 `.env` is why anything else that reads it — a build, `prisma migrate` —
+must run as `echorank` or root. A build started as `deploy` does not fail; it silently
+comes up env-less, which is worse.
