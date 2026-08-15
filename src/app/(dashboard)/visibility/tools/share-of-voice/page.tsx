@@ -30,6 +30,7 @@ import { hasFeature } from "@/lib/feature-flags";
 import { loadSovPageData, type SovPageData } from "@/lib/sov/read";
 import { SOV_WINDOW_DAYS } from "@/lib/sov/store";
 import { ShareOfVoiceClient } from "@/components/seo-tools/share-of-voice-client";
+import { CompetitorExplain } from "@/components/seo-tools/competitor-explain";
 
 export default async function Page({
   searchParams,
@@ -66,5 +67,24 @@ export default async function Page({
     engine: params.engine ?? null,
   }) : empty;
 
-  return <ShareOfVoiceClient locale={locale} data={data} locked={!unlocked} />;
+  // The Competitor Reverse Engineer hangs off this page rather than off
+  // /intelligence/competitors, which is where it was first sketched. That page
+  // lists Places-based LOCAL businesses; share of voice and the citation
+  // rollups are about the AI-visibility rivals named on the brand profile, and
+  // the two populations do not overlap — a "why are they winning?" report for a
+  // Google Business listing would have an empty share-of-voice row and an empty
+  // cited-sources row by construction. This is the page whose rivals it can
+  // actually explain.
+  //
+  // Rendered only when unlocked: it is a GROWTH+ surface and its own route
+  // enforces that again server-side, but a locked page should not fire the
+  // probe request at all.
+  return (
+    <>
+      <ShareOfVoiceClient locale={locale} data={data} locked={!unlocked} />
+      {unlocked && (
+        <CompetitorExplain locale={locale} brandProfileId={data.selectedPromptSetId} />
+      )}
+    </>
+  );
 }

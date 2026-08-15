@@ -227,6 +227,7 @@ model Tenant {
   recommendations      Recommendation[]
   experiments          Experiment[]
   sovSnapshots         SovSnapshot[]
+  explainReports       ExplainReport[]
 
   @@map("tenants")
 }
@@ -3306,4 +3307,53 @@ model SovSnapshot {
   /// The week-over-week drop check, and every tenant-scoped read.
   @@index([tenantId, date(sort: Desc)])
   @@map("sov_snapshots")
+}
+
+/// One "why are they winning?" report: a ranked, evidence-backed comparison of
+/// one rival against the tenant's own brand, assembled from six gatherers.
+///
+/// HISTORY, NOT A CACHE ROW. Keyed (tenantId, rivalDomain, createdAt) and
+/// appended to, rather than upserted on (tenantId, rivalDomain). The 7-day
+/// re-run window reads the NEWEST row and checks its age, which an upsert would
+/// serve equally well — but an upsert would also destroy the only record of
+/// what the gap looked like last month, which is the second question every
+/// customer asks. Each row also cost real money upstream; overwriting a
+/// paid-for observation to save a few kilobytes is a bad trade.
+model ExplainReport {
+  id       String @id @default(cuid())
+  tenantId String
+
+  /// Registrable domain, via src/lib/registrable-domain.ts — the same
+  /// normalisation `sources` and `citations` use, so a rival's own citation
+  /// rows join to this without a second spelling of the same company.
+  rivalDomain String
+  /// The rival as the engines actually spelled it ("Otterly.AI"), which is the
+  /// key `sources.citesCompetitors` and `sov_snapshots.brand` carry. Stored
+  /// beside the domain because neither is derivable from the other.
+  rivalName String
+  /// The BrandProfile this comparison ran against. A tenant tracking two
+  /// profiles gets two different answers about the same rival, and a report
+  /// that could not say which one produced it would be unreadable.
+  brandProfileId String
+
+  /// Ranked ExplainFactor[] — the shape is in src/lib/explain/types.ts. JSON
+  /// rather than a child table because the array is written once, read whole,
+  /// and never queried by element: a factors table would buy a join and
+  /// nothing else.
+  factors Json
+
+  /// USD this run actually spent upstream — the sum of the SeoApiCall rows it
+  /// wrote. Recorded here as well so a report can state its own cost without a
+  /// correlated query against a table that has no foreign key back to it, and
+  /// so a cached report still shows what it originally cost to produce.
+  costUsd Decimal @db.Decimal(10, 6)
+
+  createdAt DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  /// The freshness read, and the only one: newest report for one rival, one
+  /// tenant. Covers the report-view fetch and the 7-day staleness check both.
+  @@index([tenantId, rivalDomain, createdAt(sort: Desc)])
+  @@map("explain_reports")
 }

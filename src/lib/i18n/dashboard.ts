@@ -13372,3 +13372,179 @@ export const CITATION_OPPORTUNITIES_COPY: Record<DashLocale, CitationOpportuniti
       "Sortiert danach, wie viel es bringt, dort aufzutauchen — wie oft die Maschinen diese Quelle zitieren, wie viele davon es tun und wie viel davon Ihren Mitbewerbern zugutekommt — geteilt durch den Aufwand. Quellen, die bereits auf Ihre Website verlinken, bleiben aussen vor. Gelistet zu sein macht Sie lesbar; es ist kein Rankingfaktor und keine Garantie für eine Empfehlung.",
   },
 };
+
+// ─── AI Competitor Reverse Engineer ──────────────────────────────────────────
+// "Why are they winning?" — the confirm dialog, the report view, and the copy
+// for every factor including the ones that could not be measured. The
+// unavailable reasons are separate strings rather than one "no data" because
+// they call for different customer action: waiting for tonight's rollup and
+// raising a spent budget are not the same instruction.
+
+const explainEn = {
+  // ── Entry point ──
+  buttonLabel: "Why are they winning?",
+  buttonHint: "Reverse-engineer what puts {rival} ahead of you",
+
+  // ── Confirm dialog ──
+  confirmTitle: "Reverse-engineer {rival}",
+  confirmBody:
+    "We compare them to you on six factors: share of voice, the sources AI engines cite, backlink authority, knowledge-graph presence, site AI-readiness and reviews. Two of those buy live data.",
+  confirmDomainLabel: "Their domain",
+  confirmDomainHint:
+    "Used for the backlink and site checks. We suggest one from your own citation data where we can.",
+  confirmCostLabel: "Estimated data cost",
+  confirmCostNote:
+    "Charged to your workspace's monthly data budget. The report is kept for {days} days — asking again inside that window costs nothing.",
+  confirmRun: "Run the report",
+  confirmCancel: "Cancel",
+  running: "Working through six checks…",
+
+  // ── Report ──
+  reportTitle: "{rival} vs you",
+  cachedNote: "Stored report from {date}. A fresh run is available from {rerun}.",
+  freshNote: "Generated just now, from {cost} of live data.",
+  columnFactor: "Factor",
+  columnThem: "Them",
+  columnYou: "You",
+  columnGap: "Gap",
+  verdictBehind: "They lead you on {behind} of {measured} measured factors.",
+  verdictLevel: "They do not lead you on any factor we could measure.",
+  verdictNothing: "Nothing could be measured for this comparison yet.",
+  fixLabel: "Fix",
+  notMeasuredTitle: "Not measured",
+  notMeasuredBody: "These factors carry no numbers. Each says why.",
+  downloadPdf: "Download PDF",
+  error: "The report could not be generated. Nothing was charged.",
+
+  // ── The six factors ──
+  factor: {
+    share_of_voice: "Share of voice",
+    cited_sources: "Cited sources",
+    authority: "Backlink authority",
+    entities: "Knowledge-graph presence",
+    site_readiness: "Site AI-readiness",
+    reviews: "Reviews",
+  },
+
+  // ── Why a factor has no numbers ──
+  unavailable: {
+    awaiting_first_aggregation:
+      "Waiting on the first nightly share-of-voice rollup for this project.",
+    awaiting_first_sweep: "Waiting on the first weekly citation-opportunity sweep.",
+    no_place_id: "This competitor has no Google Business listing to compare against.",
+    not_configured: "This check is not configured for this workspace.",
+    cap_reached: "Your monthly data budget is spent, so this was not bought.",
+    upstream_failed: "The data source could not be reached.",
+  },
+};
+export type ExplainCopy = typeof explainEn;
+
+export const EXPLAIN_COPY: Record<DashLocale, ExplainCopy> = {
+  en: explainEn,
+  fr: {
+    buttonLabel: "Pourquoi sont-ils devant ?",
+    buttonHint: "Comprendre ce qui place {rival} devant vous",
+
+    confirmTitle: "Analyser {rival}",
+    confirmBody:
+      "Nous les comparons à vous sur six facteurs : la part de voix, les sources que citent les moteurs d'IA, l'autorité des liens entrants, la présence dans les graphes de connaissances, la lisibilité de votre site pour l'IA et les avis. Deux de ces facteurs nécessitent l'achat de données en direct.",
+    confirmDomainLabel: "Leur domaine",
+    confirmDomainHint:
+      "Utilisé pour l'analyse des liens et du site. Nous en proposons un à partir de vos propres citations lorsque c'est possible.",
+    confirmCostLabel: "Coût estimé des données",
+    confirmCostNote:
+      "Imputé au budget de données mensuel de votre espace de travail. Le rapport est conservé {days} jours — le redemander pendant cette période ne coûte rien.",
+    confirmRun: "Lancer le rapport",
+    confirmCancel: "Annuler",
+    running: "Six vérifications en cours…",
+
+    reportTitle: "{rival} face à vous",
+    cachedNote: "Rapport enregistré le {date}. Une nouvelle analyse sera possible à partir du {rerun}.",
+    freshNote: "Généré à l'instant, à partir de {cost} de données en direct.",
+    columnFactor: "Facteur",
+    columnThem: "Eux",
+    columnYou: "Vous",
+    columnGap: "Écart",
+    verdictBehind: "Ils vous devancent sur {behind} des {measured} facteurs mesurés.",
+    verdictLevel: "Ils ne vous devancent sur aucun des facteurs que nous avons pu mesurer.",
+    verdictNothing: "Aucun facteur n'a encore pu être mesuré pour cette comparaison.",
+    fixLabel: "À faire",
+    notMeasuredTitle: "Non mesuré",
+    notMeasuredBody: "Ces facteurs ne portent aucun chiffre. Chacun en explique la raison.",
+    downloadPdf: "Télécharger le PDF",
+    error: "Le rapport n'a pas pu être généré. Rien ne vous a été facturé.",
+
+    factor: {
+      share_of_voice: "Part de voix",
+      cited_sources: "Sources citées",
+      authority: "Autorité des liens entrants",
+      entities: "Présence dans les graphes de connaissances",
+      site_readiness: "Lisibilité du site pour l'IA",
+      reviews: "Avis",
+    },
+
+    unavailable: {
+      awaiting_first_aggregation:
+        "En attente de la première consolidation nocturne de la part de voix pour ce projet.",
+      awaiting_first_sweep:
+        "En attente du premier balayage hebdomadaire des opportunités de citation.",
+      no_place_id: "Ce concurrent n'a pas de fiche Google Business à comparer.",
+      not_configured: "Cette vérification n'est pas configurée pour cet espace de travail.",
+      cap_reached: "Votre budget de données mensuel est épuisé : cette donnée n'a pas été achetée.",
+      upstream_failed: "La source de données n'a pas pu être jointe.",
+    },
+  },
+  "de-CH": {
+    buttonLabel: "Warum liegen sie vorne?",
+    buttonHint: "Nachvollziehen, was {rival} vor Sie bringt",
+
+    confirmTitle: "{rival} analysieren",
+    confirmBody:
+      "Wir vergleichen sie mit Ihnen anhand von sechs Faktoren: Anteil an den Antworten, die von KI-Maschinen zitierten Quellen, Backlink-Autorität, Präsenz in Wissensgraphen, KI-Lesbarkeit Ihrer Website und Bewertungen. Zwei davon kaufen Live-Daten ein.",
+    confirmDomainLabel: "Ihre Domain",
+    confirmDomainHint:
+      "Wird für die Backlink- und Website-Prüfung verwendet. Wo möglich schlagen wir eine aus Ihren eigenen Zitationsdaten vor.",
+    confirmCostLabel: "Geschätzte Datenkosten",
+    confirmCostNote:
+      "Wird dem monatlichen Datenbudget Ihres Arbeitsbereichs belastet. Der Bericht wird {days} Tage aufbewahrt — eine erneute Abfrage innerhalb dieser Frist kostet nichts.",
+    confirmRun: "Bericht erstellen",
+    confirmCancel: "Abbrechen",
+    running: "Sechs Prüfungen laufen…",
+
+    reportTitle: "{rival} gegen Sie",
+    cachedNote: "Gespeicherter Bericht vom {date}. Ein neuer Lauf ist ab {rerun} möglich.",
+    freshNote: "Soeben erstellt, aus {cost} an Live-Daten.",
+    columnFactor: "Faktor",
+    columnThem: "Sie (Mitbewerber)",
+    columnYou: "Sie selbst",
+    columnGap: "Abstand",
+    verdictBehind: "Sie liegen bei {behind} von {measured} gemessenen Faktoren vor Ihnen.",
+    verdictLevel: "Bei keinem messbaren Faktor liegen sie vor Ihnen.",
+    verdictNothing: "Für diesen Vergleich konnte noch nichts gemessen werden.",
+    fixLabel: "Massnahme",
+    notMeasuredTitle: "Nicht gemessen",
+    notMeasuredBody: "Diese Faktoren tragen keine Zahlen. Jeder nennt den Grund.",
+    downloadPdf: "PDF herunterladen",
+    error: "Der Bericht konnte nicht erstellt werden. Es wurde nichts verrechnet.",
+
+    factor: {
+      share_of_voice: "Anteil an den Antworten",
+      cited_sources: "Zitierte Quellen",
+      authority: "Backlink-Autorität",
+      entities: "Präsenz in Wissensgraphen",
+      site_readiness: "KI-Lesbarkeit der Website",
+      reviews: "Bewertungen",
+    },
+
+    unavailable: {
+      awaiting_first_aggregation:
+        "Wartet auf die erste nächtliche Auswertung des Antwortanteils für dieses Projekt.",
+      awaiting_first_sweep:
+        "Wartet auf den ersten wöchentlichen Durchlauf der Zitations-Chancen.",
+      no_place_id: "Dieser Mitbewerber hat keinen Google-Business-Eintrag zum Vergleich.",
+      not_configured: "Diese Prüfung ist für diesen Arbeitsbereich nicht eingerichtet.",
+      cap_reached: "Ihr monatliches Datenbudget ist aufgebraucht, daher wurde dies nicht gekauft.",
+      upstream_failed: "Die Datenquelle war nicht erreichbar.",
+    },
+  },
+};
