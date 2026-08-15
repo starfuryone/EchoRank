@@ -45,7 +45,7 @@ export interface CreditPack {
  *
  * THESE SIZES MATCH THE SEEDED STRIPE CATALOGUE and are not free to change: the
  * keys echorank_credits_{100,500,2000}_usd exist in sandbox (and, once seeded,
- * live) against product prod_V4nFl2plt0kVJW. Editing a number here without
+ * live) against product prod_V4ngzkjOAgGv4s. Editing a number here without
  * creating the matching price makes that pack disappear from /credits, because
  * pricing.ts drops what it cannot resolve.
  */
@@ -63,7 +63,7 @@ export const CREDIT_PACKS: readonly CreditPack[] = [
  * cleanup, which on a shared account is three chances to make the 2026-08-01
  * mistake instead of one.
  */
-export const CREDIT_PRODUCT_ID = "prod_V4nFl2plt0kVJW";
+export const CREDIT_PRODUCT_ID = "prod_V4ngzkjOAgGv4s";
 
 /** `echorank_credits_<n>_usd` — the agreed key shape. */
 export function creditPackLookupKey(credits: number): string {
