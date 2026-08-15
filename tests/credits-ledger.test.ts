@@ -182,8 +182,14 @@ describe("credit packs", () => {
     expect(creditPackLookupKey(500)).toBe("echorank_credits_500_usd");
   });
 
-  it("names the seeded product", () => {
-    expect(CREDIT_PRODUCT_ID).toBe("prod_V4nFl2plt0kVJW");
+  it("names a Stripe product, without pinning which one", () => {
+    // NOT pinned to a literal id, deliberately. A product id is per-account, so
+    // sandbox and live hold different ones and whichever is in the constant is
+    // wrong for the other mode — a test asserting one value fails the moment
+    // the other is seeded. It is only a seeder hint anyway: the checkout and
+    // the pricing resolver both go by lookup key and never read it, so the
+    // property worth asserting is that it is a plausible product id.
+    expect(CREDIT_PRODUCT_ID).toMatch(/^prod_[A-Za-z0-9]+$/);
   });
 
   it("defines each size exactly once", () => {

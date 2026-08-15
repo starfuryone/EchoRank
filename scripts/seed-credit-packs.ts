@@ -40,6 +40,7 @@ import Stripe from "stripe";
 import {
   CREDIT_PACKS,
   CREDIT_PRODUCT_ID,
+  allCreditPackLookupKeys,
   creditPackLookupKey,
   unitUsdFor,
   type CreditPack,
@@ -114,11 +115,43 @@ async function existingPriceId(lookupKey: string): Promise<string | null> {
 /**
  * The product all three prices hang off.
  *
- * Reused if CREDIT_PRODUCT_ID resolves — sandbox is already seeded that way, and
- * live should match. Created only when it does not, so a second run never
- * leaves two products competing for the same three keys.
+ * ── RESOLVED FROM THE CATALOGUE FIRST, THE CONSTANT SECOND ──────────────────
+ * A Stripe product id is per-account, so sandbox and live hold different ones
+ * and CREDIT_PRODUCT_ID can only ever name one of them. Trusting it alone means
+ * that whichever mode was seeded second makes the other unrunnable — the
+ * constant points at a product this account has never heard of, and the seeder
+ * offers to create a duplicate beside the packs that already exist.
+ *
+ * So the first question asked is the one that cannot be wrong in either mode:
+ * does a credit-pack price already exist here, and what product is it on? Only
+ * if nothing exists does the constant get a try, and only if that fails too is
+ * a product created. A second run therefore never leaves two products competing
+ * for the same three keys, in either account.
  */
 async function resolveProductId(): Promise<string> {
+  // 1. Ask the catalogue. Scoped to our own keys, and a read.
+  try {
+    const existing = await stripe.prices.list({
+      lookup_keys: allCreditPackLookupKeys(),
+      active: true,
+      limit: 1,
+    });
+    const product = existing.data[0]?.product;
+    const productId = typeof product === "string" ? product : product?.id;
+    if (productId) {
+      console.log(`  product ${productId} — resolved from the existing prices`);
+      if (productId !== CREDIT_PRODUCT_ID) {
+        console.log(
+          `  note: CREDIT_PRODUCT_ID is ${CREDIT_PRODUCT_ID}, which is the other mode's id.`,
+        );
+      }
+      return productId;
+    }
+  } catch {
+    // Fall through to the constant.
+  }
+
+  // 2. The constant, for a mode with no packs yet but a product already made.
   try {
     const existing = await stripe.products.retrieve(CREDIT_PRODUCT_ID);
     if (!existing.deleted) {
