@@ -211,6 +211,14 @@ describe("when the product kind cannot be resolved", () => {
     // fail-closed direction the sibling test above argues for.
     //
     // tests/credit-webhook.test.ts owns the positive case.
+    //
+    // FOR THE WATCHER GO-LIVE SESSION: if Phase 2/3 ever needs a legitimate
+    // non-credit mode=payment activation path, revisit this with a flow-metadata
+    // DISCRIMINATOR — branch on session.metadata.flow so each one-time flow
+    // declares itself — rather than reverting to "no subscription means
+    // activate". That default is what made a pack of prospect lookups grant the
+    // whole product, and it would do so again the moment a third one-time SKU
+    // exists.
     await deliverCheckoutSession({ withSubscription: false });
     expect(tenantRow.billingStatus).toBe("TRIALING");
   });

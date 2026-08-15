@@ -2548,9 +2548,19 @@ model ConsentEvent {
   /// The document ids as sent, so a later config change cannot rewrite what
   /// someone actually agreed to.
   documents   Json
+  /// What was bought. A plan tier for a subscription, `credits_<n>` for a
+  /// one-time pack — non-null, so it names the product rather than being blank.
   plan        String
+  /// "month" | "year" for a subscription, "one_time" for a pack. Non-null for
+  /// the same reason: an empty string would read as a missing value.
   interval    String
-  /// "upgrade" | "guest_signup"
+  /// "upgrade" | "guest_signup" | "credit_pack"
+  ///
+  /// credit_pack rows carry NO gate — the /credits buy buttons show a
+  /// terms/privacy line instead of a modal, and `documents` records the two it
+  /// actually showed rather than all four. The row exists so §8.1's "any
+  /// purchase" wording is satisfied without putting a modal on a one-time
+  /// payment. See src/app/api/billing/credits/checkout/route.ts.
   flow        String
   /// Client-supplied moment of the click. Recorded, never trusted for auth.
   consentedAt DateTime?

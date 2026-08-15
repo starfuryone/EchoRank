@@ -15,14 +15,16 @@
 // `client_reference_id = tenantId` stamp the webhook needs to find a tenant, and
 // the `metadata.app = "echorank"` stamp the shared live account requires.
 //
-// ── CONSENT ─────────────────────────────────────────────────────────────────
-// No ConsentGate here, by explicit product decision: this is a one-time payment
-// rather than a subscription or a plan change, and the buy buttons carry a
-// terms/privacy line instead. Recorded because it is a judgement call and
-// §8.1 of the Subscription Agreement reads "before starting a trial or
-// completing ANY purchase or plan change" — a literal reading covers this. The
-// decision was to treat §8.1 as scoped to the subscription relationship it
-// governs. If that is revisited, the gate is checkConsent() from
+// ── CONSENT: no gate, but a log ─────────────────────────────────────────────
+// No ConsentGate and no modal — this is a one-time payment rather than a
+// subscription or a plan change, and the buy buttons carry a terms/privacy line
+// instead. But §8.1 reads "before starting a trial or completing ANY purchase
+// or plan change", and a literal reading covers this, so a ConsentEvent row IS
+// written below recording what the buyer was shown. That satisfies the clause's
+// wording at zero friction, and means nobody has to relitigate whether §8.1 is
+// scoped to the subscription relationship it otherwise governs.
+//
+// If a gate is ever wanted after all, it is checkConsent() from
 // ../../checkout/route.ts and it drops in above the auth branch.
 //
 // ── NO PLAN GATE, ON PURPOSE ────────────────────────────────────────────────
@@ -34,11 +36,13 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe/client";
+import { prisma } from "@/lib/prisma";
 import { getCurrentTenant } from "@/lib/tenant";
 import { auth } from "@/lib/auth";
 import { logger } from "@/infrastructure/observability/logger";
 import { SITE_URL, normalizeLocale } from "@/lib/seo";
 import { creditPackLookupKey, packForCredits } from "@/lib/credit-packs";
+import { CONSENT_VERSION } from "@/lib/consent-config";
 
 const log = logger.child({ module: "credits-checkout" });
 
@@ -66,6 +70,9 @@ export async function POST(req: NextRequest) {
   let tenantId: string;
   let customerId: string | null = null;
   let customerEmail: string | null = null;
+  // §8.2 names the user id as part of a consent record; the tenant id alone
+  // cannot say who clicked.
+  let userId: string | null = null;
   try {
     const [membership, session] = await Promise.all([getCurrentTenant(), auth()]);
     if (!membership) {
@@ -77,6 +84,7 @@ export async function POST(req: NextRequest) {
     tenantId = membership.tenant.id;
     customerId = membership.tenant.stripeCustomerId ?? null;
     customerEmail = session?.user?.email ?? null;
+    userId = (session?.user as { id?: string } | undefined)?.id ?? null;
   } catch {
     log.warn("Session lookup failed during credit checkout");
     return NextResponse.json(
@@ -143,6 +151,53 @@ export async function POST(req: NextRequest) {
     if (!session.url) {
       log.error({ sessionId: session.id }, "Credit checkout session created without a url");
       return NextResponse.json({ error: "Could not start checkout." }, { status: 502 });
+    }
+
+    // ── The compliance log, without the gate ────────────────────────────────
+    //
+    // §8.1 says consent is required before "any purchase or plan change", and a
+    // literal reading covers a one-time pack. The product decision was that a
+    // modal does not belong on a one-time payment — so this records WHAT the
+    // buyer was shown, with no gate and no friction, and the argument about the
+    // clause stops being one worth having.
+    //
+    // TWO DOCUMENTS, NOT FOUR. The plan checkout records all of
+    // CONSENT_DOCUMENT_IDS because its modal presents all four. This page shows
+    // Terms and Privacy under the buy buttons and nothing else, so recording
+    // the Subscription Agreement here would assert the buyer was shown
+    // something they were not — which is worse than a thinner log.
+    //
+    // consentedAt is NULL, deliberately: the column is documented as the
+    // client-supplied moment of the click, and there is no client payload here
+    // to supply one. `createdAt` carries the server's own timestamp, and the
+    // two would differ by network latency anyway since this row is written in
+    // the same request the click made.
+    //
+    // A FAILURE HERE MUST NOT FAIL THE CHECKOUT. The buyer has a valid session;
+    // losing this row is a compliance-log gap to alert on, not a reason to
+    // refuse a paying customer. Same rule the plan route states.
+    try {
+      await prisma.consentEvent.create({
+        data: {
+          tenantId,
+          userId,
+          email: customerEmail,
+          // Unique, so a retried request cannot write a second row for one act.
+          stripeSessionId: session.id,
+          version: CONSENT_VERSION,
+          documents: ["terms", "privacy"],
+          // `plan` is non-null and means "what was bought". Naming the pack is
+          // more use to an auditor than a bare "credits".
+          plan: `credits_${pack.credits}`,
+          // Non-null too. A one-time payment has no interval and saying so is
+          // better than an empty string that reads as a missing value.
+          interval: "one_time",
+          flow: "credit_pack",
+          consentedAt: null,
+        },
+      });
+    } catch (err) {
+      log.error({ err, sessionId: session.id, tenantId }, "ConsentEvent write failed");
     }
 
     log.info(
