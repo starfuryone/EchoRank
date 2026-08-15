@@ -89,6 +89,35 @@ days:
 
 Read it as **leads, not facts**. Verify against the code before acting on any line of it.
 
+## Migration filenames are hand-authored, and several land on the same day
+
+`prisma migrate deploy` applies in **lexical filename order**, and this repo writes those
+timestamps by hand — four migrations were created on 2026-08-15 alone. So a migration can
+easily sort *before* the one that creates a table it alters.
+
+That happened on 2026-08-15: `20260815130000_credit_packs` altered `scan_rows`, which
+`20260815160000_agency_opportunity_scanner` creates. It applied fine here, where the scanner
+had already shipped, and would have failed on any fresh rebuild — the case that only shows
+up long after the change, and this box **has** been rebuilt from git before.
+
+Before adding a migration: list `prisma/migrations`, find every table your SQL touches, and
+confirm the migration that creates each one sorts earlier. Renaming the directory is the fix
+and is free *until it has been applied* — after that it also needs an
+`_prisma_migrations` cleanup.
+
+**Two more traps from the same incident:**
+
+- **Prisma table names are not the model names.** `@@map` decides, and this schema mixes both
+  conventions — `ScanRow` maps to `scan_rows`, `SeoApiCall` maps to nothing and really is
+  `"SeoApiCall"`. Hand-written SQL that guesses `snake_case` fails at run time. Check the
+  model for `@@map`, or grep `0_init` for the `CREATE TABLE`.
+- **A failed migration leaves rows behind.** A partial run can record several
+  `_prisma_migrations` rows for one name, some `finished_at IS NULL`. `migrate deploy`
+  refuses to move until they are resolved (`prisma migrate resolve`, or a `DELETE` for a
+  renamed folder's orphans). Writing every statement guarded — `IF NOT EXISTS`, and a `DO`
+  block for `CREATE TYPE`, which has no `IF NOT EXISTS` — makes the re-apply a no-op instead
+  of a manual cleanup of whatever survived.
+
 ## Stripe: the live account is shared with 7+ other products
 
 Checkout exists now (this section used to say it did not — see
