@@ -902,7 +902,7 @@ export const TECHNICAL_GEO_HTML = `<!DOCTYPE html>
           <a class="resource" href="/en/free-tools">
             <small>Free tools</small>
             <h3>Free SEO &amp; AI Search Tools</h3>
-            <p>SERP simulator, AI Search Grader, content optimizer, share of search, and more&mdash;free, no account needed.</p>
+            <p>SERP simulator, content optimizer, share of search, SERP volatility, and more&mdash;free, no account needed.</p>
             <span class="go">Open the free tools →</span>
           </a>
         </div>

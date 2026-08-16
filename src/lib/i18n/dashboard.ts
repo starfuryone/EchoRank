@@ -13932,7 +13932,7 @@ const opportunityScannerEn = {
   errorPdf: "Could not build that report.",
 
   methodNote:
-    "Each prospect gets a passive audit of what their site already publishes — robots.txt, the HTML served to a crawler, structured data, metadata and sitemaps. Nothing is submitted and no page is crawled beyond the homepage. Grades use the same A-F bands as the AI Search Grader, so a prospect who runs the free tool themselves sees the same letter.",
+    "Each prospect gets a passive audit of what their site already publishes — robots.txt, the HTML served to a crawler, structured data, metadata and sitemaps. Nothing is submitted and no page is crawled beyond the homepage. Grades use the same A-F bands as the free audit, so a prospect who runs it on their own site sees the same letter.",
 };
 export type OpportunityScannerCopy = typeof opportunityScannerEn;
 
@@ -14016,7 +14016,7 @@ export const OPPORTUNITY_SCANNER_COPY: Record<DashLocale, OpportunityScannerCopy
     errorPdf: "Impossible de générer ce rapport.",
 
     methodNote:
-      "Chaque prospect fait l'objet d'un audit passif de ce que son site publie déjà — robots.txt, le HTML servi à un robot, les données structurées, les métadonnées et les sitemaps. Rien n'est soumis et aucune page n'est explorée au-delà de la page d'accueil. Les notes utilisent les mêmes tranches A-F que l'évaluateur de recherche IA : un prospect qui teste l'outil gratuit lui-même verra la même lettre.",
+      "Chaque prospect fait l'objet d'un audit passif de ce que son site publie déjà — robots.txt, le HTML servi à un robot, les données structurées, les métadonnées et les sitemaps. Rien n'est soumis et aucune page n'est explorée au-delà de la page d'accueil. Les notes utilisent les mêmes tranches A-F que l'audit gratuit : un prospect qui le lance lui-même sur son site verra la même lettre.",
   },
   "de-CH": {
     lockedTitle: "Der Chancen-Scanner ist ab Agency enthalten",
@@ -14096,7 +14096,7 @@ export const OPPORTUNITY_SCANNER_COPY: Record<DashLocale, OpportunityScannerCopy
     errorPdf: "Dieser Bericht konnte nicht erstellt werden.",
 
     methodNote:
-      "Jeder Interessent erhält einen passiven Audit dessen, was seine Website bereits veröffentlicht — robots.txt, das an einen Crawler ausgelieferte HTML, strukturierte Daten, Metadaten und Sitemaps. Es wird nichts übermittelt und keine Seite über die Startseite hinaus gecrawlt. Die Noten verwenden dieselben A-F-Stufen wie der KI-Suchbewerter, damit ein Interessent, der das kostenlose Werkzeug selbst nutzt, denselben Buchstaben sieht.",
+      "Jeder Interessent erhält einen passiven Audit dessen, was seine Website bereits veröffentlicht — robots.txt, das an einen Crawler ausgelieferte HTML, strukturierte Daten, Metadaten und Sitemaps. Es wird nichts übermittelt und keine Seite über die Startseite hinaus gecrawlt. Die Noten verwenden dieselben A-F-Stufen wie der kostenlose Audit, damit ein Interessent, der ihn selbst auf seiner Website laufen lässt, denselben Buchstaben sieht.",
   },
 };
 
@@ -14125,7 +14125,7 @@ const opportunityScannerHelpEn = {
 
   gradeTitle: "Read the table worst first",
   gradeBody:
-    "Grades run A to F on the same bands as the free AI Search Grader, and the table opens sorted with F at the top. That is the order you want: the sites that score worst are the ones with something to fix, which are the ones worth a call. Sites we could not reach sort to the bottom.",
+    "Grades run A to F on the same bands as the free audit, and the table opens sorted with F at the top. That is the order you want: the sites that score worst are the ones with something to fix, which are the ones worth a call. Sites we could not reach sort to the bottom.",
 
   reportTitle: "Send the report",
   reportBody:
@@ -14162,7 +14162,7 @@ export const OPPORTUNITY_SCANNER_HELP_COPY: Record<DashLocale, OpportunityScanne
 
     gradeTitle: "Lisez le tableau en commençant par les pires",
     gradeBody:
-      "Les notes vont de A à F, sur les mêmes tranches que l'évaluateur de recherche IA gratuit, et le tableau s'ouvre avec les F en haut. C'est l'ordre utile : les sites les plus faibles sont ceux qui ont quelque chose à corriger, donc ceux qui méritent un appel. Les sites injoignables passent en bas.",
+      "Les notes vont de A à F, sur les mêmes tranches que l'audit gratuit, et le tableau s'ouvre avec les F en haut. C'est l'ordre utile : les sites les plus faibles sont ceux qui ont quelque chose à corriger, donc ceux qui méritent un appel. Les sites injoignables passent en bas.",
 
     reportTitle: "Envoyez le rapport",
     reportBody:
@@ -14195,7 +14195,7 @@ export const OPPORTUNITY_SCANNER_HELP_COPY: Record<DashLocale, OpportunityScanne
 
     gradeTitle: "Lesen Sie die Tabelle von unten nach oben",
     gradeBody:
-      "Die Noten reichen von A bis F, auf denselben Stufen wie der kostenlose KI-Suchbewerter, und die Tabelle öffnet mit den F zuoberst. Das ist die nützliche Reihenfolge: die schwächsten Websites haben etwas zu beheben und sind damit einen Anruf wert. Nicht erreichbare Websites stehen zuunterst.",
+      "Die Noten reichen von A bis F, auf denselben Stufen wie der kostenlose Audit, und die Tabelle öffnet mit den F zuoberst. Das ist die nützliche Reihenfolge: die schwächsten Websites haben etwas zu beheben und sind damit einen Anruf wert. Nicht erreichbare Websites stehen zuunterst.",
 
     reportTitle: "Verschicken Sie den Bericht",
     reportBody:

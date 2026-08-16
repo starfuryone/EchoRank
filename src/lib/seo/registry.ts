@@ -126,8 +126,9 @@ export const PLAIN_ROUTES: PlainRoute[] = [
  * redirect. It stays out of LOCALIZED_ROUTES so the sitemap stops listing it.
  */
 export const RETIRED_LOCALIZED_PATHS: readonly string[] = [
-  // Reddit Threads Finder, removed 2026-08-16 → /{locale}/free-tools.
+  // Both removed 2026-08-16, both 301 → /{locale}/free-tools.
   "/free-tools/reddit-threads",
+  "/free-tools/ai-search-grader",
 ];
 
 /** Every locale-prefixed path that exists, used by the proxy locale guard. */

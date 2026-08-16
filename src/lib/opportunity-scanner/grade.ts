@@ -16,9 +16,11 @@
 // BANDS below is asserted against those exact numbers in the tests and this
 // comment is the pointer for whoever changes one of them.
 //
-// The consequence of drift is worth naming: the free AI Search Grader and this
-// scanner would give the same site two different letters, and an agency would
-// eventually put both in front of the same prospect.
+// The consequence of drift is worth naming: /free-audit (which grades through
+// gradeFor() below) and the sidecar would give the same site two different
+// letters, and an agency would eventually put both in front of the same
+// prospect. The free AI Search Grader used to be the third surface here; it was
+// retired 2026-08-16 and the drift risk outlived it.
 
 /** [minimum score, letter], highest first. */
 export const BANDS: ReadonlyArray<readonly [number, string]> = [

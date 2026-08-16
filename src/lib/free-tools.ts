@@ -20,7 +20,6 @@ export const FREE_TOOLS_BASE = "/free-tools";
 
 export type FreeToolId =
   | "serp_volatility"
-  | "ai_search_grader"
   | "content_optimizer"
   | "share_of_search"
   | "serp_simulator";
@@ -71,15 +70,11 @@ export const FREE_TOOLS: FreeTool[] = [
     isNew: true,
     jsonLd: "faq",
   },
-  {
-    id: "ai_search_grader",
-    slug: "ai-search-grader",
-    cost: "paid_api",
-    dailyLimit: 1,
-    apiPath: "/api/free/v1/ai-search-grader",
-    isNew: true,
-    jsonLd: "software",
-  },
+  // RETIRED: ai_search_grader (AI Search Grader). Removed 2026-08-16; its page
+  // path still 301s from src/app/[locale]/free-tools/ai-search-grader/route.ts
+  // and stays in RETIRED_LOCALIZED_PATHS in src/lib/seo/registry.ts. The
+  // sidecar's /grade endpoint it called is untouched — /free-audit still uses
+  // the same audit and still shows an A–F letter.
   {
     id: "content_optimizer",
     slug: "content-optimizer",

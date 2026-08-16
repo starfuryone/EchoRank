@@ -217,8 +217,8 @@ describe("parseDomainList", () => {
 describe("gradeFor", () => {
   it("matches the sidecar's bands exactly", () => {
     // These five numbers are copied from ai_visibility_audit.py's grade(). If
-    // one moves there and not here, the free AI Search Grader and this scanner
-    // give the same site two different letters.
+    // one moves there and not here, /free-audit and this scanner give the same
+    // site two different letters.
     expect(BANDS).toEqual([
       [85, "A"],
       [70, "B"],

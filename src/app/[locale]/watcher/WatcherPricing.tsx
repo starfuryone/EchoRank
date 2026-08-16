@@ -202,7 +202,10 @@ export function WatcherPricing({
       </div>
 
       <div className={s.priceGrid2}>
-        {/* ── Free: the existing one-shot grader. No checkout, no account. ── */}
+        {/* ── Free: the anonymous one-shot audit. No checkout, no account.
+             Pointed at the free-tools AI Search Grader until that tool was
+             retired; /free-audit runs the same sidecar audit and returns the
+             same A–F letter, so every word of this card still holds. ── */}
         <div className={s.price}>
           <div className={s.pname}>/ {copy.freeName}</div>
           <div className={s.pamount}>{copy.freePrice}</div>
@@ -212,7 +215,7 @@ export function WatcherPricing({
               <li key={f}>{f}</li>
             ))}
           </ul>
-          <Link className={s.pbuyGhost} href={`/${locale}/free-tools/ai-search-grader`}>
+          <Link className={s.pbuyGhost} href={`/${locale}/free-audit`}>
             {copy.freeCta}
           </Link>
         </div>

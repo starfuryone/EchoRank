@@ -69,27 +69,6 @@ export const TOOL_COPY: Record<FreeToolId, ToolCopy> = {
       },
     ],
   },
-  ai_search_grader: {
-    name: "AI Search Grader",
-    blurb: "An A–F grade for how ready your site is to be quoted by AI assistants.",
-    intro:
-      "ChatGPT, Claude and Perplexity can only recommend what their crawlers can read. Enter a domain for a letter grade and the three things holding it back.",
-    metaTitle: "Free AI search readiness grader — get your A–F grade",
-    metaDescription:
-      "Grade any domain on how readable it is to AI assistants: crawler access, structured data and rendering. Free, no account needed.",
-    limitNote: "1 free grade a day.",
-    cta: "Get the full AI visibility report",
-    faq: [
-      {
-        q: "What does the grade measure?",
-        a: "Whether AI crawlers are allowed in, whether your content exists in the raw HTML, and whether the page carries the structured data assistants rely on. It does not measure whether assistants currently mention you — that is answer tracking, which needs an account.",
-      },
-      {
-        q: "Is this the same as the full audit?",
-        a: "It uses the same scoring, on a single page rather than a crawl of the site. The full audit checks every page and gives you the fix list.",
-      },
-    ],
-  },
   content_optimizer: {
     name: "SEO Content Optimizer",
     blurb: "Paste a draft and a target keyword for an instant on-page score.",
