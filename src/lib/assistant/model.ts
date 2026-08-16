@@ -32,7 +32,54 @@ export interface SystemBlock {
 
 export interface ChatTurn {
   role: "user" | "assistant";
-  content: string;
+  content: string | ContentBlock[];
+}
+
+// ─── Tool use ───────────────────────────────────────────────────────────────
+//
+// ONLY THE PRO ASSISTANT USES THESE. The public assistant deliberately has no
+// tools (see prompt.ts), and nothing below changes that: the tool list is a
+// per-call argument, so a caller that passes none gets exactly the request the
+// public path has always sent.
+
+/** A tool the model may call. `input_schema` is JSON Schema, not zod. */
+export interface ToolDefinition {
+  name: string;
+  description: string;
+  input_schema: {
+    type: "object";
+    properties: Record<string, unknown>;
+    required?: string[];
+    additionalProperties?: false;
+  };
+}
+
+/**
+ * One content block, in either direction.
+ *
+ * Deliberately a hand-written union rather than the SDK's types: this module
+ * speaks the wire format directly (see the header), so the shapes here are the
+ * JSON the API actually sends and accepts.
+ */
+export type ContentBlock =
+  | { type: "text"; text: string }
+  | { type: "tool_use"; id: string; name: string; input: unknown }
+  | {
+      type: "tool_result";
+      tool_use_id: string;
+      content: string;
+      is_error?: boolean;
+    };
+
+export interface ToolResult {
+  /** Every block the model produced, in order. */
+  blocks: ContentBlock[];
+  /** "end_turn" | "tool_use" | "max_tokens" | "stop_sequence" | "refusal". */
+  stopReason: string;
+  inputTokens: number;
+  outputTokens: number;
+  cacheReadTokens: number;
+  model: string;
 }
 
 export interface ModelResult {
@@ -85,7 +132,14 @@ function sleep(ms: number): Promise<void> {
 }
 
 interface AnthropicResponse {
-  content?: Array<{ type: string; text?: string }>;
+  content?: Array<{
+    type: string;
+    text?: string;
+    id?: string;
+    name?: string;
+    input?: unknown;
+  }>;
+  stop_reason?: string;
   usage?: {
     input_tokens?: number;
     output_tokens?: number;
@@ -94,15 +148,33 @@ interface AnthropicResponse {
 }
 
 /**
- * One Messages call. Retries on 429 and 5xx; any other 4xx is a bug in our
- * request and surfaces immediately rather than being retried three times.
+ * One Messages call, returning the raw content blocks and the stop reason.
+ *
+ * This is the tool-aware entry point. `callAssistantModel` below is the
+ * text-only wrapper the public assistant has always used; both go through the
+ * same transport, retry policy and error mapping, so there is one place where
+ * a 429 or a rotated key is handled.
+ *
+ * Retries on 429 and 5xx; any other 4xx is a bug in our request and surfaces
+ * immediately rather than being retried three times.
  */
-export async function callAssistantModel(input: {
+export async function callAssistantModelRaw(input: {
   model: string;
   system: SystemBlock[];
   messages: ChatTurn[];
   maxTokens: number;
-}): Promise<ModelResult> {
+  /** Omit entirely for a text-only call — the public assistant passes none. */
+  tools?: ToolDefinition[];
+  /**
+   * "none" forbids further tool calls while KEEPING the tool list declared.
+   *
+   * That combination is the point. A turn that has spent its tool budget must
+   * answer, but the conversation already contains tool_use/tool_result pairs,
+   * and dropping `tools` from a request whose history references them is how
+   * you turn one over-budget turn into a 400 on every retry.
+   */
+  toolChoice?: "auto" | "none";
+}): Promise<ToolResult> {
   const key = apiKey();
 
   const body = JSON.stringify({
@@ -110,6 +182,15 @@ export async function callAssistantModel(input: {
     max_tokens: input.maxTokens,
     system: input.system,
     messages: input.messages.map((m) => ({ role: m.role, content: m.content })),
+    // Sent only when there are tools: an empty `tools` array is a different
+    // request shape from no `tools` key, and the public path must keep sending
+    // the second one byte-for-byte so its prompt cache prefix is unchanged.
+    ...(input.tools && input.tools.length > 0
+      ? {
+          tools: input.tools,
+          ...(input.toolChoice ? { tool_choice: { type: input.toolChoice } } : {}),
+        }
+      : {}),
   });
 
   let lastError: Error = new AssistantUpstreamError("The assistant could not answer.");
@@ -159,18 +240,28 @@ export async function callAssistantModel(input: {
       }
 
       const data = (await response.json()) as AnthropicResponse;
-      const text = (data.content ?? [])
-        .filter((block) => block.type === "text" && typeof block.text === "string")
-        .map((block) => block.text as string)
-        .join("")
-        .trim();
 
-      if (!text) {
-        throw new AssistantUpstreamError("The assistant returned an empty answer.", false);
+      // Unknown block types are DROPPED rather than passed through. Anything we
+      // do not understand we also cannot echo back correctly on the next turn,
+      // and a malformed replay is a 400 on every subsequent request in the
+      // conversation rather than one degraded answer.
+      const blocks: ContentBlock[] = [];
+      for (const block of data.content ?? []) {
+        if (block.type === "text" && typeof block.text === "string") {
+          blocks.push({ type: "text", text: block.text });
+        } else if (block.type === "tool_use" && block.id && block.name) {
+          blocks.push({
+            type: "tool_use",
+            id: block.id,
+            name: block.name,
+            input: block.input ?? {},
+          });
+        }
       }
 
       return {
-        text,
+        blocks,
+        stopReason: data.stop_reason ?? "end_turn",
         inputTokens: data.usage?.input_tokens ?? 0,
         outputTokens: data.usage?.output_tokens ?? 0,
         cacheReadTokens: data.usage?.cache_read_input_tokens ?? 0,
@@ -193,4 +284,42 @@ export async function callAssistantModel(input: {
   }
 
   throw lastError;
+}
+
+/** Concatenated text of every text block, trimmed. */
+export function blockText(blocks: ContentBlock[]): string {
+  return blocks
+    .filter((block): block is { type: "text"; text: string } => block.type === "text")
+    .map((block) => block.text)
+    .join("")
+    .trim();
+}
+
+/**
+ * One text-only Messages call — the public assistant's entry point, unchanged
+ * in behaviour from the day it shipped.
+ *
+ * An answer with no text is still an error HERE, where there are no tools and
+ * therefore nothing else a turn could legitimately consist of. The Pro path
+ * cannot make that assumption: a turn that ends in `tool_use` has no text yet
+ * and is not a failure, so it uses `callAssistantModelRaw` directly.
+ */
+export async function callAssistantModel(input: {
+  model: string;
+  system: SystemBlock[];
+  messages: ChatTurn[];
+  maxTokens: number;
+}): Promise<ModelResult> {
+  const result = await callAssistantModelRaw(input);
+  const text = blockText(result.blocks);
+  if (!text) {
+    throw new AssistantUpstreamError("The assistant returned an empty answer.", false);
+  }
+  return {
+    text,
+    inputTokens: result.inputTokens,
+    outputTokens: result.outputTokens,
+    cacheReadTokens: result.cacheReadTokens,
+    model: result.model,
+  };
 }

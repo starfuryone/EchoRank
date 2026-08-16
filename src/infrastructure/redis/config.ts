@@ -161,7 +161,8 @@ export type QueueName =
   | "citation-opportunities"
   | "opportunity-scan"
   | "revenue-rollup"
-  | "action-agent";
+  | "action-agent"
+  | "assistant-precompute";
 
 /** All valid queue names */
 export const QUEUE_NAMES: QueueName[] = [
@@ -193,4 +194,5 @@ export const QUEUE_NAMES: QueueName[] = [
   "opportunity-scan",
   "revenue-rollup",
   "action-agent",
+  "assistant-precompute",
 ];

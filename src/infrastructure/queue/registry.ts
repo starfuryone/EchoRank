@@ -192,6 +192,18 @@ const DEFAULT_JOB_OPTIONS: Record<QueueName, JobsOptions> = {
     removeOnComplete: { age: REDIS_CONFIG.ttl.completedJobs },
     removeOnFail: { age: REDIS_CONFIG.ttl.failedJobs },
   },
+  // Freely retryable: the assistant's weekly summary is a pure read over
+  // prompt_runs, competitor snapshots and visibility audits, followed by one
+  // Redis SET. Nothing upstream is bought and the write is idempotent — a
+  // retry recomputes the same numbers from the same rows and overwrites the
+  // same key. A missed night costs one stale summary, and the summary carries
+  // its own `computedAt` so "stale" is visible rather than silent.
+  "assistant-precompute": {
+    attempts: 3,
+    backoff: { type: "exponential", delay: 30_000 },
+    removeOnComplete: { age: REDIS_CONFIG.ttl.completedJobs },
+    removeOnFail: { age: REDIS_CONFIG.ttl.failedJobs },
+  },
   // Retryable for the same reason, by a different mechanism: the rollup's scope
   // is "citations with no sourceId", and a successful attempt stamps the rows
   // it counted in the same transaction that counted them. A retry therefore

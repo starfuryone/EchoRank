@@ -10,6 +10,7 @@ import {
   Settings,
   CreditCard,
   ScanEye,
+  Sparkle,
   Wrench,
   UserCircle,
   HelpCircle,
@@ -42,10 +43,18 @@ import type { PlanType } from "@/generated/prisma";
 // /visibility/* route would light NO row, because the only thing that used to
 // match them left the list. It is deliberately NOT "/visibility/tools", which
 // has its own row and, being longer, wins the match below on its own.
+/** The Pro assistant row, gated separately from the SEO Tools hub. */
+const ASSISTANT_HREF = "/assistant";
+
 const navItems = [
   { href: "/dashboard", icon: LayoutDashboard },
   { href: "/reputation", icon: Sparkles },
   { href: "/ai", icon: ScanEye, activePrefixes: ["/visibility"] },
+  // Directly under the AI row: the assistant answers questions ABOUT the
+  // data the AI hub renders, so it belongs next to it rather than in the
+  // administration block at the bottom. Filtered out entirely below when
+  // the tenant does not qualify — no locked row, no upsell.
+  { href: "/assistant", icon: Sparkle },
   { href: "/visibility/tools", icon: Wrench },
   { href: "/visibility/tools/ai-content-helper", icon: PenTool },
   { href: "/team", icon: UserPlus },
@@ -100,17 +109,30 @@ interface SidebarProps {
   plan?: PlanType | null;
   /** Tenant has an ACTIVE billing status (computed server-side in the layout). */
   paid?: boolean;
+  /** Paid AND both assistant switches on (computed server-side in the layout). */
+  assistantVisible?: boolean;
 }
 
-export function Sidebar({ open, onClose, locale = "en", plan, paid = false }: SidebarProps) {
+export function Sidebar({
+  open,
+  onClose,
+  locale = "en",
+  plan,
+  paid = false,
+  assistantVisible = false,
+}: SidebarProps) {
   const labels = dashNav[locale];
   const pathname = usePathname();
   // No plan-based route filtering: every tier reaches every dashboard path.
   // The SEO Tools hub still requires a paid (ACTIVE) subscription — visibility
   // only; the tools layout enforces the same predicate server-side.
-  const items = navItems.filter(
-    (item) => !item.href.startsWith(SEO_TOOLS_HUB) || paid,
-  );
+  const items = navItems.filter((item) => {
+    if (item.href.startsWith(SEO_TOOLS_HUB)) return paid;
+    // The assistant row is gated on its own flag, not on `paid`: the two
+    // kill-switch envs can hide it while the tenant is still fully paid.
+    if (item.href === ASSISTANT_HREF) return assistantVisible;
+    return true;
+  });
   // Computed once for the whole list, not once per row: the winner is a
   // property of the route, not of the row being drawn.
   const activeHref = activeNavHref(items, pathname);

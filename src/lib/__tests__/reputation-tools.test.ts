@@ -227,6 +227,14 @@ test("the sidebar order is the agreed one", () => {
     // The row still lights up for /visibility/* — see activePrefixes in
     // sidebar.tsx and the render assertions in tests/nav-links.test.ts.
     "/ai",
+    // The Pro AI Assistant, directly under the AI row: it answers questions
+    // ABOUT the data that hub renders, so it belongs beside it rather than in
+    // the administration block. It does NOT reopen the "one row per feature"
+    // pattern this suite guards against — it is a single link to one surface,
+    // and unlike the eleven consolidated rows it is gated: the row only
+    // renders when the layout passes assistantVisible (paid plan plus both
+    // kill switches). See tests/assistant-pro-ui.test.tsx.
+    "/assistant",
     "/visibility/tools",
     "/visibility/tools/ai-content-helper",
     "/team",

@@ -248,6 +248,8 @@ model Tenant {
   creditLedger          CreditLedger[]
   actionItems           ActionItem[]
 
+  assistantConversations AssistantConversation[]
+
   @@map("tenants")
 }
 
@@ -3900,4 +3902,79 @@ model ActionItem {
   /// Fix-with-AI buttons do before they enqueue.
   @@index([tenantId, sourceRef])
   @@map("action_items")
+}
+
+// ─── Pro AI Assistant (Phase 6) ─────────────────────────────────────────────
+
+/// One saved conversation with the Pro assistant.
+///
+/// TENANT-SCOPED, AND THE TENANT IS THE OUTER KEY EVERYWHERE. Every read goes
+/// through `where: { id, tenantId }` — never `findUnique({ where: { id } })` —
+/// because a conversation id is a cuid a user can paste and this table holds
+/// the tenant's own audit findings, prompts and query data.
+///
+/// `userId` records who started it and is NOT an access boundary: colleagues on
+/// the same tenant share the tenant's intelligence, and scoping reads to one
+/// user would make a conversation vanish when a seat is reassigned. It is
+/// carried so the history list can say who asked.
+///
+/// NO RETENTION SWEEP IN THIS PHASE. Conversations live until a human deletes
+/// one (hard delete, cascading to messages). A retention policy belongs beside
+/// DataRetentionPolicy when one is written, not as a silent TTL nobody asked
+/// for.
+model AssistantConversation {
+  id       String @id @default(cuid())
+  tenantId String
+  /// The user who started it. Not an access check — see the doc comment.
+  userId   String
+
+  /// Derived from the first user message, never model-authored. Renaming is
+  /// not exposed; the title is a locator, not a document.
+  title String @db.Text
+
+  createdAt DateTime @default(now())
+  /// Bumped on every appended message: the history list is "most recent first",
+  /// and that ordering is what the composite index below serves.
+  updatedAt DateTime @updatedAt
+
+  tenant   Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  messages AssistantMessage[]
+
+  /// The history list: this tenant's conversations, most recently used first.
+  @@index([tenantId, updatedAt(sort: Desc)])
+  @@map("assistant_conversations")
+}
+
+/// One turn in a conversation. Full history is persisted here regardless of how
+/// much of it is replayed to the model — the context cap in
+/// src/lib/assistant/pro/agent.ts trims what is SENT, never what is STORED.
+model AssistantMessage {
+  id             String @id @default(cuid())
+  conversationId String
+
+  /// "user" | "assistant". A string rather than an enum because the Messages
+  /// API's own role vocabulary is the source of truth and a new role there
+  /// should not need a migration against a table with rows in it.
+  role    String
+  content String @db.Text
+
+  /// What the assistant looked at for this turn: `[{ tool, cached, ok }]`.
+  /// SUMMARY, NOT PAYLOAD — tool results can carry a tenant's crawler page text
+  /// and GSC queries, and storing them twice would double the surface without
+  /// adding an answer. Null on user turns.
+  toolSummary Json?
+
+  /// Usage as the API reported it. The durable spend record is the
+  /// `ai_api_calls` row; these are here so a conversation can be costed without
+  /// a join, and Postgres is the truth if the two ever disagree.
+  inputTokens  Int @default(0)
+  outputTokens Int @default(0)
+
+  createdAt DateTime @default(now())
+
+  conversation AssistantConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  /// Transcript replay: one conversation, oldest first.
+  @@index([conversationId, createdAt])
+  @@map("assistant_messages")
 }

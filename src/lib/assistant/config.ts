@@ -19,6 +19,10 @@ export const ENV = {
   chatLimit: "AI_ASSISTANT_CHAT_LIMIT_PER_DAY",
   scanLimit: "AI_ASSISTANT_SCAN_LIMIT_PER_DAY",
   maxOutputTokens: "AI_ASSISTANT_MAX_OUTPUT_TOKENS",
+  // ── Pro assistant (Phase 6) ──
+  proMaxToolCalls: "AI_ASSISTANT_PRO_MAX_TOOL_CALLS",
+  proMaxOutputTokens: "AI_ASSISTANT_PRO_MAX_OUTPUT_TOKENS",
+  tenantMonthlyTokens: "AI_ASSISTANT_TENANT_MONTHLY_TOKENS",
 } as const;
 
 /** Haiku class — classification and short explanation. */
@@ -95,3 +99,35 @@ export function assistantLimits(): AssistantLimits {
 
 /** Support address the assistant deflects pricing/billing edge cases to. */
 export const SUPPORT_EMAIL = "support@echorank360.com";
+
+// ─── Pro assistant ──────────────────────────────────────────────────────────
+//
+// The Pro assistant HAS TOOLS, so it has two budgets the public one does not
+// need: a ceiling on how many tools one turn may call, and a bigger output
+// allowance because it answers over real tenant data rather than one page's
+// audit. Both are read at call time for the same reason as everything above.
+
+/** Tool calls one Pro turn may make before it must answer from what it has. */
+const DEFAULT_PRO_MAX_TOOL_CALLS = 6;
+/** Output tokens one Pro turn may produce, per model call. */
+const DEFAULT_PRO_MAX_OUTPUT_TOKENS = 4000;
+
+export interface ProAssistantLimits {
+  /** Hard stop on tool calls per turn. Reaching it is an answer, not an error. */
+  maxToolCalls: number;
+  /** Ceiling on a single model call's output tokens. */
+  maxOutputTokens: number;
+}
+
+export function proAssistantLimits(): ProAssistantLimits {
+  return {
+    maxToolCalls: positiveInt(
+      process.env.AI_ASSISTANT_PRO_MAX_TOOL_CALLS,
+      DEFAULT_PRO_MAX_TOOL_CALLS,
+    ),
+    maxOutputTokens: positiveInt(
+      process.env.AI_ASSISTANT_PRO_MAX_OUTPUT_TOKENS,
+      DEFAULT_PRO_MAX_OUTPUT_TOKENS,
+    ),
+  };
+}

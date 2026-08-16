@@ -33,6 +33,7 @@ export const dashNav: Record<DashLocale, Record<string, string>> = {
     "/intelligence": "Intelligence",
     "/monitoring": "Monitoring",
     "/ai": "AI",
+    "/assistant": "AI Assistant",
     "/visibility": "AI Visibility",
     "/imports": "Data Sources",
     "/extension": "Extension",
@@ -88,6 +89,7 @@ export const dashNav: Record<DashLocale, Record<string, string>> = {
     "/intelligence": "Intelligence",
     "/monitoring": "Überwachung",
     "/ai": "KI",
+    "/assistant": "KI-Assistent",
     "/visibility": "KI-Sichtbarkeit",
     "/imports": "Datenquellen",
     "/extension": "Erweiterung",
@@ -142,6 +144,7 @@ export const dashNav: Record<DashLocale, Record<string, string>> = {
     "/intelligence": "Intelligence",
     "/monitoring": "Surveillance",
     "/ai": "IA",
+    "/assistant": "Assistant IA",
     "/visibility": "Visibilité IA",
     "/imports": "Sources de données",
     "/extension": "Extension",
@@ -15196,5 +15199,178 @@ export const ACTION_AGENT_COPY: Record<DashLocale, ActionAgentCopy> = {
     lockedBody:
       "Der Aktionsagent entwirft strukturierte Daten, FAQ-Inhalte und Bewertungsantworten aus Ihren eigenen Seiten und Bewertungen und wartet dann auf Ihre Freigabe. Er teilt sich das monatliche Erstellungsbudget mit Marketing Studio.",
     lockedCta: "Abos ansehen",
+  },
+};
+
+// ─── Pro AI Assistant (widget + /assistant page) ────────────────────────────
+//
+// THE HEADING IS "Echorank Intelligence" IN EVERY LOCALE. It is a product name,
+// not a sentence, so it is not translated — and it is never written
+// "EchoRank": tests/assistant-pro-ui.test.tsx greps every file in this feature
+// for that spelling.
+//
+// EVERY VISIBLE STRING IS HERE. Nothing in the widget or the page is written in
+// English inline; the fr render test asserts that by rendering the panel in
+// French and looking for English body text.
+const assistantEn = {
+  heading: "Echorank Intelligence",
+  subtitle: "Ask about your own data. It reads your audits, prompts and rankings before it answers.",
+  metaTitle: "AI Assistant",
+  metaDescription:
+    "Ask Echorank Intelligence about your visibility, your competitors and what changed this week.",
+
+  // Widget chrome
+  launcherLabel: "Open Echorank Intelligence",
+  closeLabel: "Close the assistant",
+  openFullView: "Open full view",
+
+  // Composer
+  placeholder: "Ask about your visibility, rankings or competitors…",
+  send: "Send",
+  sending: "Thinking…",
+  refresh: "Refresh analysis",
+  refreshHint: "Re-reads your site instead of using the cached copy.",
+
+  // Transcript
+  you: "You",
+  assistant: "Echorank Intelligence",
+  checked: "Checked",
+  cachedSuffix: "cached",
+  failedSuffix: "no data",
+  budgetNote:
+    "This answer stopped short of checking everything — it reached the per-question limit.",
+
+  // History
+  history: "Conversations",
+  newConversation: "New conversation",
+  historyEmpty: "No conversations yet.",
+  deleteLabel: "Delete this conversation",
+  deleteConfirm: "Delete this conversation? This cannot be undone.",
+
+  // Empty state
+  emptyTitle: "Ask a question about your account",
+  suggestions: [
+    "What changed in my AI visibility this week?",
+    "Which tracked questions am I losing?",
+    "Audit my site and tell me what to fix first.",
+    "How are my competitors moving?",
+  ],
+
+  // Usage
+  usageTemplate: "{used} of {limit} assistant tokens used this month",
+  usageUnmetered: "{used} assistant tokens used this month",
+
+  // Errors
+  errGeneric: "Something went wrong. Try again.",
+  errNetwork: "We could not reach the assistant. Check your connection and try again.",
+  errRateLimited: "That is a lot of questions at once. Give it a moment and try again.",
+  errBudget: "This month's assistant allowance is used up. It resets on the 1st, UTC.",
+  errDisabled: "The assistant is offline for maintenance. Try again shortly.",
+};
+export type AssistantCopy = typeof assistantEn;
+
+export const ASSISTANT_COPY: Record<DashLocale, AssistantCopy> = {
+  en: assistantEn,
+  fr: {
+    heading: "Echorank Intelligence",
+    subtitle:
+      "Posez vos questions sur vos propres données. L'assistant consulte vos audits, vos requêtes suivies et vos positions avant de répondre.",
+    metaTitle: "Assistant IA",
+    metaDescription:
+      "Interrogez Echorank Intelligence sur votre visibilité, vos concurrents et ce qui a changé cette semaine.",
+
+    launcherLabel: "Ouvrir Echorank Intelligence",
+    closeLabel: "Fermer l'assistant",
+    openFullView: "Ouvrir en pleine page",
+
+    placeholder: "Posez une question sur votre visibilité, vos positions ou vos concurrents…",
+    send: "Envoyer",
+    sending: "Analyse en cours…",
+    refresh: "Actualiser l'analyse",
+    refreshHint: "Relit votre site au lieu d'utiliser la copie en cache.",
+
+    you: "Vous",
+    assistant: "Echorank Intelligence",
+    checked: "Consulté",
+    cachedSuffix: "en cache",
+    failedSuffix: "aucune donnée",
+    budgetNote:
+      "Cette réponse n'a pas pu tout vérifier : la limite par question a été atteinte.",
+
+    history: "Conversations",
+    newConversation: "Nouvelle conversation",
+    historyEmpty: "Aucune conversation pour l'instant.",
+    deleteLabel: "Supprimer cette conversation",
+    deleteConfirm: "Supprimer cette conversation ? Cette action est irréversible.",
+
+    emptyTitle: "Posez une question sur votre compte",
+    suggestions: [
+      "Qu'est-ce qui a changé dans ma visibilité IA cette semaine ?",
+      "Sur quelles questions suivies suis-je en train de perdre du terrain ?",
+      "Auditez mon site et dites-moi quoi corriger en premier.",
+      "Comment évoluent mes concurrents ?",
+    ],
+
+    usageTemplate: "{used} jetons d'assistant utilisés sur {limit} ce mois-ci",
+    usageUnmetered: "{used} jetons d'assistant utilisés ce mois-ci",
+
+    errGeneric: "Une erreur est survenue. Réessayez.",
+    errNetwork: "Impossible de joindre l'assistant. Vérifiez votre connexion et réessayez.",
+    errRateLimited: "Cela fait beaucoup de questions d'un coup. Patientez un instant et réessayez.",
+    errBudget:
+      "L'allocation d'assistant de ce mois est épuisée. Elle est réinitialisée le 1er, en UTC.",
+    errDisabled: "L'assistant est hors ligne pour maintenance. Réessayez sous peu.",
+  },
+  "de-CH": {
+    heading: "Echorank Intelligence",
+    subtitle:
+      "Stellen Sie Fragen zu Ihren eigenen Daten. Der Assistent liest Ihre Audits, verfolgten Fragen und Positionen, bevor er antwortet.",
+    metaTitle: "KI-Assistent",
+    metaDescription:
+      "Fragen Sie Echorank Intelligence nach Ihrer Sichtbarkeit, Ihren Mitbewerbern und den Veränderungen dieser Woche.",
+
+    launcherLabel: "Echorank Intelligence öffnen",
+    closeLabel: "Assistenten schliessen",
+    openFullView: "Vollansicht öffnen",
+
+    placeholder: "Fragen Sie nach Ihrer Sichtbarkeit, Ihren Positionen oder Mitbewerbern…",
+    send: "Senden",
+    sending: "Wird analysiert…",
+    refresh: "Analyse aktualisieren",
+    refreshHint: "Liest Ihre Website neu, statt die zwischengespeicherte Fassung zu verwenden.",
+
+    you: "Sie",
+    assistant: "Echorank Intelligence",
+    checked: "Geprüft",
+    cachedSuffix: "zwischengespeichert",
+    failedSuffix: "keine Daten",
+    budgetNote:
+      "Diese Antwort konnte nicht alles prüfen — das Limit pro Frage wurde erreicht.",
+
+    history: "Unterhaltungen",
+    newConversation: "Neue Unterhaltung",
+    historyEmpty: "Noch keine Unterhaltungen.",
+    deleteLabel: "Diese Unterhaltung löschen",
+    deleteConfirm: "Diese Unterhaltung löschen? Das lässt sich nicht rückgängig machen.",
+
+    emptyTitle: "Stellen Sie eine Frage zu Ihrem Konto",
+    suggestions: [
+      "Was hat sich diese Woche an meiner KI-Sichtbarkeit geändert?",
+      "Bei welchen verfolgten Fragen verliere ich an Boden?",
+      "Auditieren Sie meine Website und sagen Sie mir, was zuerst zu beheben ist.",
+      "Wie entwickeln sich meine Mitbewerber?",
+    ],
+
+    usageTemplate: "{used} von {limit} Assistenz-Tokens diesen Monat verbraucht",
+    usageUnmetered: "{used} Assistenz-Tokens diesen Monat verbraucht",
+
+    errGeneric: "Etwas ist schiefgelaufen. Versuchen Sie es erneut.",
+    errNetwork:
+      "Der Assistent war nicht erreichbar. Prüfen Sie Ihre Verbindung und versuchen Sie es erneut.",
+    errRateLimited:
+      "Das sind viele Fragen auf einmal. Warten Sie einen Moment und versuchen Sie es erneut.",
+    errBudget:
+      "Das Assistenz-Guthaben dieses Monats ist aufgebraucht. Es wird am 1. zurückgesetzt (UTC).",
+    errDisabled: "Der Assistent ist wegen Wartung offline. Versuchen Sie es in Kürze erneut.",
   },
 };

@@ -14,6 +14,13 @@ interface DashboardShellProps {
   plan?: PlanType | null;
   /** Tenant billing status is ACTIVE (computed in the (dashboard) layout). */
   paid?: boolean;
+  /**
+   * Paid AND both assistant switches on — computed server-side in the
+   * (dashboard) layout. Drives the sidebar row only; the widget itself is
+   * mounted by the layout, and every /api/assistant/pro/* route re-checks the
+   * plan on its own.
+   */
+  assistantVisible?: boolean;
   /** Unread notifications for this user (computed in the (dashboard) layout). */
   unreadCount?: number;
   user?: {
@@ -29,6 +36,7 @@ export function DashboardShell({
   locale = "en",
   plan,
   paid,
+  assistantVisible,
   unreadCount,
 }: DashboardShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -58,7 +66,7 @@ export function DashboardShell({
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Sidebar open={sidebarOpen} onClose={handleSidebarClose} locale={locale} plan={plan} paid={paid} />
+      <Sidebar open={sidebarOpen} onClose={handleSidebarClose} locale={locale} plan={plan} paid={paid} assistantVisible={assistantVisible} />
 
       {/* Main content area offset by sidebar width on desktop */}
       <div className="lg:pl-64">

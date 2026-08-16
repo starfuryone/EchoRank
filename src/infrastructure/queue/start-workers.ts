@@ -41,6 +41,7 @@ import { startCitationAggregationWorker } from "./workers/citation-aggregation.w
 import { startCitationOpportunitiesWorker } from "./workers/citation-opportunities.worker";
 import { startOpportunityScanWorker } from "./workers/opportunity-scan.worker";
 import { startActionAgentWorker } from "./workers/action-agent.worker";
+import { startAssistantPrecomputeWorker } from "./workers/assistant-precompute.worker";
 
 /**
  * How often to drain domain events that are still PENDING/FAILED in the DB.
@@ -122,6 +123,9 @@ async function startWorkers() {
     // The only worker here with no schedule of its own: every job is a human
     // pressing Fix with AI. Nothing periodic, nothing generated unasked.
     { name: "action-agent", start: startActionAgentWorker },
+    // Nightly at 07:15 UTC, behind every ingestion it summarises — the
+    // checkups, the visibility audit sweep, and the 06:30 competitor sweep.
+    { name: "assistant-precompute", start: startAssistantPrecomputeWorker },
   ];
 
   const loaded: string[] = [];

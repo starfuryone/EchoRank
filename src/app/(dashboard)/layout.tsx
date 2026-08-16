@@ -1,11 +1,13 @@
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
-import { dashboardLocale } from "@/lib/i18n/dashboard";
+import { ASSISTANT_COPY, dashboardLocale } from "@/lib/i18n/dashboard";
 import { auth } from "@/lib/auth";
 import { getCurrentTenant } from "@/lib/tenant";
 import { hasPaidPlan } from "@/lib/paid-plan";
+import { assistantEnabled, assistantLinkVisible } from "@/lib/assistant/config";
 import { unreadNotificationCount } from "@/lib/notifications/store";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
+import { AssistantWidgetLoader } from "@/components/assistant/AssistantWidgetLoader";
 import { OnboardingGate } from "@/components/onboarding/welcome-setup-modal";
 
 export default async function DashboardLayout({
@@ -38,11 +40,24 @@ export default async function DashboardLayout({
     ? await unreadNotificationCount(membership.tenantId, membership.userId)
     : 0;
 
+  // The Pro assistant's visibility, decided HERE and passed down as a boolean.
+  // Server-derived on purpose: a client-side plan check is a suggestion, and
+  // this one decides whether a paid surface appears at all. Non-qualifying
+  // tenants get no widget, no sidebar row and no upsell teaser — this phase
+  // ships no upsell surface.
+  //
+  // BOTH SWITCHES. `assistantEnabled()` is the runtime kill switch the API
+  // routes enforce; `assistantLinkVisible()` is its build-time NEXT_PUBLIC twin,
+  // the same pair the public assistant's nav link uses. Either one off hides
+  // the feature, and the routes refuse regardless of what the UI did.
+  const assistantVisible = paid && assistantEnabled() && assistantLinkVisible();
+
   return (
     <DashboardShell
       locale={locale}
       plan={plan}
       paid={paid}
+      assistantVisible={assistantVisible}
       unreadCount={unreadCount}
       user={{
         name: session.user.name,
@@ -52,6 +67,11 @@ export default async function DashboardLayout({
     >
       <OnboardingGate locale={locale} />
       {children}
+      {/* Mounted once for the whole (dashboard) group, so a navigation does not
+          reset an open conversation. Lazily loaded — see the loader. */}
+      {assistantVisible && (
+        <AssistantWidgetLoader c={ASSISTANT_COPY[locale]} fullHref="/assistant" />
+      )}
     </DashboardShell>
   );
 }

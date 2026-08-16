@@ -232,7 +232,27 @@ export type AllJobTypes =
   | FreeToolsVolatilityJob
   | SovAggregationJob
   | RevenueRollupJob
-  | CitationAggregationJob;
+  | CitationAggregationJob
+  | AssistantPrecomputeJob;
+
+/**
+ * Pro AI Assistant: the nightly weekly-summary precompute.
+ *
+ * Same sweep/one-tenant split SovAggregationJob and CitationAggregationJob use
+ * — a repeatable tick finds the tenants with data worth summarising and
+ * enqueues one job each, so a tenant with 40,000 prompt runs cannot hold up
+ * everybody else's night.
+ *
+ * Carries NO date. The summary's scope is "the last two weeks as of now", which
+ * is a window relative to the run, not a day to select — running it late gives
+ * the same answer shifted, not a wrong one.
+ */
+export interface AssistantPrecomputeJob {
+  /** The repeatable nightly tick. */
+  sweep?: boolean;
+  /** A single tenant's summary. */
+  tenantId?: string;
+}
 
 /** Free tools: the hourly SERP-volatility basket tick. */
 export interface FreeToolsVolatilityJob {
@@ -410,4 +430,5 @@ export interface QueueJobMap {
   "citation-opportunities": CitationOpportunityJob;
   "opportunity-scan": OpportunityScanJob;
   "action-agent": ActionAgentJob;
+  "assistant-precompute": AssistantPrecomputeJob;
 }
