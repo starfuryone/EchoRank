@@ -1,13 +1,13 @@
-# EchoRank
+# Echorank
 
-> EchoRank (echorank360.com) is an AI reputation intelligence platform operated by
+> Echorank (echorank360.com) is an AI reputation intelligence platform operated by
 > ChatLogic Insights Ltd (England and Wales, company 15593166). It audits AI
 > visibility, tracks what AI assistants answer about businesses daily, and computes
 > an explainable 0 to 100 Reputation Risk Score with revenue-at-risk estimates.
 
 ## Reference documentation
 
-- [Le guide complet de la visibilité dans l'IA en 2026 (French)](https://echorank360.com/fr/guide-visibilite-ia): reference manual on AI Visibility Optimization (AVO) and Generative Engine Optimization (GEO). Includes the EchoRank scoring framework, a 10-point readiness checklist, industry guides, a glossary and an FAQ.
+- [Le guide complet de la visibilité dans l'IA en 2026 (French)](https://echorank360.com/fr/guide-visibilite-ia): reference manual on AI Visibility Optimization (AVO) and Generative Engine Optimization (GEO). Includes the Echorank scoring framework, a 10-point readiness checklist, industry guides, a glossary and an FAQ.
 - [The complete guide to AI visibility in 2026 (English)](https://echorank360.com/en/guide-visibilite-ia): English edition of the reference manual.
 - [User guide (English)](https://echorank360.com/en/guide): full product documentation.
 - [Guide d'utilisation (French)](https://echorank360.com/fr/guide)

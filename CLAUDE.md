@@ -48,9 +48,19 @@ build. Hand the human the one-liner instead.
 
 ## Copy
 
-- Brand is **Echorank360** / **Echorank** in user-facing copy. Never `EchoRank` or other
-  camel-case. Tests enforce this. Do **not** rename identifiers, paths, env vars, pm2 app
-  names or git refs to match — the rule is about copy only.
+- Brand is **Echorank360** / **Echorank** in user-facing copy — lowercase `r`, lowercase
+  `k`. `ECHORANK` is the letterspaced wordmark and is fine; `EchoRank`, `echoRank`,
+  `Echo Rank` and every other camel-case or split variant are a **lint-level error**, not
+  a style preference. The rule holds in *every* surface a human or a crawler reads:
+  UI copy, page metadata and JSON-LD, `alt`/`aria-label` text, `public/llms.txt`,
+  landing-page HTML payloads, READMEs, and file names quoted inside copy.
+  `tests/brand-casing.test.ts` guards the surfaces no catalog test can see; the
+  per-catalog suites (`seo-tools`, `ai-tools`, `devtools`, `gsc`, `competitors-i18n`)
+  guard the rest.
+- Do **not** rename identifiers, paths, env vars, pm2 app names or git refs to match —
+  the rule is about copy only. Two literals are also deliberately left camel-case: the
+  assertions in those guard tests, and comments that quote a camel-case string in order
+  to ban it or to record what a model actually emitted. Fixing those breaks the guard.
 - Every user-facing string goes through the i18n catalogs. **Three locale models exist —
   do not assume one:**
   - Dashboard (`src/lib/i18n/dashboard.ts`): `DashLocale = "en" | "fr" | "de-CH"`.
@@ -106,7 +116,9 @@ Purge Everything is mandatory after every edit**, not just after a deploy.
 
 A payload carries no i18n, no shared nav and no shared pricing config, so:
 
-- Branding is **Echorank**, never `EchoRank` — the copy rule applies inside the payload.
+- Branding is **Echorank**, never camel-case — the [Copy](#copy) rule applies in full
+  inside the payload, including its JSON-LD and `alt` text. `tests/brand-casing.test.ts`
+  scans every `landing-html.ts` and picks up a new page automatically.
 - The in-page nav is a **static clone of `PublicNav`** and does not track it. Assume it is
   stale whenever the mega-nav moves.
 - Footer legal links must be `/en/legal/{privacy,terms,cookies}`. `/en/privacy` and friends

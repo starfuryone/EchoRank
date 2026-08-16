@@ -1,10 +1,10 @@
-# EchoRank — Reputation Management & Customer Feedback Automation
+# Echorank — Reputation Management & Customer Feedback Automation
 
 Turn real customer feedback into more honest reviews, fewer public complaints, and better reputation intelligence.
 
 ## Overview
 
-EchoRank is a multi-tenant B2B SaaS platform that helps businesses:
+Echorank is a multi-tenant B2B SaaS platform that helps businesses:
 
 - **Collect feedback** — Send feedback requests by email or SMS after service
 - **Route responses** — Satisfied customers (4-5 stars) get honest review requests; unhappy customers (1-3 stars) trigger recovery tickets
@@ -14,7 +14,7 @@ EchoRank is a multi-tenant B2B SaaS platform that helps businesses:
 
 ### Compliance
 
-EchoRank does not create fake reviews, pressure customers, offer incentives for positive reviews, or block unhappy customers from reviewing. All feedback is authentic.
+Echorank does not create fake reviews, pressure customers, offer incentives for positive reviews, or block unhappy customers from reviewing. All feedback is authentic.
 
 ## Tech Stack
 
