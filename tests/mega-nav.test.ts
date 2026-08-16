@@ -43,6 +43,16 @@ describe("every menu destination exists", () => {
     expect(nav("en")).toContain('href="/en/use-cases"');
   });
 
+  it("carries the Link Building Playbook in the Resources > Learn column, both locales", () => {
+    // The page is a route handler, not a page.tsx, so nothing else in the
+    // suite would notice if the nav entry were dropped or left en-only.
+    expect(navHrefs()).toContain("/link-building-playbook");
+    expect(nav("en")).toContain('href="/en/link-building-playbook"');
+    expect(nav("en")).toContain("Link Building Playbook");
+    expect(nav("fr")).toContain('href="/fr/link-building-playbook"');
+    expect(nav("fr")).toContain("Playbook netlinking");
+  });
+
   it("carries every taxonomy item in the Solutions panel", () => {
     // Derived from the config, not a literal: the count lives in exactly one
     // assertion (solutions-taxonomy.test.ts, "config integrity"), so a new
