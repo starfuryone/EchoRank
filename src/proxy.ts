@@ -100,7 +100,23 @@ const publicPaths = ["/login", "/register", "/api/auth", "/api/feedback", "/f/",
 //
 // Both are exact-match, so nothing added later under /api/public/funnel/ or
 // /embed/ inherits anonymous access. Opening a new one must be a deliberate edit.
+//
+// /api/assistant/chat backs the public AI Assistant at /{locale}/ai-assistant:
+// anonymous by design, Redis-rate-limited per IP in the route itself (chat and
+// site-scan metered separately, cf-connecting-ip required, no 'unknown' bucket).
+// It holds no session and writes no database row.
+//
+// CSRF IS DELIBERATELY LEFT ON. The origin check above runs before this list, so
+// a POST from another site is still refused — the same posture /api/av/audit has,
+// and the deliberate opposite of /api/public/v1/*. Every legitimate caller is a
+// browser on our own pages, so requiring a same-origin Origin or Referer costs
+// nothing real and stops a third-party page spending our model budget through a
+// visitor's connection.
+//
+// Exact-match, so nothing added later under /api/assistant/ — a conversation
+// history endpoint, an admin view — inherits anonymous access by prefix.
 const publicExactPaths = new Set([
+  "/api/assistant/chat",
   "/api/av/audit",
   "/api/av/audit/report",
   "/api/av/keywords",

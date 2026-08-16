@@ -25,6 +25,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { SOLUTION_CATEGORIES, solutionBase } from "@/lib/solutions-taxonomy";
+import { assistantLinkVisible } from "@/lib/assistant/config";
 import s from "./home2.module.css";
 
 type Base = "en" | "fr";
@@ -32,7 +33,13 @@ const baseOf = (locale: string): Base => (locale.startsWith("fr") ? "fr" : "en")
 
 export type NavGroupId = "product" | "solutions" | "resources";
 /** Flat items can also be "current"; kept loose so pages can name either. */
-export type NavCurrent = NavGroupId | "pricing" | "learn" | "resources-page" | "use-cases";
+export type NavCurrent =
+  | NavGroupId
+  | "pricing"
+  | "learn"
+  | "resources-page"
+  | "use-cases"
+  | "ai-assistant";
 
 interface NavItem {
   /** Locale-less path, or a "#fragment" resolved against the locale root. */
@@ -52,6 +59,8 @@ interface NavGroup {
 
 interface NavCopy {
   pricing: string;
+  /** Flat top-level link, like Pricing — one destination, so not a panel. */
+  assistant: string;
   useCases: string;
   login: string;
   join: string;
@@ -119,6 +128,7 @@ function solutionsGroup(base: Base): NavGroup {
 const NAV: Record<Base, NavCopy> = {
   en: {
     pricing: "Pricing",
+    assistant: "AI Assistant",
     useCases: "Use cases",
     login: "Login",
     join: "Join Now",
@@ -199,6 +209,7 @@ const NAV: Record<Base, NavCopy> = {
 
   fr: {
     pricing: "Tarifs",
+    assistant: "Assistant IA",
     useCases: "Cas d'usage",
     login: "Connexion",
     join: "S'inscrire",
@@ -360,6 +371,17 @@ export function PublicNav({
   const t = navFor(b);
   const L = (p: string) => (p.startsWith("#") ? `/${locale}${p}` : `/${locale}${p}`);
 
+  /**
+   * The AI Assistant link, hidden when the deployment has the feature off.
+   *
+   * BUILD-TIME AND COSMETIC. This reads NEXT_PUBLIC_AI_ASSISTANT_ENABLED, which
+   * Next inlines at build time, so flipping it needs a rebuild. It is NOT the
+   * kill switch — AI_ASSISTANT_ENABLED is, it is read per request in the route,
+   * and it takes effect on a restart. This only stops the nav advertising a
+   * surface the server is refusing.
+   */
+  const showAssistant = assistantLinkVisible();
+
   /** Exactly one panel at a time — this is a single value, not a set. */
   // Learn and Resources are pages INSIDE the Resources group now, so a page
   // that names itself "learn" highlights that trigger rather than a flat link
@@ -520,7 +542,16 @@ export function PublicNav({
             </div>
           ))}
 
-          {/* Flat link: a panel with one destination is a worse button. */}
+          {/* Flat links: a panel with one destination is a worse button. */}
+          {showAssistant && (
+            <Link
+              href={L("/ai-assistant")}
+              className={current === "ai-assistant" ? s.toggleOn : undefined}
+              aria-current={current === "ai-assistant" ? "page" : undefined}
+            >
+              {t.assistant}
+            </Link>
+          )}
           <Link
             href={L("/pricing")}
             className={current === "pricing" ? s.toggleOn : undefined}
@@ -594,6 +625,15 @@ export function PublicNav({
                   ))}
               </div>
             ))}
+            {showAssistant && (
+              <Link
+                href={L("/ai-assistant")}
+                className={s.sheetSection}
+                onClick={() => setMobileOpen(false)}
+              >
+                {t.assistant}
+              </Link>
+            )}
             <Link href={L("/pricing")} className={s.sheetSection} onClick={() => setMobileOpen(false)}>
               {t.pricing}
             </Link>

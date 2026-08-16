@@ -49,6 +49,10 @@ export const LOCALIZED_ROUTES: LocalizedRoute[] = [
   { path: "/link-building-playbook", priority: 0.6, changeFrequency: "monthly" },
   { path: "/ai-discovery-optimization", priority: 0.6, changeFrequency: "monthly" },
   { path: "/ai-visibility", priority: 0.8, changeFrequency: "weekly" },
+  // The public AI Assistant. An acquisition surface rather than an article: a
+  // visitor arrives with a question, gets a real answer and a scan of their own
+  // site, so it ranks with /free-audit rather than with the content pages.
+  { path: "/ai-assistant", priority: 0.9, changeFrequency: "weekly" },
   { path: "/demo", priority: 0.6, changeFrequency: "monthly" },
   { path: "/guide", priority: 0.7, changeFrequency: "monthly" },
   { path: "/resources", priority: 0.6, changeFrequency: "monthly" },
