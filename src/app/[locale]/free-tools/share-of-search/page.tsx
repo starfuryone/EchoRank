@@ -43,7 +43,16 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
   if (!isSupportedLocale(locale)) notFound();
 
   return (
-    <FreeToolShell locale={locale} tool={TOOL} copy={COPY}>
+    <FreeToolShell
+      locale={locale}
+      tool={TOOL}
+      copy={COPY}
+      // Marketing CTA rule: pricing is the primary destination, never /register.
+      cta={{
+        primary: { href: "/en/pricing", label: "Track share of search over time →" },
+        secondary: { href: `/en${FREE_TOOLS_BASE}`, label: "All free tools" },
+      }}
+    >
       <ShareOfSearchClient />
     </FreeToolShell>
   );

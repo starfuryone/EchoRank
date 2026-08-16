@@ -196,6 +196,53 @@
   color: var(--text, #eceaf2);
 }
 
+/* ── Share of Search ──────────────────────────────────────────────────────
+
+   Brand fills, by RANK not by name — the leader is always gold. Declared
+   after .barFill so they win on source order at equal specificity, which is
+   the same mechanism the severity fills above rely on.
+
+   Five colours because MAX_BRANDS is five. They are hues rather than a scale:
+   these brands are not ordered by anything except size, so a sequential ramp
+   would imply a relationship the data does not have. */
+.brandFill1 { background: linear-gradient(90deg, #FCD535, #F0B90B); }
+.brandFill2 { background: #0ECB81; }
+.brandFill3 { background: #7AA7FF; }
+.brandFill4 { background: #C9A2FF; }
+.brandFill5 { background: #F6465D; }
+
+/* Two lines per brand: name + volume above, meter + share below. A single
+   flex row cannot hold the leader chip — .barLabel is a fixed 108px and the
+   chip overflows it at any brand name longer than about four characters. */
+.sosRows { margin-top: 24px; }
+.sosRow { padding: 12px 0; border-bottom: 1px solid var(--line, #232330); }
+.sosRow:last-of-type { border-bottom: none; }
+.sosHead { display: flex; align-items: center; gap: 9px; margin-bottom: 8px; }
+.sosBrand { font-size: 14px; font-weight: 500; }
+.sosBrandLead { font-weight: 680; }
+/* Absolute volume, right-aligned and muted: it is context for the share, not
+   the number the tool is about. */
+.sosVolume {
+  margin-left: auto;
+  font-family: var(--mono, ui-monospace, monospace);
+  font-size: 12px;
+  color: var(--muted, #8f8fa3);
+  white-space: nowrap;
+}
+.sosMeter { display: flex; align-items: center; gap: 11px; }
+.sosShare {
+  width: 56px; flex: none; text-align: right;
+  font-family: var(--mono, ui-monospace, monospace); font-size: 13px;
+  color: var(--text, #eceaf2);
+}
+.chipLeader {
+  color: var(--goldDeep, #F0B90B);
+  border-color: rgba(240, 185, 11, 0.45);
+  background: rgba(240, 185, 11, 0.1);
+  font-size: 11px;
+  padding: 2px 9px;
+}
+
 /* ── SERP volatility ──────────────────────────────────────────────────── */
 
 /* Two columns from 980px: today's score + breakdown left, history right.

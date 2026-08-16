@@ -18,6 +18,34 @@ interface Row {
   monthly: { year: number; month: number; volume: number }[] | null;
 }
 
+/**
+ * Fill class by rank, leader first.
+ *
+ * Five entries because MAX_BRANDS is five; the array is indexed by position
+ * after sorting, so the biggest brand is always gold. Colours live in the CSS
+ * module rather than here so the marketing theme keeps one palette.
+ */
+const BRAND_FILL = [
+  f.brandFill1,
+  f.brandFill2,
+  f.brandFill3,
+  f.brandFill4,
+  f.brandFill5,
+];
+
+/**
+ * Biggest share first.
+ *
+ * The API answers in the order the visitor typed the brands, which is the right
+ * contract for it to have — but "who leads" is the question this tool exists to
+ * answer, and it should not depend on which box someone filled in first. Sorted
+ * here rather than server-side so the route's response stays a faithful echo of
+ * the request. A copy, not a sort in place: `rows` is state.
+ */
+function ranked(rows: Row[]): Row[] {
+  return [...rows].sort((a, b) => b.share - a.share);
+}
+
 export function ShareOfSearchClient() {
   const [brands, setBrands] = useState<string[]>(["", ""]);
   const [locationCode, setLocationCode] = useState(2840);
@@ -26,6 +54,7 @@ export function ShareOfSearchClient() {
   const [error, setError] = useState<string | null>(null);
 
   const filled = brands.map((b) => b.trim()).filter(Boolean);
+  const ordered = rows ? ranked(rows) : null;
 
   async function run(e: React.FormEvent) {
     e.preventDefault();
@@ -105,19 +134,33 @@ export function ShareOfSearchClient() {
 
       {error && <p className={f.error}>{error}</p>}
 
-      {rows && rows.length > 0 && (
-        <div className={f.bars} style={{ marginTop: 24 }}>
-          {rows.map((row) => (
-            <div className={f.bar} key={row.brand}>
-              <span className={f.barLabel}>{row.brand}</span>
-              <span className={f.barTrack}>
-                <span className={f.barFill} style={{ width: `${Math.max(2, row.share)}%` }} />
-              </span>
-              <span className={f.barValue}>{row.share}%</span>
+      {ordered && ordered.length > 0 && (
+        <div className={f.sosRows}>
+          {ordered.map((row, i) => (
+            <div className={f.sosRow} key={row.brand}>
+              <div className={f.sosHead}>
+                <span className={`${f.sosBrand} ${i === 0 ? f.sosBrandLead : ""}`}>{row.brand}</span>
+                {i === 0 && row.share > 0 && (
+                  <span className={`${f.chip} ${f.chipLeader}`}>Leads the category</span>
+                )}
+                <span className={f.sosVolume}>{row.volume.toLocaleString()}/mo</span>
+              </div>
+              <div className={f.sosMeter}>
+                <span className={f.barTrack}>
+                  <span
+                    className={`${f.barFill} ${BRAND_FILL[i] ?? ""}`}
+                    /* Floored at 2% for the same reason the volatility bars
+                       are: a real brand with a 0.4% share should read as a
+                       sliver, not as nothing at all. */
+                    style={{ width: `${Math.max(2, row.share)}%` }}
+                  />
+                </span>
+                <span className={f.sosShare}>{row.share}%</span>
+              </div>
             </div>
           ))}
           <p className={f.note}>
-            Monthly search volume: {rows.map((r) => `${r.brand} ${r.volume.toLocaleString()}`).join(" · ")}
+            Monthly search volume: {ordered.map((r) => `${r.brand} ${r.volume.toLocaleString()}`).join(" · ")}
           </p>
         </div>
       )}
