@@ -53,6 +53,16 @@ describe("every menu destination exists", () => {
     expect(nav("fr")).toContain("Playbook netlinking");
   });
 
+  it("carries the AIDO guide in the Resources > Learn column, both locales", () => {
+    // Same reasoning as the playbook above: a route handler, so nothing else
+    // in the suite would notice the entry going missing or staying en-only.
+    expect(navHrefs()).toContain("/ai-discovery-optimization");
+    expect(nav("en")).toContain('href="/en/ai-discovery-optimization"');
+    expect(nav("en")).toContain("AI Discovery Optimization");
+    expect(nav("fr")).toContain('href="/fr/ai-discovery-optimization"');
+    expect(nav("fr")).toContain("Optimisation de la découverte IA");
+  });
+
   it("carries every taxonomy item in the Solutions panel", () => {
     // Derived from the config, not a literal: the count lives in exactly one
     // assertion (solutions-taxonomy.test.ts, "config integrity"), so a new
