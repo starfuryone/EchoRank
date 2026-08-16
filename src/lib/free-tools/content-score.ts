@@ -15,9 +15,149 @@ export type CheckStatus = "pass" | "warn" | "fail";
 export interface ContentCheck {
   id: string;
   status: CheckStatus;
-  /** The measured value, for the UI to render next to the label. */
+  /**
+   * What the row shows on the right.
+   *
+   * A STATUS OR A METRIC, never the visitor's own prose. "Keyword in title"
+   * used to echo the title back ("Italian food"), which reads as an answer to
+   * a question nobody asked — the row is asking whether the keyword is in
+   * there, so the value is "Yes" or "No".
+   */
   value: string;
 }
+
+/**
+ * Every threshold, named once.
+ *
+ * The target strings in CHECK_META are BUILT FROM THESE, so the band the
+ * scorer applies and the sentence describing it to the visitor cannot drift
+ * apart. Changing a number here changes the grading and the copy together.
+ */
+export const THRESHOLDS = {
+  wordCount: { pass: 600, warn: 300 },
+  /** 0.5–2.5% is the band editors aim for; past `stuffed` it is keyword spam. */
+  density: { min: 0.5, max: 2.5, stuffed: 4 },
+  headings: { pass: 3, warn: 1 },
+  readability: { pass: 60, warn: 40 },
+  questions: { pass: 2 },
+  meta: { min: 120, max: 160 },
+} as const;
+
+export interface CheckMeta {
+  /** Row label. Lived in the client as a second map until this pass. */
+  label: string;
+  /** Muted text beside the value. Null when the check is a plain yes/no. */
+  target: string | null;
+  /** Concrete instruction, surfaced on a warn or fail row. */
+  hint: string;
+}
+
+/**
+ * Label, target and fix for every check.
+ *
+ * MINIMAL EXTRACTION, DELIBERATELY. scoreContent() below still applies its
+ * bands imperatively — moving the comparisons themselves into data would mean
+ * inventing a predicate DSL for nine one-line rules, which is more machinery
+ * than the problem has. What is centralised is everything the UI needed and
+ * had nowhere to read from: the copy, the target, and the instruction. The
+ * numbers those strings quote come from THRESHOLDS, which the scorer also
+ * reads, so the two halves stay in step.
+ */
+export const CHECK_META: Record<string, CheckMeta> = {
+  word_count: {
+    label: "Word count",
+    target: `aim ${THRESHOLDS.wordCount.pass}+`,
+    hint: `Expand the draft past ${THRESHOLDS.wordCount.pass} words — cover the follow-up questions a reader would ask next.`,
+  },
+  keyword_in_title: {
+    label: "Keyword in title",
+    target: null,
+    hint: "Put the exact keyword in your title tag, as near the front as reads naturally.",
+  },
+  keyword_in_h1: {
+    label: "Keyword in first heading",
+    target: null,
+    hint: "Add the keyword to your first heading.",
+  },
+  keyword_first_100: {
+    label: "Keyword in first 100 words",
+    target: null,
+    hint: "Work the keyword into the opening paragraph, inside the first 100 words.",
+  },
+  keyword_density: {
+    label: "Keyword density",
+    target: `aim ${THRESHOLDS.density.min}–${THRESHOLDS.density.max}%`,
+    hint: `Aim for ${THRESHOLDS.density.min}–${THRESHOLDS.density.max}%. Below that, repeat the keyword where it reads naturally; above it, cut repetitions rather than adding filler.`,
+  },
+  heading_structure: {
+    label: "Heading structure",
+    target: `aim ${THRESHOLDS.headings.pass}+`,
+    hint: `Break the draft up with at least ${THRESHOLDS.headings.pass} headings — start the line with # to mark one.`,
+  },
+  readability: {
+    label: "Readability (Flesch)",
+    target: `aim ${THRESHOLDS.readability.pass}+`,
+    hint: "Shorten your sentences and prefer plainer words — both raise the Flesch score.",
+  },
+  question_coverage: {
+    label: "Questions answered",
+    target: `aim ${THRESHOLDS.questions.pass}+`,
+    hint: `Answer at least ${THRESHOLDS.questions.pass} real questions outright, each on its own line ending in a question mark.`,
+  },
+  meta_length: {
+    label: "Meta description length",
+    target: `aim ${THRESHOLDS.meta.min}–${THRESHOLDS.meta.max}`,
+    hint: `Write a meta description of ${THRESHOLDS.meta.min}–${THRESHOLDS.meta.max} characters.`,
+  },
+};
+
+/** Worst first: a visitor should read what to fix before what already works. */
+const STATUS_ORDER: Record<CheckStatus, number> = { fail: 0, warn: 1, pass: 2 };
+
+/**
+ * Failed, then partial, then passed — stable within each band.
+ *
+ * A copy: `checks` belongs to the report the caller is holding.
+ */
+export function orderChecks(checks: ContentCheck[]): ContentCheck[] {
+  return [...checks].sort((a, b) => STATUS_ORDER[a.status] - STATUS_ORDER[b.status]);
+}
+
+export type Grade = "poor" | "fair" | "good";
+
+/** 0–39 poor, 40–69 fair, 70–100 good. Same shape as volatility-severity.ts. */
+export function gradeOf(score: number): Grade {
+  if (score >= 70) return "good";
+  if (score >= 40) return "fair";
+  return "poor";
+}
+
+/** Binance tokens the marketing theme defines on .page, with literal fallbacks. */
+export const GRADE_COLOR: Record<Grade, string> = {
+  poor: "var(--red, #F6465D)",
+  fair: "var(--goldDeep, #F0B90B)",
+  good: "var(--green, #0ECB81)",
+};
+
+export const GRADE_LABEL: Record<Grade, string> = {
+  poor: "Needs work",
+  fair: "Getting there",
+  good: "Well optimized",
+};
+
+/** Icon per status. Paired with colour, never colour alone. */
+export const STATUS_ICON: Record<CheckStatus, string> = {
+  pass: "✓",
+  warn: "!",
+  fail: "✕",
+};
+
+/** Spoken status, for the screen reader that cannot see the glyph. */
+export const STATUS_WORD: Record<CheckStatus, string> = {
+  pass: "Passed",
+  warn: "Partial",
+  fail: "Failed",
+};
 
 export interface ContentReport {
   score: number;
@@ -135,16 +275,23 @@ export function scoreContent(input: ContentInput): ContentReport {
   const add = (id: string, status: CheckStatus, value: string) =>
     checks.push({ id, status, value });
 
+  const T = THRESHOLDS;
+  /** Yes/No for the binary checks, so the row answers its own question. */
+  const yn = (ok: boolean) => (ok ? "Yes" : "No");
+
   add(
     "word_count",
-    wordCount >= 600 ? "pass" : wordCount >= 300 ? "warn" : "fail",
+    wordCount >= T.wordCount.pass ? "pass" : wordCount >= T.wordCount.warn ? "warn" : "fail",
     String(wordCount),
   );
 
   add(
     "keyword_in_title",
     input.title ? (containsKeyword(input.title, keyword) ? "pass" : "fail") : "warn",
-    input.title ? input.title.slice(0, 60) : "—",
+    // Used to print the title itself. A visitor typing "Italian food" saw
+    // "Italian food" in the status column and could not tell whether that was
+    // a pass, a warning or an echo.
+    input.title ? yn(containsKeyword(input.title, keyword)) : "Not set",
   );
 
   add(
@@ -154,44 +301,52 @@ export function scoreContent(input: ContentInput): ContentReport {
       : containsKeyword(heads[0]!, keyword)
         ? "pass"
         : "fail",
-    heads[0]?.replace(/^#+\s*/, "").slice(0, 60) ?? "—",
+    heads.length === 0 ? "No headings" : yn(containsKeyword(heads[0]!, keyword)),
   );
 
   add(
     "keyword_first_100",
     containsKeyword(first100, keyword) ? "pass" : "fail",
-    containsKeyword(first100, keyword) ? "yes" : "no",
+    yn(containsKeyword(first100, keyword)),
   );
 
-  // 0.5–2.5% is the band editors aim for. Below reads as unfocused, above as
-  // stuffed — and stuffing is the failure this check exists to catch.
+  // Below the band reads as unfocused, above it as stuffed — and stuffing is
+  // the failure this check exists to catch.
   add(
     "keyword_density",
-    density >= 0.5 && density <= 2.5 ? "pass" : density > 0 && density < 4 ? "warn" : "fail",
+    density >= T.density.min && density <= T.density.max
+      ? "pass"
+      : density > 0 && density < T.density.stuffed
+        ? "warn"
+        : "fail",
     `${density}%`,
   );
 
   add(
     "heading_structure",
-    heads.length >= 3 ? "pass" : heads.length >= 1 ? "warn" : "fail",
+    heads.length >= T.headings.pass ? "pass" : heads.length >= T.headings.warn ? "warn" : "fail",
     String(heads.length),
   );
 
   add(
     "readability",
-    readability >= 60 ? "pass" : readability >= 40 ? "warn" : "fail",
+    readability >= T.readability.pass ? "pass" : readability >= T.readability.warn ? "warn" : "fail",
     String(readability),
   );
 
   const questions = questionCount(text);
-  add("question_coverage", questions >= 2 ? "pass" : questions === 1 ? "warn" : "fail", String(questions));
+  add(
+    "question_coverage",
+    questions >= T.questions.pass ? "pass" : questions === 1 ? "warn" : "fail",
+    String(questions),
+  );
 
   const metaLength = (input.metaDescription ?? "").trim().length;
   add(
     "meta_length",
     metaLength === 0
       ? "fail"
-      : metaLength >= 120 && metaLength <= 160
+      : metaLength >= T.meta.min && metaLength <= T.meta.max
         ? "pass"
         : "warn",
     String(metaLength),

@@ -4,21 +4,20 @@
 // and no API route behind it: the draft never leaves the browser, which is both
 // the privacy claim the copy makes and the reason the tool costs nothing.
 
-import { useMemo, useState } from "react";
-import { scoreContent, type CheckStatus } from "@/lib/free-tools/content-score";
+import { useEffect, useMemo, useState } from "react";
+import {
+  CHECK_META,
+  GRADE_COLOR,
+  GRADE_LABEL,
+  STATUS_ICON,
+  STATUS_WORD,
+  gradeOf,
+  orderChecks,
+  scoreContent,
+  type CheckStatus,
+  type ContentCheck,
+} from "@/lib/free-tools/content-score";
 import f from "../_shared/free-tools.module.css";
-
-const CHECK_LABELS: Record<string, string> = {
-  word_count: "Word count",
-  keyword_in_title: "Keyword in title",
-  keyword_in_h1: "Keyword in first heading",
-  keyword_first_100: "Keyword in first 100 words",
-  keyword_density: "Keyword density",
-  heading_structure: "Heading structure",
-  readability: "Readability (Flesch)",
-  question_coverage: "Questions answered",
-  meta_length: "Meta description length",
-};
 
 const STATUS_CLASS: Record<CheckStatus, string> = {
   pass: f.pass!,
@@ -26,18 +25,125 @@ const STATUS_CLASS: Record<CheckStatus, string> = {
   fail: f.fail!,
 };
 
+const ICON_CLASS: Record<CheckStatus, string> = {
+  pass: f.iconPass!,
+  warn: f.iconWarn!,
+  fail: f.iconFail!,
+};
+
+/** How long the visitor stops typing before the draft is re-graded. */
+const DEBOUNCE_MS = 400;
+
+/**
+ * The 0–100 score as a ring.
+ *
+ * Built like the homepage AI Visibility ring — an SVG circle driven by
+ * stroke-dashoffset, rotated -90deg by CSS so the arc starts at the top. The
+ * radius and stroke are smaller because this sits inside a tool panel rather
+ * than a hero.
+ */
+function ScoreRing({ score }: { score: number }) {
+  const R = 44;
+  const CIRC = 2 * Math.PI * R;
+  const color = GRADE_COLOR[gradeOf(score)];
+
+  return (
+    <div className={f.scoreRing}>
+      <svg width="104" height="104" viewBox="0 0 104 104" aria-hidden="true" focusable="false">
+        <circle cx="52" cy="52" r={R} fill="none" stroke="var(--line, #232330)" strokeWidth="8" />
+        <circle
+          cx="52"
+          cy="52"
+          r={R}
+          fill="none"
+          stroke={color}
+          strokeWidth="8"
+          strokeLinecap="round"
+          strokeDasharray={CIRC}
+          strokeDashoffset={CIRC * (1 - score / 100)}
+        />
+      </svg>
+      <div className={f.scoreRingVal}>
+        <span className={f.scoreRingNum} style={{ color }}>{score}</span>
+        <span className={f.scoreRingDen}>/ 100</span>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * One check.
+ *
+ * A warn or a fail is a <details> so its fix is one click away; a pass is a
+ * plain div. Both put the same .checkRow inside the same .check shell, so the
+ * two render at identical heights — which is what keeps the list from jumping
+ * when a status flips mid-sentence.
+ */
+function CheckRow({ check }: { check: ContentCheck }) {
+  const meta = CHECK_META[check.id];
+  const expandable = check.status !== "pass";
+
+  const line = (
+    <>
+      <span className={`${f.checkIcon} ${ICON_CLASS[check.status]}`} aria-hidden="true">
+        {STATUS_ICON[check.status]}
+      </span>
+      <span className={f.srOnly}>{STATUS_WORD[check.status]}:</span>
+      <span className={f.checkName}>{meta?.label ?? check.id}</span>
+      <span className={f.checkValue}>
+        {check.value}
+        {meta?.target && <span className={f.checkTarget}> · {meta.target}</span>}
+      </span>
+      {expandable && <span className={f.checkFix}>Fix</span>}
+    </>
+  );
+
+  if (!expandable) {
+    return (
+      <div className={`${f.check} ${STATUS_CLASS[check.status]}`}>
+        <div className={f.checkRow}>{line}</div>
+      </div>
+    );
+  }
+
+  return (
+    <details className={`${f.check} ${STATUS_CLASS[check.status]}`}>
+      <summary className={f.checkRow}>{line}</summary>
+      <p className={f.checkHint}>{meta?.hint}</p>
+    </details>
+  );
+}
+
 export function ContentOptimizerClient() {
   const [text, setText] = useState("");
   const [keyword, setKeyword] = useState("");
   const [title, setTitle] = useState("");
   const [meta, setMeta] = useState("");
 
-  // Recomputed on every keystroke — it is pure arithmetic over a few thousand
-  // words, which is far cheaper than the debounce it would take to avoid.
+  // Grading is pure arithmetic and cheap, but re-rendering nine rows that
+  // REORDER themselves on every keystroke is not — the list would shuffle
+  // under the cursor mid-word. Settling for 400ms first means the visitor sees
+  // one considered result rather than nine transient ones.
+  const [draft, setDraft] = useState({ text: "", keyword: "", title: "", meta: "" });
+  useEffect(() => {
+    const id = setTimeout(() => setDraft({ text, keyword, title, meta }), DEBOUNCE_MS);
+    return () => clearTimeout(id);
+  }, [text, keyword, title, meta]);
+
   const report = useMemo(
-    () => (text.trim() ? scoreContent({ text, keyword, title, metaDescription: meta }) : null),
-    [text, keyword, title, meta],
+    () =>
+      draft.text.trim()
+        ? scoreContent({
+            text: draft.text,
+            keyword: draft.keyword,
+            title: draft.title,
+            metaDescription: draft.meta,
+          })
+        : null,
+    [draft],
   );
+
+  const passing = report?.checks.filter((c) => c.status === "pass").length ?? 0;
 
   return (
     <div className={f.panel}>
@@ -89,18 +195,23 @@ export function ContentOptimizerClient() {
       {report && (
         <div style={{ marginTop: 24 }}>
           <div className={f.scoreRow}>
-            <span className={f.scoreBig}>{report.score}</span>
-            <span className={f.resultMeta}>
-              {report.wordCount} words · {report.density}% density · readability {report.readability}
-            </span>
+            <ScoreRing score={report.score} />
+            <div>
+              <p className={f.gradeLabel} style={{ color: GRADE_COLOR[gradeOf(report.score)] }}>
+                {GRADE_LABEL[gradeOf(report.score)]}
+              </p>
+              <p className={f.checkCount}>
+                {passing} of {report.checks.length} checks passing
+              </p>
+              <span className={f.resultMeta}>
+                {report.wordCount} words · {report.density}% density · readability {report.readability}
+              </span>
+            </div>
           </div>
 
           <div className={f.checks}>
-            {report.checks.map((check) => (
-              <div className={`${f.check} ${STATUS_CLASS[check.status]}`} key={check.id}>
-                <span>{CHECK_LABELS[check.id] ?? check.id}</span>
-                <span className={f.checkValue}>{check.value}</span>
-              </div>
+            {orderChecks(report.checks).map((check) => (
+              <CheckRow check={check} key={check.id} />
             ))}
           </div>
         </div>
