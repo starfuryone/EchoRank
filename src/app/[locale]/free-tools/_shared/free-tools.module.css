@@ -163,7 +163,29 @@
    screen was the full-width grey track. It read as "every bar is maxed out".
    .barTrack escaped this only because it is a flex item of .bar and therefore
    blockified; its child is not. */
-.barFill { display: block; height: 100%; border-radius: 99px; background: var(--gold, #e8c565); }
+.barFill {
+  display: block;
+  height: 100%;
+  border-radius: 99px;
+  background: var(--gold, #e8c565);
+  /* Grow from nothing on first paint.
+     A `transition` cannot do this: the fill mounts already at its final width
+     and a transition needs a CHANGE to run, so the first render — the only one
+     a visitor sees — would not animate. The keyframe below omits its `to`,
+     which in CSS means "the element's own computed value", i.e. the inline
+     width the component set. That is what keeps this honest: the animation
+     ends at the real value rather than at some second copy of it. */
+  animation: barGrow 300ms ease-out;
+}
+@keyframes barGrow {
+  from { width: 0; }
+}
+/* Reduced motion gets the final width immediately — not a faster animation and
+   not a hidden bar. Removing the animation leaves the inline width, which is
+   already the end state. */
+@media (prefers-reduced-motion: reduce) {
+  .barFill { animation: none; }
+}
 /* Severity fills. Same three tokens as volatility-severity.ts. */
 .barCalm { background: var(--green, #0ECB81); }
 .barElevated { background: var(--goldDeep, #F0B90B); }

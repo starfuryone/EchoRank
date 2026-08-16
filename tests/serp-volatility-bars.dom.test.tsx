@@ -103,6 +103,34 @@ describe("volatility bar widths", () => {
   });
 });
 
+describe("shared bar animation", () => {
+  // Read once: these three rules are a single contract, and asserting them
+  // together is what stops a partial edit from passing.
+  const css = readFileSync(
+    join(process.cwd(), "src", "app", "[locale]", "free-tools", "_shared", "free-tools.module.css"),
+    "utf8",
+  );
+
+  it("grows the fill over 300ms ease-out", () => {
+    const rule = css.match(/\.barFill\s*\{[^}]*\}/)?.[0] ?? "";
+    expect(rule).toMatch(/animation:\s*barGrow\s+300ms\s+ease-out/);
+  });
+
+  it("animates from zero width with no explicit `to`, so it ends at the real value", () => {
+    // An explicit `to { width: 100% }` would animate every bar to a full track
+    // regardless of its value — the exact illusion this page already suffered
+    // once. The omitted `to` resolves to the element's own inline width.
+    const frames = css.match(/@keyframes\s+barGrow\s*\{[^]*?\n\}/)?.[0] ?? "";
+    expect(frames).toContain("from { width: 0; }");
+    expect(frames).not.toMatch(/\bto\s*\{/);
+  });
+
+  it("drops the animation under prefers-reduced-motion rather than shortening it", () => {
+    const query = css.match(/@media\s*\(prefers-reduced-motion:\s*reduce\)\s*\{[^]*?\n\}/)?.[0] ?? "";
+    expect(query).toMatch(/\.barFill\s*\{\s*animation:\s*none/);
+  });
+});
+
 describe("volatility severity bands", () => {
   it("maps the documented thresholds", () => {
     expect(severityOf(0)).toBe("calm");
