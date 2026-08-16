@@ -898,7 +898,7 @@ footer .legal a:hover{color:var(--gold2)}
 
 <footer>
   <div class="wrap">
-    <p class="legal">© 2026 ECHORANK / CHATLOGIC INSIGHTS LTD. All rights reserved. · <a href="/en/privacy">Privacy Policy</a> · <a href="/en/terms">Terms of Service</a> · <a href="/en/cookies">Cookie Policy</a></p>
+    <p class="legal">© 2026 ECHORANK / CHATLOGIC INSIGHTS LTD. All rights reserved. · <a href="/en/legal/privacy">Privacy Policy</a> · <a href="/en/legal/terms">Terms of Service</a> · <a href="/en/legal/cookies">Cookie Policy</a></p>
     <p>ChatLogic Insights Ltd is registered in England and Wales, Company No. 15593166.</p>
     <p><a href="/en/">Home</a> · <a href="/en/pricing">Pricing</a> · <a href="/en/free-audit">Free audit</a> · <a href="/en/glossary">Glossary</a> · <a href="/en/keyword-research">Keyword research guide</a> · <a href="/en/link-building-playbook">Link Building Playbook</a></p>
   </div>
