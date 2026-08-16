@@ -31,7 +31,6 @@ import {
   overallScore,
   scoreDay,
 } from "@/lib/free-tools/volatility";
-import { parseRedditSearch } from "@/lib/free-tools/reddit";
 import { computeShares, normalizeBrand, parseVolumeRow } from "@/lib/free-tools/share-of-search";
 import { secondsUntilUtcMidnight, utcDayStamp } from "@/lib/free-tools/limits";
 import { cacheKey } from "@/lib/free-tools/cache";
@@ -278,48 +277,6 @@ describe("volatility", () => {
   it("reduces URLs to bare domains", () => {
     expect(domainOf("https://www.Example.com/a/b")).toBe("example.com");
     expect(domainOf("not a url")).toBe("");
-  });
-});
-
-// ─── Reddit parsing ─────────────────────────────────────────────────────────
-
-describe("reddit parsing", () => {
-  const child = (over: Record<string, unknown> = {}) => ({
-    data: {
-      id: "abc",
-      title: "A thread",
-      subreddit: "seo",
-      score: 12,
-      num_comments: 3,
-      created_utc: 1_700_000_000,
-      permalink: "/r/seo/comments/abc/a_thread/",
-      author: "someone",
-      is_self: true,
-      ...over,
-    },
-  });
-
-  it("maps the fields the card renders", () => {
-    const [t] = parseRedditSearch({ data: { children: [child()] } }, new Date(1_700_003_600_000));
-    expect(t!.title).toBe("A thread");
-    expect(t!.subreddit).toBe("seo");
-    expect(t!.permalink.startsWith("https://www.reddit.com/")).toBe(true);
-    expect(t!.ageSeconds).toBe(3600);
-  });
-
-  it("drops stickied posts — subreddit furniture, not discussion", () => {
-    expect(parseRedditSearch({ data: { children: [child({ stickied: true })] } })).toHaveLength(0);
-  });
-
-  it("drops entries without a title or permalink", () => {
-    expect(parseRedditSearch({ data: { children: [child({ title: "" })] } })).toHaveLength(0);
-  });
-
-  it("returns nothing for a malformed payload rather than throwing", () => {
-    for (const body of [null, {}, { data: {} }, { data: { children: "no" } }]) {
-      expect(() => parseRedditSearch(body)).not.toThrow();
-      expect(parseRedditSearch(body)).toEqual([]);
-    }
   });
 });
 

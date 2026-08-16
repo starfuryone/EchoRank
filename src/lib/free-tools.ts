@@ -19,7 +19,6 @@
 export const FREE_TOOLS_BASE = "/free-tools";
 
 export type FreeToolId =
-  | "reddit_threads"
   | "serp_volatility"
   | "ai_search_grader"
   | "content_optimizer"
@@ -30,11 +29,14 @@ export type FreeToolId =
  * What a tool costs us per run.
  *
  * "none"     — pure client-side or cache-only; no API route at all.
- * "free_api" — a server call with no per-run cost (the Reddit proxy).
  * "paid_api" — spends real money; gated by the daily USD cap.
  * "shared"   — a scheduled job spends on everyone's behalf; reads are free.
+ *
+ * A fourth variant, "free_api" (a server call costing nothing but our egress
+ * IP's reputation), existed for the Reddit Threads Finder alone and went with
+ * it. Reinstate it if another zero-cost proxy tool ever lands.
  */
-export type FreeToolCost = "none" | "free_api" | "paid_api" | "shared";
+export type FreeToolCost = "none" | "paid_api" | "shared";
 
 export interface FreeTool {
   id: FreeToolId;
@@ -55,15 +57,10 @@ export interface FreeTool {
 }
 
 export const FREE_TOOLS: FreeTool[] = [
-  {
-    id: "reddit_threads",
-    slug: "reddit-threads",
-    cost: "free_api",
-    dailyLimit: 10,
-    apiPath: "/api/free/v1/reddit-threads",
-    isNew: true,
-    jsonLd: "software",
-  },
+  // RETIRED: reddit_threads (Reddit Threads Finder). Removed 2026-08-16; its
+  // page path still 301s from src/app/[locale]/free-tools/reddit-threads/route.ts
+  // and stays in RETIRED_LOCALIZED_PATHS in src/lib/seo/registry.ts so the
+  // locale-less URL keeps canonicalizing instead of hitting the auth gate.
   {
     id: "serp_volatility",
     slug: "serp-volatility",

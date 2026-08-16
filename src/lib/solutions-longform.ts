@@ -274,7 +274,7 @@ const LONGFORM: Record<string, Record<SolutionBase, Longform>> = {
         {
           h2: "Find the gaps, join the conversations",
           paras: [
-            "The backlinks tool maps your profile and your competitors' — every referring domain they earned that you haven't is a qualified prospect list. The Reddit threads finder surfaces the discussions ranking for your terms, where a genuinely useful answer earns visibility that outlasts any ad. Brand monitoring catches new mentions so you can build on them.",
+            "The backlinks tool maps your profile and your competitors' — every referring domain they earned that you haven't is a qualified prospect list. Brand monitoring watches the forums, communities and review sites where your category is already discussed, so a thread worth a genuinely useful answer reaches you while it is still live — visibility earned that way outlasts any ad.",
             "One earned mention a week from a domain that matters compounds faster than a hundred directory submissions. The tools point you at the ones worth earning.",
           ],
         },
@@ -292,7 +292,7 @@ const LONGFORM: Record<string, Record<SolutionBase, Longform>> = {
         {
           h2: "Repérer les écarts, rejoindre les conversations",
           paras: [
-            "L'outil de backlinks cartographie votre profil et celui de vos concurrents : chaque domaine référent qu'ils ont obtenu et pas vous constitue une liste de prospects qualifiés. Le détecteur de fils Reddit fait remonter les discussions positionnées sur vos termes, où une réponse réellement utile gagne une visibilité qui survit à n'importe quelle publicité. La surveillance de marque repère les nouvelles mentions pour que vous puissiez les exploiter.",
+            "L'outil de backlinks cartographie votre profil et celui de vos concurrents : chaque domaine référent qu'ils ont obtenu et pas vous constitue une liste de prospects qualifiés. La surveillance de marque suit les forums, les communautés et les sites d'avis où votre catégorie se discute déjà : un fil qui mérite une réponse réellement utile vous parvient pendant qu'il est encore actif, et la visibilité gagnée ainsi survit à n'importe quelle publicité.",
             "Une mention méritée par semaine sur un domaine qui compte se cumule plus vite que cent inscriptions en annuaire. Les outils vous indiquent celles qui valent l'effort.",
           ],
         },

@@ -117,10 +117,24 @@ export const PLAIN_ROUTES: PlainRoute[] = [
   },
 ];
 
+/**
+ * Retired paths that must keep canonicalizing but must NOT be advertised.
+ *
+ * A removed page whose route still answers with a 301 needs to stay in the
+ * proxy's locale guard: without it, the locale-less "/free-tools/reddit-threads"
+ * falls through to the auth gate and 307s to /login instead of reaching the
+ * redirect. It stays out of LOCALIZED_ROUTES so the sitemap stops listing it.
+ */
+export const RETIRED_LOCALIZED_PATHS: readonly string[] = [
+  // Reddit Threads Finder, removed 2026-08-16 → /{locale}/free-tools.
+  "/free-tools/reddit-threads",
+];
+
 /** Every locale-prefixed path that exists, used by the proxy locale guard. */
-export const KNOWN_MARKETING_PATHS: readonly string[] = LOCALIZED_ROUTES.map((r) => r.path).filter(
-  (p) => p !== "",
-);
+export const KNOWN_MARKETING_PATHS: readonly string[] = [
+  ...LOCALIZED_ROUTES.map((r) => r.path).filter((p) => p !== ""),
+  ...RETIRED_LOCALIZED_PATHS,
+];
 
 export function languagesFor(path: string): Record<string, string> {
   return Object.fromEntries([

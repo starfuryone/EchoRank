@@ -44,27 +44,6 @@ export const HUB_COPY = {
 } as const;
 
 export const TOOL_COPY: Record<FreeToolId, ToolCopy> = {
-  reddit_threads: {
-    name: "Reddit Threads Finder",
-    blurb: "Find the Reddit discussions ranking for a keyword, with scores and comment counts.",
-    intro:
-      "Reddit threads rank for a lot of commercial queries. Find the ones discussing your keyword, sorted by relevance, so you can see what people actually say.",
-    metaTitle: "Free Reddit thread finder for any keyword",
-    metaDescription:
-      "Find Reddit discussions about any keyword, with scores, comment counts and links. Free, no account needed.",
-    limitNote: "10 free searches a day.",
-    cta: "Monitor mentions automatically",
-    faq: [
-      {
-        q: "Where does this data come from?",
-        a: "Reddit's own public search, fetched server-side. We do not post, vote or read anything that is not already public.",
-      },
-      {
-        q: "Why did my search return nothing?",
-        a: "Either no threads matched in the last year, or Reddit declined our request. If it is the second, waiting a few minutes usually works — and it does not use up one of your daily searches.",
-      },
-    ],
-  },
   serp_volatility: {
     name: "SERP Volatility Checker",
     blurb: "How much Google's results moved today, across five industries.",
