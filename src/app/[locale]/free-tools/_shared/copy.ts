@@ -40,7 +40,7 @@ export const HUB_COPY = {
   ctaTitle: "Want the full picture?",
   ctaBody:
     "These tools each answer one question. Echorank360 tracks your reputation and AI visibility continuously — and tells you what to fix first.",
-  ctaButton: "Create a free account",
+  ctaButton: "See plans and pricing",
 } as const;
 
 export const TOOL_COPY: Record<FreeToolId, ToolCopy> = {

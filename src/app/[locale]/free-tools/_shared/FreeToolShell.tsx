@@ -1,5 +1,5 @@
 // One shell for every free-tool page: nav, hero, the tool itself, its FAQ, the
-// signup CTA, and the footer.
+// CTA, and the footer.
 //
 // JSON-LD IS BUILT FROM THE CONFIG AND THE COPY OBJECT — never hand-written per
 // page. The FAQPage markup is generated from the same `faq` array the page
@@ -17,7 +17,7 @@ import type { Locale } from "@/lib/i18n/config";
 import { JsonLd } from "@/lib/seo/JsonLd";
 import { organization, webSite, faqPage } from "@/lib/seo/jsonld";
 import { SITE_URL } from "@/lib/seo/constants";
-import { FREE_TOOLS_BASE, signupHref, type FreeTool } from "@/lib/free-tools";
+import { FREE_TOOLS_BASE, ctaHref, type FreeTool } from "@/lib/free-tools";
 import type { ToolCopy } from "./copy";
 import s from "../../home2.module.css";
 import f from "./free-tools.module.css";
@@ -39,11 +39,11 @@ function softwareNode(tool: FreeTool, copy: ToolCopy, pageUrl: string) {
 }
 
 /**
- * A page may replace the default single /register button.
+ * A page may override the default CTA pair.
  *
- * Opt-in, so nothing else on the hub changes shape. The default is still
- * signupHref(); see the note on the upsell block below for why that is worth
- * revisiting site-wide rather than page by page.
+ * The default is already compliant — ctaHref() primary, the hub secondary — so
+ * this exists only for a page that wants a more specific label than its
+ * copy.cta, not to opt into the marketing rule.
  */
 export interface ShellCta {
   primary: { href: string; label: string };
@@ -99,10 +99,10 @@ export function FreeToolShell({
 
             <p className={f.note}>{copy.limitNote}</p>
 
-            {/* Default is still signupHref() — /register — which the marketing
-                CTA rule says should be /pricing. Changing signupHref() would
-                move every free-tool page at once and is a call for the site
-                owner, so a page opts in with `cta` until that is decided. */}
+            {/* Both branches follow the marketing CTA rule: pricing primary,
+                the hub secondary, never /register. The default carries the
+                tool's ?src= attribution via ctaHref(); an overriding page
+                spells its own labels out. */}
             <div className={f.upsell}>
               <p className={f.upsellP}>{copy.cta}</p>
               {cta ? (
@@ -115,9 +115,14 @@ export function FreeToolShell({
                   </Link>
                 </>
               ) : (
-                <Link className={`${s.btn} ${s.btnPrimary}`} href={signupHref(tool)}>
-                  {copy.cta} →
-                </Link>
+                <>
+                  <Link className={`${s.btn} ${s.btnPrimary}`} href={ctaHref(tool)}>
+                    {copy.cta} →
+                  </Link>{" "}
+                  <Link className={s.btn} href={L(FREE_TOOLS_BASE)}>
+                    All free tools
+                  </Link>
+                </>
               )}
             </div>
 

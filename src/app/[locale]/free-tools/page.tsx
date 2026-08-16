@@ -15,7 +15,7 @@ import { CONTENT } from "@/lib/i18n/content";
 import { buildMetadata } from "@/lib/seo";
 import { JsonLd } from "@/lib/seo/JsonLd";
 import { organization, webSite } from "@/lib/seo/jsonld";
-import { EXTENSION_CARD_HREF, FREE_TOOLS, FREE_TOOLS_BASE, signupHref } from "@/lib/free-tools";
+import { EXTENSION_CARD_HREF, FREE_TOOLS, FREE_TOOLS_BASE, ctaHref } from "@/lib/free-tools";
 import { HUB_COPY, TOOL_COPY } from "./_shared/copy";
 import { PublicNav } from "../PublicNav";
 import s from "../home2.module.css";
@@ -105,7 +105,7 @@ export default async function FreeToolsHubPage({
             </p>
             <Link
               className={`${s.btn} ${s.btnPrimary}`}
-              href={signupHref(FREE_TOOLS[0]!)}
+              href={ctaHref(FREE_TOOLS[0]!)}
             >
               {HUB_COPY.ctaButton}
             </Link>

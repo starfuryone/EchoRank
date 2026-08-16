@@ -18,7 +18,7 @@ import {
   freeToolBySlug,
   freeToolRoutes,
   paidFreeTools,
-  signupHref,
+  ctaHref,
 } from "@/lib/free-tools";
 import { scoreContent, fleschReadingEase, keywordDensity } from "@/lib/free-tools/content-score";
 import { breadcrumbFor, previewSnippet, truncateToPixels } from "@/lib/free-tools/serp-preview";
@@ -101,7 +101,7 @@ describe("route table", () => {
 
   it("tracks the signup source per tool", () => {
     for (const tool of FREE_TOOLS) {
-      expect(signupHref(tool)).toBe(`/register?src=free-tools-${tool.slug}`);
+      expect(ctaHref(tool)).toBe(`/en/pricing?src=free-tools-${tool.slug}`);
     }
   });
 

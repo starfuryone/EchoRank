@@ -144,11 +144,25 @@ export function paidFreeTools(): FreeTool[] {
 }
 
 /**
- * Signup CTA target for a tool, carrying its attribution.
+ * Primary CTA target for a tool, carrying its attribution.
  *
  * One helper so the `?src=` value cannot drift from the slug — the whole point
  * of the parameter is telling which card sent someone.
+ *
+ * POINTS AT PRICING, NOT /register. The marketing CTA rule is that the primary
+ * destination is always /en/pricing; three tool pages had been opting out of
+ * this helper one at a time to comply, which left every page that did NOT opt
+ * out quietly non-compliant — and would have left the next tool added
+ * non-compliant by default. Fixing the helper inverts that: compliance is now
+ * what a page gets for free.
+ *
+ * Renamed from signupHref() in the same change. A function called "signup"
+ * that returns a pricing URL is the kind of thing that gets miswired later.
+ *
+ * The locale is hardcoded to /en deliberately, matching the explicit `cta`
+ * props on the pages that pass one: the attribution survives, and a bare
+ * /pricing would take an extra 308 through the proxy's locale guard.
  */
-export function signupHref(tool: FreeTool): string {
-  return `/register?src=free-tools-${tool.slug}`;
+export function ctaHref(tool: FreeTool): string {
+  return `/en/pricing?src=free-tools-${tool.slug}`;
 }

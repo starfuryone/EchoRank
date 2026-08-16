@@ -42,17 +42,11 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
   const { locale } = await params;
   if (!isSupportedLocale(locale)) notFound();
 
+  // No `cta` override: the shell default now renders this exact pair —
+  // copy.cta as the primary label, the hub as the secondary — and adds the
+  // ?src= attribution this hand-written copy was dropping.
   return (
-    <FreeToolShell
-      locale={locale}
-      tool={TOOL}
-      copy={COPY}
-      // Marketing CTA rule: pricing is the primary destination, never /register.
-      cta={{
-        primary: { href: "/en/pricing", label: "Track share of search over time →" },
-        secondary: { href: `/en${FREE_TOOLS_BASE}`, label: "All free tools" },
-      }}
-    >
+    <FreeToolShell locale={locale} tool={TOOL} copy={COPY}>
       <ShareOfSearchClient />
     </FreeToolShell>
   );

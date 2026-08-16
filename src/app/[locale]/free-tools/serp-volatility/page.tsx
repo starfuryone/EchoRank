@@ -9,7 +9,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { SUPPORTED_LOCALES, isSupportedLocale } from "@/lib/i18n/config";
 import { buildMetadata } from "@/lib/seo";
-import { FREE_TOOLS_BASE, freeToolById } from "@/lib/free-tools";
+import { FREE_TOOLS_BASE, ctaHref, freeToolById } from "@/lib/free-tools";
 import { TOOL_COPY } from "../_shared/copy";
 import { FreeToolShell } from "../_shared/FreeToolShell";
 import { SerpVolatilityClient } from "./client";
@@ -48,10 +48,13 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
       tool={TOOL}
       copy={COPY}
       wide
-      // Marketing CTA rule: pricing is the primary destination, never /register.
+      // Overridden only for the label: "track your own keywords daily" is a
+      // sharper promise on a page about a fixed 30-keyword basket than the
+      // generic copy.cta. The href still goes through ctaHref() so this page
+      // keeps its ?src= attribution like every other.
       cta={{
-        primary: { href: "/en/pricing", label: "Track your own keywords daily →" },
-        secondary: { href: `/en${FREE_TOOLS_BASE}`, label: "All free tools" },
+        primary: { href: ctaHref(TOOL), label: "Track your own keywords daily →" },
+        secondary: { href: `/${locale}${FREE_TOOLS_BASE}`, label: "All free tools" },
       }}
     >
       <SerpVolatilityClient />
