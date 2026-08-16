@@ -38,15 +38,32 @@ function softwareNode(tool: FreeTool, copy: ToolCopy, pageUrl: string) {
   };
 }
 
+/**
+ * A page may replace the default single /register button.
+ *
+ * Opt-in, so nothing else on the hub changes shape. The default is still
+ * signupHref(); see the note on the upsell block below for why that is worth
+ * revisiting site-wide rather than page by page.
+ */
+export interface ShellCta {
+  primary: { href: string; label: string };
+  secondary: { href: string; label: string };
+}
+
 export function FreeToolShell({
   locale,
   tool,
   copy,
+  cta,
+  wide,
   children,
 }: {
   locale: string;
   tool: FreeTool;
   copy: ToolCopy;
+  cta?: ShellCta;
+  /** Wider measure for a tool that lays out in two columns. */
+  wide?: boolean;
   children: React.ReactNode;
 }) {
   const foot = CONTENT[locale as Locale].footer;
@@ -77,16 +94,31 @@ export function FreeToolShell({
 
       <section className={s.section} style={{ paddingTop: 24 }}>
         <div className={s.container}>
-          <div className={f.tool}>
+          <div className={wide ? f.toolWide : f.tool}>
             {children}
 
             <p className={f.note}>{copy.limitNote}</p>
 
+            {/* Default is still signupHref() — /register — which the marketing
+                CTA rule says should be /pricing. Changing signupHref() would
+                move every free-tool page at once and is a call for the site
+                owner, so a page opts in with `cta` until that is decided. */}
             <div className={f.upsell}>
               <p className={f.upsellP}>{copy.cta}</p>
-              <Link className={`${s.btn} ${s.btnPrimary}`} href={signupHref(tool)}>
-                {copy.cta} →
-              </Link>
+              {cta ? (
+                <>
+                  <Link className={`${s.btn} ${s.btnPrimary}`} href={cta.primary.href}>
+                    {cta.primary.label}
+                  </Link>{" "}
+                  <Link className={s.btn} href={cta.secondary.href}>
+                    {cta.secondary.label}
+                  </Link>
+                </>
+              ) : (
+                <Link className={`${s.btn} ${s.btnPrimary}`} href={signupHref(tool)}>
+                  {copy.cta} →
+                </Link>
+              )}
             </div>
 
             {copy.faq.length > 0 && (

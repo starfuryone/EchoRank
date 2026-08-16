@@ -54,7 +54,12 @@
 
 /* ── Tool page ────────────────────────────────────────────────────────── */
 
-.tool { max-width: 760px; }
+/* Centred, not left-aligned. .container is 1180px wide and this sat at 760 with
+   no auto margin, so every tool page rendered in the left two-thirds with dead
+   space to the right. */
+.tool { max-width: 760px; margin-inline: auto; }
+/* Opt-in wider measure for a tool that genuinely needs two columns. */
+.toolWide { max-width: 1040px; margin-inline: auto; }
 .panel {
   background: var(--surface, #101016);
   border: 1px solid var(--line, #232330);
@@ -151,12 +156,76 @@
 .bar { display: flex; align-items: center; gap: 11px; }
 .barLabel { width: 108px; flex: none; font-size: 12.5px; color: var(--muted, #8f8fa3); }
 .barTrack { flex: 1; height: 9px; border-radius: 99px; background: var(--surface2, #15151d); overflow: hidden; }
-.barFill { height: 100%; border-radius: 99px; background: #c9a227; }
+/* display:block IS THE BUG FIX, not tidying.
+   .barFill is a <span>, and width/height do not apply to a non-replaced inline
+   box — so the inline `width: 12%` the component has always computed was
+   dropped by the UA, every fill collapsed to nothing, and all that remained on
+   screen was the full-width grey track. It read as "every bar is maxed out".
+   .barTrack escaped this only because it is a flex item of .bar and therefore
+   blockified; its child is not. */
+.barFill { display: block; height: 100%; border-radius: 99px; background: var(--gold, #e8c565); }
+/* Severity fills. Same three tokens as volatility-severity.ts. */
+.barCalm { background: var(--green, #0ECB81); }
+.barElevated { background: var(--goldDeep, #F0B90B); }
+.barHigh { background: var(--red, #F6465D); }
 .barValue {
   width: 54px; flex: none; text-align: right;
   font-family: var(--mono, ui-monospace, monospace); font-size: 12px;
   color: var(--text, #eceaf2);
 }
+
+/* ── SERP volatility ──────────────────────────────────────────────────── */
+
+/* Two columns from 980px: today's score + breakdown left, history right.
+   Single column below, which is also what every phone gets. */
+.volGrid { display: grid; gap: 26px; }
+@media (min-width: 980px) {
+  .volGrid { grid-template-columns: 1fr 1fr; gap: 34px; align-items: start; }
+}
+
+.volPanelH {
+  font-size: 12.5px;
+  font-weight: 560;
+  color: var(--muted, #8f8fa3);
+  margin: 0 0 14px;
+}
+
+/* Status chip beside the headline score. */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 99px;
+  padding: 4px 11px;
+  font-size: 12px;
+  font-weight: 560;
+  line-height: 1.4;
+  border: 1px solid transparent;
+}
+.chipCalm { color: var(--green, #0ECB81); border-color: rgba(14, 203, 129, 0.4); background: rgba(14, 203, 129, 0.1); }
+.chipElevated { color: var(--goldDeep, #F0B90B); border-color: rgba(240, 185, 11, 0.4); background: rgba(240, 185, 11, 0.1); }
+.chipHigh { color: var(--red, #F6465D); border-color: rgba(246, 70, 93, 0.4); background: rgba(246, 70, 93, 0.1); }
+
+/* ▲/▼ vs yesterday. Up is worse here — more movement — so it borrows the red,
+   and a fall back toward calm borrows the green. */
+.delta { font-size: 13px; font-weight: 560; font-family: var(--mono, ui-monospace, monospace); }
+.deltaUp { color: var(--red, #F6465D); }
+.deltaDown { color: var(--green, #0ECB81); }
+.deltaFlat { color: var(--faint, #5c5c70); }
+
+.reading { margin: 14px 0 0; font-size: 13.5px; line-height: 1.6; color: var(--muted, #8f8fa3); }
+
+/* History chart. Plain SVG — recharts is a dashboard dependency and this is
+   ten rectangles. */
+.chart { width: 100%; height: auto; display: block; }
+.chartCol { transition: opacity 120ms ease; }
+.chartCol:hover { opacity: 0.75; }
+.chartBase { fill: var(--surface2, #15151d); }
+.chartAxis { fill: var(--faint, #5c5c70); font-size: 9px; font-family: var(--mono, ui-monospace, monospace); }
+
+/* The numeric rows stay in the DOM under the chart as the accessible reading
+   of the same data. */
+.chartFallback { margin-top: 18px; }
 
 /* ── SERP snippet preview ─────────────────────────────────────────────── */
 
