@@ -122,6 +122,14 @@ export const REDIS_CONFIG = {
     // work — nothing bought upstream — so the limiter is a backstop against a
     // runaway sweep, not a cost control.
     "revenue-rollup": { max: 60, duration: 60_000 },
+    // Every job here makes at least one Anthropic call against the tenant's
+    // monthly output-token budget, and a review batch makes up to ten. Tighter
+    // than the pure-database sweeps for the same reason citation-opportunities
+    // is: a runaway loop spends money rather than merely reading rows. The real
+    // cost control is the per-tenant budget in src/lib/marketing/quota.ts,
+    // asserted before the enqueue AND again in the worker; this bounds how fast
+    // jobs start across all tenants at once.
+    "action-agent": { max: 20, duration: 60_000 },
   } as Record<string, { max: number; duration: number }>,
 } as const;
 
@@ -152,7 +160,8 @@ export type QueueName =
   | "citation-aggregation"
   | "citation-opportunities"
   | "opportunity-scan"
-  | "revenue-rollup";
+  | "revenue-rollup"
+  | "action-agent";
 
 /** All valid queue names */
 export const QUEUE_NAMES: QueueName[] = [
@@ -183,4 +192,5 @@ export const QUEUE_NAMES: QueueName[] = [
   "citation-opportunities",
   "opportunity-scan",
   "revenue-rollup",
+  "action-agent",
 ];

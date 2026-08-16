@@ -498,3 +498,46 @@ export async function notifyCreditsPurchased(input: CreditsPurchasedInput): Prom
     payload: { credits: input.credits, balance: input.balance },
   });
 }
+
+// ─── 16. AI Action Agent: a generated draft is waiting for a human ──────────
+
+export interface ActionDraftReadyInput {
+  tenantId: string;
+  actionItemId: string;
+  /** ActionItemKind, as a string — this module does not import the enum. */
+  kind: string;
+}
+
+/**
+ * One notification per ActionItem written by a generator.
+ *
+ * INFO, like notifyScanComplete and notifyCreditsPurchased: nothing got worse.
+ * Work the customer asked for finished and is waiting on them. Every other
+ * adapter in this file fires because a number moved the wrong way; these three
+ * fire because something is ready.
+ *
+ * THE DEDUPE KEY IS THE ITEM ID, WITH NO DAY STAMP. Every other adapter here
+ * keys on source + subject + day because its source re-sweeps on a schedule and
+ * would otherwise raise the same finding every morning. This one has no sweep:
+ * an ActionItem id is created exactly once and never reused, so the id alone is
+ * already the strongest possible idempotency guarantee — a retried BullMQ job
+ * that re-notifies for a draft it already wrote writes nothing. Adding a day
+ * would weaken that, not strengthen it, because a retry crossing midnight would
+ * then produce a second row.
+ *
+ * HREF IS OVERRIDDEN so the row opens the draft it names rather than the top of
+ * a queue the reader then has to search. The bare path in NOTIFICATION_HREF
+ * stays the fallback.
+ */
+export async function notifyActionDraftReady(input: ActionDraftReadyInput): Promise<void> {
+  await recordNotification({
+    tenantId: input.tenantId,
+    type: "action_draft_ready",
+    severity: "info" satisfies NotificationSeverity,
+    title: "An AI draft is ready for review",
+    dedupeKey: `notif:action-draft-${input.actionItemId}`,
+    sourceRef: `ActionItem:${input.actionItemId}`,
+    href: `/visibility/tools/action-agent?item=${input.actionItemId}`,
+    payload: { actionItemId: input.actionItemId, kind: input.kind },
+  });
+}

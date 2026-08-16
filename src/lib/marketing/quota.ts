@@ -36,6 +36,23 @@ export function marketingBudgetKey(tenantId: string, now = new Date()): string {
 }
 
 /**
+ * When the counter starts again: midnight UTC on the 1st of the next month.
+ *
+ * DERIVED, NOT STORED, because it is fully determined by `marketingMonthKey` —
+ * a stored copy would be a second source of truth that can disagree with the
+ * key the INCRBY actually lands on.
+ *
+ * UTC, AND THE UI HAS TO SAY SO. The key is built from `getUTCMonth`, so a
+ * tenant in Zürich gets their allowance back at 02:00 local on the 1st and one
+ * in Vancouver at 17:00 local on the last day of the month. Rendering this as a
+ * bare local date would tell roughly half the customer base the wrong day, so
+ * the copy that consumes it names the timezone.
+ */
+export function marketingBudgetResetsAt(now = new Date()): Date {
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1, 0, 0, 0, 0));
+}
+
+/**
  * null = unmetered.
  *
  * NOT `?? 0`: ENTERPRISE's limit IS null, and `??` fires on null as well as

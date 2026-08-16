@@ -255,3 +255,77 @@ a legitimate state worth 0 for the position component.
 rather than maintaining it forever. The place this bites is a Step 5 dashboard PR that
 touches one file and not the other. It is safe to do while these tables are small; it will
 not be later.
+
+## There is no review-reply pipeline. `ExternalReview.replyContent` has no writer
+
+Two columns on `external_reviews` look like a publishing feature and are not one:
+
+| column | what writes it | what reads it |
+| --- | --- | --- |
+| `replyContent` | **nothing, anywhere in `src/`** | `/api/monitoring/report` counts `replied` |
+| `repliedAt` | **nothing** | same |
+
+`POST /api/ai/respond` DRAFTS a reply — one Haiku call, `cachedAiCall`, a good five-clause
+system prompt — and returns it. Nothing calls that route from the app; before the Action
+Agent shipped it had zero callers in `src/`, and it still has no UI of its own. Nothing has
+ever posted a reply to Google, Trustpilot or Facebook from this codebase.
+
+**So "wire the drafts into the existing reply pipeline" is not a small task, it is the whole
+task.** The AI Action Agent (2026-08-16) stops deliberately short of it: `review_reply`
+drafts are copy-only, and `applied` means a human pasted it in. Do not add a convenience
+write to `replyContent` on apply — that quietly converts a record-keeping action into a
+publishing action, and `tests/action-agent-routes.test.ts` asserts the absence of exactly
+that write.
+
+**What a real extraction would need**, in the order the work falls out:
+
+1. **Per-platform write credentials.** `MonitoringSource` stores what to READ. Google
+   Business Profile replies need an OAuth grant with `business.manage`, which is a different
+   scope from anything `GscConnection` or `GaConnection` holds, and a separate Google Cloud
+   verification. Trustpilot's reply API is a paid Business plan feature. Facebook needs a
+   Page access token. Yelp has no public reply API at all — that one stays copy-only forever.
+2. **A per-platform adapter with an idempotency key**, because a retried post is a duplicate
+   public reply on a stranger's review and there is no unposting it.
+3. **A second human confirmation at the moment of publish**, not just at approval. Approval
+   happens in a queue, minutes or days earlier; the thing that goes public should be
+   confirmed by someone looking at it.
+4. **The tone system that does not exist.** `tone` on `/api/ai/respond` is an unvalidated
+   free-text field interpolated straight into the prompt — no enum, no preset, no per-tenant
+   setting, nothing stored. The only durable tone asset this product has is
+   `Tenant.brandVoiceGuide` (Marketing Studio category 08), which is what the Action Agent's
+   generator uses. A reply pipeline wants a real one.
+5. **`replyContent` backfill semantics.** Once something writes it, `gatherUnansweredReviews`
+   in `src/lib/action-agent/context.ts` starts excluding those rows — which is correct, and
+   is why that query checks BOTH columns rather than trusting they move together.
+
+Until all five exist, the honest product is a draft the customer copies. Say so in the copy;
+`ACTION_AGENT_COPY.noPublishBanner` and the `action_draft_ready` notification body both do.
+
+## The Action Agent and Marketing Studio share ONE monthly budget
+
+Not two counters that happen to be equal — the same Redis key, the same
+`ai_api_calls` table, the same reset date.
+
+- Key: `echorank:marketing:output-tokens:<tenantId>:<YYYY-MM>`, `INCRBY`, 40-day TTL.
+- Limits: `MARKETING_MONTHLY_OUTPUT_TOKENS` in `plan-config.ts`. `ENTERPRISE` is `null` =
+  unmetered, and `?? 0` on it is the bug quota.ts warns about at length.
+- Spend rows: `ai_api_calls.categoryId` is free text. Marketing Studio writes the category
+  id (`positioning`, `voc`, …); the Action Agent writes `action_agent:<kind>`. **That string
+  is the only thing making the two features one aggregate.** Change it and you have silently
+  created a second budget.
+- Reset date: derived by `marketingBudgetResetsAt()`, never stored. It is **UTC**, because
+  the key is built from `getUTCMonth` — a tenant in Zürich gets their allowance back at 02:00
+  local. Every string that renders it names the timezone.
+
+The budget is asserted **twice** on the Action Agent path: at the enqueue route (so an
+exhausted tenant is refused on the click, with the date) and again in the worker (because a
+job enqueued at 199,900 tokens can reach the head of the queue after a sibling drained the
+rest). The second refusal is a BullMQ `UnrecoverableError` and writes an
+`action_agent.generation_blocked` audit row — without it, "why did my draft never appear"
+has no answer once the log has rotated.
+
+`action-agent` is **`attempts: 1`**, and that is not tunable without breaking something. The
+Anthropic call commits the instant it returns; the meter is written next and the draft row
+last. A retry resuming after any of those spends the budget again to produce a duplicate
+draft. The retries worth having already happen inside `callMarketingModel`, before a token
+is billed.

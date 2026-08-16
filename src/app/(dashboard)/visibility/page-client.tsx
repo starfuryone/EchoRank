@@ -26,7 +26,13 @@ import { VisibilityReportButton } from "@/components/visibility/VisibilityReport
 import { MonitorCard } from "@/components/visibility/MonitorCard";
 import { BenchmarkCard } from "@/components/visibility/BenchmarkCard";
 import { AiLensAuditPanel } from "@/components/visibility/AiLensAuditPanel";
-import { VISIBILITY_COPY, type DashLocale, type VisibilityCopy } from "@/lib/i18n/dashboard";
+import { FixWithAiButton } from "@/components/seo-tools/fix-with-ai-button";
+import {
+  ACTION_AGENT_COPY,
+  VISIBILITY_COPY,
+  type DashLocale,
+  type VisibilityCopy,
+} from "@/lib/i18n/dashboard";
 
 // ─── Types (the sidecar's serialized audit shape) ───────────────────────────
 interface Check {
@@ -91,6 +97,7 @@ export function VisibilityPageClient({
   onboarding?: boolean;
 }) {
   const t = VISIBILITY_COPY[locale];
+  const aa = ACTION_AGENT_COPY[locale];
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -449,6 +456,35 @@ export function VisibilityPageClient({
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
+              {/* The Action Agent entry point, ALONGSIDE the panel below rather
+                  than replacing it.
+                  Two different products from the same idea: /remediate answers
+                  "show me the fixes for this page right now" and keeps nothing,
+                  while these two buttons put a draft in a queue that survives a
+                  refresh, can be edited, and records who approved it. Somebody
+                  triaging one page wants the first; somebody working through a
+                  site with a colleague wants the second. Removing either would
+                  take something away from one of them. */}
+              {audit && !audit.error && (
+                <div className="rounded-lg border border-blue-200 bg-blue-50 p-3">
+                  <p className="text-sm text-blue-900">{aa.entryIntro}</p>
+                  <div className="mt-2 flex flex-wrap items-start gap-2">
+                    <FixWithAiButton
+                      locale={locale}
+                      kind="schema"
+                      url={audit.url}
+                      label={aa.generateSchema}
+                    />
+                    <FixWithAiButton
+                      locale={locale}
+                      kind="faq"
+                      url={audit.url}
+                      label={aa.generateFaq}
+                    />
+                  </div>
+                </div>
+              )}
+
               {!rem && !remLocked && (
                 <div className="flex flex-col items-start gap-3">
                   <p className="text-sm text-gray-500">

@@ -36,6 +36,8 @@ export const NOTIFICATION_TYPES = [
   "funnel_lead",
   // Prepaid lookup credits — a Stripe one-time checkout completed
   "credits_purchased",
+  // AI Action Agent — a generator finished and a draft is waiting for a human
+  "action_draft_ready",
 ] as const;
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number];
@@ -122,6 +124,26 @@ export interface NotificationPayloads {
    * not in a tray row that every member of the tenant can read.
    */
   credits_purchased: { credits: number; balance: number };
+  /**
+   * ONE ROW PER DRAFT, and the payload is why. It carries the id of the single
+   * ActionItem it is about, so the tray row deep-links straight to that draft
+   * instead of to a queue the reader then has to search. A batch of five review
+   * replies is therefore five rows — bounded by MAX_REVIEW_BATCH (10) in
+   * src/lib/action-agent/generate.ts, which exists for exactly that reason.
+   *
+   * NO CONTENT IN THE PAYLOAD. Not the drafted reply, not the review it answers,
+   * not the page title. This row is tenant-wide, so it renders for every member
+   * including ones with no business reading a customer complaint, and the draft
+   * is one click away behind the same tenant scoping the queue enforces.
+   *
+   * `kind` IS CARRIED AND THE COPY NEVER PRINTS IT — the same split
+   * citation_opportunity.priority makes one field up. It is an enum value
+   * ("review_reply"), and render.ts substitutes payload values verbatim with no
+   * locale in hand, so a `{kind}` placeholder would put a raw snake_case token
+   * in a French tray. It is stored so a consumer can filter or route on it, and
+   * so the queue can preselect a tab when a row is opened.
+   */
+  action_draft_ready: { actionItemId: string; kind: string };
 }
 
 export type PayloadFor<T extends NotificationType> = NotificationPayloads[T];
@@ -155,6 +177,10 @@ export const NOTIFICATION_HREF: Record<NotificationType, string> = {
   // where a buyer checks what they now hold and reads the ledger. Someone who
   // has just bought is asking "did it land", not "shall I buy".
   credits_purchased: "/billing",
+  // The review queue. The adapter overrides this with ?item=<id> so the row
+  // opens the draft it names; this bare path is the fallback for a row whose
+  // href was not set, and it lands somewhere useful rather than nowhere.
+  action_draft_ready: "/visibility/tools/action-agent",
 };
 
 export function isNotificationType(value: string): value is NotificationType {

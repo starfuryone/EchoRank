@@ -171,6 +171,27 @@ const DEFAULT_JOB_OPTIONS: Record<QueueName, JobsOptions> = {
     removeOnComplete: { age: REDIS_CONFIG.ttl.completedJobs },
     removeOnFail: { age: REDIS_CONFIG.ttl.failedJobs },
   },
+  // ONE ATTEMPT, the citation-opportunities policy, and for a sharper version
+  // of the same reason.
+  //
+  // This job is NOT IDEMPOTENT and cannot be made so: the Anthropic call is
+  // committed the moment it returns, the meter is written immediately after,
+  // and only then is the draft row created. A retry that resumes after any of
+  // those steps spends the tenant's budget a second time to produce a second
+  // draft of the same page — the customer pays twice and then has to reject
+  // one of them. A review batch that failed on review 7 of 10 would re-draft
+  // all ten.
+  //
+  // The failures worth retrying are already handled a layer down:
+  // callMarketingModel retries 429s and 5xx twice on its own, inside the single
+  // attempt, where a retry costs nothing because no tokens were billed. What
+  // reaches this level is a page that will not load, JSON that will not parse,
+  // or a budget that is gone — none of which a retry fixes.
+  "action-agent": {
+    attempts: 1,
+    removeOnComplete: { age: REDIS_CONFIG.ttl.completedJobs },
+    removeOnFail: { age: REDIS_CONFIG.ttl.failedJobs },
+  },
   // Retryable for the same reason, by a different mechanism: the rollup's scope
   // is "citations with no sourceId", and a successful attempt stamps the rows
   // it counted in the same transaction that counted them. A retry therefore

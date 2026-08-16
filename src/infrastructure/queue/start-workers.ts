@@ -40,6 +40,7 @@ import { startRevenueRollupWorker } from "./workers/revenue-rollup.worker";
 import { startCitationAggregationWorker } from "./workers/citation-aggregation.worker";
 import { startCitationOpportunitiesWorker } from "./workers/citation-opportunities.worker";
 import { startOpportunityScanWorker } from "./workers/opportunity-scan.worker";
+import { startActionAgentWorker } from "./workers/action-agent.worker";
 
 /**
  * How often to drain domain events that are still PENDING/FAILED in the DB.
@@ -118,6 +119,9 @@ async function startWorkers() {
     { name: "citation-aggregation", start: startCitationAggregationWorker },
     { name: "citation-opportunities", start: startCitationOpportunitiesWorker },
     { name: "opportunity-scan", start: startOpportunityScanWorker },
+    // The only worker here with no schedule of its own: every job is a human
+    // pressing Fix with AI. Nothing periodic, nothing generated unasked.
+    { name: "action-agent", start: startActionAgentWorker },
   ];
 
   const loaded: string[] = [];

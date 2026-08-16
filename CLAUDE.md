@@ -106,7 +106,7 @@ printf 'import base from "/opt/echorank/app/vitest.config.ts";\nexport default {
 npx vitest run --config /tmp/vitest.noenv.config.ts
 ```
 
-The whole vitest suite (2775 passing, 7 skipped) passes this way — nothing in it needs the real
+The whole vitest suite (3070 passing, 7 skipped) passes this way — nothing in it needs the real
 `.env`. The `node --test` scripts (`test:imports`, `test:seo-tools`, … ) never read it
 and run as-is; only `test:vitest`, the last link in `npm test`, is affected.
 

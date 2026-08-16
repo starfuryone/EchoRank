@@ -246,6 +246,7 @@ model Tenant {
   funnelConfigs         FunnelConfig[]
   funnelLeads           FunnelLead[]
   creditLedger          CreditLedger[]
+  actionItems           ActionItem[]
 
   @@map("tenants")
 }
@@ -3800,4 +3801,103 @@ model RevenueRollup {
   /// The page read: this tenant's months, newest first.
   @@index([tenantId, month(sort: Desc)])
   @@map("revenue_rollups")
+}
+
+// ─── AI Action Agent ───────────────────────────────────────────────────────
+
+/// What a draft IS. The enum is WIDE and the generators are NARROW: `page` and
+/// `gbp_post` are v2 and nothing writes them today.
+///
+/// Declared wide on purpose. Adding an enum value to a live Postgres type is a
+/// migration that cannot run inside a transaction with anything that then uses
+/// it, and this table is read by a state machine whose exhaustiveness checks
+/// are compile-time. Shipping the full vocabulary once means v2 is a generator
+/// and a copy key, not a migration on a table with rows in it.
+enum ActionItemKind {
+  schema
+  faq
+  page
+  gbp_post
+  review_reply
+}
+
+/// The approval state machine. See ACTION_ITEM_TRANSITIONS in
+/// src/lib/action-agent/types.ts — that map is the authority, and the API
+/// route refuses any transition it does not contain.
+///
+/// `rejected` and `applied` are BOTH TERMINAL. Re-generating after a rejection
+/// writes a NEW row carrying the same sourceRef; it never revives this one. A
+/// cycle here would make "what did we decide about this page in August" an
+/// unanswerable question, which is the whole reason the table exists.
+enum ActionItemStatus {
+  draft
+  approved
+  applied
+  rejected
+}
+
+/// One AI-generated, human-approved change.
+///
+/// NOTHING IN THIS TABLE AUTO-PUBLISHES. There is no kind, no status, no
+/// setting and no code path that pushes a draft to a live surface: `applied`
+/// means a human copied it out and told us they used it, and the audit_logs
+/// row written at that moment is the record of who said so. If a future kind
+/// ever does gain a publish adapter, it gains it here, in this comment, with a
+/// second human confirmation — not by a flag someone flips.
+///
+/// SPEND IS NOT ON THIS ROW. Every generation writes an `ai_api_calls` row with
+/// `categoryId = "action_agent:<kind>"`, which puts it in the same monthly
+/// output-token aggregate as Marketing Studio — one budget, one meter, one
+/// reset date. Copying the token counts here would be a second number that can
+/// disagree with the meter that actually enforces.
+model ActionItem {
+  id       String @id @default(cuid())
+  tenantId String
+
+  kind ActionItemKind
+
+  /// What this draft is ABOUT, as "<Model>:<id>" (`ExternalReview:clx…`) or as
+  /// a URL for the page-shaped kinds. Deliberately a string and deliberately
+  /// not a foreign key: the three v1 kinds point at three different tables, one
+  /// of which (the audited page) is not a table at all.
+  ///
+  /// NOT UNIQUE. Re-generating after a rejection is a new row with the same
+  /// sourceRef, and that history is the point.
+  sourceRef String @db.Text
+
+  /// The artifact, shaped per `kind` — ActionItemDraft in
+  /// src/lib/action-agent/types.ts. JSON rather than text because every kind
+  /// carries more than one field (JSON-LD *and* where to paste it; the reply
+  /// *and* the review it answers), and because the review queue edits fields
+  /// in place.
+  draft Json
+
+  status ActionItemStatus @default(draft)
+
+  /// User id, not name — names change and this is an audit trail. Null until
+  /// the transition happens; both halves are set together.
+  approvedBy String?
+  approvedAt DateTime?
+  rejectedBy String?
+  rejectedAt DateTime?
+  /// Why it was rejected, in the reviewer's own words. Optional: "no" is a
+  /// complete answer, and a required field here would be a required field
+  /// people type "n/a" into.
+  rejectedNote String? @db.Text
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  appliedAt DateTime?
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  /// The review queue's only order: this tenant's drafts, newest first, filtered
+  /// by status.
+  @@index([tenantId, status, createdAt(sort: Desc)])
+  /// The per-kind tab on the same page.
+  @@index([tenantId, kind, createdAt(sort: Desc)])
+  /// "has this page/review already got a draft" — the de-dupe read the
+  /// Fix-with-AI buttons do before they enqueue.
+  @@index([tenantId, sourceRef])
+  @@map("action_items")
 }

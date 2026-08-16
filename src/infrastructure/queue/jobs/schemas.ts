@@ -343,6 +343,45 @@ export interface OpportunityScanJob {
   placesEnabled?: boolean;
 }
 
+// ─── AI Action Agent ──────────────────────────────────────────────────────────
+
+/**
+ * One generation request.
+ *
+ * NO PROMPT, NO MODEL, NO TOKEN CEILING — the same injection boundary the
+ * Marketing Studio route draws. `kind` selects a generator; the prompt text,
+ * the model and the ceiling all come from src/lib/action-agent/prompts.ts, so
+ * a caller who could write to this queue still could not turn it into a
+ * general-purpose model proxy on someone's budget.
+ *
+ * `plan` and `locale` are SNAPSHOTTED from the request rather than re-read in
+ * the worker. The plan is what the budget was asserted against at enqueue time,
+ * and re-reading it would let a downgrade that landed while the job waited
+ * enforce a limit the customer was never refused under. The locale is the one
+ * the person clicking the button was reading the page in, which is the only
+ * locale that means anything for a deliverable they are about to review.
+ */
+export interface ActionAgentJob extends BaseJob {
+  /** V1Kind — "schema" | "faq" | "review_reply". Validated in the worker. */
+  kind: string;
+  /** PlanType, as read at enqueue time. */
+  plan: string;
+  /** DashLocale — "en" | "fr" | "de-CH". */
+  locale: string;
+  /** Page URL for the page-shaped kinds. Absent for review_reply. */
+  url?: string;
+  /** Reviews to draft in one batch. Absent for the page-shaped kinds. */
+  reviewLimit?: number;
+  /**
+   * Draft for these reviews specifically. Set only by re-generation, which
+   * redrafts the one review a reviewer rejected rather than whatever the next
+   * batch happens to pick up.
+   */
+  reviewIds?: string[];
+  /** Who asked. Recorded in audit_logs, never used for authorization. */
+  requestedByUserId?: string;
+}
+
 // ─── Queue → Job Type mapping ─────────────────────────────────────────────────
 
 export interface QueueJobMap {
@@ -370,4 +409,5 @@ export interface QueueJobMap {
   "citation-aggregation": CitationAggregationJob;
   "citation-opportunities": CitationOpportunityJob;
   "opportunity-scan": OpportunityScanJob;
+  "action-agent": ActionAgentJob;
 }

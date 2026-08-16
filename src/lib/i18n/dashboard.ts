@@ -75,6 +75,7 @@ export const dashNav: Record<DashLocale, Record<string, string>> = {
     "/visibility/tools/opportunity-scanner": "Opportunity Scanner",
     "/visibility/tools/funnels": "Audit Funnels",
     "/visibility/tools/revenue": "AI Revenue",
+    "/visibility/tools/action-agent": "AI Action Agent",
   },
   "de-CH": {
     "/dashboard": "Dashboard",
@@ -128,6 +129,7 @@ export const dashNav: Record<DashLocale, Record<string, string>> = {
     "/visibility/tools/opportunity-scanner": "Chancen-Scanner",
     "/visibility/tools/funnels": "Audit-Funnels",
     "/visibility/tools/revenue": "KI-Umsatz",
+    "/visibility/tools/action-agent": "KI-Aktionsagent",
   },
   fr: {
     "/dashboard": "Tableau de bord",
@@ -181,6 +183,7 @@ export const dashNav: Record<DashLocale, Record<string, string>> = {
     "/visibility/tools/opportunity-scanner": "Scanner d'opportunités",
     "/visibility/tools/funnels": "Formulaires d'audit",
     "/visibility/tools/revenue": "Revenus IA",
+    "/visibility/tools/action-agent": "Agent d'action IA",
   },
 };
 
@@ -5346,6 +5349,11 @@ const seoToolsEn = {
       description:
         "What AI-referred visitors were worth this month, and what your top rival's share of the answers is costing you.",
     },
+    action_agent: {
+      name: "AI Action Agent",
+      description:
+        "Drafts schema, FAQ content and review replies for you to approve. Nothing is published — you copy it out and use it.",
+    },
     dashboard: {
       name: "Dashboard",
       description: "Track key marketing and SEO performance across projects.",
@@ -5529,6 +5537,11 @@ export const SEO_TOOLS_COPY: Record<DashLocale, SeoToolsCopy> = {
         description:
           "Ce que valaient ce mois-ci les visiteurs venus d'une IA, et ce que vous coûte la part de réponses de votre principal concurrent.",
       },
+      action_agent: {
+        name: "Agent d'action IA",
+        description:
+          "Rédige données structurées, contenu FAQ et réponses aux avis, que vous approuvez. Rien n'est publié : vous copiez le texte et vous l'utilisez.",
+      },
       dashboard: {
         name: "Tableau de bord",
         description: "Suivez la performance marketing et SEO clé de tous vos projets.",
@@ -5706,6 +5719,11 @@ export const SEO_TOOLS_COPY: Record<DashLocale, SeoToolsCopy> = {
         name: "KI-Umsatz",
         description:
           "Was Besucher aus KI-Assistenten diesen Monat wert waren und was Sie der Antwortanteil der stärksten Konkurrenz kostet.",
+      },
+      action_agent: {
+        name: "KI-Aktionsagent",
+        description:
+          "Entwirft strukturierte Daten, FAQ-Inhalte und Bewertungsantworten zu Ihrer Freigabe. Nichts wird veröffentlicht — Sie kopieren den Text und setzen ihn ein.",
       },
       dashboard: {
         name: "Dashboard",
@@ -12403,6 +12421,20 @@ const notificationsEn = {
       title: "{credits} prospect lookups added",
       body: "You now have {balance} lookups available for the Opportunity Scanner.",
     },
+    // NO {kind} PLACEHOLDER, though the payload carries one — see
+    // NotificationPayloads.action_draft_ready. render.ts substitutes payload
+    // values verbatim and has no locale in hand, so {kind} would print
+    // "review_reply" into a French tray.
+    //
+    // "Waiting for you" IS THE POINT OF THE SENTENCE. Nothing was published and
+    // nothing will be: the draft sits until a human approves it. Copy that read
+    // "Echorank fixed your schema" would be false in a way the customer only
+    // discovers when the fix never appears on their site.
+    action_draft_ready: {
+      label: "AI draft ready",
+      title: "An AI draft is ready for your review",
+      body: "Nothing has been published. Open it to edit, approve or reject it.",
+    },
   },
 };
 
@@ -12506,6 +12538,11 @@ export const NOTIFICATIONS_COPY: Record<DashLocale, NotificationsCopy> = {
         title: "{credits} recherches de prospects ajoutées",
         body: "Vous disposez maintenant de {balance} recherches pour le Scanner d'opportunités.",
       },
+      action_draft_ready: {
+        label: "Proposition IA prête",
+        title: "Une proposition rédigée par l'IA attend votre relecture",
+        body: "Rien n'a été publié. Ouvrez-la pour la modifier, l'approuver ou la refuser.",
+      },
     },
   },
   "de-CH": {
@@ -12603,6 +12640,11 @@ export const NOTIFICATIONS_COPY: Record<DashLocale, NotificationsCopy> = {
         label: "Abfragen hinzugefügt",
         title: "{credits} Prospect-Abfragen hinzugefügt",
         body: "Sie haben jetzt {balance} Abfragen für den Opportunity Scanner zur Verfügung.",
+      },
+      action_draft_ready: {
+        label: "KI-Entwurf bereit",
+        title: "Ein KI-Entwurf wartet auf Ihre Durchsicht",
+        body: "Es wurde nichts veröffentlicht. Öffnen Sie ihn, um ihn zu bearbeiten, freizugeben oder abzulehnen.",
       },
     },
   },
@@ -14851,5 +14893,308 @@ export const REVENUE_HELP_COPY: Record<DashLocale, RevenueHelpCopy> = {
     splitTitle: "Warum Erzieltes pro Assistent und Verlorenes pro Engine gilt",
     splitBody:
       "Eine Verweisung sagt, welcher Assistent jemanden geschickt hat. Ein Antwortanteil-Snapshot sagt, wie viel der Antworten einer Engine Ihnen gehören. Das sind verschiedene Messungen mit teils gleichen Namen — keine der beiden Zahlen wird auf die Achse der anderen verteilt.",
+  },
+};
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   AI Action Agent (tool page: /visibility/tools/action-agent)
+   ═══════════════════════════════════════════════════════════════════════════
+
+   THE COPY'S ONE JOB IS TO NEVER IMPLY PUBLISHING. Every string below is
+   written so that a customer who reads only the buttons still understands that
+   nothing reaches their site, their Google listing or their reviewers unless
+   they go and paste it there. "Approve" approves a draft; "Mark as applied"
+   records that they used it. Neither word is allowed to grow into "publish",
+   because the day one of them does, the product has silently promised something
+   it does not do.
+
+   THE BUDGET LINE NAMES UTC. The counter is keyed on getUTCMonth (see
+   marketingBudgetResetsAt), so a tenant in Zürich gets their allowance back at
+   02:00 local and one in Vancouver on what their calendar calls the previous
+   day. A bare date would be wrong for roughly half the customer base.
+
+   ONE BUDGET, SAID OUT LOUD. This shares Marketing Studio's monthly allowance,
+   and the copy says so rather than letting somebody discover it when a brief
+   they were writing is refused because of a draft somebody else generated.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+const actionAgentEn = {
+  title: "AI Action Agent",
+  subtitle:
+    "Drafts the fixes AI search needs, and waits for you. Nothing is published — you review, edit and copy.",
+
+  // ── The standing promise, rendered above the queue on every locale ──
+  noPublishBanner:
+    "Echorank never publishes anything for you. Every draft here is text you copy out and use yourself.",
+
+  // ── Generate ──
+  generateTitle: "Generate a draft",
+  generateSchema: "Structured data (JSON-LD)",
+  generateSchemaHint: "Reads the page, plus your latest site audit, and writes a schema block.",
+  generateFaq: "FAQ content",
+  generateFaqHint: "Turns the questions you track across AI engines into answers for this page.",
+  generateReviews: "Review replies",
+  generateReviewsHint: "Drafts a reply for each review that has none yet.",
+  urlLabel: "Page address",
+  urlPlaceholder: "https://example.com/services",
+  reviewCountLabel: "How many reviews",
+  generateCta: "Generate",
+  generating: "Generating…",
+  queued: "Queued. The draft appears here when it is ready, and you get a notification.",
+
+  // ── Usage ──
+  usageTitle: "This month's generation budget",
+  usageLine: "{used} of {limit} output tokens used",
+  usageUnlimited: "Unmetered on your plan",
+  usageResets: "Resets {date} (UTC)",
+  usageShared:
+    "Shared with Marketing Studio — both draw on the same monthly allowance.",
+
+  // ── Queue ──
+  tabDraft: "Needs review",
+  tabApproved: "Approved",
+  tabApplied: "Applied",
+  tabRejected: "Rejected",
+  empty: "No drafts yet. Generate one above, or use “Fix with AI” on an audit or a review.",
+  emptyFiltered: "Nothing in this tab.",
+
+  kindSchema: "Structured data",
+  kindFaq: "FAQ",
+  kindReviewReply: "Review reply",
+
+  // ── Row actions ──
+  edit: "Edit",
+  save: "Save changes",
+  cancel: "Cancel",
+  approve: "Approve",
+  reject: "Reject",
+  apply: "Mark as applied",
+  applyHint: "Records that you used it. It does not publish anything.",
+  regenerate: "Generate a new draft",
+  rejectNoteLabel: "Why? (optional)",
+  copy: "Copy",
+  copied: "Copied",
+  download: "Download",
+
+  // ── Row detail ──
+  placementTitle: "Where to put it",
+  omittedTitle: "Left out, because the page did not say",
+  sourcePromptsTitle: "Built to answer",
+  reviewOf: "{platform} · {rating}/5 · {author}",
+  reviewAnonymous: "Anonymous",
+  approvedBy: "Approved {date}",
+  rejectedOn: "Rejected {date}",
+  appliedOn: "Marked applied {date}",
+
+  // ── Errors ──
+  errBudget:
+    "You have used this month's generation budget. It resets {date} (UTC), or upgrade for a larger allowance.",
+  errLocked: "Marketing Studio and the Action Agent are included from the Starter plan up.",
+  errPage: "That page could not be read. Check the address and that it is publicly reachable.",
+  errConflict: "Somebody else changed this draft. Refresh to see where it got to.",
+  errGeneric: "Something went wrong. Try again.",
+
+  // ── The entry-point button, on /visibility and /monitoring ──
+  entryIntro:
+    "Want a version you can keep, edit and approve? The Action Agent drafts these into a review queue instead of a one-off panel.",
+  entryIntroReviews:
+    "Draft a reply to each of these, then read and approve them before you post anything.",
+  fixWithAi: "Fix with AI",
+  fixWithAiReviews: "Draft replies with AI",
+  fixWithAiQueued: "Queued — nothing is published. Review the draft in the Action Agent.",
+  openQueue: "Open the Action Agent",
+
+  // ── Locked (below Starter, or no marketing_studio) ──
+  lockedTitle: "Included from the Starter plan up",
+  lockedBody:
+    "The Action Agent drafts structured data, FAQ content and review replies from your own pages and reviews, and waits for you to approve them. It shares Marketing Studio's monthly generation budget.",
+  lockedCta: "See plans",
+};
+
+export type ActionAgentCopy = typeof actionAgentEn;
+
+export const ACTION_AGENT_COPY: Record<DashLocale, ActionAgentCopy> = {
+  en: actionAgentEn,
+  fr: {
+    title: "Agent d'action IA",
+    subtitle:
+      "Il rédige les correctifs dont la recherche IA a besoin, puis il vous attend. Rien n'est publié : vous relisez, modifiez et copiez.",
+
+    noPublishBanner:
+      "Echorank ne publie jamais rien à votre place. Chaque proposition ci-dessous est un texte que vous copiez et utilisez vous-même.",
+
+    generateTitle: "Rédiger une proposition",
+    generateSchema: "Données structurées (JSON-LD)",
+    generateSchemaHint:
+      "Lit la page, ainsi que votre dernier audit de site, et rédige un bloc de données structurées.",
+    generateFaq: "Contenu FAQ",
+    generateFaqHint:
+      "Transforme les questions que vous suivez sur les moteurs IA en réponses pour cette page.",
+    generateReviews: "Réponses aux avis",
+    generateReviewsHint: "Rédige une réponse pour chaque avis qui n'en a pas encore.",
+    urlLabel: "Adresse de la page",
+    urlPlaceholder: "https://exemple.com/services",
+    reviewCountLabel: "Combien d'avis",
+    generateCta: "Rédiger",
+    generating: "Rédaction…",
+    queued:
+      "En file d'attente. La proposition apparaîtra ici une fois prête, et vous recevrez une notification.",
+
+    usageTitle: "Budget de rédaction du mois",
+    usageLine: "{used} jetons de sortie utilisés sur {limit}",
+    usageUnlimited: "Sans limite sur votre offre",
+    usageResets: "Réinitialisation le {date} (UTC)",
+    usageShared:
+      "Partagé avec Marketing Studio : les deux puisent dans la même enveloppe mensuelle.",
+
+    tabDraft: "À relire",
+    tabApproved: "Approuvées",
+    tabApplied: "Appliquées",
+    tabRejected: "Refusées",
+    empty:
+      "Aucune proposition pour l'instant. Rédigez-en une ci-dessus, ou utilisez « Corriger avec l'IA » sur un audit ou un avis.",
+    emptyFiltered: "Rien dans cet onglet.",
+
+    kindSchema: "Données structurées",
+    kindFaq: "FAQ",
+    kindReviewReply: "Réponse à un avis",
+
+    edit: "Modifier",
+    save: "Enregistrer",
+    cancel: "Annuler",
+    approve: "Approuver",
+    reject: "Refuser",
+    apply: "Marquer comme appliquée",
+    applyHint: "Enregistre que vous l'avez utilisée. Cela ne publie rien.",
+    regenerate: "Rédiger une nouvelle proposition",
+    rejectNoteLabel: "Pourquoi ? (facultatif)",
+    copy: "Copier",
+    copied: "Copié",
+    download: "Télécharger",
+
+    placementTitle: "Où le placer",
+    omittedTitle: "Omis, faute d'information sur la page",
+    sourcePromptsTitle: "Rédigé pour répondre à",
+    reviewOf: "{platform} · {rating}/5 · {author}",
+    reviewAnonymous: "Anonyme",
+    approvedBy: "Approuvée le {date}",
+    rejectedOn: "Refusée le {date}",
+    appliedOn: "Marquée appliquée le {date}",
+
+    errBudget:
+      "Vous avez épuisé le budget de rédaction du mois. Il se réinitialise le {date} (UTC) ; vous pouvez aussi passer à une offre supérieure.",
+    errLocked:
+      "Marketing Studio et l'Agent d'action sont inclus à partir de l'offre Starter.",
+    errPage:
+      "Cette page n'a pas pu être lue. Vérifiez l'adresse et qu'elle est accessible publiquement.",
+    errConflict:
+      "Quelqu'un d'autre a modifié cette proposition. Actualisez pour voir son état.",
+    errGeneric: "Une erreur est survenue. Réessayez.",
+
+    entryIntro:
+      "Vous voulez une version que vous pouvez conserver, modifier et approuver ? L'Agent d'action les rédige dans une file de relecture plutôt que dans un panneau éphémère.",
+    entryIntroReviews:
+      "Rédigez une réponse à chacun de ces avis, puis relisez-les et approuvez-les avant de publier quoi que ce soit.",
+    fixWithAi: "Corriger avec l'IA",
+    fixWithAiReviews: "Rédiger les réponses avec l'IA",
+    fixWithAiQueued:
+      "En file d'attente — rien n'est publié. Relisez la proposition dans l'Agent d'action.",
+    openQueue: "Ouvrir l'Agent d'action",
+
+    lockedTitle: "Inclus à partir de l'offre Starter",
+    lockedBody:
+      "L'Agent d'action rédige des données structurées, du contenu FAQ et des réponses aux avis à partir de vos propres pages et avis, puis attend votre approbation. Il partage l'enveloppe mensuelle de rédaction de Marketing Studio.",
+    lockedCta: "Voir les offres",
+  },
+  "de-CH": {
+    title: "KI-Aktionsagent",
+    subtitle:
+      "Er entwirft die Korrekturen, die KI-Suche braucht, und wartet dann auf Sie. Nichts wird veröffentlicht — Sie prüfen, bearbeiten und kopieren.",
+
+    noPublishBanner:
+      "Echorank veröffentlicht nie etwas für Sie. Jeder Entwurf hier ist Text, den Sie selbst herauskopieren und einsetzen.",
+
+    generateTitle: "Entwurf erstellen",
+    generateSchema: "Strukturierte Daten (JSON-LD)",
+    generateSchemaHint:
+      "Liest die Seite sowie Ihren letzten Site-Audit und schreibt einen Block mit strukturierten Daten.",
+    generateFaq: "FAQ-Inhalt",
+    generateFaqHint:
+      "Macht aus den Fragen, die Sie über KI-Engines verfolgen, Antworten für diese Seite.",
+    generateReviews: "Antworten auf Bewertungen",
+    generateReviewsHint: "Entwirft eine Antwort für jede Bewertung, die noch keine hat.",
+    urlLabel: "Seitenadresse",
+    urlPlaceholder: "https://beispiel.ch/leistungen",
+    reviewCountLabel: "Wie viele Bewertungen",
+    generateCta: "Erstellen",
+    generating: "Wird erstellt…",
+    queued:
+      "In der Warteschlange. Der Entwurf erscheint hier, sobald er fertig ist, und Sie erhalten eine Benachrichtigung.",
+
+    usageTitle: "Erstellungsbudget dieses Monats",
+    usageLine: "{used} von {limit} Ausgabe-Tokens verbraucht",
+    usageUnlimited: "In Ihrem Abo ohne Limit",
+    usageResets: "Zurückgesetzt am {date} (UTC)",
+    usageShared:
+      "Geteilt mit Marketing Studio — beide schöpfen aus demselben Monatskontingent.",
+
+    tabDraft: "Zu prüfen",
+    tabApproved: "Freigegeben",
+    tabApplied: "Angewendet",
+    tabRejected: "Abgelehnt",
+    empty:
+      "Noch keine Entwürfe. Erstellen Sie oben einen, oder nutzen Sie «Mit KI beheben» bei einem Audit oder einer Bewertung.",
+    emptyFiltered: "In diesem Reiter ist nichts.",
+
+    kindSchema: "Strukturierte Daten",
+    kindFaq: "FAQ",
+    kindReviewReply: "Bewertungsantwort",
+
+    edit: "Bearbeiten",
+    save: "Änderungen speichern",
+    cancel: "Abbrechen",
+    approve: "Freigeben",
+    reject: "Ablehnen",
+    apply: "Als angewendet markieren",
+    applyHint: "Hält fest, dass Sie ihn eingesetzt haben. Es wird nichts veröffentlicht.",
+    regenerate: "Neuen Entwurf erstellen",
+    rejectNoteLabel: "Warum? (optional)",
+    copy: "Kopieren",
+    copied: "Kopiert",
+    download: "Herunterladen",
+
+    placementTitle: "Wohin damit",
+    omittedTitle: "Weggelassen, weil die Seite nichts dazu sagt",
+    sourcePromptsTitle: "Geschrieben als Antwort auf",
+    reviewOf: "{platform} · {rating}/5 · {author}",
+    reviewAnonymous: "Anonym",
+    approvedBy: "Freigegeben am {date}",
+    rejectedOn: "Abgelehnt am {date}",
+    appliedOn: "Als angewendet markiert am {date}",
+
+    errBudget:
+      "Sie haben das Erstellungsbudget dieses Monats aufgebraucht. Es wird am {date} (UTC) zurückgesetzt; alternativ können Sie das Abo erweitern.",
+    errLocked:
+      "Marketing Studio und der Aktionsagent sind ab dem Starter-Abo enthalten.",
+    errPage:
+      "Diese Seite konnte nicht gelesen werden. Prüfen Sie die Adresse und ob sie öffentlich erreichbar ist.",
+    errConflict:
+      "Jemand anderes hat diesen Entwurf geändert. Laden Sie neu, um den aktuellen Stand zu sehen.",
+    errGeneric: "Etwas ist schiefgelaufen. Versuchen Sie es erneut.",
+
+    entryIntro:
+      "Möchten Sie eine Fassung, die Sie behalten, bearbeiten und freigeben können? Der Aktionsagent entwirft sie in eine Prüfliste statt in ein einmaliges Panel.",
+    entryIntroReviews:
+      "Entwerfen Sie zu jeder dieser Bewertungen eine Antwort und geben Sie sie frei, bevor Sie etwas veröffentlichen.",
+    fixWithAi: "Mit KI beheben",
+    fixWithAiReviews: "Antworten mit KI entwerfen",
+    fixWithAiQueued:
+      "In der Warteschlange — es wird nichts veröffentlicht. Prüfen Sie den Entwurf im Aktionsagenten.",
+    openQueue: "Aktionsagent öffnen",
+
+    lockedTitle: "Ab dem Starter-Abo enthalten",
+    lockedBody:
+      "Der Aktionsagent entwirft strukturierte Daten, FAQ-Inhalte und Bewertungsantworten aus Ihren eigenen Seiten und Bewertungen und wartet dann auf Ihre Freigabe. Er teilt sich das monatliche Erstellungsbudget mit Marketing Studio.",
+    lockedCta: "Abos ansehen",
   },
 };

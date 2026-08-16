@@ -1,6 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { resolveTenant } from "@/lib/signals/auth-adapter";
 import { cachedAiCall } from "@/lib/ai-cache";
+// The five clauses that used to be a string literal in this file. Moved to
+// src/lib/action-agent/prompts.ts when the Action Agent's review_reply
+// generator needed the same instruction, and IMPORTED here rather than copied:
+// two divergent copies of the paragraph that sets this product's liability
+// posture on public replies is how that posture drifts.
+// tests/action-agent-generate.test.ts asserts this route still reads it from
+// there, and that no copy of the clauses survives in this file.
+import { REVIEW_REPLY_INSTRUCTION } from "@/lib/action-agent/prompts";
 
 // House policy: claude-haiku-4-5 for every Anthropic call.
 // AI_RESPOND_MODEL still overrides; nothing sets it.
@@ -38,12 +46,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const system =
-    "You draft public replies to customer reviews for a local business. " +
-    "Write in the business's voice: professional, warm, specific to what the reviewer said, 2 to 5 sentences. " +
-    "Thank positive reviewers concretely. For negative reviews: acknowledge, never argue, never admit legal fault, " +
-    "offer to make it right and invite offline contact. No emojis unless the tone asks. " +
-    "Never fabricate facts, discounts or promises. Output only the reply text.";
+  const system = REVIEW_REPLY_INSTRUCTION;
 
   const user =
     `Business: ${body.businessName || "the business"}\n` +

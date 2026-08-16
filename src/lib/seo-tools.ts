@@ -46,6 +46,7 @@ import {
   Crosshair,
   Megaphone,
   Banknote,
+  Wand2,
 } from "lucide-react";
 import type { PlanType } from "@/generated/prisma";
 
@@ -90,7 +91,8 @@ export type SeoToolId =
   | "citation_opportunities"
   | "opportunity_scanner"
   | "audit_funnels"
-  | "ai_revenue";
+  | "ai_revenue"
+  | "action_agent";
 
 /** Tools that render a scaffold page under /visibility/tools/<slug>. */
 // Note: brand_radar/bot_analytics/content_explorer remain ScaffoldIds although
@@ -138,6 +140,9 @@ export type ScaffoldId = Exclude<
   // And the AI Revenue dashboard, which ships real with its empty state and
   // its two headline figures in REVENUE_COPY.
   | "ai_revenue"
+  // And the AI Action Agent, which ships real with its queue, empty and error
+  // states in ACTION_AGENT_COPY.
+  | "action_agent"
 >;
 
 export interface SeoTool {
@@ -271,6 +276,16 @@ export const SEO_TOOL_GROUPS: SeoToolGroup[] = [
       // Marketing Studio. It keeps its scaffold copy per the ScaffoldId note
       // above; that union means "has scaffold copy", not "is unimplemented".
       t("ai_content_helper", "ai-content-helper", PenTool),
+      // Directly after Marketing Studio because it spends the SAME monthly
+      // output-token budget — one allowance, two doors into it, and a customer
+      // who finds one should see the other rather than discovering the shared
+      // meter when a brief is refused because of a draft.
+      //
+      // NO CARD ON THE /ai HUB, deliberately and by instruction. That hub is
+      // about ANSWERS — where you appear, what share of them is yours, who the
+      // engines read. This is an ACTION surface: it produces work to approve,
+      // not a number to read. Registered in SEO Tools only.
+      t("action_agent", "action-agent", Wand2, { badge: "new" }),
       t("social_media_manager", "social-media-manager", Share2, { comingSoon: true }),
     ],
   },

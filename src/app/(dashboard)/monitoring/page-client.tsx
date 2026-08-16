@@ -21,7 +21,13 @@ import { Badge } from "@/components/ui/badge";
 import { Modal } from "@/components/ui/modal";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ReportDownloadButton } from "@/components/reports/ReportDownloadButton";
-import { MONITORING_COPY, type DashLocale, type MonitoringCopy } from "@/lib/i18n/dashboard";
+import { FixWithAiButton } from "@/components/seo-tools/fix-with-ai-button";
+import {
+  ACTION_AGENT_COPY,
+  MONITORING_COPY,
+  type DashLocale,
+  type MonitoringCopy,
+} from "@/lib/i18n/dashboard";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -143,6 +149,7 @@ function renderStars(rating: number | null) {
 
 export function MonitoringPageClient({ locale }: { locale: DashLocale }) {
   const t = MONITORING_COPY[locale];
+  const aa = ACTION_AGENT_COPY[locale];
   const [sources, setSources] = useState<MonitoringSource[]>([]);
   const [reviews, setReviews] = useState<ExternalReview[]>([]);
   const [loading, setLoading] = useState(true);
@@ -394,6 +401,23 @@ export function MonitoringPageClient({ locale }: { locale: DashLocale }) {
             />
           </div>
         </div>
+
+        {/* Batch drafting, above the list rather than a button per row.
+            A per-row button would be the obvious placement and the wrong one:
+            answering reviews is work somebody sits down and does, the generator
+            is a batch by design (one model call per review, up to ten), and a
+            button on every card invites ten separate clicks that each enqueue a
+            separate job. The drafts land in the Action Agent queue and NOTHING
+            is posted to any platform — this repo has no path that publishes a
+            reply, and the copy says so rather than letting somebody find out. */}
+        {reviews.length > 0 && (
+          <div className="rounded-lg border border-blue-200 bg-blue-50 p-3">
+            <p className="text-sm text-blue-900">{aa.entryIntroReviews}</p>
+            <div className="mt-2">
+              <FixWithAiButton locale={locale} kind="review_reply" reviewLimit={5} />
+            </div>
+          </div>
+        )}
 
         {reviews.length === 0 && !loading ? (
           <Card>
