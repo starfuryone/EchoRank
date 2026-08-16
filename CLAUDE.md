@@ -81,6 +81,52 @@ build. Hand the human the one-liner instead.
 - A new tool must be added to `SEO_TOOL_GROUPS`, all three dashboard catalogs, `dashNav`,
   and the route table in `src/lib/__tests__/seo-tools.test.ts`.
 
+## Standalone landing pages
+
+Marketing pages whose markup is a complete HTML document — own `<head>`, own CSS — served
+by a **route handler**, never a `page.tsx`. The app shell would double the chrome. Family:
+`technical-geo`, `glossary`, `keyword-research`, `methodology`, `link-building-playbook`,
+`ai-discovery-optimization`.
+
+Shape, under `src/app/[locale]/<slug>/`:
+
+- `landing-html.ts` — the document as one `String.raw` payload. **The HTML must contain no
+  backtick and no `${`.** Grep before embedding; never escape it inline.
+- `route.ts` — `GET()` returning it as `text/html; charset=utf-8`. The EN body is served on
+  every locale.
+- An entry in `LOCALIZED_ROUTES` (`src/lib/seo/registry.ts`). It feeds the sitemap **and**
+  `KNOWN_MARKETING_PATHS`, which is what 308s a locale-less `/<slug>` onto `/en/<slug>`.
+  Without it the proxy's auth gate 307s that path to `/login`. (`/{locale}/…` is already
+  public — the locale branch returns before the gate.)
+
+Cache headers differ per page and are a deliberate choice: `methodology`,
+`link-building-playbook` and `ai-discovery-optimization` use `public, s-maxage=31536000`,
+`technical-geo` `max-age=300`, `glossary` none. At a year-long s-maxage, **Cloudflare →
+Purge Everything is mandatory after every edit**, not just after a deploy.
+
+A payload carries no i18n, no shared nav and no shared pricing config, so:
+
+- Branding is **Echorank**, never `EchoRank` — the copy rule applies inside the payload.
+- The in-page nav is a **static clone of `PublicNav`** and does not track it. Assume it is
+  stale whenever the mega-nav moves.
+- Footer legal links must be `/en/legal/{privacy,terms,cookies}`. `/en/privacy` and friends
+  are hard 404s — commit `8016ec5` fixed exactly that on two pages.
+
+### `/reputation-tools` — pending implementation
+
+Public landing for Reputation Tools & Management. Source verified at
+`/root/reputation-tools-landing.html` (sha256 `f72ffa76…a68a1397`, 44,077 bytes): no
+backtick, no `${`, no `EchoRank`. Target `src/app/[locale]/reputation-tools/`, registry
+priority **0.7**.
+
+- CTAs go to `/en/pricing` (8) and `/en/free-audit` (6), never `/register`.
+- **Pricing is hardcoded in the payload** — 79/199/499 monthly, 63/159/399 annual. A price
+  change means editing this file; nothing propagates into it.
+- Ships one broken footer link, `/en/terms`. Fix to `/en/legal/terms` when embedding.
+- Homepage cross-link: a secondary button (`s.btn`, no `btnPrimary`) under the
+  `/ 09 — THE FOUNDATION` section of `src/app/[locale]/HomeClient.tsx`, label
+  `t.trad.toolsCta`, href `/${locale}/reputation-tools`.
+
 ## Tests
 
 The suite ends **green**:
