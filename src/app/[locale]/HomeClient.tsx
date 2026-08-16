@@ -142,6 +142,7 @@ const T = {
       ],
       feats: "Review campaigns by email, SMS and QR · Private feedback & routing · AI response drafting in your voice · Suspicious review detection",
       videoLabel: "Video: the classic reputation stack, explained",
+      toolsCta: "Explore reputation tools →",
     },
     faqVideoLabel: "Video: an introduction to Echorank",
     hist: {
@@ -300,6 +301,7 @@ const T = {
       ],
       feats: "Campagnes d'avis par courriel, SMS et QR · Rétroaction privée et routage · Réponses IA dans votre ton · Détection d'avis suspects",
       videoLabel: "Vidéo : la panoplie de réputation classique, expliquée",
+      toolsCta: "Découvrir les outils de réputation →",
     },
     faqVideoLabel: "Vidéo : une introduction à Echorank",
     hist: {
@@ -750,6 +752,13 @@ export default function HomeClient({
                 ))}
               </div>
               <p className={s.label} style={{ marginTop: 22, lineHeight: 1.8 }}>{t.trad.feats}</p>
+              {/* Secondary weight on purpose: the page's primary CTA is the
+                  free audit, and this only offers the reader the tool detail
+                  behind the stack they just read about. Bare s.btn is the
+                  same secondary variant the RESOURCES whitepaper link uses. */}
+              <p style={{ marginTop: 22 }}>
+                <Link className={s.btn} href={L("/reputation-tools")}>{t.trad.toolsCta}</Link>
+              </p>
             </div>
           </div>
         </div>

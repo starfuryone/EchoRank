@@ -48,6 +48,10 @@ export const LOCALIZED_ROUTES: LocalizedRoute[] = [
   { path: "/keyword-research", priority: 0.6, changeFrequency: "monthly" },
   { path: "/link-building-playbook", priority: 0.6, changeFrequency: "monthly" },
   { path: "/ai-discovery-optimization", priority: 0.6, changeFrequency: "monthly" },
+  // The public reputation-tools landing. Ranks above the guide pages: the
+  // homepage's "classic reputation stack" section links straight here, so it
+  // is a product page in the funnel rather than an article.
+  { path: "/reputation-tools", priority: 0.7, changeFrequency: "monthly" },
   { path: "/ai-visibility", priority: 0.8, changeFrequency: "weekly" },
   // The public AI Assistant. An acquisition surface rather than an article: a
   // visitor arrives with a question, gets a real answer and a scan of their own
