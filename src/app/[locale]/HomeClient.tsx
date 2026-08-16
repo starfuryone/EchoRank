@@ -9,7 +9,6 @@ import { HomeVideo, type HomeVideoLabels } from "./HomeVideo";
 import { PublicNav } from "./PublicNav";
 import { PricingSection, type HomePricingTier } from "./PricingSection";
 import type { HomePricingChrome } from "@/lib/i18n/content";
-import TestimonialSection from "@/app/[locale]/TestimonialSection";
 // The ROI calculator's note. Lifted out of this file so the AI Revenue
 // dashboard can carry the same promise without a second copy of the sentence
 // drifting away from this one — see src/lib/revenue/disclaimer.ts. The
@@ -629,7 +628,6 @@ export default function HomeClient({
            the same config the paid hub at /visibility/tools renders. */}
       {toolsSection}
 
-
       {/* 5. TIMELINE */}
       <section className={s.section}>
         <div className={s.container}>
@@ -834,7 +832,7 @@ export default function HomeClient({
         </div>
       </section>
 
-      <TestimonialSection />
+      
 
       {/* 12. PRICING (compact, keeps #pricing anchor) */}
       <section id="pricing" className={s.section}>
