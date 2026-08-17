@@ -1,0 +1,23 @@
+-- Keyword Opportunity Finder: which analysis a cache hit was served from.
+--
+-- ADDITIVE ONLY. One nullable text column. Nothing dropped, renamed or retyped.
+--
+-- ── DATED 20260817090000, AFTER THE TABLE IT ALTERS ─────────────────────────
+--   "keyword_opportunity_analyses"  20260817060000_keyword_opportunity_finder
+--
+-- The latest migration in the tree when this was written was
+-- 20260817080000_keyword_opportunity_discovery_counts, so this sorts last.
+--
+-- ── WHY IT IS NOT A FOREIGN KEY ─────────────────────────────────────────────
+-- The same reason credit_ledger.ref is not one: this pointer must outlive the
+-- row it names. Historical analyses are never overwritten but they can be
+-- deleted by an operator (the dogfood teardown does exactly that), and a
+-- cascade there would silently delete the tenant's record of having asked. A
+-- dangling id degrades to an empty result in the reader, which is a worse
+-- render and a better outcome than a deleted row.
+--
+-- Backfill is deliberately absent: no row carries fromCache = true yet, because
+-- no analysis has completed. There is nothing to point at.
+
+-- AlterTable
+ALTER TABLE "keyword_opportunity_analyses" ADD COLUMN "cachedFromId" TEXT;

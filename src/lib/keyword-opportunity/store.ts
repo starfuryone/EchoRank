@@ -149,7 +149,14 @@ export async function createCacheHit(
   const now = input.now ?? new Date();
   const source = await prisma.keywordOpportunityAnalysis.findUnique({
     where: { id: input.sourceAnalysisId },
-    select: { keywordCount: true, aiTestedCount: true, scoreVersion: true },
+    select: {
+      keywordCount: true,
+      aiTestedCount: true,
+      discoveredCount: true,
+      brandedCount: true,
+      stoppedReason: true,
+      scoreVersion: true,
+    },
   });
 
   const row = await prisma.keywordOpportunityAnalysis.create({
@@ -167,8 +174,19 @@ export async function createCacheHit(
       // rediscovering it from the schema later.
       allowanceConsumed: false,
       costUsd: 0,
+      // THE POINTER, NOT A COPY. The opportunities stay on the source row and
+      // the reader follows this — see KeywordOpportunityAnalysis.cachedFromId.
+      // Copying them would duplicate a hundred rows per free re-run.
+      cachedFromId: input.sourceAnalysisId,
       keywordCount: source?.keywordCount ?? 0,
       aiTestedCount: source?.aiTestedCount ?? 0,
+      discoveredCount: source?.discoveredCount ?? 0,
+      brandedCount: source?.brandedCount ?? 0,
+      // Carried so a cached EMPTY result shows the same finding, with the same
+      // numbers, as the run it came from — rather than falling through to the
+      // "we know nothing about this domain" copy, which would be a different
+      // and untrue statement.
+      stoppedReason: source?.stoppedReason ?? null,
       completedAt: now,
     },
     select: { id: true },
@@ -215,6 +233,22 @@ export async function addSpend(
  * `fundingSource` records which pot paid, decided by the caller before the run
  * started — an analysis funded by a credit has already had that credit held, so
  * this only records the fact.
+ *
+ * ── AN EMPTY RESULT STILL CONSUMES, AND THAT IS NOT AN OVERSIGHT ────────────
+ *
+ * A run that completes with zero opportunities draws down the allowance like
+ * any other. Somebody will read that as a bug, so: COMPLETED means DELIVERED.
+ * The empty finding is real, actionable information — "every keyword you have
+ * is your own name, go rank for something else" — and it cost real provider
+ * money to establish. The pooled SEO quota already reads an empty result as a
+ * result for the same reason (seo-quota.ts counts rows that produced an
+ * answer, not rows that produced a satisfying one).
+ *
+ * The customer-friendliness lives elsewhere and deliberately so: the 24h cache
+ * makes every immediate re-run free, and the empty-state copy explains what
+ * happened and what to do. Refunding instead would mean a rule with a carve-out
+ * — "unless we did not like the answer" — and carve-outs in billing are how
+ * two people end up counting differently.
  */
 export async function markCompleted(
   analysisId: string,

@@ -4047,10 +4047,23 @@ model KeywordOpportunityAnalysis {
   scoreVersion Int @default(1)
 
   /// UTC day, "YYYY-MM-DD". Half the cache key; see the header.
-  dateBucket String
+  dateBucket   String
   /// True when this row was served from an earlier COMPLETED run for the same
   /// (domain, dateBucket). Consumed nothing.
-  fromCache  Boolean @default(false)
+  fromCache    Boolean @default(false)
+  /// The analysis this one was served from. Set iff `fromCache`.
+  ///
+  /// THE OPPORTUNITIES ARE NOT COPIED, THEY ARE POINTED AT. A cache hit that
+  /// duplicated a hundred opportunity rows, fifteen prompts and fifteen answers
+  /// would multiply the table by every repeat request for the same free result,
+  /// and the copies would be indistinguishable from a real second analysis in
+  /// every history and rollup. So the row records that it asked, and the read
+  /// layer follows this to the run that was actually paid for.
+  ///
+  /// Not a foreign key, for the reason CreditLedger.ref gives: this must
+  /// survive the row it names. A dangling id degrades to an empty result, which
+  /// is why the reader falls back rather than throwing.
+  cachedFromId String?
 
   keywordCount  Int @default(0)
   aiTestedCount Int @default(0)

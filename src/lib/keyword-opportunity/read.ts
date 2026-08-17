@@ -49,6 +49,7 @@ const ANALYSIS_SELECT = {
   currentStep: true,
   scoreVersion: true,
   fromCache: true,
+  cachedFromId: true,
   keywordCount: true,
   aiTestedCount: true,
   discoveredCount: true,
@@ -206,6 +207,22 @@ function toRow(opportunity: AnalysisRow["opportunities"][number]): OpportunityRo
   };
 }
 
+/**
+ * A cache hit's own identity, with the source run's opportunities.
+ *
+ * The row records that the tenant asked and when; the RESULT lives on the run
+ * that was actually paid for. Merging them here rather than at write time is
+ * what keeps one free re-run from duplicating a hundred opportunity rows.
+ *
+ * A dangling `cachedFromId` degrades to an empty result rather than throwing —
+ * the pointer is deliberately not a foreign key, so the row it names can be
+ * deleted by an operator, and a tenant's history should survive that.
+ */
+function withCachedSource(row: AnalysisRow, source: AnalysisRow | null): AnalysisRow {
+  if (!source) return row;
+  return { ...row, opportunities: source.opportunities };
+}
+
 function toAnalysis(row: AnalysisRow): KeywordOpportunityAnalysis {
   return {
     id: row.id,
@@ -239,6 +256,16 @@ function toAnalysis(row: AnalysisRow): KeywordOpportunityAnalysis {
  * for every route taking an :id, and the reason is that this row contains a
  * competitor's whole keyword strategy.
  */
+/** Follow a cache hit to the run it was served from. Tenant-scoped, again. */
+async function resolveSource(row: AnalysisRow, tenantId: string): Promise<AnalysisRow> {
+  if (!row.fromCache || !row.cachedFromId) return row;
+  const source = await prisma.keywordOpportunityAnalysis.findFirst({
+    where: { id: row.cachedFromId, tenantId },
+    select: ANALYSIS_SELECT,
+  });
+  return withCachedSource(row, source);
+}
+
 export async function readAnalysis(
   tenantId: string,
   analysisId: string,
@@ -247,7 +274,7 @@ export async function readAnalysis(
     where: { id: analysisId, tenantId },
     select: ANALYSIS_SELECT,
   });
-  return row ? toAnalysis(row) : null;
+  return row ? toAnalysis(await resolveSource(row, tenantId)) : null;
 }
 
 /** The newest analysis for one project, whatever its status. */
@@ -260,5 +287,5 @@ export async function readLatestAnalysis(
     orderBy: { createdAt: "desc" },
     select: ANALYSIS_SELECT,
   });
-  return row ? toAnalysis(row) : null;
+  return row ? toAnalysis(await resolveSource(row, tenantId)) : null;
 }

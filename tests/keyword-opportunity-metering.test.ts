@@ -49,6 +49,7 @@ import {
 import {
   analysesUsedThisMonth,
   cachedAnalysisId,
+  createCacheHit,
   markCompleted,
   markFailed,
 } from "@/lib/keyword-opportunity/store";
@@ -289,5 +290,82 @@ describe("the credit ledger", () => {
     keywordOpportunityCredit.findUnique.mockResolvedValue(null);
     await releaseCredit("tenant-1", "analysis-1");
     expect(keywordOpportunityCredit.create).not.toHaveBeenCalled();
+  });
+});
+
+describe("a cache hit shows the result it cached", () => {
+  it("points at the source run instead of copying its opportunities", async () => {
+    // THE WRONG NUMBER: a free re-run of a 100-keyword analysis reads back zero
+    // rows and renders "no keyword data for this domain" — confidently wrong
+    // about a domain that has a full result. Copying the rows instead would
+    // multiply the table by every repeat request for the same free answer.
+    keywordOpportunityAnalysis.findUnique.mockResolvedValue({
+      keywordCount: 100,
+      aiTestedCount: 15,
+      discoveredCount: 214,
+      brandedCount: 114,
+      stoppedReason: null,
+      scoreVersion: 1,
+    });
+    keywordOpportunityAnalysis.create.mockResolvedValue({ id: "cache-row" });
+
+    await createCacheHit({
+      tenantId: "tenant-1",
+      brandProfileId: "brand-1",
+      domain: "acmecrm.com",
+      scoreVersion: 1,
+      sourceAnalysisId: "source-1",
+    });
+
+    const data = keywordOpportunityAnalysis.create.mock.calls[0][0].data;
+    expect(data.cachedFromId).toBe("source-1");
+    expect(data.fromCache).toBe(true);
+    expect(data.keywordCount).toBe(100);
+  });
+
+  it("carries an empty source's finding, rather than falling back to a different one", async () => {
+    // A cached EMPTY result must keep saying "all your keywords were your own
+    // brand". Losing the reason would render the other empty state, which is a
+    // different and untrue statement about the same domain.
+    keywordOpportunityAnalysis.findUnique.mockResolvedValue({
+      keywordCount: 0,
+      aiTestedCount: 0,
+      discoveredCount: 214,
+      brandedCount: 214,
+      stoppedReason: "no_unbranded_keywords",
+      scoreVersion: 1,
+    });
+    keywordOpportunityAnalysis.create.mockResolvedValue({ id: "cache-row" });
+
+    await createCacheHit({
+      tenantId: "tenant-1",
+      brandProfileId: "brand-1",
+      domain: "acmecrm.com",
+      scoreVersion: 1,
+      sourceAnalysisId: "source-1",
+    });
+
+    const data = keywordOpportunityAnalysis.create.mock.calls[0][0].data;
+    expect(data.stoppedReason).toBe("no_unbranded_keywords");
+    expect(data.discoveredCount).toBe(214);
+    expect(data.brandedCount).toBe(214);
+  });
+
+  it("still consumes nothing", async () => {
+    keywordOpportunityAnalysis.findUnique.mockResolvedValue(null);
+    keywordOpportunityAnalysis.create.mockResolvedValue({ id: "cache-row" });
+
+    await createCacheHit({
+      tenantId: "tenant-1",
+      brandProfileId: "brand-1",
+      domain: "acmecrm.com",
+      scoreVersion: 1,
+      sourceAnalysisId: "gone",
+    });
+
+    const data = keywordOpportunityAnalysis.create.mock.calls[0][0].data;
+    expect(data.allowanceConsumed).toBe(false);
+    expect(data.costUsd).toBe(0);
+    expect(data.fundingSource).toBe("cache");
   });
 });
