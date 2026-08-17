@@ -18,6 +18,7 @@
 
 import { useCallback, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import AiSearchSetupHelp from "./AiSearchSetupHelp";
 
 interface EngineOption {
   provider: string;
@@ -164,6 +165,7 @@ export function SetupWizard({
       <p className="mt-1 text-sm text-gray-600">
         We ask AI assistants the questions your buyers ask, and record whether they mention you.
       </p>
+        <AiSearchSetupHelp />
 
       <ol className="mt-6 flex gap-2" aria-label="Progress">
         {STEP_TITLES.map((title, index) => (
