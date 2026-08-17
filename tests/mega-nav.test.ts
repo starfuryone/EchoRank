@@ -63,6 +63,17 @@ describe("every menu destination exists", () => {
     expect(nav("fr")).toContain("Optimisation de la découverte IA");
   });
 
+  it("carries the AI Search tracking setup page in Product > AI visibility, both locales", () => {
+    // Same reasoning as the two entries above: a route handler with en-only
+    // copy, so nothing else in the suite would notice the entry going missing
+    // or being left out of the French menu.
+    expect(navHrefs()).toContain("/setup-ai-search-tracking");
+    expect(nav("en")).toContain('href="/en/setup-ai-search-tracking"');
+    expect(nav("en")).toContain("Set up AI Search tracking");
+    expect(nav("fr")).toContain('href="/fr/setup-ai-search-tracking"');
+    expect(nav("fr")).toContain("Configurer le suivi de recherche IA");
+  });
+
   it("carries every taxonomy item in the Solutions panel", () => {
     // Derived from the config, not a literal: the count lives in exactly one
     // assertion (solutions-taxonomy.test.ts, "config integrity"), so a new
