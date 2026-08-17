@@ -15413,6 +15413,20 @@ export interface KeywordOpportunityCopy {
   /** Phase 2 only: the page renders example data until the worker is wired. */
   previewTitle: string;
   previewBody: string;
+
+  /**
+   * A COMPLETED analysis with nothing in it. NOT an error state.
+   *
+   * A young domain whose keyword profile is entirely its own brand name has
+   * been analysed correctly — there is just nothing in it yet, and that is a
+   * finding worth wording carefully rather than a blank table.
+   */
+  noResultsBrandedTitle: string;
+  /** "{discovered} keywords found · {branded} were your own brand" */
+  noResultsBrandedBody: string;
+  noResultsNoneTitle: string;
+  noResultsNoneBody: string;
+  noResultsNextSteps: string;
 }
 
 const keywordOpportunityEn: KeywordOpportunityCopy = {
@@ -15530,6 +15544,15 @@ const keywordOpportunityEn: KeywordOpportunityCopy = {
   previewTitle: "Preview — example data",
   previewBody:
     "This is a worked example for the domain acmecrm.com, not your own data. Every score on this page is computed by the live scoring code, but the keywords and AI answers are fixtures. Running a domain analysis on your own domain arrives in a following release.",
+
+  noResultsBrandedTitle: "No non-branded opportunities yet",
+  noResultsBrandedBody:
+    "We found {discovered} keywords for this domain, and {branded} of them were your own brand name. Branded keywords are excluded on purpose: someone searching for you has already found you, so there is no gap for an AI assistant to get wrong.",
+  noResultsNoneTitle: "No keyword data for this domain yet",
+  noResultsNoneBody:
+    "Our keyword data provider has nothing on record for this domain. That is normal for a site that is new or has little search presence — it usually changes as the site starts ranking.",
+  noResultsNextSteps:
+    "The next step is content that answers a question buyers ask without naming you. Publish one, then run another domain analysis to see whether it registers.",
 };
 
 export const KEYWORD_OPPORTUNITY_COPY: Record<DashLocale, KeywordOpportunityCopy> = {
@@ -15650,6 +15673,15 @@ export const KEYWORD_OPPORTUNITY_COPY: Record<DashLocale, KeywordOpportunityCopy
     previewTitle: "Aperçu — données d'exemple",
     previewBody:
       "Il s'agit d'un exemple travaillé pour le domaine acmecrm.com, et non de vos propres données. Tous les scores de cette page sont calculés par le code de notation réel, mais les mots-clés et les réponses IA sont fictifs. L'analyse de votre propre domaine arrivera dans une prochaine version.",
+
+    noResultsBrandedTitle: "Pas encore d'opportunité hors marque",
+    noResultsBrandedBody:
+      "Nous avons trouvé {discovered} mots-clés pour ce domaine, dont {branded} correspondaient à votre propre marque. Les mots-clés de marque sont exclus volontairement : qui vous cherche vous a déjà trouvé, il n'y a donc aucun écart qu'un assistant IA puisse manquer.",
+    noResultsNoneTitle: "Aucune donnée de mots-clés pour ce domaine",
+    noResultsNoneBody:
+      "Notre fournisseur de données de mots-clés n'a rien enregistré pour ce domaine. C'est habituel pour un site récent ou peu présent dans la recherche, et cela évolue généralement dès qu'il commence à se positionner.",
+    noResultsNextSteps:
+      "L'étape suivante est un contenu qui répond à une question que posent vos acheteurs sans vous nommer. Publiez-le, puis relancez une analyse de domaine pour voir s'il est pris en compte.",
   },
   "de-CH": {
     title: "Keyword-Chancenfinder",
@@ -15767,5 +15799,14 @@ export const KEYWORD_OPPORTUNITY_COPY: Record<DashLocale, KeywordOpportunityCopy
     previewTitle: "Vorschau — Beispieldaten",
     previewBody:
       "Dies ist ein durchgerechnetes Beispiel für die Domain acmecrm.com und nicht Ihre eigenen Daten. Jeder Score auf dieser Seite wird vom echten Bewertungscode berechnet, die Keywords und KI-Antworten sind jedoch Fixtures. Die Analyse Ihrer eigenen Domain folgt in einer der nächsten Versionen.",
+
+    noResultsBrandedTitle: "Noch keine markenfremden Chancen",
+    noResultsBrandedBody:
+      "Wir haben {discovered} Keywords für diese Domain gefunden, {branded} davon waren Ihr eigener Markenname. Marken-Keywords werden bewusst ausgeschlossen: Wer nach Ihnen sucht, hat Sie bereits gefunden — es gibt also keine Lücke, die ein KI-Assistent verfehlen könnte.",
+    noResultsNoneTitle: "Noch keine Keyword-Daten für diese Domain",
+    noResultsNoneBody:
+      "Unser Keyword-Datenanbieter hat zu dieser Domain nichts erfasst. Das ist bei einer neuen Website oder einer mit geringer Suchpräsenz üblich und ändert sich meist, sobald die Website zu ranken beginnt.",
+    noResultsNextSteps:
+      "Der nächste Schritt ist Inhalt, der eine Frage Ihrer Käuferschaft beantwortet, ohne Sie zu nennen. Veröffentlichen Sie einen und starten Sie danach eine weitere Domain-Analyse, um zu sehen, ob er erfasst wird.",
   },
 };

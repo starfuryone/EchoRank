@@ -25,6 +25,7 @@ import {
   parseKeywordsForSite,
   parseRankedKeywords,
   discoveryFailureReason,
+  discoveryOutcome,
   selectWorkingSet,
   WORKING_SET_LIMIT,
   type DiscoveredKeyword,
@@ -350,5 +351,43 @@ describe("why discovery produced nothing", () => {
       expect(reason).toMatch(/merged \d+/);
       expect(reason).toMatch(/after noise filter \d+/);
     }
+  });
+});
+
+describe("an empty working set is a result, not a failure", () => {
+  const counts = (over: Partial<Parameters<typeof discoveryOutcome>[0]> = {}) => ({
+    keywordsForSite: 0,
+    rankedKeywords: 0,
+    tracked: 0,
+    merged: 0,
+    afterNoise: 0,
+    kept: 0,
+    ...over,
+  });
+
+  it("calls only an endpoint fault an integration failure", () => {
+    expect(discoveryOutcome(counts(), ["labs/keywords_for_site"])).toBe("integration");
+  });
+
+  it("does NOT call our own filter a failure", () => {
+    // THE RULING THIS ENCODES: a young domain whose keyword profile is all its
+    // own brand name has been analysed correctly. Telling that customer their
+    // analysis FAILED — after charging them one and spending real money —
+    // describes the product as broken at the moment it did its job.
+    expect(discoveryOutcome(counts({ merged: 214, afterNoise: 0 }), [])).toBe(
+      "no_unbranded_keywords",
+    );
+  });
+
+  it("does NOT call an unknown domain a failure either", () => {
+    expect(discoveryOutcome(counts(), [])).toBe("no_keywords_found");
+  });
+
+  it("prefers the integration verdict only when nothing at all came back", () => {
+    // One endpoint erroring while the other answered is a partial discovery,
+    // not an integration failure — the analysis proceeds on what it has.
+    expect(discoveryOutcome(counts({ merged: 40, afterNoise: 40, kept: 40 }), ["labs/x"])).not.toBe(
+      "integration",
+    );
   });
 });

@@ -706,6 +706,9 @@ export const DEMO_ANALYSIS: KeywordOpportunityAnalysis = {
   fromCache: false,
   keywordCount: ROWS.length,
   aiTestedCount: ROWS.filter((row) => row.aiTested).length,
+  discoveredCount: ROWS.length,
+  brandedCount: 0,
+  emptyReason: null,
   // Fifteen Haiku answers plus their extraction passes, at the rates in
   // ai-monitor/pricing.ts. Well inside the $2 STARTER ceiling in plan-config.
   costUsd: 0.1372,
@@ -750,6 +753,7 @@ export const DEMO_STATES = [
   "queued",
   "running",
   "empty",
+  "branded_empty",
   "error",
   "denied",
 ] as const;
@@ -797,6 +801,26 @@ export function demoPageData(state: DemoState = "results"): KeywordOpportunityPa
           aiTestedCount: 0,
           keywordCount: 0,
           costUsd: 0,
+        },
+      };
+
+    case "branded_empty":
+      // COMPLETED with nothing in it. The ordinary outcome for a young domain
+      // whose keyword profile is entirely its own brand name — a result, not a
+      // failure, and the state that used to render as a blank page.
+      return {
+        ...DEMO_PAGE_DATA,
+        analysis: {
+          ...DEMO_ANALYSIS,
+          status: "COMPLETED",
+          rows: [],
+          competitors: [],
+          keywordCount: 0,
+          aiTestedCount: 0,
+          discoveredCount: 214,
+          brandedCount: 214,
+          emptyReason: "no_unbranded_keywords",
+          error: null,
         },
       };
 

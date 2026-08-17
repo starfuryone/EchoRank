@@ -589,6 +589,42 @@ export function KeywordOpportunitiesClient({
         </Card>
       )}
 
+      {/* ── Completed, and nothing in it ──────────────────────────────────
+             NOT AN ERROR STATE, and it used to render as nothing at all: the
+             results block requires rows.length > 0 and the empty block
+             required analysis === null, so a COMPLETED analysis with zero
+             opportunities fell between them and painted a blank page. That is
+             the ordinary outcome for a young domain whose keyword profile is
+             all its own brand name, so it needs to be the clearest state here,
+             not the missing one. ── */}
+      {status === "COMPLETED" && rows.length === 0 && analysis !== null && (
+        <Card>
+          <CardContent className="py-12 text-center">
+            <Target
+              className="mx-auto h-8 w-8 text-gray-300"
+              aria-hidden="true"
+              focusable="false"
+            />
+            <h2 className="mt-4 text-lg font-medium text-gray-900">
+              {analysis.emptyReason === "no_unbranded_keywords"
+                ? copy.noResultsBrandedTitle
+                : copy.noResultsNoneTitle}
+            </h2>
+            <p className="mx-auto mt-2 max-w-lg text-sm text-gray-600">
+              {analysis.emptyReason === "no_unbranded_keywords"
+                ? interpolate(copy.noResultsBrandedBody, {
+                    discovered: analysis.discoveredCount,
+                    branded: analysis.brandedCount,
+                  })
+                : copy.noResultsNoneBody}
+            </p>
+            <p className="mx-auto mt-3 max-w-lg text-sm text-gray-500">
+              {copy.noResultsNextSteps}
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
       {/* ── Empty ── */}
       {analysis === null && status !== "RUNNING" && (
         <Card>

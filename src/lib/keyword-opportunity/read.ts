@@ -51,6 +51,8 @@ const ANALYSIS_SELECT = {
   fromCache: true,
   keywordCount: true,
   aiTestedCount: true,
+  discoveredCount: true,
+  brandedCount: true,
   costUsd: true,
   stoppedReason: true,
   error: true,
@@ -217,13 +219,16 @@ function toAnalysis(row: AnalysisRow): KeywordOpportunityAnalysis {
     fromCache: row.fromCache,
     keywordCount: row.keywordCount,
     aiTestedCount: row.aiTestedCount,
+    discoveredCount: row.discoveredCount,
+    brandedCount: row.brandedCount,
+    emptyReason: row.status === "COMPLETED" ? row.stoppedReason : null,
     costUsd: Number(row.costUsd),
     rows: row.opportunities.map(toRow),
     competitors: competitorVisibility(row),
-    // A cap is not an error, so it is reported as a stoppedReason rather than
-    // in `error` — the UI branches on status, and a CAPPED run that COMPLETED
-    // must not render as a failure.
-    error: row.error ?? row.stoppedReason ?? null,
+    // ONLY A FAILED RUN HAS AN ERROR. A COMPLETED run's stoppedReason is a
+    // finding ("every keyword was your own brand") and travels in emptyReason
+    // above; putting it here would paint a correct, completed analysis red.
+    error: row.status === "FAILED" ? (row.error ?? row.stoppedReason ?? null) : null,
   };
 }
 

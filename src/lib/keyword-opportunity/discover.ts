@@ -227,6 +227,36 @@ export function selectWorkingSet(
 }
 
 /**
+ * What kind of "no working set" this is.
+ *
+ * ── ONLY THE FIRST IS A FAILURE ─────────────────────────────────────────────
+ *
+ * "integration" means our call did not work, and that is the only one worth a
+ * FAILED analysis. The other two are RESULTS:
+ *
+ *   no_keywords_found      the provider knows nothing about this domain
+ *   no_unbranded_keywords  it knows plenty and every one of them is the
+ *                          customer's own brand name
+ *
+ * The second is the ordinary shape of a young domain, and telling somebody
+ * their analysis FAILED because their site is new — after charging them an
+ * analysis and spending real money on it — describes our product as broken
+ * when it has just done its job. "We found 214 keywords; all 214 were your own
+ * brand" is an actionable finding: go and rank for something other than your
+ * name. So the pipeline completes, and the UI renders the finding.
+ */
+export type DiscoveryOutcome = "integration" | "no_keywords_found" | "no_unbranded_keywords";
+
+export function discoveryOutcome(
+  counts: DiscoveryCounts,
+  failed: readonly string[],
+): DiscoveryOutcome {
+  if (failed.length > 0 && counts.merged === 0) return "integration";
+  if (counts.merged > 0 && counts.afterNoise === 0) return "no_unbranded_keywords";
+  return "no_keywords_found";
+}
+
+/**
  * Why discovery produced no working set, in words.
  *
  * PURE AND TESTED, because the first dogfood run failed and the row could not
@@ -245,13 +275,14 @@ export function discoveryFailureReason(
     `keywords_for_site ${counts.keywordsForSite}, ranked_keywords ${counts.rankedKeywords}, ` +
     `tracked ${counts.tracked}, merged ${counts.merged}, after noise filter ${counts.afterNoise}`;
 
-  if (failed.length > 0 && counts.merged === 0) {
-    return `keyword discovery failed at ${failed.join(", ")} (${detail})`;
+  switch (discoveryOutcome(counts, failed)) {
+    case "integration":
+      return `keyword discovery failed at ${failed.join(", ")} (${detail})`;
+    case "no_unbranded_keywords":
+      return `all ${counts.merged} discovered keywords were filtered as branded or navigational (${detail})`;
+    default:
+      return `keyword discovery returned nothing for ${domain} (${detail})`;
   }
-  if (counts.merged > 0 && counts.afterNoise === 0) {
-    return `all ${counts.merged} discovered keywords were filtered as branded or navigational (${detail})`;
-  }
-  return `keyword discovery returned nothing for ${domain} (${detail})`;
 }
 
 export interface DiscoveryRequest {

@@ -171,6 +171,19 @@ export interface KeywordOpportunityAnalysis {
   fromCache: boolean;
   keywordCount: number;
   aiTestedCount: number;
+  /** Distinct keywords found before the brand/navigational filter. */
+  discoveredCount: number;
+  /** Of those, how many were the customer's own brand or navigational. */
+  brandedCount: number;
+  /**
+   * Why a COMPLETED analysis has no opportunities.
+   *
+   * "no_keywords_found" | "no_unbranded_keywords" | "ai_cap_reached", or null
+   * on an ordinary run. NOT an error — a COMPLETED analysis with zero
+   * opportunities is a result, and this says which result it is so the UI can
+   * render the finding rather than a blank table.
+   */
+  emptyReason: string | null;
   /** Provider spend for this analysis, USD. */
   costUsd: number;
   rows: OpportunityRow[];

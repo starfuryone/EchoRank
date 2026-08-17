@@ -46,6 +46,7 @@ import { costUsdFor } from "@/lib/ai-monitor/pricing";
 import {
   discoverKeywords,
   discoveryFailureReason,
+  discoveryOutcome,
   type DiscoveryCounts,
 } from "./discover";
 import { KofCapReachedError } from "./metering";
@@ -170,10 +171,38 @@ export async function runAnalysis(analysisId: string): Promise<RunSummary> {
     await markStep(analysisId, "demand");
 
     if (discovery.keywords.length === 0) {
-      // THREE DIFFERENT FAILURES, NAMED SEPARATELY — see discoveryFailureReason.
-      return await fail({
-        error: discoveryFailureReason(analysis.domain, discovery.counts, discovery.failed),
+      const outcome = discoveryOutcome(discovery.counts, discovery.failed);
+      const reason = discoveryFailureReason(
+        analysis.domain,
+        discovery.counts,
+        discovery.failed,
+      );
+
+      // ONLY AN INTEGRATION FAULT IS A FAILURE. The other two outcomes are
+      // results — see DiscoveryOutcome. A young domain whose keyword profile is
+      // entirely its own brand name has been analysed correctly; there is
+      // simply nothing in it yet, and saying FAILED would describe our product
+      // as broken at the moment it did its job.
+      if (outcome === "integration") {
+        return await fail({ error: reason });
+      }
+
+      logger.info(
+        { analysisId, domain: analysis.domain, outcome, counts: discovery.counts },
+        "domain analysis completed with no opportunities",
+      );
+
+      summary.status = "COMPLETED";
+      summary.stoppedReason = outcome;
+      await markCompleted(analysisId, {
+        keywordCount: 0,
+        aiTestedCount: 0,
+        discoveredCount: discovery.counts.merged,
+        brandedCount: discovery.counts.merged - discovery.counts.afterNoise,
+        fundingSource: analysis.fundingSource === "credits" ? "credits" : "allowance",
+        stoppedReason: outcome,
       });
+      return summary;
     }
 
     // ── Step 3: attach our own rankings. Nothing bought. ────────────────────
@@ -396,6 +425,8 @@ export async function runAnalysis(analysisId: string): Promise<RunSummary> {
     await markCompleted(analysisId, {
       keywordCount: summary.keywordCount,
       aiTestedCount: summary.aiTestedCount,
+      discoveredCount: discovery.counts.merged,
+      brandedCount: discovery.counts.merged - discovery.counts.afterNoise,
       fundingSource: analysis.fundingSource === "credits" ? "credits" : "allowance",
     });
 

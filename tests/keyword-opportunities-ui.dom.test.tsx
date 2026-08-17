@@ -357,3 +357,28 @@ describe("copy rules", () => {
     }
   });
 });
+
+describe("a completed analysis with nothing in it", () => {
+  // THE BUG: the results block needs rows.length > 0 and the empty block
+  // needed analysis === null, so this state fell between them and rendered a
+  // blank page — for what is the ordinary outcome on a young domain.
+  it("renders the finding rather than a blank page", () => {
+    renderState("branded_empty");
+    expect(screen.getByText(EN.noResultsBrandedTitle)).toBeInTheDocument();
+    expect(
+      screen.getByText(/We found 214 keywords for this domain, and 214 of them were your own brand/),
+    ).toBeInTheDocument();
+    expect(screen.getByText(EN.noResultsNextSteps)).toBeInTheDocument();
+  });
+
+  it("does not render it as an error", () => {
+    renderState("branded_empty");
+    expect(screen.queryByText(EN.errorTitle)).not.toBeInTheDocument();
+    expect(screen.queryByRole("table")).not.toBeInTheDocument();
+  });
+
+  it("still offers another run, since the answer can change", () => {
+    renderState("branded_empty");
+    expect(screen.getByRole("button", { name: EN.runCta })).toBeEnabled();
+  });
+});

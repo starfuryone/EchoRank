@@ -4055,6 +4055,20 @@ model KeywordOpportunityAnalysis {
   keywordCount  Int @default(0)
   aiTestedCount Int @default(0)
 
+  /// Distinct keywords discovery found, BEFORE the brand/navigational filter.
+  ///
+  /// STORED SO THE EMPTY STATE CAN BE HONEST. A young domain whose keyword
+  /// profile is mostly its own name completes with keywordCount 0, and
+  /// "no opportunities" on its own reads like a broken tool. "We found 214
+  /// keywords; 214 were your own brand" is the same outcome and a real finding.
+  /// Deriving it from keywordCount would not work: that figure is post-filter
+  /// AND post-working-set-cut, so the two only agree in the empty case.
+  discoveredCount Int @default(0)
+  /// Of `discoveredCount`, how many the filter removed as branded or
+  /// navigational. discoveredCount - brandedCount is what reached scoring
+  /// before the 100-keyword cut.
+  brandedCount    Int @default(0)
+
   /// Split so the dogfood run can answer "where did the money actually go"
   /// without joining two ledgers. `costUsd` is the sum and the figure the cap
   /// is enforced against.

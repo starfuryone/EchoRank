@@ -222,6 +222,18 @@ export async function markCompleted(
     keywordCount: number;
     aiTestedCount: number;
     fundingSource: "allowance" | "credits";
+    discoveredCount?: number;
+    brandedCount?: number;
+    /**
+     * Why a COMPLETED run has nothing to show, when it has nothing to show.
+     *
+     * A COMPLETED ANALYSIS WITH ZERO OPPORTUNITIES IS A RESULT, NOT A FAULT.
+     * A young domain whose keyword profile is mostly its own brand name is a
+     * legitimate customer outcome and a real finding — FAILED is reserved for
+     * integration faults. The code here is what lets the UI say which kind of
+     * empty it is rather than rendering a blank table.
+     */
+    stoppedReason?: string | null;
   },
   now: Date = new Date(),
 ): Promise<void> {
@@ -233,8 +245,11 @@ export async function markCompleted(
       completedAt: now,
       keywordCount: result.keywordCount,
       aiTestedCount: result.aiTestedCount,
+      discoveredCount: result.discoveredCount ?? result.keywordCount,
+      brandedCount: result.brandedCount ?? 0,
       allowanceConsumed: true,
       fundingSource: result.fundingSource,
+      stoppedReason: result.stoppedReason ?? null,
     },
   });
 }
