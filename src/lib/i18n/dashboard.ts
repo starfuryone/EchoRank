@@ -5129,7 +5129,9 @@ export const ONBOARDING_COPY: Record<DashLocale, OnboardingCopy> = {
 const seoToolsEn = {
   hubTitle: "SEO Tools",
   hubSubtitle: "Every Echorank360 search, content, and reporting tool in one place.",
-  hubWhitepaper: "Download the white paper (PDF)",
+  // Reads as the LAST line of the hub's help modal, not as a page-level button:
+  // the modal is the short answer, the paper is the long one.
+  hubWhitepaper: "Download the full white paper (PDF)",
   classicTitle: "Classic SEO Tools",
   classicSubtitle: "Traditional search data — rankings, keywords, backlinks and technical health.",
   upgradeTitle: "SEO Tools are part of your paid plan",
@@ -5320,7 +5322,7 @@ export const SEO_TOOLS_COPY: Record<DashLocale, SeoToolsCopy> = {
   fr: {
     hubTitle: "Outils SEO",
     hubSubtitle: "Tous les outils de recherche, de contenu et de rapports d'Echorank360, réunis au même endroit.",
-    hubWhitepaper: "Télécharger le livre blanc (PDF)",
+    hubWhitepaper: "Télécharger le livre blanc complet (PDF)",
     classicTitle: "Outils SEO classiques",
     classicSubtitle: "Données de recherche traditionnelles — positions, mots-clés, liens retour et santé technique.",
     upgradeTitle: "Les outils SEO font partie de votre forfait payant",
@@ -5508,7 +5510,7 @@ export const SEO_TOOLS_COPY: Record<DashLocale, SeoToolsCopy> = {
     // MACHINE-TRANSLATED, needs a native de-CH review before it is trusted.
     // (Requested as such; "ss" not "ß" per the house rule, though this string
     // happens to contain neither.)
-    hubWhitepaper: "Whitepaper herunterladen (PDF)",
+    hubWhitepaper: "Vollständiges Whitepaper herunterladen (PDF)",
     classicTitle: "Klassische SEO-Tools",
     classicSubtitle: "Traditionelle Suchdaten — Rankings, Keywords, Backlinks und technische Gesundheit.",
     upgradeTitle: "SEO-Tools sind Teil Ihres bezahlten Plans",
@@ -9831,6 +9833,110 @@ export const GSC_HELP_COPY: Record<DashLocale, GscHelpCopy> = {
 // coverage) and visibility_* AlertEvents. There is deliberately no "trust
 // score" section — nothing persists one, and inventing copy for it would be
 // the first fake number on the page.
+// ─── SEO Tools hub help ─────────────────────────────────────────────────────
+// The hub's own "How to use" modal. It answers the four questions the grid
+// cannot: how the cards are grouped, that each tool has its own help, that the
+// whole hub is paid-gated server-side, and where the usage counters live.
+//
+// It states no group names and no plan numbers of its own — the group bullets
+// are read from SEO_TOOLS_COPY[locale].groups at render time, and the
+// allowance is a link to /billing rather than a figure that would go stale.
+const seoToolsHubHelpEn = {
+  button: "How to use",
+  buttonAria: "How to use the SEO Tools hub",
+  title: "How to use the SEO Tools hub",
+  close: "Close",
+
+  intro:
+    "Every Echorank360 SEO tool is reachable from this page. Here is how it is organised, and what governs access.",
+
+  groupsTitle: "The tools are grouped by the job they do",
+  groupsBody:
+    "Every card on this page belongs to one of these groups, in this order. Each card names its tool and what that tool returns, so you can choose from the grid without opening anything first.",
+
+  toolsTitle: "Open a tool, then use its own Help",
+  toolsBody:
+    "A card takes you straight to the tool. Every tool page carries its own Help button explaining what its numbers mean, where the data comes from, and how to read an empty result — the detail this page deliberately does not repeat.",
+
+  accessTitle: "The whole hub is part of a paid plan",
+  accessBody:
+    "Access is checked on the server for this page and every tool under it, not merely hidden in the sidebar. Without an active subscription the hub is replaced by an upgrade screen; activate any Echorank360 plan and every card here opens. Individual tools may additionally require their feature to be enabled on your plan.",
+
+  quotaTitle: "Usage and limits live in Billing",
+  quotaBody:
+    "Tools that spend money upstream — crawls, keyword lookups, audits — count against your plan's monthly allowance. The current count and your limit sit on the Billing page next to your plan; they are never restated on the cards here, because a number kept in two places is a number that goes stale in one.",
+  quotaLink: "Open Billing →",
+
+  paperTitle: "Want the long version?",
+  paperBody:
+    "The white paper covers the methodology behind these tools and the data sources they draw on — more than a modal should hold.",
+};
+export type SeoToolsHubHelpCopy = typeof seoToolsHubHelpEn;
+
+export const SEO_TOOLS_HUB_HELP_COPY: Record<DashLocale, SeoToolsHubHelpCopy> = {
+  en: seoToolsHubHelpEn,
+  fr: {
+    button: "Comment l'utiliser",
+    buttonAria: "Comment utiliser le hub Outils SEO",
+    title: "Comment utiliser le hub Outils SEO",
+    close: "Fermer",
+
+    intro:
+      "Tous les outils SEO d'Echorank360 sont accessibles depuis cette page. Voici son organisation et les règles d'accès.",
+
+    groupsTitle: "Les outils sont regroupés par usage",
+    groupsBody:
+      "Chaque carte de cette page appartient à l'un de ces groupes, dans cet ordre. Chaque carte indique son outil et ce que celui-ci renvoie, ce qui vous permet de choisir directement depuis la grille.",
+
+    toolsTitle: "Ouvrez un outil, puis consultez son aide",
+    toolsBody:
+      "Une carte vous mène directement à l'outil. Chaque page d'outil dispose de son propre bouton d'aide, qui explique la signification de ses chiffres, la provenance des données et la façon de lire un résultat vide — le détail que cette page ne répète volontairement pas.",
+
+    accessTitle: "L'ensemble du hub fait partie d'un forfait payant",
+    accessBody:
+      "L'accès est vérifié côté serveur pour cette page et pour chaque outil qu'elle contient, et non simplement masqué dans le menu latéral. Sans abonnement actif, le hub est remplacé par un écran de mise à niveau ; activez n'importe quel forfait Echorank360 et toutes les cartes s'ouvrent. Certains outils exigent en plus que leur fonctionnalité soit activée sur votre forfait.",
+
+    quotaTitle: "La consommation et les limites figurent dans Facturation",
+    quotaBody:
+      "Les outils qui engagent des coûts en amont — explorations, recherches de mots-clés, audits — sont décomptés de l'allocation mensuelle de votre forfait. Le compteur et votre limite se trouvent sur la page Facturation, à côté de votre forfait ; ils ne sont jamais repris sur les cartes, car un chiffre conservé à deux endroits finit toujours par être périmé à l'un des deux.",
+    quotaLink: "Ouvrir la facturation →",
+
+    paperTitle: "Envie de la version longue ?",
+    paperBody:
+      "Le livre blanc détaille la méthodologie de ces outils et les sources de données qu'ils exploitent — bien plus qu'une fenêtre modale ne peut contenir.",
+  },
+  "de-CH": {
+    button: "Verwendung",
+    buttonAria: "So verwenden Sie den SEO-Tools-Hub",
+    title: "So verwenden Sie den SEO-Tools-Hub",
+    close: "Schliessen",
+
+    intro:
+      "Alle SEO-Tools von Echorank360 sind über diese Seite erreichbar. So ist sie aufgebaut — und das gilt für den Zugriff.",
+
+    groupsTitle: "Die Tools sind nach Aufgabe gruppiert",
+    groupsBody:
+      "Jede Karte auf dieser Seite gehört zu einer dieser Gruppen, in dieser Reihenfolge. Jede Karte nennt ihr Tool und was dieses liefert, sodass Sie direkt aus dem Raster auswählen können.",
+
+    toolsTitle: "Tool öffnen, dann dessen eigene Hilfe nutzen",
+    toolsBody:
+      "Eine Karte führt Sie direkt zum Tool. Jede Tool-Seite hat eine eigene Hilfe-Schaltfläche, die erklärt, was ihre Zahlen bedeuten, woher die Daten stammen und wie ein leeres Ergebnis zu lesen ist — genau diese Details wiederholt diese Seite bewusst nicht.",
+
+    accessTitle: "Der gesamte Hub gehört zu einem kostenpflichtigen Plan",
+    accessBody:
+      "Der Zugriff wird für diese Seite und jedes Tool darunter auf dem Server geprüft und nicht bloss in der Seitenleiste ausgeblendet. Ohne aktives Abonnement erscheint statt des Hubs ein Upgrade-Hinweis; aktivieren Sie einen beliebigen Echorank360-Plan, und jede Karte hier lässt sich öffnen. Einzelne Tools setzen zusätzlich voraus, dass ihre Funktion in Ihrem Plan freigeschaltet ist.",
+
+    quotaTitle: "Verbrauch und Limiten stehen unter Abrechnung",
+    quotaBody:
+      "Tools, die vorgelagert Kosten verursachen — Crawls, Keyword-Abfragen, Audits — werden an das monatliche Kontingent Ihres Plans angerechnet. Der aktuelle Stand und Ihre Limite stehen auf der Abrechnungsseite neben Ihrem Plan; auf den Karten hier werden sie nie wiederholt, denn eine Zahl an zwei Orten ist eine Zahl, die an einem davon veraltet.",
+    quotaLink: "Abrechnung öffnen →",
+
+    paperTitle: "Lieber die lange Fassung?",
+    paperBody:
+      "Das Whitepaper beschreibt die Methodik hinter diesen Tools und die Datenquellen, aus denen sie schöpfen — mehr, als in ein Dialogfenster gehört.",
+  },
+};
+
 const brandRadarHelpEn = {
   button: "Help",
   buttonAria: "How Brand Radar works",

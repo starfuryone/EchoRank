@@ -41,6 +41,7 @@ import {
   SITE_EXPLORER_HELP_COPY,
   OPPORTUNITY_SCANNER_HELP_COPY,
   REVENUE_HELP_COPY,
+  SEO_TOOLS_HUB_HELP_COPY,
 } from "@/lib/i18n/dashboard";
 
 const LOCALES = ["en", "fr", "de-CH"] as const;
@@ -125,6 +126,8 @@ const MIGRATED = [
   ["ai-lens", AI_LENS_HELP_COPY, ["whyTitle", "gapTitle", "fixTitle", "goalTitle"]],
   ["opportunity-scanner", OPPORTUNITY_SCANNER_HELP_COPY, ["listTitle", "scanTitle", "gradeTitle", "reportTitle", "googleTitle", "etiquetteTitle"]],
   ["revenue", REVENUE_HELP_COPY, ["leadsTitle", "modelTitle", "wonTitle", "lostTitle", "splitTitle"]],
+  // The hub itself. No illustration — it explains an index, not a metric.
+  ["seo-tools-hub", SEO_TOOLS_HUB_HELP_COPY, ["groupsTitle", "toolsTitle", "accessTitle", "quotaTitle", "quotaLink", "paperTitle"]],
 ] as const;
 
 describe("migrated help copy", () => {

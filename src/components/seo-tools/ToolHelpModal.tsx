@@ -31,8 +31,38 @@ export interface ToolHelpSection {
    * step — for closing tips and caveats that are not part of the sequence.
    */
   tone?: "step" | "note";
-  /** Optional link rendered under the body (e.g. "Open AI Visibility →"). */
-  link?: { href: string; label: string };
+  /**
+   * Optional link rendered under the body (e.g. "Open AI Visibility →").
+   *
+   * `external` for anything the router does not own — a static /public asset,
+   * a Caddy-served page. next/link would try to client-navigate it, and a PDF
+   * belongs in a new tab anyway rather than replacing the page behind it.
+   */
+  link?: { href: string; label: string; external?: boolean };
+}
+
+/** The one link shape both section tones render, in their own type scale. */
+function SectionLink({
+  link,
+  className,
+  onNavigate,
+}: {
+  link: NonNullable<ToolHelpSection["link"]>;
+  className: string;
+  onNavigate?: () => void;
+}) {
+  if (link.external) {
+    return (
+      <a href={link.href} target="_blank" rel="noopener noreferrer" className={className}>
+        {link.label}
+      </a>
+    );
+  }
+  return (
+    <Link href={link.href} onClick={onNavigate} className={className}>
+      {link.label}
+    </Link>
+  );
 }
 
 export interface ToolHelpModalProps {
@@ -79,12 +109,10 @@ function StepSection({ index, section }: { index: number; section: ToolHelpSecti
           </ul>
         )}
         {section.link && (
-          <Link
-            href={section.link.href}
+          <SectionLink
+            link={section.link}
             className="mt-1.5 inline-block text-sm font-medium text-blue-600 hover:text-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-          >
-            {section.link.label}
-          </Link>
+          />
         )}
       </div>
     </section>
@@ -100,14 +128,13 @@ function NoteSection({ section, onNavigate }: { section: ToolHelpSection; onNavi
       )}
       {section.link && (
         // Closing the modal on navigate: leaving it mounted over the next page
-        // traps focus in a dialog whose page has gone.
-        <Link
-          href={section.link.href}
-          onClick={onNavigate}
+        // traps focus in a dialog whose page has gone. An external link opens a
+        // new tab and leaves this page standing, so it keeps the modal open.
+        <SectionLink
+          link={section.link}
+          onNavigate={onNavigate}
           className="mt-1.5 inline-block text-xs font-medium text-blue-700 underline hover:text-blue-900"
-        >
-          {section.link.label}
-        </Link>
+        />
       )}
     </div>
   );

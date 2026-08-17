@@ -9,6 +9,7 @@ import { dashboardLocale, SEO_TOOLS_COPY } from "@/lib/i18n/dashboard";
 import { getCurrentTenant } from "@/lib/tenant";
 import { visibleSeoToolGroups } from "@/lib/seo-tools";
 import { NewBadge } from "@/components/layout/new-badge";
+import { ToolsHubHelpButton } from "@/components/seo-tools/tools-hub-help";
 
 export default async function SeoToolsHubPage() {
   const cookieStore = await cookies();
@@ -19,12 +20,14 @@ export default async function SeoToolsHubPage() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h2 className="text-sm font-medium uppercase tracking-wide text-gray-500">
-          {copy.hubTitle}
-        </h2>
-        <p className="mt-1 text-sm text-gray-500">{copy.hubSubtitle}</p>
-        <a href="/whitepapers/echorank360-seo-tools-whitepaper.pdf" download target="_blank" rel="noopener" style={{float:"right",marginLeft:"auto",display:"inline-flex",alignItems:"center",padding:"6px 14px",border:"1px solid #d1d5db",borderRadius:"8px",fontSize:"13px",fontWeight:600,color:"#374151",background:"#fff",textDecoration:"none"}}>How to use</a>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h2 className="text-sm font-medium uppercase tracking-wide text-gray-500">
+            {copy.hubTitle}
+          </h2>
+          <p className="mt-1 text-sm text-gray-500">{copy.hubSubtitle}</p>
+        </div>
+        <ToolsHubHelpButton locale={locale} />
       </div>
 
       {groups.map((group, gi) => (
