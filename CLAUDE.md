@@ -24,20 +24,27 @@ This box serves production from the working tree. A broken build is a broken sit
 
 1. `.bak.$(date +%Y%m%d-%H%M%S)` copy of every file you modify. Gitignored (`*.bak.*`,
    `*.bak-*`) — never commit them.
-2. Build and restart **in one command**:
+2. Build, from `/opt/echorank/app`:
    ```
-   NODE_OPTIONS=--max-old-space-size=1536 npm run build && pm2 restart echorank360-web
+   umask 022 && NODE_OPTIONS=--max-old-space-size=4096 npm run build && chown -R deploy:deploy .next
+   ```
+   4096, not 1536 — 1536 OOM'd on 2026-08-15.
+3. Restart, **immediately after the build** — a separate, root-side step:
+   ```
+   pm2 restart echorank360-web
    ```
    Add `echorank360-workers` if anything under `src/infrastructure/queue/` changed.
    Never leave a rebuilt `.next` under a running process — the old process serves HTML
-   referencing chunk hashes the new build deleted.
-3. Tell the human to run **Cloudflare → Purge Everything**. Manual, mandatory, and not
+   referencing chunk hashes the new build deleted. The build and the restart are two
+   commands now, which means there is a window in which exactly that is true: close it.
+4. Tell the human to run **Cloudflare → Purge Everything**. Manual, mandatory, and not
    something you can do. See [gotchas.md](docs/agents/gotchas.md).
-4. `ss -ltnp | grep 4400` must show **exactly one** listener, owned by the pm2 process
+5. `ss -ltnp | grep 4400` must show **exactly one** listener, owned by the pm2 process
    (`echorank`). Kill any orphan `next-server` and restart before you call it done.
 
 `pm2` runs under **root** (`/root/.pm2`). Without sudo you cannot restart it — do not
-build. Hand the human the one-liner instead.
+build. A build you cannot restart behind is the window in step 3, held open until a
+human notices. Hand them both commands instead.
 
 ## Commits
 

@@ -27,6 +27,7 @@ import { prisma } from "@/lib/prisma";
 import { topCompetitors, type ScoredRun } from "@/lib/ai-monitor/metrics";
 import { recommendedActions } from "./recommendations";
 import type { KeywordIntent, OpportunityComponents } from "./score";
+import type { OpportunityScoreDetailV2 } from "./score-v2";
 import type {
   AnalysisStatus,
   AnalysisStep,
@@ -143,7 +144,30 @@ function competitorVisibility(row: AnalysisRow): CompetitorVisibility[] {
   }));
 }
 
-function toRow(opportunity: AnalysisRow["opportunities"][number]): OpportunityRow {
+/**
+ * The v2 breakdown, if this row was written under v2.
+ *
+ * IT RIDES INSIDE componentScores rather than in a column of its own. The
+ * column is already a JSON blob of "how this score was arrived at", the v1 six
+ * are still at its top level for every reader that predates the pillars, and a
+ * new column would have meant a migration for a preview-only feature. See the
+ * write side in ./runner.ts.
+ *
+ * Absent on every v1 row, and read defensively: a row written by a future
+ * version whose shape we do not know degrades to "no breakdown", which the UI
+ * already renders, rather than throwing inside a page render.
+ */
+function storedDetail(componentScores: unknown): OpportunityScoreDetailV2 | null {
+  if (componentScores === null || typeof componentScores !== "object") return null;
+  const detail = (componentScores as { v2?: unknown }).v2;
+  if (detail === null || detail === undefined || typeof detail !== "object") return null;
+  return detail as OpportunityScoreDetailV2;
+}
+
+function toRow(
+  opportunity: AnalysisRow["opportunities"][number],
+  scoreVersion: number,
+): OpportunityRow {
   const components = opportunity.componentScores as unknown as OpportunityComponents;
   const result = opportunity.prompt?.result ?? null;
   const competitors = storedCompetitors(result?.competitors);
@@ -176,7 +200,12 @@ function toRow(opportunity: AnalysisRow["opportunities"][number]): OpportunityRo
     opportunityScore: opportunity.opportunityScore,
     components,
     aiTested: opportunity.aiTested,
-    scoreVersion: 1,
+    // THE ANALYSIS'S OWN VERSION, not a literal. Every row of one analysis was
+    // scored by one formula, and the number the UI uses to decide which
+    // breakdown to render has to be that formula's, not the version this
+    // deploy happens to compute.
+    scoreVersion,
+    detail: storedDetail(opportunity.componentScores),
     severity: opportunity.severity as OpportunityRow["severity"],
     prompt: opportunity.prompt
       ? { text: opportunity.prompt.text, intent: opportunity.prompt.intent as KeywordIntent }
@@ -240,7 +269,7 @@ function toAnalysis(row: AnalysisRow): KeywordOpportunityAnalysis {
     brandedCount: row.brandedCount,
     emptyReason: row.status === "COMPLETED" ? row.stoppedReason : null,
     costUsd: Number(row.costUsd),
-    rows: row.opportunities.map(toRow),
+    rows: row.opportunities.map((opportunity) => toRow(opportunity, row.scoreVersion)),
     competitors: competitorVisibility(row),
     // ONLY A FAILED RUN HAS AN ERROR. A COMPLETED run's stoppedReason is a
     // finding ("every keyword was your own brand") and travels in emptyReason

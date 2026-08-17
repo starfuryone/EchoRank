@@ -583,6 +583,55 @@ const TESTED = new Set(
 
 const BY_KEYWORD = new Map(DEMO_KEYWORDS.map((entry) => [entry.keyword, entry]));
 
+/** The demo brand's category words, for classifyEntity(). Used twice below. */
+const CATEGORY_VOCABULARY = ["CRM", "CRM software", "sales software"];
+
+/** The entries whose answer was actually bought. */
+const TESTED_ANSWERS = DEMO_KEYWORDS.filter((entry) => TESTED.has(entry.keyword));
+
+/**
+ * How many of the tested answers name each entity.
+ *
+ * A SIGNAL ABOUT THE WHOLE ANALYSIS, not about one answer: an entity half the
+ * answers rank is behaving like a rival, one that appears once is likely a
+ * passing reference, and classifyEntity() needs that count to tell them apart.
+ * Computed once here because both the per-keyword rival count and the
+ * competitor panel need it, and a hardcoded 1 in either would put every real
+ * competitor below RIVAL_THRESHOLD.
+ */
+const APPEARANCES = (() => {
+  const counts = new Map<string, number>();
+  for (const entry of TESTED_ANSWERS) {
+    for (const name of entry.answer.competitors) {
+      const key = name.trim().toLowerCase();
+      counts.set(key, (counts.get(key) ?? 0) + 1);
+    }
+  }
+  return counts;
+})();
+
+/**
+ * Rivals in one answer — the count v2's two competition curves read.
+ *
+ * THE CLASSIFIER DECIDES, NOT THE LIST LENGTH. `answer.competitors` is the
+ * raw ranked list and deliberately still contains Reddit, G2 and the bare
+ * phrase "CRM software"; counting those would tell the scorer this keyword's
+ * answer is crowded with vendors when it is not. This is the same
+ * classification the runner takes at write time from analyzeResponse().
+ */
+function rivalCountFor(entry: DemoKeyword): number {
+  return entry.answer.competitors.filter(
+    (name, index) =>
+      classifyEntity(name, {
+        position: index + 1,
+        context: sentenceWindow(entry.answer.snapshot, name),
+        brandName: DEMO_BRAND_NAME,
+        categoryVocabulary: CATEGORY_VOCABULARY,
+        rankedInPrompts: APPEARANCES.get(name.trim().toLowerCase()) ?? 1,
+      }).classification === "RIVAL",
+  ).length;
+}
+
 /** Stable ids, so a re-render does not reshuffle React keys. */
 function rowId(keyword: string): string {
   return `demo-${keyword.replace(/[^a-z0-9]+/gi, "-").toLowerCase()}`;
@@ -616,6 +665,8 @@ const ROWS: OpportunityRow[] = DEMO_KEYWORDS.map((entry) => {
     googleRank: entry.googleRank,
     intent: entry.intent,
     ai,
+    // Null for an untested keyword, and null rather than 0 — nobody counted.
+    competitorCount: tested ? rivalCountFor(entry) : null,
   });
 
   const result = tested ? resultFor(entry) : null;
@@ -646,20 +697,9 @@ const ROWS: OpportunityRow[] = DEMO_KEYWORDS.map((entry) => {
 function competitorVisibility(): CompetitorVisibility[] {
   const answered = ROWS.filter((row) => row.result !== null);
 
-  // `rankedInPrompts` is a signal ABOUT THE WHOLE ANALYSIS, not about one
-  // answer: an entity that half the answers rank is behaving like a rival, and
-  // one that appears once is likely to be a passing reference. Counting it
-  // needs every answer in hand, so it is a pass of its own — handing the
-  // classifier a hardcoded 1 would put every real competitor below
-  // RIVAL_THRESHOLD and empty the panel.
-  const appearances = new Map<string, number>();
-  for (const row of answered) {
-    for (const competitor of row.result?.competitors ?? []) {
-      const key = competitor.name.trim().toLowerCase();
-      appearances.set(key, (appearances.get(key) ?? 0) + 1);
-    }
-  }
-
+  // `rankedInPrompts` comes from APPEARANCES above — one pass over the tested
+  // answers, shared with the per-keyword rival count, so the panel and the
+  // scorer cannot disagree about how often an entity was named.
   const runs: ScoredRun[] = answered.map((row) => {
     const result = row.result as OpportunityPromptResult;
     return {
@@ -677,8 +717,8 @@ function competitorVisibility(): CompetitorVisibility[] {
           position: competitor.position,
           context: sentenceWindow(result.answerSnapshot, competitor.name),
           brandName: DEMO_BRAND_NAME,
-          categoryVocabulary: ["CRM", "CRM software", "sales software"],
-          rankedInPrompts: appearances.get(competitor.name.trim().toLowerCase()) ?? 1,
+          categoryVocabulary: CATEGORY_VOCABULARY,
+          rankedInPrompts: APPEARANCES.get(competitor.name.trim().toLowerCase()) ?? 1,
         }).classification,
       })),
     };

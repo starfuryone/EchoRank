@@ -36,9 +36,31 @@
 //
 // The renormalisation falls out of one code path rather than two: with every
 // component present the weights sum to 1 and the divisor is a no-op.
+//
+// ── VERSION 2 LIVES IN ./score-v2.ts ────────────────────────────────────────
+//
+// It is a two-level weighted geometric mean over four pillars and fourteen
+// subfactors, and it is what a new run is scored with. Everything below this
+// line is version 1 and is kept CALLABLE, not merely kept: rows written under
+// scoreVersion 1 are displayed with the number and the severity the customer
+// was already shown, and computeOpportunityScore() dispatches on the stored
+// version to do it. Nothing is migrated and nothing is recomputed.
+//
+// The import of ./score-v2.ts at the bottom of this file's dependency list is
+// one half of a deliberate ES module cycle — see that file's header for why it
+// is safe and what would break it.
 
-/** The version this module computes. Stored on every row it produces. */
-export const OPPORTUNITY_SCORE_VERSION = 1 as const;
+import { computeOpportunityDetailV2, severityForV2, type OpportunityScoreDetailV2 } from "./score-v2";
+import type { MonthlySearch } from "./trend";
+
+/**
+ * The version a NEW run is scored with. Stored on every row it produces.
+ *
+ * Bumping this does not touch a stored row. It changes what the next analysis
+ * computes, and computeOpportunityScore() keeps the old branch reachable for
+ * everything already written.
+ */
+export const OPPORTUNITY_SCORE_VERSION = 2 as const;
 
 /**
  * The six components, weighted.
@@ -136,6 +158,31 @@ export const TREND_CEILING_PERCENT = 100;
 export const AI_TESTED_KEYWORD_LIMIT = 15;
 
 /**
+ * The formula the top-15 cut is taken with. NOT OPPORTUNITY_SCORE_VERSION.
+ *
+ * ── WHY THE CUT STAYED ON v1 WHEN THE SCORE MOVED TO v2 ─────────────────────
+ *
+ * The cut is a SPEND decision taken before any AI evidence exists, and it is
+ * judged on one question: which fifteen keywords are most worth buying an
+ * answer about. Scored with `ai: null`, v1 loses one component of six and
+ * renormalises over the rest. v2 loses its entire VISIBILITY_GAP pillar — 0.30
+ * of the score, and the only pillar that measures the thing being allocated —
+ * plus reasonableCompetition, which is half of what is left of WINNABILITY.
+ * That leaves v2 ranking on demand, momentum and rank alone, which is strictly
+ * less of a signal than v1 has for the same job.
+ *
+ * It is not a hypothetical difference: switching the cut to v2 moves three of
+ * the fifteen on the demo set, including two of the three keywords the brief
+ * pins. A better final formula is not automatically a better allocator, and
+ * these are two different decisions that happened to share a function.
+ *
+ * Revisit when v2's unwired subfactors land — clickstream and content fit are
+ * both pre-AI signals, and a v2 pre-AI score that has them is a different
+ * proposition from this one.
+ */
+export const PRE_AI_CUT_SCORE_VERSION = 1;
+
+/**
  * HIGH needs an un-mentioned brand AND a score at or above this.
  *
  * ── WHY 74 AND NOT 85 ───────────────────────────────────────────────────────
@@ -227,6 +274,37 @@ export interface OpportunityInput {
   intent: KeywordIntent;
   /** Null when the keyword was not among the AI-tested top 15. */
   ai: AiEvidence | null;
+
+  // ── VERSION 2 ONLY, AND OPTIONAL ON PURPOSE ───────────────────────────────
+  //
+  // Both are ignored by v1 entirely. They are declared here rather than on a
+  // separate OpportunityInputV2 so that every existing call site stays
+  // type-compatible and a caller that HAS the data can simply pass it — an
+  // extra property on an object literal is a compile error against a narrower
+  // type, which is how a "v2 input" type would have forced a rewrite of every
+  // producer for the sake of two fields.
+
+  /**
+   * Rivals named in this keyword's AI answer.
+   *
+   * Feeds BOTH v2 competition curves — competitorValidation (demand is real)
+   * and reasonableCompetition (we could win it) — which read the same count
+   * and disagree at both ends by design. Null or absent means the count was
+   * never taken, which for an untested keyword is the only honest value: zero
+   * would say the assistant named nobody, and nobody asked it.
+   */
+  competitorCount?: number | null;
+
+  /**
+   * The provider's monthly search history, for v2's momentum horizons.
+   *
+   * ABSENT IS NOT EMPTY. Absent (the v1-shaped input) means v2 falls back to
+   * the already-derived `trendPercent` for its 90-day horizon; an empty or
+   * short array means we HAVE the history and it is too thin to say anything,
+   * which nulls the whole MOMENTUM pillar. ./discover.ts reduces this to
+   * trendPercent and drops it today, so nothing in production supplies it.
+   */
+  monthlyHistory?: readonly MonthlySearch[] | null;
 }
 
 export interface OpportunityComponents {
@@ -265,10 +343,21 @@ export type OpportunitySeverity = "HIGH" | "MEDIUM" | "LOW";
 export interface OpportunityScore {
   /** 0-100, rounded to an integer. */
   score: number;
+  /**
+   * The six v1 components, on 0-100.
+   *
+   * STILL COMPUTED UNDER v2, AND NOT VESTIGIALLY. Five of the six are the raw
+   * signals v2's subfactors are transformed from, they are what the detail
+   * panel has always shown per keyword, and they are what ./read.ts rebuilds
+   * AiEvidence out of. v2 adds `detail` beside them rather than replacing
+   * them, so a stored row stays readable by code that predates the pillars.
+   */
   components: OpportunityComponents;
   /** False when aiGap is null and the other five carried the score. */
   aiTested: boolean;
-  scoreVersion: typeof OPPORTUNITY_SCORE_VERSION;
+  scoreVersion: number;
+  /** The pillar/subfactor breakdown and confidence. Null on a v1 score. */
+  detail: OpportunityScoreDetailV2 | null;
 }
 
 /**
@@ -394,15 +483,47 @@ export function computeOpportunityScoreV1(input: OpportunityInput): OpportunityS
     score: Math.round(clampScore(score)),
     components,
     aiTested: components.aiGap !== null,
-    scoreVersion: OPPORTUNITY_SCORE_VERSION,
+    // The literal 1, NOT OPPORTUNITY_SCORE_VERSION. This function is version 1
+    // forever; the constant is what the next run uses and it has already moved.
+    scoreVersion: 1,
+    detail: null,
+  };
+}
+
+/**
+ * The Opportunity Score, version 2.
+ *
+ * The arithmetic is ./score-v2.ts. This is the seam: it carries the six v1
+ * components along beside the pillars — see OpportunityScore.components for
+ * why — and takes its 0-100 from the calibrated figure.
+ */
+export function computeOpportunityScoreV2(input: OpportunityInput): OpportunityScore {
+  const detail = computeOpportunityDetailV2(input);
+
+  return {
+    score: Math.round(clampScore(detail.calibratedScore)),
+    components: {
+      volume: volumeScore(input.monthlyVolume),
+      cpc: cpcScore(input.cpcUsd),
+      trend: trendScore(input.trendPercent),
+      intent: intentScore(input.intent),
+      seoGap: seoGapScore(input.googleRank),
+      aiGap: aiGapScore(input.ai),
+    },
+    aiTested: input.ai !== null,
+    scoreVersion: 2,
+    detail,
   };
 }
 
 /**
  * Dispatch on a stored version.
  *
- * One line today, and the reason history never has to be migrated — the same
- * shape as computeScore() in ai-monitor/metrics.ts.
+ * The reason history never has to be migrated — the same shape as
+ * computeScore() in ai-monitor/metrics.ts. A row carries the version that
+ * produced it and is re-derived with that branch, so bumping
+ * OPPORTUNITY_SCORE_VERSION changes what the next analysis computes and
+ * nothing a customer has already been shown.
  */
 export function computeOpportunityScore(
   input: OpportunityInput,
@@ -411,6 +532,8 @@ export function computeOpportunityScore(
   switch (version) {
     case 1:
       return computeOpportunityScoreV1(input);
+    case 2:
+      return computeOpportunityScoreV2(input);
     default:
       throw new Error(`unknown opportunity score version: ${version}`);
   }
@@ -421,10 +544,19 @@ export function computeOpportunityScore(
  *
  * This is what the top-15 cut is taken on, so it must not depend on the AI
  * evidence it is being used to allocate. Computed by scoring the keyword with
- * `ai: null`, which is the same renormalisation an untested keyword keeps.
+ * `ai: null`, which is the same renormalisation an untested keyword keeps —
+ * under v2 that nulls the whole VISIBILITY_GAP pillar, and the remaining three
+ * renormalise at the top level.
+ *
+ * VERSION-AWARE, and defaulting to PRE_AI_CUT_SCORE_VERSION rather than to the
+ * version a run is scored with — see that constant for why those are two
+ * different decisions.
  */
-export function preAiScore(input: OpportunityInput): number {
-  return computeOpportunityScoreV1({ ...input, ai: null }).score;
+export function preAiScore(
+  input: OpportunityInput,
+  version: number = PRE_AI_CUT_SCORE_VERSION,
+): number {
+  return computeOpportunityScore({ ...input, ai: null, competitorCount: null }, version).score;
 }
 
 /**
@@ -437,9 +569,10 @@ export function preAiScore(input: OpportunityInput): number {
 export function selectAiTestKeywords(
   inputs: readonly OpportunityInput[],
   limit: number = AI_TESTED_KEYWORD_LIMIT,
+  version: number = PRE_AI_CUT_SCORE_VERSION,
 ): OpportunityInput[] {
   return [...inputs]
-    .map((input) => ({ input, score: preAiScore(input) }))
+    .map((input) => ({ input, score: preAiScore(input, version) }))
     .sort((a, b) => b.score - a.score || a.input.keyword.localeCompare(b.input.keyword))
     .slice(0, Math.max(0, limit))
     .map((entry) => entry.input);
@@ -467,20 +600,42 @@ export interface ScoredOpportunity extends OpportunityInput {
   aiTested: boolean;
   scoreVersion: number;
   severity: OpportunitySeverity;
+  /**
+   * The v2 pillar/subfactor breakdown. Null on a v1 row.
+   *
+   * Carries `confidence`, which is one of the two gates on HIGH under v2 and
+   * is therefore something a customer can be told: "we are not calling this
+   * urgent because we only measured half of it" is a different sentence from
+   * "this keyword is not urgent".
+   */
+  detail: OpportunityScoreDetailV2 | null;
 }
 
-/** Score one keyword and attach its severity. */
+/**
+ * Score one keyword and attach its severity.
+ *
+ * The severity rule is versioned along with the arithmetic. It has to be: v2's
+ * cuts sit on a differently-shaped distribution, and v2 gates HIGH on
+ * confidence as well as on evidence of absence.
+ */
 export function scoreOpportunity(
   input: OpportunityInput,
   version: number = OPPORTUNITY_SCORE_VERSION,
 ): ScoredOpportunity {
   const scored = computeOpportunityScore(input, version);
+
+  const severity =
+    scored.detail === null
+      ? severityFor(scored.score, input.ai)
+      : severityForV2(scored.score, input.ai, scored.detail.confidence);
+
   return {
     ...input,
     opportunityScore: scored.score,
     components: scored.components,
     aiTested: scored.aiTested,
     scoreVersion: scored.scoreVersion,
-    severity: severityFor(scored.score, input.ai),
+    severity,
+    detail: scored.detail,
   };
 }

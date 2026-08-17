@@ -240,6 +240,20 @@ export async function runAnalysis(analysisId: string): Promise<RunSummary> {
       }
     >();
 
+    /**
+     * Rivals named in each answer, for v2's two competition curves.
+     *
+     * RIVALS ONLY — classifyEntity()'s verdict, taken at write time, not the
+     * raw ranked list. An answer that names Reddit, G2 and "CRM software"
+     * alongside two real vendors has two competitors in it, and counting five
+     * would push the keyword past the winnability hump for mentioning a forum.
+     * The same filter the competitor panel uses, on the same classifications.
+     *
+     * Keyed only for keywords whose answer we actually bought; every other
+     * keyword's count stays null, which is what nulls both curves.
+     */
+    const rivalCounts = new Map<string, number>();
+
     let aiCost = 0;
     let aiCapped = false;
 
@@ -320,6 +334,11 @@ export async function runAnalysis(analysisId: string): Promise<RunSummary> {
             averagePosition: analysed.brandPosition,
           });
 
+          rivalCounts.set(
+            prompt.keyword,
+            analysed.competitors.filter((c) => c.classification.classification === "RIVAL").length,
+          );
+
           resultRows.set(prompt.keyword, {
             brandMentioned: analysed.brandMentioned,
             brandPosition: analysed.brandPosition,
@@ -361,7 +380,11 @@ export async function runAnalysis(analysisId: string): Promise<RunSummary> {
     await markStep(analysisId, "score");
 
     const scored = inputs.map((input) =>
-      scoreOpportunity({ ...input, ai: evidence.get(input.keyword) ?? null }),
+      scoreOpportunity({
+        ...input,
+        ai: evidence.get(input.keyword) ?? null,
+        competitorCount: rivalCounts.get(input.keyword) ?? null,
+      }),
     );
 
     for (const row of scored) {
@@ -379,7 +402,18 @@ export async function runAnalysis(analysisId: string): Promise<RunSummary> {
           intent: row.intent,
           // A closed interface has no index signature, which is what Prisma's
           // InputJsonValue requires. The shape is plain data either way.
-          componentScores: row.components as unknown as Prisma.InputJsonObject,
+          //
+          // THE v2 BREAKDOWN RIDES IN THE SAME BLOB, under `v2`. It carries the
+          // fourteen subfactors, the four pillars and the CONFIDENCE — which
+          // the brief requires persisted, because it is one of the two gates on
+          // HIGH and a customer is entitled to know a keyword was quiet rather
+          // than unmeasured. A column of its own would have meant a migration
+          // for a preview-only feature; the v1 six stay at the top level so
+          // every existing reader is unaffected. Read back by ./read.ts.
+          componentScores: {
+            ...row.components,
+            ...(row.detail ? { v2: row.detail } : {}),
+          } as unknown as Prisma.InputJsonObject,
           opportunityScore: row.opportunityScore,
           severity: row.severity,
           aiTested: row.aiTested,

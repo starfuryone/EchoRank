@@ -29,6 +29,34 @@ import {
   type OpportunityInput,
 } from "@/lib/keyword-opportunity/score";
 import {
+  ACCELERATION_CLAMP_POINTS,
+  COMPETITION_FLOOR,
+  CONFIDENCE_HIGH_MIN,
+  CONFIDENCE_MEDIUM_MIN,
+  MIN_FACTOR,
+  PILLAR_KEYS,
+  SUBFACTOR_KEYS,
+  SUBFACTOR_PILLAR,
+  V2_PILLAR_WEIGHTS,
+  V2_SEVERITY_CUTS,
+  V2_SUBFACTOR_SOURCES,
+  V2_SUBFACTOR_WEIGHTS,
+  assertV2WeightsSumToOne,
+  brandAiAbsenceFactor,
+  clampFactor,
+  competitorValidationFactor,
+  composeScore,
+  computeOpportunityDetailV2,
+  confidenceFor,
+  coverageFor,
+  momentumFactors,
+  reasonableCompetitionFactor,
+  recommendationGapFactor,
+  severityForV2,
+  weightedGeomean,
+  type SubfactorKey,
+} from "@/lib/keyword-opportunity/score-v2";
+import {
   DEMO_ALIASES,
   DEMO_ANALYSIS,
   DEMO_BRAND_NAME,
@@ -243,7 +271,7 @@ describe("computeOpportunityScore", () => {
 
   it("renormalises over the measured weights when the keyword was not AI-tested", () => {
     const untested = input({ ai: null });
-    const scored = computeOpportunityScore(untested);
+    const scored = computeOpportunityScore(untested, 1);
 
     expect(scored.components.aiGap).toBeNull();
     expect(scored.aiTested).toBe(false);
@@ -268,7 +296,24 @@ describe("computeOpportunityScore", () => {
   });
 
   it("throws on an unknown score version rather than guessing", () => {
-    expect(() => computeOpportunityScore(input(), 2)).toThrow(/unknown opportunity score version/);
+    expect(() => computeOpportunityScore(input(), 3)).toThrow(/unknown opportunity score version/);
+    expect(() => computeOpportunityScore(input(), 0)).toThrow(/unknown opportunity score version/);
+  });
+
+  it("keeps version 1 callable and reachable, so stored rows are not restated", () => {
+    // The whole point of the version regime. A v1 row re-derived today must
+    // produce the number the customer was shown, not today's formula's.
+    const keyword = input({ ai: NOT_MENTIONED });
+    const v1 = computeOpportunityScore(keyword, 1);
+    const v2 = computeOpportunityScore(keyword, 2);
+
+    expect(v1.scoreVersion).toBe(1);
+    expect(v1.detail).toBeNull();
+    expect(v2.scoreVersion).toBe(2);
+    expect(v2.detail).not.toBeNull();
+    // The default is v2 — what a NEW run computes.
+    expect(computeOpportunityScore(keyword).scoreVersion).toBe(OPPORTUNITY_SCORE_VERSION);
+    expect(OPPORTUNITY_SCORE_VERSION).toBe(2);
   });
 });
 
@@ -464,6 +509,433 @@ describe("entitlement", () => {
   });
 });
 
+// ── VERSION 2 ───────────────────────────────────────────────────────────────
+
+/** Every subfactor at one value, for the composition properties. */
+function uniformSubfactors(value: number | null): Record<SubfactorKey, number | null> {
+  return Object.fromEntries(SUBFACTOR_KEYS.map((key) => [key, value])) as Record<
+    SubfactorKey,
+    number | null
+  >;
+}
+
+function subfactorsWith(
+  overrides: Partial<Record<SubfactorKey, number | null>>,
+  base = 0.5,
+): Record<SubfactorKey, number | null> {
+  return { ...uniformSubfactors(base), ...overrides };
+}
+
+describe("v2 weights", () => {
+  it("sum to 1 at BOTH levels, over the full factor set", () => {
+    expect(() => assertV2WeightsSumToOne()).not.toThrow();
+
+    // Asserted again here rather than only inside the helper, so a reader can
+    // see the two sums and a future edit to the helper cannot quietly weaken
+    // the check it is the only witness to.
+    expect(PILLAR_KEYS.reduce((a, k) => a + V2_PILLAR_WEIGHTS[k], 0)).toBeCloseTo(1, 12);
+    for (const pillar of PILLAR_KEYS) {
+      const sum = SUBFACTOR_KEYS.filter((k) => SUBFACTOR_PILLAR[k] === pillar).reduce(
+        (a, k) => a + V2_SUBFACTOR_WEIGHTS[k],
+        0,
+      );
+      expect(sum).toBeCloseTo(1, 12);
+    }
+  });
+
+  it("covers every subfactor exactly once, in exactly one pillar", () => {
+    expect(SUBFACTOR_KEYS).toHaveLength(14);
+    expect(new Set(SUBFACTOR_KEYS).size).toBe(14);
+    for (const key of SUBFACTOR_KEYS) {
+      expect(PILLAR_KEYS).toContain(SUBFACTOR_PILLAR[key]);
+    }
+  });
+});
+
+describe("the weighted geometric mean", () => {
+  it("returns the uniform value when every factor agrees, at both levels", () => {
+    // THE EXPONENT-SUM CHECK. exp(Σ w·ln f / Σ w) with every f equal is f
+    // exactly, whatever the weights are — at the subfactor level, and then
+    // again over four identical pillars. Anything else means a weight table
+    // that does not sum to 1 or a renormalisation applied twice.
+    const { pillars, rawScore } = composeScore(uniformSubfactors(0.7));
+    for (const pillar of PILLAR_KEYS) {
+      expect(pillars[pillar].value).toBeCloseTo(0.7, 12);
+      expect(pillars[pillar].measuredWeight).toBeCloseTo(1, 12);
+    }
+    expect(rawScore).toBeCloseTo(70, 10);
+    expect(Math.round(rawScore)).toBe(70);
+  });
+
+  it("is a product, so a weak factor is punished rather than paid for", () => {
+    // The difference from v1 in one assertion: a factor at the floor cannot be
+    // bought back by perfect scores everywhere else.
+    const strong = composeScore(uniformSubfactors(1)).rawScore;
+    const oneDead = composeScore(subfactorsWith({ brandAiAbsence: MIN_FACTOR }, 1)).rawScore;
+    expect(strong).toBeCloseTo(100, 10);
+    expect(oneDead).toBeLessThan(75);
+  });
+
+  it("renormalises a null over the remaining weights INSIDE its pillar", () => {
+    // clickstreamValidation is 0.20 of DEMAND. Dropping it must leave DEMAND
+    // as the geomean of the other two at 0.45/0.35 renormalised, and must not
+    // move any other pillar at all.
+    const full = composeScore(subfactorsWith({ searchVolume: 0.9, commercialIntent: 0.4 }));
+    const dropped = composeScore(
+      subfactorsWith({ searchVolume: 0.9, commercialIntent: 0.4, clickstreamValidation: null }),
+    );
+
+    const expected = Math.exp(
+      (0.45 * Math.log(0.9) + 0.35 * Math.log(0.4)) / (0.45 + 0.35),
+    );
+    expect(dropped.pillars.demand.value).toBeCloseTo(expected, 12);
+    expect(dropped.pillars.demand.measuredWeight).toBeCloseTo(0.8, 12);
+
+    // The weight went nowhere else.
+    for (const pillar of ["momentum", "visibilityGap", "winnability"] as const) {
+      expect(dropped.pillars[pillar].value).toBeCloseTo(full.pillars[pillar].value ?? 0, 12);
+    }
+  });
+
+  it("omitting a factor is NOT the same as flooring it", () => {
+    // The rule the whole null/zero distinction exists for. A keyword whose
+    // trend we never measured must score HIGHER than one we measured and found
+    // collapsing — otherwise "we did not ask" is being reported as bad news.
+    const unmeasured = composeScore(subfactorsWith({ trend90d: null })).rawScore;
+    const terrible = composeScore(subfactorsWith({ trend90d: MIN_FACTOR })).rawScore;
+    const neutral = composeScore(subfactorsWith({})).rawScore;
+
+    expect(unmeasured).toBeGreaterThan(terrible);
+    // And it is not a reward either: dropping a factor that was going to score
+    // the pillar average leaves the pillar exactly where it was.
+    expect(unmeasured).toBeCloseTo(neutral, 12);
+  });
+
+  it("nulls a whole pillar when every one of its subfactors is null", () => {
+    // MOMENTUM fully null is the realistic case, not a contrived one: a young
+    // domain has no search history to derive a trend from. The pillar drops out
+    // and its 0.20 renormalises across the other three at the top level.
+    const noMomentum = subfactorsWith({ trend90d: null, trend30d: null, acceleration: null });
+    const { pillars, rawScore } = composeScore(noMomentum);
+
+    expect(pillars.momentum.value).toBeNull();
+    expect(pillars.momentum.measuredWeight).toBe(0);
+    expect(Number.isFinite(rawScore)).toBe(true);
+    expect(rawScore).toBeGreaterThan(0);
+
+    // The other three, renormalised over 0.80, are the whole score.
+    const expected = Math.exp(
+      (0.3 * Math.log(pillars.demand.value!) +
+        0.3 * Math.log(pillars.visibilityGap.value!) +
+        0.2 * Math.log(pillars.winnability.value!)) /
+        0.8,
+    );
+    expect(rawScore).toBeCloseTo(expected * 100, 10);
+  });
+
+  it("scores 0 rather than NaN when nothing at all was measured", () => {
+    const { pillars, rawScore } = composeScore(uniformSubfactors(null));
+    for (const pillar of PILLAR_KEYS) expect(pillars[pillar].value).toBeNull();
+    expect(rawScore).toBe(0);
+    expect(Number.isNaN(rawScore)).toBe(false);
+  });
+
+  it("never takes ln(0), whatever it is handed", () => {
+    // Zeroes, negatives and non-finite values all land on the floor before the
+    // logarithm sees them, so no input produces -Infinity or NaN.
+    for (const hostile of [0, -1, Number.NaN, Number.POSITIVE_INFINITY, Number.NEGATIVE_INFINITY]) {
+      const { rawScore } = composeScore(uniformSubfactors(hostile));
+      expect(Number.isFinite(rawScore)).toBe(true);
+    }
+    const geo = weightedGeomean([{ value: 0, weight: 1 }]);
+    expect(geo.value).toBeCloseTo(MIN_FACTOR, 12);
+  });
+});
+
+describe("the factor floor", () => {
+  it("clamps a transformed factor into [0.05, 1]", () => {
+    expect(clampFactor(0)).toBe(MIN_FACTOR);
+    expect(clampFactor(-5)).toBe(MIN_FACTOR);
+    expect(clampFactor(Number.NaN)).toBe(MIN_FACTOR);
+    expect(clampFactor(1.4)).toBe(1);
+    expect(clampFactor(0.5)).toBe(0.5);
+  });
+
+  it("does NOT floor a raw zero that transforms to a maximum", () => {
+    // THE CASE THE FLOOR MUST NOT TOUCH. Zero AI mentions is the best possible
+    // reading of brandAiAbsence — it is the finding the product exists to make
+    // — and flooring the raw count instead of the transformed factor would
+    // have turned it into 0.05, the worst.
+    const noMentions: AiEvidence = {
+      mentioned: false,
+      visibilityScore: null,
+      mentionRate: 0,
+      averagePosition: null,
+    };
+    expect(brandAiAbsenceFactor(noMentions)).toBe(1);
+    expect(recommendationGapFactor(noMentions)).toBe(1);
+
+    // It is the brand the assistant put FIRST that hits the floor.
+    expect(brandAiAbsenceFactor(MENTIONED_FIRST)).toBe(MIN_FACTOR);
+    expect(recommendationGapFactor(MENTIONED_FIRST)).toBe(MIN_FACTOR);
+  });
+
+  it("keeps null meaning null on every AI-derived subfactor", () => {
+    expect(brandAiAbsenceFactor(null)).toBeNull();
+    expect(recommendationGapFactor(null)).toBeNull();
+    expect(competitorValidationFactor(null)).toBeNull();
+    expect(reasonableCompetitionFactor(null)).toBeNull();
+  });
+});
+
+describe("the two competition curves", () => {
+  it("validates demand in buckets: nobody named is a near-veto, two or three is ideal", () => {
+    expect(competitorValidationFactor(0)).toBeCloseTo(0.2, 12);
+    expect(competitorValidationFactor(1)).toBeCloseTo(0.65, 12);
+    expect(competitorValidationFactor(2)).toBeCloseTo(0.9, 12);
+    expect(competitorValidationFactor(3)).toBeCloseTo(1, 12);
+    expect(competitorValidationFactor(4)).toBeCloseTo(1, 12);
+    expect(competitorValidationFactor(5)).toBeCloseTo(0.8, 12);
+    expect(competitorValidationFactor(6)).toBeCloseTo(0.7, 12);
+    expect(competitorValidationFactor(40)).toBeCloseTo(0.7, 12);
+  });
+
+  it("scores winnability on a continuous hump over the SAME raw count", () => {
+    // floor + (1 - floor)·exp(-((n - 2.5)² / (2·2.25²)))
+    expect(reasonableCompetitionFactor(2)).toBeCloseTo(0.9805, 3);
+    expect(reasonableCompetitionFactor(3)).toBeCloseTo(0.9805, 3);
+    expect(reasonableCompetitionFactor(2.5)).toBeCloseTo(1, 12);
+    expect(reasonableCompetitionFactor(7)).toBeCloseTo(0.3083, 3);
+    // Far out it decays towards the floor, and asymptotically — a twelve-rival
+    // answer is still worth marginally more than nothing. (Far enough out the
+    // Gaussian underflows to zero in float and the value IS the floor; that is
+    // arithmetic, not a cliff in the curve.)
+    expect(reasonableCompetitionFactor(12)).toBeCloseTo(COMPETITION_FLOOR, 3);
+    expect(reasonableCompetitionFactor(12)!).toBeGreaterThan(COMPETITION_FLOOR);
+    expect(reasonableCompetitionFactor(60)).toBe(COMPETITION_FLOOR);
+  });
+
+  it("disagrees with the validation curve at zero, which is the point of having two", () => {
+    // ── A DELIBERATE DEPARTURE FROM THE BRIEF, FLAGGED HERE ──────────────────
+    //
+    // The brief's sanity check said count 0 -> 0.20 for this curve too. Its own
+    // formula does not do that: at n=0 the Gaussian is exp(-6.25/10.125) =
+    // 0.539, which the floor lifts to 0.631. The two figures cannot both be
+    // right, and the formula was specified exactly while the 0.20 is also the
+    // validation table's value at 0 — so it reads as a transcription of the
+    // wrong curve. The formula is implemented as written; awaiting a ruling.
+    expect(reasonableCompetitionFactor(0)).toBeCloseTo(0.6315, 3);
+    expect(competitorValidationFactor(0)).toBeCloseTo(0.2, 12);
+
+    // An answer naming nobody: no demand validated, but nothing to beat either.
+    expect(reasonableCompetitionFactor(0)!).toBeGreaterThan(competitorValidationFactor(0)!);
+    // A crowded answer: demand is proven, winning it is not.
+    expect(reasonableCompetitionFactor(7)!).toBeLessThan(competitorValidationFactor(7)!);
+  });
+});
+
+describe("momentum horizons", () => {
+  const history = (volumes: readonly number[]) =>
+    volumes.map((search_volume, index) => ({
+      year: 2025 + Math.floor(index / 12),
+      month: (index % 12) + 1,
+      search_volume,
+    }));
+
+  it("falls back to the derived trendPercent when no history is supplied", () => {
+    // The v1-shaped input. One horizon exists, so the other two are null —
+    // which is the brief's own rule for exactly this case.
+    const factors = momentumFactors(24, undefined);
+    expect(factors.trend90d).toBeCloseTo(trendScore(24) / 100, 12);
+    expect(factors.trend30d).toBeNull();
+    expect(factors.acceleration).toBeNull();
+    expect(momentumFactors(24, null).trend90d).toBeCloseTo(trendScore(24) / 100, 12);
+  });
+
+  it("nulls every horizon when the history is present but too thin", () => {
+    // ABSENT AND EMPTY ARE DIFFERENT. An empty history is a young domain we
+    // looked at; it produces a fully-null MOMENTUM pillar rather than a flat
+    // trend, because "no data yet" is not "demand is steady".
+    for (const points of [[], [100], [100, 110, 120]]) {
+      const factors = momentumFactors(24, history(points));
+      expect(factors.trend90d).toBeNull();
+      expect(factors.acceleration).toBeNull();
+    }
+  });
+
+  it("derives all three from a full twelve-month history", () => {
+    const rising = history([100, 105, 110, 120, 130, 140, 155, 170, 185, 205, 225, 250]);
+    const factors = momentumFactors(0, rising);
+
+    expect(factors.trend90d).not.toBeNull();
+    expect(factors.trend30d).not.toBeNull();
+    expect(factors.acceleration).not.toBeNull();
+    // Growing, and growing faster: every horizon above its neutral point.
+    expect(factors.trend90d!).toBeGreaterThan(trendScore(0) / 100);
+    expect(factors.acceleration!).toBeGreaterThan(0.5);
+
+    // A decline that is getting steeper: below neutral on both.
+    const collapsing = history([250, 248, 246, 244, 240, 236, 230, 220, 205, 185, 160, 130]);
+    const down = momentumFactors(0, collapsing);
+    expect(down.trend90d!).toBeLessThan(factors.trend90d!);
+    expect(down.acceleration!).toBeLessThan(0.5);
+
+    // ACCELERATION IS ABOUT THE SECOND DERIVATIVE, NOT THE FIRST, and this is
+    // the case that proves the two are separate subfactors: a series falling
+    // steadily but by LESS each quarter is shrinking demand whose decline is
+    // easing, so trend90d reads badly and acceleration reads above neutral.
+    const easing = history([...rising].reverse().map((point) => point.search_volume));
+    const slowing = momentumFactors(0, easing);
+    expect(slowing.trend90d!).toBeLessThan(0.5);
+    expect(slowing.acceleration!).toBeGreaterThan(0.5);
+  });
+
+  it("puts a steady trend at the middle of the acceleration scale", () => {
+    const flat = history(Array.from({ length: 12 }, () => 500));
+    const factors = momentumFactors(0, flat);
+    expect(factors.acceleration).toBeCloseTo(0.5, 12);
+    expect(ACCELERATION_CLAMP_POINTS).toBeGreaterThan(0);
+  });
+});
+
+describe("confidence", () => {
+  it("counts coverage at the subfactor level, both ways", () => {
+    expect(coverageFor(uniformSubfactors(0.5), "count")).toBeCloseTo(1, 12);
+    expect(coverageFor(uniformSubfactors(null), "count")).toBe(0);
+    expect(coverageFor(uniformSubfactors(0.5), "weight")).toBeCloseTo(1, 12);
+
+    // One subfactor missing is 1/14 of the count and its own share of the
+    // score under "weight" — 0.30 x 0.20 = 6% for clickstreamValidation.
+    const missing = subfactorsWith({ clickstreamValidation: null });
+    expect(coverageFor(missing, "count")).toBeCloseTo(13 / 14, 12);
+    expect(coverageFor(missing, "weight")).toBeCloseTo(1 - 0.3 * 0.2, 12);
+  });
+
+  it("maps coverage onto the three levels at the specified bars", () => {
+    expect(confidenceFor(1)).toBe("HIGH");
+    expect(confidenceFor(CONFIDENCE_HIGH_MIN)).toBe("HIGH");
+    expect(confidenceFor(CONFIDENCE_HIGH_MIN - 0.001)).toBe("MEDIUM");
+    expect(confidenceFor(CONFIDENCE_MEDIUM_MIN)).toBe("MEDIUM");
+    expect(confidenceFor(CONFIDENCE_MEDIUM_MIN - 0.001)).toBe("LOW");
+    expect(confidenceFor(0)).toBe("LOW");
+  });
+
+  it("gates HIGH on confidence AS WELL AS on evidence of absence", () => {
+    const wellAbove = V2_SEVERITY_CUTS.high + 10;
+    expect(severityForV2(wellAbove, NOT_MENTIONED, "HIGH")).toBe("HIGH");
+    expect(severityForV2(wellAbove, NOT_MENTIONED, "MEDIUM")).toBe("HIGH");
+    // Measured too thinly to shout about, however well it scores.
+    expect(severityForV2(wellAbove, NOT_MENTIONED, "LOW")).toBe("MEDIUM");
+    // v1's rule survives unchanged: absence of evidence is not evidence.
+    expect(severityForV2(wellAbove, null, "HIGH")).toBe("MEDIUM");
+    expect(severityForV2(wellAbove, MENTIONED_FIRST, "HIGH")).toBe("MEDIUM");
+    // And the cuts govern the rest.
+    expect(severityForV2(V2_SEVERITY_CUTS.medium, null, "HIGH")).toBe("MEDIUM");
+    expect(severityForV2(V2_SEVERITY_CUTS.medium - 1, null, "HIGH")).toBe("LOW");
+  });
+});
+
+describe("v2 monotonicity", () => {
+  it("never lowers the score when a single subfactor is raised", () => {
+    // Fourteen sweeps, each holding the other thirteen fixed. This is the
+    // property that makes the score arguable with a customer: "your rank
+    // improved and the score went down" must be impossible.
+    for (const key of SUBFACTOR_KEYS) {
+      let previous = -Infinity;
+      for (const value of [0.05, 0.1, 0.25, 0.4, 0.55, 0.7, 0.85, 1]) {
+        const score = composeScore(subfactorsWith({ [key]: value })).rawScore;
+        expect(score).toBeGreaterThanOrEqual(previous - 1e-9);
+        previous = score;
+      }
+    }
+  });
+
+  it("is monotone in the inputs the transforms are built from", () => {
+    const base: OpportunityInput = {
+      keyword: "k",
+      monthlyVolume: 2000,
+      cpcUsd: 10,
+      competition: 0.4,
+      trendPercent: 10,
+      googleRank: 20,
+      intent: "commercial_investigation",
+      ai: NOT_MENTIONED,
+      competitorCount: 2,
+    };
+
+    const raise = (o: Partial<OpportunityInput>) =>
+      computeOpportunityDetailV2({ ...base, ...o }).rawScore;
+
+    // More demand, and a worse rank (more room to gain), never score lower.
+    expect(raise({ monthlyVolume: 20_000 })).toBeGreaterThan(raise({}));
+    expect(raise({ googleRank: 2 })).toBeLessThan(raise({}));
+    expect(raise({ trendPercent: 90 })).toBeGreaterThan(raise({}));
+    // A brand the assistant already recommends first has less of an opening.
+    expect(raise({ ai: MENTIONED_FIRST })).toBeLessThan(raise({}));
+  });
+});
+
+describe("what v2 measures today", () => {
+  it("declares exactly six subfactors as having no live source yet", () => {
+    // THE HONEST LEDGER. Anything marked "unwired" must be null on every
+    // fixture — a subfactor that quietly starts returning a constant is the
+    // failure mode this assertion exists to catch.
+    const unwired = SUBFACTOR_KEYS.filter((key) => V2_SUBFACTOR_SOURCES[key] === "unwired");
+    expect(new Set(unwired)).toEqual(
+      new Set([
+        "clickstreamValidation",
+        "trend30d",
+        "acceleration",
+        "citationGap",
+        "contentFit",
+        "authorityFit",
+      ]),
+    );
+
+    for (const row of DEMO_ANALYSIS.rows) {
+      for (const key of unwired) expect(row.detail?.subfactors[key]).toBeNull();
+    }
+  });
+
+  it("produces a number for every live subfactor on an AI-tested keyword", () => {
+    const tested = DEMO_ANALYSIS.rows.find((row) => row.aiTested);
+    const live = SUBFACTOR_KEYS.filter((key) => V2_SUBFACTOR_SOURCES[key] === "live");
+    expect(live).toHaveLength(8);
+    for (const key of live) {
+      expect(typeof tested?.detail?.subfactors[key]).toBe("number");
+    }
+  });
+
+  it("keeps every AI subfactor null on a keyword nobody asked about", () => {
+    const untested = DEMO_ANALYSIS.rows.find((row) => !row.aiTested);
+    expect(untested?.detail?.pillars.visibilityGap.value).toBeNull();
+    for (const key of [
+      "brandAiAbsence",
+      "competitorValidation",
+      "recommendationGap",
+    ] as SubfactorKey[]) {
+      expect(untested?.detail?.subfactors[key]).toBeNull();
+    }
+    expect(untested?.competitorCount ?? null).toBeNull();
+  });
+
+  it("keeps raw and calibrated apart even while they are equal", () => {
+    for (const row of DEMO_ANALYSIS.rows) {
+      expect(row.detail?.calibratedScore).toBe(row.detail?.rawScore);
+      expect(row.opportunityScore).toBe(Math.round(row.detail!.calibratedScore));
+    }
+  });
+
+  it("puts every cutoff in one tunable config rather than in the code", () => {
+    expect(V2_SEVERITY_CUTS.high).toBeGreaterThan(V2_SEVERITY_CUTS.medium);
+    expect(CONFIDENCE_HIGH_MIN).toBeGreaterThan(CONFIDENCE_MEDIUM_MIN);
+    // v2's HIGH cut and v1's are both 74 by coincidence, from different
+    // formulas on different distributions. They are NOT the same constant and
+    // must not be pointed at each other.
+    expect(V2_SEVERITY_CUTS.high).not.toBe(MEDIUM_SEVERITY_MIN_SCORE);
+  });
+});
+
 describe("the AcmeCRM demo is scored by the production scorer", () => {
   const rows = DEMO_ANALYSIS.rows;
   const byKeyword = new Map(rows.map((row) => [row.keyword, row]));
@@ -482,10 +954,12 @@ describe("the AcmeCRM demo is scored by the production scorer", () => {
         googleRank: row.googleRank,
         intent: row.intent,
         ai: row.ai,
+        competitorCount: row.competitorCount,
       });
       expect(rescored.opportunityScore).toBe(row.opportunityScore);
       expect(rescored.severity).toBe(row.severity);
       expect(rescored.components).toEqual(row.components);
+      expect(rescored.detail).toEqual(row.detail);
     }
   });
 
@@ -507,14 +981,39 @@ describe("the AcmeCRM demo is scored by the production scorer", () => {
   //   anything. 94 is above that ceiling, so no choice of normalisation
   //   constants reaches it.
   //
-  // The scores below are what the specified formula actually produces. They
-  // preserve what the brief was describing — all three AI-tested, the two
-  // un-mentioned keywords ahead of the mentioned one — and they are asserted
-  // exactly so that a future change to the weights has to come past this test.
-  it("scores the three specced keywords at the formula's real values", () => {
-    expect(byKeyword.get("best CRM for startups")?.opportunityScore).toBe(75);
-    expect(byKeyword.get("CRM for agencies")?.opportunityScore).toBe(68);
-    expect(byKeyword.get("affordable CRM software")?.opportunityScore).toBe(73);
+  // ── AND WHAT VERSION 2 DOES TO THEM ───────────────────────────────────────
+  //
+  // v1 scored them 75 / 68 / 73. v2 scores them 79 / 44 / 75, and the middle
+  // one is the whole difference between an additive and a multiplicative
+  // score: "CRM for agencies" has real demand and a rank of 7, and the
+  // assistant DOES name the brand, at position 4. Under v1 that cost it the
+  // aiGap component and it kept two thirds of its score. Under v2 the
+  // visibility gap it does not have multiplies through everything else, and it
+  // drops out of the recommendations — which is correct, because an
+  // opportunity is a conjunction and this keyword is missing the conjunct the
+  // product exists to find.
+  //
+  // NOT PINNED TO THREE INTEGERS, deliberately. The v2 figures are awaiting a
+  // ruling and a number asserted here before it is ratified is a number nobody
+  // chose. What IS asserted is the shape the brief was describing, which does
+  // have to survive a retune: all three tested, and the keywords with a gap
+  // ahead of the keyword without one.
+  it("scores the three specced keywords, with the un-mentioned pair on top", () => {
+    const startups = byKeyword.get("best CRM for startups");
+    const agencies = byKeyword.get("CRM for agencies");
+    const affordable = byKeyword.get("affordable CRM software");
+
+    for (const row of [startups, agencies, affordable]) {
+      expect(row?.aiTested).toBe(true);
+      expect(row?.scoreVersion).toBe(2);
+    }
+
+    // The two the assistant never named outrank the one it did.
+    expect(startups!.opportunityScore).toBeGreaterThan(agencies!.opportunityScore);
+    expect(affordable!.opportunityScore).toBeGreaterThan(agencies!.opportunityScore);
+    expect(startups?.severity).toBe("HIGH");
+    expect(affordable?.severity).toBe("HIGH");
+    expect(agencies?.severity).toBe("LOW");
   });
 
   it("keeps the three specced keywords inside the AI-tested fifteen", () => {
@@ -616,26 +1115,27 @@ describe("the AcmeCRM demo is scored by the production scorer", () => {
     expect(severities).toEqual(new Set(["HIGH", "MEDIUM", "LOW"]));
   });
 
-  it("splits into three usable bands at the shipped cuts", () => {
-    // THE REASON THE CUTS ARE 74/60 AND NOT 85/70, pinned so a change to
-    // either constant has to come past a number somebody chose. At 85/70 this
-    // read 2/12/11 — HIGH was a two-row shortlist that excluded the archetype
-    // the tool exists to surface. At 75/70 it read 10/4/11, which is three
-    // bands on paper and two in practice.
+  it("splits into three usable bands at the shipped v2 cuts", () => {
+    // THE CALIBRATION, pinned so a change to either cut has to come past a
+    // number somebody chose. v1 read 11 / 7 / 7 at 74 / 60; v2 reads 11 / 8 / 6
+    // at 74 / 47, and the 8 rather than 7 is not a choice — two keywords score
+    // 50.909 and 51.322, so no MEDIUM cut admits one without the other. See
+    // V2_SEVERITY_CUTS.
     //
-    // These are v1 figures off a 25-keyword fixture set built to exercise
-    // branches, NOT a sampled population. See HIGH_SEVERITY_MIN_SCORE.
+    // Off a 25-keyword fixture set built to exercise branches, NOT a sampled
+    // population. Same caveat v1 carried.
     const tally = { HIGH: 0, MEDIUM: 0, LOW: 0 };
     for (const row of rows) tally[row.severity] += 1;
-    expect(tally).toEqual({ HIGH: 11, MEDIUM: 7, LOW: 7 });
+    expect(tally).toEqual({ HIGH: 11, MEDIUM: 8, LOW: 6 });
   });
 
   it("puts the rank-16 archetype in HIGH with headroom, not by a rounding step", () => {
-    // 74.519 rounds to 75. A cut at 75 would have it clear by 0.48 of a
-    // rounding artifact; at 74 it clears by a point of real score.
+    // The lesson v1 wrote down: a flagship keyword that clears its cut only
+    // because Math.round carried it there flips band on any drift. Under v2 it
+    // scores 78.83 against a cut of 74.
     const archetype = byKeyword.get("best CRM for startups");
     expect(archetype?.severity).toBe("HIGH");
-    expect(archetype?.opportunityScore).toBeGreaterThan(HIGH_SEVERITY_MIN_SCORE);
+    expect(archetype?.opportunityScore).toBeGreaterThan(V2_SEVERITY_CUTS.high + 1);
   });
 
   it("keeps the MEDIUM explanation honest for the untested keywords it now holds", () => {

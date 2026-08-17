@@ -15545,6 +15545,18 @@ export interface KeywordOpportunityCopy {
   componentAiGap: string;
   componentNotMeasured: string;
 
+  /** Version 2 renders four pillars in place of the six v1 components. */
+  sourceMixed: string;
+  pillarDemand: string;
+  pillarMomentum: string;
+  pillarVisibilityGap: string;
+  pillarWinnability: string;
+  detailConfidence: string;
+  detailConfidenceBody: string;
+  confidenceHigh: string;
+  confidenceMedium: string;
+  confidenceLow: string;
+
   detailCompetitors: string;
   detailCompetitorsBody: string;
   competitorShare: string;
@@ -15665,6 +15677,18 @@ const keywordOpportunityEn: KeywordOpportunityCopy = {
   componentSeoGap: "Ranking gap",
   componentAiGap: "AI answer gap",
   componentNotMeasured: "Not measured",
+
+  sourceMixed: "Provider data and Echorank calculation",
+  pillarDemand: "Demand",
+  pillarMomentum: "Momentum",
+  pillarVisibilityGap: "Visibility gap",
+  pillarWinnability: "Winnability",
+  detailConfidence: "Confidence",
+  detailConfidenceBody:
+    "How much of this score rests on something we measured. A keyword we could only measure in part is never marked high priority, however well it scores.",
+  confidenceHigh: "High",
+  confidenceMedium: "Medium",
+  confidenceLow: "Low",
 
   detailCompetitors: "Who the assistant named instead",
   detailCompetitorsBody:
@@ -15795,6 +15819,18 @@ export const KEYWORD_OPPORTUNITY_COPY: Record<DashLocale, KeywordOpportunityCopy
     componentAiGap: "Écart dans les réponses IA",
     componentNotMeasured: "Non mesuré",
 
+    sourceMixed: "Données du fournisseur et calcul Echorank",
+    pillarDemand: "Demande",
+    pillarMomentum: "Dynamique",
+    pillarVisibilityGap: "Écart de visibilité",
+    pillarWinnability: "Accessibilité",
+    detailConfidence: "Fiabilité",
+    detailConfidenceBody:
+      "La part de ce score qui repose sur des mesures réelles. Un mot-clé que nous n'avons mesuré qu'en partie n'est jamais classé prioritaire, quel que soit son score.",
+    confidenceHigh: "Élevée",
+    confidenceMedium: "Moyenne",
+    confidenceLow: "Faible",
+
     detailCompetitors: "Qui l'assistant a nommé à votre place",
     detailCompetitorsBody:
       "Part des réponses IA de cette analyse de domaine qui ont nommé chaque concurrent. Les plateformes, annuaires et termes génériques sont exclus.",
@@ -15920,6 +15956,18 @@ export const KEYWORD_OPPORTUNITY_COPY: Record<DashLocale, KeywordOpportunityCopy
     componentSeoGap: "Ranking-Lücke",
     componentAiGap: "Lücke in KI-Antworten",
     componentNotMeasured: "Nicht gemessen",
+
+    sourceMixed: "Anbieterdaten und Echorank-Berechnung",
+    pillarDemand: "Nachfrage",
+    pillarMomentum: "Dynamik",
+    pillarVisibilityGap: "Sichtbarkeitslücke",
+    pillarWinnability: "Gewinnchance",
+    detailConfidence: "Verlässlichkeit",
+    detailConfidenceBody:
+      "Wie viel dieses Scores auf tatsächlich Gemessenem beruht. Ein Keyword, das wir nur teilweise messen konnten, wird nie als vorrangig markiert, wie gut es auch abschneidet.",
+    confidenceHigh: "Hoch",
+    confidenceMedium: "Mittel",
+    confidenceLow: "Niedrig",
 
     detailCompetitors: "Wen der Assistent stattdessen genannt hat",
     detailCompetitorsBody:

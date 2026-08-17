@@ -182,36 +182,67 @@ describe("the detail panel", () => {
   it("opens on a row click with the score, severity and its explanation", () => {
     openRow("best CRM for startups");
     expect(screen.getByRole("heading", { name: "best CRM for startups" })).toBeInTheDocument();
-    expect(screen.getByText("High · 75")).toBeInTheDocument();
+    expect(screen.getByText("High · 79")).toBeInTheDocument();
     expect(screen.getByText(EN.severityHighExplain)).toBeInTheDocument();
   });
 
   it("reads sensibly on a MEDIUM row at the bottom of the band", () => {
-    // Lowering the MEDIUM floor to 60 pulled untested keywords into the band.
-    // "CRM software reviews" scores 61 and was never AI-tested, so the panel
-    // must not tell the customer the assistant already names them here.
+    // An untested keyword inside the MEDIUM band. The panel must not tell the
+    // customer the assistant already names them here — nobody asked it — and
+    // under v2 the whole VISIBILITY GAP pillar renders "Not measured" for the
+    // same reason, which is the null-not-zero rule made visible.
     openRow("CRM software reviews");
-    expect(screen.getByText("Medium · 61")).toBeInTheDocument();
+    expect(screen.getByText("Medium · 62")).toBeInTheDocument();
     expect(screen.getByText(EN.severityMediumExplain)).toBeInTheDocument();
     expect(screen.getByText(EN.componentNotMeasured)).toBeInTheDocument();
   });
 
-  it("breaks the score down per component, with weights and provenance", () => {
+  it("breaks a v2 score down per pillar, with weights and provenance", () => {
     openRow("best CRM for startups");
     expect(screen.getByText(EN.detailBreakdown)).toBeInTheDocument();
     for (const label of [
-      EN.componentVolume,
-      EN.componentCpc,
-      EN.componentTrend,
-      EN.componentIntent,
-      EN.componentSeoGap,
-      EN.componentAiGap,
+      EN.pillarDemand,
+      EN.pillarMomentum,
+      EN.pillarVisibilityGap,
+      EN.pillarWinnability,
     ]) {
       expect(screen.getByText(label)).toBeInTheDocument();
     }
-    // Volume and CPC are the provider's figures; the other four are ours.
+    // DEMAND is the only pillar that mixes the provider's search volume with
+    // our own classification; the other three are entirely ours.
+    expect(screen.getAllByText(EN.sourceMixed)).toHaveLength(1);
+    expect(screen.getAllByText(EN.sourceEchorank)).toHaveLength(3);
+    // The v1 component table must NOT also be on screen — one score, one
+    // explanation of how it was arrived at.
+    expect(screen.queryByText(EN.componentCpc)).not.toBeInTheDocument();
+  });
+
+  it("states the confidence, because it is a gate on the severity", () => {
+    openRow("best CRM for startups");
+    expect(screen.getByText(`${EN.detailConfidence}: ${EN.confidenceMedium}`)).toBeInTheDocument();
+    expect(screen.getByText(EN.detailConfidenceBody)).toBeInTheDocument();
+  });
+
+  it("still explains a stored v1 row with the v1 component table", () => {
+    // A row written before the v2 deploy keeps the number the customer was
+    // shown AND the arithmetic that produced it. `detail: null` is what
+    // ./read.ts hands the component for such a row.
+    const data = demoPageData("results");
+    const analysis = data.analysis!;
+    const v1Row = { ...analysis.rows[0], scoreVersion: 1, detail: null };
+    render(
+      <KeywordOpportunitiesClient
+        locale="en"
+        data={{ ...data, analysis: { ...analysis, scoreVersion: 1, rows: [v1Row] } }}
+        preview
+      />,
+    );
+    fireEvent.click(screen.getByRole("button", { name: v1Row.keyword }));
+
+    expect(screen.getByText(EN.componentCpc)).toBeInTheDocument();
     expect(screen.getAllByText(EN.sourceProvider)).toHaveLength(2);
-    expect(screen.getAllByText(EN.sourceEchorank)).toHaveLength(4);
+    expect(screen.queryByText(EN.pillarDemand)).not.toBeInTheDocument();
+    expect(screen.queryByText(EN.detailConfidenceBody)).not.toBeInTheDocument();
   });
 
   it("lists the rivals that this keyword's own answer named", () => {

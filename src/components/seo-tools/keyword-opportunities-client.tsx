@@ -53,6 +53,12 @@ import {
   type OpportunityComponents,
 } from "@/lib/keyword-opportunity/score";
 import {
+  PILLAR_KEYS,
+  V2_PILLAR_WEIGHTS,
+  type OpportunityConfidence,
+  type PillarKey,
+} from "@/lib/keyword-opportunity/score-v2";
+import {
   ANALYSIS_STEPS,
   type AnalysisStep,
   type KeywordOpportunityPageData,
@@ -121,6 +127,41 @@ const COMPONENT_LABEL: Record<keyof OpportunityComponents, keyof Copy> = {
   intent: "componentIntent",
   seoGap: "componentSeoGap",
   aiGap: "componentAiGap",
+};
+
+/**
+ * Version 2's four pillars, for the rows scored with it.
+ *
+ * A v2 row's breakdown CANNOT be the v1 table. The six components are still on
+ * the row and are still real numbers, but they are not what the score is made
+ * of any more, and rendering them beside a "Weight" column of v1 percentages
+ * would explain a score with an arithmetic that did not produce it. Which
+ * table appears is decided by the row's own scoreVersion, so an analysis run
+ * last month keeps the explanation it was scored with.
+ */
+const PILLAR_LABEL: Record<PillarKey, keyof Copy> = {
+  demand: "pillarDemand",
+  momentum: "pillarMomentum",
+  visibilityGap: "pillarVisibilityGap",
+  winnability: "pillarWinnability",
+};
+
+/**
+ * Only DEMAND mixes the two. Its search-volume subfactor is the provider's
+ * figure; everything else in v2 — the trend, the intent class, the rank, the
+ * AI answer — is ours, which is the same split COMPONENT_SOURCES draws.
+ */
+const PILLAR_SOURCE: Record<PillarKey, keyof Copy> = {
+  demand: "sourceMixed",
+  momentum: "sourceEchorank",
+  visibilityGap: "sourceEchorank",
+  winnability: "sourceEchorank",
+};
+
+const CONFIDENCE_LABEL: Record<OpportunityConfidence, keyof Copy> = {
+  HIGH: "confidenceHigh",
+  MEDIUM: "confidenceMedium",
+  LOW: "confidenceLow",
 };
 
 const ACTION_LABEL: Record<RecommendedActionId, keyof Copy> = {
@@ -902,36 +943,68 @@ function DetailPanel({
                 </tr>
               </thead>
               <tbody>
-                {(Object.keys(OPPORTUNITY_WEIGHTS_V1) as (keyof OpportunityComponents)[]).map(
-                  (key) => {
-                    const value = row.components[key];
-                    return (
-                      <tr key={key} className="border-b border-gray-100 last:border-0">
-                        <td className="py-2 text-gray-700">{copy[COMPONENT_LABEL[key]]}</td>
-                        <td className="py-2 text-right tabular-nums text-gray-900">
-                          {value === null ? (
-                            <span className="text-gray-400">{copy.componentNotMeasured}</span>
-                          ) : (
-                            Math.round(value)
-                          )}
-                        </td>
-                        <td className="py-2 text-right tabular-nums text-gray-500">
-                          {new Intl.NumberFormat(intl, { style: "percent" }).format(
-                            OPPORTUNITY_WEIGHTS_V1[key],
-                          )}
-                        </td>
-                        <td className="py-2 text-right text-xs text-gray-500">
-                          {COMPONENT_SOURCES[key] === "provider"
-                            ? copy.sourceProvider
-                            : copy.sourceEchorank}
-                        </td>
-                      </tr>
-                    );
-                  },
-                )}
+                {row.detail
+                  ? PILLAR_KEYS.map((key) => {
+                      const pillar = row.detail?.pillars[key];
+                      return (
+                        <tr key={key} className="border-b border-gray-100 last:border-0">
+                          <td className="py-2 text-gray-700">{copy[PILLAR_LABEL[key]]}</td>
+                          <td className="py-2 text-right tabular-nums text-gray-900">
+                            {!pillar || pillar.value === null ? (
+                              <span className="text-gray-400">{copy.componentNotMeasured}</span>
+                            ) : (
+                              Math.round(pillar.value * 100)
+                            )}
+                          </td>
+                          <td className="py-2 text-right tabular-nums text-gray-500">
+                            {new Intl.NumberFormat(intl, { style: "percent" }).format(
+                              V2_PILLAR_WEIGHTS[key],
+                            )}
+                          </td>
+                          <td className="py-2 text-right text-xs text-gray-500">
+                            {copy[PILLAR_SOURCE[key]]}
+                          </td>
+                        </tr>
+                      );
+                    })
+                  : (Object.keys(OPPORTUNITY_WEIGHTS_V1) as (keyof OpportunityComponents)[]).map(
+                      (key) => {
+                        const value = row.components[key];
+                        return (
+                          <tr key={key} className="border-b border-gray-100 last:border-0">
+                            <td className="py-2 text-gray-700">{copy[COMPONENT_LABEL[key]]}</td>
+                            <td className="py-2 text-right tabular-nums text-gray-900">
+                              {value === null ? (
+                                <span className="text-gray-400">{copy.componentNotMeasured}</span>
+                              ) : (
+                                Math.round(value)
+                              )}
+                            </td>
+                            <td className="py-2 text-right tabular-nums text-gray-500">
+                              {new Intl.NumberFormat(intl, { style: "percent" }).format(
+                                OPPORTUNITY_WEIGHTS_V1[key],
+                              )}
+                            </td>
+                            <td className="py-2 text-right text-xs text-gray-500">
+                              {COMPONENT_SOURCES[key] === "provider"
+                                ? copy.sourceProvider
+                                : copy.sourceEchorank}
+                            </td>
+                          </tr>
+                        );
+                      },
+                    )}
               </tbody>
             </table>
           </div>
+          {row.detail && (
+            <p className="mt-2 text-xs text-gray-500">
+              <span className="font-medium text-gray-700">
+                {copy.detailConfidence}: {copy[CONFIDENCE_LABEL[row.detail.confidence]]}
+              </span>{" "}
+              {copy.detailConfidenceBody}
+            </p>
+          )}
           {!row.aiTested && <p className="mt-2 text-xs text-gray-500">{copy.aiNotTestedHint}</p>}
         </section>
 
