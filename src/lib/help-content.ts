@@ -45,6 +45,14 @@ export interface HelpCard {
   slug?: string;
   /** Target for "app" and "external" cards. Locale-prefixed only for "app". */
   href?: string;
+  /**
+   * Icon override. The hub otherwise reads it off `kind`: "external" gets the
+   * outbound-arrow glyph, everything else the book. That rule assumes every
+   * "external" card is a utility page (the Caddy-served extension pages, the
+   * PDF) — so a card that is genuinely something to READ, but whose copy this
+   * config owns because it is not a Knowledge Hub article, needs to say so.
+   */
+  icon?: "book" | "external";
 }
 
 export interface HelpGroup {
@@ -64,6 +72,16 @@ export const HELP_GROUPS: HelpGroup[] = [
       { id: "first_steps", kind: "app", href: "/dashboard" },
       { id: "install_extension", kind: "video", slug: "install-browser-extension" },
       { id: "import_history", kind: "chapter", slug: "import-your-review-history" },
+      // The public setup walkthrough for AI Search tracking. "external" because
+      // it is a standalone HTML landing page, not a Knowledge Hub article — so
+      // its copy lives in HELP_COPY — but it reads like a guide, hence the book
+      // icon. The href is hard-coded /en: the page ships an en-only body.
+      {
+        id: "setup_ai_search",
+        kind: "external",
+        href: "/en/setup-ai-search-tracking",
+        icon: "book",
+      },
     ],
   },
   {

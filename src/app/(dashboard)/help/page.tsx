@@ -129,7 +129,10 @@ export default async function HelpHubPage() {
               }
 
               const item = resolve(card, copy, locale);
-              const Icon = card.kind === "external" ? ExternalLink : BookOpen;
+              const Icon =
+                (card.icon ?? (card.kind === "external" ? "external" : "book")) === "external"
+                  ? ExternalLink
+                  : BookOpen;
 
               const body = (
                 <>

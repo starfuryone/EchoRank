@@ -11722,6 +11722,10 @@ const helpEn = {
       name: "Your first steps",
       description: "The setup checklist on your dashboard: connect a source, import history, ask for the first review.",
     },
+    setup_ai_search: {
+      name: "Set up AI Search tracking",
+      description: "We ask AI assistants the questions your buyers ask, and record whether they mention you.",
+    },
     echopedia: {
       name: "Echopedia",
       description: "Every term used across the guides, defined in one place.",
@@ -11780,6 +11784,10 @@ export const HELP_COPY: Record<DashLocale, HelpCopy> = {
         name: "Vos premières étapes",
         description: "La liste de mise en route de votre tableau de bord : connecter une source, importer l'historique, demander le premier avis.",
       },
+      setup_ai_search: {
+        name: "Configurer le suivi AI Search",
+        description: "Nous posons aux assistants IA les questions que posent vos acheteurs, et notons s'ils vous mentionnent.",
+      },
       echopedia: {
         name: "Echopedia",
         description: "Tous les termes employés dans les guides, définis au même endroit.",
@@ -11830,6 +11838,10 @@ export const HELP_COPY: Record<DashLocale, HelpCopy> = {
       first_steps: {
         name: "Ihre ersten Schritte",
         description: "Die Einrichtungsliste auf Ihrem Dashboard: Quelle verbinden, Verlauf importieren, erste Bewertung anfragen.",
+      },
+      setup_ai_search: {
+        name: "AI-Search-Tracking einrichten",
+        description: "Wir stellen KI-Assistenten die Fragen Ihrer Käufer und halten fest, ob Sie erwähnt werden.",
       },
       echopedia: {
         name: "Echopedia",

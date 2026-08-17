@@ -113,6 +113,22 @@ describe("cards derive from learn-content", () => {
     }
   });
 
+  it("sends the AI Search setup card to the public landing page, in a new tab", () => {
+    // Not a Knowledge Hub article — a standalone landing page — so it is an
+    // "external" card carrying its own copy. Two things are easy to get wrong:
+    // the /en prefix (the payload is en-only, so the link must not be localised
+    // to a dashboard locale that the page does not have), and the icon (the hub
+    // reads it off `kind`, which would give this reading card the outbound arrow).
+    const card = ALL_CARDS.find((c) => c.id === "setup_ai_search")!;
+    expect(card).toBeDefined();
+    expect(card.kind).toBe("external");
+    expect(card.href).toBe("/en/setup-ai-search-tracking");
+    expect(card.icon).toBe("book");
+
+    const group = HELP_GROUPS.find((g) => g.cards.some((c) => c.id === "setup_ai_search"))!;
+    expect(group.id).toBe("getting_started");
+  });
+
   it("ships the PDF the reference group links to", () => {
     const pdf = ALL_CARDS.find((c) => c.id === "pdf")!;
     expect(pdf.href).toBe(LEARN_PDF);

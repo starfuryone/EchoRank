@@ -48,6 +48,10 @@ export const LOCALIZED_ROUTES: LocalizedRoute[] = [
   { path: "/keyword-research", priority: 0.6, changeFrequency: "monthly" },
   { path: "/link-building-playbook", priority: 0.6, changeFrequency: "monthly" },
   { path: "/ai-discovery-optimization", priority: 0.6, changeFrequency: "monthly" },
+  // The AI Search tracking setup walkthrough. Also linked from the in-app Help
+  // hub's "Getting started" group, so it is reached from inside the product as
+  // well as from search.
+  { path: "/setup-ai-search-tracking", priority: 0.6, changeFrequency: "monthly" },
   // The public reputation-tools landing. Ranks above the guide pages: the
   // homepage's "classic reputation stack" section links straight here, so it
   // is a product page in the funnel rather than an article.
