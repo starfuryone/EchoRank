@@ -19,6 +19,8 @@
 import { useCallback, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import AiSearchSetupHelp from "./AiSearchSetupHelp";
+import { ExplainerVideoButton } from "./ExplainerVideoButton";
+import type { DashLocale } from "@/lib/i18n/dashboard";
 
 interface EngineOption {
   provider: string;
@@ -51,10 +53,13 @@ export function SetupWizard({
   engines,
   promptLimit,
   planName,
+  locale,
 }: {
   engines: EngineOption[];
   promptLimit: number;
   planName: string;
+  /** Only the explainer video button is localized so far — see the note there. */
+  locale: DashLocale;
 }) {
   const router = useRouter();
   const [step, setStep] = useState<Step>(0);
@@ -165,6 +170,11 @@ export function SetupWizard({
       <p className="mt-1 text-sm text-gray-600">
         We ask AI assistants the questions your buyers ask, and record whether they mention you.
       </p>
+      {/* Block wrapper so the button takes its own line above the existing
+          "How does this work?" link rather than flowing beside it. */}
+      <div>
+        <ExplainerVideoButton locale={locale} />
+      </div>
         <AiSearchSetupHelp />
 
       <ol className="mt-6 flex gap-2" aria-label="Progress">

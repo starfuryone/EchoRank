@@ -11694,6 +11694,45 @@ export const REPUTATION_HELP_COPY: Record<DashLocale, ReputationHelpCopy> = {
   },
 };
 
+// ─── AI Search setup explainer video (/visibility/ai-search/setup) ─────────
+//
+// Three locales, not five: dashboardLocale() folds fr* to fr, de* to de-CH and
+// everything else to en, so a fourth catalog is unreachable.
+//
+// The wizard around this button is still hard-coded English (STEP_TITLES and its
+// error strings). Not fixed here — that is a bigger change than this task owns —
+// but the new copy is catalogued rather than inlined so it does not add to the
+// pile that will have to be migrated.
+export interface AiSearchExplainerCopy {
+  /** The trigger button. */
+  watch: string;
+  modalTitle: string;
+  close: string;
+  /** Sits under the player: sets the expectation before anyone clicks play. */
+  caption: string;
+}
+
+export const AI_SEARCH_EXPLAINER_COPY: Record<DashLocale, AiSearchExplainerCopy> = {
+  en: {
+    watch: "Watch Explainer Video",
+    modalTitle: "How AI Search tracking works",
+    close: "Close",
+    caption: "One minute. Sound on — the walkthrough is narrated.",
+  },
+  fr: {
+    watch: "Voir la vidéo explicative",
+    modalTitle: "Comment fonctionne le suivi AI Search",
+    close: "Fermer",
+    caption: "Une minute. Activez le son — la présentation est commentée.",
+  },
+  "de-CH": {
+    watch: "Erklärvideo ansehen",
+    modalTitle: "So funktioniert das AI-Search-Tracking",
+    close: "Schliessen",
+    caption: "Eine Minute. Ton einschalten — die Führung ist kommentiert.",
+  },
+};
+
 // ─── Help hub (/help) ──────────────────────────────────────────────────────
 //
 // CHROME ONLY. Article titles, descriptions and reading times come from

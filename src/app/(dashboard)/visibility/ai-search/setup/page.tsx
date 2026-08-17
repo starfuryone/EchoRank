@@ -1,5 +1,7 @@
+import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import { requireTenant } from "@/lib/tenant";
+import { dashboardLocale } from "@/lib/i18n/dashboard";
 import { aiSearchEnabledFor } from "@/lib/ai-monitor/rollout";
 import { wizardEngineOptions } from "@/lib/ai-monitor/wizard/engines";
 import { planConfig } from "@/lib/plan-config";
@@ -26,11 +28,18 @@ export default async function AiSearchSetupPage() {
 
   const config = planConfig(membership.tenant.planType);
 
+  // Resolved here rather than in the wizard: the cookie is only readable on the
+  // server, and the wizard is a client component. Only the explainer button's
+  // copy uses it today.
+  const cookieStore = await cookies();
+  const locale = dashboardLocale(cookieStore.get("echorank_locale")?.value);
+
   return (
     <SetupWizard
       engines={wizardEngineOptions()}
       promptLimit={config.aiCheckup.prompts}
       planName={config.name}
+      locale={locale}
     />
   );
 }
