@@ -43,7 +43,11 @@ import { JSON_CALL_MODEL } from "@/lib/ai-monitor/json-call";
 import { askEngine } from "@/lib/ai-monitor/runner/providers";
 import { analyzeResponse } from "@/lib/ai-monitor/analysis/analyze-response";
 import { costUsdFor } from "@/lib/ai-monitor/pricing";
-import { discoverKeywords } from "./discover";
+import {
+  discoverKeywords,
+  discoveryFailureReason,
+  type DiscoveryCounts,
+} from "./discover";
 import { KofCapReachedError } from "./metering";
 import { generateKeywordPrompts } from "./prompts";
 import { rankFor, rankingsForDomain, trackedKeywordsFrom } from "./rankings";
@@ -74,6 +78,8 @@ export interface RunSummary {
   generatedPrompts: number;
   /** Generated prompts dropped for naming the brand. */
   droppedForBrand: number;
+  /** How the discovery funnel narrowed. Null when discovery never ran. */
+  discovery: DiscoveryCounts | null;
 }
 
 /**
@@ -130,6 +136,7 @@ export async function runAnalysis(analysisId: string): Promise<RunSummary> {
     stoppedReason: null,
     generatedPrompts: 0,
     droppedForBrand: 0,
+    discovery: null,
   };
 
   const fail = async (reason: { stoppedReason?: string; error?: string }) => {
@@ -158,15 +165,14 @@ export async function runAnalysis(analysisId: string): Promise<RunSummary> {
     });
 
     summary.dataforseoCostUsd = discovery.costUsd;
+    summary.discovery = discovery.counts;
     await addSpend(analysisId, { dataforseoCostUsd: discovery.costUsd });
     await markStep(analysisId, "demand");
 
     if (discovery.keywords.length === 0) {
+      // THREE DIFFERENT FAILURES, NAMED SEPARATELY — see discoveryFailureReason.
       return await fail({
-        error:
-          discovery.failed.length > 0
-            ? `keyword discovery failed: ${discovery.failed.join(", ")}`
-            : "keyword discovery returned nothing for this domain",
+        error: discoveryFailureReason(analysis.domain, discovery.counts, discovery.failed),
       });
     }
 

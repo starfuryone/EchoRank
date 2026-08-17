@@ -125,6 +125,13 @@ async function run(): Promise<void> {
 
   console.log(`status            ${summary.status}${summary.stoppedReason ? ` (${summary.stoppedReason})` : ""}`);
   console.log(`keywords scored   ${summary.keywordCount}`);
+  if (summary.discovery) {
+    const d = summary.discovery;
+    console.log(
+      `discovery funnel  keywords_for_site ${d.keywordsForSite} + ranked_keywords ${d.rankedKeywords} + tracked ${d.tracked}` +
+        ` -> merged ${d.merged} -> after noise ${d.afterNoise} -> kept ${d.kept}`,
+    );
+  }
   console.log(`ai-tested         ${summary.aiTestedCount}`);
   console.log(`prompts generated ${summary.generatedPrompts} (rest used the fallback)`);
   console.log(`dropped for brand ${summary.droppedForBrand}`);
@@ -159,6 +166,7 @@ async function report(argId?: string): Promise<void> {
       id: true,
       status: true,
       stoppedReason: true,
+      error: true,
       keywordCount: true,
       aiTestedCount: true,
       costUsd: true,
@@ -193,7 +201,25 @@ async function report(argId?: string): Promise<void> {
     return;
   }
 
-  console.log(`analysis ${analysis.id}  ${analysis.status}${analysis.stoppedReason ? ` (${analysis.stoppedReason})` : ""}`);
+  console.log(`analysis ${analysis.id}  ${analysis.status}`);
+
+  // THE FAILURE REASON COMES FIRST AND IS NEVER OMITTED.
+  //
+  // This block exists because the first dogfood run FAILED and this report said
+  // nothing about why: it selected `stoppedReason` and not `error`, and a plain
+  // failure sets `error` while leaving `stoppedReason` null — that column is
+  // reserved for caps. So the one code path that was not a cap printed an empty
+  // string. A FAILED report that hides the reason is half a report.
+  if (analysis.status === "FAILED" || analysis.stoppedReason || analysis.error) {
+    console.log("");
+    if (analysis.stoppedReason) console.log(`  stoppedReason  ${analysis.stoppedReason}`);
+    if (analysis.error) console.log(`  error          ${analysis.error}`);
+    if (analysis.status === "FAILED" && !analysis.stoppedReason && !analysis.error) {
+      // Should be unreachable: markFailed always writes one or the other.
+      console.log("  (FAILED with neither stoppedReason nor error — that is a bug in markFailed)");
+    }
+    console.log("");
+  }
   console.log(
     `cost  total $${Number(analysis.costUsd).toFixed(4)}  =  dataforseo $${Number(
       analysis.dataforseoCostUsd,

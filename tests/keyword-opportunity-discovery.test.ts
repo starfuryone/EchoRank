@@ -24,6 +24,7 @@ import {
   mergeKeywords,
   parseKeywordsForSite,
   parseRankedKeywords,
+  discoveryFailureReason,
   selectWorkingSet,
   WORKING_SET_LIMIT,
   type DiscoveredKeyword,
@@ -303,5 +304,51 @@ describe("the brand-naming filter on the live prompt path", () => {
     const prompt = fallbackPromptFor(keyword);
     expect(withoutBrandNamedPrompts([{ text: prompt }], ALIASES).kept).toHaveLength(1);
     expect(prompt.length).toBeGreaterThan(keyword.length);
+  });
+});
+
+describe("why discovery produced nothing", () => {
+  // THE BUG THIS GUARDS. The first dogfood run billed $0.024, scored zero
+  // keywords, and recorded one sentence that fitted three different causes.
+  // Diagnosis went to the provider; it could equally have been our own filter.
+  const counts = (over: Partial<Parameters<typeof discoveryFailureReason>[1]> = {}) => ({
+    keywordsForSite: 0,
+    rankedKeywords: 0,
+    tracked: 0,
+    merged: 0,
+    afterNoise: 0,
+    kept: 0,
+    ...over,
+  });
+
+  it("names the endpoints when they errored", () => {
+    const reason = discoveryFailureReason("echorank360.com", counts(), ["labs/keywords_for_site"]);
+    expect(reason).toMatch(/failed at labs\/keywords_for_site/);
+  });
+
+  it("says OUR filter ate it when discovery found plenty and kept none", () => {
+    const reason = discoveryFailureReason(
+      "echorank360.com",
+      counts({ keywordsForSite: 200, merged: 200, afterNoise: 0 }),
+      [],
+    );
+    expect(reason).toMatch(/all 200 discovered keywords were filtered as branded or navigational/);
+    // Must NOT read as "the provider knows nothing about this domain".
+    expect(reason).not.toMatch(/returned nothing/);
+  });
+
+  it("says the provider knew nothing when both endpoints came back empty", () => {
+    const reason = discoveryFailureReason("echorank360.com", counts(), []);
+    expect(reason).toMatch(/returned nothing for echorank360\.com/);
+    expect(reason).not.toMatch(/filtered as branded/);
+  });
+
+  it("always carries the funnel, so the next reader does not have to guess", () => {
+    for (const failed of [[], ["x"]]) {
+      const reason = discoveryFailureReason("d.com", counts({ merged: 3, afterNoise: 1 }), failed);
+      expect(reason).toMatch(/keywords_for_site \d+/);
+      expect(reason).toMatch(/merged \d+/);
+      expect(reason).toMatch(/after noise filter \d+/);
+    }
   });
 });

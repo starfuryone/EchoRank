@@ -226,6 +226,34 @@ export function selectWorkingSet(
     .slice(0, Math.max(0, limit));
 }
 
+/**
+ * Why discovery produced no working set, in words.
+ *
+ * PURE AND TESTED, because the first dogfood run failed and the row could not
+ * say which of three things had happened. The distinction is not cosmetic:
+ * "the provider knows nothing about this domain" sends you to check the domain,
+ * "the endpoints errored" sends you to check the integration, and "our filter
+ * ate all of it" sends you here. One sentence for all three sent the first
+ * diagnosis to the wrong place.
+ */
+export function discoveryFailureReason(
+  domain: string,
+  counts: DiscoveryCounts,
+  failed: readonly string[],
+): string {
+  const detail =
+    `keywords_for_site ${counts.keywordsForSite}, ranked_keywords ${counts.rankedKeywords}, ` +
+    `tracked ${counts.tracked}, merged ${counts.merged}, after noise filter ${counts.afterNoise}`;
+
+  if (failed.length > 0 && counts.merged === 0) {
+    return `keyword discovery failed at ${failed.join(", ")} (${detail})`;
+  }
+  if (counts.merged > 0 && counts.afterNoise === 0) {
+    return `all ${counts.merged} discovered keywords were filtered as branded or navigational (${detail})`;
+  }
+  return `keyword discovery returned nothing for ${domain} (${detail})`;
+}
+
 export interface DiscoveryRequest {
   domain: string;
   locationCode: number;
@@ -235,11 +263,41 @@ export interface DiscoveryRequest {
   trackedKeywords?: readonly string[];
 }
 
+/**
+ * How the funnel narrowed, stage by stage.
+ *
+ * ADDED AFTER A FAILED DOGFOOD RUN THAT COULD NOT BE DIAGNOSED. The run billed
+ * $0.024 of Labs calls and scored zero keywords, and the only thing the row
+ * could say was "discovery returned nothing" — which is one of THREE very
+ * different failures wearing the same sentence:
+ *
+ *   both endpoints errored          -> an integration bug or bad credentials
+ *   both returned zero items        -> a domain the provider knows nothing about
+ *   everything was filtered as noise-> our own brand filter ate the working set
+ *
+ * The third is the one that matters most and was the least visible: a domain
+ * whose keyword profile is mostly its own brand name is exactly the shape that
+ * discovery finds two hundred keywords for and keeps none of. Reporting that as
+ * "returned nothing" points the next person at the provider instead of at us.
+ */
+export interface DiscoveryCounts {
+  keywordsForSite: number;
+  rankedKeywords: number;
+  tracked: number;
+  /** Distinct keywords after the three sources are merged. */
+  merged: number;
+  /** Survivors of the brand + navigational filter. */
+  afterNoise: number;
+  /** Carried into scoring, after the working-set cut. */
+  kept: number;
+}
+
 export interface DiscoveryResult {
   keywords: DiscoveredKeyword[];
   costUsd: number;
   /** Endpoints that failed. A partial discovery still produces an analysis. */
   failed: string[];
+  counts: DiscoveryCounts;
 }
 
 /**
@@ -305,12 +363,21 @@ export async function discoverKeywords(
     source: "keywords_for_site",
   }));
 
+  const merged = mergeKeywords(fromSite, fromRanked, fromTracked);
+  const afterNoise = merged.filter((row) => !isNoise(row.keyword, request.brandAliases));
+  const keywords = selectWorkingSet(merged, request.brandAliases);
+
   return {
-    keywords: selectWorkingSet(
-      mergeKeywords(fromSite, fromRanked, fromTracked),
-      request.brandAliases,
-    ),
+    keywords,
     costUsd,
     failed,
+    counts: {
+      keywordsForSite: fromSite.length,
+      rankedKeywords: fromRanked.length,
+      tracked: fromTracked.length,
+      merged: merged.length,
+      afterNoise: afterNoise.length,
+      kept: keywords.length,
+    },
   };
 }
