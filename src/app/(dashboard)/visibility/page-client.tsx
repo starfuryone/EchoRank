@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type ChangeEvent, type KeyboardEvent } from "react";
+import { useEffect, useState, type ChangeEvent, type KeyboardEvent } from "react";
 import Link from "next/link";
 import {
   Search,
@@ -118,6 +118,26 @@ export function VisibilityPageClient({
   const [attrError, setAttrError] = useState<string | null>(null);
   const [attr, setAttr] = useState<AttributionResult | null>(null);
 
+  // Rehydrate the last stored audit on mount so a reload keeps the results
+  // panel instead of blanking it. Functional updates on purpose: the onboarding
+  // FirstAuditRunner can resolve while this is in flight, and a fresh audit must
+  // always win over a stored one.
+  useEffect(() => {
+    let alive = true;
+    fetch("/api/ai/visibility/audit")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => {
+        const stored = d?.audit as AuditResult | undefined;
+        if (!alive || !stored) return;
+        setAudit((current) => current ?? stored);
+        setUrl((current) => current || stored.url || "");
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, []);
+
   async function runAudit() {
     const v = url.trim();
     if (!v) return;
@@ -131,7 +151,11 @@ export function VisibilityPageClient({
       const res = await fetch("/api/ai/visibility/audit", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: v, crawl: true }),
+        // persist:true is the fix. The route stores nothing unless asked
+        // (`body?.persist === true`), so every audit run from this page was
+        // discarded the moment the tab closed — no last-audit panel on
+        // reload, and the PDF report probe counting rows never saw one.
+        body: JSON.stringify({ url: v, crawl: true, persist: true }),
       });
       const data: AuditResult = await res.json();
       if (!res.ok || data.error) throw new Error(data.error || t.requestFailed(res.status));

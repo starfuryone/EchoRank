@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireTenant } from "@/lib/tenant";
 import { enforcementErrorResponse } from "@/lib/plan-enforcement";
 import { sidecarPost } from "@/lib/av-sidecar";
+import { hydratableAudit } from "@/lib/visibility-audit-hydrate";
 import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@/generated/prisma";
 
@@ -48,6 +49,42 @@ async function persistAudit(tenantId: string, url: string, data: AuditResponse) 
       raw: data as unknown as Prisma.InputJsonValue,
     },
   });
+}
+
+/**
+ * GET → the tenant's most recent stored audit, so a reload does not blank the
+ * results panel.
+ *
+ * Same guard as POST — requireTenant() only, deliberately: this reads back
+ * exactly what the write path just stored, and a GET that gated harder than
+ * the POST would let a tenant create rows it then could not see. Scoped by
+ * tenantId on the query itself, never by an id from the client.
+ */
+export async function GET() {
+  try {
+    const membership = await requireTenant();
+
+    const row = await prisma.visibilityAudit.findFirst({
+      where: { tenantId: membership.tenantId },
+      orderBy: { createdAt: "desc" },
+      select: { url: true, score: true, grade: true, raw: true, createdAt: true },
+    });
+    if (!row) return NextResponse.json({ audit: null });
+
+    const audit = hydratableAudit(row.raw, row);
+    return NextResponse.json({
+      audit,
+      auditedAt: audit ? row.createdAt.toISOString() : null,
+    });
+  } catch (error) {
+    const enforcement = enforcementErrorResponse(error);
+    if (enforcement) return enforcement;
+    if (error instanceof Error && error.message === "Not authenticated or no tenant access") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    console.error("Error loading latest visibility audit:", error);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 }
 
 export async function POST(request: NextRequest) {
