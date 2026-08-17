@@ -47,13 +47,20 @@ export const RANK_TRACKED_KEYWORDS: Record<SellablePlanType, number> = Object.fr
 ) as Record<SellablePlanType, number>;
 
 /**
- * Frequencies each plan may choose. GROWTH is weekly-only; daily is the
- * AGENCY-and-up differentiator (and 7x the spend).
+ * Frequencies each plan may choose. STARTER and GROWTH are weekly-only; daily
+ * is the AGENCY-and-up differentiator (and 7x the spend).
+ *
+ * STARTER GAINED "weekly" ON 2026-08-17, with the restoration of its 25-keyword
+ * allowance. It is not optional dressing on that change: `planCanTrack()` reads
+ * the keyword cap alone, so a STARTER tenant would otherwise pass the lock,
+ * reach the create form, and find no frequency it is allowed to pick. The tier
+ * ladder still separates the two — GROWTH tracks 4x the keywords — and daily
+ * stays where it was.
  */
 export const RANK_ALLOWED_FREQUENCIES: Record<PlanType, readonly RankFrequency[]> = {
   /** @deprecated Retired tier; pinned to STARTER's value for legacy rows. */
-  AI_VISIBILITY: [],
-  STARTER: [],
+  AI_VISIBILITY: ["weekly"],
+  STARTER: ["weekly"],
   GROWTH: ["weekly"],
   AGENCY: ["daily", "weekly"],
   ENTERPRISE: ["daily", "weekly"],
@@ -66,16 +73,23 @@ export const RANK_ALLOWED_FREQUENCIES: Record<PlanType, readonly RankFrequency[]
  * are checked, so "Run now" cannot be clicked in a loop to bypass the schedule.
  *
  * Sized as the plan's scheduled load plus headroom for manual runs:
- *   GROWTH   50 kw weekly  ≈ 220/mo scheduled -> 400
- *   AGENCY  250 kw daily   ≈ 7750/mo scheduled -> 9000
- * At $0.006/check that is $2.40 and $54.00 of ceiling respectively.
+ *   STARTER  25 kw weekly  ≈  108/mo scheduled ->   200
+ *   GROWTH  100 kw weekly  ≈  433/mo scheduled ->   800
+ *   AGENCY  500 kw daily   ≈ 15500/mo scheduled -> 18000
+ * At $0.006/check that is $1.20, $4.80 and $108.00 of ceiling respectively.
+ *
+ * RESIZED 2026-08-17 with the 25/100/500 keyword allowances. These are not
+ * independent knobs: a budget below the tier's own scheduled load is a tier
+ * that cannot complete its own schedule, so raising a keyword cap without
+ * raising this number silently starts skipping checks late in the month.
+ * AGENCY's ceiling doubles ($54 -> $108) because its keyword cap did.
  */
 export const RANK_CHECKS_PER_MONTH: Record<PlanType, number> = {
   /** @deprecated Retired tier; pinned to STARTER's value for legacy rows. */
-  AI_VISIBILITY: 0,
-  STARTER: 0,
-  GROWTH: 400,
-  AGENCY: 9000,
+  AI_VISIBILITY: 200,
+  STARTER: 200,
+  GROWTH: 800,
+  AGENCY: 18000,
   ENTERPRISE: 40000,
 };
 
@@ -104,7 +118,13 @@ export function checksPerMonthLimit(plan: PlanType): number {
   return RANK_CHECKS_PER_MONTH[plan] ?? 0;
 }
 
-/** False for STARTER — it gets the locked upsell card. */
+/**
+ * True on every sellable tier since 2026-08-17, when STARTER's keyword
+ * allowance was restored. The locked upsell card it used to gate is therefore
+ * unreachable today; the branch and its copy stay because this stays a real
+ * question — a future tier, or a tier whose allowance is cut back, gets the
+ * card without a component change.
+ */
 export function planCanTrack(plan: PlanType): boolean {
   return trackedKeywordLimit(plan) > 0;
 }

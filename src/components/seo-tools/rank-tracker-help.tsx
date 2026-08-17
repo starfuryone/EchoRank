@@ -29,7 +29,11 @@ export function RankTrackerHelpButton({ locale }: { locale: DashLocale }) {
           // Plan caps come from the config, never written into the copy, so
           // the help text cannot claim a limit the code does not enforce.
           bullets: [
-            t.step1Plans(RANK_TRACKED_KEYWORDS.GROWTH, RANK_TRACKED_KEYWORDS.AGENCY),
+            t.step1Plans(
+              RANK_TRACKED_KEYWORDS.STARTER,
+              RANK_TRACKED_KEYWORDS.GROWTH,
+              RANK_TRACKED_KEYWORDS.AGENCY,
+            ),
           ],
         },
         { title: t.step2Title, body: t.step2Body },

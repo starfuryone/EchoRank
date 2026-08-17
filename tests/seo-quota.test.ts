@@ -228,47 +228,59 @@ describe("seoQuotaUsage", () => {
 
 // ─── Tracked keywords ───────────────────────────────────────────────────────
 describe("tracked keyword cap", () => {
+  // Read from the config rather than restated, so an allowance change moves
+  // these cases with it instead of failing them. The BEHAVIOUR under test is
+  // "the boundary is exactly the limit", which is true at any limit.
+  const GROWTH_CAP = trackedKeywordLimit("GROWTH") as number;
+
   it("allows an add that lands exactly on the limit", () => {
-    expect(requireTrackedKeywordRoom("GROWTH", 40, 10, NOW)).toBe(0);
+    expect(requireTrackedKeywordRoom("GROWTH", GROWTH_CAP - 10, 10, NOW)).toBe(0);
   });
 
   it("denies the add that would cross it", () => {
-    expect(() => requireTrackedKeywordRoom("GROWTH", 40, 11, NOW)).toThrow(
+    expect(() => requireTrackedKeywordRoom("GROWTH", GROWTH_CAP - 10, 11, NOW)).toThrow(
       TrackedKeywordLimitError,
     );
   });
 
   it("returns the same typed body shape as the search quota", () => {
     try {
-      requireTrackedKeywordRoom("GROWTH", 50, 1, NOW);
+      requireTrackedKeywordRoom("GROWTH", GROWTH_CAP, 1, NOW);
       throw new Error("should have thrown");
     } catch (err) {
       const e = err as InstanceType<typeof TrackedKeywordLimitError>;
       expect(e.statusCode).toBe(429);
       expect(e.toBody()).toEqual({
         error: "quota_exceeded",
-        limit: 50,
-        used: 50,
+        limit: GROWTH_CAP,
+        used: GROWTH_CAP,
         resetsAt: "2026-08-01T00:00:00.000Z",
         upgradeUrl: "/billing",
       });
     }
   });
 
-  it("denies STARTER and AI_VISIBILITY outright — the tool is not in those tiers", () => {
-    // This change must not have quietly granted rank tracking to STARTER.
-    expect(trackedKeywordLimit("STARTER")).toBe(0);
-    expect(trackedKeywordLimit("AI_VISIBILITY")).toBe(0);
-    expect(() => requireTrackedKeywordRoom("STARTER", 0, 1, NOW)).toThrow(
+  it("grants STARTER its 25 keywords, and folds the retired tier onto it", () => {
+    // DELIBERATE REVERSAL, 2026-08-17. This assertion used to read `toBe(0)`
+    // under the comment "must not have quietly granted rank tracking to
+    // STARTER". The grant is no longer quiet: 25/100/500 is the 2026-07-30
+    // pricing decision, and the 0 that stood here was implementation drift
+    // against a sheet that had always sold the tool on Starter.
+    expect(trackedKeywordLimit("STARTER")).toBe(25);
+    expect(trackedKeywordLimit("AI_VISIBILITY")).toBe(25);
+    // The cap still bites once it is reached, on Starter like anywhere else.
+    expect(() => requireTrackedKeywordRoom("STARTER", 25, 1, NOW)).toThrow(
       TrackedKeywordLimitError,
     );
+    expect(() => requireTrackedKeywordRoom("STARTER", 24, 1, NOW)).not.toThrow();
   });
 
-  it("keeps the pre-existing per-tier numbers", () => {
+  it("keeps the per-tier numbers the cards advertise", () => {
     // Guards against a well-meaning "round these up" edit: these are the values
-    // customers are on today.
-    expect(trackedKeywordLimit("GROWTH")).toBe(50);
-    expect(trackedKeywordLimit("AGENCY")).toBe(250);
+    // customers are on today, and the pricing cards derive their copy from
+    // exactly these fields — see tests/pricing-card-invariants.test.ts.
+    expect(trackedKeywordLimit("GROWTH")).toBe(100);
+    expect(trackedKeywordLimit("AGENCY")).toBe(500);
     expect(trackedKeywordLimit("ENTERPRISE")).toBe(1000);
   });
 });

@@ -531,15 +531,30 @@ test("rank-tracker copy never uses CamelCase branding or names the data vendor",
 });
 
 test("rank-tracker plan caps match the pricing sheet", () => {
-  // STARTER is locked by product decision — it sees the upsell card, not a form.
-  assert.equal(RANK_TRACKED_KEYWORDS.STARTER, 0);
-  assert.equal(RANK_TRACKED_KEYWORDS.GROWTH, 50);
-  assert.equal(RANK_TRACKED_KEYWORDS.AGENCY, 250);
+  // The 2026-07-30 pricing decision, restored 2026-08-17. STARTER's 0 was
+  // implementation drift: the sheet has always sold Rank Tracker on it.
+  assert.equal(RANK_TRACKED_KEYWORDS.STARTER, 25);
+  assert.equal(RANK_TRACKED_KEYWORDS.GROWTH, 100);
+  assert.equal(RANK_TRACKED_KEYWORDS.AGENCY, 500);
   assert.ok(RANK_TRACKED_KEYWORDS.ENTERPRISE >= RANK_TRACKED_KEYWORDS.AGENCY);
 
-  assert.ok(!planCanTrack("STARTER"));
+  assert.ok(planCanTrack("STARTER"));
   assert.ok(planCanTrack("GROWTH"));
   assert.ok(planCanTrack("AGENCY"));
+});
+
+test("every tier that can track has a frequency it may actually pick", () => {
+  // The failure this exists to catch: planCanTrack() reads the keyword cap
+  // alone, so a tier granted keywords but left out of RANK_ALLOWED_FREQUENCIES
+  // passes the lock and then offers a create form with nothing selectable.
+  for (const plan of ["STARTER", "GROWTH", "AGENCY", "ENTERPRISE"] as const) {
+    if (!planCanTrack(plan)) continue;
+    assert.ok(
+      RANK_ALLOWED_FREQUENCIES[plan].length > 0,
+      `${plan} can track but may pick no frequency`,
+    );
+    assert.ok(RANK_CHECKS_PER_MONTH[plan] > 0, `${plan} can track but has no check budget`);
+  }
 });
 
 test("daily tracking is an AGENCY-and-up differentiator", () => {
@@ -547,36 +562,48 @@ test("daily tracking is an AGENCY-and-up differentiator", () => {
   assert.ok(!planAllowsFrequency("GROWTH", "daily"));
   assert.ok(planAllowsFrequency("AGENCY", "daily"));
   assert.ok(planAllowsFrequency("AGENCY", "weekly"));
-  // A locked plan may choose nothing at all.
-  assert.deepEqual([...RANK_ALLOWED_FREQUENCIES.STARTER], []);
+  // STARTER tracks weekly like GROWTH; the two are separated by keyword count,
+  // not by cadence. Daily remains the thing only AGENCY buys.
+  assert.deepEqual([...RANK_ALLOWED_FREQUENCIES.STARTER], ["weekly"]);
+  assert.ok(!planAllowsFrequency("STARTER", "daily"));
 });
 
 test("monthly check allowance covers each plan's scheduled load", () => {
-  // GROWTH: 50 kw weekly ~= 220 checks/mo. AGENCY: 250 kw daily ~= 7750/mo.
-  assert.ok(RANK_CHECKS_PER_MONTH.GROWTH >= 50 * 4.5, "GROWTH cannot complete its own schedule");
+  // Derived from the keyword caps rather than restated, so raising an allowance
+  // without raising the budget beside it fails here instead of quietly skipping
+  // checks late in the month. Weekly ~= 4.5 runs/mo, daily = 31.
+  for (const plan of ["STARTER", "GROWTH"] as const) {
+    assert.ok(
+      RANK_CHECKS_PER_MONTH[plan] >= RANK_TRACKED_KEYWORDS[plan] * 4.5,
+      `${plan} cannot complete its own weekly schedule`,
+    );
+  }
   assert.ok(
-    RANK_CHECKS_PER_MONTH.AGENCY >= 250 * 31,
+    RANK_CHECKS_PER_MONTH.AGENCY >= RANK_TRACKED_KEYWORDS.AGENCY * 31,
     "AGENCY cannot complete its own daily schedule",
   );
-  assert.equal(RANK_CHECKS_PER_MONTH.STARTER, 0);
 });
 
 test("worst-case monthly spend matches the depth-100 cost model", () => {
   // Depth 100 costs $0.006/keyword (depth 10 would be $0.0006 but reports
-  // nothing below position 10). AGENCY 250 kw daily = 250 * 31 * $0.006.
+  // nothing below position 10). AGENCY 500 kw daily = 500 * 31 * $0.006 = $93.
   assert.equal(COST_PER_KEYWORD_USD, 0.006);
   const agencyScheduled = RANK_TRACKED_KEYWORDS.AGENCY * 31 * COST_PER_KEYWORD_USD;
   assert.ok(
-    agencyScheduled > 46 && agencyScheduled < 47,
+    agencyScheduled > 92 && agencyScheduled < 94,
     `AGENCY scheduled spend ${agencyScheduled}`,
   );
   const growthScheduled = RANK_TRACKED_KEYWORDS.GROWTH * 4.5 * COST_PER_KEYWORD_USD;
-  assert.ok(growthScheduled < 2, `GROWTH scheduled spend ${growthScheduled}`);
+  assert.ok(growthScheduled < 3, `GROWTH scheduled spend ${growthScheduled}`);
+  const starterScheduled = RANK_TRACKED_KEYWORDS.STARTER * 4.5 * COST_PER_KEYWORD_USD;
+  assert.ok(starterScheduled < 1, `STARTER scheduled spend ${starterScheduled}`);
 
   // The hard ceiling the Redis counter enforces, manual runs included. This is
-  // the number that actually bounds a tenant's bill.
+  // the number that actually bounds a tenant's bill. It doubled on 2026-08-17
+  // with AGENCY's keyword cap (250 -> 500); against a $499 tier it is still
+  // well under a fifth of revenue, which is the test this number has to pass.
   const agencyCeiling = RANK_CHECKS_PER_MONTH.AGENCY * COST_PER_KEYWORD_USD;
-  assert.ok(agencyCeiling <= 54, `AGENCY ceiling ${agencyCeiling}`);
+  assert.ok(agencyCeiling <= 108, `AGENCY ceiling ${agencyCeiling}`);
   // The ceiling must clear the schedule, or daily projects stall mid-month.
   assert.ok(agencyCeiling >= agencyScheduled, "AGENCY ceiling below its own schedule");
 });
@@ -608,7 +635,12 @@ test("rank-tracker help copy complete in all locales", () => {
 
     // Plan numbers are injected, never hardcoded, so they cannot drift from
     // the config that enforces them.
-    const plans = c.step1Plans(RANK_TRACKED_KEYWORDS.GROWTH, RANK_TRACKED_KEYWORDS.AGENCY);
+    const plans = c.step1Plans(
+      RANK_TRACKED_KEYWORDS.STARTER,
+      RANK_TRACKED_KEYWORDS.GROWTH,
+      RANK_TRACKED_KEYWORDS.AGENCY,
+    );
+    assert.ok(plans.includes(String(RANK_TRACKED_KEYWORDS.STARTER)), `${locale} starter cap`);
     assert.ok(plans.includes(String(RANK_TRACKED_KEYWORDS.GROWTH)), `${locale} growth cap`);
     assert.ok(plans.includes(String(RANK_TRACKED_KEYWORDS.AGENCY)), `${locale} agency cap`);
   }
@@ -616,10 +648,12 @@ test("rank-tracker help copy complete in all locales", () => {
 
 test("help copy states the plan gating the code actually enforces", () => {
   // Guards against the help text and RANK_ALLOWED_FREQUENCIES drifting apart:
-  // the copy claims weekly-only on Growth and daily on Agency.
+  // the copy claims weekly on Starter and Growth, and daily on Agency.
   assert.ok(!planAllowsFrequency("GROWTH", "daily"), "copy says Growth is weekly-only");
   assert.ok(planAllowsFrequency("AGENCY", "daily"), "copy says Agency can go daily");
-  assert.ok(!planCanTrack("STARTER"), "copy says Starter has no Rank Tracker");
+  assert.ok(planCanTrack("STARTER"), "copy says Starter tracks keywords");
+  assert.ok(planAllowsFrequency("STARTER", "weekly"), "copy says Starter checks weekly");
+  assert.ok(!planAllowsFrequency("STARTER", "daily"), "copy does not offer Starter daily");
 });
 
 test("rank-tracker help copy never uses CamelCase branding or names the vendor", () => {

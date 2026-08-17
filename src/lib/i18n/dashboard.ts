@@ -8086,8 +8086,8 @@ const rankTrackerHelpEn = {
   step1Title: "Create a tracking project",
   step1Body:
     "Add your domain and the keywords you want to watch (one per line), pick country, language, device, and how often to check: daily or weekly.",
-  step1Plans: (growth: number, agency: number) =>
-    `Growth tracks up to ${growth} keywords and checks weekly. Agency tracks up to ${agency} and can also check daily. Rank Tracker is not included on Starter.`,
+  step1Plans: (starter: number, growth: number, agency: number) =>
+    `Starter tracks up to ${starter} keywords and checks weekly. Growth tracks up to ${growth}, also weekly. Agency tracks up to ${agency} and can also check daily.`,
 
   step2Title: "Checks run automatically",
   step2Body:
@@ -8120,8 +8120,8 @@ export const RANK_TRACKER_HELP_COPY: Record<DashLocale, RankTrackerHelpCopy> = {
     step1Title: "Créez un projet de suivi",
     step1Body:
       "Ajoutez votre domaine et les mots-clés à surveiller (un par ligne), puis choisissez le pays, la langue, l'appareil et la fréquence de vérification : quotidienne ou hebdomadaire.",
-    step1Plans: (growth: number, agency: number) =>
-      `Le forfait Croissance suit jusqu'à ${growth} mots-clés avec une vérification hebdomadaire. Le forfait Agence en suit jusqu'à ${agency} et permet aussi la vérification quotidienne. Le suivi de positions n'est pas inclus dans le forfait Démarrage.`,
+    step1Plans: (starter: number, growth: number, agency: number) =>
+      `Le forfait Démarrage suit jusqu'à ${starter} mots-clés avec une vérification hebdomadaire. Le forfait Croissance en suit jusqu'à ${growth}, également chaque semaine. Le forfait Agence en suit jusqu'à ${agency} et permet aussi la vérification quotidienne.`,
 
     step2Title: "Les vérifications se font automatiquement",
     step2Body:
@@ -8150,8 +8150,8 @@ export const RANK_TRACKER_HELP_COPY: Record<DashLocale, RankTrackerHelpCopy> = {
     step1Title: "Tracking-Projekt erstellen",
     step1Body:
       "Fügen Sie Ihre Domain und die zu beobachtenden Keywords hinzu (eines pro Zeile) und wählen Sie Land, Sprache, Gerät und Prüfhäufigkeit: täglich oder wöchentlich.",
-    step1Plans: (growth: number, agency: number) =>
-      `Growth verfolgt bis zu ${growth} Keywords und prüft wöchentlich. Agency verfolgt bis zu ${agency} und kann zusätzlich täglich prüfen. Im Starter-Plan ist der Rank Tracker nicht enthalten.`,
+    step1Plans: (starter: number, growth: number, agency: number) =>
+      `Starter verfolgt bis zu ${starter} Keywords und prüft wöchentlich. Growth verfolgt bis zu ${growth}, ebenfalls wöchentlich. Agency verfolgt bis zu ${agency} und kann zusätzlich täglich prüfen.`,
 
     step2Title: "Prüfungen laufen automatisch",
     step2Body:

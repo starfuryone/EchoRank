@@ -189,19 +189,29 @@ describe("auth is required", () => {
 // ─── Plan gating ────────────────────────────────────────────────────────────
 
 describe("plan gating", () => {
+  // STARTER GAINED THE TOOL ON 2026-08-17 (25 keywords, weekly). These cases
+  // asserted a 403 PLAN_LOCKED until then; the lock itself is still live code,
+  // it simply has no tier standing behind it today.
   it.each(["STARTER", "AI_VISIBILITY"] as const)(
-    "%s cannot create a project — the tool is not in the plan",
+    "%s may create a weekly project — the tool is in the plan",
     async (plan) => {
       requirePaidPlan.mockResolvedValue(membership(plan));
       const res = await CREATE(jsonRequest(VALID_BODY));
-      const body = await res.json();
 
-      expect(res.status).toBe(403);
-      expect(body.code).toBe("PLAN_LOCKED");
-      expect(body.upgradeHref).toBe("/billing");
-      expect(rankProject.create).not.toHaveBeenCalled();
+      expect(res.status).toBe(201);
+      expect(rankProject.create).toHaveBeenCalled();
     },
   );
+
+  it("STARTER cannot schedule daily checks", async () => {
+    requirePaidPlan.mockResolvedValue(membership("STARTER"));
+    const res = await CREATE(jsonRequest({ ...VALID_BODY, frequency: "daily" }));
+    const body = await res.json();
+
+    expect(res.status).toBe(403);
+    expect(body.code).toBe("FREQUENCY_NOT_ALLOWED");
+    expect(rankProject.create).not.toHaveBeenCalled();
+  });
 
   it("GROWTH cannot schedule daily checks", async () => {
     requirePaidPlan.mockResolvedValue(membership("GROWTH"));
@@ -232,36 +242,44 @@ describe("plan gating", () => {
     expect(body.usage.allowedFrequencies).toEqual(["daily", "weekly"]);
   });
 
-  it("tells STARTER it cannot track, so the UI shows the locked card", async () => {
+  it("tells STARTER it tracks weekly, within its own cap", async () => {
     requirePaidPlan.mockResolvedValue(membership("STARTER"));
     const body = await (await LIST()).json();
-    expect(body.usage.canTrack).toBe(false);
-    expect(body.usage.trackedKeywordLimit).toBe(0);
-    expect(body.usage.allowedFrequencies).toEqual([]);
+    expect(body.usage.canTrack).toBe(true);
+    expect(body.usage.trackedKeywordLimit).toBe(RANK_TRACKED_KEYWORDS.STARTER);
+    expect(body.usage.checksLimit).toBe(RANK_CHECKS_PER_MONTH.STARTER);
+    // Weekly only — daily stays the AGENCY differentiator.
+    expect(body.usage.allowedFrequencies).toEqual(["weekly"]);
   });
 });
 
 // ─── Tracked-keyword cap ────────────────────────────────────────────────────
 
 describe("tracked-keyword cap at create", () => {
+  // VALID_BODY carries 2 keywords. Both cases are positioned relative to the
+  // configured cap rather than to a literal, so an allowance change moves the
+  // boundary with them — the behaviour under test is "one over is refused,
+  // exactly full is accepted", which holds at any cap.
+  const GROWTH_CAP = RANK_TRACKED_KEYWORDS.GROWTH;
+
   it("rejects a list that would exceed the plan's total", async () => {
     requirePaidPlan.mockResolvedValue(membership("GROWTH"));
-    // 49 already tracked elsewhere + 2 incoming = 51 > GROWTH's 50.
-    rankKeyword.count.mockResolvedValue(49);
+    // (cap - 1) already tracked elsewhere + 2 incoming = cap + 1.
+    rankKeyword.count.mockResolvedValue(GROWTH_CAP - 1);
 
     const res = await CREATE(jsonRequest(VALID_BODY));
     const body = await res.json();
 
     expect(res.status).toBe(429);
     expect(body.code).toBe("KEYWORD_CAP_EXCEEDED");
-    expect(body.limit).toBe(RANK_TRACKED_KEYWORDS.GROWTH);
-    expect(body.requested).toBe(51);
+    expect(body.limit).toBe(GROWTH_CAP);
+    expect(body.requested).toBe(GROWTH_CAP + 1);
     expect(rankProject.create).not.toHaveBeenCalled();
   });
 
   it("accepts a list that exactly fills the cap", async () => {
     requirePaidPlan.mockResolvedValue(membership("GROWTH"));
-    rankKeyword.count.mockResolvedValue(48);
+    rankKeyword.count.mockResolvedValue(GROWTH_CAP - 2);
     expect((await CREATE(jsonRequest(VALID_BODY))).status).toBe(201);
   });
 
@@ -373,8 +391,11 @@ describe("run now", () => {
 
   it("429s a project left over the keyword cap by a downgrade", async () => {
     requirePaidPlan.mockResolvedValue(membership("GROWTH"));
-    // 80 keywords on a plan that now allows 50.
-    rankProject.findFirst.mockResolvedValue({ id: "proj_1", _count: { keywords: 80 } });
+    // A project holding well over whatever GROWTH currently allows.
+    rankProject.findFirst.mockResolvedValue({
+      id: "proj_1",
+      _count: { keywords: RANK_TRACKED_KEYWORDS.GROWTH + 30 },
+    });
 
     const res = await RUN(new Request("http://localhost", { method: "POST" }), {
       params: Promise.resolve({ id: "proj_1" }),
@@ -452,8 +473,22 @@ describe("runProject", () => {
     expect(redisStore.get(rankQuotaKey(TENANT))).toBe(2);
   });
 
-  it("skips and flags a project whose plan no longer includes the tool", async () => {
+  it("runs a STARTER project inside its cap", async () => {
+    // The inverse of what this asserted before 2026-08-17, when STARTER had no
+    // Rank Tracker and any project on it was skipped and flagged overCap.
     rankProject.findUnique.mockResolvedValue(projectWithKeywords(3));
+    tenant.findUnique.mockResolvedValue({ planType: "STARTER" });
+
+    const result = await runProject("proj_1");
+
+    expect(result.posted).toBe(3);
+    expect(seoMeteredCallResult).toHaveBeenCalledTimes(3);
+  });
+
+  it("skips and flags a STARTER project left over its smaller cap", async () => {
+    rankProject.findUnique.mockResolvedValue(
+      projectWithKeywords(RANK_TRACKED_KEYWORDS.STARTER + 10),
+    );
     tenant.findUnique.mockResolvedValue({ planType: "STARTER" });
 
     const result = await runProject("proj_1");
@@ -464,8 +499,10 @@ describe("runProject", () => {
   });
 
   it("skips and flags a project holding more keywords than the plan allows", async () => {
-    // 60 keywords, GROWTH allows 50 — the post-downgrade case.
-    rankProject.findUnique.mockResolvedValue(projectWithKeywords(60));
+    // Over whatever GROWTH allows — the post-downgrade case.
+    rankProject.findUnique.mockResolvedValue(
+      projectWithKeywords(RANK_TRACKED_KEYWORDS.GROWTH + 10),
+    );
 
     const result = await runProject("proj_1");
 

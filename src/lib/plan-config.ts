@@ -216,6 +216,14 @@ export interface PlanConfig {
    * A cap on CURRENT STATE, not on spend — it is the figure that falls again
    * when a tenant deletes keywords. Spend is bounded separately by the monthly
    * check counter in rank-tracker/options.ts.
+   *
+   * 25 / 100 / 500 IS THE PRICING DECISION OF 2026-07-30, restored here on
+   * 2026-08-17. The values that stood until then (0 / 50 / 250) were
+   * implementation drift, and STARTER's 0 in particular meant the Rank Tracker
+   * was locked on a tier the pricing sheet had always sold it on. Restoring it
+   * is a three-part change, not a one-line one — a tier with keywords but no
+   * entry in RANK_ALLOWED_FREQUENCIES and a zero RANK_CHECKS_PER_MONTH budget
+   * renders an unlocked tool that cannot run. Change all three together.
    */
   trackedKeywords: number | null;
   /**
@@ -341,7 +349,7 @@ export const PLAN_CONFIGS: Record<SellablePlanType, PlanConfig> = {
       maxApiRequestsPerDay: 0,
     },
     seoSearchesPerMonth: 250,
-    trackedKeywords: 0,
+    trackedKeywords: 25,
     crawlUrlCap: 500,
     crawlsPerMonth: 4,
     // The shape the retired AI Visibility tier sold: two providers and one
@@ -385,7 +393,7 @@ export const PLAN_CONFIGS: Record<SellablePlanType, PlanConfig> = {
       maxApiRequestsPerDay: 1000,
     },
     seoSearchesPerMonth: 1000,
-    trackedKeywords: 50,
+    trackedKeywords: 100,
     crawlUrlCap: 5_000,
     crawlsPerMonth: 20,
     aiCheckup: { frequency: "twice_weekly", providers: 4, prompts: 15, repetitions: 2 },
@@ -427,7 +435,7 @@ export const PLAN_CONFIGS: Record<SellablePlanType, PlanConfig> = {
       maxApiRequestsPerDay: 10000,
     },
     seoSearchesPerMonth: 5000,
-    trackedKeywords: 250,
+    trackedKeywords: 500,
     crawlUrlCap: 25_000,
     crawlsPerMonth: null,
     aiCheckup: { frequency: "daily", providers: null, prompts: 20, repetitions: 3 },
