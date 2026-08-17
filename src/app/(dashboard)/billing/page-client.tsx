@@ -15,6 +15,7 @@ import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { PLAN_PRICES, planConfig, sellablePlan } from "@/lib/plan-config";
+import { planFeaturesByPlan } from "@/lib/plan-features";
 import type { PlanType } from "@/generated/prisma";
 import { BILLING_COPY, type DashLocale } from "@/lib/i18n/dashboard";
 import { PlanCards } from "@/components/billing/plan-cards";
@@ -268,7 +269,13 @@ export function BillingPageClient({
           t={t}
           plans={PLAN_CARD_ORDER}
           icons={PLAN_ICONS}
-          features={t.planFeatures as Record<string, string[]>}
+          // THE SAME BULLETS THE MARKETING CARDS RENDER, in this locale.
+          // These used to come from BILLING_COPY.planFeatures, a second
+          // hand-written set that had drifted badly: it told a Growth customer
+          // they had 3 locations and 2,000 requests when they had bought 5 and
+          // 5,000. Reading the shared source makes that class of contradiction
+          // impossible rather than merely fixed.
+          features={planFeaturesByPlan(locale)}
         />
         <p className="mt-4 text-sm text-gray-500">{t.pricesInUsd}</p>
       </div>

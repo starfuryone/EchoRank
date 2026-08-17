@@ -183,7 +183,13 @@ export interface PlanConfig {
   monthlyPrice: number;
   annualPrice: number; // per month when billed annually
   isCustomPricing: boolean;
-  features: string[];
+  /**
+   * NO `features` FIELD. It used to live here as a string[] per tier and it
+   * drifted from the allowances two dozen lines below it — every tier claimed
+   * "4 engines" while STARTER queried 2. The card bullets are now DERIVED from
+   * those allowances by src/lib/plan-features.ts, which is the only place they
+   * are assembled and the only place any renderer reads them from.
+   */
   quotaDefaults: {
     maxLocations: number;
     maxRequestsPerMonth: number;
@@ -322,18 +328,6 @@ export const PLAN_CONFIGS: Record<SellablePlanType, PlanConfig> = {
     monthlyPrice: 79,
     annualPrice: 63,
     isCustomPricing: false,
-    features: [
-      "1 location",
-      "AI answer tracking across 4 engines",
-      "Lost-recommendation alerts",
-      "AI Trust Score",
-      "500 feedback requests/month",
-      "Email review requests",
-      "Basic dashboard",
-      "Email support",
-      "Review authenticity verification",
-      "250 SEO searches/mo",
-    ],
     quotaDefaults: {
       maxLocations: 1,
       maxRequestsPerMonth: 500,
@@ -370,18 +364,6 @@ export const PLAN_CONFIGS: Record<SellablePlanType, PlanConfig> = {
     monthlyPrice: 199,
     annualPrice: 159,
     isCustomPricing: false,
-    features: [
-      "5 locations",
-      "AI answer tracking across 4 engines",
-      "5,000 feedback requests/month",
-      "Email + SMS channels",
-      "AI risk scoring & sentiment analysis",
-      "Recovery tickets & workflows",
-      "Advanced analytics",
-      "Escalation prediction",
-      "1,000 SEO searches/mo",
-      "Priority support",
-    ],
     quotaDefaults: {
       maxLocations: 5,
       maxRequestsPerMonth: 5000,
@@ -412,18 +394,6 @@ export const PLAN_CONFIGS: Record<SellablePlanType, PlanConfig> = {
     monthlyPrice: 499,
     annualPrice: 399,
     isCustomPricing: false,
-    features: [
-      "25 locations",
-      "AI answer tracking across 4 engines",
-      "15,000 feedback requests/month",
-      "White-label dashboard",
-      "Client management",
-      "Custom domain support",
-      "Full API access",
-      "All AI features",
-      "5,000 SEO searches/mo",
-      "Priority support",
-    ],
     quotaDefaults: {
       maxLocations: 25,
       maxRequestsPerMonth: 15000,
@@ -454,20 +424,6 @@ export const PLAN_CONFIGS: Record<SellablePlanType, PlanConfig> = {
     monthlyPrice: 0,
     annualPrice: 0, // Custom pricing — see isCustomPricing; render "Contact us"
     isCustomPricing: true,
-    features: [
-      "Unlimited locations",
-      "AI answer tracking across 4 engines",
-      "Custom request volume",
-      "Full AI intelligence suite",
-      "Real-time reputation monitoring",
-      "SSO / SAML authentication",
-      "SLA guarantee (99.9% uptime)",
-      "Dedicated account manager",
-      "Executive dashboards",
-      "Custom integrations",
-      "Compliance exports",
-      "Multi-location intelligence",
-    ],
     quotaDefaults: {
       maxLocations: -1, // Unlimited
       maxRequestsPerMonth: 100000,

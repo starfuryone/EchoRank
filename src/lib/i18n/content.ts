@@ -1575,6 +1575,16 @@ export interface HomePricingChrome {
   toolsLine: string;
   toolsAnchor: string;
   contactUs: string;
+  /**
+   * The one line under the grid pointing at /credits.
+   *
+   * DELIBERATELY GENERIC. The credits page sells Business-listing lookups
+   * today and domain-analysis packs later, so naming the product here would
+   * date the moment a second pack ships. What the reader needs from this line
+   * is that more capacity is buyable and that buying it does not start a
+   * clock — "never expire" is the part people actually ask about.
+   */
+  creditsLine: string;
   /** Primary checkout button on each paid pricing card. */
   checkoutCta: string;
   checkoutBusy: string;
@@ -1592,6 +1602,7 @@ export const HOME_PRICING_CHROME: Record<Locale, HomePricingChrome> = {
     toolsLine: "{n}+ SEO & AI tools included",
     toolsAnchor: "See the tools ↓",
     contactUs: "Contact us",
+    creditsLine: "Need more? Prepaid credit packs \u2014 never expire \u2192",
     checkoutCta: "Start free trial",
     checkoutBusy: "Starting\u2026",
     checkoutError: "Could not start checkout. Please try again.",
@@ -1606,6 +1617,7 @@ export const HOME_PRICING_CHROME: Record<Locale, HomePricingChrome> = {
     toolsLine: "{n}+ SEO & AI tools included",
     toolsAnchor: "See the tools ↓",
     contactUs: "Contact us",
+    creditsLine: "Need more? Prepaid credit packs \u2014 never expire \u2192",
     checkoutCta: "Start free trial",
     checkoutBusy: "Starting\u2026",
     checkoutError: "Could not start checkout. Please try again.",
@@ -1620,6 +1632,7 @@ export const HOME_PRICING_CHROME: Record<Locale, HomePricingChrome> = {
     toolsLine: "{n}+ outils SEO et IA inclus",
     toolsAnchor: "Voir les outils ↓",
     contactUs: "Nous contacter",
+    creditsLine: "Besoin de plus ? Packs de cr\u00e9dits pr\u00e9pay\u00e9s \u2014 sans expiration \u2192",
     checkoutCta: "D\u00e9marrer l'essai gratuit",
     checkoutBusy: "D\u00e9marrage\u2026",
     checkoutError: "Impossible de d\u00e9marrer le paiement. R\u00e9essayez.",
@@ -1634,6 +1647,7 @@ export const HOME_PRICING_CHROME: Record<Locale, HomePricingChrome> = {
     toolsLine: "{n}+ outils SEO et IA inclus",
     toolsAnchor: "Voir les outils ↓",
     contactUs: "Nous contacter",
+    creditsLine: "Besoin de plus ? Packs de cr\u00e9dits pr\u00e9pay\u00e9s \u2014 sans expiration \u2192",
     checkoutCta: "D\u00e9marrer l'essai gratuit",
     checkoutBusy: "D\u00e9marrage\u2026",
     checkoutError: "Impossible de d\u00e9marrer le paiement. R\u00e9essayez.",
@@ -1648,6 +1662,7 @@ export const HOME_PRICING_CHROME: Record<Locale, HomePricingChrome> = {
     toolsLine: "{n}+ SEO- und KI-Werkzeuge inklusive",
     toolsAnchor: "Werkzeuge ansehen ↓",
     contactUs: "Kontakt aufnehmen",
+    creditsLine: "Mehr n\u00f6tig? Guthabenpakete im Voraus \u2014 ohne Verfall \u2192",
     checkoutCta: "Gratis-Test starten",
     checkoutBusy: "Wird gestartet\u2026",
     checkoutError: "Zahlung konnte nicht gestartet werden. Bitte erneut versuchen.",

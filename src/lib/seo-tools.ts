@@ -386,6 +386,25 @@ export function navPath(href: string): string {
 }
 
 /**
+ * Is this tool actually shipped?
+ *
+ * `comingSoon` is the flag, and it is absent on a live tool — so this is a
+ * negation rather than a second list that could disagree with the first. The
+ * flag is already asserted against the real route files by seo-tools.test.ts,
+ * which is what makes it safe to sell from.
+ *
+ * EXISTS FOR THE PRICING CARDS. A card that names a tool has to stop naming it
+ * the moment that tool goes back to being a scaffold, and the only way to hold
+ * that is for the card to ask this question rather than carry a boolean someone
+ * has to remember to flip. Unknown ids answer `false`: a bullet is a promise,
+ * and the safe answer to "does this exist" is no.
+ */
+export function isSeoToolLive(id: SeoToolId): boolean {
+  const tool = SEO_TOOL_GROUPS.flatMap((g) => g.tools).find((t) => t.id === id);
+  return tool ? tool.comingSoon !== true : false;
+}
+
+/**
  * Groups this plan may see — now every group, for every tier.
  *
  * This used to drop cards outside the caller's route allowlist (the Dashboard

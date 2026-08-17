@@ -52,6 +52,16 @@ export const FAQ: Record<FaqBase, { label: string; h2: string; sub: string; item
         q: "My CSV file isn't displaying correctly in Excel, why?",
         a: "Exports are UTF-8 with comma separators. If Excel shows everything in one column or garbles accents, use Data → From Text/CSV and pick UTF-8 — or open the file in Google Sheets, which detects it automatically.",
       },
+      // The binding definition of the two support tiers. It exists because the
+      // cards say "Email support" and "Priority support" and those are words a
+      // reader otherwise prices with their own assumptions. Deliberately
+      // promises no phone line, no chat and no weekend response — there is
+      // nobody staffing any of the three, and a support promise is the cheapest
+      // thing in the world to write and the most expensive to not honour.
+      {
+        q: "What support is included?",
+        a: "Starter includes email support with a response within 48 hours on weekdays. Growth and Agency include priority support: email with a response within 24 hours on weekdays. Support is email-based on every plan — we do not offer a phone line or live chat, and response times are measured on weekdays only.",
+      },
     ],
   },
 
@@ -87,6 +97,10 @@ export const FAQ: Record<FaqBase, { label: string; h2: string; sub: string; item
       {
         q: "Mon fichier CSV ne s'affiche pas correctement dans Excel, pourquoi ?",
         a: "Les exports sont en UTF-8 avec des virgules comme séparateurs. Si Excel affiche tout dans une seule colonne ou déforme les accents, utilisez Données → À partir d'un fichier texte/CSV et choisissez UTF-8 — ou ouvrez le fichier dans Google Sheets, qui le détecte automatiquement.",
+      },
+      {
+        q: "Quel soutien est inclus ?",
+        a: "Le forfait Démarrage comprend le soutien par courriel, avec une réponse en 48 heures les jours ouvrables. Les forfaits Croissance et Agence comprennent le soutien prioritaire : par courriel, avec une réponse en 24 heures les jours ouvrables. Le soutien se fait par courriel sur tous les forfaits — nous n'offrons ni ligne téléphonique ni clavardage en direct, et les délais de réponse ne comptent que les jours ouvrables.",
       },
     ],
   },

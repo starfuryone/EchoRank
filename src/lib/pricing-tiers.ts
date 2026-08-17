@@ -13,6 +13,7 @@
 // else (feature matrix, upgrade ordering); it simply has no card.
 
 import { PLAN_CONFIGS, PLAN_ORDER } from "@/lib/plan-config";
+import { planFeatures } from "@/lib/plan-features";
 import { HOME_PRICING_CHROME } from "@/lib/i18n/content";
 import { normalizeLocale } from "@/lib/seo/constants";
 import type { HomePricingTier } from "@/app/[locale]/PricingSection";
@@ -35,7 +36,9 @@ export function pricingTiers(locale: string): HomePricingTier[] {
         monthly && annual && monthly > 0
           ? Math.round(((monthly - annual) / monthly) * 100)
           : null,
-      features: c.features,
+      // Derived from this tier's own allowances, in this locale — never a
+      // typed list. See plan-features.ts for what that prevents.
+      features: planFeatures(plan, locale),
       // cta / ctaLink are deliberately NOT passed through. The cards have a
       // single action now (Stripe Checkout), and PLAN_CONFIGS keeps both
       // fields because FeatureGate still reads them.

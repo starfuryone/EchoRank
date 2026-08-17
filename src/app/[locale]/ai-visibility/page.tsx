@@ -4,11 +4,23 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { SUPPORTED_LOCALES, isSupportedLocale, type Locale } from '@/lib/i18n/config';
 import { CONTENT } from '@/lib/i18n/content';
+import { PLAN_CONFIGS } from '@/lib/plan-config';
 import { AuditWidget, type AuditWidgetContent } from '@/components/AuditWidget';
 import { KeywordWidget, type KeywordWidgetContent } from '@/components/KeywordWidget';
 import { JsonLd, SITE_URL, buildMetadata, faqPage, normalizeLocale, organization, webSite } from "@/lib/seo";
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://echorank360.com';
+
+// Engine counts for the "included in every plan" card, read from the tiers
+// themselves.
+//
+// THIS CARD USED TO CLAIM ALL FOUR ENGINES ON EVERY PLAN. It is headed "Included
+// in every plan", so the only honest number in it is the FLOOR — and the floor is
+// Starter's checkup, which queries 2 providers, not 4. Interpolating both figures
+// keeps the claim tied to the config that produces it, the same way the pricing
+// cards derive theirs (see src/lib/plan-features.ts).
+const AV_STARTER_ENGINES = PLAN_CONFIGS.STARTER.aiCheckup.providers ?? 0;
+const AV_GROWTH_ENGINES = PLAN_CONFIGS.GROWTH.aiCheckup.providers ?? 0;
 
 // Brand/product terms kept verbatim across locales: Echorank360, Trust Score,
 // the engine names (ChatGPT/Claude/Gemini/Perplexity), the plan names
@@ -115,7 +127,7 @@ const C: Record<Locale, AvContent> = {
         'Weekly answer refresh',
         'Lost-recommendation alerts',
         'AI Trust Score',
-        'ChatGPT, Claude, Gemini & Perplexity coverage',
+        `${AV_STARTER_ENGINES} AI engines on Starter, all ${AV_GROWTH_ENGINES} on Growth and up`,
       ],
       cta: 'See plans',
       finePre: 'Cancel anytime. Need more brands, seats or nightly refresh? ',
@@ -243,7 +255,7 @@ const C: Record<Locale, AvContent> = {
         'Actualisation hebdomadaire des réponses',
         'Alertes de perte de recommandation',
         'AI Trust Score',
-        'Couverture ChatGPT, Claude, Gemini et Perplexity',
+        `${AV_STARTER_ENGINES} moteurs IA avec Démarrage, les ${AV_GROWTH_ENGINES} à partir de Croissance`,
       ],
       cta: 'Voir les forfaits',
       finePre: 'Annulable à tout moment. Besoin de plus de marques, de sièges ou d’une actualisation nocturne ? ',
@@ -371,7 +383,7 @@ const C: Record<Locale, AvContent> = {
         'Wöchentliche Antwort-Aktualisierung',
         'Benachrichtigungen bei verlorenen Empfehlungen',
         'AI Trust Score',
-        'Abdeckung von ChatGPT, Claude, Gemini und Perplexity',
+        `${AV_STARTER_ENGINES} KI-Engines mit Starter, alle ${AV_GROWTH_ENGINES} ab Growth`,
       ],
       cta: 'Abos ansehen',
       finePre: 'Jederzeit kündbar. Mehr Marken, Sitze oder nächtliche Aktualisierung nötig? ',

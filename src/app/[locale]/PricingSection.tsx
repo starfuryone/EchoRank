@@ -301,6 +301,18 @@ export function PricingSection({
           );
         })}
       </div>
+      {/* Credit packs. ONE LINE, NOT A FOURTH CARD, and the restraint is the
+          decision: this grid sells plans, and a credit pack is an add-on to
+          one of them. A fourth column would invite the "$79 vs $99/mo"
+          comparison it would lose, and would imply packs are an alternative
+          to a subscription rather than something you spend inside one.
+
+          Rendered HERE rather than on each page so both surfaces carry it
+          from one string — it previously existed only on /pricing, which is
+          how the homepage came to have no route to /credits at all. */}
+      <p className={s.creditsLine}>
+        <a href={`/${locale}/credits`}>{priceChrome.creditsLine}</a>
+      </p>
       <ConsentGate
         locale={locale as Locale}
         accepted={consented}

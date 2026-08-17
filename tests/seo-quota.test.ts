@@ -32,6 +32,7 @@ const {
   trackedKeywordLimit,
 } = await import("@/lib/seo-quota");
 const { PLAN_CONFIGS } = await import("@/lib/plan-config");
+const { planFeatures } = await import("@/lib/plan-features");
 type SellablePlanType = Exclude<PlanType, "AI_VISIBILITY">;
 
 const NOW = new Date("2026-07-30T15:00:00Z");
@@ -58,14 +59,19 @@ describe("limits are single-sourced", () => {
   });
 
   it("states each tier's pricing bullet with the same number it enforces", () => {
-    // The marketing bullet and the guard must never disagree.
+    // The marketing bullet and the guard must never disagree. Since 2026-08-17
+    // the bullet is COMPUTED from the same field this guard reads, so this is
+    // a check on the rendering rather than on two numbers agreeing.
     const bullet = (plan: SellablePlanType) =>
-      PLAN_CONFIGS[plan].features.find((f: string) => /SEO searches\/mo/.test(f));
+      planFeatures(plan, "en").find((f: string) => /SEO searches/.test(f));
     expect(bullet("STARTER")).toContain("250");
     expect(bullet("GROWTH")).toContain("1,000");
     expect(bullet("AGENCY")).toContain("5,000");
-    // Enterprise is unlimited, so it must NOT print a number.
-    expect(bullet("ENTERPRISE")).toBeUndefined();
+    // Enterprise's search pool is unlimited, so that half prints no number.
+    // Its keyword cap is a real 1,000 and still does — the two halves are
+    // independent, and printing "unlimited" for a capped field would be the
+    // exact overstatement this test exists to catch.
+    expect(bullet("ENTERPRISE")).toBe("Unlimited SEO searches + 1,000 tracked keywords/mo");
   });
 });
 

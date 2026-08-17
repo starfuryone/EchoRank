@@ -24,6 +24,11 @@ const PAGE = read("src", "app", "[locale]", "credits", "page.tsx");
 const COPY_SRC = read("src", "app", "[locale]", "credits", "copy.ts");
 const PURCHASE = read("src", "app", "[locale]", "credits", "CreditsPurchase.tsx");
 const PRICING = read("src", "app", "[locale]", "pricing", "page.tsx");
+// The link moved here on 2026-08-17 so the HOMEPAGE grid carries it too — it
+// previously had no route to /credits at all. Both surfaces render this one
+// component, so this is now the file that has to hold the link.
+const PRICING_SECTION = read("src", "app", "[locale]", "PricingSection.tsx");
+const CONTENT = read("src", "lib", "i18n", "content.ts");
 const CHECKOUT = read("src", "app", "api", "billing", "credits", "checkout", "route.ts");
 const WEBHOOK = read("src", "lib", "billing", "credit-webhook.ts");
 
@@ -92,23 +97,37 @@ describe("the pack catalogue is a single source", () => {
 
 // ─── The pricing-page link ──────────────────────────────────────────────────
 
-describe("/pricing links to /credits", () => {
+describe("the pricing grid links to /credits", () => {
   it("carries exactly one link, not a fourth card", () => {
-    expect(PRICING).toContain("/credits");
-    // One <Link> to /credits. More than one would mean a card crept in.
-    const links = PRICING.match(/\/\$\{l\}\/credits/g) ?? [];
+    expect(PRICING_SECTION).toContain("/credits");
+    // One link to /credits. More than one would mean a card crept in.
+    const links = PRICING_SECTION.match(/\/\$\{locale\}\/credits/g) ?? [];
     expect(links).toHaveLength(1);
+  });
+
+  it("no longer duplicates the link on /pricing itself", () => {
+    // Two copies of this line, one per surface, is how the wording drifts.
+    expect(PRICING).not.toMatch(/\/credits["`]/);
   });
 
   it("does not add /credits to the plan card catalogue", () => {
     // The cards come from pricingTiers(); a pack must never appear among them.
-    expect(PRICING).not.toMatch(/pricingTiers[\s\S]{0,200}credits/);
+    expect(PRICING_SECTION).not.toMatch(/pricing\.map[\s\S]{0,400}credits/);
   });
 
-  it("labels the link in both locales", () => {
-    expect(PRICING).toMatch(/creditsLink:\s*"[^"]+"/g);
-    const labels = PRICING.match(/creditsLink:\s*"([^"]+)"/g) ?? [];
-    expect(labels).toHaveLength(2);
+  it("labels the link in every marketing locale", () => {
+    // Five locales in HOME_PRICING_CHROME, which both surfaces read.
+    const labels = CONTENT.match(/creditsLine:\s*"([^"]+)"/g) ?? [];
+    expect(labels).toHaveLength(5);
+  });
+
+  it("says the packs never expire, in every locale", () => {
+    // The part customers actually ask about before buying capacity.
+    const NEVER_EXPIRE = [/never expire/, /sans expiration/, /ohne Verfall/];
+    const labels = CONTENT.match(/creditsLine:\s*"([^"]+)"/g) ?? [];
+    for (const label of labels) {
+      expect(NEVER_EXPIRE.some((re) => re.test(label)), label).toBe(true);
+    }
   });
 });
 
