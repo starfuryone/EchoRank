@@ -33,6 +33,18 @@ export const LABS = {
   serpCompetitors: "v3/dataforseo_labs/google/serp_competitors/live",
   /** googleCompetitorsDomainLive — Site Explorer's competitors card */
   competitorsDomain: "v3/dataforseo_labs/google/competitors_domain/live",
+  /**
+   * googleKeywordsForSiteLive — every keyword a domain ranks for or is
+   * relevant to. The Keyword Opportunity Finder's discovery call.
+   *
+   * LABS, NOT ADS, AND THAT IS NOT A PREFERENCE. The ADS block below is headed
+   * "true search volume / CPC" and is the obvious place to reach for demand
+   * figures; the Keyword Opportunity Finder must not use it. Its volume, CPC,
+   * competition and twelve-month history all come from THIS response's
+   * `keyword_info`, so no Google Ads call is needed and none is permitted —
+   * see src/lib/keyword-opportunity/discover.ts.
+   */
+  keywordsForSite: "v3/dataforseo_labs/google/keywords_for_site/live",
 } as const;
 
 // ---------------------------------------------------------------------------
@@ -195,6 +207,35 @@ export type RankedKeywordItem = {
 };
 
 /**
+ * ONE ITEM of keywords_for_site.
+ *
+ * FLATTER THAN RankedKeywordItem ABOVE, and mixing the two up is the easy
+ * mistake: ranked_keywords nests everything under `keyword_data`, while
+ * keywords_for_site puts `keyword` and `keyword_info` at the top level. A
+ * parser written for one silently reads `undefined` from the other, which
+ * surfaces as every keyword having zero volume rather than as an error.
+ *
+ * `monthly_searches` is the twelve-month history the trend percentage is
+ * derived from — newest first in the responses recorded to date, which
+ * src/lib/keyword-opportunity/trend.ts does not assume; it sorts by (year,
+ * month) before taking a slope.
+ */
+export type KeywordsForSiteItem = {
+  se_type?: string;
+  keyword?: string;
+  location_code?: number;
+  language_code?: string;
+  keyword_info?: {
+    search_volume?: number;
+    cpc?: number;
+    competition?: number;
+    monthly_searches?: { year: number; month: number; search_volume: number }[];
+  };
+  keyword_properties?: { keyword_difficulty?: number };
+  search_intent_info?: { main_intent?: string };
+};
+
+/**
  * competitors_domain returns the target itself as one of the rows (100 %
  * intersection with itself), so callers filter on `domain`.
  *
@@ -267,6 +308,39 @@ export function rankedKeywords(
       order_by: input.orderBy,
       filters: input.filters,
       include_subdomains: input.includeSubdomains,
+    },
+  );
+}
+
+/**
+ * Every keyword a site is relevant to, with demand attached.
+ *
+ * `include_serp_info` is off: the SERP block roughly doubles the payload and
+ * the Keyword Opportunity Finder reads rankings from our own tracker rather
+ * than from a provider's snapshot of the SERP.
+ */
+export function keywordsForSite(
+  input: {
+    target: string;
+    limit: number;
+    offset?: number;
+    orderBy?: string[];
+    filters?: unknown[];
+    includeSubdomains?: boolean;
+  } & Loc,
+) {
+  return postTask<{ items?: KeywordsForSiteItem[]; total_count?: number }[]>(
+    LABS.keywordsForSite,
+    {
+      target: input.target,
+      location_code: input.locationCode,
+      language_code: input.languageCode,
+      limit: input.limit,
+      offset: input.offset,
+      order_by: input.orderBy,
+      filters: input.filters,
+      include_subdomains: input.includeSubdomains,
+      include_serp_info: false,
     },
   );
 }

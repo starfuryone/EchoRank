@@ -29,6 +29,28 @@ export function startOfBillingMonth(now = new Date()): Date {
 }
 
 /**
+ * Features that carry their own USD ceiling and are therefore NOT part of this
+ * cap's denominator.
+ *
+ * A SECOND EXCLUSION BESIDE creditFunded, and a different one. `creditFunded`
+ * means "the tenant already paid for this call"; this means "this call is
+ * capped somewhere else". Counting a domain analysis here would let the
+ * Keyword Opportunity Finder exhaust the allowance every other SEO tool draws
+ * from, which is the double-charge the feature split exists to prevent — one
+ * user action, one allowance.
+ *
+ * The rows are still written with real costUsd and are still summed by the
+ * feature's own cap (keyword-opportunity/metering.ts kofSpentThisMonth) and by
+ * anything reporting total upstream spend. Nothing is hidden; this aggregate is
+ * deliberately narrower than "everything we were charged", exactly as it
+ * already is for credit-funded rows.
+ *
+ * Behaviour-preserving on every existing row: no SeoApiCall carries these
+ * features before the migration that introduced them.
+ */
+export const OWN_CAP_FEATURES: readonly CreditFeature[] = ["keyword_opportunity"];
+
+/**
  * Sum of PLAN-FUNDED billed USD for a tenant since the start of the month.
  *
  * CREDIT-FUNDED ROWS ARE EXCLUDED, and that exclusion is what the monthly cap
@@ -42,7 +64,12 @@ export function startOfBillingMonth(now = new Date()): Date {
 export async function spentThisMonth(tenantId: string): Promise<number> {
   const agg = await prisma.seoApiCall.aggregate({
     _sum: { costUsd: true },
-    where: { tenantId, creditFunded: false, createdAt: { gte: startOfBillingMonth() } },
+    where: {
+      tenantId,
+      creditFunded: false,
+      feature: { notIn: [...OWN_CAP_FEATURES] },
+      createdAt: { gte: startOfBillingMonth() },
+    },
   });
   return Number(agg._sum.costUsd ?? 0);
 }

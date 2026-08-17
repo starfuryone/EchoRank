@@ -182,9 +182,9 @@ model Tenant {
   // the settings page gets the same arithmetic the marketing site quoted them.
   /// Share of AI-attributed leads that close. 0 < convRate <= 1, enforced in
   /// src/lib/account-validation.ts and again by a CHECK constraint.
-  convRate              Float         @default(0.30)
+  convRate     Float @default(0.30)
   /// What one closed sale is worth, in the tenant's billing currency. > 0.
-  avgSaleValue          Float         @default(450)
+  avgSaleValue Float @default(450)
 
   members            TenantMember[]
   visibilityMonitors VisibilityMonitor[]
@@ -247,6 +247,11 @@ model Tenant {
   funnelLeads           FunnelLead[]
   creditLedger          CreditLedger[]
   actionItems           ActionItem[]
+
+  /// Keyword Opportunity Finder. The credit pool is DELIBERATELY SEPARATE from
+  /// creditLedger above — see KeywordOpportunityCredit.
+  keywordOpportunityAnalyses KeywordOpportunityAnalysis[]
+  keywordOpportunityCredits  KeywordOpportunityCredit[]
 
   assistantConversations AssistantConversation[]
 
@@ -2357,12 +2362,15 @@ model BrandProfile {
   checkups Checkup[]
   trends   CheckupTrend[]
 
-  visibilityMetrics VisibilityMetric[]
-  sources           Source[]
-  recommendations   Recommendation[]
-  experiments       Experiment[]
+  visibilityMetrics          VisibilityMetric[]
+  sources                    Source[]
+  recommendations            Recommendation[]
+  experiments                Experiment[]
   /// AI Share of Voice. The brand profile IS the prompt set — see SovSnapshot.
-  sovSnapshots      SovSnapshot[]
+  sovSnapshots               SovSnapshot[]
+  /// Keyword Opportunity Finder. The brand profile supplies the domain, the
+  /// aliases the brand-naming filter runs on, and the competitor list.
+  keywordOpportunityAnalyses KeywordOpportunityAnalysis[]
 
   @@index([tenantId])
   @@map("brand_profiles")
@@ -3878,14 +3886,14 @@ model ActionItem {
 
   /// User id, not name — names change and this is an audit trail. Null until
   /// the transition happens; both halves are set together.
-  approvedBy String?
-  approvedAt DateTime?
-  rejectedBy String?
-  rejectedAt DateTime?
+  approvedBy   String?
+  approvedAt   DateTime?
+  rejectedBy   String?
+  rejectedAt   DateTime?
   /// Why it was rejected, in the reviewer's own words. Optional: "no" is a
   /// complete answer, and a required field here would be a required field
   /// people type "n/a" into.
-  rejectedNote String? @db.Text
+  rejectedNote String?   @db.Text
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -3977,4 +3985,271 @@ model AssistantMessage {
   /// Transcript replay: one conversation, oldest first.
   @@index([conversationId, createdAt])
   @@map("assistant_messages")
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Keyword Opportunity Finder
+// ═══════════════════════════════════════════════════════════════════════════
+
+/// One domain analysis's lifecycle.
+///
+/// THE SAME FOUR STATES THE UI ALREADY RENDERS (see
+/// src/lib/keyword-opportunity/types.ts AnalysisStatus). Deliberately NOT
+/// CheckupStatus: that enum carries PARTIAL, which means "scored on a subset
+/// of the plan" and is meaningful for a checkup that asks N providers N times.
+/// A domain analysis asks each keyword once, so there is no partial coverage to
+/// report — a run either produced a scored keyword set or it did not.
+enum KeywordOpportunityStatus {
+  QUEUED
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+/// One run over one domain: discover, enrich, rank, AI-test the top 15, score.
+///
+/// ── HISTORY IS NEVER OVERWRITTEN ───────────────────────────────────────────
+/// Every run is a new row. A re-run of the same domain tomorrow does not update
+/// today's; that is what makes "has this moved since we shipped the page" a
+/// question the product can answer, and it is the same call every scored entity
+/// in this schema makes (Checkup, VisibilityMetric, RankSnapshot).
+///
+/// ── THE TWO COUNTERS ARE SEPARATE COLUMNS ON PURPOSE ───────────────────────
+/// `costUsd` accrues at the moment a provider bills us, on every run including
+/// the ones that fail. `allowanceConsumed` flips only when a run reaches
+/// COMPLETED. A failed analysis therefore costs US capped dollars and costs the
+/// CUSTOMER nothing, which is the intended asymmetry: we chose to spend the
+/// money, they did not choose to lose the run. Reading spend off the allowance
+/// flag, or the allowance off the spend, collapses that distinction.
+///
+/// ── THE CACHE KEY IS (domain, dateBucket) ──────────────────────────────────
+/// A UTC day rather than a rolling 24h window read off `createdAt`. A rolling
+/// window makes "did this cost me anything" depend on the minute the customer
+/// clicked, which is not a rule anybody can hold in their head. A row with
+/// `fromCache` true was served from an earlier COMPLETED run and consumed
+/// neither allowance nor credits nor spend.
+model KeywordOpportunityAnalysis {
+  id             String @id @default(cuid())
+  tenantId       String
+  brandProfileId String
+
+  /// Registrable domain, lowercased — registrableDomain() output, which is also
+  /// what RankProject.domain stores, so the rankings join needs no normalising.
+  domain String
+
+  status      KeywordOpportunityStatus @default(QUEUED)
+  /// discover | demand | rankings | ai | score. Null unless RUNNING. Matches
+  /// ANALYSIS_STEPS so the progress UI and the worker share one vocabulary.
+  currentStep String?
+
+  /// Which formula produced the scores on this run's rows. Historical rows are
+  /// never recomputed; a version 2 is written beside them.
+  scoreVersion Int @default(1)
+
+  /// UTC day, "YYYY-MM-DD". Half the cache key; see the header.
+  dateBucket String
+  /// True when this row was served from an earlier COMPLETED run for the same
+  /// (domain, dateBucket). Consumed nothing.
+  fromCache  Boolean @default(false)
+
+  keywordCount  Int @default(0)
+  aiTestedCount Int @default(0)
+
+  /// Split so the dogfood run can answer "where did the money actually go"
+  /// without joining two ledgers. `costUsd` is the sum and the figure the cap
+  /// is enforced against.
+  costUsd           Decimal @default(0) @db.Decimal(10, 6)
+  dataforseoCostUsd Decimal @default(0) @db.Decimal(10, 6)
+  aiCostUsd         Decimal @default(0) @db.Decimal(10, 6)
+
+  /// True once the run reached COMPLETED and drew down the month's allowance
+  /// (or a credit). See the header — this is NOT derivable from status alone,
+  /// because a cache hit completes without consuming anything.
+  allowanceConsumed Boolean @default(false)
+  /// allowance | credits | cache. Null while QUEUED/RUNNING and on FAILED.
+  fundingSource     String?
+
+  /// "cap_reached" | a truncated error. Null on a clean finish. Same vocabulary
+  /// as Checkup.stoppedReason.
+  stoppedReason String?
+  error         String?
+
+  startedAt   DateTime?
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+
+  tenant        Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  brandProfile  BrandProfile         @relation(fields: [brandProfileId], references: [id], onDelete: Cascade)
+  opportunities KeywordOpportunity[]
+
+  /// The tool page: this tenant's analyses, newest first.
+  @@index([tenantId, createdAt(sort: Desc)])
+  /// The cache probe: one domain, one UTC day.
+  @@index([domain, dateBucket])
+  /// The stale-RUNNING reaper: unfinished runs, oldest first.
+  @@index([status, startedAt])
+  @@map("keyword_opportunity_analyses")
+}
+
+/// One scored keyword inside one analysis.
+///
+/// EVERY COMPONENT IS STORED, not just the total. A customer disputing a score
+/// is disputing one of six numbers, and recomputing them at read time would
+/// mean the explanation could disagree with the score it explains after a
+/// version bump. `componentScores` carries the JSON shape of
+/// OpportunityComponents, where `aiGap` is null for a keyword outside the
+/// AI-tested top 15 — null being distinct from zero is the whole reason the
+/// column is JSON rather than six floats.
+model KeywordOpportunity {
+  id         String @id @default(cuid())
+  analysisId String
+
+  keyword String
+
+  /// Provider figures, carried verbatim. `competition` is stored and displayed
+  /// but carries NO WEIGHT in the score — paid competition is a fact about an
+  /// ad auction and this tool is about organic and AI answers.
+  monthlyVolume Int
+  cpcUsd        Decimal @db.Decimal(10, 2)
+  competition   Float
+  /// Percent change derived by us from the provider's monthly search history.
+  trendPercent  Float
+
+  /// Current Google position, or NULL. NULL COVERS TWO DIFFERENT FACTS and both
+  /// score seoGapScore 100: the keyword is not tracked at all, and it is tracked
+  /// but ranks outside the top 100. `rankSource` keeps them apart.
+  googleRank Int?
+  /// untracked | tracked. Which kind of null the row carries.
+  rankSource String?
+
+  /// One of KEYWORD_INTENTS. Decided by the deterministic pattern layer in
+  /// keyword-opportunity/intent.ts, using the provider's own intent as one
+  /// input signal — never by a model call.
+  intent String
+
+  /// OpportunityComponents as JSON. See the header.
+  componentScores  Json
+  opportunityScore Int
+  /// HIGH | MEDIUM | LOW, from the shipped cuts at scoring time.
+  severity         String
+  /// False when the keyword fell outside the AI-tested top 15.
+  aiTested         Boolean @default(false)
+
+  /// Null when not AI-tested. Not false — we did not ask.
+  aiMentioned       Boolean?
+  aiMentionRate     Float?
+  aiAveragePosition Int?
+
+  createdAt DateTime @default(now())
+
+  analysis KeywordOpportunityAnalysis @relation(fields: [analysisId], references: [id], onDelete: Cascade)
+  prompt   OpportunityPrompt?
+
+  /// One keyword appears once per analysis.
+  @@unique([analysisId, keyword])
+  /// The results table: one analysis, best opportunity first.
+  @@index([analysisId, opportunityScore(sort: Desc)])
+  @@map("keyword_opportunities")
+}
+
+/// The buyer question one keyword became.
+///
+/// NEVER CONTAINS THE BRAND NAME, and that is enforced in code before the row
+/// is written — see keyword-opportunity/prompts.ts. A prompt naming the brand
+/// gets the brand into the answer, which collapses aiGap toward zero and makes
+/// the tool quietest about exactly the keywords it exists to find.
+///
+/// One per AI-tested opportunity, so the relation is 1:1 rather than a list:
+/// this feature asks each keyword once. Deep multi-prompt testing is the
+/// Watcher's product.
+model OpportunityPrompt {
+  id            String @id @default(cuid())
+  opportunityId String @unique
+
+  text   String @db.Text
+  intent String
+
+  createdAt DateTime @default(now())
+
+  opportunity KeywordOpportunity       @relation(fields: [opportunityId], references: [id], onDelete: Cascade)
+  result      OpportunityPromptResult?
+
+  @@map("opportunity_prompts")
+}
+
+/// What one provider answered, analysed.
+///
+/// `answerSnapshot` IS UNTRUSTED INPUT. It was written by another vendor's
+/// model and is rendered as text, never as markup — the same posture
+/// ai-monitor takes when it feeds an answer to the extraction pass.
+///
+/// `competitors` is the answer's RANKED list with each entity's classifier-v3
+/// verdict attached. Platforms and category words are KEPT rather than dropped,
+/// for the reason MentionAnalysis gives: filtering to RIVAL happens at read
+/// time, so re-tuning the rules later is a re-run of a pure function over
+/// stored rows rather than another provider call.
+model OpportunityPromptResult {
+  id       String @id @default(cuid())
+  promptId String @unique
+
+  provider String
+  model    String
+
+  brandMentioned Boolean
+  /// 1-based. Null when the brand was named in prose but never ranked — which
+  /// scores as no visibility, not as no evidence.
+  brandPosition  Int?
+
+  answerSnapshot String @db.Text
+  /// [{name, position, classification}] — see the header.
+  competitors    Json
+
+  inputTokens  Int     @default(0)
+  outputTokens Int     @default(0)
+  costUsd      Decimal @default(0) @db.Decimal(10, 6)
+
+  checkedAt DateTime @default(now())
+
+  prompt OpportunityPrompt @relation(fields: [promptId], references: [id], onDelete: Cascade)
+
+  @@map("opportunity_prompt_results")
+}
+
+/// Prepaid DOMAIN-ANALYSIS credits, as an append-only ledger.
+///
+/// ── A SEPARATE TABLE FROM CreditLedger, AND IT MUST STAY SEPARATE ──────────
+/// CreditLedger holds prepaid PLACES lookups for the Agency Opportunity
+/// Scanner. Its balance is SUM(delta) over every row a tenant has and `/billing`
+/// renders that sum, so adding a `pool` column there would silently change what
+/// every existing balance read means — an existing feature, modified. A second
+/// table costs one migration and keeps both balances honest.
+///
+/// Everything else is deliberately identical to CreditLedger, because the
+/// reasoning that shaped it applies here unchanged: balance is SUM(delta) with
+/// no balance column, nothing updates or deletes a row, and
+/// (tenantId, reason, ref) is unique so every writer is safe to retry —
+/// RESERVE once per analysis, CONSUME_RELEASE once per analysis. Read that
+/// model's comments for the argument in full.
+///
+/// `ref` is a KeywordOpportunityAnalysis id for RESERVE and CONSUME_RELEASE, a
+/// Stripe session id for PURCHASE (no checkout exists yet), and an
+/// operator-chosen unique token for ADMIN. Not a foreign key: a ledger row must
+/// outlive the analysis it refers to.
+model KeywordOpportunityCredit {
+  id       String @id @default(cuid())
+  tenantId String
+
+  /// Signed. Positive adds credits, negative removes them. Never zero.
+  delta  Int
+  reason CreditReason
+  ref    String
+
+  createdAt DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, reason, ref])
+  /// The balance aggregate, and the billing history list.
+  @@index([tenantId, createdAt(sort: Desc)])
+  @@map("keyword_opportunity_credits")
 }

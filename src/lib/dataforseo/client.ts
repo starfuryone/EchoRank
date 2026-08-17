@@ -35,7 +35,24 @@ export type CreditFeature =
   | "site_audit"
   | "rank_tracking"
   | "local_seo"
-  | "content_research";
+  | "content_research"
+  /**
+   * Keyword Opportunity Finder.
+   *
+   * NEVER RETURNED BY pathToFeature() BELOW, and that is deliberate rather than
+   * an omission. KOF calls the same Labs paths other tools call
+   * (keywords_for_site, ranked_keywords), so classifying by path would file
+   * them as "keyword_research"/"domain_overview" — both of which sit inside
+   * SEO_SEARCH_FEATURES and would draw down the tenant's pooled search
+   * allowance for an action that already costs them a domain analysis. The
+   * feature is therefore supplied EXPLICITLY by
+   * keyword-opportunity/metering.ts, which is the only writer of this value.
+   *
+   * Being outside SEO_SEARCH_FEATURES is what keeps these rows out of the pool,
+   * by exactly the mechanism site_audit, content_research and rank_tracking are
+   * already excluded by. See src/lib/seo-quota.ts.
+   */
+  | "keyword_opportunity";
 
 export type ApiCallCost = { path: string[]; costUsd: number };
 /** `taskId` is DataForSEO's own task uuid — set on every envelope, and the

@@ -252,6 +252,23 @@ const DEFAULT_JOB_OPTIONS: Record<QueueName, JobsOptions> = {
     removeOnComplete: { age: REDIS_CONFIG.ttl.completedJobs },
     removeOnFail: { age: REDIS_CONFIG.ttl.failedJobs },
   },
+  // ONE ATTEMPT, the rank-tracker policy, and for the same reason stated more
+  // sharply: a domain analysis buys two DataForSEO Labs calls and up to
+  // thirty-one Haiku calls, and NONE of it is idempotent. A retry re-buys
+  // discovery, re-asks every question, and finds the rows the first attempt
+  // already wrote — so the customer would be charged twice to receive one
+  // analysis with a duplicated keyword set.
+  //
+  // Nothing is lost by refusing the retry. A failed analysis consumes no
+  // allowance (see keyword-opportunity/store.ts markFailed), is visible in the
+  // UI with its reason, and is one click to run again — which is a decision the
+  // customer should make anyway, since the commonest cause of a failure here is
+  // a domain the discovery endpoints know nothing about.
+  "keyword-opportunity": {
+    attempts: 1,
+    removeOnComplete: { age: REDIS_CONFIG.ttl.completedJobs },
+    removeOnFail: { age: REDIS_CONFIG.ttl.failedJobs },
+  },
 };
 
 // ─── Queue registry ───────────────────────────────────────────────────────────

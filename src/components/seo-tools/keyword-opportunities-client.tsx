@@ -78,6 +78,15 @@ function interpolate(template: string, values: Record<string, string | number>):
 /** How long each simulated step is shown while the fixture "runs". */
 const DEMO_STEP_MS = 900;
 
+/**
+ * Live poll interval while an analysis is QUEUED or RUNNING.
+ *
+ * Four seconds. A domain analysis takes minutes, so a tighter poll buys nothing
+ * but load on an endpoint that reads a hundred rows and their answers; a looser
+ * one makes the step list feel stuck.
+ */
+const POLL_INTERVAL_MS = 4_000;
+
 type SortKey = "keyword" | "monthlyVolume" | "cpcUsd" | "trendPercent" | "rank" | "ai" | "score";
 type SortDir = "asc" | "desc";
 
@@ -243,11 +252,22 @@ export function KeywordOpportunitiesClient({
   locale,
   data,
   preview = false,
+  live = false,
 }: {
   locale: DashLocale;
   data: KeywordOpportunityPageData;
-  /** Phase 2: the page is a worked example and says so at the top. */
+  /** The page is a worked example and says so at the top. */
   preview?: boolean;
+  /**
+   * The tenant is allowlisted for real runs.
+   *
+   * TWO PATHS, ONE RENDER TREE. Live and demo differ only in where the states
+   * come from — a POST and a poll, or a timer walking the same five steps —
+   * and everything below this line is identical for both. That is deliberate:
+   * a separate live component would be a second place for the table, the
+   * detail panel and the empty states to drift.
+   */
+  live?: boolean;
 }) {
   const copy = KEYWORD_OPPORTUNITY_COPY[locale];
   const intl = INTL_LOCALE[locale];
@@ -257,9 +277,14 @@ export function KeywordOpportunitiesClient({
   const [openId, setOpenId] = useState<string | null>(null);
   /** Non-null while the demo run is walking the steps. */
   const [runningStep, setRunningStep] = useState<AnalysisStep | null>(null);
+  /** Live mode: the server's view, replacing the prop once a run starts. */
+  const [livePage, setLivePage] = useState<KeywordOpportunityPageData | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const analysis = data.analysis;
-  const funding = fundingFor(data.entitlement);
+  const page = livePage ?? data;
+  const analysis = page.analysis;
+  const funding = fundingFor(page.entitlement);
 
   const rows = useMemo(() => {
     const source = analysis?.rows ?? [];
@@ -292,20 +317,120 @@ export function KeywordOpportunitiesClient({
     [sort],
   );
 
-  // The demo run: walk the five steps, then stop. Phase 3 replaces this with a
-  // poll against the analysis row's status and currentStep — the states it
-  // renders are already the states the worker reports.
+  // The DEMO run: walk the five steps on a timer, then stop. Live runs never
+  // reach this — their steps come off the analysis row's `currentStep`, which
+  // is the same vocabulary (ANALYSIS_STEPS) reported by the worker.
   useEffect(() => {
-    if (runningStep === null) return;
+    if (live || runningStep === null) return;
     const index = ANALYSIS_STEPS.indexOf(runningStep);
     const timer = setTimeout(() => {
       const next = ANALYSIS_STEPS[index + 1];
       setRunningStep(next ?? null);
     }, DEMO_STEP_MS);
     return () => clearTimeout(timer);
-  }, [runningStep]);
+  }, [live, runningStep]);
 
+  /**
+   * Live mode: poll while the analysis is in flight.
+   *
+   * STOPS THE MOMENT IT IS TERMINAL. A poll that keeps running against a
+   * COMPLETED row is a request every few seconds for the life of the tab, and
+   * this endpoint reads a hundred opportunity rows and their answers.
+   */
   const status = runningStep !== null ? "RUNNING" : (analysis?.status ?? null);
+  const inFlight = live && (status === "QUEUED" || status === "RUNNING");
+
+  useEffect(() => {
+    if (!inFlight) return;
+    let cancelled = false;
+
+    const timer = setInterval(async () => {
+      try {
+        const response = await fetch("/api/keyword-opportunities", { cache: "no-store" });
+        if (!response.ok) return;
+        const body = (await response.json()) as {
+          live?: boolean;
+          brandProfileId?: string;
+          brandName?: string;
+          domain?: string;
+          entitlement?: KeywordOpportunityPageData["entitlement"];
+          analysis?: KeywordOpportunityPageData["analysis"];
+        };
+        if (cancelled || !body.live || !body.entitlement) return;
+        setLivePage({
+          brandProfileId: body.brandProfileId ?? page.brandProfileId,
+          brandName: body.brandName ?? page.brandName,
+          domain: body.domain ?? page.domain,
+          entitlement: body.entitlement,
+          analysis: body.analysis ?? null,
+        });
+      } catch {
+        // A dropped poll is not an error worth showing — the next tick
+        // recovers, and the run is happening on the server either way.
+      }
+    }, POLL_INTERVAL_MS);
+
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [inFlight]);
+
+  /**
+   * Start a run.
+   *
+   * In demo mode this walks the fixture steps. Live, it POSTs and lets the poll
+   * above take over — the button never waits for the analysis, because the
+   * whole design is that the customer can leave and come back.
+   */
+  const startRun = useCallback(async () => {
+    setSubmitError(null);
+
+    if (!live) {
+      setRunningStep(ANALYSIS_STEPS[0]);
+      return;
+    }
+
+    setSubmitting(true);
+    try {
+      const response = await fetch("/api/keyword-opportunities", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ brandProfileId: page.brandProfileId }),
+      });
+      const body = (await response.json()) as { error?: string };
+      if (!response.ok) {
+        // 402 is "you have run out" and already has its own panel; anything
+        // else is worth a line the customer can read.
+        if (response.status !== 402) setSubmitError(body.error ?? copy.errorTitle);
+        return;
+      }
+      // Pull the new QUEUED row straight away so the progress view appears
+      // without waiting a full poll interval.
+      const refreshed = await fetch("/api/keyword-opportunities", { cache: "no-store" });
+      if (refreshed.ok) {
+        const next = (await refreshed.json()) as {
+          entitlement?: KeywordOpportunityPageData["entitlement"];
+          analysis?: KeywordOpportunityPageData["analysis"];
+        };
+        if (next.entitlement) {
+          setLivePage({
+            brandProfileId: page.brandProfileId,
+            brandName: page.brandName,
+            domain: page.domain,
+            entitlement: next.entitlement,
+            analysis: next.analysis ?? null,
+          });
+        }
+      }
+    } catch {
+      setSubmitError(copy.errorTitle);
+    } finally {
+      setSubmitting(false);
+    }
+  }, [live, page.brandProfileId, page.brandName, page.domain, copy.errorTitle]);
+
   const currentStep = runningStep ?? analysis?.currentStep ?? null;
   const doneSteps = useMemo(() => {
     if (currentStep === null) return new Set<AnalysisStep>();
@@ -313,11 +438,11 @@ export function KeywordOpportunitiesClient({
   }, [currentStep]);
 
   const allowanceLine =
-    data.entitlement.allowanceTotal === null
+    page.entitlement.allowanceTotal === null
       ? copy.allowanceUnlimited
       : interpolate(copy.allowanceTemplate, {
-          remaining: data.entitlement.allowanceRemaining ?? 0,
-          total: data.entitlement.allowanceTotal,
+          remaining: page.entitlement.allowanceRemaining ?? 0,
+          total: page.entitlement.allowanceTotal,
         });
 
   return (
@@ -354,20 +479,31 @@ export function KeywordOpportunitiesClient({
             <span className="block text-xs font-medium uppercase tracking-wide text-gray-500">
               {copy.domainLabel}
             </span>
-            <span className="mt-1 block text-lg font-medium text-gray-900">{data.domain}</span>
+            <span className="mt-1 block text-lg font-medium text-gray-900">{page.domain}</span>
             <span className="mt-1 block text-sm text-gray-500">{allowanceLine}</span>
           </div>
           <Button
-            onClick={() => setRunningStep(ANALYSIS_STEPS[0])}
-            loading={status === "RUNNING"}
-            disabled={!funding.canRun || status === "RUNNING" || status === "QUEUED"}
+            onClick={startRun}
+            loading={status === "RUNNING" || submitting}
+            disabled={!funding.canRun || submitting || status === "RUNNING" || status === "QUEUED"}
           >
             {status === "RUNNING" ? copy.runningCta : copy.runCta}
           </Button>
         </CardContent>
       </Card>
 
-      {data.entitlement.cacheHit && (
+      {submitError !== null && (
+        <p className="flex items-start gap-2 text-sm text-rose-700" role="alert">
+          <AlertTriangle
+            className="mt-0.5 h-4 w-4 shrink-0"
+            aria-hidden="true"
+            focusable="false"
+          />
+          {submitError}
+        </p>
+      )}
+
+      {page.entitlement.cacheHit && (
         <p className="flex items-start gap-2 text-sm text-gray-600">
           <Info
             className="mt-0.5 h-4 w-4 shrink-0 text-gray-400"
@@ -422,7 +558,7 @@ export function KeywordOpportunitiesClient({
         <Card>
           <CardContent className="py-8">
             <h2 className="text-lg font-medium text-gray-900">
-              {interpolate(copy.progressTitle, { domain: data.domain })}
+              {interpolate(copy.progressTitle, { domain: page.domain })}
             </h2>
             <p className="mt-1 max-w-xl text-sm text-gray-500">{copy.progressBody}</p>
             <StepList copy={copy} current={currentStep} done={doneSteps} />
@@ -445,7 +581,7 @@ export function KeywordOpportunitiesClient({
               <p className="mt-3 font-mono text-xs text-gray-400">{analysis.error}</p>
             )}
             <div className="mt-6">
-              <Button variant="outline" onClick={() => setRunningStep(ANALYSIS_STEPS[0])}>
+              <Button variant="outline" onClick={startRun} loading={submitting}>
                 {copy.errorCta}
               </Button>
             </div>

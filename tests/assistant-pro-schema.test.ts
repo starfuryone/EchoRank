@@ -55,9 +55,21 @@ describe("the migration applies in the right place", () => {
       .sort();
     // Filenames are hand-written here and apply in lexical order, so a
     // migration can easily sort before the one that creates a table it
-    // references. This one references only "tenants" (0_init), but it must
-    // still be last so a later reader can trust the ordering.
-    expect(all[all.length - 1]).toBe(NAME);
+    // references. This one references only "tenants" (0_init).
+    //
+    // ASSERTS THE DEPENDENCY, NOT "IS NEWEST". It used to require this
+    // migration to be the last directory in the tree, which made every
+    // subsequent additive migration fail a test about assistant_pro's
+    // ordering — the first one to do so was
+    // 20260817060000_keyword_opportunity_finder, which references nothing
+    // this migration creates. The name of this test is the contract; being
+    // last was only ever a proxy for it, and a proxy that expires the next
+    // time anybody ships.
+    expect(all).toContain(NAME);
+    const dependencies = all.filter((entry) => entry.startsWith("0_init"));
+    for (const dependency of dependencies) {
+      expect(NAME > dependency, `${NAME} must sort after ${dependency}`).toBe(true);
+    }
   });
 
   it("references only tables that already exist at that point", () => {
