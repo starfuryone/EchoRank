@@ -37,6 +37,7 @@ import {
 import { withoutBrandNamedPrompts } from "@/lib/keyword-opportunity/prompts";
 import { recommendedActions } from "@/lib/keyword-opportunity/recommendations";
 import { cacheKeyFor, fundingFor } from "@/lib/keyword-opportunity/entitlement";
+import { KEYWORD_OPPORTUNITY_COPY } from "@/lib/i18n/dashboard";
 import type { AnalysisEntitlement } from "@/lib/keyword-opportunity/types";
 
 const MENTIONED_FIRST: AiEvidence = {
@@ -613,6 +614,43 @@ describe("the AcmeCRM demo is scored by the production scorer", () => {
   it("produces all three severities", () => {
     const severities = new Set(rows.map((row) => row.severity));
     expect(severities).toEqual(new Set(["HIGH", "MEDIUM", "LOW"]));
+  });
+
+  it("splits into three usable bands at the shipped cuts", () => {
+    // THE REASON THE CUTS ARE 74/60 AND NOT 85/70, pinned so a change to
+    // either constant has to come past a number somebody chose. At 85/70 this
+    // read 2/12/11 — HIGH was a two-row shortlist that excluded the archetype
+    // the tool exists to surface. At 75/70 it read 10/4/11, which is three
+    // bands on paper and two in practice.
+    //
+    // These are v1 figures off a 25-keyword fixture set built to exercise
+    // branches, NOT a sampled population. See HIGH_SEVERITY_MIN_SCORE.
+    const tally = { HIGH: 0, MEDIUM: 0, LOW: 0 };
+    for (const row of rows) tally[row.severity] += 1;
+    expect(tally).toEqual({ HIGH: 11, MEDIUM: 7, LOW: 7 });
+  });
+
+  it("puts the rank-16 archetype in HIGH with headroom, not by a rounding step", () => {
+    // 74.519 rounds to 75. A cut at 75 would have it clear by 0.48 of a
+    // rounding artifact; at 74 it clears by a point of real score.
+    const archetype = byKeyword.get("best CRM for startups");
+    expect(archetype?.severity).toBe("HIGH");
+    expect(archetype?.opportunityScore).toBeGreaterThan(HIGH_SEVERITY_MIN_SCORE);
+  });
+
+  it("keeps the MEDIUM explanation honest for the untested keywords it now holds", () => {
+    // Lowering the floor to 60 pulled untested keywords (63, 62, 61) into
+    // MEDIUM. The explanation must cover that case rather than asserting the
+    // assistant already names the brand, which for an untested keyword is
+    // something nobody measured.
+    const untestedMedium = rows.filter(
+      (row) => row.severity === "MEDIUM" && !row.aiTested,
+    );
+    expect(untestedMedium.length).toBeGreaterThan(0);
+    for (const locale of ["en", "fr", "de-CH"] as const) {
+      expect(KEYWORD_OPPORTUNITY_COPY[locale].severityMediumExplain.length).toBeGreaterThan(0);
+    }
+    expect(KEYWORD_OPPORTUNITY_COPY.en.severityMediumExplain).toMatch(/not have been AI-tested/i);
   });
 
   it("never marks an untested keyword HIGH", () => {

@@ -135,10 +135,45 @@ export const TREND_CEILING_PERCENT = 100;
  */
 export const AI_TESTED_KEYWORD_LIMIT = 15;
 
-/** HIGH needs an un-mentioned brand AND a score at or above this. */
-export const HIGH_SEVERITY_MIN_SCORE = 85;
-/** MEDIUM needs a score at or above this. */
-export const MEDIUM_SEVERITY_MIN_SCORE = 70;
+/**
+ * HIGH needs an un-mentioned brand AND a score at or above this.
+ *
+ * ── WHY 74 AND NOT 85 ───────────────────────────────────────────────────────
+ *
+ * 85 was the brief's figure and it made HIGH a two-row shortlist: on the demo
+ * set it captured 2 of the 12 keywords eligible for it, and left the archetype
+ * this feature exists to surface — real demand, a rank outside the top ten, and
+ * an assistant that never names the brand — reading MEDIUM.
+ *
+ * 74 rather than 75, and the extra point is the whole reason this constant
+ * carries a comment. The archetype ("best CRM for startups") scores 74.519 and
+ * only reaches 75 because Math.round takes it there. A cut at exactly 75 would
+ * mean the flagship case clears by 0.48 of a rounding step: any drift in
+ * volume, CPC or trend flips it back to MEDIUM and the panel looks like it
+ * changed its mind about a keyword nobody touched. 74 gives it real headroom.
+ *
+ * These are v1 constants under the scoreVersion regime, not settled truth. They
+ * were chosen against a 25-keyword fixture set built to exercise branches, not
+ * a sampled population — a domain that already ranks well would push the whole
+ * distribution down and shrink HIGH at any cut. Revisit once real domains flow;
+ * a change here is a version 2, and rows written under 1 keep the severity the
+ * customer was shown.
+ */
+export const HIGH_SEVERITY_MIN_SCORE = 74;
+
+/**
+ * MEDIUM needs a score at or above this.
+ *
+ * MOVED DOWN WITH THE HIGH CUT, AND THAT PAIRING IS THE POINT. Lowering the
+ * HIGH bar alone would have left MEDIUM a five-point sliver between 70 and 74 —
+ * three bands on paper, two in practice. At 60 the demo set reads 11 HIGH /
+ * 7 MEDIUM / 7 LOW, which is three bands a human can actually use.
+ *
+ * The floor governs LOW on its own: the HIGH cut only ever redistributes rows
+ * between HIGH and MEDIUM, so this is the only constant that decides what a
+ * customer is told not to bother with.
+ */
+export const MEDIUM_SEVERITY_MIN_SCORE = 60;
 
 /**
  * What one AI test found for one keyword.

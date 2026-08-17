@@ -15575,7 +15575,7 @@ const keywordOpportunityEn: KeywordOpportunityCopy = {
   severityHighExplain:
     "Buyers ask this, it is worth real money, and the assistant answered without naming you once.",
   severityMediumExplain:
-    "Worth working on. Either the assistant already knows you here, or the commercial signals are strong but not exceptional.",
+    "Worth a place on the list, but not the top of it. The assistant may already name you here, or this keyword may not have been AI-tested, or its commercial signals are solid rather than exceptional.",
   severityLowExplain:
     "Low priority for now. The demand, the cost per click or the intent behind this keyword does not justify the work yet.",
 
@@ -15695,7 +15695,7 @@ export const KEYWORD_OPPORTUNITY_COPY: Record<DashLocale, KeywordOpportunityCopy
     severityHighExplain:
       "Les acheteurs posent cette question, elle vaut de l'argent, et l'assistant y a répondu sans vous nommer une seule fois.",
     severityMediumExplain:
-      "À travailler. Soit l'assistant vous connaît déjà ici, soit les signaux commerciaux sont solides sans être exceptionnels.",
+      "À garder sur la liste, sans être prioritaire. Soit l'assistant vous nomme déjà ici, soit ce mot-clé n'a pas été testé auprès d'une IA, soit ses signaux commerciaux sont solides sans être exceptionnels.",
     severityLowExplain:
       "Peu prioritaire pour l'instant. La demande, le coût par clic ou l'intention derrière ce mot-clé ne justifient pas encore l'effort.",
 
@@ -15812,7 +15812,7 @@ export const KEYWORD_OPPORTUNITY_COPY: Record<DashLocale, KeywordOpportunityCopy
     severityHighExplain:
       "Käufer fragen danach, es ist bares Geld wert, und der Assistent hat geantwortet, ohne Sie ein einziges Mal zu nennen.",
     severityMediumExplain:
-      "Lohnt die Arbeit. Entweder kennt der Assistent Sie hier bereits, oder die kommerziellen Signale sind solide, aber nicht aussergewöhnlich.",
+      "Gehört auf die Liste, aber nicht an deren Spitze. Entweder nennt der Assistent Sie hier bereits, oder das Keyword wurde nicht KI-getestet, oder seine kommerziellen Signale sind solide, aber nicht aussergewöhnlich.",
     severityLowExplain:
       "Vorerst nachrangig. Nachfrage, Klickpreis oder Kaufabsicht hinter diesem Keyword rechtfertigen den Aufwand noch nicht.",
 

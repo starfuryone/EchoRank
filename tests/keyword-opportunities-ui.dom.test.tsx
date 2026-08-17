@@ -182,8 +182,18 @@ describe("the detail panel", () => {
   it("opens on a row click with the score, severity and its explanation", () => {
     openRow("best CRM for startups");
     expect(screen.getByRole("heading", { name: "best CRM for startups" })).toBeInTheDocument();
-    expect(screen.getByText("Medium · 75")).toBeInTheDocument();
+    expect(screen.getByText("High · 75")).toBeInTheDocument();
+    expect(screen.getByText(EN.severityHighExplain)).toBeInTheDocument();
+  });
+
+  it("reads sensibly on a MEDIUM row at the bottom of the band", () => {
+    // Lowering the MEDIUM floor to 60 pulled untested keywords into the band.
+    // "CRM software reviews" scores 61 and was never AI-tested, so the panel
+    // must not tell the customer the assistant already names them here.
+    openRow("CRM software reviews");
+    expect(screen.getByText("Medium · 61")).toBeInTheDocument();
     expect(screen.getByText(EN.severityMediumExplain)).toBeInTheDocument();
+    expect(screen.getByText(EN.componentNotMeasured)).toBeInTheDocument();
   });
 
   it("breaks the score down per component, with weights and provenance", () => {
