@@ -23,15 +23,8 @@ import { getCurrentTenant } from "@/lib/tenant";
 import { registrableDomain } from "@/lib/registrable-domain";
 import { prisma } from "@/lib/prisma";
 import { kofEnabledFor } from "@/lib/keyword-opportunity/rollout";
-import { fundingFor } from "@/lib/keyword-opportunity/entitlement";
-import { reserveCredit } from "@/lib/keyword-opportunity/credits";
-import { OPPORTUNITY_SCORE_VERSION } from "@/lib/keyword-opportunity/score";
-import {
-  cachedAnalysisId,
-  createAnalysis,
-  createCacheHit,
-  entitlementFor,
-} from "@/lib/keyword-opportunity/store";
+import { startAnalysis } from "@/lib/keyword-opportunity/start";
+import { entitlementFor } from "@/lib/keyword-opportunity/store";
 import { enqueueAnalysis } from "@/infrastructure/queue/workers/keyword-opportunity.worker";
 import { readAnalysis, readLatestAnalysis } from "@/lib/keyword-opportunity/read";
 
@@ -124,65 +117,43 @@ export async function POST(request: Request) {
     );
   }
 
-  const entitlement = await entitlementFor(tenantId, plan, project.domain);
-  const funding = fundingFor(entitlement);
+  // ONE FUNCTION DECIDES, HERE AND IN THE DOGFOOD SCRIPT. This used to be four
+  // decisions written out at this call site, which is how a second entry point
+  // came to skip the cache and pay twice for one domain. See
+  // keyword-opportunity/start.ts.
+  const outcome = await startAnalysis({
+    tenantId,
+    plan,
+    brandProfileId: project.id,
+    domain: project.domain,
+  });
 
-  // ── Cache: free, and answered before any entitlement is touched ──────────
-  if (funding.funding === "cache") {
-    const sourceId = await cachedAnalysisId(project.domain);
-    if (sourceId) {
-      const id = await createCacheHit({
-        tenantId,
-        brandProfileId: project.id,
-        domain: project.domain,
-        scoreVersion: OPPORTUNITY_SCORE_VERSION,
-        sourceAnalysisId: sourceId,
-      });
-      return NextResponse.json({ analysisId: id, funding: "cache", cached: true }, { status: 200 });
-    }
-    // The cache disappeared between the probe and here. Fall through and run
-    // it properly rather than reporting a hit we cannot serve.
-  }
-
-  if (!funding.canRun) {
+  if (outcome.kind === "denied") {
     // 402 rather than 403: this is "you have run out", not "you may not". The
-    // Phase 2 insufficient-allowance state is what renders it.
+    // insufficient-allowance state is what renders it.
     return NextResponse.json(
       {
         error: "No domain analyses left this month",
         code: "NO_ALLOWANCE",
-        entitlement,
+        entitlement: outcome.entitlement,
       },
       { status: 402 },
     );
   }
 
-  const id = await createAnalysis({
-    tenantId,
-    brandProfileId: project.id,
-    domain: project.domain,
-    scoreVersion: OPPORTUNITY_SCORE_VERSION,
-  });
-
-  // A credit is HELD AT SUBMIT, before the worker starts, so two requests
-  // arriving together cannot both spend the same credit. The allowance needs no
-  // equivalent hold: it is counted from completed rows, and two concurrent runs
-  // that both complete both count.
-  if (funding.funding === "credits") {
-    const reserved = await reserveCredit(tenantId, id);
-    if (!reserved) {
-      return NextResponse.json(
-        { error: "No domain analyses left this month", code: "NO_ALLOWANCE", entitlement },
-        { status: 402 },
-      );
-    }
-    await prisma.keywordOpportunityAnalysis.update({
-      where: { id },
-      data: { fundingSource: "credits" },
-    });
+  if (outcome.kind === "cached") {
+    // Already COMPLETED, pointing at the run that was paid for. Enqueueing it
+    // would re-run work somebody already has.
+    return NextResponse.json(
+      { analysisId: outcome.analysisId, funding: "cache", cached: true },
+      { status: 200 },
+    );
   }
 
-  await enqueueAnalysis(id);
+  await enqueueAnalysis(outcome.analysisId);
 
-  return NextResponse.json({ analysisId: id, funding: funding.funding }, { status: 202 });
+  return NextResponse.json(
+    { analysisId: outcome.analysisId, funding: outcome.funding },
+    { status: 202 },
+  );
 }

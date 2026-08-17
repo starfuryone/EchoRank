@@ -35,7 +35,7 @@ import { kofAllowlist, kofEnabledFor } from "@/lib/keyword-opportunity/rollout";
 import { checkKofCap } from "@/lib/keyword-opportunity/metering";
 import { entitlementFor } from "@/lib/keyword-opportunity/store";
 import { runAnalysis } from "@/lib/keyword-opportunity/runner";
-import { createAnalysis } from "@/lib/keyword-opportunity/store";
+import { startAnalysis } from "@/lib/keyword-opportunity/start";
 import { OPPORTUNITY_SCORE_VERSION } from "@/lib/keyword-opportunity/score";
 import { isNoise } from "@/lib/keyword-opportunity/discover";
 import { classifyIntentDetailed } from "@/lib/keyword-opportunity/intent";
@@ -113,14 +113,44 @@ async function run(): Promise<void> {
     return;
   }
 
-  const id = await createAnalysis({
+  const tenant = await prisma.tenant.findUnique({
+    where: { id: project.tenantId },
+    select: { planType: true },
+  });
+  if (!tenant) {
+    console.error("brand profile has no tenant");
+    process.exitCode = 1;
+    return;
+  }
+
+  // THROUGH startAnalysis(), LIKE THE ROUTE. This used to call createAnalysis()
+  // directly, which skipped the cache probe and the entitlement decision — and
+  // so paid for the same domain twice inside forty seconds while the preflight
+  // command reported "cache HIT" correctly the whole time. The script is a
+  // second entry point and had to behave like the first.
+  const outcome = await startAnalysis({
     tenantId: project.tenantId,
+    plan: tenant.planType,
     brandProfileId: project.id,
     domain: DOMAIN,
     scoreVersion: OPPORTUNITY_SCORE_VERSION,
   });
 
-  console.log(`analysis ${id} queued; running inline (the worker would do this)`);
+  if (outcome.kind === "denied") {
+    console.error("no allowance and no credits — nothing was spent");
+    process.exitCode = 1;
+    return;
+  }
+
+  if (outcome.kind === "cached") {
+    console.log(`CACHE HIT — served from ${outcome.sourceAnalysisId}, spent $0, consumed nothing`);
+    console.log(`analysis ${outcome.analysisId} recorded as a cache hit`);
+    console.log(`\nnext: npx tsx scripts/dogfood-keyword-opportunity.ts report ${outcome.analysisId}`);
+    return;
+  }
+
+  const id = outcome.analysisId;
+  console.log(`analysis ${id} queued (${outcome.funding}); running inline (the worker would do this)`);
   const summary = await runAnalysis(id);
 
   console.log(`status            ${summary.status}${summary.stoppedReason ? ` (${summary.stoppedReason})` : ""}`);

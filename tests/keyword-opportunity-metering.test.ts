@@ -7,6 +7,8 @@
 // what these are actually for. A metering bug does not throw — it produces a
 // plausible figure on somebody's bill.
 
+import { readFileSync, readdirSync } from "node:fs";
+import { join } from "node:path";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 // vi.mock factories are hoisted above every top-level statement, so the stubs
@@ -54,6 +56,7 @@ import {
   markFailed,
 } from "@/lib/keyword-opportunity/store";
 import { fundingFor } from "@/lib/keyword-opportunity/entitlement";
+import { startAnalysis } from "@/lib/keyword-opportunity/start";
 import { reserveCredit, releaseCredit } from "@/lib/keyword-opportunity/credits";
 import { KEYWORD_OPPORTUNITY_CAP_USD } from "@/lib/plan-config";
 
@@ -367,5 +370,150 @@ describe("a cache hit shows the result it cached", () => {
     expect(data.allowanceConsumed).toBe(false);
     expect(data.costUsd).toBe(0);
     expect(data.fundingSource).toBe("cache");
+  });
+});
+
+describe("starting an analysis goes through one function", () => {
+  beforeEach(() => {
+    keywordOpportunityAnalysis.create.mockResolvedValue({ id: "new-analysis" });
+  });
+
+  it("serves the cached run instead of doing the work again", async () => {
+    // THE BUG THIS GUARDS, AND IT COST REAL MONEY. A second run of the same
+    // domain thirty-five seconds after the first created a NEW analysis, re-ran
+    // the full funnel and re-billed $0.024 — while the preflight command's
+    // cache probe reported "HIT" correctly the whole time, because the path
+    // that spent the money never consulted it.
+    keywordOpportunityAnalysis.count.mockResolvedValue(2);
+    keywordOpportunityAnalysis.findFirst.mockResolvedValue({ id: "source-1" });
+    keywordOpportunityAnalysis.findUnique.mockResolvedValue({
+      keywordCount: 0,
+      aiTestedCount: 0,
+      discoveredCount: 214,
+      brandedCount: 214,
+      stoppedReason: "no_unbranded_keywords",
+      scoreVersion: 1,
+    });
+
+    const outcome = await startAnalysis({
+      tenantId: "tenant-1",
+      plan: "GROWTH",
+      brandProfileId: "brand-1",
+      domain: "echorank360.com",
+    });
+
+    expect(outcome.kind).toBe("cached");
+    const data = keywordOpportunityAnalysis.create.mock.calls[0][0].data;
+    // No new work: COMPLETED on arrival, pointing at the paid run.
+    expect(data.status).toBe("COMPLETED");
+    expect(data.fromCache).toBe(true);
+    expect(data.cachedFromId).toBe("source-1");
+    // $0, no allowance, and the source's finding carried across intact.
+    expect(data.costUsd).toBe(0);
+    expect(data.allowanceConsumed).toBe(false);
+    expect(data.stoppedReason).toBe("no_unbranded_keywords");
+    expect(data.discoveredCount).toBe(214);
+    expect(data.brandedCount).toBe(214);
+  });
+
+  it("answers the cache before consulting the allowance at all", async () => {
+    // A tenant at their ceiling must still get today's free result.
+    keywordOpportunityAnalysis.count.mockResolvedValue(25);
+    keywordOpportunityAnalysis.findFirst.mockResolvedValue({ id: "source-1" });
+    keywordOpportunityAnalysis.findUnique.mockResolvedValue({
+      keywordCount: 100,
+      aiTestedCount: 15,
+      discoveredCount: 214,
+      brandedCount: 114,
+      stoppedReason: null,
+      scoreVersion: 1,
+    });
+
+    const outcome = await startAnalysis({
+      tenantId: "tenant-1",
+      plan: "GROWTH",
+      brandProfileId: "brand-1",
+      domain: "echorank360.com",
+    });
+    expect(outcome.kind).toBe("cached");
+  });
+
+  it("queues a real run when the cache is cold", async () => {
+    keywordOpportunityAnalysis.count.mockResolvedValue(2);
+    keywordOpportunityAnalysis.findFirst.mockResolvedValue(null);
+
+    const outcome = await startAnalysis({
+      tenantId: "tenant-1",
+      plan: "GROWTH",
+      brandProfileId: "brand-1",
+      domain: "echorank360.com",
+    });
+
+    expect(outcome).toMatchObject({ kind: "queued", funding: "allowance" });
+    const data = keywordOpportunityAnalysis.create.mock.calls[0][0].data;
+    expect(data.status).toBe("QUEUED");
+    expect(data.fromCache).toBeUndefined();
+  });
+
+  it("denies with no allowance, no credits and no cache", async () => {
+    keywordOpportunityAnalysis.count.mockResolvedValue(25);
+    keywordOpportunityAnalysis.findFirst.mockResolvedValue(null);
+    keywordOpportunityCredit.aggregate.mockResolvedValue({ _sum: { delta: 0 } });
+
+    const outcome = await startAnalysis({
+      tenantId: "tenant-1",
+      plan: "GROWTH",
+      brandProfileId: "brand-1",
+      domain: "echorank360.com",
+    });
+    expect(outcome.kind).toBe("denied");
+    expect(keywordOpportunityAnalysis.create).not.toHaveBeenCalled();
+  });
+});
+
+describe("nobody has grown a third entry point", () => {
+  // A GREP GUARD, and it earned its keep before it existed. createAnalysis()
+  // and createCacheHit() are the raw writes; calling either directly skips the
+  // cache probe, the funding decision and the credit hold. The dogfood script
+  // did exactly that and paid for one domain twice.
+  //
+  // Asserted against the source tree rather than trusted, because the failure
+  // is invisible in review — the call looks reasonable, and only the bill
+  // disagrees.
+  const RAW_WRITES = ["createAnalysis", "createCacheHit"] as const;
+
+  /** Every .ts/.tsx under src and scripts, excluding gitignored deploy backups. */
+  function sourceFiles(dir: string, out: string[] = []): string[] {
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      if (entry.name === "generated" || entry.name === "node_modules") continue;
+      const full = join(dir, entry.name);
+      if (entry.isDirectory()) sourceFiles(full, out);
+      else if (/\.tsx?$/.test(entry.name) && !/\.bak[.-]/.test(entry.name)) out.push(full);
+    }
+    return out;
+  }
+
+  it("only start.ts imports the raw analysis writes", () => {
+    const allowed = new Set([
+      join("src", "lib", "keyword-opportunity", "start.ts"),
+      // The module that defines them.
+      join("src", "lib", "keyword-opportunity", "store.ts"),
+    ]);
+
+    const offenders: string[] = [];
+    for (const file of [...sourceFiles("src"), ...sourceFiles("scripts")]) {
+      const relative = file.replace(`${process.cwd()}/`, "");
+      if (allowed.has(relative)) continue;
+      const source = readFileSync(file, "utf8");
+      for (const write of RAW_WRITES) {
+        // The import, not the word — comments naming these in order to ban
+        // them are exactly what this file's own header does.
+        if (new RegExp(`\\b${write}\\b[^\\n]*\\bfrom\\b|\\bimport\\b[^\\n]*\\b${write}\\b`).test(source)) {
+          offenders.push(`${relative} imports ${write}`);
+        }
+      }
+    }
+
+    expect(offenders, offenders.join("\n")).toEqual([]);
   });
 });
