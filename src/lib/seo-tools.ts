@@ -44,6 +44,7 @@ import {
   Quote,
   ListChecks,
   Crosshair,
+  Target,
   Megaphone,
   Banknote,
   Wand2,
@@ -92,7 +93,8 @@ export type SeoToolId =
   | "opportunity_scanner"
   | "audit_funnels"
   | "ai_revenue"
-  | "action_agent";
+  | "action_agent"
+  | "keyword_opportunities";
 
 /** Tools that render a scaffold page under /visibility/tools/<slug>. */
 // Note: brand_radar/bot_analytics/content_explorer remain ScaffoldIds although
@@ -143,6 +145,9 @@ export type ScaffoldId = Exclude<
   // And the AI Action Agent, which ships real with its queue, empty and error
   // states in ACTION_AGENT_COPY.
   | "action_agent"
+  // And the Keyword Opportunity Finder, which ships real with its progress,
+  // empty, error and no-allowance states in KEYWORD_OPPORTUNITY_COPY.
+  | "keyword_opportunities"
 >;
 
 export interface SeoTool {
@@ -199,6 +204,12 @@ export const SEO_TOOL_GROUPS: SeoToolGroup[] = [
         href: "/visibility/keywords",
         existing: true,
       }),
+      // Directly after Keywords Explorer because it answers the question that
+      // one leaves open. The Explorer tells you what a keyword is worth; this
+      // tells you which of those keywords an AI assistant answers WITHOUT you,
+      // which is the half that decides where the work goes. It is also the
+      // only tool here that scores demand and AI absence in one number.
+      t("keyword_opportunities", "keyword-opportunities", Target, { badge: "new" }),
       t("rank_tracker", "rank-tracker", LineChart),
       t("gsc_insights", "gsc-insights", SearchCheck),
       t("serp_checker", "serp-checker", ListOrdered),

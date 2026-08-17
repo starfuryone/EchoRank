@@ -139,6 +139,43 @@ export const WATCHER_PRICES_CENTS = {
   annual: 9000,
 } as const;
 
+/**
+ * Per-tenant monthly USD ceiling for the Keyword Opportunity Finder.
+ *
+ * A SECOND CAP, BESIDE aiMonthlyCapUsd AND NOT INSTEAD OF IT. The pooled AI cap
+ * is the Watcher's budget; spending domain analyses out of it would mean a
+ * tenant who ran their allowance of analyses had also, invisibly, stopped their
+ * scheduled checkups. Two products that can each exhaust the other's budget is
+ * the failure mode this separation exists to prevent. Same shape as
+ * WATCHER_SOLO_CAP_USD above, for the same reason: a per-product ceiling that
+ * the pure cap arithmetic in ai-monitor/cap.ts can be handed directly.
+ *
+ * ── THE ARITHMETIC ──────────────────────────────────────────────────────────
+ * One domain analysis buys, at worst: keyword discovery and enrichment from
+ * DataForSEO Labs, then 15 AI tests. Each test is one Haiku answer plus one
+ * Haiku extraction pass — at the published rates in ai-monitor/pricing.ts
+ * ($1/$5 per MTok) that is roughly $0.0065 a keyword, so about $0.10 of model
+ * spend, and under $0.15 all in.
+ *
+ * The ceilings are therefore deliberately far above the allowances they sit
+ * beside — STARTER's 5 analyses cost about $0.75 against a $2 cap. That
+ * headroom is the point: this is an ABUSE GUARD, not a margin lever, and a cap
+ * that bites during normal use would stop a customer mid-analysis for a
+ * rounding error. ENTERPRISE is uncapped because it is contract-priced, the
+ * same call every other `null` ceiling in this file makes.
+ */
+export const KEYWORD_OPPORTUNITY_CAP_USD: Record<SellablePlanType, number | null> = {
+  STARTER: 2,
+  GROWTH: 8,
+  AGENCY: 15,
+  ENTERPRISE: null,
+};
+
+/** The tier's monthly USD ceiling for domain analyses. `null` = uncapped. */
+export function keywordOpportunityCapUsd(plan: PlanType): number | null {
+  return KEYWORD_OPPORTUNITY_CAP_USD[sellablePlan(plan)];
+}
+
 export interface PlanConfig {
   name: string;
   slug: string;
@@ -237,6 +274,30 @@ export interface PlanConfig {
    * the worst-case monthly bill dollar for dollar.
    */
   aiMonthlyCapUsd: number | null;
+  /**
+   * Keyword Opportunity Finder DOMAIN ANALYSES per calendar month (UTC).
+   * `null` = unlimited.
+   *
+   * THE UNIT IS A DOMAIN ANALYSIS, NOT A SEARCH, and the distinction is not
+   * cosmetic: `seoSearchesPerMonth` above is the pooled DataForSEO allowance,
+   * and one domain analysis makes several of those calls. They are NOT drawn
+   * from that pool — one user action draws down one allowance, and the Labs
+   * calls a domain analysis makes are metered outside the pool so a tenant
+   * cannot be charged twice for one click.
+   *
+   * Counted from analysis rows rather than a counter, for the reason
+   * seo-quota.ts and site-crawler/quota.ts both give: this box restarts several
+   * times a day and an in-process tally would hand every tenant a fresh
+   * allowance on each deploy. A 24h cache hit is not counted at all — see
+   * keyword-opportunity/entitlement.ts for the order of draw.
+   *
+   * A legacy AI_VISIBILITY tenant inherits STARTER's 5 through planConfig(),
+   * like every other capability that tier absorbed. That is deliberate: a
+   * special case to withhold five analyses from a tier nobody is on would be
+   * the first field in this file to break the fold, for well under a dollar of
+   * monthly COGS.
+   */
+  keywordOpportunityAnalysesPerMonth: number | null;
   highlighted: boolean;
   cta: string;
   ctaLink: string;
@@ -288,6 +349,7 @@ export const PLAN_CONFIGS: Record<SellablePlanType, PlanConfig> = {
     aiCheckup: { frequency: "weekly", providers: 2, prompts: 10, repetitions: 1 },
     aiProjects: 1,
     aiMonthlyCapUsd: 5,
+    keywordOpportunityAnalysesPerMonth: 5,
     highlighted: false,
     cta: "Start Free Trial",
     ctaLink: "/register?plan=starter",
@@ -329,6 +391,7 @@ export const PLAN_CONFIGS: Record<SellablePlanType, PlanConfig> = {
     aiCheckup: { frequency: "twice_weekly", providers: 4, prompts: 15, repetitions: 2 },
     aiProjects: 3,
     aiMonthlyCapUsd: 40,
+    keywordOpportunityAnalysesPerMonth: 25,
     highlighted: true,
     cta: "Start Free Trial",
     ctaLink: "/register?plan=growth",
@@ -370,6 +433,7 @@ export const PLAN_CONFIGS: Record<SellablePlanType, PlanConfig> = {
     aiCheckup: { frequency: "daily", providers: null, prompts: 20, repetitions: 3 },
     aiProjects: 25,
     aiMonthlyCapUsd: 150,
+    keywordOpportunityAnalysesPerMonth: 55,
     highlighted: false,
     cta: "Start Free Trial",
     ctaLink: "/register?plan=agency",
@@ -415,6 +479,7 @@ export const PLAN_CONFIGS: Record<SellablePlanType, PlanConfig> = {
     aiCheckup: { frequency: "custom", providers: null, prompts: 20, repetitions: 3 },
     aiProjects: null,
     aiMonthlyCapUsd: null,
+    keywordOpportunityAnalysesPerMonth: null,
     highlighted: false,
     cta: "Book Enterprise Demo",
     ctaLink: "/enterprise",

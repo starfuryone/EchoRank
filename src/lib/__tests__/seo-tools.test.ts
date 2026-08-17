@@ -49,6 +49,7 @@ const EXPECTED_HREFS: Record<string, string> = {
   content_explorer: "/visibility/tools/content-explorer",
   ai_content_helper: "/visibility/tools/ai-content-helper",
   action_agent: "/visibility/tools/action-agent",
+  keyword_opportunities: "/visibility/tools/keyword-opportunities",
   historical: "/visibility/tools/historical",
   social_media_manager: "/visibility/tools/social-media-manager",
   dashboard: "/dashboard",
@@ -92,6 +93,7 @@ test('"New" badges exactly on Action Agent, AI Attribution, AI Lens, AI Revenue,
     "citation_opportunities",
     "gbp_monitor",
     "historical",
+    "keyword_opportunities",
     "opportunity_scanner",
     "share_of_voice",
   ]);
@@ -132,8 +134,8 @@ test("the live/coming-soon split is what the marketing copy claims", () => {
   // src/lib/i18n/content.ts (toolsSection.count) has to move with it.
   const live = ALL_TOOLS.filter((t) => !t.comingSoon);
   const soon = ALL_TOOLS.filter((t) => t.comingSoon);
-  assert.equal(ALL_TOOLS.length, 32, "tool count changed");
-  assert.equal(live.length, 28, "live tool count changed — update the homepage copy");
+  assert.equal(ALL_TOOLS.length, 33, "tool count changed");
+  assert.equal(live.length, 29, "live tool count changed — update the homepage copy");
   assert.equal(soon.length, 4);
   assert.deepEqual(
     soon.map((t) => t.id).sort(),

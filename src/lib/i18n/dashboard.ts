@@ -77,6 +77,7 @@ export const dashNav: Record<DashLocale, Record<string, string>> = {
     "/visibility/tools/funnels": "Audit Funnels",
     "/visibility/tools/revenue": "AI Revenue",
     "/visibility/tools/action-agent": "AI Action Agent",
+    "/visibility/tools/keyword-opportunities": "Keyword Opportunity Finder",
   },
   "de-CH": {
     "/dashboard": "Dashboard",
@@ -132,6 +133,7 @@ export const dashNav: Record<DashLocale, Record<string, string>> = {
     "/visibility/tools/funnels": "Audit-Funnels",
     "/visibility/tools/revenue": "KI-Umsatz",
     "/visibility/tools/action-agent": "KI-Aktionsagent",
+    "/visibility/tools/keyword-opportunities": "Keyword-Chancenfinder",
   },
   fr: {
     "/dashboard": "Tableau de bord",
@@ -187,6 +189,7 @@ export const dashNav: Record<DashLocale, Record<string, string>> = {
     "/visibility/tools/funnels": "Formulaires d'audit",
     "/visibility/tools/revenue": "Revenus IA",
     "/visibility/tools/action-agent": "Agent d'action IA",
+    "/visibility/tools/keyword-opportunities": "Détecteur d'opportunités de mots-clés",
   },
 };
 
@@ -5357,6 +5360,11 @@ const seoToolsEn = {
       description:
         "Drafts schema, FAQ content and review replies for you to approve. Nothing is published — you copy it out and use it.",
     },
+    keyword_opportunities: {
+      name: "Keyword Opportunity Finder",
+      description:
+        "Run one domain analysis to score commercial keywords on demand, cost and rank, then test whether AI assistants name you for the best of them.",
+    },
     dashboard: {
       name: "Dashboard",
       description: "Track key marketing and SEO performance across projects.",
@@ -5545,6 +5553,11 @@ export const SEO_TOOLS_COPY: Record<DashLocale, SeoToolsCopy> = {
         description:
           "Rédige données structurées, contenu FAQ et réponses aux avis, que vous approuvez. Rien n'est publié : vous copiez le texte et vous l'utilisez.",
       },
+      keyword_opportunities: {
+        name: "Détecteur d'opportunités de mots-clés",
+        description:
+          "Lancez une analyse de domaine pour noter vos mots-clés commerciaux selon la demande, le coût et le classement, puis vérifiez si les assistants IA vous citent sur les meilleurs d'entre eux.",
+      },
       dashboard: {
         name: "Tableau de bord",
         description: "Suivez la performance marketing et SEO clé de tous vos projets.",
@@ -5727,6 +5740,11 @@ export const SEO_TOOLS_COPY: Record<DashLocale, SeoToolsCopy> = {
         name: "KI-Aktionsagent",
         description:
           "Entwirft strukturierte Daten, FAQ-Inhalte und Bewertungsantworten zu Ihrer Freigabe. Nichts wird veröffentlicht — Sie kopieren den Text und setzen ihn ein.",
+      },
+      keyword_opportunities: {
+        name: "Keyword-Chancenfinder",
+        description:
+          "Starten Sie eine Domain-Analyse, die kommerzielle Keywords nach Nachfrage, Kosten und Ranking bewertet, und prüfen Sie dann, ob KI-Assistenten Sie bei den besten davon nennen.",
       },
       dashboard: {
         name: "Dashboard",
@@ -15372,5 +15390,481 @@ export const ASSISTANT_COPY: Record<DashLocale, AssistantCopy> = {
     errBudget:
       "Das Assistenz-Guthaben dieses Monats ist aufgebraucht. Es wird am 1. zurückgesetzt (UTC).",
     errDisabled: "Der Assistent ist wegen Wartung offline. Versuchen Sie es in Kürze erneut.",
+  },
+};
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Keyword Opportunity Finder (tool page: /visibility/tools/keyword-opportunities)
+   ═══════════════════════════════════════════════════════════════════════════
+
+   THE UNIT IS A "DOMAIN ANALYSIS" AND NEVER A "SEARCH". Not in English, not in
+   the translations, not in a tooltip. "Search" already means something specific
+   and different across this dashboard — it is the pooled DataForSEO allowance
+   in plan-config (`seoSearchesPerMonth`), which Site Explorer, SERP Checker,
+   Backlinks and Keyword Research all draw from. A customer who reads "5
+   searches" here will go looking for them in the wrong meter and conclude the
+   numbers disagree. One domain analysis makes several of those calls and is
+   billed as one thing, which is exactly why it needs a word of its own.
+
+   Consequently: `analyse`/`analyses` in EN, `analyse(s) de domaine` in FR,
+   `Domain-Analyse(n)` in DE. Never `recherche`, never `Suche`, never `scan`,
+   never `lookup`, never `credit` in the running copy.
+
+   NO GOOGLE ENDORSEMENT. Google is named only as the surface a rank is measured
+   on ("Google rank"), never as a partner, source of approval or data provider.
+   The demand figures come from a third-party provider and the methodology note
+   says so — see `methodologyBody`, which is required reading on every results
+   view rather than tucked behind a link.
+*/
+
+export interface KeywordOpportunityCopy {
+  title: string;
+  intro: string;
+
+  runCta: string;
+  runningCta: string;
+  domainLabel: string;
+  /** "{remaining} of {total} domain analyses left this month" */
+  allowanceTemplate: string;
+  allowanceUnlimited: string;
+  allowanceNoneTitle: string;
+  allowanceNoneBody: string;
+  allowanceNoneCta: string;
+  cacheNotice: string;
+
+  stepDiscover: string;
+  stepDemand: string;
+  stepRankings: string;
+  stepAi: string;
+  stepScore: string;
+  progressTitle: string;
+  progressBody: string;
+  queuedTitle: string;
+  queuedBody: string;
+
+  emptyTitle: string;
+  emptyBody: string;
+  errorTitle: string;
+  errorBody: string;
+  errorCta: string;
+
+  colKeyword: string;
+  colVolume: string;
+  colCpc: string;
+  colTrend: string;
+  colRank: string;
+  colAi: string;
+  colScore: string;
+  sortedByScore: string;
+
+  rankUntracked: string;
+  rankUntrackedHint: string;
+  aiNotMentioned: string;
+  aiMentionedAt: string;
+  aiMentionedUnranked: string;
+  aiNotTested: string;
+  aiNotTestedHint: string;
+
+  severityHigh: string;
+  severityMedium: string;
+  severityLow: string;
+  severityHighExplain: string;
+  severityMediumExplain: string;
+  severityLowExplain: string;
+
+  detailBreakdown: string;
+  detailComponent: string;
+  detailValue: string;
+  detailWeight: string;
+  detailSource: string;
+  sourceProvider: string;
+  sourceEchorank: string;
+  componentVolume: string;
+  componentCpc: string;
+  componentTrend: string;
+  componentIntent: string;
+  componentSeoGap: string;
+  componentAiGap: string;
+  componentNotMeasured: string;
+
+  detailCompetitors: string;
+  detailCompetitorsBody: string;
+  competitorShare: string;
+  detailPrompt: string;
+  detailPromptBody: string;
+  detailAnswer: string;
+  detailActions: string;
+
+  actionLandingPage: string;
+  actionCompetitorComparison: string;
+  actionPricingProof: string;
+  actionExternalCitations: string;
+  actionRerun: string;
+
+  watcherBridge: string;
+  watcherBridgeCta: string;
+  closePanel: string;
+
+  methodologyTitle: string;
+  methodologyBody: string;
+  summaryTemplate: string;
+
+  /** Phase 2 only: the page renders example data until the worker is wired. */
+  previewTitle: string;
+  previewBody: string;
+}
+
+const keywordOpportunityEn: KeywordOpportunityCopy = {
+  title: "Keyword Opportunity Finder",
+  intro:
+    "One domain analysis finds the commercial keywords your buyers use, scores each on demand, cost, trend and your Google rank, then asks an AI assistant the top fifteen to see whether it names you.",
+
+  runCta: "Run domain analysis",
+  runningCta: "Domain analysis running…",
+  domainLabel: "Domain",
+  allowanceTemplate: "{remaining} of {total} domain analyses left this month",
+  allowanceUnlimited: "Unlimited domain analyses on your plan",
+  allowanceNoneTitle: "No domain analyses left this month",
+  allowanceNoneBody:
+    "Your monthly allowance resets on the 1st (UTC). You can add credits to run more before then, or move to a plan with a larger allowance.",
+  allowanceNoneCta: "See plans",
+  cacheNotice:
+    "This domain was analysed in the last 24 hours. Re-opening the result costs nothing and uses none of your allowance.",
+
+  stepDiscover: "Discovering commercial keywords",
+  stepDemand: "Loading search demand",
+  stepRankings: "Checking Google rankings",
+  stepAi: "Testing AI prompts",
+  stepScore: "Calculating opportunity scores",
+  progressTitle: "Analysing {domain}",
+  progressBody:
+    "This takes a few minutes. You can leave this page — the analysis keeps running and the result will be here when you come back.",
+  queuedTitle: "Queued",
+  queuedBody: "Your domain analysis is waiting for a free worker. It will start shortly.",
+
+  emptyTitle: "No domain analysis yet",
+  emptyBody:
+    "Run one to see which commercial keywords your buyers ask about, and which of them AI assistants answer without ever naming you.",
+  errorTitle: "That domain analysis did not finish",
+  errorBody:
+    "Nothing was charged for the steps that failed. You can start a new domain analysis, or come back later if the problem persists.",
+  errorCta: "Try again",
+
+  colKeyword: "Keyword",
+  colVolume: "Volume",
+  colCpc: "CPC",
+  colTrend: "Trend",
+  colRank: "Google rank",
+  colAi: "AI visibility",
+  colScore: "Opportunity",
+  sortedByScore: "Sorted by opportunity score, highest first",
+
+  rankUntracked: "Not tracked",
+  rankUntrackedHint:
+    "This keyword is not in your Rank Tracker, or your domain does not rank in the top 100 for it. Either way there is no position to defend, which is scored as the widest possible gap.",
+  aiNotMentioned: "Not mentioned",
+  aiMentionedAt: "Mentioned #{position}",
+  aiMentionedUnranked: "Mentioned, not ranked",
+  aiNotTested: "Not AI-tested",
+  aiNotTestedHint:
+    "Only the top fifteen keywords by score are tested against an AI assistant. This one scored below the cut, so its opportunity score is calculated from the five measurements we do have rather than assuming an answer we never bought.",
+
+  severityHigh: "High",
+  severityMedium: "Medium",
+  severityLow: "Low",
+  severityHighExplain:
+    "Buyers ask this, it is worth real money, and the assistant answered without naming you once.",
+  severityMediumExplain:
+    "Worth working on. Either the assistant already knows you here, or the commercial signals are strong but not exceptional.",
+  severityLowExplain:
+    "Low priority for now. The demand, the cost per click or the intent behind this keyword does not justify the work yet.",
+
+  detailBreakdown: "Score breakdown",
+  detailComponent: "Component",
+  detailValue: "Score",
+  detailWeight: "Weight",
+  detailSource: "Source",
+  sourceProvider: "Provider data",
+  sourceEchorank: "Echorank calculation",
+  componentVolume: "Search demand",
+  componentCpc: "Cost per click",
+  componentTrend: "Demand trend",
+  componentIntent: "Buying intent",
+  componentSeoGap: "Ranking gap",
+  componentAiGap: "AI answer gap",
+  componentNotMeasured: "Not measured",
+
+  detailCompetitors: "Who the assistant named instead",
+  detailCompetitorsBody:
+    "Share of this domain analysis's AI answers that named each competitor. Platforms, directories and category words are excluded.",
+  competitorShare: "{share}% of answers",
+  detailPrompt: "The question we asked",
+  detailPromptBody:
+    "Written from the keyword as a buyer would phrase it. It never contains your brand name — the point is to find out whether the assistant brings you up on its own.",
+  detailAnswer: "What the assistant answered",
+  detailActions: "What to do about it",
+
+  actionLandingPage:
+    "Publish a page that answers this keyword directly, with the specifics a buyer is comparing on.",
+  actionCompetitorComparison:
+    "Write an honest comparison against the competitors named above. Assistants quote comparisons that state trade-offs plainly.",
+  actionPricingProof:
+    "Put pricing, limits and proof on a page a crawler can read — as text and tables, not inside an image or behind a form.",
+  actionExternalCitations:
+    "Get named on the sources the assistant is reading. Reviews, directories and independent write-ups are what it quotes from.",
+  actionRerun:
+    "Re-run the domain analysis after the changes are live to see whether the answer moved.",
+
+  watcherBridge:
+    "Want this measured continuously, across more assistants and repeated over time?",
+  watcherBridgeCta: "Track this prompt set in AI Search Watcher",
+  closePanel: "Close",
+
+  methodologyTitle: "How to read these numbers",
+  methodologyBody:
+    "Search volume, cost per click and competition are directional estimates supplied by a third-party keyword data provider, not measured traffic — treat them as a way to rank keywords against each other rather than as a forecast. The trend is calculated by Echorank from that provider's monthly search history. Google rank comes from your own tracked keywords. AI visibility is a single answer from one assistant per keyword, which locates a gap but does not measure it — the AI Search Watcher is what measures it.",
+  summaryTemplate:
+    "{keywords} keywords scored · {tested} AI-tested · analysed {date}",
+
+  previewTitle: "Preview — example data",
+  previewBody:
+    "This is a worked example for the domain acmecrm.com, not your own data. Every score on this page is computed by the live scoring code, but the keywords and AI answers are fixtures. Running a domain analysis on your own domain arrives in a following release.",
+};
+
+export const KEYWORD_OPPORTUNITY_COPY: Record<DashLocale, KeywordOpportunityCopy> = {
+  en: keywordOpportunityEn,
+  fr: {
+    title: "Détecteur d'opportunités de mots-clés",
+    intro:
+      "Une analyse de domaine repère les mots-clés commerciaux qu'utilisent vos acheteurs, note chacun d'eux selon la demande, le coût, la tendance et votre classement Google, puis pose les quinze premiers à un assistant IA pour voir s'il vous nomme.",
+
+    runCta: "Lancer l'analyse de domaine",
+    runningCta: "Analyse de domaine en cours…",
+    domainLabel: "Domaine",
+    allowanceTemplate: "Il vous reste {remaining} analyses de domaine sur {total} ce mois-ci",
+    allowanceUnlimited: "Analyses de domaine illimitées avec votre forfait",
+    allowanceNoneTitle: "Plus d'analyse de domaine disponible ce mois-ci",
+    allowanceNoneBody:
+      "Votre quota mensuel se réinitialise le 1er (UTC). Vous pouvez ajouter des crédits pour en lancer d'autres d'ici là, ou passer à un forfait au quota plus large.",
+    allowanceNoneCta: "Voir les forfaits",
+    cacheNotice:
+      "Ce domaine a été analysé au cours des dernières 24 heures. Rouvrir le résultat ne coûte rien et n'entame pas votre quota.",
+
+    stepDiscover: "Recherche des mots-clés commerciaux",
+    stepDemand: "Chargement de la demande de recherche",
+    stepRankings: "Vérification des classements Google",
+    stepAi: "Test des questions posées à l'IA",
+    stepScore: "Calcul des scores d'opportunité",
+    progressTitle: "Analyse de {domain}",
+    progressBody:
+      "Cela prend quelques minutes. Vous pouvez quitter cette page : l'analyse continue et le résultat vous attendra à votre retour.",
+    queuedTitle: "En file d'attente",
+    queuedBody:
+      "Votre analyse de domaine attend qu'un processus se libère. Elle démarrera sous peu.",
+
+    emptyTitle: "Aucune analyse de domaine pour l'instant",
+    emptyBody:
+      "Lancez-en une pour découvrir les mots-clés commerciaux sur lesquels vos acheteurs s'interrogent, et ceux auxquels les assistants IA répondent sans jamais vous nommer.",
+    errorTitle: "Cette analyse de domaine n'est pas allée au bout",
+    errorBody:
+      "Les étapes qui ont échoué n'ont rien été facturé. Vous pouvez lancer une nouvelle analyse de domaine, ou revenir plus tard si le problème persiste.",
+    errorCta: "Réessayer",
+
+    colKeyword: "Mot-clé",
+    colVolume: "Volume",
+    colCpc: "CPC",
+    colTrend: "Tendance",
+    colRank: "Classement Google",
+    colAi: "Visibilité IA",
+    colScore: "Opportunité",
+    sortedByScore: "Trié par score d'opportunité, du plus élevé au plus faible",
+
+    rankUntracked: "Non suivi",
+    rankUntrackedHint:
+      "Ce mot-clé n'est pas dans votre suivi de position, ou votre domaine n'apparaît pas dans les 100 premiers résultats. Dans les deux cas il n'y a aucune position à défendre, ce qui est noté comme l'écart le plus large possible.",
+    aiNotMentioned: "Non mentionné",
+    aiMentionedAt: "Mentionné en {position}e position",
+    aiMentionedUnranked: "Mentionné, hors classement",
+    aiNotTested: "Non testé auprès de l'IA",
+    aiNotTestedHint:
+      "Seuls les quinze premiers mots-clés au score sont testés auprès d'un assistant IA. Celui-ci est passé sous la barre : son score d'opportunité est donc calculé à partir des cinq mesures dont nous disposons, plutôt qu'en supposant une réponse que nous n'avons jamais achetée.",
+
+    severityHigh: "Élevée",
+    severityMedium: "Moyenne",
+    severityLow: "Faible",
+    severityHighExplain:
+      "Les acheteurs posent cette question, elle vaut de l'argent, et l'assistant y a répondu sans vous nommer une seule fois.",
+    severityMediumExplain:
+      "À travailler. Soit l'assistant vous connaît déjà ici, soit les signaux commerciaux sont solides sans être exceptionnels.",
+    severityLowExplain:
+      "Peu prioritaire pour l'instant. La demande, le coût par clic ou l'intention derrière ce mot-clé ne justifient pas encore l'effort.",
+
+    detailBreakdown: "Détail du score",
+    detailComponent: "Composante",
+    detailValue: "Score",
+    detailWeight: "Poids",
+    detailSource: "Source",
+    sourceProvider: "Données du fournisseur",
+    sourceEchorank: "Calcul Echorank",
+    componentVolume: "Demande de recherche",
+    componentCpc: "Coût par clic",
+    componentTrend: "Tendance de la demande",
+    componentIntent: "Intention d'achat",
+    componentSeoGap: "Écart de classement",
+    componentAiGap: "Écart dans les réponses IA",
+    componentNotMeasured: "Non mesuré",
+
+    detailCompetitors: "Qui l'assistant a nommé à votre place",
+    detailCompetitorsBody:
+      "Part des réponses IA de cette analyse de domaine qui ont nommé chaque concurrent. Les plateformes, annuaires et termes génériques sont exclus.",
+    competitorShare: "{share} % des réponses",
+    detailPrompt: "La question posée",
+    detailPromptBody:
+      "Formulée à partir du mot-clé comme un acheteur la poserait. Elle ne contient jamais votre marque : tout l'intérêt est de savoir si l'assistant vous cite de lui-même.",
+    detailAnswer: "Ce que l'assistant a répondu",
+    detailActions: "Quoi faire",
+
+    actionLandingPage:
+      "Publiez une page qui répond directement à ce mot-clé, avec les détails concrets que compare un acheteur.",
+    actionCompetitorComparison:
+      "Rédigez une comparaison honnête face aux concurrents cités plus haut. Les assistants reprennent les comparaisons qui énoncent clairement les compromis.",
+    actionPricingProof:
+      "Mettez tarifs, limites et preuves sur une page lisible par un robot : en texte et en tableaux, pas dans une image ni derrière un formulaire.",
+    actionExternalCitations:
+      "Faites-vous citer sur les sources que lit l'assistant. Ce sont les avis, les annuaires et les articles indépendants qu'il reprend.",
+    actionRerun:
+      "Relancez l'analyse de domaine une fois les changements en ligne pour voir si la réponse a bougé.",
+
+    watcherBridge:
+      "Vous voulez suivre cela en continu, sur davantage d'assistants et de façon répétée ?",
+    watcherBridgeCta: "Suivre ce jeu de questions dans AI Search Watcher",
+    closePanel: "Fermer",
+
+    methodologyTitle: "Comment lire ces chiffres",
+    methodologyBody:
+      "Le volume de recherche, le coût par clic et la concurrence sont des estimations indicatives fournies par un prestataire tiers de données de mots-clés, et non du trafic mesuré : servez-vous-en pour classer les mots-clés entre eux, pas comme d'une prévision. La tendance est calculée par Echorank à partir de l'historique mensuel de ce prestataire. Le classement Google provient de vos propres mots-clés suivis. La visibilité IA repose sur une seule réponse d'un seul assistant par mot-clé, ce qui localise un écart sans le mesurer : c'est AI Search Watcher qui le mesure.",
+    summaryTemplate:
+      "{keywords} mots-clés notés · {tested} testés auprès de l'IA · analyse du {date}",
+
+    previewTitle: "Aperçu — données d'exemple",
+    previewBody:
+      "Il s'agit d'un exemple travaillé pour le domaine acmecrm.com, et non de vos propres données. Tous les scores de cette page sont calculés par le code de notation réel, mais les mots-clés et les réponses IA sont fictifs. L'analyse de votre propre domaine arrivera dans une prochaine version.",
+  },
+  "de-CH": {
+    title: "Keyword-Chancenfinder",
+    intro:
+      "Eine Domain-Analyse findet die kommerziellen Keywords Ihrer Käuferschaft, bewertet jedes nach Nachfrage, Kosten, Trend und Ihrem Google-Ranking und stellt die besten fünfzehn einem KI-Assistenten, um zu sehen, ob er Sie nennt.",
+
+    runCta: "Domain-Analyse starten",
+    runningCta: "Domain-Analyse läuft…",
+    domainLabel: "Domain",
+    allowanceTemplate: "Noch {remaining} von {total} Domain-Analysen in diesem Monat",
+    allowanceUnlimited: "Unbegrenzte Domain-Analysen in Ihrem Tarif",
+    allowanceNoneTitle: "Diesen Monat keine Domain-Analyse mehr verfügbar",
+    allowanceNoneBody:
+      "Ihr Monatskontingent wird am 1. zurückgesetzt (UTC). Sie können Guthaben ergänzen, um vorher weitere zu starten, oder in einen Tarif mit grösserem Kontingent wechseln.",
+    allowanceNoneCta: "Tarife ansehen",
+    cacheNotice:
+      "Diese Domain wurde in den letzten 24 Stunden analysiert. Das Ergebnis erneut zu öffnen kostet nichts und verbraucht kein Kontingent.",
+
+    stepDiscover: "Kommerzielle Keywords werden gesucht",
+    stepDemand: "Suchnachfrage wird geladen",
+    stepRankings: "Google-Rankings werden geprüft",
+    stepAi: "KI-Fragen werden getestet",
+    stepScore: "Chancen-Scores werden berechnet",
+    progressTitle: "{domain} wird analysiert",
+    progressBody:
+      "Das dauert einige Minuten. Sie können die Seite verlassen — die Analyse läuft weiter und das Ergebnis wartet auf Sie.",
+    queuedTitle: "In der Warteschlange",
+    queuedBody:
+      "Ihre Domain-Analyse wartet auf einen freien Prozess. Sie startet in Kürze.",
+
+    emptyTitle: "Noch keine Domain-Analyse",
+    emptyBody:
+      "Starten Sie eine, um zu sehen, nach welchen kommerziellen Keywords Ihre Käuferschaft fragt — und welche davon KI-Assistenten beantworten, ohne Sie je zu nennen.",
+    errorTitle: "Diese Domain-Analyse wurde nicht fertig",
+    errorBody:
+      "Für die fehlgeschlagenen Schritte wurde nichts berechnet. Sie können eine neue Domain-Analyse starten oder später wiederkommen, falls das Problem bestehen bleibt.",
+    errorCta: "Erneut versuchen",
+
+    colKeyword: "Keyword",
+    colVolume: "Volumen",
+    colCpc: "CPC",
+    colTrend: "Trend",
+    colRank: "Google-Ranking",
+    colAi: "KI-Sichtbarkeit",
+    colScore: "Chance",
+    sortedByScore: "Sortiert nach Chancen-Score, höchster zuerst",
+
+    rankUntracked: "Nicht verfolgt",
+    rankUntrackedHint:
+      "Dieses Keyword ist nicht im Rank Tracker, oder Ihre Domain erscheint nicht in den ersten 100 Ergebnissen. In beiden Fällen gibt es keine Position zu verteidigen, was als grösstmögliche Lücke bewertet wird.",
+    aiNotMentioned: "Nicht genannt",
+    aiMentionedAt: "Genannt auf Platz {position}",
+    aiMentionedUnranked: "Genannt, ohne Platzierung",
+    aiNotTested: "Nicht KI-getestet",
+    aiNotTestedHint:
+      "Nur die fünfzehn bestbewerteten Keywords werden einem KI-Assistenten gestellt. Dieses lag darunter, deshalb wird sein Chancen-Score aus den fünf vorhandenen Messungen berechnet — statt eine Antwort anzunehmen, die nie eingekauft wurde.",
+
+    severityHigh: "Hoch",
+    severityMedium: "Mittel",
+    severityLow: "Niedrig",
+    severityHighExplain:
+      "Käufer fragen danach, es ist bares Geld wert, und der Assistent hat geantwortet, ohne Sie ein einziges Mal zu nennen.",
+    severityMediumExplain:
+      "Lohnt die Arbeit. Entweder kennt der Assistent Sie hier bereits, oder die kommerziellen Signale sind solide, aber nicht aussergewöhnlich.",
+    severityLowExplain:
+      "Vorerst nachrangig. Nachfrage, Klickpreis oder Kaufabsicht hinter diesem Keyword rechtfertigen den Aufwand noch nicht.",
+
+    detailBreakdown: "Score im Detail",
+    detailComponent: "Komponente",
+    detailValue: "Score",
+    detailWeight: "Gewicht",
+    detailSource: "Quelle",
+    sourceProvider: "Anbieterdaten",
+    sourceEchorank: "Echorank-Berechnung",
+    componentVolume: "Suchnachfrage",
+    componentCpc: "Klickpreis",
+    componentTrend: "Nachfragetrend",
+    componentIntent: "Kaufabsicht",
+    componentSeoGap: "Ranking-Lücke",
+    componentAiGap: "Lücke in KI-Antworten",
+    componentNotMeasured: "Nicht gemessen",
+
+    detailCompetitors: "Wen der Assistent stattdessen genannt hat",
+    detailCompetitorsBody:
+      "Anteil der KI-Antworten dieser Domain-Analyse, die den jeweiligen Mitbewerber genannt haben. Plattformen, Verzeichnisse und Gattungsbegriffe sind ausgenommen.",
+    competitorShare: "{share} % der Antworten",
+    detailPrompt: "Die gestellte Frage",
+    detailPromptBody:
+      "Aus dem Keyword so formuliert, wie eine Käuferin sie stellen würde. Sie enthält nie Ihren Markennamen — es geht darum, ob der Assistent Sie von sich aus nennt.",
+    detailAnswer: "Was der Assistent geantwortet hat",
+    detailActions: "Was zu tun ist",
+
+    actionLandingPage:
+      "Veröffentlichen Sie eine Seite, die dieses Keyword direkt beantwortet, mit den konkreten Angaben, die Käufer vergleichen.",
+    actionCompetitorComparison:
+      "Schreiben Sie einen ehrlichen Vergleich mit den oben genannten Mitbewerbern. Assistenten zitieren Vergleiche, die Kompromisse klar benennen.",
+    actionPricingProof:
+      "Bringen Sie Preise, Grenzen und Belege auf eine Seite, die ein Crawler lesen kann — als Text und Tabellen, nicht in einem Bild und nicht hinter einem Formular.",
+    actionExternalCitations:
+      "Lassen Sie sich auf den Quellen nennen, die der Assistent liest. Bewertungen, Verzeichnisse und unabhängige Beiträge sind es, woraus er zitiert.",
+    actionRerun:
+      "Starten Sie die Domain-Analyse erneut, sobald die Änderungen live sind, um zu sehen, ob sich die Antwort bewegt hat.",
+
+    watcherBridge:
+      "Möchten Sie das laufend messen, über mehr Assistenten und wiederholt über die Zeit?",
+    watcherBridgeCta: "Dieses Fragenset im AI Search Watcher verfolgen",
+    closePanel: "Schliessen",
+
+    methodologyTitle: "Wie diese Zahlen zu lesen sind",
+    methodologyBody:
+      "Suchvolumen, Klickpreis und Wettbewerb sind richtungsweisende Schätzungen eines externen Keyword-Datenanbieters und kein gemessener Traffic — nutzen Sie sie, um Keywords untereinander zu ordnen, nicht als Prognose. Den Trend berechnet Echorank aus der monatlichen Suchhistorie dieses Anbieters. Das Google-Ranking stammt aus Ihren eigenen verfolgten Keywords. Die KI-Sichtbarkeit beruht auf einer einzigen Antwort eines einzigen Assistenten je Keyword; das ortet eine Lücke, misst sie aber nicht — gemessen wird sie vom AI Search Watcher.",
+    summaryTemplate:
+      "{keywords} Keywords bewertet · {tested} KI-getestet · analysiert am {date}",
+
+    previewTitle: "Vorschau — Beispieldaten",
+    previewBody:
+      "Dies ist ein durchgerechnetes Beispiel für die Domain acmecrm.com und nicht Ihre eigenen Daten. Jeder Score auf dieser Seite wird vom echten Bewertungscode berechnet, die Keywords und KI-Antworten sind jedoch Fixtures. Die Analyse Ihrer eigenen Domain folgt in einer der nächsten Versionen.",
   },
 };
