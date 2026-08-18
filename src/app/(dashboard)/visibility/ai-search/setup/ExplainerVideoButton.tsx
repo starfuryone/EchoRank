@@ -50,7 +50,10 @@ export function ExplainerVideoButton({ locale }: { locale: DashLocale }) {
         variant="outline"
         size="sm"
         onClick={() => setOpen(true)}
-        className="mt-3 gap-1.5"
+        // No margin of its own: it sits in the page header row now, and the
+        // spacing belongs to that row rather than to the button. The old mt-3
+        // was for the stacked placement under the description.
+        className="gap-1.5"
       >
         <PlayCircle className="h-4 w-4" aria-hidden="true" />
         {copy.watch}

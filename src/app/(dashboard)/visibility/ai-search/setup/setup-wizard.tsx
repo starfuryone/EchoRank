@@ -166,16 +166,28 @@ export function SetupWizard({
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-8">
-      <h1 className="text-2xl font-semibold text-gray-900">Set up AI Search tracking</h1>
-      <p className="mt-1 text-sm text-gray-600">
-        We ask AI assistants the questions your buyers ask, and record whether they mention you.
-      </p>
-      {/* Block wrapper so the button takes its own line above the existing
-          "How does this work?" link rather than flowing beside it. */}
-      <div>
-        <ExplainerVideoButton locale={locale} />
+      {/* Header row: title left, explainer top-right — the same shape the tool
+          pages use for their Help button, so the video reads as a secondary
+          aid rather than as something competing with the wizard itself.
+
+          STACKS ON MOBILE rather than shrinking. "Watch Explainer Video" is a
+          long label, and holding it on one row with the h1 below `sm` would
+          squeeze the title into three or four lines to save one — so under
+          `sm` the button simply sits beneath the description, left-aligned,
+          which is where it was before this moved. */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+        <div className="min-w-0">
+          <h1 className="text-2xl font-semibold text-gray-900">Set up AI Search tracking</h1>
+          <p className="mt-1 text-sm text-gray-600">
+            We ask AI assistants the questions your buyers ask, and record whether they mention you.
+          </p>
+        </div>
+        <div className="shrink-0">
+          <ExplainerVideoButton locale={locale} />
+        </div>
       </div>
-        <AiSearchSetupHelp />
+
+      <AiSearchSetupHelp />
 
       <ol className="mt-6 flex gap-2" aria-label="Progress">
         {STEP_TITLES.map((title, index) => (
