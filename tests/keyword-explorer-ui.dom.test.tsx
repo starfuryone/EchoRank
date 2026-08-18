@@ -28,14 +28,44 @@ const RESULT = {
   url: "ahrefs.com",
   language: "en",
   seed_keywords: [
-    { kw: "keyword research", score: 1, difficulty: "low", source: "heuristic" },
-    { kw: "backlink checker", score: 0.62, difficulty: "medium", source: "heuristic" },
-    { kw: "rank tracking software", score: 0.31, difficulty: "high", source: "heuristic" },
-    // An AI row: the sidecar stamps score 0.5 rather than measuring one.
-    { kw: "seo audit tool", score: 0.5, difficulty: "low", source: "ai" },
+    {
+      kw: "keyword research",
+      score: 1,
+      difficulty: "low",
+      source: "heuristic",
+      fields: { title: 4, body: 3 },
+      count: 7,
+    },
+    {
+      kw: "backlink checker",
+      score: 0.62,
+      difficulty: "medium",
+      source: "heuristic",
+      fields: { h2: 2, body: 1 },
+      count: 3,
+    },
+    {
+      kw: "rank tracking software",
+      score: 0.31,
+      difficulty: "high",
+      source: "heuristic",
+      fields: { body: 2 },
+      count: 2,
+    },
+    // An AI row: the model proposed it, nothing weighed it, so score is null
+    // and it carries no field origin.
+    { kw: "seo audit tool", score: null, difficulty: "low", source: "ai" },
   ],
+  serp_features: ["Image Pack", "People Also Ask"],
   question_keywords: [
-    { kw: "best ahrefs", score: 0.9, difficulty: "low", source: "heuristic" },
+    {
+      kw: "best ahrefs",
+      score: 0.9,
+      difficulty: "low",
+      source: "heuristic",
+      fields: { body: 1 },
+      count: 1,
+    },
   ],
   content_optimization: {
     present_terms: ["seo"],
@@ -132,22 +162,69 @@ describe("summary metrics", () => {
 });
 
 describe("the keyword table", () => {
-  it("omits a Source column, because the payload does not carry one", async () => {
+  it("renders the columns the payload supports", async () => {
+    // WAS "omits a Source column, because the payload does not carry one".
+    // The extraction fix made keyword_suggest.py retain per-field origin
+    // instead of summing it away, so the column has data now. The
+    // does-it-disappear half of that old claim is asserted below against a
+    // pre-fix cached response, which is where it still holds.
     await scan();
-    // score/difficulty/keyword are real; title-vs-body origin is summed away
-    // upstream. A column here would have to invent it.
     expect(screen.getByRole("columnheader", { name: EN.colKeyword })).toBeInTheDocument();
     expect(screen.getByRole("columnheader", { name: EN.colRelevance })).toBeInTheDocument();
-    expect(screen.queryByRole("columnheader", { name: /^source$/i })).not.toBeInTheDocument();
+    expect(screen.getByRole("columnheader", { name: EN.colSource })).toBeInTheDocument();
   });
 
-  it("shows a measured relevance for heuristic rows and a dash for AI rows", async () => {
+  it("shows a measured relevance for heuristic rows and a dash for unscored ones", async () => {
     await scan();
+    // score: null — not a fabricated number the customer could sort by.
     const aiRow = screen.getByText("seo audit tool").closest("tr")!;
-    expect(within(aiRow).getByText(EN.relevanceNa)).toBeInTheDocument();
+    expect(within(aiRow).getAllByText(EN.relevanceNa).length).toBeGreaterThan(0);
 
     const realRow = screen.getByText("backlink checker").closest("tr")!;
     expect(within(realRow).getByText("62")).toBeInTheDocument();
+  });
+
+  it("renders the Source column from field origin, by prominence not by weight", async () => {
+    await scan();
+    expect(screen.getByRole("columnheader", { name: EN.colSource })).toBeInTheDocument();
+    // title 4 + body 3: body has more accumulated weight, but "Title" is the
+    // useful answer and is what the priority order picks.
+    const row = screen.getByText("keyword research").closest("tr")!;
+    expect(within(row).getByText(EN.fieldLabels.title)).toBeInTheDocument();
+    // h2 beats body on the same rule.
+    const second = screen.getByText("backlink checker").closest("tr")!;
+    expect(within(second).getByText(EN.fieldLabels.h2)).toBeInTheDocument();
+  });
+
+  it("omits the Source column entirely for a pre-fix cached response", async () => {
+    // THE VERSION-TOLERANCE CASE. A response cached before the extraction fix
+    // has no `fields` anywhere; the column vanishes rather than rendering a
+    // stripe of blanks that reads as missing data.
+    const legacy = {
+      ...RESULT,
+      serp_features: undefined,
+      seed_keywords: RESULT.seed_keywords.map(({ kw, score, difficulty, source }) => ({
+        kw,
+        // The old pipeline stamped AI rows 0.5; that is a number and still
+        // renders as one, because it is what the customer was already shown.
+        score: source === "ai" ? 0.5 : score,
+        difficulty,
+        source,
+      })),
+      question_keywords: RESULT.question_keywords.map(({ kw, score, difficulty, source }) => ({
+        kw,
+        score,
+        difficulty,
+        source,
+      })),
+    };
+    mockFetch(legacy);
+    await scan();
+    expect(screen.queryByRole("columnheader", { name: EN.colSource })).not.toBeInTheDocument();
+    // And it still renders the rest of the table.
+    expect(screen.getByText("keyword research")).toBeInTheDocument();
+    const aiRow = screen.getByText("seo audit tool").closest("tr")!;
+    expect(within(aiRow).getByText("50")).toBeInTheDocument();
   });
 
   it("labels difficulty in words, not by colour alone", async () => {

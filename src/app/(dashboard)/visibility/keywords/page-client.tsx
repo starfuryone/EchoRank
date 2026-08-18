@@ -56,9 +56,22 @@ import { KEYWORDS_COPY, dashNav, type DashLocale, type KeywordsCopy } from "@/li
 // ─── Types (the sidecar's /keywords response shape) ─────────────────────────
 interface KeywordItem {
   kw: string;
-  score: number;
+  /** Null on an AI-proposed row: nothing measured its relevance. */
+  score: number | null;
   difficulty: "low" | "medium" | "high";
+  /** Provenance, NOT place. See `fields` for where on the page it appeared. */
   source: "heuristic" | "ai";
+  /**
+   * Which page fields carried this phrase, and the weight each contributed.
+   *
+   * OPTIONAL, AND THAT IS LOAD-BEARING. AI rows never have it, and neither do
+   * the responses already sitting in the 24h cache from before the extraction
+   * fix shipped. Every read of it is guarded; the Source column disappears for
+   * a result that predates it rather than rendering a column of blanks.
+   */
+  fields?: Record<string, number>;
+  /** Occurrences across the scanned pages. Optional for the same reason. */
+  count?: number;
 }
 interface TechnicalCheck {
   check: string;
@@ -78,6 +91,8 @@ interface KeywordResult {
     flags: string[];
   };
   ai_visibility_prompts: string[];
+  /** SERP-feature names detected in the scanned page's own copy. */
+  serp_features?: string[];
   technical: TechnicalCheck[];
   meta: {
     pages_crawled: number;
@@ -97,29 +112,20 @@ interface Row extends KeywordItem {
   kind: "topic" | "question";
 }
 
-// ── PIPELINE TODO (av-service/keyword_suggest.py — ONE fix, two symptoms) ───
+// ── EXTRACTION ARTIFACTS: FIXED UPSTREAM, NOT HERE ─────────────────────────
 //
-// Live extraction promotes two classes of non-keyword to first-class rows, and
-// both are the same bug in the same place: generate_candidates() scores every
-// n-gram it can build out of the page and nothing downstream asks whether the
-// n-gram is a keyword at all.
+// SERP-feature chrome ("stories image pack", "sitelinks shopping ads") and
+// bare low-signal unigrams ("see", "use", "across", "pages") used to arrive as
+// ordinary keyword rows. Both are now handled in av-service where the evidence
+// is — serp_feature_of() classifies the first into `serp_features`, and a
+// min-signal floor drops the second on the grounds that a single word absent
+// from every title, heading, meta and alt attribute is not a keyword the site
+// signals. Neither is a string match in this file, and neither should become
+// one: a blocklist here would delete a real keyword the first time a customer
+// sells packaging or greeting cards.
 //
-//   1. SERP-FEATURE N-GRAMS scraped from the target site's own UI chrome —
-//      "stories image pack", "pack videos discussions", "sitelinks shopping
-//      ads", "also ask thumbnail", "knowledge card knowledge". These are the
-//      page describing Google's result types, not the site's topics. They need
-//      classifying at extraction into a SERP-features bucket (Image Pack,
-//      Videos, People Also Ask, Shopping, Featured Snippet, Knowledge Panel).
-//   2. BARE STOPWORDS / LOW-SIGNAL TOKENS — "see", "use", "across", "pages".
-//      _ngrams() already takes a stopword set but only splits ON it; a
-//      surviving unigram that IS one, or that carries no document-frequency
-//      signal, is never filtered. Needs a min-signal floor (length, IDF, or
-//      part-of-speech) applied to the candidate list.
-//
-// Deliberately NOT patched in the frontend. A string-match blocklist here
-// would have to guess at "pack" and "card" and would silently delete a real
-// keyword the first time a customer sells packaging or greeting cards. The
-// classification exists upstream or it does not exist.
+// This component stays version-tolerant on purpose. Responses cached before
+// that shipped carry no `fields` and no `serp_features`, and must still render.
 //
 // ── PIPELINE TODO (same file, question_keywords()) ─────────────────────────
 //
@@ -130,6 +136,26 @@ interface Row extends KeywordItem {
 // prompt generator in src/lib/keyword-opportunity/prompts.ts is directly
 // reusable — it already turns a keyword plus an intent into a buyer-phrased
 // question and drops any that name the brand. Out of scope here.
+
+/**
+ * The strongest field a phrase appears in, by PRIORITY rather than by weight.
+ *
+ * `fields` accumulates weight per occurrence, so a phrase in the title once and
+ * the body six times has more body weight than title weight — and "it is in
+ * your body" is not the sentence anybody needs. The useful answer is the most
+ * prominent place it reached, so this walks the priority order and takes the
+ * first hit. Returns null for a row that carries no field data at all.
+ */
+const FIELD_PRIORITY = ["title", "h1", "h2", "h3", "meta", "alt", "anchor", "body"] as const;
+
+function strongestField(fields?: Record<string, number>): string | null {
+  if (!fields) return null;
+  for (const field of FIELD_PRIORITY) {
+    if (fields[field] !== undefined) return field;
+  }
+  const [first] = Object.keys(fields);
+  return first ?? null;
+}
 
 const DIFF_DOT: Record<string, string> = {
   low: "bg-emerald-500",
@@ -249,12 +275,16 @@ export function KeywordsPageClient({ locale }: { locale: DashLocale }) {
       return true;
     });
     const order: Record<string, number> = { low: 0, medium: 1, high: 2 };
+    // NULLS SORT LAST, in both directions — an unscored AI row is not a row
+    // that scored zero, and floating it to the top of a relevance sort would
+    // claim the keywords we measured least are the ones we rate highest.
+    const rank = (r: Row) => (r.score === null || r.score === undefined ? -1 : r.score);
     return [...filtered].sort((a, b) => {
       if (sort === "alpha") return a.kw.localeCompare(b.kw);
       if (sort === "difficulty") {
-        return (order[a.difficulty] ?? 3) - (order[b.difficulty] ?? 3) || b.score - a.score;
+        return (order[a.difficulty] ?? 3) - (order[b.difficulty] ?? 3) || rank(b) - rank(a);
       }
-      return b.score - a.score || a.kw.localeCompare(b.kw);
+      return rank(b) - rank(a) || a.kw.localeCompare(b.kw);
     });
   }, [rows, group, diffFilter, query, sort]);
 
@@ -274,6 +304,16 @@ export function KeywordsPageClient({ locale }: { locale: DashLocale }) {
         result.content_optimization.flags.length,
     };
   }, [result, rows]);
+
+  /**
+   * Whether this response carries field origin at all.
+   *
+   * One check for the whole table rather than per row: a result either came
+   * from a pipeline that retains `fields` or it did not, and a column that
+   * appeared for some rows and not others would read as missing data rather
+   * than as an older scan. Cached pre-fix responses simply have no column.
+   */
+  const hasFieldOrigin = useMemo(() => rows.some((r) => r.fields !== undefined), [rows]);
 
   const allVisibleSelected = visible.length > 0 && visible.every((r) => selected.has(r.kw));
 
@@ -314,9 +354,9 @@ export function KeywordsPageClient({ locale }: { locale: DashLocale }) {
         [
           esc(r.kw),
           esc(t.diffLabels[r.difficulty] ?? r.difficulty),
-          // An AI row has no measured relevance; the CSV says so rather than
-          // exporting the sidecar's flat 0.5 as if it were one.
-          esc(r.source === "ai" ? "" : String(r.score)),
+          // An unscored row exports as empty rather than as a number: the
+          // spreadsheet must not imply a measurement nobody made.
+          esc(r.score === null || r.score === undefined ? "" : String(r.score)),
           esc(r.kind),
         ].join(","),
       )
@@ -742,6 +782,15 @@ export function KeywordsPageClient({ locale }: { locale: DashLocale }) {
                             >
                               {t.colRelevance}
                             </th>
+                            {hasFieldOrigin && (
+                              <th
+                                scope="col"
+                                title={t.sourceTitle}
+                                className="hidden w-28 py-2.5 pr-3 text-xs font-medium uppercase tracking-wide text-gray-500 lg:table-cell"
+                              >
+                                {t.colSource}
+                              </th>
+                            )}
                             <th scope="col" className="w-24 py-2.5 pr-4 text-right">
                               <span className="sr-only">{t.colActions}</span>
                             </th>
@@ -785,11 +834,15 @@ export function KeywordsPageClient({ locale }: { locale: DashLocale }) {
                                     label={t.diffLabels[k.difficulty] ?? k.difficulty}
                                   />
                                 </td>
-                                {/* Relevance. An AI row carries the sidecar's
-                                    flat 0.5 placeholder rather than a measured
-                                    weight, so it shows a dash — see the header. */}
+                                {/* Relevance. Null on an AI row — the model
+                                    proposed the keyword, nothing weighed it —
+                                    so it shows a dash rather than a number
+                                    somebody could sort by. The `=== null`
+                                    check also covers the pre-fix responses
+                                    that stamped a flat 0.5, because those are
+                                    numbers and render as before. */}
                                 <td className="hidden py-2 pr-3 sm:table-cell">
-                                  {k.source === "ai" ? (
+                                  {k.score === null || k.score === undefined ? (
                                     <span className="text-gray-400">{t.relevanceNa}</span>
                                   ) : (
                                     <span className="flex items-center gap-2">
@@ -808,6 +861,20 @@ export function KeywordsPageClient({ locale }: { locale: DashLocale }) {
                                     </span>
                                   )}
                                 </td>
+                                {hasFieldOrigin && (
+                                  <td className="hidden py-2 pr-3 lg:table-cell">
+                                    {(() => {
+                                      const field = strongestField(k.fields);
+                                      return field ? (
+                                        <span className="text-xs text-gray-500">
+                                          {t.fieldLabels[field] ?? field}
+                                        </span>
+                                      ) : (
+                                        <span className="text-gray-400">{t.relevanceNa}</span>
+                                      );
+                                    })()}
+                                  </td>
+                                )}
                                 <td className="py-2 pr-4">
                                   <span className="flex items-center justify-end gap-1">
                                     <Link
