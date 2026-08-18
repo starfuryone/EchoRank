@@ -9811,32 +9811,45 @@ export const SITE_EXPLORER_HELP_COPY: Record<DashLocale, SiteExplorerHelpCopy> =
 // says so in the first line.
 const keywordsExplorerHelpEn = {
   button: "Help",
-  buttonAria: "How the keyword suggester works",
-  title: "How the keyword suggester works",
+  buttonAria: "How Keyword Explorer works",
+  title: "How Keyword Explorer works",
   close: "Close",
 
-  intro: "Point it at one of your pages. It reads the page and suggests the keywords that page could realistically win.",
+  intro:
+    "Give it a domain. It scans your key pages and reports the topics and questions your site already signals — read out of your own words, not looked up in a keyword database.",
 
-  crawlTitle: "It reads your page, not a keyword database",
-  crawlBody:
-    "Enter a URL and the scan crawls that page and a few linked ones, then works from the words actually on them. Suggestions are therefore grounded in what you already publish — which is why a thin page produces thin suggestions, and the fix is the page rather than the tool.",
+  whatTitle: "It scans your pages, not a keyword database",
+  whatBody:
+    "Enter a URL and the analysis scans that page and a few linked ones, then works from the words actually on them. The status line tells you how many pages were scanned. Everything below is grounded in what you already publish, which is why a thin page produces thin results — and the fix is the page rather than the tool.",
 
-  scoringTitle: "Score and difficulty are estimates",
-  scoringBody:
-    "Score ranks the suggestions against each other for this page; difficulty is a low / medium / high band, not a competitor count. Treat them as an ordering to work through, not as absolute numbers to report.",
+  readingTitle: "Reading the table",
+  readingBody: "Four columns, and each answers a different question.",
+  readDifficulty:
+    "Difficulty — the coloured dot. Easy, Medium or Hard describes how specific the phrase is, not how many competitors it has: a long, precise phrase is Easy because it is narrow enough to own, and a single broad word is Hard because everyone is aiming at it.",
+  readRelevance:
+    "Relevance — how strongly your own pages signal this phrase, weighted by where it appears and how often. AI-suggested rows show a dash instead of a number, by design: a model proposed those, nothing measured them against your page, and a made-up figure there would be one you could sort by.",
+  readSource:
+    "Source — the most prominent element the phrase came from: title, H1, H2, meta description or body text. A keyword sourced from your title is one the page already commits to; one found only in body text is a topic you mention rather than one you claim.",
 
-  contentTitle: "Present and missing terms",
-  contentBody:
-    "Present terms are the relevant words the page already uses. Missing terms are ones closely related pages tend to cover and this one does not — each is a paragraph you could add. The title and meta suggestions are drafts to edit, not text to paste unread.",
+  groupsTitle: "Topics, Questions, and what is left out",
+  groupsBody:
+    "The keyword list is split so you can work on one kind of thing at a time.",
+  groupTopics:
+    "Topics — the noun phrases your pages are about. These are the subjects to build or strengthen pages around.",
+  groupQuestions:
+    "Questions — the same subjects phrased the way a person asks them, which is the shape a search or an AI prompt usually takes.",
+  groupSerp:
+    "SERP features are not in either list. Phrases like image pack or people also ask describe the layout of a results page, not your subject matter, so they are recognised and removed while the page is read rather than offered as keywords you could win.",
 
-  promptsTitle: "AI visibility prompts are the handoff",
-  promptsBody:
-    "The prompts tab turns the same analysis into questions a customer might ask an AI assistant. Track the ones that matter and you can watch whether your brand gets mentioned in the answers over time.",
-  promptsLink: "Open Custom Prompts →",
+  actionsTitle: "Getting the results out",
+  actionsBody:
+    "The copy icon on a row copies that one keyword. Tick rows to select them, then copy the whole selection at once, or export the visible table to CSV. Each row also links straight into AI Visibility, which seeds a tracked prompt with that keyword so you can watch whether assistants mention you for it — it fills the box, it does not submit it. Regenerate with AI, in the overflow menu beside Scan again, re-runs the analysis through a language model for broader suggestions; without a provider configured the scan still works and says so instead of failing.",
+  actionsLink: "Open AI Visibility →",
 
-  aiTitle: "The AI pass is optional",
-  aiBody:
-    "Regenerate with AI re-runs the analysis through a language model for broader suggestions. Without a provider configured, the scan still works — it falls back to the built-in heuristics and tells you so instead of failing.",
+  finderTitle: "This is not the Opportunity Finder",
+  finderBody:
+    "Keyword Explorer finds the keywords your site already signals. Keyword Opportunity Finder scores the keywords worth winning — it buys real search demand, checks where you rank, and tests whether AI assistants name you. Start here to learn what you are about; go there to decide what to chase.",
+  finderLink: "Open Keyword Opportunity Finder →",
 };
 export type KeywordsExplorerHelpCopy = typeof keywordsExplorerHelpEn;
 
@@ -9844,63 +9857,87 @@ export const KEYWORDS_EXPLORER_HELP_COPY: Record<DashLocale, KeywordsExplorerHel
   en: keywordsExplorerHelpEn,
   fr: {
     button: "Aide",
-    buttonAria: "Comment fonctionne le suggesteur de mots-clés",
-    title: "Comment fonctionne le suggesteur de mots-clés",
+    buttonAria: "Comment fonctionne l'Explorateur de mots-clés",
+    title: "Comment fonctionne l'Explorateur de mots-clés",
     close: "Fermer",
 
     intro:
-      "Indiquez-lui une de vos pages. Il la lit et propose les mots-clés que cette page pourrait réellement gagner.",
+      "Indiquez un domaine. L'outil analyse vos pages principales et présente les sujets et les questions que votre site signale déjà — extraits de vos propres mots, et non recherchés dans une base de mots-clés.",
 
-    crawlTitle: "Il lit votre page, pas une base de mots-clés",
-    crawlBody:
-      "Saisissez une URL : l'analyse explore cette page et quelques pages liées, puis travaille à partir des mots qui s'y trouvent réellement. Les suggestions sont donc ancrées dans ce que vous publiez déjà — une page pauvre produit des suggestions pauvres, et c'est la page qu'il faut corriger, pas l'outil.",
+    whatTitle: "Il analyse vos pages, pas une base de mots-clés",
+    whatBody:
+      "Saisissez une URL : l'analyse parcourt cette page et quelques pages liées, puis travaille à partir des mots qui s'y trouvent réellement. La ligne d'état indique combien de pages ont été analysées. Tout ce qui suit est ancré dans ce que vous publiez déjà — une page pauvre produit donc des résultats pauvres, et c'est la page qu'il faut corriger, pas l'outil.",
 
-    scoringTitle: "Le score et la difficulté sont des estimations",
-    scoringBody:
-      "Le score classe les suggestions les unes par rapport aux autres pour cette page ; la difficulté est une tranche faible / moyenne / élevée, pas un nombre de concurrents. Voyez-y un ordre de travail, pas des valeurs absolues à reporter.",
+    readingTitle: "Lire le tableau",
+    readingBody: "Quatre colonnes, chacune répondant à une question différente.",
+    readDifficulty:
+      "Difficulté — la pastille de couleur. Faible, Moyenne ou Élevée décrit le degré de précision de l'expression, pas son nombre de concurrents : une expression longue et précise est faible parce qu'elle est assez étroite pour être conquise, un mot unique et large est élevé parce que tout le monde le vise.",
+    readRelevance:
+      "Pertinence — la force avec laquelle vos propres pages signalent cette expression, pondérée par l'endroit où elle apparaît et par sa fréquence. Les suggestions issues de l'IA affichent un tiret plutôt qu'un chiffre, et c'est voulu : un modèle les a proposées, rien ne les a mesurées sur votre page, et un chiffre inventé serait un chiffre sur lequel vous pourriez trier.",
+    readSource:
+      "Source — l'élément le plus marquant d'où provient l'expression : titre, H1, H2, méta-description ou corps de texte. Un mot-clé issu de votre titre est un engagement déjà pris par la page ; un mot-clé trouvé uniquement dans le corps du texte est un sujet que vous évoquez plutôt qu'un sujet que vous revendiquez.",
 
-    contentTitle: "Termes présents et termes manquants",
-    contentBody:
-      "Les termes présents sont les mots pertinents que la page utilise déjà. Les termes manquants sont ceux que les pages proches traitent généralement et que celle-ci ignore — chacun est un paragraphe à ajouter. Les suggestions de titre et de méta-description sont des brouillons à retravailler, pas du texte à coller sans le lire.",
+    groupsTitle: "Sujets, Questions, et ce qui est écarté",
+    groupsBody:
+      "La liste est scindée pour vous permettre de traiter un type d'élément à la fois.",
+    groupTopics:
+      "Sujets — les groupes nominaux dont parlent vos pages. Ce sont les thèmes autour desquels construire ou renforcer des pages.",
+    groupQuestions:
+      "Questions — les mêmes sujets formulés comme une personne les pose, c'est-à-dire la forme que prend habituellement une recherche ou une requête adressée à une IA.",
+    groupSerp:
+      "Les fonctionnalités de SERP ne figurent dans aucune des deux listes. Des expressions comme « image pack » ou « autres questions posées » décrivent la mise en page d'une page de résultats, pas votre sujet : elles sont donc reconnues et retirées pendant la lecture de la page, au lieu d'être proposées comme des mots-clés à conquérir.",
 
-    promptsTitle: "Les requêtes d'IA sont le prolongement",
-    promptsBody:
-      "L'onglet des requêtes transforme la même analyse en questions qu'un client pourrait poser à un assistant IA. Suivez celles qui comptent et vous verrez si votre marque est citée dans les réponses au fil du temps.",
-    promptsLink: "Ouvrir les requêtes personnalisées →",
+    actionsTitle: "Récupérer les résultats",
+    actionsBody:
+      "L'icône de copie d'une ligne copie ce mot-clé. Cochez des lignes pour les sélectionner, puis copiez toute la sélection d'un coup, ou exportez le tableau visible en CSV. Chaque ligne mène aussi directement à Visibilité IA : le mot-clé y pré-remplit une requête suivie, pour observer si les assistants vous citent à son sujet — le champ est rempli, rien n'est envoyé. « Régénérer avec l'IA », dans le menu à côté de « Relancer l'analyse », relance l'analyse via un modèle de langage pour élargir les suggestions ; sans fournisseur configuré, l'analyse fonctionne quand même et vous le signale au lieu d'échouer.",
+    actionsLink: "Ouvrir Visibilité IA →",
 
-    aiTitle: "Le passage par l'IA est facultatif",
-    aiBody:
-      "« Régénérer avec l'IA » relance l'analyse via un modèle de langage pour élargir les suggestions. Sans fournisseur configuré, l'analyse fonctionne quand même : elle revient aux heuristiques intégrées et vous le signale au lieu d'échouer.",
+    finderTitle: "Ce n'est pas le Détecteur d'opportunités",
+    finderBody:
+      "L'Explorateur de mots-clés trouve les mots-clés que votre site signale déjà. Le Détecteur d'opportunités de mots-clés note les mots-clés qui valent la peine d'être gagnés : il achète la demande de recherche réelle, vérifie votre classement et teste si les assistants IA vous citent. Commencez ici pour savoir de quoi vous parlez ; allez là-bas pour décider quoi viser.",
+    finderLink: "Ouvrir le Détecteur d'opportunités de mots-clés →",
   },
   "de-CH": {
     button: "Hilfe",
-    buttonAria: "So funktioniert der Keyword-Vorschlag",
-    title: "So funktioniert der Keyword-Vorschlag",
+    buttonAria: "So funktioniert der Keyword Explorer",
+    title: "So funktioniert der Keyword Explorer",
     close: "Schliessen",
 
     intro:
-      "Geben Sie eine Ihrer Seiten an. Das Tool liest die Seite und schlägt die Keywords vor, die diese Seite realistisch gewinnen kann.",
+      "Geben Sie eine Domain an. Das Tool scannt Ihre wichtigsten Seiten und zeigt die Themen und Fragen, die Ihre Website bereits signalisiert — aus Ihren eigenen Worten gelesen, nicht in einer Keyword-Datenbank nachgeschlagen.",
 
-    crawlTitle: "Es liest Ihre Seite, keine Keyword-Datenbank",
-    crawlBody:
-      "Geben Sie eine URL ein: Der Scan crawlt diese Seite und einige verlinkte Seiten und arbeitet dann mit den Wörtern, die tatsächlich darauf stehen. Die Vorschläge beruhen also auf dem, was Sie bereits veröffentlichen — eine dünne Seite liefert dünne Vorschläge, und zu korrigieren ist die Seite, nicht das Tool.",
+    whatTitle: "Es scannt Ihre Seiten, keine Keyword-Datenbank",
+    whatBody:
+      "Geben Sie eine URL ein: Die Analyse scannt diese Seite und einige verlinkte Seiten und arbeitet dann mit den Wörtern, die tatsächlich darauf stehen. Die Statuszeile nennt die Anzahl gescannter Seiten. Alles Weitere beruht auf dem, was Sie bereits veröffentlichen — eine dünne Seite liefert deshalb dünne Ergebnisse, und zu korrigieren ist die Seite, nicht das Tool.",
 
-    scoringTitle: "Score und Schwierigkeit sind Schätzungen",
-    scoringBody:
-      "Der Score ordnet die Vorschläge für diese Seite untereinander; die Schwierigkeit ist eine Einstufung tief / mittel / hoch, keine Anzahl Mitbewerber. Nutzen Sie beides als Reihenfolge zum Abarbeiten, nicht als absolute Kennzahl für einen Bericht.",
+    readingTitle: "Die Tabelle lesen",
+    readingBody: "Vier Spalten, und jede beantwortet eine andere Frage.",
+    readDifficulty:
+      "Schwierigkeit — der farbige Punkt. Tief, Mittel oder Hoch beschreibt, wie spezifisch die Phrase ist, nicht wie viele Mitbewerber sie hat: Eine lange, präzise Phrase ist tief, weil sie eng genug ist, um sie zu besetzen; ein einzelnes breites Wort ist hoch, weil alle darauf zielen.",
+    readRelevance:
+      "Relevanz — wie stark Ihre eigenen Seiten diese Phrase signalisieren, gewichtet danach, wo sie vorkommt und wie oft. KI-Vorschläge zeigen statt einer Zahl einen Strich, und zwar absichtlich: Ein Modell hat sie vorgeschlagen, gemessen hat sie an Ihrer Seite nichts, und eine erfundene Zahl wäre eine, nach der Sie sortieren könnten.",
+    readSource:
+      "Quelle — das prominenteste Element, aus dem die Phrase stammt: Titel, H1, H2, Meta-Beschreibung oder Fliesstext. Ein Keyword aus Ihrem Titel ist eines, auf das sich die Seite bereits festlegt; eines, das nur im Fliesstext vorkommt, ist ein Thema, das Sie erwähnen, statt eines, das Sie beanspruchen.",
 
-    contentTitle: "Vorhandene und fehlende Begriffe",
-    contentBody:
-      "Vorhandene Begriffe sind die relevanten Wörter, welche die Seite bereits verwendet. Fehlende Begriffe decken vergleichbare Seiten üblicherweise ab, diese jedoch nicht — jeder davon ist ein Absatz, den Sie ergänzen könnten. Die Titel- und Meta-Vorschläge sind Entwürfe zum Überarbeiten, kein Text zum ungelesenen Einfügen.",
+    groupsTitle: "Themen, Fragen — und was wegfällt",
+    groupsBody:
+      "Die Liste ist aufgeteilt, damit Sie eine Sorte nach der anderen bearbeiten können.",
+    groupTopics:
+      "Themen — die Nominalphrasen, worum es auf Ihren Seiten geht. Das sind die Themen, um die herum Sie Seiten aufbauen oder stärken.",
+    groupQuestions:
+      "Fragen — dieselben Themen so formuliert, wie eine Person sie stellt, also in der Form, die eine Suche oder ein KI-Prompt üblicherweise annimmt.",
+    groupSerp:
+      "SERP-Features stehen in keiner der beiden Listen. Ausdrücke wie «Image Pack» oder «Ähnliche Fragen» beschreiben das Layout einer Ergebnisseite und nicht Ihr Thema; sie werden deshalb beim Lesen der Seite erkannt und entfernt, statt als gewinnbare Keywords angeboten zu werden.",
 
-    promptsTitle: "Die KI-Prompts sind die Übergabe",
-    promptsBody:
-      "Der Prompt-Tab übersetzt dieselbe Analyse in Fragen, die Kundschaft einem KI-Assistenten stellen könnte. Verfolgen Sie die relevanten, und Sie sehen über die Zeit, ob Ihre Marke in den Antworten erwähnt wird.",
-    promptsLink: "Eigene Prompts öffnen →",
+    actionsTitle: "Die Ergebnisse herausholen",
+    actionsBody:
+      "Das Kopiersymbol einer Zeile kopiert dieses eine Keyword. Haken Sie Zeilen an, um sie auszuwählen, kopieren Sie dann die ganze Auswahl auf einmal, oder exportieren Sie die sichtbare Tabelle als CSV. Jede Zeile führt ausserdem direkt in die KI-Sichtbarkeit: Dort füllt das Keyword einen verfolgten Prompt vor, damit Sie sehen, ob Assistenten Sie dafür nennen — das Feld wird gefüllt, abgeschickt wird nichts. «Mit KI neu erzeugen» im Menü neben «Erneut scannen» lässt die Analyse zusätzlich durch ein Sprachmodell laufen; ohne konfigurierten Anbieter funktioniert der Scan weiterhin und weist Sie darauf hin, statt fehlzuschlagen.",
+    actionsLink: "KI-Sichtbarkeit öffnen →",
 
-    aiTitle: "Der KI-Durchlauf ist optional",
-    aiBody:
-      "«Mit KI neu erzeugen» lässt die Analyse zusätzlich durch ein Sprachmodell laufen. Ohne konfigurierten Anbieter funktioniert der Scan weiterhin — er fällt auf die eingebauten Heuristiken zurück und weist Sie darauf hin, statt fehlzuschlagen.",
+    finderTitle: "Das ist nicht der Chancenfinder",
+    finderBody:
+      "Der Keyword Explorer findet die Keywords, die Ihre Website bereits signalisiert. Der Keyword-Chancenfinder bewertet die Keywords, die sich zu gewinnen lohnen: Er kauft echte Suchnachfrage ein, prüft Ihr Ranking und testet, ob KI-Assistenten Sie nennen. Beginnen Sie hier, um zu erfahren, worum es bei Ihnen geht; gehen Sie dorthin, um zu entscheiden, was Sie verfolgen.",
+    finderLink: "Keyword-Chancenfinder öffnen →",
   },
 };
 
