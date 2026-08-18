@@ -1,18 +1,39 @@
 // POST /api/billing/checkout — create a Stripe Checkout Session.
 //
-// AUTHENTICATION IS REQUIRED. An anonymous caller gets 401 and the client
-// sends them to /register?plan=…, which resumes checkout once the account
-// exists. The 401 is deliberate rather than leaving the proxy to redirect:
-// a redirect to /login is followed by fetch() and arrives as HTML with a 200,
-// which the caller cannot distinguish from success.
+// TWO FLOWS, AND metadata.flow IS WHAT NAMES THEM. Everything downstream —
+// the webhook's three-way dispatch, /welcome deciding whether a session id is
+// a credential or a display hint — branches on that one string, so it is
+// stamped on EVERY session this route creates, never left to be inferred:
 //
-// Every session is stamped with client_reference_id (tenantId) — that is what
-// lets the webhook find a tenant that has no Stripe customer yet, which is
-// every tenant until its first checkout completes.
+//   flow=upgrade      a signed-in tenant buying or changing a plan. Carries
+//                     client_reference_id (tenantId); the webhook activates
+//                     the tenant that already exists.
+//   flow=guest_signup nobody is signed in and no account exists yet. Carries
+//                     NO client_reference_id — there is no tenant to point at.
+//                     Stripe collects the email, and the webhook provisions
+//                     user + tenant + membership + subscription from the
+//                     completed session. This is the inversion: the card comes
+//                     before the account.
 //
-// The card is collected up front. Stripe's defaults do that, so this route
-// deliberately sets neither payment_method_collection nor trial_settings:
-// naming them is what switches the trial to card-optional.
+// A third value, credit_pack, is stamped by the credits route and handled the
+// same way; it never reaches here.
+//
+// ANONYMOUS IS NO LONGER AN ERROR — except for the standalone Watcher. That
+// SKU is an add-on to a tenant, priced and gated against an existing
+// subscription (watcherCheckoutBlock reads the tenant's Subscription row), and
+// there is no tenant to read for a guest. It therefore keeps the old 401, and
+// /watcher keeps its /register?plan=watcher_pro&checkout=1 fallback. The 401 is
+// deliberate rather than leaving the proxy to redirect: a redirect to /login is
+// followed by fetch() and arrives as HTML with a 200, which the caller cannot
+// distinguish from success.
+//
+// THE CARD IS ALWAYS COLLECTED, ON BOTH FLOWS. Stripe's defaults do that, so
+// this route deliberately sets neither payment_method_collection nor
+// trial_settings: naming either one is what switches the trial to card-optional.
+// It matters more on the guest flow than it ever did on the upgrade flow — a
+// card-optional guest trial provisions an account for someone who has entered
+// nothing, which is a free-account signup wearing a checkout's clothes.
+// tests/guest-checkout.test.ts asserts the created session carries neither key.
 //
 // Prices are NOT defined here. The eight lookup keys already exist in Stripe
 // and are resolved live — this app never creates or edits a price, and there
@@ -92,44 +113,56 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "consent_required" }, { status: 400 });
   }
 
-  // Auth gate. 401 carries the tier back so the client can build the
-  // /register?plan=… link without re-deriving it.
-  let tenantId: string;
+  // Who is asking. A failed session lookup is treated as anonymous rather than
+  // as an error: the guest flow is the anonymous flow now, so the fallback is a
+  // working checkout instead of a dead end. Nothing below trusts `tenantId`
+  // without checking it for null first.
+  let tenantId: string | null = null;
   let customerId: string | null = null;
   let customerEmail: string | null = null;
   let userId: string | null = null;
   try {
     const [membership, session] = await Promise.all([getCurrentTenant(), auth()]);
-    if (!membership) {
+    if (membership) {
+      tenantId = membership.tenant.id;
+      customerId = membership.tenant.stripeCustomerId ?? null;
+      // The email comes from the session: getCurrentTenant returns the membership
+      // and its tenant, not the user.
+      customerEmail = session?.user?.email ?? null;
+      // Recorded on the ConsentEvent: §8.2 names the user id as part of a
+      // consent record, and the tenant id alone cannot say who clicked.
+      userId = (session?.user as { id?: string } | undefined)?.id ?? null;
+    }
+  } catch {
+    log.warn("Session lookup failed during checkout — continuing as guest");
+  }
+
+  const isGuest = tenantId === null;
+  const flow = isGuest ? "guest_signup" : "upgrade";
+
+  const lookupKey = checkoutLookupKey(tier, interval);
+
+  // THE WATCHER IS THE ONE TIER A GUEST CANNOT BUY.
+  //
+  // Its whole gate is a question about a tenant that already exists — "does
+  // this tenant's plan already include the watcher?" — and a guest has no
+  // tenant to ask about. Provisioning one from a watcher session would also
+  // give it no planType to be provisioned WITH: the watcher is an entitlement,
+  // not a tier. So it keeps the pre-inversion contract exactly: 401, and
+  // /watcher's client sends the buyer to /register?plan=watcher_pro&checkout=1.
+  if (isWatcherLookupKey(lookupKey)) {
+    // Checked as `tenantId === null` rather than via `isGuest` so the narrowing
+    // reaches the findUnique below; they are the same condition.
+    if (tenantId === null) {
       return NextResponse.json(
         { error: "Sign in required.", reason: "unauthenticated", tier, interval },
         { status: 401 },
       );
     }
-    tenantId = membership.tenant.id;
-    customerId = membership.tenant.stripeCustomerId ?? null;
-    // The email comes from the session: getCurrentTenant returns the membership
-    // and its tenant, not the user.
-    customerEmail = session?.user?.email ?? null;
-    // Recorded on the ConsentEvent: §8.2 names the user id as part of a
-    // consent record, and the tenant id alone cannot say who clicked.
-    userId = (session?.user as { id?: string } | undefined)?.id ?? null;
-  } catch {
-    log.warn("Session lookup failed during checkout");
-    return NextResponse.json(
-      { error: "Sign in required.", reason: "unauthenticated", tier, interval },
-      { status: 401 },
-    );
-  }
-
-
-  const lookupKey = checkoutLookupKey(tier, interval);
-
-  // A tenant on a plan cannot buy the standalone watcher. Server-side because
-  // hiding the button leaves the endpoint open, and the failure mode is a
-  // customer paying twice for one capability — the plan row is the single
-  // subscription row, so the purchase would also overwrite it.
-  if (isWatcherLookupKey(lookupKey)) {
+    // A tenant on a plan cannot buy the standalone watcher. Server-side because
+    // hiding the button leaves the endpoint open, and the failure mode is a
+    // customer paying twice for one capability — the plan row is the single
+    // subscription row, so the purchase would also overwrite it.
     const existing = await prisma.subscription.findUnique({
       where: { tenantId },
       select: { productKind: true, status: true },
@@ -168,12 +201,18 @@ export async function POST(req: NextRequest) {
 
   const base = `${SITE_URL}/${loc}`;
   const consentPayload = consent as { timestamp?: string; version?: string; documents?: string[] };
-  // Consent rides in the session metadata as well as the ConsentEvent row. On
-  // the logged-in path the row is written below and the metadata is belt and
-  // braces; when the guest branch lands it is the ONLY carrier, because there
-  // is no tenant to attach a row to until the webhook provisions one.
+  // Consent rides in the session metadata as well as the ConsentEvent row.
+  // Belt and braces on the upgrade path; on the guest path the metadata is what
+  // lets the webhook rebuild the row from the session alone, if the row written
+  // below never landed.
+  //
+  // `flow` is stamped here rather than derived downstream. The webhook dispatch
+  // and /welcome both read it, and a session whose flow has to be guessed from
+  // the absence of client_reference_id is a session that guesses wrong for
+  // anything Stripe did not create through this route.
   const metadata = {
     app: "echorank",
+    flow,
     tier,
     interval,
     consent_version: String(consentPayload.version ?? ""),
@@ -194,10 +233,15 @@ export async function POST(req: NextRequest) {
         metadata,
       },
       metadata,
-      // client_reference_id is how the webhook links a session to a tenant
-      // that has no Stripe customer yet — which is every tenant today, since
-      // no checkout has ever run in this app.
-      client_reference_id: tenantId,
+      // client_reference_id is how the webhook links a session to a tenant that
+      // has no Stripe customer yet. A guest has no tenant at all, so the key is
+      // OMITTED rather than sent empty — the webhook's upgrade path keys off its
+      // presence, and "" would send it looking for a tenant named "".
+      //
+      // The email is likewise left to Stripe on the guest path. Checkout already
+      // collects it, and it is the address the account gets provisioned under,
+      // so it must be the one the buyer actually typed on Stripe's page.
+      ...(tenantId ? { client_reference_id: tenantId } : {}),
       ...(customerId
         ? { customer: customerId }
         : customerEmail
@@ -214,9 +258,17 @@ export async function POST(req: NextRequest) {
 
     // Record the consent now that the session exists, so the row can carry the
     // session id and be deduped against a webhook replay by the unique index.
+    //
+    // ON THE GUEST PATH tenantId, userId and email are all NULL here, and that
+    // is the case ConsentEvent's columns were made nullable for: the consent
+    // happened, provably, before anyone existed to attribute it to. The webhook
+    // backfills all three onto THIS row when it provisions the account — same
+    // row, found by stripeSessionId — so one act of consent stays one row.
+    //
     // A failure here must NOT fail the checkout: the buyer has a valid session
     // and the metadata above still carries the consent, so losing the row is a
     // compliance-log gap to alert on, not a reason to refuse a paying customer.
+    // The webhook upserts rather than updates for exactly this reason.
     try {
       await prisma.consentEvent.create({
         data: {
@@ -228,15 +280,15 @@ export async function POST(req: NextRequest) {
           documents: consentPayload.documents ?? [],
           plan: tier,
           interval,
-          flow: "upgrade",
+          flow,
           consentedAt: consentPayload.timestamp ? new Date(consentPayload.timestamp) : null,
         },
       });
     } catch (err) {
-      log.error({ err, sessionId: session.id, tenantId }, "ConsentEvent write failed");
+      log.error({ err, sessionId: session.id, tenantId, flow }, "ConsentEvent write failed");
     }
 
-    log.info({ tier, interval, tenantId, sessionId: session.id }, "Checkout session created");
+    log.info({ tier, interval, tenantId, flow, sessionId: session.id }, "Checkout session created");
     return NextResponse.json({ url: session.url });
   } catch (err) {
     log.error({ err, tier, interval }, "Stripe checkout session creation failed");
