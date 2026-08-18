@@ -1,9 +1,12 @@
 // /[locale]/pricing — the standalone pricing page.
 //
-// THE FUNNEL'S ONE EXIT. Every marketing CTA on the site now points here, and
-// this is the only marketing page that links into /register. That is the whole
-// design: a visitor cannot reach registration without passing the prices, and
-// there is exactly one page to change if that ever stops being true.
+// THE FUNNEL'S ONE EXIT, AND NOW ITS ONLY ENTRANCE. Every marketing CTA on the
+// site points here, and nothing on the site links into /register any more —
+// bare /register redirects BACK to this page. That is the checkout-first
+// design: a card is entered at Stripe before an account exists, and the account
+// is what the webhook builds out of the completed session. There is therefore
+// no "create an account, choose a plan later" state to offer, which is why the
+// plan-less Create-account button that used to sit under the grid is gone.
 //
 // NO NUMBERS LIVE HERE. The cards come from pricingTiers() over PLAN_CONFIGS,
 // the same call the homepage makes, rendered by the same PricingSection
@@ -17,7 +20,6 @@
 // wording. Metadata is per-locale and canonical per-locale.
 
 import type { Metadata } from "next";
-import Link from "next/link";
 import { PublicNav } from "../PublicNav";
 import { PricingSection } from "../PricingSection";
 import { pricingTiers } from "@/lib/pricing-tiers";
@@ -40,9 +42,6 @@ const COPY: Record<Base, {
   tax: string;
   currency: string;
   toolsAnchor: string;
-  signupHeading: string;
-  signupSub: string;
-  signupCta: string;
 }> = {
   en: {
     metaTitle: "Pricing",
@@ -55,9 +54,6 @@ const COPY: Record<Base, {
     currency:
       "All prices are in US dollars (USD). If you pay with a card in another currency, your bank converts the charge at its own exchange rate.",
     toolsAnchor: "See the tools included",
-    signupHeading: "Not sure which plan yet?",
-    signupSub: "Create your account first and pick a plan when you are ready.",
-    signupCta: "Create account",
   },
   fr: {
     metaTitle: "Tarifs",
@@ -70,9 +66,6 @@ const COPY: Record<Base, {
     currency:
       "Tous les prix sont en dollars américains (USD). Si vous payez avec une carte dans une autre devise, votre banque effectue la conversion à son propre taux de change.",
     toolsAnchor: "Voir les outils inclus",
-    signupHeading: "Vous hésitez encore ?",
-    signupSub: "Créez votre compte d'abord et choisissez un forfait quand vous serez prêt.",
-    signupCta: "Créer un compte",
   },
 };
 
@@ -146,18 +139,12 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
               route to /credits at all. Same argument /watcher makes for not
               being a fifth column here. */}
 
-          {/* The one /register link on the marketing site that is not a plan
-              card's own checkout. Someone who wants an account before choosing
-              a tier would otherwise have no route in at all, now that every
-              other CTA leads here. No ?plan= — that is the point of it. */}
-          <div className={s.closebtns} style={{ marginTop: "2.5rem" }}>
-            <p className={s.sub}>
-              <strong>{c.signupHeading}</strong> {c.signupSub}
-            </p>
-            <Link className={`${s.btn} ${s.btnGhost}`} href="/register">
-              {c.signupCta}
-            </Link>
-          </div>
+          {/* THE PLAN-LESS "Create account" BUTTON WAS HERE, AND IS GONE.
+              Checkout-first: an account is what a completed checkout produces,
+              so there is no longer an account to make before choosing a plan.
+              /register redirects here now, which would have made this button a
+              link back to the page it sits on. tests/pricing-route.test.ts
+              asserts the absence. */}
         </div>
       </section>
     </div>

@@ -1,12 +1,17 @@
 // Phase 0 + 1: the standalone /pricing page, and the homepage CTAs that now
 // route through it.
 //
-// THE INVARIANT THIS PROTECTS: /pricing is the only marketing page that links
-// into /register. Every other CTA leads here first, so a visitor cannot reach
-// registration without passing the prices. Two exceptions are deliberate and
-// must survive — a plan card's own Stripe checkout (which has already chosen a
-// tier, so bouncing it back to pricing would dead-end the funnel) and the
-// signed-in dashboard link.
+// THE INVARIANT THIS PROTECTS, INVERTED AS OF THE CHECKOUT-FIRST FUNNEL:
+// /pricing no longer links into /register AT ALL, and neither does anything
+// else. An account is what a completed Stripe checkout produces, so there is no
+// account to create before choosing a plan — bare /register redirects here, and
+// the plan-less "Create account" button that used to sit under the grid was
+// deleted in the same commit as this assertion was flipped.
+//
+// The plan cards' own checkout still keeps its /register?plan=… fallback in the
+// source, but only for the standalone Watcher: that SKU is an entitlement gated
+// on an existing tenant, so /api/billing/checkout still 401s it for anonymous
+// callers. It is never a rendered href either way.
 import { describe, expect, it } from "vitest";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -84,19 +89,27 @@ describe("numbers come from plan config, never from the page", () => {
 });
 
 describe("the funnel terminates at pricing", () => {
-  it("/pricing has a create-account link outside the plan cards", async () => {
-    // Someone who wants an account before choosing a tier needs a way in, now
-    // that every other CTA leads here.
-    const html = await page("en");
-    const register = hrefs(html).filter((h) => h.startsWith("/register"));
-    expect(register.length).toBeGreaterThanOrEqual(1);
-    // No ?plan= on it — that is what makes it the plan-less path.
-    expect(register).toContain("/register");
+  it("/pricing carries NO /register link, plan-less or otherwise", async () => {
+    // The inversion. This assertion used to require exactly the opposite: a
+    // bare "/register" href for someone who wanted an account before choosing a
+    // tier. That state no longer exists — an account is the OUTPUT of a
+    // checkout now, not its prerequisite — and bare /register redirects to this
+    // very page, so the button would have linked here from here.
+    //
+    // Flipped in the same commit as the redirect and the button's deletion, on
+    // purpose: inverted first it would have failed against shipped code; left
+    // until after, it would have opened a window with nothing guarding the
+    // invariant at all.
+    for (const locale of SUPPORTED_LOCALES) {
+      const html = await page(locale);
+      expect(hrefs(html).filter((h) => h.startsWith("/register")), locale).toEqual([]);
+    }
   });
 
   it("the plan cards themselves carry no /register link", () => {
-    // Their action is the Stripe checkout button, which only falls back to
-    // /register from JS on a 401 — never as a rendered href.
+    // Their action is the Stripe checkout button. It reaches /register only
+    // from JS on a 401, which now happens for the standalone Watcher alone —
+    // never as a rendered href, then or now.
     const html = renderToStaticMarkup(
       createElement(PricingSection, {
         locale: "en",
