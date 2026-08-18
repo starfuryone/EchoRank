@@ -17,7 +17,7 @@ import {
   Bell,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { dashNav, type DashLocale } from "@/lib/i18n/dashboard";
+import { SIDEBAR_GROUPS_COPY, dashNav, type DashLocale } from "@/lib/i18n/dashboard";
 import { SEO_TOOLS_HUB } from "@/lib/seo-tools";
 import type { PlanType } from "@/generated/prisma";
 
@@ -46,25 +46,41 @@ import type { PlanType } from "@/generated/prisma";
 /** The Pro assistant row, gated separately from the SEO Tools hub. */
 const ASSISTANT_HREF = "/assistant";
 
+// ── THREE BANDS, AND NOTHING ELSE CHANGED ──────────────────────────────────
+//
+// `group` is presentation. No route moved, no plan gate moved, and the active-
+// row rule below still runs over the flat filtered list, so the longest-claim
+// behaviour is untouched. The bands exist because twelve equally-weighted rows
+// made a customer read the whole list to find the one they wanted: what you
+// work in, what you administer, and the utilities you reach for occasionally
+// are three different kinds of destination.
+//
+// Account and Billing stay where they are rather than folding into a Settings
+// menu — that is an information-architecture change with its own consequences
+// for deep links and for the account menu in the header, and this is a
+// grouping pass.
 const navItems = [
-  { href: "/dashboard", icon: LayoutDashboard },
-  { href: "/reputation", icon: Sparkles },
-  { href: "/ai", icon: ScanEye, activePrefixes: ["/visibility"] },
+  { href: "/dashboard", icon: LayoutDashboard, group: "workspace" },
+  { href: "/ai", icon: ScanEye, activePrefixes: ["/visibility"], group: "workspace" },
   // Directly under the AI row: the assistant answers questions ABOUT the
   // data the AI hub renders, so it belongs next to it rather than in the
   // administration block at the bottom. Filtered out entirely below when
   // the tenant does not qualify — no locked row, no upsell.
-  { href: "/assistant", icon: Sparkle },
-  { href: "/visibility/tools", icon: Wrench },
-  { href: "/visibility/tools/ai-content-helper", icon: PenTool },
-  { href: "/team", icon: UserPlus },
-  { href: "/settings", icon: Settings },
-  { href: "/settings/account", icon: UserCircle },
-  { href: "/billing", icon: CreditCard },
-  { href: "/notifications", icon: Bell },
-  // Last row, below the administration block. Help is never plan-gated.
-  { href: "/help", icon: HelpCircle },
+  { href: "/assistant", icon: Sparkle, group: "workspace" },
+  { href: "/visibility/tools", icon: Wrench, group: "workspace" },
+  { href: "/visibility/tools/ai-content-helper", icon: PenTool, group: "workspace" },
+  { href: "/reputation", icon: Sparkles, group: "workspace" },
+  { href: "/team", icon: UserPlus, group: "manage" },
+  { href: "/notifications", icon: Bell, group: "manage" },
+  { href: "/settings", icon: Settings, group: "utility" },
+  { href: "/settings/account", icon: UserCircle, group: "utility" },
+  { href: "/billing", icon: CreditCard, group: "utility" },
+  // Help is never plan-gated.
+  { href: "/help", icon: HelpCircle, group: "utility" },
 ] as const;
+
+/** Render order of the bands. "utility" is unlabelled — it is the tail. */
+const NAV_GROUPS = ["workspace", "manage", "utility"] as const;
 
 interface NavItem {
   href: string;
@@ -122,6 +138,7 @@ export function Sidebar({
   assistantVisible = false,
 }: SidebarProps) {
   const labels = dashNav[locale];
+  const groupLabels = SIDEBAR_GROUPS_COPY[locale];
   const pathname = usePathname();
   // No plan-based route filtering: every tier reaches every dashboard path.
   // The SEO Tools hub still requires a paid (ACTIVE) subscription — visibility
@@ -169,29 +186,49 @@ export function Sidebar({
 
         {/* Navigation */}
         <nav className="flex-1 overflow-y-auto px-3 py-4">
-          <ul className="space-y-1">
-            {items.map((item) => {
-              const isActive = item.href === activeHref;
+          {NAV_GROUPS.map((group) => {
+            const rows = items.filter((item) => item.group === group);
+            if (rows.length === 0) return null;
+            const heading = group === "utility" ? null : groupLabels[group as "workspace" | "manage"];
 
-              return (
-                <li key={item.href}>
-                  <Link
-                    href={item.href}
-                    onClick={onClose}
-                    className={cn(
-                      "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                      isActive
-                        ? "bg-gray-800 text-white"
-                        : "text-gray-400 hover:bg-gray-800/50 hover:text-white"
-                    )}
-                  >
-                    <item.icon className="h-5 w-5 shrink-0" />
-                    {labels[item.href]}
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
+            return (
+              <div key={group} className="mb-5 last:mb-0">
+                {heading ? (
+                  <h2 className="px-3 pb-1.5 text-[11px] font-semibold uppercase tracking-wider text-gray-500">
+                    {heading}
+                  </h2>
+                ) : (
+                  // The utility tail earns a rule rather than a word: naming it
+                  // would give Settings and Help a category they do not need.
+                  <div aria-hidden="true" className="mx-3 mb-3 border-t border-gray-800" />
+                )}
+                <ul className="space-y-1">
+                  {rows.map((item) => {
+                    const isActive = item.href === activeHref;
+
+                    return (
+                      <li key={item.href}>
+                        <Link
+                          href={item.href}
+                          onClick={onClose}
+                          aria-current={isActive ? "page" : undefined}
+                          className={cn(
+                            "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                            isActive
+                              ? "bg-gray-800 text-white"
+                              : "text-gray-400 hover:bg-gray-800/50 hover:text-white"
+                          )}
+                        >
+                          <item.icon className="h-5 w-5 shrink-0" />
+                          {labels[item.href]}
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            );
+          })}
         </nav>
 
         {/* Footer */}

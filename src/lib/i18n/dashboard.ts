@@ -46,7 +46,7 @@ export const dashNav: Record<DashLocale, Record<string, string>> = {
     "/notifications": "Notifications",
     "/help": "Help",
     // SEO Tools hub surfaces (sidebar label + header titles)
-    "/visibility/keywords": "Keywords Explorer",
+    "/visibility/keywords": "Keyword Explorer",
     "/visibility/tools": "SEO Tools",
     "/visibility/tools/site-explorer": "Site Explorer",
     "/visibility/tools/rank-tracker": "Rank Tracker",
@@ -102,7 +102,7 @@ export const dashNav: Record<DashLocale, Record<string, string>> = {
     "/billing": "Abrechnung",
     "/notifications": "Benachrichtigungen",
     "/help": "Hilfe",
-    "/visibility/keywords": "Keywords Explorer",
+    "/visibility/keywords": "Keyword Explorer",
     "/visibility/tools": "SEO-Tools",
     "/visibility/tools/site-explorer": "Site Explorer",
     "/visibility/tools/rank-tracker": "Rank Tracker",
@@ -4754,6 +4754,23 @@ export const VISIBILITY_COPY: Record<DashLocale, VisibilityCopy> = {
   },
 };
 
+// ─── Sidebar section headings (src/components/layout/sidebar.tsx) ──────────
+//
+// VISUAL GROUPING ONLY. These label three bands of a nav list whose routes,
+// order-within-band and plan gating are unchanged — no row moved between
+// products, nothing became reachable that was not.
+const sidebarGroupsEn = {
+  workspace: "Workspace",
+  manage: "Manage",
+};
+export type SidebarGroupsCopy = typeof sidebarGroupsEn;
+
+export const SIDEBAR_GROUPS_COPY: Record<DashLocale, SidebarGroupsCopy> = {
+  en: sidebarGroupsEn,
+  fr: { workspace: "Espace de travail", manage: "Administration" },
+  "de-CH": { workspace: "Arbeitsbereich", manage: "Verwaltung" },
+};
+
 // ─── VisibilityHelpButton (src/components/help/VisibilityHelpButton.tsx) ────
 const visibilityHelpEn = {
   fullGuide: "Full guide",
@@ -4801,7 +4818,6 @@ const keywordsEn = {
   lockedPage:
     "The keyword suggester is part of your paid Echorank360 plan. Activate a subscription to scan your site.",
   upgradePlan: "Upgrade plan",
-  pagesCrawled: (n: number) => `${n} page${n === 1 ? "" : "s"} crawled`,
   // tabs (the four benchmark classes)
   tabSeeds: "Keywords",
   tabContent: "Content optimization",
@@ -4842,6 +4858,50 @@ const keywordsEn = {
   statusLabels: { pass: "PASS", warn: "WARN", fail: "FAIL" } as Record<string, string>,
   emptyTitle: "No scan yet",
   emptyDescription: "Enter your domain above to extract keyword suggestions.",
+  // ── Refactor: hierarchy, scan card, metrics, table, bulk actions ─────────
+  breadcrumbTools: "SEO Tools",
+  heading: "Keyword Explorer",
+  headingDescription:
+    "Discover the search topics and AI questions your website should own.",
+  analyzeLabel: "Analyze a website",
+  analyzeCta: "Analyze",
+  analyzeBlurb:
+    "Scan key pages to identify topics, questions, content opportunities, and AI visibility opportunities.",
+  scanAgain: "Scan again",
+  moreActions: "More actions",
+  pagesScanned: (n: number) => `${n} page${n === 1 ? "" : "s"} scanned`,
+  analysisComplete: "Analysis complete",
+  metricKeywords: "Keywords",
+  metricQuestions: "Questions",
+  metricEasyWins: "Easy wins",
+  metricIssues: "Issues",
+  colKeyword: "Keyword",
+  colDifficulty: "Opportunity",
+  colRelevance: "Relevance",
+  colActions: "Actions",
+  relevanceNa: "—",
+  relevanceTitle: "Weighted by where the phrase appears on your pages",
+  copyKeyword: "Copy keyword",
+  copySelected: "Copy selected",
+  exportCsv: "Export CSV",
+  selectAll: "Select all",
+  selectRow: (kw: string) => `Select ${kw}`,
+  selectedCount: (n: number) => `${n} selected`,
+  clearSelection: "Clear",
+  trackInAiVisibility: "Track in AI Visibility",
+  filterAll: "All",
+  filterTopics: "Topics",
+  filterQuestions: "Questions",
+  searchPlaceholder: "Search keywords",
+  filterDifficulty: "Difficulty",
+  filterAllDifficulties: "All difficulties",
+  sortBy: "Sort",
+  sortRelevance: "Relevance",
+  sortAlpha: "A–Z",
+  sortDifficulty: "Difficulty",
+  noMatches: "No keywords match these filters.",
+  clearFilters: "Clear filters",
+  aiRow: "AI",
 };
 export type KeywordsCopy = typeof keywordsEn;
 
@@ -4866,7 +4926,6 @@ export const KEYWORDS_COPY: Record<DashLocale, KeywordsCopy> = {
     lockedPage:
       "Le suggesteur de mots-clés fait partie de votre forfait payant Echorank360. Activez un abonnement pour analyser votre site.",
     upgradePlan: "Passer au forfait supérieur",
-    pagesCrawled: (n: number) => `${n} page${n === 1 ? "" : "s"} explorée${n === 1 ? "" : "s"}`,
     tabSeeds: "Mots-clés",
     tabContent: "Optimisation du contenu",
     tabPrompts: "Visibilité IA",
@@ -4903,6 +4962,49 @@ export const KEYWORDS_COPY: Record<DashLocale, KeywordsCopy> = {
     statusLabels: { pass: "RÉUSSI", warn: "ATTENTION", fail: "ÉCHEC" } as Record<string, string>,
     emptyTitle: "Aucune analyse pour l'instant",
     emptyDescription: "Saisissez votre domaine ci-dessus pour extraire des suggestions de mots-clés.",
+    breadcrumbTools: "Outils SEO",
+    heading: "Explorateur de mots-clés",
+    headingDescription:
+      "Découvrez les sujets de recherche et les questions IA que votre site devrait dominer.",
+    analyzeLabel: "Analyser un site",
+    analyzeCta: "Analyser",
+    analyzeBlurb:
+      "Analysez les pages clés pour identifier les sujets, les questions, les opportunités de contenu et les occasions de visibilité IA.",
+    scanAgain: "Relancer l'analyse",
+    moreActions: "Autres actions",
+    pagesScanned: (n: number) => `${n} page${n === 1 ? "" : "s"} analysée${n === 1 ? "" : "s"}`,
+    analysisComplete: "Analyse terminée",
+    metricKeywords: "Mots-clés",
+    metricQuestions: "Questions",
+    metricEasyWins: "Gains faciles",
+    metricIssues: "Problèmes",
+    colKeyword: "Mot-clé",
+    colDifficulty: "Opportunité",
+    colRelevance: "Pertinence",
+    colActions: "Actions",
+    relevanceNa: "—",
+    relevanceTitle: "Pondéré selon l'endroit où l'expression apparaît sur vos pages",
+    copyKeyword: "Copier le mot-clé",
+    copySelected: "Copier la sélection",
+    exportCsv: "Exporter en CSV",
+    selectAll: "Tout sélectionner",
+    selectRow: (kw: string) => `Sélectionner ${kw}`,
+    selectedCount: (n: number) => `${n} sélectionné${n === 1 ? "" : "s"}`,
+    clearSelection: "Effacer",
+    trackInAiVisibility: "Suivre dans Visibilité IA",
+    filterAll: "Tous",
+    filterTopics: "Sujets",
+    filterQuestions: "Questions",
+    searchPlaceholder: "Rechercher des mots-clés",
+    filterDifficulty: "Difficulté",
+    filterAllDifficulties: "Toutes difficultés",
+    sortBy: "Trier",
+    sortRelevance: "Pertinence",
+    sortAlpha: "A–Z",
+    sortDifficulty: "Difficulté",
+    noMatches: "Aucun mot-clé ne correspond à ces filtres.",
+    clearFilters: "Réinitialiser les filtres",
+    aiRow: "IA",
   },
   "de-CH": {
     title: "Keyword-Vorschläge",
@@ -4923,7 +5025,6 @@ export const KEYWORDS_COPY: Record<DashLocale, KeywordsCopy> = {
     lockedPage:
       "Die Keyword-Vorschläge sind Teil Ihres bezahlten Echorank360-Plans. Aktivieren Sie ein Abonnement, um Ihre Website zu scannen.",
     upgradePlan: "Upgrade durchführen",
-    pagesCrawled: (n: number) => `${n} Seite${n === 1 ? "" : "n"} gecrawlt`,
     tabSeeds: "Keywords",
     tabContent: "Content-Optimierung",
     tabPrompts: "KI-Sichtbarkeit",
@@ -4961,6 +5062,49 @@ export const KEYWORDS_COPY: Record<DashLocale, KeywordsCopy> = {
     emptyTitle: "Noch kein Scan",
     emptyDescription:
       "Geben Sie oben Ihre Domain ein, um Keyword-Vorschläge zu extrahieren.",
+    breadcrumbTools: "SEO-Tools",
+    heading: "Keyword Explorer",
+    headingDescription:
+      "Entdecken Sie die Suchthemen und KI-Fragen, die Ihre Website besetzen sollte.",
+    analyzeLabel: "Website analysieren",
+    analyzeCta: "Analysieren",
+    analyzeBlurb:
+      "Scannen Sie zentrale Seiten, um Themen, Fragen, Content-Chancen und Chancen für KI-Sichtbarkeit zu erkennen.",
+    scanAgain: "Erneut scannen",
+    moreActions: "Weitere Aktionen",
+    pagesScanned: (n: number) => `${n} Seite${n === 1 ? "" : "n"} gescannt`,
+    analysisComplete: "Analyse abgeschlossen",
+    metricKeywords: "Keywords",
+    metricQuestions: "Fragen",
+    metricEasyWins: "Schnelle Erfolge",
+    metricIssues: "Probleme",
+    colKeyword: "Keyword",
+    colDifficulty: "Chance",
+    colRelevance: "Relevanz",
+    colActions: "Aktionen",
+    relevanceNa: "—",
+    relevanceTitle: "Gewichtet danach, wo die Phrase auf Ihren Seiten vorkommt",
+    copyKeyword: "Keyword kopieren",
+    copySelected: "Auswahl kopieren",
+    exportCsv: "CSV exportieren",
+    selectAll: "Alle auswählen",
+    selectRow: (kw: string) => `${kw} auswählen`,
+    selectedCount: (n: number) => `${n} ausgewählt`,
+    clearSelection: "Zurücksetzen",
+    trackInAiVisibility: "In KI-Sichtbarkeit verfolgen",
+    filterAll: "Alle",
+    filterTopics: "Themen",
+    filterQuestions: "Fragen",
+    searchPlaceholder: "Keywords suchen",
+    filterDifficulty: "Schwierigkeit",
+    filterAllDifficulties: "Alle Schwierigkeiten",
+    sortBy: "Sortieren",
+    sortRelevance: "Relevanz",
+    sortAlpha: "A–Z",
+    sortDifficulty: "Schwierigkeit",
+    noMatches: "Keine Keywords entsprechen diesen Filtern.",
+    clearFilters: "Filter zurücksetzen",
+    aiRow: "KI",
   },
 };
 
@@ -5169,8 +5313,13 @@ const seoToolsEn = {
       description: "Analyze websites, competitors, backlinks, and organic search performance.",
     },
     keywords_explorer: {
-      name: "Keywords Explorer",
-      description: "Discover keywords, search demand, difficulty, and ranking opportunities.",
+      name: "Keyword Explorer",
+      // Names what this tool actually does — crawl a site and read back what
+      // it already signals. The old line promised "search demand", which is
+      // the Opportunity Finder's job and nothing this tool ever fetches;
+      // side by side in the hub the two cards described the same product.
+      description:
+        "Crawl your site to find the keywords it already signals, plus the AI questions it should answer.",
     },
     rank_tracker: {
       name: "Rank Tracker",
@@ -5265,8 +5414,11 @@ const seoToolsEn = {
     },
     keyword_opportunities: {
       name: "Keyword Opportunity Finder",
+      // The other half of the pair: not what you signal, but what is worth
+      // winning. Demand and the AI gap, which is what makes it the scoring
+      // tool rather than the discovery one.
       description:
-        "Run one domain analysis to score commercial keywords on demand, cost and rank, then test whether AI assistants name you for the best of them.",
+        "Score the keywords worth winning: one domain analysis rates commercial demand and rank, then tests whether AI assistants name you for the best of them.",
     },
     dashboard: {
       name: "Dashboard",
@@ -5361,7 +5513,8 @@ export const SEO_TOOLS_COPY: Record<DashLocale, SeoToolsCopy> = {
       },
       keywords_explorer: {
         name: "Explorateur de mots-clés",
-        description: "Découvrez les mots-clés, la demande de recherche, la difficulté et les occasions de classement.",
+        description:
+          "Explorez votre site pour trouver les mots-clés qu'il signale déjà, ainsi que les questions IA auxquelles il devrait répondre.",
       },
       rank_tracker: {
         name: "Suivi des positions",
@@ -5459,7 +5612,7 @@ export const SEO_TOOLS_COPY: Record<DashLocale, SeoToolsCopy> = {
       keyword_opportunities: {
         name: "Détecteur d'opportunités de mots-clés",
         description:
-          "Lancez une analyse de domaine pour noter vos mots-clés commerciaux selon la demande, le coût et le classement, puis vérifiez si les assistants IA vous citent sur les meilleurs d'entre eux.",
+          "Notez les mots-clés qui valent la peine d'être gagnés : une analyse de domaine évalue la demande commerciale et le classement, puis vérifie si les assistants IA vous citent sur les meilleurs d'entre eux.",
       },
       dashboard: {
         name: "Tableau de bord",
@@ -5548,8 +5701,9 @@ export const SEO_TOOLS_COPY: Record<DashLocale, SeoToolsCopy> = {
         description: "Analysieren Sie Websites, Wettbewerber, Backlinks und die organische Suchleistung.",
       },
       keywords_explorer: {
-        name: "Keywords Explorer",
-        description: "Entdecken Sie Keywords, Suchnachfrage, Schwierigkeit und Ranking-Chancen.",
+        name: "Keyword Explorer",
+        description:
+          "Crawlen Sie Ihre Website, um die Keywords zu finden, die sie bereits signalisiert, samt der KI-Fragen, die sie beantworten sollte.",
       },
       rank_tracker: {
         name: "Rank Tracker",
@@ -5647,7 +5801,7 @@ export const SEO_TOOLS_COPY: Record<DashLocale, SeoToolsCopy> = {
       keyword_opportunities: {
         name: "Keyword-Chancenfinder",
         description:
-          "Starten Sie eine Domain-Analyse, die kommerzielle Keywords nach Nachfrage, Kosten und Ranking bewertet, und prüfen Sie dann, ob KI-Assistenten Sie bei den besten davon nennen.",
+          "Bewerten Sie die Keywords, die sich zu gewinnen lohnen: Eine Domain-Analyse misst kommerzielle Nachfrage und Ranking und prüft dann, ob KI-Assistenten Sie bei den besten davon nennen.",
       },
       dashboard: {
         name: "Dashboard",

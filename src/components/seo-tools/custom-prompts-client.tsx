@@ -14,7 +14,8 @@
 // rather than fetched again, so the help modal can quote the live number
 // without the page issuing two identical GETs.
 
-import { useCallback, useState } from "react";
+import { Suspense, useCallback, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { Wrench } from "lucide-react";
 import { BackLink, BackLinkRow } from "@/components/ui/back-link";
 import { AnswerTrackingCard } from "@/components/visibility/AnswerTrackingCard";
@@ -24,6 +25,24 @@ import {
   type PromptQuota,
 } from "@/components/seo-tools/custom-prompts-help";
 import { SEO_TOOLS_COPY, VISIBILITY_COPY, dashNav, type DashLocale } from "@/lib/i18n/dashboard";
+
+/**
+ * Reads ?prompt= and seeds the add-prompt box.
+ *
+ * Split into its own component because useSearchParams() opts the whole tree
+ * into client-side rendering unless it sits under a Suspense boundary — the
+ * page frame around it stays statically rendered this way.
+ */
+function SeededTracking({ locale, onQuota }: { locale: DashLocale; onQuota: (q: PromptQuota) => void }) {
+  const params = useSearchParams();
+  return (
+    <AnswerTrackingCard
+      locale={locale}
+      onQuota={onQuota}
+      initialPrompt={params.get("prompt") ?? undefined}
+    />
+  );
+}
 
 export function CustomPromptsClient({ locale }: { locale: DashLocale }) {
   const it = SEO_TOOLS_COPY[locale].items.custom_prompts;
@@ -52,7 +71,9 @@ export function CustomPromptsClient({ locale }: { locale: DashLocale }) {
       </div>
 
       {/* Both are AGENCY+ and render their own locked/empty states. */}
-      <AnswerTrackingCard locale={locale} onQuota={handleQuota} />
+      <Suspense fallback={<AnswerTrackingCard locale={locale} onQuota={handleQuota} />}>
+        <SeededTracking locale={locale} onQuota={handleQuota} />
+      </Suspense>
       <PromptTrends locale={locale} />
     </div>
   );

@@ -103,10 +103,21 @@ describe("the AI row targets the hub", () => {
     expect(html).not.toContain('href="/visibility"');
   });
 
-  it("keeps its position — third row, between Reputation and SEO Tools", () => {
+  it("sits above SEO Tools inside the Workspace band", () => {
+    // WAS "third row, between Reputation and SEO Tools". The sidebar is now
+    // grouped into Workspace / Manage / utility, and Reputation moved to the
+    // end of the Workspace band — so the Reputation-before-AI half of the old
+    // assertion pinned a layout that no longer exists.
+    //
+    // What still has to hold is the part that was ever load-bearing: AI comes
+    // before SEO Tools, so the hub the tools belong to is read first. The
+    // active-row rules are asserted on their own below and did not move.
     const html = sidebar();
-    expect(html.indexOf('href="/ai"')).toBeGreaterThan(html.indexOf('href="/reputation"'));
+    expect(html.indexOf('href="/ai"')).toBeGreaterThan(html.indexOf('href="/dashboard"'));
     expect(html.indexOf('href="/ai"')).toBeLessThan(html.indexOf('href="/visibility/tools"'));
+    expect(html.indexOf('href="/visibility/tools"')).toBeLessThan(
+      html.indexOf('href="/reputation"'),
+    );
   });
 
   it("labels it per locale", () => {

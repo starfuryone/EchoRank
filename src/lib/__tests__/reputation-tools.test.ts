@@ -218,14 +218,26 @@ test("the sidebar order is the agreed one", () => {
   );
   const navBlock = sidebar.slice(sidebar.indexOf("const navItems"), sidebar.indexOf("] as const;"));
   const hrefs = [...navBlock.matchAll(/href: "([^"]+)"/g)].map((m) => m[1]);
+  // GROUPED, NOT REORDERED-FOR-FUN. The list is now three visual bands —
+  // Workspace, Manage, and an unlabelled utility tail — and `group` on each
+  // row is the only thing that decides which band draws it. No route moved,
+  // no plan gate moved, and this test still reads the flat literal because
+  // the flat literal is still what the file contains.
+  //
+  // Two rows changed index. Reputation moved to the END of Workspace, so the
+  // band reads dashboard-first then the AI surfaces then reputation, and
+  // Notifications moved UP beside Team, because seat management and the
+  // notification feed are both things you administer rather than things you
+  // work in. Neither is a reputation-surface regression: this suite's real
+  // guard is "one row per hub, not one per feature", asserted by the length
+  // and membership of this list, and both are unchanged.
   assert.deepEqual(hrefs, [
     "/dashboard",
-    "/reputation",
     // Was "/visibility". The AI surfaces got the same treatment the reputation
-    // ones did: one row, one hub at /ai. The row kept its position and its
-    // icon; only its target moved, and /visibility is now a card on that hub.
-    // The row still lights up for /visibility/* — see activePrefixes in
-    // sidebar.tsx and the render assertions in tests/nav-links.test.ts.
+    // ones did: one row, one hub at /ai. Only its target moved, and
+    // /visibility is now a card on that hub. The row still lights up for
+    // /visibility/* — see activePrefixes in sidebar.tsx and the render
+    // assertions in tests/nav-links.test.ts.
     "/ai",
     // The Pro AI Assistant, directly under the AI row: it answers questions
     // ABOUT the data that hub renders, so it belongs beside it rather than in
@@ -237,12 +249,15 @@ test("the sidebar order is the agreed one", () => {
     "/assistant",
     "/visibility/tools",
     "/visibility/tools/ai-content-helper",
+    // Last in Workspace rather than second overall.
+    "/reputation",
+    // ── Manage ──
     "/team",
+    "/notifications",
+    // ── Utility tail, unlabelled ──
     "/settings",
     "/settings/account",
     "/billing",
-    // Notifications sits with the administration block, above Help.
-    "/notifications",
     // Help is the last row, added deliberately after the nine-row
     // consolidation. It is not a reputation surface and does not reopen the
     // "one row per feature" pattern this suite guards against: it is a single

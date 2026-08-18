@@ -28,8 +28,19 @@ interface PromptRow {
 export function AnswerTrackingCard({
   locale = "en",
   onQuota,
+  initialPrompt,
 }: {
   locale?: DashLocale;
+  /**
+   * Seeds the add-prompt box, so another tool can hand a keyword straight
+   * across. Keyword Explorer links here with ?prompt=… rather than telling the
+   * customer to copy a phrase and paste it into a different page.
+   *
+   * SEEDS, DOES NOT SUBMIT. It fills the field the human then reads and sends;
+   * a link that silently spent one of a capped allowance would be a URL with a
+   * side effect, which is not something a link may have.
+   */
+  initialPrompt?: string;
   /**
    * Reports the plan allowance upward after each load, so the page header can
    * show it (the help modal does) without issuing a second identical GET.
@@ -44,7 +55,7 @@ export function AnswerTrackingCard({
   const [limit, setLimit] = useState(25);
   const [used, setUsed] = useState(0);
   const [mentionRate, setMentionRate] = useState<number | null>(null);
-  const [input, setInput] = useState("");
+  const [input, setInput] = useState(initialPrompt ?? "");
   const [busy, setBusy] = useState(false);
   const [running, setRunning] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
