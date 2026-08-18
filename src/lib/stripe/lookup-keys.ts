@@ -63,3 +63,37 @@ export function isBillingInterval(value: unknown): value is BillingInterval {
 export function checkoutLookupKey(tier: CheckoutTier, interval: BillingInterval): string {
   return `echorank_${tier}_usd_${interval}`;
 }
+
+/**
+ * The PlanType a checkout lookup key sells, or null.
+ *
+ * The reverse of checkoutLookupKey, and deliberately the ONLY reverse: the
+ * webhook's guest branch has to name a tier for a tenant it is about to create,
+ * and the honest source for that is the price Stripe actually charged rather
+ * than the metadata whoever created the session chose to send.
+ *
+ * Null for the watcher (an entitlement, not a tier), for enterprise (no key
+ * exists), and for anything that is not one of ours. A caller that gets null
+ * must not guess — see handleGuestSignupCompleted, which provisions nothing.
+ *
+ * This mirrors TIER_TO_PLAN in ./prices.ts, which cannot be reused here: that
+ * module imports Prisma, and this one is pure so the pricing UI can import it.
+ * tests/guest-signup.test.ts asserts the two agree for every checkout tier.
+ */
+export function planTypeForLookupKey(
+  lookupKey: string | null | undefined,
+): "STARTER" | "GROWTH" | "AGENCY" | null {
+  switch (lookupKey) {
+    case "echorank_starter_usd_month":
+    case "echorank_starter_usd_year":
+      return "STARTER";
+    case "echorank_growth_usd_month":
+    case "echorank_growth_usd_year":
+      return "GROWTH";
+    case "echorank_agency_usd_month":
+    case "echorank_agency_usd_year":
+      return "AGENCY";
+    default:
+      return null;
+  }
+}

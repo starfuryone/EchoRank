@@ -13,6 +13,7 @@ import {
   scheduleTrialEndingNotice,
 } from "@/lib/billing/trial-notice";
 import { handleCreditPackCompleted, isCreditPackSession } from "@/lib/billing/credit-webhook";
+import { handleGuestSignupCompleted, isGuestSignupSession } from "@/lib/billing/guest-signup";
 
 const log = logger.child({ module: "stripe-webhook" });
 
@@ -76,13 +77,33 @@ function mapStripePlan(
 // ─── Event handlers ─────────────────────────────────────────────────────────
 
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
-  // ── THE CREDIT BRANCH, FIRST, AND IT RETURNS ────────────────────────────
-  // Everything below this line assumes a subscription. In particular the
-  // activation check reads `subscriptionId ? productKind === "PLAN" : true`,
-  // which treats "no subscription" as "plan" — so a one-time credit purchase
-  // reaching it would set the tenant ACTIVE. See lib/billing/credit-webhook.ts.
+  // ── A THREE-WAY DISPATCH, AND BOTH EARLY RETURNS ARE LOAD-BEARING ───────
+  //
+  // Everything below these two branches assumes a session for a tenant that
+  // ALREADY EXISTS, found by client_reference_id, and ends at:
+  //
+  //     if (subscriptionId ? productKind === "PLAN" : true)
+  //       updateData.billingStatus = "ACTIVE";
+  //
+  // Each branch has to return before that line, for opposite reasons:
+  //
+  //   credit_pack   carries no subscription, so the ternary short-circuits to
+  //                 true and a $19 pack of lookups would set the tenant ACTIVE.
+  //                 It must not reach the line because it would wrongly GRANT.
+  //   guest_signup  carries no client_reference_id, so the tenant lookup above
+  //                 finds nothing and the handler warns and returns — the buyer
+  //                 pays and receives no account at all. It must not reach the
+  //                 line because it would wrongly DO NOTHING.
+  //
+  // tests/credit-webhook.test.ts and tests/guest-signup.test.ts both drive the
+  // real dispatcher rather than re-implementing it, so this ordering is what is
+  // under test.
   if (isCreditPackSession(session)) {
     await handleCreditPackCompleted(session);
+    return;
+  }
+  if (isGuestSignupSession(session)) {
+    await handleGuestSignupCompleted(session);
     return;
   }
 

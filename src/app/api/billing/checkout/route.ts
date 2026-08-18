@@ -215,6 +215,10 @@ export async function POST(req: NextRequest) {
     flow,
     tier,
     interval,
+    // Carried for the guest branch alone: the webhook provisions a tenant for
+    // someone who never saw a settings page, and defaultLanguage has to come
+    // from somewhere. The upgrade branch's tenant already has one.
+    locale: loc,
     consent_version: String(consentPayload.version ?? ""),
     consent_ts: String(consentPayload.timestamp ?? ""),
     consent_docs: (consentPayload.documents ?? []).join(","),
