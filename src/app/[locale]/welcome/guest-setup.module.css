@@ -1,0 +1,77 @@
+/* The password-set form on /welcome. Its own module rather than additions to
+   home2.module.css: that file styles the marketing site, and this is the one
+   piece of account UI that renders inside it. */
+
+.form {
+  margin-top: 24px;
+  max-width: 420px;
+}
+
+.label {
+  display: block;
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.input {
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.03);
+  color: #f5f5f5;
+  font-size: 16px; /* 16px or iOS zooms the page on focus. */
+}
+
+.input:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 1px;
+}
+
+.hint {
+  font-size: 13px;
+  color: var(--faint);
+  margin-top: 8px;
+}
+
+.error {
+  font-size: 14px;
+  color: #ff8f8f;
+  margin-top: 12px;
+}
+
+.email {
+  font-family: var(--mono);
+  color: var(--text);
+}
+
+.actions {
+  margin-top: 20px;
+}
+
+/* The wait state's spinner. Reduced-motion users get a static ring rather than
+   nothing, so the state still reads as "working". */
+.spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  margin-right: 10px;
+  border: 2px solid var(--line);
+  border-top-color: var(--gold);
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+  vertical-align: -3px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation: none;
+  }
+}

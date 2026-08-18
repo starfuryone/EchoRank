@@ -1,14 +1,26 @@
 // Post-checkout landing page. Stripe's success_url points here.
 //
-// THIS PAGE CONFIRMS, IT DOES NOT ENTITLE. The checkout session id in the URL
-// is a display hint and nothing more: it is user-supplied, and a visitor could
-// paste anyone's. Plan access comes from the Stripe webhook writing the
-// Subscription row, which is the only source of truth. Nothing here reads or
-// changes tenant state.
+// TWO CONTRACTS NOW, AND metadata.flow ON THE SESSION IS WHAT PICKS BETWEEN
+// THEM. Both are live; neither may leak into the other.
 //
-// It must never throw. A missing, malformed, expired or foreign session id all
-// fall back to a generic welcome — someone who has just paid should not meet an
-// error page because a query string was mangled in an email client.
+// flow=upgrade (and anything without a flow) — THE PAGE CONFIRMS, IT DOES NOT
+// ENTITLE, exactly as before. The session id is a display hint and nothing
+// more: it is user-supplied, a visitor could paste anyone's, and plan access
+// comes from the webhook writing the Subscription row. Nothing on this path
+// reads or changes account state. Unchanged, deliberately — a signed-in
+// customer's confirmation page is not part of the inversion.
+//
+// flow=guest_signup — the session id is a CREDENTIAL, because it is the only
+// thing the buyer has: there is no account to log into yet. It authorises
+// setting the first password, once. Every rule that makes that safe lives in
+// src/lib/billing/guest-welcome.ts; this file only renders what it returns.
+//
+// IT MUST NEVER THROW, ON EITHER PATH. A missing, malformed, expired or foreign
+// session id all fall back to the generic welcome — someone who has just paid
+// should not meet an error page because a query string was mangled in an email
+// client. That is also why every guest reject renders the same generic state
+// rather than four different ones: the page cannot tell them apart, and the
+// endpoint that matters refuses all four identically.
 //
 // LOCALE MODEL: en/fr bases like the rest of the marketing tree (en-CA folds to
 // en, fr-CA to fr, de-CH shows English). Dates and money are formatted with the
@@ -25,6 +37,8 @@ import { getStripe } from "@/lib/stripe/client";
 import { PLAN_CONFIGS, PLAN_ORDER, TRIAL_DAYS } from "@/lib/plan-config";
 import { PLAN_HOME } from "@/lib/plan-routing";
 import { logger } from "@/infrastructure/observability/logger";
+import { resolveGuestSession } from "@/lib/billing/guest-welcome";
+import { GuestSetup } from "./GuestSetup";
 import { PublicNav } from "../PublicNav";
 import s from "../home2.module.css";
 import g from "../guides/_shared/guide.module.css";
@@ -56,6 +70,29 @@ const COPY = {
     ctaBilling: "Manage billing",
     pending:
       "Still setting up? Access can take a moment to appear while the confirmation from Stripe lands.",
+    guest: {
+      readyTitle: "One last step: choose a password.",
+      readyBody: (email: string) =>
+        email
+          ? `Your account is set up under ${email}. Choose a password and you are straight in.`
+          : "Your account is set up. Choose a password and you are straight in.",
+      passwordLabel: "Password",
+      passwordHint: "At least 8 characters.",
+      submit: "Set password and continue",
+      submitBusy: "Setting up…",
+      errShort: "Please use at least 8 characters.",
+      errFailed: "That link can no longer be used. If you have already set a password, log in instead.",
+      errSignin: "Your password is set. Please log in to continue.",
+      pendingTitle: "Setting up your account…",
+      pendingBody:
+        "Your payment went through. We are waiting on the confirmation from Stripe — this page updates itself, so there is nothing to do.",
+      pendingSlow:
+        "This is taking longer than usual. Your payment went through and your account will be ready shortly — try this link again in a few minutes, or contact us and we will finish it by hand.",
+      consumedTitle: "This account is already set up.",
+      consumedBody:
+        "A password has already been chosen for it. Log in and you are away — use the password reset on the login page if you cannot remember it.",
+      loginCta: "Log in",
+    },
   },
   fr: {
     eyebrow: "BIENVENUE",
@@ -74,6 +111,30 @@ const COPY = {
     ctaBilling: "Gérer la facturation",
     pending:
       "Configuration en cours ? L'accès peut mettre un instant à apparaître, le temps que la confirmation de Stripe arrive.",
+    guest: {
+      readyTitle: "Dernière étape : choisissez un mot de passe.",
+      readyBody: (email: string) =>
+        email
+          ? `Votre compte est créé au nom de ${email}. Choisissez un mot de passe et vous y êtes.`
+          : "Votre compte est créé. Choisissez un mot de passe et vous y êtes.",
+      passwordLabel: "Mot de passe",
+      passwordHint: "8 caractères minimum.",
+      submit: "Définir le mot de passe et continuer",
+      submitBusy: "Configuration en cours…",
+      errShort: "Veuillez utiliser au moins 8 caractères.",
+      errFailed:
+        "Ce lien n'est plus utilisable. Si vous avez déjà défini un mot de passe, connectez-vous.",
+      errSignin: "Votre mot de passe est défini. Connectez-vous pour continuer.",
+      pendingTitle: "Création de votre compte…",
+      pendingBody:
+        "Votre paiement est passé. Nous attendons la confirmation de Stripe — cette page se met à jour toute seule, vous n'avez rien à faire.",
+      pendingSlow:
+        "Cela prend plus de temps que d'habitude. Votre paiement est passé et votre compte sera prêt sous peu — réessayez ce lien dans quelques minutes, ou écrivez-nous et nous terminerons à la main.",
+      consumedTitle: "Ce compte est déjà configuré.",
+      consumedBody:
+        "Un mot de passe a déjà été choisi. Connectez-vous — utilisez la réinitialisation sur la page de connexion si vous ne vous en souvenez plus.",
+      loginCta: "Se connecter",
+    },
   },
 } as const;
 
@@ -153,12 +214,48 @@ export default async function WelcomePage({
   searchParams,
 }: {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{ s?: string }>;
+  searchParams: Promise<{ s?: string; session_id?: string }>;
 }) {
   const { locale } = await params;
   if (!isSupportedLocale(locale)) notFound();
-  const { s: sessionId } = await searchParams;
+  // `s` is the parameter this app's success_url has always used. `session_id`
+  // is accepted alongside it because it is Stripe's own documented placeholder
+  // name and is what a hand-built link or a pasted example will carry.
+  const { s: sParam, session_id: sessionIdParam } = await searchParams;
+  const sessionId = sParam ?? sessionIdParam;
   const c = COPY[baseOf(locale)];
+
+  // THE GUEST BRANCH IS TRIED FIRST, AND ONLY A COMPLETE guest_signup SESSION
+  // GETS PAST IT. Everything else — upgrade, credit, incomplete, garbage,
+  // absent — falls through to the confirmation page below with its original
+  // behaviour intact. resolveGuestSession collapses all four reject reasons to
+  // `invalid`, so there is one fallthrough rather than four.
+  const guest =
+    sessionId && sessionId.startsWith("cs_") ? await resolveGuestSession(sessionId) : null;
+
+  if (guest && guest.kind !== "invalid") {
+    return (
+      <div className={s.page}>
+        <PublicNav locale={locale} />
+        <section className={s.section}>
+          <div className={`${s.container} ${g.article}`}>
+            <p className={s.label}>
+              <b>/ {c.eyebrow}</b>
+            </p>
+            <h1 className={s.h2}>{c.title}</h1>
+            <GuestSetup
+              sessionId={sessionId!}
+              initialKind={guest.kind}
+              email={guest.kind === "ready" ? guest.email : null}
+              planHome={guest.kind === "ready" ? guest.planHome : "/dashboard"}
+              loginHref="/login"
+              t={c.guest}
+            />
+          </div>
+        </section>
+      </div>
+    );
+  }
 
   const confirmation =
     sessionId && sessionId.startsWith("cs_") ? await loadConfirmation(sessionId) : null;
