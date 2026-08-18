@@ -22,13 +22,26 @@ separate from the lowercase stack docs above. Start at `STATUS.md` for security 
 
 This box serves production from the working tree. A broken build is a broken site.
 
-1. `.bak.$(date +%Y%m%d-%H%M%S)` copy of every file you modify. Gitignored (`*.bak.*`,
-   `*.bak-*`) — never commit them.
-2. Build, from `/opt/echorank/app`:
+0. `umask 022` before you touch anything. Repo files are **world-readable**: several
+   accounts read this tree (`deploy` edits, `echorank` builds, `root` runs pm2), and a
+   file written 0640 by one of them is a build that fails for the next. This is why the
+   build line carries its own `umask 022` — belt and braces, not duplication.
+1. `.bak.$(date +%Y%m%d-%H%M%S)` copy of every file you modify, written to
+   **`/opt/echorank/backups/`** — mirroring the repo path under it, e.g.
+   `/opt/echorank/backups/app-src/lib/foo.ts.bak.20260818-064500`. **Never inside
+   `src/`.** They are gitignored (`*.bak.*`, `*.bak-*`) so they will not be committed,
+   but gitignored is not invisible: a hundred `.bak` files under `src/` break every
+   `grep -r`, every editor's fuzzy-open, and every agent trying to read the tree.
+2. Build, from `/opt/echorank/app`. **The ownership dance is the point** — `.env` is `600 echorank`, so the build must run AS `echorank`, and
+   `echorank` cannot write a `.next` owned by `deploy`:
    ```
-   umask 022 && NODE_OPTIONS=--max-old-space-size=4096 npm run build && chown -R deploy:deploy .next
+   chown -R echorank:echorank .next
+   sudo -u echorank bash -c 'umask 022 && NODE_OPTIONS=--max-old-space-size=4096 npm run build'
+   chown -R deploy:deploy .next
    ```
-   4096, not 1536 — 1536 OOM'd on 2026-08-15.
+   4096, not 1536 — 1536 OOM'd on 2026-08-15. A build started as `deploy` does not
+   fail; it silently comes up env-less, which is worse. The restart that closes this
+   cycle is step 3, and it follows immediately — see the window it opens.
 3. Restart, **immediately after the build** — a separate, root-side step:
    ```
    pm2 restart echorank360-web
@@ -50,6 +63,14 @@ human notices. Hand them both commands instead.
 
 - `git status` before you touch anything. In-flight work that is not yours gets its own
   commit, first.
+- **`deploy` cannot push.** No SSH key, and `git ls-remote` fails, so from this box you
+  cannot tell whether a commit reached `origin` — the local `origin/…` ref only moves on
+  fetch or push and is not evidence. **The owner's confirmation that a commit was pushed
+  satisfies any push-verification gate you cannot check from here.** Take it and move on;
+  do not block a task on a check the VPS is structurally unable to perform. `911ee84` and
+  `0d62e45` were confirmed pushed from the owner's laptop on 2026-08-18.
+- `/opt/echorank/av-service` is a SEPARATE git repo with no remote at all. Its commits are
+  local-only until someone configures one.
 - One feature, one commit.
 - Never leave production-live changes uncommitted. This box has been rebuilt from git.
 
