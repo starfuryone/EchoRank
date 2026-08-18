@@ -20,6 +20,8 @@ export interface AuthContent {
     errUnexpected: string;
     noAccount: string;
     startTrial: string;
+    showPassword: string;
+    hidePassword: string;
   };
   register: {
     h2: string;
@@ -64,6 +66,8 @@ const en: AuthContent = {
     errUnexpected: "An unexpected error occurred",
     noAccount: "Don't have an account?",
     startTrial: "Start free trial",
+    showPassword: "Show password",
+    hidePassword: "Hide password",
   },
   register: {
     h2: "Start your free trial",
@@ -108,6 +112,8 @@ const fr: AuthContent = {
     errUnexpected: "Une erreur inattendue s'est produite",
     noAccount: "Pas encore de compte ?",
     startTrial: "Démarrer l'essai gratuit",
+    showPassword: "Afficher le mot de passe",
+    hidePassword: "Masquer le mot de passe",
   },
   register: {
     h2: "Commencez votre essai gratuit",
@@ -152,6 +158,8 @@ const frCA: AuthContent = {
     errUnexpected: "Une erreur inattendue s'est produite",
     noAccount: "Pas encore de compte ?",
     startTrial: "Démarrer l'essai gratuit",
+    showPassword: "Afficher le mot de passe",
+    hidePassword: "Masquer le mot de passe",
   },
   register: {
     h2: "Commencez votre essai gratuit",
@@ -196,6 +204,8 @@ const deCH: AuthContent = {
     errUnexpected: "Ein unerwarteter Fehler ist aufgetreten",
     noAccount: "Noch kein Konto?",
     startTrial: "Kostenlos testen",
+    showPassword: "Passwort anzeigen",
+    hidePassword: "Passwort ausblenden",
   },
   register: {
     h2: "Starten Sie Ihre kostenlose Testphase",
