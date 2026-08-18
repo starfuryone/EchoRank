@@ -32,6 +32,15 @@
 // so cutting by score here would mean the cut and the ranking disagreed about
 // what they were ranking.
 
+import "server-only";
+// A CLIENT COMPONENT IMPORTING THIS IS A BUILD ERROR, BY DESIGN.
+// This module reaches the database driver / the Node filesystem, and a
+// value import of it from a Client Component pulls pg (dns, net, tls) or
+// node:fs into the browser bundle. That took production down on
+// 2026-08-18: eight Turbopack errors, a failed build, and a cleared
+// .next serving nothing. `server-only` turns the same mistake into a
+// compile error naming this file instead. Use `import type` for types.
+
 import { namesBrand } from "@/lib/ai-monitor/wizard/suggest";
 import type { PlanType } from "@/generated/prisma";
 import {
@@ -43,8 +52,17 @@ import { classifyIntent } from "./intent";
 import { trendPercentFrom, type MonthlySearch } from "./trend";
 import type { KeywordIntent } from "./score";
 
-/** Keywords carried forward into scoring. See the header. */
-export const WORKING_SET_LIMIT = 100;
+/**
+ * Keywords carried forward into scoring. See the header.
+ *
+ * DEFINED IN ./limits.ts AND RE-EXPORTED HERE. The value is needed by the
+ * Explorer's confirm dialog, which is a Client Component — and importing it
+ * from this module dragged prisma and the DataForSEO client into the browser
+ * bundle. The re-export keeps every existing server-side importer working.
+ */
+import { WORKING_SET_LIMIT } from "./limits";
+
+export { WORKING_SET_LIMIT };
 
 /** Rows asked of each Labs endpoint. Cut to WORKING_SET_LIMIT after merging. */
 export const DISCOVERY_LIMIT = 300;
@@ -66,8 +84,16 @@ export interface DiscoveredKeyword {
   intent: KeywordIntent;
   /** The provider's own intent reading, kept for the dogfood report. */
   providerIntent: string | null;
-  /** Which endpoint this row came from, for the same reason. */
-  source: "keywords_for_site" | "ranked_keywords";
+  /**
+   * Which endpoint this row came from, for the same reason.
+   *
+   * "seeded" is not an endpoint — it is the Keyword Explorer bridge, where the
+   * keyword came from the customer's selection and only its demand figures
+   * were bought (from keyword_overview; see ./enrich.ts). Kept in the same
+   * union so the dogfood report can say which rows were chosen rather than
+   * found.
+   */
+  source: "keywords_for_site" | "ranked_keywords" | "seeded";
 }
 
 /**

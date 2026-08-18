@@ -4905,6 +4905,19 @@ const keywordsEn = {
   noMatches: "No keywords match these filters.",
   clearFilters: "Clear filters",
   aiRow: "AI",
+  scoreInFinder: "Score in Opportunity Finder",
+  scoreConfirmTitle: "Score these keywords?",
+  scoreConfirmBody: (n: number) =>
+    `This runs one domain analysis over the ${n} keyword${n === 1 ? "" : "s"} you selected — buying their search demand, checking where you rank, and asking AI assistants about the strongest of them.`,
+  scoreAllowance: (left: number, total: number) =>
+    `${left} of ${total} domain analyses left this month.`,
+  scoreAllowanceUnlimited: "Unlimited domain analyses on this plan.",
+  scoreConfirmCta: "Run domain analysis",
+  scoreCancel: "Cancel",
+  scoreStarting: "Starting…",
+  scoreOverCap: (n: number, cap: number) =>
+    `You selected ${n} keywords. A domain analysis scores at most ${cap} — deselect some and try again.`,
+  scoreFailed: "Could not start the domain analysis.",
 };
 export type KeywordsCopy = typeof keywordsEn;
 
@@ -5011,6 +5024,19 @@ export const KEYWORDS_COPY: Record<DashLocale, KeywordsCopy> = {
     noMatches: "Aucun mot-clé ne correspond à ces filtres.",
     clearFilters: "Réinitialiser les filtres",
     aiRow: "IA",
+    scoreInFinder: "Évaluer dans le Détecteur d'opportunités",
+    scoreConfirmTitle: "Évaluer ces mots-clés ?",
+    scoreConfirmBody: (n: number) =>
+      `Ceci lance une analyse de domaine sur les ${n} mots-clés sélectionnés — achat de leur demande de recherche, vérification de votre classement et interrogation des assistants IA sur les plus prometteurs.`,
+    scoreAllowance: (left: number, total: number) =>
+      `${left} analyse${left === 1 ? "" : "s"} de domaine restante${left === 1 ? "" : "s"} sur ${total} ce mois-ci.`,
+    scoreAllowanceUnlimited: "Analyses de domaine illimitées sur cette formule.",
+    scoreConfirmCta: "Lancer l'analyse de domaine",
+    scoreCancel: "Annuler",
+    scoreStarting: "Lancement…",
+    scoreOverCap: (n: number, cap: number) =>
+      `Vous avez sélectionné ${n} mots-clés. Une analyse de domaine en évalue ${cap} au maximum — désélectionnez-en quelques-uns et réessayez.`,
+    scoreFailed: "Impossible de lancer l'analyse de domaine.",
   },
   "de-CH": {
     title: "Keyword-Vorschläge",
@@ -5114,6 +5140,19 @@ export const KEYWORDS_COPY: Record<DashLocale, KeywordsCopy> = {
     noMatches: "Keine Keywords entsprechen diesen Filtern.",
     clearFilters: "Filter zurücksetzen",
     aiRow: "KI",
+    scoreInFinder: "Im Chancenfinder bewerten",
+    scoreConfirmTitle: "Diese Keywords bewerten?",
+    scoreConfirmBody: (n: number) =>
+      `Damit läuft eine Domain-Analyse über die ${n} ausgewählten Keywords — sie kauft deren Suchnachfrage ein, prüft Ihr Ranking und befragt KI-Assistenten zu den stärksten davon.`,
+    scoreAllowance: (left: number, total: number) =>
+      `Noch ${left} von ${total} Domain-Analysen in diesem Monat.`,
+    scoreAllowanceUnlimited: "Unbegrenzte Domain-Analysen in diesem Tarif.",
+    scoreConfirmCta: "Domain-Analyse starten",
+    scoreCancel: "Abbrechen",
+    scoreStarting: "Wird gestartet…",
+    scoreOverCap: (n: number, cap: number) =>
+      `Sie haben ${n} Keywords ausgewählt. Eine Domain-Analyse bewertet höchstens ${cap} — wählen Sie einige ab und versuchen Sie es erneut.`,
+    scoreFailed: "Die Domain-Analyse konnte nicht gestartet werden.",
   },
 };
 

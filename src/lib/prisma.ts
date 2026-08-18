@@ -1,3 +1,12 @@
+import "server-only";
+// A CLIENT COMPONENT IMPORTING THIS IS A BUILD ERROR, BY DESIGN.
+// This module reaches the database driver / the Node filesystem, and a
+// value import of it from a Client Component pulls pg (dns, net, tls) or
+// node:fs into the browser bundle. That took production down on
+// 2026-08-18: eight Turbopack errors, a failed build, and a cleared
+// .next serving nothing. `server-only` turns the same mistake into a
+// compile error naming this file instead. Use `import type` for types.
+
 import { PrismaClient } from "@/generated/prisma";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { Pool } from "pg";

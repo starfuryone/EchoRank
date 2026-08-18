@@ -18,6 +18,16 @@
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+// The page pushes to the Opportunity Finder after starting a seeded analysis,
+// and useRouter() throws outside a mounted app router. Mocked at the module
+// boundary, the same way mega-nav.dom and assistant-pro-ui do it.
+const push = vi.fn();
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push, replace: vi.fn(), refresh: vi.fn(), prefetch: vi.fn() }),
+  usePathname: () => "/visibility/keywords",
+  useSearchParams: () => new URLSearchParams(),
+}));
+
 import { KeywordsPageClient } from "@/app/(dashboard)/visibility/keywords/page-client";
 import { KEYWORDS_COPY } from "@/lib/i18n/dashboard";
 
@@ -82,12 +92,29 @@ const RESULT = {
   meta: { pages_crawled: 5, ai_used: false, elapsed_ms: 1200 },
 };
 
-function mockFetch(body: unknown = RESULT, status = 200) {
+/**
+ * Routes the two endpoints the page talks to: the scan, and the Opportunity
+ * Finder probe that decides whether the bridge action is drawn at all.
+ */
+function mockFetch(body: unknown = RESULT, status = 200, kof: unknown = KOF_LIVE) {
   vi.stubGlobal(
     "fetch",
-    vi.fn(async () => ({ ok: status === 200, status, json: async () => body })),
+    vi.fn(async (url: string, init?: { method?: string }) => {
+      if (typeof url === "string" && url.includes("/api/keyword-opportunities")) {
+        if (init?.method === "POST") {
+          return { ok: true, status: 202, json: async () => ({ analysisId: "an-1" }) };
+        }
+        return { ok: true, status: 200, json: async () => kof };
+      }
+      return { ok: status === 200, status, json: async () => body };
+    }),
   );
 }
+
+const KOF_LIVE = {
+  live: true,
+  entitlement: { allowanceTotal: 5, allowanceRemaining: 3 },
+};
 
 /** Render, run a scan, and wait for the results to land. */
 async function scan() {
@@ -298,6 +325,68 @@ describe("tabs", () => {
     expect(screen.getByRole("tab", { name: new RegExp(EN.tabContent) })).toHaveAttribute(
       "aria-selected",
       "true",
+    );
+  });
+});
+
+
+describe("the Opportunity Finder bridge", () => {
+  async function selectOne() {
+    await scan();
+    fireEvent.click(screen.getByRole("checkbox", { name: EN.selectRow("keyword research") }));
+    await waitFor(() =>
+      expect(screen.getByRole("button", { name: new RegExp(EN.scoreInFinder) })).toBeInTheDocument(),
+    );
+  }
+
+  it("offers the action once something is selected, and not before", async () => {
+    await scan();
+    // No selection, no bulk bar, no action.
+    expect(
+      screen.queryByRole("button", { name: new RegExp(EN.scoreInFinder) }),
+    ).not.toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("checkbox", { name: EN.selectRow("keyword research") }));
+    await waitFor(() =>
+      expect(
+        screen.getByRole("button", { name: new RegExp(EN.scoreInFinder) }),
+      ).toBeInTheDocument(),
+    );
+  });
+
+  it("hides the action entirely for a tenant without Opportunity Finder access", async () => {
+    // `live: false` is the KOF allowlist saying no. Disabled-with-reason would
+    // invite "why", and the answer is an upsell the Explorer should not make.
+    mockFetch(RESULT, 200, { live: false, entitlement: null });
+    await scan();
+    fireEvent.click(screen.getByRole("checkbox", { name: EN.selectRow("keyword research") }));
+    expect(screen.getByText(EN.selectedCount(1))).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: new RegExp(EN.scoreInFinder) })).not.toBeInTheDocument();
+  });
+
+  it("confirms with the count and the remaining allowance before spending", async () => {
+    await selectOne();
+    fireEvent.click(screen.getByRole("button", { name: new RegExp(EN.scoreInFinder) }));
+    expect(screen.getByText(EN.scoreConfirmTitle)).toBeInTheDocument();
+    expect(screen.getByText(EN.scoreConfirmBody(1))).toBeInTheDocument();
+    expect(screen.getByText(EN.scoreAllowance(3, 5))).toBeInTheDocument();
+  });
+
+  it("posts the selection as seeds and lands on the Finder's own results view", async () => {
+    await selectOne();
+    fireEvent.click(screen.getByRole("button", { name: new RegExp(EN.scoreInFinder) }));
+    fireEvent.click(screen.getByRole("button", { name: EN.scoreConfirmCta }));
+
+    await waitFor(() => expect(push).toHaveBeenCalled());
+    const body = JSON.parse(
+      (globalThis.fetch as unknown as { mock: { calls: [string, { body: string }][] } }).mock.calls
+        .filter((c) => c[1]?.body)
+        .at(-1)![1].body,
+    );
+    expect(body.seedKeywords).toEqual(["keyword research"]);
+    // One results view, and it is the Finder's.
+    expect(push).toHaveBeenCalledWith(
+      "/visibility/tools/keyword-opportunities?analysisId=an-1",
     );
   });
 });

@@ -39,10 +39,21 @@ export const LABS = {
    *
    * LABS, NOT ADS, AND THAT IS NOT A PREFERENCE. The ADS block below is headed
    * "true search volume / CPC" and is the obvious place to reach for demand
-   * figures; the Keyword Opportunity Finder must not use it. Its volume, CPC,
-   * competition and twelve-month history all come from THIS response's
-   * `keyword_info`, so no Google Ads call is needed and none is permitted —
-   * see src/lib/keyword-opportunity/discover.ts.
+   * figures; the Keyword Opportunity Finder must not use it. No Google Ads call
+   * is needed and none is permitted.
+   *
+   * WHERE KOF's DEMAND FIGURES COME FROM — both halves, because for a while
+   * this comment asserted only the first and the second made it false:
+   *
+   *   DISCOVERY runs take volume, CPC, competition and the twelve-month
+   *   history from THIS response's `keyword_info` (and ranked_keywords'), so
+   *   discovery and enrichment are one call. See keyword-opportunity/discover.ts.
+   *
+   *   SEEDED runs — the Keyword Explorer bridge — have no discovery step to
+   *   ride along with, because the keywords come from the customer's own pages
+   *   rather than from a lookup. They buy the same `keyword_info` from
+   *   `keywordOverview` below, on KOF's own meter. See
+   *   keyword-opportunity/enrich.ts.
    */
   keywordsForSite: "v3/dataforseo_labs/google/keywords_for_site/live",
 } as const;
@@ -221,6 +232,30 @@ export type RankedKeywordItem = {
  * month) before taking a slope.
  */
 export type KeywordsForSiteItem = {
+  se_type?: string;
+  keyword?: string;
+  location_code?: number;
+  language_code?: string;
+  keyword_info?: {
+    search_volume?: number;
+    cpc?: number;
+    competition?: number;
+    monthly_searches?: { year: number; month: number; search_volume: number }[];
+  };
+  keyword_properties?: { keyword_difficulty?: number };
+  search_intent_info?: { main_intent?: string };
+};
+
+/**
+ * ONE ITEM of keyword_overview.
+ *
+ * Same top-level shape as KeywordsForSiteItem — `keyword` and `keyword_info`
+ * side by side — which is what lets keyword-opportunity/enrich.ts produce rows
+ * the scorer cannot distinguish from discovered ones. Declared separately
+ * rather than aliased because the two endpoints are free to diverge, and an
+ * alias would hide the day one of them does.
+ */
+export type KeywordOverviewItem = {
   se_type?: string;
   keyword?: string;
   location_code?: number;

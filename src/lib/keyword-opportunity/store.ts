@@ -65,6 +65,7 @@ export async function analysesUsedThisMonth(
 export async function cachedAnalysisId(
   domain: string,
   now: Date = new Date(),
+  seedHash: string | null = null,
 ): Promise<string | null> {
   const row = await prisma.keywordOpportunityAnalysis.findFirst({
     where: {
@@ -72,6 +73,13 @@ export async function cachedAnalysisId(
       dateBucket: dateBucket(now),
       status: "COMPLETED",
       fromCache: false,
+      // THE TWO CACHES NEVER SEE EACH OTHER. A discovery probe passes null and
+      // matches only rows with no seed set; a seeded probe passes its hash and
+      // matches only the identical set. Different inputs, different result —
+      // serving one for the other would hand a customer a hundred keywords
+      // they did not choose, or twelve they did instead of the full analysis
+      // they paid for.
+      seedHash,
     },
     orderBy: { completedAt: "desc" },
     select: { id: true },
@@ -92,11 +100,13 @@ export async function entitlementFor(
   plan: PlanType,
   domain: string,
   now: Date = new Date(),
+  /** Null asks about the discovery cache; a hash asks about that seed set. */
+  seedHash: string | null = null,
 ): Promise<AnalysisEntitlement> {
   const [allowanceUsed, credits, cacheId] = await Promise.all([
     analysesUsedThisMonth(tenantId, now),
     creditBalance(tenantId),
-    cachedAnalysisId(domain, now),
+    cachedAnalysisId(domain, now, seedHash),
   ]);
 
   const allowanceTotal = analysisAllowanceFor(plan);
@@ -116,6 +126,9 @@ export interface CreateAnalysisInput {
   domain: string;
   scoreVersion: number;
   now?: Date;
+  /** Absent on a discovery run. Present, normalised and sorted, on a seeded one. */
+  seeds?: readonly string[];
+  seedHash?: string | null;
 }
 
 /** A QUEUED row. The worker moves it on from here. */
@@ -129,6 +142,10 @@ export async function createAnalysis(input: CreateAnalysisInput): Promise<string
       dateBucket: dateBucket(now),
       scoreVersion: input.scoreVersion,
       status: "QUEUED",
+      // The worker is a different process and has nothing but this row.
+      sourceMode: input.seeds?.length ? "seeded" : "discovery",
+      seedHash: input.seedHash ?? null,
+      seedKeywords: input.seeds ? [...input.seeds] : [],
     },
     select: { id: true },
   });
@@ -169,6 +186,14 @@ export async function createCacheHit(
       status: "COMPLETED",
       fromCache: true,
       fundingSource: "cache",
+      // The hit inherits the identity of what it serves. Without these a
+      // seeded cache hit would be written as a discovery row: it would show
+      // the wrong mode in the results view, and — because the probe filters
+      // on seedHash — it would be invisible to the next probe for the same
+      // seed set, which is only harmless because hits are excluded anyway.
+      sourceMode: input.seeds?.length ? "seeded" : "discovery",
+      seedHash: input.seedHash ?? null,
+      seedKeywords: input.seeds ? [...input.seeds] : [],
       // Explicit, though both are the defaults: a cache hit consumes no
       // allowance and spends nothing. Stating it here is cheaper than
       // rediscovering it from the schema later.

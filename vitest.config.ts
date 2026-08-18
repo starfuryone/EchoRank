@@ -26,6 +26,16 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": fileURLToPath(new URL("./src", import.meta.url)),
+      // `server-only` is a marker package: under Next's react-server condition
+      // it resolves to an empty module, and everywhere else to one that THROWS
+      // on import. Vitest is "everywhere else", so without this alias every
+      // suite touching prisma, metering, discover or the DataForSEO client
+      // dies at import with "cannot be imported from a Client Component".
+      //
+      // Aliasing to its own empty.js is the same thing Next does, not a
+      // weakening of the guard: the guard's job is to fail the BUILD when a
+      // Client Component imports a server module, and the build still does.
+      "server-only": fileURLToPath(new URL("./node_modules/server-only/empty.js", import.meta.url)),
     },
   },
 });

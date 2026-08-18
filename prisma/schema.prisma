@@ -4046,6 +4046,33 @@ model KeywordOpportunityAnalysis {
   /// never recomputed; a version 2 is written beside them.
   scoreVersion Int @default(1)
 
+  /// discovery | seeded. Which entry mode produced this analysis.
+  ///
+  /// A seeded run scores a keyword set the customer chose in Keyword Explorer
+  /// instead of one discovery found. Everything after the working set is
+  /// identical — same enrichment shape, same top-15 AI cut, same scorer, same
+  /// allowance — so this is a discriminator for reads and reruns, not a second
+  /// pipeline.
+  sourceMode String @default("discovery")
+
+  /// SHA-256 of the normalised seed set. NULL on a discovery run.
+  ///
+  /// THE OTHER HALF OF THE CACHE KEY FOR SEEDED RUNS, and the reason it is a
+  /// column rather than something derived: the cache probe is an indexed
+  /// equality lookup, and a value computed in application code cannot be one.
+  /// NULL vs non-NULL is also what keeps the two caches from ever seeing each
+  /// other — a discovery probe filters seedHash: null and a seeded probe
+  /// filters its own hash, so neither can serve the other's result.
+  seedHash String?
+
+  /// The normalised seeds, in canonical order. Empty on a discovery run.
+  ///
+  /// STORED BECAUSE THE WORKER IS A DIFFERENT PROCESS. start.ts creates a
+  /// QUEUED row and returns; the run happens later, elsewhere, with nothing
+  /// but this row to go on. Without the seeds on it there is no way to tell
+  /// the worker what to score.
+  seedKeywords String[]
+
   /// UTC day, "YYYY-MM-DD". Half the cache key; see the header.
   dateBucket   String
   /// True when this row was served from an earlier COMPLETED run for the same
@@ -4111,8 +4138,11 @@ model KeywordOpportunityAnalysis {
 
   /// The tool page: this tenant's analyses, newest first.
   @@index([tenantId, createdAt(sort: Desc)])
-  /// The cache probe: one domain, one UTC day.
-  @@index([domain, dateBucket])
+  /// The cache probe: one domain, one UTC day, one seed set. `seedHash` is
+  /// last because it is an equality filter on top of the pair that already
+  /// selects the day's runs — and NULL for every discovery row, which is the
+  /// common case the leading columns still serve on their own.
+  @@index([domain, dateBucket, seedHash])
   /// The stale-RUNNING reaper: unfinished runs, oldest first.
   @@index([status, startedAt])
   @@map("keyword_opportunity_analyses")

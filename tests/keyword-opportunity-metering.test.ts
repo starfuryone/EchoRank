@@ -471,6 +471,158 @@ describe("starting an analysis goes through one function", () => {
   });
 });
 
+describe("seeded mode goes through the same entry point", () => {
+  // The Keyword Explorer bridge. A seeded run scores a set the customer chose
+  // instead of one discovery found — and spends exactly what a discovery run
+  // spends, through exactly this function.
+
+  it("records the seeds, the mode and the hash on the row", async () => {
+    keywordOpportunityAnalysis.count.mockResolvedValue(0);
+    keywordOpportunityAnalysis.findFirst.mockResolvedValue(null);
+    keywordOpportunityAnalysis.create.mockResolvedValue({ id: "seeded-1" });
+
+    const outcome = await startAnalysis({
+      tenantId: "tenant-1",
+      plan: "GROWTH",
+      brandProfileId: "brand-1",
+      domain: "echorank360.com",
+      seedKeywords: ["Best CRM", "  best  crm ", "seo tools"],
+    });
+
+    expect(outcome.kind).toBe("queued");
+    const data = keywordOpportunityAnalysis.create.mock.calls[0][0].data;
+    expect(data.sourceMode).toBe("seeded");
+    // Normalised, deduped and sorted — the worker is a different process and
+    // this row is all it gets.
+    expect(data.seedKeywords).toEqual(["best crm", "seo tools"]);
+    expect(data.seedHash).toMatch(/^[0-9a-f]{64}$/);
+  });
+
+  it("leaves a discovery run's new columns empty", async () => {
+    keywordOpportunityAnalysis.count.mockResolvedValue(0);
+    keywordOpportunityAnalysis.findFirst.mockResolvedValue(null);
+    keywordOpportunityAnalysis.create.mockResolvedValue({ id: "disc-1" });
+
+    await startAnalysis({
+      tenantId: "tenant-1",
+      plan: "GROWTH",
+      brandProfileId: "brand-1",
+      domain: "echorank360.com",
+    });
+
+    const data = keywordOpportunityAnalysis.create.mock.calls[0][0].data;
+    expect(data.sourceMode).toBe("discovery");
+    expect(data.seedHash).toBeNull();
+    expect(data.seedKeywords).toEqual([]);
+  });
+
+  it("probes the seeded cache with the hash, never the discovery cache", async () => {
+    // THE ISOLATION, ASSERTED ON THE QUERY. Serving a discovery run to a
+    // seeded request would hand the customer a hundred keywords they did not
+    // choose; serving the reverse would give them twelve instead of the full
+    // analysis they paid for.
+    keywordOpportunityAnalysis.count.mockResolvedValue(0);
+    keywordOpportunityAnalysis.findFirst.mockResolvedValue(null);
+    keywordOpportunityAnalysis.create.mockResolvedValue({ id: "seeded-2" });
+
+    await startAnalysis({
+      tenantId: "tenant-1",
+      plan: "GROWTH",
+      brandProfileId: "brand-1",
+      domain: "echorank360.com",
+      seedKeywords: ["best crm"],
+    });
+
+    const probes = keywordOpportunityAnalysis.findFirst.mock.calls.map((c) => c[0].where);
+    expect(probes.length).toBeGreaterThan(0);
+    for (const where of probes) {
+      expect(where.seedHash, JSON.stringify(where)).toMatch(/^[0-9a-f]{64}$/);
+    }
+
+    // And a discovery request asks for seedHash: null, which no seeded row has.
+    keywordOpportunityAnalysis.findFirst.mockClear();
+    keywordOpportunityAnalysis.create.mockResolvedValue({ id: "disc-2" });
+    await startAnalysis({
+      tenantId: "tenant-1",
+      plan: "GROWTH",
+      brandProfileId: "brand-1",
+      domain: "echorank360.com",
+    });
+    for (const call of keywordOpportunityAnalysis.findFirst.mock.calls) {
+      expect(call[0].where.seedHash).toBeNull();
+    }
+  });
+
+  it("serves an identical seed set from cache at no cost and no allowance", async () => {
+    keywordOpportunityAnalysis.count.mockResolvedValue(2);
+    keywordOpportunityAnalysis.findFirst.mockResolvedValue({ id: "seed-source" });
+    keywordOpportunityAnalysis.findUnique.mockResolvedValue({
+      keywordCount: 12,
+      aiTestedCount: 12,
+      discoveredCount: 12,
+      brandedCount: 0,
+      stoppedReason: null,
+      scoreVersion: 2,
+    });
+    keywordOpportunityAnalysis.create.mockResolvedValue({ id: "seed-hit" });
+
+    const outcome = await startAnalysis({
+      tenantId: "tenant-1",
+      plan: "GROWTH",
+      brandProfileId: "brand-1",
+      domain: "echorank360.com",
+      seedKeywords: ["best crm", "seo tools"],
+    });
+
+    expect(outcome.kind).toBe("cached");
+    const data = keywordOpportunityAnalysis.create.mock.calls[0][0].data;
+    expect(data.costUsd).toBe(0);
+    expect(data.allowanceConsumed).toBe(false);
+    expect(data.cachedFromId).toBe("seed-source");
+    // The hit inherits the identity of what it serves.
+    expect(data.sourceMode).toBe("seeded");
+    expect(data.seedKeywords).toEqual(["best crm", "seo tools"]);
+  });
+
+  it("consumes one allowance for a seeded run, exactly like a discovery run", async () => {
+    keywordOpportunityAnalysis.count.mockResolvedValue(0);
+    keywordOpportunityAnalysis.findFirst.mockResolvedValue(null);
+    keywordOpportunityAnalysis.create.mockResolvedValue({ id: "seeded-3" });
+
+    const outcome = await startAnalysis({
+      tenantId: "tenant-1",
+      plan: "GROWTH",
+      brandProfileId: "brand-1",
+      domain: "echorank360.com",
+      seedKeywords: ["best crm"],
+    });
+
+    expect(outcome.kind).toBe("queued");
+    if (outcome.kind === "queued") expect(outcome.funding).toBe("allowance");
+    // Same funding feature, same order, no second pot.
+    expect(keywordOpportunityAnalysis.create.mock.calls[0][0].data.status).toBe("QUEUED");
+  });
+
+  it("rejects an over-cap set BEFORE touching the entitlement", async () => {
+    // A set we will not run must not consult, let alone consume, an allowance.
+    keywordOpportunityAnalysis.count.mockClear();
+    keywordOpportunityAnalysis.create.mockClear();
+
+    await expect(
+      startAnalysis({
+        tenantId: "tenant-1",
+        plan: "GROWTH",
+        brandProfileId: "brand-1",
+        domain: "echorank360.com",
+        seedKeywords: Array.from({ length: 101 }, (_, i) => `kw ${i}`),
+      }),
+    ).rejects.toThrow(/at most 100/i);
+
+    expect(keywordOpportunityAnalysis.count).not.toHaveBeenCalled();
+    expect(keywordOpportunityAnalysis.create).not.toHaveBeenCalled();
+  });
+});
+
 describe("nobody has grown a third entry point", () => {
   // A GREP GUARD, and it earned its keep before it existed. createAnalysis()
   // and createCacheHit() are the raw writes; calling either directly skips the

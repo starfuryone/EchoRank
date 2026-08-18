@@ -50,9 +50,15 @@ This box serves production from the working tree. A broken build is a broken sit
    Never leave a rebuilt `.next` under a running process — the old process serves HTML
    referencing chunk hashes the new build deleted. The build and the restart are two
    commands now, which means there is a window in which exactly that is true: close it.
-4. Tell the human to run **Cloudflare → Purge Everything**. Manual, mandatory, and not
+4. **`next build` is part of verifying any change that touches a Client
+   Component.** `tsc`, `eslint` and `vitest` green does NOT imply build green:
+   none of them bundle, so none of them can see a server module being dragged
+   into the browser. A commit went in that way on 2026-08-18 and took the site
+   down — the failed build also clears `.next`, so the cost of finding out at
+   deploy time is an outage, not a red X.
+5. Tell the human to run **Cloudflare → Purge Everything**. Manual, mandatory, and not
    something you can do. See [gotchas.md](docs/agents/gotchas.md).
-5. `ss -ltnp | grep 4400` must show **exactly one** listener, owned by the pm2 process
+6. `ss -ltnp | grep 4400` must show **exactly one** listener, owned by the pm2 process
    (`echorank`). Kill any orphan `next-server` and restart before you call it done.
 
 `pm2` runs under **root** (`/root/.pm2`). Without sudo you cannot restart it — do not
@@ -73,6 +79,36 @@ human notices. Hand them both commands instead.
   local-only until someone configures one.
 - One feature, one commit.
 - Never leave production-live changes uncommitted. This box has been rebuilt from git.
+
+## Client / server boundary
+
+- **A Client Component never imports a server module.** Not `@/lib/prisma`, not
+  `dataforseo/*`, not `keyword-opportunity/{discover,metering,store,start,runner,
+  enrich,seeds}`. One value import of a constant from `discover.ts` pulled `pg`
+  (dns, net, tls) and `node:fs` into the browser bundle and took production down.
+  `import "server-only"` at the top of those modules turns the same mistake into
+  a named compile error; keep it there and add it to new ones. A type is free —
+  `import type` is erased — and a constant the UI needs belongs in a
+  dependency-free module like `keyword-opportunity/limits.ts`.
+- **Every runtime outside Next needs a declared strategy for `server-only`.**
+  The package resolves to an empty module only under the `react-server`
+  condition; everywhere else its main export THROWS on import. Next supplies
+  that condition, so nothing else does — and each non-Next runtime that touches
+  a guarded module breaks until it is given one. Two exist and both are
+  declared:
+  - **vitest** — `resolve.alias` maps `server-only` to its own `empty.js`
+    (`vitest.config.ts`).
+  - **tsx workers** — `npm run workers` sets
+    `NODE_OPTIONS=--conditions=react-server`, which is the same resolution Next
+    performs rather than an override of it.
+
+  Adding a third runtime (a cron entry, a one-off script, a new worker process)
+  means adding its strategy in the same commit. The failure is not subtle — the
+  process dies at import — but it dies in production, not in CI: the workers
+  crash-looped 66 times before this was written down. Note that `prisma/seed.ts`
+  and the `test:*` suites are unaffected because they construct
+  `PrismaClient` directly and never import `@/lib/prisma`; that is luck, not
+  design, and it will not hold for the next script.
 
 ## Copy
 

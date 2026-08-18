@@ -29,8 +29,9 @@
 // the column is omitted rather than half-built. See the report's backend
 // recommendations.
 
-import { useMemo, useState, type ChangeEvent, type KeyboardEvent } from "react";
+import { useEffect, useMemo, useState, type ChangeEvent, type KeyboardEvent } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Search,
   Copy,
@@ -44,12 +45,17 @@ import {
   RotateCw,
   Radar,
   Download,
+  Target,
 } from "lucide-react";
 import { BackLink, BackLinkRow } from "@/components/ui/back-link";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Modal } from "@/components/ui/modal";
+// limits.ts, NOT discover.ts. This is a Client Component, and discover.ts
+// reaches prisma and the DataForSEO client — see limits.ts for the outage.
+import { WORKING_SET_LIMIT } from "@/lib/keyword-opportunity/limits";
 import { KeywordsExplorerHelpButton } from "@/components/seo-tools/keywords-explorer-help";
 import { KEYWORDS_COPY, dashNav, type DashLocale, type KeywordsCopy } from "@/lib/i18n/dashboard";
 
@@ -214,6 +220,26 @@ export function KeywordsPageClient({ locale }: { locale: DashLocale }) {
   const [sort, setSort] = useState<Sort>("relevance");
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
+  // ── The Opportunity Finder bridge ──────────────────────────────────────
+  //
+  // Entitlement is fetched ONCE, and only after a scan has produced results —
+  // by then the customer is engaged and the answer is about to matter. Doing
+  // it on mount would put a request on every Explorer visit to decide whether
+  // to draw a button most visits never reach.
+  //
+  // `live: false` is the KOF allowlist saying no. The action is HIDDEN rather
+  // than disabled in that case: a disabled control invites "why", and the
+  // honest answer is "this account does not have that tool", which is an
+  // upsell the Explorer is the wrong place for.
+  const router = useRouter();
+  const [kof, setKof] = useState<{
+    live: boolean;
+    entitlement: { allowanceTotal: number | null; allowanceRemaining: number | null } | null;
+  } | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [dispatching, setDispatching] = useState(false);
+  const [dispatchError, setDispatchError] = useState<string | null>(null);
+
   async function runScan(ai: boolean) {
     const target = (ai ? result?.url : url.trim()) || url.trim();
     if (!target) return;
@@ -343,6 +369,61 @@ export function KeywordsPageClient({ locale }: { locale: DashLocale }) {
     () => visible.filter((r) => selected.has(r.kw)).map((r) => r.kw),
     [visible, selected],
   );
+
+  const hasResult = result !== null;
+  useEffect(() => {
+    if (!hasResult || kof !== null) return;
+    let cancelled = false;
+    fetch("/api/keyword-opportunities")
+      .then((res) => (res.ok ? res.json() : { live: false, entitlement: null }))
+      .then((data) => {
+        if (!cancelled) setKof({ live: Boolean(data?.live), entitlement: data?.entitlement ?? null });
+      })
+      .catch(() => {
+        // A failed probe hides the action rather than showing one that might
+        // 403 on click. The Explorer's own job is unaffected.
+        if (!cancelled) setKof({ live: false, entitlement: null });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [hasResult, kof]);
+
+  /**
+   * Start a seeded domain analysis over the selection and go watch it run.
+   *
+   * ONE ENTRY POINT, VIA THE EXISTING ROUTE. This posts the selection to the
+   * same endpoint the Opportunity Finder's own button uses; it does not reach
+   * into the pipeline. The route validates the set, decides the funding and
+   * enqueues — see keyword-opportunity/start.ts.
+   */
+  async function scoreSelection() {
+    setDispatching(true);
+    setDispatchError(null);
+    try {
+      const res = await fetch("/api/keyword-opportunities", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ seedKeywords: selectedList }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setDispatchError(
+          data?.code === "OVER_CAP"
+            ? t.scoreOverCap(selectedList.length, WORKING_SET_LIMIT)
+            : (data?.error ?? t.scoreFailed),
+        );
+        return;
+      }
+      // Straight to the Finder's own progress/results view. The Explorer does
+      // not render analyses — there is one results view and this is not it.
+      router.push(`/visibility/tools/keyword-opportunities?analysisId=${data.analysisId}`);
+    } catch {
+      setDispatchError(t.scoreFailed);
+    } finally {
+      setDispatching(false);
+    }
+  }
 
   /** CSV of the current selection, or of everything visible when none is picked. */
   function exportCsv() {
@@ -723,6 +804,12 @@ export function KeywordsPageClient({ locale }: { locale: DashLocale }) {
                       <Copy aria-hidden="true" className="mr-1.5 h-3.5 w-3.5" />
                       {copiedKw === selectedList.join("\n") ? t.copied : t.copySelected}
                     </Button>
+                    {kof?.live && (
+                      <Button size="sm" onClick={() => setConfirmOpen(true)}>
+                        <Target aria-hidden="true" className="mr-1.5 h-3.5 w-3.5" />
+                        {t.scoreInFinder}
+                      </Button>
+                    )}
                     <Button variant="ghost" size="sm" onClick={() => setSelected(new Set())}>
                       {t.clearSelection}
                     </Button>
@@ -912,6 +999,46 @@ export function KeywordsPageClient({ locale }: { locale: DashLocale }) {
               <p aria-live="polite" className="sr-only">
                 {copiedKw ? t.copied : ""}
               </p>
+
+              {/* CONFIRM BEFORE SPENDING. A domain analysis costs an allowance
+                  and real provider money, so the count and what is left are on
+                  screen before the button that spends them — never a one-click
+                  dispatch from a table where select-all is one click away. */}
+              <Modal
+                open={confirmOpen}
+                onClose={() => setConfirmOpen(false)}
+                title={t.scoreConfirmTitle}
+                closeLabel={t.scoreCancel}
+              >
+                <p className="text-sm text-gray-600">
+                  {t.scoreConfirmBody(selectedList.length)}
+                </p>
+                <p className="mt-3 text-sm font-medium text-gray-900">
+                  {kof?.entitlement?.allowanceTotal === null
+                    ? t.scoreAllowanceUnlimited
+                    : t.scoreAllowance(
+                        kof?.entitlement?.allowanceRemaining ?? 0,
+                        kof?.entitlement?.allowanceTotal ?? 0,
+                      )}
+                </p>
+                {dispatchError && (
+                  <p role="alert" className="mt-3 text-sm text-rose-600">
+                    {dispatchError}
+                  </p>
+                )}
+                <div className="mt-5 flex justify-end gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => setConfirmOpen(false)}
+                    disabled={dispatching}
+                  >
+                    {t.scoreCancel}
+                  </Button>
+                  <Button onClick={() => void scoreSelection()} disabled={dispatching}>
+                    {dispatching ? t.scoreStarting : t.scoreConfirmCta}
+                  </Button>
+                </div>
+              </Modal>
             </div>
           )}
 

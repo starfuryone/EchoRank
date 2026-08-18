@@ -47,8 +47,10 @@ import {
   discoverKeywords,
   discoveryFailureReason,
   discoveryOutcome,
+  type DiscoveredKeyword,
   type DiscoveryCounts,
 } from "./discover";
+import { enrichSeeds } from "./enrich";
 import { KofCapReachedError } from "./metering";
 import { generateKeywordPrompts } from "./prompts";
 import { rankFor, rankingsForDomain, trackedKeywordsFrom } from "./rankings";
@@ -62,6 +64,9 @@ import {
   type OpportunityInput,
 } from "./score";
 import { addSpend, markCompleted, markFailed, markRunning, markStep } from "./store";
+
+/** The endpoint name recorded when seeded enrichment answers badly. */
+const LABS_OVERVIEW = "v3/dataforseo_labs/google/keyword_overview/live";
 
 /** Default market. BrandProfile.country/language override per project. */
 const DEFAULT_LOCATION_CODE = 2840; // United States
@@ -105,6 +110,8 @@ export async function runAnalysis(analysisId: string): Promise<RunSummary> {
       tenantId: true,
       domain: true,
       fundingSource: true,
+      sourceMode: true,
+      seedKeywords: true,
       brandProfile: {
         select: {
           name: true,
@@ -156,17 +163,61 @@ export async function runAnalysis(analysisId: string): Promise<RunSummary> {
     // ── Rankings first: free, and its keyword list feeds discovery ──────────
     const ranks = await rankingsForDomain(analysis.tenantId, analysis.domain);
 
-    // ── Steps 1 + 2: discover and enrich (one pair of Labs calls) ───────────
-    const discovery = await discoverKeywords(ctx, {
-      domain: analysis.domain,
-      locationCode: DEFAULT_LOCATION_CODE,
-      languageCode: brand.language || DEFAULT_LANGUAGE_CODE,
-      brandAliases: aliases,
-      trackedKeywords: trackedKeywordsFrom(ranks),
-    });
+    // ── Steps 1 + 2: get the working set, with its demand figures ──────────
+    //
+    // TWO MODES, ONE WORKING SET. A discovery run finds the keywords and gets
+    // their demand data in the same pair of Labs calls. A seeded run already
+    // knows the keywords — the customer chose them in Keyword Explorer — and
+    // buys only the demand figures, because DataForSEO has never been asked
+    // about phrases that came off the customer's own pages.
+    //
+    // Everything after this point is identical, which is the whole design:
+    // the top-15 AI cut, the AI test, the scorer and the persistence below
+    // cannot tell which branch produced their input.
+    const seeded = analysis.sourceMode === "seeded" && analysis.seedKeywords.length > 0;
+
+    let workingSet: DiscoveredKeyword[];
+    let discoveryCounts: DiscoveryCounts | null = null;
+    let discoveryFailed: string[] = [];
+    let stageCostUsd = 0;
+
+    if (seeded) {
+      const enriched = await enrichSeeds(ctx, {
+        seeds: analysis.seedKeywords,
+        languageCode: brand.language || DEFAULT_LANGUAGE_CODE,
+      });
+      workingSet = enriched.keywords;
+      stageCostUsd = enriched.costUsd;
+      if (enriched.failed) discoveryFailed = [LABS_OVERVIEW];
+    } else {
+      const discovery = await discoverKeywords(ctx, {
+        domain: analysis.domain,
+        locationCode: DEFAULT_LOCATION_CODE,
+        languageCode: brand.language || DEFAULT_LANGUAGE_CODE,
+        brandAliases: aliases,
+        trackedKeywords: trackedKeywordsFrom(ranks),
+      });
+      workingSet = discovery.keywords;
+      discoveryCounts = discovery.counts;
+      discoveryFailed = discovery.failed;
+      stageCostUsd = discovery.costUsd;
+    }
+
+    const discovery = {
+      keywords: workingSet,
+      // A seeded run discovered nothing and filtered nothing: the customer's
+      // selection IS the funnel. Reporting it as a discovery of N found and 0
+      // branded would put invented numbers in the dogfood report.
+      counts: discoveryCounts ?? {
+        merged: workingSet.length,
+        afterNoise: workingSet.length,
+      } as DiscoveryCounts,
+      failed: discoveryFailed,
+      costUsd: stageCostUsd,
+    };
 
     summary.dataforseoCostUsd = discovery.costUsd;
-    summary.discovery = discovery.counts;
+    summary.discovery = discoveryCounts;
     await addSpend(analysisId, { dataforseoCostUsd: discovery.costUsd });
     await markStep(analysisId, "demand");
 

@@ -24,6 +24,7 @@ import { registrableDomain } from "@/lib/registrable-domain";
 import { prisma } from "@/lib/prisma";
 import { kofEnabledFor } from "@/lib/keyword-opportunity/rollout";
 import { startAnalysis } from "@/lib/keyword-opportunity/start";
+import { SeedSetError } from "@/lib/keyword-opportunity/seeds";
 import { entitlementFor } from "@/lib/keyword-opportunity/store";
 import { enqueueAnalysis } from "@/infrastructure/queue/workers/keyword-opportunity.worker";
 import { readAnalysis, readLatestAnalysis } from "@/lib/keyword-opportunity/read";
@@ -102,12 +103,18 @@ export async function POST(request: Request) {
     );
   }
 
-  let body: { brandProfileId?: string } = {};
+  let body: { brandProfileId?: string; seedKeywords?: unknown } = {};
   try {
-    body = (await request.json()) as { brandProfileId?: string };
+    body = (await request.json()) as { brandProfileId?: string; seedKeywords?: unknown };
   } catch {
     // An empty body is fine — the tenant's first brand profile is the default.
   }
+
+  // SEEDED MODE, from the Keyword Explorer bridge. Absent means discovery,
+  // which is what every caller before the bridge sent.
+  const seedKeywords = Array.isArray(body.seedKeywords)
+    ? body.seedKeywords.filter((k): k is string => typeof k === "string")
+    : undefined;
 
   const project = await resolveProject(tenantId, body.brandProfileId);
   if (!project) {
@@ -121,12 +128,28 @@ export async function POST(request: Request) {
   // decisions written out at this call site, which is how a second entry point
   // came to skip the cache and pay twice for one domain. See
   // keyword-opportunity/start.ts.
-  const outcome = await startAnalysis({
-    tenantId,
-    plan,
-    brandProfileId: project.id,
-    domain: project.domain,
-  });
+  let outcome;
+  try {
+    outcome = await startAnalysis({
+      tenantId,
+      plan,
+      brandProfileId: project.id,
+      domain: project.domain,
+      seedKeywords,
+    });
+  } catch (err) {
+    // An unusable seed set is the caller's mistake, not a server fault, and it
+    // is thrown before anything is consulted or spent. 400 with the reason, so
+    // the Explorer can say "you selected 140, the limit is 100" rather than
+    // "something went wrong".
+    if (err instanceof SeedSetError) {
+      return NextResponse.json(
+        { error: err.message, code: err.code, count: err.count ?? null },
+        { status: 400 },
+      );
+    }
+    throw err;
+  }
 
   if (outcome.kind === "denied") {
     // 402 rather than 403: this is "you have run out", not "you may not". The

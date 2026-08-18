@@ -2,6 +2,12 @@
 //
 // THE ONLY WAY TO START A DOMAIN ANALYSIS.
 //
+// TWO MODES, ONE ENTRY POINT. Discovery finds the keywords; seeded scores a set
+// the customer picked in Keyword Explorer. `seedKeywords` is the whole
+// difference, and it deliberately arrives here rather than at a second
+// function — the four decisions below are exactly the ones a second entry point
+// got wrong last time, and a seeded run spends the same allowance.
+//
 // ── WHY THIS MODULE EXISTS ──────────────────────────────────────────────────
 //
 // It did not, and a dogfood run paid for the same domain twice inside forty
@@ -39,6 +45,7 @@ import { prisma } from "@/lib/prisma";
 import { fundingFor } from "./entitlement";
 import { reserveCredit } from "./credits";
 import { OPPORTUNITY_SCORE_VERSION } from "./score";
+import { normalizeSeedSet, seedSetHash } from "./seeds";
 import { cachedAnalysisId, createAnalysis, createCacheHit, entitlementFor } from "./store";
 import type { AnalysisEntitlement } from "./types";
 
@@ -66,6 +73,20 @@ export interface StartAnalysisInput {
   domain: string;
   scoreVersion?: number;
   now?: Date;
+  /**
+   * SEEDED MODE: score exactly these keywords instead of discovering some.
+   *
+   * Absent or empty means a discovery run, which is every caller that existed
+   * before the Keyword Explorer bridge. Passing seeds does not create a second
+   * pipeline — it changes what the working set is and skips one stage; the
+   * funding order, the cache rules, the AI cut, the scorer and the worker path
+   * are all the ones above.
+   *
+   * Throws SeedSetError on an empty or over-cap set. That is deliberate and it
+   * happens BEFORE any entitlement is touched: a set we will not run must not
+   * consult, let alone consume, an allowance.
+   */
+  seedKeywords?: readonly string[];
 }
 
 /**
@@ -79,7 +100,13 @@ export async function startAnalysis(input: StartAnalysisInput): Promise<StartOut
   const scoreVersion = input.scoreVersion ?? OPPORTUNITY_SCORE_VERSION;
   const domain = input.domain.trim().toLowerCase();
 
-  const entitlement = await entitlementFor(input.tenantId, input.plan, domain, now);
+  // Validate and canonicalise first — an over-cap selection is rejected before
+  // the tenant's entitlement is even read, let alone spent.
+  const seeded = input.seedKeywords !== undefined && input.seedKeywords.length > 0;
+  const seeds = seeded ? normalizeSeedSet(input.seedKeywords ?? []) : undefined;
+  const seedHash = seeds ? seedSetHash(seeds) : null;
+
+  const entitlement = await entitlementFor(input.tenantId, input.plan, domain, now, seedHash);
   const funding = fundingFor(entitlement);
 
   if (funding.funding === "cache") {
@@ -88,7 +115,7 @@ export async function startAnalysis(input: StartAnalysisInput): Promise<StartOut
     // concurrent teardown could have removed it. A miss here falls through
     // and runs the analysis properly rather than reporting a hit we cannot
     // serve.
-    const sourceAnalysisId = await cachedAnalysisId(domain, now);
+    const sourceAnalysisId = await cachedAnalysisId(domain, now, seedHash);
     if (sourceAnalysisId) {
       const analysisId = await createCacheHit({
         tenantId: input.tenantId,
@@ -97,6 +124,8 @@ export async function startAnalysis(input: StartAnalysisInput): Promise<StartOut
         scoreVersion,
         sourceAnalysisId,
         now,
+        seeds,
+        seedHash,
       });
       return { kind: "cached", analysisId, sourceAnalysisId, entitlement };
     }
@@ -112,6 +141,8 @@ export async function startAnalysis(input: StartAnalysisInput): Promise<StartOut
     domain,
     scoreVersion,
     now,
+    seeds,
+    seedHash,
   });
 
   if (funding.funding === "credits") {
