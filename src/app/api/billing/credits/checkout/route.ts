@@ -27,17 +27,32 @@
 // If a gate is ever wanted after all, it is checkConsent() from
 // ../../checkout/route.ts and it drops in above the auth branch.
 //
-// ── NO PLAN GATE, ON PURPOSE ────────────────────────────────────────────────
-// Credits are spent by the Opportunity Scanner, which is AGENCY+. A sub-AGENCY
-// tenant can still buy them, and both /credits and the confirm step say plainly
-// that the lookups need an AGENCY plan to spend. Taking the money while hiding
-// that would be the problem; refusing a customer who is about to upgrade is
-// merely unhelpful. Money accepted, never misleading.
+// ── NO TIER GATE, BUT A BILLING-STATUS ONE ──────────────────────────────────
+// TIER STAYS IRRELEVANT. Credits are spent by the Opportunity Scanner, which is
+// AGENCY+, and a STARTER tenant may still buy them: both /credits and the
+// confirm step say plainly that the lookups need an AGENCY plan to spend.
+// Taking the money while hiding that would be the problem; refusing a customer
+// who is about to upgrade is merely unhelpful. Money accepted, never
+// misleading.
+//
+// BILLING STATUS IS NOW DECISIVE, AND IT NARROWS EXACTLY ONE CASE. A tenant
+// that has never subscribed (BillingStatus.NONE — registered, never paid) may
+// not buy credits by any path. This is the real gate; the buy buttons on
+// /credits, /billing and the scanner's inline chip only reflect it, and a
+// disabled button is not a gate.
+//
+// CANCELED AND PAST_DUE ARE DELIBERATELY UNCHANGED — they may still buy. A
+// customer whose card just failed, topping up, is someone trying to keep using
+// us. The predicate is canBuyCredits() in src/lib/paid-plan.ts, which reads the
+// same getBillingContext() call requirePaidPlan does: one source for what a
+// tenant IS, so the credits rule and the product-access rule cannot drift apart
+// — and credits is where drift becomes a refund conversation.
 
 import { NextRequest, NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe/client";
 import { prisma } from "@/lib/prisma";
 import { getCurrentTenant } from "@/lib/tenant";
+import { canBuyCredits } from "@/lib/paid-plan";
 import { auth } from "@/lib/auth";
 import { logger } from "@/infrastructure/observability/logger";
 import { SITE_URL, normalizeLocale } from "@/lib/seo";
@@ -90,6 +105,25 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       { error: "Sign in required.", reason: "unauthenticated", credits: pack.credits },
       { status: 401 },
+    );
+  }
+
+  // ── THE GATE, BEFORE ANY STRIPE CALL ───────────────────────────────────
+  //
+  // Placed here on purpose: no session is created, no price is listed, nothing
+  // is reserved. A tenant that has never subscribed is refused outright, with a
+  // machine-readable reason the client uses to render "choose a plan" rather
+  // than a generic failure. 403 rather than 401 — they ARE signed in, and
+  // answering 401 would send the client into the sign-in loop the credits page
+  // uses for a dead session.
+  if (!(await canBuyCredits(tenantId))) {
+    log.info({ tenantId, credits: pack.credits }, "credit checkout refused: no subscription");
+    return NextResponse.json(
+      {
+        error: "A plan is required before buying lookups.",
+        reason: "plan_required",
+      },
+      { status: 403 },
     );
   }
 

@@ -13,7 +13,13 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const { prismaFns, stripeMock, authFns, loggerFns } = vi.hoisted(() => ({
-  prismaFns: { consentEvent: { create: vi.fn() } },
+  // subscription/tenant back getBillingContext(), which the route now calls
+  // through canBuyCredits() before it touches Stripe.
+  prismaFns: {
+    consentEvent: { create: vi.fn() },
+    subscription: { findUnique: vi.fn() },
+    tenant: { findUnique: vi.fn() },
+  },
   stripeMock: {
     prices: { list: vi.fn() },
     checkout: { sessions: { create: vi.fn() } },
@@ -63,6 +69,91 @@ beforeEach(() => {
     url: "https://checkout.stripe.com/c/pay/cs_1",
   });
   prismaFns.consentEvent.create.mockResolvedValue({});
+  // The default tenant for this file is a paying one: an ACTIVE plan row. Every
+  // test that is not ABOUT the billing gate needs to get past it.
+  prismaFns.subscription.findUnique.mockResolvedValue({
+    status: "ACTIVE",
+    productKind: "PLAN",
+  });
+  prismaFns.tenant.findUnique.mockResolvedValue({ billingStatus: "ACTIVE" });
+});
+
+// ─── The billing gate ───────────────────────────────────────────────────────
+//
+// CREDITS ARE FOR SUBSCRIBERS. A tenant that registered and never subscribed
+// (BillingStatus.NONE) cannot buy a pack by any path, and the refusal happens
+// BEFORE Stripe — no session, no price lookup, nothing to reconcile later.
+//
+// The rule narrows exactly one status. CANCELED and PAST_DUE deliberately keep
+// buying: someone whose card just failed, topping up, is a customer trying to
+// keep using us, and taking their money is the right answer. Asserted here
+// because "we tightened the gate" is exactly the kind of change that quietly
+// takes two more statuses with it.
+
+describe("the billing gate", () => {
+  /** A tenant that has never subscribed: no row, billingStatus NONE. */
+  function neverSubscribed() {
+    prismaFns.subscription.findUnique.mockResolvedValue(null);
+    prismaFns.tenant.findUnique.mockResolvedValue({ billingStatus: "NONE" });
+  }
+
+  it("refuses a tenant that has never subscribed", async () => {
+    neverSubscribed();
+    const { POST } = await import("@/app/api/billing/credits/checkout/route");
+    const res = await POST(post({ credits: PACK, locale: "en" }));
+
+    expect(res.status).toBe(403);
+    expect((await res.json()).reason).toBe("plan_required");
+  });
+
+  it("creates NO Stripe session for a tenant that has never subscribed", async () => {
+    // The point of gating before the Stripe call: a refused buyer must not
+    // leave an abandoned session behind, and must not even cost a price lookup.
+    neverSubscribed();
+    const { POST } = await import("@/app/api/billing/credits/checkout/route");
+    await POST(post({ credits: PACK, locale: "en" }));
+
+    expect(stripeMock.checkout.sessions.create).not.toHaveBeenCalled();
+    expect(stripeMock.prices.list).not.toHaveBeenCalled();
+    // ...and no compliance row for a purchase that never started.
+    expect(prismaFns.consentEvent.create).not.toHaveBeenCalled();
+  });
+
+  it("403, not 401 — they ARE signed in", async () => {
+    // 401 is what the client turns into a /login round trip. Answering it here
+    // would bounce a signed-in user to a login page they do not need, and back,
+    // forever.
+    neverSubscribed();
+    const { POST } = await import("@/app/api/billing/credits/checkout/route");
+    const res = await POST(post({ credits: PACK, locale: "en" }));
+
+    expect(res.status).not.toBe(401);
+  });
+
+  it("lets a TRIALING tenant with a real subscription buy", async () => {
+    prismaFns.subscription.findUnique.mockResolvedValue({
+      status: "TRIALING",
+      productKind: "PLAN",
+    });
+    prismaFns.tenant.findUnique.mockResolvedValue({ billingStatus: "TRIALING" });
+    const { POST } = await import("@/app/api/billing/credits/checkout/route");
+    const res = await POST(post({ credits: PACK, locale: "en" }));
+
+    expect(res.status).toBe(200);
+    expect(stripeMock.checkout.sessions.create).toHaveBeenCalledTimes(1);
+  });
+
+  it.each(["PAST_DUE", "CANCELED"] as const)(
+    "still sells to a %s tenant — the gate narrows NONE only",
+    async (status) => {
+      prismaFns.subscription.findUnique.mockResolvedValue(null);
+      prismaFns.tenant.findUnique.mockResolvedValue({ billingStatus: status });
+      const { POST } = await import("@/app/api/billing/credits/checkout/route");
+      const res = await POST(post({ credits: PACK, locale: "en" }));
+
+      expect(res.status).toBe(200);
+    },
+  );
 });
 
 // ─── The consent record ─────────────────────────────────────────────────────

@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import Stripe from "stripe";
+import type Stripe from "stripe";
 import type { Prisma } from "@/generated/prisma";
 import { prisma } from "@/lib/prisma";
+import { getStripe } from "@/lib/stripe/client";
 import { productKindFor, type ProductKind } from "@/lib/ai-monitor/watcher-entitlement";
 import { reconcileTenantMatrixAccounts } from "@/lib/matrix-accounts";
 import { rateLimit } from "@/lib/rate-limit";
@@ -13,18 +14,33 @@ import {
   scheduleTrialEndingNotice,
 } from "@/lib/billing/trial-notice";
 import { handleCreditPackCompleted, isCreditPackSession } from "@/lib/billing/credit-webhook";
-import { handleGuestSignupCompleted, isGuestSignupSession } from "@/lib/billing/guest-signup";
 
 const log = logger.child({ module: "stripe-webhook" });
 
-function getStripe(): Stripe {
-  const key = process.env.STRIPE_SECRET_KEY;
-  if (!key) throw new Error("STRIPE_SECRET_KEY is not configured");
-  return new Stripe(key);
-}
+// The client comes from src/lib/stripe/client.ts now, not from a constructor
+// here. This file used to build its own from the same env var, which meant the
+// sandbox boot guard in that module (PORT=4501 must carry a sk_test_ key) had
+// exactly one way around it — and the webhook is the last place that should be
+// the exception, since it both reads and writes billing state.
 
 // ─── Subscription status mapping ────────────────────────────────────────────
 
+/**
+ * Stripe's subscription status -> ours.
+ *
+ * IT CAN NEVER RETURN "NONE", AND THAT IS ENFORCED BY THIS SIGNATURE.
+ *
+ * NONE means "registered, never subscribed". Stripe has no such status — it
+ * has no opinion about an account that never reached checkout — so there is no
+ * input that could legitimately map to it. Spelling the four values out here
+ * rather than writing `BillingStatus` is what makes that structural: a webhook
+ * cannot demote a paying tenant to NONE, because the function every status
+ * write flows through has no way to produce the value. The only writer of NONE
+ * anywhere is the Tenant.billingStatus column default.
+ *
+ * The same reasoning is why Subscription.status is documented as never-NONE in
+ * prisma/schema.prisma: this is the function that fills it.
+ */
 function mapStripeStatus(
   status: string
 ): "ACTIVE" | "PAST_DUE" | "CANCELED" | "TRIALING" {
@@ -77,33 +93,30 @@ function mapStripePlan(
 // ─── Event handlers ─────────────────────────────────────────────────────────
 
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
-  // ── A THREE-WAY DISPATCH, AND BOTH EARLY RETURNS ARE LOAD-BEARING ───────
+  // ── A TWO-WAY DISPATCH, AND THE EARLY RETURN IS LOAD-BEARING ────────────
   //
-  // Everything below these two branches assumes a session for a tenant that
-  // ALREADY EXISTS, found by client_reference_id, and ends at:
+  // Everything below this branch assumes a session for a tenant that ALREADY
+  // EXISTS, found by client_reference_id, and ends at:
   //
   //     if (subscriptionId ? productKind === "PLAN" : true)
   //       updateData.billingStatus = "ACTIVE";
   //
-  // Each branch has to return before that line, for opposite reasons:
+  // credit_pack has to return before that line: it carries no subscription, so
+  // the ternary short-circuits to true and a $19 pack of lookups would set the
+  // tenant ACTIVE. It must not reach the line because it would wrongly GRANT.
+  // tests/credit-webhook.test.ts drives the real dispatcher rather than
+  // re-implementing it, so this ordering is what is under test.
   //
-  //   credit_pack   carries no subscription, so the ternary short-circuits to
-  //                 true and a $19 pack of lookups would set the tenant ACTIVE.
-  //                 It must not reach the line because it would wrongly GRANT.
-  //   guest_signup  carries no client_reference_id, so the tenant lookup above
-  //                 finds nothing and the handler warns and returns — the buyer
-  //                 pays and receives no account at all. It must not reach the
-  //                 line because it would wrongly DO NOTHING.
-  //
-  // tests/credit-webhook.test.ts and tests/guest-signup.test.ts both drive the
-  // real dispatcher rather than re-implementing it, so this ordering is what is
-  // under test.
+  // THE guest_signup ARM IS GONE, along with the flow that produced it. The
+  // funnel is register -> checkout again: every session this app creates now
+  // carries a client_reference_id, because a tenant always exists before
+  // Stripe is called. A session arriving here without one is what it was
+  // before the inversion — something started outside this app — and is handled
+  // by the warn-and-return below rather than by provisioning an account from
+  // a payment. src/lib/billing/guest-signup.ts is now unreferenced; it is
+  // removed in its own commit with the rest of that cluster.
   if (isCreditPackSession(session)) {
     await handleCreditPackCompleted(session);
-    return;
-  }
-  if (isGuestSignupSession(session)) {
-    await handleGuestSignupCompleted(session);
     return;
   }
 
@@ -230,22 +243,105 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   );
 }
 
-async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
+// ─── Tenant resolution for subscription events ──────────────────────────────
+
+/**
+ * Raised when an event WE created cannot be attached to a tenant.
+ *
+ * Thrown, not logged, so the route returns non-2xx and Stripe retries with
+ * backoff. That is the escape hatch for the one ordering case metadata cannot
+ * cover: a subscription created before tenantId was stamped (in flight during
+ * the deploy that added it), whose tenant is identifiable only by a
+ * stripeCustomerId that checkout.session.completed has not written yet. The
+ * retry lands after that event and succeeds.
+ */
+class TenantNotResolvedError extends Error {
+  constructor(customerId: string | undefined, subscriptionId: string) {
+    super(
+      `No tenant for subscription ${subscriptionId} (customer ${customerId ?? "unknown"}). ` +
+        "Returning non-2xx so Stripe retries after checkout.session.completed lands.",
+    );
+    this.name = "TenantNotResolvedError";
+  }
+}
+
+/**
+ * Find the tenant a subscription belongs to, WITHOUT depending on event order.
+ *
+ * TWO ROUTES, IN THIS ORDER, AND THE ORDER IS THE FIX:
+ *
+ *   1. metadata.tenantId, stamped by /api/billing/checkout onto
+ *      subscription_data.metadata. Present on the Subscription object itself, so
+ *      it answers the question from the event in hand and needs nothing to have
+ *      happened first.
+ *   2. stripeCustomerId, as before. Still required: a subscription created in
+ *      the Stripe dashboard or by the billing portal carries no metadata of
+ *      ours, and by then the tenant has a customer id anyway.
+ *
+ * ── WHY AN UNRESOLVED EVENT IS NOT ALWAYS AN ERROR ─────────────────────────
+ *
+ * THE LIVE STRIPE ACCOUNT IS SHARED WITH SEVEN OR MORE OTHER PRODUCTS
+ * (docs/agents/gotchas.md). A webhook endpoint receives every account event of
+ * a subscribed type, so this handler is routinely handed subscriptions that
+ * belong to AgoraIQ or AI Membership Hub and never had a tenant to find. Those
+ * must keep returning 200: making "no tenant" a retryable failure would put
+ * every foreign subscription event into a three-day retry loop and bury real
+ * failures in the noise.
+ *
+ * So the two cases are separated by whether the subscription is OURS, which
+ * metadata.app answers:
+ *
+ *   app === "echorank", no tenant  ->  THROW. Our event, genuinely unattached.
+ *   no app marker,      no tenant  ->  warn + 200. Somebody else's product.
+ *
+ * A subscription that names a tenantId which no longer exists also returns 200:
+ * the tenant was deleted, and no number of retries will bring it back.
+ */
+async function resolveSubscriptionTenant(subscription: Stripe.Subscription) {
   const customerId =
     typeof subscription.customer === "string"
       ? subscription.customer
       : subscription.customer?.id;
 
-  if (!customerId) return;
+  const metadata = subscription.metadata ?? {};
+  const stampedTenantId = metadata.tenantId;
+  const isOurs = metadata.app === "echorank";
 
-  const tenant = await prisma.tenant.findFirst({
-    where: { stripeCustomerId: customerId },
-  });
-
-  if (!tenant) {
-    log.warn({ customerId }, "No tenant found for subscription update");
-    return;
+  if (stampedTenantId) {
+    const tenant = await prisma.tenant.findUnique({ where: { id: stampedTenantId } });
+    if (tenant) return { tenant, customerId, resolvedBy: "metadata" as const };
+    // Named a tenant that is gone. Retrying cannot help.
+    log.warn(
+      { subscriptionId: subscription.id, stampedTenantId, customerId },
+      "Subscription names a tenant that no longer exists — not retrying",
+    );
+    return { tenant: null, customerId, resolvedBy: "none" as const };
   }
+
+  if (customerId) {
+    const tenant = await prisma.tenant.findFirst({ where: { stripeCustomerId: customerId } });
+    if (tenant) return { tenant, customerId, resolvedBy: "customer" as const };
+  }
+
+  if (isOurs) {
+    // Ours, unattached, and a retry can plausibly fix it. See the doc above.
+    throw new TenantNotResolvedError(customerId, subscription.id);
+  }
+
+  log.warn(
+    { subscriptionId: subscription.id, customerId },
+    "No tenant for subscription and no echorank marker — foreign product, ignoring",
+  );
+  return { tenant: null, customerId, resolvedBy: "none" as const };
+}
+
+async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
+  // Order-independent: see resolveSubscriptionTenant. This used to look the
+  // tenant up by stripeCustomerId alone, which is a column the SIBLING event
+  // writes — so whichever event Stripe happened to deliver second decided
+  // whether a paying customer got a Subscription row at all.
+  const { tenant, customerId, resolvedBy } = await resolveSubscriptionTenant(subscription);
+  if (!tenant) return;
 
   const billingStatus = mapStripeStatus(subscription.status);
   const firstItem = subscription.items?.data?.[0];
@@ -277,6 +373,17 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
   const tenantUpdate: Record<string, unknown> = {
     stripeSubscriptionId: subscription.id,
   };
+  // WRITE THE CUSTOMER ID IF WE ARRIVED BY METADATA.
+  //
+  // Only checkout.session.completed used to persist this, so a tenant resolved
+  // here by metadata — because this event won the race — would still have a null
+  // stripeCustomerId. Every invoice handler below finds its tenant by that
+  // column and by nothing else, so leaving it unwritten just moves the same race
+  // onto invoice.payment_failed. Written here, the column exists as soon as
+  // EITHER event lands, whichever that is.
+  if (customerId && tenant.stripeCustomerId !== customerId) {
+    tenantUpdate.stripeCustomerId = customerId;
+  }
   // A watcher purchase does not move the tenant's billing status either. The
   // paid gate falls back to this column when the row is not a plan, so writing
   // ACTIVE here would reopen the hole one level down.
@@ -389,7 +496,7 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
   }
 
   log.info(
-    { tenantId: tenant.id, status: billingStatus, planType },
+    { tenantId: tenant.id, status: billingStatus, planType, resolvedBy },
     "Subscription updated"
   );
 }
@@ -399,21 +506,11 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
   // warning about one would be worse than silence.
   await cancelTrialEndingNotice(subscription.id);
 
-  const customerId =
-    typeof subscription.customer === "string"
-      ? subscription.customer
-      : subscription.customer?.id;
-
-  if (!customerId) return;
-
-  const tenant = await prisma.tenant.findFirst({
-    where: { stripeCustomerId: customerId },
-  });
-
-  if (!tenant) {
-    log.warn({ customerId }, "No tenant found for subscription deletion");
-    return;
-  }
+  // Same resolver as the update path: a cancellation must not be dropped just
+  // because it arrived before the checkout event that would have written the
+  // customer id.
+  const { tenant } = await resolveSubscriptionTenant(subscription);
+  if (!tenant) return;
 
   await prisma.tenant.update({
     where: { id: tenant.id },
@@ -428,6 +525,20 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
   log.info({ tenantId: tenant.id }, "Subscription canceled");
 }
 
+// ─── Invoice handlers ───────────────────────────────────────────────────────
+//
+// THESE TWO STILL RESOLVE BY stripeCustomerId ALONE, AND THAT IS SOUND HERE.
+//
+// An Invoice does not carry our subscription metadata inline, so giving them the
+// resolver above would mean an extra Stripe API call on every invoice event to
+// fetch the subscription. It buys nothing: both handlers only ever adjust a
+// tenant BETWEEN paid states — one clears PAST_DUE, the other sets it — and a
+// tenant with no stripeCustomerId has not completed a checkout, so it has no
+// paid state to move and nothing to correct. The race that mattered was the one
+// that skipped writing a row; there is no row to miss here.
+//
+// The customer id is now written by whichever of the two subscription events
+// lands first (see tenantUpdate above), which shortens even this window.
 async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
   const customerId =
     typeof invoice.customer === "string"

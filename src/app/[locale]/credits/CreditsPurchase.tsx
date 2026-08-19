@@ -27,6 +27,9 @@ import type { Locale } from "@/lib/i18n/config";
 import type { PricedPack } from "@/lib/credits/pricing";
 import s from "../home2.module.css";
 
+/** Ties every inert buy button to the panel that says why. */
+const NO_PLAN_NOTE_ID = "credits-no-plan";
+
 export interface CreditsPurchaseCopy {
   perLookup: string;
   lookups: string;
@@ -36,19 +39,36 @@ export interface CreditsPurchaseCopy {
   terms: string;
   planNoticeTitle: string;
   planNoticeBody: string;
+  noPlanTitle: string;
+  noPlanBody: string;
+  noPlanCta: string;
 }
 
 export function CreditsPurchase({
   locale,
   packs,
   signedIn,
+  canPurchase,
   showPlanNotice,
+  pricingHref,
   copy,
 }: {
   locale: Locale;
   packs: PricedPack[];
   signedIn: boolean;
+  /**
+   * Server-resolved: may this tenant buy at all? False only for a signed-in
+   * tenant that has never subscribed. TRUE for a signed-out visitor, who is
+   * unknown rather than unentitled and keeps the sign-in path.
+   *
+   * PRESENTATION ONLY. POST /api/billing/credits/checkout enforces the same
+   * rule and is the actual gate; a disabled button is a courtesy, and this
+   * component would be trivially bypassable on its own.
+   */
+  canPurchase: boolean;
   showPlanNotice: boolean;
+  /** Where "choose a plan" goes. Locale-prefixed by the caller. */
+  pricingHref: string;
   copy: CreditsPurchaseCopy;
 }) {
   const [pending, setPending] = useState<number | null>(null);
@@ -61,6 +81,10 @@ export function CreditsPurchase({
       window.location.assign(`/login?next=/${locale}/credits`);
       return;
     }
+    // Belt to the server's braces. The buttons are not rendered as live in
+    // this state, so reaching here means something got out of step; refusing
+    // locally beats a round trip that can only end in a 403.
+    if (!canPurchase) return;
     setPending(credits);
     setError(null);
     try {
@@ -97,6 +121,28 @@ export function CreditsPurchase({
         <p className={s.label}>
           <b>/ 03</b>
         </p>
+
+        {/* NO PLAN AT ALL: a state that explains itself, not a dead button.
+            Lookups are an add-on to a subscription, so the only useful thing
+            this page can offer someone without one is the way to get one. The
+            buy buttons below render inert in this state rather than being
+            hidden — a card whose price you can still read, with a reason
+            attached, tells you what you would be buying once you have a plan. */}
+        {signedIn && !canPurchase && (
+          <div
+            id={NO_PLAN_NOTE_ID}
+            className={s.ucCard}
+            style={{ display: "block", marginBottom: 24, maxWidth: 760 }}
+          >
+            <span className={s.ucTitle}>{copy.noPlanTitle}</span>
+            <span className={s.ucBody}>{copy.noPlanBody}</span>
+            <p style={{ marginTop: 12 }}>
+              <Link className={`${s.btn} ${s.btnPrimary}`} href={pricingHref}>
+                {copy.noPlanCta}
+              </Link>
+            </p>
+          </div>
+        )}
 
         {/* MONEY IS ACCEPTED, BUT NEVER MISLEADINGLY. A tenant below Agency can
             buy — the credits keep — and is told plainly that the tool which
@@ -142,12 +188,20 @@ export function CreditsPurchase({
                   <span className={s.ucBody}>
                     ${pack.unitUsd.toFixed(3)} {copy.perLookup}
                   </span>
+                  {/* Inert without a plan. `disabled` and not a hidden button:
+                      the price stays readable, and the reason is in the panel
+                      above rather than in a control that silently does nothing. */}
                   <button
                     type="button"
                     onClick={() => void buy(pack.credits)}
-                    disabled={pending !== null}
+                    disabled={pending !== null || (signedIn && !canPurchase)}
+                    aria-describedby={signedIn && !canPurchase ? NO_PLAN_NOTE_ID : undefined}
                     className={`${s.btn} ${s.btnPrimary}`}
-                    style={{ marginTop: 14, width: "100%", opacity: pending ? 0.6 : 1 }}
+                    style={{
+                      marginTop: 14,
+                      width: "100%",
+                      opacity: pending || (signedIn && !canPurchase) ? 0.6 : 1,
+                    }}
                   >
                     {pending === pack.credits ? "…" : `${copy.buy} ↗`}
                   </button>

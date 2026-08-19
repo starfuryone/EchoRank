@@ -325,31 +325,64 @@ export function navHrefs(): string[] {
 }
 
 /**
+ * Is there a session? Asked ONCE for the whole nav.
+ *
+ * THIS USED TO LIVE INSIDE AuthCta, AND THAT WAS THE BUG. The CTA flipped to
+ * "Dashboard" for a signed-in visitor while the "Login" link two elements to
+ * its left stayed put, because nothing else consulted the session. On most
+ * marketing pages that is merely untidy; on /[locale]/welcome it is wrong in a
+ * way customers notice, because that page is reached by someone who has just
+ * paid and is definitionally signed in — and it greeted them with "Login" and
+ * "Join Now". Hoisting the probe here is what lets every auth-dependent item in
+ * the nav answer from one source.
+ *
+ * The nav is a client component on public pages with no session prop to read,
+ * hence a fetch rather than a server check. It starts as "signed out" and
+ * corrects itself: a brief logged-out nav for a logged-in visitor is a flicker,
+ * whereas assuming signed-in would flash an authenticated-looking nav at every
+ * anonymous visitor on every marketing page. A failed probe leaves the
+ * logged-out chrome — never blocks, never hides.
+ */
+function useSignedIn(override?: boolean): boolean {
+  const [probed, setProbed] = useState(false);
+
+  useEffect(() => {
+    // A caller that already knows has told us server-side; do not spend a
+    // request re-asking, and do not let a slow answer overwrite a certain one.
+    if (override !== undefined) return;
+    let cancelled = false;
+    fetch("/api/auth/session", { credentials: "same-origin" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (!cancelled && data && data.user) setProbed(true);
+      })
+      .catch(() => {
+        // A failed session probe just means the logged-out chrome stays.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [override]);
+
+  return override ?? probed;
+}
+
+/**
  * Signup/dashboard switch.
  *
  * Signed OUT this points at /pricing, not /register: every marketing CTA now
  * routes through the pricing page, and this button is a marketing CTA like any
  * other. Signed IN it points at /dashboard, which is an in-app link and stays.
  */
-function AuthCta({ labels, pricingHref }: { labels: NavCopy; pricingHref: string }) {
-  const [signedIn, setSignedIn] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-    fetch("/api/auth/session", { credentials: "same-origin" })
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data) => {
-        if (!cancelled && data && data.user) setSignedIn(true);
-      })
-      .catch(() => {
-        // A failed session probe just means the logged-out CTA stays. Never
-        // block or hide the button over it.
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
+function AuthCta({
+  labels,
+  pricingHref,
+  signedIn,
+}: {
+  labels: NavCopy;
+  pricingHref: string;
+  signedIn: boolean;
+}) {
   return signedIn ? (
     <Link className={s.navcta} href="/dashboard">
       {labels.dashboard}
@@ -364,10 +397,26 @@ function AuthCta({ labels, pricingHref }: { labels: NavCopy; pricingHref: string
 export function PublicNav({
   locale,
   current,
+  signedIn: signedInProp,
 }: {
   locale: string;
   /** Marks the active group or flat link. */
   current?: NavCurrent;
+  /**
+   * Server-known session state, for pages that already have it.
+   *
+   * WITHOUT THIS THE PROBE IS THE ONLY ANSWER, and a probe cannot run until
+   * after hydration — so the FIRST paint of every page shows logged-out chrome.
+   * On a marketing page that is an invisible flicker. On /[locale]/welcome it is
+   * the bug: that page is reached by someone who has just paid, so the one
+   * visitor it ever has is signed in, and it greeted them with "Login" and
+   * "Join Now" until the probe came back.
+   *
+   * Omit it on genuinely static marketing pages — passing it forces those pages
+   * to become dynamic for a piece of nav chrome, which is the wrong trade
+   * everywhere except where the answer is already in hand.
+   */
+  signedIn?: boolean;
 }) {
   const b = baseOf(locale);
   const t = navFor(b);
@@ -383,6 +432,11 @@ export function PublicNav({
    * surface the server is refusing.
    */
   const showAssistant = assistantLinkVisible();
+
+  // One answer for the whole nav: the CTA below and both "Login" links read it,
+  // so they can never disagree about whether there is a session. Server-supplied
+  // when the page knows, probed otherwise.
+  const signedIn = useSignedIn(signedInProp);
 
   /** Exactly one panel at a time — this is a single value, not a set. */
   // Learn and Resources are pages INSIDE the Resources group now, so a page
@@ -561,7 +615,9 @@ export function PublicNav({
           >
             {t.pricing}
           </Link>
-          <Link href="/login">{t.login}</Link>
+          {/* Hidden when signed in — see useSignedIn. Offering "Login" to a
+              visitor who is already logged in is the /welcome bug. */}
+          {!signedIn && <Link href="/login">{t.login}</Link>}
         </div>
 
         <div className={s.navright}>
@@ -574,7 +630,7 @@ export function PublicNav({
               FR
             </Link>
           </span>
-          <AuthCta labels={t} pricingHref={L("/pricing")} />
+          <AuthCta labels={t} pricingHref={L("/pricing")} signedIn={signedIn} />
           <button
             type="button"
             className={s.burger}
@@ -639,9 +695,11 @@ export function PublicNav({
             <Link href={L("/pricing")} className={s.sheetSection} onClick={() => setMobileOpen(false)}>
               {t.pricing}
             </Link>
-            <Link href="/login" className={s.sheetSection} onClick={() => setMobileOpen(false)}>
-              {t.login}
-            </Link>
+            {!signedIn && (
+              <Link href="/login" className={s.sheetSection} onClick={() => setMobileOpen(false)}>
+                {t.login}
+              </Link>
+            )}
           </div>
         </div>
       )}

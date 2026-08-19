@@ -1,9 +1,10 @@
 import { redirect } from "next/navigation";
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { ASSISTANT_COPY, dashboardLocale } from "@/lib/i18n/dashboard";
 import { auth } from "@/lib/auth";
 import { getCurrentTenant } from "@/lib/tenant";
-import { hasPaidPlan } from "@/lib/paid-plan";
+import { getBillingContext, isPaidStatus } from "@/lib/paid-plan";
+import { isNoneAllowedPath } from "@/lib/billing-gate";
 import { assistantEnabled, assistantLinkVisible } from "@/lib/assistant/config";
 import { unreadNotificationCount } from "@/lib/notifications/store";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
@@ -29,9 +30,41 @@ export default async function DashboardLayout({
   const membership = await getCurrentTenant();
   const plan = membership?.tenant.planType;
 
-  // Paid (ACTIVE billing) drives SEO Tools visibility in the sidebar; the
-  // tools layout re-checks server-side, so this is presentation only.
-  const paid = membership ? await hasPaidPlan(membership.tenantId) : false;
+  // ── THE BILLING GATE, AND THE ONLY PLACE IT LIVES ────────────────────────
+  //
+  // ONE getBillingContext CALL ANSWERS BOTH QUESTIONS. `paid` drives what the
+  // sidebar shows; `needsPlanSelection` decides whether this tenant may be here
+  // at all. Reading them from one context is what makes it impossible for the
+  // gate and requirePaidPlan to disagree about the same tenant — see
+  // src/lib/billing-gate.ts for why this is not in the proxy.
+  const billing = membership
+    ? await getBillingContext(membership.tenantId)
+    : null;
+
+  // Paid (ACTIVE billing, or a real Stripe trial) drives SEO Tools visibility
+  // in the sidebar; the tools layout re-checks server-side, so this is
+  // presentation only.
+  const paid = billing ? isPaidStatus(billing.status, billing.hasSubscriptionRow) : false;
+
+  // A tenant that has never subscribed is sent to pick a plan. NOT an error
+  // page and NOT a modal: they have an account, they are signed in, and the
+  // one thing missing is a plan — so the destination is the page that sells
+  // them one, where (being signed in) a single click now goes straight to
+  // Stripe with no second registration.
+  //
+  // THE EXEMPT PATHS ARE CHECKED FIRST. /settings/account has to stay reachable
+  // or a user who wants to leave cannot find out what they are leaving.
+  //
+  // x-pathname is stamped by src/proxy.ts for authenticated app routes; a
+  // layout cannot read the pathname any other way. If it is somehow absent we
+  // fail CLOSED (redirect), because the alternative is a gate that silently
+  // stops applying the moment a header goes missing.
+  if (billing?.needsPlanSelection) {
+    const pathname = (await headers()).get("x-pathname");
+    if (!isNoneAllowedPath(pathname)) {
+      redirect(`/${locale}/pricing`);
+    }
+  }
 
   // Resolved here so the bell is correct on first paint rather than flashing
   // an empty badge while the client fetches. The header re-reads it on every

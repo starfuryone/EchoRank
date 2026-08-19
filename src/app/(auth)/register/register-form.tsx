@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Modal } from "@/components/ui/modal";
 import type { AuthContent } from "@/lib/i18n/auth-content";
 import { postSignupRedirect } from "@/lib/plan-routing";
+import { takeCheckoutConsent } from "@/lib/checkout-consent";
 
 export default function RegisterForm({
   c,
@@ -69,26 +70,48 @@ export default function RegisterForm({
       } else if (resumeCheckout && plan) {
         // Came from a pricing card: finish what they clicked rather than
         // dropping them on a dashboard and making them find pricing again.
-        // Any failure here falls through to the normal destination — a new
-        // account is not worth stranding over a checkout hiccup.
-        try {
-          const r = await fetch("/api/billing/checkout", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              tier: plan,
-              interval: interval === "year" ? "year" : "month",
-              locale,
-            }),
-          });
-          const d = (await r.json()) as { url?: string };
-          if (r.ok && d.url) {
-            window.location.assign(d.url);
-            return;
+        //
+        // THE CONSENT IS THE WHOLE REASON THIS WORKS. /api/billing/checkout
+        // validates it BEFORE the auth branch, so a resumed call without it is
+        // answered 400 consent_required — and this block's fallthrough would
+        // swallow that and land a brand-new paying customer on a dashboard
+        // with no subscription, with nothing on either side saying so. The
+        // payload was stashed by the pricing card that sent them here; see
+        // src/lib/checkout-consent.ts.
+        //
+        // NO CONSENT, NO CALL. If nothing was stashed — someone opened this URL
+        // directly, or storage is unavailable — we do not invent a payload to
+        // satisfy the server. Consent has to be an act the visitor performed,
+        // and the fallback below leads to /pricing, where the gate is, rather
+        // than to a checkout they never agreed to.
+        const consent = takeCheckoutConsent();
+        if (consent) {
+          try {
+            const r = await fetch("/api/billing/checkout", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                tier: plan,
+                interval: interval === "year" ? "year" : "month",
+                locale,
+                consent,
+              }),
+            });
+            const d = (await r.json()) as { url?: string };
+            if (r.ok && d.url) {
+              window.location.assign(d.url);
+              return;
+            }
+          } catch {
+            // fall through
           }
-        } catch {
-          // fall through
         }
+        // Checkout could not be resumed. The account EXISTS and is signed in,
+        // so this is a redirect, not an error: the new tenant is NONE, and the
+        // dashboard's billing guard sends a NONE tenant to /pricing — where
+        // one click now goes straight to Stripe, because they are signed in.
+        // Deliberately not a hard-coded /pricing push: if the tenant somehow is
+        // not NONE, postSignupRedirect's destination is the right one.
         router.push(postSignupRedirect(data.planType ?? plan));
       } else {
         // Every plan lands on /dashboard; ?plan=ai_visibility folds to STARTER.

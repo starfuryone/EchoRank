@@ -24,6 +24,12 @@ export interface AccountCopy {
   currencyLabel: string;
   billingStatusLabel: string;
   noSubscription: string;
+  /** BillingStatus.NONE — registered, never subscribed. Not a trial. */
+  statusNone: string;
+  /** Shown in the Plan row instead of a tier the tenant never bought. */
+  planNone: string;
+  /** Route out of the no-plan state, on the one page a NONE tenant can reach. */
+  choosePlan: string;
   priceUnavailable: string;
   intervalMonth: string;
   intervalYear: string;
@@ -85,6 +91,9 @@ export const ACCOUNT_COPY: Record<DashLocale, AccountCopy> = {
     currencyLabel: "Currency",
     billingStatusLabel: "Billing status",
     noSubscription: "No active subscription record",
+    statusNone: "No plan",
+    planNone: "None",
+    choosePlan: "Choose a plan",
     priceUnavailable: "Not available",
     intervalMonth: "Monthly",
     intervalYear: "Yearly",
@@ -144,6 +153,9 @@ export const ACCOUNT_COPY: Record<DashLocale, AccountCopy> = {
     currencyLabel: "Devise",
     billingStatusLabel: "État de facturation",
     noSubscription: "Aucun abonnement enregistré",
+    statusNone: "Aucun forfait",
+    planNone: "Aucun",
+    choosePlan: "Choisir un forfait",
     priceUnavailable: "Non disponible",
     intervalMonth: "Mensuel",
     intervalYear: "Annuel",
@@ -203,6 +215,9 @@ export const ACCOUNT_COPY: Record<DashLocale, AccountCopy> = {
     currencyLabel: "Währung",
     billingStatusLabel: "Abrechnungsstatus",
     noSubscription: "Kein aktives Abo erfasst",
+    statusNone: "Kein Abo",
+    planNone: "Keines",
+    choosePlan: "Abo wählen",
     priceUnavailable: "Nicht verfügbar",
     intervalMonth: "Monatlich",
     intervalYear: "Jährlich",

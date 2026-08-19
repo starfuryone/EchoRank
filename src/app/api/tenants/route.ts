@@ -85,6 +85,16 @@ export async function POST(request: Request) {
     }
 
     const planType = membership.tenant.planType;
+    // INHERITED ALONGSIDE planType, and for the same reason.
+    //
+    // Tenant.billingStatus now defaults to NONE ("registered, never
+    // subscribed"), and a NONE tenant is redirected to /pricing by the billing
+    // gate. Taking that default here would mean an ACTIVE agency creating a
+    // client workspace and finding it immediately bounced to a page selling it
+    // a plan it is already paying for. The workspace is not a new customer —
+    // it is a seat on the parent's existing subscription, which is exactly the
+    // argument planType has always made.
+    const billingStatus = membership.tenant.billingStatus;
 
     const tenant = await prisma.$transaction(async (tx) => {
       const created = await tx.tenant.create({
@@ -92,6 +102,7 @@ export async function POST(request: Request) {
           name,
           slug,
           planType,
+          billingStatus,
           defaultLanguage: membership.tenant.defaultLanguage,
         },
       });

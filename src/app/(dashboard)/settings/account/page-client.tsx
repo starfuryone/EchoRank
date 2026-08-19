@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
+import Link from "next/link";
 import { User, CreditCard, Building2, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -44,6 +45,12 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
 
 export function AccountPageClient({ locale, user, tenant, subscription, price, chat }: Props) {
   const t = ACCOUNT_COPY[locale];
+
+  // Registered, never subscribed. A Subscription row settles it either way —
+  // one exists only because the Stripe webhook wrote it — so the column is
+  // consulted only in its absence, which is the same precedence the rows below
+  // already use.
+  const neverSubscribed = !subscription && tenant.billingStatus === "NONE";
 
   const [state, formAction, pending] = useActionState<UpdateTenantNameState, FormData>(
     updateTenantNameAction,
@@ -103,16 +110,43 @@ export function AccountPageClient({ locale, user, tenant, subscription, price, c
           </div>
         </CardHeader>
         <CardContent>
+          {/* THE PAIR IS READ STATUS FIRST, TIER SECOND.
+              Tenant.planType defaults to STARTER for everyone, so a tenant that
+              has never subscribed used to render here as "on Starter" — a tier
+              nobody bought, sitting next to a billing status that (as TRIALING)
+              claimed a trial nobody started. planType's default is deliberately
+              NOT changed to fix this: nothing entitles off planType alone, so
+              this is a display bug, and rewriting the column's default would
+              touch what existing tenants are recorded as. The status decides
+              whether the tier means anything; the tier is only shown when it
+              does. */}
           <Row label={t.planLabel}>
-            <Badge>{subscription?.planType ?? tenant.planType ?? t.notSet}</Badge>
+            <Badge>
+              {neverSubscribed
+                ? t.planNone
+                : (subscription?.planType ?? tenant.planType ?? t.notSet)}
+            </Badge>
           </Row>
           <Row label={t.billingStatusLabel}>
-            {subscription?.status ?? tenant.billingStatus ?? t.notSet}
+            {neverSubscribed
+              ? t.statusNone
+              : (subscription?.status ?? tenant.billingStatus ?? t.notSet)}
           </Row>
           <Row label={t.intervalLabel}>{intervalLabel}</Row>
           <Row label={t.currencyLabel}>{price?.currency ?? t.priceUnavailable}</Row>
-          {!subscription && (
-            <p className="pt-3 text-xs text-gray-500">{t.noSubscription}</p>
+          {/* The way out. This page is the ONE dashboard route a never-subscribed
+              tenant can reach (src/lib/billing-gate.ts), so it is the only place
+              a link to pricing will actually be seen by one. */}
+          {neverSubscribed ? (
+            <p className="pt-3 text-xs">
+              <Link href="/pricing" className="text-amber-300 underline hover:text-amber-200">
+                {t.choosePlan}
+              </Link>
+            </p>
+          ) : (
+            !subscription && (
+              <p className="pt-3 text-xs text-gray-500">{t.noSubscription}</p>
+            )
           )}
         </CardContent>
       </Card>

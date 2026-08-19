@@ -33,6 +33,7 @@ import Link from "next/link";
 import type Stripe from "stripe";
 import { SUPPORTED_LOCALES, isSupportedLocale, type Locale } from "@/lib/i18n/config";
 import { buildMetadata } from "@/lib/seo";
+import { auth } from "@/lib/auth";
 import { getStripe } from "@/lib/stripe/client";
 import { PLAN_CONFIGS, PLAN_ORDER, TRIAL_DAYS } from "@/lib/plan-config";
 import { PLAN_HOME } from "@/lib/plan-routing";
@@ -225,6 +226,18 @@ export default async function WelcomePage({
   const sessionId = sParam ?? sessionIdParam;
   const c = COPY[baseOf(locale)];
 
+  // THE NAV IS TOLD, NOT LEFT TO GUESS.
+  //
+  // PublicNav otherwise learns about the session from a fetch that cannot run
+  // until after hydration, so its first paint is always the logged-OUT chrome —
+  // "Login" and "Join Now". Every other marketing page can absorb that as a
+  // flicker. This one cannot: it is the page Stripe returns a buyer to, so its
+  // visitor has just paid and is signed in, and greeting them with an invitation
+  // to join is the bug. This page is already dynamic (it reads searchParams), so
+  // reading the session costs it nothing it had not already spent.
+  const session = await auth();
+  const signedIn = Boolean(session?.user);
+
   // THE GUEST BRANCH IS TRIED FIRST, AND ONLY A COMPLETE guest_signup SESSION
   // GETS PAST IT. Everything else — upgrade, credit, incomplete, garbage,
   // absent — falls through to the confirmation page below with its original
@@ -236,7 +249,7 @@ export default async function WelcomePage({
   if (guest && guest.kind !== "invalid") {
     return (
       <div className={s.page}>
-        <PublicNav locale={locale} />
+        <PublicNav locale={locale} signedIn={signedIn} />
         <section className={s.section}>
           <div className={`${s.container} ${g.article}`}>
             <p className={s.label}>
@@ -274,7 +287,7 @@ export default async function WelcomePage({
 
   return (
     <div className={s.page}>
-      <PublicNav locale={locale} />
+      <PublicNav locale={locale} signedIn={signedIn} />
 
       <section className={s.section}>
         <div className={`${s.container} ${g.article}`}>

@@ -19,6 +19,12 @@
 //      stops that before the handler runs — but the retry AFTER a throw, when
 //      the dispatcher has deleted that marker on purpose.
 
+// NOTE (2026-08-19): the guest-signup FLOW is reversed — the funnel is
+// register -> checkout again, and the webhook's guest_signup dispatch arm is
+// removed. The dispatch tests below now assert that reversal. The rest of this
+// file still exercises src/lib/billing/guest-signup.ts directly; that module is
+// unreferenced by the app and is deleted, with this file, in its own commit.
+
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const {
@@ -164,7 +170,7 @@ beforeEach(() => {
 
 // ─── 1. Where the branch sits ───────────────────────────────────────────────
 
-describe("the three-way dispatch, driven through the real route", () => {
+describe("the dispatch, driven through the real route", () => {
   async function post(session: Record<string, unknown>, eventId = "evt_1") {
     stripeMock.webhooks.constructEvent.mockReturnValue({
       id: eventId,
@@ -180,20 +186,30 @@ describe("the three-way dispatch, driven through the real route", () => {
     } as never);
   }
 
-  it("routes a guest_signup session to provisioning, not to the tenant lookup", async () => {
+  // ── THE GUEST ARM IS GONE, AND THIS IS WHAT REPLACED IT ──────────────────
+  //
+  // The funnel is register -> checkout again, so every session this app creates
+  // carries a client_reference_id. A session arriving WITHOUT one is what it
+  // was before the inversion: something started outside this app — a payment
+  // link, the Stripe dashboard — and the handler warns and returns.
+  //
+  // PROVISIONING FROM A PAYMENT MUST NOT HAPPEN. That is the whole reversal, so
+  // it is asserted directly rather than left to the absence of a branch: no
+  // tenant is created, and none is updated either.
+  it("provisions NOTHING from a session with no client_reference_id", async () => {
     const res = await post(guestSession());
 
+    // Still 200: Stripe must not retry an event there is nothing to do with.
     expect(res.status).toBe(200);
-    // It provisioned...
-    expect(tenant.create).toHaveBeenCalledTimes(1);
-    // ...and it never reached the code that resolves an EXISTING tenant.
-    expect(tenant.findFirst).not.toHaveBeenCalled();
+    expect(tenant.create).not.toHaveBeenCalled();
+    expect(tenant.update).not.toHaveBeenCalled();
   });
 
-  it("NEVER lets a guest session reach the billingStatus ternary", async () => {
-    // The upgrade path's update is the only thing that writes billingStatus on
-    // an existing tenant. A guest has none, so any tenant.update at all here
-    // means the branch leaked past its return.
+  it("does not activate a tenant it cannot identify", async () => {
+    // With no client_reference_id the lookup falls back to the customer id, and
+    // when that finds nothing the handler returns before the billingStatus
+    // ternary. Nothing is granted on the strength of a payment alone.
+    tenant.findFirst.mockResolvedValue(null);
     await post(guestSession());
 
     expect(tenant.update).not.toHaveBeenCalled();

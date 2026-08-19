@@ -104,6 +104,18 @@ export async function sendOnboardingEmail(
   if (stage === "d2" && snapshot.completedCount >= 2) {
     return { status: "skipped", reason: "already_active" };
   }
+  // NONE FALLS OUT HERE, CORRECTLY AND WITHOUT A NEW BRANCH.
+  //
+  // The d10 mail is trial-shaped — it lands as the trial is running out — so it
+  // is sent only to a tenant that is actually in one. A never-subscribed tenant
+  // (BillingStatus.NONE) is `!== "TRIALING"` and is skipped, which is an
+  // improvement on what this did before NONE existed: every new tenant was
+  // TRIALING by default, so this mail went to people who had never started a
+  // trial to be warned about the end of. Someone who registers and then
+  // completes checkout IS TRIALING by day 10 and still receives it.
+  //
+  // The `not_trialing` reason now covers both "never subscribed" and "no longer
+  // trialing"; it is a log string, and the distinction has no consequence here.
   if (stage === "d10" && tenant.billingStatus !== "TRIALING") {
     return { status: "skipped", reason: "not_trialing" };
   }

@@ -21,9 +21,26 @@ const NOTICE_LEAD_MS = 24 * 60 * 60 * 1000;
 /**
  * Deterministic job id, so scheduling twice for the same subscription replaces
  * rather than duplicates, and cancelling only needs the subscription id.
+ *
+ * NO COLON. BullMQ rejects a custom job id containing ":" unless it splits into
+ * exactly three parts — the separator is reserved for its own Redis keys, and
+ * the three-part shape is grandfathered in for legacy repeatable jobs
+ * (node_modules/bullmq/dist/cjs/classes/job.js, validateOptions).
+ *
+ * The previous id was `trial-ending:${id}` — two parts — so every call threw
+ * "Custom Id cannot contain :" inside Job.validateOptions, before Redis was
+ * ever contacted. The webhook wraps this call in a try/catch that deliberately
+ * never fails a delivery over a reminder, so the throw surfaced only as a
+ * "Could not schedule trial-ending notice" warning on every single checkout.
+ * The 24-hour notice has therefore never been scheduled, in any environment,
+ * since it shipped. Found 2026-08-19 while diagnosing an unrelated event race.
+ *
+ * A hyphen carries the same meaning to a human reader and none to BullMQ.
+ * Nothing is queued under the old id (nothing ever validated), so changing the
+ * scheme orphans no jobs.
  */
 export function trialNoticeJobId(stripeSubscriptionId: string): string {
-  return `trial-ending:${stripeSubscriptionId}`;
+  return `trial-ending-${stripeSubscriptionId}`;
 }
 
 /**

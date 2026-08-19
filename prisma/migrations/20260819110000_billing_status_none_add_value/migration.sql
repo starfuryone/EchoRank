@@ -1,0 +1,13 @@
+-- BillingStatus.NONE — step 1 of 2: ADD THE VALUE, AND NOTHING ELSE.
+--
+-- Postgres refuses to use a new enum value inside the transaction that added
+-- it ("unsafe use of new value ... of enum type"), and `prisma migrate deploy`
+-- wraps each migration file in exactly one transaction. So the ALTER TYPE has
+-- to commit on its own before anything — a DEFAULT, a comparison, an UPDATE —
+-- can name 'NONE'. That is the whole reason this migration exists separately
+-- from 20260819110001, and why nothing else may be added to this file.
+--
+-- IF NOT EXISTS makes a re-apply a no-op rather than an error, per the rule in
+-- docs/agents/gotchas.md: a partially-applied migration on this box has to be
+-- repairable by re-running it.
+ALTER TYPE "BillingStatus" ADD VALUE IF NOT EXISTS 'NONE';

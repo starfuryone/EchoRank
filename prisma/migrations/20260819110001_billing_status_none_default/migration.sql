@@ -1,0 +1,20 @@
+-- BillingStatus.NONE — step 2 of 2: the default for NEW tenants only.
+--
+-- THERE IS NO BACKFILL HERE, AND THAT IS THE POINT.
+--
+-- Every tenant that exists when this runs keeps the billingStatus it already
+-- has — including the legacy rows that are TRIALING with no Subscription row.
+-- Not one existing row is read or written by this deployment: no UPDATE, no
+-- WHERE, no examination. Their planType, credits, entitlements and product
+-- access are exactly what they were the moment before.
+--
+-- Those legacy TRIALING rows stay legacy on purpose. src/lib/paid-plan.ts
+-- denies them paid features today via `ACTIVE || (TRIALING && a Subscription
+-- row exists)`, and that clause stays load-bearing precisely because they were
+-- not backfilled — NONE existing does not make it redundant. Backfilling them
+-- to NONE would change what they are entitled to, which is not this task's to
+-- do.
+--
+-- NONE therefore describes exactly one population: tenants created after this
+-- statement commits.
+ALTER TABLE "tenants" ALTER COLUMN "billingStatus" SET DEFAULT 'NONE';
