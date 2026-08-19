@@ -48,6 +48,7 @@ export const LOCALIZED_ROUTES: LocalizedRoute[] = [
   { path: "/keyword-research", priority: 0.6, changeFrequency: "monthly" },
   { path: "/link-building-playbook", priority: 0.6, changeFrequency: "monthly" },
   { path: "/ai-discovery-optimization", priority: 0.6, changeFrequency: "monthly" },
+  { path: "/seo-guide", priority: 0.6, changeFrequency: "monthly" },
   // The AI Search tracking setup walkthrough. Also linked from the in-app Help
   // hub's "Getting started" group, so it is reached from inside the product as
   // well as from search.
