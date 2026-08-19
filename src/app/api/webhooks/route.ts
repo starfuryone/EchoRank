@@ -539,6 +539,35 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
 //
 // The customer id is now written by whichever of the two subscription events
 // lands first (see tenantUpdate above), which shortens even this window.
+/**
+ * PAST_DUE -> ACTIVE when an invoice is paid.
+ *
+ * ── DRIVEN BY TWO EVENT TYPES, DELIBERATELY ─────────────────────────────────
+ *
+ * Stripe sends BOTH `invoice.paid` and `invoice.payment_succeeded` for the same
+ * successful invoice. Only the latter was in the switch, while the sandbox
+ * destination was subscribed to only the former — so this recovery had never
+ * once been reachable in that environment: every payment fell through to
+ * `default:` and logged as an unhandled type. Handling both makes the code
+ * indifferent to which of the two a given destination happens to be configured
+ * with, which matters because there are two destinations (sandbox, and a live
+ * endpoint not yet created) ticked off by hand at different times.
+ *
+ * ── WHY HANDLING BOTH IS SAFE WITHOUT NEW MACHINERY ─────────────────────────
+ *
+ * The route's idempotency marker is keyed on event id, and these are two
+ * DIFFERENT events, so both reach this function. What makes the second one a
+ * no-op is the `=== "PAST_DUE"` guard below, which was already here: the first
+ * delivery moves the tenant to ACTIVE, the second reads ACTIVE, fails the guard,
+ * and returns without a write and without a log line. That is idempotence by
+ * construction rather than by a flag, and it is the reason this needed no
+ * dedupe layer added on top.
+ *
+ * Note for anyone tightening this later: a $0 invoice (a proration credit, a
+ * fully discounted period) also fires these events, so it can clear PAST_DUE
+ * without money arriving. That is pre-existing behaviour of the
+ * `payment_succeeded` path and is unchanged here, not introduced by it.
+ */
 async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
   const customerId =
     typeof invoice.customer === "string"
@@ -719,6 +748,11 @@ export async function POST(request: NextRequest) {
           break;
         }
 
+        // Both, sharing one handler. Stripe emits the pair for a single paid
+        // invoice; the handler's PAST_DUE guard makes the second delivery a
+        // no-op. `invoice.paid` is what the sandbox destination was already
+        // sending, and its absence here is why the recovery never ran.
+        case "invoice.paid":
         case "invoice.payment_succeeded":
           await handleInvoicePaymentSucceeded(
             event.data.object as Stripe.Invoice
