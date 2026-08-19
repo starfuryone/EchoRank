@@ -9,18 +9,8 @@ import { validate, registerSchema } from "@/lib/validations";
 import { rateLimit } from "@/lib/rate-limit";
 import { normalizeDomain } from "@/lib/onboarding";
 import { resolveRequestLocale } from "@/lib/i18n/resolve-request-locale";
-import { addJob } from "@/infrastructure/queue/registry";
-import type { OnboardingEmailStage } from "@/infrastructure/queue/jobs/schemas";
+import { enqueueOnboardingDrip } from "@/lib/onboarding-drip";
 import type { PlanType } from "@/generated/prisma";
-
-/** Onboarding drip schedule: stage → delay from signup. */
-const ONBOARDING_DRIP_DELAYS: Record<OnboardingEmailStage, number> = {
-  // D0 waits a few hours so the first audit exists when the recap renders.
-  d0: 3 * 60 * 60 * 1000,
-  d2: 2 * 24 * 60 * 60 * 1000,
-  d5: 5 * 24 * 60 * 60 * 1000,
-  d10: 10 * 24 * 60 * 60 * 1000,
-};
 
 /**
  * Plans a user may put themselves on at signup. Deliberately excludes the
@@ -150,23 +140,11 @@ export async function POST(request: Request) {
     });
 
     // Onboarding drip: delayed jobs re-check tenant state (consent, progress)
-    // before sending. Fixed jobIds make re-enqueues idempotent. Enqueue failure
-    // must never fail the signup itself.
+    // before sending. Fixed jobIds make re-enqueues idempotent — see
+    // src/lib/onboarding-drip.ts, which owns the schedule. Enqueue failure must
+    // never fail the signup itself.
     try {
-      await Promise.all(
-        (Object.keys(ONBOARDING_DRIP_DELAYS) as OnboardingEmailStage[]).map(
-          (stage) =>
-            addJob(
-              "onboarding-email",
-              "drip",
-              { tenantId: result.tenantId, correlationId: result.tenantId, stage },
-              {
-                jobId: `onboarding-${result.tenantId}-${stage}`,
-                delay: ONBOARDING_DRIP_DELAYS[stage],
-              },
-            ),
-        ),
-      );
+      await enqueueOnboardingDrip(result.tenantId);
     } catch (err) {
       console.error("Failed to enqueue onboarding drip:", err);
     }

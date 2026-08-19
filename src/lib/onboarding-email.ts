@@ -104,18 +104,35 @@ export async function sendOnboardingEmail(
   if (stage === "d2" && snapshot.completedCount >= 2) {
     return { status: "skipped", reason: "already_active" };
   }
-  // NONE FALLS OUT HERE, CORRECTLY AND WITHOUT A NEW BRANCH.
+  // ── THE d10 GATE, AND A TIMING PROBLEM IT IS CURRENTLY HIDING ─────────────
   //
-  // The d10 mail is trial-shaped — it lands as the trial is running out — so it
-  // is sent only to a tenant that is actually in one. A never-subscribed tenant
-  // (BillingStatus.NONE) is `!== "TRIALING"` and is skipped, which is an
-  // improvement on what this did before NONE existed: every new tenant was
-  // TRIALING by default, so this mail went to people who had never started a
-  // trial to be warned about the end of. Someone who registers and then
-  // completes checkout IS TRIALING by day 10 and still receives it.
+  // This mail is trial-shaped: its only stage-specific params are hasTrialEnd
+  // and trialEndDate, read from subscription.currentPeriodEnd. So it is sent
+  // only to a tenant actually in a trial, and a never-subscribed tenant
+  // (BillingStatus.NONE) is `!== "TRIALING"` and correctly skipped.
   //
-  // The `not_trialing` reason now covers both "never subscribed" and "no longer
-  // trialing"; it is a log string, and the distinction has no consequence here.
+  // WHAT THE GATE ALSO SKIPS IS EVERY CUSTOMER WHO CONVERTED. TRIAL_DAYS is 7
+  // and this stage fires at day 10, so a tenant who checked out at signup had
+  // their trial end on day 7; Stripe sent customer.subscription.updated with
+  // status=active, which maps to ACTIVE, and by day 10 they are `!== "TRIALING"`.
+  // The only tenants still TRIALING here are late checkouts — registered on day
+  // 0, subscribed on day 5 or later — whose trial has not yet run out.
+  //
+  // DO NOT "FIX" THAT BY DROPPING THE STATUS CHECK. For a converted tenant
+  // currentPeriodEnd is the end of their first PAID period, so widening the gate
+  // would mail them "your trial ends on <date>" three days after it actually
+  // ended, naming their next billing date as a trial end. The gate is the only
+  // thing preventing a factually wrong email; the mistimed stage is the real
+  // bug, and it belongs in the schedule (src/lib/onboarding-drip.ts) or in this
+  // stage's purpose, not here.
+  //
+  // (An earlier revision of this comment claimed a tenant who registers and
+  // checks out is still TRIALING at day 10. That is wrong — 7 < 10 — and it is
+  // what a reader would otherwise carry away from this branch.)
+  //
+  // The `not_trialing` reason covers "never subscribed", "already converted" and
+  // "lapsed" alike; it is a log string, and the distinction has no consequence
+  // for the decision made here.
   if (stage === "d10" && tenant.billingStatus !== "TRIALING") {
     return { status: "skipped", reason: "not_trialing" };
   }
