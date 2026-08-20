@@ -1,6 +1,10 @@
 import { prisma } from "@/lib/prisma";
 import { getOnboardingSnapshot } from "@/lib/onboarding";
 import { SITE_URL } from "@/lib/seo/constants";
+// planConfig(), not PLAN_CONFIGS[...]: the map is keyed by SellablePlanType and
+// a tenant can still carry the retired AI_VISIBILITY tier, which the helper
+// folds to STARTER.
+import { planConfig } from "@/lib/plan-config";
 import { logger } from "@/infrastructure/observability/logger";
 import type { OnboardingEmailStage } from "@/infrastructure/queue/jobs/schemas";
 
@@ -104,31 +108,24 @@ export async function sendOnboardingEmail(
   if (stage === "d2" && snapshot.completedCount >= 2) {
     return { status: "skipped", reason: "already_active" };
   }
-  // ── THE d10 GATE, AND A TIMING PROBLEM IT IS CURRENTLY HIDING ─────────────
+  // ── THE d10 GATE, WHICH THE MOVE TO DAY SIX FINALLY MAKES TRUE ────────────
   //
-  // This mail is trial-shaped: its only stage-specific params are hasTrialEnd
-  // and trialEndDate, read from subscription.currentPeriodEnd. So it is sent
-  // only to a tenant actually in a trial, and a never-subscribed tenant
-  // (BillingStatus.NONE) is `!== "TRIALING"` and correctly skipped.
+  // This stage is sent only to a tenant actually mid-trial, because it is a
+  // pre-conversion mail: it recaps what they built while deciding. A
+  // never-subscribed tenant (BillingStatus.NONE) is `!== "TRIALING"` and is
+  // correctly skipped — there is no conversion coming to recap for.
   //
-  // WHAT THE GATE ALSO SKIPS IS EVERY CUSTOMER WHO CONVERTED. TRIAL_DAYS is 7
-  // and this stage fires at day 10, so a tenant who checked out at signup had
-  // their trial end on day 7; Stripe sent customer.subscription.updated with
-  // status=active, which maps to ACTIVE, and by day 10 they are `!== "TRIALING"`.
-  // The only tenants still TRIALING here are late checkouts — registered on day
-  // 0, subscribed on day 5 or later — whose trial has not yet run out.
+  // AT TEN DAYS THIS GATE SKIPPED ALMOST EVERYONE IT WAS MEANT FOR. TRIAL_DAYS
+  // is 7, so a tenant who checked out at signup had converted on day 7: Stripe
+  // sent customer.subscription.updated with status=active, which maps to ACTIVE,
+  // and by day 10 they were `!== "TRIALING"`. The only survivors were late
+  // checkouts whose trial had not yet run out. The stage now fires on day six
+  // (see ONBOARDING_DRIP_DELAYS), inside the trial, so the tenants this gate
+  // admits are the ones it was always describing.
   //
-  // DO NOT "FIX" THAT BY DROPPING THE STATUS CHECK. For a converted tenant
-  // currentPeriodEnd is the end of their first PAID period, so widening the gate
-  // would mail them "your trial ends on <date>" three days after it actually
-  // ended, naming their next billing date as a trial end. The gate is the only
-  // thing preventing a factually wrong email; the mistimed stage is the real
-  // bug, and it belongs in the schedule (src/lib/onboarding-drip.ts) or in this
-  // stage's purpose, not here.
-  //
-  // (An earlier revision of this comment claimed a tenant who registers and
-  // checks out is still TRIALING at day 10. That is wrong — 7 < 10 — and it is
-  // what a reader would otherwise carry away from this branch.)
+  // The gate still earns its place at six days: a tenant who cancelled during
+  // the trial, or whose card failed, is no longer TRIALING and should not be
+  // told what is about to start.
   //
   // The `not_trialing` reason covers "never subscribed", "already converted" and
   // "lapsed" alike; it is a log string, and the distinction has no consequence
@@ -194,16 +191,34 @@ export async function sendOnboardingEmail(
       : `${SITE_URL}/billing`;
   }
 
+  // ── d10: A PRE-CONVERSION VALUE RECAP, NOT A DEADLINE ─────────────────────
+  //
+  // IT DELIBERATELY CARRIES NO DATE. This stage used to send hasTrialEnd and
+  // trialEndDate, which made it a second "your trial ends on <date>" notice —
+  // and there is already one that owns that job properly: the 24h trial-ending
+  // notice, scheduled from the subscription's real trial_end
+  // (src/lib/billing/trial-notice.ts). Two mails counting down to the same
+  // moment is worse than one, and this one counted from the wrong clock: its
+  // date came from currentPeriodEnd, which stops meaning "trial end" the moment
+  // the trial converts.
+  //
+  // Dropping the date is what makes the two complementary rather than
+  // duplicate, now that both land on day six of a seven-day trial:
+  //
+  //   trial notice -> the deadline. "Your card is charged tomorrow."
+  //   d10          -> the value.    "Here is what you have built with it."
+  //
+  // So this block answers only "what have they got out of it so far", from the
+  // same checklist the dashboard shows, plus the plan that is about to start.
+  // Nothing here asserts WHEN anything happens — the moment a date appears in
+  // this payload, the two mails are competing again.
   if (stage === "d10") {
-    const trialEnd = tenant.subscription?.currentPeriodEnd ?? null;
-    params.hasTrialEnd = Boolean(trialEnd);
-    params.trialEndDate = trialEnd
-      ? trialEnd.toLocaleDateString(locale === "fr" ? "fr-CA" : "en-US", {
-          year: "numeric",
-          month: "long",
-          day: "numeric",
-        })
-      : null;
+    params.doneCount = snapshot.completedCount;
+    params.totalCount = snapshot.steps.length;
+    // Named, not dated: "your Growth plan" rather than "on 27 August". The
+    // deadline belongs to the other mail.
+    params.planName = planConfig(tenant.planType).name;
+    params.billingUrl = `${SITE_URL}/billing`;
   }
 
   const templateId = templateIdFor(stage, locale);

@@ -22,13 +22,39 @@
 import { addJob } from "@/infrastructure/queue/registry";
 import type { OnboardingEmailStage } from "@/infrastructure/queue/jobs/schemas";
 
-/** Stage → delay from account creation. */
+/**
+ * Stage → delay from account creation.
+ *
+ * ── "d10" FIRES ON DAY SIX, AND THE NAME IS KEPT ON PURPOSE ────────────────
+ *
+ * The key is a WIRE IDENTIFIER, not a description of timing. It is half of the
+ * dedupe id (`onboarding-<tenantId>-d10`), and jobs already sitting in Redis
+ * with a ten-day delay carry it in their payload. Renaming it to `d6` would
+ * mean:
+ *
+ *   • every in-flight job fails schema validation when it fires, because
+ *     OnboardingEmailStage would no longer contain "d10"; and
+ *   • a tenant re-enqueued after the rename gets BOTH `…-d10` (old, still
+ *     queued) and `…-d6` (new) — two ids, so no dedupe, so two emails.
+ *
+ * Keeping the id is what makes this deploy safe for tenants already inside the
+ * drip window: their queued job keeps its own baked-in ten-day delay and fires
+ * once, and any re-enqueue collapses onto the same id. Only accounts created
+ * after this deploy get the six-day delay.
+ *
+ * The stage's PURPOSE moved with its timing: it is now a pre-conversion value
+ * recap, not a "your trial ends on <date>" notice. See the d10 block in
+ * src/lib/onboarding-email.ts.
+ */
 export const ONBOARDING_DRIP_DELAYS: Record<OnboardingEmailStage, number> = {
   // D0 waits a few hours so the first audit exists when the recap renders.
   d0: 3 * 60 * 60 * 1000,
   d2: 2 * 24 * 60 * 60 * 1000,
   d5: 5 * 24 * 60 * 60 * 1000,
-  d10: 10 * 24 * 60 * 60 * 1000,
+  // Day SIX. TRIAL_DAYS is 7, so this lands while the tenant is still TRIALING
+  // and before Stripe converts them — which is what the stage's own status gate
+  // has always assumed and, at ten days, never got.
+  d10: 6 * 24 * 60 * 60 * 1000,
 };
 
 export const ONBOARDING_DRIP_STAGES = Object.keys(

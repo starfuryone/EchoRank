@@ -11,10 +11,16 @@ const QUEUE_NAME = "onboarding-email";
 /**
  * Onboarding email drip worker.
  *
- * Jobs are enqueued at signup with fixed delays (d0/d2/d5/d10) and fixed
- * jobIds (`onboarding-<tenantId>-<stage>`), so re-enqueues dedupe. Every
- * send re-checks tenant state (deleted / unsubscribed / already activated /
- * no longer trialing) inside sendOnboardingEmail — a skip completes the job,
+ * Jobs are enqueued at signup with fixed delays and fixed jobIds
+ * (`onboarding-<tenantId>-<stage>`) by src/lib/onboarding-drip.ts, which owns
+ * the schedule, so re-enqueues dedupe rather than duplicating.
+ *
+ * THE STAGE KEYS ARE WIRE IDENTIFIERS, NOT TIMINGS. "d10" fires on day SIX; it
+ * keeps its name so the dedupe ids stay stable for jobs already sitting in the
+ * queue with the old ten-day delay. That module explains the trade.
+ *
+ * Every send re-checks tenant state (deleted / unsubscribed / already activated
+ * / no longer trialing) inside sendOnboardingEmail — a skip completes the job,
  * only transport failures throw for retry.
  */
 
