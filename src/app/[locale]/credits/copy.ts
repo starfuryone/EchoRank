@@ -54,7 +54,7 @@ export const COPY: Record<
     unavailable:
       "Credit packs are temporarily unavailable. Please try again shortly, or contact support@echorank360.com.",
     terms:
-      "One-time payment in US dollars. By buying you agree to our Terms of Use and Privacy Policy.",
+      "One-time payment in US dollars. Credits never expire, are non-refundable, and need an active plan that includes the Opportunity Scanner to spend. By buying you agree to our Terms of Use and Privacy Policy.",
     planNoticeTitle: "Lookups are spent by an Agency-plan tool",
     planNoticeBody:
       "The Opportunity Scanner is included with Agency plans. You can buy lookups on any plan and they will not expire — but until your account is on Agency, there is nothing to spend them on.",
@@ -78,7 +78,7 @@ export const COPY: Record<
       },
       {
         q: "What if a prospect has no listing?",
-        a: "That still uses a lookup — we are charged for the search whether or not it finds a business. Prospects in batches that never ran the search, because you turned listings off or the scan failed first, are refunded automatically.",
+        a: "That still uses a lookup — we are charged for the search whether or not it finds a business. Prospects in batches where the search never ran, because the scan failed first, are credited back automatically; a batch you submit with listings switched off is never charged for them at all. In all other cases, lookups are non-refundable.",
       },
     ],
   },
@@ -99,7 +99,7 @@ export const COPY: Record<
     unavailable:
       "Les packs sont temporairement indisponibles. Réessayez dans un instant ou écrivez à support@echorank360.com.",
     terms:
-      "Paiement unique en dollars américains. En achetant, vous acceptez nos Conditions d'utilisation et notre Politique de confidentialité.",
+      "Paiement unique en dollars américains. Les crédits n'expirent pas, ne sont pas remboursables et nécessitent un forfait actif incluant le Scanner d'opportunités pour être utilisés. En achetant, vous acceptez nos Conditions d'utilisation et notre Politique de confidentialité.",
     planNoticeTitle: "Les recherches se dépensent dans un outil du forfait Agency",
     planNoticeBody:
       "Le Scanner d'opportunités est inclus dans les forfaits Agency. Vous pouvez acheter des recherches avec n'importe quel forfait et elles n'expirent pas — mais tant que votre compte n'est pas en Agency, vous n'aurez nulle part où les dépenser.",
@@ -123,7 +123,7 @@ export const COPY: Record<
       },
       {
         q: "Et si un prospect n'a pas de fiche ?",
-        a: "Cela consomme quand même une recherche : la recherche nous est facturée qu'elle trouve une entreprise ou non. Les prospects des lots qui n'ont jamais lancé la recherche, parce que vous aviez désactivé les fiches ou que l'analyse a échoué avant, sont remboursés automatiquement.",
+        a: "Cela consomme quand même une recherche : la recherche nous est facturée qu'elle trouve une entreprise ou non. Les prospects des lots dont la recherche n'a jamais été lancée, parce que l'analyse a échoué avant, sont recrédités automatiquement ; un lot soumis avec les fiches désactivées n'est jamais facturé pour celles-ci. Dans tous les autres cas, les recherches ne sont pas remboursables.",
       },
     ],
   },

@@ -220,7 +220,11 @@ export function CreditsPurchase({
                 flow does not wrap it. See the route handler for the full note. */}
             <p className={s.sub} style={{ marginTop: 18, maxWidth: 760, fontSize: "0.85rem" }}>
               {copy.terms}{" "}
-              <Link href={`/${locale}/legal/terms`}>Terms</Link>
+              {/* Deep-linked to the clause that governs THESE purchases rather
+                  than the top of a sixteen-section document. The anchor is
+                  declared on the section itself (LegalSection.id), so it is
+                  stable across locales and survives rewording of the heading. */}
+              <Link href={`/${locale}/legal/terms#prepaid-credits`}>Terms</Link>
               {" · "}
               <Link href={`/${locale}/legal/privacy`}>Privacy</Link>
             </p>

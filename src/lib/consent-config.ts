@@ -24,7 +24,14 @@
 // Day-stamped from here on. The month-granular "2026-08" could not express a
 // second material change inside the same month, and the Subscription Agreement
 // was revised on 2026-08-12 after being published on 2026-08-07 — both August.
-export const CONSENT_VERSION = "2026-08-12";
+//
+// 2026-08-20: prepaid-credit terms added to BOTH the Terms of Use (§16) and the
+// Subscription Agreement (§13) — no expiry, non-refundable, spendable only on an
+// active qualifying plan, and the credit-back rule for batches whose search
+// never ran. That is new operative language in two of the four consent
+// documents, which is exactly what this constant is bumped for. Every consent
+// recorded against 2026-08-12 is now stale, and the next checkout re-asks.
+export const CONSENT_VERSION = "2026-08-20";
 
 export type ConsentDocumentId =
   | "subscription_agreement"

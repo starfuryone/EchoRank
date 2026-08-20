@@ -24,7 +24,23 @@ export interface LegalDoc {
   updated: string;
   /** Plain text for generateMetadata — a section paragraph may be JSX. */
   description: string;
-  sections: { h: string; ps: ReactNode[] }[];
+  sections: LegalSection[];
+}
+
+export interface LegalSection {
+  h: string;
+  ps: ReactNode[];
+  /**
+   * Optional stable anchor, e.g. "prepaid-credits" -> /legal/terms#prepaid-credits.
+   *
+   * OPT-IN, AND STABLE ACROSS LOCALES AND RENUMBERING. Deriving it from the
+   * heading would give a different anchor in every language and break the
+   * moment a section is renumbered or reworded — and the links that point here
+   * come from elsewhere in the app (the /credits footer), so they cannot be
+   * updated in the same breath as the heading. Only sections something actually
+   * links to need one.
+   */
+  id?: string;
 }
 
 /** Builders take the locale because some paragraphs carry locale-aware links. */
@@ -49,7 +65,10 @@ export function LegalBody({
   return (
     <div className={className}>
       {doc.sections.map((s) => (
-        <section key={s.h}>
+        // The id goes on the SECTION, not the heading: an in-page jump should
+        // land above the heading rather than scrolling it to the very top edge
+        // with its text touching the viewport.
+        <section key={s.h} id={s.id}>
           <h2 className={headingClassName}>{s.h}</h2>
           {s.ps.map((p, i) => (
             <p key={i} className={paragraphClassName}>

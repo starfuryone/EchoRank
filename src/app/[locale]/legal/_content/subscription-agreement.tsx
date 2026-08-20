@@ -20,7 +20,7 @@ function planLines(): string[] {
 export function buildSubscriptionAgreement(locale: string): LegalDoc {
   return {
   title: "Subscription Agreement",
-  updated: "Last updated: August 12, 2026",
+  updated: "Last updated: August 20, 2026",
   description:
     "This Subscription Agreement governs your subscription to Echorank360, operated by ChatLogic Insights LTD.",
   sections: [
@@ -114,7 +114,20 @@ export function buildSubscriptionAgreement(locale: string): LegalDoc {
     { h: "12. Governing Law", ps: [
       "This Agreement is governed by the laws of England and Wales. Any disputes shall be subject to the exclusive jurisdiction of the courts of England and Wales.",
     ]},
-    { h: "13. Contact", ps: [
+    // Placed before Contact, which is a tail section rather than an operative
+    // one, so the numbering of §1-§12 is untouched. English only, like every
+    // other section of this document — buildSubscriptionAgreement takes a
+    // locale but uses it solely for links, so there is no French text here for
+    // a translation to sit consistently beside. One French section inside an
+    // otherwise English contract would read worse than uniform English; the
+    // document's missing FR is its own piece of work.
+    { h: "13. Prepaid credits (prospect lookups)", id: "prepaid-credits", ps: [
+      "Prospect lookups for the Opportunity Scanner are sold as prepaid credits in one-time packs. A credit purchase is not a subscription and does not change your plan: credits do not renew, are not billed periodically, and do not expire.",
+      "Credits are spendable only while you hold an active subscription to a plan that includes the Opportunity Scanner. Ending your subscription does not forfeit them — unused credits remain on the account and become spendable again when an eligible subscription is reactivated.",
+      "Credits consumed by batches in which the listing search never executed are automatically re-credited to your account balance; this is a balance adjustment, not a monetary refund. In all other cases, credits are non-refundable and non-transferable, except where a refund is required by applicable consumer law, and are not refunded on cancellation or downgrade of your subscription.",
+      "A lookup is consumed when the search runs, whether or not it finds a matching business. Because unused credits are not converted to cash, we recommend using or accounting for your remaining balance before cancelling. Section 7 (Cancellation) governs the subscription itself; this section governs the credits.",
+    ]},
+    { h: "14. Contact", ps: [
       "ChatLogic Insights LTD — support@echorank360.com",
     ]},
   ],

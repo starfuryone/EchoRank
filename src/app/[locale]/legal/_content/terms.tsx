@@ -10,7 +10,7 @@ function NfaLink({ locale, label }: { locale: string; label: string }) {
 function buildEn(locale: string): LegalDoc {
   return {
   title: "Terms of Use",
-  updated: "Last updated: August 7, 2026",
+  updated: "Last updated: August 20, 2026",
   description:
     "These Terms govern access to and use of Echorank (echorank360.com), operated by ChatLogic Insights Ltd.",
   sections: [
@@ -70,6 +70,18 @@ function buildEn(locale: string): LegalDoc {
     { h: "15. General", ps: [
       "If a provision is unenforceable, the rest remains in effect. These Terms and the Privacy Policy are the entire agreement between you and ChatLogic regarding the Service. You may not assign these Terms without our consent; we may assign them as part of a corporate transaction. Contact: privacy@echorank360.com.",
     ]},
+    // APPENDED RATHER THAN INSERTED AFTER §3, where it belongs topically.
+    // Sections here are hand-numbered and §9 cross-references them by number
+    // ("clauses that by nature survive (including 4, 5, 9 to 12)"). Inserting
+    // mid-document would renumber twelve headings in two languages and silently
+    // invalidate that reference. A clause in the right place with the wrong
+    // cross-reference is worse than one at the end with a correct one.
+    { h: "16. Prepaid credits (prospect lookups)", id: "prepaid-credits", ps: [
+      "Prospect lookups are sold as prepaid credits in one-time packs. They are not a subscription: they do not renew, they are not billed periodically, and they do not expire.",
+      "Spending credits requires an active subscription to a plan that includes the Opportunity Scanner. If your subscription ends, any unused credits remain on your account and become spendable again when an eligible subscription is reactivated.",
+      "Credits consumed by batches in which the listing search never executed are automatically re-credited to your account balance; this is a balance adjustment, not a monetary refund. In all other cases, credits are non-refundable and non-transferable, except where a refund is required by applicable consumer law, and are not refunded on cancellation or downgrade of your subscription.",
+      "A lookup is consumed when the search runs, whether or not it finds a matching business. If you are planning to cancel, use or account for your remaining credits first: unused credits are not converted to cash.",
+    ]},
   ],
   };
 }
@@ -77,7 +89,7 @@ function buildEn(locale: string): LegalDoc {
 function buildFr(locale: string): LegalDoc {
   return {
   title: "Conditions d'utilisation",
-  updated: "Dernière mise à jour : 7 août 2026",
+  updated: "Dernière mise à jour : 20 août 2026",
   description:
     "Les présentes Conditions régissent l'accès au service Echorank (echorank360.com), exploité par ChatLogic Insights Ltd.",
   sections: [
@@ -136,6 +148,13 @@ function buildFr(locale: string): LegalDoc {
     ]},
     { h: "15. Dispositions générales", ps: [
       "Si une clause est inapplicable, le reste demeure en vigueur. Ces Conditions et la Politique de confidentialité constituent l'intégralité de l'accord relatif au Service. Vous ne pouvez céder ces Conditions sans notre accord ; nous pouvons les céder dans le cadre d'une opération d'entreprise. Contact : privacy@echorank360.com.",
+    ]},
+    // Même ancre que la version anglaise — voir le commentaire côté EN.
+    { h: "16. Crédits prépayés (recherches de prospects)", id: "prepaid-credits", ps: [
+      "Les recherches de prospects sont vendues sous forme de crédits prépayés, par packs et en paiement unique. Il ne s'agit pas d'un abonnement : ils ne se renouvellent pas, ne font l'objet d'aucune facturation périodique et n'expirent pas.",
+      "L'utilisation des crédits requiert un abonnement actif à un forfait incluant le Scanner d'opportunités. Si votre abonnement prend fin, les crédits inutilisés restent acquis à votre compte et redeviennent utilisables dès la réactivation d'un abonnement éligible.",
+      "Les crédits consommés par des lots dont la recherche d'établissement n'a jamais été exécutée sont automatiquement recrédités sur le solde de votre compte ; il s'agit d'un ajustement de solde et non d'un remboursement en argent. Dans tous les autres cas, les crédits ne sont ni remboursables ni transférables, sauf lorsqu'un remboursement est exigé par le droit de la consommation applicable, et ils ne sont pas remboursés en cas de résiliation ou de passage à un forfait inférieur.",
+      "Une recherche est consommée dès son exécution, qu'elle trouve ou non un établissement correspondant. Si vous envisagez de résilier, utilisez ou prenez en compte vos crédits restants au préalable : les crédits inutilisés ne sont pas convertis en espèces.",
     ]},
   ],
   };
