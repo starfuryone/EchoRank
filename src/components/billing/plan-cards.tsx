@@ -217,16 +217,26 @@ export function PlanCards({
                   <span className={s.currentBadge} data-testid="current-plan-badge">
                     {t.currentPlan}
                   </span>
-                ) : action === "upgrade" ? (
+                ) : action === "upgrade" || action === "downgrade" ? (
+                  // ONE BUTTON, TWO LABELS. Both directions do the same thing —
+                  // POST a checkout for the target tier — so they share the
+                  // control and differ only in what it says. The label is not
+                  // cosmetic: "Upgrade to Starter" shown to a Growth subscriber
+                  // is telling them a cheaper, smaller plan is a step up.
+                  //
+                  // The testid keeps the direction, so a test cannot assert the
+                  // button exists without asserting which way it points.
                   <button
                     type="button"
                     className={s.planUpgradeBtn}
                     onClick={() => requestCheckout(plan)}
                     disabled={busy === plan}
                     aria-busy={busy === plan}
-                    data-testid={`upgrade-${plan}`}
+                    data-testid={`${action}-${plan}`}
                   >
-                    {t.upgradeTo(PLAN_LABELS[plan] ?? plan)}
+                    {action === "upgrade"
+                      ? t.upgradeTo(PLAN_LABELS[plan] ?? plan)
+                      : t.downgradeTo(PLAN_LABELS[plan] ?? plan)}
                   </button>
                 ) : action === "contact" ? (
                   <a

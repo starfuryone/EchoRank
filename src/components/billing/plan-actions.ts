@@ -7,8 +7,14 @@ import {
   type BillingInterval,
   type CheckoutTier,
 } from "@/lib/stripe/lookup-keys";
+// The canonical tier ranking already exists, and rank — not price — is what
+// decides direction: ENTERPRISE is custom-priced, so comparing monthlyPrice
+// would make it incomparable. isUpgrade() also folds the retired
+// AI_VISIBILITY tier, so a legacy tenant compares as STARTER rather than
+// falling outside the order entirely.
+import { isUpgrade } from "@/lib/plan-config";
 
-export type PlanCardAction = "current" | "upgrade" | "contact" | "none";
+export type PlanCardAction = "current" | "upgrade" | "downgrade" | "contact" | "none";
 
 /**
  * Tiers that may show an Upgrade button.
@@ -74,7 +80,20 @@ export function planCardAction(
 ): PlanCardAction {
   if (subscribed && currentPlan && plan === currentPlan) return "current";
   if (plan === "ENTERPRISE") return "contact";
-  return UPGRADEABLE_PLANS.includes(plan) ? "upgrade" : "none";
+  // Whether a card sells at all is unchanged and separate from which direction
+  // it sells in. UPGRADEABLE_PLANS is the gate; the ranking below only picks
+  // the label.
+  if (!UPGRADEABLE_PLANS.includes(plan)) return "none";
+  // A tenant with nothing to compare against — never subscribed, or no tier on
+  // record — is buying, not moving. Everything reads as "upgrade" for them,
+  // which is also the only honest word when there is no current plan to be
+  // below.
+  if (!subscribed || !currentPlan) return "upgrade";
+  // DIRECTION, RELATIVE TO WHAT THEY HOLD. Labelling every sellable card
+  // "Upgrade to …" told a GROWTH subscriber to "Upgrade to Starter" — a cheaper,
+  // smaller plan. The copy for the other direction already existed in all three
+  // locales (BillingCopy.downgradeTo) and had never been wired to anything.
+  return isUpgrade(currentPlan, plan) ? "upgrade" : "downgrade";
 }
 
 /**
@@ -88,7 +107,10 @@ export function planCheckoutLookupKey(
   interval: BillingInterval,
   subscribed: boolean = true,
 ): string | null {
-  if (planCardAction(plan, currentPlan, subscribed) !== "upgrade") return null;
+  // Both directions POST a checkout for the target tier, so both need a key.
+  // Only "current", "contact" and "none" have no button to build one for.
+  const action = planCardAction(plan, currentPlan, subscribed);
+  if (action !== "upgrade" && action !== "downgrade") return null;
   const tier = tierKeyFor(plan);
   return tier ? checkoutLookupKey(tier, interval) : null;
 }
