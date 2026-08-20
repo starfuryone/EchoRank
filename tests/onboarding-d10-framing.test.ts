@@ -102,6 +102,33 @@ describe("the d10 payload", () => {
     expect(params.totalCount).toBe(5);
   });
 
+  it("ships hasDoneCount, which the template gates the recap on", async () => {
+    // Without it `{% if params.hasDoneCount %}` is always false and the Brevo
+    // template silently renders its fallback — for the one mail whose entire
+    // point is the recap, that means sending the sentence that omits it.
+    expect((await d10()).hasDoneCount).toBe(true);
+  });
+
+  it("guards on the TOTAL, so a tenant who has done nothing still gets numbers", async () => {
+    // "0 of 5" is a true and useful sentence; suppressing it would hide exactly
+    // the tenant most worth nudging.
+    snapshot.get.mockResolvedValue({
+      completedCount: 0,
+      steps: [{ key: "first_audit", done: false, href: "/visibility" }],
+    });
+    const params = await d10();
+
+    expect(params.hasDoneCount).toBe(true);
+    expect(params.doneCount).toBe(0);
+  });
+
+  it("drops the recap when the checklist produced no steps at all", async () => {
+    // "0 of 0" is not a sentence worth sending.
+    snapshot.get.mockResolvedValue({ completedCount: 0, steps: [] });
+
+    expect((await d10()).hasDoneCount).toBe(false);
+  });
+
   it("names the plan rather than dating it", async () => {
     const params = await d10();
 

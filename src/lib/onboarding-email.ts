@@ -155,6 +155,13 @@ export async function sendOnboardingEmail(
 
   if (stage === "d2") {
     const next = snapshot.steps.find((s) => !s.done);
+    // hasDoneCount guards the PAIR, per this module's own rule that every
+    // numeric rides with a has* boolean. It is `totalCount > 0`, not
+    // `doneCount > 0`: zero completed steps is a real and common state that the
+    // template should still be able to render ("0 of 5"), whereas zero TOTAL
+    // steps means the checklist produced nothing and "0 of 0" is not a sentence
+    // worth sending.
+    params.hasDoneCount = snapshot.steps.length > 0;
     params.doneCount = snapshot.completedCount;
     params.totalCount = snapshot.steps.length;
     params.nextStepLabel = next ? STEP_LABELS[locale][next.key] ?? next.key : null;
@@ -213,6 +220,11 @@ export async function sendOnboardingEmail(
   // Nothing here asserts WHEN anything happens — the moment a date appears in
   // this payload, the two mails are competing again.
   if (stage === "d10") {
+    // See the d2 block for why this guards on totalCount rather than doneCount.
+    // Without it the recap block in the Brevo template has nothing to test and
+    // silently renders its fallback — which, for the mail whose entire purpose
+    // is the recap, means sending the one sentence that omits it.
+    params.hasDoneCount = snapshot.steps.length > 0;
     params.doneCount = snapshot.completedCount;
     params.totalCount = snapshot.steps.length;
     // Named, not dated: "your Growth plan" rather than "on 27 August". The
