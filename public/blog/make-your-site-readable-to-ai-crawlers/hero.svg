@@ -1,0 +1,40 @@
+<svg viewBox="0 0 1400 600" width="1400" height="600" xmlns="http://www.w3.org/2000/svg" font-family="Geist, system-ui, sans-serif">
+  <rect width="1400" height="600" fill="#181A20"/>
+  <rect x="70" y="70" width="1260" height="460" rx="16" fill="#1E2329" stroke="#2B3139"/>
+  <!-- crawler -->
+  <g transform="translate(130,258)">
+    <rect x="0" y="0" width="96" height="84" rx="14" fill="#23282F" stroke="#FCD535" stroke-width="2"/>
+    <circle cx="32" cy="34" r="9" fill="#FCD535"/><circle cx="64" cy="34" r="9" fill="#FCD535"/>
+    <rect x="28" y="58" width="40" height="8" rx="4" fill="#848E9C"/>
+    <path d="M48 0 v-22" stroke="#FCD535" stroke-width="3"/><circle cx="48" cy="-28" r="6" fill="#FCD535"/>
+  </g>
+  <!-- path -->
+  <line x1="240" y1="300" x2="1230" y2="300" stroke="#2B3139" stroke-width="3" stroke-dasharray="10 8"/>
+  <!-- gate 1 open -->
+  <g transform="translate(420,180)">
+    <rect x="0" y="0" width="16" height="240" rx="4" fill="#2B3139"/><rect x="120" y="0" width="16" height="240" rx="4" fill="#2B3139"/>
+    <rect x="16" y="0" width="104" height="46" rx="4" fill="#0ECB81" opacity="0.22"/>
+    <path d="M46 24 l16 16 l30 -34" fill="none" stroke="#0ECB81" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <text x="488" y="452" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="17" fill="#B7BDC6">robots.txt</text>
+  <!-- gate 2 open -->
+  <g transform="translate(700,180)">
+    <rect x="0" y="0" width="16" height="240" rx="4" fill="#2B3139"/><rect x="120" y="0" width="16" height="240" rx="4" fill="#2B3139"/>
+    <rect x="16" y="0" width="104" height="46" rx="4" fill="#0ECB81" opacity="0.22"/>
+    <path d="M46 24 l16 16 l30 -34" fill="none" stroke="#0ECB81" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <text x="768" y="452" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="17" fill="#B7BDC6">200 OK</text>
+  <!-- gate 3 CLOSED -->
+  <g transform="translate(980,180)">
+    <rect x="0" y="0" width="16" height="240" rx="4" fill="#2B3139"/><rect x="120" y="0" width="16" height="240" rx="4" fill="#2B3139"/>
+    <rect x="16" y="0" width="104" height="240" rx="4" fill="#F6465D" opacity="0.16"/>
+    <g stroke="#F6465D" stroke-width="6" stroke-linecap="round"><line x1="46" y1="106" x2="90" y2="150"/><line x1="90" y1="106" x2="46" y2="150"/></g>
+  </g>
+  <text x="1048" y="452" text-anchor="middle" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="17" fill="#F6465D">rendered HTML</text>
+  <!-- the page, unreached -->
+  <g transform="translate(1180,244)" opacity="0.4">
+    <rect x="0" y="0" width="112" height="112" rx="10" fill="#23282F" stroke="#3B4753" stroke-width="2"/>
+    <g fill="#3B4753"><rect x="18" y="24" width="76" height="9" rx="4"/><rect x="18" y="48" width="60" height="9" rx="4"/><rect x="18" y="72" width="76" height="9" rx="4"/></g>
+  </g>
+  <text x="150" y="132" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="14" fill="#848E9C" letter-spacing="2.2">THREE GATES, IN ORDER</text>
+</svg>

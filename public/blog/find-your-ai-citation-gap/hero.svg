@@ -1,0 +1,26 @@
+<svg viewBox="0 0 1400 600" width="1400" height="600" xmlns="http://www.w3.org/2000/svg" font-family="Geist, system-ui, sans-serif">
+  <rect width="1400" height="600" fill="#181A20"/>
+  <rect x="70" y="70" width="1260" height="460" rx="16" fill="#1E2329" stroke="#2B3139"/>
+  <!-- track -->
+  <rect x="150" y="170" width="1100" height="72" rx="8" fill="#23282F"/>
+  <rect x="150" y="330" width="1100" height="72" rx="8" fill="#23282F"/>
+  <!-- mention rate: wide -->
+  <rect x="150" y="170" width="704" height="72" rx="8" fill="#FCD535"/>
+  <!-- citation rate: narrow -->
+  <rect x="150" y="330" width="176" height="72" rx="8" fill="#F0B90B"/>
+  <g font-size="20" fill="#0B0E11" font-weight="600">
+    <text x="176" y="214">Mentioned</text>
+  </g>
+  <text x="352" y="374" font-size="20" fill="#B7BDC6" font-weight="600">Cited</text>
+  <!-- the gap -->
+  <g stroke="#F6465D" stroke-width="2" stroke-dasharray="7 6">
+    <line x1="326" y1="402" x2="326" y2="470"/>
+    <line x1="854" y1="242" x2="854" y2="470"/>
+  </g>
+  <line x1="326" y1="470" x2="854" y2="470" stroke="#F6465D" stroke-width="2"/>
+  <g stroke="#F6465D" stroke-width="2" fill="none">
+    <path d="M338 462 L326 470 L338 478"/><path d="M842 462 L854 470 L842 478"/>
+  </g>
+  <text x="590" y="504" text-anchor="middle" font-size="21" fill="#F6465D" font-weight="600">the citation gap</text>
+  <text x="150" y="132" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="14" fill="#848E9C" letter-spacing="2.2">ONE PROMPT RUN</text>
+</svg>

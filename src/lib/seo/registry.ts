@@ -7,6 +7,10 @@ import { learnRoutes } from "@/lib/learn-content";
 import { helpArticleRoutes } from "@/lib/help-articles";
 import { freeToolRoutes } from "@/lib/free-tools";
 import { solutionRoutes } from "@/lib/solutions-taxonomy";
+// "@/lib/blog/constants" DELIBERATELY, not "@/lib/blog": this module is imported
+// by src/proxy.ts, which runs on the EDGE, and the blog's loader reads
+// content/blog/ with node:fs. The constants module imports nothing at all.
+import { BLOG_BASE, blogCategoryRoutes } from "@/lib/blog/constants";
 import { LOCALES, SITE_URL } from "./constants";
 
 export interface LocalizedRoute {
@@ -58,6 +62,13 @@ export const LOCALIZED_ROUTES: LocalizedRoute[] = [
   // homepage's "classic reputation stack" section links straight here, so it
   // is a product page in the funnel rather than an article.
   { path: "/reputation-tools", priority: 0.7, changeFrequency: "monthly" },
+  // The public blog. Ranks with the guide pages rather than the product ones:
+  // it acquires readers, not buyers. Only the HUB is listed here — article
+  // slugs are FILENAMES under content/blog/, and enumerating them in this
+  // module would put node:fs in the edge middleware bundle. src/app/sitemap.ts
+  // adds the article and category URLs; KNOWN_MARKETING_PREFIXES below is how
+  // the proxy reaches them without reading the disk.
+  { path: BLOG_BASE, priority: 0.7, changeFrequency: "weekly" },
   { path: "/ai-visibility", priority: 0.8, changeFrequency: "weekly" },
   // The public AI Assistant. An acquisition surface rather than an article: a
   // visitor arrives with a question, gets a real answer and a scan of their own
@@ -151,8 +162,37 @@ export const RETIRED_LOCALIZED_PATHS: readonly string[] = [
 /** Every locale-prefixed path that exists, used by the proxy locale guard. */
 export const KNOWN_MARKETING_PATHS: readonly string[] = [
   ...LOCALIZED_ROUTES.map((r) => r.path).filter((p) => p !== ""),
+  // Blog categories are a typed union, so unlike the articles they CAN be
+  // listed here without touching the filesystem. They stay out of
+  // LOCALIZED_ROUTES because an empty category should not be advertised in the
+  // sitemap — src/app/sitemap.ts adds only the ones that have articles.
+  ...blogCategoryRoutes(),
   ...RETIRED_LOCALIZED_PATHS,
 ];
+
+/**
+ * Locale-prefixed path PREFIXES, for namespaces whose members cannot be listed.
+ *
+ * KNOWN_MARKETING_PATHS above is an exact-match list, and that works because
+ * every other public path in this app comes from a typed config the edge can
+ * read. The blog does not: its article slugs are filenames under content/blog/,
+ * and reading them here would pull node:fs into the middleware bundle.
+ *
+ * So "/blog/" is matched as a prefix instead, and a locale-less
+ * "/blog/how-to-measure-ai-search-visibility" 308s onto "/en/blog/…" exactly as
+ * "/about" does. Without it that URL falls through to the auth gate and 307s to
+ * /login — a public article behind a login wall, which is the same failure the
+ * help articles' registry entry exists to prevent.
+ *
+ * THE TRAILING SLASH IS LOAD-BEARING. "/blog" itself is in LOCALIZED_ROUTES and
+ * is handled by the exact list above; a prefix of "/blog" with no slash would
+ * also swallow a future "/blogroll" and redirect it into a 404.
+ *
+ * Add to this list only for a namespace that genuinely cannot be enumerated. An
+ * exact path is strictly better: it 308s only URLs that exist, where a prefix
+ * redirects a typo to a locale-prefixed typo before 404ing it anyway.
+ */
+export const KNOWN_MARKETING_PREFIXES: readonly string[] = [`${BLOG_BASE}/`];
 
 export function languagesFor(path: string): Record<string, string> {
   return Object.fromEntries([

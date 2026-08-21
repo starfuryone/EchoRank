@@ -186,6 +186,64 @@ export function article(input: ArticleInput): JsonLdNode {
   };
 }
 
+export interface BlogPostingInput {
+  headline: string;
+  description: string;
+  /** Absolute URL of the article. */
+  pageUrl: string;
+  /** Absolute or site-relative hero. */
+  image: string;
+  /** YYYY-MM-DD, from frontmatter. */
+  datePublished: string;
+  /** YYYY-MM-DD. Omitted when it is not later than datePublished. */
+  dateModified?: string;
+  authorName: string;
+  inLanguage?: string;
+  /** Whole minutes, COMPUTED from the body — see readingTime(). */
+  readingTime?: number;
+  keywords?: readonly string[];
+  articleSection?: string;
+}
+
+/**
+ * BlogPosting for a public blog article.
+ *
+ * UNLIKE article() above, this one DOES carry datePublished and dateModified,
+ * and that is not a relaxation of this file's no-invented-data rule. A Knowledge
+ * Hub page has no authored date anywhere — only a file mtime, which is when the
+ * box last touched it — whereas a blog article's frontmatter carries a date a
+ * human wrote and the page renders visibly. The rule is that structured data
+ * must not state what we cannot source; here we can.
+ *
+ * dateModified is emitted only when the caller passes one, and the caller is
+ * expected to pass it only when it is genuinely later than publication
+ * (showsUpdated() in src/lib/blog/constants.ts). Re-dating an untouched article
+ * is the same fabrication in a slower form.
+ *
+ * The author is a Person, not the Organization: a blog with a byline the page
+ * shows should say the same thing in its markup.
+ */
+export function blogPosting(input: BlogPostingInput): JsonLdNode {
+  return {
+    "@type": "BlogPosting",
+    "@id": `${input.pageUrl}#article`,
+    headline: input.headline,
+    description: input.description,
+    url: input.pageUrl,
+    mainEntityOfPage: { "@type": "WebPage", "@id": input.pageUrl },
+    image: abs(input.image),
+    datePublished: input.datePublished,
+    ...(input.dateModified ? { dateModified: input.dateModified } : {}),
+    author: { "@type": "Person", name: input.authorName },
+    publisher: { "@id": ORGANIZATION_ID },
+    isPartOf: { "@id": WEBSITE_ID },
+    ...(input.inLanguage ? { inLanguage: input.inLanguage } : {}),
+    ...(input.readingTime ? { timeRequired: `PT${input.readingTime}M` } : {}),
+    ...(input.keywords?.length ? { keywords: [...input.keywords] } : {}),
+    ...(input.articleSection ? { articleSection: input.articleSection } : {}),
+  };
+}
+
 export interface CoursePart {
   headline: string;
   description: string;

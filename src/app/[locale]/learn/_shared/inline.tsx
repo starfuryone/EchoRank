@@ -23,6 +23,15 @@ const LOCALIZED_PREFIXES = [
   // and silently drops a French reader into the English page.
   "/pricing",
   "/legal",
+  // The blog. Its articles cross-link each other in prose, and an unprefixed
+  // "/blog/<slug>" would leave a French reader on the English article after a
+  // 308 — the same cost the two entries above were added to avoid.
+  "/blog",
+  // Both are locale-prefixed marketing routes that blog prose links to
+  // directly. Same reasoning again: reachable either way, one redirect hop
+  // cheaper and one language more correct this way.
+  "/free-audit",
+  "/free-tools",
 ];
 
 /**

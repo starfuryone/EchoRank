@@ -5,7 +5,7 @@ import { isSupportedLocale, resolveTarget, type Locale } from "@/lib/i18n/config
 // Import the registry directly, not the "@/lib/seo" barrel — the barrel
 // re-exports JsonLd.tsx, and pulling React into the middleware bundle is a
 // needless edge-runtime cost.
-import { KNOWN_MARKETING_PATHS } from "@/lib/seo/registry";
+import { KNOWN_MARKETING_PATHS, KNOWN_MARKETING_PREFIXES } from "@/lib/seo/registry";
 
 const LOCALE_COOKIE = "echorank_locale";
 
@@ -269,9 +269,19 @@ export default auth((req) => {
   // Redirecting on "unknown first segment" alone would rewrite /customers to
   // /en/customers and break the authenticated app.
   {
-    const marketingTarget = KNOWN_MARKETING_PATHS.includes(stripTrailingSlash(pathname))
-      ? stripTrailingSlash(pathname) // "/about"
-      : KNOWN_MARKETING_PATHS.includes(stripTrailingSlash(dropFirstSegment(pathname)))
+    // Exact paths first, then the prefix namespaces. A path is a marketing
+    // target if it is itself registered ("/about") or if dropping a bogus first
+    // segment makes it one ("/xx/about").
+    //
+    // KNOWN_MARKETING_PREFIXES covers the blog, whose article slugs are files on
+    // disk and therefore cannot be listed in a module the edge runtime imports.
+    // See its comment in src/lib/seo/registry.ts. Without it a locale-less
+    // "/blog/<slug>" falls through to the auth gate below and 307s to /login.
+    const registered = (p: string) =>
+      KNOWN_MARKETING_PATHS.includes(p) || KNOWN_MARKETING_PREFIXES.some((x) => p.startsWith(x));
+    const marketingTarget = registered(stripTrailingSlash(pathname))
+      ? stripTrailingSlash(pathname) // "/about", "/blog/<slug>"
+      : registered(stripTrailingSlash(dropFirstSegment(pathname)))
         ? stripTrailingSlash(dropFirstSegment(pathname)) // "/xx/about"
         : null;
     if (marketingTarget) {
