@@ -1,0 +1,30 @@
+[Unit]
+# The nightly blog build. Paired with blog-publish.timer.
+#
+# NAMED blog-publish, NOT echorank-*: /etc/systemd/system already holds
+# echorank-web.service, echorank-workers.service and redis-echorank.service.
+# Those are long-running units; this is a oneshot. Verified 2026-08-21 that no
+# timer of any name exists on this box, so there is nothing to conflict with.
+Description=Echorank nightly blog build and publish
+Documentation=file:///opt/echorank/app/deploy/blog-publisher/README.md
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+ExecStart=/opt/echorank/bin/publish-blog.sh
+# A build plus a restart plus origin checks. Generous, but bounded: a hung
+# build must not sit holding the tree until someone notices tomorrow.
+TimeoutStartSec=1800
+# pm2 lives in root's home; the script shells out to it.
+Environment=HOME=/root
+Environment=PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+StandardOutput=journal
+StandardError=journal
+# NOT Restart=on-failure. A failed build that retries in a loop rebuilds the
+# tree under a running process repeatedly; the alert in the script is the
+# signal, and a human decides whether to re-run.
+
+[Install]
+WantedBy=multi-user.target

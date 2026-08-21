@@ -4336,3 +4336,79 @@ model KeywordOpportunityCredit {
   @@index([tenantId, createdAt(sort: Desc)])
   @@map("keyword_opportunity_credits")
 }
+
+/// The blog agent's run ledger. One row per topic, per stage transition target.
+///
+/// TENANT-LESS, deliberately: this is an internal content pipeline, not a
+/// customer feature, and giving it a tenantId would imply a scoping rule that
+/// does not exist. It is the one table in this schema with no tenant column,
+/// which is why it is documented here rather than left to be noticed.
+///
+/// Follows the ledger shape used elsewhere in this schema: rows are written and
+/// their status advanced, never deleted, so "what did the agent do on the 14th"
+/// stays answerable after the draft has been published or rejected.
+///
+/// `topicHash` is the 30-day dedupe key — a hash of the story title's
+/// significant tokens (see src/lib/blog-agent/discover.ts). It is NOT unique:
+/// the same story legitimately reappears after the window, and a unique
+/// constraint would make that a crash instead of a new run.
+model BlogAgentRun {
+  id String @id @default(cuid())
+
+  /// Which pipeline stage produced this row's current state.
+  stage  BlogAgentStage
+  status BlogAgentStatus
+
+  /// Dedupe key over the normalized story title. Indexed with createdAt for
+  /// the 30-day lookback the discover stage runs on every pass.
+  topicHash String
+  /// The story as the feed titled it, kept for the briefing and for debugging
+  /// a dedupe decision after the fact.
+  topicTitle String
+  /// Feed source id from src/lib/blog-agent/sources.ts.
+  sourceId String
+
+  /// Every URL the research stage actually fetched. The gate checks the draft's
+  /// external links against exactly this list, so it is evidence, not metadata.
+  sourceUrls Json
+
+  /// Set once the gate passes and the file is written.
+  slug String?
+
+  /// Anthropic spend for this run in USD, summed across the draft call and any
+  /// retry. Logged on every run that spends money upstream, per the house rule.
+  costUsd Float @default(0)
+
+  /// The gate failures, or the upstream error. Null on a clean run.
+  error String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  /// The dedupe lookback: WHERE createdAt > now() - 30 days.
+  @@index([topicHash, createdAt(sort: Desc)])
+  /// The daily spend cap: SUM(costUsd) WHERE createdAt > start of day.
+  @@index([createdAt(sort: Desc)])
+  @@index([status])
+  @@map("blog_agent_runs")
+}
+
+enum BlogAgentStage {
+  DISCOVER
+  RESEARCH
+  DRAFT
+  GATE
+  LAND
+}
+
+/// discovered -> drafted -> awaiting_review -> approved -> published
+/// with gated_fail and rejected as terminal branches.
+enum BlogAgentStatus {
+  DISCOVERED
+  DRAFTED
+  GATED_FAIL
+  AWAITING_REVIEW
+  APPROVED
+  PUBLISHED
+  REJECTED
+}

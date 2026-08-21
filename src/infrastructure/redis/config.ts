@@ -163,7 +163,10 @@ export type QueueName =
   | "revenue-rollup"
   | "action-agent"
   | "assistant-precompute"
-  | "keyword-opportunity";
+  | "keyword-opportunity"
+  // Internal content pipeline. No tenant, no customer-facing surface —
+  // see src/infrastructure/queue/workers/blog-agent.worker.ts.
+  | "blog-agent";
 
 /** All valid queue names */
 export const QUEUE_NAMES: QueueName[] = [
@@ -197,4 +200,5 @@ export const QUEUE_NAMES: QueueName[] = [
   "action-agent",
   "assistant-precompute",
   "keyword-opportunity",
+  "blog-agent",
 ];

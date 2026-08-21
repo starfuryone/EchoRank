@@ -43,6 +43,7 @@ import { startOpportunityScanWorker } from "./workers/opportunity-scan.worker";
 import { startActionAgentWorker } from "./workers/action-agent.worker";
 import { startAssistantPrecomputeWorker } from "./workers/assistant-precompute.worker";
 import { startKeywordOpportunityWorker } from "./workers/keyword-opportunity.worker";
+import { startBlogAgentWorker } from "./workers/blog-agent.worker";
 
 /**
  * How often to drain domain events that are still PENDING/FAILED in the DB.
@@ -130,6 +131,10 @@ async function startWorkers() {
     // No schedule of its own beyond a reaper tick: every analysis is a human
     // pressing "Run domain analysis". Scheduled re-runs ride the Watcher.
     { name: "keyword-opportunity", start: startKeywordOpportunityWorker },
+    // Off unless BLOG_AGENT_ENABLED=true. The worker still starts and still
+    // registers its schedules, so the cron is already correct on the day the
+    // switch is flipped; every stage returns immediately while it is off.
+    { name: "blog-agent", start: startBlogAgentWorker },
   ];
 
   const loaded: string[] = [];

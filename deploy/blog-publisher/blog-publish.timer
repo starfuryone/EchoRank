@@ -1,0 +1,16 @@
+[Unit]
+Description=Run the Echorank blog build nightly at 06:15 UTC
+Documentation=file:///opt/echorank/app/deploy/blog-publisher/README.md
+
+[Timer]
+# 06:15 UTC — after the agent's 05:00 discover and 05:45 publish-check, with
+# half an hour of slack for a slow drafting run.
+OnCalendar=*-*-* 06:15:00 UTC
+# If the box was down at 06:15, run once on boot rather than skipping the day.
+Persistent=true
+# Spread the start so a shared host does not see every timer fire on the minute.
+RandomizedDelaySec=120
+Unit=blog-publish.service
+
+[Install]
+WantedBy=timers.target

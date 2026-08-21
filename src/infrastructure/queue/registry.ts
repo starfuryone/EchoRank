@@ -264,6 +264,16 @@ const DEFAULT_JOB_OPTIONS: Record<QueueName, JobsOptions> = {
   // UI with its reason, and is one click to run again — which is a decision the
   // customer should make anyway, since the commonest cause of a failure here is
   // a domain the discovery endpoints know nothing about.
+  // Spends money upstream and git-commits into the tree that serves
+  // production, so a blind retry could double-charge and could commit a second
+  // copy of the same article. One attempt; a failed run is in blog_agent_runs
+  // and in the notification log, and tomorrow's discover picks the topic up
+  // again if it is still worth writing about.
+  "blog-agent": {
+    attempts: 1,
+    removeOnComplete: { age: REDIS_CONFIG.ttl.completedJobs },
+    removeOnFail: { age: REDIS_CONFIG.ttl.failedJobs },
+  },
   "keyword-opportunity": {
     attempts: 1,
     removeOnComplete: { age: REDIS_CONFIG.ttl.completedJobs },
