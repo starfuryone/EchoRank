@@ -17,10 +17,18 @@ import {
   HELP_HUB,
   HELP_VIDEO,
   helpArticleFor,
+  helpArticlePaths,
+  helpArticleSlugFor,
   helpLearnPaths,
   learnHref,
   pageHelp,
+  pageHelpArticle,
 } from "@/lib/help-content";
+import {
+  helpArticleBySlug,
+  helpArticleRoutes,
+  helpArticlesByCategory,
+} from "@/lib/help-articles";
 import {
   LEARN_CHAPTERS,
   LEARN_GUIDES,
@@ -56,6 +64,7 @@ describe("cards derive from learn-content", () => {
   it("gives every group at least one card, and no duplicate card ids", () => {
     expect(HELP_GROUPS.map((g) => g.id)).toEqual([
       "getting_started",
+      "billing",
       "course",
       "guides",
       "reference",
@@ -80,6 +89,28 @@ describe("cards derive from learn-content", () => {
       if (card.kind === "guide" || card.kind === "video") {
         expect(guideBySlug(card.slug!), card.id).toBeDefined();
       }
+      if (card.kind === "article") {
+        expect(helpArticleBySlug(card.slug!), card.id).toBeDefined();
+      }
+    }
+  });
+
+  it("lists every billing help article, in config order", () => {
+    const billing = HELP_GROUPS.find((g) => g.id === "billing")!;
+    expect(billing.cards.map((c) => c.slug)).toEqual(
+      helpArticlesByCategory("billing").map((a) => a.slug),
+    );
+    for (const card of billing.cards) expect(card.kind).toBe("article");
+  });
+
+  it("points every help-article link at a route the SEO registry knows", () => {
+    // Same guarantee helpLearnPaths() gives the Knowledge Hub cards: a card or
+    // an in-context link naming a renamed article fails here rather than 404ing
+    // for someone who is already stuck.
+    const known = new Set(helpArticleRoutes());
+    expect(helpArticlePaths().length).toBeGreaterThan(0);
+    for (const path of helpArticlePaths()) {
+      expect(known.has(path), `${path} is not a help-article route`).toBe(true);
     }
   });
 
@@ -97,7 +128,13 @@ describe("cards derive from learn-content", () => {
       (c) => c.id,
     );
     const derived = ALL_CARDS.filter(
-      (c) => c.kind === "chapter" || c.kind === "guide" || c.kind === "video",
+      (c) =>
+        c.kind === "chapter" ||
+        c.kind === "guide" ||
+        c.kind === "video" ||
+        // Its title and description come from help-articles.ts, localized —
+        // a catalog entry here would be the same duplicate in a new place.
+        c.kind === "article",
     ).map((c) => c.id);
 
     for (const locale of LOCALES) {
@@ -160,6 +197,9 @@ describe("pageHelp deep links", () => {
   it("returns nothing for a route with no obvious match", () => {
     // A help link that lands on a loosely related article teaches people the
     // button does not work. Absent is better.
+    //
+    // /billing has no KNOWLEDGE HUB article and still does not — its help is a
+    // help ARTICLE, which is the separate pageHelpArticle map below.
     expect(helpArticleFor("/billing")).toBeUndefined();
     expect(helpArticleFor("/team")).toBeUndefined();
   });
@@ -170,6 +210,21 @@ describe("pageHelp deep links", () => {
         `/${locale}/learn/guides/csv-review-import`,
       );
     }
+  });
+});
+
+describe("in-context help-article links", () => {
+  it("names only articles that exist", () => {
+    for (const [route, slug] of Object.entries(pageHelpArticle)) {
+      expect(helpArticleBySlug(slug), `${route} → ${slug}`).toBeDefined();
+    }
+  });
+
+  it("sends /billing to the cancellation walkthrough", () => {
+    // The link the Subscription Agreement's self-serve promise leans on: it
+    // sits beside Manage subscription and explains what the button does.
+    expect(helpArticleSlugFor("/billing")).toBe("cancel-subscription");
+    expect(helpArticleSlugFor("/team")).toBeUndefined();
   });
 });
 

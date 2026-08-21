@@ -87,13 +87,27 @@ export interface ArticleShellProps {
   locale: string;
   /** "CHAPTER 03" / "GUIDE" — already composed by the caller. */
   eyebrow: string;
+  /**
+   * This article's BODY is written in the reader's language.
+   *
+   * Suppresses the English-only notice below, which would otherwise tell a
+   * French reader their French article is in English. Knowledge Hub articles
+   * leave it false — their prose really is English under every locale.
+   */
+  localizedBody?: boolean;
   title: string;
   description: string;
   readingTime: number;
   body: readonly LearnBlock[];
   video?: LearnVideo;
   faq?: readonly LearnFaqEntry[];
-  cta: LearnCta;
+  /**
+   * Closing CTA block. OPTIONAL, and omitted on purpose by the help article
+   * about cancelling: that page promises "no retention hoops", and closing it
+   * with a Start-free-trial pitch would be one. Every Knowledge Hub article
+   * still passes one.
+   */
+  cta?: LearnCta;
   related: readonly LearnLink[];
   prev?: { href: string; label: string };
   next?: { href: string; label: string };
@@ -102,6 +116,7 @@ export interface ArticleShellProps {
 export function ArticleShell({
   locale,
   eyebrow,
+  localizedBody = false,
   title,
   description,
   readingTime,
@@ -122,8 +137,8 @@ export function ArticleShell({
   const player = HOME_TOOLS[locale as Locale].player;
   const L = (p: string) => `/${locale}${p.startsWith("/") ? p : `/${p}`}`;
   const toc = tableOfContents(body);
-  const ctaCopy = cta === "audit" ? t.ctaAudit : t.ctaRegister;
-  const notice = ENGLISH_BODY_NOTICE[b];
+  const ctaCopy = cta && (cta === "audit" ? t.ctaAudit : t.ctaRegister);
+  const notice = localizedBody ? null : ENGLISH_BODY_NOTICE[b];
   // One field, two placements — narrowed here so the JSX below never inspects
   // the discriminant itself. A chapter video goes to the fixed slot after the
   // intro; a prose-placed one goes to its marker, through HomeVideo.
@@ -176,19 +191,21 @@ export function ArticleShell({
                 }
               />
 
-              <aside className={c.cta}>
-                <h2 className={c.ctaH}>{ctaCopy.h}</h2>
-                <p className={c.ctaP}>{ctaCopy.p}</p>
-                {cta === "audit" ? (
-                  <Link className={`${s.btn} ${s.btnPrimary}`} href={L("/free-audit")}>
-                    {ctaCopy.btn}
-                  </Link>
-                ) : (
-                  <Link className={`${s.btn} ${s.btnPrimary}`} href="/register">
-                    {ctaCopy.btn}
-                  </Link>
-                )}
-              </aside>
+              {ctaCopy && (
+                <aside className={c.cta}>
+                  <h2 className={c.ctaH}>{ctaCopy.h}</h2>
+                  <p className={c.ctaP}>{ctaCopy.p}</p>
+                  {cta === "audit" ? (
+                    <Link className={`${s.btn} ${s.btnPrimary}`} href={L("/free-audit")}>
+                      {ctaCopy.btn}
+                    </Link>
+                  ) : (
+                    <Link className={`${s.btn} ${s.btnPrimary}`} href="/register">
+                      {ctaCopy.btn}
+                    </Link>
+                  )}
+                </aside>
+              )}
 
               {related.length > 0 && (
                 <section className={c.related}>

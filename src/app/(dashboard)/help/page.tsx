@@ -20,6 +20,7 @@ import { BookOpen, ExternalLink } from "lucide-react";
 import { dashboardLocale, HELP_COPY } from "@/lib/i18n/dashboard";
 import { requireTenant } from "@/lib/tenant";
 import { HELP_GROUPS, HELP_VIDEO, learnHref, type HelpCard } from "@/lib/help-content";
+import { helpArticleBySlug, helpArticleCopy, helpArticleHref } from "@/lib/help-articles";
 import {
   ECHOPEDIA_DESCRIPTION,
   ECHOPEDIA_TITLE,
@@ -49,6 +50,20 @@ function resolve(card: HelpCard, copy: (typeof HELP_COPY)["en"], locale: string)
         description: g.blurb,
         href: learnHref(locale, `${LEARN_BASE}/guides/${g.slug}`),
         minutes: g.readingTime,
+        newTab: true,
+      };
+    }
+    case "article": {
+      // A public help article. Its copy is LOCALIZED, unlike the Knowledge Hub
+      // kinds above, so the card shows the reader's own language — de-CH folds
+      // to English through helpBaseOf(), same as everything else on this hub.
+      const a = helpArticleBySlug(card.slug!)!;
+      const copy = helpArticleCopy(a, locale);
+      return {
+        name: copy.title,
+        description: copy.description,
+        href: helpArticleHref(locale, a.slug),
+        minutes: a.readingTime,
         newTab: true,
       };
     }

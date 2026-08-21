@@ -4,6 +4,8 @@ import { getCurrentTenant } from "@/lib/tenant";
 import { BillingPageClient } from "./page-client";
 import { creditBalance, creditHistory } from "@/lib/credits/store";
 import { getBillingContext } from "@/lib/paid-plan";
+import { helpArticleSlugFor } from "@/lib/help-content";
+import { helpArticleHref } from "@/lib/help-articles";
 
 export default async function BillingPage() {
   const cookieStore = await cookies();
@@ -41,9 +43,17 @@ export default async function BillingPage() {
   // list, nothing here has to be remembered.
   const subscribed = billing ? !billing.needsPlanSelection : true;
 
+  // Resolved HERE rather than in the client component: help-content.ts reads
+  // the whole Knowledge Hub config to build the /help hub, and importing it
+  // across the "use client" boundary would ship 70 KB of course prose to a
+  // browser that needs one href. All three DashLocales are valid marketing
+  // locale segments, so the dashboard language carries straight into the URL.
+  const cancelSlug = helpArticleSlugFor("/billing");
+
   return (
     <BillingPageClient
       locale={locale}
+      cancelHelpHref={cancelSlug ? helpArticleHref(locale, cancelSlug) : null}
       currentPlan={membership?.tenant.planType ?? null}
       subscribed={subscribed}
       credits={credits}

@@ -28,12 +28,33 @@ export type LearnBlock =
   | { k: "ul"; items: string[] }
   | { k: "ol"; items: string[] }
   | { k: "table"; head: string[]; rows: string[][] }
+  /**
+   * A numbered walkthrough where a step may carry its own illustration.
+   *
+   * Distinct from "ol" because an ordered list cannot hold a figure: the help
+   * articles need the picture UNDER the step it belongs to, not floating
+   * between two list items. Steps are excluded from tableOfContents() for the
+   * same reason list items are — the TOC indexes headings.
+   */
+  | { k: "steps"; items: LearnStep[] }
   | { k: "quote"; paras: string[] }
   | { k: "code"; t: string }
   /** Renders the page's `video` through HomeVideo, in prose position. */
   | { k: "video" }
   /** Renders the page's `faq` array — the same array the JSON-LD is built from. */
   | { k: "faq" };
+
+/**
+ * One step of a {k:"steps"} walkthrough.
+ *
+ * `img` is a site-relative path under public/. The alt text is authored per
+ * locale even though the image is shared, because a schematic drawing of the UI
+ * is language-neutral and its description is not.
+ */
+export interface LearnStep {
+  t: string;
+  img?: { src: string; alt: string };
+}
 
 export interface LearnFaqEntry {
   q: string;

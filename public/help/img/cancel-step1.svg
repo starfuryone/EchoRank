@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" font-family="-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif">
+  <rect width="640" height="360" rx="12" fill="#F6F7F9"/>
+  <!-- dark sidebar -->
+  <rect x="0" y="0" width="200" height="360" rx="12" fill="#15181E"/>
+  <rect x="12" y="0" width="188" height="360" fill="#15181E"/>
+  <g transform="translate(20,26)">
+    <rect x="0" y="-8" width="18" height="18" rx="3" transform="rotate(45 9 1)" fill="#F0B90B"/>
+    <text x="30" y="6" fill="#EAECEF" font-size="14" font-weight="700" letter-spacing="1">ECHORANK 360</text>
+  </g>
+  <g fill="#848E9C" font-size="13">
+    <text x="24" y="86">Dashboard</text>
+    <text x="24" y="116">AI</text>
+    <text x="24" y="146">SEO Tools</text>
+    <text x="24" y="176">Reputation Tools</text>
+    <text x="24" y="236">Settings</text>
+    <text x="24" y="266">Account</text>
+  </g>
+  <!-- highlighted Billing item -->
+  <rect x="10" y="286" width="180" height="34" rx="8" fill="#2B3139"/>
+  <text x="24" y="308" fill="#FFFFFF" font-size="13" font-weight="700">Billing</text>
+  <circle cx="176" cy="303" r="11" fill="#F0B90B"/>
+  <text x="176" y="308" text-anchor="middle" fill="#15181E" font-size="13" font-weight="800">1</text>
+  <!-- content hint -->
+  <text x="230" y="60" fill="#1F2328" font-size="20" font-weight="800">Billing</text>
+  <text x="230" y="84" fill="#6B7280" font-size="13">Manage your subscription and view usage.</text>
+  <rect x="230" y="104" width="380" height="120" rx="10" fill="#FFFFFF" stroke="#E5E7EB"/>
+  <rect x="250" y="124" width="140" height="14" rx="4" fill="#E5E7EB"/>
+  <rect x="250" y="150" width="220" height="10" rx="4" fill="#EEF0F3"/>
+</svg>

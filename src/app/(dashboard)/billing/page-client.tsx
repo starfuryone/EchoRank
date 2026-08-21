@@ -49,12 +49,19 @@ const PLAN_CARD_ORDER = ["STARTER", "GROWTH", "AGENCY"] as const;
 
 export function BillingPageClient({
   locale,
+  cancelHelpHref,
   currentPlan,
   subscribed,
   credits,
   creditHistory,
 }: {
   locale: DashLocale;
+  /**
+   * The public "How cancellation works" article, already locale-prefixed and
+   * resolved server-side — see the note in page.tsx. Null if the route map has
+   * no article for /billing, in which case the link simply is not rendered.
+   */
+  cancelHelpHref: string | null;
   /** Tenant.planType, resolved server-side in page.tsx. */
   currentPlan: PlanType | null;
   /**
@@ -220,7 +227,27 @@ export function BillingPageClient({
             <Button variant="outline" onClick={openPortal} disabled={portalBusy}>
               {t.manageSubscription}
             </Button>
-            <p className="mt-2 text-xs text-gray-500">{t.manageSubscriptionHint}</p>
+            <p className="mt-2 text-xs text-gray-500">
+              {t.manageSubscriptionHint}
+              {/* The full walkthrough, next to the button it walks through.
+                  Public page, so it opens in a new tab rather than dropping
+                  someone out of the dashboard mid-cancellation — and the slug
+                  comes from the help-content route map, so a renamed article
+                  breaks a test instead of this link. */}
+              {cancelHelpHref && (
+                <>
+                  {" "}
+                  <a
+                    href={cancelHelpHref}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-medium text-gray-700 underline underline-offset-2 hover:text-gray-900"
+                  >
+                    {t.cancellationHelp}
+                  </a>
+                </>
+              )}
+            </p>
             {portalError && (
               <p className="mt-2 text-xs text-red-600" role="alert">
                 {t.manageSubscriptionError}

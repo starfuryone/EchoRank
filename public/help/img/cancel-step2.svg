@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" font-family="-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif">
+  <rect width="640" height="360" rx="12" fill="#F6F7F9"/>
+  <text x="40" y="52" fill="#1F2328" font-size="20" font-weight="800">Billing</text>
+  <rect x="40" y="76" width="560" height="190" rx="12" fill="#FFFFFF" stroke="#E5E7EB"/>
+  <rect x="64" y="100" width="44" height="44" rx="10" fill="#EEF2FF"/>
+  <rect x="76" y="114" width="20" height="14" rx="2" fill="#4F6BF6"/>
+  <text x="122" y="118" fill="#1F2328" font-size="16" font-weight="700">Starter Plan</text>
+  <rect x="222" y="104" width="52" height="20" rx="10" fill="#E8F7EE"/>
+  <text x="248" y="118" text-anchor="middle" fill="#1E8E4E" font-size="11" font-weight="600">Active</text>
+  <text x="122" y="140" fill="#6B7280" font-size="13">$79/month</text>
+  <!-- Manage subscription button highlighted -->
+  <rect x="64" y="168" width="196" height="42" rx="9" fill="#FFFFFF" stroke="#F0B90B" stroke-width="3"/>
+  <text x="162" y="194" text-anchor="middle" fill="#1F2328" font-size="14" font-weight="600">Manage subscription</text>
+  <circle cx="278" cy="189" r="13" fill="#F0B90B"/>
+  <text x="278" y="194" text-anchor="middle" fill="#15181E" font-size="14" font-weight="800">2</text>
+  <text x="64" y="238" fill="#9AA1AB" font-size="12">Update your payment method or cancel. Cancelling keeps your access until the end of the period you have already paid for.</text>
+</svg>

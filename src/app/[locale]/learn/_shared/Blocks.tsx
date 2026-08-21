@@ -132,6 +132,42 @@ export function Blocks({ body, locale, video, faq, afterIntro }: BlocksProps) {
               </div>
             );
 
+          case "steps":
+            // A numbered walkthrough. The figure sits INSIDE its <li>, so the
+            // picture stays attached to its step when the list reflows — and
+            // an <ol> keeps the numbering in the document rather than in the
+            // copy, which is what stops "step 3" from surviving the deletion
+            // of step 2.
+            return (
+              <ol key={key} className={`${b.list} ${b.steps}`}>
+                {block.items.map((step, j) => (
+                  <li key={`${key}-${j}`}>
+                    {inline(step.t, locale, `${key}-${j}`)}
+                    {step.img && (
+                      <figure className={b.stepFigure}>
+                        {/* Plain <img>: these are hand-drawn SVG schematics,
+                            already a few KB, and next/image cannot optimize an
+                            SVG anyway — it passes them through unchanged. The
+                            intrinsic size is the asset's own 640x360 viewBox,
+                            declared so the row reserves its height before the
+                            file lands. */}
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          className={b.stepImg}
+                          src={step.img.src}
+                          alt={step.img.alt}
+                          width={640}
+                          height={360}
+                          loading="lazy"
+                          decoding="async"
+                        />
+                      </figure>
+                    )}
+                  </li>
+                ))}
+              </ol>
+            );
+
           case "video":
             return video ? (
               <div key={key} className={b.videoBlock}>

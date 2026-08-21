@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" font-family="-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif">
+  <rect width="640" height="360" rx="12" fill="#FFFFFF" stroke="#E5E7EB"/>
+  <text x="40" y="48" fill="#111827" font-size="16" font-weight="700">Starter</text>
+  <text x="40" y="70" fill="#6B7280" font-size="12">$79.00 per month · next payment Aug 27</text>
+  <rect x="40" y="96" width="560" height="1" fill="#EEF0F3"/>
+  <g fill="#374151" font-size="13">
+    <text x="40" y="130">Update plan</text>
+    <text x="40" y="162">Update payment method</text>
+  </g>
+  <!-- cancel action highlighted -->
+  <rect x="30" y="182" width="300" height="40" rx="9" fill="#FEF2F2" stroke="#F0B90B" stroke-width="3"/>
+  <text x="48" y="207" fill="#B42318" font-size="14" font-weight="700">Cancel subscription</text>
+  <circle cx="348" cy="202" r="13" fill="#F0B90B"/>
+  <text x="348" y="207" text-anchor="middle" fill="#15181E" font-size="14" font-weight="800">4</text>
+  <!-- reassurance note -->
+  <rect x="40" y="248" width="560" height="70" rx="10" fill="#F9FAFB" stroke="#EEF0F3"/>
+  <text x="60" y="276" fill="#374151" font-size="13" font-weight="600">Your plan stays active until the end of the period you have paid for.</text>
+  <text x="60" y="298" fill="#6B7280" font-size="12">No further charges. Your data and any prepaid lookup credits are kept.</text>
+</svg>

@@ -3,6 +3,7 @@ import HomeClient, { type HomePricingTier } from "./HomeClient";
 import { pricingTiers } from "@/lib/pricing-tiers";
 import { ClassicSeoTools } from "./ClassicSeoTools";
 import { FAQ } from "./faq-data";
+import { plainText } from "./learn/_shared/inline";
 import { PLAN_CONFIGS, PLAN_ORDER } from "@/lib/plan-config";
 import { HOME_PRICING_CHROME, HOME_TOOLS } from "@/lib/i18n/content";
 import { SEO_TOOL_GROUPS } from "@/lib/seo-tools";
@@ -57,8 +58,13 @@ export default async function Page(
           webSite(l),
           softwareApplication(l),
           // Built from the same array HomeClient renders, so the markup can
-          // never describe questions the page doesn't display.
-          faqPage(faq.items, `${SITE_URL}/${l}`),
+          // never describe questions the page doesn't display — with the inline
+          // markup stripped, because a FAQPage answer is plain text and
+          // "**Billing**" in a rich result publishes the asterisks.
+          faqPage(
+            faq.items.map((it) => ({ q: plainText(it.q), a: plainText(it.a) })),
+            `${SITE_URL}/${l}`,
+          ),
         ]}
       />
       <HomeClient

@@ -10,6 +10,19 @@
 //
 // Every answer paraphrases a claim already made elsewhere on the page. No
 // figures appear here that aren't already stated on the page itself.
+//
+// ONE ENTRY IS NOT AUTHORED HERE. The cancellation Q&A is the short form of the
+// help article at /help/cancel-subscription and is imported from
+// src/lib/help-articles.ts, which is the single source every surface that
+// answers "how do I cancel" reads. Retyping it here is exactly the drift that
+// file exists to prevent.
+//
+// Answers may carry the same inline markup the Knowledge Hub prose uses —
+// **bold** and [label](href). HomeClient renders them through inline(); the
+// FAQPage JSON-LD in page.tsx strips them with plainText(), because a rich
+// result must not publish the asterisks.
+
+import { helpArticleBySlug, helpArticleCopy } from "@/lib/help-articles";
 
 export type FaqBase = "en" | "fr";
 
@@ -17,6 +30,10 @@ export interface FaqItem {
   q: string;
   a: string;
 }
+
+const CANCEL = helpArticleBySlug("cancel-subscription")!;
+/** The short-form Q&A, in the base the catalog below is keyed by. */
+const cancelFaq = (base: FaqBase): FaqItem => helpArticleCopy(CANCEL, base).faq;
 
 export const FAQ: Record<FaqBase, { label: string; h2: string; sub: string; items: FaqItem[] }> = {
   en: {
@@ -52,6 +69,7 @@ export const FAQ: Record<FaqBase, { label: string; h2: string; sub: string; item
         q: "My CSV file isn't displaying correctly in Excel, why?",
         a: "Exports are UTF-8 with comma separators. If Excel shows everything in one column or garbles accents, use Data → From Text/CSV and pick UTF-8 — or open the file in Google Sheets, which detects it automatically.",
       },
+      cancelFaq("en"),
       // The binding definition of the two support tiers. It exists because the
       // cards say "Email support" and "Priority support" and those are words a
       // reader otherwise prices with their own assumptions. Deliberately
@@ -98,6 +116,7 @@ export const FAQ: Record<FaqBase, { label: string; h2: string; sub: string; item
         q: "Mon fichier CSV ne s'affiche pas correctement dans Excel, pourquoi ?",
         a: "Les exports sont en UTF-8 avec des virgules comme séparateurs. Si Excel affiche tout dans une seule colonne ou déforme les accents, utilisez Données → À partir d'un fichier texte/CSV et choisissez UTF-8 — ou ouvrez le fichier dans Google Sheets, qui le détecte automatiquement.",
       },
+      cancelFaq("fr"),
       {
         q: "Quel soutien est inclus ?",
         a: "Le forfait Démarrage comprend le soutien par courriel, avec une réponse en 48 heures les jours ouvrables. Les forfaits Croissance et Agence comprennent le soutien prioritaire : par courriel, avec une réponse en 24 heures les jours ouvrables. Le soutien se fait par courriel sur tous les forfaits — nous n'offrons ni ligne téléphonique ni clavardage en direct, et les délais de réponse ne comptent que les jours ouvrables.",

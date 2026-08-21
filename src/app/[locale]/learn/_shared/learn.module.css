@@ -423,6 +423,57 @@
   border-bottom: 0;
 }
 
+/* Hub cross-link blurb (the Billing basics section). One authored paragraph
+   with an inline link, outside .article, so it carries its own link styling
+   rather than inheriting the prose rules above. */
+.blurb {
+  margin: 0 0 12px;
+  max-width: 760px;
+  font-size: 15.5px;
+  line-height: 1.7;
+  color: var(--muted, #8f8fa3);
+}
+.blurb strong {
+  color: var(--text, #eceaf2);
+  font-weight: 620;
+}
+.blurb a {
+  color: var(--gold, #e8c565);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  transition: color 150ms ease;
+}
+.blurb a:hover,
+.blurb a:focus-visible {
+  color: #fff1a8;
+}
+
+/* ── Numbered walkthrough with per-step illustrations ({k:"steps"}) ──
+   Inherits .list for the marker colour and prose sizing; everything below is
+   the room the figures need. */
+
+.steps {
+  gap: 18px;
+}
+.stepFigure {
+  /* ~560px, the width these schematics were drawn to read at. Capped by the
+     column too, so a narrow viewport shrinks them rather than scrolling. */
+  margin: 12px 0 4px;
+  max-width: 560px;
+  width: 100%;
+}
+.stepImg {
+  display: block;
+  width: 100%;
+  height: auto;
+  /* The 16:9 box is reserved before the SVG lands, so the paragraph below it
+     does not jump — same reason .chapterVideoFrame declares its ratio. */
+  aspect-ratio: 640 / 360;
+  border: 1px solid var(--line, #232330);
+  border-radius: 12px;
+  background: #fff;
+}
+
 .videoBlock {
   margin: 22px 0;
   max-width: 620px;

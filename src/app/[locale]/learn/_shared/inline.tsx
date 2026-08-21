@@ -13,14 +13,36 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 /** Path prefixes that live under /[locale]. Anything else is used verbatim. */
-const LOCALIZED_PREFIXES = ["/learn", "/resources", "/guide", "/ai-visibility"];
+const LOCALIZED_PREFIXES = [
+  "/learn",
+  "/resources",
+  "/guide",
+  "/ai-visibility",
+  // Both are locale-prefixed marketing routes. A bare "/pricing" in prose still
+  // resolves — the proxy 308s it to /en/pricing — but it costs a redirect hop
+  // and silently drops a French reader into the English page.
+  "/pricing",
+  "/legal",
+];
+
+/**
+ * "/help/<slug>" — the PUBLIC help articles, which are locale-prefixed.
+ *
+ * Deliberately a slash-terminated prefix rather than an entry in the list
+ * above: "/help" with no slug is the auth-gated in-app hub at
+ * src/app/(dashboard)/help, and rewriting that to "/en/help" would point every
+ * in-product help link at a 404.
+ */
+const HELP_ARTICLE_PREFIX = "/help/";
 
 /** Locale-prefix an in-app marketing path; leave external and app URLs alone. */
 export function resolveHref(href: string, locale: string): string {
   if (!href.startsWith("/")) return href;
-  const localized = LOCALIZED_PREFIXES.some(
-    (p) => href === p || href.startsWith(`${p}/`) || href.startsWith(`${p}#`),
-  );
+  const localized =
+    href.startsWith(HELP_ARTICLE_PREFIX) ||
+    LOCALIZED_PREFIXES.some(
+      (p) => href === p || href.startsWith(`${p}/`) || href.startsWith(`${p}#`),
+    );
   return localized ? `/${locale}${href}` : href;
 }
 

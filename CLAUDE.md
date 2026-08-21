@@ -155,6 +155,42 @@ human notices. Hand them both commands instead.
 - A new tool must be added to `SEO_TOOL_GROUPS`, all three dashboard catalogs, `dashNav`,
   and the route table in `src/lib/__tests__/seo-tools.test.ts`.
 
+## Help articles
+
+Two different things are called "help", and confusing them is the landmine:
+
+- **`/help`** — the in-app hub, `src/app/(dashboard)/help`. Auth-gated, a grid of
+  cards, `noindex` by virtue of being behind the gate.
+- **`/{locale}/help/<slug>`** — PUBLIC help articles, `src/app/[locale]/help/[slug]`,
+  rendered from `src/lib/help-articles.ts`. Indexable, in the sitemap.
+
+`resolveHref()` (`learn/_shared/inline.tsx`) locale-prefixes `/help/<slug>` and
+deliberately does **not** prefix a bare `/help` — rewriting the in-app hub to
+`/en/help` would point every in-product help link at a 404.
+
+- **One source, every surface.** An article's title, body, its short-form FAQ
+  pair and its hub blurb all live in `help-articles.ts`. The homepage FAQ
+  (`faq-data.ts`), the `/learn` Billing basics section, the `/help` hub card and
+  the Billing page's inline link all import it. Nothing paraphrases it —
+  `tests/help-articles.test.ts` compares each surface to the source.
+- **The body IS localized** — en/fr, folded by `helpBaseOf()`, de-CH → en. This is
+  the one exception to the Knowledge Hub's en-only rule, so these pages canonical
+  to **themselves**, not to the en URL, and pass `localizedBody` to `ArticleShell`
+  to suppress its English-only notice.
+- Rendering reuses `ArticleShell` + `Blocks` + the `LearnBlock` vocabulary. A
+  walkthrough with a figure under each step is `{k:"steps"}`, not `{k:"ol"}` — an
+  ordered list cannot hold a figure.
+- Step illustrations live in `public/help/img/`, are shared across locales (only
+  the alt text is translated), and are drawn on one 640×360 canvas so the column
+  reserves its height. **They hard-code a plan price**, which nothing propagates
+  into: `tests/help-articles.test.ts` asserts the drawn price still matches
+  `PLAN_CONFIGS`, so a price change fails the build instead of shipping a stale
+  picture. Re-cut the SVGs; do not relax the assertion.
+- Registration is derived: `helpArticleRoutes()` feeds `LOCALIZED_ROUTES` and
+  therefore `KNOWN_MARKETING_PATHS`, which is what 308s a locale-less
+  `/help/<slug>` onto `/en/help/<slug>` instead of letting the auth gate 307 it
+  to `/login`.
+
 ## Standalone landing pages
 
 Marketing pages whose markup is a complete HTML document — own `<head>`, own CSS — served

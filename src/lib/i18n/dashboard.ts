@@ -553,6 +553,11 @@ const billingEn = {
   manageSubscriptionHint:
     "Update your payment method or cancel. Cancelling keeps your access until the end of the period you have already paid for.",
   manageSubscriptionError: "Could not open the billing portal. Please try again.",
+  // Label for the inline link to the public help article beside the button.
+  // The ANSWER lives in src/lib/help-articles.ts and is never restated here;
+  // this is the four words that get someone to it, and it is chrome, which is
+  // why it needs the de-CH the article body does not have.
+  cancellationHelp: "How cancellation works",
   usageTitle: "Usage This Month",
   feedbackRequests: "Feedback Requests",
   usagePct: (pct: number) => `${pct}% of your monthly limit used`,
@@ -632,6 +637,7 @@ export const BILLING_COPY: Record<DashLocale, BillingCopy> = {
       "Modifiez votre moyen de paiement ou résiliez. La résiliation conserve votre accès jusqu'à la fin de la période déjà payée.",
     manageSubscriptionError:
       "Impossible d'ouvrir le portail de facturation. Veuillez réessayer.",
+    cancellationHelp: "Comment fonctionne l'annulation",
     usageTitle: "Utilisation ce mois-ci",
     feedbackRequests: "Demandes de rétroaction",
     usagePct: (pct: number) =>
@@ -697,6 +703,7 @@ export const BILLING_COPY: Record<DashLocale, BillingCopy> = {
       "Zahlungsmittel ändern oder kündigen. Bei einer Kündigung bleibt der Zugang bis zum Ende der bereits bezahlten Laufzeit bestehen.",
     manageSubscriptionError:
       "Das Rechnungsportal konnte nicht geöffnet werden. Bitte erneut versuchen.",
+    cancellationHelp: "So funktioniert die Kündigung",
     usageTitle: "Nutzung in diesem Monat",
     feedbackRequests: "Feedback-Anfragen",
     usagePct: (pct: number) =>
@@ -12020,6 +12027,7 @@ const helpEn = {
 
   groups: {
     getting_started: "Getting started",
+    billing: "Billing & account",
     course: "The course",
     guides: "In-depth guides",
     reference: "Reference",
@@ -12083,6 +12091,7 @@ export const HELP_COPY: Record<DashLocale, HelpCopy> = {
 
     groups: {
       getting_started: "Pour démarrer",
+      billing: "Facturation et compte",
       course: "Le cours",
       guides: "Guides approfondis",
       reference: "Référence",
@@ -12138,6 +12147,7 @@ export const HELP_COPY: Record<DashLocale, HelpCopy> = {
 
     groups: {
       getting_started: "Erste Schritte",
+      billing: "Abrechnung und Konto",
       course: "Der Kurs",
       guides: "Vertiefende Anleitungen",
       reference: "Nachschlagen",

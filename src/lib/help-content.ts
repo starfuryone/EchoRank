@@ -19,23 +19,42 @@ import {
   LEARN_PDF,
   guideBySlug,
 } from "./learn-content";
+import { helpArticlePath, helpArticlesByCategory } from "./help-articles";
 
 export const HELP_HUB = "/help";
 
-export type HelpGroupId = "getting_started" | "course" | "guides" | "reference";
+export type HelpGroupId =
+  | "getting_started"
+  // Account and subscription articles. Second, not last: "how do I cancel" is
+  // the other reason someone opens Help, and burying it under ten chapters and
+  // five guides is how a support ticket gets written instead.
+  | "billing"
+  | "course"
+  | "guides"
+  | "reference";
 
 /**
  * How a card behaves when clicked.
  *
  * "chapter" / "guide" / "glossary" — a public Knowledge Hub page, opened in a
  *   new tab so the reader does not lose their place in the dashboard.
+ * "article" — a public help article (src/lib/help-articles.ts). Same new-tab
+ *   rule; unlike the Knowledge Hub kinds its body is localized, so the card
+ *   shows the reader's own language.
  * "video" — the ONE exception: the extension install opens in place, in a
  *   modal, because sending someone to a new tab to watch a two-minute video
  *   they are following along with is the wrong trade.
  * "app" — an existing dashboard route, same tab.
  * "external" — a Caddy-served page or the PDF, new tab.
  */
-export type HelpCardKind = "chapter" | "guide" | "glossary" | "video" | "app" | "external";
+export type HelpCardKind =
+  | "chapter"
+  | "guide"
+  | "glossary"
+  | "article"
+  | "video"
+  | "app"
+  | "external";
 
 export interface HelpCard {
   /** Stable key. Doubles as the i18n key for cards that carry their own copy. */
@@ -83,6 +102,16 @@ export const HELP_GROUPS: HelpGroup[] = [
         icon: "book",
       },
     ],
+  },
+  {
+    id: "billing",
+    // Derived, like the course and guides groups below: an article added to
+    // help-articles.ts appears here without this file being touched.
+    cards: helpArticlesByCategory("billing").map((a) => ({
+      id: a.slug,
+      kind: "article" as const,
+      slug: a.slug,
+    })),
   },
   {
     id: "course",
@@ -136,9 +165,34 @@ export function learnHref(locale: string, path: string): string {
   return `/${locale}${path.startsWith("/") ? path : `/${path}`}`;
 }
 
+/**
+ * Dashboard route → the public HELP ARTICLE that page links to inline.
+ *
+ * Separate from pageHelp above, which deep-links the per-page Help BUTTON at a
+ * Knowledge Hub page. This is the smaller, in-context link — the Billing page's
+ * "How cancellation works", sitting next to the button it describes.
+ */
+export const pageHelpArticle: Record<string, string> = {
+  "/billing": "cancel-subscription",
+};
+
 /** The article a given dashboard route should point at, if any. */
 export function helpArticleFor(route: string): string | undefined {
   return pageHelp[route];
+}
+
+/** The help-article slug a dashboard route links inline, if any. */
+export function helpArticleSlugFor(route: string): string | undefined {
+  return pageHelpArticle[route];
+}
+
+/** Every help-article path the hub or an inline link references. Drift test. */
+export function helpArticlePaths(): string[] {
+  const fromCards = HELP_GROUPS.flatMap((g) =>
+    g.cards.filter((c) => c.kind === "article").map((c) => helpArticlePath(c.slug!)),
+  );
+  const fromRoutes = Object.values(pageHelpArticle).map((slug) => helpArticlePath(slug));
+  return [...new Set([...fromCards, ...fromRoutes])];
 }
 
 /** Every learn path the hub or a deep link references. Used by the drift test. */

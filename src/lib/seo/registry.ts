@@ -4,6 +4,7 @@
 // See README.md.
 
 import { learnRoutes } from "@/lib/learn-content";
+import { helpArticleRoutes } from "@/lib/help-articles";
 import { freeToolRoutes } from "@/lib/free-tools";
 import { solutionRoutes } from "@/lib/solutions-taxonomy";
 import { LOCALES, SITE_URL } from "./constants";
@@ -107,6 +108,17 @@ export const LOCALIZED_ROUTES: LocalizedRoute[] = [
     path,
     priority: path === "/free-tools" ? 0.8 : 0.7,
     changeFrequency: "weekly" as const,
+  })),
+  // Public help articles — DERIVED from src/lib/help-articles.ts. Ranked with
+  // the content pages: support copy that answers a real query ("how to cancel
+  // Echorank"), not a page that sells anything. Registering here also earns the
+  // path its entry in KNOWN_MARKETING_PATHS below, which is what 308s the
+  // locale-less "/help/<slug>" onto "/en/help/<slug>" instead of letting the
+  // proxy's auth gate 307 it to /login.
+  ...helpArticleRoutes().map((path) => ({
+    path,
+    priority: 0.5,
+    changeFrequency: "monthly" as const,
   })),
 ];
 

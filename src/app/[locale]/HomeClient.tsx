@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import s from "./home2.module.css";
 import { FAQ } from "./faq-data";
+import { inline } from "./learn/_shared/inline";
 import { DemoVideoModal } from "@/components/demo-video";
 import { HomeVideo, type HomeVideoLabels } from "./HomeVideo";
 import { PublicNav } from "./PublicNav";
@@ -875,7 +876,10 @@ export default function HomeClient({
             {faq.items.map((it) => (
               <div className={`${s.faqItem} ${s.reveal}`} key={it.q}>
                 <h3 className={s.faqQ}>{it.q}</h3>
-                <p className={s.faqA}>{it.a}</p>
+                {/* inline() renders the **bold** and [label](href) an answer may
+                    carry, and locale-prefixes in-app links. The FAQPage JSON-LD
+                    in page.tsx strips the same markup with plainText(). */}
+                <p className={s.faqA}>{inline(it.a, locale, `faq-${it.q}`)}</p>
               </div>
             ))}
           </div>

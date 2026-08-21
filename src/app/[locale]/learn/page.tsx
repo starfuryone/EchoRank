@@ -31,9 +31,11 @@ import {
   LEARN_GUIDES,
   LEARN_PDF,
 } from "@/lib/learn-content";
+import { helpArticleCopy, helpArticlesByCategory } from "@/lib/help-articles";
 import { PublicNav } from "../PublicNav";
 import { HomeVideo } from "../HomeVideo";
 import { baseOf, type Base } from "./_shared/ArticleShell";
+import { inline } from "./_shared/inline";
 import s from "../home2.module.css";
 import c from "./_shared/learn.module.css";
 
@@ -61,6 +63,8 @@ interface HubChrome {
   guidesSub: string;
   toolsH: string;
   toolsSub: string;
+  billingH: string;
+  billingSub: string;
   watchH: string;
   watchSub: string;
   watchWritten: string;
@@ -105,6 +109,8 @@ const CHROME: Record<Base, HubChrome> = {
     guidesSub: "Deep dives on the topics the course can only touch.",
     toolsH: "Tool guides & more",
     toolsSub: "Hands-on help for the Echorank toolset.",
+    billingH: "Billing basics",
+    billingSub: "Managing your plan, in plain terms.",
     watchH: "Watch",
     watchSub: "The extension install, start to finish — two minutes.",
     watchWritten: "Written steps:",
@@ -142,6 +148,8 @@ const CHROME: Record<Base, HubChrome> = {
     guidesSub: "Les sujets que le cours ne fait qu'effleurer, traités à fond.",
     toolsH: "Guides des outils",
     toolsSub: "L'aide pratique pour les outils Echorank.",
+    billingH: "Notions de facturation",
+    billingSub: "Gérer votre forfait, en clair.",
     watchH: "En vidéo",
     watchSub: "L'installation de l'extension, de bout en bout — deux minutes.",
     watchWritten: "Les étapes par écrit :",
@@ -225,6 +233,7 @@ export default async function LearnHubPage({
   ];
 
   const firstChapter = LEARN_CHAPTERS[0];
+  const billingArticles = helpArticlesByCategory("billing");
 
   return (
     <div className={s.page}>
@@ -324,6 +333,28 @@ export default async function LearnHubPage({
           </div>
         </div>
       </section>
+
+      {/* Billing basics — the public help articles, cross-linked from the hub
+          so the Knowledge Hub is a real breadcrumb parent for them and so
+          "how do I cancel" has an answer on the page a reader lands on when
+          they go looking for documentation. The blurbs are NOT written here:
+          they come from src/lib/help-articles.ts, the same file the article,
+          the homepage FAQ and the in-app Billing link read. */}
+      {billingArticles.length > 0 && (
+        <section className={s.section} id="billing">
+          <div className={s.container}>
+            <h2 className={s.h2}>{t.billingH}</h2>
+            <p className={s.sub} style={{ marginBottom: 24 }}>
+              {t.billingSub}
+            </p>
+            {billingArticles.map((a) => (
+              <p key={a.slug} className={c.blurb}>
+                {inline(helpArticleCopy(a, locale).blurb, locale, `help-${a.slug}`)}
+              </p>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Watch — the same mp4 the extension download page uses, Caddy-served
           from outside this repo and referenced absolutely. */}
