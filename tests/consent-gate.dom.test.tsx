@@ -18,8 +18,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { PricingSection, type HomePricingTier } from "@/app/[locale]/PricingSection";
+import { ConsentGate } from "@/app/[locale]/ConsentGate";
 import { CONSENT_COPY, HOME_PRICING_CHROME } from "@/lib/i18n/content";
 import { CONSENT_DOCUMENT_IDS, CONSENT_VERSION } from "@/lib/consent-config";
+import type { Locale } from "@/lib/i18n/config";
 
 const chrome = HOME_PRICING_CHROME.en;
 const copy = CONSENT_COPY.en;
@@ -319,5 +321,67 @@ describe("keyboard and focus", () => {
 
     fireEvent.keyDown(document, { key: "Tab", shiftKey: true });
     expect(last).toHaveFocus();
+  });
+});
+
+describe("an unsupported locale", () => {
+  // THE 500 THIS IS THE NET FOR. proxy.ts used to exclude every path containing
+  // a dot from the middleware matcher, so "/wp-login.php" skipped locale
+  // handling and was matched by the [locale] catch-all with "wp-login.php" as
+  // the locale. CONSENT_COPY has no such key, and `t.agreePrefix` threw on
+  // undefined — a 500 on the marketing homepage for a URL a scanner made up
+  // (digest 2897223636, chunk _0s~jl~q._.js).
+  //
+  // The proxy now 404s those URLs (tests/proxy-static-paths.test.ts) and is the
+  // real fix. This suite asserts the second line of defence holds on its own,
+  // so a future route that forgets to validate its locale degrades to English
+  // instead of taking the page down.
+  //
+  // The cast is the whole point: the type says this cannot happen and the
+  // incident says it did. Removing it would remove the test.
+  const bogus = "wp-login.php" as unknown as Locale;
+
+  function renderGate(locale: Locale) {
+    return render(
+      <ConsentGate
+        locale={locale}
+        accepted={false}
+        onChange={() => {}}
+        modalOpen
+        onCloseModal={() => {}}
+        ctaLabel="Start"
+        onAccept={() => {}}
+      />,
+    );
+  }
+
+  it("renders the gate instead of throwing", () => {
+    expect(() => renderGate(bogus)).not.toThrow();
+    // Both rows exist — the page's and the modal's. The modal renders the SAME
+    // ConsentRow, so a fallback in only one of them would still have thrown.
+    expect(screen.getAllByRole("checkbox")).toHaveLength(2);
+  });
+
+  it("falls back to the English sentence, in both rows", () => {
+    renderGate(bogus);
+    const labels = screen.getAllByText((_, el) => el?.tagName === "LABEL" && el.textContent!.includes(copy.agreePrefix));
+    expect(labels.length).toBeGreaterThanOrEqual(2);
+    // And the modal chrome, which reads its copy off the same lookup.
+    expect(screen.getByText(copy.modalTitle)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: copy.modalClose })).toBeInTheDocument();
+  });
+
+  it("still names every consent document", () => {
+    renderGate(bogus);
+    for (const name of [copy.subscriptionAgreement, copy.terms, copy.privacy, copy.cookies]) {
+      expect(screen.getAllByRole("link", { name }).length).toBeGreaterThan(0);
+    }
+  });
+
+  it("leaves a supported locale on its own copy", () => {
+    // The fallback must be a fallback, not a flattening: fr still renders fr.
+    renderGate("fr");
+    expect(screen.getByText(CONSENT_COPY.fr.modalTitle)).toBeInTheDocument();
+    expect(screen.queryByText(copy.modalTitle)).toBeNull();
   });
 });

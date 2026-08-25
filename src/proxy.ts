@@ -6,6 +6,7 @@ import { isSupportedLocale, resolveTarget, type Locale } from "@/lib/i18n/config
 // re-exports JsonLd.tsx, and pulling React into the middleware bundle is a
 // needless edge-runtime cost.
 import { KNOWN_MARKETING_PATHS, KNOWN_MARKETING_PREFIXES } from "@/lib/seo/registry";
+import { firstSegment, isStaticPath, isUnroutableDottedPath } from "@/lib/static-paths";
 
 const LOCALE_COOKIE = "echorank_locale";
 
@@ -80,8 +81,10 @@ const publicPaths = ["/login", "/register", "/api/auth", "/api/feedback", "/f/",
 // That key grants exactly one verb — append a visit row to its own tenant.
 //
 // Exact-match, so nothing added later under /api/collect/ inherits anonymity.
-// The sibling snippet route needs NO entry here: its path contains a dot and
-// the matcher at the bottom of this file excludes those from the proxy outright.
+// The sibling snippet route needs NO entry here: the dot is in a segment after
+// the first ("/api/public/attribution.js"), and the matcher at the bottom of
+// this file excludes those from the proxy. A dot in the FIRST segment is a
+// different case entirely and is handled below — see isUnroutableDottedPath.
 // /api/public/funnel/audit is the white-label audit funnel's capture endpoint.
 // It is called by the loader at /api/public/funnel.js from the AGENCY's domain,
 // so it never carries our session cookie and would otherwise be 307'd to
@@ -127,11 +130,6 @@ const publicExactPaths = new Set([
   "/embed/audit",
 ]);
 
-/** First path segment, e.g. "/fr/x" -> "fr". */
-function firstSegment(pathname: string): string {
-  return pathname.split("/")[1] ?? "";
-}
-
 /** "/xx/legal/terms" -> "/legal/terms". "/about" -> "". */
 function dropFirstSegment(pathname: string): string {
   const rest = pathname.split("/").slice(2).join("/");
@@ -166,7 +164,7 @@ function resolveHomepage(req: Parameters<Parameters<typeof auth>[0]>[0]) {
   );
 }
 
-export default auth((req) => {
+const withSession = auth((req) => {
   const { pathname } = req.nextUrl;
   const method = req.method;
 
@@ -291,6 +289,34 @@ export default auth((req) => {
     }
   }
 
+  // ── Junk with a dotted first segment ─────────────────────────────────
+  // "/foo.bar", "/en.php", "/wp-login.php". Everything above has had its say:
+  // the segment is not a locale, the path is not a registered marketing target
+  // (so "/foo.bar/pricing" already 308'd to "/en/pricing" one block up), and
+  // isStaticPath let every real root file past before this handler even ran.
+  // What is left cannot name a page — no locale contains a dot and no app route
+  // does either.
+  //
+  // THIS IS THE BUG THIS BRANCH EXISTS FOR. Until the matcher below stopped
+  // excluding every dotted path, these URLs skipped the proxy entirely and were
+  // matched by the [locale] catch-all with the junk as the locale — so
+  // "/wp-login.php" rendered the homepage with locale="wp-login.php", every
+  // catalog lookup on that key returned undefined, and the page 500'd
+  // (TypeError on CONSENT_COPY[locale].agreePrefix, digest 2897223636).
+  // src/app/[locale]/layout.tsx says outright that the proxy is what guarantees
+  // a valid locale reaches it; this is that guarantee.
+  //
+  // A bare 404 rather than a rewrite to the branded not-found page: this is
+  // scanner traffic by construction, and rendering React for it is the cost the
+  // branch is here to avoid. Real 404s inside a valid locale ("/en/nope") are
+  // untouched and still get the full page.
+  if (isUnroutableDottedPath(pathname)) {
+    return new NextResponse("Not Found", {
+      status: 404,
+      headers: { "content-type": "text/plain; charset=utf-8" },
+    });
+  }
+
   const isPublic =
     publicExactPaths.has(pathname) ||
     publicPaths.some((path) => pathname.startsWith(path));
@@ -310,6 +336,45 @@ export default auth((req) => {
   return NextResponse.next({ request: { headers: requestHeaders } });
 });
 
+/**
+ * Stand aside for the site's root files BEFORE any session work happens, then
+ * hand everything else to the auth-wrapped handler above.
+ *
+ * The order is the point, twice over. `auth()` decodes the session cookie and
+ * may re-issue it on the way out; doing that on a request for
+ * "/echorank-logo.svg" is both wasted work on the hottest paths the app serves
+ * and a `Set-Cookie` on a response that a CDN should be free to cache. And
+ * standing aside here is what lets the handler treat EVERY remaining dotted
+ * first segment as junk, with no allowlist to consult a second time.
+ */
+export default function proxy(
+  ...args: Parameters<typeof withSession>
+): ReturnType<typeof withSession> {
+  const req = args[0] as { nextUrl: { pathname: string } };
+  if (isStaticPath(req.nextUrl.pathname)) {
+    return NextResponse.next() as ReturnType<typeof withSession>;
+  }
+  return withSession(...args);
+}
+
+// WHAT THIS EXCLUDES, AND WHY IT NO LONGER EXCLUDES EVERY DOT.
+//
+// The old pattern ended in `.*\..*` — "skip any path containing a dot,
+// anywhere". That was written for static assets and it did cover them, but a
+// dot in the FIRST segment is not an asset, it is a locale slot, and the same
+// rule quietly handed "/wp-login.php", "/en.php" and "/foo.bar" straight to the
+// [locale] render with the junk as the locale. Known since July; see the branch
+// above for the crash it produced.
+//
+// `.*/.*\..*` says instead: skip a path whose dot is in a segment AFTER the
+// first. That keeps every nested asset and dotted route handler out of the
+// middleware exactly as before — the blog's RSS feed, the guide and solution
+// SVGs, /og/*.png, /help/img/*.svg, /guide/*.pdf, /.well-known/security.txt,
+// and the two snippet routes under /api/public/ —
+// while a dotted FIRST segment now reaches the proxy and gets an answer.
+// Root files ("/sitemap.xml", "/robots.txt", "/llms.txt", "/echorank-logo.svg")
+// reach it too and are waved through by isStaticPath in the wrapper above,
+// which is why that list has a drift test against public/.
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\..*).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*/.*\\..*).*)"],
 };

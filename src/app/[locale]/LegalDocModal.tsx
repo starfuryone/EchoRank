@@ -19,7 +19,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { ConsentDocumentId } from "@/lib/consent-config";
 import { CONSENT_DOCUMENTS } from "@/lib/consent-config";
 import { CONSENT_COPY } from "@/lib/i18n/content";
-import type { Locale } from "@/lib/i18n/config";
+import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n/config";
 import { loadLegalDoc } from "./legal/_content/registry";
 import { LegalBody, type LegalDoc } from "./legal/_content/types";
 import s from "./home2.module.css";
@@ -36,7 +36,11 @@ export function LegalDocModal({
   /** Switching documents keeps one dialog open and swaps its body. */
   onSwitch: (next: ConsentDocumentId) => void;
 }) {
-  const t = CONSENT_COPY[locale];
+  // Same net as ConsentGate's consentCopy(): this modal is rendered BY the gate
+  // and takes the same `locale`, so an unsupported one reaches it by the same
+  // route and .modalTitle below would throw on undefined exactly as
+  // .agreePrefix did.
+  const t = CONSENT_COPY[locale] ?? CONSENT_COPY[DEFAULT_LOCALE];
   const [doc, setDoc] = useState<LegalDoc | null>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);

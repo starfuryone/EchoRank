@@ -102,12 +102,23 @@ describe("the proxy's locale guard reaches every blog URL", () => {
     expect(KNOWN_MARKETING_PREFIXES).toEqual([`${BLOG_BASE}/`]);
   });
 
-  it("needs no proxy entry for the feed, because its path contains a dot", () => {
-    // "/((?!_next/static|_next/image|favicon.ico|.*\\..*).*)" — the matcher at
-    // the bottom of src/proxy.ts excludes dotted paths from the middleware
-    // outright, which is why /blog/rss.xml reaches its handler unauthenticated.
+  it("needs no proxy entry for the feed, because its dot is not in the first segment", () => {
+    // The matcher at the bottom of src/proxy.ts is what lets /blog/rss.xml reach
+    // its handler unauthenticated, and this test used to assert the rule it did
+    // that by: `.*\..*`, "skip any path containing a dot".
+    //
+    // THAT RULE WAS THE BUG. A dot in the FIRST segment is not an asset, it is
+    // the [locale] slot, so the same exclusion also handed "/wp-login.php" and
+    // "/en.php" to the marketing render with the junk as the locale, and the
+    // page 500'd. The matcher now reads `.*/.*\..*` — skip a dot in a segment
+    // AFTER the first — which is still true of the feed and no longer true of
+    // the junk. The feed's exemption is unchanged; it still needs no entry.
+    //
+    // tests/proxy-static-paths.test.ts owns the matcher's behaviour in full,
+    // this path included. What is asserted here is only that the blog's own
+    // reason for not appearing in proxy.ts still holds.
     const proxy = readFileSync(join(ROOT, "src", "proxy.ts"), "utf-8");
-    expect(proxy).toContain(String.raw`.*\\..*`); // as written in the source string
+    expect(proxy).toContain(String.raw`.*/.*\\..*`); // as written in the source string
     expect(proxy).not.toContain("/blog/rss.xml");
   });
 });

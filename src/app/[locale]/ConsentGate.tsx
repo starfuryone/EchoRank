@@ -29,8 +29,8 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { CONSENT_DOCUMENTS, CONSENT_VERSION, type ConsentPayload } from "@/lib/consent-config";
-import { CONSENT_COPY } from "@/lib/i18n/content";
-import type { Locale } from "@/lib/i18n/config";
+import { CONSENT_COPY, type ConsentCopy } from "@/lib/i18n/content";
+import { DEFAULT_LOCALE, type Locale } from "@/lib/i18n/config";
 import type { ConsentDocumentId } from "@/lib/consent-config";
 import s from "./home2.module.css";
 
@@ -38,6 +38,26 @@ import s from "./home2.module.css";
 // someone asks to read one, not on every pricing page view. ssr:false because
 // the modal only ever exists in response to a click.
 const LegalDocModal = dynamic(() => import("./LegalDocModal"), { ssr: false });
+
+/**
+ * The consent catalog for a locale, falling back to English.
+ *
+ * `locale` is typed `Locale` and the catalog is a `Record<Locale, ConsentCopy>`,
+ * so to the compiler this fallback is unreachable. At RUNTIME the value is
+ * whatever the URL's first segment was: proxy.ts used to skip locale handling
+ * for any path containing a dot, so "/wp-login.php" reached this component with
+ * locale="wp-login.php", the lookup returned undefined, and reading .agreePrefix
+ * off it threw — a 500 on the marketing homepage for a URL a scanner made up
+ * (digest 2897223636, chunk _0s~jl~q._.js).
+ *
+ * The proxy is the fix and now 404s those URLs before they render. This is the
+ * net under it: a locale the catalog does not know costs an English sentence,
+ * not the page. Both call sites go through here — the modal renders the SAME
+ * ConsentRow as the page, so a fallback in only one of them would still throw.
+ */
+function consentCopy(locale: Locale): ConsentCopy {
+  return CONSENT_COPY[locale] ?? CONSENT_COPY[DEFAULT_LOCALE];
+}
 
 /** Distinct so the two rows are never duplicate ids on the same document. */
 const PAGE_BOX_ID = "checkout-consent";
@@ -111,7 +131,7 @@ function ConsentRow({
   onOpenDoc: (id: ConsentDocumentId) => void;
   boxRef?: React.RefObject<HTMLInputElement | null>;
 }) {
-  const t = CONSENT_COPY[locale];
+  const t = consentCopy(locale);
   return (
     <div className={className}>
       <input
@@ -155,7 +175,7 @@ export function ConsentGate({
   /** Consent is on record: resume the checkout the modal interrupted. */
   onAccept: () => void;
 }) {
-  const t = CONSENT_COPY[locale];
+  const t = consentCopy(locale);
   const dialogRef = useRef<HTMLDivElement>(null);
   const modalBoxRef = useRef<HTMLInputElement>(null);
   // Which document the reader is on. null = the dialog is closed.
