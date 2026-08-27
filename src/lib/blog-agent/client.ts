@@ -26,6 +26,48 @@ const MAX_RETRIES = 2;
 /** Output ceiling. ~4k tokens comfortably covers 1,600 words plus frontmatter. */
 export const MAX_OUTPUT_TOKENS = 4_096;
 
+/**
+ * The assistant prefill — the reply is forced to begin INSIDE the frontmatter.
+ *
+ * On 2026-08-27 the 05:00 run produced zero drafts and every gate failure read
+ * "file does not open with a --- frontmatter block": a small model asked for
+ * "one fenced block and nothing else" writes a sentence first anyway. Prefilling
+ * the assistant turn removes the opportunity — there is no position before the
+ * delimiter left to write in.
+ *
+ * NO TRAILING WHITESPACE. The API rejects a final assistant message that ends in
+ * whitespace, so the prefill is "---" and the newline is the model's first token.
+ *
+ * THE PREFILL IS NOT ECHOED BACK. The response continues from it, so the three
+ * characters have to be put back on the front — see withPrefill(), which is
+ * applied here so callers always receive a whole document.
+ *
+ * MODEL-GATED, and this is the reason to leave BLOG_AGENT_MODEL alone: prefill
+ * was removed in the 4.6+ family and on Fable/Opus/Sonnet 5, where a prefilled
+ * assistant turn is a 400. It works on claude-haiku-4-5, which is the default
+ * and what this runs on. Pointing BLOG_AGENT_MODEL at a newer model means
+ * deleting the prefill in the same change — the gate below tolerates a preamble
+ * either way, so nothing else depends on it.
+ */
+export const DRAFT_PREFILL = "---";
+
+/**
+ * Put the prefill back on the front of the reply.
+ *
+ * Exported for the suite. The `---` repeat guard is for the model that, having
+ * been handed the delimiter, opens with it again: without it the document would
+ * carry an empty frontmatter block and the gate would report field errors for a
+ * formatting slip.
+ */
+export function withPrefill(reply: string): string {
+  // A reply that opens with a fence is a wrapped document, which means the
+  // prefill was not honoured at all — prepending to it would push the delimiter
+  // outside the fence and break a reply that extractFenced() can still read.
+  if (reply.trimStart().startsWith("```")) return reply;
+  const continued = reply.replace(/^[ \t]*\n?[ \t]*---[ \t]*(?:\n|$)/, "").replace(/^\n+/, "");
+  return `${DRAFT_PREFILL}\n${continued}`;
+}
+
 export class BlogAgentUpstreamError extends Error {
   constructor(
     message: string,
@@ -77,7 +119,11 @@ export async function callDraftModel(input: {
     model,
     max_tokens: MAX_OUTPUT_TOKENS,
     system: input.system,
-    messages: [{ role: "user", content: input.userMessage }],
+    messages: [
+      { role: "user", content: input.userMessage },
+      // Forces the reply to start inside the frontmatter. See DRAFT_PREFILL.
+      { role: "assistant", content: DRAFT_PREFILL },
+    ],
   });
 
   let lastError = new BlogAgentUpstreamError("Draft generation failed");
@@ -128,7 +174,9 @@ export async function callDraftModel(input: {
       const inputTokens = json.usage?.input_tokens ?? 0;
       const outputTokens = json.usage?.output_tokens ?? 0;
       return {
-        text,
+        // The whole document, prefill included — the caller never has to know
+        // the turn was prefilled.
+        text: withPrefill(text),
         inputTokens,
         outputTokens,
         costUsd: callCostUsd(inputTokens, outputTokens),
@@ -157,14 +205,20 @@ export async function callDraftModel(input: {
 }
 
 /**
- * Pull the fenced block out of the model's reply.
+ * Unwrap a fenced block, but ONLY one that opens the reply.
  *
- * The prompt asks for exactly one fence and nothing else, and a small model
- * sometimes adds a sentence before it anyway. Extracting rather than trusting
- * costs four lines and removes a whole class of gate failure that would
- * otherwise burn the one retry on a formatting slip.
+ * The prefill means a wrapper fence can no longer be emitted at all — there is
+ * no room before the delimiter — so on the current model this is a no-op kept
+ * for the reply shapes the prefill does not cover (a model without prefill
+ * support, a hand-fed fixture).
+ *
+ * ANCHORED AT THE START, deliberately. The unanchored form matched the FIRST
+ * ``` anywhere in the reply, and the body is allowed to contain fenced code —
+ * so a draft with a bare ``` block would have been "extracted" down to that
+ * code sample and everything around it thrown away. A wrapper fence is at
+ * position zero or it is not a wrapper.
  */
 export function extractFenced(reply: string): string {
-  const fence = /```(?:markdown|md|yaml)?\n([\s\S]*?)```/.exec(reply);
+  const fence = /^```(?:markdown|md|yaml)?\n([\s\S]*?)\n?```\s*$/.exec(reply.trim());
   return (fence ? fence[1] : reply).trim();
 }

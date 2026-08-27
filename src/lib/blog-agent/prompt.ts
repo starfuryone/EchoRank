@@ -109,7 +109,12 @@ export function systemPrompt(): string {
     "- Brand is Echorank, always. Never EchoRank, echoRank or Echo Rank.",
     "",
     "## Output format",
-    "Return ONE fenced code block containing YAML frontmatter and then the markdown body. Nothing before or after the fence.",
+    // THE REPLY IS PREFILLED WITH `---` (client.ts, DRAFT_PREFILL), so there is
+    // no position left for a preamble or a wrapper fence. This instruction
+    // describes what the model is actually continuing; asking for a fence it
+    // cannot open would only invite a stray closing ``` at the end.
+    "Your reply has been started for you with the opening `---` of the frontmatter. Continue from there: the frontmatter keys, then a closing `---`, then the markdown body.",
+    "Write no preamble, no sign-off and no code fence around the document. Fenced code blocks INSIDE the body are fine where the article needs one.",
     "The frontmatter keys, all required unless marked optional:",
     "  slug, title, seoTitle, metaDescription, excerpt, category, tags, searchIntent,",
     "  primaryKeyword, secondaryKeywords, publishedAt, tldr, faq (optional), relatedTool,",

@@ -167,7 +167,13 @@ export async function runDraft(payload: DraftJobPayload, now = new Date()): Prom
     // it to invent the article.
     const reason = `no source page could be read`;
     await advanceRun(runId, { status: "GATED_FAIL", error: reason });
-    logger.info({ runId, reason }, "blog-agent: insufficient research");
+    // WARN, not info, and it names the topic — this is the line a human reads
+    // when the morning run produced nothing. The per-URL reasons are logged one
+    // level down in research.ts; this says which topic they belonged to.
+    logger.warn(
+      { runId, reason, topic: topic.title, topicUrl: topic.url, source: topic.sourceId },
+      "blog-agent: insufficient research",
+    );
     return { runId, ok: false, reason, costUsd: 0 };
   }
   const researchUrls = new Set(research.extracts.map((e) => e.url));

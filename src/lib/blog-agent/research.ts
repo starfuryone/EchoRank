@@ -15,6 +15,7 @@
 // we read" to "a host we contact".
 
 import * as cheerio from "cheerio";
+import { logger } from "@/infrastructure/observability/logger";
 import { guardedFetch } from "./fetch";
 import { allowedFeedOrigins } from "./sources";
 import type { FeedItem } from "./feeds";
@@ -78,20 +79,60 @@ export function extractReadable(html: string): string {
   return best.slice(0, MAX_EXTRACT_CHARS);
 }
 
-/** Fetch and extract one page. Returns null on any refusal — never throws. */
+/**
+ * Fetch and extract one page. Returns null on any refusal — never throws.
+ *
+ * EVERY REFUSAL IS LOGGED, AT WARN, WITH THE URL. The 05:00 run on 2026-08-27
+ * reported "insufficient research — no source page could be read" and nothing
+ * else: four pages had been refused, and which ones, and why, was not
+ * recoverable from the logs. A silent null per page turns four distinct causes —
+ * a 403, a robots block, a paywall stub, a host that would not resolve — into
+ * one indistinguishable outcome. The shape mirrors feeds.ts so the two stages
+ * read the same way.
+ */
 async function extractOne(item: FeedItem): Promise<Extract | null> {
   const origins = [...allowedFeedOrigins(), safeOrigin(item.url)].filter(Boolean) as string[];
   const res = await guardedFetch(item.url, {
     allowedOrigins: origins,
     accept: "text/html,application/xhtml+xml",
   });
-  if (!res.ok || !res.body) return null;
-  if (res.contentType && !res.contentType.includes("html")) return null;
+  if (!res.ok || !res.body) {
+    logger.warn(
+      {
+        url: item.url,
+        source: item.sourceName,
+        reason: res.reason,
+        status: res.status,
+        detail: res.detail,
+      },
+      "blog-agent: source page could not be fetched",
+    );
+    return null;
+  }
+  if (res.contentType && !res.contentType.includes("html")) {
+    logger.warn(
+      { url: res.url, source: item.sourceName, status: res.status, contentType: res.contentType },
+      "blog-agent: source page is not html",
+    );
+    return null;
+  }
 
   const text = extractReadable(res.body);
   // Under ~400 characters this is a paywall stub, a cookie wall or a redirect
   // page. Passing it to the model produces a draft with nothing behind it.
-  if (text.length < 400) return null;
+  if (text.length < 400) {
+    logger.warn(
+      {
+        url: res.url,
+        source: item.sourceName,
+        status: res.status,
+        bytes: res.body.length,
+        chars: text.length,
+      },
+      "blog-agent: source page yielded too little prose (paywall, cookie wall or redirect)",
+    );
+    return null;
+  }
 
   return { url: res.url, sourceName: item.sourceName, title: item.title, text };
 }
@@ -126,11 +167,29 @@ export async function researchTopic(
   pool: readonly FeedItem[],
 ): Promise<Research> {
   const others = corroborating(topic, pool, 3);
-  const settled = await Promise.allSettled([topic, ...others].map((i) => extractOne(i)));
+  const attempted = [topic, ...others];
+  const settled = await Promise.allSettled(attempted.map((i) => extractOne(i)));
+
+  // extractOne is written not to throw, so a rejection here is a bug rather
+  // than a dead page — and it would otherwise be swallowed by the flatMap.
+  settled.forEach((r, i) => {
+    if (r.status === "rejected") {
+      logger.warn(
+        { url: attempted[i].url, source: attempted[i].sourceName, err: String(r.reason) },
+        "blog-agent: source extraction threw",
+      );
+    }
+  });
+
   const extracts = settled
     .flatMap((r) => (r.status === "fulfilled" && r.value ? [r.value] : []))
     // Two outlets can syndicate the same wire copy; one URL each is enough.
     .filter((e, i, all) => all.findIndex((x) => x.url === e.url) === i);
+
+  logger.info(
+    { topic: topic.title, attempted: attempted.length, extracted: extracts.length },
+    "blog-agent: research complete",
+  );
 
   return { topic, extracts };
 }

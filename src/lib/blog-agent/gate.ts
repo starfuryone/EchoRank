@@ -57,6 +57,35 @@ export function heroAlt(title: string): string {
   return `Abstract Echorank cover graphic for the article "${title.replace(/"/g, "'")}"`;
 }
 
+/**
+ * Find the frontmatter and throw away whatever the model wrote before it.
+ *
+ * WHY THE GATE TOLERATES A PREAMBLE. parseFrontmatter() requires the file to
+ * open with `---`, which is right for a file on disk — a committed article with
+ * a stray line above its frontmatter is a bug. A model reply is not a file. On
+ * 2026-08-27 the 05:00 run drafted three articles and rejected all three on
+ * "file does not open with a --- frontmatter block": one conversational sentence
+ * before the delimiter, and $0.075 of drafting thrown away over a line nobody
+ * wanted anyway. The prefill in client.ts stops it happening; this stops it
+ * mattering.
+ *
+ * The bar is unchanged: reject only when there is NO frontmatter block at all.
+ * A line of exactly `---` (trailing spaces ignored) opens one — everything above
+ * it is dropped, including from the banned-phrase and brand checks, which is
+ * correct: a preamble is not part of the article.
+ *
+ * Returns null when no such line exists, and the caller reports the parse
+ * failure it always did.
+ */
+export function stripPreamble(raw: string): string | null {
+  const lines = raw.replace(/^\uFEFF/, "").replace(/\r\n/g, "\n").split("\n");
+  const start = lines.findIndex((l) => l.trim() === "---");
+  if (start === -1) return null;
+  // Re-emit the delimiter rather than slicing it: an indented or space-padded
+  // `---` is a frontmatter opener the parser would otherwise refuse.
+  return ["---", ...lines.slice(start + 1)].join("\n");
+}
+
 /** Body word count, ignoring markdown syntax so `**bold**` is one word. */
 export function bodyWordCount(body: string): number {
   return body
@@ -90,7 +119,9 @@ export function brandOffenders(text: string): string[] {
  */
 export function runGate(input: GateInput): GateResult {
   const failures: string[] = [];
-  const raw = input.raw.trim();
+  // Everything downstream — the banned-phrase scan, the brand scan and the file
+  // text itself — reads this, so the preamble is dropped once, here.
+  const raw = stripPreamble(input.raw) ?? input.raw.trim();
 
   // ── Parse ────────────────────────────────────────────────────────────────
   let parsed: { frontmatter: Record<string, unknown>; body: string };

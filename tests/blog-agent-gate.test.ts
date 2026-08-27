@@ -10,7 +10,16 @@
 // time someone tidies it, and the failure reads as a gate bug.
 
 import { describe, expect, it } from "vitest";
-import { runGate, bodyWordCount, bodyLinks, brandOffenders, MIN_WORDS, MAX_WORDS } from "@/lib/blog-agent/gate";
+import {
+  runGate,
+  bodyWordCount,
+  bodyLinks,
+  brandOffenders,
+  stripPreamble,
+  MIN_WORDS,
+  MAX_WORDS,
+} from "@/lib/blog-agent/gate";
+import { DRAFT_PREFILL, extractFenced, withPrefill } from "@/lib/blog-agent/client";
 import { BANNED_PHRASES, TOOL_LINK_ALLOWLIST } from "@/lib/blog-agent/prompt";
 import { getAllArticles } from "@/lib/blog/loader";
 
@@ -140,6 +149,52 @@ describe("structure", () => {
     const r = gate("Here is your article!\n\n## A heading\n\nSome prose.");
     expect(r.ok).toBe(false);
     expect(r.failures.join(" ")).toMatch(/could not be parsed/i);
+  });
+
+  // The 05:00 run on 2026-08-27 produced zero drafts: every reply opened with a
+  // conversational sentence, and the gate threw all of them away on "file does
+  // not open with a --- frontmatter block". A preamble is not a quality problem.
+  it("parses a draft the model introduced with a sentence", () => {
+    const r = gate(`Here's the article you asked for:\n\n${validDraft()}`);
+    expect(r.failures).toEqual([]);
+    expect(r.ok).toBe(true);
+    // The frontmatter and the body are the ones from the draft, not a
+    // best-effort salvage: the same slug, title and category the clean fixture
+    // yields, and a body the word counter agrees is the article.
+    const clean = gate(validDraft());
+    expect(r.draft!.slug).toBe(clean.draft!.slug);
+    expect(r.draft!.title).toBe(clean.draft!.title);
+    expect(r.draft!.category).toBe(clean.draft!.category);
+    expect(r.draft!.wordCount).toBe(clean.draft!.wordCount);
+    expect(r.draft!.markdown).toBe(clean.draft!.markdown);
+  });
+
+  it("drops the preamble from the file it writes", () => {
+    // Not merely tolerated — removed. A sentence above the frontmatter would be
+    // committed into content/blog/ and rendered.
+    const r = gate(`Here's the article you asked for:\n\n${validDraft()}`);
+    expect(r.draft!.markdown.startsWith("---\n")).toBe(true);
+    expect(r.draft!.markdown).not.toMatch(/Here's the article/);
+  });
+
+  it("scans the article, not the preamble, for banned copy", () => {
+    // The preamble is discarded before the copy rules run, so a banned phrase in
+    // a sentence that never reaches the file is not a reason to burn the retry.
+    const r = gate(`Let's dive in — here is the draft:\n\n${validDraft()}`);
+    expect(r.failures).toEqual([]);
+    expect(r.ok).toBe(true);
+  });
+
+  it("still rejects a reply with no frontmatter block at all", () => {
+    // The bar moved for junk ABOVE the frontmatter, not for a missing one.
+    const r = gate("Here is your article!\n\ntitle: Something\n\n## A heading\n\nProse.");
+    expect(r.ok).toBe(false);
+    expect(r.failures.join(" ")).toMatch(/could not be parsed/i);
+  });
+
+  it("finds the frontmatter after a padded delimiter line", () => {
+    expect(stripPreamble("preamble\n  ---  \ntitle: x")).toBe("---\ntitle: x");
+    expect(stripPreamble("no delimiter here")).toBeNull();
   });
 
   it("rejects markdown the blog cannot render", () => {
@@ -338,5 +393,53 @@ describe("helpers", () => {
       "/one",
       "https://two.example",
     ]);
+  });
+});
+
+// The two lines between the API response and runGate(). They are tested here
+// rather than beside the transport because what they have to produce is defined
+// by the gate: a whole document, starting at the frontmatter delimiter.
+describe("assembling the reply the gate is handed", () => {
+  const reply = (draft: string) => extractFenced(withPrefill(draft.replace(/^---\n/, "\n")));
+
+  it("puts the prefill back, since the API does not echo it", () => {
+    // The model is handed "---" and continues; on its own the continuation is
+    // not a parseable document.
+    expect(withPrefill("\ntitle: x\n---\nbody")).toBe("---\ntitle: x\n---\nbody");
+  });
+
+  it("does not double the delimiter when the model repeats it", () => {
+    expect(withPrefill("---\ntitle: x")).toBe("---\ntitle: x");
+  });
+
+  it("hands the gate a draft that passes, end to end", () => {
+    const r = gate(reply(validDraft()));
+    expect(r.failures).toEqual([]);
+    expect(r.ok).toBe(true);
+  });
+
+  it("has no trailing whitespace — the API rejects a prefill that does", () => {
+    expect(DRAFT_PREFILL).toBe(DRAFT_PREFILL.trimEnd());
+  });
+
+  it("unwraps a fence only when the fence opens the reply", () => {
+    expect(extractFenced("```markdown\n---\ntitle: x\n---\n```")).toBe("---\ntitle: x\n---");
+  });
+
+  it("leaves a fenced code block inside the body alone", () => {
+    // The unanchored regex matched the FIRST ``` anywhere and returned the code
+    // sample as if it were the whole article.
+    const doc = "---\ntitle: x\n---\n\nProse.\n\n```\nrobots.txt\n```\n\nMore prose.";
+    expect(extractFenced(doc)).toBe(doc);
+  });
+});
+
+describe("a reply the prefill did not reach", () => {
+  it("leaves a fence-wrapped reply for extractFenced to unwrap", () => {
+    // Prepending the delimiter would push it OUTSIDE the fence and turn a
+    // readable reply into an unparseable one.
+    const wrapped = "```markdown\n---\ntitle: x\n---\nbody\n```";
+    expect(withPrefill(wrapped)).toBe(wrapped);
+    expect(extractFenced(withPrefill(wrapped))).toBe("---\ntitle: x\n---\nbody");
   });
 });

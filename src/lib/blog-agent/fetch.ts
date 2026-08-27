@@ -60,6 +60,15 @@ export interface FetchResult {
   contentType?: string;
   status?: number;
   reason?: FetchRejection;
+  /**
+   * The thrown error's message, when there was one.
+   *
+   * "http_error" covers both a 4xx WITH a status and a connection that never
+   * produced one — DNS failure, TLS rejection, a socket hangup. Without this the
+   * two are indistinguishable in the logs, which is how a research stage that
+   * could not resolve a host reads as a site returning an error.
+   */
+  detail?: string;
 }
 
 /**
@@ -214,7 +223,9 @@ export async function guardedFetch(
 ): Promise<FetchResult> {
   const guard = guardCheckUrl(rawUrl);
   if (!guard.ok || !guard.url) {
-    return { ok: false, url: rawUrl, reason: "blocked_url" };
+    // The guard's own reason, carried through: "blocked_url" alone does not say
+    // whether the URL was malformed, a private address or an odd port.
+    return { ok: false, url: rawUrl, reason: "blocked_url", detail: guard.reason };
   }
   const url = guard.url;
   const parsed = new URL(url);
@@ -251,7 +262,16 @@ export async function guardedFetch(
     return { ok: true, url, body, contentType, status: response.status };
   } catch (err) {
     const timedOut = err instanceof Error && err.name === "AbortError";
-    return { ok: false, url, reason: timedOut ? "timeout" : "http_error" };
+    return {
+      ok: false,
+      url,
+      reason: timedOut ? "timeout" : "http_error",
+      detail: timedOut
+        ? `no response within ${TIMEOUT_MS}ms`
+        : err instanceof Error
+          ? `${err.name}: ${err.message}`
+          : String(err),
+    };
   } finally {
     clearTimeout(timer);
   }
