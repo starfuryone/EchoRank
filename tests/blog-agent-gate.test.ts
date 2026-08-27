@@ -20,7 +20,13 @@ import {
   MAX_WORDS,
 } from "@/lib/blog-agent/gate";
 import { DRAFT_PREFILL, extractFenced, withPrefill } from "@/lib/blog-agent/client";
-import { BANNED_PHRASES, TOOL_LINK_ALLOWLIST } from "@/lib/blog-agent/prompt";
+import { BANNED_PHRASES, systemPrompt, TOOL_LINK_ALLOWLIST } from "@/lib/blog-agent/prompt";
+import {
+  BLOG_CATEGORIES,
+  BLOG_TOOLS,
+  RESERVED_BLOG_SLUGS,
+  SEARCH_INTENTS,
+} from "@/lib/blog/constants";
 import { getAllArticles } from "@/lib/blog/loader";
 
 const PUBLISHED = getAllArticles("en");
@@ -441,5 +447,48 @@ describe("a reply the prefill did not reach", () => {
     const wrapped = "```markdown\n---\ntitle: x\n---\nbody\n```";
     expect(withPrefill(wrapped)).toBe(wrapped);
     expect(extractFenced(withPrefill(wrapped))).toBe("---\ntitle: x\n---\nbody");
+  });
+});
+
+// The prompt asks; the gate enforces. A closed vocabulary the prompt does not
+// name is one the model can only guess at — yesterday's run burned two attempts
+// and ~$0.05 guessing relatedTool. These assertions fail the build when a
+// category, tool or intent is added to constants.ts without the prompt
+// following it, which is the drift that made the miss possible.
+describe("the prompt names every value the schema will accept", () => {
+  const prompt = systemPrompt();
+
+  it("names every relatedTool key", () => {
+    for (const tool of BLOG_TOOLS) expect(prompt).toContain(tool);
+  });
+
+  it("names every category", () => {
+    for (const category of BLOG_CATEGORIES) expect(prompt).toContain(category);
+  });
+
+  it("names every search intent", () => {
+    for (const intent of SEARCH_INTENTS) expect(prompt).toContain(intent);
+  });
+
+  it("names every reserved slug", () => {
+    for (const reserved of RESERVED_BLOG_SLUGS) expect(prompt).toContain(reserved);
+  });
+
+  it("keeps relatedTool and the body tool links apart", () => {
+    // The two vocabularies overlap in spelling — "free-audit" is a relatedTool
+    // key and "/free-audit" is a body path — so the prompt has to say which is
+    // which, not merely list both.
+    expect(prompt).toMatch(/relatedTool[\s\S]{0,400}NOT a URL/);
+  });
+
+  it("states the limits the gate rejects on", () => {
+    expect(prompt).toContain("70 to 165");           // metaDescription
+    // The prompt writes the band the way a human reads it ("900 to 1,600"),
+    // so the assertion formats the constants the same way rather than pinning
+    // the sentence.
+    expect(prompt).toContain(MIN_WORDS.toLocaleString("en-US"));
+    expect(prompt).toContain(MAX_WORDS.toLocaleString("en-US"));
+    expect(prompt).toMatch(/NO inline images/);
+    expect(prompt).toMatch(/exactly: draft/);
   });
 });

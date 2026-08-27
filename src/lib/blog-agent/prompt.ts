@@ -11,7 +11,20 @@
 // your other articles" invents plausible slugs, and a plausible slug is a 404
 // that looks fine in review. The real list comes from the loader.
 
-import { BLOG_CATEGORIES, BLOG_AUTHOR } from "@/lib/blog/constants";
+// THE CLOSED VOCABULARIES ARE IMPORTED, NEVER RETYPED. Every list below is the
+// same `as const` array the zod schema builds its z.enum() from, so the prompt
+// cannot drift from what the gate accepts: adding a category or retiring a tool
+// updates both in one edit. Yesterday's run failed twice on relatedTool for the
+// opposite reason — the prompt did not name the four legal values at all, so the
+// model guessed, and a guess is rejected without a nearest match.
+// tests/blog-agent-gate.test.ts asserts every member of every enum appears here.
+import {
+  BLOG_AUTHOR,
+  BLOG_CATEGORIES,
+  BLOG_TOOLS,
+  RESERVED_BLOG_SLUGS,
+  SEARCH_INTENTS,
+} from "@/lib/blog/constants";
 
 /** Tool links a draft may use. Hardcoded, and every one is a real route. */
 export const TOOL_LINK_ALLOWLIST: readonly string[] = [
@@ -115,26 +128,48 @@ export function systemPrompt(): string {
     // cannot open would only invite a stray closing ``` at the end.
     "Your reply has been started for you with the opening `---` of the frontmatter. Continue from there: the frontmatter keys, then a closing `---`, then the markdown body.",
     "Write no preamble, no sign-off and no code fence around the document. Fenced code blocks INSIDE the body are fine where the article needs one.",
-    "The frontmatter keys, all required unless marked optional:",
-    "  slug, title, seoTitle, metaDescription, excerpt, category, tags, searchIntent,",
-    "  primaryKeyword, secondaryKeywords, publishedAt, tldr, faq (optional), relatedTool,",
-    "  relatedSlugs, status, featured",
-    "Rules for the frontmatter:",
-    `  category must be one of: ${BLOG_CATEGORIES.join(", ")}`,
-    "  searchIntent must be one of: informational, commercial, transactional, navigational",
-    "  status must be exactly: draft",
-    "  featured must be: false",
-    "  slug: lowercase words joined by single hyphens, and it must not be page, category or rss",
-    "  title 10-120 chars; seoTitle 10-75; metaDescription 70-165; excerpt 60-320",
-    "  tldr: 3 to 5 bullets, each over 20 characters",
-    "  tags: 1 to 8 items, inline array form: [a, b, c]",
-    "  relatedSlugs: the same slugs you linked in the body, inline array form",
-    "  Do NOT emit featuredImage, readingTime, author or updatedAt. They are added or computed elsewhere.",
+    "",
+    "## Frontmatter — every key, and exactly what it accepts",
+    "The frontmatter is validated field by field. A value outside the list given below is rejected outright; there is no nearest match and no default.",
+    "",
+    `  slug            lowercase a-z0-9 words joined by single hyphens, e.g. ai-crawler-directives. Never ${RESERVED_BLOG_SLUGS.join(", ")}. Must not already exist.`,
+    "  title           10 to 120 characters. The h1.",
+    "  seoTitle        10 to 75 characters. The <title>; write it to earn a click, not to repeat the h1.",
+    "  metaDescription 70 to 165 characters. Over 165 is rejected — count them.",
+    "  excerpt         60 to 320 characters.",
+    `  category        one of, verbatim: ${BLOG_CATEGORIES.join(" | ")}`,
+    "  tags            1 to 8 items, each 2+ characters. Inline array: [a, b, c]",
+    `  searchIntent    one of, verbatim: ${SEARCH_INTENTS.join(" | ")}`,
+    "  primaryKeyword  3+ characters.",
+    "  secondaryKeywords  up to 10 items, each 3+ characters. Inline array.",
+    "  publishedAt     YYYY-MM-DD, and a real calendar date. Use the date you are given.",
+    "  tldr            3 to 5 bullets, each over 20 characters. Block sequence.",
+    "  faq             OPTIONAL. If present: 2+ items, q 10+ chars, a 30+ chars.",
+    // relatedTool IS NOT THE TOOL LINK. This is the field yesterday's run failed
+    // twice on: the model invented a value because the prompt never named the
+    // four, and the two vocabularies look interchangeable from the outside — one
+    // is a CTA key, the other is a set of body-link paths. Naming both, adjacent,
+    // is the fix.
+    `  relatedTool     one of, verbatim: ${BLOG_TOOLS.join(" | ")}`,
+    "                  This is the CTA key for the end of the article. It is NOT a URL and NOT the tool link you put in the body — those are separate, and the paths below do not belong here.",
+    "  relatedSlugs    up to 6, each an EXISTING slug from the list you are given, lowercase and hyphenated. Inline array. The same slugs you linked in the body, and never your own slug.",
+    "  status          exactly: draft",
+    "  featured        exactly: false",
+    "",
+    "  Emit NO other key. An unrecognised key is an error, not an extra — that includes featuredImage, featuredImageAlt, readingTime, updatedAt and author.",
     `  The author is fixed and is not yours to set: ${BLOG_AUTHOR.name}.`,
     "Write faq as a block sequence of two-line items:",
     "faq:",
     '  - q: "A question?"',
     '    a: "An answer of at least thirty characters."',
+    "",
+    "## Body — what the renderer accepts",
+    "The body is compiled to a fixed block vocabulary. Anything outside it is rejected:",
+    "- Headings: ## and ### only. No # (the title is the h1) and no ####.",
+    "- Paragraphs, `- ` bullets, `1. ` numbered lists, > quotes, fenced code blocks, and pipe tables whose rows all have the header's cell count.",
+    "- NO inline images. `![alt](path)` is rejected — the article's one image is the hero, and it is added for you.",
+    "- NO nested or indented lists. One level only.",
+    "- Links: [label](path). Exactly one tool link, chosen VERBATIM from the allowlist you are given. At least two /blog/<slug> links, chosen only from the slug list you are given. Every external link must be one of the source URLs you were given, character for character.",
   ].join("\n");
 }
 
@@ -155,7 +190,12 @@ export function userMessage(input: PromptInput): string {
     `# Story\n${input.topicTitle}`,
     `# Source pages — everything factual in your article must come from these\n\n${sources}`,
     `# Existing Echorank blog articles — link to at least TWO of these, by exact path\n${slugs}`,
-    `# Tool link allowlist — use exactly ONE, verbatim\n${TOOL_LINK_ALLOWLIST.map((t) => `- ${t}`).join("\n")}`,
+    // The two tool vocabularies, adjacent and labelled. They are different
+    // things that both say "tool", which is how relatedTool ends up holding a
+    // path — so the message that carries the data spells out which is which
+    // rather than leaving it to the system prompt alone.
+    `# Tool link allowlist — for the BODY. Use exactly ONE, verbatim, as a markdown link\n${TOOL_LINK_ALLOWLIST.map((t) => `- ${t}`).join("\n")}`,
+    `# relatedTool — for the FRONTMATTER. Not a path. Exactly one of these keys\n${BLOG_TOOLS.map((t) => `- ${t}`).join("\n")}`,
     `# Banned phrases — an automated check rejects the draft if any appears\n${BANNED_PHRASES.map((p) => `- ${p}`).join("\n")}`,
     `# Today's date, for publishedAt\n${new Date().toISOString().slice(0, 10)}`,
   ];
