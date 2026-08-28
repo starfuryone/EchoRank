@@ -18,8 +18,10 @@
 // This asserts the id against BullMQ's ACTUAL rule rather than against a
 // hand-copied regex, so it keeps holding if that rule ever changes shape.
 
-import { describe, expect, it } from "vitest";
+import { vi, describe, expect, it } from "vitest";
 import { trialNoticeJobId } from "@/lib/billing/trial-notice";
+
+vi.mock("@/lib/prisma", () => ({ prisma: { tenant: { findUnique: vi.fn() } } }));
 
 /** BullMQ's rule, verbatim from Job.validateOptions (bullmq 5.77.6). */
 function bullmqRejects(jobId: string): boolean {
