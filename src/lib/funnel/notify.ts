@@ -12,14 +12,15 @@
 // as never throwing; sendMail() is not, so its call is wrapped, and the whole
 // thing is invoked without being awaited by the route.
 //
-// ── Brevo is real, and this is not a TODO-log ───────────────────────────────
-// src/lib/mailer.ts is a live Brevo SMTP relay already used by the signals
-// notifier and the visibility alerts. It is NOT the stub that
-// sendTrialEndingEmail() is — that one logs because its TEMPLATE was never
-// built, not because sending is unavailable. So this sends for real, with one
-// caveat inherited from sendMail: it returns false rather than throwing when
-// SMTP_HOST is unset, and that case is logged at warn so a misconfigured box
-// looks different in the logs from a quiet one.
+// ── Brevo is real ───────────────────────────────────────────────────────────
+// src/lib/mailer.ts is a live Brevo SMTP relay, and every sender in the tree now
+// goes through it — the signals notifier, the visibility alerts, and (since
+// 2026-08-28) sendTrialEndingEmail(), which was a warn-level stub until its
+// template was written. So this sends for real, with two caveats inherited from
+// sendMail: it returns false rather than throwing when SMTP_HOST is unset, and
+// it returns false when the dev guard holds the message outside production.
+// Both are logged at warn so a misconfigured box looks different in the logs
+// from a quiet one.
 
 import { logger } from "@/infrastructure/observability/logger";
 import { sendMail } from "@/lib/mailer";

@@ -47,6 +47,37 @@ export async function getStripePriceId(
   return row?.stripePriceId ?? null;
 }
 
+export type BillingInterval = "month" | "year";
+
+/**
+ * The billing interval behind a subscription's price id.
+ *
+ * The Subscription row records planType and stripePriceId but no interval, so
+ * "monthly or annual?" is only answerable through this table.
+ *
+ * NO `active` FILTER, unlike the two lookups either side of it. Those pick a
+ * price to CHARGE, and a retired one must never be picked; this one describes a
+ * subscription that is already on its price, and retiring that price does not
+ * change how often it bills. Filtering here would blank the interval for exactly
+ * the long-lived customers most likely to be on an older price.
+ *
+ * An id the catalog has never seen resolves to null rather than to a guess: the
+ * trial-ending email would rather name the plan alone than tell a customer the
+ * wrong amount is about to leave their card.
+ */
+export async function resolveIntervalFromPriceId(
+  priceId: string | null | undefined,
+): Promise<BillingInterval | null> {
+  if (!priceId) return null;
+  const row = await prisma.stripePrice.findFirst({
+    where: { stripePriceId: priceId },
+    orderBy: { createdAt: "desc" },
+    select: { interval: true },
+  });
+  const interval = row?.interval?.toLowerCase();
+  return interval === "month" || interval === "year" ? interval : null;
+}
+
 /**
  * Reverse-lookup a Stripe Price id back to its plan tier + currency. Used by
  * the subscription webhook so we record the tier (not the price id), and so

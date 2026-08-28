@@ -12,6 +12,10 @@
 import { getQueue } from "@/infrastructure/queue/registry";
 import type { TrialNoticeJob } from "@/infrastructure/queue/jobs/schemas";
 import { logger } from "@/infrastructure/observability/logger";
+import { prisma } from "@/lib/prisma";
+import { isEmailConfigured, missingEmailEnv, sendMail } from "@/lib/mailer";
+import { resolveIntervalFromPriceId } from "@/lib/stripe/prices";
+import { BILLING_URL, emailLocaleOf, renderTrialEndingEmail } from "./trial-ending-email";
 
 const log = logger.child({ module: "trial-notice" });
 
@@ -105,23 +109,128 @@ export async function cancelTrialEndingNotice(
 /**
  * The single send point.
  *
- * TODO(brevo): replace the log with a Brevo transactional send. Brevo is not
- * wired for this template yet, and shipping a half-real send — writing an
- * EmailLog row for a message nobody received — would be worse than logging.
- * Everything the template needs is already in the arguments.
+ * ── WHY THIS THROWS, AND WHEN IT MUST NOT ───────────────────────────────────
+ * A send failure THROWS, so BullMQ retries it: the trial-notice queue is
+ * configured with attempts 3 and exponential backoff precisely because a
+ * transient relay error here means a customer is charged with no warning.
+ *
+ * A MISSING ENV VAR IS NOT A TRANSIENT ERROR. Throwing on unconfigured SMTP
+ * would burn all three attempts against a condition no retry can change, and
+ * bury the actual cause under a stack of "job failed" lines. So that case logs
+ * once, structured, names the variables, and returns — the job completes, the
+ * queue stays clean, and the log says exactly which variable to set.
+ *
+ * ── IDEMPOTENT BY CONSTRUCTION ──────────────────────────────────────────────
+ * Nothing here writes to the database. A retry, or a duplicate delivery from a
+ * queue replay, re-reads the same rows and sends the same message; the worst
+ * outcome is a customer warned twice about a charge, which is the right way to
+ * fail. (An EmailLog row is not written because that table is customer-bound —
+ * `EmailLog.customerId` — and the recipient here is an account owner, not a
+ * Customer record. The same reason src/lib/visibility-alerts.ts bypasses it.)
+ *
+ * The "still trialing?" guard lives in the worker
+ * (src/infrastructure/queue/workers/trial-notice.worker.ts), which re-reads the
+ * subscription before calling this. It is re-checked HERE as well, on the row
+ * this function loads anyway: the worker's read and this one are separate
+ * queries, and this is the one that decides what the email says.
  */
 export async function sendTrialEndingEmail(input: {
   tenantId: string;
   stripeSubscriptionId: string;
   trialEnd: number;
 }): Promise<void> {
-  log.warn(
-    {
-      tenantId: input.tenantId,
-      stripeSubscriptionId: input.stripeSubscriptionId,
-      trialEnd: new Date(input.trialEnd * 1000).toISOString(),
-      stub: true,
+  const { tenantId, stripeSubscriptionId } = input;
+  const trialEndsAt = new Date(input.trialEnd * 1000);
+
+  if (!isEmailConfigured()) {
+    log.warn(
+      {
+        tenantId,
+        stripeSubscriptionId,
+        trialEnd: trialEndsAt.toISOString(),
+        missingEnv: missingEmailEnv(),
+        queue: "trial-notice",
+      },
+      "Trial-ending email NOT SENT — SMTP is not configured; the card will still be charged",
+    );
+    return;
+  }
+
+  const tenant = await prisma.tenant.findUnique({
+    where: { id: tenantId },
+    select: {
+      defaultLanguage: true,
+      timezone: true,
+      members: {
+        where: { role: "OWNER" },
+        orderBy: { createdAt: "asc" },
+        take: 1,
+        select: { user: { select: { email: true } } },
+      },
+      subscription: {
+        select: { status: true, planType: true, stripePriceId: true },
+      },
     },
-    "TRIAL ENDING IN 24H — email not sent (Brevo not wired; see TODO(brevo))",
+  });
+
+  if (!tenant) {
+    log.info({ tenantId, stripeSubscriptionId }, "Trial-ending email: tenant gone — skipping");
+    return;
+  }
+
+  const subscription = tenant.subscription;
+  if (!subscription || subscription.status !== "TRIALING") {
+    // Re-checked at the last possible moment. Between the worker's guard and
+    // this read a customer may have cancelled or converted, and a warning about
+    // a charge that is not coming is its own support ticket.
+    log.info(
+      { tenantId, stripeSubscriptionId, status: subscription?.status ?? null },
+      "Trial-ending email: no longer trialing — skipping",
+    );
+    return;
+  }
+
+  const to = tenant.members[0]?.user.email;
+  if (!to) {
+    log.warn(
+      { tenantId, stripeSubscriptionId },
+      "Trial-ending email: tenant has no OWNER email — nobody to warn",
+    );
+    return;
+  }
+
+  const interval = await resolveIntervalFromPriceId(subscription.stripePriceId);
+  const locale = emailLocaleOf(tenant.defaultLanguage);
+  const { subject, html, text } = renderTrialEndingEmail({
+    planType: subscription.planType,
+    interval,
+    trialEndsAt,
+    timezone: tenant.timezone,
+    billingUrl: BILLING_URL,
+    locale,
+  });
+
+  // Throws on a relay error — that is what makes the queue retry. A false
+  // return means the message was held (SMTP_HOST unset, or the dev guard), and
+  // sendMail has already logged which.
+  const sent = await sendMail({ to: [to], subject, html, text });
+  if (!sent) {
+    log.warn(
+      { tenantId, stripeSubscriptionId, locale, queue: "trial-notice" },
+      "Trial-ending email was not delivered — the mailer held it",
+    );
+    return;
+  }
+
+  log.info(
+    {
+      tenantId,
+      stripeSubscriptionId,
+      locale,
+      planType: subscription.planType,
+      interval,
+      trialEnd: trialEndsAt.toISOString(),
+    },
+    "Trial-ending email sent",
   );
 }

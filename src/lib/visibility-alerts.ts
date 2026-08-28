@@ -1,5 +1,5 @@
-import nodemailer from "nodemailer";
 import { prisma } from "@/lib/prisma";
+import { sendMail } from "@/lib/mailer";
 import { logger } from "@/infrastructure/observability/logger";
 import {
   notifyPromptTransitions,
@@ -9,7 +9,13 @@ import {
 /**
  * Direct SMTP alerting for visibility monitoring. Admin/owner alerts are not
  * customer-bound, and EmailDeliveryJob requires a customerId, so this bypasses
- * the email queue and sends via the same Brevo SMTP credentials.
+ * the email queue and sends through the shared Brevo relay.
+ *
+ * IT USED TO OWN A SECOND nodemailer TRANSPORT, byte-identical to the one in
+ * src/lib/mailer.ts — two connection pools against one relay, and any change to
+ * either applying to one sender and not the other. sendMail() is that transport
+ * now. Behaviour here is unchanged: a false return still means "SMTP not
+ * configured", still logs, and still returns rather than throwing.
  */
 
 export interface BotFlip {
@@ -26,25 +32,6 @@ export interface VisibilityAlertInput {
   flippedBlocked: BotFlip[];
   flippedAllowed: string[];
   failingChecks: { category: string; recommendation: string }[];
-}
-
-let transport: nodemailer.Transporter | null = null;
-
-function getTransport(): nodemailer.Transporter | null {
-  if (transport) return transport;
-  const host = process.env.SMTP_HOST;
-  if (!host) return null;
-  const port = Number(process.env.SMTP_PORT || 587);
-  transport = nodemailer.createTransport({
-    host,
-    port,
-    secure: port === 465,
-    auth:
-      process.env.SMTP_USER && process.env.SMTP_PASS
-        ? { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS }
-        : undefined,
-  });
-  return transport;
 }
 
 async function resolveRecipients(tenantId: string): Promise<string[]> {
@@ -108,18 +95,11 @@ export async function sendVisibilityAlert(input: VisibilityAlertInput): Promise<
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")}</pre>`;
 
-  const t = getTransport();
-  if (!t) {
+  const sent = await sendMail({ to: recipients, subject, text, html });
+  if (!sent) {
     logger.info({ tenantId: input.tenantId, recipients, subject }, "SMTP not configured - alert logged only");
     return;
   }
-  await t.sendMail({
-    from: process.env.SMTP_FROM || "alerts@echorank360.com",
-    to: recipients.join(", "),
-    subject,
-    text,
-    html,
-  });
   logger.info({ tenantId: input.tenantId, recipients: recipients.length, url: input.url }, "Visibility alert sent");
 }
 
@@ -225,18 +205,11 @@ export async function recordPromptAlerts(
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")}</pre>`;
 
-  const t = getTransport();
-  if (!t) {
+  const sent = await sendMail({ to: recipients, subject, text, html });
+  if (!sent) {
     logger.info({ tenantId, recipients, subject }, "SMTP not configured - prompt digest logged only");
     return;
   }
-  await t.sendMail({
-    from: process.env.SMTP_FROM || "alerts@echorank360.com",
-    to: recipients.join(", "),
-    subject,
-    text,
-    html,
-  });
   logger.info(
     { tenantId, recipients: recipients.length, lost: lost.length, drops: drops.length, regained: regained.length },
     "Prompt alert digest sent",
