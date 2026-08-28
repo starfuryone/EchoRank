@@ -1,0 +1,18 @@
+<svg viewBox="0 0 1400 600" width="1400" height="600" xmlns="http://www.w3.org/2000/svg" font-family="Geist, system-ui, sans-serif">
+  <rect width="1400" height="600" fill="#181A20"/>
+  <rect x="70" y="70" width="1260" height="460" rx="16" fill="#1E2329" stroke="#2B3139"/>
+  <circle cx="270" cy="300" r="46" fill="#F0B90B"/>
+  <line x1="316" y1="300" x2="1014" y2="170" stroke="#2B3139" stroke-width="2"/>
+  <circle cx="1014" cy="170" r="22" fill="#F0B90B" opacity="0.89"/>
+  <line x1="316" y1="300" x2="662" y2="222" stroke="#2B3139" stroke-width="2"/>
+  <circle cx="662" cy="222" r="11" fill="#2B3139" opacity="0.45"/>
+  <line x1="316" y1="300" x2="698" y2="274" stroke="#2B3139" stroke-width="2"/>
+  <circle cx="698" cy="274" r="12" fill="#F0B90B" opacity="0.50"/>
+  <line x1="316" y1="300" x2="1097" y2="326" stroke="#2B3139" stroke-width="2"/>
+  <circle cx="1097" cy="326" r="24" fill="#2B3139" opacity="1.00"/>
+  <line x1="316" y1="300" x2="761" y2="378" stroke="#2B3139" stroke-width="2"/>
+  <circle cx="761" cy="378" r="14" fill="#F0B90B" opacity="0.58"/>
+  <line x1="316" y1="300" x2="692" y2="430" stroke="#2B3139" stroke-width="2"/>
+  <circle cx="692" cy="430" r="12" fill="#2B3139" opacity="0.49"/>
+  <text x="150" y="132" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="14" fill="#848E9C" letter-spacing="2.2">AI VISIBILITY</text>
+</svg>
