@@ -155,6 +155,7 @@ const NAV: Record<Base, NavCopy> = {
           {
             title: "Reputation",
             items: [
+              { href: "/reputation-tools", label: "Reputation Tools", desc: "Review monitoring, campaigns & AI replies." },
               { href: "/reputation-engine", label: "Reputation Engine", desc: "Automate requests and replies." },
               { href: "/reputation-risk", label: "Reputation risk", desc: "A score for what could go wrong." },
               { href: "/customer-feedback", label: "Customer feedback", desc: "Collect and read the signal." },
@@ -239,6 +240,7 @@ const NAV: Record<Base, NavCopy> = {
           {
             title: "Réputation",
             items: [
+              { href: "/reputation-tools", label: "Outils de réputation", desc: "Avis, campagnes et réponses IA." },
               { href: "/reputation-engine", label: "Moteur de réputation", desc: "Automatisez demandes et réponses." },
               { href: "/reputation-risk", label: "Risque de réputation", desc: "Un score de ce qui peut déraper." },
               { href: "/customer-feedback", label: "Avis clients", desc: "Collectez et lisez le signal." },
