@@ -1,6 +1,28 @@
+<!--
+NON-AUTHORITATIVE SNAPSHOT. The document customers actually read and accept is
+src/app/[locale]/legal/_content/subscription-agreement.tsx — rendered by the
+/[locale]/legal/subscription-agreement route AND by the checkout consent modal
+(LegalDocModal, via _content/registry.ts). This file is the Aug-2026 drafting
+source that predates that implementation; nothing imports it at runtime.
+
+PRICE DRIFT RISK. The 1.1 table below is the one place in this document that
+hard-codes money, and markdown cannot read PLAN_CONFIGS the way the TSX body
+does (it maps PLAN_ORDER -> PLAN_CONFIGS, so the served document can never
+quote a price the checkout does not charge). This table can, and did: it
+carried a retired "$29 AI Visibility" row long after that tier stopped being
+sellable. tests/legal-subscription-plans.test.ts now parses this table and
+compares it to PLAN_CONFIGS — when it fails, re-cut the table, do not relax
+the assertion.
+
+The served TSX body is dated separately and ON PURPOSE: its "Last updated"
+tracks CONSENT_VERSION (src/lib/consent-config.ts), which is bumped only when
+the wording a customer accepts changes materially. Editing this snapshot does
+not change that wording, so the two dates legitimately differ.
+-->
+
 # Subscription Agreement
 
-Last updated: August 2026
+Last updated: August 30, 2026
 
 This Subscription Agreement ("Agreement") governs your subscription to Echorank360 ("Service"), operated by ChatLogic Insights LTD ("we," "us," "our"). By starting a free trial or subscribing, you agree to the terms below in addition to our Terms of Use. A subscription (with an active trial or paid status) is required to access the dashboard, reputation tools, AI visibility monitoring, SEO tools, and all other platform features.
 
@@ -12,7 +34,6 @@ Echorank360 offers the following subscription tiers:
 
 | Plan | Monthly | Yearly |
 |---|---|---|
-| AI Visibility | $29/month | $288/year ($24/mo equivalent) |
 | Starter | $79/month | $756/year ($63/mo equivalent) |
 | Growth | $199/month | $1,908/year ($159/mo equivalent) |
 | Agency | $499/month | $4,788/year ($399/mo equivalent) |
