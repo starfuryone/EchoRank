@@ -1,0 +1,14 @@
+<svg viewBox="0 0 1400 600" width="1400" height="600" xmlns="http://www.w3.org/2000/svg" font-family="Geist, system-ui, sans-serif">
+  <rect width="1400" height="600" fill="#181A20"/>
+  <rect x="70" y="70" width="1260" height="460" rx="16" fill="#1E2329" stroke="#2B3139"/>
+  <rect x="150" y="373.10708944975124" width="72" height="97" rx="5" fill="#F0B90B"/>
+  <rect x="278" y="374.70046082949307" width="72" height="95" rx="5" fill="#2B3139"/>
+  <rect x="406" y="296.4568010498367" width="72" height="174" rx="5" fill="#2B3139"/>
+  <rect x="534" y="230.01953184606464" width="72" height="240" rx="5" fill="#F0B90B"/>
+  <rect x="662" y="267.59361552781763" width="72" height="202" rx="5" fill="#2B3139"/>
+  <rect x="790" y="184.21185949278237" width="72" height="286" rx="5" fill="#2B3139"/>
+  <rect x="918" y="225.47807245094148" width="72" height="245" rx="5" fill="#F0B90B"/>
+  <rect x="1046" y="206.7226172673727" width="72" height="263" rx="5" fill="#2B3139"/>
+  <rect x="1174" y="369.71678823206275" width="72" height="100" rx="5" fill="#2B3139"/>
+  <text x="150" y="132" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="14" fill="#848E9C" letter-spacing="2.2">AI VISIBILITY</text>
+</svg>
