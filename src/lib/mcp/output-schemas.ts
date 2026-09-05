@@ -167,6 +167,8 @@ export const backlinksOverviewOutputSchema = z.looseObject({
   referringDomains: z.array(z.looseObject({ domain: z.string() })),
   anchors: z.array(z.looseObject({ anchor: z.string() })),
   pages: z.array(z.looseObject({ url: z.string() })),
+  /** Full-tier only. Empty means NOT BOUGHT — see the tool's note. */
+  links: z.array(z.looseObject({ urlFrom: z.string() })),
   note,
 });
 
@@ -188,6 +190,7 @@ export const domainOverviewOutputSchema = z.looseObject({
     .nullable(),
   keywords: z.array(z.looseObject({ keyword: z.string() })),
   competitors: z.array(z.looseObject({ domain: z.string() })),
+  pages: z.array(z.looseObject({ url: z.string() })),
   note,
 });
 

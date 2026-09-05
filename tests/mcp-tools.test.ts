@@ -275,6 +275,34 @@ describe("tenant isolation", () => {
     );
   });
 
+  it("says WHY a Basic analysis has no links, rather than implying there are none", async () => {
+    // The trap: a Basic tier never buys anchors, linked pages or the
+    // individual-links table, so those arrive empty. An agent reading an empty
+    // array as "this target has no backlinks" tells the customer something
+    // false. The note has to name the reason.
+    backlinksAnalysis.findFirst.mockResolvedValue({
+      id: "bl_1",
+      target: "example.com",
+      mode: "domain",
+      status: "completed",
+      costUsd: 0.1,
+      summary: { backlinks: 1000, referringDomains: 120, rank: 240 },
+      history: null,
+      referringDomains: { items: [], totalCount: 120 },
+      anchors: null,
+      pages: null,
+      list: null,
+      failedSections: [],
+      createdAt: new Date("2026-09-05T00:00:00Z"),
+    });
+
+    const out = await reads.getBacklinksOverview(TENANT_A, {});
+    expect(out.found).toBe(true);
+    expect(out.links).toEqual([]);
+    expect(out.note).toMatch(/not included on this workspace's plan/);
+    expect(out.note).toMatch(/not a finding about the target/);
+  });
+
   it("scopes the AI Citations read by tenant, and never spends from MCP", async () => {
     await reads.getAiCitations(TENANT_B, { target: "rival.example" });
     expect(aiCitationsAnalysis.findFirst).toHaveBeenCalledWith(

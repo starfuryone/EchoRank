@@ -466,10 +466,26 @@ export async function getBacklinksOverview(
       rank: num(item.rank),
       statusCode: (item.statusCode as number | null) ?? null,
     })),
+    // The Full tier's individual-links table. ABSENT on a Basic analysis, and
+    // the note below says which — an empty array here means "this workspace's
+    // plan did not buy it", not "this target has no links", and an agent that
+    // reads it as the latter will tell a customer something false.
+    links: sectionItems(dto.list).map((item) => ({
+      urlFrom: clip(item.urlFrom as string, 500),
+      domainFrom: clip(item.domainFrom as string, 200),
+      // Anchor text was written by whoever built the link. Untrusted, clipped.
+      anchor: clip(item.anchor as string, 200),
+      domainRank: num(item.domainRank),
+      dofollow: Boolean(item.dofollow),
+      isLost: Boolean(item.isLost),
+      isBroken: Boolean(item.isBroken),
+    })),
     note:
       dto.failedSections.length > 0
         ? `Sections that did not load when this ran: ${dto.failedSections.join(", ")}.`
-        : undefined,
+        : dto.list === null
+          ? "Anchors, most-linked pages and the individual-links table are not included on this workspace's plan, so this analysis did not buy them. Their absence is not a finding about the target."
+          : undefined,
   };
 }
 
@@ -528,6 +544,16 @@ export async function getDomainOverview(
       avgPosition: num(item.avgPosition),
       etv: num(item.etv),
     })),
+    // Which pages earn the traffic the keywords above count. Null on an
+    // analysis stored before the Pages tab existed — "not fetched", not "none".
+    pages: sectionItems(dto.pages)
+      .slice(0, limit)
+      .map((item) => ({
+        url: clip(item.url as string, 500),
+        keywordCount: num(item.keywordCount),
+        etv: num(item.etv),
+        topPositions: num(item.topPositions),
+      })),
     note:
       dto.failedSections.length > 0
         ? `Sections that did not load when this ran: ${dto.failedSections.join(", ")}.`

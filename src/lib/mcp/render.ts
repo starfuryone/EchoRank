@@ -331,14 +331,40 @@ export function renderBacklinksOverview(data: BacklinksOverviewPayload): string 
         title: "\nMost-linked pages",
         rows: pages.rows,
         columns: LINKED_PAGE_COLUMNS,
-        emptyNote: "No page rows stored (exact-URL analyses skip this section).",
+        emptyNote: "No page rows stored (page- and path-scoped analyses skip this section).",
       }),
       pages.omitted,
     ),
   );
 
+  const links = capped(data.links as Record<string, unknown>[]);
+  blocks.push(
+    withOmitted(
+      formatMcpSection({
+        title: "\nIndividual links",
+        rows: links.rows,
+        columns: BACKLINK_ROW_COLUMNS,
+        emptyNote:
+          data.note ??
+          "No individual-link rows stored. On plans below Agency this section is not purchased at all.",
+      }),
+      links.omitted,
+    ),
+  );
+
   return blocks.join("\n");
 }
+
+const BACKLINK_ROW_COLUMNS: McpTableColumn<Record<string, unknown>>[] = [
+  { header: "from", value: (row) => row.urlFrom, format: truncatedCell(80) },
+  { header: "anchor", value: (row) => row.anchor, format: truncatedCell(50) },
+  { header: "domain rank", value: (row) => row.domainRank },
+  { header: "follow", value: (row) => (row.dofollow ? "dofollow" : "nofollow") },
+  {
+    header: "status",
+    value: (row) => (row.isBroken ? "broken" : row.isLost ? "lost" : "live"),
+  },
+];
 
 const DOMAIN_KEYWORD_COLUMNS: McpTableColumn<Record<string, unknown>>[] = [
   { header: "keyword", value: (row) => row.keyword, format: truncatedCell(60) },
@@ -411,8 +437,29 @@ export function renderDomainOverview(data: DomainOverviewPayload): string {
     ),
   );
 
+  const pages = capped(data.pages as Record<string, unknown>[]);
+  blocks.push(
+    withOmitted(
+      formatMcpSection({
+        title: "\nTop pages",
+        rows: pages.rows,
+        columns: DOMAIN_PAGE_COLUMNS,
+        emptyNote:
+          "No page rows stored. Analyses run before the Pages tab shipped have none — that is not a finding about the domain.",
+      }),
+      pages.omitted,
+    ),
+  );
+
   return blocks.join("\n");
 }
+
+const DOMAIN_PAGE_COLUMNS: McpTableColumn<Record<string, unknown>>[] = [
+  { header: "page", value: (row) => row.url, format: truncatedCell(90) },
+  { header: "keywords", value: (row) => row.keywordCount },
+  { header: "traffic", value: (row) => row.etv },
+  { header: "at #1", value: (row) => row.topPositions },
+];
 
 const OPPORTUNITY_COLUMNS: McpTableColumn<Record<string, unknown>>[] = [
   { header: "keyword", value: (row) => row.keyword, format: truncatedCell(60) },
