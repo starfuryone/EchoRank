@@ -45,6 +45,7 @@ import {
   type ContentBlock,
 } from "../model";
 import { budgetExhaustedNote, proSystemBlocks } from "./prompt";
+import { skillSystemBlocks } from "@/lib/agent-skills/assistant";
 import { renderResult, toolEvidence } from "./evidence";
 import { runTool, toolDefinitions, type ToolContext } from "./tools";
 import type { DashLocale } from "@/lib/i18n/dashboard";
@@ -140,7 +141,16 @@ export async function runProTurn(input: ProTurnInput): Promise<ProTurnResult> {
   const limits = proAssistantLimits();
   const turn = new TurnCache();
   const ctx: ToolContext = { ...input.ctx, turn };
-  const system = proSystemBlocks(input.locale, input.ctx.tenantName);
+  // The published agent skills, appended as their own cached block. The
+  // prompt's own block above stays byte-identical — that is what its
+  // cache_control breakpoint depends on — and this one is equally static, so
+  // the whole prefix is a cache read after the first call in a window. Empty
+  // on a deployment without the pack, which yields exactly the prompt this
+  // surface had before.
+  const system = [
+    ...proSystemBlocks(input.locale, input.ctx.tenantName),
+    ...skillSystemBlocks(input.locale),
+  ];
 
   const messages: ChatTurn[] = [
     ...trimHistory(input.history),
