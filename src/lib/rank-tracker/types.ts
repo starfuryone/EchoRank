@@ -42,6 +42,16 @@ export interface RankProjectSummary {
   name: string;
   domain: string;
   locationCode: number;
+  /**
+   * The project's city scope, or null for country-level.
+   *
+   * Read from the FIRST keyword, because the column lives on RankKeyword while
+   * the form offers one location per project. If a project ever holds a mix —
+   * only reachable by editing rows directly — this reports the first, and the
+   * edit form will then apply that one to all of them. Rendering "mixed" would
+   * describe a state the product does not create.
+   */
+  locationName: string | null;
   languageCode: string;
   device: RankDevice;
   frequency: RankFrequency;

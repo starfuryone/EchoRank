@@ -24,6 +24,7 @@ import {
   DEFAULT_DEVICE,
   MAX_KEYWORDS_PER_REQUEST,
 } from "@/lib/rank-tracker/options";
+import { findLocationByName } from "@/lib/locations/search";
 
 const BodySchema = z.object({
   name: z.string().trim().max(120).default(""),
@@ -33,6 +34,23 @@ const BodySchema = z.object({
   languageCode: z.string().trim().min(2).max(5).default(DEFAULT_LANGUAGE_CODE),
   device: z.enum(RANK_DEVICES).default(DEFAULT_DEVICE),
   frequency: z.enum(RANK_FREQUENCIES),
+  /**
+   * Optional city scope, as the canonical DataForSEO location_name.
+   *
+   * VALIDATED AGAINST THE CURATED TABLE, not merely length-checked: the
+   * provider matches this string literally and rejects anything it did not
+   * produce — after billing the call. A free-text field here would turn a
+   * typo into a paid failure.
+   */
+  locationName: z
+    .string()
+    .trim()
+    .max(300)
+    .nullish()
+    .refine(
+      (value) => !value || findLocationByName(value) !== null,
+      "Pick a location from the list.",
+    ),
 });
 
 export async function GET() {
@@ -60,7 +78,15 @@ export async function POST(request: Request) {
       );
     }
 
-    const project = await createProject(tenant.tenantId, tenant.tenant.planType, parsed.data);
+    // The code is RESOLVED from the curated table, never taken from the
+    // request: a client that sent a name and a mismatched code would store a
+    // pair that disagrees with itself.
+    const project = await createProject(tenant.tenantId, tenant.tenant.planType, {
+      ...parsed.data,
+      locationCodeOverride: parsed.data.locationName
+        ? (findLocationByName(parsed.data.locationName)?.code ?? null)
+        : null,
+    });
     const usage = await buildUsage(tenant.tenantId, tenant.tenant.planType);
 
     return NextResponse.json({ project, usage }, { status: 201 });

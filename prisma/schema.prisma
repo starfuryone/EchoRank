@@ -1877,10 +1877,25 @@ model RankProject {
 /// One tracked keyword inside a project. Unique per project so re-submitting
 /// the same textarea cannot create duplicates that would each cost $0.0006.
 model RankKeyword {
-  id        String   @id @default(cuid())
-  projectId String
-  keyword   String
-  createdAt DateTime @default(now())
+  id           String   @id @default(cuid())
+  projectId    String
+  keyword      String
+  /// City-scoped tracking: the canonical DataForSEO location_name for this
+  /// keyword, e.g. "Enid,Oklahoma,United States". NULL = inherit the project's
+  /// country (RankProject.locationCode), which is what every existing row does.
+  ///
+  /// THE NAME, NOT A CODE, AND THAT IS THE PROVIDER'S CONTRACT rather than a
+  /// preference: DataForSEO targets a country by `location_code` and a
+  /// sub-country place by `location_name`. A city's code is not accepted where
+  /// a country's is. `locationCode` below is kept alongside it for the
+  /// picker's own bookkeeping and for a future country-level override; the
+  /// value actually sent upstream is decided by serpTarget() in
+  /// src/lib/locations/types.ts.
+  locationName String?
+  /// The picked location's own code. Informational for a sub-country entry —
+  /// see locationName.
+  locationCode Int?
+  createdAt    DateTime @default(now())
 
   project   RankProject    @relation(fields: [projectId], references: [id], onDelete: Cascade)
   snapshots RankSnapshot[]

@@ -84,10 +84,26 @@ export interface ProjectInput {
   name: string;
   domain: string;
   keywords: string[];
+  /** The project's COUNTRY. Every keyword without its own location uses it. */
   locationCode: number;
   languageCode: string;
   device: RankDevice;
   frequency: RankFrequency;
+  /**
+   * Optional city scope applied to EVERY keyword in this project.
+   *
+   * PER PROJECT RATHER THAN PER KEYWORD IN THE UI, even though the column is
+   * per keyword. A tracker mixing national and city-scoped keywords produces a
+   * chart whose average position means nothing — half of it is measured in a
+   * different place. The column is per keyword because that is where the
+   * provider contract needs it and because a future per-keyword override
+   * should not be a migration; the form offers one location per project.
+   *
+   * The canonical DataForSEO location_name. Null = country-level, unchanged.
+   */
+  locationName?: string | null;
+  /** The picked location's own code, for the picker's bookkeeping. */
+  locationCodeOverride?: number | null;
 }
 
 // ─── Create / edit ──────────────────────────────────────────────────────────
@@ -133,13 +149,17 @@ export async function createProject(
       device: input.device,
       frequency: input.frequency,
       keywords: {
-        create: input.keywords.slice(0, MAX_KEYWORDS_PER_REQUEST).map((keyword) => ({ keyword })),
+        create: input.keywords.slice(0, MAX_KEYWORDS_PER_REQUEST).map((keyword) => ({
+          keyword,
+          locationName: input.locationName ?? null,
+          locationCode: input.locationCodeOverride ?? null,
+        })),
       },
     },
     include: { _count: { select: { keywords: true } } },
   });
 
-  return toSummary(project, project._count.keywords, 0, null);
+  return toSummary(project, project._count.keywords, 0, null, input.locationName ?? null);
 }
 
 /**
@@ -182,14 +202,30 @@ export async function updateProject(
       // check above, so whatever the scheduler objected to is resolved.
       overCap: false,
       keywords: {
+        // Keywords that SURVIVE the edit keep their id and their history, so
+        // a location change has to be applied to them explicitly — otherwise
+        // changing a project from national to city-scoped moves only the
+        // keywords added in the same edit, and the chart averages two
+        // different places.
+        updateMany: {
+          where: {},
+          data: {
+            locationName: input.locationName ?? null,
+            locationCode: input.locationCodeOverride ?? null,
+          },
+        },
         deleteMany: toRemove.length ? { id: { in: toRemove } } : undefined,
-        create: toAdd.map((keyword) => ({ keyword })),
+        create: toAdd.map((keyword) => ({
+          keyword,
+          locationName: input.locationName ?? null,
+          locationCode: input.locationCodeOverride ?? null,
+        })),
       },
     },
     include: { _count: { select: { keywords: true } } },
   });
 
-  return toSummary(project, project._count.keywords, 0, null);
+  return toSummary(project, project._count.keywords, 0, null, input.locationName ?? null);
 }
 
 export async function deleteProject(tenantId: string, projectId: string): Promise<void> {
@@ -220,7 +256,11 @@ export interface RunResult {
 export async function runProject(projectId: string, now = new Date()): Promise<RunResult> {
   const project = await prisma.rankProject.findUnique({
     where: { id: projectId },
-    include: { keywords: { select: { id: true, keyword: true } } },
+    // locationName is selected because the task post below sends it. Without
+    // it every keyword silently falls back to the project's country, which is
+    // the OLD behaviour and therefore invisible — a city-scoped tracker that
+    // quietly reports national positions.
+    include: { keywords: { select: { id: true, keyword: true, locationName: true } } },
   });
   if (!project) throw new RankProjectNotFoundError();
 
@@ -270,7 +310,18 @@ export async function runProject(projectId: string, now = new Date()): Promise<R
           SERP.organicTaskPost,
           {
             keyword: keyword.keyword,
-            location_code: project.locationCode,
+            // ── CITY-SCOPED TRACKING ────────────────────────────────────────
+            // A keyword with its own location is posted with `location_name`;
+            // one without inherits the project's country `location_code`. The
+            // two are NOT interchangeable — a city's code is not a value the
+            // SERP endpoints accept — which is why the keyword stores the
+            // canonical NAME. See src/lib/locations/types.ts.
+            //
+            // Cost is unchanged: SERP pricing is per result page and does not
+            // vary by location.
+            ...(keyword.locationName
+              ? { location_name: keyword.locationName }
+              : { location_code: project.locationCode }),
             language_code: project.languageCode,
             device: project.device,
             os: project.device === "mobile" ? "android" : "windows",
@@ -335,12 +386,15 @@ function toSummary(
   keywordCount: number,
   pendingCount: number,
   averagePosition: number | null,
+  /** From the first keyword — see RankProjectSummary.locationName. */
+  locationName: string | null = null,
 ): RankProjectSummary {
   return {
     id: project.id,
     name: project.name,
     domain: project.domain,
     locationCode: project.locationCode,
+    locationName,
     languageCode: project.languageCode,
     device: project.device as RankDevice,
     frequency: project.frequency as RankFrequency,
@@ -362,6 +416,7 @@ export async function listProjects(tenantId: string): Promise<RankProjectSummary
       _count: { select: { keywords: true } },
       keywords: {
         select: {
+          locationName: true,
           snapshots: {
             where: { status: { in: ["queued", "completed"] } },
             orderBy: { runDate: "desc" },
@@ -382,7 +437,13 @@ export async function listProjects(tenantId: string): Promise<RankProjectSummary
     const averagePosition = ranked.length
       ? ranked.reduce((a, b) => a + b, 0) / ranked.length
       : null;
-    return toSummary(project, project._count.keywords, pendingCount, averagePosition);
+    return toSummary(
+      project,
+      project._count.keywords,
+      pendingCount,
+      averagePosition,
+      project.keywords[0]?.locationName ?? null,
+    );
   });
 }
 

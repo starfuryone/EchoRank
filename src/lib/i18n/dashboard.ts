@@ -8367,6 +8367,20 @@ const rankTrackerEn = {
     n === 1 ? "1 duplicate ignored" : `${n} duplicates ignored`,
   overLimit: (count: number, limit: number) =>
     `${count} keywords entered — your plan allows ${limit} in total.`,
+  // ── City-scoped tracking ──
+  // ONE LOCATION PER PROJECT: a tracker mixing national and city-scoped
+  // keywords produces an average position that means nothing.
+  locationLocalLabel: "City or region (optional)",
+  locationLocalPlaceholder: "Start typing a city…",
+  locationLocalHint: "Leave empty to track national rankings for the country above.",
+  locationLocalNone: "National — the whole country",
+  locationLocalNoMatch: "No match in this country.",
+  locationLocalSelected: (label: string) => `Tracking rankings as seen in ${label}.`,
+  // Shown when the location table has not been generated on this deployment.
+  // A combobox that returns nothing for every query reads as broken, so the
+  // control says why instead.
+  locationLocalUnavailable:
+    "City-level tracking is not available on this deployment yet — rankings are tracked nationally.",
   locationLabel: "Location",
   languageLabel: "Language",
   deviceLabel: "Device",
@@ -8471,6 +8485,14 @@ export const RANK_TRACKER_COPY: Record<DashLocale, RankTrackerCopy> = {
       n === 1 ? "1 doublon ignoré" : `${n} doublons ignorés`,
     overLimit: (count: number, limit: number) =>
       `${count} mots-clés saisis — votre forfait en permet ${limit} au total.`,
+    locationLocalLabel: "Ville ou région (facultatif)",
+    locationLocalPlaceholder: "Commencez à saisir une ville…",
+    locationLocalHint: "Laissez vide pour suivre les positions nationales du pays ci-dessus.",
+    locationLocalNone: "National — tout le pays",
+    locationLocalNoMatch: "Aucune correspondance dans ce pays.",
+    locationLocalSelected: (label: string) => `Positions telles que vues depuis ${label}.`,
+    locationLocalUnavailable:
+      "Le suivi au niveau de la ville n'est pas encore disponible sur ce déploiement — les positions sont suivies au niveau national.",
     locationLabel: "Lieu",
     languageLabel: "Langue",
     deviceLabel: "Appareil",
@@ -8571,6 +8593,14 @@ export const RANK_TRACKER_COPY: Record<DashLocale, RankTrackerCopy> = {
       n === 1 ? "1 Duplikat ignoriert" : `${n} Duplikate ignoriert`,
     overLimit: (count: number, limit: number) =>
       `${count} Keywords eingegeben — Ihr Plan erlaubt insgesamt ${limit}.`,
+    locationLocalLabel: "Stadt oder Region (optional)",
+    locationLocalPlaceholder: "Stadt eingeben…",
+    locationLocalHint: "Leer lassen, um landesweite Positionen für das Land oben zu verfolgen.",
+    locationLocalNone: "Landesweit — das ganze Land",
+    locationLocalNoMatch: "Keine Treffer in diesem Land.",
+    locationLocalSelected: (label: string) => `Positionen, wie sie in ${label} erscheinen.`,
+    locationLocalUnavailable:
+      "Standortbezogenes Tracking ist auf dieser Installation noch nicht verfügbar — Positionen werden landesweit verfolgt.",
     locationLabel: "Standort",
     languageLabel: "Sprache",
     deviceLabel: "Gerät",

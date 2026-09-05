@@ -37,6 +37,14 @@ import { formatDateTime } from "@/lib/utils";
 import { isValidDomain } from "@/lib/site-explorer/domain";
 import { SCAFFOLD_RELATED } from "@/lib/seo-tools";
 import { parseKeywords } from "@/lib/rank-tracker/keywords";
+// PURE modules: the curated table and its search have no server imports, which
+// is what lets the picker filter in the browser with no round trip.
+import {
+  findCountryByCode,
+  findLocationByName,
+  searchLocations,
+} from "@/lib/locations/search";
+import { hasLocalLocations } from "@/lib/locations/curated";
 import { RankTrackerHelpButton } from "@/components/seo-tools/rank-tracker-help";
 import {
   RANK_DEVICES,
@@ -232,6 +240,137 @@ function DeltaCell({ value, t }: { value: number | null; t: RankTrackerCopy }) {
 
 // ─── Create / edit modal ────────────────────────────────────────────────────
 
+
+// ─── Location picker ────────────────────────────────────────────────────────
+
+/**
+ * ISO code for one of the offered country codes, for scoping the search.
+ *
+ * Falls back to the country's own entry, so a country whose cities have not
+ * been generated yet simply searches nothing and the picker says so — rather
+ * than searching every country and offering a city in the wrong one.
+ */
+function countryIsoFor(locationCode: number): string {
+  return findCountryByCode(locationCode)?.countryCode ?? "";
+}
+
+/**
+ * City / region picker for a rank-tracking project.
+ *
+ * ── FILTERS IN THE BROWSER, WITH NO DEBOUNCE ──────────────────────────────
+ * The curated table is a static module capped by its generator precisely so
+ * this can be a synchronous array filter. No fetch, no debounce, no spinner.
+ * See src/lib/locations/search.ts for what happens if the table outgrows that.
+ *
+ * ── IT SAYS WHEN IT IS EMPTY ──────────────────────────────────────────────
+ * Until someone runs scripts/generate-locations.ts the table holds countries
+ * only, and a combobox that returns nothing for every query reads as broken.
+ * So the control renders a plain note instead, naming the reason.
+ */
+function LocationPicker({
+  countryCode,
+  value,
+  onChange,
+  t,
+}: {
+  countryCode: string;
+  value: string;
+  onChange: (name: string) => void;
+  t: RankTrackerCopy;
+}) {
+  const [query, setQuery] = useState("");
+  const [open, setOpen] = useState(false);
+
+  const local = hasLocalLocations();
+  const results = useMemo(
+    () => (local ? searchLocations(query, { countryCode, types: LOCAL_TYPES }) : []),
+    [local, query, countryCode],
+  );
+
+  const selected = value ? findLocationByName(value) : null;
+
+  if (!local) {
+    return (
+      <div>
+        <span className="mb-1 block text-sm font-medium text-gray-700">
+          {t.locationLocalLabel}
+        </span>
+        <p className="text-xs text-gray-400">{t.locationLocalUnavailable}</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative">
+      <label
+        htmlFor="rank-local-location"
+        className="mb-1 block text-sm font-medium text-gray-700"
+      >
+        {t.locationLocalLabel}
+      </label>
+      <Input
+        id="rank-local-location"
+        value={open ? query : (selected?.label ?? "")}
+        placeholder={t.locationLocalPlaceholder}
+        onFocus={() => {
+          setOpen(true);
+          setQuery("");
+        }}
+        onChange={(e) => setQuery(e.target.value)}
+        onBlur={() => {
+          // A blur that lands on a result fires before the click, so the close
+          // is deferred by one tick — otherwise selecting anything is
+          // impossible.
+          setTimeout(() => setOpen(false), 120);
+        }}
+      />
+      <p className="mt-1 text-xs text-gray-400">
+        {selected ? t.locationLocalSelected(selected.label) : t.locationLocalHint}
+      </p>
+
+      {open && (
+        <ul className="absolute z-20 mt-1 max-h-64 w-full overflow-auto rounded-lg border border-gray-200 bg-white shadow-lg">
+          {/* Country-level is a CHOICE, not the absence of one, so it is the
+              first row rather than an empty field the user has to guess at. */}
+          <li>
+            <button
+              type="button"
+              className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50"
+              onClick={() => {
+                onChange("");
+                setOpen(false);
+              }}
+            >
+              {t.locationLocalNone}
+            </button>
+          </li>
+          {results.map((location) => (
+            <li key={location.name}>
+              <button
+                type="button"
+                className="w-full px-3 py-2 text-left text-sm hover:bg-gray-50"
+                onClick={() => {
+                  onChange(location.name);
+                  setOpen(false);
+                }}
+              >
+                <span className="text-gray-900">{location.label}</span>
+                <span className="ml-2 text-xs text-gray-400">{location.type}</span>
+              </button>
+            </li>
+          ))}
+          {results.length === 0 && (
+            <li className="px-3 py-2 text-sm text-gray-500">{t.locationLocalNoMatch}</li>
+          )}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+/** The picker offers sub-country places only; the country is the Select above. */
+const LOCAL_TYPES = ["City", "DMA Region", "County", "Region"] as const;
+
 interface ProjectFormState {
   name: string;
   domain: string;
@@ -240,6 +379,15 @@ interface ProjectFormState {
   languageCode: string;
   device: RankDevice;
   frequency: RankFrequency;
+  /**
+   * Canonical DataForSEO location_name, or "" for country-level.
+   *
+   * ONE LOCATION PER PROJECT, not per keyword, even though the column is per
+   * keyword. A tracker mixing national and city-scoped keywords produces a
+   * chart whose average position is meaningless — half of it is measured
+   * somewhere else.
+   */
+  locationName: string;
 }
 
 function ProjectModal({
@@ -295,6 +443,9 @@ function ProjectModal({
           domain: form.domain.trim(),
           keywords: parsed.keywords,
           locationCode: Number(form.locationCode),
+          // "" is country-level. Sent as null so the server's refine() sees an
+          // absent value rather than an empty string it has to special-case.
+          locationName: form.locationName ? form.locationName : null,
           languageCode: form.languageCode,
           device: form.device,
           frequency: form.frequency,
@@ -393,6 +544,12 @@ function ProjectModal({
                 value: String(code),
                 label: serp.locationLabels[code],
               }))}
+            />
+            <LocationPicker
+              countryCode={countryIsoFor(Number(form.locationCode))}
+              value={form.locationName}
+              onChange={(name: string) => set("locationName", name)}
+              t={t}
             />
             <Select
               id="rank-language"
@@ -577,6 +734,7 @@ export function RankTrackerClient({ locale }: { locale: DashLocale }) {
         domain: "",
         keywordsText: "",
         locationCode: String(DEFAULT_LOCATION_CODE),
+        locationName: "",
         languageCode: DEFAULT_LANGUAGE_CODE,
         device: DEFAULT_DEVICE,
         frequency: usage.allowedFrequencies[0] ?? "weekly",
@@ -592,6 +750,7 @@ export function RankTrackerClient({ locale }: { locale: DashLocale }) {
         domain: project.domain,
         keywordsText: project.keywords.map((k) => k.keyword).join("\n"),
         locationCode: String(project.locationCode),
+        locationName: project.locationName ?? "",
         languageCode: project.languageCode,
         device: project.device,
         frequency: project.frequency,

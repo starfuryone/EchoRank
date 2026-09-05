@@ -32,6 +32,8 @@ License: MIT
 | `src/lib/backlinks/filters.ts` | DataForSEO filter-expression builders: include/exclude term semantics, ilike escaping, numeric ranges, and the 8-condition budget assertion. |
 | `src/lib/backlinks/target.ts` | The URL-prefix (subfolder) scope, and the filtered `total_count` technique for a path's totals where the summary endpoint takes only a whole target. |
 | `src/lib/site-explorer/pagination.ts` | Server-side filter/sort/paginate over a stored ranked-keywords set, and the domain keywords/pages page shapes. |
+| `src/lib/locations/types.ts` | The `location_code` vs `location_name` targeting contract, the five useful location granularities, and the canonical-label formatter. |
+| `scripts/generate-locations.ts` | The SERP location-registry fetch and slimming approach (spec 0008). |
 
 ### MIT License
 
