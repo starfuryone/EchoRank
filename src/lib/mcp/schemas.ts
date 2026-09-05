@@ -22,6 +22,7 @@
 import { z } from "zod";
 import { SERP_LANGUAGE_CODES, SERP_LOCATION_CODES } from "@/lib/serp/options";
 import { RANK_DEVICES } from "@/lib/rank-tracker/options";
+import { RESEARCH_FEATURES } from "@/lib/research-log/types";
 import { MCP_TOOL_NAMES } from "./tools";
 
 // ─── Shared fragments ────────────────────────────────────────────────────────
@@ -131,6 +132,12 @@ export const gscQueriesInputSchema = z.object({
   limit: limitSchema(200).optional(),
 });
 
+export const researchLogInputSchema = z.object({
+  feature: z.enum(RESEARCH_FEATURES).optional(),
+  target: targetSchema.optional(),
+  limit: limitSchema(100).optional(),
+});
+
 export const crawlSummaryInputSchema = z.object({
   crawlJobId: idSchema.optional(),
   limit: limitSchema(100).optional(),
@@ -150,6 +157,7 @@ export const MCP_INPUT_SCHEMAS: Record<string, z.ZodType> = {
   get_backlinks_overview: backlinksOverviewInputSchema,
   get_domain_overview: domainOverviewInputSchema,
   list_keyword_opportunities: keywordOpportunitiesInputSchema,
+  get_research_log: researchLogInputSchema,
   get_gsc_queries: gscQueriesInputSchema,
   get_crawl_summary: crawlSummaryInputSchema,
 };

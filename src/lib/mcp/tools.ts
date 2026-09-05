@@ -265,6 +265,36 @@ export const MCP_TOOLS: readonly McpToolDefinition[] = [
 
   // ─── Owned-data reads ─────────────────────────────────────────────────────
   {
+    name: "get_research_log",
+    description:
+      "What this workspace has already paid to research, newest first: which analysis, on what target, how long ago, and what it cost. CHECK THIS BEFORE SPENDING. A result under 30 days old is almost always worth reusing instead of re-buying — read it back with the matching get_* tool rather than starting a new run. Advisory: nothing here blocks a call.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        feature: {
+          type: "string",
+          enum: [
+            "serp_check",
+            "backlinks",
+            "domain_overview",
+            "site_crawl",
+            "keyword_opportunity",
+            "ai_citations",
+          ],
+          description: "Narrow to one kind of research. Omit for everything.",
+        },
+        target: {
+          type: "string",
+          description:
+            "Narrow to one exact target — a keyword, domain or URL, as the tool that researched it normalised it.",
+        },
+        limit: LIMIT_PROP(100, 20),
+      },
+    },
+    annotations: { title: "Research log", readOnlyHint: true },
+  },
+
+  {
     name: "get_gsc_queries",
     description:
       "Top Google Search Console queries for this workspace over a recent window: clicks, impressions, average CTR and average position. Reads synced Search Console data and costs nothing. An empty result on a connected property is normal — Google withholds queries searched by too few people — and does not mean the sync is broken.",

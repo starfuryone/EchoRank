@@ -105,6 +105,9 @@ const caps: McpCapabilities = {
   async listKeywordOpportunities() {
     return { found: false, analysis: null, opportunities: [], note: "none" };
   },
+  async getResearchLog() {
+    return { reuseWindowDays: 30, entries: [], note: "nothing yet" };
+  },
   async getGscQueries() {
     return {
       connected: false,

@@ -34,6 +34,7 @@ import type {
   GetSerpCheckPayload,
   GscQueriesPayload,
   KeywordOpportunitiesPayload,
+  ResearchLogPayload,
   RankKeywordMutationPayload,
   RankTrackerPayload,
   StartSerpCheckPayload,
@@ -452,6 +453,39 @@ export function renderKeywordOpportunities(data: KeywordOpportunitiesPayload): s
   );
 }
 
+// ─── Research log ────────────────────────────────────────────────────────────
+
+const RESEARCH_LOG_COLUMNS: McpTableColumn<ResearchLogPayload["entries"][number]>[] = [
+  { header: "what", value: (row) => row.feature },
+  { header: "target", value: (row) => row.target, format: truncatedCell(70) },
+  { header: "age", value: (row) => ageLine(row.ageHours) },
+  { header: "cost", value: (row) => usd(row.costUsd) },
+  // The column an agent is meant to act on: "yes" means read it back rather
+  // than buying it again.
+  { header: "reusable", value: (row) => row.reusable },
+  { header: "result id", value: (row) => row.sourceRef },
+];
+
+export function renderResearchLog(data: ResearchLogPayload): string {
+  const reusable = data.entries.filter((entry) => entry.reusable).length;
+  const spent = data.entries.reduce((total, entry) => total + entry.costUsd, 0);
+  return formatMcpSection({
+    title: "Research already paid for on this workspace",
+    facts: [
+      formatMcpFacts([
+        ["Entries shown", data.entries.length],
+        [`Still worth reusing (under ${data.reuseWindowDays} days)`, reusable],
+        ["Spent on the research shown", usd(spent)],
+      ]),
+    ],
+    rows: data.entries,
+    columns: RESEARCH_LOG_COLUMNS,
+    emptyNote:
+      data.note ??
+      "Nothing researched yet. Anything you buy will be recorded here so it is not bought twice.",
+  });
+}
+
 // ─── Owned-data reads ────────────────────────────────────────────────────────
 
 const GSC_COLUMNS: McpTableColumn<GscQueriesPayload["queries"][number]>[] = [
@@ -551,6 +585,8 @@ export function renderToolText(name: string, data: unknown): string {
       return renderDomainOverview(data as DomainOverviewPayload);
     case "list_keyword_opportunities":
       return renderKeywordOpportunities(data as KeywordOpportunitiesPayload);
+    case "get_research_log":
+      return renderResearchLog(data as ResearchLogPayload);
     case "get_gsc_queries":
       return renderGscQueries(data as GscQueriesPayload);
     case "get_crawl_summary":
@@ -581,6 +617,7 @@ const RENDERED_TOOLS = new Set([
   "get_backlinks_overview",
   "get_domain_overview",
   "list_keyword_opportunities",
+  "get_research_log",
   "get_gsc_queries",
   "get_crawl_summary",
 ]);

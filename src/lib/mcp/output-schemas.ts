@@ -208,6 +208,26 @@ export const keywordOpportunitiesOutputSchema = z.looseObject({
   note,
 });
 
+// ─── Research log ────────────────────────────────────────────────────────────
+
+export const researchLogOutputSchema = z.looseObject({
+  reuseWindowDays: z.number(),
+  entries: z.array(
+    z.looseObject({
+      id: z.string(),
+      feature: z.string(),
+      target: z.string(),
+      metrics: z.record(z.string(), z.union([z.number(), z.string()])).nullable(),
+      costUsd: z.number(),
+      sourceRef: z.string().nullable(),
+      createdAt: z.string(),
+      ageHours: z.number(),
+      reusable: z.boolean(),
+    }),
+  ),
+  note,
+});
+
 // ─── Owned-data reads ────────────────────────────────────────────────────────
 
 export const gscQueriesOutputSchema = z.looseObject({
@@ -279,6 +299,7 @@ export const MCP_OUTPUT_SCHEMAS: Record<string, z.ZodType> = {
   get_backlinks_overview: backlinksOverviewOutputSchema,
   get_domain_overview: domainOverviewOutputSchema,
   list_keyword_opportunities: keywordOpportunitiesOutputSchema,
+  get_research_log: researchLogOutputSchema,
   get_gsc_queries: gscQueriesOutputSchema,
   get_crawl_summary: crawlSummaryOutputSchema,
 };
@@ -308,5 +329,6 @@ export type RankKeywordMutationPayload = z.infer<typeof rankKeywordMutationOutpu
 export type BacklinksOverviewPayload = z.infer<typeof backlinksOverviewOutputSchema>;
 export type DomainOverviewPayload = z.infer<typeof domainOverviewOutputSchema>;
 export type KeywordOpportunitiesPayload = z.infer<typeof keywordOpportunitiesOutputSchema>;
+export type ResearchLogPayload = z.infer<typeof researchLogOutputSchema>;
 export type GscQueriesPayload = z.infer<typeof gscQueriesOutputSchema>;
 export type CrawlSummaryPayload = z.infer<typeof crawlSummaryOutputSchema>;

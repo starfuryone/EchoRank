@@ -29,6 +29,7 @@ import {
   type RankedKeywordItem,
 } from "@/lib/dataforseo/endpoints";
 import { seoMeteredCallResult } from "@/lib/dataforseo/metering";
+import { recordResearch } from "@/lib/research-log/store";
 import { backlinksSummaryTask } from "@/lib/dataforseo/backlinks-summary";
 import { parseBacklinks, parseCompetitors, parseOverview, parseRankedKeywords } from "./parse";
 import {
@@ -266,6 +267,25 @@ export async function runAnalysis(
       backlinks: (backlinks?.payload as object) ?? undefined,
       failedSections,
     },
+  });
+
+  // Research Log, on delivered success. A partial analysis still counts —
+  // the customer paid for it and can read it back, which is the question the
+  // log answers. recordResearch never throws (see its header), so this cannot
+  // turn a completed, billed analysis into a 500.
+  await recordResearch({
+    tenantId,
+    feature: "domain_overview",
+    target: params.domain,
+    metrics: {
+      locationCode: params.locationCode,
+      languageCode: params.languageCode,
+      keywords: overview?.payload?.keywordCount ?? 0,
+      etv: Math.round(overview?.payload?.etv ?? 0),
+      failedSections: failedSections.length,
+    },
+    costUsd,
+    sourceRef: row.id,
   });
 
   console.info(

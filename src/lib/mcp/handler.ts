@@ -62,6 +62,7 @@ export interface McpCapabilities {
   getBacklinksOverview(args: Record<string, unknown>): Promise<unknown>;
   getDomainOverview(args: Record<string, unknown>): Promise<unknown>;
   listKeywordOpportunities(args: Record<string, unknown>): Promise<unknown>;
+  getResearchLog(args: Record<string, unknown>): Promise<unknown>;
   getGscQueries(args: Record<string, unknown>): Promise<unknown>;
   getCrawlSummary(args: Record<string, unknown>): Promise<unknown>;
 }
@@ -165,6 +166,8 @@ function runTool(
       return caps.getDomainOverview(args);
     case "list_keyword_opportunities":
       return caps.listKeywordOpportunities(args);
+    case "get_research_log":
+      return caps.getResearchLog(args);
     case "get_gsc_queries":
       return caps.getGscQueries(args);
     case "get_crawl_summary":

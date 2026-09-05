@@ -10,13 +10,24 @@ import { getCurrentTenant } from "@/lib/tenant";
 import { visibleSeoToolGroups } from "@/lib/seo-tools";
 import { NewBadge } from "@/components/layout/new-badge";
 import { ToolsHubHelpButton } from "@/components/seo-tools/tools-hub-help";
+import { RecentResearchPanel } from "@/components/seo-tools/recent-research-panel";
+import { readResearchLog } from "@/lib/research-log/store";
+import { RESEARCH_LOG_PANEL_LIMIT } from "@/lib/research-log/types";
 
 export default async function SeoToolsHubPage() {
   const cookieStore = await cookies();
   const locale = dashboardLocale(cookieStore.get("echorank_locale")?.value);
   const copy = SEO_TOOLS_COPY[locale];
-  const plan = (await getCurrentTenant())?.tenant.planType;
+  const membership = await getCurrentTenant();
+  const plan = membership?.tenant.planType;
   const groups = visibleSeoToolGroups(plan);
+
+  // What this workspace has already paid to research. Reads fail soft and
+  // return [] (see readResearchLog), so the hub renders identically on a
+  // deployment where the research_log migration has not been applied yet.
+  const research = membership
+    ? await readResearchLog(membership.tenant.id, { limit: RESEARCH_LOG_PANEL_LIMIT })
+    : [];
 
   return (
     <div className="space-y-8">
@@ -73,6 +84,8 @@ export default async function SeoToolsHubPage() {
           </ul>
         </section>
       ))}
+
+      <RecentResearchPanel locale={locale} entries={research} />
     </div>
   );
 }

@@ -82,6 +82,9 @@ export function capsFor(tenantId: string): McpCapabilities {
     async listKeywordOpportunities(args) {
       return reads.listKeywordOpportunities(await tenant(), args);
     },
+    async getResearchLog(args) {
+      return reads.getResearchLog(await tenant(), args);
+    },
     async getGscQueries(args) {
       return reads.getGscQueries(await tenant(), args);
     },

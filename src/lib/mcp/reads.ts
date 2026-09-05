@@ -65,6 +65,11 @@ import { trackedKeywordLimit as rankTrackedKeywordLimit } from "@/lib/rank-track
 import type { RankDevice, RankFrequency } from "@/lib/rank-tracker/options";
 import { toAnalysisDto as toBacklinksDto } from "@/lib/backlinks/service";
 import { toAnalysisDto as toSiteExplorerDto } from "@/lib/site-explorer/service";
+import { readResearchLog } from "@/lib/research-log/store";
+import {
+  RESEARCH_REUSE_WINDOW_DAYS,
+  type ResearchFeature,
+} from "@/lib/research-log/types";
 
 // ─── Shared helpers ──────────────────────────────────────────────────────────
 
@@ -592,6 +597,31 @@ export async function listKeywordOpportunities(
         : analysis.rows.length > limit
           ? `Showing ${limit} of ${analysis.rows.length} opportunities. Raise \`limit\` for more.`
           : undefined,
+  };
+}
+
+// ─── Research log ────────────────────────────────────────────────────────────
+
+/**
+ * What this workspace has already paid to research.
+ *
+ * READ-ONLY AND ADVISORY, like the log itself. It returns entries, not
+ * results — an agent that sees a reusable row is meant to call the matching
+ * get_* tool with the `sourceRef`, not to treat this as the answer.
+ */
+export async function getResearchLog(tenant: McpTenant, args: Record<string, unknown>) {
+  const entries = await readResearchLog(tenant.id, {
+    limit: limitOf(args, 20),
+    feature: typeof args.feature === "string" ? (args.feature as ResearchFeature) : undefined,
+    target: typeof args.target === "string" ? args.target.trim() : undefined,
+  });
+
+  return {
+    reuseWindowDays: RESEARCH_REUSE_WINDOW_DAYS,
+    entries,
+    note: entries.length
+      ? undefined
+      : "Nothing recorded yet. Either this workspace has not run a paid analysis, or the research log table has not been created on this deployment.",
   };
 }
 

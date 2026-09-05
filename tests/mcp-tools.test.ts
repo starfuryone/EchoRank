@@ -40,6 +40,7 @@ const gscConnection = { findUnique: vi.fn() };
 const gscQueryStat = { groupBy: vi.fn(async () => []) };
 const crawlJob = { findFirst: vi.fn() };
 const crawlIssue = { groupBy: vi.fn(async () => []) };
+const researchLog = { findMany: vi.fn(async () => []), findFirst: vi.fn(async () => null), create: vi.fn() };
 const seoApiCall = { count: vi.fn(async () => 0), aggregate: vi.fn(async () => ({ _sum: { costUsd: 0 } })) };
 const creditLedger = { aggregate: vi.fn(async () => ({ _sum: { delta: 0 } })) };
 const keywordOpportunityCredit = { aggregate: vi.fn(async () => ({ _sum: { delta: 0 } })) };
@@ -59,6 +60,7 @@ vi.mock("@/lib/prisma", () => ({
     gscQueryStat,
     crawlJob,
     crawlIssue,
+    researchLog,
     seoApiCall,
     creditLedger,
     keywordOpportunityCredit,
@@ -129,6 +131,7 @@ beforeEach(() => {
   keywordOpportunityCredit.aggregate.mockResolvedValue({ _sum: { delta: 0 } });
   gscQueryStat.groupBy.mockResolvedValue([]);
   crawlIssue.groupBy.mockResolvedValue([]);
+  researchLog.findMany.mockResolvedValue([]);
 });
 
 // ─── 1. Auth ─────────────────────────────────────────────────────────────────
@@ -265,6 +268,15 @@ describe("tenant isolation", () => {
     expect(rankProject.findFirst).toHaveBeenCalledWith(
       expect.objectContaining({
         where: { id: "proj_owned_by_b", tenantId: "tenant_a" },
+      }),
+    );
+  });
+
+  it("scopes the research log by tenant", async () => {
+    await reads.getResearchLog(TENANT_B, { limit: 5 });
+    expect(researchLog.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({ tenantId: "tenant_b" }),
       }),
     );
   });

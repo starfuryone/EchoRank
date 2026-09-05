@@ -31,6 +31,7 @@ import {
   type BacklinksSummaryItem,
 } from "@/lib/dataforseo/backlinks-summary";
 import { seoMeteredCallResult } from "@/lib/dataforseo/metering";
+import { recordResearch } from "@/lib/research-log/store";
 import { parseAnchors, parseHistory, parseLinkedPages, parseReferringDomains } from "./parse";
 import {
   ANCHORS_LIMIT,
@@ -307,6 +308,26 @@ export async function runAnalysis(
       failedSections,
       createdAt: now,
     },
+  });
+
+  // The Research Log entry, on delivered success only. A partial analysis
+  // still counts: the customer paid for it and can read it back, which is
+  // exactly the question the log answers. A run where EVERY section failed
+  // threw above and never reaches here.
+  await recordResearch({
+    tenantId,
+    feature: "backlinks",
+    target,
+    metrics: {
+      mode: params.mode,
+      referringDomains: summary?.payload?.referringDomains ?? 0,
+      backlinks: summary?.payload?.backlinks ?? 0,
+      domainRank: summary?.payload?.rank ?? 0,
+      failedSections: failedSections.length,
+    },
+    costUsd,
+    sourceRef: row.id,
+    now,
   });
 
   // Per-section costs, not just the total: this API bills per row, so a

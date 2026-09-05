@@ -4361,12 +4361,12 @@ model BlogAgentRun {
 
   /// Dedupe key over the normalized story title. Indexed with createdAt for
   /// the 30-day lookback the discover stage runs on every pass.
-  topicHash String
+  topicHash  String
   /// The story as the feed titled it, kept for the briefing and for debugging
   /// a dedupe decision after the fact.
   topicTitle String
   /// Feed source id from src/lib/blog-agent/sources.ts.
-  sourceId String
+  sourceId   String
 
   /// Every URL the research stage actually fetched. The gate checks the draft's
   /// external links against exactly this list, so it is evidence, not metadata.
@@ -4411,4 +4411,63 @@ enum BlogAgentStatus {
   APPROVED
   PUBLISHED
   REJECTED
+}
+
+// -----------------------------------------------------------------------------
+// Research Log — spend-before-check discipline
+// -----------------------------------------------------------------------------
+
+/// One paid research result, recorded so the next caller can find it before
+/// buying the same thing again.
+///
+/// ADVISORY, NOT A GATE. Nothing consults this table to allow or deny a call —
+/// the real gates are the per-tool caps, the pooled search quota and the USD
+/// cap, and adding a fourth would make "why was I refused" a four-way question.
+/// What this exists for is the question an agent or a customer asks BEFORE
+/// spending: has anyone here already bought this? Every billable analysis
+/// appends one row on delivered success.
+///
+/// NO PAYLOAD LIVES HERE. `sourceRef` points at the row that holds the result
+/// (SerpCheck, BacklinksAnalysis, SiteExplorerAnalysis, CrawlJob,
+/// KeywordOpportunityAnalysis). Duplicating the payload would double the
+/// storage of every analysis and give the two copies somewhere to disagree.
+///
+/// NO ENGLISH LIVES HERE EITHER, and that is the reason there is no prose
+/// `summary` column. A text column written by a job ships English to every
+/// locale forever: the French dashboard would render an English sentence a
+/// worker wrote months ago, with nothing to translate it from. So the row
+/// carries a `feature` KEY and a small `metrics` object of numbers, and each
+/// surface renders its own sentence — the dashboard from its three catalogs,
+/// the MCP tool in English like the rest of that protocol surface.
+///
+/// No Tenant relation, matching SeoApiCall: this is an append-only ledger read
+/// by tenant id, and a relation would only add a back-reference nothing uses.
+model ResearchLog {
+  id        String   @id @default(cuid())
+  tenantId  String
+  /// Closed set, mirrored by RESEARCH_FEATURES in src/lib/research-log/types.ts:
+  /// serp_check | backlinks | domain_overview | site_crawl |
+  /// keyword_opportunity | ai_citations
+  feature   String
+  /// What was researched, normalised the same way the feature normalises it —
+  /// a keyword, a domain, an absolute URL, a crawl root. Lowercased for the
+  /// domain-shaped features so "Example.com" and "example.com" are one target.
+  target    String
+  /// Small, numeric, feature-specific: { rows: 50, referringDomains: 1200 }.
+  /// Counts and identifiers only. Never prose, never a payload.
+  metrics   Json?
+  /// What the provider charged for the work this row records. Decimal, like
+  /// SeoApiCall.costUsd — a float would lose the sixth decimal that most
+  /// DataForSEO prices live in.
+  costUsd   Decimal  @default(0) @db.Decimal(10, 6)
+  /// Id of the row holding the actual result, in the feature's own table.
+  /// Nullable because a feature may record research that has no single row.
+  sourceRef String?
+  createdAt DateTime @default(now())
+
+  /// The reuse question: "has this workspace researched this target lately?"
+  @@index([tenantId, feature, target, createdAt])
+  /// The panel and the MCP tool: this workspace's recent research, newest first.
+  @@index([tenantId, createdAt])
+  @@map("research_log")
 }

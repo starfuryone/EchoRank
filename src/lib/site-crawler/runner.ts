@@ -20,6 +20,7 @@
 
 import type Redis from "ioredis";
 import { prisma } from "@/lib/prisma";
+import { recordResearch } from "@/lib/research-log/store";
 import { logger } from "@/infrastructure/observability/logger";
 import {
   CRAWLER_USER_AGENT,
@@ -89,7 +90,10 @@ export async function runCrawl({
 
   const job = await prisma.crawlJob.findUnique({
     where: { id: jobId },
-    select: { id: true, rootUrl: true, urlCap: true, status: true },
+    // tenantId is here for the Research Log write at the end. It is not used
+    // to scope anything: the job id came from a tenant-scoped route, and the
+    // worker is running that job, not looking one up.
+    select: { id: true, tenantId: true, rootUrl: true, urlCap: true, status: true },
   });
   if (!job) throw new Error(`CrawlJob ${jobId} not found`);
 
@@ -261,6 +265,27 @@ export async function runCrawl({
     await redis
       .del(keys.queue, keys.seen, keys.cancel, keys.inlinks, keys.sitemap)
       .catch(() => {});
+  }
+
+  // Research Log — COMPLETED crawls only, including cap- and time-capped ones
+  // (a partial crawl's findings are still findings, which is the same call the
+  // aggregation step above makes). CANCELLED and FAILED runs record nothing:
+  // the log answers "has this workspace already researched this", and a crawl
+  // that produced no usable page set has not.
+  //
+  // costUsd is 0 and that is correct, not a placeholder — the crawler fetches
+  // pages itself and buys nothing from DataForSEO. The entry still earns its
+  // place: knowing a site was crawled two days ago is what stops the next
+  // agent starting a second one.
+  if (status === "COMPLETED") {
+    await recordResearch({
+      tenantId: job.tenantId,
+      feature: "site_crawl",
+      target: job.rootUrl,
+      metrics: { pagesCrawled, issues: issueCount, urlCap: job.urlCap },
+      costUsd: 0,
+      sourceRef: jobId,
+    });
   }
 
   logger.info({ jobId, status, pagesCrawled, issueCount, stoppedReason }, "site-crawl finished");

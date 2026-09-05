@@ -7150,6 +7150,66 @@ export const API_ACCESS_COPY: Record<DashLocale, ApiAccessCopy> = {
   },
 };
 
+// ─── Research Log — the "Recent research" panel on the SEO Tools hub ─────────
+//
+// The row's WORDS live here and its NUMBERS live in the database, which is the
+// whole reason research_log has no prose column. A worker that wrote "Backlinks
+// analysis of example.com" into a text column would ship that English sentence
+// to the French dashboard forever, with nothing to translate it from.
+const researchLogEn = {
+  panelTitle: "Recent research",
+  panelHint: "Already paid for — open it again instead of re-running.",
+  reusable: "Reusable",
+  ageJustNow: "just now",
+  ageHours: (n: number) => `${n}h ago`,
+  ageDays: (n: number) => (n === 1 ? "1 day ago" : `${n} days ago`),
+  features: {
+    serp_check: "SERP check",
+    backlinks: "Backlinks",
+    domain_overview: "Domain overview",
+    site_crawl: "Site crawl",
+    keyword_opportunity: "Keyword opportunities",
+    ai_citations: "AI citations",
+  } as Record<string, string>,
+};
+export type ResearchLogCopy = typeof researchLogEn;
+
+export const RESEARCH_LOG_COPY: Record<DashLocale, ResearchLogCopy> = {
+  en: researchLogEn,
+  fr: {
+    panelTitle: "Recherches récentes",
+    panelHint: "Déjà payées — rouvrez-les plutôt que de les relancer.",
+    reusable: "Réutilisable",
+    ageJustNow: "à l'instant",
+    ageHours: (n: number) => `il y a ${n} h`,
+    ageDays: (n: number) => (n === 1 ? "il y a 1 jour" : `il y a ${n} jours`),
+    features: {
+      serp_check: "Analyse SERP",
+      backlinks: "Backlinks",
+      domain_overview: "Aperçu de domaine",
+      site_crawl: "Exploration du site",
+      keyword_opportunity: "Opportunités de mots-clés",
+      ai_citations: "Citations IA",
+    } as Record<string, string>,
+  },
+  "de-CH": {
+    panelTitle: "Letzte Recherchen",
+    panelHint: "Bereits bezahlt — erneut öffnen statt neu ausführen.",
+    reusable: "Wiederverwendbar",
+    ageJustNow: "gerade eben",
+    ageHours: (n: number) => `vor ${n} Std.`,
+    ageDays: (n: number) => (n === 1 ? "vor 1 Tag" : `vor ${n} Tagen`),
+    features: {
+      serp_check: "SERP-Prüfung",
+      backlinks: "Backlinks",
+      domain_overview: "Domain-Überblick",
+      site_crawl: "Site-Crawl",
+      keyword_opportunity: "Keyword-Chancen",
+      ai_citations: "KI-Zitate",
+    } as Record<string, string>,
+  },
+};
+
 // ─── /visibility/tools/mcp-server ───────────────────────────────────────────
 const mcpServerEn = {
   intro:
@@ -7169,6 +7229,7 @@ const mcpServerEn = {
     get_backlinks_overview: "Your newest stored backlinks analysis: referring domains, anchors, linked pages.",
     get_domain_overview: "Your newest stored Site Explorer analysis: traffic, keywords, competitors.",
     list_keyword_opportunities: "Scored keywords from your newest Keyword Opportunity Finder run.",
+    get_research_log: "What this workspace has already paid to research \u2014 check it before spending again.",
     get_gsc_queries: "Top Search Console queries with clicks, impressions, CTR and average position.",
     get_crawl_summary: "Your newest site crawl: pages crawled and the most common issues found.",
   } as Record<string, string>,
@@ -7210,6 +7271,7 @@ export const MCP_SERVER_COPY: Record<DashLocale, McpServerCopy> = {
       get_backlinks_overview: "Votre analyse de backlinks la plus récente : domaines référents, ancres, pages liées.",
       get_domain_overview: "Votre analyse Site Explorer la plus récente : trafic, mots-clés, concurrents.",
       list_keyword_opportunities: "Les mots-clés notés par votre dernière analyse du Détecteur d'opportunités.",
+      get_research_log: "Ce que cet espace de travail a déjà payé pour rechercher \u2014 à consulter avant de dépenser à nouveau.",
       get_gsc_queries: "Principales requêtes Search Console : clics, impressions, CTR et position moyenne.",
       get_crawl_summary: "Votre dernière exploration de site : pages explorées et problèmes les plus fréquents.",
     } as Record<string, string>,
@@ -7247,6 +7309,7 @@ export const MCP_SERVER_COPY: Record<DashLocale, McpServerCopy> = {
       get_backlinks_overview: "Ihre neueste Backlink-Analyse: verweisende Domains, Ankertexte, verlinkte Seiten.",
       get_domain_overview: "Ihre neueste Site-Explorer-Analyse: Traffic, Keywords, Wettbewerber.",
       list_keyword_opportunities: "Bewertete Keywords aus Ihrem letzten Lauf des Keyword-Chancen-Finders.",
+      get_research_log: "Was dieser Arbeitsbereich bereits an Recherche bezahlt hat \u2014 vor der nächsten Ausgabe prüfen.",
       get_gsc_queries: "Top-Suchanfragen aus der Search Console: Klicks, Impressionen, CTR, Durchschnittsposition.",
       get_crawl_summary: "Ihr neuester Site-Crawl: gecrawlte Seiten und die häufigsten gefundenen Probleme.",
     } as Record<string, string>,

@@ -6,6 +6,7 @@
 
 import { prisma } from "@/lib/prisma";
 import type { PendingTask, StandardQueueOwner } from "@/lib/dataforseo/standard-queue";
+import { recordResearch } from "@/lib/research-log/store";
 import { parseSerpTaskResult } from "./parse";
 
 export const serpCheckOwner: StandardQueueOwner = {
@@ -43,7 +44,7 @@ export const serpCheckOwner: StandardQueueOwner = {
 
   async complete(rowId: string, result: unknown[]): Promise<void> {
     const parsed = parseSerpTaskResult(result);
-    await prisma.serpCheck.update({
+    const row = await prisma.serpCheck.update({
       where: { id: rowId },
       data: {
         status: "completed",
@@ -53,6 +54,25 @@ export const serpCheckOwner: StandardQueueOwner = {
         error: null,
         completedAt: new Date(),
       },
+      select: { id: true, tenantId: true, keyword: true, costUsd: true, locationCode: true },
+    });
+
+    // DELIVERED SUCCESS, which for the standard queue is here and not at
+    // task_post. The check was billed minutes ago; this is the first moment
+    // the customer actually has something. Logging at submit would record
+    // research for tasks that go on to expire without ever returning.
+    // recordResearch never throws — see its header.
+    await recordResearch({
+      tenantId: row.tenantId,
+      feature: "serp_check",
+      target: row.keyword,
+      metrics: {
+        results: parsed.itemCount,
+        serpFeatures: parsed.serpFeatures.length,
+        locationCode: row.locationCode,
+      },
+      costUsd: Number(row.costUsd),
+      sourceRef: row.id,
     });
   },
 

@@ -26,6 +26,7 @@
 
 import type { PlanType } from "@/generated/prisma";
 import { prisma } from "@/lib/prisma";
+import { recordResearch } from "@/lib/research-log/store";
 import { analysisAllowanceFor, dateBucket } from "./entitlement";
 import { creditBalance } from "./credits";
 import type { AnalysisEntitlement, AnalysisStep } from "./types";
@@ -296,7 +297,7 @@ export async function markCompleted(
   },
   now: Date = new Date(),
 ): Promise<void> {
-  await prisma.keywordOpportunityAnalysis.update({
+  const row = await prisma.keywordOpportunityAnalysis.update({
     where: { id: analysisId },
     data: {
       status: "COMPLETED",
@@ -310,6 +311,27 @@ export async function markCompleted(
       fundingSource: result.fundingSource,
       stoppedReason: result.stoppedReason ?? null,
     },
+    select: { id: true, tenantId: true, domain: true, costUsd: true },
+  });
+
+  // Research Log. HERE AND NOT IN createCacheHit: this is the branch that sets
+  // allowanceConsumed, i.e. the run the customer actually paid for. A cache hit
+  // is a second reader of THIS row, and logging it would make one purchase look
+  // like several in the panel that exists to show what has been bought.
+  // recordResearch never throws — see its header.
+  await recordResearch({
+    tenantId: row.tenantId,
+    feature: "keyword_opportunity",
+    target: row.domain,
+    metrics: {
+      keywords: result.keywordCount,
+      aiTested: result.aiTestedCount,
+      discovered: result.discoveredCount ?? result.keywordCount,
+      fundedBy: result.fundingSource,
+    },
+    costUsd: Number(row.costUsd),
+    sourceRef: row.id,
+    now,
   });
 }
 
