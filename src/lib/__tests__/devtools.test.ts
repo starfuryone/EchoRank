@@ -1,9 +1,23 @@
 // Developer features: API-key format/parsing (pure parts) + a full MCP
 // protocol roundtrip against mocked capabilities — no DB, no HTTP.
+//
+// The DEEPER MCP coverage — tenant isolation, revoked keys, output-schema
+// validation and the text-table snapshots — lives in tests/mcp-tools.test.ts
+// under vitest, which can mock Prisma. This suite stays the DB-less protocol
+// roundtrip and the three-catalog copy check, and runs under `node --test`.
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { __testing } from "../api-keys";
-import { handleMcpMessage, MCP_TOOLS, MCP_SERVER_INFO, type McpCapabilities } from "../mcp/handler";
+import {
+  handleMcpMessage,
+  MCP_TOOLS,
+  MCP_TOOL_NAMES,
+  MCP_WRITE_TOOLS,
+  MCP_SERVER_INFO,
+  type McpCapabilities,
+} from "../mcp/handler";
+import { missingInputSchemas } from "../mcp/schemas";
+import { missingOutputSchemas, orphanOutputSchemas } from "../mcp/output-schemas";
 import { API_ACCESS_COPY, MCP_SERVER_COPY } from "../i18n/dashboard";
 
 const LOCALES = ["en", "fr", "de-CH"] as const;
@@ -31,7 +45,19 @@ test("malformed keys are rejected by the parser", () => {
 
 // ─── MCP roundtrip ───────────────────────────────────────────────────────────
 
+// Every capability, because the interface is exhaustive by design: a tool
+// added to the catalog without a capability is a compile error here, which is
+// the cheapest possible place to find out.
 const caps: McpCapabilities = {
+  async whoami() {
+    return {
+      workspace: { name: "Mock Co", plan: "GROWTH" },
+      seoSearches: { used: 3, limit: 50, remaining: 47, unlimited: false, resetsAt: "2026-10-01T00:00:00.000Z" },
+      keywordOpportunity: { allowanceTotal: 5, allowanceUsed: 1, allowanceRemaining: 4, credits: 2 },
+      trackedKeywords: { used: 12, limit: 100 },
+      dataforseoSpend: { monthUsd: 1.5, capUsd: 25, remainingUsd: 23.5 },
+    };
+  },
   async suggestKeywords(url, depth) {
     return { url, depth, seed_keywords: [{ kw: "mock keyword" }] };
   },
@@ -40,6 +66,58 @@ const caps: McpCapabilities = {
   },
   async getVisibilitySummary() {
     return { prompts: { mentionRate: 42 } };
+  },
+  async getSerpCheck() {
+    return { found: false, check: null, note: "nothing stored" };
+  },
+  async startSerpCheck(args) {
+    return { id: "chk_1", keyword: String(args.keyword), status: "queued", cached: false };
+  },
+  async getRankTracker() {
+    return { projects: [], project: null, keywords: [], note: "no projects" };
+  },
+  async addRankTrackingKeywords(args) {
+    return {
+      projectId: String(args.projectId),
+      changed: args.keywords as string[],
+      ignored: [],
+      keywordCount: (args.keywords as string[]).length,
+      trackedKeywords: 12,
+      trackedKeywordLimit: 100,
+    };
+  },
+  async removeRankTrackingKeywords(args) {
+    return {
+      projectId: String(args.projectId),
+      changed: args.keywords as string[],
+      ignored: [],
+      keywordCount: 0,
+      trackedKeywords: 10,
+      trackedKeywordLimit: 100,
+    };
+  },
+  async getBacklinksOverview() {
+    return { found: false, analysis: null, referringDomains: [], anchors: [], pages: [], note: "none" };
+  },
+  async getDomainOverview() {
+    return { found: false, analysis: null, keywords: [], competitors: [], note: "none" };
+  },
+  async listKeywordOpportunities() {
+    return { found: false, analysis: null, opportunities: [], note: "none" };
+  },
+  async getGscQueries() {
+    return {
+      connected: false,
+      needsReauth: false,
+      property: null,
+      windowDays: 28,
+      lastSyncAt: null,
+      queries: [],
+      note: "not connected",
+    };
+  },
+  async getCrawlSummary() {
+    return { found: false, crawl: null, topIssues: [], note: "no crawl" };
   },
 };
 
@@ -60,15 +138,97 @@ test("mcp notifications/initialized returns 202 with no body", async () => {
   assert.equal(r.body, undefined);
 });
 
-test("mcp tools/list returns exactly the three read tools", async () => {
+test("mcp tools/list advertises the whole catalog, and nothing else", async () => {
   const r = await handleMcpMessage({ jsonrpc: "2.0", id: 2, method: "tools/list" }, caps);
-  const body = r.body as { result: { tools: { name: string }[] } };
+  const body = r.body as {
+    result: { tools: { name: string; annotations?: { readOnlyHint?: boolean } }[] };
+  };
   assert.deepEqual(
     body.result.tools.map((t) => t.name).sort(),
-    ["get_latest_audit", "get_visibility_summary", "suggest_keywords"],
+    [...MCP_TOOL_NAMES].sort(),
   );
-  // no aspirational tools: get_gsc_queries must NOT exist until GSC ships
-  assert.ok(!body.result.tools.some((t) => t.name === "get_gsc_queries"));
+
+  // get_gsc_queries was withheld until Search Console shipped. It has, so the
+  // tool exists — this assertion is the inverse of the one it replaced, and is
+  // kept as an assertion rather than deleted because "is it aspirational yet"
+  // is still the right question to ask of this list.
+  assert.ok(body.result.tools.some((t) => t.name === "get_gsc_queries"));
+
+  // Every tool declares its read/write posture on the wire. A tool with no
+  // annotation would show as read-only on the page while possibly spending.
+  for (const tool of body.result.tools) {
+    assert.equal(
+      typeof tool.annotations?.readOnlyHint,
+      "boolean",
+      `${tool.name} must declare readOnlyHint`,
+    );
+  }
+
+  // Exactly three tools may spend or mutate. Growing this set is a product
+  // decision, so it fails here first.
+  assert.deepEqual(
+    [...MCP_WRITE_TOOLS].sort(),
+    ["add_rank_tracking_keywords", "remove_rank_tracking_keywords", "start_serp_check"],
+  );
+});
+
+test("every tool has an input schema and an output schema", () => {
+  assert.deepEqual(missingInputSchemas(), []);
+  assert.deepEqual(missingOutputSchemas(), []);
+  assert.deepEqual(orphanOutputSchemas(), []);
+});
+
+test("whoami renders allowances as text, not just JSON", async () => {
+  const r = await handleMcpMessage(
+    { jsonrpc: "2.0", id: 20, method: "tools/call", params: { name: "whoami" } },
+    caps,
+  );
+  const body = r.body as {
+    result: {
+      content: { text: string }[];
+      structuredContent: { workspace: { name: string } };
+      isError?: boolean;
+    };
+  };
+  assert.ok(!body.result.isError);
+  const text = body.result.content[0].text;
+  assert.match(text, /Workspace: Mock Co/);
+  assert.match(text, /47 left/);
+  assert.match(text, /\$1\.50 of \$25\.00 cap/);
+  // structuredContent carries the same data for clients that read it.
+  assert.equal(body.result.structuredContent.workspace.name, "Mock Co");
+});
+
+test("bad tool arguments come back as a readable tool error", async () => {
+  const r = await handleMcpMessage(
+    {
+      jsonrpc: "2.0",
+      id: 21,
+      method: "tools/call",
+      params: { name: "start_serp_check", arguments: { keyword: "x", locationCode: 9999 } },
+    },
+    caps,
+  );
+  const body = r.body as { result: { isError?: boolean; content: { text: string }[] } };
+  assert.ok(body.result.isError);
+  assert.match(body.result.content[0].text, /locationCode/);
+});
+
+test("a drifted tool payload fails validation instead of shipping garbage", async () => {
+  const drifted: McpCapabilities = {
+    ...caps,
+    async getCrawlSummary() {
+      // `found` went missing in this imagined refactor.
+      return { crawl: null, topIssues: [] };
+    },
+  };
+  const r = await handleMcpMessage(
+    { jsonrpc: "2.0", id: 22, method: "tools/call", params: { name: "get_crawl_summary" } },
+    drifted,
+  );
+  const body = r.body as { result: { isError?: boolean; content: { text: string }[] } };
+  assert.ok(body.result.isError);
+  assert.match(body.result.content[0].text, /unexpected result shape for get_crawl_summary/);
 });
 
 test("mcp tools/call roundtrip: suggest_keywords returns text content", async () => {

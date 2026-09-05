@@ -10,7 +10,9 @@ import { Copy, Plug } from "lucide-react";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { MCP_TOOLS } from "@/lib/mcp/handler";
+// The CATALOG, not the protocol core: handler.ts pulls in zod and the
+// output-schema registry, neither of which belongs in a browser bundle.
+import { MCP_TOOLS } from "@/lib/mcp/tools";
 import {
   MCP_SERVER_COPY,
   SEO_TOOLS_COPY,
@@ -132,15 +134,31 @@ export function McpServerClient({
         </CardHeader>
         <CardContent className="p-0">
           <ul className="divide-y divide-gray-100">
-            {MCP_TOOLS.map((tool) => (
-              <li key={tool.name} className="px-6 py-3">
-                <code className="font-mono text-sm font-medium text-gray-900">{tool.name}</code>
-                <p className="mt-0.5 text-xs text-gray-500">
-                  {t.toolDescs[tool.name] ?? tool.description}
-                </p>
-              </li>
-            ))}
+            {MCP_TOOLS.map((tool) => {
+              // Derived from the wire annotation, never a second list here —
+              // a badge that disagreed with what the server tells clients
+              // would be worse than no badge at all.
+              const writes = tool.annotations?.readOnlyHint === false;
+              return (
+                <li key={tool.name} className="px-6 py-3">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <code className="font-mono text-sm font-medium text-gray-900">
+                      {tool.name}
+                    </code>
+                    <Badge variant={writes ? "warning" : "info"}>
+                      {writes ? t.toolsWritesBadge : t.toolsReadOnlyBadge}
+                    </Badge>
+                  </div>
+                  <p className="mt-0.5 text-xs text-gray-500">
+                    {t.toolDescs[tool.name] ?? tool.description}
+                  </p>
+                </li>
+              );
+            })}
           </ul>
+          <p className="border-t border-gray-100 px-6 py-3 text-xs text-gray-400">
+            {t.toolsSpendNote}
+          </p>
         </CardContent>
       </Card>
 
