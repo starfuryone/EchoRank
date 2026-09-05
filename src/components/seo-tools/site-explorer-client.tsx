@@ -19,7 +19,10 @@ import { SiteExplorerHelpButton } from "@/components/seo-tools/site-explorer-hel
 import { formatDateTime } from "@/lib/utils";
 import { isValidDomain } from "@/lib/site-explorer/domain";
 import { SCAFFOLD_RELATED } from "@/lib/seo-tools";
+import { ExportCsvButton } from "@/components/seo-tools/export-csv-button";
+import type { CsvColumn } from "@/lib/csv-export";
 import type {
+  DomainPageRow,
   RankedKeywordRow,
   SiteExplorerAnalysisDto,
   SiteExplorerHistoryRow,
@@ -279,6 +282,173 @@ function KeywordsTable({
 
 // ─── Page ───────────────────────────────────────────────────────────────────
 
+
+// ─── Keywords / Pages table pieces ──────────────────────────────────────────
+
+/**
+ * The filter toolbar.
+ *
+ * NO APPLY BUTTON AND NO COST WARNING, deliberately. Every field here filters
+ * rows the analysis already bought — there is no provider call to trigger and
+ * no allowance to spend, so an Apply button would be asking permission for
+ * nothing. Compare the Backlinks tool's toolbar, which has both, because there
+ * a filter really does re-ask the provider.
+ */
+function TableFilters({
+  tab,
+  filters,
+  onChange,
+  t,
+}: {
+  tab: "keywords" | "pages";
+  filters: Record<string, string>;
+  onChange: (next: Record<string, string>) => void;
+  t: SiteExplorerCopy;
+}) {
+  const set = (key: string, value: string) => onChange({ ...filters, [key]: value });
+
+  const fields =
+    tab === "pages"
+      ? [
+          { key: "q", label: t.filterUrl, type: "text" },
+          { key: "minKeywords", label: t.filterMinKeywords, type: "number" },
+          { key: "minTraffic", label: t.filterMinTraffic, type: "number" },
+        ]
+      : [
+          { key: "q", label: t.filterKeyword, type: "text" },
+          { key: "urlContains", label: t.filterUrl, type: "text" },
+          { key: "minVolume", label: t.filterMinVolume, type: "number" },
+          { key: "maxVolume", label: t.filterMaxVolume, type: "number" },
+          { key: "minPosition", label: t.filterMinPosition, type: "number" },
+          { key: "maxPosition", label: t.filterMaxPosition, type: "number" },
+        ];
+
+  const active = Object.values(filters).some((value) => value.trim().length > 0);
+
+  return (
+    <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {fields.map((field) => (
+          <label key={field.key} className="block">
+            <span className="mb-1 block text-xs font-medium text-gray-500">{field.label}</span>
+            <Input
+              type={field.type}
+              value={filters[field.key] ?? ""}
+              onChange={(e) => set(field.key, e.target.value)}
+            />
+          </label>
+        ))}
+      </div>
+      <div className="mt-3 flex flex-wrap items-center gap-3">
+        {active && (
+          <Button type="button" variant="outline" size="sm" onClick={() => onChange({})}>
+            {t.filterClear}
+          </Button>
+        )}
+        <span className="text-xs text-gray-400">{t.filterFree}</span>
+      </div>
+    </div>
+  );
+}
+
+/** The Pages tab's table. */
+function PagesTable({
+  rows,
+  t,
+  int,
+}: {
+  rows: DomainPageRow[];
+  t: SiteExplorerCopy;
+  int: Intl.NumberFormat;
+}) {
+  if (rows.length === 0) return <p className="text-sm text-gray-500">{t.emptyFiltered}</p>;
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b border-gray-200 text-left text-xs uppercase tracking-wide text-gray-400">
+            <th className="py-2 pr-3 font-semibold">{t.colUrl}</th>
+            <th className="w-28 py-2 pr-3 font-semibold">{t.colPageKeywords}</th>
+            <th className="w-28 py-2 pr-3 font-semibold">{t.colEtv}</th>
+            <th className="w-28 py-2 pr-3 font-semibold">{t.colTopPositions}</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-gray-100">
+          {rows.map((row) => (
+            <tr key={row.url}>
+              <td className="max-w-0 py-2 pr-3">
+                <a
+                  href={row.url}
+                  target="_blank"
+                  rel="nofollow noopener noreferrer"
+                  className="block truncate text-blue-600 hover:text-blue-700"
+                  title={row.url}
+                >
+                  {row.url}
+                </a>
+              </td>
+              <td className="py-2 pr-3 tabular-nums text-gray-600">
+                {int.format(row.keywordCount)}
+              </td>
+              <td className="py-2 pr-3 tabular-nums text-gray-600">{int.format(row.etv)}</td>
+              <td className="py-2 pr-3 tabular-nums text-gray-600">
+                {int.format(row.topPositions)}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+/** Previous / position / Next. */
+function Pager({
+  page,
+  totalPages,
+  onPage,
+  t,
+}: {
+  page: number;
+  totalPages: number;
+  onPage: (next: number) => void;
+  t: SiteExplorerCopy;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        disabled={page <= 1}
+        onClick={() => onPage(page - 1)}
+      >
+        {t.pagerPrevious}
+      </Button>
+      <span className="text-xs text-gray-500">{t.pagerPosition(page, totalPages)}</span>
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        disabled={page >= totalPages}
+        onClick={() => onPage(page + 1)}
+      >
+        {t.pagerNext}
+      </Button>
+    </div>
+  );
+}
+
+/** One page of either table, as the table route returns it. */
+interface TableResponse {
+  rows: unknown[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+  fetched: number;
+}
+
 export function SiteExplorerClient({ locale }: { locale: DashLocale }) {
   const t = SITE_EXPLORER_COPY[locale];
   const tools = SEO_TOOLS_COPY[locale];
@@ -289,6 +459,19 @@ export function SiteExplorerClient({ locale }: { locale: DashLocale }) {
   const [domain, setDomain] = useState("");
   const [analysis, setAnalysis] = useState<SiteExplorerAnalysisDto | null>(null);
   const [running, setRunning] = useState(false);
+
+  // ── The tables ───────────────────────────────────────────────────────────
+  // Server-side filter/sort/page over the STORED analysis. It is a fetch
+  // rather than client-side work because one analysis holds up to a thousand
+  // keyword rows and five hundred page rows — shipping all of that to the
+  // browser to slice it there would be a megabyte per page load, and the CSV
+  // export would then disagree with the table the moment the two drifted.
+  // Nothing here can spend: see the route's header.
+  const [tab, setTab] = useState<"keywords" | "pages">("keywords");
+  const [page, setPage] = useState(1);
+  const [tableFilters, setTableFilters] = useState<Record<string, string>>({});
+  const [table, setTable] = useState<TableResponse | null>(null);
+  const [tableLoading, setTableLoading] = useState(false);
   const [history, setHistory] = useState<HistoryResponse | null>(null);
   const [quotaLimit, setQuotaLimit] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -312,6 +495,64 @@ export function SiteExplorerClient({ locale }: { locale: DashLocale }) {
       cancelled = true;
     };
   }, [t, reloadToken]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    // Every state write happens inside this async function rather than in the
+    // effect body. Setting state synchronously during an effect is what
+    // react-hooks/set-state-in-effect flags, and the repo's lint baseline
+    // already carries nineteen of those — adding a twentieth is exactly what
+    // CLAUDE.md says not to do.
+    const load = async () => {
+      if (!analysis) {
+        if (!cancelled) setTable(null);
+        return;
+      }
+      if (!cancelled) setTableLoading(true);
+
+      const params = new URLSearchParams({ id: analysis.id, tab, page: String(page) });
+      for (const [key, value] of Object.entries(tableFilters)) {
+        if (value.trim()) params.set(key, value.trim());
+      }
+
+      try {
+        const res = await fetch(`${API}/table?${params.toString()}`);
+        const data = res.ok ? ((await res.json()) as TableResponse) : null;
+        if (!cancelled) setTable(data);
+      } catch {
+        if (!cancelled) setTable(null);
+      } finally {
+        if (!cancelled) setTableLoading(false);
+      }
+    };
+
+    void load();
+    return () => {
+      cancelled = true;
+    };
+  }, [analysis, tab, page, tableFilters]);
+
+  const keywordCsvColumns: CsvColumn<RankedKeywordRow>[] = useMemo(
+    () => [
+      { header: t.colKeyword, value: (row) => row.keyword },
+      { header: t.colPosition, value: (row) => row.position },
+      { header: t.colVolume, value: (row) => row.searchVolume },
+      { header: t.colEtv, value: (row) => row.etv },
+      { header: t.colUrl, value: (row) => row.url },
+    ],
+    [t],
+  );
+
+  const pageCsvColumns: CsvColumn<DomainPageRow>[] = useMemo(
+    () => [
+      { header: t.colUrl, value: (row) => row.url },
+      { header: t.colPageKeywords, value: (row) => row.keywordCount },
+      { header: t.colEtv, value: (row) => row.etv },
+      { header: t.colTopPositions, value: (row) => row.topPositions },
+    ],
+    [t],
+  );
 
   const trimmed = domain.trim();
   const valid = trimmed.length > 0 && isValidDomain(trimmed);
@@ -545,25 +786,105 @@ export function SiteExplorerClient({ locale }: { locale: DashLocale }) {
             )}
           </SectionCard>
 
-          {/* Top keywords */}
+          {/* Keywords and Pages, as tabs over one stored analysis.
+              EVERY interaction here — filter, sort, page, tab — is served from
+              rows already bought. No provider call, no allowance, no spinner
+              worth apologising for. See src/lib/site-explorer/pagination.ts. */}
           <SectionCard
-            title={t.keywordsTitle}
+            title={tab === "pages" ? t.pagesTitle : t.keywordsTitle}
             subtitle={
-              analysis?.rankedKeywords
-                ? `${t.keywordsSubtitle(
-                    analysis.rankedKeywords.items.length,
-                    analysis.rankedKeywords.totalCount,
-                  )} · ${t.sortHint}`
+              analysis
+                ? tab === "pages"
+                  ? t.pagesSubtitle(table?.total ?? 0, analysis.pages?.items.length ?? 0)
+                  : t.keywordsSubtitle(table?.total ?? 0, analysis.rankedKeywords?.totalCount ?? 0)
                 : undefined
             }
             icon={Search}
             loading={running}
-            failed={failed("rankedKeywords")}
+            failed={failed(tab === "pages" ? "pages" : "rankedKeywords")}
             skeletonRows={6}
             t={t}
           >
-            {analysis?.rankedKeywords && (
-              <KeywordsTable rows={analysis.rankedKeywords.items} t={t} int={int} />
+            {analysis && (
+              <div className="space-y-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="inline-flex rounded-lg border border-gray-300 p-0.5">
+                    {(["keywords", "pages"] as const).map((value) => (
+                      <button
+                        key={value}
+                        type="button"
+                        aria-pressed={tab === value}
+                        onClick={() => {
+                          setTab(value);
+                          // Page 1 on a tab change: page 7 of the keywords
+                          // table means nothing on the pages one.
+                          setPage(1);
+                        }}
+                        className={`rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
+                          tab === value
+                            ? "bg-blue-600 text-white"
+                            : "text-gray-600 hover:bg-gray-50"
+                        }`}
+                      >
+                        {value === "pages" ? t.tabPages : t.tabKeywords}
+                      </button>
+                    ))}
+                  </div>
+                  {/* One button per tab rather than one with a union of row
+                      types: CsvColumn<Row> is generic precisely so a column
+                      accessor is checked against the row it receives, and a
+                      cast to satisfy the union would throw that away. */}
+                  {table && table.rows.length > 0 && tab === "keywords" && (
+                    <ExportCsvButton
+                      rows={table.rows as RankedKeywordRow[]}
+                      columns={keywordCsvColumns}
+                      tool="site-explorer"
+                      label={t.exportCsv}
+                    />
+                  )}
+                  {table && table.rows.length > 0 && tab === "pages" && (
+                    <ExportCsvButton
+                      rows={table.rows as DomainPageRow[]}
+                      columns={pageCsvColumns}
+                      tool="site-explorer"
+                      label={t.exportCsv}
+                    />
+                  )}
+                </div>
+
+                <TableFilters
+                  tab={tab}
+                  filters={tableFilters}
+                  onChange={(next) => {
+                    setTableFilters(next);
+                    // Narrowing while on page 9 would otherwise show an empty
+                    // table; paginate() clamps, and resetting is clearer still.
+                    setPage(1);
+                  }}
+                  t={t}
+                />
+
+                {tableLoading ? (
+                  <p className="py-6 text-center text-sm text-gray-500">{t.analyzing}</p>
+                ) : tab === "pages" ? (
+                  <PagesTable rows={(table?.rows ?? []) as DomainPageRow[]} t={t} int={int} />
+                ) : (
+                  <KeywordsTable
+                    rows={(table?.rows ?? []) as RankedKeywordRow[]}
+                    t={t}
+                    int={int}
+                  />
+                )}
+
+                {table && table.totalPages > 1 && (
+                  <Pager
+                    page={table.page}
+                    totalPages={table.totalPages}
+                    onPage={setPage}
+                    t={t}
+                  />
+                )}
+              </div>
             )}
           </SectionCard>
 

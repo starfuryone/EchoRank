@@ -10,6 +10,8 @@ export const SITE_EXPLORER_SECTIONS = [
   "rankedKeywords",
   "competitors",
   "backlinks",
+  /** The Pages tab: which pages on the domain earn the organic traffic. */
+  "pages",
 ] as const;
 
 export type SiteExplorerSection = (typeof SITE_EXPLORER_SECTIONS)[number];
@@ -52,6 +54,23 @@ export interface RankedKeywordsSection {
   totalCount: number;
 }
 
+/** One row of the Pages tab — a page on the target and what it earns. */
+export interface DomainPageRow {
+  url: string;
+  /** Keywords this page ranks for in the top 100. */
+  keywordCount: number;
+  /** Estimated monthly organic traffic to this page. */
+  etv: number;
+  /** How many of its keywords sit at position 1. */
+  topPositions: number;
+}
+
+export interface DomainPagesSection {
+  items: DomainPageRow[];
+  /** DataForSEO's total for the domain, far larger than `items`. */
+  totalCount: number;
+}
+
 /** One row of the competitors table. */
 export interface CompetitorRow {
   domain: string;
@@ -89,6 +108,7 @@ export interface SiteExplorerAnalysisDto {
   rankedKeywords: RankedKeywordsSection | null;
   competitors: CompetitorsSection | null;
   backlinks: BacklinksSection | null;
+  pages: DomainPagesSection | null;
   /** Section keys that did not load. Each renders its own "couldn't load" card. */
   failedSections: SiteExplorerSection[];
   createdAt: string;

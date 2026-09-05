@@ -12,10 +12,12 @@ import type {
   CompetitorsDomainItem,
   DomainRankOverviewItem,
   RankedKeywordItem,
+  RelevantPageItem,
 } from "@/lib/dataforseo/endpoints";
 import type {
   CompetitorRow,
   CompetitorsSection,
+  DomainPagesSection,
   OverviewSection,
   RankedKeywordRow,
   RankedKeywordsSection,
@@ -118,3 +120,32 @@ export function parseCompetitors(
  * module's public surface stable.
  */
 export { parseBacklinksSummary as parseBacklinks } from "@/lib/dataforseo/backlinks-summary";
+
+
+/**
+ * relevant_pages -> the Pages tab.
+ *
+ * The metrics sit under `metrics.organic`, a level below the item — the same
+ * nesting that makes DomainRankOverviewItem easy to misread. A parser written
+ * against the item root reads undefined from every field and the tab renders a
+ * page list where every number is 0, which looks like a site with no traffic
+ * rather than like a bug.
+ */
+export function parseDomainPages(
+  raw: { items?: RelevantPageItem[]; total_count?: number }[],
+): DomainPagesSection {
+  const first = raw?.[0];
+  const items = Array.isArray(first?.items) ? first.items : [];
+
+  return {
+    items: items
+      .filter((item) => typeof item?.page_address === "string" && item.page_address.length > 0)
+      .map((item) => ({
+        url: item.page_address as string,
+        keywordCount: num(item.metrics?.organic?.count),
+        etv: num(item.metrics?.organic?.etv),
+        topPositions: num(item.metrics?.organic?.pos_1),
+      })),
+    totalCount: num(first?.total_count),
+  };
+}

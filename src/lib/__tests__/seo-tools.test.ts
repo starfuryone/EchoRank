@@ -366,6 +366,7 @@ import {
   SITE_EXPLORER_ANALYSES_PER_MONTH,
   SITE_EXPLORER_CACHE_TTL_MS,
   RANKED_KEYWORDS_LIMIT,
+  RELEVANT_PAGES_LIMIT,
   COMPETITORS_LIMIT,
   DEFAULT_LOCATION_CODE as SE_DEFAULT_LOCATION_CODE,
   DEFAULT_LANGUAGE_CODE as SE_DEFAULT_LANGUAGE_CODE,
@@ -435,11 +436,21 @@ test("site explorer defaults match the keywords/overview route", () => {
   assert.equal(SE_DEFAULT_LANGUAGE_CODE, "en");
 });
 
-test("cost levers are the specified caps: 100 keywords, 20 competitors, 24 h cache", () => {
-  // ranked_keywords is billed per row returned, so this limit IS the price.
-  assert.equal(RANKED_KEYWORDS_LIMIT, 100);
+test("cost levers: a wide keyword fetch, once a week", () => {
+  // ranked_keywords and relevant_pages are billed per row returned, so these
+  // limits ARE the price of an analysis.
+  //
+  // RANKED_KEYWORDS_LIMIT WAS 100 AND IS NOW 1000 (2026-09-05). With filtering
+  // and paging on the Keywords tab, narrowing over a hundred rows narrows a
+  // SAMPLE rather than the site. One wide fetch makes every subsequent filter,
+  // sort and page free — no allowance, no provider call — and it is paid once
+  // per domain per week, shared across tenants.
+  assert.equal(RANKED_KEYWORDS_LIMIT, 1000);
+  assert.equal(RELEVANT_PAGES_LIMIT, 500);
   assert.equal(COMPETITORS_LIMIT, 20);
-  assert.equal(SITE_EXPLORER_CACHE_TTL_MS, 24 * 60 * 60 * 1000);
+  // And the window widened to seven days in the same change, which is what
+  // pays for the wider fetch. "Re-run available in 21h" became "in 6 days".
+  assert.equal(SITE_EXPLORER_CACHE_TTL_MS, 7 * 24 * 60 * 60 * 1000);
 });
 
 test("every plan has a monthly analysis limit, ordered by tier", () => {
@@ -453,12 +464,14 @@ test("every plan has a monthly analysis limit, ordered by tier", () => {
   assert.ok(SITE_EXPLORER_ANALYSES_PER_MONTH.ENTERPRISE >= SITE_EXPLORER_ANALYSES_PER_MONTH.AGENCY);
 });
 
-test("the four sections are the four cards the page renders", () => {
+test("the sections are the cards the page renders", () => {
   assert.deepEqual([...SITE_EXPLORER_SECTIONS], [
     "overview",
     "rankedKeywords",
     "competitors",
     "backlinks",
+    // The Pages tab: which pages earn the traffic the Keywords tab counts.
+    "pages",
   ]);
 });
 

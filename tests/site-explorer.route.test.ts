@@ -187,9 +187,25 @@ const ENVELOPES: Record<string, { data: unknown; billing: { path: string[]; cost
     ],
     billing: { path: ["v3", "backlinks", "summary", "live"], costUsd: 0.005 },
   },
+  // The Pages tab. relevant_pages nests its metrics under metrics.organic —
+  // a level below the item, like domain_rank_overview.
+  "v3/dataforseo_labs/google/relevant_pages/live": {
+    data: [
+      {
+        total_count: 640,
+        items: [
+          {
+            page_address: "https://example.com/pricing",
+            metrics: { organic: { count: 42, etv: 900.4, pos_1: 3 } },
+          },
+        ],
+      },
+    ],
+    billing: { path: ["v3", "dataforseo_labs", "google", "relevant_pages", "live"], costUsd: 0.008 },
+  },
 };
 
-const TOTAL_COST = 0.02 + 0.011 + 0.014 + 0.005;
+const TOTAL_COST = 0.02 + 0.011 + 0.014 + 0.005 + 0.008;
 
 beforeEach(() => {
   redisStore.clear();
@@ -338,7 +354,7 @@ describe("domain normalization happens before any spend", () => {
 
 // ─── Cache ──────────────────────────────────────────────────────────────────
 
-describe("24 h cache", () => {
+describe("the 7-day cache", () => {
   it("returns the stored analysis without any upstream call or quota spend", async () => {
     const threeHoursAgo = new Date(Date.now() - 3 * 60 * 60 * 1000);
     siteExplorerAnalysis.findFirst.mockResolvedValue(row({ createdAt: threeHoursAgo }));
@@ -353,10 +369,12 @@ describe("24 h cache", () => {
     expect(siteExplorerAnalysis.create).not.toHaveBeenCalled();
     expect(redis.incr).not.toHaveBeenCalled();
 
-    // ~21 h left of the 24 h window — what the UI renders as "Re-run in 21h".
+    // THE WINDOW WIDENED FROM 24 HOURS TO 7 DAYS (2026-09-05), which is what
+    // pays for the ten-times-wider keyword fetch. The user-visible cost is
+    // this number: "Re-run in 21h" became "in 6 days".
     const hoursLeft = body.analysis.reRunAvailableInMs / 3_600_000;
-    expect(hoursLeft).toBeGreaterThan(20.9);
-    expect(hoursLeft).toBeLessThanOrEqual(21);
+    expect(hoursLeft).toBeGreaterThan(7 * 24 - 3.1);
+    expect(hoursLeft).toBeLessThanOrEqual(7 * 24 - 3);
   });
 
   it("keys the lookup on tenant + domain + location + language, inside the window", async () => {
@@ -375,18 +393,20 @@ describe("24 h cache", () => {
 
 // ─── The run itself ─────────────────────────────────────────────────────────
 
-describe("a cache miss runs four live calls and persists one row", () => {
-  it("calls all four endpoints in order and sums the billed cost", async () => {
+describe("a cache miss runs five live calls and persists one row", () => {
+  it("calls all five endpoints in order and sums the billed cost", async () => {
     const res = await POST(postRequest({ domain: "example.com" }));
     const body = await res.json();
 
     expect(res.status).toBe(200);
-    expect(seoMeteredCallResult).toHaveBeenCalledTimes(4);
+    expect(seoMeteredCallResult).toHaveBeenCalledTimes(5);
     expect(seoMeteredCallResult.mock.calls.map((c) => c[1])).toEqual([
       "v3/dataforseo_labs/google/domain_rank_overview/live",
       "v3/dataforseo_labs/google/ranked_keywords/live",
       "v3/dataforseo_labs/google/competitors_domain/live",
       "v3/backlinks/summary/live",
+      // The Pages tab — which pages earn the traffic the Keywords tab counts.
+      "v3/dataforseo_labs/google/relevant_pages/live",
     ]);
 
     const data = siteExplorerAnalysis.create.mock.calls[0][0].data;
@@ -397,12 +417,18 @@ describe("a cache miss runs four live calls and persists one row", () => {
     expect(body.usage.limit).toBe(SITE_EXPLORER_ANALYSES_PER_MONTH.STARTER);
   });
 
-  it("requests 100 keyword rows and 20 competitors — the cost levers", async () => {
+  it("requests a wide keyword set — the cost lever, deliberately raised", async () => {
     await POST(postRequest({ domain: "example.com" }));
     const tasks = Object.fromEntries(
       seoMeteredCallResult.mock.calls.map((c) => [c[1] as string, c[2] as Record<string, unknown>]),
     );
-    expect(tasks["v3/dataforseo_labs/google/ranked_keywords/live"].limit).toBe(100);
+    // WAS 100. With filtering and paging on the Keywords tab, narrowing over a
+    // hundred rows narrows a sample rather than the site. One wide fetch makes
+    // every subsequent filter, sort and page free — and it is paid once per
+    // domain per WEEK, shared across tenants. This endpoint bills per row, so
+    // the number IS the price: pinned here.
+    expect(tasks["v3/dataforseo_labs/google/ranked_keywords/live"].limit).toBe(1000);
+    expect(tasks["v3/dataforseo_labs/google/relevant_pages/live"].limit).toBe(500);
     expect(tasks["v3/dataforseo_labs/google/competitors_domain/live"].limit).toBe(20);
   });
 
@@ -442,7 +468,7 @@ describe("a cache miss runs four live calls and persists one row", () => {
 // ─── Partial failure ────────────────────────────────────────────────────────
 
 describe("partial failure", () => {
-  it("keeps the three good sections, flags the failed one, and still charges once", async () => {
+  it("keeps the four good sections, flags the failed one, and still charges once", async () => {
     seoMeteredCallResult.mockImplementation(async (_tenantId: string, path: string) => {
       if (path === "v3/backlinks/summary/live") throw new Error("upstream 502");
       return ENVELOPES[path];
@@ -458,6 +484,7 @@ describe("partial failure", () => {
     expect(data.overview).toBeTruthy();
     expect(data.rankedKeywords).toBeTruthy();
     expect(data.competitors).toBeTruthy();
+    expect(data.pages).toBeTruthy();
     expect(data.backlinks).toBeUndefined();
     // Cost is the sum of what actually came back, not the full four.
     expect(data.costUsd).toBeCloseTo(TOTAL_COST - 0.005, 6);

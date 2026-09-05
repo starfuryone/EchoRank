@@ -4,10 +4,25 @@
 // the tests.
 //
 // Order of operations matters and is deliberate:
-//   1. 24 h cache      — free, and never touches the monthly allowance
-//   2. monthly quota   — Redis reservation, rolled back if nothing was billed
-//   3. four live calls — sequential, each metered (USD cap inside seoMeteredCall)
-//   4. persist row     — status=completed, or partial when a section failed
+//   1. stored row      — free; this tenant already ran this exact analysis
+//   2. SPACES cache    — free; ANOTHER tenant already bought this week's answer
+//   3. monthly quota   — Redis reservation, rolled back if nothing was billed
+//   4. five live calls — sequential, each metered (USD cap inside seoMeteredCall)
+//   5. persist row     — status=completed, or partial when a section failed
+//
+// ── ONE WIDE FETCH, THEN EVERY QUESTION IS FREE ────────────────────────────
+// The keyword and page sets are fetched wide (1000 and 500 rows) and stored.
+// The Keywords and Pages tabs then filter, sort and page over THOSE rows —
+// server-side, but with no provider call and no allowance. That is the whole
+// bargain of this tool, and it is the opposite of the one Backlinks makes; the
+// reasoning for the difference is in ./pagination.ts.
+//
+// ── THE SHARED CACHE ───────────────────────────────────────────────────────
+// A domain's organic footprint is a fact about the public web, not about who
+// asked, so the payload is cached under a tenant-free key and one workspace's
+// purchase answers another's question. The METERING stays per-tenant: a hit
+// consumes no allowance from anyone, and a miss bills only the tenant whose
+// request paid for it.
 //
 // All four endpoints are LIVE mode: DataForSEO's Labs and Backlinks families
 // have no standard queue, so there is nothing to poll and no worker. Each call
@@ -27,16 +42,26 @@ import {
   type CompetitorsDomainItem,
   type DomainRankOverviewItem,
   type RankedKeywordItem,
+  type RelevantPageItem,
 } from "@/lib/dataforseo/endpoints";
 import { seoMeteredCallResult } from "@/lib/dataforseo/metering";
+import { cacheKey, dateBucket, readCache, writeCache } from "@/lib/spaces-cache";
 import { recordResearch } from "@/lib/research-log/store";
 import { backlinksSummaryTask } from "@/lib/dataforseo/backlinks-summary";
-import { parseBacklinks, parseCompetitors, parseOverview, parseRankedKeywords } from "./parse";
+import {
+  parseBacklinks,
+  parseCompetitors,
+  parseDomainPages,
+  parseOverview,
+  parseRankedKeywords,
+} from "./parse";
 import {
   COMPETITORS_LIMIT,
   DEFAULT_LANGUAGE_CODE,
   DEFAULT_LOCATION_CODE,
   RANKED_KEYWORDS_LIMIT,
+  RELEVANT_PAGES_LIMIT,
+  SITE_EXPLORER_CACHE_DAYS,
   SITE_EXPLORER_CACHE_TTL_MS,
 } from "./options";
 import {
@@ -47,6 +72,7 @@ import {
 import type {
   BacklinksSection,
   CompetitorsSection,
+  DomainPagesSection,
   OverviewSection,
   RankedKeywordsSection,
   SiteExplorerAnalysisDto,
@@ -92,6 +118,7 @@ export function toAnalysisDto(
     rankedKeywords: (row.rankedKeywords as RankedKeywordsSection | null) ?? null,
     competitors: (row.competitors as CompetitorsSection | null) ?? null,
     backlinks: (row.backlinks as BacklinksSection | null) ?? null,
+    pages: (row.pages as DomainPagesSection | null) ?? null,
     failedSections: Array.isArray(row.failedSections)
       ? (row.failedSections as SiteExplorerSection[])
       : [],
@@ -107,6 +134,33 @@ export function toAnalysisDto(
   }
 
   return dto;
+}
+
+/**
+ * The shared Spaces key for this analysis.
+ *
+ * NO TENANT ID, and the market IS in the scope segment: the same domain asked
+ * about from Canada and from the United States is a different answer, and a
+ * key that dropped the market would serve one as the other.
+ */
+export function siteExplorerCacheKey(params: SiteExplorerParams, now = new Date()): string {
+  return cacheKey({
+    feature: "site-explorer",
+    version: "v1",
+    scope: `${params.locationCode}-${params.languageCode}`,
+    target: params.domain,
+    dateBucket: dateBucket(SITE_EXPLORER_CACHE_DAYS, now),
+  });
+}
+
+/** What lands in Spaces: the parsed sections, not the raw envelopes. */
+interface CachedSiteExplorerPayload {
+  overview: OverviewSection | null;
+  rankedKeywords: RankedKeywordsSection | null;
+  competitors: CompetitorsSection | null;
+  backlinks: BacklinksSection | null;
+  pages: DomainPagesSection | null;
+  failedSections: SiteExplorerSection[];
 }
 
 /** Newest analysis for this exact target inside the cache window. */
@@ -172,6 +226,50 @@ export async function runAnalysis(
     return { analysis: toAnalysisDto(cached, { cached: true }), cached: true };
   }
 
+  // The SHARED cache, still before the allowance. Another tenant may already
+  // have bought this week's payload; serving it costs this tenant nothing.
+  // readCache never throws — an unreachable cache is a miss.
+  const shared = await readCache<CachedSiteExplorerPayload>(siteExplorerCacheKey(params));
+  if (shared) {
+    const row = await prisma.siteExplorerAnalysis.create({
+      data: {
+        tenantId,
+        domain: params.domain,
+        locationCode: params.locationCode,
+        languageCode: params.languageCode,
+        status: shared.failedSections.length > 0 ? "partial" : "completed",
+        // Zero, because nobody was billed for this one. The tenant gets a
+        // result and the ledger says what actually happened.
+        costUsd: 0,
+        overview: (shared.overview as object) ?? undefined,
+        rankedKeywords: (shared.rankedKeywords as object) ?? undefined,
+        competitors: (shared.competitors as object) ?? undefined,
+        backlinks: (shared.backlinks as object) ?? undefined,
+        pages: (shared.pages as object) ?? undefined,
+        failedSections: shared.failedSections,
+      },
+    });
+    await recordResearch({
+      tenantId,
+      feature: "domain_overview",
+      target: params.domain,
+      metrics: {
+        locationCode: params.locationCode,
+        languageCode: params.languageCode,
+        keywords: shared.overview?.keywordCount ?? 0,
+        etv: Math.round(shared.overview?.etv ?? 0),
+        failedSections: shared.failedSections.length,
+        sharedCache: 1,
+      },
+      costUsd: 0,
+      sourceRef: row.id,
+    });
+    console.info(
+      `[site-explorer] tenant=${tenantId} domain=${params.domain} SHARED-CACHE-HIT cost=$0`,
+    );
+    return { analysis: toAnalysisDto(row), cached: true };
+  }
+
   // Pooled monthly search quota (Postgres). Runs alongside the per-tool
   // reservation below and the USD cap inside the metered call — any of the
   // three can deny. Placed after the cache check on purpose: serving a
@@ -231,7 +329,21 @@ export async function runAnalysis(
     parseBacklinks,
   );
 
-  const sections = { overview, rankedKeywords, competitors, backlinks };
+  // The Pages tab. relevant_pages answers "which pages earn the traffic",
+  // which is the question the Keywords tab leaves open: a customer looking at
+  // 1,000 ranked keywords wants to know which twenty pages they belong to.
+  const pages = await section<
+    { items?: RelevantPageItem[]; total_count?: number }[],
+    DomainPagesSection
+  >(
+    "pages",
+    tenantId,
+    LABS.relevantPages,
+    { target: params.domain, ...loc, limit: RELEVANT_PAGES_LIMIT },
+    parseDomainPages,
+  );
+
+  const sections = { overview, rankedKeywords, competitors, backlinks, pages };
   const failedSections = (Object.keys(sections) as SiteExplorerSection[]).filter(
     (key) => sections[key] === null,
   );
@@ -265,6 +377,7 @@ export async function runAnalysis(
       rankedKeywords: (rankedKeywords?.payload as object) ?? undefined,
       competitors: (competitors?.payload as object) ?? undefined,
       backlinks: (backlinks?.payload as object) ?? undefined,
+      pages: (pages?.payload as object) ?? undefined,
       failedSections,
     },
   });
@@ -287,6 +400,22 @@ export async function runAnalysis(
     costUsd,
     sourceRef: row.id,
   });
+
+  // Share the payload. Fire-and-forget: writeCache never throws, and the
+  // customer already has their answer, so a slow Spaces write must not sit on
+  // their critical path. A PARTIAL analysis is not shared — the next tenant
+  // would receive missing sections at cost 0 with no way to tell them from
+  // genuinely empty ones, the same trap the Backlinks tier split avoids.
+  if (failedSections.length === 0) {
+    void writeCache(siteExplorerCacheKey(params), {
+      overview: overview?.payload ?? null,
+      rankedKeywords: rankedKeywords?.payload ?? null,
+      competitors: competitors?.payload ?? null,
+      backlinks: backlinks?.payload ?? null,
+      pages: pages?.payload ?? null,
+      failedSections,
+    } satisfies CachedSiteExplorerPayload);
+  }
 
   console.info(
     `[site-explorer] tenant=${tenantId} domain=${params.domain} ` +

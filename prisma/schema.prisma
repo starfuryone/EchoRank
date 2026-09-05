@@ -1714,9 +1714,16 @@ model SiteExplorerAnalysis {
   status         String   @default("completed") // completed | partial
   costUsd        Decimal  @default(0) @db.Decimal(10, 6)
   overview       Json? // OverviewSection — traffic, keyword count, rank spread
-  rankedKeywords Json? // RankedKeywordsSection — top 100 rows
+  /// RankedKeywordsSection. UP TO 1000 ROWS since 2026-09-05 — the Keywords
+  /// tab filters, sorts and pages over what is stored here rather than
+  /// re-asking the provider, so the row has to be worth paging through. See
+  /// src/lib/site-explorer/pagination.ts.
+  rankedKeywords Json?
   competitors    Json? // CompetitorsSection — top 20 rows
   backlinks      Json? // BacklinksSection — link profile headline metrics
+  /// DomainPagesSection — which pages earn the organic traffic. NULL on rows
+  /// written before the Pages tab existed, which is "not fetched", not "none".
+  pages          Json?
   failedSections Json? // string[] of section keys that did not load
   createdAt      DateTime @default(now())
 
