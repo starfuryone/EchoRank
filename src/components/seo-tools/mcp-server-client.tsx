@@ -6,7 +6,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Copy, Plug } from "lucide-react";
+import { Copy, Plug, BookOpen } from "lucide-react";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,7 @@ import {
 } from "@/lib/i18n/dashboard";
 
 const MCP_URL = "https://echorank360.com/api/public/v1/mcp";
+const SKILLS_BASE = "https://echorank360.com/api/public/v1/skills";
 const PLACEHOLDER = "er_api_YOUR_KEY";
 
 const CLAUDE_CODE_CMD = `claude mcp add --transport http echorank360 ${MCP_URL} --header "Authorization: Bearer ${PLACEHOLDER}"`;
@@ -35,6 +36,23 @@ const MCP_REMOTE_JSON = `{
     }
   }
 }`;
+
+/**
+ * One command that fetches the whole pack into the layout Claude Code and the
+ * other agent runners already look in.
+ *
+ * Written out per skill rather than looped in shell: a reader has to be able to
+ * see exactly which files land where before pasting a command into their
+ * terminal, and a `for` loop over a JSON index hides that.
+ */
+function skillsFetchCommand(skills: AgentSkillSummary[]): string {
+  return skills
+    .map(
+      (skill) =>
+        `mkdir -p .agents/skills/${skill.slug} && curl -sL ${SKILLS_BASE}/${skill.slug} -o .agents/skills/${skill.slug}/SKILL.md`,
+    )
+    .join("\n");
+}
 
 function Snippet({
   id,
@@ -66,12 +84,21 @@ function Snippet({
   );
 }
 
+/** {name, description} only — the bodies stay on the server. */
+export interface AgentSkillSummary {
+  slug: string;
+  name: string;
+  description: string;
+}
+
 export function McpServerClient({
   locale,
   activeKeys,
+  skills,
 }: {
   locale: DashLocale;
   activeKeys: number;
+  skills: AgentSkillSummary[];
 }) {
   const t = MCP_SERVER_COPY[locale];
   const it = SEO_TOOLS_COPY[locale].items.mcp_server;
@@ -181,6 +208,68 @@ export function McpServerClient({
             <Snippet id="desktop" text={MCP_REMOTE_JSON} copied={copied} copyLabel={t.copy} copiedLabel={t.copied} onCopy={copyText} />
           </div>
           <p className="text-xs text-gray-400">{t.securityNote}</p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <BookOpen className="h-4 w-4 text-gray-400" aria-hidden="true" />
+            <h3 className="text-base font-semibold text-gray-900">{t.skillsTitle}</h3>
+          </div>
+          <p className="mt-1 text-sm text-gray-500">{t.skillsIntro}</p>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {skills.length === 0 ? (
+            <p className="text-sm text-gray-500">{t.skillsEmpty}</p>
+          ) : (
+            <>
+              <ul className="divide-y divide-gray-100 overflow-hidden rounded-lg border border-gray-200">
+                {skills.map((skill) => {
+                  const url = `${SKILLS_BASE}/${skill.slug}`;
+                  return (
+                    <li key={skill.slug} className="px-4 py-3">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <code className="font-mono text-sm font-medium text-gray-900">
+                          {skill.name}
+                        </code>
+                        <div className="flex items-center gap-2">
+                          <a
+                            href={url}
+                            className="text-xs font-medium text-blue-600 hover:text-blue-700"
+                          >
+                            {t.skillsDownload}
+                          </a>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => copyText(`skill-${skill.slug}`, url)}
+                          >
+                            <Copy className="mr-1.5 h-3.5 w-3.5" />
+                            {copied === `skill-${skill.slug}` ? t.copied : t.copy}
+                          </Button>
+                        </div>
+                      </div>
+                      <p className="mt-0.5 text-xs text-gray-500">{skill.description}</p>
+                    </li>
+                  );
+                })}
+              </ul>
+              <div>
+                <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-400">
+                  {t.skillsInstallLabel}
+                </p>
+                <Snippet
+                  id="skills-fetch"
+                  text={skillsFetchCommand(skills)}
+                  copied={copied}
+                  copyLabel={t.copy}
+                  copiedLabel={t.copied}
+                  onCopy={copyText}
+                />
+              </div>
+            </>
+          )}
         </CardContent>
       </Card>
     </div>

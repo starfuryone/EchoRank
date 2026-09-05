@@ -7248,6 +7248,12 @@ const mcpServerEn = {
   copied: "Copied",
   securityNote:
     "The server is read-only, scoped to your workspace, and rate-limited per key. Revoking the key disconnects every client using it.",
+  skillsTitle: "Agent skills",
+  skillsIntro:
+    "Ready-made workflows for coding agents. Each one is a markdown file that tells the agent which Echorank tools to use, in what order, and what to do with the results — including checking what you have already paid for before it spends anything.",
+  skillsInstallLabel: "Save it next to your agent, or fetch it:",
+  skillsDownload: "Open",
+  skillsEmpty: "No skills are available on this deployment.",
 };
 export type McpServerCopy = typeof mcpServerEn;
 
@@ -7290,6 +7296,12 @@ export const MCP_SERVER_COPY: Record<DashLocale, McpServerCopy> = {
     copied: "Copié",
     securityNote:
       "Le serveur est en lecture seule, limité à votre espace de travail et à un débit par clé. Révoquer la clé déconnecte tous les clients qui l'utilisent.",
+    skillsTitle: "Compétences pour agents",
+    skillsIntro:
+      "Des procédures prêtes à l'emploi pour les agents de développement. Chacune est un fichier markdown qui indique à l'agent quels outils Echorank utiliser, dans quel ordre et quoi faire des résultats — y compris vérifier ce que vous avez déjà payé avant toute dépense.",
+    skillsInstallLabel: "Enregistrez-la auprès de votre agent, ou récupérez-la :",
+    skillsDownload: "Ouvrir",
+    skillsEmpty: "Aucune compétence n'est disponible sur ce déploiement.",
   },
   "de-CH": {
     intro:
@@ -7328,6 +7340,12 @@ export const MCP_SERVER_COPY: Record<DashLocale, McpServerCopy> = {
     copied: "Kopiert",
     securityNote:
       "Der Server ist schreibgeschützt, auf Ihren Arbeitsbereich beschränkt und pro Schlüssel ratenlimitiert. Das Widerrufen des Schlüssels trennt alle Clients, die ihn verwenden.",
+    skillsTitle: "Agenten-Skills",
+    skillsIntro:
+      "Fertige Arbeitsabläufe für Coding-Agenten. Jeder ist eine Markdown-Datei, die dem Agenten sagt, welche Echorank-Tools er in welcher Reihenfolge nutzt und was er mit den Ergebnissen tut — einschliesslich der Prüfung, was Sie bereits bezahlt haben, bevor er etwas ausgibt.",
+    skillsInstallLabel: "Legen Sie sie zu Ihrem Agenten, oder rufen Sie sie ab:",
+    skillsDownload: "Öffnen",
+    skillsEmpty: "Auf dieser Installation sind keine Skills verfügbar.",
   },
 };
 
