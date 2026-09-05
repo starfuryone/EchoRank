@@ -5530,9 +5530,14 @@ const seoToolsEn = {
       name: "MCP Server",
       description: "Connect Claude and other AI assistants to your Echorank360 data via the Model Context Protocol.",
     },
+    ai_citations: {
+      name: "AI Citations",
+      description: "See which pages ChatGPT and Google's AI cite about your brand, and your share of voice against rivals.",
+    },
   } satisfies Record<SeoToolId, { name: string; description: string }>,
   scaffolds: {
     serp_checker: { cta: "Check a SERP", related: "Find keywords to check →" },
+    ai_citations: { cta: "Look up AI citations", related: "See who our own watcher found →" },
     backlinks: { cta: "Analyze backlinks" },
     lighthouse: { cta: "Run a Lighthouse audit", related: "Open Site Audit →" },
     site_explorer: { cta: "Analyze a domain", related: "Open competitor intelligence →" },
@@ -5724,9 +5729,14 @@ export const SEO_TOOLS_COPY: Record<DashLocale, SeoToolsCopy> = {
         name: "Serveur MCP",
         description: "Connectez Claude et d'autres assistants IA à vos données Echorank360 via le Model Context Protocol.",
       },
+      ai_citations: {
+        name: "Citations IA",
+        description: "Voyez quelles pages ChatGPT et l'IA de Google citent à propos de votre marque, et votre part de voix face aux concurrents.",
+      },
     },
     scaffolds: {
       serp_checker: { cta: "Vérifier une SERP", related: "Trouver des mots-clés à vérifier →" },
+      ai_citations: { cta: "Rechercher les citations IA", related: "Voir ce que notre propre veille a trouvé →" },
       backlinks: { cta: "Analyser les liens retour" },
       lighthouse: { cta: "Lancer un audit Lighthouse", related: "Ouvrir l'audit de site →" },
       site_explorer: { cta: "Analyser un domaine", related: "Ouvrir l'intelligence concurrentielle →" },
@@ -5913,9 +5923,14 @@ export const SEO_TOOLS_COPY: Record<DashLocale, SeoToolsCopy> = {
         name: "MCP-Server",
         description: "Verbinden Sie Claude und andere KI-Assistenten über das Model Context Protocol mit Ihren Echorank360-Daten.",
       },
+      ai_citations: {
+        name: "KI-Zitate",
+        description: "Sehen Sie, welche Seiten ChatGPT und die Google-KI über Ihre Marke zitieren — und Ihren Share of Voice gegenüber Mitbewerbern.",
+      },
     },
     scaffolds: {
       serp_checker: { cta: "SERP prüfen", related: "Keywords zum Prüfen finden →" },
+      ai_citations: { cta: "KI-Zitate nachschlagen", related: "Sehen, was unsere eigene Überwachung fand →" },
       backlinks: { cta: "Backlinks analysieren" },
       lighthouse: { cta: "Lighthouse-Audit ausführen", related: "Site-Audit öffnen →" },
       site_explorer: { cta: "Domain analysieren", related: "Wettbewerbs-Intelligence öffnen →" },
@@ -7150,6 +7165,182 @@ export const API_ACCESS_COPY: Record<DashLocale, ApiAccessCopy> = {
   },
 };
 
+// ─── /visibility/tools/ai-citations ─────────────────────────────────────────
+//
+// A DIFFERENT QUESTION FROM SHARE OF VOICE, and the copy has to keep them
+// apart or the two tools read as duplicates. /visibility/tools/share-of-voice
+// reports what the WATCHER saw when Echorank asked the providers our
+// customer's own tracked prompts. This reports what DATAFORSEO has observed
+// across many people's answers. One is our measurement, the other is the
+// market's. A disagreement between them is information.
+const aiCitationsEn = {
+  formTitle: "Look up AI citations",
+  formIntro:
+    "Which pages AI assistants cite when they answer questions about a brand, and how much of the conversation that brand holds against its rivals.",
+  targetLabel: "Domain or URL",
+  targetPlaceholder: "example.com",
+  scopeLabel: "Scope",
+  scopes: {
+    subdomains: "Domain and subdomains",
+    domain: "This domain only",
+    subfolder: "This path and below",
+    exact_url: "This page only",
+  } as Record<string, string>,
+  platformsLabel: "Platforms",
+  platforms: { chat_gpt: "ChatGPT", google: "Google AI" } as Record<string, string>,
+  chatGptMarketNote:
+    "ChatGPT mention data covers the United States in English only — that is the data provider's coverage, not a setting.",
+  competitorsLabel: "Compare against (optional)",
+  competitorsPlaceholder: "Competitor One, Competitor Two",
+  competitorsHint: "Up to five brand names, comma-separated. Each one adds a little to the cost.",
+  submit: "Look up",
+  running: "Looking up…",
+  costHint: "One search from your monthly allowance. Repeat lookups of the same target today are free.",
+  cachedNote: (hours: number) =>
+    `Showing today's stored result — nothing was spent. A fresh lookup is available in about ${hours}h.`,
+  partialNote: (platforms: string) =>
+    `${platforms} did not answer. Everything else below is complete.`,
+  totalsTitle: "Mentions by platform",
+  totalMentions: "mentions observed",
+  totalVolume: "AI search volume",
+  sovTitle: "Share of voice",
+  sovIntro: (platforms: string) => `Across ${platforms}.`,
+  sovYou: "You",
+  sovNoData: "no data",
+  sourcesTitle: "Pages AI assistants cite",
+  sourcesIntro:
+    "The pages cited most often when these platforms answer about your target, with real questions they were cited for.",
+  sourcesEmpty:
+    "No cited pages found for this target. That is a finding rather than an error — it usually means AI assistants are answering from somewhere else.",
+  colUrl: "Page",
+  colDomain: "Domain",
+  colPlatform: "Platform",
+  colMentions: "Mentions",
+  colVolume: "AI volume",
+  colPrompts: "Example prompts",
+  exportCsv: "Export CSV",
+  samplingNote:
+    "Mention counts come from the provider's full observation set. The example questions come from a sample of it, so they illustrate rather than enumerate.",
+  errorNotEnabled:
+    "AI Citations is not switched on for this deployment yet. It needs the AI Optimization product on the connected SEO data account.",
+  errorPlanLocked: "AI Citations is available on the Growth plan and above.",
+  errorQuota: "You have used this month's SEO searches. Stored lookups are still free to reopen.",
+  errorGeneric: "Could not complete that lookup. Try again in a minute.",
+};
+export type AiCitationsCopy = typeof aiCitationsEn;
+
+export const AI_CITATIONS_COPY: Record<DashLocale, AiCitationsCopy> = {
+  en: aiCitationsEn,
+  fr: {
+    formTitle: "Rechercher les citations IA",
+    formIntro:
+      "Les pages que les assistants IA citent lorsqu'ils répondent à des questions sur une marque, et la part de conversation que cette marque détient face à ses concurrents.",
+    targetLabel: "Domaine ou URL",
+    targetPlaceholder: "exemple.com",
+    scopeLabel: "Portée",
+    scopes: {
+      subdomains: "Domaine et sous-domaines",
+      domain: "Ce domaine uniquement",
+      subfolder: "Ce chemin et ce qu'il contient",
+      exact_url: "Cette page uniquement",
+    } as Record<string, string>,
+    platformsLabel: "Plateformes",
+    platforms: { chat_gpt: "ChatGPT", google: "IA de Google" } as Record<string, string>,
+    chatGptMarketNote:
+      "Les données de mentions ChatGPT couvrent uniquement les États-Unis en anglais — c'est la couverture du fournisseur, pas un réglage.",
+    competitorsLabel: "Comparer avec (facultatif)",
+    competitorsPlaceholder: "Concurrent Un, Concurrent Deux",
+    competitorsHint: "Jusqu'à cinq marques, séparées par des virgules. Chacune ajoute un peu au coût.",
+    submit: "Rechercher",
+    running: "Recherche en cours…",
+    costHint: "Une recherche de votre quota mensuel. Les recherches répétées de la même cible aujourd'hui sont gratuites.",
+    cachedNote: (hours: number) =>
+      `Résultat stocké d'aujourd'hui — rien n'a été dépensé. Une nouvelle recherche sera possible dans environ ${hours} h.`,
+    partialNote: (platforms: string) =>
+      `${platforms} n'a pas répondu. Tout le reste ci-dessous est complet.`,
+    totalsTitle: "Mentions par plateforme",
+    totalMentions: "mentions observées",
+    totalVolume: "Volume de recherche IA",
+    sovTitle: "Part de voix",
+    sovIntro: (platforms: string) => `Sur ${platforms}.`,
+    sovYou: "Vous",
+    sovNoData: "aucune donnée",
+    sourcesTitle: "Pages citées par les assistants IA",
+    sourcesIntro:
+      "Les pages les plus souvent citées lorsque ces plateformes répondent au sujet de votre cible, avec de vraies questions pour lesquelles elles ont été citées.",
+    sourcesEmpty:
+      "Aucune page citée pour cette cible. C'est un constat, pas une erreur : cela signifie généralement que les assistants IA répondent à partir d'ailleurs.",
+    colUrl: "Page",
+    colDomain: "Domaine",
+    colPlatform: "Plateforme",
+    colMentions: "Mentions",
+    colVolume: "Volume IA",
+    colPrompts: "Exemples de requêtes",
+    exportCsv: "Exporter en CSV",
+    samplingNote:
+      "Le nombre de mentions provient de l'ensemble complet des observations du fournisseur. Les exemples de questions proviennent d'un échantillon : ils illustrent, sans être exhaustifs.",
+    errorNotEnabled:
+      "Les citations IA ne sont pas encore activées sur ce déploiement. Le produit AI Optimization doit être actif sur le compte de données SEO connecté.",
+    errorPlanLocked: "Les citations IA sont disponibles à partir du forfait Growth.",
+    errorQuota: "Vous avez utilisé les recherches SEO de ce mois. Les recherches stockées restent gratuites à rouvrir.",
+    errorGeneric: "Impossible de terminer cette recherche. Réessayez dans une minute.",
+  },
+  "de-CH": {
+    formTitle: "KI-Zitate nachschlagen",
+    formIntro:
+      "Welche Seiten KI-Assistenten zitieren, wenn sie Fragen zu einer Marke beantworten, und wie viel Gesprächsanteil diese Marke gegenüber ihren Mitbewerbern hält.",
+    targetLabel: "Domain oder URL",
+    targetPlaceholder: "beispiel.com",
+    scopeLabel: "Bereich",
+    scopes: {
+      subdomains: "Domain und Subdomains",
+      domain: "Nur diese Domain",
+      subfolder: "Dieser Pfad und darunter",
+      exact_url: "Nur diese Seite",
+    } as Record<string, string>,
+    platformsLabel: "Plattformen",
+    platforms: { chat_gpt: "ChatGPT", google: "Google-KI" } as Record<string, string>,
+    chatGptMarketNote:
+      "ChatGPT-Erwähnungsdaten decken nur die USA auf Englisch ab — das ist die Abdeckung des Datenanbieters, keine Einstellung.",
+    competitorsLabel: "Vergleichen mit (optional)",
+    competitorsPlaceholder: "Mitbewerber Eins, Mitbewerber Zwei",
+    competitorsHint: "Bis zu fünf Markennamen, durch Komma getrennt. Jeder erhöht die Kosten leicht.",
+    submit: "Nachschlagen",
+    running: "Wird nachgeschlagen…",
+    costHint: "Eine Suche aus Ihrem Monatskontingent. Wiederholte Abfragen desselben Ziels sind heute kostenlos.",
+    cachedNote: (hours: number) =>
+      `Gespeichertes Ergebnis von heute — es wurde nichts ausgegeben. Eine neue Abfrage ist in rund ${hours} Std. möglich.`,
+    partialNote: (platforms: string) =>
+      `${platforms} hat nicht geantwortet. Alles Übrige unten ist vollständig.`,
+    totalsTitle: "Erwähnungen nach Plattform",
+    totalMentions: "beobachtete Erwähnungen",
+    totalVolume: "KI-Suchvolumen",
+    sovTitle: "Share of Voice",
+    sovIntro: (platforms: string) => `Über ${platforms}.`,
+    sovYou: "Sie",
+    sovNoData: "keine Daten",
+    sourcesTitle: "Von KI-Assistenten zitierte Seiten",
+    sourcesIntro:
+      "Die Seiten, die am häufigsten zitiert werden, wenn diese Plattformen über Ihr Ziel antworten — mit echten Fragen, für die sie zitiert wurden.",
+    sourcesEmpty:
+      "Keine zitierten Seiten für dieses Ziel gefunden. Das ist ein Befund und kein Fehler: meist antworten die KI-Assistenten dann aus anderen Quellen.",
+    colUrl: "Seite",
+    colDomain: "Domain",
+    colPlatform: "Plattform",
+    colMentions: "Erwähnungen",
+    colVolume: "KI-Volumen",
+    colPrompts: "Beispiel-Prompts",
+    exportCsv: "CSV exportieren",
+    samplingNote:
+      "Die Erwähnungszahlen stammen aus dem vollständigen Beobachtungsbestand des Anbieters. Die Beispielfragen stammen aus einer Stichprobe und sind daher illustrativ, nicht vollständig.",
+    errorNotEnabled:
+      "KI-Zitate sind auf dieser Installation noch nicht aktiviert. Dafür braucht es das Produkt AI Optimization auf dem verbundenen SEO-Datenkonto.",
+    errorPlanLocked: "KI-Zitate sind ab dem Growth-Tarif verfügbar.",
+    errorQuota: "Sie haben die SEO-Suchen dieses Monats aufgebraucht. Gespeicherte Abfragen bleiben kostenlos abrufbar.",
+    errorGeneric: "Die Abfrage konnte nicht abgeschlossen werden. Versuchen Sie es in einer Minute erneut.",
+  },
+};
+
 // ─── Research Log — the "Recent research" panel on the SEO Tools hub ─────────
 //
 // The row's WORDS live here and its NUMBERS live in the database, which is the
@@ -7229,6 +7420,7 @@ const mcpServerEn = {
     get_backlinks_overview: "Your newest stored backlinks analysis: referring domains, anchors, linked pages.",
     get_domain_overview: "Your newest stored Site Explorer analysis: traffic, keywords, competitors.",
     list_keyword_opportunities: "Scored keywords from your newest Keyword Opportunity Finder run.",
+    get_ai_citations: "Your newest AI Citations lookup: cited pages, per-platform totals and share of voice.",
     get_research_log: "What this workspace has already paid to research \u2014 check it before spending again.",
     get_gsc_queries: "Top Search Console queries with clicks, impressions, CTR and average position.",
     get_crawl_summary: "Your newest site crawl: pages crawled and the most common issues found.",
@@ -7277,6 +7469,7 @@ export const MCP_SERVER_COPY: Record<DashLocale, McpServerCopy> = {
       get_backlinks_overview: "Votre analyse de backlinks la plus récente : domaines référents, ancres, pages liées.",
       get_domain_overview: "Votre analyse Site Explorer la plus récente : trafic, mots-clés, concurrents.",
       list_keyword_opportunities: "Les mots-clés notés par votre dernière analyse du Détecteur d'opportunités.",
+      get_ai_citations: "Votre dernière recherche de citations IA : pages citées, totaux par plateforme et part de voix.",
       get_research_log: "Ce que cet espace de travail a déjà payé pour rechercher \u2014 à consulter avant de dépenser à nouveau.",
       get_gsc_queries: "Principales requêtes Search Console : clics, impressions, CTR et position moyenne.",
       get_crawl_summary: "Votre dernière exploration de site : pages explorées et problèmes les plus fréquents.",
@@ -7321,6 +7514,7 @@ export const MCP_SERVER_COPY: Record<DashLocale, McpServerCopy> = {
       get_backlinks_overview: "Ihre neueste Backlink-Analyse: verweisende Domains, Ankertexte, verlinkte Seiten.",
       get_domain_overview: "Ihre neueste Site-Explorer-Analyse: Traffic, Keywords, Wettbewerber.",
       list_keyword_opportunities: "Bewertete Keywords aus Ihrem letzten Lauf des Keyword-Chancen-Finders.",
+      get_ai_citations: "Ihre neueste KI-Zitate-Abfrage: zitierte Seiten, Summen pro Plattform und Share of Voice.",
       get_research_log: "Was dieser Arbeitsbereich bereits an Recherche bezahlt hat \u2014 vor der nächsten Ausgabe prüfen.",
       get_gsc_queries: "Top-Suchanfragen aus der Search Console: Klicks, Impressionen, CTR, Durchschnittsposition.",
       get_crawl_summary: "Ihr neuester Site-Crawl: gecrawlte Seiten und die häufigsten gefundenen Probleme.",

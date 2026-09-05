@@ -75,6 +75,96 @@ export const CONTENT_ANALYSIS = {
 } as const;
 
 // ---------------------------------------------------------------------------
+// AI Optimization — LLM Mentions (the AI Citations tool)
+// ---------------------------------------------------------------------------
+//
+// UNVERIFIED ON THIS ACCOUNT AS OF 2026-09-05. The paths and request shapes
+// below are transcribed from open-seo @ HEAD, where they are documented as
+// verified live against DataForSEO on 2026-06-30. Nobody has yet confirmed
+// that ECHORANK's DataForSEO account has the AI Optimization product enabled,
+// because the credentials are 600 echorank and the porting session ran as
+// `deploy`. Until someone runs the probe in aiCitationsEnabled()'s comment,
+// the whole feature stays behind AI_CITATIONS_VERIFIED and no code path here
+// can be reached in production.
+//
+// A DIFFERENT PRODUCT FROM THE WATCHER, and the distinction is the point of
+// the tool. src/lib/ai-monitor asks the providers directly — it sends a prompt
+// to ChatGPT and reads the answer. These endpoints ask DATAFORSEO what it has
+// observed across many such answers. The watcher knows what happened when WE
+// asked; this knows what tends to happen. Neither replaces the other, and a
+// disagreement between them is information rather than a bug.
+//
+// TWO PLATFORMS ONLY, and `chat_gpt` is US/en ONLY (DataForSEO's own
+// restriction, not ours). See CHATGPT_LOCATION_CODE below.
+export const AI_OPTIMIZATION = {
+  /** One row per observed LLM answer that matched the target. */
+  llmMentionsSearch: "v3/ai_optimization/llm_mentions/search/live",
+  /** Totals for one target, grouped by platform. The cheapest of the family. */
+  llmMentionsAggregated: "v3/ai_optimization/llm_mentions/aggregated_metrics/live",
+  /** Pages CITED by LLM answers for the target — the cited-sources table. */
+  llmMentionsTopPages: "v3/ai_optimization/llm_mentions/top_pages/live",
+  /** 2..10 brands compared in one call — the share-of-voice leaderboard. */
+  llmMentionsCrossAggregated:
+    "v3/ai_optimization/llm_mentions/cross_aggregated_metrics/live",
+} as const;
+
+// The platform vocabulary and the target builder live in a PURE module and are
+// re-exported here, so server code keeps one import site while the AI Citations
+// client component can take the array without dragging ./client — and therefore
+// "server-only", pg, dns, net and tls — into the browser bundle. Turbopack
+// rejected exactly that, by name, when these were defined inline.
+export {
+  LLM_PLATFORMS,
+  CHATGPT_LOCATION_CODE,
+  CHATGPT_LANGUAGE_CODE,
+  buildLlmTarget,
+  isLlmPlatform,
+} from "@/lib/ai-citations/platforms";
+export type { LlmPlatform, LlmTarget } from "@/lib/ai-citations/platforms";
+
+/** One element of a `platform` group array, on every LLM Mentions response. */
+export type LlmGroupElement = {
+  type?: string | null;
+  key?: string | null;
+  mentions?: number | null;
+  ai_search_volume?: number | null;
+  impressions?: number | null;
+};
+
+/** `result[0].items[]` of llm_mentions/search. */
+export type LlmMentionItem = {
+  question?: string | null;
+  sources?: { url?: string | null; title?: string | null; domain?: string | null }[] | null;
+  ai_search_volume?: number | null;
+  first_response_at?: string | null;
+  last_response_at?: string | null;
+  brand_entities?: { title?: string | null }[] | null;
+};
+
+/** `result[0].items[]` of llm_mentions/top_pages. `key` is the cited page URL. */
+export type LlmTopPagesItem = {
+  key?: string | null;
+  platform?: LlmGroupElement[] | null;
+};
+
+/**
+ * `result[0].items[]` of cross_aggregated_metrics.
+ *
+ * `key` here is the request's own `aggregation_key` — the brand LABEL we sent —
+ * NOT a page URL, which is what `key` means on every other endpoint in this
+ * family. The shared provider type documents it as a URL; it is not one here.
+ */
+export type LlmCrossAggregatedItem = {
+  key?: string | null;
+  platform?: LlmGroupElement[] | null;
+};
+
+/** `result[0].total` of aggregated_metrics. */
+export type LlmAggregatedTotal = {
+  platform?: LlmGroupElement[] | null;
+};
+
+// ---------------------------------------------------------------------------
 // Keywords Data (Google Ads) — true search volume / CPC
 // ---------------------------------------------------------------------------
 export const ADS = {

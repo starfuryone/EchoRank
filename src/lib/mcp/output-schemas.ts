@@ -208,6 +208,47 @@ export const keywordOpportunitiesOutputSchema = z.looseObject({
   note,
 });
 
+export const aiCitationsOutputSchema = z.looseObject({
+  found: z.boolean(),
+  analysis: z
+    .looseObject({
+      id: z.string(),
+      target: z.string(),
+      scope: z.string(),
+      platforms: z.array(z.string()),
+      competitors: z.array(z.string()),
+      status: z.string(),
+      costUsd: z.number(),
+      createdAt: z.string(),
+      ageHours: z.number(),
+      failedPlatforms: z.array(z.string()),
+    })
+    .nullable(),
+  totals: z.array(
+    z.looseObject({
+      platform: z.string(),
+      mentions: nullableNumber,
+      aiSearchVolume: nullableNumber,
+      impressions: nullableNumber,
+    }),
+  ),
+  sources: z.array(z.looseObject({ url: z.string(), platform: z.string() })),
+  shareOfVoice: z
+    .looseObject({
+      platforms: z.array(z.string()),
+      entries: z.array(
+        z.looseObject({
+          label: z.string(),
+          isTarget: z.boolean(),
+          mentions: nullableNumber,
+          sharePct: nullableNumber,
+        }),
+      ),
+    })
+    .nullable(),
+  note,
+});
+
 // ─── Research log ────────────────────────────────────────────────────────────
 
 export const researchLogOutputSchema = z.looseObject({
@@ -299,6 +340,7 @@ export const MCP_OUTPUT_SCHEMAS: Record<string, z.ZodType> = {
   get_backlinks_overview: backlinksOverviewOutputSchema,
   get_domain_overview: domainOverviewOutputSchema,
   list_keyword_opportunities: keywordOpportunitiesOutputSchema,
+  get_ai_citations: aiCitationsOutputSchema,
   get_research_log: researchLogOutputSchema,
   get_gsc_queries: gscQueriesOutputSchema,
   get_crawl_summary: crawlSummaryOutputSchema,
@@ -329,6 +371,7 @@ export type RankKeywordMutationPayload = z.infer<typeof rankKeywordMutationOutpu
 export type BacklinksOverviewPayload = z.infer<typeof backlinksOverviewOutputSchema>;
 export type DomainOverviewPayload = z.infer<typeof domainOverviewOutputSchema>;
 export type KeywordOpportunitiesPayload = z.infer<typeof keywordOpportunitiesOutputSchema>;
+export type AiCitationsPayload = z.infer<typeof aiCitationsOutputSchema>;
 export type ResearchLogPayload = z.infer<typeof researchLogOutputSchema>;
 export type GscQueriesPayload = z.infer<typeof gscQueriesOutputSchema>;
 export type CrawlSummaryPayload = z.infer<typeof crawlSummaryOutputSchema>;

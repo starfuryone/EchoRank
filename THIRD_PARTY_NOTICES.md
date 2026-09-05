@@ -24,6 +24,11 @@ License: MIT
 | `src/lib/dataforseo/endpoints.ts` | SDK-method → v3-path mapping for the endpoint families in scope. |
 | `src/lib/mcp/table.ts` | Compact fixed-width table rendering for MCP tool text output (`formatMcpCell`, `truncatedCell`, `formatMcpTable`, `readPath`). |
 | `src/lib/mcp/output-schemas.ts` | Per-tool zod output-schema discipline for MCP `structuredContent`. |
+| `src/lib/mcp/schemas.ts` | Per-tool zod input-schema discipline. |
+| `src/lib/ai-citations/cited-sources.ts` | Cited-sources derivation: top_pages authoritative for rows and metrics, prompt examples attached from the mentions sample, URL-scope filter applied before the per-platform cap. |
+| `src/lib/ai-citations/share-of-voice.ts` | Share-of-voice arithmetic: null-vs-zero handling, seeded rows for every requested brand, case-insensitive key matching, competitor de-duplication. |
+| `src/lib/ai-citations/target.ts` | Research-scope model (domain / subdomains / subfolder / exact_url) and the URL post-filter, since the provider has no URL-level targeting. |
+| `src/lib/ai-citations/url.ts` | http(s) scheme allow-listing for URLs originating in LLM answers. |
 
 ### MIT License
 

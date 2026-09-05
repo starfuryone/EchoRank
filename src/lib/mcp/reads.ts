@@ -65,6 +65,8 @@ import { trackedKeywordLimit as rankTrackedKeywordLimit } from "@/lib/rank-track
 import type { RankDevice, RankFrequency } from "@/lib/rank-tracker/options";
 import { toAnalysisDto as toBacklinksDto } from "@/lib/backlinks/service";
 import { toAnalysisDto as toSiteExplorerDto } from "@/lib/site-explorer/service";
+import { readLatestAiCitations } from "@/lib/ai-citations/service";
+import { aiCitationsEnabled } from "@/lib/ai-citations/options";
 import { readResearchLog } from "@/lib/research-log/store";
 import {
   RESEARCH_REUSE_WINDOW_DAYS,
@@ -596,6 +598,77 @@ export async function listKeywordOpportunities(
             : `The run is ${analysis.status.toLowerCase()}.`))
         : analysis.rows.length > limit
           ? `Showing ${limit} of ${analysis.rows.length} opportunities. Raise \`limit\` for more.`
+          : undefined,
+  };
+}
+
+// ─── AI Citations ────────────────────────────────────────────────────────────
+
+/**
+ * The newest stored AI Citations lookup.
+ *
+ * READ-ONLY, like every other stored-analysis tool here. Starting a lookup
+ * draws a search from the monthly allowance, so it stays a deliberate click on
+ * the tool page rather than something an agent can do in a loop.
+ *
+ * The note distinguishes THREE empty answers, because they have three
+ * different fixes: the feature is not enabled on this deployment (an operator
+ * change), the workspace has never run one (a click), and this particular
+ * target has none (a different click).
+ */
+export async function getAiCitations(tenant: McpTenant, args: Record<string, unknown>, now = new Date()) {
+  const target = typeof args.target === "string" ? args.target.trim() : undefined;
+  const limit = limitOf(args, 50);
+
+  const analysis = await readLatestAiCitations(tenant.id, target);
+
+  if (!analysis) {
+    return {
+      found: false,
+      analysis: null,
+      totals: [],
+      sources: [],
+      shareOfVoice: null,
+      note: !aiCitationsEnabled()
+        ? "AI Citations is not enabled on this deployment yet, so no lookups exist. It needs the AI Optimization product on the connected SEO data account."
+        : target
+          ? `No stored AI Citations lookup for ${target}. Run one on the AI Citations page — this tool never spends.`
+          : "No AI Citations lookup on this workspace yet. Run one on the AI Citations page — this tool never spends.",
+    };
+  }
+
+  return {
+    found: true,
+    analysis: {
+      id: analysis.id,
+      target: analysis.target,
+      scope: analysis.scope,
+      platforms: analysis.platforms,
+      competitors: analysis.competitors,
+      status: analysis.status,
+      costUsd: analysis.costUsd,
+      createdAt: analysis.createdAt,
+      ageHours: Number(hoursSince(new Date(analysis.createdAt), now).toFixed(2)),
+      failedPlatforms: analysis.failedPlatforms,
+    },
+    totals: analysis.totals,
+    // Cited URLs came from LLM answers by way of the provider. They were
+    // scheme-filtered when the lookup ran (ai-citations/url.ts); clipping here
+    // bounds what an agent receives rather than re-deciding safety.
+    sources: analysis.sources.slice(0, limit).map((row) => ({
+      url: clip(row.url, 500),
+      domain: row.domain,
+      platform: row.platform,
+      mentions: row.mentions,
+      capturedVolume: row.capturedVolume,
+      prompts: row.prompts.map((prompt) => clip(prompt.question, 300)),
+    })),
+    shareOfVoice: analysis.shareOfVoice,
+    note:
+      analysis.failedPlatforms.length > 0
+        ? `Platforms that did not answer when this ran: ${analysis.failedPlatforms.join(", ")}.`
+        : analysis.sources.length > limit
+          ? `Showing ${limit} of ${analysis.sources.length} cited pages. Raise \`limit\` for more.`
           : undefined,
   };
 }

@@ -54,6 +54,18 @@ export const SEO_SEARCH_FEATURES = [
   "keyword_research",
   "backlinks",
   "local_seo",
+  /**
+   * AI Citations is IN the pool. One lookup is one user action of about the
+   * same weight as a domain overview, so it draws one search — not one per
+   * provider call, of which there are up to four. The service counts the
+   * allowance once, before the fan-out; the USD cap counts every call.
+   *
+   * FLAGGED FOR REVIEW alongside the feature's own note in
+   * dataforseo/client.ts: if a lookup proves much more expensive than a domain
+   * overview once the account probe reports a real per-call cost, the right
+   * answer is its own allowance and this line comes out.
+   */
+  "ai_citations",
 ] as const satisfies readonly CreditFeature[];
 
 export type SeoSearchFeature = (typeof SEO_SEARCH_FEATURES)[number];

@@ -60,8 +60,28 @@ export interface SkillLoadResult {
   skipped: string[];
 }
 
+/**
+ * The pack's directory.
+ *
+ * ── WHY THE turbopackIgnore COMMENT IS LOAD-BEARING ────────────────────────
+ * Without it, Turbopack sees a filesystem read rooted at `process.cwd()` and
+ * concludes the whole project might be needed at runtime. It then traces
+ * EVERYTHING into every route that transitively imports this module — which
+ * pulled `next.config.ts` and, through it, modules guarded by "server-only"
+ * into the public skills route's graph, and failed the build with an error
+ * naming a file that route never imports:
+ *
+ *   ./src/lib/dataforseo/client.ts
+ *   ./src/lib/agent-skills/loader.ts
+ *   ./src/app/api/public/v1/skills/[slug]/route.ts
+ *
+ * The comment tells Turbopack this path is deliberate and statically scoped,
+ * which is true: it is a fixed two-segment path under the repository root, and
+ * `agentSkill()` looks a slug up in the LOADED SET rather than joining caller
+ * input onto it (see below), so nothing dynamic reaches the filesystem.
+ */
 function skillsDir(): string {
-  return join(process.cwd(), ...SKILLS_DIR_SEGMENTS);
+  return join(/* turbopackIgnore: true */ process.cwd(), ...SKILLS_DIR_SEGMENTS);
 }
 
 /** False on a deployment where the pack was not shipped. See the header. */

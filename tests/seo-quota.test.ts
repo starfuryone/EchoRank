@@ -77,8 +77,16 @@ describe("limits are single-sourced", () => {
 
 // ─── Scope of the pool ──────────────────────────────────────────────────────
 describe("which features are pooled", () => {
-  it("covers the four search tools and nothing else", () => {
+  it("covers the five pooled search tools and nothing else", () => {
+    // A LIST, NOT A PREDICATE, on purpose: adding a feature to the pool is a
+    // billing decision — it changes what a customer's monthly allowance buys —
+    // so it has to fail here and be argued for rather than slipping in with the
+    // feature that needed it. ai_citations joined on 2026-09-05; the reasoning,
+    // and the alternative of giving it its own allowance the way the Keyword
+    // Opportunity Finder has one, are recorded on the feature itself in
+    // src/lib/dataforseo/client.ts and src/lib/seo-quota.ts.
     expect([...SEO_SEARCH_FEATURES].sort()).toEqual([
+      "ai_citations",
       "backlinks",
       "domain_overview",
       "keyword_research",

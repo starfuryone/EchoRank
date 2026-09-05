@@ -4471,3 +4471,49 @@ model ResearchLog {
   @@index([tenantId, createdAt])
   @@map("research_log")
 }
+
+/// AI Citations — one row per lookup, and the 24h cache.
+///
+/// CACHED BY KEY, NOT BY TIMESTAMP. `cacheKey` is
+/// `<scope>:<hostname><path>|<sorted platforms>|<UTC date>`, so freshness is
+/// encoded in the key the way the Keyword Opportunity Finder's is — see
+/// src/lib/ai-citations/options.ts for why a day bucket beats a rolling window.
+///
+/// The three payload columns are already-normalised OUR shapes, not provider
+/// envelopes: `totals` is per-platform figures for the target, `sources` is the
+/// cited-pages table after URL-safety filtering and the per-platform cap, and
+/// `shareOfVoice` is the competitor leaderboard (null when no competitors were
+/// supplied, which is the common case).
+///
+/// UNREACHABLE IN PRODUCTION UNTIL AI_CITATIONS_VERIFIED IS SET. The table is
+/// created now so the migration is not a second deploy; nothing writes to it
+/// while the flag is off.
+model AiCitationsAnalysis {
+  id              String   @id @default(cuid())
+  tenantId        String
+  /// hostname + path as shown to the user, e.g. "example.com/blog".
+  target          String
+  /// subdomains | domain | subfolder | exact_url
+  scope           String
+  /// The exact key this row answers. See the header.
+  cacheKey        String
+  /// string[] — the platforms requested, e.g. ["chat_gpt", "google"].
+  platforms       Json
+  /// string[] — competitor labels compared, or [].
+  competitors     Json
+  /// completed | partial (at least one platform failed)
+  status          String
+  costUsd         Decimal  @default(0) @db.Decimal(10, 6)
+  totals          Json?
+  sources         Json?
+  shareOfVoice    Json?
+  /// string[] — platforms whose calls failed. Each renders its own note.
+  failedPlatforms Json
+  createdAt       DateTime @default(now())
+
+  /// The cache probe: one tenant, one exact key, newest first.
+  @@index([tenantId, cacheKey, createdAt])
+  /// History list and the MCP read.
+  @@index([tenantId, createdAt])
+  @@map("ai_citations_analyses")
+}

@@ -105,6 +105,16 @@ const caps: McpCapabilities = {
   async listKeywordOpportunities() {
     return { found: false, analysis: null, opportunities: [], note: "none" };
   },
+  async getAiCitations() {
+    return {
+      found: false,
+      analysis: null,
+      totals: [],
+      sources: [],
+      shareOfVoice: null,
+      note: "none",
+    };
+  },
   async getResearchLog() {
     return { reuseWindowDays: 30, entries: [], note: "nothing yet" };
   },

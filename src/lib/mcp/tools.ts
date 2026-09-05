@@ -253,6 +253,23 @@ export const MCP_TOOLS: readonly McpToolDefinition[] = [
     annotations: { title: "Domain overview", readOnlyHint: true },
   },
   {
+    name: "get_ai_citations",
+    description:
+      "The newest stored AI Citations lookup: which pages ChatGPT and Google's AI cite when answering about a target, per-platform mention totals, and share of voice against competitors. Reads stored results only and never spends — starting a lookup draws a search from the monthly allowance and stays a deliberate action on the AI Citations page. Complements the watcher's own prompt runs rather than replacing them: this is what the data provider observed across many people's answers, not what Echorank saw when it asked.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        target: {
+          type: "string",
+          description:
+            "Domain or URL to look up, as shown on the tool page. Omit for the most recent lookup of any target.",
+        },
+        limit: LIMIT_PROP(200, 50),
+      },
+    },
+    annotations: { title: "AI citations", readOnlyHint: true },
+  },
+  {
     name: "list_keyword_opportunities",
     description:
       "The newest completed Keyword Opportunity Finder run for this workspace: scored keyword opportunities with search volume, difficulty, intent, trend and the reason each one scored as it did. Reads stored results only — starting a run spends a domain analysis and stays a deliberate action on the Keyword Opportunities page.",

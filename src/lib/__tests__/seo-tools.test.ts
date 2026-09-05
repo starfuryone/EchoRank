@@ -58,6 +58,7 @@ const EXPECTED_HREFS: Record<string, string> = {
   gbp_monitor: "/visibility/tools/gbp-monitor",
   api_access: "/visibility/tools/api-access",
   mcp_server: "/visibility/tools/mcp-server",
+  ai_citations: "/visibility/tools/ai-citations",
 };
 
 test("all five groups present with tools", () => {
@@ -80,11 +81,12 @@ test("tool ids unique, hrefs match the route table, slugs consistent", () => {
   }
 });
 
-test('"New" badges exactly on Action Agent, AI Attribution, AI Lens, AI Revenue, Audit Funnels, Bot Analytics, Citation Finder, Citation Opportunities, GBP Monitor, Historical, Opportunity Scanner and Share of Voice', () => {
+test('"New" badges exactly on Action Agent, AI Attribution, AI Citations, AI Lens, AI Revenue, Audit Funnels, Bot Analytics, Citation Finder, Citation Opportunities, GBP Monitor, Historical, Opportunity Scanner and Share of Voice', () => {
   const badged = ALL_TOOLS.filter((i) => i.badge === "new").map((i) => i.id).sort();
   assert.deepEqual(badged, [
     "action_agent",
     "ai_attribution",
+    "ai_citations",
     "ai_lens",
     "ai_revenue",
     "audit_funnels",
@@ -134,12 +136,17 @@ test("the live/coming-soon split is what the marketing copy claims", () => {
   // src/lib/i18n/content.ts (toolsSection.count) has to move with it.
   const live = ALL_TOOLS.filter((t) => !t.comingSoon);
   const soon = ALL_TOOLS.filter((t) => t.comingSoon);
-  assert.equal(ALL_TOOLS.length, 33, "tool count changed");
+  assert.equal(ALL_TOOLS.length, 34, "tool count changed");
   assert.equal(live.length, 29, "live tool count changed — update the homepage copy");
-  assert.equal(soon.length, 4);
+  assert.equal(soon.length, 5);
+  // ai_citations is here because its DATA SOURCE is unverified, not because
+  // its page is unwritten — the page, service, routes and MCP tool all ship.
+  // It leaves this list in the same commit that sets AI_CITATIONS_VERIFIED and
+  // deletes the scaffold branch from its page.tsx; the test above ties the two
+  // together, which is the point. See src/lib/ai-citations/options.ts.
   assert.deepEqual(
     soon.map((t) => t.id).sort(),
-    ["gbp_monitor", "portfolios", "report_builder", "social_media_manager"],
+    ["ai_citations", "gbp_monitor", "portfolios", "report_builder", "social_media_manager"],
   );
 });
 

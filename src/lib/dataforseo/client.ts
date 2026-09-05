@@ -61,7 +61,26 @@ export type CreditFeature =
    * by exactly the mechanism site_audit, content_research and rank_tracking are
    * already excluded by. See src/lib/seo-quota.ts.
    */
-  | "keyword_opportunity";
+  | "keyword_opportunity"
+  /**
+   * AI Citations — the DataForSEO LLM Mentions family.
+   *
+   * IN the pool, unlike keyword_opportunity above, and that is a product
+   * decision rather than an oversight: one lookup is one user action of
+   * roughly the same weight as a domain overview, so it draws one search from
+   * the shared `seoSearchesPerMonth` allowance and its spend counts against
+   * the same tenant USD cap as everything else. It is listed in
+   * SEO_SEARCH_FEATURES for exactly that reason.
+   *
+   * FLAGGED FOR REVIEW: the alternative is its own allowance in plan-config,
+   * the way the Keyword Opportunity Finder has one. That would be right if a
+   * lookup turns out to be much more expensive than a domain overview — which
+   * nobody can know until the account probe runs and a real per-call cost is
+   * observed. Moving it later means adding it to OWN_CAP_FEATURES and removing
+   * it from SEO_SEARCH_FEATURES; both are one-line changes and neither
+   * rewrites history, because the rows carry the feature key either way.
+   */
+  | "ai_citations";
 
 export type ApiCallCost = { path: string[]; costUsd: number };
 /** `taskId` is DataForSEO's own task uuid — set on every envelope, and the
@@ -151,6 +170,12 @@ export function pathToFeature(path: readonly string[]): CreditFeature {
     // per-feature spend reporting quietly wrong.
     case "content_analysis":
       return "content_research";
+    // AI Citations. Every llm_mentions/* path bills to one feature: the four
+    // endpoints are sections of a single user action, exactly as the Backlinks
+    // tool's five are, and splitting them across meters would make per-feature
+    // spend reporting describe calls rather than actions.
+    case "ai_optimization":
+      return "ai_citations";
     case "dataforseo_labs": {
       const endpoint = p[3] ?? "";
       return endpoint.startsWith("domain_") ||

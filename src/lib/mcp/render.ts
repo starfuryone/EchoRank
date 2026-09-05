@@ -33,6 +33,7 @@ import type {
   DomainOverviewPayload,
   GetSerpCheckPayload,
   GscQueriesPayload,
+  AiCitationsPayload,
   KeywordOpportunitiesPayload,
   ResearchLogPayload,
   RankKeywordMutationPayload,
@@ -453,6 +454,90 @@ export function renderKeywordOpportunities(data: KeywordOpportunitiesPayload): s
   );
 }
 
+// ─── AI Citations ────────────────────────────────────────────────────────────
+
+const AI_CITATION_COLUMNS: McpTableColumn<Record<string, unknown>>[] = [
+  { header: "page", value: (row) => row.url, format: truncatedCell(90) },
+  { header: "platform", value: (row) => row.platform },
+  { header: "mentions", value: (row) => row.mentions },
+  { header: "ai volume", value: (row) => row.capturedVolume },
+  {
+    header: "example prompts",
+    value: (row) => (Array.isArray(row.prompts) ? row.prompts.join(" / ") : null),
+    format: truncatedCell(120),
+  },
+];
+
+const SOV_COLUMNS: McpTableColumn<{
+  label: string;
+  isTarget: boolean;
+  mentions: number | null;
+  sharePct: number | null;
+}>[] = [
+  { header: "brand", value: (row) => `${row.label}${row.isTarget ? " (you)" : ""}` },
+  { header: "mentions", value: (row) => row.mentions },
+  // null share renders as "—", which is the honest rendering of "no data" and
+  // must never become 0% — see share-of-voice.ts.
+  { header: "share %", value: (row) => row.sharePct },
+];
+
+export function renderAiCitations(data: AiCitationsPayload): string {
+  if (!data.found || !data.analysis) {
+    return data.note ?? "No stored AI Citations lookup on this workspace.";
+  }
+  const a = data.analysis;
+  const blocks: string[] = [
+    `AI citations — ${a.target} (${a.scope})`,
+    formatMcpFacts([
+      ["Looked up", `${a.createdAt} (${ageLine(a.ageHours)})`],
+      ["Platforms", a.platforms.join(", ")],
+      ["Status", a.status],
+      [
+        "Platforms that failed",
+        a.failedPlatforms.length ? a.failedPlatforms.join(", ") : "none",
+      ],
+      ["Cost of this lookup", usd(a.costUsd)],
+    ]),
+    "",
+    formatMcpTable(
+      data.totals,
+      [
+        { header: "platform", value: (row) => row.platform },
+        { header: "mentions", value: (row) => row.mentions },
+        { header: "ai volume", value: (row) => row.aiSearchVolume },
+        { header: "impressions", value: (row) => row.impressions },
+      ],
+    ),
+  ];
+
+  if (data.shareOfVoice && data.shareOfVoice.entries.length > 0) {
+    blocks.push(
+      formatMcpSection({
+        title: `\nShare of voice across ${data.shareOfVoice.platforms.join(", ")}`,
+        rows: data.shareOfVoice.entries,
+        columns: SOV_COLUMNS,
+        emptyNote: "No competitors were compared.",
+      }),
+    );
+  }
+
+  const { rows, omitted } = capped(data.sources as Record<string, unknown>[]);
+  blocks.push(
+    withOmitted(
+      formatMcpSection({
+        title: "\nPages cited",
+        rows,
+        columns: AI_CITATION_COLUMNS,
+        emptyNote:
+          "No cited pages found. That is a finding rather than an error — AI assistants are answering about this target from somewhere else.",
+      }),
+      omitted,
+    ),
+  );
+
+  return blocks.join("\n");
+}
+
 // ─── Research log ────────────────────────────────────────────────────────────
 
 const RESEARCH_LOG_COLUMNS: McpTableColumn<ResearchLogPayload["entries"][number]>[] = [
@@ -585,6 +670,8 @@ export function renderToolText(name: string, data: unknown): string {
       return renderDomainOverview(data as DomainOverviewPayload);
     case "list_keyword_opportunities":
       return renderKeywordOpportunities(data as KeywordOpportunitiesPayload);
+    case "get_ai_citations":
+      return renderAiCitations(data as AiCitationsPayload);
     case "get_research_log":
       return renderResearchLog(data as ResearchLogPayload);
     case "get_gsc_queries":
@@ -617,6 +704,7 @@ const RENDERED_TOOLS = new Set([
   "get_backlinks_overview",
   "get_domain_overview",
   "list_keyword_opportunities",
+  "get_ai_citations",
   "get_research_log",
   "get_gsc_queries",
   "get_crawl_summary",

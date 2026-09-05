@@ -123,6 +123,11 @@ export const domainOverviewInputSchema = z.object({
   limit: limitSchema(200).optional(),
 });
 
+export const aiCitationsInputSchema = z.object({
+  target: targetSchema.optional(),
+  limit: limitSchema(200).optional(),
+});
+
 export const keywordOpportunitiesInputSchema = z.object({
   limit: limitSchema(200).optional(),
 });
@@ -156,6 +161,7 @@ export const MCP_INPUT_SCHEMAS: Record<string, z.ZodType> = {
   remove_rank_tracking_keywords: rankKeywordMutationInputSchema,
   get_backlinks_overview: backlinksOverviewInputSchema,
   get_domain_overview: domainOverviewInputSchema,
+  get_ai_citations: aiCitationsInputSchema,
   list_keyword_opportunities: keywordOpportunitiesInputSchema,
   get_research_log: researchLogInputSchema,
   get_gsc_queries: gscQueriesInputSchema,

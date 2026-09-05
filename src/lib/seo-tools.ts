@@ -48,6 +48,7 @@ import {
   Megaphone,
   Banknote,
   Wand2,
+  Sparkles,
 } from "lucide-react";
 import type { PlanType } from "@/generated/prisma";
 
@@ -80,6 +81,7 @@ export type SeoToolId =
   | "gbp_monitor"
   | "api_access"
   | "mcp_server"
+  | "ai_citations"
   | "serp_checker"
   | "backlinks"
   | "lighthouse"
@@ -235,6 +237,21 @@ export const SEO_TOOL_GROUPS: SeoToolGroup[] = [
       // doing outreach, and burying a worklist inside a diagnostic table is how
       // worklists go unworked.
       t("citation_opportunities", "citation-opportunities", ListChecks, { badge: "new" }),
+      // AI Citations. Beside Citation Finder because they answer the same
+      // question from OPPOSITE SOURCES, and the pair is the point: the Finder
+      // reports what OUR watcher saw when Echorank asked this customer's own
+      // tracked prompts; this reports what DataForSEO has observed across many
+      // people's answers. Ours is a measurement, theirs is the market. Where
+      // they disagree, that is a finding rather than a bug — and neither
+      // number is trustworthy alone.
+      //
+      // comingSoon UNTIL THE ACCOUNT IS VERIFIED. Nobody has confirmed the
+      // DataForSEO account carries the AI Optimization product, so the page
+      // renders FeatureScaffold and the homepage must not sell this. The flag,
+      // the scaffold branch in page.tsx and the counts in seo-tools.test.ts
+      // move together — see src/lib/ai-citations/options.ts for the three-step
+      // flip.
+      t("ai_citations", "ai-citations", Sparkles, { badge: "new", comingSoon: true }),
       // What an AI crawler actually receives for one page. Sits beside Brand
       // Radar because both answer "are we in the answers"; this one answers
       // "can they even read us".
@@ -358,6 +375,10 @@ export const SCAFFOLD_RELATED: Partial<Record<ScaffoldId, string>> = {
   ai_content_helper: "/templates",
   report_builder: "/visibility",
   gbp_monitor: "/monitoring",
+  // Until the data account is verified, the honest place to send someone
+  // asking "who do AI assistants cite about us" is the tool that already
+  // answers it from our own watcher runs.
+  ai_citations: "/visibility/tools/citation-finder",
   serp_checker: "/visibility/keywords",
   lighthouse: "/visibility",
 };
