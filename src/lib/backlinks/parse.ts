@@ -19,6 +19,7 @@ import {
 import type {
   AnchorRow,
   AnchorsSection,
+  BacklinksListSection,
   HistoryPoint,
   HistorySection,
   LinkedPageRow,
@@ -33,6 +34,11 @@ function num(value: unknown): number {
 
 function str(value: unknown): string {
   return typeof value === "string" ? value : "";
+}
+
+/** Bound a provider string before it reaches a table or a CSV cell. */
+function clipText(value: string, max: number): string {
+  return value.length <= max ? value : `${value.slice(0, max - 1)}\u2026`;
 }
 
 /** ISO-ish timestamp, or null. DataForSEO uses "2019-01-15 23:22:06 +00:00". */
@@ -202,4 +208,41 @@ export function parseHistory(
     .sort((a, b) => a.month.localeCompare(b.month));
 
   return { points };
+}
+
+
+// ─── Individual links (Full tier) ────────────────────────────────────────────
+
+/**
+ * One row of backlinks/backlinks/live.
+ *
+ * ANCHOR IS UNTRUSTED TEXT — it was written by whoever built the link, and it
+ * reaches a table in an authenticated session. It is clipped here and rendered
+ * as text; nothing on this path may put it through dangerouslySetInnerHTML.
+ */
+export function parseBacklinksList(
+  raw: { items?: unknown[]; total_count?: number }[],
+): BacklinksListSection {
+  const first = raw?.[0];
+  const items = Array.isArray(first?.items) ? first.items : [];
+
+  return {
+    items: items
+      .filter((item): item is Record<string, unknown> => typeof item === "object" && item !== null)
+      .map((item) => ({
+        urlFrom: clipText(str(item.url_from), 500),
+        urlTo: clipText(str(item.url_to), 500),
+        domainFrom: clipText(str(item.domain_from), 200),
+        anchor: clipText(str(item.anchor), 300),
+        domainRank: num(item.domain_from_rank),
+        // Explicit Boolean(): DataForSEO sends these as booleans today, but a
+        // null would otherwise become a falsy value that reads as "nofollow"
+        // rather than "not reported".
+        dofollow: Boolean(item.dofollow),
+        isLost: Boolean(item.is_lost),
+        isBroken: Boolean(item.is_broken),
+        firstSeen: date(item.first_seen),
+      })),
+    totalCount: num(first?.total_count),
+  };
 }

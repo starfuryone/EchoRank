@@ -176,6 +176,50 @@ export function keywordOpportunityCapUsd(plan: PlanType): number | null {
   return KEYWORD_OPPORTUNITY_CAP_USD[sellablePlan(plan)];
 }
 
+/**
+ * The Backlinks tool's shape on one tier.
+ *
+ * DEFAULT BOUNDARY, AND IT IS A PRICING DECISION: Basic on STARTER and GROWTH,
+ * Full on AGENCY and ENTERPRISE.
+ *
+ * STARTER GAINED ACCESS in this change. Its backlinks allowance was 0 — the
+ * tool rendered a locked upsell card — and Basic includes it, so the allowance
+ * had to become non-zero or "Basic = STARTER" would describe a card nobody can
+ * click. At roughly $0.37 a lookup, five a month is under $2 of monthly COGS on
+ * a $79 tier, and Basic buys fewer endpoint families than the old five-call
+ * analysis did. FLAGGED: this is a packaging change, not an implementation
+ * detail.
+ */
+export interface BacklinksCapability {
+  /** Naming only — every decision below reads a specific field, not this. */
+  tier: "basic" | "full";
+  /**
+   * "domain" = whole-domain lookups only.
+   * "full"   = the scope selector (domain / subdomain / URL-prefix / exact URL).
+   */
+  scope: "domain" | "full";
+  /** Rows the referring-domains table may show. */
+  listRows: number;
+  /** Server-side filters and sort on the tables. */
+  filters: boolean;
+  /** CSV export on every table. */
+  csv: boolean;
+  /**
+   * The history sparkline.
+   *
+   * SNAPSHOTS ARE WRITTEN ON EVERY TIER regardless of this flag — the data was
+   * already paid for, and a tier that starts recording history only on upgrade
+   * shows an empty chart for weeks afterwards. This gates the UI, not the write.
+   */
+  history: boolean;
+  /**
+   * Anchors and the full backlinks list — the deeper, per-row-billed endpoint
+   * families. Gated at the ROUTE as well as in the UI: a hidden button is not
+   * an authorization boundary.
+   */
+  deepEndpoints: boolean;
+}
+
 export interface PlanConfig {
   name: string;
   slug: string;
@@ -312,6 +356,23 @@ export interface PlanConfig {
    * monthly COGS.
    */
   keywordOpportunityAnalysesPerMonth: number | null;
+  /**
+   * What the Backlinks tool DOES on this tier.
+   *
+   * ── A CAPABILITY OBJECT, NOT A PLAN NAME ──────────────────────────────────
+   * Every component and route asks this what it may render or serve; none of
+   * them tests for AGENCY. That is the whole point: the tier boundary is a
+   * pricing decision that will move, and the day it moves should be one edit
+   * here rather than a grep for plan names across a feature.
+   *
+   * ── ONE SERVICE, TWO EXPERIENCES ─────────────────────────────────────────
+   * There is no "basic service" and "full service" — that is two code paths
+   * that drift, and the second one is always the one nobody tests. There is
+   * one service, and these fields decide how much of it runs. `tier` exists so
+   * copy and analytics have a name for the shape; every actual decision reads
+   * one of the specific fields below it.
+   */
+  backlinks: BacklinksCapability;
   highlighted: boolean;
   cta: string;
   ctaLink: string;
@@ -352,6 +413,15 @@ export const PLAN_CONFIGS: Record<SellablePlanType, PlanConfig> = {
     aiProjects: 1,
     aiMonthlyCapUsd: 5,
     keywordOpportunityAnalysesPerMonth: 5,
+    backlinks: {
+      tier: "basic",
+      scope: "domain",
+      listRows: 25,
+      filters: false,
+      csv: false,
+      history: false,
+      deepEndpoints: false,
+    },
     highlighted: false,
     cta: "Start Free Trial",
     ctaLink: "/register?plan=starter",
@@ -382,6 +452,15 @@ export const PLAN_CONFIGS: Record<SellablePlanType, PlanConfig> = {
     aiProjects: 3,
     aiMonthlyCapUsd: 40,
     keywordOpportunityAnalysesPerMonth: 25,
+    backlinks: {
+      tier: "basic",
+      scope: "domain",
+      listRows: 25,
+      filters: false,
+      csv: false,
+      history: false,
+      deepEndpoints: false,
+    },
     highlighted: true,
     cta: "Start Free Trial",
     ctaLink: "/register?plan=growth",
@@ -412,6 +491,15 @@ export const PLAN_CONFIGS: Record<SellablePlanType, PlanConfig> = {
     aiProjects: 25,
     aiMonthlyCapUsd: 150,
     keywordOpportunityAnalysesPerMonth: 55,
+    backlinks: {
+      tier: "full",
+      scope: "full",
+      listRows: 200,
+      filters: true,
+      csv: true,
+      history: true,
+      deepEndpoints: true,
+    },
     highlighted: false,
     cta: "Start Free Trial",
     ctaLink: "/register?plan=agency",
@@ -444,6 +532,15 @@ export const PLAN_CONFIGS: Record<SellablePlanType, PlanConfig> = {
     aiProjects: null,
     aiMonthlyCapUsd: null,
     keywordOpportunityAnalysesPerMonth: null,
+    backlinks: {
+      tier: "full",
+      scope: "full",
+      listRows: 1000,
+      filters: true,
+      csv: true,
+      history: true,
+      deepEndpoints: true,
+    },
     highlighted: false,
     cta: "Book Enterprise Demo",
     ctaLink: "/enterprise",

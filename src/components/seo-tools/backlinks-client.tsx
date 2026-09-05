@@ -22,10 +22,29 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatDateTime } from "@/lib/utils";
 import { BacklinksHelpButton } from "@/components/seo-tools/backlinks-help";
-import { isValidTarget, type BacklinksMode } from "@/lib/backlinks/target";
+// PURE modules only. `options` re-exports the capability TYPE and the cost
+// hint; it must never pull in the service, which is server-only.
+import {
+  BACKLINKS_MODES,
+  BASIC_BACKLINKS_MODES,
+  isValidTarget,
+  modeNeedsPath,
+  type BacklinksMode,
+} from "@/lib/backlinks/target";
+import {
+  countFilterConditions,
+  MAX_FILTER_CONDITIONS,
+  type BacklinksListFilters,
+} from "@/lib/backlinks/filters";
+import type { BacklinksCapability } from "@/lib/plan-config";
+import { BACKLINKS_OBSERVED_COST_USD } from "@/lib/backlinks/options";
+import { MIN_HISTORY_POINTS, type BacklinkSnapshotPoint } from "@/lib/backlinks/snapshot-shape";
+import { ExportCsvButton } from "@/components/seo-tools/export-csv-button";
+import type { CsvColumn } from "@/lib/csv-export";
 import { sectionAppliesTo } from "@/lib/backlinks/types";
 import type {
   AnchorRow,
+  BacklinkRow,
   BacklinksAnalysisDto,
   BacklinksHistoryRow,
   BacklinksSection,
@@ -405,9 +424,364 @@ function AnchorsTable({
   );
 }
 
+
+// ─── Full-tier pieces ───────────────────────────────────────────────────────
+
+/**
+ * The filter toolbar.
+ *
+ * THE CONDITION COUNTER IS NOT DECORATION. DataForSEO accepts at most eight
+ * filter conditions and rejects the call HAVING BILLED IT, so the count shown
+ * here comes from the SAME function the server enforces with
+ * (countFilterConditions) and Apply is disabled on it. A second counting
+ * implementation in this component is how the two would come apart.
+ *
+ * The cost note is the other half: unlike sorting and paging, changing a
+ * filter re-asks the provider and spends another search. Saying so beside the
+ * button is cheaper than explaining it after the fact.
+ */
+function LinkFilters({
+  filters,
+  onChange,
+  conditions,
+  disabled,
+  onApply,
+  t,
+}: {
+  filters: BacklinksListFilters;
+  onChange: (next: BacklinksListFilters) => void;
+  conditions: number;
+  disabled: boolean;
+  onApply: () => void;
+  t: BacklinksToolCopy;
+}) {
+  const over = conditions > MAX_FILTER_CONDITIONS;
+  const set = (patch: Partial<BacklinksListFilters>) => onChange({ ...filters, ...patch });
+
+  return (
+    <div className="rounded-lg border border-gray-200 bg-gray-50 p-4">
+      <p className="mb-3 text-sm font-medium text-gray-700">{t.filtersTitle}</p>
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <label className="block">
+          <span className="mb-1 block text-xs font-medium text-gray-500">
+            {t.filtersInclude}
+          </span>
+          <Input
+            value={filters.include ?? ""}
+            onChange={(e) => set({ include: e.target.value || undefined })}
+            placeholder="blog, news"
+          />
+          <span className="mt-1 block text-xs text-gray-400">{t.filtersIncludeHint}</span>
+        </label>
+        <label className="block">
+          <span className="mb-1 block text-xs font-medium text-gray-500">
+            {t.filtersExclude}
+          </span>
+          <Input
+            value={filters.exclude ?? ""}
+            onChange={(e) => set({ exclude: e.target.value || undefined })}
+          />
+        </label>
+        <label className="block">
+          <span className="mb-1 block text-xs font-medium text-gray-500">
+            {t.filtersLinkType}
+          </span>
+          <select
+            value={filters.linkType ?? ""}
+            onChange={(e) =>
+              set({ linkType: (e.target.value || undefined) as BacklinksListFilters["linkType"] })
+            }
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+          >
+            <option value="">{t.filtersAnyType}</option>
+            <option value="dofollow">{t.filtersDofollow}</option>
+            <option value="nofollow">{t.filtersNofollow}</option>
+          </select>
+        </label>
+        <label className="block">
+          <span className="mb-1 block text-xs font-medium text-gray-500">{t.filtersTld}</span>
+          <Input
+            value={filters.tld ?? ""}
+            onChange={(e) => set({ tld: e.target.value || undefined })}
+            placeholder={t.filtersTldPlaceholder}
+          />
+        </label>
+        <label className="block">
+          <span className="mb-1 block text-xs font-medium text-gray-500">
+            {t.filtersMinRank}
+          </span>
+          <Input
+            type="number"
+            min={0}
+            max={1000}
+            value={filters.minDomainRank ?? ""}
+            onChange={(e) =>
+              set({ minDomainRank: e.target.value === "" ? undefined : Number(e.target.value) })
+            }
+          />
+        </label>
+        <label className="block">
+          <span className="mb-1 block text-xs font-medium text-gray-500">
+            {t.filtersMaxRank}
+          </span>
+          <Input
+            type="number"
+            min={0}
+            max={1000}
+            value={filters.maxDomainRank ?? ""}
+            onChange={(e) =>
+              set({ maxDomainRank: e.target.value === "" ? undefined : Number(e.target.value) })
+            }
+          />
+        </label>
+      </div>
+
+      <div className="mt-3 flex flex-wrap items-center gap-4">
+        <label className="flex items-center gap-2 text-sm text-gray-600">
+          <input
+            type="checkbox"
+            checked={filters.hideLost ?? false}
+            onChange={(e) => set({ hideLost: e.target.checked || undefined })}
+          />
+          {t.filtersHideLost}
+        </label>
+        <label className="flex items-center gap-2 text-sm text-gray-600">
+          <input
+            type="checkbox"
+            checked={filters.hideBroken ?? false}
+            onChange={(e) => set({ hideBroken: e.target.checked || undefined })}
+          />
+          {t.filtersHideBroken}
+        </label>
+      </div>
+
+      <div className="mt-4 flex flex-wrap items-center gap-3">
+        <Button type="button" onClick={onApply} disabled={disabled || over}>
+          {t.filtersApply}
+        </Button>
+        <Button type="button" variant="outline" onClick={() => onChange({})}>
+          {t.filtersClear}
+        </Button>
+        <span className={`text-xs ${over ? "text-amber-700" : "text-gray-400"}`}>
+          {over
+            ? t.filtersOverBudget
+            : t.filtersBudget(conditions, MAX_FILTER_CONDITIONS)}
+        </span>
+      </div>
+      <p className="mt-2 text-xs text-gray-400">{t.filtersCostNote}</p>
+    </div>
+  );
+}
+
+/** The individual-links table. */
+function LinksTable({
+  rows,
+  t,
+  int,
+}: {
+  rows: BacklinkRow[];
+  t: BacklinksToolCopy;
+  int: Intl.NumberFormat;
+}) {
+  if (rows.length === 0) {
+    return <p className="text-sm text-gray-500">{t.pagesEmpty}</p>;
+  }
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b border-gray-200 text-left text-xs uppercase tracking-wide text-gray-400">
+            <th className="py-2 pr-3 font-semibold">{t.colLinkingPage}</th>
+            <th className="py-2 pr-3 font-semibold">{t.colAnchorText}</th>
+            <th className="w-20 py-2 pr-3 font-semibold">{t.colRank}</th>
+            <th className="w-24 py-2 pr-3 font-semibold">{t.colFollow}</th>
+            <th className="w-24 py-2 pr-3 font-semibold">{t.colLinkStatus}</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-gray-100">
+          {rows.map((row) => (
+            <tr key={`${row.urlFrom}:${row.urlTo}`}>
+              <td className="max-w-0 py-2 pr-3">
+                {/* rel="nofollow noopener": these are pages that link to the
+                    customer, not pages we vouch for. */}
+                <a
+                  href={row.urlFrom}
+                  target="_blank"
+                  rel="nofollow noopener noreferrer"
+                  className="block truncate text-blue-600 hover:text-blue-700"
+                  title={row.urlFrom}
+                >
+                  {row.urlFrom}
+                </a>
+              </td>
+              {/* Anchor text was written by whoever built the link. Rendered as
+                  TEXT, always — never through dangerouslySetInnerHTML. */}
+              <td className="max-w-0 truncate py-2 pr-3 text-gray-600" title={row.anchor}>
+                {row.anchor || "—"}
+              </td>
+              <td className="py-2 pr-3 tabular-nums text-gray-600">
+                {int.format(row.domainRank)}
+              </td>
+              <td className="py-2 pr-3 text-gray-600">
+                {row.dofollow ? "dofollow" : "nofollow"}
+              </td>
+              <td className="py-2 pr-3">
+                {row.isBroken ? (
+                  <Badge variant="warning">{t.statusBroken}</Badge>
+                ) : row.isLost ? (
+                  <Badge variant="danger">{t.statusLost}</Badge>
+                ) : (
+                  <span className="text-gray-500">{t.statusLive}</span>
+                )}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+/**
+ * The snapshot sparkline.
+ *
+ * Inline SVG rather than a chart library: two series, no axes, no interaction.
+ * The y-scale spans each series' own min and max, because a link profile that
+ * moves from 1000 to 1010 is a flat line on an absolute scale and the shape is
+ * the whole point of a sparkline.
+ */
+function Sparkline({
+  points,
+  t,
+  int,
+}: {
+  points: { date: string; backlinks: number; referringDomains: number }[];
+  t: BacklinksToolCopy;
+  int: Intl.NumberFormat;
+}) {
+  const width = 480;
+  const height = 90;
+
+  const path = (values: number[]) => {
+    const min = Math.min(...values);
+    const max = Math.max(...values);
+    // A flat series has min === max; without this it divides by zero and the
+    // line vanishes.
+    const span = max - min || 1;
+    return values
+      .map((value, i) => {
+        const x = values.length === 1 ? 0 : (i / (values.length - 1)) * width;
+        const y = height - ((value - min) / span) * height;
+        return `${i === 0 ? "M" : "L"}${x.toFixed(1)},${y.toFixed(1)}`;
+      })
+      .join(" ");
+  };
+
+  const latest = points[points.length - 1];
+
+  return (
+    <div className="space-y-3">
+      <svg
+        viewBox={`0 0 ${width} ${height}`}
+        className="h-24 w-full"
+        preserveAspectRatio="none"
+        role="img"
+        aria-label={`${t.snapshotHistoryTitle}: ${points.length}`}
+      >
+        <path
+          d={path(points.map((p) => p.backlinks))}
+          fill="none"
+          stroke="#2563eb"
+          strokeWidth={2}
+          vectorEffect="non-scaling-stroke"
+        />
+        <path
+          d={path(points.map((p) => p.referringDomains))}
+          fill="none"
+          stroke="#9ca3af"
+          strokeWidth={2}
+          vectorEffect="non-scaling-stroke"
+        />
+      </svg>
+      <div className="flex flex-wrap gap-4 text-xs text-gray-500">
+        <span className="flex items-center gap-1.5">
+          <span className="inline-block h-2 w-2 rounded-full bg-blue-600" aria-hidden="true" />
+          {t.snapshotHistoryBacklinks}: {int.format(latest.backlinks)}
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="inline-block h-2 w-2 rounded-full bg-gray-400" aria-hidden="true" />
+          {t.snapshotHistoryReferringDomains}: {int.format(latest.referringDomains)}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * The Basic tier's upsell.
+ *
+ * ONE panel, after the results, naming what the tier does not include. Not a
+ * lock icon on every control: a page that advertises on every field is a page
+ * where the advertising is ignored, and the customer still has a working tool
+ * they are paying for.
+ *
+ * The history line is the one worth reading twice — their snapshots are ALREADY
+ * being recorded, so upgrading shows a filled chart rather than an empty one.
+ * That is true, and it is the most persuasive thing on the panel.
+ */
+function BacklinksUpsell({ t }: { t: BacklinksToolCopy }) {
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center gap-2">
+          <Lock className="h-4 w-4 text-gray-400" aria-hidden="true" />
+          <h3 className="text-base font-semibold text-gray-900">{t.upsellTitle}</h3>
+        </div>
+        <p className="mt-1 text-sm text-gray-500">{t.upsellIntro}</p>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <ul className="space-y-1.5 text-sm text-gray-600">
+          {[
+            t.upsellScope,
+            t.upsellFilters,
+            t.upsellLinks,
+            t.upsellAnchors,
+            t.upsellCsv,
+            t.upsellHistory,
+          ].map((line) => (
+            <li key={line} className="flex gap-2">
+              <span aria-hidden="true">·</span>
+              {line}
+            </li>
+          ))}
+        </ul>
+        <p className="text-xs text-gray-400">{t.upsellHistoryNote}</p>
+        {/* /pricing per the standing CTA rule. */}
+        <Link
+          href="/pricing"
+          className="inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+        >
+          {t.upsellCta}
+        </Link>
+      </CardContent>
+    </Card>
+  );
+}
+
 // ─── Page ───────────────────────────────────────────────────────────────────
 
-export function BacklinksClient({ locale }: { locale: DashLocale }) {
+export function BacklinksClient({
+  locale,
+  capability,
+}: {
+  locale: DashLocale;
+  /**
+   * What this tier's tool does. Read for every branch below — never a plan
+   * name, and never a second copy of the boundary. The server re-checks it,
+   * so a hand-crafted request cannot get past a control this did not draw.
+   */
+  capability: BacklinksCapability;
+}) {
   const t = BACKLINKS_TOOL_COPY[locale];
   const tools = SEO_TOOLS_COPY[locale];
   const it = tools.items.backlinks;
@@ -415,6 +789,7 @@ export function BacklinksClient({ locale }: { locale: DashLocale }) {
 
   const [target, setTarget] = useState("");
   const [mode, setMode] = useState<BacklinksMode>("domain");
+  const [filters, setFilters] = useState<BacklinksListFilters>({});
   const [analysis, setAnalysis] = useState<BacklinksAnalysisDto | null>(null);
   const [running, setRunning] = useState(false);
   const [history, setHistory] = useState<HistoryResponse | null>(null);
@@ -423,6 +798,34 @@ export function BacklinksClient({ locale }: { locale: DashLocale }) {
   const [reloadToken, setReloadToken] = useState(0);
 
   const reloadHistory = useCallback(() => setReloadToken((n) => n + 1), []);
+
+  /**
+   * Our own snapshot series, for the Full tier's sparkline.
+   *
+   * Read from the analysis response rather than fetched separately: the server
+   * already has the tenant, target and scope when it answers, and a second
+   * round trip to draw a chart beside data that just arrived would be a
+   * spinner nobody needs.
+   */
+  const snapshots: BacklinkSnapshotPoint[] = useMemo(
+    () => analysis?.snapshots ?? [],
+    [analysis],
+  );
+
+  const linkCsvColumns: CsvColumn<BacklinkRow>[] = useMemo(
+    () => [
+      { header: t.colLinkingPage, value: (row) => row.urlFrom },
+      { header: t.colLinkedPage, value: (row) => row.urlTo },
+      { header: t.colAnchorText, value: (row) => row.anchor },
+      { header: t.colRank, value: (row) => row.domainRank },
+      { header: t.colFollow, value: (row) => (row.dofollow ? "dofollow" : "nofollow") },
+      {
+        header: t.colLinkStatus,
+        value: (row) => (row.isBroken ? "broken" : row.isLost ? "lost" : "live"),
+      },
+    ],
+    [t],
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -439,13 +842,37 @@ export function BacklinksClient({ locale }: { locale: DashLocale }) {
     };
   }, [t, reloadToken]);
 
+  // Basic gets domain only. Derived from the capability rather than from a
+  // plan name, so moving the boundary is one edit in plan-config.
+  const availableModes = useMemo(
+    () => (capability.scope === "full" ? [...BACKLINKS_MODES] : [...BASIC_BACKLINKS_MODES]),
+    [capability.scope],
+  );
+
+  const filterConditions = useMemo(() => {
+    try {
+      return countFilterConditions(filters);
+    } catch {
+      // Over budget. The counter still has to render a number, and the Apply
+      // button is disabled on it below.
+      return MAX_FILTER_CONDITIONS + 1;
+    }
+  }, [filters]);
+
   const trimmed = target.trim();
   const valid = trimmed.length > 0 && isValidTarget(trimmed, mode);
   const showInvalid = trimmed.length > 0 && !valid;
-  const invalidMessage = mode === "exact_url" ? t.invalidUrl : t.invalidDomain;
+  const invalidMessage = modeNeedsPath(mode) ? t.invalidUrl : t.invalidDomain;
 
-  async function submit(event: React.FormEvent) {
-    event.preventDefault();
+  /**
+   * Run a lookup.
+   *
+   * `event` is optional because the Full tier's Apply-filters button calls
+   * this directly — a filter change re-asks the provider, so it goes through
+   * exactly the same path (and the same gates) as pressing Analyze.
+   */
+  async function submit(event?: React.FormEvent) {
+    event?.preventDefault();
     if (!valid || running) return;
 
     setRunning(true);
@@ -457,7 +884,16 @@ export function BacklinksClient({ locale }: { locale: DashLocale }) {
       const res = await fetch(`${API}/analyze`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ target: trimmed, mode }),
+        body: JSON.stringify({
+          target: trimmed,
+          mode,
+          // Omitted entirely on Basic. The service treats "filters present" as
+          // a Full request and refuses it, so sending {} would break a Basic
+          // tenant who filtered nothing.
+          ...(capability.filters && Object.keys(filters).length > 0
+            ? { listFilters: filters }
+            : {}),
+        }),
       });
       const body = await res.json().catch(() => null);
 
@@ -575,13 +1011,8 @@ export function BacklinksClient({ locale }: { locale: DashLocale }) {
                 <legend className="mb-1 block text-sm font-medium text-gray-700">
                   {t.modeLabel}
                 </legend>
-                <div className="inline-flex rounded-lg border border-gray-300 p-0.5">
-                  {(
-                    [
-                      ["domain", t.modeDomain],
-                      ["exact_url", t.modeExactUrl],
-                    ] as const
-                  ).map(([value, label]) => (
+                <div className="inline-flex flex-wrap rounded-lg border border-gray-300 p-0.5">
+                  {availableModes.map((value) => (
                     <button
                       key={value}
                       type="button"
@@ -593,19 +1024,30 @@ export function BacklinksClient({ locale }: { locale: DashLocale }) {
                           : "text-gray-600 hover:bg-gray-50"
                       }`}
                     >
-                      {label}
+                      {t.modes[value]}
                     </button>
                   ))}
                 </div>
-                <p className="mt-1 text-xs text-gray-400">
-                  {mode === "exact_url" ? t.modeExactUrlHint : t.modeDomainHint}
-                </p>
+                <p className="mt-1 text-xs text-gray-400">{t.modeHints[mode]}</p>
+                {/* Basic sees ONE chip and no explanation of the others. The
+                    upsell for the missing scopes lives in one place, below the
+                    results, rather than sprinkled through the form — a form
+                    that advertises on every field is a form nobody reads. */}
               </fieldset>
             </div>
-            <Button type="submit" loading={running} disabled={!valid}>
-              {!running && <Search className="mr-2 h-4 w-4" aria-hidden="true" />}
-              {running ? t.analyzing : t.analyze}
-            </Button>
+            <div className="flex flex-wrap items-center gap-3">
+              <Button type="submit" loading={running} disabled={!valid}>
+                {!running && <Search className="mr-2 h-4 w-4" aria-hidden="true" />}
+                {running ? t.analyzing : t.analyze}
+              </Button>
+              {/* WHAT THIS COSTS, before the click. A backlinks lookup is the
+                  most expensive thing in the SEO toolkit, and a customer who
+                  learns that from their allowance counter afterwards has been
+                  told too late. */}
+              <span className="text-xs text-gray-400">
+                {t.costHint(BACKLINKS_OBSERVED_COST_USD.toFixed(2))}
+              </span>
+            </div>
           </form>
         </CardContent>
       </Card>
@@ -648,9 +1090,7 @@ export function BacklinksClient({ locale }: { locale: DashLocale }) {
               <h3 className="min-w-0 break-all text-lg font-semibold text-gray-900">
                 {analysis.target}
               </h3>
-              <Badge variant="info">
-                {analysis.mode === "exact_url" ? t.modeExactUrl : t.modeDomain}
-              </Badge>
+              <Badge variant="info">{t.modes[analysis.mode] ?? analysis.mode}</Badge>
               {analysis.status === "partial" && (
                 <Badge variant="warning">{t.statusPartial}</Badge>
               )}
@@ -756,7 +1196,10 @@ export function BacklinksClient({ locale }: { locale: DashLocale }) {
             )}
           </SectionCard>
 
-          {/* Anchors */}
+          {/* Anchors — Full tier only. Basic does not BUY this section, so
+              rendering an empty card would misreport a purchase that never
+              happened. The upsell below names what is missing, once. */}
+          {capability.deepEndpoints && (
           <SectionCard
             title={t.anchorsTitle}
             subtitle={
@@ -779,9 +1222,10 @@ export function BacklinksClient({ locale }: { locale: DashLocale }) {
               />
             )}
           </SectionCard>
+          )}
 
-          {/* Most linked pages — domain mode only */}
-          {shows("pages") && (
+          {/* Most linked pages — hostname scopes, Full tier only */}
+          {capability.deepEndpoints && shows("pages") && (
           <SectionCard
             title={t.pagesTitle}
             subtitle={
@@ -836,6 +1280,80 @@ export function BacklinksClient({ locale }: { locale: DashLocale }) {
               ))}
           </SectionCard>
           )}
+
+          {/* Individual links — Full tier only, with the filter toolbar. */}
+          {capability.deepEndpoints && (
+            <SectionCard
+              title={t.tabLinks}
+              subtitle={
+                analysis?.list
+                  ? t.pagesSubtitle(analysis.list.items.length, analysis.list.totalCount)
+                  : undefined
+              }
+              icon={Link2}
+              loading={running}
+              failed={failed("list")}
+              skeletonRows={6}
+              t={t}
+            >
+              <div className="space-y-4">
+                {capability.filters && (
+                  <LinkFilters
+                    filters={filters}
+                    onChange={setFilters}
+                    conditions={filterConditions}
+                    disabled={running}
+                    onApply={() => void submit()}
+                    t={t}
+                  />
+                )}
+                {analysis?.list && (
+                  <>
+                    {capability.csv && analysis.list.items.length > 0 && (
+                      <div className="flex justify-end">
+                        <ExportCsvButton
+                          rows={analysis.list.items}
+                          columns={linkCsvColumns}
+                          tool="backlinks"
+                          label={t.exportCsv}
+                        />
+                      </div>
+                    )}
+                    <LinksTable rows={analysis.list.items} t={t} int={int} />
+                  </>
+                )}
+              </div>
+            </SectionCard>
+          )}
+
+          {/* Link growth from OUR snapshots — a different series from the
+              provider's monthly history above, and the reason the two have
+              separate copy keys. Full tier only; the WRITE happens on every
+              tier, so this fills in the moment someone upgrades. */}
+          {capability.history && (
+            <SectionCard
+              title={t.snapshotHistoryTitle}
+              subtitle={t.snapshotHistoryIntro}
+              icon={TrendingUp}
+              loading={running}
+              failed={false}
+              skeletonRows={3}
+              t={t}
+            >
+              {snapshots.length < MIN_HISTORY_POINTS ? (
+                // One point is a dot. A dot drawn as a trend line is worse
+                // than saying there is no trend yet.
+                <p className="text-sm text-gray-500">{t.snapshotHistoryTooShort}</p>
+              ) : (
+                <Sparkline points={snapshots} t={t} int={int} />
+              )}
+            </SectionCard>
+          )}
+
+          {/* The Basic upsell. ONE panel, below the results, naming exactly
+              what is missing — rather than a lock icon on every control, which
+              turns the whole page into an advertisement. */}
+          {capability.tier === "basic" && <BacklinksUpsell t={t} />}
         </div>
       )}
 
@@ -875,7 +1393,7 @@ export function BacklinksClient({ locale }: { locale: DashLocale }) {
                         {row.target}
                       </td>
                       <td className="py-2 pr-3 text-gray-500">
-                        {row.mode === "exact_url" ? t.modeExactUrl : t.modeDomain}
+                        {t.modes[row.mode] ?? row.mode}
                       </td>
                       <td className="py-2 pr-3">
                         {row.status === "partial" ? (

@@ -290,22 +290,34 @@ describe("mode -> upstream params", () => {
 // ─── Mode-scoped sections ───────────────────────────────────────────────────
 
 describe("sections that only exist for a whole domain", () => {
-  it("keeps all five for domain mode", () => {
-    expect(sectionsForMode("domain")).toEqual([
-      "summary",
-      "history",
-      "referringDomains",
-      "anchors",
-      "pages",
-    ]);
+  it("keeps every section for a hostname scope", () => {
+    for (const mode of ["domain", "subdomain"] as const) {
+      expect(sectionsForMode(mode)).toEqual([
+        "summary",
+        "history",
+        "referringDomains",
+        "anchors",
+        "pages",
+        "list",
+      ]);
+    }
   });
 
-  it("drops history and pages for exact-URL mode", () => {
+  it("drops history and pages for the page- and path-scoped modes", () => {
     // Both are domain-scoped upstream and error on a page target, so they are
-    // skipped rather than called and reported as broken.
-    expect(sectionsForMode("exact_url")).toEqual(["summary", "referringDomains", "anchors"]);
-    expect(sectionAppliesTo("history", "exact_url")).toBe(false);
-    expect(sectionAppliesTo("pages", "exact_url")).toBe(false);
-    expect(sectionAppliesTo("summary", "exact_url")).toBe(true);
+    // skipped rather than called and reported as broken. The individual-links
+    // list survives: a page and a path both HAVE individual links.
+    for (const mode of ["exact_url", "prefix"] as const) {
+      expect(sectionsForMode(mode)).toEqual([
+        "summary",
+        "referringDomains",
+        "anchors",
+        "list",
+      ]);
+      expect(sectionAppliesTo("history", mode)).toBe(false);
+      expect(sectionAppliesTo("pages", mode)).toBe(false);
+      expect(sectionAppliesTo("summary", mode)).toBe(true);
+      expect(sectionAppliesTo("list", mode)).toBe(true);
+    }
   });
 });

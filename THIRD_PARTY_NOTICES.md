@@ -29,6 +29,8 @@ License: MIT
 | `src/lib/ai-citations/share-of-voice.ts` | Share-of-voice arithmetic: null-vs-zero handling, seeded rows for every requested brand, case-insensitive key matching, competitor de-duplication. |
 | `src/lib/ai-citations/target.ts` | Research-scope model (domain / subdomains / subfolder / exact_url) and the URL post-filter, since the provider has no URL-level targeting. |
 | `src/lib/ai-citations/url.ts` | http(s) scheme allow-listing for URLs originating in LLM answers. |
+| `src/lib/backlinks/filters.ts` | DataForSEO filter-expression builders: include/exclude term semantics, ilike escaping, numeric ranges, and the 8-condition budget assertion. |
+| `src/lib/backlinks/target.ts` | The URL-prefix (subfolder) scope, and the filtered `total_count` technique for a path's totals where the summary endpoint takes only a whole target. |
 
 ### MIT License
 

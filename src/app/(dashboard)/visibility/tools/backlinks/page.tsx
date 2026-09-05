@@ -7,12 +7,21 @@ import {
   SeoQuotaExceededNotice,
 } from "@/components/seo-tools/SeoQuotaNotice";
 import { BacklinksClient } from "@/components/seo-tools/backlinks-client";
+import { backlinksCapability } from "@/lib/backlinks/options";
 
-// Real data page (replaced the scaffold): five live DataForSEO Backlinks calls
-// behind /api/seo/v1/backlinks/analyze — summary, history, referring domains,
-// anchors and most-linked pages, cached 24 h per (target, mode).
-// Paid gating enforced by ../layout.tsx; plan gating (STARTER sees
-// the locked card) is enforced server-side in the API and mirrored in the client.
+// Real data page: live DataForSEO Backlinks calls behind
+// /api/seo/v1/backlinks/analyze — summary, history, referring domains, anchors,
+// most-linked pages and, on the Full tier, the individual-links table.
+//
+// CACHED 7 DAYS PER (target, scope), twice over: once in this tenant's own
+// rows, and once in a cross-tenant Spaces object, because a link profile is a
+// fact about the public web rather than about who asked. Both are checked
+// before the allowance.
+//
+// TWO TIERS, ONE PAGE. The capability object below decides what renders; the
+// SAME object is re-checked server-side in the service, because a component
+// that declines to draw a control is not an authorization boundary. Paid
+// gating is enforced by ../layout.tsx.
 export default async function BacklinksPage() {
   const cookieStore = await cookies();
   const locale = dashboardLocale(cookieStore.get("echorank_locale")?.value);
@@ -27,7 +36,14 @@ export default async function BacklinksPage() {
     <div className="space-y-4">
       {quota && <SeoQuotaExceededNotice usage={quota} locale={locale} />}
       {quota && <SeoQuotaCounter usage={quota} locale={locale} />}
-      <BacklinksClient locale={locale} />
+      <BacklinksClient
+        locale={locale}
+        capability={
+          membership
+            ? backlinksCapability(membership.tenant.planType)
+            : backlinksCapability("STARTER")
+        }
+      />
     </div>
   );
 }

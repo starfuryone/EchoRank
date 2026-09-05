@@ -17,8 +17,38 @@
 
 import { InvalidDomainError, normalizeDomain } from "@/lib/site-explorer/domain";
 
-export const BACKLINKS_MODES = ["domain", "exact_url"] as const;
+/**
+ * ── FOUR SCOPES NOW, AND THE FIRST TWO KEEP THEIR OLD SPELLING ─────────────
+ *
+ * "domain" and "exact_url" are the original two modes. Their strings are
+ * UNCHANGED because they are persisted in BacklinksAnalysis.mode and in the
+ * cache key: renaming either would orphan every stored analysis and silently
+ * re-buy every cached one.
+ *
+ * The two new scopes are what the Full tier adds:
+ *
+ *   domain     — the hostname and its subdomains (include_subdomains=true).
+ *                Kept as the widest scope for backward compatibility with
+ *                every row already written under this name.
+ *   subdomain  — that exact hostname only, subdomains excluded.
+ *   prefix     — a path and everything under it. The provider's summary and
+ *                history endpoints cannot answer this, so it is served by
+ *                filtered total_count reads of the backlinks list — see
+ *                buildPrefixOverview in ./service.ts.
+ *   exact_url  — one page.
+ */
+export const BACKLINKS_MODES = ["domain", "subdomain", "prefix", "exact_url"] as const;
 export type BacklinksMode = (typeof BACKLINKS_MODES)[number];
+
+/** The two scopes the Basic tier may use. Basic is domain-only. */
+export const BASIC_BACKLINKS_MODES: readonly BacklinksMode[] = ["domain"];
+
+/** Scopes whose target carries a path, and which therefore need one. */
+export const PATH_BACKLINKS_MODES: readonly BacklinksMode[] = ["prefix", "exact_url"];
+
+export function modeNeedsPath(mode: BacklinksMode): boolean {
+  return PATH_BACKLINKS_MODES.includes(mode);
+}
 
 /** Longest target DataForSEO will sensibly take. */
 const MAX_URL_LENGTH = 2000;
@@ -32,7 +62,9 @@ export class InvalidTargetError extends Error {
     super(
       mode === "exact_url"
         ? "Enter a full page URL like https://example.com/pricing"
-        : "Enter a domain like example.com",
+        : mode === "prefix"
+          ? "Enter a URL with a path like https://example.com/blog"
+          : "Enter a domain like example.com",
     );
     this.name = "InvalidTargetError";
   }
@@ -88,7 +120,17 @@ function normalizeUrl(input: string, mode: BacklinksMode): string {
  * have one error type to map.
  */
 export function normalizeTarget(input: string, mode: BacklinksMode): string {
-  if (mode === "exact_url") return normalizeUrl(input, mode);
+  if (modeNeedsPath(mode)) {
+    const url = normalizeUrl(input, mode);
+    // A prefix over "/" is the whole domain wearing a more expensive costume:
+    // it would run the filtered-total_count path to answer a question the
+    // cheap summary endpoint answers directly. Rejected so the customer picks
+    // the scope that is actually free.
+    if (mode === "prefix" && new URL(url).pathname.replace(/\/+$/, "") === "") {
+      throw new InvalidTargetError(input, mode);
+    }
+    return url;
+  }
 
   try {
     return normalizeDomain(input);
@@ -109,9 +151,41 @@ export function isValidTarget(input: string, mode: BacklinksMode): boolean {
 }
 
 /**
- * Exact-URL targets are pages, and DataForSEO ignores include_subdomains for
- * them; domain targets want it on so subdomain links are counted.
+ * Only the widest scope includes subdomains.
+ *
+ * "domain" keeps subdomains for backward compatibility — that is what every
+ * analysis already stored under this name means, and narrowing it now would
+ * change the answer to a question customers have already asked. "subdomain" is
+ * the new, narrower scope for anyone who wants the hostname alone. The
+ * provider ignores the flag for page-shaped targets entirely.
  */
 export function includeSubdomainsFor(mode: BacklinksMode): boolean {
   return mode === "domain";
+}
+
+/**
+ * The provider-side target for a scope.
+ *
+ * Prefix scope sends the HOSTNAME upstream and narrows with a filter, because
+ * the Backlinks endpoints take a domain or a page and nothing in between. The
+ * path is applied by buildPrefixFilters below.
+ */
+export function apiTargetFor(target: string, mode: BacklinksMode): string {
+  if (mode !== "prefix") return target;
+  return new URL(target).hostname.replace(/^www\./, "");
+}
+
+/**
+ * The DataForSEO filter that narrows a backlinks-list read to a path prefix.
+ *
+ * `url_to` is the linked page. `ilike '<origin><path>%'` catches the path and
+ * its children; the escape stops a path containing % or _ from turning into a
+ * wildcard that silently widens the scope — which would be invisible, because
+ * a wider answer still looks like an answer.
+ */
+export function buildPrefixFilters(target: string): unknown[] {
+  const url = new URL(target);
+  const path = url.pathname.replace(/\/+$/, "");
+  const escaped = `${url.origin}${path}`.replace(/[\\%_]/g, (match) => `\\${match}`);
+  return [["url_to", "ilike", `${escaped}%`]];
 }

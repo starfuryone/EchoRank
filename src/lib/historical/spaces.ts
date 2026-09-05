@@ -18,19 +18,23 @@
 // mode this module exists to prevent.
 
 import {
-  S3Client,
   PutObjectCommand,
   GetObjectCommand,
   DeleteObjectCommand,
 } from "@aws-sdk/client-s3";
+import {
+  SpacesNotConfiguredError,
+  spacesClient,
+  spacesCredentials,
+  resetSpacesClient,
+} from "@/lib/spaces-client";
 
-export class SpacesNotConfiguredError extends Error {
-  readonly statusCode = 503;
-  constructor(missing: string[]) {
-    super(`Snapshot storage is not configured (missing: ${missing.join(", ")}).`);
-    this.name = "SpacesNotConfiguredError";
-  }
-}
+// Re-exported so existing importers of these names keep working. The client
+// and the credential reader moved to @/lib/spaces-client when the backlinks
+// cache needed them too; the BUCKET and the throw-on-missing doctrine stayed
+// here, because that cache wants the opposite failure behaviour. See that
+// module's header.
+export { SpacesNotConfiguredError, resetSpacesClient };
 
 export class SpacesUnavailableError extends Error {
   readonly statusCode = 503;
@@ -56,26 +60,13 @@ export interface SpacesConfig {
  * `pm2 restart`.
  */
 export function spacesConfig(): SpacesConfig {
-  const key = process.env.SPACES_KEY?.trim();
-  const secret = process.env.SPACES_SECRET?.trim();
-  const region = process.env.SPACES_REGION?.trim();
   const bucket = process.env.SPACES_BUCKET?.trim();
-
-  const missing = [
-    !key && "SPACES_KEY",
-    !secret && "SPACES_SECRET",
-    !region && "SPACES_REGION",
-    !bucket && "SPACES_BUCKET",
-  ].filter(Boolean) as string[];
-  if (missing.length) throw new SpacesNotConfiguredError(missing);
-
-  return {
-    key: key!,
-    secret: secret!,
-    region: region!,
-    bucket: bucket!,
-    endpoint: process.env.SPACES_ENDPOINT?.trim() || `https://${region}.digitaloceanspaces.com`,
-  };
+  // The bucket is checked FIRST and separately, so a deployment missing only
+  // SPACES_BUCKET is told exactly that rather than nothing — spacesCredentials
+  // does not know this module wants one.
+  if (!bucket) throw new SpacesNotConfiguredError(["SPACES_BUCKET"]);
+  const credentials = spacesCredentials();
+  return { ...credentials, bucket };
 }
 
 /** True when all four vars are present — lets a page hide capture UI rather
@@ -89,26 +80,9 @@ export function isSpacesConfigured(): boolean {
   }
 }
 
-let cached: { client: S3Client; endpoint: string; key: string } | null = null;
-
-function client(config: SpacesConfig): S3Client {
-  // Keyed on endpoint+key so a credential rotation builds a new client rather
-  // than reusing one signing with the dead secret.
-  if (cached && cached.endpoint === config.endpoint && cached.key === config.key) {
-    return cached.client;
-  }
-  const next = new S3Client({
-    region: config.region,
-    endpoint: config.endpoint,
-    credentials: { accessKeyId: config.key, secretAccessKey: config.secret },
-  });
-  cached = { client: next, endpoint: config.endpoint, key: config.key };
-  return next;
-}
-
-/** Reset the memoized client. Tests only. */
-export function resetSpacesClient(): void {
-  cached = null;
+/** The shared, memoized client. See @/lib/spaces-client. */
+function client(config: SpacesConfig) {
+  return spacesClient(config);
 }
 
 /**

@@ -1924,8 +1924,8 @@ model RankSnapshot {
 model BacklinksAnalysis {
   id               String   @id @default(cuid())
   tenantId         String
-  target           String // normalized: bare host (domain) or absolute URL (exact_url)
-  mode             String // domain | exact_url
+  target           String // normalized: bare host (domain) or absolute URL (prefix/exact_url)
+  mode             String // domain | subdomain | prefix | exact_url
   status           String   @default("completed") // completed | partial
   costUsd          Decimal  @default(0) @db.Decimal(10, 6)
   summary          Json? // SummarySection — totals, rank, dofollow split
@@ -1933,6 +1933,11 @@ model BacklinksAnalysis {
   referringDomains Json? // ReferringDomainsSection — top 50
   anchors          Json? // AnchorsSection — top 30 anchor texts
   pages            Json? // PagesSection — top 20 most-linked pages
+  /// BacklinksListSection — the Full tier's individual-links table.
+  /// NULL ON A BASIC ROW, and null there means "not bought", not "none found".
+  /// A Basic tenant's analysis never contains this section, so a reader must
+  /// not treat its absence as an empty link profile.
+  list             Json?
   failedSections   Json? // string[] of section keys that did not load
   createdAt        DateTime @default(now())
 
@@ -4516,4 +4521,42 @@ model AiCitationsAnalysis {
   /// History list and the MCP read.
   @@index([tenantId, createdAt])
   @@map("ai_citations_analyses")
+}
+
+/// One overview snapshot for a backlinks target, for the history sparkline.
+///
+/// WRITTEN ON EVERY TIER, SHOWN ON ONE. The data was already paid for by
+/// whoever ran the lookup, and a tier that starts recording history only when
+/// someone upgrades shows an empty chart for weeks afterwards — the moment the
+/// feature is least convincing. The plan capability gates the UI, not this
+/// write. See BacklinksCapability.history in src/lib/plan-config.ts.
+///
+/// COUNTS ONLY, and small ones: four integers and a rank. This is not a copy of
+/// the analysis — that lives in BacklinksAnalysis, and the cached provider
+/// payload lives in Spaces. What a sparkline needs is a number per date, and
+/// storing more would make a per-lookup row into a per-lookup blob.
+///
+/// TENANT-SCOPED even though the underlying data is public. Two workspaces
+/// tracking the same domain each get their own series, because the series is a
+/// record of when THEY looked — a chart with gaps where another tenant happened
+/// not to look would be unreadable.
+model BacklinkSnapshot {
+  id               String   @id @default(cuid())
+  tenantId         String
+  /// Normalised target, matching BacklinksAnalysis.target.
+  target           String
+  /// domain | subdomain | prefix | exact_url
+  mode             String
+  backlinks        Int
+  referringDomains Int
+  /// DataForSEO domain rank, 0-1000. Null for a prefix scope, which has no
+  /// rank the provider will report — null is the honest value, not 0.
+  rank             Int?
+  brokenBacklinks  Int?
+  dofollowDomains  Int?
+  capturedAt       DateTime @default(now())
+
+  /// The sparkline query: one tenant, one target+scope, oldest first.
+  @@index([tenantId, target, mode, capturedAt])
+  @@map("backlink_snapshots")
 }

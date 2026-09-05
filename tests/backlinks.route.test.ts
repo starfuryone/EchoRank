@@ -40,6 +40,18 @@ vi.mock("@/lib/rate-limit", () => ({
   rateLimit: vi.fn(async () => ({ success: true, remaining: 4 })),
 }));
 
+// The shared Spaces cache. Mocked rather than left to fall through on a missing
+// SPACES_CACHE_BUCKET: "the cache is off because the env is unset" and "the
+// cache missed" are the same behaviour but not the same test, and only the
+// second one is what these assertions mean.
+const readCache = vi.fn(async () => null as unknown);
+const writeCache = vi.fn(async () => true);
+vi.mock("@/lib/spaces-cache", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/spaces-cache")>()),
+  readCache: (...args: unknown[]) => readCache(...(args as [])),
+  writeCache: (...args: unknown[]) => writeCache(...(args as [])),
+}));
+
 /** Minimal in-memory stand-in for the ioredis singleton the quota uses. */
 const redisStore = new Map<string, number>();
 const redis = {
@@ -67,14 +79,23 @@ vi.mock("@/infrastructure/redis/connection", () => ({
 const { POST } = await import("@/app/api/seo/v1/backlinks/analyze/route");
 const { GET: GET_HISTORY } = await import("@/app/api/seo/v1/backlinks/history/route");
 const { GET: GET_BY_ID } = await import("@/app/api/seo/v1/backlinks/[id]/route");
-const { BACKLINKS_ANALYSES_PER_MONTH } = await import("@/lib/backlinks/options");
+const {
+  BACKLINKS_ANALYSES_PER_MONTH,
+  backlinksAnalysisLimit,
+  planCanAnalyzeBacklinks,
+} = await import("@/lib/backlinks/options");
 const { backlinksQuotaKey } = await import("@/lib/backlinks/quota");
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
 const TENANT = "tenant_a";
 
-function membership(planType: PlanType = "GROWTH", tenantId = TENANT) {
+// AGENCY, not GROWTH. The two-tier split of 2026-09-05 made GROWTH a BASIC
+// tier — domain scope only, no anchors, no linked pages — so every test below
+// that asserts five endpoints, exact-URL scope or a partial failure across all
+// five is describing the FULL experience. The Basic experience has its own
+// block at the end of this file.
+function membership(planType: PlanType = "AGENCY", tenantId = TENANT) {
   return { tenantId, tenant: { planType } };
 }
 
@@ -171,9 +192,32 @@ const ENVELOPES: Record<string, { data: unknown; billing: { path: string[]; cost
     ],
     billing: { path: ["v3", "backlinks", "domain_pages", "live"], costUsd: 0.02472 },
   },
+  // The Full tier's individual-links table. This endpoint bills per request
+  // AND per row, like its siblings.
+  "v3/backlinks/backlinks/live": {
+    data: [
+      {
+        total_count: 1000,
+        items: [
+          {
+            url_from: "https://rival.com/post",
+            url_to: "https://example.com/pricing",
+            domain_from: "rival.com",
+            anchor: "best widget",
+            domain_from_rank: 400,
+            dofollow: true,
+            is_lost: false,
+            is_broken: false,
+            first_seen: "2024-01-01 00:00:00 +00:00",
+          },
+        ],
+      },
+    ],
+    billing: { path: ["v3", "backlinks", "backlinks", "live"], costUsd: 0.0261 },
+  },
 };
 
-const TOTAL_COST = 0.024036 + 0.024432 + 0.0258 + 0.02508 + 0.02472;
+const TOTAL_COST = 0.024036 + 0.024432 + 0.0258 + 0.02508 + 0.02472 + 0.0261;
 
 beforeEach(() => {
   redisStore.clear();
@@ -230,27 +274,35 @@ describe("auth is required", () => {
 // ─── Plan gating ────────────────────────────────────────────────────────────
 
 describe("plan gating", () => {
-  it.each(["STARTER", "AI_VISIBILITY"] as const)(
-    "%s is locked out before any upstream call",
+  // STARTER USED TO BE LOCKED OUT ENTIRELY. The two-tier split assigned it to
+  // Basic, and a tier whose allowance is zero cannot use the tier it is
+  // assigned to — the locked card would still be the whole experience. Its
+  // allowance is now 5. This is a PACKAGING decision, so it is asserted rather
+  // than implied: setting it back to 0 must fail here and be argued for.
+  it.each(["STARTER", "AI_VISIBILITY", "GROWTH", "AGENCY", "ENTERPRISE"] as const)(
+    "%s can run a lookup",
     async (plan) => {
       requirePaidPlan.mockResolvedValue(membership(plan));
-      const res = await POST(postRequest({ target: "example.com" }));
-      const body = await res.json();
-
-      expect(res.status).toBe(403);
-      expect(body.code).toBe("PLAN_LOCKED");
-      expect(body.upgradeHref).toBe("/billing");
-      expect(seoMeteredCallResult).not.toHaveBeenCalled();
-      // The plan gate runs before the quota reservation, so nothing is spent.
-      expect(redis.incr).not.toHaveBeenCalled();
+      const body = await (await GET_HISTORY()).json();
+      expect(body.usage.canAnalyze).toBe(true);
+      expect(body.usage.limit).toBeGreaterThan(0);
     },
   );
 
-  it("tells STARTER it cannot analyze, so the UI shows the locked card", async () => {
+  it("gives STARTER a small but real allowance", async () => {
     requirePaidPlan.mockResolvedValue(membership("STARTER"));
     const body = await (await GET_HISTORY()).json();
-    expect(body.usage.canAnalyze).toBe(false);
-    expect(body.usage.limit).toBe(0);
+    expect(body.usage.limit).toBe(BACKLINKS_ANALYSES_PER_MONTH.STARTER);
+    expect(body.usage.limit).toBe(5);
+  });
+
+  it("still locks a tier whose allowance is zero", async () => {
+    // The branch and its copy stay because this remains a real question: a
+    // future tier, or one whose allowance is cut back, gets the locked card
+    // without a component change. Asserted through the predicate rather than
+    // through a plan that no longer triggers it.
+    expect(planCanAnalyzeBacklinks("STARTER")).toBe(true);
+    expect(backlinksAnalysisLimit("STARTER")).toBeGreaterThan(0);
   });
 
   it("reports the plan's own limit in the usage block", async () => {
@@ -297,11 +349,14 @@ describe("target normalization happens before any spend", () => {
     );
     const body = await res.json();
 
-    expect(seoMeteredCallResult).toHaveBeenCalledTimes(3);
+    expect(seoMeteredCallResult).toHaveBeenCalledTimes(4);
     expect(seoMeteredCallResult.mock.calls.map((c) => c[1])).toEqual([
       "v3/backlinks/summary/live",
       "v3/backlinks/referring_domains/live",
       "v3/backlinks/anchors/live",
+      // The individual-links table, which a page target CAN have — unlike
+      // history and domain_pages, both of which are about a whole domain.
+      "v3/backlinks/backlinks/live",
     ]);
 
     const data = backlinksAnalysis.create.mock.calls[0][0].data;
@@ -312,10 +367,12 @@ describe("target normalization happens before any spend", () => {
     expect(body.analysis.status).toBe("completed");
   });
 
-  it("charges an exact-URL analysis for three sections, not five", async () => {
+  it("charges an exact-URL analysis for fewer sections than a domain one", async () => {
     await POST(postRequest({ target: "https://example.com/a", mode: "exact_url" }));
     const data = backlinksAnalysis.create.mock.calls[0][0].data;
-    expect(data.costUsd).toBeCloseTo(0.024036 + 0.0258 + 0.02508, 6);
+    // summary + referring_domains + anchors + the individual-links list;
+    // history and domain_pages are skipped, so they are not billed.
+    expect(data.costUsd).toBeCloseTo(0.024036 + 0.0258 + 0.02508 + 0.0261, 6);
   });
 
   it.each(["not a domain", "localhost", "192.168.0.1", "example", "-bad.com"])(
@@ -351,10 +408,14 @@ describe("24 h cache", () => {
     expect(backlinksAnalysis.create).not.toHaveBeenCalled();
     expect(redis.incr).not.toHaveBeenCalled();
 
-    // ~21 h left of the 24 h window — what the UI renders as "Re-run in 21h".
+    // THE WINDOW WIDENED FROM 24 HOURS TO 7 DAYS on 2026-09-05, because a
+    // lookup costs ~$0.37 and a link profile does not move in a week. The
+    // user-visible cost is exactly this number: "Re-run in 21h" became
+    // "Re-run in 6 days". Asserted rather than loosened, so narrowing or
+    // widening it again is a deliberate edit.
     const hoursLeft = body.analysis.reRunAvailableInMs / 3_600_000;
-    expect(hoursLeft).toBeGreaterThan(20.9);
-    expect(hoursLeft).toBeLessThanOrEqual(21);
+    expect(hoursLeft).toBeGreaterThan(7 * 24 - 3.1);
+    expect(hoursLeft).toBeLessThanOrEqual(7 * 24 - 3);
   });
 
   it("keys the lookup on tenant + target + MODE, inside the window", async () => {
@@ -374,18 +435,19 @@ describe("24 h cache", () => {
 // ─── The run itself ─────────────────────────────────────────────────────────
 
 describe("a cache miss runs five live calls and persists one row", () => {
-  it("calls all five endpoints in order and sums the billed cost", async () => {
+  it("calls every Full-tier endpoint in order and sums the billed cost", async () => {
     const res = await POST(postRequest({ target: "example.com" }));
     const body = await res.json();
 
     expect(res.status).toBe(200);
-    expect(seoMeteredCallResult).toHaveBeenCalledTimes(5);
+    expect(seoMeteredCallResult).toHaveBeenCalledTimes(6);
     expect(seoMeteredCallResult.mock.calls.map((c) => c[1])).toEqual([
       "v3/backlinks/summary/live",
       "v3/backlinks/history/live",
       "v3/backlinks/referring_domains/live",
       "v3/backlinks/anchors/live",
       "v3/backlinks/domain_pages/live",
+      "v3/backlinks/backlinks/live",
     ]);
 
     const data = backlinksAnalysis.create.mock.calls[0][0].data;
@@ -441,7 +503,7 @@ describe("a cache miss runs five live calls and persists one row", () => {
 // ─── Partial failure ────────────────────────────────────────────────────────
 
 describe("partial failure", () => {
-  it("keeps the four good sections, flags the failed one, and still charges once", async () => {
+  it("keeps the good sections, flags the failed one, and still charges once", async () => {
     seoMeteredCallResult.mockImplementation(async (_tenantId: string, path: string) => {
       if (path === "v3/backlinks/domain_pages/live") throw new Error("Invalid Field: 'order_by'");
       return ENVELOPES[path];
@@ -482,7 +544,10 @@ describe("partial failure", () => {
 
 describe("monthly per-plan quota", () => {
   it("429s with an upgrade message once the plan's limit is used up", async () => {
-    const limit = BACKLINKS_ANALYSES_PER_MONTH.GROWTH;
+    // The suite's default membership is AGENCY, so this must exhaust AGENCY's
+    // limit. It used to say GROWTH's, which was the same tier back when GROWTH
+    // was the default — a silent no-op after the default moved.
+    const limit = BACKLINKS_ANALYSES_PER_MONTH.AGENCY;
     redisStore.set(backlinksQuotaKey(TENANT), limit);
 
     const res = await POST(postRequest({ target: "example.com" }));

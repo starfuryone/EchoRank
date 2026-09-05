@@ -6,6 +6,7 @@
 
 import type { BacklinksSummary } from "@/lib/dataforseo/backlinks-summary";
 import type { BacklinksMode } from "./target";
+import type { BacklinkSnapshotPoint } from "./snapshot-shape";
 
 /** The five sections an analysis is made of, in render order. */
 export const BACKLINKS_SECTIONS = [
@@ -14,6 +15,8 @@ export const BACKLINKS_SECTIONS = [
   "referringDomains",
   "anchors",
   "pages",
+  /** The Full tier's individual-links table. Absent on Basic — not empty. */
+  "list",
 ] as const;
 
 export type BacklinksSection = (typeof BACKLINKS_SECTIONS)[number];
@@ -33,8 +36,12 @@ export type BacklinksStatus = "completed" | "partial";
  */
 export const DOMAIN_ONLY_SECTIONS: readonly BacklinksSection[] = ["history", "pages"];
 
+/** Scopes whose target is a whole hostname, which is what the domain-only
+ *  sections need. "prefix" is not one: a path has no link-growth history. */
+const HOSTNAME_MODES: readonly BacklinksMode[] = ["domain", "subdomain"];
+
 export function sectionAppliesTo(section: BacklinksSection, mode: BacklinksMode): boolean {
-  return mode === "domain" || !DOMAIN_ONLY_SECTIONS.includes(section);
+  return HOSTNAME_MODES.includes(mode) || !DOMAIN_ONLY_SECTIONS.includes(section);
 }
 
 /** The sections an analysis in this mode will actually contain. */
@@ -121,6 +128,33 @@ export interface PagesSection {
   totalCount: number;
 }
 
+/** One individual link, for the Full tier's backlinks table. */
+export interface BacklinkRow {
+  /** The linking page. */
+  urlFrom: string;
+  /** The linked page on the target. */
+  urlTo: string;
+  /** Linking domain. */
+  domainFrom: string;
+  /** Anchor text. An empty string is a real value — image links have none. */
+  anchor: string;
+  /** DataForSEO rank of the linking DOMAIN, 0-1000. */
+  domainRank: number;
+  dofollow: boolean;
+  /** The link no longer exists. */
+  isLost: boolean;
+  /** The linked page 404s. Broken links are recoverable traffic. */
+  isBroken: boolean;
+  /** ISO timestamp, or null when upstream omits it. */
+  firstSeen: string | null;
+}
+
+export interface BacklinksListSection {
+  items: BacklinkRow[];
+  /** DataForSEO's own total for the filter, far larger than `items`. */
+  totalCount: number;
+}
+
 /** Shape returned by all three Backlinks routes. */
 export interface BacklinksAnalysisDto {
   id: string;
@@ -133,6 +167,8 @@ export interface BacklinksAnalysisDto {
   referringDomains: ReferringDomainsSection | null;
   anchors: AnchorsSection | null;
   pages: PagesSection | null;
+  /** Full tier only; null on Basic, which does not buy it. */
+  list: BacklinksListSection | null;
   /** Section keys that did not load. Each renders its own "couldn't load" card. */
   failedSections: BacklinksSection[];
   createdAt: string;
@@ -140,6 +176,16 @@ export interface BacklinksAnalysisDto {
   cached?: boolean;
   /** ms until this target can be re-analyzed; only set on a cache hit. */
   reRunAvailableInMs?: number;
+  /**
+   * OUR snapshot series for this target and scope, oldest first.
+   *
+   * Attached to the analysis rather than fetched separately: the server
+   * already knows the tenant, target and scope when it answers, and a second
+   * round trip to draw a chart beside data that just arrived is a spinner
+   * nobody needs. Empty on tiers without the history capability, and empty
+   * before the backlink_snapshots migration is applied.
+   */
+  snapshots?: BacklinkSnapshotPoint[];
 }
 
 /** One row of the history list — no section payloads, just the summary. */

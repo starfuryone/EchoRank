@@ -678,6 +678,7 @@ import {
   ANCHORS_LIMIT,
   DOMAIN_PAGES_LIMIT,
   HISTORY_MONTHS,
+  backlinksCapability,
   planCanAnalyzeBacklinks,
 } from "../backlinks/options";
 import { BACKLINKS_SECTIONS } from "../backlinks/types";
@@ -745,17 +746,42 @@ test("backlinks copy never uses CamelCase branding or names the data vendor", ()
 });
 
 test("backlinks plan caps match the pricing sheet", () => {
-  // STARTER is locked by product decision — it sees the upsell card.
-  assert.equal(BACKLINKS_ANALYSES_PER_MONTH.STARTER, 0);
-  assert.equal(BACKLINKS_ANALYSES_PER_MONTH.AI_VISIBILITY, 0);
+  // STARTER WAS 0 AND IS NOW 5 (2026-09-05). The two-tier split assigned it to
+  // Basic, and a tier whose allowance is zero cannot use the tier it is
+  // assigned to. Five lookups is under $2 of monthly COGS on a $79 plan, and
+  // Basic buys fewer endpoint families than the old five-call analysis did.
+  // A PACKAGING DECISION, pinned here so reverting it has to be deliberate.
+  assert.equal(BACKLINKS_ANALYSES_PER_MONTH.STARTER, 5);
+  assert.equal(BACKLINKS_ANALYSES_PER_MONTH.AI_VISIBILITY, 5);
   assert.equal(BACKLINKS_ANALYSES_PER_MONTH.GROWTH, 25);
   assert.equal(BACKLINKS_ANALYSES_PER_MONTH.AGENCY, 100);
   assert.ok(BACKLINKS_ANALYSES_PER_MONTH.ENTERPRISE >= BACKLINKS_ANALYSES_PER_MONTH.AGENCY);
 
-  assert.ok(!planCanAnalyzeBacklinks("STARTER"));
-  assert.ok(!planCanAnalyzeBacklinks("AI_VISIBILITY"));
-  assert.ok(planCanAnalyzeBacklinks("GROWTH"));
-  assert.ok(planCanAnalyzeBacklinks("AGENCY"));
+  // Every sellable tier can now run a lookup. The locked-card branch stays,
+  // because a future tier — or one whose allowance is cut back — needs it
+  // without a component change.
+  for (const plan of ["STARTER", "AI_VISIBILITY", "GROWTH", "AGENCY", "ENTERPRISE"] as const) {
+    assert.ok(planCanAnalyzeBacklinks(plan), plan);
+  }
+});
+
+test("the tier boundary is a capability object, and the two tiers differ", () => {
+  // Components and routes ask this, never a plan name, so moving the boundary
+  // is one edit in plan-config.ts rather than a grep across a feature.
+  assert.equal(backlinksCapability("STARTER").tier, "basic");
+  assert.equal(backlinksCapability("GROWTH").tier, "basic");
+  assert.equal(backlinksCapability("AGENCY").tier, "full");
+  assert.equal(backlinksCapability("ENTERPRISE").tier, "full");
+
+  const basic = backlinksCapability("GROWTH");
+  const full = backlinksCapability("AGENCY");
+  assert.equal(basic.scope, "domain");
+  assert.equal(full.scope, "full");
+  for (const key of ["filters", "csv", "history", "deepEndpoints"] as const) {
+    assert.equal(basic[key], false, `basic.${key}`);
+    assert.equal(full[key], true, `full.${key}`);
+  }
+  assert.ok(full.listRows > basic.listRows);
 });
 
 test("backlinks row limits are the cost levers, and are pinned", () => {
@@ -765,7 +791,12 @@ test("backlinks row limits are the cost levers, and are pinned", () => {
   assert.equal(ANCHORS_LIMIT, 30);
   assert.equal(DOMAIN_PAGES_LIMIT, 20);
   assert.equal(HISTORY_MONTHS, 12);
-  assert.equal(BACKLINKS_CACHE_TTL_MS, 24 * 60 * 60 * 1000);
+  // THE WINDOW WIDENED FROM 24 HOURS TO 7 DAYS (2026-09-05). A lookup costs
+  // ~$0.37 and a link profile does not move in a week. The user-visible cost is
+  // that "Re-run available in 21h" became "in 6 days" — a real regression for
+  // anyone watching a campaign daily, and the reason this is pinned rather than
+  // loosened.
+  assert.equal(BACKLINKS_CACHE_TTL_MS, 7 * 24 * 60 * 60 * 1000);
 });
 
 test("worst-case monthly backlinks spend, at the measured per-run cost", () => {
@@ -776,18 +807,24 @@ test("worst-case monthly backlinks spend, at the measured per-run cost", () => {
   assert.ok(agency < 12.5, `AGENCY worst case ${agency}`);
 });
 
-test("the five sections are the five cards the page renders", () => {
+test("the sections are the cards the page renders", () => {
   assert.deepEqual([...BACKLINKS_SECTIONS], [
     "summary",
     "history",
     "referringDomains",
     "anchors",
     "pages",
+    // The Full tier's individual-links table. NOT bought on Basic — its
+    // absence there means "not purchased", never "no links found".
+    "list",
   ]);
 });
 
-test("the two target modes never share a cache key", () => {
-  assert.deepEqual([...BACKLINKS_MODES], ["domain", "exact_url"]);
+test("the target scopes never share a cache key", () => {
+  // "domain" and "exact_url" KEEP THEIR ORIGINAL SPELLING: both are persisted
+  // in BacklinksAnalysis.mode and in the Spaces cache key, so renaming either
+  // would orphan every stored analysis and silently re-buy every cached one.
+  assert.deepEqual([...BACKLINKS_MODES], ["domain", "subdomain", "prefix", "exact_url"]);
   assert.notEqual(
     normalizeTarget("example.com", "domain"),
     normalizeTarget("example.com", "exact_url"),

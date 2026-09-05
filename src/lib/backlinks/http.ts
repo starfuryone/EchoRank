@@ -9,12 +9,13 @@ import { SeoQuotaExceededError, TrackedKeywordLimitError } from "@/lib/seo-quota
 import { enforcementErrorResponse } from "@/lib/plan-enforcement";
 import { seoErrorResponse } from "@/lib/dataforseo/metering";
 import { InvalidTargetError } from "./target";
+import { TooManyFilterConditionsError } from "./filters";
 import {
   BacklinksPlanLockedError,
   BacklinksQuotaExceededError,
   BacklinksQuotaUnavailableError,
 } from "./quota";
-import { BacklinksFailedError } from "./service";
+import { BacklinksCapabilityError, BacklinksFailedError } from "./service";
 
 export function backlinksRouteError(err: unknown): NextResponse {
   // PaidPlanRequiredError -> 403, plan errors -> their own statuses.
@@ -35,6 +36,29 @@ export function backlinksRouteError(err: unknown): NextResponse {
   }
 
   // The tool is not in this plan at all — the UI shows the locked card.
+  // A tier reaching for a capability it does not have. 403 with the specific
+  // capability named, so the UI can point at the right upsell rather than a
+  // generic "upgrade" — and so a Basic client that somehow submitted a Full
+  // request gets told what was wrong with it.
+  if (err instanceof BacklinksCapabilityError) {
+    return NextResponse.json(
+      {
+        error: err.message,
+        code: err.code,
+        capability: err.capability,
+        upgradeHref: "/pricing",
+      },
+      { status: err.statusCode },
+    );
+  }
+
+  if (err instanceof TooManyFilterConditionsError) {
+    return NextResponse.json(
+      { error: err.message, code: err.code, used: err.used },
+      { status: err.statusCode },
+    );
+  }
+
   if (err instanceof BacklinksPlanLockedError) {
     return NextResponse.json(
       { error: err.message, code: "PLAN_LOCKED", plan: err.plan, upgradeHref: "/billing" },
