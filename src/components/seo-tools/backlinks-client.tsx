@@ -37,7 +37,6 @@ import {
   type BacklinksListFilters,
 } from "@/lib/backlinks/filters";
 import type { BacklinksCapability } from "@/lib/plan-config";
-import { BACKLINKS_OBSERVED_COST_USD } from "@/lib/backlinks/options";
 import { MIN_HISTORY_POINTS, type BacklinkSnapshotPoint } from "@/lib/backlinks/snapshot-shape";
 import { ExportCsvButton } from "@/components/seo-tools/export-csv-button";
 import type { CsvColumn } from "@/lib/csv-export";
@@ -46,6 +45,8 @@ import type {
   AnchorRow,
   BacklinkRow,
   BacklinksAnalysisDto,
+  HistorySection,
+  SummarySection,
   BacklinksHistoryRow,
   BacklinksSection,
   BacklinksUsage,
@@ -97,12 +98,111 @@ function shortDate(value: string | null): string {
 
 // ─── Shared card pieces ─────────────────────────────────────────────────────
 
+/**
+ * One overview card.
+ *
+ * ── THE LABEL *IS* THE BADGE ──────────────────────────────────────────────
+ * Rather than adding a second element beside a grey caption, the caption
+ * itself became the pill. Every card has a label, so this is the one piece of
+ * card content that can carry a badge CONSISTENTLY — a badge driven by
+ * something optional (a delta, a unit) would be present on some cards and
+ * absent on others, which reads as a rendering bug rather than a design.
+ *
+ * `bg-blue-600` is READ FROM THE ACTIVE SCOPE CHIP in the form above, not
+ * chosen here. If that chip's blue moves, this must move with it — they are
+ * the same "this is the selected/primary thing" blue on one page, and a second
+ * hex would drift the moment either is touched.
+ */
 function Metric({ label, value, unit }: { label: string; value: string; unit?: string }) {
   return (
     <div>
-      <dt className="text-xs font-medium uppercase tracking-wide text-gray-400">{label}</dt>
-      <dd className="mt-1 text-2xl font-semibold text-gray-900">{value}</dd>
-      {unit && <p className="text-xs text-gray-400">{unit}</p>}
+      <dt>
+        <span className="inline-block rounded-full bg-blue-600 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-white">
+          {label}
+        </span>
+      </dt>
+      <dd className="mt-1.5 text-2xl font-semibold text-gray-900">{value}</dd>
+      {unit && <p className="mt-0.5 text-xs text-gray-400">{unit}</p>}
+    </div>
+  );
+}
+
+/**
+ * The overview cards. ONE COMPONENT, BOTH TIERS — deliberately not gated.
+ *
+ * ── THERE WAS NEVER A BASIC/FULL FORK HERE ────────────────────────────────
+ * Both tiers already rendered this same block inline; extracting it makes the
+ * sharing structural rather than incidental, so a later change to "the Basic
+ * cards" cannot quietly become a second copy.
+ *
+ * ── EVERY FIGURE IS ALREADY PAID FOR ──────────────────────────────────────
+ * summary and history are both non-deep sections, fetched on every tier (see
+ * DEEP_SECTIONS in backlinks/service.ts). Rendering the follow split and the
+ * new/lost pair costs nothing and buys nothing — no capability moved, no
+ * second call. That is the whole reason these can be shown to Basic too.
+ */
+export function BacklinksOverviewCards({
+  summary,
+  history,
+  t,
+  int,
+  dec,
+}: {
+  summary: SummarySection;
+  history: HistorySection | null;
+  t: BacklinksToolCopy;
+  int: Intl.NumberFormat;
+  dec: Intl.NumberFormat;
+}) {
+  // The newest month the provider reported. Absent for page- and path-scoped
+  // analyses, which have no monthly growth series at all — the card is then
+  // omitted rather than shown as zeroes, because "0 new, 0 lost" is a claim
+  // about a month nobody measured.
+  const latest = history?.points.length ? history.points[history.points.length - 1] : null;
+
+  return (
+    <div className="space-y-4">
+      <dl className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <Metric label={t.metricBacklinks} value={int.format(summary.backlinks)} />
+        <Metric
+          label={t.metricReferringDomains}
+          value={int.format(summary.referringDomains)}
+        />
+        <Metric
+          label={t.metricRank}
+          value={int.format(summary.rank)}
+          unit={t.metricRankUnit}
+        />
+        {/* The dofollow/nofollow SPLIT, not just the dofollow half. Both
+            figures are reported on the same base — referring domains — which
+            is the only pairing that means anything here; see the note in
+            dataforseo/backlinks-summary.ts about why the per-link figures
+            cannot be differenced against these. */}
+        <Metric
+          label={t.metricFollowSplit}
+          value={`${int.format(summary.dofollowDomains)} / ${int.format(summary.nofollowDomains)}`}
+        />
+        <Metric label={t.metricBroken} value={int.format(summary.brokenBacklinks)} />
+        <Metric
+          label={t.metricSpam}
+          value={int.format(summary.spamScore ?? 0)}
+          unit={t.metricSpamUnit}
+        />
+        {latest && (
+          <Metric
+            label={t.metricNewLost}
+            value={`+${int.format(latest.newBacklinks)} / −${int.format(latest.lostBacklinks)}`}
+            // The month itself, as data — no new copy, and it stops the pair
+            // reading as an all-time total.
+            unit={latest.month}
+          />
+        )}
+      </dl>
+      <p className="text-sm text-gray-500">
+        {summary.dofollowRatio === null
+          ? t.noDofollowData
+          : t.dofollowRatio(dec.format(summary.dofollowRatio * 100))}
+      </p>
     </div>
   );
 }
@@ -1043,10 +1143,11 @@ export function BacklinksClient({
               {/* WHAT THIS COSTS, before the click. A backlinks lookup is the
                   most expensive thing in the SEO toolkit, and a customer who
                   learns that from their allowance counter afterwards has been
-                  told too late. */}
-              <span className="text-xs text-gray-400">
-                {t.costHint(BACKLINKS_OBSERVED_COST_USD.toFixed(2))}
-              </span>
+                  told too late.
+                  NO DOLLAR FIGURE: the copy says "heavy" and names the reuse
+                  window instead. A price in the UI is a number nobody meters
+                  from and everybody has to remember to update. */}
+              <span className="text-xs text-gray-400">{t.costHint}</span>
             </div>
           </form>
         </CardContent>
@@ -1119,41 +1220,13 @@ export function BacklinksClient({
             t={t}
           >
             {analysis?.summary && (
-              <div className="space-y-4">
-                <dl className="grid gap-6 sm:grid-cols-3 lg:grid-cols-6">
-                  <Metric
-                    label={t.metricBacklinks}
-                    value={int.format(analysis.summary.backlinks)}
-                  />
-                  <Metric
-                    label={t.metricReferringDomains}
-                    value={int.format(analysis.summary.referringDomains)}
-                  />
-                  <Metric
-                    label={t.metricDofollow}
-                    value={int.format(analysis.summary.dofollowDomains)}
-                  />
-                  <Metric
-                    label={t.metricRank}
-                    value={int.format(analysis.summary.rank)}
-                    unit={t.metricRankUnit}
-                  />
-                  <Metric
-                    label={t.metricBroken}
-                    value={int.format(analysis.summary.brokenBacklinks)}
-                  />
-                  <Metric
-                    label={t.metricSpam}
-                    value={int.format(analysis.summary.spamScore ?? 0)}
-                    unit={t.metricSpamUnit}
-                  />
-                </dl>
-                <p className="text-sm text-gray-500">
-                  {analysis.summary.dofollowRatio === null
-                    ? t.noDofollowData
-                    : t.dofollowRatio(dec.format(analysis.summary.dofollowRatio * 100))}
-                </p>
-              </div>
+              <BacklinksOverviewCards
+                summary={analysis.summary}
+                history={analysis.history}
+                t={t}
+                int={int}
+                dec={dec}
+              />
             )}
           </SectionCard>
 

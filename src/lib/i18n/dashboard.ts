@@ -8766,8 +8766,7 @@ const backlinksToolEn = {
     prefix: "Links to this path and everything under it, e.g. /blog.",
     exact_url: "Links to this one page only.",
   } as Record<string, string>,
-  costHint: (usd: string) =>
-    `Roughly $${usd} per lookup. The same target is free again for 7 days, for you and everyone else on Echorank.`,
+  costHint: "Heavy lookup — results for a target are reused for 7 days.",
   // ── Full-tier surfaces ────────────────────────────────────────────────────
   tabDomains: "Referring domains",
   tabLinks: "Individual links",
@@ -8844,6 +8843,10 @@ const backlinksToolEn = {
   metricRankUnit: "0–1000",
   metricBroken: "Broken backlinks",
   metricDofollow: "Dofollow domains",
+  /** The SPLIT card: dofollow / nofollow referring domains, one base. */
+  metricFollowSplit: "Dofollow / nofollow",
+  /** Newest reported month's new and lost links. The month is the card's unit. */
+  metricNewLost: "New / lost",
   metricSpam: "Spam score",
   metricSpamUnit: "0–100, lower is better",
   dofollowRatio: (percent: string) => `${percent}% of referring domains link without rel=nofollow`,
@@ -8943,8 +8946,7 @@ export const BACKLINKS_TOOL_COPY: Record<DashLocale, BacklinksToolCopy> = {
       prefix: "Les liens vers ce chemin et tout ce qu'il contient, p. ex. /blog.",
       exact_url: "Les liens vers cette seule page.",
     } as Record<string, string>,
-    costHint: (usd: string) =>
-      `Environ ${usd} $ par recherche. La même cible est ensuite gratuite pendant 7 jours, pour vous comme pour tous les utilisateurs d'Echorank.`,
+    costHint: "Recherche lourde — les résultats d'une cible sont réutilisés pendant 7 jours.",
     tabDomains: "Domaines référents",
     tabLinks: "Liens individuels",
     tabAnchors: "Ancres",
@@ -9020,6 +9022,8 @@ export const BACKLINKS_TOOL_COPY: Record<DashLocale, BacklinksToolCopy> = {
     metricRankUnit: "0–1000",
     metricBroken: "Liens brisés",
     metricDofollow: "Domaines dofollow",
+    metricFollowSplit: "Dofollow / nofollow",
+    metricNewLost: "Nouveaux / perdus",
     metricSpam: "Score de pourriel",
     metricSpamUnit: "0–100, plus bas est mieux",
     dofollowRatio: (percent: string) =>
@@ -9109,8 +9113,7 @@ export const BACKLINKS_TOOL_COPY: Record<DashLocale, BacklinksToolCopy> = {
       prefix: "Links auf diesen Pfad und alles darunter, z. B. /blog.",
       exact_url: "Nur Links auf diese eine Seite.",
     } as Record<string, string>,
-    costHint: (usd: string) =>
-      `Rund ${usd} $ pro Abfrage. Dasselbe Ziel ist danach 7 Tage lang gratis — für Sie und für alle anderen auf Echorank.`,
+    costHint: "Aufwendige Abfrage — Ergebnisse für ein Ziel werden 7 Tage lang wiederverwendet.",
     tabDomains: "Verweisende Domains",
     tabLinks: "Einzelne Links",
     tabAnchors: "Ankertexte",
@@ -9188,6 +9191,8 @@ export const BACKLINKS_TOOL_COPY: Record<DashLocale, BacklinksToolCopy> = {
     metricRankUnit: "0–1000",
     metricBroken: "Defekte Backlinks",
     metricDofollow: "Dofollow-Domains",
+    metricFollowSplit: "Dofollow / Nofollow",
+    metricNewLost: "Neu / verloren",
     metricSpam: "Spam-Score",
     metricSpamUnit: "0–100, tiefer ist besser",
     dofollowRatio: (percent: string) =>
