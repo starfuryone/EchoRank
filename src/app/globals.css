@@ -3,11 +3,27 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+
+  /* ── Brand gold ────────────────────────────────────────────────────────
+   * The marketing site's deep gold, which until now existed only as
+   * --goldDeep inside src/app/[locale]/home2.module.css — a CSS module, so
+   * scoped to that page and unreachable from the dashboard. Promoted to a
+   * real token here so both sides name the same colour instead of repeating
+   * the hex.
+   *
+   * FILL ONLY, WITH DARK TEXT ON IT. #F0B90B against white is 1.9:1 and fails
+   * every contrast bar as text; against --brand-gold-ink it is 8.8:1, which
+   * is why the ink token sits beside it rather than being left to a caller's
+   * judgement. */
+  --brand-gold: #f0b90b;
+  --brand-gold-ink: #1e2329;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-brand-gold: var(--brand-gold);
+  --color-brand-gold-ink: var(--brand-gold-ink);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }

@@ -5352,6 +5352,37 @@ export const ONBOARDING_COPY: Record<DashLocale, OnboardingCopy> = {
   },
 };
 
+// ─── The Google-approval "Coming soon" badge ────────────────────────────────
+//
+// ITS OWN COPY OBJECT, not a key inside SEO_TOOLS_COPY, because three hubs
+// render it — SEO Tools, Reputation Tools and Marketing Studio. Reaching into
+// the SEO hub's catalog from a reputation card would work and would be a lie
+// about where the string belongs.
+//
+// `label` is what a sighted reader sees. `sr` and `reason` both say WHY,
+// because "coming soon" on its own is the one thing this badge does not mean:
+// the surface is built and works — Google has not approved the access it needs.
+const comingSoonEn = {
+  label: "Coming soon",
+  sr: "coming soon, waiting on Google approval",
+  reason: "Waiting on Google's approval of the access this feature needs.",
+};
+export type ComingSoonCopy = typeof comingSoonEn;
+
+export const COMING_SOON_COPY: Record<DashLocale, ComingSoonCopy> = {
+  en: comingSoonEn,
+  fr: {
+    label: "Bientôt",
+    sr: "bientôt disponible, en attente de l'approbation de Google",
+    reason: "En attente de l'approbation par Google de l'accès dont cette fonctionnalité a besoin.",
+  },
+  "de-CH": {
+    label: "Demnächst",
+    sr: "demnächst verfügbar, wartet auf die Freigabe durch Google",
+    reason: "Wartet auf die Freigabe des benötigten Zugriffs durch Google.",
+  },
+};
+
 // ─── Products menu + feature scaffolds ──────────────────────────────────────
 // Typed against the nav config's id unions (imported at the top of this
 // file): adding an item/group/scaffold in src/lib/seo-tools.ts without copy

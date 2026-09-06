@@ -9,6 +9,7 @@ import { dashboardLocale, SEO_TOOLS_COPY } from "@/lib/i18n/dashboard";
 import { getCurrentTenant } from "@/lib/tenant";
 import { visibleSeoToolGroups } from "@/lib/seo-tools";
 import { NewBadge } from "@/components/layout/new-badge";
+import { ComingSoonBadge } from "@/components/layout/coming-soon-badge";
 import { ToolsHubHelpButton } from "@/components/seo-tools/tools-hub-help";
 import { RecentResearchPanel } from "@/components/seo-tools/recent-research-panel";
 import { readResearchLog } from "@/lib/research-log/store";
@@ -71,7 +72,15 @@ export default async function SeoToolsHubPage() {
                         <span className="truncate text-sm font-semibold text-gray-900">
                           {it.name}
                         </span>
-                        {tool.badge === "new" && <NewBadge locale={locale} />}
+                        {/* REPLACES the New badge while set — two badges on
+                            one card is a card that has to be read twice, and
+                            the Google block is always the more urgent of the
+                            two. */}
+                        {tool.requiresGoogleApproval ? (
+                          <ComingSoonBadge locale={locale} />
+                        ) : (
+                          tool.badge === "new" && <NewBadge locale={locale} />
+                        )}
                       </span>
                       <span className="mt-1 block text-xs leading-snug text-gray-500">
                         {it.description}

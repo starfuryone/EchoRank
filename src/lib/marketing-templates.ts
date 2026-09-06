@@ -70,6 +70,22 @@ export interface MarketingCategory {
   /** Output ceiling for the generate step, or a hybrid's optional AI step. */
   maxTokens?: number;
   parts: MarketingPart[];
+
+  /**
+   * Live operation is blocked on GOOGLE's approval — an OAuth consent-screen
+   * review, or admission to a Google API program. Renders the golden "Coming
+   * soon" badge INSTEAD of any other badge; changes no routing and no gating.
+   * See the long note on the same flag in src/lib/seo-tools.ts.
+   *
+   * NO TEMPLATE CARRIES IT TODAY, and by construction none should: this hub
+   * reaches no external API at all. Template 09 "analytics" is the one that
+   * sounds like it might — it does not. Its rows are PASTED by the customer
+   * and summarised in TypeScript; nothing here connects to GA4, and the
+   * pasted corpus is never even sent to the model. The flag exists so the type
+   * matches its two sibling hubs and a template can be marked without a type
+   * change if a Google-backed one is ever added.
+   */
+  requiresGoogleApproval?: true;
 }
 
 const v = (k: string, labelKey: string, multiline = false): MarketingVariable =>

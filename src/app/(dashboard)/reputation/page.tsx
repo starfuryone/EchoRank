@@ -18,6 +18,7 @@ import { getCurrentTenant } from "@/lib/tenant";
 import { planConfig } from "@/lib/plan-config";
 import { visibleReputationGroups, toolLockState } from "@/lib/reputation-tools";
 import { ReputationHelpButton } from "@/components/help/ReputationHelp";
+import { ComingSoonBadge } from "@/components/layout/coming-soon-badge";
 
 export default async function ReputationHubPage() {
   const cookieStore = await cookies();
@@ -66,10 +67,20 @@ export default async function ReputationHubPage() {
                       <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-1.5">
                           <span className="text-sm font-medium text-gray-500">{item.name}</span>
-                          <span className="inline-flex items-center gap-1 rounded-full bg-gray-200 px-2 py-0.5 text-[10px] font-medium text-gray-600">
-                            <Lock className="h-2.5 w-2.5" aria-hidden="true" />
-                            {copy.lockedBadge}
-                          </span>
+                          {/* REPLACES the lock pill while set. "Upgrade" is the
+                              wrong instruction for a card Google has not
+                              approved — no amount of money fixes that one. The
+                              upgrade copy below still renders, because the plan
+                              lock is also true and is what the customer must
+                              clear first. */}
+                          {tool.requiresGoogleApproval ? (
+                            <ComingSoonBadge locale={locale} />
+                          ) : (
+                            <span className="inline-flex items-center gap-1 rounded-full bg-gray-200 px-2 py-0.5 text-[10px] font-medium text-gray-600">
+                              <Lock className="h-2.5 w-2.5" aria-hidden="true" />
+                              {copy.lockedBadge}
+                            </span>
+                          )}
                         </div>
                         <p className="mt-1 text-xs leading-relaxed text-gray-400">{item.description}</p>
                         <p className="mt-2 text-xs text-gray-500">{copy.lockedHint(planName)}</p>
@@ -96,7 +107,10 @@ export default async function ReputationHubPage() {
                       aria-hidden="true"
                     />
                     <div className="min-w-0">
-                      <span className="text-sm font-medium text-gray-900">{item.name}</span>
+                      <span className="flex flex-wrap items-center gap-1.5">
+                        <span className="text-sm font-medium text-gray-900">{item.name}</span>
+                        {tool.requiresGoogleApproval && <ComingSoonBadge locale={locale} />}
+                      </span>
                       <p className="mt-1 text-xs leading-relaxed text-gray-500">{item.description}</p>
                     </div>
                   </Link>

@@ -175,6 +175,28 @@ export interface SeoTool {
    * Absent = live. Only the five remaining scaffolds carry it.
    */
   comingSoon?: true;
+
+  /**
+   * Live operation is blocked on GOOGLE's approval — an OAuth consent-screen
+   * review, or admission to a Google API program — not on our build queue and
+   * not on the customer's plan.
+   *
+   * BADGE ONLY. It renders the golden "Coming soon" badge INSTEAD of whatever
+   * badge the card would otherwise carry, and changes nothing about routing or
+   * gating: a clickable card stays clickable, a locked one stays locked.
+   * Whether a Google-blocked surface should also stop being reachable is a
+   * product decision that belongs somewhere it can be seen, not inside a flag
+   * named for a badge.
+   *
+   * THE CRITERION IS "WHAT ACTUALLY CALLS GOOGLE", verified from the code
+   * rather than from the card's subject matter. Exactly two modules in this
+   * repository request a Google OAuth scope (src/lib/gsc/client.ts —
+   * webmasters.readonly; src/lib/ga/client.ts — analytics.readonly), plus the
+   * Business Profile integration point that has no code yet. A card that
+   * merely MENTIONS Google is not blocked by it — see the note on the
+   * monitoring card in reputation-tools.ts.
+   */
+  requiresGoogleApproval?: true;
 }
 
 export interface SeoToolGroup {
@@ -213,7 +235,10 @@ export const SEO_TOOL_GROUPS: SeoToolGroup[] = [
       // only tool here that scores demand and AI absence in one number.
       t("keyword_opportunities", "keyword-opportunities", Target, { badge: "new" }),
       t("rank_tracker", "rank-tracker", LineChart),
-      t("gsc_insights", "gsc-insights", SearchCheck),
+      // GSC OAuth, scope webmasters.readonly — a restricted scope, so the
+      // consent screen needs Google's review before anyone outside the
+      // test-user list can connect.
+      t("gsc_insights", "gsc-insights", SearchCheck, { requiresGoogleApproval: true }),
       t("serp_checker", "serp-checker", ListOrdered),
       t("backlinks", "backlinks", Link2),
       t("brand_radar", "brand-radar", RadarIcon),
@@ -276,7 +301,9 @@ export const SEO_TOOL_GROUPS: SeoToolGroup[] = [
       // but this one is first-party and priced by URLs rather than per page.
       t("site_crawler", "site-crawler", Network),
       t("lighthouse", "lighthouse", Gauge),
-      t("web_analytics", "web-analytics", AreaChart),
+      // GA4 OAuth, scope analytics.readonly — a sensitive scope, same
+      // consent-screen review as GSC above.
+      t("web_analytics", "web-analytics", AreaChart, { requiresGoogleApproval: true }),
       t("bot_analytics", "bot-analytics", Bot, { badge: "new" }),
       // The other half of Bot Analytics. That one answers "are AI crawlers
       // reading us"; this one answers "are the humans they answered actually
@@ -351,7 +378,20 @@ export const SEO_TOOL_GROUPS: SeoToolGroup[] = [
   },
   {
     id: "local_seo",
-    tools: [t("gbp_monitor", "gbp-monitor", Store, { badge: "new", comingSoon: true })],
+    tools: [
+      // Google Business Profile. No code calls it yet — the page is still a
+      // FeatureScaffold — but the block is the same one: the GBP API is an
+      // approval-gated Google program, so building it does not make it usable.
+      // It carries BOTH flags honestly: comingSoon because the page is a
+      // placeholder, requiresGoogleApproval because finishing the page would
+      // not change that. The badge shows the second, which is the one a
+      // customer cannot wait out.
+      t("gbp_monitor", "gbp-monitor", Store, {
+        badge: "new",
+        comingSoon: true,
+        requiresGoogleApproval: true,
+      }),
+    ],
   },
   {
     id: "developers",

@@ -70,6 +70,22 @@ export interface ReputationTool {
    * Absent = reachable on every paid plan that can reach the hub at all.
    */
   feature?: Feature;
+
+  /**
+   * Live operation is blocked on GOOGLE's approval — an OAuth consent-screen
+   * review, or admission to a Google API program. Renders the golden "Coming
+   * soon" badge INSTEAD of any other badge; changes no routing and no gating.
+   * See the long note on the same flag in src/lib/seo-tools.ts.
+   *
+   * NOTHING IN THIS HUB CARRIES IT TODAY, and that is a finding rather than an
+   * omission: the criterion is what actually calls Google, and no reputation
+   * surface does. `/monitoring` lists GOOGLE among seven review platforms, but
+   * its Google reviews arrive by import and by the browser extension — no
+   * Google OAuth scope is requested anywhere on that path, so the hub is not
+   * waiting on Google for it. The flag is here so a card CAN be marked without
+   * a type change if that ever stops being true.
+   */
+  requiresGoogleApproval?: true;
 }
 
 export interface ReputationToolGroup {

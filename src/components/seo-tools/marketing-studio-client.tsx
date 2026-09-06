@@ -13,6 +13,7 @@ import Link from "next/link";
 import { Lock, Sparkles, Calculator, ServerCog, Mic2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { ComingSoonBadge } from "@/components/layout/coming-soon-badge";
 import { MARKETING_CATEGORIES, type MarketingMode } from "@/lib/marketing-templates";
 import type { MarketingUsage } from "@/lib/marketing/types";
 import {
@@ -127,10 +128,19 @@ export function MarketingStudioClient({ locale, usage, hasVoiceGuide }: Props) {
                   <p className="mt-1.5 text-xs leading-relaxed text-gray-600">
                     {marketingLabel(t, category.roleKey)}
                   </p>
-                  <span className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-medium text-gray-700">
-                    <Icon className="h-3 w-3" aria-hidden="true" />
-                    {modeLabel(category.mode)}
-                  </span>
+                  {/* REPLACES the mode chip while set. The mode ("generate",
+                      "hybrid") describes how a template works, which is not
+                      worth saying about one that cannot run yet. */}
+                  {category.requiresGoogleApproval ? (
+                    <span className="mt-3 inline-flex">
+                      <ComingSoonBadge locale={locale} />
+                    </span>
+                  ) : (
+                    <span className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-2 py-0.5 text-[11px] font-medium text-gray-700">
+                      <Icon className="h-3 w-3" aria-hidden="true" />
+                      {modeLabel(category.mode)}
+                    </span>
+                  )}
                 </Link>
               </li>
             );
