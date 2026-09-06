@@ -1,13 +1,56 @@
 export const GLOSSARY_HTML: string = String.raw`<!DOCTYPE html>
 <html lang="en">
 <head>
+  <script>try{if(localStorage.getItem("er-theme")==="day")document.documentElement.setAttribute("data-theme","day")}catch(e){}</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Echorank Glossary — search, ranking &amp; AI visibility terms</title>
 <meta name="description" content="The Echorank Glossary: definitions and concepts for search, ranking, AI visibility, and digital discovery.">
 <link rel="canonical" href="https://echorank360.com/en/glossary">
 <style>
-:root{--bg:#181A20;--surface:#1E2329;--surface2:#2B3139;--text:#EAECEF;--muted:#848E9C;--border:#2B3139;--accent:#FCD535;--accent2:#F0B90B;--highlight:rgba(252,213,53,.28);--radius:14px;--width:1100px}
+:root{--bg:#181A20;--surface:#1E2329;--surface2:#2B3139;--text:#EAECEF;--muted:#848E9C;--border:#2B3139;--accent:#FCD535;--accent2:#F0B90B;--highlight:rgba(252,213,53,.28);--radius:14px;--width:1100px
+      /* Text-safe counterparts of the fills above. A colour that paints a
+         button and a colour that is read cannot be one token: gold is
+         1.6:1 on white. At night these ARE the fills, so nothing moves. */
+      --ink-strong:#FFFFFF;--ink-muted:#B7BDC6;
+      --ink-accent:#FCD535;--ink-accent-2:#F0B90B;
+      --ink-good:#0ECB81;--ink-bad:#F6465D;
+      /* Ink on a gold fill. Theme-INVARIANT: day does not override it,
+         because gold does not move either. */
+      --ink-on-gold:#181A20;
+    }
+
+    /* ── DAY ───────────────────────────────────────────────────────────────
+       Night is the :root block above; this is the whole of the override, and
+       the default is night — a visitor who never presses the toggle gets the
+       bytes that shipped. GOLD IS NOT LISTED: it is a fill in both themes,
+       and the ink on it (--ink-on-gold) is dark in both, which is only true
+       because neither moves. Anything that is READ takes an --ink-* token.
+       Values are the same ones globals.css uses, so a page rendered by React
+       and a page rendered by this route handler are the same colour. */
+    [data-theme="day"]{
+      --bg:#FFFFFF;--bg-2:#F5F6F8;--surface:#F5F6F8;--surface-2:#EAECEF;
+      --surface2:#EAECEF;--surface-soft:#EAECEF;--card:#F5F6F8;--card2:#EAECEF;
+      --line:#EAECEF;--line-soft:rgba(0,0,0,.06);--border:#EAECEF;
+      --text:#1E2329;--muted:#5A6270;
+      --ink-strong:#0B0E11;--ink-muted:#5A6270;
+      --ink-accent:#8A6100;--ink-accent-2:#8A6100;
+      --ink-good:#0B7A4A;--ink-bad:#C11C33;
+      --shadow:0 18px 60px rgba(15,23,42,.14);
+      --highlight:rgba(138,97,0,.20);--accent-soft:rgba(138,97,0,.10);
+    }
+    /* The toggle. Icon-only, so the accessible name is the aria-label, and the
+       script below rewrites it — a button that says "night theme" while it is
+       the thing that LEAVES night is unusable without sight. */
+    .er-theme{display:inline-flex;align-items:center;justify-content:center;
+      width:32px;height:32px;flex:none;padding:0;border-radius:8px;cursor:pointer;
+      border:1px solid var(--line,var(--border,#2B3139));background:transparent;
+      color:var(--muted);font-size:14px;line-height:1;font-family:inherit}
+    .er-theme:hover{color:var(--text)}
+    .er-theme .er-day{display:none}
+    [data-theme="day"] .er-theme .er-night{display:none}
+    [data-theme="day"] .er-theme .er-day{display:inline}
+
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}
 body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;line-height:1.6}
@@ -16,14 +59,14 @@ a{color:inherit}
 .header{border-bottom:1px solid var(--border);background:rgba(24,26,32,.96);backdrop-filter:blur(12px);position:sticky;top:0;z-index:100}
 .header-inner{min-height:70px;display:flex;align-items:center;justify-content:space-between;gap:24px}
 .brand{display:inline-flex;align-items:center;gap:10px;text-decoration:none;font-weight:800;font-size:1.25rem}
-.mark{width:34px;height:34px;display:grid;place-items:center;border-radius:10px;background:var(--accent);color:#181A20;font-weight:900}
+.mark{width:34px;height:34px;display:grid;place-items:center;border-radius:10px;background:var(--accent);color:var(--ink-on-gold);font-weight:900}
 .nav{display:flex;align-items:center;gap:20px;font-size:.95rem}
 .nav a{color:var(--muted);text-decoration:none}
 .nav a:hover{color:var(--text)}
-.cta{padding:9px 16px;border-radius:10px;background:var(--accent);color:#181A20 !important;font-weight:700}
+.cta{padding:9px 16px;border-radius:10px;background:var(--accent);color:var(--ink-on-gold) !important;font-weight:700}
 .cta:hover{background:var(--accent2)}
 .hero{padding:80px 0 52px;text-align:center}
-.eyebrow{margin:0 0 12px;color:var(--accent);font-size:.85rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase}
+.eyebrow{margin:0 0 12px;color:var(--ink-accent);font-size:.85rem;font-weight:800;letter-spacing:.12em;text-transform:uppercase}
 .hero h1{margin:0;font-size:clamp(2.5rem,6vw,5rem);line-height:1;letter-spacing:-.05em}
 .hero p{max-width:700px;margin:22px auto 0;color:var(--muted);font-size:1.1rem}
 .search-wrapper{position:relative;max-width:720px;margin:0 auto 38px}
@@ -35,7 +78,7 @@ a{color:inherit}
 .suggestions li:hover{background:var(--surface2)}
 .alphabet{position:sticky;top:70px;z-index:40;display:flex;flex-wrap:wrap;justify-content:center;gap:4px;padding:12px;margin-bottom:42px;border:1px solid var(--border);border-radius:var(--radius);background:rgba(30,35,41,.96);backdrop-filter:blur(12px)}
 .alphabet a{min-width:32px;padding:6px 7px;text-align:center;border-radius:7px;color:var(--muted);text-decoration:none;font-size:.88rem;font-weight:700}
-.alphabet a:hover,.alphabet a.active{background:var(--accent);color:#181A20}
+.alphabet a:hover,.alphabet a.active{background:var(--accent);color:var(--ink-on-gold)}
 .alphabet a.disabled{opacity:.32;pointer-events:none}
 .glossary{padding-bottom:90px}
 .glossary-letter{scroll-margin-top:150px;margin-bottom:56px}
@@ -43,7 +86,7 @@ a{color:inherit}
 .glossary-letter ul{margin:0;padding:0;list-style:none}
 .glossary-item{padding:25px 0;border-bottom:1px solid var(--border)}
 .glossary-item h3{margin:0 0 8px;font-size:1.25rem}
-.glossary-item p{margin:0;max-width:900px;color:#B7BDC6}
+.glossary-item p{margin:0;max-width:900px;color:var(--ink-muted)}
 .highlight{padding:0 2px;background:var(--highlight);border-radius:3px}
 .no-results{display:none;padding:50px 20px;text-align:center;border:1px dashed var(--border);border-radius:var(--radius);color:var(--muted)}
 .footer{padding:40px 0;border-top:1px solid var(--border);color:var(--muted);text-align:center;font-size:.9rem}
@@ -60,6 +103,7 @@ a{color:inherit}
       <a href="/en/learn">Learn</a>
       <a href="/en/pricing" class="cta">See pricing</a>
     </nav>
+    <button type="button" class="er-theme" id="er-theme" aria-label="Switch to day theme"><span class="er-night" aria-hidden="true">&#9788;</span><span class="er-day" aria-hidden="true">&#9789;</span></button>
   </div>
 </header>
 
@@ -716,5 +760,38 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 </script>
 
+<script>
+/* Night/Day toggle. Client-only on purpose: this document is served by a route
+   handler and cached at the edge (up to a year on some of the family), so the
+   HTML must be identical for every visitor and the theme has to be applied in
+   the browser. The <head> guard above does it before first paint; this only
+   handles the click. Same "er-theme" key and same data-theme attribute as the
+   React pages, so a choice made on the homepage survives a link into here. */
+(function(){
+  var KEY="er-theme";
+  var root=document.documentElement;
+  var btn=document.getElementById("er-theme");
+  if(!btn){return}
+  var TO_DAY="Switch to day theme";
+  var TO_NIGHT="Switch to night theme";
+  function label(){
+    btn.setAttribute("aria-label",root.getAttribute("data-theme")==="day"?TO_NIGHT:TO_DAY)
+  }
+  function apply(day){
+    if(day){root.setAttribute("data-theme","day")}else{root.removeAttribute("data-theme")}
+    label()
+  }
+  label();
+  btn.addEventListener("click",function(){
+    var day=root.getAttribute("data-theme")!=="day";
+    apply(day);
+    try{localStorage.setItem(KEY,day?"day":"night")}catch(e){}
+  });
+  window.addEventListener("storage",function(e){
+    if(e.key!==KEY){return}
+    apply(e.newValue==="day")
+  });
+})();
+</script>
 </body>
 </html>`;

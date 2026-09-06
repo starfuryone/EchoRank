@@ -4,6 +4,7 @@
 export const AIDO_HTML: string = String.raw`<!DOCTYPE html>
 <html lang="en">
 <head>
+  <script>try{if(localStorage.getItem("er-theme")==="day")document.documentElement.setAttribute("data-theme","day")}catch(e){}</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>AI Discovery Optimization (AIDO): The Complete Guide | Echorank</title>
@@ -47,24 +48,66 @@ export const AIDO_HTML: string = String.raw`<!DOCTYPE html>
   --bg:#181A20; --surface:#1E2329; --surface2:#2B3139; --line:#2B3139;
   --text:#EAECEF; --muted:#848E9C; --gold:#F0B90B; --gold2:#FCD535;
   --green:#0ECB81; --red:#F6465D; --radius:12px;
-}
+
+      /* Text-safe counterparts of the fills above. A colour that paints a
+         button and a colour that is read cannot be one token: gold is
+         1.6:1 on white. At night these ARE the fills, so nothing moves. */
+      --ink-strong:#FFFFFF;--ink-muted:#C7CCD6;
+      --ink-accent:#FCD535;--ink-accent-2:#F0B90B;
+      --ink-good:#0ECB81;--ink-bad:#F6465D;
+      /* Ink on a gold fill. Theme-INVARIANT: day does not override it,
+         because gold does not move either. */
+      --ink-on-gold:#181A20;
+    }
+
+    /* ── DAY ───────────────────────────────────────────────────────────────
+       Night is the :root block above; this is the whole of the override, and
+       the default is night — a visitor who never presses the toggle gets the
+       bytes that shipped. GOLD IS NOT LISTED: it is a fill in both themes,
+       and the ink on it (--ink-on-gold) is dark in both, which is only true
+       because neither moves. Anything that is READ takes an --ink-* token.
+       Values are the same ones globals.css uses, so a page rendered by React
+       and a page rendered by this route handler are the same colour. */
+    [data-theme="day"]{
+      --bg:#FFFFFF;--bg-2:#F5F6F8;--surface:#F5F6F8;--surface-2:#EAECEF;
+      --surface2:#EAECEF;--surface-soft:#EAECEF;--card:#F5F6F8;--card2:#EAECEF;
+      --line:#EAECEF;--line-soft:rgba(0,0,0,.06);--border:#EAECEF;
+      --text:#1E2329;--muted:#5A6270;
+      --ink-strong:#0B0E11;--ink-muted:#5A6270;
+      --ink-accent:#8A6100;--ink-accent-2:#8A6100;
+      --ink-good:#0B7A4A;--ink-bad:#C11C33;
+      --shadow:0 18px 60px rgba(15,23,42,.14);
+      --highlight:rgba(138,97,0,.20);--accent-soft:rgba(138,97,0,.10);
+    }
+    /* The toggle. Icon-only, so the accessible name is the aria-label, and the
+       script below rewrites it — a button that says "night theme" while it is
+       the thing that LEAVES night is unusable without sight. */
+    .er-theme{display:inline-flex;align-items:center;justify-content:center;
+      width:32px;height:32px;flex:none;padding:0;border-radius:8px;cursor:pointer;
+      border:1px solid var(--line,var(--border,#2B3139));background:transparent;
+      color:var(--muted);font-size:14px;line-height:1;font-family:inherit}
+    .er-theme:hover{color:var(--text)}
+    .er-theme .er-day{display:none}
+    [data-theme="day"] .er-theme .er-night{display:none}
+    [data-theme="day"] .er-theme .er-day{display:inline}
+
 *{box-sizing:border-box}
 html{scroll-behavior:smooth}
 @media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}}
 body{margin:0;background:var(--bg);color:var(--text);
   font:16px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
   -webkit-font-smoothing:antialiased}
-a{color:var(--gold2);text-decoration:none}
+a{color:var(--ink-accent);text-decoration:none}
 a:hover{text-decoration:underline}
 a:focus-visible,button:focus-visible,input:focus-visible,summary:focus-visible{
   outline:2px solid var(--gold2);outline-offset:2px;border-radius:4px}
 .wrap{max-width:1180px;margin:0 auto;padding:0 20px}
-.eyebrow{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);font-weight:600;margin:0 0 12px}
+.eyebrow{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-accent-2);font-weight:600;margin:0 0 12px}
 h1{font-size:clamp(30px,5vw,50px);line-height:1.12;margin:0 0 18px;letter-spacing:-.01em}
 h2{font-size:clamp(22px,3vw,30px);line-height:1.25;margin:0 0 16px;letter-spacing:-.01em;scroll-margin-top:90px}
 h3{font-size:19px;margin:28px 0 10px;scroll-margin-top:90px}
 p{margin:0 0 16px;color:var(--text)}
-.lead{font-size:18px;color:#C7CCD6}
+.lead{font-size:18px;color:var(--ink-muted)}
 .muted{color:var(--muted)}
 ul,ol{margin:0 0 16px;padding-left:22px}
 li{margin:0 0 8px}
@@ -75,12 +118,12 @@ section.block{padding:56px 0;border-top:1px solid var(--line)}
 .brand{display:flex;align-items:center;gap:10px;color:var(--text);font-weight:700;letter-spacing:.14em;font-size:15px}
 .brand:hover{text-decoration:none}
 .hnav{display:flex;align-items:center;gap:22px;font-size:14px}
-.hnav a{color:#C7CCD6}
-.hnav a:hover{color:var(--gold2);text-decoration:none}
-.btn{display:inline-block;background:var(--gold);color:#181A20;font-weight:700;
+.hnav a{color:var(--ink-muted)}
+.hnav a:hover{color:var(--ink-accent);text-decoration:none}
+.btn{display:inline-block;background:var(--gold);color:var(--ink-on-gold);font-weight:700;
   padding:12px 22px;border-radius:10px;font-size:15px;border:0;cursor:pointer}
 .btn:hover{background:var(--gold2);text-decoration:none}
-.btn.ghost{background:transparent;color:var(--gold2);border:1px solid var(--gold)}
+.btn.ghost{background:transparent;color:var(--ink-accent);border:1px solid var(--gold)}
 .btn.ghost:hover{background:rgba(240,185,11,.1)}
 .btn.sm{padding:9px 16px;font-size:14px}
 @media(max-width:720px){.hnav .hide-m{display:none}}
@@ -96,8 +139,8 @@ section.block{padding:56px 0;border-top:1px solid var(--line)}
 .toc h2{font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin:0 0 12px}
 .toc ol{list-style:none;padding:0;margin:0}
 .toc li{margin:0 0 10px}
-.toc a{color:#C7CCD6}
-.toc a:hover{color:var(--gold2)}
+.toc a{color:var(--ink-muted)}
+.toc a:hover{color:var(--ink-accent)}
 .toc-m{display:none;margin:0 0 32px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius)}
 .toc-m summary{cursor:pointer;padding:14px 18px;font-weight:600;list-style:none}
 .toc-m summary::before{content:"☰ "}
@@ -107,23 +150,23 @@ section.block{padding:56px 0;border-top:1px solid var(--line)}
 /* components */
 .kicker{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;
   padding:4px 10px;border-radius:99px;margin-bottom:14px}
-.k-gold{background:rgba(240,185,11,.12);color:var(--gold2)}
-.k-green{background:rgba(14,203,129,.12);color:var(--green)}
-.k-red{background:rgba(246,70,93,.12);color:var(--red)}
+.k-gold{background:rgba(240,185,11,.12);color:var(--ink-accent)}
+.k-green{background:rgba(14,203,129,.12);color:var(--ink-good)}
+.k-red{background:rgba(246,70,93,.12);color:var(--ink-bad)}
 .callout{background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--gold);
   border-radius:var(--radius);padding:18px 20px;margin:24px 0}
 .callout.green{border-left-color:var(--green)}
 .callout.red{border-left-color:var(--red)}
-.callout .lbl{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--gold);margin:0 0 6px}
-.callout.green .lbl{color:var(--green)}
-.callout.red .lbl{color:var(--red)}
+.callout .lbl{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-accent-2);margin:0 0 6px}
+.callout.green .lbl{color:var(--ink-good)}
+.callout.red .lbl{color:var(--ink-bad)}
 .callout p:last-child{margin-bottom:0}
 /* flow chips */
 .flow{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:22px 0;list-style:none;padding:0}
 .flow li{background:var(--surface);border:1px solid var(--surface2);border-radius:10px;
   padding:10px 14px;font-size:14px;font-weight:600;margin:0}
-.flow li.hot{background:rgba(240,185,11,.12);border-color:var(--gold);color:var(--gold2)}
-.flow li.arr{background:none;border:0;color:var(--gold);padding:0 2px;font-weight:700}
+.flow li.hot{background:rgba(240,185,11,.12);border-color:var(--gold);color:var(--ink-accent)}
+.flow li.arr{background:none;border:0;color:var(--ink-accent-2);padding:0 2px;font-weight:700}
 .flow.vrail{flex-direction:column;align-items:stretch;max-width:420px}
 .flow.vrail li{text-align:center}
 .flow.vrail li.arr{text-align:center}
@@ -140,12 +183,12 @@ section.block{padding:56px 0;border-top:1px solid var(--line)}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px}
 .card h4{margin:0 0 8px;font-size:15px}
 .card p{font-size:14px;color:var(--muted);margin:0}
-.card .ic{color:var(--gold);font-size:20px;line-height:1;margin-bottom:10px}
+.card .ic{color:var(--ink-accent-2);font-size:20px;line-height:1;margin-bottom:10px}
 /* tables */
 .tbl{width:100%;border-collapse:collapse;margin:22px 0;font-size:14px}
 .tbl caption{text-align:left;font-size:13px;color:var(--muted);padding:0 0 10px}
 .tbl th{background:var(--surface2);color:var(--text);text-align:left;padding:10px 12px;font-size:12px;letter-spacing:.06em;text-transform:uppercase}
-.tbl td{border-bottom:1px solid var(--surface2);padding:11px 12px;vertical-align:top;color:#C7CCD6}
+.tbl td{border-bottom:1px solid var(--surface2);padding:11px 12px;vertical-align:top;color:var(--ink-muted)}
 .tbl tr:hover td{background:rgba(43,49,57,.35)}
 .tscroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
 .tscroll .tbl{min-width:640px}
@@ -160,13 +203,13 @@ section.block{padding:56px 0;border-top:1px solid var(--line)}
 .cta{background:linear-gradient(135deg,rgba(240,185,11,.14),rgba(252,213,53,.05));
   border:1px solid var(--gold);border-radius:16px;padding:30px 28px;margin:44px 0;text-align:center}
 .cta h3{margin:0 0 8px;font-size:22px}
-.cta p{color:#C7CCD6;max-width:640px;margin:0 auto 20px}
+.cta p{color:var(--ink-muted);max-width:640px;margin:0 auto 20px}
 .cta .row{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
 /* checklist */
 .check{list-style:none;padding:0;margin:14px 0 26px}
 .check li{margin:0 0 10px;display:flex;gap:10px;align-items:flex-start}
 .check input{margin-top:4px;accent-color:var(--gold);width:16px;height:16px;flex:none}
-.check label{color:#C7CCD6;font-size:15px}
+.check label{color:var(--ink-muted);font-size:15px}
 /* before/after */
 .ba{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:22px 0}
 @media(max-width:720px){.ba{grid-template-columns:1fr}}
@@ -174,8 +217,8 @@ section.block{padding:56px 0;border-top:1px solid var(--line)}
 .ba .pane.bad{border-color:rgba(246,70,93,.5)}
 .ba .pane.good{border-color:rgba(14,203,129,.5)}
 .ba .tag{font-size:11px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;margin-bottom:12px}
-.ba .bad .tag{color:var(--red)}
-.ba .good .tag{color:var(--green)}
+.ba .bad .tag{color:var(--ink-bad)}
+.ba .good .tag{color:var(--ink-good)}
 /* risk columns */
 .risk{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:22px 0}
 @media(max-width:820px){.risk{grid-template-columns:1fr}}
@@ -184,11 +227,11 @@ section.block{padding:56px 0;border-top:1px solid var(--line)}
 .risk .col.care{border-top-color:var(--gold)}
 .risk .col.no{border-top-color:var(--red)}
 .risk h4{margin:0 0 10px;font-size:14px;letter-spacing:.1em;text-transform:uppercase}
-.risk .ok h4{color:var(--green)}
-.risk .care h4{color:var(--gold2)}
-.risk .no h4{color:var(--red)}
+.risk .ok h4{color:var(--ink-good)}
+.risk .care h4{color:var(--ink-accent)}
+.risk .no h4{color:var(--ink-bad)}
 .risk ul{margin:0;padding-left:18px}
-.risk li{font-size:14px;color:#C7CCD6}
+.risk li{font-size:14px;color:var(--ink-muted)}
 /* spectrum */
 .spectrum{margin:22px 0}
 .spectrum .bar{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
@@ -205,7 +248,7 @@ svg{max-width:100%;height:auto;display:block}
 /* footer */
 footer{border-top:1px solid var(--line);padding:40px 0 48px;margin-top:64px;font-size:14px;color:var(--muted)}
 footer .legal a{color:var(--muted);text-decoration:underline}
-footer .legal a:hover{color:var(--gold2)}
+footer .legal a:hover{color:var(--ink-accent)}
 </style>
 </head>
 <body>
@@ -225,6 +268,7 @@ footer .legal a:hover{color:var(--gold2)}
       <a class="hide-m" href="/en/free-audit">Free audit</a>
       <a class="hide-m" href="/en/glossary">Glossary</a>
       <a class="hide-m" href="/en/link-building-playbook">Link Building Playbook</a>
+      <button type="button" class="er-theme" id="er-theme" aria-label="Switch to day theme"><span class="er-night" aria-hidden="true">&#9788;</span><span class="er-day" aria-hidden="true">&#9789;</span></button>
       <a class="btn sm" href="/en/pricing">Subscribe to Echorank</a>
     </nav>
   </div>
@@ -327,17 +371,17 @@ footer .legal a:hover{color:var(--gold2)}
       <div class="risk" role="img" aria-label="Three layers of AI visibility: discovery, citation, and recommendation, each with the question it answers and its typical evidence">
         <div class="col ok">
           <h4>1 · Discovery</h4>
-          <p style="font-size:14px;color:#C7CCD6"><strong>Can the system find and understand us?</strong></p>
+          <p style="font-size:14px;color:var(--ink-muted)"><strong>Can the system find and understand us?</strong></p>
           <ul><li>Crawlability</li><li>Structure</li><li>Internal links</li><li>Clear entity information</li></ul>
         </div>
         <div class="col care">
           <h4>2 · Citation</h4>
-          <p style="font-size:14px;color:#C7CCD6"><strong>Does our content become supporting evidence?</strong></p>
+          <p style="font-size:14px;color:var(--ink-muted)"><strong>Does our content become supporting evidence?</strong></p>
           <ul><li>Original research</li><li>Definitions</li><li>Statistics</li><li>Documentation</li><li>Expert analysis</li></ul>
         </div>
         <div class="col ok" style="border-top-color:#F0B90B">
           <h4 style="color:#FCD535">3 · Recommendation</h4>
-          <p style="font-size:14px;color:#C7CCD6"><strong>Are we mentioned in decisions?</strong></p>
+          <p style="font-size:14px;color:var(--ink-muted)"><strong>Are we mentioned in decisions?</strong></p>
           <ul><li>Strong brand footprint</li><li>Credible third-party mentions</li><li>Relevant product information</li></ul>
         </div>
       </div>
@@ -354,7 +398,7 @@ footer .legal a:hover{color:var(--gold2)}
     <figure>
       <div class="ba" role="img" aria-label="Comparison of traditional search, which flows from query to results to click to website, with AI discovery, which flows from question through interpretation, retrieval, synthesis, and citation to follow-up">
         <div class="pane">
-          <p class="tag" style="color:#848E9C">Traditional search</p>
+          <p class="tag" style="color:var(--muted)">Traditional search</p>
           <ul class="flow vrail" style="margin:0">
             <li>Query</li><li class="arr" aria-hidden="true">↓</li>
             <li>Results</li><li class="arr" aria-hidden="true">↓</li>
@@ -741,7 +785,7 @@ footer .legal a:hover{color:var(--gold2)}
         <li>5 · Establish authority</li><li class="arr" aria-hidden="true">↓</li>
         <li>6 · Enable discovery</li><li class="arr" aria-hidden="true">↓</li>
         <li class="hot">7 · Improve</li><li class="arr" aria-hidden="true">↺</li>
-        <li style="border-style:dashed;color:#848E9C">…back to Understand</li>
+        <li style="border-style:dashed;color:var(--muted)">…back to Understand</li>
       </ul>
       <figcaption>The AIDO cycle: each pass through the loop makes the next one better informed.</figcaption>
     </figure>
@@ -854,7 +898,7 @@ footer .legal a:hover{color:var(--gold2)}
       <div class="ba" role="img" aria-label="Overlap of SEO and AIDO: shared foundations of useful content, technical accessibility, authority, and entity clarity, with different visibility surfaces">
         <div class="pane">
           <p class="tag" style="color:#FCD535">Shared foundations</p>
-          <ul style="margin:0;padding-left:18px;font-size:14px;color:#C7CCD6">
+          <ul style="margin:0;padding-left:18px;font-size:14px;color:var(--ink-muted)">
             <li>Useful, original content</li>
             <li>Technical accessibility</li>
             <li>Authority, links &amp; brand mentions</li>
@@ -865,7 +909,7 @@ footer .legal a:hover{color:var(--gold2)}
         </div>
         <div class="pane good">
           <p class="tag">Different visibility surfaces</p>
-          <ul style="margin:0;padding-left:18px;font-size:14px;color:#C7CCD6">
+          <ul style="margin:0;padding-left:18px;font-size:14px;color:var(--ink-muted)">
             <li><strong>SEO:</strong> ranked results people click</li>
             <li><strong>AIDO:</strong> answers, citations, comparisons, and recommendations AI systems generate</li>
           </ul>
@@ -904,5 +948,38 @@ footer .legal a:hover{color:var(--gold2)}
   </div>
 </footer>
 
+<script>
+/* Night/Day toggle. Client-only on purpose: this document is served by a route
+   handler and cached at the edge (up to a year on some of the family), so the
+   HTML must be identical for every visitor and the theme has to be applied in
+   the browser. The <head> guard above does it before first paint; this only
+   handles the click. Same "er-theme" key and same data-theme attribute as the
+   React pages, so a choice made on the homepage survives a link into here. */
+(function(){
+  var KEY="er-theme";
+  var root=document.documentElement;
+  var btn=document.getElementById("er-theme");
+  if(!btn){return}
+  var TO_DAY="Switch to day theme";
+  var TO_NIGHT="Switch to night theme";
+  function label(){
+    btn.setAttribute("aria-label",root.getAttribute("data-theme")==="day"?TO_NIGHT:TO_DAY)
+  }
+  function apply(day){
+    if(day){root.setAttribute("data-theme","day")}else{root.removeAttribute("data-theme")}
+    label()
+  }
+  label();
+  btn.addEventListener("click",function(){
+    var day=root.getAttribute("data-theme")!=="day";
+    apply(day);
+    try{localStorage.setItem(KEY,day?"day":"night")}catch(e){}
+  });
+  window.addEventListener("storage",function(e){
+    if(e.key!==KEY){return}
+    apply(e.newValue==="day")
+  });
+})();
+</script>
 </body>
 </html>`;

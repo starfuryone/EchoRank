@@ -1,6 +1,7 @@
 export const landingHtml = String.raw`<!DOCTYPE html>
 <html lang="en">
 <head>
+  <script>try{if(localStorage.getItem("er-theme")==="day")document.documentElement.setAttribute("data-theme","day")}catch(e){}</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Reputation Management — Echorank</title>
@@ -14,7 +15,49 @@ export const landingHtml = String.raw`<!DOCTYPE html>
     --text:#eaecef; --muted:#8b95a5; --gold:#f0b90b; --gold-deep:#c99400;
     --green:#0ecb81; --red:#f6465d;
     --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
-  }
+  
+      /* Text-safe counterparts of the fills above. A colour that paints a
+         button and a colour that is read cannot be one token: gold is
+         1.6:1 on white. At night these ARE the fills, so nothing moves. */
+      --ink-strong:#FFFFFF;--ink-muted:#B7BDC6;
+      --ink-accent:#f0b90b;--ink-accent-2:#f0b90b;
+      --ink-good:#0ecb81;--ink-bad:#f6465d;
+      /* Ink on a gold fill. Theme-INVARIANT: day does not override it,
+         because gold does not move either. */
+      --ink-on-gold:#111;
+    }
+
+    /* ── DAY ───────────────────────────────────────────────────────────────
+       Night is the :root block above; this is the whole of the override, and
+       the default is night — a visitor who never presses the toggle gets the
+       bytes that shipped. GOLD IS NOT LISTED: it is a fill in both themes,
+       and the ink on it (--ink-on-gold) is dark in both, which is only true
+       because neither moves. Anything that is READ takes an --ink-* token.
+       Values are the same ones globals.css uses, so a page rendered by React
+       and a page rendered by this route handler are the same colour. */
+    [data-theme="day"]{
+      --bg:#FFFFFF;--bg-2:#F5F6F8;--surface:#F5F6F8;--surface-2:#EAECEF;
+      --surface2:#EAECEF;--surface-soft:#EAECEF;--card:#F5F6F8;--card2:#EAECEF;
+      --line:#EAECEF;--line-soft:rgba(0,0,0,.06);--border:#EAECEF;
+      --text:#1E2329;--muted:#5A6270;
+      --ink-strong:#0B0E11;--ink-muted:#5A6270;
+      --ink-accent:#8A6100;--ink-accent-2:#8A6100;
+      --ink-good:#0B7A4A;--ink-bad:#C11C33;
+      --shadow:0 18px 60px rgba(15,23,42,.14);
+      --highlight:rgba(138,97,0,.20);--accent-soft:rgba(138,97,0,.10);
+    }
+    /* The toggle. Icon-only, so the accessible name is the aria-label, and the
+       script below rewrites it — a button that says "night theme" while it is
+       the thing that LEAVES night is unusable without sight. */
+    .er-theme{display:inline-flex;align-items:center;justify-content:center;
+      width:32px;height:32px;flex:none;padding:0;border-radius:8px;cursor:pointer;
+      border:1px solid var(--line,var(--border,#2B3139));background:transparent;
+      color:var(--muted);font-size:14px;line-height:1;font-family:inherit}
+    .er-theme:hover{color:var(--text)}
+    .er-theme .er-day{display:none}
+    [data-theme="day"] .er-theme .er-night{display:none}
+    [data-theme="day"] .er-theme .er-day{display:inline}
+
   *{box-sizing:border-box;margin:0;padding:0}
   html{scroll-behavior:smooth}
   @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important;animation:none!important}}
@@ -23,7 +66,7 @@ export const landingHtml = String.raw`<!DOCTYPE html>
   a:focus-visible,button:focus-visible,summary:focus-visible{outline:2px solid var(--gold);outline-offset:3px;border-radius:4px}
   .wrap{max-width:1160px;margin:0 auto;padding:0 24px}
   .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted)}
-  .eyebrow .n{color:var(--gold)}
+  .eyebrow .n{color:var(--ink-accent-2)}
   h1,h2,h3{line-height:1.15;letter-spacing:-.02em}
   h2{font-size:clamp(28px,4vw,40px);font-weight:800;margin:14px 0 12px}
   .lead{color:var(--muted);font-size:17px;max-width:640px}
@@ -32,10 +75,10 @@ export const landingHtml = String.raw`<!DOCTYPE html>
   /* buttons */
   .btn{display:inline-flex;align-items:center;gap:8px;font-weight:600;font-size:15px;padding:12px 22px;border-radius:10px;border:1px solid transparent;cursor:pointer;background:transparent;color:inherit;font-family:inherit;transition:transform .15s,background .15s,border-color .15s}
   .btn:active{transform:translateY(1px)}
-  .btn-gold{background:var(--gold);color:#111;border-color:var(--gold)}
+  .btn-gold{background:var(--gold);color:var(--ink-on-gold);border-color:var(--gold)}
   .btn-gold:hover{background:#ffd23e}
   .btn-ghost{border-color:var(--border);color:var(--text)}
-  .btn-ghost:hover{border-color:var(--gold);color:var(--gold)}
+  .btn-ghost:hover{border-color:var(--gold);color:var(--ink-accent-2)}
 
   /* header */
   header{position:sticky;top:0;z-index:50;background:rgba(11,13,16,.85);backdrop-filter:blur(10px);border-bottom:1px solid var(--border)}
@@ -48,7 +91,7 @@ export const landingHtml = String.raw`<!DOCTYPE html>
   .hero{padding:96px 0 80px;border-top:none;background:radial-gradient(700px 380px at 78% 14%,rgba(240,185,11,.08),transparent 65%)}
   .hero-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:56px;align-items:center}
   .hero h1{font-size:clamp(36px,5.4vw,58px);font-weight:800;margin:16px 0 18px}
-  .hero h1 em{font-style:normal;color:var(--gold)}
+  .hero h1 em{font-style:normal;color:var(--ink-accent-2)}
   .hero-ctas{display:flex;gap:14px;flex-wrap:wrap;margin-top:28px}
   .hero-note{margin-top:16px;font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
 
@@ -62,7 +105,7 @@ export const landingHtml = String.raw`<!DOCTYPE html>
   .answer{background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--gold);border-radius:14px;padding:22px 24px;box-shadow:0 24px 60px rgba(0,0,0,.45)}
   .answer .q{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
   .answer p{font-size:15px}
-  .answer .hl{color:var(--gold);font-weight:600}
+  .answer .hl{color:var(--ink-accent-2);font-weight:600}
   .answer .src{margin-top:14px;padding-top:12px;border-top:1px dashed var(--border);font-family:var(--mono);font-size:10px;letter-spacing:.12em;color:var(--muted)}
 
   /* hero metrics graphics */
@@ -70,7 +113,7 @@ export const landingHtml = String.raw`<!DOCTYPE html>
   .metric{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:14px}
   .metric .lbl{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
   .metric .val{font-size:20px;font-weight:800}
-  .metric .val em{font-style:normal;color:var(--green);font-size:12px;font-weight:600}
+  .metric .val em{font-style:normal;color:var(--ink-good);font-size:12px;font-weight:600}
 
   /* before/after trend charts */
   .ba-chart{margin-top:18px;border-top:1px dashed var(--border);padding-top:14px}
@@ -80,7 +123,7 @@ export const landingHtml = String.raw`<!DOCTYPE html>
   /* pain */
   .cards-3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:36px}
   .pain-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:26px}
-  .pain-card .k{font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--red);margin-bottom:12px}
+  .pain-card .k{font-family:var(--mono);font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-bad);margin-bottom:12px}
   .pain-card h3{font-size:18px;margin-bottom:8px}
   .pain-card p{color:var(--muted);font-size:14.5px}
 
@@ -93,7 +136,7 @@ export const landingHtml = String.raw`<!DOCTYPE html>
   .tools{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:40px}
   .tool{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:22px;transition:border-color .15s,transform .15s}
   .tool:hover{border-color:var(--gold);transform:translateY(-2px)}
-  .tool .ic{width:36px;height:36px;border-radius:9px;background:rgba(240,185,11,.12);color:var(--gold);display:flex;align-items:center;justify-content:center;font-size:17px;margin-bottom:14px}
+  .tool .ic{width:36px;height:36px;border-radius:9px;background:rgba(240,185,11,.12);color:var(--ink-accent-2);display:flex;align-items:center;justify-content:center;font-size:17px;margin-bottom:14px}
   .tool h3{font-size:15.5px;margin-bottom:6px}
   .tool p{color:var(--muted);font-size:13.5px}
 
@@ -103,14 +146,14 @@ export const landingHtml = String.raw`<!DOCTYPE html>
   .ba-before{background:var(--surface)}
   .ba-after{background:linear-gradient(180deg,rgba(240,185,11,.08),rgba(240,185,11,.02));border-color:rgba(240,185,11,.4)}
   .ba-col .t{font-family:var(--mono);font-size:12px;letter-spacing:.18em;text-transform:uppercase;margin-bottom:18px}
-  .ba-before .t{color:var(--red)}
-  .ba-after .t{color:var(--gold)}
+  .ba-before .t{color:var(--ink-bad)}
+  .ba-after .t{color:var(--ink-accent-2)}
   .ba-col ul{list-style:none;display:flex;flex-direction:column;gap:12px}
   .ba-col li{display:flex;gap:10px;font-size:14.5px;color:var(--text)}
   .ba-before li{color:var(--muted)}
   .ba-col li .m{flex:none;font-weight:700}
-  .ba-before li .m{color:var(--red)}
-  .ba-after li .m{color:var(--green)}
+  .ba-before li .m{color:var(--ink-bad)}
+  .ba-after li .m{color:var(--ink-good)}
 
   /* extension */
   .ext-grid{display:grid;grid-template-columns:1fr 1fr;gap:44px;align-items:center;margin-top:36px}
@@ -121,12 +164,12 @@ export const landingHtml = String.raw`<!DOCTYPE html>
   /* pricing */
   .toggle{display:inline-flex;border:1px solid var(--border);border-radius:999px;padding:4px;margin-top:26px;background:var(--surface)}
   .toggle button{border:0;background:transparent;color:var(--muted);font-weight:600;font-size:13.5px;padding:8px 18px;border-radius:999px;cursor:pointer;font-family:inherit}
-  .toggle button.on{background:var(--gold);color:#111}
+  .toggle button.on{background:var(--gold);color:var(--ink-on-gold)}
   .toggle .save{font-family:var(--mono);font-size:10px;letter-spacing:.08em}
   .plans{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-top:36px;align-items:stretch}
   .plan{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:30px;display:flex;flex-direction:column}
   .plan.hot{border-color:var(--gold);position:relative;background:var(--surface-2)}
-  .plan .badge{position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:var(--gold);color:#111;font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;font-weight:600;padding:4px 12px;border-radius:999px}
+  .plan .badge{position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:var(--gold);color:var(--ink-on-gold);font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;font-weight:600;padding:4px 12px;border-radius:999px}
   .plan .name{font-weight:700;font-size:17px}
   .plan .for{color:var(--muted);font-size:13px;margin-top:2px}
   .plan .price{margin:20px 0 4px;font-size:42px;font-weight:800;letter-spacing:-.03em}
@@ -134,7 +177,7 @@ export const landingHtml = String.raw`<!DOCTYPE html>
   .plan .cycle{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);min-height:16px}
   .plan ul{list-style:none;margin:22px 0 26px;display:flex;flex-direction:column;gap:10px;flex:1}
   .plan li{display:flex;gap:10px;font-size:14px;color:var(--text)}
-  .plan li .m{color:var(--green);font-weight:700;flex:none}
+  .plan li .m{color:var(--ink-good);font-weight:700;flex:none}
   .plan .btn{justify-content:center}
 
   /* faq */
@@ -142,7 +185,7 @@ export const landingHtml = String.raw`<!DOCTYPE html>
   details{border:1px solid var(--border);border-radius:12px;background:var(--surface);margin-bottom:12px}
   summary{cursor:pointer;list-style:none;padding:18px 22px;font-weight:600;font-size:15.5px;display:flex;justify-content:space-between;align-items:center;gap:16px}
   summary::-webkit-details-marker{display:none}
-  summary .plus{color:var(--gold);font-weight:400;font-size:20px;transition:transform .15s}
+  summary .plus{color:var(--ink-accent-2);font-weight:400;font-size:20px;transition:transform .15s}
   details[open] summary .plus{transform:rotate(45deg)}
   details .a{padding:0 22px 20px;color:var(--muted);font-size:14.5px}
 
@@ -171,6 +214,7 @@ export const landingHtml = String.raw`<!DOCTYPE html>
     <nav class="nav-cta">
       <button type="button" class="btn btn-ghost" id="back-btn" aria-label="Go back to the previous page">&#8592; Back</button>
       <a class="btn btn-ghost" href="/en/free-audit">Run a free audit</a>
+      <button type="button" class="er-theme" id="er-theme" aria-label="Switch to day theme"><span class="er-night" aria-hidden="true">&#9788;</span><span class="er-day" aria-hidden="true">&#9789;</span></button>
       <a class="btn btn-gold" href="/en/pricing">See pricing</a>
     </nav>
   </div>
@@ -481,5 +525,38 @@ export const landingHtml = String.raw`<!DOCTYPE html>
 })();
 </script>
 
+<script>
+/* Night/Day toggle. Client-only on purpose: this document is served by a route
+   handler and cached at the edge (up to a year on some of the family), so the
+   HTML must be identical for every visitor and the theme has to be applied in
+   the browser. The <head> guard above does it before first paint; this only
+   handles the click. Same "er-theme" key and same data-theme attribute as the
+   React pages, so a choice made on the homepage survives a link into here. */
+(function(){
+  var KEY="er-theme";
+  var root=document.documentElement;
+  var btn=document.getElementById("er-theme");
+  if(!btn){return}
+  var TO_DAY="Switch to day theme";
+  var TO_NIGHT="Switch to night theme";
+  function label(){
+    btn.setAttribute("aria-label",root.getAttribute("data-theme")==="day"?TO_NIGHT:TO_DAY)
+  }
+  function apply(day){
+    if(day){root.setAttribute("data-theme","day")}else{root.removeAttribute("data-theme")}
+    label()
+  }
+  label();
+  btn.addEventListener("click",function(){
+    var day=root.getAttribute("data-theme")!=="day";
+    apply(day);
+    try{localStorage.setItem(KEY,day?"day":"night")}catch(e){}
+  });
+  window.addEventListener("storage",function(e){
+    if(e.key!==KEY){return}
+    apply(e.newValue==="day")
+  });
+})();
+</script>
 </body>
 </html>`;

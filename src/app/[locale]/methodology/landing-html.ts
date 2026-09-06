@@ -4,6 +4,7 @@ export const METHODOLOGY_HTML: string = String.raw`
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <script>try{if(localStorage.getItem("er-theme")==="day")document.documentElement.setAttribute("data-theme","day")}catch(e){}</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Methodology — How Echorank measures AI visibility | Echorank</title>
@@ -26,14 +27,56 @@ export const METHODOLOGY_HTML: string = String.raw`
   --accent:#F0B90B;
   --accent-bright:#FCD535;
   --success:#0ECB81;
-}
+
+      /* Text-safe counterparts of the fills above. A colour that paints a
+         button and a colour that is read cannot be one token: gold is
+         1.6:1 on white. At night these ARE the fills, so nothing moves. */
+      --ink-strong:#FFFFFF;--ink-muted:#B7BDC6;
+      --ink-accent:#FCD535;--ink-accent-2:#F0B90B;
+      --ink-good:#0ECB81;--ink-bad:#F6465D;
+      /* Ink on a gold fill. Theme-INVARIANT: day does not override it,
+         because gold does not move either. */
+      --ink-on-gold:#181A20;
+    }
+
+    /* ── DAY ───────────────────────────────────────────────────────────────
+       Night is the :root block above; this is the whole of the override, and
+       the default is night — a visitor who never presses the toggle gets the
+       bytes that shipped. GOLD IS NOT LISTED: it is a fill in both themes,
+       and the ink on it (--ink-on-gold) is dark in both, which is only true
+       because neither moves. Anything that is READ takes an --ink-* token.
+       Values are the same ones globals.css uses, so a page rendered by React
+       and a page rendered by this route handler are the same colour. */
+    [data-theme="day"]{
+      --bg:#FFFFFF;--bg-2:#F5F6F8;--surface:#F5F6F8;--surface-2:#EAECEF;
+      --surface2:#EAECEF;--surface-soft:#EAECEF;--card:#F5F6F8;--card2:#EAECEF;
+      --line:#EAECEF;--line-soft:rgba(0,0,0,.06);--border:#EAECEF;
+      --text:#1E2329;--muted:#5A6270;
+      --ink-strong:#0B0E11;--ink-muted:#5A6270;
+      --ink-accent:#8A6100;--ink-accent-2:#8A6100;
+      --ink-good:#0B7A4A;--ink-bad:#C11C33;
+      --shadow:0 18px 60px rgba(15,23,42,.14);
+      --highlight:rgba(138,97,0,.20);--accent-soft:rgba(138,97,0,.10);
+    }
+    /* The toggle. Icon-only, so the accessible name is the aria-label, and the
+       script below rewrites it — a button that says "night theme" while it is
+       the thing that LEAVES night is unusable without sight. */
+    .er-theme{display:inline-flex;align-items:center;justify-content:center;
+      width:32px;height:32px;flex:none;padding:0;border-radius:8px;cursor:pointer;
+      border:1px solid var(--line,var(--border,#2B3139));background:transparent;
+      color:var(--muted);font-size:14px;line-height:1;font-family:inherit}
+    .er-theme:hover{color:var(--text)}
+    .er-theme .er-day{display:none}
+    [data-theme="day"] .er-theme .er-night{display:none}
+    [data-theme="day"] .er-theme .er-day{display:inline}
+
 *{margin:0;padding:0;box-sizing:border-box}
 html{scroll-behavior:smooth}
 body{background:var(--bg);color:var(--text);font-family:'IBM Plex Sans',system-ui,-apple-system,sans-serif;line-height:1.6;-webkit-font-smoothing:antialiased}
 a{color:inherit;text-decoration:none}
 img,svg{display:block;max-width:100%}
 .wrap{max-width:1160px;margin:0 auto;padding:0 24px}
-.eyebrow{font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--accent);font-weight:500}
+.eyebrow{font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-accent-2);font-weight:500}
 h1{font-size:clamp(38px,6vw,64px);line-height:1.05;font-weight:700;letter-spacing:-.02em}
 h2{font-size:clamp(28px,4vw,42px);line-height:1.12;font-weight:700;letter-spacing:-.015em}
 .lead{font-size:18px;color:var(--muted);max-width:56ch}
@@ -51,7 +94,7 @@ h2{font-size:clamp(28px,4vw,42px);line-height:1.12;font-weight:700;letter-spacin
 .nav-ctas{display:flex;gap:12px;align-items:center}
 .btn{display:inline-flex;align-items:center;gap:8px;padding:12px 22px;border-radius:8px;font-weight:600;font-size:15px;transition:transform .15s ease,background .15s ease,border-color .15s ease;border:1px solid transparent}
 .btn:hover{transform:translateY(-1px)}
-.btn-primary{background:var(--accent);color:#181A20}
+.btn-primary{background:var(--accent);color:var(--ink-on-gold)}
 .btn-primary:hover{background:var(--accent-bright)}
 .btn-secondary{border-color:var(--surface2);color:var(--text);background:transparent}
 .btn-secondary:hover{border-color:var(--accent)}
@@ -94,9 +137,9 @@ h2{font-size:clamp(28px,4vw,42px);line-height:1.12;font-weight:700;letter-spacin
 .prompt-row:nth-child(4){animation-delay:1.5s}
 .prompt-row:nth-child(5){animation-delay:2s}
 @keyframes rise{to{opacity:1;transform:none}}
-.prompt-row .tag{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--accent);border:1px solid rgba(240,185,11,.35);border-radius:6px;padding:2px 7px;white-space:nowrap;margin-top:2px}
+.prompt-row .tag{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-accent-2);border:1px solid rgba(240,185,11,.35);border-radius:6px;padding:2px 7px;white-space:nowrap;margin-top:2px}
 .prompt-row p{font-size:14px;color:var(--text)}
-.prompt-row .hit{margin-top:4px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--success)}
+.prompt-row .hit{margin-top:4px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--ink-good)}
 .prompt-row .miss{color:var(--muted)}
 @media(prefers-reduced-motion:reduce){.prompt-row{animation:none;opacity:1;transform:none}}
 
@@ -137,7 +180,7 @@ h2{font-size:clamp(28px,4vw,42px);line-height:1.12;font-weight:700;letter-spacin
 .disclosure{margin-top:26px;border:1px solid var(--surface2);border-radius:12px;background:var(--surface);max-width:560px}
 .disclosure summary{cursor:pointer;list-style:none;padding:16px 20px;font-weight:600;font-size:15px;display:flex;align-items:center;justify-content:space-between}
 .disclosure summary::-webkit-details-marker{display:none}
-.disclosure summary::after{content:"+";color:var(--accent);font-size:20px;font-weight:400}
+.disclosure summary::after{content:"+";color:var(--ink-accent-2);font-size:20px;font-weight:400}
 .disclosure[open] summary::after{content:"–"}
 .disclosure .dbody{padding:0 20px 18px;font-size:14.5px;color:var(--muted)}
 .disclosure .dbody .eyebrow{display:block;margin-bottom:8px}
@@ -179,10 +222,10 @@ footer{border-top:1px solid var(--border);padding:36px 0}
 /* floating result chips over the photo */
 .float-chip{position:absolute;z-index:2;display:flex;align-items:center;gap:8px;background:rgba(24,26,32,.92);border:1px solid var(--surface2);border-radius:10px;padding:10px 14px;font-family:'IBM Plex Mono',monospace;font-size:12.5px;box-shadow:0 12px 30px rgba(0,0,0,.45);opacity:0;animation:chipIn .6s ease forwards,bob 6s ease-in-out 1.8s infinite}
 .float-chip.c1{top:26px;left:-18px;animation-delay:.4s,1.8s}
-.float-chip.c1 b{color:var(--success);font-weight:500}
+.float-chip.c1 b{color:var(--ink-good);font-weight:500}
 .float-chip.c2{top:44%;right:-22px;flex-direction:column;align-items:flex-start;gap:2px;animation-delay:.9s,2.6s}
 .float-chip.c2 small{color:var(--muted);font-size:10px;letter-spacing:.12em}
-.float-chip.c2 b{color:var(--accent-bright);font-size:15px;font-weight:600}
+.float-chip.c2 b{color:var(--ink-accent);font-size:15px;font-weight:600}
 @keyframes chipIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 @keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
 @media(max-width:560px){.float-chip{display:none}}
@@ -253,6 +296,7 @@ a:focus-visible,summary:focus-visible,.btn:focus-visible{outline:2px solid var(-
     </div>
     <div class="nav-ctas">
       <a class="btn btn-secondary btn-sm" href="/en/free-audit">Run a free audit</a>
+      <button type="button" class="er-theme" id="er-theme" aria-label="Switch to day theme"><span class="er-night" aria-hidden="true">&#9788;</span><span class="er-day" aria-hidden="true">&#9789;</span></button>
       <a class="btn btn-primary btn-sm" href="/en/pricing">See pricing</a>
     </div>
   </nav>
@@ -465,6 +509,39 @@ a:focus-visible,summary:focus-visible,.btn:focus-visible{outline:2px solid var(-
   },{threshold:0.25});
   var targets=document.querySelectorAll('.flow,.cards3,.cards4');
   for(var i=0;i<targets.length;i++)io.observe(targets[i]);
+})();
+</script>
+<script>
+/* Night/Day toggle. Client-only on purpose: this document is served by a route
+   handler and cached at the edge (up to a year on some of the family), so the
+   HTML must be identical for every visitor and the theme has to be applied in
+   the browser. The <head> guard above does it before first paint; this only
+   handles the click. Same "er-theme" key and same data-theme attribute as the
+   React pages, so a choice made on the homepage survives a link into here. */
+(function(){
+  var KEY="er-theme";
+  var root=document.documentElement;
+  var btn=document.getElementById("er-theme");
+  if(!btn){return}
+  var TO_DAY="Switch to day theme";
+  var TO_NIGHT="Switch to night theme";
+  function label(){
+    btn.setAttribute("aria-label",root.getAttribute("data-theme")==="day"?TO_NIGHT:TO_DAY)
+  }
+  function apply(day){
+    if(day){root.setAttribute("data-theme","day")}else{root.removeAttribute("data-theme")}
+    label()
+  }
+  label();
+  btn.addEventListener("click",function(){
+    var day=root.getAttribute("data-theme")!=="day";
+    apply(day);
+    try{localStorage.setItem(KEY,day?"day":"night")}catch(e){}
+  });
+  window.addEventListener("storage",function(e){
+    if(e.key!==KEY){return}
+    apply(e.newValue==="day")
+  });
 })();
 </script>
 </body>

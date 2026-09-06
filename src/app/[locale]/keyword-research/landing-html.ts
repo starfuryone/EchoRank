@@ -1,6 +1,7 @@
 export const KEYWORD_GUIDE_HTML: string = String.raw`<!DOCTYPE html>
 <html lang="en">
 <head>
+  <script>try{if(localStorage.getItem("er-theme")==="day")document.documentElement.setAttribute("data-theme","day")}catch(e){}</script>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="description" content="Echorank's plain-English guide to keyword research: find search ideas, judge opportunities, match search intent, and build useful content." />
@@ -21,7 +22,49 @@ export const KEYWORD_GUIDE_HTML: string = String.raw`<!DOCTYPE html>
       --radius:18px;
       --shadow:0 16px 45px rgba(0,0,0,.45);
       --max:1180px;
+    
+      /* Text-safe counterparts of the fills above. A colour that paints a
+         button and a colour that is read cannot be one token: gold is
+         1.6:1 on white. At night these ARE the fills, so nothing moves. */
+      --ink-strong:#FFFFFF;--ink-muted:#B7BDC6;
+      --ink-accent:#FCD535;--ink-accent-2:#F0B90B;
+      --ink-good:#0ECB81;--ink-bad:#F6465D;
+      /* Ink on a gold fill. Theme-INVARIANT: day does not override it,
+         because gold does not move either. */
+      --ink-on-gold:#181A20;
     }
+
+    /* ── DAY ───────────────────────────────────────────────────────────────
+       Night is the :root block above; this is the whole of the override, and
+       the default is night — a visitor who never presses the toggle gets the
+       bytes that shipped. GOLD IS NOT LISTED: it is a fill in both themes,
+       and the ink on it (--ink-on-gold) is dark in both, which is only true
+       because neither moves. Anything that is READ takes an --ink-* token.
+       Values are the same ones globals.css uses, so a page rendered by React
+       and a page rendered by this route handler are the same colour. */
+    [data-theme="day"]{
+      --bg:#FFFFFF;--bg-2:#F5F6F8;--surface:#F5F6F8;--surface-2:#EAECEF;
+      --surface2:#EAECEF;--surface-soft:#EAECEF;--card:#F5F6F8;--card2:#EAECEF;
+      --line:#EAECEF;--line-soft:rgba(0,0,0,.06);--border:#EAECEF;
+      --text:#1E2329;--muted:#5A6270;
+      --ink-strong:#0B0E11;--ink-muted:#5A6270;
+      --ink-accent:#8A6100;--ink-accent-2:#8A6100;
+      --ink-good:#0B7A4A;--ink-bad:#C11C33;
+      --shadow:0 18px 60px rgba(15,23,42,.14);
+      --highlight:rgba(138,97,0,.20);--accent-soft:rgba(138,97,0,.10);
+    }
+    /* The toggle. Icon-only, so the accessible name is the aria-label, and the
+       script below rewrites it — a button that says "night theme" while it is
+       the thing that LEAVES night is unusable without sight. */
+    .er-theme{display:inline-flex;align-items:center;justify-content:center;
+      width:32px;height:32px;flex:none;padding:0;border-radius:8px;cursor:pointer;
+      border:1px solid var(--line,var(--border,#2B3139));background:transparent;
+      color:var(--muted);font-size:14px;line-height:1;font-family:inherit}
+    .er-theme:hover{color:var(--text)}
+    .er-theme .er-day{display:none}
+    [data-theme="day"] .er-theme .er-night{display:none}
+    [data-theme="day"] .er-theme .er-day{display:inline}
+
     *{box-sizing:border-box}
     html{scroll-behavior:smooth}
     body{
@@ -45,7 +88,7 @@ export const KEYWORD_GUIDE_HTML: string = String.raw`<!DOCTYPE html>
     .brand{display:flex;align-items:center;gap:10px;font-weight:850;text-decoration:none}
     .mark{
       width:36px;height:36px;border-radius:11px;background:var(--accent);
-      color:#181A20;display:grid;place-items:center;font-weight:900
+      color:var(--ink-on-gold);display:grid;place-items:center;font-weight:900
     }
     .topnav{display:flex;gap:18px;color:var(--muted);font-size:.95rem}
     .topnav a{text-decoration:none}
@@ -55,7 +98,7 @@ export const KEYWORD_GUIDE_HTML: string = String.raw`<!DOCTYPE html>
     }
     .hero{padding:86px 0 58px}
     .eyebrow{
-      color:var(--accent);font-weight:800;text-transform:uppercase;
+      color:var(--ink-accent);font-weight:800;text-transform:uppercase;
       letter-spacing:.12em;font-size:.78rem;margin:0 0 14px
     }
     h1{
@@ -86,20 +129,20 @@ export const KEYWORD_GUIDE_HTML: string = String.raw`<!DOCTYPE html>
       display:block;text-decoration:none;padding:8px 10px;border-radius:9px;
       color:var(--muted);font-size:.94rem
     }
-    .toc a:hover,.toc a.active{background:var(--accent-soft);color:var(--accent)}
+    .toc a:hover,.toc a.active{background:var(--accent-soft);color:var(--ink-accent)}
     .chapter{
       background:var(--surface);border:1px solid var(--line);border-radius:24px;
       padding:clamp(24px,5vw,52px);margin-bottom:28px;box-shadow:0 10px 32px rgba(0,0,0,.35)
     }
     .chapter-number{
-      display:inline-flex;align-items:center;gap:8px;color:var(--accent);font-weight:800;
+      display:inline-flex;align-items:center;gap:8px;color:var(--ink-accent);font-weight:800;
       font-size:.8rem;text-transform:uppercase;letter-spacing:.1em
     }
     h2{font-size:clamp(2rem,4vw,3.2rem);line-height:1.08;letter-spacing:-.035em;margin:12px 0 18px}
     h3{font-size:1.45rem;line-height:1.25;margin:34px 0 12px}
     h4{font-size:1.1rem;margin:24px 0 8px}
     p{margin:12px 0}
-    .lede{font-size:1.08rem;color:#B7BDC6}
+    .lede{font-size:1.08rem;color:var(--ink-muted)}
     .note,.tip,.warning{
       border-radius:14px;padding:16px 18px;margin:22px 0;border:1px solid var(--line)
     }
@@ -122,7 +165,7 @@ export const KEYWORD_GUIDE_HTML: string = String.raw`<!DOCTYPE html>
     }
     .step:before{
       content:counter(step);width:44px;height:44px;border-radius:12px;display:grid;place-items:center;
-      background:var(--accent);color:#181A20;font-weight:850
+      background:var(--accent);color:var(--ink-on-gold);font-weight:850
     }
     .step strong{display:block;margin-bottom:4px}
     ul,ol{padding-left:1.35rem}
@@ -134,12 +177,12 @@ export const KEYWORD_GUIDE_HTML: string = String.raw`<!DOCTYPE html>
     tr:last-child td{border-bottom:0}
     .intent{
       display:inline-block;padding:4px 9px;border-radius:999px;background:var(--accent-soft);
-      color:var(--accent);font-size:.8rem;font-weight:800
+      color:var(--ink-accent);font-size:.8rem;font-weight:800
     }
     .checklist{list-style:none;padding:0;margin:18px 0}
     .checklist li{position:relative;padding-left:30px}
     .checklist li:before{
-      content:"\2713";position:absolute;left:0;top:0;color:var(--success);font-weight:900
+      content:"\2713";position:absolute;left:0;top:0;color:var(--ink-good);font-weight:900
     }
     .quiz{display:grid;gap:18px;margin-top:24px}
     .question{border:1px solid var(--line);border-radius:15px;padding:18px}
@@ -149,7 +192,7 @@ export const KEYWORD_GUIDE_HTML: string = String.raw`<!DOCTYPE html>
     button{
       appearance:none;border:0;border-radius:11px;padding:12px 16px;font:inherit;font-weight:800;cursor:pointer
     }
-    .primary{background:var(--accent);color:#181A20}
+    .primary{background:var(--accent);color:var(--ink-on-gold)}
     .secondary{background:var(--surface-soft);color:var(--text)}
     #quiz-result{font-weight:800}
     .footer{
@@ -184,6 +227,7 @@ export const KEYWORD_GUIDE_HTML: string = String.raw`<!DOCTYPE html>
         <a href="#quiz">Quiz</a>
         <a href="/en/pricing">Pricing</a>
       </nav>
+      <button type="button" class="er-theme" id="er-theme" aria-label="Switch to day theme"><span class="er-night" aria-hidden="true">&#9788;</span><span class="er-day" aria-hidden="true">&#9789;</span></button>
       <div id="progress" class="progress" aria-hidden="true"></div>
     </div>
   </header>
@@ -623,5 +667,38 @@ export const KEYWORD_GUIDE_HTML: string = String.raw`<!DOCTYPE html>
       setTimeout(function () { result.textContent = ''; }, 0);
     });
   </script>
+<script>
+/* Night/Day toggle. Client-only on purpose: this document is served by a route
+   handler and cached at the edge (up to a year on some of the family), so the
+   HTML must be identical for every visitor and the theme has to be applied in
+   the browser. The <head> guard above does it before first paint; this only
+   handles the click. Same "er-theme" key and same data-theme attribute as the
+   React pages, so a choice made on the homepage survives a link into here. */
+(function(){
+  var KEY="er-theme";
+  var root=document.documentElement;
+  var btn=document.getElementById("er-theme");
+  if(!btn){return}
+  var TO_DAY="Switch to day theme";
+  var TO_NIGHT="Switch to night theme";
+  function label(){
+    btn.setAttribute("aria-label",root.getAttribute("data-theme")==="day"?TO_NIGHT:TO_DAY)
+  }
+  function apply(day){
+    if(day){root.setAttribute("data-theme","day")}else{root.removeAttribute("data-theme")}
+    label()
+  }
+  label();
+  btn.addEventListener("click",function(){
+    var day=root.getAttribute("data-theme")!=="day";
+    apply(day);
+    try{localStorage.setItem(KEY,day?"day":"night")}catch(e){}
+  });
+  window.addEventListener("storage",function(e){
+    if(e.key!==KEY){return}
+    apply(e.newValue==="day")
+  });
+})();
+</script>
 </body>
 </html>`;

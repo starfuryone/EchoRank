@@ -3,6 +3,7 @@
 export const TECHNICAL_GEO_HTML = `<!DOCTYPE html>
 <html lang="en">
 <head>
+  <script>try{if(localStorage.getItem("er-theme")==="day")document.documentElement.setAttribute("data-theme","day")}catch(e){}</script>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="description" content="Audit and improve your AI search visibility with Echorank. Run a free audit, see why AI engines skip your brand, fix it with 22 SEO tools, and measure the change." />
@@ -26,7 +27,49 @@ export const TECHNICAL_GEO_HTML = `<!DOCTYPE html>
       --radius:16px;
       --shadow:0 18px 60px rgba(0,0,0,.45);
       --max:1180px;
+    
+      /* Text-safe counterparts of the fills above. A colour that paints a
+         button and a colour that is read cannot be one token: gold is
+         1.6:1 on white. At night these ARE the fills, so nothing moves. */
+      --ink-strong:#FFFFFF;--ink-muted:#B7BDC6;
+      --ink-accent:#FCD535;--ink-accent-2:#F0B90B;
+      --ink-good:#0ECB81;--ink-bad:#F6465D;
+      /* Ink on a gold fill. Theme-INVARIANT: day does not override it,
+         because gold does not move either. */
+      --ink-on-gold:#181A20;
     }
+
+    /* ── DAY ───────────────────────────────────────────────────────────────
+       Night is the :root block above; this is the whole of the override, and
+       the default is night — a visitor who never presses the toggle gets the
+       bytes that shipped. GOLD IS NOT LISTED: it is a fill in both themes,
+       and the ink on it (--ink-on-gold) is dark in both, which is only true
+       because neither moves. Anything that is READ takes an --ink-* token.
+       Values are the same ones globals.css uses, so a page rendered by React
+       and a page rendered by this route handler are the same colour. */
+    [data-theme="day"]{
+      --bg:#FFFFFF;--bg-2:#F5F6F8;--surface:#F5F6F8;--surface-2:#EAECEF;
+      --surface2:#EAECEF;--surface-soft:#EAECEF;--card:#F5F6F8;--card2:#EAECEF;
+      --line:#EAECEF;--line-soft:rgba(0,0,0,.06);--border:#EAECEF;
+      --text:#1E2329;--muted:#5A6270;
+      --ink-strong:#0B0E11;--ink-muted:#5A6270;
+      --ink-accent:#8A6100;--ink-accent-2:#8A6100;
+      --ink-good:#0B7A4A;--ink-bad:#C11C33;
+      --shadow:0 18px 60px rgba(15,23,42,.14);
+      --highlight:rgba(138,97,0,.20);--accent-soft:rgba(138,97,0,.10);
+    }
+    /* The toggle. Icon-only, so the accessible name is the aria-label, and the
+       script below rewrites it — a button that says "night theme" while it is
+       the thing that LEAVES night is unusable without sight. */
+    .er-theme{display:inline-flex;align-items:center;justify-content:center;
+      width:32px;height:32px;flex:none;padding:0;border-radius:8px;cursor:pointer;
+      border:1px solid var(--line,var(--border,#2B3139));background:transparent;
+      color:var(--muted);font-size:14px;line-height:1;font-family:inherit}
+    .er-theme:hover{color:var(--text)}
+    .er-theme .er-day{display:none}
+    [data-theme="day"] .er-theme .er-night{display:none}
+    [data-theme="day"] .er-theme .er-day{display:inline}
+
 
     *{box-sizing:border-box}
     html{scroll-behavior:smooth}
@@ -55,7 +98,7 @@ export const TECHNICAL_GEO_HTML = `<!DOCTYPE html>
       border:1px solid rgba(240,185,11,.35);
       background:rgba(240,185,11,.08);
       border-radius:999px;
-      color:var(--yellow);
+      color:var(--ink-accent);
       font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
     }
     .eyebrow:before{
@@ -67,7 +110,7 @@ export const TECHNICAL_GEO_HTML = `<!DOCTYPE html>
     h1{font-size:clamp(42px,6.6vw,76px);line-height:1.0;letter-spacing:-.045em;max-width:980px;margin:24px auto 24px}
     h2{font-size:clamp(32px,4.6vw,52px);line-height:1.05;letter-spacing:-.035em;margin-bottom:18px}
     h3{font-size:20px;line-height:1.3;letter-spacing:-.015em}
-    .lead{font-size:clamp(17px,2vw,21px);color:#B7BDC6;max-width:820px}
+    .lead{font-size:clamp(17px,2vw,21px);color:var(--ink-muted);max-width:820px}
     .muted{color:var(--muted)}
     .center{text-align:center}
     .center .lead{margin-left:auto;margin-right:auto}
@@ -86,8 +129,8 @@ export const TECHNICAL_GEO_HTML = `<!DOCTYPE html>
       transform:rotate(45deg);
       box-shadow:0 4px 16px rgba(240,185,11,.35);
     }
-    .nav-links{display:flex;align-items:center;gap:24px;font-size:14px;color:#B7BDC6}
-    .nav-links a:hover{color:#fff}
+    .nav-links{display:flex;align-items:center;gap:24px;font-size:14px;color:var(--ink-muted)}
+    .nav-links a:hover{color:var(--ink-strong)}
     .nav-actions{display:flex;align-items:center;gap:10px}
 
     .btn{
@@ -97,9 +140,9 @@ export const TECHNICAL_GEO_HTML = `<!DOCTYPE html>
       transition:transform .15s ease,background .15s ease,border-color .15s ease;
     }
     .btn:hover{transform:translateY(-1px)}
-    .btn-primary{color:#181A20;background:linear-gradient(135deg,var(--yellow),var(--yellow-2));box-shadow:0 12px 32px rgba(240,185,11,.22)}
+    .btn-primary{color:var(--ink-on-gold);background:linear-gradient(135deg,var(--yellow),var(--yellow-2));box-shadow:0 12px 32px rgba(240,185,11,.22)}
     .btn-primary:hover{background:var(--yellow)}
-    .btn-secondary{color:#EAECEF;border-color:var(--surface-2);background:rgba(255,255,255,.03)}
+    .btn-secondary{color:var(--text);border-color:var(--surface-2);background:rgba(255,255,255,.03)}
     .btn-secondary:hover{border-color:#3a424c}
     .btn-sm{min-height:38px;padding:0 14px;border-radius:9px;font-size:14px}
 
@@ -123,7 +166,7 @@ export const TECHNICAL_GEO_HTML = `<!DOCTYPE html>
     }
     .dash-top{display:flex;align-items:center;justify-content:space-between;gap:20px;margin-bottom:20px}
     .dash-title{font-weight:800}
-    .status{display:inline-flex;align-items:center;gap:8px;color:var(--green);font-size:13px}
+    .status{display:inline-flex;align-items:center;gap:8px;color:var(--ink-good);font-size:13px}
     .status i{width:8px;height:8px;border-radius:50%;background:var(--green);display:block}
     .dash-grid{display:grid;grid-template-columns:1.2fr .8fr;gap:16px}
     .panel{
@@ -136,13 +179,13 @@ export const TECHNICAL_GEO_HTML = `<!DOCTYPE html>
     .gauge{flex:none}
     .gauge text{font-family:inherit}
     .score-meta{min-width:180px;flex:1}
-    .delta{color:var(--green);font-size:13px;font-weight:700}
+    .delta{color:var(--ink-good);font-size:13px;font-weight:700}
     .engines{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:16px}
     .engine{
       padding:10px 12px;border-radius:10px;border:1px solid var(--line-soft);
-      background:rgba(255,255,255,.02);font-size:12px;color:#B7BDC6;
+      background:rgba(255,255,255,.02);font-size:12px;color:var(--ink-muted);
     }
-    .engine b{display:block;color:#fff;font-size:16px;margin-top:2px}
+    .engine b{display:block;color:var(--ink-strong);font-size:16px;margin-top:2px}
     .engine .mini{height:4px;border-radius:99px;background:var(--surface-2);margin-top:7px;overflow:hidden}
     .engine .mini span{display:block;height:100%;background:linear-gradient(90deg,var(--yellow-2),var(--yellow));border-radius:inherit}
     .issues{display:grid;gap:9px}
@@ -151,8 +194,8 @@ export const TECHNICAL_GEO_HTML = `<!DOCTYPE html>
       background:rgba(255,255,255,.02);display:flex;gap:10px;align-items:flex-start;
     }
     .issue-badge{font-size:11px;font-weight:800;padding:4px 7px;border-radius:7px;white-space:nowrap}
-    .issue-badge.high{background:rgba(246,70,93,.12);color:var(--red)}
-    .issue-badge.med{background:rgba(240,185,11,.12);color:var(--yellow)}
+    .issue-badge.high{background:rgba(246,70,93,.12);color:var(--ink-bad)}
+    .issue-badge.med{background:rgba(240,185,11,.12);color:var(--ink-accent)}
     .issue strong{display:block;font-size:13px}
     .issue small{color:var(--muted)}
     .sparkline-panel{margin-top:16px}
@@ -160,15 +203,15 @@ export const TECHNICAL_GEO_HTML = `<!DOCTYPE html>
     .logo-strip{border-top:1px solid var(--line);border-bottom:1px solid var(--line);background:rgba(255,255,255,.015)}
     .logo-row{
       min-height:82px;display:flex;align-items:center;justify-content:center;gap:36px;flex-wrap:wrap;
-      color:#848E9C;font-size:13px;text-transform:uppercase;letter-spacing:.16em;font-weight:800;
+      color:var(--muted);font-size:13px;text-transform:uppercase;letter-spacing:.16em;font-weight:800;
     }
 
     .intro-grid{display:grid;grid-template-columns:1fr 1fr;gap:56px;align-items:start}
     .bullet-list{display:grid;gap:13px;margin-top:26px}
-    .bullet{display:flex;gap:12px;align-items:flex-start;color:#B7BDC6}
+    .bullet{display:flex;gap:12px;align-items:flex-start;color:var(--ink-muted)}
     .check{
       flex:none;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;
-      background:rgba(252,213,53,.1);color:var(--yellow);font-weight:900;font-size:12px;
+      background:rgba(252,213,53,.1);color:var(--ink-accent);font-weight:900;font-size:12px;
       border:1px solid rgba(252,213,53,.2);margin-top:1px;
     }
 
@@ -178,7 +221,7 @@ export const TECHNICAL_GEO_HTML = `<!DOCTYPE html>
       background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,.01));
       min-height:290px;overflow:hidden;
     }
-    .step-no{font-size:12px;font-weight:900;color:var(--yellow);letter-spacing:.14em;text-transform:uppercase;margin-bottom:38px}
+    .step-no{font-size:12px;font-weight:900;color:var(--ink-accent);letter-spacing:.14em;text-transform:uppercase;margin-bottom:38px}
     .step h3{font-size:23px}
     .step p{color:var(--muted)}
     .step:after{
@@ -196,15 +239,15 @@ export const TECHNICAL_GEO_HTML = `<!DOCTYPE html>
     .icon{
       width:42px;height:42px;border-radius:11px;display:grid;place-items:center;
       background:rgba(252,213,53,.09);border:1px solid rgba(252,213,53,.18);
-      font-size:19px;margin-bottom:34px;color:var(--yellow);
+      font-size:19px;margin-bottom:34px;color:var(--ink-accent);
     }
     .feature-card p{color:var(--muted);max-width:690px}
     .pill-row{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}
     .pill{
       padding:7px 10px;border-radius:999px;border:1px solid var(--line-soft);
-      background:rgba(255,255,255,.02);font-size:12px;color:#B7BDC6;
+      background:rgba(255,255,255,.02);font-size:12px;color:var(--ink-muted);
     }
-    .pill.new{border-color:rgba(14,203,129,.35);color:var(--green)}
+    .pill.new{border-color:rgba(14,203,129,.35);color:var(--ink-good)}
 
     /* AI Lens diagram */
     .lens-diagram{margin-top:22px;border-radius:12px;border:1px solid var(--line-soft);background:rgba(0,0,0,.18);padding:10px}
@@ -212,8 +255,8 @@ export const TECHNICAL_GEO_HTML = `<!DOCTYPE html>
     .compare{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:40px}
     .compare-card{border:1px solid var(--line-soft);border-radius:var(--radius);padding:26px;background:rgba(255,255,255,.02)}
     .bars{display:grid;gap:13px;margin-top:22px}
-    .bar-row{display:grid;grid-template-columns:130px 1fr 44px;gap:12px;align-items:center;font-size:13px;color:#B7BDC6}
-    .bar-row b{color:#fff;text-align:right}
+    .bar-row{display:grid;grid-template-columns:130px 1fr 44px;gap:12px;align-items:center;font-size:13px;color:var(--ink-muted)}
+    .bar-row b{color:var(--ink-strong);text-align:right}
     .bar-bg{height:8px;border-radius:999px;background:var(--surface-2);overflow:hidden}
     .bar-fill{height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--yellow-2),var(--yellow))}
     .bar-fill.alt{background:linear-gradient(90deg,#0ECB81,#66e2b0)}
@@ -223,14 +266,14 @@ export const TECHNICAL_GEO_HTML = `<!DOCTYPE html>
       padding:13px;border-radius:10px;border:1px solid var(--line-soft);
       background:rgba(255,255,255,.02);font-size:13px;
     }
-    .impact{font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.08em;color:var(--yellow)}
+    .impact{font-size:11px;font-weight:900;text-transform:uppercase;letter-spacing:.08em;color:var(--ink-accent)}
 
     .tools-groups{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:40px}
     .tool-group{
       border:1px solid var(--line-soft);border-radius:14px;padding:20px;
       background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,.01));
     }
-    .tool-group h3{font-size:15px;margin-bottom:12px;color:#fff}
+    .tool-group h3{font-size:15px;margin-bottom:12px;color:var(--ink-strong)}
     .tool-group .pill-row{margin-top:0}
 
     .stats{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:40px}
@@ -238,7 +281,7 @@ export const TECHNICAL_GEO_HTML = `<!DOCTYPE html>
       border:1px solid var(--line-soft);border-radius:16px;padding:28px;
       background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,.01));
     }
-    .stat strong{display:block;font-size:50px;line-height:1;letter-spacing:-.04em;margin-bottom:10px;color:var(--yellow)}
+    .stat strong{display:block;font-size:50px;line-height:1;letter-spacing:-.04em;margin-bottom:10px;color:var(--ink-accent)}
     .stat span{color:var(--muted)}
 
     .pricing-band{
@@ -253,12 +296,12 @@ export const TECHNICAL_GEO_HTML = `<!DOCTYPE html>
     .price-cards{display:grid;grid-template-columns:1fr 1fr;gap:10px}
     .price-card{
       padding:16px;border-radius:12px;border:1px solid var(--line-soft);
-      background:rgba(255,255,255,.02);font-size:13px;color:#B7BDC6;
+      background:rgba(255,255,255,.02);font-size:13px;color:var(--ink-muted);
     }
-    .price-card b{display:block;color:#fff;font-size:22px;letter-spacing:-.02em;margin-top:4px}
+    .price-card b{display:block;color:var(--ink-strong);font-size:22px;letter-spacing:-.02em;margin-top:4px}
     .price-card small{color:var(--muted)}
     .price-card.hot{border-color:rgba(252,213,53,.4);background:rgba(252,213,53,.05)}
-    .price-card .tag{font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.1em;color:var(--yellow)}
+    .price-card .tag{font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.1em;color:var(--ink-accent)}
 
     .resources{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:40px}
     .resource{
@@ -269,7 +312,7 @@ export const TECHNICAL_GEO_HTML = `<!DOCTYPE html>
     .resource small{color:var(--muted);text-transform:uppercase;letter-spacing:.1em;font-weight:800;font-size:11px}
     .resource h3{margin:30px 0 10px}
     .resource p{color:var(--muted);font-size:14px}
-    .resource .go{color:var(--yellow);font-weight:800;font-size:14px}
+    .resource .go{color:var(--ink-accent);font-weight:800;font-size:14px}
 
     .faq{max-width:900px;margin:36px auto 0}
     details{border-bottom:1px solid var(--line)}
@@ -280,9 +323,9 @@ export const TECHNICAL_GEO_HTML = `<!DOCTYPE html>
     summary::-webkit-details-marker{display:none}
     summary:after{
       content:"+";position:absolute;right:0;top:17px;width:28px;height:28px;border-radius:50%;
-      display:grid;place-items:center;border:1px solid var(--surface-2);color:#B7BDC6;
+      display:grid;place-items:center;border:1px solid var(--surface-2);color:var(--ink-muted);
     }
-    details[open] summary:after{content:"–";color:var(--yellow);border-color:rgba(252,213,53,.4)}
+    details[open] summary:after{content:"–";color:var(--ink-accent);border-color:rgba(252,213,53,.4)}
     details p{color:var(--muted);padding:0 44px 20px 0;margin:0}
 
     .final-cta{
@@ -307,13 +350,13 @@ export const TECHNICAL_GEO_HTML = `<!DOCTYPE html>
     }
     .sticky-cta .btn{width:100%}
 
-    footer{padding:42px 0 52px;color:#848E9C;font-size:13px}
+    footer{padding:42px 0 52px;color:var(--muted);font-size:13px}
     .footer-inner{
       display:flex;justify-content:space-between;gap:26px;align-items:center;flex-wrap:wrap;
       border-top:1px solid var(--line);padding-top:26px;
     }
     .footer-links{display:flex;gap:20px;flex-wrap:wrap}
-    .footer-links a:hover{color:#fff}
+    .footer-links a:hover{color:var(--ink-strong)}
 
     @media(max-width:960px){
       .nav-links{display:none}
@@ -357,6 +400,7 @@ export const TECHNICAL_GEO_HTML = `<!DOCTYPE html>
       </nav>
 
       <div class="nav-actions">
+        <button type="button" class="er-theme" id="er-theme" aria-label="Switch to day theme"><span class="er-night" aria-hidden="true">&#9788;</span><span class="er-day" aria-hidden="true">&#9789;</span></button>
         <a class="btn btn-secondary btn-sm" href="/en/pricing">See plans</a>
         <a class="btn btn-primary btn-sm" href="/en/free-audit">Run free audit</a>
       </div>
@@ -1020,5 +1064,38 @@ export const TECHNICAL_GEO_HTML = `<!DOCTYPE html>
   <div class="sticky-cta" aria-hidden="false">
     <a class="btn btn-primary" href="/en/free-audit">Run your free AI visibility audit</a>
   </div>
+<script>
+/* Night/Day toggle. Client-only on purpose: this document is served by a route
+   handler and cached at the edge (up to a year on some of the family), so the
+   HTML must be identical for every visitor and the theme has to be applied in
+   the browser. The <head> guard above does it before first paint; this only
+   handles the click. Same "er-theme" key and same data-theme attribute as the
+   React pages, so a choice made on the homepage survives a link into here. */
+(function(){
+  var KEY="er-theme";
+  var root=document.documentElement;
+  var btn=document.getElementById("er-theme");
+  if(!btn){return}
+  var TO_DAY="Switch to day theme";
+  var TO_NIGHT="Switch to night theme";
+  function label(){
+    btn.setAttribute("aria-label",root.getAttribute("data-theme")==="day"?TO_NIGHT:TO_DAY)
+  }
+  function apply(day){
+    if(day){root.setAttribute("data-theme","day")}else{root.removeAttribute("data-theme")}
+    label()
+  }
+  label();
+  btn.addEventListener("click",function(){
+    var day=root.getAttribute("data-theme")!=="day";
+    apply(day);
+    try{localStorage.setItem(KEY,day?"day":"night")}catch(e){}
+  });
+  window.addEventListener("storage",function(e){
+    if(e.key!==KEY){return}
+    apply(e.newValue==="day")
+  });
+})();
+</script>
 </body>
 </html>`;
