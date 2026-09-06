@@ -69,12 +69,19 @@ export const AA_LARGE = 3;
 export function readCssTokens(relativePath: string, selector: string): Record<string, string> {
   const css = readFileSync(join(process.cwd(), relativePath), "utf8");
   const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const block = new RegExp(`${escaped}\\s*\\{([^}]*)\\}`, "m").exec(css);
-  if (!block) throw new Error(`No \`${selector}\` block in ${relativePath}`);
+
+  // EVERY block for the selector, not the first. A stylesheet may declare
+  // `:root` more than once — globals.css does — and CSS cascades them, so
+  // reading only the first would assert against tokens that are not the ones
+  // in force. Later blocks win, exactly as the browser resolves them.
+  const blocks = [...css.matchAll(new RegExp(`${escaped}\\s*\\{([^}]*)\\}`, "gm"))];
+  if (blocks.length === 0) throw new Error(`No \`${selector}\` block in ${relativePath}`);
 
   const tokens: Record<string, string> = {};
-  for (const match of block[1].matchAll(/(--[\w-]+)\s*:\s*(#[0-9a-fA-F]{3,8})\s*;/g)) {
-    tokens[match[1]] = match[2];
+  for (const block of blocks) {
+    for (const match of block[1].matchAll(/(--[\w-]+)\s*:\s*(#[0-9a-fA-F]{3,8})\s*;/g)) {
+      tokens[match[1]] = match[2];
+    }
   }
   return tokens;
 }

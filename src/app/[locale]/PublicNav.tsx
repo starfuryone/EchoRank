@@ -27,6 +27,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { SOLUTION_CATEGORIES, solutionBase } from "@/lib/solutions-taxonomy";
 import { assistantLinkVisible } from "@/lib/assistant/config";
 import s from "./home2.module.css";
+import { ThemeToggle } from "@/components/marketing/theme-toggle";
 
 type Base = "en" | "fr";
 const baseOf = (locale: string): Base => (locale.startsWith("fr") ? "fr" : "en");
@@ -67,6 +68,10 @@ interface NavCopy {
   dashboard: string;
   menu: string;
   close: string;
+  /** Theme toggle. Named for what pressing it DOES, not for the current
+   *  theme — a control labelled with its own state reads as a readout. */
+  toDay: string;
+  toNight: string;
   promoTitle: string;
   promoBody: string;
   promoCta: string;
@@ -135,6 +140,8 @@ const NAV: Record<Base, NavCopy> = {
     dashboard: "Dashboard",
     menu: "Menu",
     close: "Close",
+    toDay: "Switch to day theme",
+    toNight: "Switch to night theme",
     promoTitle: "Free AI visibility audit",
     promoBody: "See what AI assistants say about your business. No account needed.",
     promoCta: "Run the audit ↗",
@@ -220,6 +227,8 @@ const NAV: Record<Base, NavCopy> = {
     dashboard: "Tableau de bord",
     menu: "Menu",
     close: "Fermer",
+    toDay: "Passer au thème jour",
+    toNight: "Passer au thème nuit",
     promoTitle: "Audit de visibilité IA gratuit",
     promoBody: "Découvrez ce que les assistants IA disent de votre entreprise. Sans compte.",
     promoCta: "Lancer l'audit ↗",
@@ -636,6 +645,12 @@ export function PublicNav({
               FR
             </Link>
           </span>
+          {/* Beside the language switch, which is the row's other "how do I
+              want this site" control. */}
+          <ThemeToggle
+            labels={{ toDay: t.toDay, toNight: t.toNight }}
+            className={s.themeBtn}
+          />
           <AuthCta labels={t} pricingHref={L("/pricing")} signedIn={signedIn} />
           <button
             type="button"
@@ -653,6 +668,12 @@ export function PublicNav({
         <div className={s.sheet} role="dialog" aria-modal="true" aria-label={t.menu}>
           <div className={s.sheetHead}>
             <span className={s.brand}>ECHORANK</span>
+            {/* The desktop control is off-screen behind the sheet, so the
+                toggle is repeated here rather than being desktop-only. */}
+            <ThemeToggle
+              labels={{ toDay: t.toDay, toNight: t.toNight }}
+              className={s.themeBtn}
+            />
             <button
               type="button"
               className={s.legalClose}

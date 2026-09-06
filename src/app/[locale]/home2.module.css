@@ -1,23 +1,29 @@
 /* Echorank — AI Visibility homepage redesign */
 .page{
-  /* Binance palette. Remapped ONTO THE EXISTING NAMES rather than added as a
-     new --accent/--surface set: nothing in this file reads --accent, so a
-     parallel vocabulary would style nothing. And these live on .page, not
-     :root — every element here is inside it, and custom-property lookup takes
-     the nearest ancestor that defines the name, so a :root block would lose
-     to this one no matter where it sat in the file. */
-  --bg:#181A20; --surface:#1E2329; --surface2:#2B3139;
-  --line:#2B3139; --lineSoft:#23282F;
-  --text:#EAECEF; --muted:#B7BDC6; --faint:#848E9C;
-  --gold:#FCD535; --goldDeep:#F0B90B;
+  /* Binance palette, now THEMED. The values moved to :root in globals.css and
+     this block aliases them, so the ~200 rules below keep their local
+     vocabulary and follow [data-theme] without one of them changing.
+     
+     THE ALIAS MUST NOT SHARE ITS NAME WITH ITS SOURCE. `--text: var(--text)`
+     inside .page is circular and resolves to nothing — a whole page of
+     unstyled text — which is why the global set is prefixed --er-*. The
+     original note here was right that a :root block loses to this one; that
+     is exactly why the values had to leave rather than be duplicated. */
+  --bg:var(--er-bg); --surface:var(--er-surface); --surface2:var(--er-surface2);
+  --line:var(--er-line); --lineSoft:var(--er-line-soft);
+  --text:var(--er-text); --muted:var(--er-text-muted); --faint:var(--er-text-faint);
+  --gold:var(--er-gold); --goldDeep:var(--er-gold-deep);
   /* Kept as a gradient because .btnPrimary and .goldtext paint with it, but
      flattened to the two Binance yellows — the old five-stop ramp read as
-     metallic, which this palette is not. */
-  --goldGrad:linear-gradient(120deg,#FCD535,#F0B90B 100%);
-  --green:#0ECB81; --red:#F6465D;
-  /* --blue is untouched: the palette has no signature blue and this is only
-     used for incidental links. */
-  --blue:#7aa7ff;
+     metallic, which this palette is not. Gold does not move between themes:
+     it is a FILL, and --onGold is the text that sits on it. */
+  --goldGrad:var(--er-gold-grad);
+  --onGold:var(--er-on-gold);
+  --green:var(--er-green); --red:var(--er-red);
+  /* --blue was #7aa7ff — a light blue that is 2.4:1 on white and unreadable in
+     day. Routed through the themed link token instead, which is gold at night
+     and dark amber in day. */
+  --blue:var(--er-link);
   --radius:14px;
   --mono:var(--font-geist-mono),ui-monospace,"SF Mono",Menlo,monospace;
   background:var(--bg);color:var(--text);
@@ -42,14 +48,14 @@
 /* Dark text on yellow, not white. White on #FCD535 is about 1.6:1 — below any
    readable threshold. This is the --on-accent your palette names; it has to be
    set here because the button hardcoded #FFFFFF and no variable reached it. */
-.btnPrimary{background:var(--goldGrad);color: var(--bg);box-shadow:0 8px 30px -10px rgba(240,185,11,.45);
+.btnPrimary{background:var(--goldGrad);color: var(--onGold);box-shadow:0 8px 30px -10px rgba(240,185,11,.45);
   font-weight: 800;
   letter-spacing: .2px;
   /* No text-shadow: it existed to lift white text off the old metallic ramp.
      Dark text on flat yellow needs no help, and the white glow actively
      muddied it. */
 }
-.btnGhost{border-color:var(--line);color: #F5F5F5;background:rgba(255,255,255,.02);
+.btnGhost{border-color:var(--line);color: var(--text);background:var(--er-wash);
   font-weight: 600;
 }
 .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius)}
@@ -89,7 +95,7 @@
 @media(prefers-reduced-motion:reduce){.pulse{animation:none}}
 
 /* dashboard card */
-.dash{composes:card;padding:22px;box-shadow:0 40px 90px -40px rgba(0,0,0,.9);background:linear-gradient(180deg,var(--surface2),var(--surface))}
+.dash{composes:card;padding:22px;box-shadow:0 40px 90px -40px var(--er-shadow);background:linear-gradient(180deg,var(--surface2),var(--surface))}
 .dashhead{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
 .dashtitle{font-family:var(--mono);font-size:11px;letter-spacing:.12em;color:var(--faint);text-transform:uppercase}
 .scorerow{display:flex;gap:22px;align-items:center;margin-bottom:20px}
@@ -150,7 +156,7 @@
 @media(max-width:900px){.shot,.shotRev{grid-template-columns:1fr}.shotRev .shotcopy{order:0}}
 .shotcopy h3{font-size:22px;font-weight:640;letter-spacing:-.015em;margin:10px 0 8px}
 .shotcopy p{color:var(--muted);font-size:14.5px;max-width:420px}
-.frame{border:1px solid var(--line);border-radius:12px;background:var(--surface2);overflow:hidden;box-shadow:0 30px 70px -35px rgba(0,0,0,.85)}
+.frame{border:1px solid var(--line);border-radius:12px;background:var(--surface2);overflow:hidden;box-shadow:0 30px 70px -35px var(--er-shadow)}
 .framebar{display:flex;gap:6px;padding:11px 14px;border-bottom:1px solid var(--lineSoft)}
 .framebar i{width:9px;height:9px;border-radius:99px;background:var(--line)}
 .framebody{padding:18px;display:grid;gap:12px}
@@ -212,7 +218,7 @@
 .cmpold{composes:cmpc;color:var(--faint);background:var(--surface);border-right:1px solid var(--lineSoft)}
 .cmpnew{composes:cmpc;background:linear-gradient(90deg,rgba(252,213,53,.05),transparent);color:var(--text)}
 .cmphead .cmpnew{color:var(--gold)}
-.cmpold s{text-decoration-color:rgba(255,255,255,.25)}
+.cmpold s{text-decoration-color:var(--er-strike)}
 
 /* ENGINES */
 .englogos{display:flex;flex-wrap:wrap;gap:12px;margin-top:36px}
@@ -307,14 +313,14 @@
 .page :focus-visible{outline:2px solid var(--gold);outline-offset:2px;border-radius:6px}
 
 .btnGhost:hover {
-  background: #ffffff;
-  color: #0F1117;
+  background: var(--text);
+  color: var(--er-text-inverse);
   text-shadow: none;
 }
 
 .navcta:hover {
-  background: #FFD76A;
-  color: #111;
+  background: var(--gold);
+  color: var(--onGold);
   text-shadow: none;
 }
 
@@ -323,8 +329,8 @@
 .navcta {
   background:
     repeating-linear-gradient(115deg,
-      rgba(255,255,255,.07) 0px,
-      rgba(255,255,255,.07) 2px,
+      var(--er-wash-strong) 0px,
+      var(--er-wash-strong) 2px,
       transparent 2px,
       transparent 5px),
     linear-gradient(135deg, #d4c56a 0%, #C4B454 45%, #a8993f 100%);
@@ -579,7 +585,7 @@
 /* ---------- Pricing: monthly/annual toggle + tools line ---------- */
 .priceToggle{display:inline-flex;gap:4px;margin:16px 0 26px;padding:4px;background:var(--surface2);border:1px solid var(--line);border-radius:999px}
 .priceToggleBtn{font-family:var(--mono);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;padding:8px 16px;border-radius:999px;border:0;background:transparent;color:var(--muted);cursor:pointer;transition:background .15s,color .15s}
-.priceToggleOn{background:var(--goldGrad);color:#1a1408;font-weight:600}
+.priceToggleOn{background:var(--goldGrad);color:var(--onGold);font-weight:600}
 .priceSave{font-family:var(--mono);font-size:10px;letter-spacing:.06em;color:var(--gold);margin-left:6px}
 /* Anchor price on the ANNUAL toggle: the real monthly rate, struck through.
    Muted gold so it reads as secondary to the live figure rather than competing
@@ -631,7 +637,7 @@
    the card's only action — the secondary .pcta link it used to sit above was
    removed with the rule itself. */
 .pbuy{display:block;width:100%;margin-top:16px;padding:12px 18px;border-radius:10px;border:0;
-  background:var(--goldGrad);color:#1a1408;font-size:14px;font-weight:700;text-align:center;
+  background:var(--goldGrad);color:var(--onGold);font-size:14px;font-weight:700;text-align:center;
   cursor:pointer;transition:filter 150ms ease}
 .pbuy:hover,.pbuy:focus-visible{filter:brightness(1.1)}
 .pbuy:disabled{opacity:.65;cursor:default;filter:none}
@@ -639,8 +645,8 @@
 /* Secondary card action — the free tool's link, and "Manage" for someone who
    already subscribes. Same geometry as .pbuy so the two cards' buttons line up,
    without the gold: only the card that takes money wears the accent. */
-.pbuyGhost{composes:pbuy;background:rgba(255,255,255,.02);border:1px solid var(--line);
-  color:#F5F5F5;text-decoration:none;font-weight:600}
+.pbuyGhost{composes:pbuy;background:var(--er-wash);border:1px solid var(--line);
+  color:var(--text);text-decoration:none;font-weight:600}
 .pbuyGhost:hover,.pbuyGhost:focus-visible{filter:none;border-color:var(--gold)}
 /* The state where there is nothing to buy: a plan already includes this. Reads
    as a statement rather than a disabled control, which explains nothing. */
@@ -670,7 +676,7 @@
 
 /* "Agreement required" modal */
 .consentOverlay{
-  position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.6);
+  position:fixed;inset:0;z-index:100;background:var(--er-shadow);
   display:flex;align-items:center;justify-content:center;padding:20px;
 }
 .consentDialog{
@@ -689,7 +695,7 @@
 
 /* == legal document modal (consent gate) == */
 .legalOverlay{
-  position:fixed;inset:0;z-index:110;background:rgba(0,0,0,.68);
+  position:fixed;inset:0;z-index:110;background:var(--er-shadow);
   display:flex;align-items:center;justify-content:center;padding:20px;
 }
 .legalDialog{
@@ -763,7 +769,7 @@
   width:100vw;max-width:1180px;z-index:60;
   background:var(--surface);border:1px solid var(--line);border-top:0;
   border-radius:0 0 var(--radius) var(--radius);
-  box-shadow:0 30px 70px -30px rgba(0,0,0,.85);
+  box-shadow:0 30px 70px -30px var(--er-shadow);
 }
 .megaInner{display:grid;grid-template-columns:repeat(3,1fr) 260px;gap:26px;padding:26px 28px}
 @media(max-width:1080px){.megaInner{grid-template-columns:repeat(2,1fr)}}
@@ -808,3 +814,15 @@
   .burger{display:inline-block}
   .megaPanel{display:none}
 }
+
+/* ── Theme toggle ─────────────────────────────────────────────────────────
+   Sized to match the EN/FR switch beside it rather than the CTA — it is a
+   preference control, not an action, and giving it button weight would make
+   it compete with "Join Now". */
+.themeBtn{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:32px;height:32px;border-radius:8px;
+  border:1px solid var(--line);background:var(--er-wash);
+  color:var(--muted);transition:color .15s,border-color .15s,background .15s;
+}
+.themeBtn:hover{color:var(--text);border-color:var(--faint)}

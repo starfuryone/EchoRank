@@ -28,6 +28,123 @@
   --font-mono: var(--font-geist-mono);
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+ * MARKETING THEME — Night (default) and Day
+ * ═══════════════════════════════════════════════════════════════════════════
+ *
+ * THE DASHBOARD DOES NOT PARTICIPATE. It is light already, styled with
+ * Tailwind utilities rather than these tokens, and nothing below is named in a
+ * dashboard component. `[data-theme]` on <html> changes marketing pages only.
+ *
+ * ── WHY THE TOKENS MOVED HERE ─────────────────────────────────────────────
+ * They lived on `.page` inside home2.module.css, and that file says why:
+ * "custom-property lookup takes the nearest ancestor that defines the name, so
+ * a :root block would lose to this one". Exactly so — which is also why a
+ * theme could not be bolted on without moving them. A `[data-theme="day"]`
+ * block on :root loses to any module that defines the same name on .page.
+ *
+ * So the VALUES live here and the modules keep their local vocabulary by
+ * aliasing to these. The alias must use a DIFFERENT name than the local one
+ * (`--text: var(--er-text)`, never `--text: var(--text)`) or the declaration
+ * is circular and resolves to nothing — a whole page of unstyled text.
+ *
+ * ── DEFAULT IS NIGHT, AND IT IS THE :root VALUES ──────────────────────────
+ * Not a `[data-theme="night"]` block. A visitor who never touches the toggle,
+ * and every crawler, gets exactly the bytes that shipped before this existed.
+ *
+ * ── EVERY TEXT COLOUR IS SEMANTIC ─────────────────────────────────────────
+ * --er-text / --er-text-muted / --er-text-faint / --er-text-inverse /
+ * --er-link / --er-accent-text / --er-placeholder. A literal on text is a
+ * literal that cannot follow the theme, so it becomes invisible in one of the
+ * two. The contrast test in tests/theme-contrast.test.ts computes every
+ * text-on-surface pairing from these values and fails on a regression.
+ *
+ * ── GOLD IS A FILL IN BOTH THEMES ─────────────────────────────────────────
+ * #FCD535 on white is 1.6:1 and #F0B90B is 1.9:1 — unreadable as text. Gold
+ * paints backgrounds, with --er-on-gold on top. Where an ACCENT COLOUR is
+ * wanted for text, --er-accent-text is the themed answer: gold at night,
+ * dark amber in day.
+ */
+:root {
+  /* Surfaces */
+  --er-bg: #181a20;
+  --er-surface: #1e2329;
+  --er-surface2: #2b3139;
+  --er-line: #2b3139;
+  --er-line-soft: #23282f;
+
+  /* Text */
+  --er-text: #eaecef;
+  --er-text-muted: #b7bdc6;
+  --er-text-faint: #848e9c;
+  /* Text on a surface that runs OPPOSITE to the theme — a light chip at
+   * night, a dark card in day. Not "white": it flips. */
+  --er-text-inverse: #181a20;
+  --er-link: #fcd535;
+  --er-accent-text: #fcd535;
+  /* Its own token because it is the classic invisible-on-white bug, and
+   * because browsers do not inherit ::placeholder from the input's colour. */
+  --er-placeholder: #848e9c;
+
+  /* Gold — fill only, in both themes. */
+  --er-gold: #fcd535;
+  --er-gold-deep: #f0b90b;
+  --er-on-gold: #1e2329;
+  --er-gold-grad: linear-gradient(120deg, #fcd535, #f0b90b 100%);
+
+  /* Status. Unthemed in v1: these are already mid-tone and legible on both. */
+  --er-green: #0ecb81;
+  --er-red: #f6465d;
+
+  /* Faint washes. White-over-dark at night; the SAME wash in day paints white
+   * on white and vanishes, so it flips to black-over-light. */
+  --er-wash: rgba(255, 255, 255, 0.02);
+  --er-wash-strong: rgba(255, 255, 255, 0.07);
+  --er-strike: rgba(255, 255, 255, 0.25);
+  --er-shadow: rgba(0, 0, 0, 0.85);
+}
+
+/* ── DAY ───────────────────────────────────────────────────────────────────
+ * Every value here clears WCAG AA (4.5:1) against every surface it is used
+ * on, computed rather than eyeballed. Three of them are DARKER than the brief
+ * asked for, and each is darker by exactly as much as the arithmetic
+ * required — the numbers are in tests/theme-contrast.test.ts.
+ */
+[data-theme="day"] {
+  --er-bg: #ffffff;
+  --er-surface: #f5f6f8;
+  --er-surface2: #eaecef;
+  --er-line: #eaecef;
+  --er-line-soft: #f0f1f3;
+
+  --er-text: #1e2329;
+  /* #5A6270: 6.1:1 on white, 5.2:1 on the darkest day surface. */
+  --er-text-muted: #5a6270;
+  /* #616873, not the #767E8B floor that was suggested: that value is 4.1:1 on
+   * white and fails AA body outright. This clears 4.5:1 on all three day
+   * surfaces. The cost is that muted and faint sit close together in day —
+   * unavoidable on light backgrounds if both must stay readable. */
+  --er-text-faint: #616873;
+  /* White, because in day the inverted surface is a DARK one. */
+  --er-text-inverse: #ffffff;
+  /* #8A6100, not #B78103: that amber is 3.4:1 on white — AA-large only, and
+   * links are body text. This clears 4.5:1 on every day surface including the
+   * darkest. NEVER #FCD535 here; it is 1.6:1 on white. */
+  --er-link: #8a6100;
+  --er-accent-text: #8a6100;
+  --er-placeholder: #616873;
+
+  --er-wash: rgba(0, 0, 0, 0.03);
+  --er-wash-strong: rgba(0, 0, 0, 0.06);
+  --er-strike: rgba(0, 0, 0, 0.3);
+  /* Day shadows are far lighter: the night value is near-opaque black, which
+   * on white reads as dirt rather than depth. */
+  --er-shadow: rgba(15, 23, 42, 0.14);
+
+  /* Gold is unchanged: it is a brand fill, and --er-on-gold is dark in both
+   * themes because gold itself does not move. */
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
