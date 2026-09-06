@@ -138,7 +138,7 @@ export function FreeToolShell({
             )}
 
             <p className={f.note} style={{ marginTop: 28 }}>
-              <Link href={L(FREE_TOOLS_BASE)} style={{ color: "var(--gold, #e8c565)" }}>
+              <Link href={L(FREE_TOOLS_BASE)} style={{ color: "var(--er-accent-text)" }}>
                 ← All free tools
               </Link>
             </p>

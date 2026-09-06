@@ -20,6 +20,17 @@
   --goldGrad:var(--er-gold-grad);
   --onGold:var(--er-on-gold);
   --green:var(--er-green); --red:var(--er-red);
+  /* ── FILL vs TEXT is a real distinction here, not pedantry ──────────────
+     --gold / --goldDeep / --green / --red above paint FILLS: bars, chips,
+     left rules, icon washes. A fill only has to be distinguishable. The four
+     below are the same roles as TEXT, and they are separate because the
+     bright values do not survive a white background — #FCD535 is 1.6:1 on
+     white, #0ECB81 is 1.9:1. At night these resolve to exactly the fill
+     colours, so the homepage does not move; in day they go dark.
+     Rule for this file: `color:` takes a *Text token, everything else does
+     not. */
+  --goldText:var(--er-accent-text); --goldDeepText:var(--er-warn-text);
+  --greenText:var(--er-green-text); --redText:var(--er-red-text);
   /* --blue was #7aa7ff — a light blue that is 2.4:1 on white and unreadable in
      day. Routed through the themed link token instead, which is gold at night
      and dark amber in day. */
@@ -34,7 +45,7 @@
 .page button{font:inherit;cursor:pointer}
 .container{max-width:1180px;margin:0 auto;padding:0 28px}
 .label{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint)}
-.label b{color:var(--gold);font-weight:500}
+.label b{color:var(--goldText);font-weight:500}
 .section{padding:96px 0;border-top:1px solid var(--lineSoft)}
 .h2{font-size:clamp(26px,3.4vw,40px);font-weight:650;letter-spacing:-.02em;line-height:1.12;margin:14px 0 10px}
 .sub{color:var(--muted);max-width:640px;font-size:16px}
@@ -60,7 +71,7 @@
 }
 .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius)}
 .chip{font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;padding:3px 8px;border-radius:99px;border:1px solid var(--line)}
-.chipGreen{composes:chip;color:var(--green);border-color:rgba(74,222,128,.35);background:rgba(74,222,128,.07)}
+.chipGreen{composes:chip;color:var(--greenText);border-color:rgba(74,222,128,.35);background:rgba(74,222,128,.07)}
 .tm{font-size:.62em;vertical-align:super;opacity:.7}
 
 /* NAV */
@@ -70,13 +81,13 @@
 .diamond{width:22px;height:22px;background:var(--goldGrad);transform:rotate(45deg);border-radius:4px;flex:none}
 .navlinks{display:flex;gap:26px;font-size:14px;color:var(--muted)}
 .navlinks a{transition:color 150ms ease}
-.navlinks a:hover,.navlinks a:focus-visible{color:var(--gold)}
+.navlinks a:hover,.navlinks a:focus-visible{color:var(--goldText)}
 .navright{display:flex;align-items:center;gap:16px}
 .toggle{font-family:var(--mono);font-size:12px;color:var(--muted);display:inline-flex;gap:8px}
 .toggle a{transition:color 150ms ease}
-.toggle a:hover,.toggle a:focus-visible{color:var(--gold)}
-.toggleOn{color:var(--gold)}
-.navcta{background:var(--goldGrad);color: var(--bg);font-size:13.5px;font-weight: 700;padding:9px 16px;border-radius:9px;
+.toggle a:hover,.toggle a:focus-visible{color:var(--goldText)}
+.toggleOn{color:var(--goldText)}
+.navcta{background:var(--goldGrad);color: var(--onGold);font-size:13.5px;font-weight: 700;padding:9px 16px;border-radius:9px;
   letter-spacing: 0.2px;
 }
 @media(max-width:900px){.navlinks{display:none}}
@@ -89,7 +100,7 @@
 .h1{font-size:clamp(34px,4.6vw,54px);font-weight:680;letter-spacing:-.028em;line-height:1.06;margin:18px 0 16px}
 .heroSub{composes:sub;margin-bottom:28px}
 .ctarow{display:flex;gap:12px;flex-wrap:wrap}
-.livechip{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--green);border:1px solid rgba(74,222,128,.3);background:rgba(74,222,128,.06);border-radius:99px;padding:5px 12px}
+.livechip{display:inline-flex;align-items:center;gap:7px;font-family:var(--mono);font-size:11px;letter-spacing:.1em;color:var(--greenText);border:1px solid rgba(74,222,128,.3);background:rgba(74,222,128,.06);border-radius:99px;padding:5px 12px}
 .pulse{width:7px;height:7px;border-radius:99px;background:var(--green);animation:pulse 1.8s infinite}
 @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(74,222,128,.5)}70%{box-shadow:0 0 0 8px rgba(74,222,128,0)}100%{box-shadow:0 0 0 0 rgba(74,222,128,0)}}
 @media(prefers-reduced-motion:reduce){.pulse{animation:none}}
@@ -105,7 +116,7 @@
 .ringnum{font-size:30px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
 .ringden{font-family:var(--mono);font-size:10px;color:var(--faint)}
 .scorebig{font-size:15px;font-weight:600}
-.trend{display:inline-flex;align-items:center;gap:6px;color:var(--green);font-family:var(--mono);font-size:12.5px;margin:6px 0 8px}
+.trend{display:inline-flex;align-items:center;gap:6px;color:var(--greenText);font-family:var(--mono);font-size:12.5px;margin:6px 0 8px}
 .ts{font-family:var(--mono);font-size:11px;color:var(--faint)}
 .engines{display:grid;gap:9px;margin-bottom:18px}
 .eng{display:grid;grid-template-columns:96px 1fr 34px;align-items:center;gap:12px;font-size:12.5px}
@@ -116,21 +127,21 @@
 .comp{border-top:1px solid var(--lineSoft);padding-top:14px}
 .comprow{display:flex;justify-content:space-between;font-size:12.5px;padding:5px 0;font-family:var(--mono)}
 .comprank{color:var(--faint);width:26px;display:inline-block}
-.compyou{color:var(--gold)}
+.compyou{color:var(--goldText)}
 .compsc{font-variant-numeric:tabular-nums;color:var(--muted)}
 
 /* FLOW */
 .flow{display:flex;flex-direction:column;align-items:center;margin-top:48px}
 .fnode{width:100%;max-width:640px;text-align:center;padding:18px 22px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
 .fdashed{border-style:dashed}
-.fkey{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;color:var(--gold);text-transform:uppercase;display:block;margin-bottom:6px}
+.fkey{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;color:var(--goldText);text-transform:uppercase;display:block;margin-bottom:6px}
 .fq{font-size:17px;font-weight:560}
 .farrow{height:44px;width:2px;background:linear-gradient(var(--line),var(--goldDeep));position:relative;margin:2px 0}
 .farrow::after{content:"";position:absolute;bottom:-1px;left:50%;transform:translateX(-50%) rotate(45deg);width:8px;height:8px;border-right:2px solid var(--goldDeep);border-bottom:2px solid var(--goldDeep)}
 .fengines{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
 .fengines span{font-family:var(--mono);font-size:12px;padding:7px 14px;border:1px solid var(--line);border-radius:99px;color:var(--muted);background:var(--surface)}
 .signals{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;max-width:640px;margin:10px auto 2px}
-.signals span{font-size:12.5px;padding:7px 13px;border-radius:99px;border:1px solid rgba(252,213,53,.25);color:var(--gold);background:rgba(252,213,53,.05)}
+.signals span{font-size:12.5px;padding:7px 13px;border-radius:99px;border:1px solid rgba(252,213,53,.25);color:var(--goldText);background:rgba(252,213,53,.05)}
 .ffinal{border-color:rgba(252,213,53,.5);box-shadow:0 0 60px -20px rgba(240,185,11,.35)}
 .fverdict{composes:fq;composes:goldtext;font-weight:650}
 
@@ -145,8 +156,8 @@
 .mbar{height:5px;border-radius:99px;background:var(--lineSoft);margin:12px 0 8px;overflow:hidden}
 .mfill{height:100%;border-radius:99px}
 .md{font-family:var(--mono);font-size:11px;color:var(--muted)}
-.mdGreen{composes:md;color:var(--green)}
-.mdRed{composes:md;color:var(--red)}
+.mdGreen{composes:md;color:var(--greenText)}
+.mdRed{composes:md;color:var(--redText)}
 
 /* PRODUCT SHOTS */
 .shots{display:grid;gap:64px;margin-top:56px}
@@ -164,9 +175,9 @@
 .sk{border:1px solid var(--lineSoft);border-radius:9px;padding:12px;background:var(--surface)}
 .skl{font-family:var(--mono);font-size:9.5px;color:var(--faint);letter-spacing:.08em;text-transform:uppercase}
 .skn{font-size:19px;font-weight:700;margin-top:4px;font-variant-numeric:tabular-nums}
-.sknG{composes:skn;color:var(--green)}
-.sknR{composes:skn;color:var(--red)}
-.sknGd{composes:skn;color:var(--gold)}
+.sknG{composes:skn;color:var(--greenText)}
+.sknR{composes:skn;color:var(--redText)}
+.sknGd{composes:skn;color:var(--goldText)}
 .skchart{border:1px solid var(--lineSoft);border-radius:9px;padding:12px;background:var(--surface)}
 .sklines{display:grid;gap:8px}
 .skline{height:9px;border-radius:99px;background:var(--lineSoft);position:relative;overflow:hidden}
@@ -182,31 +193,31 @@
 .tlw{font-family:var(--mono);font-size:11px;color:var(--faint);letter-spacing:.1em}
 .tlt{font-size:16.5px;font-weight:600;margin:4px 0 3px}
 .tld{font-size:13.5px;color:var(--muted);max-width:520px}
-.tlm{font-family:var(--mono);font-size:12px;color:var(--green);margin-top:5px}
-.tlmGold{composes:tlm;color:var(--gold)}
+.tlm{font-family:var(--mono);font-size:12px;color:var(--greenText);margin-top:5px}
+.tlmGold{composes:tlm;color:var(--goldText)}
 
 /* SIMULATOR */
 .sim{composes:card;padding:26px;margin-top:48px}
 .simq{display:flex;gap:12px;align-items:center;border:1px solid var(--line);background:var(--bg);border-radius:11px;padding:14px 18px;font-size:15.5px}
-.simqic{color:var(--gold);font-family:var(--mono);font-size:12px;flex:none}
+.simqic{color:var(--goldText);font-family:var(--mono);font-size:12px;flex:none}
 .simtabs{display:flex;gap:8px;margin:18px 0 16px;flex-wrap:wrap}
 .simtab{border:1px solid var(--line);background:transparent;color:var(--muted);font-size:12.5px;font-family:var(--mono);padding:7px 14px;border-radius:99px;transition:.15s}
-.simtabOn{composes:simtab;border-color:rgba(252,213,53,.5);color:var(--gold);background:rgba(252,213,53,.06)}
+.simtabOn{composes:simtab;border-color:rgba(252,213,53,.5);color:var(--goldText);background:rgba(252,213,53,.06)}
 .simans{display:grid;gap:8px;margin-bottom:20px}
 .simrow{display:flex;align-items:center;gap:12px;border:1px solid var(--lineSoft);border-radius:10px;padding:12px 16px;font-size:14px;background:var(--surface2)}
 .simrank{font-family:var(--mono);font-size:11.5px;color:var(--faint);width:20px;flex:none}
-.simmiss{composes:simrow;border-style:dashed;border-color:rgba(248,113,113,.45);color:var(--red);background:rgba(248,113,113,.04)}
-.simmiss .simrank{color:var(--red)}
+.simmiss{composes:simrow;border-style:dashed;border-color:rgba(248,113,113,.45);color:var(--redText);background:rgba(248,113,113,.04)}
+.simmiss .simrank{color:var(--redText)}
 .simgrid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 @media(max-width:760px){.simgrid{grid-template-columns:1fr}}
 .simh{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px}
-.simhR{composes:simh;color:var(--red)}
-.simhG{composes:simh;color:var(--green)}
+.simhR{composes:simh;color:var(--redText)}
+.simhG{composes:simh;color:var(--greenText)}
 .simcol ul{list-style:none;display:grid;gap:8px;padding:0;margin:0}
 .simcol li{font-size:13.5px;color:var(--muted);display:flex;gap:10px;align-items:flex-start}
 .simcol li i{font-style:normal;flex:none;font-family:var(--mono);font-size:12px}
-.simWhy li i{color:var(--red)}
-.simFix li i{color:var(--green)}
+.simWhy li i{color:var(--redText)}
+.simFix li i{color:var(--greenText)}
 .simFix b{color:var(--text);font-weight:560}
 
 /* COMPARISON TABLE */
@@ -217,7 +228,7 @@
 .cmphead .cmpc{font-family:var(--mono);font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;padding:14px 22px}
 .cmpold{composes:cmpc;color:var(--faint);background:var(--surface);border-right:1px solid var(--lineSoft)}
 .cmpnew{composes:cmpc;background:linear-gradient(90deg,rgba(252,213,53,.05),transparent);color:var(--text)}
-.cmphead .cmpnew{color:var(--gold)}
+.cmphead .cmpnew{color:var(--goldText)}
 .cmpold s{text-decoration-color:var(--er-strike)}
 
 /* ENGINES */
@@ -232,8 +243,8 @@
 .hcard{composes:card;padding:18px}
 .hk{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px}
 .hn{font-size:14px;font-weight:600}
-.ht{font-family:var(--mono);font-size:12px;color:var(--green)}
-.htRed{composes:ht;color:var(--red)}
+.ht{font-family:var(--mono);font-size:12px;color:var(--greenText)}
+.htRed{composes:ht;color:var(--redText)}
 .hv{font-family:var(--mono);font-size:11px;color:var(--faint);margin-bottom:10px}
 .hcard svg{width:100%;height:56px;display:block}
 
@@ -242,12 +253,12 @@
 .rm{composes:card;display:grid;grid-template-columns:auto 1fr auto auto;gap:18px;align-items:center;padding:17px 22px}
 @media(max-width:760px){.rm{grid-template-columns:auto 1fr;row-gap:8px}}
 .rp{font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;padding:4px 10px;border-radius:6px;width:52px;text-align:center}
-.rp1{composes:rp;background:rgba(248,113,113,.12);color:var(--red)}
-.rp2{composes:rp;background:rgba(252,213,53,.12);color:var(--gold)}
+.rp1{composes:rp;background:rgba(248,113,113,.12);color:var(--redText)}
+.rp2{composes:rp;background:rgba(252,213,53,.12);color:var(--goldText)}
 .rp3{composes:rp;background:rgba(122,167,255,.12);color:var(--blue)}
 .rt{font-size:15px;font-weight:560}
 .rt small{display:block;font-weight:400;color:var(--muted);font-size:13px;margin-top:2px}
-.rlift{font-family:var(--mono);font-size:13px;color:var(--green);white-space:nowrap}
+.rlift{font-family:var(--mono);font-size:13px;color:var(--greenText);white-space:nowrap}
 .rimp{font-family:var(--mono);font-size:11px;color:var(--faint);white-space:nowrap}
 
 /* ROI */
@@ -283,12 +294,12 @@
 .pamount{font-size:28px;font-weight:700;margin:10px 0 14px;letter-spacing:-.02em}
 .pamount span{font-size:13px;color:var(--faint);font-weight:500}
 .price ul{list-style:none;padding:0;margin:0;display:grid;gap:8px;font-size:13px;color:var(--muted)}
-.price li::before{content:"— ";color:var(--goldDeep)}
+.price li::before{content:"— ";color:var(--goldDeepText)}
 .taxline{font-size:12.5px;color:var(--faint);margin-top:18px}
 /* The /credits pointer under the grid. Sits between the cards and the consent
    row, so it reads as an add-on to the plans rather than a fourth option. */
 .creditsLine{font-size:14px;margin-top:24px}
-.creditsLine a{color:var(--gold);text-decoration:none;border-bottom:1px solid transparent}
+.creditsLine a{color:var(--goldText);text-decoration:none;border-bottom:1px solid transparent}
 .creditsLine a:hover{border-bottom-color:var(--gold)}
 
 /* CLOSE */
@@ -304,7 +315,7 @@
 .footlinks{display:flex;gap:20px;flex-wrap:wrap}
 .footlinks a,.footin a{transition:color 150ms ease}
 .footlinks a:hover,.footlinks a:focus-visible,
-.footin a:hover,.footin a:focus-visible{color:var(--gold)}
+.footin a:hover,.footin a:focus-visible{color:var(--goldText)}
 
 /* reveal */
 .reveal{opacity:0;transform:translateY(18px);transition:opacity .6s ease,transform .6s ease}
@@ -366,7 +377,7 @@
 
 /* "More details →" link under a product shot */
 .shotlink{display:inline-block;margin-top:14px;font-family:var(--mono);font-size:11px;letter-spacing:.08em;
-  text-transform:uppercase;color:var(--gold);border-bottom:1px solid rgba(240,185,11,.35);padding-bottom:2px}
+  text-transform:uppercase;color:var(--goldText);border-bottom:1px solid rgba(240,185,11,.35);padding-bottom:2px}
 .shotlink:hover{border-bottom-color:var(--gold)}
 
 .faqVideoWrap {
@@ -522,7 +533,7 @@
 /* Renders from SEO_TOOL_GROUPS, so the grid must survive an arbitrary number of
    tools per group — everything below is auto-fit rather than a fixed column
    count. Dark/gold tokens only; no new colours introduced. */
-.toolsCount{font-family:var(--mono);font-size:12px;letter-spacing:.08em;color:var(--gold);margin-top:14px}
+.toolsCount{font-family:var(--mono);font-size:12px;letter-spacing:.08em;color:var(--goldText);margin-top:14px}
 
 /* / 04 featured cards + overview video. The heading block above this is full
    width; only the "WORTH A CLOSER LOOK" row splits, and the tool-group grids
@@ -561,7 +572,7 @@
 .toolsFeaturedLabel{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);margin:40px 0 14px}
 .toolsFeatured{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
 .toolsFeatureCard{background:var(--surface2);border:1px solid var(--line);border-radius:var(--radius);padding:22px}
-.toolsFeatureTag{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--gold)}
+.toolsFeatureTag{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--goldText)}
 .toolsFeatureH{font-size:17px;font-weight:600;line-height:1.25;margin:10px 0 8px;color:var(--text)}
 .toolsFeatureP{font-size:14px;line-height:1.5;color:var(--muted);margin:0}
 
@@ -570,14 +581,14 @@
 .toolsGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:12px}
 .toolCard{background:var(--surface);border:1px solid var(--lineSoft);border-radius:12px;padding:16px 18px}
 .toolCardHead{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
-.toolIcon{width:16px;height:16px;color:var(--gold);flex:none}
+.toolIcon{width:16px;height:16px;color:var(--goldText);flex:none}
 .toolName{font-size:14px;font-weight:580;color:var(--text)}
 .toolDesc{font-size:13px;line-height:1.45;color:var(--muted);margin:8px 0 0}
 
 /* Status badges. COMING SOON is deliberately quiet — it is an honesty marker,
    not a feature. LIVE carries the accent because 17 of 22 tools are shipped and
    that is the point the section is making. */
-.toolBadgeLive{margin-left:auto;font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;padding:3px 7px;border-radius:999px;color:var(--green);background:rgba(74,222,128,.10);border:1px solid rgba(74,222,128,.28)}
+.toolBadgeLive{margin-left:auto;font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;padding:3px 7px;border-radius:999px;color:var(--greenText);background:rgba(74,222,128,.10);border:1px solid rgba(74,222,128,.28)}
 .toolBadgeSoon{margin-left:auto;font-family:var(--mono);font-size:9.5px;letter-spacing:.1em;padding:3px 7px;border-radius:999px;color:var(--faint);background:transparent;border:1px solid var(--line)}
 
 .toolsIncluded{color:var(--muted);max-width:680px;font-size:14px;margin:36px 0 20px}
@@ -586,15 +597,15 @@
 .priceToggle{display:inline-flex;gap:4px;margin:16px 0 26px;padding:4px;background:var(--surface2);border:1px solid var(--line);border-radius:999px}
 .priceToggleBtn{font-family:var(--mono);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;padding:8px 16px;border-radius:999px;border:0;background:transparent;color:var(--muted);cursor:pointer;transition:background .15s,color .15s}
 .priceToggleOn{background:var(--goldGrad);color:var(--onGold);font-weight:600}
-.priceSave{font-family:var(--mono);font-size:10px;letter-spacing:.06em;color:var(--gold);margin-left:6px}
+.priceSave{font-family:var(--mono);font-size:10px;letter-spacing:.06em;color:var(--goldText);margin-left:6px}
 /* Anchor price on the ANNUAL toggle: the real monthly rate, struck through.
    Muted gold so it reads as secondary to the live figure rather than competing
    with it — the number that matters is the one you pay. Never rendered on the
    monthly toggle, and never a computed "was" price. */
-.priceAnchor{color:var(--goldDeep);opacity:.6;font-size:18px;font-weight:600;
+.priceAnchor{color:var(--goldDeepText);opacity:.6;font-size:18px;font-weight:600;
   margin-right:8px;text-decoration-thickness:1.5px}
 .pbilled{font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;color:var(--faint);margin-top:-2px}
-.ptools{font-family:var(--mono);font-size:10.5px;letter-spacing:.05em;color:var(--gold);margin-top:12px;display:block;text-decoration:none;border-top:1px solid var(--lineSoft);padding-top:12px}
+.ptools{font-family:var(--mono);font-size:10.5px;letter-spacing:.05em;color:var(--goldText);margin-top:12px;display:block;text-decoration:none;border-top:1px solid var(--lineSoft);padding-top:12px}
 .ptools:hover{text-decoration:underline}
 
 /* ── Hover + focus states, public pages ─────────────────────────────────────
@@ -641,7 +652,7 @@
   cursor:pointer;transition:filter 150ms ease}
 .pbuy:hover,.pbuy:focus-visible{filter:brightness(1.1)}
 .pbuy:disabled{opacity:.65;cursor:default;filter:none}
-.pbuyErr{margin:8px 0 0;font-size:12px;line-height:1.4;color:var(--red)}
+.pbuyErr{margin:8px 0 0;font-size:12px;line-height:1.4;color:var(--redText)}
 /* Secondary card action — the free tool's link, and "Manage" for someone who
    already subscribes. Same geometry as .pbuy so the two cards' buttons line up,
    without the gold: only the card that takes money wears the accent. */
@@ -671,8 +682,8 @@
   accent-color:var(--gold);
 }
 .consentText{color:var(--muted);font-size:14px;line-height:1.5}
-.consentText a{color:var(--gold);text-decoration:underline;text-underline-offset:2px}
-.consentText a:hover,.consentText a:focus-visible{color:var(--goldDeep)}
+.consentText a{color:var(--goldText);text-decoration:underline;text-underline-offset:2px}
+.consentText a:hover,.consentText a:focus-visible{color:var(--goldDeepText)}
 
 /* "Agreement required" modal */
 .consentOverlay{
@@ -722,13 +733,13 @@
   color:var(--muted);font-size:12px;padding:5px 11px;cursor:pointer;
 }
 .legalTab:hover,.legalTab:focus-visible{color:var(--text);border-color:var(--gold)}
-.legalTabOn{composes:legalTab;color:var(--bg);background:var(--gold);border-color:var(--gold)}
+.legalTabOn{composes:legalTab;color:var(--onGold);background:var(--gold);border-color:var(--gold)}
 /* The one scrolling region: the header and tabs stay put while the body moves. */
 .legalBody{overflow-y:auto;padding:18px 20px 24px;-webkit-overflow-scrolling:touch}
 .legalUpdated{color:var(--faint);font-size:12px;margin-bottom:14px}
 .legalH2{font-size:15px;font-weight:650;margin:18px 0 6px}
 .legalP{color:var(--muted);font-size:14px;line-height:1.6;margin-bottom:8px}
-.legalP a{color:var(--gold);text-decoration:underline}
+.legalP a{color:var(--goldText);text-decoration:underline}
 
 /* == use-cases page == */
 .ucGrid{
@@ -760,7 +771,7 @@
   background:none;border:0;color:var(--muted);font:inherit;font-size:14px;
   padding:0;cursor:pointer;transition:color 150ms ease;
 }
-.megaTrigger:hover,.megaTrigger:focus-visible{color:var(--gold)}
+.megaTrigger:hover,.megaTrigger:focus-visible{color:var(--goldText)}
 .chev{display:inline-block;font-size:10px;transition:transform 150ms ease}
 .chevOpen{composes:chev;transform:rotate(180deg)}
 /* Full width, anchored under the header, overlaying the page. */
@@ -780,14 +791,14 @@
 }
 .megaLink{display:flex;flex-direction:column;gap:2px}
 .megaLinkLabel{font-size:14px;font-weight:560;color:var(--text)}
-.megaLink:hover .megaLinkLabel,.megaLink:focus-visible .megaLinkLabel{color:var(--gold)}
+.megaLink:hover .megaLinkLabel,.megaLink:focus-visible .megaLinkLabel{color:var(--goldText)}
 .megaLinkDesc{font-size:12.5px;line-height:1.45;color:var(--muted)}
 .megaPromo{
   display:flex;flex-direction:column;gap:8px;padding:18px;
   background:var(--surface2);border:1px solid var(--line);border-radius:var(--radius);
 }
 .megaPromo:hover,.megaPromo:focus-visible{border-color:var(--gold)}
-.megaPromoCta{color:var(--gold);font-size:13px;font-weight:600}
+.megaPromoCta{color:var(--goldText);font-size:13px;font-weight:600}
 
 /* Mobile sheet */
 .burger{

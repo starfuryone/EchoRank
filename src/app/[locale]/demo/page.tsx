@@ -8,7 +8,8 @@ import Link from "next/link";
 import { statSync } from "node:fs";
 import { join } from "node:path";
 import { SUPPORTED_LOCALES, isSupportedLocale } from "@/lib/i18n/config";
-import { DEMO_VIDEO } from "@/lib/i18n/content";
+import { DEMO_VIDEO, THEME_TOGGLE_COPY } from "@/lib/i18n/content";
+import { ThemeToggle } from "@/components/marketing/theme-toggle";
 import { DemoVideoPlayer } from "@/components/demo-video";
 import { DEMO_VIDEO_POSTER, DEMO_VIDEO_SRC } from "@/lib/demo-video";
 import s from "@/components/demo-video.module.css";
@@ -78,10 +79,13 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
       />
       <main className={s.demoPage}>
         <div className={s.demoContainer}>
-          <Link href={`/${locale}`} className={s.demoBrand}>
-            <span className={s.demoDiamond} aria-hidden />
-            ECHORANK
-          </Link>
+          <div className={s.demoHead}>
+            <Link href={`/${locale}`} className={s.demoBrand}>
+              <span className={s.demoDiamond} aria-hidden />
+              ECHORANK
+            </Link>
+            <ThemeToggle labels={THEME_TOGGLE_COPY[locale]} className={s.demoThemeBtn} />
+          </div>
           <h1 className={s.demoH1}>{d.h1}</h1>
           <p className={s.demoSub}>{d.sub}</p>
           <DemoVideoPlayer locale={locale} pricingHref={`/${locale}#pricing`} />

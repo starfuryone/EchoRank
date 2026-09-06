@@ -535,7 +535,7 @@ export default function HomeClient({
             </div>
             <div className={s.comp}>
               <div className={s.comprow}><span><span className={s.comprank}>#1</span>ProFlow Services</span><span className={s.compsc}>81</span></div>
-              <div className={`${s.comprow} ${s.compyou}`}><span><span className={s.comprank}>#2</span>{t.hero.you}</span><span className={s.compsc} style={{ color: "var(--gold)" }}>74</span></div>
+              <div className={`${s.comprow} ${s.compyou}`}><span><span className={s.comprank}>#2</span>{t.hero.you}</span><span className={s.compsc} style={{ color: "var(--er-accent-text)" }}>74</span></div>
               <div className={s.comprow}><span><span className={s.comprank}>#3</span>City Drain Co.</span><span className={s.compsc}>62</span></div>
             </div>
           </div>

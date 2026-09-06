@@ -26,11 +26,25 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { SOLUTION_CATEGORIES, solutionBase } from "@/lib/solutions-taxonomy";
 import { assistantLinkVisible } from "@/lib/assistant/config";
+import { THEME_TOGGLE_COPY, type ThemeToggleCopy } from "@/lib/i18n/content";
+import { isSupportedLocale } from "@/lib/i18n/config";
 import s from "./home2.module.css";
 import { ThemeToggle } from "@/components/marketing/theme-toggle";
 
 type Base = "en" | "fr";
 const baseOf = (locale: string): Base => (locale.startsWith("fr") ? "fr" : "en");
+
+/**
+ * The theme toggle is the one control here that does NOT fold to en/fr.
+ * Everything else in this nav is deliberately English for de-CH (see the
+ * header comment), but its label is an icon button's entire accessible name,
+ * the catalog already carries all five marketing locales, and reading it from
+ * there is what keeps this component from becoming a second source for two
+ * strings that /ai-visibility and /demo also render.
+ */
+function themeLabels(locale: string): ThemeToggleCopy {
+  return isSupportedLocale(locale) ? THEME_TOGGLE_COPY[locale] : THEME_TOGGLE_COPY.en;
+}
 
 export type NavGroupId = "product" | "solutions" | "resources";
 /** Flat items can also be "current"; kept loose so pages can name either. */
@@ -70,8 +84,6 @@ interface NavCopy {
   close: string;
   /** Theme toggle. Named for what pressing it DOES, not for the current
    *  theme — a control labelled with its own state reads as a readout. */
-  toDay: string;
-  toNight: string;
   promoTitle: string;
   promoBody: string;
   promoCta: string;
@@ -140,8 +152,6 @@ const NAV: Record<Base, NavCopy> = {
     dashboard: "Dashboard",
     menu: "Menu",
     close: "Close",
-    toDay: "Switch to day theme",
-    toNight: "Switch to night theme",
     promoTitle: "Free AI visibility audit",
     promoBody: "See what AI assistants say about your business. No account needed.",
     promoCta: "Run the audit ↗",
@@ -227,8 +237,6 @@ const NAV: Record<Base, NavCopy> = {
     dashboard: "Tableau de bord",
     menu: "Menu",
     close: "Fermer",
-    toDay: "Passer au thème jour",
-    toNight: "Passer au thème nuit",
     promoTitle: "Audit de visibilité IA gratuit",
     promoBody: "Découvrez ce que les assistants IA disent de votre entreprise. Sans compte.",
     promoCta: "Lancer l'audit ↗",
@@ -648,7 +656,7 @@ export function PublicNav({
           {/* Beside the language switch, which is the row's other "how do I
               want this site" control. */}
           <ThemeToggle
-            labels={{ toDay: t.toDay, toNight: t.toNight }}
+            labels={themeLabels(locale)}
             className={s.themeBtn}
           />
           <AuthCta labels={t} pricingHref={L("/pricing")} signedIn={signedIn} />
@@ -671,7 +679,7 @@ export function PublicNav({
             {/* The desktop control is off-screen behind the sheet, so the
                 toggle is repeated here rather than being desktop-only. */}
             <ThemeToggle
-              labels={{ toDay: t.toDay, toNight: t.toNight }}
+              labels={themeLabels(locale)}
               className={s.themeBtn}
             />
             <button

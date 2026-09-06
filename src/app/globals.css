@@ -102,6 +102,39 @@
   --er-wash-strong: rgba(255, 255, 255, 0.07);
   --er-strike: rgba(255, 255, 255, 0.25);
   --er-shadow: rgba(0, 0, 0, 0.85);
+  /* Modal/lightbox scrim. Follows the theme; the MEDIA scrim below does not. */
+  --er-scrim: rgba(6, 6, 9, 0.72);
+
+  /* ── Status colours, as TEXT ──────────────────────────────────────────
+   * Separate from --er-green / --er-red, which are FILLS (bar segments,
+   * left rules, icon washes). A fill only has to be distinguishable; text
+   * has to be readable, and the same mid-tone rarely does both across two
+   * themes. Chips, deltas and error lines take these. */
+  --er-green-text: #0ecb81;
+  --er-red-text: #f6465d;
+  --er-warn-text: #f0b90b;
+
+  /* ── Knowledge-Hub gold ───────────────────────────────────────────────
+   * A SECOND gold, deliberately: #c9a227 is the accent /learn, /free-tools,
+   * /guides and /resources have always used, muted next to brand #fcd535 so
+   * long-form pages do not shout. Tokenised rather than unified — unifying
+   * it would repaint four sections at night, which this change must not do.
+   * Day takes it dark for the same reason brand gold cannot be text. */
+  --er-kb-gold: #c9a227;
+  --er-kb-gold-hi: #fff1a8;
+  --er-kb-soft: rgba(201, 162, 39, 0.5);
+  --er-accent-soft: rgba(252, 213, 53, 0.32);
+
+  /* ── Over media — THEME-INVARIANT ─────────────────────────────────────
+   * Mute chips, play buttons and caption bars sit on video frames, which are
+   * dark in both themes. Day must NOT override these: a light scrim on a
+   * dark still is the bug, not the fix. Same reasoning as --er-on-gold. */
+  --er-media-well: #0b0e11;
+  --er-media-scrim: rgba(10, 10, 12, 0.62);
+  --er-media-scrim-strong: rgba(10, 10, 12, 0.82);
+  --er-media-ink: #c9a227;
+  --er-media-text: #f5f5f5;
+  --er-media-text-muted: #b9b9c6;
 }
 
 /* ── DAY ───────────────────────────────────────────────────────────────────
@@ -140,6 +173,25 @@
   /* Day shadows are far lighter: the night value is near-opaque black, which
    * on white reads as dirt rather than depth. */
   --er-shadow: rgba(15, 23, 42, 0.14);
+
+  /* Day scrims are lighter: a 72%-black overlay on a white page reads as a
+   * power cut rather than as focus. */
+  --er-scrim: rgba(15, 23, 42, 0.45);
+
+  /* Status text, re-derived for white. The night values are bright mid-tones
+   * (#0ECB81 is 1.9:1 on white, #F6465D 3.6:1, #F0B90B 1.9:1) and every one
+   * of them fails as body text in day. The FILL tokens above keep the bright
+   * values, because a bar segment is not something you read. */
+  --er-green-text: #0b7a4a;
+  --er-red-text: #c11c33;
+  --er-warn-text: #8a6100;
+
+  --er-kb-gold: #8a6100;
+  --er-kb-gold-hi: #6d4d00;
+  --er-kb-soft: rgba(138, 97, 0, 0.45);
+  --er-accent-soft: rgba(138, 97, 0, 0.4);
+
+  /* --er-media-* deliberately absent. See the night block. */
 
   /* Gold is unchanged: it is a brand fill, and --er-on-gold is dark in both
    * themes because gold itself does not move. */

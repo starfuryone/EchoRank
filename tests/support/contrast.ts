@@ -60,11 +60,17 @@ export const AA_BODY = 4.5;
 export const AA_LARGE = 3;
 
 /**
- * Every `--name: #hex;` declaration in a CSS file, by selector block.
+ * Every `--name: value;` declaration in a CSS file, by selector block.
  *
  * Deliberately dumb: it does not resolve `var()` indirection, because a token
  * defined as a reference to another token has no colour of its own to assert.
  * Callers ask for the literal-valued tokens and get exactly those.
+ *
+ * Values come back VERBATIM, hex or not — `rgba(...)`, a gradient, anything.
+ * That matters because the most useful assertion about a scrim or a gradient
+ * is not its ratio but WHETHER A THEME OVERRIDES IT, and a hex-only reader
+ * reports "absent" for a token that is merely not a hex. Feeding a non-hex
+ * value to luminance() still throws, loudly, which is the right outcome.
  */
 export function readCssTokens(relativePath: string, selector: string): Record<string, string> {
   const css = readFileSync(join(process.cwd(), relativePath), "utf8");
@@ -79,8 +85,8 @@ export function readCssTokens(relativePath: string, selector: string): Record<st
 
   const tokens: Record<string, string> = {};
   for (const block of blocks) {
-    for (const match of block[1].matchAll(/(--[\w-]+)\s*:\s*(#[0-9a-fA-F]{3,8})\s*;/g)) {
-      tokens[match[1]] = match[2];
+    for (const match of block[1].matchAll(/(--[\w-]+)\s*:\s*([^;{}]+);/g)) {
+      tokens[match[1]] = match[2].trim();
     }
   }
   return tokens;

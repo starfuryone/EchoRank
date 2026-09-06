@@ -51,7 +51,7 @@
   outline: none;
   transition: border-color 150ms ease;
 }
-.searchInput::placeholder { color: var(--faint, #848e9c); }
+.searchInput::placeholder { color: var(--er-placeholder); }
 .searchInput:focus { border-color: var(--gold, #fcd535); }
 .searchCount {
   font-family: var(--mono, ui-monospace, monospace);
@@ -87,7 +87,7 @@
 }
 .tabOn {
   border-color: var(--gold, #fcd535);
-  color: #0b0e11;
+  color: var(--er-on-gold);
   background: var(--gold, #fcd535);
   font-weight: 600;
 }
@@ -205,8 +205,8 @@
   font-size: 10.5px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--gold, #fcd535);
-  border: 1px solid rgba(252, 213, 53, 0.32);
+  color: var(--er-accent-text);
+  border: 1px solid var(--er-accent-soft);
   border-radius: 999px;
   padding: 4px 11px;
 }
@@ -239,7 +239,7 @@
 .pageOn {
   border-color: var(--gold, #fcd535);
   background: var(--gold, #fcd535);
-  color: #0b0e11;
+  color: var(--er-on-gold);
   font-weight: 600;
 }
 
@@ -266,7 +266,7 @@
 }
 .crumbs a { color: var(--muted, #b7bdc6); }
 .crumbs a:hover,
-.crumbs a:focus-visible { color: var(--gold, #fcd535); }
+.crumbs a:focus-visible { color: var(--er-accent-text); }
 .crumbSep { color: var(--surface2, #2b3139); }
 
 .byline {
@@ -309,7 +309,7 @@
   font-size: 10.5px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--gold, #fcd535);
+  color: var(--er-accent-text);
   margin: 0 0 12px;
 }
 .tldrList {
@@ -323,7 +323,7 @@
   line-height: 1.58;
   color: var(--muted, #b7bdc6);
 }
-.tldrList li::marker { color: var(--gold, #fcd535); }
+.tldrList li::marker { color: var(--er-accent-text); }
 
 /* ── Mid-article tool CTA ──────────────────────────────────────────────── */
 
@@ -381,7 +381,7 @@
 .faqQ::-webkit-details-marker { display: none; }
 .faqQ::before {
   content: "+";
-  color: var(--gold, #fcd535);
+  color: var(--er-accent-text);
   font-family: var(--mono, ui-monospace, monospace);
   line-height: 1.35;
 }
@@ -411,7 +411,7 @@
   height: 48px;
   border-radius: 999px;
   background: var(--goldGrad, linear-gradient(120deg, #fcd535, #f0b90b));
-  color: #0b0e11;
+  color: var(--er-on-gold);
   display: grid;
   place-items: center;
   font-weight: 700;
@@ -428,7 +428,7 @@
   margin: 4px 0 9px;
 }
 .authorBio { font-size: 14px; line-height: 1.6; color: var(--muted, #b7bdc6); margin: 0; }
-.authorBio a { color: var(--gold, #fcd535); }
+.authorBio a { color: var(--er-accent-text); }
 
 /* ── Related ───────────────────────────────────────────────────────────── */
 

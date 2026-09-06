@@ -5,7 +5,7 @@
   position: fixed;
   inset: 0;
   z-index: 100;
-  background: rgba(6, 6, 9, 0.72);
+  background: var(--er-scrim);
   backdrop-filter: blur(3px);
   display: flex;
   align-items: center;
@@ -21,10 +21,10 @@
   overflow-y: auto;
   background: var(--surface, #101016);
   border: 1px solid var(--line, #232330);
-  border-top: 2px solid #c9a227;
+  border-top: 2px solid var(--er-kb-gold);
   border-radius: 14px;
   padding: 26px 24px 24px;
-  box-shadow: 0 30px 90px -30px rgba(0, 0, 0, 0.9);
+  box-shadow: 0 30px 90px -30px var(--er-shadow);
 }
 
 .closeBtn {
@@ -43,8 +43,8 @@
 }
 .closeBtn:hover,
 .closeBtn:focus-visible {
-  color: #c9a227;
-  border-color: #c9a227;
+  color: var(--er-kb-gold);
+  border-color: var(--er-kb-gold);
 }
 
 .title {
@@ -65,7 +65,7 @@
   font-size: 11px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #c9a227;
+  color: var(--er-kb-gold);
   margin: 0 0 18px;
 }
 
@@ -77,7 +77,7 @@
   border-radius: 10px;
   border: 0;
   background: linear-gradient(120deg, #f7d76f, #b88420);
-  color: #1a1408;
+  color: var(--er-on-gold);
   font-size: 14px;
   font-weight: 700;
   cursor: pointer;
@@ -104,11 +104,11 @@
   font-size: 14px;
 }
 .input:focus-visible {
-  outline: 2px solid #c9a227;
+  outline: 2px solid var(--er-kb-gold);
   outline-offset: 1px;
 }
 .error {
-  color: #f87171;
+  color: var(--er-red-text);
   font-size: 12.5px;
   margin: 6px 0 0;
 }
@@ -167,7 +167,7 @@
 }
 .directLink:hover,
 .directLink:focus-visible {
-  color: #c9a227;
+  color: var(--er-kb-gold);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -183,7 +183,7 @@
 .cardLink:hover,
 .cardLink:focus-visible {
   transform: translateY(-4px);
-  border-color: #c9a227;
+  border-color: var(--er-kb-gold);
   box-shadow: 0 12px 32px -8px rgba(201, 162, 39, 0.3);
 }
 @media (prefers-reduced-motion: reduce) {

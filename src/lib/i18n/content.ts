@@ -1758,3 +1758,45 @@ export const CONSENT_COPY: Record<Locale, ConsentCopy> = {
     modalClose: "Schliessen",
   },
 };
+
+// ─── Night/Day theme toggle ───────────────────────────────────────────────────
+// Two aria-labels, and they are the whole accessible name of an icon-only
+// button — a sighted visitor reads a sun or a moon, a screen-reader user reads
+// only this. So the label names WHAT THE BUTTON WILL DO ("switch to day"),
+// never the state it is in: "night theme" on a button that leaves night is the
+// most common way to make a toggle unusable without sight.
+//
+// One catalog rather than one per header. The control now appears in
+// PublicNav, on /ai-visibility and on /demo, each of which folds locales
+// differently for its own copy; keying this on the full Locale keeps the five
+// marketing locales from drifting into three near-copies of two strings.
+
+export interface ThemeToggleCopy {
+  /** Label while the page is in night — pressing goes to day. */
+  toDay: string;
+  /** Label while the page is in day — pressing goes back to night. */
+  toNight: string;
+}
+
+export const THEME_TOGGLE_COPY: Record<Locale, ThemeToggleCopy> = {
+  en: {
+    toDay: "Switch to day theme",
+    toNight: "Switch to night theme",
+  },
+  "en-CA": {
+    toDay: "Switch to day theme",
+    toNight: "Switch to night theme",
+  },
+  fr: {
+    toDay: "Passer au thème jour",
+    toNight: "Passer au thème nuit",
+  },
+  "fr-CA": {
+    toDay: "Passer au thème jour",
+    toNight: "Passer au thème nuit",
+  },
+  "de-CH": {
+    toDay: "Zum Tag-Design wechseln",
+    toNight: "Zum Nacht-Design wechseln",
+  },
+};

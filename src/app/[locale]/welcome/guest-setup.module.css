@@ -19,8 +19,8 @@
   padding: 14px 16px;
   border-radius: 10px;
   border: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.03);
-  color: #f5f5f5;
+  background: var(--er-wash);
+  color: var(--er-text);
   font-size: 16px; /* 16px or iOS zooms the page on focus. */
 }
 
@@ -37,7 +37,7 @@
 
 .error {
   font-size: 14px;
-  color: #ff8f8f;
+  color: var(--er-red-text);
   margin-top: 12px;
 }
 

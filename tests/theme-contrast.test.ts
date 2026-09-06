@@ -30,7 +30,19 @@ const day = readCssTokens(CSS, '[data-theme="day"]');
 const SURFACES = ["--er-bg", "--er-surface", "--er-surface2"] as const;
 
 /** Text tokens that carry BODY copy — the full 4.5:1 bar, everywhere. */
-const BODY_TEXT = ["--er-text", "--er-text-muted", "--er-link", "--er-accent-text"] as const;
+const BODY_TEXT = [
+  "--er-text",
+  "--er-text-muted",
+  "--er-link",
+  "--er-accent-text",
+  // Phase 2. Every one of these replaced a literal or a FILL token that was
+  // being read as text somewhere in the marketing tree.
+  "--er-kb-gold",
+  "--er-kb-gold-hi",
+  "--er-green-text",
+  "--er-red-text",
+  "--er-warn-text",
+] as const;
 
 function value(tokens: Record<string, string>, name: string): string {
   const found = tokens[name];
@@ -54,6 +66,11 @@ describe("both themes define the whole semantic set", () => {
     "--er-link",
     "--er-accent-text",
     "--er-placeholder",
+    "--er-kb-gold",
+    "--er-kb-gold-hi",
+    "--er-green-text",
+    "--er-red-text",
+    "--er-warn-text",
   ] as const;
 
   it("night carries every token", () => {
@@ -67,13 +84,29 @@ describe("both themes define the whole semantic set", () => {
   });
 });
 
+/**
+ * Night pairings below the body bar, each named rather than excluded quietly.
+ * Both are Binance red on a raised surface — #F6465D is 4.48:1 on #1E2329 and
+ * 3.72:1 on #2B3139 — and both are pre-existing: this is the palette that has
+ * shipped for months, used for delta figures and chip labels, which are bold.
+ * Night must not move, so they are pinned where they actually sit rather than
+ * "fixed" into a colour nobody asked for.
+ */
+const NIGHT_LARGE_ONLY = new Set([
+  "--er-red-text|--er-surface",
+  "--er-red-text|--er-surface2",
+]);
+
 describe("night — body text on every surface", () => {
   for (const text of BODY_TEXT) {
     for (const surface of SURFACES) {
-      it(`${text} on ${surface}`, () => {
-        expect(contrastRatio(value(night, text), value(night, surface))).toBeGreaterThanOrEqual(
-          AA_BODY,
-        );
+      const large = NIGHT_LARGE_ONLY.has(`${text}|${surface}`);
+      it(`${text} on ${surface}${large ? " (bold/large only — pre-existing)" : ""}`, () => {
+        const ratio = contrastRatio(value(night, text), value(night, surface));
+        expect(ratio).toBeGreaterThanOrEqual(large ? AA_LARGE : AA_BODY);
+        // A pinned exception must not silently become compliant either: if it
+        // improves, the line above is stale and should be deleted.
+        if (large) expect(ratio).toBeLessThan(AA_BODY);
       });
     }
   }
@@ -179,6 +212,87 @@ describe("placeholders", () => {
     expect(
       contrastRatio(value(night, "--er-placeholder"), value(night, "--er-bg")),
     ).toBeGreaterThanOrEqual(AA_BODY);
+  });
+});
+
+describe("colours that must NOT follow the theme", () => {
+  // Three families are invariant on purpose, and each has a different reason.
+  it("gold, because it is the brand fill", () => {
+    expect(day["--er-gold"]).toBeUndefined();
+  });
+
+  it("--er-media-*, because it is painted on video", () => {
+    // Mute chips, play buttons, end-card overlays. The still behind them is
+    // dark in day exactly as it is at night, so a themed value there is the
+    // bug rather than the fix.
+    for (const token of [
+      "--er-media-well",
+      "--er-media-scrim",
+      "--er-media-scrim-strong",
+      "--er-media-ink",
+      "--er-media-text",
+      "--er-media-text-muted",
+    ]) {
+      expect(night[token], token).toBeTruthy();
+      expect(day[token], `${token} must not be overridden in day`).toBeUndefined();
+    }
+  });
+
+  it("and the media text is readable on the media well", () => {
+    expect(
+      contrastRatio(value(night, "--er-media-text"), value(night, "--er-media-well")),
+    ).toBeGreaterThanOrEqual(AA_BODY);
+    expect(
+      contrastRatio(value(night, "--er-media-text-muted"), value(night, "--er-media-well")),
+    ).toBeGreaterThanOrEqual(AA_BODY);
+    expect(
+      contrastRatio(value(night, "--er-media-ink"), value(night, "--er-media-well")),
+    ).toBeGreaterThanOrEqual(AA_BODY);
+  });
+});
+
+describe("status colours: the FILL and the TEXT are different tokens", () => {
+  // --er-green / --er-red paint bar segments, left rules and icon washes; the
+  // *-text pair are the same roles as type. They are equal at night by
+  // construction — the homepage must not move — and diverge in day, where the
+  // bright values are 1.9:1 and 3.6:1 on white.
+  it("night: text token equals its fill token", () => {
+    expect(night["--er-green-text"].toLowerCase()).toBe(night["--er-green"].toLowerCase());
+    expect(night["--er-red-text"].toLowerCase()).toBe(night["--er-red"].toLowerCase());
+    expect(night["--er-warn-text"].toLowerCase()).toBe(night["--er-gold-deep"].toLowerCase());
+  });
+
+  it("day: the fills stay bright and would fail as text", () => {
+    expect(day["--er-green"]).toBeUndefined();
+    expect(day["--er-red"]).toBeUndefined();
+    expect(contrastRatio(night["--er-green"], day["--er-bg"])).toBeLessThan(AA_BODY);
+    expect(contrastRatio(night["--er-red"], day["--er-bg"])).toBeLessThan(AA_BODY);
+  });
+
+  it("day: the text tokens clear the bar that the fills fail", () => {
+    for (const token of ["--er-green-text", "--er-red-text", "--er-warn-text"]) {
+      expect(
+        contrastRatio(value(day, token), value(day, "--er-bg")),
+        token,
+      ).toBeGreaterThanOrEqual(AA_BODY);
+    }
+  });
+});
+
+describe("the Knowledge-Hub gold is a second gold, kept as one", () => {
+  it("night keeps #c9a227 — /learn, /free-tools, /guides and /resources", () => {
+    // Unifying it with brand gold would repaint four sections at night, which
+    // is precisely what this work must not do.
+    expect(night["--er-kb-gold"].toLowerCase()).toBe("#c9a227");
+    expect(night["--er-kb-gold-hi"].toLowerCase()).toBe("#fff1a8");
+  });
+
+  it("day goes dark, because #c9a227 is 2.6:1 on white", () => {
+    expect(contrastRatio(night["--er-kb-gold"], day["--er-bg"])).toBeLessThan(AA_BODY);
+    expect(contrastRatio(day["--er-kb-gold"], day["--er-bg"])).toBeGreaterThanOrEqual(AA_BODY);
+    // The hover tint is the worse of the two: a pale yellow on white.
+    expect(contrastRatio(night["--er-kb-gold-hi"], day["--er-bg"])).toBeLessThan(AA_LARGE);
+    expect(contrastRatio(day["--er-kb-gold-hi"], day["--er-bg"])).toBeGreaterThanOrEqual(AA_BODY);
   });
 });
 

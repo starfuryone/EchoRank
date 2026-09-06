@@ -11,7 +11,7 @@
   padding: 20px 22px;
   background: var(--surface2, #15151d);
   border: 1px solid var(--line, #232330);
-  border-left: 2px solid #c9a227;
+  border-left: 2px solid var(--er-kb-gold);
   border-radius: 12px;
 }
 .needsTitle {
@@ -20,7 +20,7 @@
   font-weight: 650;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--gold, #e8c565);
+  color: var(--er-accent-text);
 }
 .needsList {
   margin: 0;
@@ -59,8 +59,8 @@
   height: 28px;
   border-radius: 8px;
   background: var(--surface2, #15151d);
-  border: 1px solid rgba(201, 162, 39, 0.45);
-  color: #c9a227;
+  border: 1px solid var(--er-kb-soft);
+  color: var(--er-kb-gold);
   font-family: var(--mono, ui-monospace, monospace);
   font-size: 13px;
   display: inline-flex;
@@ -124,23 +124,23 @@
   color: var(--muted, #8f8fa3);
 }
 .tip {
-  border-left: 2px solid #c9a227;
+  border-left: 2px solid var(--er-kb-gold);
 }
 .tip .calloutLabel {
-  color: #c9a227;
+  color: var(--er-kb-gold);
 }
 .warning {
   border-left: 2px solid var(--red, #f87171);
   background: rgba(248, 113, 113, 0.05);
 }
 .warning .calloutLabel {
-  color: var(--red, #f87171);
+  color: var(--er-red-text);
 }
 .note {
   border-left: 2px solid var(--blue, #7aa7ff);
 }
 .note .calloutLabel {
-  color: var(--blue, #7aa7ff);
+  color: var(--er-link);
 }
 
 .nextList {
@@ -152,10 +152,10 @@
   line-height: 1.5;
 }
 .nextList a {
-  color: var(--gold, #e8c565);
+  color: var(--er-accent-text);
   transition: color 150ms ease;
 }
 .nextList a:hover,
 .nextList a:focus-visible {
-  color: #fff1a8;
+  color: var(--er-kb-gold-hi);
 }

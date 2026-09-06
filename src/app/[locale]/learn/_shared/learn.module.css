@@ -3,7 +3,7 @@
    Dark/gold tokens (--bg, --surface, --surface2, --line, --gold, --muted…) are
    inherited from .page in home2.module.css, which wraps every page here, so
    this file declares layout and the few knowledge-base-specific accents rather
-   than a second palette. #c9a227 is the knowledge-base gold already used by
+   than a second palette. var(--er-kb-gold) is the knowledge-base gold already used by
    guide.module.css for the same purpose — the design preview's gold. */
 
 /* ── Hero ──────────────────────────────────────────────────────────────── */
@@ -17,7 +17,7 @@
   font-weight: 700;
   letter-spacing: -0.055em;
   line-height: 0.98;
-  color: #EAECEF;
+  color: var(--er-text);
   margin: 14px auto 12px;
   max-width: 980px;
 }
@@ -81,7 +81,7 @@
 .chapters a::before {
   counter-increment: ch;
   content: counter(ch, decimal-leading-zero);
-  color: #c9a227;
+  color: var(--er-kb-gold);
   font-family: var(--mono, ui-monospace, monospace);
   font-size: 12px;
   font-weight: 600;
@@ -90,7 +90,7 @@
 .chapters a:hover,
 .chapters a:focus-visible {
   background: var(--surface2, #15151d);
-  color: var(--gold, #e8c565);
+  color: var(--er-accent-text);
 }
 
 /* ── Card grid (ultimate guides) ───────────────────────────────────────── */
@@ -110,7 +110,7 @@
 }
 .card:hover,
 .card:focus-visible {
-  border-color: #c9a227;
+  border-color: var(--er-kb-gold);
   transform: translateY(-1px);
 }
 .cardTag {
@@ -119,8 +119,8 @@
   font-size: 10px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: #c9a227;
-  border: 1px solid rgba(201, 162, 39, 0.5);
+  color: var(--er-kb-gold);
+  border: 1px solid var(--er-kb-soft);
   border-radius: 4px;
   padding: 2px 7px;
   margin-bottom: 12px;
@@ -161,8 +161,8 @@
 }
 .rowlinks a:hover,
 .rowlinks a:focus-visible {
-  border-color: #c9a227;
-  color: var(--gold, #e8c565);
+  border-color: var(--er-kb-gold);
+  color: var(--er-accent-text);
 }
 
 /* ── Watch section ─────────────────────────────────────────────────────── */
@@ -220,7 +220,7 @@
 }
 .crumbs a:hover,
 .crumbs a:focus-visible {
-  color: var(--gold, #e8c565);
+  color: var(--er-accent-text);
 }
 
 /* Article first, TOC second: the source order is the reading order, so the
@@ -287,7 +287,7 @@
 }
 .tocList a:hover,
 .tocList a:focus-visible {
-  color: var(--gold, #e8c565);
+  color: var(--er-accent-text);
 }
 
 /* ── Article body blocks ───────────────────────────────────────────────── */
@@ -318,14 +318,14 @@
   font-weight: 620;
 }
 .article :where(.para, .list, .quote, .faqA) a {
-  color: var(--gold, #e8c565);
+  color: var(--er-accent-text);
   text-decoration: underline;
   text-underline-offset: 2px;
   transition: color 150ms ease;
 }
 .article :where(.para, .list, .quote, .faqA) a:hover,
 .article :where(.para, .list, .quote, .faqA) a:focus-visible {
-  color: #fff1a8;
+  color: var(--er-kb-gold-hi);
 }
 .article :where(.para, .list, .quote, .table) code {
   font-family: var(--mono, ui-monospace, monospace);
@@ -347,7 +347,7 @@
 }
 .list::marker,
 .list li::marker {
-  color: #c9a227;
+  color: var(--er-kb-gold);
 }
 
 .quote {
@@ -355,7 +355,7 @@
   padding: 16px 20px;
   background: var(--surface, #101016);
   border: 1px solid var(--line, #232330);
-  border-left: 2px solid #c9a227;
+  border-left: 2px solid var(--er-kb-gold);
   border-radius: 10px;
 }
 .quote p {
@@ -438,14 +438,14 @@
   font-weight: 620;
 }
 .blurb a {
-  color: var(--gold, #e8c565);
+  color: var(--er-accent-text);
   text-decoration: underline;
   text-underline-offset: 2px;
   transition: color 150ms ease;
 }
 .blurb a:hover,
 .blurb a:focus-visible {
-  color: #fff1a8;
+  color: var(--er-kb-gold-hi);
 }
 
 /* ── Numbered walkthrough with per-step illustrations ({k:"steps"}) ──
@@ -566,15 +566,15 @@
 }
 .relatedList::marker,
 .relatedList li::marker {
-  color: #c9a227;
+  color: var(--er-kb-gold);
 }
 .relatedList a {
-  color: var(--gold, #e8c565);
+  color: var(--er-accent-text);
   transition: color 150ms ease;
 }
 .relatedList a:hover,
 .relatedList a:focus-visible {
-  color: #fff1a8;
+  color: var(--er-kb-gold-hi);
 }
 
 .pager {
@@ -596,7 +596,7 @@
 }
 .pagerLink:hover,
 .pagerLink:focus-visible {
-  border-color: #c9a227;
+  border-color: var(--er-kb-gold);
 }
 .pagerNext {
   text-align: right;
@@ -635,14 +635,14 @@
   font-size: 12px;
 }
 .azLink {
-  color: var(--gold, #e8c565);
+  color: var(--er-accent-text);
   background: var(--surface, #101016);
   transition: border-color 150ms ease, color 150ms ease;
 }
 .azLink:hover,
 .azLink:focus-visible {
-  border-color: #c9a227;
-  color: #fff1a8;
+  border-color: var(--er-kb-gold);
+  color: var(--er-kb-gold-hi);
 }
 /* A letter with no terms is shown, not hidden: the row is a map of the
    glossary, and a gap that silently disappears reads as a rendering bug. */
@@ -658,7 +658,7 @@
   font-family: var(--mono, ui-monospace, monospace);
   font-size: 13px;
   letter-spacing: 0.12em;
-  color: #c9a227;
+  color: var(--er-kb-gold);
   margin: 0 0 12px;
   padding-bottom: 8px;
   border-bottom: 1px solid var(--line, #232330);
