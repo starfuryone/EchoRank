@@ -1,31 +1,78 @@
-# Echorank
+# Echorank360
 
-> Echorank (echorank360.com) is an AI reputation intelligence platform operated by
-> ChatLogic Insights Ltd (England and Wales, company 15593166). It audits AI
-> visibility, tracks what AI assistants answer about businesses daily, and computes
-> an explainable 0 to 100 Reputation Risk Score with revenue-at-risk estimates.
+> When customers ask ChatGPT, Google AI or Perplexity who to hire, is your business the answer? Measure your AI Visibility Score, track recommendations daily, and get a prioritized roadmap to become the business AI recommends.
 
-## Reference documentation
+## Docs
 
-- [Le guide complet de la visibilité dans l'IA en 2026 (French)](https://echorank360.com/fr/guide-visibilite-ia): reference manual on AI Visibility Optimization (AVO) and Generative Engine Optimization (GEO). Includes the Echorank scoring framework, a 10-point readiness checklist, industry guides, a glossary and an FAQ.
-- [The complete guide to AI visibility in 2026 (English)](https://echorank360.com/en/guide-visibilite-ia): English edition of the reference manual.
-- [User guide (English)](https://echorank360.com/en/guide): full product documentation.
-- [Guide d'utilisation (French)](https://echorank360.com/fr/guide)
+- [Echorank Glossary — search, ranking & AI visibility terms](https://echorank360.com/en/glossary): The Echorank Glossary: definitions and concepts for search, ranking, AI visibility, and digital discovery.
+- [Echorank User Guide](https://echorank360.com/en/guide): By the end of this guide you will have connected your Google Business Profile, imported your review history, launched your first review campaign, set up…
+- [AI visibility, from zero to tracked](https://echorank360.com/en/guides/ai-visibility): What ChatGPT, Perplexity and Gemini answer when your market comes up — how to measure it, track it and improve it, step by step.
+- [Audit your website — what crawlers and AI actually see](https://echorank360.com/en/guides/audit-your-website): Run the free audit, read the itemised checks, and fix in the order that moves the score: crawlability first, structured data second, content last.
+- [Getting started with Echorank — setup guide](https://echorank360.com/en/guides/getting-started): From an empty account to a working dashboard in about 15 minutes: create your account, connect Google Business Profile, run your first audit and import your…
+- [Keyword research — from customer language to a tracked list](https://echorank360.com/en/guides/keyword-research): Start from what customers actually say, expand in Keywords Explorer within your plan's search quota, filter by intent, and assign one primary keyword per page.
+- [Track rankings — a stable basket and a monthly read](https://echorank360.com/en/guides/track-rankings): Pick ten to twenty-five terms, add them to Rank Tracker, read trends over four weeks rather than four days, and connect Search Console for the queries you…
+- [Learn reputation & AI visibility — the Echorank Knowledge Hub](https://echorank360.com/en/learn): A free ten-chapter course, five deep-dive guides and a glossary: audit your baseline, import your review history, generate and answer reviews, and get…
+- [Analyze what customers actually say](https://echorank360.com/en/learn/analyze-what-customers-say): Six ways to slice review data, the five patterns that matter, and how one theme becomes one operational fix per month.
+- [Audit your starting point](https://echorank360.com/en/learn/audit-your-starting-point): A 90-minute honest baseline: branded search, review inventory, response history, website basics, and whether AI assistants know you exist.
+- [Classic SEO that compounds your reputation](https://echorank360.com/en/learn/classic-seo-that-compounds): Keyword research from review language, on-page and technical basics, local citations, backlinks, and rank tracking — one paragraph each.
+- [Echopedia — the reputation & AI visibility glossary](https://echorank360.com/en/learn/echopedia): Every term from the Echorank guides, defined in one place.
+- [Generate reviews ethically](https://echorank360.com/en/learn/generate-reviews-ethically): What's banned (gating, incentives, fakes), what works (ask everyone, fast, in one tap), and copy-paste request templates.
+- [Import your review history](https://echorank360.com/en/learn/import-your-review-history): Four routes to get every existing review into one place: browser extension, CSV, Google Business Profile connection, and Takeout.
+- [Methodology — How Echorank measures AI visibility](https://echorank360.com/en/methodology): How Echorank measures brand visibility in AI answers: curated prompt sets, scheduled checkups across ChatGPT, Claude, Gemini, Perplexity and Google AI…
+- [Resources — guides, whitepapers and free tools](https://echorank360.com/en/resources): Every Echorank guide, whitepaper, extension help page and free tool in one place. No account required.
 
-## Product pages
+## Product
 
-- [AI Visibility Audit](https://echorank360.com/en/ai-visibility)
-- [Reputation Risk Score](https://echorank360.com/en/reputation-risk)
-- [Customer Feedback Intelligence](https://echorank360.com/en/customer-feedback)
-- [Reputation Engine](https://echorank360.com/en/reputation-engine)
-- [Live Monitoring](https://echorank360.com/en/live-monitoring)
-- [From Alert to Action](https://echorank360.com/en/act-on-signals)
+- [From alert to action](https://echorank360.com/en/act-on-signals): Alerts that arrive with the cause named and the dollar impact attached, plus responses already drafted, so fixing starts the moment you open the email.
+- [AI Discovery Optimization (AIDO): The Complete Guide](https://echorank360.com/en/ai-discovery-optimization): Learn AI Discovery Optimization with Echorank. Improve how AI assistants discover, understand, cite, compare, and recommend your brand.
+- [AI Visibility](https://echorank360.com/en/ai-visibility): Track whether ChatGPT, Claude, Gemini and Perplexity recommend your business. Prompt tracking, lost-recommendation alerts and an AI Trust Score, included in…
+- [Customer Feedback Intelligence](https://echorank360.com/en/customer-feedback): Echorank reads every review and comment: recurring complaints surfaced before they become crises, suspicious activity flagged, responses drafted in your own…
+- [Free AI visibility audit — see what AI says about your business](https://echorank360.com/en/free-audit): Run a free audit in 60 seconds. See whether ChatGPT, Claude, Gemini and Perplexity know your business — score, itemized checks, and a PDF report. No account…
+- [Free SEO tools — no account needed](https://echorank360.com/en/free-tools): Small, sharp tools that answer one question each. Nothing here asks for an email, and everything runs on the same data our paid product uses.
+- [The complete guide to AI visibility in 2026](https://echorank360.com/en/guide-visibilite-ia): The reference manual on AI visibility and Generative Engine Optimization (GEO): how to appear in ChatGPT, how to get recommended by AI, AI search…
+- [Echorank Keyword Research Guide](https://echorank360.com/en/keyword-research): Echorank's plain-English guide to keyword research: find search ideas, judge opportunities, match search intent, and build useful content.
+- [Link Building Playbook: How to Earn High-Quality Backlinks](https://echorank360.com/en/link-building-playbook): Learn how to earn high-quality backlinks with Echorank's complete link-building playbook covering prospecting, outreach, digital PR, link reclamation…
+- [Always-on monitoring](https://echorank360.com/en/live-monitoring): Risk recalculated hourly, AI answers tracked daily, competitor snapshots every morning, reviews synced as they land. One feed, watched around the clock.
+- [Pricing](https://echorank360.com/en/pricing): Echorank plans and pricing. Every plan starts with a 7-day free trial. Compare AI Visibility, Starter, Growth and Agency.
+- [Reputation Engine, Automation](https://echorank360.com/en/reputation-engine): Compliant SMS, email and QR feedback campaigns, multi-platform monitoring, white-label tools and workflows that keep fresh customer signals flowing.
+- [Reputation Risk Score](https://echorank360.com/en/reputation-risk): One explainable 0–100 Reputation Risk Score across reviews, feedback, AI visibility and competitors, with alerts and revenue-at-risk, so you prevent instead…
+- [Reputation Management](https://echorank360.com/en/reputation-tools): Monitor and manage Google Reviews, Trustpilot, Meta, Yelp and TripAdvisor from one place — the same reviews AI engines learn from. Campaigns, AI reply…
+- [The Complete Guide to SEO & AI Visibility](https://echorank360.com/en/seo-guide): A practical, end-to-end tutorial on SEO and AI visibility: strategy, technical foundations, content, authority, measurement, and how to become part of the…
+- [Use cases](https://echorank360.com/en/use-cases): Pick your goal — AI visibility, reputation monitoring, reviews, search visibility or content — and see the Echorank360 tools that get you there.
+- [AI Search Watcher — $9/mo](https://echorank360.com/en/watcher): Track how AI assistants answer questions about your brand. 10 prompts, checked 3 times a week on Claude, with competitor and citation tracking. $9/mo.
 
-## Methodology notes
+## Blog
 
-- The Reputation Risk Score combines five weighted components: negative pressure (0.40), review velocity (0.25), recent critical signals (0.15), AI visibility (0.15), stagnation (0.05). Weights are those of the current model version and every driver behind a score is named.
-- AI answer tracking runs configured customer questions against major AI engines daily and archives each response, producing a dated time series of citations, misrepresentations and absences.
+- [GEO, AI search visibility, and what actually moves them](https://echorank360.com/en/blog): Practical writing on generative engine optimization: how to measure AI visibility, how to earn citations, and which of your SEO habits still apply. Method…
+- [AI Crawler User-Agents & robots.txt Guide](https://echorank360.com/en/blog/ai-crawler-user-agents-and-robots-txt): GPTBot, ClaudeBot, PerplexityBot, Google-Extended and friends do different jobs. Blocking the wrong one removes you from answers, not just from training.
+- [How to Find and Close Your AI Citation Gap](https://echorank360.com/en/blog/find-your-ai-citation-gap): A citation gap is the distance between how often AI answers mention you and how often they cite you. Here is how to measure it and what actually closes it.
+- [How to Measure AI Search Visibility](https://echorank360.com/en/blog/how-to-measure-ai-search-visibility): AI search visibility is measured by running a fixed prompt set on a schedule and recording four things: coverage, citation share, position and framing.
+- [Make Your Site Readable to AI Crawlers](https://echorank360.com/en/blog/make-your-site-readable-to-ai-crawlers): AI crawlers do not run your JavaScript, and many are blocked by a robots.txt nobody has read since 2021. Check access and rendering before writing more content.
+- [Schema Markup for AI Answers & GEO](https://echorank360.com/en/blog/schema-markup-for-ai-answers): Schema will not make a model understand your page, but it decides how retrieval pipelines classify it. The types that pull weight for AI visibility.
+- [SEO Metrics vs GEO Metrics: What Carries Over](https://echorank360.com/en/blog/seo-vs-geo-metrics): Rankings, impressions and CTR describe a ranked list. AI answers have no list. Here is which SEO metrics still work in GEO, which mislead, and what replaces…
+- [Structure Content for AI Answers (GEO Patterns)](https://echorank360.com/en/blog/structure-content-for-ai-answers): Answer engines quote passages, not pages. Answer-first sections, self-contained passages and concrete claims are what turn content into citations.
+- [Track Brand Mentions Across LLMs](https://echorank360.com/en/blog/track-brand-mentions-across-llms): A repeatable method for monitoring how ChatGPT, Claude, Gemini and Perplexity describe your brand: fixed prompts, clean sessions, scheduled weekly runs.
+- [llms.txt: What It Is and What It Is Not](https://echorank360.com/en/blog/what-llms-txt-is-and-is-not): llms.txt is a proposed convention, not a standard and not an access control. Here is what it can do, what it cannot, and how to write one worth having.
 
-## Contact
+## About
 
-- privacy@echorank360.com
+- [About us](https://echorank360.com/en/about): Echorank360 helps brands strengthen their visibility across search, AI discovery and reputation channels — one connected platform for modern digital growth.
+
+## Optional
+
+- [Home](https://echorank360.com/): When customers ask ChatGPT, Google AI or Perplexity who to hire, is your business the answer? Measure your AI Visibility Score, track recommendations daily…
+- [Ask Echorank AI — free AI visibility assistant](https://echorank360.com/en/ai-assistant): Ask the Echorank assistant anything about AI visibility, then scan your own site. It checks what ChatGPT, Claude, Gemini and Perplexity can actually read, and…
+- [Prospect lookups — prepaid credit packs](https://echorank360.com/en/credits): Buy prospect lookups for the Echorank Agency Opportunity Scanner. One-time purchase, credits never expire, no subscription.
+- [Watch the 2-Minute Demo](https://echorank360.com/en/demo): See how Echorank measures the way ChatGPT, Perplexity, Google AI and other engines see your business — and turns it into a score you can move.
+- [How to get started](https://echorank360.com/en/how-to): From zero to your first AI-visibility audit and risk baseline in under ten minutes: what to connect, what happens next, and the best first moves.
+- [Free SEO content optimizer — score any draft instantly](https://echorank360.com/en/free-tools/content-optimizer): Paste your draft and target keyword for an instant on-page SEO score: keyword placement, density, readability, headings and meta length.
+- [Free Google SERP snippet preview tool](https://echorank360.com/en/free-tools/serp-simulator): Preview how your title tag and meta description appear in Google, with accurate pixel-width truncation for desktop and mobile.
+- [Free SERP volatility tracker — daily Google ranking flux](https://echorank360.com/en/free-tools/serp-volatility): Daily Google SERP volatility across ecommerce, local, finance, health and tech. Updated every day, free to read.
+- [Free share of search calculator — compare brand demand](https://echorank360.com/en/free-tools/share-of-search): Compare search volume across two to five brands and see each one's share of category demand. Free, no account needed.
+- [How to get your business seen by AI assistants](https://echorank360.com/extension/howto-ai-visibility.html): Plain-English guide to the EchoRank 360 AI Visibility audit: check whether ChatGPT, Claude, Perplexity and Gemini can find your business, fix what blocks…
+- [Cookie Policy](https://echorank360.com/en/legal/cookies): How Echorank360, operated by ChatLogic Insights LTD, uses cookies and similar technologies on echorank360.com.
+- [Disclaimer](https://echorank360.com/en/legal/disclaimer): Echorank is provided "as is" and "as available". To the maximum extent permitted by law, ChatLogic Insights Ltd disclaims all warranties, express or implied…
+- [No Financial Advice](https://echorank360.com/en/legal/no-financial-advice): Echorank360, operated by ChatLogic Insights LTD ("we," "us," "our"), provides reputation management, AI visibility monitoring, SEO analytics, and related…
+- [Privacy Policy](https://echorank360.com/en/legal/privacy): Echorank (echorank360.com, the "Service") is operated by ChatLogic Insights Ltd, a company registered in England and Wales under company number 15593166…
+- [Subscription Agreement](https://echorank360.com/en/legal/subscription-agreement): This Subscription Agreement governs your subscription to Echorank360, operated by ChatLogic Insights LTD.
+- [Terms of Use](https://echorank360.com/en/legal/terms): These Terms govern access to and use of Echorank (echorank360.com), operated by ChatLogic Insights Ltd.
