@@ -70,6 +70,13 @@ vi.mock("@/lib/prisma", () => ({
   },
 }));
 
+// DNS for the SSRF guard (src/lib/public-url.ts): every name resolves public here;
+// tests/public-url.test.ts covers names that resolve private.
+vi.mock("node:dns/promises", () => {
+  const lookup = async () => [{ address: "93.184.215.14", family: 4 }];
+  return { lookup, default: { lookup } };
+});
+
 vi.mock("@/lib/paid-plan", () => ({ hasPaidPlan: vi.fn(async () => true) }));
 
 const sidecarPost = vi.fn();

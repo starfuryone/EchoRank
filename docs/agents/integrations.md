@@ -151,9 +151,13 @@ carries `x-partner-subject`: the partner's opaque id for its own customer
 **Endpoints.**
 
 - `POST /v1/audit` `{ url, mode: "quick"|"full" }` (mode defaults to quick). Sidecar `/audit`
-  with `crawl: false|true`. URLs go through the SSRF guard (`bot-analytics/url-guard.ts`:
-  http(s) only, no IP literals, no credentials, ports 80/443, no private suffixes or
-  single-label hosts). Stored as a `VisibilityAudit` on the partner tenant
+  with `crawl: false|true`. URLs go through the SSRF guard (`src/lib/public-url.ts`):
+  `bot-analytics/url-guard.ts` on the URL as written (http(s) only, no IP literals, no
+  credentials, ports 80/443 only, no private suffixes or single-label hosts), then every
+  address the host resolves to must be public (no loopback, RFC 1918, link-local/metadata,
+  CGNAT, ULA, IPv4-mapped private). `/api/av/audit` uses the same guard. Not covered: DNS
+  rebinding between our lookup and the sidecar's, and redirects to private hosts; those need
+  resolve-then-pin in the sidecar. Stored as a `VisibilityAudit` on the partner tenant
   (`monitorId` null), ledgered in `partner_calls` with the subject. Returns:
   ```
   { id, url, mode, score, grade,

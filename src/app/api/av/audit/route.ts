@@ -3,6 +3,7 @@
 // Per-IP limit: 1 successful free audit / 24h, in Redis (src/lib/av-free-limit.ts).
 import { NextRequest, NextResponse } from 'next/server';
 import { avFreeLimited, avFreeRecord } from '@/lib/av-free-limit';
+import { guardPublicUrl } from '@/lib/public-url';
 
 const SIDECAR_URL = process.env.AV_SIDECAR_URL ?? 'http://127.0.0.1:4500';
 const SIDECAR_AUDIT_PATH = process.env.AV_SIDECAR_AUDIT_PATH ?? '/audit';
@@ -28,6 +29,13 @@ export async function POST(req: NextRequest) {
   if (!brand || !/^[\w .,'&@:/-]+$/i.test(brand)) {
     return NextResponse.json({ error: 'invalid_brand' }, { status: 400 });
   }
+  // The sidecar fetches whatever it is given, so the field is a URL in all but
+  // name: refuse private, loopback and link-local hosts (as written and as
+  // resolved), non-http(s) schemes and every port but 80/443 before it leaves.
+  const target = await guardPublicUrl(brand);
+  if (!target.ok) {
+    return NextResponse.json({ error: 'invalid_url', reason: target.reason }, { status: 400 });
+  }
 
   try {
     const res = await fetch(`${SIDECAR_URL}${SIDECAR_AUDIT_PATH}`, {
@@ -37,7 +45,7 @@ export async function POST(req: NextRequest) {
         'X-Internal-Secret': INTERNAL_SECRET,
       },
       // Sidecar /audit expects `url`; crawl=false keeps the free tier light.
-      body: JSON.stringify({ url: brand, crawl: false }),
+      body: JSON.stringify({ url: target.url, crawl: false }),
       signal: AbortSignal.timeout(45_000),
     });
     if (!res.ok) {

@@ -10,7 +10,7 @@ import "server-only";
 import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@/generated/prisma";
 import { sidecarPost } from "@/lib/av-sidecar";
-import { guardCheckUrl } from "@/lib/bot-analytics/url-guard";
+import { guardPublicUrl } from "@/lib/public-url";
 import { costUsdFor, roundUsd } from "@/lib/ai-monitor/pricing";
 import type { PartnerContext } from "./auth";
 import { PARTNER_BENCHMARK_MAX_COMPETITORS, PARTNER_QUERY_ENGINES, type PartnerKind } from "./limits";
@@ -99,11 +99,9 @@ async function ledger(
   }
 }
 
-/** URL check before anything leaves the box — the SSRF guard the bot-access probe uses. */
-export function checkPartnerUrl(raw: unknown): { ok: true; url: string } | { ok: false; reason: string } {
-  if (typeof raw !== "string" || raw.length > 300) return { ok: false, reason: "not_a_url" };
-  const g = guardCheckUrl(raw);
-  return g.ok && g.url ? { ok: true, url: g.url } : { ok: false, reason: g.reason ?? "not_a_url" };
+/** URL check before anything leaves the box: the URL as written, then every address it resolves to. */
+export function checkPartnerUrl(raw: unknown) {
+  return guardPublicUrl(raw);
 }
 
 type AuditOutcome = { ok: true; audit: PartnerAudit } | { ok: false; status: number; error: string; detail?: string };
@@ -142,7 +140,7 @@ async function auditOne(ctx: PartnerContext, url: string, mode: PartnerAuditMode
 export async function partnerAudit(ctx: PartnerContext, body: Record<string, unknown>): Promise<PartnerResult> {
   const mode = body.mode === "full" ? "full" : body.mode === "quick" || body.mode === undefined ? "quick" : null;
   if (!mode) return { status: 400, body: { error: "invalid_mode", allowed: ["quick", "full"] } };
-  const checked = checkPartnerUrl(body.url);
+  const checked = await checkPartnerUrl(body.url);
   if (!checked.ok) return { status: 400, body: { error: "invalid_url", reason: checked.reason } };
 
   const kind: PartnerKind = mode === "full" ? "audit_full" : "audit_quick";
@@ -182,11 +180,11 @@ export async function partnerBenchmark(ctx: PartnerContext, body: Record<string,
   if (!Array.isArray(comps) || comps.length === 0 || comps.length > PARTNER_BENCHMARK_MAX_COMPETITORS) {
     return { status: 400, body: { error: "invalid_competitors", max: PARTNER_BENCHMARK_MAX_COMPETITORS } };
   }
-  const you = checkPartnerUrl(body.you);
+  const you = await checkPartnerUrl(body.you);
   if (!you.ok) return { status: 400, body: { error: "invalid_url", field: "you", reason: you.reason } };
   const urls: string[] = [];
   for (const [i, c] of comps.entries()) {
-    const g = checkPartnerUrl(c);
+    const g = await checkPartnerUrl(c);
     if (!g.ok) return { status: 400, body: { error: "invalid_url", field: `competitors[${i}]`, reason: g.reason } };
     urls.push(g.url);
   }
@@ -233,7 +231,7 @@ export async function partnerQuery(ctx: PartnerContext, body: Record<string, unk
   if (!business) return { status: 400, body: { error: "invalid_business" } };
   let website: string | null = null;
   if (body.website !== undefined && body.website !== null && body.website !== "") {
-    const g = checkPartnerUrl(body.website);
+    const g = await checkPartnerUrl(body.website);
     if (!g.ok) return { status: 400, body: { error: "invalid_url", field: "website", reason: g.reason } };
     website = g.url;
   }
