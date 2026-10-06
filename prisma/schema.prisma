@@ -1438,15 +1438,44 @@ model ApiKey {
   keyHash    String    @unique
   /// First 8 chars of the public id segment, surfaced for identification.
   prefix     String
+  /// What the key may call: "public" (/api/public/v1/*, the SEO Tools keys) or
+  /// "partner" (/api/partner/v1/*, sibling products). A key carries one scope.
+  scopes     String[]  @default(["public"])
   lastUsedAt DateTime?
   revokedAt  DateTime?
   createdAt  DateTime  @default(now())
   updatedAt  DateTime  @updatedAt
 
-  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant       Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  partnerCalls PartnerCall[]
 
   @@index([tenantId])
   @@map("api_keys")
+}
+
+/// One row per partner-API call that ran (src/lib/partner). The ledger for
+/// per-subject metering and costUsd, and the ownership record that scopes
+/// GET /api/partner/v1/audit/:id to the key that created the audit.
+model PartnerCall {
+  id        String   @id @default(cuid())
+  apiKeyId  String
+  /// The partner's opaque id for its own customer (x-partner-subject). Never an email.
+  subject   String
+  /// audit_quick | audit_full | query | benchmark
+  kind      String
+  /// The stored VisibilityAudit, for audit and benchmark calls.
+  auditId   String?
+  costUsd   Decimal  @default(0) @db.Decimal(10, 6)
+  ok        Boolean  @default(true)
+  error     String?
+  createdAt DateTime @default(now())
+
+  apiKey ApiKey @relation(fields: [apiKeyId], references: [id], onDelete: Cascade)
+
+  @@index([apiKeyId, createdAt])
+  @@index([apiKeyId, auditId])
+  @@index([subject, createdAt])
+  @@map("partner_calls")
 }
 
 /// Google Search Console connection (SEO Tools "GSC Insights"). One per

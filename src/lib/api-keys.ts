@@ -22,6 +22,14 @@ const KEY_PREFIX = "er_api_";
 const ID_BYTES = 12;
 const SECRET_BYTES = 24;
 
+/**
+ * What a key may call. "public" is every SEO Tools key (/api/public/v1/*);
+ * "partner" is a sibling product's key (/api/partner/v1/*, src/lib/partner).
+ * The two never overlap: a partner key is refused on public routes and the
+ * reverse, so leaking one never widens what it can reach.
+ */
+export type ApiKeyScope = "public" | "partner";
+
 /** Per-key request budget for the public API (requests / minute). */
 export const PUBLIC_API_RATE_LIMIT = 60;
 const RATE_WINDOW_MS = 60_000;
@@ -48,7 +56,11 @@ export interface IssuedApiKey {
   prefix: string;
 }
 
-export async function createApiKey(tenantId: string, label: string): Promise<IssuedApiKey> {
+export async function createApiKey(
+  tenantId: string,
+  label: string,
+  scopes: ApiKeyScope[] = ["public"],
+): Promise<IssuedApiKey> {
   const { prisma } = await import("@/lib/prisma");
   const idPart = randomBytes(ID_BYTES).toString("hex");
   const secret = randomBytes(SECRET_BYTES).toString("hex");
@@ -59,6 +71,7 @@ export async function createApiKey(tenantId: string, label: string): Promise<Iss
       label: label.trim().slice(0, 120) || "API key",
       keyHash: sha256(secret),
       prefix: idPart.slice(0, 8),
+      scopes,
     },
     select: { id: true, prefix: true },
   });
@@ -94,6 +107,7 @@ export async function revokeApiKey(tenantId: string, keyId: string): Promise<boo
 export interface VerifiedApiKey {
   keyId: string;
   tenantId: string;
+  scopes: string[];
 }
 
 export async function verifyApiKey(key: string): Promise<VerifiedApiKey | null> {
@@ -103,7 +117,7 @@ export async function verifyApiKey(key: string): Promise<VerifiedApiKey | null> 
   const presentedHash = sha256(parsed.secret);
   const row = await prisma.apiKey.findUnique({
     where: { keyHash: presentedHash },
-    select: { id: true, tenantId: true, keyHash: true, revokedAt: true },
+    select: { id: true, tenantId: true, keyHash: true, revokedAt: true, scopes: true },
   });
   if (!row) return null;
   const a = Buffer.from(row.keyHash, "hex");
@@ -113,7 +127,13 @@ export async function verifyApiKey(key: string): Promise<VerifiedApiKey | null> 
   void prisma.apiKey
     .update({ where: { id: row.id }, data: { lastUsedAt: new Date() } })
     .catch(() => {});
-  return { keyId: row.id, tenantId: row.tenantId };
+  return { keyId: row.id, tenantId: row.tenantId, scopes: row.scopes ?? ["public"] };
+}
+
+/** The Bearer token from an Authorization header, or "" when absent. */
+export function bearerKey(req: Request): string {
+  const header = req.headers.get("authorization") ?? "";
+  return header.startsWith("Bearer ") ? header.slice(7).trim() : "";
 }
 
 export type PublicAuthResult =
@@ -126,8 +146,7 @@ export type PublicAuthResult =
  * sliding window via the repo's limiter, in-memory fallback).
  */
 export async function authenticatePublicRequest(req: Request): Promise<PublicAuthResult> {
-  const header = req.headers.get("authorization") ?? "";
-  const key = header.startsWith("Bearer ") ? header.slice(7).trim() : "";
+  const key = bearerKey(req);
   if (!key) {
     return {
       ok: false,
@@ -142,6 +161,12 @@ export async function authenticatePublicRequest(req: Request): Promise<PublicAut
     return {
       ok: false,
       response: NextResponse.json({ error: "invalid_or_revoked_key" }, { status: 401 }),
+    };
+  }
+  if (!verified.scopes.includes("public")) {
+    return {
+      ok: false,
+      response: NextResponse.json({ error: "wrong_scope" }, { status: 403 }),
     };
   }
   if (!(await hasPaidPlan(verified.tenantId))) {

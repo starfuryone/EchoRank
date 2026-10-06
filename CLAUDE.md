@@ -139,7 +139,6 @@ human notices. Hand them both commands instead.
 - Counters and rate limits live in **Redis**, month-keyed `INCR` with a TTL past the
   longest month. See `src/lib/site-audit/quota.ts` for the shape to copy. In-process
   `Map`s reset on every deploy and this box restarts often.
-  (Known violator, not yet fixed: `src/app/api/av/audit/route.ts`.)
 - Every API route taking an `:id` is tenant-scoped — `findFirst({ where: { id, tenantId } })`,
   never `findUnique({ where: { id } })`. New routes go through `requireTenant()`
   (`src/lib/tenant.ts`) or `requirePaidPlan()`.

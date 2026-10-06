@@ -18,6 +18,11 @@ const LOCALE_COOKIE = "echorank_locale";
 // CSRF origin checks don't interfere: v1 data routes are GET-only, and the
 // MCP POST endpoint is called by non-browser clients that authenticate via
 // the Authorization header, never via cookies.
+// /api/partner/v1/ is the partner API for sibling products (EchoPilot):
+// Bearer keys with scope "partner" (src/lib/partner/auth.ts), per-key monthly
+// allowances and a per-subject hourly limit in Redis. Same posture as
+// /api/public/v1/: no session, no cookies, so it is CSRF-exempt below too.
+// /api/v1/visibility/query is its one alias (exact-match, below).
 // /api/free/v1/ is the anonymous free-tools namespace: no session, no tenant.
 // It is a PREFIX entry rather than an exact-match one because the namespace is
 // designed to grow, and every route under it is written to the same contract —
@@ -27,7 +32,7 @@ const LOCALE_COOKIE = "echorank_locale";
 // CSRF IS UNAFFECTED. The origin check above runs before this list and applies
 // to every mutating request, so a POST from another site is still refused. That
 // is the same posture /api/av/audit has.
-const publicPaths = ["/login", "/register", "/api/auth", "/api/feedback", "/f/", "/api/extension/import", "/api/public/v1/", "/api/free/v1/"];
+const publicPaths = ["/login", "/register", "/api/auth", "/api/feedback", "/f/", "/api/extension/import", "/api/public/v1/", "/api/partner/v1/", "/api/free/v1/"];
 
 // Exactly-public paths — matched whole, never by prefix.
 //
@@ -127,6 +132,7 @@ const publicExactPaths = new Set([
   "/api/webhooks",
   "/api/collect",
   "/api/public/funnel/audit",
+  "/api/v1/visibility/query",
   "/embed/audit",
 ]);
 
@@ -198,6 +204,9 @@ const withSession = auth((req) => {
     // Bearer-key-authenticated public API/MCP: cookies are never consulted,
     // so origin checks add nothing and would block non-browser clients.
     !pathname.startsWith("/api/public/v1/") &&
+    // The partner API and its one alias: same reasoning, Bearer key only.
+    !pathname.startsWith("/api/partner/v1/") &&
+    pathname !== "/api/v1/visibility/query" &&
     // The attribution beacon. EVERY legitimate call is cross-origin — it comes
     // from the customer's own domain — so the origin check would reject 100% of
     // real traffic. Exempting it costs nothing that CSRF was protecting: the

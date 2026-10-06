@@ -1,30 +1,12 @@
 // src/app/api/av/audit/route.ts
 // Proxies free audits to the av-visibility sidecar's POST /audit.
-// Per-IP limit: 1 successful free audit / 24h (in-memory — single instance).
+// Per-IP limit: 1 successful free audit / 24h, in Redis (src/lib/av-free-limit.ts).
 import { NextRequest, NextResponse } from 'next/server';
+import { avFreeLimited, avFreeRecord } from '@/lib/av-free-limit';
 
 const SIDECAR_URL = process.env.AV_SIDECAR_URL ?? 'http://127.0.0.1:4500';
 const SIDECAR_AUDIT_PATH = process.env.AV_SIDECAR_AUDIT_PATH ?? '/audit';
 const INTERNAL_SECRET = process.env.INTERNAL_API_SECRET ?? '';
-const LIMIT_PER_DAY = 1;
-
-const hits = new Map<string, { count: number; resetAt: number }>();
-
-function isLimited(ip: string): boolean {
-  const rec = hits.get(ip);
-  if (!rec || Date.now() > rec.resetAt) return false;
-  return rec.count >= LIMIT_PER_DAY;
-}
-
-function recordHit(ip: string): void {
-  const now = Date.now();
-  const rec = hits.get(ip);
-  if (!rec || now > rec.resetAt) {
-    hits.set(ip, { count: 1, resetAt: now + 24 * 60 * 60 * 1000 });
-  } else {
-    rec.count += 1;
-  }
-}
 
 export async function POST(req: NextRequest) {
   const ip =
@@ -32,7 +14,7 @@ export async function POST(req: NextRequest) {
     req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ??
     'unknown';
 
-  if (isLimited(ip)) {
+  if (await avFreeLimited(ip)) {
     return NextResponse.json({ error: 'rate_limited' }, { status: 429 });
   }
 
@@ -62,7 +44,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'audit_failed' }, { status: 502 });
     }
     const data = await res.json();
-    recordHit(ip); // only successful audits consume quota
+    await avFreeRecord(ip); // only successful audits consume quota
 
     // Pass the audit through plus normalized fields AuditWidget reads.
     return NextResponse.json({

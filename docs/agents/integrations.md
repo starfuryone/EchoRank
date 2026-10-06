@@ -103,8 +103,96 @@ web app, so every `ai_analysis` surface falls back to heuristics — by design, 
 tells the user when it happened rather than failing. The av-service sidecar carries its own
 key.
 
+**The answer check asks Claude only.** The sidecar's `/track` (`answer_track.py`, model from
+`TRACK_MODEL`, default `claude-haiku-4-5`) is what tracked prompts and the partner API's
+`/visibility/query` run, and it answers with one engine: Claude. Marketing copy that says
+Echorank monitors six engines (the homepage hero and feature cards, the "six engines"
+paragraph in `src/lib/i18n/content.ts`) describes more than this path does; the
+multi-provider list in `src/lib/ai-monitor/pricing.ts` belongs to the AI Search monitor,
+and each provider there is live only when its key is set.
+
 ## Email / SMS
 
 `SMTP_*` empty, `BREVO_API_KEY` absent though `/api/webhooks/brevo` exists, Twilio
 partially configured. Campaigns, review requests, digests and alerts are inert. Treat any
 "send" path as unexercised in production.
+
+## Partner API (EchoPilot)
+
+Echorank's AI-visibility engine for sibling products. EchoPilot never calls the av-visibility
+sidecar or holds `INTERNAL_API_SECRET`; it calls this, and Echorank owns the engine, the
+limits and the cost. Code: `src/lib/partner/` (auth, limits, quota, shape, service),
+routes under `src/app/api/partner/v1/`. Tests: `tests/partner-api.test.ts`.
+
+**Base URL.** `http://127.0.0.1:4400/api/partner` from this box (EchoPilot's
+`ECHORANK_API_BASE`): loopback skips Cloudflare and TLS, and the proxy treats
+`/api/partner/v1/` like `/api/public/v1/` (no session, no CSRF origin check). From
+elsewhere: `https://echorank360.com/api/partner`.
+
+**Auth.** `Authorization: Bearer er_api_<id>.<secret>`, a key with scope `partner`
+(`api_keys.scopes`). Keys live on the internal tenant "EchoPilot (partner)" (slug
+`echopilot-partner`) and are issued with `npm run partner:create-key -- "<label>"` (as
+echorank/root, prints the key once). Scopes do not overlap: a partner key gets 403 on
+`/api/public/v1/*`, a public (SEO Tools) key gets 403 here. No paid-plan check. Every call
+carries `x-partner-subject`: the partner's opaque id for its own customer
+(`^[A-Za-z0-9_-]{1,64}$`, never an email).
+
+| Status | Body `error` | When |
+|---|---|---|
+| 401 | `missing_bearer_key` / `invalid_or_revoked_key` | no key, unknown key, revoked key |
+| 403 | `wrong_scope` | key without scope `partner` |
+| 400 | `missing_partner_subject` / `invalid_partner_subject` | header absent or not an opaque id |
+| 400 | `invalid_url` (+ `reason`), `invalid_mode`, `invalid_competitors`, `invalid_question`, `invalid_business`, `no_supported_engine` | input |
+| 422 | `site_unreachable` | the audited site could not be fetched |
+| 429 | `rate_limited` (+ `scope`, `retryAfter`, `Retry-After` header) | `subject_hour` or `month_<kind>` |
+| 502 | `upstream_error` | sidecar failed; the call's allowance is given back |
+| 503 | `quota_unavailable` | Redis unreachable (fails closed) |
+
+**Endpoints.**
+
+- `POST /v1/audit` `{ url, mode: "quick"|"full" }` (mode defaults to quick). Sidecar `/audit`
+  with `crawl: false|true`. URLs go through the SSRF guard (`bot-analytics/url-guard.ts`:
+  http(s) only, no IP literals, no credentials, ports 80/443, no private suffixes or
+  single-label hosts). Stored as a `VisibilityAudit` on the partner tenant
+  (`monitorId` null), ledgered in `partner_calls` with the subject. Returns:
+  ```
+  { id, url, mode, score, grade,
+    rendering: { likelyCsr, textLength, framework } | null,
+    robotsTxt: boolean,
+    crawlers: [{ engine, vendor, status: "ALLOWED"|"BLOCKED", scored, detail }],   // scored engines first
+    checks:   [{ key, label, score, max, detail, recommendation }],
+    createdAt }
+  ```
+  Check keys: `robots`, `rendering`, `structured_data`, `sitemap`, `head`, `headings`,
+  `content` (a new sidecar label falls back to its slug).
+- `GET /v1/audit/:id`: an audit this key created (quick, full or benchmark), else 404. Another
+  key on the same tenant gets 404 too.
+- `POST /v1/visibility/query` `{ question, business, website?, engines? }`. The tracked-prompt
+  answer check (sidecar `/track`, the call the visibility-monitoring worker makes): brand terms
+  = business name + the website's domain root, two prompts (the question, and "what is
+  <business> (<host>)"). Returns
+  `{ mentioned, answer_excerpt, engines: [{ engine, model, mentioned, answer_excerpt }], description, costUsd, unsupportedEngines? }`.
+  Engines today: `claude` only; requested engines we cannot ask come back in
+  `unsupportedEngines`, never as a fake answer. `costUsd` is a ceiling (the sidecar reports no
+  token usage, so each answer is priced at `max_tokens` 700 with `ai-monitor/pricing.ts`
+  rates); the same figure is stored on the `partner_calls` row.
+  Alias: `POST /api/v1/visibility/query` (same handler, same auth), for EchoPilot's original
+  base `https://echorank360.com/api`. Remove it once no caller uses that base.
+- `POST /v1/benchmark` `{ you, competitors: [≤5 urls], mode: "quick" }`. Quick audits of all,
+  in parallel. Returns `{ mode, you, competitors, createdAt }`, each entry either the
+  dashboard benchmark's summary plus the audit (`{ url, score, grade, blocked, botTotal, audit }`)
+  or `{ url, error }`. One benchmark call counts once against `benchmark`, not per URL.
+
+**Limits** (`src/lib/partner/limits.ts`; Redis, `src/lib/partner/quota.ts`, the site-audit
+quota shape). Per key per UTC month: `audit_quick` 2,000 · `audit_full` 300 · `query`
+3,000 · `benchmark` 300. Per subject: 60 requests per UTC clock hour across every endpoint,
+including GET. Per-subject monthly counters (`echorank:partner:subject:*`) are kept for
+metering and never refuse.
+
+**Cost.** Every call that ran writes a `partner_calls` row (`kind`, `subject`, `auditId`,
+`costUsd`, `ok`). Audits spend nothing upstream (`costUsd` 0, logged anyway); queries log the
+ceiling above. Spend per subject:
+`SELECT subject, sum("costUsd") FROM partner_calls WHERE "createdAt" >= date_trunc('month', now()) GROUP BY 1;`
+
+**Versioning.** Within v1, changes are additive only: new fields, new optional inputs, new
+endpoints. Removing or renaming a field, changing a type or a status code means `/v2`.

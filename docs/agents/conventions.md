@@ -67,8 +67,8 @@ In-process `Map`s are wrong here: they reset on every `pm2 restart` and are not 
 between web and workers. `src/lib/rate-limit.ts` falls back to in-memory when Redis is
 unavailable, which is a deliberate liveness choice, not a licence to start there.
 
-**Known violator:** `src/app/api/av/audit/route.ts` still uses a bare `new Map()` for its
-1-per-24h free-audit limit. Its sibling `/api/av/keywords` does it correctly via Redis.
+`src/app/api/av/audit/route.ts` was the last bare-`Map` limiter; its 1-per-24h free-audit
+limit moved to Redis (`src/lib/av-free-limit.ts`) on 2026-10-06.
 
 ## Tool pages
 
