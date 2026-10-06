@@ -1,6 +1,6 @@
 import { auth } from "@/lib/auth";
 import { NextResponse } from "next/server";
-import { csrfProtection } from "@/lib/csrf-protection";
+import { csrfProtection, isBearerWithoutSession } from "@/lib/csrf-protection";
 import { isSupportedLocale, resolveTarget, type Locale } from "@/lib/i18n/config";
 // Import the registry directly, not the "@/lib/seo" barrel — the barrel
 // re-exports JsonLd.tsx, and pulling React into the middleware bundle is a
@@ -20,8 +20,8 @@ const LOCALE_COOKIE = "echorank_locale";
 // the Authorization header, never via cookies.
 // /api/partner/v1/ is the partner API for sibling products (EchoPilot):
 // Bearer keys with scope "partner" (src/lib/partner/auth.ts), per-key monthly
-// allowances and a per-subject hourly limit in Redis. Same posture as
-// /api/public/v1/: no session, no cookies, so it is CSRF-exempt below too.
+// allowances and a per-subject hourly limit in Redis. CSRF-exempt below only
+// for a Bearer request without a session cookie (isBearerWithoutSession).
 // /api/v1/visibility/query is its one alias (exact-match, below).
 // /api/free/v1/ is the anonymous free-tools namespace: no session, no tenant.
 // It is a PREFIX entry rather than an exact-match one because the namespace is
@@ -204,9 +204,13 @@ const withSession = auth((req) => {
     // Bearer-key-authenticated public API/MCP: cookies are never consulted,
     // so origin checks add nothing and would block non-browser clients.
     !pathname.startsWith("/api/public/v1/") &&
-    // The partner API and its one alias: same reasoning, Bearer key only.
-    !pathname.startsWith("/api/partner/v1/") &&
-    pathname !== "/api/v1/visibility/query" &&
+    // The partner API and its one alias, for server-to-server calls only:
+    // a Bearer key and no session cookie. A request carrying our session
+    // cookie is a browser, and keeps the origin check like any other.
+    !(
+      (pathname.startsWith("/api/partner/v1/") || pathname === "/api/v1/visibility/query") &&
+      isBearerWithoutSession(req)
+    ) &&
     // The attribution beacon. EVERY legitimate call is cross-origin — it comes
     // from the customer's own domain — so the origin check would reject 100% of
     // real traffic. Exempting it costs nothing that CSRF was protecting: the

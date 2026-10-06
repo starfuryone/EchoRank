@@ -127,7 +127,11 @@ routes under `src/app/api/partner/v1/`. Tests: `tests/partner-api.test.ts`.
 **Base URL.** `http://127.0.0.1:4400/api/partner` from this box (EchoPilot's
 `ECHORANK_API_BASE`): loopback skips Cloudflare and TLS, and the proxy treats
 `/api/partner/v1/` like `/api/public/v1/` (no session, no CSRF origin check). From
-elsewhere: `https://echorank360.com/api/partner`.
+elsewhere: `https://echorank360.com/api/partner`. The proxy skips its CSRF origin check here only for a
+`Authorization: Bearer …` request with no session cookie (`isBearerWithoutSession`,
+`src/lib/csrf-protection.ts`); a request carrying an Auth.js session cookie is a browser and
+needs a same-site Origin like any other POST. `tests/partner-proxy.test.ts` drives the real
+proxy.
 
 **Auth.** `Authorization: Bearer er_api_<id>.<secret>`, a key with scope `partner`
 (`api_keys.scopes`). Keys live on the internal tenant "EchoPilot (partner)" (slug

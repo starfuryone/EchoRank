@@ -33,3 +33,22 @@ export function csrfProtection(request: NextRequest): NextResponse | null {
   }
   return null; // Passed
 }
+
+/**
+ * Auth.js session cookie, any spelling: authjs (v5) or next-auth (v4), with
+ * the __Secure-/__Host- prefixes and the .0/.1 chunks a large JWT is split into.
+ */
+const SESSION_COOKIE_RE = /^(?:__Secure-|__Host-)?(?:authjs|next-auth)\.session-token(?:\.\d+)?$/;
+
+/**
+ * A server-to-server call: it authenticates with `Authorization: Bearer …` and
+ * carries no session cookie. Such a request has no ambient browser authority
+ * for a forged cross-site POST to borrow, so the origin check protects nothing
+ * on it. A request that carries a session cookie is a browser and keeps the
+ * check, Bearer header or not.
+ */
+export function isBearerWithoutSession(request: Pick<NextRequest, "headers" | "cookies">): boolean {
+  const auth = request.headers.get("authorization") ?? "";
+  if (!/^Bearer \S+/.test(auth)) return false;
+  return !request.cookies.getAll().some((c) => SESSION_COOKIE_RE.test(c.name));
+}
