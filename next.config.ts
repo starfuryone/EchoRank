@@ -2,7 +2,10 @@ import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // Production serves from `.next`. A verification build must never overwrite
+  // it under the running process, so `NEXT_DIST_DIR=.next-check npm run build`
+  // builds beside it. Unset, this is the default `.next`.
+  distDir: process.env.NEXT_DIST_DIR || ".next",
 };
 
 // Only wrap with Sentry's build plugin when a DSN is configured, so default
