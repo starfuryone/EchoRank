@@ -42,11 +42,19 @@ export type NavCurrent =
   | "ai-assistant";
 
 interface NavItem {
-  /** Locale-less path, or a "#fragment" resolved against the locale root. */
+  /**
+   * Locale-less path, or a "#fragment" resolved against the locale root. When
+   * `asset` is set, a file under public/ served as-is: never locale-prefixed,
+   * and outside the proxy's matcher, so it opens without a session.
+   */
   href: string;
   label: string;
   desc?: string;
+  asset?: true;
 }
+/** A static file in public/, public to visitors and signed-in users alike. */
+export const ECHOPILOT_GUIDE_PDF = "/whitepapers/EchoPilot-A-Plain-English-Guide.pdf";
+
 interface NavColumn {
   title: string;
   items: NavItem[];
@@ -203,6 +211,7 @@ const NAV: Record<Base, NavCopy> = {
             title: "More",
             items: [
               { href: "/resources", label: "Resources", desc: "Whitepapers and downloads." },
+              { href: ECHOPILOT_GUIDE_PDF, label: "EchoPilot guide (PDF)", desc: "A plain-English guide to EchoPilot.", asset: true },
               { href: "/about", label: "About Echorank" },
             ],
           },
@@ -288,6 +297,7 @@ const NAV: Record<Base, NavCopy> = {
             title: "Plus",
             items: [
               { href: "/resources", label: "Ressources", desc: "Livres blancs et téléchargements." },
+              { href: ECHOPILOT_GUIDE_PDF, label: "Guide EchoPilot (PDF)", desc: "Le guide d'EchoPilot, en anglais.", asset: true },
               { href: "/about", label: "À propos d'Echorank" },
             ],
           },
@@ -315,7 +325,6 @@ export function nextOpenPanel(
   return current === clicked ? null : clicked;
 }
 
-/** Every href the menu can render, for the route test. */
 /** The catalog with the derived Solutions group substituted in. */
 function navFor(base: Base): NavCopy {
   return {
@@ -326,8 +335,17 @@ function navFor(base: Base): NavCopy {
   };
 }
 
+const navItems = (base: Base): NavItem[] =>
+  navFor(base).groups.flatMap((g) => g.columns.flatMap((c) => c.items));
+
+/** Every route href the menu can render, for the route test. */
 export function navHrefs(): string[] {
-  return navFor("en").groups.flatMap((g) => g.columns.flatMap((c) => c.items.map((i) => i.href)));
+  return navItems("en").filter((i) => !i.asset).map((i) => i.href);
+}
+
+/** Every static-file href the menu can render, for the public/ test. */
+export function navAssetHrefs(): string[] {
+  return [...new Set((["en", "fr"] as const).flatMap((b) => navItems(b).filter((i) => i.asset).map((i) => i.href)))];
 }
 
 /**
@@ -540,12 +558,23 @@ export function PublicNav({
         {g.columns.map((col) => (
           <div key={col.title} className={s.megaCol}>
             <p className={s.megaColTitle}>{col.title}</p>
-            {col.items.map((item) => (
-              <Link key={item.href + item.label} href={L(item.href)} className={s.megaLink}>
-                <span className={s.megaLinkLabel}>{item.label}</span>
-                {item.desc && <span className={s.megaLinkDesc}>{item.desc}</span>}
-              </Link>
-            ))}
+            {col.items.map((item) => {
+              const body = (
+                <>
+                  <span className={s.megaLinkLabel}>{item.label}</span>
+                  {item.desc && <span className={s.megaLinkDesc}>{item.desc}</span>}
+                </>
+              );
+              return item.asset ? (
+                <a key={item.href + item.label} href={item.href} target="_blank" rel="noopener" className={s.megaLink}>
+                  {body}
+                </a>
+              ) : (
+                <Link key={item.href + item.label} href={L(item.href)} className={s.megaLink}>
+                  {body}
+                </Link>
+              );
+            })}
           </div>
         ))}
         {/* Promo: the existing free-audit funnel, no invented route. */}
@@ -677,16 +706,29 @@ export function PublicNav({
                   </span>
                 </button>
                 {expanded === g.id &&
-                  g.columns.flatMap((c) => c.items).map((item) => (
-                    <Link
-                      key={item.href + item.label}
-                      href={L(item.href)}
-                      className={s.sheetLink}
-                      onClick={() => setMobileOpen(false)}
-                    >
-                      {item.label}
-                    </Link>
-                  ))}
+                  g.columns.flatMap((c) => c.items).map((item) =>
+                    item.asset ? (
+                      <a
+                        key={item.href + item.label}
+                        href={item.href}
+                        target="_blank"
+                        rel="noopener"
+                        className={s.sheetLink}
+                        onClick={() => setMobileOpen(false)}
+                      >
+                        {item.label}
+                      </a>
+                    ) : (
+                      <Link
+                        key={item.href + item.label}
+                        href={L(item.href)}
+                        className={s.sheetLink}
+                        onClick={() => setMobileOpen(false)}
+                      >
+                        {item.label}
+                      </Link>
+                    ),
+                  )}
               </div>
             ))}
             {showAssistant && (

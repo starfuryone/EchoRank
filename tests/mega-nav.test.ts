@@ -11,7 +11,9 @@
 import { describe, expect, it } from "vitest";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { PublicNav, navHrefs, nextOpenPanel } from "@/app/[locale]/PublicNav";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
+import { PublicNav, navHrefs, navAssetHrefs, nextOpenPanel, ECHOPILOT_GUIDE_PDF } from "@/app/[locale]/PublicNav";
 import { LOCALIZED_ROUTES } from "@/lib/seo/registry";
 import { SOLUTION_ITEMS } from "@/lib/solutions-taxonomy";
 
@@ -72,6 +74,28 @@ describe("every menu destination exists", () => {
     expect(nav("en")).toContain("Set up AI Search tracking");
     expect(nav("fr")).toContain('href="/fr/setup-ai-search-tracking"');
     expect(nav("fr")).toContain("Configurer le suivi de recherche IA");
+  });
+
+  it("points every file link at a file that ships in public/", () => {
+    // Files bypass the registry check above, so this is their dead-link guard.
+    expect(navAssetHrefs().length).toBeGreaterThan(0);
+    for (const href of navAssetHrefs()) {
+      expect(existsSync(join(process.cwd(), "public", href)), `${href} is missing from public/`).toBe(true);
+    }
+  });
+
+  it("links the EchoPilot guide PDF from Resources, unprefixed and outside the auth gate, both locales", () => {
+    // A locale prefix would turn the file into a [locale] page 404, and the
+    // proxy matcher skips any path whose dot sits after the first segment.
+    expect(ECHOPILOT_GUIDE_PDF.split("/").filter(Boolean).length).toBeGreaterThan(1);
+    expect(ECHOPILOT_GUIDE_PDF.endsWith(".pdf")).toBe(true);
+    for (const locale of ["en", "fr"]) {
+      const html = nav(locale);
+      expect(html).toContain(`href="${ECHOPILOT_GUIDE_PDF}"`);
+      expect(html).not.toContain(`href="/${locale}${ECHOPILOT_GUIDE_PDF}"`);
+    }
+    expect(nav("en")).toContain("EchoPilot guide (PDF)");
+    expect(nav("fr")).toContain("Guide EchoPilot (PDF)");
   });
 
   it("carries every taxonomy item in the Solutions panel", () => {
