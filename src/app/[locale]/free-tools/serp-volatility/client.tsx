@@ -28,6 +28,8 @@ interface Day {
 
 interface Payload {
   collecting: boolean;
+  /** Polling is switched off; the days are the last stored snapshot. */
+  paused?: boolean;
   days: Day[];
   latest: Day | null;
 }
@@ -159,6 +161,16 @@ export function SerpVolatilityClient() {
     );
   }
 
+  // Paused with nothing stored to show: say paused, not "collecting" — no
+  // sample is coming, so promising one would be false.
+  if (data.paused && (data.collecting || !data.latest)) {
+    return (
+      <div className={f.panel}>
+        <p className={f.note}>Updates paused. No stored reading to show yet.</p>
+      </div>
+    );
+  }
+
   // Two consecutive days are needed before anything can be compared, and
   // "collecting" is a different statement from "nothing moved".
   if (data.collecting || !data.latest) {
@@ -186,6 +198,11 @@ export function SerpVolatilityClient() {
   return (
     <div className={f.volGrid}>
       <div className={f.panel}>
+        {data.paused && (
+          <p className={f.note} data-testid="volatility-paused">
+            Updates paused. Showing the last stored reading, from {latest.date}.
+          </p>
+        )}
         <div className={f.scoreRow}>
           <span className={f.scoreBig}>{overall ?? "—"}</span>
           <span>

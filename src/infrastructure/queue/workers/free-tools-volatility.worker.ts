@@ -15,8 +15,14 @@
 // would hash differently and orphan the previous one), and the worker removes
 // any repeatable job for this queue whose key does not match before adding its
 // own. Without that pruning a changed interval silently doubles the basket.
+//
+// VOLATILITY_POLL_ENABLED (default false, lib/free-tools/volatility-flag.ts).
+// While it is off, start-workers.ts does not register this worker and calls
+// removeFreeToolsVolatilitySchedules() instead: the same prune loop with
+// nothing to keep, so a schedule left by an earlier process cannot fire after
+// a restart. The sampler refuses to post on its own as well.
 
-import { Worker, type Job } from "bullmq";
+import { Worker, type Job, type Queue } from "bullmq";
 import { getSubscriberConnection } from "@/infrastructure/redis/connection";
 import { REDIS_CONFIG } from "@/infrastructure/redis/config";
 import { getQueue } from "@/infrastructure/queue/registry";
@@ -77,13 +83,7 @@ export function startFreeToolsVolatilityWorker(): Worker<FreeToolsVolatilityJob>
 async function scheduleTick(): Promise<void> {
   const queue = getQueue(QUEUE_NAME);
   try {
-    for (const existing of await queue.getRepeatableJobs()) {
-      const stale = existing.name !== TICK_JOB_NAME || existing.every !== String(TICK_INTERVAL_MS);
-      if (stale) {
-        await queue.removeRepeatableByKey(existing.key);
-        logger.warn({ key: existing.key, queue: QUEUE_NAME }, "removed stale repeatable schedule");
-      }
-    }
+    await pruneRepeatables(queue, true);
 
     await queue.add(
       TICK_JOB_NAME,
@@ -97,4 +97,28 @@ async function scheduleTick(): Promise<void> {
   } catch (err) {
     logger.error({ err, queue: QUEUE_NAME }, "failed to schedule volatility tick");
   }
+}
+
+type RepeatableQueue = Pick<Queue, "getRepeatableJobs" | "removeRepeatableByKey">;
+
+/**
+ * The prune loop. `keepTick` false removes every repeatable job in the queue,
+ * the current tick included; true removes all but the current tick.
+ * Returns how many schedules were removed.
+ */
+export async function pruneRepeatables(queue: RepeatableQueue, keepTick: boolean): Promise<number> {
+  let removed = 0;
+  for (const existing of await queue.getRepeatableJobs()) {
+    const current = existing.name === TICK_JOB_NAME && existing.every === String(TICK_INTERVAL_MS);
+    if (keepTick && current) continue;
+    await queue.removeRepeatableByKey(existing.key);
+    removed += 1;
+    logger.warn({ key: existing.key, queue: QUEUE_NAME }, keepTick ? "removed stale repeatable schedule" : "removed repeatable schedule: polling disabled");
+  }
+  return removed;
+}
+
+/** Boot with VOLATILITY_POLL_ENABLED off: nothing registered, every schedule removed. */
+export async function removeFreeToolsVolatilitySchedules(queue: RepeatableQueue = getQueue(QUEUE_NAME)): Promise<number> {
+  return pruneRepeatables(queue, false);
 }

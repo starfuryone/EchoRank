@@ -9,12 +9,18 @@
  * response says so rather than returning zeroes: "nothing moved" and "we have
  * no data yet" are different claims.
  *
+ * PAUSED. With VOLATILITY_POLL_ENABLED off no new samples arrive, so a window
+ * ending today would empty itself within a month. The window instead ends at
+ * the last stored sample — the last snapshot, served as it was — and the
+ * response says `paused: true` so the page can say "Updates paused".
+ *
  * PUBLIC BY DESIGN — /api/free/v1/ is in publicPaths.
  */
 
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { ONE_HOUR, cacheKey, cached, writeCache } from "@/lib/free-tools/cache";
+import { volatilityPollEnabled } from "@/lib/free-tools/volatility-flag";
 import {
   VOLATILITY_LOCATION_CODE,
   overallScore,
@@ -32,16 +38,30 @@ export interface VolatilityDay {
 
 export interface VolatilityResponse {
   collecting: boolean;
+  /** VOLATILITY_POLL_ENABLED is off: the days are the last stored snapshot. */
+  paused: boolean;
   days: VolatilityDay[];
   latest: VolatilityDay | null;
 }
 
 export async function GET() {
-  const key = cacheKey("volatility", WINDOW_DAYS, VOLATILITY_LOCATION_CODE);
+  const paused = !volatilityPollEnabled();
+  // The state is in the key: flipping the switch must not serve the other
+  // state's cached body for up to an hour.
+  const key = cacheKey("volatility", WINDOW_DAYS, VOLATILITY_LOCATION_CODE, paused ? "paused" : "live");
   const hit = await cached<VolatilityResponse>(key);
   if (hit.hit && hit.value) return NextResponse.json(hit.value);
 
-  const since = new Date(Date.now() - (WINDOW_DAYS + 1) * 86_400_000);
+  let end = Date.now();
+  if (paused) {
+    const last = await prisma.serpVolatilitySample.findFirst({
+      where: { locationCode: VOLATILITY_LOCATION_CODE },
+      orderBy: { sampledOn: "desc" },
+      select: { sampledOn: true },
+    });
+    if (last) end = last.sampledOn.getTime() + 86_400_000;
+  }
+  const since = new Date(end - (WINDOW_DAYS + 1) * 86_400_000);
   const rows = await prisma.serpVolatilitySample.findMany({
     where: { locationCode: VOLATILITY_LOCATION_CODE, sampledOn: { gte: since } },
     orderBy: { sampledOn: "asc" },
@@ -75,6 +95,7 @@ export async function GET() {
 
   const payload: VolatilityResponse = {
     collecting: days.length === 0,
+    paused,
     days: days.slice(-WINDOW_DAYS),
     latest: days.length > 0 ? days[days.length - 1]! : null,
   };

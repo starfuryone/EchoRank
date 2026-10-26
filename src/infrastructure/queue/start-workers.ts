@@ -33,7 +33,8 @@ import { startRankTrackerWorker } from "./workers/rank-tracker.worker";
 import { startSiteAuditWorker } from "./workers/site-audit.worker";
 import { startBotLogAnalysisWorker } from "./workers/bot-log-analysis.worker";
 import { startSiteCrawlWorker } from "./workers/site-crawl.worker";
-import { startFreeToolsVolatilityWorker } from "./workers/free-tools-volatility.worker";
+import { removeFreeToolsVolatilitySchedules, startFreeToolsVolatilityWorker } from "./workers/free-tools-volatility.worker";
+import { volatilityPollEnabled } from "@/lib/free-tools/volatility-flag";
 import { startAiCheckupWorker } from "./workers/ai-checkup.worker";
 import { startSovAggregationWorker } from "./workers/sov-aggregation.worker";
 import { startRevenueRollupWorker } from "./workers/revenue-rollup.worker";
@@ -113,7 +114,8 @@ async function startWorkers() {
     { name: "site-audit", start: startSiteAuditWorker },
     { name: "bot-log-analysis", start: startBotLogAnalysisWorker },
     { name: "site-crawl", start: startSiteCrawlWorker },
-    { name: "free-tools-volatility", start: startFreeToolsVolatilityWorker },
+    // Only with VOLATILITY_POLL_ENABLED=true; see disabledWorkers() below.
+    ...(volatilityPollEnabled() ? [{ name: "free-tools-volatility", start: startFreeToolsVolatilityWorker }] : []),
     { name: "ai-checkup", start: startAiCheckupWorker },
     { name: "sov-aggregation", start: startSovAggregationWorker },
     // After sov-aggregation in this list and twenty minutes after it on the
@@ -136,6 +138,8 @@ async function startWorkers() {
     // switch is flipped; every stage returns immediately while it is off.
     { name: "blog-agent", start: startBlogAgentWorker },
   ];
+
+  void disabledWorkers();
 
   const loaded: string[] = [];
 
@@ -166,6 +170,21 @@ async function startWorkers() {
 
   process.on("SIGINT", shutdown);
   process.on("SIGTERM", shutdown);
+}
+
+/**
+ * Workers switched off by env. Not registering one is not enough: its
+ * repeatable schedule lives in Redis and outlives the process, so it is
+ * removed on every boot while the switch is off.
+ */
+async function disabledWorkers(): Promise<void> {
+  if (volatilityPollEnabled()) return;
+  try {
+    const removed = await removeFreeToolsVolatilitySchedules();
+    console.log(`[Workers] Skipped: free-tools-volatility (VOLATILITY_POLL_ENABLED is not true); removed ${removed} schedule(s)`);
+  } catch (err) {
+    console.error("[Workers] Could not remove free-tools-volatility schedules:", err);
+  }
 }
 
 startWorkers().catch((err) => {

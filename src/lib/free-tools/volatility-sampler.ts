@@ -9,6 +9,9 @@
 // queued: a day with no sample is a gap in a chart, while a blown budget takes
 // every other free tool down with it.
 //
+// OFF BY DEFAULT. VOLATILITY_POLL_ENABLED must be "true" or postDailyBasket()
+// returns before touching DataForSEO (reason "poll_disabled").
+//
 // IDEMPOTENT PER DAY. The unique index on (sampledOn, keyword, locationCode)
 // means a retried tick upserts rather than duplicates, so a worker restart in
 // the middle of a run cannot double-count a day.
@@ -19,6 +22,7 @@ import { SERP } from "@/lib/dataforseo/endpoints";
 import { logger } from "@/infrastructure/observability/logger";
 import { FREE_TOOLS_TENANT_ID, checkDailyCap } from "./spend";
 import { VOLATILITY_LOCATION_CODE, basketEntries, domainOf } from "./volatility";
+import { volatilityPollEnabled } from "./volatility-flag";
 
 /** Depth 10: the tool compares top-10s, so anything deeper is money burnt. */
 const SAMPLE_DEPTH = 10;
@@ -42,6 +46,13 @@ export function utcDay(now: Date = new Date()): Date {
  * turns completed rows into samples on a later tick.
  */
 export async function postDailyBasket(now: Date = new Date()): Promise<SampleStats> {
+  // Refuses before any read or call: a tick that was already queued when the
+  // switch went off must not spend.
+  if (!volatilityPollEnabled()) {
+    logger.warn("volatility basket refused: VOLATILITY_POLL_ENABLED is not true");
+    return { posted: 0, skipped: basketEntries().length, reason: "poll_disabled" };
+  }
+
   const day = utcDay(now);
 
   const alreadyToday = await prisma.serpVolatilitySample.count({

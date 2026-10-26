@@ -150,3 +150,22 @@ describe("volatility severity bands", () => {
     expect(screen.getByText(/Below 2 means rankings are stable/)).toBeTruthy();
   });
 });
+
+describe("VOLATILITY_POLL_ENABLED off: the last snapshot, paused", () => {
+  it("shows the stored reading with an Updates paused line, not an error or an empty state", async () => {
+    mockFetch({ ...PAYLOAD, paused: true });
+    render(<SerpVolatilityClient />);
+    await waitFor(() => expect(screen.getByTestId("volatility-paused")).toBeTruthy());
+    expect(screen.getByTestId("volatility-paused").textContent).toBe("Updates paused. Showing the last stored reading, from 2026-08-16.");
+    expect(screen.getByText("Calm")).toBeTruthy();
+    expect(screen.queryByText(/Could not load/)).toBeNull();
+    expect(screen.queryByText(/Collecting data/)).toBeNull();
+  });
+
+  it("no paused line while polling is on", async () => {
+    mockFetch({ ...PAYLOAD, paused: false });
+    render(<SerpVolatilityClient />);
+    await waitFor(() => expect(screen.getByText("Calm")).toBeTruthy());
+    expect(screen.queryByTestId("volatility-paused")).toBeNull();
+  });
+});
