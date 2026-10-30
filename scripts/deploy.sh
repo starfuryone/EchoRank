@@ -7,7 +7,9 @@
 # is swapped in only once it is complete, so a failed build leaves the running site untouched,
 # and the build it replaced stays on disk as .next-prev for `--rollback`.
 #
-#   0. preflight        root, .env, one deploy at a time, clean tree, installed copy == repo copy
+#   0. preflight        root, .env, one deploy at a time, clean tree, installed copy == repo copy,
+#                       echorank can read every tracked file and write tsconfig.json,
+#                       next-env.d.ts and .next-build (offenders listed; `npm run fix-perms`)
 #   1. health before    GET /en on 4400. Not 200 → warn and carry on (a deploy may be the fix),
 #                       but a failed health check after the restart will not auto-roll back
 #   2. prisma generate  as deploy (src/generated/prisma is deploy's; generate never connects)
@@ -158,6 +160,27 @@ fi
 HEAD_SHA=$(git_app rev-parse HEAD)
 echo "deploying $(git_app log -1 --format='%h %s')"
 
+# Permissions, checked as $BUILD_USER before any work. A $SRC_USER commit that replaces a file
+# leaves it $SRC_USER-owned, and a file written 0600 by anyone is one the build cannot read;
+# both used to surface as an EACCES half-way through `next build`. Next rewrites tsconfig.json
+# and next-env.d.ts when their content is not what it wants, so both must be writable.
+rm -rf "$NEXT_BUILD"
+# $APP belongs to $SRC_USER, so $BUILD_USER cannot create the directory itself. next build
+# empties it and keeps it.
+install -d -o "$BUILD_USER" -g "$BUILD_USER" -m 0755 "$NEXT_BUILD"
+perm_problems=$(git_app ls-files -z | sudo -u "$BUILD_USER" -H bash -c '
+  cd "$1" || { echo "unreadable  $1/"; exit 0; }
+  while IFS= read -r -d "" f; do [ -r "$f" ] || printf "unreadable  %s\n" "$f"; done
+  for f in tsconfig.json next-env.d.ts; do [ -w "$f" ] || printf "unwritable  %s\n" "$f"; done
+  { : >.next-build/.write-probe && rm -f .next-build/.write-probe; } 2>/dev/null ||
+    printf "unwritable  .next-build/\n"
+' _ "$APP")
+if [ -n "$perm_problems" ]; then
+  echo "$perm_problems" >&2
+  die "$BUILD_USER cannot read or write the paths above; nothing built, nothing restarted.
+## tsconfig.json / next-env.d.ts: sudo npm --prefix $APP run fix-perms"
+fi
+
 # ---- 1. health before
 step "1/8 health before ($HEALTH_URL)"
 BEFORE=$(http_code "$HEALTH_URL")
@@ -178,10 +201,6 @@ EXTRA_ENV=()
 
 # ---- 3. build
 step "3/8 next build (as $BUILD_USER, into .next-build)"
-rm -rf "$NEXT_BUILD"
-# $APP belongs to $SRC_USER, so $BUILD_USER cannot create the directory itself. next build
-# empties it and keeps it.
-install -d -o "$BUILD_USER" -g "$BUILD_USER" -m 0755 "$NEXT_BUILD"
 EXTRA_ENV=(NEXT_DIST_DIR=.next-build)
 as_user "$BUILD_USER" npm run build || die "next build exited non-zero; .next untouched, nothing restarted"
 EXTRA_ENV=()

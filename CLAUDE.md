@@ -24,7 +24,11 @@ This box serves production from the working tree. A broken build is a broken sit
 
 **The deploy is one root command: `sudo echorank360-deploy`** — `/usr/local/sbin/echorank360-deploy`,
 installed from `scripts/deploy.sh` (reinstall line in its header; it warns when the two
-differ). It refuses a dirty tree, builds as `echorank` into `.next-build` and swaps that in
+differ). It refuses a dirty tree, and refuses (listing the paths) when `echorank` cannot read
+every tracked file or write `tsconfig.json`, `next-env.d.ts` and `.next-build`. Editing
+`tsconfig.json` as `deploy` flips its owner, so after such a commit the human runs
+`sudo npm --prefix /opt/echorank/app run fix-perms`; a git hook cannot do it, since only root
+can `chown` to another user. It builds as `echorank` into `.next-build` and swaps that in
 only on success (the old build stays as `.next-prev`; `--rollback` swaps it back), health-checks
 `/en` on 4400 before and after `pm2 restart`, rolls back on a failed check, never restarts on a
 failed build, and ends with the Cloudflare reminder. The steps below are what it automates and

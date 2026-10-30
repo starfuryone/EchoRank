@@ -13,8 +13,8 @@ const SCRIPT = join(__dirname, "..", "scripts", "deploy.sh");
 
 const STUBS: Record<string, string> = {
   id: `echo "\${STUB_UID:-0}"`,
-  // sudo -u <user> -H env K=V… bash -c … → run it, logging who it ran as.
-  sudo: `echo "as $2: \${@: -2}" >>"$STUB_STATE/log"; while [ "$1" != env ]; do shift; done; exec "$@"`,
+  // sudo -u <user> -H <command…> → run it as ourselves, logging who it would have run as.
+  sudo: `echo "as $2: \${@: -2}" >>"$STUB_STATE/log"; shift 3; exec "$@"`,
   install: `mkdir -p "\${@: -1}"`,
   chown: `true`,
   npm: `echo "build NEXT_DIST_DIR=$NEXT_DIST_DIR" >>"$STUB_STATE/log"
@@ -81,7 +81,9 @@ beforeEach(() => {
     writeFileSync(join(bin, name), `#!/usr/bin/env bash\n${body}\n`);
     chmodSync(join(bin, name), 0o755);
   }
-  writeFileSync(join(app, ".gitignore"), ".env\n.next*\n");
+  writeFileSync(join(app, ".gitignore"), ".env\n.next*\nnext-env.d.ts\n");
+  writeFileSync(join(app, "tsconfig.json"), "{}\n");
+  writeFileSync(join(app, "next-env.d.ts"), "\n");
   writeFileSync(join(app, ".env"), "SECRET=1\n");
   writeFileSync(join(app, "scripts/deploy.sh"), readFileSync(SCRIPT));
   writeFileSync(join(app, "src/app/page.tsx"), "export default 1;\n");
@@ -128,6 +130,34 @@ describe("echorank360-deploy", () => {
     expect(r.err).toContain("src/app/new.tsx");
     expect(r.log.some((l) => l.startsWith("build") || l.startsWith("pm2"))).toBe(false);
     expect(buildId(".next")).toBe("old");
+  });
+
+  it("lists every path the build user cannot read or write, and stops before any work", () => {
+    chmodSync(join(app, "src/app/page.tsx"), 0o000);
+    chmodSync(join(app, "tsconfig.json"), 0o444);
+    rmSync(join(app, "next-env.d.ts"));
+    // Git runs as root on the box and still reads the file; here it is the same user and
+    // would report it modified, so the dirty-tree gate is bypassed for this case.
+    const r = deploy("--allow-dirty");
+    expect(r.status).toBe(1);
+    expect(r.err).toContain("unreadable  src/app/page.tsx");
+    expect(r.err).toContain("unwritable  tsconfig.json");
+    expect(r.err).toContain("unwritable  next-env.d.ts");
+    expect(r.err).toContain("npm --prefix");
+    expect(r.err).not.toContain(".next-build/");
+    // No health probe, no generate, no build, no pm2.
+    expect(r.log.some((l) => /^(curl|build|npx|pm2)/.test(l))).toBe(false);
+    expect(buildId(".next")).toBe("old");
+  });
+
+  it("reports a .next-build the build user cannot write", () => {
+    // install stub that creates the directory without granting write, as a wrong owner would.
+    writeFileSync(join(bin, "install"), `#!/usr/bin/env bash\nmkdir -p "\${@: -1}" && chmod 555 "\${@: -1}"\n`);
+    const r = deploy();
+    chmodSync(join(app, ".next-build"), 0o755);
+    expect(r.status).toBe(1);
+    expect(r.err).toContain("unwritable  .next-build/");
+    expect(r.log.some((l) => /^(build|pm2)/.test(l))).toBe(false);
   });
 
   it("never restarts on a failed build, and leaves .next alone", () => {
@@ -205,6 +235,23 @@ describe("echorank360-deploy", () => {
       const r = spawnSync("git", ["check-ignore", "-q", `${dir}/BUILD_ID`], { cwd: repo });
       expect(r.status, `${dir} is not gitignored`).toBe(0);
     }
+  });
+
+  it("fix-perms is wired to npm and refuses to run without root", () => {
+    const pkg = JSON.parse(readFileSync(join(__dirname, "..", "package.json"), "utf8"));
+    expect(pkg.scripts["fix-perms"]).toBe("bash scripts/fix-perms.sh");
+    const r = spawnSync("bash", [join(__dirname, "..", "scripts", "fix-perms.sh")], {
+      encoding: "utf8",
+      env: { ...process.env, PATH: `${bin}:${process.env.PATH}`, ECHORANK_APP: app, STUB_UID: "1002" },
+    });
+    expect(r.status).toBe(1);
+    expect(r.stderr).toContain("run as root");
+  });
+
+  it("the committed tsconfig already lists .next-build types, so the build never rewrites it", () => {
+    const tsconfig = readFileSync(join(__dirname, "..", "tsconfig.json"), "utf8");
+    expect(tsconfig).toContain('".next-build/types/**/*.ts"');
+    expect(tsconfig).toContain('".next-build/dev/types/**/*.ts"');
   });
 
   it("refuses to run as anyone but root", () => {

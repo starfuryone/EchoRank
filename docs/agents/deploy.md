@@ -35,6 +35,13 @@ install -o root -g root -m 0755 /opt/echorank/app/scripts/deploy.sh /usr/local/s
 What it does, in order (each abort before step 5 leaves the running site untouched):
 
 0. **Preflight.** Root, `.env` present, a lock so only one deploy runs at a time, clean tree.
+   Then, checked as `echorank` before any other work: every tracked file is readable, and
+   `tsconfig.json`, `next-env.d.ts` and `.next-build` are writable. Next rewrites the first
+   two when their content is not what it wants. Offending paths are listed and nothing runs.
+   An edit to `tsconfig.json` made as `deploy` leaves it `deploy`-owned; fix with
+   `sudo npm --prefix /opt/echorank/app run fix-perms` (root only, which is why this is not a
+   git hook). The committed `tsconfig.json` already includes the `.next-build/types` globs,
+   so a build normally has nothing to rewrite there.
 1. **Health before.** `GET 127.0.0.1:4400/en`. Not 200 is a warning, not an abort, since a
    deploy is often the fix, but then step 7 will not roll back to a build that was already failing.
 2. **`prisma generate`** as `deploy` (it owns `src/generated/prisma`). It never connects, so
