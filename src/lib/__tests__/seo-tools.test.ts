@@ -17,6 +17,8 @@ import {
   CLASSIC_SEO_TOOL_IDS,
   visibleSeoToolGroups,
   navPath,
+  seoToolCounts,
+  seoToolStatus,
 } from "../seo-tools";
 import { SEO_TOOLS_COPY, dashNav } from "../i18n/dashboard";
 import { isPaidStatus } from "../paid-plan";
@@ -132,13 +134,18 @@ test("comingSoon flags match the actual route files", () => {
 });
 
 test("the live/coming-soon split is what the marketing copy claims", () => {
-  // The homepage prints a tool count. If this number moves, the copy in
-  // src/lib/i18n/content.ts (toolsSection.count) has to move with it.
-  const live = ALL_TOOLS.filter((t) => !t.comingSoon);
+  // The printed counts are derived (seoToolCounts() -> TOOL_COUNT_LINE), so
+  // nothing in copy has to move with these numbers any more. They are pinned
+  // so a change in the split is a deliberate, reviewed one.
   const soon = ALL_TOOLS.filter((t) => t.comingSoon);
   assert.equal(ALL_TOOLS.length, 34, "tool count changed");
-  assert.equal(live.length, 29, "live tool count changed — update the homepage copy");
   assert.equal(soon.length, 5);
+  // Available = neither a scaffold nor blocked on Google's approval.
+  assert.deepEqual(seoToolCounts(), { available: 27, coming: 7, total: 34 });
+  assert.deepEqual(
+    ALL_TOOLS.filter((t) => seoToolStatus(t) === "waiting_approval").map((t) => t.id).sort(),
+    ["gbp_monitor", "gsc_insights", "web_analytics"],
+  );
   // ai_citations is here because its DATA SOURCE is unverified, not because
   // its page is unwritten — the page, service, routes and MCP tool all ship.
   // It leaves this list in the same commit that sets AI_CITATIONS_VERIFIED and

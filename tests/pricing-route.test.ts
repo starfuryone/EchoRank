@@ -115,7 +115,7 @@ describe("the funnel terminates at pricing", () => {
         locale: "en",
         pricing: pricingTiers("en"),
         priceChrome: HOME_PRICING_CHROME.en,
-        liveToolCount: 24,
+        toolCountLine: "24 tools available · 3 coming",
         tax: "t",
         currency: "c",
         header: null,

@@ -447,14 +447,14 @@ export default function HomeClient({
   locale,
   pricing,
   priceChrome,
-  liveToolCount,
+  toolCountLine,
   toolsSection,
   playerLabels,
 }: {
   locale: string;
   pricing: HomePricingTier[];
   priceChrome: HomePricingChrome;
-  liveToolCount: number;
+  toolCountLine: string;
   /** Server-rendered Classic SEO Tools section, slotted in after /03. */
   toolsSection: ReactNode;
   /**
@@ -932,7 +932,7 @@ export default function HomeClient({
             locale={locale}
             pricing={pricing}
             priceChrome={priceChrome}
-            liveToolCount={liveToolCount}
+            toolCountLine={toolCountLine}
             tax={t.pricing.tax}
             currency={t.pricing.currency}
             header={null}

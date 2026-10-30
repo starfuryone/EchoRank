@@ -7,7 +7,8 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 import { dashboardLocale, SEO_TOOLS_COPY } from "@/lib/i18n/dashboard";
 import { getCurrentTenant } from "@/lib/tenant";
-import { visibleSeoToolGroups } from "@/lib/seo-tools";
+import { seoToolCounts, visibleSeoToolGroups } from "@/lib/seo-tools";
+import { toolCountLine } from "@/lib/i18n/content";
 import { NewBadge } from "@/components/layout/new-badge";
 import { ComingSoonBadge } from "@/components/layout/coming-soon-badge";
 import { ToolsHubHelpButton } from "@/components/seo-tools/tools-hub-help";
@@ -38,6 +39,11 @@ export default async function SeoToolsHubPage() {
             {copy.hubTitle}
           </h2>
           <p className="mt-1 text-sm text-gray-500">{copy.hubSubtitle}</p>
+          {/* Same sentence and numbers as the homepage and /pricing — see
+              TOOL_COUNT_LINE. DashLocale is a subset of the marketing Locale. */}
+          <p className="mt-1 text-xs font-medium text-gray-400">
+            {toolCountLine(locale, seoToolCounts())}
+          </p>
         </div>
         <ToolsHubHelpButton locale={locale} />
       </div>

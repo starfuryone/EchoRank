@@ -29,7 +29,7 @@ function home(locale: "en" | "fr"): string {
       locale,
       pricing: [],
       priceChrome: HOME_PRICING_CHROME[locale],
-      liveToolCount: 0,
+      toolCountLine: "",
       // The Classic SEO Tools section is server-rendered and slotted in; the
       // RESOURCES section does not depend on it.
       toolsSection: null,

@@ -23,8 +23,8 @@ import type { Metadata } from "next";
 import { PublicNav } from "../PublicNav";
 import { PricingSection } from "../PricingSection";
 import { pricingTiers } from "@/lib/pricing-tiers";
-import { HOME_PRICING_CHROME } from "@/lib/i18n/content";
-import { SEO_TOOL_GROUPS } from "@/lib/seo-tools";
+import { HOME_PRICING_CHROME, toolCountLine } from "@/lib/i18n/content";
+import { seoToolCounts } from "@/lib/seo-tools";
 import { SUPPORTED_LOCALES, isSupportedLocale, type Locale } from "@/lib/i18n/config";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { JsonLd, SITE_URL, baseGraph, breadcrumbList, softwareApplication } from "@/lib/seo";
@@ -91,7 +91,6 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
   const { locale } = await params;
   const l = (isSupportedLocale(locale) ? locale : "en") as Locale;
   const c = COPY[baseOf(l)];
-  const liveToolCount = SEO_TOOL_GROUPS.flatMap((g) => g.tools).length;
 
   return (
     <div className={s.page}>
@@ -116,7 +115,7 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
             locale={l}
             pricing={pricingTiers(l)}
             priceChrome={HOME_PRICING_CHROME[l]}
-            liveToolCount={liveToolCount}
+            toolCountLine={toolCountLine(l, seoToolCounts())}
             tax={c.tax}
             currency={c.currency}
             // The "N tools" line points at the homepage's #tools section —

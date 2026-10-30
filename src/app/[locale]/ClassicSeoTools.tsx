@@ -10,9 +10,11 @@
 // NOTHING IS HAND-DUPLICATED:
 //   the tool list, groups and order  -> src/lib/seo-tools.ts
 //   names + one-line benefits        -> SEO_TOOLS_COPY in src/lib/i18n/dashboard.ts
-//   LIVE / COMING SOON               -> the `comingSoon` flag, which
-//                                       seo-tools.test.ts asserts against the
-//                                       actual route files
+//   LIVE / COMING SOON               -> seoToolStatus(): `comingSoon` (asserted
+//                                       against the route files by
+//                                       seo-tools.test.ts) or
+//                                       `requiresGoogleApproval`. Only
+//                                       "available" is badged LIVE.
 //   section chrome + featured copy   -> HOME_TOOLS in src/lib/i18n/content.ts
 //
 // The dashboard catalog carries three locales (en / fr / de-CH) which cover all
@@ -25,9 +27,9 @@
 
 import Link from "next/link";
 import { HomeVideo } from "./HomeVideo";
-import { SEO_TOOL_GROUPS } from "@/lib/seo-tools";
+import { SEO_TOOL_GROUPS, seoToolCounts, seoToolStatus } from "@/lib/seo-tools";
 import { SEO_TOOLS_COPY, type DashLocale } from "@/lib/i18n/dashboard";
-import { HOME_TOOLS } from "@/lib/i18n/content";
+import { HOME_TOOLS, toolCountLine } from "@/lib/i18n/content";
 import type { Locale } from "@/lib/i18n/config";
 import s from "./home2.module.css";
 
@@ -49,9 +51,6 @@ export function ClassicSeoTools({
   const t = HOME_TOOLS[locale];
   const copy = SEO_TOOLS_COPY[toDashLocale(locale)];
 
-  const all = SEO_TOOL_GROUPS.flatMap((g) => g.tools);
-  const liveCount = all.filter((tool) => !tool.comingSoon).length;
-  const soonCount = all.length - liveCount;
 
   return (
     <section id="tools" className={s.section}>
@@ -61,7 +60,7 @@ export function ClassicSeoTools({
         </p>
         <h2 className={s.h2}>{t.h2}</h2>
         <p className={s.sub}>{t.sub}</p>
-        <p className={s.toolsCount}>{t.count(liveCount, soonCount)}</p>
+        <p className={s.toolsCount}>{toolCountLine(locale, seoToolCounts())}</p>
 
         {/* Featured row — the four that are hardest to infer from a name —
             paired with the overview video. The label sits ABOVE the split
@@ -105,7 +104,7 @@ export function ClassicSeoTools({
             <div className={s.toolsGrid}>
               {group.tools.map((tool) => {
                 const item = copy.items[tool.id];
-                const soon = tool.comingSoon === true;
+                const soon = seoToolStatus(tool) !== "available";
                 return (
                   <div className={s.toolCard} key={tool.id}>
                     <div className={s.toolCardHead}>

@@ -17,15 +17,15 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { PricingSection } from "@/app/[locale]/PricingSection";
 import { pricingTiers } from "@/lib/pricing-tiers";
-import { HOME_PRICING_CHROME } from "@/lib/i18n/content";
-import { SEO_TOOL_GROUPS } from "@/lib/seo-tools";
+import { HOME_PRICING_CHROME, toolCountLine } from "@/lib/i18n/content";
+import { seoToolCounts } from "@/lib/seo-tools";
 import { PLAN_CONFIGS } from "@/lib/plan-config";
 import type { Locale } from "@/lib/i18n/config";
 
 vi.stubGlobal("fetch", vi.fn());
 afterEach(cleanup);
 
-const liveToolCount = SEO_TOOL_GROUPS.flatMap((g) => g.tools).length;
+const counts = seoToolCounts();
 
 function renderGrid(locale: Locale) {
   return render(
@@ -33,7 +33,7 @@ function renderGrid(locale: Locale) {
       locale={locale}
       pricing={pricingTiers(locale)}
       priceChrome={HOME_PRICING_CHROME[locale]}
-      liveToolCount={liveToolCount}
+      toolCountLine={toolCountLine(locale, counts)}
       tax="tax line"
       currency="currency line"
       header={null}
@@ -217,9 +217,19 @@ describe("the surrounding furniture is undisturbed", () => {
     expect(screen.getByRole("checkbox")).toBeTruthy();
   });
 
-  it("still renders the tools footer on every paid card, from the live count", () => {
+  it("still renders the tools footer on every paid card, from the registry counts", () => {
     renderGrid("en");
-    const links = screen.getAllByText(new RegExp(`${liveToolCount}\\+ SEO & AI tools included`));
+    const links = screen.getAllByText(
+      new RegExp(`${counts.available} tools available · ${counts.coming} coming`),
+    );
+    expect(links).toHaveLength(3);
+  });
+
+  it("prints the French count line on the French grid", () => {
+    renderGrid("fr");
+    const links = screen.getAllByText(
+      new RegExp(`${counts.available} outils disponibles · ${counts.coming} à venir`),
+    );
     expect(links).toHaveLength(3);
   });
 

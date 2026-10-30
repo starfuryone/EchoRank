@@ -5,8 +5,8 @@ import { ClassicSeoTools } from "./ClassicSeoTools";
 import { FAQ } from "./faq-data";
 import { plainText } from "./learn/_shared/inline";
 import { PLAN_CONFIGS, PLAN_ORDER } from "@/lib/plan-config";
-import { HOME_PRICING_CHROME, HOME_TOOLS } from "@/lib/i18n/content";
-import { SEO_TOOL_GROUPS } from "@/lib/seo-tools";
+import { HOME_PRICING_CHROME, HOME_TOOLS, toolCountLine } from "@/lib/i18n/content";
+import { seoToolCounts } from "@/lib/seo-tools";
 import {
   BRAND_TITLE,
   JsonLd,
@@ -46,10 +46,6 @@ export default async function Page(
   // FAQ copy is en/fr only, matching the rest of HomeClient's catalogue.
   const faq = FAQ[baseOf(l)];
 
-  const liveToolCount = SEO_TOOL_GROUPS.flatMap((g) => g.tools).filter(
-    (t) => !t.comingSoon,
-  ).length;
-
   return (
     <>
       <JsonLd
@@ -75,7 +71,7 @@ export default async function Page(
         // HomeClient, whose own copy table is en/fr only, does not have to
         // import the whole content catalog to render a mute button.
         playerLabels={HOME_TOOLS[l].player}
-        liveToolCount={liveToolCount}
+        toolCountLine={toolCountLine(l, seoToolCounts())}
         // Passed in as a slot rather than imported by HomeClient: the grid is a
         // server component so the whole seo-tools config (and its lucide icon
         // set) stays out of the client bundle, and the marketing copy stays

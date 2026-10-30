@@ -94,7 +94,7 @@ function renderPricing() {
       locale="en"
       pricing={TIERS}
       priceChrome={chrome}
-      liveToolCount={20}
+      toolCountLine="20 tools available · 3 coming"
       tax="Taxes may apply."
       currency="Prices in USD."
       header={<h2>Pricing</h2>}

@@ -447,22 +447,54 @@ export function navPath(href: string): string {
 }
 
 /**
- * Is this tool actually shipped?
+ * What a customer can do with the tool today — the ONE status every public
+ * count, badge and "included" claim reads.
  *
- * `comingSoon` is the flag, and it is absent on a live tool — so this is a
- * negation rather than a second list that could disagree with the first. The
- * flag is already asserted against the real route files by seo-tools.test.ts,
- * which is what makes it safe to sell from.
+ *   available        — shipped, and nothing outside our control blocks it
+ *   coming           — the page is still a FeatureScaffold (`comingSoon`)
+ *   waiting_approval — built or not, it cannot run for customers until Google
+ *                      approves it (`requiresGoogleApproval`)
+ *
+ * Derived from the two flags rather than stored, so it cannot disagree with
+ * them. A tool carrying both flags reports waiting_approval: finishing the page
+ * would not unblock it, so that is the honest reason.
+ */
+export type SeoToolStatus = "available" | "coming" | "waiting_approval";
+
+export function seoToolStatus(tool: SeoTool): SeoToolStatus {
+  if (tool.requiresGoogleApproval) return "waiting_approval";
+  if (tool.comingSoon) return "coming";
+  return "available";
+}
+
+/**
+ * "{available} tools available · {coming} coming" — the numbers behind every
+ * tool count on the site (homepage section, pricing cards on / and /pricing,
+ * the in-app hub header). `coming` folds scaffolds and Google-blocked tools
+ * together: to a buyer both mean "not usable yet".
+ */
+export function seoToolCounts(): { available: number; coming: number; total: number } {
+  const all = SEO_TOOL_GROUPS.flatMap((g) => g.tools);
+  const available = all.filter((t) => seoToolStatus(t) === "available").length;
+  return { available, coming: all.length - available, total: all.length };
+}
+
+/**
+ * Can a customer use this tool today?
+ *
+ * Reads seoToolStatus(), so a scaffold AND a Google-blocked tool both answer
+ * false — GSC Insights is a real page, but selling it on a card before Google
+ * approves the scope sells something a customer cannot connect.
  *
  * EXISTS FOR THE PRICING CARDS. A card that names a tool has to stop naming it
- * the moment that tool goes back to being a scaffold, and the only way to hold
+ * the moment that tool goes back to being unavailable, and the only way to hold
  * that is for the card to ask this question rather than carry a boolean someone
  * has to remember to flip. Unknown ids answer `false`: a bullet is a promise,
  * and the safe answer to "does this exist" is no.
  */
 export function isSeoToolLive(id: SeoToolId): boolean {
   const tool = SEO_TOOL_GROUPS.flatMap((g) => g.tools).find((t) => t.id === id);
-  return tool ? tool.comingSoon !== true : false;
+  return tool ? seoToolStatus(tool) === "available" : false;
 }
 
 /**

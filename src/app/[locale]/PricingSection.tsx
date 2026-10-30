@@ -102,7 +102,7 @@ export function PricingSection({
   locale,
   pricing,
   priceChrome,
-  liveToolCount,
+  toolCountLine,
   tax,
   currency,
   header,
@@ -116,7 +116,12 @@ export function PricingSection({
   locale: string;
   pricing: HomePricingTier[];
   priceChrome: HomePricingChrome;
-  liveToolCount: number;
+  /**
+   * "27 tools available · 7 coming", filled server-side from seoToolCounts()
+   * — the same string the homepage tools section prints, so the two pages
+   * cannot show different numbers.
+   */
+  toolCountLine: string;
   tax: string;
   currency: string;
   /** Section label / heading, supplied by the caller. */
@@ -291,7 +296,7 @@ export function PricingSection({
                   tier-gated. */}
               {amount !== null && (
                 <a className={s.ptools} href={toolsHref}>
-                  {priceChrome.toolsLine.replace("{n}", String(liveToolCount))} ·{" "}
+                  {toolCountLine} ·{" "}
                   {priceChrome.toolsAnchor}
                 </a>
               )}

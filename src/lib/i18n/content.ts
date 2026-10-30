@@ -1343,12 +1343,37 @@ export const DEMO_VIDEO: Record<Locale, DemoVideoCopy> = {
 // MACHINE-TRANSLATED and awaiting human review — see docs/agents/STATUS.md.
 // de-CH follows the house rule of "ss", never "ß".
 
+/**
+ * THE tool-count sentence — homepage tools section, both pricing grids and the
+ * in-app hub header all render this one template, filled from seoToolCounts()
+ * (src/lib/seo-tools.ts). It used to be three strings fed two different
+ * numbers: the homepage said 29 live, /pricing said "34+ included" because it
+ * counted every card, scaffolds and Google-blocked tools alike.
+ *
+ * Contains "{available}" and "{coming}". Kept as a template rather than a
+ * function so a Client Component can receive the filled string as a prop.
+ */
+export const TOOL_COUNT_LINE: Record<Locale, string> = {
+  en: "{available} tools available · {coming} coming",
+  "en-CA": "{available} tools available · {coming} coming",
+  fr: "{available} outils disponibles · {coming} à venir",
+  "fr-CA": "{available} outils disponibles · {coming} à venir",
+  "de-CH": "{available} Werkzeuge verfügbar · {coming} in Vorbereitung",
+};
+
+export function toolCountLine(
+  locale: Locale,
+  counts: { available: number; coming: number },
+): string {
+  return TOOL_COUNT_LINE[locale]
+    .replace("{available}", String(counts.available))
+    .replace("{coming}", String(counts.coming));
+}
+
 export interface HomeToolsCopy {
   label: string;
   h2: string;
   sub: string;
-  /** "18 tools live today, 4 more on the way" — counts are injected. */
-  count: (live: number, soon: number) => string;
   included: string;
   cta: string;
   badgeLive: string;
@@ -1374,8 +1399,6 @@ export const HOME_TOOLS: Record<Locale, HomeToolsCopy> = {
     videoLabel: "Video: an overview of the Classic SEO Tools",
     player: { play: "Play video", pause: "Pause video", mute: "Mute", unmute: "Unmute", caption: "Video plays muted — tap the speaker icon to unmute." },
     sub: "AI visibility is the new layer, not a replacement — the rankings, links and crawl health underneath it still decide what AI has to read. Every tool below lives in one workspace, on your plan.",
-    count: (live, soon) =>
-      `${live} tools live today · ${soon} more in build`,
     included:
       "Included with a paid plan. Monthly allowances scale with your tier, and a few of the heavier tools start at Starter or Growth.",
     cta: "Start free trial",
@@ -1389,9 +1412,12 @@ export const HOME_TOOLS: Record<Locale, HomeToolsCopy> = {
         p: "Fetches one page twice — once as an AI crawler, once as a real browser — and reports the gap. Anything only a browser can see is content AI engines never read.",
       },
       {
-        k: "Search Performance",
-        h: "Your real Search Console data",
-        p: "A live Google Search Console connection: the queries, clicks and impressions Google actually recorded, next to the AI-visibility numbers for the same site.",
+        // Was "Search Performance" (GSC). That connection waits on Google's
+        // consent-screen review, so it cannot be sold as a featured, included
+        // tool until seoToolStatus() says "available".
+        k: "Share of Voice",
+        h: "How much of each AI answer is yours",
+        p: "Built from your tracked prompts: the share of each AI engine's answers that names you, who takes the rest, and which way it is moving.",
       },
       {
         k: "API + MCP server",
@@ -1411,7 +1437,6 @@ export const HOME_TOOLS: Record<Locale, HomeToolsCopy> = {
     videoLabel: "Video: an overview of the Classic SEO Tools",
     player: { play: "Play video", pause: "Pause video", mute: "Mute", unmute: "Unmute", caption: "Video plays muted — tap the speaker icon to unmute." },
     sub: "AI visibility is the new layer, not a replacement — the rankings, links and crawl health underneath it still decide what AI has to read. Every tool below lives in one workspace, on your plan.",
-    count: (live, soon) => `${live} tools live today · ${soon} more in build`,
     included:
       "Included with a paid plan. Monthly allowances scale with your tier, and a few of the heavier tools start at Starter or Growth.",
     cta: "Start free trial",
@@ -1425,9 +1450,12 @@ export const HOME_TOOLS: Record<Locale, HomeToolsCopy> = {
         p: "Fetches one page twice — once as an AI crawler, once as a real browser — and reports the gap. Anything only a browser can see is content AI engines never read.",
       },
       {
-        k: "Search Performance",
-        h: "Your real Search Console data",
-        p: "A live Google Search Console connection: the queries, clicks and impressions Google actually recorded, next to the AI-visibility numbers for the same site.",
+        // Was "Search Performance" (GSC). That connection waits on Google's
+        // consent-screen review, so it cannot be sold as a featured, included
+        // tool until seoToolStatus() says "available".
+        k: "Share of Voice",
+        h: "How much of each AI answer is yours",
+        p: "Built from your tracked prompts: the share of each AI engine's answers that names you, who takes the rest, and which way it is moving.",
       },
       {
         k: "API + MCP server",
@@ -1447,7 +1475,6 @@ export const HOME_TOOLS: Record<Locale, HomeToolsCopy> = {
     videoLabel: "Vidéo : aperçu des outils SEO classiques",
     player: { play: "Lire la vidéo", pause: "Mettre en pause", mute: "Couper le son", unmute: "Activer le son", caption: "La vidéo démarre sans le son — touchez l'icône haut-parleur pour l'activer." },
     sub: "La visibilité IA est une nouvelle couche, pas un remplacement — les classements, les liens et la santé d'exploration en dessous décident encore de ce que l'IA aura à lire. Tous les outils ci-dessous vivent dans un seul espace de travail, inclus dans votre forfait.",
-    count: (live, soon) => `${live} outils disponibles · ${soon} en construction`,
     included:
       "Inclus avec un forfait payant. Les quotas mensuels augmentent avec votre palier, et quelques outils plus lourds démarrent à Starter ou Growth.",
     cta: "Démarrer l'essai gratuit",
@@ -1461,9 +1488,9 @@ export const HOME_TOOLS: Record<Locale, HomeToolsCopy> = {
         p: "Récupère une page deux fois — une fois comme robot d'IA, une fois comme navigateur réel — et signale l'écart. Tout ce que seul un navigateur voit est du contenu que les moteurs d'IA ne lisent jamais.",
       },
       {
-        k: "Search Performance",
-        h: "Vos vraies données Search Console",
-        p: "Une connexion Google Search Console en direct : les requêtes, clics et impressions réellement enregistrés par Google, à côté des chiffres de visibilité IA du même site.",
+        k: "Part de voix",
+        h: "Quelle part de chaque réponse IA vous revient",
+        p: "Calculée à partir de vos requêtes suivies : la part des réponses de chaque moteur d'IA qui vous nomme, qui prend le reste, et dans quel sens cela évolue.",
       },
       {
         k: "API + serveur MCP",
@@ -1483,7 +1510,6 @@ export const HOME_TOOLS: Record<Locale, HomeToolsCopy> = {
     videoLabel: "Vidéo : aperçu des outils SEO classiques",
     player: { play: "Lire la vidéo", pause: "Mettre en pause", mute: "Couper le son", unmute: "Activer le son", caption: "La vidéo démarre sans le son — touchez l'icône haut-parleur pour l'activer." },
     sub: "La visibilité IA est une nouvelle couche, pas un remplacement — les classements, les liens et la santé d'exploration en dessous décident encore de ce que l'IA aura à lire. Tous les outils ci-dessous vivent dans un seul espace de travail, inclus dans votre forfait.",
-    count: (live, soon) => `${live} outils disponibles · ${soon} en construction`,
     included:
       "Inclus avec un forfait payant. Les quotas mensuels augmentent avec votre palier, et quelques outils plus lourds démarrent à Starter ou Growth.",
     cta: "Démarrer l'essai gratuit",
@@ -1497,9 +1523,9 @@ export const HOME_TOOLS: Record<Locale, HomeToolsCopy> = {
         p: "Récupère une page deux fois — une fois comme robot d'IA, une fois comme navigateur réel — et signale l'écart. Tout ce que seul un navigateur voit est du contenu que les moteurs d'IA ne lisent jamais.",
       },
       {
-        k: "Search Performance",
-        h: "Vos vraies données Search Console",
-        p: "Une connexion Google Search Console en direct : les requêtes, clics et impressions réellement enregistrés par Google, à côté des chiffres de visibilité IA du même site.",
+        k: "Part de voix",
+        h: "Quelle part de chaque réponse IA vous revient",
+        p: "Calculée à partir de vos requêtes suivies : la part des réponses de chaque moteur d'IA qui vous nomme, qui prend le reste, et dans quel sens cela évolue.",
       },
       {
         k: "API + serveur MCP",
@@ -1519,7 +1545,6 @@ export const HOME_TOOLS: Record<Locale, HomeToolsCopy> = {
     videoLabel: "Video: Überblick über die klassischen SEO-Tools",
     player: { play: "Video abspielen", pause: "Video pausieren", mute: "Ton aus", unmute: "Ton ein", caption: "Das Video startet ohne Ton — tippen Sie auf das Lautsprechersymbol." },
     sub: "KI-Sichtbarkeit ist eine neue Schicht, kein Ersatz — Rankings, Links und Crawl-Gesundheit darunter entscheiden weiterhin, was die KI überhaupt zu lesen bekommt. Alle Werkzeuge unten liegen in einem Arbeitsbereich, in Ihrem Abo enthalten.",
-    count: (live, soon) => `${live} Werkzeuge verfügbar · ${soon} in Arbeit`,
     included:
       "In einem kostenpflichtigen Abo enthalten. Die monatlichen Kontingente wachsen mit Ihrer Stufe, und einige der schwereren Werkzeuge beginnen bei Starter oder Growth.",
     cta: "Kostenlos testen",
@@ -1533,9 +1558,9 @@ export const HOME_TOOLS: Record<Locale, HomeToolsCopy> = {
         p: "Ruft eine Seite zweimal ab — einmal als KI-Crawler, einmal als echter Browser — und meldet die Differenz. Alles, was nur ein Browser sieht, ist Inhalt, den KI-Maschinen nie lesen.",
       },
       {
-        k: "Search Performance",
-        h: "Ihre echten Search-Console-Daten",
-        p: "Eine Live-Verbindung zur Google Search Console: die Suchanfragen, Klicks und Impressionen, die Google tatsächlich erfasst hat, neben den KI-Sichtbarkeitszahlen derselben Website.",
+        k: "Stimmanteil",
+        h: "Wie viel jeder KI-Antwort Ihnen gehört",
+        p: "Berechnet aus Ihren verfolgten Prompts: der Anteil der Antworten jeder KI-Maschine, der Sie nennt, wer den Rest bekommt und wohin es sich bewegt.",
       },
       {
         k: "API + MCP-Server",
@@ -1571,8 +1596,6 @@ export interface HomePricingChrome {
   anchorLabel: string;
   /** Contains "{pct}". */
   save: string;
-  /** Contains "{n}". */
-  toolsLine: string;
   toolsAnchor: string;
   contactUs: string;
   /**
@@ -1599,7 +1622,6 @@ export const HOME_PRICING_CHROME: Record<Locale, HomePricingChrome> = {
     billedAnnually: "billed annually",
     anchorLabel: "regular monthly price",
     save: "save {pct}%",
-    toolsLine: "{n}+ SEO & AI tools included",
     toolsAnchor: "See the tools ↓",
     contactUs: "Contact us",
     creditsLine: "Need more? Prepaid credit packs \u2014 never expire \u2192",
@@ -1614,7 +1636,6 @@ export const HOME_PRICING_CHROME: Record<Locale, HomePricingChrome> = {
     billedAnnually: "billed annually",
     anchorLabel: "regular monthly price",
     save: "save {pct}%",
-    toolsLine: "{n}+ SEO & AI tools included",
     toolsAnchor: "See the tools ↓",
     contactUs: "Contact us",
     creditsLine: "Need more? Prepaid credit packs \u2014 never expire \u2192",
@@ -1629,7 +1650,6 @@ export const HOME_PRICING_CHROME: Record<Locale, HomePricingChrome> = {
     billedAnnually: "facturé annuellement",
     anchorLabel: "prix mensuel normal",
     save: "économisez {pct} %",
-    toolsLine: "{n}+ outils SEO et IA inclus",
     toolsAnchor: "Voir les outils ↓",
     contactUs: "Nous contacter",
     creditsLine: "Besoin de plus ? Packs de cr\u00e9dits pr\u00e9pay\u00e9s \u2014 sans expiration \u2192",
@@ -1644,7 +1664,6 @@ export const HOME_PRICING_CHROME: Record<Locale, HomePricingChrome> = {
     billedAnnually: "facturé annuellement",
     anchorLabel: "prix mensuel normal",
     save: "économisez {pct} %",
-    toolsLine: "{n}+ outils SEO et IA inclus",
     toolsAnchor: "Voir les outils ↓",
     contactUs: "Nous contacter",
     creditsLine: "Besoin de plus ? Packs de cr\u00e9dits pr\u00e9pay\u00e9s \u2014 sans expiration \u2192",
@@ -1659,7 +1678,6 @@ export const HOME_PRICING_CHROME: Record<Locale, HomePricingChrome> = {
     billedAnnually: "jährlich verrechnet",
     anchorLabel: "regulärer Monatspreis",
     save: "{pct}% sparen",
-    toolsLine: "{n}+ SEO- und KI-Werkzeuge inklusive",
     toolsAnchor: "Werkzeuge ansehen ↓",
     contactUs: "Kontakt aufnehmen",
     creditsLine: "Mehr n\u00f6tig? Guthabenpakete im Voraus \u2014 ohne Verfall \u2192",
