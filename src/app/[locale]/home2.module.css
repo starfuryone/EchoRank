@@ -850,3 +850,28 @@
 .homeStatValue a{color:inherit}
 .homeStatAsOf{margin:2px 0 0;font-size:11.5px;color:var(--faint)}
 @media(max-width:560px){.homeStatsRow{grid-template-columns:1fr}.sampleCaption{text-align:left}}
+
+/* ── DAY: header and gold CTAs on the theme tokens ───────────────────────
+   Night is untouched. In day the header band was a hard-coded near-black
+   (rgba(9,9,12,.82)) while everything on it followed the day tokens, which
+   left dark ink on a dark band. The "Vegas gold" override above also painted
+   both gold buttons olive in both themes. In day the band takes the card
+   surface with the card border, the ink takes the body text colour, and the
+   two gold buttons take the brand yellow with --onGold text, as the token
+   comments at the top of this file intend. Contrast pairs:
+   tests/header-theme.test.ts. */
+:global([data-theme="day"]) .nav{
+  background:var(--surface);backdrop-filter:none;
+  border-bottom:1px solid var(--line);
+  box-shadow:0 10px 30px -24px var(--er-shadow);
+}
+:global([data-theme="day"]) .brand,
+:global([data-theme="day"]) .navlinks,
+:global([data-theme="day"]) .megaTrigger,
+:global([data-theme="day"]) .toggle,
+:global([data-theme="day"]) .themeBtn,
+:global([data-theme="day"]) .burger{color:var(--text)}
+:global([data-theme="day"]) .toggleOn{color:var(--goldText)}
+:global([data-theme="day"]) .btnPrimary,
+:global([data-theme="day"]) .navcta{background:var(--goldGrad);color:var(--onGold)}
+:global([data-theme="day"]) .navcta:hover{background:var(--gold);color:var(--onGold)}
