@@ -7,6 +7,7 @@ import { isSupportedLocale, resolveTarget, type Locale } from "@/lib/i18n/config
 // needless edge-runtime cost.
 import { KNOWN_MARKETING_PATHS, KNOWN_MARKETING_PREFIXES } from "@/lib/seo/registry";
 import { firstSegment, isStaticPath, isUnroutableDottedPath } from "@/lib/static-paths";
+import { localeAppRedirect } from "@/lib/app-routes";
 
 const LOCALE_COOKIE = "echorank_locale";
 
@@ -257,6 +258,23 @@ const withSession = auth((req) => {
   // nav switcher navigates to), so subsequent "/" visits honor it.
   const seg = firstSegment(pathname);
   if (isSupportedLocale(seg)) {
+    // "/en/dashboard", "/fr/settings/account": an app route with a locale in
+    // front. The app is not under [locale], so these 404'd. 308 onto the bare
+    // path and keep the query; the auth gate then runs on the bare path as
+    // usual. The locale is still recorded as the user's choice — the
+    // dashboard reads the same cookie, so /fr/dashboard opens in French.
+    const appTarget = localeAppRedirect(pathname);
+    if (appTarget) {
+      const url = req.nextUrl.clone();
+      url.pathname = appTarget;
+      const res = NextResponse.redirect(url, 308);
+      res.cookies.set(LOCALE_COOKIE, seg, {
+        path: "/",
+        maxAge: 60 * 60 * 24 * 365,
+        sameSite: "lax",
+      });
+      return res;
+    }
     const { currency } = resolveHomepage(req);
     const requestHeaders = new Headers(req.headers);
     requestHeaders.set("x-echorank-currency", currency);
