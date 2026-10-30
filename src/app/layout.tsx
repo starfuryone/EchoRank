@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { BRAND_DESCRIPTION, BRAND_TITLE, SITE_NAME, SITE_URL } from "@/lib/seo";
-import { THEME_INIT_SCRIPT } from "@/components/marketing/theme-toggle";
+import { themeInitScript } from "@/lib/theme-schedule";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -59,7 +59,11 @@ export default function RootLayout({
             tokens, so this is inert there — but it runs on every page rather
             than only on marketing ones, because the alternative is a second
             layout and a second place to keep this correct. */}
-        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+        {/* Also applies the New York day/night default on marketing paths
+            when nothing is stored (src/lib/theme-schedule.ts). Built from a
+            plain module: a constant imported from a "use client" file is a
+            client reference here, not a string. */}
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript() }} />
       </head>
       <body className="min-h-full flex flex-col">{children}</body>
     </html>

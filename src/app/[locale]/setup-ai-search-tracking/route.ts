@@ -1,4 +1,5 @@
 import { SETUP_AI_SEARCH_TRACKING_HTML } from "./landing-html";
+import { withThemeSchedule } from "@/lib/theme-schedule";
 
 /**
  * Standalone marketing landing page served as a raw HTML document. A route
@@ -16,7 +17,7 @@ import { SETUP_AI_SEARCH_TRACKING_HTML } from "./landing-html";
 export const dynamic = "force-static";
 
 export function GET() {
-  return new Response(SETUP_AI_SEARCH_TRACKING_HTML, {
+  return new Response(withThemeSchedule(SETUP_AI_SEARCH_TRACKING_HTML), {
     headers: { "content-type": "text/html; charset=utf-8" },
   });
 }

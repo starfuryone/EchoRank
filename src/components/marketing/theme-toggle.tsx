@@ -9,8 +9,14 @@
 // colour in the marketing token set is a `[data-theme="day"]` override in
 // globals.css, so one attribute repaints the whole site and no component
 // branches on the theme. Night is the ABSENCE of the attribute, not
-// `data-theme="night"` — a visitor who never touches this, and every crawler,
-// gets exactly the bytes that shipped before the toggle existed.
+// `data-theme="night"`. Every crawler gets exactly the bytes that shipped
+// before the toggle existed.
+//
+// ── THE DEFAULT FOLLOWS NEW YORK TIME ─────────────────────────────────────
+// A visitor who has never clicked gets day from 09:00 to 16:59 New York and
+// night otherwise (src/lib/theme-schedule.ts, THEME_SCHEDULE_ENABLED). One
+// click stores a choice, and that choice wins from then on. Storage is the
+// same key with the same two values.
 //
 // ── NO SSR BRANCH, NO COOKIE ──────────────────────────────────────────────
 // The theme is read from localStorage by an inline script before paint (see
@@ -32,35 +38,55 @@
 // two tabs and switching the theme in one updates the other. That falls out of
 // using the right hook rather than being extra work.
 
-import { useCallback, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useSyncExternalStore } from "react";
+import {
+  THEME_SCHEDULE_EVENT,
+  THEME_STORAGE_KEY,
+  asStoredChoice,
+  isMarketingPath,
+  scheduledTheme,
+  themeInitScript,
+  type MarketingTheme,
+} from "@/lib/theme-schedule";
 
-export const THEME_STORAGE_KEY = "er-theme";
-
-export type MarketingTheme = "night" | "day";
+export { THEME_STORAGE_KEY, type MarketingTheme };
 
 /**
- * The FOUC guard.
- *
- * Runs BEFORE first paint, synchronously, in <head>. Anything later — a
- * useEffect, a deferred script — paints night first and then flips, which on a
- * dark-to-light change is a full-screen flash.
- *
- * Wrapped in try/catch because localStorage throws outright in a few real
- * situations (Safari private mode historically, and any browser configured to
- * block site data). A theme preference is not worth a white screen, so the
- * failure mode is "you get night", silently.
- *
- * Minified by hand rather than by a bundler: it is inlined as a string, so
- * nothing else is going to shrink it, and at this size readable beats clever.
+ * The FOUC guard, now with the New York schedule. It lives in
+ * src/lib/theme-schedule.ts so that server code (the root layout and the
+ * landing-page route handlers) can build it without importing a client
+ * module. Kept here under its old name for existing importers.
  */
-export const THEME_INIT_SCRIPT = `try{if(localStorage.getItem("${THEME_STORAGE_KEY}")==="day")document.documentElement.setAttribute("data-theme","day")}catch(e){}`;
+export const THEME_INIT_SCRIPT = themeInitScript();
 
-export function readStoredTheme(): MarketingTheme {
+/** The visitor's explicit choice, or null if they never used the toggle. */
+function readStoredChoice(): MarketingTheme | null {
   try {
-    return localStorage.getItem(THEME_STORAGE_KEY) === "day" ? "day" : "night";
+    return asStoredChoice(localStorage.getItem(THEME_STORAGE_KEY));
   } catch {
-    return "night";
+    return null;
   }
+}
+
+/**
+ * The theme on screen. The <html> attribute is the single source of truth,
+ * whoever set it: the init script (stored choice or schedule), the schedule's
+ * interval, or this toggle.
+ */
+export function readStoredTheme(): MarketingTheme {
+  return document.documentElement.getAttribute("data-theme") === "day" ? "day" : "night";
+}
+
+/** The init script sets this when the schedule is on (THEME_SCHEDULE_ENABLED). */
+function scheduleOn(): boolean {
+  return (window as { __erThemeSchedule?: boolean }).__erThemeSchedule === true;
+}
+
+/** What should be on screen right now with no click: the choice, else the default. */
+function effectiveTheme(): MarketingTheme {
+  const choice = readStoredChoice();
+  if (choice) return choice;
+  return scheduleOn() && isMarketingPath(location.pathname) ? scheduledTheme(new Date()) : "night";
 }
 
 function applyTheme(theme: MarketingTheme): void {
@@ -71,20 +97,25 @@ function applyTheme(theme: MarketingTheme): void {
     // Same reasoning as the init script: a preference that cannot be saved is
     // a preference that lasts one page. That is better than an error.
   }
+  notify();
+}
+
+function notify(): void {
   // localStorage does not fire `storage` in the tab that wrote it, so this tab
   // is told by hand. Without it the button repaints the page and not itself.
   for (const listener of themeListeners) listener();
 }
 
 /**
- * The server always renders night — it cannot know, and night is the default.
- * React swaps in the client snapshot after hydration without a mismatch.
+ * The server always renders night. It cannot know the theme, and the HTML
+ * stays theme-free (see theme-schedule.ts). React swaps in the client
+ * snapshot after hydration without a mismatch.
  */
 function serverTheme(): MarketingTheme {
   return "night";
 }
 
-/** Local listeners plus the cross-tab `storage` event. */
+/** Local listeners, the cross-tab `storage` event, and schedule flips. */
 const themeListeners = new Set<() => void>();
 
 function subscribeToTheme(onChange: () => void): () => void {
@@ -93,14 +124,16 @@ function subscribeToTheme(onChange: () => void): () => void {
     if (event.key === THEME_STORAGE_KEY) {
       // Another tab changed it. Mirror the attribute here too, or this tab
       // shows the new icon over the old colours.
-      syncAttribute(readStoredTheme());
+      syncAttribute(effectiveTheme());
       onChange();
     }
   };
   window.addEventListener("storage", onStorage);
+  window.addEventListener(THEME_SCHEDULE_EVENT, onChange);
   return () => {
     themeListeners.delete(onChange);
     window.removeEventListener("storage", onStorage);
+    window.removeEventListener(THEME_SCHEDULE_EVENT, onChange);
   };
 }
 
@@ -119,6 +152,18 @@ export function ThemeToggle({
   className?: string;
 }) {
   const theme = useSyncExternalStore(subscribeToTheme, readStoredTheme, serverTheme);
+
+  // A client-side navigation into the marketing site (from /login, say) does
+  // not re-run the <head> script. With no stored choice, apply the schedule on
+  // arrival instead of waiting up to 30 s for the interval's next tick.
+  useEffect(() => {
+    if (readStoredChoice() || !scheduleOn()) return;
+    const want = effectiveTheme();
+    if (want !== readStoredTheme()) {
+      syncAttribute(want);
+      notify();
+    }
+  }, []);
 
   const toggle = useCallback(() => {
     applyTheme(readStoredTheme() === "day" ? "night" : "day");

@@ -1,9 +1,10 @@
 import { METHODOLOGY_HTML } from "./landing-html";
+import { withThemeSchedule } from "@/lib/theme-schedule";
 
 export const dynamic = "force-static";
 
 export function GET(): Response {
-  return new Response(METHODOLOGY_HTML, {
+  return new Response(withThemeSchedule(METHODOLOGY_HTML), {
     headers: {
       "Content-Type": "text/html; charset=utf-8",
       // Same policy as /glossary: long edge cache, CF Purge Everything is the deploy for edits.

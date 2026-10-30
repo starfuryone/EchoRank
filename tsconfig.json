@@ -41,6 +41,7 @@
   ],
   "exclude": [
     "node_modules",
-    "extension"
+    "extension",
+    "tests/e2e"
   ]
 }
