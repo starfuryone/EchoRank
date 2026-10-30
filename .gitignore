@@ -60,3 +60,6 @@ public/videos/
 .claude/settings.local.json
 learn-content/
 /.next-check/
+# scripts/deploy.sh: the build being made, and the one it replaced (for --rollback)
+/.next-build/
+/.next-prev/

@@ -22,6 +22,14 @@ separate from the lowercase stack docs above. Start at `STATUS.md` for security 
 
 This box serves production from the working tree. A broken build is a broken site.
 
+**The deploy is one root command: `sudo echorank360-deploy`** — `/usr/local/sbin/echorank360-deploy`,
+installed from `scripts/deploy.sh` (reinstall line in its header; it warns when the two
+differ). It refuses a dirty tree, builds as `echorank` into `.next-build` and swaps that in
+only on success (the old build stays as `.next-prev`; `--rollback` swaps it back), health-checks
+`/en` on 4400 before and after `pm2 restart`, rolls back on a failed check, never restarts on a
+failed build, and ends with the Cloudflare reminder. The steps below are what it automates and
+the fallback when it cannot run. `tests/deploy-script.test.ts` covers its ordering.
+
 0. `umask 022` before you touch anything. Repo files are **world-readable**: several
    accounts read this tree (`deploy` edits, `echorank` builds, `root` runs pm2), and a
    file written 0640 by one of them is a build that fails for the next. This is why the
@@ -63,7 +71,7 @@ This box serves production from the working tree. A broken build is a broken sit
 
 `pm2` runs under **root** (`/root/.pm2`). Without sudo you cannot restart it — do not
 build. A build you cannot restart behind is the window in step 3, held open until a
-human notices. Hand them both commands instead.
+human notices. Commit, then hand them `sudo echorank360-deploy` instead.
 
 ## Commits
 
