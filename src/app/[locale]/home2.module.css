@@ -837,3 +837,16 @@
   color:var(--muted);transition:color .15s,border-color .15s,background .15s;
 }
 .themeBtn:hover{color:var(--text);border-color:var(--faint)}
+
+/* Illustrative-example caption under every mocked panel, and the real-numbers
+   strip (src/lib/home-stats.ts). The caption sits inside or after the panel it
+   describes; it must stay readable on both themes and never wrap the panel. */
+.sampleCaption{margin:12px 0 0;font-size:11.5px;letter-spacing:.4px;color:var(--faint);font-style:italic;text-align:right}
+.homeStats{margin-top:22px}
+.homeStatsRow{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin:10px 0 0}
+.homeStat{border:1px solid var(--line);border-radius:12px;padding:14px 16px;background:var(--surface)}
+.homeStatLabel{font-size:13px;line-height:1.45;color:var(--muted)}
+.homeStatValue{margin:6px 0 0;font-size:26px;font-weight:700;color:var(--goldText)}
+.homeStatValue a{color:inherit}
+.homeStatAsOf{margin:2px 0 0;font-size:11.5px;color:var(--faint)}
+@media(max-width:560px){.homeStatsRow{grid-template-columns:1fr}.sampleCaption{text-align:left}}

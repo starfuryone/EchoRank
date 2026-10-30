@@ -15,6 +15,7 @@ import type { HomePricingChrome } from "@/lib/i18n/content";
 // drifting away from this one — see src/lib/revenue/disclaimer.ts. The
 // "~35% / 30%" assumptions clause stays with the calculator that makes it.
 import { ROI_CALCULATOR_NOTE } from "@/lib/revenue/disclaimer";
+import { HOME_STATS, filledHomeStats } from "@/lib/home-stats";
 
 /**
  * One pricing card, built server-side from PLAN_CONFIGS. Prices and feature
@@ -24,6 +25,59 @@ import { ROI_CALCULATOR_NOTE } from "@/lib/revenue/disclaimer";
 // cards from the very same numbers. Re-exported here because page.tsx has
 // always imported the type from this module.
 export type { HomePricingTier } from "./PricingSection";
+
+/* ---------- illustrative vs real ---------- */
+
+/** Under every mocked panel: the numbers in it are invented. */
+function SampleCaption({ text }: { text: string }) {
+  return <p className={s.sampleCaption}>{text}</p>;
+}
+
+/**
+ * The homepage's real figures (src/lib/home-stats.ts). Renders only filled
+ * slots, and nothing at all when none are — the illustrative panels are the
+ * fallback, never a placeholder number.
+ */
+function HomeStatsStrip({
+  copy,
+  locale,
+}: {
+  copy: { statsLabel: string; ownerReadability: string; freeAuditsRun: string; asOf: string };
+  locale: Base;
+}) {
+  const keys = filledHomeStats();
+  if (keys.length === 0) return null;
+  return (
+    <div className={s.homeStats}>
+      <p className={s.label}>{copy.statsLabel}</p>
+      <dl className={s.homeStatsRow}>
+        {keys.map((k) => {
+          const stat = HOME_STATS[k];
+          const label =
+            k === "echopilotFindings"
+              ? HOME_STATS.echopilotFindings.label![locale]
+              : copy[k];
+          const value = k === "echopilotFindings" ? `${stat.value}%` : `${stat.value}${stat.suffix ?? ""}`;
+          return (
+            <div className={s.homeStat} key={k}>
+              <dt className={s.homeStatLabel}>{label}</dt>
+              <dd className={s.homeStatValue}>
+                {k === "echopilotFindings" ? (
+                  <a href={HOME_STATS.echopilotFindings.href}>{value}</a>
+                ) : (
+                  value
+                )}
+              </dd>
+              <dd className={s.homeStatAsOf}>
+                {copy.asOf} {stat.asOf}
+              </dd>
+            </div>
+          );
+        })}
+      </dl>
+    </div>
+  );
+}
 
 /* ---------- copy ---------- */
 
@@ -146,6 +200,15 @@ const T = {
       toolsCta: "Explore reputation tools →",
     },
     faqVideoLabel: "Video: an introduction to Echorank",
+    // Every product mockup on this page shows an invented business. The
+    // caption says so on each one; real figures live in src/lib/home-stats.ts.
+    sample: {
+      caption: "Illustrative example",
+      statsLabel: "REAL NUMBERS",
+      ownerReadability: "AI readability of echorank360.com, measured by our own free audit",
+      freeAuditsRun: "free audits run to date",
+      asOf: "as of",
+    },
     hist: {
       label: "AI RECOMMENDATION TRACKER", h2: "Recommendations, on the record",
       sub: "Last 30 days of mentions across engines — so a quiet disappearance never goes unnoticed.",
@@ -305,6 +368,13 @@ const T = {
       toolsCta: "Découvrir les outils de réputation →",
     },
     faqVideoLabel: "Vidéo : une introduction à Echorank",
+    sample: {
+      caption: "Exemple illustratif",
+      statsLabel: "CHIFFRES RÉELS",
+      ownerReadability: "Lisibilité IA d'echorank360.com, mesurée par notre propre audit gratuit",
+      freeAuditsRun: "audits gratuits réalisés à ce jour",
+      asOf: "au",
+    },
     hist: {
       label: "SUIVI DES RECOMMANDATIONS IA", h2: "Les recommandations, consignées",
       sub: "30 derniers jours de mentions par moteur — pour qu'une disparition silencieuse ne passe jamais inaperçue.",
@@ -502,9 +572,10 @@ export default function HomeClient({
               <button type="button" className={`${s.btn} ${s.btnGhost}`} onClick={() => setDemoOpen(true)}>{t.hero.cta2}</button>
             </div>
             <p className={s.label} style={{ marginTop: 22 }}>{t.hero.note}</p>
+            <HomeStatsStrip copy={t.sample} locale={baseOf(locale)} />
           </div>
 
-          <div className={s.dash} aria-label={t.hero.score}>
+          <div className={s.dash} aria-label={t.hero.score} data-sample="true">
             <div className={s.dashhead}>
               <span className={s.dashtitle}>{t.hero.dashTitle}<Tm /> — {t.hero.dashBiz}</span>
               <span className={s.chipGreen}>LIVE</span>
@@ -538,6 +609,7 @@ export default function HomeClient({
               <div className={`${s.comprow} ${s.compyou}`}><span><span className={s.comprank}>#2</span>{t.hero.you}</span><span className={s.compsc} style={{ color: "var(--er-accent-text)" }}>74</span></div>
               <div className={s.comprow}><span><span className={s.comprank}>#3</span>City Drain Co.</span><span className={s.compsc}>62</span></div>
             </div>
+            <SampleCaption text={t.sample.caption} />
           </div>
         </div>
       </header>
@@ -600,7 +672,7 @@ export default function HomeClient({
                     <Link className={s.shotlink} href={L("/ai-visibility")}>{t.shots.more}</Link>
                   )}
                 </div>
-                <div className={s.frame}>
+                <div className={s.frame} data-sample="true">
                   <div className={s.framebar}><i /><i /><i /></div>
                   <div className={s.framebody}>
                     {i === 0 && (<>
@@ -619,6 +691,7 @@ export default function HomeClient({
                       <div className={s.skrow}><div className={s.sk}><div className={s.skl}>Rivals</div><div className={s.skn}>5</div></div><div className={s.sk}><div className={s.skl}>Gaining</div><div className={s.sknR}>2</div></div><div className={s.sk}><div className={s.skl}>Rank</div><div className={s.sknGd}>#2</div></div></div>
                       <div className={s.skchart}><div className={s.sklines}>{[["81%", "#232330"], ["74%", "linear-gradient(90deg,#b88420,#f7d76f)"], ["62%", "#232330"]].map(([w, c], j) => <div className={s.skline} key={j}><i style={{ width: w as string, background: c as string }} /></div>)}</div></div>
                     </>)}
+                    <SampleCaption text={t.sample.caption} />
                   </div>
                 </div>
               </div>
@@ -636,7 +709,7 @@ export default function HomeClient({
         <div className={s.container}>
           <p className={s.label}><b>/ 05</b> — {t.tlx.label}</p>
           <h2 className={s.h2}>{t.tlx.h2}</h2>
-          <div className={s.trajLayout}><div className={s.timeline}>
+          <div className={s.trajLayout}><div className={s.timeline} data-sample="true">
             {t.tlx.items.map((it) => (
               <div className={`${s.tl} ${it.hot ? s.tlHot : ""} ${s.reveal}`} key={it.w}>
                 <span className={s.tlw}>{it.w}</span>
@@ -645,6 +718,7 @@ export default function HomeClient({
                 <div className={it.hot ? s.tlmGold : s.tlm}>{it.m}</div>
               </div>
             ))}
+            <SampleCaption text={t.sample.caption} />
           </div>
           {/* Same player as the /04 overview: click to toggle, arrow overlay,
               mute chip while playing, caption under the box. Already sized by
@@ -668,7 +742,7 @@ export default function HomeClient({
           <p className={s.label}><b>/ 06</b> — {t.sim.label}</p>
           <h2 className={s.h2}>{t.sim.h2}</h2>
           <p className={s.sub}>{t.sim.sub}</p>
-          <div className={s.sim}>
+          <div className={s.sim} data-sample="true">
             <div className={s.simq}><span className={s.simqic}>{t.sim.promptLbl}</span><span>{t.sim.prompt}</span></div>
             <div className={s.simtabs} role="tablist">
               {(["chatgpt", "perplexity", "google"] as const).map((k) => (
@@ -695,6 +769,7 @@ export default function HomeClient({
                 <ul className={s.simFix}>{sim.fix.map(([f, m], i) => <li key={i}><i>✓</i><span><b>{f}</b> — {m}</span></li>)}</ul>
               </div>
             </div>
+            <SampleCaption text={t.sample.caption} />
           </div>
         </div>
       </section>
@@ -771,7 +846,7 @@ export default function HomeClient({
           <p className={s.label}><b>/ 10</b> — {t.hist.label}<Tm /></p>
           <h2 className={s.h2}>{t.hist.h2}</h2>
           <p className={s.sub}>{t.hist.sub}</p>
-          <div className={s.hist}>
+          <div className={s.hist} data-sample="true">
             {HIST.map((h) => (
               <div className={`${s.hcard} ${s.reveal}`} key={h.n}>
                 <div className={s.hk}><span className={s.hn}>{h.n}</span><span className={h.up ? s.ht : s.htRed}>{h.t}</span></div>
@@ -782,6 +857,7 @@ export default function HomeClient({
               </div>
             ))}
           </div>
+          <SampleCaption text={t.sample.caption} />
         </div>
       </section>
 
@@ -791,7 +867,7 @@ export default function HomeClient({
           <p className={s.label}><b>/ 11</b> — {t.rmx.label}</p>
           <h2 className={s.h2}>{t.rmx.h2}</h2>
           <p className={s.sub}>{t.rmx.sub}</p>
-          <div className={s.roadmap}>
+          <div className={s.roadmap} data-sample="true">
             {t.rmx.items.map((r) => (
               <div className={`${s.rm} ${s.reveal}`} key={r.t}>
                 <span className={r.p === 1 ? s.rp1 : r.p === 2 ? s.rp2 : s.rp3}>P{r.p}</span>
@@ -801,6 +877,7 @@ export default function HomeClient({
               </div>
             ))}
           </div>
+          <SampleCaption text={t.sample.caption} />
         </div>
       </section>
 
