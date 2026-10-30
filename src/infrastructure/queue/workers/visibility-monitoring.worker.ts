@@ -266,11 +266,23 @@ async function processPromptBatch(tenantId: string): Promise<void> {
     where: { tenantId },
     select: { url: true },
   });
+  // The tenant's declared brands count too. A tenant can run more than one
+  // brand (the owner tenant tracks prompts for two products), and without
+  // these a prompt about the second brand could only ever read "not mentioned".
+  const brands = await prisma.brandProfile.findMany({
+    where: { tenantId },
+    select: { name: true, aliases: true },
+  });
   const brandTerms = new Set<string>();
   if (tenant?.name && tenant.name.length >= 3) brandTerms.add(tenant.name);
   for (const m of monitors) {
     const root = domainRoot(m.url);
     if (root) brandTerms.add(root);
+  }
+  for (const b of brands) {
+    for (const term of [b.name, ...b.aliases]) {
+      if (term.trim().length >= 3) brandTerms.add(term.trim());
+    }
   }
   if (brandTerms.size === 0) brandTerms.add(tenant?.name ?? "unknown");
 
