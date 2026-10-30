@@ -19,9 +19,18 @@ import Link from "next/link";
 import { SUPPORTED_LOCALES, isSupportedLocale } from "@/lib/i18n/config";
 import { JsonLd, SITE_URL, buildMetadata, faqPage, normalizeLocale, organization } from "@/lib/seo";
 import { AuditWidget, type AuditWidgetContent } from "@/components/AuditWidget";
+import { PLAN_CONFIGS } from "@/lib/plan-config";
 import { PublicNav } from "../PublicNav";
 import { PublicFooter } from "@/components/PublicFooter";
 import s from "../home2.module.css";
+
+// The free-audit upsell quotes the plans' prompt allowances. Read from the
+// config, never typed — the line used to promise "25 prompts" against a
+// config that grants 10 to 20.
+const PROMPTS_MIN = PLAN_CONFIGS.STARTER.aiCheckup.prompts;
+const PROMPTS_MAX = Math.max(
+  ...(["STARTER", "GROWTH", "AGENCY"] as const).map((p) => PLAN_CONFIGS[p].aiCheckup.prompts),
+);
 
 export function generateStaticParams() {
   return SUPPORTED_LOCALES.map((locale) => ({ locale }));
@@ -115,15 +124,18 @@ const COPY: Record<Base, Copy> = {
       placeholder: "Your brand or domain, e.g. acme.com",
       runIdle: "Run free audit",
       runBusy: "Auditing…",
-      noteTemplate: "Asking the AIs about “{brand}” — takes ~20 seconds.",
+      noteTemplate: "Reading “{brand}” the way AI crawlers do — takes ~20 seconds.",
       errLimit: "Free audit limit reached for today. Sign up to run unlimited audits.",
       errGeneric: "The audit could not run. Try again in a minute.",
       fine: "No account needed. One audit per day.",
-      resultAppearedIn: "appeared in",
-      resultOfPrompts: "of test prompts",
-      trustScore: "Trust Score",
+      mentionLabel: "Named in AI answers",
+      mentionValue: "{hits} of {total} AI engines",
+      mentionNotTested: "not tested by the free audit",
+      mentionGloss: "Whether ChatGPT, Claude, Gemini or Perplexity mention you when asked for a recommendation. The free audit does not ask them; a plan does, every week.",
+      readabilityLabel: "AI readability",
+      readabilityGloss: "How easily AI crawlers can read and cite your site.",
       upsell:
-        "This was 3 generic prompts, one engine pass. The full plan tracks 25 prompts of your choosing, weekly, with alerts when you drop out.",
+        `The free audit reads your site; it does not ask the AI engines anything. Plans track ${PROMPTS_MIN}–${PROMPTS_MAX} prompts of your choosing, weekly or more often, with alerts when you drop out.`,
       ctaTemplate: "Track {brand} with Echorank",
       again: "Run another audit",
       pdfIdle: "Download PDF report",
@@ -198,16 +210,19 @@ const COPY: Record<Base, Copy> = {
       placeholder: "Votre marque ou domaine, p. ex. acme.com",
       runIdle: "Lancer l’audit gratuit",
       runBusy: "Audit en cours…",
-      noteTemplate: "Interrogation des IA sur « {brand} » — environ 20 secondes.",
+      noteTemplate: "Lecture de « {brand} » comme le font les robots d’IA — environ 20 secondes.",
       errLimit:
         "Limite d’audit gratuit atteinte pour aujourd’hui. Inscrivez-vous pour des audits illimités.",
       errGeneric: "L’audit n’a pas pu s’exécuter. Réessayez dans une minute.",
       fine: "Aucun compte requis. Un audit par jour.",
-      resultAppearedIn: "est apparu dans",
-      resultOfPrompts: "des requêtes testées",
-      trustScore: "Trust Score",
+      mentionLabel: "Cité dans les réponses IA",
+      mentionValue: "{hits} moteurs IA sur {total}",
+      mentionNotTested: "non testé par l’audit gratuit",
+      mentionGloss: "Si ChatGPT, Claude, Gemini ou Perplexity vous nomment quand on leur demande une recommandation. L’audit gratuit ne les interroge pas ; un forfait le fait, chaque semaine.",
+      readabilityLabel: "Lisibilité IA",
+      readabilityGloss: "La facilité avec laquelle les robots d’IA peuvent lire et citer votre site.",
       upsell:
-        "Il s’agissait de 3 requêtes génériques, un seul passage moteur. Le forfait complet suit 25 requêtes de votre choix, chaque semaine, avec des alertes quand vous décrochez.",
+        `L’audit gratuit lit votre site ; il n’interroge aucun moteur d’IA. Les forfaits suivent de ${PROMPTS_MIN} à ${PROMPTS_MAX} requêtes de votre choix, chaque semaine ou plus souvent, avec des alertes quand vous décrochez.`,
       ctaTemplate: "Suivre {brand} avec Echorank",
       again: "Lancer un autre audit",
       pdfIdle: "Télécharger le rapport PDF",
@@ -253,7 +268,11 @@ const CSS = `
   background:var(--surface); border:1px solid var(--line);
   border-radius:var(--radius); padding:24px;
 }
-.av-audit-headline { font-size:16.5px; line-height:1.5; margin:0 0 14px; }
+.av-audit-headline { font-size:16.5px; line-height:1.5; margin:0 0 10px; }
+.av-audit-line { font-size:15.5px; line-height:1.5; margin:0 0 12px; }
+.av-audit-line-k { font-weight:650; color:var(--text); }
+.av-audit-line-na { color:var(--muted); }
+.av-audit-gloss { display:block; color:var(--muted); font-size:13.5px; line-height:1.55; margin-top:2px; }
 .av-gold { color:var(--gold); font-weight:700; }
 .av-audit-engines { list-style:none; padding:0; margin:0 0 14px; display:flex; gap:8px; flex-wrap:wrap; }
 .av-audit-engines li {

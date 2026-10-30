@@ -3,12 +3,20 @@
 
 import { useState } from 'react';
 
+// WHAT THE FREE AUDIT ACTUALLY MEASURES. /api/av/audit proxies the sidecar's
+// audit_site(): a crawler-readability check (robots, JSON-LD, llms.txt,
+// rendering...) whose `score` is points out of 100. It asks NO AI engine
+// anything — the route fills `mentionRate: 0` and `engines: []` as constants,
+// and `trustScore` falls back to `score`. So the teaser prints `score` as
+// "AI readability", and prints a mention count ONLY if real engine results
+// ever arrive; until then the line says it was not tested. It used to read
+// "appeared in 0% of tested queries" for every brand, about queries never run.
 type AuditResult = {
   brand: string;
-  mentionRate: number;        // 0–100, % of test prompts where brand appeared
+  score?: number;             // 0–100, crawler readability (sum of checks[].points)
   engines: { name: string; mentioned: boolean }[];
   sampleAnswer?: string;      // short excerpt of one AI answer
-  trustScore?: number;        // 0–100
+  trustScore?: number;        // legacy alias; equals `score` today
 };
 
 type Status = 'idle' | 'running' | 'done' | 'error';
@@ -29,9 +37,13 @@ export interface AuditWidgetContent {
   errLimit: string;
   errGeneric: string;
   fine: string;
-  resultAppearedIn: string;
-  resultOfPrompts: string;
-  trustScore: string;
+  mentionLabel: string;
+  /** Contains "{hits}" and "{total}". Used only when engines were really asked. */
+  mentionValue: string;
+  mentionNotTested: string;
+  mentionGloss: string;
+  readabilityLabel: string;
+  readabilityGloss: string;
   upsell: string;
   ctaTemplate: string;    // contains "{brand}"
   /**
@@ -59,6 +71,7 @@ export function AuditWidget({ c }: { c: AuditWidgetContent }) {
   const [auditJson, setAuditJson] = useState<Record<string, unknown> | null>(null);
   const [error, setError] = useState('');
   const [pdf, setPdf] = useState<PdfStatus>('idle');
+  const readability = result ? result.score ?? result.trustScore : undefined;
 
   async function runAudit() {
     const b = brand.trim();
@@ -154,13 +167,28 @@ export function AuditWidget({ c }: { c: AuditWidgetContent }) {
       {status === 'done' && result && (
         <div className="av-audit-result">
           <p className="av-audit-headline">
-            <strong>{result.brand}</strong> {c.resultAppearedIn}{' '}
-            <span className="av-gold">{result.mentionRate}%</span>{' '}
-            {c.resultOfPrompts}
-            {typeof result.trustScore === 'number' && (
-              <> · {c.trustScore} <span className="av-gold">{result.trustScore}</span></>
-            )}
+            <strong>{result.brand}</strong>
           </p>
+          <p className="av-audit-line">
+            <span className="av-audit-line-k">{c.mentionLabel}:</span>{' '}
+            {result.engines.length > 0 ? (
+              <span className="av-gold">
+                {c.mentionValue
+                  .replace('{hits}', String(result.engines.filter((e) => e.mentioned).length))
+                  .replace('{total}', String(result.engines.length))}
+              </span>
+            ) : (
+              <span className="av-audit-line-na">{c.mentionNotTested}</span>
+            )}
+            <span className="av-audit-gloss">{c.mentionGloss}</span>
+          </p>
+          {typeof readability === 'number' && (
+            <p className="av-audit-line">
+              <span className="av-audit-line-k">{c.readabilityLabel}:</span>{' '}
+              <span className="av-gold">{readability}/100</span>
+              <span className="av-audit-gloss">{c.readabilityGloss}</span>
+            </p>
+          )}
           <ul className="av-audit-engines">
             {result.engines.map((e) => (
               <li key={e.name} className={e.mentioned ? 'av-hit' : 'av-miss'}>
