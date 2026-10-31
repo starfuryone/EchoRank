@@ -45,6 +45,7 @@ import { startActionAgentWorker } from "./workers/action-agent.worker";
 import { startAssistantPrecomputeWorker } from "./workers/assistant-precompute.worker";
 import { startKeywordOpportunityWorker } from "./workers/keyword-opportunity.worker";
 import { startBlogAgentWorker } from "./workers/blog-agent.worker";
+import { startQueueFailureAlert } from "./failure-alert";
 
 /**
  * How often to drain domain events that are still PENDING/FAILED in the DB.
@@ -154,11 +155,16 @@ async function startWorkers() {
   }
 
   console.log(`[Workers] ${loaded.length}/${workers.length} workers running`);
+
+  // Emails support@ on any final job failure (src/lib/queue-alerts.ts). Dead
+  // repeatables used to be visible only in this process's log.
+  const stopFailureAlert = startQueueFailureAlert();
   console.log("[Workers] Press Ctrl+C to stop");
 
   const shutdown = async () => {
     console.log("\n[Workers] Shutting down gracefully...");
     clearInterval(dispatchTimer);
+    stopFailureAlert();
     try {
       const { closeAllQueues } = await import("./registry");
       await closeAllQueues();

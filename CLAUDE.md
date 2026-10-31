@@ -151,6 +151,16 @@ human notices. Commit, then hand them `sudo echorank360-deploy` instead.
 - Counters and rate limits live in **Redis**, month-keyed `INCR` with a TTL past the
   longest month. See `src/lib/site-audit/quota.ts` for the shape to copy. In-process
   `Map`s reset on every deploy and this box restarts often.
+- Custom BullMQ job ids go through `queueJobId()` (`src/infrastructure/queue/job-id.ts`).
+  BullMQ rejects a `:` at `Queue.add` (unless the id has exactly three parts), which
+  killed the citation and revenue sweeps every night until 2026-10-31. A once-a-night
+  dedupe id carries `utcDay()`: completed jobs live 24 h, so an undated id from last
+  night silently drops tonight's job. `tests/queue-job-ids.test.ts` runs every literal
+  `jobId:` in `src/` through BullMQ's own validator.
+- Final job failures in any queue email support@ (`src/lib/queue-alerts.ts`, run by
+  the workers process every 15 min). It reads each queue's events stream, so jobs added
+  with `removeOnFail: true` are covered too. A job that must alert when it fails for good
+  throws, or throws `UnrecoverableError` when a retry would "succeed" with nothing.
 - Every API route taking an `:id` is tenant-scoped — `findFirst({ where: { id, tenantId } })`,
   never `findUnique({ where: { id } })`. New routes go through `requireTenant()`
   (`src/lib/tenant.ts`) or `requirePaidPlan()`.
