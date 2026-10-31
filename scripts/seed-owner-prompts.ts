@@ -7,6 +7,7 @@
  *   set -a && . ./.env && set +a
  *   npm run prompts:seed-owner -- --tenant <tenant id or slug>          # apply + run once
  *   npm run prompts:seed-owner -- --tenant <id|slug> --prune            # delete, not pause, the old ones
+ *   npm run prompts:seed-owner -- --tenant <id|slug> --wait             # apply, run, wait, then report
  *   npm run prompts:seed-owner -- --tenant <id|slug> report             # mention rates per brand
  *   OWNER_TENANT_ID=<id> npm run prompts:seed-owner                     # same, via env
  *
@@ -59,7 +60,30 @@ async function listCandidates() {
   }
 }
 
-async function apply(tenantId: string) {
+/** Polls until every active prompt has a run at or after `since`, or the deadline. */
+async function waitForRuns(tenantId: string, since: Date, timeoutMs: number): Promise<boolean> {
+  const deadline = Date.now() + timeoutMs;
+  for (;;) {
+    const prompts = await prisma.trackedPrompt.findMany({ where: { tenantId, active: true }, select: { id: true } });
+    const ran = await prisma.promptRun.findMany({
+      where: { tenantId, promptId: { in: prompts.map((p) => p.id) }, createdAt: { gte: since } },
+      distinct: ["promptId"],
+      select: { promptId: true },
+    });
+    process.stdout.write(`\r  ${ran.length}/${prompts.length} prompts answered since ${since.toISOString()}`);
+    if (ran.length >= prompts.length) {
+      process.stdout.write("\n");
+      return true;
+    }
+    if (Date.now() > deadline) {
+      process.stdout.write("\n");
+      return false;
+    }
+    await new Promise((r) => setTimeout(r, 10_000));
+  }
+}
+
+async function apply(tenantId: string): Promise<Date | null> {
   // Both brands as BrandProfiles: the prompt runner counts a mention of any
   // of the tenant's declared brands. trackingActive stays false — this
   // declares the brand, it does not start AI Search checkups for it.
@@ -110,39 +134,57 @@ async function apply(tenantId: string) {
   // sweep picks them up on its own.
   try {
     const { addJob } = await import("@/infrastructure/queue/registry");
-    await addJob(
+    const queuedAt = new Date();
+    const job = await addJob(
       "visibility-monitoring",
       "run-prompt-batch",
       { promptTenantId: tenantId },
-      { jobId: `pt-seed-${tenantId}-${Date.now()}`, removeOnComplete: true, removeOnFail: true },
+      { jobId: `pt-seed-${tenantId}-${queuedAt.getTime()}`, removeOnComplete: true, removeOnFail: true },
     );
-    console.log("queued: run-prompt-batch (results in ~1 min; then `report`)");
+    // 25 prompts are asked one after another: ~2 min. A `report` before the
+    // batch finishes shows "not run yet" for every prompt.
+    console.log(`queued: ${job.id} (25 prompts take ~2 min; pass --wait, or run \`report\` after that)`);
+    return queuedAt;
   } catch (err) {
     console.warn("could not queue now; the sweep will run them within 15 min:", (err as Error).message);
+    return null;
   }
 }
 
 async function report(tenantId: string) {
   const prompts = await prisma.trackedPrompt.findMany({
     where: { tenantId, active: true },
-    select: { id: true, text: true, tags: true },
+    select: { id: true, text: true, tags: true, nextRunAt: true },
   });
+  // The latest run per prompt INCLUDING errored ones. Filtering errors out
+  // here used to turn a batch that errored into "not run yet".
   const runs = await prisma.promptRun.findMany({
-    where: { tenantId, promptId: { in: prompts.map((p) => p.id) }, error: null },
+    where: { tenantId, promptId: { in: prompts.map((p) => p.id) } },
     orderBy: { createdAt: "desc" },
     distinct: ["promptId"],
-    select: { promptId: true, brandMentioned: true, createdAt: true },
+    select: { promptId: true, brandMentioned: true, brandRank: true, createdAt: true, error: true, excerpt: true, model: true },
   });
   const latest = new Map(runs.map((r) => [r.promptId, r]));
+  const oneLine = (s: string | null, n: number) => (s ?? "").replace(/\s+/g, " ").trim().slice(0, n);
   for (const b of OWNER_BRANDS) {
     const mine = prompts.filter((p) => p.tags.includes(b.key));
-    const ran = mine.filter((p) => latest.has(p.id));
-    const hit = ran.filter((p) => latest.get(p.id)!.brandMentioned);
-    const pct = ran.length ? Math.round((hit.length / ran.length) * 100) : null;
-    console.log(`\n${b.name}: ${hit.length}/${ran.length} mentioned (${pct ?? "-"}%), ${mine.length - ran.length} not run yet`);
+    const answered = mine.filter((p) => latest.has(p.id) && !latest.get(p.id)!.error);
+    const errored = mine.filter((p) => latest.get(p.id)?.error);
+    const hit = answered.filter((p) => latest.get(p.id)!.brandMentioned);
+    const pct = answered.length ? Math.round((hit.length / answered.length) * 100) : null;
+    console.log(
+      `\n${b.name}: ${hit.length}/${answered.length} mentioned (${pct ?? "-"}%), ` +
+        `${errored.length} errored, ${mine.length - answered.length - errored.length} not run yet`,
+    );
     for (const p of mine) {
       const r = latest.get(p.id);
-      console.log(`  ${r ? (r.brandMentioned ? "YES" : " no") : "  …"}  ${p.text}`);
+      if (!r) {
+        console.log(`  …    ${p.text}\n         not run yet (due ${p.nextRunAt.toISOString()})`);
+        continue;
+      }
+      const mark = r.error ? "ERR" : r.brandMentioned ? `YES${r.brandRank ? `#${r.brandRank}` : ""}` : " no";
+      console.log(`  ${mark.padEnd(5)}${p.text}`);
+      console.log(`         ${r.createdAt.toISOString()} ${r.model}: ${r.error ? `error: ${oneLine(r.error, 160)}` : oneLine(r.excerpt, 110)}`);
     }
   }
 }
@@ -155,8 +197,19 @@ async function main() {
     return;
   }
   console.log(`tenant: ${tenant.name} (${tenant.id}, ${tenant.planType})`);
-  if (args.includes("report")) await report(tenant.id);
-  else await apply(tenant.id);
+  if (args.includes("report")) {
+    await report(tenant.id);
+    return;
+  }
+  const queuedAt = await apply(tenant.id);
+  if (queuedAt && flag("--wait")) {
+    const done = await waitForRuns(tenant.id, queuedAt, 10 * 60_000);
+    if (!done) {
+      console.log("timed out after 10 min; the job may still be running or have failed (pm2 logs echorank360-workers)");
+      process.exitCode = 1;
+    }
+    await report(tenant.id);
+  }
 }
 
 main()

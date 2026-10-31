@@ -1,4 +1,4 @@
-import { Worker, type Job } from "bullmq";
+import { UnrecoverableError, Worker, type Job } from "bullmq";
 import { getSubscriberConnection } from "@/infrastructure/redis/connection";
 import { REDIS_CONFIG } from "@/infrastructure/redis/config";
 import type { VisibilityMonitoringJob } from "@/infrastructure/queue/jobs/schemas";
@@ -24,6 +24,12 @@ const SWEEP_BATCH = 25;
 const SCORE_DROP_THRESHOLD = 5; // alert when score falls by more than this
 
 const DAY_MS = 24 * 60 * 60 * 1000;
+/**
+ * A prompt whose answer errored (provider outage, rate limit) is asked again
+ * after this, not tomorrow: the error cost nothing, and a day-long gap after a
+ * five-minute outage is a day of "not run yet".
+ */
+const PROMPT_ERROR_RETRY_MS = 60 * 60 * 1000;
 
 const PROMPT_SWEEP_JOB_NAME = "prompt-sweep";
 const GSC_SWEEP_JOB_NAME = "gsc-sweep";
@@ -309,6 +315,7 @@ async function processPromptBatch(tenantId: string): Promise<void> {
   const promptTextById = new Map(prompts.map((p) => [p.id, p.text]));
 
   const now = new Date();
+  const retryErrored = { nextRunAt: new Date(Date.now() + PROMPT_ERROR_RETRY_MS) };
   for (const r of data.results) {
     await prisma.promptRun.create({
       data: {
@@ -325,19 +332,42 @@ async function processPromptBatch(tenantId: string): Promise<void> {
     });
     await prisma.trackedPrompt.update({
       where: { id: r.id },
-      data: { lastRunAt: now, ...advance },
+      data: { lastRunAt: now, ...(r.error ? retryErrored : advance) },
     });
   }
 
-  await meteringService.record(tenantId, "AI_INFERENCE", data.results.length, {
-    source: "answer_tracking",
-  });
+  // The sidecar answers 200 with a per-prompt `error` and an empty answer when
+  // the provider call fails, so a batch can "complete" with nothing answered.
+  // Count it, meter only what was answered, and fail the job outright when
+  // nothing was: an all-error batch is an outage, and it must reach the
+  // failed-job alert (src/lib/queue-alerts.ts) rather than read as "0 mentioned".
+  const errored = data.results.filter((r) => r.error);
+  const answered = data.results.length - errored.length;
+  if (answered > 0) {
+    await meteringService.record(tenantId, "AI_INFERENCE", answered, {
+      source: "answer_tracking",
+    });
+  }
 
-  const mentioned = data.results.filter((r) => r.brand_mentioned).length;
-  logger.info(
-    { tenantId, prompts: data.results.length, mentioned, queue: QUEUE_NAME },
-    "Prompt batch complete",
-  );
+  const mentioned = data.results.filter((r) => !r.error && r.brand_mentioned).length;
+  const summary = {
+    tenantId,
+    prompts: data.results.length,
+    answered,
+    errored: errored.length,
+    mentioned,
+    firstError: errored[0]?.error ?? undefined,
+    queue: QUEUE_NAME,
+  };
+  if (errored.length) logger.error(summary, "Prompt batch complete with errors");
+  else logger.info(summary, "Prompt batch complete");
+  if (data.results.length > 0 && answered === 0) {
+    // Unrecoverable: a retry would find these prompts no longer due (they were
+    // moved to retry in PROMPT_ERROR_RETRY_MS) and "complete" with nothing.
+    throw new UnrecoverableError(
+      `all ${data.results.length} prompts errored; first: ${String(errored[0]?.error).slice(0, 200)}`,
+    );
+  }
 
   // ── Transition detection (lost / rank drop / regained) ────────────────
   const transitions: PromptTransition[] = [];
@@ -504,3 +534,6 @@ export async function stopVisibilityMonitoringWorker(): Promise<void> {
     logger.info({ queue: QUEUE_NAME }, "Worker stopped");
   }
 }
+
+/** Exported for tests/prompt-batch-errors.test.ts. */
+export { processPromptBatch };
