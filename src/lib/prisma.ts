@@ -32,9 +32,15 @@ function getPool(): Pool {
     connectionTimeoutMillis: 5_000,
   });
 
-  // Log pool errors to prevent unhandled rejections
-  _pool.on("error", (err) => {
-    console.error("[PrismaPool] Unexpected pool error:", err.message);
+  // An IDLE client whose connection died (Postgres restart, pg_terminate_backend:
+  // "terminating connection due to administrator command") emits here, once per
+  // client, and pg-pool has already removed it; the next query opens a fresh
+  // one. tests/prisma-pool-reconnect.test.ts proves that against a real server.
+  // The listener is what keeps it from being an unhandled 'error' event.
+  _pool.on("error", (err: Error & { code?: string }) => {
+    console.error(
+      `[PrismaPool] Idle client dropped (${err.code ?? "no code"}): ${err.message}; removed from the pool, next query reconnects`,
+    );
   });
 
   return _pool;
@@ -81,6 +87,12 @@ export async function disconnectPrisma(): Promise<void> {
       console.error("[PrismaPool] Error draining pool:", err);
     }
   }
+}
+
+/** Connections held by the pool: open, idle in it, and callers waiting for one. */
+export function poolStats(): { total: number; idle: number; waiting: number } {
+  const pool = getPool();
+  return { total: pool.totalCount, idle: pool.idleCount, waiting: pool.waitingCount };
 }
 
 // ---------------------------------------------------------------------------
