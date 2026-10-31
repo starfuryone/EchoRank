@@ -43,6 +43,7 @@ import { Worker, type Job } from "bullmq";
 import { getSubscriberConnection } from "@/infrastructure/redis/connection";
 import { REDIS_CONFIG } from "@/infrastructure/redis/config";
 import { getQueue, addJob } from "@/infrastructure/queue/registry";
+import { queueJobId, utcDay } from "@/infrastructure/queue/job-id";
 import { logger } from "@/infrastructure/observability/logger";
 import type { CitationOpportunityJob } from "@/infrastructure/queue/jobs/schemas";
 import { listOpportunityTenants, loadCandidates, sweepTenant } from "@/lib/citation-opportunities/store";
@@ -85,13 +86,13 @@ async function sweep(): Promise<number> {
       QUEUE_NAME,
       SCORE_JOB_NAME,
       { tenantId: tenant.tenantId },
-      // Keyed on the tenant alone, no date: two passes for one tenant must
-      // never run concurrently, because both would read the same monthly spend
-      // and both would decide they were under the cap. A jobId that already
-      // exists is dropped by BullMQ, which is exactly the mutual exclusion this
-      // needs — and a dropped job costs nothing, because next week's pass
-      // recomputes the same worklist from scratch.
-      { jobId: `citation-opps:${tenant.tenantId}` },
+      // Keyed on the tenant and the day: two passes for one tenant must never
+      // run concurrently, because both would read the same monthly spend and
+      // both would decide they were under the cap. A jobId that already exists
+      // is dropped by BullMQ, which is the mutual exclusion this needs. The day
+      // keeps a manual re-run 24 h later (completed jobs are kept that long)
+      // from being dropped as well.
+      { jobId: queueJobId("citation-opps", tenant.tenantId, utcDay(new Date())) },
     );
   }
 

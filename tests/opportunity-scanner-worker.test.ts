@@ -107,7 +107,7 @@ describe("fanOut", () => {
       "opportunity-scan",
       "row",
       { rowId: "r1", domain: "a.com", batchId: BATCH },
-      { jobId: "scan-row:r1" },
+      { jobId: "scan-row-r1" }, // no ":" — BullMQ rejects it (tests/queue-job-ids.test.ts)
     ]);
   });
 

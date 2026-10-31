@@ -94,8 +94,11 @@ describe("the weekly cadence", () => {
     expect(count).toBe(2);
     expect(addJob).toHaveBeenCalledTimes(2);
     // The jobId is the mutual exclusion: two concurrent passes would both read
-    // the same monthly spend and both decide they were under the cap.
-    expect(addJob.mock.calls[0]![3]).toEqual({ jobId: `citation-opps:${TENANT}` });
+    // the same monthly spend and both decide they were under the cap. No ":"
+    // (BullMQ rejects it; tests/queue-job-ids.test.ts), and the day in it.
+    expect(addJob.mock.calls[0]![3]).toEqual({
+      jobId: expect.stringMatching(new RegExp(`^citation-opps-${TENANT}-\\d{4}-\\d{2}-\\d{2}$`)),
+    });
   });
 });
 

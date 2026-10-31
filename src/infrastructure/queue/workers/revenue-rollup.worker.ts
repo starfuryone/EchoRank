@@ -44,6 +44,7 @@ import { Worker, type Job } from "bullmq";
 import { getSubscriberConnection } from "@/infrastructure/redis/connection";
 import { REDIS_CONFIG } from "@/infrastructure/redis/config";
 import { getQueue, addJob } from "@/infrastructure/queue/registry";
+import { queueJobId, utcDay } from "@/infrastructure/queue/job-id";
 import { logger } from "@/infrastructure/observability/logger";
 import type { RevenueRollupJob } from "@/infrastructure/queue/jobs/schemas";
 import {
@@ -99,7 +100,7 @@ async function sweep(now: Date): Promise<number> {
         // Keyed on the tenant-month AND the night, so a sweep that fires twice
         // (a restart, a manual tick) collapses to one rollup per tenant-month
         // per day instead of racing two writers on the same unique constraint.
-        { jobId: `revenue:${tenantId}:${month}:${monthKey(now)}-${now.getUTCDate()}` },
+        { jobId: queueJobId("revenue", tenantId, month, utcDay(now)) },
       );
     }
   }

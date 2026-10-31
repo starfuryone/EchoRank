@@ -32,6 +32,7 @@ import { Worker, type Job } from "bullmq";
 import { getSubscriberConnection } from "@/infrastructure/redis/connection";
 import { REDIS_CONFIG } from "@/infrastructure/redis/config";
 import { getQueue, addJob } from "@/infrastructure/queue/registry";
+import { queueJobId, utcDay } from "@/infrastructure/queue/job-id";
 import { logger } from "@/infrastructure/observability/logger";
 import type { CitationAggregationJob } from "@/infrastructure/queue/jobs/schemas";
 import { listCitationBrandProfiles, rollUpBrandProfile } from "@/lib/citations/store";
@@ -54,7 +55,7 @@ const SWEEP_CRON = "35 3 * * *";
 const CONCURRENCY = 2;
 
 /** Enqueue one rollup per tracked brand profile. */
-async function sweep(): Promise<number> {
+async function sweep(now: Date = new Date()): Promise<number> {
   const profiles = await listCitationBrandProfiles();
 
   for (const profile of profiles) {
@@ -62,13 +63,15 @@ async function sweep(): Promise<number> {
       QUEUE_NAME,
       ROLLUP_JOB_NAME,
       { brandProfileId: profile.brandProfileId, tenantId: profile.tenantId },
-      // Keyed on the brand profile alone, with no date: two rollups for one
-      // brand must never run concurrently, because the read-merge-write on the
-      // JSON columns is not atomic (see store.ts). A jobId that already exists
-      // is dropped by BullMQ, which is exactly the mutual exclusion this needs
-      // — and a dropped job costs nothing, since the watermark means the next
-      // night picks up whatever this one skipped.
-      { jobId: `citations:${profile.brandProfileId}` },
+      // Keyed on the brand profile and the night: two rollups for one brand
+      // must never run concurrently, because the read-merge-write on the JSON
+      // columns is not atomic (see store.ts). A jobId that already exists is
+      // dropped by BullMQ, which is the mutual exclusion within a night. The
+      // day is in the key because completed jobs are kept 24 h
+      // (REDIS_CONFIG.ttl.completedJobs) and cleaned only when another job
+      // completes, so an undated id from last night was usually still there
+      // and tonight's rollup was dropped too.
+      { jobId: queueJobId("citations", profile.brandProfileId, utcDay(now)) },
     );
   }
 

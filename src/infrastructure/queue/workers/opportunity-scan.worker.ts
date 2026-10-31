@@ -38,6 +38,7 @@ import { Worker, type Job } from "bullmq";
 import { getSubscriberConnection } from "@/infrastructure/redis/connection";
 import { REDIS_CONFIG } from "@/infrastructure/redis/config";
 import { addJob } from "@/infrastructure/queue/registry";
+import { queueJobId } from "@/infrastructure/queue/job-id";
 import { logger } from "@/infrastructure/observability/logger";
 import type { OpportunityScanJob } from "@/infrastructure/queue/jobs/schemas";
 import { sidecarPost } from "@/lib/av-sidecar";
@@ -125,7 +126,7 @@ async function fanOut(batchId: string): Promise<number> {
       // an operator replaying one) must not enqueue a second scan for a row
       // that is already queued — that would double the batch's `done` counter
       // and complete it at half its rows.
-      { jobId: `scan-row:${row.id}` },
+      { jobId: queueJobId("scan-row", row.id) },
     );
   }
 
@@ -334,7 +335,7 @@ export async function enqueueBatch(batchId: string): Promise<void> {
     QUEUE_NAME,
     FAN_OUT_JOB_NAME,
     { fanOut: true, batchId },
-    { jobId: `scan-fanout:${batchId}` },
+    { jobId: queueJobId("scan-fanout", batchId) },
   );
 }
 
