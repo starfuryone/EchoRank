@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import Stripe from "stripe";
+import type Stripe from "stripe";
 import type { Prisma } from "@/generated/prisma";
 import { prisma } from "@/lib/prisma";
+import { getStripe } from "@/lib/stripe/client";
 import { productKindFor, type ProductKind } from "@/lib/ai-monitor/watcher-entitlement";
 import { reconcileTenantMatrixAccounts } from "@/lib/matrix-accounts";
 import { rateLimit } from "@/lib/rate-limit";
@@ -13,18 +14,33 @@ import {
   scheduleTrialEndingNotice,
 } from "@/lib/billing/trial-notice";
 import { handleCreditPackCompleted, isCreditPackSession } from "@/lib/billing/credit-webhook";
-import { handleGuestSignupCompleted, isGuestSignupSession } from "@/lib/billing/guest-signup";
 
 const log = logger.child({ module: "stripe-webhook" });
 
-function getStripe(): Stripe {
-  const key = process.env.STRIPE_SECRET_KEY;
-  if (!key) throw new Error("STRIPE_SECRET_KEY is not configured");
-  return new Stripe(key);
-}
+// The client comes from src/lib/stripe/client.ts now, not from a constructor
+// here. This file used to build its own from the same env var, which meant the
+// sandbox boot guard in that module (PORT=4501 must carry a sk_test_ key) had
+// exactly one way around it — and the webhook is the last place that should be
+// the exception, since it both reads and writes billing state.
 
 // ─── Subscription status mapping ────────────────────────────────────────────
 
+/**
+ * Stripe's subscription status -> ours.
+ *
+ * IT CAN NEVER RETURN "NONE", AND THAT IS ENFORCED BY THIS SIGNATURE.
+ *
+ * NONE means "registered, never subscribed". Stripe has no such status — it
+ * has no opinion about an account that never reached checkout — so there is no
+ * input that could legitimately map to it. Spelling the four values out here
+ * rather than writing `BillingStatus` is what makes that structural: a webhook
+ * cannot demote a paying tenant to NONE, because the function every status
+ * write flows through has no way to produce the value. The only writer of NONE
+ * anywhere is the Tenant.billingStatus column default.
+ *
+ * The same reasoning is why Subscription.status is documented as never-NONE in
+ * prisma/schema.prisma: this is the function that fills it.
+ */
 function mapStripeStatus(
   status: string
 ): "ACTIVE" | "PAST_DUE" | "CANCELED" | "TRIALING" {
@@ -77,33 +93,30 @@ function mapStripePlan(
 // ─── Event handlers ─────────────────────────────────────────────────────────
 
 async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
-  // ── A THREE-WAY DISPATCH, AND BOTH EARLY RETURNS ARE LOAD-BEARING ───────
+  // ── A TWO-WAY DISPATCH, AND THE EARLY RETURN IS LOAD-BEARING ────────────
   //
-  // Everything below these two branches assumes a session for a tenant that
-  // ALREADY EXISTS, found by client_reference_id, and ends at:
+  // Everything below this branch assumes a session for a tenant that ALREADY
+  // EXISTS, found by client_reference_id, and ends at:
   //
   //     if (subscriptionId ? productKind === "PLAN" : true)
   //       updateData.billingStatus = "ACTIVE";
   //
-  // Each branch has to return before that line, for opposite reasons:
+  // credit_pack has to return before that line: it carries no subscription, so
+  // the ternary short-circuits to true and a $19 pack of lookups would set the
+  // tenant ACTIVE. It must not reach the line because it would wrongly GRANT.
+  // tests/credit-webhook.test.ts drives the real dispatcher rather than
+  // re-implementing it, so this ordering is what is under test.
   //
-  //   credit_pack   carries no subscription, so the ternary short-circuits to
-  //                 true and a $19 pack of lookups would set the tenant ACTIVE.
-  //                 It must not reach the line because it would wrongly GRANT.
-  //   guest_signup  carries no client_reference_id, so the tenant lookup above
-  //                 finds nothing and the handler warns and returns — the buyer
-  //                 pays and receives no account at all. It must not reach the
-  //                 line because it would wrongly DO NOTHING.
-  //
-  // tests/credit-webhook.test.ts and tests/guest-signup.test.ts both drive the
-  // real dispatcher rather than re-implementing it, so this ordering is what is
-  // under test.
+  // THE guest_signup ARM IS GONE, along with the flow that produced it. The
+  // funnel is register -> checkout again: every session this app creates now
+  // carries a client_reference_id, because a tenant always exists before
+  // Stripe is called. A session arriving here without one is what it was
+  // before the inversion — something started outside this app — and is handled
+  // by the warn-and-return below rather than by provisioning an account from
+  // a payment. src/lib/billing/guest-signup.ts is now unreferenced; it is
+  // removed in its own commit with the rest of that cluster.
   if (isCreditPackSession(session)) {
     await handleCreditPackCompleted(session);
-    return;
-  }
-  if (isGuestSignupSession(session)) {
-    await handleGuestSignupCompleted(session);
     return;
   }
 

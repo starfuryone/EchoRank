@@ -21,6 +21,7 @@ import s from "./home2.module.css";
 import type { HomePricingChrome } from "@/lib/i18n/content";
 import type { Locale } from "@/lib/i18n/config";
 import { ConsentGate, consentPayload } from "./ConsentGate";
+import { stashCheckoutConsent } from "@/lib/checkout-consent";
 
 export interface HomePricingTier {
   id: string;
@@ -146,24 +147,35 @@ export function PricingSection({
     if (busyTier) return;
     setBusyTier(tier);
     setErrorTier(null);
+    // Built ONCE and reused below. The same acceptance has to be the one sent
+    // to the server and the one stashed for the register hop — building a
+    // second payload there would stamp a second timestamp for a single click.
+    const consent = consentPayload();
     try {
       const res = await fetch("/api/billing/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         // The server re-validates this against CONSENT_DOCUMENTS and
         // CONSENT_VERSION; sending it is not what authorizes the checkout.
-        body: JSON.stringify({ tier, interval, locale, consent: consentPayload() }),
+        body: JSON.stringify({ tier, interval, locale, consent }),
       });
       // Not signed in: go and make an account, then come straight back into
       // checkout for the tier and interval that were clicked. Carrying the
       // interval matters — losing it silently drops an annual buyer onto a
       // monthly price.
       //
-      // THIS /register IS DELIBERATE AND STAYS. The marketing CTAs now route to
-      // /pricing instead, but a card's own checkout has already chosen a plan —
+      // THE CONSENT IS CARRIED TOO, and it is the part most easily lost. The
+      // checkout route validates consent BEFORE its auth branch, so the call
+      // the register form makes after signup is refused 400 without it — and
+      // refused silently, leaving a brand-new customer on a dashboard with no
+      // subscription. See src/lib/checkout-consent.ts.
+      //
+      // THIS /register IS DELIBERATE AND STAYS. Marketing CTAs route to
+      // /pricing, but a card's own checkout has already chosen a plan —
       // sending it to /pricing would loop the buyer back to the page they just
       // acted on, which is how a funnel dead-ends.
       if (res.status === 401) {
+        stashCheckoutConsent(consent);
         window.location.assign(
           `/register?plan=${encodeURIComponent(tier)}&interval=${encodeURIComponent(interval)}&checkout=1`,
         );

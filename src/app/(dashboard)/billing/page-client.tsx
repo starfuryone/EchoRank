@@ -50,12 +50,18 @@ const PLAN_CARD_ORDER = ["STARTER", "GROWTH", "AGENCY"] as const;
 export function BillingPageClient({
   locale,
   currentPlan,
+  subscribed,
   credits,
   creditHistory,
 }: {
   locale: DashLocale;
   /** Tenant.planType, resolved server-side in page.tsx. */
   currentPlan: PlanType | null;
+  /**
+   * Has this tenant ever subscribed? False for BillingStatus.NONE. Without it
+   * the cards read planType alone, which defaults to STARTER for everyone.
+   */
+  subscribed: boolean;
   /** Prepaid lookups held, SUM(delta) server-side. */
   credits: number;
   /** Newest first. Empty for a tenant that has never bought a pack. */
@@ -265,6 +271,7 @@ export function BillingPageClient({
         </h3>
         <PlanCards
           currentPlan={currentPlan}
+          subscribed={subscribed}
           locale={locale}
           t={t}
           plans={PLAN_CARD_ORDER}

@@ -7,10 +7,34 @@
 // NOTHING HERE WRITES planType. Upgrades go through Stripe Checkout and the
 // tenant's tier changes only when the signed webhook says so. The old
 // window.confirm() flip that POSTed a plan name is gone.
+//
+// ── THE CONSENT DIALOG IS NOT DECORATION ────────────────────────────────────
+//
+// /api/billing/checkout validates consent BEFORE its auth branch and returns
+// 400 consent_required without it, on every flow. This surface was POSTing
+// {tier, interval, locale} and nothing else, so EVERY in-app upgrade from
+// /billing was failing — silently, as the route's error is generic and the
+// card only renders "Something went wrong". A dialog is the fix rather than a
+// hardcoded payload: consent has to be an act the customer performed, and
+// asserting they accepted four documents they were never shown is worse than
+// the bug.
+//
+// THE DOCUMENT LIST IS NEVER WRITTEN IN JSX HERE. It maps CONSENT_DOCUMENTS,
+// the same array the marketing gate and the server both read, so adding a
+// document updates this dialog and the server's requirement in one edit. The
+// marketing ConsentGate is not reused directly because it is built on the
+// public site's home2.module.css chrome; what is shared is the source of
+// truth, which is the part that must not drift.
 
 import { useState } from "react";
 import { Check } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { Modal } from "@/components/ui/modal";
+import { CONSENT_DOCUMENTS, CONSENT_VERSION } from "@/lib/consent-config";
+// The same localized document names the public gate renders. Reused rather
+// than restated: a document called one thing on /pricing and another on
+// /billing is the drift CONSENT_DOCUMENTS exists to prevent, one level up.
+import { CONSENT_COPY } from "@/lib/i18n/content";
 import { cn } from "@/lib/utils";
 import { PLAN_CONFIGS, PLAN_PRICES } from "@/lib/plan-config";
 import type { PlanType } from "@/generated/prisma";
@@ -31,6 +55,13 @@ const PLAN_LABELS: Record<string, string> = {
 export interface PlanCardsProps {
   /** Tenant.planType, read server-side. Never inferred in the browser. */
   currentPlan: PlanType | null;
+  /**
+   * Has this tenant ever subscribed? False for BillingStatus.NONE, in which
+   * case NO card is "current" — planType alone defaults to STARTER for every
+   * tenant and would otherwise badge a plan nobody bought. Defaults true so
+   * existing callers keep their behaviour.
+   */
+  subscribed?: boolean;
   locale: DashLocale;
   t: BillingCopy;
   /** Which tiers to draw, in order. */
@@ -44,6 +75,7 @@ export interface PlanCardsProps {
 
 export function PlanCards({
   currentPlan,
+  subscribed = true,
   locale,
   t,
   plans,
@@ -53,6 +85,9 @@ export function PlanCards({
 }: PlanCardsProps) {
   const [busy, setBusy] = useState<PlanType | null>(null);
   const [failed, setFailed] = useState<PlanType | null>(null);
+  /** The plan whose button opened the consent dialog, resumed on accept. */
+  const [pending, setPending] = useState<PlanType | null>(null);
+  const [accepted, setAccepted] = useState(false);
 
   async function startCheckout(plan: PlanType) {
     const tier = tierKeyFor(plan);
@@ -63,7 +98,20 @@ export function PlanCards({
       const res = await fetch("/api/billing/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tier, interval, locale }),
+        body: JSON.stringify({
+          tier,
+          interval,
+          locale,
+          // Built at accept time, so the timestamp is the moment of the act.
+          // The server re-validates every field; sending it is not what
+          // authorizes the checkout.
+          consent: {
+            accepted: true,
+            timestamp: new Date().toISOString(),
+            version: CONSENT_VERSION,
+            documents: CONSENT_DOCUMENTS.map((d) => d.id),
+          },
+        }),
       });
       const data = (await res.json()) as { url?: string };
       if (!res.ok || !data.url) throw new Error("checkout failed");
@@ -76,10 +124,80 @@ export function PlanCards({
     }
   }
 
+  /** Every buy button enters here. Gate first, network second. */
+  function requestCheckout(plan: PlanType) {
+    setPending(plan);
+    setAccepted(false);
+  }
+
+  function acceptAndCheckout() {
+    const resume = pending;
+    setPending(null);
+    if (resume) void startCheckout(resume);
+  }
+
+  const consentDialog = (
+    <Modal
+      open={pending !== null}
+      onClose={() => setPending(null)}
+      title={t.consentTitle}
+      closeLabel={t.consentCancel}
+    >
+      <p className="text-sm text-gray-600">{t.consentBody}</p>
+      <label className="mt-4 flex items-start gap-2 text-sm text-gray-700">
+        <input
+          type="checkbox"
+          checked={accepted}
+          onChange={(e) => setAccepted(e.target.checked)}
+          className="mt-0.5 h-4 w-4 rounded border-gray-300"
+        />
+        <span>
+          {t.consentAgree}{" "}
+          {CONSENT_DOCUMENTS.map((doc, i) => (
+            <span key={doc.id}>
+              {i > 0 && ", "}
+              <a
+                href={`/${locale}${doc.href}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 underline hover:text-blue-700"
+              >
+                {CONSENT_COPY[locale][doc.labelKey]}
+              </a>
+            </span>
+          ))}
+          .
+        </span>
+      </label>
+      <div className="mt-5 flex items-center justify-end gap-3">
+        <button
+          type="button"
+          onClick={() => setPending(null)}
+          className="rounded-lg px-4 py-2 text-sm font-medium text-gray-600 hover:text-gray-900"
+        >
+          {t.consentCancel}
+        </button>
+        {/* Disabled until the box is ticked — here the reason is the sentence
+            directly above it, so the disabled state reads as a consequence
+            rather than a wall. */}
+        <button
+          type="button"
+          onClick={acceptAndCheckout}
+          disabled={!accepted}
+          className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+        >
+          {t.consentConfirm}
+        </button>
+      </div>
+    </Modal>
+  );
+
   return (
+    <>
+    {consentDialog}
     <div className={cn(s.scope, "grid grid-cols-1 gap-6 lg:grid-cols-4")}>
       {plans.map((plan) => {
-        const action = planCardAction(plan, currentPlan);
+        const action = planCardAction(plan, currentPlan, subscribed);
         const isCurrent = action === "current";
         const price = PLAN_PRICES[plan];
         const custom = PLAN_CONFIGS[plan]?.isCustomPricing === true;
@@ -103,7 +221,7 @@ export function PlanCards({
                   <button
                     type="button"
                     className={s.planUpgradeBtn}
-                    onClick={() => startCheckout(plan)}
+                    onClick={() => requestCheckout(plan)}
                     disabled={busy === plan}
                     aria-busy={busy === plan}
                     data-testid={`upgrade-${plan}`}
@@ -176,5 +294,6 @@ export function PlanCards({
         );
       })}
     </div>
+    </>
   );
 }

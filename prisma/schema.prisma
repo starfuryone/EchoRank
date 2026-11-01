@@ -21,11 +21,29 @@ enum PlanType {
   ENTERPRISE
 }
 
+/// Billing lifecycle. Shared by Tenant.billingStatus and Subscription.status,
+/// which is why NONE needs the two rules below spelled out.
+///
+/// NONE IS ONLY EVER WRITTEN BY US, NEVER BY A WEBHOOK. Stripe has no such
+/// status, so mapStripeStatus() in src/app/api/webhooks/route.ts cannot return
+/// it — its return type does not include NONE, deliberately. That is what makes
+/// it structurally impossible for a billing event to demote a paying tenant to
+/// NONE: the only writer is the column default on a brand-new tenant.
+///
+/// A Subscription ROW MUST NEVER BE NONE. A row exists only because the Stripe
+/// webhook wrote one, and every status it can write comes from mapStripeStatus.
+/// NONE means "no subscription was ever started", which is precisely the state
+/// in which no row exists at all — a NONE row would be a contradiction, and
+/// paid-plan.ts's `TRIALING && a row exists` rule reads the row's status
+/// expecting a Stripe-originated value.
 enum BillingStatus {
   ACTIVE
   PAST_DUE
   CANCELED
   TRIALING
+  /// Registered, never subscribed. See the enum doc above: written only by the
+  /// Tenant.billingStatus default, never by a webhook, never on a Subscription.
+  NONE
 }
 
 enum FeedbackStatus {
@@ -151,7 +169,12 @@ model Tenant {
   timezone              String        @default("America/New_York")
   planType              PlanType      @default(STARTER)
   monthlyRequestLimit   Int           @default(300)
-  billingStatus         BillingStatus @default(TRIALING)
+  /// NONE, not TRIALING. TRIALING as a default was a lie the rest of the app
+  /// had to keep working around: it made "registered but never subscribed"
+  /// indistinguishable from a real Stripe trial, which is why paid-plan.ts has
+  /// to require a Subscription row alongside it. New tenants get NONE; existing
+  /// rows were deliberately NOT backfilled (see migration 20260819110000).
+  billingStatus         BillingStatus @default(NONE)
   /// Marketing Studio brand voice, produced by category 08's heuristic and
   /// saved by the tenant. Prepended to every generation's system prompt when
   /// set. Text, not JSON: it is written straight into a prompt.
@@ -520,6 +543,9 @@ model Subscription {
   /// sold is a plan, and a default of WATCHER would strip existing paying
   /// customers of everything on the next request.
   productKind          ProductKind   @default(PLAN)
+  /// NEVER NONE. This column shares BillingStatus with Tenant.billingStatus,
+  /// but a row here exists only because the Stripe webhook wrote one, and NONE
+  /// means no subscription was ever started. See the BillingStatus enum doc.
   status               BillingStatus @default(TRIALING)
   currentPeriodStart   DateTime?
   currentPeriodEnd     DateTime?

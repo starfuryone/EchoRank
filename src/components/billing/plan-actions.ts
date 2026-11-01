@@ -44,12 +44,35 @@ export function tierKeyFor(plan: PlanType): CheckoutTier | null {
  * The current tier always wins: a tenant already on GROWTH sees the badge on
  * the GROWTH card, never a button to buy what they have. `currentPlan` comes
  * from Tenant.planType read server-side — it is never inferred client-side.
+ *
+ * ── WHY planType ALONE IS NOT ENOUGH ANYMORE ────────────────────────────────
+ *
+ * Tenant.planType defaults to STARTER for every tenant, whether or not anyone
+ * ever bought anything. Combined with the old TRIALING default that was
+ * invisible; now that a never-subscribed tenant is explicitly NONE, reading
+ * planType on its own puts a "Current plan" badge on the Starter card of a
+ * tenant that has never paid us — and, worse, REMOVES its buy button, because
+ * "current" is the one action with nothing to click. The tenant most in need of
+ * checking out would be the one card that could not.
+ *
+ * So the pair is read, status first: `subscribed` says whether the tier means
+ * anything at all. This is a display fix and not a security one — nothing in
+ * the product entitles off planType alone (see requirePaidPlan, which reads
+ * billing status) — which is also why the fix belongs here rather than in the
+ * planType default, where it would rewrite what existing tenants are on.
  */
 export function planCardAction(
   plan: PlanType,
   currentPlan: PlanType | null | undefined,
+  /**
+   * Has this tenant ever actually subscribed? False for BillingStatus.NONE.
+   * Defaults TRUE so every existing caller keeps its behaviour exactly: the
+   * cards have always assumed a tenant with a tier is on that tier, and only a
+   * caller that knows otherwise should say so.
+   */
+  subscribed: boolean = true,
 ): PlanCardAction {
-  if (currentPlan && plan === currentPlan) return "current";
+  if (subscribed && currentPlan && plan === currentPlan) return "current";
   if (plan === "ENTERPRISE") return "contact";
   return UPGRADEABLE_PLANS.includes(plan) ? "upgrade" : "none";
 }
@@ -63,8 +86,9 @@ export function planCheckoutLookupKey(
   plan: PlanType,
   currentPlan: PlanType | null | undefined,
   interval: BillingInterval,
+  subscribed: boolean = true,
 ): string | null {
-  if (planCardAction(plan, currentPlan) !== "upgrade") return null;
+  if (planCardAction(plan, currentPlan, subscribed) !== "upgrade") return null;
   const tier = tierKeyFor(plan);
   return tier ? checkoutLookupKey(tier, interval) : null;
 }

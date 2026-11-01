@@ -29,6 +29,10 @@ export const COPY: Record<
     terms: string;
     planNoticeTitle: string;
     planNoticeBody: string;
+    /** BillingStatus.NONE — signed in, never subscribed. Cannot buy at all. */
+    noPlanTitle: string;
+    noPlanBody: string;
+    noPlanCta: string;
     faqTitle: string;
     faq: { q: string; a: string }[];
   }
@@ -54,6 +58,10 @@ export const COPY: Record<
     planNoticeTitle: "Lookups are spent by an Agency-plan tool",
     planNoticeBody:
       "The Opportunity Scanner is included with Agency plans. You can buy lookups on any plan and they will not expire — but until your account is on Agency, there is nothing to spend them on.",
+    noPlanTitle: "Lookups are for subscribers",
+    noPlanBody:
+      "Your account does not have a plan yet. Choose one first — lookups are an add-on to a subscription, not a way to buy one.",
+    noPlanCta: "See plans",
     faqTitle: "Questions",
     faq: [
       {
@@ -95,6 +103,10 @@ export const COPY: Record<
     planNoticeTitle: "Les recherches se dépensent dans un outil du forfait Agency",
     planNoticeBody:
       "Le Scanner d'opportunités est inclus dans les forfaits Agency. Vous pouvez acheter des recherches avec n'importe quel forfait et elles n'expirent pas — mais tant que votre compte n'est pas en Agency, vous n'aurez nulle part où les dépenser.",
+    noPlanTitle: "Les recherches sont réservées aux abonnés",
+    noPlanBody:
+      "Votre compte n'a pas encore de forfait. Choisissez-en un d'abord — les recherches sont un complément à un abonnement, pas un moyen d'en acheter un.",
+    noPlanCta: "Voir les forfaits",
     faqTitle: "Questions",
     faq: [
       {

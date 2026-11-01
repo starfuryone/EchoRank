@@ -325,13 +325,25 @@ export function navHrefs(): string[] {
 }
 
 /**
- * Signup/dashboard switch.
+ * Is there a session? Asked ONCE for the whole nav.
  *
- * Signed OUT this points at /pricing, not /register: every marketing CTA now
- * routes through the pricing page, and this button is a marketing CTA like any
- * other. Signed IN it points at /dashboard, which is an in-app link and stays.
+ * THIS USED TO LIVE INSIDE AuthCta, AND THAT WAS THE BUG. The CTA flipped to
+ * "Dashboard" for a signed-in visitor while the "Login" link two elements to
+ * its left stayed put, because nothing else consulted the session. On most
+ * marketing pages that is merely untidy; on /[locale]/welcome it is wrong in a
+ * way customers notice, because that page is reached by someone who has just
+ * paid and is definitionally signed in — and it greeted them with "Login" and
+ * "Join Now". Hoisting the probe here is what lets every auth-dependent item in
+ * the nav answer from one source.
+ *
+ * The nav is a client component on public pages with no session prop to read,
+ * hence a fetch rather than a server check. It starts as "signed out" and
+ * corrects itself: a brief logged-out nav for a logged-in visitor is a flicker,
+ * whereas assuming signed-in would flash an authenticated-looking nav at every
+ * anonymous visitor on every marketing page. A failed probe leaves the
+ * logged-out chrome — never blocks, never hides.
  */
-function AuthCta({ labels, pricingHref }: { labels: NavCopy; pricingHref: string }) {
+function useSignedIn(): boolean {
   const [signedIn, setSignedIn] = useState(false);
 
   useEffect(() => {
@@ -342,14 +354,32 @@ function AuthCta({ labels, pricingHref }: { labels: NavCopy; pricingHref: string
         if (!cancelled && data && data.user) setSignedIn(true);
       })
       .catch(() => {
-        // A failed session probe just means the logged-out CTA stays. Never
-        // block or hide the button over it.
+        // A failed session probe just means the logged-out chrome stays.
       });
     return () => {
       cancelled = true;
     };
   }, []);
 
+  return signedIn;
+}
+
+/**
+ * Signup/dashboard switch.
+ *
+ * Signed OUT this points at /pricing, not /register: every marketing CTA now
+ * routes through the pricing page, and this button is a marketing CTA like any
+ * other. Signed IN it points at /dashboard, which is an in-app link and stays.
+ */
+function AuthCta({
+  labels,
+  pricingHref,
+  signedIn,
+}: {
+  labels: NavCopy;
+  pricingHref: string;
+  signedIn: boolean;
+}) {
   return signedIn ? (
     <Link className={s.navcta} href="/dashboard">
       {labels.dashboard}
@@ -383,6 +413,10 @@ export function PublicNav({
    * surface the server is refusing.
    */
   const showAssistant = assistantLinkVisible();
+
+  // One probe for the whole nav: the CTA below and both "Login" links read it,
+  // so they can never disagree about whether there is a session.
+  const signedIn = useSignedIn();
 
   /** Exactly one panel at a time — this is a single value, not a set. */
   // Learn and Resources are pages INSIDE the Resources group now, so a page
@@ -561,7 +595,9 @@ export function PublicNav({
           >
             {t.pricing}
           </Link>
-          <Link href="/login">{t.login}</Link>
+          {/* Hidden when signed in — see useSignedIn. Offering "Login" to a
+              visitor who is already logged in is the /welcome bug. */}
+          {!signedIn && <Link href="/login">{t.login}</Link>}
         </div>
 
         <div className={s.navright}>
@@ -574,7 +610,7 @@ export function PublicNav({
               FR
             </Link>
           </span>
-          <AuthCta labels={t} pricingHref={L("/pricing")} />
+          <AuthCta labels={t} pricingHref={L("/pricing")} signedIn={signedIn} />
           <button
             type="button"
             className={s.burger}
@@ -639,9 +675,11 @@ export function PublicNav({
             <Link href={L("/pricing")} className={s.sheetSection} onClick={() => setMobileOpen(false)}>
               {t.pricing}
             </Link>
-            <Link href="/login" className={s.sheetSection} onClick={() => setMobileOpen(false)}>
-              {t.login}
-            </Link>
+            {!signedIn && (
+              <Link href="/login" className={s.sheetSection} onClick={() => setMobileOpen(false)}>
+                {t.login}
+              </Link>
+            )}
           </div>
         </div>
       )}

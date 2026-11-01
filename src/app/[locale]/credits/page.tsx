@@ -30,6 +30,7 @@ import { SUPPORTED_LOCALES, isSupportedLocale, type Locale } from "@/lib/i18n/co
 import { buildMetadata } from "@/lib/seo/metadata";
 import { JsonLd, SITE_URL, baseGraph, breadcrumbList } from "@/lib/seo";
 import { getCurrentTenant } from "@/lib/tenant";
+import { canBuyCredits } from "@/lib/paid-plan";
 import { pricedPacks } from "@/lib/credits/pricing";
 import { CreditsPurchase } from "./CreditsPurchase";
 import { COPY, baseOf } from "./copy";
@@ -60,10 +61,14 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
   const l = (isSupportedLocale(locale) ? locale : "en") as Locale;
   const c = COPY[baseOf(l)];
 
-  // Both resolved server-side. The plan decides whether the "you will have
+  // All resolved server-side. The plan decides whether the "you will have
   // nowhere to spend these" notice shows, and a signed-out visitor gets no
   // notice at all — they have no plan to be wrong about, and the buy button
   // sends them to sign in first.
+  //
+  // THIS PAGE STAYS PUBLIC. It is a marketing page that happens to sell
+  // something, so a signed-out visitor sees the packs and the prices exactly as
+  // before, and the /login?next= round trip is untouched.
   const [packs, membership] = await Promise.all([
     pricedPacks(),
     getCurrentTenant().catch(() => null),
@@ -72,6 +77,18 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
   const signedIn = membership !== null;
   const planCanSpend = membership?.tenant.planType === "AGENCY" ||
     membership?.tenant.planType === "ENTERPRISE";
+
+  // TIER vs STATUS, and they answer different questions.
+  //
+  //   planCanSpend  "will you have anywhere to SPEND these?" — a notice.
+  //   canPurchase   "may you BUY these at all?" — a gate.
+  //
+  // A tenant that has never subscribed cannot buy: lookups are an add-on to a
+  // subscription, not a way to acquire one. Resolved through the same
+  // getBillingContext() the product gates use rather than by reading the status
+  // column here — see canBuyCredits(). A signed-OUT visitor is not "unentitled",
+  // they are unknown, so they keep the sign-in path and the live buttons.
+  const canPurchase = membership ? await canBuyCredits(membership.tenantId) : true;
 
   return (
     <div className={s.page}>
@@ -116,7 +133,12 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
         locale={l}
         packs={packs}
         signedIn={signedIn}
-        showPlanNotice={signedIn && !planCanSpend}
+        canPurchase={canPurchase}
+        // Suppressed when they cannot buy at all: telling someone what they
+        // will not be able to spend a thing on, when they cannot buy the thing,
+        // is two problems reported in the wrong order.
+        showPlanNotice={signedIn && canPurchase && !planCanSpend}
+        pricingHref={`/${l}/pricing`}
         copy={{
           perLookup: c.perLookup,
           lookups: c.lookups,
@@ -126,6 +148,9 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
           terms: c.terms,
           planNoticeTitle: c.planNoticeTitle,
           planNoticeBody: c.planNoticeBody,
+          noPlanTitle: c.noPlanTitle,
+          noPlanBody: c.noPlanBody,
+          noPlanCta: c.noPlanCta,
         }}
       />
 

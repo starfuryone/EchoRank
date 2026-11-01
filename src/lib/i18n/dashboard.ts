@@ -536,6 +536,10 @@ const billingEn = {
   statusLabels: {
     ACTIVE: "Active",
     TRIALING: "Trial",
+    // "Registered, never subscribed" — NOT a trial and not a lapsed plan.
+    // Naming it plainly is the point: TRIALING as a default was what made this
+    // state read as a trial nobody had started.
+    NONE: "No plan",
     PAST_DUE: "Past due",
     CANCELED: "Canceled",
     CANCELLED: "Canceled",
@@ -563,6 +567,19 @@ const billingEn = {
   confirmChange: (isUpgrade: boolean, plan: string, price: number) =>
     `Are you sure you want to ${isUpgrade ? "upgrade" : "downgrade"} to the ${plan} plan ($${price}/mo)?`,
   changeFailed: "Failed to change plan. Please try again.",
+
+  // ── Checkout consent ──
+  // /api/billing/checkout refuses any request without a valid consent payload,
+  // on EVERY flow, so this surface needs a real gate rather than a silent
+  // payload. The document list itself is never written here — the dialog maps
+  // CONSENT_DOCUMENTS, exactly as the marketing gate does, so adding a document
+  // changes both places at once.
+  consentTitle: "Before you continue",
+  consentBody:
+    "Starting a subscription means agreeing to the documents below. Links open in a new tab.",
+  consentAgree: "I agree to the",
+  consentConfirm: "Agree and continue to checkout",
+  consentCancel: "Cancel",
 
   // ── Prospect lookups ──
   // COUNTS, NEVER DOLLARS, like every other credits surface. What a pack cost
@@ -600,6 +617,7 @@ export const BILLING_COPY: Record<DashLocale, BillingCopy> = {
     statusLabels: {
       ACTIVE: "Actif",
       TRIALING: "Essai",
+      NONE: "Aucun forfait",
       PAST_DUE: "En souffrance",
       CANCELED: "Annulé",
       CANCELLED: "Annulé",
@@ -631,6 +649,12 @@ export const BILLING_COPY: Record<DashLocale, BillingCopy> = {
         ? `Voulez-vous vraiment passer au forfait ${plan} (${price} $/mois)?`
         : `Voulez-vous vraiment rétrograder vers le forfait ${plan} (${price} $/mois)?`,
     changeFailed: "Échec du changement de forfait. Veuillez réessayer.",
+    consentTitle: "Avant de continuer",
+    consentBody:
+      "Souscrire un abonnement suppose d'accepter les documents ci-dessous. Les liens s'ouvrent dans un nouvel onglet.",
+    consentAgree: "J'accepte les",
+    consentConfirm: "Accepter et continuer vers le paiement",
+    consentCancel: "Annuler",
     creditsTitle: "Recherches de prospects",
     creditsSubtitle: "Crédits prépayés pour le Scanner d'opportunités. Ils n'expirent jamais.",
     creditsBuy: "Acheter des recherches",
@@ -658,6 +682,7 @@ export const BILLING_COPY: Record<DashLocale, BillingCopy> = {
     statusLabels: {
       ACTIVE: "Aktiv",
       TRIALING: "Testphase",
+      NONE: "Kein Abo",
       PAST_DUE: "Überfällig",
       CANCELED: "Gekündigt",
       CANCELLED: "Gekündigt",
@@ -690,6 +715,12 @@ export const BILLING_COPY: Record<DashLocale, BillingCopy> = {
         : `Möchten Sie wirklich ein Downgrade auf den ${plan}-Plan durchführen ($${price}/Monat)?`,
     changeFailed:
       "Planwechsel fehlgeschlagen. Bitte versuchen Sie es erneut.",
+    consentTitle: "Bevor Sie fortfahren",
+    consentBody:
+      "Ein Abonnement zu starten bedeutet, den untenstehenden Dokumenten zuzustimmen. Links öffnen in einem neuen Tab.",
+    consentAgree: "Ich stimme den",
+    consentConfirm: "Zustimmen und zur Kasse",
+    consentCancel: "Abbrechen",
     creditsTitle: "Prospect-Abfragen",
     creditsSubtitle: "Vorausbezahltes Guthaben für den Opportunity Scanner. Es verfällt nie.",
     creditsBuy: "Abfragen kaufen",
