@@ -67,6 +67,16 @@
 .list li { display: flex; justify-content: space-between; gap: 12px; font-size: 14px; border-bottom: 1px solid var(--lineSoft, var(--line)); padding: 6px 0; }
 .list li span:last-child { color: var(--muted); white-space: nowrap; }
 
+.todo { margin: 10px 0 0; padding-left: 20px; display: grid; gap: 10px; }
+.todo li { font-size: 14px; }
+.todoDomain { font-weight: 650; color: var(--text); }
+.todoAction { display: block; color: var(--gold); font-weight: 650; font-size: 13.5px; margin-top: 2px; }
+
+.shows { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; margin: 24px 0 0; padding: 0; list-style: none; }
+.shows li { border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
+.shows b { display: block; color: var(--text); margin-bottom: 4px; }
+.shows span { color: var(--muted); font-size: 14px; line-height: 1.55; }
+
 .share { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 10px; }
 .share input { flex: 1; min-width: 220px; height: 40px; padding: 0 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--text); font: inherit; font-size: 13px; }
 

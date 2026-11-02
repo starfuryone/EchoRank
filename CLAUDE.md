@@ -170,7 +170,9 @@ human notices. Commit, then hand them `sudo echorank360-deploy` instead.
   checks that domain, so it returns the preview only; the full report needs the share
   token an email unlock mints. Jobs ride `visibility-monitoring` (`snapshot`,
   `snapshot-email`), so the support@ alert covers them. The PDF is the sidecar's
-  `POST /snapshot-report`.
+  `POST /snapshot-report`. Three small analysis calls ride the same cap: one competitor
+  extraction per engine and one source classification for "What to do"
+  (`src/lib/snapshot/sources.ts`); a failed classification is type "unknown", no action.
 - Every API route taking an `:id` is tenant-scoped — `findFirst({ where: { id, tenantId } })`,
   never `findUnique({ where: { id } })`. New routes go through `requireTenant()`
   (`src/lib/tenant.ts`) or `requirePaidPlan()`.

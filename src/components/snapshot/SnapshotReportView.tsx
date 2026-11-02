@@ -60,6 +60,9 @@ export function SnapshotPreviewView({ p, c, cached }: { p: SnapshotPreview; c: S
       ) : (
         <p className={st.muted}>{c.result.competitorsNone}</p>
       )}
+      <p className={st.muted} style={{ marginTop: 14 }}>
+        {c.result.sourcesCount.replace("{n}", String(p.sourceCount))}
+      </p>
       {cached && <p className={st.fine}>{c.result.cached}</p>}
       {p.capped && <p className={st.fine}>{c.result.capped}</p>}
     </>
@@ -142,6 +145,17 @@ export function SnapshotFullView({ r, c }: { r: SnapshotReport; c: SnapshotCopy 
                     <td key={e}>
                       <span className={cell.mentioned ? st.yes : st.no}>{cell.mentioned ? c.full.yes : c.full.no}</span>
                       {cell.cited && <span className={st.cited}>{c.full.cited}</span>}
+                      {cell.competitors.length > 0 && (
+                        <span className={st.cellMeta}>
+                          {c.full.competitorsIn}: {cell.competitors.join(", ")}
+                        </span>
+                      )}
+                      {cell.excerpt && (
+                        <details className={st.excerpt}>
+                          <summary>{c.full.showExcerpt}</summary>
+                          <p>{cell.excerpt}</p>
+                        </details>
+                      )}
                     </td>
                   );
                 })}
@@ -151,20 +165,54 @@ export function SnapshotFullView({ r, c }: { r: SnapshotReport; c: SnapshotCopy 
         </table>
       </div>
 
-      <h3 className={st.h3}>{c.full.sourcesTitle}</h3>
+      <h3 className={st.h3}>{c.full.sourcesDecided}</h3>
       {r.sources.length ? (
-        <ul className={st.list}>
-          {r.sources.map((s) => (
-            <li key={s.domain}>
-              <span>{s.domain}</span>
-              <span>
-                {s.timesCited} {c.full.timesCited}
-              </span>
-            </li>
-          ))}
-        </ul>
+        <div className={st.tableWrap}>
+          <table className={st.table}>
+            <thead>
+              <tr>
+                <th scope="col">{c.full.colSource}</th>
+                <th scope="col">{c.full.colTimes}</th>
+                <th scope="col">{c.full.colSupported}</th>
+                <th scope="col">{c.full.colYou}</th>
+              </tr>
+            </thead>
+            <tbody>
+              {r.sources.map((s) => (
+                <tr key={s.domain}>
+                  <td>{s.domain}</td>
+                  <td>{s.timesCited}</td>
+                  <td>{s.competitors.map((x) => `${x.name} ×${x.count}`).join(", ") || "—"}</td>
+                  <td className={s.userCited ? st.yes : st.no}>{s.userCited ? c.full.yesShort : c.full.noShort}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       ) : (
         <p className={st.muted}>{c.full.sourcesNone}</p>
+      )}
+
+      <h3 className={st.h3}>{c.todo.title}</h3>
+      {r.actions.length ? (
+        <>
+          <p className={st.muted}>{c.todo.lead}</p>
+          <ol className={st.todo}>
+            {r.actions.map((a) => (
+              <li key={a.domain}>
+                <span className={st.todoDomain}>{a.domain}</span>
+                <span className={st.cellMeta}>
+                  {c.todo.types[a.type]} · {a.timesCited} {c.full.timesCited}
+                </span>
+                <span className={a.action ? st.todoAction : st.cellMeta}>
+                  {a.action ? c.todo.actions[a.action] : c.todo.noAction}
+                </span>
+              </li>
+            ))}
+          </ol>
+        </>
+      ) : (
+        <p className={st.muted}>{c.todo.none}</p>
       )}
       {r.capped && <p className={st.fine}>{c.result.capped}</p>}
     </>

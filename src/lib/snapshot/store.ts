@@ -113,12 +113,16 @@ export async function saveAnswer(id: string, row: AnswerRow): Promise<void> {
   });
 }
 
-export async function saveCompetitors(id: string, engine: SnapshotEngine, byPrompt: Map<number, string[]>): Promise<void> {
+export async function saveAnalysis(
+  id: string,
+  engine: SnapshotEngine,
+  byPrompt: Map<number, { competitors: string[]; excerpt: string }>,
+): Promise<void> {
   await prisma.$transaction(
-    [...byPrompt.entries()].map(([promptIndex, competitors]) =>
+    [...byPrompt.entries()].map(([promptIndex, { competitors, excerpt }]) =>
       prisma.visibilitySnapshotAnswer.update({
         where: { snapshotId_promptIndex_engine: { snapshotId: id, promptIndex, engine } },
-        data: { competitors },
+        data: { competitors, excerpt },
       }),
     ),
   );

@@ -68,7 +68,25 @@ export interface SnapshotCopy {
     copied: string;
     expires: string;
     kinds: Record<"best" | "alternatives" | "howto" | "direct", string>;
+    competitorsIn: string;
+    showExcerpt: string;
+    sourcesDecided: string;
+    colSource: string;
+    colTimes: string;
+    colSupported: string;
+    colYou: string;
+    yesShort: string;
+    noShort: string;
   };
+  todo: {
+    title: string;
+    lead: string;
+    none: string;
+    types: Record<"directory" | "publisher" | "competitor" | "forum" | "unknown", string>;
+    actions: Record<"get_listed" | "claim_profile" | "pitch_comparison" | "join_discussion", string>;
+    noAction: string;
+  };
+  shows: { heading: string; lead: string; items: { h: string; p: string }[]; footnote: string };
   upsell: { heading: string; body: string; cta: string; planLine: string };
   /** Pricing page banner when arriving from the check's upsell. */
   pricingFit: string;
@@ -155,6 +173,45 @@ export const SNAPSHOT_COPY: Record<SnapshotBase, SnapshotCopy> = {
       copied: "Copied",
       expires: "Works until {date}.",
       kinds: { best: "Best / top", alternatives: "Alternatives", howto: "How to", direct: "About you" },
+      competitorsIn: "Named",
+      showExcerpt: "Answer excerpt",
+      sourcesDecided: "Sources that decided the answers",
+      colSource: "Source",
+      colTimes: "Times cited",
+      colSupported: "Competitors it supported",
+      colYou: "You cited there",
+      yesShort: "yes",
+      noShort: "no",
+    },
+    todo: {
+      title: "What to do",
+      lead: "The sources the answers leaned on where you don't appear, ranked by how often they were cited.",
+      none: "You appear wherever the answers cited a source. Nothing to add here.",
+      types: {
+        directory: "Directory / review site",
+        publisher: "Publisher",
+        competitor: "Competitor-owned",
+        forum: "Forum",
+        unknown: "Unclassified",
+      },
+      actions: {
+        get_listed: "Get listed",
+        claim_profile: "Claim your profile",
+        pitch_comparison: "Pitch a comparison",
+        join_discussion: "Join the discussion",
+      },
+      noAction: "No action",
+    },
+    shows: {
+      heading: "What the check shows",
+      lead: "The moment that matters: a customer asks an AI assistant a category question. Are you in the answer?",
+      items: [
+        { h: "Are you mentioned?", p: "Mention rate per engine across 10 real questions." },
+        { h: "Who's named instead?", p: "The competitors that fill the answers you're absent from." },
+        { h: "Where do the answers come from?", p: "The sources AI leaned on, and which competitor each one helped." },
+        { h: "What to do about it.", p: "The sources you aren't on yet, ranked by how often they decided an answer." },
+      ],
+      footnote: "Every prompt comes with the answer excerpt, so you can see it for yourself.",
     },
     upsell: {
       heading: "The shortlist is made before anyone visits your site.",
@@ -250,6 +307,45 @@ export const SNAPSHOT_COPY: Record<SnapshotBase, SnapshotCopy> = {
       copied: "Copié",
       expires: "Valable jusqu'au {date}.",
       kinds: { best: "Meilleurs", alternatives: "Alternatives", howto: "Comment faire", direct: "Sur vous" },
+      competitorsIn: "Cités",
+      showExcerpt: "Extrait de la réponse",
+      sourcesDecided: "Les sources qui ont fait les réponses",
+      colSource: "Source",
+      colTimes: "Citée",
+      colSupported: "Concurrents qu'elle a servis",
+      colYou: "Vous y êtes cité",
+      yesShort: "oui",
+      noShort: "non",
+    },
+    todo: {
+      title: "Que faire",
+      lead: "Les sources sur lesquelles les réponses s'appuient et où vous n'apparaissez pas, classées par nombre de citations.",
+      none: "Vous apparaissez partout où les réponses citent une source. Rien à ajouter ici.",
+      types: {
+        directory: "Annuaire / site d'avis",
+        publisher: "Média",
+        competitor: "Site d'un concurrent",
+        forum: "Forum",
+        unknown: "Non classé",
+      },
+      actions: {
+        get_listed: "Vous y faire référencer",
+        claim_profile: "Revendiquer votre fiche",
+        pitch_comparison: "Proposer un comparatif",
+        join_discussion: "Prendre part à la discussion",
+      },
+      noAction: "Aucune action",
+    },
+    shows: {
+      heading: "Ce que montre la vérification",
+      lead: "Le moment décisif : un client pose une question sur votre catégorie à un assistant IA. Êtes-vous dans la réponse ?",
+      items: [
+        { h: "Êtes-vous mentionné ?", p: "Le taux de mention par moteur, sur 10 vraies questions." },
+        { h: "Qui est cité à votre place ?", p: "Les concurrents qui occupent les réponses dont vous êtes absent." },
+        { h: "D'où viennent les réponses ?", p: "Les sources sur lesquelles l'IA s'est appuyée, et le concurrent que chacune a servi." },
+        { h: "Que faire ?", p: "Les sources où vous n'êtes pas encore, classées selon le nombre de réponses qu'elles ont emportées." },
+      ],
+      footnote: "Chaque question est accompagnée de l'extrait de la réponse : vous pouvez vérifier par vous-même.",
     },
     upsell: {
       heading: "La liste restreinte se fait avant qu'on visite votre site.",

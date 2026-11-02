@@ -11,7 +11,8 @@
 // reservation would cross the cap is not made. Two ceilings bind:
 //   - SNAPSHOT_RUN_CAP_USD (default 0.35) over every call in the run;
 //   - MAX_ANSWER_CALLS (20) answered search calls per run, plus
-//     MAX_ANALYSIS_CALLS (one competitor extraction per engine). A retry
+//     MAX_ANALYSIS_CALLS (one competitor extraction per engine, one source
+//     classification). A retry
 //     re-asks only what errored; those calls stay under the dollar cap.
 //
 // RESUMABLE. Answers already stored for this run are not asked again, and
@@ -19,12 +20,22 @@
 // instead of paying for it twice.
 
 import type { Answer, EngineConfig, Usage } from "./engines";
-import { domainsOf, isCited, isMentioned, openingExcerpt } from "./match";
-import { buildReport, canonicalCompetitors, type StoredAnswer } from "./report";
+import { domainsOf, excerptAround, isCited, isMentioned } from "./match";
+import { buildReport, canonicalCompetitors, countCompetitors, type StoredAnswer } from "./report";
+import {
+  CLASSIFY_INSTRUCTIONS,
+  CLASSIFY_SCHEMA,
+  absentSources,
+  actionRows,
+  classifyInput,
+  parseClassification,
+  sourceMap,
+  type ClassifiedKind,
+} from "./sources";
 import type { SnapshotEngine, SnapshotPrompt, SnapshotReport } from "./types";
 
 export const MAX_ANSWER_CALLS = 20;
-export const MAX_ANALYSIS_CALLS = 2;
+export const MAX_ANALYSIS_CALLS = 3;
 export const DEFAULT_RUN_CAP_USD = 0.35;
 export const CONCURRENCY = 5;
 
@@ -90,7 +101,12 @@ export interface RunDeps {
   /** Answers already stored for this run (a retry resumes from them). */
   loadAnswers: (id: string) => Promise<AnswerRow[]>;
   saveAnswer: (id: string, row: AnswerRow) => Promise<void>;
-  saveCompetitors: (id: string, engine: SnapshotEngine, byPrompt: Map<number, string[]>) => Promise<void>;
+  /** Competitors and the mention-centred excerpt, per prompt, once extraction has run. */
+  saveAnalysis: (
+    id: string,
+    engine: SnapshotEngine,
+    byPrompt: Map<number, { competitors: string[]; excerpt: string }>,
+  ) => Promise<void>;
   now?: () => Date;
 }
 
@@ -192,7 +208,7 @@ export async function runSnapshot(spec: SnapshotSpec, deps: RunDeps): Promise<Ru
           cited: isCited(citedDomains, spec.domain),
           competitors: [],
           citedDomains,
-          excerpt: openingExcerpt(a.text),
+          excerpt: excerptAround(a.text, spec.brand, spec.domain, []),
           answer: a.text,
           error: a.text.trim() ? null : "empty answer",
           costUsd: cost,
@@ -220,15 +236,42 @@ export async function runSnapshot(spec: SnapshotSpec, deps: RunDeps): Promise<Ru
       const { value, usage } = await deps.askJson(cfg, EXTRACT_INSTRUCTIONS, input, EXTRACT_SCHEMA);
       budget.settle(est, deps.cost(cfg.engine, cfg.model, usage, false));
       const parsed = parseExtraction(value);
-      const byPrompt = new Map<number, string[]>();
+      const byPrompt = new Map<number, { competitors: string[]; excerpt: string }>();
       for (const r of mine) {
         r.competitors = canonicalCompetitors(parsed.get(r.promptIndex) ?? [], spec.brand, spec.domain);
-        byPrompt.set(r.promptIndex, r.competitors);
+        // Re-centred now that the competitors are known: the first brand OR
+        // competitor mention, whichever comes first.
+        r.excerpt = excerptAround(r.answer, spec.brand, spec.domain, r.competitors);
+        byPrompt.set(r.promptIndex, { competitors: r.competitors, excerpt: r.excerpt });
       }
-      await deps.saveCompetitors(spec.id, cfg.engine, byPrompt);
+      await deps.saveAnalysis(spec.id, cfg.engine, byPrompt);
     } catch {
       // No competitors for this engine beats no report: the rates stand alone.
       budget.settle(est, est);
+    }
+  }
+
+  // "What to do": one classification call over the top absent sources.
+  const competitorNames = countCompetitors(rows).map((c) => c.name);
+  const absent = absentSources(sourceMap(rows, spec.domain), spec.domain);
+  let classified: Map<string, ClassifiedKind> | null = null;
+  const classifier = deps.engines[0];
+  if (absent.length && classifier) {
+    const est = deps.estimate(classifier.engine, classifier.model, false);
+    if (budget.reserve("analysis", est)) {
+      try {
+        const { value, usage } = await deps.askJson(
+          classifier,
+          CLASSIFY_INSTRUCTIONS,
+          classifyInput(absent, competitorNames),
+          CLASSIFY_SCHEMA,
+        );
+        budget.settle(est, deps.cost(classifier.engine, classifier.model, usage, false));
+        classified = parseClassification(value);
+      } catch {
+        // Every row falls back to "unknown", no action (sources.ts actionRows).
+        budget.settle(est, est);
+      }
     }
   }
 
@@ -238,6 +281,7 @@ export async function runSnapshot(spec: SnapshotSpec, deps: RunDeps): Promise<Ru
       ...spec,
       engines: deps.engines.map((e) => e.engine),
       answers: rows,
+      actions: actionRows(absent, competitorNames, classified),
       capped: budget.capped,
       now: deps.now?.() ?? new Date(),
     }),

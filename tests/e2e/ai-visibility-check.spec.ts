@@ -26,6 +26,9 @@ test("form → result → email gate → share link", async ({ page, context }) 
   await page.goto("/en/ai-visibility-check");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("See what AI says when customers ask.");
   await expect(page.getByText("Real ChatGPT and Gemini answers")).toBeVisible();
+  // Under the form: what the check shows.
+  await expect(page.getByRole("heading", { name: "What the check shows" })).toBeVisible();
+  await expect(page.getByText("Where do the answers come from?")).toBeVisible();
 
   await page.getByLabel("Website").fill(`acme-${run}.co.uk`);
   await page.getByLabel("Business name").fill(BRAND);
@@ -47,17 +50,31 @@ test("form → result → email gate → share link", async ({ page, context }) 
   await expect(preview.getByText("Gemini", { exact: true })).toBeVisible();
   await expect(preview.getByText("Pipeworks Ltd")).toBeVisible();
   await expect(preview.getByText("DrainPro")).toBeVisible();
+  // …and the count of sources, but no prompt table, no source names, no actions.
+  await expect(preview.getByText(/\d+ sources cited across the answers/)).toBeVisible();
   await expect(preview.locator("table")).toHaveCount(0);
   await expect(preview.getByText("checkatrade.com")).toHaveCount(0);
+  await expect(preview.getByText("What to do")).toHaveCount(0);
 
   // The gate.
   await preview.getByPlaceholder("Email").fill(`e2e-${run}@example.com`);
   await preview.getByRole("button", { name: "Email me the full report" }).click();
   const full = page.getByTestId("snapshot-full");
   await expect(full).toBeVisible();
-  await expect(full.locator("tbody tr")).toHaveCount(10);
-  await expect(full.getByText("checkatrade.com")).toBeVisible();
+  await expect(full.locator("table").first().locator("tbody tr")).toHaveCount(10);
+  await expect(full.getByRole("cell", { name: "checkatrade.com" })).toBeVisible();
   await expect(full.getByText("YES").first()).toBeVisible();
+  // Per cell: competitors and an expandable excerpt.
+  await expect(full.getByText(/^Named: /).first()).toBeVisible();
+  const excerpt = full.locator("details").first();
+  await excerpt.locator("summary").click();
+  await expect(excerpt.locator("p")).toContainText("Pipeworks Ltd");
+  // Sources that decided the answers, then What to do with typed, actioned rows.
+  await expect(full.getByRole("heading", { name: "Sources that decided the answers" })).toBeVisible();
+  await expect(full.getByRole("columnheader", { name: "Competitors it supported" })).toBeVisible();
+  await expect(full.getByRole("heading", { name: "What to do" })).toBeVisible();
+  await expect(full.getByText("Claim your profile")).toBeVisible();
+  await expect(full.getByText("Get listed")).toBeVisible();
 
   // The upsell goes to the plan picker, prefilled.
   const track = page.getByRole("link", { name: /Track these 10 prompts weekly/ }).first();
@@ -69,7 +86,8 @@ test("form → result → email gate → share link", async ({ page, context }) 
   const shared = await context.newPage();
   await shared.goto(new URL(shareUrl).pathname);
   await expect(shared.getByRole("heading", { level: 1 })).toHaveText(`AI Visibility Check: ${BRAND}`);
-  await expect(shared.locator("tbody tr")).toHaveCount(10);
+  await expect(shared.getByRole("heading", { name: "What to do" })).toBeVisible();
+  await expect(shared.locator("table").first().locator("tbody tr")).toHaveCount(10);
   await expect(shared.locator('meta[name="robots"]')).toHaveAttribute("content", /noindex/);
 
   // And the plan picker picks the plan that covers 10 × 2 × weekly.

@@ -72,7 +72,7 @@ export async function processSnapshot(snapshotId: string, attemptsMade: number, 
     estimate: estimateCall,
     loadAnswers: store.loadAnswers,
     saveAnswer: store.saveAnswer,
-    saveCompetitors: store.saveCompetitors,
+    saveAnalysis: store.saveAnalysis,
   });
 
   const log = { snapshotId, domain: run.domain, costUsd: result.costUsd.toFixed(4), calls: result.calls, capped: result.report.capped };

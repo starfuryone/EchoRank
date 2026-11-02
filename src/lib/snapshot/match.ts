@@ -128,9 +128,29 @@ export function isCited(sourceDomains: string[], domain: string): boolean {
 }
 
 export const EXCERPT_CHARS = 300;
+/** Context kept on each side of the first mention. */
+export const EXCERPT_RADIUS = 200;
 
 /** The opening of the answer, whitespace collapsed. */
 export function openingExcerpt(text: string): string {
   const flat = text.replace(/\s+/g, " ").trim();
   return flat.length > EXCERPT_CHARS ? `${flat.slice(0, EXCERPT_CHARS).trimEnd()}…` : flat;
+}
+
+/**
+ * The answer around its first brand OR competitor mention, ±EXCERPT_RADIUS
+ * characters, cut at word boundaries; the opening EXCERPT_CHARS when nobody is
+ * named. Offsets are taken on the collapsed text so the window is what the
+ * reader sees.
+ */
+export function excerptAround(text: string, brand: string, domain: string, competitors: string[]): string {
+  const flat = text.replace(/\s+/g, " ").trim();
+  const hits = [findBrand(flat, brand, domain), ...competitors.map((c) => findBrand(flat, c))].filter((n) => n >= 0);
+  if (!hits.length) return openingExcerpt(flat);
+  const at = Math.min(...hits);
+  let start = Math.max(0, at - EXCERPT_RADIUS);
+  let end = Math.min(flat.length, at + EXCERPT_RADIUS);
+  if (start > 0) start = flat.indexOf(" ", start) + 1 || start;
+  if (end < flat.length) end = flat.lastIndexOf(" ", end) > at ? flat.lastIndexOf(" ", end) : end;
+  return `${start > 0 ? "…" : ""}${flat.slice(start, end).trim()}${end < flat.length ? "…" : ""}`;
 }

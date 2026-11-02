@@ -50,10 +50,28 @@ export interface CompetitorCount {
   byEngine: Partial<Record<SnapshotEngine, number>>;
 }
 
-/** A domain the answers cited, and how many answers cited it. */
+export type SourceType = "directory" | "publisher" | "competitor" | "forum" | "unknown";
+export type SourceAction = "get_listed" | "claim_profile" | "pitch_comparison" | "join_discussion";
+
+/** "Sources that decided the answers": one row per cited domain. */
 export interface SourceRow {
   domain: string;
+  /** Answers that cited it. */
   timesCited: number;
+  /** Competitors named in those answers, most frequent first. */
+  competitors: CompetitorCount[];
+  /** True when the user's own domain was cited in at least one of those answers. */
+  userCited: boolean;
+}
+
+/** "What to do": a cited domain the user's domain is absent from. */
+export interface ActionRow {
+  domain: string;
+  timesCited: number;
+  /** "directory" covers directories and review sites; "unknown" when the classification failed. */
+  type: SourceType;
+  /** Null for competitor-owned and unknown domains. */
+  action: SourceAction | null;
 }
 
 export interface PromptRow {
@@ -73,6 +91,8 @@ export interface SnapshotReport {
   competitors: CompetitorCount[];
   prompts: PromptRow[];
   sources: SourceRow[];
+  /** Top 5 absent sources with a type and an action. */
+  actions: ActionRow[];
   /** True when the cost or call cap stopped the run before every call was made. */
   capped: boolean;
   generatedAt: string;

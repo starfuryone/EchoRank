@@ -73,6 +73,24 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
 
       <section className={s.section}>
         <div className={s.container}>
+          <h2 className={s.h2}>{c.shows.heading}</h2>
+          <p className={s.sub}>{c.shows.lead}</p>
+          <ul className={st.shows}>
+            {c.shows.items.map((it) => (
+              <li key={it.h}>
+                <b>{it.h}</b>
+                <span>{it.p}</span>
+              </li>
+            ))}
+          </ul>
+          <p className={st.fine} style={{ marginTop: 16 }}>
+            {c.shows.footnote}
+          </p>
+        </div>
+      </section>
+
+      <section className={s.section}>
+        <div className={s.container}>
           <SnapshotUpsell c={c} locale={locale} />
         </div>
       </section>

@@ -12,9 +12,10 @@ import {
   type PromptRow,
   type SnapshotEngine,
   type SnapshotPrompt,
+  type ActionRow,
   type SnapshotReport,
-  type SourceRow,
 } from "./types";
+import { sourceMap } from "./sources";
 
 export const TOP_COMPETITORS = 5;
 
@@ -40,6 +41,8 @@ export interface ReportInput {
   /** Engines the run asked; an engine absent here is not in the report. */
   engines: SnapshotEngine[];
   answers: StoredAnswer[];
+  /** "What to do" rows (sources.ts actionRows); empty when there are none. */
+  actions: ActionRow[];
   capped: boolean;
   now: Date;
 }
@@ -74,17 +77,6 @@ export function countCompetitors(answers: StoredAnswer[]): CompetitorCount[] {
     }
   }
   return [...byKey.values()].sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
-}
-
-function countSources(answers: StoredAnswer[]): SourceRow[] {
-  const n = new Map<string, number>();
-  for (const a of answers) {
-    if (a.error) continue;
-    for (const d of new Set(a.citedDomains)) n.set(d, (n.get(d) ?? 0) + 1);
-  }
-  return [...n.entries()]
-    .map(([domain, timesCited]) => ({ domain, timesCited }))
-    .sort((a, b) => b.timesCited - a.timesCited || a.domain.localeCompare(b.domain));
 }
 
 function summarize(engine: SnapshotEngine, answers: StoredAnswer[], asked: number): EngineSummary {
@@ -131,7 +123,8 @@ export function buildReport(input: ReportInput): SnapshotReport {
     engines: engines.map((e) => summarize(e, input.answers, input.prompts.length)),
     competitors: countCompetitors(input.answers).slice(0, TOP_COMPETITORS),
     prompts,
-    sources: countSources(input.answers),
+    sources: sourceMap(input.answers, input.domain),
+    actions: input.actions,
     capped: input.capped,
     generatedAt: input.now.toISOString(),
   };

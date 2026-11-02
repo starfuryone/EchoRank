@@ -38,15 +38,22 @@ function harness(opts: { cap?: number; perCall?: number; answer?: (e: SnapshotEn
       asked.push(`${i}:${cfg.engine}`);
       const a = opts.answer?.(cfg.engine, i) ?? {
         text: i % 2 ? "Pipeworks Ltd is the usual pick." : "Acme Plumbing and Pipeworks Ltd are both good.",
-        sourceUrls: i === 0 ? ["https://acmeplumbing.co.uk/", "https://www.checkatrade.com/x"] : ["https://checkatrade.com/y"],
+        sourceUrls:
+          i === 0
+            ? ["https://acmeplumbing.co.uk/", "https://www.checkatrade.com/x"]
+            : i % 2
+              ? ["https://checkatrade.com/y", "https://www.yell.com/z"]
+              : ["https://checkatrade.com/y"],
         usage: { inputTokens: 100, outputTokens: 100 },
         model: cfg.model,
       };
       if (a instanceof Error) throw a;
       return a;
     }),
-    askJson: vi.fn(async (_cfg, _i, input: string) => ({
-      value: {
+    askJson: vi.fn(async (_cfg, instructions: string, input: string) => ({
+      value: instructions.startsWith("Classify")
+        ? { domains: [{ domain: "yell.com", type: "directory" }] }
+        : {
         answers: [...input.matchAll(/### Answer (\d+)/g)].map((m) => ({
           index: Number(m[1]),
           competitors: ["Pipeworks Ltd", "pipeworks ltd.", "Acme Plumbing"],
@@ -58,26 +65,34 @@ function harness(opts: { cap?: number; perCall?: number; answer?: (e: SnapshotEn
     estimate: (_e, _m, searched) => (searched ? perCall : 0.001),
     loadAnswers: async () => [...db.values()],
     saveAnswer: async (_id, row) => void db.set(`${row.promptIndex}:${row.engine}`, row),
-    saveCompetitors: async () => undefined,
+    saveAnalysis: async () => undefined,
     now: () => new Date("2026-11-02T05:00:00Z"),
   };
   return { deps, db, asked };
 }
 
 describe("runSnapshot", () => {
-  it("asks 10 prompts × 2 engines, scores them, and extracts competitors once per engine", async () => {
+  it("asks 10 prompts × 2 engines, scores them, extracts competitors once per engine, classifies once", async () => {
     const { deps, asked } = harness();
     const r = await runSnapshot(spec, deps);
     expect(asked).toHaveLength(20);
-    expect(deps.askJson).toHaveBeenCalledTimes(2);
-    expect(r.calls).toBe(22);
-    expect(r.costUsd).toBeCloseTo(20 * 0.01 + 2 * 0.001, 8);
+    expect(deps.askJson).toHaveBeenCalledTimes(3);
+    expect(r.calls).toBe(23);
+    expect(r.costUsd).toBeCloseTo(20 * 0.01 + 3 * 0.001, 8);
     const [openai, gemini] = r.report.engines;
     expect(openai).toMatchObject({ engine: "openai", asked: 10, answered: 10, mentioned: 5, cited: 1, mentionRate: 0.5, citationRate: 0.1 });
     expect(gemini.mentionRate).toBe(0.5);
     // Deduped across spellings, the brand itself dropped.
     expect(r.report.competitors).toEqual([{ name: "Pipeworks Ltd", count: 20, byEngine: { openai: 10, gemini: 10 } }]);
-    expect(r.report.sources[0]).toEqual({ domain: "checkatrade.com", timesCited: 20 });
+    // checkatrade.com is cited by every answer; the user's site only by prompt 0, so
+    // the user was cited beside checkatrade there and it is not a gap.
+    expect(r.report.sources[0]).toMatchObject({ domain: "checkatrade.com", timesCited: 20, userCited: true });
+    expect(r.report.sources[0].competitors[0]).toMatchObject({ name: "Pipeworks Ltd", count: 20 });
+    // yell.com is cited only beside competitors: the one gap, classified and actioned.
+    expect(r.report.sources[1]).toMatchObject({ domain: "yell.com", timesCited: 10, userCited: false });
+    expect(r.report.actions).toEqual([{ domain: "yell.com", timesCited: 10, type: "directory", action: "get_listed" }]);
+    // Excerpts are centred on the first brand or competitor mention.
+    expect(r.report.prompts[1].results.openai?.excerpt).toBe("Pipeworks Ltd is the usual pick.");
     expect(r.report.capped).toBe(false);
   });
 
@@ -118,7 +133,7 @@ describe("runSnapshot", () => {
     // 15 answers + 5 errors charged at the estimate, then 5 answers and one
     // extraction (the OpenAI answers already have theirs). The first
     // attempt's extraction calls live on no answer row and are not re-counted.
-    expect(r.costUsd).toBeCloseTo(20 * 0.01 + 5 * 0.01 + 0.001, 8);
+    expect(r.costUsd).toBeCloseTo(20 * 0.01 + 5 * 0.01 + 0.001 + 0.001, 8); // + the classification
   });
 
   it("every answer errored: allErrored, no extraction", async () => {
