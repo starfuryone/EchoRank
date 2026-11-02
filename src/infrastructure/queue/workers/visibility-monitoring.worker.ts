@@ -451,6 +451,15 @@ async function processVisibilityJob(job: Job<VisibilityMonitoringJob>): Promise<
     if (job.data.promptSweep) return processPromptSweep();
     if (job.data.gscSweep) return processGscSweep();
     if (job.data.promptTenantId) return processPromptBatch(job.data.promptTenantId);
+    // The free AI Visibility Check (src/lib/snapshot/job.ts).
+    if (job.data.snapshotId) {
+      const { processSnapshot } = await import("@/lib/snapshot/job");
+      return processSnapshot(job.data.snapshotId, job.attemptsMade, job.opts.attempts ?? 1);
+    }
+    if (job.data.snapshotLeadId) {
+      const { processSnapshotEmail } = await import("@/lib/snapshot/job");
+      return processSnapshotEmail(job.data.snapshotLeadId);
+    }
     if (job.data.monitorId) return processMonitorRun(job.data.monitorId);
     logger.warn({ jobId: job.id, queue: QUEUE_NAME }, "Job without sweep flag or monitorId");
   });

@@ -10,6 +10,7 @@ import s from "@/app/[locale]/home2.module.css";
 const LINKS: Record<"en" | "fr", ReadonlyArray<readonly [string, string]>> = {
   en: [
     ["/pricing", "Pricing"],
+    ["/ai-visibility-check", "Free AI visibility check"],
     ["/free-tools", "Free tools"],
     ["/learn", "Learn"],
     ["/blog", "Blog"],
@@ -19,6 +20,7 @@ const LINKS: Record<"en" | "fr", ReadonlyArray<readonly [string, string]>> = {
   ],
   fr: [
     ["/pricing", "Tarifs"],
+    ["/ai-visibility-check", "Vérification de visibilité IA gratuite"],
     ["/free-tools", "Outils gratuits"],
     ["/learn", "Apprendre"],
     ["/blog", "Blog"],

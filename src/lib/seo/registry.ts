@@ -37,6 +37,11 @@ export const LOCALIZED_ROUTES: LocalizedRoute[] = [
   // lands here — nav promo, homepage hero, learn chapters, solutions pages —
   // so it ranks with /pricing rather than with the content pages below.
   { path: "/free-audit", priority: 0.9, changeFrequency: "monthly" },
+  // The free AI Visibility Check: ten real ChatGPT + Gemini answers. The
+  // second lead magnet beside /free-audit, ranked with it. Its share pages
+  // (/{locale}/ai-visibility-check/r/<token>) are noindex and not listed; every
+  // link to one is minted with its locale, which is what makes it public.
+  { path: "/ai-visibility-check", priority: 0.9, changeFrequency: "monthly" },
   // Goal-led entry page; every card links to a route already in this list.
   // The standalone Watcher's own page. Ranks with /pricing rather than the
   // content pages: it is a second purchase path, not an article.

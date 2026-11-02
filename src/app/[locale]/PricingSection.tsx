@@ -16,12 +16,14 @@
 // below that line — toggle, cards, struck price, tax lines — is identical and
 // lives here.
 
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import s from "./home2.module.css";
 import type { HomePricingChrome } from "@/lib/i18n/content";
 import type { Locale } from "@/lib/i18n/config";
 import { ConsentGate, consentPayload } from "./ConsentGate";
 import { stashCheckoutConsent } from "@/lib/checkout-consent";
+import { SNAPSHOT_COPY, snapshotBaseOf } from "@/lib/snapshot/copy";
+import { fitsTracking, parseTrackParam } from "@/lib/snapshot/tracking";
 
 export interface HomePricingTier {
   id: string;
@@ -33,6 +35,8 @@ export interface HomePricingTier {
   savePct: number | null;
   features: string[];
   highlighted: boolean;
+  /** The plan's AI checkup shape, for the free check's "track these prompts" prefill. */
+  tracking?: { prompts: number; providers: number | null; perWeek: number };
 }
 
 /** The Stripe tier keys a card can check out with. */
@@ -129,6 +133,16 @@ export function PricingSection({
   toolsHref?: string;
 }) {
   const [annual, setAnnual] = useState(false);
+  // Arriving from the free AI Visibility Check ("Track these 10 prompts
+  // weekly", ?track=10x2-weekly): pick out the smallest plan that covers it.
+  // Read after mount: the page is static, so the query never reaches the server.
+  const [trackFit, setTrackFit] = useState<{ id: string; name: string } | null>(null);
+  useEffect(() => {
+    const want = parseTrackParam(new URLSearchParams(window.location.search).get("track"));
+    const fit = want && pricing.find((p) => p.tracking && fitsTracking(p.tracking, want));
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-shot read of the URL after hydration
+    if (fit) setTrackFit({ id: fit.id, name: fit.name });
+  }, [pricing]);
   // Consent state lives here, not in the button: one checkbox governs every
   // card, and the page row and the modal row are two views of THIS boolean.
   const [consented, setConsented] = useState(false);
@@ -256,11 +270,18 @@ export function PricingSection({
         </button>
       </div>
 
+      {trackFit && (
+        <p className={s.sub} role="status" data-testid="track-fit">
+          {SNAPSHOT_COPY[snapshotBaseOf(locale)].pricingFit.replace("{plan}", trackFit.name)}
+        </p>
+      )}
+
       <div className={s.priceGrid}>
         {pricing.map((p) => {
           const amount = annual ? p.annual : p.monthly;
+          const hi = trackFit ? trackFit.id === p.id : p.highlighted;
           return (
-            <div className={p.highlighted ? s.priceHi : s.price} key={p.id}>
+            <div className={hi ? s.priceHi : s.price} key={p.id}>
               <div className={s.pname}>/ {p.name}</div>
               {amount === null ? (
                 <div className={s.pamount}>{p.customLabel}</div>

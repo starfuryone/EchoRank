@@ -17,6 +17,7 @@ import { planFeatures } from "@/lib/plan-features";
 import { HOME_PRICING_CHROME } from "@/lib/i18n/content";
 import { normalizeLocale } from "@/lib/seo/constants";
 import type { HomePricingTier } from "@/app/[locale]/PricingSection";
+import { CHECKUPS_PER_WEEK } from "@/lib/snapshot/tracking";
 
 export function pricingTiers(locale: string): HomePricingTier[] {
   const chrome = HOME_PRICING_CHROME[normalizeLocale(locale)];
@@ -43,6 +44,11 @@ export function pricingTiers(locale: string): HomePricingTier[] {
       // single action now (Stripe Checkout), and PLAN_CONFIGS keeps both
       // fields because FeatureGate still reads them.
       highlighted: c.highlighted === true,
+      tracking: {
+        prompts: c.aiCheckup.prompts,
+        providers: c.aiCheckup.providers,
+        perWeek: CHECKUPS_PER_WEEK[c.aiCheckup.frequency],
+      },
     };
   });
 }

@@ -1,0 +1,23 @@
+{
+  "candidates": [
+    {
+      "content": {
+        "role": "model",
+        "parts": [
+          { "text": "Popular choices for an emergency plumber in Leeds include Pipeworks Ltd and Leeds Rapid Plumbing. " },
+          { "text": "Both are listed on Checkatrade and MyBuilder with recent reviews." }
+        ]
+      },
+      "groundingMetadata": {
+        "webSearchQueries": ["emergency plumber Leeds"],
+        "groundingChunks": [
+          { "web": { "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/AAA", "title": "checkatrade.com" } },
+          { "web": { "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/BBB", "title": "mybuilder.com" } },
+          { "web": { "uri": "https://vertexaisearch.cloud.google.com/grounding-api-redirect/CCC", "title": "Leeds plumbers guide" } }
+        ]
+      }
+    }
+  ],
+  "usageMetadata": { "promptTokenCount": 12, "candidatesTokenCount": 41, "toolUsePromptTokenCount": 380, "thoughtsTokenCount": 0 },
+  "modelVersion": "gemini-3.1-flash-lite"
+}

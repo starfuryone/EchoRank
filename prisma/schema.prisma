@@ -4611,3 +4611,97 @@ model BacklinkSnapshot {
   @@index([tenantId, target, mode, capturedAt])
   @@map("backlink_snapshots")
 }
+
+/// One run of the free AI Visibility Check (/ai-visibility-check): ten
+/// questions about a brand's category, asked of ChatGPT and Gemini with search
+/// on. Anonymous: no tenant. The prompt set is stored as asked, so a plan that
+/// starts from this check can adopt the same ten questions as tracked prompts.
+///
+/// Served from cache to anyone who checks the same domain within 7 days, so a
+/// row is about a DOMAIN, not a visitor. Who asked for the full report is in
+/// VisibilitySnapshotLead.
+model VisibilitySnapshot {
+  id         String  @id @default(cuid())
+  brand      String
+  /// Normalised host, no www.: the cache key.
+  domain     String
+  city       String?
+  category   String
+  location   String?
+  locale     String  @default("en")
+  /// [{ kind, text }] — the 10 prompts, in asking order.
+  prompts    Json
+  /// Engines asked ("openai", "gemini"), snapshotted at creation.
+  engines    String[] @default([])
+  /// queued | running | done | failed
+  status     String  @default("queued")
+  /// SnapshotReport (src/lib/snapshot/types.ts). Null until done.
+  report     Json?
+  costUsd    Decimal @default(0) @db.Decimal(10, 6)
+  /// Provider calls made, answer + analysis.
+  calls      Int     @default(0)
+  error      String?
+  /// sha256(salt + IP). Never the IP itself.
+  ipHash     String
+  /// Minted at the first email unlock; the public /r/<token> link. 30-day expiry.
+  shareToken     String?   @unique
+  shareExpiresAt DateTime?
+  createdAt   DateTime  @default(now())
+  completedAt DateTime?
+
+  answers VisibilitySnapshotAnswer[]
+  leads   VisibilitySnapshotLead[]
+
+  /// The 7-day cache read: latest run for a domain.
+  @@index([domain, createdAt])
+  @@index([createdAt])
+  @@map("visibility_snapshots")
+}
+
+/// What one engine answered to one prompt of a check, scored.
+model VisibilitySnapshotAnswer {
+  id           String   @id @default(cuid())
+  snapshotId   String
+  promptIndex  Int
+  /// openai | gemini
+  engine       String
+  model        String?
+  mentioned    Boolean  @default(false)
+  cited        Boolean  @default(false)
+  /// Competitors named in this answer (one extraction call per engine).
+  competitors  String[] @default([])
+  /// Every domain among the answer's sources, first-seen order.
+  citedDomains String[] @default([])
+  excerpt      String   @db.Text
+  /// The full answer, kept so a scoring change can re-score without re-asking.
+  answer       String   @db.Text
+  /// Provider error, "empty answer", or "cost_cap" for a call the cap skipped.
+  error        String?
+  costUsd      Decimal  @default(0) @db.Decimal(10, 6)
+  createdAt    DateTime @default(now())
+
+  snapshot VisibilitySnapshot @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
+
+  /// One answer per prompt per engine: a retried job resumes instead of re-asking.
+  @@unique([snapshotId, promptIndex, engine])
+  @@map("visibility_snapshot_answers")
+}
+
+/// An email that unlocked a check's full report.
+model VisibilitySnapshotLead {
+  id               String    @id @default(cuid())
+  snapshotId       String
+  email            String
+  locale           String    @default("en")
+  /// Opted in to marketing email; only these are added to the Brevo list.
+  marketingConsent Boolean   @default(false)
+  /// When the report email (with the PDF) went out; null until it has.
+  emailedAt        DateTime?
+  createdAt        DateTime  @default(now())
+
+  snapshot VisibilitySnapshot @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
+
+  @@unique([snapshotId, email])
+  @@index([createdAt])
+  @@map("visibility_snapshot_leads")
+}

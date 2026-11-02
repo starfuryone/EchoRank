@@ -1,0 +1,35 @@
+{
+  "id": "resp_fixture",
+  "model": "gpt-4.1-mini-2025-04-14",
+  "output": [
+    {
+      "type": "web_search_call",
+      "id": "ws_1",
+      "status": "completed",
+      "action": {
+        "type": "search",
+        "query": "best emergency plumber Leeds",
+        "sources": [
+          { "type": "url", "url": "https://www.checkatrade.com/Search/Plumber/in/Leeds" },
+          { "type": "url", "url": "https://www.yell.com/s/plumbers-leeds.html" },
+          { "type": "url", "url": "https://blog.acmeplumbing.co.uk/emergency-tips" }
+        ]
+      }
+    },
+    {
+      "type": "message",
+      "role": "assistant",
+      "content": [
+        {
+          "type": "output_text",
+          "text": "Here are well-reviewed emergency plumbers in Leeds:\n\n1. **Pipeworks Ltd** — 24/7 call-outs, strong Checkatrade reviews.\n2. **Acme  Plumbing** — local family firm with fixed call-out fees.\n3. **DrainPro Leeds** — drainage specialists.\n\nCompare quotes before booking.",
+          "annotations": [
+            { "type": "url_citation", "url": "https://www.checkatrade.com/Search/Plumber/in/Leeds", "title": "Checkatrade", "start_index": 60, "end_index": 120 },
+            { "type": "url_citation", "url": "https://acmeplumbing.co.uk/?utm_source=openai", "title": "Acme Plumbing", "start_index": 121, "end_index": 180 }
+          ]
+        }
+      ]
+    }
+  ],
+  "usage": { "input_tokens": 1410, "output_tokens": 162 }
+}

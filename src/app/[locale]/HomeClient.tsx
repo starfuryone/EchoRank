@@ -252,7 +252,7 @@ const T = {
       seoPaper: "The SEO tools, explained (PDF)",
       extension: "Browser extension",
     },
-    foot: { links: [["pricing", "PRICING"], ["use-cases", "USE CASES"], ["about", "ABOUT"], ["resources", "RESOURCES"], ["guide", "GUIDE"], ["guide-visibilite-ia", "AI VISIBILITY GUIDE"], ["legal/subscription-agreement", "SUBSCRIPTION"], ["legal/privacy", "PRIVACY"], ["legal/terms", "TERMS"], ["legal/cookies", "COOKIES"], ["legal/no-financial-advice", "NO FINANCIAL ADVICE"], ["legal/disclaimer", "DISCLAIMER"]] },
+    foot: { links: [["pricing", "PRICING"], ["ai-visibility-check", "FREE CHECK"], ["use-cases", "USE CASES"], ["about", "ABOUT"], ["resources", "RESOURCES"], ["guide", "GUIDE"], ["guide-visibilite-ia", "AI VISIBILITY GUIDE"], ["legal/subscription-agreement", "SUBSCRIPTION"], ["legal/privacy", "PRIVACY"], ["legal/terms", "TERMS"], ["legal/cookies", "COOKIES"], ["legal/no-financial-advice", "NO FINANCIAL ADVICE"], ["legal/disclaimer", "DISCLAIMER"]] },
   },
 
   fr: {
@@ -415,7 +415,7 @@ const T = {
       seoPaper: "Les outils SEO, expliqués (PDF)",
       extension: "Extension navigateur",
     },
-    foot: { links: [["pricing", "TARIFS"], ["use-cases", "CAS D’USAGE"], ["about", "À PROPOS"], ["resources", "RESSOURCES"], ["guide", "GUIDE"], ["guide-visibilite-ia", "GUIDE VISIBILITÉ IA"], ["legal/subscription-agreement", "ABONNEMENT"], ["legal/privacy", "CONFIDENTIALITÉ"], ["legal/terms", "CONDITIONS"], ["legal/cookies", "COOKIES"], ["legal/no-financial-advice", "CONSEIL FINANCIER"], ["legal/disclaimer", "AVIS"]] },
+    foot: { links: [["pricing", "TARIFS"], ["ai-visibility-check", "VÉRIFICATION GRATUITE"], ["use-cases", "CAS D’USAGE"], ["about", "À PROPOS"], ["resources", "RESSOURCES"], ["guide", "GUIDE"], ["guide-visibilite-ia", "GUIDE VISIBILITÉ IA"], ["legal/subscription-agreement", "ABONNEMENT"], ["legal/privacy", "CONFIDENTIALITÉ"], ["legal/terms", "CONDITIONS"], ["legal/cookies", "COOKIES"], ["legal/no-financial-advice", "CONSEIL FINANCIER"], ["legal/disclaimer", "AVIS"]] },
   },
 } as const;
 

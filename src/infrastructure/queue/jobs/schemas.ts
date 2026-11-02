@@ -145,6 +145,10 @@ export interface VisibilityMonitoringJob {
   promptTenantId?: string;
   /** Nightly GSC query-stat sync across all connected tenants. */
   gscSweep?: boolean;
+  /** Free AI Visibility Check: run one check (job name "snapshot"). */
+  snapshotId?: string;
+  /** Free AI Visibility Check: email one unlocked report (job name "snapshot-email"). */
+  snapshotLeadId?: string;
   correlationId?: string;
 }
 

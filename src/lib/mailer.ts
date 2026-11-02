@@ -123,6 +123,8 @@ export interface MailInput {
    * scores worse with spam filters and is unreadable in a text-only client.
    */
   text?: string;
+  /** Files to attach (the free check's PDF report). */
+  attachments?: { filename: string; content: Buffer; contentType: string }[];
 }
 
 /**
@@ -134,7 +136,7 @@ export interface MailInput {
  * inside BullMQ needs the rejection to trigger the retry, and a caller on a
  * request path is expected to wrap it (see src/lib/funnel/notify.ts).
  */
-export async function sendMail({ to, subject, html, text }: MailInput): Promise<boolean> {
+export async function sendMail({ to, subject, html, text, attachments }: MailInput): Promise<boolean> {
   const t = getTransport();
   if (!t) return false;
 
@@ -156,6 +158,7 @@ export async function sendMail({ to, subject, html, text }: MailInput): Promise<
     subject,
     html,
     ...(text ? { text } : {}),
+    ...(attachments?.length ? { attachments } : {}),
   });
   return true;
 }

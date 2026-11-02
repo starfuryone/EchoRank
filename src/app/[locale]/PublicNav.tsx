@@ -54,7 +54,8 @@ export type NavCurrent =
   | "learn"
   | "resources-page"
   | "use-cases"
-  | "ai-assistant";
+  | "ai-assistant"
+  | "free-check";
 
 interface NavItem {
   /** Locale-less path, or a "#fragment" resolved against the locale root. */
@@ -74,6 +75,8 @@ interface NavGroup {
 
 interface NavCopy {
   pricing: string;
+  /** Flat top-level link to the free AI Visibility Check. */
+  freeCheck: string;
   /** Flat top-level link, like Pricing — one destination, so not a panel. */
   assistant: string;
   useCases: string;
@@ -145,6 +148,7 @@ function solutionsGroup(base: Base): NavGroup {
 const NAV: Record<Base, NavCopy> = {
   en: {
     pricing: "Pricing",
+    freeCheck: "Free check",
     assistant: "AI Assistant",
     useCases: "Use cases",
     login: "Login",
@@ -230,6 +234,7 @@ const NAV: Record<Base, NavCopy> = {
 
   fr: {
     pricing: "Tarifs",
+    freeCheck: "Vérification gratuite",
     assistant: "Assistant IA",
     useCases: "Cas d'usage",
     login: "Connexion",
@@ -632,6 +637,13 @@ export function PublicNav({
             </Link>
           )}
           <Link
+            href={L("/ai-visibility-check")}
+            className={current === "free-check" ? s.toggleOn : undefined}
+            aria-current={current === "free-check" ? "page" : undefined}
+          >
+            {t.freeCheck}
+          </Link>
+          <Link
             href={L("/pricing")}
             className={current === "pricing" ? s.toggleOn : undefined}
             aria-current={current === "pricing" ? "page" : undefined}
@@ -727,6 +739,13 @@ export function PublicNav({
                 {t.assistant}
               </Link>
             )}
+            <Link
+              href={L("/ai-visibility-check")}
+              className={s.sheetSection}
+              onClick={() => setMobileOpen(false)}
+            >
+              {t.freeCheck}
+            </Link>
             <Link href={L("/pricing")} className={s.sheetSection} onClick={() => setMobileOpen(false)}>
               {t.pricing}
             </Link>
