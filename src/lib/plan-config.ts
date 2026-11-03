@@ -405,7 +405,7 @@ export const PLAN_CONFIGS: Record<SellablePlanType, PlanConfig> = {
     },
     seoSearchesPerMonth: 250,
     trackedKeywords: 25,
-    crawlUrlCap: 500,
+    crawlUrlCap: 2_500,
     crawlsPerMonth: 4,
     // The shape the retired AI Visibility tier sold: two providers and one
     // repetition. Repeatability needs >1 and stays a GROWTH feature.

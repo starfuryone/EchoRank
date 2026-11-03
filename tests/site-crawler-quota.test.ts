@@ -45,7 +45,7 @@ describe("per-tier caps", () => {
   });
 
   it("matches the numbers the spec asked for", () => {
-    expect(urlCapForPlan("STARTER")).toBe(500);
+    expect(urlCapForPlan("STARTER")).toBe(2_500);
     expect(urlCapForPlan("GROWTH")).toBe(5_000);
     expect(urlCapForPlan("AGENCY")).toBe(25_000);
     expect(urlCapForPlan("ENTERPRISE")).toBe(urlCapForPlan("AGENCY"));

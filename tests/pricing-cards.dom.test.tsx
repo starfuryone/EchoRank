@@ -76,7 +76,7 @@ describe("the rendered card line-ups", () => {
       "Email review requests",
       "250 SEO searches + 25 tracked keywords/mo",
       "5 domain analyses/mo — 75+ AI-tested opportunities (AI Keyword Opportunity Finder)",
-      "Site crawls up to 500 URLs",
+      "Site crawls up to 2,500 URLs",
       "Review authenticity verification",
       "Email support — 48h weekday response",
     ]);
@@ -133,7 +133,7 @@ describe("the French grid", () => {
       "Demandes d'avis par courriel",
       "250 recherches SEO + 25 mots-clés suivis/mois",
       "5 analyses de domaine/mois — plus de 75 occasions testées par IA (Détecteur d'occasions IA)",
-      "Analyses de site jusqu'à 500 URL",
+      "Analyses de site jusqu'à 2 500 URL",
       "Vérification de l'authenticité des avis",
       "Soutien par courriel — réponse en 48 h les jours ouvrables",
     ]);
