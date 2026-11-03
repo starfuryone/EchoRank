@@ -454,7 +454,7 @@ export function PagesPanel({
   );
 }
 
-function Pager({
+export function Pager({
   page,
   totalPages,
   onPage,

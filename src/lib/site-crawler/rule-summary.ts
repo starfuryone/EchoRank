@@ -14,7 +14,7 @@ import "server-only";
 import { RULE_BY_ID, type RuleKind } from "@/lib/crawl-rules";
 import { prisma } from "@/lib/prisma";
 import type { RuleTally } from "./aggregate";
-import { ruleIdOf } from "./legacy-map";
+import { LEGACY_RULE, ruleIdOf } from "./legacy-map";
 
 export interface RuleTallies {
   issues: Record<string, RuleTally>;
@@ -45,4 +45,20 @@ export async function ruleTalliesFor(jobId: string, summary: unknown): Promise<R
   const s = (summary ?? {}) as Partial<RuleTallies>;
   if (s.issues && s.issuesByKind) return { issues: s.issues, issuesByKind: s.issuesByKind, computed: false };
   return { ...(await computeRuleTallies(jobId)), computed: true };
+}
+
+/** Legacy `type`s that map to a rule id (pre-3a rows carry no ruleId). */
+export function legacyTypesFor(ruleId: string): string[] {
+  return Object.entries(LEGACY_RULE)
+    .filter(([, id]) => id === ruleId)
+    .map(([type]) => type);
+}
+
+/** crawl_issues filter for one rule in one crawl, old rows included. */
+export function ruleIssueWhere(jobId: string, ruleId: string) {
+  const legacy = legacyTypesFor(ruleId);
+  return {
+    crawlJobId: jobId,
+    OR: [{ ruleId }, ...(legacy.length ? [{ ruleId: null, type: { in: legacy } }] : [])],
+  };
 }

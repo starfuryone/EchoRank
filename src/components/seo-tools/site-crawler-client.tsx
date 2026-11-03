@@ -20,7 +20,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { formatDateTime } from "@/lib/utils";
-import { ISSUE_TYPES, type Severity } from "@/lib/site-crawler/checks";
+import type { Severity } from "@/lib/site-crawler/checks";
+import { RULES, RULE_COPY } from "@/lib/crawl-rules";
+import { RulesPanel } from "./site-crawler-rules-panel";
 import {
   EMPTY_PAGE_FILTERS,
   isInFlight,
@@ -44,12 +46,18 @@ import {
 } from "@/components/seo-tools/site-crawler-panels";
 import { SITE_CRAWLER_COPY, type DashLocale, type SiteCrawlerCopy } from "@/lib/i18n/dashboard";
 
-type TabId = "overview" | "issues" | "duplicates" | "redirects" | "pages";
+type TabId = "overview" | "rules" | "issues" | "duplicates" | "redirects" | "pages";
 
-const TABS: TabId[] = ["overview", "issues", "duplicates", "redirects", "pages"];
+/** The Issues filter: every registry rule, by name. Pre-3a rows match through legacy-map. */
+const RULE_OPTIONS = RULES.map((r) => ({ value: r.id, label: RULE_COPY[r.id]?.name ?? r.id })).sort((a, b) =>
+  a.label.localeCompare(b.label),
+);
+
+const TABS: TabId[] = ["overview", "rules", "issues", "duplicates", "redirects", "pages"];
 
 function tabLabel(id: TabId, t: SiteCrawlerCopy): string {
   if (id === "overview") return t.tabOverview;
+  if (id === "rules") return t.tabRules;
   if (id === "issues") return t.tabIssues;
   if (id === "duplicates") return t.tabDuplicates;
   if (id === "redirects") return t.tabRedirects;
@@ -233,7 +241,7 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
   );
 
   useEffect(() => {
-    if (!active || isInFlight(active.status) || tab === "issues") return;
+    if (!active || isInFlight(active.status) || tab === "issues" || tab === "rules") return;
     let cancelled = false;
     void (async () => {
       const data = await loadTab(active.id, tab);
@@ -431,6 +439,8 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
         <OverviewPanel summary={summary} t={t} int={int} />
       )}
 
+      {active && !running && tab === "rules" && <RulesPanel crawlId={active.id} t={t} int={int} />}
+
       {active && !running && tab === "duplicates" && (
         <DuplicatesPanel
           data={duplicates}
@@ -508,7 +518,7 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
                   }}
                   options={[
                     { value: "", label: `${t.filterType}: ${t.filterAll}` },
-                    ...ISSUE_TYPES.map((it) => ({ value: it, label: t.issueTypes[it] ?? it })),
+                    ...RULE_OPTIONS,
                   ]}
                 />
                 <a
@@ -554,7 +564,7 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
                             </Badge>
                           </td>
                           <td className="py-2 pr-3 text-gray-900">
-                            {t.issueTypes[issue.type] ?? issue.type}
+                            {t.issueTypes[issue.type] ?? RULE_COPY[issue.type]?.name ?? issue.type}
                           </td>
                           <td className="max-w-sm py-2 pr-3">
                             <span className="block truncate text-gray-600" title={issue.url}>

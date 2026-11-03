@@ -1,8 +1,9 @@
 /**
  * GET /api/seo/v1/crawl/[id]/issues — paginated issues, joined with page URL.
  *
- * Filterable by `severity` and `type`. Both are validated against the closed
- * sets in checks.ts rather than passed through: an unrecognized filter is a
+ * Filterable by `severity` and `type`. `type` is a rule id from the registry
+ * (matching pre-3a rows through their legacy type too) or, for old links, one
+ * of the 21 legacy types. Both are validated rather than passed through: an unrecognized filter is a
  * 400, not a silent empty page that reads like "no issues found".
  *
  * Tenant scoping is on the PARENT: the crawl is looked up by id + tenantId
@@ -16,6 +17,8 @@ import { requirePaidPlan } from "@/lib/paid-plan";
 import { prisma } from "@/lib/prisma";
 import { ISSUE_TYPES, type IssueType, type Severity } from "@/lib/site-crawler/checks";
 import { crawlRouteError } from "@/lib/site-crawler/http";
+import { RULE_BY_ID } from "@/lib/crawl-rules";
+import { ruleIssueWhere } from "@/lib/site-crawler/rule-summary";
 import { csvFilename } from "@/lib/csv-export";
 import { ISSUE_COLUMNS, type CrawlIssueRow } from "@/lib/site-crawler/csv-columns";
 import { csvStreamResponse, wantsCsv } from "@/lib/csv-stream";
@@ -51,7 +54,8 @@ export async function GET(
         { status: 400 },
       );
     }
-    if (type && !(ISSUE_TYPES as readonly string[]).includes(type)) {
+    const isRule = !!type && RULE_BY_ID.has(type);
+    if (type && !isRule && !(ISSUE_TYPES as readonly string[]).includes(type)) {
       return NextResponse.json(
         { error: "Unknown issue type", code: "INVALID_REQUEST" },
         { status: 400 },
@@ -65,9 +69,9 @@ export async function GET(
     );
 
     const where = {
-      crawlPage: { crawlJobId: crawl.id },
+      ...(isRule ? ruleIssueWhere(crawl.id, type!) : { crawlPage: { crawlJobId: crawl.id } }),
       ...(severity ? { severity } : {}),
-      ...(type ? { type: type as IssueType } : {}),
+      ...(type && !isRule ? { type: type as IssueType } : {}),
     };
 
     // CSV branches AFTER validation and after the tenant-scoped crawl lookup,

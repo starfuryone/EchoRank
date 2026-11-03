@@ -58,6 +58,9 @@ const { GET: getPages } = await import("@/app/api/seo/v1/crawl/[id]/pages/route"
 const { POST: cancel } = await import("@/app/api/seo/v1/crawl/[id]/cancel/route");
 const { GET: exportCsv } = await import("@/app/api/seo/v1/crawl/[id]/export/route");
 const { GET: getSummary } = await import("@/app/api/seo/v1/crawl/[id]/summary/route");
+const { GET: getRules } = await import("@/app/api/seo/v1/crawl/[id]/rules/route");
+const { GET: getRulePages } = await import("@/app/api/seo/v1/crawl/[id]/rules/[ruleId]/route");
+const ruleParams = (id: string, ruleId: string) => ({ params: Promise.resolve({ id, ruleId }) });
 const { GET: getDuplicates } = await import("@/app/api/seo/v1/crawl/[id]/duplicates/route");
 const { GET: getRedirects } = await import("@/app/api/seo/v1/crawl/[id]/redirects/route");
 
@@ -136,6 +139,11 @@ describe("authentication", () => {
       "GET /crawl/[id]/redirects",
       () => getRedirects(new Request("https://app.test/x"), params("crawl_1")),
     ],
+    ["GET /crawl/[id]/rules", () => getRules(new Request("https://app.test/x"), params("crawl_1"))],
+    [
+      "GET /crawl/[id]/rules/[ruleId]",
+      () => getRulePages(new Request("https://app.test/x"), ruleParams("crawl_1", "h1.missing")),
+    ],
   ];
 
   for (const [name, call] of endpoints) {
@@ -179,6 +187,11 @@ describe("tenant isolation", () => {
     [
       "GET /crawl/[id]/redirects",
       () => getRedirects(new Request("https://app.test/x"), params("other_tenant")),
+    ],
+    ["GET /crawl/[id]/rules", () => getRules(new Request("https://app.test/x"), params("other_tenant"))],
+    [
+      "GET /crawl/[id]/rules/[ruleId]",
+      () => getRulePages(new Request("https://app.test/x"), ruleParams("other_tenant", "h1.missing")),
     ],
   ];
 
@@ -598,5 +611,75 @@ describe("GET /crawl/[id]/pages — Phase 2 filters", () => {
   it("applies no filters when none are given", async () => {
     await getPages(new Request("https://app.test/x"), params("crawl_1"));
     expect(crawlPage.findMany.mock.calls[0]![0]!.where).toEqual({ crawlJobId: "crawl_1" });
+  });
+});
+
+// ─── Phase 3a: Issues by rule ───────────────────────────────────────────────
+
+describe("GET /crawl/[id]/rules", () => {
+  it("lists fired rules issues-first, then by priority and URL count, with the share of the crawl", async () => {
+    authed();
+    crawlJob.findFirst.mockResolvedValue({
+      id: "crawl_1",
+      pagesCrawled: 200,
+      summary: {
+        issues: {
+          "images.not_next_gen_format": { count: 90, kind: "opportunity", priority: "low" },
+          "h1.missing": { count: 10, kind: "issue", priority: "medium" },
+          "response_codes.internal_4xx": { count: 4, kind: "issue", priority: "high" },
+          "directives.noindex": { count: 2, kind: "warning", priority: "high" },
+        },
+        issuesByKind: { issue: 14, warning: 2, opportunity: 90 },
+      },
+    });
+    const body = await (await getRules(new Request("https://app.test/x"), params("crawl_1"))).json();
+    expect(body.rules.map((r: { ruleId: string }) => r.ruleId)).toEqual([
+      "response_codes.internal_4xx",
+      "h1.missing",
+      "directives.noindex",
+      "images.not_next_gen_format",
+    ]);
+    expect(body.rules[1]).toMatchObject({ family: "h1", urls: 10, share: 5 });
+  });
+});
+
+describe("GET /crawl/[id]/rules/[ruleId]", () => {
+  it("400s an unknown rule id", async () => {
+    authed();
+    crawlJob.findFirst.mockResolvedValue({ id: "crawl_1" });
+    const res = await getRulePages(new Request("https://app.test/x"), ruleParams("crawl_1", "not.a_rule"));
+    expect(res.status).toBe(400);
+  });
+
+  it("matches pre-3a rows through their legacy type, and returns evidence", async () => {
+    authed();
+    crawlJob.findFirst.mockResolvedValue({ id: "crawl_1" });
+    crawlIssue.count.mockResolvedValue(2);
+    crawlIssue.findMany.mockResolvedValue([
+      { id: "i1", evidence: { length: 72 }, detail: null, crawlPage: { url: "https://example.com/a", statusCode: 200 } },
+      { id: "i2", evidence: null, detail: "72 chars", crawlPage: { url: "https://example.com/b", statusCode: 200 } },
+    ]);
+    const body = await (
+      await getRulePages(new Request("https://app.test/x?page=1"), ruleParams("crawl_1", "page_titles.over_60_chars"))
+    ).json();
+    expect(crawlIssue.findMany.mock.calls[0]![0]!.where).toEqual({
+      crawlJobId: "crawl_1",
+      OR: [{ ruleId: "page_titles.over_60_chars" }, { ruleId: null, type: { in: ["TITLE_TOO_LONG"] } }],
+    });
+    expect(body.rows.map((r: { evidence: unknown }) => r.evidence)).toEqual([{ length: 72 }, { detail: "72 chars" }]);
+    expect(body.total).toBe(2);
+  });
+});
+
+describe("GET /crawl/[id]/issues with a rule id", () => {
+  it("accepts a registry rule id as the type filter and matches old rows too", async () => {
+    authed();
+    crawlJob.findFirst.mockResolvedValue({ id: "crawl_1" });
+    const res = await getIssues(new Request("https://app.test/x?type=h1.missing"), params("crawl_1"));
+    expect(res.status).toBe(200);
+    expect(crawlIssue.findMany.mock.calls[0]![0]!.where).toMatchObject({
+      crawlJobId: "crawl_1",
+      OR: [{ ruleId: "h1.missing" }, { ruleId: null, type: { in: ["H1_MISSING"] } }],
+    });
   });
 });
