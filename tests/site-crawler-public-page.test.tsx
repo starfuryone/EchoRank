@@ -23,7 +23,7 @@ vi.mock("@/lib/crawl-rules", async (importOriginal) => {
 
 import Page, { generateMetadata } from "@/app/[locale]/site-crawler/page";
 import { RULES } from "@/lib/crawl-rules";
-import { FLAGS } from "@/lib/flags";
+import { FLAGS, type Flags } from "@/lib/flags";
 import { PLAN_CONFIGS } from "@/lib/plan-config";
 import { LOCALIZED_ROUTES } from "@/lib/seo/registry";
 import { CRAWLER_BRAND } from "@/lib/site-crawler/brand";
@@ -171,6 +171,17 @@ describe("/site-crawler", () => {
       expect(capabilityBody(mobile, base, { ...FLAGS, "crawl.psi": false })).not.toMatch(/Lighthouse/);
       expect(capabilityBody(mobile, base, { ...FLAGS, "crawl.psi": true })).toMatch(/Lighthouse/);
     }
+  });
+
+  it("claims JavaScript redirects only with rendering, and a sitemap-only crawl only with list mode", () => {
+    const body = (id: string, flags: Flags) =>
+      ["en", "fr"].map((b) => capabilityBody(CRAWL_CAPABILITIES.find((c) => c.id === id)!, b as "en" | "fr", flags));
+    const off = { ...FLAGS, "crawl.render": false, "crawl.listMode": false };
+    const on = { ...FLAGS, "crawl.render": true, "crawl.listMode": true };
+    for (const t of body("redirects", off)) expect(t).not.toMatch(/JavaScript/);
+    for (const t of body("redirects", on)) expect(t).toMatch(/JavaScript/);
+    for (const t of body("sitemap-analysis", off)) expect(t).not.toMatch(/on its own|seul/);
+    for (const t of body("sitemap-analysis", on)) expect(t).toMatch(/on its own|seul/);
   });
 
   it("describes render mode as the three modes it has, not a page picker", () => {
