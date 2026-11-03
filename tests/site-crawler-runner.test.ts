@@ -653,3 +653,40 @@ describe("link graph", () => {
     });
   });
 });
+
+// ─── List mode (Phase 4a) ──────────────────────────────────────────────────
+
+describe("list mode", () => {
+  function listJob(urls: string[]) {
+    crawlJob.findUnique.mockResolvedValue({ id: "job_1", rootUrl: urls[0], urlCap: urls.length, status: "QUEUED", mode: "list" });
+    const redis = fakeRedis();
+    void redis.rpush("crawl:job_1:queue", ...urls.map((url) => JSON.stringify({ url, depth: 0 })));
+    return redis;
+  }
+
+  it("fetches each listed URL once, discovers nothing, reads each host's robots.txt once", async () => {
+    fetchRobots.mockImplementation(async () => allowAllRules());
+    const redis = listJob(["https://a.example/1", "https://b.example/2", "https://a.example/3"]);
+    fetchPage.mockImplementation(async (url: string) => htmlResponse(url, ["/linked"]));
+    await runCrawl({ jobId: "job_1", redis: redis as never });
+    expect(fetchPage.mock.calls.map((c) => c[0])).toEqual(["https://a.example/1", "https://b.example/2", "https://a.example/3"]);
+    expect(fetchRobots.mock.calls.map((c) => new URL(c[0] as string).host).sort()).toEqual(["a.example", "b.example"]);
+    expect(collectSitemapUrls).not.toHaveBeenCalled();
+    expect((aggregateCrawl.mock.calls[0] as unknown[])[0]).toMatchObject({ listMode: true });
+  });
+
+  it("obeys the robots.txt of each URL's own host", async () => {
+    fetchRobots.mockImplementation(async (origin: string) =>
+      rulesFromBody(origin.includes("b.example") ? "User-agent: *\nDisallow: /" : "", `${origin}robots.txt`),
+    );
+    const redis = listJob(["https://a.example/1", "https://b.example/2"]);
+    await runCrawl({ jobId: "job_1", redis: redis as never });
+    expect(fetchPage.mock.calls.map((c) => c[0])).toEqual(["https://a.example/1"]);
+  });
+
+  it("a list that expired before the job ran ends list_expired, not silently empty", async () => {
+    crawlJob.findUnique.mockResolvedValue({ id: "job_1", rootUrl: "https://a.example/", urlCap: 5, status: "QUEUED", mode: "list" });
+    await runCrawl({ jobId: "job_1", redis: fakeRedis() as never });
+    expect(terminalWrite()).toMatchObject({ status: "COMPLETED", stoppedReason: "list_expired", pagesCrawled: 0 });
+  });
+});

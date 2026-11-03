@@ -74,8 +74,12 @@ interface SpellCtx {
 /** Everything one page's crawl needs, fixed for the length of the crawl. */
 interface CrawlCtx {
   rootUrl: string;
-  /** The robots.txt rules the crawl obeys. */
+  /** The robots.txt rules the crawl obeys (spider mode). */
   robots: RobotsRules;
+  /** Phase 4a list mode: every URL is fetched once, nothing is discovered. */
+  listMode: boolean;
+  /** The rules for a URL's host: the crawl's own in spider mode, each host's in list mode. */
+  robotsFor: (url: string) => Promise<RobotsRules>;
   /** A custom robots.txt in test mode: judged, never obeyed. */
   robotsTest: RobotsRules | null;
   limiter: RateLimiter;
@@ -167,9 +171,11 @@ export async function runCrawl({
       renderCap: true,
       pagesRendered: true,
       config: true,
+      mode: true,
     },
   });
   if (!job) throw new Error(`CrawlJob ${jobId} not found`);
+  const listMode = job.mode === "list";
 
   let pagesCrawled = 0;
   let issueCount = 0;
@@ -238,20 +244,26 @@ export async function runCrawl({
 
     // Seed. SADD returns 0 if the root was already seen, which happens only on
     // a retry of the same job — the frontier is authoritative either way.
-    await redis.sadd(keys.seen, rootUrl);
-    await redis.rpush(keys.queue, JSON.stringify({ url: rootUrl, depth: 0 }));
-    await redis.expire(keys.seen, REDIS_KEY_TTL_SECONDS);
-    await redis.expire(keys.queue, REDIS_KEY_TTL_SECONDS);
+    // List mode was seeded by the service with the whole list; nothing to add.
+    if (!listMode) {
+      await redis.sadd(keys.seen, rootUrl);
+      await redis.rpush(keys.queue, JSON.stringify({ url: rootUrl, depth: 0 }));
+      await redis.expire(keys.seen, REDIS_KEY_TTL_SECONDS);
+      await redis.expire(keys.queue, REDIS_KEY_TTL_SECONDS);
+    }
 
     // ── Sitemap ─────────────────────────────────────────────────────────
     // Fetched after robots.txt because robots is where the Sitemap: lines
     // live. Failure is not fatal: a site with no sitemap crawls exactly as it
-    // did in Phase 1, and the summary records that none was found.
-    sitemap = await collectSitemapUrls({
-      rootUrl,
-      declared: robots.sitemaps,
-      limiter,
-    });
+    // did in Phase 1, and the summary records that none was found. Not read
+    // in list mode: the list is the whole job.
+    if (!listMode) {
+      sitemap = await collectSitemapUrls({
+        rootUrl,
+        declared: robots.sitemaps,
+        limiter,
+      });
+    }
 
     if (sitemap.urls.length > 0) {
       // Stored as a SET so membership is one SISMEMBER per page rather than a
@@ -293,7 +305,16 @@ export async function runCrawl({
     const ctx: CrawlCtx = {
       rootUrl,
       robots,
-      robotsTest,
+      // List mode obeys each host's own live robots.txt; a draft speaks for the root's host only.
+      robotsTest: listMode ? null : robotsTest,
+      listMode,
+      robotsFor: listMode
+        ? robotsCache((origin) =>
+            origin === listRoot(rootUrl)
+              ? Promise.resolve(robots)
+              : fetchRobots(origin, { userAgent: settings.userAgent, agent: settings.agent }),
+          )
+        : async () => robots,
       limiter,
       isInSitemap,
       head: { redis, cacheKey: keys.headCache, limiter },
@@ -320,7 +341,11 @@ export async function runCrawl({
       const remaining = job.urlCap - pagesCrawled;
       const batchSize = Math.min(WRITE_BATCH_SIZE, remaining);
       const batch = await popBatch(redis, keys.queue, batchSize);
-      if (batch.length === 0) break; // frontier exhausted — the clean ending
+      if (batch.length === 0) {
+        // A list-mode job that finds no list: it sat queued past the frontier TTL.
+        if (listMode && pagesCrawled === 0) stoppedReason = "list_expired";
+        break; // frontier exhausted — the clean ending
+      }
 
       const results = await processBatch(batch, ctx);
       const written = await writeBatch(jobId, results, redis, keys.seen, job.urlCap, pagesCrawled);
@@ -353,6 +378,7 @@ export async function runCrawl({
           sitemapSeeded,
           sitemapDeclaredInRobots: robots.sitemaps.length > 0,
           tenantId: job.tenantId,
+          listMode,
         });
         summary = result.summary;
         issueCount = result.issueCount;
@@ -503,7 +529,11 @@ async function processBatch(batch: FrontierItem[], ctx: CrawlCtx): Promise<Pendi
 }
 
 async function crawlOne(item: FrontierItem, ctx: CrawlCtx): Promise<PendingPage> {
-  const { rootUrl, robots, robotsTest, limiter, isInSitemap, head, render, spell, settings } = ctx;
+  const { robotsTest, limiter, isInSitemap, head, render, spell, settings } = ctx;
+  // In list mode every URL is its own site: internal vs external, and which
+  // robots.txt applies, are judged against the URL's own origin.
+  const rootUrl = ctx.listMode ? listRoot(item.url) : ctx.rootUrl;
+  const robots = await ctx.robotsFor(rootUrl);
   const base: PendingPage = {
     url: item.url,
     depth: item.depth,
@@ -634,7 +664,7 @@ async function crawlOne(item: FrontierItem, ctx: CrawlCtx): Promise<PendingPage>
     rendered: renderColumns(facts),
     contentHash: parsed?.contentHash ?? null,
     inSitemap,
-    discovered: deeper
+    discovered: deeper && !ctx.listMode
       ? [...linkTargets, ...nofollowFollowed, ...annotationTargets(facts, linkTargets, settings)].map((url) => ({
           url,
           depth: item.depth + 1,
@@ -700,6 +730,32 @@ function imageSrcs(facts: PageFacts): string[] {
     if (/^https?:\/\//i.test(img.src) && img.src.length <= 2000) out.add(img.src);
   }
   return [...out];
+}
+
+/** "https://a.example/x?y" → "https://a.example/". */
+function listRoot(url: string): string {
+  try {
+    return `${new URL(url).origin}/`;
+  } catch {
+    return url;
+  }
+}
+
+/** Hosts whose robots.txt a list-mode crawl keeps in memory. A longer list refetches. */
+const ROBOTS_CACHE_HOSTS = 200;
+
+/** One robots.txt fetch per host for a list-mode crawl. */
+function robotsCache(load: (origin: string) => Promise<RobotsRules>): (rootUrl: string) => Promise<RobotsRules> {
+  const cache = new Map<string, Promise<RobotsRules>>();
+  return (rootUrl) => {
+    let rules = cache.get(rootUrl);
+    if (!rules) {
+      if (cache.size >= ROBOTS_CACHE_HOSTS) cache.clear();
+      rules = load(rootUrl);
+      cache.set(rootUrl, rules);
+    }
+    return rules;
+  };
 }
 
 /** How the live file and the draft judge one URL (custom robots.txt, test mode). */

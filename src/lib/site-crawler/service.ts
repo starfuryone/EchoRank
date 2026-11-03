@@ -17,7 +17,13 @@ import { crawlKeys, REDIS_KEY_TTL_SECONDS } from "./constants";
 import { getCrawlQuota } from "./quota";
 import { validateRootUrl } from "./url";
 import type { RenderMode } from "./types";
-import { CrawlLockedError, CrawlQuotaExceededError, InvalidCrawlConfigError, InvalidCrawlUrlError } from "./http";
+import {
+  CrawlLockedError,
+  CrawlQuotaExceededError,
+  InvalidCrawlConfigError,
+  InvalidCrawlListError,
+  InvalidCrawlUrlError,
+} from "./http";
 import { checkCrawlConfig, readStoredConfig, viewCrawlConfig, type CrawlConfigInput, type CrawlConfigView } from "./crawl-config";
 import { sealCrawlConfig } from "./crawl-config-secrets";
 import { newVerifyToken } from "./site-verify";
@@ -90,6 +96,31 @@ export interface StartCrawlOptions {
   config?: CrawlConfigInput;
   /** Also store this configuration as the default for the root's host. */
   saveAsDefault?: boolean;
+  /** "list": fetch `urls` once each, no discovery. rawUrl is ignored. */
+  mode?: "spider" | "list";
+  urls?: string[];
+}
+
+/**
+ * A list-mode list, each line through the same SSRF guard as a crawl root.
+ * Lines that are not public http(s) URLs are skipped and counted; any host is
+ * allowed (a list is a status check, not a crawl of someone's site).
+ */
+export function validateUrlList(lines: string[]): { urls: string[]; skipped: number } {
+  const urls: string[] = [];
+  const seen = new Set<string>();
+  let skipped = 0;
+  for (const line of lines) {
+    const v = validateRootUrl(line);
+    if (!v.ok || !v.url) {
+      skipped++;
+      continue;
+    }
+    if (seen.has(v.url)) continue;
+    seen.add(v.url);
+    urls.push(v.url);
+  }
+  return { urls, skipped };
 }
 
 /** Validate, enforce quota, create the row, enqueue the job. */
@@ -99,13 +130,20 @@ export async function startCrawl(
   rawUrl: string,
   renderMode: RenderMode = "none",
   opts: StartCrawlOptions = {},
-): Promise<CrawlJobDto> {
+): Promise<CrawlJobDto & { listSkipped?: number }> {
   const quota = await getCrawlQuota(tenantId, plan);
   if (quota.locked) throw new CrawlLockedError(plan);
 
-  const validated = validateRootUrl(rawUrl);
+  const mode = opts.mode === "list" ? "list" : "spider";
+  const list = mode === "list" ? validateUrlList(opts.urls ?? []) : null;
+  if (list) {
+    if (list.urls.length === 0) throw new InvalidCrawlListError("empty", quota.urlCap);
+    const cap = Math.min(quota.urlCap, opts.config?.maxUrls ?? quota.urlCap);
+    if (list.urls.length > cap) throw new InvalidCrawlListError("too_long", cap);
+  }
+  const validated = list ? { ok: true, url: list.urls[0] } : validateRootUrl(rawUrl);
   if (!validated.ok || !validated.url) {
-    throw new InvalidCrawlUrlError(validated.reason ?? "not_a_url");
+    throw new InvalidCrawlUrlError((validated as { reason?: string }).reason ?? "not_a_url");
   }
 
   // Phase 4a configuration, checked before quota like the URL: a typo in a
@@ -141,13 +179,14 @@ export async function startCrawl(
     data: {
       tenantId,
       rootUrl: validated.url,
+      mode,
       ...(stored
         ? { config: { ...stored, customRobotsMode: site?.verifiedAt ? "replace" : "test" } as object }
         : {}),
       // Copied from the plan at creation: the crawl keeps reporting the ceiling
       // it ran under even if the tenant changes tier tomorrow. A configured
       // max URLs lowers it, never raises it.
-      urlCap: Math.min(quota.urlCap, stored?.maxUrls ?? quota.urlCap),
+      urlCap: list ? list.urls.length : Math.min(quota.urlCap, stored?.maxUrls ?? quota.urlCap),
       // Same rule for the render ceiling. A tier without one crawls raw only,
       // whatever was asked for.
       renderMode: quota.renderCap > 0 ? renderMode : "none",
@@ -156,9 +195,25 @@ export async function startCrawl(
     },
   });
 
+  // List mode: the list rides the frontier, seeded here rather than stored on
+  // the row (25,000 URLs is megabytes the row would carry forever). Same TTL
+  // as every other crawl key: a job still queued a day later finds it gone
+  // and ends with stoppedReason "list_expired".
+  if (list) {
+    const redis = getRedisConnection();
+    const keys = crawlKeys(job.id);
+    for (let i = 0; i < list.urls.length; i += 1000) {
+      const chunk = list.urls.slice(i, i + 1000);
+      await redis.rpush(keys.queue, ...chunk.map((url) => JSON.stringify({ url, depth: 0 })));
+      await redis.sadd(keys.seen, ...chunk);
+    }
+    await redis.expire(keys.queue, REDIS_KEY_TTL_SECONDS);
+    await redis.expire(keys.seen, REDIS_KEY_TTL_SECONDS);
+  }
+
   await addJob("site-crawl", "crawl", { crawlJobId: job.id, tenantId });
 
-  return toCrawlDto(job);
+  return { ...toCrawlDto(job), ...(list ? { listSkipped: list.skipped } : {}) };
 }
 
 /**

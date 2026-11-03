@@ -46,8 +46,10 @@ const addJob = vi.fn<(...a: unknown[]) => Promise<{ id: string }>>(async () => (
 vi.mock("@/infrastructure/queue/registry", () => ({ addJob: (...a: unknown[]) => addJob(...a) }));
 
 const redisSet = vi.fn(async () => "OK");
+const redisRpush = vi.fn(async () => 1);
+const redisSadd = vi.fn(async () => 1);
 vi.mock("@/infrastructure/redis/connection", () => ({
-  getRedisConnection: () => ({ set: redisSet }),
+  getRedisConnection: () => ({ set: redisSet, rpush: redisRpush, sadd: redisSadd, expire: async () => 1 }),
 }));
 
 // ─── Subjects ───────────────────────────────────────────────────────────────
@@ -366,6 +368,41 @@ describe("POST /crawl", () => {
       const body = await res.text();
       expect(body).not.toContain("pw-123");
       expect(JSON.parse(body).config.basicAuth).toEqual({ user: "u", password: { set: true } });
+    });
+  });
+
+  describe("list mode (Phase 4a)", () => {
+    const listPost = (urls: string[], extra: Record<string, unknown> = {}) =>
+      startCrawl(postRequest({ mode: "list", urls, ...extra }));
+
+    it("seeds the frontier with the guarded list, any host, and sizes the cap to it", async () => {
+      authed("GROWTH");
+      crawlJob.create.mockImplementation(async (args: { data: Record<string, unknown> }) => ({ ...JOB_ROW, ...args.data }));
+      const res = await listPost(["https://a.example.com/x", "https://b.example.org/", "http://127.0.0.1/", "url", "https://a.example.com/x"]);
+      expect(res.status).toBe(202);
+      expect(await res.json()).toMatchObject({ mode: "list", listSkipped: 2 });
+      expect(crawlJob.create.mock.calls[0]![0]!.data).toMatchObject({ mode: "list", urlCap: 2, rootUrl: "https://a.example.com/x" });
+      const pushed = (redisRpush.mock.calls as unknown as [string, ...string[]][]).flatMap(([, ...v]) => v.map((x) => JSON.parse(x).url));
+      expect(pushed).toEqual(["https://a.example.com/x", "https://b.example.org/"]);
+    });
+
+    it.each([
+      ["empty", [] as string[], "empty"],
+      ["only private addresses", ["http://10.0.0.1/", "http://localhost/"], "empty"],
+    ])("400 on %s", async (_n, urls, reason) => {
+      authed("GROWTH");
+      const res = await listPost(urls);
+      expect(res.status).toBe(400);
+      expect(await res.json()).toMatchObject({ code: "INVALID_LIST", reason });
+      expect(crawlJob.create).not.toHaveBeenCalled();
+    });
+
+    it("refuses a list longer than the plan's URLs per crawl, or the configured max", async () => {
+      authed("STARTER");
+      const many = Array.from({ length: 2501 }, (_, i) => `https://a.example.com/${i}`);
+      expect(await (await listPost(many)).json()).toMatchObject({ code: "INVALID_LIST", reason: "too_long", cap: 2500 });
+      expect(await (await listPost(many.slice(0, 20), { config: { maxUrls: 10 } })).json()).toMatchObject({ reason: "too_long", cap: 10 });
+      expect(redisRpush).not.toHaveBeenCalled();
     });
   });
 

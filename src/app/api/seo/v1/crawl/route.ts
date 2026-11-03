@@ -22,6 +22,7 @@ import { getCrawlQuota } from "@/lib/site-crawler/quota";
 import { crawlRouteError } from "@/lib/site-crawler/http";
 import { RENDER_MODES } from "@/lib/site-crawler/types";
 import { CrawlConfigInputSchema } from "@/lib/site-crawler/crawl-config";
+import { MAX_LIST_LINES } from "@/lib/site-crawler/url-list";
 
 /** Starts per tenant per minute. A floor under the monthly allowance, which
  * for STARTER is only 4 and could otherwise be burned by a double-click. */
@@ -31,7 +32,11 @@ const START_RATE_WINDOW_MS = 60_000;
 const LIST_LIMIT = 20;
 
 const BodySchema = z.object({
-  url: z.string().trim().min(1).max(MAX_URL_LENGTH),
+  /** Spider mode's start URL. Ignored in list mode. */
+  url: z.string().trim().max(MAX_URL_LENGTH).default(""),
+  /** Phase 4a list mode: fetch `urls` once each, no discovery. */
+  mode: z.enum(["spider", "list"]).default("spider"),
+  urls: z.array(z.string().trim().max(MAX_URL_LENGTH)).max(MAX_LIST_LINES).optional(),
   /** Phase 3b. Capped by the plan's rendered pages per crawl. */
   renderMode: z.enum(RENDER_MODES).default("none"),
   /** Phase 4a. Omitted = the defaults. Secrets in clear here, sealed before storage. */
@@ -68,7 +73,12 @@ export async function POST(request: Request) {
       tenant.tenant.planType,
       parsed.data.url,
       parsed.data.renderMode,
-      { config: parsed.data.config, saveAsDefault: parsed.data.saveAsDefault },
+      {
+        config: parsed.data.config,
+        saveAsDefault: parsed.data.saveAsDefault,
+        mode: parsed.data.mode,
+        urls: parsed.data.urls,
+      },
     );
     return NextResponse.json(job, { status: 202 });
   } catch (err) {

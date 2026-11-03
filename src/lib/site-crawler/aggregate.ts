@@ -50,6 +50,19 @@ export interface AggregateArgs {
   sitemapDeclaredInRobots?: boolean;
   /** Phase 3c: whose Lighthouse runs to attach. Absent = no performance rules. */
   tenantId?: string;
+  /** Phase 4a list mode: no link graph, so the rules that read one are skipped. */
+  listMode?: boolean;
+}
+
+/**
+ * Site rules that judge a crawl's link graph or its sitemap: meaningless for a
+ * pasted URL list, where nothing was discovered and every URL is "orphaned".
+ */
+const LIST_MODE_SKIPPED_FAMILIES = new Set(["links", "sitemaps"]);
+const LIST_MODE_SKIPPED_RULES = new Set(["response_codes.inlinks_to_3xx", "hreflang.missing_on_multilingual_site"]);
+
+export function keptInListMode(ruleId: string): boolean {
+  return !LIST_MODE_SKIPPED_FAMILIES.has(ruleId.split(".")[0]!) && !LIST_MODE_SKIPPED_RULES.has(ruleId);
 }
 
 export interface RuleTally {
@@ -108,6 +121,7 @@ export async function aggregateCrawl({
   sitemapSeeded,
   sitemapDeclaredInRobots = false,
   tenantId,
+  listMode = false,
 }: AggregateArgs): Promise<AggregateResult> {
   const started = Date.now();
   const keys = crawlKeys(jobId);
@@ -199,7 +213,8 @@ export async function aggregateCrawl({
         isRoot,
         psi: pagePsi,
       });
-      return issueRows(found, jobId).map((r) => ({ ...r, crawlPageId: page.id }));
+      const kept = listMode ? found.filter((f) => keptInListMode(f.ruleId)) : found;
+      return issueRows(kept, jobId).map((r) => ({ ...r, crawlPageId: page.id }));
     });
     for (let i = 0; i < rows.length; i += AGGREGATION_BATCH_SIZE) {
       await prisma.crawlIssue.createMany({ data: rows.slice(i, i + AGGREGATION_BATCH_SIZE) });

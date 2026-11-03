@@ -44,9 +44,28 @@ export class InvalidCrawlConfigError extends Error {
   }
 }
 
+/** List mode (Phase 4a): no usable URL, or more than the plan's URLs per crawl. */
+export class InvalidCrawlListError extends Error {
+  readonly statusCode = 400;
+  constructor(
+    readonly reason: "empty" | "too_long",
+    readonly cap: number,
+  ) {
+    super(reason === "empty" ? "The list has no public http(s) URL." : `The list is longer than your plan's ${cap} URLs per crawl.`);
+    this.name = "InvalidCrawlListError";
+  }
+}
+
 export function crawlRouteError(err: unknown): NextResponse {
   const enforcement = enforcementErrorResponse(err);
   if (enforcement) return enforcement;
+
+  if (err instanceof InvalidCrawlListError) {
+    return NextResponse.json(
+      { error: err.message, code: "INVALID_LIST", reason: err.reason, cap: err.cap },
+      { status: 400 },
+    );
+  }
 
   if (err instanceof InvalidCrawlConfigError) {
     return NextResponse.json(
