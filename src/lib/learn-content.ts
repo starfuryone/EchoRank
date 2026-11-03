@@ -20,6 +20,8 @@
 // would be worse than shipping it in English, and French here is real French or
 // nothing.
 
+import { CRAWLER_BRAND } from "@/lib/site-crawler/brand";
+
 /** One renderable unit of article body. The markdown subset the pack uses. */
 export type LearnBlock =
   | { k: "p"; t: string }
@@ -42,7 +44,14 @@ export type LearnBlock =
   /** Renders the page's `video` through HomeVideo, in prose position. */
   | { k: "video" }
   /** Renders the page's `faq` array — the same array the JSON-LD is built from. */
-  | { k: "faq" };
+  | { k: "faq" }
+  /**
+   * The crawler's capability list, rendered from CRAWL_CAPABILITIES
+   * (src/lib/site-crawler/marketing-copy.ts) with the same gates as the public
+   * /site-crawler page. A marker, not copy: the words live in one place, and
+   * this module stays free of the rule registry (the proxy imports it).
+   */
+  | { k: "crawlCapabilities" };
 
 /**
  * One step of a {k:"steps"} walkthrough.
@@ -124,7 +133,7 @@ export interface LearnLink {
  * Which CTA block the page closes with.
  * "audit" — the free, no-account audit widget. "register" — start a trial.
  */
-export type LearnCta = "audit" | "register";
+export type LearnCta = "audit" | "register" | "crawler";
 
 export interface LearnChapter {
   slug: string;
@@ -149,6 +158,12 @@ export interface LearnGuide extends Omit<LearnChapter, "order"> {
   blurb: string;
   /** Present only where the guide carries a real FAQ section. */
   faq?: LearnFaqEntry[];
+  /**
+   * French title and description, where written. The BODY stays en-only (see
+   * the note at the top); these localise the heading, the hub card and the
+   * metadata so a French visitor knows what the page is before reading it.
+   */
+  fr?: { title: string; description: string; blurb: string };
 }
 
 export interface GlossaryTerm {
@@ -1812,6 +1827,53 @@ export const LEARN_GUIDES: LearnGuide[] = [
       {
         k: "p",
         t: "Next step: [import your review history](/learn/import-your-review-history) — the extension route for Google and Facebook, plus CSV for everything else.",
+      },
+    ],
+  },
+  {
+    slug: "what-nosy-bat-checks",
+    order: 6,
+    title: `What ${CRAWLER_BRAND.name} checks`,
+    description: `What a ${CRAWLER_BRAND.name} crawl collects, every rule family it runs, and how to read a finding: issue, warning or opportunity, with its evidence and how to fix it.`,
+    readingTime: 6,
+    tag: "Site crawler",
+    blurb: "Every rule family the crawler runs, and how to read what it finds.",
+    fr: {
+      title: `Ce que ${CRAWLER_BRAND.name} vérifie`,
+      description: `Ce que recueille une exploration ${CRAWLER_BRAND.name}, chaque famille de règles qu'elle applique, et comment lire un constat : problème, avertissement ou occasion, avec sa preuve et sa correction.`,
+      blurb: "Chaque famille de règles du robot, et comment lire ce qu'il trouve.",
+    },
+    cta: "crawler",
+    related: [
+      { href: "/site-crawler", label: `${CRAWLER_BRAND.name}: plans and features`, internal: true },
+      { href: "/learn/guides/ai-lens-content-gap", label: "Guide: the content gap", internal: true },
+    ],
+    body: [
+      {
+        k: "p",
+        t: `A crawl starts at your homepage and follows every internal link it can reach, the way a search engine's crawler does. For each page it records the response — status code, redirects, headers, how long it took — and the parts of the HTML that decide how the page is indexed and shown: title, meta description, headings, canonical, robots directives, hreflang, structured data, images and links. It also reads your robots.txt and sitemaps, so it knows which pages you meant to be found. ${CRAWLER_BRAND.name} identifies itself as Echorank360Bot, obeys robots.txt and stays under two requests a second.`,
+      },
+      {
+        k: "p",
+        t: "Every page then goes through the rule library, and the site as a whole goes through it once more for the checks that need more than one page: duplicates, orphans, redirect chains, hreflang return links. A finding never stands alone. It names the page, the rule that fired and the **evidence** — the title that was too long and its length, the canonical and where it pointed, the status code a link returned — so you can check it yourself before you change anything.",
+      },
+      { k: "h2", t: "What a crawl checks" },
+      { k: "crawlCapabilities" },
+      { k: "h2", t: "How to read a finding" },
+      {
+        k: "ul",
+        items: [
+          "**Issue** — something is wrong and costs you: a broken link, a page missing its title, a canonical pointing at an error. Fix these first.",
+          "**Warning** — probably wrong, or wrong in some contexts: a title past 60 characters, a page marked noindex. Check each one; some are deliberate.",
+          "**Opportunity** — not broken, but better is available: missing structured-data properties, images without width and height, non-descriptive anchors.",
+          "**Evidence** — the values the rule saw, shown next to every affected URL. If the evidence looks right to you, the rule is wrong for your site, and you can leave it.",
+          "**How to fix** — each rule carries one short instruction: what to change, not which plugin to install.",
+          "**Not assessable** — when a check cannot be read (a timeout, a page blocked to us, a response with no HTML), the page is marked not assessable for that rule. It is never counted as a failure.",
+        ],
+      },
+      {
+        k: "p",
+        t: "Every table — issues, pages, duplicates, redirects — exports to CSV, so a finding can go straight to whoever fixes it.",
       },
     ],
   },

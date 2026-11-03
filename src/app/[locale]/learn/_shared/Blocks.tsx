@@ -6,6 +6,8 @@ import { headingId } from "@/lib/learn-content";
 import { inline } from "./inline";
 import { Fragment, type ReactNode } from "react";
 import b from "./learn.module.css";
+import { RULES } from "@/lib/crawl-rules";
+import { capabilityBody, visibleCapabilities } from "@/lib/site-crawler/marketing-copy";
 
 export interface BlocksProps {
   body: readonly LearnBlock[];
@@ -174,6 +176,20 @@ export function Blocks({ body, locale, video, faq, afterIntro }: BlocksProps) {
                 {video}
               </div>
             ) : null;
+
+          case "crawlCapabilities":
+            // The public /site-crawler page's list, same array and same gates
+            // (registry families + flags, evaluated here at render). English,
+            // like the rest of a Knowledge Hub body.
+            return (
+              <ul key={key} className={b.list}>
+                {visibleCapabilities({ families: new Set(RULES.map((r) => r.family)) }).map((cap) => (
+                  <li key={cap.id} id={cap.id}>
+                    <strong>{cap.title.en}</strong> — {capabilityBody(cap, "en")}
+                  </li>
+                ))}
+              </ul>
+            );
 
           case "faq":
             // The FAQPage JSON-LD is built from this same array by the page —

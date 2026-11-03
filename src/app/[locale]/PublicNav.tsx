@@ -214,6 +214,7 @@ const NAV: Record<Base, NavCopy> = {
             title: "Learn",
             items: [
               { href: "/learn", label: "Knowledge hub", desc: "Course, guides and Echopedia." },
+              { href: "/learn/guides/what-nosy-bat-checks", label: `What ${CRAWLER_BRAND.name} checks`, desc: "Every rule family the crawler runs." },
               { href: "/glossary", label: "Echorank Glossary", desc: "Search, ranking and AI visibility terms." },
               { href: "/blog", label: "Echorank Blog", desc: "GEO, AI search visibility and what to measure." },
               { href: "/keyword-research", label: "Keyword research guide", desc: "Find, analyze and use keywords." },
@@ -300,6 +301,7 @@ const NAV: Record<Base, NavCopy> = {
             title: "Apprendre",
             items: [
               { href: "/learn", label: "Centre de connaissances", desc: "Cours, guides et Echopedia." },
+              { href: "/learn/guides/what-nosy-bat-checks", label: `Ce que ${CRAWLER_BRAND.name} vérifie`, desc: "Chaque famille de règles du robot." },
               { href: "/glossary", label: "Glossaire Echorank", desc: "Termes de recherche, ranking et visibilité IA." },
               { href: "/blog", label: "Blog Echorank", desc: "GEO, visibilité dans la recherche IA et quoi mesurer." },
               { href: "/keyword-research", label: "Guide recherche de mots-clés", desc: "Trouver, analyser et utiliser les mots-clés." },

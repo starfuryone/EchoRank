@@ -49,11 +49,12 @@ export async function generateMetadata({
   const guide = guideBySlug(slug);
   if (!guide) return {};
 
+  const fr = baseOf(locale) === "fr" ? guide.fr : undefined;
   return buildMetadata({
     locale,
     path: `${LEARN_BASE}/guides/${guide.slug}`,
-    title: guide.title,
-    description: guide.description,
+    title: fr?.title ?? guide.title,
+    description: fr?.description ?? guide.description,
     ogType: "article",
     canonicalLocale: "en",
   });
@@ -119,8 +120,9 @@ export default async function GuidePage({
       <ArticleShell
         locale={locale}
         eyebrow={CRUMB[b].eyebrow}
-        title={guide.title}
-        description={guide.description}
+        // A French title/description where one is written; the body stays en.
+        title={(b === "fr" && guide.fr?.title) || guide.title}
+        description={(b === "fr" && guide.fr?.description) || guide.description}
         readingTime={guide.readingTime}
         body={guide.body}
         video={guide.video}

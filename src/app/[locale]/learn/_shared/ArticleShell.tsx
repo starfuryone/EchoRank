@@ -30,6 +30,7 @@ import {
 import { Blocks } from "./Blocks";
 import { ChapterVideo } from "./ChapterVideo";
 import { resolveHref } from "./inline";
+import { CRAWLER_BRAND } from "@/lib/site-crawler/brand";
 import s from "../../home2.module.css";
 import c from "./learn.module.css";
 
@@ -50,6 +51,11 @@ const CHROME = {
       p: "Run the Echorank audit on your own site. No account and no card: you get a score, itemized checks, and a PDF worth keeping as your day-zero baseline.",
       btn: "Run the free audit →",
     },
+    ctaCrawler: {
+      h: `Crawl your own site with ${CRAWLER_BRAND.name}`,
+      p: "Every page, every rule family, the evidence next to each finding. Included in every paid plan.",
+      btn: `Meet ${CRAWLER_BRAND.name} ↗`,
+    },
     ctaRegister: {
       h: "Put this into practice",
       p: "Import your review history, ask every customer in one tap, and watch the themes — and the AI mentions — move.",
@@ -68,6 +74,11 @@ const CHROME = {
       h: "Faites le point — gratuitement",
       p: "Lancez l'audit Echorank sur votre propre site. Sans compte et sans carte : vous obtenez un score, des vérifications détaillées et un PDF à conserver comme point de départ.",
       btn: "Lancer l'audit gratuit →",
+    },
+    ctaCrawler: {
+      h: `Explorez votre propre site avec ${CRAWLER_BRAND.name}`,
+      p: "Chaque page, chaque famille de règles, la preuve à côté de chaque constat. Inclus dans chaque forfait payant.",
+      btn: `Découvrir ${CRAWLER_BRAND.name} ↗`,
     },
     ctaRegister: {
       h: "Passez à la pratique",
@@ -137,7 +148,7 @@ export function ArticleShell({
   const player = HOME_TOOLS[locale as Locale].player;
   const L = (p: string) => `/${locale}${p.startsWith("/") ? p : `/${p}`}`;
   const toc = tableOfContents(body);
-  const ctaCopy = cta && (cta === "audit" ? t.ctaAudit : t.ctaRegister);
+  const ctaCopy = cta && (cta === "audit" ? t.ctaAudit : cta === "crawler" ? t.ctaCrawler : t.ctaRegister);
   const notice = localizedBody ? null : ENGLISH_BODY_NOTICE[b];
   // One field, two placements — narrowed here so the JSX below never inspects
   // the discriminant itself. A chapter video goes to the fixed slot after the
@@ -197,6 +208,10 @@ export function ArticleShell({
                   <p className={c.ctaP}>{ctaCopy.p}</p>
                   {cta === "audit" ? (
                     <Link className={`${s.btn} ${s.btnPrimary}`} href={L("/free-audit")}>
+                      {ctaCopy.btn}
+                    </Link>
+                  ) : cta === "crawler" ? (
+                    <Link className={`${s.btn} ${s.btnPrimary}`} href={L("/site-crawler")}>
                       {ctaCopy.btn}
                     </Link>
                   ) : (

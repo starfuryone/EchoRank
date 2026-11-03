@@ -126,10 +126,10 @@ describe("route table", () => {
 });
 
 describe("config integrity", () => {
-  it("has ten chapters numbered 1..10 in order, and five guides", () => {
+  it("has ten chapters numbered 1..10 in order, and six guides", () => {
     expect(LEARN_CHAPTERS.map((c) => c.order)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
-    expect(LEARN_GUIDES).toHaveLength(5);
-    expect(LEARN_GUIDES.map((g) => g.order)).toEqual([1, 2, 3, 4, 5]);
+    expect(LEARN_GUIDES).toHaveLength(6);
+    expect(LEARN_GUIDES.map((g) => g.order)).toEqual([1, 2, 3, 4, 5, 6]);
   });
 
   it("keeps slugs unique across chapters and guides", () => {
@@ -194,7 +194,8 @@ describe("calls to action", () => {
     // the chapters that tell a reader to go and measure something.
     const audit = LEARN_CHAPTERS.filter((c) => c.cta === "audit").map((c) => c.order);
     expect(audit).toEqual([1, 2, 7, 8]);
-    for (const g of LEARN_GUIDES) expect(g.cta, g.slug).toBe("register");
+    // The crawler guide closes on the crawler's own page instead.
+    for (const g of LEARN_GUIDES) expect(g.cta, g.slug).toBe(g.slug === "what-nosy-bat-checks" ? "crawler" : "register");
   });
 });
 

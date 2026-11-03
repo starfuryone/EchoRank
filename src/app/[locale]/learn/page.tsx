@@ -297,8 +297,8 @@ export default async function LearnHubPage({
             {LEARN_GUIDES.map((g) => (
               <Link key={g.slug} className={c.card} href={L(`${LEARN_BASE}/guides/${g.slug}`)}>
                 <span className={c.cardTag}>{g.tag}</span>
-                <h3 className={c.cardH}>{g.title}</h3>
-                <p className={c.cardP}>{g.blurb}</p>
+                <h3 className={c.cardH}>{(baseOf(locale) === "fr" && g.fr?.title) || g.title}</h3>
+                <p className={c.cardP}>{(baseOf(locale) === "fr" && g.fr?.blurb) || g.blurb}</p>
                 <p className={c.cardMeta}>{t.minRead(g.readingTime)}</p>
               </Link>
             ))}
