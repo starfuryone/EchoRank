@@ -176,6 +176,11 @@ human notices. Commit, then hand them `sudo echorank360-deploy` instead.
 - Every API route taking an `:id` is tenant-scoped — `findFirst({ where: { id, tenantId } })`,
   never `findUnique({ where: { id } })`. New routes go through `requireTenant()`
   (`src/lib/tenant.ts`) or `requirePaidPlan()`.
+- `/api/admin/*` is **staff only**, not tenant OWNER/ADMIN: the `PLATFORM_ADMIN_EMAILS`
+  allowlist (unset = nobody). The proxy 403s everyone else, signed out included, and each
+  handler opens with `requirePlatformAdminApi()` (`src/lib/platform-admin.ts`) because the
+  internal-secret bypass skips the proxy. `tests/admin-api-gate.test.ts` fails any route
+  there that does not.
 - Log `costUsd` on every stored run that spends money upstream.
 
 ## Tool pages

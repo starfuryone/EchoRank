@@ -8,6 +8,7 @@ import { isSupportedLocale, resolveTarget, type Locale } from "@/lib/i18n/config
 import { KNOWN_MARKETING_PATHS, KNOWN_MARKETING_PREFIXES } from "@/lib/seo/registry";
 import { firstSegment, isStaticPath, isUnroutableDottedPath } from "@/lib/static-paths";
 import { localeAppRedirect } from "@/lib/app-routes";
+import { isAdminApiPath, isPlatformAdminEmail } from "@/lib/platform-admin-emails";
 
 const LOCALE_COOKIE = "echorank_locale";
 
@@ -352,6 +353,14 @@ const withSession = auth((req) => {
     publicExactPaths.has(pathname) ||
     publicPaths.some((path) => pathname.startsWith(path));
   if (isPublic) return NextResponse.next();
+
+  // Platform-wide APIs: staff only (PLATFORM_ADMIN_EMAILS). A 403 for
+  // everyone else, signed out included — an API answers, it does not 307 to
+  // /login. The routes check again (requirePlatformAdminApi), since the
+  // internal-secret bypass above never reaches this line.
+  if (isAdminApiPath(pathname) && !isPlatformAdminEmail(req.auth?.user?.email)) {
+    return NextResponse.json({ error: "forbidden" }, { status: 403 });
+  }
 
   if (!req.auth) {
     const loginUrl = new URL("/login", req.url);
