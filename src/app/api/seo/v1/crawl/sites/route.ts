@@ -26,7 +26,7 @@ import { rateLimit } from "@/lib/rate-limit";
 import { CrawlConfigInputSchema, checkCrawlConfig, readStoredConfig, viewCrawlConfig } from "@/lib/site-crawler/crawl-config";
 import { sealCrawlConfig } from "@/lib/site-crawler/crawl-config-secrets";
 import { InvalidCrawlConfigError, InvalidCrawlUrlError, crawlRouteError } from "@/lib/site-crawler/http";
-import { urlCapForPlan } from "@/lib/site-crawler/quota";
+import { featureCapsForPlan, urlCapForPlan } from "@/lib/site-crawler/quota";
 import {
   VERIFY_META_NAME,
   VERIFY_TXT_PREFIX,
@@ -101,6 +101,7 @@ export async function PUT(request: Request) {
     const { config, problems } = checkCrawlConfig(parsed.data.config, {
       urlCap: urlCapForPlan(tenant.tenant.planType),
       verified: Boolean(site.verifiedAt),
+      ...featureCapsForPlan(tenant.tenant.planType),
     });
     if (problems.length) throw new InvalidCrawlConfigError(problems);
     const stored = sealCrawlConfig(config, readStoredConfig(site.config));

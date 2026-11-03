@@ -42,6 +42,8 @@ const draft = (over: Partial<DraftArg> = {}): DraftArg => ({
   basicSaved: false,
   respectRobots: true,
   customRobots: "",
+  extractors: [],
+  searches: [],
   ...over,
 });
 

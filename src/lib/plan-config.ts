@@ -314,6 +314,15 @@ export interface PlanConfig {
    * (src/lib/site-crawler/retention.ts). Phase 4a tier table.
    */
   crawlsKept: number;
+  /**
+   * Site Crawler Phase 4b, per crawl: custom extractors (CSS / XPath / regex)
+   * and custom source-code searches. Caps only — every paid tier has the
+   * feature.
+   */
+  crawlExtractors: number;
+  crawlSearches: number;
+  /** Phase 4b: saved segments per site (tenant + host). */
+  crawlSegments: number;
   /** Shape of one AI Visibility checkup for this tier. */
   aiCheckup: AiCheckupShape;
   /**
@@ -428,6 +437,9 @@ export const PLAN_CONFIGS: Record<SellablePlanType, PlanConfig> = {
     crawlsPerMonth: 4,
     crawlRenderedPages: 100,
     crawlsKept: 3,
+    crawlExtractors: 3,
+    crawlSearches: 2,
+    crawlSegments: 3,
     // The shape the retired AI Visibility tier sold: two providers and one
     // repetition. Repeatability needs >1 and stays a GROWTH feature.
     aiCheckup: { frequency: "weekly", providers: 2, prompts: 10, repetitions: 1 },
@@ -471,6 +483,9 @@ export const PLAN_CONFIGS: Record<SellablePlanType, PlanConfig> = {
     crawlsPerMonth: 20,
     crawlRenderedPages: 500,
     crawlsKept: 10,
+    crawlExtractors: 5,
+    crawlSearches: 5,
+    crawlSegments: 10,
     aiCheckup: { frequency: "twice_weekly", providers: 4, prompts: 15, repetitions: 2 },
     aiProjects: 3,
     aiMonthlyCapUsd: 40,
@@ -512,6 +527,9 @@ export const PLAN_CONFIGS: Record<SellablePlanType, PlanConfig> = {
     crawlsPerMonth: null,
     crawlRenderedPages: 5_000,
     crawlsKept: 50,
+    crawlExtractors: 10,
+    crawlSearches: 5,
+    crawlSegments: 25,
     aiCheckup: { frequency: "daily", providers: null, prompts: 20, repetitions: 3 },
     aiProjects: 25,
     aiMonthlyCapUsd: 150,
@@ -553,6 +571,9 @@ export const PLAN_CONFIGS: Record<SellablePlanType, PlanConfig> = {
     crawlsPerMonth: null,
     crawlRenderedPages: 5_000,
     crawlsKept: 50,
+    crawlExtractors: 10,
+    crawlSearches: 5,
+    crawlSegments: 25,
     // "custom": the schedule is set per contract, so the scheduler reads the
     // brand profile rather than a cadence baked in here.
     aiCheckup: { frequency: "custom", providers: null, prompts: 20, repetitions: 3 },

@@ -256,6 +256,7 @@ model Tenant {
 
   crawlJobs CrawlJob[]
   crawlSiteDefaults CrawlSiteDefault[]
+  crawlSegments CrawlSegment[]
 
   brandProfiles   BrandProfile[]
   checkups        Checkup[]
@@ -2275,6 +2276,7 @@ model CrawlJob {
   pages  CrawlPage[]
   issues CrawlIssue[]
   links  CrawlLink[]
+  extractions CrawlExtraction[]
 
   @@index([tenantId, createdAt])
   @@map("crawl_jobs")
@@ -2374,10 +2376,15 @@ model CrawlPage {
   imgSrcs             String[]
   /// Last-Modified response header, as sent (sitemap lastmod source).
   lastModified        String?
+  /// Phase 4b custom search: {"<search index>": matches}, only searches that matched.
+  searchHits          Json?
+  /// Phase 4b: indexes into the crawl's config.segments this page fell in.
+  segmentIds          Int[]    @db.SmallInt
 
-  crawlJob CrawlJob     @relation(fields: [crawlJobId], references: [id], onDelete: Cascade)
-  issues   CrawlIssue[]
-  outlinks CrawlLink[]
+  crawlJob    CrawlJob          @relation(fields: [crawlJobId], references: [id], onDelete: Cascade)
+  issues      CrawlIssue[]
+  outlinks    CrawlLink[]
+  extractions CrawlExtraction[]
 
   @@index([crawlJobId])
   /// Aggregation joins pages to pages by URL (canonical, hreflang and
@@ -2439,6 +2446,45 @@ model CrawlSiteDefault {
 
   @@unique([tenantId, host])
   @@map("crawl_site_defaults")
+}
+
+/// Phase 4b: what one custom extractor found on one page. Only extractors that
+/// returned something get a row. Values capped at 20, each at 500 chars.
+model CrawlExtraction {
+  id             String   @id @default(cuid())
+  crawlJobId     String
+  pageId         String
+  /// Index into the crawl's config.extractors.
+  extractorIndex Int      @db.SmallInt
+  values         String[]
+
+  crawlJob CrawlJob  @relation(fields: [crawlJobId], references: [id], onDelete: Cascade)
+  /// Cascade: retention deletes a crawl's pages and their extractions go with them.
+  page     CrawlPage @relation(fields: [pageId], references: [id], onDelete: Cascade)
+
+  @@unique([pageId, extractorIndex])
+  @@index([crawlJobId, extractorIndex])
+  @@map("crawl_extractions")
+}
+
+/// Phase 4b: a named slice of one site, saved per tenant + host. Each crawl
+/// snapshots the host's segments into config.segments at creation.
+model CrawlSegment {
+  id        String   @id @default(cuid())
+  tenantId  String
+  /// Lowercased hostname, as crawl_site_defaults.host.
+  host      String
+  name      String
+  /// One SegmentRule (src/lib/site-crawler/segments.ts).
+  rule      Json
+  position  Int      @db.SmallInt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, host, position])
+  @@map("crawl_segments")
 }
 
 /// One finding on one page. `type` and `severity` are enum-like strings rather

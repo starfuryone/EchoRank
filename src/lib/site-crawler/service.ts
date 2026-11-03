@@ -14,7 +14,7 @@ import { prisma } from "@/lib/prisma";
 import { addJob } from "@/infrastructure/queue/registry";
 import { getRedisConnection } from "@/infrastructure/redis/connection";
 import { crawlKeys, REDIS_KEY_TTL_SECONDS } from "./constants";
-import { getCrawlQuota } from "./quota";
+import { featureCapsForPlan, getCrawlQuota } from "./quota";
 import { validateRootUrl } from "./url";
 import type { RenderMode } from "./types";
 import {
@@ -158,7 +158,11 @@ export async function startCrawl(
     : null;
   let stored = null;
   if (opts.config) {
-    const checked = checkCrawlConfig(opts.config, { urlCap: quota.urlCap, verified: Boolean(site?.verifiedAt) });
+    const checked = checkCrawlConfig(opts.config, {
+      urlCap: quota.urlCap,
+      verified: Boolean(site?.verifiedAt),
+      ...featureCapsForPlan(plan),
+    });
     if (checked.problems.length) throw new InvalidCrawlConfigError(checked.problems);
     stored = sealCrawlConfig(checked.config, readStoredConfig(site?.config));
   }

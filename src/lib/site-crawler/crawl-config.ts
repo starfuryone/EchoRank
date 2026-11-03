@@ -16,8 +16,14 @@
 // the crawler treats someone's server, so they need a verified site
 // (site-verify.ts). A custom robots.txt is allowed everywhere: on a verified
 // site it replaces the live file, on an unverified one it runs in test mode.
+//
+// PHASE 4b adds extractors, custom searches and the crawl's segment snapshot.
+// Their counts are capped per plan (crawlExtractors, crawlSearches,
+// crawlSegments in plan-config.ts); every expression is ≤ 500 characters and
+// every regular expression passes unsafeRegex below.
 
 import { z } from "zod";
+import type { SegmentDef } from "./segments";
 
 export const CONFIG_LIMITS = {
   patterns: 20,
@@ -33,7 +39,55 @@ export const CONFIG_LIMITS = {
   minSpeed: 0.5,
   maxSpeed: 2,
   maxDepth: 100,
+  /** Phase 4b: extractor names, search names. */
+  nameChars: 60,
+  /** Extractor expressions and search patterns. */
+  exprChars: 500,
+  attrChars: 64,
+  /** Values stored per extractor per page, and characters per value. */
+  extractValues: 20,
+  extractValueChars: 500,
 } as const;
+
+export const EXTRACTOR_KINDS = ["css", "xpath", "regex"] as const;
+export type ExtractorKind = (typeof EXTRACTOR_KINDS)[number];
+
+/**
+ * One custom extractor. css: a selector, the element's text or `attr`.
+ * xpath: an expression; nodes give their text (or `attr`), other results their
+ * string value. regex: a pattern over the raw HTML, flags "g"; the first
+ * capture group when there is one, else the whole match. `multiple` keeps up
+ * to 20 values, otherwise the first.
+ */
+export interface Extractor {
+  name: string;
+  kind: ExtractorKind;
+  expr: string;
+  attr: string | null;
+  multiple: boolean;
+}
+
+/** One custom search over the raw HTML: a case-insensitive string, or a regex (flags "g"). */
+export interface CustomSearch {
+  name: string;
+  pattern: string;
+  isRegex: boolean;
+}
+
+/** Prefilled extractor rows the Configuration section offers. Only a starting point: every field stays editable. */
+export const EXTRACTOR_PRESETS = {
+  ogTitle: { name: "og:title", kind: "css", expr: 'meta[property="og:title"]', attr: "content", multiple: false },
+  ogDescription: { name: "og:description", kind: "css", expr: 'meta[property="og:description"]', attr: "content", multiple: false },
+  ogImage: { name: "og:image", kind: "css", expr: 'meta[property="og:image"]', attr: "content", multiple: false },
+  price: { name: "Price", kind: "css", expr: '[itemprop="price"], meta[property="product:price:amount"]', attr: "content", multiple: false },
+  sku: { name: "SKU", kind: "regex", expr: '"sku"\\s*:\\s*"([^"]{1,100})"', attr: null, multiple: false },
+  author: { name: "Author", kind: "css", expr: 'meta[name="author"]', attr: "content", multiple: false },
+  published: { name: "Published", kind: "css", expr: 'meta[property="article:published_time"]', attr: "content", multiple: false },
+  hreflang: { name: "hreflang", kind: "xpath", expr: '//link[@rel="alternate"][@hreflang]/@hreflang', attr: null, multiple: true },
+  canonical: { name: "Canonical", kind: "css", expr: 'link[rel="canonical"]', attr: "href", multiple: false },
+} as const satisfies Record<string, Extractor>;
+export type ExtractorPreset = keyof typeof EXTRACTOR_PRESETS;
+
 
 export const USER_AGENTS = ["echorank", "googlebot_smartphone", "googlebot_desktop", "custom"] as const;
 export type UserAgentChoice = (typeof USER_AGENTS)[number];
@@ -96,6 +150,15 @@ export interface CrawlConfigOf<S> {
    * obeyed and robots.would_block / would_allow report the difference).
    */
   customRobotsMode?: "replace" | "test";
+  /** Phase 4b. At most the plan's crawlExtractors. */
+  extractors: Extractor[];
+  /** Phase 4b. At most the plan's crawlSearches. */
+  searches: CustomSearch[];
+  /**
+   * Phase 4b: the host's saved segments, copied in by the server at crawl
+   * creation, never taken from input. crawl_pages.segmentIds index into it.
+   */
+  segments?: SegmentDef[];
 }
 
 export type CrawlConfigInput = CrawlConfigOf<SecretInput>;
@@ -123,6 +186,8 @@ export const DEFAULT_CRAWL_CONFIG: CrawlConfigOf<never> = {
   basicAuth: null,
   respectRobots: true,
   customRobots: null,
+  extractors: [],
+  searches: [],
 };
 
 // ─── Patterns ────────────────────────────────────────────────────────────────
@@ -256,13 +321,48 @@ export const CrawlConfigInputSchema = z.object({
     .default(null),
   respectRobots: z.boolean().default(true),
   customRobots: z.string().max(CONFIG_LIMITS.customRobotsChars).nullable().default(null),
+  extractors: z
+    .array(
+      z.object({
+        name: z.string().trim().min(1).max(CONFIG_LIMITS.nameChars),
+        kind: z.enum(EXTRACTOR_KINDS),
+        expr: z.string().trim().min(1).max(CONFIG_LIMITS.exprChars),
+        attr: z.string().trim().max(CONFIG_LIMITS.attrChars).regex(/^[\w:.-]*$/).nullable().default(null),
+        multiple: z.boolean().default(false),
+      }),
+    )
+    .max(50)
+    .default([]),
+  searches: z
+    .array(
+      z.object({
+        name: z.string().trim().min(1).max(CONFIG_LIMITS.nameChars),
+        pattern: z.string().min(1).max(CONFIG_LIMITS.exprChars),
+        isRegex: z.boolean().default(false),
+      }),
+    )
+    .max(50)
+    .default([]),
 });
 
 export type ConfigProblem =
   | { field: string; code: "requires_verified_site" }
   | { field: string; code: "invalid_pattern"; pattern: string; reason: string }
   | { field: string; code: "reserved_header"; name: string }
-  | { field: string; code: "custom_ua_missing" };
+  | { field: string; code: "custom_ua_missing" }
+  | { field: "extractors" | "searches"; code: "over_plan_cap"; limit: number }
+  | { field: "extractors" | "searches"; code: "invalid_expression"; index: number; reason: string };
+
+/** A regex an extractor or search may run: compiles, and passes unsafeRegex. Null when fine. */
+export function regexProblem(source: string): string | null {
+  if (unsafeRegex(source)) return "unsafe_regex";
+  try {
+    new RegExp(source, "g");
+    return null;
+  } catch {
+    return "invalid_regex";
+  }
+}
 
 /**
  * Check a parsed input against the plan and the site's verification. The URL
@@ -271,7 +371,15 @@ export type ConfigProblem =
  */
 export function checkCrawlConfig(
   input: CrawlConfigInput,
-  ctx: { urlCap: number; verified: boolean },
+  ctx: {
+    urlCap: number;
+    verified: boolean;
+    /** Plan caps (plan-config crawlExtractors / crawlSearches). Absent = 0: a caller that forgets refuses, never allows. */
+    extractorCap?: number;
+    searchCap?: number;
+    /** Server-side syntax check for css / xpath expressions (needs cheerio / xpath). */
+    checkExpr?: (e: Extractor) => string | null;
+  },
 ): { config: CrawlConfigInput; problems: ConfigProblem[] } {
   const problems: ConfigProblem[] = [];
   const config: CrawlConfigInput = {
@@ -281,7 +389,23 @@ export function checkCrawlConfig(
     exclude: input.exclude.map((p) => p.trim()).filter(Boolean),
     customRobots: input.customRobots?.trim() ? input.customRobots : null,
     customUserAgent: input.userAgent === "custom" ? input.customUserAgent : null,
+    extractors: (input.extractors ?? []).map((e) => ({ ...e, attr: e.attr?.trim() ? e.attr.trim() : null })),
+    searches: input.searches ?? [],
   };
+  // Never from input: the server snapshots the host's saved segments.
+  delete config.segments;
+  const extractorCap = ctx.extractorCap ?? 0;
+  const searchCap = ctx.searchCap ?? 0;
+  if (config.extractors.length > extractorCap) problems.push({ field: "extractors", code: "over_plan_cap", limit: extractorCap });
+  if (config.searches.length > searchCap) problems.push({ field: "searches", code: "over_plan_cap", limit: searchCap });
+  config.extractors.forEach((e, index) => {
+    const reason = e.kind === "regex" ? regexProblem(e.expr) : (ctx.checkExpr?.(e) ?? null);
+    if (reason) problems.push({ field: "extractors", code: "invalid_expression", index, reason });
+  });
+  config.searches.forEach((s, index) => {
+    const reason = s.isRegex ? regexProblem(s.pattern) : null;
+    if (reason) problems.push({ field: "searches", code: "invalid_expression", index, reason });
+  });
   for (const field of ["include", "exclude"] as const) {
     for (const pattern of config[field]) {
       const c = compilePattern(pattern);

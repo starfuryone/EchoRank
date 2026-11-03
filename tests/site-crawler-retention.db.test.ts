@@ -31,6 +31,7 @@ describe.skipIf(!TEST_DB)("retention against Postgres", () => {
           data: { crawlJobId: job(n), url: `https://ret.example.com/${p}`, depth: 1, issues: { create: [{ crawlJobId: job(n), type: "x", severity: "NOTICE", ruleId: "x" }] } },
         });
         await prisma.crawlLink.create({ data: { crawlJobId: job(n), fromPageId: page.id, toUrl: "https://ret.example.com/", position: 0 } });
+        await prisma.crawlExtraction.create({ data: { crawlJobId: job(n), pageId: page.id, extractorIndex: 0, values: ["v"] } });
       }
     }
   });
@@ -41,11 +42,12 @@ describe.skipIf(!TEST_DB)("retention against Postgres", () => {
 
   it("purges in batches, keeps the row and summary", async () => {
     const deleted = await r.purgeCrawlData(job(2), 3);
-    expect(deleted).toBe(21); // 7 issues + 7 links + 7 pages, three at a time
+    expect(deleted).toBe(28); // 7 issues + 7 extractions + 7 links + 7 pages, three at a time
     const row = await prisma.crawlJob.findUnique({ where: { id: job(2) } });
     expect(row).toMatchObject({ summary: { n: 2 } });
     expect(row!.dataPurgedAt).not.toBeNull();
     expect(await prisma.crawlPage.count({ where: { crawlJobId: job(2) } })).toBe(0);
+    expect(await prisma.crawlExtraction.count({ where: { crawlJobId: job(2) } })).toBe(0);
   });
 
   it("the nightly run spares the 3 newest and the pinned one", async () => {

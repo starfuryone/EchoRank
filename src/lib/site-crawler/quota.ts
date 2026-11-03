@@ -40,10 +40,20 @@ export interface CrawlQuota {
   locked: boolean;
   /** Phase 4a: completed crawls kept with full data (plan-config crawlsKept). */
   crawlsKept: number;
+  /** Phase 4b caps: extractors and searches per crawl, segments per site. */
+  extractorCap: number;
+  searchCap: number;
+  segmentCap: number;
 }
 
 export function urlCapForPlan(plan: PlanType): number {
   return planConfig(plan).crawlUrlCap;
+}
+
+/** Phase 4b caps (plan-config crawlExtractors / crawlSearches / crawlSegments). */
+export function featureCapsForPlan(plan: PlanType): { extractorCap: number; searchCap: number; segmentCap: number } {
+  const c = planConfig(plan);
+  return { extractorCap: c.crawlExtractors, searchCap: c.crawlSearches, segmentCap: c.crawlSegments };
 }
 
 export function monthlyLimitForPlan(plan: PlanType): number | null {
@@ -80,10 +90,11 @@ export async function getCrawlQuota(
   const monthlyLimit = monthlyLimitForPlan(plan);
   const locked = urlCap <= 0;
   const crawlsKept = planConfig(plan).crawlsKept;
+  const caps = featureCapsForPlan(plan);
 
   // A locked tier never runs a query it cannot act on.
   if (locked) {
-    return { urlCap, renderCap, monthlyLimit, used: 0, remaining: 0, allowed: false, locked: true, crawlsKept };
+    return { urlCap, renderCap, monthlyLimit, used: 0, remaining: 0, allowed: false, locked: true, crawlsKept, ...caps };
   }
 
   const used = await crawlsUsedThisMonth(tenantId, now);
@@ -98,5 +109,6 @@ export async function getCrawlQuota(
     allowed: monthlyLimit === null || used < monthlyLimit,
     locked: false,
     crawlsKept,
+    ...caps,
   };
 }

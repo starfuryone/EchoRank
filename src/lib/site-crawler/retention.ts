@@ -2,8 +2,8 @@
 //
 // Crawl retention (Phase 4a). Every crawl keeps its crawl_jobs row and summary
 // forever: the history list. Full data — crawl_pages, crawl_issues,
-// crawl_links (and, from 4b on, extractions and metrics, which hang off the
-// pages) — is kept for:
+// crawl_links, crawl_extractions (and, from 4d on, metrics, which hang off
+// the pages) — is kept for:
 //   - the plan's crawlsKept most recent COMPLETED crawls of each tenant;
 //   - pinned crawls (≤ CRAWL_PIN_MAX per tenant);
 //   - failed and cancelled crawls for RETENTION_UNFINISHED_DAYS, so a partial
@@ -16,7 +16,7 @@
 // been touched for SITE_DEFAULTS_STALE_DAYS.
 
 import "server-only";
-import type { PlanType } from "@/generated/prisma";
+import { Prisma, type PlanType } from "@/generated/prisma";
 import { prisma } from "@/lib/prisma";
 import { planConfig } from "@/lib/plan-config";
 import { logger } from "@/infrastructure/observability/logger";
@@ -54,18 +54,17 @@ export function crawlsToPurge(crawls: RetentionCandidate[], kept: number, now: D
     .map((c) => c.id);
 }
 
+/** A crawl's full data, children before crawl_pages so the page deletes cascade over nothing. */
+const PURGED_TABLES = ["crawl_issues", "crawl_extractions", "crawl_links", "crawl_pages"] as const;
+
 /** Delete one crawl's full data in bounded batches, then stamp it. Returns rows deleted. */
 export async function purgeCrawlData(jobId: string, batch = RETENTION_BATCH_ROWS): Promise<number> {
   let total = 0;
-  // Children first, each in batches, so the page deletes cascade over nothing.
-  for (const table of ["crawl_issues", "crawl_links", "crawl_pages"] as const) {
+  for (const table of PURGED_TABLES) {
+    // The table name is one of the literals above, never input.
+    const name = Prisma.raw(`"${table}"`);
     for (;;) {
-      const n =
-        table === "crawl_issues"
-          ? await prisma.$executeRaw`DELETE FROM "crawl_issues" WHERE "id" IN (SELECT "id" FROM "crawl_issues" WHERE "crawlJobId" = ${jobId} LIMIT ${batch})`
-          : table === "crawl_links"
-            ? await prisma.$executeRaw`DELETE FROM "crawl_links" WHERE "id" IN (SELECT "id" FROM "crawl_links" WHERE "crawlJobId" = ${jobId} LIMIT ${batch})`
-            : await prisma.$executeRaw`DELETE FROM "crawl_pages" WHERE "id" IN (SELECT "id" FROM "crawl_pages" WHERE "crawlJobId" = ${jobId} LIMIT ${batch})`;
+      const n = await prisma.$executeRaw`DELETE FROM ${name} WHERE "id" IN (SELECT "id" FROM ${name} WHERE "crawlJobId" = ${jobId} LIMIT ${batch})`;
       total += n;
       if (n < batch) break;
     }

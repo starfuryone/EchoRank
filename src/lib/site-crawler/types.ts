@@ -74,6 +74,10 @@ export interface CrawlQuotaDto {
   locked: boolean;
   /** Phase 4a: crawls kept with full data (plan-config crawlsKept). */
   crawlsKept?: number;
+  /** Phase 4b caps: extractors and searches per crawl, segments per site. */
+  extractorCap?: number;
+  searchCap?: number;
+  segmentCap?: number;
 }
 
 export interface CrawlIssueRow {

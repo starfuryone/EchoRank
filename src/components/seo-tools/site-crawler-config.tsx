@@ -21,6 +21,8 @@ import {
   type ConfigProblem,
   type CrawlConfigInput,
   type CrawlConfigView,
+  type CustomSearch,
+  type Extractor,
   type QueryMode,
   type UserAgentChoice,
 } from "@/lib/site-crawler/crawl-config";
@@ -56,6 +58,9 @@ interface Draft {
   basicSaved: boolean;
   respectRobots: boolean;
   customRobots: string;
+  /** Phase 4b. */
+  extractors: Extractor[];
+  searches: CustomSearch[];
 }
 
 const EMPTY: Draft = {
@@ -78,6 +83,8 @@ const EMPTY: Draft = {
   basicSaved: false,
   respectRobots: true,
   customRobots: "",
+  extractors: [],
+  searches: [],
 };
 
 const lines = (s: string) => s.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
@@ -104,6 +111,8 @@ function fromView(v: CrawlConfigView): Draft {
     basicSaved: Boolean(v.basicAuth),
     respectRobots: v.respectRobots,
     customRobots: v.customRobots ?? "",
+    extractors: v.extractors ?? [],
+    searches: v.searches ?? [],
   };
 }
 
@@ -129,6 +138,8 @@ export function toInput(d: Draft): CrawlConfigInput {
     basicAuth: d.basicUser.trim() ? { user: d.basicUser.trim(), password: secret(d.basicPassword, d.basicSaved) ?? "" } : null,
     respectRobots: d.respectRobots,
     customRobots: d.customRobots.trim() ? d.customRobots : null,
+    extractors: d.extractors,
+    searches: d.searches,
   };
 }
 
