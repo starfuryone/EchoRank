@@ -46,6 +46,11 @@ type Rule = {
 - `crawl_issues`: add `ruleId text`, `kind`, `priority`, `evidence jsonb` (small: counts, lengths, the offending value truncated to 200 chars). Index `(jobId, ruleId)`.
 - `crawl_pages`: new columns per phase (below). Keep rows narrow; arrays only where listed.
 - `crawl_jobs.summary` JSON gains `issues: {ruleId: {count, kind, priority}}` and totals by kind.
+  **Old jobs (from the live page):** `summary` is null for pre-Phase-2 jobs, and Phase 2 jobs
+  have a summary with no `issues` / kind totals. Either backfill both in the 3a migration, or
+  have the Overview cards and the Issues tab compute from `crawl_issues` (groupBy `ruleId`, kind;
+  legacy rows through the 7-type mapping) whenever `summary` is null or has no `issues`. Never
+  render zeroes for a job that simply predates the field.
 
 **UI** — new **Issues** tab, Screaming Frog layout: one row per rule → Issue · Kind · Priority · URLs · % of crawled; click → filtered Pages list for that rule; side panel shows description + how to fix. Overview tab gets issue/warning/opportunity totals. Existing 5 tabs unchanged. CSV export of the issues table and of the per-rule page list via `csv-export.ts` + `?format=csv` on the list route. Light Tailwind dashboard theme (Card/Button/Input), not the marketing tokens.
 
@@ -72,6 +77,10 @@ Families and rule set (name each rule exactly; ids are stable API):
 9. **images** — missing alt, alt over 100 chars, missing width/height attributes, broken image (from frontier results, same-host only), over 100 KB (HEAD `content-length`, same-host, cap 20 HEADs/page), alt equals filename, image count > 50.
 10. **canonicals** — missing, canonicalised (points elsewhere), multiple, canonical to 3xx, canonical to 4xx, canonical to noindex page, relative canonical, header vs HTML mismatch, outside `<head>`, canonical to non-HTTPS from HTTPS page.
 11. **directives** — noindex, nofollow, none, noarchive, nosnippet, max-snippet, noimageindex, notranslate, unavailable_after, noindex + canonical conflict, noindex + in sitemap, outside `<head>`, X-Robots-Tag vs meta conflict.
+    **Kinds (from the live page):** the nine "present" rules (`directives.noindex` …
+    `directives.unavailable_after`) are `kind: 'warning'`, not `'issue'`. A directive being
+    there is a deliberate choice as often as a mistake. The conflict and placement rules
+    stay `'issue'`. Assert the kinds in the registry test.
 12. **links** — high external outlinks (>100), high internal outlinks (>500), no internal outlinks, inlinks only via nofollow, non-descriptive anchor text ("click here", "read more", "here", "link"), localhost/127.0.0.1 links, internal nofollow, outlinks to redirect, internal links with parameters, only one inlink, crawl depth > 3, orphan (sitemap-only — existing).
 13. **sitemaps** — in sitemap not in crawl (existing), in crawl not in sitemap, non-indexable URL in sitemap, 3xx in sitemap, 4xx in sitemap, sitemap missing, sitemap over 50k URLs or 50 MB, sitemap not in robots.txt.
 14. **security** — HTTP URL, mixed content, form on HTTP, `target=_blank` without `rel=noopener`, missing HSTS, missing CSP, missing X-Content-Type-Options, missing X-Frame-Options, missing Referrer-Policy, protocol-relative resource, bad content-type for HTML.
