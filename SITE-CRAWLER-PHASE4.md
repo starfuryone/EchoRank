@@ -47,7 +47,7 @@ Every paid Echorank plan gets the complete desktop-crawler feature set below. Ti
 
 | Cap | STARTER | GROWTH | AGENCY |
 |---|---|---|---|
-| URLs per crawl | 500 | 5,000 | 25,000 |
+| URLs per crawl | 2,500 | 5,000 | 25,000 |
 | Crawls per month | 4 | 20 | unlimited |
 | Rendered pages per crawl (3b) | 100 | 500 | 5,000 |
 | Crawls kept (full data) | 3 | 10 | 50 |
@@ -84,7 +84,7 @@ Deliver in six sub-phases, one CC session each, one commit per feature (small wr
 
 **Crawl configuration** (`crawl_jobs.config jsonb`, a typed `CrawlConfig`): max URLs (≤ tier cap), max depth, include/exclude URL patterns (glob or regex, ≤ 20 each), crawl subdomains (bool), follow nofollow (bool), query-string handling (keep | strip all | strip listed params), speed (0.5–2 req/s), user-agent (Echorank360Bot default; Googlebot-smartphone / Googlebot-desktop / custom string on verified sites only), custom request headers (≤ 10, values encrypted), cookies (one header string, encrypted), HTTP basic auth (user + password, encrypted), respect robots.txt (bool — **false only on verified sites**), custom robots.txt (textarea). Start card gets a collapsible "Configuration" section with sensible defaults and a "Save as default for this site" toggle (`crawl_site_defaults` per tenant+host).
 
-**Custom robots.txt.** On a verified site the supplied file replaces the live one for the crawl. On an unverified site it runs in test mode: the crawl obeys the live file, and a `robots.would_block` / `robots.would_allow` pair of informational rules reports what the custom file would have changed. Both modes also produce a **robots.txt tester** panel: paste URLs, see allow/block per rule line for live vs custom.
+**Custom robots.txt.** On a verified site the supplied file replaces the live one for the crawl. On an unverified site it runs in test mode: the crawl obeys the live file, and a `robots.would_block` / `robots.would_allow` pair of informational rules (family `robots`, reserved in `RULE_FAMILIES` by 3a) reports what the custom file would have changed. Both modes also produce a **robots.txt tester** panel: paste URLs, see allow/block per rule line for live vs custom.
 
 **Link edges.** New table `crawl_links` (crawlJobId, fromPageId, toPageId nullable, toUrl, anchor ≤ 200, nofollow bool, position smallint). Internal links only, deduped per (from, to), capped 100 per page. Indexes (crawlJobId, toPageId), (crawlJobId, fromPageId). `crawl_pages` gains `foundOn` (first referrer) and `parentPageId` (BFS discoverer) and `redirectChain jsonb` (every hop {url, status}).
 
@@ -98,7 +98,7 @@ Deliver in six sub-phases, one CC session each, one commit per feature (small wr
 
 **Graph endpoint** (consumed in 4c): `GET /api/seo/v1/crawl/[id]/graph?kind=directory|crawl-tree|links&limit=2000`.
 
-Migration: `site_crawler_phase4a_config_links`.
+Migration: `site_crawler_phase4a_config_links` (a normal migration file; see Definition of done).
 
 ---
 
@@ -158,7 +158,7 @@ Migration: `site_crawler_phase4e_render_features`.
 
 ## Phase 4f — public page and in-app copy
 
-Build `/[locale]/site-crawler` (route-handler pattern à la `/technical-geo`, en + fr, Binance tokens, FAQPage JSON-LD, `LOCALIZED_ROUTES` at 0.7, linked from Solutions › By goal and the SEO Tools hub card). Hero → twelve capability cards → full 32-row feature table with the three plan columns and their caps → "Hosted, not installed" block (no desktop app, scheduled, team-shared, API) → pricing strip from `PLAN_CONFIGS` → FAQ. CTAs → `/pricing`. Screenshots by Playwright from the dogfood tenant's crawl of echorank360.com.
+Build `/[locale]/site-crawler` (route-handler pattern à la `/technical-geo`, en + fr, Binance tokens, FAQPage JSON-LD, `LOCALIZED_ROUTES` at 0.7, linked from Solutions › By goal and the SEO Tools hub card). Hero → twelve capability cards → full 32-row feature table with **four columns — Free, Starter, Growth, Agency** — and their caps. The Free column is filled only where an existing free tool covers the feature (name and link the tool, e.g. the free site audit or robots checker under `/free-tools`); every other Free cell is a dash, never a tick for something the free tools do not do → "Hosted, not installed" block, **led by pricing per workspace, not per user**: one plan covers the tenant's whole team, where desktop crawlers sell a licence per user (or per machine). Read the seat rule from `plan-config.ts`, never hardcode it; today there is no seat cap (team invites are unlimited), so the copy says "your whole team", and it must change in the same commit if a cap is ever added. Then: no desktop app, scheduled, team-shared, API → pricing strip from `PLAN_CONFIGS` → FAQ. CTAs → `/pricing`. Screenshots by Playwright from the dogfood tenant's crawl of echorank360.com.
 
 **Gating:** every card and table row is keyed to a feature flag (`crawl.<feature>`) and renders only when the flag is on in production. The page never lists a capability that isn't shipped. Row 32 ("Free technical support") is always on.
 
@@ -183,7 +183,7 @@ In-app: the SEO Tools hub card gets the same one-liner; `/kb` gets one article p
 
 ## Definition of done (every sub-phase)
 
-- Migration via `prisma migrate diff` → `psql` → `prisma migrate resolve --applied`; name in the commit message.
+- Migration: a normal file under `prisma/migrations/`, SQL generated with `prisma migrate diff --from-schema <old> --to-schema prisma/schema.prisma --script`, applied only by `sudo echorank360-deploy` (`prisma migrate deploy`) — never by hand. Guarded statements (`IF NOT EXISTS`, `DO` blocks for types) so a retry is a no-op. Name in the commit message.
 - Retention job for every new table; encryption for every secret; verified-site check on every feature marked as such.
 - `tsc` clean, suite green, tree clean, one commit per feature.
 - Report: features shipped, tables + retention, plan-config keys, operator steps (OAuth scopes, consent screen), tests before/after, commit hashes, deviations with reasons, the exact deploy line (both pm2 processes, CF Purge Everything after a successful build, sidecar first when touched).

@@ -36,6 +36,8 @@ export const RULE_FAMILIES = [
   "pagination",
   "structured_data",
   "validation",
+  // Reserved for Phase 4a (robots.would_block / robots.would_allow, custom robots.txt test mode).
+  "robots",
 ] as const;
 
 export type RuleFamily = (typeof RULE_FAMILIES)[number];

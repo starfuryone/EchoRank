@@ -22,7 +22,7 @@ Deliver in three sub-phases, one CC session each, each independently shippable. 
 
 ## Architecture (all phases)
 
-**Rule registry** — `packages/crawl-rules/src/rules/<family>.ts`, each exporting `Rule[]`:
+**Rule registry** — `packages/crawl-rules/src/rules/<family>.ts`, each exporting `Rule[]`. `RULE_FAMILIES` also reserves `robots` (no rules in 3a; Phase 4a adds `robots.would_block` / `robots.would_allow`):
 
 ```ts
 type Rule = {
@@ -41,7 +41,7 @@ type Rule = {
 - Page-scope rules run inline on the already-parsed page; no second parse, no HTML body stored (Phase 1 rule stands). Add only the extra `PageFacts` columns listed per phase. Site-scope rules run in the existing aggregation job via groupBy; never load the page set into RAM.
 - The 7 existing issue types are migrated to rule ids (keep a mapping so old rows still render).
 
-**Schema** (migration via `prisma migrate diff` → `psql` → `prisma migrate resolve --applied`; the DB user cannot create a shadow DB, `migrate dev` fails):
+**Schema** (a normal migration file under `prisma/migrations/`: generate the SQL with `prisma migrate diff --from-schema <old> --to-schema prisma/schema.prisma --script` (no shadow DB needed), never apply it by hand — `sudo echorank360-deploy` runs `prisma migrate deploy`; `migrate dev` fails here):
 
 - `crawl_issues`: add `ruleId text`, `kind`, `priority`, `evidence jsonb` (small: counts, lengths, the offending value truncated to 200 chars). Index `(jobId, ruleId)`.
 - `crawl_pages`: new columns per phase (below). Keep rows narrow; arrays only where listed.
@@ -54,7 +54,7 @@ type Rule = {
 
 **UI** — new **Issues** tab, Screaming Frog layout: one row per rule → Issue · Kind · Priority · URLs · % of crawled; click → filtered Pages list for that rule; side panel shows description + how to fix. Overview tab gets issue/warning/opportunity totals. Existing 5 tabs unchanged. CSV export of the issues table and of the per-rule page list via `csv-export.ts` + `?format=csv` on the list route. Light Tailwind dashboard theme (Card/Button/Input), not the marketing tokens.
 
-**Gating** — same `requirePaidPlan` as today. Rule evaluation adds no external cost, so no new quota in 3a. Render mode (3b) is per-tier: STARTER 0 rendered pages, GROWTH 500 / crawl, AGENCY 5,000 / crawl, keyed in `plan-config.ts` next to the crawl URL caps (500 / 5,000 / 25,000).
+**Gating** — same `requirePaidPlan` as today. Rule evaluation adds no external cost, so no new quota in 3a. Render mode (3b) is per-tier: STARTER 0 rendered pages, GROWTH 500 / crawl, AGENCY 5,000 / crawl, keyed in `plan-config.ts` next to the crawl URL caps (2,500 / 5,000 / 25,000; superseded for rendering by the Phase 4 tier table).
 
 **Tests** — table-driven: one fixture-HTML test per rule (positive + negative). `tsc` clean, full suite green, route-table test updated if a route is added.
 
