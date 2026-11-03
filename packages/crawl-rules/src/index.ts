@@ -20,6 +20,8 @@ import type {
   SiteRuleCtx,
   StoredPageFacts,
 } from "./types";
+import { RULES as structuredDataRules } from "./rules/structured_data";
+import { COPY as structuredDataCopy } from "./copy/structured_data";
 import { RULES as paginationRules } from "./rules/pagination";
 import { COPY as paginationCopy } from "./copy/pagination";
 import { RULES as securityRules } from "./rules/security";
@@ -73,6 +75,7 @@ const FAMILIES: Family[] = [
   { rules: sitemapsRules, copy: sitemapsCopy },
   { rules: securityRules, copy: securityCopy },
   { rules: paginationRules, copy: paginationCopy },
+  { rules: structuredDataRules, copy: structuredDataCopy },
 ];
 
 export const RULES: readonly Rule[] = FAMILIES.flatMap((f) => f.rules);
