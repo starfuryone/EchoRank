@@ -16,6 +16,7 @@ import { getRedisConnection } from "@/infrastructure/redis/connection";
 import { crawlKeys, REDIS_KEY_TTL_SECONDS } from "./constants";
 import { getCrawlQuota } from "./quota";
 import { validateRootUrl } from "./url";
+import type { RenderMode } from "./types";
 import { CrawlLockedError, CrawlQuotaExceededError, InvalidCrawlUrlError } from "./http";
 
 export interface CrawlJobDto {
@@ -29,6 +30,9 @@ export interface CrawlJobDto {
   startedAt: string | null;
   finishedAt: string | null;
   createdAt: string;
+  renderMode: RenderMode;
+  renderCap: number;
+  pagesRendered: number;
 }
 
 export function toCrawlDto(row: {
@@ -42,6 +46,9 @@ export function toCrawlDto(row: {
   startedAt: Date | null;
   finishedAt: Date | null;
   createdAt: Date;
+  renderMode?: string;
+  renderCap?: number;
+  pagesRendered?: number;
 }): CrawlJobDto {
   return {
     id: row.id,
@@ -54,6 +61,9 @@ export function toCrawlDto(row: {
     startedAt: row.startedAt?.toISOString() ?? null,
     finishedAt: row.finishedAt?.toISOString() ?? null,
     createdAt: row.createdAt.toISOString(),
+    renderMode: row.renderMode === "thin" || row.renderMode === "all" ? row.renderMode : "none",
+    renderCap: row.renderCap ?? 0,
+    pagesRendered: row.pagesRendered ?? 0,
   };
 }
 
@@ -62,6 +72,7 @@ export async function startCrawl(
   tenantId: string,
   plan: PlanType,
   rawUrl: string,
+  renderMode: RenderMode = "none",
 ): Promise<CrawlJobDto> {
   const quota = await getCrawlQuota(tenantId, plan);
   if (quota.locked) throw new CrawlLockedError(plan);
@@ -82,6 +93,10 @@ export async function startCrawl(
       // Copied from the plan at creation: the crawl keeps reporting the ceiling
       // it ran under even if the tenant changes tier tomorrow.
       urlCap: quota.urlCap,
+      // Same rule for the render ceiling. A tier without one crawls raw only,
+      // whatever was asked for.
+      renderMode: quota.renderCap > 0 ? renderMode : "none",
+      renderCap: quota.renderCap,
       status: "QUEUED",
     },
   });

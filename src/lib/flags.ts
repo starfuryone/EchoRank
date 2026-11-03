@@ -36,7 +36,8 @@ export const FLAGS = {
   "crawl.psi": false,
   "crawl.backlinks": false,
   // Phase 3b / 4e
-  "crawl.render": false,
+  // Phase 3b shipped render mode (headless Chromium via the sidecar).
+  "crawl.render": true,
   "crawl.customJs": false,
   "crawl.ai": false,
   "crawl.formsAuth": false,

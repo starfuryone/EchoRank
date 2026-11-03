@@ -36,6 +36,11 @@ export const RULE_FAMILIES = [
   "pagination",
   "structured_data",
   "validation",
+  // Phase 3b: render mode. accessibility and mobile fire only on rendered
+  // pages; javascript mostly does (see rules/javascript.ts).
+  "javascript",
+  "accessibility",
+  "mobile",
   // Reserved for Phase 4a (robots.would_block / robots.would_allow, custom robots.txt test mode).
   "robots",
 ] as const;
@@ -213,6 +218,42 @@ export interface ImageCheckFacts {
   sample: string | null;
 }
 
+/**
+ * What a headless browser saw for this page (Phase 3b render mode). Absent on
+ * PageFacts when the page was not rendered: render mode off, the page not
+ * picked by "thin", the job's rendered-page cap reached, or the render failed.
+ */
+export interface RenderFacts {
+  /** HTTP status of the document the browser loaded. */
+  statusCode: number | null;
+  finalUrl: string;
+  /** Where a script (or meta refresh) navigated after load; null when it stayed. */
+  jsRedirect: string | null;
+  /** The rendered DOM through the same extractor as the raw HTML. Null when the page navigated off-site. */
+  html: HtmlFacts | null;
+  /** console.error calls plus uncaught exceptions. */
+  consoleErrors: number;
+  /** The first one, truncated. */
+  consoleSample: string | null;
+  /** Measured at a phone's device width. Null when the measurement did not run. */
+  viewport: { width: number; scrollWidth: number } | null;
+  /** Computed font-size of <body>, CSS px. */
+  bodyFontPx: number | null;
+  tapTargets: { checked: number; tooClose: number; sample: string | null } | null;
+  /** axe-core violations by axe rule id. Null when axe did not run in the budget. */
+  axe: Record<string, { impact: string | null; nodes: number }> | null;
+}
+
+/** Which page elements exist, or differ, only after JavaScript runs. */
+export interface JsOnlyFacts {
+  title: boolean;
+  metaDesc: boolean;
+  h1: boolean;
+  canonical: boolean;
+  content: boolean;
+  links: boolean;
+}
+
 export interface PageFacts {
   /** The URL as crawled (pre-redirect), normalised. */
   url: string;
@@ -240,6 +281,8 @@ export interface PageFacts {
   html: HtmlFacts | null;
   externalLinkChecks?: LinkCheckFacts;
   imageChecks?: ImageCheckFacts;
+  /** Phase 3b. See RenderFacts. */
+  render?: RenderFacts;
 }
 
 // ─── Stored (site-scope) facts ──────────────────────────────────────────────

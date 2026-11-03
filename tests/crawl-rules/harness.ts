@@ -23,10 +23,11 @@ import {
   type JobFacts,
   type PageFacts,
   type PageSiteFacts,
+  type RenderFacts,
   type SiteRuleCtx,
   type StoredPageFacts,
 } from "@/lib/crawl-rules";
-import { buildPageFacts, type PageFactsInput } from "@/lib/site-crawler/facts";
+import { buildPageFacts, extractHtmlFacts, type PageFactsInput } from "@/lib/site-crawler/facts";
 
 export const ROOT = "https://example.com/";
 export const PAGE_URL = "https://example.com/page";
@@ -72,6 +73,27 @@ export function page(html: string | null, over: Partial<PageFactsInput> = {}): P
 /** Mutate a built PageFacts (for facts the extractor cannot produce, e.g. HEAD-check results). */
 export function withFacts(p: PageFacts, patch: (p: PageFacts) => void): PageFacts {
   patch(p);
+  return p;
+}
+
+/**
+ * Attach what a browser saw (Phase 3b). The rendered HTML goes through the same
+ * extractor as the raw one; null = the page navigated off-site.
+ */
+export function withRender(p: PageFacts, renderedHtml: string | null, over: Partial<RenderFacts> = {}): PageFacts {
+  p.render = {
+    statusCode: 200,
+    finalUrl: p.finalUrl,
+    jsRedirect: null,
+    html: renderedHtml === null ? null : extractHtmlFacts(renderedHtml, p.finalUrl, ROOT, null),
+    consoleErrors: 0,
+    consoleSample: null,
+    viewport: { width: 412, scrollWidth: 412 },
+    bodyFontPx: 16,
+    tapTargets: { checked: 10, tooClose: 0, sample: null },
+    axe: {},
+    ...over,
+  };
   return p;
 }
 
@@ -149,6 +171,11 @@ export function run(c: RuleCase): Evidence | null {
     return evaluatePage([rule], c.page, { capabilities: c.capabilities ?? [] })[0]?.evidence ?? null;
   }
   return evaluateSite([rule], c.stored, c.ctx ?? siteCtx())[0]?.evidence ?? null;
+}
+
+/** A page case run with render mode on for the job. */
+export function rc(rule: string, name: string, fires: boolean, p: PageFacts, evidence?: Evidence): RuleCase {
+  return { rule, name, fires, page: p, capabilities: ["render"], ...(evidence ? { evidence } : {}) };
 }
 
 /** Shorthand for a page case: positive and negative in one call. */

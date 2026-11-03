@@ -10,7 +10,7 @@
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 import { describe, expect, it } from "vitest";
-import { RULE_COPY, RULE_FAMILIES, RULES } from "@/lib/crawl-rules";
+import { AXE_RULES, RULE_COPY, RULE_FAMILIES, RULES } from "@/lib/crawl-rules";
 import type { RuleCase } from "./harness";
 
 const cases = Object.values(import.meta.glob<{ default: RuleCase[] }>("./cases/*.ts", { eager: true })).flatMap(
@@ -67,6 +67,31 @@ describe("rule registry", () => {
       const present = !/(conflict|in_sitemap|outside_head)/.test(r.id);
       expect(r.kind, r.id).toBe(present ? "warning" : "issue");
     }
+  });
+});
+
+describe("Phase 3b families", () => {
+  it("accessibility: one rule per generated axe rule, kind from axe's impact", () => {
+    const a11y = RULES.filter((r) => r.family === "accessibility");
+    expect(a11y.length).toBe(AXE_RULES.length);
+    const want = { critical: "issue", serious: "issue", moderate: "warning", minor: "opportunity" } as const;
+    for (const m of AXE_RULES) {
+      const r = a11y.find((x) => x.id === `accessibility.${m.axeId.replace(/-/g, "_")}`);
+      expect(r, m.axeId).toBeDefined();
+      expect(r!.kind, m.axeId).toBe(want[m.impact]);
+      expect(r!.requires).toEqual(["render"]);
+      expect(RULE_COPY[r!.id]!.howToFix).toContain(m.helpUrl);
+    }
+  });
+
+  it("accessibility and mobile rules all require render; javascript except the two raw-HTML rules", () => {
+    for (const r of RULES.filter((x) => x.family === "mobile")) expect(r.requires, r.id).toEqual(["render"]);
+    const raw = RULES.filter((x) => x.family === "javascript" && !x.requires).map((r) => r.id);
+    expect(raw.sort()).toEqual(["javascript.ajax_crawling_scheme", "javascript.enable_rendering"]);
+  });
+
+  it("mobile does not duplicate validation's viewport rule", () => {
+    expect(RULES.filter((r) => /viewport_missing|missing_viewport/.test(r.id)).map((r) => r.id)).toEqual(["validation.missing_viewport"]);
   });
 });
 

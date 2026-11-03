@@ -125,10 +125,13 @@ export function extractHtmlFacts(html: string, pageUrl: string, rootUrl: string,
 
   const lang = ($("html").attr("lang") ?? "").trim() || null;
 
-  // Visible text, as the crawler has always measured it.
+  // Visible text: the body's. A document with an empty body has no visible
+  // text, so the fallback to the whole tree applies only when there is no
+  // body at all (it used to fire on an empty one, and counted the <title>).
   const $text = cheerio.load(html);
   $text("script, style, noscript, template, svg").remove();
-  const text = collapse($text("body").text() || $text.root().text());
+  const $body = $text("body");
+  const text = collapse($body.length ? $body.text() : $text.root().text());
   const total = bytes ?? utf8Bytes(html);
 
   const metaCharset = $("meta[charset]").first().attr("charset");

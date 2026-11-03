@@ -37,7 +37,10 @@ import { parsePage, type ParsedPage } from "./checks";
 import { evaluatePageRules, type Issue, type PageFacts } from "@/lib/crawl-rules";
 import { buildPageFacts } from "./facts";
 import { attachHeadChecks, type HeadCheckDeps } from "./head-checks";
-import { issueRows, storedColumns } from "./stored";
+import { issueRows, renderColumns, storedColumns } from "./stored";
+import { RenderBudget } from "./render";
+import { isRenderMode } from "./types";
+import { renderedOnlyLinks } from "@/lib/crawl-rules";
 import { fetchRobots, type RobotsRules } from "./robots";
 import { isFetchableUrl, isInScope, normalizeCrawlUrl } from "./url";
 
@@ -68,6 +71,8 @@ interface PendingPage {
   issues: Issue[];
   /** The Phase 3a stored-fact columns; null when nothing was fetched. */
   stored: ReturnType<typeof storedColumns> | null;
+  /** The Phase 3b render columns; null/empty when the page was not rendered. */
+  rendered: ReturnType<typeof renderColumns> | null;
   contentHash: string | null;
   /** Null when the crawl found no sitemap at all. */
   inSitemap: boolean | null;
@@ -96,7 +101,16 @@ export async function runCrawl({
     // tenantId is here for the Research Log write at the end. It is not used
     // to scope anything: the job id came from a tenant-scoped route, and the
     // worker is running that job, not looking one up.
-    select: { id: true, tenantId: true, rootUrl: true, urlCap: true, status: true },
+    select: {
+      id: true,
+      tenantId: true,
+      rootUrl: true,
+      urlCap: true,
+      status: true,
+      renderMode: true,
+      renderCap: true,
+      pagesRendered: true,
+    },
   });
   if (!job) throw new Error(`CrawlJob ${jobId} not found`);
 
@@ -109,6 +123,11 @@ export async function runCrawl({
   /** URLs the sitemap put in the frontier — an orphan candidate is one of these. */
   const sitemapSeeded = new Set<string>();
   let summary: unknown = undefined;
+  const render = new RenderBudget(
+    isRenderMode(job.renderMode) ? job.renderMode : "none",
+    job.renderCap,
+    job.pagesRendered,
+  );
 
   try {
     await prisma.crawlJob.update({
@@ -128,6 +147,8 @@ export async function runCrawl({
         crawlDelay: robots.crawlDelaySeconds,
         robotsAllowAll: robots.allowAll,
         ua: CRAWLER_USER_AGENT,
+        renderMode: render.mode,
+        renderCap: render.cap,
       },
       "site-crawl started",
     );
@@ -209,7 +230,7 @@ export async function runCrawl({
         redis,
         cacheKey: keys.headCache,
         limiter,
-      });
+      }, render);
       const written = await writeBatch(jobId, results, redis, keys.seen, job.urlCap, pagesCrawled);
 
       pagesCrawled += written.pages;
@@ -218,7 +239,7 @@ export async function runCrawl({
       // Progress is written every batch so the UI's 3s poll shows movement.
       await prisma.crawlJob.update({
         where: { id: jobId },
-        data: { pagesCrawled, issueCount },
+        data: { pagesCrawled, issueCount, pagesRendered: job.pagesRendered + render.rendered },
       });
     }
     // ── Site-wide aggregation ───────────────────────────────────────────
@@ -264,6 +285,7 @@ export async function runCrawl({
           issueCount,
           stoppedReason,
           finishedAt: new Date(),
+          pagesRendered: job.pagesRendered + render.rendered,
           ...(summary === undefined ? {} : { summary: summary as never }),
         },
       })
@@ -306,7 +328,19 @@ export async function runCrawl({
     });
   }
 
-  logger.info({ jobId, status, pagesCrawled, issueCount, stoppedReason }, "site-crawl finished");
+  logger.info(
+    {
+      jobId,
+      status,
+      pagesCrawled,
+      issueCount,
+      stoppedReason,
+      rendered: render.rendered,
+      renderFailed: render.failed,
+      renderStopped: render.stopped,
+    },
+    "site-crawl finished",
+  );
   return { status, pagesCrawled, issueCount, stoppedReason };
 }
 
@@ -343,6 +377,7 @@ async function processBatch(
   limiter: RateLimiter,
   isInSitemap: ((url: string) => Promise<boolean>) | null,
   head: HeadCheckDeps,
+  render: RenderBudget,
 ): Promise<PendingPage[]> {
   const results: PendingPage[] = [];
   let cursor = 0;
@@ -352,7 +387,7 @@ async function processBatch(
       const index = cursor++;
       if (index >= batch.length) return;
       const item = batch[index]!;
-      results.push(await crawlOne(item, rootUrl, robots, limiter, isInSitemap, head));
+      results.push(await crawlOne(item, rootUrl, robots, limiter, isInSitemap, head, render));
     }
   };
 
@@ -370,6 +405,7 @@ async function crawlOne(
   /** Null when the crawl found no sitemap; otherwise membership per URL. */
   isInSitemap: ((url: string) => Promise<boolean>) | null,
   head: HeadCheckDeps,
+  render: RenderBudget,
 ): Promise<PendingPage> {
   const base: PendingPage = {
     url: item.url,
@@ -381,6 +417,7 @@ async function crawlOne(
     parsed: null,
     issues: [],
     stored: null,
+    rendered: null,
     contentHash: null,
     inSitemap: null,
     discovered: [],
@@ -443,13 +480,20 @@ async function crawlOne(
     html: isHtml ? res.html : null,
   });
   await attachHeadChecks(facts, rootUrl, head);
-  const issues = evaluatePageRules(facts);
+  const rendered = await render.maybeRender(facts);
+  if (rendered) facts.render = rendered;
+  const issues = evaluatePageRules(facts, { capabilities: render.enabled ? ["render"] : [] });
+
+  // Links that exist only after JavaScript are links a rendering crawler
+  // follows, so a rendered page's discovery (and the inlink credit it gives)
+  // includes them.
+  const jsLinks = facts.html && facts.render?.html ? renderedOnlyLinks(facts.html, facts.render.html) : [];
 
   // parsePage already dedupes hrefs per page, so this set is the "one credit
   // per source page" rule the inlink count needs.
   const linkTargets = [
     ...new Set(
-      (parsed?.links ?? [])
+      [...(parsed?.links ?? []), ...jsLinks]
         .map((url) => normalizeCrawlUrl(url))
         .filter((url): url is string => Boolean(url))
         .filter((url) => isInScope(url, rootUrl) && isFetchableUrl(url)),
@@ -465,6 +509,7 @@ async function crawlOne(
     parsed,
     issues,
     stored: storedColumns(facts),
+    rendered: renderColumns(facts),
     contentHash: parsed?.contentHash ?? null,
     inSitemap,
     discovered: [...linkTargets, ...annotationTargets(facts, linkTargets, rootUrl)].map((url) => ({
@@ -540,6 +585,7 @@ async function writeBatch(
           contentType: result.contentType,
           inSitemap: result.inSitemap,
           ...(result.stored ?? {}),
+          ...(result.rendered ?? {}),
           simhash: result.parsed?.simhash ?? null,
           issues: { create: issues },
         },

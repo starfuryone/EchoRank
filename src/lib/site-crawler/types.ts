@@ -15,6 +15,19 @@ export function isInFlight(status: string): boolean {
   return (IN_FLIGHT_CRAWL_STATUSES as string[]).includes(status);
 }
 
+/**
+ * Render mode (Phase 3b). none = raw HTML only; thin = render only pages whose
+ * raw HTML has under THIN_MAX_WORDS words or no links; all = every HTML page.
+ * Either way capped by the plan's rendered pages per crawl.
+ */
+export const RENDER_MODES = ["none", "thin", "all"] as const;
+export type RenderMode = (typeof RENDER_MODES)[number];
+export const THIN_MAX_WORDS = 50;
+
+export function isRenderMode(v: unknown): v is RenderMode {
+  return typeof v === "string" && (RENDER_MODES as readonly string[]).includes(v);
+}
+
 export interface CrawlDto {
   id: string;
   rootUrl: string;
@@ -26,6 +39,10 @@ export interface CrawlDto {
   startedAt: string | null;
   finishedAt: string | null;
   createdAt: string;
+  renderMode: RenderMode;
+  /** The plan's rendered-page ceiling when the crawl was created. */
+  renderCap: number;
+  pagesRendered: number;
   /** Present on the detail endpoint once the crawl has settled. */
   severityCounts?: SeverityCounts;
 }
@@ -38,6 +55,8 @@ export interface SeverityCounts {
 
 export interface CrawlQuotaDto {
   urlCap: number;
+  /** Pages one crawl may render; 0 = render mode unavailable on the plan. */
+  renderCap: number;
   monthlyLimit: number | null;
   used: number;
   remaining: number | null;

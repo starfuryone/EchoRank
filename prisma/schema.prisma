@@ -2236,6 +2236,12 @@ model CrawlJob {
   pagesCrawled  Int         @default(0)
   issueCount    Int         @default(0)
   stoppedReason String?
+  /// Phase 3b render mode: "none" | "thin" | "all". renderCap is the plan's
+  /// rendered-page ceiling copied at creation (like urlCap); pagesRendered
+  /// counts pages the sidecar actually rendered.
+  renderMode    String      @default("none")
+  renderCap     Int         @default(0)
+  pagesRendered Int         @default(0)
   /// Site-wide aggregation output: distributions, duplicate/redirect counts,
   /// sitemap and inlink stats. COUNTS AND CAPPED SAMPLES ONLY — never full
   /// lists, so the column stays well under 100 KB on a 25,000-URL crawl.
@@ -2322,6 +2328,17 @@ model CrawlPage {
   jsonLdErrors        Int?
   /// 64-bit SimHash of the visible text (signed), for near-duplicates.
   simhash             BigInt?
+
+  // ── Phase 3b: render mode. Null on pages that were not rendered. ─────────
+  renderedWordCount   Int?
+  /// Internal links in the rendered DOM.
+  renderedLinkCount   Int?
+  /// {title, metaDesc, h1, canonical, content, links} booleans: what exists
+  /// or differs only after JavaScript (packages/crawl-rules jsOnlyFacts).
+  jsOnly              Json?
+  /// axe rule id → violating node count. Counts only, no HTML snippets.
+  axeViolations       Json?
+  consoleErrors       Int?
 
   crawlJob CrawlJob     @relation(fields: [crawlJobId], references: [id], onDelete: Cascade)
   issues   CrawlIssue[]

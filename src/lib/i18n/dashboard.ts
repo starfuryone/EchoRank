@@ -12888,13 +12888,20 @@ const siteCrawlerEn = {
   helpAria: "Open the guide to what the crawler checks (new tab)",
   title: "Site Crawler",
   subtitle:
-    "Crawl every page on your site and see the on-page SEO issues, page by page. Raw HTML only — no JavaScript rendering in this version.",
+    "Crawl every page on your site and see the on-page SEO issues, page by page. Raw HTML by default; turn on rendering to see JavaScript pages as a browser does.",
 
   urlLabel: "Site URL",
   urlPlaceholder: "https://example.com",
   startCta: "Start crawl",
   starting: "Starting…",
   capNote: (cap: string) => `Up to ${cap} URLs per crawl on your plan.`,
+  renderLabel: "JavaScript rendering",
+  renderNone: "Off (raw HTML)",
+  renderThin: "Thin pages only",
+  renderAll: "All pages",
+  renderCapNote: (cap: string) =>
+    `Rendered pages run in headless Chromium, one at a time, up to ${cap} per crawl on your plan. Thin pages: under 50 words or no links in the raw HTML.`,
+  renderedProgress: (done: string, cap: string) => `${done} of up to ${cap} pages rendered`,
   quotaNote: (used: string, limit: string) => `${used} of ${limit} crawls used this month.`,
   // `n` picks the plural; `used` is the same number, already locale-formatted.
   quotaUnlimited: (used: string, n: number) =>
@@ -13059,13 +13066,20 @@ export const SITE_CRAWLER_COPY: Record<DashLocale, SiteCrawlerCopy> = {
     helpAria: "Ouvrir le guide de ce que vérifie le robot (nouvel onglet)",
     title: "Explorateur de site",
     subtitle:
-      "Parcourez chaque page de votre site et consultez les problèmes SEO on-page, page par page. HTML brut uniquement — pas de rendu JavaScript dans cette version.",
+      "Parcourez chaque page de votre site et consultez les problèmes SEO on-page, page par page. HTML brut par défaut; activez le rendu pour voir les pages JavaScript comme un navigateur.",
 
     urlLabel: "URL du site",
     urlPlaceholder: "https://exemple.com",
     startCta: "Lancer l'exploration",
     starting: "Lancement…",
     capNote: (cap: string) => `Jusqu'à ${cap} URL par exploration avec votre forfait.`,
+    renderLabel: "Rendu JavaScript",
+    renderNone: "Désactivé (HTML brut)",
+    renderThin: "Pages minces seulement",
+    renderAll: "Toutes les pages",
+    renderCapNote: (cap: string) =>
+      `Les pages rendues passent dans Chromium sans interface, une à la fois, jusqu'à ${cap} par exploration avec votre forfait. Pages minces : moins de 50 mots ou aucun lien dans le HTML brut.`,
+    renderedProgress: (done: string, cap: string) => `Pages rendues : ${done} sur un maximum de ${cap}`,
     // Phrased so the count needs no agreement; quotaUnlimited below takes `n`
     // because it cannot be (French takes the singular for 0 and 1).
     quotaNote: (used: string, limit: string) => `Explorations utilisées ce mois-ci : ${used} sur ${limit}.`,
@@ -13225,13 +13239,20 @@ export const SITE_CRAWLER_COPY: Record<DashLocale, SiteCrawlerCopy> = {
     helpAria: "Leitfaden zu den Prüfungen des Crawlers öffnen (neuer Tab)",
     title: "Site Crawler",
     subtitle:
-      "Crawlen Sie jede Seite Ihrer Website und sehen Sie die On-Page-SEO-Probleme Seite für Seite. Nur rohes HTML — kein JavaScript-Rendering in dieser Version.",
+      "Crawlen Sie jede Seite Ihrer Website und sehen Sie die On-Page-SEO-Probleme Seite für Seite. Standardmässig rohes HTML; mit Rendering sehen Sie JavaScript-Seiten wie ein Browser.",
 
     urlLabel: "Website-URL",
     urlPlaceholder: "https://beispiel.ch",
     startCta: "Crawl starten",
     starting: "Wird gestartet…",
     capNote: (cap: string) => `Bis zu ${cap} URLs pro Crawl in Ihrem Abo.`,
+    renderLabel: "JavaScript-Rendering",
+    renderNone: "Aus (rohes HTML)",
+    renderThin: "Nur dünne Seiten",
+    renderAll: "Alle Seiten",
+    renderCapNote: (cap: string) =>
+      `Gerenderte Seiten laufen nacheinander in Headless-Chromium, bis zu ${cap} pro Crawl in Ihrem Abo. Dünne Seiten: unter 50 Wörtern oder ohne Links im rohen HTML.`,
+    renderedProgress: (done: string, cap: string) => `${done} von maximal ${cap} Seiten gerendert`,
     quotaNote: (used: string, limit: string) => `${used} von ${limit} Crawls diesen Monat genutzt.`,
     quotaUnlimited: (used: string, n: number) =>
       `${used} ${n === 1 ? "Crawl" : "Crawls"} diesen Monat. Keine monatliche Begrenzung in Ihrem Abo.`,

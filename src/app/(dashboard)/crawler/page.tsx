@@ -3,9 +3,10 @@ import { cookies } from "next/headers";
 import { dashboardLocale, SITE_CRAWLER_COPY } from "@/lib/i18n/dashboard";
 import { SiteCrawlerClient } from "@/components/seo-tools/site-crawler-client";
 
-// The Site Crawler (CRAWLER_BRAND) — our own BFS crawl of a tenant's site. Raw HTML only: no
-// JavaScript rendering, no external API, no sidecar. The worker fetches and
-// parses in-process, respects robots.txt, and stays under 2 requests a second.
+// The Site Crawler (CRAWLER_BRAND) — our own BFS crawl of a tenant's site, no
+// external API. The worker fetches and parses raw HTML in-process, respects
+// robots.txt, and stays under 2 requests a second; render mode (Phase 3b)
+// sends the pages it picks through the av-service sidecar's headless Chromium.
 //
 // NOT Site Audit, which buys a technical crawl from DataForSEO and is priced
 // per page. This one is first-party and capped by URLs per plan.

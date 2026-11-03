@@ -20,6 +20,12 @@ import type {
   SiteRuleCtx,
   StoredPageFacts,
 } from "./types";
+import { RULES as javascriptRules } from "./rules/javascript";
+import { COPY as javascriptCopy } from "./copy/javascript";
+import { RULES as accessibilityRules } from "./rules/accessibility";
+import { COPY as accessibilityCopy } from "./copy/accessibility";
+import { RULES as mobileRules } from "./rules/mobile";
+import { COPY as mobileCopy } from "./copy/mobile";
 import { RULES as hreflangRules } from "./rules/hreflang";
 import { COPY as hreflangCopy } from "./copy/hreflang";
 import { RULES as validationRules } from "./rules/validation";
@@ -82,6 +88,9 @@ const FAMILIES: Family[] = [
   { rules: structuredDataRules, copy: structuredDataCopy },
   { rules: validationRules, copy: validationCopy },
   { rules: hreflangRules, copy: hreflangCopy },
+  { rules: javascriptRules, copy: javascriptCopy },
+  { rules: accessibilityRules, copy: accessibilityCopy },
+  { rules: mobileRules, copy: mobileCopy },
 ];
 
 export const RULES: readonly Rule[] = FAMILIES.flatMap((f) => f.rules);
@@ -104,6 +113,8 @@ export function evaluateSiteRules(page: StoredPageFacts, ctx: SiteRuleCtx) {
 export { ev, isOk, pageRule, siteRule, evaluatePage, evaluateSite } from "./engine";
 export * from "./types";
 export { pixelWidth, TITLE_FONT_PX, DESCRIPTION_FONT_PX } from "./util/pixels";
+export { jsOnlyFacts, renderedOnlyLinks, metaNoindex, JS_CONTENT_MIN_WORDS } from "./util/render";
+export { AXE_RULES, AXE_VERSION } from "./generated/axe-rules";
 export { simhash64, hammingDistance, NEAR_DUPLICATE_MAX_HAMMING } from "./util/simhash";
 export {
   collapse,

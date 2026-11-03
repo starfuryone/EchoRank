@@ -27,6 +27,8 @@ export const QUOTA_CONSUMING_STATUSES = ["QUEUED", "RUNNING", "COMPLETED"] as co
 export interface CrawlQuota {
   /** URLs one crawl may fetch. 0 = the tool is locked for this tier. */
   urlCap: number;
+  /** Pages one crawl may render (Phase 3b). 0 = render mode off for the tier. */
+  renderCap: number;
   /** Crawls per calendar month, or null for unlimited. */
   monthlyLimit: number | null;
   /** Crawls already started this month that consume quota. */
@@ -72,12 +74,13 @@ export async function getCrawlQuota(
   now: Date = new Date(),
 ): Promise<CrawlQuota> {
   const urlCap = urlCapForPlan(plan);
+  const renderCap = planConfig(plan).crawlRenderedPages;
   const monthlyLimit = monthlyLimitForPlan(plan);
   const locked = urlCap <= 0;
 
   // A locked tier never runs a query it cannot act on.
   if (locked) {
-    return { urlCap, monthlyLimit, used: 0, remaining: 0, allowed: false, locked: true };
+    return { urlCap, renderCap, monthlyLimit, used: 0, remaining: 0, allowed: false, locked: true };
   }
 
   const used = await crawlsUsedThisMonth(tenantId, now);
@@ -85,6 +88,7 @@ export async function getCrawlQuota(
 
   return {
     urlCap,
+    renderCap,
     monthlyLimit,
     used,
     remaining,

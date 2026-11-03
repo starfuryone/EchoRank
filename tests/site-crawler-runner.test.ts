@@ -8,7 +8,7 @@
 // clean, capped, cancelled, timed out, or thrown — is asserted to write a
 // terminal status.
 
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // ─── Stubs ──────────────────────────────────────────────────────────────────
 
@@ -433,5 +433,72 @@ describe("inlink counting", () => {
 
     await runCrawl({ jobId: "job_1", redis: fakeRedis() as never });
     expect(credits.some((c) => c.field.includes("elsewhere.com"))).toBe(false);
+  });
+});
+
+// ─── Render mode (Phase 3b) ─────────────────────────────────────────────────
+
+describe("render mode", () => {
+  const rendered = (url: string, extraLinks: string[]) => ({
+    finalUrl: url,
+    status: 200,
+    jsRedirect: null,
+    offSite: false,
+    html: htmlResponse(url, extraLinks).html,
+    consoleErrors: 2,
+    consoleSample: "boom",
+    viewport: { width: 412, scrollWidth: 412 },
+    bodyFontPx: 16,
+    tapTargets: { checked: 1, tooClose: 0, sample: null },
+    axe: { version: "4.11.4", violations: { "image-alt": { impact: "critical", nodes: 1 } } },
+  });
+
+  function sidecarStub() {
+    const calls: string[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string, init: RequestInit) => {
+        if (!url.endsWith("/render")) throw new Error(`unexpected fetch ${url}`);
+        const page = JSON.parse(init.body as string).url as string;
+        calls.push(page);
+        // The root renders one link the raw HTML does not have.
+        return new Response(JSON.stringify(rendered(page, page === "https://example.com/" ? ["/js-only"] : [])), { status: 200 });
+      }),
+    );
+    return calls;
+  }
+
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("renders up to the job's cap, stores the render columns and follows JS-only links", async () => {
+    crawlJob.findUnique.mockResolvedValue({
+      id: "job_1",
+      rootUrl: "https://example.com/",
+      urlCap: 100,
+      status: "QUEUED",
+      renderMode: "all",
+      renderCap: 1,
+      pagesRendered: 0,
+    });
+    const calls = sidecarStub();
+
+    await runCrawl({ jobId: "job_1", redis: fakeRedis() as never });
+
+    expect(calls).toEqual(["https://example.com/"]);
+    const rootRow = crawlPage.create.mock.calls.find((c) => c[0].data.url === "https://example.com/")![0].data;
+    expect(rootRow).toMatchObject({ consoleErrors: 2, axeViolations: { "image-alt": 1 }, jsOnly: { links: true } });
+    const ruleIds = rootRow.issues.create.map((i: { ruleId: string }) => i.ruleId);
+    expect(ruleIds).toEqual(expect.arrayContaining(["javascript.links_only_rendered", "javascript.console_errors", "accessibility.image_alt"]));
+    // The JS-only link became a crawled page.
+    expect(fetchPage.mock.calls.map((c) => c[0])).toContain("https://example.com/js-only");
+    expect(terminalWrite().pagesRendered).toBe(1);
+  });
+
+  it("renders nothing and fires no render rules when the job's mode is none", async () => {
+    const calls = sidecarStub();
+    await runCrawl({ jobId: "job_1", redis: fakeRedis() as never });
+    expect(calls).toEqual([]);
+    const all = crawlPage.create.mock.calls.flatMap((c) => c[0].data.issues.create.map((i: { ruleId: string }) => i.ruleId));
+    expect(all.some((id: string) => id.startsWith("accessibility.") || id.startsWith("mobile."))).toBe(false);
   });
 });

@@ -295,6 +295,17 @@ export interface PlanConfig {
    * src/lib/site-crawler/quota.ts.
    */
   crawlsPerMonth: number | null;
+  /**
+   * Pages one Site Crawler run may send through headless Chromium (render
+   * mode, Phase 3b). A per-RUN ceiling like crawlUrlCap, copied onto the
+   * CrawlJob row at creation. 0 = render mode is off for the tier.
+   *
+   * 100 / 500 / 5,000 is the Phase 4 tier table (SITE-CRAWLER-PHASE4.md),
+   * which superseded the Phase 3 spec's STARTER 0. Renders run one at a time
+   * on the sidecar, so the AGENCY figure is a ceiling the crawl's one-hour
+   * wall clock usually reaches first.
+   */
+  crawlRenderedPages: number;
   /** Shape of one AI Visibility checkup for this tier. */
   aiCheckup: AiCheckupShape;
   /**
@@ -407,6 +418,7 @@ export const PLAN_CONFIGS: Record<SellablePlanType, PlanConfig> = {
     trackedKeywords: 25,
     crawlUrlCap: 2_500,
     crawlsPerMonth: 4,
+    crawlRenderedPages: 100,
     // The shape the retired AI Visibility tier sold: two providers and one
     // repetition. Repeatability needs >1 and stays a GROWTH feature.
     aiCheckup: { frequency: "weekly", providers: 2, prompts: 10, repetitions: 1 },
@@ -448,6 +460,7 @@ export const PLAN_CONFIGS: Record<SellablePlanType, PlanConfig> = {
     trackedKeywords: 100,
     crawlUrlCap: 5_000,
     crawlsPerMonth: 20,
+    crawlRenderedPages: 500,
     aiCheckup: { frequency: "twice_weekly", providers: 4, prompts: 15, repetitions: 2 },
     aiProjects: 3,
     aiMonthlyCapUsd: 40,
@@ -487,6 +500,7 @@ export const PLAN_CONFIGS: Record<SellablePlanType, PlanConfig> = {
     trackedKeywords: 500,
     crawlUrlCap: 25_000,
     crawlsPerMonth: null,
+    crawlRenderedPages: 5_000,
     aiCheckup: { frequency: "daily", providers: null, prompts: 20, repetitions: 3 },
     aiProjects: 25,
     aiMonthlyCapUsd: 150,
@@ -526,6 +540,7 @@ export const PLAN_CONFIGS: Record<SellablePlanType, PlanConfig> = {
     trackedKeywords: 1000,
     crawlUrlCap: 25_000,
     crawlsPerMonth: null,
+    crawlRenderedPages: 5_000,
     // "custom": the schedule is set per contract, so the scheduler reads the
     // brand profile rather than a cadence baked in here.
     aiCheckup: { frequency: "custom", providers: null, prompts: 20, repetitions: 3 },

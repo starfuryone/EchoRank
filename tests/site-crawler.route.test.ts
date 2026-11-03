@@ -251,6 +251,28 @@ describe("POST /crawl", () => {
     );
   });
 
+  it("defaults to render mode none and copies the plan's rendered-page cap", async () => {
+    authed("GROWTH");
+    crawlJob.create.mockResolvedValue({ ...JOB_ROW, status: "QUEUED" });
+    await startCrawl(postRequest({ url: "https://example.com" }));
+    expect(crawlJob.create.mock.calls[0]![0]!.data).toMatchObject({ renderMode: "none", renderCap: 500 });
+  });
+
+  it("accepts a render mode, capped by the plan, never by the request", async () => {
+    authed("STARTER");
+    crawlJob.create.mockResolvedValue({ ...JOB_ROW, status: "QUEUED" });
+    const res = await startCrawl(postRequest({ url: "https://example.com", renderMode: "all", renderCap: 99999 }));
+    expect(res.status).toBe(202);
+    expect(crawlJob.create.mock.calls[0]![0]!.data).toMatchObject({ renderMode: "all", renderCap: 100 });
+  });
+
+  it("rejects an unknown render mode with 400", async () => {
+    authed();
+    const res = await startCrawl(postRequest({ url: "https://example.com", renderMode: "everything" }));
+    expect(res.status).toBe(400);
+    expect(crawlJob.create).not.toHaveBeenCalled();
+  });
+
   it("rejects a malformed body with 400", async () => {
     authed();
     const res = await startCrawl(postRequest({}));

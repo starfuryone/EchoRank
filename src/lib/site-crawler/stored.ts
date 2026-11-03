@@ -6,7 +6,7 @@
 // for the aggregation step.
 
 import "server-only";
-import type { Issue, PageFacts, StoredPageFacts, HreflangFact } from "@/lib/crawl-rules";
+import { jsOnlyFacts, type Issue, type PageFacts, type StoredPageFacts, type HreflangFact } from "@/lib/crawl-rules";
 import { SEVERITY_OF_KIND } from "./legacy-map";
 
 const NOINDEX = /\b(noindex|none)\b/i;
@@ -58,6 +58,22 @@ export function storedColumns(f: PageFacts) {
     nofollowOutlinks: h ? h.anchors.filter((a) => /\bnofollow\b/.test(a.rel)).length : null,
     jsonLdTypes: h ? [...new Set(h.jsonLd.flatMap((b) => b.items.map((i) => i.type)))].slice(0, 20) : [],
     jsonLdErrors: h ? h.jsonLd.filter((b) => !b.ok).length : null,
+  };
+}
+
+/** The Phase 3b render columns; all null when the page was not rendered. */
+export function renderColumns(f: PageFacts) {
+  const r = f.render;
+  if (!r) return {};
+  const rh = r.html;
+  return {
+    renderedWordCount: rh ? rh.wordCount : null,
+    renderedLinkCount: rh ? new Set(rh.anchors.filter((a) => a.internal).map((a) => a.href)).size : null,
+    jsOnly: rh && f.html ? (jsOnlyFacts(f.html, rh) as unknown as object) : undefined,
+    axeViolations: r.axe
+      ? (Object.fromEntries(Object.entries(r.axe).map(([id, v]) => [id, v.nodes])) as unknown as object)
+      : undefined,
+    consoleErrors: r.consoleErrors,
   };
 }
 

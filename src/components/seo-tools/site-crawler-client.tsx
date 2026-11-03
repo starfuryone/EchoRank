@@ -27,6 +27,7 @@ import {
   EMPTY_PAGE_FILTERS,
   isInFlight,
   type CrawlDto,
+  type RenderMode,
   type CrawlIssuePage,
   type CrawlListResponse,
   type CrawlPagesPage,
@@ -117,6 +118,7 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
   const [issues, setIssues] = useState<CrawlIssuePage | null>(null);
 
   const [url, setUrl] = useState("");
+  const [renderMode, setRenderMode] = useState<RenderMode>("none");
   const [starting, setStarting] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -284,7 +286,7 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
       const res = await fetch("/api/seo/v1/crawl", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ url }),
+        body: JSON.stringify({ url, renderMode: quota && quota.renderCap > 0 ? renderMode : "none" }),
       });
       const data = await res.json().catch(() => null);
       if (!res.ok) {
@@ -364,6 +366,22 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
                 disabled={starting || Boolean(running)}
               />
             </div>
+            {quota && quota.renderCap > 0 && (
+              <div className="w-full sm:w-auto">
+                <Select
+                  id="crawl-render"
+                  label={t.renderLabel}
+                  value={renderMode}
+                  onChange={(e) => setRenderMode(e.target.value as RenderMode)}
+                  disabled={starting || Boolean(running)}
+                  options={[
+                    { value: "none", label: t.renderNone },
+                    { value: "thin", label: t.renderThin },
+                    { value: "all", label: t.renderAll },
+                  ]}
+                />
+              </div>
+            )}
             <Button type="submit" disabled={starting || !url.trim() || Boolean(running)}>
               {starting ? (
                 <>
@@ -377,6 +395,9 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
 
           <div className="mt-3 space-y-1 text-xs text-gray-500">
             {quota && <p>{t.capNote(int.format(quota.urlCap))}</p>}
+            {quota && quota.renderCap > 0 && renderMode !== "none" && (
+              <p>{t.renderCapNote(int.format(quota.renderCap))}</p>
+            )}
             {quota &&
               (quota.monthlyLimit === null ? (
                 <p>{t.quotaUnlimited(int.format(quota.used), quota.used)}</p>
@@ -423,6 +444,11 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
                 <p className="text-sm text-gray-600">
                   {t.progress(int.format(active.pagesCrawled), int.format(active.urlCap))}
                 </p>
+                {active.renderMode !== "none" && (
+                  <p className="text-xs text-gray-500">
+                    {t.renderedProgress(int.format(active.pagesRendered), int.format(active.renderCap))}
+                  </p>
+                )}
                 <p className="text-xs text-gray-400">{t.crawlingNote}</p>
                 <Button variant="outline" size="sm" onClick={cancel} disabled={cancelling}>
                   {cancelling ? t.cancelling : t.cancelCta}
@@ -740,6 +766,11 @@ function Summary({
         <Tile label={t.summaryWarnings} value={int.format(counts.WARNING)} muted />
         <Tile label={t.summaryNotices} value={int.format(counts.NOTICE)} muted />
       </div>
+      {crawl.renderMode !== "none" && (
+        <p className="text-xs text-gray-500">
+          {t.renderedProgress(int.format(crawl.pagesRendered), int.format(crawl.renderCap))}
+        </p>
+      )}
       {stopped && <p className="text-xs text-gray-500">{stopped}</p>}
     </div>
   );

@@ -160,7 +160,7 @@ describe("/site-crawler", () => {
     expect(gateOpen({ family: "links" }, ctx)).toBe(true);
     expect(gateOpen({ family: "amp" }, ctx)).toBe(false);
     expect(gateOpen({ flag: "crawl.links" }, ctx)).toBe(true);
-    expect(gateOpen({ flag: "crawl.render" }, ctx)).toBe(false);
+    expect(gateOpen({ flag: "crawl.formsAuth" }, ctx)).toBe(false);
   });
 
   it("says 'your whole team' only while plans carry no seat cap", () => {
