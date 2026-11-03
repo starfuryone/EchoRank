@@ -59,6 +59,8 @@ function page(url: string, body: string): FetchOutcome {
     contentType: "text/html",
     html: html(body),
     xRobotsTag: null,
+    headers: {},
+    bytes: null,
     fetchMs: 5,
     error: null,
   };

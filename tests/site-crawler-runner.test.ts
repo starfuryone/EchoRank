@@ -59,6 +59,13 @@ vi.mock("@/lib/site-crawler/aggregate", () => ({
   aggregateCrawl: (...a: unknown[]) => aggregateCrawl(...(a as [])),
 }));
 
+// The HEAD checks would open real sockets to the external links in these
+// fixtures; they have their own suite.
+const attachHeadChecks = vi.fn(async () => {});
+vi.mock("@/lib/site-crawler/head-checks", () => ({
+  attachHeadChecks: (...a: unknown[]) => attachHeadChecks(...(a as [])),
+}));
+
 const { runCrawl } = await import("@/lib/site-crawler/runner");
 
 // ─── Fake Redis ─────────────────────────────────────────────────────────────
@@ -103,8 +110,11 @@ function fakeRedis(opts: { cancelled?: boolean } = {}) {
     /** Records the inlink HINCRBY batch so the dedupe rule can be asserted. */
     pipeline() {
       const chain = {
-        hincrby(_key: string, field: string, by: number) {
-          credits.push({ field, by });
+        hincrby(key: string, field: string, by: number) {
+          if (key.endsWith(":inlinks")) credits.push({ field, by });
+          return chain;
+        },
+        hsetnx() {
           return chain;
         },
         expire() {
@@ -141,6 +151,8 @@ function htmlResponse(url: string, links: string[] = []) {
       <body><h1>H</h1><p>${Array.from({ length: 200 }, (_, i) => `w${i}`).join(" ")}</p>
       ${links.map((l) => `<a href="${l}">x</a>`).join("")}</body></html>`,
     xRobotsTag: null,
+    headers: { "content-type": "text/html; charset=utf-8" },
+    bytes: 2048,
     fetchMs: 10,
     error: null,
   };
@@ -297,11 +309,17 @@ describe("robots.txt", () => {
 
     const outcome = await runCrawl({ jobId: "job_1", redis: fakeRedis() as never });
     expect(fetchPage).not.toHaveBeenCalled();
-    // The row still exists, carrying the BLOCKED_BY_ROBOTS notice.
+    // The row still exists, carrying the blocked-by-robots finding and nothing else.
     expect(crawlPage.create).toHaveBeenCalledTimes(1);
     const created = crawlPage.create.mock.calls[0]![0].data;
     expect(created.issues.create).toEqual([
-      expect.objectContaining({ type: "BLOCKED_BY_ROBOTS", severity: "NOTICE" }),
+      expect.objectContaining({
+        crawlJobId: "job_1",
+        ruleId: "response_codes.blocked_by_robots",
+        type: "response_codes.blocked_by_robots",
+        kind: "warning",
+        severity: "WARNING",
+      }),
     ]);
     expect(outcome.pagesCrawled).toBe(1);
   });
@@ -327,17 +345,35 @@ describe("progress and cleanup", () => {
     expect(del).toHaveBeenCalled();
   });
 
-  it("flags a duplicate when another page shared the content hash", async () => {
-    fetchPage.mockImplementation(async (url: string) =>
-      url === "https://example.com/" ? htmlResponse(url, ["/a"]) : htmlResponse(url),
-    );
-    crawlPage.findFirst.mockResolvedValue({ url: "https://example.com/original" });
-
+  it("writes page-rule findings with rule id, kind, priority and evidence, and the stored facts", async () => {
+    fetchPage.mockImplementation(async (url: string) => ({
+      ...htmlResponse(url),
+      html: `<html><head><title>x</title></head><body><img src="/a.png"></body></html>`,
+    }));
     await runCrawl({ jobId: "job_1", redis: fakeRedis() as never });
-    const written = crawlPage.create.mock.calls.flatMap(
-      (c) => c[0].data.issues.create as { type: string }[],
+    const data = crawlPage.create.mock.calls[0]![0].data;
+    const rules = (data.issues.create as { ruleId: string }[]).map((i) => i.ruleId);
+    expect(rules).toEqual(expect.arrayContaining(["page_titles.under_30_chars", "images.missing_alt", "validation.missing_doctype"]));
+    expect(data.issues.create[0]).toMatchObject({ crawlJobId: "job_1", kind: expect.any(String), priority: expect.any(String), evidence: expect.any(Object) });
+    expect(data).toMatchObject({ imgCount: 1, imgMissingAltCount: 1, hasViewport: false, noindex: false, bytes: 2048 });
+    expect(typeof data.simhash).toBe("bigint");
+    // Duplicates are a site rule now: nothing is looked up at write time.
+    expect(crawlPage.findFirst).not.toHaveBeenCalled();
+  });
+
+  it("queues hreflang, canonical and pagination targets, without inlink credit", async () => {
+    fetchPage.mockImplementation(async (url: string) =>
+      url === "https://example.com/"
+        ? {
+            ...htmlResponse(url),
+            html: `<html><head><link rel="alternate" hreflang="fr" href="/fr"><link rel="next" href="/p2"></head><body></body></html>`,
+          }
+        : htmlResponse(url),
     );
-    expect(written.some((i) => i.type === "DUPLICATE_CONTENT")).toBe(true);
+    await runCrawl({ jobId: "job_1", redis: fakeRedis() as never });
+    const urls = crawlPage.create.mock.calls.map((c) => c[0].data.url);
+    expect(urls).toEqual(expect.arrayContaining(["https://example.com/fr", "https://example.com/p2"]));
+    expect(credits.some((c) => c.field.endsWith("/fr") || c.field.endsWith("/p2"))).toBe(false);
   });
 });
 

@@ -18,6 +18,7 @@ import {
   MAX_RESPONSE_BYTES,
   MAX_REQUESTS_PER_SECOND,
 } from "./constants";
+import { pickRuleHeaders } from "./facts";
 
 /**
  * Token bucket: at most MAX_REQUESTS_PER_SECOND starts per second, per crawl.
@@ -82,6 +83,10 @@ export interface FetchOutcome {
   html: string | null;
   /** X-Robots-Tag of the final response, lowercased. */
   xRobotsTag: string | null;
+  /** The final response's headers the crawl rules read (facts.ts RULE_HEADERS), lowercased names. */
+  headers: Record<string, string>;
+  /** Body bytes read; null when the body was not read. */
+  bytes: number | null;
   fetchMs: number;
   /** Set when the request never produced a response at all. */
   error: string | null;
@@ -135,6 +140,8 @@ export async function fetchPage(url: string): Promise<FetchOutcome> {
             contentType: res.headers.get("content-type"),
             html: null,
             xRobotsTag: lowerOrNull(res.headers.get("x-robots-tag")),
+            headers: pickRuleHeaders((n) => res.headers.get(n)),
+            bytes: null,
             fetchMs: Date.now() - started,
             error: null,
           };
@@ -152,6 +159,8 @@ export async function fetchPage(url: string): Promise<FetchOutcome> {
             contentType: res.headers.get("content-type"),
             html: null,
             xRobotsTag: lowerOrNull(res.headers.get("x-robots-tag")),
+            headers: pickRuleHeaders((n) => res.headers.get(n)),
+            bytes: null,
             fetchMs: Date.now() - started,
             error: "too_many_redirects",
           };
@@ -177,22 +186,26 @@ export async function fetchPage(url: string): Promise<FetchOutcome> {
           contentType,
           html: null,
           xRobotsTag,
+          headers: pickRuleHeaders((n) => res.headers.get(n)),
+          bytes: null,
           fetchMs: Date.now() - started,
           error: null,
         };
       }
 
-      const html = await readCapped(res, MAX_RESPONSE_BYTES);
+      const body = await readCapped(res, MAX_RESPONSE_BYTES);
       return {
         finalUrl: current,
         statusCode: res.status,
         redirectTarget,
         redirectHops: hops,
         contentType,
-        html,
+        html: body?.text ?? null,
         xRobotsTag,
+        headers: pickRuleHeaders((n) => res.headers.get(n)),
+        bytes: body?.bytes ?? null,
         fetchMs: Date.now() - started,
-        error: html === null ? "response_too_large" : null,
+        error: body === null ? "response_too_large" : null,
       };
     }
   } catch (err) {
@@ -204,6 +217,8 @@ export async function fetchPage(url: string): Promise<FetchOutcome> {
       contentType: null,
       html: null,
       xRobotsTag: null,
+      headers: {},
+      bytes: null,
       fetchMs: Date.now() - started,
       error: err instanceof Error ? err.name || err.message : "fetch_failed",
     };
@@ -215,9 +230,9 @@ function lowerOrNull(v: string | null): string | null {
 }
 
 /** Read a body up to a ceiling; null means the ceiling was hit. */
-async function readCapped(res: Response, maxBytes: number): Promise<string | null> {
+async function readCapped(res: Response, maxBytes: number): Promise<{ text: string; bytes: number } | null> {
   const reader = res.body?.getReader();
-  if (!reader) return "";
+  if (!reader) return { text: "", bytes: 0 };
 
   const chunks: Uint8Array[] = [];
   let total = 0;
@@ -242,5 +257,5 @@ async function readCapped(res: Response, maxBytes: number): Promise<string | nul
     joined.set(chunk, offset);
     offset += chunk.byteLength;
   }
-  return new TextDecoder("utf-8").decode(joined);
+  return { text: new TextDecoder("utf-8").decode(joined), bytes: total };
 }

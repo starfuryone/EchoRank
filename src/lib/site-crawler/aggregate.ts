@@ -1,22 +1,31 @@
 // src/lib/site-crawler/aggregate.ts
 //
 // The site-wide pass: everything that cannot be known from one page alone.
+// Since Phase 3a it computes the facts the site-scope rules need
+// (packages/crawl-rules PageSiteFacts / JobFacts), then runs those rules over
+// every page row and writes their findings.
 //
-// NOTHING HERE LOADS THE PAGE SET INTO NODE. Every question is asked of
-// Postgres as a groupBy or a batched keyset scan, and the largest thing this
-// module holds at once is one AGGREGATION_BATCH_SIZE window plus the redirect
-// map (url -> target, only for pages that actually redirect). A 25,000-URL
-// crawl aggregates in roughly the memory a 25-URL one does, which is the same
-// constraint that shaped the crawl itself.
+// NOTHING HERE LOADS THE PAGE SET INTO NODE. Each site fact is one SQL query
+// that returns only the pages it applies to (duplicate groups, canonical
+// targets, hreflang and pagination targets, near-duplicate pairs), held as
+// id-keyed maps; the rules then run over a keyset scan of AGGREGATION_BATCH_SIZE
+// rows at a time. A 25,000-URL crawl aggregates in roughly the memory a
+// 25-URL one does, which is the constraint that shaped the crawl itself.
 //
-// IDEMPOTENT BY CONSTRUCTION. Aggregation deletes AGGREGATED_ISSUE_TYPES for
-// the job before writing, so running it twice yields the same rows. The one
-// exception is REDIRECT_CHAIN, which the crawl also writes from single-fetch
-// hop counts — see the note on AGGREGATED_ISSUE_TYPES in checks.ts.
+// IDEMPOTENT. Every site rule's rows for the job are deleted before writing,
+// so running it twice yields the same rows.
 
 import type Redis from "ioredis";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/infrastructure/observability/logger";
+import {
+  RULES,
+  evaluateSiteRules,
+  type JobFacts,
+  type PageSiteFacts,
+  type RuleKind,
+  type RulePriority,
+} from "@/lib/crawl-rules";
 import {
   AGGREGATION_BATCH_SIZE,
   MAX_CHAIN_WALK,
@@ -24,15 +33,24 @@ import {
   SUMMARY_SAMPLE_LIMIT,
   crawlKeys,
 } from "./constants";
-import { AGGREGATED_ISSUE_TYPES, ISSUE_SEVERITY, type IssueType } from "./checks";
 import type { SitemapResult } from "./sitemap";
+import { issueRows, toStoredFacts } from "./stored";
 
 export interface AggregateArgs {
   jobId: string;
+  rootUrl: string;
   redis: Redis;
   sitemap: SitemapResult;
   /** URLs the sitemap seeded into the frontier — the orphan candidates. */
   sitemapSeeded: Set<string>;
+  /** robots.txt carried at least one Sitemap: line. */
+  sitemapDeclaredInRobots?: boolean;
+}
+
+export interface RuleTally {
+  count: number;
+  kind: RuleKind;
+  priority: RulePriority;
 }
 
 export interface CrawlSummary {
@@ -40,7 +58,10 @@ export interface CrawlSummary {
   depths: Record<string, number>;
   issuesBySeverity: Record<string, number>;
   issuesByType: Record<string, number>;
-  duplicates: { title: number; metaDescription: number; content: number };
+  /** Phase 3a: findings per rule id, and totals by kind. */
+  issues?: Record<string, RuleTally>;
+  issuesByKind?: Record<RuleKind, number>;
+  duplicates: { title: number; metaDescription: number; content: number; nearContent?: number | null };
   redirects: { chains: number; loops: number; longestChain: number };
   sitemap: {
     found: boolean;
@@ -62,65 +83,131 @@ export interface AggregateResult {
   issueCount: number;
 }
 
-interface IssueRow {
-  crawlPageId: string;
-  type: IssueType;
-  severity: string;
-  detail: string | null;
-}
+const SITE_RULE_IDS = RULES.filter((r) => r.scope === "site").map((r) => r.id);
+
+/** Near-duplicate pairing is quadratic in the worst case; it gets a budget, not a free hand. */
+const NEAR_DUPLICATE_TIMEOUT_MS = 60_000;
 
 export async function aggregateCrawl({
   jobId,
+  rootUrl,
   redis,
   sitemap,
   sitemapSeeded,
+  sitemapDeclaredInRobots = false,
 }: AggregateArgs): Promise<AggregateResult> {
   const started = Date.now();
   const keys = crawlKeys(jobId);
 
   // Wipe what this step owns, so a re-run cannot double it.
-  await prisma.crawlIssue.deleteMany({
-    where: {
-      crawlPage: { crawlJobId: jobId },
-      type: { in: [...AGGREGATED_ISSUE_TYPES] },
-    },
-  });
-
-  const pending: IssueRow[] = [];
-  const add = (crawlPageId: string, type: IssueType, detail?: string) =>
-    pending.push({ crawlPageId, type, severity: ISSUE_SEVERITY[type], detail: detail ?? null });
+  await prisma.crawlIssue.deleteMany({ where: { crawlJobId: jobId, ruleId: { in: SITE_RULE_IDS } } });
 
   const inlinkStats = await flushInlinks(jobId, redis, keys.inlinks);
-  const duplicates = await findDuplicates(jobId, add);
-  const redirects = await walkRedirects(jobId, add);
-  const orphans = await findOrphans(jobId, sitemapSeeded, add);
-  await flagNoInlinks(jobId, add);
+  await flushHash(jobId, redis, keys.nofollowInlinks, "nofollowInlinkCount");
 
-  // One bulk insert. createMany skips the per-row round trip that would make
-  // tens of thousands of findings the slowest part of the crawl.
-  for (let i = 0; i < pending.length; i += AGGREGATION_BATCH_SIZE) {
-    await prisma.crawlIssue.createMany({ data: pending.slice(i, i + AGGREGATION_BATCH_SIZE) });
+  const [dupTitle, dupMeta, dupH1, dupH2, dupContent, h1Title, canonicalTargets, hreflang, pagination, near] =
+    await Promise.all([
+      duplicateCounts(jobId, "title"),
+      duplicateCounts(jobId, "metaDescription"),
+      duplicateCounts(jobId, "h1First"),
+      duplicateCounts(jobId, "h2First"),
+      duplicateCounts(jobId, "contentHash"),
+      h1MatchesOtherTitle(jobId),
+      canonicalTargetFacts(jobId),
+      hreflangFacts(jobId),
+      paginationFacts(jobId),
+      nearDuplicates(jobId),
+    ]);
+  const redirects = await walkRedirects(jobId, redis, keys.firstSource);
+  const orphans = await findOrphans(jobId, sitemapSeeded);
+  const notCrawled = await sitemapNotCrawled(jobId, sitemap);
+
+  const job: JobFacts = {
+    pagesCrawled: await prisma.crawlPage.count({ where: { crawlJobId: jobId } }),
+    langsSeen: await langsSeen(jobId),
+    sitemap: {
+      found: sitemap.found,
+      urlCount: sitemap.urls.length,
+      largestFileUrls: sitemap.largestFileUrls ?? sitemap.urls.length,
+      notCrawled: notCrawled.count,
+      notCrawledSample: notCrawled.sample[0] ?? null,
+      declaredInRobots: sitemapDeclaredInRobots,
+    },
+  };
+
+  // ── Run the site rules over every page, one keyset window at a time ──────
+  const rootKey = rootUrl.replace(/\/+$/, "");
+  let cursor: string | undefined;
+  for (;;) {
+    const batch = await prisma.crawlPage.findMany({
+      where: { crawlJobId: jobId },
+      select: {
+        id: true, url: true, depth: true, statusCode: true, redirectTarget: true, contentType: true,
+        title: true, metaDescription: true, h1First: true, h2First: true, canonical: true,
+        canonicalHeader: true, noindex: true, metaRobots: true, inSitemap: true, inlinkCount: true,
+        nofollowInlinkCount: true, hreflang: true, langAttr: true, relNext: true, relPrev: true,
+      },
+      orderBy: { id: "asc" },
+      take: AGGREGATION_BATCH_SIZE,
+      ...(cursor ? { skip: 1, cursor: { id: cursor } } : {}),
+    });
+    if (batch.length === 0) break;
+
+    const rows = batch.flatMap((page) => {
+      const site: PageSiteFacts = {
+        duplicateTitleCount: dupTitle.get(page.id) ?? 1,
+        duplicateMetaCount: dupMeta.get(page.id) ?? 1,
+        duplicateH1Count: dupH1.get(page.id) ?? 1,
+        duplicateH2Count: dupH2.get(page.id) ?? 1,
+        duplicateContentCount: dupContent.get(page.id) ?? 1,
+        nearDuplicateCount: near.pairs.get(page.id) ?? 0,
+        h1MatchesOtherTitleCount: h1Title.get(page.id) ?? 0,
+        nofollowInlinkCount: page.nofollowInlinkCount ?? 0,
+        redirectLoop: redirects.loops.get(page.id) ?? null,
+        outlinksToRedirect: redirects.toRedirect.get(page.url) ?? 0,
+        orphan: orphans.has(page.id),
+        canonicalTarget: canonicalTargets.get(page.id) ?? null,
+        hreflang: hreflang.get(page.id) ?? {
+          targets: 0, non200: 0, noindex: 0, notCanonical: 0, missingReturn: 0, langMismatch: 0, unlinked: 0, sample: null,
+        },
+        pagination: pagination.get(page.id) ?? { non200: 0, sequenceErrors: 0, sample: null },
+      };
+      const isRoot = page.url.replace(/\/+$/, "") === rootKey;
+      const found = evaluateSiteRules(toStoredFacts(page, rootUrl), { capabilities: [], site, job, isRoot });
+      return issueRows(found, jobId).map((r) => ({ ...r, crawlPageId: page.id }));
+    });
+    for (let i = 0; i < rows.length; i += AGGREGATION_BATCH_SIZE) {
+      await prisma.crawlIssue.createMany({ data: rows.slice(i, i + AGGREGATION_BATCH_SIZE) });
+    }
+
+    if (batch.length < AGGREGATION_BATCH_SIZE) break;
+    cursor = batch[batch.length - 1]!.id;
   }
 
-  const [statusCodes, depths, issuesBySeverity, issuesByType, deepestPages, issueCount] =
-    await Promise.all([
-      distribution(jobId, "statusCode"),
-      distribution(jobId, "depth"),
-      issueDistribution(jobId, "severity"),
-      issueDistribution(jobId, "type"),
-      deepest(jobId),
-      prisma.crawlIssue.count({ where: { crawlPage: { crawlJobId: jobId } } }),
-    ]);
-
-  const notCrawled = await sitemapNotCrawled(jobId, sitemap);
+  const [statusCodes, depths, issuesBySeverity, issuesByType, ruleTallies, deepestPages, issueCount] = await Promise.all([
+    distribution(jobId, "statusCode"),
+    distribution(jobId, "depth"),
+    issueDistribution(jobId, "severity"),
+    issueDistribution(jobId, "type"),
+    ruleTally(jobId),
+    deepest(jobId),
+    prisma.crawlIssue.count({ where: { crawlJobId: jobId } }),
+  ]);
 
   const summary: CrawlSummary = {
     statusCodes,
     depths,
     issuesBySeverity,
     issuesByType,
-    duplicates,
-    redirects,
+    issues: ruleTallies.issues,
+    issuesByKind: ruleTallies.byKind,
+    duplicates: {
+      title: groupsOf(dupTitle),
+      metaDescription: groupsOf(dupMeta),
+      content: groupsOf(dupContent),
+      nearContent: near.timedOut ? null : near.pages,
+    },
+    redirects: redirects.stats,
     sitemap: {
       found: sitemap.found,
       urlCount: sitemap.urls.length,
@@ -135,50 +222,32 @@ export async function aggregateCrawl({
   };
 
   logger.info(
-    { jobId, aggregationMs: summary.aggregationMs, issueCount, orphans },
+    { jobId, aggregationMs: summary.aggregationMs, issueCount, orphans: orphans.size, nearTimedOut: near.timedOut },
     "site-crawl aggregation complete",
   );
 
   return { summary, issueCount };
 }
 
+/** Distinct groups in a page→group-size map: sum over members of 1/size. */
+function groupsOf(m: Map<string, number>): number {
+  let n = 0;
+  for (const size of m.values()) n += 1 / size;
+  return Math.round(n);
+}
+
 /**
  * Move the Redis inlink hash into CrawlPage.inlinkCount.
  *
  * HSCAN rather than HGETALL: a 25,000-page site's hash is 25,000 fields, and
- * HGETALL would materialize all of them in one reply. Updates go out per
- * batch with a WHERE on the crawl, so a URL from another crawl cannot be hit.
+ * HGETALL would materialize all of them in one reply.
  */
 async function flushInlinks(
   jobId: string,
   redis: Redis,
   inlinksKey: string,
 ): Promise<{ average: number; zeroCount: number; max: number }> {
-  let cursor = "0";
-  let max = 0;
-
-  do {
-    const [next, flat] = await redis.hscan(inlinksKey, cursor, "COUNT", 500);
-    cursor = next;
-
-    // HSCAN returns [field, value, field, value, …].
-    for (let i = 0; i < flat.length; i += 2) {
-      const url = flat[i]!;
-      const count = Number(flat[i + 1]) || 0;
-      if (count > max) max = count;
-      await prisma.crawlPage.updateMany({
-        where: { crawlJobId: jobId, url },
-        data: { inlinkCount: count },
-      });
-    }
-  } while (cursor !== "0");
-
-  // Pages nothing linked to keep a real 0 rather than null, so "no inlinks"
-  // and "not yet computed" stay distinguishable.
-  await prisma.crawlPage.updateMany({
-    where: { crawlJobId: jobId, inlinkCount: null },
-    data: { inlinkCount: 0 },
-  });
+  const max = await flushHash(jobId, redis, inlinksKey, "inlinkCount");
 
   const [agg, zeroCount] = await Promise.all([
     prisma.crawlPage.aggregate({ where: { crawlJobId: jobId }, _avg: { inlinkCount: true } }),
@@ -192,111 +261,183 @@ async function flushInlinks(
   };
 }
 
-/** 200-status HTML pages — the only population the content rules apply to. */
-const OK_HTML = {
-  statusCode: { gte: 200, lt: 300 },
-  contentType: { startsWith: "text/html" },
-};
-
 /**
- * Duplicate title / meta description / content groups.
- *
- * Postgres does the grouping; only duplicated groups come back, each already
- * carrying its member ids. A site with no duplicates transfers nothing.
+ * HSCAN a url → count hash into one CrawlPage column, then 0-fill the rest so
+ * "none" and "not yet computed" stay distinguishable. Returns the max count.
  */
-async function findDuplicates(
+async function flushHash(
   jobId: string,
-  add: (pageId: string, type: IssueType, detail?: string) => void,
-): Promise<{ title: number; metaDescription: number; content: number }> {
-  const [title, metaDescription, content] = await Promise.all([
-    duplicateGroups(jobId, "title"),
-    duplicateGroups(jobId, "metaDescription"),
-    duplicateGroups(jobId, "contentHash"),
-  ]);
-
-  const write = (
-    groups: DuplicateGroup[],
-    type: IssueType,
-    what: string,
-  ) => {
-    for (const group of groups) {
-      // EVERY member is flagged, including the first. Phase 1's write-time
-      // check could only see pages written before the current one, so the
-      // first member of each group went unflagged — that is the bug this
-      // recomputation fixes.
-      for (const id of group.ids) {
-        add(id, type, `${group.ids.length} pages share this ${what}`);
-      }
+  redis: Redis,
+  key: string,
+  field: "inlinkCount" | "nofollowInlinkCount",
+): Promise<number> {
+  let cursor = "0";
+  let max = 0;
+  do {
+    const [next, flat] = await redis.hscan(key, cursor, "COUNT", 500);
+    cursor = next;
+    for (let i = 0; i < flat.length; i += 2) {
+      const url = flat[i]!;
+      const count = Number(flat[i + 1]) || 0;
+      if (count > max) max = count;
+      await prisma.crawlPage.updateMany({ where: { crawlJobId: jobId, url }, data: { [field]: count } });
     }
-  };
-
-  write(title, "DUPLICATE_TITLE", "title");
-  write(metaDescription, "DUPLICATE_META_DESC", "meta description");
-  write(content, "DUPLICATE_CONTENT", "content");
-
-  return {
-    title: title.length,
-    metaDescription: metaDescription.length,
-    content: content.length,
-  };
-}
-
-interface DuplicateGroup {
-  ids: string[];
+  } while (cursor !== "0");
+  await prisma.crawlPage.updateMany({ where: { crawlJobId: jobId, [field]: null }, data: { [field]: 0 } });
+  return max;
 }
 
 /**
- * Groups of 200-status HTML pages sharing one column value.
- *
- * RAW SQL, and one query per column rather than groupBy + a findMany per
- * group: array_agg returns the member ids with the group, so a site with 400
- * duplicate groups costs three queries instead of 1,200. The column name is a
- * literal in each branch — never interpolated — so this cannot become an
- * injection point.
+ * page id → size of its group, for 200-status HTML pages sharing one value.
+ * Only members of duplicated groups come back. Each branch names its column
+ * as a literal — never interpolated — so this cannot become an injection point.
  */
-async function duplicateGroups(
+async function duplicateCounts(
   jobId: string,
-  field: "title" | "metaDescription" | "contentHash",
-): Promise<DuplicateGroup[]> {
-  const rows =
-    field === "title"
-      ? await prisma.$queryRaw<{ ids: string[] }[]>`
-          SELECT array_agg(id) AS ids FROM crawl_pages
-          WHERE "crawlJobId" = ${jobId}
-            AND "statusCode" >= 200 AND "statusCode" < 300
-            AND "contentType" LIKE 'text/html%'
-            AND title IS NOT NULL AND title <> ''
-          GROUP BY title HAVING count(*) > 1`
-      : field === "metaDescription"
-        ? await prisma.$queryRaw<{ ids: string[] }[]>`
-            SELECT array_agg(id) AS ids FROM crawl_pages
-            WHERE "crawlJobId" = ${jobId}
-              AND "statusCode" >= 200 AND "statusCode" < 300
-              AND "contentType" LIKE 'text/html%'
-              AND "metaDescription" IS NOT NULL AND "metaDescription" <> ''
-            GROUP BY "metaDescription" HAVING count(*) > 1`
-        : await prisma.$queryRaw<{ ids: string[] }[]>`
-            SELECT array_agg(id) AS ids FROM crawl_pages
-            WHERE "crawlJobId" = ${jobId}
-              AND "statusCode" >= 200 AND "statusCode" < 300
-              AND "contentType" LIKE 'text/html%'
-              AND "contentHash" IS NOT NULL
-            GROUP BY "contentHash" HAVING count(*) > 1`;
+  field: "title" | "metaDescription" | "h1First" | "h2First" | "contentHash",
+): Promise<Map<string, number>> {
+  const where = (col: string) => `
+    "crawlJobId" = $1 AND "statusCode" >= 200 AND "statusCode" < 300
+    AND "contentType" LIKE 'text/html%' AND ${col} IS NOT NULL AND ${col} <> ''`;
+  const sql = {
+    title: `SELECT array_agg(id) AS ids FROM crawl_pages WHERE ${where("title")} GROUP BY title HAVING count(*) > 1`,
+    metaDescription: `SELECT array_agg(id) AS ids FROM crawl_pages WHERE ${where('"metaDescription"')} GROUP BY "metaDescription" HAVING count(*) > 1`,
+    h1First: `SELECT array_agg(id) AS ids FROM crawl_pages WHERE ${where('"h1First"')} GROUP BY "h1First" HAVING count(*) > 1`,
+    h2First: `SELECT array_agg(id) AS ids FROM crawl_pages WHERE ${where('"h2First"')} GROUP BY "h2First" HAVING count(*) > 1`,
+    contentHash: `SELECT array_agg(id) AS ids FROM crawl_pages WHERE ${where('"contentHash"')} GROUP BY "contentHash" HAVING count(*) > 1`,
+  }[field];
+  const rows = await prisma.$queryRawUnsafe<{ ids: string[] }[]>(sql, jobId);
+  const out = new Map<string, number>();
+  for (const r of rows) for (const id of r.ids) out.set(id, r.ids.length);
+  return out;
+}
 
-  return rows.map((r) => ({ ids: r.ids }));
+/** page id → how many OTHER pages have this page's first H1 as their title. */
+async function h1MatchesOtherTitle(jobId: string): Promise<Map<string, number>> {
+  const rows = await prisma.$queryRaw<{ id: string; n: number }[]>`
+    SELECT p.id, count(o.id)::int AS n
+    FROM crawl_pages p
+    JOIN crawl_pages o ON o."crawlJobId" = p."crawlJobId" AND o.id <> p.id AND o.title = p."h1First"
+    WHERE p."crawlJobId" = ${jobId} AND p."h1First" IS NOT NULL AND p."h1First" <> ''
+      AND o."statusCode" >= 200 AND o."statusCode" < 300
+    GROUP BY p.id`;
+  return new Map(rows.map((r) => [r.id, r.n]));
+}
+
+/** page id → the crawled page its canonical points at, when that is another URL. */
+async function canonicalTargetFacts(jobId: string): Promise<Map<string, PageSiteFacts["canonicalTarget"]>> {
+  const rows = await prisma.$queryRaw<{ id: string; statusCode: number | null; redirects: boolean; noindex: boolean }[]>`
+    SELECT p.id, t."statusCode", (t."redirectTarget" IS NOT NULL) AS redirects, COALESCE(t.noindex, false) AS noindex
+    FROM crawl_pages p
+    JOIN crawl_pages t ON t."crawlJobId" = p."crawlJobId" AND t.url = p.canonical
+    WHERE p."crawlJobId" = ${jobId} AND p.canonical IS NOT NULL AND p.canonical <> p.url`;
+  return new Map(rows.map((r) => [r.id, { statusCode: r.statusCode, redirects: r.redirects, noindex: r.noindex }]));
 }
 
 /**
- * Walk url -> redirectTarget chains.
+ * page id → what its hreflang alternates look like where they were crawled.
+ * Self-references are excluded; an alternate never crawled contributes only
+ * to `targets` (nothing can be said about it).
+ */
+async function hreflangFacts(jobId: string): Promise<Map<string, PageSiteFacts["hreflang"]>> {
+  const rows = await prisma.$queryRaw<(PageSiteFacts["hreflang"] & { id: string })[]>`
+    SELECT p.id,
+      count(*)::int AS targets,
+      count(*) FILTER (WHERE t.id IS NOT NULL AND (t."statusCode" IS NULL OR t."statusCode" < 200 OR t."statusCode" >= 300 OR t."redirectTarget" IS NOT NULL))::int AS non200,
+      count(*) FILTER (WHERE t.noindex)::int AS noindex,
+      count(*) FILTER (WHERE t.canonical IS NOT NULL AND t.canonical <> t.url)::int AS "notCanonical",
+      count(*) FILTER (WHERE t.id IS NOT NULL AND t."statusCode" >= 200 AND t."statusCode" < 300 AND NOT EXISTS (
+        SELECT 1 FROM jsonb_array_elements(CASE WHEN jsonb_typeof(t.hreflang) = 'array' THEN t.hreflang ELSE '[]'::jsonb END) r
+        WHERE r->>'href' = p.url))::int AS "missingReturn",
+      count(*) FILTER (WHERE t."langAttr" IS NOT NULL AND e->>'lang' <> 'x-default'
+        AND split_part(lower(t."langAttr"), '-', 1) <> split_part(lower(e->>'lang'), '-', 1))::int AS "langMismatch",
+      count(*) FILTER (WHERE t.id IS NOT NULL AND t."inlinkCount" = 0)::int AS unlinked,
+      min(e->>'href') AS sample
+    FROM crawl_pages p
+    CROSS JOIN LATERAL jsonb_array_elements(p.hreflang) e
+    LEFT JOIN crawl_pages t ON t."crawlJobId" = p."crawlJobId" AND t.url = e->>'href'
+    WHERE p."crawlJobId" = ${jobId} AND jsonb_typeof(p.hreflang) = 'array' AND e->>'href' <> p.url
+    GROUP BY p.id`;
+  return new Map(rows.map(({ id, ...facts }) => [id, facts]));
+}
+
+/** page id → its rel next/prev targets' status and reciprocity. */
+async function paginationFacts(jobId: string): Promise<Map<string, PageSiteFacts["pagination"]>> {
+  const rows = await prisma.$queryRaw<{ id: string; non200: number; sequenceErrors: number; sample: string | null }[]>`
+    SELECT p.id,
+      count(*) FILTER (WHERE t.id IS NOT NULL AND (t."statusCode" IS NULL OR t."statusCode" < 200 OR t."statusCode" >= 300 OR t."redirectTarget" IS NOT NULL))::int AS non200,
+      count(*) FILTER (WHERE t.id IS NOT NULL AND t."statusCode" >= 200 AND t."statusCode" < 300 AND (
+        (x.dir = 'next' AND t."relPrev" IS DISTINCT FROM p.url) OR (x.dir = 'prev' AND t."relNext" IS DISTINCT FROM p.url)))::int AS "sequenceErrors",
+      min(x.href) AS sample
+    FROM crawl_pages p
+    CROSS JOIN LATERAL (VALUES ('next', p."relNext"), ('prev', p."relPrev")) AS x(dir, href)
+    LEFT JOIN crawl_pages t ON t."crawlJobId" = p."crawlJobId" AND t.url = x.href
+    WHERE p."crawlJobId" = ${jobId} AND x.href IS NOT NULL
+    GROUP BY p.id`;
+  return new Map(rows.map(({ id, ...facts }) => [id, facts]));
+}
+
+/**
+ * Near-duplicates: pairs of 200 HTML pages whose 64-bit SimHashes differ in
+ * at most 3 bits, exact duplicates excluded.
+ *
+ * Pigeonhole: two hashes within 3 bits agree exactly on at least one of four
+ * 16-bit bands, so candidates come from four equi-joins (hash joins, no
+ * cross product), and only candidates get the popcount. A site whose pages
+ * share a band wholesale (one template, no text) can still blow up, so the
+ * query runs under a statement timeout; on timeout near-duplicates are
+ * skipped and the summary says so (nearContent: null).
+ */
+async function nearDuplicates(jobId: string): Promise<{ pairs: Map<string, number>; pages: number; timedOut: boolean }> {
+  try {
+    const rows = await prisma.$transaction(
+      async (tx) => {
+        await tx.$executeRawUnsafe(`SET LOCAL statement_timeout = ${NEAR_DUPLICATE_TIMEOUT_MS}`);
+        return tx.$queryRaw<{ id: string; n: number }[]>`
+          WITH p AS (
+            SELECT id, simhash, "contentHash",
+              (simhash >> 48) & 65535 AS b0, (simhash >> 32) & 65535 AS b1,
+              (simhash >> 16) & 65535 AS b2, simhash & 65535 AS b3
+            FROM crawl_pages
+            WHERE "crawlJobId" = ${jobId} AND simhash IS NOT NULL
+              AND "statusCode" >= 200 AND "statusCode" < 300 AND "contentType" LIKE 'text/html%'
+          ),
+          c AS (
+            SELECT a.id AS aid, b.id AS bid, a.simhash AS sa, b.simhash AS sb FROM p a JOIN p b ON a.b0 = b.b0 AND a.id < b.id AND a."contentHash" IS DISTINCT FROM b."contentHash"
+            UNION SELECT a.id, b.id, a.simhash, b.simhash FROM p a JOIN p b ON a.b1 = b.b1 AND a.id < b.id AND a."contentHash" IS DISTINCT FROM b."contentHash"
+            UNION SELECT a.id, b.id, a.simhash, b.simhash FROM p a JOIN p b ON a.b2 = b.b2 AND a.id < b.id AND a."contentHash" IS DISTINCT FROM b."contentHash"
+            UNION SELECT a.id, b.id, a.simhash, b.simhash FROM p a JOIN p b ON a.b3 = b.b3 AND a.id < b.id AND a."contentHash" IS DISTINCT FROM b."contentHash"
+          ),
+          m AS (SELECT aid, bid FROM c WHERE length(replace(((sa # sb)::bit(64))::text, '0', '')) <= 3)
+          SELECT id, count(*)::int AS n FROM (SELECT aid AS id FROM m UNION ALL SELECT bid FROM m) x GROUP BY id`;
+      },
+      { timeout: NEAR_DUPLICATE_TIMEOUT_MS + 10_000 },
+    );
+    return { pairs: new Map(rows.map((r) => [r.id, r.n])), pages: rows.length, timedOut: false };
+  } catch (err) {
+    logger.warn({ jobId, err }, "site-crawl near-duplicate pass skipped");
+    return { pairs: new Map(), pages: 0, timedOut: true };
+  }
+}
+
+/** Distinct primary language subtags across 200 HTML pages. */
+async function langsSeen(jobId: string): Promise<number> {
+  const [row] = await prisma.$queryRaw<{ n: number }[]>`
+    SELECT count(DISTINCT split_part(lower("langAttr"), '-', 1))::int AS n FROM crawl_pages
+    WHERE "crawlJobId" = ${jobId} AND "langAttr" IS NOT NULL AND "langAttr" <> ''
+      AND "statusCode" >= 200 AND "statusCode" < 300`;
+  return row?.n ?? 0;
+}
+
+/**
+ * Walk url -> redirectTarget chains: loops per page, chain stats, and the
+ * outlinks-to-redirect credit (the first page seen linking to each
+ * redirecting URL, from the Redis firstSource hash).
  *
  * The map holds only pages that actually redirect, which on a healthy site is
- * a small fraction of the crawl. Each start is walked at most MAX_CHAIN_WALK
- * hops; revisiting a URL inside one walk is a loop.
+ * a small fraction of the crawl.
  */
-async function walkRedirects(
-  jobId: string,
-  add: (pageId: string, type: IssueType, detail?: string) => void,
-): Promise<{ chains: number; loops: number; longestChain: number }> {
+async function walkRedirects(jobId: string, redis: Redis, firstSourceKey: string) {
   const map = new Map<string, { id: string; target: string }>();
 
   let cursor: string | undefined;
@@ -309,47 +450,28 @@ async function walkRedirects(
       ...(cursor ? { skip: 1, cursor: { id: cursor } } : {}),
     });
     if (batch.length === 0) break;
-    for (const row of batch) {
-      map.set(row.url, { id: row.id, target: row.redirectTarget! });
-    }
+    for (const row of batch) map.set(row.url, { id: row.id, target: row.redirectTarget! });
     if (batch.length < AGGREGATION_BATCH_SIZE) break;
     cursor = batch[batch.length - 1]!.id;
   }
 
-  // Pages that already carry a chain warning from the crawl keep it; see the
-  // note on AGGREGATED_ISSUE_TYPES. This is what makes adding chains here
-  // stable across re-runs without deleting the per-fetch findings.
-  const alreadyFlagged = new Set(
-    (
-      await prisma.crawlIssue.findMany({
-        where: { crawlPage: { crawlJobId: jobId }, type: "REDIRECT_CHAIN" },
-        select: { crawlPageId: true },
-      })
-    ).map((r) => r.crawlPageId),
-  );
-
+  const loops = new Map<string, string>();
+  const toRedirect = new Map<string, number>();
   let chains = 0;
-  let loops = 0;
   let longestChain = 0;
 
   for (const [start, entry] of map) {
     const walk = walkChain(start, map);
-
-    if (walk.looped) {
-      loops += 1;
-      add(entry.id, "REDIRECT_LOOP", `loop: ${walk.path.join(" → ")}`);
-      continue;
-    }
-    if (walk.hops > 1) {
+    if (walk.looped) loops.set(entry.id, walk.path.join(" → "));
+    else if (walk.hops > 1) {
       chains += 1;
       longestChain = Math.max(longestChain, walk.hops);
-      if (!alreadyFlagged.has(entry.id)) {
-        add(entry.id, "REDIRECT_CHAIN", `${walk.hops} hops: ${walk.path.join(" → ")}`);
-      }
     }
+    const source = await redis.hget(firstSourceKey, start);
+    if (source) toRedirect.set(source, (toRedirect.get(source) ?? 0) + 1);
   }
 
-  return { chains, loops, longestChain };
+  return { loops, toRedirect, stats: { chains, loops: loops.size, longestChain } };
 }
 
 export interface ChainWalk {
@@ -407,56 +529,24 @@ export function walkChain(
  * linked to by definition. Combined with inlinkCount = 0, that is precisely
  * "advertised but unreachable by following links".
  */
-async function findOrphans(
-  jobId: string,
-  sitemapSeeded: Set<string>,
-  add: (pageId: string, type: IssueType, detail?: string) => void,
-): Promise<number> {
-  if (sitemapSeeded.size === 0) return 0;
-
-  let orphans = 0;
+async function findOrphans(jobId: string, sitemapSeeded: Set<string>): Promise<Set<string>> {
+  const out = new Set<string>();
   const seeded = [...sitemapSeeded];
-
   for (let i = 0; i < seeded.length; i += AGGREGATION_BATCH_SIZE) {
-    const slice = seeded.slice(i, i + AGGREGATION_BATCH_SIZE);
     const rows = await prisma.crawlPage.findMany({
       where: {
         crawlJobId: jobId,
-        url: { in: slice },
+        url: { in: seeded.slice(i, i + AGGREGATION_BATCH_SIZE) },
         depth: 0,
         inlinkCount: 0,
-        ...OK_HTML,
+        statusCode: { gte: 200, lt: 300 },
+        contentType: { startsWith: "text/html" },
       },
       select: { id: true },
     });
-    for (const row of rows) {
-      add(row.id, "ORPHAN_PAGE", "In the sitemap, but nothing on the site links to it");
-      orphans += 1;
-    }
+    for (const row of rows) out.add(row.id);
   }
-
-  return orphans;
-}
-
-/** 200 HTML pages below the root that nothing links to. */
-async function flagNoInlinks(
-  jobId: string,
-  add: (pageId: string, type: IssueType, detail?: string) => void,
-): Promise<void> {
-  let cursor: string | undefined;
-  for (;;) {
-    const batch = await prisma.crawlPage.findMany({
-      where: { crawlJobId: jobId, inlinkCount: 0, depth: { gt: 0 }, ...OK_HTML },
-      select: { id: true },
-      orderBy: { id: "asc" },
-      take: AGGREGATION_BATCH_SIZE,
-      ...(cursor ? { skip: 1, cursor: { id: cursor } } : {}),
-    });
-    if (batch.length === 0) break;
-    for (const row of batch) add(row.id, "NO_INLINKS", "No internal links point to this page");
-    if (batch.length < AGGREGATION_BATCH_SIZE) break;
-    cursor = batch[batch.length - 1]!.id;
-  }
+  return out;
 }
 
 /** Value -> count for one CrawlPage column, computed in Postgres. */
@@ -484,13 +574,30 @@ async function issueDistribution(
 ): Promise<Record<string, number>> {
   const groups = await prisma.crawlIssue.groupBy({
     by: [field],
-    where: { crawlPage: { crawlJobId: jobId } },
+    where: { crawlJobId: jobId },
     _count: { _all: true },
   });
 
   const out: Record<string, number> = {};
   for (const group of groups) out[group[field]] = group._count._all;
   return out;
+}
+
+/** Findings per rule id and totals by kind, for summary.issues / issuesByKind. */
+async function ruleTally(jobId: string): Promise<{ issues: Record<string, RuleTally>; byKind: Record<RuleKind, number> }> {
+  const groups = await prisma.crawlIssue.groupBy({
+    by: ["ruleId", "kind", "priority"],
+    where: { crawlJobId: jobId, ruleId: { not: null } },
+    _count: { _all: true },
+  });
+  const issues: Record<string, RuleTally> = {};
+  const byKind: Record<RuleKind, number> = { issue: 0, warning: 0, opportunity: 0 };
+  for (const g of groups) {
+    const kind = g.kind as RuleKind;
+    issues[g.ruleId!] = { count: g._count._all, kind, priority: g.priority as RulePriority };
+    if (kind in byKind) byKind[kind] += g._count._all;
+  }
+  return { issues, byKind };
 }
 
 async function deepest(jobId: string): Promise<{ url: string; depth: number }[]> {

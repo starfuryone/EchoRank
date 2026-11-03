@@ -33,13 +33,11 @@ import {
 import { collectSitemapUrls, type SitemapResult } from "./sitemap";
 import { aggregateCrawl } from "./aggregate";
 import { RateLimiter, fetchPage, isHtmlContentType } from "./fetch";
-import {
-  detectIssues,
-  duplicateContentIssue,
-  parsePage,
-  type DetectedIssue,
-  type ParsedPage,
-} from "./checks";
+import { parsePage, type ParsedPage } from "./checks";
+import { evaluatePageRules, type Issue, type PageFacts } from "@/lib/crawl-rules";
+import { buildPageFacts } from "./facts";
+import { attachHeadChecks, type HeadCheckDeps } from "./head-checks";
+import { issueRows, storedColumns } from "./stored";
 import { fetchRobots, type RobotsRules } from "./robots";
 import { isFetchableUrl, isInScope, normalizeCrawlUrl } from "./url";
 
@@ -66,7 +64,10 @@ interface PendingPage {
   contentType: string | null;
   fetchMs: number | null;
   parsed: ParsedPage | null;
-  issues: DetectedIssue[];
+  /** Page-scope rule findings (packages/crawl-rules). */
+  issues: Issue[];
+  /** The Phase 3a stored-fact columns; null when nothing was fetched. */
+  stored: ReturnType<typeof storedColumns> | null;
   contentHash: string | null;
   /** Null when the crawl found no sitemap at all. */
   inSitemap: boolean | null;
@@ -78,6 +79,8 @@ interface PendingPage {
    * should count once per page, not once per anchor.
    */
   linkTargets: string[];
+  /** Distinct in-scope rel=nofollow targets: the nofollow-inlink credit. */
+  nofollowTargets: string[];
 }
 
 export async function runCrawl({
@@ -202,7 +205,11 @@ export async function runCrawl({
       const batch = await popBatch(redis, keys.queue, batchSize);
       if (batch.length === 0) break; // frontier exhausted — the clean ending
 
-      const results = await processBatch(batch, rootUrl, robots, limiter, isInSitemap);
+      const results = await processBatch(batch, rootUrl, robots, limiter, isInSitemap, {
+        redis,
+        cacheKey: keys.headCache,
+        limiter,
+      });
       const written = await writeBatch(jobId, results, redis, keys.seen, job.urlCap, pagesCrawled);
 
       pagesCrawled += written.pages;
@@ -226,9 +233,11 @@ export async function runCrawl({
       try {
         const result = await aggregateCrawl({
           jobId,
+          rootUrl: job.rootUrl,
           redis,
           sitemap,
           sitemapSeeded,
+          sitemapDeclaredInRobots: robots.sitemaps.length > 0,
         });
         summary = result.summary;
         issueCount = result.issueCount;
@@ -263,7 +272,16 @@ export async function runCrawl({
     // The frontier is worthless once the crawl ends; TTL is the backstop for
     // a process that dies before reaching this line.
     await redis
-      .del(keys.queue, keys.seen, keys.cancel, keys.inlinks, keys.sitemap)
+      .del(
+        keys.queue,
+        keys.seen,
+        keys.cancel,
+        keys.inlinks,
+        keys.sitemap,
+        keys.nofollowInlinks,
+        keys.firstSource,
+        keys.headCache,
+      )
       .catch(() => {});
   }
 
@@ -324,6 +342,7 @@ async function processBatch(
   robots: RobotsRules,
   limiter: RateLimiter,
   isInSitemap: ((url: string) => Promise<boolean>) | null,
+  head: HeadCheckDeps,
 ): Promise<PendingPage[]> {
   const results: PendingPage[] = [];
   let cursor = 0;
@@ -333,7 +352,7 @@ async function processBatch(
       const index = cursor++;
       if (index >= batch.length) return;
       const item = batch[index]!;
-      results.push(await crawlOne(item, rootUrl, robots, limiter, isInSitemap));
+      results.push(await crawlOne(item, rootUrl, robots, limiter, isInSitemap, head));
     }
   };
 
@@ -350,6 +369,7 @@ async function crawlOne(
   limiter: RateLimiter,
   /** Null when the crawl found no sitemap; otherwise membership per URL. */
   isInSitemap: ((url: string) => Promise<boolean>) | null,
+  head: HeadCheckDeps,
 ): Promise<PendingPage> {
   const base: PendingPage = {
     url: item.url,
@@ -360,27 +380,38 @@ async function crawlOne(
     fetchMs: null,
     parsed: null,
     issues: [],
+    stored: null,
     contentHash: null,
     inSitemap: null,
     discovered: [],
     linkTargets: [],
+    nofollowTargets: [],
+  };
+  const factsBase = {
+    url: item.url,
+    rootUrl,
+    depth: item.depth,
+    redirectHops: 0,
+    redirectTarget: null,
+    contentType: null,
+    responseMs: null,
+    bytes: null,
+    inSitemap: null,
+    headers: {},
+    html: null,
   };
 
   // Disallowed URLs are RECORDED, never fetched. The row exists so the tenant
   // can see what robots.txt is hiding from search engines too.
   if (!robots.isAllowed(item.url)) {
-    return {
-      ...base,
-      issues: detectIssues({
-        statusCode: null,
-        parsed: null,
-        finalUrl: item.url,
-        redirectHops: 0,
-        xRobotsTag: null,
-        isHtml: false,
-        blockedByRobots: true,
-      }),
-    };
+    const facts = buildPageFacts({
+      ...factsBase,
+      finalUrl: item.url,
+      blockedByRobots: true,
+      statusCode: null,
+      fetchError: null,
+    });
+    return { ...base, issues: evaluatePageRules(facts) };
   }
 
   // Second line behind scope: never open a socket to a private address.
@@ -394,14 +425,25 @@ async function crawlOne(
   const isHtml = isHtmlContentType(res.contentType) && res.html !== null;
   const parsed = isHtml ? parsePage(res.html!, res.finalUrl, rootUrl) : null;
 
-  const issues = detectIssues({
-    statusCode: res.statusCode,
-    parsed,
+  // One PageFacts for the rule engine. The HTML string goes no further than
+  // this call: facts are counts, flags, short strings and URLs.
+  const facts = buildPageFacts({
+    ...factsBase,
     finalUrl: res.finalUrl,
+    blockedByRobots: false,
+    statusCode: res.statusCode,
+    fetchError: res.statusCode === null ? res.error : null,
     redirectHops: res.redirectHops,
-    xRobotsTag: res.xRobotsTag,
-    isHtml,
+    redirectTarget: res.redirectTarget,
+    contentType: res.contentType,
+    responseMs: res.fetchMs,
+    bytes: res.bytes,
+    inSitemap,
+    headers: res.headers,
+    html: isHtml ? res.html : null,
   });
+  await attachHeadChecks(facts, rootUrl, head);
+  const issues = evaluatePageRules(facts);
 
   // parsePage already dedupes hrefs per page, so this set is the "one credit
   // per source page" rule the inlink count needs.
@@ -422,20 +464,44 @@ async function crawlOne(
     fetchMs: res.fetchMs,
     parsed,
     issues,
+    stored: storedColumns(facts),
     contentHash: parsed?.contentHash ?? null,
     inSitemap,
-    discovered: linkTargets.map((url) => ({ url, depth: item.depth + 1 })),
+    discovered: [...linkTargets, ...annotationTargets(facts, linkTargets, rootUrl)].map((url) => ({
+      url,
+      depth: item.depth + 1,
+    })),
     linkTargets,
+    nofollowTargets: [...new Set(parsed?.nofollowLinks ?? [])],
   };
+}
+
+/**
+ * URLs a page points at through annotations rather than anchors: hreflang
+ * alternates, the canonical, rel next/prev. Crawled (in scope only) so the
+ * site rules can judge them, but they earn no inlink credit — an annotation
+ * is not a link a visitor can follow.
+ */
+function annotationTargets(facts: PageFacts, linkTargets: string[], rootUrl: string): string[] {
+  const h = facts.html;
+  if (!h) return [];
+  const seen = new Set(linkTargets);
+  const out: string[] = [];
+  for (const raw of [...h.hreflang.map((x) => x.href), ...h.canonicals, ...h.relNext, ...h.relPrev]) {
+    const url = normalizeCrawlUrl(raw, facts.finalUrl);
+    if (!url || seen.has(url) || !isInScope(url, rootUrl) || !isFetchableUrl(url)) continue;
+    seen.add(url);
+    out.push(url);
+  }
+  return out;
 }
 
 /**
  * Write one batch and enqueue what it discovered.
  *
- * Duplicate detection happens HERE rather than in checks.ts because it needs
- * the rest of the crawl: a hash is a duplicate only if another 200 page in this
- * job already carried it. The [crawlJobId, contentHash] index is what makes
- * that lookup cheap enough to do per page.
+ * Page-scope findings only. Everything that needs the rest of the crawl
+ * (duplicates, canonical/hreflang targets, orphans…) is a site rule and runs
+ * once, in aggregation, over the complete page set.
  */
 async function writeBatch(
   jobId: string,
@@ -451,21 +517,7 @@ async function writeBatch(
 
   await prisma.$transaction(async (tx) => {
     for (const result of results) {
-      const isOk =
-        result.statusCode !== null && result.statusCode >= 200 && result.statusCode < 300;
-
-      let duplicateOf: string | null = null;
-      if (isOk && result.contentHash) {
-        const existing = await tx.crawlPage.findFirst({
-          where: { crawlJobId: jobId, contentHash: result.contentHash },
-          select: { url: true },
-        });
-        duplicateOf = existing?.url ?? null;
-      }
-
-      const issues = duplicateOf
-        ? [...result.issues, duplicateContentIssue(duplicateOf)]
-        : result.issues;
+      const issues = issueRows(result.issues, jobId);
 
       await tx.crawlPage.create({
         data: {
@@ -487,13 +539,9 @@ async function writeBatch(
           fetchMs: result.fetchMs,
           contentType: result.contentType,
           inSitemap: result.inSitemap,
-          issues: {
-            create: issues.map((i) => ({
-              type: i.type,
-              severity: i.severity,
-              detail: i.detail ?? null,
-            })),
-          },
+          ...(result.stored ?? {}),
+          simhash: result.parsed?.simhash ?? null,
+          issues: { create: issues },
         },
       });
 
@@ -505,11 +553,16 @@ async function writeBatch(
   // distinct (source page, target) pair — an edge table would carry an order
   // of magnitude more rows than the pages themselves.
   const credits = results.flatMap((r) => r.linkTargets);
-  if (credits.length > 0) {
+  const nofollow = results.flatMap((r) => r.nofollowTargets);
+  if (credits.length > 0 || nofollow.length > 0) {
+    const keys = crawlKeys(jobId);
     const pipeline = redis.pipeline();
-    const inlinksKey = seenKey.replace(/:seen$/, ":inlinks");
-    for (const target of credits) pipeline.hincrby(inlinksKey, target, 1);
-    pipeline.expire(inlinksKey, REDIS_KEY_TTL_SECONDS);
+    for (const target of credits) pipeline.hincrby(keys.inlinks, target, 1);
+    for (const target of nofollow) pipeline.hincrby(keys.nofollowInlinks, target, 1);
+    // First page seen linking to each target: the source that gets the
+    // links.outlinks_to_redirect credit when the target turns out to redirect.
+    for (const r of results) for (const target of r.linkTargets) pipeline.hsetnx(keys.firstSource, target, r.url);
+    for (const key of [keys.inlinks, keys.nofollowInlinks, keys.firstSource]) pipeline.expire(key, REDIS_KEY_TTL_SECONDS);
     await pipeline.exec();
   }
 

@@ -40,6 +40,8 @@ export interface SitemapResult {
   filesFetched: number;
   /** True when a cap stopped us short of the whole sitemap. */
   truncated: boolean;
+  /** Most <loc> entries in any single (non-index) file, as written — sitemaps.too_large. */
+  largestFileUrls?: number;
 }
 
 /** Decode the five XML entities that appear in a URL. */
@@ -169,6 +171,7 @@ export async function collectSitemapUrls({
   let filesFetched = 0;
   let found = false;
   let truncated = false;
+  let largestFileUrls = 0;
 
   while (queue.length > 0) {
     if (filesFetched >= MAX_SITEMAP_FILES) {
@@ -188,6 +191,7 @@ export async function collectSitemapUrls({
 
     found = true;
     const { isIndex, locs } = parseSitemapXml(xml);
+    if (!isIndex) largestFileUrls = Math.max(largestFileUrls, locs.length);
 
     for (const loc of locs) {
       if (isIndex) {
@@ -206,5 +210,5 @@ export async function collectSitemapUrls({
 
   if (queue.length > 0) truncated = true;
 
-  return { found, urls: [...urls], filesFetched, truncated };
+  return { found, urls: [...urls], filesFetched, truncated, largestFileUrls };
 }

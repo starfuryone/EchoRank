@@ -73,4 +73,19 @@ export const crawlKeys = (jobId: string) => ({
   inlinks: `crawl:${jobId}:inlinks`,
   /** SET of normalized in-scope sitemap URLs. */
   sitemap: `crawl:${jobId}:sitemap`,
+  /** HASH normalizedUrl -> internal rel=nofollow links pointing at it. */
+  nofollowInlinks: `crawl:${jobId}:nofollow`,
+  /** HASH target -> the first page seen linking to it (outlinks-to-redirect credit). */
+  firstSource: `crawl:${jobId}:firstsource`,
+  /** HASH url -> "status|bytes" of a HEAD check, so a shared image or link is checked once per crawl. */
+  headCache: `crawl:${jobId}:head`,
 });
+
+// ─── Phase 3a: bounded HEAD checks (external links, same-host images) ──────
+/** External links HEAD-checked per page; results cached per crawl. */
+export const EXTERNAL_CHECKS_PER_PAGE = 10;
+/** Same-host images HEAD-checked per page, through the politeness limiter. */
+export const IMAGE_CHECKS_PER_PAGE = 10;
+export const HEAD_TIMEOUT_MS = 5_000;
+/** images.over_100kb threshold. */
+export const IMAGE_MAX_BYTES = 100 * 1024;

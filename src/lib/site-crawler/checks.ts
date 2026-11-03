@@ -20,6 +20,7 @@ import {
   TITLE_MIN_LENGTH,
 } from "./constants";
 import { isInScope, looksLikeNonHtml, normalizeCrawlUrl } from "./url";
+import { simhash64 } from "@/lib/crawl-rules";
 
 /** The closed set of findings. Asserted in tests so a typo cannot ship. */
 export const ISSUE_TYPES = [
@@ -112,6 +113,8 @@ export interface ParsedPage {
   metaRobots: string | null;
   wordCount: number;
   contentHash: string;
+  /** 64-bit SimHash of the same normalized text (signed, for a bigint column). */
+  simhash: bigint;
   /** In-scope, fetchable links found on the page, normalized and deduped. */
   links: string[];
   /** Count of in-scope links, including nofollow ones. */
@@ -185,6 +188,7 @@ export function parsePage(html: string, pageUrl: string, rootUrl: string): Parse
     metaRobots: metaRobots || null,
     wordCount,
     contentHash,
+    simhash: simhash64(text),
     links,
     internalLinks,
     nofollowLinks,
