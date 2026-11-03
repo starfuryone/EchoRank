@@ -20,6 +20,8 @@ import { Header } from "@/components/layout/header";
 import { dashNav, dashNavByline, SIDEBAR_TOOLTIPS, SITE_CRAWLER_COPY } from "@/lib/i18n/dashboard";
 import { CRAWLER_BRAND } from "@/lib/site-crawler/brand";
 import OldSiteCrawlerPage from "@/app/(dashboard)/visibility/tools/site-crawler/page";
+import { SiteCrawlerClient } from "@/components/seo-tools/site-crawler-client";
+import { helpArticleFor, learnHref } from "@/lib/help-content";
 
 const APP = join(__dirname, "..", "src", "app", "(dashboard)");
 
@@ -96,6 +98,17 @@ describe("the top bar on /crawler", () => {
   it("sets the browser title to the brand and Echorank", () => {
     for (const locale of ["en", "fr", "de-CH"] as const) {
       expect(SITE_CRAWLER_COPY[locale].pageTitle).toBe(`${CRAWLER_BRAND.name} — Echorank`);
+    }
+  });
+});
+
+describe("the Help button on /crawler", () => {
+  it("opens the crawler guide from pageHelp, in a new tab", () => {
+    expect(helpArticleFor("/crawler")).toBe("/learn/guides/what-nosy-bat-checks");
+    for (const locale of ["en", "fr"] as const) {
+      const html = renderToStaticMarkup(createElement(SiteCrawlerClient, { locale }));
+      const href = learnHref(locale, helpArticleFor("/crawler")!);
+      expect(html).toMatch(new RegExp(`<a href="${href}" target="_blank" rel="noopener noreferrer"[^>]*>.*${SITE_CRAWLER_COPY[locale].helpButton}</a>`));
     }
   });
 });

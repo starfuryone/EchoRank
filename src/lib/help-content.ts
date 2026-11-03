@@ -152,6 +152,7 @@ export const pageHelp: Record<string, string> = {
   "/visibility": `${LEARN_BASE}/track-and-improve-ai-visibility`,
   "/extension": `${LEARN_BASE}/guides/install-browser-extension`,
   "/visibility/tools/ai-lens": `${LEARN_BASE}/guides/ai-lens-content-gap`,
+  "/crawler": `${LEARN_BASE}/guides/what-nosy-bat-checks`,
 };
 
 /**

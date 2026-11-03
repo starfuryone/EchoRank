@@ -190,7 +190,7 @@ describe("pageHelp deep links", () => {
 
   it("covers the routes whose help has an obvious article", () => {
     expect(Object.keys(pageHelp).sort()).toEqual(
-      ["/campaigns", "/extension", "/imports", "/visibility", "/visibility/tools/ai-lens"].sort(),
+      ["/campaigns", "/crawler", "/extension", "/imports", "/visibility", "/visibility/tools/ai-lens"].sort(),
     );
   });
 

@@ -13,7 +13,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { AlertCircle, Download, Loader2, Network } from "lucide-react";
+import { AlertCircle, CircleQuestionMark, Download, Loader2, Network } from "lucide-react";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -46,6 +46,7 @@ import {
 } from "@/components/seo-tools/site-crawler-panels";
 import { SITE_CRAWLER_COPY, type DashLocale, type SiteCrawlerCopy } from "@/lib/i18n/dashboard";
 import { CRAWLER_BRAND } from "@/lib/site-crawler/brand";
+import { helpArticleFor, learnHref } from "@/lib/help-content";
 
 type TabId = "overview" | "rules" | "issues" | "duplicates" | "redirects" | "pages";
 
@@ -324,7 +325,7 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
   if (quota?.locked) {
     return (
       <div className="space-y-6">
-        <Header t={t} />
+        <Header t={t} locale={locale} />
         <Card>
           <CardContent className="py-10 text-center">
             <Network className="mx-auto h-8 w-8 text-gray-300" aria-hidden="true" />
@@ -346,7 +347,7 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
 
   return (
     <div className="space-y-6">
-      <Header t={t} />
+      <Header t={t} locale={locale} />
 
       <Card>
         <CardContent className="pt-6">
@@ -679,9 +680,26 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
   );
 }
 
-function Header({ t }: { t: SiteCrawlerCopy }) {
+function Header({ t, locale }: { t: SiteCrawlerCopy; locale: DashLocale }) {
+  // The guide behind the Help button comes from pageHelp (help-content.ts),
+  // asserted against the Knowledge Hub's routes. New tab, as the help hub
+  // opens public /learn pages: the guide is a marketing page, and losing the
+  // crawl you were reading is not a fair trade.
+  const guide = helpArticleFor("/crawler");
   return (
     <div>
+      {guide && (
+        <a
+          href={learnHref(locale, guide)}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={t.helpAria}
+          className="float-right inline-flex items-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+        >
+          <CircleQuestionMark className="mr-2 h-4 w-4 text-blue-600" aria-hidden="true" />
+          {t.helpButton}
+        </a>
+      )}
       {/* The lockup carries the name and the byline, so neither is repeated in
           text; the alt text is the accessible name. The top bar already reads
           the brand name as the page's h1, so this is an h2. */}

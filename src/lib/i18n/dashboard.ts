@@ -12884,6 +12884,8 @@ const siteCrawlerEn = {
   brandName: CRAWLER_BRAND.nameTm,
   byline: CRAWLER_BRAND.byline as string,
   pageTitle: `${CRAWLER_BRAND.name} — Echorank`,
+  helpButton: "Help",
+  helpAria: "Open the guide to what the crawler checks (new tab)",
   title: "Site Crawler",
   subtitle:
     "Crawl every page on your site and see the on-page SEO issues, page by page. Raw HTML only — no JavaScript rendering in this version.",
@@ -13053,6 +13055,8 @@ export const SITE_CRAWLER_COPY: Record<DashLocale, SiteCrawlerCopy> = {
     brandName: CRAWLER_BRAND.nameTm,
     byline: "robot d'exploration par Echorank",
     pageTitle: `${CRAWLER_BRAND.name} — Echorank`,
+    helpButton: "Aide",
+    helpAria: "Ouvrir le guide de ce que vérifie le robot (nouvel onglet)",
     title: "Explorateur de site",
     subtitle:
       "Parcourez chaque page de votre site et consultez les problèmes SEO on-page, page par page. HTML brut uniquement — pas de rendu JavaScript dans cette version.",
@@ -13217,6 +13221,8 @@ export const SITE_CRAWLER_COPY: Record<DashLocale, SiteCrawlerCopy> = {
     brandName: CRAWLER_BRAND.nameTm,
     byline: "Crawler von Echorank",
     pageTitle: `${CRAWLER_BRAND.name} — Echorank`,
+    helpButton: "Hilfe",
+    helpAria: "Leitfaden zu den Prüfungen des Crawlers öffnen (neuer Tab)",
     title: "Site Crawler",
     subtitle:
       "Crawlen Sie jede Seite Ihrer Website und sehen Sie die On-Page-SEO-Probleme Seite für Seite. Nur rohes HTML — kein JavaScript-Rendering in dieser Version.",
