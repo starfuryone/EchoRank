@@ -20,6 +20,8 @@ import type {
   SiteRuleCtx,
   StoredPageFacts,
 } from "./types";
+import { RULES as responseCodesRules } from "./rules/response_codes";
+import { COPY as responseCodesCopy } from "./copy/response_codes";
 
 interface Family {
   rules: readonly Rule[];
@@ -28,6 +30,7 @@ interface Family {
 
 const FAMILIES: Family[] = [
   // one line per family, in RULE_FAMILIES order
+  { rules: responseCodesRules, copy: responseCodesCopy },
 ];
 
 export const RULES: readonly Rule[] = FAMILIES.flatMap((f) => f.rules);
