@@ -20,6 +20,8 @@ import type {
   SiteRuleCtx,
   StoredPageFacts,
 } from "./types";
+import { RULES as directivesRules } from "./rules/directives";
+import { COPY as directivesCopy } from "./copy/directives";
 import { RULES as canonicalsRules } from "./rules/canonicals";
 import { COPY as canonicalsCopy } from "./copy/canonicals";
 import { RULES as imagesRules } from "./rules/images";
@@ -58,6 +60,7 @@ const FAMILIES: Family[] = [
   { rules: contentRules, copy: contentCopy },
   { rules: imagesRules, copy: imagesCopy },
   { rules: canonicalsRules, copy: canonicalsCopy },
+  { rules: directivesRules, copy: directivesCopy },
 ];
 
 export const RULES: readonly Rule[] = FAMILIES.flatMap((f) => f.rules);
