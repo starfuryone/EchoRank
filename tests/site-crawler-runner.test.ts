@@ -21,6 +21,8 @@ vi.mock("@/lib/prisma", () => ({
     crawlJob,
     crawlPage,
     $executeRaw: (...a: unknown[]) => executeRaw(...(a as [])),
+    // resolveLinkGraph's window lookup: no edge past the first window.
+    $queryRaw: async () => [],
     // Spell check: the workspace's accepted words (Phase 3c).
     tenant: { findUnique: async () => ({ name: "Acme", spellingAcceptedWords: ["Acmeware"] }) },
     // The runner writes a batch inside a transaction; run the callback inline.
