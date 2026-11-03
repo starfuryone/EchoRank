@@ -156,8 +156,15 @@ export const CRAWL_CAPABILITIES: readonly CrawlCapability[] = [
     ["PageSpeed Insights", "Lighthouse scores, Core Web Vitals field data and the top performance opportunities for the pages you choose."],
     ["PageSpeed Insights", "Scores Lighthouse, données terrain des Core Web Vitals et principales occasions de performance pour les pages que vous choisissez."]),
   cap("mobile-usability", { family: "mobile" },
-    ["Mobile usability", "Viewport, font size, tap targets and content wider than the screen, from the rendered page and Lighthouse."],
-    ["Ergonomie mobile", "Viewport, taille de police, zones tactiles et contenu plus large que l'écran, d'après la page rendue et Lighthouse."]),
+    ["Mobile usability", "Viewport, font size, tap targets and content wider than the screen, from the rendered page."],
+    ["Ergonomie mobile", "Viewport, taille de police, zones tactiles et contenu plus large que l'écran, d'après la page rendue."],
+    {
+      flag: "crawl.psi",
+      body: {
+        en: "Viewport, font size, tap targets and content wider than the screen, from the rendered page and Lighthouse.",
+        fr: "Viewport, taille de police, zones tactiles et contenu plus large que l'écran, d'après la page rendue et Lighthouse.",
+      },
+    }),
   cap("backlinks", { flag: "crawl.backlinks" },
     ["Backlink metrics", "Referring domains and backlink counts per URL, so you know which broken or redirecting pages are costing you links."],
     ["Métriques de liens entrants", "Domaines référents et nombre de liens entrants par URL, pour savoir quelles pages brisées ou redirigées vous coûtent des liens."]),
@@ -379,8 +386,8 @@ export const CRAWL_FAQ: readonly CrawlFaqEntry[] = [
     gate: { flag: "crawl.render" },
     q: { en: "Does it render JavaScript?", fr: "Fait-il le rendu du JavaScript ?" },
     a: {
-      en: () => "Yes, in headless Chromium, for the pages you choose, within your plan's rendered-page cap.",
-      fr: () => "Oui, dans Chromium sans interface, pour les pages que vous choisissez, dans la limite de pages rendues de votre forfait.",
+      en: () => "Yes, in headless Chromium. Rendering is off, thin pages or all pages, within your plan's rendered-page cap.",
+      fr: () => "Oui, dans Chromium sans interface. Le rendu est désactivé, limité aux pages minces ou appliqué à toutes les pages, dans la limite de pages rendues de votre forfait.",
     },
   },
   {

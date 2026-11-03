@@ -31,8 +31,10 @@ import { RULE_COUNT, ruleCountLabel } from "@/lib/site-crawler/rule-count";
 import {
   CRAWL_CAPABILITIES,
   CRAWL_FEATURE_ROWS,
+  capabilityBody,
   gateOpen,
   visibleCapabilities,
+  visibleFaq,
 } from "@/lib/site-crawler/marketing-copy";
 
 const ROOT = join(__dirname, "..");
@@ -161,6 +163,21 @@ describe("/site-crawler", () => {
     expect(gateOpen({ family: "amp" }, ctx)).toBe(false);
     expect(gateOpen({ flag: "crawl.links" }, ctx)).toBe(true);
     expect(gateOpen({ flag: "crawl.formsAuth" }, ctx)).toBe(false);
+  });
+
+  it("names Lighthouse in the mobile card only once crawl.psi ships", () => {
+    const mobile = CRAWL_CAPABILITIES.find((c) => c.id === "mobile-usability")!;
+    for (const base of ["en", "fr"] as const) {
+      expect(capabilityBody(mobile, base, { ...FLAGS, "crawl.psi": false })).not.toMatch(/Lighthouse/);
+      expect(capabilityBody(mobile, base, { ...FLAGS, "crawl.psi": true })).toMatch(/Lighthouse/);
+    }
+  });
+
+  it("describes render mode as the three modes it has, not a page picker", () => {
+    const ctx = { families: new Set<string>(), flags: { ...FLAGS, "crawl.render": true }, plans: PLAN_CONFIGS };
+    const faq = visibleFaq(ctx, "en").find((f) => /JavaScript/.test(f.q))!;
+    expect(faq.a).toMatch(/off, thin pages or all pages, within your plan's rendered-page cap/);
+    expect(faq.a).not.toMatch(/pages you choose/);
   });
 
   it("says 'your whole team' only while plans carry no seat cap", () => {
