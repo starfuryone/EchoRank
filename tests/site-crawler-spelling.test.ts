@@ -1,10 +1,21 @@
 // Spell check (Phase 3c): real hunspell dictionaries through nspell. Fixtures
 // use a few known-good and known-bad words per language, no word lists.
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
 
-import { acceptedWords, checkSpelling, primaryLang, spellTokens } from "@/lib/site-crawler/spelling";
+const log = vi.hoisted(() => ({ warn: vi.fn(), info: vi.fn() }));
+vi.mock("@/infrastructure/observability/logger", () => ({ logger: log }));
+
+import {
+  SPELL_MIN_FREE_BYTES,
+  acceptedWords,
+  acquireSpelling,
+  checkSpelling,
+  loadedSpellLangs,
+  primaryLang,
+  spellTokens,
+} from "@/lib/site-crawler/spelling";
 import { normalizeAcceptedWords, parseAcceptedWords, MAX_ACCEPTED_WORDS } from "@/lib/site-crawler/accepted-words";
 
 const none = new Set<string>();
@@ -54,6 +65,43 @@ describe("checkSpelling", () => {
   it("no language at all: no verdict rather than a guess", async () => {
     expect(await checkSpelling("Teh", null, none)).toBeNull();
     expect(primaryLang("")).toBeNull();
+  });
+});
+
+describe("dictionary memory", () => {
+  const plenty = () => SPELL_MIN_FREE_BYTES * 4;
+  // The tests above load dictionaries without holding them; start empty.
+  beforeEach(() => acquireSpelling()());
+
+  it("skips loading under 1 GB free, with one logged note per language", async () => {
+    const release = acquireSpelling();
+    log.warn.mockClear();
+    const low = () => SPELL_MIN_FREE_BYTES - 1;
+    expect(await checkSpelling("Teh cat", "en", none, low)).toBeNull();
+    expect(await checkSpelling("Teh dog", "en", none, low)).toBeNull();
+    expect(loadedSpellLangs()).toEqual([]);
+    expect(log.warn).toHaveBeenCalledTimes(1);
+    expect(log.warn.mock.calls[0]![0]).toMatchObject({ lang: "en", minFreeMb: 1024 });
+    release();
+  });
+
+  it("does not re-check memory for a dictionary already loaded", async () => {
+    const release = acquireSpelling();
+    await checkSpelling("cat", "en", none, plenty);
+    expect(await checkSpelling("Teh", "en", none, () => 0)).toMatchObject({ misspelled: 1 });
+    release();
+  });
+
+  it("frees the dictionaries when the last crawl holding them ends", async () => {
+    const a = acquireSpelling();
+    const b = acquireSpelling();
+    await checkSpelling("cat", "en", none, plenty);
+    expect(loadedSpellLangs()).toEqual(["en"]);
+    a();
+    a(); // a second release of the same crawl is a no-op
+    expect(loadedSpellLangs()).toEqual(["en"]);
+    b();
+    expect(loadedSpellLangs()).toEqual([]);
   });
 });
 

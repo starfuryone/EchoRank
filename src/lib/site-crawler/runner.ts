@@ -36,7 +36,7 @@ import { RateLimiter, fetchPage, isHtmlContentType } from "./fetch";
 import { parsePage, type ParsedPage } from "./checks";
 import { evaluatePageRules, type Issue, type PageFacts } from "@/lib/crawl-rules";
 import { buildPageFacts, buildPageFactsAndText } from "./facts";
-import { acceptedWords, checkSpelling } from "./spelling";
+import { acceptedWords, acquireSpelling, checkSpelling } from "./spelling";
 import { attachHeadChecks, type HeadCheckDeps } from "./head-checks";
 import { issueRows, renderColumns, storedColumns } from "./stored";
 import { RenderBudget } from "./render";
@@ -144,6 +144,9 @@ export async function runCrawl({
     job.renderCap,
     job.pagesRendered,
   );
+  // Released in the finally below: the dictionaries (600 MB for French) are
+  // dropped once no crawl in this process holds them.
+  const releaseSpelling = acquireSpelling();
 
   try {
     await prisma.crawlJob.update({
@@ -291,6 +294,7 @@ export async function runCrawl({
     stoppedReason = truncate(err instanceof Error ? err.message : String(err), 500);
     logger.error({ jobId, err }, "site-crawl failed");
   } finally {
+    releaseSpelling();
     // Terminal status ALWAYS, even if the update above threw. A job left in
     // RUNNING is one the UI polls forever.
     await prisma.crawlJob

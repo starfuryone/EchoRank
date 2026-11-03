@@ -7,10 +7,20 @@
 // (LanguageTool needs Java and ~2 GB of RAM) is deliberately out of scope on
 // this box.
 //
-// Dictionaries load lazily, once per worker process, the first time a page in
-// that language is checked: English ~70 ms / 30 MB, German ~0.5 s / 80 MB,
-// French ~2 s / 600 MB (its affix rules expand to a very large word set).
-// A crawl of an English site never pays for French.
+// MEMORY. Dictionaries load lazily, the first time a page in that language is
+// checked: English ~70 ms / 30 MB, German ~0.5 s / 80 MB, French ~2 s /
+// 600 MB (its affix rules expand to a very large word set). A crawl of an
+// English site never pays for French. They live in the workers process, next
+// to the crawl itself, so:
+//   - a crawl holds them through acquireSpelling(), and they are dropped when
+//     the last crawl running in this process releases (two run at once, see
+//     CRAWL_JOB_CONCURRENCY, and share one copy);
+//   - a dictionary is not loaded while free memory (os.freemem(), which is
+//     MemAvailable on Linux) is under SPELL_MIN_FREE_BYTES. Pages in that
+//     language get no spelling verdict, and the skip is logged once per
+//     language until the dictionaries are next dropped.
+// The dictionary packages' own aff/dic bytes (~1.5 MB for French) stay in
+// the module cache; the expanded word set is what is freed.
 //
 // What is not looked up: words with digits, all-caps acronyms and inner
 // capitals (product names), URLs and e-mail addresses, one-letter tokens, and
@@ -24,14 +34,19 @@
 // dynamic imports and out of every Next bundle.
 
 import "server-only";
+import { freemem } from "node:os";
 import nspell from "nspell";
 import { SPELLING_SAMPLE_MAX, type SpellingFacts } from "@/lib/crawl-rules";
+import { logger } from "@/infrastructure/observability/logger";
 
 export const SPELL_LANGS = ["en", "fr", "de"] as const;
 export type SpellLang = (typeof SPELL_LANGS)[number];
 
 /** Words looked up per page at most. Enough to judge a page; bounded CPU on a 20,000-word one. */
 export const MAX_WORDS_PER_PAGE = 3_000;
+
+/** No dictionary is loaded with less free memory than this. */
+export const SPELL_MIN_FREE_BYTES = 1024 ** 3;
 
 type Checker = ReturnType<typeof nspell>;
 
@@ -42,13 +57,53 @@ const LOADERS: Record<SpellLang, () => Promise<{ default: { aff: Uint8Array; dic
 };
 
 const checkers = new Map<SpellLang, Promise<Checker>>();
+const skipLogged = new Set<SpellLang>();
+let holders = 0;
 
-function checker(lang: SpellLang): Promise<Checker> {
+/**
+ * Hold the dictionaries for one crawl. Call the returned function when the
+ * crawl ends (it is idempotent); the last release in the process drops them.
+ */
+export function acquireSpelling(): () => void {
+  holders++;
+  let released = false;
+  return () => {
+    if (released) return;
+    released = true;
+    if (--holders > 0) return;
+    holders = 0;
+    if (checkers.size) logger.info({ langs: [...checkers.keys()] }, "site-crawl spelling: dictionaries released");
+    checkers.clear();
+    skipLogged.clear();
+  };
+}
+
+/** Languages whose dictionary is loaded or loading. */
+export function loadedSpellLangs(): SpellLang[] {
+  return [...checkers.keys()];
+}
+
+/** Null when the dictionary is not loaded and free memory is too low to load it. */
+function checker(lang: SpellLang, freeBytes: () => number): Promise<Checker> | null {
   let c = checkers.get(lang);
   if (!c) {
+    const free = freeBytes();
+    if (free < SPELL_MIN_FREE_BYTES) {
+      if (!skipLogged.has(lang)) {
+        skipLogged.add(lang);
+        logger.warn(
+          { lang, freeMb: Math.round(free / 1024 ** 2), minFreeMb: SPELL_MIN_FREE_BYTES / 1024 ** 2 },
+          "site-crawl spelling: low free memory, dictionary not loaded, pages in this language are not spell-checked",
+        );
+      }
+      return null;
+    }
     c = LOADERS[lang]().then((m) => nspell(Buffer.from(m.default.aff), Buffer.from(m.default.dic)));
     // A failed load is retried on the next page rather than cached forever.
-    c.catch(() => checkers.delete(lang));
+    const loading = c;
+    c.catch(() => {
+      if (checkers.get(lang) === loading) checkers.delete(lang);
+    });
     checkers.set(lang, c);
   }
   return c;
@@ -91,13 +146,15 @@ function correct(c: Checker, word: string, lang: SpellLang): boolean {
 
 /**
  * Check one page. `lang` is the page's <html lang>, falling back to the crawl
- * root's. Null when there is no language to go on: guessing English for an
- * unlabelled French page would report every word.
+ * root's. Null when there is no language to go on (guessing English for an
+ * unlabelled French page would report every word), or when the dictionary
+ * could not be loaded for lack of memory.
  */
 export async function checkSpelling(
   text: string,
   lang: string | null,
   accepted: ReadonlySet<string>,
+  freeBytes: () => number = freemem,
 ): Promise<SpellingFacts | null> {
   const primary = primaryLang(lang);
   if (!primary) return null;
@@ -105,7 +162,9 @@ export async function checkSpelling(
     return { lang: primary, supported: false, checked: 0, misspelled: 0, sample: [] };
   }
   const l = primary as SpellLang;
-  const c = await checker(l);
+  const loading = checker(l, freeBytes);
+  if (!loading) return null;
+  const c = await loading;
   const words = spellTokens(text, l, accepted);
   const wrong = new Set<string>();
   const sample: string[] = [];
