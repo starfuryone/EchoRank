@@ -20,6 +20,8 @@ import type {
   SiteRuleCtx,
   StoredPageFacts,
 } from "./types";
+import { RULES as pageTitlesRules } from "./rules/page_titles";
+import { COPY as pageTitlesCopy } from "./copy/page_titles";
 import { RULES as urlRules } from "./rules/url";
 import { COPY as urlCopy } from "./copy/url";
 import { RULES as responseCodesRules } from "./rules/response_codes";
@@ -34,6 +36,7 @@ const FAMILIES: Family[] = [
   // one line per family, in RULE_FAMILIES order
   { rules: responseCodesRules, copy: responseCodesCopy },
   { rules: urlRules, copy: urlCopy },
+  { rules: pageTitlesRules, copy: pageTitlesCopy },
 ];
 
 export const RULES: readonly Rule[] = FAMILIES.flatMap((f) => f.rules);
