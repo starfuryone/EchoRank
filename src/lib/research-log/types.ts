@@ -77,7 +77,7 @@ export const RESEARCH_FEATURE_HREFS: Record<ResearchFeature, string> = {
   serp_check: "/visibility/tools/serp-checker",
   backlinks: "/visibility/tools/backlinks",
   domain_overview: "/visibility/tools/site-explorer",
-  site_crawl: "/visibility/tools/site-crawler",
+  site_crawl: "/crawler",
   keyword_opportunity: "/visibility/tools/keyword-opportunities",
   ai_citations: "/visibility/tools/ai-citations",
 };

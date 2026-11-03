@@ -21,6 +21,7 @@ export const APP_ROUTE_SEGMENTS: readonly string[] = [
   "assistant",
   "billing",
   "campaigns",
+  "crawler",
   "customers",
   "dashboard",
   "extension",

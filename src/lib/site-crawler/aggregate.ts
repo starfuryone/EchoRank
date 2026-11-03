@@ -34,7 +34,9 @@ import {
   crawlKeys,
 } from "./constants";
 import type { SitemapResult } from "./sitemap";
+import type { SeverityCounts } from "./types";
 import { issueRows, toStoredFacts } from "./stored";
+import { toTotals } from "./issue-totals";
 
 export interface AggregateArgs {
   jobId: string;
@@ -58,6 +60,11 @@ export interface CrawlSummary {
   depths: Record<string, number>;
   issuesBySeverity: Record<string, number>;
   issuesByType: Record<string, number>;
+  /**
+   * issuesBySeverity in the fixed shape. Its presence is what tells
+   * getIssueTotals the cache is current; older summaries fall back to a groupBy.
+   */
+  totals: SeverityCounts;
   /** Phase 3a: findings per rule id, and totals by kind. */
   issues?: Record<string, RuleTally>;
   issuesByKind?: Record<RuleKind, number>;
@@ -199,6 +206,7 @@ export async function aggregateCrawl({
     depths,
     issuesBySeverity,
     issuesByType,
+    totals: toTotals(issuesBySeverity),
     issues: ruleTallies.issues,
     issuesByKind: ruleTallies.byKind,
     duplicates: {

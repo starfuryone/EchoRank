@@ -57,6 +57,8 @@ export const dashNav: Record<DashLocale, Record<string, string>> = {
     "/visibility/tools/bot-analytics": "Bot Analytics",
     "/visibility/tools/content-explorer": "Content Explorer",
     "/visibility/tools/ai-content-helper": "Marketing Studio",
+    // Sub-brand, never translated — see CRAWLER_BRAND.
+    "/crawler": CRAWLER_BRAND.name,
     "/visibility/tools/social-media-manager": "Social Media Manager",
     "/visibility/tools/portfolios": "Portfolios",
     "/visibility/tools/report-builder": "Report Builder",
@@ -113,6 +115,8 @@ export const dashNav: Record<DashLocale, Record<string, string>> = {
     "/visibility/tools/bot-analytics": "Bot-Analytics",
     "/visibility/tools/content-explorer": "Content Explorer",
     "/visibility/tools/ai-content-helper": "Marketing Studio",
+    // Sub-brand, never translated — see CRAWLER_BRAND.
+    "/crawler": CRAWLER_BRAND.name,
     "/visibility/tools/social-media-manager": "Social-Media-Manager",
     "/visibility/tools/portfolios": "Portfolios",
     "/visibility/tools/report-builder": "Report Builder",
@@ -169,6 +173,7 @@ export const dashNav: Record<DashLocale, Record<string, string>> = {
     "/visibility/tools/bot-analytics": "Analytique des robots",
     "/visibility/tools/content-explorer": "Explorateur de contenu",
     "/visibility/tools/ai-content-helper": "Studio marketing",
+    "/crawler": CRAWLER_BRAND.name,
     "/visibility/tools/social-media-manager": "Gestionnaire de médias sociaux",
     "/visibility/tools/portfolios": "Portefeuilles",
     "/visibility/tools/report-builder": "Générateur de rapports",
@@ -4809,6 +4814,22 @@ export const SIDEBAR_GROUPS_COPY: Record<DashLocale, SidebarGroupsCopy> = {
   fr: { workspace: "Espace de travail", manage: "Administration" },
   "de-CH": { workspace: "Arbeitsbereich", manage: "Verwaltung" },
 };
+
+// Sidebar row → tooltip, for rows whose label is a brand name that does not
+// say what the thing is. Rows not listed carry no tooltip.
+export const SIDEBAR_TOOLTIPS: Record<DashLocale, Record<string, string>> = {
+  en: { "/crawler": "Site crawler" },
+  fr: { "/crawler": "Robot d'exploration" },
+  "de-CH": { "/crawler": "Site-Crawler" },
+};
+
+// Top-bar byline, shown small and muted after the title, for routes that have
+// one. A function rather than a table so the byline is read from its one home
+// (SITE_CRAWLER_COPY, declared further down) at call time.
+export function dashNavByline(locale: DashLocale, pathname: string): string | undefined {
+  if (pathname === "/crawler" || pathname.startsWith("/crawler/")) return SITE_CRAWLER_COPY[locale].byline;
+  return undefined;
+}
 
 // ─── VisibilityHelpButton (src/components/help/VisibilityHelpButton.tsx) ────
 const visibilityHelpEn = {
@@ -12848,7 +12869,7 @@ export const HELP_COPY: Record<DashLocale, HelpCopy> = {
   },
 };
 
-// ─── Site Crawler (/visibility/tools/site-crawler) ──────────────────────────
+// ─── Site Crawler (/crawler) ──────────────────────────────────────────────
 //
 // Three locales, not five: dashboardLocale() folds fr* to fr, de* to de-CH and
 // everything else to en. Every string the page renders lives here — the known
@@ -12862,7 +12883,7 @@ const siteCrawlerEn = {
   // translated. `title` stays the generic noun for the lock card and eyebrows.
   brandName: CRAWLER_BRAND.nameTm,
   byline: CRAWLER_BRAND.byline as string,
-  pageTitle: `${CRAWLER_BRAND.name} — Site Crawler — Echorank`,
+  pageTitle: `${CRAWLER_BRAND.name} — Echorank`,
   title: "Site Crawler",
   subtitle:
     "Crawl every page on your site and see the on-page SEO issues, page by page. Raw HTML only — no JavaScript rendering in this version.",
@@ -12873,7 +12894,9 @@ const siteCrawlerEn = {
   starting: "Starting…",
   capNote: (cap: string) => `Up to ${cap} URLs per crawl on your plan.`,
   quotaNote: (used: string, limit: string) => `${used} of ${limit} crawls used this month.`,
-  quotaUnlimited: (used: string) => `${used} crawls this month. No monthly limit on your plan.`,
+  // `n` picks the plural; `used` is the same number, already locale-formatted.
+  quotaUnlimited: (used: string, n: number) =>
+    `${used} ${n === 1 ? "crawl" : "crawls"} this month. No monthly limit on your plan.`,
   politeNote:
     `We identify ourselves as Echorank360Bot (${CRAWLER_BRAND.name}), obey robots.txt, and stay under 2 requests a second.`,
 
@@ -13029,7 +13052,7 @@ export const SITE_CRAWLER_COPY: Record<DashLocale, SiteCrawlerCopy> = {
   fr: {
     brandName: CRAWLER_BRAND.nameTm,
     byline: "robot d'exploration par Echorank",
-    pageTitle: `${CRAWLER_BRAND.name} — Explorateur de site — Echorank`,
+    pageTitle: `${CRAWLER_BRAND.name} — Echorank`,
     title: "Explorateur de site",
     subtitle:
       "Parcourez chaque page de votre site et consultez les problèmes SEO on-page, page par page. HTML brut uniquement — pas de rendu JavaScript dans cette version.",
@@ -13039,10 +13062,11 @@ export const SITE_CRAWLER_COPY: Record<DashLocale, SiteCrawlerCopy> = {
     startCta: "Lancer l'exploration",
     starting: "Lancement…",
     capNote: (cap: string) => `Jusqu'à ${cap} URL par exploration avec votre forfait.`,
-    quotaNote: (used: string, limit: string) =>
-      `${used} exploration(s) sur ${limit} utilisée(s) ce mois-ci.`,
-    quotaUnlimited: (used: string) =>
-      `${used} exploration(s) ce mois-ci. Aucune limite mensuelle avec votre forfait.`,
+    // Phrased so the count needs no agreement; quotaUnlimited below takes `n`
+    // because it cannot be (French takes the singular for 0 and 1).
+    quotaNote: (used: string, limit: string) => `Explorations utilisées ce mois-ci : ${used} sur ${limit}.`,
+    quotaUnlimited: (used: string, n: number) =>
+      `${used} ${n < 2 ? "exploration" : "explorations"} ce mois-ci. Aucune limite mensuelle avec votre forfait.`,
     politeNote:
       `Nous nous identifions comme Echorank360Bot (${CRAWLER_BRAND.name}), respectons robots.txt et restons sous 2 requêtes par seconde.`,
 
@@ -13192,7 +13216,7 @@ export const SITE_CRAWLER_COPY: Record<DashLocale, SiteCrawlerCopy> = {
   "de-CH": {
     brandName: CRAWLER_BRAND.nameTm,
     byline: "Crawler von Echorank",
-    pageTitle: `${CRAWLER_BRAND.name} — Site Crawler — Echorank`,
+    pageTitle: `${CRAWLER_BRAND.name} — Echorank`,
     title: "Site Crawler",
     subtitle:
       "Crawlen Sie jede Seite Ihrer Website und sehen Sie die On-Page-SEO-Probleme Seite für Seite. Nur rohes HTML — kein JavaScript-Rendering in dieser Version.",
@@ -13203,8 +13227,8 @@ export const SITE_CRAWLER_COPY: Record<DashLocale, SiteCrawlerCopy> = {
     starting: "Wird gestartet…",
     capNote: (cap: string) => `Bis zu ${cap} URLs pro Crawl in Ihrem Abo.`,
     quotaNote: (used: string, limit: string) => `${used} von ${limit} Crawls diesen Monat genutzt.`,
-    quotaUnlimited: (used: string) =>
-      `${used} Crawls diesen Monat. Keine monatliche Begrenzung in Ihrem Abo.`,
+    quotaUnlimited: (used: string, n: number) =>
+      `${used} ${n === 1 ? "Crawl" : "Crawls"} diesen Monat. Keine monatliche Begrenzung in Ihrem Abo.`,
     politeNote:
       `Wir weisen uns als Echorank360Bot (${CRAWLER_BRAND.name}) aus, beachten robots.txt und bleiben unter 2 Anfragen pro Sekunde.`,
 

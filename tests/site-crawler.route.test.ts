@@ -98,6 +98,13 @@ const JOB_ROW = {
   createdAt: new Date("2026-08-05T00:00:00Z"),
 };
 
+/** groupBy answers by its `by`: severity totals vs the per-rule tally. */
+function bySeverityOrType(typeRows: unknown[], severityRows: unknown[]) {
+  crawlIssue.groupBy.mockImplementation(async (args: { by: string[] }) =>
+    args.by.includes("severity") ? severityRows : typeRows,
+  );
+}
+
 beforeEach(() => {
   vi.clearAllMocks();
   crawlJob.count.mockResolvedValue(0);
@@ -305,6 +312,36 @@ describe("GET /crawl/[id]", () => {
     expect(body.severityCounts).toEqual({ ERROR: 2, WARNING: 1, NOTICE: 0 });
   });
 
+  it("counts a crawl with no summary from crawl_issues: one of each severity is 1 / 1 / 1", async () => {
+    // The header-tile bug: a Phase 2 crawl showed 0 / 0 / 0 while Overview
+    // showed the real split. Both now read getIssueTotals.
+    authed();
+    crawlJob.findFirst.mockResolvedValue({ ...JOB_ROW, summary: null });
+    crawlIssue.groupBy.mockResolvedValue([
+      { severity: "ERROR", _count: { _all: 1 } },
+      { severity: "WARNING", _count: { _all: 1 } },
+      { severity: "NOTICE", _count: { _all: 1 } },
+    ]);
+    const body = await (await getCrawl(new Request("https://app.test/x"), params("crawl_1"))).json();
+    expect(body.severityCounts).toEqual({ ERROR: 1, WARNING: 1, NOTICE: 1 });
+    // By crawlJobId, like Overview — not through crawlPage, which missed nothing
+    // today but would diverge the moment a finding has no page.
+    expect(crawlIssue.groupBy.mock.calls[0]![0]).toMatchObject({ by: ["severity"], where: { crawlJobId: "crawl_1" } });
+  });
+
+  it("trusts summary.totals when it has the current shape, and only then", async () => {
+    authed();
+    crawlJob.findFirst.mockResolvedValue({ ...JOB_ROW, summary: { totals: { ERROR: 4, WARNING: 5, NOTICE: 6 } } });
+    let body = await (await getCrawl(new Request("https://app.test/x"), params("crawl_1"))).json();
+    expect(body.severityCounts).toEqual({ ERROR: 4, WARNING: 5, NOTICE: 6 });
+    expect(crawlIssue.groupBy).not.toHaveBeenCalled();
+
+    crawlJob.findFirst.mockResolvedValue({ ...JOB_ROW, summary: { totals: { ERROR: 4 } } });
+    crawlIssue.groupBy.mockResolvedValue([{ severity: "NOTICE", _count: { _all: 7 } }]);
+    body = await (await getCrawl(new Request("https://app.test/x"), params("crawl_1"))).json();
+    expect(body.severityCounts).toEqual({ ERROR: 0, WARNING: 0, NOTICE: 7 });
+  });
+
   it("skips the groupBy while the crawl is still running", async () => {
     // This endpoint is polled every 3 s; a groupBy per poll is a cost the
     // running view does not need.
@@ -467,21 +504,29 @@ describe("GET /crawl/[id]/summary", () => {
     crawlJob.findFirst.mockResolvedValue({
       id: "crawl_1",
       status: "COMPLETED",
-      summary: { statusCodes: {}, issues, issuesByKind: { issue: 2, warning: 0, opportunity: 0 } },
+      summary: {
+        statusCodes: {},
+        issues,
+        issuesByKind: { issue: 2, warning: 0, opportunity: 0 },
+        totals: { ERROR: 2, WARNING: 0, NOTICE: 0 },
+      },
     });
     const body = await (await getSummary(new Request("https://app.test/x"), params("crawl_1"))).json();
-    expect(body).toMatchObject({ issues, computed: false });
+    expect(body).toMatchObject({ issues, computed: false, totals: { ERROR: 2, WARNING: 0, NOTICE: 0 } });
     expect(crawlIssue.groupBy).not.toHaveBeenCalled();
   });
 
   it("computes tallies from crawl_issues for a Phase 2 summary, mapping legacy types", async () => {
     authed();
     crawlJob.findFirst.mockResolvedValue({ id: "crawl_1", status: "COMPLETED", summary: { statusCodes: { "200": 5 } } });
-    crawlIssue.groupBy.mockResolvedValue([
-      { ruleId: null, type: "TITLE_MISSING", _count: { _all: 3 } },
-      { ruleId: null, type: "DUPLICATE_TITLE", _count: { _all: 2 } },
-      { ruleId: null, type: "NOT_A_TYPE", _count: { _all: 9 } },
-    ]);
+    bySeverityOrType(
+      [
+        { ruleId: null, type: "TITLE_MISSING", _count: { _all: 3 } },
+        { ruleId: null, type: "DUPLICATE_TITLE", _count: { _all: 2 } },
+        { ruleId: null, type: "NOT_A_TYPE", _count: { _all: 9 } },
+      ],
+      [{ severity: "ERROR", _count: { _all: 14 } }],
+    );
     const body = await (await getSummary(new Request("https://app.test/x"), params("crawl_1"))).json();
     expect(crawlIssue.groupBy.mock.calls[0]![0]).toMatchObject({ where: { crawlJobId: "crawl_1" } });
     expect(body.statusCodes["200"]).toBe(5);
@@ -491,12 +536,16 @@ describe("GET /crawl/[id]/summary", () => {
     });
     expect(body.issuesByKind).toEqual({ issue: 5, warning: 0, opportunity: 0 });
     expect(body.computed).toBe(true);
+    expect(body.totals).toEqual({ ERROR: 14, WARNING: 0, NOTICE: 0 });
   });
 
   it("answers a pre-Phase-2 crawl (no summary) with the computed tallies alone", async () => {
     authed();
     crawlJob.findFirst.mockResolvedValue({ id: "crawl_1", status: "COMPLETED", summary: null });
-    crawlIssue.groupBy.mockResolvedValue([{ ruleId: null, type: "HTTP_4XX", _count: { _all: 1 } }]);
+    bySeverityOrType(
+      [{ ruleId: null, type: "HTTP_4XX", _count: { _all: 1 } }],
+      [{ severity: "ERROR", _count: { _all: 1 } }],
+    );
     const res = await getSummary(new Request("https://app.test/x"), params("crawl_1"));
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({
@@ -504,7 +553,23 @@ describe("GET /crawl/[id]/summary", () => {
       computed: true,
       issues: { "response_codes.internal_4xx": { count: 1, kind: "issue", priority: "high" } },
       issuesByKind: { issue: 1, warning: 0, opportunity: 0 },
+      totals: { ERROR: 1, WARNING: 0, NOTICE: 0 },
     });
+  });
+
+  it("gives Overview the same totals the header tiles get", async () => {
+    authed();
+    const row = { ...JOB_ROW, summary: { statusCodes: {} } };
+    crawlJob.findFirst.mockResolvedValue(row);
+    bySeverityOrType([], [
+      { severity: "ERROR", _count: { _all: 49 } },
+      { severity: "WARNING", _count: { _all: 151 } },
+      { severity: "NOTICE", _count: { _all: 42 } },
+    ]);
+    const overview = await (await getSummary(new Request("https://app.test/x"), params("crawl_1"))).json();
+    const header = await (await getCrawl(new Request("https://app.test/x"), params("crawl_1"))).json();
+    expect(overview.totals).toEqual({ ERROR: 49, WARNING: 151, NOTICE: 42 });
+    expect(header.severityCounts).toEqual(overview.totals);
   });
 });
 

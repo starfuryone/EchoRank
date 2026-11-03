@@ -15,6 +15,7 @@ import { requirePaidPlan } from "@/lib/paid-plan";
 import { prisma } from "@/lib/prisma";
 import { toCrawlDto } from "@/lib/site-crawler/service";
 import { crawlRouteError } from "@/lib/site-crawler/http";
+import { getIssueTotals } from "@/lib/site-crawler/issue-totals";
 
 export async function GET(
   _request: Request,
@@ -32,23 +33,14 @@ export async function GET(
       return NextResponse.json({ error: "Crawl not found", code: "NOT_FOUND" }, { status: 404 });
     }
 
-    // Per-severity totals for the summary tiles. Skipped while the crawl is
-    // still running: the numbers would be stale by the time they rendered, and
-    // this endpoint is polled every 3 s — a groupBy per poll is a cost the
-    // running view does not need.
-    const severityCounts = { ERROR: 0, WARNING: 0, NOTICE: 0 };
-    if (row.status !== "QUEUED" && row.status !== "RUNNING") {
-      const grouped = await prisma.crawlIssue.groupBy({
-        by: ["severity"],
-        where: { crawlPage: { crawlJobId: row.id } },
-        _count: { _all: true },
-      });
-      for (const g of grouped) {
-        if (g.severity in severityCounts) {
-          severityCounts[g.severity as keyof typeof severityCounts] = g._count._all;
-        }
-      }
-    }
+    // Per-severity totals for the header tiles — the same getIssueTotals the
+    // Overview tab reads. Skipped while the crawl is still running: the numbers
+    // would be stale by the time they rendered, and this endpoint is polled
+    // every 3 s — a groupBy per poll is a cost the running view does not need.
+    const severityCounts =
+      row.status !== "QUEUED" && row.status !== "RUNNING"
+        ? await getIssueTotals(row.id, row.summary)
+        : { ERROR: 0, WARNING: 0, NOTICE: 0 };
 
     return NextResponse.json({ ...toCrawlDto(row), severityCounts });
   } catch (err) {

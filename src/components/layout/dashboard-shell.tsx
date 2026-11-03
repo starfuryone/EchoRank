@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { Sidebar } from "./sidebar";
 import { Header } from "./header";
-import { dashNav, type DashLocale } from "@/lib/i18n/dashboard";
+import { dashNav, dashNavByline, type DashLocale } from "@/lib/i18n/dashboard";
 import type { PlanType } from "@/generated/prisma";
 
 interface DashboardShellProps {
@@ -72,6 +72,7 @@ export function DashboardShell({
       <div className="lg:pl-64">
         <Header
           title={title}
+          byline={dashNavByline(locale, pathname)}
           locale={locale}
           user={user}
           unreadCount={unreadCount}

@@ -189,6 +189,24 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
     return () => clearInterval(timer);
   }, [active, refresh]);
 
+  // A settled crawl that came from the list — a reload, or one picked from
+  // history — carries no severityCounts: only the detail endpoint does. Fetch
+  // it once, or the header tiles sit at 0 / 0 / 0 while Overview shows the
+  // real split (both now read getIssueTotals on the server).
+  useEffect(() => {
+    if (!active || isInFlight(active.status) || active.severityCounts) return;
+    let cancelled = false;
+    void (async () => {
+      const res = await fetch(`/api/seo/v1/crawl/${active.id}`);
+      if (cancelled || !res.ok) return;
+      const fresh: CrawlDto = await res.json();
+      if (!cancelled) setActive((current) => (current?.id === fresh.id ? fresh : current));
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [active]);
+
   const loadIssues = useCallback(
     async (crawlId: string, currentPage: number, sev: string, ty: string) => {
       const params = new URLSearchParams({
@@ -360,7 +378,7 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
             {quota && <p>{t.capNote(int.format(quota.urlCap))}</p>}
             {quota &&
               (quota.monthlyLimit === null ? (
-                <p>{t.quotaUnlimited(int.format(quota.used))}</p>
+                <p>{t.quotaUnlimited(int.format(quota.used), quota.used)}</p>
               ) : (
                 <p>{t.quotaNote(int.format(quota.used), int.format(quota.monthlyLimit))}</p>
               ))}
@@ -664,14 +682,19 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
 function Header({ t }: { t: SiteCrawlerCopy }) {
   return (
     <div>
-      <div className="flex items-center gap-3">
+      {/* The lockup carries the name and the byline, so neither is repeated in
+          text; the alt text is the accessible name. The top bar already reads
+          the brand name as the page's h1, so this is an h2. */}
+      <h2>
         {/* eslint-disable-next-line @next/next/no-img-element -- a static SVG; next/image adds nothing */}
-        <img src={CRAWLER_BRAND.mark} alt="" aria-hidden="true" width={40} height={40} className="h-10 w-10" />
-        <div>
-          <h2 className="text-lg font-semibold text-gray-900">{t.brandName}</h2>
-          <p className="text-xs text-gray-500">{t.byline}</p>
-        </div>
-      </div>
+        <img
+          src={CRAWLER_BRAND.logoOnLight}
+          alt={`${t.brandName} — ${t.byline}`}
+          width={128}
+          height={40}
+          className="h-10 w-auto"
+        />
+      </h2>
       <p className="mt-2 max-w-3xl text-sm text-gray-500">{t.subtitle}</p>
     </div>
   );

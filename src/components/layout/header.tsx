@@ -9,6 +9,8 @@ import { dashChrome, type DashLocale } from "@/lib/i18n/dashboard";
 
 interface HeaderProps {
   title: string;
+  /** Small muted text after the title (a sub-brand's "… by Echorank"). */
+  byline?: string;
   locale?: DashLocale;
   user?: {
     name?: string | null;
@@ -23,6 +25,7 @@ interface HeaderProps {
 
 export function Header({
   title,
+  byline,
   locale = "en",
   user,
   unreadCount = 0,
@@ -74,6 +77,7 @@ export function Header({
 
         <h1 className="text-lg font-semibold text-gray-900 sm:text-xl">
           {title}
+          {byline && <span className="ml-2 text-xs font-normal text-gray-500">{byline}</span>}
         </h1>
       </div>
 

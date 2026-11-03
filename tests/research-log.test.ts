@@ -231,7 +231,8 @@ describe("reads", () => {
 describe("feature vocabulary", () => {
   it("every feature has a label in all three catalogs and a page to open", () => {
     for (const feature of RESEARCH_FEATURES) {
-      expect(RESEARCH_FEATURE_HREFS[feature]).toMatch(/^\/visibility\/tools\//);
+      // A tool page; the crawler moved out of the hub to its own /crawler.
+      expect(RESEARCH_FEATURE_HREFS[feature]).toMatch(/^\/(visibility\/tools\/|crawler$)/);
       for (const locale of LOCALES) {
         expect(RESEARCH_LOG_COPY[locale].features[feature]?.length).toBeGreaterThan(0);
       }

@@ -78,6 +78,8 @@ export interface CrawlSummaryDto {
   depths: Record<string, number>;
   issuesBySeverity: Record<string, number>;
   issuesByType: Record<string, number>;
+  /** Errors / warnings / notices — getIssueTotals, the same source as the header tiles. */
+  totals: SeverityCounts;
   duplicates: { title: number; metaDescription: number; content: number };
   redirects: { chains: number; loops: number; longestChain: number };
   sitemap: {
@@ -113,6 +115,7 @@ export interface PartialSummaryDto {
   partial: true;
   issues: Record<string, RuleTallyDto>;
   issuesByKind: Record<RuleKindDto, number>;
+  totals: SeverityCounts;
   computed: boolean;
 }
 

@@ -38,7 +38,7 @@ const EXPECTED_HREFS: Record<string, string> = {
   custom_prompts: "/visibility/tools/custom-prompts",
   ai_lens: "/visibility/tools/ai-lens",
   site_audit: "/visibility/tools/site-audit",
-  site_crawler: "/visibility/tools/site-crawler",
+  site_crawler: "/crawler",
   web_analytics: "/visibility/tools/web-analytics",
   bot_analytics: "/visibility/tools/bot-analytics",
   ai_attribution: "/visibility/tools/ai-attribution",

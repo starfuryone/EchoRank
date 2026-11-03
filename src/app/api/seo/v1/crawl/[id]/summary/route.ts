@@ -17,6 +17,7 @@ import { NextResponse } from "next/server";
 import { requirePaidPlan } from "@/lib/paid-plan";
 import { prisma } from "@/lib/prisma";
 import { crawlRouteError } from "@/lib/site-crawler/http";
+import { getIssueTotals } from "@/lib/site-crawler/issue-totals";
 import { ruleTalliesFor } from "@/lib/site-crawler/rule-summary";
 
 export async function GET(
@@ -39,9 +40,12 @@ export async function GET(
       );
     }
 
-    const { issues, issuesByKind, computed } = await ruleTalliesFor(row.id, row.summary);
-    if (row.summary === null) return NextResponse.json({ partial: true, issues, issuesByKind, computed });
-    return NextResponse.json({ ...(row.summary as object), issues, issuesByKind, computed });
+    const [{ issues, issuesByKind, computed }, totals] = await Promise.all([
+      ruleTalliesFor(row.id, row.summary),
+      getIssueTotals(row.id, row.summary),
+    ]);
+    if (row.summary === null) return NextResponse.json({ partial: true, issues, issuesByKind, totals, computed });
+    return NextResponse.json({ ...(row.summary as object), issues, issuesByKind, totals, computed });
   } catch (err) {
     return crawlRouteError(err);
   }

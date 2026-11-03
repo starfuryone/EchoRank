@@ -299,8 +299,9 @@ export const SEO_TOOL_GROUPS: SeoToolGroup[] = [
       // Our own BFS crawler: raw HTML, no external API, no JS rendering. Sits
       // beside Site Audit because both answer "what is wrong across the site",
       // but this one is first-party and priced by URLs rather than per page.
-      // Sub-branded (CRAWLER_BRAND): the card shows the mark (an <img> in the icon slot).
-      t("site_crawler", "site-crawler", NosyBatIcon),
+      // Sub-branded (CRAWLER_BRAND): the card shows the mark (an <img> in the
+      // icon slot) and links out to the crawler's own route, /crawler.
+      t("site_crawler", "site-crawler", NosyBatIcon, { href: "/crawler", existing: true }),
       t("lighthouse", "lighthouse", Gauge),
       // GA4 OAuth, scope analytics.readonly — a sensitive scope, same
       // consent-screen review as GSC above.

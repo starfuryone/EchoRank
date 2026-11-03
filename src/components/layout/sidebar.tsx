@@ -17,8 +17,9 @@ import {
   Bell,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { SIDEBAR_GROUPS_COPY, dashNav, type DashLocale } from "@/lib/i18n/dashboard";
+import { SIDEBAR_GROUPS_COPY, SIDEBAR_TOOLTIPS, dashNav, type DashLocale } from "@/lib/i18n/dashboard";
 import { SEO_TOOLS_HUB } from "@/lib/seo-tools";
+import { NosyBatIcon } from "@/components/seo-tools/nosy-bat-icon";
 import type { PlanType } from "@/generated/prisma";
 
 // Eleven reputation surfaces used to sit here as eleven rows, which made the
@@ -45,6 +46,8 @@ import type { PlanType } from "@/generated/prisma";
 // has its own row and, being longer, wins the match below on its own.
 /** The Pro assistant row, gated separately from the SEO Tools hub. */
 const ASSISTANT_HREF = "/assistant";
+/** The crawler moved out of the SEO Tools hub; same paid gate as the hub. */
+const CRAWLER_HREF = "/crawler";
 
 // ── THREE BANDS, AND NOTHING ELSE CHANGED ──────────────────────────────────
 //
@@ -68,6 +71,9 @@ const navItems = [
   // the tenant does not qualify — no locked row, no upsell.
   { href: "/assistant", icon: Sparkle, group: "workspace" },
   { href: "/visibility/tools", icon: Wrench, group: "workspace" },
+  // The crawler's own row (sub-brand): label from dashNav (CRAWLER_BRAND.name),
+  // icon the brand mark as an <img> — the slot takes a className component.
+  { href: CRAWLER_HREF, icon: NosyBatIcon, group: "workspace" },
   { href: "/visibility/tools/ai-content-helper", icon: PenTool, group: "workspace" },
   { href: "/reputation", icon: Sparkles, group: "workspace" },
   { href: "/team", icon: UserPlus, group: "manage" },
@@ -139,12 +145,13 @@ export function Sidebar({
 }: SidebarProps) {
   const labels = dashNav[locale];
   const groupLabels = SIDEBAR_GROUPS_COPY[locale];
+  const tooltips = SIDEBAR_TOOLTIPS[locale];
   const pathname = usePathname();
   // No plan-based route filtering: every tier reaches every dashboard path.
   // The SEO Tools hub still requires a paid (ACTIVE) subscription — visibility
   // only; the tools layout enforces the same predicate server-side.
   const items = navItems.filter((item) => {
-    if (item.href.startsWith(SEO_TOOLS_HUB)) return paid;
+    if (item.href.startsWith(SEO_TOOLS_HUB) || item.href === CRAWLER_HREF) return paid;
     // The assistant row is gated on its own flag, not on `paid`: the two
     // kill-switch envs can hide it while the tenant is still fully paid.
     if (item.href === ASSISTANT_HREF) return assistantVisible;
@@ -212,6 +219,7 @@ export function Sidebar({
                           href={item.href}
                           onClick={onClose}
                           aria-current={isActive ? "page" : undefined}
+                          title={tooltips[item.href]}
                           className={cn(
                             "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
                             isActive

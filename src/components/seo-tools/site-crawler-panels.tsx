@@ -151,9 +151,10 @@ export function OverviewPanel({
     <div className="space-y-4">
       <KindTotals byKind={summary.issuesByKind} t={t} int={int} />
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <Stat label={t.summaryErrors} value={int.format(summary.issuesBySeverity.ERROR ?? 0)} />
-        <Stat label={t.summaryWarnings} value={int.format(summary.issuesBySeverity.WARNING ?? 0)} />
-        <Stat label={t.summaryNotices} value={int.format(summary.issuesBySeverity.NOTICE ?? 0)} />
+        {/* summary.totals: getIssueTotals, the same numbers as the header tiles. */}
+        <Stat label={t.summaryErrors} value={int.format(summary.totals.ERROR)} />
+        <Stat label={t.summaryWarnings} value={int.format(summary.totals.WARNING)} />
+        <Stat label={t.summaryNotices} value={int.format(summary.totals.NOTICE)} />
         <Stat
           label={t.ovInlinkAverage}
           value={int.format(summary.inlinks.average)}
