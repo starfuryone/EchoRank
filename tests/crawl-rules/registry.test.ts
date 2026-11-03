@@ -95,6 +95,25 @@ describe("Phase 3b families", () => {
   });
 });
 
+describe("Phase 3c families", () => {
+  it("performance: 25 opportunity rules, site scope, all reading psi", () => {
+    const perf = RULES.filter((r) => r.family === "performance");
+    expect(perf).toHaveLength(25);
+    for (const r of perf) {
+      expect(r.kind, r.id).toBe("opportunity");
+      expect(r.scope, r.id).toBe("site");
+      expect(r.requires, r.id).toEqual(["psi"]);
+    }
+  });
+
+  it("spelling: three page rules on the spell capability, no grammar", () => {
+    const sp = RULES.filter((r) => r.family === "spelling");
+    expect(sp.map((r) => r.id).sort()).toEqual(["spelling.misspellings", "spelling.over_5_misspellings", "spelling.unsupported_language"]);
+    for (const r of sp) expect(r.requires).toEqual(["spell"]);
+    expect(RULES.some((r) => /grammar/.test(r.id))).toBe(false);
+  });
+});
+
 describe("package boundary", () => {
   const root = join(process.cwd(), "packages/crawl-rules/src");
   const files: string[] = [];

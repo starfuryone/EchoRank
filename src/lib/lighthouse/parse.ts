@@ -8,6 +8,7 @@
 // Zero invented numbers: a missing score is null, never 0 — the difference
 // between "scored zero" and "not scored" is the whole point of a gauge.
 
+import { PSI_AUDIT_IDS, type PsiAudit } from "@/lib/crawl-rules";
 import { MAX_OPPORTUNITIES } from "./options";
 import {
   LAB_METRICS,
@@ -26,6 +27,7 @@ interface RawAudit {
   title?: string;
   description?: string;
   score?: number | null;
+  scoreDisplayMode?: string;
   displayValue?: string;
   numericValue?: number;
   details?: {
@@ -253,11 +255,33 @@ export function parseCrux(psi: RawPsiResponse): CruxData | null {
 
 // ─── Whole response ─────────────────────────────────────────────────────────
 
+/**
+ * Verdicts for the audits the Site Crawler's performance rules read
+ * (packages/crawl-rules PSI_AUDIT_IDS), keyed by Lighthouse audit id. Only
+ * those ids, so the row stays small; an audit Lighthouse marked not
+ * applicable, manual or errored is left out (absent = not measured).
+ */
+export function parseAuditVerdicts(psi: RawPsiResponse): Record<string, PsiAudit> {
+  const audits = psi.lighthouseResult?.audits ?? {};
+  const out: Record<string, PsiAudit> = {};
+  for (const id of PSI_AUDIT_IDS) {
+    const a = audits[id];
+    if (!a || ["notApplicable", "manual", "error"].includes(str(a.scoreDisplayMode))) continue;
+    out[id] = {
+      score: typeof a.score === "number" && Number.isFinite(a.score) ? a.score : null,
+      value: typeof a.numericValue === "number" && Number.isFinite(a.numericValue) ? a.numericValue : null,
+      display: str(a.displayValue) || null,
+    };
+  }
+  return out;
+}
+
 export interface ParsedAudit {
   scores: CategoryScores;
   metrics: LabMetric[];
   opportunities: Opportunity[];
   crux: CruxData | null;
+  audits: Record<string, PsiAudit>;
   finalUrl: string;
   lighthouseVersion: string | null;
 }
@@ -269,6 +293,7 @@ export function parsePsiResponse(raw: unknown): ParsedAudit {
     metrics: parseMetrics(psi),
     opportunities: parseOpportunities(psi),
     crux: parseCrux(psi),
+    audits: parseAuditVerdicts(psi),
     // The URL Lighthouse actually ended on, which differs from the requested
     // one whenever the site redirects (http -> https, or / -> /home).
     finalUrl: str(psi.lighthouseResult?.finalUrl) || str(psi.lighthouseResult?.requestedUrl),

@@ -285,7 +285,9 @@ export const CRAWL_FEATURE_ROWS: readonly CrawlFeatureRow[] = [
   row("mobile-usability", { family: "mobile" }, "Mobile usability", "Ergonomie mobile"),
   row("amp", { family: "amp" }, "AMP crawling & validation", "Exploration et validation AMP"),
   row("structured-data", { family: "structured_data" }, "Structured data & validation", "Données structurées et validation"),
-  row("spelling", { family: "spelling" }, "Spelling & grammar", "Orthographe et grammaire"),
+  // Spelling only: grammar is out of scope (SITE-CRAWLER-PHASE3.md, 3c), so
+  // the row does not claim it.
+  row("spelling", { family: "spelling" }, "Spelling", "Orthographe"),
   row("source-search", { flag: "crawl.extraction" }, "Custom source code search", "Recherche dans le code source"),
   row("custom-extraction", { flag: "crawl.extraction" }, "Custom extraction", "Extraction personnalisée"),
   row("custom-javascript", { flag: "crawl.customJs" }, "Custom JavaScript", "JavaScript personnalisé"),

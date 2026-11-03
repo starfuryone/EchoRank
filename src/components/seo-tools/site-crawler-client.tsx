@@ -45,6 +45,7 @@ import {
   PagesPanel,
   RedirectsPanel,
 } from "@/components/seo-tools/site-crawler-panels";
+import { AcceptedWords } from "@/components/seo-tools/site-crawler-accepted-words";
 import { SITE_CRAWLER_COPY, type DashLocale, type SiteCrawlerCopy } from "@/lib/i18n/dashboard";
 import { CRAWLER_BRAND } from "@/lib/site-crawler/brand";
 import { helpArticleFor, learnHref } from "@/lib/help-content";
@@ -413,6 +414,8 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
               {error}
             </p>
           )}
+
+          <AcceptedWords t={t} />
         </CardContent>
       </Card>
 

@@ -36,6 +36,7 @@ import {
 import type { SitemapResult } from "./sitemap";
 import type { SeverityCounts } from "./types";
 import { issueRows, toStoredFacts } from "./stored";
+import { psiFactsForUrls } from "./psi";
 import { toTotals } from "./issue-totals";
 
 export interface AggregateArgs {
@@ -47,6 +48,8 @@ export interface AggregateArgs {
   sitemapSeeded: Set<string>;
   /** robots.txt carried at least one Sitemap: line. */
   sitemapDeclaredInRobots?: boolean;
+  /** Phase 3c: whose Lighthouse runs to attach. Absent = no performance rules. */
+  tenantId?: string;
 }
 
 export interface RuleTally {
@@ -80,6 +83,8 @@ export interface CrawlSummary {
   };
   inlinks: { average: number; zeroCount: number; max: number };
   deepestPages: { url: string; depth: number }[];
+  /** Phase 3c: pages whose performance rules ran on an attached Lighthouse run. */
+  psiPages?: number;
   aggregationMs: number;
   aggregationError?: string;
 }
@@ -102,6 +107,7 @@ export async function aggregateCrawl({
   sitemap,
   sitemapSeeded,
   sitemapDeclaredInRobots = false,
+  tenantId,
 }: AggregateArgs): Promise<AggregateResult> {
   const started = Date.now();
   const keys = crawlKeys(jobId);
@@ -145,6 +151,8 @@ export async function aggregateCrawl({
   // ── Run the site rules over every page, one keyset window at a time ──────
   const rootKey = rootUrl.replace(/\/+$/, "");
   let cursor: string | undefined;
+  /** Pages with a Lighthouse run attached (Phase 3c). */
+  let psiPages = 0;
   for (;;) {
     const batch = await prisma.crawlPage.findMany({
       where: { crawlJobId: jobId },
@@ -159,6 +167,9 @@ export async function aggregateCrawl({
       ...(cursor ? { skip: 1, cursor: { id: cursor } } : {}),
     });
     if (batch.length === 0) break;
+
+    const psi = tenantId ? await psiFactsForUrls(tenantId, batch.map((p) => p.url)) : new Map();
+    psiPages += psi.size;
 
     const rows = batch.flatMap((page) => {
       const site: PageSiteFacts = {
@@ -180,7 +191,14 @@ export async function aggregateCrawl({
         pagination: pagination.get(page.id) ?? { non200: 0, sequenceErrors: 0, sample: null },
       };
       const isRoot = page.url.replace(/\/+$/, "") === rootKey;
-      const found = evaluateSiteRules(toStoredFacts(page, rootUrl), { capabilities: [], site, job, isRoot });
+      const pagePsi = psi.get(page.url) ?? null;
+      const found = evaluateSiteRules(toStoredFacts(page, rootUrl), {
+        capabilities: pagePsi ? ["psi"] : [],
+        site,
+        job,
+        isRoot,
+        psi: pagePsi,
+      });
       return issueRows(found, jobId).map((r) => ({ ...r, crawlPageId: page.id }));
     });
     for (let i = 0; i < rows.length; i += AGGREGATION_BATCH_SIZE) {
@@ -226,6 +244,7 @@ export async function aggregateCrawl({
     },
     inlinks: inlinkStats,
     deepestPages,
+    psiPages,
     aggregationMs: Date.now() - started,
   };
 

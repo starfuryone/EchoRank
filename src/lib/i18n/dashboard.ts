@@ -12902,6 +12902,12 @@ const siteCrawlerEn = {
   renderCapNote: (cap: string) =>
     `Rendered pages run in headless Chromium, one at a time, up to ${cap} per crawl on your plan. Thin pages: under 50 words or no links in the raw HTML.`,
   renderedProgress: (done: string, cap: string) => `${done} of up to ${cap} pages rendered`,
+  acceptedTitle: "Accepted words (spell check)",
+  acceptedHelp: (max: number) =>
+    `Brand, product and people's names the spell check should never report. One per line, up to ${max}. Your workspace name and the site's own domain are always accepted. Applies to the next crawl.`,
+  acceptedSave: "Save words",
+  acceptedSaving: "Saving…",
+  acceptedSaved: "Saved.",
   quotaNote: (used: string, limit: string) => `${used} of ${limit} crawls used this month.`,
   // `n` picks the plural; `used` is the same number, already locale-formatted.
   quotaUnlimited: (used: string, n: number) =>
@@ -13080,6 +13086,12 @@ export const SITE_CRAWLER_COPY: Record<DashLocale, SiteCrawlerCopy> = {
     renderCapNote: (cap: string) =>
       `Les pages rendues passent dans Chromium sans interface, une à la fois, jusqu'à ${cap} par exploration avec votre forfait. Pages minces : moins de 50 mots ou aucun lien dans le HTML brut.`,
     renderedProgress: (done: string, cap: string) => `Pages rendues : ${done} sur un maximum de ${cap}`,
+    acceptedTitle: "Mots acceptés (orthographe)",
+    acceptedHelp: (max: number) =>
+      `Noms de marque, de produits et de personnes que la vérification orthographique ne doit jamais signaler. Un par ligne, jusqu'à ${max}. Le nom de votre espace de travail et le domaine du site sont toujours acceptés. S'applique à la prochaine exploration.`,
+    acceptedSave: "Enregistrer les mots",
+    acceptedSaving: "Enregistrement…",
+    acceptedSaved: "Enregistré.",
     // Phrased so the count needs no agreement; quotaUnlimited below takes `n`
     // because it cannot be (French takes the singular for 0 and 1).
     quotaNote: (used: string, limit: string) => `Explorations utilisées ce mois-ci : ${used} sur ${limit}.`,
@@ -13253,6 +13265,12 @@ export const SITE_CRAWLER_COPY: Record<DashLocale, SiteCrawlerCopy> = {
     renderCapNote: (cap: string) =>
       `Gerenderte Seiten laufen nacheinander in Headless-Chromium, bis zu ${cap} pro Crawl in Ihrem Abo. Dünne Seiten: unter 50 Wörtern oder ohne Links im rohen HTML.`,
     renderedProgress: (done: string, cap: string) => `${done} von maximal ${cap} Seiten gerendert`,
+    acceptedTitle: "Akzeptierte Wörter (Rechtschreibung)",
+    acceptedHelp: (max: number) =>
+      `Marken-, Produkt- und Personennamen, die die Rechtschreibprüfung nie melden soll. Eines pro Zeile, bis zu ${max}. Der Name Ihres Arbeitsbereichs und die Domain der Website gelten immer als korrekt. Gilt ab dem nächsten Crawl.`,
+    acceptedSave: "Wörter speichern",
+    acceptedSaving: "Wird gespeichert…",
+    acceptedSaved: "Gespeichert.",
     quotaNote: (used: string, limit: string) => `${used} von ${limit} Crawls diesen Monat genutzt.`,
     quotaUnlimited: (used: string, n: number) =>
       `${used} ${n === 1 ? "Crawl" : "Crawls"} diesen Monat. Keine monatliche Begrenzung in Ihrem Abo.`,

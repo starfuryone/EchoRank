@@ -161,6 +161,9 @@ model Tenant {
   logo                  String?
   brandPrimaryColor     String        @default("#2563eb")
   brandSecondaryColor   String        @default("#1e40af")
+  /// Site Crawler spell check (Phase 3c): words this workspace accepts as
+  /// correctly spelled — brand, product and people's names.
+  spellingAcceptedWords String[]      @default([])
   supportEmail          String?
   googleReviewLink      String?
   facebookReviewLink    String?
@@ -2060,6 +2063,10 @@ model LighthouseAudit {
   metrics           Json // LabMetric[] — FCP, LCP, TBT, CLS, SI, TTI
   opportunities     Json // Opportunity[] — sorted by estimated saving
   crux              Json? // CruxData — null when the page has no field data
+  /// Site Crawler Phase 3c: {auditId: {score, value, display}} for the audits
+  /// the crawler's performance rules read (crawl-rules PSI_AUDIT_IDS). Null on
+  /// runs from before 3c; the crawler falls back to metrics + opportunities.
+  audits            Json?
   /// Lighthouse version, so an odd score can be traced to a scoring change.
   lighthouseVersion String?
   fetchedAt         DateTime @default(now())

@@ -70,6 +70,10 @@ export const LOCALIZED_ROUTES: LocalizedRoute[] = [
   // The crawler's public page: a product page in the funnel (linked from
   // Solutions > By goal and the footer), ranked with /reputation-tools.
   { path: "/site-crawler", priority: 0.7, changeFrequency: "monthly" },
+  // Its public issue library: one anchor per rule, generated from the
+  // registry (route handler, EN on every locale). Reference content, so it
+  // ranks with the guides.
+  { path: "/seo-spider/issues", priority: 0.6, changeFrequency: "monthly" },
   // The public blog. Ranks with the guide pages rather than the product ones:
   // it acquires readers, not buyers. Only the HUB is listed here — article
   // slugs are FILENAMES under content/blog/, and enumerating them in this

@@ -139,6 +139,8 @@ export async function runAudit(
       metrics: parsed.metrics as object,
       opportunities: parsed.opportunities as object,
       crux: (parsed.crux as object) ?? undefined,
+      // Per-audit verdicts for the Site Crawler's performance rules (Phase 3c).
+      audits: parsed.audits as object,
       lighthouseVersion: parsed.lighthouseVersion,
       fetchedAt: now,
     },

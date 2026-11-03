@@ -26,6 +26,10 @@ import { RULES as accessibilityRules } from "./rules/accessibility";
 import { COPY as accessibilityCopy } from "./copy/accessibility";
 import { RULES as mobileRules } from "./rules/mobile";
 import { COPY as mobileCopy } from "./copy/mobile";
+import { RULES as spellingRules } from "./rules/spelling";
+import { COPY as spellingCopy } from "./copy/spelling";
+import { RULES as performanceRules } from "./rules/performance";
+import { COPY as performanceCopy } from "./copy/performance";
 import { RULES as hreflangRules } from "./rules/hreflang";
 import { COPY as hreflangCopy } from "./copy/hreflang";
 import { RULES as validationRules } from "./rules/validation";
@@ -91,6 +95,8 @@ const FAMILIES: Family[] = [
   { rules: javascriptRules, copy: javascriptCopy },
   { rules: accessibilityRules, copy: accessibilityCopy },
   { rules: mobileRules, copy: mobileCopy },
+  { rules: spellingRules, copy: spellingCopy },
+  { rules: performanceRules, copy: performanceCopy },
 ];
 
 export const RULES: readonly Rule[] = FAMILIES.flatMap((f) => f.rules);
@@ -114,6 +120,8 @@ export { ev, isOk, pageRule, siteRule, evaluatePage, evaluateSite } from "./engi
 export * from "./types";
 export { pixelWidth, TITLE_FONT_PX, DESCRIPTION_FONT_PX } from "./util/pixels";
 export { jsOnlyFacts, renderedOnlyLinks, metaNoindex, JS_CONTENT_MIN_WORDS } from "./util/render";
+export { PSI_AUDIT_IDS, PERF_SPECS, PASS_SCORE } from "./rules/performance";
+export { MANY_MISSPELLINGS } from "./rules/spelling";
 export { AXE_RULES, AXE_VERSION } from "./generated/axe-rules";
 export { simhash64, hammingDistance, NEAR_DUPLICATE_MAX_HAMMING } from "./util/simhash";
 export {

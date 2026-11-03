@@ -75,11 +75,19 @@ export interface PageFactsInput {
 }
 
 export function buildPageFacts(input: PageFactsInput): PageFacts {
+  return buildPageFactsAndText(input).facts;
+}
+
+/**
+ * The same, plus the page's visible text for a consumer that checks it
+ * (the Phase 3c spell check). The text is the caller's to discard: it never
+ * goes onto PageFacts and is never stored.
+ */
+export function buildPageFactsAndText(input: PageFactsInput): { facts: PageFacts; text: string | null } {
   const { html, ...rest } = input;
-  return {
-    ...rest,
-    html: html === null ? null : extractHtmlFacts(html, input.finalUrl, input.rootUrl, input.bytes),
-  };
+  if (html === null) return { facts: { ...rest, html: null }, text: null };
+  const out = extractWithText(html, input.finalUrl, input.rootUrl, input.bytes);
+  return { facts: { ...rest, html: out.facts }, text: out.text };
 }
 
 const HEAD_ELEMENTS = new Set(["title", "meta", "link", "style", "script", "noscript", "base", "template"]);
@@ -98,6 +106,15 @@ function resolve(raw: string, base: string): string {
 }
 
 export function extractHtmlFacts(html: string, pageUrl: string, rootUrl: string, bytes: number | null): HtmlFacts {
+  return extractWithText(html, pageUrl, rootUrl, bytes).facts;
+}
+
+function extractWithText(
+  html: string,
+  pageUrl: string,
+  rootUrl: string,
+  bytes: number | null,
+): { facts: HtmlFacts; text: string } {
   const $ = cheerio.load(html);
   const inHead = (el: AnyNode) => $(el).closest("head").length > 0;
   const relHas = (el: Element, token: string) =>
@@ -220,7 +237,7 @@ export function extractHtmlFacts(html: string, pageUrl: string, rootUrl: string,
     .get();
   const orphanItemprops = $("[itemprop]").filter((_, el) => $(el).parent().closest("[itemscope]").length === 0).length;
 
-  return {
+  const facts: HtmlFacts = {
     titles,
     titlesOutsideHead: titleEls.filter((_, el) => !inHead(el)).length,
     metaDescriptions,
@@ -260,6 +277,7 @@ export function extractHtmlFacts(html: string, pageUrl: string, rootUrl: string,
     orphanItemprops,
     raw: rawStructure(html),
   };
+  return { facts, text };
 }
 
 /** Stable JSON: keys sorted at every level, so equal blocks fingerprint equal. */

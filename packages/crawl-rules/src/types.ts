@@ -41,6 +41,11 @@ export const RULE_FAMILIES = [
   "javascript",
   "accessibility",
   "mobile",
+  // Phase 3c. spelling runs on every page's visible text (capability
+  // "spell"); performance reads Lighthouse audits the consumer attaches
+  // (capability "psi").
+  "spelling",
+  "performance",
   // Reserved for Phase 4a (robots.would_block / robots.would_allow, custom robots.txt test mode).
   "robots",
 ] as const;
@@ -254,6 +259,21 @@ export interface JsOnlyFacts {
   links: boolean;
 }
 
+/** The consumer's spell check of the page's visible text (Phase 3c). */
+export interface SpellingFacts {
+  /** Primary language subtag checked ("en" | "fr" | "de"), or the unsupported one found. */
+  lang: string;
+  supported: boolean;
+  /** Words looked up (after skipping numbers, acronyms, URLs and whitelisted words). */
+  checked: number;
+  /** Distinct words not in the dictionary. */
+  misspelled: number;
+  /** Up to SPELLING_SAMPLE_MAX of them, in document order. */
+  sample: string[];
+}
+
+export const SPELLING_SAMPLE_MAX = 5;
+
 export interface PageFacts {
   /** The URL as crawled (pre-redirect), normalised. */
   url: string;
@@ -283,6 +303,8 @@ export interface PageFacts {
   imageChecks?: ImageCheckFacts;
   /** Phase 3b. See RenderFacts. */
   render?: RenderFacts;
+  /** Phase 3c. Absent when the consumer did not spell-check the page. */
+  spelling?: SpellingFacts;
 }
 
 // ─── Stored (site-scope) facts ──────────────────────────────────────────────
@@ -379,8 +401,33 @@ export interface PageRuleCtx {
   capabilities: readonly Capability[];
 }
 
+/**
+ * One Lighthouse run for this page (Phase 3c), as the consumer stored it.
+ * Audits are keyed by Lighthouse audit id; a consumer may supply only the
+ * ids PSI_AUDIT_IDS lists.
+ */
+export interface PsiFacts {
+  strategy: "mobile" | "desktop";
+  lighthouseVersion: string | null;
+  fetchedAt: string;
+  audits: Record<string, PsiAudit>;
+  /** INP 75th percentile from CrUX field data, ms. Null when PSI returned no field data. */
+  inpP75: number | null;
+}
+
+export interface PsiAudit {
+  /** 0–1, null when Lighthouse did not score it. */
+  score: number | null;
+  /** numericValue: ms for timings, unitless for CLS, bytes or counts elsewhere. */
+  value: number | null;
+  /** Lighthouse's displayValue. */
+  display: string | null;
+}
+
 export interface SiteRuleCtx {
   capabilities: readonly Capability[];
+  /** Phase 3c: the page's Lighthouse run, when one is attached. */
+  psi?: PsiFacts | null;
   site: PageSiteFacts;
   job: JobFacts;
   /** True for the row job-level findings attach to. */

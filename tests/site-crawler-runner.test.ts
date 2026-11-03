@@ -18,6 +18,8 @@ vi.mock("@/lib/prisma", () => ({
   prisma: {
     crawlJob,
     crawlPage,
+    // Spell check: the workspace's accepted words (Phase 3c).
+    tenant: { findUnique: async () => ({ name: "Acme", spellingAcceptedWords: ["Acmeware"] }) },
     // The runner writes a batch inside a transaction; run the callback inline.
     $transaction: async (fn: (tx: unknown) => Promise<unknown>) => fn({ crawlPage }),
   },
@@ -500,5 +502,21 @@ describe("render mode", () => {
     expect(calls).toEqual([]);
     const all = crawlPage.create.mock.calls.flatMap((c) => c[0].data.issues.create.map((i: { ruleId: string }) => i.ruleId));
     expect(all.some((id: string) => id.startsWith("accessibility.") || id.startsWith("mobile."))).toBe(false);
+  });
+});
+
+// ─── Spell check (Phase 3c) ─────────────────────────────────────────────────
+
+describe("spell check", () => {
+  it("checks pages in their declared language and skips the workspace's accepted words", async () => {
+    fetchPage.mockImplementation(async (url: string) => {
+      const r = htmlResponse(url);
+      return { ...r, html: r.html.replace("<html>", '<html lang="en">').replace("<h1>H</h1>", "<h1>Acmeware recieve</h1>") };
+    });
+    await runCrawl({ jobId: "job_1", redis: fakeRedis() as never });
+    const issues = crawlPage.create.mock.calls[0]![0].data.issues.create as { ruleId: string; evidence: Record<string, unknown> }[];
+    const sp = issues.find((i) => i.ruleId === "spelling.misspellings");
+    expect(sp?.evidence.sample).toContain("recieve");
+    expect(String(sp?.evidence.sample)).not.toMatch(/acmeware/i);
   });
 });

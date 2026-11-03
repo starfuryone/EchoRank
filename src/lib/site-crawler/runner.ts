@@ -35,7 +35,8 @@ import { aggregateCrawl } from "./aggregate";
 import { RateLimiter, fetchPage, isHtmlContentType } from "./fetch";
 import { parsePage, type ParsedPage } from "./checks";
 import { evaluatePageRules, type Issue, type PageFacts } from "@/lib/crawl-rules";
-import { buildPageFacts } from "./facts";
+import { buildPageFacts, buildPageFactsAndText } from "./facts";
+import { acceptedWords, checkSpelling } from "./spelling";
 import { attachHeadChecks, type HeadCheckDeps } from "./head-checks";
 import { issueRows, renderColumns, storedColumns } from "./stored";
 import { RenderBudget } from "./render";
@@ -56,6 +57,12 @@ export interface CrawlOutcome {
   pagesCrawled: number;
   issueCount: number;
   stoppedReason: string | null;
+}
+
+/** Per-crawl spell-check context. rootLang is filled once the root page is parsed. */
+interface SpellCtx {
+  accepted: Set<string>;
+  rootLang: string | null;
 }
 
 /** One page's fetch+parse result, held only until the batch is written. */
@@ -123,6 +130,15 @@ export async function runCrawl({
   /** URLs the sitemap put in the frontier — an orphan candidate is one of these. */
   const sitemapSeeded = new Set<string>();
   let summary: unknown = undefined;
+  // Spell check (Phase 3c): the workspace's accepted words, and the root
+  // page's language as the fallback for pages that do not declare one.
+  const tenant = await prisma.tenant
+    .findUnique({ where: { id: job.tenantId }, select: { name: true, spellingAcceptedWords: true } })
+    .catch(() => null);
+  const spell: SpellCtx = {
+    accepted: acceptedWords(tenant?.spellingAcceptedWords ?? [], tenant?.name ?? "", job.rootUrl),
+    rootLang: null,
+  };
   const render = new RenderBudget(
     isRenderMode(job.renderMode) ? job.renderMode : "none",
     job.renderCap,
@@ -230,7 +246,7 @@ export async function runCrawl({
         redis,
         cacheKey: keys.headCache,
         limiter,
-      }, render);
+      }, render, spell);
       const written = await writeBatch(jobId, results, redis, keys.seen, job.urlCap, pagesCrawled);
 
       pagesCrawled += written.pages;
@@ -259,6 +275,7 @@ export async function runCrawl({
           sitemap,
           sitemapSeeded,
           sitemapDeclaredInRobots: robots.sitemaps.length > 0,
+          tenantId: job.tenantId,
         });
         summary = result.summary;
         issueCount = result.issueCount;
@@ -378,6 +395,7 @@ async function processBatch(
   isInSitemap: ((url: string) => Promise<boolean>) | null,
   head: HeadCheckDeps,
   render: RenderBudget,
+  spell: SpellCtx,
 ): Promise<PendingPage[]> {
   const results: PendingPage[] = [];
   let cursor = 0;
@@ -387,7 +405,7 @@ async function processBatch(
       const index = cursor++;
       if (index >= batch.length) return;
       const item = batch[index]!;
-      results.push(await crawlOne(item, rootUrl, robots, limiter, isInSitemap, head, render));
+      results.push(await crawlOne(item, rootUrl, robots, limiter, isInSitemap, head, render, spell));
     }
   };
 
@@ -406,6 +424,7 @@ async function crawlOne(
   isInSitemap: ((url: string) => Promise<boolean>) | null,
   head: HeadCheckDeps,
   render: RenderBudget,
+  spell: SpellCtx,
 ): Promise<PendingPage> {
   const base: PendingPage = {
     url: item.url,
@@ -463,8 +482,9 @@ async function crawlOne(
   const parsed = isHtml ? parsePage(res.html!, res.finalUrl, rootUrl) : null;
 
   // One PageFacts for the rule engine. The HTML string goes no further than
-  // this call: facts are counts, flags, short strings and URLs.
-  const facts = buildPageFacts({
+  // this call: facts are counts, flags, short strings and URLs. The visible
+  // text is held only for the spell check below.
+  const { facts, text } = buildPageFactsAndText({
     ...factsBase,
     finalUrl: res.finalUrl,
     blockedByRobots: false,
@@ -482,7 +502,14 @@ async function crawlOne(
   await attachHeadChecks(facts, rootUrl, head);
   const rendered = await render.maybeRender(facts);
   if (rendered) facts.render = rendered;
-  const issues = evaluatePageRules(facts, { capabilities: render.enabled ? ["render"] : [] });
+
+  if (facts.html && item.url === rootUrl) spell.rootLang = facts.html.langAttr;
+  if (text && facts.html && facts.statusCode !== null && facts.statusCode >= 200 && facts.statusCode < 300) {
+    const spelling = await checkSpelling(text, facts.html.langAttr ?? spell.rootLang, spell.accepted).catch(() => null);
+    if (spelling) facts.spelling = spelling;
+  }
+
+  const issues = evaluatePageRules(facts, { capabilities: render.enabled ? ["render", "spell"] : ["spell"] });
 
   // Links that exist only after JavaScript are links a rendering crawler
   // follows, so a rendered page's discovery (and the inlink credit it gives)
