@@ -196,3 +196,21 @@ export const INLINK_COLUMNS: CsvColumn<InlinkRow>[] = [
   { header: "Anchor text", value: (r) => r.anchor },
   { header: "Nofollow", value: (r) => r.nofollow },
 ];
+
+/** Phase 4b: one HTML page and what each extractor found on it (null = nothing). */
+export interface ExtractionRow {
+  id: string;
+  url: string;
+  values: (string[] | null)[];
+  /** Phase 4b segments, as names. */
+  segment: string;
+}
+
+/** URL, one column per extractor (values " | "-joined), then segment. Headers are the extractor names. */
+export function extractionColumns(names: readonly string[]): CsvColumn<ExtractionRow>[] {
+  return [
+    { header: "URL", value: (r) => r.url },
+    ...names.map((name, i): CsvColumn<ExtractionRow> => ({ header: name, value: (r) => r.values[i]?.join(" | ") ?? "" })),
+    { header: "Segment", value: (r) => r.segment },
+  ];
+}

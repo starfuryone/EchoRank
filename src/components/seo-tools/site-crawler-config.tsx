@@ -16,6 +16,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import type { SiteCrawlerCopy } from "@/lib/i18n/dashboard";
+import { flag } from "@/lib/flags";
+import { ExtractorsEditor } from "./site-crawler-config-4b";
 import {
   CONFIG_LIMITS,
   type ConfigProblem,
@@ -28,6 +30,14 @@ import {
 } from "@/lib/site-crawler/crawl-config";
 
 type T = SiteCrawlerCopy["p4a"];
+type T4b = SiteCrawlerCopy["p4b"];
+
+/** Phase 4b plan caps, from the live quota. */
+export interface FeatureCaps {
+  extractors: number;
+  searches: number;
+  segments: number;
+}
 
 export interface SiteInfo {
   host: string;
@@ -144,7 +154,9 @@ export function toInput(d: Draft): CrawlConfigInput {
 }
 
 /** One server-side problem as a sentence. */
-export function problemText(p: ConfigProblem, t: T): string {
+export function problemText(p: ConfigProblem, t: T, t4b: T4b): string {
+  if (p.code === "over_plan_cap") return t4b.problemCap(String(p.limit));
+  if (p.code === "invalid_expression") return t4b.problemExtractor(String(p.index + 1));
   if (p.code === "requires_verified_site") return t.problemVerified(p.field);
   if (p.code === "invalid_pattern") return t.problemPattern(p.pattern);
   if (p.code === "reserved_header") return t.problemHeader(p.name);
@@ -208,12 +220,16 @@ function CopyLine({ value, t }: { value: string; t: T }) {
 
 export function CrawlConfigSection({
   t,
+  t4b,
+  caps,
   rootUrl,
   urlCap,
   disabled,
   onChange,
 }: {
   t: T;
+  t4b: T4b;
+  caps: FeatureCaps;
   rootUrl: string;
   urlCap: string;
   disabled: boolean;
@@ -447,6 +463,16 @@ export function CrawlConfigSection({
         </Field>
 
         {host && <RobotsTester t={t} rootUrl={rootUrl} customRobots={draft.customRobots} />}
+
+        {flag("crawl.extraction") && (
+          <ExtractorsEditor
+            t={t4b}
+            value={draft.extractors}
+            cap={caps.extractors}
+            capText={String(caps.extractors)}
+            onChange={(v) => set("extractors", v)}
+          />
+        )}
 
         <Toggle id="cfg-save-default" label={t.saveDefault} checked={saveAsDefault} onChange={(v) => { setSaveAsDefault(v); setDirty(true); }} />
       </fieldset>

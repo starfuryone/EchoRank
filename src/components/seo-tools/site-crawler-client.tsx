@@ -49,6 +49,7 @@ import { AcceptedWords } from "@/components/seo-tools/site-crawler-accepted-word
 import { CrawlConfigSection, problemText } from "@/components/seo-tools/site-crawler-config";
 import { CrawlTools } from "@/components/seo-tools/site-crawler-crawl-tools";
 import { InlinksPanel } from "@/components/seo-tools/site-crawler-inlinks";
+import { ExtractionPanel } from "@/components/seo-tools/site-crawler-extraction";
 import type { ConfigProblem, CrawlConfigInput } from "@/lib/site-crawler/crawl-config";
 import { parseUrlList } from "@/lib/site-crawler/url-list";
 import { flag } from "@/lib/flags";
@@ -56,7 +57,7 @@ import { SITE_CRAWLER_COPY, type DashLocale, type SiteCrawlerCopy } from "@/lib/
 import { CRAWLER_BRAND } from "@/lib/site-crawler/brand";
 import { helpArticleFor, learnHref } from "@/lib/help-content";
 
-type TabId = "overview" | "rules" | "issues" | "duplicates" | "redirects" | "pages";
+type TabId = "overview" | "rules" | "issues" | "duplicates" | "redirects" | "pages" | "extraction";
 
 /** The Issues filter: every registry rule, by name. Pre-3a rows match through legacy-map. */
 const RULE_OPTIONS = RULE_IDS.map((id) => ({ value: id, label: RULE_COPY[id]?.name ?? id })).sort((a, b) =>
@@ -65,12 +66,18 @@ const RULE_OPTIONS = RULE_IDS.map((id) => ({ value: id, label: RULE_COPY[id]?.na
 
 const TABS: TabId[] = ["overview", "rules", "issues", "duplicates", "redirects", "pages"];
 
+/** The tabs a crawl shows: Extraction only when it ran extractors (Phase 4b). */
+export function crawlTabs(crawl: Pick<CrawlDto, "config"> | null): TabId[] {
+  return flag("crawl.extraction") && (crawl?.config?.extractors?.length ?? 0) > 0 ? [...TABS, "extraction"] : TABS;
+}
+
 function tabLabel(id: TabId, t: SiteCrawlerCopy): string {
   if (id === "overview") return t.tabOverview;
   if (id === "rules") return t.tabRules;
   if (id === "issues") return t.tabIssues;
   if (id === "duplicates") return t.tabDuplicates;
   if (id === "redirects") return t.tabRedirects;
+  if (id === "extraction") return t.p4b.tabExtraction;
   return t.tabPages;
 }
 
@@ -280,7 +287,7 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
   );
 
   useEffect(() => {
-    if (!active || isInFlight(active.status) || tab === "issues" || tab === "rules") return;
+    if (!active || isInFlight(active.status) || tab === "issues" || tab === "rules" || tab === "extraction") return;
     let cancelled = false;
     void (async () => {
       const data = await loadTab(active.id, tab);
@@ -504,7 +511,7 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
           {problems.length > 0 && (
             <ul className="mt-1 list-disc pl-10 text-sm text-red-600">
               {problems.map((p, i) => (
-                <li key={i}>{problemText(p, t.p4a)}</li>
+                <li key={i}>{problemText(p, t.p4a, t.p4b)}</li>
               ))}
             </ul>
           )}
@@ -513,6 +520,8 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
           {flag("crawl.config") && mode === "spider" && quota && (
             <CrawlConfigSection
               t={t.p4a}
+              t4b={t.p4b}
+              caps={{ extractors: quota.extractorCap ?? 0, searches: quota.searchCap ?? 0, segments: quota.segmentCap ?? 0 }}
               rootUrl={url}
               urlCap={int.format(quota.urlCap)}
               disabled={starting || Boolean(running)}
@@ -585,7 +594,7 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
 
       {active && !running && (
         <div className="flex flex-wrap gap-2 border-b border-gray-200 pb-2">
-          {TABS.map((id) => (
+          {crawlTabs(active).map((id) => (
             <button
               key={id}
               type="button"
@@ -608,6 +617,10 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
       )}
 
       {active && !running && tab === "rules" && <RulesPanel crawlId={active.id} t={t} int={int} />}
+
+      {active && !running && tab === "extraction" && (
+        <ExtractionPanel crawlId={active.id} extractorNames={(active.config?.extractors ?? []).map((e) => e.name)} t={t} int={int} />
+      )}
 
       {active && !running && tab === "duplicates" && (
         <DuplicatesPanel

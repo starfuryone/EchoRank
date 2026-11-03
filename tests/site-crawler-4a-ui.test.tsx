@@ -86,7 +86,7 @@ describe("configuration draft → API input", () => {
         { field: "headers", code: "reserved_header" as const, name: "Host" },
         { field: "customUserAgent", code: "custom_ua_missing" as const },
       ]) {
-        expect(problemText(p, t).length, `${l} ${p.code}`).toBeGreaterThan(3);
+        expect(problemText(p, t, SITE_CRAWLER_COPY[l].p4b).length, `${l} ${p.code}`).toBeGreaterThan(3);
       }
     }
   });
