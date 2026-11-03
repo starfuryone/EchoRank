@@ -97,7 +97,15 @@ describe("/site-crawler", () => {
     expect(html).toContain("Free technical support");
     expect(html).toContain("Save &amp; open crawls");
     expect(html).not.toContain("Audit hreflang attributes");
-    expect(html).not.toContain("Generate XML sitemaps");
+    // A flag still off (4c).
+    expect(html).not.toContain("Crawl comparison");
+  });
+
+  it("4a: the kept-crawls cap is read from plan-config", async () => {
+    const html = await render("en");
+    for (const p of ["STARTER", "GROWTH", "AGENCY"] as const) {
+      expect(html).toContain(`Last ${PLAN_CONFIGS[p].crawlsKept} crawls kept`);
+    }
   });
 
   it("reads table caps from plan-config, never from a literal", async () => {
@@ -173,7 +181,7 @@ describe("/site-crawler", () => {
     }
   });
 
-  it("claims JavaScript redirects only with rendering, and a sitemap-only crawl only with list mode", () => {
+  it("claims JavaScript redirects only with rendering, and never a sitemap-only crawl", () => {
     const body = (id: string, flags: Flags) =>
       ["en", "fr"].map((b) => capabilityBody(CRAWL_CAPABILITIES.find((c) => c.id === id)!, b as "en" | "fr", flags));
     const off = { ...FLAGS, "crawl.render": false, "crawl.listMode": false };
@@ -181,7 +189,8 @@ describe("/site-crawler", () => {
     for (const t of body("redirects", off)) expect(t).not.toMatch(/JavaScript/);
     for (const t of body("redirects", on)) expect(t).toMatch(/JavaScript/);
     for (const t of body("sitemap-analysis", off)) expect(t).not.toMatch(/on its own|seul/);
-    for (const t of body("sitemap-analysis", on)) expect(t).toMatch(/on its own|seul/);
+    // List mode checks a pasted URL list; nothing crawls a sitemap on its own.
+    for (const t of body("sitemap-analysis", on)) expect(t).not.toMatch(/on its own|seul/);
   });
 
   it("describes render mode as the three modes it has, not a page picker", () => {

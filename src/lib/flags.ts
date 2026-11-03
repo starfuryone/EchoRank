@@ -16,12 +16,18 @@ export const FLAGS = {
   // homepage's link to that page keys on this.
   "crawl.publicPage": true,
 
-  // Phase 4a
-  "crawl.config": false,
-  "crawl.links": false,
-  "crawl.listMode": false,
-  "crawl.sitemapGen": false,
-  "crawl.customRobots": false,
+  // Phase 4a shipped: configuration, the internal link graph (found on,
+  // inlinks, broken-link sources), list mode, the sitemap generator, custom
+  // robots.txt (test mode + tester).
+  "crawl.config": true,
+  "crawl.links": true,
+  "crawl.listMode": true,
+  "crawl.sitemapGen": true,
+  "crawl.customRobots": true,
+  // Every outbound link stored with status, anchor and source. No phase
+  // builds it yet: 4a stores internal edges, 3a HEAD-checks a sample of
+  // external links per page.
+  "crawl.externalLinks": false,
   // Phase 4b
   "crawl.extraction": false,
   "crawl.segments": false,

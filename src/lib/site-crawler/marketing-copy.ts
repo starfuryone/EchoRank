@@ -19,6 +19,7 @@
 // family ids, which is what lets a test stub the registry.
 
 import { CRAWLER_BRAND } from "./brand";
+import { CRAWL_PIN_MAX } from "./constants";
 import { flag as flagOn, FLAGS, type FlagName, type Flags } from "@/lib/flags";
 import type { PlanConfig } from "@/lib/plan-config";
 
@@ -81,10 +82,11 @@ export const CRAWL_CAPABILITIES: readonly CrawlCapability[] = [
         fr: "Les pages dont le robots.txt en ligne interdit l'accès aux robots, et ce qu'un brouillon de robots.txt changerait, avant que vous le publiiez.",
       },
     }),
-  cap("external-links", { flag: "crawl.links" },
+  cap("external-links", { flag: "crawl.externalLinks" },
     ["External links", "Every outbound link with its status code, anchor text and source page."],
     ["Liens externes", "Chaque lien sortant avec son code de réponse, son texte d'ancre et sa page source."]),
-  cap("site-structure", { flag: "crawl.links" },
+  // The directory breakdown is drawn by the Structure tab (4c).
+  cap("site-structure", { flag: "crawl.visualise" },
     ["Site structure", "Indexability and crawl depth by directory, orphan pages, and the pages that carry the most internal links."],
     ["Structure du site", "Indexabilité et profondeur d'exploration par répertoire, pages orphelines, et les pages qui portent le plus de liens internes."]),
   cap("internal-linking", { family: "links" },
@@ -142,8 +144,8 @@ export const CRAWL_CAPABILITIES: readonly CrawlCapability[] = [
     ["User agent", `Crawl as ${NB}, as Googlebot smartphone or desktop, or as any custom string on a site you have verified.`],
     ["Agent utilisateur", `Explorez en tant que ${NB}, que Googlebot mobile ou ordinateur, ou avec la chaîne de votre choix sur un site que vous avez vérifié.`]),
   cap("custom-headers", { flag: "crawl.config" },
-    ["Custom headers and cookies", "Send any request header, a cookie string or HTTP basic auth with every fetch."],
-    ["En-têtes et témoins personnalisés", "Envoyez l'en-tête de requête de votre choix, une chaîne de témoins ou une authentification HTTP de base à chaque requête."]),
+    ["Custom headers and cookies", "Send your own request headers, a cookie string or HTTP basic auth with every request to the site you crawl."],
+    ["En-têtes et témoins personnalisés", "Envoyez vos propres en-têtes de requête, une chaîne de témoins ou une authentification HTTP de base à chaque requête vers le site exploré."]),
   cap("custom-search", { flag: "crawl.extraction" },
     ["Custom source search", "Search every page's source for a string or a pattern: a tracking tag, a keyword, a snippet of code."],
     ["Recherche dans le code source", "Cherchez une chaîne ou un motif dans le code source de chaque page : une balise de suivi, un mot-clé, un extrait de code."]),
@@ -180,14 +182,7 @@ export const CRAWL_CAPABILITIES: readonly CrawlCapability[] = [
     ["Plans de site XML", "Générez un plan de site et un plan de site d'images à partir de l'exploration, pages indexables seulement, découpés automatiquement à 50 000 URL."]),
   cap("sitemap-analysis", { family: "sitemaps" },
     ["Sitemap analysis", "Read the site's XML sitemaps during the crawl to find URLs that are missing, non-indexable, redirecting, broken or orphaned."],
-    ["Analyse des plans de site", "Lisez les plans de site XML pendant l'exploration pour repérer les URL absentes, non indexables, redirigées, brisées ou orphelines."],
-    {
-      flag: "crawl.listMode",
-      body: {
-        en: "Crawl a sitemap on its own or with the site to find URLs that are missing, non-indexable, redirecting, broken or orphaned.",
-        fr: "Explorez un plan de site seul ou avec le site pour repérer les URL absentes, non indexables, redirigées, brisées ou orphelines.",
-      },
-    }),
+    ["Analyse des plans de site", "Lisez les plans de site XML pendant l'exploration pour repérer les URL absentes, non indexables, redirigées, brisées ou orphelines."]),
   cap("custom-robots", { flag: "crawl.customRobots" },
     ["Custom robots.txt", "Edit a copy of the site's robots.txt and test which URLs it would allow or block."],
     ["robots.txt personnalisé", "Modifiez une copie du robots.txt du site et vérifiez quelles URL il autoriserait ou bloquerait."]),
@@ -298,7 +293,10 @@ export const CRAWL_FEATURE_ROWS: readonly CrawlFeatureRow[] = [
       : `${fmt(p.crawlUrlCap, b)} URLs per crawl · ${p.crawlsPerMonth === null ? "unlimited crawls" : `${fmt(p.crawlsPerMonth, b)} crawls a month`}`),
   row("scheduling", { flag: "crawl.schedule" }, "Scheduling", "Planification"),
   row("crawl-configuration", { flag: "crawl.config" }, "Crawl configuration", "Configuration de l'exploration"),
-  row("save-open", { always: true }, "Save & open crawls", "Enregistrer et rouvrir les explorations"),
+  row("save-open", { always: true }, "Save & open crawls", "Enregistrer et rouvrir les explorations", (p, b) =>
+    b === "fr"
+      ? `${fmt(p.crawlsKept, b)} dernières explorations conservées · ${CRAWL_PIN_MAX} épinglées en plus`
+      : `Last ${fmt(p.crawlsKept, b)} crawls kept · ${CRAWL_PIN_MAX} more pinned`),
   row("javascript-rendering", { family: "javascript" }, "JavaScript rendering", "Rendu JavaScript"),
   row("crawl-comparison", { flag: "crawl.compare" }, "Crawl comparison", "Comparaison d'explorations"),
   row("near-duplicates", { family: "content" }, "Near duplicate content", "Contenu quasi dupliqué"),
