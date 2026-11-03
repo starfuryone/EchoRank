@@ -133,6 +133,22 @@ confirm the migration that creates each one sorts earlier. Renaming the director
 and is free *until it has been applied* — after that it also needs an
 `_prisma_migrations` cleanup.
 
+**`0_init` is the baseline, and it sorts first.** It is the whole database as of 2026-08-14
+(after `20260811210000_subscription_product_kind`), forty db-push'd tables included. The 37
+migrations it superseded stayed in the folder until 2026-11-03, so a replay from empty ran
+`0_init` and then died re-creating `extension_tokens`. They are deleted now (git history and
+`/opt/echorank/backups/app-prisma/` keep them). Production still has their
+`_prisma_migrations` rows; `migrate deploy` and `migrate status` ignore rows with no local
+directory, which was checked against a copy of that state. Never re-add one, and never give
+a new migration a timestamp earlier than the newest — `tests/migrations-baseline.test.ts`
+fails on either.
+
+A replay from empty still leaves two differences from `schema.prisma` that production may
+share: `credit_ledger` has no `tenantId` foreign key, and
+`keyword_opportunity_analyses."seedKeywords"` keeps a default the schema dropped. Run
+`migrate diff --from-config-datasource --to-schema prisma/schema.prisma --script` against
+production before writing the migration that closes them.
+
 **Two more traps from the same incident:**
 
 - **Prisma table names are not the model names.** `@@map` decides, and this schema mixes both

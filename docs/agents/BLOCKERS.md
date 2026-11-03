@@ -40,6 +40,9 @@ Updated: 2026-07-25 (session: package build, claude.ai sandbox)
   npx prisma migrate resolve --applied <visibility_monitoring dir name>
   ```
   (`ls prisma/migrations` for the full timestamped names.)
+- **Superseded 2026-11-03:** those directories no longer exist. `0_init` is the baseline and
+  the 37 migrations it contains were removed; see "`0_init` is the baseline" in
+  [gotchas.md](gotchas.md). Nothing to resolve.
 - **Gates:** `SeoApiCall` / snapshot-model migration in
   `prisma/classic-seo.fragment.prisma`.
 
