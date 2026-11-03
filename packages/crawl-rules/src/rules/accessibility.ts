@@ -8,6 +8,9 @@
 import { ev, pageRule } from "../engine";
 import type { Rule, RuleKind, RulePriority } from "../types";
 import { AXE_RULES, type AxeRuleMeta } from "../generated/axe-rules";
+import { a11yRuleId } from "../data/accessibility";
+
+export { a11yRuleId };
 
 const F = "accessibility" as const;
 
@@ -24,11 +27,6 @@ const PRIORITY_OF_IMPACT: Record<AxeRuleMeta["impact"], RulePriority> = {
   moderate: "medium",
   minor: "low",
 };
-
-/** "color-contrast" → "accessibility.color_contrast". Ids are lower snake case. */
-export function a11yRuleId(axeId: string): string {
-  return `${F}.${axeId.replace(/-/g, "_")}`;
-}
 
 export const RULES: Rule[] = AXE_RULES.map((m) =>
   pageRule({

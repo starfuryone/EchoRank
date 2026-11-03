@@ -1,5 +1,5 @@
 import type { RuleCopy } from "../types";
-import { TYPE_SPECS } from "../rules/structured_data";
+import { TYPE_SPECS } from "../data/structured_data";
 
 /** Display names for the type specs, as schema.org spells them. */
 const TYPE_NAME: Record<string, string> = {

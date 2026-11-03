@@ -5,15 +5,15 @@
 // the side panel: what the rule checks, how to fix it, and the URLs it fired
 // on with each finding's evidence.
 //
-// Rule names and descriptions come from the registry (packages/crawl-rules,
-// dependency-free, safe in the browser). They are English-only in 3a; the
+// Rule names and descriptions come from the registry's client-safe half
+// (packages/crawl-rules/src/meta.ts). They are English-only in 3a; the
 // tab says so on fr / de-CH. Everything else is SITE_CRAWLER_COPY.
 
 import { useEffect, useState } from "react";
 import { Download } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { RULE_COPY } from "@/lib/crawl-rules";
+import { RULE_COPY } from "@/lib/crawl-rules-meta";
 import type { SiteCrawlerCopy } from "@/lib/i18n/dashboard";
 import type { RuleKindDto } from "@/lib/site-crawler/types";
 import { Pager } from "./site-crawler-panels";

@@ -21,7 +21,7 @@ import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import { formatDateTime } from "@/lib/utils";
 import type { Severity } from "@/lib/site-crawler/checks";
-import { RULES, RULE_COPY } from "@/lib/crawl-rules";
+import { RULE_COPY, RULE_IDS } from "@/lib/crawl-rules-meta";
 import { RulesPanel } from "./site-crawler-rules-panel";
 import {
   EMPTY_PAGE_FILTERS,
@@ -53,7 +53,7 @@ import { helpArticleFor, learnHref } from "@/lib/help-content";
 type TabId = "overview" | "rules" | "issues" | "duplicates" | "redirects" | "pages";
 
 /** The Issues filter: every registry rule, by name. Pre-3a rows match through legacy-map. */
-const RULE_OPTIONS = RULES.map((r) => ({ value: r.id, label: RULE_COPY[r.id]?.name ?? r.id })).sort((a, b) =>
+const RULE_OPTIONS = RULE_IDS.map((id) => ({ value: id, label: RULE_COPY[id]?.name ?? id })).sort((a, b) =>
   a.label.localeCompare(b.label),
 );
 

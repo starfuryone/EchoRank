@@ -4,13 +4,16 @@
 // public API — the Issues tab, CSV and the public library key on them); every
 // rule has EN copy and no copy is orphaned; every rule has at least one fixture
 // case that fires and one that does not; the package imports nothing outside
-// itself.
+// itself; the client-safe half (meta.ts) carries no rule logic and is what
+// Client Components import; the package's dependencies are pinned in the app's
+// package.json and lockfile.
 /// <reference types="vite/client" />
 
 import { readFileSync, readdirSync, statSync } from "node:fs";
-import { join, relative } from "node:path";
+import { dirname, join, relative, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import { AXE_RULES, RULE_COPY, RULE_FAMILIES, RULES } from "@/lib/crawl-rules";
+import { RULE_IDS } from "@/lib/crawl-rules-meta";
 import type { RuleCase } from "./harness";
 
 const cases = Object.values(import.meta.glob<{ default: RuleCase[] }>("./cases/*.ts", { eager: true })).flatMap(
@@ -133,5 +136,59 @@ describe("package boundary", () => {
     // (declared in packages/crawl-rules/package.json). Nothing else.
     for (const s of specs) expect(s, s).toMatch(/^(\.\.?\/|iso-639-1$|i18n-iso-countries\/index$)/);
     expect(src).not.toMatch(/\brequire\(|process\.|\bfetch\(|Buffer\b/);
+  });
+});
+
+describe("meta/rules split", () => {
+  const root = join(process.cwd(), "packages/crawl-rules/src");
+  const specsOf = (f: string) =>
+    [...readFileSync(f, "utf8").matchAll(/(?:from|import)\s*\(?\s*["']([^"']+)["']/g)].map((m) => m[1]!);
+
+  it("meta.ts reaches no rule logic and no package, at any depth", () => {
+    const seen = new Set<string>();
+    const visit = (f: string) => {
+      if (seen.has(f)) return;
+      seen.add(f);
+      for (const s of specsOf(f)) {
+        expect(s, `${relative(root, f)} imports ${s}`).toMatch(/^\.\.?\//);
+        visit(resolve(dirname(f), s.endsWith(".ts") ? s : `${s}.ts`));
+      }
+    };
+    visit(join(root, "meta.ts"));
+    const reached = [...seen].map((f) => relative(root, f));
+    expect(reached.filter((f) => f.startsWith("rules/") || f.startsWith("util/") || f === "engine.ts")).toEqual([]);
+  });
+
+  it("meta's ids are exactly the registry's", () => {
+    expect([...RULE_IDS].sort()).toEqual(RULES.map((r) => r.id).sort());
+  });
+
+  it("no Client Component imports the full registry", () => {
+    const offenders: string[] = [];
+    const walk = (d: string) => {
+      for (const f of readdirSync(d)) {
+        const p = join(d, f);
+        if (statSync(p).isDirectory()) walk(p);
+        else if (/\.tsx?$/.test(p)) {
+          const src = readFileSync(p, "utf8");
+          if (/^\s*["']use client["']/.test(src) && /from\s+["']@\/lib\/crawl-rules["']/.test(src)) offenders.push(p);
+        }
+      }
+    };
+    walk(join(process.cwd(), "src"));
+    expect(offenders).toEqual([]);
+  });
+
+  it("pins the package's dependencies in the app's package.json and lockfile", () => {
+    const own = JSON.parse(readFileSync(join(root, "../package.json"), "utf8")) as { dependencies: Record<string, string> };
+    const app = JSON.parse(readFileSync(join(process.cwd(), "package.json"), "utf8")) as { dependencies: Record<string, string> };
+    const lock = JSON.parse(readFileSync(join(process.cwd(), "package-lock.json"), "utf8")) as {
+      packages: Record<string, { version?: string; dependencies?: Record<string, string> }>;
+    };
+    for (const [name, version] of Object.entries(own.dependencies)) {
+      expect(app.dependencies[name], name).toBe(version);
+      expect(lock.packages[""]!.dependencies![name], name).toBe(version);
+      expect(lock.packages[`node_modules/${name}`]?.version, name).toBe(version);
+    }
   });
 });

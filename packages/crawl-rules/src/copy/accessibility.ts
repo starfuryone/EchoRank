@@ -5,7 +5,7 @@
 
 import type { RuleCopy } from "../types";
 import { AXE_RULES, AXE_VERSION } from "../generated/axe-rules";
-import { a11yRuleId } from "../rules/accessibility";
+import { a11yRuleId } from "../data/accessibility";
 
 /** "wcag1410" → "1.4.10". */
 function criterion(tag: string): string {

@@ -14,39 +14,11 @@
 
 import { ev, pageRule } from "../engine";
 import type { PageFacts, Rule, StructuredItem } from "../types";
+import { TYPE_SPECS, type Req, type TypeSpec } from "../data/structured_data";
+
+export { TYPE_SPECS };
 
 const F = "structured_data" as const;
-
-/** A requirement is one property, or several of which any one will do. */
-type Req = string | readonly string[];
-
-interface TypeSpec {
-  id: string;
-  types: readonly string[];
-  required: readonly Req[];
-  recommended: readonly Req[];
-}
-
-export const TYPE_SPECS: readonly TypeSpec[] = [
-  { id: "organization", types: ["Organization"], required: ["name", "url"], recommended: ["logo", "sameAs", "contactPoint"] },
-  { id: "local_business", types: ["LocalBusiness"], required: ["name", "address"], recommended: ["telephone", "openingHoursSpecification", "geo", "url", "image"] },
-  { id: "product", types: ["Product"], required: ["name", "offers"], recommended: ["image", "description", "brand", "sku", "aggregateRating"] },
-  { id: "article", types: ["Article", "NewsArticle", "BlogPosting"], required: ["headline", "author", "datePublished"], recommended: ["image", "dateModified", "publisher"] },
-  { id: "faq_page", types: ["FAQPage"], required: ["mainEntity"], recommended: [] },
-  { id: "breadcrumb_list", types: ["BreadcrumbList"], required: ["itemListElement"], recommended: [] },
-  { id: "website", types: ["WebSite"], required: ["name", "url"], recommended: ["alternateName"] },
-  { id: "event", types: ["Event"], required: ["name", "startDate", "location"], recommended: ["description", "endDate", "image", "offers", "organizer", "eventStatus"] },
-  { id: "recipe", types: ["Recipe"], required: ["name", "image"], recommended: ["author", "recipeIngredient", "recipeInstructions", "totalTime", "nutrition", "aggregateRating"] },
-  { id: "video_object", types: ["VideoObject"], required: ["name", "thumbnailUrl", "uploadDate"], recommended: ["description", "duration", ["contentUrl", "embedUrl"]] },
-  {
-    id: "job_posting",
-    types: ["JobPosting"],
-    required: ["title", "description", "datePosted", "hiringOrganization", ["jobLocation", "applicantLocationRequirements"]],
-    recommended: ["validThrough", "baseSalary", "employmentType", "identifier"],
-  },
-  { id: "review", types: ["Review"], required: ["itemReviewed", "author", "reviewRating"], recommended: ["datePublished", "reviewBody", "name"] },
-  { id: "how_to", types: ["HowTo"], required: ["name", "step"], recommended: ["totalTime", "supply", "tool", "image"] },
-];
 
 const SCHEMA_ORG = /^https?:\/\/(www\.)?schema\.org\/?/i;
 
