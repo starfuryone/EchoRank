@@ -29,7 +29,7 @@ export const FLAGS = {
   // external links per page.
   "crawl.externalLinks": false,
   // Phase 4b
-  "crawl.extraction": false,
+  "crawl.extraction": true,
   "crawl.segments": false,
   // Phase 4c
   "crawl.visualise": false,

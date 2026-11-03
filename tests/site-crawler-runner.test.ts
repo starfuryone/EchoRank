@@ -569,7 +569,7 @@ describe("crawl configuration", () => {
       { crawlJobId: "job_1", pageId: "p1", extractorIndex: 2, values: ["https://example.com/"] },
     ]);
     // w19 and w190..w199
-    expect(crawlPage.create.mock.calls[0]![0].data.searchHits).toEqual({ "0": 11 });
+    expect(crawlPage.create.mock.calls[0]![0].data.searchHits).toEqual({ "0": 11, "1": 0 });
   });
 
   it("a crawl without extractors or searches writes neither", async () => {

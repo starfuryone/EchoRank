@@ -664,7 +664,7 @@ async function crawlOne(item: FrontierItem, ctx: CrawlCtx): Promise<PendingPage>
     contentHash: parsed?.contentHash ?? null,
     inSitemap,
     extracted: ex?.values ?? new Map(),
-    searchHits: ex?.searchHits ?? (extract && extract.searchCount > 0 && isHtml ? {} : null),
+    searchHits: ex?.searchHits ?? null,
     discovered: deeper && !ctx.listMode
       ? [...linkTargets, ...nofollowFollowed, ...annotationTargets(facts, linkTargets, settings)].map((url) => ({
           url,

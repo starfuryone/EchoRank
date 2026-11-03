@@ -25,6 +25,7 @@ import { RULE_COPY, RULE_IDS } from "@/lib/crawl-rules-meta";
 import { RulesPanel } from "./site-crawler-rules-panel";
 import {
   EMPTY_PAGE_FILTERS,
+  pageFilterParams,
   isInFlight,
   type CrawlDto,
   type RenderMode,
@@ -272,10 +273,9 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
             : which === "redirects"
               ? `/api/seo/v1/crawl/${crawlId}/redirects?page=${redirectPage}`
               : (() => {
-                  const params = new URLSearchParams({ page: String(pagesPage), pageSize: "50" });
-                  if (pageFilters.inSitemap) params.set("inSitemap", pageFilters.inSitemap);
-                  if (pageFilters.depth) params.set("depth", pageFilters.depth);
-                  if (pageFilters.minInlinks) params.set("minInlinks", pageFilters.minInlinks);
+                  const params = pageFilterParams(pageFilters);
+                  params.set("page", String(pagesPage));
+                  params.set("pageSize", "50");
                   return `/api/seo/v1/crawl/${crawlId}/pages?${params}`;
                 })();
 
@@ -666,6 +666,8 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
             setPageRows(null);
           }}
           onInlinks={flag("crawl.links") && !active.dataPurgedAt ? setInlinksFor : undefined}
+          searchNames={flag("crawl.extraction") ? (active.config?.searches ?? []).map((s) => s.name) : []}
+          csvHref={`/api/seo/v1/crawl/${active.id}/pages?${pageFilterParams(pageFilters)}&format=csv`}
           t={t}
           int={int}
         />

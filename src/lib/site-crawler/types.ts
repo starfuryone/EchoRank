@@ -203,6 +203,8 @@ export interface CrawlPageRow {
   wordCount: number | null;
   /** Phase 4a: the first page seen linking here. */
   foundOn?: string | null;
+  /** Phase 4b: {"<search index>": matches}; null on non-HTML pages. */
+  searchHits?: Record<string, number> | null;
   issueCount: number;
 }
 
@@ -219,6 +221,22 @@ export interface PageFilters {
   inSitemap: string;
   depth: string;
   minInlinks: string;
+  /** Phase 4b: "" = any; "N:hit" / "N:none" = custom search N matched / did not. */
+  search: string;
 }
 
-export const EMPTY_PAGE_FILTERS: PageFilters = { inSitemap: "", depth: "", minInlinks: "" };
+export const EMPTY_PAGE_FILTERS: PageFilters = { inSitemap: "", depth: "", minInlinks: "", search: "" };
+
+/** The pages route's query for a set of filters (the table and its CSV share it). */
+export function pageFilterParams(f: PageFilters): URLSearchParams {
+  const params = new URLSearchParams();
+  if (f.inSitemap) params.set("inSitemap", f.inSitemap);
+  if (f.depth) params.set("depth", f.depth);
+  if (f.minInlinks) params.set("minInlinks", f.minInlinks);
+  const [index, which] = f.search.split(":");
+  if (index && which) {
+    params.set("search", index);
+    params.set("hit", which === "hit" ? "true" : "false");
+  }
+  return params;
+}

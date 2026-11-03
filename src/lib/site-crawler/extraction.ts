@@ -38,7 +38,7 @@ export const SEARCH_COUNT_MAX = 100_000;
 export interface PageExtraction {
   /** Extractor index → values (1..20, each ≤ 500 chars). Extractors that found nothing are absent. */
   values: Map<number, string[]>;
-  /** Search index → matches, only searches that matched. Null when the crawl has no searches. */
+  /** Search index → matches, every search (0 = no match), so "not found" is filterable. Null when the crawl has no searches. */
   searchHits: Record<string, number> | null;
   /** True when the regex budget ran out on this page. */
   timedOut: boolean;
@@ -201,10 +201,12 @@ function compileExtractor(e: Extractor): Run {
   };
 }
 
-function compileSearch(s: CustomSearch): (html: string, lower: () => string, budget: Budget) => number {
+/** A search's count on one page; null when the regex budget ran out before it could start (unknown, not 0). */
+function compileSearch(s: CustomSearch): (html: string, lower: () => string, budget: Budget) => number | null {
   if (s.isRegex) {
     const re = new RegExp(s.pattern, "g");
     return (html, _lower, budget) => {
+      if (budget.spent()) return null;
       let n = 0;
       for (const m of matches(re, html, budget, SEARCH_COUNT_MAX)) n += m ? 1 : 0;
       return n;
@@ -260,7 +262,7 @@ export function compileExtraction(extractors: readonly Extractor[], searches: re
         searchHits = {};
         counts.forEach((count, i) => {
           const n = count ? count(html, getLower, budget) : 0;
-          if (n > 0) searchHits![String(i)] = n;
+          if (n !== null) searchHits![String(i)] = n;
         });
       }
       return { values, searchHits, timedOut: budget.timedOut };

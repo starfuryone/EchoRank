@@ -60,6 +60,8 @@ export interface CrawlPageRow {
   redirectTarget: string | null;
   contentType: string | null;
   foundOn: string | null;
+  /** Phase 4b: {"<search index>": matches}; null on non-HTML pages. */
+  searchHits?: unknown;
 }
 
 /**
@@ -196,6 +198,21 @@ export const INLINK_COLUMNS: CsvColumn<InlinkRow>[] = [
   { header: "Anchor text", value: (r) => r.anchor },
   { header: "Nofollow", value: (r) => r.nofollow },
 ];
+
+/** A page's count for one search, or null when it was not searched (non-HTML, pre-4b). */
+export function searchCount(hits: unknown, index: number): number | null {
+  if (!hits || typeof hits !== "object") return null;
+  const n = (hits as Record<string, unknown>)[String(index)];
+  return typeof n === "number" ? n : null;
+}
+
+/** The pages export plus one count column per custom search (Phase 4b), headed "Search: <name>". */
+export function pageColumns(searchNames: readonly string[]): CsvColumn<CrawlPageRow>[] {
+  return [
+    ...PAGE_COLUMNS,
+    ...searchNames.map((name, i): CsvColumn<CrawlPageRow> => ({ header: `Search: ${name}`, value: (r) => searchCount(r.searchHits, i) })),
+  ];
+}
 
 /** Phase 4b: one HTML page and what each extractor found on it (null = nothing). */
 export interface ExtractionRow {

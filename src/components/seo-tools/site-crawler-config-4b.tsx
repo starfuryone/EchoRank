@@ -14,6 +14,7 @@ import { Select } from "@/components/ui/select";
 import type { SiteCrawlerCopy } from "@/lib/i18n/dashboard";
 import {
   CONFIG_LIMITS,
+  type CustomSearch,
   EXTRACTOR_KINDS,
   EXTRACTOR_PRESETS,
   type Extractor,
@@ -127,6 +128,57 @@ export function ExtractorsEditor({
             options={[{ value: "", label: t.exPresetPick }, ...PRESET_GROUPS.map((g) => ({ value: g.id, label: presetLabel(g.id, t) }))]}
           />
         </div>
+      ) : (
+        <p className="text-xs text-gray-500">{t.capReached(capText)}</p>
+      )}
+    </div>
+  );
+}
+
+export function SearchesEditor({
+  t,
+  value,
+  cap,
+  capText,
+  onChange,
+}: {
+  t: T4b;
+  value: CustomSearch[];
+  cap: number;
+  capText: string;
+  onChange: (next: CustomSearch[]) => void;
+}) {
+  const update = (i: number, patch: Partial<CustomSearch>) => onChange(value.map((s, j) => (j === i ? { ...s, ...patch } : s)));
+  return (
+    <div className="space-y-2">
+      <p className="text-sm font-medium text-gray-900">{t.srSection}</p>
+      <p className="text-xs text-gray-500">{t.srHelp(capText)}</p>
+      {value.map((s, i) => (
+        <div key={i} className="grid gap-2 rounded-lg border border-gray-100 p-2 sm:grid-cols-[10rem_1fr_auto]">
+          <Input aria-label={t.srName} placeholder={t.srName} maxLength={CONFIG_LIMITS.nameChars} value={s.name} onChange={(ev) => update(i, { name: ev.target.value })} />
+          <Input
+            aria-label={t.srPattern}
+            placeholder={t.srPattern}
+            className="font-mono text-xs"
+            maxLength={CONFIG_LIMITS.exprChars}
+            value={s.pattern}
+            onChange={(ev) => update(i, { pattern: ev.target.value })}
+          />
+          <div className="flex items-center gap-3">
+            <label className="flex items-center gap-1 text-xs text-gray-600">
+              <input type="checkbox" checked={s.isRegex} onChange={(ev) => update(i, { isRegex: ev.target.checked })} />
+              {t.srRegex}
+            </label>
+            <button type="button" aria-label={t.srRemove} className="text-gray-400 hover:text-gray-700" onClick={() => onChange(value.filter((_, j) => j !== i))}>
+              <Trash2 className="h-4 w-4" aria-hidden="true" />
+            </button>
+          </div>
+        </div>
+      ))}
+      {value.length < cap ? (
+        <Button type="button" size="sm" variant="outline" onClick={() => onChange([...value, { name: "", pattern: "", isRegex: false }])}>
+          <Plus className="h-4 w-4" aria-hidden="true" /> {t.srAdd}
+        </Button>
       ) : (
         <p className="text-xs text-gray-500">{t.capReached(capText)}</p>
       )}

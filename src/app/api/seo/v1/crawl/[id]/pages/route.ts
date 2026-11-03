@@ -1,7 +1,8 @@
 /**
  * GET /api/seo/v1/crawl/[id]/pages — paginated crawled pages.
  *
- * Filters: inSitemap, minInlinks/maxInlinks, depth. Each is validated rather
+ * Filters: inSitemap, minInlinks/maxInlinks, depth, and (Phase 4b)
+ * search=N&hit=true|false — custom search N matched / did not. Each is validated rather
  * than coerced — an unparseable depth is a 400, not a silent "all pages",
  * which would look like the filter had been applied and found everything.
  *
@@ -13,7 +14,8 @@
 import { NextResponse } from "next/server";
 import { requirePaidPlan } from "@/lib/paid-plan";
 import { csvFilename } from "@/lib/csv-export";
-import { PAGE_COLUMNS, type CrawlPageRow } from "@/lib/site-crawler/csv-columns";
+import { pageColumns, type CrawlPageRow } from "@/lib/site-crawler/csv-columns";
+import { readStoredConfig } from "@/lib/site-crawler/crawl-config";
 import { csvStreamResponse, wantsCsv } from "@/lib/csv-stream";
 import { prisma } from "@/lib/prisma";
 import { crawlRouteError } from "@/lib/site-crawler/http";
@@ -31,7 +33,7 @@ export async function GET(
 
     const crawl = await prisma.crawlJob.findFirst({
       where: { id, tenantId: tenant.tenantId },
-      select: { id: true },
+      select: { id: true, config: true },
     });
     if (!crawl) {
       return NextResponse.json({ error: "Crawl not found", code: "NOT_FOUND" }, { status: 404 });
@@ -78,6 +80,22 @@ export async function GET(
       }
     }
 
+    // Phase 4b custom search: every HTML page stores a count per search (0 included).
+    const searches = readStoredConfig(crawl.config)?.searches ?? [];
+    const searchParam = url.searchParams.get("search");
+    const hitParam = url.searchParams.get("hit");
+    const searchIndex = searchParam === null ? null : Number(searchParam);
+    if (searchIndex !== null && !(Number.isInteger(searchIndex) && searchIndex >= 0 && searchIndex < searches.length)) {
+      return NextResponse.json({ error: "Unknown search", code: "INVALID_REQUEST" }, { status: 400 });
+    }
+    if (searchIndex !== null && hitParam !== "true" && hitParam !== "false") {
+      return NextResponse.json({ error: "hit must be true or false", code: "INVALID_REQUEST" }, { status: 400 });
+    }
+    const searchFilter =
+      searchIndex === null
+        ? {}
+        : { searchHits: hitParam === "true" ? { path: [String(searchIndex)], gt: 0 } : { path: [String(searchIndex)], equals: 0 } };
+
     const inlinkRange = {
       ...(minInlinks.value !== undefined ? { gte: minInlinks.value } : {}),
       ...(maxInlinks.value !== undefined ? { lte: maxInlinks.value } : {}),
@@ -88,6 +106,7 @@ export async function GET(
       ...(inSitemapParam !== null ? { inSitemap: inSitemapParam === "true" } : {}),
       ...(depth.value !== undefined ? { depth: depth.value } : {}),
       ...(Object.keys(inlinkRange).length > 0 ? { inlinkCount: inlinkRange } : {}),
+      ...searchFilter,
     };
 
     // CSV branches after validation and the tenant-scoped crawl lookup, so it
@@ -95,7 +114,7 @@ export async function GET(
     // unparseable filter. A response format, not a second access surface.
     if (wantsCsv(url)) {
       return csvStreamResponse<CrawlPageRow>({
-        columns: PAGE_COLUMNS,
+        columns: pageColumns(searches.map((s) => s.name)),
         filename: csvFilename("site-crawler-pages"),
         cursorOf: (row) => row.id,
         fetchPage: (cursor, take) =>
@@ -122,6 +141,7 @@ export async function GET(
               redirectTarget: true,
               contentType: true,
               foundOn: true,
+              searchHits: true,
             },
           }),
       });
@@ -152,6 +172,7 @@ export async function GET(
           inlinkCount: true,
           inSitemap: true,
           foundOn: true,
+          searchHits: true,
           _count: { select: { issues: true } },
         },
       }),
@@ -176,6 +197,7 @@ export async function GET(
         inlinkCount: r.inlinkCount,
         inSitemap: r.inSitemap,
         foundOn: r.foundOn,
+        searchHits: (r.searchHits as Record<string, number> | null) ?? null,
         issueCount: r._count.issues,
       })),
       page,

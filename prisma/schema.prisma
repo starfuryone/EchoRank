@@ -2376,7 +2376,7 @@ model CrawlPage {
   imgSrcs             String[]
   /// Last-Modified response header, as sent (sitemap lastmod source).
   lastModified        String?
-  /// Phase 4b custom search: {"<search index>": matches}, only searches that matched.
+  /// Phase 4b custom search: {"<search index>": matches} for every search, 0 included; null on non-HTML pages.
   searchHits          Json?
   /// Phase 4b: indexes into the crawl's config.segments this page fell in.
   segmentIds          Int[]    @db.SmallInt

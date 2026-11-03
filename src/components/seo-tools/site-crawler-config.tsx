@@ -17,7 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import type { SiteCrawlerCopy } from "@/lib/i18n/dashboard";
 import { flag } from "@/lib/flags";
-import { ExtractorsEditor } from "./site-crawler-config-4b";
+import { ExtractorsEditor, SearchesEditor } from "./site-crawler-config-4b";
 import {
   CONFIG_LIMITS,
   type ConfigProblem,
@@ -156,7 +156,9 @@ export function toInput(d: Draft): CrawlConfigInput {
 /** One server-side problem as a sentence. */
 export function problemText(p: ConfigProblem, t: T, t4b: T4b): string {
   if (p.code === "over_plan_cap") return t4b.problemCap(String(p.limit));
-  if (p.code === "invalid_expression") return t4b.problemExtractor(String(p.index + 1));
+  if (p.code === "invalid_expression") {
+    return p.field === "searches" ? t4b.problemSearch(String(p.index + 1)) : t4b.problemExtractor(String(p.index + 1));
+  }
   if (p.code === "requires_verified_site") return t.problemVerified(p.field);
   if (p.code === "invalid_pattern") return t.problemPattern(p.pattern);
   if (p.code === "reserved_header") return t.problemHeader(p.name);
@@ -471,6 +473,15 @@ export function CrawlConfigSection({
             cap={caps.extractors}
             capText={String(caps.extractors)}
             onChange={(v) => set("extractors", v)}
+          />
+        )}
+        {flag("crawl.extraction") && (
+          <SearchesEditor
+            t={t4b}
+            value={draft.searches}
+            cap={caps.searches}
+            capText={String(caps.searches)}
+            onChange={(v) => set("searches", v)}
           />
         )}
 

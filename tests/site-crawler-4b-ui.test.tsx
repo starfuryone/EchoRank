@@ -13,7 +13,9 @@ vi.mock("@/lib/flags", async (importOriginal) => {
 
 import { SITE_CRAWLER_COPY, type DashLocale } from "@/lib/i18n/dashboard";
 import { problemText } from "@/components/seo-tools/site-crawler-config";
-import { ExtractorsEditor, PRESET_GROUPS, withPreset } from "@/components/seo-tools/site-crawler-config-4b";
+import { ExtractorsEditor, PRESET_GROUPS, SearchesEditor, withPreset } from "@/components/seo-tools/site-crawler-config-4b";
+import { PagesPanel, searchHitsText } from "@/components/seo-tools/site-crawler-panels";
+import { EMPTY_PAGE_FILTERS } from "@/lib/site-crawler/types";
 import { ExtractionPanel, extractionQuery } from "@/components/seo-tools/site-crawler-extraction";
 import { crawlTabs } from "@/components/seo-tools/site-crawler-client";
 import { EXTRACTOR_PRESETS, type Extractor } from "@/lib/site-crawler/crawl-config";
@@ -80,11 +82,47 @@ describe("Extraction tab", () => {
   });
 });
 
+describe("custom search", () => {
+  it.each(LOCALES)("%s: the search editor renders its rows and add button", (l) => {
+    const t = SITE_CRAWLER_COPY[l].p4b;
+    const html = renderToStaticMarkup(
+      <SearchesEditor t={t} value={[{ name: "GTM", pattern: "googletagmanager", isRegex: false }]} cap={2} capText="2" onChange={() => {}} />,
+    );
+    expect(html).toContain(t.srAdd);
+    expect(html).toContain('value="googletagmanager"');
+    expect(html).not.toMatch(UNDEFINED);
+  });
+
+  it.each(LOCALES)("%s: Pages shows the search column, its filter and the CSV link", (l) => {
+    const t = SITE_CRAWLER_COPY[l];
+    const int = new Intl.NumberFormat(l);
+    const data = {
+      pages: [{ id: "p1", url: "https://x.com/", statusCode: 200, title: "T", depth: 0, inlinkCount: 1, inSitemap: true, wordCount: 1, issueCount: 0, searchHits: { "0": 12, "1": 0 } }],
+      page: 1, pageSize: 50, total: 1, totalPages: 1,
+    };
+    const html = renderToStaticMarkup(
+      <PagesPanel data={data} filters={EMPTY_PAGE_FILTERS} onFilters={() => {}} onPage={() => {}} searchNames={["GTM", "Price"]} csvHref="/csv" t={t} int={int} />,
+    );
+    expect(html).toContain(t.p4b.colSearch);
+    expect(html).toContain(t.p4b.filterSearchNone("Price"));
+    expect(html).toContain("GTM: 12");
+    expect(html).toContain('href="/csv"');
+    expect(html).not.toMatch(UNDEFINED);
+  });
+
+  it("lists only the searches that matched", () => {
+    const int = new Intl.NumberFormat("en");
+    expect(searchHitsText({ "0": 0, "1": 3 }, ["A", "B"], int)).toBe("B: 3");
+    expect(searchHitsText(null, ["A"], int)).toBe("—");
+  });
+});
+
 describe("4b problems", () => {
   it.each(LOCALES)("%s: names the cap and the bad expression", (l) => {
     const c = SITE_CRAWLER_COPY[l];
     expect(problemText({ field: "extractors", code: "over_plan_cap", limit: 3 }, c.p4a, c.p4b)).toContain("3");
     expect(problemText({ field: "extractors", code: "invalid_expression", index: 1, reason: "invalid_xpath" }, c.p4a, c.p4b)).toContain("2");
+    expect(problemText({ field: "searches", code: "invalid_expression", index: 0, reason: "unsafe_regex" }, c.p4a, c.p4b)).toBe(c.p4b.problemSearch("1"));
   });
 
   it("de-CH copy uses ss, never ß", () => {

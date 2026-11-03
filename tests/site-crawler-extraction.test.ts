@@ -93,13 +93,13 @@ describe("custom search", () => {
     expect(hits["0"] ?? 0).toBe(n);
   });
 
-  it("records only searches that matched, by index", () => {
+  it("records every search by index, 0 when it did not match", () => {
     const hits = run([], HTML, [
       { name: "a", pattern: "nope", isRegex: false },
       { name: "b", pattern: "aaa", isRegex: false },
       { name: "c", pattern: "h1", isRegex: false },
     ]).searchHits;
-    expect(hits).toEqual({ "2": 2 });
+    expect(hits).toEqual({ "0": 0, "1": 0, "2": 2 });
   });
 });
 
@@ -115,6 +115,7 @@ describe("regex budget", () => {
     const out = extractor.run(cheerio.load(html), html, now);
     expect(out.timedOut).toBe(true);
     expect(out.values.get(0)!.length).toBeLessThan(8);
+    // The budget ran out before the search started: unknown, so no count rather than a false 0.
     expect(out.searchHits).toEqual({});
   });
 });

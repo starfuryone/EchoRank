@@ -29,6 +29,7 @@ import type {
   PageFilters,
   RedirectPage,
 } from "@/lib/site-crawler/types";
+import { EMPTY_PAGE_FILTERS } from "@/lib/site-crawler/types";
 
 interface Common {
   t: SiteCrawlerCopy;
@@ -352,12 +353,20 @@ export function RedirectsPanel({
   );
 }
 
+/** The searches that matched on a page, "name: count", or a dash. */
+export function searchHitsText(hits: Record<string, number> | null | undefined, names: readonly string[], int: Intl.NumberFormat): string {
+  const found = names.flatMap((n, i) => ((hits?.[String(i)] ?? 0) > 0 ? [`${n}: ${int.format(hits![String(i)]!)}`] : []));
+  return found.length ? found.join(", ") : "—";
+}
+
 export function PagesPanel({
   data,
   filters,
   onFilters,
   onPage,
   onInlinks,
+  searchNames = [],
+  csvHref,
   t,
   int,
 }: Common & {
@@ -367,6 +376,10 @@ export function PagesPanel({
   onPage: (p: number) => void;
   /** Phase 4a: open the Inlinks panel for a row. Absent = no link-graph column. */
   onInlinks?: (row: { id: string; url: string }) => void;
+  /** Phase 4b: the crawl's custom searches, by index. Empty = no search column or filter. */
+  searchNames?: string[];
+  /** The pages CSV for the current filters. */
+  csvHref?: string;
 }) {
   const set = (key: keyof PageFilters, value: string) => onFilters({ ...filters, [key]: value });
 
@@ -403,13 +416,33 @@ export function PagesPanel({
             onChange={(e) => set("minInlinks", e.target.value.replace(/\D/g, ""))}
           />
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => onFilters({ inSitemap: "", depth: "", minInlinks: "" })}
-        >
+        {searchNames.length > 0 && (
+          <div className="w-56">
+            <Select
+              aria-label={t.p4b.colSearch}
+              value={filters.search}
+              onChange={(e) => set("search", e.target.value)}
+              options={[
+                { value: "", label: t.p4b.filterSearchAll },
+                ...searchNames.flatMap((n, i) => [
+                  { value: `${i}:hit`, label: t.p4b.filterSearchHit(n) },
+                  { value: `${i}:none`, label: t.p4b.filterSearchNone(n) },
+                ]),
+              ]}
+            />
+          </div>
+        )}
+        <Button variant="outline" size="sm" onClick={() => onFilters(EMPTY_PAGE_FILTERS)}>
           {t.filterClear}
         </Button>
+        {csvHref && (
+          <a
+            href={csvHref}
+            className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1 text-xs font-medium text-gray-700 hover:border-gray-300"
+          >
+            {t.exportCsv}
+          </a>
+        )}
       </div>
 
       {!data || data.pages.length === 0 ? (
@@ -425,6 +458,7 @@ export function PagesPanel({
                   <th scope="col" className="py-2 pr-3">{t.colInlinks}</th>
                   <th scope="col" className="py-2 pr-3">{t.colSitemap}</th>
                   {onInlinks && <th scope="col" className="py-2 pr-3">{t.p4a.colFoundOn}</th>}
+                  {searchNames.length > 0 && <th scope="col" className="py-2 pr-3">{t.p4b.colSearch}</th>}
                   <th scope="col" className="py-2">{t.issuesTitle}</th>
                 </tr>
               </thead>
@@ -458,6 +492,9 @@ export function PagesPanel({
                           {row.foundOn ?? "—"}
                         </span>
                       </td>
+                    )}
+                    {searchNames.length > 0 && (
+                      <td className="py-2 pr-3 text-xs text-gray-600">{searchHitsText(row.searchHits, searchNames, int)}</td>
                     )}
                     <td className="py-2 tabular-nums text-gray-600">
                       {int.format(row.issueCount)}
