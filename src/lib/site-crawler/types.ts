@@ -135,6 +135,17 @@ export interface CrawlSummaryDto {
   issuesByKind?: Record<RuleKindDto, number>;
   /** True when the tallies were counted on read (an older crawl). */
   computed?: boolean;
+  /** Phase 4b: pages and issue totals per segment (no segment filter). */
+  segments?: SegmentOverviewDto[];
+  /** Phase 4b: the segment the totals and tallies were narrowed to. */
+  segment?: { index: number; name: string; pages: number };
+}
+
+export interface SegmentOverviewDto {
+  index: number;
+  name: string;
+  pages: number;
+  totals: SeverityCounts;
 }
 
 export type RuleKindDto = "issue" | "warning" | "opportunity";
@@ -152,6 +163,8 @@ export interface PartialSummaryDto {
   issuesByKind: Record<RuleKindDto, number>;
   totals: SeverityCounts;
   computed: boolean;
+  segments?: SegmentOverviewDto[];
+  segment?: { index: number; name: string; pages: number };
 }
 
 export type DuplicateKind = "title" | "meta" | "content";

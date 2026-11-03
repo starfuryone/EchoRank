@@ -14,14 +14,21 @@ import { Prisma } from "@/generated/prisma";
 import { prisma } from "@/lib/prisma";
 import type { BrokenLinkRow, InlinkRow, RedirectChainRow } from "./csv-columns";
 
-export async function brokenLinksPage(jobId: string, cursor: string | null, take: number): Promise<BrokenLinkRow[]> {
+/** `segment` (Phase 4b) keeps links whose SOURCE page is in that segment. */
+export async function brokenLinksPage(
+  jobId: string,
+  cursor: string | null,
+  take: number,
+  segment: number | null = null,
+): Promise<BrokenLinkRow[]> {
   return prisma.$queryRaw<BrokenLinkRow[]>`
-    SELECT l."id", f."url" AS "source", l."toUrl" AS "target", l."anchor", t."statusCode"
+    SELECT l."id", f."url" AS "source", l."toUrl" AS "target", l."anchor", t."statusCode", f."segmentIds"
     FROM "crawl_links" l
     JOIN "crawl_pages" t ON t."id" = l."toPageId"
     JOIN "crawl_pages" f ON f."id" = l."fromPageId"
     WHERE l."crawlJobId" = ${jobId}
       AND (t."statusCode" >= 400 OR (t."statusCode" IS NULL AND t."fetchMs" IS NOT NULL))
+      ${segment === null ? Prisma.empty : Prisma.sql`AND f."segmentIds" @> ARRAY[${segment}]::smallint[]`}
       ${cursor ? Prisma.sql`AND l."id" > ${cursor}` : Prisma.empty}
     ORDER BY l."id"
     LIMIT ${take}`;
@@ -42,12 +49,22 @@ export async function inlinksPage(
   return rows.map((r) => ({ id: r.id, source: r.fromPage.url, anchor: r.anchor, nofollow: r.nofollow }));
 }
 
-export async function redirectChainsPage(jobId: string, cursor: string | null, take: number): Promise<RedirectChainRow[]> {
+export async function redirectChainsPage(
+  jobId: string,
+  cursor: string | null,
+  take: number,
+  segment: number | null = null,
+): Promise<RedirectChainRow[]> {
   return prisma.crawlPage.findMany({
-    where: { crawlJobId: jobId, redirectChain: { not: Prisma.DbNull }, ...(cursor ? { id: { gt: cursor } } : {}) },
+    where: {
+      crawlJobId: jobId,
+      redirectChain: { not: Prisma.DbNull },
+      ...(segment === null ? {} : { segmentIds: { has: segment } }),
+      ...(cursor ? { id: { gt: cursor } } : {}),
+    },
     orderBy: { id: "asc" },
     take,
-    select: { id: true, url: true, foundOn: true, redirectChain: true },
+    select: { id: true, url: true, foundOn: true, redirectChain: true, segmentIds: true },
   });
 }
 

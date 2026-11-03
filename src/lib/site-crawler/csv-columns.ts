@@ -10,6 +10,19 @@
 
 import type { CsvColumn } from "@/lib/csv-export";
 import { RULE_COPY } from "@/lib/crawl-rules";
+import { segmentCell, type SegmentDef } from "./segments";
+
+/**
+ * Phase 4b: append a "Segment" column (the page's segment names, "; "-joined)
+ * when the crawl ran with segments. Crawls without any export as before.
+ */
+export function withSegmentColumn<R>(
+  columns: readonly CsvColumn<R>[],
+  defs: readonly SegmentDef[],
+  idsOf: (row: R) => number[] | null | undefined,
+): CsvColumn<R>[] {
+  return defs.length ? [...columns, { header: "Segment", value: (r) => segmentCell(idsOf(r), defs) }] : [...columns];
+}
 
 /** The row shape the CSV columns and the Prisma select agree on. */
 export interface CrawlIssueRow {
@@ -17,7 +30,7 @@ export interface CrawlIssueRow {
   type: string;
   severity: string;
   detail: string | null;
-  crawlPage: { url: string; statusCode: number | null };
+  crawlPage: { url: string; statusCode: number | null; segmentIds?: number[] };
 }
 
 /**
@@ -62,6 +75,7 @@ export interface CrawlPageRow {
   foundOn: string | null;
   /** Phase 4b: {"<search index>": matches}; null on non-HTML pages. */
   searchHits?: unknown;
+  segmentIds?: number[];
 }
 
 /**
@@ -98,6 +112,16 @@ export interface RuleListRow {
   priority: string;
   urls: number;
   share: number;
+  /** Phase 4b: findings per segment, by segment index. */
+  bySegment?: number[];
+}
+
+/** The rule list plus one count column per segment ("Segment: <name>"). */
+export function ruleListColumns(defs: readonly SegmentDef[]): CsvColumn<RuleListRow>[] {
+  return [
+    ...RULE_LIST_COLUMNS,
+    ...defs.map((d, i): CsvColumn<RuleListRow> => ({ header: `Segment: ${d.name}`, value: (r) => r.bySegment?.[i] ?? 0 })),
+  ];
 }
 
 export const RULE_LIST_COLUMNS: CsvColumn<RuleListRow>[] = [
@@ -117,7 +141,7 @@ export interface RulePageRow {
   type: string;
   evidence: unknown;
   detail: string | null;
-  crawlPage: { url: string; statusCode: number | null; foundOn: string | null };
+  crawlPage: { url: string; statusCode: number | null; foundOn: string | null; segmentIds?: number[] };
 }
 
 /** Evidence as "key: value · key: value"; pre-3a rows fall back to their detail string. */
@@ -152,6 +176,8 @@ export interface BrokenLinkRow {
   target: string;
   anchor: string | null;
   statusCode: number | null;
+  /** The source page's segments. */
+  segmentIds?: number[];
 }
 
 /** Anchors and URLs are crawled-site text: untrusted, formula-guarded by the serializer. */
@@ -169,6 +195,7 @@ export interface RedirectChainRow {
   url: string;
   foundOn: string | null;
   redirectChain: unknown;
+  segmentIds?: number[];
 }
 
 function hops(r: RedirectChainRow): { url: string; status: number }[] {
@@ -223,11 +250,11 @@ export interface ExtractionRow {
   segment: string;
 }
 
-/** URL, one column per extractor (values " | "-joined), then segment. Headers are the extractor names. */
-export function extractionColumns(names: readonly string[]): CsvColumn<ExtractionRow>[] {
+/** URL, one column per extractor (values " | "-joined), then Segment when the crawl has segments. Headers are the extractor names. */
+export function extractionColumns(names: readonly string[], hasSegments: boolean): CsvColumn<ExtractionRow>[] {
   return [
     { header: "URL", value: (r) => r.url },
     ...names.map((name, i): CsvColumn<ExtractionRow> => ({ header: name, value: (r) => r.values[i]?.join(" | ") ?? "" })),
-    { header: "Segment", value: (r) => r.segment },
+    ...(hasSegments ? [{ header: "Segment", value: (r: ExtractionRow) => r.segment }] : []),
   ];
 }

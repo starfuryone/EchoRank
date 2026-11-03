@@ -18,10 +18,17 @@ import { requirePaidPlan } from "@/lib/paid-plan";
 import { prisma } from "@/lib/prisma";
 import { crawlRouteError } from "@/lib/site-crawler/http";
 import { getIssueTotals } from "@/lib/site-crawler/issue-totals";
-import { ruleTalliesFor } from "@/lib/site-crawler/rule-summary";
+import { computeRuleTallies, ruleTalliesFor } from "@/lib/site-crawler/rule-summary";
+import {
+  issueInSegment,
+  pageInSegment,
+  segmentIssueTotals,
+  segmentOverview,
+  segmentScope,
+} from "@/lib/site-crawler/segment-filter";
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
@@ -30,7 +37,7 @@ export async function GET(
 
     const row = await prisma.crawlJob.findFirst({
       where: { id, tenantId: tenant.tenantId },
-      select: { id: true, status: true, summary: true },
+      select: { id: true, status: true, summary: true, config: true },
     });
 
     if (!row || row.status !== "COMPLETED") {
@@ -40,12 +47,30 @@ export async function GET(
       );
     }
 
-    const [{ issues, issuesByKind, computed }, totals] = await Promise.all([
+    // Phase 4b: ?segment=N narrows the issue totals and per-rule tallies to
+    // that segment's pages (`segment` says which, and how many pages). The
+    // rest of the stored summary stays whole-crawl. Without it, a crawl that
+    // ran with segments also gets `segments`: pages and totals per segment.
+    const scope = segmentScope(new URL(request.url), row.config);
+    if (scope.index !== null) {
+      const [{ issues, issuesByKind }, totals, pages] = await Promise.all([
+        computeRuleTallies(row.id, issueInSegment(scope)),
+        segmentIssueTotals(row.id, scope),
+        prisma.crawlPage.count({ where: { crawlJobId: row.id, ...pageInSegment(scope) } }),
+      ]);
+      const segment = { index: scope.index, name: scope.defs[scope.index]!.name, pages };
+      if (row.summary === null) return NextResponse.json({ partial: true, issues, issuesByKind, totals, computed: true, segment });
+      return NextResponse.json({ ...(row.summary as object), issues, issuesByKind, totals, computed: true, segment });
+    }
+
+    const [{ issues, issuesByKind, computed }, totals, segments] = await Promise.all([
       ruleTalliesFor(row.id, row.summary),
       getIssueTotals(row.id, row.summary),
+      segmentOverview(row.id, scope.defs),
     ]);
-    if (row.summary === null) return NextResponse.json({ partial: true, issues, issuesByKind, totals, computed });
-    return NextResponse.json({ ...(row.summary as object), issues, issuesByKind, totals, computed });
+    const perSegment = segments.length ? { segments } : {};
+    if (row.summary === null) return NextResponse.json({ partial: true, issues, issuesByKind, totals, computed, ...perSegment });
+    return NextResponse.json({ ...(row.summary as object), issues, issuesByKind, totals, computed, ...perSegment });
   } catch (err) {
     return crawlRouteError(err);
   }

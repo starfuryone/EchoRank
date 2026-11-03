@@ -17,6 +17,7 @@ import { NextResponse } from "next/server";
 import { requirePaidPlan } from "@/lib/paid-plan";
 import { Prisma } from "@/generated/prisma";
 import { prisma } from "@/lib/prisma";
+import { segmentScope, sqlInSegment } from "@/lib/site-crawler/segment-filter";
 import { crawlRouteError } from "@/lib/site-crawler/http";
 
 const DEFAULT_PAGE_SIZE = 20;
@@ -43,7 +44,7 @@ export async function GET(
 
     const crawl = await prisma.crawlJob.findFirst({
       where: { id, tenantId: tenant.tenantId },
-      select: { id: true },
+      select: { id: true, config: true },
     });
     if (!crawl) {
       return NextResponse.json({ error: "Crawl not found", code: "NOT_FOUND" }, { status: 404 });
@@ -64,6 +65,8 @@ export async function GET(
       Math.max(1, Number(url.searchParams.get("pageSize") ?? DEFAULT_PAGE_SIZE) || DEFAULT_PAGE_SIZE),
     );
     const offset = (page - 1) * pageSize;
+    // Phase 4b: one segment's pages only. A group counts members inside the segment.
+    const seg = sqlInSegment(segmentScope(url, crawl.config), "crawl_pages");
 
     // Column names are literals per branch, never interpolated.
     const groups: GroupRow[] =
@@ -72,7 +75,7 @@ export async function GET(
             SELECT title AS value, count(*)::int AS members,
                    (array_agg(url ORDER BY url))[1:${MEMBERS_PER_GROUP}] AS urls
             FROM crawl_pages
-            WHERE "crawlJobId" = ${crawl.id}
+            WHERE "crawlJobId" = ${crawl.id} ${seg}
               AND "statusCode" >= 200 AND "statusCode" < 300
               AND "contentType" LIKE 'text/html%'
               AND title IS NOT NULL AND title <> ''
@@ -84,7 +87,7 @@ export async function GET(
               SELECT "metaDescription" AS value, count(*)::int AS members,
                      (array_agg(url ORDER BY url))[1:${MEMBERS_PER_GROUP}] AS urls
               FROM crawl_pages
-              WHERE "crawlJobId" = ${crawl.id}
+              WHERE "crawlJobId" = ${crawl.id} ${seg}
                 AND "statusCode" >= 200 AND "statusCode" < 300
                 AND "contentType" LIKE 'text/html%'
                 AND "metaDescription" IS NOT NULL AND "metaDescription" <> ''
@@ -95,7 +98,7 @@ export async function GET(
               SELECT "contentHash" AS value, count(*)::int AS members,
                      (array_agg(url ORDER BY url))[1:${MEMBERS_PER_GROUP}] AS urls
               FROM crawl_pages
-              WHERE "crawlJobId" = ${crawl.id}
+              WHERE "crawlJobId" = ${crawl.id} ${seg}
                 AND "statusCode" >= 200 AND "statusCode" < 300
                 AND "contentType" LIKE 'text/html%'
                 AND "contentHash" IS NOT NULL
@@ -111,7 +114,7 @@ export async function GET(
     const totalRows = await prisma.$queryRaw<{ total: bigint }[]>`
       SELECT count(*)::bigint AS total FROM (
         SELECT 1 FROM crawl_pages
-        WHERE "crawlJobId" = ${crawl.id}
+        WHERE "crawlJobId" = ${crawl.id} ${seg}
           AND "statusCode" >= 200 AND "statusCode" < 300
           AND "contentType" LIKE 'text/html%'
           AND ${column} IS NOT NULL AND ${column} <> ''

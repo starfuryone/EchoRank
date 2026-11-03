@@ -31,10 +31,13 @@ export function sitemapHref(
 
 export function CrawlTools({
   crawl,
+  segment = null,
   t,
   kept,
   onUpdated,
 }: {
+  /** Phase 4b: the selected segment (index); the exports follow it. */
+  segment?: string | null;
   crawl: CrawlDto;
   t: T;
   kept: string;
@@ -49,6 +52,7 @@ export function CrawlTools({
   const [images, setImages] = useState(false);
 
   const purged = Boolean(crawl.dataPurgedAt);
+  const segQ = segment ? `&segment=${encodeURIComponent(segment)}` : "";
   const settled = crawl.status === "COMPLETED" || crawl.status === "FAILED" || crawl.status === "CANCELLED";
 
   async function togglePin() {
@@ -79,10 +83,10 @@ export function CrawlTools({
         )}
         {!purged && flag("crawl.links") && (
           <>
-            <a href={`/api/seo/v1/crawl/${crawl.id}/export?view=broken-links`} className={linkClass}>
+            <a href={`/api/seo/v1/crawl/${crawl.id}/export?view=broken-links${segQ}`} className={linkClass}>
               <Download className="h-4 w-4" aria-hidden="true" /> {t.exportBrokenLinks}
             </a>
-            <a href={`/api/seo/v1/crawl/${crawl.id}/export?view=redirects`} className={linkClass}>
+            <a href={`/api/seo/v1/crawl/${crawl.id}/export?view=redirects${segQ}`} className={linkClass}>
               <Download className="h-4 w-4" aria-hidden="true" /> {t.exportRedirectHops}
             </a>
           </>

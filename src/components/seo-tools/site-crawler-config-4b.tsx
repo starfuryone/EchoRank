@@ -7,6 +7,7 @@
 //
 // Client-safe imports only: crawl-config.ts is dependency-free (zod).
 
+import { useEffect, useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -21,6 +22,7 @@ import {
   type ExtractorKind,
   type ExtractorPreset,
 } from "@/lib/site-crawler/crawl-config";
+import { SEGMENT_NAME_CHARS, STATUS_CLASSES, SegmentDefSchema, type SegmentDef, type SegmentRule, type StatusClass } from "@/lib/site-crawler/segments";
 
 type T4b = SiteCrawlerCopy["p4b"];
 
@@ -183,5 +185,167 @@ export function SearchesEditor({
         <p className="text-xs text-gray-500">{t.capReached(capText)}</p>
       )}
     </div>
+  );
+}
+
+const RULE_KINDS = ["urlPattern", "extractorValue", "depthMax", "statusClass"] as const;
+
+function ruleKindLabel(k: SegmentRule["kind"], t: T4b): string {
+  if (k === "urlPattern") return t.ruleUrlPattern;
+  if (k === "extractorValue") return t.ruleExtractorValue;
+  if (k === "depthMax") return t.ruleDepthMax;
+  return t.ruleStatusClass;
+}
+
+/** A fresh rule of a kind, keeping what can be kept. */
+export function blankRule(kind: SegmentRule["kind"]): SegmentRule {
+  if (kind === "urlPattern") return { kind, pattern: "" };
+  if (kind === "extractorValue") return { kind, index: 0, equals: "" };
+  if (kind === "depthMax") return { kind, max: 1 };
+  return { kind, cls: "2xx" };
+}
+
+/** The segments as the API takes them, or null when one is incomplete. */
+export function segmentsPayload(list: SegmentDef[]): SegmentDef[] | null {
+  const parsed = list.map((s) => SegmentDefSchema.safeParse(s));
+  return parsed.every((p) => p.success) ? parsed.map((p) => p.data!) : null;
+}
+
+/**
+ * Segments are saved per site, not per crawl: "Save for this site" writes
+ * them, and every later crawl of the host copies them.
+ */
+export function SegmentsEditor({
+  t,
+  host,
+  cap,
+  extractorNames,
+}: {
+  t: T4b;
+  host: string;
+  cap: number;
+  /** The draft's extractors, for extracted-value rules. */
+  extractorNames: string[];
+}) {
+  const [list, setList] = useState<SegmentDef[]>([]);
+  const [status, setStatus] = useState<"idle" | "saving" | "saved" | "failed">("idle");
+
+  useEffect(() => {
+    let cancelled = false;
+    void fetch(`/api/seo/v1/crawl/segments?host=${encodeURIComponent(host)}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { segments: SegmentDef[] } | null) => {
+        if (cancelled) return;
+        setList(d?.segments ?? []);
+        setStatus("idle");
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [host]);
+
+  const change = (next: SegmentDef[]) => {
+    setList(next);
+    setStatus("idle");
+  };
+  const update = (i: number, patch: Partial<SegmentDef>) => change(list.map((s, j) => (j === i ? { ...s, ...patch } : s)));
+  const setRule = (i: number, rule: SegmentRule) => update(i, { rule });
+
+  async function save() {
+    const segments = segmentsPayload(list);
+    if (!segments) return setStatus("failed");
+    setStatus("saving");
+    const res = await fetch("/api/seo/v1/crawl/segments", {
+      method: "PUT",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ host, segments }),
+    }).catch(() => null);
+    setStatus(res?.ok ? "saved" : "failed");
+  }
+
+  return (
+    <div className="space-y-2">
+      <p className="text-sm font-medium text-gray-900">{t.segSection}</p>
+      <p className="text-xs text-gray-500">{t.segHelp(String(cap))}</p>
+      {list.map((s, i) => (
+        <div key={i} className="grid gap-2 rounded-lg border border-gray-100 p-2 sm:grid-cols-[9rem_11rem_1fr_auto]">
+          <Input aria-label={t.segName} placeholder={t.segName} maxLength={SEGMENT_NAME_CHARS} value={s.name} onChange={(ev) => update(i, { name: ev.target.value })} />
+          <Select
+            aria-label={t.segRule}
+            value={s.rule.kind}
+            onChange={(ev) => setRule(i, blankRule(ev.target.value as SegmentRule["kind"]))}
+            options={RULE_KINDS.map((k) => ({ value: k, label: ruleKindLabel(k, t) }))}
+          />
+          <RuleValue t={t} rule={s.rule} extractorNames={extractorNames} onChange={(r) => setRule(i, r)} />
+          <button type="button" aria-label={t.segRemove} className="text-gray-400 hover:text-gray-700" onClick={() => change(list.filter((_, j) => j !== i))}>
+            <Trash2 className="h-4 w-4" aria-hidden="true" />
+          </button>
+        </div>
+      ))}
+      <div className="flex flex-wrap items-center gap-2">
+        {list.length < cap ? (
+          <Button type="button" size="sm" variant="outline" onClick={() => change([...list, { name: "", rule: blankRule("urlPattern") }])}>
+            <Plus className="h-4 w-4" aria-hidden="true" /> {t.segAdd}
+          </Button>
+        ) : (
+          <p className="text-xs text-gray-500">{t.capReached(String(cap))}</p>
+        )}
+        <Button type="button" size="sm" onClick={() => void save()} disabled={status === "saving"}>
+          {t.segSave}
+        </Button>
+        {status === "saved" && <span className="text-xs text-green-700">{t.segSaved}</span>}
+        {status === "failed" && <span className="text-xs text-red-700">{t.segSaveFailed}</span>}
+      </div>
+    </div>
+  );
+}
+
+function RuleValue({
+  t,
+  rule,
+  extractorNames,
+  onChange,
+}: {
+  t: T4b;
+  rule: SegmentRule;
+  extractorNames: string[];
+  onChange: (r: SegmentRule) => void;
+}) {
+  if (rule.kind === "urlPattern") {
+    return (
+      <Input aria-label={t.ruleUrlPattern} placeholder={t.segPattern} className="font-mono text-xs" maxLength={200} value={rule.pattern} onChange={(ev) => onChange({ ...rule, pattern: ev.target.value })} />
+    );
+  }
+  if (rule.kind === "extractorValue") {
+    if (extractorNames.length === 0) return <p className="self-center text-xs text-gray-500">{t.segNoExtractor}</p>;
+    return (
+      <div className="grid grid-cols-2 gap-2">
+        <Select
+          aria-label={t.segExtractor}
+          value={String(rule.index)}
+          onChange={(ev) => onChange({ ...rule, index: Number(ev.target.value) })}
+          options={extractorNames.map((n, i) => ({ value: String(i), label: n || `#${i + 1}` }))}
+        />
+        <Input aria-label={t.segEquals} placeholder={t.segEquals} maxLength={500} value={rule.equals} onChange={(ev) => onChange({ ...rule, equals: ev.target.value })} />
+      </div>
+    );
+  }
+  if (rule.kind === "depthMax") {
+    return (
+      <Input
+        aria-label={t.segDepth}
+        inputMode="numeric"
+        value={String(rule.max)}
+        onChange={(ev) => onChange({ ...rule, max: Math.min(100, Number(ev.target.value.replace(/\D/g, "") || 0)) })}
+      />
+    );
+  }
+  return (
+    <Select
+      aria-label={t.ruleStatusClass}
+      value={rule.cls}
+      onChange={(ev) => onChange({ ...rule, cls: ev.target.value as StatusClass })}
+      options={STATUS_CLASSES.map((c) => ({ value: c, label: c === "none" ? t.statusNone : c }))}
+    />
   );
 }

@@ -21,7 +21,7 @@ import { readStoredConfig } from "@/lib/site-crawler/crawl-config";
 import { extractionColumns, type ExtractionRow } from "@/lib/site-crawler/csv-columns";
 import { extractionKeysetPage, extractionOffsetPage, extractionWhere } from "@/lib/site-crawler/extraction-rows";
 import { crawlRouteError } from "@/lib/site-crawler/http";
-import { parseSegmentParam } from "@/lib/site-crawler/segments";
+import { segmentScope } from "@/lib/site-crawler/segment-filter";
 
 const DEFAULT_PAGE_SIZE = 50;
 const MAX_PAGE_SIZE = 200;
@@ -38,8 +38,9 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 
     const config = readStoredConfig(crawl.config);
     const extractors = config?.extractors ?? [];
-    const segments = config?.segments ?? [];
     const url = new URL(request.url);
+    const scope = segmentScope(url, crawl.config);
+    const segments = scope.defs;
 
     const extractorRaw = url.searchParams.get("extractor");
     const hasRaw = url.searchParams.get("has");
@@ -53,12 +54,15 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     const where = extractionWhere(crawl.id, {
       extractor,
       has: hasRaw === null ? null : hasRaw === "true",
-      segment: parseSegmentParam(url.searchParams.get("segment"), segments),
+      segment: scope.index,
     });
 
     if (wantsCsv(url)) {
       return csvStreamResponse<ExtractionRow>({
-        columns: extractionColumns(extractors.map((e) => e.name)),
+        columns: extractionColumns(
+          extractors.map((e) => e.name),
+          segments.length > 0,
+        ),
         filename: csvFilename("site-crawler-extraction"),
         cursorOf: (row) => row.id,
         fetchPage: (cursor, take) => extractionKeysetPage(where, cursor, take, extractors.length, segments),

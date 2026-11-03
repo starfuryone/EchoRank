@@ -21,7 +21,8 @@ import { crawlRouteError } from "@/lib/site-crawler/http";
 import { ruleIssueWhere } from "@/lib/site-crawler/rule-summary";
 import { csvFilename } from "@/lib/csv-export";
 import { csvStreamResponse, wantsCsv } from "@/lib/csv-stream";
-import { RULE_PAGE_COLUMNS, type RulePageRow } from "@/lib/site-crawler/csv-columns";
+import { RULE_PAGE_COLUMNS, withSegmentColumn, type RulePageRow } from "@/lib/site-crawler/csv-columns";
+import { issueInSegment, segmentScope } from "@/lib/site-crawler/segment-filter";
 
 const DEFAULT_PAGE_SIZE = 50;
 const MAX_PAGE_SIZE = 200;
@@ -35,7 +36,7 @@ export async function GET(
     const { id, ruleId } = await params;
     const crawl = await prisma.crawlJob.findFirst({
       where: { id, tenantId: tenant.tenantId },
-      select: { id: true },
+      select: { id: true, config: true },
     });
     if (!crawl) {
       return NextResponse.json({ error: "Crawl not found", code: "NOT_FOUND" }, { status: 404 });
@@ -50,12 +51,13 @@ export async function GET(
       MAX_PAGE_SIZE,
       Math.max(1, Number(url.searchParams.get("pageSize") ?? DEFAULT_PAGE_SIZE) || DEFAULT_PAGE_SIZE),
     );
-    const where = ruleIssueWhere(crawl.id, ruleId);
+    const segment = segmentScope(url, crawl.config);
+    const where = { ...ruleIssueWhere(crawl.id, ruleId), ...issueInSegment(segment) };
 
     // After validation and the tenant-scoped lookup, so CSV inherits both.
     if (wantsCsv(url)) {
       return csvStreamResponse<RulePageRow>({
-        columns: RULE_PAGE_COLUMNS,
+        columns: withSegmentColumn(RULE_PAGE_COLUMNS, segment.defs, (r) => r.crawlPage.segmentIds),
         filename: csvFilename(`site-crawler-${ruleId.replace(/[^a-z0-9]+/g, "-")}`),
         cursorOf: (r) => r.id,
         fetchPage: (cursor, take) =>
@@ -69,7 +71,7 @@ export async function GET(
               type: true,
               evidence: true,
               detail: true,
-              crawlPage: { select: { url: true, statusCode: true, foundOn: true } },
+              crawlPage: { select: { url: true, statusCode: true, foundOn: true, segmentIds: true } },
             },
           }),
       });

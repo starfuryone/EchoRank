@@ -19,6 +19,9 @@
  *   ?view=redirects    — every redirecting URL with each hop and its status.
  * No view (or ?view=issues) is the issue export above.
  *
+ * Phase 4b: every view takes ?segment=N (broken links: the SOURCE page's
+ * segment) and, for a crawl that ran with segments, ends with a Segment column.
+ *
  * AUTHENTICATED — do not add /api/seo/v1/* to publicPaths in src/proxy.ts.
  */
 
@@ -32,11 +35,13 @@ import {
   BROKEN_LINK_COLUMNS,
   ISSUE_COLUMNS,
   REDIRECT_CHAIN_COLUMNS,
+  withSegmentColumn,
   type BrokenLinkRow,
   type CrawlIssueRow,
   type RedirectChainRow,
 } from "@/lib/site-crawler/csv-columns";
 import { brokenLinksPage, redirectChainsPage } from "@/lib/site-crawler/link-graph";
+import { issueInSegment, segmentScope } from "@/lib/site-crawler/segment-filter";
 
 const VIEWS = ["issues", "broken-links", "redirects"] as const;
 
@@ -50,41 +55,44 @@ export async function GET(
 
     const crawl = await prisma.crawlJob.findFirst({
       where: { id, tenantId: tenant.tenantId },
-      select: { id: true },
+      select: { id: true, config: true },
     });
     if (!crawl) {
       return NextResponse.json({ error: "Crawl not found", code: "NOT_FOUND" }, { status: 404 });
     }
 
-    const view = new URL(request.url).searchParams.get("view") ?? "issues";
+    const url = new URL(request.url);
+    const view = url.searchParams.get("view") ?? "issues";
+    const segment = segmentScope(url, crawl.config);
     if (!(VIEWS as readonly string[]).includes(view)) {
       return NextResponse.json({ error: "Unknown view", code: "INVALID_REQUEST" }, { status: 400 });
     }
     if (view === "broken-links") {
       return csvStreamResponse<BrokenLinkRow>({
-        columns: BROKEN_LINK_COLUMNS,
+        columns: withSegmentColumn(BROKEN_LINK_COLUMNS, segment.defs, (r) => r.segmentIds),
         filename: csvFilename("site-crawler-broken-links"),
         cursorOf: (row) => row.id,
-        fetchPage: (cursor, take) => brokenLinksPage(crawl.id, cursor, take),
+        fetchPage: (cursor, take) => brokenLinksPage(crawl.id, cursor, take, segment.index),
       });
     }
     if (view === "redirects") {
       return csvStreamResponse<RedirectChainRow>({
-        columns: REDIRECT_CHAIN_COLUMNS,
+        columns: withSegmentColumn(REDIRECT_CHAIN_COLUMNS, segment.defs, (r) => r.segmentIds),
         filename: csvFilename("site-crawler-redirects"),
         cursorOf: (row) => row.id,
-        fetchPage: (cursor, take) => redirectChainsPage(crawl.id, cursor, take),
+        fetchPage: (cursor, take) => redirectChainsPage(crawl.id, cursor, take, segment.index),
       });
     }
 
     return csvStreamResponse<CrawlIssueRow>({
-      columns: ISSUE_COLUMNS,
+      columns: withSegmentColumn(ISSUE_COLUMNS, segment.defs, (r) => r.crawlPage.segmentIds),
       filename: csvFilename("site-crawler-issues"),
       cursorOf: (row) => row.id,
       fetchPage: (cursor, take) =>
         prisma.crawlIssue.findMany({
           where: {
             crawlPage: { crawlJobId: crawl.id },
+            ...issueInSegment(segment),
             ...(cursor ? { id: { gt: cursor } } : {}),
           },
           orderBy: { id: "asc" },
@@ -94,7 +102,7 @@ export async function GET(
             type: true,
             severity: true,
             detail: true,
-            crawlPage: { select: { url: true, statusCode: true } },
+            crawlPage: { select: { url: true, statusCode: true, segmentIds: true } },
           },
         }),
     });

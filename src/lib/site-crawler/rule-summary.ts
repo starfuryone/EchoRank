@@ -11,6 +11,7 @@
 // absent, never a zero — so an old crawl never shows zeroes it did not count.
 
 import "server-only";
+import type { Prisma } from "@/generated/prisma";
 import { RULE_BY_ID, type RuleKind } from "@/lib/crawl-rules";
 import { prisma } from "@/lib/prisma";
 import type { RuleTally } from "./aggregate";
@@ -21,10 +22,11 @@ export interface RuleTallies {
   issuesByKind: Record<RuleKind, number>;
 }
 
-export async function computeRuleTallies(jobId: string): Promise<RuleTallies> {
+/** `extra` narrows the findings counted (Phase 4b: one segment's pages). */
+export async function computeRuleTallies(jobId: string, extra: Prisma.CrawlIssueWhereInput = {}): Promise<RuleTallies> {
   const groups = await prisma.crawlIssue.groupBy({
     by: ["ruleId", "type"],
-    where: { crawlJobId: jobId },
+    where: { crawlJobId: jobId, ...extra },
     _count: { _all: true },
   });
   const issues: Record<string, RuleTally> = {};

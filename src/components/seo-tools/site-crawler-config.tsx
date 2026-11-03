@@ -17,7 +17,7 @@ import { Input } from "@/components/ui/input";
 import { Select } from "@/components/ui/select";
 import type { SiteCrawlerCopy } from "@/lib/i18n/dashboard";
 import { flag } from "@/lib/flags";
-import { ExtractorsEditor, SearchesEditor } from "./site-crawler-config-4b";
+import { ExtractorsEditor, SearchesEditor, SegmentsEditor } from "./site-crawler-config-4b";
 import {
   CONFIG_LIMITS,
   type ConfigProblem,
@@ -483,6 +483,9 @@ export function CrawlConfigSection({
             capText={String(caps.searches)}
             onChange={(v) => set("searches", v)}
           />
+        )}
+        {flag("crawl.segments") && host && (
+          <SegmentsEditor t={t4b} host={host} cap={caps.segments} extractorNames={draft.extractors.map((e) => e.name)} />
         )}
 
         <Toggle id="cfg-save-default" label={t.saveDefault} checked={saveAsDefault} onChange={(v) => { setSaveAsDefault(v); setDirty(true); }} />

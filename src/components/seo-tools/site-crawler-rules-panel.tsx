@@ -25,11 +25,15 @@ interface RuleRow {
   priority: "high" | "medium" | "low";
   urls: number;
   share: number;
+  /** Phase 4b: findings per segment, by segment index. */
+  bySegment?: number[];
 }
 
 interface RulesResponse {
   pagesCrawled: number;
   rules: RuleRow[];
+  /** Phase 4b: the crawl's segment names (empty when filtered to one). */
+  segments?: string[];
 }
 
 interface RulePagesResponse {
@@ -59,7 +63,19 @@ function evidenceText(e: Record<string, unknown>): string {
     .join(" · ");
 }
 
-export function RulesPanel({ crawlId, t, int }: { crawlId: string; t: SiteCrawlerCopy; int: Intl.NumberFormat }) {
+export function RulesPanel({
+  crawlId,
+  segment = null,
+  t,
+  int,
+}: {
+  crawlId: string;
+  /** Phase 4b segment filter (index), or null for the whole crawl. */
+  segment?: string | null;
+  t: SiteCrawlerCopy;
+  int: Intl.NumberFormat;
+}) {
+  const seg = segment === null ? "" : `segment=${encodeURIComponent(segment)}`;
   const [data, setData] = useState<RulesResponse | null>(null);
   const [kind, setKind] = useState<RuleKindDto | "all">("all");
   const [selected, setSelected] = useState<string | null>(null);
@@ -68,7 +84,7 @@ export function RulesPanel({ crawlId, t, int }: { crawlId: string; t: SiteCrawle
 
   useEffect(() => {
     let cancelled = false;
-    void fetch(`/api/seo/v1/crawl/${crawlId}/rules`)
+    void fetch(`/api/seo/v1/crawl/${crawlId}/rules?${seg}`)
       .then((r) => (r.ok ? r.json() : null))
       .then((d: RulesResponse | null) => {
         if (!cancelled) setData(d ?? { pagesCrawled: 0, rules: [] });
@@ -76,12 +92,12 @@ export function RulesPanel({ crawlId, t, int }: { crawlId: string; t: SiteCrawle
     return () => {
       cancelled = true;
     };
-  }, [crawlId]);
+  }, [crawlId, seg]);
 
   useEffect(() => {
     if (!selected) return;
     let cancelled = false;
-    void fetch(`/api/seo/v1/crawl/${crawlId}/rules/${encodeURIComponent(selected)}?page=${page}`)
+    void fetch(`/api/seo/v1/crawl/${crawlId}/rules/${encodeURIComponent(selected)}?page=${page}&${seg}`)
       .then((r) => (r.ok ? r.json() : null))
       .then((d: RulePagesResponse | null) => {
         if (!cancelled) setPages(d);
@@ -89,13 +105,15 @@ export function RulesPanel({ crawlId, t, int }: { crawlId: string; t: SiteCrawle
     return () => {
       cancelled = true;
     };
-  }, [crawlId, selected, page]);
+  }, [crawlId, selected, page, seg]);
 
   if (!data) return null;
   if (data.rules.length === 0) return <p className="py-8 text-center text-sm text-gray-500">{t.rulesNone}</p>;
 
   const rows = kind === "all" ? data.rules : data.rules.filter((r) => r.kind === kind);
   const copy = selected ? RULE_COPY[selected] : undefined;
+  // Per-segment counts: one column per segment, when the crawl ran with segments and no single one is selected.
+  const segmentNames = data.segments ?? [];
 
   return (
     <div className="space-y-3">
@@ -117,7 +135,7 @@ export function RulesPanel({ crawlId, t, int }: { crawlId: string; t: SiteCrawle
         ))}
         {t.rulesEnglishOnly && <span className="text-xs text-gray-400">{t.rulesEnglishOnly}</span>}
         {/* The whole table, every kind: the file is the full list, not this filter of it. */}
-        <a href={`/api/seo/v1/crawl/${crawlId}/rules?format=csv`} className={`${CSV_LINK} ml-auto`}>
+        <a href={`/api/seo/v1/crawl/${crawlId}/rules?format=csv&${seg}`} className={`${CSV_LINK} ml-auto`}>
           <Download className="h-3.5 w-3.5" aria-hidden="true" />
           {t.exportCsv}
         </a>
@@ -134,6 +152,11 @@ export function RulesPanel({ crawlId, t, int }: { crawlId: string; t: SiteCrawle
                   <th className="px-3 py-2">{t.rulesColPriority}</th>
                   <th className="px-3 py-2 text-right">{t.rulesColUrls}</th>
                   <th className="px-3 py-2 text-right">{t.rulesColShare}</th>
+                  {segmentNames.map((n, i) => (
+                    <th key={i} className="px-3 py-2 text-right normal-case" title={t.p4b.segColTitle(n)}>
+                      {n}
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody>
@@ -159,6 +182,11 @@ export function RulesPanel({ crawlId, t, int }: { crawlId: string; t: SiteCrawle
                     <td className="px-3 py-2 text-gray-600">{priorityLabel(r.priority, t)}</td>
                     <td className="px-3 py-2 text-right tabular-nums">{int.format(r.urls)}</td>
                     <td className="px-3 py-2 text-right tabular-nums text-gray-500">{r.share}%</td>
+                    {segmentNames.map((_, i) => (
+                      <td key={i} className="px-3 py-2 text-right tabular-nums text-gray-500">
+                        {int.format(r.bySegment?.[i] ?? 0)}
+                      </td>
+                    ))}
                   </tr>
                 ))}
               </tbody>
@@ -185,7 +213,7 @@ export function RulesPanel({ crawlId, t, int }: { crawlId: string; t: SiteCrawle
                       {pages ? ` (${int.format(pages.total)})` : ""}
                     </h4>
                     <a
-                      href={`/api/seo/v1/crawl/${crawlId}/rules/${encodeURIComponent(selected)}?format=csv`}
+                      href={`/api/seo/v1/crawl/${crawlId}/rules/${encodeURIComponent(selected)}?format=csv&${seg}`}
                       className={CSV_LINK}
                     >
                       <Download className="h-3.5 w-3.5" aria-hidden="true" />

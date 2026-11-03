@@ -2,7 +2,8 @@
  * GET /api/seo/v1/crawl/[id]/pages — paginated crawled pages.
  *
  * Filters: inSitemap, minInlinks/maxInlinks, depth, and (Phase 4b)
- * search=N&hit=true|false — custom search N matched / did not. Each is validated rather
+ * search=N&hit=true|false — custom search N matched / did not, and
+ * segment=N (the CSV then carries a Segment column). Each is validated rather
  * than coerced — an unparseable depth is a 400, not a silent "all pages",
  * which would look like the filter had been applied and found everything.
  *
@@ -14,7 +15,8 @@
 import { NextResponse } from "next/server";
 import { requirePaidPlan } from "@/lib/paid-plan";
 import { csvFilename } from "@/lib/csv-export";
-import { pageColumns, type CrawlPageRow } from "@/lib/site-crawler/csv-columns";
+import { pageColumns, withSegmentColumn, type CrawlPageRow } from "@/lib/site-crawler/csv-columns";
+import { pageInSegment, segmentScope } from "@/lib/site-crawler/segment-filter";
 import { readStoredConfig } from "@/lib/site-crawler/crawl-config";
 import { csvStreamResponse, wantsCsv } from "@/lib/csv-stream";
 import { prisma } from "@/lib/prisma";
@@ -82,6 +84,7 @@ export async function GET(
 
     // Phase 4b custom search: every HTML page stores a count per search (0 included).
     const searches = readStoredConfig(crawl.config)?.searches ?? [];
+    const segment = segmentScope(url, crawl.config);
     const searchParam = url.searchParams.get("search");
     const hitParam = url.searchParams.get("hit");
     const searchIndex = searchParam === null ? null : Number(searchParam);
@@ -107,6 +110,7 @@ export async function GET(
       ...(depth.value !== undefined ? { depth: depth.value } : {}),
       ...(Object.keys(inlinkRange).length > 0 ? { inlinkCount: inlinkRange } : {}),
       ...searchFilter,
+      ...pageInSegment(segment),
     };
 
     // CSV branches after validation and the tenant-scoped crawl lookup, so it
@@ -114,7 +118,7 @@ export async function GET(
     // unparseable filter. A response format, not a second access surface.
     if (wantsCsv(url)) {
       return csvStreamResponse<CrawlPageRow>({
-        columns: pageColumns(searches.map((s) => s.name)),
+        columns: withSegmentColumn(pageColumns(searches.map((s) => s.name)), segment.defs, (r) => r.segmentIds),
         filename: csvFilename("site-crawler-pages"),
         cursorOf: (row) => row.id,
         fetchPage: (cursor, take) =>
@@ -142,6 +146,7 @@ export async function GET(
               contentType: true,
               foundOn: true,
               searchHits: true,
+              segmentIds: true,
             },
           }),
       });

@@ -52,6 +52,7 @@ import { isFetchableUrl, normalizeCrawlUrl } from "./url";
 import type { RedirectHop } from "./fetch";
 import { resolveLinkGraph } from "./link-graph";
 import { compileExtraction, type PageExtraction, type PageExtractor } from "./extraction";
+import { segmentMatcher, type SegmentPage } from "./segments";
 
 export interface RunCrawlArgs {
   jobId: string;
@@ -93,6 +94,8 @@ interface CrawlCtx {
   settings: CrawlSettings;
   /** Phase 4b custom extraction and search; null when the crawl has neither. */
   extract: PageExtractor | null;
+  /** Phase 4b: the segments a page falls in (indexes into config.segments); null when the crawl has none. */
+  segmentsOf: ((page: SegmentPage) => number[]) | null;
 }
 
 /** The job's stored config, decrypted; the defaults for a pre-4a job. */
@@ -143,6 +146,8 @@ interface PendingPage {
   /** Phase 4b: extractor index → values, and search hits (null = no searches configured). */
   extracted: Map<number, string[]>;
   searchHits: Record<string, number> | null;
+  /** Phase 4b: indexes into config.segments. */
+  segmentIds: number[];
   /** Links to enqueue once the row is written. */
   discovered: FrontierItem[];
   /**
@@ -329,6 +334,7 @@ export async function runCrawl({
       spell,
       settings,
       extract: compileExtraction(cfg.extractors ?? [], cfg.searches ?? []),
+      segmentsOf: cfg.segments?.length ? segmentMatcher(cfg.segments) : null,
     };
 
     for (;;) {
@@ -508,7 +514,17 @@ async function processBatch(batch: FrontierItem[], ctx: CrawlCtx): Promise<Pendi
       const index = cursor++;
       if (index >= batch.length) return;
       const item = batch[index]!;
-      results.push(await crawlOne(item, ctx));
+      const result = await crawlOne(item, ctx);
+      // Segments are judged on the finished page: URL, depth, status, extracted values.
+      if (ctx.segmentsOf) {
+        result.segmentIds = ctx.segmentsOf({
+          url: result.url,
+          depth: result.depth,
+          statusCode: result.statusCode,
+          extracted: result.extracted,
+        });
+      }
+      results.push(result);
     }
   };
 
@@ -544,6 +560,7 @@ async function crawlOne(item: FrontierItem, ctx: CrawlCtx): Promise<PendingPage>
     inSitemap: null,
     extracted: new Map(),
     searchHits: null,
+    segmentIds: [],
     discovered: [],
     linkTargets: [],
     nofollowTargets: [],
@@ -820,6 +837,7 @@ async function writeBatch(
           ...(result.rendered ?? {}),
           simhash: result.parsed?.simhash ?? null,
           searchHits: result.searchHits ?? undefined,
+          segmentIds: result.segmentIds,
           issues: { create: issues },
         },
         select: { id: true },

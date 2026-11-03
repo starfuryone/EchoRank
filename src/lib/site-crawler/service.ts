@@ -24,7 +24,17 @@ import {
   InvalidCrawlListError,
   InvalidCrawlUrlError,
 } from "./http";
-import { checkCrawlConfig, readStoredConfig, viewCrawlConfig, type CrawlConfigInput, type CrawlConfigView } from "./crawl-config";
+import {
+  DEFAULT_CRAWL_CONFIG,
+  checkCrawlConfig,
+  readStoredConfig,
+  viewCrawlConfig,
+  type CrawlConfigInput,
+  type CrawlConfigView,
+  type StoredCrawlConfig,
+} from "./crawl-config";
+import { flag } from "@/lib/flags";
+import { SegmentDefSchema, type SegmentDef } from "./segments";
 import { sealCrawlConfig } from "./crawl-config-secrets";
 import { checkExtractorExpr } from "./extraction";
 import { newVerifyToken } from "./site-verify";
@@ -181,13 +191,20 @@ export async function startCrawl(
     });
   }
 
+  // Phase 4b: the host's saved segments, copied onto the crawl so its
+  // segmentIds keep meaning what they meant when it ran. Capped at the plan's
+  // crawlSegments in case the plan shrank after they were saved.
+  const segments = flag("crawl.segments") ? await segmentSnapshot(tenantId, host, featureCapsForPlan(plan).segmentCap) : [];
+  const jobConfig: StoredCrawlConfig | null =
+    stored || segments.length ? { ...(stored ?? DEFAULT_CRAWL_CONFIG), ...(segments.length ? { segments } : {}) } : null;
+
   const job = await prisma.crawlJob.create({
     data: {
       tenantId,
       rootUrl: validated.url,
       mode,
-      ...(stored
-        ? { config: { ...stored, customRobotsMode: site?.verifiedAt ? "replace" : "test" } as object }
+      ...(jobConfig
+        ? { config: { ...jobConfig, customRobotsMode: site?.verifiedAt ? "replace" : "test" } as object }
         : {}),
       // Copied from the plan at creation: the crawl keeps reporting the ceiling
       // it ran under even if the tenant changes tier tomorrow. A configured
@@ -253,4 +270,19 @@ export async function cancelCrawl(tenantId: string, crawlJobId: string): Promise
   }
 
   return true;
+}
+
+/** A host's saved segments, in order, at most `cap`. Rows that no longer parse are skipped. */
+export async function segmentSnapshot(tenantId: string, host: string, cap: number): Promise<SegmentDef[]> {
+  if (cap <= 0) return [];
+  const rows = await prisma.crawlSegment.findMany({
+    where: { tenantId, host },
+    orderBy: { position: "asc" },
+    take: cap,
+    select: { name: true, rule: true },
+  });
+  return rows.flatMap((r) => {
+    const parsed = SegmentDefSchema.safeParse(r);
+    return parsed.success ? [parsed.data] : [];
+  });
 }

@@ -74,6 +74,11 @@ export function crawlRouteError(err: unknown): NextResponse {
     );
   }
 
+  // segment-filter.ts: ?segment=N the crawl does not have. Matched by name, as below.
+  if (err instanceof Error && err.name === "InvalidSegmentError") {
+    return NextResponse.json({ error: err.message, code: "INVALID_REQUEST" }, { status: 400 });
+  }
+
   // crawl-config-secrets.ts: { keep: true } with no saved value. Matched by
   // name so this module stays importable without the server-only crypto.
   if (err instanceof Error && err.name === "MissingKeptSecretError") {

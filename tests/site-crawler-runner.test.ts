@@ -572,6 +572,31 @@ describe("crawl configuration", () => {
     expect(crawlPage.create.mock.calls[0]![0].data.searchHits).toEqual({ "0": 11, "1": 0 });
   });
 
+  it("records each page's segments: URL, depth, status and extracted value (Phase 4b)", async () => {
+    withConfig(
+      { extractors: [{ name: "h1", kind: "css", expr: "h1" }] },
+      {
+        segments: [
+          { name: "Root", rule: { kind: "depthMax", max: 0 } },
+          { name: "A pages", rule: { kind: "urlPattern", pattern: "/a*" } },
+          { name: "H is h", rule: { kind: "extractorValue", index: 0, equals: "h" } },
+          { name: "OK", rule: { kind: "statusClass", cls: "2xx" } },
+        ],
+      },
+    );
+    site({ "https://example.com/": ["/a"] });
+    await runCrawl({ jobId: "job_1", redis: fakeRedis() as never });
+    const byUrl = Object.fromEntries(crawlPage.create.mock.calls.map((c) => [c[0].data.url, c[0].data.segmentIds]));
+    expect(byUrl).toEqual({ "https://example.com/": [0, 2, 3], "https://example.com/a": [1, 2, 3] });
+  });
+
+  it("a crawl without segments stores none", async () => {
+    withConfig({});
+    site({ "https://example.com/": [] });
+    await runCrawl({ jobId: "job_1", redis: fakeRedis() as never });
+    expect(crawlPage.create.mock.calls[0]![0].data.segmentIds).toEqual([]);
+  });
+
   it("a crawl without extractors or searches writes neither", async () => {
     withConfig({});
     site({ "https://example.com/": [] });

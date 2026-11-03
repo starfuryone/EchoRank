@@ -12,6 +12,7 @@
 import { NextResponse } from "next/server";
 import { requirePaidPlan } from "@/lib/paid-plan";
 import { prisma } from "@/lib/prisma";
+import { issueInSegment, segmentScope } from "@/lib/site-crawler/segment-filter";
 import { crawlRouteError } from "@/lib/site-crawler/http";
 
 const DEFAULT_PAGE_SIZE = 50;
@@ -37,7 +38,7 @@ export async function GET(
 
     const crawl = await prisma.crawlJob.findFirst({
       where: { id, tenantId: tenant.tenantId },
-      select: { id: true },
+      select: { id: true, config: true },
     });
     if (!crawl) {
       return NextResponse.json({ error: "Crawl not found", code: "NOT_FOUND" }, { status: 404 });
@@ -53,6 +54,7 @@ export async function GET(
     const where = {
       crawlPage: { crawlJobId: crawl.id },
       type: { in: ["REDIRECT_CHAIN", "REDIRECT_LOOP"] },
+      ...issueInSegment(segmentScope(url, crawl.config)),
     };
 
     const [total, rows] = await Promise.all([

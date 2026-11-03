@@ -51,6 +51,7 @@ import { CrawlConfigSection, problemText } from "@/components/seo-tools/site-cra
 import { CrawlTools } from "@/components/seo-tools/site-crawler-crawl-tools";
 import { InlinksPanel } from "@/components/seo-tools/site-crawler-inlinks";
 import { ExtractionPanel } from "@/components/seo-tools/site-crawler-extraction";
+import { SegmentOverview, SegmentPicker } from "@/components/seo-tools/site-crawler-segments";
 import type { ConfigProblem, CrawlConfigInput } from "@/lib/site-crawler/crawl-config";
 import { parseUrlList } from "@/lib/site-crawler/url-list";
 import { flag } from "@/lib/flags";
@@ -158,6 +159,23 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
   // opens all of them.
   const [tab, setTab] = useState<TabId>("overview");
   const [summary, setSummary] = useState<CrawlSummaryDto | PartialSummaryDto | null>(null);
+  // Phase 4b: the segment every tab, total and CSV is filtered to, per crawl
+  // (picking another crawl drops it without an effect).
+  const [segmentSel, setSegmentSel] = useState<{ crawlId: string; value: string }>({ crawlId: "", value: "" });
+  const segmentNames = flag("crawl.segments") ? (active?.config?.segments ?? []).map((g) => g.name) : [];
+  const segment = active && segmentSel.crawlId === active.id && Number(segmentSel.value) < segmentNames.length ? segmentSel.value : "";
+  const pickSegment = (value: string) => {
+    if (!active) return;
+    setSegmentSel({ crawlId: active.id, value });
+    setPage(1);
+    setDupPage(1);
+    setRedirectPage(1);
+    setPagesPage(1);
+    setSummary(null);
+    setDuplicates(null);
+    setRedirects(null);
+    setPageRows(null);
+  };
   const [duplicates, setDuplicates] = useState<DuplicatePage | null>(null);
   const [dupKind, setDupKind] = useState<DuplicateKind>("title");
   const [dupPage, setDupPage] = useState(1);
@@ -236,13 +254,14 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
   }, [active]);
 
   const loadIssues = useCallback(
-    async (crawlId: string, currentPage: number, sev: string, ty: string) => {
+    async (crawlId: string, currentPage: number, sev: string, ty: string, seg: string) => {
       const params = new URLSearchParams({
         page: String(currentPage),
         pageSize: String(ISSUE_PAGE_SIZE),
       });
       if (sev) params.set("severity", sev);
       if (ty) params.set("type", ty);
+      if (seg) params.set("segment", seg);
       const res = await fetch(`/api/seo/v1/crawl/${crawlId}/issues?${params}`);
       if (!res.ok) return null;
       return (await res.json()) as CrawlIssuePage;
@@ -254,28 +273,30 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
     if (!active || isInFlight(active.status)) return;
     let cancelled = false;
     void (async () => {
-      const data = await loadIssues(active.id, page, severity, type);
+      const data = await loadIssues(active.id, page, severity, type, segment);
       if (!cancelled && data) setIssues(data);
     })();
     return () => {
       cancelled = true;
     };
-  }, [active, page, severity, type, loadIssues]);
+  }, [active, page, severity, type, segment, loadIssues]);
 
   /** Fetch whichever tab is open. A 404 summary is a real answer, not an error. */
   const loadTab = useCallback(
     async (crawlId: string, which: TabId): Promise<unknown | null> => {
+      const seg = segment ? `segment=${encodeURIComponent(segment)}` : "";
       const url =
         which === "overview"
-          ? `/api/seo/v1/crawl/${crawlId}/summary`
+          ? `/api/seo/v1/crawl/${crawlId}/summary?${seg}`
           : which === "duplicates"
-            ? `/api/seo/v1/crawl/${crawlId}/duplicates?type=${dupKind}&page=${dupPage}`
+            ? `/api/seo/v1/crawl/${crawlId}/duplicates?type=${dupKind}&page=${dupPage}&${seg}`
             : which === "redirects"
-              ? `/api/seo/v1/crawl/${crawlId}/redirects?page=${redirectPage}`
+              ? `/api/seo/v1/crawl/${crawlId}/redirects?page=${redirectPage}&${seg}`
               : (() => {
                   const params = pageFilterParams(pageFilters);
                   params.set("page", String(pagesPage));
                   params.set("pageSize", "50");
+                  if (segment) params.set("segment", segment);
                   return `/api/seo/v1/crawl/${crawlId}/pages?${params}`;
                 })();
 
@@ -283,7 +304,7 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
       if (!res.ok) return null;
       return res.json();
     },
-    [dupKind, dupPage, redirectPage, pagesPage, pageFilters],
+    [dupKind, dupPage, redirectPage, pagesPage, pageFilters, segment],
   );
 
   useEffect(() => {
@@ -579,6 +600,7 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
                 <Summary crawl={active} t={t} int={int} />
                 <CrawlTools
                   crawl={active}
+                  segment={segment || null}
                   t={t.p4a}
                   kept={int.format(quota?.crawlsKept ?? 0)}
                   onUpdated={(c) => {
@@ -594,6 +616,7 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
 
       {active && !running && (
         <div className="flex flex-wrap gap-2 border-b border-gray-200 pb-2">
+          <SegmentPicker names={segmentNames} value={segment} onChange={pickSegment} t={t} />
           {crawlTabs(active).map((id) => (
             <button
               key={id}
@@ -613,13 +636,22 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
       )}
 
       {active && !running && tab === "overview" && (
-        <OverviewPanel summary={summary} t={t} int={int} />
+        <>
+          <SegmentOverview segments={summary?.segments} segment={summary?.segment} onPick={pickSegment} t={t} int={int} />
+          <OverviewPanel summary={summary} t={t} int={int} />
+        </>
       )}
 
-      {active && !running && tab === "rules" && <RulesPanel crawlId={active.id} t={t} int={int} />}
+      {active && !running && tab === "rules" && <RulesPanel crawlId={active.id} segment={segment || null} t={t} int={int} />}
 
       {active && !running && tab === "extraction" && (
-        <ExtractionPanel crawlId={active.id} extractorNames={(active.config?.extractors ?? []).map((e) => e.name)} t={t} int={int} />
+        <ExtractionPanel
+          crawlId={active.id}
+          extractorNames={(active.config?.extractors ?? []).map((e) => e.name)}
+          segment={segment || null}
+          t={t}
+          int={int}
+        />
       )}
 
       {active && !running && tab === "duplicates" && (
@@ -667,7 +699,7 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
           }}
           onInlinks={flag("crawl.links") && !active.dataPurgedAt ? setInlinksFor : undefined}
           searchNames={flag("crawl.extraction") ? (active.config?.searches ?? []).map((s) => s.name) : []}
-          csvHref={`/api/seo/v1/crawl/${active.id}/pages?${pageFilterParams(pageFilters)}&format=csv`}
+          csvHref={`/api/seo/v1/crawl/${active.id}/pages?${pageFilterParams(pageFilters)}&format=csv${segment ? `&segment=${encodeURIComponent(segment)}` : ""}`}
           t={t}
           int={int}
         />
@@ -716,7 +748,7 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
                   // still exists for the whole crawl, unfiltered.
                   href={`/api/seo/v1/crawl/${active.id}/issues?format=csv${
                     severity ? `&severity=${encodeURIComponent(severity)}` : ""
-                  }${type ? `&type=${encodeURIComponent(type)}` : ""}`}
+                  }${type ? `&type=${encodeURIComponent(type)}` : ""}${segment ? `&segment=${encodeURIComponent(segment)}` : ""}`}
                   className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-sm font-medium text-gray-700 hover:border-gray-300"
                 >
                   <Download className="h-4 w-4" aria-hidden="true" />

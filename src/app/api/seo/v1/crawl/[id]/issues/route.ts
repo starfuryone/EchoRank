@@ -20,7 +20,8 @@ import { crawlRouteError } from "@/lib/site-crawler/http";
 import { RULE_BY_ID } from "@/lib/crawl-rules";
 import { ruleIssueWhere } from "@/lib/site-crawler/rule-summary";
 import { csvFilename } from "@/lib/csv-export";
-import { ISSUE_COLUMNS, type CrawlIssueRow } from "@/lib/site-crawler/csv-columns";
+import { ISSUE_COLUMNS, withSegmentColumn, type CrawlIssueRow } from "@/lib/site-crawler/csv-columns";
+import { issueInSegment, segmentScope } from "@/lib/site-crawler/segment-filter";
 import { csvStreamResponse, wantsCsv } from "@/lib/csv-stream";
 
 const DEFAULT_PAGE_SIZE = 50;
@@ -38,13 +39,14 @@ export async function GET(
 
     const crawl = await prisma.crawlJob.findFirst({
       where: { id, tenantId: tenant.tenantId },
-      select: { id: true },
+      select: { id: true, config: true },
     });
     if (!crawl) {
       return NextResponse.json({ error: "Crawl not found", code: "NOT_FOUND" }, { status: 404 });
     }
 
     const url = new URL(request.url);
+    const segment = segmentScope(url, crawl.config);
     const severity = url.searchParams.get("severity");
     const type = url.searchParams.get("type");
 
@@ -72,6 +74,7 @@ export async function GET(
       ...(isRule ? ruleIssueWhere(crawl.id, type!) : { crawlPage: { crawlJobId: crawl.id } }),
       ...(severity ? { severity } : {}),
       ...(type && !isRule ? { type: type as IssueType } : {}),
+      ...issueInSegment(segment),
     };
 
     // CSV branches AFTER validation and after the tenant-scoped crawl lookup,
@@ -80,7 +83,7 @@ export async function GET(
     // access surface.
     if (wantsCsv(url)) {
       return csvStreamResponse<CrawlIssueRow>({
-        columns: ISSUE_COLUMNS,
+        columns: withSegmentColumn(ISSUE_COLUMNS, segment.defs, (r) => r.crawlPage.segmentIds),
         filename: csvFilename("site-crawler-issues"),
         cursorOf: (row) => row.id,
         fetchPage: (cursor, take) =>
@@ -95,7 +98,7 @@ export async function GET(
               type: true,
               severity: true,
               detail: true,
-              crawlPage: { select: { url: true, statusCode: true } },
+              crawlPage: { select: { url: true, statusCode: true, segmentIds: true } },
             },
           }),
       });

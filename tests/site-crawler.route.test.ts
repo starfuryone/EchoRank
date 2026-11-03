@@ -32,8 +32,9 @@ const crawlPage = { findMany: vi.fn(), count: vi.fn() };
 const crawlIssue = { findMany: vi.fn(), count: vi.fn(), groupBy: vi.fn() };
 const queryRaw = vi.fn();
 const crawlSiteDefault = { findUnique: vi.fn(), upsert: vi.fn() };
+const crawlSegment = { findMany: vi.fn() };
 vi.mock("@/lib/prisma", () => ({
-  prisma: { crawlJob, crawlPage, crawlIssue, crawlSiteDefault, $queryRaw: (...a: unknown[]) => queryRaw(...a) },
+  prisma: { crawlJob, crawlPage, crawlIssue, crawlSiteDefault, crawlSegment, $queryRaw: (...a: unknown[]) => queryRaw(...a) },
 }));
 
 vi.mock("@/lib/rate-limit", () => ({
@@ -118,6 +119,7 @@ beforeEach(() => {
   crawlPage.count.mockResolvedValue(0);
   crawlPage.findMany.mockResolvedValue([]);
   queryRaw.mockResolvedValue([]);
+  crawlSegment.findMany.mockResolvedValue([]);
 });
 
 // ─── Auth ───────────────────────────────────────────────────────────────────
@@ -313,6 +315,33 @@ describe("POST /crawl", () => {
     beforeEach(() => {
       vi.stubEnv("GSC_TOKEN_ENCRYPTION_KEY", "test-key-not-a-secret");
       crawlSiteDefault.findUnique.mockResolvedValue(null);
+    });
+
+    it("copies the host's saved segments onto the crawl, capped by the plan (Phase 4b)", async () => {
+      authed("STARTER");
+      crawlJob.create.mockResolvedValue({ ...JOB_ROW, status: "QUEUED" });
+      crawlSegment.findMany.mockResolvedValue([
+        { name: "Blog", rule: { kind: "urlPattern", pattern: "/blog/*" } },
+        { name: "Broken", rule: { kind: "statusClass", cls: "4xx" } },
+        { name: "Bad", rule: { kind: "nope" } },
+      ]);
+      await startCrawl(postRequest({ url: "https://www.example.com/x" }));
+      expect(crawlSegment.findMany.mock.calls[0]![0]).toMatchObject({
+        where: { tenantId: TENANT, host: "www.example.com" },
+        orderBy: { position: "asc" },
+        take: 3,
+      });
+      expect(crawlJob.create.mock.calls[0]![0]!.data.config.segments).toEqual([
+        { name: "Blog", rule: { kind: "urlPattern", pattern: "/blog/*" } },
+        { name: "Broken", rule: { kind: "statusClass", cls: "4xx" } },
+      ]);
+    });
+
+    it("a host without segments keeps a config-less crawl config-less", async () => {
+      authed("GROWTH");
+      crawlJob.create.mockResolvedValue({ ...JOB_ROW, status: "QUEUED" });
+      await startCrawl(postRequest({ url: "https://example.com" }));
+      expect(crawlJob.create.mock.calls[0]![0]!.data.config).toBeUndefined();
     });
 
     it("stores the config sealed and lowers the URL cap to max URLs", async () => {

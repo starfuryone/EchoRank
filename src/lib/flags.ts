@@ -30,7 +30,7 @@ export const FLAGS = {
   "crawl.externalLinks": false,
   // Phase 4b
   "crawl.extraction": true,
-  "crawl.segments": false,
+  "crawl.segments": true,
   // Phase 4c
   "crawl.visualise": false,
   "crawl.compare": false,
