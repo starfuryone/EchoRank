@@ -6,6 +6,7 @@
 
 import { NextResponse } from "next/server";
 import { enforcementErrorResponse } from "@/lib/plan-enforcement";
+import type { ConfigProblem } from "./crawl-config";
 
 export class InvalidCrawlUrlError extends Error {
   readonly statusCode = 400;
@@ -34,9 +35,31 @@ export class CrawlLockedError extends Error {
   }
 }
 
+/** A CrawlConfig that cannot be honoured (Phase 4a): bad pattern, reserved header, verified-only option. */
+export class InvalidCrawlConfigError extends Error {
+  readonly statusCode = 400;
+  constructor(readonly problems: ConfigProblem[]) {
+    super("Some crawl settings cannot be used.");
+    this.name = "InvalidCrawlConfigError";
+  }
+}
+
 export function crawlRouteError(err: unknown): NextResponse {
   const enforcement = enforcementErrorResponse(err);
   if (enforcement) return enforcement;
+
+  if (err instanceof InvalidCrawlConfigError) {
+    return NextResponse.json(
+      { error: err.message, code: "INVALID_CONFIG", problems: err.problems },
+      { status: 400 },
+    );
+  }
+
+  // crawl-config-secrets.ts: { keep: true } with no saved value. Matched by
+  // name so this module stays importable without the server-only crypto.
+  if (err instanceof Error && err.name === "MissingKeptSecretError") {
+    return NextResponse.json({ error: err.message, code: "INVALID_CONFIG" }, { status: 400 });
+  }
 
   if (err instanceof InvalidCrawlUrlError) {
     return NextResponse.json(

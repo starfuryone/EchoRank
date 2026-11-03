@@ -19,6 +19,7 @@ import type {
 export class MissingKeptSecretError extends Error {
   constructor(readonly field: string) {
     super(`No saved value to keep for ${field}`);
+    this.name = "MissingKeptSecretError";
   }
 }
 
