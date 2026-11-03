@@ -269,6 +269,11 @@ export interface SiteCrawlJob {
   tenantId: string;
 }
 
+/** The nightly retention sweep on the site-crawl queue (job name "retention"). */
+export interface SiteCrawlRetentionJob {
+  retention: true;
+}
+
 /**
  * AI Share of Voice: the nightly tick, or one prompt set's rollup.
  *
@@ -427,7 +432,7 @@ export interface QueueJobMap {
   "rank-tracker": RankTrackerJob;
   "site-audit": SiteAuditJob;
   "bot-log-analysis": BotLogAnalysisJob;
-  "site-crawl": SiteCrawlJob;
+  "site-crawl": SiteCrawlJob | SiteCrawlRetentionJob;
   "free-tools-volatility": FreeToolsVolatilityJob;
   "sov-aggregation": SovAggregationJob;
   "citation-aggregation": CitationAggregationJob;

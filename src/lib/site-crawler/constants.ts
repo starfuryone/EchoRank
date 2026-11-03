@@ -77,6 +77,16 @@ export const MAX_ANCHOR_CHARS = 200;
 /** <img> srcs kept per page for the image sitemap. */
 export const MAX_IMG_SRCS_PER_PAGE = 50;
 
+// ─── Phase 4a: retention ────────────────────────────────────────────────────
+/** Crawls a tenant may pin (kept with full data beyond the plan's crawlsKept). */
+export const CRAWL_PIN_MAX = 5;
+/** Rows deleted per statement by the retention job. */
+export const RETENTION_BATCH_ROWS = 5_000;
+/** A failed or cancelled crawl's partial data is kept this long, then purged. */
+export const RETENTION_UNFINISHED_DAYS = 7;
+/** crawl_site_defaults rows never verified and untouched this long are deleted. */
+export const SITE_DEFAULTS_STALE_DAYS = 365;
+
 /** Redis key names for one crawl's transient state. */
 export const crawlKeys = (jobId: string) => ({
   queue: `crawl:${jobId}:queue`,

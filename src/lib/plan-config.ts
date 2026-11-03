@@ -306,6 +306,14 @@ export interface PlanConfig {
    * wall clock usually reaches first.
    */
   crawlRenderedPages: number;
+  /**
+   * Site Crawler runs kept with their full data (pages, issues, link graph)
+   * per tenant: the N most recent completed crawls, plus up to CRAWL_PIN_MAX
+   * pinned ones. Older crawls keep their row and summary forever (history
+   * list) and lose the rest to the nightly retention job
+   * (src/lib/site-crawler/retention.ts). Phase 4a tier table.
+   */
+  crawlsKept: number;
   /** Shape of one AI Visibility checkup for this tier. */
   aiCheckup: AiCheckupShape;
   /**
@@ -419,6 +427,7 @@ export const PLAN_CONFIGS: Record<SellablePlanType, PlanConfig> = {
     crawlUrlCap: 2_500,
     crawlsPerMonth: 4,
     crawlRenderedPages: 100,
+    crawlsKept: 3,
     // The shape the retired AI Visibility tier sold: two providers and one
     // repetition. Repeatability needs >1 and stays a GROWTH feature.
     aiCheckup: { frequency: "weekly", providers: 2, prompts: 10, repetitions: 1 },
@@ -461,6 +470,7 @@ export const PLAN_CONFIGS: Record<SellablePlanType, PlanConfig> = {
     crawlUrlCap: 5_000,
     crawlsPerMonth: 20,
     crawlRenderedPages: 500,
+    crawlsKept: 10,
     aiCheckup: { frequency: "twice_weekly", providers: 4, prompts: 15, repetitions: 2 },
     aiProjects: 3,
     aiMonthlyCapUsd: 40,
@@ -501,6 +511,7 @@ export const PLAN_CONFIGS: Record<SellablePlanType, PlanConfig> = {
     crawlUrlCap: 25_000,
     crawlsPerMonth: null,
     crawlRenderedPages: 5_000,
+    crawlsKept: 50,
     aiCheckup: { frequency: "daily", providers: null, prompts: 20, repetitions: 3 },
     aiProjects: 25,
     aiMonthlyCapUsd: 150,
@@ -541,6 +552,7 @@ export const PLAN_CONFIGS: Record<SellablePlanType, PlanConfig> = {
     crawlUrlCap: 25_000,
     crawlsPerMonth: null,
     crawlRenderedPages: 5_000,
+    crawlsKept: 50,
     // "custom": the schedule is set per contract, so the scheduler reads the
     // brand profile rather than a cadence baked in here.
     aiCheckup: { frequency: "custom", providers: null, prompts: 20, repetitions: 3 },
