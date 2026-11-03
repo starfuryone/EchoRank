@@ -22,6 +22,8 @@ export interface CrawlSettings {
   admit: (url: string) => string | null;
   /** Same scope as admit, without the include/exclude patterns: where credentials may go. */
   inScope: (url: string) => boolean;
+  /** The query-string option alone: how a link target is keyed to match a crawled page's URL. */
+  canonical: (url: string) => string;
   maxDepth: number | null;
   followNofollow: boolean;
 }
@@ -65,6 +67,7 @@ export function crawlSettings(cfg: RuntimeCrawlConfig, rootUrl: string): CrawlSe
       return inScope(u) && isFetchableUrl(u) && filter(u) ? u : null;
     },
     inScope,
+    canonical: (url) => applyQueryMode(url, cfg.queryStrings, cfg.stripParams),
     maxDepth: cfg.maxDepth,
     followNofollow: cfg.followNofollow,
   };

@@ -14,14 +14,17 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const crawlJob = { findUnique: vi.fn(), update: vi.fn() };
 const crawlPage = { create: vi.fn(), findFirst: vi.fn() };
+const crawlLink = { createMany: vi.fn() };
+const executeRaw = vi.fn(async () => 0);
 vi.mock("@/lib/prisma", () => ({
   prisma: {
     crawlJob,
     crawlPage,
+    $executeRaw: (...a: unknown[]) => executeRaw(...(a as [])),
     // Spell check: the workspace's accepted words (Phase 3c).
     tenant: { findUnique: async () => ({ name: "Acme", spellingAcceptedWords: ["Acmeware"] }) },
     // The runner writes a batch inside a transaction; run the callback inline.
-    $transaction: async (fn: (tx: unknown) => Promise<unknown>) => fn({ crawlPage }),
+    $transaction: async (fn: (tx: unknown) => Promise<unknown>) => fn({ crawlPage, crawlLink }),
   },
 }));
 
@@ -146,6 +149,8 @@ function htmlResponse(url: string, links: string[] = []) {
     statusCode: 200,
     redirectTarget: null,
     redirectHops: 0,
+    chain: [] as { url: string; status: number }[],
+    lastModified: null as string | null,
     contentType: "text/html; charset=utf-8",
     html: `<html><head><title>A title long enough to pass</title>
       <meta name="description" content="${"d".repeat(40)}">
@@ -525,7 +530,7 @@ describe("spell check", () => {
 
 const { sealCrawlConfig } = await import("@/lib/site-crawler/crawl-config-secrets");
 const { CrawlConfigInputSchema } = await import("@/lib/site-crawler/crawl-config");
-const { rulesFromBody } = await import("@/lib/site-crawler/robots");
+const { rulesFromBody, allowAllRules } = await import("@/lib/site-crawler/robots");
 
 describe("crawl configuration", () => {
   const KEY = "test-key-not-a-secret";
@@ -584,5 +589,67 @@ describe("crawl configuration", () => {
     expect(fetchPage).not.toHaveBeenCalled();
     expect(terminalWrite().status).toBe("FAILED");
     expect(JSON.stringify(terminalWrite())).not.toContain("session=abc");
+  });
+});
+
+// ─── Link graph (Phase 4a) ─────────────────────────────────────────────────
+
+describe("link graph", () => {
+  const created = () => crawlPage.create.mock.calls.map((c) => c[0].data);
+
+  it("stores one edge per internal target with its first anchor, nofollow and position", async () => {
+    fetchPage.mockImplementation(async (url: string) => {
+      const r = htmlResponse(url);
+      if (url !== "https://example.com/") return r;
+      return {
+        ...r,
+        html: r.html.replace(
+          "</body>",
+          '<a href="/a">First</a><a href="/a">Again</a><a href="/b" rel="nofollow">B</a><a href="https://other.test/">Out</a></body>',
+        ),
+      };
+    });
+    await runCrawl({ jobId: "job_1", redis: fakeRedis() as never });
+    const edges = crawlLink.createMany.mock.calls[0]![0].data as { toUrl: string; anchor: string; nofollow: boolean; position: number; fromPageId: string }[];
+    expect(edges.map((e) => [e.toUrl, e.anchor, e.nofollow])).toEqual([
+      ["https://example.com/a", "First", false],
+      ["https://example.com/b", "B", true],
+    ]);
+    expect(edges[0]!.fromPageId).toBe("p1");
+    expect(edges[1]!.position).toBe(2);
+  });
+
+  it("records the discoverer as foundOn and resolves ids in SQL before aggregation", async () => {
+    fetchRobots.mockResolvedValue(allowAllRules());
+    fetchPage.mockImplementation(async (url: string) => htmlResponse(url, url === "https://example.com/" ? ["/a"] : []));
+    await runCrawl({ jobId: "job_1", redis: fakeRedis() as never });
+    expect(created().find((d) => d.url === "https://example.com/a").foundOn).toBe("https://example.com/");
+    expect(created().find((d) => d.url === "https://example.com/").foundOn).toBeNull();
+    expect(executeRaw).toHaveBeenCalledTimes(2);
+    expect(executeRaw.mock.invocationCallOrder[1]!).toBeLessThan(aggregateCrawl.mock.invocationCallOrder[0]!);
+  });
+
+  it("stores every redirect hop plus the destination, image srcs and Last-Modified", async () => {
+    fetchPage.mockImplementation(async (url: string) => ({
+      ...htmlResponse("https://example.com/final"),
+      html: htmlResponse(url).html.replace("</body>", '<img src="/i.png" alt=""><img src="data:x" alt=""></body>'),
+      redirectHops: 2,
+      redirectTarget: "https://example.com/mid",
+      chain: [
+        { url, status: 301 },
+        { url: "https://example.com/mid", status: 302 },
+      ],
+      lastModified: "Tue, 03 Nov 2026 10:00:00 GMT",
+    }));
+    await runCrawl({ jobId: "job_1", redis: fakeRedis() as never });
+    expect(created()[0]).toMatchObject({
+      redirectChain: [
+        { url: "https://example.com/", status: 301 },
+        { url: "https://example.com/mid", status: 302 },
+        { url: "https://example.com/final", status: 200 },
+      ],
+      imgSrcs: ["https://example.com/i.png"],
+      lastModified: "Tue, 03 Nov 2026 10:00:00 GMT",
+    });
   });
 });

@@ -70,6 +70,13 @@ export const AGGREGATION_BATCH_SIZE = 1_000;
 export const SUMMARY_SAMPLE_LIMIT = 500;
 export const SUMMARY_DEEPEST_LIMIT = 10;
 
+// ─── Phase 4a: link graph ───────────────────────────────────────────────────
+/** Internal link edges stored per source page (deduped per target first). */
+export const MAX_LINKS_PER_PAGE = 100;
+export const MAX_ANCHOR_CHARS = 200;
+/** <img> srcs kept per page for the image sitemap. */
+export const MAX_IMG_SRCS_PER_PAGE = 50;
+
 /** Redis key names for one crawl's transient state. */
 export const crawlKeys = (jobId: string) => ({
   queue: `crawl:${jobId}:queue`,

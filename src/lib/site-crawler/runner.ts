@@ -24,7 +24,10 @@ import { recordResearch } from "@/lib/research-log/store";
 import { logger } from "@/infrastructure/observability/logger";
 import {
   FETCH_CONCURRENCY,
+  MAX_ANCHOR_CHARS,
   MAX_CRAWL_DURATION_MS,
+  MAX_IMG_SRCS_PER_PAGE,
+  MAX_LINKS_PER_PAGE,
   REDIS_KEY_TTL_SECONDS,
   WRITE_BATCH_SIZE,
   crawlKeys,
@@ -46,6 +49,7 @@ import { isRenderMode } from "./types";
 import { renderedOnlyLinks } from "@/lib/crawl-rules";
 import { fetchRobots, type RobotsRules } from "./robots";
 import { isFetchableUrl, normalizeCrawlUrl } from "./url";
+import type { RedirectHop } from "./fetch";
 
 export interface RunCrawlArgs {
   jobId: string;
@@ -89,10 +93,31 @@ function runtimeConfig(raw: unknown): RuntimeCrawlConfig {
   return stored ? openCrawlConfig(stored) : { ...DEFAULT_CRAWL_CONFIG };
 }
 
+/** A frontier entry. `from` is the page that linked here first (absent for the root and seeds). */
+interface FrontierItem {
+  url: string;
+  depth: number;
+  from?: string;
+}
+
+/** One internal link edge, before its source page has an id. */
+interface PendingEdge {
+  toUrl: string;
+  anchor: string | null;
+  nofollow: boolean;
+  position: number;
+}
+
 /** One page's fetch+parse result, held only until the batch is written. */
 interface PendingPage {
   url: string;
   depth: number;
+  /** Phase 4a: the discoverer, every redirect hop, image srcs, Last-Modified, outgoing edges. */
+  foundOn: string | null;
+  redirectChain: RedirectHop[] | null;
+  imgSrcs: string[];
+  lastModified: string | null;
+  edges: PendingEdge[];
   statusCode: number | null;
   redirectTarget: string | null;
   contentType: string | null;
@@ -108,7 +133,7 @@ interface PendingPage {
   /** Null when the crawl found no sitemap at all. */
   inSitemap: boolean | null;
   /** Links to enqueue once the row is written. */
-  discovered: { url: string; depth: number }[];
+  discovered: FrontierItem[];
   /**
    * Distinct in-scope link targets on this page — the inlink credit it gives.
    * DEDUPED PER SOURCE PAGE: a nav that links the homepage from every page
@@ -319,6 +344,7 @@ export async function runCrawl({
     // The reason lands in summary.aggregationError instead.
     if (status === "COMPLETED" && pagesCrawled > 0) {
       try {
+        await resolveLinkGraph(jobId);
         const result = await aggregateCrawl({
           jobId,
           rootUrl: job.rootUrl,
@@ -413,23 +439,41 @@ export async function runCrawl({
   return { status, pagesCrawled, issueCount, stoppedReason };
 }
 
+/**
+ * Phase 4a: join the link graph to the page rows, in SQL. A link's target and
+ * a page's discoverer are stored as URLs while crawling (the target may not
+ * have a row yet); once the page set is final they resolve to page ids.
+ */
+async function resolveLinkGraph(jobId: string): Promise<void> {
+  await prisma.$executeRaw`
+    UPDATE "crawl_links" l SET "toPageId" = p."id"
+    FROM "crawl_pages" p
+    WHERE l."crawlJobId" = ${jobId} AND p."crawlJobId" = ${jobId}
+      AND p."url" = l."toUrl" AND l."toPageId" IS NULL`;
+  await prisma.$executeRaw`
+    UPDATE "crawl_pages" c SET "parentPageId" = p."id"
+    FROM "crawl_pages" p
+    WHERE c."crawlJobId" = ${jobId} AND p."crawlJobId" = ${jobId}
+      AND p."url" = c."foundOn" AND c."parentPageId" IS NULL`;
+}
+
 /** Pop up to `count` frontier entries. LPOP with a count is atomic. */
-async function popBatch(
-  redis: Redis,
-  queueKey: string,
-  count: number,
-): Promise<{ url: string; depth: number }[]> {
+async function popBatch(redis: Redis, queueKey: string, count: number): Promise<FrontierItem[]> {
   if (count <= 0) return [];
   const raw = await redis.lpop(queueKey, count);
   if (!raw) return [];
   const items = Array.isArray(raw) ? raw : [raw];
 
-  const out: { url: string; depth: number }[] = [];
+  const out: FrontierItem[] = [];
   for (const entry of items) {
     try {
-      const parsed = JSON.parse(entry) as { url: string; depth: number };
+      const parsed = JSON.parse(entry) as FrontierItem;
       if (typeof parsed?.url === "string") {
-        out.push({ url: parsed.url, depth: Number(parsed.depth) || 0 });
+        out.push({
+          url: parsed.url,
+          depth: Number(parsed.depth) || 0,
+          ...(typeof parsed.from === "string" ? { from: parsed.from } : {}),
+        });
       }
     } catch {
       // A malformed frontier entry is dropped rather than failing the crawl.
@@ -439,7 +483,7 @@ async function popBatch(
 }
 
 /** Fetch and parse one batch, at most FETCH_CONCURRENCY at a time. */
-async function processBatch(batch: { url: string; depth: number }[], ctx: CrawlCtx): Promise<PendingPage[]> {
+async function processBatch(batch: FrontierItem[], ctx: CrawlCtx): Promise<PendingPage[]> {
   const results: PendingPage[] = [];
   let cursor = 0;
 
@@ -458,11 +502,16 @@ async function processBatch(batch: { url: string; depth: number }[], ctx: CrawlC
   return results;
 }
 
-async function crawlOne(item: { url: string; depth: number }, ctx: CrawlCtx): Promise<PendingPage> {
+async function crawlOne(item: FrontierItem, ctx: CrawlCtx): Promise<PendingPage> {
   const { rootUrl, robots, robotsTest, limiter, isInSitemap, head, render, spell, settings } = ctx;
   const base: PendingPage = {
     url: item.url,
     depth: item.depth,
+    foundOn: item.from ?? null,
+    redirectChain: null,
+    imgSrcs: [],
+    lastModified: null,
+    edges: [],
     statusCode: null,
     redirectTarget: null,
     contentType: null,
@@ -571,6 +620,10 @@ async function crawlOne(item: { url: string; depth: number }, ctx: CrawlCtx): Pr
 
   return {
     ...base,
+    redirectChain: res.chain.length ? [...res.chain, { url: res.finalUrl, status: res.statusCode ?? 0 }] : null,
+    imgSrcs: imageSrcs(facts),
+    lastModified: res.lastModified ? res.lastModified.slice(0, 64) : null,
+    edges: linkEdges(facts, settings),
     statusCode: res.statusCode,
     redirectTarget: res.redirectTarget,
     contentType: res.contentType,
@@ -585,6 +638,7 @@ async function crawlOne(item: { url: string; depth: number }, ctx: CrawlCtx): Pr
       ? [...linkTargets, ...nofollowFollowed, ...annotationTargets(facts, linkTargets, settings)].map((url) => ({
           url,
           depth: item.depth + 1,
+          from: item.url,
         }))
       : [],
     linkTargets,
@@ -611,6 +665,41 @@ function annotationTargets(facts: PageFacts, linkTargets: string[], settings: Cr
     out.push(url);
   }
   return out;
+}
+
+/**
+ * The page's internal link edges: one per distinct target, the first anchor
+ * that points there (its text and position), capped at MAX_LINKS_PER_PAGE.
+ * Targets are keyed like crawled URLs, so aggregation can join them to pages.
+ */
+function linkEdges(facts: PageFacts, settings: CrawlSettings): PendingEdge[] {
+  const out: PendingEdge[] = [];
+  const seen = new Set<string>();
+  for (const [position, a] of (facts.html?.anchors ?? []).entries()) {
+    if (out.length >= MAX_LINKS_PER_PAGE) break;
+    const normalized = normalizeCrawlUrl(a.href, facts.finalUrl);
+    if (!normalized || !settings.inScope(normalized)) continue;
+    const toUrl = settings.canonical(normalized);
+    if (seen.has(toUrl)) continue;
+    seen.add(toUrl);
+    out.push({
+      toUrl,
+      anchor: a.text ? a.text.slice(0, MAX_ANCHOR_CHARS) : null,
+      nofollow: a.rel.split(/\s+/).includes("nofollow"),
+      position: Math.min(position, 32_767),
+    });
+  }
+  return out;
+}
+
+/** Absolute http(s) <img> srcs, deduped, capped (image sitemap). */
+function imageSrcs(facts: PageFacts): string[] {
+  const out = new Set<string>();
+  for (const img of facts.html?.images ?? []) {
+    if (out.size >= MAX_IMG_SRCS_PER_PAGE) break;
+    if (/^https?:\/\//i.test(img.src) && img.src.length <= 2000) out.add(img.src);
+  }
+  return [...out];
 }
 
 /** How the live file and the draft judge one URL (custom robots.txt, test mode). */
@@ -646,10 +735,14 @@ async function writeBatch(
     for (const result of results) {
       const issues = issueRows(result.issues, jobId);
 
-      await tx.crawlPage.create({
+      const page = await tx.crawlPage.create({
         data: {
           crawlJobId: jobId,
           url: result.url,
+          foundOn: result.foundOn,
+          redirectChain: result.redirectChain ? (result.redirectChain as unknown as object[]) : undefined,
+          imgSrcs: result.imgSrcs,
+          lastModified: result.lastModified,
           statusCode: result.statusCode,
           redirectTarget: result.redirectTarget,
           title: result.parsed?.title ?? null,
@@ -671,7 +764,13 @@ async function writeBatch(
           simhash: result.parsed?.simhash ?? null,
           issues: { create: issues },
         },
+        select: { id: true },
       });
+      if (result.edges.length) {
+        await tx.crawlLink.createMany({
+          data: result.edges.map((e) => ({ crawlJobId: jobId, fromPageId: page.id, ...e })),
+        });
+      }
 
       issuesWritten += issues.length;
     }
@@ -711,12 +810,7 @@ async function writeBatch(
  * SADD reports how many members were new, so the seen-set is both the dedupe
  * and the decision — no read-then-write race between concurrent batches.
  */
-async function enqueueUnseen(
-  redis: Redis,
-  seenKey: string,
-  candidates: { url: string; depth: number }[],
-  room: number,
-): Promise<void> {
+async function enqueueUnseen(redis: Redis, seenKey: string, candidates: FrontierItem[], room: number): Promise<void> {
   if (candidates.length === 0 || room <= 0) return;
 
   const queueKey = seenKey.replace(/:seen$/, ":queue");
@@ -730,7 +824,7 @@ async function enqueueUnseen(
 
     const added = await redis.sadd(seenKey, candidate.url);
     if (added === 1) {
-      toPush.push(JSON.stringify({ url: candidate.url, depth: candidate.depth }));
+      toPush.push(JSON.stringify(candidate));
     }
   }
 
