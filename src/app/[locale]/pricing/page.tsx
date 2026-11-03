@@ -23,7 +23,7 @@ import type { Metadata } from "next";
 import { PublicNav } from "../PublicNav";
 import { PricingSection } from "../PricingSection";
 import { pricingTiers } from "@/lib/pricing-tiers";
-import { HOME_PRICING_CHROME, toolCountLine } from "@/lib/i18n/content";
+import { HOME_PRICING_CHROME, PRICING_NOTES, toolCountLine } from "@/lib/i18n/content";
 import { seoToolCounts } from "@/lib/seo-tools";
 import { SUPPORTED_LOCALES, isSupportedLocale, type Locale } from "@/lib/i18n/config";
 import { buildMetadata } from "@/lib/seo/metadata";
@@ -39,8 +39,6 @@ const COPY: Record<Base, {
   label: string;
   h1: string;
   sub: string;
-  tax: string;
-  currency: string;
   toolsAnchor: string;
 }> = {
   en: {
@@ -50,9 +48,6 @@ const COPY: Record<Base, {
     label: "PRICING",
     h1: "Plans",
     sub: "Every plan starts with a 7-day free trial. Change or cancel at any time.",
-    tax: "Try Echorank free for 7 days. Cancel anytime. Card required.",
-    currency:
-      "All prices are in US dollars (USD). If you pay with a card in another currency, your bank converts the charge at its own exchange rate.",
     toolsAnchor: "See the tools included",
   },
   fr: {
@@ -62,9 +57,6 @@ const COPY: Record<Base, {
     label: "TARIFS",
     h1: "Forfaits",
     sub: "Chaque forfait commence par un essai gratuit de 7 jours. Modifiez ou annulez à tout moment.",
-    tax: "Essayez Echorank gratuitement pendant 7 jours. Annulez à tout moment. Carte requise.",
-    currency:
-      "Tous les prix sont en dollars américains (USD). Si vous payez avec une carte dans une autre devise, votre banque effectue la conversion à son propre taux de change.",
     toolsAnchor: "Voir les outils inclus",
   },
 };
@@ -116,8 +108,8 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
             pricing={pricingTiers(l)}
             priceChrome={HOME_PRICING_CHROME[l]}
             toolCountLine={toolCountLine(l, seoToolCounts())}
-            tax={c.tax}
-            currency={c.currency}
+            tax={PRICING_NOTES[baseOf(l)].tax}
+            currency={PRICING_NOTES[baseOf(l)].currency}
             // The "N tools" line points at the homepage's #tools section —
             // this page has none, and a bare "#tools" here would be a dead
             // anchor that silently scrolls nowhere.

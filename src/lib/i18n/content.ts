@@ -1818,3 +1818,19 @@ export const THEME_TOGGLE_COPY: Record<Locale, ThemeToggleCopy> = {
     toNight: "Zum Nacht-Design wechseln",
   },
 };
+
+// The two notes under the plan cards on /pricing, shared by every page that
+// renders PricingSection outside the homepage (/pricing, /site-crawler), so a
+// second page never words the trial or the currency differently.
+export const PRICING_NOTES: Record<"en" | "fr", { tax: string; currency: string }> = {
+  en: {
+    tax: "Try Echorank free for 7 days. Cancel anytime. Card required.",
+    currency:
+      "All prices are in US dollars (USD). If you pay with a card in another currency, your bank converts the charge at its own exchange rate.",
+  },
+  fr: {
+    tax: "Essayez Echorank gratuitement pendant 7 jours. Annulez à tout moment. Carte requise.",
+    currency:
+      "Tous les prix sont en dollars américains (USD). Si vous payez avec une carte dans une autre devise, votre banque effectue la conversion à son propre taux de change.",
+  },
+};

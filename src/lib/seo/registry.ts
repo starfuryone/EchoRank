@@ -67,6 +67,9 @@ export const LOCALIZED_ROUTES: LocalizedRoute[] = [
   // homepage's "classic reputation stack" section links straight here, so it
   // is a product page in the funnel rather than an article.
   { path: "/reputation-tools", priority: 0.7, changeFrequency: "monthly" },
+  // The crawler's public page: a product page in the funnel (linked from
+  // Solutions > By goal and the footer), ranked with /reputation-tools.
+  { path: "/site-crawler", priority: 0.7, changeFrequency: "monthly" },
   // The public blog. Ranks with the guide pages rather than the product ones:
   // it acquires readers, not buyers. Only the HUB is listed here — article
   // slugs are FILENAMES under content/blog/, and enumerating them in this

@@ -14,6 +14,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { PublicNav, navHrefs, nextOpenPanel } from "@/app/[locale]/PublicNav";
 import { LOCALIZED_ROUTES } from "@/lib/seo/registry";
 import { SOLUTION_ITEMS } from "@/lib/solutions-taxonomy";
+import { CRAWLER_BRAND } from "@/lib/site-crawler/brand";
 
 const nav = (locale: string, current?: Parameters<typeof PublicNav>[0]["current"]) =>
   renderToStaticMarkup(createElement(PublicNav, { locale, current }));
@@ -72,6 +73,16 @@ describe("every menu destination exists", () => {
     expect(nav("en")).toContain("Set up AI Search tracking");
     expect(nav("fr")).toContain('href="/fr/setup-ai-search-tracking"');
     expect(nav("fr")).toContain("Configurer le suivi de recherche IA");
+  });
+
+  it("carries the crawler page in Solutions > By goal, both locales", () => {
+    // Appended to the goals column, not configured in the taxonomy (it has no
+    // solutions/<slug> page), so the taxonomy count below does not see it.
+    expect(navHrefs()).toContain("/site-crawler");
+    expect(nav("en")).toContain('href="/en/site-crawler"');
+    expect(nav("en")).toContain(`Crawl your site (${CRAWLER_BRAND.name})`);
+    expect(nav("fr")).toContain('href="/fr/site-crawler"');
+    expect(nav("fr")).toContain(`Explorer votre site (${CRAWLER_BRAND.name})`);
   });
 
   it("carries every taxonomy item in the Solutions panel", () => {

@@ -30,6 +30,7 @@ import { THEME_TOGGLE_COPY, type ThemeToggleCopy } from "@/lib/i18n/content";
 import { isSupportedLocale } from "@/lib/i18n/config";
 import s from "./home2.module.css";
 import { ThemeToggle } from "@/components/marketing/theme-toggle";
+import { CRAWLER_BRAND } from "@/lib/site-crawler/brand";
 
 type Base = "en" | "fr";
 const baseOf = (locale: string): Base => (locale.startsWith("fr") ? "fr" : "en");
@@ -100,6 +101,12 @@ interface NavCopy {
  * descriptions: with all 25 items described the panel is taller than most
  * viewports, and a menu you have to scroll is a worse menu.
  */
+function crawlerGoalItem(base: Base): NavItem {
+  return base === "fr"
+    ? { href: "/site-crawler", label: `Explorer votre site (${CRAWLER_BRAND.name})`, desc: "Chaque page vérifiée, preuve à l'appui." }
+    : { href: "/site-crawler", label: `Crawl your site (${CRAWLER_BRAND.name})`, desc: "Every page checked, with the evidence." };
+}
+
 function solutionsGroup(base: Base): NavGroup {
   return {
     id: "solutions",
@@ -107,11 +114,17 @@ function solutionsGroup(base: Base): NavGroup {
     columns: [
       ...SOLUTION_CATEGORIES.map((cat) => ({
         title: cat[base].label,
-        items: cat.items.map((item) => ({
-          href: `/solutions/${cat.slug}/${item.slug}`,
-          label: item[base].label,
-          ...(cat.slug === "goals" ? { desc: item[base].desc } : {}),
-        })),
+        items: [
+          ...cat.items.map((item) => ({
+            href: `/solutions/${cat.slug}/${item.slug}`,
+            label: item[base].label,
+            ...(cat.slug === "goals" ? { desc: item[base].desc } : {}),
+          })),
+          // The crawler's own page is a product page, not a taxonomy item (it
+          // has no solutions/<slug> page), so it is appended rather than
+          // configured in solutions-taxonomy.ts.
+          ...(cat.slug === "goals" ? [crawlerGoalItem(base)] : []),
+        ],
       })),
       // "Use cases" as its own category, not a flat top-level link.
       {
@@ -371,7 +384,7 @@ export function navHrefs(): string[] {
  * anonymous visitor on every marketing page. A failed probe leaves the
  * logged-out chrome — never blocks, never hides.
  */
-function useSignedIn(override?: boolean): boolean {
+export function useSignedIn(override?: boolean): boolean {
   const [probed, setProbed] = useState(false);
 
   useEffect(() => {

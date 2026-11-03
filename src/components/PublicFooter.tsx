@@ -6,12 +6,16 @@
 
 import Link from "next/link";
 import s from "@/app/[locale]/home2.module.css";
+import { CRAWLER_BRAND } from "@/lib/site-crawler/brand";
 
 const LINKS: Record<"en" | "fr", ReadonlyArray<readonly [string, string]>> = {
   en: [
     ["/pricing", "Pricing"],
     ["/ai-visibility-check", "Free AI visibility check"],
     ["/free-tools", "Free tools"],
+    // Product: the crawler's public page. The footer is one flat row, so
+    // "under Product" means beside the other product links, before Learn.
+    ["/site-crawler", CRAWLER_BRAND.name],
     ["/learn", "Learn"],
     ["/blog", "Blog"],
     ["/about", "About"],
@@ -22,6 +26,7 @@ const LINKS: Record<"en" | "fr", ReadonlyArray<readonly [string, string]>> = {
     ["/pricing", "Tarifs"],
     ["/ai-visibility-check", "Vérification de visibilité IA gratuite"],
     ["/free-tools", "Outils gratuits"],
+    ["/site-crawler", CRAWLER_BRAND.name],
     ["/learn", "Apprendre"],
     ["/blog", "Blog"],
     ["/about", "À propos"],
