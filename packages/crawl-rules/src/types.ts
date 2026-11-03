@@ -46,7 +46,7 @@ export const RULE_FAMILIES = [
   // (capability "psi").
   "spelling",
   "performance",
-  // Reserved for Phase 4a (robots.would_block / robots.would_allow, custom robots.txt test mode).
+  // Phase 4a: what a custom robots.txt in test mode would change.
   "robots",
 ] as const;
 
@@ -305,6 +305,20 @@ export interface PageFacts {
   render?: RenderFacts;
   /** Phase 3c. Absent when the consumer did not spell-check the page. */
   spelling?: SpellingFacts;
+  /** Phase 4a. Present only when a custom robots.txt runs in test mode. */
+  robotsTest?: RobotsTestFacts;
+}
+
+/**
+ * Custom robots.txt in test mode (Phase 4a): the crawl obeys the live file,
+ * and each URL is also judged against the draft. Lines are 1-based; null when
+ * no rule matched (allowed by default).
+ */
+export interface RobotsTestFacts {
+  liveAllowed: boolean;
+  customAllowed: boolean;
+  liveLine: number | null;
+  customLine: number | null;
 }
 
 // ─── Stored (site-scope) facts ──────────────────────────────────────────────

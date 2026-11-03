@@ -21,6 +21,7 @@ import { startCrawl, toCrawlDto } from "@/lib/site-crawler/service";
 import { getCrawlQuota } from "@/lib/site-crawler/quota";
 import { crawlRouteError } from "@/lib/site-crawler/http";
 import { RENDER_MODES } from "@/lib/site-crawler/types";
+import { CrawlConfigInputSchema } from "@/lib/site-crawler/crawl-config";
 
 /** Starts per tenant per minute. A floor under the monthly allowance, which
  * for STARTER is only 4 and could otherwise be burned by a double-click. */
@@ -33,6 +34,9 @@ const BodySchema = z.object({
   url: z.string().trim().min(1).max(MAX_URL_LENGTH),
   /** Phase 3b. Capped by the plan's rendered pages per crawl. */
   renderMode: z.enum(RENDER_MODES).default("none"),
+  /** Phase 4a. Omitted = the defaults. Secrets in clear here, sealed before storage. */
+  config: CrawlConfigInputSchema.optional(),
+  saveAsDefault: z.boolean().default(false),
 });
 
 export async function POST(request: Request) {
@@ -64,6 +68,7 @@ export async function POST(request: Request) {
       tenant.tenant.planType,
       parsed.data.url,
       parsed.data.renderMode,
+      { config: parsed.data.config, saveAsDefault: parsed.data.saveAsDefault },
     );
     return NextResponse.json(job, { status: 202 });
   } catch (err) {

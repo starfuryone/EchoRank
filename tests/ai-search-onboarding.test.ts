@@ -36,12 +36,16 @@ const allowAll: RobotsRules = {
   isAllowed: () => true,
   crawlDelaySeconds: 0,
   sitemaps: [],
+  matchLine: () => null,
+  body: null,
 };
 const denyAll: RobotsRules = {
   allowAll: false,
   isAllowed: () => false,
   crawlDelaySeconds: 0,
   sitemaps: [],
+  matchLine: () => null,
+  body: null,
 };
 
 function html(body: string, title = "Acme POS"): string {
@@ -56,6 +60,8 @@ function page(url: string, body: string): FetchOutcome {
     statusCode: 200,
     redirectTarget: null,
     redirectHops: 0,
+    chain: [],
+    lastModified: null,
     contentType: "text/html",
     html: html(body),
     xRobotsTag: null,

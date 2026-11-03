@@ -71,6 +71,27 @@ export function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+/**
+ * Per-crawl request settings (Phase 4a CrawlConfig). Secrets arrive decrypted
+ * and live only in this object for the length of the crawl.
+ */
+export interface FetchOptions {
+  userAgent?: string;
+  /** Custom headers, the cookie string and basic auth, already as header lines. */
+  extraHeaders?: Record<string, string>;
+  /**
+   * Which hosts get extraHeaders. Credentials never follow a redirect off the
+   * crawled site: a cookie or a password for staging.example.com must not be
+   * handed to whatever host a redirect names.
+   */
+  credentialsFor?: (url: string) => boolean;
+}
+
+export interface RedirectHop {
+  url: string;
+  status: number;
+}
+
 export interface FetchOutcome {
   /** Final URL after redirects. */
   finalUrl: string;
@@ -78,6 +99,10 @@ export interface FetchOutcome {
   /** Location of the FIRST hop only, when there was one. */
   redirectTarget: string | null;
   redirectHops: number;
+  /** Every redirect response, first request first: [{url, status}]. Empty when none. */
+  chain: RedirectHop[];
+  /** Last-Modified of the final response, as sent. */
+  lastModified: string | null;
   contentType: string | null;
   /** Present only for text/html within the size cap. */
   html: string | null;
@@ -105,17 +130,20 @@ export function isHtmlContentType(contentType: string | null): boolean {
  * Never throws: transport failures come back as `error` with a null status, so
  * one unreachable page cannot end a crawl.
  */
-export async function fetchPage(url: string): Promise<FetchOutcome> {
+export async function fetchPage(url: string, opts: FetchOptions = {}): Promise<FetchOutcome> {
   const started = Date.now();
   let current = url;
   let redirectTarget: string | null = null;
   let hops = 0;
+  const chain: RedirectHop[] = [];
 
   try {
     for (;;) {
+      const credentials = opts.extraHeaders && (!opts.credentialsFor || opts.credentialsFor(current)) ? opts.extraHeaders : {};
       const res = await fetch(current, {
         headers: {
-          "user-agent": CRAWLER_USER_AGENT,
+          ...credentials,
+          "user-agent": opts.userAgent ?? CRAWLER_USER_AGENT,
           accept: "text/html,application/xhtml+xml;q=0.9,*/*;q=0.5",
           "accept-language": "en",
         },
@@ -127,6 +155,7 @@ export async function fetchPage(url: string): Promise<FetchOutcome> {
       const isRedirect = res.status >= 300 && res.status < 400 && location;
 
       if (isRedirect) {
+        chain.push({ url: current, status: res.status });
         let next: string;
         try {
           next = new URL(location, current).toString();
@@ -137,6 +166,8 @@ export async function fetchPage(url: string): Promise<FetchOutcome> {
             statusCode: res.status,
             redirectTarget: redirectTarget ?? location,
             redirectHops: hops,
+            chain,
+            lastModified: null,
             contentType: res.headers.get("content-type"),
             html: null,
             xRobotsTag: lowerOrNull(res.headers.get("x-robots-tag")),
@@ -156,6 +187,8 @@ export async function fetchPage(url: string): Promise<FetchOutcome> {
             statusCode: res.status,
             redirectTarget,
             redirectHops: hops,
+            chain,
+            lastModified: null,
             contentType: res.headers.get("content-type"),
             html: null,
             xRobotsTag: lowerOrNull(res.headers.get("x-robots-tag")),
@@ -183,6 +216,8 @@ export async function fetchPage(url: string): Promise<FetchOutcome> {
           statusCode: res.status,
           redirectTarget,
           redirectHops: hops,
+          chain,
+          lastModified: res.headers.get("last-modified"),
           contentType,
           html: null,
           xRobotsTag,
@@ -199,6 +234,8 @@ export async function fetchPage(url: string): Promise<FetchOutcome> {
         statusCode: res.status,
         redirectTarget,
         redirectHops: hops,
+        chain,
+        lastModified: res.headers.get("last-modified"),
         contentType,
         html: body?.text ?? null,
         xRobotsTag,
@@ -214,6 +251,8 @@ export async function fetchPage(url: string): Promise<FetchOutcome> {
       statusCode: null,
       redirectTarget,
       redirectHops: hops,
+      chain,
+      lastModified: null,
       contentType: null,
       html: null,
       xRobotsTag: null,

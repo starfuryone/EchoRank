@@ -34,6 +34,14 @@ export interface RobotsRules {
    * fetcher falls back to {origin}/sitemap.xml in that case.
    */
   sitemaps: string[];
+  /**
+   * 1-based line of the rule that decided this URL, or null when no rule
+   * matched (allowed by default) or there is no file. The robots.txt tester
+   * shows it next to each verdict.
+   */
+  matchLine(url: string): number | null;
+  /** The file as fetched (or supplied), for the tester. Null when there was none. */
+  body: string | null;
 }
 
 /**
@@ -51,20 +59,27 @@ export function clampCrawlDelay(raw: unknown): number {
 
 /** Rules that permit everything — used when robots.txt is absent (404/410). */
 export function allowAllRules(): RobotsRules {
-  return { allowAll: true, isAllowed: () => true, crawlDelaySeconds: 0, sitemaps: [] };
+  return { allowAll: true, isAllowed: () => true, crawlDelaySeconds: 0, sitemaps: [], matchLine: () => null, body: null };
 }
 
 /** Rules that permit nothing — used when robots.txt could not be read. */
 export function denyAllRules(): RobotsRules {
-  return { allowAll: false, isAllowed: () => false, crawlDelaySeconds: 0, sitemaps: [] };
+  return { allowAll: false, isAllowed: () => false, crawlDelaySeconds: 0, sitemaps: [], matchLine: () => null, body: null };
 }
 
-/** Wrap a parsed robots.txt body in the interface the crawler consumes. */
-export function rulesFromBody(body: string, robotsUrl: string): RobotsRules {
+/**
+ * Wrap a parsed robots.txt body in the interface the crawler consumes.
+ *
+ * `agent` is the user-agent TOKEN whose group applies (Echorank360Bot by
+ * default, Googlebot when a verified site crawls as Googlebot): robots-parser
+ * keeps what comes before the first "/", so a full browser-style UA string
+ * would be matched as "Mozilla".
+ */
+export function rulesFromBody(body: string, robotsUrl: string, agent: string = CRAWLER_USER_AGENT): RobotsRules {
   const parsed: Robot = robotsParser(robotsUrl, body);
   // robots-parser resolves the most specific matching group for this UA and
   // falls back to `*` itself, which is exactly the precedence we want.
-  const delay = clampCrawlDelay(parsed.getCrawlDelay(CRAWLER_USER_AGENT));
+  const delay = clampCrawlDelay(parsed.getCrawlDelay(agent));
 
   // getSitemaps() returns whatever the file declared, absolute per the spec.
   // Filtered to http(s) here so a junk line cannot reach the fetcher.
@@ -77,9 +92,14 @@ export function rulesFromBody(body: string, robotsUrl: string): RobotsRules {
       // isAllowed returns undefined for a URL on a different host than the
       // robots.txt. Scope already prevents that; treat it as allowed rather
       // than silently dropping the URL.
-      const verdict = parsed.isAllowed(url, CRAWLER_USER_AGENT);
+      const verdict = parsed.isAllowed(url, agent);
       return verdict !== false;
     },
+    matchLine(url: string): number | null {
+      const line = parsed.getMatchingLineNumber(url, agent);
+      return typeof line === "number" && line > 0 ? line : null;
+    },
+    body,
     crawlDelaySeconds: delay,
   };
 }
@@ -90,7 +110,10 @@ export function rulesFromBody(body: string, robotsUrl: string): RobotsRules {
  * Never throws: every failure resolves to a rules object, because the crawl
  * must make a decision either way and an exception here would fail the job.
  */
-export async function fetchRobots(rootUrl: string): Promise<RobotsRules> {
+export async function fetchRobots(
+  rootUrl: string,
+  opts: { userAgent?: string; agent?: string } = {},
+): Promise<RobotsRules> {
   let robotsUrl: string;
   try {
     robotsUrl = new URL("/robots.txt", rootUrl).toString();
@@ -100,7 +123,7 @@ export async function fetchRobots(rootUrl: string): Promise<RobotsRules> {
 
   try {
     const res = await fetch(robotsUrl, {
-      headers: { "user-agent": CRAWLER_USER_AGENT, accept: "text/plain,*/*;q=0.8" },
+      headers: { "user-agent": opts.userAgent ?? CRAWLER_USER_AGENT, accept: "text/plain,*/*;q=0.8" },
       signal: AbortSignal.timeout(ROBOTS_TIMEOUT_MS),
       redirect: "follow",
     });
@@ -116,7 +139,7 @@ export async function fetchRobots(rootUrl: string): Promise<RobotsRules> {
     // An empty robots.txt is a valid "everything allowed".
     if (body.trim() === "") return allowAllRules();
 
-    return rulesFromBody(body, robotsUrl);
+    return rulesFromBody(body, robotsUrl, opts.agent);
   } catch {
     // Timeout, DNS failure, connection reset — we asked and got no answer.
     return denyAllRules();

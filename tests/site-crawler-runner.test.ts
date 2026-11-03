@@ -520,3 +520,69 @@ describe("spell check", () => {
     expect(String(sp?.evidence.sample)).not.toMatch(/acmeware/i);
   });
 });
+
+// ─── Crawl configuration (Phase 4a) ────────────────────────────────────────
+
+const { sealCrawlConfig } = await import("@/lib/site-crawler/crawl-config-secrets");
+const { CrawlConfigInputSchema } = await import("@/lib/site-crawler/crawl-config");
+const { rulesFromBody } = await import("@/lib/site-crawler/robots");
+
+describe("crawl configuration", () => {
+  const KEY = "test-key-not-a-secret";
+
+  function withConfig(input: Record<string, unknown>, extra: Record<string, unknown> = {}) {
+    vi.stubEnv("GSC_TOKEN_ENCRYPTION_KEY", KEY);
+    const config = { ...sealCrawlConfig(CrawlConfigInputSchema.parse(input), null, KEY), ...extra };
+    crawlJob.findUnique.mockResolvedValue({ id: "job_1", rootUrl: "https://example.com/", urlCap: 100, status: "QUEUED", config });
+  }
+  const fetched = () => fetchPage.mock.calls.map((c) => c[0] as string);
+  const site = (links: Record<string, string[]>) =>
+    fetchPage.mockImplementation(async (url: string) => htmlResponse(url, links[url] ?? []));
+
+  afterEach(() => vi.unstubAllEnvs());
+
+  it("excluded URLs and URLs past max depth are never fetched", async () => {
+    withConfig({ exclude: ["*/tag/*"], maxDepth: 1 });
+    site({
+      "https://example.com/": ["/a", "/tag/x"],
+      "https://example.com/a": ["/a/deeper"],
+    });
+    await runCrawl({ jobId: "job_1", redis: fakeRedis() as never });
+    expect(fetched().sort()).toEqual(["https://example.com/", "https://example.com/a"]);
+  });
+
+  it("sends decrypted credentials and the configured pace, never logs them", async () => {
+    withConfig({ cookies: "session=abc", headers: [{ name: "X-Preview", value: "tok" }] });
+    await runCrawl({ jobId: "job_1", redis: fakeRedis() as never });
+    const opts = fetchPage.mock.calls[0]![1] as { extraHeaders: Record<string, string>; credentialsFor: (u: string) => boolean };
+    expect(opts.extraHeaders).toMatchObject({ cookie: "session=abc", "x-preview": "tok" });
+    expect(opts.credentialsFor("https://elsewhere.test/")).toBe(false);
+  });
+
+  it("test mode: obeys the live robots.txt and reports what the draft would block", async () => {
+    withConfig({ customRobots: "User-agent: *\nDisallow: /a" }, { customRobotsMode: "test" });
+    fetchRobots.mockResolvedValue(rulesFromBody("User-agent: *\nDisallow:", "https://example.com/robots.txt"));
+    site({ "https://example.com/": ["/a"] });
+    await runCrawl({ jobId: "job_1", redis: fakeRedis() as never });
+    expect(fetched()).toContain("https://example.com/a");
+    const pageA = crawlPage.create.mock.calls.map((c) => c[0].data).find((d) => d.url === "https://example.com/a");
+    expect(pageA.issues.create.map((i: { ruleId: string }) => i.ruleId)).toContain("robots.would_block");
+  });
+
+  it("replace mode (verified site): the draft is what the crawl obeys", async () => {
+    withConfig({ customRobots: "User-agent: *\nDisallow: /a" }, { customRobotsMode: "replace" });
+    fetchRobots.mockResolvedValue(rulesFromBody("User-agent: *\nDisallow:", "https://example.com/robots.txt"));
+    site({ "https://example.com/": ["/a"] });
+    await runCrawl({ jobId: "job_1", redis: fakeRedis() as never });
+    expect(fetched()).not.toContain("https://example.com/a");
+  });
+
+  it("fails the job, without crawling, when the secrets cannot be opened", async () => {
+    withConfig({ cookies: "session=abc" });
+    vi.stubEnv("GSC_TOKEN_ENCRYPTION_KEY", "a-different-key");
+    await runCrawl({ jobId: "job_1", redis: fakeRedis() as never });
+    expect(fetchPage).not.toHaveBeenCalled();
+    expect(terminalWrite().status).toBe("FAILED");
+    expect(JSON.stringify(terminalWrite())).not.toContain("session=abc");
+  });
+});

@@ -31,8 +31,9 @@ const crawlJob = {
 const crawlPage = { findMany: vi.fn(), count: vi.fn() };
 const crawlIssue = { findMany: vi.fn(), count: vi.fn(), groupBy: vi.fn() };
 const queryRaw = vi.fn();
+const crawlSiteDefault = { findUnique: vi.fn(), upsert: vi.fn() };
 vi.mock("@/lib/prisma", () => ({
-  prisma: { crawlJob, crawlPage, crawlIssue, $queryRaw: (...a: unknown[]) => queryRaw(...a) },
+  prisma: { crawlJob, crawlPage, crawlIssue, crawlSiteDefault, $queryRaw: (...a: unknown[]) => queryRaw(...a) },
 }));
 
 vi.mock("@/lib/rate-limit", () => ({
@@ -304,6 +305,68 @@ describe("POST /crawl", () => {
     expect(res.status).toBe(429);
     expect((await res.json()).code).toBe("QUOTA_EXCEEDED");
     expect(addJob).not.toHaveBeenCalled();
+  });
+
+  describe("configuration (Phase 4a)", () => {
+    beforeEach(() => {
+      vi.stubEnv("GSC_TOKEN_ENCRYPTION_KEY", "test-key-not-a-secret");
+      crawlSiteDefault.findUnique.mockResolvedValue(null);
+    });
+
+    it("stores the config sealed and lowers the URL cap to max URLs", async () => {
+      authed("GROWTH");
+      crawlJob.create.mockResolvedValue({ ...JOB_ROW, status: "QUEUED" });
+      const res = await startCrawl(postRequest({ url: "https://example.com", config: { maxUrls: 300, cookies: "sid=secret" } }));
+      expect(res.status).toBe(202);
+      const data = crawlJob.create.mock.calls[0]![0]!.data;
+      expect(data.urlCap).toBe(300);
+      expect(JSON.stringify(data.config)).not.toContain("sid=secret");
+    });
+
+    it("never raises the cap above the plan's", async () => {
+      authed("STARTER");
+      crawlJob.create.mockResolvedValue({ ...JOB_ROW, status: "QUEUED" });
+      await startCrawl(postRequest({ url: "https://example.com", config: { maxUrls: 1_000_000 } }));
+      expect(crawlJob.create.mock.calls[0]![0]!.data.urlCap).toBe(2500);
+    });
+
+    it("a custom robots.txt runs in test mode on an unverified site, replace mode on a verified one", async () => {
+      authed("GROWTH");
+      crawlJob.create.mockResolvedValue({ ...JOB_ROW, status: "QUEUED" });
+      await startCrawl(postRequest({ url: "https://example.com", config: { customRobots: "User-agent: *\nDisallow: /x" } }));
+      expect(crawlJob.create.mock.calls[0]![0]!.data.config.customRobotsMode).toBe("test");
+      crawlSiteDefault.findUnique.mockResolvedValue({ verifiedAt: new Date(), config: null });
+      await startCrawl(postRequest({ url: "https://example.com", config: { customRobots: "User-agent: *\nDisallow: /x" } }));
+      expect(crawlJob.create.mock.calls[1]![0]!.data.config.customRobotsMode).toBe("replace");
+    });
+
+    it("refuses verified-only options on an unverified site, before spending quota", async () => {
+      authed("STARTER");
+      crawlJob.count.mockResolvedValue(4);
+      const res = await startCrawl(postRequest({ url: "https://example.com", config: { userAgent: "googlebot_desktop" } }));
+      expect(res.status).toBe(400);
+      expect(await res.json()).toMatchObject({ code: "INVALID_CONFIG", problems: [{ field: "userAgent", code: "requires_verified_site" }] });
+      expect(crawlJob.create).not.toHaveBeenCalled();
+    });
+
+    it("saves the config as the site's default when asked", async () => {
+      authed("GROWTH");
+      crawlJob.create.mockResolvedValue({ ...JOB_ROW, status: "QUEUED" });
+      await startCrawl(postRequest({ url: "https://www.example.com/x", config: { speed: 1 }, saveAsDefault: true }));
+      expect(crawlSiteDefault.upsert.mock.calls[0]![0]).toMatchObject({
+        where: { tenantId_host: { tenantId: TENANT, host: "www.example.com" } },
+        update: { config: expect.objectContaining({ speed: 1 }) },
+      });
+    });
+
+    it("never echoes secrets in the response", async () => {
+      authed("GROWTH");
+      crawlJob.create.mockImplementation(async (args: { data: Record<string, unknown> }) => ({ ...JOB_ROW, ...args.data }));
+      const res = await startCrawl(postRequest({ url: "https://example.com", config: { basicAuth: { user: "u", password: "pw-123" } } }));
+      const body = await res.text();
+      expect(body).not.toContain("pw-123");
+      expect(JSON.parse(body).config.basicAuth).toEqual({ user: "u", password: { set: true } });
+    });
   });
 
   it("spends no quota on an invalid URL", async () => {

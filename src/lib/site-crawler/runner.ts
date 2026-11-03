@@ -23,7 +23,6 @@ import { prisma } from "@/lib/prisma";
 import { recordResearch } from "@/lib/research-log/store";
 import { logger } from "@/infrastructure/observability/logger";
 import {
-  CRAWLER_USER_AGENT,
   FETCH_CONCURRENCY,
   MAX_CRAWL_DURATION_MS,
   REDIS_KEY_TTL_SECONDS,
@@ -33,6 +32,9 @@ import {
 import { collectSitemapUrls, type SitemapResult } from "./sitemap";
 import { aggregateCrawl } from "./aggregate";
 import { RateLimiter, fetchPage, isHtmlContentType } from "./fetch";
+import { DEFAULT_CRAWL_CONFIG, readStoredConfig, type RuntimeCrawlConfig } from "./crawl-config";
+import { openCrawlConfig } from "./crawl-config-secrets";
+import { crawlSettings, resolveRobots, type CrawlSettings } from "./crawl-settings";
 import { parsePage, type ParsedPage } from "./checks";
 import { evaluatePageRules, type Issue, type PageFacts } from "@/lib/crawl-rules";
 import { buildPageFacts, buildPageFactsAndText } from "./facts";
@@ -43,7 +45,7 @@ import { RenderBudget } from "./render";
 import { isRenderMode } from "./types";
 import { renderedOnlyLinks } from "@/lib/crawl-rules";
 import { fetchRobots, type RobotsRules } from "./robots";
-import { isFetchableUrl, isInScope, normalizeCrawlUrl } from "./url";
+import { isFetchableUrl, normalizeCrawlUrl } from "./url";
 
 export interface RunCrawlArgs {
   jobId: string;
@@ -63,6 +65,28 @@ export interface CrawlOutcome {
 interface SpellCtx {
   accepted: Set<string>;
   rootLang: string | null;
+}
+
+/** Everything one page's crawl needs, fixed for the length of the crawl. */
+interface CrawlCtx {
+  rootUrl: string;
+  /** The robots.txt rules the crawl obeys. */
+  robots: RobotsRules;
+  /** A custom robots.txt in test mode: judged, never obeyed. */
+  robotsTest: RobotsRules | null;
+  limiter: RateLimiter;
+  /** Null when the crawl found no sitemap; otherwise membership per URL. */
+  isInSitemap: ((url: string) => Promise<boolean>) | null;
+  head: HeadCheckDeps;
+  render: RenderBudget;
+  spell: SpellCtx;
+  settings: CrawlSettings;
+}
+
+/** The job's stored config, decrypted; the defaults for a pre-4a job. */
+function runtimeConfig(raw: unknown): RuntimeCrawlConfig {
+  const stored = readStoredConfig(raw);
+  return stored ? openCrawlConfig(stored) : { ...DEFAULT_CRAWL_CONFIG };
 }
 
 /** One page's fetch+parse result, held only until the batch is written. */
@@ -117,6 +141,7 @@ export async function runCrawl({
       renderMode: true,
       renderCap: true,
       pagesRendered: true,
+      config: true,
     },
   });
   if (!job) throw new Error(`CrawlJob ${jobId} not found`);
@@ -155,8 +180,18 @@ export async function runCrawl({
     });
 
     const rootUrl = job.rootUrl;
-    const robots: RobotsRules = await fetchRobots(rootUrl);
-    const limiter = new RateLimiter(undefined, robots.crawlDelaySeconds * 1000);
+    // Phase 4a configuration. Decrypted here, inside the try: a key that
+    // cannot open the secrets fails the job rather than crawling without them.
+    const cfg = runtimeConfig(job.config);
+    const settings = crawlSettings(cfg, rootUrl);
+    const live = await fetchRobots(rootUrl, { userAgent: settings.userAgent, agent: settings.agent });
+    const { obey: robots, test: robotsTest } = resolveRobots(
+      live,
+      cfg,
+      new URL("/robots.txt", rootUrl).toString(),
+      settings.agent,
+    );
+    const limiter = new RateLimiter(cfg.speed, robots.crawlDelaySeconds * 1000);
 
     logger.info(
       {
@@ -165,7 +200,11 @@ export async function runCrawl({
         urlCap: job.urlCap,
         crawlDelay: robots.crawlDelaySeconds,
         robotsAllowAll: robots.allowAll,
-        ua: CRAWLER_USER_AGENT,
+        ua: settings.userAgent,
+        respectRobots: cfg.respectRobots,
+        customRobots: cfg.customRobots ? (cfg.customRobotsMode ?? "test") : null,
+        // Which options are set, never their values.
+        credentials: Boolean(settings.fetchOpts.extraHeaders),
         renderMode: render.mode,
         renderCap: render.cap,
       },
@@ -203,9 +242,10 @@ export async function runCrawl({
       // Capped so seeding alone can never exceed the plan's URL ceiling.
       const seedRoom = Math.max(0, job.urlCap - 1);
       const seeds: string[] = [];
-      for (const url of sitemap.urls) {
+      for (const raw of sitemap.urls) {
         if (seeds.length >= seedRoom) break;
-        if (!isFetchableUrl(url)) continue;
+        const url = settings.admit(raw);
+        if (!url) continue;
         if ((await redis.sadd(keys.seen, url)) === 1) {
           seeds.push(JSON.stringify({ url, depth: 0 }));
           sitemapSeeded.add(url);
@@ -224,6 +264,18 @@ export async function runCrawl({
       },
       "site-crawl sitemap ingested",
     );
+
+    const ctx: CrawlCtx = {
+      rootUrl,
+      robots,
+      robotsTest,
+      limiter,
+      isInSitemap,
+      head: { redis, cacheKey: keys.headCache, limiter },
+      render,
+      spell,
+      settings,
+    };
 
     for (;;) {
       if (await redis.exists(keys.cancel)) {
@@ -245,11 +297,7 @@ export async function runCrawl({
       const batch = await popBatch(redis, keys.queue, batchSize);
       if (batch.length === 0) break; // frontier exhausted — the clean ending
 
-      const results = await processBatch(batch, rootUrl, robots, limiter, isInSitemap, {
-        redis,
-        cacheKey: keys.headCache,
-        limiter,
-      }, render, spell);
+      const results = await processBatch(batch, ctx);
       const written = await writeBatch(jobId, results, redis, keys.seen, job.urlCap, pagesCrawled);
 
       pagesCrawled += written.pages;
@@ -391,16 +439,7 @@ async function popBatch(
 }
 
 /** Fetch and parse one batch, at most FETCH_CONCURRENCY at a time. */
-async function processBatch(
-  batch: { url: string; depth: number }[],
-  rootUrl: string,
-  robots: RobotsRules,
-  limiter: RateLimiter,
-  isInSitemap: ((url: string) => Promise<boolean>) | null,
-  head: HeadCheckDeps,
-  render: RenderBudget,
-  spell: SpellCtx,
-): Promise<PendingPage[]> {
+async function processBatch(batch: { url: string; depth: number }[], ctx: CrawlCtx): Promise<PendingPage[]> {
   const results: PendingPage[] = [];
   let cursor = 0;
 
@@ -409,7 +448,7 @@ async function processBatch(
       const index = cursor++;
       if (index >= batch.length) return;
       const item = batch[index]!;
-      results.push(await crawlOne(item, rootUrl, robots, limiter, isInSitemap, head, render, spell));
+      results.push(await crawlOne(item, ctx));
     }
   };
 
@@ -419,17 +458,8 @@ async function processBatch(
   return results;
 }
 
-async function crawlOne(
-  item: { url: string; depth: number },
-  rootUrl: string,
-  robots: RobotsRules,
-  limiter: RateLimiter,
-  /** Null when the crawl found no sitemap; otherwise membership per URL. */
-  isInSitemap: ((url: string) => Promise<boolean>) | null,
-  head: HeadCheckDeps,
-  render: RenderBudget,
-  spell: SpellCtx,
-): Promise<PendingPage> {
+async function crawlOne(item: { url: string; depth: number }, ctx: CrawlCtx): Promise<PendingPage> {
+  const { rootUrl, robots, robotsTest, limiter, isInSitemap, head, render, spell, settings } = ctx;
   const base: PendingPage = {
     url: item.url,
     depth: item.depth,
@@ -471,6 +501,7 @@ async function crawlOne(
       statusCode: null,
       fetchError: null,
     });
+    if (robotsTest) facts.robotsTest = judgeDraft(robots, robotsTest, item.url);
     return { ...base, issues: evaluatePageRules(facts) };
   }
 
@@ -480,7 +511,7 @@ async function crawlOne(
   const inSitemap = isInSitemap ? await isInSitemap(item.url) : null;
 
   await limiter.acquire();
-  const res = await fetchPage(item.url);
+  const res = await fetchPage(item.url, settings.fetchOpts);
 
   const isHtml = isHtmlContentType(res.contentType) && res.html !== null;
   const parsed = isHtml ? parsePage(res.html!, res.finalUrl, rootUrl) : null;
@@ -504,6 +535,7 @@ async function crawlOne(
     html: isHtml ? res.html : null,
   });
   await attachHeadChecks(facts, rootUrl, head);
+  if (robotsTest) facts.robotsTest = judgeDraft(robots, robotsTest, item.url);
   const rendered = await render.maybeRender(facts);
   if (rendered) facts.render = rendered;
 
@@ -522,14 +554,20 @@ async function crawlOne(
 
   // parsePage already dedupes hrefs per page, so this set is the "one credit
   // per source page" rule the inlink count needs.
-  const linkTargets = [
+  const admitAll = (urls: string[]) => [
     ...new Set(
-      [...(parsed?.links ?? []), ...jsLinks]
+      urls
         .map((url) => normalizeCrawlUrl(url))
         .filter((url): url is string => Boolean(url))
-        .filter((url) => isInScope(url, rootUrl) && isFetchableUrl(url)),
+        .map(settings.admit)
+        .filter((url): url is string => Boolean(url)),
     ),
   ];
+  const linkTargets = admitAll([...(parsed?.links ?? []), ...jsLinks]);
+  // rel=nofollow targets are crawled only when the configuration says so;
+  // they never earn a followed-inlink credit either way.
+  const nofollowFollowed = settings.followNofollow ? admitAll(parsed?.nofollowLinks ?? []) : [];
+  const deeper = settings.maxDepth === null || item.depth + 1 <= settings.maxDepth;
 
   return {
     ...base,
@@ -543,10 +581,12 @@ async function crawlOne(
     rendered: renderColumns(facts),
     contentHash: parsed?.contentHash ?? null,
     inSitemap,
-    discovered: [...linkTargets, ...annotationTargets(facts, linkTargets, rootUrl)].map((url) => ({
-      url,
-      depth: item.depth + 1,
-    })),
+    discovered: deeper
+      ? [...linkTargets, ...nofollowFollowed, ...annotationTargets(facts, linkTargets, settings)].map((url) => ({
+          url,
+          depth: item.depth + 1,
+        }))
+      : [],
     linkTargets,
     nofollowTargets: [...new Set(parsed?.nofollowLinks ?? [])],
   };
@@ -558,18 +598,29 @@ async function crawlOne(
  * site rules can judge them, but they earn no inlink credit — an annotation
  * is not a link a visitor can follow.
  */
-function annotationTargets(facts: PageFacts, linkTargets: string[], rootUrl: string): string[] {
+function annotationTargets(facts: PageFacts, linkTargets: string[], settings: CrawlSettings): string[] {
   const h = facts.html;
   if (!h) return [];
   const seen = new Set(linkTargets);
   const out: string[] = [];
   for (const raw of [...h.hreflang.map((x) => x.href), ...h.canonicals, ...h.relNext, ...h.relPrev]) {
-    const url = normalizeCrawlUrl(raw, facts.finalUrl);
-    if (!url || seen.has(url) || !isInScope(url, rootUrl) || !isFetchableUrl(url)) continue;
+    const normalized = normalizeCrawlUrl(raw, facts.finalUrl);
+    const url = normalized ? settings.admit(normalized) : null;
+    if (!url || seen.has(url)) continue;
     seen.add(url);
     out.push(url);
   }
   return out;
+}
+
+/** How the live file and the draft judge one URL (custom robots.txt, test mode). */
+function judgeDraft(live: RobotsRules, draft: RobotsRules, url: string) {
+  return {
+    liveAllowed: live.isAllowed(url),
+    customAllowed: draft.isAllowed(url),
+    liveLine: live.matchLine?.(url) ?? null,
+    customLine: draft.matchLine(url),
+  };
 }
 
 /**

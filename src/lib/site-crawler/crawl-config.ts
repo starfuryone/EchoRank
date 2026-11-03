@@ -90,6 +90,12 @@ export interface CrawlConfigOf<S> {
   basicAuth: { user: string; password: S } | null;
   respectRobots: boolean;
   customRobots: string | null;
+  /**
+   * Set by the server at crawl creation, never taken from input: "replace" on
+   * a verified site (the draft is obeyed), "test" otherwise (the live file is
+   * obeyed and robots.would_block / would_allow report the difference).
+   */
+  customRobotsMode?: "replace" | "test";
 }
 
 export type CrawlConfigInput = CrawlConfigOf<SecretInput>;

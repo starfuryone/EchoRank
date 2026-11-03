@@ -17,7 +17,10 @@ import { crawlKeys, REDIS_KEY_TTL_SECONDS } from "./constants";
 import { getCrawlQuota } from "./quota";
 import { validateRootUrl } from "./url";
 import type { RenderMode } from "./types";
-import { CrawlLockedError, CrawlQuotaExceededError, InvalidCrawlUrlError } from "./http";
+import { CrawlLockedError, CrawlQuotaExceededError, InvalidCrawlConfigError, InvalidCrawlUrlError } from "./http";
+import { checkCrawlConfig, readStoredConfig, viewCrawlConfig, type CrawlConfigInput, type CrawlConfigView } from "./crawl-config";
+import { sealCrawlConfig } from "./crawl-config-secrets";
+import { newVerifyToken } from "./site-verify";
 
 export interface CrawlJobDto {
   id: string;
@@ -33,6 +36,13 @@ export interface CrawlJobDto {
   renderMode: RenderMode;
   renderCap: number;
   pagesRendered: number;
+  /** Phase 4a. */
+  mode: "spider" | "list";
+  /** Secrets as { set: true }; null = the defaults. */
+  config: CrawlConfigView | null;
+  pinned: boolean;
+  /** Set once retention deleted the crawl's pages: summary only from then on. */
+  dataPurgedAt: string | null;
 }
 
 export function toCrawlDto(row: {
@@ -49,6 +59,10 @@ export function toCrawlDto(row: {
   renderMode?: string;
   renderCap?: number;
   pagesRendered?: number;
+  mode?: string;
+  config?: unknown;
+  pinned?: boolean;
+  dataPurgedAt?: Date | null;
 }): CrawlJobDto {
   return {
     id: row.id,
@@ -64,7 +78,18 @@ export function toCrawlDto(row: {
     renderMode: row.renderMode === "thin" || row.renderMode === "all" ? row.renderMode : "none",
     renderCap: row.renderCap ?? 0,
     pagesRendered: row.pagesRendered ?? 0,
+    mode: row.mode === "list" ? "list" : "spider",
+    config: viewCrawlConfig(readStoredConfig(row.config)),
+    pinned: row.pinned ?? false,
+    dataPurgedAt: row.dataPurgedAt?.toISOString() ?? null,
   };
+}
+
+export interface StartCrawlOptions {
+  /** Phase 4a configuration; omitted = the defaults. */
+  config?: CrawlConfigInput;
+  /** Also store this configuration as the default for the root's host. */
+  saveAsDefault?: boolean;
 }
 
 /** Validate, enforce quota, create the row, enqueue the job. */
@@ -73,6 +98,7 @@ export async function startCrawl(
   plan: PlanType,
   rawUrl: string,
   renderMode: RenderMode = "none",
+  opts: StartCrawlOptions = {},
 ): Promise<CrawlJobDto> {
   const quota = await getCrawlQuota(tenantId, plan);
   if (quota.locked) throw new CrawlLockedError(plan);
@@ -82,17 +108,46 @@ export async function startCrawl(
     throw new InvalidCrawlUrlError(validated.reason ?? "not_a_url");
   }
 
+  // Phase 4a configuration, checked before quota like the URL: a typo in a
+  // pattern should not spend a crawl. Verified-only options are refused on
+  // an unverified host; a custom robots.txt runs in test mode there.
+  const host = new URL(validated.url).hostname;
+  const site = opts.config || opts.saveAsDefault
+    ? await prisma.crawlSiteDefault.findUnique({
+        where: { tenantId_host: { tenantId, host } },
+        select: { verifiedAt: true, config: true },
+      })
+    : null;
+  let stored = null;
+  if (opts.config) {
+    const checked = checkCrawlConfig(opts.config, { urlCap: quota.urlCap, verified: Boolean(site?.verifiedAt) });
+    if (checked.problems.length) throw new InvalidCrawlConfigError(checked.problems);
+    stored = sealCrawlConfig(checked.config, readStoredConfig(site?.config));
+  }
+
   if (!quota.allowed) {
     throw new CrawlQuotaExceededError(quota.monthlyLimit ?? 0, plan);
+  }
+
+  if (stored && opts.saveAsDefault) {
+    await prisma.crawlSiteDefault.upsert({
+      where: { tenantId_host: { tenantId, host } },
+      create: { tenantId, host, verifyToken: newVerifyToken(), config: stored as object },
+      update: { config: stored as object },
+    });
   }
 
   const job = await prisma.crawlJob.create({
     data: {
       tenantId,
       rootUrl: validated.url,
+      ...(stored
+        ? { config: { ...stored, customRobotsMode: site?.verifiedAt ? "replace" : "test" } as object }
+        : {}),
       // Copied from the plan at creation: the crawl keeps reporting the ceiling
-      // it ran under even if the tenant changes tier tomorrow.
-      urlCap: quota.urlCap,
+      // it ran under even if the tenant changes tier tomorrow. A configured
+      // max URLs lowers it, never raises it.
+      urlCap: Math.min(quota.urlCap, stored?.maxUrls ?? quota.urlCap),
       // Same rule for the render ceiling. A tier without one crawls raw only,
       // whatever was asked for.
       renderMode: quota.renderCap > 0 ? renderMode : "none",
