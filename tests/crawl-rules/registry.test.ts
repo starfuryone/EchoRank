@@ -85,7 +85,9 @@ describe("package boundary", () => {
   it.each(files.map((f) => [relative(root, f), f]))("%s imports only from inside the package", (_n, f) => {
     const src = readFileSync(f, "utf8");
     const specs = [...src.matchAll(/(?:from|import)\s*\(?\s*["']([^"']+)["']/g)].map((m) => m[1]!);
-    for (const s of specs) expect(s, s).toMatch(/^\.\.?\//);
+    // Relative imports, plus the two data packages hreflang validation uses
+    // (declared in packages/crawl-rules/package.json). Nothing else.
+    for (const s of specs) expect(s, s).toMatch(/^(\.\.?\/|iso-639-1$|i18n-iso-countries\/index$)/);
     expect(src).not.toMatch(/\brequire\(|process\.|\bfetch\(|Buffer\b/);
   });
 });

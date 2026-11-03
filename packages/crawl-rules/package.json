@@ -2,7 +2,7 @@
   "name": "@echorank/crawl-rules",
   "version": "0.1.0",
   "private": true,
-  "description": "Rule-driven SEO issue library: PageFacts/SiteFacts in, Issue[] out. Zero runtime dependencies.",
+  "description": "Rule-driven SEO issue library: PageFacts/SiteFacts in, Issue[] out. Runtime dependencies: two code-list packages for hreflang validation, nothing else.",
   "type": "module",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
@@ -10,6 +10,10 @@
     ".": "./src/index.ts"
   },
   "sideEffects": false,
+  "dependencies": {
+    "i18n-iso-countries": "7.14.0",
+    "iso-639-1": "3.1.6"
+  },
   "scripts": {
     "typecheck": "tsc -p tsconfig.json"
   }

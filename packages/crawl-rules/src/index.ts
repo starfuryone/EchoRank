@@ -20,6 +20,8 @@ import type {
   SiteRuleCtx,
   StoredPageFacts,
 } from "./types";
+import { RULES as hreflangRules } from "./rules/hreflang";
+import { COPY as hreflangCopy } from "./copy/hreflang";
 import { RULES as validationRules } from "./rules/validation";
 import { COPY as validationCopy } from "./copy/validation";
 import { RULES as structuredDataRules } from "./rules/structured_data";
@@ -79,6 +81,7 @@ const FAMILIES: Family[] = [
   { rules: paginationRules, copy: paginationCopy },
   { rules: structuredDataRules, copy: structuredDataCopy },
   { rules: validationRules, copy: validationCopy },
+  { rules: hreflangRules, copy: hreflangCopy },
 ];
 
 export const RULES: readonly Rule[] = FAMILIES.flatMap((f) => f.rules);
