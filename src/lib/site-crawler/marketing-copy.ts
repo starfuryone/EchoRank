@@ -307,8 +307,11 @@ export const CRAWL_FEATURE_ROWS: readonly CrawlFeatureRow[] = [
   // Spelling only: grammar is out of scope (SITE-CRAWLER-PHASE3.md, 3c), so
   // the row does not claim it.
   row("spelling", { family: "spelling" }, "Spelling", "Orthographe"),
-  row("source-search", { flag: "crawl.extraction" }, "Custom source code search", "Recherche dans le code source"),
-  row("custom-extraction", { flag: "crawl.extraction" }, "Custom extraction", "Extraction personnalisée"),
+  // Phase 4b caps, per crawl (searches, extractors) and per site (segments).
+  row("source-search", { flag: "crawl.extraction" }, "Custom source code search", "Recherche dans le code source", (p, b) =>
+    b === "fr" ? `${fmt(p.crawlSearches, b)} recherches par exploration` : `${fmt(p.crawlSearches, b)} searches per crawl`),
+  row("custom-extraction", { flag: "crawl.extraction" }, "Custom extraction", "Extraction personnalisée", (p, b) =>
+    b === "fr" ? `${fmt(p.crawlExtractors, b)} extracteurs par exploration` : `${fmt(p.crawlExtractors, b)} extractors per crawl`),
   row("custom-javascript", { flag: "crawl.customJs" }, "Custom JavaScript", "JavaScript personnalisé"),
   row("ai-crawl", { flag: "crawl.ai" }, "Crawl with AI (Claude / OpenAI / Gemini)", "Exploration avec l'IA (Claude / OpenAI / Gemini)"),
   row("google-analytics", { flag: "crawl.ga4" }, "Google Analytics integration", "Intégration Google Analytics"),
@@ -317,7 +320,8 @@ export const CRAWL_FEATURE_ROWS: readonly CrawlFeatureRow[] = [
   row("accessibility", { family: "accessibility" }, "Accessibility auditing", "Audit d'accessibilité"),
   row("link-metrics", { flag: "crawl.backlinks" }, "Link metrics integration", "Intégration des métriques de liens"),
   row("forms-auth", { flag: "crawl.formsAuth" }, "Forms-based authentication", "Authentification par formulaire"),
-  row("segmentation", { flag: "crawl.segments" }, "Segmentation", "Segmentation"),
+  row("segmentation", { flag: "crawl.segments" }, "Segmentation", "Segmentation", (p, b) =>
+    b === "fr" ? `${fmt(p.crawlSegments, b)} segments par site` : `${fmt(p.crawlSegments, b)} segments per site`),
   row("looker-studio", { flag: "crawl.reports" }, "Looker Studio crawl report", "Rapport d'exploration Looker Studio"),
   row("support", { always: true }, "Free technical support", "Soutien technique gratuit"),
 ];

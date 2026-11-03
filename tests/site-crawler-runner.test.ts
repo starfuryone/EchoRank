@@ -597,6 +597,21 @@ describe("crawl configuration", () => {
     expect(crawlPage.create.mock.calls[0]![0].data.segmentIds).toEqual([]);
   });
 
+  it("raises extraction.empty and search.match from the page's own results (Phase 4b)", async () => {
+    withConfig({
+      extractors: [
+        { name: "Heading", kind: "css", expr: "h1" },
+        { name: "Price", kind: "css", expr: "[itemprop=price]" },
+      ],
+      searches: [{ name: "words", pattern: "w19", isRegex: false }],
+    });
+    site({ "https://example.com/": [] });
+    await runCrawl({ jobId: "job_1", redis: fakeRedis() as never });
+    const issues = crawlPage.create.mock.calls[0]![0].data.issues.create as { ruleId: string; evidence: unknown }[];
+    expect(issues.find((i) => i.ruleId === "extraction.empty")?.evidence).toEqual({ empty: "Price", count: 1 });
+    expect(issues.find((i) => i.ruleId === "search.match")?.evidence).toEqual({ searches: "words (11)", matches: 11 });
+  });
+
   it("a crawl without extractors or searches writes neither", async () => {
     withConfig({});
     site({ "https://example.com/": [] });

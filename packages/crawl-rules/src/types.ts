@@ -48,7 +48,15 @@ export const RULE_FAMILIES = [
   "performance",
   // Phase 4a: what a custom robots.txt in test mode would change.
   "robots",
+  // Phase 4b: the tenant's own extractors and searches. The one family whose
+  // rules carry two id prefixes: extraction.* and search.* (FAMILY_ID_PREFIXES).
+  "extraction",
 ] as const;
+
+/** Families whose rule ids may start with more than the family name. Ids are public API, so this is a closed list. */
+export const FAMILY_ID_PREFIXES: Partial<Record<(typeof RULE_FAMILIES)[number], readonly string[]>> = {
+  extraction: ["extraction", "search"],
+};
 
 export type RuleFamily = (typeof RULE_FAMILIES)[number];
 export type RuleKind = "issue" | "warning" | "opportunity";
@@ -307,6 +315,18 @@ export interface PageFacts {
   spelling?: SpellingFacts;
   /** Phase 4a. Present only when a custom robots.txt runs in test mode. */
   robotsTest?: RobotsTestFacts;
+  /** Phase 4b. Present only on HTML pages of a crawl with custom extractors or searches. */
+  custom?: CustomFacts;
+}
+
+/** What the tenant's own extractors and searches found on one page (Phase 4b). */
+export interface CustomFacts {
+  /** Names of the extractors that returned nothing here. */
+  extractorsEmpty: string[];
+  /** How many extractors returned something here. */
+  extractorsFound: number;
+  /** Searches that matched here, with their counts. */
+  searchMatches: { name: string; count: number }[];
 }
 
 /**

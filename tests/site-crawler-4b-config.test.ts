@@ -8,6 +8,8 @@ import { describe, expect, it } from "vitest";
 import { CrawlConfigInputSchema, EXTRACTOR_PRESETS, checkCrawlConfig, regexProblem, readStoredConfig } from "@/lib/site-crawler/crawl-config";
 import { planConfig } from "@/lib/plan-config";
 import { featureCapsForPlan } from "@/lib/site-crawler/quota";
+import { CRAWL_FEATURE_ROWS, featureCells } from "@/lib/site-crawler/marketing-copy";
+import { PLAN_CONFIGS } from "@/lib/plan-config";
 import { SegmentDefSchema, parseSegmentParam, segmentCell, segmentMatcher, statusClassOf, type SegmentDef } from "@/lib/site-crawler/segments";
 
 const input = (over: Record<string, unknown> = {}) => CrawlConfigInputSchema.parse(over);
@@ -23,6 +25,19 @@ describe("plan caps (crawlExtractors / crawlSearches / crawlSegments)", () => {
   ] as const)("%s: %i extractors, %i searches, %i segments", (plan, e, s, g) => {
     expect(featureCapsForPlan(plan)).toEqual({ extractorCap: e, searchCap: s, segmentCap: g });
     expect(planConfig(plan)).toMatchObject({ crawlExtractors: e, crawlSearches: s, crawlSegments: g });
+  });
+});
+
+describe("public feature table cells (read from plan-config)", () => {
+  const plans = { STARTER: PLAN_CONFIGS.STARTER, GROWTH: PLAN_CONFIGS.GROWTH, AGENCY: PLAN_CONFIGS.AGENCY };
+  const cells = (id: string, base: "en" | "fr") => featureCells(CRAWL_FEATURE_ROWS.find((r) => r.id === id)!, plans, base);
+  it.each([
+    ["custom-extraction", "en", ["3 extractors per crawl", "5 extractors per crawl", "10 extractors per crawl"]],
+    ["source-search", "en", ["2 searches per crawl", "5 searches per crawl", "5 searches per crawl"]],
+    ["segmentation", "en", ["3 segments per site", "10 segments per site", "25 segments per site"]],
+    ["segmentation", "fr", ["3 segments par site", "10 segments par site", "25 segments par site"]],
+  ] as const)("%s (%s)", (id, base, want) => {
+    expect(Object.values(cells(id, base))).toEqual(want);
   });
 });
 

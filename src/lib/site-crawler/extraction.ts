@@ -28,6 +28,7 @@ import type { CheerioAPI } from "cheerio";
 import * as cheerio from "cheerio";
 import { DOMImplementation, type Document as XmlDocument, type Element as XmlElement } from "@xmldom/xmldom";
 import * as xpath from "xpath";
+import type { CustomFacts } from "@/lib/crawl-rules";
 import { CONFIG_LIMITS, type CustomSearch, type Extractor } from "./crawl-config";
 
 /** Wall-clock budget for all regex work on one page. */
@@ -47,6 +48,8 @@ export interface PageExtraction {
 export interface PageExtractor {
   extractorCount: number;
   searchCount: number;
+  extractorNames: string[];
+  searchNames: string[];
   run($: CheerioAPI, html: string, now?: () => number): PageExtraction;
 }
 
@@ -240,6 +243,8 @@ export function compileExtraction(extractors: readonly Extractor[], searches: re
   return {
     extractorCount: extractors.length,
     searchCount: searches.length,
+    extractorNames: extractors.map((e) => e.name),
+    searchNames: searches.map((s) => s.name),
     run($, html, now = Date.now) {
       const budget = new Budget(now() + REGEX_PAGE_BUDGET_MS, now);
       let xml: XmlDocument | null = null;
@@ -267,5 +272,17 @@ export function compileExtraction(extractors: readonly Extractor[], searches: re
       }
       return { values, searchHits, timedOut: budget.timedOut };
     },
+  };
+}
+
+/** The page facts the extraction rules read (extraction.empty, search.match). */
+export function customFacts(x: PageExtractor, result: PageExtraction): CustomFacts {
+  return {
+    extractorsEmpty: x.extractorNames.filter((_, i) => !result.values.has(i)),
+    extractorsFound: result.values.size,
+    searchMatches: x.searchNames.flatMap((name, i) => {
+      const count = result.searchHits?.[String(i)] ?? 0;
+      return count > 0 ? [{ name, count }] : [];
+    }),
   };
 }

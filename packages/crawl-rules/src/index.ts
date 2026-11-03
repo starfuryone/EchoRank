@@ -47,6 +47,7 @@ import { RULES as pageTitlesRules } from "./rules/page_titles";
 import { RULES as urlRules } from "./rules/url";
 import { RULES as responseCodesRules } from "./rules/response_codes";
 import { RULES as robotsRules } from "./rules/robots";
+import { RULES as extractionRules } from "./rules/extraction";
 
 const FAMILIES: (readonly Rule[])[] = [
   // one line per family, in RULE_FAMILIES order
@@ -74,6 +75,7 @@ const FAMILIES: (readonly Rule[])[] = [
   spellingRules,
   performanceRules,
   robotsRules,
+  extractionRules,
 ];
 
 export const RULES: readonly Rule[] = FAMILIES.flat();

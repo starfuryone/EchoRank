@@ -12,7 +12,7 @@
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import { describe, expect, it } from "vitest";
-import { AXE_RULES, RULE_COPY, RULE_FAMILIES, RULES } from "@/lib/crawl-rules";
+import { AXE_RULES, FAMILY_ID_PREFIXES, RULE_COPY, RULE_FAMILIES, RULES } from "@/lib/crawl-rules";
 import { RULE_IDS } from "@/lib/crawl-rules-meta";
 import type { RuleCase } from "./harness";
 
@@ -27,7 +27,8 @@ describe("rule registry", () => {
     for (const r of RULES) {
       expect(RULE_FAMILIES).toContain(r.family);
       expect(r.id).toMatch(/^[a-z0-9_]+(\.[a-z0-9_]+)+$/);
-      expect(r.id.startsWith(`${r.family}.`), r.id).toBe(true);
+      const prefixes = FAMILY_ID_PREFIXES[r.family] ?? [r.family];
+      expect(prefixes.some((p) => r.id.startsWith(`${p}.`)), r.id).toBe(true);
     }
   });
 

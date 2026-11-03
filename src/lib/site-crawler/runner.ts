@@ -51,7 +51,7 @@ import { fetchRobots, type RobotsRules } from "./robots";
 import { isFetchableUrl, normalizeCrawlUrl } from "./url";
 import type { RedirectHop } from "./fetch";
 import { resolveLinkGraph } from "./link-graph";
-import { compileExtraction, type PageExtraction, type PageExtractor } from "./extraction";
+import { compileExtraction, customFacts, type PageExtraction, type PageExtractor } from "./extraction";
 import { segmentMatcher, type SegmentPage } from "./segments";
 
 export interface RunCrawlArgs {
@@ -629,6 +629,7 @@ async function crawlOne(item: FrontierItem, ctx: CrawlCtx): Promise<PendingPage>
     headers: res.headers,
     html: isHtml ? res.html : null,
   });
+  if (extract && ex) facts.custom = customFacts(extract, ex);
   await attachHeadChecks(facts, rootUrl, head);
   if (robotsTest) facts.robotsTest = judgeDraft(robots, robotsTest, item.url);
   const rendered = await render.maybeRender(facts);

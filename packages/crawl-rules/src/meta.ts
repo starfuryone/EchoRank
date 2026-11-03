@@ -32,6 +32,7 @@ import { COPY as pageTitlesCopy } from "./copy/page_titles";
 import { COPY as urlCopy } from "./copy/url";
 import { COPY as responseCodesCopy } from "./copy/response_codes";
 import { COPY as robotsCopy } from "./copy/robots";
+import { COPY as extractionCopy } from "./copy/extraction";
 
 const COPIES: Readonly<Record<string, RuleCopy>>[] = [
   // one line per family, in index.ts FAMILIES order
@@ -59,6 +60,7 @@ const COPIES: Readonly<Record<string, RuleCopy>>[] = [
   spellingCopy,
   performanceCopy,
   robotsCopy,
+  extractionCopy,
 ];
 
 export const RULE_COPY: Readonly<Record<string, RuleCopy>> = Object.assign({}, ...COPIES);

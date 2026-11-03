@@ -44,6 +44,7 @@ export const FAMILY_LABELS: Record<RuleFamily, string> = {
   spelling: "Spelling",
   performance: "Performance",
   robots: "robots.txt",
+  extraction: "Custom extraction and search",
 };
 
 const KIND_LABEL = { issue: "Issue", warning: "Warning", opportunity: "Opportunity" } as const;
