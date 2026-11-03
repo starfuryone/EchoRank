@@ -113,3 +113,63 @@ describe.skipIf(!TEST_DB)("link graph against Postgres", () => {
     expect(await prisma.crawlLink.count({ where: { crawlJobId: jobId } })).toBe(3);
   });
 });
+
+describe.skipIf(!TEST_DB)("link resolution in id windows (60,000 edges)", () => {
+  let prisma: typeof import("@/lib/prisma").prisma;
+  let g: typeof import("@/lib/site-crawler/link-graph");
+  const tenantId = `t_graphw_${Date.now()}`;
+  const jobId = `j_graphw_${Date.now()}`;
+  const PAGES = 600;
+  const EDGES = 60_000;
+
+  beforeAll(async () => {
+    ({ prisma } = await import("@/lib/prisma"));
+    g = await import("@/lib/site-crawler/link-graph");
+    await prisma.tenant.create({ data: { id: tenantId, name: "graphw", slug: tenantId } });
+    await prisma.crawlJob.create({ data: { id: jobId, tenantId, rootUrl: ROOT, urlCap: PAGES } });
+    await prisma.crawlPage.createMany({
+      data: Array.from({ length: PAGES }, (_, i) => ({ id: `${jobId}_p${i}`, crawlJobId: jobId, url: u(`/p${i}`), depth: 1, statusCode: 200 })),
+    });
+    // 100 edges per page; every 650th-cycle target past /p599 was never crawled.
+    await prisma.$executeRaw`
+      INSERT INTO "crawl_links" ("id", "crawlJobId", "fromPageId", "toUrl", "position")
+      SELECT ${jobId} || '_l' || lpad(n::text, 6, '0'), ${jobId}, ${jobId} || '_p' || (n / 100),
+             ${ROOT} || 'p' || (n % 650), (n % 100)::smallint
+      FROM generate_series(0, ${EDGES - 1}) AS n`;
+  }, 60_000);
+
+  afterAll(async () => {
+    await prisma?.tenant.delete({ where: { id: tenantId } }).catch(() => {});
+  });
+
+  it("resolves every edge, one statement per window, none larger than the window", async () => {
+    const touched: number[] = [];
+    const real = prisma.$executeRaw.bind(prisma);
+    const tracked = vi.spyOn(prisma, "$executeRaw").mockImplementation((async (...args: Parameters<typeof real>) => {
+      const n = await real(...args);
+      touched.push(n);
+      return n;
+    }) as never);
+
+    const windows = await g.resolveLinkGraph(jobId);
+    tracked.mockRestore();
+
+    expect(windows).toBe(2); // 50,000 + 10,000
+    const linkUpdates = touched.slice(0, windows);
+    expect(Math.max(...linkUpdates)).toBeLessThanOrEqual(g.LINK_RESOLVE_WINDOW);
+    const resolvable = Array.from({ length: EDGES }, (_, n) => n % 650).filter((t) => t < PAGES).length;
+    expect(linkUpdates.reduce((a, b) => a + b, 0)).toBe(resolvable);
+    expect(await prisma.crawlLink.count({ where: { crawlJobId: jobId, toPageId: { not: null } } })).toBe(resolvable);
+    expect(await prisma.crawlLink.count({ where: { crawlJobId: jobId, toPageId: null } })).toBe(EDGES - resolvable);
+  }, 60_000);
+
+  it("smaller windows cover the same rows and a rerun is a no-op", async () => {
+    await prisma.crawlLink.updateMany({ where: { crawlJobId: jobId }, data: { toPageId: null } });
+    expect(await g.resolveLinkGraph(jobId, 7_000)).toBe(Math.ceil(EDGES / 7_000));
+    const resolved = await prisma.crawlLink.count({ where: { crawlJobId: jobId, toPageId: { not: null } } });
+    expect(await g.resolveLinkGraph(jobId, 7_000)).toBe(Math.ceil(EDGES / 7_000));
+    expect(await prisma.crawlLink.count({ where: { crawlJobId: jobId, toPageId: { not: null } } })).toBe(resolved);
+    const sample = await prisma.crawlLink.findFirst({ where: { crawlJobId: jobId, toUrl: u("/p42") }, select: { toPageId: true } });
+    expect(sample!.toPageId).toBe(`${jobId}_p42`);
+  }, 60_000);
+});
