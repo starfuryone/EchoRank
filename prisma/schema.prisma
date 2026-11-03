@@ -2245,8 +2245,9 @@ model CrawlJob {
   finishedAt    DateTime?
   createdAt     DateTime    @default(now())
 
-  tenant Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   pages  CrawlPage[]
+  issues CrawlIssue[]
 
   @@index([tenantId, createdAt])
   @@map("crawl_jobs")
@@ -2286,10 +2287,49 @@ model CrawlPage {
   /// found no sitemap at all, which is different from "absent from it".
   inSitemap       Boolean?
 
+  // ── Phase 3a: the stored facts the site-scope rules read ─────────────────
+  // (packages/crawl-rules StoredPageFacts). Narrow on purpose: page-scope
+  // rules run on the in-memory PageFacts at crawl time and need none of this.
+  h1First             String?
+  h2First             String?
+  h2Count             Int?
+  imgCount            Int?
+  imgMissingAltCount  Int?
+  /// rel=canonical from the Link response header, when sent.
+  canonicalHeader     String?
+  xRobotsTag          String?
+  /// meta robots or X-Robots-Tag carries noindex (or none).
+  noindex             Boolean?
+  /// [{lang, href}] — absolute, normalised like `url`.
+  hreflang            Json?
+  relNext             String?
+  relPrev             String?
+  bytes               Int?
+  /// Visible text / response bytes, percent.
+  textRatio           Float?
+  langAttr            String?
+  hasViewport         Boolean?
+  charset             String?
+  /// {hsts, csp, xcto, xfo, refpol} booleans.
+  securityHeaders     Json?
+  mixedContentCount   Int?
+  insecureFormCount   Int?
+  externalOutlinks    Int?
+  nofollowOutlinks    Int?
+  /// Internal links pointing here with rel=nofollow; filled at aggregation.
+  nofollowInlinkCount Int?
+  jsonLdTypes         String[]
+  jsonLdErrors        Int?
+  /// 64-bit SimHash of the visible text (signed), for near-duplicates.
+  simhash             BigInt?
+
   crawlJob CrawlJob     @relation(fields: [crawlJobId], references: [id], onDelete: Cascade)
   issues   CrawlIssue[]
 
   @@index([crawlJobId])
+  /// Aggregation joins pages to pages by URL (canonical, hreflang and
+  /// pagination targets) and the inlink flush updates by URL.
+  @@index([crawlJobId, url])
   /// Duplicate detection reads this at write time: same hash, same crawl.
   @@index([crawlJobId, contentHash])
   @@map("crawl_pages")
@@ -2301,13 +2341,28 @@ model CrawlPage {
 model CrawlIssue {
   id          String  @id @default(cuid())
   crawlPageId String
+  /// Denormalised from the page so per-job, per-rule queries need no join.
+  /// Backfilled for pre-3a rows by the migration; always set on new ones.
+  crawlJobId  String?
+  /// Pre-3a: one of the 21 legacy types. 3a+: the rule id (= ruleId), kept
+  /// so the Phase 2 panels still read every row.
   type        String
+  /// ERROR / WARNING / NOTICE. 3a+ rows derive it from `kind`.
   severity    String
   detail      String?
+  /// packages/crawl-rules rule id. Null on pre-3a rows: legacy-map.ts maps
+  /// their `type` to a rule id on read.
+  ruleId      String?
+  kind        String?
+  priority    String?
+  /// Small by contract (counts, lengths, one value ≤ 200 chars).
+  evidence    Json?
 
   crawlPage CrawlPage @relation(fields: [crawlPageId], references: [id], onDelete: Cascade)
+  crawlJob  CrawlJob? @relation(fields: [crawlJobId], references: [id], onDelete: Cascade)
 
   @@index([crawlPageId])
+  @@index([crawlJobId, ruleId])
   @@map("crawl_issues")
 }
 
