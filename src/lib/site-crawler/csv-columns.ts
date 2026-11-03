@@ -9,6 +9,7 @@
 // kind of thing that type-checks locally and fails the production build.
 
 import type { CsvColumn } from "@/lib/csv-export";
+import { RULE_COPY } from "@/lib/crawl-rules";
 
 /** The row shape the CSV columns and the Prisma select agree on. */
 export interface CrawlIssueRow {
@@ -81,4 +82,58 @@ export const PAGE_COLUMNS: CsvColumn<CrawlPageRow>[] = [
   { header: "Canonical", value: (r) => r.canonical },
   { header: "Redirect target", value: (r) => r.redirectTarget },
   { header: "Content type", value: (r) => r.contentType },
+];
+
+// ─── Phase 3a: Issues by rule ───────────────────────────────────────────────
+
+/** One row of the Issues tab. */
+export interface RuleListRow {
+  ruleId: string;
+  family: string | null;
+  kind: string;
+  priority: string;
+  urls: number;
+  share: number;
+}
+
+export const RULE_LIST_COLUMNS: CsvColumn<RuleListRow>[] = [
+  { header: "Issue", value: (r) => RULE_COPY[r.ruleId]?.name ?? r.ruleId },
+  { header: "Rule id", value: (r) => r.ruleId },
+  { header: "Family", value: (r) => r.family },
+  { header: "Kind", value: (r) => r.kind },
+  { header: "Priority", value: (r) => r.priority },
+  { header: "URLs", value: (r) => r.urls },
+  { header: "% of crawled", value: (r) => r.share },
+];
+
+/** One finding of one rule, as the per-rule page list selects it. */
+export interface RulePageRow {
+  id: string;
+  ruleId: string | null;
+  type: string;
+  evidence: unknown;
+  detail: string | null;
+  crawlPage: { url: string; statusCode: number | null };
+}
+
+/** Evidence as "key: value · key: value"; pre-3a rows fall back to their detail string. */
+export function evidenceCell(r: Pick<RulePageRow, "evidence" | "detail">): string | null {
+  const e = r.evidence as Record<string, unknown> | null;
+  if (!e || typeof e !== "object") return r.detail;
+  return Object.entries(e)
+    .filter(([, v]) => v !== null && v !== "")
+    .map(([k, v]) => `${k}: ${String(v)}`)
+    .join(" · ");
+}
+
+/**
+ * Per-rule page list columns. Evidence carries crawled-page text (a title, a
+ * canonical) — untrusted, which the serializer's formula guard handles.
+ */
+export const RULE_PAGE_COLUMNS: CsvColumn<RulePageRow>[] = [
+  { header: "URL", value: (r) => r.crawlPage.url },
+  { header: "Status code", value: (r) => r.crawlPage.statusCode },
+  { header: "Rule id", value: (r) => r.ruleId ?? r.type },
+  { header: "Issue", value: (r) => RULE_COPY[r.ruleId ?? ""]?.name ?? r.type },
+  { header: "Evidence", value: (r) => evidenceCell(r) },
 ];

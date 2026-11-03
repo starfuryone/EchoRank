@@ -10,6 +10,7 @@
 // tab says so on fr / de-CH. Everything else is SITE_CRAWLER_COPY.
 
 import { useEffect, useState } from "react";
+import { Download } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { RULE_COPY } from "@/lib/crawl-rules";
@@ -37,6 +38,9 @@ interface RulePagesResponse {
   totalPages: number;
   total: number;
 }
+
+const CSV_LINK =
+  "inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1 text-xs font-medium text-gray-700 hover:border-gray-300";
 
 const KIND_VARIANT = { issue: "danger", warning: "warning", opportunity: "info" } as const;
 
@@ -112,6 +116,11 @@ export function RulesPanel({ crawlId, t, int }: { crawlId: string; t: SiteCrawle
           </button>
         ))}
         {t.rulesEnglishOnly && <span className="text-xs text-gray-400">{t.rulesEnglishOnly}</span>}
+        {/* The whole table, every kind: the file is the full list, not this filter of it. */}
+        <a href={`/api/seo/v1/crawl/${crawlId}/rules?format=csv`} className={`${CSV_LINK} ml-auto`}>
+          <Download className="h-3.5 w-3.5" aria-hidden="true" />
+          {t.exportCsv}
+        </a>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
@@ -170,10 +179,19 @@ export function RulesPanel({ crawlId, t, int }: { crawlId: string; t: SiteCrawle
                   <p className="mt-1 text-sm text-gray-700">{copy.howToFix}</p>
                 </div>
                 <div>
-                  <h4 className="text-xs font-semibold uppercase tracking-wide text-gray-500">
-                    {t.rulesAffected}
-                    {pages ? ` (${int.format(pages.total)})` : ""}
-                  </h4>
+                  <div className="flex items-center justify-between gap-2">
+                    <h4 className="text-xs font-semibold uppercase tracking-wide text-gray-500">
+                      {t.rulesAffected}
+                      {pages ? ` (${int.format(pages.total)})` : ""}
+                    </h4>
+                    <a
+                      href={`/api/seo/v1/crawl/${crawlId}/rules/${encodeURIComponent(selected)}?format=csv`}
+                      className={CSV_LINK}
+                    >
+                      <Download className="h-3.5 w-3.5" aria-hidden="true" />
+                      {t.exportCsv}
+                    </a>
+                  </div>
                   <ul className="mt-2 space-y-2">
                     {pages?.rows.map((p) => (
                       <li key={p.id} className="text-sm">

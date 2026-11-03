@@ -683,3 +683,43 @@ describe("GET /crawl/[id]/issues with a rule id", () => {
     });
   });
 });
+
+describe("Issues-by-rule CSV", () => {
+  it("streams the rule list with names, ids, kinds and shares", async () => {
+    authed();
+    crawlJob.findFirst.mockResolvedValue({
+      id: "crawl_1",
+      pagesCrawled: 4,
+      summary: { issues: { "h1.missing": { count: 1, kind: "issue", priority: "medium" } }, issuesByKind: { issue: 1, warning: 0, opportunity: 0 } },
+    });
+    const res = await getRules(new Request("https://app.test/x?format=csv"), params("crawl_1"));
+    expect(res.headers.get("content-type")).toMatch(/text\/csv/);
+    const text = await res.text();
+    expect(text).toContain("Issue,Rule id,Family,Kind,Priority,URLs,% of crawled");
+    expect(text).toContain("Missing H1,h1.missing,h1,issue,medium,1,25");
+  });
+
+  it("streams one rule's findings with evidence, old rows through their detail, and guards formulas", async () => {
+    authed();
+    crawlJob.findFirst.mockResolvedValue({ id: "crawl_1" });
+    crawlIssue.findMany
+      .mockResolvedValueOnce([
+        { id: "i1", ruleId: "page_titles.over_60_chars", type: "page_titles.over_60_chars", evidence: { length: 72, title: "=HYPERLINK(1)" }, detail: null, crawlPage: { url: "https://example.com/a", statusCode: 200 } },
+        { id: "i2", ruleId: null, type: "TITLE_TOO_LONG", evidence: null, detail: "72 chars", crawlPage: { url: "https://example.com/b", statusCode: 200 } },
+      ])
+      .mockResolvedValue([]);
+    const res = await getRulePages(new Request("https://app.test/x?format=csv"), ruleParams("crawl_1", "page_titles.over_60_chars"));
+    const text = await res.text();
+    expect(text).toContain("URL,Status code,Rule id,Issue,Evidence");
+    expect(text).toContain("https://example.com/a,200,page_titles.over_60_chars,Title over 60 characters,");
+    expect(text).not.toMatch(/,=HYPERLINK/);
+    expect(text).toContain("https://example.com/b,200,TITLE_TOO_LONG,TITLE_TOO_LONG,72 chars");
+  });
+
+  it("still 400s an unknown rule before streaming anything", async () => {
+    authed();
+    crawlJob.findFirst.mockResolvedValue({ id: "crawl_1" });
+    const res = await getRulePages(new Request("https://app.test/x?format=csv"), ruleParams("crawl_1", "nope.nope"));
+    expect(res.status).toBe(400);
+  });
+});

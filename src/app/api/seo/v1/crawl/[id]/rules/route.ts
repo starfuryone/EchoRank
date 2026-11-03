@@ -4,6 +4,8 @@
  * of the crawl that is. Old crawls are tallied from crawl_issues
  * (rule-summary.ts); a rule that never fired is absent, not a zero row.
  *
+ * `?format=csv` streams the same rows (csv-columns.ts RULE_LIST_COLUMNS).
+ *
  * Tenant-scoped on the parent crawl (id + tenantId).
  * AUTHENTICATED — do not add /api/seo/v1/* to publicPaths in src/proxy.ts.
  */
@@ -14,8 +16,11 @@ import { requirePaidPlan } from "@/lib/paid-plan";
 import { prisma } from "@/lib/prisma";
 import { crawlRouteError } from "@/lib/site-crawler/http";
 import { ruleTalliesFor } from "@/lib/site-crawler/rule-summary";
+import { csvFilename } from "@/lib/csv-export";
+import { csvStreamResponse, wantsCsv } from "@/lib/csv-stream";
+import { RULE_LIST_COLUMNS, type RuleListRow } from "@/lib/site-crawler/csv-columns";
 
-export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const tenant = await requirePaidPlan();
     const { id } = await params;
@@ -44,6 +49,16 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
           b.urls - a.urls ||
           a.ruleId.localeCompare(b.ruleId),
       );
+
+    if (wantsCsv(new URL(request.url))) {
+      // At most one row per registry rule: one page, then done.
+      return csvStreamResponse<RuleListRow>({
+        columns: RULE_LIST_COLUMNS,
+        filename: csvFilename("site-crawler-issues-by-rule"),
+        cursorOf: (r) => r.ruleId,
+        fetchPage: async (cursor) => (cursor === null ? rules : []),
+      });
+    }
 
     return NextResponse.json({ pagesCrawled: crawl.pagesCrawled, issuesByKind, rules });
   } catch (err) {

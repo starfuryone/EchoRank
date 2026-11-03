@@ -6,6 +6,9 @@
  * an empty page that reads like "no problems". Pre-3a rows match through
  * their legacy type (rule-summary.ts ruleIssueWhere).
  *
+ * `?format=csv` streams every finding (keyset, capped like every export):
+ * URL, status, rule, evidence (csv-columns.ts RULE_PAGE_COLUMNS).
+ *
  * Tenant-scoped on the parent crawl (id + tenantId).
  * AUTHENTICATED — do not add /api/seo/v1/* to publicPaths in src/proxy.ts.
  */
@@ -16,6 +19,9 @@ import { requirePaidPlan } from "@/lib/paid-plan";
 import { prisma } from "@/lib/prisma";
 import { crawlRouteError } from "@/lib/site-crawler/http";
 import { ruleIssueWhere } from "@/lib/site-crawler/rule-summary";
+import { csvFilename } from "@/lib/csv-export";
+import { csvStreamResponse, wantsCsv } from "@/lib/csv-stream";
+import { RULE_PAGE_COLUMNS, type RulePageRow } from "@/lib/site-crawler/csv-columns";
 
 const DEFAULT_PAGE_SIZE = 50;
 const MAX_PAGE_SIZE = 200;
@@ -45,6 +51,29 @@ export async function GET(
       Math.max(1, Number(url.searchParams.get("pageSize") ?? DEFAULT_PAGE_SIZE) || DEFAULT_PAGE_SIZE),
     );
     const where = ruleIssueWhere(crawl.id, ruleId);
+
+    // After validation and the tenant-scoped lookup, so CSV inherits both.
+    if (wantsCsv(url)) {
+      return csvStreamResponse<RulePageRow>({
+        columns: RULE_PAGE_COLUMNS,
+        filename: csvFilename(`site-crawler-${ruleId.replace(/[^a-z0-9]+/g, "-")}`),
+        cursorOf: (r) => r.id,
+        fetchPage: (cursor, take) =>
+          prisma.crawlIssue.findMany({
+            where: { ...where, ...(cursor ? { id: { gt: cursor } } : {}) },
+            orderBy: { id: "asc" },
+            take,
+            select: {
+              id: true,
+              ruleId: true,
+              type: true,
+              evidence: true,
+              detail: true,
+              crawlPage: { select: { url: true, statusCode: true } },
+            },
+          }),
+      });
+    }
     const [total, rows] = await Promise.all([
       prisma.crawlIssue.count({ where }),
       prisma.crawlIssue.findMany({
