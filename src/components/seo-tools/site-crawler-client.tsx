@@ -30,6 +30,7 @@ import {
   type CrawlPagesPage,
   type CrawlQuotaDto,
   type CrawlSummaryDto,
+  type PartialSummaryDto,
   type DuplicateKind,
   type DuplicatePage,
   type PageFilters,
@@ -119,7 +120,7 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
   // a crawl of 25,000 pages has four more endpoints behind it and nobody
   // opens all of them.
   const [tab, setTab] = useState<TabId>("overview");
-  const [summary, setSummary] = useState<CrawlSummaryDto | null>(null);
+  const [summary, setSummary] = useState<CrawlSummaryDto | PartialSummaryDto | null>(null);
   const [duplicates, setDuplicates] = useState<DuplicatePage | null>(null);
   const [dupKind, setDupKind] = useState<DuplicateKind>("title");
   const [dupPage, setDupPage] = useState(1);
@@ -237,7 +238,7 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
     void (async () => {
       const data = await loadTab(active.id, tab);
       if (cancelled) return;
-      if (tab === "overview") setSummary((data as CrawlSummaryDto | null) ?? null);
+      if (tab === "overview") setSummary((data as CrawlSummaryDto | PartialSummaryDto | null) ?? null);
       if (tab === "duplicates") setDuplicates((data as DuplicatePage | null) ?? null);
       if (tab === "redirects") setRedirects((data as RedirectPage | null) ?? null);
       if (tab === "pages") setPageRows((data as CrawlPagesPage | null) ?? null);

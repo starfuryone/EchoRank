@@ -12948,6 +12948,10 @@ const siteCrawlerEn = {
   ovAggregationFailed:
     "The page data is complete, but the site-wide analysis did not finish. The issue list below is still accurate.",
   ovNoSummary: "No site-wide analysis for this crawl.",
+  ovKindIssue: "Issues",
+  ovKindWarning: "Warnings",
+  ovKindOpportunity: "Opportunities",
+  ovPartial: "This crawl predates the site-wide analysis. The totals are counted from its findings.",
 
   dupTitle: "Same title",
   dupMeta: "Same meta description",
@@ -13094,6 +13098,10 @@ export const SITE_CRAWLER_COPY: Record<DashLocale, SiteCrawlerCopy> = {
   ovAggregationFailed:
     "Les données des pages sont complètes, mais l'analyse globale du site n'a pas abouti. La liste des problèmes ci-dessous reste exacte.",
   ovNoSummary: "Aucune analyse globale pour cette exploration.",
+  ovKindIssue: "Problèmes",
+  ovKindWarning: "Avertissements",
+  ovKindOpportunity: "Pistes d'amélioration",
+  ovPartial: "Cette exploration précède l'analyse globale. Les totaux sont comptés à partir de ses constats.",
 
   dupTitle: "Même titre",
   dupMeta: "Même méta description",
@@ -13234,6 +13242,10 @@ export const SITE_CRAWLER_COPY: Record<DashLocale, SiteCrawlerCopy> = {
   ovAggregationFailed:
     "Die Seitendaten sind vollständig, aber die seitenweite Auswertung wurde nicht beendet. Die Problemliste unten stimmt weiterhin.",
   ovNoSummary: "Keine seitenweite Auswertung für diesen Crawl.",
+  ovKindIssue: "Probleme",
+  ovKindWarning: "Warnungen",
+  ovKindOpportunity: "Verbesserungsmöglichkeiten",
+  ovPartial: "Dieser Crawl stammt aus der Zeit vor der seitenweiten Auswertung. Die Summen sind aus seinen Befunden gezählt.",
 
   dupTitle: "Gleicher Title",
   dupMeta: "Gleiche Meta-Description",

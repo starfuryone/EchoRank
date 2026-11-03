@@ -93,6 +93,27 @@ export interface CrawlSummaryDto {
   aggregationMs: number;
   /** Present when aggregation failed; the page data is still complete. */
   aggregationError?: string;
+  /** Phase 3a: per-rule tallies and totals by kind — from the summary, or computed from crawl_issues. */
+  issues?: Record<string, RuleTallyDto>;
+  issuesByKind?: Record<RuleKindDto, number>;
+  /** True when the tallies were counted on read (an older crawl). */
+  computed?: boolean;
+}
+
+export type RuleKindDto = "issue" | "warning" | "opportunity";
+
+export interface RuleTallyDto {
+  count: number;
+  kind: RuleKindDto;
+  priority: "high" | "medium" | "low";
+}
+
+/** A crawl from before Phase 2: no site-wide summary, tallies only. */
+export interface PartialSummaryDto {
+  partial: true;
+  issues: Record<string, RuleTallyDto>;
+  issuesByKind: Record<RuleKindDto, number>;
+  computed: boolean;
 }
 
 export type DuplicateKind = "title" | "meta" | "content";

@@ -22,6 +22,8 @@ import type { SiteCrawlerCopy } from "@/lib/i18n/dashboard";
 import type {
   CrawlPagesPage,
   CrawlSummaryDto,
+  PartialSummaryDto,
+  RuleKindDto,
   DuplicateKind,
   DuplicatePage,
   PageFilters,
@@ -102,13 +104,35 @@ function Stat({ label, value }: { label: string; value: string }) {
   );
 }
 
+/** Issue / warning / opportunity totals. Absent tallies render nothing, never zeroes. */
+function KindTotals({ byKind, t, int }: Common & { byKind?: Record<RuleKindDto, number> }) {
+  if (!byKind) return null;
+  return (
+    <div className="grid grid-cols-3 gap-3">
+      <Stat label={t.ovKindIssue} value={int.format(byKind.issue ?? 0)} />
+      <Stat label={t.ovKindWarning} value={int.format(byKind.warning ?? 0)} />
+      <Stat label={t.ovKindOpportunity} value={int.format(byKind.opportunity ?? 0)} />
+    </div>
+  );
+}
+
 export function OverviewPanel({
   summary,
   t,
   int,
-}: Common & { summary: CrawlSummaryDto | null }) {
+}: Common & { summary: CrawlSummaryDto | PartialSummaryDto | null }) {
   if (!summary) {
     return <p className="py-8 text-center text-sm text-gray-500">{t.ovNoSummary}</p>;
+  }
+
+  // Before Phase 2 there was no site-wide summary: the tallies are all there is.
+  if ("partial" in summary) {
+    return (
+      <div className="space-y-4">
+        <KindTotals byKind={summary.issuesByKind} t={t} int={int} />
+        <p className="text-sm text-gray-500">{t.ovPartial}</p>
+      </div>
+    );
   }
 
   // Aggregation failed but the crawl did not: say so plainly rather than
@@ -125,6 +149,7 @@ export function OverviewPanel({
 
   return (
     <div className="space-y-4">
+      <KindTotals byKind={summary.issuesByKind} t={t} int={int} />
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Stat label={t.summaryErrors} value={int.format(summary.issuesBySeverity.ERROR ?? 0)} />
         <Stat label={t.summaryWarnings} value={int.format(summary.issuesBySeverity.WARNING ?? 0)} />

@@ -448,11 +448,50 @@ describe("GET /crawl/[id]/summary", () => {
     expect(res.status).toBe(404);
   });
 
-  it("404s when aggregation never wrote one", async () => {
+  it("passes a 3a summary's own tallies through, without counting again", async () => {
+    authed();
+    const issues = { "h1.missing": { count: 2, kind: "issue", priority: "medium" } };
+    crawlJob.findFirst.mockResolvedValue({
+      id: "crawl_1",
+      status: "COMPLETED",
+      summary: { statusCodes: {}, issues, issuesByKind: { issue: 2, warning: 0, opportunity: 0 } },
+    });
+    const body = await (await getSummary(new Request("https://app.test/x"), params("crawl_1"))).json();
+    expect(body).toMatchObject({ issues, computed: false });
+    expect(crawlIssue.groupBy).not.toHaveBeenCalled();
+  });
+
+  it("computes tallies from crawl_issues for a Phase 2 summary, mapping legacy types", async () => {
+    authed();
+    crawlJob.findFirst.mockResolvedValue({ id: "crawl_1", status: "COMPLETED", summary: { statusCodes: { "200": 5 } } });
+    crawlIssue.groupBy.mockResolvedValue([
+      { ruleId: null, type: "TITLE_MISSING", _count: { _all: 3 } },
+      { ruleId: null, type: "DUPLICATE_TITLE", _count: { _all: 2 } },
+      { ruleId: null, type: "NOT_A_TYPE", _count: { _all: 9 } },
+    ]);
+    const body = await (await getSummary(new Request("https://app.test/x"), params("crawl_1"))).json();
+    expect(crawlIssue.groupBy.mock.calls[0]![0]).toMatchObject({ where: { crawlJobId: "crawl_1" } });
+    expect(body.statusCodes["200"]).toBe(5);
+    expect(body.issues).toEqual({
+      "page_titles.missing": { count: 3, kind: "issue", priority: "high" },
+      "page_titles.duplicate": { count: 2, kind: "issue", priority: "medium" },
+    });
+    expect(body.issuesByKind).toEqual({ issue: 5, warning: 0, opportunity: 0 });
+    expect(body.computed).toBe(true);
+  });
+
+  it("answers a pre-Phase-2 crawl (no summary) with the computed tallies alone", async () => {
     authed();
     crawlJob.findFirst.mockResolvedValue({ id: "crawl_1", status: "COMPLETED", summary: null });
+    crawlIssue.groupBy.mockResolvedValue([{ ruleId: null, type: "HTTP_4XX", _count: { _all: 1 } }]);
     const res = await getSummary(new Request("https://app.test/x"), params("crawl_1"));
-    expect(res.status).toBe(404);
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({
+      partial: true,
+      computed: true,
+      issues: { "response_codes.internal_4xx": { count: 1, kind: "issue", priority: "high" } },
+      issuesByKind: { issue: 1, warning: 0, opportunity: 0 },
+    });
   });
 });
 
