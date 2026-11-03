@@ -15,6 +15,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 const crawlJob = { findUnique: vi.fn(), update: vi.fn() };
 const crawlPage = { create: vi.fn(), findFirst: vi.fn() };
 const crawlLink = { createMany: vi.fn() };
+const crawlExtraction = { createMany: vi.fn() };
 const executeRaw = vi.fn(async () => 0);
 vi.mock("@/lib/prisma", () => ({
   prisma: {
@@ -26,7 +27,7 @@ vi.mock("@/lib/prisma", () => ({
     // Spell check: the workspace's accepted words (Phase 3c).
     tenant: { findUnique: async () => ({ name: "Acme", spellingAcceptedWords: ["Acmeware"] }) },
     // The runner writes a batch inside a transaction; run the callback inline.
-    $transaction: async (fn: (tx: unknown) => Promise<unknown>) => fn({ crawlPage, crawlLink }),
+    $transaction: async (fn: (tx: unknown) => Promise<unknown>) => fn({ crawlPage, crawlLink, crawlExtraction }),
   },
 }));
 
@@ -547,6 +548,37 @@ describe("crawl configuration", () => {
     fetchPage.mockImplementation(async (url: string) => htmlResponse(url, links[url] ?? []));
 
   afterEach(() => vi.unstubAllEnvs());
+
+  it("stores custom extractions per page and search hits on the page row (Phase 4b)", async () => {
+    withConfig({
+      extractors: [
+        { name: "nav", kind: "css", expr: "nav" },
+        { name: "h1", kind: "css", expr: "h1" },
+        { name: "canonical", kind: "xpath", expr: "//link[@rel='canonical']/@href" },
+      ],
+      searches: [
+        { name: "w19x", pattern: "w19", isRegex: false },
+        { name: "absent", pattern: "gtag\\(", isRegex: true },
+      ],
+    });
+    site({ "https://example.com/": [] });
+    await runCrawl({ jobId: "job_1", redis: fakeRedis() as never });
+    const rows = crawlExtraction.createMany.mock.calls[0]![0].data;
+    expect(rows).toEqual([
+      { crawlJobId: "job_1", pageId: "p1", extractorIndex: 1, values: ["H"] },
+      { crawlJobId: "job_1", pageId: "p1", extractorIndex: 2, values: ["https://example.com/"] },
+    ]);
+    // w19 and w190..w199
+    expect(crawlPage.create.mock.calls[0]![0].data.searchHits).toEqual({ "0": 11 });
+  });
+
+  it("a crawl without extractors or searches writes neither", async () => {
+    withConfig({});
+    site({ "https://example.com/": [] });
+    await runCrawl({ jobId: "job_1", redis: fakeRedis() as never });
+    expect(crawlExtraction.createMany).not.toHaveBeenCalled();
+    expect(crawlPage.create.mock.calls[0]![0].data.searchHits).toBeUndefined();
+  });
 
   it("excluded URLs and URLs past max depth are never fetched", async () => {
     withConfig({ exclude: ["*/tag/*"], maxDepth: 1 });

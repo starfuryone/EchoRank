@@ -51,6 +51,7 @@ import { fetchRobots, type RobotsRules } from "./robots";
 import { isFetchableUrl, normalizeCrawlUrl } from "./url";
 import type { RedirectHop } from "./fetch";
 import { resolveLinkGraph } from "./link-graph";
+import { compileExtraction, type PageExtraction, type PageExtractor } from "./extraction";
 
 export interface RunCrawlArgs {
   jobId: string;
@@ -90,6 +91,8 @@ interface CrawlCtx {
   render: RenderBudget;
   spell: SpellCtx;
   settings: CrawlSettings;
+  /** Phase 4b custom extraction and search; null when the crawl has neither. */
+  extract: PageExtractor | null;
 }
 
 /** The job's stored config, decrypted; the defaults for a pre-4a job. */
@@ -137,6 +140,9 @@ interface PendingPage {
   contentHash: string | null;
   /** Null when the crawl found no sitemap at all. */
   inSitemap: boolean | null;
+  /** Phase 4b: extractor index → values, and search hits (null = no searches configured). */
+  extracted: Map<number, string[]>;
+  searchHits: Record<string, number> | null;
   /** Links to enqueue once the row is written. */
   discovered: FrontierItem[];
   /**
@@ -322,6 +328,7 @@ export async function runCrawl({
       render,
       spell,
       settings,
+      extract: compileExtraction(cfg.extractors ?? [], cfg.searches ?? []),
     };
 
     for (;;) {
@@ -535,6 +542,8 @@ async function crawlOne(item: FrontierItem, ctx: CrawlCtx): Promise<PendingPage>
     rendered: null,
     contentHash: null,
     inSitemap: null,
+    extracted: new Map(),
+    searchHits: null,
     discovered: [],
     linkTargets: [],
     nofollowTargets: [],
@@ -576,7 +585,14 @@ async function crawlOne(item: FrontierItem, ctx: CrawlCtx): Promise<PendingPage>
   const res = await fetchPage(item.url, settings.fetchOpts);
 
   const isHtml = isHtmlContentType(res.contentType) && res.html !== null;
-  const parsed = isHtml ? parsePage(res.html!, res.finalUrl, rootUrl) : null;
+  // Custom extraction runs on the document parsePage loads, not a second parse.
+  let extraction: PageExtraction | null = null;
+  const extract = ctx.extract;
+  const parsed = isHtml
+    ? parsePage(res.html!, res.finalUrl, rootUrl, extract ? ($) => void (extraction = extract.run($, res.html!)) : undefined)
+    : null;
+  const ex = extraction as PageExtraction | null;
+  if (ex?.timedOut) logger.info({ url: item.url }, "site-crawl regex budget spent on page");
 
   // One PageFacts for the rule engine. The HTML string goes no further than
   // this call: facts are counts, flags, short strings and URLs. The visible
@@ -647,6 +663,8 @@ async function crawlOne(item: FrontierItem, ctx: CrawlCtx): Promise<PendingPage>
     rendered: renderColumns(facts),
     contentHash: parsed?.contentHash ?? null,
     inSitemap,
+    extracted: ex?.values ?? new Map(),
+    searchHits: ex?.searchHits ?? (extract && extract.searchCount > 0 && isHtml ? {} : null),
     discovered: deeper && !ctx.listMode
       ? [...linkTargets, ...nofollowFollowed, ...annotationTargets(facts, linkTargets, settings)].map((url) => ({
           url,
@@ -801,10 +819,16 @@ async function writeBatch(
           ...(result.stored ?? {}),
           ...(result.rendered ?? {}),
           simhash: result.parsed?.simhash ?? null,
+          searchHits: result.searchHits ?? undefined,
           issues: { create: issues },
         },
         select: { id: true },
       });
+      if (result.extracted.size) {
+        await tx.crawlExtraction.createMany({
+          data: [...result.extracted].map(([extractorIndex, values]) => ({ crawlJobId: jobId, pageId: page.id, extractorIndex, values })),
+        });
+      }
       if (result.edges.length) {
         await tx.crawlLink.createMany({
           data: result.edges.map((e) => ({ crawlJobId: jobId, fromPageId: page.id, ...e })),

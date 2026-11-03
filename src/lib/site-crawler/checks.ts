@@ -130,8 +130,15 @@ export interface ParsedPage {
  * does the canonical comparison, because a canonical pointing at the
  * pre-redirect URL is a real finding.
  */
-export function parsePage(html: string, pageUrl: string, rootUrl: string): ParsedPage {
+export function parsePage(
+  html: string,
+  pageUrl: string,
+  rootUrl: string,
+  /** Phase 4b: handed the loaded document before anything mutates it (custom extraction). */
+  visit?: ($: cheerio.CheerioAPI) => void,
+): ParsedPage {
   const $ = cheerio.load(html);
+  visit?.($);
 
   const title = firstNonEmpty($("head > title").first().text(), $("title").first().text());
   const metaDescription = attrOf($, 'meta[name="description" i]', "content");

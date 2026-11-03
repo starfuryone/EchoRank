@@ -26,6 +26,7 @@ import {
 } from "./http";
 import { checkCrawlConfig, readStoredConfig, viewCrawlConfig, type CrawlConfigInput, type CrawlConfigView } from "./crawl-config";
 import { sealCrawlConfig } from "./crawl-config-secrets";
+import { checkExtractorExpr } from "./extraction";
 import { newVerifyToken } from "./site-verify";
 
 export interface CrawlJobDto {
@@ -162,6 +163,7 @@ export async function startCrawl(
       urlCap: quota.urlCap,
       verified: Boolean(site?.verifiedAt),
       ...featureCapsForPlan(plan),
+      checkExpr: checkExtractorExpr,
     });
     if (checked.problems.length) throw new InvalidCrawlConfigError(checked.problems);
     stored = sealCrawlConfig(checked.config, readStoredConfig(site?.config));

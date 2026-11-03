@@ -25,6 +25,7 @@ import { prisma } from "@/lib/prisma";
 import { rateLimit } from "@/lib/rate-limit";
 import { CrawlConfigInputSchema, checkCrawlConfig, readStoredConfig, viewCrawlConfig } from "@/lib/site-crawler/crawl-config";
 import { sealCrawlConfig } from "@/lib/site-crawler/crawl-config-secrets";
+import { checkExtractorExpr } from "@/lib/site-crawler/extraction";
 import { InvalidCrawlConfigError, InvalidCrawlUrlError, crawlRouteError } from "@/lib/site-crawler/http";
 import { featureCapsForPlan, urlCapForPlan } from "@/lib/site-crawler/quota";
 import {
@@ -102,6 +103,7 @@ export async function PUT(request: Request) {
       urlCap: urlCapForPlan(tenant.tenant.planType),
       verified: Boolean(site.verifiedAt),
       ...featureCapsForPlan(tenant.tenant.planType),
+      checkExpr: checkExtractorExpr,
     });
     if (problems.length) throw new InvalidCrawlConfigError(problems);
     const stored = sealCrawlConfig(config, readStoredConfig(site.config));
