@@ -46,6 +46,12 @@ import {
   RedirectsPanel,
 } from "@/components/seo-tools/site-crawler-panels";
 import { AcceptedWords } from "@/components/seo-tools/site-crawler-accepted-words";
+import { CrawlConfigSection, problemText } from "@/components/seo-tools/site-crawler-config";
+import { CrawlTools } from "@/components/seo-tools/site-crawler-crawl-tools";
+import { InlinksPanel } from "@/components/seo-tools/site-crawler-inlinks";
+import type { ConfigProblem, CrawlConfigInput } from "@/lib/site-crawler/crawl-config";
+import { parseUrlList } from "@/lib/site-crawler/url-list";
+import { flag } from "@/lib/flags";
 import { SITE_CRAWLER_COPY, type DashLocale, type SiteCrawlerCopy } from "@/lib/i18n/dashboard";
 import { CRAWLER_BRAND } from "@/lib/site-crawler/brand";
 import { helpArticleFor, learnHref } from "@/lib/help-content";
@@ -106,6 +112,7 @@ function stoppedLabel(reason: string | null, t: SiteCrawlerCopy): string | null 
   if (reason === "url_cap") return t.stoppedUrlCap;
   if (reason === "time_cap") return t.stoppedTimeCap;
   if (reason === "cancelled") return t.stoppedCancelled;
+  if (reason === "list_expired") return t.p4a.stoppedListExpired;
   return reason; // a FAILED crawl carries its truncated error here
 }
 
@@ -120,6 +127,15 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
 
   const [url, setUrl] = useState("");
   const [renderMode, setRenderMode] = useState<RenderMode>("none");
+  // Phase 4a: spider or list mode, the configuration section's output.
+  const [mode, setMode] = useState<"spider" | "list">("spider");
+  const [listText, setListText] = useState("");
+  const [cfg, setCfg] = useState<{ config: CrawlConfigInput | null; saveAsDefault: boolean }>({ config: null, saveAsDefault: false });
+  const onConfig = useCallback((next: { config: CrawlConfigInput | null; saveAsDefault: boolean }) => setCfg(next), []);
+  const [problems, setProblems] = useState<ConfigProblem[]>([]);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [inlinksFor, setInlinksFor] = useState<{ id: string; url: string } | null>(null);
+  const listUrls = useMemo(() => parseUrlList(listText), [listText]);
   const [starting, setStarting] = useState(false);
   const [cancelling, setCancelling] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -282,25 +298,44 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
   async function start(event: React.FormEvent) {
     event.preventDefault();
     setError(null);
+    setProblems([]);
+    setNotice(null);
     setStarting(true);
     try {
+      const listing = mode === "list";
       const res = await fetch("/api/seo/v1/crawl", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ url, renderMode: quota && quota.renderCap > 0 ? renderMode : "none" }),
+        body: JSON.stringify({
+          url: listing ? "" : url,
+          renderMode: quota && quota.renderCap > 0 ? renderMode : "none",
+          ...(listing ? { mode: "list", urls: listUrls } : {}),
+          ...(flag("crawl.config") && cfg.config ? { config: cfg.config, saveAsDefault: !listing && cfg.saveAsDefault } : {}),
+        }),
       });
       const data = await res.json().catch(() => null);
       if (!res.ok) {
+        if (data?.code === "INVALID_CONFIG") {
+          setError(t.p4a.errConfig);
+          setProblems(Array.isArray(data.problems) ? data.problems : []);
+          return;
+        }
         setError(
           data?.code === "QUOTA_EXCEEDED"
             ? t.errQuota
-            : data?.code === "INVALID_REQUEST"
-              ? t.errInvalidUrl
-              : t.errGeneric,
+            : data?.code === "INVALID_LIST"
+              ? data.reason === "too_long"
+                ? t.p4a.errListTooLong(int.format(data.cap))
+                : t.p4a.errListEmpty
+              : data?.code === "INVALID_REQUEST"
+                ? t.errInvalidUrl
+                : t.errGeneric,
         );
         return;
       }
+      if (data?.listSkipped) setNotice(t.p4a.listSkipped(int.format(data.listSkipped)));
       setUrl("");
+      setListText("");
       setActive(data);
       setPage(1);
       await refresh();
@@ -355,18 +390,66 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
       <Card>
         <CardContent className="pt-6">
           <form onSubmit={start} className="flex flex-wrap items-end gap-3">
-            <div className="min-w-[260px] flex-1">
-              <label htmlFor="crawl-url" className="mb-1 block text-sm font-medium text-gray-700">
-                {t.urlLabel}
-              </label>
-              <Input
-                id="crawl-url"
-                value={url}
-                onChange={(e) => setUrl(e.target.value)}
-                placeholder={t.urlPlaceholder}
-                disabled={starting || Boolean(running)}
-              />
-            </div>
+            {flag("crawl.listMode") && (
+              <div className="w-full sm:w-auto">
+                <Select
+                  id="crawl-mode"
+                  label={t.p4a.modeLabel}
+                  value={mode}
+                  onChange={(e) => setMode(e.target.value as "spider" | "list")}
+                  disabled={starting || Boolean(running)}
+                  options={[
+                    { value: "spider", label: t.p4a.modeSpider },
+                    { value: "list", label: t.p4a.modeList },
+                  ]}
+                />
+              </div>
+            )}
+            {mode === "spider" ? (
+              <div className="min-w-[260px] flex-1">
+                <label htmlFor="crawl-url" className="mb-1 block text-sm font-medium text-gray-700">
+                  {t.urlLabel}
+                </label>
+                <Input
+                  id="crawl-url"
+                  value={url}
+                  onChange={(e) => setUrl(e.target.value)}
+                  placeholder={t.urlPlaceholder}
+                  disabled={starting || Boolean(running)}
+                />
+              </div>
+            ) : (
+              <div className="w-full">
+                <label htmlFor="crawl-list" className="mb-1 block text-sm font-medium text-gray-700">
+                  {t.p4a.listLabel}
+                </label>
+                <textarea
+                  id="crawl-list"
+                  rows={5}
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 font-mono text-xs"
+                  value={listText}
+                  onChange={(e) => setListText(e.target.value)}
+                  placeholder={t.p4a.listPlaceholder}
+                  disabled={starting || Boolean(running)}
+                />
+                <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-gray-500">
+                  <label className="cursor-pointer text-blue-700 hover:underline">
+                    {t.p4a.listUpload}
+                    <input
+                      type="file"
+                      accept=".txt,.csv,text/plain,text/csv"
+                      className="sr-only"
+                      onChange={async (e) => {
+                        const file = e.target.files?.[0];
+                        if (file) setListText(await file.text());
+                        e.target.value = "";
+                      }}
+                    />
+                  </label>
+                  <span>{t.p4a.listCount(int.format(listUrls.length))}</span>
+                </div>
+              </div>
+            )}
             {quota && quota.renderCap > 0 && (
               <div className="w-full sm:w-auto">
                 <Select
@@ -383,7 +466,10 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
                 />
               </div>
             )}
-            <Button type="submit" disabled={starting || !url.trim() || Boolean(running)}>
+            <Button
+              type="submit"
+              disabled={starting || (mode === "spider" ? !url.trim() : listUrls.length === 0) || Boolean(running)}
+            >
               {starting ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin" /> {t.starting}
@@ -395,7 +481,8 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
           </form>
 
           <div className="mt-3 space-y-1 text-xs text-gray-500">
-            {quota && <p>{t.capNote(int.format(quota.urlCap))}</p>}
+            {quota && mode === "spider" && <p>{t.capNote(int.format(quota.urlCap))}</p>}
+            {quota && mode === "list" && <p>{t.p4a.listHelp(int.format(quota.urlCap))}</p>}
             {quota && quota.renderCap > 0 && renderMode !== "none" && (
               <p>{t.renderCapNote(int.format(quota.renderCap))}</p>
             )}
@@ -414,6 +501,24 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
               {error}
             </p>
           )}
+          {problems.length > 0 && (
+            <ul className="mt-1 list-disc pl-10 text-sm text-red-600">
+              {problems.map((p, i) => (
+                <li key={i}>{problemText(p, t.p4a)}</li>
+              ))}
+            </ul>
+          )}
+          {notice && <p className="mt-3 text-sm text-gray-600">{notice}</p>}
+
+          {flag("crawl.config") && mode === "spider" && quota && (
+            <CrawlConfigSection
+              t={t.p4a}
+              rootUrl={url}
+              urlCap={int.format(quota.urlCap)}
+              disabled={starting || Boolean(running)}
+              onChange={onConfig}
+            />
+          )}
 
           <AcceptedWords t={t} />
         </CardContent>
@@ -424,7 +529,10 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
           <CardHeader>
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div className="min-w-0">
-                <p className="truncate text-sm font-medium text-gray-900">{active.rootUrl}</p>
+                <p className="truncate text-sm font-medium text-gray-900">
+                  {active.mode === "list" && <Badge className="mr-2">{t.p4a.listBadge}</Badge>}
+                  {active.rootUrl}
+                </p>
                 <p className="text-xs text-gray-500">{formatDateTime(active.createdAt, locale)}</p>
               </div>
               <Badge variant={active.status === "FAILED" ? "danger" : "default"}>
@@ -458,7 +566,18 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
                 </Button>
               </div>
             ) : (
-              <Summary crawl={active} t={t} int={int} />
+              <div className="space-y-4">
+                <Summary crawl={active} t={t} int={int} />
+                <CrawlTools
+                  crawl={active}
+                  t={t.p4a}
+                  kept={int.format(quota?.crawlsKept ?? 0)}
+                  onUpdated={(c) => {
+                    setActive(c);
+                    setCrawls((list) => list.map((x) => (x.id === c.id ? { ...x, pinned: c.pinned } : x)));
+                  }}
+                />
+              </div>
             )}
           </CardContent>
         </Card>
@@ -533,9 +652,14 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
             setPagesPage(p);
             setPageRows(null);
           }}
+          onInlinks={flag("crawl.links") && !active.dataPurgedAt ? setInlinksFor : undefined}
           t={t}
           int={int}
         />
+      )}
+
+      {active && !running && tab === "pages" && inlinksFor && (
+        <InlinksPanel crawlId={active.id} page={inlinksFor} t={t.p4a} onClose={() => setInlinksFor(null)} />
       )}
 
       {active && !running && tab === "issues" && (
@@ -681,6 +805,7 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
                       setRedirectPage(1);
                       setPagesPage(1);
                       setPageFilters(EMPTY_PAGE_FILTERS);
+                      setInlinksFor(null);
                     }}
                     className="flex w-full flex-wrap items-center justify-between gap-3 py-3 text-left hover:bg-gray-50"
                   >

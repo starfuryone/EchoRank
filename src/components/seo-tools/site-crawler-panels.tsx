@@ -357,6 +357,7 @@ export function PagesPanel({
   filters,
   onFilters,
   onPage,
+  onInlinks,
   t,
   int,
 }: Common & {
@@ -364,6 +365,8 @@ export function PagesPanel({
   filters: PageFilters;
   onFilters: (f: PageFilters) => void;
   onPage: (p: number) => void;
+  /** Phase 4a: open the Inlinks panel for a row. Absent = no link-graph column. */
+  onInlinks?: (row: { id: string; url: string }) => void;
 }) {
   const set = (key: keyof PageFilters, value: string) => onFilters({ ...filters, [key]: value });
 
@@ -421,6 +424,7 @@ export function PagesPanel({
                   <th scope="col" className="py-2 pr-3">{t.colDepth}</th>
                   <th scope="col" className="py-2 pr-3">{t.colInlinks}</th>
                   <th scope="col" className="py-2 pr-3">{t.colSitemap}</th>
+                  {onInlinks && <th scope="col" className="py-2 pr-3">{t.p4a.colFoundOn}</th>}
                   <th scope="col" className="py-2">{t.issuesTitle}</th>
                 </tr>
               </thead>
@@ -435,10 +439,26 @@ export function PagesPanel({
                     <td className="py-2 pr-3 tabular-nums text-gray-600">{int.format(row.depth)}</td>
                     <td className="py-2 pr-3 tabular-nums text-gray-600">
                       {row.inlinkCount === null ? "—" : int.format(row.inlinkCount)}
+                      {onInlinks && (row.inlinkCount ?? 0) > 0 && (
+                        <button
+                          type="button"
+                          className="ml-2 text-xs text-blue-700 hover:underline"
+                          onClick={() => onInlinks({ id: row.id, url: row.url })}
+                        >
+                          {t.p4a.inlinksCta}
+                        </button>
+                      )}
                     </td>
                     <td className="py-2 pr-3 text-gray-600">
                       {row.inSitemap === null ? "—" : row.inSitemap ? t.filterYes : t.filterNo}
                     </td>
+                    {onInlinks && (
+                      <td className="max-w-xs py-2 pr-3">
+                        <span className="block truncate text-gray-500" title={row.foundOn ?? undefined}>
+                          {row.foundOn ?? "—"}
+                        </span>
+                      </td>
+                    )}
                     <td className="py-2 tabular-nums text-gray-600">
                       {int.format(row.issueCount)}
                     </td>

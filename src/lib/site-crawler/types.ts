@@ -5,6 +5,7 @@
 // Prisma and the queue registry along with it.
 
 import type { Severity } from "./checks";
+import type { CrawlConfigView } from "./crawl-config";
 
 export type CrawlStatusValue = "QUEUED" | "RUNNING" | "COMPLETED" | "FAILED" | "CANCELLED";
 
@@ -43,6 +44,15 @@ export interface CrawlDto {
   /** The plan's rendered-page ceiling when the crawl was created. */
   renderCap: number;
   pagesRendered: number;
+  /** Phase 4a. */
+  mode?: "spider" | "list";
+  /** Secrets as { set: true }; null = the defaults. */
+  config?: CrawlConfigView | null;
+  pinned?: boolean;
+  /** Set once retention deleted the crawl's pages: summary only. */
+  dataPurgedAt?: string | null;
+  /** Start response only, list mode: lines that were not public http(s) URLs. */
+  listSkipped?: number;
   /** Present on the detail endpoint once the crawl has settled. */
   severityCounts?: SeverityCounts;
 }
@@ -62,6 +72,8 @@ export interface CrawlQuotaDto {
   remaining: number | null;
   allowed: boolean;
   locked: boolean;
+  /** Phase 4a: crawls kept with full data (plan-config crawlsKept). */
+  crawlsKept?: number;
 }
 
 export interface CrawlIssueRow {
@@ -185,6 +197,8 @@ export interface CrawlPageRow {
   inlinkCount: number | null;
   inSitemap: boolean | null;
   wordCount: number | null;
+  /** Phase 4a: the first page seen linking here. */
+  foundOn?: string | null;
   issueCount: number;
 }
 

@@ -33,7 +33,7 @@ interface RulesResponse {
 }
 
 interface RulePagesResponse {
-  rows: { id: string; url: string; statusCode: number | null; evidence: Record<string, unknown> }[];
+  rows: { id: string; url: string; statusCode: number | null; foundOn?: string | null; evidence: Record<string, unknown> }[];
   page: number;
   totalPages: number;
   total: number;
@@ -202,6 +202,11 @@ export function RulesPanel({ crawlId, t, int }: { crawlId: string; t: SiteCrawle
                           {p.statusCode ?? "—"}
                           {Object.keys(p.evidence).length ? ` · ${evidenceText(p.evidence)}` : ""}
                         </span>
+                        {p.foundOn && (
+                          <span className="block truncate text-xs text-gray-500" title={p.foundOn}>
+                            {t.p4a.colFoundOn}: {p.foundOn}
+                          </span>
+                        )}
                       </li>
                     ))}
                   </ul>
