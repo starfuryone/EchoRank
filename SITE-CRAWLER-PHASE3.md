@@ -4,7 +4,7 @@ Repo: /opt/echorank/app (Next.js 16 App Router, Prisma, BullMQ in `echorank360-w
 
 ## Goal
 
-Turn the Site Crawler (Phase 1+2, Aug 5: `crawl_jobs` / `crawl_pages` / `crawl_issues`, 7 issue types, 5 tabs at `/visibility/tools/site-crawler`) into a rule-driven issue library at Screaming Frog scale: ~300 named checks across links, redirects, titles/meta, headings, content, duplicates, images, canonicals, directives, hreflang, pagination, structured data, security, validation, JS rendering, accessibility, spelling.
+Turn the Site Crawler (Phase 1+2, Aug 5: `crawl_jobs` / `crawl_pages` / `crawl_issues`, 7 issue types, 5 tabs at `/visibility/tools/site-crawler`) into a rule-driven issue library at Screaming Frog scale: **300+ named checks** (≈170 in 3a, ≈100 in 3b, ≈30 in 3c; the 3c report states the final registry count against 300) across links, redirects, titles/meta, headings, content, duplicates, images, canonicals, directives, hreflang, pagination, structured data, security, validation, JS rendering, accessibility, spelling.
 
 Deliver in three sub-phases, one CC session each, each independently shippable. Stop after 3a and report; do not start 3b until told.
 
@@ -60,33 +60,43 @@ type Rule = {
 
 ---
 
-## Phase 3a — static rule families (no sidecar changes) · target ≈ 140 rules
+## Phase 3a — static rule families (no sidecar changes) · target ≈ 170 rules
 
-New `PageFacts` columns: `h2Count`, `h2First`, `imgMissingAltCount`, `imgCount`, `canonicalHeader`, `xRobotsTag`, `hreflang jsonb` (array of {lang, href}), `relNext`, `relPrev`, `responseMs`, `bytes`, `textRatio`, `langAttr`, `hasViewport`, `securityHeaders jsonb` ({hsts,csp,xcto,xfo,refpol} booleans), `mixedContentCount`, `insecureFormCount`, `externalOutlinks`, `internalOutlinks`, `nofollowOutlinks`, `jsonLdTypes text[]`, `jsonLdErrors int`, `simhash bigint` (64-bit over visible text shingles).
+New `PageFacts` columns: `h2Count`, `h2First`, `imgMissingAltCount`, `imgCount`, `canonicalHeader`, `xRobotsTag`, `hreflang jsonb` (array of {lang, href}), `relNext`, `relPrev`, `responseMs`, `bytes`, `textRatio`, `langAttr`, `hasViewport`, `securityHeaders jsonb` ({hsts,csp,xcto,xfo,refpol} booleans), `mixedContentCount`, `insecureFormCount`, `externalOutlinks`, `internalOutlinks`, `nofollowOutlinks`, `jsonLdTypes text[]`, `jsonLdErrors int`, `simhash bigint` (64-bit over visible text shingles), `charset text` (declared charset: `<meta charset>` / http-equiv, else the Content-Type header; null when neither).
+
+Transient `PageFacts` additions (not stored): `ImageFact` gains `loading` (attribute, lowercased, null when absent), `hasSrcset`, and `modernSource` (inside a `<picture>` with a WebP/AVIF `<source>`); `LinkCheckFacts` gains `redirects` (count of checked external URLs answering 3xx) for `links.external_to_redirect`.
 
 Families and rule set (name each rule exactly; ids are stable API):
 
 1. **response_codes** — internal 4xx, internal 5xx, external 4xx, external 5xx, no response/timeout, internal 3xx, redirect chain (>1 hop), redirect loop, meta refresh, redirect to 4xx/5xx, blocked by robots.txt, inlinks pointing at a 3xx.
 2. **url** — non-ASCII characters, underscores, uppercase, parameters, over 115 chars, multiple slashes, repetitive path segments, contains space, internal search parameter, non-canonical trailing-slash variant found.
-3. **page_titles** — missing, duplicate (site), over 60 chars, under 30 chars, over 561 px, under 200 px (width estimate via per-char table), same as H1, multiple titles, outside `<head>`.
+3. **page_titles** — missing, duplicate (site), over 60 chars, under 30 chars, over 561 px, under 200 px (width estimate via per-char table), over 70 chars, same as H1, multiple titles, outside `<head>`.
 4. **meta_description** — missing, duplicate (site), over 155 chars, under 70 chars, over 985 px, multiple, outside `<head>`.
 5. **meta_keywords** — present (opportunity: remove).
 6. **h1** — missing, duplicate (site), over 70 chars, multiple, same as another page's H1 (site), empty.
 7. **h2** — missing, duplicate (site), over 70 chars, multiple identical on page, non-sequential (H3 before H2), empty.
-8. **content** — low word count (<200), exact duplicate (contentHash, site), near duplicate (simhash Hamming ≤ 3, site), readability difficult (Flesch < 50, en only), placeholder text (lorem ipsum / "coming soon" / "under construction"), soft 404 (200 with "not found/404" title or <50 words), text ratio < 10 %, missing `lang` attribute.
-9. **images** — missing alt, alt over 100 chars, missing width/height attributes, broken image (from frontier results, same-host only), over 100 KB (HEAD `content-length`, same-host, cap 20 HEADs/page), alt equals filename, image count > 50.
+8. **content** — low word count (<200), exact duplicate (contentHash, site), near duplicate (simhash Hamming ≤ 3, site), readability difficult (Flesch < 50, en only), placeholder text (lorem ipsum / "coming soon" / "under construction"), soft 404 (200 with "not found/404" title or <50 words), text ratio < 10 %, missing `lang` attribute, charset missing (no meta charset and none in Content-Type), charset not UTF-8.
+9. **images** — missing alt, alt over 100 chars, missing width/height attributes, broken image (from frontier results, same-host only), over 100 KB (HEAD `content-length`, same-host, cap 20 HEADs/page), alt equals filename, image count > 50, not lazy-loaded (images after the first 3 in document order with no `loading="lazy"`; warning), above-the-fold image lazy-loaded (the first image carries `loading="lazy"`; warning), missing srcset (no `srcset` and declared width ≥ 400 px or undeclared; opportunity), not next-gen format (JPEG/PNG/GIF by extension with no WebP/AVIF `<picture>` source; opportunity).
 10. **canonicals** — missing, canonicalised (points elsewhere), multiple, canonical to 3xx, canonical to 4xx, canonical to noindex page, relative canonical, header vs HTML mismatch, outside `<head>`, canonical to non-HTTPS from HTTPS page.
 11. **directives** — noindex, nofollow, none, noarchive, nosnippet, max-snippet, noimageindex, notranslate, unavailable_after, noindex + canonical conflict, noindex + in sitemap, outside `<head>`, X-Robots-Tag vs meta conflict.
     **Kinds (from the live page):** the nine "present" rules (`directives.noindex` …
     `directives.unavailable_after`) are `kind: 'warning'`, not `'issue'`. A directive being
     there is a deliberate choice as often as a mistake. The conflict and placement rules
     stay `'issue'`. Assert the kinds in the registry test.
-12. **links** — high external outlinks (>100), high internal outlinks (>500), no internal outlinks, inlinks only via nofollow, non-descriptive anchor text ("click here", "read more", "here", "link"), localhost/127.0.0.1 links, internal nofollow, outlinks to redirect, internal links with parameters, only one inlink, crawl depth > 3, orphan (sitemap-only — existing).
+12. **links** — high external outlinks (>100), high internal outlinks (>500), no internal outlinks, inlinks only via nofollow, non-descriptive anchor text ("click here", "read more", "here", "link"), localhost/127.0.0.1 links, internal nofollow, outlinks to redirect, internal links with parameters, only one inlink, crawl depth > 3, orphan (sitemap-only — existing), external outlinks to redirect (from the bounded HEAD checks, same cap as external 4xx/5xx), anchor text over 100 chars, links to non-HTTPS URLs (an `http://` href, internal or external, from any page).
 13. **sitemaps** — in sitemap not in crawl (existing), in crawl not in sitemap, non-indexable URL in sitemap, 3xx in sitemap, 4xx in sitemap, sitemap missing, sitemap over 50k URLs or 50 MB, sitemap not in robots.txt.
 14. **security** — HTTP URL, mixed content, form on HTTP, `target=_blank` without `rel=noopener`, missing HSTS, missing CSP, missing X-Content-Type-Options, missing X-Frame-Options, missing Referrer-Policy, protocol-relative resource, bad content-type for HTML.
 15. **hreflang** — missing return links (site), inconsistent language (site), non-200 hreflang URL, unlinked hreflang URL, missing self-reference, not using canonical, invalid language/region code (ISO 639-1 / 3166-1), multiple entries for one lang, missing x-default, outside `<head>`, hreflang to noindex page, no hreflang on a multilingual site (≥ 2 `lang` values seen).
 16. **pagination** — rel next/prev to non-200, sequence error, paginated URL not in anchor, multiple pagination URLs, outside `<head>`, non-first page canonicalised to first.
-17. **structured_data** — JSON-LD parse error, microdata present but unparsable, no structured data, non-schema.org type, missing required property per type (table: Organization name+url · LocalBusiness name+address · Product name+offers · Article headline+author+datePublished · FAQPage mainEntity · BreadcrumbList itemListElement · WebSite name+url · Event name+startDate+location), missing recommended property per type, duplicate blocks, type on a page where it never makes sense (Product on a contact page is NOT flagged — keep it to parse/required/recommended only).
+17. **structured_data** — JSON-LD parse error, microdata present but unparsable, no structured data, non-schema.org type, missing required property and missing recommended property — **one rule each per type** (`structured_data.<type>.missing_required`, `….missing_recommended`; 13 types → 26 rules), table:
+    - Organization: required name, url · LocalBusiness: name, address · Product: name, offers · Article: headline, author, datePublished · FAQPage: mainEntity · BreadcrumbList: itemListElement · WebSite: name, url · Event: name, startDate, location
+    - Recipe: required name, image; recommended author, recipeIngredient, recipeInstructions, totalTime, nutrition, aggregateRating
+    - VideoObject: required name, thumbnailUrl, uploadDate; recommended description, duration, contentUrl or embedUrl
+    - JobPosting: required title, description, datePosted, hiringOrganization, jobLocation (or applicantLocationRequirements with jobLocationType TELECOMMUTE); recommended validThrough, baseSalary, employmentType, identifier
+    - Review: required itemReviewed, author, reviewRating (with ratingValue); recommended datePublished, reviewBody, name
+    - HowTo: required name, step; recommended totalTime, supply, tool, image. Google retired HowTo rich results in 2023: validate it, but its description must not promise a rich result.
+    - Recommended lists for the first eight types: take them from Google's structured-data docs per type, and cite the doc in the rule copy.
+    duplicate blocks, type on a page where it never makes sense (Product on a contact page is NOT flagged — keep it to parse/required/recommended only).
 18. **validation** — missing doctype, element in `<head>` that belongs in `<body>`, `<body>` before `<head>` content, multiple `<html>`/`<body>`, `<head>` not first child, viewport missing.
 
 Also in 3a: migrate the 7 existing types to the registry; Issues tab; CSV; summary; tests; `npm run test` green; commit. Do NOT deploy; report rule count, migration name, test count, commit hash, and any family you dropped or renamed with the reason.
@@ -105,10 +115,10 @@ Also in 3a: migrate the 7 existing types to the registry; Issues tab; CSV; summa
 
 ---
 
-## Phase 3c — spelling, PSI opportunities, public library · ≈ +40 rules
+## Phase 3c — spelling, PSI opportunities, public library · ≈ +30 rules
 
 - **spelling** — spelling only (no grammar): `nspell` + hunspell dictionaries for en, fr, de (the 5 locales fold to these three); language from `langAttr`, fallback job default; whitelist from tenant settings (brand names). Rules: misspellings present, > 5 misspellings, unsupported language (opportunity). Grammar (LanguageTool, Java, ~2 GB RAM) is explicitly out of scope on this VPS — note it as a deferred decision, do not install.
-- **performance** opportunities — only when the job has PSI data attached via the existing Lighthouse/PSI integration: ~15 Lighthouse audits mapped to opportunity rules (render-blocking resources, unused CSS/JS, unsized images, LCP > 2.5 s, CLS > 0.1, INP > 200 ms, large network payload, text compression, image formats, caching, redirects, server response > 600 ms). Gate behind the Lighthouse tool's quota; no new PSI spend.
+- **performance** opportunities — only when the job has PSI data attached via the existing Lighthouse/PSI integration: **25 Lighthouse audits** mapped one-to-one to opportunity rules: render-blocking resources, unused CSS, unused JS, unminified CSS, unminified JS, unsized images, offscreen images, efficiently encode images, properly size images, next-gen image formats, text compression, efficient cache policy, multiple redirects, server response > 600 ms, preconnect to required origins, excessive DOM size, JS execution time, main-thread work, large network payload, LCP > 2.5 s, CLS > 0.1, INP > 200 ms (field data only — skip when PSI returns no CrUX), FCP > 1.8 s, TBT > 200 ms, Speed Index > 3.4 s. Map by the audit ids the PSI response actually returns (Lighthouse 12+ folds several into "insights"); a test pins the id list against a recorded PSI fixture. Gate behind the Lighthouse tool's quota; no new PSI spend.
 - Public issue library: `/[locale]/seo-spider/issues` (route-handler pattern, Binance tokens, generated from the registry — one anchor per rule with description + how to fix, FAQ-free). Add to `LOCALIZED_ROUTES` registry (sitemap 0.6) and the Resources › Learn column. This is the SEO-content equivalent of Screaming Frog's /seo-spider/issues/ page.
 
 ---
