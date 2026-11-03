@@ -1,4 +1,4 @@
-// The RESOURCES section (/15) on the homepage.
+// The RESOURCES section (/16) on the homepage.
 //
 // Asserts the RENDERED markup rather than the copy table: a label present in
 // the catalog but dropped from the section is exactly the failure worth
@@ -33,6 +33,7 @@ function home(locale: "en" | "fr"): string {
       // The Classic SEO Tools section is server-rendered and slotted in; the
       // RESOURCES section does not depend on it.
       toolsSection: null,
+      crawlersSection: null,
       playerLabels: HOME_TOOLS[locale].player,
     }),
   );

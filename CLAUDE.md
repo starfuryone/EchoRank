@@ -274,7 +274,7 @@ priority **0.7**.
   change means editing this file; nothing propagates into it.
 - Ships one broken footer link, `/en/terms`. Fix to `/en/legal/terms` when embedding.
 - Homepage cross-link: a secondary button (`s.btn`, no `btnPrimary`) under the
-  `/ 09 — THE FOUNDATION` section of `src/app/[locale]/HomeClient.tsx`, label
+  `/ 10 — THE FOUNDATION` section of `src/app/[locale]/HomeClient.tsx`, label
   `t.trad.toolsCta`, href `/${locale}/reputation-tools`.
 
 ## Tests

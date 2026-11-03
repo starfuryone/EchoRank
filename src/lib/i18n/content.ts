@@ -8,6 +8,7 @@
 // thousands, comma/period decimal) so output is locale-correct by construction.
 
 import type { Locale, Currency } from "./config";
+import { CRAWLER_BRAND } from "@/lib/site-crawler/brand";
 
 export interface PricingTier {
   key: "starter" | "growth" | "agency" | "enterprise";
@@ -1832,5 +1833,127 @@ export const PRICING_NOTES: Record<"en" | "fr", { tax: string; currency: string 
     tax: "Essayez Echorank gratuitement pendant 7 jours. Annulez à tout moment. Carte requise.",
     currency:
       "Tous les prix sont en dollars américains (USD). Si vous payez avec une carte dans une autre devise, votre banque effectue la conversion à son propre taux de change.",
+  },
+};
+
+// ─── Homepage /01 — "Two crawlers" (SITE-CRAWLER-HOMEPAGE.md) ───────────────
+//
+// en/fr; the other locales fold to en like the rest of the homepage. The brand
+// name comes from CRAWLER_BRAND and is never translated. Numbers are NOT here:
+// the rule count, the family count and the URL cap are passed in, derived from
+// the registry and PLAN_CONFIGS (TwoCrawlers.tsx). `checks` lists the body's
+// rule areas, each keyed to the registry family that must exist for it to be
+// named — an area whose family is missing is dropped from the sentence.
+
+export interface TwoCrawlersCopy {
+  eyebrow: string;
+  h2: string;
+  lead: string;
+  a: { eyebrow: string; title: string; body: string; bullets: string[]; cta: string; secondary: string };
+  b: {
+    lockupAlt: string;
+    title: string;
+    body: (cap: string, rules: string, checks: string) => string;
+    checks: readonly { family: string; text: string }[];
+    and: string;
+    bulletRules: (rules: string, families: number) => string;
+    bulletRulesNoRegistry: (rules: string) => string;
+    bullets: string[];
+    cta: string;
+    secondary: string;
+  };
+  closer: string;
+}
+
+export const HOME_TWO_CRAWLERS: Record<"en" | "fr", TwoCrawlersCopy> = {
+  en: {
+    eyebrow: "TWO CRAWLERS",
+    h2: "Two crawlers. One honest picture of your site.",
+    lead: "Search engines read your site one way. AI engines read it another way, then talk about it. Echorank runs both views, in your browser, nothing to install.",
+    a: {
+      eyebrow: "Echorank AI Visibility",
+      title: "What AI engines see, and what they say.",
+      body: "Checks whether ChatGPT, Gemini, Claude and Perplexity can reach and render your pages, measures the gap between what they read and what your visitors see, validates your llms.txt, then asks the engines about your brand and tracks the answers week over week.",
+      bullets: [
+        "AI-crawler access: robots.txt, Cloudflare, rendering",
+        "Raw-vs-rendered gap on every audited page",
+        "llms.txt validation",
+        "Brand answers tracked across engines",
+      ],
+      cta: "Run the free AI visibility check",
+      secondary: "See plans",
+    },
+    b: {
+      lockupAlt: `${CRAWLER_BRAND.name}, ${CRAWLER_BRAND.byline}`,
+      title: "What search engines see, every page.",
+      body: (cap, rules, checks) =>
+        `Crawls up to ${cap} URLs and checks each one against ${rules} rules: ${checks}. Every finding is an issue, a warning or an opportunity, with the evidence next to it.`,
+      checks: [
+        { family: "response_codes", text: "broken links" },
+        { family: "response_codes", text: "redirect chains" },
+        { family: "page_titles", text: "titles and descriptions" },
+        { family: "content", text: "duplicate and thin content" },
+        { family: "directives", text: "directives" },
+        { family: "hreflang", text: "hreflang" },
+        { family: "structured_data", text: "structured data" },
+        { family: "security", text: "security headers" },
+      ],
+      and: "and",
+      bulletRules: (rules, families) => `${rules} checks across ${families} rule families`,
+      bulletRulesNoRegistry: (rules) => `${rules} checks across every rule family`,
+      bullets: [
+        "Issues, warnings and opportunities, with evidence",
+        "CSV export of every table",
+        "Included in every paid plan — no per-seat licence",
+      ],
+      cta: "See plans",
+      secondary: `Meet ${CRAWLER_BRAND.name}`,
+    },
+    closer: "Your whole team on one plan. Both crawlers run on our servers, on a schedule if you want, and share nothing with anyone but you.",
+  },
+  fr: {
+    eyebrow: "DEUX ROBOTS D'EXPLORATION",
+    h2: "Deux robots. Une image honnête de votre site.",
+    lead: "Les moteurs de recherche lisent votre site d'une façon. Les moteurs d'IA le lisent autrement, puis en parlent. Echorank fait les deux lectures, dans votre navigateur, sans rien installer.",
+    a: {
+      eyebrow: "Echorank Visibilité IA",
+      title: "Ce que les moteurs d'IA voient, et ce qu'ils disent.",
+      body: "Vérifie si ChatGPT, Gemini, Claude et Perplexity peuvent atteindre et rendre vos pages, mesure l'écart entre ce qu'ils lisent et ce que voient vos visiteurs, valide votre llms.txt, puis interroge les moteurs sur votre marque et suit les réponses semaine après semaine.",
+      bullets: [
+        "Accès des robots d'IA : robots.txt, Cloudflare, rendu",
+        "Écart brut-rendu sur chaque page auditée",
+        "Validation du llms.txt",
+        "Réponses sur votre marque suivies d'un moteur à l'autre",
+      ],
+      cta: "Lancer la vérification gratuite de visibilité IA",
+      secondary: "Voir les forfaits",
+    },
+    b: {
+      lockupAlt: `${CRAWLER_BRAND.name}, robot d'exploration par Echorank`,
+      title: "Ce que les moteurs de recherche voient, page par page.",
+      body: (cap, rules, checks) =>
+        `Explore jusqu'à ${cap} URL et vérifie chacune selon ${rules} règles : ${checks}. Chaque constat est un problème, un avertissement ou une occasion, avec la preuve à côté.`,
+      checks: [
+        { family: "response_codes", text: "liens brisés" },
+        { family: "response_codes", text: "chaînes de redirection" },
+        { family: "page_titles", text: "titres et descriptions" },
+        { family: "content", text: "contenu dupliqué ou trop mince" },
+        { family: "directives", text: "directives" },
+        { family: "hreflang", text: "hreflang" },
+        { family: "structured_data", text: "données structurées" },
+        { family: "security", text: "en-têtes de sécurité" },
+      ],
+      and: "et",
+      bulletRules: (rules, families) => `${rules} vérifications dans ${families} familles de règles`,
+      bulletRulesNoRegistry: (rules) => `${rules} vérifications dans chaque famille de règles`,
+      bullets: [
+        "Problèmes, avertissements et occasions, avec preuves",
+        "Export CSV de chaque tableau",
+        "Inclus dans chaque forfait payant, sans licence par utilisateur",
+      ],
+      cta: "Voir les forfaits",
+      secondary: `Rencontrer ${CRAWLER_BRAND.name}`,
+    },
+    closer: "Toute votre équipe sur un seul forfait. Les deux robots tournent sur nos serveurs, à l'horaire si vous le souhaitez, et ne partagent rien avec personne d'autre que vous.",
   },
 };

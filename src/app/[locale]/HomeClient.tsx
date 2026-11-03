@@ -449,6 +449,7 @@ export default function HomeClient({
   priceChrome,
   toolCountLine,
   toolsSection,
+  crawlersSection,
   playerLabels,
 }: {
   locale: string;
@@ -457,6 +458,8 @@ export default function HomeClient({
   toolCountLine: string;
   /** Server-rendered Classic SEO Tools section, slotted in after /03. */
   toolsSection: ReactNode;
+  /** The /01 "Two crawlers" section, server-rendered (TwoCrawlers.tsx) for the same reason as toolsSection. */
+  crawlersSection: ReactNode;
   /**
    * HomeVideo's control labels, from HOME_TOOLS[locale].player. Passed in
    * rather than imported: HOME_TOOLS is a five-locale catalog and this file's
@@ -614,10 +617,14 @@ export default function HomeClient({
         </div>
       </header>
 
+      {/* 1b. TWO CRAWLERS — directly after the hero. Server-rendered slot: it
+           reads the rule registry, which must stay out of this bundle. */}
+      {crawlersSection}
+
       {/* 2. HOW AI DECIDES */}
       <section id="how" className={s.section}>
         <div className={s.container}>
-          <p className={s.label}><b>/ 01</b> — {t.how.label}</p>
+          <p className={s.label}><b>/ 02</b> — {t.how.label}</p>
           <h2 className={s.h2}>{t.how.h2}</h2>
           <p className={s.sub}>{t.how.sub}</p>
           <div className={s.flow}>
@@ -640,7 +647,7 @@ export default function HomeClient({
       {/* 3. SCORECARDS */}
       <section className={s.section}>
         <div className={s.container}>
-          <p className={s.label}><b>/ 02</b> — {t.cards.label}</p>
+          <p className={s.label}><b>/ 03</b> — {t.cards.label}</p>
           <h2 className={s.h2}>{t.cards.h2}</h2>
           <p className={s.sub}>{t.cards.sub}</p>
           <div className={s.cards5}>
@@ -659,7 +666,7 @@ export default function HomeClient({
       {/* 4. PRODUCT SHOTS */}
       <section id="platform" className={s.section}>
         <div className={s.container}>
-          <p className={s.label}><b>/ 03</b> — {t.shots.label}</p>
+          <p className={s.label}><b>/ 04</b> — {t.shots.label}</p>
           <h2 className={s.h2}>{t.shots.h2}</h2>
           <div className={s.shots}>
             {t.shots.items.map((it, i) => (
@@ -707,7 +714,7 @@ export default function HomeClient({
       {/* 5. TIMELINE */}
       <section className={s.section}>
         <div className={s.container}>
-          <p className={s.label}><b>/ 05</b> — {t.tlx.label}</p>
+          <p className={s.label}><b>/ 06</b> — {t.tlx.label}</p>
           <h2 className={s.h2}>{t.tlx.h2}</h2>
           <div className={s.trajLayout}><div className={s.timeline} data-sample="true">
             {t.tlx.items.map((it) => (
@@ -739,7 +746,7 @@ export default function HomeClient({
       {/* 6. SIMULATOR */}
       <section id="simulator" className={s.section}>
         <div className={s.container}>
-          <p className={s.label}><b>/ 06</b> — {t.sim.label}</p>
+          <p className={s.label}><b>/ 07</b> — {t.sim.label}</p>
           <h2 className={s.h2}>{t.sim.h2}</h2>
           <p className={s.sub}>{t.sim.sub}</p>
           <div className={s.sim} data-sample="true">
@@ -777,7 +784,7 @@ export default function HomeClient({
       {/* 7. SEO VS AIV */}
       <section className={s.section}>
         <div className={s.container}>
-          <p className={s.label}><b>/ 07</b> — {t.cmp.label}</p>
+          <p className={s.label}><b>/ 08</b> — {t.cmp.label}</p>
           <h2 className={s.h2}>{t.cmp.h2a}<span className={s.goldtext}>{t.cmp.h2b}</span></h2>
           <p className={s.sub}>{t.cmp.sub}</p>
           <div className={s.cmp}>
@@ -792,7 +799,7 @@ export default function HomeClient({
       {/* 8. ENGINES */}
       <section className={s.section}>
         <div className={s.container}>
-          <p className={s.label}><b>/ 08</b> — {t.eng.label}</p>
+          <p className={s.label}><b>/ 09</b> — {t.eng.label}</p>
           <h2 className={s.h2}>{t.eng.h2}</h2>
           <p className={s.sub}>{t.eng.sub}</p>
           <div className={s.englogos}>
@@ -806,7 +813,7 @@ export default function HomeClient({
       {/* 8b. TRADITIONAL REPUTATION STACK */}
       <section className={s.section}>
         <div className={s.container}>
-          <p className={s.label}><b>/ 09</b> — {t.trad.label}</p>
+          <p className={s.label}><b>/ 10</b> — {t.trad.label}</p>
           <div className={s.foundLayout}>
             {/* This one used to loop. HomeVideo does not, and a clip the
                 visitor deliberately started should end rather than restart
@@ -843,7 +850,7 @@ export default function HomeClient({
       {/* 9. HISTORY */}
       <section className={s.section}>
         <div className={s.container}>
-          <p className={s.label}><b>/ 10</b> — {t.hist.label}<Tm /></p>
+          <p className={s.label}><b>/ 11</b> — {t.hist.label}<Tm /></p>
           <h2 className={s.h2}>{t.hist.h2}</h2>
           <p className={s.sub}>{t.hist.sub}</p>
           <div className={s.hist} data-sample="true">
@@ -864,7 +871,7 @@ export default function HomeClient({
       {/* 10. ROADMAP */}
       <section className={s.section}>
         <div className={s.container}>
-          <p className={s.label}><b>/ 11</b> — {t.rmx.label}</p>
+          <p className={s.label}><b>/ 12</b> — {t.rmx.label}</p>
           <h2 className={s.h2}>{t.rmx.h2}</h2>
           <p className={s.sub}>{t.rmx.sub}</p>
           <div className={s.roadmap} data-sample="true">
@@ -884,7 +891,7 @@ export default function HomeClient({
       {/* 11. ROI */}
       <section id="roi" className={s.section}>
         <div className={s.container}>
-          <p className={s.label}><b>/ 12</b> — {t.roi.label}<Tm /></p>
+          <p className={s.label}><b>/ 13</b> — {t.roi.label}<Tm /></p>
           <h2 className={s.h2}>{t.roi.h2}</h2>
           <p className={s.sub}>{t.roi.sub}</p>
           <div className={s.roi}>
@@ -924,7 +931,7 @@ export default function HomeClient({
       {/* 12. PRICING (compact, keeps #pricing anchor) */}
       <section id="pricing" className={s.section}>
         <div className={s.container}>
-          <p className={s.label}><b>/ 13</b> — {t.pricing.label}</p>
+          <p className={s.label}><b>/ 14</b> — {t.pricing.label}</p>
           {baseOf(locale) === "en" && locale !== "en-CA" && (
             <p><Link className={s.label} href="/en-CA#pricing">{t.pricing.cadLink}</Link></p>
           )}
@@ -945,7 +952,7 @@ export default function HomeClient({
            so the structured data matches what a crawler sees. */}
       <section id="faq" className={s.section}>
         <div className={s.container}>
-          <p className={s.label}><b>/ 14</b> — {faq.label}</p>
+          <p className={s.label}><b>/ 15</b> — {faq.label}</p>
           <h2 className={s.h2}>{faq.h2}</h2>
           <p className={s.sub}>{faq.sub}</p>
           <div className={s.faqLayout}>
@@ -977,7 +984,7 @@ export default function HomeClient({
       </section>
 
       {/* 14. CLOSE */}
-      <section className={s.section}><div className={s.container}><p className={s.label}><b>/ 15</b> — RESOURCES</p><h2 className={s.h2}>Reputation Intelligence, Made Simple</h2><p className={s.sub}>The plain-English guide to running Echorank: the 30-minute setup, daily operating rhythm, AI visibility and answer tracking, and risk &amp; competitor intelligence. Free PDF, no email required.</p><a className={`${s.btn} ${s.btnPrimary}`} href="/whitepapers/Echorank_Reputation_Intelligence_Whitepaper.pdf" download target="_blank" rel="noopener">{t.resources.repPaper} ↓</a> <a className={s.btn} href="/whitepapers/echorank360-seo-tools-whitepaper.pdf" download target="_blank" rel="noopener">{t.resources.seoPaper} ↓</a> {/*
+      <section className={s.section}><div className={s.container}><p className={s.label}><b>/ 16</b> — RESOURCES</p><h2 className={s.h2}>Reputation Intelligence, Made Simple</h2><p className={s.sub}>The plain-English guide to running Echorank: the 30-minute setup, daily operating rhythm, AI visibility and answer tracking, and risk &amp; competitor intelligence. Free PDF, no email required.</p><a className={`${s.btn} ${s.btnPrimary}`} href="/whitepapers/Echorank_Reputation_Intelligence_Whitepaper.pdf" download target="_blank" rel="noopener">{t.resources.repPaper} ↓</a> <a className={s.btn} href="/whitepapers/echorank360-seo-tools-whitepaper.pdf" download target="_blank" rel="noopener">{t.resources.seoPaper} ↓</a> {/*
         A plain <a>, and a plain path, for two separate reasons.
 
         NOT <Link>: /extension is served by Caddy from /opt/echorank/extension-dist
@@ -1002,7 +1009,7 @@ export default function HomeClient({
       {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
       <a className={s.btn} href="/extension">{t.resources.extension} ↗</a></div></section><section className={s.close}>
         <div className={s.container}>
-          <p className={s.label}><b>/ 16</b> — {t.close.label}</p>
+          <p className={s.label}><b>/ 17</b> — {t.close.label}</p>
           <h2 className={s.h2c}>{t.close.h2a}<span className={s.goldtext}>{t.close.h2b}</span></h2>
           <p className={s.closesub} style={{ maxWidth: 560 }}>{t.close.sub}</p>
           <div className={s.closebtns}>

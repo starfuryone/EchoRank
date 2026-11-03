@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import HomeClient, { type HomePricingTier } from "./HomeClient";
 import { pricingTiers } from "@/lib/pricing-tiers";
 import { ClassicSeoTools } from "./ClassicSeoTools";
+import { TwoCrawlers } from "./TwoCrawlers";
+import { CRAWLER_BRAND } from "@/lib/site-crawler/brand";
 import { FAQ } from "./faq-data";
 import { plainText } from "./learn/_shared/inline";
 import { PLAN_CONFIGS, PLAN_ORDER } from "@/lib/plan-config";
@@ -30,7 +32,7 @@ export async function generateMetadata(
 }
 
 /**
- * Pricing rows for the /13 grid, read from PLAN_CONFIGS rather than retyped.
+ * Pricing rows for the /14 grid, read from PLAN_CONFIGS rather than retyped.
  *
  * The marketing page is allowed to hold price COPY, but the numbers and the
  * feature bullets are the plan config's job — they drive Stripe, entitlements
@@ -52,7 +54,12 @@ export default async function Page(
         graph={[
           organization(l),
           webSite(l),
-          softwareApplication(l),
+          {
+            ...softwareApplication(l),
+            // The two crawlers the /01 section presents. Homepage only: the
+            // node is shared by @id, and this is the page that describes them.
+            featureList: ["AI visibility audit", `Site crawler (${CRAWLER_BRAND.name})`],
+          },
           // Built from the same array HomeClient renders, so the markup can
           // never describe questions the page doesn't display — with the inline
           // markup stripped, because a FAQPage answer is plain text and
@@ -67,7 +74,7 @@ export default async function Page(
         locale={locale}
         pricing={pricingTiers(locale)}
         priceChrome={HOME_PRICING_CHROME[l]}
-        // Five-locale player chrome for the /05 video. Resolved here so
+        // Five-locale player chrome for the /06 video. Resolved here so
         // HomeClient, whose own copy table is en/fr only, does not have to
         // import the whole content catalog to render a mute button.
         playerLabels={HOME_TOOLS[l].player}
@@ -76,7 +83,8 @@ export default async function Page(
         // server component so the whole seo-tools config (and its lucide icon
         // set) stays out of the client bundle, and the marketing copy stays
         // derived from the same source the product hub uses.
-        toolsSection={<ClassicSeoTools locale={l} sectionNumber="04" />}
+        toolsSection={<ClassicSeoTools locale={l} sectionNumber="05" />}
+        crawlersSection={<TwoCrawlers locale={l} sectionNumber="01" />}
       />
     </>
   );
