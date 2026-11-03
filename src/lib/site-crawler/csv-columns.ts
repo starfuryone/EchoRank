@@ -59,6 +59,7 @@ export interface CrawlPageRow {
   canonical: string | null;
   redirectTarget: string | null;
   contentType: string | null;
+  foundOn: string | null;
 }
 
 /**
@@ -82,6 +83,7 @@ export const PAGE_COLUMNS: CsvColumn<CrawlPageRow>[] = [
   { header: "Canonical", value: (r) => r.canonical },
   { header: "Redirect target", value: (r) => r.redirectTarget },
   { header: "Content type", value: (r) => r.contentType },
+  { header: "Found on", value: (r) => r.foundOn },
 ];
 
 // ─── Phase 3a: Issues by rule ───────────────────────────────────────────────
@@ -113,7 +115,7 @@ export interface RulePageRow {
   type: string;
   evidence: unknown;
   detail: string | null;
-  crawlPage: { url: string; statusCode: number | null };
+  crawlPage: { url: string; statusCode: number | null; foundOn: string | null };
 }
 
 /** Evidence as "key: value · key: value"; pre-3a rows fall back to their detail string. */
@@ -136,4 +138,61 @@ export const RULE_PAGE_COLUMNS: CsvColumn<RulePageRow>[] = [
   { header: "Rule id", value: (r) => r.ruleId ?? r.type },
   { header: "Issue", value: (r) => RULE_COPY[r.ruleId ?? ""]?.name ?? r.type },
   { header: "Evidence", value: (r) => evidenceCell(r) },
+  { header: "Found on", value: (r) => r.crawlPage.foundOn },
+];
+
+// ─── Phase 4a: link graph exports ───────────────────────────────────────────
+
+/** One internal link to a broken URL: the page it is on, where it points, the anchor, the status. */
+export interface BrokenLinkRow {
+  id: string;
+  source: string;
+  target: string;
+  anchor: string | null;
+  statusCode: number | null;
+}
+
+/** Anchors and URLs are crawled-site text: untrusted, formula-guarded by the serializer. */
+export const BROKEN_LINK_COLUMNS: CsvColumn<BrokenLinkRow>[] = [
+  { header: "Source URL", value: (r) => r.source },
+  { header: "Broken URL", value: (r) => r.target },
+  { header: "Anchor text", value: (r) => r.anchor },
+  // No status = no response at all (timeout, DNS, refused).
+  { header: "Status code", value: (r) => r.statusCode ?? "no response" },
+];
+
+/** One redirecting URL with every hop. */
+export interface RedirectChainRow {
+  id: string;
+  url: string;
+  foundOn: string | null;
+  redirectChain: unknown;
+}
+
+function hops(r: RedirectChainRow): { url: string; status: number }[] {
+  return Array.isArray(r.redirectChain) ? (r.redirectChain as { url: string; status: number }[]) : [];
+}
+
+export const REDIRECT_CHAIN_COLUMNS: CsvColumn<RedirectChainRow>[] = [
+  { header: "URL", value: (r) => r.url },
+  { header: "Redirects", value: (r) => Math.max(0, hops(r).length - 1) },
+  { header: "First status", value: (r) => hops(r)[0]?.status ?? null },
+  { header: "Final URL", value: (r) => hops(r).at(-1)?.url ?? null },
+  { header: "Final status", value: (r) => hops(r).at(-1)?.status || null },
+  { header: "Chain", value: (r) => hops(r).map((h) => `${h.url} (${h.status || "no response"})`).join(" → ") },
+  { header: "Found on", value: (r) => r.foundOn },
+];
+
+/** One page linking to another (the Inlinks panel's export). */
+export interface InlinkRow {
+  id: string;
+  source: string;
+  anchor: string | null;
+  nofollow: boolean;
+}
+
+export const INLINK_COLUMNS: CsvColumn<InlinkRow>[] = [
+  { header: "Source URL", value: (r) => r.source },
+  { header: "Anchor text", value: (r) => r.anchor },
+  { header: "Nofollow", value: (r) => r.nofollow },
 ];

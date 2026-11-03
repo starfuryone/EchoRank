@@ -50,6 +50,7 @@ import { renderedOnlyLinks } from "@/lib/crawl-rules";
 import { fetchRobots, type RobotsRules } from "./robots";
 import { isFetchableUrl, normalizeCrawlUrl } from "./url";
 import type { RedirectHop } from "./fetch";
+import { resolveLinkGraph } from "./link-graph";
 
 export interface RunCrawlArgs {
   jobId: string;
@@ -463,24 +464,6 @@ export async function runCrawl({
     "site-crawl finished",
   );
   return { status, pagesCrawled, issueCount, stoppedReason };
-}
-
-/**
- * Phase 4a: join the link graph to the page rows, in SQL. A link's target and
- * a page's discoverer are stored as URLs while crawling (the target may not
- * have a row yet); once the page set is final they resolve to page ids.
- */
-async function resolveLinkGraph(jobId: string): Promise<void> {
-  await prisma.$executeRaw`
-    UPDATE "crawl_links" l SET "toPageId" = p."id"
-    FROM "crawl_pages" p
-    WHERE l."crawlJobId" = ${jobId} AND p."crawlJobId" = ${jobId}
-      AND p."url" = l."toUrl" AND l."toPageId" IS NULL`;
-  await prisma.$executeRaw`
-    UPDATE "crawl_pages" c SET "parentPageId" = p."id"
-    FROM "crawl_pages" p
-    WHERE c."crawlJobId" = ${jobId} AND p."crawlJobId" = ${jobId}
-      AND p."url" = c."foundOn" AND c."parentPageId" IS NULL`;
 }
 
 /** Pop up to `count` frontier entries. LPOP with a count is atomic. */

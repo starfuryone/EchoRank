@@ -121,6 +121,7 @@ export async function GET(
               canonical: true,
               redirectTarget: true,
               contentType: true,
+              foundOn: true,
             },
           }),
       });
@@ -150,6 +151,7 @@ export async function GET(
           canonical: true,
           inlinkCount: true,
           inSitemap: true,
+          foundOn: true,
           _count: { select: { issues: true } },
         },
       }),
@@ -173,6 +175,7 @@ export async function GET(
         canonical: r.canonical,
         inlinkCount: r.inlinkCount,
         inSitemap: r.inSitemap,
+        foundOn: r.foundOn,
         issueCount: r._count.issues,
       })),
       page,

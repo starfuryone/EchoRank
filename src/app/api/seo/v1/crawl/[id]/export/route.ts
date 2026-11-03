@@ -14,6 +14,11 @@
  * collapsing them would remove "give me everything" from a screen that is
  * usually filtered.
  *
+ * Phase 4a views, same auth and streaming:
+ *   ?view=broken-links — one row per (source URL, broken URL, anchor, status);
+ *   ?view=redirects    — every redirecting URL with each hop and its status.
+ * No view (or ?view=issues) is the issue export above.
+ *
  * AUTHENTICATED — do not add /api/seo/v1/* to publicPaths in src/proxy.ts.
  */
 
@@ -23,10 +28,20 @@ import { prisma } from "@/lib/prisma";
 import { crawlRouteError } from "@/lib/site-crawler/http";
 import { csvFilename } from "@/lib/csv-export";
 import { csvStreamResponse } from "@/lib/csv-stream";
-import { ISSUE_COLUMNS, type CrawlIssueRow } from "@/lib/site-crawler/csv-columns";
+import {
+  BROKEN_LINK_COLUMNS,
+  ISSUE_COLUMNS,
+  REDIRECT_CHAIN_COLUMNS,
+  type BrokenLinkRow,
+  type CrawlIssueRow,
+  type RedirectChainRow,
+} from "@/lib/site-crawler/csv-columns";
+import { brokenLinksPage, redirectChainsPage } from "@/lib/site-crawler/link-graph";
+
+const VIEWS = ["issues", "broken-links", "redirects"] as const;
 
 export async function GET(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
@@ -39,6 +54,27 @@ export async function GET(
     });
     if (!crawl) {
       return NextResponse.json({ error: "Crawl not found", code: "NOT_FOUND" }, { status: 404 });
+    }
+
+    const view = new URL(request.url).searchParams.get("view") ?? "issues";
+    if (!(VIEWS as readonly string[]).includes(view)) {
+      return NextResponse.json({ error: "Unknown view", code: "INVALID_REQUEST" }, { status: 400 });
+    }
+    if (view === "broken-links") {
+      return csvStreamResponse<BrokenLinkRow>({
+        columns: BROKEN_LINK_COLUMNS,
+        filename: csvFilename("site-crawler-broken-links"),
+        cursorOf: (row) => row.id,
+        fetchPage: (cursor, take) => brokenLinksPage(crawl.id, cursor, take),
+      });
+    }
+    if (view === "redirects") {
+      return csvStreamResponse<RedirectChainRow>({
+        columns: REDIRECT_CHAIN_COLUMNS,
+        filename: csvFilename("site-crawler-redirects"),
+        cursorOf: (row) => row.id,
+        fetchPage: (cursor, take) => redirectChainsPage(crawl.id, cursor, take),
+      });
     }
 
     return csvStreamResponse<CrawlIssueRow>({

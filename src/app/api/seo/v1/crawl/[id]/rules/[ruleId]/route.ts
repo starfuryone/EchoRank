@@ -69,7 +69,7 @@ export async function GET(
               type: true,
               evidence: true,
               detail: true,
-              crawlPage: { select: { url: true, statusCode: true } },
+              crawlPage: { select: { url: true, statusCode: true, foundOn: true } },
             },
           }),
       });
@@ -78,7 +78,12 @@ export async function GET(
       prisma.crawlIssue.count({ where }),
       prisma.crawlIssue.findMany({
         where,
-        select: { id: true, evidence: true, detail: true, crawlPage: { select: { url: true, statusCode: true } } },
+        select: {
+          id: true,
+          evidence: true,
+          detail: true,
+          crawlPage: { select: { id: true, url: true, statusCode: true, foundOn: true } },
+        },
         orderBy: { id: "asc" },
         skip: (page - 1) * pageSize,
         take: pageSize,
@@ -89,8 +94,10 @@ export async function GET(
       ruleId,
       rows: rows.map((r) => ({
         id: r.id,
+        pageId: r.crawlPage.id,
         url: r.crawlPage.url,
         statusCode: r.crawlPage.statusCode,
+        foundOn: r.crawlPage.foundOn,
         evidence: (r.evidence as Record<string, unknown> | null) ?? (r.detail ? { detail: r.detail } : {}),
       })),
       page,
