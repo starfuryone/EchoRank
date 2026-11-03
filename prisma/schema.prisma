@@ -255,6 +255,7 @@ model Tenant {
   contentSearches    ContentSearch[]
 
   crawlJobs CrawlJob[]
+  crawlSiteDefaults CrawlSiteDefault[]
 
   brandProfiles   BrandProfile[]
   checkups        Checkup[]
@@ -2249,6 +2250,18 @@ model CrawlJob {
   renderMode    String      @default("none")
   renderCap     Int         @default(0)
   pagesRendered Int         @default(0)
+  /// Phase 4a. "spider" follows links from rootUrl; "list" fetches a pasted
+  /// URL list once each, no discovery (the list rides the Redis frontier).
+  mode          String      @default("spider")
+  /// Phase 4a CrawlConfig (src/lib/site-crawler/crawl-config.ts). Secret
+  /// values (header values, cookies, basic-auth password) are stored
+  /// encrypted, never in clear. Null = the defaults (pre-4a crawls).
+  config        Json?
+  /// Kept with full data past the plan's crawlsKept (≤ CRAWL_PIN_MAX per tenant).
+  pinned        Boolean     @default(false)
+  /// Set when retention deleted this crawl's pages, issues and links. The row
+  /// and its summary stay forever (history list).
+  dataPurgedAt  DateTime?
   /// Site-wide aggregation output: distributions, duplicate/redirect counts,
   /// sitemap and inlink stats. COUNTS AND CAPPED SAMPLES ONLY — never full
   /// lists, so the column stays well under 100 KB on a 25,000-URL crawl.
@@ -2261,6 +2274,7 @@ model CrawlJob {
   tenant Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   pages  CrawlPage[]
   issues CrawlIssue[]
+  links  CrawlLink[]
 
   @@index([tenantId, createdAt])
   @@map("crawl_jobs")
@@ -2347,8 +2361,23 @@ model CrawlPage {
   axeViolations       Json?
   consoleErrors       Int?
 
+  // ── Phase 4a: link graph and redirects ───────────────────────────────────
+  /// URL of the first page seen linking here (the BFS discoverer). Null for
+  /// the root, sitemap seeds and list-mode URLs.
+  foundOn             String?
+  /// crawl_pages.id of foundOn, resolved at aggregation. No FK: a dangling id
+  /// is harmless and retention deletes a crawl's pages together.
+  parentPageId        String?
+  /// Every hop when the URL redirected: [{url, status}], first request first.
+  redirectChain       Json?
+  /// Absolute http(s) <img> srcs, capped at 50, for the image sitemap.
+  imgSrcs             String[]
+  /// Last-Modified response header, as sent (sitemap lastmod source).
+  lastModified        String?
+
   crawlJob CrawlJob     @relation(fields: [crawlJobId], references: [id], onDelete: Cascade)
   issues   CrawlIssue[]
+  outlinks CrawlLink[]
 
   @@index([crawlJobId])
   /// Aggregation joins pages to pages by URL (canonical, hreflang and
@@ -2357,6 +2386,59 @@ model CrawlPage {
   /// Duplicate detection reads this at write time: same hash, same crawl.
   @@index([crawlJobId, contentHash])
   @@map("crawl_pages")
+}
+
+/// One internal link edge (Phase 4a). Deduped per (from, to), capped at 100
+/// per source page, internal targets only. Deleted with its source page
+/// (retention: crawl-retention.ts).
+model CrawlLink {
+  id         String  @id @default(cuid())
+  crawlJobId String
+  fromPageId String
+  /// crawl_pages.id of the target once aggregation resolves it; null when the
+  /// target was never crawled (cap, depth, exclusion).
+  toPageId   String?
+  toUrl      String
+  /// Anchor text of the first link to this target on the page, ≤ 200 chars.
+  anchor     String?
+  nofollow   Boolean @default(false)
+  /// Order of the first such link on the page, 0-based.
+  position   Int     @db.SmallInt
+
+  crawlJob CrawlJob  @relation(fields: [crawlJobId], references: [id], onDelete: Cascade)
+  /// Cascade: retention deletes a crawl's pages and the edges go with them.
+  fromPage CrawlPage @relation(fields: [fromPageId], references: [id], onDelete: Cascade)
+
+  @@index([crawlJobId, toPageId])
+  @@index([crawlJobId, fromPageId])
+  @@map("crawl_links")
+}
+
+/// Per tenant + host: the saved crawl configuration ("Save as default for this
+/// site") and the site-ownership token (Phase 4a). Verified sites unlock the
+/// options that change how the crawler treats the target: another user agent,
+/// ignoring robots.txt, a custom robots.txt that replaces the live one.
+/// Retention: deleted with the tenant; rows untouched for 12 months and never
+/// verified are swept by the nightly retention job.
+model CrawlSiteDefault {
+  id           String    @id @default(cuid())
+  tenantId     String
+  /// Lowercased hostname, no port. www is its own host.
+  host         String
+  /// CrawlConfig with secrets encrypted, as on crawl_jobs.config.
+  config       Json?
+  /// Random token for <meta name="echorank-verify"> or a DNS TXT record.
+  verifyToken  String
+  verifiedAt   DateTime?
+  /// "meta" | "dns" | "gsc"
+  verifyMethod String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, host])
+  @@map("crawl_site_defaults")
 }
 
 /// One finding on one page. `type` and `severity` are enum-like strings rather
