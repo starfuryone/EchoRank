@@ -38,7 +38,6 @@ import {
   Gauge,
   ScanEye,
   History,
-  Network,
   MousePointerClick,
   PieChart,
   Quote,
@@ -51,6 +50,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import type { PlanType } from "@/generated/prisma";
+import { NosyBatIcon } from "@/components/seo-tools/nosy-bat-icon";
 
 export const SEO_TOOLS_HUB = "/visibility/tools";
 
@@ -299,7 +299,8 @@ export const SEO_TOOL_GROUPS: SeoToolGroup[] = [
       // Our own BFS crawler: raw HTML, no external API, no JS rendering. Sits
       // beside Site Audit because both answer "what is wrong across the site",
       // but this one is first-party and priced by URLs rather than per page.
-      t("site_crawler", "site-crawler", Network),
+      // Sub-branded (CRAWLER_BRAND): the card shows the mark (an <img> in the icon slot).
+      t("site_crawler", "site-crawler", NosyBatIcon),
       t("lighthouse", "lighthouse", Gauge),
       // GA4 OAuth, scope analytics.readonly — a sensitive scope, same
       // consent-screen review as GSC above.

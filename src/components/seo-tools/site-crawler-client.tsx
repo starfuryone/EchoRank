@@ -45,6 +45,7 @@ import {
   RedirectsPanel,
 } from "@/components/seo-tools/site-crawler-panels";
 import { SITE_CRAWLER_COPY, type DashLocale, type SiteCrawlerCopy } from "@/lib/i18n/dashboard";
+import { CRAWLER_BRAND } from "@/lib/site-crawler/brand";
 
 type TabId = "overview" | "rules" | "issues" | "duplicates" | "redirects" | "pages";
 
@@ -663,8 +664,15 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
 function Header({ t }: { t: SiteCrawlerCopy }) {
   return (
     <div>
-      <h2 className="text-sm font-medium uppercase tracking-wide text-gray-500">{t.title}</h2>
-      <p className="mt-1 max-w-3xl text-sm text-gray-500">{t.subtitle}</p>
+      <div className="flex items-center gap-3">
+        {/* eslint-disable-next-line @next/next/no-img-element -- a static SVG; next/image adds nothing */}
+        <img src={CRAWLER_BRAND.mark} alt="" aria-hidden="true" width={40} height={40} className="h-10 w-10" />
+        <div>
+          <h2 className="text-lg font-semibold text-gray-900">{t.brandName}</h2>
+          <p className="text-xs text-gray-500">{t.byline}</p>
+        </div>
+      </div>
+      <p className="mt-2 max-w-3xl text-sm text-gray-500">{t.subtitle}</p>
     </div>
   );
 }

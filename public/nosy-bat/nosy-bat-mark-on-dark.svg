@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-label="Nosy Bat">
+<rect width="256" height="256" rx="56" fill="#181A20"/>
+<g transform="translate(0 0) scale(1.0)">
+  <path d="M 104 112 C 86 82, 48 78, 14 92 C 32 100, 40 116, 44 134 C 58 130, 70 138, 76 152 C 86 146, 96 148, 106 156 Z" fill="#F0B90B"/><path d="M 104 112 C 86 82, 48 78, 14 92 C 32 100, 40 116, 44 134 C 58 130, 70 138, 76 152 C 86 146, 96 148, 106 156 Z" fill="#F0B90B" transform="translate(256 0) scale(-1 1)"/>
+  <ellipse cx="128" cy="152" rx="36" ry="42" fill="#F0B90B"/>
+  <ellipse cx="128" cy="162" rx="22" ry="26" fill="#FCD535"/>
+  <path d="M 98 84 C 92 64, 90 48, 94 36 C 96 32, 100 32, 102 36 C 110 50, 118 60, 124 70 Z" fill="#F0B90B"/><path d="M 100 76 C 97 64, 96 54, 98 46 C 104 54, 108 60, 112 68 Z" fill="#FCD535"/><path d="M 98 84 C 92 64, 90 48, 94 36 C 96 32, 100 32, 102 36 C 110 50, 118 60, 124 70 Z" fill="#F0B90B" transform="translate(256 0) scale(-1 1)"/><path d="M 100 76 C 97 64, 96 54, 98 46 C 104 54, 108 60, 112 68 Z" fill="#FCD535" transform="translate(256 0) scale(-1 1)"/>
+  <circle cx="128" cy="104" r="47" fill="#F0B90B"/>
+  <!-- face patch -->
+  <ellipse cx="128" cy="116" rx="30" ry="22" fill="#FCD535"/>
+  <!-- eyes -->
+  <circle cx="111" cy="104" r="13" fill="#FFFFFF"/>
+  <circle cx="145" cy="104" r="13" fill="#FFFFFF"/>
+  <circle cx="113" cy="106" r="8" fill="#181A20"/>
+  <circle cx="147" cy="106" r="8" fill="#181A20"/>
+  <circle cx="116" cy="102" r="3" fill="#FFFFFF"/>
+  <circle cx="150" cy="102" r="3" fill="#FFFFFF"/>
+  <!-- nose -->
+  <ellipse cx="128" cy="119" rx="4" ry="3" fill="#181A20"/>
+  <!-- smile -->
+  <path d="M 114 126 Q 128 138 142 126" fill="none" stroke="#181A20" stroke-width="4.5" stroke-linecap="round"/>
+  <!-- tiny friendly fangs -->
+  <path d="M 119 129 l 3 6 l 3 -5 Z" fill="#FFFFFF"/>
+  <path d="M 131 130 l 3 5 l 3 -6 Z" fill="#FFFFFF"/>
+  <circle cx="156" cy="120" r="5" fill="#F0B90B" opacity="0.9"/>
+</g>
+</svg>

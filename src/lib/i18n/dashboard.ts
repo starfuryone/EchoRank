@@ -13,6 +13,7 @@ import type { SerpLanguageCode, SerpLocationCode } from "@/lib/serp/options";
 // src/app/[locale]/HomeClient.tsx read one string instead of keeping two.
 // REVENUE_COPY.disclaimer is the only consumer here.
 import { ESTIMATE_DISCLAIMER } from "@/lib/revenue/disclaimer";
+import { CRAWLER_BRAND } from "@/lib/site-crawler/brand";
 export type DashLocale = "en" | "fr" | "de-CH";
 
 export function dashboardLocale(cookieValue?: string | null): DashLocale {
@@ -5463,8 +5464,8 @@ const seoToolsEn = {
       description: "Crawl your website and identify technical SEO issues.",
     },
     site_crawler: {
-      name: "Site Crawler",
-      description: "Crawl every page on your site and list the on-page SEO issues it finds.",
+      name: CRAWLER_BRAND.name,
+      description: "Site crawler. Crawl every page on your site and list the on-page SEO issues it finds.",
     },
     web_analytics: {
       name: "Web Analytics",
@@ -5663,8 +5664,8 @@ export const SEO_TOOLS_COPY: Record<DashLocale, SeoToolsCopy> = {
         description: "Explorez votre site web et identifiez les problèmes techniques de SEO.",
       },
       site_crawler: {
-        name: "Explorateur de site",
-        description: "Parcourez chaque page de votre site et listez les problèmes SEO on-page détectés.",
+        name: CRAWLER_BRAND.name,
+        description: "Robot d'exploration. Parcourez chaque page de votre site et listez les problèmes SEO on-page détectés.",
       },
       web_analytics: {
         name: "Analytique web",
@@ -5857,8 +5858,8 @@ export const SEO_TOOLS_COPY: Record<DashLocale, SeoToolsCopy> = {
         description: "Crawlen Sie Ihre Website und identifizieren Sie technische SEO-Probleme.",
       },
       site_crawler: {
-        name: "Site Crawler",
-        description: "Crawlen Sie jede Seite Ihrer Website und erhalten Sie alle gefundenen On-Page-SEO-Probleme.",
+        name: CRAWLER_BRAND.name,
+        description: "Site-Crawler. Crawlen Sie jede Seite Ihrer Website und erhalten Sie alle gefundenen On-Page-SEO-Probleme.",
       },
       web_analytics: {
         name: "Web-Analytics",
@@ -12857,6 +12858,11 @@ export const HELP_COPY: Record<DashLocale, HelpCopy> = {
 // rule that ships without copy is a missing key the tests catch rather than a
 // raw "META_DESC_TOO_LONG" shown to a customer.
 const siteCrawlerEn = {
+  // The tool is branded Nosy Bat; the name comes from CRAWLER_BRAND and is never
+  // translated. `title` stays the generic noun for the lock card and eyebrows.
+  brandName: CRAWLER_BRAND.nameTm,
+  byline: CRAWLER_BRAND.byline as string,
+  pageTitle: `${CRAWLER_BRAND.name} — Site Crawler — Echorank`,
   title: "Site Crawler",
   subtitle:
     "Crawl every page on your site and see the on-page SEO issues, page by page. Raw HTML only — no JavaScript rendering in this version.",
@@ -12869,7 +12875,7 @@ const siteCrawlerEn = {
   quotaNote: (used: string, limit: string) => `${used} of ${limit} crawls used this month.`,
   quotaUnlimited: (used: string) => `${used} crawls this month. No monthly limit on your plan.`,
   politeNote:
-    "We identify ourselves as Echorank360Bot, obey robots.txt, and stay under 2 requests a second.",
+    `We identify ourselves as Echorank360Bot (${CRAWLER_BRAND.name}), obey robots.txt, and stay under 2 requests a second.`,
 
   lockedTitle: "Site Crawler is not part of your plan",
   lockedBody:
@@ -13021,6 +13027,9 @@ export type SiteCrawlerCopy = typeof siteCrawlerEn;
 export const SITE_CRAWLER_COPY: Record<DashLocale, SiteCrawlerCopy> = {
   en: siteCrawlerEn,
   fr: {
+    brandName: CRAWLER_BRAND.nameTm,
+    byline: "robot d'exploration par Echorank",
+    pageTitle: `${CRAWLER_BRAND.name} — Explorateur de site — Echorank`,
     title: "Explorateur de site",
     subtitle:
       "Parcourez chaque page de votre site et consultez les problèmes SEO on-page, page par page. HTML brut uniquement — pas de rendu JavaScript dans cette version.",
@@ -13035,7 +13044,7 @@ export const SITE_CRAWLER_COPY: Record<DashLocale, SiteCrawlerCopy> = {
     quotaUnlimited: (used: string) =>
       `${used} exploration(s) ce mois-ci. Aucune limite mensuelle avec votre forfait.`,
     politeNote:
-      "Nous nous identifions comme Echorank360Bot, respectons robots.txt et restons sous 2 requêtes par seconde.",
+      `Nous nous identifions comme Echorank360Bot (${CRAWLER_BRAND.name}), respectons robots.txt et restons sous 2 requêtes par seconde.`,
 
     lockedTitle: "L'explorateur de site n'est pas inclus dans votre forfait",
     lockedBody:
@@ -13181,6 +13190,9 @@ export const SITE_CRAWLER_COPY: Record<DashLocale, SiteCrawlerCopy> = {
     },
   },
   "de-CH": {
+    brandName: CRAWLER_BRAND.nameTm,
+    byline: "Crawler von Echorank",
+    pageTitle: `${CRAWLER_BRAND.name} — Site Crawler — Echorank`,
     title: "Site Crawler",
     subtitle:
       "Crawlen Sie jede Seite Ihrer Website und sehen Sie die On-Page-SEO-Probleme Seite für Seite. Nur rohes HTML — kein JavaScript-Rendering in dieser Version.",
@@ -13194,7 +13206,7 @@ export const SITE_CRAWLER_COPY: Record<DashLocale, SiteCrawlerCopy> = {
     quotaUnlimited: (used: string) =>
       `${used} Crawls diesen Monat. Keine monatliche Begrenzung in Ihrem Abo.`,
     politeNote:
-      "Wir weisen uns als Echorank360Bot aus, beachten robots.txt und bleiben unter 2 Anfragen pro Sekunde.",
+      `Wir weisen uns als Echorank360Bot (${CRAWLER_BRAND.name}) aus, beachten robots.txt und bleiben unter 2 Anfragen pro Sekunde.`,
 
     lockedTitle: "Site Crawler ist nicht Teil Ihres Abos",
     lockedBody:

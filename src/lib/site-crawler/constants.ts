@@ -4,8 +4,14 @@
 // on us, not on the site being crawled — they are the reason a tenant can point
 // this at a server without us becoming their traffic problem.
 
-/** Identifies the crawler and points at a page explaining it. Never spoofed. */
-export const CRAWLER_USER_AGENT = "Echorank360Bot/1.0 (+https://echorank360.com/bot)";
+import { CRAWLER_BRAND } from "./brand";
+
+/**
+ * Identifies the crawler and points at a page explaining it. Never spoofed.
+ * The token before the `/` is what robots.txt groups match; only the comment
+ * carries the brand name.
+ */
+export const CRAWLER_USER_AGENT = CRAWLER_BRAND.ua;
 
 /** Requests per second, per crawl. Enforced by a token bucket. */
 export const MAX_REQUESTS_PER_SECOND = 2;
