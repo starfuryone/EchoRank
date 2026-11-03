@@ -15,6 +15,7 @@
 
 import { NextResponse } from "next/server";
 import { requirePaidPlan } from "@/lib/paid-plan";
+import { Prisma } from "@/generated/prisma";
 import { prisma } from "@/lib/prisma";
 import { crawlRouteError } from "@/lib/site-crawler/http";
 
@@ -102,22 +103,20 @@ export async function GET(
               ORDER BY count(*) DESC, "contentHash" ASC
               LIMIT ${pageSize} OFFSET ${offset}`;
 
+    // The grouped column as a literal, like the branches above. It used to be
+    // a CASE on ${kind} in both GROUP BY and HAVING; each ${kind} binds its
+    // own parameter, so Postgres saw two different expressions and refused
+    // the query (42803) — the tab answered 500 on every load.
+    const column = Prisma.raw(kind === "title" ? "title" : kind === "meta" ? `"metaDescription"` : `"contentHash"`);
     const totalRows = await prisma.$queryRaw<{ total: bigint }[]>`
       SELECT count(*)::bigint AS total FROM (
         SELECT 1 FROM crawl_pages
         WHERE "crawlJobId" = ${crawl.id}
           AND "statusCode" >= 200 AND "statusCode" < 300
           AND "contentType" LIKE 'text/html%'
-        GROUP BY CASE
-          WHEN ${kind} = 'title' THEN title
-          WHEN ${kind} = 'meta' THEN "metaDescription"
-          ELSE "contentHash"
-        END
-        HAVING count(*) > 1 AND CASE
-          WHEN ${kind} = 'title' THEN title
-          WHEN ${kind} = 'meta' THEN "metaDescription"
-          ELSE "contentHash"
-        END IS NOT NULL
+          AND ${column} IS NOT NULL AND ${column} <> ''
+        GROUP BY ${column}
+        HAVING count(*) > 1
       ) g`;
     const total = Number(totalRows[0]?.total ?? 0);
 
