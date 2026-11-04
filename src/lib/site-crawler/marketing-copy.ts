@@ -186,7 +186,7 @@ export const CRAWL_CAPABILITIES: readonly CrawlCapability[] = [
   cap("custom-robots", { flag: "crawl.customRobots" },
     ["Custom robots.txt", "Edit a copy of the site's robots.txt and test which URLs it would allow or block."],
     ["robots.txt personnalisé", "Modifiez une copie du robots.txt du site et vérifiez quelles URL il autoriserait ou bloquerait."]),
-  cap("amp", { family: "amp" },
+  cap("amp", { flag: "crawl.amp" },
     ["AMP", "Find AMP URLs, validate them with the official validator, and check the canonical links in both directions."],
     ["AMP", "Repérez les URL AMP, validez-les avec le validateur officiel et vérifiez les liens canoniques dans les deux sens."]),
   cap("visualisations", { flag: "crawl.visualise" },
@@ -208,6 +208,9 @@ export const CRAWL_CAPABILITIES: readonly CrawlCapability[] = [
   cap("accessibility", { family: "accessibility" },
     ["Accessibility", "Automated WCAG 2.1 AA checks with the axe-core rule set on every rendered page."],
     ["Accessibilité", "Vérifications WCAG 2.1 AA automatisées avec les règles axe-core sur chaque page rendue."]),
+  cap("forms-login", { flag: "crawl.login" },
+    ["Forms-based authentication", "Log in through your site's own login form before crawling, to audit the pages behind it. Your verified sites only; logout links are never followed."],
+    ["Authentification par formulaire", "Connectez-vous via le formulaire de connexion de votre site avant l'exploration, pour auditer les pages protégées. Sur vos sites vérifiés seulement ; les liens de déconnexion ne sont jamais suivis."]),
   cap("ai-prompts", { flag: "crawl.ai" },
     ["AI prompts", "Run up to three prompts per crawl against page content with Claude, OpenAI or Gemini: classify intent, summarise, suggest titles, check grammar."],
     ["Requêtes IA", "Lancez jusqu'à trois requêtes par exploration sur le contenu des pages avec Claude, OpenAI ou Gemini : classer l'intention, résumer, proposer des titres, vérifier la grammaire."]),
@@ -330,18 +333,23 @@ export const CRAWL_FEATURE_ROWS: readonly CrawlFeatureRow[] = [
   row("near-duplicates", { family: "content" }, "Near duplicate content", "Contenu quasi dupliqué"),
   row("custom-robots", { flag: "crawl.customRobots" }, "Custom robots.txt", "robots.txt personnalisé"),
   row("mobile-usability", { family: "mobile" }, "Mobile usability", "Ergonomie mobile"),
-  row("amp", { family: "amp" }, "AMP crawling & validation", "Exploration et validation AMP"),
+  row("amp", { flag: "crawl.amp" }, "AMP crawling & validation", "Exploration et validation AMP"),
   row("structured-data", { family: "structured_data" }, "Structured data & validation", "Données structurées et validation"),
-  // Spelling only: grammar is out of scope (SITE-CRAWLER-PHASE3.md, 3c), so
-  // the row does not claim it.
+  // Spelling only: the spell check is built in; grammar runs through the AI
+  // prompts (Phase 4e, its own row), so this row does not claim it.
   row("spelling", { family: "spelling" }, "Spelling", "Orthographe"),
   // Phase 4b caps, per crawl (searches, extractors) and per site (segments).
   row("source-search", { flag: "crawl.extraction" }, "Custom source code search", "Recherche dans le code source", (p, b) =>
     b === "fr" ? `${fmt(p.crawlSearches, b)} recherches par exploration` : `${fmt(p.crawlSearches, b)} searches per crawl`),
   row("custom-extraction", { flag: "crawl.extraction" }, "Custom extraction", "Extraction personnalisée", (p, b) =>
     b === "fr" ? `${fmt(p.crawlExtractors, b)} extracteurs par exploration` : `${fmt(p.crawlExtractors, b)} extractors per crawl`),
-  row("custom-javascript", { flag: "crawl.customJs" }, "Custom JavaScript", "JavaScript personnalisé"),
-  row("ai-crawl", { flag: "crawl.ai" }, "Crawl with AI (Claude / OpenAI / Gemini)", "Exploration avec l'IA (Claude / OpenAI / Gemini)"),
+  // Phase 4e caps per crawl, from plan-config.
+  row("custom-javascript", { flag: "crawl.customJs" }, "Custom JavaScript", "JavaScript personnalisé", (p, b) =>
+    b === "fr"
+      ? `${fmt(p.crawlJsSnippets, b)} ${p.crawlJsSnippets > 1 ? "extraits" : "extrait"} par exploration`
+      : `${fmt(p.crawlJsSnippets, b)} ${p.crawlJsSnippets > 1 ? "snippets" : "snippet"} per crawl`),
+  row("ai-crawl", { flag: "crawl.ai" }, "Crawl with AI (Claude / OpenAI / Gemini)", "Exploration avec l'IA (Claude / OpenAI / Gemini)", (p, b) =>
+    b === "fr" ? `${fmt(p.crawlAiPages, b)} pages par exploration, 3 requêtes` : `${fmt(p.crawlAiPages, b)} pages per crawl, 3 prompts`),
   row("google-analytics", { flag: "crawl.ga4" }, "Google Analytics integration", "Intégration Google Analytics"),
   row("search-console", { flag: "crawl.gsc" }, "Search Console integration", "Intégration Search Console"),
   // Phase 4d caps per crawl, from plan-config; Search Console and GA4 are uncapped.
