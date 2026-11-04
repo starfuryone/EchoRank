@@ -20,6 +20,7 @@
 
 import { CRAWLER_BRAND } from "./brand";
 import { CRAWL_PIN_MAX, MAX_EXTERNAL_LINKS_PER_PAGE } from "./constants";
+import { FREE_CRAWL_RETENTION_DAYS, FREE_CRAWL_URL_CAP } from "./free-limits";
 import { flag as flagOn, FLAGS, type FlagName, type Flags } from "@/lib/flags";
 import type { CrawlCadence, PlanConfig } from "@/lib/plan-config";
 
@@ -383,6 +384,34 @@ export const CRAWL_FEATURE_ROWS: readonly CrawlFeatureRow[] = [
   row("api", { flag: "crawl.api" }, "Command line & API", "Ligne de commande et API", (_p, b) => (b === "fr" ? "API REST et MCP" : "REST API and MCP")),
   row("support", { always: true }, "Free technical support", "Soutien technique gratuit"),
 ];
+
+// ─── The free crawler on this page (flag crawl.free) ─────────────────────────
+//
+// The feature table's Free column: one cell down the whole column (the free
+// crawl is one fixed offer, not a per-feature cap), and the "Try it free"
+// strip above the pricing strip. Numbers from free-limits.ts.
+
+export const FREE_COLUMN: { head: Text; summary: Text; link: Text } = {
+  head: { en: "Free", fr: "Gratuit" },
+  summary: {
+    en: `${FREE_CRAWL_URL_CAP} URLs · raw HTML · full rule library · ${FREE_CRAWL_RETENTION_DAYS}-day results`,
+    fr: `${FREE_CRAWL_URL_CAP} URL · HTML brut · bibliothèque de règles complète · résultats conservés ${FREE_CRAWL_RETENTION_DAYS} jours`,
+  },
+  link: { en: "Try it free", fr: "Essayer gratuitement" },
+};
+
+export const FREE_TRY_STRIP: { label: Text; h2: Text; body: Text; button: Text } = {
+  label: { en: "Try it free", fr: "Essayez gratuitement" },
+  h2: {
+    en: `Crawl ${FREE_CRAWL_URL_CAP} pages of your site, free`,
+    fr: `Explorez ${FREE_CRAWL_URL_CAP} pages de votre site, gratuitement`,
+  },
+  body: {
+    en: `No account. ${CRAWLER_BRAND.name} crawls ${FREE_CRAWL_URL_CAP} pages of raw HTML against the full rule library and shows your Site health and the five problems to fix first. The result is yours for ${FREE_CRAWL_RETENTION_DAYS} days.`,
+    fr: `Sans compte. ${CRAWLER_BRAND.name} explore ${FREE_CRAWL_URL_CAP} pages de HTML brut avec toute la bibliothèque de règles et affiche la santé de votre site et les cinq problèmes à corriger en premier. Le résultat reste disponible ${FREE_CRAWL_RETENTION_DAYS} jours.`,
+  },
+  button: { en: `Crawl ${FREE_CRAWL_URL_CAP} pages free`, fr: `Explorer ${FREE_CRAWL_URL_CAP} pages gratuitement` },
+};
 
 export function visibleFeatureRows(ctx: GateContext): CrawlFeatureRow[] {
   return CRAWL_FEATURE_ROWS.filter((r) => gateOpen(r.gate, ctx));

@@ -41,6 +41,8 @@ import {
   CRAWL_CLOSER,
   CRAWL_INTRO,
   CRAWL_PLANS,
+  FREE_COLUMN,
+  FREE_TRY_STRIP,
   capabilityBody,
   featureCells,
   visibleCapabilities,
@@ -49,12 +51,15 @@ import {
   type CopyBase,
   type GateContext,
 } from "@/lib/site-crawler/marketing-copy";
+import { FREE_TOOLS_BASE } from "@/lib/free-tools";
 import { PublicNav } from "../PublicNav";
 import { PricingSection } from "../PricingSection";
 import { PublicFooter } from "@/components/PublicFooter";
 import { CrawlerCta } from "./CrawlerCta";
 import s from "../home2.module.css";
 import c from "./site-crawler.module.css";
+
+const FREE_CRAWLER_PATH = `${FREE_TOOLS_BASE}/site-crawler`;
 
 const PATH = "/site-crawler";
 const NB = CRAWLER_BRAND.name;
@@ -171,6 +176,8 @@ export default async function Page({ params }: { params: Params }) {
   const base = baseOf(l);
   const t = COPY[base];
   const link = (href: string) => `/${l}${href}`;
+  // The free public crawler's entry points (Try it free strip, the Free column).
+  const freeOn = flag("crawl.free");
   const url = `${SITE_URL}/${l}${PATH}`;
 
   const ctx: GateContext = { families: new Set(RULES.map((r) => r.family)), flags: FLAGS };
@@ -255,19 +262,30 @@ export default async function Page({ params }: { params: Params }) {
               <thead>
                 <tr>
                   <th scope="col">{t.feature}</th>
+                  {freeOn && <th scope="col">{FREE_COLUMN.head[base]}</th>}
                   {CRAWL_PLANS.map((p) => (
                     <th key={p} scope="col">{PLAN_CONFIGS[p].name}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {rows.map((r) => {
+                {rows.map((r, i) => {
                   const cells = featureCells(r, PLANS_BY_ID, base);
                   return (
                     <tr key={r.id}>
                       <th scope="row" style={{ textTransform: "none", fontFamily: "inherit", fontSize: 14, letterSpacing: 0, color: "var(--text)" }}>
                         {r.label[base]}
                       </th>
+                      {/* The free crawler (crawl.free): one fixed offer, one cell down the column. */}
+                      {freeOn && i === 0 && (
+                        <td rowSpan={rows.length} data-testid="free-column">
+                          {FREE_COLUMN.summary[base]}
+                          <br />
+                          <a className={c.textLink} href={link(FREE_CRAWLER_PATH)}>
+                            {FREE_COLUMN.link[base]}
+                          </a>
+                        </td>
+                      )}
                       {CRAWL_PLANS.map((p) => (
                         <td key={p}>
                           {cells[p] === true ? (
@@ -301,6 +319,22 @@ export default async function Page({ params }: { params: Params }) {
           </div>
         </div>
       </section>
+
+      {/* Try it free (crawl.free): the free public crawler, above the pricing strip. */}
+      {freeOn && (
+        <section id="try-free" className={s.section} data-testid="try-free-strip">
+          <div className={s.container}>
+            <p className={s.label}><b>{FREE_TRY_STRIP.label[base]}</b></p>
+            <h2 className={s.h2}>{FREE_TRY_STRIP.h2[base]}</h2>
+            <p className={s.sub}>{FREE_TRY_STRIP.body[base]}</p>
+            <div className={s.ctarow} style={{ marginTop: 20 }}>
+              <a className={`${s.btn} ${s.btnPrimary}`} href={link(FREE_CRAWLER_PATH)}>
+                {FREE_TRY_STRIP.button[base]}
+              </a>
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* /05 — pricing strip: the shared cards, no new pricing copy */}
       <section id="pricing" className={s.section}>
