@@ -5,7 +5,8 @@
 // labelled by its title; the capability cards are the public page's, gated by
 // the same flags and families; Escape closes it and focus returns to the
 // button; ?help=1 opens it on load; the plan tab reads the tenant's quota;
-// the footer opens the /learn guide in a new tab. In every dashboard locale.
+// the footer opens the /learn guide in a new tab, and all the crawler guides
+// beside it. In every dashboard locale.
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -53,7 +54,8 @@ describe.each(LOCALES)("%s", (l) => {
     await act(async () => root.render(<CrawlerHeader t={t} locale={l} quota={quota} />));
     const button = el.querySelector<HTMLButtonElement>(`button[aria-label="${t.helpAria}"]`)!;
     expect(button).not.toBeNull();
-    expect(el.querySelector("a[target=_blank]")).toBeNull();
+    // The only new-tab link in the header is Guides (the crawler guides on the Knowledge Hub).
+    expect([...el.querySelectorAll("a[target=_blank]")].map((a) => a.getAttribute("data-testid"))).toEqual(["guides-link"]);
     expect(dialog()).toBeNull();
     await act(async () => {
       button.focus();
@@ -69,6 +71,10 @@ describe.each(LOCALES)("%s", (l) => {
     const guide = [...d.querySelectorAll("a")].find((a) => a.textContent === t.helpModal.guide)!;
     expect(guide.getAttribute("href")).toBe(`/${l}/learn/guides/what-nosy-bat-checks`);
     expect(guide.getAttribute("target")).toBe("_blank");
+    // The footer keeps "Open the full guide" and adds every crawler guide.
+    const all = [...d.querySelectorAll("a")].find((a) => a.textContent === t.helpModal.allGuides)!;
+    expect(all.getAttribute("href")).toBe(`/${l}/learn/guides#nosy-bat`);
+    expect(all.getAttribute("target")).toBe("_blank");
     await act(async () => void document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })));
     await vi.waitFor(() => expect(dialog()).toBeNull());
     await vi.waitFor(() => expect(document.activeElement).toBe(button));

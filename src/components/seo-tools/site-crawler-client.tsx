@@ -15,7 +15,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
-import { AlertCircle, BookOpen, CircleQuestionMark, Download, Loader2, Network } from "lucide-react";
+import { AlertCircle, BookOpen, CircleQuestionMark, Download, Library, Loader2, Network } from "lucide-react";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -74,6 +74,7 @@ import { parseUrlList } from "@/lib/site-crawler/url-list";
 import { flag } from "@/lib/flags";
 import { SITE_CRAWLER_COPY, type DashLocale, type SiteCrawlerCopy } from "@/lib/i18n/dashboard";
 import { helpModalFor, learnHref } from "@/lib/help-content";
+import { CRAWLER_GUIDES_HREF } from "@/lib/crawler-guides-link";
 
 type TabId = "overview" | "rules" | "issues" | "duplicates" | "redirects" | "pages" | "structure" | "compare" | "extraction" | "external" | "metrics" | "segments";
 
@@ -1319,34 +1320,42 @@ export function CrawlerHeader({ t, locale, quota, howto }: { t: SiteCrawlerCopy;
   const headerButton =
     "inline-flex items-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2";
   // The brand lives in the top bar (mark, name, byline); this header starts
-  // with the description, Help and How to right-aligned on the same row.
+  // with the description, How to / Help / Guides right-aligned on the same
+  // row. Guides is a link, not a dialog: the crawler guides on the public
+  // Knowledge Hub (#nosy-bat), in the dashboard's language, in a new tab. It
+  // shows on every crawler view, the locked-plan screen included.
+  const guidesHref = learnHref(locale, CRAWLER_GUIDES_HREF);
   return (
     <div className="flex items-start justify-between gap-3" data-testid="crawler-header">
       <p className="max-w-3xl text-sm text-gray-600">{t.subtitle}</p>
-      {(help || howto) && (
-        <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
-          {howto && (
-            <button ref={howtoButton} type="button" onClick={() => setHowtoOpen(true)} aria-haspopup="dialog" className={headerButton} data-testid="howto-button">
-              <BookOpen className="mr-2 h-4 w-4 text-emerald-700" aria-hidden="true" />
-              {t.ux.howtoButton}
-            </button>
-          )}
-          {help && (
-            <button
-              ref={button}
-              type="button"
-              onClick={() => setOpen(true)}
-              aria-label={t.helpAria}
-              aria-haspopup="dialog"
-              className={headerButton}
-            >
-              <CircleQuestionMark className="mr-2 h-4 w-4 text-blue-600" aria-hidden="true" />
-              {t.helpButton}
-            </button>
-          )}
-        </div>
+      <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+        {howto && (
+          <button ref={howtoButton} type="button" onClick={() => setHowtoOpen(true)} aria-haspopup="dialog" className={headerButton} data-testid="howto-button">
+            <BookOpen className="mr-2 h-4 w-4 text-emerald-700" aria-hidden="true" />
+            {t.ux.howtoButton}
+          </button>
+        )}
+        {help && (
+          <button
+            ref={button}
+            type="button"
+            onClick={() => setOpen(true)}
+            aria-label={t.helpAria}
+            aria-haspopup="dialog"
+            className={headerButton}
+          >
+            <CircleQuestionMark className="mr-2 h-4 w-4 text-blue-600" aria-hidden="true" />
+            {t.helpButton}
+          </button>
+        )}
+        <a href={guidesHref} target="_blank" rel="noopener noreferrer" aria-label={t.ux.guidesAria} className={headerButton} data-testid="guides-link">
+          <Library className="mr-2 h-4 w-4 text-emerald-700" aria-hidden="true" />
+          {t.ux.guidesButton}
+        </a>
+      </div>
+      {help && shown && (
+        <CrawlerHelpModal t={t} locale={locale} quota={quota} guideHref={learnHref(locale, help.guide)} allGuidesHref={guidesHref} onClose={close} />
       )}
-      {help && shown && <CrawlerHelpModal t={t} locale={locale} quota={quota} guideHref={learnHref(locale, help.guide)} onClose={close} />}
       {howto && howtoOpen && (
         <CrawlerHowtoModal
           view={howto}

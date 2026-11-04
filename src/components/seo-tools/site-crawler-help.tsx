@@ -37,6 +37,7 @@ export default function CrawlerHelpModal({
   locale,
   quota,
   guideHref,
+  allGuidesHref,
   onClose,
 }: {
   t: SiteCrawlerCopy;
@@ -44,6 +45,8 @@ export default function CrawlerHelpModal({
   quota: CrawlQuotaDto | null;
   /** The full /learn guide (locale-prefixed). */
   guideHref: string;
+  /** The crawler guides' section of the guides index (locale-prefixed). */
+  allGuidesHref: string;
   onClose: () => void;
 }) {
   const h = t.helpModal;
@@ -158,6 +161,9 @@ export default function CrawlerHelpModal({
         <div className="flex flex-wrap items-center justify-end gap-3 border-t border-gray-100 pt-3">
           <a href={guideHref} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-blue-600 hover:underline">
             {h.guide}
+          </a>
+          <a href={allGuidesHref} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-blue-600 hover:underline" data-testid="help-all-guides">
+            {h.allGuides}
           </a>
           <Button type="button" variant="outline" onClick={onClose}>
             {h.close}

@@ -56,6 +56,7 @@ import { PublicNav } from "../PublicNav";
 import { PricingSection } from "../PricingSection";
 import { PublicFooter } from "@/components/PublicFooter";
 import { CrawlerCta } from "./CrawlerCta";
+import { CRAWLER_GUIDES_HREF } from "@/lib/crawler-guides-link";
 import s from "../home2.module.css";
 import c from "./site-crawler.module.css";
 
@@ -85,6 +86,7 @@ const COPY = {
     seePlans: "See plans",
     open: `Open ${NB}`,
     compare: "How it compares to a desktop crawler",
+    guides: "Guides",
     reportsLabel: "WHAT IT REPORTS",
     reportsH2: `What ${NB} crawls and reports`,
     featuresLabel: "FEATURES",
@@ -106,6 +108,7 @@ const COPY = {
     seePlans: "Voir les forfaits",
     open: `Ouvrir ${NB}`,
     compare: "Comparé à un robot à installer",
+    guides: "Guides",
     reportsLabel: "CE QU'IL SIGNALE",
     reportsH2: `Ce que ${NB} explore et signale`,
     featuresLabel: "FONCTIONS",
@@ -231,6 +234,9 @@ export default async function Page({ params }: { params: Params }) {
           <div className={s.ctarow} style={{ marginTop: 24 }}>
             <CrawlerCta pricingHref={link("/pricing")} plansLabel={t.seePlans} openLabel={t.open} />
             <a className={c.textLink} href="#hosted">{t.compare}</a>
+            {/* One link, not a strip of cards: the four guides are listed on
+                the guides index (#nosy-bat), and only there. */}
+            <a className={c.textLink} href={link(CRAWLER_GUIDES_HREF)} data-testid="crawler-guides-link">{t.guides}</a>
           </div>
         </div>
       </section>

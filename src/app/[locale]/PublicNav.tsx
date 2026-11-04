@@ -31,6 +31,7 @@ import { isSupportedLocale } from "@/lib/i18n/config";
 import s from "./home2.module.css";
 import { ThemeToggle } from "@/components/marketing/theme-toggle";
 import { CRAWLER_BRAND } from "@/lib/site-crawler/brand";
+import { CRAWLER_GUIDES_HREF } from "@/lib/crawler-guides-link";
 
 type Base = "en" | "fr";
 const baseOf = (locale: string): Base => (locale.startsWith("fr") ? "fr" : "en");
@@ -215,6 +216,10 @@ const NAV: Record<Base, NavCopy> = {
             items: [
               { href: "/learn", label: "Knowledge hub", desc: "Course, guides and Echopedia." },
               { href: "/learn/guides/what-nosy-bat-checks", label: `What ${CRAWLER_BRAND.name} checks`, desc: "Every rule family the crawler runs." },
+              // One item, not the four guides: this column already holds eleven
+              // described items and is the panel's tallest. The four cards live
+              // on the guides index, at the anchor.
+              { href: CRAWLER_GUIDES_HREF, label: `${CRAWLER_BRAND.name} guides`, desc: "Broken links, sitemaps, extraction, migrations." },
               { href: "/seo-spider/issues", label: `${CRAWLER_BRAND.name} issue library`, desc: "Every check, with how to fix it." },
               { href: "/glossary", label: "Echorank Glossary", desc: "Search, ranking and AI visibility terms." },
               { href: "/blog", label: "Echorank Blog", desc: "GEO, AI search visibility and what to measure." },
@@ -303,6 +308,7 @@ const NAV: Record<Base, NavCopy> = {
             items: [
               { href: "/learn", label: "Centre de connaissances", desc: "Cours, guides et Echopedia." },
               { href: "/learn/guides/what-nosy-bat-checks", label: `Ce que ${CRAWLER_BRAND.name} vérifie`, desc: "Chaque famille de règles du robot." },
+              { href: CRAWLER_GUIDES_HREF, label: `Les guides ${CRAWLER_BRAND.name}`, desc: "Liens brisés, plans de site, extraction, migrations." },
               { href: "/seo-spider/issues", label: `Bibliothèque des problèmes ${CRAWLER_BRAND.name}`, desc: "Chaque vérification et sa correction (en anglais)." },
               { href: "/glossary", label: "Glossaire Echorank", desc: "Termes de recherche, ranking et visibilité IA." },
               { href: "/blog", label: "Blog Echorank", desc: "GEO, visibilité dans la recherche IA et quoi mesurer." },

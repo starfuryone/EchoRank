@@ -207,6 +207,9 @@ export interface GlossaryTerm {
 /** Path after the locale segment. */
 export const LEARN_BASE = "/learn";
 
+/** The crawler guides' anchored section of the guides index (dependency-free module). */
+export { CRAWLER_GUIDES_HREF } from "./crawler-guides-link";
+
 /**
  * The PDF the hub's closing CTA points at.
  *
@@ -2105,6 +2108,8 @@ export function learnRoutes(): string[] {
   return [
     LEARN_BASE,
     ...LEARN_CHAPTERS.map((c) => `${LEARN_BASE}/${c.slug}`),
+    // The guides index (its #nosy-bat section is where nav and app link).
+    `${LEARN_BASE}/guides`,
     ...LEARN_GUIDES.map((g) => `${LEARN_BASE}/guides/${g.slug}`),
     `${LEARN_BASE}/${ECHOPEDIA_SLUG}`,
   ];

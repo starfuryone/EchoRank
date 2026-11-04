@@ -103,10 +103,11 @@ describe("route table", () => {
     expect(learnRoutes()).toEqual([
       LEARN_BASE,
       ...LEARN_CHAPTERS.map((c) => `${LEARN_BASE}/${c.slug}`),
+      `${LEARN_BASE}/guides`,
       ...LEARN_GUIDES.map((g) => `${LEARN_BASE}/guides/${g.slug}`),
       `${LEARN_BASE}/${ECHOPEDIA_SLUG}`,
     ]);
-    expect(learnRoutes()).toHaveLength(1 + LEARN_CHAPTERS.length + LEARN_GUIDES.length + 1);
+    expect(learnRoutes()).toHaveLength(1 + LEARN_CHAPTERS.length + 1 + LEARN_GUIDES.length + 1);
   });
 
   it("puts every learn route in the sitemap registry, once, for every locale", () => {

@@ -317,6 +317,10 @@ const en = {
   schEmptyBody: "Create one to see recurring audits here.",
   // ── How to (the walkthrough itself is in site-crawler/howto-copy.ts) ──
   howtoButton: "How to",
+  // The crawler guides on the public Knowledge Hub, in a new tab.
+  guidesButton: "Guides",
+  // No brand here: the top bar names it once per view (tests/crawler-brand-once.test.tsx).
+  guidesAria: "Guides (opens in a new tab)",
   metaStartTitle: `${NB} — site crawler by Echorank`,
   metaStartDesc: "Crawl your site for technical SEO issues: start a crawl, set its options, and see your recent crawls.",
   metaResultsTitle: (host: string, date: string) => `Crawl of ${host}, ${date}`,
@@ -631,6 +635,8 @@ const fr: SiteCrawlerUxCopy = {
   schEmptyBody: "Créez-en une pour voir vos audits récurrents ici.",
   // ── How to (the walkthrough itself is in site-crawler/howto-copy.ts) ──
   howtoButton: "Mode d'emploi",
+  guidesButton: "Guides",
+  guidesAria: "Guides (s'ouvre dans un nouvel onglet)",
   metaStartTitle: `${NB} — robot d'exploration par Echorank`,
   metaStartDesc: "Explorez votre site à la recherche de problèmes SEO techniques : lancez une exploration, réglez ses options et retrouvez vos explorations récentes.",
   metaResultsTitle: (host: string, date: string) => `Exploration de ${host}, ${date}`,
@@ -943,6 +949,8 @@ const deCH: SiteCrawlerUxCopy = {
   schEmptyBody: "Erstellen Sie einen, um wiederkehrende Audits hier zu sehen.",
   // ── How to (the walkthrough itself is in site-crawler/howto-copy.ts) ──
   howtoButton: "Anleitung",
+  guidesButton: "Leitfäden",
+  guidesAria: "Leitfäden (öffnet in einem neuen Tab)",
   metaStartTitle: `${NB} — Website-Crawler von Echorank`,
   metaStartDesc: "Crawlen Sie Ihre Website nach technischen SEO-Problemen: Crawl starten, Optionen festlegen und die letzten Crawls ansehen.",
   metaResultsTitle: (host: string, date: string) => `Crawl von ${host}, ${date}`,

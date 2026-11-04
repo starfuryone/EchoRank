@@ -25,6 +25,7 @@ import { JsonLd } from "@/lib/seo/JsonLd";
 import { course, organization, webSite, videoObject } from "@/lib/seo/jsonld";
 import { SITE_URL } from "@/lib/seo/constants";
 import {
+  CRAWLER_GUIDES_HREF,
   ECHOPEDIA_SLUG,
   LEARN_BASE,
   LEARN_CHAPTERS,
@@ -32,6 +33,7 @@ import {
   LEARN_PDF,
 } from "@/lib/learn-content";
 import { helpArticleCopy, helpArticlesByCategory } from "@/lib/help-articles";
+import { CRAWLER_BRAND } from "@/lib/site-crawler/brand";
 import { PublicNav } from "../PublicNav";
 import { HomeVideo } from "../HomeVideo";
 import { baseOf, type Base } from "./_shared/ArticleShell";
@@ -61,6 +63,8 @@ interface HubChrome {
   courseCta: string;
   guidesH: string;
   guidesSub: string;
+  /** The one hub card for the crawler guides, which are listed on the guides index. */
+  crawlerCard: { tag: string; h: string; p: string; meta: string };
   toolsH: string;
   toolsSub: string;
   billingH: string;
@@ -107,6 +111,12 @@ const CHROME: Record<Base, HubChrome> = {
     courseCta: "Start with Chapter 1 →",
     guidesH: "Ultimate guides",
     guidesSub: "Deep dives on the topics the course can only touch.",
+    crawlerCard: {
+      tag: "Technical SEO with a crawler",
+      h: `${CRAWLER_BRAND.name} guides`,
+      p: "Broken links, XML sitemaps, custom extraction and site migrations — four walkthroughs with diagrams.",
+      meta: "4 guides →",
+    },
     toolsH: "Tool guides & more",
     toolsSub: "Hands-on help for the Echorank toolset.",
     billingH: "Billing basics",
@@ -146,6 +156,12 @@ const CHROME: Record<Base, HubChrome> = {
     courseCta: "Commencer par le chapitre 1 →",
     guidesH: "Guides approfondis",
     guidesSub: "Les sujets que le cours ne fait qu'effleurer, traités à fond.",
+    crawlerCard: {
+      tag: "SEO technique avec un robot",
+      h: `Les guides ${CRAWLER_BRAND.name}`,
+      p: "Liens brisés, plans de site XML, extraction personnalisée et migrations — quatre marches à suivre, schémas à l'appui.",
+      meta: "4 guides →",
+    },
     toolsH: "Guides des outils",
     toolsSub: "L'aide pratique pour les outils Echorank.",
     billingH: "Notions de facturation",
@@ -294,7 +310,9 @@ export default async function LearnHubPage({
             {t.guidesSub}
           </p>
           <div className={c.grid}>
-            {LEARN_GUIDES.map((g) => (
+            {/* The crawler guides are one card here; their four cards live on
+                the guides index, at #nosy-bat. */}
+            {LEARN_GUIDES.filter((g) => !g.group).map((g) => (
               <Link key={g.slug} className={c.card} href={L(`${LEARN_BASE}/guides/${g.slug}`)}>
                 <span className={c.cardTag}>{g.tag}</span>
                 <h3 className={c.cardH}>{(baseOf(locale) === "fr" && g.fr?.title) || g.title}</h3>
@@ -302,6 +320,12 @@ export default async function LearnHubPage({
                 <p className={c.cardMeta}>{t.minRead(g.readingTime)}</p>
               </Link>
             ))}
+            <Link className={c.card} href={L(CRAWLER_GUIDES_HREF)} data-testid="crawler-guides-card">
+              <span className={c.cardTag}>{t.crawlerCard.tag}</span>
+              <h3 className={c.cardH}>{t.crawlerCard.h}</h3>
+              <p className={c.cardP}>{t.crawlerCard.p}</p>
+              <p className={c.cardMeta}>{t.crawlerCard.meta}</p>
+            </Link>
           </div>
         </div>
       </section>

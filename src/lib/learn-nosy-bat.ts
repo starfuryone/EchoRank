@@ -32,7 +32,7 @@ import type { LearnBlock, LearnGuide } from "./learn-content";
 const NB = CRAWLER_BRAND.name;
 
 /** Where the four are listed together: an anchored section of the guides index. */
-export const NOSY_BAT_GUIDES_ANCHOR = "nosy-bat";
+export { CRAWLER_GUIDES_ANCHOR as NOSY_BAT_GUIDES_ANCHOR } from "./crawler-guides-link";
 
 type Base = "en" | "fr";
 const fmt = (n: number, b: Base) => new Intl.NumberFormat(b === "fr" ? "fr-CA" : "en-US").format(n);

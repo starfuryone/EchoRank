@@ -191,3 +191,17 @@ describe("i18n", () => {
     expect(nav("fr")).toContain("Audit de visibilité IA gratuit");
   });
 });
+
+describe("the crawler guides item (Resources › Learn)", () => {
+  it("is one item opening the guides index at #nosy-bat, in both locales", () => {
+    // One item, not four: the Learn column is already the panel's tallest.
+    expect(navHrefs().filter((h) => h.startsWith("/learn/guides#"))).toEqual(["/learn/guides#nosy-bat"]);
+    expect(navHrefs()).not.toContain("/learn/guides/how-to-find-broken-links");
+    const en = nav("en");
+    const fr = nav("fr");
+    expect(en).toContain('href="/en/learn/guides#nosy-bat"');
+    expect(en).toContain(`${CRAWLER_BRAND.name} guides`);
+    expect(fr).toContain('href="/fr/learn/guides#nosy-bat"');
+    expect(fr).toContain(`Les guides ${CRAWLER_BRAND.name}`);
+  });
+});
