@@ -120,6 +120,13 @@ describe("Phase 3c families", () => {
   });
 });
 
+describe("REGISTRY_FAMILIES (the client-safe family list)", () => {
+  it("equals the families the registry's rules belong to", async () => {
+    const { REGISTRY_FAMILIES } = await import("@/lib/crawl-rules-meta");
+    expect([...REGISTRY_FAMILIES].sort()).toEqual([...new Set(RULES.map((r) => r.family))].sort());
+  });
+});
+
 describe("package boundary", () => {
   const root = join(process.cwd(), "packages/crawl-rules/src");
   const files: string[] = [];

@@ -1,0 +1,186 @@
+// src/lib/i18n/site-crawler-help.ts
+//
+// The crawler's in-app help modal (<CrawlerHelpModal>): section titles, how to
+// read a finding, one line per start-card option, the plan labels. Attached
+// to SITE_CRAWLER_COPY[locale].helpModal. The capability cards are NOT here:
+// they come from marketing-copy.ts, the public page's own source. de-CH uses
+// ss, never ß. The product name comes from brand.ts (tests/nosy-bat-brand.test.ts).
+
+import { CRAWLER_BRAND } from "@/lib/site-crawler/brand";
+
+const NB = CRAWLER_BRAND.name;
+
+const en = {
+  title: `${NB} help`,
+  tabChecks: `What ${NB} checks`,
+  tabReading: "How to read a finding",
+  tabConfig: "Configuration",
+  tabPlan: "Your plan",
+  checksIntro: (n: string) => `${n} capabilities, the same list as the public ${NB} page.`,
+  reading: [
+    { term: "Issue", text: "Something is broken or blocks search engines. Fix these first." },
+    { term: "Warning", text: "Something works but is weaker than it should be. Fix when you can." },
+    { term: "Opportunity", text: "Not a fault: a change that could help. Worth a look when the rest is done." },
+    { term: "Evidence", text: "The numbers and the sample URL or value behind each finding, so you can check it yourself." },
+    { term: "How to fix", text: "Every rule says what to change. Open a finding in the Issues tab to read it." },
+    { term: "Not assessable", text: "A check that could not run on this crawl, for example because it needs rendering or a connection. It is neither a pass nor a fail." },
+  ],
+  config: [
+    { term: "Start URL or list", text: "Crawl a site from one URL by following links, or check a pasted list of URLs once each." },
+    { term: "Render mode", text: "Run thin pages or every page through a browser to see what JavaScript adds." },
+    { term: "Max URLs and depth", text: "Stop earlier than your plan's limit, or only go so many clicks deep." },
+    { term: "Include and exclude", text: "URL patterns that keep the crawl inside, or out of, parts of the site." },
+    { term: "Subdomains, nofollow, query strings", text: "Whether to follow other subdomains and nofollow links, and how to treat ?parameters." },
+    { term: "Speed", text: "Requests per second, 2 at most, so the crawl never strains the site." },
+    { term: "User agent", text: `Crawl as ${NB}, as Googlebot or with your own string. Verified sites only.` },
+    { term: "Headers, cookies, basic auth", text: "Sent with every request to the crawled site; saved encrypted, never shown again." },
+    { term: "robots.txt", text: "Obeyed by default. Ignoring it, or replacing it with a draft, needs a verified site; otherwise a draft is only tested." },
+    { term: "Extractors and searches", text: "Pull values with CSS, XPath or a regex, and count a string or pattern in every page's source." },
+    { term: "Segments", text: "Named slices of the site that filter every table and total." },
+    { term: "Custom JavaScript", text: "Your own snippet runs in each rendered page. Verified sites only." },
+    { term: "Forms login", text: "Log in through the site's form before crawling. Verified sites only; logout links are never followed." },
+    { term: "Add data", text: "Join Search Console, Analytics, PageSpeed, backlinks, index status and AI prompts onto the crawl's pages." },
+    { term: "Schedule", text: "Run the same crawl daily, weekly or monthly and compare each run with the last." },
+    { term: "Save as default", text: "Keep these settings for the next crawl of the same site." },
+  ],
+  verifiedTitle: "What “verified site” means",
+  verifiedText: `Options that change how ${NB} treats a server only run on a site you have shown you control. Verify it once, in any of three ways:`,
+  verifiedWays: [
+    "Search Console: your connected property covers the site.",
+    "Meta tag: add the <meta name=\"echorank-verify\"> tag we give you to the home page.",
+    "DNS: add the echorank-verify TXT record we give you to the domain.",
+  ],
+  planIntro: "What your plan allows. Numbers are per crawl unless said otherwise.",
+  plan: {
+    urls: "URLs per crawl",
+    crawls: "Crawls per month",
+    rendered: "Rendered pages per crawl",
+    extractors: "Extractors per crawl",
+    schedules: "Scheduled crawls",
+    kept: "Crawls kept with full data",
+    ai: "AI-prompted pages per crawl",
+    psi: "PageSpeed pages per crawl",
+    backlinks: "Backlink lookups per crawl",
+  },
+  unlimited: "Unlimited",
+  guide: "Open the full guide",
+  close: "Close",
+};
+
+export type SiteCrawlerHelpCopy = typeof en;
+
+const fr: SiteCrawlerHelpCopy = {
+  title: `Aide ${NB}`,
+  tabChecks: `Ce que ${NB} vérifie`,
+  tabReading: "Lire un constat",
+  tabConfig: "Configuration",
+  tabPlan: "Votre forfait",
+  checksIntro: (n: string) => `${n} capacités, la même liste que la page publique de ${NB}.`,
+  reading: [
+    { term: "Problème", text: "Quelque chose est cassé ou bloque les moteurs de recherche. À corriger en premier." },
+    { term: "Avertissement", text: "Cela fonctionne, mais moins bien qu'il ne le faudrait. À corriger quand vous pouvez." },
+    { term: "Opportunité", text: "Pas un défaut : un changement qui pourrait aider. À regarder une fois le reste réglé." },
+    { term: "Preuves", text: "Les chiffres et l'URL ou la valeur d'exemple derrière chaque constat, pour vérifier par vous-même." },
+    { term: "Comment corriger", text: "Chaque règle indique quoi changer. Ouvrez un constat dans l'onglet Problèmes pour le lire." },
+    { term: "Non évaluable", text: "Une vérification qui n'a pas pu s'exécuter sur cette exploration, par exemple faute de rendu ou de connexion. Ce n'est ni une réussite ni un échec." },
+  ],
+  config: [
+    { term: "URL de départ ou liste", text: "Explorer un site à partir d'une URL en suivant les liens, ou vérifier une fois chaque URL d'une liste collée." },
+    { term: "Mode de rendu", text: "Passer les pages pauvres ou toutes les pages dans un navigateur pour voir ce qu'ajoute JavaScript." },
+    { term: "Nombre d'URL et profondeur", text: "S'arrêter avant la limite de votre forfait, ou à un certain nombre de clics de profondeur." },
+    { term: "Inclure et exclure", text: "Des motifs d'URL qui gardent l'exploration dans certaines parties du site, ou en dehors." },
+    { term: "Sous-domaines, nofollow, paramètres", text: "Suivre ou non les autres sous-domaines et les liens nofollow, et comment traiter les ?paramètres." },
+    { term: "Vitesse", text: "Requêtes par seconde, 2 au plus, pour ne jamais surcharger le site." },
+    { term: "Agent utilisateur", text: `Explorer en tant que ${NB}, Googlebot ou avec votre propre chaîne. Sites vérifiés seulement.` },
+    { term: "En-têtes, témoins, authentification de base", text: "Envoyés avec chaque requête au site exploré ; enregistrés chiffrés, jamais réaffichés." },
+    { term: "robots.txt", text: "Respecté par défaut. L'ignorer ou le remplacer par un brouillon exige un site vérifié ; sinon le brouillon est seulement testé." },
+    { term: "Extracteurs et recherches", text: "Extraire des valeurs en CSS, XPath ou expression régulière, et compter une chaîne ou un motif dans le code source de chaque page." },
+    { term: "Segments", text: "Des parties nommées du site qui filtrent chaque tableau et chaque total." },
+    { term: "JavaScript personnalisé", text: "Votre propre extrait s'exécute dans chaque page rendue. Sites vérifiés seulement." },
+    { term: "Connexion par formulaire", text: "Se connecter via le formulaire du site avant l'exploration. Sites vérifiés seulement ; les liens de déconnexion ne sont jamais suivis." },
+    { term: "Ajouter des données", text: "Joindre Search Console, Analytics, PageSpeed, liens entrants, état d'indexation et prompts IA aux pages explorées." },
+    { term: "Planification", text: "Relancer la même exploration chaque jour, semaine ou mois et comparer chaque passage au précédent." },
+    { term: "Enregistrer par défaut", text: "Garder ces réglages pour la prochaine exploration du même site." },
+  ],
+  verifiedTitle: "Ce que signifie « site vérifié »",
+  verifiedText: `Les options qui changent la façon dont ${NB} traite un serveur ne s'exécutent que sur un site dont vous avez prouvé le contrôle. Vérifiez-le une fois, de l'une de trois façons :`,
+  verifiedWays: [
+    "Search Console : votre propriété connectée couvre le site.",
+    "Balise meta : ajoutez à la page d'accueil la balise <meta name=\"echorank-verify\"> que nous vous donnons.",
+    "DNS : ajoutez au domaine l'enregistrement TXT echorank-verify que nous vous donnons.",
+  ],
+  planIntro: "Ce que permet votre forfait. Les chiffres s'entendent par exploration sauf mention contraire.",
+  plan: {
+    urls: "URL par exploration",
+    crawls: "Explorations par mois",
+    rendered: "Pages rendues par exploration",
+    extractors: "Extracteurs par exploration",
+    schedules: "Explorations planifiées",
+    kept: "Explorations conservées en entier",
+    ai: "Pages soumises aux prompts IA par exploration",
+    psi: "Pages PageSpeed par exploration",
+    backlinks: "Recherches de liens entrants par exploration",
+  },
+  unlimited: "Illimité",
+  guide: "Ouvrir le guide complet",
+  close: "Fermer",
+};
+
+const deCH: SiteCrawlerHelpCopy = {
+  title: `Hilfe zu ${NB}`,
+  tabChecks: `Was ${NB} prüft`,
+  tabReading: "Einen Befund lesen",
+  tabConfig: "Konfiguration",
+  tabPlan: "Ihr Abo",
+  checksIntro: (n: string) => `${n} Funktionen, dieselbe Liste wie auf der öffentlichen Nosy-Bat-Seite.`,
+  reading: [
+    { term: "Problem", text: "Etwas ist defekt oder blockiert Suchmaschinen. Zuerst beheben." },
+    { term: "Warnung", text: "Es funktioniert, aber schwächer als nötig. Beheben, wenn Sie Zeit haben." },
+    { term: "Chance", text: "Kein Fehler: eine Änderung, die helfen könnte. Ansehen, wenn der Rest erledigt ist." },
+    { term: "Belege", text: "Die Zahlen und die Beispiel-URL oder der Beispielwert hinter jedem Befund, damit Sie selbst prüfen können." },
+    { term: "So beheben", text: "Jede Regel sagt, was zu ändern ist. Öffnen Sie einen Befund im Tab Probleme, um es zu lesen." },
+    { term: "Nicht bewertbar", text: "Eine Prüfung, die bei diesem Crawl nicht laufen konnte, zum Beispiel ohne Rendering oder Verbindung. Weder bestanden noch durchgefallen." },
+  ],
+  config: [
+    { term: "Start-URL oder Liste", text: "Eine Website ab einer URL über Links crawlen oder jede URL einer eingefügten Liste einmal prüfen." },
+    { term: "Render-Modus", text: "Dünne Seiten oder alle Seiten durch einen Browser schicken, um zu sehen, was JavaScript hinzufügt." },
+    { term: "Max. URLs und Tiefe", text: "Vor dem Limit Ihres Abos aufhören oder nur bis zu einer bestimmten Klicktiefe gehen." },
+    { term: "Einschliessen und ausschliessen", text: "URL-Muster, die den Crawl in Teilen der Website halten oder von ihnen fernhalten." },
+    { term: "Subdomains, nofollow, Parameter", text: "Ob andere Subdomains und nofollow-Links verfolgt werden und wie ?Parameter behandelt werden." },
+    { term: "Geschwindigkeit", text: "Anfragen pro Sekunde, höchstens 2, damit der Crawl die Website nie belastet." },
+    { term: "User-Agent", text: `Als ${NB}, als Googlebot oder mit eigener Kennung crawlen. Nur für verifizierte Websites.` },
+    { term: "Header, Cookies, Basic Auth", text: "Werden mit jeder Anfrage an die gecrawlte Website gesendet; verschlüsselt gespeichert, nie wieder angezeigt." },
+    { term: "robots.txt", text: "Wird standardmässig befolgt. Sie zu ignorieren oder durch einen Entwurf zu ersetzen, braucht eine verifizierte Website; sonst wird der Entwurf nur getestet." },
+    { term: "Extraktoren und Suchen", text: "Werte per CSS, XPath oder regulärem Ausdruck auslesen und eine Zeichenfolge oder ein Muster im Quelltext jeder Seite zählen." },
+    { term: "Segmente", text: "Benannte Teile der Website, die jede Tabelle und jede Summe filtern." },
+    { term: "Eigenes JavaScript", text: "Ihr eigenes Snippet läuft in jeder gerenderten Seite. Nur für verifizierte Websites." },
+    { term: "Login per Formular", text: "Vor dem Crawl über das Login-Formular der Website anmelden. Nur für verifizierte Websites; Logout-Links werden nie verfolgt." },
+    { term: "Daten hinzufügen", text: "Search Console, Analytics, PageSpeed, Backlinks, Indexierungsstatus und KI-Prompts mit den gecrawlten Seiten verknüpfen." },
+    { term: "Zeitplan", text: "Denselben Crawl täglich, wöchentlich oder monatlich ausführen und jeden Lauf mit dem letzten vergleichen." },
+    { term: "Als Standard speichern", text: "Diese Einstellungen für den nächsten Crawl derselben Website behalten." },
+  ],
+  verifiedTitle: "Was «verifizierte Website» bedeutet",
+  verifiedText: `Optionen, die ändern, wie ${NB} einen Server behandelt, laufen nur auf einer Website, deren Kontrolle Sie nachgewiesen haben. Verifizieren Sie sie einmal, auf eine von drei Arten:`,
+  verifiedWays: [
+    "Search Console: Ihre verbundene Property deckt die Website ab.",
+    "Meta-Tag: Fügen Sie der Startseite das <meta name=\"echorank-verify\">-Tag hinzu, das wir Ihnen geben.",
+    "DNS: Fügen Sie der Domain den echorank-verify-TXT-Eintrag hinzu, den wir Ihnen geben.",
+  ],
+  planIntro: "Was Ihr Abo erlaubt. Die Zahlen gelten pro Crawl, sofern nicht anders angegeben.",
+  plan: {
+    urls: "URLs pro Crawl",
+    crawls: "Crawls pro Monat",
+    rendered: "Gerenderte Seiten pro Crawl",
+    extractors: "Extraktoren pro Crawl",
+    schedules: "Geplante Crawls",
+    kept: "Vollständig aufbewahrte Crawls",
+    ai: "Seiten mit KI-Prompts pro Crawl",
+    psi: "PageSpeed-Seiten pro Crawl",
+    backlinks: "Backlink-Abfragen pro Crawl",
+  },
+  unlimited: "Unbegrenzt",
+  guide: "Vollständige Anleitung öffnen",
+  close: "Schliessen",
+};
+
+export const SITE_CRAWLER_HELP = { en, fr, "de-CH": deCH } as const;

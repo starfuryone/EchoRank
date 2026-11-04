@@ -17,6 +17,7 @@ import { SITE_CRAWLER_4C } from "./site-crawler-4c";
 import { SITE_CRAWLER_4D } from "./site-crawler-4d";
 import { SITE_CRAWLER_4E } from "./site-crawler-4e";
 import { SITE_CRAWLER_4G } from "./site-crawler-4g";
+import { SITE_CRAWLER_HELP } from "./site-crawler-help";
 import { CRAWLER_BRAND } from "@/lib/site-crawler/brand";
 export type DashLocale = "en" | "fr" | "de-CH";
 
@@ -12889,7 +12890,7 @@ const siteCrawlerEn = {
   byline: CRAWLER_BRAND.byline as string,
   pageTitle: `${CRAWLER_BRAND.name} — Echorank`,
   helpButton: "Help",
-  helpAria: "Open the guide to what the crawler checks (new tab)",
+  helpAria: "Open help: what the crawler checks, configuration and your plan",
   title: "Site Crawler",
   subtitle:
     "Crawl every page on your site and see the on-page SEO issues, page by page. Raw HTML by default; turn on rendering to see JavaScript pages as a browser does.",
@@ -12917,6 +12918,7 @@ const siteCrawlerEn = {
   p4d: SITE_CRAWLER_4D.en,
   p4e: SITE_CRAWLER_4E.en,
   p4g: SITE_CRAWLER_4G.en,
+  helpModal: SITE_CRAWLER_HELP.en,
   p4b: {
     tabExtraction: "Extraction",
     exSection: "Custom extraction",
@@ -13280,7 +13282,7 @@ export const SITE_CRAWLER_COPY: Record<DashLocale, SiteCrawlerCopy> = {
     byline: "robot d'exploration par Echorank",
     pageTitle: `${CRAWLER_BRAND.name} — Echorank`,
     helpButton: "Aide",
-    helpAria: "Ouvrir le guide de ce que vérifie le robot (nouvel onglet)",
+    helpAria: "Ouvrir l'aide : ce que vérifie le robot, la configuration et votre forfait",
     title: "Explorateur de site",
     subtitle:
       "Parcourez chaque page de votre site et consultez les problèmes SEO on-page, page par page. HTML brut par défaut; activez le rendu pour voir les pages JavaScript comme un navigateur.",
@@ -13307,6 +13309,7 @@ export const SITE_CRAWLER_COPY: Record<DashLocale, SiteCrawlerCopy> = {
     p4d: SITE_CRAWLER_4D.fr,
     p4e: SITE_CRAWLER_4E.fr,
     p4g: SITE_CRAWLER_4G.fr,
+    helpModal: SITE_CRAWLER_HELP.fr,
     p4b: {
       tabExtraction: "Extraction",
       exSection: "Extraction personnalisée",
@@ -13665,7 +13668,7 @@ export const SITE_CRAWLER_COPY: Record<DashLocale, SiteCrawlerCopy> = {
     byline: "Crawler von Echorank",
     pageTitle: `${CRAWLER_BRAND.name} — Echorank`,
     helpButton: "Hilfe",
-    helpAria: "Leitfaden zu den Prüfungen des Crawlers öffnen (neuer Tab)",
+    helpAria: "Hilfe öffnen: was der Crawler prüft, Konfiguration und Ihr Abo",
     title: "Site Crawler",
     subtitle:
       "Crawlen Sie jede Seite Ihrer Website und sehen Sie die On-Page-SEO-Probleme Seite für Seite. Standardmässig rohes HTML; mit Rendering sehen Sie JavaScript-Seiten wie ein Browser.",
@@ -13692,6 +13695,7 @@ export const SITE_CRAWLER_COPY: Record<DashLocale, SiteCrawlerCopy> = {
     p4d: SITE_CRAWLER_4D["de-CH"],
     p4e: SITE_CRAWLER_4E["de-CH"],
     p4g: SITE_CRAWLER_4G["de-CH"],
+    helpModal: SITE_CRAWLER_HELP["de-CH"],
     p4b: {
       tabExtraction: "Extraktion",
       exSection: "Eigene Extraktion",

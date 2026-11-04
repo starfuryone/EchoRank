@@ -17,6 +17,7 @@ import {
   HELP_HUB,
   HELP_VIDEO,
   helpArticleFor,
+  helpModalFor,
   helpArticlePaths,
   helpArticleSlugFor,
   helpLearnPaths,
@@ -183,9 +184,17 @@ describe("cards derive from learn-content", () => {
 describe("pageHelp deep links", () => {
   it("maps every route to a Knowledge Hub page that exists", () => {
     const known = new Set(learnRoutes());
-    for (const [route, path] of Object.entries(pageHelp)) {
+    for (const [route, target] of Object.entries(pageHelp)) {
+      // A modal entry (the crawler's) is checked by the guide its footer opens.
+      const path = typeof target === "string" ? target : target.guide;
       expect(known.has(path), `${route} → ${path} is not a learn route`).toBe(true);
     }
+  });
+
+  it("the crawler's Help button opens the in-app modal, whose footer opens the /learn guide", () => {
+    expect(helpModalFor("/crawler")).toEqual({ modal: "crawler", guide: "/learn/guides/what-nosy-bat-checks" });
+    expect(helpArticleFor("/crawler")).toBeUndefined();
+    expect(helpModalFor("/imports")).toBeUndefined();
   });
 
   it("covers the routes whose help has an obvious article", () => {
@@ -206,7 +215,7 @@ describe("pageHelp deep links", () => {
 
   it("locale-prefixes the article link with the visitor's dashboard language", () => {
     for (const locale of LOCALES) {
-      expect(learnHref(locale, pageHelp["/imports"])).toBe(
+      expect(learnHref(locale, pageHelp["/imports"] as string)).toBe(
         `/${locale}/learn/guides/csv-review-import`,
       );
     }

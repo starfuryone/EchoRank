@@ -146,13 +146,20 @@ export const HELP_GROUPS: HelpGroup[] = [
  * tests/help-content.test.ts — so renaming a chapter breaks the build's tests
  * rather than silently 404ing a help button.
  */
-export const pageHelp: Record<string, string> = {
+/** Phase 4h: a route whose Help button opens an in-app modal; `guide` is the /learn page its footer links. */
+export interface PageHelpModal {
+  modal: "crawler";
+  guide: string;
+}
+
+export const pageHelp: Record<string, string | PageHelpModal> = {
   "/campaigns": `${LEARN_BASE}/guides/review-request-templates`,
   "/imports": `${LEARN_BASE}/guides/csv-review-import`,
   "/visibility": `${LEARN_BASE}/track-and-improve-ai-visibility`,
   "/extension": `${LEARN_BASE}/guides/install-browser-extension`,
   "/visibility/tools/ai-lens": `${LEARN_BASE}/guides/ai-lens-content-gap`,
-  "/crawler": `${LEARN_BASE}/guides/what-nosy-bat-checks`,
+  // The crawler's Help button opens <CrawlerHelpModal> (deep link ?help=1); its footer opens this guide.
+  "/crawler": { modal: "crawler", guide: `${LEARN_BASE}/guides/what-nosy-bat-checks` },
 };
 
 /**
@@ -179,7 +186,14 @@ export const pageHelpArticle: Record<string, string> = {
 
 /** The article a given dashboard route should point at, if any. */
 export function helpArticleFor(route: string): string | undefined {
-  return pageHelp[route];
+  const v = pageHelp[route];
+  return typeof v === "string" ? v : undefined;
+}
+
+/** The in-app help modal a route's Help button opens, if any. */
+export function helpModalFor(route: string): PageHelpModal | undefined {
+  const v = pageHelp[route];
+  return typeof v === "string" ? undefined : v;
 }
 
 /** The help-article slug a dashboard route links inline, if any. */
@@ -207,5 +221,5 @@ export function helpLearnPaths(): string[] {
       return [];
     }),
   );
-  return [...new Set([...fromCards, ...Object.values(pageHelp)])];
+  return [...new Set([...fromCards, ...Object.values(pageHelp).map((v) => (typeof v === "string" ? v : v.guide))])];
 }

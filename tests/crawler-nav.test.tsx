@@ -13,6 +13,7 @@ const nav = vi.hoisted(() => ({ pathname: "/dashboard", redirect: vi.fn() }));
 vi.mock("next/navigation", () => ({
   usePathname: () => nav.pathname,
   permanentRedirect: (url: string) => nav.redirect(url),
+  useSearchParams: () => new URLSearchParams(),
 }));
 
 import { Sidebar, activeNavHref } from "@/components/layout/sidebar";
@@ -103,12 +104,17 @@ describe("the top bar on /crawler", () => {
 });
 
 describe("the Help button on /crawler", () => {
-  it("opens the crawler guide from pageHelp, in a new tab", () => {
-    expect(helpArticleFor("/crawler")).toBe("/learn/guides/what-nosy-bat-checks");
+  // Since the in-app help modal: a <button> opening <CrawlerHelpModal> (tests/site-crawler-help-modal.test.tsx);
+  // the /learn guide moved to the modal's footer.
+  it("is a button that opens the in-app help, not a link away", () => {
+    expect(helpArticleFor("/crawler")).toBeUndefined();
     for (const locale of ["en", "fr"] as const) {
       const html = renderToStaticMarkup(createElement(SiteCrawlerClient, { locale }));
-      const href = learnHref(locale, helpArticleFor("/crawler")!);
-      expect(html).toMatch(new RegExp(`<a href="${href}" target="_blank" rel="noopener noreferrer"[^>]*>.*${SITE_CRAWLER_COPY[locale].helpButton}</a>`));
+      const aria = SITE_CRAWLER_COPY[locale].helpAria.replace(/'/g, "&#x27;");
+      const at = html.indexOf(`<button type="button" aria-label="${aria}" aria-haspopup="dialog"`);
+      expect(at).toBeGreaterThan(-1);
+      expect(html.slice(at, html.indexOf("</button>", at))).toContain(SITE_CRAWLER_COPY[locale].helpButton);
+      expect(html).not.toContain(`href="${learnHref(locale, "/learn/guides/what-nosy-bat-checks")}"`);
     }
   });
 });

@@ -8,6 +8,7 @@
 // this module's imports and checks RULE_IDS against the full registry.
 
 import type { RuleCopy, RuleKind, RulePriority } from "./types";
+import { FAMILY_ID_PREFIXES, RULE_FAMILIES } from "./types";
 import { COPY as javascriptCopy } from "./copy/javascript";
 import { COPY as accessibilityCopy } from "./copy/accessibility";
 import { COPY as mobileCopy } from "./copy/mobile";
@@ -76,6 +77,17 @@ const COPIES: Readonly<Record<string, RuleCopy>>[] = [
 export const RULE_COPY: Readonly<Record<string, RuleCopy>> = Object.assign({}, ...COPIES);
 /** Every rule id. The copy is keyed by rule id, one entry per rule (registry test). */
 export const RULE_IDS: readonly string[] = Object.keys(RULE_COPY);
+
+/**
+ * The families that have at least one rule — RULES.map((r) => r.family) for a
+ * Client Component, derived from the ids' prefixes (FAMILY_ID_PREFIXES, else
+ * the family's own name). tests/crawl-rules/registry.test.ts checks it equals
+ * the registry's.
+ */
+export const REGISTRY_FAMILIES: ReadonlySet<string> = (() => {
+  const byPrefix = new Map<string, string>(RULE_FAMILIES.flatMap((f) => (FAMILY_ID_PREFIXES[f] ?? [f]).map((p) => [p, f] as const)));
+  return new Set(RULE_IDS.map((id) => byPrefix.get(id.split(".")[0]!)).filter((f): f is string => Boolean(f)));
+})();
 
 export const KIND_ORDER: readonly RuleKind[] = ["issue", "warning", "opportunity"];
 export const PRIORITY_ORDER: readonly RulePriority[] = ["high", "medium", "low"];

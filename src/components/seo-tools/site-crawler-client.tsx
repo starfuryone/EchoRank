@@ -11,9 +11,10 @@
 // against is a translated sidebar above an English body, which is why there is
 // no inline English in the markup at all, including the issue-type labels.
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
+import { useSearchParams } from "next/navigation";
 import { AlertCircle, CircleQuestionMark, Download, Loader2, Network } from "lucide-react";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -73,7 +74,7 @@ import { parseUrlList } from "@/lib/site-crawler/url-list";
 import { flag } from "@/lib/flags";
 import { SITE_CRAWLER_COPY, type DashLocale, type SiteCrawlerCopy } from "@/lib/i18n/dashboard";
 import { CRAWLER_BRAND } from "@/lib/site-crawler/brand";
-import { helpArticleFor, learnHref } from "@/lib/help-content";
+import { helpModalFor, learnHref } from "@/lib/help-content";
 
 type TabId = "overview" | "rules" | "issues" | "duplicates" | "redirects" | "pages" | "structure" | "compare" | "extraction" | "external";
 
@@ -85,6 +86,8 @@ const RULE_OPTIONS = RULE_IDS.map((id) => ({ value: id, label: RULE_COPY[id]?.na
 const TABS: TabId[] = ["overview", "rules", "issues", "duplicates", "redirects", "pages"];
 
 // Phase 4c: the Structure tab's d3 code loads only when the tab is opened.
+// <CrawlerHelpModal>: loaded only when the Help button (or ?help=1) opens it.
+const CrawlerHelpModal = dynamic(() => import("./site-crawler-help"), { ssr: false, loading: () => null });
 const StructurePanel = dynamic(() => import("./site-crawler-structure"), { ssr: false, loading: () => null });
 
 /**
@@ -493,7 +496,7 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
   if (quota?.locked) {
     return (
       <div className="space-y-6">
-        <Header t={t} locale={locale} />
+        <CrawlerHeader t={t} locale={locale} quota={quota} />
         <Card>
           <CardContent className="py-10 text-center">
             <Network className="mx-auto h-8 w-8 text-gray-300" aria-hidden="true" />
@@ -515,7 +518,7 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
 
   return (
     <div className="space-y-6">
-      <Header t={t} locale={locale} />
+      <CrawlerHeader t={t} locale={locale} quota={quota} />
 
       <Card>
         <CardContent className="pt-6">
@@ -1134,26 +1137,39 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
   );
 }
 
-function Header({ t, locale }: { t: SiteCrawlerCopy; locale: DashLocale }) {
-  // The guide behind the Help button comes from pageHelp (help-content.ts),
-  // asserted against the Knowledge Hub's routes. New tab, as the help hub
-  // opens public /learn pages: the guide is a marketing page, and losing the
-  // crawl you were reading is not a fair trade.
-  const guide = helpArticleFor("/crawler");
+export function CrawlerHeader({ t, locale, quota }: { t: SiteCrawlerCopy; locale: DashLocale; quota: CrawlQuotaDto | null }) {
+  // The Help button opens <CrawlerHelpModal> (pageHelp's modal entry for
+  // /crawler, help-content.ts), loaded on demand so this page's bundle does
+  // not carry it. ?help=1 opens it on arrival (schedule email, public page).
+  // Its footer still opens the full /learn guide in a new tab.
+  const help = helpModalFor("/crawler");
+  const deepLinked = useSearchParams()?.get("help") === "1";
+  const [open, setOpen] = useState(false);
+  const [dismissed, setDismissed] = useState(false);
+  const button = useRef<HTMLButtonElement>(null);
+  const shown = open || (deepLinked && !dismissed);
+  const close = () => {
+    setOpen(false);
+    setDismissed(true);
+    // Back to the trigger, also when the dialog opened from the deep link (nothing had focus then).
+    requestAnimationFrame(() => button.current?.focus());
+  };
   return (
     <div>
-      {guide && (
-        <a
-          href={learnHref(locale, guide)}
-          target="_blank"
-          rel="noopener noreferrer"
+      {help && (
+        <button
+          ref={button}
+          type="button"
+          onClick={() => setOpen(true)}
           aria-label={t.helpAria}
+          aria-haspopup="dialog"
           className="float-right inline-flex items-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
         >
           <CircleQuestionMark className="mr-2 h-4 w-4 text-blue-600" aria-hidden="true" />
           {t.helpButton}
-        </a>
+        </button>
       )}
+      {help && shown && <CrawlerHelpModal t={t} locale={locale} quota={quota} guideHref={learnHref(locale, help.guide)} onClose={close} />}
       {/* The lockup carries the name and the byline, so neither is repeated in
           text; the alt text is the accessible name. The top bar already reads
           the brand name as the page's h1, so this is an h2. */}
