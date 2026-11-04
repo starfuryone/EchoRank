@@ -21,7 +21,8 @@
 #   6. pm2 restart      web, plus workers when the commits since the last deploy reach them
 #   7. health after     GET /en for up to 60 s, every stylesheet 200, exactly one listener on 4400
 #                       failure → swap .next-prev back, restart, recheck, exit 1
-#   8. reminder         Cloudflare → Purge Everything (manual; see docs/agents/gotchas.md)
+#   8. reminder         Cloudflare → Purge Everything (manual; see docs/agents/gotchas.md), then the
+#                       "To deploy" banner: the crawl:smoke command to run as echorank
 #
 # The swap and the restart are back to back: between them the old process may lazily load a
 # chunk from the new .next, which is the window CLAUDE.md describes, now seconds instead of a
@@ -116,6 +117,17 @@ purge_reminder() {
   echo
   echo "!! Cloudflare → Caching → Configuration → Purge Everything. Manual, and the deploy is not"
   echo "!! done until it has happened: cached HTML names chunk hashes this build does not have."
+}
+
+# The last thing every deploy prints: the Site Crawler smoke test to run next (scripts/crawl-smoke.ts).
+# A real crawl, so not run from here: it takes minutes, and --backlinks spends DataForSEO money.
+to_deploy_banner() {
+  echo
+  echo "== To deploy: finish with the Site Crawler smoke test, as echorank (exit 0 = no FAIL):"
+  echo "   sudo -u echorank -H npm --prefix $APP run crawl:smoke -- --tenant <tenant-slug> \\"
+  echo "     --url https://echorank360.com --render thin --psi 10 --backlinks 10 --extract og \\"
+  echo "     --search \"gtag(\" --segment \"/learn/*\" --timeout 20"
+  echo "   (no --tenant lists the slugs; --backlinks spends DataForSEO money, estimate printed before the crawl)"
 }
 
 ALLOW_DIRTY=0
@@ -272,3 +284,4 @@ fi
 # ---- 8. reminder
 step "8/8 done: build $BUILD_ID ($(git_app log -1 --format=%h))"
 purge_reminder
+to_deploy_banner

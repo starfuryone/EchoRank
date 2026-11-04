@@ -120,6 +120,9 @@ describe("echorank360-deploy", () => {
     // No record of the previous deploy → workers restart too.
     expect(r.log).toContain("pm2 restart echorank360-workers");
     expect(r.out).toContain("Purge Everything");
+    // …and ends with the crawler smoke command, after the purge reminder.
+    expect(r.out).toMatch(/sudo -u echorank -H npm --prefix \S+ run crawl:smoke -- --tenant <tenant-slug>/);
+    expect(r.out.indexOf("== To deploy:")).toBeGreaterThan(r.out.indexOf("Purge Everything"));
   });
 
   it("refuses a dirty tree before building or restarting anything", () => {

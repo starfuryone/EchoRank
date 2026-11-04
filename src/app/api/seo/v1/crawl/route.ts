@@ -12,37 +12,20 @@
  */
 
 import { NextResponse } from "next/server";
-import { z } from "zod";
 import { requirePaidPlan } from "@/lib/paid-plan";
 import { rateLimit } from "@/lib/rate-limit";
 import { prisma } from "@/lib/prisma";
-import { MAX_URL_LENGTH } from "@/lib/site-crawler/url";
 import { startCrawl, toCrawlDto } from "@/lib/site-crawler/service";
 import { getCrawlQuota } from "@/lib/site-crawler/quota";
 import { crawlRouteError } from "@/lib/site-crawler/http";
-import { RENDER_MODES } from "@/lib/site-crawler/types";
-import { CrawlConfigInputSchema } from "@/lib/site-crawler/crawl-config";
-import { MAX_LIST_LINES } from "@/lib/site-crawler/url-list";
-
-/** Starts per tenant per minute. A floor under the monthly allowance, which
- * for STARTER is only 4 and could otherwise be burned by a double-click. */
-const START_RATE_LIMIT = 3;
-const START_RATE_WINDOW_MS = 60_000;
+import {
+  START_RATE_LIMIT,
+  START_RATE_WINDOW_MS,
+  StartCrawlBodySchema as BodySchema,
+  startRateKey,
+} from "@/lib/site-crawler/start-body";
 
 const LIST_LIMIT = 20;
-
-const BodySchema = z.object({
-  /** Spider mode's start URL. Ignored in list mode. */
-  url: z.string().trim().max(MAX_URL_LENGTH).default(""),
-  /** Phase 4a list mode: fetch `urls` once each, no discovery. */
-  mode: z.enum(["spider", "list"]).default("spider"),
-  urls: z.array(z.string().trim().max(MAX_URL_LENGTH)).max(MAX_LIST_LINES).optional(),
-  /** Phase 3b. Capped by the plan's rendered pages per crawl. */
-  renderMode: z.enum(RENDER_MODES).default("none"),
-  /** Phase 4a. Omitted = the defaults. Secrets in clear here, sealed before storage. */
-  config: CrawlConfigInputSchema.optional(),
-  saveAsDefault: z.boolean().default(false),
-});
 
 export async function POST(request: Request) {
   try {
@@ -57,7 +40,7 @@ export async function POST(request: Request) {
     }
 
     const limited = await rateLimit(
-      `site-crawl:${tenant.tenantId}`,
+      startRateKey(tenant.tenantId),
       START_RATE_LIMIT,
       START_RATE_WINDOW_MS,
     );
