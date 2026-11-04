@@ -14,7 +14,7 @@ import { prisma } from "@/lib/prisma";
 import { addJob } from "@/infrastructure/queue/registry";
 import { getRedisConnection } from "@/infrastructure/redis/connection";
 import { crawlKeys, REDIS_KEY_TTL_SECONDS } from "./constants";
-import { featureCapsForPlan, getCrawlQuota, metricCapsForPlan, renderFeatureCapsForPlan } from "./quota";
+import { featureCapsForPlan, getCrawlQuota, metricCapsForPlan, parityCapsForPlan, renderFeatureCapsForPlan } from "./quota";
 import { validateRootUrl } from "./url";
 import type { RenderMode } from "./types";
 import {
@@ -207,7 +207,8 @@ export async function startCrawl(
       ...metricCapsForPlan(plan),
       ...renderFeatureCapsForPlan(plan),
       renders: renderMode !== "none" && quota.renderCap > 0,
-      ...(await aiChecks(tenantId, plan, opts.config.ai ?? null)),
+      ...parityCapsForPlan(plan),
+      ...(await aiChecks(tenantId, plan, opts.config.ai ?? (opts.config.semantic ? { provider: "openai" } : null))),
       checkExpr: checkExtractorExpr,
     });
     if (checked.problems.length) throw new InvalidCrawlConfigError(checked.problems);
@@ -220,7 +221,8 @@ export async function startCrawl(
       ...metricCapsForPlan(plan),
       ...renderFeatureCapsForPlan(plan),
       renders: renderMode !== "none" && quota.renderCap > 0,
-      ...(await aiChecks(tenantId, plan, opts.sealed.ai ?? null)),
+      ...parityCapsForPlan(plan),
+      ...(await aiChecks(tenantId, plan, opts.sealed.ai ?? (opts.sealed.semantic ? { provider: "openai" } : null))),
       checkExpr: checkExtractorExpr,
     });
     if (checked.problems.length) throw new InvalidCrawlConfigError(checked.problems);
@@ -257,6 +259,9 @@ export async function startCrawl(
   const segments = flag("crawl.segments") ? await segmentSnapshot(tenantId, host, featureCapsForPlan(plan).segmentCap) : [];
   const jobConfig: StoredCrawlConfig | null =
     stored || segments.length ? { ...(stored ?? DEFAULT_CRAWL_CONFIG), ...(segments.length ? { segments } : {}) } : null;
+  // Phase 4g: and the semantic opt-in's.
+  const semSeg = jobConfig?.semantic?.segment;
+  if (semSeg != null && semSeg >= segments.length) throw new InvalidCrawlConfigError([{ field: "semantic", code: "unknown_segment" }]);
   // Phase 4e: so may the AI prompts' top N.
   const aiSeg = jobConfig?.ai?.top.segment;
   if (aiSeg != null && aiSeg >= segments.length) throw new InvalidCrawlConfigError([{ field: "ai", code: "unknown_segment" }]);

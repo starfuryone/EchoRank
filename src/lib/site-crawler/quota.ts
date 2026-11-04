@@ -167,7 +167,7 @@ export async function getCrawlQuota(
     lighthouseLimit: AUDITS_PER_HOUR,
     backlinkUnitUsd: await backlinkUnitCostUsd().catch(() => OBSERVED_BACKLINK_UNIT_USD),
     seoBudgetLeftUsd: await seoBudgetLeftUsd(tenantId).catch(() => 0),
-    ...(flag("crawl.ai") ? await aiQuota(tenantId, plan) : {}),
+    ...(flag("crawl.ai") || flag("crawl.semantic") ? await aiQuota(tenantId, plan) : {}),
   };
 }
 

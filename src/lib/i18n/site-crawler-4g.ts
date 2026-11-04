@@ -25,6 +25,17 @@ const en = {
   // ── Link Score ──────────────────────────────────────────────────────────
   colLinkScore: "Link Score",
   linkScoreHelp: "Internal PageRank, 0–100 on a log scale: how much link weight the site's own links give the page.",
+  // ── Semantic duplicates ─────────────────────────────────────────────────
+  semOn: "Find semantic duplicates and off-topic pages",
+  semHelp: (cap: string) => `Compares what the top pages say (up to ${cap}), not just their wording, after the crawl.`,
+  semNeedsKey: "Runs on your own OpenAI key — add it in Settings → Integrations first.",
+  semOwnKey: "Runs on your own OpenAI key (text-embedding-3-small), billed to your OpenAI account.",
+  semEstimate: (tokens: string, usd: string) => `About ${tokens} tokens, roughly ${usd} at OpenAI's published price.`,
+  confirmSem: (pages: string, usd: string) => `Semantic comparison of ${pages} pages: roughly ${usd} on your OpenAI account.`,
+  semStatusRunning: (done: string, total: string) => `Semantic comparison: ${done} of ${total} pages read.`,
+  semStatusDone: (embedded: string, total: string) => `Semantic comparison: ${embedded} of ${total} pages compared.`,
+  semStatusKey: "Semantic comparison stopped: the OpenAI key is missing or was refused. Check Settings → Integrations.",
+  problemSemKey: "Semantic duplicates need your OpenAI key. Add it in Settings → Integrations.",
 };
 
 export type SiteCrawler4gCopy = typeof en;
@@ -48,6 +59,16 @@ const fr: SiteCrawler4gCopy = {
   notChecked: "non vérifié",
   colLinkScore: "Link Score",
   linkScoreHelp: "PageRank interne, de 0 à 100 sur une échelle logarithmique : le poids que les liens du site donnent à la page.",
+  semOn: "Repérer les doublons sémantiques et les pages hors sujet",
+  semHelp: (cap: string) => `Compare ce que disent les pages principales (jusqu'à ${cap}), pas seulement leur formulation, après l'exploration.`,
+  semNeedsKey: "Utilise votre propre clé OpenAI : ajoutez-la d'abord dans Paramètres → Intégrations.",
+  semOwnKey: "Utilise votre propre clé OpenAI (text-embedding-3-small), facturée sur votre compte OpenAI.",
+  semEstimate: (tokens: string, usd: string) => `Environ ${tokens} jetons, soit à peu près ${usd} au tarif publié d'OpenAI.`,
+  confirmSem: (pages: string, usd: string) => `Comparaison sémantique de ${pages} pages : environ ${usd} sur votre compte OpenAI.`,
+  semStatusRunning: (done: string, total: string) => `Comparaison sémantique : ${done} pages lues sur ${total}.`,
+  semStatusDone: (embedded: string, total: string) => `Comparaison sémantique : ${embedded} pages comparées sur ${total}.`,
+  semStatusKey: "Comparaison sémantique arrêtée : la clé OpenAI est absente ou a été refusée. Vérifiez Paramètres → Intégrations.",
+  problemSemKey: "Les doublons sémantiques nécessitent votre clé OpenAI. Ajoutez-la dans Paramètres → Intégrations.",
 };
 
 const deCH: SiteCrawler4gCopy = {
@@ -69,6 +90,16 @@ const deCH: SiteCrawler4gCopy = {
   notChecked: "nicht geprüft",
   colLinkScore: "Link Score",
   linkScoreHelp: "Interner PageRank, 0–100 auf einer logarithmischen Skala: wie viel Linkgewicht die Links der eigenen Website der Seite geben.",
+  semOn: "Semantische Duplikate und themenfremde Seiten finden",
+  semHelp: (cap: string) => `Vergleicht nach dem Crawl, was die wichtigsten Seiten aussagen (bis ${cap}), nicht nur ihren Wortlaut.`,
+  semNeedsKey: "Läuft mit Ihrem eigenen OpenAI-Schlüssel – hinterlegen Sie ihn zuerst unter Einstellungen → Integrationen.",
+  semOwnKey: "Läuft mit Ihrem eigenen OpenAI-Schlüssel (text-embedding-3-small), abgerechnet über Ihr OpenAI-Konto.",
+  semEstimate: (tokens: string, usd: string) => `Etwa ${tokens} Tokens, rund ${usd} zum veröffentlichten Preis von OpenAI.`,
+  confirmSem: (pages: string, usd: string) => `Semantischer Vergleich von ${pages} Seiten: rund ${usd} auf Ihrem OpenAI-Konto.`,
+  semStatusRunning: (done: string, total: string) => `Semantischer Vergleich: ${done} von ${total} Seiten gelesen.`,
+  semStatusDone: (embedded: string, total: string) => `Semantischer Vergleich: ${embedded} von ${total} Seiten verglichen.`,
+  semStatusKey: "Semantischer Vergleich gestoppt: Der OpenAI-Schlüssel fehlt oder wurde abgelehnt. Prüfen Sie Einstellungen → Integrationen.",
+  problemSemKey: "Semantische Duplikate brauchen Ihren OpenAI-Schlüssel. Hinterlegen Sie ihn unter Einstellungen → Integrationen.",
 };
 
 export const SITE_CRAWLER_4G = { en, fr, "de-CH": deCH } as const;

@@ -190,6 +190,11 @@ export interface CrawlConfigOf<S> {
   login?: LoginConfigOf<S> | null;
   /** Phase 4e, input only: log in with the host's saved login before crawling. */
   useLogin?: boolean;
+  /**
+   * Phase 4g semantic duplicates (crawl.semantic): embed the top N pages after
+   * the crawl, on the tenant's own OpenAI key. N at most crawlSemanticPages.
+   */
+  semantic?: TopPages | null;
 }
 
 /** Phase 4d: the top N pages by inlinks, optionally inside one of the crawl's segments. */
@@ -397,6 +402,7 @@ export const CrawlConfigInputSchema = z.object({
     .nullable()
     .default(null),
   useLogin: z.boolean().default(false),
+  semantic: z.object({ pages: z.number().int().min(1).max(5_000), segment: z.number().int().min(0).nullable().default(null) }).nullable().default(null),
   ai: z
     .object({
       provider: z.enum(AI_PROVIDERS),
@@ -430,7 +436,9 @@ export type ConfigProblem =
   | { field: "addData.psi" | "addData.backlinks"; code: "unknown_segment" }
   | { field: "js"; code: "over_plan_cap"; limit: number }
   | { field: "ai"; code: "over_plan_cap"; limit: number }
-  | { field: "ai"; code: "ai_key_missing"; provider: "openai" | "gemini" }
+  | { field: "ai" | "semantic"; code: "ai_key_missing"; provider: "openai" | "gemini" }
+  | { field: "semantic"; code: "over_plan_cap"; limit: number }
+  | { field: "semantic"; code: "unknown_segment" }
   | { field: "ai"; code: "ai_unavailable" }
   | { field: "ai"; code: "invalid_prompt"; index: number }
   | { field: "ai"; code: "unknown_segment" }
@@ -471,6 +479,8 @@ export function checkCrawlConfig(
     renders?: boolean;
     /** Phase 4e AI: plan crawlAiPages (absent = 0); which tenant keys are saved; whether Claude (Marketing Studio) is on the plan. Absent = not checked. */
     aiPageCap?: number;
+    /** Phase 4g: plan crawlSemanticPages (absent = 0). */
+    semanticCap?: number;
     aiKeys?: { openai: boolean; gemini: boolean };
     claudeAvailable?: boolean;
     /** Server-side syntax check for css / xpath expressions (needs cheerio / xpath). */
@@ -522,6 +532,13 @@ export function checkCrawlConfig(
     const provider = config.ai.provider;
     if (provider !== "claude" && ctx.aiKeys && !ctx.aiKeys[provider]) problems.push({ field: "ai", code: "ai_key_missing", provider });
     if (provider === "claude" && ctx.claudeAvailable === false) problems.push({ field: "ai", code: "ai_unavailable" });
+  }
+  // Phase 4g semantic duplicates: dropped when off; capped; needs the tenant's OpenAI key.
+  config.semantic = flag("crawl.semantic") ? (input.semantic ?? null) : null;
+  if (config.semantic) {
+    const cap = ctx.semanticCap ?? 0;
+    if (config.semantic.pages > cap) problems.push({ field: "semantic", code: "over_plan_cap", limit: cap });
+    if (ctx.aiKeys && !ctx.aiKeys.openai) problems.push({ field: "semantic", code: "ai_key_missing", provider: "openai" });
   }
   // Phase 4e forms login: never from input; useLogin asks for the saved one, verified sites only.
   delete config.login;

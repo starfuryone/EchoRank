@@ -57,6 +57,8 @@ import { ComparePanel } from "@/components/seo-tools/site-crawler-compare";
 import { CrawlSchedules } from "@/components/seo-tools/site-crawler-schedules";
 import { AddDataSection, confirmLines } from "@/components/seo-tools/site-crawler-add-data";
 import { AiPromptsSection, AiStatusLine, aiConfirmLine, type AiQuota } from "@/components/seo-tools/site-crawler-ai";
+import { SemanticSection, semanticConfirmLine, semanticStatusText } from "@/components/seo-tools/site-crawler-semantic";
+import type { TopPages } from "@/lib/site-crawler/crawl-config";
 import type { AiConfig } from "@/lib/site-crawler/ai-shared";
 import { MetricTiles } from "@/components/seo-tools/site-crawler-metrics";
 import { SourceLines } from "@/components/seo-tools/site-crawler-sources";
@@ -212,6 +214,7 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
   // Phase 4d: the post-crawl opt-ins, confirmed with their cost before the crawl starts.
   const [addData, setAddData] = useState<AddData | null>(null);
   const [ai, setAi] = useState<AiConfig | null>(null);
+  const [semantic, setSemantic] = useState<TopPages | null>(null);
   const [confirming, setConfirming] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [inlinksFor, setInlinksFor] = useState<{ id: string; url: string } | null>(null);
@@ -404,7 +407,8 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
     event.preventDefault();
     const extra = mode === "spider" ? addData : null;
     const aiExtra = mode === "spider" && flag("crawl.ai") ? ai : null;
-    if ((extra || aiExtra) && !confirming) {
+    const semExtra = mode === "spider" && flag("crawl.semantic") ? semantic : null;
+    if ((extra || aiExtra || semExtra) && !confirming) {
       setConfirming(true);
       return;
     }
@@ -422,9 +426,14 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
           url: listing ? "" : url,
           renderMode: quota && quota.renderCap > 0 ? renderMode : "none",
           ...(listing ? { mode: "list", urls: listUrls } : {}),
-          ...((flag("crawl.config") && cfg.config) || extra || aiExtra
+          ...((flag("crawl.config") && cfg.config) || extra || aiExtra || semExtra
             ? {
-                config: { ...(flag("crawl.config") && cfg.config ? cfg.config : {}), ...(extra ? { addData: extra } : {}), ...(aiExtra ? { ai: aiExtra } : {}) },
+                config: {
+                  ...(flag("crawl.config") && cfg.config ? cfg.config : {}),
+                  ...(extra ? { addData: extra } : {}),
+                  ...(aiExtra ? { ai: aiExtra } : {}),
+                  ...(semExtra ? { semantic: semExtra } : {}),
+                },
                 saveAsDefault: !listing && flag("crawl.config") && cfg.config !== null && cfg.saveAsDefault,
               }
             : {}),
@@ -621,7 +630,7 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
           {problems.length > 0 && (
             <ul className="mt-1 list-disc pl-10 text-sm text-red-600">
               {problems.map((p, i) => (
-                <li key={i}>{problemText(p, t.p4a, t.p4b, t.p4d, t.p4e)}</li>
+                <li key={i}>{problemText(p, t.p4a, t.p4b, t.p4d, t.p4e, t.p4g)}</li>
               ))}
             </ul>
           )}
@@ -654,7 +663,7 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
             </CrawlConfigSection>
           )}
 
-          {(flag("crawl.psi") || flag("crawl.backlinks") || flag("crawl.gsc") || flag("crawl.ga4") || flag("crawl.ai")) && mode === "spider" && quota && (
+          {(flag("crawl.psi") || flag("crawl.backlinks") || flag("crawl.gsc") || flag("crawl.ga4") || flag("crawl.ai") || flag("crawl.semantic")) && mode === "spider" && quota && (
             <AddDataSection
               t={t.p4d}
               host={hostOfInput(url)}
@@ -665,9 +674,25 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
                 setConfirming(false);
               }}
               disabled={starting || Boolean(running)}
-              extra={
-                flag("crawl.ai")
-                  ? (segments) => (
+              extra={(segments) => (
+                <>
+                  {flag("crawl.semantic") && (
+                    <SemanticSection
+                      t={t.p4g}
+                      t4d={t.p4d}
+                      cap={quota.semanticCap ?? 0}
+                      hasKey={quota.aiKeys?.openai ?? false}
+                      value={semantic}
+                      segments={segments}
+                      int={int}
+                      disabled={starting || Boolean(running)}
+                      onChange={(v) => {
+                        setSemantic(v);
+                        setConfirming(false);
+                      }}
+                    />
+                  )}
+                  {flag("crawl.ai") && (
                       <AiPromptsSection
                         t={t.p4e}
                         t4d={t.p4d}
@@ -681,21 +706,21 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
                           setConfirming(false);
                         }}
                       />
-                    )
-                  : undefined
-              }
+                  )}
+                </>
+              )}
             >
               <SourceLines t={t.p4d} host={hostOfInput(url)} />
             </AddDataSection>
           )}
 
-          {confirming && (addData || ai) && quota && (
+          {confirming && (addData || ai || semantic) && quota && (
             <div role="dialog" aria-labelledby="crawl-confirm-title" className="mt-4 space-y-2 rounded-lg border border-amber-200 bg-amber-50 p-3">
               <p id="crawl-confirm-title" className="text-sm font-semibold text-gray-900">
                 {t.p4d.confirmTitle}
               </p>
               <ul className="list-disc space-y-1 pl-5 text-sm text-gray-700">
-                {[...(addData ? confirmLines(t.p4d, addData, addDataQuota(quota)) : []), ...(ai ? [aiConfirmLine(t.p4e, ai, int)] : [])].map((line) => (
+                {[...(addData ? confirmLines(t.p4d, addData, addDataQuota(quota)) : []), ...(ai ? [aiConfirmLine(t.p4e, ai, int)] : []), ...(semantic ? [semanticConfirmLine(t.p4g, semantic, int)] : [])].map((line) => (
                   <li key={line}>{line}</li>
                 ))}
               </ul>
@@ -810,6 +835,11 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
           {summary && "metricOverview" in summary && summary.metricOverview && <MetricTiles data={summary.metricOverview} t={t.p4d} int={int} />}
           {flag("crawl.ai") && summary && "metricOverview" in summary && summary.metricOverview && (
             <AiStatusLine status={summary.metricOverview.status as object} t={t.p4e} int={int} />
+          )}
+          {flag("crawl.semantic") && summary && "metricOverview" in summary && summary.metricOverview && (
+            <p className="text-xs text-gray-600">
+              {semanticStatusText((summary.metricOverview.status as { semantic?: Parameters<typeof semanticStatusText>[0] }).semantic, t.p4g, int)}
+            </p>
           )}
           <OverviewPanel summary={summary} t={t} int={int} />
         </>

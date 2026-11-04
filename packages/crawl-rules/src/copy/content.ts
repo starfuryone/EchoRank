@@ -51,4 +51,14 @@ export const COPY: Record<string, RuleCopy> = {
     description: "The page declares an encoding other than UTF-8 (e.g. ISO-8859-1 or Windows-1252). UTF-8 is the web standard; other encodings break on characters they cannot represent.",
     howToFix: "Save templates and content as UTF-8 and declare charset=utf-8 in the header and <meta charset>.",
   },
+  "content.semantic_duplicate": {
+    name: "Says the same thing as another page",
+    description: "This page's text means nearly the same as another page's (cosine similarity of their embeddings 0.95 or more), even if the wording differs. Search engines pick one and may ignore the other, and the two compete for the same queries. The evidence shows the other URL and the score.",
+    howToFix: "Merge the two pages and 301 the weaker one to the stronger, or rewrite one so each answers a distinct question; a canonical works when both must stay.",
+  },
+  "content.off_topic": {
+    name: "Off-topic for the site",
+    description: "This page's text is among the 5 % furthest from what the site as a whole is about (distance from the average of all embedded pages). It may be stray, outdated or thin content that dilutes the site's topical focus.",
+    howToFix: "Check whether the page belongs: bring it closer to the site's subject, link it into a relevant section, or remove or noindex it.",
+  },
 };

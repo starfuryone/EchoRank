@@ -27,6 +27,13 @@
 //              stops with "token_budget"); OpenAI / Gemini on the tenant's key.
 //              Two pages at a time, one retry per call, outputs (<= 1 KB) in
 //              crawl_extractions kind ai. Prompts and outputs are never logged.
+//   semantic   Phase 4g: the top N pages' visible text embedded with OpenAI
+//              text-embedding-3-small (256 dims) on the tenant's own key, 100
+//              pages a tick, 50 per call; the vector in crawl_pages.embedding
+//              (an empty one = tried, nothing to embed). Once every target is
+//              tried, nearest neighbours and centroid distance are computed in
+//              memory over typed arrays and content.semantic_duplicate /
+//              content.off_topic run on those pages.
 //   rules      once a source's targets are done (or it stopped), the rules
 //              requiring its capability are re-evaluated for those pages
 //              (earlier findings replaced) and the summary is re-tallied.
@@ -57,6 +64,7 @@ import { isFetchableUrl } from "./url";
 import { AI_LIMITS, type AiConfig, type AiProvider } from "./ai-shared";
 import { claudeCostUsd, parseGrammar, parseSuggestion, runPrompt } from "./ai-prompts";
 import { openAiKey } from "./ai-keys";
+import { EMBEDDING_DIMS, EMBEDDING_TEXT_CHARS, EmbeddingError, analyse, embedBatch, embeddingCostUsd, fromBytes, toBytes } from "./semantic";
 import { MARKETING_MODEL } from "@/lib/marketing-templates";
 import { marketingTokenLimit, marketingTokensUsed, recordMarketingTokens } from "@/lib/marketing/quota";
 import type { AiFacts } from "@/lib/crawl-rules";
@@ -79,6 +87,8 @@ export interface SourceState {
   failed: number;
   /** Why it stopped early (backlinks: "usd_cap"; ai: "token_budget", "key_missing"). */
   stoppedReason?: string;
+  /** semantic: pages with a vector. */
+  embedded?: number;
   /** ai: tokens charged (Claude: to the Marketing Studio budget) and their list cost. */
   tokens?: number;
   costUsd?: number;
@@ -99,6 +109,8 @@ export interface MetricsDeps {
   aiKey: (tenantId: string, provider: AiProvider) => Promise<string | null>;
   tokenBudget: (tenantId: string, plan: PlanType) => Promise<{ used: number; limit: number | null }>;
   recordTokens: (tenantId: string, tokens: number) => Promise<void>;
+  /** Phase 4g semantic duplicates. */
+  embed: typeof embedBatch;
 }
 const DEFAULT_DEPS: MetricsDeps = {
   runAudit,
@@ -114,7 +126,11 @@ const DEFAULT_DEPS: MetricsDeps = {
   aiKey: async (tenantId, provider) => (provider === "claude" ? process.env.ANTHROPIC_API_KEY?.trim() || null : openAiKey(tenantId, provider)),
   tokenBudget: async (tenantId, plan) => ({ used: await marketingTokensUsed(tenantId), limit: marketingTokenLimit(plan) }),
   recordTokens: recordMarketingTokens,
+  embed: embedBatch,
 };
+
+export const SEMANTIC_PAGES_PER_TICK = 100;
+const EMBED_BATCH = 50;
 
 /** AI pages per tick, and how many run at once. */
 export const AI_PAGES_PER_TICK = 10;
@@ -209,7 +225,7 @@ export async function reevaluatePsiRules(jobId: string, tenantId: string, rootUr
 }
 
 /** Read-modify-write one source's state under summary.metrics. */
-export async function setSourceState(jobId: string, source: "psi" | "backlinks" | "ai", state: Omit<SourceState, "updatedAt">): Promise<void> {
+export async function setSourceState(jobId: string, source: "psi" | "backlinks" | "ai" | "semantic", state: Omit<SourceState, "updatedAt">): Promise<void> {
   const job = await prisma.crawlJob.findUnique({ where: { id: jobId }, select: { summary: true } });
   const summary = (job?.summary as Record<string, unknown> | null) ?? {};
   const metrics = (summary.metrics as Record<string, unknown> | undefined) ?? {};
@@ -251,6 +267,96 @@ export async function reevaluateAiRules(jobId: string, rootUrl: string, ai: AiCo
   });
   if (issues.length) await prisma.crawlIssue.createMany({ data: issues });
   return issues.length;
+}
+
+export const SEMANTIC_RULE_IDS = RULES.filter((r) => r.requires?.includes("semantic")).map((r) => r.id);
+
+/** Compare the embedded targets and replace the semantic rules' findings on them. */
+export async function reevaluateSemanticRules(jobId: string, rootUrl: string, pages: Awaited<ReturnType<typeof targetPages>>): Promise<{ findings: number; embedded: number }> {
+  if (pages.length === 0) return { findings: 0, embedded: 0 };
+  const rows = await prisma.crawlPage.findMany({ where: { id: { in: pages.map((p) => p.id) } }, select: { id: true, embedding: true } });
+  const withVec = rows.flatMap((r) => {
+    const v = r.embedding ? fromBytes(r.embedding) : null;
+    return v ? [{ id: r.id, v }] : [];
+  });
+  await prisma.crawlIssue.deleteMany({ where: { crawlPageId: { in: pages.map((p) => p.id) }, ruleId: { in: SEMANTIC_RULE_IDS } } });
+  if (withVec.length < 2) return { findings: 0, embedded: withVec.length };
+  const flat = new Float32Array(withVec.length * EMBEDDING_DIMS);
+  withVec.forEach((w, i) => flat.set(w.v, i * EMBEDDING_DIMS));
+  const found = analyse(flat, withVec.length);
+  const byId = new Map(pages.map((p) => [p.id, p]));
+  const keep = new Set(SEMANTIC_RULE_IDS);
+  const issues = withVec.flatMap((w, i) => {
+    const page = byId.get(w.id)!;
+    const f = found[i]!;
+    const semantic = { nearestUrl: f.nearest >= 0 ? byId.get(withVec[f.nearest]!.id)!.url : null, nearestScore: f.nearest >= 0 ? f.nearestScore : null, distance: f.distance, offTopic: f.offTopic };
+    const hits = evaluateSiteRules(toStoredFacts(page, rootUrl), { capabilities: ["semantic"], metrics: { semantic }, site: NO_SITE, job: NO_JOB, isRoot: false }).filter((x) => keep.has(x.ruleId));
+    return issueRows(hits, jobId).map((r) => ({ ...r, crawlPageId: page.id }));
+  });
+  if (issues.length) await prisma.crawlIssue.createMany({ data: issues });
+  return { findings: issues.length, embedded: withVec.length };
+}
+
+async function semanticTick(job: Job, top: TopPages, deps: MetricsDeps): Promise<MetricsTick> {
+  const pages = await targetPages(job.id, top, { htmlOnly: true });
+  const tried = await prisma.crawlPage.findMany({ where: { id: { in: pages.map((p) => p.id) }, embedding: { not: null } }, select: { id: true } });
+  const done = new Set(tried.map((t) => t.id));
+  const prev = ((job.summary as { metrics?: { semantic?: SourceState } } | null)?.metrics?.semantic) ?? null;
+  let tokens = prev?.tokens ?? 0;
+  const state = (extra: Partial<SourceState> = {}) => ({
+    status: "running" as const,
+    targets: pages.length,
+    completed: done.size,
+    failed: 0,
+    tokens,
+    costUsd: Math.round(embeddingCostUsd(tokens) * 1e6) / 1e6,
+    ...extra,
+  });
+  const finish = async (s: Pick<SourceState, "status" | "stoppedReason">) => {
+    const r = await reevaluateSemanticRules(job.id, job.rootUrl, pages);
+    await recountIssues(job.id);
+    await setSourceState(job.id, "semantic", { ...state(s), embedded: r.embedded, failed: done.size - r.embedded });
+    log.info({ jobId: job.id, embedded: r.embedded, findings: r.findings }, "crawl semantic done");
+    return { done: true } as const;
+  };
+  const todo = pages.filter((p) => !done.has(p.id)).slice(0, SEMANTIC_PAGES_PER_TICK);
+  if (todo.length === 0) return finish({ status: "done" });
+  const key = await deps.aiKey(job.tenantId, "openai");
+  if (!key) return finish({ status: "stopped", stoppedReason: "key_missing" });
+
+  const stored0 = readStoredConfig(job.config);
+  const settings = crawlSettings(stored0 ? openCrawlConfig(stored0) : { ...DEFAULT_CRAWL_CONFIG }, job.rootUrl);
+  const limiter = new RateLimiter(stored0?.speed ?? 2, 0);
+  const texts: { id: string; text: string }[] = [];
+  const mark = async (id: string, bytes: Buffer) => {
+    await prisma.crawlPage.update({ where: { id }, data: { embedding: new Uint8Array(bytes) } });
+    done.add(id);
+  };
+  for (const page of todo) {
+    await limiter.acquire();
+    const html = await deps.aiFetchHtml(page.url, settings).catch(() => null);
+    const text = html ? visibleText(html, page.url, job.rootUrl).slice(0, EMBEDDING_TEXT_CHARS).trim() : "";
+    if (text) texts.push({ id: page.id, text });
+    else await mark(page.id, Buffer.alloc(0));
+  }
+  for (let i = 0; i < texts.length; i += EMBED_BATCH) {
+    const batch = texts.slice(i, i + EMBED_BATCH);
+    try {
+      const r = await deps.embed(key, batch.map((b) => b.text));
+      tokens += r.tokens;
+      for (const [j, b] of batch.entries()) await mark(b.id, toBytes(r.vectors[j]!));
+    } catch (err) {
+      const status = err instanceof EmbeddingError ? err.status : null;
+      if (status === 401 || status === 403) return finish({ status: "stopped", stoppedReason: "key_invalid" });
+      if (status === null || status === 429 || status >= 500) {
+        await setSourceState(job.id, "semantic", state());
+        return { done: false, delayMs: 60_000 };
+      }
+      for (const b of batch) await mark(b.id, Buffer.alloc(0));
+    }
+  }
+  await setSourceState(job.id, "semantic", state());
+  return { done: false, delayMs: 0 };
 }
 
 async function aiTick(job: Job, ai: AiConfig, deps: MetricsDeps): Promise<MetricsTick> {
@@ -435,6 +541,11 @@ export async function runCrawlMetrics(jobId: string, overrides: Partial<MetricsD
     const tick = await backlinksTick(job, add.backlinks, deps);
     if (!tick.done) return tick;
   }
+  const semantic = readStoredConfig(job.config)?.semantic;
+  if (semantic && flag("crawl.semantic") && !settled(states.semantic)) {
+    const tick = await semanticTick(job, semantic, deps);
+    if (!tick.done) return tick;
+  }
   if (ai && flag("crawl.ai") && !settled(states.ai)) {
     const tick = await aiTick(job, ai, deps);
     if (!tick.done) return tick;
@@ -450,5 +561,5 @@ export async function runCrawlMetrics(jobId: string, overrides: Partial<MetricsD
 export function needsMetrics(config: unknown): boolean {
   const stored = readStoredConfig(config);
   const add = stored?.addData;
-  return Boolean((add?.psi && flag("crawl.psi")) || (add?.backlinks && flag("crawl.backlinks")) || (stored?.ai && flag("crawl.ai")));
+  return Boolean((add?.psi && flag("crawl.psi")) || (add?.backlinks && flag("crawl.backlinks")) || (stored?.ai && flag("crawl.ai")) || (stored?.semantic && flag("crawl.semantic")));
 }

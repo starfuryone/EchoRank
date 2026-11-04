@@ -211,6 +211,9 @@ export const CRAWL_CAPABILITIES: readonly CrawlCapability[] = [
   cap("forms-login", { flag: "crawl.login" },
     ["Forms-based authentication", "Log in through your site's own login form before crawling, to audit the pages behind it. Your verified sites only; logout links are never followed."],
     ["Authentification par formulaire", "Connectez-vous via le formulaire de connexion de votre site avant l'exploration, pour auditer les pages protégées. Sur vos sites vérifiés seulement ; les liens de déconnexion ne sont jamais suivis."]),
+  cap("semantic-duplicates", { flag: "crawl.semantic" },
+    ["Semantic duplicates", "Pages that say the same thing in different words, and pages that don't belong on the site."],
+    ["Doublons sémantiques", "Les pages qui disent la même chose avec d'autres mots, et celles qui n'ont pas leur place sur le site."]),
   cap("ai-prompts", { flag: "crawl.ai" },
     ["AI prompts", "Run up to three prompts per crawl against page content with Claude, OpenAI or Gemini: classify intent, summarise, suggest titles, check grammar."],
     ["Requêtes IA", "Lancez jusqu'à trois requêtes par exploration sur le contenu des pages avec Claude, OpenAI ou Gemini : classer l'intention, résumer, proposer des titres, vérifier la grammaire."]),
@@ -315,6 +318,9 @@ export const CRAWL_FEATURE_ROWS: readonly CrawlFeatureRow[] = [
     b === "fr" ? `${fmt(MAX_EXTERNAL_LINKS_PER_PAGE, b)} par page, code vérifié une fois par exploration` : `${fmt(MAX_EXTERNAL_LINKS_PER_PAGE, b)} per page, status checked once per crawl`),
   row("link-score", { flag: "crawl.linkScore" }, "Link Score", "Link Score", (_p, b) =>
     b === "fr" ? "Toutes les pages explorées" : "Every crawled page"),
+  // Phase 4g caps per crawl, from plan-config (on the tenant's own OpenAI key).
+  row("semantic-duplicates", { flag: "crawl.semantic" }, "Semantic duplicates", "Doublons sémantiques", (p, b) =>
+    b === "fr" ? `${fmt(p.crawlSemanticPages, b)} pages par exploration` : `${fmt(p.crawlSemanticPages, b)} pages per crawl`),
   row("titles-meta", { family: "page_titles" }, "Analyse page titles & meta data", "Analyse des titres et métadonnées"),
   row("directives", { family: "directives" }, "Review meta robots & directives", "Meta robots et directives"),
   row("hreflang", { family: "hreflang" }, "Audit hreflang attributes", "Audit des attributs hreflang"),

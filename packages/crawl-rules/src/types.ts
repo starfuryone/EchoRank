@@ -79,7 +79,7 @@ export type RulePriority = "high" | "medium" | "low";
  * (a page with no row then reads as zero); "backlinks" — the page itself was
  * looked up. The consumer hands the joined numbers in SiteRuleCtx.metrics.
  */
-export type Capability = "render" | "psi" | "spell" | "gsc" | "ga4" | "backlinks" | "amp" | "ai";
+export type Capability = "render" | "psi" | "spell" | "gsc" | "ga4" | "backlinks" | "amp" | "ai" | "semantic";
 
 /**
  * What a rule reports alongside its verdict. Small by contract: counts,
@@ -538,6 +538,18 @@ export interface SiteMetricFacts {
   highPriorityIssues?: number;
   /** Phase 4e: the AI prompts' answers on this page. */
   ai?: AiFacts | null;
+  /** Phase 4g: the page's embedding compared with the other embedded pages and the site centroid. */
+  semantic?: SemanticFacts | null;
+}
+
+/** Phase 4g: semantic similarity (capability "semantic", only on pages that were embedded). */
+export interface SemanticFacts {
+  /** The most similar other embedded page, and its cosine similarity. */
+  nearestUrl: string | null;
+  nearestScore: number | null;
+  /** 1 − cosine to the site centroid, and whether it is in the top 5 %. */
+  distance: number;
+  offTopic: boolean;
 }
 
 /** Phase 4e: what the title and grammar presets answered (null = that preset did not run). */

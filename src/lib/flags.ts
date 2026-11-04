@@ -31,6 +31,8 @@ export const FLAGS = {
   "crawl.externalLinks": true,
   // Phase 4g: Link Score — internal PageRank at aggregation, a Pages column, node size in the Structure graph.
   "crawl.linkScore": true,
+  // Phase 4g: semantic duplicates and off-topic pages (embeddings on the tenant's OpenAI key).
+  "crawl.semantic": true,
   // Phase 4b
   "crawl.extraction": true,
   "crawl.segments": true,

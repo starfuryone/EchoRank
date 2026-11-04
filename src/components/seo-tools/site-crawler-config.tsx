@@ -22,6 +22,7 @@ import { ExtractorsEditor, SearchesEditor, SegmentsEditor } from "./site-crawler
 import { JsSnippetsEditor } from "./site-crawler-js";
 import { LoginEditor } from "./site-crawler-login";
 import type { SiteCrawler4eCopy } from "@/lib/i18n/site-crawler-4e";
+import type { SiteCrawler4gCopy } from "@/lib/i18n/site-crawler-4g";
 import type { JsSnippet } from "@/lib/site-crawler/js-snippets";
 import {
   CONFIG_LIMITS,
@@ -170,7 +171,13 @@ export function toInput(d: Draft): CrawlConfigInput {
 }
 
 /** One server-side problem as a sentence. */
-export function problemText(p: ConfigProblem, t: T, t4b: T4b, t4d?: SiteCrawler4dCopy, t4e?: SiteCrawler4eCopy): string {
+export function problemText(p: ConfigProblem, t: T, t4b: T4b, t4d?: SiteCrawler4dCopy, t4e?: SiteCrawler4eCopy, t4g?: SiteCrawler4gCopy): string {
+  // Phase 4g: semantic duplicates.
+  if (p.field === "semantic") {
+    if (p.code === "ai_key_missing") return t4g?.problemSemKey ?? t.problemVerified(p.field);
+    if (p.code === "over_plan_cap" && t4d) return t4d.problemCap(String(p.limit));
+    if (p.code === "unknown_segment" && t4d) return t4d.problemSegment;
+  }
   // Phase 4e: forms login.
   if (p.code === "login_missing") return t4e?.problemLoginMissing ?? t.problemVerified(p.field);
   if (p.code === "requires_verified_site" && p.field === "login" && t4e) return `${t4e.loginTitle}: ${t4e.loginVerifiedOnly}`;

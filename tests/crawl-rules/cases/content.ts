@@ -8,6 +8,11 @@ const noCharsetHeader = { ...SECURE_HEADERS, "content-type": "text/html" };
 const EASY = "The cat sat on the mat. It was a good cat. We like the cat a lot. ".repeat(12);
 const HARD = "Notwithstanding considerable organisational complexity, interdepartmental communication necessitates comprehensive documentation procedures. ".repeat(12);
 
+const semCtx = (over: Partial<{ nearestUrl: string | null; nearestScore: number | null; distance: number; offTopic: boolean }>) => ({
+  ...siteCtx({ capabilities: ["semantic"] }),
+  metrics: { semantic: { nearestUrl: null, nearestScore: null, distance: 0.2, offTopic: false, ...over } },
+});
+
 const cases: RuleCase[] = [
   pc("content.low_word_count", "50 words", true, page(raw({ body: `<p>${words(80)}</p>` })), { words: 80 }),
   pc("content.low_word_count", "300 words", false, page(raw({}))),
@@ -36,6 +41,13 @@ const cases: RuleCase[] = [
   }),
   pc("content.charset_not_utf8", "header wins over meta", false, page(raw({ head: '<meta charset="iso-8859-1">' }))),
   pc("content.charset_not_utf8", "utf-8", false, page(raw({}))),
+  // Phase 4g: embeddings, capability "semantic" (only pages that were embedded).
+  { ...sc("content.semantic_duplicate", "cosine 0.97 with another page", true, stored(), semCtx({ nearestUrl: "https://example.com/twin", nearestScore: 0.97 })), evidence: { value: "https://example.com/twin", score: 0.97 } },
+  sc("content.semantic_duplicate", "exactly 0.95", true, stored(), semCtx({ nearestUrl: "https://example.com/twin", nearestScore: 0.95 })),
+  sc("content.semantic_duplicate", "0.94: related, not a duplicate", false, stored(), semCtx({ nearestUrl: "https://example.com/near", nearestScore: 0.94 })),
+  sc("content.semantic_duplicate", "not embedded", false, stored(), { ...siteCtx({ capabilities: [] }), metrics: { semantic: { nearestUrl: "x", nearestScore: 1, distance: 0, offTopic: false } } }),
+  { ...sc("content.off_topic", "top 5 % by centroid distance", true, stored(), semCtx({ offTopic: true, distance: 0.62 })), evidence: { distance: 0.62 } },
+  sc("content.off_topic", "close to the site's subject", false, stored(), semCtx({ offTopic: false, distance: 0.1 })),
 ];
 
 export default cases;

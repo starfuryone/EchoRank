@@ -102,4 +102,27 @@ export const RULES: Rule[] = [
       return declared && !/^utf-?8$/.test(declared) ? ev({ charset: declared }) : null;
     },
   }),
+  // Phase 4g: embeddings (opt-in, the tenant's OpenAI key) on the top N pages.
+  siteRule({
+    id: "content.semantic_duplicate",
+    family: F,
+    kind: "warning",
+    priority: "medium",
+    requires: ["semantic"],
+    detect: (p, ctx) => {
+      const s = ctx.metrics?.semantic;
+      return s && s.nearestUrl && s.nearestScore !== null && s.nearestScore >= 0.95 ? ev({ value: s.nearestUrl, score: s.nearestScore }) : null;
+    },
+  }),
+  siteRule({
+    id: "content.off_topic",
+    family: F,
+    kind: "opportunity",
+    priority: "low",
+    requires: ["semantic"],
+    detect: (p, ctx) => {
+      const s = ctx.metrics?.semantic;
+      return s && s.offTopic ? ev({ distance: s.distance }) : null;
+    },
+  }),
 ];
