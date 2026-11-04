@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { Bell, LogOut, Menu } from "lucide-react";
 import { cn, getInitials } from "@/lib/utils";
 import { dashChrome, type DashLocale } from "@/lib/i18n/dashboard";
+import { CRAWLER_BRAND } from "@/lib/site-crawler/brand";
 
 interface HeaderProps {
   title: string;
@@ -59,6 +60,9 @@ export function Header({
       cancelled = true;
     };
   }, [pathname]);
+  // The crawler's routes carry its mark before the title: the one brand
+  // rendering on those pages besides the sidebar row.
+  const crawler = pathname === "/crawler" || Boolean(pathname?.startsWith("/crawler/"));
   const displayName = user?.name || user?.email || chrome.user;
   const initials = getInitials(displayName);
 
@@ -75,6 +79,10 @@ export function Header({
           <Menu className="h-5 w-5" />
         </button>
 
+        {crawler && (
+          // eslint-disable-next-line @next/next/no-img-element -- a static SVG; next/image adds nothing
+          <img src={CRAWLER_BRAND.mark} alt="" aria-hidden="true" width={28} height={28} className="h-7 w-7 shrink-0" data-testid="topbar-mark" />
+        )}
         <h1 className="text-lg font-semibold text-gray-900 sm:text-xl">
           {title}
           {byline && <span className="ml-2 text-xs font-normal text-gray-500">{byline}</span>}

@@ -75,7 +75,6 @@ import type { ConfigProblem, CrawlConfigInput } from "@/lib/site-crawler/crawl-c
 import { parseUrlList } from "@/lib/site-crawler/url-list";
 import { flag } from "@/lib/flags";
 import { SITE_CRAWLER_COPY, type DashLocale, type SiteCrawlerCopy } from "@/lib/i18n/dashboard";
-import { CRAWLER_BRAND } from "@/lib/site-crawler/brand";
 import { helpModalFor, learnHref } from "@/lib/help-content";
 
 type TabId = "overview" | "rules" | "issues" | "duplicates" | "redirects" | "pages" | "structure" | "compare" | "extraction" | "external" | "metrics" | "segments";
@@ -1310,36 +1309,27 @@ export function CrawlerHeader({ t, locale, quota }: { t: SiteCrawlerCopy; locale
     // Back to the trigger, also when the dialog opened from the deep link (nothing had focus then).
     requestAnimationFrame(() => button.current?.focus());
   };
+  // The brand lives in the top bar (mark, name, byline); this header starts
+  // with the description, the Help button right-aligned on the same row.
   return (
-    <div>
+    <div className="flex items-start justify-between gap-3" data-testid="crawler-header">
+      <p className="max-w-3xl text-sm text-gray-600">{t.subtitle}</p>
       {help && (
-        <button
-          ref={button}
-          type="button"
-          onClick={() => setOpen(true)}
-          aria-label={t.helpAria}
-          aria-haspopup="dialog"
-          className="float-right inline-flex items-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-        >
-          <CircleQuestionMark className="mr-2 h-4 w-4 text-blue-600" aria-hidden="true" />
-          {t.helpButton}
-        </button>
+        <div className="flex shrink-0 items-center gap-2">
+          <button
+            ref={button}
+            type="button"
+            onClick={() => setOpen(true)}
+            aria-label={t.helpAria}
+            aria-haspopup="dialog"
+            className="inline-flex items-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+          >
+            <CircleQuestionMark className="mr-2 h-4 w-4 text-blue-600" aria-hidden="true" />
+            {t.helpButton}
+          </button>
+        </div>
       )}
       {help && shown && <CrawlerHelpModal t={t} locale={locale} quota={quota} guideHref={learnHref(locale, help.guide)} onClose={close} />}
-      {/* The lockup carries the name and the byline, so neither is repeated in
-          text; the alt text is the accessible name. The top bar already reads
-          the brand name as the page's h1, so this is an h2. */}
-      <h2>
-        {/* eslint-disable-next-line @next/next/no-img-element -- a static SVG; next/image adds nothing */}
-        <img
-          src={CRAWLER_BRAND.logoOnLight}
-          alt={`${t.brandName} — ${t.byline}`}
-          width={128}
-          height={40}
-          className="h-10 w-auto"
-        />
-      </h2>
-      <p className="mt-2 max-w-3xl text-sm text-gray-500">{t.subtitle}</p>
     </div>
   );
 }

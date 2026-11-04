@@ -11,7 +11,7 @@ const NB = CRAWLER_BRAND.name;
 
 const en = {
   // ── Navigation strip ────────────────────────────────────────────────────
-  navLabel: `${NB} sections`,
+  navLabel: "Crawler sections",
   navStart: "New crawl",
   navResults: "Results",
   navHistory: "History",
@@ -240,7 +240,7 @@ const en = {
 export type SiteCrawlerUxCopy = typeof en;
 
 const fr: SiteCrawlerUxCopy = {
-  navLabel: `Sections de ${NB}`,
+  navLabel: "Sections du robot d'exploration",
   navStart: "Nouvelle exploration",
   navResults: "Résultats",
   navHistory: "Historique",
@@ -461,7 +461,7 @@ const fr: SiteCrawlerUxCopy = {
 };
 
 const deCH: SiteCrawlerUxCopy = {
-  navLabel: `Bereiche von ${NB}`,
+  navLabel: "Crawler-Bereiche",
   navStart: "Neuer Crawl",
   navResults: "Ergebnisse",
   navHistory: "Verlauf",
