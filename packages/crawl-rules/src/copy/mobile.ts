@@ -16,4 +16,9 @@ export const COPY: Record<string, RuleCopy> = {
     description: "Links or buttons smaller than 24 × 24 px sit within 24 px of another target, so a finger easily hits the wrong one (WCAG 2.2 success criterion 2.5.8, target size).",
     howToFix: "Make small targets at least 24 × 24 px (48 px is the comfortable size), or add spacing between them.",
   },
+  "mobile.lighthouse_usability_low": {
+    name: "Lighthouse mobile usability audit failed",
+    description: "The page's mobile PageSpeed run failed one of Lighthouse's mobile usability audits: a viewport meta tag that does not fit the page to the device width, or (on Lighthouse versions that still report them) legible font sizes and tap target spacing. The evidence names the failing audits.",
+    howToFix: "Add <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"> and keep it free of fixed widths and user-scalable=no. For font size and tap targets, use body text of at least 12 px and give links and buttons at least 24 × 24 px with space between them, then run PageSpeed again.",
+  },
 };

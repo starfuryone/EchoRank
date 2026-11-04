@@ -294,6 +294,31 @@ export async function aggregateCrawl({
   return { summary, issueCount };
 }
 
+/**
+ * Phase 4d: re-tally a finished crawl's issues into its summary after the
+ * post-crawl metrics job added findings (PSI, backlinks). The same queries
+ * aggregation runs, written over the summary's issue fields only.
+ */
+export async function recountIssues(jobId: string): Promise<{ issueCount: number }> {
+  const [issuesBySeverity, issuesByType, ruleTallies, issueCount, job] = await Promise.all([
+    issueDistribution(jobId, "severity"),
+    issueDistribution(jobId, "type"),
+    ruleTally(jobId),
+    prisma.crawlIssue.count({ where: { crawlJobId: jobId } }),
+    prisma.crawlJob.findUnique({ where: { id: jobId }, select: { summary: true } }),
+  ]);
+  const summary = {
+    ...((job?.summary as object | null) ?? {}),
+    issuesBySeverity,
+    issuesByType,
+    totals: toTotals(issuesBySeverity),
+    issues: ruleTallies.issues,
+    issuesByKind: ruleTallies.byKind,
+  };
+  await prisma.crawlJob.update({ where: { id: jobId }, data: { issueCount, summary: summary as object } });
+  return { issueCount };
+}
+
 /** A page GSC returned no row for had no clicks and no impressions. */
 export function gscFacts(g: GscMetric | undefined) {
   return g ? { clicks: g.clicks, impressions: g.impressions, ctr: g.ctr, position: g.position } : { clicks: 0, impressions: 0, ctr: 0, position: null };

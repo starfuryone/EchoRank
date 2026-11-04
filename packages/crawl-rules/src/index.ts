@@ -100,6 +100,7 @@ export * from "./types";
 export { pixelWidth, TITLE_FONT_PX, DESCRIPTION_FONT_PX } from "./util/pixels";
 export { jsOnlyFacts, renderedOnlyLinks, metaNoindex, JS_CONTENT_MIN_WORDS } from "./util/render";
 export { PSI_AUDIT_IDS, PERF_SPECS, PASS_SCORE } from "./rules/performance";
+export { MOBILE_USABILITY_AUDITS } from "./rules/mobile";
 export { MANY_MISSPELLINGS } from "./rules/spelling";
 export { AXE_RULES, AXE_VERSION } from "./generated/axe-rules";
 export { simhash64, hammingDistance, NEAR_DUPLICATE_MAX_HAMMING } from "./util/simhash";

@@ -54,6 +54,8 @@ import { InlinksPanel } from "@/components/seo-tools/site-crawler-inlinks";
 import { ExtractionPanel } from "@/components/seo-tools/site-crawler-extraction";
 import { ComparePanel } from "@/components/seo-tools/site-crawler-compare";
 import { CrawlSchedules } from "@/components/seo-tools/site-crawler-schedules";
+import { AddDataSection, confirmLines } from "@/components/seo-tools/site-crawler-add-data";
+import type { AddData } from "@/lib/site-crawler/crawl-config";
 import { SheetsExport } from "@/components/seo-tools/site-crawler-sheets";
 import { ReportDownloadButton } from "@/components/reports/ReportDownloadButton";
 import { lookerStudioHref } from "@/lib/site-crawler/sheets-layout";
@@ -99,6 +101,17 @@ function tabLabel(id: TabId, t: SiteCrawlerCopy): string {
   if (id === "structure") return t.p4c.tabStructure;
   if (id === "compare") return t.p4c.tabCompare;
   return t.tabPages;
+}
+
+/** The host of what was typed in the URL field, for the Add data segment list. */
+function hostOfInput(raw: string): string | null {
+  const v = raw.trim();
+  if (!v) return null;
+  try {
+    return new URL(/^https?:\/\//i.test(v) ? v : `https://${v}`).hostname.toLowerCase() || null;
+  } catch {
+    return null;
+  }
 }
 
 /** Poll cadence while a crawl is in flight, per spec. */
@@ -160,6 +173,9 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
   const [cfg, setCfg] = useState<{ config: CrawlConfigInput | null; saveAsDefault: boolean }>({ config: null, saveAsDefault: false });
   const onConfig = useCallback((next: { config: CrawlConfigInput | null; saveAsDefault: boolean }) => setCfg(next), []);
   const [problems, setProblems] = useState<ConfigProblem[]>([]);
+  // Phase 4d: the post-crawl opt-ins, confirmed with their cost before the crawl starts.
+  const [addData, setAddData] = useState<AddData | null>(null);
+  const [confirming, setConfirming] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [inlinksFor, setInlinksFor] = useState<{ id: string; url: string } | null>(null);
   const listUrls = useMemo(() => parseUrlList(listText), [listText]);
@@ -349,6 +365,12 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
 
   async function start(event: React.FormEvent) {
     event.preventDefault();
+    const extra = mode === "spider" ? addData : null;
+    if (extra && !confirming) {
+      setConfirming(true);
+      return;
+    }
+    setConfirming(false);
     setError(null);
     setProblems([]);
     setNotice(null);
@@ -362,7 +384,12 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
           url: listing ? "" : url,
           renderMode: quota && quota.renderCap > 0 ? renderMode : "none",
           ...(listing ? { mode: "list", urls: listUrls } : {}),
-          ...(flag("crawl.config") && cfg.config ? { config: cfg.config, saveAsDefault: !listing && cfg.saveAsDefault } : {}),
+          ...((flag("crawl.config") && cfg.config) || extra
+            ? {
+                config: { ...(flag("crawl.config") && cfg.config ? cfg.config : {}), ...(extra ? { addData: extra } : {}) },
+                saveAsDefault: !listing && flag("crawl.config") && cfg.config !== null && cfg.saveAsDefault,
+              }
+            : {}),
         }),
       });
       const data = await res.json().catch(() => null);
@@ -556,7 +583,7 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
           {problems.length > 0 && (
             <ul className="mt-1 list-disc pl-10 text-sm text-red-600">
               {problems.map((p, i) => (
-                <li key={i}>{problemText(p, t.p4a, t.p4b)}</li>
+                <li key={i}>{problemText(p, t.p4a, t.p4b, t.p4d)}</li>
               ))}
             </ul>
           )}
@@ -585,6 +612,41 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
                 />
               )}
             </CrawlConfigSection>
+          )}
+
+          {(flag("crawl.psi") || flag("crawl.backlinks")) && mode === "spider" && quota && (
+            <AddDataSection
+              t={t.p4d}
+              host={hostOfInput(url)}
+              quota={{ psiCap: quota.psiCap ?? 0, lighthouseUsed: quota.lighthouseUsed ?? 0, lighthouseLimit: quota.lighthouseLimit ?? 0 }}
+              value={addData}
+              onChange={(v) => {
+                setAddData(v);
+                setConfirming(false);
+              }}
+              disabled={starting || Boolean(running)}
+            />
+          )}
+
+          {confirming && addData && quota && (
+            <div role="dialog" aria-labelledby="crawl-confirm-title" className="mt-4 space-y-2 rounded-lg border border-amber-200 bg-amber-50 p-3">
+              <p id="crawl-confirm-title" className="text-sm font-semibold text-gray-900">
+                {t.p4d.confirmTitle}
+              </p>
+              <ul className="list-disc space-y-1 pl-5 text-sm text-gray-700">
+                {confirmLines(t.p4d, addData, { psiCap: quota.psiCap ?? 0, lighthouseUsed: quota.lighthouseUsed ?? 0, lighthouseLimit: quota.lighthouseLimit ?? 0 }).map((line) => (
+                  <li key={line}>{line}</li>
+                ))}
+              </ul>
+              <div className="flex gap-2">
+                <Button size="sm" onClick={(e) => void start(e)} disabled={starting}>
+                  {t.p4d.confirmStart}
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => setConfirming(false)}>
+                  {t.p4d.confirmBack}
+                </Button>
+              </div>
+            </div>
           )}
 
           <AcceptedWords t={t} />

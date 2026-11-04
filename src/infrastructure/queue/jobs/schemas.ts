@@ -271,6 +271,12 @@ export interface SiteCrawlJob {
   scheduleId?: string;
 }
 
+/** Phase 4d: one tick of a finished crawl's PSI / backlink opt-ins (job name "metrics"). */
+export interface SiteCrawlMetricsJob {
+  crawlJobId: string;
+  metrics: true;
+}
+
 /** Phase 4c: one schedule's repeatable tick on the site-crawl queue (job name "schedule"). */
 export interface SiteCrawlScheduleJob {
   scheduleId: string;
@@ -439,7 +445,7 @@ export interface QueueJobMap {
   "rank-tracker": RankTrackerJob;
   "site-audit": SiteAuditJob;
   "bot-log-analysis": BotLogAnalysisJob;
-  "site-crawl": SiteCrawlJob | SiteCrawlRetentionJob | SiteCrawlScheduleJob;
+  "site-crawl": SiteCrawlJob | SiteCrawlRetentionJob | SiteCrawlScheduleJob | SiteCrawlMetricsJob;
   "free-tools-volatility": FreeToolsVolatilityJob;
   "sov-aggregation": SovAggregationJob;
   "citation-aggregation": CitationAggregationJob;

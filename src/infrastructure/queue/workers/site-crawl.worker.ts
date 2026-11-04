@@ -19,15 +19,21 @@
 // schedule started carries scheduleId, and its completion hook (compare with
 // the last run, then the exports) runs here after runCrawl.
 //
+// METRICS (Phase 4d) ride it too: a completed crawl that opted into PageSpeed
+// or backlink metrics gets a "metrics" job, which does a few minutes of work
+// and re-queues itself (delayed while the Lighthouse allowance refills) until
+// done — so it never holds one of the two slots for long.
+//
 // The job carries only ids. Everything else is read from the CrawlJob row, so
 // a job that sat in the queue across a deploy still crawls with the cap it was
 // created with rather than one baked into the payload.
 
 import { Worker, type Job, type Queue } from "bullmq";
-import { getQueue } from "@/infrastructure/queue/registry";
+import { addJob, getQueue } from "@/infrastructure/queue/registry";
+import { METRICS_JOB_NAME, needsMetrics, runCrawlMetrics } from "@/lib/site-crawler/metrics-runner";
 import { getSubscriberConnection, createNewConnection } from "@/infrastructure/redis/connection";
 import { REDIS_CONFIG } from "@/infrastructure/redis/config";
-import type { SiteCrawlJob, SiteCrawlRetentionJob, SiteCrawlScheduleJob } from "@/infrastructure/queue/jobs/schemas";
+import type { SiteCrawlJob, SiteCrawlMetricsJob, SiteCrawlRetentionJob, SiteCrawlScheduleJob } from "@/infrastructure/queue/jobs/schemas";
 import { runCrawl } from "@/lib/site-crawler/runner";
 import { runCrawlRetention } from "@/lib/site-crawler/retention";
 import { prisma } from "@/lib/prisma";
@@ -45,7 +51,7 @@ export const RETENTION_JOB_NAME = "retention";
 /** Numeric, and a constant: BullMQ keys a repeatable job by its interval. */
 export const RETENTION_INTERVAL_MS = 24 * 60 * 60 * 1000;
 
-type SiteCrawlQueueJob = SiteCrawlJob | SiteCrawlRetentionJob | SiteCrawlScheduleJob;
+type SiteCrawlQueueJob = SiteCrawlJob | SiteCrawlRetentionJob | SiteCrawlScheduleJob | SiteCrawlMetricsJob;
 
 /**
  * A dedicated connection for frontier operations.
@@ -66,6 +72,12 @@ async function processSiteCrawlJob(job: Job<SiteCrawlQueueJob>): Promise<void> {
     await withSpan("site-crawl.retention", () => runCrawlRetention());
     return;
   }
+  if (job.name === METRICS_JOB_NAME && "metrics" in job.data) {
+    const { crawlJobId } = job.data;
+    const tick = await withSpan("site-crawl.metrics", () => runCrawlMetrics(crawlJobId));
+    if (!tick.done) await addJob("site-crawl", METRICS_JOB_NAME, { crawlJobId, metrics: true }, { delay: tick.delayMs });
+    return;
+  }
   if (job.name === SCHEDULE_JOB_NAME && !("crawlJobId" in job.data)) {
     const { scheduleId } = job.data as SiteCrawlScheduleJob;
     const outcome = await withSpan("site-crawl.schedule", () => runScheduledCrawl(scheduleId));
@@ -84,6 +96,10 @@ async function processSiteCrawlJob(job: Job<SiteCrawlQueueJob>): Promise<void> {
     // to BullMQ for the failed-job log.
     const outcome = await runCrawl({ jobId: crawlJobId, redis: getFrontierRedis() });
     logger.info({ jobId: job.id, crawlJobId, ...outcome }, "site-crawl job done");
+    if (outcome.status === "COMPLETED") {
+      const row = await prisma.crawlJob.findUnique({ where: { id: crawlJobId }, select: { config: true } });
+      if (needsMetrics(row?.config)) await addJob("site-crawl", METRICS_JOB_NAME, { crawlJobId, metrics: true });
+    }
     if (scheduleId) {
       // After the crawl's own terminal write; its failure never fails the crawl.
       await afterScheduledCrawl(scheduleId, crawlJobId, SCHEDULE_HOOKS).catch((err) =>

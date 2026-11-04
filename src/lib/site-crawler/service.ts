@@ -14,7 +14,7 @@ import { prisma } from "@/lib/prisma";
 import { addJob } from "@/infrastructure/queue/registry";
 import { getRedisConnection } from "@/infrastructure/redis/connection";
 import { crawlKeys, REDIS_KEY_TTL_SECONDS } from "./constants";
-import { featureCapsForPlan, getCrawlQuota } from "./quota";
+import { featureCapsForPlan, getCrawlQuota, metricCapsForPlan } from "./quota";
 import { validateRootUrl } from "./url";
 import type { RenderMode } from "./types";
 import {
@@ -182,6 +182,7 @@ export async function startCrawl(
       urlCap: quota.urlCap,
       verified: Boolean(site?.verifiedAt),
       ...featureCapsForPlan(plan),
+      ...metricCapsForPlan(plan),
       checkExpr: checkExtractorExpr,
     });
     if (checked.problems.length) throw new InvalidCrawlConfigError(checked.problems);
@@ -191,6 +192,7 @@ export async function startCrawl(
       urlCap: quota.urlCap,
       verified: Boolean(site?.verifiedAt),
       ...featureCapsForPlan(plan),
+      ...metricCapsForPlan(plan),
       checkExpr: checkExtractorExpr,
     });
     if (checked.problems.length) throw new InvalidCrawlConfigError(checked.problems);
@@ -215,6 +217,11 @@ export async function startCrawl(
   const segments = flag("crawl.segments") ? await segmentSnapshot(tenantId, host, featureCapsForPlan(plan).segmentCap) : [];
   const jobConfig: StoredCrawlConfig | null =
     stored || segments.length ? { ...(stored ?? DEFAULT_CRAWL_CONFIG), ...(segments.length ? { segments } : {}) } : null;
+  // Phase 4d: a top-N opt-in may name one of the segments just snapshotted.
+  for (const key of ["psi", "backlinks"] as const) {
+    const seg = jobConfig?.addData?.[key]?.segment;
+    if (seg != null && seg >= segments.length) throw new InvalidCrawlConfigError([{ field: `addData.${key}` as const, code: "unknown_segment" }]);
+  }
 
   const job = await prisma.crawlJob.create({
     data: {

@@ -89,7 +89,8 @@ describe("Phase 3b families", () => {
   });
 
   it("accessibility and mobile rules all require render; javascript except the two raw-HTML rules", () => {
-    for (const r of RULES.filter((x) => x.family === "mobile")) expect(r.requires, r.id).toEqual(["render"]);
+    // Phase 4d's one exception reads the mobile Lighthouse run instead of the render.
+    for (const r of RULES.filter((x) => x.family === "mobile")) expect(r.requires, r.id).toEqual(r.id === "mobile.lighthouse_usability_low" ? ["psi"] : ["render"]);
     const raw = RULES.filter((x) => x.family === "javascript" && !x.requires).map((r) => r.id);
     expect(raw.sort()).toEqual(["javascript.ajax_crawling_scheme", "javascript.enable_rendering"]);
   });

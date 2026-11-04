@@ -44,10 +44,11 @@ export const FLAGS = {
   // enabled in the GCP project — an operator step; flipped after it.
   "crawl.sheets": false,
   // Phase 4d: Search Console joined onto crawled pages (automatic when the
-  // GSC connection covers the host).
+  // GSC connection covers the host), and PageSpeed on the top N pages
+  // (opt-in, through the Lighthouse tool's allowance).
   "crawl.ga4": false,
   "crawl.gsc": true,
-  "crawl.psi": false,
+  "crawl.psi": true,
   "crawl.backlinks": false,
   // Phase 3b / 4e
   // Phase 3b shipped render mode (headless Chromium via the sidecar).

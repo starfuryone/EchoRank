@@ -24,6 +24,7 @@
 
 import { z } from "zod";
 import type { SegmentDef } from "./segments";
+import { flag } from "@/lib/flags";
 
 export const CONFIG_LIMITS = {
   patterns: 20,
@@ -159,6 +160,23 @@ export interface CrawlConfigOf<S> {
    * creation, never taken from input. crawl_pages.segmentIds index into it.
    */
   segments?: SegmentDef[];
+  /**
+   * Phase 4d opt-ins, run after the crawl on its most-linked pages (within
+   * one segment when given): PageSpeed (crawl.psi) and backlink metrics
+   * (crawl.backlinks). Pages at most the plan's crawlPsiPages /
+   * crawlBacklinkPages. Absent = neither.
+   */
+  addData?: AddData | null;
+}
+
+/** Phase 4d: the top N pages by inlinks, optionally inside one of the crawl's segments. */
+export interface TopPages {
+  pages: number;
+  segment: number | null;
+}
+export interface AddData {
+  psi: TopPages | null;
+  backlinks: TopPages | null;
 }
 
 export type CrawlConfigInput = CrawlConfigOf<SecretInput>;
@@ -287,6 +305,11 @@ const noCrLf = (s: string) => !/[\r\n\0]/.test(s);
 const secretInput = (max: number) =>
   z.union([z.string().max(max).refine(noCrLf, "control characters"), z.null(), z.object({ keep: z.literal(true) })]);
 
+const TopPagesSchema = z.object({
+  pages: z.number().int().min(1).max(1_000),
+  segment: z.number().int().min(0).nullable().default(null),
+});
+
 export const CrawlConfigInputSchema = z.object({
   maxUrls: z.number().int().min(1).nullable().default(null),
   maxDepth: z.number().int().min(0).max(CONFIG_LIMITS.maxDepth).nullable().default(null),
@@ -343,6 +366,13 @@ export const CrawlConfigInputSchema = z.object({
     )
     .max(50)
     .default([]),
+  addData: z
+    .object({
+      psi: TopPagesSchema.nullable().default(null),
+      backlinks: TopPagesSchema.nullable().default(null),
+    })
+    .nullable()
+    .default(null),
 });
 
 export type ConfigProblem =
@@ -350,7 +380,8 @@ export type ConfigProblem =
   | { field: string; code: "invalid_pattern"; pattern: string; reason: string }
   | { field: string; code: "reserved_header"; name: string }
   | { field: string; code: "custom_ua_missing" }
-  | { field: "extractors" | "searches"; code: "over_plan_cap"; limit: number }
+  | { field: "extractors" | "searches" | "addData.psi" | "addData.backlinks"; code: "over_plan_cap"; limit: number }
+  | { field: "addData.psi" | "addData.backlinks"; code: "unknown_segment" }
   | { field: "extractors" | "searches"; code: "invalid_expression"; index: number; reason: string };
 
 /** A regex an extractor or search may run: compiles, and passes unsafeRegex. Null when fine. */
@@ -377,6 +408,9 @@ export function checkCrawlConfig(
     /** Plan caps (plan-config crawlExtractors / crawlSearches). Absent = 0: a caller that forgets refuses, never allows. */
     extractorCap?: number;
     searchCap?: number;
+    /** Phase 4d caps (plan-config crawlPsiPages / crawlBacklinkPages). Absent = 0. */
+    psiCap?: number;
+    backlinkCap?: number;
     /** Server-side syntax check for css / xpath expressions (needs cheerio / xpath). */
     checkExpr?: (e: Extractor) => string | null;
   },
@@ -391,7 +425,18 @@ export function checkCrawlConfig(
     customUserAgent: input.userAgent === "custom" ? input.customUserAgent : null,
     extractors: (input.extractors ?? []).map((e) => ({ ...e, attr: e.attr?.trim() ? e.attr.trim() : null })),
     searches: input.searches ?? [],
+    addData: input.addData ? { psi: input.addData.psi ?? null, backlinks: input.addData.backlinks ?? null } : null,
   };
+  // Phase 4d: an opt-in whose feature is off in production is dropped, not refused.
+  if (config.addData) {
+    if (!flag("crawl.psi")) config.addData.psi = null;
+    if (!flag("crawl.backlinks")) config.addData.backlinks = null;
+    if (!config.addData.psi && !config.addData.backlinks) config.addData = null;
+  }
+  const psiCap = ctx.psiCap ?? 0;
+  const backlinkCap = ctx.backlinkCap ?? 0;
+  if (config.addData?.psi && config.addData.psi.pages > psiCap) problems.push({ field: "addData.psi", code: "over_plan_cap", limit: psiCap });
+  if (config.addData?.backlinks && config.addData.backlinks.pages > backlinkCap) problems.push({ field: "addData.backlinks", code: "over_plan_cap", limit: backlinkCap });
   // Never from input: the server snapshots the host's saved segments.
   delete config.segments;
   const extractorCap = ctx.extractorCap ?? 0;

@@ -8,7 +8,7 @@
 // Zero invented numbers: a missing score is null, never 0 — the difference
 // between "scored zero" and "not scored" is the whole point of a gauge.
 
-import { PSI_AUDIT_IDS, type PsiAudit } from "@/lib/crawl-rules";
+import { MOBILE_USABILITY_AUDITS, PSI_AUDIT_IDS, type PsiAudit } from "@/lib/crawl-rules";
 import { MAX_OPPORTUNITIES } from "./options";
 import {
   LAB_METRICS,
@@ -257,14 +257,15 @@ export function parseCrux(psi: RawPsiResponse): CruxData | null {
 
 /**
  * Verdicts for the audits the Site Crawler's performance rules read
- * (packages/crawl-rules PSI_AUDIT_IDS), keyed by Lighthouse audit id. Only
+ * (packages/crawl-rules PSI_AUDIT_IDS, plus Phase 4d's MOBILE_USABILITY_AUDITS),
+ * keyed by Lighthouse audit id. Only
  * those ids, so the row stays small; an audit Lighthouse marked not
  * applicable, manual or errored is left out (absent = not measured).
  */
 export function parseAuditVerdicts(psi: RawPsiResponse): Record<string, PsiAudit> {
   const audits = psi.lighthouseResult?.audits ?? {};
   const out: Record<string, PsiAudit> = {};
-  for (const id of PSI_AUDIT_IDS) {
+  for (const id of [...PSI_AUDIT_IDS, ...MOBILE_USABILITY_AUDITS]) {
     const a = audits[id];
     if (!a || ["notApplicable", "manual", "error"].includes(str(a.scoreDisplayMode))) continue;
     out[id] = {

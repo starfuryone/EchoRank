@@ -18,7 +18,7 @@ import { flag } from "@/lib/flags";
 import { checkCrawlConfig, readStoredConfig, type StoredCrawlConfig } from "./crawl-config";
 import { sealCrawlConfig } from "./crawl-config-secrets";
 import { checkExtractorExpr } from "./extraction";
-import { featureCapsForPlan, getCrawlQuota, scheduleCapsForPlan } from "./quota";
+import { featureCapsForPlan, getCrawlQuota, metricCapsForPlan, scheduleCapsForPlan } from "./quota";
 import { validateRootUrl } from "./url";
 import { startCrawl } from "./service";
 import { CrawlQuotaExceededError, InvalidCrawlConfigError, InvalidCrawlUrlError } from "./errors";
@@ -166,6 +166,7 @@ export async function createSchedule(tenantId: string, plan: PlanType, input: Sc
       urlCap: quota.urlCap,
       verified: Boolean(site?.verifiedAt),
       ...featureCapsForPlan(plan),
+      ...metricCapsForPlan(plan),
       checkExpr: checkExtractorExpr,
     });
     if (checked.problems.length) throw new InvalidCrawlConfigError(checked.problems);

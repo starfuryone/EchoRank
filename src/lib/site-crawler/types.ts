@@ -84,6 +84,8 @@ export interface CrawlQuotaDto {
   /** Phase 4d: pages per crawl for PageSpeed and for backlink metrics. */
   psiCap?: number;
   backlinkCap?: number;
+  lighthouseUsed?: number;
+  lighthouseLimit?: number;
 }
 
 export interface CrawlIssueRow {

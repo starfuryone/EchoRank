@@ -20,6 +20,8 @@
 import type { PlanType } from "@/generated/prisma";
 import { prisma } from "@/lib/prisma";
 import { planConfig, type CrawlCadence } from "@/lib/plan-config";
+import { auditsUsedThisHour } from "@/lib/lighthouse/usage";
+import { AUDITS_PER_HOUR } from "@/lib/lighthouse/options";
 
 /** Statuses that consume a monthly slot. */
 export const QUOTA_CONSUMING_STATUSES = ["QUEUED", "RUNNING", "COMPLETED"] as const;
@@ -50,6 +52,9 @@ export interface CrawlQuota {
   /** Phase 4d: pages per crawl for PageSpeed and for backlink metrics. */
   psiCap: number;
   backlinkCap: number;
+  /** Phase 4d: the Lighthouse tool's hourly allowance, which PSI opt-ins draw from. */
+  lighthouseUsed: number;
+  lighthouseLimit: number;
 }
 
 export function urlCapForPlan(plan: PlanType): number {
@@ -112,7 +117,7 @@ export async function getCrawlQuota(
 
   // A locked tier never runs a query it cannot act on.
   if (locked) {
-    return { urlCap, renderCap, monthlyLimit, used: 0, remaining: 0, allowed: false, locked: true, crawlsKept, ...caps };
+    return { urlCap, renderCap, monthlyLimit, used: 0, remaining: 0, allowed: false, locked: true, crawlsKept, ...caps, lighthouseUsed: 0, lighthouseLimit: AUDITS_PER_HOUR };
   }
 
   const used = await crawlsUsedThisMonth(tenantId, now);
@@ -128,5 +133,7 @@ export async function getCrawlQuota(
     locked: false,
     crawlsKept,
     ...caps,
+    lighthouseUsed: await auditsUsedThisHour(tenantId, now.getTime()),
+    lighthouseLimit: AUDITS_PER_HOUR,
   };
 }

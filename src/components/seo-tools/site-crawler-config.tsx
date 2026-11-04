@@ -10,6 +10,7 @@
 // The site panel (verification, saved defaults) and the robots.txt tester
 // load for the host of the start URL, once the section is open.
 
+import type { SiteCrawler4dCopy } from "@/lib/i18n/site-crawler-4d";
 import { useEffect, useRef, useState } from "react";
 import { Check, Copy, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -154,7 +155,10 @@ export function toInput(d: Draft): CrawlConfigInput {
 }
 
 /** One server-side problem as a sentence. */
-export function problemText(p: ConfigProblem, t: T, t4b: T4b): string {
+export function problemText(p: ConfigProblem, t: T, t4b: T4b, t4d?: SiteCrawler4dCopy): string {
+  // Phase 4d: the Add data opt-ins.
+  if (p.code === "unknown_segment") return t4d?.problemSegment ?? t4b.problemCap("0");
+  if (p.code === "over_plan_cap" && p.field.startsWith("addData.") && t4d) return t4d.problemCap(String(p.limit));
   if (p.code === "over_plan_cap") return t4b.problemCap(String(p.limit));
   if (p.code === "invalid_expression") {
     return p.field === "searches" ? t4b.problemSearch(String(p.index + 1)) : t4b.problemExtractor(String(p.index + 1));

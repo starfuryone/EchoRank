@@ -7,7 +7,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { PERF_SPECS, PSI_AUDIT_IDS } from "@/lib/crawl-rules";
+import { MOBILE_USABILITY_AUDITS, PERF_SPECS, PSI_AUDIT_IDS } from "@/lib/crawl-rules";
 import { parseAuditVerdicts } from "@/lib/lighthouse/parse";
 
 const FIX = join(process.cwd(), "fixtures/pagespeed");
@@ -39,9 +39,10 @@ describe("performance audit ids", () => {
   it("the parser keeps exactly the audits the rules read, from a recorded response", () => {
     const raw = JSON.parse(readFileSync(join(FIX, "__synthetic__-with-crux-mobile.json"), "utf8"));
     const verdicts = parseAuditVerdicts(raw);
-    expect(Object.keys(verdicts).every((k) => PSI_AUDIT_IDS.includes(k))).toBe(true);
+    // Phase 4d adds the mobile usability audits mobile.lighthouse_usability_low reads.
+    expect(Object.keys(verdicts).every((k) => PSI_AUDIT_IDS.includes(k) || (MOBILE_USABILITY_AUDITS as readonly string[]).includes(k))).toBe(true);
     expect(verdicts["largest-contentful-paint"]).toEqual({ score: 0.48, value: 3104.8, display: expect.anything() });
     expect(verdicts["render-blocking-resources"]?.score).toBe(0.41);
-    expect(verdicts).not.toHaveProperty("viewport");
+    expect(verdicts).toHaveProperty("viewport");
   });
 });

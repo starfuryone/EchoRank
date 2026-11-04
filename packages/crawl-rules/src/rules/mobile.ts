@@ -3,7 +3,7 @@
 // "Viewport missing" is NOT here: validation.missing_viewport already reports
 // it from the raw HTML, rendered or not, and one finding per fact is the rule.
 
-import { ev, pageRule } from "../engine";
+import { ev, pageRule, siteRule } from "../engine";
 import type { Rule } from "../types";
 
 const F = "mobile" as const;
@@ -13,6 +13,14 @@ const RENDER = ["render" as const];
 export const OVERFLOW_TOLERANCE_PX = 2;
 /** The legibility floor for body text on a phone. */
 export const MIN_BODY_FONT_PX = 12;
+
+/**
+ * Phase 4d: the Lighthouse audits mobile.lighthouse_usability_low reads from
+ * the MOBILE run. Lighthouse 12 removed font-size and tap-targets, so current
+ * PSI reports only viewport; the other two still count on runs that carry them.
+ */
+export const MOBILE_USABILITY_AUDITS = ["viewport", "font-size", "tap-targets"] as const;
+const LIGHTHOUSE_PASS = 0.9;
 
 export const RULES: Rule[] = [
   pageRule({
@@ -47,6 +55,22 @@ export const RULES: Rule[] = [
     detect: (p) => {
       const t = p.render?.tapTargets;
       return t && t.tooClose > 0 ? ev({ tooClose: t.tooClose, checked: t.checked, sample: t.sample }) : null;
+    },
+  }),
+  siteRule({
+    id: "mobile.lighthouse_usability_low",
+    family: F,
+    kind: "warning",
+    priority: "medium",
+    requires: ["psi"],
+    detect: (_p, ctx) => {
+      const psi = ctx.psi;
+      if (!psi || psi.strategy !== "mobile") return null;
+      const failing = MOBILE_USABILITY_AUDITS.filter((id) => {
+        const a = psi.audits[id];
+        return a && a.score !== null && a.score < LIGHTHOUSE_PASS;
+      });
+      return failing.length ? ev({ audits: failing.join(", "), strategy: "mobile", lighthouse: psi.lighthouseVersion }) : null;
     },
   }),
 ];

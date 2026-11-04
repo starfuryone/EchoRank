@@ -38,3 +38,20 @@ export async function buildUsage(tenantId: string): Promise<LighthouseUsage> {
     apiKeyConfigured: hasApiKey(),
   };
 }
+
+/**
+ * Phase 4d: milliseconds until the limiter frees its next slot (the oldest
+ * entry in the window ages out), for a job that must wait its turn rather
+ * than fail. A guess when Redis cannot be read: five minutes.
+ */
+export async function msUntilNextAudit(tenantId: string, now = Date.now()): Promise<number> {
+  try {
+    const redis = getRedisConnection();
+    const oldest = await redis.zrange(`ratelimit:lighthouse:${tenantId}`, 0, 0, "WITHSCORES");
+    const score = Number(oldest[1]);
+    if (!Number.isFinite(score)) return 60_000;
+    return Math.max(10_000, score + AUDIT_WINDOW_MS - now + 1_000);
+  } catch {
+    return 5 * 60_000;
+  }
+}
