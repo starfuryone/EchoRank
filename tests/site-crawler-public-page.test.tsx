@@ -97,8 +97,8 @@ describe("/site-crawler", () => {
     expect(html).toContain("Free technical support");
     expect(html).toContain("Save &amp; open crawls");
     expect(html).not.toContain("Audit hreflang attributes");
-    // A flag still off (4c).
-    expect(html).not.toContain("Crawl comparison");
+    // A flag still off (4d).
+    expect(html).not.toContain("Google Analytics integration");
   });
 
   it("4a: the kept-crawls cap is read from plan-config", async () => {
