@@ -37,7 +37,7 @@ async function mount(l: DashLocale, list: ScheduleDto[], cap: number, onFetch: (
   document.body.appendChild(host);
   await act(async () => {
     createRoot(host!).render(
-      <CrawlSchedules t={SITE_CRAWLER_COPY[l].p4c} locale={l} rootUrl="https://x.com/" renderMode="none" config={null} cap={cap} cadences={["weekly", "monthly"]} />,
+      <CrawlSchedules ux={SITE_CRAWLER_COPY[l].ux} t={SITE_CRAWLER_COPY[l].p4c} locale={l} rootUrl="https://x.com/" renderMode="none" config={null} cap={cap} cadences={["weekly", "monthly"]} />,
     );
   });
   await act(async () => {});
@@ -56,6 +56,18 @@ describe("CrawlSchedules", () => {
     expect(host!.textContent).toContain(t.schEmail);
     expect(host!.textContent).not.toContain(t.schSheets);
     expect(host!.textContent).not.toMatch(/undefined|NaN/);
+  });
+
+  it.each(["en", "fr", "de-CH"] as const)("%s: each row shows next run, last health and export targets; Integrations links to Settings", async (l) => {
+    await mount(l, [{ ...saved, lastHealth: 82 }, { ...saved, id: "s2", exportTo: null, lastHealth: null }], 3);
+    const ux = SITE_CRAWLER_COPY[l].ux;
+    const rows = [...host!.querySelectorAll<HTMLLIElement>("[data-schedule]")];
+    expect(rows[0]!.textContent).toContain(SITE_CRAWLER_COPY[l].p4c.schNext("").trim().split(" ")[0]!);
+    expect(rows[0]!.querySelector("[data-last-health]")!.textContent).toBe(`${ux.schLastHealth}: 82 · ${ux.schSendsTo}: ${ux.schToEmail}`);
+    expect(rows[1]!.querySelector("[data-last-health]")!.textContent).toBe(`${ux.schLastHealth}: ${ux.schNoRunYet} · ${ux.schSendsTo}: ${ux.schToNone}`);
+    const integrations = [...host!.querySelectorAll("a")].find((a) => a.textContent === ux.integrations)!;
+    expect(integrations.getAttribute("href")).toBe("/settings");
+    if (l === "de-CH") expect(JSON.stringify(ux)).not.toContain("ß");
   });
 
   it("Save POSTs the URL, settings, cadence, hour and exports", async () => {

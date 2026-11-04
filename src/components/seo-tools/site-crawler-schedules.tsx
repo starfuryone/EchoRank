@@ -1,8 +1,10 @@
 "use client";
 
-// "Run this crawl on a schedule" (Phase 4c), inside the Configuration
-// section: saves the start URL, render mode and the settings above as a
-// crawl_schedules row, lists the tenant's schedules with pause / delete.
+// "Run this crawl on a schedule" (Phase 4c), on /crawler/schedules (UX
+// restructure; it used to sit inside the Start view's Configuration): saves
+// the URL, render mode and the site's saved settings as a crawl_schedules
+// row, lists the tenant's schedules with next run, last health, export
+// targets, pause / delete.
 // Cadences offered are the plan's (plan-config crawlScheduleCadences); the
 // route refuses anything else anyway.
 
@@ -13,6 +15,8 @@ import { flag } from "@/lib/flags";
 import { formatDateTime } from "@/lib/utils";
 import type { DashLocale } from "@/lib/i18n/dashboard";
 import type { SiteCrawler4cCopy } from "@/lib/i18n/site-crawler-4c";
+import type { SiteCrawlerUxCopy } from "@/lib/i18n/site-crawler-ux";
+import Link from "next/link";
 import type { CrawlConfigInput } from "@/lib/site-crawler/crawl-config";
 import type { RenderMode } from "@/lib/site-crawler/types";
 
@@ -26,6 +30,9 @@ export interface ScheduleDto {
   enabled: boolean;
   nextRunAt: string;
   exportTo: { email?: boolean; sheets?: { spreadsheetId: string | null } | null } | null;
+  lastJobId?: string | null;
+  /** Health of the last completed run (GET only); null before one. */
+  lastHealth?: number | null;
 }
 
 export function cadenceLabel(c: Cadence, t: SiteCrawler4cCopy): string {
@@ -49,7 +56,10 @@ export function CrawlSchedules({
   cap,
   cadences,
   disabled = false,
+  ux,
 }: {
+  /** The UX restructure's copy: row details and the Integrations link. */
+  ux: SiteCrawlerUxCopy;
   t: SiteCrawler4cCopy;
   locale: DashLocale;
   rootUrl: string;
@@ -127,8 +137,8 @@ export function CrawlSchedules({
       <h4 id="crawl-schedules-title" className="text-sm font-semibold text-gray-900">
         {t.schTitle}
       </h4>
-      <p className="text-xs text-gray-500">{t.schHelp}</p>
-      <p className="text-xs text-gray-500">{t.schCapNote(String(used), String(cap))}</p>
+      <p className="text-xs text-gray-600">{t.schHelp}</p>
+      <p className="text-xs text-gray-600">{t.schCapNote(String(used), String(cap))}</p>
 
       {!full && (
         <div className="flex flex-wrap items-end gap-3">
@@ -165,22 +175,26 @@ export function CrawlSchedules({
           <input type="checkbox" checked={sheets} onChange={(e) => setSheets(e.target.checked)} /> {t.schSheets}
         </label>
       )}
-      {!full && !rootUrl.trim() && <p className="text-xs text-gray-500">{t.schNeedUrl}</p>}
+      {!full && !rootUrl.trim() && <p className="text-xs text-gray-600">{t.schNeedUrl}</p>}
       {msg && <p className={msg.ok ? "text-sm text-green-700" : "text-sm text-red-600"}>{msg.text}</p>}
 
       <div>
-        <h5 className="text-xs font-semibold uppercase tracking-wide text-gray-500">{t.schList}</h5>
+        <h5 className="text-xs font-semibold uppercase tracking-wide text-gray-600">{t.schList}</h5>
         {list !== null && list.length === 0 ? (
-          <p className="mt-1 text-xs text-gray-500">{t.schNone}</p>
+          <p className="mt-1 text-xs text-gray-600">{t.schNone}</p>
         ) : (
           <ul className="mt-1 divide-y divide-gray-100">
             {(list ?? []).map((s) => (
-              <li key={s.id} className="flex flex-wrap items-center justify-between gap-2 py-2 text-sm">
+              <li key={s.id} data-schedule={s.id} className="flex flex-wrap items-center justify-between gap-2 py-2 text-sm">
                 <span className="min-w-0">
                   <span className="block truncate font-medium text-gray-900">{s.rootUrl}</span>
-                  <span className="text-xs text-gray-500">
+                  <span className="block text-xs text-gray-600">
                     {cadenceLabel(s.cadence, t)} · {t.schHourOption(String(s.hourUtc).padStart(2, "0"))} ·{" "}
                     {s.enabled ? t.schNext(formatDateTime(s.nextRunAt, locale)) : t.schPaused}
+                  </span>
+                  <span className="block text-xs text-gray-600" data-last-health>
+                    {ux.schLastHealth}: {s.lastHealth === null || s.lastHealth === undefined ? ux.schNoRunYet : String(s.lastHealth)} · {ux.schSendsTo}:{" "}
+                    {exportTargets(s, ux)}
                   </span>
                 </span>
                 <span className="flex gap-2">
@@ -196,6 +210,18 @@ export function CrawlSchedules({
           </ul>
         )}
       </div>
+      <p className="text-xs text-gray-600">
+        {ux.integrationsHelp}{" "}
+        <Link href="/settings" className="font-medium text-blue-700 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
+          {ux.integrations}
+        </Link>
+      </p>
     </section>
   );
+}
+
+/** Where a schedule's runs go, as one line. */
+export function exportTargets(s: Pick<ScheduleDto, "exportTo">, ux: SiteCrawlerUxCopy): string {
+  const out = [s.exportTo?.email ? ux.schToEmail : null, s.exportTo?.sheets ? ux.schToSheets : null].filter(Boolean);
+  return out.length ? out.join(", ") : ux.schToNone;
 }

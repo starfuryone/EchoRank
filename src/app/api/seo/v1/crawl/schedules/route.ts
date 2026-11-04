@@ -16,6 +16,8 @@ import { NextResponse } from "next/server";
 import { requirePaidPlan } from "@/lib/paid-plan";
 import { getQueue } from "@/infrastructure/queue/registry";
 import { flag } from "@/lib/flags";
+import { prisma } from "@/lib/prisma";
+import { healthOf } from "@/lib/site-crawler/site-health";
 import { crawlRouteError } from "@/lib/site-crawler/http";
 import { scheduleCapsForPlan } from "@/lib/site-crawler/quota";
 import { ScheduleInputSchema } from "@/lib/site-crawler/schedule";
@@ -29,7 +31,17 @@ export async function GET() {
     const tenant = await requirePaidPlan();
     const { scheduleCap, scheduleCadences } = scheduleCapsForPlan(tenant.tenant.planType);
     const rows = await listSchedules(tenant.tenantId);
-    return NextResponse.json({ schedules: rows.map(toScheduleDto), cap: scheduleCap, cadences: scheduleCadences });
+    // Each schedule's last completed run, for its health (one read, tenant-scoped).
+    const lastIds = rows.map((r) => r.lastJobId).filter((id): id is string => Boolean(id));
+    const last = lastIds.length
+      ? await prisma.crawlJob.findMany({ where: { id: { in: lastIds }, tenantId: tenant.tenantId }, select: { id: true, summary: true } })
+      : [];
+    const healthById = new Map(last.map((j) => [j.id, healthOf(j.summary)]));
+    return NextResponse.json({
+      schedules: rows.map((r) => ({ ...toScheduleDto(r), lastHealth: r.lastJobId ? (healthById.get(r.lastJobId) ?? null) : null })),
+      cap: scheduleCap,
+      cadences: scheduleCadences,
+    });
   } catch (err) {
     return crawlRouteError(err);
   }

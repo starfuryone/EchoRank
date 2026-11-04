@@ -119,6 +119,18 @@ const en = {
   pinCrawl: (host: string) => `Pin the crawl of ${host}`,
   unpinCrawl: (host: string) => `Unpin the crawl of ${host}`,
   historyPage: (from: string, to: string, total: string) => `${from}–${to} of ${total}`,
+  // ── Schedules ───────────────────────────────────────────────────────────
+  schedulesTitle: "Scheduled crawls",
+  schUsesDefaults: (host: string) => `Runs with the settings saved as defaults for ${host}. Change them from New crawl → Advanced options → Configuration, with "Save as default".`,
+  schNoDefaults: (host: string) => `No saved settings for ${host}: the schedule runs a standard crawl. Save settings as the site's default from New crawl to use them.`,
+  schLastHealth: "Last health",
+  schNoRunYet: "No run yet",
+  schSendsTo: "Sends to",
+  schToEmail: "Email",
+  schToSheets: "Google Sheets",
+  schToNone: "Nothing",
+  integrations: "Integrations",
+  integrationsHelp: "Connect Google Sheets and other export destinations in Settings.",
 };
 
 export type SiteCrawlerUxCopy = typeof en;
@@ -228,6 +240,17 @@ const fr: SiteCrawlerUxCopy = {
   pinCrawl: (host: string) => `Épingler l'exploration de ${host}`,
   unpinCrawl: (host: string) => `Désépingler l'exploration de ${host}`,
   historyPage: (from: string, to: string, total: string) => `${from}–${to} sur ${total}`,
+  schedulesTitle: "Explorations planifiées",
+  schUsesDefaults: (host: string) => `S'exécute avec les réglages enregistrés par défaut pour ${host}. Modifiez-les depuis Nouvelle exploration → Options avancées → Configuration, avec « Enregistrer par défaut ».`,
+  schNoDefaults: (host: string) => `Aucun réglage enregistré pour ${host} : la planification lance une exploration standard. Enregistrez des réglages par défaut pour ce site depuis Nouvelle exploration pour les utiliser.`,
+  schLastHealth: "Dernière santé",
+  schNoRunYet: "Pas encore exécutée",
+  schSendsTo: "Envoie vers",
+  schToEmail: "E-mail",
+  schToSheets: "Google Sheets",
+  schToNone: "Rien",
+  integrations: "Intégrations",
+  integrationsHelp: "Connectez Google Sheets et les autres destinations d'export dans les Paramètres.",
 };
 
 const deCH: SiteCrawlerUxCopy = {
@@ -335,6 +358,17 @@ const deCH: SiteCrawlerUxCopy = {
   pinCrawl: (host: string) => `Crawl von ${host} anheften`,
   unpinCrawl: (host: string) => `Crawl von ${host} lösen`,
   historyPage: (from: string, to: string, total: string) => `${from}–${to} von ${total}`,
+  schedulesTitle: "Geplante Crawls",
+  schUsesDefaults: (host: string) => `Läuft mit den als Standard gespeicherten Einstellungen für ${host}. Ändern Sie diese unter Neuer Crawl → Erweiterte Optionen → Konfiguration mit «Als Standard speichern».`,
+  schNoDefaults: (host: string) => `Keine gespeicherten Einstellungen für ${host}: Der Zeitplan startet einen Standard-Crawl. Speichern Sie unter Neuer Crawl Einstellungen als Standard der Website, um sie zu verwenden.`,
+  schLastHealth: "Letzter Zustand",
+  schNoRunYet: "Noch kein Lauf",
+  schSendsTo: "Sendet an",
+  schToEmail: "E-Mail",
+  schToSheets: "Google Sheets",
+  schToNone: "Nichts",
+  integrations: "Integrationen",
+  integrationsHelp: "Verbinden Sie Google Sheets und weitere Exportziele in den Einstellungen.",
 };
 
 export const SITE_CRAWLER_UX = { en, fr, "de-CH": deCH } as const;

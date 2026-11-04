@@ -55,7 +55,6 @@ import { InlinksPanel } from "@/components/seo-tools/site-crawler-inlinks";
 import { ExtractionPanel, extractionQuery } from "@/components/seo-tools/site-crawler-extraction";
 import { ExternalPanel } from "@/components/seo-tools/site-crawler-external";
 import { ComparePanel } from "@/components/seo-tools/site-crawler-compare";
-import { CrawlSchedules } from "@/components/seo-tools/site-crawler-schedules";
 import { AddDataSection, confirmLines, useSiteSegmentNames } from "@/components/seo-tools/site-crawler-add-data";
 import { AdvancedSection, summaryLine } from "@/components/seo-tools/site-crawler-advanced";
 import { CRAWLER_ROUTES, CrawlerNav, RecentCrawls, hostOfCrawl, statusLabel } from "@/components/seo-tools/site-crawler-nav";
@@ -757,20 +756,7 @@ export function SiteCrawlerClient({ locale, view = "start", crawlId = null }: { 
               urlCap={int.format(quota.urlCap)}
               disabled={starting || busy}
               onChange={onConfig}
-            >
-              {flag("crawl.schedule") && (
-                <CrawlSchedules
-                  t={t.p4c}
-                  locale={locale}
-                  rootUrl={url}
-                  renderMode={quota.renderCap > 0 ? renderMode : "none"}
-                  config={cfg.config}
-                  cap={quota.scheduleCap ?? 0}
-                  cadences={quota.scheduleCadences ?? []}
-                  disabled={starting}
-                />
-              )}
-            </CrawlConfigSection>
+            />
           )}
 
           {(flag("crawl.psi") || flag("crawl.backlinks") || flag("crawl.gsc") || flag("crawl.ga4") || flag("crawl.ai") || flag("crawl.semantic") || flag("crawl.inspection")) && mode === "spider" && quota && (

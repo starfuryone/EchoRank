@@ -115,7 +115,7 @@ const EMPTY: Draft = {
 const lines = (s: string) => s.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
 const num = (s: string) => (s.trim() === "" ? null : Number(s));
 
-function fromView(v: CrawlConfigView): Draft {
+export function fromView(v: CrawlConfigView): Draft {
   return {
     maxUrls: v.maxUrls === null ? "" : String(v.maxUrls),
     maxDepth: v.maxDepth === null ? "" : String(v.maxDepth),

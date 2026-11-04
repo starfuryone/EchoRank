@@ -16,7 +16,7 @@ vi.mock("@/lib/paid-plan", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/paid-plan")>()),
   requirePaidPlan: () => requirePaidPlan(),
 }));
-const crawlJob = { findFirst: vi.fn(), count: vi.fn(), create: vi.fn() };
+const crawlJob = { findFirst: vi.fn(), findMany: vi.fn(), count: vi.fn(), create: vi.fn() };
 const crawlSchedule = { findMany: vi.fn(), findFirst: vi.fn(), findUnique: vi.fn(), count: vi.fn(), create: vi.fn(), update: vi.fn(), deleteMany: vi.fn() };
 const crawlSiteDefault = { findUnique: vi.fn() };
 const crawlSegment = { findMany: vi.fn(async () => []) };
@@ -273,6 +273,15 @@ describe("routes", () => {
     crawlSchedule.deleteMany.mockResolvedValue({ count: 0 });
     expect((await oneRoute.DELETE(new Request("https://app.test/x"), ctx)).status).toBe(404);
     expect(crawlSchedule.deleteMany).toHaveBeenCalledWith({ where: { id: "s1", tenantId: "t1" } });
+  });
+
+  it("GET lists each schedule with its last completed run's health, read tenant-scoped", async () => {
+    const base = { tenantId: "t1", host: "x.com", cadence: "weekly", hourUtc: 3, enabled: true, nextRunAt: new Date("2026-12-01T03:00:00Z"), exportTo: null, createdAt: new Date(), config: { rootUrl: "https://x.com/", renderMode: "none", crawl: null } };
+    crawlSchedule.findMany.mockResolvedValue([{ ...base, id: "s1", lastJobId: "j1" }, { ...base, id: "s2", lastJobId: null }]);
+    crawlJob.findMany.mockResolvedValue([{ id: "j1", summary: { health: { score: 77 } } }]);
+    const body = await (await listRoute.GET()).json();
+    expect(crawlJob.findMany).toHaveBeenCalledWith({ where: { id: { in: ["j1"] }, tenantId: "t1" }, select: { id: true, summary: true } });
+    expect(body.schedules.map((x: { id: string; lastHealth: number | null }) => [x.id, x.lastHealth])).toEqual([["s1", 77], ["s2", null]]);
   });
 
   it("everything is a 404 while crawl.schedule is off", async () => {
