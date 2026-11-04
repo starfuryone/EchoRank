@@ -21,7 +21,7 @@
 import { CRAWLER_BRAND } from "./brand";
 import { CRAWL_PIN_MAX } from "./constants";
 import { flag as flagOn, FLAGS, type FlagName, type Flags } from "@/lib/flags";
-import type { PlanConfig } from "@/lib/plan-config";
+import type { CrawlCadence, PlanConfig } from "@/lib/plan-config";
 
 export type CopyBase = "en" | "fr";
 type Text = Readonly<Record<CopyBase, string>>;
@@ -217,9 +217,22 @@ export const CRAWL_CAPABILITIES: readonly CrawlCapability[] = [
   cap("crawl-comparison", { flag: "crawl.compare" },
     ["Crawl comparison", "Diff two crawls: pages added or removed, issues fixed or introduced, element changes, with URL mapping to compare staging against production."],
     ["Comparaison d'explorations", "Comparez deux explorations : pages ajoutées ou retirées, problèmes corrigés ou apparus, éléments modifiés, avec une correspondance d'URL pour comparer la préproduction à la production."]),
+  // Phase 4c. Each claim behind its own flag: Sheets and the Looker Studio
+  // guide wait for crawl.sheets (an operator step), and no card mentions a
+  // Looker Studio template until one is published (TODO(fred)).
   cap("scheduling", { flag: "crawl.schedule" },
-    ["Scheduling and reports", "Daily, weekly or monthly crawls, results exported to email or Google Sheets, a Looker Studio template that reads them, and a PDF report for every crawl."],
-    ["Planification et rapports", "Explorations quotidiennes, hebdomadaires ou mensuelles, résultats exportés par courriel ou vers Google Sheets, un modèle Looker Studio qui les lit, et un rapport PDF pour chaque exploration."]),
+    ["Scheduling", "Daily, weekly or monthly crawls on a fixed day and hour, each one compared with the run before it."],
+    ["Planification", "Explorations quotidiennes, hebdomadaires ou mensuelles à jour et heure fixes, chacune comparée à la précédente."],
+    {
+      flag: "crawl.sheets",
+      body: {
+        en: "Daily, weekly or monthly crawls on a fixed day and hour, each one compared with the run before it and written to Google Sheets, ready to chart in Looker Studio.",
+        fr: "Explorations quotidiennes, hebdomadaires ou mensuelles à jour et heure fixes, chacune comparée à la précédente et écrite dans Google Sheets, prête à être suivie dans Looker Studio.",
+      },
+    }),
+  cap("reports", { flag: "crawl.reports" },
+    ["Reports", "A PDF report for every crawl — totals, the top issues with their evidence, segments and the changes since the last crawl — and scheduled results emailed with the changes and links to the CSVs."],
+    ["Rapports", "Un rapport PDF pour chaque exploration — totaux, principaux problèmes avec leur preuve, segments et changements depuis la dernière exploration — et les résultats planifiés envoyés par courriel avec les changements et les liens vers les CSV."]),
   cap("list-mode", { flag: "crawl.listMode" },
     ["List mode", "Paste or upload a URL list and check status and redirect chains without crawling, for migrations."],
     ["Mode liste", "Collez ou téléversez une liste d'URL et vérifiez les codes et les chaînes de redirection sans explorer, pour les migrations."]),
@@ -278,6 +291,20 @@ const row = (id: string, gate: CrawlGate, en: string, fr: string, capFn?: CrawlF
   ...(capFn ? { cap: capFn } : {}),
 });
 
+const CADENCE: Record<CopyBase, Record<CrawlCadence, string>> = {
+  en: { daily: "daily", weekly: "weekly", monthly: "monthly" },
+  fr: { daily: "quotidienne", weekly: "hebdomadaire", monthly: "mensuelle" },
+};
+
+/** "2 scheduled crawls · weekly or monthly", from crawlSchedules / crawlScheduleCadences. */
+function scheduleCell(p: PlanConfig, b: CopyBase): string {
+  const list = p.crawlScheduleCadences.map((c) => CADENCE[b][c]);
+  const or = b === "fr" ? " ou " : " or ";
+  const joined = list.length > 1 ? `${list.slice(0, -1).join(", ")}${or}${list[list.length - 1]}` : (list[0] ?? "");
+  if (b === "fr") return `${fmt(p.crawlSchedules, b)} ${p.crawlSchedules > 1 ? "explorations planifiées" : "exploration planifiée"} · ${joined}`;
+  return `${fmt(p.crawlSchedules, b)} ${p.crawlSchedules > 1 ? "scheduled crawls" : "scheduled crawl"} · ${joined}`;
+}
+
 export const CRAWL_FEATURE_ROWS: readonly CrawlFeatureRow[] = [
   row("broken-links", { family: "response_codes" }, "Find broken links, errors & redirects", "Liens brisés, erreurs et redirections"),
   row("titles-meta", { family: "page_titles" }, "Analyse page titles & meta data", "Analyse des titres et métadonnées"),
@@ -291,7 +318,8 @@ export const CRAWL_FEATURE_ROWS: readonly CrawlFeatureRow[] = [
     b === "fr"
       ? `${fmt(p.crawlUrlCap, b)} URL par exploration · ${p.crawlsPerMonth === null ? "explorations illimitées" : `${fmt(p.crawlsPerMonth, b)} explorations par mois`}`
       : `${fmt(p.crawlUrlCap, b)} URLs per crawl · ${p.crawlsPerMonth === null ? "unlimited crawls" : `${fmt(p.crawlsPerMonth, b)} crawls a month`}`),
-  row("scheduling", { flag: "crawl.schedule" }, "Scheduling", "Planification"),
+  // Phase 4c caps: scheduled crawls per workspace and the cadences each plan may pick.
+  row("scheduling", { flag: "crawl.schedule" }, "Scheduling", "Planification", (p, b) => scheduleCell(p, b)),
   row("crawl-configuration", { flag: "crawl.config" }, "Crawl configuration", "Configuration de l'exploration"),
   row("save-open", { always: true }, "Save & open crawls", "Enregistrer et rouvrir les explorations", (p, b) =>
     b === "fr"
