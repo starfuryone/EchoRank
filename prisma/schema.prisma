@@ -172,6 +172,13 @@ model Tenant {
   timezone              String        @default("America/New_York")
   planType              PlanType      @default(STARTER)
   monthlyRequestLimit   Int           @default(300)
+  /// Site crawler caps set by staff in /admin/crawl-overrides (Phase 3d-A),
+  /// read wherever the plan's are: simultaneous crawls (the worker's fair
+  /// share), completed crawls kept with full data (retention), URLs per crawl
+  /// (startCrawl's cap). Null = the plan's value.
+  crawlConcurrencyOverride Int?
+  crawlsKeptOverride       Int?
+  crawlUrlCapOverride      Int?
   /// NONE, not TRIALING. TRIALING as a default was a lie the rest of the app
   /// had to keep working around: it made "registered but never subscribed"
   /// indistinguishable from a real Stripe trial, which is why paid-plan.ts has

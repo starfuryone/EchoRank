@@ -6,12 +6,13 @@
 // because those are product decisions a refactor should not be free to change
 // silently.
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
-import type { PlanType } from "@/generated/prisma";
 import { PLAN_CONFIGS, type SellablePlanType } from "@/lib/plan-config";
 
 const counts = { value: 0 };
 vi.mock("@/lib/prisma", () => ({
   prisma: {
+    // Phase 3d-A overrides: none here (tenant-caps.ts reads null as the plan's caps).
+    tenant: { findUnique: vi.fn(async () => null) },
     crawlJob: {
       count: vi.fn(async () => counts.value),
     },

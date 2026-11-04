@@ -21,7 +21,7 @@ const crawlSchedule = { findMany: vi.fn(), findFirst: vi.fn(), findUnique: vi.fn
 const crawlSiteDefault = { findUnique: vi.fn() };
 const crawlSegment = { findMany: vi.fn(async () => []) };
 const queryRaw = vi.fn<(...a: unknown[]) => Promise<unknown[]>>(async () => []);
-vi.mock("@/lib/prisma", () => ({ prisma: { crawlJob, crawlSchedule, crawlSiteDefault, crawlSegment, $queryRaw: (...a: unknown[]) => queryRaw(...a) } }));
+vi.mock("@/lib/prisma", () => ({ prisma: { crawlJob, crawlSchedule, crawlSiteDefault, crawlSegment, tenant: { findUnique: async () => null }, $queryRaw: (...a: unknown[]) => queryRaw(...a) } }));
 const rateLimit = vi.fn<(...a: unknown[]) => Promise<{ success: boolean }>>(async () => ({ success: true }));
 vi.mock("@/lib/rate-limit", () => ({ rateLimit: (...a: unknown[]) => rateLimit(...a) }));
 const addJob = vi.fn(async () => ({ id: "bull" }));

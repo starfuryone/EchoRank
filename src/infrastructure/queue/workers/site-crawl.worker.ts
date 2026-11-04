@@ -28,7 +28,8 @@
 // a job that sat in the queue across a deploy still crawls with the cap it was
 // created with rather than one baked into the payload.
 
-import { Worker, type Job, type Queue } from "bullmq";
+import { DelayedError, Worker, type Job, type Queue } from "bullmq";
+import { FAIR_SHARE_RETRY_MS, tenantHasCrawlSlot } from "@/lib/site-crawler/tenant-caps";
 import { addJob, getQueue } from "@/infrastructure/queue/registry";
 import { METRICS_JOB_NAME, needsMetrics, runCrawlMetrics } from "@/lib/site-crawler/metrics-runner";
 import { getSubscriberConnection, createNewConnection } from "@/infrastructure/redis/connection";
@@ -74,7 +75,7 @@ function getFrontierRedis(): Redis {
   return frontierRedis;
 }
 
-async function processSiteCrawlJob(job: Job<SiteCrawlQueueJob>): Promise<void> {
+async function processSiteCrawlJob(job: Job<SiteCrawlQueueJob>, token?: string): Promise<void> {
   if (job.name === RETENTION_JOB_NAME || "retention" in job.data) {
     await withSpan("site-crawl.retention", () => runCrawlRetention());
     return;
@@ -96,10 +97,19 @@ async function processSiteCrawlJob(job: Job<SiteCrawlQueueJob>): Promise<void> {
     logger.info({ jobId: job.id, scheduleId, ...outcome }, "site-crawl schedule tick");
     return;
   }
-  const { crawlJobId, scheduleId } = job.data as SiteCrawlJob;
+  const { crawlJobId, scheduleId, tenantId } = job.data as SiteCrawlJob;
   if (!crawlJobId) {
     logger.warn({ jobId: job.id, queue: QUEUE_NAME }, "site-crawl job without crawlJobId");
     return;
+  }
+
+  // Fair share (tenant-caps.ts): a tenant already at its simultaneous-crawl
+  // limit waits, so one workspace cannot hold every slot. The crawl stays
+  // QUEUED and is picked up again in FAIR_SHARE_RETRY_MS.
+  if (tenantId && !(await tenantHasCrawlSlot(tenantId, crawlJobId))) {
+    await job.moveToDelayed(Date.now() + FAIR_SHARE_RETRY_MS, token);
+    logger.info({ jobId: job.id, crawlJobId, tenantId }, "site-crawl held back: tenant at its concurrency");
+    throw new DelayedError();
   }
 
   await withSpan("site-crawl.process", async () => {
@@ -174,3 +184,6 @@ export function startSiteCrawlWorker(): Worker<SiteCrawlQueueJob> {
   logger.info({ queue: QUEUE_NAME, concurrency: CRAWL_JOB_CONCURRENCY }, "site-crawl worker started");
   return worker;
 }
+
+/** For tests: the job processor (fair share, callback, dispatch). */
+export const __testing = { processSiteCrawlJob };

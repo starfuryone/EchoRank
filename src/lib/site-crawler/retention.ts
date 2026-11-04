@@ -18,9 +18,10 @@
 import "server-only";
 import { Prisma, type PlanType } from "@/generated/prisma";
 import { prisma } from "@/lib/prisma";
-import { planConfig } from "@/lib/plan-config";
 import { logger } from "@/infrastructure/observability/logger";
 import { RETENTION_BATCH_ROWS, RETENTION_UNFINISHED_DAYS, SITE_DEFAULTS_STALE_DAYS } from "./constants";
+import { effectiveCaps } from "./tenant-caps";
+
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
@@ -90,13 +91,17 @@ export async function runCrawlRetention(now: Date = new Date()): Promise<Retenti
   let crawlsPurged = 0;
   let rowsDeleted = 0;
   for (const { tenantId } of tenants) {
-    const tenant = await prisma.tenant.findUnique({ where: { id: tenantId }, select: { planType: true } });
+    const tenant = await prisma.tenant.findUnique({
+      where: { id: tenantId },
+      select: { planType: true, crawlConcurrencyOverride: true, crawlsKeptOverride: true, crawlUrlCapOverride: true },
+    });
     if (!tenant) continue;
     const crawls = await prisma.crawlJob.findMany({
       where: { tenantId, dataPurgedAt: null, status: { in: ["COMPLETED", "FAILED", "CANCELLED"] } },
       select: { id: true, status: true, pinned: true, finishedAt: true, createdAt: true },
     });
-    for (const id of crawlsToPurge(crawls, planConfig(tenant.planType as PlanType).crawlsKept, now)) {
+    // Phase 3d-A: a staff override of crawls kept (tenant-caps.ts) replaces the plan's.
+    for (const id of crawlsToPurge(crawls, effectiveCaps(tenant.planType as PlanType, tenant).crawlsKept, now)) {
       rowsDeleted += await purgeCrawlData(id);
       crawlsPurged++;
     }

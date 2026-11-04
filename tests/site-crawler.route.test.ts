@@ -34,7 +34,7 @@ const queryRaw = vi.fn();
 const crawlSiteDefault = { findUnique: vi.fn(), upsert: vi.fn() };
 const crawlSegment = { findMany: vi.fn() };
 vi.mock("@/lib/prisma", () => ({
-  prisma: { crawlJob, crawlPage, crawlIssue, crawlSiteDefault, crawlSegment, crawlPageMetric: { groupBy: async () => [] }, $queryRaw: (...a: unknown[]) => queryRaw(...a) },
+  prisma: { crawlJob, crawlPage, crawlIssue, crawlSiteDefault, crawlSegment, tenant: { findUnique: async () => null }, crawlPageMetric: { groupBy: async () => [] }, $queryRaw: (...a: unknown[]) => queryRaw(...a) },
 }));
 
 vi.mock("@/lib/rate-limit", () => ({

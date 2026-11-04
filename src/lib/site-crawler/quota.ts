@@ -26,6 +26,8 @@ import { flag } from "@/lib/flags";
 import { OBSERVED_BACKLINK_UNIT_USD, backlinkUnitCostUsd, seoBudgetLeftUsd } from "./backlink-cost";
 import { aiKeyStatus } from "./ai-keys";
 import { marketingTokenLimit, marketingTokensUsed, planCanUseMarketing } from "@/lib/marketing/quota";
+import { effectiveCaps, tenantOverrides } from "./tenant-caps";
+
 
 /** Statuses that consume a monthly slot. */
 export const QUOTA_CONSUMING_STATUSES = ["QUEUED", "RUNNING", "COMPLETED"] as const;
@@ -138,11 +140,13 @@ export async function getCrawlQuota(
   plan: PlanType,
   now: Date = new Date(),
 ): Promise<CrawlQuota> {
-  const urlCap = urlCapForPlan(plan);
+  // Phase 3d-A: staff overrides (tenant-caps.ts) replace the plan's URL cap and crawls kept.
+  const caps0 = effectiveCaps(plan, await tenantOverrides(tenantId));
+  const urlCap = caps0.urlCap;
   const renderCap = planConfig(plan).crawlRenderedPages;
   const monthlyLimit = monthlyLimitForPlan(plan);
   const locked = urlCap <= 0;
-  const crawlsKept = planConfig(plan).crawlsKept;
+  const crawlsKept = caps0.crawlsKept;
   const caps = { ...featureCapsForPlan(plan), ...scheduleCapsForPlan(plan), ...metricCapsForPlan(plan), ...renderFeatureCapsForPlan(plan), ...parityCapsForPlan(plan) };
 
   // A locked tier never runs a query it cannot act on.
