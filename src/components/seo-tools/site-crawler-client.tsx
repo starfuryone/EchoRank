@@ -103,6 +103,18 @@ function tabLabel(id: TabId, t: SiteCrawlerCopy): string {
   return t.tabPages;
 }
 
+/** The Add data section's view of the crawl quota (Phase 4d). */
+function addDataQuota(q: CrawlQuotaDto) {
+  return {
+    psiCap: q.psiCap ?? 0,
+    lighthouseUsed: q.lighthouseUsed ?? 0,
+    lighthouseLimit: q.lighthouseLimit ?? 0,
+    backlinkCap: q.backlinkCap ?? 0,
+    backlinkUnitUsd: q.backlinkUnitUsd ?? 0,
+    seoBudgetLeftUsd: q.seoBudgetLeftUsd ?? 0,
+  };
+}
+
 /** The host of what was typed in the URL field, for the Add data segment list. */
 function hostOfInput(raw: string): string | null {
   const v = raw.trim();
@@ -618,7 +630,7 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
             <AddDataSection
               t={t.p4d}
               host={hostOfInput(url)}
-              quota={{ psiCap: quota.psiCap ?? 0, lighthouseUsed: quota.lighthouseUsed ?? 0, lighthouseLimit: quota.lighthouseLimit ?? 0 }}
+              quota={addDataQuota(quota)}
               value={addData}
               onChange={(v) => {
                 setAddData(v);
@@ -634,7 +646,7 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
                 {t.p4d.confirmTitle}
               </p>
               <ul className="list-disc space-y-1 pl-5 text-sm text-gray-700">
-                {confirmLines(t.p4d, addData, { psiCap: quota.psiCap ?? 0, lighthouseUsed: quota.lighthouseUsed ?? 0, lighthouseLimit: quota.lighthouseLimit ?? 0 }).map((line) => (
+                {confirmLines(t.p4d, addData, addDataQuota(quota)).map((line) => (
                   <li key={line}>{line}</li>
                 ))}
               </ul>

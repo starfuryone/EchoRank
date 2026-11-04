@@ -21,6 +21,9 @@ const en = {
   confirmBack: "Back",
   problemSegment: "The chosen segment no longer exists for this site. Pick another one.",
   problemCap: (cap: string) => `Your plan allows up to ${cap} pages here.`,
+  blLabel: (cap: string) => `Fetch backlink metrics for the top pages (up to ${cap})`,
+  blEstimate: (cost: string, unit: string, left: string) => `Estimated ${cost} (${unit} per page, from the last lookup), charged to your monthly SEO data budget: ${left} left. Lookups stop if the budget runs out.`,
+  confirmBacklinks: (pages: string, cost: string, left: string) => `Backlink metrics on ${pages} pages: about ${cost} of your SEO data budget (${left} left).`,
 };
 
 export type SiteCrawler4dCopy = typeof en;
@@ -42,6 +45,9 @@ const fr: SiteCrawler4dCopy = {
   confirmBack: "Retour",
   problemSegment: "Le segment choisi n'existe plus pour ce site. Choisissez-en un autre.",
   problemCap: (cap: string) => `Votre forfait permet jusqu'à ${cap} pages ici.`,
+  blLabel: (cap: string) => `Récupérer les métriques de liens entrants des pages principales (jusqu'à ${cap})`,
+  blEstimate: (cost: string, unit: string, left: string) => `Coût estimé ${cost} (${unit} par page, d'après la dernière requête), imputé à votre budget mensuel de données SEO : ${left} restants. Les requêtes s'arrêtent si le budget est épuisé.`,
+  confirmBacklinks: (pages: string, cost: string, left: string) => `Métriques de liens entrants sur ${pages} pages : environ ${cost} de votre budget de données SEO (${left} restants).`,
 };
 
 const deCH: SiteCrawler4dCopy = {
@@ -61,6 +67,9 @@ const deCH: SiteCrawler4dCopy = {
   confirmBack: "Zurück",
   problemSegment: "Das gewählte Segment gibt es für diese Website nicht mehr. Wählen Sie ein anderes.",
   problemCap: (cap: string) => `Ihr Abo erlaubt hier bis zu ${cap} Seiten.`,
+  blLabel: (cap: string) => `Backlink-Kennzahlen für die wichtigsten Seiten abrufen (bis ${cap})`,
+  blEstimate: (cost: string, unit: string, left: string) => `Geschätzt ${cost} (${unit} pro Seite, aus der letzten Abfrage), belastet Ihr monatliches SEO-Datenbudget: noch ${left}. Die Abfragen stoppen, wenn das Budget aufgebraucht ist.`,
+  confirmBacklinks: (pages: string, cost: string, left: string) => `Backlink-Kennzahlen für ${pages} Seiten: etwa ${cost} Ihres SEO-Datenbudgets (noch ${left}).`,
 };
 
 export const SITE_CRAWLER_4D = { en, fr, "de-CH": deCH } as const;

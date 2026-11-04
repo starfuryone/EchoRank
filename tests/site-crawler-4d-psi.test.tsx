@@ -54,7 +54,7 @@ describe("helpers", () => {
     const t = SITE_CRAWLER_COPY[l];
     expect(problemText({ field: "addData.psi", code: "unknown_segment" }, t.p4a, t.p4b, t.p4d)).toBe(t.p4d.problemSegment);
     expect(problemText({ field: "addData.psi", code: "over_plan_cap", limit: 10 }, t.p4a, t.p4b, t.p4d)).toBe(t.p4d.problemCap("10"));
-    const lines = confirmLines(t.p4d, { psi: { pages: 10, segment: null }, backlinks: null }, { psiCap: 10, lighthouseUsed: 5, lighthouseLimit: 20 });
+    const lines = confirmLines(t.p4d, { psi: { pages: 10, segment: null }, backlinks: null }, { psiCap: 10, lighthouseUsed: 5, lighthouseLimit: 20, backlinkCap: 0, backlinkUnitUsd: 0.02, seoBudgetLeftUsd: 5 });
     expect(lines).toEqual([t.p4d.confirmPsi("10", "20", "15", "20")]);
   });
 });
@@ -75,7 +75,7 @@ describe("AddDataSection", () => {
     document.body.appendChild(host);
     const render = async (value: Parameters<typeof AddDataSection>[0]["value"]) =>
       act(async () => {
-        createRoot(host!).render(<AddDataSection t={t} host="x.com" quota={{ psiCap: 50, lighthouseUsed: 4, lighthouseLimit: 20 }} value={value} onChange={onChange} />);
+        createRoot(host!).render(<AddDataSection t={t} host="x.com" quota={{ psiCap: 50, lighthouseUsed: 4, lighthouseLimit: 20, backlinkCap: 0, backlinkUnitUsd: 0.02, seoBudgetLeftUsd: 5 }} value={value} onChange={onChange} />);
       });
     await render(null);
     expect(host.textContent).toContain(t.psiLabel("50"));

@@ -47,6 +47,7 @@ export const FAMILY_LABELS: Record<RuleFamily, string> = {
   extraction: "Custom extraction and search",
   search_console: "Search Console",
   analytics: "Google Analytics",
+  backlinks: "Backlinks",
 };
 
 const KIND_LABEL = { issue: "Issue", warning: "Warning", opportunity: "Opportunity" } as const;

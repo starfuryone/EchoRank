@@ -22,6 +22,7 @@ import { flag, type FlagName } from "@/lib/flags";
 export const FAMILY_FLAGS: Partial<Record<RuleFamily, FlagName>> = {
   search_console: "crawl.gsc",
   analytics: "crawl.ga4",
+  backlinks: "crawl.backlinks",
 };
 
 export function familyIsPublic(f: RuleFamily): boolean {

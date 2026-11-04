@@ -86,6 +86,8 @@ export interface CrawlQuotaDto {
   backlinkCap?: number;
   lighthouseUsed?: number;
   lighthouseLimit?: number;
+  backlinkUnitUsd?: number;
+  seoBudgetLeftUsd?: number;
 }
 
 export interface CrawlIssueRow {

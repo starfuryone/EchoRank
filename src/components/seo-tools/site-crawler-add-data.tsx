@@ -16,7 +16,14 @@ export interface AddDataQuota {
   psiCap: number;
   lighthouseUsed: number;
   lighthouseLimit: number;
+  backlinkCap: number;
+  backlinkUnitUsd: number;
+  seoBudgetLeftUsd: number;
 }
+
+const usd = (n: number, digits = 2) => `$${n.toFixed(digits)}`;
+/** N × the last metered unit cost. */
+export const backlinkCost = (top: TopPages | null, unit: number) => (top ? top.pages * unit : 0);
 
 /** Lighthouse runs a PSI opt-in takes: mobile + desktop per page. */
 export const psiRuns = (top: TopPages | null) => (top ? top.pages * 2 : 0);
@@ -150,6 +157,25 @@ export function AddDataSection({
           {value?.psi && <p className="pl-6 text-xs text-gray-500">{t.psiNeeds(String(psiRuns(value.psi)))}</p>}
         </div>
       )}
+      {flag("crawl.backlinks") && (
+        <div className="space-y-1">
+          <TopPicker
+            id="add-backlinks"
+            t={t}
+            label={t.blLabel(String(quota.backlinkCap))}
+            cap={quota.backlinkCap}
+            value={value?.backlinks ?? null}
+            segments={names}
+            disabled={disabled}
+            onChange={(v) => onChange(withSource(value, "backlinks", v))}
+          />
+          {value?.backlinks && (
+            <p className="pl-6 text-xs text-gray-500">
+              {t.blEstimate(usd(backlinkCost(value.backlinks, quota.backlinkUnitUsd)), usd(quota.backlinkUnitUsd, 3), usd(quota.seoBudgetLeftUsd))}
+            </p>
+          )}
+        </div>
+      )}
     </section>
   );
 }
@@ -157,5 +183,10 @@ export function AddDataSection({
 /** The confirm step's lines, one per opt-in. */
 export function confirmLines(t: SiteCrawler4dCopy, value: AddData, quota: AddDataQuota): string[] {
   const left = Math.max(0, quota.lighthouseLimit - quota.lighthouseUsed);
-  return value.psi ? [t.confirmPsi(String(value.psi.pages), String(psiRuns(value.psi)), String(left), String(quota.lighthouseLimit))] : [];
+  return [
+    ...(value.psi ? [t.confirmPsi(String(value.psi.pages), String(psiRuns(value.psi)), String(left), String(quota.lighthouseLimit))] : []),
+    ...(value.backlinks
+      ? [t.confirmBacklinks(String(value.backlinks.pages), usd(backlinkCost(value.backlinks, quota.backlinkUnitUsd)), usd(quota.seoBudgetLeftUsd))]
+      : []),
+  ];
 }

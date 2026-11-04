@@ -11,10 +11,17 @@
 //              LighthouseAudit where the 3c performance rules read them. When
 //              the allowance is spent the job waits for the next free slot
 //              instead of failing; the crawl shows "waiting for Lighthouse".
-//   rules      once every target has both runs, the rules that require "psi"
-//              are re-evaluated for those pages (their earlier findings, from
-//              runs attached at aggregation, are replaced) and the summary is
-//              re-tallied.
+//   backlinks  DataForSEO backlinks/summary/live per page URL, metered through
+//              seoMeteredCall (SeoApiCall row, the tenant's monthly USD cap).
+//              Runs FIRST: it takes seconds, PSI may wait hours for its
+//              allowance. The cap is checked before every call; once it is
+//              reached the step stops and the crawl says "usd_cap".
+//              ARCHIVE: there is no seodata provider-response store in this
+//              repo, so responses are not archived (the SeoApiCall row and
+//              the parsed numbers are what is kept).
+//   rules      once a source's targets are done (or it stopped), the rules
+//              requiring its capability are re-evaluated for those pages
+//              (earlier findings replaced) and the summary is re-tallied.
 
 import "server-only";
 import { prisma } from "@/lib/prisma";
@@ -25,9 +32,13 @@ import { LighthouseRateLimitedError, runAudit } from "@/lib/lighthouse/service";
 import { msUntilNextAudit } from "@/lib/lighthouse/usage";
 import type { LighthouseAuditDto } from "@/lib/lighthouse/types";
 import { readStoredConfig, type TopPages } from "./crawl-config";
+import { DataforseoError } from "@/lib/dataforseo/client";
+import { BACKLINKS } from "@/lib/dataforseo/endpoints";
+import { backlinksSummaryTask, parseBacklinksSummary, type BacklinksSummaryItem } from "@/lib/dataforseo/backlinks-summary";
+import { monthlyCapUsd, seoMeteredCall, spentThisMonth } from "@/lib/dataforseo/metering";
 import { recountIssues } from "./aggregate";
 import { metricsForPages, upsertPageMetrics } from "./metrics";
-import type { PsiMetric, PsiRunSummary } from "./metrics-shared";
+import type { BacklinkMetric, PsiMetric, PsiRunSummary } from "./metrics-shared";
 import { psiFactsForUrls } from "./psi";
 import { issueRows, toStoredFacts } from "./stored";
 
@@ -51,11 +62,22 @@ export interface SourceState {
   updatedAt: string;
 }
 
+/** Backlink lookups per tick: live calls take a second or two. */
+export const BACKLINK_PAGES_PER_TICK = 20;
+
 export interface MetricsDeps {
   runAudit: typeof runAudit;
   msUntilNextAudit: typeof msUntilNextAudit;
+  backlinksSummary: (tenantId: string, url: string) => Promise<BacklinksSummaryItem[]>;
+  budget: (tenantId: string) => Promise<{ spent: number; cap: number }>;
 }
-const DEFAULT_DEPS: MetricsDeps = { runAudit, msUntilNextAudit };
+const DEFAULT_DEPS: MetricsDeps = {
+  runAudit,
+  msUntilNextAudit,
+  backlinksSummary: (tenantId, url) => seoMeteredCall<BacklinksSummaryItem[]>(tenantId, BACKLINKS.summary, backlinksSummaryTask(url, { includeSubdomains: false })),
+  budget: async (tenantId) => ({ spent: await spentThisMonth(tenantId), cap: await monthlyCapUsd(tenantId) }),
+};
+
 
 const PAGE_SELECT = {
   id: true, url: true, depth: true, statusCode: true, redirectTarget: true, contentType: true, title: true,
@@ -110,6 +132,23 @@ const NO_JOB: JobFacts = {
 };
 
 export const PSI_RULE_IDS = RULES.filter((r) => r.requires?.includes("psi")).map((r) => r.id);
+export const BACKLINK_RULE_IDS = RULES.filter((r) => r.requires?.includes("backlinks")).map((r) => r.id);
+
+/** Replace the backlinks rules' findings on these pages, from their stored lookups. */
+export async function reevaluateBacklinkRules(jobId: string, rootUrl: string, pages: Awaited<ReturnType<typeof targetPages>>): Promise<number> {
+  if (pages.length === 0) return 0;
+  const have = await metricsForPages(pages.map((p) => p.id));
+  await prisma.crawlIssue.deleteMany({ where: { crawlPageId: { in: pages.map((p) => p.id) }, ruleId: { in: BACKLINK_RULE_IDS } } });
+  const keep = new Set(BACKLINK_RULE_IDS);
+  const rows = pages.flatMap((page) => {
+    const b = have.get(page.id)?.backlinks as (BacklinkMetric & { error?: string }) | undefined;
+    if (!b || b.error) return [];
+    const found = evaluateSiteRules(toStoredFacts(page, rootUrl), { capabilities: ["backlinks"], metrics: { backlinks: b }, site: NO_SITE, job: NO_JOB, isRoot: false }).filter((f) => keep.has(f.ruleId));
+    return issueRows(found, jobId).map((r) => ({ ...r, crawlPageId: page.id }));
+  });
+  if (rows.length) await prisma.crawlIssue.createMany({ data: rows });
+  return rows.length;
+}
 
 /** Replace the "psi" rules' findings on these pages with ones from their newest runs. */
 export async function reevaluatePsiRules(jobId: string, tenantId: string, rootUrl: string, pages: Awaited<ReturnType<typeof targetPages>>): Promise<number> {
@@ -185,8 +224,49 @@ async function psiTick(job: Job, top: TopPages, deps: MetricsDeps): Promise<Metr
   return { done: false, delayMs: 0 };
 }
 
+async function backlinksTick(job: Job, top: TopPages, deps: MetricsDeps): Promise<MetricsTick> {
+  const pages = await targetPages(job.id, top, { htmlOnly: false });
+  const have = await metricsForPages(pages.map((p) => p.id));
+  const todo = pages.filter((p) => !have.get(p.id)?.backlinks);
+  const state = (extra: Partial<SourceState> = {}) => {
+    const done = pages.filter((p) => have.get(p.id)?.backlinks);
+    const failed = done.filter((p) => (have.get(p.id)?.backlinks as { error?: string }).error).length;
+    return { status: "running" as const, targets: pages.length, completed: done.length, failed, ...extra };
+  };
+  const finish = async (s: Pick<SourceState, "status" | "stoppedReason">) => {
+    await reevaluateBacklinkRules(job.id, job.rootUrl, pages.filter((p) => have.get(p.id)?.backlinks));
+    await recountIssues(job.id);
+    await setSourceState(job.id, "backlinks", state(s));
+    return { done: true } as const;
+  };
+  if (todo.length === 0) return finish({ status: "done" });
+
+  for (const page of todo.slice(0, BACKLINK_PAGES_PER_TICK)) {
+    const { spent, cap } = await deps.budget(job.tenantId);
+    if (spent >= cap) return finish({ status: "stopped", stoppedReason: "usd_cap" });
+    let data: BacklinkMetric | { error: string };
+    try {
+      const s = parseBacklinksSummary(await deps.backlinksSummary(job.tenantId, page.url));
+      data = { referringDomains: s.referringDomains, backlinks: s.backlinks, rank: s.rank };
+    } catch (err) {
+      if (err instanceof DataforseoError && err.code === "RATE_LIMITED") {
+        const b = await deps.budget(job.tenantId);
+        if (b.spent >= b.cap) return finish({ status: "stopped", stoppedReason: "usd_cap" });
+        await setSourceState(job.id, "backlinks", state());
+        return { done: false, delayMs: 60_000 };
+      }
+      data = { error: err instanceof Error ? err.message.slice(0, 160) : "failed" };
+    }
+    have.set(page.id, { ...(have.get(page.id) ?? {}), backlinks: data });
+    await upsertPageMetrics(job.id, "backlinks", [{ pageId: page.id, data }]);
+  }
+  await setSourceState(job.id, "backlinks", state());
+  return { done: false, delayMs: 0 };
+}
+
 /** One tick of a crawl's post-crawl metrics. Done when every opted-in source is. */
-export async function runCrawlMetrics(jobId: string, deps: MetricsDeps = DEFAULT_DEPS): Promise<MetricsTick> {
+export async function runCrawlMetrics(jobId: string, overrides: Partial<MetricsDeps> = {}): Promise<MetricsTick> {
+  const deps: MetricsDeps = { ...DEFAULT_DEPS, ...overrides };
   const job = await prisma.crawlJob.findFirst({
     where: { id: jobId, status: "COMPLETED", dataPurgedAt: null },
     select: { id: true, tenantId: true, rootUrl: true, config: true, summary: true },
@@ -194,7 +274,12 @@ export async function runCrawlMetrics(jobId: string, deps: MetricsDeps = DEFAULT
   if (!job) return { done: true };
   const add = readStoredConfig(job.config)?.addData;
   const states = ((job.summary as { metrics?: Record<string, SourceState> } | null)?.metrics ?? {}) as Record<string, SourceState | undefined>;
-  if (add?.psi && flag("crawl.psi") && states.psi?.status !== "done") {
+  const settled = (s: SourceState | undefined) => s?.status === "done" || s?.status === "stopped";
+  if (add?.backlinks && flag("crawl.backlinks") && !settled(states.backlinks)) {
+    const tick = await backlinksTick(job, add.backlinks, deps);
+    if (!tick.done) return tick;
+  }
+  if (add?.psi && flag("crawl.psi") && !settled(states.psi)) {
     const tick = await psiTick(job, add.psi, deps);
     if (!tick.done) return tick;
   }

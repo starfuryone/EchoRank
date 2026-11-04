@@ -45,11 +45,12 @@ export const FLAGS = {
   "crawl.sheets": false,
   // Phase 4d: Search Console joined onto crawled pages (automatic when the
   // GSC connection covers the host), and PageSpeed on the top N pages
-  // (opt-in, through the Lighthouse tool's allowance).
+  // (opt-in, through the Lighthouse tool's allowance), and backlink metrics
+  // on the top N pages (opt-in, metered under the tenant's USD cap).
   "crawl.ga4": false,
   "crawl.gsc": true,
   "crawl.psi": true,
-  "crawl.backlinks": false,
+  "crawl.backlinks": true,
   // Phase 3b / 4e
   // Phase 3b shipped render mode (headless Chromium via the sidecar).
   "crawl.render": true,

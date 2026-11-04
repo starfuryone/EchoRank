@@ -22,6 +22,7 @@ import { prisma } from "@/lib/prisma";
 import { planConfig, type CrawlCadence } from "@/lib/plan-config";
 import { auditsUsedThisHour } from "@/lib/lighthouse/usage";
 import { AUDITS_PER_HOUR } from "@/lib/lighthouse/options";
+import { OBSERVED_BACKLINK_UNIT_USD, backlinkUnitCostUsd, seoBudgetLeftUsd } from "./backlink-cost";
 
 /** Statuses that consume a monthly slot. */
 export const QUOTA_CONSUMING_STATUSES = ["QUEUED", "RUNNING", "COMPLETED"] as const;
@@ -55,6 +56,9 @@ export interface CrawlQuota {
   /** Phase 4d: the Lighthouse tool's hourly allowance, which PSI opt-ins draw from. */
   lighthouseUsed: number;
   lighthouseLimit: number;
+  /** Phase 4d backlink estimate: last metered unit cost and the monthly SEO data budget left. */
+  backlinkUnitUsd: number;
+  seoBudgetLeftUsd: number;
 }
 
 export function urlCapForPlan(plan: PlanType): number {
@@ -117,7 +121,7 @@ export async function getCrawlQuota(
 
   // A locked tier never runs a query it cannot act on.
   if (locked) {
-    return { urlCap, renderCap, monthlyLimit, used: 0, remaining: 0, allowed: false, locked: true, crawlsKept, ...caps, lighthouseUsed: 0, lighthouseLimit: AUDITS_PER_HOUR };
+    return { urlCap, renderCap, monthlyLimit, used: 0, remaining: 0, allowed: false, locked: true, crawlsKept, ...caps, lighthouseUsed: 0, lighthouseLimit: AUDITS_PER_HOUR, backlinkUnitUsd: OBSERVED_BACKLINK_UNIT_USD, seoBudgetLeftUsd: 0 };
   }
 
   const used = await crawlsUsedThisMonth(tenantId, now);
@@ -135,5 +139,7 @@ export async function getCrawlQuota(
     ...caps,
     lighthouseUsed: await auditsUsedThisHour(tenantId, now.getTime()),
     lighthouseLimit: AUDITS_PER_HOUR,
+    backlinkUnitUsd: await backlinkUnitCostUsd().catch(() => OBSERVED_BACKLINK_UNIT_USD),
+    seoBudgetLeftUsd: await seoBudgetLeftUsd(tenantId).catch(() => 0),
   };
 }

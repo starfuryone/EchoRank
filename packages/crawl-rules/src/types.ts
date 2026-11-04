@@ -55,6 +55,7 @@ export const RULE_FAMILIES = [
   // the source's short name (FAMILY_ID_PREFIXES).
   "search_console",
   "analytics",
+  "backlinks",
 ] as const;
 
 /** Families whose rule ids may start with more than the family name. Ids are public API, so this is a closed list. */
@@ -72,7 +73,7 @@ export type RulePriority = "high" | "medium" | "low";
  * (a page with no row then reads as zero); "backlinks" — the page itself was
  * looked up. The consumer hands the joined numbers in SiteRuleCtx.metrics.
  */
-export type Capability = "render" | "psi" | "spell" | "gsc" | "ga4";
+export type Capability = "render" | "psi" | "spell" | "gsc" | "ga4" | "backlinks";
 
 /**
  * What a rule reports alongside its verdict. Small by contract: counts,
@@ -485,10 +486,18 @@ export interface Ga4Facts {
   keyEvents: number;
 }
 
+/** Phase 4d: DataForSEO Backlinks summary for this exact URL. */
+export interface BacklinkFacts {
+  referringDomains: number;
+  backlinks: number;
+  rank: number | null;
+}
+
 /** Phase 4d: numbers joined onto the page from other sources. */
 export interface SiteMetricFacts {
   gsc?: GscFacts | null;
   ga4?: Ga4Facts | null;
+  backlinks?: BacklinkFacts | null;
   /** High-priority findings already on the page (any family), for ga4.converting_page_has_issues. */
   highPriorityIssues?: number;
 }
