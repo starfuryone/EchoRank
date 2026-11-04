@@ -30,6 +30,10 @@ import {
 import type {
   BacklinksOverviewPayload,
   CrawlSummaryPayload,
+  CrawlIssuesPayload,
+  CrawlStatusPayload,
+  ListCrawlsPayload,
+  StartCrawlPayload,
   DomainOverviewPayload,
   GetSerpCheckPayload,
   GscQueriesPayload,
@@ -685,6 +689,95 @@ export function renderCrawlSummary(data: CrawlSummaryPayload): string {
   );
 }
 
+// ─── Phase 3d-A: the public crawl API as tools ──────────────────────────────
+
+export function renderStartCrawl(d: StartCrawlPayload): string {
+  return formatMcpSection({
+    title: "Site crawl started",
+    facts: [
+      formatMcpFacts([
+        ["Crawl id", d.crawlId],
+        ["Status", d.status],
+        ["Queue position", d.queuePosition],
+        ["Estimated start", d.estimatedStart],
+      ]),
+    ],
+    rows: [],
+    columns: [],
+    emptyNote: "Poll get_crawl_status with this crawl id.",
+  });
+}
+
+const FAMILY_COLUMNS: McpTableColumn<[string, number]>[] = [
+  { header: "family", value: (r) => r[0] },
+  { header: "findings", value: (r) => r[1] },
+];
+
+export function renderCrawlStatus(d: CrawlStatusPayload): string {
+  const families = Object.entries(d.totals?.byFamily ?? {}).sort((a, b) => b[1] - a[1]);
+  const { rows, omitted } = capped(families);
+  return withOmitted(
+    formatMcpSection({
+      title: `Site crawl — ${d.rootUrl}`,
+      facts: [
+        formatMcpFacts([
+          ["Crawl id", d.crawlId],
+          ["Status", d.status],
+          ["Pages crawled", `${d.progress.pagesCrawled} of ${d.progress.urlCap}`],
+          ["Rendered", `${d.progress.pagesRendered} of ${d.progress.renderCap}`],
+          ["Queue position", d.queuePosition],
+          ["Site health", d.health === null ? null : `${d.health}/100`],
+          ["Issues / warnings / opportunities", d.totals ? `${d.totals.byKind.issue ?? 0} / ${d.totals.byKind.warning ?? 0} / ${d.totals.byKind.opportunity ?? 0}` : null],
+          ["Stopped early", d.stoppedReason],
+        ]),
+      ],
+      rows,
+      columns: FAMILY_COLUMNS,
+      emptyNote: d.totals ? "No findings." : "Findings appear once the crawl has ended.",
+    }),
+    omitted,
+  );
+}
+
+const CRAWL_FINDING_COLUMNS: McpTableColumn<CrawlIssuesPayload["issues"][number]>[] = [
+  { header: "rule", value: (r) => r.ruleId },
+  { header: "kind", value: (r) => r.kind },
+  { header: "priority", value: (r) => r.priority },
+  { header: "url", value: (r) => r.url },
+  { header: "status", value: (r) => r.statusCode },
+];
+
+export function renderCrawlIssues(d: CrawlIssuesPayload): string {
+  const { rows, omitted } = capped(d.issues);
+  return withOmitted(
+    formatMcpSection({
+      title: "Site crawl findings",
+      facts: [formatMcpFacts([["Next cursor", d.nextCursor]])],
+      rows,
+      columns: CRAWL_FINDING_COLUMNS,
+      emptyNote: "No findings match.",
+    }),
+    omitted,
+  );
+}
+
+const CRAWL_LIST_COLUMNS: McpTableColumn<ListCrawlsPayload["crawls"][number]>[] = [
+  { header: "crawl id", value: (r) => r.crawlId },
+  { header: "site", value: (r) => r.host },
+  { header: "status", value: (r) => r.status },
+  { header: "pages", value: (r) => r.progress.pagesCrawled },
+  { header: "health", value: (r) => r.health },
+  { header: "created", value: (r) => r.createdAt },
+];
+
+export function renderListCrawls(d: ListCrawlsPayload): string {
+  const { rows, omitted } = capped(d.crawls);
+  return withOmitted(
+    formatMcpSection({ title: "Site crawls", facts: [], rows, columns: CRAWL_LIST_COLUMNS, emptyNote: "No crawls yet. Start one with start_crawl." }),
+    omitted,
+  );
+}
+
 // ─── Dispatch ────────────────────────────────────────────────────────────────
 
 /**
@@ -725,6 +818,14 @@ export function renderToolText(name: string, data: unknown): string {
       return renderGscQueries(data as GscQueriesPayload);
     case "get_crawl_summary":
       return renderCrawlSummary(data as CrawlSummaryPayload);
+    case "start_crawl":
+      return renderStartCrawl(data as StartCrawlPayload);
+    case "get_crawl_status":
+      return renderCrawlStatus(data as CrawlStatusPayload);
+    case "get_crawl_issues":
+      return renderCrawlIssues(data as CrawlIssuesPayload);
+    case "list_crawls":
+      return renderListCrawls(data as ListCrawlsPayload);
     default:
       return JSON.stringify(data, null, 2);
   }
@@ -755,6 +856,10 @@ const RENDERED_TOOLS = new Set([
   "get_research_log",
   "get_gsc_queries",
   "get_crawl_summary",
+  "start_crawl",
+  "get_crawl_status",
+  "get_crawl_issues",
+  "list_crawls",
 ]);
 
 /** Column sets are exported for the snapshot tests, which assert headers. */

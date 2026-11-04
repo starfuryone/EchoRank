@@ -17,8 +17,11 @@ import { sidecarPost } from "@/lib/av-sidecar";
 import { getVisibilitySummary } from "@/lib/visibility-summary";
 import type { McpCapabilities } from "./handler";
 import * as reads from "./reads";
+import { findPublicCrawl, listPublicCrawls, publicCrawlDetail, publicIssues, queueEstimate } from "@/lib/site-crawler/public-api";
+import { acceptCallbackUrl, startViaApi, startedView } from "@/lib/site-crawler/public-start";
+import { CrawlConfigInputSchema } from "@/lib/site-crawler/crawl-config";
 
-export function capsFor(tenantId: string): McpCapabilities {
+export function capsFor(tenantId: string, keyId = ""): McpCapabilities {
   let tenantPromise: Promise<reads.McpTenant> | null = null;
   const tenant = () => (tenantPromise ??= reads.loadMcpTenant(tenantId));
 
@@ -93,6 +96,46 @@ export function capsFor(tenantId: string): McpCapabilities {
     },
     async getCrawlSummary(args) {
       return reads.getCrawlSummary(await tenant(), args);
+    },
+
+    // Phase 3d-A: the public crawl API as tools (src/lib/site-crawler/public-*.ts).
+    async startCrawl(args) {
+      const callbackUrl = acceptCallbackUrl(args.callbackUrl as string | undefined);
+      const { crawlId } = await startViaApi(
+        { tenantId, keyId },
+        {
+          url: (args.url as string) ?? "",
+          mode: (args.mode as "spider" | "list") ?? "spider",
+          urls: args.urls as string[] | undefined,
+          renderMode: (args.renderMode as "none" | "thin" | "all") ?? "none",
+          // Through the dashboard's schema, so its defaults and checks apply.
+          config: typeof args.maxUrls === "number" ? CrawlConfigInputSchema.parse({ maxUrls: args.maxUrls }) : undefined,
+          saveAsDefault: false,
+        },
+        callbackUrl,
+      );
+      return startedView(crawlId);
+    },
+    async getCrawlStatus(args) {
+      const row = await findPublicCrawl(tenantId, args.crawlId as string);
+      if (!row) throw new Error("No crawl with that id in this workspace.");
+      const [detail, queue] = await Promise.all([publicCrawlDetail(row), queueEstimate(row)]);
+      return { ...detail, ...queue };
+    },
+    async getCrawlIssues(args) {
+      const crawl = await prisma.crawlJob.findFirst({ where: { id: args.crawlId as string, tenantId }, select: { id: true, config: true } });
+      if (!crawl) throw new Error("No crawl with that id in this workspace.");
+      return publicIssues(crawl, {
+        ruleId: (args.ruleId as string) ?? null,
+        family: (args.family as string) ?? null,
+        kind: (args.kind as string) ?? null,
+        segment: typeof args.segment === "number" ? String(args.segment) : null,
+        cursor: (args.cursor as string) ?? null,
+        limit: (args.limit as number) ?? null,
+      });
+    },
+    async listCrawls(args) {
+      return { crawls: await listPublicCrawls(tenantId, { host: (args.host as string) ?? null, limit: (args.limit as number) ?? null }) };
     },
   };
 }

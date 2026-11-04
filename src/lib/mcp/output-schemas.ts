@@ -315,6 +315,51 @@ export const crawlSummaryOutputSchema = z.looseObject({
   note,
 });
 
+// ─── Phase 3d-A: the public crawl API as tools ──────────────────────────────
+
+const publicCrawlSchema = z.looseObject({
+  crawlId: z.string(),
+  rootUrl: z.string(),
+  host: z.string(),
+  status: z.enum(["queued", "crawling", "completed", "failed", "cancelled"]),
+  stoppedReason: z.string().nullable(),
+  createdAt: z.string(),
+  finishedAt: z.string().nullable(),
+  progress: z.looseObject({ phase: z.string(), pagesCrawled: z.number(), urlCap: z.number(), pagesRendered: z.number(), renderCap: z.number() }),
+  health: z.number().nullable(),
+});
+
+export const startCrawlOutputSchema = z.looseObject({
+  crawlId: z.string(),
+  status: z.string(),
+  queuePosition: z.number().nullable(),
+  estimatedStart: z.string().nullable(),
+});
+
+export const crawlStatusOutputSchema = publicCrawlSchema.extend({
+  totals: z.looseObject({ byKind: z.record(z.string(), z.number()), byFamily: z.record(z.string(), z.number()) }).nullable(),
+  segments: z.array(z.looseObject({ index: z.number(), name: z.string(), pages: z.number(), findings: z.number() })),
+  queuePosition: z.number().nullable(),
+  estimatedStart: z.string().nullable(),
+});
+
+export const crawlIssuesOutputSchema = z.looseObject({
+  issues: z.array(
+    z.looseObject({
+      ruleId: z.string(),
+      family: z.string().nullable(),
+      kind: z.string().nullable(),
+      priority: z.string().nullable(),
+      url: z.string(),
+      statusCode: z.number().nullable(),
+      evidence: z.record(z.string(), z.unknown()),
+    }),
+  ),
+  nextCursor: z.string().nullable(),
+});
+
+export const listCrawlsOutputSchema = z.looseObject({ crawls: z.array(publicCrawlSchema) });
+
 // ─── Pre-existing tools ──────────────────────────────────────────────────────
 // Shapes owned elsewhere (the av-service sidecar, the shared visibility
 // summary). Asserting their internals here would duplicate a contract that
@@ -347,6 +392,10 @@ export const MCP_OUTPUT_SCHEMAS: Record<string, z.ZodType> = {
   get_research_log: researchLogOutputSchema,
   get_gsc_queries: gscQueriesOutputSchema,
   get_crawl_summary: crawlSummaryOutputSchema,
+  start_crawl: startCrawlOutputSchema,
+  get_crawl_status: crawlStatusOutputSchema,
+  get_crawl_issues: crawlIssuesOutputSchema,
+  list_crawls: listCrawlsOutputSchema,
 };
 
 /** Tool names in the catalog with no output schema. Empty is the only pass. */
@@ -378,3 +427,7 @@ export type AiCitationsPayload = z.infer<typeof aiCitationsOutputSchema>;
 export type ResearchLogPayload = z.infer<typeof researchLogOutputSchema>;
 export type GscQueriesPayload = z.infer<typeof gscQueriesOutputSchema>;
 export type CrawlSummaryPayload = z.infer<typeof crawlSummaryOutputSchema>;
+export type StartCrawlPayload = z.infer<typeof startCrawlOutputSchema>;
+export type CrawlStatusPayload = z.infer<typeof crawlStatusOutputSchema>;
+export type CrawlIssuesPayload = z.infer<typeof crawlIssuesOutputSchema>;
+export type ListCrawlsPayload = z.infer<typeof listCrawlsOutputSchema>;

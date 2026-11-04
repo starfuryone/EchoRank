@@ -15,8 +15,11 @@
 //
 // ── READ-ONLY IS THE DEFAULT, AND ALMOST THE RULE ──────────────────────────
 // Exactly one tool in this list spends money (`start_serp_check`, $0.006 a
-// keyword at depth 100) and two mutate state (`add_/remove_rank_tracking_
-// keywords`, which change what is tracked, not what is bought). Everything
+// keyword at depth 100), one spends an allowance (`start_crawl`, Phase 3d-A:
+// one crawl of the month's, at most 3 starts a minute, within the plan's URL
+// cap — what POST /api/public/v1/crawl does) and two mutate state
+// (`add_/remove_rank_tracking_keywords`, which change what is tracked, not
+// what is bought). Everything
 // else reads what the tenant has already paid for. Expensive analyses —
 // backlinks (~$0.368 a lookup), domain overview, the Keyword Opportunity
 // Finder, AI Citations — are deliberately READ-ONLY here: an agent must not be
@@ -344,6 +347,65 @@ export const MCP_TOOLS: readonly McpToolDefinition[] = [
       },
     },
     annotations: { title: "Site crawl summary", readOnlyHint: true },
+  },
+  {
+    name: "start_crawl",
+    description:
+      "Start a site crawl (the Nosy Bat crawler) — the same as POST /api/public/v1/crawl. Spider mode follows links from `url`; list mode fetches `urls` once each. Uses one crawl from this month's allowance and runs within the plan's URL and render caps. Returns the crawl id and its queue position; poll get_crawl_status.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        url: { type: "string", description: "Spider mode's start URL, e.g. https://example.com/." },
+        mode: { type: "string", enum: ["spider", "list"], description: "Defaults to \"spider\"." },
+        urls: { type: "array", items: { type: "string" }, description: "List mode: the URLs to fetch." },
+        renderMode: { type: "string", enum: ["none", "thin", "all"], description: "JavaScript rendering. Defaults to \"none\"; capped by the plan." },
+        maxUrls: { type: "integer", minimum: 1, description: "Lower the plan's URL cap for this crawl." },
+        callbackUrl: { type: "string", description: "https URL told when the crawl ends, signed with X-Echorank-Signature." },
+      },
+    },
+    annotations: { title: "Start a site crawl", readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: true },
+  },
+  {
+    name: "get_crawl_status",
+    description:
+      "One site crawl: status and progress (pages crawled of the cap, rendered pages), queue position while queued, and once it has ended site health 0–100, findings by kind and by rule family, and per-segment totals. Costs nothing.",
+    inputSchema: {
+      type: "object",
+      properties: { crawlId: { type: "string", description: "From start_crawl or list_crawls." } },
+      required: ["crawlId"],
+    },
+    annotations: { title: "Site crawl status", readOnlyHint: true },
+  },
+  {
+    name: "get_crawl_issues",
+    description:
+      "A crawl's findings, one row per page and rule, with the evidence — filter by rule id, family (e.g. page_titles), kind (issue, warning, opportunity) or segment, and page with `cursor`. Costs nothing.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        crawlId: { type: "string" },
+        ruleId: { type: "string", description: "One rule, e.g. response_codes.internal_4xx." },
+        family: { type: "string", description: "A rule family, e.g. page_titles." },
+        kind: { type: "string", enum: ["issue", "warning", "opportunity"] },
+        segment: { type: "integer", minimum: 0, description: "A segment index the crawl ran with." },
+        cursor: { type: "string", description: "nextCursor from the previous page." },
+        limit: LIMIT_PROP(200, 100),
+      },
+      required: ["crawlId"],
+    },
+    annotations: { title: "Site crawl findings", readOnlyHint: true },
+  },
+  {
+    name: "list_crawls",
+    description: "This workspace's site crawls, newest first, with status, progress and health. Optionally one site. Costs nothing.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        host: { type: "string", description: "One site, e.g. www.example.com." },
+        limit: LIMIT_PROP(100, 20),
+      },
+    },
+    annotations: { title: "Site crawls", readOnlyHint: true },
   },
 ] as const;
 

@@ -18,27 +18,18 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { authenticatePublicRequest } from "@/lib/api-keys";
-import { prisma } from "@/lib/prisma";
-import { rateLimit } from "@/lib/rate-limit";
-import type { PlanType } from "@/generated/prisma";
-import { checkCallbackUrl } from "@/lib/site-crawler/callback";
 import { crawlRouteError } from "@/lib/site-crawler/http";
 import { IDEMPOTENCY_KEY_MAX, claimIdempotency, completeIdempotency, releaseIdempotency } from "@/lib/site-crawler/idempotency";
-import { listPublicCrawls, queueEstimate } from "@/lib/site-crawler/public-api";
-import { startCrawl } from "@/lib/site-crawler/service";
-import { START_RATE_LIMIT, START_RATE_WINDOW_MS, StartCrawlBodySchema, startRateKey } from "@/lib/site-crawler/start-body";
+import { listPublicCrawls } from "@/lib/site-crawler/public-api";
+import { PublicStartError, acceptCallbackUrl, startViaApi, startedView } from "@/lib/site-crawler/public-start";
+import { StartCrawlBodySchema } from "@/lib/site-crawler/start-body";
 
 const PublicStartBodySchema = StartCrawlBodySchema.extend({
   callbackUrl: z.string().trim().max(2048).optional(),
 });
 
 async function started(crawlId: string, replayed: boolean) {
-  const row = await prisma.crawlJob.findUnique({ where: { id: crawlId }, select: { id: true, status: true, createdAt: true, startedAt: true } });
-  const estimate = row ? await queueEstimate(row) : { queuePosition: null, estimatedStart: null };
-  return NextResponse.json(
-    { crawlId, status: row?.status.toLowerCase() ?? "queued", ...estimate, ...(replayed ? { replayed: true } : {}) },
-    { status: replayed ? 200 : 202 },
-  );
+  return NextResponse.json({ ...(await startedView(crawlId)), ...(replayed ? { replayed: true } : {}) }, { status: replayed ? 200 : 202 });
 }
 
 export async function POST(request: Request) {
@@ -57,11 +48,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "invalid_request", code: "INVALID_REQUEST", issues: parsed.error.issues }, { status: 400 });
   }
   const { callbackUrl: rawCallback, ...body } = parsed.data;
-  let callbackUrl: string | null = null;
-  if (rawCallback) {
-    const checked = checkCallbackUrl(rawCallback);
-    if (!checked.ok) return NextResponse.json({ error: "invalid_callback_url", reason: checked.reason }, { status: 400 });
-    callbackUrl = checked.url;
+  let callbackUrl: string | null;
+  try {
+    callbackUrl = acceptCallbackUrl(rawCallback);
+  } catch (err) {
+    const e = err as PublicStartError;
+    return NextResponse.json({ error: "invalid_callback_url", reason: e.reason }, { status: 400 });
   }
 
   const idemKey = request.headers.get("idempotency-key")?.trim() || null;
@@ -76,24 +68,14 @@ export async function POST(request: Request) {
   }
 
   try {
-    const tenant = await prisma.tenant.findUnique({ where: { id: auth.tenantId }, select: { planType: true } });
-    if (!tenant) throw new Error("tenant not found");
-    const limited = await rateLimit(startRateKey(auth.tenantId), START_RATE_LIMIT, START_RATE_WINDOW_MS);
-    if (!limited.success) {
-      if (idemKey) await releaseIdempotency(auth.tenantId, idemKey);
-      return NextResponse.json({ error: "Too many crawls in a row. Wait a minute.", code: "RATE_LIMITED" }, { status: 429 });
-    }
-    const job = await startCrawl(auth.tenantId, tenant.planType as PlanType, body.url, body.renderMode, {
-      config: body.config,
-      saveAsDefault: body.saveAsDefault,
-      mode: body.mode,
-      urls: body.urls,
-      api: { apiKeyId: auth.keyId, callbackUrl },
-    });
-    if (idemKey) await completeIdempotency(auth.tenantId, idemKey, raw, job.id);
-    return started(job.id, false);
+    const { crawlId } = await startViaApi(auth, body, callbackUrl);
+    if (idemKey) await completeIdempotency(auth.tenantId, idemKey, raw, crawlId);
+    return started(crawlId, false);
   } catch (err) {
     if (idemKey) await releaseIdempotency(auth.tenantId, idemKey).catch(() => undefined);
+    if (err instanceof PublicStartError && err.code === "RATE_LIMITED") {
+      return NextResponse.json({ error: err.message, code: "RATE_LIMITED" }, { status: 429 });
+    }
     return crawlRouteError(err);
   }
 }

@@ -132,6 +132,22 @@ const caps: McpCapabilities = {
   async getCrawlSummary() {
     return { found: false, crawl: null, topIssues: [], note: "no crawl" };
   },
+  async startCrawl() {
+    return { crawlId: "c1", status: "queued", queuePosition: 1, estimatedStart: "2026-11-05T10:00:00.000Z" };
+  },
+  async getCrawlStatus() {
+    return {
+      crawlId: "c1", rootUrl: "https://example.com/", host: "example.com", status: "completed", stoppedReason: null, createdAt: "2026-11-05T10:00:00.000Z",
+      finishedAt: "2026-11-05T10:10:00.000Z", progress: { phase: "completed", pagesCrawled: 10, urlCap: 500, pagesRendered: 0, renderCap: 0 }, health: 90,
+      totals: { byKind: { issue: 1, warning: 0, opportunity: 0 }, byFamily: { h1: 1 } }, segments: [], queuePosition: null, estimatedStart: null,
+    };
+  },
+  async getCrawlIssues() {
+    return { issues: [], nextCursor: null };
+  },
+  async listCrawls() {
+    return { crawls: [] };
+  },
 };
 
 test("mcp initialize negotiates protocol and reports server info", async () => {
@@ -177,11 +193,12 @@ test("mcp tools/list advertises the whole catalog, and nothing else", async () =
     );
   }
 
-  // Exactly three tools may spend or mutate. Growing this set is a product
-  // decision, so it fails here first.
+  // Exactly four tools may spend or mutate. Growing this set is a product
+  // decision, so it fails here first. start_crawl (Phase 3d-A) was one: it
+  // spends a crawl of the monthly allowance, at most 3 starts a minute.
   assert.deepEqual(
     [...MCP_WRITE_TOOLS].sort(),
-    ["add_rank_tracking_keywords", "remove_rank_tracking_keywords", "start_serp_check"],
+    ["add_rank_tracking_keywords", "remove_rank_tracking_keywords", "start_crawl", "start_serp_check"],
   );
 });
 

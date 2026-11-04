@@ -54,6 +54,7 @@ vi.mock("@/lib/prisma", () => ({
     },
     $queryRaw: vi.fn(async () => queryRows.shift() ?? []),
     tenant: { findUnique: vi.fn(async ({ where }: { where: { id: string } }) => ({ id: where.id, planType: "GROWTH" })) },
+    crawlIssue: { findMany: vi.fn(async () => []) },
     crawlJob: {
       findUnique: vi.fn(async ({ where }: { where: { id: string } }) => jobs.find((j) => j.id === where.id) ?? null),
       findFirst: vi.fn(async ({ where }: { where: Record<string, unknown> }) => jobs.find((j) => match(j, where)) ?? null),
@@ -416,5 +417,78 @@ describe("GET /api/public/v1/crawl (list)", () => {
     expect(args.take).toBe(100);
     expect((await crawlRoute.GET(get("/api/public/v1/crawl?limit=0", KEY_A))).status).toBe(400);
     expect((await crawlRoute.GET(get("/api/public/v1/crawl"))).status).toBe(401);
+  });
+});
+
+// ─── MCP ─────────────────────────────────────────────────────────────────────
+
+describe("MCP: start_crawl, get_crawl_status, get_crawl_issues, list_crawls", async () => {
+  const mcpRoute = await import("@/app/api/public/v1/mcp/route");
+  const { NextRequest } = await import("next/server");
+  const rpc = async (key: string | undefined, method: string, params?: unknown) => {
+    const res = await mcpRoute.POST(
+      new NextRequest("https://app.test/api/public/v1/mcp", {
+        method: "POST",
+        headers: { "content-type": "application/json", ...(key ? { authorization: `Bearer ${key}` } : {}) },
+        body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, ...(params ? { params } : {}) }),
+      }),
+    );
+    return { status: res.status, body: (await res.json()) as { result?: Record<string, unknown>; error?: unknown } };
+  };
+  const call = async (key: string, name: string, args: Record<string, unknown> = {}) =>
+    (await rpc(key, "tools/call", { name, arguments: args })).body.result as {
+      isError?: boolean;
+      structuredContent?: Record<string, unknown>;
+      content: { text: string }[];
+    };
+
+  it("handshake: initialize, then tools/list carries the four crawl tools with JSON schemas", async () => {
+    expect((await rpc(undefined, "initialize")).status).toBe(401);
+    const init = await rpc(KEY_A, "initialize", { protocolVersion: "2025-06-18" });
+    expect(init.body.result).toMatchObject({ protocolVersion: "2025-06-18", capabilities: { tools: {} } });
+    const list = (await rpc(KEY_A, "tools/list")).body.result as {
+      tools: { name: string; inputSchema: { type: string; required?: string[] }; annotations: { readOnlyHint: boolean } }[];
+    };
+    const byName = Object.fromEntries(list.tools.map((t) => [t.name, t]));
+    for (const n of ["start_crawl", "get_crawl_status", "get_crawl_issues", "list_crawls"]) expect(byName[n]!.inputSchema.type).toBe("object");
+    expect(byName.get_crawl_status!.inputSchema.required).toEqual(["crawlId"]);
+    expect(byName.start_crawl!.annotations.readOnlyHint).toBe(false);
+    expect(byName.list_crawls!.annotations.readOnlyHint).toBe(true);
+  });
+
+  it("start_crawl starts as the key's tenant, records the key, and answers with the queue position", async () => {
+    const r = await call(KEY_A, "start_crawl", { url: "https://shop.example/", renderMode: "thin", maxUrls: 50 });
+    expect(r.isError).toBeUndefined();
+    expect(r.structuredContent).toMatchObject({ crawlId: "c1", status: "queued" });
+    expect(typeof r.structuredContent!.queuePosition).toBe("number");
+    const [tenantId, , url, render, opts] = startCrawl.mock.calls[0] as unknown as [
+      string,
+      string,
+      string,
+      string,
+      { config: { maxUrls: number }; api: unknown },
+    ];
+    expect([tenantId, url, render, opts.config.maxUrls]).toEqual(["t_a", "https://shop.example/", "thin", 50]);
+    expect(opts.api).toEqual({ apiKeyId: "k_a", callbackUrl: null });
+    expect(r.content[0]!.text).toContain("c1");
+    // The same refusals as the REST start.
+    expect((await call(KEY_A, "start_crawl", { url: "https://shop.example/", callbackUrl: "http://x.example/" })).isError).toBe(true);
+    expect((await call(KEY_A, "start_crawl", { mode: "list" })).isError).toBe(true);
+    limits.start = false;
+    const limited = await call(KEY_A, "start_crawl", { url: "https://shop.example/" });
+    expect([limited.isError, limited.content[0]!.text]).toEqual([true, "Too many crawls in a row. Wait a minute."]);
+  });
+
+  it("get_crawl_status, list_crawls and get_crawl_issues read only the key's tenant", async () => {
+    jobs.push(row() as never);
+    const own = await call(KEY_A, "get_crawl_status", { crawlId: "c1" });
+    expect(own.structuredContent).toMatchObject({ crawlId: "c1", status: "completed", health: 64, totals: { byFamily: { h1: 5, images: 7 } } });
+    expect(own.content[0]!.text).toContain("64/100");
+    const other = await call(KEY_B, "get_crawl_status", { crawlId: "c1" });
+    expect([other.isError, other.content[0]!.text]).toEqual([true, "No crawl with that id in this workspace."]);
+    expect((await call(KEY_B, "get_crawl_issues", { crawlId: "c1" })).isError).toBe(true);
+    expect((await call(KEY_A, "list_crawls", {})).structuredContent).toMatchObject({ crawls: [{ crawlId: "c1" }] });
+    expect((await call(KEY_B, "list_crawls", {})).structuredContent).toEqual({ crawls: [] });
+    expect((await call(KEY_A, "get_crawl_status", {})).isError).toBe(true);
   });
 });

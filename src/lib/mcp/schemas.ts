@@ -148,6 +148,35 @@ export const crawlSummaryInputSchema = z.object({
   limit: limitSchema(100).optional(),
 });
 
+// Phase 3d-A: the public crawl API as tools.
+export const startCrawlInputSchema = z
+  .object({
+    url: z.string().trim().max(2048).default(""),
+    mode: z.enum(["spider", "list"]).default("spider"),
+    urls: z.array(z.string().trim().max(2048)).max(25_000).optional(),
+    renderMode: z.enum(["none", "thin", "all"]).default("none"),
+    maxUrls: z.coerce.number().int().min(1).optional(),
+    callbackUrl: z.string().trim().max(2048).optional(),
+  })
+  .refine((v) => (v.mode === "list" ? (v.urls?.length ?? 0) > 0 : v.url.length > 0), { message: "Give `url` (spider mode) or `urls` (list mode)." });
+
+export const crawlIdInputSchema = z.object({ crawlId: idSchema });
+
+export const crawlIssuesInputSchema = z.object({
+  crawlId: idSchema,
+  ruleId: idSchema.optional(),
+  family: idSchema.optional(),
+  kind: z.enum(["issue", "warning", "opportunity"]).optional(),
+  segment: z.coerce.number().int().min(0).optional(),
+  cursor: idSchema.optional(),
+  limit: limitSchema(200).optional(),
+});
+
+export const listCrawlsInputSchema = z.object({
+  host: z.string().trim().min(1).max(200).optional(),
+  limit: limitSchema(100).optional(),
+});
+
 /** The registry the handler parses with. Keyed by tool name. */
 export const MCP_INPUT_SCHEMAS: Record<string, z.ZodType> = {
   whoami: noArgsSchema,
@@ -166,6 +195,10 @@ export const MCP_INPUT_SCHEMAS: Record<string, z.ZodType> = {
   get_research_log: researchLogInputSchema,
   get_gsc_queries: gscQueriesInputSchema,
   get_crawl_summary: crawlSummaryInputSchema,
+  start_crawl: startCrawlInputSchema,
+  get_crawl_status: crawlIdInputSchema,
+  get_crawl_issues: crawlIssuesInputSchema,
+  list_crawls: listCrawlsInputSchema,
 };
 
 /** Tool names in the catalog with no input schema. Empty is the only pass. */

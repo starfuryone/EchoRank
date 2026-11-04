@@ -424,13 +424,16 @@ describe("schema discipline", () => {
     expect(Object.keys(MCP_INPUT_SCHEMAS).sort()).toEqual([...MCP_TOOL_NAMES].sort());
   });
 
-  it("every tool declares readOnlyHint, and only three may write", () => {
+  it("every tool declares readOnlyHint, and only four may write", () => {
     for (const tool of MCP_TOOLS) {
       expect(typeof tool.annotations?.readOnlyHint).toBe("boolean");
     }
+    // start_crawl (Phase 3d-A) spends one crawl of the monthly allowance, at
+    // most 3 a minute (the dashboard's start limit).
     expect([...MCP_WRITE_TOOLS].sort()).toEqual([
       "add_rank_tracking_keywords",
       "remove_rank_tracking_keywords",
+      "start_crawl",
       "start_serp_check",
     ]);
   });

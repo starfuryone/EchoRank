@@ -66,6 +66,10 @@ export interface McpCapabilities {
   getResearchLog(args: Record<string, unknown>): Promise<unknown>;
   getGscQueries(args: Record<string, unknown>): Promise<unknown>;
   getCrawlSummary(args: Record<string, unknown>): Promise<unknown>;
+  startCrawl(args: Record<string, unknown>): Promise<unknown>;
+  getCrawlStatus(args: Record<string, unknown>): Promise<unknown>;
+  getCrawlIssues(args: Record<string, unknown>): Promise<unknown>;
+  listCrawls(args: Record<string, unknown>): Promise<unknown>;
 }
 
 interface JsonRpcRequest {
@@ -175,6 +179,14 @@ function runTool(
       return caps.getGscQueries(args);
     case "get_crawl_summary":
       return caps.getCrawlSummary(args);
+    case "start_crawl":
+      return caps.startCrawl(args);
+    case "get_crawl_status":
+      return caps.getCrawlStatus(args);
+    case "get_crawl_issues":
+      return caps.getCrawlIssues(args);
+    case "list_crawls":
+      return caps.listCrawls(args);
     default:
       return Promise.reject(new UnknownToolError(name));
   }

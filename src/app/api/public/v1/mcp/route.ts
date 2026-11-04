@@ -25,7 +25,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const result = await handleMcpMessage(msg, capsFor(auth.tenantId));
+  const result = await handleMcpMessage(msg, capsFor(auth.tenantId, auth.keyId));
   if (result.status === 202) return new NextResponse(null, { status: 202 });
   return NextResponse.json(result.body, { status: result.status });
 }
