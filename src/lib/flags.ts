@@ -32,11 +32,16 @@ export const FLAGS = {
   "crawl.extraction": true,
   "crawl.segments": true,
   // Phase 4c: the Structure tab (directory tree, crawl tree, link graph) and
-  // the Compare tab shipped.
+  // the Compare tab shipped, and scheduled crawls (BullMQ repeatable per
+  // schedule, compare with the last run). The email export rides crawl.reports.
   "crawl.visualise": true,
   "crawl.compare": true,
-  "crawl.schedule": false,
+  "crawl.schedule": true,
   "crawl.reports": false,
+  // Google Sheets export (and the Looker Studio guide that reads it). Needs
+  // the spreadsheets scope on the Google OAuth client and the Sheets API
+  // enabled in the GCP project — an operator step; flipped after it.
+  "crawl.sheets": false,
   // Phase 4d
   "crawl.ga4": false,
   "crawl.gsc": false,

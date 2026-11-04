@@ -53,6 +53,7 @@ import { CrawlTools } from "@/components/seo-tools/site-crawler-crawl-tools";
 import { InlinksPanel } from "@/components/seo-tools/site-crawler-inlinks";
 import { ExtractionPanel } from "@/components/seo-tools/site-crawler-extraction";
 import { ComparePanel } from "@/components/seo-tools/site-crawler-compare";
+import { CrawlSchedules } from "@/components/seo-tools/site-crawler-schedules";
 import { SegmentOverview, SegmentPicker } from "@/components/seo-tools/site-crawler-segments";
 import type { ConfigProblem, CrawlConfigInput } from "@/lib/site-crawler/crawl-config";
 import { parseUrlList } from "@/lib/site-crawler/url-list";
@@ -209,10 +210,16 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
   const applyList = useCallback((data: CrawlListResponse) => {
     setQuota(data.quota);
     setCrawls(data.crawls);
-    // Resume whatever is in flight, so a reload lands back on the live crawl.
+    // ?crawl=<id> (the scheduled-crawl email's link) opens that crawl; else
+    // resume whatever is in flight, so a reload lands back on the live crawl.
+    const wanted = typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get("crawl");
     setActive(
       (current) =>
-        current ?? data.crawls.find((c) => isInFlight(c.status)) ?? data.crawls[0] ?? null,
+        current ??
+        data.crawls.find((c) => c.id === wanted) ??
+        data.crawls.find((c) => isInFlight(c.status)) ??
+        data.crawls[0] ??
+        null,
     );
   }, []);
 
@@ -561,7 +568,20 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
               urlCap={int.format(quota.urlCap)}
               disabled={starting || Boolean(running)}
               onChange={onConfig}
-            />
+            >
+              {flag("crawl.schedule") && (
+                <CrawlSchedules
+                  t={t.p4c}
+                  locale={locale}
+                  rootUrl={url}
+                  renderMode={quota.renderCap > 0 ? renderMode : "none"}
+                  config={cfg.config}
+                  cap={quota.scheduleCap ?? 0}
+                  cadences={quota.scheduleCadences ?? []}
+                  disabled={starting}
+                />
+              )}
+            </CrawlConfigSection>
           )}
 
           <AcceptedWords t={t} />

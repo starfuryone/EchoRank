@@ -228,6 +228,7 @@ export function CrawlConfigSection({
   urlCap,
   disabled,
   onChange,
+  children,
 }: {
   t: T;
   t4b: T4b;
@@ -236,6 +237,8 @@ export function CrawlConfigSection({
   urlCap: string;
   disabled: boolean;
   onChange: (next: { config: CrawlConfigInput | null; saveAsDefault: boolean }) => void;
+  /** Phase 4c: the "Run this crawl on a schedule" block, inside the section. */
+  children?: React.ReactNode;
 }) {
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState<Draft>(EMPTY);
@@ -490,6 +493,7 @@ export function CrawlConfigSection({
 
         <Toggle id="cfg-save-default" label={t.saveDefault} checked={saveAsDefault} onChange={(v) => { setSaveAsDefault(v); setDirty(true); }} />
       </fieldset>
+      {children}
     </details>
   );
 }

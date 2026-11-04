@@ -23,7 +23,7 @@ import {
   InvalidCrawlConfigError,
   InvalidCrawlListError,
   InvalidCrawlUrlError,
-} from "./http";
+} from "./errors";
 import {
   DEFAULT_CRAWL_CONFIG,
   checkCrawlConfig,
@@ -110,6 +110,15 @@ export interface StartCrawlOptions {
   /** "list": fetch `urls` once each, no discovery. rawUrl is ignored. */
   mode?: "spider" | "list";
   urls?: string[];
+  /**
+   * Phase 4c: a schedule's configuration, already checked and sealed when the
+   * schedule was saved. Re-checked here against today's plan and the site's
+   * verification (secrets are not re-entered), so a downgrade or a lost
+   * verification refuses the run instead of crawling past the new limits.
+   */
+  sealed?: StoredCrawlConfig | null;
+  /** Phase 4c: the schedule this run belongs to; rides the job payload to the completion hook. */
+  scheduleId?: string;
 }
 
 /**
@@ -161,7 +170,7 @@ export async function startCrawl(
   // pattern should not spend a crawl. Verified-only options are refused on
   // an unverified host; a custom robots.txt runs in test mode there.
   const host = new URL(validated.url).hostname;
-  const site = opts.config || opts.saveAsDefault
+  const site = opts.config || opts.saveAsDefault || opts.sealed
     ? await prisma.crawlSiteDefault.findUnique({
         where: { tenantId_host: { tenantId, host } },
         select: { verifiedAt: true, config: true },
@@ -177,6 +186,15 @@ export async function startCrawl(
     });
     if (checked.problems.length) throw new InvalidCrawlConfigError(checked.problems);
     stored = sealCrawlConfig(checked.config, readStoredConfig(site?.config));
+  } else if (opts.sealed) {
+    const checked = checkCrawlConfig({ ...opts.sealed, headers: [], cookies: null, basicAuth: null }, {
+      urlCap: quota.urlCap,
+      verified: Boolean(site?.verifiedAt),
+      ...featureCapsForPlan(plan),
+      checkExpr: checkExtractorExpr,
+    });
+    if (checked.problems.length) throw new InvalidCrawlConfigError(checked.problems);
+    stored = { ...opts.sealed, maxUrls: checked.config.maxUrls };
   }
 
   if (!quota.allowed) {
@@ -234,7 +252,7 @@ export async function startCrawl(
     await redis.expire(keys.seen, REDIS_KEY_TTL_SECONDS);
   }
 
-  await addJob("site-crawl", "crawl", { crawlJobId: job.id, tenantId });
+  await addJob("site-crawl", "crawl", { crawlJobId: job.id, tenantId, ...(opts.scheduleId ? { scheduleId: opts.scheduleId } : {}) });
 
   return { ...toCrawlDto(job), ...(list ? { listSkipped: list.skipped } : {}) };
 }

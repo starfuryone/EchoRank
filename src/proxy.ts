@@ -364,7 +364,10 @@ const withSession = auth((req) => {
 
   if (!req.auth) {
     const loginUrl = new URL("/login", req.url);
-    loginUrl.searchParams.set("callbackUrl", pathname);
+    // With the query: a signed-out click on an emailed CSV link
+    // (…/pages?format=csv, Phase 4c schedules) comes back to the same file.
+    // The login page still only follows same-origin paths.
+    loginUrl.searchParams.set("callbackUrl", pathname + req.nextUrl.search);
     return NextResponse.redirect(loginUrl);
   }
 

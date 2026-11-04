@@ -6,55 +6,15 @@
 
 import { NextResponse } from "next/server";
 import { enforcementErrorResponse } from "@/lib/plan-enforcement";
-import type { ConfigProblem } from "./crawl-config";
 
-export class InvalidCrawlUrlError extends Error {
-  readonly statusCode = 400;
-  constructor(readonly reason: string, message = "Enter a public http(s) URL, like https://example.com") {
-    super(message);
-    this.name = "InvalidCrawlUrlError";
-  }
-}
-
-export class CrawlQuotaExceededError extends Error {
-  readonly statusCode = 429;
-  constructor(
-    readonly limit: number,
-    readonly plan: string,
-  ) {
-    super(`You have used all ${limit} crawls included this month.`);
-    this.name = "CrawlQuotaExceededError";
-  }
-}
-
-export class CrawlLockedError extends Error {
-  readonly statusCode = 403;
-  constructor(readonly plan: string) {
-    super("Site Crawler is not included in your plan.");
-    this.name = "CrawlLockedError";
-  }
-}
-
-/** A CrawlConfig that cannot be honoured (Phase 4a): bad pattern, reserved header, verified-only option. */
-export class InvalidCrawlConfigError extends Error {
-  readonly statusCode = 400;
-  constructor(readonly problems: ConfigProblem[]) {
-    super("Some crawl settings cannot be used.");
-    this.name = "InvalidCrawlConfigError";
-  }
-}
-
-/** List mode (Phase 4a): no usable URL, or more than the plan's URLs per crawl. */
-export class InvalidCrawlListError extends Error {
-  readonly statusCode = 400;
-  constructor(
-    readonly reason: "empty" | "too_long",
-    readonly cap: number,
-  ) {
-    super(reason === "empty" ? "The list has no public http(s) URL." : `The list is longer than your plan's ${cap} URLs per crawl.`);
-    this.name = "InvalidCrawlListError";
-  }
-}
+export {
+  CrawlLockedError,
+  CrawlQuotaExceededError,
+  InvalidCrawlConfigError,
+  InvalidCrawlListError,
+  InvalidCrawlUrlError,
+} from "./errors";
+import { CrawlLockedError, CrawlQuotaExceededError, InvalidCrawlConfigError, InvalidCrawlListError, InvalidCrawlUrlError } from "./errors";
 
 export function crawlRouteError(err: unknown): NextResponse {
   const enforcement = enforcementErrorResponse(err);
@@ -77,6 +37,11 @@ export function crawlRouteError(err: unknown): NextResponse {
   // segment-filter.ts: ?segment=N the crawl does not have. Matched by name, as below.
   if (err instanceof Error && err.name === "InvalidSegmentError") {
     return NextResponse.json({ error: err.message, code: "INVALID_REQUEST" }, { status: 400 });
+  }
+
+  // schedule-service.ts (Phase 4c): plan cap or cadence; matched by name, same reason.
+  if (err instanceof Error && err.name === "ScheduleRefusedError") {
+    return NextResponse.json({ error: err.message, code: "SCHEDULE_REFUSED", reason: (err as Error & { reason: string }).reason }, { status: 400 });
   }
 
   // compare.ts (Phase 4c), matched by name for the same reason.

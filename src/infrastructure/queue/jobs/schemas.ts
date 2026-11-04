@@ -267,6 +267,13 @@ export interface FreeToolsVolatilityJob {
 export interface SiteCrawlJob {
   crawlJobId: string;
   tenantId: string;
+  /** Phase 4c: set when a schedule started the crawl; its completion hook runs after. */
+  scheduleId?: string;
+}
+
+/** Phase 4c: one schedule's repeatable tick on the site-crawl queue (job name "schedule"). */
+export interface SiteCrawlScheduleJob {
+  scheduleId: string;
 }
 
 /** The nightly retention sweep on the site-crawl queue (job name "retention"). */
@@ -432,7 +439,7 @@ export interface QueueJobMap {
   "rank-tracker": RankTrackerJob;
   "site-audit": SiteAuditJob;
   "bot-log-analysis": BotLogAnalysisJob;
-  "site-crawl": SiteCrawlJob | SiteCrawlRetentionJob;
+  "site-crawl": SiteCrawlJob | SiteCrawlRetentionJob | SiteCrawlScheduleJob;
   "free-tools-volatility": FreeToolsVolatilityJob;
   "sov-aggregation": SovAggregationJob;
   "citation-aggregation": CitationAggregationJob;
