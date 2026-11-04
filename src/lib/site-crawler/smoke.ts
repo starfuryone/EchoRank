@@ -36,7 +36,7 @@ import { rateLimit } from "@/lib/rate-limit";
 import { RULES, FAMILY_ID_PREFIXES, RULE_FAMILIES, type RuleFamily } from "@/lib/crawl-rules";
 import { BACKLINKS } from "@/lib/dataforseo/endpoints";
 import { EXTRACTOR_PRESETS, readStoredConfig, type CrawlConfigInput, type ExtractorPreset } from "./crawl-config";
-import { ISSUE_COLUMNS, metricCsvColumns, pageColumns, withSegmentColumn } from "./csv-columns";
+import { ISSUE_COLUMNS, LINK_SCORE_COLUMN, metricCsvColumns, pageColumns, withSegmentColumn } from "./csv-columns";
 import { cachedTotals, toTotals } from "./issue-totals";
 import { METRIC_COLUMNS, METRIC_SOURCES, type MetricSource } from "./metrics-shared";
 import { metricCoverage } from "./metrics";
@@ -69,6 +69,9 @@ export interface SmokeArgs {
   ai: AiPreset[];
   aiPages: number;
   login: boolean;
+  /** Phase 4g: semantic duplicates on N pages (the tenant's OpenAI key), URL Inspection on N pages. */
+  semantic: number | null;
+  inspect: number | null;
   timeoutMin: number;
   baseUrl: string;
 }
@@ -89,13 +92,14 @@ const EXTRACT_ALIASES: Record<string, ExtractorPreset[]> = { og: ["ogTitle", "og
 export const USAGE = `usage: npm run crawl:smoke -- --tenant <slug> --url <https://host> [--render thin|all] [--psi N]
        [--backlinks N] [--extract og|<preset,...>] [--search "<text>"] [--segment "<glob>"] [--timeout <minutes>]
        [--js ${SMOKE_JS.join("|")}] [--ai "suggest title"|intent|summary|grammar[,…]] [--ai-pages N] [--login]
+       [--semantic N] [--inspect N]
 presets: ${Object.keys(EXTRACTOR_PRESETS).join(", ")} (og = ogTitle,ogDescription,ogImage)
 env:   CRAWL_SMOKE_BASE_URL (default http://127.0.0.1:4400) — the web process the API checks call`;
 
 export function parseArgs(argv: readonly string[], env: Record<string, string | undefined> = process.env): SmokeArgs {
   const out: SmokeArgs = {
     tenant: null, url: null, render: null, psi: null, backlinks: null, extract: [], search: null, segment: null,
-    js: null, ai: [], aiPages: 5, login: false,
+    js: null, ai: [], aiPages: 5, login: false, semantic: null, inspect: null,
     timeoutMin: 20, baseUrl: (env.CRAWL_SMOKE_BASE_URL || "http://127.0.0.1:4400").replace(/\/+$/, ""),
   };
   const int = (name: string, v: string | undefined) => {
@@ -150,6 +154,8 @@ export function parseArgs(argv: readonly string[], env: Record<string, string | 
       }
       case "--ai-pages": out.aiPages = int("ai-pages", take()); break;
       case "--login": out.login = true; break;
+      case "--semantic": out.semantic = int("semantic", take()); break;
+      case "--inspect": out.inspect = int("inspect", take()); break;
       default: throw new Error(`unknown argument ${a}`);
     }
   }
@@ -171,6 +177,8 @@ export function requestBody(args: SmokeArgs): unknown {
   if (args.js) config.js = [{ name: args.js, preset: args.js, selector: null, code: null }];
   if (args.ai.length) config.ai = { provider: "claude", prompts: args.ai.map((preset) => ({ preset, text: null })), top: { pages: args.aiPages, segment: null } };
   if (args.login) config.useLogin = true;
+  if (args.semantic) config.semantic = { pages: args.semantic, segment: null };
+  if (args.inspect) config.inspection = { pages: args.inspect, segment: null };
   return {
     url: args.url ?? "",
     renderMode: args.render ?? "none",
@@ -414,13 +422,16 @@ const JOB_SELECT = {
 const TERMINAL = new Set(["COMPLETED", "FAILED", "CANCELLED"]);
 
 /** Opted-in post-crawl sources still running. Empty once every one is done or stopped. */
-export function pendingMetrics(job: Pick<JobRow, "config" | "summary">): ("psi" | "backlinks" | "ai")[] {
+export function pendingMetrics(job: Pick<JobRow, "config" | "summary">): ("psi" | "backlinks" | "ai" | "semantic" | "gsc_inspection")[] {
   const add = readStoredConfig(job.config)?.addData;
   const ai = readStoredConfig(job.config)?.ai;
   const states = ((job.summary as { metrics?: Record<string, SourceState | undefined> } | null)?.metrics ?? {});
   const settled = (s: SourceState | undefined) => s?.status === "done" || s?.status === "stopped";
-  const out: ("psi" | "backlinks" | "ai")[] = [];
+  const out: ("psi" | "backlinks" | "ai" | "semantic" | "gsc_inspection")[] = [];
   if (ai && flag("crawl.ai") && !settled(states.ai)) out.push("ai");
+  const stored = readStoredConfig(job.config);
+  if (stored?.semantic && flag("crawl.semantic") && !settled(states.semantic)) out.push("semantic");
+  if (stored?.inspection && flag("crawl.inspection") && !settled(states.gsc_inspection)) out.push("gsc_inspection");
   if (add?.backlinks && flag("crawl.backlinks") && !settled(states.backlinks)) out.push("backlinks");
   if (add?.psi && flag("crawl.psi") && !settled(states.psi)) out.push("psi");
   return out;
@@ -758,7 +769,8 @@ export async function runSmoke(args: SmokeArgs, deps: SmokeDeps): Promise<SmokeR
     const same = got.length === expected.length && got.every((h, i) => h === expected[i]);
     check(same ? "PASS" : "FAIL", name, same ? `200 · ${got.length} columns` : `200 · header differs: got [${got.join(", ")}] want [${expected.join(", ")}]`);
   };
-  await csvCheck("CSV pages", "/pages?format=csv", withSegmentColumn([...pageColumns(searchNames), ...metricCsvColumns(sources)], segments, () => []).map((c) => c.header));
+  const scored = flag("crawl.linkScore") && (await prisma.crawlPage.count({ where: { crawlJobId: jobId, linkScore: { not: null } }, take: 1 })) > 0;
+  await csvCheck("CSV pages", "/pages?format=csv", withSegmentColumn([...pageColumns(searchNames), ...(scored ? [LINK_SCORE_COLUMN] : []), ...metricCsvColumns(sources)], segments, () => []).map((c) => c.header));
   await csvCheck("CSV issues", "/export?view=issues", withSegmentColumn(ISSUE_COLUMNS, segments, () => []).map((c) => c.header));
 
   // Extraction, search, segment.
@@ -802,6 +814,35 @@ export async function runSmoke(args: SmokeArgs, deps: SmokeDeps): Promise<SmokeR
     const behind = prefix ? await prisma.crawlPage.count({ where: { crawlJobId: jobId, statusCode: 200, url: { startsWith: prefix } } }) : job.pagesCrawled;
     if (login?.status !== "ok") check("FAIL", "authenticated pages crawled", `login ${login?.status ?? "not attempted"}${login?.reason ? ` (${login.reason})` : ""}`);
     else check(behind > 0 ? "PASS" : "FAIL", "authenticated pages crawled", prefix ? `logged in · ${behind} pages answered 200 under ${prefix}` : `logged in · ${behind} pages`);
+  }
+  // ── Phase 4g ─────────────────────────────────────────────────────────────
+  if (!flag("crawl.externalLinks")) check("SKIP", "external links", "crawl.externalLinks is off");
+  else {
+    const rows = await prisma.crawlLink.count({ where: { crawlJobId: jobId, isExternal: true } });
+    const checked = await prisma.crawlLink.count({ where: { crawlJobId: jobId, isExternal: true, status: { not: null } } });
+    const ext = (job.summary as { external?: { urls?: number; capped?: boolean } } | null)?.external;
+    check(rows > 0 ? "PASS" : "FAIL", "external rows present", `${rows} rows · ${ext?.urls ?? 0} distinct URLs · ${checked} rows with a status${ext?.capped ? " · resolve cap reached" : ""}`);
+  }
+  if (!flag("crawl.linkScore")) check("SKIP", "linkScore", "crawl.linkScore is off");
+  else {
+    const scoredPages = await prisma.crawlPage.count({ where: { crawlJobId: jobId, linkScore: { not: null } } });
+    check(scoredPages === job.pagesCrawled ? "PASS" : "FAIL", "linkScore populated", `${scoredPages} of ${job.pagesCrawled} pages`);
+  }
+  if (!args.semantic) check("SKIP", "semantic rules", "no --semantic");
+  else if (!flag("crawl.semantic")) check("SKIP", "semantic rules", "crawl.semantic is off");
+  else {
+    const st = (job.summary as { metrics?: { semantic?: SourceState & { embedded?: number } } } | null)?.metrics?.semantic;
+    const n = await prisma.crawlIssue.count({ where: { crawlJobId: jobId, ruleId: { in: ["content.semantic_duplicate", "content.off_topic"] } } });
+    const ok = st?.status === "done" && (st.embedded ?? 0) > 1;
+    check(ok ? "PASS" : "FAIL", "semantic rules evaluated", `${st?.status ?? "not run"}${st?.stoppedReason ? ` (${st.stoppedReason})` : ""} · ${st?.embedded ?? 0} of ${st?.targets ?? 0} pages embedded · ${n} findings`);
+  }
+  if (!args.inspect) check("SKIP", "inspection rows", "no --inspect");
+  else if (!flag("crawl.inspection")) check("SKIP", "inspection rows", "crawl.inspection is off");
+  else {
+    const rows = await prisma.crawlPageMetric.count({ where: { crawlJobId: jobId, source: "gsc_inspection" } });
+    const st = (job.summary as { metrics?: { gsc_inspection?: SourceState } } | null)?.metrics?.gsc_inspection;
+    const ok = rows > 0 && rows <= args.inspect;
+    check(ok ? "PASS" : "FAIL", "inspection rows ≤ --inspect", `${rows} of ${args.inspect}${st?.stoppedReason ? ` · stopped: ${st.stoppedReason}` : ""}`);
   }
   if (!args.search) check("SKIP", "search counts", "no --search");
   else {

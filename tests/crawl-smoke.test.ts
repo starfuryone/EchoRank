@@ -23,6 +23,7 @@ const db = {
   earlier: [] as Row[],
   pages: [] as Row[],
   jsValues: [] as Row[],
+  inspectionRows: 0,
   aiValues: [] as Row[],
 };
 
@@ -65,6 +66,7 @@ const prismaFake = {
     findMany: vi.fn(async () => db.earlier),
   },
   crawlIssue: {
+    count: vi.fn(async () => 1),
     groupBy: vi.fn(async ({ by }: { by: string[] }) => (by[0] === "severity" ? db.severity : db.byRule)),
   },
   crawlPage: {
@@ -75,7 +77,10 @@ const prismaFake = {
     }),
     count: vi.fn(async () => 3),
   },
+  // Phase 4g: outbound link rows; URL Inspection rows.
+  crawlLink: { count: vi.fn(async ({ where }: { where: { status?: unknown } }) => (where.status ? 3 : 4)) },
   crawlPageMetric: {
+    count: vi.fn(async () => db.inspectionRows),
     groupBy: vi.fn(async () => db.coverage),
     findMany: vi.fn(async () => [
       { source: "psi", data: { mobile: { performance: 71 }, desktop: { performance: 88 } }, page: { statusCode: 200 } },
@@ -112,7 +117,7 @@ vi.mock("@/lib/dataforseo/metering", () => ({ monthlyCapUsd: vi.fn(async () => 2
 
 const { parseArgs, requestBody, runSmoke, csvHeaderCells } = await import("@/lib/site-crawler/smoke");
 const { StartCrawlBodySchema } = await import("@/lib/site-crawler/start-body");
-const { ISSUE_COLUMNS, metricCsvColumns, pageColumns, withSegmentColumn } = await import("@/lib/site-crawler/csv-columns");
+const { ISSUE_COLUMNS, LINK_SCORE_COLUMN, metricCsvColumns, pageColumns, withSegmentColumn } = await import("@/lib/site-crawler/csv-columns");
 
 // ── fake web process ─────────────────────────────────────────────────────────
 type Answer = { status?: number; json?: unknown; csv?: string; pdf?: boolean; type?: string };
@@ -168,7 +173,8 @@ function healthy() {
     "GET /pages?pageSize=1&sort=psi.mobile.performance&dir=desc": { json: { total: 3, pages: [{ metrics: { psi: { mobile: {} } } }] } },
     "GET /pages?pageSize=1&sort=backlinks.referringDomains&dir=desc": { json: { total: 3, pages: [{ metrics: { backlinks: { backlinks: 4 } } }] } },
     "GET /pages?pageSize=1&segment=0": { json: { total: 1, pages: [{}] } },
-    "GET /pages?format=csv": { csv: csvLine(withSegmentColumn([...pageColumns(searches), ...metricCsvColumns(["psi", "backlinks"])], segDefs as never, () => []).map((c) => c.header)) },
+    // Phase 4g: a crawl with Link Scores exports the Link Score column.
+    "GET /pages?format=csv": { csv: csvLine(withSegmentColumn([...pageColumns(searches), LINK_SCORE_COLUMN, ...metricCsvColumns(["psi", "backlinks"])], segDefs as never, () => []).map((c) => c.header)) },
     "GET /export?view=issues": { csv: csvLine(withSegmentColumn(ISSUE_COLUMNS, segDefs as never, () => []).map((c) => c.header)) },
     "GET /graph?kind=links": { json: { kind: "links", nodes: [{ id: "p1" }, { id: "p2" }], edges: [{ source: "p1", target: "p2" }] } },
     "POST /compare": { json: { id: "cmp1", result: { counts: { added: 1, removed: 0, changed: 2, issuesNew: 1, issuesResolved: 0 } } } },
@@ -391,5 +397,47 @@ describe("crawl smoke: 4e flags", () => {
     expect(verdictOf(result.lines, "ai token meter")).toBe("FAIL");
     expect(result.lines.find((l) => l.name.startsWith("authenticated pages"))).toMatchObject({ verdict: "FAIL", value: "login failed (success_check_failed)" });
     expect(result.exitCode).toBe(1);
+  });
+});
+
+// ─── Phase 4g: --semantic, --inspect, external links, Link Score ────────────
+
+describe("crawl smoke: 4g flags", () => {
+  const G4 = ["--tenant", "smoke", "--url", "https://echorank360.com", "--semantic", "3", "--inspect", "2", "--timeout", "1"];
+  beforeEach(() => {
+    healthy();
+    vi.clearAllMocks();
+    db.inspectionRows = 2;
+    const done = { semantic: { status: "done", targets: 3, completed: 3, embedded: 3 }, gsc_inspection: { status: "done", targets: 2, completed: 2 } };
+    db.jobStates = [job("COMPLETED", done, { summary: { totals: { ERROR: 1, WARNING: 2, NOTICE: 3 }, metrics: done, external: { urls: 4, checked: 3, capped: false } } })];
+  });
+
+  it("parses the flags into the opt-ins the handler accepts", () => {
+    expect(parseArgs(G4, {})).toMatchObject({ semantic: 3, inspect: 2 });
+    const body = requestBody(parseArgs(G4, {})) as { config: Record<string, unknown> };
+    expect(StartCrawlBodySchema.safeParse(body).success).toBe(true);
+    expect(body.config).toMatchObject({ semantic: { pages: 3, segment: null }, inspection: { pages: 2, segment: null } });
+    expect(() => parseArgs(["--inspect", "0"], {})).toThrow(/positive integer/);
+  });
+
+  it("PASSes external rows, linkScore populated, semantic rules evaluated and inspection rows <= N", async () => {
+    // The handler refuses inspection without a covering GSC property: give it one for this run.
+    prismaFake.gscConnection.findUnique.mockResolvedValue({ tenantId: "t1", status: "ACTIVE", siteUrl: "sc-domain:echorank360.com" } as never);
+    prismaFake.tenantAiKey.findMany.mockResolvedValue([{ provider: "openai", createdAt: T0, lastUsedAt: null }] as never);
+    const { result } = await run(G4);
+    for (const name of ["external rows present", "linkScore populated", "semantic rules evaluated", "inspection rows"]) expect(verdictOf(result.lines, name), name).toBe("PASS");
+    expect(result.lines.find((l) => l.name.startsWith("external rows"))!.value).toBe("4 rows · 4 distinct URLs · 3 rows with a status");
+    prismaFake.gscConnection.findUnique.mockResolvedValue(null as never);
+    prismaFake.tenantAiKey.findMany.mockResolvedValue([] as never);
+  });
+
+  it("FAILs inspection rows over N", async () => {
+    prismaFake.gscConnection.findUnique.mockResolvedValue({ tenantId: "t1", status: "ACTIVE", siteUrl: "sc-domain:echorank360.com" } as never);
+    prismaFake.tenantAiKey.findMany.mockResolvedValue([{ provider: "openai", createdAt: T0, lastUsedAt: null }] as never);
+    db.inspectionRows = 5;
+    const { result } = await run(G4);
+    expect(verdictOf(result.lines, "inspection rows")).toBe("FAIL");
+    prismaFake.gscConnection.findUnique.mockResolvedValue(null as never);
+    prismaFake.tenantAiKey.findMany.mockResolvedValue([] as never);
   });
 });
