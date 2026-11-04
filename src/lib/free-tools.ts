@@ -16,13 +16,16 @@
 // was not — /free-tools did not exist in any branch or in production. This file
 // creates the hub, and the simulator is built here with the rest.
 
+import { flag, type FlagName } from "@/lib/flags";
+
 export const FREE_TOOLS_BASE = "/free-tools";
 
 export type FreeToolId =
   | "serp_volatility"
   | "content_optimizer"
   | "share_of_search"
-  | "serp_simulator";
+  | "serp_simulator"
+  | "site_crawler";
 
 /**
  * What a tool costs us per run.
@@ -31,11 +34,11 @@ export type FreeToolId =
  * "paid_api" — spends real money; gated by the daily USD cap.
  * "shared"   — a scheduled job spends on everyone's behalf; reads are free.
  *
- * A fourth variant, "free_api" (a server call costing nothing but our egress
- * IP's reputation), existed for the Reddit Threads Finder alone and went with
- * it. Reinstate it if another zero-cost proxy tool ever lands.
+ * "free_api" — a server call costing no upstream money, only our own capacity
+ *              (and our crawler's reputation): the free site crawler. It first
+ *              existed for the Reddit Threads Finder and went with it.
  */
-export type FreeToolCost = "none" | "paid_api" | "shared";
+export type FreeToolCost = "none" | "paid_api" | "shared" | "free_api";
 
 export interface FreeTool {
   id: FreeToolId;
@@ -53,6 +56,8 @@ export interface FreeTool {
    * ones whose page answers real questions.
    */
   jsonLd: "software" | "faq";
+  /** Shown (hub card, route table, sitemap, page) only while this flag is on. */
+  flag?: FlagName;
 }
 
 export const FREE_TOOLS: FreeTool[] = [
@@ -106,7 +111,29 @@ export const FREE_TOOLS: FreeTool[] = [
     isNew: false,
     jsonLd: "software",
   },
+  {
+    // The free public site crawler: 100 pages, a result link kept 7 days,
+    // the full list behind an email (src/lib/site-crawler/free-crawl.ts).
+    // Its body is localized (en/fr), unlike the others.
+    id: "site_crawler",
+    slug: "site-crawler",
+    cost: "free_api",
+    dailyLimit: 3,
+    apiPath: "/api/free/v1/site-crawler",
+    isNew: true,
+    jsonLd: "faq",
+    flag: "crawl.free",
+  },
 ];
+
+/** A tool whose flag is off is not shown anywhere (hub, routes, sitemap; its page 404s). */
+export function freeToolVisible(tool: FreeTool): boolean {
+  return !tool.flag || flag(tool.flag);
+}
+
+export function visibleFreeTools(): FreeTool[] {
+  return FREE_TOOLS.filter(freeToolVisible);
+}
 
 /**
  * The extension card.
@@ -130,7 +157,7 @@ export function freeToolById(id: FreeToolId): FreeTool {
 
 /** Every locale-prefixed path the hub owns, for the sitemap and route tests. */
 export function freeToolRoutes(): string[] {
-  return [FREE_TOOLS_BASE, ...FREE_TOOLS.map((t) => `${FREE_TOOLS_BASE}/${t.slug}`)];
+  return [FREE_TOOLS_BASE, ...visibleFreeTools().map((t) => `${FREE_TOOLS_BASE}/${t.slug}`)];
 }
 
 /** Tools that can spend money — the ones the daily USD cap must gate. */

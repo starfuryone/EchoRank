@@ -11,6 +11,7 @@
 // blank page.
 
 import type { FreeToolId } from "@/lib/free-tools";
+import { FREE_CRAWLER_COPY } from "@/lib/site-crawler/free-copy";
 
 export interface ToolCopy {
   name: string;
@@ -32,7 +33,7 @@ export const HUB_COPY = {
   kicker: "FREE TOOLS",
   h1: "Free SEO tools, no account needed",
   intro:
-    "Small, sharp tools that answer one question each. Nothing here asks for an email, and everything runs on the same data our paid product uses.",
+    "Small, sharp tools that answer one question each. None of them needs an account, and everything runs on the same data our paid product uses.",
   newBadge: "NEW",
   extensionName: "Browser extension",
   extensionBlurb:
@@ -131,5 +132,18 @@ export const TOOL_COPY: Record<FreeToolId, ToolCopy> = {
         a: "It is a close approximation of Google's rendering, not a pixel-exact copy — treat a result near the limit as 'likely to truncate' rather than a guarantee either way.",
       },
     ],
+  },
+  // The free site crawler's page and result are localized (en/fr) from
+  // src/lib/site-crawler/free-copy.ts; this entry is its English hub card and
+  // the shell's fallback.
+  site_crawler: {
+    name: FREE_CRAWLER_COPY.en.name,
+    blurb: FREE_CRAWLER_COPY.en.blurb,
+    intro: FREE_CRAWLER_COPY.en.intro,
+    metaTitle: FREE_CRAWLER_COPY.en.metaTitle,
+    metaDescription: FREE_CRAWLER_COPY.en.metaDescription,
+    limitNote: FREE_CRAWLER_COPY.en.limitNote,
+    cta: FREE_CRAWLER_COPY.en.result.ctaButton,
+    faq: FREE_CRAWLER_COPY.en.faq,
   },
 };

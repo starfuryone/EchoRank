@@ -5124,3 +5124,24 @@ model FreeCrawlBlockedHost {
 
   @@map("free_crawl_blocked_hosts")
 }
+
+/// A lead from the free public crawler's email gate (the full list and CSV of
+/// one result). Kept after the crawl and its result are purged: `token` and
+/// `domain` are plain values, no FK. `marketingConsent` = the box was ticked;
+/// only then is the address sent to Brevo, by double opt-in
+/// (`doiRequestedAt` = the confirmation email was requested).
+model FreeCrawlLead {
+  id               String    @id @default(cuid())
+  email            String
+  token            String
+  domain           String
+  locale           String    @default("en")
+  marketingConsent Boolean   @default(false)
+  source           String    @default("free-crawler")
+  doiRequestedAt   DateTime?
+  createdAt        DateTime  @default(now())
+
+  @@unique([token, email])
+  @@index([createdAt])
+  @@map("free_crawl_leads")
+}

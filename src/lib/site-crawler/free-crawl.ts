@@ -18,13 +18,9 @@ import { verifyTurnstile } from "@/lib/snapshot/turnstile";
 import { FREE_CRAWL_PRIORITY, freeTenantId } from "./free-tenant";
 import { validateRootUrl } from "./url";
 
-export const FREE_CRAWL_URL_CAP = 100;
-/** New free crawls per visitor IP per UTC day (Redis INCR + TTL, free-tools/limits.ts). */
-export const FREE_CRAWL_IP_DAILY = 3;
-/** One crawl per registrable domain in this window; a second request gets the first's result. */
-export const FREE_CRAWL_DOMAIN_WINDOW_MS = 24 * 60 * 60 * 1000;
-/** Result links (and the crawl behind them) live this long. */
-export const FREE_CRAWL_RETENTION_DAYS = 7;
+// The numbers live in free-limits.ts (dependency-free, so the copy and the UI read them too).
+import { FREE_CRAWL_DOMAIN_WINDOW_MS, FREE_CRAWL_IP_DAILY, FREE_CRAWL_URL_CAP } from "./free-limits";
+export { FREE_CRAWL_DOMAIN_WINDOW_MS, FREE_CRAWL_IP_DAILY, FREE_CRAWL_RETENTION_DAYS, FREE_CRAWL_URL_CAP } from "./free-limits";
 const LIMIT_TOOL = "site-crawler";
 const LOCK_S = 30;
 

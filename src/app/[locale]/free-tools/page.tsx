@@ -15,7 +15,7 @@ import { CONTENT } from "@/lib/i18n/content";
 import { buildMetadata } from "@/lib/seo";
 import { JsonLd } from "@/lib/seo/JsonLd";
 import { organization, webSite } from "@/lib/seo/jsonld";
-import { EXTENSION_CARD_HREF, FREE_TOOLS, FREE_TOOLS_BASE, ctaHref } from "@/lib/free-tools";
+import { EXTENSION_CARD_HREF, FREE_TOOLS, FREE_TOOLS_BASE, ctaHref, visibleFreeTools } from "@/lib/free-tools";
 import { HUB_COPY, TOOL_COPY } from "./_shared/copy";
 import { PublicNav } from "../PublicNav";
 import s from "../home2.module.css";
@@ -69,7 +69,7 @@ export default async function FreeToolsHubPage({
       <section className={s.section} style={{ paddingTop: 24 }}>
         <div className={s.container}>
           <div className={f.grid}>
-            {FREE_TOOLS.map((tool) => {
+            {visibleFreeTools().map((tool) => {
               const copy = TOOL_COPY[tool.id];
               return (
                 <Link

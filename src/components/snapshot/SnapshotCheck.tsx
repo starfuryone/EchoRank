@@ -4,69 +4,21 @@
 // → full report. The run id is kept in ?run= so a reload resumes the poll;
 // it is NOT a key to the full report (see GET /api/free/v1/snapshot/<id>).
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { SnapshotCopy } from "@/lib/snapshot/copy";
 import type { SnapshotPreview, SnapshotReport } from "@/lib/snapshot/types";
 import { ShareLink, SnapshotFullView, SnapshotPreviewView, SnapshotUpsell } from "./SnapshotReportView";
+import { useTurnstile } from "@/components/turnstile/use-turnstile";
 import st from "./snapshot.module.css";
 
 const API = "/api/free/v1/snapshot";
 const POLL_MS = 2500;
-const TURNSTILE_SRC = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
-
-interface TurnstileApi {
-  render: (el: HTMLElement, opts: Record<string, unknown>) => string;
-  reset: (id?: string) => void;
-}
-declare global {
-  interface Window {
-    turnstile?: TurnstileApi;
-  }
-}
 
 type Phase =
   | { k: "form" }
   | { k: "running"; id: string; status: string }
   | { k: "preview"; id: string; preview: SnapshotPreview; cached: boolean }
   | { k: "full"; id: string; report: SnapshotReport; token: string; expiresAt: string | null };
-
-function useTurnstile(siteKey: string | undefined) {
-  const box = useRef<HTMLDivElement>(null);
-  const widget = useRef<string | null>(null);
-  const [token, setToken] = useState<string | null>(null);
-  useEffect(() => {
-    if (!siteKey || !box.current) return;
-    let cancelled = false;
-    const mount = () => {
-      if (cancelled || !box.current || !window.turnstile || widget.current) return;
-      widget.current = window.turnstile.render(box.current, {
-        sitekey: siteKey,
-        callback: (t: string) => setToken(t),
-        "expired-callback": () => setToken(null),
-        "error-callback": () => setToken(null),
-      });
-    };
-    if (window.turnstile) mount();
-    else {
-      let s = document.querySelector<HTMLScriptElement>(`script[src="${TURNSTILE_SRC}"]`);
-      if (!s) {
-        s = document.createElement("script");
-        s.src = TURNSTILE_SRC;
-        s.async = true;
-        document.head.appendChild(s);
-      }
-      s.addEventListener("load", mount);
-    }
-    return () => {
-      cancelled = true;
-    };
-  }, [siteKey]);
-  const reset = useCallback(() => {
-    setToken(null);
-    if (widget.current) window.turnstile?.reset(widget.current);
-  }, []);
-  return { box, token, reset };
-}
 
 export function SnapshotCheck({
   c,
