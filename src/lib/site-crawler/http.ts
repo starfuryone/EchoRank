@@ -79,6 +79,12 @@ export function crawlRouteError(err: unknown): NextResponse {
     return NextResponse.json({ error: err.message, code: "INVALID_REQUEST" }, { status: 400 });
   }
 
+  // compare.ts (Phase 4c), matched by name for the same reason.
+  if (err instanceof Error && err.name === "CompareError") {
+    const e = err as Error & { code: string; status: number };
+    return NextResponse.json({ error: "These crawls cannot be compared that way.", code: "COMPARE_ERROR", reason: e.code }, { status: e.status });
+  }
+
   // crawl-config-secrets.ts: { keep: true } with no saved value. Matched by
   // name so this module stays importable without the server-only crypto.
   if (err instanceof Error && err.name === "MissingKeptSecretError") {

@@ -31,9 +31,10 @@ export const FLAGS = {
   // Phase 4b
   "crawl.extraction": true,
   "crawl.segments": true,
-  // Phase 4c: the Structure tab shipped (directory tree, crawl tree, link graph).
+  // Phase 4c: the Structure tab (directory tree, crawl tree, link graph) and
+  // the Compare tab shipped.
   "crawl.visualise": true,
-  "crawl.compare": false,
+  "crawl.compare": true,
   "crawl.schedule": false,
   "crawl.reports": false,
   // Phase 4d
