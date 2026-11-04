@@ -31,7 +31,7 @@ beforeEach(() => {
     "fetch",
     vi.fn(async (u: string) => {
       if (u === "/api/seo/v1/crawl") return { ok: true, json: async () => ({ crawls: [], quota }) };
-      if (u === "/api/seo/v1/crawl/schedules") return { ok: true, json: async () => ({ schedules: [] }) };
+      if (u === "/api/seo/v1/crawl/schedules") return { ok: true, json: async () => ({ schedules: [], cap: 2, cadences: ["weekly", "monthly"], timezone: "UTC" }) };
       if (u.startsWith("/api/seo/v1/crawl/sites?host=shop.example")) return { ok: true, json: async () => ({ host: "shop.example", verified: false, defaults: null }) };
       return { ok: false, json: async () => null };
     }),
@@ -48,7 +48,7 @@ describe.each(["en", "fr", "de-CH"] as const)("%s", (l) => {
   it("shows the editor with a labelled URL field and says which settings a schedule runs with", async () => {
     await act(async () => root.render(<CrawlSchedulesView locale={l} />));
     await vi.waitFor(() => expect(el.querySelector("#schedule-cadence")).not.toBeNull());
-    expect(el.querySelector('label[for="schedule-url"]')!.textContent).toBe(t.urlLabel);
+    expect(el.querySelector('label[for="schedule-url"]')!.textContent).toBe(t.ux.schSiteUrl);
     expect(el.querySelector('nav [aria-current="page"]')!.textContent).toBe(t.ux.navSchedules);
     const input = el.querySelector<HTMLInputElement>("#schedule-url")!;
     await act(async () => {

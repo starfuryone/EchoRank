@@ -20,7 +20,10 @@ const crawlJob = { findFirst: vi.fn(), findMany: vi.fn(), count: vi.fn(), create
 const crawlSchedule = { findMany: vi.fn(), findFirst: vi.fn(), findUnique: vi.fn(), count: vi.fn(), create: vi.fn(), update: vi.fn(), deleteMany: vi.fn() };
 const crawlSiteDefault = { findUnique: vi.fn() };
 const crawlSegment = { findMany: vi.fn(async () => []) };
-vi.mock("@/lib/prisma", () => ({ prisma: { crawlJob, crawlSchedule, crawlSiteDefault, crawlSegment } }));
+const queryRaw = vi.fn<(...a: unknown[]) => Promise<unknown[]>>(async () => []);
+vi.mock("@/lib/prisma", () => ({ prisma: { crawlJob, crawlSchedule, crawlSiteDefault, crawlSegment, $queryRaw: (...a: unknown[]) => queryRaw(...a) } }));
+const rateLimit = vi.fn<(...a: unknown[]) => Promise<{ success: boolean }>>(async () => ({ success: true }));
+vi.mock("@/lib/rate-limit", () => ({ rateLimit: (...a: unknown[]) => rateLimit(...a) }));
 const addJob = vi.fn(async () => ({ id: "bull" }));
 const queue = {
   getRepeatableJobs: vi.fn(async () => [] as unknown[]),
@@ -37,13 +40,16 @@ const svc = await import("@/lib/site-crawler/schedule-service");
 const { scheduleEmail, SCHEDULE_EMAIL_COPY } = await import("@/lib/site-crawler/schedule-email");
 const listRoute = await import("@/app/api/seo/v1/crawl/schedules/route");
 const oneRoute = await import("@/app/api/seo/v1/crawl/schedules/[scheduleId]/route");
+const runRoute = await import("@/app/api/seo/v1/crawl/schedules/[scheduleId]/run/route");
 
 beforeEach(() => {
   vi.clearAllMocks();
   queue.getRepeatableJobs.mockResolvedValue([]);
   crawlJob.count.mockResolvedValue(0);
   crawlSiteDefault.findUnique.mockResolvedValue(null);
-  requirePaidPlan.mockResolvedValue({ tenantId: "t1", tenant: { planType: "GROWTH" } });
+  requirePaidPlan.mockResolvedValue({ tenantId: "t1", tenant: { planType: "GROWTH", timezone: "Europe/Zurich" } });
+  queryRaw.mockResolvedValue([]);
+  rateLimit.mockResolvedValue({ success: true });
 });
 
 describe("cadence", () => {
@@ -284,10 +290,76 @@ describe("routes", () => {
     expect(body.schedules.map((x: { id: string; lastHealth: number | null }) => [x.id, x.lastHealth])).toEqual([["s1", 77], ["s2", null]]);
   });
 
+  it("GET: last and previous completed runs per schedule (the delta), the plan that unlocks a cadence, the workspace timezone", async () => {
+    const base = { tenantId: "t1", host: "x.com", cadence: "weekly", hourUtc: 3, enabled: true, nextRunAt: new Date("2026-12-01T03:00:00Z"), exportTo: null, createdAt: new Date(), config: { rootUrl: "https://x.com/", renderMode: "none", crawl: null } };
+    crawlSchedule.findMany.mockResolvedValue([{ ...base, id: "s1", lastJobId: "j9" }, { ...base, id: "s2", lastJobId: "j1" }]);
+    crawlJob.findMany.mockResolvedValue([{ id: "j1", summary: { health: { score: 55 } } }]);
+    queryRaw.mockResolvedValue([
+      { scheduleId: "s1", score: 74, rn: BigInt(1) },
+      { scheduleId: "s1", score: 70, rn: BigInt(2) },
+    ]);
+    const body = await (await listRoute.GET()).json();
+    const sql = queryRaw.mock.calls[0]! as unknown as [TemplateStringsArray, ...unknown[]];
+    expect(sql[0].join("?")).toContain("row_number() OVER (PARTITION BY \"scheduleId\"");
+    expect(sql.slice(1)).toEqual(["t1", ["s1", "s2"]]);
+    // s1 from its runs; s2 has none tagged yet, so its lastJobId answers and there is no delta.
+    expect(body.schedules.map((x: { id: string; lastHealth: number | null; prevHealth: number | null }) => [x.id, x.lastHealth, x.prevHealth])).toEqual([
+      ["s1", 74, 70],
+      ["s2", 55, null],
+    ]);
+    expect(body).toMatchObject({ cadences: ["weekly", "monthly"], cadenceUnlocks: { daily: "Agency" }, timezone: "Europe/Zurich" });
+    expect(s.cadenceUnlocks(["monthly"])).toEqual({ daily: "Agency", weekly: "Growth" });
+    expect(s.cadenceUnlocks(["daily", "weekly", "monthly"])).toEqual({});
+  });
+
+  describe("POST /schedules/[id]/run (Run now)", () => {
+    const ctx = { params: Promise.resolve({ scheduleId: "s1" }) };
+    const run = () => runRoute.POST(new Request("https://app.test/x", { method: "POST" }), ctx);
+    const tickRow = (over: Record<string, unknown> = {}) => ({
+      id: "s1", tenantId: "t1", host: "x.com", cadence: "weekly", hourUtc: 3, enabled: true, lastJobId: null, exportTo: { email: true, sheets: null },
+      config: { rootUrl: "https://x.com/", renderMode: "none", crawl: null }, tenant: { planType: "GROWTH" }, ...over,
+    });
+
+    it("another workspace's schedule is a 404 and nothing runs", async () => {
+      crawlSchedule.findFirst.mockResolvedValue(null);
+      expect((await run()).status).toBe(404);
+      expect(crawlSchedule.findFirst).toHaveBeenCalledWith({ where: { id: "s1", tenantId: "t1" }, select: { id: true } });
+      expect(crawlSchedule.findUnique).not.toHaveBeenCalled();
+    });
+
+    it("rate-limited with crawl starts", async () => {
+      crawlSchedule.findFirst.mockResolvedValue({ id: "s1" });
+      rateLimit.mockResolvedValue({ success: false });
+      expect((await run()).status).toBe(429);
+      expect(rateLimit.mock.calls[0]![0]).toContain("t1");
+      expect(crawlSchedule.findUnique).not.toHaveBeenCalled();
+    });
+
+    it("starts the schedule's crawl like its tick (scheduleId on the job): 202", async () => {
+      crawlSchedule.findFirst.mockResolvedValue({ id: "s1" });
+      crawlSchedule.findUnique.mockResolvedValue(tickRow());
+      crawlJob.create.mockImplementation(async (a: { data: Record<string, unknown> }) => ({ id: "job7", createdAt: new Date(), ...a.data }));
+      const res = await run();
+      expect(res.status).toBe(202);
+      expect(await res.json()).toEqual({ status: "started", crawlJobId: "job7" });
+      expect(addJob).toHaveBeenCalledWith("site-crawl", "crawl", { crawlJobId: "job7", tenantId: "t1", scheduleId: "s1" });
+    });
+
+    it("a skipped run is a 409 with its reason", async () => {
+      crawlSchedule.findFirst.mockResolvedValue({ id: "s1" });
+      crawlSchedule.findUnique.mockResolvedValue(tickRow({ enabled: false }));
+      const res = await run();
+      expect(res.status).toBe(409);
+      expect(await res.json()).toMatchObject({ code: "SCHEDULE_SKIPPED", reason: "disabled" });
+      expect(crawlJob.create).not.toHaveBeenCalled();
+    });
+  });
+
   it("everything is a 404 while crawl.schedule is off", async () => {
     flags.on.delete("crawl.schedule");
     expect((await listRoute.GET()).status).toBe(404);
     expect((await post(valid)).status).toBe(404);
+    expect((await runRoute.POST(new Request("https://app.test/x", { method: "POST" }), { params: Promise.resolve({ scheduleId: "s1" }) })).status).toBe(404);
     flags.on.add("crawl.schedule");
   });
 });

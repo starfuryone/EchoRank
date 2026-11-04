@@ -13,7 +13,7 @@
 // too). Its tick creates a normal crawl_jobs row.
 
 import { z } from "zod";
-import type { CrawlCadence } from "@/lib/plan-config";
+import { PLAN_CONFIGS, PLAN_ORDER, type CrawlCadence } from "@/lib/plan-config";
 import { CrawlConfigInputSchema } from "./crawl-config";
 
 export const CADENCES = ["daily", "weekly", "monthly"] as const satisfies readonly CrawlCadence[];
@@ -93,4 +93,15 @@ export function scheduleProblem(
   if (existing >= plan.scheduleCap) return "over_plan_cap";
   if (!plan.scheduleCadences.includes(input.cadence)) return "cadence_not_in_plan";
   return null;
+}
+
+/** For each cadence a plan lacks, the first plan (PLAN_ORDER) that has it: "Daily — Agency plan". */
+export function cadenceUnlocks(have: readonly CrawlCadence[]): Partial<Record<CrawlCadence, string>> {
+  const out: Partial<Record<CrawlCadence, string>> = {};
+  for (const c of CADENCES) {
+    if (have.includes(c)) continue;
+    const plan = PLAN_ORDER.find((p) => PLAN_CONFIGS[p].crawlScheduleCadences.includes(c));
+    if (plan) out[c] = PLAN_CONFIGS[plan].name;
+  }
+  return out;
 }
