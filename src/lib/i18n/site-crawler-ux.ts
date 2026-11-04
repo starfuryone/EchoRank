@@ -315,6 +315,8 @@ const en = {
   schDeleteNo: "Keep",
   schEmptyTitle: "No schedules yet",
   schEmptyBody: "Create one to see recurring audits here.",
+  // ── How to (the walkthrough itself is in site-crawler/howto-copy.ts) ──
+  howtoButton: "How to",
   metaStartTitle: `${NB} — site crawler by Echorank`,
   metaStartDesc: "Crawl your site for technical SEO issues: start a crawl, set its options, and see your recent crawls.",
   metaResultsTitle: (host: string, date: string) => `Crawl of ${host}, ${date}`,
@@ -627,6 +629,8 @@ const fr: SiteCrawlerUxCopy = {
   schDeleteNo: "Conserver",
   schEmptyTitle: "Aucune planification pour l'instant",
   schEmptyBody: "Créez-en une pour voir vos audits récurrents ici.",
+  // ── How to (the walkthrough itself is in site-crawler/howto-copy.ts) ──
+  howtoButton: "Mode d'emploi",
   metaStartTitle: `${NB} — robot d'exploration par Echorank`,
   metaStartDesc: "Explorez votre site à la recherche de problèmes SEO techniques : lancez une exploration, réglez ses options et retrouvez vos explorations récentes.",
   metaResultsTitle: (host: string, date: string) => `Exploration de ${host}, ${date}`,
@@ -937,6 +941,8 @@ const deCH: SiteCrawlerUxCopy = {
   schDeleteNo: "Behalten",
   schEmptyTitle: "Noch keine Zeitpläne",
   schEmptyBody: "Erstellen Sie einen, um wiederkehrende Audits hier zu sehen.",
+  // ── How to (the walkthrough itself is in site-crawler/howto-copy.ts) ──
+  howtoButton: "Anleitung",
   metaStartTitle: `${NB} — Website-Crawler von Echorank`,
   metaStartDesc: "Crawlen Sie Ihre Website nach technischen SEO-Problemen: Crawl starten, Optionen festlegen und die letzten Crawls ansehen.",
   metaResultsTitle: (host: string, date: string) => `Crawl von ${host}, ${date}`,

@@ -15,7 +15,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
-import { AlertCircle, CircleQuestionMark, Download, Loader2, Network } from "lucide-react";
+import { AlertCircle, BookOpen, CircleQuestionMark, Download, Loader2, Network } from "lucide-react";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,7 @@ import { formatDateTime } from "@/lib/utils";
 import type { Severity } from "@/lib/site-crawler/checks";
 import { RULE_COPY, RULE_IDS } from "@/lib/crawl-rules-meta";
 import { IssuesView } from "./site-crawler-issues";
+import { howtoStorageKey, type HowtoView } from "@/lib/site-crawler/howto-copy";
 import { PagesView, extractionNamesOf } from "./site-crawler-pages";
 import {
   EMPTY_PAGE_FILTERS,
@@ -106,6 +107,8 @@ const TABS: TabId[] = ["rules", "issues", "duplicates", "redirects", "pages"];
 // Phase 4c: the Structure tab's d3 code loads only when the tab is opened.
 // <CrawlerHelpModal>: loaded only when the Help button (or ?help=1) opens it.
 const CrawlerHelpModal = dynamic(() => import("./site-crawler-help"), { ssr: false, loading: () => null });
+// <CrawlerHowtoModal>: the view's walkthrough, loaded only when it opens.
+const CrawlerHowtoModal = dynamic(() => import("./site-crawler-howto"), { ssr: false, loading: () => null });
 const StructurePanel = dynamic(() => import("./site-crawler-structure"), { ssr: false, loading: () => null });
 
 /**
@@ -602,7 +605,7 @@ export function SiteCrawlerClient({
   if (view === "start") {
     return (
       <div className="space-y-6">
-        <CrawlerHeader t={t} locale={locale} quota={quota} />
+        <CrawlerHeader t={t} locale={locale} quota={quota} howto="overview" />
         <CrawlerNav current="start" t={t.ux} />
 
       <Card>
@@ -874,7 +877,7 @@ export function SiteCrawlerClient({
   const groupsOf = GROUPS.filter((g) => subsOf(g).length > 0);
   return (
     <div className="space-y-6">
-      <CrawlerHeader t={t} locale={locale} quota={quota} />
+      <CrawlerHeader t={t} locale={locale} quota={quota} howto={tab === "pages" ? "pages" : "issues"} />
       <CrawlerNav current="results" t={t.ux} />
       {missing && !active && <p className="text-sm text-gray-700">{t.ux.notFound}</p>}
 
@@ -1251,16 +1254,57 @@ export function SiteCrawlerClient({
   );
 }
 
-export function CrawlerHeader({ t, locale, quota }: { t: SiteCrawlerCopy; locale: DashLocale; quota: CrawlQuotaDto | null }) {
+/** A view's walkthrough state in localStorage: "seen", "off", none, or "unavailable" (storage blocked). */
+export function readHowto(view: HowtoView): "seen" | "off" | null | "unavailable" {
+  try {
+    const v = window.localStorage.getItem(howtoStorageKey(view));
+    return v === "seen" || v === "off" ? v : null;
+  } catch {
+    return "unavailable";
+  }
+}
+
+export function writeHowto(view: HowtoView, value: "seen" | "off"): void {
+  try {
+    window.localStorage.setItem(howtoStorageKey(view), value);
+  } catch {
+    // Private mode or blocked storage: the walkthrough just won't remember.
+  }
+}
+
+export function CrawlerHeader({ t, locale, quota, howto }: { t: SiteCrawlerCopy; locale: DashLocale; quota: CrawlQuotaDto | null; howto?: HowtoView }) {
   // The Help button opens <CrawlerHelpModal> (pageHelp's modal entry for
   // /crawler, help-content.ts), loaded on demand so this page's bundle does
   // not carry it. ?help=1 opens it on arrival (schedule email, public page).
   // Its footer still opens the full /learn guide in a new tab.
+  // The How to button opens this view's walkthrough the same way: ?howto=1
+  // opens it on arrival, and each view opens it by itself once, on the first
+  // visit, unless "Don't show again" is set (localStorage, per view).
   const help = helpModalFor("/crawler");
-  const deepLinked = useSearchParams()?.get("help") === "1";
+  const params = useSearchParams();
+  const deepLinked = params?.get("help") === "1";
   const [open, setOpen] = useState(false);
   const [dismissed, setDismissed] = useState(false);
   const button = useRef<HTMLButtonElement>(null);
+  const howtoButton = useRef<HTMLButtonElement>(null);
+  const [howtoOpen, setHowtoOpen] = useState(false);
+  const [howtoOff, setHowtoOff] = useState(false);
+  const howtoDeep = params?.get("howto") === "1";
+  useEffect(() => {
+    if (!howto) return;
+    // Storage is read after mount (the server render has none), and applied
+    // on the next frame rather than synchronously inside the effect.
+    const frame = requestAnimationFrame(() => {
+      const state = readHowto(howto);
+      setHowtoOff(state === "off");
+      if (howtoDeep) setHowtoOpen(true);
+      else if (state === null) {
+        setHowtoOpen(true);
+        writeHowto(howto, "seen");
+      }
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [howto, howtoDeep]);
   const shown = open || (deepLinked && !dismissed);
   const close = () => {
     setOpen(false);
@@ -1268,27 +1312,53 @@ export function CrawlerHeader({ t, locale, quota }: { t: SiteCrawlerCopy; locale
     // Back to the trigger, also when the dialog opened from the deep link (nothing had focus then).
     requestAnimationFrame(() => button.current?.focus());
   };
+  const closeHowto = () => {
+    setHowtoOpen(false);
+    requestAnimationFrame(() => howtoButton.current?.focus());
+  };
+  const headerButton =
+    "inline-flex items-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2";
   // The brand lives in the top bar (mark, name, byline); this header starts
-  // with the description, the Help button right-aligned on the same row.
+  // with the description, Help and How to right-aligned on the same row.
   return (
     <div className="flex items-start justify-between gap-3" data-testid="crawler-header">
       <p className="max-w-3xl text-sm text-gray-600">{t.subtitle}</p>
-      {help && (
-        <div className="flex shrink-0 items-center gap-2">
-          <button
-            ref={button}
-            type="button"
-            onClick={() => setOpen(true)}
-            aria-label={t.helpAria}
-            aria-haspopup="dialog"
-            className="inline-flex items-center rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-          >
-            <CircleQuestionMark className="mr-2 h-4 w-4 text-blue-600" aria-hidden="true" />
-            {t.helpButton}
-          </button>
+      {(help || howto) && (
+        <div className="flex shrink-0 flex-wrap items-center justify-end gap-2">
+          {howto && (
+            <button ref={howtoButton} type="button" onClick={() => setHowtoOpen(true)} aria-haspopup="dialog" className={headerButton} data-testid="howto-button">
+              <BookOpen className="mr-2 h-4 w-4 text-emerald-700" aria-hidden="true" />
+              {t.ux.howtoButton}
+            </button>
+          )}
+          {help && (
+            <button
+              ref={button}
+              type="button"
+              onClick={() => setOpen(true)}
+              aria-label={t.helpAria}
+              aria-haspopup="dialog"
+              className={headerButton}
+            >
+              <CircleQuestionMark className="mr-2 h-4 w-4 text-blue-600" aria-hidden="true" />
+              {t.helpButton}
+            </button>
+          )}
         </div>
       )}
       {help && shown && <CrawlerHelpModal t={t} locale={locale} quota={quota} guideHref={learnHref(locale, help.guide)} onClose={close} />}
+      {howto && howtoOpen && (
+        <CrawlerHowtoModal
+          view={howto}
+          locale={locale}
+          onClose={closeHowto}
+          dontShow={howtoOff}
+          onDontShow={(off) => {
+            setHowtoOff(off);
+            writeHowto(howto, off ? "off" : "seen");
+          }}
+        />
+      )}
     </div>
   );
 }

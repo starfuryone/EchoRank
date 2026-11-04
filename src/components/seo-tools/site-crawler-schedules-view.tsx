@@ -101,7 +101,7 @@ export function CrawlSchedulesView({ locale }: { locale: DashLocale }) {
 
   return (
     <div className="space-y-6">
-      <CrawlerHeader t={t} locale={locale} quota={quota} />
+      <CrawlerHeader t={t} locale={locale} quota={quota} howto="schedules" />
       <CrawlerNav current="schedules" t={u} />
 
       <header data-testid="schedules-hero">

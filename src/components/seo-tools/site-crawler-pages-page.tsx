@@ -36,7 +36,7 @@ export function CrawlPagesPage({ locale, crawlId }: { locale: DashLocale; crawlI
   const segmentNames = flag("crawl.segments") ? (crawl?.config?.segments ?? []).map((g) => g.name) : [];
   return (
     <div className="space-y-6">
-      <CrawlerHeader t={t} locale={locale} quota={null} />
+      <CrawlerHeader t={t} locale={locale} quota={null} howto="pages" />
       <CrawlerNav current="results" t={t.ux} />
       <PagesView
         crawlId={crawlId}

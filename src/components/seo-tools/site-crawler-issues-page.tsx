@@ -36,7 +36,7 @@ export function CrawlIssuesPage({ locale, crawlId }: { locale: DashLocale; crawl
   const segmentNames = flag("crawl.segments") ? (crawl?.config?.segments ?? []).map((g) => g.name) : [];
   return (
     <div className="space-y-6">
-      <CrawlerHeader t={t} locale={locale} quota={null} />
+      <CrawlerHeader t={t} locale={locale} quota={null} howto="issues" />
       <CrawlerNav current="results" t={t.ux} />
       <IssuesView
         crawlId={crawlId}

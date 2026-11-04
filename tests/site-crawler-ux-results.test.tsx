@@ -40,6 +40,8 @@ let el: HTMLDivElement;
 let root: Root;
 let calls: string[];
 beforeEach(() => {
+  // These tests are about the Results view, not its first-visit walkthrough.
+  for (const v of ["issues", "pages"]) localStorage.setItem(`crawler-howto:${v}`, "seen");
   el = document.createElement("div");
   document.body.appendChild(el);
   root = createRoot(el);

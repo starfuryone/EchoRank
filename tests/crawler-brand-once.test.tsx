@@ -82,6 +82,7 @@ describe.each(["en", "fr", "de-CH"] as const)("/crawler (%s)", (l) => {
     const header = el.querySelector('[data-testid="crawler-header"]')!;
     expect(header.firstElementChild!.tagName).toBe("P");
     expect(header.firstElementChild!.textContent).toBe(SITE_CRAWLER_COPY[l].subtitle);
-    expect(header.querySelector("button")!.textContent).toContain(SITE_CRAWLER_COPY[l].helpButton);
+    const buttons = [...header.querySelectorAll("button")].map((b) => b.textContent);
+    expect(buttons).toEqual(expect.arrayContaining([expect.stringContaining(SITE_CRAWLER_COPY[l].helpButton), expect.stringContaining(SITE_CRAWLER_COPY[l].ux.howtoButton)]));
   });
 });

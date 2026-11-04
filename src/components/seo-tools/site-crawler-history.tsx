@@ -191,7 +191,7 @@ export function CrawlHistory({ locale }: { locale: DashLocale }) {
 
   return (
     <div className="space-y-6">
-      <CrawlerHeader t={t} locale={locale} quota={quota} />
+      <CrawlerHeader t={t} locale={locale} quota={quota} howto="history" />
       <CrawlerNav current="history" t={u} />
 
       <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between" data-testid="history-hero">
