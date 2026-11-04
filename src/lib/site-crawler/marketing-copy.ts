@@ -610,6 +610,25 @@ export const guideCtas: Readonly<Record<string, GuideCtaCopy>> = {
       ),
     },
   },
+  "how-to-audit-a-site-migration": {
+    inline: fixed(
+      "Pin the baseline crawl now; after launch, Compare shows exactly what changed.",
+      "Épinglez l'exploration de référence dès maintenant; après le lancement, Comparer montre exactement ce qui a changé.",
+    ),
+    nudge: fixed(
+      "Staging on another host? URL mapping compares it to production before anyone else sees it.",
+      "La préproduction est sur un autre hôte ? La correspondance d'URL la compare à la production avant que quiconque la voie.",
+    ),
+    closing: {
+      h: fixed("Launch without losing a page.", "Lancez sans perdre une seule page."),
+      // "a weekly watch" would be wrong on Starter, which schedules monthly.
+      p1: fixed(
+        "List-mode redirect checks, crawl comparison with URL mapping, and a scheduled watch for the first month.",
+        "Vérification des redirections en mode liste, comparaison d'explorations avec correspondance d'URL et une surveillance planifiée pendant le premier mois.",
+      ),
+      p2: fixed("Everything in this guide is on every paid plan.", "Tout ce que décrit ce guide est offert dans chaque forfait payant."),
+    },
+  },
 };
 
 /** One guide's CTA copy, resolved for a base and the crawl tiers. Undefined for a guide without CTAs. */

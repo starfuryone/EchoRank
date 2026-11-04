@@ -7,6 +7,7 @@ import { HEROES } from "./heroes";
 import { exportOneRowPerLink, whereBrokenLinkLives, whichFix } from "./broken-links";
 import { crawlToSitemap, largeSites, whereItGoes } from "./sitemap";
 import { extractionTable, selectorToValue, valuesBecomeSegments } from "./extraction";
+import { collapseChain, migrationTimeline, urlMapping } from "./migration";
 
 export const NB_ART: Readonly<Record<string, ArtSpec>> = {
   "broken-links-where": whereBrokenLinkLives,
@@ -18,6 +19,9 @@ export const NB_ART: Readonly<Record<string, ArtSpec>> = {
   "extraction-selector": selectorToValue,
   "extraction-table": extractionTable,
   "extraction-segments": valuesBecomeSegments,
+  "migration-timeline": migrationTimeline,
+  "migration-chain": collapseChain,
+  "migration-mapping": urlMapping,
 };
 
 export function NbArt({ id, base }: { id: string; base: ArtBase }) {

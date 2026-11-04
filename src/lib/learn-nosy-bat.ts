@@ -26,6 +26,7 @@
 
 import { CRAWLER_BRAND } from "@/lib/site-crawler/brand";
 import { PLAN_CONFIGS } from "@/lib/plan-config";
+import { CRAWL_PIN_MAX } from "@/lib/site-crawler/constants";
 import type { LearnBlock, LearnGuide } from "./learn-content";
 
 const NB = CRAWLER_BRAND.name;
@@ -213,6 +214,7 @@ export const BROKEN_LINKS_GUIDE: LearnGuide = {
   blurb: "Every 404 and server error, the page it's on, and the order to fix them in.",
   cta: "crawler",
   related: [
+    { href: href("how-to-audit-a-site-migration"), label: "How to audit a site migration", internal: true },
     { href: "/learn", label: "Learn SEO →", internal: true },
   ],
   body: brokenLinksEn,
@@ -222,6 +224,7 @@ export const BROKEN_LINKS_GUIDE: LearnGuide = {
     blurb: "Chaque 404 et erreur serveur, la page où elle se trouve, et l'ordre de correction.",
     body: brokenLinksFr,
     related: [
+      { href: href("how-to-audit-a-site-migration"), label: "Auditer une migration de site", internal: true },
       { href: "/learn", label: "Apprendre le SEO →", internal: true },
     ],
   },
@@ -348,14 +351,20 @@ export const SITEMAP_GUIDE: LearnGuide = {
   tag: NB,
   blurb: "Indexable pages only, built from a real crawl, split and indexed past 50,000 URLs.",
   cta: "crawler",
-  related: [{ href: href("how-to-find-broken-links"), label: "How to find broken links", internal: true }],
+  related: [
+    { href: href("how-to-find-broken-links"), label: "How to find broken links", internal: true },
+    { href: href("how-to-audit-a-site-migration"), label: "How to audit a site migration", internal: true },
+  ],
   body: sitemapEn,
   fr: {
     title: "Générer un plan de site XML à partir d'une exploration",
     description: `Bâtissez un plan de site qui ne liste que les pages à indexer — à partir de ce que ${NB} a réellement exploré, pas d'une supposition.`,
     blurb: "Les pages indexables seulement, tirées d'une vraie exploration, découpées et indexées au-delà de 50 000 URL.",
     body: sitemapFr,
-    related: [{ href: href("how-to-find-broken-links"), label: "Trouver les liens brisés", internal: true }],
+    related: [
+      { href: href("how-to-find-broken-links"), label: "Trouver les liens brisés", internal: true },
+      { href: href("how-to-audit-a-site-migration"), label: "Auditer une migration de site", internal: true },
+    ],
   },
 };
 
@@ -482,7 +491,7 @@ const extractionFr: LearnBlock[] = [
   { k: "h2", t: "4. Faire des valeurs des segments" },
   {
     k: "p",
-    t: "Dans **Options avancées → Segments**, choisissez **Ajouter un segment** avec la règle **La valeur extraite est** — « les pages où `type` = product » — puis **Enregistrer pour ce site**. Les segments s'appliquent à partir de la prochaine exploration du site; dès lors, Problèmes, Pages, Comparer et chaque CSV peuvent être filtrés sur le segment. Voilà comment vérifier « toutes les fiches produit ont-elles des données structurées? » sans ouvrir de tableur.",
+    t: "Dans **Options avancées → Segments**, choisissez **Ajouter un segment** avec la règle **La valeur extraite est** — « les pages où `type` = product » — puis **Enregistrer pour ce site**. Les segments s'appliquent à partir de la prochaine exploration du site; dès lors, Problèmes, Pages, Comparer et chaque CSV peuvent être filtrés sur le segment. Voilà comment vérifier « toutes les fiches produit ont-elles des données structurées ? » sans ouvrir de tableur.",
   },
   { k: "figure", art: "extraction-segments" },
   { k: "h2", t: "5. Les pages construites en JavaScript" },
@@ -527,4 +536,149 @@ export const EXTRACTION_GUIDE: LearnGuide = {
   },
 };
 
-export const NOSY_BAT_GUIDES: LearnGuide[] = [BROKEN_LINKS_GUIDE, SITEMAP_GUIDE, EXTRACTION_GUIDE];
+// ─── Guide 4 — how-to-audit-a-site-migration ────────────────────────────────
+//
+// Corrected against the UI: Compare runs FROM the newer crawl and rewrites the
+// baseline's URLs (compare.ts), so the staging mapping turns www. into
+// staging. — the reverse of the spec's example; there is no 302-should-be-301
+// rule, so the step points at the hop statuses in Redirect chains (CSV); old
+// URLs that 404 surface as Internal client error (4xx) on Issues; and the
+// schedule cadence per tier is read from the config.
+
+const MIGRATION_FIND = "^https://www\\.";
+const MIGRATION_REPLACE = "https://staging.";
+
+const migrationEn: LearnBlock[] = [
+  { k: "h2", t: "The two moments that matter" },
+  {
+    k: "p",
+    t: `A migration goes wrong in one of two ways: old URLs stop resolving, or the new site lost pages, titles or links the old one had. The first shows up as 404s and redirect chains; the second only shows up if you compare. ${NB} covers both — the audit is two crawls and a list.`,
+  },
+  { k: "figure", art: "migration-timeline" },
+  { k: "h2", t: "Before launch" },
+  { k: "h3", t: "1. Baseline the old site" },
+  {
+    k: "p",
+    t: `Run a full spider crawl of the live site and **Pin** it in **History**, so retention never drops its data (up to ${CRAWL_PIN_MAX} pinned crawls are kept in full). This is the reference everything is compared to.`,
+  },
+  { k: "guideCta", at: "inline" },
+  { k: "h3", t: "2. Export the URL list" },
+  { k: "p", t: "From that crawl, **Exports → Pages (CSV)**. Its URL column is your list of everything that must still resolve after launch." },
+  { k: "h3", t: "3. Crawl staging" },
+  {
+    k: "p",
+    t: `If the new site is on a staging host, crawl it too — **HTTP auth user**, **HTTP auth password** and **Custom request headers** are in **Advanced options → Configuration**. Then, on the staging crawl, open **Compare**, pick the baseline under **Compare with**, and add a rule under **URL mapping (optional)**: **Find (regular expression)** \`${MIGRATION_FIND}\`, **Replace with** \`${MIGRATION_REPLACE}\`. The mapping rewrites the baseline's URLs, which is why it runs from production to staging. **Pages removed** then lists the pages the new site lost, **Pages changed** the titles and canonicals that changed, and **New issues** what the redesign introduced.`,
+  },
+  { k: "figure", art: "migration-mapping" },
+  { k: "h2", t: "Launch day" },
+  { k: "h3", t: "4. Check every old URL" },
+  {
+    k: "p",
+    t: `In **New crawl**, set **Mode** to **List (check URLs)** and paste the list from step 2 into **URLs to check, one per line**. ${NB} fetches each one and records every hop. Then look for:`,
+  },
+  {
+    k: "ul",
+    items: [
+      "**Internal client error (4xx)** on **Issues** — old URLs with no redirect: the most urgent fix",
+      "**Redirect chain** — old → interim → final, listed under **Links → Redirects → Chains**; collapse each to a single 301",
+      "**Redirect loop** — under **Loops**",
+      "Temporary redirects — **Exports → Redirect chains (CSV)** gives each URL's first status and every hop, so a 302 that should be a permanent 301 is one filter away",
+    ],
+  },
+  { k: "figure", art: "migration-chain" },
+  { k: "h3", t: "5. Crawl the new site in full" },
+  {
+    k: "p",
+    t: "Run a spider crawl of the new site and **Compare** it with the pinned baseline — no mapping needed now. Confirm **Pages removed** is empty or explained, **Indexable pages** hasn't dropped, and the **Sitemaps** family is clean ([generate one](/learn/guides/xml-sitemap-generator) from this crawl if needed).",
+  },
+  { k: "guideCta", at: "nudge" },
+  { k: "h2", t: "After launch" },
+  { k: "h3", t: "6. Schedule the crawl for the first month" },
+  {
+    k: "p",
+    t: `Add a schedule under **Schedules** — ${scheduleCadenceLine("en")} — with **Email to workspace owner** under **Export targets**, so late-appearing problems (cached old links, a CMS re-publishing old slugs) are caught. Keep the baseline pinned until the comparison has been clean twice.`,
+  },
+];
+
+const migrationFr: LearnBlock[] = [
+  { k: "h2", t: "Les deux moments qui comptent" },
+  {
+    k: "p",
+    t: `Une migration dérape de deux façons : les anciennes URL ne répondent plus, ou le nouveau site a perdu des pages, des titres ou des liens que l'ancien avait. Le premier problème se voit en 404 et en chaînes de redirections; le second ne se voit qu'en comparant. ${NB} couvre les deux — l'audit tient en deux explorations et une liste.`,
+  },
+  { k: "figure", art: "migration-timeline" },
+  { k: "h2", t: "Avant le lancement" },
+  { k: "h3", t: "1. Prendre une référence de l'ancien site" },
+  {
+    k: "p",
+    t: `Lancez une exploration complète du site en ligne et **épinglez-la** dans **Historique** (bouton **Épingler**), pour que la conservation n'en efface jamais les données (jusqu'à ${CRAWL_PIN_MAX} explorations épinglées sont gardées en entier). C'est la référence à laquelle tout sera comparé.`,
+  },
+  { k: "guideCta", at: "inline" },
+  { k: "h3", t: "2. Exporter la liste des URL" },
+  { k: "p", t: "Depuis cette exploration, **Exports → Pages (CSV)**. Sa colonne URL est la liste de tout ce qui doit encore répondre après le lancement." },
+  { k: "h3", t: "3. Explorer la préproduction" },
+  {
+    k: "p",
+    t: `Si le nouveau site est sur un hôte de préproduction, explorez-le aussi — **Utilisateur (authentification HTTP)**, **Mot de passe (authentification HTTP)** et **En-têtes de requête personnalisés** se trouvent dans **Options avancées → Configuration**. Ensuite, sur l'exploration de préproduction, ouvrez **Comparer**, choisissez la référence sous **Comparer avec** et ajoutez une règle sous **Correspondance d'URL (facultatif)** : **Rechercher (expression régulière)** \`${MIGRATION_FIND}\`, **Remplacer par** \`${MIGRATION_REPLACE}\`. La correspondance réécrit les URL de la référence; c'est pourquoi elle va de la production vers la préproduction. **Pages retirées** liste alors les pages que le nouveau site a perdues, **Pages modifiées** les titres et URL canoniques qui ont changé, et **Nouveaux problèmes** ce que la refonte a introduit.`,
+  },
+  { k: "figure", art: "migration-mapping" },
+  { k: "h2", t: "Le jour du lancement" },
+  { k: "h3", t: "4. Vérifier chaque ancienne URL" },
+  {
+    k: "p",
+    t: `Dans **Nouvelle exploration**, réglez le **Mode** sur **Liste (vérifier des URL)** et collez la liste de l'étape 2 dans **URL à vérifier, une par ligne**. ${NB} interroge chacune et note chaque saut. Cherchez ensuite :`,
+  },
+  {
+    k: "ul",
+    items: [
+      "**Internal client error (4xx)** dans **Problèmes** — les anciennes URL sans redirection : la correction la plus urgente",
+      "**Redirect chain** — ancienne → intermédiaire → finale, sous **Liens → Redirections → Chaînes**; ramenez chacune à une seule 301",
+      "**Redirect loop** — sous **Boucles**",
+      "Les redirections temporaires — **Exports → Chaînes de redirections (CSV)** donne le premier statut de chaque URL et chaque saut : une 302 qui devrait être une 301 permanente est à un filtre près",
+    ],
+  },
+  { k: "figure", art: "migration-chain" },
+  { k: "h3", t: "5. Explorer le nouveau site au complet" },
+  {
+    k: "p",
+    t: "Lancez une exploration complète du nouveau site et **Comparez**-la avec la référence épinglée — plus besoin de correspondance. Vérifiez que **Pages retirées** est vide ou expliqué, que les **Pages indexables** n'ont pas baissé et que la famille **Sitemaps** est propre ([générez-en un](/learn/guides/xml-sitemap-generator) à partir de cette exploration au besoin).",
+  },
+  { k: "guideCta", at: "nudge" },
+  { k: "h2", t: "Après le lancement" },
+  { k: "h3", t: "6. Planifier l'exploration pendant le premier mois" },
+  {
+    k: "p",
+    t: `Ajoutez une planification dans **Planifications** — ${scheduleCadenceLine("fr")} — avec **Courriel au propriétaire de l'espace** sous **Destinations d'export**, pour attraper les problèmes tardifs (anciens liens en cache, un CMS qui republie d'anciens slugs). Gardez la référence épinglée jusqu'à ce que la comparaison soit propre deux fois de suite.`,
+  },
+];
+
+export const MIGRATION_GUIDE: LearnGuide = {
+  slug: "how-to-audit-a-site-migration",
+  group: "nosy-bat",
+  hero: "migration",
+  howTo: true,
+  order: 10,
+  title: "How to audit a site migration (before and after it goes live)",
+  description: "Use list mode, redirect chains and crawl comparison with URL mapping to make sure a redesign or domain move loses nothing.",
+  readingTime: 6,
+  tag: NB,
+  blurb: "A pinned baseline, a list-mode check of every old URL, and a compare that shows what the move lost.",
+  cta: "crawler",
+  related: [
+    { href: href("how-to-find-broken-links"), label: "How to find broken links", internal: true },
+    { href: href("xml-sitemap-generator"), label: "Generate an XML sitemap", internal: true },
+  ],
+  body: migrationEn,
+  fr: {
+    title: "Auditer une migration de site (avant et après la mise en ligne)",
+    description: "Servez-vous du mode liste, des chaînes de redirections et de la comparaison d'explorations avec correspondance d'URL pour qu'une refonte ou un changement de domaine ne perde rien.",
+    blurb: "Une référence épinglée, chaque ancienne URL vérifiée en mode liste, et une comparaison qui montre ce que le déménagement a perdu.",
+    body: migrationFr,
+    related: [
+      { href: href("how-to-find-broken-links"), label: "Trouver les liens brisés", internal: true },
+      { href: href("xml-sitemap-generator"), label: "Générer un plan de site XML", internal: true },
+    ],
+  },
+};
+
+export const NOSY_BAT_GUIDES: LearnGuide[] = [BROKEN_LINKS_GUIDE, SITEMAP_GUIDE, EXTRACTION_GUIDE, MIGRATION_GUIDE];
