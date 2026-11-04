@@ -696,7 +696,7 @@ async function crawlOne(item: FrontierItem, ctx: CrawlCtx): Promise<PendingPage>
     fetchMs: res.fetchMs,
     parsed,
     issues,
-    stored: storedColumns(facts),
+    stored: { ...storedColumns(facts), ampHtml: ampKey(facts, settings) },
     rendered: renderColumns(facts),
     contentHash: parsed?.contentHash ?? null,
     inSitemap,
@@ -734,6 +734,13 @@ function annotationTargets(facts: PageFacts, linkTargets: string[], settings: Cr
     out.push(url);
   }
   return out;
+}
+
+/** Phase 4e: the first rel=amphtml target keyed like a crawled URL (so it joins that row), or null. */
+function ampKey(facts: PageFacts, settings: CrawlSettings): string | null {
+  const raw = facts.html?.amphtml?.[0];
+  const normalized = raw ? normalizeCrawlUrl(raw, facts.finalUrl) : null;
+  return normalized ? settings.canonical(normalized) : null;
 }
 
 /**
