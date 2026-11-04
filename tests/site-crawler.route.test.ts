@@ -891,6 +891,16 @@ describe("GET /crawl/[id]/pages — Phase 2 filters", () => {
     await getPages(new Request("https://app.test/x"), params("crawl_1"));
     expect(crawlPage.findMany.mock.calls[0]![0]!.where).toEqual({ crawlJobId: "crawl_1" });
   });
+
+  it("filters to pages with a finding of one rule (Issues › See all pages), legacy rows included; an unknown rule is a 400", async () => {
+    await getPages(new Request("https://app.test/x?rule=page_titles.over_60_chars"), params("crawl_1"));
+    expect(crawlPage.findMany.mock.calls[0]![0]!.where).toMatchObject({
+      crawlJobId: "crawl_1",
+      issues: { some: { OR: [{ ruleId: "page_titles.over_60_chars" }, { ruleId: null, type: { in: ["TITLE_TOO_LONG"] } }] } },
+    });
+    const res = await getPages(new Request("https://app.test/x?rule=no.such_rule"), params("crawl_1"));
+    expect(res.status).toBe(400);
+  });
 });
 
 // ─── Phase 3a: Issues by rule ───────────────────────────────────────────────
@@ -918,7 +928,24 @@ describe("GET /crawl/[id]/rules", () => {
       "directives.noindex",
       "images.not_next_gen_format",
     ]);
-    expect(body.rules[1]).toMatchObject({ family: "h1", urls: 10, share: 5 });
+    expect(body.rules[1]).toMatchObject({ family: "h1", urls: 10, share: 5, pages: null });
+    expect(body.highPages).toBeNull();
+  });
+
+  it("carries distinct pages per rule and the summary's high-priority page count (Issues view)", async () => {
+    authed();
+    crawlJob.findFirst.mockResolvedValue({
+      id: "crawl_1",
+      pagesCrawled: 200,
+      summary: {
+        issues: { "response_codes.internal_4xx": { count: 6, pages: 4, kind: "issue", priority: "high" } },
+        issuesByKind: { issue: 6, warning: 0, opportunity: 0 },
+        highPages: 4,
+      },
+    });
+    const body = await (await getRules(new Request("https://app.test/x"), params("crawl_1"))).json();
+    expect(body.rules[0]).toMatchObject({ urls: 6, pages: 4 });
+    expect(body.highPages).toBe(4);
   });
 });
 

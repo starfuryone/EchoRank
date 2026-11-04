@@ -37,6 +37,8 @@ describe("route table", () => {
   it.each([
     ["/crawler", "crawler/page.tsx"],
     ["/crawler/[id]", "crawler/[id]/page.tsx"],
+    ["/crawler/[id]/issues", "crawler/[id]/issues/page.tsx"],
+    ["/crawler/[id]/pages", "crawler/[id]/pages/page.tsx"],
     ["/crawler/history", "crawler/history/page.tsx"],
     ["/crawler/schedules", "crawler/schedules/page.tsx"],
   ])("%s has a page under the paid crawler layout", (_route, file) => {
@@ -47,6 +49,9 @@ describe("route table", () => {
   it("names every view in one place", () => {
     expect(CRAWLER_ROUTES).toMatchObject({ start: "/crawler", history: "/crawler/history", schedules: "/crawler/schedules" });
     expect(CRAWLER_ROUTES.results("c 1")).toBe("/crawler/c%201");
+    expect(CRAWLER_ROUTES.issues("c1")).toBe("/crawler/c1/issues");
+    expect(CRAWLER_ROUTES.pages("c1")).toBe("/crawler/c1/pages");
+    expect(CRAWLER_ROUTES.pages("c1", "h1.missing")).toBe("/crawler/c1/pages?rule=h1.missing");
   });
 });
 
@@ -70,7 +75,7 @@ describe("redirects", () => {
 describe("one sidebar row, a strip for the views", () => {
   it("keeps the sidebar's crawler row active on every view", () => {
     const items = [{ href: "/visibility/tools" }, { href: "/crawler" }];
-    for (const p of ["/crawler", "/crawler/c1", "/crawler/history", "/crawler/schedules"]) expect(activeNavHref(items, p)).toBe("/crawler");
+    for (const p of ["/crawler", "/crawler/c1", "/crawler/c1/issues", "/crawler/c1/pages", "/crawler/history", "/crawler/schedules"]) expect(activeNavHref(items, p)).toBe("/crawler");
   });
 
   it.each(["en", "fr", "de-CH"] as const)("%s: the strip links New crawl, History and Schedules, and marks the current view", (l) => {

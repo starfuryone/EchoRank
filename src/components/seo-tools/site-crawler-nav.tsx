@@ -20,6 +20,9 @@ export const CRAWLER_ROUTES = {
   history: "/crawler/history",
   schedules: "/crawler/schedules",
   results: (id: string) => `/crawler/${encodeURIComponent(id)}`,
+  issues: (id: string) => `/crawler/${encodeURIComponent(id)}/issues`,
+  /** The Pages view, optionally filtered to pages with a finding of one rule. */
+  pages: (id: string, rule?: string) => `/crawler/${encodeURIComponent(id)}/pages${rule ? `?rule=${encodeURIComponent(rule)}` : ""}`,
 } as const;
 
 export function CrawlerNav({ current, t }: { current: CrawlerNavItem; t: SiteCrawlerUxCopy }) {

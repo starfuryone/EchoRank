@@ -4,7 +4,8 @@
  * Filters: inSitemap, minInlinks/maxInlinks, depth, and (Phase 4b)
  * search=N&hit=true|false — custom search N matched / did not, and
  * segment=N (the CSV then carries a Segment column), and (Phase 4c)
- * urlPrefix=… — URLs starting with it (the Structure tab's click-through).
+ * urlPrefix=… — URLs starting with it (the Structure tab's click-through),
+ * and rule=<id> — pages with a finding of that rule (Issues' "See all pages").
  * Phase 4d: every row carries its joined metrics (GSC, PSI, GA4, backlinks);
  * sort=<metric key>&dir=asc|desc orders by one (pages-sort.ts); the CSV
  * carries every metric column of each source the crawl has data from. Each is validated rather
@@ -17,6 +18,7 @@
  */
 
 import { NextResponse } from "next/server";
+import { RULE_BY_ID } from "@/lib/crawl-rules";
 import { flag } from "@/lib/flags";
 import { requirePaidPlan } from "@/lib/paid-plan";
 import { csvFilename } from "@/lib/csv-export";
@@ -29,6 +31,7 @@ import { readStoredConfig } from "@/lib/site-crawler/crawl-config";
 import { csvStreamResponse, wantsCsv } from "@/lib/csv-stream";
 import { prisma } from "@/lib/prisma";
 import { crawlRouteError } from "@/lib/site-crawler/http";
+import { ruleIssueOnPage } from "@/lib/site-crawler/rule-summary";
 
 const DEFAULT_PAGE_SIZE = 50;
 const MAX_PAGE_SIZE = 200;
@@ -113,6 +116,12 @@ export async function GET(
       return NextResponse.json({ error: "urlPrefix must be 1–2048 characters", code: "INVALID_REQUEST" }, { status: 400 });
     }
 
+    // Issues view: pages with a finding of one rule ("See all pages").
+    const ruleParam = url.searchParams.get("rule");
+    if (ruleParam !== null && !RULE_BY_ID.has(ruleParam)) {
+      return NextResponse.json({ error: "Unknown rule", code: "INVALID_REQUEST" }, { status: 400 });
+    }
+
     // Phase 4d: sort by a joined metric.
     const sort = url.searchParams.get("sort");
     const dir = url.searchParams.get("dir") ?? "desc";
@@ -137,6 +146,7 @@ export async function GET(
       ...(Object.keys(inlinkRange).length > 0 ? { inlinkCount: inlinkRange } : {}),
       ...searchFilter,
       ...(urlPrefix !== null ? { url: { startsWith: urlPrefix } } : {}),
+      ...(ruleParam !== null ? { issues: { some: ruleIssueOnPage(ruleParam) } } : {}),
       ...pageInSegment(segment),
     };
 

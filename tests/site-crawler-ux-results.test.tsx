@@ -50,7 +50,9 @@ beforeEach(() => {
       calls.push(u);
       if (u === "/api/seo/v1/crawl") return { ok: true, json: async () => ({ crawls: [crawl], quota }) };
       if (u.startsWith("/api/seo/v1/crawl/c1/summary")) return { ok: true, json: async () => summary };
-      if (u.startsWith("/api/seo/v1/crawl/c1/rules")) return { ok: true, json: async () => ({ pagesCrawled: 2476, rules: [] }) };
+      if (u.startsWith("/api/seo/v1/crawl/c1/rules/")) return { ok: true, json: async () => ({ rows: [], total: 0 }) };
+      if (u.startsWith("/api/seo/v1/crawl/c1/rules"))
+        return { ok: true, json: async () => ({ pagesCrawled: 2476, rules: [{ ruleId: "r2", family: null, kind: "issue", priority: "high", urls: 30, pages: 30, share: 1.2 }] }) };
       return { ok: false, json: async () => null };
     }),
   );

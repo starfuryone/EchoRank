@@ -24,7 +24,7 @@ import { Select } from "@/components/ui/select";
 import { formatDateTime } from "@/lib/utils";
 import type { Severity } from "@/lib/site-crawler/checks";
 import { RULE_COPY, RULE_IDS } from "@/lib/crawl-rules-meta";
-import { RulesPanel } from "./site-crawler-rules-panel";
+import { IssuesView } from "./site-crawler-issues";
 import {
   EMPTY_PAGE_FILTERS,
   pageFilterParams,
@@ -229,7 +229,18 @@ function stoppedLabel(reason: string | null, t: SiteCrawlerCopy): string | null 
 /** The crawler's task views: Start (/crawler) and Results (/crawler/[id]). */
 export type CrawlerView = "start" | "results";
 
-export function SiteCrawlerClient({ locale, view = "start", crawlId = null }: { locale: DashLocale; view?: CrawlerView; crawlId?: string | null }) {
+export function SiteCrawlerClient({
+  locale,
+  view = "start",
+  crawlId = null,
+  initialTab = "rules",
+}: {
+  locale: DashLocale;
+  view?: CrawlerView;
+  crawlId?: string | null;
+  /** The tab Results opens on: Issues by default; /crawler/[id]/pages opens Pages. */
+  initialTab?: "rules" | "pages";
+}) {
   const router = useRouter();
   const t = SITE_CRAWLER_COPY[locale];
   const int = useMemo(() => new Intl.NumberFormat(locale === "en" ? "en-US" : locale), [locale]);
@@ -273,9 +284,10 @@ export function SiteCrawlerClient({ locale, view = "start", crawlId = null }: { 
   // a crawl of 25,000 pages has four more endpoints behind it and nobody
   // opens all of them.
   // Results open on Issues → By rule; ?rule=<id> (Fix first's link) opens that rule.
+  // On /crawler/[id]/pages, ?rule=<id> instead filters Pages to that rule's pages.
   const deepRule = useSearchParams()?.get("rule") ?? null;
-  const [tab, setTab] = useState<TabId>("rules");
-  const [ruleSel, setRuleSel] = useState<string | null>(deepRule);
+  const [tab, setTab] = useState<TabId>(initialTab);
+  const [ruleSel, setRuleSel] = useState<string | null>(initialTab === "rules" ? deepRule : null);
   /** The sub-view last open in each group, so switching groups and back keeps your place. */
   const [lastSub, setLastSub] = useState<Partial<Record<GroupId, TabId>>>({});
   const pickTab = (id: TabId) => {
@@ -312,7 +324,9 @@ export function SiteCrawlerClient({ locale, view = "start", crawlId = null }: { 
   const [redirects, setRedirects] = useState<RedirectPage | null>(null);
   const [redirectPage, setRedirectPage] = useState(1);
   const [pageRows, setPageRows] = useState<CrawlPagesPage | null>(null);
-  const [pageFilters, setPageFilters] = useState<PageFilters>(EMPTY_PAGE_FILTERS);
+  const [pageFilters, setPageFilters] = useState<PageFilters>(() =>
+    initialTab === "pages" && deepRule ? { ...EMPTY_PAGE_FILTERS, rule: deepRule } : EMPTY_PAGE_FILTERS,
+  );
   const [pagesPage, setPagesPage] = useState(1);
 
   /** Fetches; never sets state itself, so effects can decide when to apply. */
@@ -1028,7 +1042,20 @@ export function SiteCrawlerClient({ locale, view = "start", crawlId = null }: { 
         <SegmentOverview segments={summary?.segments} segment={summary?.segment} onPick={pickSegment} t={t} int={int} />
       )}
 
-      {active && !running && tab === "rules" && <RulesPanel key={ruleSel ?? ""} crawlId={active.id} segment={segment || null} initialRule={ruleSel} t={t} int={int} />}
+      {active && !running && tab === "rules" && (
+        <IssuesView
+          key={ruleSel ?? ""}
+          crawlId={active.id}
+          crawl={active}
+          locale={locale}
+          segmentNames={segmentNames}
+          segment={segment}
+          onSegment={pickSegment}
+          initialRule={ruleSel}
+          t={t}
+          int={int}
+        />
+      )}
 
       {active && !running && tab === "external" && <ExternalPanel crawlId={active.id} t={t} int={int} />}
 
@@ -1098,6 +1125,23 @@ export function SiteCrawlerClient({ locale, view = "start", crawlId = null }: { 
           t={t}
           int={int}
         />
+      )}
+
+      {active && !running && tab === "pages" && pageFilters.rule && (
+        <p className="flex flex-wrap items-center gap-2 text-sm text-gray-700" data-testid="pages-rule-filter">
+          {t.ux.pagesRuleFilter(RULE_COPY[pageFilters.rule]?.name ?? pageFilters.rule)}
+          <button
+            type="button"
+            onClick={() => {
+              setPageFilters((f) => ({ ...f, rule: "" }));
+              setPagesPage(1);
+              setPageRows(null);
+            }}
+            className="rounded px-1.5 text-sm font-medium text-blue-700 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+          >
+            {t.ux.clearFilter}
+          </button>
+        </p>
       )}
 
       {active && !running && tab === "pages" && (

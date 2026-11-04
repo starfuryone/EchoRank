@@ -64,3 +64,9 @@ export function ruleIssueWhere(jobId: string, ruleId: string) {
     OR: [{ ruleId }, ...(legacy.length ? [{ ruleId: null, type: { in: legacy } }] : [])],
   };
 }
+
+/** A page's findings of one rule, old rows included (the pages route's ?rule= filter). */
+export function ruleIssueOnPage(ruleId: string) {
+  const legacy = legacyTypesFor(ruleId);
+  return { OR: [{ ruleId }, ...(legacy.length ? [{ ruleId: null, type: { in: legacy } }] : [])] };
+}

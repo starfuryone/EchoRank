@@ -112,6 +112,8 @@ export interface CrawlSummary {
   psiPages?: number;
   /** Site health 0–100 (site-health.ts), with its inputs. Absent on crawls from before it. */
   health?: SiteHealth | null;
+  /** Distinct pages with at least one high-priority finding (Issues banner). Absent on older summaries. */
+  highPages?: number;
   /** Phase 4g: distinct external URLs, how many had their status resolved, and whether the resolve cap cut it short. */
   external?: { urls: number; checked: number; capped: boolean };
   /** Phase 4g: pages and followed internal edges Link Score ran over, and its bottom-decile threshold. */
@@ -334,6 +336,7 @@ export async function aggregateCrawl({
     deepestPages,
     psiPages,
     health: siteHealth(priorityCounts(ruleTallies.issues), job.pagesCrawled),
+    highPages: ruleTallies.highPages,
     ...(Object.keys(metricsStatus).length ? { metrics: metricsStatus } : {}),
     ...(external ? { external } : {}),
     ...(linkScore ? { linkScore } : {}),
@@ -370,6 +373,7 @@ export async function recountIssues(jobId: string): Promise<{ issueCount: number
     issuesByKind: ruleTallies.byKind,
     // Post-crawl steps add findings: health follows them.
     health: siteHealth(priorityCounts(ruleTallies.issues), job?.pagesCrawled ?? 0),
+    highPages: ruleTallies.highPages,
   };
   await prisma.crawlJob.update({ where: { id: jobId }, data: { issueCount, summary: summary as object } });
   return { issueCount };
@@ -758,13 +762,21 @@ async function issueDistribution(
 }
 
 /** Findings per rule id and totals by kind, for summary.issues / issuesByKind. */
-async function ruleTally(jobId: string): Promise<{ issues: Record<string, RuleTally>; byKind: Record<RuleKind, number> }> {
+async function ruleTally(jobId: string): Promise<{ issues: Record<string, RuleTally>; byKind: Record<RuleKind, number>; highPages: number }> {
   // One grouped read: findings and the distinct pages they sit on, per rule.
-  const groups = await prisma.$queryRaw<{ ruleId: string; kind: string; priority: string; n: bigint; pages: bigint }[]>`
+  // Plus the distinct pages with any high-priority finding (the Issues banner;
+  // per-rule page counts overlap, so they cannot be summed).
+  const [groups, high] = await Promise.all([
+    prisma.$queryRaw<{ ruleId: string; kind: string; priority: string; n: bigint; pages: bigint }[]>`
     SELECT "ruleId", "kind", "priority", count(*) AS n, count(DISTINCT "crawlPageId") AS pages
     FROM "crawl_issues"
     WHERE "crawlJobId" = ${jobId} AND "ruleId" IS NOT NULL
-    GROUP BY "ruleId", "kind", "priority"`;
+    GROUP BY "ruleId", "kind", "priority"`,
+    prisma.$queryRaw<{ pages: bigint }[]>`
+    SELECT count(DISTINCT "crawlPageId") AS pages
+    FROM "crawl_issues"
+    WHERE "crawlJobId" = ${jobId} AND "ruleId" IS NOT NULL AND "priority" = 'high'`,
+  ]);
   const issues: Record<string, RuleTally> = {};
   const byKind: Record<RuleKind, number> = { issue: 0, warning: 0, opportunity: 0 };
   for (const g of groups) {
@@ -772,7 +784,7 @@ async function ruleTally(jobId: string): Promise<{ issues: Record<string, RuleTa
     issues[g.ruleId] = { count: Number(g.n), kind, priority: g.priority as RulePriority, pages: Number(g.pages) };
     if (kind in byKind) byKind[kind] += Number(g.n);
   }
-  return { issues, byKind };
+  return { issues, byKind, highPages: Number(high[0]?.pages ?? 0) };
 }
 
 async function deepest(jobId: string): Promise<{ url: string; depth: number }[]> {

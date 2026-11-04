@@ -277,6 +277,8 @@ export interface PageFilters {
   search: string;
   /** Phase 4c: URLs starting with this (a Structure tab click). "" = any. */
   urlPrefix?: string;
+  /** Issues view "See all pages": pages with a finding of this rule id. "" = any. */
+  rule?: string;
   /** Phase 4d: a metric sort key (metrics-shared METRIC_COLUMNS) and direction; "" = the default order. */
   sort?: string;
   dir?: "asc" | "desc";
@@ -291,6 +293,7 @@ export function pageFilterParams(f: PageFilters): URLSearchParams {
   if (f.depth) params.set("depth", f.depth);
   if (f.minInlinks) params.set("minInlinks", f.minInlinks);
   if (f.urlPrefix) params.set("urlPrefix", f.urlPrefix);
+  if (f.rule) params.set("rule", f.rule);
   if (f.sort) {
     params.set("sort", f.sort);
     params.set("dir", f.dir ?? "desc");

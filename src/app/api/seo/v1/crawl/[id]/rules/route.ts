@@ -25,6 +25,11 @@ import { csvFilename } from "@/lib/csv-export";
 import { csvStreamResponse, wantsCsv } from "@/lib/csv-stream";
 import { ruleListColumns, type RuleListRow } from "@/lib/site-crawler/csv-columns";
 
+function highPagesOf(summary: unknown): number | null {
+  const n = (summary as { highPages?: unknown } | null)?.highPages;
+  return typeof n === "number" ? n : null;
+}
+
 export async function GET(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     const tenant = await requirePaidPlan();
@@ -51,6 +56,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
         kind: t.kind,
         priority: t.priority,
         urls: t.count,
+        // Distinct pages (3a+ summaries); a segment-filtered or older tally has findings only.
+        pages: t.pages ?? null,
         share: pagesInScope > 0 ? Math.round((t.count / pagesInScope) * 1000) / 10 : 0,
         ...(segment.defs.length && !filtered ? { bySegment: bySegment[ruleId] ?? segment.defs.map(() => 0) } : {}),
       }))
@@ -75,6 +82,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     return NextResponse.json({
       pagesCrawled: pagesInScope,
       issuesByKind,
+      // Distinct pages with a high-priority finding: whole crawl only, from the summary.
+      highPages: !filtered ? highPagesOf(crawl.summary) : null,
       rules,
       segments: filtered ? [] : segment.defs.map((d) => d.name),
     });
