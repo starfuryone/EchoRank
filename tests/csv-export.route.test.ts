@@ -21,7 +21,7 @@ vi.mock("@/lib/paid-plan", async (importOriginal) => ({
 const crawlJob = { findFirst: vi.fn() };
 const crawlPage = { findMany: vi.fn(), count: vi.fn() };
 const crawlIssue = { findMany: vi.fn(), count: vi.fn() };
-vi.mock("@/lib/prisma", () => ({ prisma: { crawlJob, crawlPage, crawlIssue } }));
+vi.mock("@/lib/prisma", () => ({ prisma: { crawlJob, crawlPage, crawlIssue, crawlPageMetric: { groupBy: async () => [] } } }));
 
 const { GET: getIssues } = await import("@/app/api/seo/v1/crawl/[id]/issues/route");
 const { GET: getPages } = await import("@/app/api/seo/v1/crawl/[id]/pages/route");
