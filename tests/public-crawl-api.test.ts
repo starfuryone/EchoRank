@@ -16,6 +16,7 @@ vi.mock("server-only", () => ({}));
 // ─── Fakes ───────────────────────────────────────────────────────────────────
 
 const kv = new Map<string, string>();
+const queryRows: unknown[][] = [];
 const redis = {
   set: vi.fn(async (k: string, v: string, ...opts: unknown[]) => {
     if (opts.includes("NX") && kv.has(k)) return null;
@@ -51,11 +52,12 @@ vi.mock("@/lib/prisma", () => ({
       ),
       update: vi.fn(async () => ({})),
     },
+    $queryRaw: vi.fn(async () => queryRows.shift() ?? []),
     tenant: { findUnique: vi.fn(async ({ where }: { where: { id: string } }) => ({ id: where.id, planType: "GROWTH" })) },
     crawlJob: {
       findUnique: vi.fn(async ({ where }: { where: { id: string } }) => jobs.find((j) => j.id === where.id) ?? null),
       findFirst: vi.fn(async ({ where }: { where: Record<string, unknown> }) => jobs.find((j) => match(j, where)) ?? null),
-      findMany: vi.fn(async () => []),
+      findMany: vi.fn(async (args: { where: { tenantId?: string } }) => (args?.where?.tenantId ? jobs.filter((j) => j.tenantId === args.where.tenantId) : [])),
       count: vi.fn(async ({ where }: { where: { status: string } }) => jobs.filter((j) => j.status === where.status && j.id !== "self").length),
     },
   },
@@ -69,6 +71,7 @@ const startCrawl = vi.fn(async (tenantId: string) => {
 vi.mock("@/lib/site-crawler/service", () => ({ startCrawl: (...a: unknown[]) => startCrawl(...(a as [string])) }));
 
 const crawlRoute = await import("@/app/api/public/v1/crawl/route");
+const oneRoute = await import("@/app/api/public/v1/crawl/[id]/route");
 const { deliverCrawlCallback, signCallback, SIGNATURE_HEADER } = await import("@/lib/site-crawler/callback");
 const { queueEstimate } = await import("@/lib/site-crawler/public-api");
 
@@ -98,6 +101,7 @@ const post = (body: unknown, opts: { key?: string; headers?: Record<string, stri
   );
 
 beforeEach(() => {
+  queryRows.length = 0;
   kv.clear();
   jobs.length = 0;
   startCrawl.mockClear();
@@ -306,5 +310,111 @@ describe("completion callback", () => {
     );
     for (const id of ["n1", "n2", "n3", "n4"]) expect(await deliverCrawlCallback(id, 1, deps)).toBe("skipped");
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+});
+
+// ─── Status and list ─────────────────────────────────────────────────────────
+
+const get = (path: string, key?: string) => new Request(`https://app.test${path}`, { headers: key ? { authorization: `Bearer ${key}` } : {} });
+const idParams = (id: string) => ({ params: Promise.resolve({ id }) });
+const row = (extra: Record<string, unknown> = {}) => ({
+  id: "c1",
+  tenantId: "t_a",
+  rootUrl: "https://shop.example/",
+  mode: "spider",
+  status: "COMPLETED",
+  stoppedReason: "url_cap",
+  createdAt: new Date("2026-11-05T10:00:00Z"),
+  startedAt: new Date("2026-11-05T10:01:00Z"),
+  finishedAt: new Date("2026-11-05T10:31:00Z"),
+  pagesCrawled: 500,
+  urlCap: 500,
+  pagesRendered: 40,
+  renderCap: 100,
+  issueCount: 12,
+  scheduleId: null,
+  apiKeyId: "k_a",
+  config: { segments: [{ name: "Blog", rule: { kind: "urlPattern", pattern: "/blog/*" } }] },
+  summary: {
+    health: { score: 64 },
+    highPages: 9,
+    statusCodes: { "200": 490, "404": 10 },
+    issues: { "h1.missing": { count: 5, kind: "issue", priority: "high" }, "images.missing_alt": { count: 7, kind: "warning", priority: "medium" } },
+    issuesByKind: { issue: 5, warning: 7, opportunity: 0 },
+  },
+  ...extra,
+});
+
+describe("GET /api/public/v1/crawl/{id}", () => {
+  it.each([
+    ["no key", undefined, 401],
+    ["a revoked key", REVOKED, 401],
+    ["a partner key", PARTNER, 403],
+    ["an unpaid tenant", UNPAID, 403],
+  ])("%s → %i", async (_n, key, status) => {
+    jobs.push(row() as never);
+    expect((await oneRoute.GET(get("/api/public/v1/crawl/c1", key), idParams("c1"))).status).toBe(status);
+  });
+
+  it("another workspace's crawl is a 404", async () => {
+    jobs.push(row() as never);
+    const res = await oneRoute.GET(get("/api/public/v1/crawl/c1", KEY_B), idParams("c1"));
+    expect(res.status).toBe(404);
+  });
+
+  it("a settled crawl: progress, health, summary, totals by kind and family, segments", async () => {
+    jobs.push(row() as never);
+    queryRows.push(
+      [{ seg: 0, n: 120 }],
+      [
+        { seg: 0, severity: "ERROR", n: 3 },
+        { seg: 0, severity: "WARNING", n: 4 },
+      ],
+    );
+    const res = await oneRoute.GET(get("/api/public/v1/crawl/c1", KEY_A), idParams("c1"));
+    expect(res.status).toBe(200);
+    expect(await res.json()).toMatchObject({
+      crawlId: "c1",
+      host: "shop.example",
+      status: "completed",
+      stoppedReason: "url_cap",
+      viaApi: true,
+      progress: { phase: "completed", pagesCrawled: 500, urlCap: 500, pagesRendered: 40, renderCap: 100 },
+      health: 64,
+      summary: { issueCount: 12, durationMs: 30 * 60_000, statusCodes: { "200": 490, "404": 10 }, highPriorityPages: 9 },
+      totals: { byKind: { issue: 5, warning: 7, opportunity: 0 }, byFamily: { h1: 5, images: 7 } },
+      segments: [{ index: 0, name: "Blog", pages: 120, findings: 7 }],
+      queuePosition: null,
+    });
+  });
+
+  it("a queued crawl: no summary yet, a queue position; a failed one hides its internal reason", async () => {
+    jobs.push(row({ status: "QUEUED", startedAt: null, finishedAt: null, summary: null, stoppedReason: null }) as never);
+    const body = await (await oneRoute.GET(get("/api/public/v1/crawl/c1", KEY_A), idParams("c1"))).json();
+    expect(body).toMatchObject({ status: "queued", summary: null, totals: null, segments: [], health: null });
+    expect(body.queuePosition).toBeGreaterThanOrEqual(1);
+    expect(body.estimatedStart).toMatch(/^\d{4}-/);
+    jobs.length = 0;
+    jobs.push(row({ status: "FAILED", stoppedReason: "TypeError: at /opt/echorank/…" }) as never);
+    const failed = await (await oneRoute.GET(get("/api/public/v1/crawl/c1", KEY_A), idParams("c1"))).json();
+    expect(failed).toMatchObject({ status: "failed", stoppedReason: null });
+  });
+});
+
+describe("GET /api/public/v1/crawl (list)", () => {
+  it("lists only the key's tenant's crawls, by exact host, limit capped at 100", async () => {
+    jobs.push(row({ id: "a1" }) as never, row({ id: "b1", tenantId: "t_b" }) as never);
+    const { prisma } = await import("@/lib/prisma");
+    const findMany = prisma.crawlJob.findMany as unknown as ReturnType<typeof vi.fn>;
+    findMany.mockClear();
+    const res = await crawlRoute.GET(get("/api/public/v1/crawl?host=Shop.Example&limit=500", KEY_A));
+    const body = await res.json();
+    expect(body.crawls.map((c: { crawlId: string }) => c.crawlId)).toEqual(["a1"]);
+    const args = findMany.mock.calls[0]![0];
+    expect(args.where.tenantId).toBe("t_a");
+    expect(args.where.OR[2]).toEqual({ rootUrl: { startsWith: "https://shop.example/", mode: "insensitive" } });
+    expect(args.take).toBe(100);
+    expect((await crawlRoute.GET(get("/api/public/v1/crawl?limit=0", KEY_A))).status).toBe(400);
+    expect((await crawlRoute.GET(get("/api/public/v1/crawl"))).status).toBe(401);
   });
 });

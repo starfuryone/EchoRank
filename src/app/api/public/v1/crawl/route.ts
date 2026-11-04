@@ -8,6 +8,8 @@
  *         Same validation, plan caps, start rate limit and quota as the UI.
  *         `Idempotency-Key` header: one crawl per key per 24 h.
  *         → 202 { crawlId, status, queuePosition, estimatedStart }
+ *   GET   ?host=&limit= — the tenant's crawls, newest first (limit ≤ 100,
+ *         default 20; host = an exact site). → { crawls: [...] }
  *
  * Auth: Bearer er_api_<id>.<secret> (authenticatePublicRequest — key, scope,
  * paid plan, 60 requests a minute). Tenant-scoped throughout.
@@ -22,7 +24,7 @@ import type { PlanType } from "@/generated/prisma";
 import { checkCallbackUrl } from "@/lib/site-crawler/callback";
 import { crawlRouteError } from "@/lib/site-crawler/http";
 import { IDEMPOTENCY_KEY_MAX, claimIdempotency, completeIdempotency, releaseIdempotency } from "@/lib/site-crawler/idempotency";
-import { queueEstimate } from "@/lib/site-crawler/public-api";
+import { listPublicCrawls, queueEstimate } from "@/lib/site-crawler/public-api";
 import { startCrawl } from "@/lib/site-crawler/service";
 import { START_RATE_LIMIT, START_RATE_WINDOW_MS, StartCrawlBodySchema, startRateKey } from "@/lib/site-crawler/start-body";
 
@@ -94,4 +96,14 @@ export async function POST(request: Request) {
     if (idemKey) await releaseIdempotency(auth.tenantId, idemKey).catch(() => undefined);
     return crawlRouteError(err);
   }
+}
+
+export async function GET(request: Request) {
+  const auth = await authenticatePublicRequest(request);
+  if (!auth.ok) return auth.response;
+  const params = new URL(request.url).searchParams;
+  const limitRaw = params.get("limit");
+  const limit = limitRaw === null ? null : Number.parseInt(limitRaw, 10);
+  if (limitRaw !== null && !(Number.isInteger(limit) && limit! >= 1)) return NextResponse.json({ error: "invalid_limit" }, { status: 400 });
+  return NextResponse.json({ crawls: await listPublicCrawls(auth.tenantId, { host: params.get("host"), limit }) });
 }
