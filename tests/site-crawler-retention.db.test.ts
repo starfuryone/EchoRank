@@ -32,6 +32,7 @@ describe.skipIf(!TEST_DB)("retention against Postgres", () => {
         });
         await prisma.crawlLink.create({ data: { crawlJobId: job(n), fromPageId: page.id, toUrl: "https://ret.example.com/", position: 0 } });
         await prisma.crawlExtraction.create({ data: { crawlJobId: job(n), pageId: page.id, extractorIndex: 0, values: ["v"] } });
+        await prisma.crawlPageMetric.create({ data: { crawlJobId: job(n), pageId: page.id, source: "gsc", data: { clicks: 1 } } });
       }
     }
     // Phase 4c: comparisons naming crawl 2 on either side, and one that does not.
@@ -50,12 +51,13 @@ describe.skipIf(!TEST_DB)("retention against Postgres", () => {
 
   it("purges in batches, keeps the row and summary", async () => {
     const deleted = await r.purgeCrawlData(job(2), 3);
-    expect(deleted).toBe(28); // 7 issues + 7 extractions + 7 links + 7 pages, three at a time
+    expect(deleted).toBe(35); // 7 issues + 7 extractions + 7 metrics + 7 links + 7 pages, three at a time
     const row = await prisma.crawlJob.findUnique({ where: { id: job(2) } });
     expect(row).toMatchObject({ summary: { n: 2 } });
     expect(row!.dataPurgedAt).not.toBeNull();
     expect(await prisma.crawlPage.count({ where: { crawlJobId: job(2) } })).toBe(0);
     expect(await prisma.crawlExtraction.count({ where: { crawlJobId: job(2) } })).toBe(0);
+    expect(await prisma.crawlPageMetric.count({ where: { crawlJobId: job(2) } })).toBe(0);
     // Either side purged → the comparison goes; the unrelated one stays.
     expect(await prisma.crawlComparison.count({ where: { OR: [{ jobAId: job(2) }, { jobBId: job(2) }] } })).toBe(0);
     expect(await prisma.crawlComparison.count({ where: { jobAId: job(4) } })).toBe(1);

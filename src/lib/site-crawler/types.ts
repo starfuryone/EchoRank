@@ -81,6 +81,9 @@ export interface CrawlQuotaDto {
   /** Phase 4c: schedules per tenant and the cadences this tier may pick. */
   scheduleCap?: number;
   scheduleCadences?: readonly ("daily" | "weekly" | "monthly")[];
+  /** Phase 4d: pages per crawl for PageSpeed and for backlink metrics. */
+  psiCap?: number;
+  backlinkCap?: number;
 }
 
 export interface CrawlIssueRow {

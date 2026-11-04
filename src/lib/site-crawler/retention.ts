@@ -55,7 +55,7 @@ export function crawlsToPurge(crawls: RetentionCandidate[], kept: number, now: D
 }
 
 /** A crawl's full data, children before crawl_pages so the page deletes cascade over nothing. */
-const PURGED_TABLES = ["crawl_issues", "crawl_extractions", "crawl_links", "crawl_pages"] as const;
+const PURGED_TABLES = ["crawl_issues", "crawl_extractions", "crawl_page_metrics", "crawl_links", "crawl_pages"] as const;
 
 /** Delete one crawl's full data in bounded batches, then stamp it. Returns rows deleted. */
 export async function purgeCrawlData(jobId: string, batch = RETENTION_BATCH_ROWS): Promise<number> {

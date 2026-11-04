@@ -1504,6 +1504,11 @@ model GscConnection {
   /// the normal outcome on a low-traffic property, where Google withholds
   /// queries below its anonymity threshold. Null means never synced.
   lastRowsSynced  Int?
+  /// Site Crawler Phase 4d (crawl.ga4): the GA4 property picked in
+  /// Settings → Integrations ("properties/123"), read with this connection's
+  /// token once it carries analytics.readonly. Null = no GA4 join.
+  ga4PropertyId   String?
+  ga4PropertyName String?
   updatedAt       DateTime            @updatedAt
 
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
@@ -2278,6 +2283,7 @@ model CrawlJob {
   issues CrawlIssue[]
   links  CrawlLink[]
   extractions CrawlExtraction[]
+  metrics     CrawlPageMetric[]
   comparisonsAsA CrawlComparison[] @relation("ComparisonJobA")
   comparisonsAsB CrawlComparison[] @relation("ComparisonJobB")
 
@@ -2388,6 +2394,7 @@ model CrawlPage {
   issues      CrawlIssue[]
   outlinks    CrawlLink[]
   extractions CrawlExtraction[]
+  metrics     CrawlPageMetric[]
 
   @@index([crawlJobId])
   /// Aggregation joins pages to pages by URL (canonical, hreflang and
@@ -2540,6 +2547,36 @@ model CrawlSchedule {
 
   @@index([tenantId])
   @@map("crawl_schedules")
+}
+
+/// Phase 4d: where a crawl_page_metrics row came from.
+enum CrawlMetricSource {
+  gsc
+  psi
+  ga4
+  backlinks
+}
+
+/// Phase 4d: one external data source joined onto one crawled page. data is
+/// small by contract (src/lib/site-crawler/metrics-shared.ts): gsc {clicks,
+/// impressions, ctr, position}; psi {mobile?, desktop?} score summaries;
+/// ga4 {sessions, totalUsers, engagementRate, keyEvents}; backlinks
+/// {referringDomains, backlinks, rank}. Retention: deleted with the page
+/// (nightly crawl retention, batched; FK cascade).
+model CrawlPageMetric {
+  id         String            @id @default(cuid())
+  crawlJobId String
+  pageId     String
+  source     CrawlMetricSource
+  data       Json
+  fetchedAt  DateTime          @default(now())
+
+  crawlJob CrawlJob  @relation(fields: [crawlJobId], references: [id], onDelete: Cascade)
+  page     CrawlPage @relation(fields: [pageId], references: [id], onDelete: Cascade)
+
+  @@unique([pageId, source])
+  @@index([crawlJobId, source])
+  @@map("crawl_page_metrics")
 }
 
 /// One finding on one page. `type` and `severity` are enum-like strings rather

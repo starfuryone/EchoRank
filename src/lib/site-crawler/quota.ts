@@ -47,6 +47,9 @@ export interface CrawlQuota {
   /** Phase 4c: schedules per tenant and the cadences the tier allows. */
   scheduleCap: number;
   scheduleCadences: readonly CrawlCadence[];
+  /** Phase 4d: pages per crawl for PageSpeed and for backlink metrics. */
+  psiCap: number;
+  backlinkCap: number;
 }
 
 export function urlCapForPlan(plan: PlanType): number {
@@ -63,6 +66,12 @@ export function featureCapsForPlan(plan: PlanType): { extractorCap: number; sear
 export function scheduleCapsForPlan(plan: PlanType): { scheduleCap: number; scheduleCadences: readonly CrawlCadence[] } {
   const c = planConfig(plan);
   return { scheduleCap: c.crawlSchedules, scheduleCadences: c.crawlScheduleCadences };
+}
+
+/** Phase 4d caps (plan-config crawlPsiPages / crawlBacklinkPages). */
+export function metricCapsForPlan(plan: PlanType): { psiCap: number; backlinkCap: number } {
+  const c = planConfig(plan);
+  return { psiCap: c.crawlPsiPages, backlinkCap: c.crawlBacklinkPages };
 }
 
 export function monthlyLimitForPlan(plan: PlanType): number | null {
@@ -99,7 +108,7 @@ export async function getCrawlQuota(
   const monthlyLimit = monthlyLimitForPlan(plan);
   const locked = urlCap <= 0;
   const crawlsKept = planConfig(plan).crawlsKept;
-  const caps = { ...featureCapsForPlan(plan), ...scheduleCapsForPlan(plan) };
+  const caps = { ...featureCapsForPlan(plan), ...scheduleCapsForPlan(plan), ...metricCapsForPlan(plan) };
 
   // A locked tier never runs a query it cannot act on.
   if (locked) {
