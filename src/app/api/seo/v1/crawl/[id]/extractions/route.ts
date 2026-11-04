@@ -19,7 +19,7 @@ import { csvFilename } from "@/lib/csv-export";
 import { csvStreamResponse, wantsCsv } from "@/lib/csv-stream";
 import { readStoredConfig } from "@/lib/site-crawler/crawl-config";
 import { extractionColumns, type ExtractionRow } from "@/lib/site-crawler/csv-columns";
-import { extractionKeysetPage, extractionOffsetPage, extractionWhere } from "@/lib/site-crawler/extraction-rows";
+import { extractionColumnRefs, extractionKeysetPage, extractionOffsetPage, extractionWhere } from "@/lib/site-crawler/extraction-rows";
 import { crawlRouteError } from "@/lib/site-crawler/http";
 import { segmentScope } from "@/lib/site-crawler/segment-filter";
 
@@ -37,7 +37,8 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     if (!crawl) return NextResponse.json({ error: "Crawl not found", code: "NOT_FOUND" }, { status: 404 });
 
     const config = readStoredConfig(crawl.config);
-    const extractors = config?.extractors ?? [];
+    // Phase 4e: extractors, then custom JS snippets, then AI prompts.
+    const refs = extractionColumnRefs(config);
     const url = new URL(request.url);
     const scope = segmentScope(url, crawl.config);
     const segments = scope.defs;
@@ -45,14 +46,14 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     const extractorRaw = url.searchParams.get("extractor");
     const hasRaw = url.searchParams.get("has");
     const extractor = extractorRaw === null ? null : Number(extractorRaw);
-    if (extractor !== null && !(Number.isInteger(extractor) && extractor >= 0 && extractor < extractors.length)) {
+    if (extractor !== null && !(Number.isInteger(extractor) && extractor >= 0 && extractor < refs.length)) {
       return NextResponse.json({ error: "Unknown extractor", code: "INVALID_REQUEST" }, { status: 400 });
     }
     if (hasRaw !== null && hasRaw !== "true" && hasRaw !== "false") {
       return NextResponse.json({ error: "has must be true or false", code: "INVALID_REQUEST" }, { status: 400 });
     }
     const where = extractionWhere(crawl.id, {
-      extractor,
+      extractor: extractor === null ? null : refs[extractor]!,
       has: hasRaw === null ? null : hasRaw === "true",
       segment: scope.index,
     });
@@ -60,20 +61,20 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     if (wantsCsv(url)) {
       return csvStreamResponse<ExtractionRow>({
         columns: extractionColumns(
-          extractors.map((e) => e.name),
+          refs.map((c) => c.name),
           segments.length > 0,
         ),
         filename: csvFilename("site-crawler-extraction"),
         cursorOf: (row) => row.id,
-        fetchPage: (cursor, take) => extractionKeysetPage(where, cursor, take, extractors.length, segments),
+        fetchPage: (cursor, take) => extractionKeysetPage(where, cursor, take, refs, segments),
       });
     }
 
     const page = Math.max(1, Number(url.searchParams.get("page") ?? "1") || 1);
     const pageSize = Math.min(MAX_PAGE_SIZE, Math.max(1, Number(url.searchParams.get("pageSize") ?? DEFAULT_PAGE_SIZE) || DEFAULT_PAGE_SIZE));
-    const { total, rows } = await extractionOffsetPage(where, page, pageSize, extractors.length, segments);
+    const { total, rows } = await extractionOffsetPage(where, page, pageSize, refs, segments);
     return NextResponse.json({
-      extractors: extractors.map((e) => ({ name: e.name, kind: e.kind })),
+      extractors: refs.map((c) => ({ name: c.name, kind: c.kind === "extract" ? (config?.extractors[c.index]?.kind ?? "css") : c.kind })),
       rows,
       page,
       pageSize,

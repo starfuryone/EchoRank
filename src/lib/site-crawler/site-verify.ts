@@ -155,6 +155,8 @@ export interface SiteRecord {
   verifiedAt: Date | null;
   verifyMethod: string | null;
   config: unknown;
+  /** Phase 4e: the host's saved custom JavaScript snippets. */
+  jsSnippets: unknown;
 }
 
 /** The tenant's record for a host, created (with a fresh token) on first use. */
@@ -163,7 +165,7 @@ export async function getOrCreateSite(tenantId: string, host: string): Promise<S
     where: { tenantId_host: { tenantId, host } },
     create: { tenantId, host, verifyToken: newVerifyToken() },
     update: {},
-    select: { host: true, verifyToken: true, verifiedAt: true, verifyMethod: true, config: true },
+    select: { host: true, verifyToken: true, verifiedAt: true, verifyMethod: true, config: true, jsSnippets: true },
   });
 }
 
@@ -175,7 +177,7 @@ export async function verifySite(tenantId: string, host: string, deps?: VerifyDe
   return prisma.crawlSiteDefault.update({
     where: { tenantId_host: { tenantId, host } },
     data: { verifiedAt: new Date(), verifyMethod: method },
-    select: { host: true, verifyToken: true, verifiedAt: true, verifyMethod: true, config: true },
+    select: { host: true, verifyToken: true, verifiedAt: true, verifyMethod: true, config: true, jsSnippets: true },
   });
 }
 

@@ -764,3 +764,61 @@ describe("list mode", () => {
     expect(terminalWrite()).toMatchObject({ status: "COMPLETED", stoppedReason: "list_expired", pagesCrawled: 0 });
   });
 });
+
+// ─── Phase 4e: custom JavaScript and AMP ───────────────────────────────────
+
+describe("custom JavaScript and AMP (Phase 4e)", () => {
+  const KEY = "test-key-not-a-secret";
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.unstubAllGlobals();
+  });
+
+  it("sends the snippets with each render and stores one js row per snippet value", async () => {
+    vi.stubEnv("GSC_TOKEN_ENCRYPTION_KEY", KEY);
+    const config = sealCrawlConfig(
+      CrawlConfigInputSchema.parse({ js: [{ name: "dl", preset: "dataLayer" }, { name: "more", preset: "loadMore", selector: "#more" }] }),
+      null,
+      KEY,
+    );
+    crawlJob.findUnique.mockResolvedValue({ id: "job_1", rootUrl: "https://example.com/", urlCap: 1, status: "QUEUED", renderMode: "all", renderCap: 5, pagesRendered: 0, config });
+    fetchPage.mockImplementation(async (url: string) => htmlResponse(url));
+    const bodies: { snippets?: string[] }[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (_url: string, init: RequestInit) => {
+        const body = JSON.parse(init.body as string);
+        bodies.push(body);
+        return new Response(
+          JSON.stringify({ finalUrl: body.url, status: 200, jsRedirect: null, offSite: false, html: htmlResponse(body.url).html, consoleErrors: 0, consoleSample: null, viewport: null, bodyFontPx: null, tapTargets: null, axe: null, snippets: ['[{"event":"x"}]', "error: boom"] }),
+          { status: 200 },
+        );
+      }),
+    );
+    await runCrawl({ jobId: "job_1", redis: fakeRedis() as never });
+    expect(bodies[0]!.snippets).toHaveLength(2);
+    expect(bodies[0]!.snippets![0]).toContain("window.dataLayer");
+    expect(bodies[0]!.snippets![1]).toContain('"#more"');
+    const js = crawlExtraction.createMany.mock.calls.map((c) => c[0].data).flat().filter((r: { kind?: string }) => r.kind === "js");
+    expect(js).toEqual([
+      { crawlJobId: "job_1", pageId: "p1", kind: "js", extractorIndex: 0, values: ['[{"event":"x"}]'] },
+      { crawlJobId: "job_1", pageId: "p1", kind: "js", extractorIndex: 1, values: ["error: boom"] },
+    ]);
+  });
+
+  it("queues a page's rel=amphtml target, and stores ampHtml / isAmp", async () => {
+    crawlJob.findUnique.mockResolvedValue({ id: "job_1", rootUrl: "https://example.com/", urlCap: 10, status: "QUEUED" });
+    fetchPage.mockImplementation(async (url: string) => {
+      const r = htmlResponse(url);
+      if (url === "https://example.com/") r.html = r.html.replace("</head>", '<link rel="amphtml" href="/amp/"></head>');
+      if (url === "https://example.com/amp") r.html = r.html.replace("<html>", "<html amp>");
+      return r;
+    });
+    await runCrawl({ jobId: "job_1", redis: fakeRedis() as never });
+    // Normalised like every crawled URL, so the stored ampHtml joins the AMP page's row.
+    expect(fetchPage.mock.calls.map((c) => c[0])).toContain("https://example.com/amp");
+    const rows = crawlPage.create.mock.calls.map((c) => c[0].data);
+    expect(rows.find((r) => r.url === "https://example.com/")).toMatchObject({ ampHtml: "https://example.com/amp", isAmp: false });
+    expect(rows.find((r) => r.url === "https://example.com/amp")).toMatchObject({ isAmp: true });
+  });
+});

@@ -23,11 +23,11 @@ import { z } from "zod";
 import { requirePaidPlan } from "@/lib/paid-plan";
 import { prisma } from "@/lib/prisma";
 import { rateLimit } from "@/lib/rate-limit";
-import { CrawlConfigInputSchema, checkCrawlConfig, readStoredConfig, viewCrawlConfig } from "@/lib/site-crawler/crawl-config";
+import { CrawlConfigInputSchema, checkCrawlConfig, readSiteDefaults, siteDefaultColumns, viewCrawlConfig } from "@/lib/site-crawler/crawl-config";
 import { sealCrawlConfig } from "@/lib/site-crawler/crawl-config-secrets";
 import { checkExtractorExpr } from "@/lib/site-crawler/extraction";
 import { InvalidCrawlConfigError, InvalidCrawlUrlError, crawlRouteError } from "@/lib/site-crawler/http";
-import { featureCapsForPlan, urlCapForPlan } from "@/lib/site-crawler/quota";
+import { featureCapsForPlan, renderFeatureCapsForPlan, urlCapForPlan } from "@/lib/site-crawler/quota";
 import {
   VERIFY_META_NAME,
   VERIFY_TXT_PREFIX,
@@ -57,7 +57,7 @@ function siteDto(site: SiteRecord) {
     verifyMethod: site.verifyMethod,
     metaTag: `<meta name="${VERIFY_META_NAME}" content="${site.verifyToken}">`,
     dnsRecord: `${VERIFY_TXT_PREFIX}${site.verifyToken}`,
-    defaults: viewCrawlConfig(readStoredConfig(site.config)),
+    defaults: viewCrawlConfig(readSiteDefaults(site.config, site.jsSnippets)),
   };
 }
 
@@ -103,14 +103,15 @@ export async function PUT(request: Request) {
       urlCap: urlCapForPlan(tenant.tenant.planType),
       verified: Boolean(site.verifiedAt),
       ...featureCapsForPlan(tenant.tenant.planType),
+      ...renderFeatureCapsForPlan(tenant.tenant.planType),
       checkExpr: checkExtractorExpr,
     });
     if (problems.length) throw new InvalidCrawlConfigError(problems);
-    const stored = sealCrawlConfig(config, readStoredConfig(site.config));
+    const stored = sealCrawlConfig(config, readSiteDefaults(site.config, site.jsSnippets));
     const saved = await prisma.crawlSiteDefault.update({
       where: { tenantId_host: { tenantId: tenant.tenantId, host } },
-      data: { config: stored as object },
-      select: { host: true, verifyToken: true, verifiedAt: true, verifyMethod: true, config: true },
+      data: siteDefaultColumns(stored),
+      select: { host: true, verifyToken: true, verifiedAt: true, verifyMethod: true, config: true, jsSnippets: true },
     });
     return NextResponse.json(siteDto(saved));
   } catch (err) {
@@ -124,7 +125,7 @@ export async function DELETE(request: Request) {
     const host = guardedHost(new URL(request.url).searchParams.get("host"));
     await prisma.crawlSiteDefault.updateMany({
       where: { tenantId: tenant.tenantId, host },
-      data: { config: Prisma.DbNull },
+      data: { config: Prisma.DbNull, jsSnippets: Prisma.DbNull },
     });
     return NextResponse.json({ ok: true });
   } catch (err) {

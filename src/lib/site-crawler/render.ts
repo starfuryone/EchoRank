@@ -23,6 +23,8 @@ import { THIN_MAX_WORDS, type RenderMode } from "./types";
 
 /** The sidecar's own budget is 20 s plus up to 25 s waiting for its slot. */
 export const RENDER_REQUEST_TIMEOUT_MS = 50_000;
+/** Phase 4e: the sidecar gives each custom JavaScript snippet 5 s more. */
+export const SNIPPET_TIMEOUT_MS = 5_000;
 export const RENDER_FAILURE_LIMIT = 5;
 /** One retry after a 429 (the sidecar's slot was taken by another crawl). */
 const BUSY_RETRY_MS = 3_000;
@@ -50,6 +52,8 @@ export interface SidecarRender {
   bodyFontPx: number | null;
   tapTargets: { checked: number; tooClose: number; sample: string | null } | null;
   axe: { version: string; violations: Record<string, { impact: string | null; nodes: number }> } | null;
+  /** Phase 4e: one value per snippet sent; null when none were. */
+  snippets?: string[] | null;
 }
 
 export function toRenderFacts(r: SidecarRender, rootUrl: string): RenderFacts {
@@ -64,13 +68,14 @@ export function toRenderFacts(r: SidecarRender, rootUrl: string): RenderFacts {
     bodyFontPx: r.bodyFontPx ?? null,
     tapTargets: r.tapTargets ?? null,
     axe: r.axe?.violations ?? null,
+    ...(r.snippets ? { snippets: r.snippets } : {}),
   };
 }
 
 type FetchLike = (url: string, init: RequestInit) => Promise<Response>;
 
 /** One call to the sidecar. Null on any failure; the reason is logged. */
-export async function callSidecarRender(url: string, fetchImpl: FetchLike = fetch): Promise<SidecarRender | null> {
+export async function callSidecarRender(url: string, fetchImpl: FetchLike = fetch, snippets: readonly string[] = []): Promise<SidecarRender | null> {
   for (let attempt = 0; attempt < 2; attempt++) {
     let res: Response;
     try {
@@ -80,8 +85,8 @@ export async function callSidecarRender(url: string, fetchImpl: FetchLike = fetc
           "content-type": "application/json",
           "X-Internal-Secret": process.env.INTERNAL_API_SECRET || "",
         },
-        body: JSON.stringify({ url, userAgent: CRAWLER_USER_AGENT }),
-        signal: AbortSignal.timeout(RENDER_REQUEST_TIMEOUT_MS),
+        body: JSON.stringify({ url, userAgent: CRAWLER_USER_AGENT, ...(snippets.length ? { snippets } : {}) }),
+        signal: AbortSignal.timeout(RENDER_REQUEST_TIMEOUT_MS + SNIPPET_TIMEOUT_MS * snippets.length),
       });
     } catch (err) {
       logger.warn({ url, err: err instanceof Error ? err.message : String(err) }, "site-crawl render: sidecar unreachable");

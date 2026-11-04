@@ -15,6 +15,7 @@ import type { SerpLanguageCode, SerpLocationCode } from "@/lib/serp/options";
 import { ESTIMATE_DISCLAIMER } from "@/lib/revenue/disclaimer";
 import { SITE_CRAWLER_4C } from "./site-crawler-4c";
 import { SITE_CRAWLER_4D } from "./site-crawler-4d";
+import { SITE_CRAWLER_4E } from "./site-crawler-4e";
 import { CRAWLER_BRAND } from "@/lib/site-crawler/brand";
 export type DashLocale = "en" | "fr" | "de-CH";
 
@@ -12913,6 +12914,7 @@ const siteCrawlerEn = {
   // Phase 4a: configuration, list mode, verification, robots tester, retention, sitemaps, link graph.
   p4c: SITE_CRAWLER_4C.en,
   p4d: SITE_CRAWLER_4D.en,
+  p4e: SITE_CRAWLER_4E.en,
   p4b: {
     tabExtraction: "Extraction",
     exSection: "Custom extraction",
@@ -13301,6 +13303,7 @@ export const SITE_CRAWLER_COPY: Record<DashLocale, SiteCrawlerCopy> = {
     acceptedSaved: "Enregistré.",
     p4c: SITE_CRAWLER_4C.fr,
     p4d: SITE_CRAWLER_4D.fr,
+    p4e: SITE_CRAWLER_4E.fr,
     p4b: {
       tabExtraction: "Extraction",
       exSection: "Extraction personnalisée",
@@ -13684,6 +13687,7 @@ export const SITE_CRAWLER_COPY: Record<DashLocale, SiteCrawlerCopy> = {
     acceptedSaved: "Gespeichert.",
     p4c: SITE_CRAWLER_4C["de-CH"],
     p4d: SITE_CRAWLER_4D["de-CH"],
+    p4e: SITE_CRAWLER_4E["de-CH"],
     p4b: {
       tabExtraction: "Extraktion",
       exSection: "Eigene Extraktion",

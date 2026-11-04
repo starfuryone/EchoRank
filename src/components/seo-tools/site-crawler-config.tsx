@@ -19,6 +19,9 @@ import { Select } from "@/components/ui/select";
 import type { SiteCrawlerCopy } from "@/lib/i18n/dashboard";
 import { flag } from "@/lib/flags";
 import { ExtractorsEditor, SearchesEditor, SegmentsEditor } from "./site-crawler-config-4b";
+import { JsSnippetsEditor } from "./site-crawler-js";
+import type { SiteCrawler4eCopy } from "@/lib/i18n/site-crawler-4e";
+import type { JsSnippet } from "@/lib/site-crawler/js-snippets";
 import {
   CONFIG_LIMITS,
   type ConfigProblem,
@@ -38,6 +41,8 @@ export interface FeatureCaps {
   extractors: number;
   searches: number;
   segments: number;
+  /** Phase 4e: custom JavaScript snippets per crawl. */
+  js?: number;
 }
 
 export interface SiteInfo {
@@ -72,6 +77,8 @@ interface Draft {
   /** Phase 4b. */
   extractors: Extractor[];
   searches: CustomSearch[];
+  /** Phase 4e. */
+  js: JsSnippet[];
 }
 
 const EMPTY: Draft = {
@@ -96,6 +103,7 @@ const EMPTY: Draft = {
   customRobots: "",
   extractors: [],
   searches: [],
+  js: [],
 };
 
 const lines = (s: string) => s.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
@@ -124,6 +132,7 @@ function fromView(v: CrawlConfigView): Draft {
     customRobots: v.customRobots ?? "",
     extractors: v.extractors ?? [],
     searches: v.searches ?? [],
+    js: v.js ?? [],
   };
 }
 
@@ -151,11 +160,16 @@ export function toInput(d: Draft): CrawlConfigInput {
     customRobots: d.customRobots.trim() ? d.customRobots : null,
     extractors: d.extractors,
     searches: d.searches,
+    js: d.js,
   };
 }
 
 /** One server-side problem as a sentence. */
-export function problemText(p: ConfigProblem, t: T, t4b: T4b, t4d?: SiteCrawler4dCopy): string {
+export function problemText(p: ConfigProblem, t: T, t4b: T4b, t4d?: SiteCrawler4dCopy, t4e?: SiteCrawler4eCopy): string {
+  // Phase 4e: custom JavaScript.
+  if (p.code === "requires_render") return t4e?.problemRender ?? t.problemVerified(p.field);
+  if (p.code === "invalid_snippet") return t4e?.problemSnippet(String(p.index + 1)) ?? t4b.problemExtractor(String(p.index + 1));
+  if (p.code === "requires_verified_site" && p.field === "js" && t4e) return `${t4e.jsTitle}: ${t4e.jsVerifiedOnly}`;
   // Phase 4d: the Add data opt-ins.
   if (p.code === "unknown_segment") return t4d?.problemSegment ?? t4b.problemCap("0");
   if (p.code === "over_plan_cap" && p.field.startsWith("addData.") && t4d) return t4d.problemCap(String(p.limit));
@@ -227,6 +241,8 @@ function CopyLine({ value, t }: { value: string; t: T }) {
 export function CrawlConfigSection({
   t,
   t4b,
+  t4e,
+  renders = false,
   caps,
   rootUrl,
   urlCap,
@@ -236,6 +252,10 @@ export function CrawlConfigSection({
 }: {
   t: T;
   t4b: T4b;
+  /** Phase 4e copy; its editors render only when given. */
+  t4e?: SiteCrawler4eCopy;
+  /** Phase 4e: the crawl will render pages (custom JavaScript needs it). */
+  renders?: boolean;
   caps: FeatureCaps;
   rootUrl: string;
   urlCap: string;
@@ -493,6 +513,10 @@ export function CrawlConfigSection({
         )}
         {flag("crawl.segments") && host && (
           <SegmentsEditor t={t4b} host={host} cap={caps.segments} extractorNames={draft.extractors.map((e) => e.name)} />
+        )}
+
+        {flag("crawl.customJs") && t4e && (caps.js ?? 0) > 0 && (
+          <JsSnippetsEditor t={t4e} value={draft.js} cap={caps.js ?? 0} verified={verified} renders={renders} onChange={(v) => set("js", v)} />
         )}
 
         <Toggle id="cfg-save-default" label={t.saveDefault} checked={saveAsDefault} onChange={(v) => { setSaveAsDefault(v); setDirty(true); }} />

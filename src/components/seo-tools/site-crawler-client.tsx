@@ -89,7 +89,11 @@ export function crawlTabs(crawl: (Pick<CrawlDto, "config"> & { dataPurgedAt?: st
   const tabs: TabId[] = [...TABS];
   if (flag("crawl.visualise") && crawl && !crawl.dataPurgedAt) tabs.push("structure");
   if (flag("crawl.compare") && crawl && !crawl.dataPurgedAt && (crawl.status ?? "COMPLETED") === "COMPLETED") tabs.push("compare");
-  if (flag("crawl.extraction") && (crawl?.config?.extractors?.length ?? 0) > 0) tabs.push("extraction");
+  if (
+    (flag("crawl.extraction") && (crawl?.config?.extractors?.length ?? 0) > 0) ||
+    (flag("crawl.customJs") && (crawl?.config?.js?.length ?? 0) > 0)
+  )
+    tabs.push("extraction");
   return tabs;
 }
 
@@ -597,7 +601,7 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
           {problems.length > 0 && (
             <ul className="mt-1 list-disc pl-10 text-sm text-red-600">
               {problems.map((p, i) => (
-                <li key={i}>{problemText(p, t.p4a, t.p4b, t.p4d)}</li>
+                <li key={i}>{problemText(p, t.p4a, t.p4b, t.p4d, t.p4e)}</li>
               ))}
             </ul>
           )}
@@ -607,7 +611,9 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
             <CrawlConfigSection
               t={t.p4a}
               t4b={t.p4b}
-              caps={{ extractors: quota.extractorCap ?? 0, searches: quota.searchCap ?? 0, segments: quota.segmentCap ?? 0 }}
+              t4e={t.p4e}
+              renders={quota.renderCap > 0 && renderMode !== "none"}
+              caps={{ extractors: quota.extractorCap ?? 0, searches: quota.searchCap ?? 0, segments: quota.segmentCap ?? 0, js: quota.jsSnippetCap ?? 0 }}
               rootUrl={url}
               urlCap={int.format(quota.urlCap)}
               disabled={starting || Boolean(running)}
@@ -772,7 +778,7 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
       {active && !running && tab === "extraction" && (
         <ExtractionPanel
           crawlId={active.id}
-          extractorNames={(active.config?.extractors ?? []).map((e) => e.name)}
+          extractorNames={[...(active.config?.extractors ?? []).map((e) => e.name), ...(active.config?.js ?? []).map((s) => `JS: ${s.name}`)]}
           segment={segment || null}
           t={t}
           int={int}

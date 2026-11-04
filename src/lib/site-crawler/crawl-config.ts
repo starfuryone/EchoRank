@@ -25,6 +25,7 @@
 import { z } from "zod";
 import type { SegmentDef } from "./segments";
 import { flag } from "@/lib/flags";
+import { JS_LIMITS, JS_PRESETS, type JsSnippet } from "./js-snippets";
 
 export const CONFIG_LIMITS = {
   patterns: 20,
@@ -167,6 +168,12 @@ export interface CrawlConfigOf<S> {
    * crawlBacklinkPages. Absent = neither.
    */
   addData?: AddData | null;
+  /**
+   * Phase 4e custom JavaScript (crawl.customJs): run on every rendered page,
+   * verified sites only, at most the plan's crawlJsSnippets. Saved per host
+   * in crawl_site_defaults.jsSnippets, not in its config.
+   */
+  js?: JsSnippet[];
 }
 
 /** Phase 4d: the top N pages by inlinks, optionally inside one of the crawl's segments. */
@@ -373,6 +380,17 @@ export const CrawlConfigInputSchema = z.object({
     })
     .nullable()
     .default(null),
+  js: z
+    .array(
+      z.object({
+        name: z.string().trim().min(1).max(JS_LIMITS.nameChars),
+        preset: z.enum(JS_PRESETS),
+        selector: z.string().trim().max(JS_LIMITS.selectorChars).nullable().default(null),
+        code: z.string().max(JS_LIMITS.codeChars).nullable().default(null),
+      }),
+    )
+    .max(20)
+    .default([]),
 });
 
 export type ConfigProblem =
@@ -382,6 +400,9 @@ export type ConfigProblem =
   | { field: string; code: "custom_ua_missing" }
   | { field: "extractors" | "searches" | "addData.psi" | "addData.backlinks"; code: "over_plan_cap"; limit: number }
   | { field: "addData.psi" | "addData.backlinks"; code: "unknown_segment" }
+  | { field: "js"; code: "over_plan_cap"; limit: number }
+  | { field: "js"; code: "requires_render" }
+  | { field: "js"; code: "invalid_snippet"; index: number; reason: "selector_missing" | "code_missing" }
   | { field: "extractors" | "searches"; code: "invalid_expression"; index: number; reason: string };
 
 /** A regex an extractor or search may run: compiles, and passes unsafeRegex. Null when fine. */
@@ -411,6 +432,9 @@ export function checkCrawlConfig(
     /** Phase 4d caps (plan-config crawlPsiPages / crawlBacklinkPages). Absent = 0. */
     psiCap?: number;
     backlinkCap?: number;
+    /** Phase 4e: plan crawlJsSnippets (absent = 0), and whether the crawl renders (JS runs on rendered pages only; absent = not checked, as when saving defaults). */
+    jsSnippetCap?: number;
+    renders?: boolean;
     /** Server-side syntax check for css / xpath expressions (needs cheerio / xpath). */
     checkExpr?: (e: Extractor) => string | null;
   },
@@ -437,6 +461,18 @@ export function checkCrawlConfig(
   const backlinkCap = ctx.backlinkCap ?? 0;
   if (config.addData?.psi && config.addData.psi.pages > psiCap) problems.push({ field: "addData.psi", code: "over_plan_cap", limit: psiCap });
   if (config.addData?.backlinks && config.addData.backlinks.pages > backlinkCap) problems.push({ field: "addData.backlinks", code: "over_plan_cap", limit: backlinkCap });
+  // Phase 4e custom JavaScript: dropped when the feature is off, refused unverified, capped, render only.
+  config.js = flag("crawl.customJs") ? (input.js ?? []) : [];
+  if (config.js.length) {
+    const jsCap = ctx.jsSnippetCap ?? 0;
+    if (config.js.length > jsCap) problems.push({ field: "js", code: "over_plan_cap", limit: jsCap });
+    if (!ctx.verified) problems.push({ field: "js", code: "requires_verified_site" });
+    if (ctx.renders === false) problems.push({ field: "js", code: "requires_render" });
+    config.js.forEach((s, index) => {
+      if (s.preset === "loadMore" && !s.selector?.trim()) problems.push({ field: "js", code: "invalid_snippet", index, reason: "selector_missing" });
+      if (s.preset === "custom" && !s.code?.trim()) problems.push({ field: "js", code: "invalid_snippet", index, reason: "code_missing" });
+    });
+  }
   // Never from input: the server snapshots the host's saved segments.
   delete config.segments;
   const extractorCap = ctx.extractorCap ?? 0;
@@ -481,6 +517,19 @@ export function viewCrawlConfig(stored: StoredCrawlConfig | null): CrawlConfigVi
     cookies: set(stored.cookies),
     basicAuth: stored.basicAuth ? { user: stored.basicAuth.user, password: { set: true } } : null,
   };
+}
+
+/** Phase 4e: a site's saved defaults as columns — the snippets live in jsSnippets, not in config. */
+export function siteDefaultColumns(stored: StoredCrawlConfig): { config: object; jsSnippets: object } {
+  const { js, ...rest } = stored;
+  return { config: rest as object, jsSnippets: (js ?? []) as object };
+}
+
+/** A site's saved defaults read back: config with its jsSnippets column folded in. */
+export function readSiteDefaults(config: unknown, jsSnippets: unknown): StoredCrawlConfig | null {
+  const stored = readStoredConfig(config);
+  if (!stored) return null;
+  return Array.isArray(jsSnippets) ? { ...stored, js: jsSnippets as JsSnippet[] } : stored;
 }
 
 /** A stored config read back from JSON, with defaults for any missing key (configs saved by an older build). */

@@ -61,8 +61,9 @@ describe.skipIf(!TEST_DB)("4e storage against Postgres", () => {
       prisma.crawlExtraction.create({ data: { crawlJobId: job.id, pageId: page.id, kind: "js", extractorIndex: 0, values: ["dup"] } }),
     ).rejects.toThrow();
     const { extractionOffsetPage } = await import("@/lib/site-crawler/extraction-rows");
-    const { rows } = await extractionOffsetPage({ crawlJobId: job.id }, 1, 10, 1, []);
-    expect(rows[0]!.values).toEqual([["extract"]]);
+    const refs = [{ kind: "extract", index: 0, name: "E" }, { kind: "js", index: 0, name: "JS: J" }, { kind: "ai", index: 0, name: "AI: A" }] as const;
+    const { rows } = await extractionOffsetPage({ crawlJobId: job.id }, 1, 10, refs, []);
+    expect(rows[0]!.values).toEqual([["extract"], ["js"], ["ai"]]);
   });
 
   it("goes with the tenant", async () => {

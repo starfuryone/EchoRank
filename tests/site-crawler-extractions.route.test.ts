@@ -28,8 +28,8 @@ const config = {
   segments: [{ name: "Shop", rule: { kind: "urlPattern", pattern: "/shop/*" } }],
 };
 const rows = [
-  { id: "p1", url: "https://x.com/shop/a", segmentIds: [0], extractions: [{ extractorIndex: 0, values: ["=19.90"] }] },
-  { id: "p2", url: "https://x.com/blog", segmentIds: [], extractions: [{ extractorIndex: 1, values: ["Ada", "Bob"] }] },
+  { id: "p1", url: "https://x.com/shop/a", segmentIds: [0], extractions: [{ kind: "extract", extractorIndex: 0, values: ["=19.90"] }, { kind: "js", extractorIndex: 0, values: ['{"n":1}'] }] },
+  { id: "p2", url: "https://x.com/blog", segmentIds: [], extractions: [{ kind: "extract", extractorIndex: 1, values: ["Ada", "Bob"] }] },
 ];
 
 beforeEach(() => {
@@ -41,6 +41,18 @@ beforeEach(() => {
 });
 
 describe("GET extractions", () => {
+  it("Phase 4e: custom JavaScript snippets are columns after the extractors, filterable", async () => {
+    crawlJob.findFirst.mockResolvedValue({ id: "c1", config: { ...config, js: [{ name: "dl", preset: "dataLayer", selector: null, code: null }] } });
+    const body = await (await call("")).json();
+    expect(body.extractors.map((e: { name: string; kind: string }) => `${e.kind}:${e.name}`)).toEqual(["css:Price", "xpath:Author", "js:JS: dl"]);
+    expect(body.rows[0].values).toEqual([["=19.90"], null, ['{"n":1}']]);
+    expect(body.rows[1].values[2]).toBeNull();
+    crawlPage.findMany.mockResolvedValue([]);
+    await call("extractor=2&has=true");
+    expect(crawlPage.findMany.mock.calls.at(-1)![0].where.extractions).toEqual({ some: { kind: "js", extractorIndex: 0 } });
+    expect((await call("extractor=3&has=true")).status).toBe(400);
+  });
+
   it("looks the crawl up by id AND tenant, and 404s another tenant's", async () => {
     crawlJob.findFirst.mockResolvedValueOnce(null);
     expect((await call("")).status).toBe(404);
@@ -55,8 +67,8 @@ describe("GET extractions", () => {
   });
 
   it.each([
-    ["extractor=1&has=true", { extractions: { some: { extractorIndex: 1 } } }],
-    ["extractor=0&has=false", { extractions: { none: { extractorIndex: 0 } } }],
+    ["extractor=1&has=true", { extractions: { some: { kind: "extract", extractorIndex: 1 } } }],
+    ["extractor=0&has=false", { extractions: { none: { kind: "extract", extractorIndex: 0 } } }],
     ["segment=0", { segmentIds: { has: 0 } }],
   ])("%s filters the HTML pages", async (q, want) => {
     await call(q);

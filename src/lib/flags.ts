@@ -56,7 +56,8 @@ export const FLAGS = {
   "crawl.render": true,
   // Phase 4e: AMP pages through rel=amphtml, the official validator in the worker.
   "crawl.amp": true,
-  "crawl.customJs": false,
+  // Phase 4e: custom JavaScript snippets in rendered pages (verified sites only).
+  "crawl.customJs": true,
   "crawl.ai": false,
   "crawl.formsAuth": false,
 } as const satisfies Record<string, boolean>;

@@ -282,6 +282,8 @@ export interface RenderFacts {
   tapTargets: { checked: number; tooClose: number; sample: string | null } | null;
   /** axe-core violations by axe rule id. Null when axe did not run in the budget. */
   axe: Record<string, { impact: string | null; nodes: number }> | null;
+  /** Phase 4e: each custom JavaScript snippet's value (JSON text, or "error: …"), in config order. Absent = none ran. */
+  snippets?: string[] | null;
 }
 
 /** Which page elements exist, or differ, only after JavaScript runs. */

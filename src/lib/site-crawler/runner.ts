@@ -44,10 +44,11 @@ import { buildPageFacts, buildPageFactsAndText } from "./facts";
 import { acceptedWords, acquireSpelling, checkSpelling } from "./spelling";
 import { attachHeadChecks, type HeadCheckDeps } from "./head-checks";
 import { issueRows, renderColumns, storedColumns } from "./stored";
-import { RenderBudget } from "./render";
+import { RenderBudget, callSidecarRender } from "./render";
 import { isRenderMode } from "./types";
 import { flag } from "@/lib/flags";
 import type { Validator as AmpValidator } from "amphtml-validator";
+import { snippetCode } from "./js-snippets";
 import { ampValidator, validateAmp } from "./amp-validator";
 import { renderedOnlyLinks } from "@/lib/crawl-rules";
 import { fetchRobots, type RobotsRules } from "./robots";
@@ -150,6 +151,8 @@ interface PendingPage {
   inSitemap: boolean | null;
   /** Phase 4b: extractor index → values, and search hits (null = no searches configured). */
   extracted: Map<number, string[]>;
+  /** Phase 4e: custom JavaScript values, one per snippet, on rendered pages only. */
+  jsValues: string[] | null;
   searchHits: Record<string, number> | null;
   /** Phase 4b: indexes into config.segments. */
   segmentIds: number[];
@@ -212,10 +215,13 @@ export async function runCrawl({
     accepted: acceptedWords(tenant?.spellingAcceptedWords ?? [], tenant?.name ?? "", job.rootUrl),
     rootLang: null,
   };
+  // Phase 4e: the custom JavaScript snippets ride every render call (set once the config is open).
+  let snippetCodes: string[] = [];
   const render = new RenderBudget(
     isRenderMode(job.renderMode) ? job.renderMode : "none",
     job.renderCap,
     job.pagesRendered,
+    (url) => callSidecarRender(url, fetch, snippetCodes),
   );
   // Released in the finally below: the dictionaries (600 MB for French) are
   // dropped once no crawl in this process holds them.
@@ -232,6 +238,7 @@ export async function runCrawl({
     // cannot open the secrets fails the job rather than crawling without them.
     const cfg = runtimeConfig(job.config);
     const settings = crawlSettings(cfg, rootUrl);
+    snippetCodes = flag("crawl.customJs") ? (cfg.js ?? []).map(snippetCode) : [];
     const live = await fetchRobots(rootUrl, { userAgent: settings.userAgent, agent: settings.agent });
     const { obey: robots, test: robotsTest } = resolveRobots(
       live,
@@ -565,6 +572,7 @@ async function crawlOne(item: FrontierItem, ctx: CrawlCtx): Promise<PendingPage>
     contentHash: null,
     inSitemap: null,
     extracted: new Map(),
+    jsValues: null,
     searchHits: null,
     segmentIds: [],
     discovered: [],
@@ -701,6 +709,7 @@ async function crawlOne(item: FrontierItem, ctx: CrawlCtx): Promise<PendingPage>
     contentHash: parsed?.contentHash ?? null,
     inSitemap,
     extracted: ex?.values ?? new Map(),
+    jsValues: facts.render?.snippets ?? null,
     searchHits: ex?.searchHits ?? null,
     discovered: deeper && !ctx.listMode
       ? [...linkTargets, ...nofollowFollowed, ...annotationTargets(facts, linkTargets, settings)].map((url) => ({
@@ -873,6 +882,11 @@ async function writeBatch(
       if (result.extracted.size) {
         await tx.crawlExtraction.createMany({
           data: [...result.extracted].map(([extractorIndex, values]) => ({ crawlJobId: jobId, pageId: page.id, extractorIndex, values })),
+        });
+      }
+      if (result.jsValues?.length) {
+        await tx.crawlExtraction.createMany({
+          data: result.jsValues.map((v, extractorIndex) => ({ crawlJobId: jobId, pageId: page.id, kind: "js" as const, extractorIndex, values: [v] })),
         });
       }
       if (result.edges.length) {

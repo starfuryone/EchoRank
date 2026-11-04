@@ -14,7 +14,7 @@ import { prisma } from "@/lib/prisma";
 import { addJob } from "@/infrastructure/queue/registry";
 import { getRedisConnection } from "@/infrastructure/redis/connection";
 import { crawlKeys, REDIS_KEY_TTL_SECONDS } from "./constants";
-import { featureCapsForPlan, getCrawlQuota, metricCapsForPlan } from "./quota";
+import { featureCapsForPlan, getCrawlQuota, metricCapsForPlan, renderFeatureCapsForPlan } from "./quota";
 import { validateRootUrl } from "./url";
 import type { RenderMode } from "./types";
 import {
@@ -27,7 +27,9 @@ import {
 import {
   DEFAULT_CRAWL_CONFIG,
   checkCrawlConfig,
+  readSiteDefaults,
   readStoredConfig,
+  siteDefaultColumns,
   viewCrawlConfig,
   type CrawlConfigInput,
   type CrawlConfigView,
@@ -173,7 +175,7 @@ export async function startCrawl(
   const site = opts.config || opts.saveAsDefault || opts.sealed
     ? await prisma.crawlSiteDefault.findUnique({
         where: { tenantId_host: { tenantId, host } },
-        select: { verifiedAt: true, config: true },
+        select: { verifiedAt: true, config: true, jsSnippets: true },
       })
     : null;
   let stored = null;
@@ -183,16 +185,20 @@ export async function startCrawl(
       verified: Boolean(site?.verifiedAt),
       ...featureCapsForPlan(plan),
       ...metricCapsForPlan(plan),
+      ...renderFeatureCapsForPlan(plan),
+      renders: renderMode !== "none" && quota.renderCap > 0,
       checkExpr: checkExtractorExpr,
     });
     if (checked.problems.length) throw new InvalidCrawlConfigError(checked.problems);
-    stored = sealCrawlConfig(checked.config, readStoredConfig(site?.config));
+    stored = sealCrawlConfig(checked.config, readSiteDefaults(site?.config, site?.jsSnippets));
   } else if (opts.sealed) {
     const checked = checkCrawlConfig({ ...opts.sealed, headers: [], cookies: null, basicAuth: null }, {
       urlCap: quota.urlCap,
       verified: Boolean(site?.verifiedAt),
       ...featureCapsForPlan(plan),
       ...metricCapsForPlan(plan),
+      ...renderFeatureCapsForPlan(plan),
+      renders: renderMode !== "none" && quota.renderCap > 0,
       checkExpr: checkExtractorExpr,
     });
     if (checked.problems.length) throw new InvalidCrawlConfigError(checked.problems);
@@ -206,8 +212,8 @@ export async function startCrawl(
   if (stored && opts.saveAsDefault) {
     await prisma.crawlSiteDefault.upsert({
       where: { tenantId_host: { tenantId, host } },
-      create: { tenantId, host, verifyToken: newVerifyToken(), config: stored as object },
-      update: { config: stored as object },
+      create: { tenantId, host, verifyToken: newVerifyToken(), ...siteDefaultColumns(stored) },
+      update: siteDefaultColumns(stored),
     });
   }
 
