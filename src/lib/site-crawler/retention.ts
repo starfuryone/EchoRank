@@ -14,6 +14,11 @@
 //
 // Also swept: crawl_site_defaults rows that were never verified and have not
 // been touched for SITE_DEFAULTS_STALE_DAYS.
+//
+// The free public crawler (free-tenant.ts) is not on the crawlsKept rule: its
+// crawls are deleted outright — full data, then the crawl_jobs row, whose
+// free_crawls row (the result link) cascades — once older than
+// FREE_CRAWL_RETENTION_DAYS. Its leads (free_crawl_leads) have no FK and stay.
 
 import "server-only";
 import { Prisma, type PlanType } from "@/generated/prisma";
@@ -21,6 +26,7 @@ import { prisma } from "@/lib/prisma";
 import { logger } from "@/infrastructure/observability/logger";
 import { RETENTION_BATCH_ROWS, RETENTION_UNFINISHED_DAYS, SITE_DEFAULTS_STALE_DAYS } from "./constants";
 import { effectiveCaps } from "./tenant-caps";
+import { FREE_CRAWL_RETENTION_DAYS } from "./free-limits";
 
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -80,6 +86,25 @@ export interface RetentionResult {
   crawlsPurged: number;
   rowsDeleted: number;
   siteDefaultsDeleted: number;
+  freeCrawlsDeleted: number;
+}
+
+/**
+ * The free crawler's crawls older than FREE_CRAWL_RETENTION_DAYS, deleted with
+ * everything hanging off them (leads are not). A RUNNING one is left for the
+ * next night; a free crawl runs 10 minutes at most.
+ */
+export async function purgeFreeCrawls(now: Date = new Date()): Promise<number> {
+  const old = await prisma.crawlJob.findMany({
+    where: { tenant: { source: "free" }, createdAt: { lt: new Date(now.getTime() - FREE_CRAWL_RETENTION_DAYS * DAY_MS) }, status: { not: "RUNNING" } },
+    select: { id: true },
+    take: 500,
+  });
+  for (const { id } of old) {
+    await purgeCrawlData(id);
+    await prisma.crawlJob.delete({ where: { id } });
+  }
+  return old.length;
 }
 
 /** The nightly run. Idempotent; a crash midway resumes on the next night. */
@@ -93,9 +118,10 @@ export async function runCrawlRetention(now: Date = new Date()): Promise<Retenti
   for (const { tenantId } of tenants) {
     const tenant = await prisma.tenant.findUnique({
       where: { id: tenantId },
-      select: { planType: true, crawlConcurrencyOverride: true, crawlsKeptOverride: true, crawlUrlCapOverride: true },
+      select: { planType: true, crawlConcurrencyOverride: true, crawlsKeptOverride: true, crawlUrlCapOverride: true, source: true },
     });
-    if (!tenant) continue;
+    // The free crawler's tenant has its own rule (purgeFreeCrawls, below).
+    if (!tenant || tenant.source === "free") continue;
     const crawls = await prisma.crawlJob.findMany({
       where: { tenantId, dataPurgedAt: null, status: { in: ["COMPLETED", "FAILED", "CANCELLED"] } },
       select: { id: true, status: true, pinned: true, finishedAt: true, createdAt: true },
@@ -109,6 +135,7 @@ export async function runCrawlRetention(now: Date = new Date()): Promise<Retenti
   const { count: siteDefaultsDeleted } = await prisma.crawlSiteDefault.deleteMany({
     where: { verifiedAt: null, updatedAt: { lt: new Date(now.getTime() - SITE_DEFAULTS_STALE_DAYS * DAY_MS) } },
   });
-  logger.info({ crawlsPurged, rowsDeleted, siteDefaultsDeleted }, "site-crawl retention done");
-  return { crawlsPurged, rowsDeleted, siteDefaultsDeleted };
+  const freeCrawlsDeleted = await purgeFreeCrawls(now);
+  logger.info({ crawlsPurged, rowsDeleted, siteDefaultsDeleted, freeCrawlsDeleted }, "site-crawl retention done");
+  return { crawlsPurged, rowsDeleted, siteDefaultsDeleted, freeCrawlsDeleted };
 }

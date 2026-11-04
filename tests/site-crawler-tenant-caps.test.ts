@@ -24,8 +24,9 @@ vi.mock("@/lib/prisma", () => ({
         where.status === "RUNNING" && where.tenantId ? (running[where.tenantId] ?? 0) : 0,
       ),
       groupBy: vi.fn(async () => [{ tenantId: "t_kept" }]),
-      findMany: vi.fn(async () =>
-        Array.from({ length: 5 }, (_, i) => ({
+      // The free crawler's purge (where.tenant) finds nothing here.
+      findMany: vi.fn(async (a?: { where?: { tenant?: unknown } }) =>
+        a?.where?.tenant ? [] : Array.from({ length: 5 }, (_, i) => ({
           id: `c${i}`,
           status: "COMPLETED",
           pinned: false,
