@@ -51,6 +51,8 @@ import { flag } from "@/lib/flags";
 import type { Validator as AmpValidator } from "amphtml-validator";
 import { cookieHeaderFor, loadJar, saveJar, sidecarLogin, type JarCookie } from "./login";
 import { LOGOUT_TEXT, LOGOUT_URL } from "./login-config";
+/** Phase 4g: the visible text the AI and semantic steps read (their own truncation). */
+const TEXT_SNIPPET_CHARS = 6_000;
 import { snippetCode } from "./js-snippets";
 import { ampValidator, validateAmp } from "./amp-validator";
 import { renderedOnlyLinks } from "@/lib/crawl-rules";
@@ -107,6 +109,8 @@ interface CrawlCtx {
   amp: (() => Promise<AmpValidator | null>) | null;
   /** Phase 4e: the crawl is logged in — logout links and rel=nofollow links are never followed. */
   loggedIn: boolean;
+  /** Phase 4g: keep each page's visible text (AI prompts or semantic duplicates opted in). */
+  keepText: boolean;
 }
 
 /** The job's stored config, decrypted; the defaults for a pre-4a job. */
@@ -160,6 +164,8 @@ interface PendingPage {
   extracted: Map<number, string[]>;
   /** Phase 4e: custom JavaScript values, one per snippet, on rendered pages only. */
   jsValues: string[] | null;
+  /** Phase 4g: visible text for the post-crawl AI / semantic steps; null unless kept. */
+  textSnippet: string | null;
   searchHits: Record<string, number> | null;
   /** Phase 4b: indexes into config.segments. */
   segmentIds: number[];
@@ -382,6 +388,7 @@ export async function runCrawl({
       segmentsOf: cfg.segments?.length ? segmentMatcher(cfg.segments) : null,
       amp: flag("crawl.amp") ? () => ampValidator() : null,
       loggedIn: jar !== null,
+      keepText: Boolean((cfg.ai && flag("crawl.ai")) || (cfg.semantic && flag("crawl.semantic"))),
     };
 
     for (;;) {
@@ -608,6 +615,7 @@ async function crawlOne(item: FrontierItem, ctx: CrawlCtx): Promise<PendingPage>
     inSitemap: null,
     extracted: new Map(),
     jsValues: null,
+    textSnippet: null,
     searchHits: null,
     segmentIds: [],
     discovered: [],
@@ -748,6 +756,10 @@ async function crawlOne(item: FrontierItem, ctx: CrawlCtx): Promise<PendingPage>
     inSitemap,
     extracted: ex?.values ?? new Map(),
     jsValues: facts.render?.snippets ?? null,
+    textSnippet:
+      ctx.keepText && text && facts.html && facts.statusCode !== null && facts.statusCode >= 200 && facts.statusCode < 300
+        ? text.slice(0, TEXT_SNIPPET_CHARS) || null
+        : null,
     searchHits: ex?.searchHits ?? null,
     discovered: deeper && !ctx.listMode
       ? [...linkTargets, ...nofollowFollowed, ...annotationTargets(facts, linkTargets, settings)]
@@ -944,6 +956,7 @@ async function writeBatch(
           simhash: result.parsed?.simhash ?? null,
           searchHits: result.searchHits ?? undefined,
           segmentIds: result.segmentIds,
+          ...(result.textSnippet ? { textSnippet: result.textSnippet } : {}),
           issues: { create: issues },
         },
         select: { id: true },

@@ -101,4 +101,18 @@ describe.skipIf(!TEST_DB)("AI prompts against Postgres", () => {
     expect(used).toBe(0);
     expect((row.summary as { metrics: { ai: unknown } }).metrics.ai).toMatchObject({ status: "stopped", stoppedReason: "key_missing" });
   });
+
+  it("Phase 4g: reads the snippet the crawl kept instead of fetching the page", async () => {
+    const id = `${tenantId}_d`;
+    await makeJob(id);
+    await prisma.crawlPage.updateMany({ where: { crawlJobId: id }, data: { textSnippet: "Our Tables are handmade. Kept during the crawl." } });
+    calls.length = 0;
+    used = 0;
+    const d = { ...deps(100_000), aiFetchHtml: async () => {
+      throw new Error("must not fetch");
+    } };
+    const row = await run(id, d as never);
+    expect(calls).toHaveLength(4);
+    expect((row.summary as { metrics: { ai: unknown } }).metrics.ai).toMatchObject({ status: "done", failed: 0 });
+  });
 });

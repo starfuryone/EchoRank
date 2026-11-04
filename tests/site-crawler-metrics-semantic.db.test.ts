@@ -79,4 +79,15 @@ describe.skipIf(!TEST_DB)("semantic duplicates against Postgres", () => {
     expect(calls).toBe(0);
     expect(s.metrics.semantic).toMatchObject({ status: "stopped", stoppedReason: "key_missing" });
   });
+
+  it("Phase 4g: embeds the kept snippet without fetching; falls back to a fetch only where it is null", async () => {
+    const id = `${tenantId}_c`;
+    await makeJob(id, ["p0", "p1", "p2"]);
+    await prisma.crawlPage.updateMany({ where: { crawlJobId: id, url: { in: [url("p0"), url("p1")] } }, data: { textSnippet: "About kept things." } });
+    const fetched: string[] = [];
+    const d = { ...deps(), aiFetchHtml: async (u: string) => (fetched.push(u), `<html><body><p>About ${u.split("/").pop()} things.</p></body></html>`) };
+    const s = await run(id, d as never);
+    expect(fetched).toEqual([url("p2")]);
+    expect(s.metrics.semantic).toMatchObject({ status: "done", embedded: 3 });
+  }, 30_000);
 });

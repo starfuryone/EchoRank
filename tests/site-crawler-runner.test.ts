@@ -916,3 +916,34 @@ describe("external links (Phase 4g)", () => {
     expect(edges.filter((e) => !e.isExternal).map((e) => e.toUrl)).toEqual(["https://example.com/in"]);
   });
 });
+
+// ─── Phase 4g: text snippets for the post-crawl AI / semantic steps ────────
+
+describe("text snippets (Phase 4g)", () => {
+  const KEY = "test-key-not-a-secret";
+  afterEach(() => vi.unstubAllEnvs());
+  const crawl = async (input: Record<string, unknown> | null) => {
+    vi.stubEnv("GSC_TOKEN_ENCRYPTION_KEY", KEY);
+    const config = input ? sealCrawlConfig(CrawlConfigInputSchema.parse(input), null, KEY) : undefined;
+    crawlJob.findUnique.mockResolvedValue({ id: "job_1", rootUrl: "https://example.com/", urlCap: 1, status: "QUEUED", ...(config ? { config } : {}) });
+    fetchPage.mockImplementation(async (url: string) => {
+      const r = htmlResponse(url);
+      r.html = r.html.replace("</body>", `<p>${"long ".repeat(2000)}</p></body>`);
+      return r;
+    });
+    await runCrawl({ jobId: "job_1", redis: fakeRedis() as never });
+    return crawlPage.create.mock.calls[0]![0].data.textSnippet as string | undefined;
+  };
+
+  it("keeps the visible text, at most 6,000 chars, when AI prompts or semantic duplicates are opted in", async () => {
+    const withAi = await crawl({ ai: { provider: "claude", prompts: [{ preset: "summary" }], top: { pages: 5, segment: null } } });
+    expect(withAi).toContain("w1 w2 w3");
+    expect(withAi!.length).toBe(6000);
+    crawlPage.create.mockClear();
+    expect((await crawl({ semantic: { pages: 5, segment: null } }))?.length).toBe(6000);
+  });
+
+  it("keeps nothing otherwise", async () => {
+    expect(await crawl(null)).toBeUndefined();
+  });
+});

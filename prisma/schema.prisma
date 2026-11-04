@@ -2348,6 +2348,10 @@ model CrawlPage {
   linkScore           Float?   @db.Real
   /// Phase 4g: text-embedding-3-small, 256 dimensions, Float32 little-endian (1 KB).
   embedding           Bytes?
+  /// Phase 4g: the page's visible text (≤ 6,000 chars), kept only on crawls with
+  /// AI prompts or semantic duplicates opted in, so those post-crawl steps read
+  /// it instead of re-fetching. Goes with the page.
+  textSnippet         String?
   ampHtml             String?
   isAmp               Boolean?
   bytes               Int?

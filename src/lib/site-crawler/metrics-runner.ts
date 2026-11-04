@@ -165,7 +165,23 @@ const PAGE_SELECT = {
   id: true, url: true, depth: true, statusCode: true, redirectTarget: true, contentType: true, title: true,
   metaDescription: true, h1First: true, h2First: true, canonical: true, canonicalHeader: true, noindex: true,
   metaRobots: true, inSitemap: true, inlinkCount: true, hreflang: true, langAttr: true, relNext: true, relPrev: true,
+  textSnippet: true,
 } as const;
+
+/** Phase 4g: the page's visible text — the snippet the crawl kept, else a fetch (older crawls, or a page without one). */
+async function pageText(
+  page: { url: string; textSnippet: string | null },
+  deps: MetricsDeps,
+  settings: ReturnType<typeof crawlSettings>,
+  limiter: RateLimiter,
+  rootUrl: string,
+  max: number,
+): Promise<{ text: string; fetched: boolean }> {
+  if (page.textSnippet) return { text: page.textSnippet.slice(0, max).trim(), fetched: true };
+  await limiter.acquire();
+  const html = await deps.aiFetchHtml(page.url, settings).catch(() => null);
+  return { text: html ? visibleText(html, page.url, rootUrl).slice(0, max).trim() : "", fetched: html !== null };
+}
 
 /** The top N pages by inlinks (ties by id), in one segment when given. PSI takes indexable HTML pages only. */
 export async function targetPages(jobId: string, top: TopPages, opts: { htmlOnly: boolean }) {
@@ -423,9 +439,7 @@ async function semanticTick(job: Job, top: TopPages, deps: MetricsDeps): Promise
     done.add(id);
   };
   for (const page of todo) {
-    await limiter.acquire();
-    const html = await deps.aiFetchHtml(page.url, settings).catch(() => null);
-    const text = html ? visibleText(html, page.url, job.rootUrl).slice(0, EMBEDDING_TEXT_CHARS).trim() : "";
+    const { text } = await pageText(page, deps, settings, limiter, job.rootUrl, EMBEDDING_TEXT_CHARS);
     if (text) texts.push({ id: page.id, text });
     else await mark(page.id, Buffer.alloc(0));
   }
@@ -485,14 +499,12 @@ async function aiTick(job: Job, ai: AiConfig, deps: MetricsDeps): Promise<Metric
     have.set(pageId, (have.get(pageId) ?? new Map()).set(index, value));
   };
   const onePage = async (page: (typeof pages)[number]) => {
-    await limiter.acquire();
-    const html = await deps.aiFetchHtml(page.url, settings).catch(() => null);
-    const text = html ? visibleText(html, page.url, job.rootUrl).slice(0, AI_LIMITS.textChars) : "";
+    const { text, fetched } = await pageText(page, deps, settings, limiter, job.rootUrl, AI_LIMITS.textChars);
     for (const [index, prompt] of ai.prompts.entries()) {
       if (budgetHit) return;
       if (have.get(page.id)?.has(index)) continue;
       if (!text) {
-        await save(page.id, index, html ? "error: no visible text" : "error: page could not be fetched");
+        await save(page.id, index, fetched ? "error: no visible text" : "error: page could not be fetched");
         continue;
       }
       if (ai.provider === "claude") {
