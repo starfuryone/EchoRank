@@ -61,6 +61,11 @@ export async function saveConnection(params: {
   });
 }
 
+/** Phase 4d: the GA4 property the crawler joins (null clears it). */
+export async function selectGa4Property(tenantId: string, property: { id: string; name: string } | null): Promise<void> {
+  await prisma.gscConnection.update({ where: { tenantId }, data: { ga4PropertyId: property?.id ?? null, ga4PropertyName: property?.name ?? null } });
+}
+
 export async function selectSite(tenantId: string, siteUrl: string): Promise<void> {
   await prisma.gscConnection.update({ where: { tenantId }, data: { siteUrl } });
 }

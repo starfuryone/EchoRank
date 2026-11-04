@@ -17,8 +17,8 @@ function hmac(payload: string, secret: string): string {
   return createHmac("sha256", secret).update(payload).digest("base64url");
 }
 
-/** Which flow minted the state: Search Console (default) or the crawler's Sheets connect (Phase 4c). */
-export type StatePurpose = "gsc" | "sheets";
+/** Which flow minted the state: Search Console (default), the crawler's Sheets connect (4c) or Google Analytics (4d). */
+export type StatePurpose = "gsc" | "sheets" | "ga4";
 
 export function signState(tenantId: string, secret = envSecret(), now = Date.now(), purpose: StatePurpose = "gsc"): string {
   const nonce = randomBytes(8).toString("base64url");
@@ -59,6 +59,6 @@ export function verifyStatePurpose(
   if (!tenantId || !expiresStr) return null;
   const expires = Number(expiresStr);
   if (!Number.isFinite(expires) || now > expires) return null;
-  if (purposeStr !== undefined && purposeStr !== "sheets") return null;
-  return { tenantId, purpose: purposeStr === "sheets" ? "sheets" : "gsc" };
+  if (purposeStr !== undefined && purposeStr !== "sheets" && purposeStr !== "ga4") return null;
+  return { tenantId, purpose: purposeStr ?? "gsc" };
 }

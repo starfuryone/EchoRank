@@ -54,12 +54,14 @@ export const RULE_FAMILIES = [
   // Phase 4d: data joined from other sources onto crawled pages. Ids carry
   // the source's short name (FAMILY_ID_PREFIXES).
   "search_console",
+  "analytics",
 ] as const;
 
 /** Families whose rule ids may start with more than the family name. Ids are public API, so this is a closed list. */
 export const FAMILY_ID_PREFIXES: Partial<Record<(typeof RULE_FAMILIES)[number], readonly string[]>> = {
   extraction: ["extraction", "search"],
   search_console: ["gsc"],
+  analytics: ["ga4"],
 };
 
 export type RuleFamily = (typeof RULE_FAMILIES)[number];
@@ -70,7 +72,7 @@ export type RulePriority = "high" | "medium" | "low";
  * (a page with no row then reads as zero); "backlinks" — the page itself was
  * looked up. The consumer hands the joined numbers in SiteRuleCtx.metrics.
  */
-export type Capability = "render" | "psi" | "spell" | "gsc";
+export type Capability = "render" | "psi" | "spell" | "gsc" | "ga4";
 
 /**
  * What a rule reports alongside its verdict. Small by contract: counts,
@@ -475,9 +477,20 @@ export interface GscFacts {
   position: number | null;
 }
 
+/** Phase 4d: GA4, last 28 days, for one landing page (zeros when GA4 had no row). */
+export interface Ga4Facts {
+  sessions: number;
+  totalUsers: number;
+  engagementRate: number;
+  keyEvents: number;
+}
+
 /** Phase 4d: numbers joined onto the page from other sources. */
 export interface SiteMetricFacts {
   gsc?: GscFacts | null;
+  ga4?: Ga4Facts | null;
+  /** High-priority findings already on the page (any family), for ga4.converting_page_has_issues. */
+  highPriorityIssues?: number;
 }
 
 export interface SiteRuleCtx {

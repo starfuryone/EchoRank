@@ -13,7 +13,7 @@
 
 import { RULE_COPY, RULE_FAMILIES, RULES, type Rule, type RuleFamily } from "@/lib/crawl-rules";
 import { CRAWLER_BRAND } from "@/lib/site-crawler/brand";
-import { ruleCountLabel } from "@/lib/site-crawler/rule-count";
+import { familyIsPublic, ruleCountLabel } from "@/lib/site-crawler/rule-count";
 import { LEGACY_THEME_INIT_SCRIPT } from "@/lib/theme-schedule";
 
 export const LIBRARY_PATH = "/seo-spider/issues";
@@ -46,6 +46,7 @@ export const FAMILY_LABELS: Record<RuleFamily, string> = {
   robots: "robots.txt",
   extraction: "Custom extraction and search",
   search_console: "Search Console",
+  analytics: "Google Analytics",
 };
 
 const KIND_LABEL = { issue: "Issue", warning: "Warning", opportunity: "Opportunity" } as const;
@@ -71,7 +72,8 @@ function linkify(escaped: string): string {
 }
 
 export function familiesInUse(): RuleFamily[] {
-  return RULE_FAMILIES.filter((f) => RULES.some((r) => r.family === f));
+  // Phase 4d: an integration's family is listed once that integration ships.
+  return RULE_FAMILIES.filter((f) => familyIsPublic(f) && RULES.some((r) => r.family === f));
 }
 
 function ruleHtml(r: Rule): string {

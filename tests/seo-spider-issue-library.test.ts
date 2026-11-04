@@ -1,4 +1,5 @@
 // /[locale]/seo-spider/issues — the public issue library (Phase 3c).
+import { PUBLIC_RULES } from "@/lib/site-crawler/rule-count";
 import { describe, expect, it } from "vitest";
 import { RULE_COPY, RULES } from "@/lib/crawl-rules";
 import { LOCALIZED_ROUTES } from "@/lib/seo/registry";
@@ -12,7 +13,7 @@ describe("issue library", () => {
   it("has one anchor per rule in the registry, and no other", () => {
     const anchors = [...html.matchAll(/<article class="rule" id="([^"]+)"/g)].map((m) => m[1]);
     expect(anchors).toEqual(familiesInUse().flatMap((f) => RULES.filter((r) => r.family === f).map((r) => r.id)));
-    expect(new Set(anchors).size).toBe(RULES.length);
+    expect(new Set(anchors).size).toBe(PUBLIC_RULES.length);
   });
 
   it("prints each rule's description and fix from the registry, escaped", () => {
@@ -48,5 +49,12 @@ describe("issue library", () => {
     expect(res.headers.get("content-type")).toBe("text/html; charset=utf-8");
     expect(await res.text()).toContain('id="spelling.misspellings"');
     expect(LOCALIZED_ROUTES.find((r) => r.path === "/seo-spider/issues")?.priority).toBe(0.6);
+  });
+
+  it("Phase 4d: an integration's family stays out of the public library until its flag is on", () => {
+    expect(familiesInUse()).not.toContain("analytics");
+    const html = issueLibraryHtml();
+    expect(html).not.toContain("ga4.converting_page_has_issues");
+    expect(html).toContain("gsc.traffic_noindex");
   });
 });

@@ -20,6 +20,7 @@ import { prisma } from "@/lib/prisma";
 import { logger } from "@/infrastructure/observability/logger";
 import {
   RULES,
+  evaluateSite,
   evaluateSiteRules,
   type Capability,
   type JobFacts,
@@ -40,8 +41,9 @@ import { issueRows, toStoredFacts } from "./stored";
 import { psiFactsForUrls } from "./psi";
 import { flag } from "@/lib/flags";
 import { joinGsc, type GscJoinStatus } from "./gsc-join";
+import { joinGa4, type Ga4JoinStatus } from "./ga4-join";
 import { metricsForPages } from "./metrics";
-import type { GscMetric } from "./metrics-shared";
+import type { Ga4Metric, GscMetric } from "./metrics-shared";
 import { toTotals } from "./issue-totals";
 
 export interface AggregateArgs {
@@ -104,7 +106,7 @@ export interface CrawlSummary {
   /** Phase 3c: pages whose performance rules ran on an attached Lighthouse run. */
   psiPages?: number;
   /** Phase 4d: what each joined source did on this crawl (absent = not attempted). */
-  metrics?: { gsc?: GscJoinStatus };
+  metrics?: { gsc?: GscJoinStatus; ga4?: Ga4JoinStatus };
   aggregationMs: number;
   aggregationError?: string;
 }
@@ -180,6 +182,14 @@ export async function aggregateCrawl({
     metricsStatus.gsc = gsc;
     if (gsc.status === "ok") joined.push("gsc");
   }
+  if (tenantId && flag("crawl.ga4")) {
+    const ga4: Ga4JoinStatus = await joinGa4(jobId, tenantId, rootUrl).catch((err: unknown) => ({
+      status: "failed" as const,
+      error: err instanceof Error ? err.message.slice(0, 200) : "unknown",
+    }));
+    metricsStatus.ga4 = ga4;
+    if (ga4.status === "ok") joined.push("ga4");
+  }
 
   // ── Run the site rules over every page, one keyset window at a time ──────
   const rootKey = rootUrl.replace(/\/+$/, "");
@@ -204,6 +214,8 @@ export async function aggregateCrawl({
     const psi = tenantId ? await psiFactsForUrls(tenantId, batch.map((p) => p.url)) : new Map();
     psiPages += psi.size;
     const metrics = joined.length ? await metricsForPages(batch.map((p) => p.id)) : new Map();
+    // ga4.converting_page_has_issues: high-priority findings already on the page (page scope).
+    const highByPage = joined.includes("ga4") ? await highPriorityByPage(batch.map((p) => p.id)) : new Map<string, number>();
 
     const rows = batch.flatMap((page) => {
       const site: PageSiteFacts = {
@@ -229,12 +241,30 @@ export async function aggregateCrawl({
       const m = metrics.get(page.id);
       const found = evaluateSiteRules(toStoredFacts(page, rootUrl), {
         capabilities: pagePsi ? ["psi", ...joined] : joined,
-        metrics: { gsc: joined.includes("gsc") ? gscFacts(m?.gsc as GscMetric | undefined) : null },
+        metrics: {
+          gsc: joined.includes("gsc") ? gscFacts(m?.gsc as GscMetric | undefined) : null,
+          ga4: joined.includes("ga4") ? ga4Facts(m?.ga4 as Ga4Metric | undefined) : null,
+          highPriorityIssues: highByPage.get(page.id) ?? 0,
+        },
         site,
         job,
         isRoot,
         psi: pagePsi,
       });
+      // Site-scope findings of this pass count too: re-ask the one GA4 rule with them included.
+      const siteHigh = found.filter((f) => f.priority === "high").length;
+      if (joined.includes("ga4") && siteHigh > 0 && !found.some((f) => f.ruleId === GA4_CONVERTING.id)) {
+        const g = ga4Facts(m?.ga4 as Ga4Metric | undefined);
+        found.push(
+          ...evaluateSite([GA4_CONVERTING], toStoredFacts(page, rootUrl), {
+            capabilities: joined,
+            metrics: { ga4: g, highPriorityIssues: (highByPage.get(page.id) ?? 0) + siteHigh },
+            site,
+            job,
+            isRoot,
+          }),
+        );
+      }
       const kept = listMode ? found.filter((f) => keptInListMode(f.ruleId)) : found;
       return issueRows(kept, jobId).map((r) => ({ ...r, crawlPageId: page.id }));
     });
@@ -317,6 +347,19 @@ export async function recountIssues(jobId: string): Promise<{ issueCount: number
   };
   await prisma.crawlJob.update({ where: { id: jobId }, data: { issueCount, summary: summary as object } });
   return { issueCount };
+}
+
+const GA4_CONVERTING = RULES.find((r) => r.id === "ga4.converting_page_has_issues")!;
+
+/** A page GA4 returned no row for had no sessions. */
+export function ga4Facts(g: Ga4Metric | undefined) {
+  return g ?? { sessions: 0, totalUsers: 0, engagementRate: 0, keyEvents: 0 };
+}
+
+/** Page-scope high-priority findings per page (written during the crawl). */
+async function highPriorityByPage(pageIds: string[]): Promise<Map<string, number>> {
+  const groups = await prisma.crawlIssue.groupBy({ by: ["crawlPageId"], where: { crawlPageId: { in: pageIds }, priority: "high" }, _count: { _all: true } });
+  return new Map(groups.map((g) => [g.crawlPageId, g._count._all]));
 }
 
 /** A page GSC returned no row for had no clicks and no impressions. */

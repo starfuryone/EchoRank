@@ -18,6 +18,9 @@ import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Modal } from "@/components/ui/modal";
 import { SETTINGS_COPY, type DashLocale, type SettingsCopy } from "@/lib/i18n/dashboard";
+import { INTEGRATIONS_COPY } from "@/lib/i18n/integrations";
+import { Ga4Integration } from "@/components/settings/ga4-integration";
+import { flag } from "@/lib/flags";
 
 interface TenantSettings {
   businessName: string;
@@ -458,6 +461,9 @@ export function SettingsPageClient({ locale }: { locale: DashLocale }) {
           </Button>
         </div>
       </form>
+
+      {/* Phase 4d: Integrations → Google Analytics 4 for the Site Crawler (crawl.ga4). */}
+      {flag("crawl.ga4") && <Ga4Integration t={INTEGRATIONS_COPY[locale]} />}
     </div>
   );
 }

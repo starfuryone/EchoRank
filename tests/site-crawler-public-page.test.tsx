@@ -27,7 +27,7 @@ import { FLAGS, type Flags } from "@/lib/flags";
 import { PLAN_CONFIGS } from "@/lib/plan-config";
 import { LOCALIZED_ROUTES } from "@/lib/seo/registry";
 import { CRAWLER_BRAND } from "@/lib/site-crawler/brand";
-import { RULE_COUNT, ruleCountLabel } from "@/lib/site-crawler/rule-count";
+import { RULE_COUNT, familyIsPublic, ruleCountLabel } from "@/lib/site-crawler/rule-count";
 import {
   CRAWL_CAPABILITIES,
   CRAWL_FEATURE_ROWS,
@@ -136,7 +136,8 @@ describe("/site-crawler", () => {
   it("never prints a rule count of its own", async () => {
     // Same pattern as the homepage test: every "N rules / N checks" on the page
     // is the derived label.
-    expect(RULE_COUNT).toBe(RULES.length);
+    // Phase 4d: the public count leaves out integration families whose flag is off.
+    expect(RULE_COUNT).toBe(RULES.filter((r) => familyIsPublic(r.family)).length);
     for (const locale of ["en", "fr"]) {
       const html = await render(locale);
       const counts = [...html.matchAll(/\b(\d{2,3}\+?) (checks|rules|vérifications|règles)\b/g)].map((m) => m[1]);

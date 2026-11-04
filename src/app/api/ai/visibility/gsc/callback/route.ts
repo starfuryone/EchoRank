@@ -29,9 +29,9 @@ export async function GET(req: NextRequest) {
   const url = req.nextUrl;
   if (url.searchParams.get("error")) {
     // User declined on Google's screen. A Sheets connect goes back to the crawler.
-    if (verifyStatePurpose(url.searchParams.get("state") ?? "")?.purpose === "sheets") {
-      return NextResponse.redirect(new URL("/crawler?sheets_error=denied", BASE));
-    }
+    const purpose = verifyStatePurpose(url.searchParams.get("state") ?? "")?.purpose;
+    if (purpose === "sheets") return NextResponse.redirect(new URL("/crawler?sheets_error=denied", BASE));
+    if (purpose === "ga4") return NextResponse.redirect(new URL("/settings?ga4_error=denied", BASE));
     return back(req, "gsc_error=denied");
   }
   const code = url.searchParams.get("code") ?? "";
@@ -44,8 +44,12 @@ export async function GET(req: NextRequest) {
   // Phase 4c: the Site Crawler's "Connect Google Sheets" (crawl.sheets). The
   // same refresh token, now carrying spreadsheets too; the chosen property
   // is kept, and having no property is fine here.
-  if (verified.purpose === "sheets") {
-    const crawler = (q: string) => NextResponse.redirect(new URL(`/crawler?${q}`, BASE));
+  // Phase 4d: Google Analytics, same token, now carrying analytics.readonly
+  // too; back to Settings → Integrations to pick a property.
+  if (verified.purpose === "sheets" || verified.purpose === "ga4") {
+    const p = verified.purpose;
+    const crawler = (q: string) =>
+      NextResponse.redirect(new URL(p === "ga4" ? `/settings?${q.replace(/^sheets/, "ga4")}` : `/crawler?${q}`, BASE));
     try {
       const { refreshToken } = await exchangeCode(code);
       if (!refreshToken) return crawler("sheets_error=no_refresh_token");
