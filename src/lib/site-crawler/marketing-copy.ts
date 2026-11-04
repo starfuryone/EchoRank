@@ -180,7 +180,7 @@ export const CRAWL_CAPABILITIES: readonly CrawlCapability[] = [
     ["Métriques de liens entrants", "Domaines référents et nombre de liens entrants par URL, pour savoir quelles pages brisées ou redirigées vous coûtent des liens."]),
   cap("xml-sitemaps", { flag: "crawl.sitemapGen" },
     ["XML sitemaps", "Generate a sitemap and an image sitemap from the crawl, indexable pages only, split automatically at 50,000 URLs."],
-    ["Plans de site XML", "Générez un plan de site et un plan de site d'images à partir de l'exploration, pages indexables seulement, découpés automatiquement à 50 000 URL."]),
+    ["Plans de site XML", "Générez un plan de site et un plan de site d'images à partir de l'exploration, pages indexables seulement, découpés automatiquement à 50 000 URL."]),
   cap("sitemap-analysis", { family: "sitemaps" },
     ["Sitemap analysis", "Read the site's XML sitemaps during the crawl to find URLs that are missing, non-indexable, redirecting, broken or orphaned."],
     ["Analyse des plans de site", "Lisez les plans de site XML pendant l'exploration pour repérer les URL absentes, non indexables, redirigées, brisées ou orphelines."]),
@@ -564,6 +564,29 @@ export const guideCtas: Readonly<Record<string, GuideCtaCopy>> = {
         fr: (p) => `Explorez jusqu'à ${largest(p, "fr")} pages, exportez la source de chaque lien brisé et recevez une vérification planifiée dans votre boîte de réception.`,
       },
       p2: fixed("Included in every paid Echorank plan — no per-user licence.", "Inclus dans chaque forfait payant Echorank — aucune licence par utilisateur."),
+    },
+  },
+  "xml-sitemap-generator": {
+    inline: fixed(
+      `Your sitemap should list what's indexable today — ${NB} builds it from a real crawl.`,
+      `Votre plan de site doit lister ce qui est indexable aujourd'hui — ${NB} le bâtit à partir d'une vraie exploration.`,
+    ),
+    // "One click from current" would overpromise: a schedule does not keep the
+    // generator's options. What it does keep is a fresh crawl to build from.
+    nudge: fixed(
+      "Sites change; sitemaps go stale. A scheduled crawl means there is always a fresh crawl to build the file from.",
+      "Les sites changent; les plans de site vieillissent. Avec une exploration planifiée, vous avez toujours une exploration récente pour bâtir le fichier.",
+    ),
+    closing: {
+      h: fixed("A sitemap search engines can trust.", "Un plan de site digne de confiance pour les moteurs."),
+      p1: fixed(
+        "Indexable pages only, split automatically at 50,000 URLs, image sitemap included.",
+        "Les pages indexables seulement, découpé automatiquement à 50 000 URL, plan de site d'images compris.",
+      ),
+      p2: fixed(
+        "Generate it from any completed crawl on any paid plan.",
+        "Générez-le à partir de n'importe quelle exploration terminée, sur chaque forfait payant.",
+      ),
     },
   },
 };

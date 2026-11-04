@@ -72,6 +72,8 @@ export const NOSY_BAT_GUIDE_FACTS = {
   fmt,
 } as const;
 
+const href = (slug: string) => `/learn/guides/${slug}`;
+
 // ─── Guide 1 — how-to-find-broken-links ─────────────────────────────────────
 
 const brokenLinksEn: LearnBlock[] = [
@@ -225,4 +227,136 @@ export const BROKEN_LINKS_GUIDE: LearnGuide = {
   },
 };
 
-export const NOSY_BAT_GUIDES: LearnGuide[] = [BROKEN_LINKS_GUIDE];
+// ─── Guide 2 — xml-sitemap-generator ────────────────────────────────────────
+//
+// Corrected against the UI: the generator is a section of Crawl details, not
+// an Exports item; "indexable only" is fixed, not an option; changefreq has no
+// by-depth mode (priority does); the index file is sitemap_index.xml; and a
+// schedule does not remember sitemap options.
+
+const SITEMAP_LINE = "Sitemap: https://your-site.com/sitemap.xml";
+
+const sitemapEn: LearnBlock[] = [
+  { k: "h2", t: "What a sitemap should and shouldn't contain" },
+  {
+    k: "p",
+    t: "A sitemap is a list of URLs you want indexed, with optional hints about when each changed. Search engines treat it as a suggestion, not a command, so a sitemap full of redirects, noindexed pages and duplicates does more harm than good: it wastes crawl budget and tells the engine your signals can't be trusted.",
+  },
+  {
+    k: "p",
+    t: `${NB} builds the sitemap from the crawl, so it only contains pages that are **indexable** today: HTML, status 200, no \`noindex\`, not canonicalised to another URL. Pages robots.txt keeps out are never crawled, so they never get in either.`,
+  },
+  { k: "figure", art: "sitemap-funnel" },
+  { k: "h2", t: "1. Crawl the site" },
+  {
+    k: "p",
+    t: "Any completed crawl in **Spider (follow links)** mode works; list-mode crawls don't offer the generator. If part of the site shouldn't be listed (a staging folder, internal tools), exclude it before you start with **Advanced options → Configuration → Never crawl URLs matching**, or leave it out in the generator's options below.",
+  },
+  { k: "guideCta", at: "inline" },
+  { k: "h2", t: "2. Open the generator" },
+  { k: "p", t: "On the crawl's results page, open **Crawl details** and then **Generate XML sitemap**. What it includes is fixed — indexable pages only — and the rest is yours to set:" },
+  {
+    k: "ul",
+    items: [
+      "**lastmod** — **Crawl date** (the default), the page's **Last-Modified header** when the server sends one, or **Leave out**. Use the header if your CMS sets it correctly; otherwise leave it out. A wrong lastmod is worse than no lastmod.",
+      "**changefreq** and **priority** — **Leave out**, or a fixed value; priority can also go **By depth (1.0 for the home page)**. Most engines ignore both, so leaving them out is fine.",
+      "**Leave out URLs matching (one per line)** — paths to exclude even if they are indexable.",
+      "**Add an image sitemap** — a second file listing the images found on each page.",
+    ],
+  },
+  { k: "h2", t: "3. Download and place the files" },
+  {
+    k: "p",
+    t: "**Download .zip** gives you `sitemap.xml` — or, past 50,000 URLs, `sitemap-1.xml`, `sitemap-2.xml`… with a `sitemap_index.xml` that points at each one. Upload them to the root of the site, next to `robots.txt`, so the sitemap URL is `https://your-site.com/sitemap.xml` (or the index's).",
+  },
+  { k: "figure", art: "sitemap-index" },
+  { k: "guideCta", at: "nudge" },
+  { k: "h2", t: "4. Tell the engines" },
+  { k: "p", t: "Add one line to `robots.txt`:" },
+  { k: "code", t: SITEMAP_LINE },
+  {
+    k: "p",
+    t: `Then submit the same URL in Google Search Console under **Sitemaps**. On the next crawl, ${NB}'s **Sitemaps** family checks the result: **No XML sitemap found**, **Sitemap not declared in robots.txt**, **Non-indexable URL in the sitemap**, **Redirect in the sitemap** and **Error page in the sitemap** should all come back empty.`,
+  },
+  { k: "figure", art: "sitemap-where" },
+  { k: "h2", t: "5. Keep it current" },
+  {
+    k: "p",
+    t: "Regenerate after any structural change — new sections, removed pages, a migration. If you crawl on a **schedule**, every completed run is a fresh crawl to build from: open its **Crawl details**, set the options and download. The options are not saved with the schedule, so note the ones you chose.",
+  },
+];
+
+const sitemapFr: LearnBlock[] = [
+  { k: "h2", t: "Ce qu'un plan de site doit contenir, et ce qu'il doit laisser de côté" },
+  {
+    k: "p",
+    t: "Un plan de site est la liste des URL que vous voulez voir indexées, avec, au besoin, une indication de leur dernière modification. Les moteurs de recherche le prennent comme une suggestion, pas comme un ordre : un plan de site rempli de redirections, de pages noindex et de doublons fait plus de tort que de bien. Il gaspille le budget d'exploration et apprend au moteur que vos signaux ne sont pas fiables.",
+  },
+  {
+    k: "p",
+    t: `${NB} construit le plan de site à partir de l'exploration; il ne contient donc que les pages **indexables** aujourd'hui : du HTML, un statut 200, aucun \`noindex\`, aucune URL canonique pointant ailleurs. Les pages que le robots.txt bloque ne sont jamais explorées, alors elles n'y entrent pas non plus.`,
+  },
+  { k: "figure", art: "sitemap-funnel" },
+  { k: "h2", t: "1. Explorer le site" },
+  {
+    k: "p",
+    t: "N'importe quelle exploration terminée en mode **Exploration (suivre les liens)** fait l'affaire; les explorations en mode liste n'offrent pas le générateur. Si une partie du site ne doit pas figurer dans le plan (un dossier de préproduction, des outils internes), excluez-la avant de lancer avec **Options avancées → Configuration → Ne jamais explorer les URL correspondant à**, ou écartez-la dans les options du générateur ci-dessous.",
+  },
+  { k: "guideCta", at: "inline" },
+  { k: "h2", t: "2. Ouvrir le générateur" },
+  { k: "p", t: "Dans les résultats de l'exploration, ouvrez **Détails de l'exploration**, puis **Générer un plan de site XML**. Le contenu est fixe — les pages indexables seulement — et le reste vous appartient :" },
+  {
+    k: "ul",
+    items: [
+      "**lastmod** — **Date de l'exploration** (par défaut), l'**En-tête Last-Modified** de la page quand le serveur l'envoie, ou **Ne pas l'indiquer**. Prenez l'en-tête si votre CMS le règle correctement; sinon, ne l'indiquez pas. Un lastmod erroné est pire qu'aucun lastmod.",
+      "**changefreq** et **priority** — **Ne pas l'indiquer**, ou une valeur fixe; priority peut aussi suivre **Selon la profondeur (1.0 pour l'accueil)**. La plupart des moteurs ignorent les deux : vous pouvez les laisser de côté.",
+      "**Écarter les URL correspondant à (une par ligne)** — les chemins à exclure même s'ils sont indexables.",
+      "**Ajouter un plan de site d'images** — un second fichier qui liste les images trouvées sur chaque page.",
+    ],
+  },
+  { k: "h2", t: "3. Télécharger et placer les fichiers" },
+  {
+    k: "p",
+    t: "**Télécharger le .zip** vous donne `sitemap.xml` — ou, au-delà de 50 000 URL, `sitemap-1.xml`, `sitemap-2.xml`… avec un `sitemap_index.xml` qui pointe vers chacun. Téléversez-les à la racine du site, à côté du `robots.txt`, pour que l'adresse du plan soit `https://your-site.com/sitemap.xml` (ou celle de l'index).",
+  },
+  { k: "figure", art: "sitemap-index" },
+  { k: "guideCta", at: "nudge" },
+  { k: "h2", t: "4. Prévenir les moteurs" },
+  { k: "p", t: "Ajoutez une ligne au `robots.txt` :" },
+  { k: "code", t: SITEMAP_LINE },
+  {
+    k: "p",
+    t: `Soumettez ensuite la même URL dans la Google Search Console, sous **Sitemaps**. À l'exploration suivante, la famille **Sitemaps** de ${NB} vérifie le résultat : **No XML sitemap found**, **Sitemap not declared in robots.txt**, **Non-indexable URL in the sitemap**, **Redirect in the sitemap** et **Error page in the sitemap** devraient tous revenir vides (les noms des règles s'affichent en anglais).`,
+  },
+  { k: "figure", art: "sitemap-where" },
+  { k: "h2", t: "5. Le garder à jour" },
+  {
+    k: "p",
+    t: "Régénérez-le après tout changement de structure — nouvelles sections, pages retirées, migration. Si vous explorez selon une **planification**, chaque exécution terminée est une exploration fraîche à partir de laquelle bâtir le fichier : ouvrez ses **Détails de l'exploration**, réglez les options et téléchargez. Les options ne sont pas enregistrées avec la planification; notez celles que vous avez choisies.",
+  },
+];
+
+export const SITEMAP_GUIDE: LearnGuide = {
+  slug: "xml-sitemap-generator",
+  group: "nosy-bat",
+  hero: "sitemap",
+  howTo: true,
+  order: 8,
+  title: "Generate an XML sitemap from a crawl",
+  description: `Build a sitemap that only lists pages search engines should index — from what ${NB} actually crawled, not from a guess.`,
+  readingTime: 5,
+  tag: NB,
+  blurb: "Indexable pages only, built from a real crawl, split and indexed past 50,000 URLs.",
+  cta: "crawler",
+  related: [{ href: href("how-to-find-broken-links"), label: "How to find broken links", internal: true }],
+  body: sitemapEn,
+  fr: {
+    title: "Générer un plan de site XML à partir d'une exploration",
+    description: `Bâtissez un plan de site qui ne liste que les pages à indexer — à partir de ce que ${NB} a réellement exploré, pas d'une supposition.`,
+    blurb: "Les pages indexables seulement, tirées d'une vraie exploration, découpées et indexées au-delà de 50 000 URL.",
+    body: sitemapFr,
+    related: [{ href: href("how-to-find-broken-links"), label: "Trouver les liens brisés", internal: true }],
+  },
+};
+
+export const NOSY_BAT_GUIDES: LearnGuide[] = [BROKEN_LINKS_GUIDE, SITEMAP_GUIDE];

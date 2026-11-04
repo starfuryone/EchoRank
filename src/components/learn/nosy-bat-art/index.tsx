@@ -5,11 +5,15 @@
 import { NbFigure, type ArtBase, type ArtSpec } from "./frame";
 import { HEROES } from "./heroes";
 import { exportOneRowPerLink, whereBrokenLinkLives, whichFix } from "./broken-links";
+import { crawlToSitemap, largeSites, whereItGoes } from "./sitemap";
 
 export const NB_ART: Readonly<Record<string, ArtSpec>> = {
   "broken-links-where": whereBrokenLinkLives,
   "broken-links-export": exportOneRowPerLink,
   "broken-links-fix": whichFix,
+  "sitemap-funnel": crawlToSitemap,
+  "sitemap-index": largeSites,
+  "sitemap-where": whereItGoes,
 };
 
 export function NbArt({ id, base }: { id: string; base: ArtBase }) {
