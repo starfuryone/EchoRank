@@ -59,7 +59,11 @@ vi.mock("@/lib/prisma", () => ({
       findUnique: vi.fn(async ({ where }: { where: { id: string } }) => jobs.find((j) => j.id === where.id) ?? null),
       findFirst: vi.fn(async ({ where }: { where: Record<string, unknown> }) => jobs.find((j) => match(j, where)) ?? null),
       findMany: vi.fn(async (args: { where: { tenantId?: string } }) => (args?.where?.tenantId ? jobs.filter((j) => j.tenantId === args.where.tenantId) : [])),
-      count: vi.fn(async ({ where }: { where: { status: string } }) => jobs.filter((j) => j.status === where.status && j.id !== "self").length),
+      count: vi.fn(async ({ where }: { where: { status?: string; tenantId?: string } }) =>
+        where.tenantId
+          ? jobs.filter((j) => j.tenantId === where.tenantId && (j.status === "RUNNING" || j.status === "QUEUED") && j.id !== "self").length
+          : jobs.filter((j) => j.status === where.status && j.id !== "self").length,
+      ),
     },
   },
 }));
@@ -215,10 +219,22 @@ describe("queue estimate", () => {
     const self = { id: "self", status: "QUEUED" as const, createdAt: now, startedAt: null };
     expect(await queueEstimate(self, now)).toEqual({ queuePosition: 1, estimatedStart: now.toISOString() });
     jobs.push({ id: "r1", tenantId: "t_b", status: "RUNNING", createdAt: now }, { id: "r2", tenantId: "t_b", status: "RUNNING", createdAt: now });
-    const est = await queueEstimate(self, now);
+    // Six slots (the default): two running leave room.
+    expect((await queueEstimate(self, now)).estimatedStart).toBe(now.toISOString());
+    // A two-slot box is full.
+    const est = await queueEstimate(self, now, 2);
     expect(est.estimatedStart).toBe(new Date(now.getTime() + 10 * 60_000).toISOString());
     expect(await queueEstimate({ ...self, status: "COMPLETED" }, now)).toEqual({ queuePosition: null, estimatedStart: null });
     expect((await queueEstimate({ ...self, status: "RUNNING", startedAt: now }, now)).queuePosition).toBe(0);
+  });
+
+  it("fair share: free box slots do not help a workspace already running its one crawl", async () => {
+    const now = new Date("2026-11-05T10:00:00Z");
+    const self = { id: "self", tenantId: "t_b", status: "QUEUED" as const, createdAt: now, startedAt: null };
+    jobs.push({ id: "r1", tenantId: "t_b", status: "RUNNING", createdAt: now });
+    expect((await queueEstimate(self, now)).estimatedStart).toBe(new Date(now.getTime() + 10 * 60_000).toISOString());
+    // Another workspace with the same box load starts now.
+    expect((await queueEstimate({ ...self, tenantId: "t_a" }, now)).estimatedStart).toBe(now.toISOString());
   });
 });
 

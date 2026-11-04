@@ -55,7 +55,7 @@ export async function startViaApi(
 
 /** { crawlId, status, queuePosition, estimatedStart } for a crawl just started (or replayed). */
 export async function startedView(crawlId: string) {
-  const row = await prisma.crawlJob.findUnique({ where: { id: crawlId }, select: { id: true, status: true, createdAt: true, startedAt: true } });
+  const row = await prisma.crawlJob.findUnique({ where: { id: crawlId }, select: { id: true, tenantId: true, status: true, createdAt: true, startedAt: true } });
   const estimate = row ? await queueEstimate(row) : { queuePosition: null, estimatedStart: null };
   return { crawlId, status: row?.status.toLowerCase() ?? "queued", ...estimate };
 }

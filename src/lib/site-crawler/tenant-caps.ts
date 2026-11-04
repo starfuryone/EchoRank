@@ -7,7 +7,8 @@
 //   crawlsKept   crawls kept with data  nightly retention, the History line
 //   concurrency  simultaneous crawls    the worker's fair share, below
 //
-// FAIR SHARE. The box runs CRAWL_JOB_CONCURRENCY crawls at once. A tenant may
+// FAIR SHARE. The box runs crawlMaxConcurrent() crawls at once (env
+// CRAWL_MAX_CONCURRENT, default 6). A tenant may
 // hold at most `concurrency` of them (default 1), so one workspace's batch
 // cannot take every slot while another waits. A crawl whose tenant is at its
 // limit goes back to the queue for FAIR_SHARE_RETRY_MS and stays QUEUED. An
@@ -18,8 +19,17 @@ import "server-only";
 import type { PlanType } from "@/generated/prisma";
 import { planConfig } from "@/lib/plan-config";
 import { prisma } from "@/lib/prisma";
+import { CRAWL_MAX_CONCURRENT_BOUNDS, CRAWL_MAX_CONCURRENT_DEFAULT } from "./constants";
 
 export const TENANT_CRAWL_CONCURRENCY_DEFAULT = 1;
+
+/** Crawls the box runs at once: CRAWL_MAX_CONCURRENT (an integer in bounds), else the default. */
+export function crawlMaxConcurrent(raw: string | undefined = process.env.CRAWL_MAX_CONCURRENT): number {
+  const n = Number((raw ?? "").trim());
+  const [min, max] = CRAWL_MAX_CONCURRENT_BOUNDS;
+  if (!raw?.trim() || !Number.isInteger(n)) return CRAWL_MAX_CONCURRENT_DEFAULT;
+  return Math.min(max, Math.max(min, n));
+}
 export const FAIR_SHARE_RETRY_MS = 30_000;
 
 /** What /admin accepts for each override (inclusive). */

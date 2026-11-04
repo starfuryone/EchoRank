@@ -19,8 +19,14 @@ export const MAX_REQUESTS_PER_SECOND = 2;
 /** Simultaneous in-flight fetches inside one crawl. */
 export const FETCH_CONCURRENCY = 4;
 
-/** Simultaneous crawls box-wide (BullMQ worker concurrency). */
-export const CRAWL_JOB_CONCURRENCY = 2;
+/**
+ * Simultaneous crawls box-wide (BullMQ worker concurrency): env
+ * CRAWL_MAX_CONCURRENT, read by crawlMaxConcurrent() in tenant-caps.ts (server
+ * only), bounded to CRAWL_MAX_CONCURRENT_BOUNDS. Each workspace still holds at
+ * most one of them unless staff override it (fair share, tenant-caps.ts).
+ */
+export const CRAWL_MAX_CONCURRENT_DEFAULT = 6;
+export const CRAWL_MAX_CONCURRENT_BOUNDS = [1, 16] as const;
 
 /** Per-request timeout. */
 export const FETCH_TIMEOUT_MS = 15_000;

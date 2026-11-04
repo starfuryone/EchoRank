@@ -17,7 +17,7 @@ import "server-only";
 import { RULE_BY_ID, RULES } from "@/lib/crawl-rules";
 import { prisma } from "@/lib/prisma";
 import type { CrawlStatus, Prisma } from "@/generated/prisma";
-import { CRAWL_JOB_CONCURRENCY } from "./constants";
+import { crawlMaxConcurrent, TENANT_CRAWL_CONCURRENCY_DEFAULT, tenantOverrides } from "./tenant-caps";
 import { healthOf } from "./site-health";
 import { legacyTypesFor, ruleTalliesFor } from "./rule-summary";
 import { ruleIdOf } from "./legacy-map";
@@ -72,6 +72,7 @@ export const PUBLIC_CRAWL_SELECT = {
   config: true,
   scheduleId: true,
   apiKeyId: true,
+  tenantId: true,
 } satisfies Prisma.CrawlJobSelect;
 
 export type PublicCrawlRow = Prisma.CrawlJobGetPayload<{ select: typeof PUBLIC_CRAWL_SELECT }>;
@@ -172,16 +173,21 @@ export const DEFAULT_CRAWL_MS = 10 * 60_000;
 /**
  * Where a crawl sits in the box-wide queue and roughly when it starts.
  * Position 1 = next; 0 = already running. The estimate assumes the crawls
- * ahead take the box's recent average and run CRAWL_JOB_CONCURRENCY at a time.
+ * ahead take the box's recent average and run crawlMaxConcurrent() at a time
+ * (CRAWL_MAX_CONCURRENT, default 6) — and, with fair share, that the crawl's
+ * own workspace runs only its concurrency (default 1) at a time, so the later
+ * of the two waits wins.
  */
 export async function queueEstimate(
-  job: { id: string; status: CrawlStatus; createdAt: Date; startedAt: Date | null },
+  job: { id: string; tenantId?: string; status: CrawlStatus; createdAt: Date; startedAt: Date | null },
   now: Date = new Date(),
+  slots: number = crawlMaxConcurrent(),
 ): Promise<{ queuePosition: number | null; estimatedStart: string | null }> {
   if (job.status === "RUNNING") return { queuePosition: 0, estimatedStart: (job.startedAt ?? now).toISOString() };
   if (job.status !== "QUEUED") return { queuePosition: null, estimatedStart: null };
-  const [ahead, running, recent] = await Promise.all([
-    prisma.crawlJob.count({ where: { status: "QUEUED", OR: [{ createdAt: { lt: job.createdAt } }, { createdAt: job.createdAt, id: { lt: job.id } }] } }),
+  const before = { OR: [{ createdAt: { lt: job.createdAt } }, { createdAt: job.createdAt, id: { lt: job.id } }] };
+  const [ahead, running, recent, own] = await Promise.all([
+    prisma.crawlJob.count({ where: { status: "QUEUED", ...before } }),
     prisma.crawlJob.count({ where: { status: "RUNNING" } }),
     prisma.crawlJob.findMany({
       where: { status: "COMPLETED", startedAt: { not: null }, finishedAt: { not: null } },
@@ -189,12 +195,18 @@ export async function queueEstimate(
       take: 20,
       select: { startedAt: true, finishedAt: true },
     }),
+    job.tenantId
+      ? Promise.all([
+          prisma.crawlJob.count({ where: { tenantId: job.tenantId, OR: [{ status: "RUNNING" }, { status: "QUEUED", ...before }] } }),
+          tenantOverrides(job.tenantId),
+        ]).then(([n, o]) => ({ n, limit: o.crawlConcurrencyOverride ?? TENANT_CRAWL_CONCURRENCY_DEFAULT }))
+      : null,
   ]);
   const avg = recent.length
     ? Math.max(60_000, recent.reduce((n, r) => n + (r.finishedAt!.getTime() - r.startedAt!.getTime()), 0) / recent.length)
     : DEFAULT_CRAWL_MS;
-  const busy = running + ahead;
-  const waves = busy < CRAWL_JOB_CONCURRENCY ? 0 : Math.floor((busy - CRAWL_JOB_CONCURRENCY) / CRAWL_JOB_CONCURRENCY) + 1;
+  const waits = (busy: number, width: number) => (busy < width ? 0 : Math.floor((busy - width) / width) + 1);
+  const waves = Math.max(waits(running + ahead, slots), own ? waits(own.n, own.limit) : 0);
   return { queuePosition: ahead + 1, estimatedStart: new Date(now.getTime() + waves * avg).toISOString() };
 }
 

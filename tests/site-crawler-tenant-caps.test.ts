@@ -79,6 +79,18 @@ beforeEach(() => {
   platform.email = "staff@echorank360.com";
 });
 
+describe("box-wide crawl concurrency (CRAWL_MAX_CONCURRENT)", () => {
+  it("defaults to 6, takes an integer within 1-16, ignores junk", () => {
+    expect(caps.crawlMaxConcurrent(undefined)).toBe(6);
+    expect(caps.crawlMaxConcurrent("")).toBe(6);
+    expect(caps.crawlMaxConcurrent("lots")).toBe(6);
+    expect(caps.crawlMaxConcurrent("2.5")).toBe(6);
+    expect(caps.crawlMaxConcurrent("4")).toBe(4);
+    expect(caps.crawlMaxConcurrent("0")).toBe(1);
+    expect(caps.crawlMaxConcurrent("99")).toBe(16);
+  });
+});
+
 describe("effective caps", () => {
   it("the plan's values unless an override is set", () => {
     const g = planConfig("GROWTH");

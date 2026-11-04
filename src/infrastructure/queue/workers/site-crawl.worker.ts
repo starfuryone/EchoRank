@@ -29,7 +29,7 @@
 // created with rather than one baked into the payload.
 
 import { DelayedError, Worker, type Job, type Queue } from "bullmq";
-import { FAIR_SHARE_RETRY_MS, tenantHasCrawlSlot } from "@/lib/site-crawler/tenant-caps";
+import { crawlMaxConcurrent, FAIR_SHARE_RETRY_MS, tenantHasCrawlSlot } from "@/lib/site-crawler/tenant-caps";
 import { addJob, getQueue } from "@/infrastructure/queue/registry";
 import { METRICS_JOB_NAME, needsMetrics, runCrawlMetrics } from "@/lib/site-crawler/metrics-runner";
 import { getSubscriberConnection, createNewConnection } from "@/infrastructure/redis/connection";
@@ -43,7 +43,6 @@ import { afterScheduledCrawl, runScheduledCrawl, syncAllRepeatables } from "@/li
 import { SCHEDULE_JOB_NAME } from "@/lib/site-crawler/schedule";
 import { sendScheduledCrawlEmail } from "@/lib/site-crawler/schedule-email";
 import { exportScheduledToSheets } from "@/lib/site-crawler/sheets";
-import { CRAWL_JOB_CONCURRENCY } from "@/lib/site-crawler/constants";
 import { logger } from "@/infrastructure/observability/logger";
 import { withSpan } from "@/infrastructure/observability/telemetry";
 import type Redis from "ioredis";
@@ -161,7 +160,7 @@ export function startSiteCrawlWorker(): Worker<SiteCrawlQueueJob> {
   worker = new Worker<SiteCrawlQueueJob>(QUEUE_NAME, processSiteCrawlJob, {
     connection: getSubscriberConnection(),
     prefix: REDIS_CONFIG.queues.prefix,
-    concurrency: CRAWL_JOB_CONCURRENCY,
+    concurrency: crawlMaxConcurrent(),
     // A crawl can legitimately run for an hour without BullMQ hearing from it
     // between batches. The default 30s lock would be renewed fine, but the
     // stalled check needs headroom for a slow batch on a slow site.
@@ -181,7 +180,7 @@ export function startSiteCrawlWorker(): Worker<SiteCrawlQueueJob> {
     .then((schedules) => scheduleRetention(getQueue(QUEUE_NAME), schedules))
     .catch((err) => logger.error({ err, queue: QUEUE_NAME }, "failed to schedule site-crawl repeatables"));
 
-  logger.info({ queue: QUEUE_NAME, concurrency: CRAWL_JOB_CONCURRENCY }, "site-crawl worker started");
+  logger.info({ queue: QUEUE_NAME, concurrency: crawlMaxConcurrent() }, "site-crawl worker started");
   return worker;
 }
 

@@ -13,8 +13,8 @@
 // English site never pays for French. They live in the workers process, next
 // to the crawl itself, so:
 //   - a crawl holds them through acquireSpelling(), and they are dropped when
-//     the last crawl running in this process releases (two run at once, see
-//     CRAWL_JOB_CONCURRENCY, and share one copy);
+//     the last crawl running in this process releases (several run at once,
+//     see crawlMaxConcurrent() in tenant-caps.ts, and share one copy);
 //   - a dictionary is not loaded while free memory (os.freemem(), which is
 //     MemAvailable on Linux) is under SPELL_MIN_FREE_BYTES. Pages in that
 //     language get no spelling verdict, and the skip is logged once per
