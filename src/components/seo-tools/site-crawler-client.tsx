@@ -889,8 +889,8 @@ export function SiteCrawlerClient({ locale, view = "start", crawlId = null }: { 
                   {active.mode === "list" && <Badge className="mr-2">{t.p4a.listBadge}</Badge>}
                   {hostOfCrawl(active.rootUrl)}
                 </h2>
-                <p className="text-xs text-gray-600">
-                  {formatDateTime(active.createdAt, locale)} · <span className="truncate">{active.rootUrl}</span>
+                <p className="truncate text-xs text-gray-600" title={active.rootUrl}>
+                  {formatDateTime(active.createdAt, locale)} · {active.rootUrl}
                 </p>
               </div>
               <div className="flex items-center gap-2">

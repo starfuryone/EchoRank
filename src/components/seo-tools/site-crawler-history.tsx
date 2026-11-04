@@ -100,7 +100,7 @@ export function CrawlHistory({ locale }: { locale: DashLocale }) {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-wrap items-end gap-3">
-            <div className="min-w-0 flex-1 sm:max-w-xs">
+            <div className="w-full min-w-0 sm:w-auto sm:max-w-xs sm:flex-1">
               <label htmlFor="history-host" className="mb-1 block text-xs font-medium text-gray-700">
                 {u.filterHost}
               </label>
