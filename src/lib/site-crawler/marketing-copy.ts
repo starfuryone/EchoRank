@@ -589,6 +589,27 @@ export const guideCtas: Readonly<Record<string, GuideCtaCopy>> = {
       ),
     },
   },
+  "web-scraping-with-custom-extraction": {
+    inline: {
+      en: (p) => `${p.STARTER.crawlExtractors} extractors on ${p.STARTER.name}, ${p.AGENCY.crawlExtractors} on ${p.AGENCY.name} — CSS, XPath or regex, on every page of the crawl.`,
+      fr: (p) => `${p.STARTER.crawlExtractors} extracteurs sur ${p.STARTER.name}, ${p.AGENCY.crawlExtractors} sur ${p.AGENCY.name} — CSS, XPath ou expression régulière, sur chaque page de l'exploration.`,
+    },
+    nudge: fixed(
+      "Turn an extracted value into a segment and every report filters to it — no spreadsheet needed.",
+      "Faites d'une valeur extraite un segment, et chaque rapport se filtre dessus — sans tableur.",
+    ),
+    closing: {
+      h: fixed("Every page, your columns.", "Chaque page, vos colonnes."),
+      p1: fixed(
+        "Extract prices, authors, tags or anything else across the whole site in one crawl, then export it.",
+        "Extrayez prix, auteurs, balises ou n'importe quoi d'autre sur tout le site en une exploration, puis exportez le tout.",
+      ),
+      p2: fixed(
+        "Rendering and custom JavaScript when the page is built in the browser.",
+        "Rendu et JavaScript personnalisé quand la page se construit dans le navigateur.",
+      ),
+    },
+  },
 };
 
 /** One guide's CTA copy, resolved for a base and the crawl tiers. Undefined for a guide without CTAs. */

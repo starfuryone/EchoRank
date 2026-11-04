@@ -6,6 +6,7 @@ import { NbFigure, type ArtBase, type ArtSpec } from "./frame";
 import { HEROES } from "./heroes";
 import { exportOneRowPerLink, whereBrokenLinkLives, whichFix } from "./broken-links";
 import { crawlToSitemap, largeSites, whereItGoes } from "./sitemap";
+import { extractionTable, selectorToValue, valuesBecomeSegments } from "./extraction";
 
 export const NB_ART: Readonly<Record<string, ArtSpec>> = {
   "broken-links-where": whereBrokenLinkLives,
@@ -14,6 +15,9 @@ export const NB_ART: Readonly<Record<string, ArtSpec>> = {
   "sitemap-funnel": crawlToSitemap,
   "sitemap-index": largeSites,
   "sitemap-where": whereItGoes,
+  "extraction-selector": selectorToValue,
+  "extraction-table": extractionTable,
+  "extraction-segments": valuesBecomeSegments,
 };
 
 export function NbArt({ id, base }: { id: string; base: ArtBase }) {

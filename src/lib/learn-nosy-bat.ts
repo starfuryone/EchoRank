@@ -359,4 +359,172 @@ export const SITEMAP_GUIDE: LearnGuide = {
   },
 };
 
-export const NOSY_BAT_GUIDES: LearnGuide[] = [BROKEN_LINKS_GUIDE, SITEMAP_GUIDE];
+// ─── Guide 3 — web-scraping-with-custom-extraction ─────────────────────────
+//
+// Corrected against the UI: "multiple" is the checkbox All matches (up to 20);
+// Starter has fewer custom searches than the other tiers (read from config);
+// segments live in their own Advanced options section, are saved per site and
+// apply from the next crawl; a JS snippet's return value lands on Extraction.
+// The spec's "Export respects the filter" is not claimed — unverified.
+
+const X = NOSY_BAT_GUIDE_FACTS;
+const capsLine = (b: Base) =>
+  b === "fr"
+    ? `Jusqu'à ${X.extractors.starter}, ${X.extractors.growth} ou ${X.extractors.agency} extracteurs par exploration, sur ${X.names.starter}, ${X.names.growth} et ${X.names.agency}.`
+    : `Up to ${X.extractors.starter}, ${X.extractors.growth} or ${X.extractors.agency} extractors per crawl on ${X.names.starter}, ${X.names.growth} and ${X.names.agency}.`;
+const searchLine = (b: Base) =>
+  b === "fr"
+    ? `${X.searches.starter} recherches sur ${X.names.starter}, ${X.searches.top} à partir de ${X.names.growth}`
+    : `${X.searches.starter} searches on ${X.names.starter}, ${X.searches.top} from ${X.names.growth} up`;
+
+const extractionEn: LearnBlock[] = [
+  { k: "h2", t: "What extraction is for" },
+  {
+    k: "p",
+    t: "A crawl already collects the SEO facts about each page. Extraction collects **your** facts: the price on every product page, the author and date on every article, the schema type, the tracking tag, the text of a specific heading. The result is a table with one row per page and one column per extractor, exportable as CSV.",
+  },
+  {
+    k: "p",
+    t: "Typical uses: check that every product shows a price; list every post without an author; find pages whose breadcrumb is missing; confirm the analytics tag is on every page; collect all `og:image` values to find pages sharing one.",
+  },
+  { k: "h2", t: "The three ways to point at a value" },
+  {
+    k: "ul",
+    items: [
+      "**CSS selector** — the simplest. `h1`, `.price`, `meta[property=\"og:title\"]`. Name an **Attribute (optional)** such as `content` or `href`, or leave it empty for the text.",
+      "**XPath** — when you need structure: `//div[@class=\"price\"]/span[2]`, or \"the paragraph after this heading\".",
+      "**Regex** — run against the raw HTML, for things that aren't elements: an order ID pattern, a tracking ID, a date inside a script. It returns its first capture group, or the whole match.",
+    ],
+  },
+  {
+    k: "p",
+    t: "**Start from a preset** prefills the common ones: **Open Graph tags**, **Product price and SKU**, **Author and date**, **hreflang** and **Canonical**.",
+  },
+  { k: "figure", art: "extraction-selector" },
+  { k: "h2", t: "1. Add extractors before the crawl" },
+  {
+    k: "p",
+    t: `**New crawl → Advanced options → Extraction & search**. Under **Custom extraction**, choose **Add extractor**, give it a **Name**, pick its **Type**, paste the **Expression**, and tick **All matches (up to 20)** if a page can hold several values (every product on a category page). ${capsLine("en")}`,
+  },
+  { k: "guideCta", at: "inline" },
+  { k: "h2", t: "2. Add a custom search (optional)" },
+  {
+    k: "p",
+    t: `The same section takes a **Custom search**: a string or pattern counted in every HTML page's source — ${searchLine("en")}. The count appears in the **Custom search** column on **Pages**, and the filter **gtag: not found** answers "which pages don't contain \`gtag(\`" in one click.`,
+  },
+  { k: "h2", t: "3. Read the Extraction tab" },
+  {
+    k: "p",
+    t: "After the crawl, **Data → Extraction** shows the URL plus one column per extractor. Filter to **Author: empty** — or **has a value** — to find the pages that are missing something, and take the table away with **Exports → Extraction (CSV)**.",
+  },
+  { k: "figure", art: "extraction-table" },
+  { k: "guideCta", at: "nudge" },
+  { k: "h2", t: "4. Turn values into segments" },
+  {
+    k: "p",
+    t: "In **Advanced options → Segments**, choose **Add segment** with the rule **Extracted value equals** — \"pages where `type` = product\" — and **Save for this site**. Segments apply from the site's next crawl; from then on Issues, Pages, Compare and every CSV can be filtered to the segment. This is how you check \"do all product pages have structured data\" without touching a spreadsheet.",
+  },
+  { k: "figure", art: "extraction-segments" },
+  { k: "h2", t: "5. Pages built by JavaScript" },
+  {
+    k: "p",
+    t: "If the value only exists after JavaScript runs, set **JavaScript rendering** to **Thin pages only** or **All pages** and the extractors read the rendered page. On a **verified site** you can also add **Custom JavaScript** — **Scroll to the bottom**, **Click “load more”**, **Read window.dataLayer**, or your own function — and the value each snippet returns appears on the Extraction tab.",
+  },
+  { k: "h2", t: "Limits and manners" },
+  {
+    k: "p",
+    t: `${NB} identifies itself as Echorank360Bot, obeys robots.txt and stays under two requests a second, on your site and on any other. Extraction is for sites you own or have permission to crawl; it is not a way around a site's terms. Custom JavaScript and the Googlebot or custom user agents are only available on sites you have verified as yours.`,
+  },
+];
+
+const extractionFr: LearnBlock[] = [
+  { k: "h2", t: "À quoi sert l'extraction" },
+  {
+    k: "p",
+    t: "Une exploration recueille déjà les faits SEO de chaque page. L'extraction recueille **vos** faits : le prix sur chaque fiche produit, l'auteur et la date de chaque article, le type de données structurées, la balise de suivi, le texte d'un intertitre précis. Le résultat est un tableau d'une ligne par page et d'une colonne par extracteur, exportable en CSV.",
+  },
+  {
+    k: "p",
+    t: "Usages courants : vérifier que chaque produit affiche un prix; lister les articles sans auteur; trouver les pages sans fil d'Ariane; confirmer que la balise d'analyse est partout; recueillir toutes les valeurs `og:image` pour repérer les pages qui partagent la même.",
+  },
+  { k: "h2", t: "Trois façons de désigner une valeur" },
+  {
+    k: "ul",
+    items: [
+      "**Sélecteur CSS** — le plus simple. `h1`, `.price`, `meta[property=\"og:title\"]`. Indiquez un **Attribut (facultatif)** comme `content` ou `href`, ou laissez-le vide pour obtenir le texte.",
+      "**XPath** — quand la structure compte : `//div[@class=\"price\"]/span[2]`, ou « le paragraphe qui suit cet intertitre ».",
+      "**Expression régulière** — appliquée au HTML brut, pour ce qui n'est pas un élément : un format de numéro de commande, un identifiant de suivi, une date dans un script. Elle renvoie son premier groupe de capture, ou la correspondance entière.",
+    ],
+  },
+  {
+    k: "p",
+    t: "**Partir d'un modèle** préremplit les cas courants : **Balises Open Graph**, **Prix et code produit**, **Auteur et date**, **hreflang** et **URL canonique**.",
+  },
+  { k: "figure", art: "extraction-selector" },
+  { k: "h2", t: "1. Ajouter les extracteurs avant l'exploration" },
+  {
+    k: "p",
+    t: `**Nouvelle exploration → Options avancées → Extraction et recherche**. Sous **Extraction personnalisée**, choisissez **Ajouter un extracteur**, donnez-lui un **Nom**, choisissez son **Type**, collez l'**Expression**, et cochez **Toutes les correspondances (20 au plus)** si une page peut contenir plusieurs valeurs (chaque produit d'une page de catégorie). ${capsLine("fr")}`,
+  },
+  { k: "guideCta", at: "inline" },
+  { k: "h2", t: "2. Ajouter une recherche personnalisée (facultatif)" },
+  {
+    k: "p",
+    t: `La même section accepte une **Recherche personnalisée** : un texte ou un motif compté dans le code source de chaque page HTML — ${searchLine("fr")}. Le compte apparaît dans la colonne **Recherche personnalisée** de **Pages**, et le filtre **gtag : absent** répond en un clic à « quelles pages ne contiennent pas \`gtag(\` ».`,
+  },
+  { k: "h2", t: "3. Lire l'onglet Extraction" },
+  {
+    k: "p",
+    t: "Après l'exploration, **Données → Extraction** affiche l'URL et une colonne par extracteur. Filtrez sur **Author : vide** — ou **a une valeur** — pour trouver les pages auxquelles il manque quelque chose, et emportez le tableau avec **Exports → Extraction (CSV)**.",
+  },
+  { k: "figure", art: "extraction-table" },
+  { k: "guideCta", at: "nudge" },
+  { k: "h2", t: "4. Faire des valeurs des segments" },
+  {
+    k: "p",
+    t: "Dans **Options avancées → Segments**, choisissez **Ajouter un segment** avec la règle **La valeur extraite est** — « les pages où `type` = product » — puis **Enregistrer pour ce site**. Les segments s'appliquent à partir de la prochaine exploration du site; dès lors, Problèmes, Pages, Comparer et chaque CSV peuvent être filtrés sur le segment. Voilà comment vérifier « toutes les fiches produit ont-elles des données structurées? » sans ouvrir de tableur.",
+  },
+  { k: "figure", art: "extraction-segments" },
+  { k: "h2", t: "5. Les pages construites en JavaScript" },
+  {
+    k: "p",
+    t: "Si la valeur n'existe qu'après l'exécution du JavaScript, réglez le **Rendu JavaScript** sur **Pages minces seulement** ou **Toutes les pages** : les extracteurs liront la page rendue. Sur un **site vérifié**, vous pouvez aussi ajouter du **JavaScript personnalisé** — défiler jusqu'en bas, cliquer sur « charger plus », lire window.dataLayer ou votre propre fonction — et la valeur que renvoie chaque extrait apparaît dans l'onglet Extraction.",
+  },
+  { k: "h2", t: "Limites et savoir-vivre" },
+  {
+    k: "p",
+    t: `${NB} s'identifie comme Echorank360Bot, respecte le robots.txt et reste sous deux requêtes par seconde, sur votre site comme sur tout autre. L'extraction sert aux sites qui vous appartiennent ou que vous avez la permission d'explorer; ce n'est pas un moyen de contourner les conditions d'un site. Le JavaScript personnalisé et les agents utilisateurs Googlebot ou personnalisés ne sont offerts que sur les sites dont vous avez vérifié la propriété.`,
+  },
+];
+
+export const EXTRACTION_GUIDE: LearnGuide = {
+  slug: "web-scraping-with-custom-extraction",
+  group: "nosy-bat",
+  hero: "extraction",
+  // Article only (spec): this guide is a reference as much as a walkthrough.
+  howTo: false,
+  order: 9,
+  title: "Web scraping with custom extraction",
+  description: "Pull prices, SKUs, authors, dates or any value from every page of a site in one crawl — with CSS selectors, XPath or a regular expression.",
+  readingTime: 6,
+  tag: NB,
+  blurb: "Your own columns on every page: CSS, XPath or regex, then filter and segment by them.",
+  cta: "crawler",
+  related: [
+    { href: href("how-to-find-broken-links"), label: "How to find broken links", internal: true },
+    { href: "/learn", label: "Learn SEO →", internal: true },
+  ],
+  body: extractionEn,
+  fr: {
+    title: "Extraire des données de chaque page avec l'extraction personnalisée",
+    description: "Récupérez prix, codes produit, auteurs, dates ou toute autre valeur sur chaque page d'un site, en une exploration — avec des sélecteurs CSS, XPath ou une expression régulière.",
+    blurb: "Vos propres colonnes sur chaque page : CSS, XPath ou expression régulière, puis filtres et segments.",
+    body: extractionFr,
+    related: [
+      { href: href("how-to-find-broken-links"), label: "Trouver les liens brisés", internal: true },
+      { href: "/learn", label: "Apprendre le SEO →", internal: true },
+    ],
+  },
+};
+
+export const NOSY_BAT_GUIDES: LearnGuide[] = [BROKEN_LINKS_GUIDE, SITEMAP_GUIDE, EXTRACTION_GUIDE];
