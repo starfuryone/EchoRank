@@ -54,6 +54,8 @@ export const FLAGS = {
   // Phase 3b / 4e
   // Phase 3b shipped render mode (headless Chromium via the sidecar).
   "crawl.render": true,
+  // Phase 4e: AMP pages through rel=amphtml, the official validator in the worker.
+  "crawl.amp": true,
   "crawl.customJs": false,
   "crawl.ai": false,
   "crawl.formsAuth": false,

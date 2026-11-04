@@ -196,6 +196,7 @@ export const GATED_FAMILIES: Partial<Record<RuleFamily, FlagName>> = {
   backlinks: "crawl.backlinks",
   extraction: "crawl.extraction",
   robots: "crawl.customRobots",
+  amp: "crawl.amp",
 };
 
 type Num = number | null | undefined;
@@ -286,6 +287,8 @@ export async function familyFacts(jobId: string, config: ReturnType<typeof readS
     backlinks: backlinkFacts,
     extraction: extractionFacts,
     robots: Boolean(config?.customRobots),
+    // Phase 4e: whether a rule fires depends on the validator and the AMP pair; only "AMP was found" is stored.
+    amp: (await prisma.crawlPage.count({ where: { crawlJobId: jobId, OR: [{ ampHtml: { not: null } }, { isAmp: true }] } })) > 0 ? "unknown" : false,
   };
 }
 

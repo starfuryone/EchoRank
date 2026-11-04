@@ -51,6 +51,7 @@ import { RULES as extractionRules } from "./rules/extraction";
 import { RULES as searchConsoleRules } from "./rules/search_console";
 import { RULES as analyticsRules } from "./rules/analytics";
 import { RULES as backlinksRules } from "./rules/backlinks";
+import { RULES as ampRules } from "./rules/amp";
 
 const FAMILIES: (readonly Rule[])[] = [
   // one line per family, in RULE_FAMILIES order
@@ -82,6 +83,7 @@ const FAMILIES: (readonly Rule[])[] = [
   searchConsoleRules,
   analyticsRules,
   backlinksRules,
+  ampRules,
 ];
 
 export const RULES: readonly Rule[] = FAMILIES.flat();

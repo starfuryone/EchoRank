@@ -38,6 +38,8 @@ export function storedColumns(f: PageFacts) {
     hreflang: h ? (h.hreflang as unknown as object) : undefined,
     relNext: h?.relNext[0] ?? null,
     relPrev: h?.relPrev[0] ?? null,
+    ampHtml: h?.amphtml?.[0] ?? null,
+    isAmp: h ? (h.isAmp ?? false) : null,
     bytes: f.bytes,
     textRatio: h ? h.textRatio : null,
     langAttr: h?.langAttr ?? null,
@@ -111,6 +113,8 @@ export interface StoredPageRow {
   langAttr: string | null;
   relNext: string | null;
   relPrev: string | null;
+  ampHtml?: string | null;
+  isAmp?: boolean | null;
 }
 
 /** A crawl_pages row → the package's StoredPageFacts. Pre-3a rows fill what they can. */
@@ -134,5 +138,7 @@ export function toStoredFacts(row: StoredPageRow, rootUrl: string): StoredPageFa
     langAttr: row.langAttr,
     relNext: row.relNext,
     relPrev: row.relPrev,
+    ampHtml: row.ampHtml ?? null,
+    isAmp: row.isAmp ?? null,
   };
 }

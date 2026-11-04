@@ -56,6 +56,9 @@ export const RULE_FAMILIES = [
   "search_console",
   "analytics",
   "backlinks",
+  // Phase 4e: AMP pages found through <link rel="amphtml">, validated with
+  // the official validator (capability "amp" when it loaded).
+  "amp",
 ] as const;
 
 /** Families whose rule ids may start with more than the family name. Ids are public API, so this is a closed list. */
@@ -73,7 +76,7 @@ export type RulePriority = "high" | "medium" | "low";
  * (a page with no row then reads as zero); "backlinks" — the page itself was
  * looked up. The consumer hands the joined numbers in SiteRuleCtx.metrics.
  */
-export type Capability = "render" | "psi" | "spell" | "gsc" | "ga4" | "backlinks";
+export type Capability = "render" | "psi" | "spell" | "gsc" | "ga4" | "backlinks" | "amp";
 
 /**
  * What a rule reports alongside its verdict. Small by contract: counts,
@@ -211,6 +214,9 @@ export interface HtmlFacts {
   relNext: string[];
   relPrev: string[];
   paginationOutsideHead: number;
+  /** Phase 4e: <link rel="amphtml"> targets, absolute; and whether this document is AMP (<html amp> / <html ⚡>). Absent = not extracted. */
+  amphtml?: string[];
+  isAmp?: boolean;
   anchors: AnchorFact[];
   images: ImageFact[];
   /** Raw src/href of subresources: img, script, stylesheet link, iframe, media, embed, object. */
@@ -222,6 +228,15 @@ export interface HtmlFacts {
   /** itemprop attributes with no itemscope ancestor. */
   orphanItemprops: number;
   raw: RawStructureFacts;
+}
+
+/** Phase 4e: the official AMP validator on one page's raw HTML. */
+export interface AmpValidationFacts {
+  status: "PASS" | "FAIL";
+  /** ERROR-severity findings; warnings are not counted. */
+  errorCount: number;
+  /** The first three error messages, each truncated. */
+  messages: string[];
 }
 
 /** Results of the bounded HEAD checks a consumer may run. Absent = not checked. */
@@ -327,6 +342,8 @@ export interface PageFacts {
   spelling?: SpellingFacts;
   /** Phase 4a. Present only when a custom robots.txt runs in test mode. */
   robotsTest?: RobotsTestFacts;
+  /** Phase 4e. The validator's verdict on an AMP page (capability "amp"). */
+  amp?: AmpValidationFacts;
   /** Phase 4b. Present only on HTML pages of a crawl with custom extractors or searches. */
   custom?: CustomFacts;
 }
@@ -385,6 +402,9 @@ export interface StoredPageFacts {
   langAttr: string | null;
   relNext: string | null;
   relPrev: string | null;
+  /** Phase 4e. Absent on crawls stored before AMP was extracted. */
+  ampHtml?: string | null;
+  isAmp?: boolean | null;
 }
 
 /** Per-page results of the site-wide queries. Zero/null means "nothing found". */
@@ -423,6 +443,8 @@ export interface PageSiteFacts {
     sample: string | null;
   };
   pagination: { non200: number; sequenceErrors: number; sample: string | null };
+  /** Phase 4e: the crawled page this page's rel=amphtml names. Null = none, or not crawled. */
+  ampTarget?: { url: string; statusCode: number | null; isAmp: boolean; canonical: string | null } | null;
 }
 
 /** Job-wide facts. Job-level rules attach their finding to the root page. */

@@ -112,6 +112,11 @@ describe.skipIf(!TEST_DB)("aggregateCrawl against Postgres", () => {
         // linked only with nofollow; and a sitemap orphan
         page("/nf", { simhash: spread(9) }),
         page("/orph", { depth: 0, simhash: spread(10) }),
+        // Phase 4e AMP: a pair whose canonical points elsewhere, an amphtml to a 404, one to a regular page
+        page("/article", { ampHtml: u("/article/amp"), isAmp: false, simhash: spread(11) }),
+        page("/article/amp", { isAmp: true, canonical: u("/elsewhere"), simhash: spread(12) }),
+        page("/badamp", { ampHtml: u("/gone"), isAmp: false, simhash: spread(13) }),
+        page("/fakeamp", { ampHtml: u("/p2"), isAmp: false, simhash: spread(14) }),
       ] as never,
     });
 
@@ -155,6 +160,13 @@ describe.skipIf(!TEST_DB)("aggregateCrawl against Postgres", () => {
 
   it("judges a canonical by its target row", async () => {
     expect(await rulesOn("/canon")).toEqual(expect.arrayContaining(["canonicals.to_error"]));
+  });
+
+  it("Phase 4e: judges a rel=amphtml link by the crawled AMP row", async () => {
+    expect(await rulesOn("/article")).toContain("amp.canonical_mismatch");
+    expect(await rulesOn("/badamp")).toContain("amp.link_non_200");
+    expect(await rulesOn("/fakeamp")).toContain("amp.non_amp_linked_as_amp");
+    expect(await rulesOn("/p1")).not.toContain("amp.link_non_200");
   });
 
   it("finds a missing hreflang return link", async () => {

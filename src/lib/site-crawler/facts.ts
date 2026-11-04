@@ -135,6 +135,8 @@ function extractWithText(
   const hreflangEls = $("link[hreflang]").filter((_, el) => relHas(el, "alternate"));
   const nextEls = $("link[rel]").filter((_, el) => relHas(el, "next"));
   const prevEls = $("link[rel]").filter((_, el) => relHas(el, "prev") || relHas(el, "previous"));
+  const ampEls = $("link[rel]").filter((_, el) => relHas(el, "amphtml"));
+  const htmlEl = $("html").first();
 
   let h3BeforeH2 = false;
   const firstHeading = $("h2, h3").first();
@@ -268,6 +270,8 @@ function extractWithText(
     relNext: nextEls.map((_, el) => resolve(($(el).attr("href") ?? "").trim(), pageUrl)).get(),
     relPrev: prevEls.map((_, el) => resolve(($(el).attr("href") ?? "").trim(), pageUrl)).get(),
     paginationOutsideHead: nextEls.add(prevEls).filter((_, el) => !inHead(el)).length,
+    amphtml: ampEls.map((_, el) => resolve(($(el).attr("href") ?? "").trim(), pageUrl)).get().filter(Boolean),
+    isAmp: htmlEl.attr("amp") !== undefined || htmlEl.attr("⚡") !== undefined,
     anchors,
     images,
     resources,

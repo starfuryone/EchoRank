@@ -2343,6 +2343,9 @@ model CrawlPage {
   hreflang            Json?
   relNext             String?
   relPrev             String?
+  /// Phase 4e: the first <link rel="amphtml"> target, absolute; and whether this page is an AMP document.
+  ampHtml             String?
+  isAmp               Boolean?
   bytes               Int?
   /// Visible text / response bytes, percent.
   textRatio           Float?

@@ -141,7 +141,7 @@ export async function aggregateCrawl({
   const inlinkStats = await flushInlinks(jobId, redis, keys.inlinks);
   await flushHash(jobId, redis, keys.nofollowInlinks, "nofollowInlinkCount");
 
-  const [dupTitle, dupMeta, dupH1, dupH2, dupContent, h1Title, canonicalTargets, hreflang, pagination, near] =
+  const [dupTitle, dupMeta, dupH1, dupH2, dupContent, h1Title, canonicalTargets, hreflang, pagination, near, ampTargets] =
     await Promise.all([
       duplicateCounts(jobId, "title"),
       duplicateCounts(jobId, "metaDescription"),
@@ -153,6 +153,7 @@ export async function aggregateCrawl({
       hreflangFacts(jobId),
       paginationFacts(jobId),
       nearDuplicates(jobId),
+      ampTargetFacts(jobId),
     ]);
   const redirects = await walkRedirects(jobId, redis, keys.firstSource);
   const orphans = await findOrphans(jobId, sitemapSeeded);
@@ -204,6 +205,7 @@ export async function aggregateCrawl({
         title: true, metaDescription: true, h1First: true, h2First: true, canonical: true,
         canonicalHeader: true, noindex: true, metaRobots: true, inSitemap: true, inlinkCount: true,
         nofollowInlinkCount: true, hreflang: true, langAttr: true, relNext: true, relPrev: true,
+        ampHtml: true, isAmp: true,
       },
       orderBy: { id: "asc" },
       take: AGGREGATION_BATCH_SIZE,
@@ -235,6 +237,7 @@ export async function aggregateCrawl({
           targets: 0, non200: 0, noindex: 0, notCanonical: 0, missingReturn: 0, langMismatch: 0, unlinked: 0, sample: null,
         },
         pagination: pagination.get(page.id) ?? { non200: 0, sequenceErrors: 0, sample: null },
+        ampTarget: ampTargets.get(page.id) ?? null,
       };
       const isRoot = page.url.replace(/\/+$/, "") === rootKey;
       const pagePsi = psi.get(page.url) ?? null;
@@ -460,6 +463,16 @@ async function h1MatchesOtherTitle(jobId: string): Promise<Map<string, number>> 
       AND o."statusCode" >= 200 AND o."statusCode" < 300
     GROUP BY p.id`;
   return new Map(rows.map((r) => [r.id, r.n]));
+}
+
+/** Phase 4e: page id → the crawled page its rel=amphtml names (not crawled = absent). */
+async function ampTargetFacts(jobId: string): Promise<Map<string, NonNullable<PageSiteFacts["ampTarget"]>>> {
+  const rows = await prisma.$queryRaw<{ id: string; url: string; statusCode: number | null; isAmp: boolean; canonical: string | null }[]>`
+    SELECT p.id, t.url, t."statusCode", COALESCE(t."isAmp", false) AS "isAmp", COALESCE(t.canonical, t."canonicalHeader") AS canonical
+    FROM crawl_pages p
+    JOIN crawl_pages t ON t."crawlJobId" = p."crawlJobId" AND t.url = p."ampHtml"
+    WHERE p."crawlJobId" = ${jobId} AND p."ampHtml" IS NOT NULL AND p."ampHtml" <> p.url`;
+  return new Map(rows.map((r) => [r.id, { url: r.url, statusCode: r.statusCode, isAmp: r.isAmp, canonical: r.canonical }]));
 }
 
 /** page id → the crawled page its canonical points at, when that is another URL. */

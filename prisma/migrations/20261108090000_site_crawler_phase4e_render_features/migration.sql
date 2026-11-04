@@ -1,10 +1,10 @@
--- Site Crawler Phase 4e: custom JavaScript, AI prompts, forms login (AMP needs no schema).
+-- Site Crawler Phase 4e: AMP, custom JavaScript, AI prompts, forms login.
 -- Generated with `prisma migrate diff --from-schema <pre-4e> --to-schema
 -- prisma/schema.prisma --script`, then guarded and reordered so a retried
 -- deploy is a no-op and the old unique index is dropped only after its
 -- replacement exists. Applied by `prisma migrate deploy` (sudo
 -- echorank360-deploy), never by hand.
--- Additive: two enums, one table, three nullable/defaulted columns. The one
+-- Additive: two enums, one table, five nullable/defaulted columns. The one
 -- index swap widens crawl_extractions' key from (pageId, extractorIndex) to
 -- (pageId, kind, extractorIndex); every existing row is kind 'extract'.
 -- Retention: tenant_ai_keys go with the tenant or when the tenant deletes the
@@ -21,6 +21,10 @@ BEGIN
     CREATE TYPE "AiKeyProvider" AS ENUM ('openai', 'gemini');
   END IF;
 END $$;
+
+ALTER TABLE "crawl_pages"
+  ADD COLUMN IF NOT EXISTS "ampHtml" TEXT,
+  ADD COLUMN IF NOT EXISTS "isAmp" BOOLEAN;
 
 ALTER TABLE "crawl_site_defaults"
   ADD COLUMN IF NOT EXISTS "jsSnippets" JSONB,

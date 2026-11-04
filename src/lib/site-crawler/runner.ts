@@ -46,6 +46,9 @@ import { attachHeadChecks, type HeadCheckDeps } from "./head-checks";
 import { issueRows, renderColumns, storedColumns } from "./stored";
 import { RenderBudget } from "./render";
 import { isRenderMode } from "./types";
+import { flag } from "@/lib/flags";
+import type { Validator as AmpValidator } from "amphtml-validator";
+import { ampValidator, validateAmp } from "./amp-validator";
 import { renderedOnlyLinks } from "@/lib/crawl-rules";
 import { fetchRobots, type RobotsRules } from "./robots";
 import { isFetchableUrl, normalizeCrawlUrl } from "./url";
@@ -96,6 +99,8 @@ interface CrawlCtx {
   extract: PageExtractor | null;
   /** Phase 4b: the segments a page falls in (indexes into config.segments); null when the crawl has none. */
   segmentsOf: ((page: SegmentPage) => number[]) | null;
+  /** Phase 4e: the official AMP validator, loaded on the first AMP page (null = unavailable); null when crawl.amp is off. */
+  amp: (() => Promise<AmpValidator | null>) | null;
 }
 
 /** The job's stored config, decrypted; the defaults for a pre-4a job. */
@@ -335,6 +340,7 @@ export async function runCrawl({
       settings,
       extract: compileExtraction(cfg.extractors ?? [], cfg.searches ?? []),
       segmentsOf: cfg.segments?.length ? segmentMatcher(cfg.segments) : null,
+      amp: flag("crawl.amp") ? () => ampValidator() : null,
     };
 
     for (;;) {
@@ -634,6 +640,17 @@ async function crawlOne(item: FrontierItem, ctx: CrawlCtx): Promise<PendingPage>
   if (robotsTest) facts.robotsTest = judgeDraft(robots, robotsTest, item.url);
   const rendered = await render.maybeRender(facts);
   if (rendered) facts.render = rendered;
+  // Phase 4e: an AMP document is validated on its raw HTML, as AMP caches see it.
+  if (ctx.amp && facts.html?.isAmp && isHtml) {
+    const validator = await ctx.amp();
+    if (validator) {
+      try {
+        facts.amp = validateAmp(validator, res.html!);
+      } catch (err) {
+        logger.warn({ url: item.url, err: err instanceof Error ? err.message : String(err) }, "site-crawl amp validation failed");
+      }
+    }
+  }
 
   if (facts.html && item.url === rootUrl) spell.rootLang = facts.html.langAttr;
   if (text && facts.html && facts.statusCode !== null && facts.statusCode >= 200 && facts.statusCode < 300) {
@@ -641,7 +658,9 @@ async function crawlOne(item: FrontierItem, ctx: CrawlCtx): Promise<PendingPage>
     if (spelling) facts.spelling = spelling;
   }
 
-  const issues = evaluatePageRules(facts, { capabilities: render.enabled ? ["render", "spell"] : ["spell"] });
+  const issues = evaluatePageRules(facts, {
+    capabilities: [...(render.enabled ? (["render", "spell"] as const) : (["spell"] as const)), ...(facts.amp ? (["amp"] as const) : [])],
+  });
 
   // Links that exist only after JavaScript are links a rendering crawler
   // follows, so a rendered page's discovery (and the inlink credit it gives)
@@ -706,7 +725,8 @@ function annotationTargets(facts: PageFacts, linkTargets: string[], settings: Cr
   if (!h) return [];
   const seen = new Set(linkTargets);
   const out: string[] = [];
-  for (const raw of [...h.hreflang.map((x) => x.href), ...h.canonicals, ...h.relNext, ...h.relPrev]) {
+  // Phase 4e: rel=amphtml targets too; they count against the crawl's URL cap like any page.
+  for (const raw of [...h.hreflang.map((x) => x.href), ...h.canonicals, ...h.relNext, ...h.relPrev, ...(h.amphtml ?? [])]) {
     const normalized = normalizeCrawlUrl(raw, facts.finalUrl);
     const url = normalized ? settings.admit(normalized) : null;
     if (!url || seen.has(url)) continue;
