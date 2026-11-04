@@ -10,6 +10,7 @@
  * nonindexable | errors | redirects | orphans (pages-sort.ts PAGE_SCOPES).
  * Sorts: a metric key, linkScore, or status | issues | score | inlinks
  * (crawl_pages columns; score and issues are written in the summary pass).
+ * status=2xx|3xx|4xx|5xx|none — a status class (the public API's filter).
  * Paging: `cursor` (the Pages view, 50 a page) — a keyset on the sort column
  * and id, or "o:<offset>" for a metric sort; the legacy `page` still works.
  * Phase 4d: every row carries its joined metrics (GSC, PSI, GA4, backlinks);
@@ -32,7 +33,16 @@ import { csvFilename } from "@/lib/csv-export";
 import { LINK_SCORE_COLUMN, metricCsvColumns, pageColumns, withSegmentColumn, type CrawlPageRow } from "@/lib/site-crawler/csv-columns";
 import { METRIC_SORT_KEYS, METRIC_SOURCES } from "@/lib/site-crawler/metrics-shared";
 import { metricCoverage } from "@/lib/site-crawler/metrics";
-import { PAGE_SCOPES, pageIdsByMetric, pageScopeWhere, pageSearchWhere, type PageScope } from "@/lib/site-crawler/pages-sort";
+import {
+  PAGE_SCOPES,
+  STATUS_CLASSES,
+  pageIdsByMetric,
+  pageScopeWhere,
+  pageSearchWhere,
+  statusClassWhere,
+  type PageScope,
+  type StatusClass,
+} from "@/lib/site-crawler/pages-sort";
 import { pageInSegment, segmentScope } from "@/lib/site-crawler/segment-filter";
 import { readStoredConfig } from "@/lib/site-crawler/crawl-config";
 import { csvStreamResponse, wantsCsv } from "@/lib/csv-stream";
@@ -145,6 +155,12 @@ export async function GET(
       return NextResponse.json({ error: "Unknown scope", code: "INVALID_REQUEST" }, { status: 400 });
     }
 
+    const statusParam = url.searchParams.get("status");
+    const statusClass: StatusClass | null = statusParam ? (statusParam as StatusClass) : null;
+    if (statusClass !== null && !STATUS_CLASSES.includes(statusClass)) {
+      return NextResponse.json({ error: "Unknown status class", code: "INVALID_REQUEST" }, { status: 400 });
+    }
+
     // Phase 4d: sort by a joined metric.
     const sort = url.searchParams.get("sort");
     const dir = url.searchParams.get("dir") ?? "desc";
@@ -173,7 +189,9 @@ export async function GET(
       ...(ruleParam !== null ? { issues: { some: ruleIssueOnPage(ruleParam) } } : {}),
       ...pageInSegment(segment),
       // Each carries its own OR, so they go under AND rather than spread.
-      ...(q || scope ? { AND: [...(q ? [pageSearchWhere(q)] : []), ...(scope ? [pageScopeWhere(scope)] : [])] } : {}),
+      ...(q || scope || statusClass
+        ? { AND: [...(q ? [pageSearchWhere(q)] : []), ...(scope ? [pageScopeWhere(scope)] : []), ...(statusClass ? [statusClassWhere(statusClass)] : [])] }
+        : {}),
     };
 
     // CSV branches after validation and the tenant-scoped crawl lookup, so it
@@ -268,6 +286,7 @@ export async function GET(
               ...(ruleParam !== null ? { rule: ruleParam } : {}),
               ...(q ? { q } : {}),
               ...(scope ? { scope } : {}),
+              ...(statusClass ? { status: statusClass } : {}),
               segment: segment.index,
             },
             sort,

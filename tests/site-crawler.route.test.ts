@@ -939,6 +939,15 @@ describe("GET /crawl/[id]/pages — Pages view: search, scope, sorts, cursor", (
     expect(crawlPage.findMany.mock.calls[0]![0]!.where).toEqual({ crawlJobId: "crawl_1", AND: [expected] });
   });
 
+  it("status=2xx|3xx|4xx|5xx|none filters on the status class (the public API's filter); anything else is a 400", async () => {
+    await getPages(new Request("https://app.test/x?status=4xx"), params("crawl_1"));
+    expect(crawlPage.findMany.mock.calls[0]![0]!.where).toEqual({ crawlJobId: "crawl_1", AND: [{ statusCode: { gte: 400, lt: 500 } }] });
+    crawlPage.findMany.mockClear();
+    await getPages(new Request("https://app.test/x?status=none"), params("crawl_1"));
+    expect(crawlPage.findMany.mock.calls[0]![0]!.where).toEqual({ crawlJobId: "crawl_1", AND: [{ statusCode: null }] });
+    expect((await getPages(new Request("https://app.test/x?status=418"), params("crawl_1"))).status).toBe(400);
+  });
+
   it("rejects an unknown scope and an over-long search", async () => {
     expect((await getPages(new Request("https://app.test/x?scope=everything"), params("crawl_1"))).status).toBe(400);
     expect((await getPages(new Request(`https://app.test/x?q=${"a".repeat(201)}`), params("crawl_1"))).status).toBe(400);

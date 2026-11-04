@@ -14,13 +14,14 @@
 // Every read is scoped to the tenant: findFirst on { id, tenantId }.
 
 import "server-only";
-import { RULE_BY_ID } from "@/lib/crawl-rules";
+import { RULE_BY_ID, RULES } from "@/lib/crawl-rules";
 import { prisma } from "@/lib/prisma";
 import type { CrawlStatus, Prisma } from "@/generated/prisma";
 import { CRAWL_JOB_CONCURRENCY } from "./constants";
 import { healthOf } from "./site-health";
-import { ruleTalliesFor } from "./rule-summary";
-import { segmentOverview, segmentScope } from "./segment-filter";
+import { legacyTypesFor, ruleTalliesFor } from "./rule-summary";
+import { ruleIdOf } from "./legacy-map";
+import { issueInSegment, segmentOverview, segmentScope } from "./segment-filter";
 
 export type PublicPhase = "queued" | "crawling" | "completed" | "failed" | "cancelled";
 
@@ -195,4 +196,88 @@ export async function queueEstimate(
   const busy = running + ahead;
   const waves = busy < CRAWL_JOB_CONCURRENCY ? 0 : Math.floor((busy - CRAWL_JOB_CONCURRENCY) / CRAWL_JOB_CONCURRENCY) + 1;
   return { queuePosition: ahead + 1, estimatedStart: new Date(now.getTime() + waves * avg).toISOString() };
+}
+
+// ─── Issues (findings), cursor-paged ─────────────────────────────────────────
+
+export const ISSUES_PAGE_DEFAULT = 100;
+export const ISSUES_PAGE_MAX = 200;
+const KINDS = ["issue", "warning", "opportunity"] as const;
+
+export interface PublicIssue {
+  id: string;
+  ruleId: string;
+  family: string | null;
+  kind: string | null;
+  priority: string | null;
+  url: string;
+  statusCode: number | null;
+  foundOn: string | null;
+  evidence: Record<string, unknown>;
+}
+
+export class PublicApiInputError extends Error {
+  constructor(readonly code: string) {
+    super(code);
+    this.name = "PublicApiInputError";
+  }
+}
+
+/**
+ * Findings of one crawl, oldest first, keyset-paged on the finding id.
+ * Filters narrow to a set of rule ids (ruleId, family, kind combine); rows
+ * from before rule ids (pre-3a) match through their legacy type.
+ */
+export async function publicIssues(
+  crawl: { id: string; config: unknown },
+  q: { ruleId?: string | null; family?: string | null; kind?: string | null; segment?: string | null; cursor?: string | null; limit?: number | null },
+): Promise<{ issues: PublicIssue[]; nextCursor: string | null }> {
+  if (q.ruleId && !RULE_BY_ID.has(q.ruleId)) throw new PublicApiInputError("unknown_rule");
+  if (q.family && !RULES.some((r) => r.family === q.family)) throw new PublicApiInputError("unknown_family");
+  if (q.kind && !(KINDS as readonly string[]).includes(q.kind)) throw new PublicApiInputError("unknown_kind");
+  const limit = Math.max(1, Math.min(ISSUES_PAGE_MAX, Math.floor(q.limit ?? ISSUES_PAGE_DEFAULT) || ISSUES_PAGE_DEFAULT));
+  const scope = segmentScope(new URL(`https://x.invalid/?${q.segment ? `segment=${encodeURIComponent(q.segment)}` : ""}`), crawl.config);
+
+  let ruleFilter: Prisma.CrawlIssueWhereInput = {};
+  if (q.ruleId || q.family || q.kind) {
+    const ids = RULES.filter((r) => (!q.ruleId || r.id === q.ruleId) && (!q.family || r.family === q.family) && (!q.kind || r.kind === q.kind)).map(
+      (r) => r.id,
+    );
+    const legacy = ids.flatMap(legacyTypesFor);
+    ruleFilter = { OR: [{ ruleId: { in: ids } }, ...(legacy.length ? [{ ruleId: null, type: { in: legacy } }] : [])] };
+  }
+  const rows = await prisma.crawlIssue.findMany({
+    where: { crawlJobId: crawl.id, ...ruleFilter, ...issueInSegment(scope), ...(q.cursor ? { id: { gt: q.cursor } } : {}) },
+    orderBy: { id: "asc" },
+    take: limit + 1,
+    select: {
+      id: true,
+      ruleId: true,
+      type: true,
+      kind: true,
+      priority: true,
+      evidence: true,
+      detail: true,
+      crawlPage: { select: { url: true, statusCode: true, foundOn: true } },
+    },
+  });
+  const page = rows.slice(0, limit);
+  return {
+    issues: page.map((r) => {
+      const ruleId = ruleIdOf(r) ?? r.type;
+      const rule = RULE_BY_ID.get(ruleId);
+      return {
+        id: r.id,
+        ruleId,
+        family: rule?.family ?? null,
+        kind: r.kind ?? rule?.kind ?? null,
+        priority: r.priority ?? rule?.priority ?? null,
+        url: r.crawlPage.url,
+        statusCode: r.crawlPage.statusCode,
+        foundOn: r.crawlPage.foundOn,
+        evidence: (r.evidence as Record<string, unknown> | null) ?? (r.detail ? { detail: r.detail } : {}),
+      };
+    }),
+    nextCursor: rows.length > limit ? page[page.length - 1]!.id : null,
+  };
 }

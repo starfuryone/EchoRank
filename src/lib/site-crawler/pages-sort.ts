@@ -34,6 +34,22 @@ export function pageScopeWhere(scope: PageScope): Prisma.CrawlPageWhereInput {
   }
 }
 
+/** Status class filter (public API ?status=): 2xx, 3xx, 4xx, 5xx, or none (the fetch failed). */
+export const STATUS_CLASSES = ["2xx", "3xx", "4xx", "5xx", "none"] as const;
+export type StatusClass = (typeof STATUS_CLASSES)[number];
+
+export function statusClassWhere(c: StatusClass): Prisma.CrawlPageWhereInput {
+  if (c === "none") return { statusCode: null };
+  const base = Number(c[0]) * 100;
+  return { statusCode: { gte: base, lt: base + 100 } };
+}
+
+function statusClassSql(c: StatusClass): Prisma.Sql {
+  if (c === "none") return Prisma.sql`p."statusCode" IS NULL`;
+  const base = Number(c[0]) * 100;
+  return Prisma.sql`(p."statusCode" >= ${base} AND p."statusCode" < ${base + 100})`;
+}
+
 /** Search: URL or title contains the text, any case. */
 export function pageSearchWhere(q: string): Prisma.CrawlPageWhereInput {
   return { OR: [{ url: { contains: q, mode: "insensitive" } }, { title: { contains: q, mode: "insensitive" } }] };
@@ -78,6 +94,8 @@ export interface PageSqlFilters {
   scope?: PageScope;
   /** Pages with a finding of this rule (Issues › See all pages). */
   rule?: string;
+  /** Public API: a status class. */
+  status?: StatusClass;
 }
 
 /** LIKE-escape a literal prefix. */
@@ -99,6 +117,7 @@ export function pageWhereSql(f: PageSqlFilters): Prisma.Sql {
   if (f.q) parts.push(Prisma.sql`(p."url" ILIKE ${likeContains(f.q)} OR p."title" ILIKE ${likeContains(f.q)})`);
   if (f.scope) parts.push(pageScopeSql(f.scope));
   if (f.rule) parts.push(ruleExistsSql(f.rule));
+  if (f.status) parts.push(statusClassSql(f.status));
   return Prisma.join(parts, " AND ");
 }
 
