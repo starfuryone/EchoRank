@@ -2,8 +2,11 @@
 
 // API access — tenant API keys for /api/public/v1/*. Mirrors the extension
 // tokens page UX: key shown exactly once at creation, list with prefix only,
-// instant revoke. The docs section lists the COMPLETE v1 surface — three GET
-// endpoints — nothing aspirational.
+// instant revoke. The docs section lists the COMPLETE v1 surface — the three
+// GET endpoints and the site crawler (Phase 3d-A: start, status, findings,
+// pages, CSV, cancel, with a curl walkthrough and the callback check) —
+// nothing aspirational. The examples read the key from an environment
+// variable; no key is ever printed here.
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
@@ -15,9 +18,12 @@ import { Input } from "@/components/ui/input";
 import { formatDate } from "@/lib/utils";
 import {
   API_ACCESS_COPY,
+  MCP_SERVER_COPY,
   SEO_TOOLS_COPY,
   type DashLocale,
 } from "@/lib/i18n/dashboard";
+import { flag } from "@/lib/flags";
+import { SITE_URL } from "@/lib/seo/constants";
 
 interface KeyRow {
   id: string;
@@ -33,6 +39,70 @@ const ENDPOINTS: { path: string; descKey: "suggest" | "audit" | "summary" }[] = 
   { path: "GET /api/public/v1/audit/latest", descKey: "audit" },
   { path: "GET /api/public/v1/visibility/summary", descKey: "summary" },
 ];
+
+type CrawlEndpointKey = "crawlStart" | "crawlList" | "crawlStatus" | "crawlIssues" | "crawlPages" | "crawlExport" | "crawlCancel";
+const CRAWL_ENDPOINTS: { path: string; descKey: CrawlEndpointKey }[] = [
+  { path: "POST /api/public/v1/crawl", descKey: "crawlStart" },
+  { path: "GET /api/public/v1/crawl?host=&limit=", descKey: "crawlList" },
+  { path: "GET /api/public/v1/crawl/{id}", descKey: "crawlStatus" },
+  { path: "GET /api/public/v1/crawl/{id}/issues?ruleId=&family=&kind=&segment=&cursor=", descKey: "crawlIssues" },
+  { path: "GET /api/public/v1/crawl/{id}/pages?status=&segment=&cursor=", descKey: "crawlPages" },
+  { path: "GET /api/public/v1/crawl/{id}/export?view=issues|pages|broken-links|external|redirects", descKey: "crawlExport" },
+  { path: "POST /api/public/v1/crawl/{id}/cancel", descKey: "crawlCancel" },
+];
+
+export const CRAWL_MCP_TOOLS = ["start_crawl", "get_crawl_status", "get_crawl_issues", "list_crawls"] as const;
+
+/** The walkthrough's commands. The key comes from $ECHORANK_API_KEY; nothing secret is shown. */
+export const CRAWL_WALKTHROUGH = {
+  start: [
+    'export ECHORANK_API_KEY="er_api_..."   # from the list above; never commit it',
+    `curl -s -X POST ${SITE_URL}/api/public/v1/crawl \\`,
+    '  -H "Authorization: Bearer $ECHORANK_API_KEY" -H "Content-Type: application/json" \\',
+    '  -H "Idempotency-Key: $(uuidgen)" \\',
+    '  -d \'{"url":"https://www.example.com/","renderMode":"thin","callbackUrl":"https://hooks.example.com/echorank"}\'',
+    '# {"crawlId":"cm...","status":"queued","queuePosition":1,"estimatedStart":"..."}',
+  ].join("\n"),
+  poll: `curl -s ${SITE_URL}/api/public/v1/crawl/$CRAWL_ID -H "Authorization: Bearer $ECHORANK_API_KEY"`,
+  issues: `curl -s "${SITE_URL}/api/public/v1/crawl/$CRAWL_ID/issues?family=page_titles&limit=200" -H "Authorization: Bearer $ECHORANK_API_KEY"`,
+  csv: `curl -s -o issues.csv "${SITE_URL}/api/public/v1/crawl/$CRAWL_ID/export?view=issues" -H "Authorization: Bearer $ECHORANK_API_KEY"`,
+  callback: [
+    'import { createHash, createHmac, timingSafeEqual } from "node:crypto";',
+    "// secret = the part of your key after the dot",
+    'const key = createHash("sha256").update(secret).digest("hex");',
+    'const expected = createHmac("sha256", key).update(rawBody).digest("hex");',
+    'const given = request.headers["x-echorank-signature"];',
+    'const ok = given?.length === expected.length && timingSafeEqual(Buffer.from(given, "hex"), Buffer.from(expected, "hex"));',
+  ].join("\n"),
+} as const;
+
+function CodeBlock({
+  code,
+  copyLabel,
+  copiedLabel,
+  copied,
+  onCopy,
+}: {
+  code: string;
+  copyLabel: string;
+  copiedLabel: string;
+  copied: boolean;
+  onCopy: () => void;
+}) {
+  return (
+    <div className="overflow-hidden rounded-lg border border-gray-200">
+      <div className="flex justify-end bg-gray-50 px-2 py-1">
+        <Button variant="outline" size="sm" onClick={onCopy}>
+          <Copy className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
+          {copied ? copiedLabel : copyLabel}
+        </Button>
+      </div>
+      <pre className="overflow-x-auto bg-gray-900 px-4 py-3 font-mono text-xs leading-relaxed text-gray-100">
+        <code>{code}</code>
+      </pre>
+    </div>
+  );
+}
 
 export function ApiAccessClient({ locale }: { locale: DashLocale }) {
   const t = API_ACCESS_COPY[locale];
@@ -216,14 +286,74 @@ export function ApiAccessClient({ locale }: { locale: DashLocale }) {
               <p className="px-4 py-2.5 text-xs text-gray-500">{t.docsEndpoints[e.descKey]}</p>
             </div>
           ))}
-          <p className="text-xs text-gray-400">
+          <p className="text-xs text-gray-600">
             {t.mcpHint}{" "}
-            <Link href="/visibility/tools/mcp-server" className="font-medium text-blue-600 hover:text-blue-700">
+            <Link href="/visibility/tools/mcp-server" className="font-medium text-blue-700 hover:text-blue-800">
               MCP →
             </Link>
           </p>
         </CardContent>
       </Card>
+
+      {flag("crawl.api") && (
+        <Card>
+          <CardHeader>
+            <h3 className="text-base font-semibold text-gray-900" id="crawl-api">
+              {t.crawlTitle}
+            </h3>
+            <p className="mt-1 text-sm text-gray-600">{t.crawlIntro}</p>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4" data-testid="crawl-api-docs">
+              {CRAWL_ENDPOINTS.map((e) => (
+                <div key={e.path} className="overflow-hidden rounded-lg border border-gray-200">
+                  <div className="flex items-center justify-between gap-3 bg-gray-50 px-4 py-2">
+                    <code className="break-all font-mono text-xs text-gray-800">{e.path}</code>
+                    <Button variant="outline" size="sm" onClick={() => copyText(e.path, e.path)}>
+                      <Copy className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
+                      {copied === e.path ? t.copied : t.copy}
+                    </Button>
+                  </div>
+                  <p className="px-4 py-2.5 text-xs text-gray-600">{t.docsEndpoints[e.descKey]}</p>
+                </div>
+              ))}
+
+              <h4 className="pt-2 text-sm font-semibold text-gray-900">{t.walkTitle}</h4>
+              {(["start", "poll", "issues", "csv"] as const).map((step) => (
+                <div key={step} className="space-y-1.5" data-walk={step}>
+                  <p className="text-sm text-gray-700">{t.walkSteps[step]}</p>
+                  <CodeBlock
+                    code={CRAWL_WALKTHROUGH[step]}
+                    copyLabel={t.copy}
+                    copiedLabel={t.copied}
+                    copied={copied === `walk-${step}`}
+                    onCopy={() => copyText(`walk-${step}`, CRAWL_WALKTHROUGH[step])}
+                  />
+                </div>
+              ))}
+
+              <h4 className="pt-2 text-sm font-semibold text-gray-900">{t.callbackTitle}</h4>
+              <p className="text-sm text-gray-700">{t.callbackNote}</p>
+              <CodeBlock
+                code={CRAWL_WALKTHROUGH.callback}
+                copyLabel={t.copy}
+                copiedLabel={t.copied}
+                copied={copied === "walk-callback"}
+                onCopy={() => copyText("walk-callback", CRAWL_WALKTHROUGH.callback)}
+              />
+
+              <h4 className="pt-2 text-sm font-semibold text-gray-900">{t.mcpCrawlTitle}</h4>
+              <ul className="space-y-1.5" data-testid="crawl-mcp-tools">
+                {CRAWL_MCP_TOOLS.map((name) => (
+                  <li key={name} className="text-sm text-gray-700">
+                    <code className="font-mono text-xs text-gray-900">{name}</code> — {MCP_SERVER_COPY[locale].toolDescs[name]}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

@@ -70,6 +70,10 @@ export const FLAGS = {
   "crawl.ai": true,
   // Phase 4e: forms-based login before crawling (verified sites only).
   "crawl.login": true,
+  // Phase 3d-A: the crawler over the public API (POST/GET /api/public/v1/crawl…,
+  // signed callbacks) and its MCP tools; the feature table's API row and the
+  // API-access page's crawler section key on it.
+  "crawl.api": true,
 } as const satisfies Record<string, boolean>;
 
 export type FlagName = keyof typeof FLAGS;

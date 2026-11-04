@@ -7136,15 +7136,39 @@ const apiAccessEn = {
   actionFailed: "Action failed",
   docsTitle: "API reference",
   docsIntro:
-    "All endpoints are GET, authenticated with `Authorization: Bearer <key>`, scoped to your workspace, and rate-limited to 60 requests/minute per key. This is the complete v1 surface — nothing else exists yet.",
+    "Every endpoint is authenticated with `Authorization: Bearer <key>`, scoped to your workspace, and rate-limited to 60 requests/minute per key. This is the complete v1 surface.",
   docsEndpoints: {
     suggest:
       "Run the SEO keyword suggester against a URL. Params: url (required), depth=single|site.",
     audit: "Your workspace's most recent stored AI-visibility audit (404 if none yet).",
     summary:
       "Visibility summary: latest audit score, 30-day AI mention rate, per-engine coverage, recent alerts.",
+    crawlStart:
+      "Start a crawl. The body is what the crawler's Start page sends (url, mode, urls, renderMode, config), plus an optional https callbackUrl. Send an Idempotency-Key header to make retries safe for 24 hours. Answers with crawlId, queuePosition and estimatedStart.",
+    crawlList: "Your crawls, newest first. Params: host (one site), limit (up to 100).",
+    crawlStatus:
+      "One crawl: status, progress (pages crawled of the cap, rendered pages), queue position, and once it has ended the summary, site health, findings by kind and by rule family, and per-segment totals.",
+    crawlIssues:
+      "The crawl's findings with their evidence, 200 at most per page. Params: ruleId, family, kind (issue, warning, opportunity), segment, cursor (nextCursor from the previous page), limit.",
+    crawlPages: "The crawl's pages, the rows the Pages view shows. Params: status (2xx, 3xx, 4xx, 5xx, none), segment, cursor, limit (up to 200).",
+    crawlExport: "Download CSV: view = issues, pages, broken-links, external or redirects. Params: segment.",
+    crawlCancel: "Stop a queued or running crawl.",
   },
   mcpHint: "These same capabilities are exposed to AI assistants via the MCP Server tool.",
+  crawlTitle: "Site crawler",
+  crawlIntro:
+    "Start a crawl, follow it, and read its findings or CSV exports. A crawl started here counts toward your monthly crawls, runs within your plan's URL cap, and is limited to 3 starts a minute.",
+  walkTitle: "Walkthrough",
+  walkSteps: {
+    start: "1. Start a crawl. Keep the key in an environment variable, never in code.",
+    poll: "2. Poll its status every minute or so until status is completed (or use the callback).",
+    issues: "3. Read the findings, a family at a time.",
+    csv: "4. Download a CSV.",
+  },
+  callbackTitle: "Checking the callback",
+  callbackNote:
+    "When the crawl ends we POST {crawlId, status, summary} to your callbackUrl, once more a minute later if it fails. X-Echorank-Signature is the hex HMAC-SHA256 of the raw body, keyed with the SHA-256 (hex) of your key's secret, the part after the dot. Recompute it and compare in constant time before trusting the call.",
+  mcpCrawlTitle: "Crawler tools for AI assistants",
 };
 export type ApiAccessCopy = typeof apiAccessEn;
 
@@ -7176,15 +7200,39 @@ export const API_ACCESS_COPY: Record<DashLocale, ApiAccessCopy> = {
     actionFailed: "Échec de l'action",
     docsTitle: "Référence de l'API",
     docsIntro:
-      "Tous les points de terminaison sont en GET, authentifiés avec `Authorization: Bearer <clé>`, limités à votre espace de travail et à 60 requêtes/minute par clé. C'est la surface v1 complète — rien d'autre n'existe encore.",
+      "Chaque point de terminaison est authentifié avec `Authorization: Bearer <clé>`, limité à votre espace de travail et à 60 requêtes/minute par clé. C'est la surface v1 complète.",
     docsEndpoints: {
       suggest:
         "Lance le suggesteur de mots-clés SEO sur une URL. Paramètres : url (requis), depth=single|site.",
       audit: "Le plus récent audit de visibilité IA stocké de votre espace de travail (404 s'il n'y en a pas encore).",
       summary:
         "Résumé de visibilité : score du dernier audit, taux de mention IA sur 30 jours, couverture par moteur, alertes récentes.",
+      crawlStart:
+        "Lance une exploration. Le corps est celui qu'envoie la page de lancement du robot (url, mode, urls, renderMode, config), plus une callbackUrl https facultative. Envoyez un en-tête Idempotency-Key pour que les nouvelles tentatives soient sûres pendant 24 heures. Répond avec crawlId, queuePosition et estimatedStart.",
+      crawlList: "Vos explorations, les plus récentes d'abord. Paramètres : host (un site), limit (jusqu'à 100).",
+      crawlStatus:
+        "Une exploration : statut, progression (pages explorées sur le plafond, pages rendues), position dans la file, puis à la fin le résumé, la santé du site, les constats par type et par famille de règles, et les totaux par segment.",
+      crawlIssues:
+        "Les constats de l'exploration avec leur preuve, 200 au plus par page. Paramètres : ruleId, family, kind (issue, warning, opportunity), segment, cursor (nextCursor de la page précédente), limit.",
+      crawlPages: "Les pages de l'exploration, les lignes de la vue Pages. Paramètres : status (2xx, 3xx, 4xx, 5xx, none), segment, cursor, limit (jusqu'à 200).",
+      crawlExport: "Télécharger un CSV : view = issues, pages, broken-links, external ou redirects. Paramètres : segment.",
+      crawlCancel: "Arrêter une exploration en attente ou en cours.",
     },
     mcpHint: "Ces mêmes capacités sont exposées aux assistants IA via l'outil Serveur MCP.",
+    crawlTitle: "Robot d'exploration",
+    crawlIntro:
+      "Lancez une exploration, suivez-la, puis lisez ses constats ou ses exports CSV. Une exploration lancée ici compte dans vos explorations du mois, respecte le plafond d'URL de votre forfait et est limitée à 3 lancements par minute.",
+    walkTitle: "Pas à pas",
+    walkSteps: {
+      start: "1. Lancez une exploration. Gardez la clé dans une variable d'environnement, jamais dans le code.",
+      poll: "2. Interrogez son statut environ chaque minute jusqu'à ce que status vaille completed (ou utilisez le rappel).",
+      issues: "3. Lisez les constats, une famille à la fois.",
+      csv: "4. Téléchargez un CSV.",
+    },
+    callbackTitle: "Vérifier le rappel",
+    callbackNote:
+      "À la fin de l'exploration, nous envoyons {crawlId, status, summary} en POST à votre callbackUrl, une fois de plus une minute plus tard en cas d'échec. X-Echorank-Signature est le HMAC-SHA256 hexadécimal du corps brut, avec pour clé le SHA-256 (hexadécimal) du secret de votre clé, la partie après le point. Recalculez-le et comparez en temps constant avant de faire confiance à l'appel.",
+    mcpCrawlTitle: "Outils du robot pour les assistants IA",
   },
   "de-CH": {
     intro:
@@ -7212,15 +7260,39 @@ export const API_ACCESS_COPY: Record<DashLocale, ApiAccessCopy> = {
     actionFailed: "Aktion fehlgeschlagen",
     docsTitle: "API-Referenz",
     docsIntro:
-      "Alle Endpunkte sind GET, authentifiziert mit `Authorization: Bearer <Schlüssel>`, auf Ihren Arbeitsbereich beschränkt und auf 60 Anfragen/Minute pro Schlüssel limitiert. Das ist die vollständige v1-Oberfläche — mehr existiert noch nicht.",
+      "Jeder Endpunkt ist mit `Authorization: Bearer <Schlüssel>` authentifiziert, auf Ihren Arbeitsbereich beschränkt und auf 60 Anfragen/Minute pro Schlüssel limitiert. Das ist die vollständige v1-Oberfläche.",
     docsEndpoints: {
       suggest:
         "Führt den SEO-Keyword-Vorschlag für eine URL aus. Parameter: url (erforderlich), depth=single|site.",
       audit: "Das zuletzt gespeicherte KI-Sichtbarkeits-Audit Ihres Arbeitsbereichs (404, falls noch keines existiert).",
       summary:
         "Sichtbarkeits-Zusammenfassung: letzter Audit-Score, KI-Erwähnungsrate über 30 Tage, Abdeckung pro Engine, aktuelle Alerts.",
+      crawlStart:
+        "Startet einen Crawl. Der Body entspricht dem, was die Startseite des Crawlers sendet (url, mode, urls, renderMode, config), dazu eine optionale https-callbackUrl. Senden Sie einen Idempotency-Key-Header, damit Wiederholungen 24 Stunden lang sicher sind. Antwortet mit crawlId, queuePosition und estimatedStart.",
+      crawlList: "Ihre Crawls, die neuesten zuerst. Parameter: host (eine Website), limit (bis 100).",
+      crawlStatus:
+        "Ein Crawl: Status, Fortschritt (gecrawlte Seiten von der Grenze, gerenderte Seiten), Position in der Warteschlange und nach dem Ende die Zusammenfassung, der Website-Zustand, Befunde nach Art und Regelfamilie sowie Summen pro Segment.",
+      crawlIssues:
+        "Die Befunde des Crawls mit Belegen, höchstens 200 pro Seite. Parameter: ruleId, family, kind (issue, warning, opportunity), segment, cursor (nextCursor der vorherigen Seite), limit.",
+      crawlPages: "Die Seiten des Crawls, die Zeilen der Seitenansicht. Parameter: status (2xx, 3xx, 4xx, 5xx, none), segment, cursor, limit (bis 200).",
+      crawlExport: "CSV herunterladen: view = issues, pages, broken-links, external oder redirects. Parameter: segment.",
+      crawlCancel: "Einen wartenden oder laufenden Crawl stoppen.",
     },
     mcpHint: "Dieselben Fähigkeiten stehen KI-Assistenten über das MCP-Server-Tool zur Verfügung.",
+    crawlTitle: "Website-Crawler",
+    crawlIntro:
+      "Starten Sie einen Crawl, verfolgen Sie ihn und lesen Sie seine Befunde oder CSV-Exporte. Ein hier gestarteter Crawl zählt zu Ihren monatlichen Crawls, läuft innerhalb der URL-Grenze Ihres Plans und ist auf 3 Starts pro Minute begrenzt.",
+    walkTitle: "Schritt für Schritt",
+    walkSteps: {
+      start: "1. Starten Sie einen Crawl. Bewahren Sie den Schlüssel in einer Umgebungsvariable auf, nie im Code.",
+      poll: "2. Fragen Sie den Status etwa jede Minute ab, bis status completed lautet (oder nutzen Sie den Callback).",
+      issues: "3. Lesen Sie die Befunde, eine Familie nach der anderen.",
+      csv: "4. Laden Sie ein CSV herunter.",
+    },
+    callbackTitle: "Den Callback prüfen",
+    callbackNote:
+      "Wenn der Crawl endet, senden wir {crawlId, status, summary} per POST an Ihre callbackUrl, bei einem Fehler eine Minute später noch einmal. X-Echorank-Signature ist der hexadezimale HMAC-SHA256 des rohen Bodys, mit dem SHA-256 (hexadezimal) des Geheimnisses Ihres Schlüssels als Schlüssel, also dem Teil nach dem Punkt. Berechnen Sie ihn neu und vergleichen Sie in konstanter Zeit, bevor Sie dem Aufruf vertrauen.",
+    mcpCrawlTitle: "Crawler-Tools für KI-Assistenten",
   },
 };
 

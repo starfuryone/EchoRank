@@ -379,6 +379,8 @@ export const CRAWL_FEATURE_ROWS: readonly CrawlFeatureRow[] = [
     b === "fr" ? `${fmt(p.crawlSegments, b)} segments par site` : `${fmt(p.crawlSegments, b)} segments per site`),
   // Sheets export + the Looker Studio guide; the PDF report (crawl.reports) is not this row.
   row("looker-studio", { flag: "crawl.sheets" }, "Looker Studio crawl report", "Rapport d'exploration Looker Studio"),
+  // Phase 3d-A: start and read crawls from scripts and AI assistants, every paid plan.
+  row("api", { flag: "crawl.api" }, "Command line & API", "Ligne de commande et API", (_p, b) => (b === "fr" ? "API REST et MCP" : "REST API and MCP")),
   row("support", { always: true }, "Free technical support", "Soutien technique gratuit"),
 ];
 
