@@ -14,7 +14,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { AlertCircle, CircleQuestionMark, Download, Loader2, Network } from "lucide-react";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -56,7 +56,9 @@ import { ExtractionPanel } from "@/components/seo-tools/site-crawler-extraction"
 import { ExternalPanel } from "@/components/seo-tools/site-crawler-external";
 import { ComparePanel } from "@/components/seo-tools/site-crawler-compare";
 import { CrawlSchedules } from "@/components/seo-tools/site-crawler-schedules";
-import { AddDataSection, confirmLines } from "@/components/seo-tools/site-crawler-add-data";
+import { AddDataSection, confirmLines, useSiteSegmentNames } from "@/components/seo-tools/site-crawler-add-data";
+import { AdvancedSection, summaryLine } from "@/components/seo-tools/site-crawler-advanced";
+import { CrawlerNav, RecentCrawls, statusLabel } from "@/components/seo-tools/site-crawler-nav";
 import { AiPromptsSection, AiStatusLine, aiConfirmLine, type AiQuota } from "@/components/seo-tools/site-crawler-ai";
 import { SemanticSection, semanticConfirmLine, semanticStatusText } from "@/components/seo-tools/site-crawler-semantic";
 import { InspectionSection } from "@/components/seo-tools/site-crawler-inspection";
@@ -174,20 +176,6 @@ function severityTone(severity: string): "danger" | "warning" | "default" {
   return "default";
 }
 
-function statusLabel(status: string, t: SiteCrawlerCopy): string {
-  switch (status) {
-    case "QUEUED":
-      return t.statusQueued;
-    case "RUNNING":
-      return t.statusRunning;
-    case "COMPLETED":
-      return t.statusCompleted;
-    case "FAILED":
-      return t.statusFailed;
-    default:
-      return t.statusCancelled;
-  }
-}
 
 function stoppedLabel(reason: string | null, t: SiteCrawlerCopy): string | null {
   if (!reason) return null;
@@ -198,7 +186,11 @@ function stoppedLabel(reason: string | null, t: SiteCrawlerCopy): string | null 
   return reason; // a FAILED crawl carries its truncated error here
 }
 
-export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
+/** The crawler's task views: Start (/crawler) and Results (/crawler/[id]). */
+export type CrawlerView = "start" | "results";
+
+export function SiteCrawlerClient({ locale, view = "start", crawlId = null }: { locale: DashLocale; view?: CrawlerView; crawlId?: string | null }) {
+  const router = useRouter();
   const t = SITE_CRAWLER_COPY[locale];
   const int = useMemo(() => new Intl.NumberFormat(locale === "en" ? "en-US" : locale), [locale]);
 
@@ -218,6 +210,10 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
   // Phase 4d: the post-crawl opt-ins, confirmed with their cost before the crawl starts.
   const [addData, setAddData] = useState<AddData | null>(null);
   const [ai, setAi] = useState<AiConfig | null>(null);
+  /** Bumped by "Reset to defaults": remounts the configuration, which re-reads the site's saved settings. */
+  const [resetKey, setResetKey] = useState(0);
+  // The host's saved segments, for the AI and semantic "chosen by" pickers outside Add data.
+  const segmentNamesForHost = useSiteSegmentNames(view === "start" && mode === "spider" ? hostOfInput(url) : null);
   const [semantic, setSemantic] = useState<TopPages | null>(null);
   const [inspection, setInspection] = useState<TopPages | null>(null);
   const [confirming, setConfirming] = useState(false);
@@ -274,18 +270,10 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
   const applyList = useCallback((data: CrawlListResponse) => {
     setQuota(data.quota);
     setCrawls(data.crawls);
-    // ?crawl=<id> (the scheduled-crawl email's link) opens that crawl; else
-    // resume whatever is in flight, so a reload lands back on the live crawl.
-    const wanted = typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get("crawl");
-    setActive(
-      (current) =>
-        current ??
-        data.crawls.find((c) => c.id === wanted) ??
-        data.crawls.find((c) => isInFlight(c.status)) ??
-        data.crawls[0] ??
-        null,
-    );
-  }, []);
+    // Results view: the crawl in the URL (fetched on its own below when it is
+    // older than the list). The Start view shows no crawl of its own.
+    if (view === "results") setActive((current) => current ?? data.crawls.find((c) => c.id === crawlId) ?? null);
+  }, [view, crawlId]);
 
   const refresh = useCallback(async () => {
     const data = await loadList();
@@ -305,6 +293,22 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
       cancelled = true;
     };
   }, [loadList, applyList]);
+
+  // Results view, a crawl past the list window: read it by id.
+  const [missing, setMissing] = useState(false);
+  useEffect(() => {
+    if (view !== "results" || !crawlId || active) return;
+    let cancelled = false;
+    void (async () => {
+      const res = await fetch(`/api/seo/v1/crawl/${encodeURIComponent(crawlId)}`);
+      if (cancelled) return;
+      if (res.ok) setActive((await res.json()) as CrawlDto);
+      else setMissing(true);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [view, crawlId, active]);
 
   // Poll the active crawl while it runs. Cleared as soon as it settles, so a
   // finished crawl costs no requests.
@@ -469,9 +473,8 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
       if (data?.listSkipped) setNotice(t.p4a.listSkipped(int.format(data.listSkipped)));
       setUrl("");
       setListText("");
-      setActive(data);
-      setPage(1);
-      await refresh();
+      // The crawl's own page: progress while it runs, the results after.
+      router.push(`/crawler/${data.id}`);
     } catch {
       setError(t.errGeneric);
     } finally {
@@ -515,10 +518,24 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
   }
 
   const running = active && isInFlight(active.status);
+  // Start view: one crawl at a time per workspace, so a crawl in flight anywhere holds the Start button.
+  const busy = crawls.some((c) => isInFlight(c.status));
+  const advancedCount = [cfg.config, addData, ai, semantic, inspection].filter(Boolean).length;
+  const resetAdvanced = () => {
+    setResetKey((k) => k + 1);
+    setAddData(null);
+    setAi(null);
+    setSemantic(null);
+    setInspection(null);
+    setConfirming(false);
+    setNotice(t.ux.resetDone);
+  };
 
-  return (
-    <div className="space-y-6">
-      <CrawlerHeader t={t} locale={locale} quota={quota} />
+  if (view === "start") {
+    return (
+      <div className="space-y-6">
+        <CrawlerHeader t={t} locale={locale} quota={quota} />
+        <CrawlerNav current="start" t={t.ux} />
 
       <Card>
         <CardContent className="pt-6">
@@ -530,7 +547,7 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
                   label={t.p4a.modeLabel}
                   value={mode}
                   onChange={(e) => setMode(e.target.value as "spider" | "list")}
-                  disabled={starting || Boolean(running)}
+                  disabled={starting || busy}
                   options={[
                     { value: "spider", label: t.p4a.modeSpider },
                     { value: "list", label: t.p4a.modeList },
@@ -548,7 +565,7 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
                   value={url}
                   onChange={(e) => setUrl(e.target.value)}
                   placeholder={t.urlPlaceholder}
-                  disabled={starting || Boolean(running)}
+                  disabled={starting || busy}
                 />
               </div>
             ) : (
@@ -563,7 +580,7 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
                   value={listText}
                   onChange={(e) => setListText(e.target.value)}
                   placeholder={t.p4a.listPlaceholder}
-                  disabled={starting || Boolean(running)}
+                  disabled={starting || busy}
                 />
                 <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-gray-500">
                   <label className="cursor-pointer text-blue-700 hover:underline">
@@ -590,7 +607,7 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
                   label={t.renderLabel}
                   value={renderMode}
                   onChange={(e) => setRenderMode(e.target.value as RenderMode)}
-                  disabled={starting || Boolean(running)}
+                  disabled={starting || busy}
                   options={[
                     { value: "none", label: t.renderNone },
                     { value: "thin", label: t.renderThin },
@@ -601,7 +618,7 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
             )}
             <Button
               type="submit"
-              disabled={starting || (mode === "spider" ? !url.trim() : listUrls.length === 0) || Boolean(running)}
+              disabled={starting || (mode === "spider" ? !url.trim() : listUrls.length === 0) || busy}
             >
               {starting ? (
                 <>
@@ -643,8 +660,23 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
           )}
           {notice && <p className="mt-3 text-sm text-gray-600">{notice}</p>}
 
+          {mode === "spider" && quota && (
+            <details className="mt-4 rounded-lg border border-gray-200 bg-gray-50" id="crawl-advanced">
+              <summary className="flex cursor-pointer select-none flex-wrap items-baseline justify-between gap-2 px-4 py-3 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
+                <span className="text-sm font-semibold text-gray-900">{t.ux.advancedTitle}</span>
+                <span className="text-xs text-gray-600">{advancedCount ? t.ux.advancedSet(int.format(advancedCount)) : t.ux.notSet}</span>
+              </summary>
+              <div className="space-y-3 border-t border-gray-200 p-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <p className="text-xs text-gray-600">{t.ux.advancedHelp}</p>
+                  <button type="button" onClick={resetAdvanced} className="text-xs font-medium text-blue-700 underline-offset-2 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
+                    {t.ux.reset}
+                  </button>
+                </div>
           {flag("crawl.config") && mode === "spider" && quota && (
             <CrawlConfigSection
+              key={resetKey}
+              ux={t.ux}
               t={t.p4a}
               t4b={t.p4b}
               t4e={t.p4e}
@@ -652,7 +684,7 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
               caps={{ extractors: quota.extractorCap ?? 0, searches: quota.searchCap ?? 0, segments: quota.segmentCap ?? 0, js: quota.jsSnippetCap ?? 0 }}
               rootUrl={url}
               urlCap={int.format(quota.urlCap)}
-              disabled={starting || Boolean(running)}
+              disabled={starting || busy}
               onChange={onConfig}
             >
               {flag("crawl.schedule") && (
@@ -671,7 +703,9 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
           )}
 
           {(flag("crawl.psi") || flag("crawl.backlinks") || flag("crawl.gsc") || flag("crawl.ga4") || flag("crawl.ai") || flag("crawl.semantic") || flag("crawl.inspection")) && mode === "spider" && quota && (
+            <AdvancedSection id="add-data" title={t.ux.secAddData} summary={summaryLine([addData?.psi && t.ux.sumPsi(int.format(addData.psi.pages)), addData?.backlinks && t.ux.sumBacklinks(int.format(addData.backlinks.pages)), inspection && t.ux.sumInspection(int.format(inspection.pages))], t.ux.notSet)}>
             <AddDataSection
+              bare
               t={t.p4d}
               host={hostOfInput(url)}
               quota={addDataQuota(quota)}
@@ -680,7 +714,7 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
                 setAddData(v);
                 setConfirming(false);
               }}
-              disabled={starting || Boolean(running)}
+              disabled={starting || busy}
               extra={(segments) => (
                 <>
                   {flag("crawl.inspection") && (
@@ -692,49 +726,61 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
                       value={inspection}
                       segments={segments}
                       int={int}
-                      disabled={starting || Boolean(running)}
+                      disabled={starting || busy}
                       onChange={(v) => {
                         setInspection(v);
                         setConfirming(false);
                       }}
                     />
                   )}
-                  {flag("crawl.semantic") && (
+                </>
+              )}
+            >
+              <SourceLines t={t.p4d} host={hostOfInput(url)} />
+            </AddDataSection>
+            </AdvancedSection>
+          )}
+
+                {flag("crawl.ai") && (
+                  <AdvancedSection id="ai" title={t.ux.secAi} summary={ai ? t.ux.sumAi(int.format(ai.prompts.length), int.format(ai.top.pages)) : t.ux.notSet}>
+                    <AiPromptsSection
+                        t={t.p4e}
+                        t4d={t.p4d}
+                        quota={aiQuota(quota)}
+                        value={ai}
+                        segments={segmentNamesForHost}
+                        int={int}
+                        disabled={starting || busy}
+                        onChange={(v) => {
+                          setAi(v);
+                          setConfirming(false);
+                        }}
+                      />
+                  </AdvancedSection>
+                )}
+                {flag("crawl.semantic") && (
+                  <AdvancedSection id="semantic" title={t.ux.secSemantic} summary={semantic ? t.ux.sumPages(int.format(semantic.pages)) : t.ux.notSet}>
                     <SemanticSection
                       t={t.p4g}
                       t4d={t.p4d}
                       cap={quota.semanticCap ?? 0}
                       hasKey={quota.aiKeys?.openai ?? false}
                       value={semantic}
-                      segments={segments}
+                      segments={segmentNamesForHost}
                       int={int}
-                      disabled={starting || Boolean(running)}
+                      disabled={starting || busy}
                       onChange={(v) => {
                         setSemantic(v);
                         setConfirming(false);
                       }}
                     />
-                  )}
-                  {flag("crawl.ai") && (
-                      <AiPromptsSection
-                        t={t.p4e}
-                        t4d={t.p4d}
-                        quota={aiQuota(quota)}
-                        value={ai}
-                        segments={segments}
-                        int={int}
-                        disabled={starting || Boolean(running)}
-                        onChange={(v) => {
-                          setAi(v);
-                          setConfirming(false);
-                        }}
-                      />
-                  )}
-                </>
-              )}
-            >
-              <SourceLines t={t.p4d} host={hostOfInput(url)} />
-            </AddDataSection>
+                  </AdvancedSection>
+                )}
+                <AdvancedSection id="spelling" title={t.ux.secSpelling} summary={t.ux.spellingSummary}>
+                  <AcceptedWords t={t} />
+                </AdvancedSection>
+              </div>
+            </details>
           )}
 
           {confirming && (addData || ai || semantic || inspection) && quota && (
@@ -758,9 +804,21 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
             </div>
           )}
 
-          <AcceptedWords t={t} />
+
         </CardContent>
       </Card>
+
+      <RecentCrawls crawls={crawls.slice(0, 5)} locale={locale} t={t} int={int} />
+      </div>
+    );
+  }
+
+  // ── Results (/crawler/[id]) ─────────────────────────────────────────────
+  return (
+    <div className="space-y-6">
+      <CrawlerHeader t={t} locale={locale} quota={quota} />
+      <CrawlerNav current="results" t={t.ux} />
+      {missing && !active && <p className="text-sm text-gray-700">{t.ux.notFound}</p>}
 
       {active && (
         <Card>
@@ -1083,56 +1141,6 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
         </Card>
       )}
 
-      <Card>
-        <CardHeader>
-          <h3 className="text-sm font-semibold text-gray-900">{t.pastTitle}</h3>
-        </CardHeader>
-        <CardContent>
-          {crawls.length === 0 ? (
-            <p className="py-4 text-center text-sm text-gray-500">{t.noCrawls}</p>
-          ) : (
-            <ul className="divide-y divide-gray-100">
-              {crawls.map((crawl) => (
-                <li key={crawl.id}>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setActive(crawl);
-                      setPage(1);
-                      setTab("overview");
-                      setSummary(null);
-                      setDuplicates(null);
-                      setRedirects(null);
-                      setPageRows(null);
-                      setDupPage(1);
-                      setRedirectPage(1);
-                      setPagesPage(1);
-                      setPageFilters(EMPTY_PAGE_FILTERS);
-                      setInlinksFor(null);
-                    }}
-                    className="flex w-full flex-wrap items-center justify-between gap-3 py-3 text-left hover:bg-gray-50"
-                  >
-                    <div className="min-w-0">
-                      <p className="truncate text-sm text-gray-900">{crawl.rootUrl}</p>
-                      <p className="text-xs text-gray-500">
-                        {formatDateTime(crawl.createdAt, locale)}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <span className="text-xs text-gray-500">
-                        {int.format(crawl.pagesCrawled)} · {int.format(crawl.issueCount)}
-                      </span>
-                      <Badge variant={crawl.status === "FAILED" ? "danger" : "default"}>
-                        {statusLabel(crawl.status, t)}
-                      </Badge>
-                    </div>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </CardContent>
-      </Card>
     </div>
   );
 }

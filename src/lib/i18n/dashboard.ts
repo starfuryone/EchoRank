@@ -18,6 +18,7 @@ import { SITE_CRAWLER_4D } from "./site-crawler-4d";
 import { SITE_CRAWLER_4E } from "./site-crawler-4e";
 import { SITE_CRAWLER_4G } from "./site-crawler-4g";
 import { SITE_CRAWLER_HELP } from "./site-crawler-help";
+import { SITE_CRAWLER_UX } from "./site-crawler-ux";
 import { CRAWLER_BRAND } from "@/lib/site-crawler/brand";
 export type DashLocale = "en" | "fr" | "de-CH";
 
@@ -12919,6 +12920,7 @@ const siteCrawlerEn = {
   p4e: SITE_CRAWLER_4E.en,
   p4g: SITE_CRAWLER_4G.en,
   helpModal: SITE_CRAWLER_HELP.en,
+  ux: SITE_CRAWLER_UX.en,
   p4b: {
     tabExtraction: "Extraction",
     exSection: "Custom extraction",
@@ -13310,6 +13312,7 @@ export const SITE_CRAWLER_COPY: Record<DashLocale, SiteCrawlerCopy> = {
     p4e: SITE_CRAWLER_4E.fr,
     p4g: SITE_CRAWLER_4G.fr,
     helpModal: SITE_CRAWLER_HELP.fr,
+    ux: SITE_CRAWLER_UX.fr,
     p4b: {
       tabExtraction: "Extraction",
       exSection: "Extraction personnalisée",
@@ -13696,6 +13699,7 @@ export const SITE_CRAWLER_COPY: Record<DashLocale, SiteCrawlerCopy> = {
     p4e: SITE_CRAWLER_4E["de-CH"],
     p4g: SITE_CRAWLER_4G["de-CH"],
     helpModal: SITE_CRAWLER_HELP["de-CH"],
+    ux: SITE_CRAWLER_UX["de-CH"],
     p4b: {
       tabExtraction: "Extraktion",
       exSection: "Eigene Extraktion",

@@ -55,6 +55,8 @@ export interface CrawlDto {
   listSkipped?: number;
   /** Present on the detail endpoint once the crawl has settled. */
   severityCounts?: SeverityCounts;
+  /** Site health 0–100 (summary.health; site-health.ts). Null before the crawl settles or on older crawls. */
+  health?: number | null;
   /** Phase 4e forms login: failed = the crawl ran unauthenticated. */
   login?: { status: "ok" | "failed"; reason: string | null } | null;
 }

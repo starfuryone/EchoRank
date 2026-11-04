@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { dashboardLocale, SITE_CRAWLER_COPY } from "@/lib/i18n/dashboard";
 import { SiteCrawlerClient } from "@/components/seo-tools/site-crawler-client";
 
@@ -24,8 +25,13 @@ export async function generateMetadata(): Promise<Metadata> {
   return { title: { absolute: t.pageTitle } };
 }
 
-export default async function SiteCrawlerPage() {
+export default async function SiteCrawlerPage({ searchParams }: { searchParams: Promise<{ crawl?: string | string[] }> }) {
+  // The old deep link (/crawler?crawl=<id>, in scheduled-crawl emails already
+  // sent) now has its own page.
+  const { crawl } = await searchParams;
+  const wanted = Array.isArray(crawl) ? crawl[0] : crawl;
+  if (wanted && /^[A-Za-z0-9_-]{1,64}$/.test(wanted)) redirect(`/crawler/${wanted}`);
   const cookieStore = await cookies();
   const locale = dashboardLocale(cookieStore.get("echorank_locale")?.value);
-  return <SiteCrawlerClient locale={locale} />;
+  return <SiteCrawlerClient locale={locale} view="start" />;
 }

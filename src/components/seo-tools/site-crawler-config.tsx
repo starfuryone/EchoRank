@@ -21,6 +21,8 @@ import { flag } from "@/lib/flags";
 import { ExtractorsEditor, SearchesEditor, SegmentsEditor } from "./site-crawler-config-4b";
 import { JsSnippetsEditor } from "./site-crawler-js";
 import { LoginEditor } from "./site-crawler-login";
+import { AdvancedSection, summaryLine } from "./site-crawler-advanced";
+import type { SiteCrawlerUxCopy } from "@/lib/i18n/site-crawler-ux";
 import type { SiteCrawler4eCopy } from "@/lib/i18n/site-crawler-4e";
 import type { SiteCrawler4gCopy } from "@/lib/i18n/site-crawler-4g";
 import type { JsSnippet } from "@/lib/site-crawler/js-snippets";
@@ -269,6 +271,7 @@ export function CrawlConfigSection({
   t,
   t4b,
   t4e,
+  ux,
   renders = false,
   caps,
   rootUrl,
@@ -281,6 +284,8 @@ export function CrawlConfigSection({
   t4b: T4b;
   /** Phase 4e copy; its editors render only when given. */
   t4e?: SiteCrawler4eCopy;
+  /** The Advanced options sub-section titles and summaries. */
+  ux: SiteCrawlerUxCopy;
   /** Phase 4e: the crawl will render pages (custom JavaScript needs it). */
   renders?: boolean;
   caps: FeatureCaps;
@@ -291,7 +296,6 @@ export function CrawlConfigSection({
   /** Phase 4c: the "Run this crawl on a schedule" block, inside the section. */
   children?: React.ReactNode;
 }) {
-  const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState<Draft>(EMPTY);
   const [dirty, setDirty] = useState(false);
   // Read by the site fetch without re-running it when the form is touched.
@@ -304,9 +308,10 @@ export function CrawlConfigSection({
   const [checking, setChecking] = useState<"idle" | "checking" | "failed">("idle");
   const host = hostOf(rootUrl);
 
-  // The site panel follows the start URL's host, once the section is open.
+  // The site panel follows the start URL's host, and its saved defaults fill
+  // an untouched form as soon as the host is known (no need to open anything).
   useEffect(() => {
-    if (!open || !host) return;
+    if (!host) return;
     let cancelled = false;
     const timer = setTimeout(() => {
       void (async () => {
@@ -326,7 +331,7 @@ export function CrawlConfigSection({
       cancelled = true;
       clearTimeout(timer);
     };
-  }, [open, host]);
+  }, [host]);
 
   useEffect(() => {
     onChange({ config: dirty ? toInput(draft) : null, saveAsDefault: dirty && saveAsDefault });
@@ -353,207 +358,240 @@ export function CrawlConfigSection({
 
   const method = (m: string | null) => (m === "gsc" ? t.methodGsc : m === "dns" ? t.methodDns : t.methodMeta);
 
+  const n = (v: number) => String(v);
+  const configSummary = summaryLine(
+    [
+      draft.maxUrls && ux.sumMaxUrls(draft.maxUrls),
+      draft.maxDepth && ux.sumDepth(draft.maxDepth),
+      lines(draft.include).length + lines(draft.exclude).length > 0 && ux.sumPatterns(n(lines(draft.include).length + lines(draft.exclude).length)),
+      draft.speed !== "2" && ux.sumSpeed(draft.speed),
+      draft.userAgent !== "echorank" && ux.sumUa,
+      !draft.respectRobots && ux.sumRobots,
+      draft.customRobots.trim() !== "" && ux.sumCustomRobots,
+      (draft.headers.length > 0 || draft.cookies !== "" || draft.cookiesSaved || draft.basicUser !== "") && ux.sumCredentials,
+    ],
+    ux.notSet,
+  );
+  const extractSummary = summaryLine(
+    [draft.extractors.length > 0 && ux.sumExtractors(n(draft.extractors.length)), draft.searches.length > 0 && ux.sumSearches(n(draft.searches.length))],
+    ux.notSet,
+  );
+
+  // Each part is its own collapsed sub-section of the start card's Advanced
+  // options; one fieldset each, so "disabled" still covers every control.
   return (
-    <details
-      className="mt-4 rounded-lg border border-gray-200 bg-white"
-      onToggle={(e) => setOpen((e.currentTarget as HTMLDetailsElement).open)}
-    >
-      <summary className="cursor-pointer select-none px-4 py-3 text-sm font-medium text-gray-900">{t.configTitle}</summary>
-      <fieldset disabled={disabled} className="space-y-5 border-t border-gray-100 px-4 py-4">
-        <p className="text-xs text-gray-500">{t.configHelp}</p>
-
-        {site && (
-          <div className="rounded-lg bg-gray-50 p-3 text-sm">
-            <p className="font-medium text-gray-900">
-              {t.verifyTitle(site.host)} ·{" "}
-              <span className={verified ? "text-green-700" : "text-gray-600"}>
-                {verified ? t.verified(method(site.verifyMethod)) : t.notVerified}
-              </span>
-            </p>
-            {!verified && (
-              <div className="mt-2 space-y-2">
-                <p className="text-xs text-gray-600">{t.verifyHelp}</p>
-                <p className="text-xs font-medium text-gray-700">{t.verifyMeta}</p>
-                <CopyLine value={site.metaTag} t={t} />
-                <p className="text-xs font-medium text-gray-700">{t.verifyDns}</p>
-                <CopyLine value={site.dnsRecord} t={t} />
-                <div className="flex items-center gap-3">
-                  <Button type="button" size="sm" variant="outline" onClick={verify} disabled={checking === "checking"}>
-                    {checking === "checking" ? t.verifyChecking : t.verifyCheck}
-                  </Button>
-                  {checking === "failed" && <span className="text-xs text-gray-500">{t.verifyFailed}</span>}
+    <>
+      <AdvancedSection id="config" title={ux.secConfig} summary={configSummary}>
+        <fieldset disabled={disabled} className="space-y-5">
+          <p className="text-xs text-gray-600">{t.configHelp}</p>
+          {site && (
+            <div className="rounded-lg bg-gray-50 p-3 text-sm">
+              <p className="font-medium text-gray-900">
+                {t.verifyTitle(site.host)} ·{" "}
+                <span className={verified ? "text-green-700" : "text-gray-600"}>
+                  {verified ? t.verified(method(site.verifyMethod)) : t.notVerified}
+                </span>
+              </p>
+              {!verified && (
+                <div className="mt-2 space-y-2">
+                  <p className="text-xs text-gray-600">{t.verifyHelp}</p>
+                  <p className="text-xs font-medium text-gray-700">{t.verifyMeta}</p>
+                  <CopyLine value={site.metaTag} t={t} />
+                  <p className="text-xs font-medium text-gray-700">{t.verifyDns}</p>
+                  <CopyLine value={site.dnsRecord} t={t} />
+                  <div className="flex items-center gap-3">
+                    <Button type="button" size="sm" variant="outline" onClick={verify} disabled={checking === "checking"}>
+                      {checking === "checking" ? t.verifyChecking : t.verifyCheck}
+                    </Button>
+                    {checking === "failed" && <span className="text-xs text-gray-500">{t.verifyFailed}</span>}
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
-        )}
-
-        <div className="grid gap-4 sm:grid-cols-2">
-          <Field label={t.maxUrls} hint={t.maxUrlsHint(urlCap)} htmlFor="cfg-max-urls">
-            <Input id="cfg-max-urls" inputMode="numeric" value={draft.maxUrls} onChange={(e) => set("maxUrls", e.target.value.replace(/\D/g, ""))} />
-          </Field>
-          <Field label={t.maxDepth} hint={t.maxDepthHint} htmlFor="cfg-max-depth">
-            <Input id="cfg-max-depth" inputMode="numeric" value={draft.maxDepth} onChange={(e) => set("maxDepth", e.target.value.replace(/\D/g, "").slice(0, 3))} />
-          </Field>
-          <Field label={t.include} hint={t.patternsHint} htmlFor="cfg-include">
-            <textarea id="cfg-include" rows={3} className="w-full rounded-lg border border-gray-300 px-3 py-2 font-mono text-xs" value={draft.include} onChange={(e) => set("include", e.target.value)} />
-          </Field>
-          <Field label={t.exclude} hint={t.patternsHint} htmlFor="cfg-exclude">
-            <textarea id="cfg-exclude" rows={3} className="w-full rounded-lg border border-gray-300 px-3 py-2 font-mono text-xs" value={draft.exclude} onChange={(e) => set("exclude", e.target.value)} />
-          </Field>
-        </div>
-
-        <div className="flex flex-wrap gap-x-6 gap-y-2">
-          <Toggle id="cfg-subdomains" label={t.subdomains} checked={draft.crawlSubdomains} onChange={(v) => set("crawlSubdomains", v)} />
-          <Toggle id="cfg-nofollow" label={t.followNofollow} checked={draft.followNofollow} onChange={(v) => set("followNofollow", v)} />
-        </div>
-
-        <div className="grid gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Select
-              id="cfg-query"
-              label={t.queryLabel}
-              value={draft.queryStrings}
-              onChange={(e) => set("queryStrings", e.target.value as QueryMode)}
-              options={[
-                { value: "keep", label: t.queryKeep },
-                { value: "strip_all", label: t.queryStripAll },
-                { value: "strip_listed", label: t.queryStripListed },
-              ]}
-            />
-            {draft.queryStrings === "strip_listed" && (
-              <Input aria-label={t.stripParams} placeholder={t.stripParams} value={draft.stripParams} onChange={(e) => set("stripParams", e.target.value)} />
-            )}
-          </div>
-          <Select
-            id="cfg-speed"
-            label={t.speed}
-            value={draft.speed}
-            onChange={(e) => set("speed", e.target.value)}
-            options={["2", "1.5", "1", "0.5"].map((v) => ({ value: v, label: t.speedValue(v) }))}
-          />
-          <div className="space-y-2">
-            <Select
-              id="cfg-ua"
-              label={t.uaLabel}
-              value={draft.userAgent}
-              onChange={(e) => set("userAgent", e.target.value as UserAgentChoice)}
-              disabled={!verified}
-              options={[
-                { value: "echorank", label: t.uaEchorank },
-                { value: "googlebot_smartphone", label: t.uaGoogleSmart },
-                { value: "googlebot_desktop", label: t.uaGoogleDesktop },
-                { value: "custom", label: t.uaCustom },
-              ]}
-            />
-            {!verified && <p className="text-xs text-gray-500">{t.verifiedOnly}</p>}
-            {draft.userAgent === "custom" && (
-              <Input aria-label={t.customUa} placeholder={t.customUa} maxLength={CONFIG_LIMITS.customUaChars} value={draft.customUserAgent} onChange={(e) => set("customUserAgent", e.target.value)} />
-            )}
-          </div>
-          <Toggle
-            id="cfg-robots"
-            label={t.respectRobots}
-            checked={draft.respectRobots}
-            disabled={!verified}
-            onChange={(v) => set("respectRobots", v)}
-            note={verified ? undefined : t.verifiedOnly}
-          />
-        </div>
-
-        <div className="space-y-2">
-          <p className="text-xs font-medium text-gray-700">{t.headersLabel}</p>
-          {draft.headers.map((h, i) => (
-            <div key={i} className="flex flex-wrap gap-2">
-              <Input
-                aria-label={t.headerName}
-                placeholder={t.headerName}
-                className="w-40"
-                value={h.name}
-                onChange={(e) => set("headers", draft.headers.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)))}
-              />
-              <Input
-                aria-label={t.headerValue}
-                placeholder={h.saved ? t.secretSaved : t.headerValue}
-                className="min-w-0 flex-1"
-                type="password"
-                autoComplete="off"
-                value={h.value}
-                onChange={(e) => set("headers", draft.headers.map((x, j) => (j === i ? { ...x, value: e.target.value } : x)))}
-              />
-              <button type="button" aria-label={t.removeHeader} className="text-gray-400 hover:text-gray-700" onClick={() => set("headers", draft.headers.filter((_, j) => j !== i))}>
-                <Trash2 className="h-4 w-4" aria-hidden="true" />
-              </button>
+              )}
             </div>
-          ))}
-          {draft.headers.length < CONFIG_LIMITS.headers && (
-            <Button type="button" size="sm" variant="outline" onClick={() => set("headers", [...draft.headers, { name: "", value: "", saved: false }])}>
-              <Plus className="h-4 w-4" aria-hidden="true" /> {t.addHeader}
-            </Button>
           )}
-        </div>
 
-        <div className="grid gap-4 sm:grid-cols-3">
-          <Field label={t.cookies} htmlFor="cfg-cookies">
-            <Input id="cfg-cookies" type="password" autoComplete="off" placeholder={draft.cookiesSaved ? t.secretSaved : ""} value={draft.cookies} onChange={(e) => set("cookies", e.target.value)} />
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Field label={t.maxUrls} hint={t.maxUrlsHint(urlCap)} htmlFor="cfg-max-urls">
+              <Input id="cfg-max-urls" inputMode="numeric" value={draft.maxUrls} onChange={(e) => set("maxUrls", e.target.value.replace(/\D/g, ""))} />
+            </Field>
+            <Field label={t.maxDepth} hint={t.maxDepthHint} htmlFor="cfg-max-depth">
+              <Input id="cfg-max-depth" inputMode="numeric" value={draft.maxDepth} onChange={(e) => set("maxDepth", e.target.value.replace(/\D/g, "").slice(0, 3))} />
+            </Field>
+            <Field label={t.include} hint={t.patternsHint} htmlFor="cfg-include">
+              <textarea id="cfg-include" rows={3} className="w-full rounded-lg border border-gray-300 px-3 py-2 font-mono text-xs" value={draft.include} onChange={(e) => set("include", e.target.value)} />
+            </Field>
+            <Field label={t.exclude} hint={t.patternsHint} htmlFor="cfg-exclude">
+              <textarea id="cfg-exclude" rows={3} className="w-full rounded-lg border border-gray-300 px-3 py-2 font-mono text-xs" value={draft.exclude} onChange={(e) => set("exclude", e.target.value)} />
+            </Field>
+          </div>
+
+          <div className="flex flex-wrap gap-x-6 gap-y-2">
+            <Toggle id="cfg-subdomains" label={t.subdomains} checked={draft.crawlSubdomains} onChange={(v) => set("crawlSubdomains", v)} />
+            <Toggle id="cfg-nofollow" label={t.followNofollow} checked={draft.followNofollow} onChange={(v) => set("followNofollow", v)} />
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Select
+                id="cfg-query"
+                label={t.queryLabel}
+                value={draft.queryStrings}
+                onChange={(e) => set("queryStrings", e.target.value as QueryMode)}
+                options={[
+                  { value: "keep", label: t.queryKeep },
+                  { value: "strip_all", label: t.queryStripAll },
+                  { value: "strip_listed", label: t.queryStripListed },
+                ]}
+              />
+              {draft.queryStrings === "strip_listed" && (
+                <Input aria-label={t.stripParams} placeholder={t.stripParams} value={draft.stripParams} onChange={(e) => set("stripParams", e.target.value)} />
+              )}
+            </div>
+            <Select
+              id="cfg-speed"
+              label={t.speed}
+              value={draft.speed}
+              onChange={(e) => set("speed", e.target.value)}
+              options={["2", "1.5", "1", "0.5"].map((v) => ({ value: v, label: t.speedValue(v) }))}
+            />
+            <div className="space-y-2">
+              <Select
+                id="cfg-ua"
+                label={t.uaLabel}
+                value={draft.userAgent}
+                onChange={(e) => set("userAgent", e.target.value as UserAgentChoice)}
+                disabled={!verified}
+                options={[
+                  { value: "echorank", label: t.uaEchorank },
+                  { value: "googlebot_smartphone", label: t.uaGoogleSmart },
+                  { value: "googlebot_desktop", label: t.uaGoogleDesktop },
+                  { value: "custom", label: t.uaCustom },
+                ]}
+              />
+              {!verified && <p className="text-xs text-gray-500">{t.verifiedOnly}</p>}
+              {draft.userAgent === "custom" && (
+                <Input aria-label={t.customUa} placeholder={t.customUa} maxLength={CONFIG_LIMITS.customUaChars} value={draft.customUserAgent} onChange={(e) => set("customUserAgent", e.target.value)} />
+              )}
+            </div>
+            <Toggle
+              id="cfg-robots"
+              label={t.respectRobots}
+              checked={draft.respectRobots}
+              disabled={!verified}
+              onChange={(v) => set("respectRobots", v)}
+              note={verified ? undefined : t.verifiedOnly}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <p className="text-xs font-medium text-gray-700">{t.headersLabel}</p>
+            {draft.headers.map((h, i) => (
+              <div key={i} className="flex flex-wrap gap-2">
+                <Input
+                  aria-label={t.headerName}
+                  placeholder={t.headerName}
+                  className="w-40"
+                  value={h.name}
+                  onChange={(e) => set("headers", draft.headers.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)))}
+                />
+                <Input
+                  aria-label={t.headerValue}
+                  placeholder={h.saved ? t.secretSaved : t.headerValue}
+                  className="min-w-0 flex-1"
+                  type="password"
+                  autoComplete="off"
+                  value={h.value}
+                  onChange={(e) => set("headers", draft.headers.map((x, j) => (j === i ? { ...x, value: e.target.value } : x)))}
+                />
+                <button type="button" aria-label={t.removeHeader} className="text-gray-400 hover:text-gray-700" onClick={() => set("headers", draft.headers.filter((_, j) => j !== i))}>
+                  <Trash2 className="h-4 w-4" aria-hidden="true" />
+                </button>
+              </div>
+            ))}
+            {draft.headers.length < CONFIG_LIMITS.headers && (
+              <Button type="button" size="sm" variant="outline" onClick={() => set("headers", [...draft.headers, { name: "", value: "", saved: false }])}>
+                <Plus className="h-4 w-4" aria-hidden="true" /> {t.addHeader}
+              </Button>
+            )}
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-3">
+            <Field label={t.cookies} htmlFor="cfg-cookies">
+              <Input id="cfg-cookies" type="password" autoComplete="off" placeholder={draft.cookiesSaved ? t.secretSaved : ""} value={draft.cookies} onChange={(e) => set("cookies", e.target.value)} />
+            </Field>
+            <Field label={t.basicUser} htmlFor="cfg-basic-user">
+              <Input id="cfg-basic-user" autoComplete="off" value={draft.basicUser} onChange={(e) => set("basicUser", e.target.value)} />
+            </Field>
+            <Field label={t.basicPassword} htmlFor="cfg-basic-pw">
+              <Input id="cfg-basic-pw" type="password" autoComplete="new-password" placeholder={draft.basicSaved ? t.secretSaved : ""} value={draft.basicPassword} onChange={(e) => set("basicPassword", e.target.value)} />
+            </Field>
+          </div>
+          <p className="text-xs text-gray-500">{t.secretsNote}</p>
+
+          <Field label={t.customRobots} hint={verified ? t.customRobotsReplace : t.customRobotsTest} htmlFor="cfg-custom-robots">
+            <textarea
+              id="cfg-custom-robots"
+              rows={5}
+              maxLength={CONFIG_LIMITS.customRobotsChars}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 font-mono text-xs"
+              placeholder={"User-agent: *\nDisallow: /search"}
+              value={draft.customRobots}
+              onChange={(e) => set("customRobots", e.target.value)}
+            />
           </Field>
-          <Field label={t.basicUser} htmlFor="cfg-basic-user">
-            <Input id="cfg-basic-user" autoComplete="off" value={draft.basicUser} onChange={(e) => set("basicUser", e.target.value)} />
-          </Field>
-          <Field label={t.basicPassword} htmlFor="cfg-basic-pw">
-            <Input id="cfg-basic-pw" type="password" autoComplete="new-password" placeholder={draft.basicSaved ? t.secretSaved : ""} value={draft.basicPassword} onChange={(e) => set("basicPassword", e.target.value)} />
-          </Field>
-        </div>
-        <p className="text-xs text-gray-500">{t.secretsNote}</p>
 
-        <Field label={t.customRobots} hint={verified ? t.customRobotsReplace : t.customRobotsTest} htmlFor="cfg-custom-robots">
-          <textarea
-            id="cfg-custom-robots"
-            rows={5}
-            maxLength={CONFIG_LIMITS.customRobotsChars}
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 font-mono text-xs"
-            placeholder={"User-agent: *\nDisallow: /search"}
-            value={draft.customRobots}
-            onChange={(e) => set("customRobots", e.target.value)}
-          />
-        </Field>
+          {host && <RobotsTester t={t} rootUrl={rootUrl} customRobots={draft.customRobots} />}
 
-        {host && <RobotsTester t={t} rootUrl={rootUrl} customRobots={draft.customRobots} />}
-
-        {flag("crawl.extraction") && (
-          <ExtractorsEditor
-            t={t4b}
-            value={draft.extractors}
-            cap={caps.extractors}
-            capText={String(caps.extractors)}
-            onChange={(v) => set("extractors", v)}
-          />
-        )}
-        {flag("crawl.extraction") && (
-          <SearchesEditor
-            t={t4b}
-            value={draft.searches}
-            cap={caps.searches}
-            capText={String(caps.searches)}
-            onChange={(v) => set("searches", v)}
-          />
-        )}
-        {flag("crawl.segments") && host && (
-          <SegmentsEditor t={t4b} host={host} cap={caps.segments} extractorNames={draft.extractors.map((e) => e.name)} />
-        )}
-
-        {flag("crawl.login") && t4e && host && (
-          <LoginEditor t={t4e} host={host} verified={verified} use={draft.useLogin} onUse={(v) => set("useLogin", v)} disabled={disabled} />
-        )}
-
-        {flag("crawl.customJs") && t4e && (caps.js ?? 0) > 0 && (
-          <JsSnippetsEditor t={t4e} value={draft.js} cap={caps.js ?? 0} verified={verified} renders={renders} onChange={(v) => set("js", v)} />
-        )}
-
-        <Toggle id="cfg-save-default" label={t.saveDefault} checked={saveAsDefault} onChange={(v) => { setSaveAsDefault(v); setDirty(true); }} />
-      </fieldset>
-      {children}
-    </details>
+  <Toggle id="cfg-save-default" label={t.saveDefault} checked={saveAsDefault} onChange={(v) => { setSaveAsDefault(v); setDirty(true); }} />
+        </fieldset>
+        {children}
+      </AdvancedSection>
+      {flag("crawl.extraction") && (
+        <AdvancedSection id="extraction" title={ux.secExtraction} summary={extractSummary}>
+          <fieldset disabled={disabled} className="space-y-5">
+            {flag("crawl.extraction") && (
+              <ExtractorsEditor
+                t={t4b}
+                value={draft.extractors}
+                cap={caps.extractors}
+                capText={String(caps.extractors)}
+                onChange={(v) => set("extractors", v)}
+              />
+            )}
+            {flag("crawl.extraction") && (
+              <SearchesEditor
+                t={t4b}
+                value={draft.searches}
+                cap={caps.searches}
+                capText={String(caps.searches)}
+                onChange={(v) => set("searches", v)}
+              />
+            )}
+          </fieldset>
+        </AdvancedSection>
+      )}
+      {flag("crawl.segments") && host && (
+        <AdvancedSection id="segments" title={ux.secSegments} summary={ux.segmentsSummary}>
+          <fieldset disabled={disabled}>
+            <SegmentsEditor t={t4b} host={host} cap={caps.segments} extractorNames={draft.extractors.map((e) => e.name)} />
+          </fieldset>
+        </AdvancedSection>
+      )}
+      {flag("crawl.customJs") && t4e && (caps.js ?? 0) > 0 && (
+        <AdvancedSection id="js" title={ux.secJs} summary={draft.js.length ? ux.sumSnippets(n(draft.js.length)) : ux.notSet}>
+          <fieldset disabled={disabled}>
+            <JsSnippetsEditor t={t4e} value={draft.js} cap={caps.js ?? 0} verified={verified} renders={renders} onChange={(v) => set("js", v)} />
+          </fieldset>
+        </AdvancedSection>
+      )}
+      {flag("crawl.login") && t4e && host && (
+        <AdvancedSection id="login" title={ux.secLogin} summary={draft.useLogin ? ux.on : ux.off}>
+          <fieldset disabled={disabled}>
+            <LoginEditor t={t4e} host={host} verified={verified} use={draft.useLogin} onUse={(v) => set("useLogin", v)} disabled={disabled} />
+          </fieldset>
+        </AdvancedSection>
+      )}
+    </>
   );
 }
 

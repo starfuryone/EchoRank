@@ -98,28 +98,8 @@ function TopPicker({
   );
 }
 
-export function AddDataSection({
-  t,
-  host,
-  quota,
-  value,
-  onChange,
-  disabled = false,
-  children,
-  extra,
-}: {
-  t: SiteCrawler4dCopy;
-  /** The start URL's host, for its saved segments. */
-  host: string | null;
-  quota: AddDataQuota;
-  value: AddData | null;
-  onChange: (v: AddData | null) => void;
-  disabled?: boolean;
-  /** Later opt-ins and the source status lines. */
-  children?: React.ReactNode;
-  /** Phase 4e: opt-ins that also pick a segment (the AI prompts), given the host's segment names. */
-  extra?: (segments: string[]) => React.ReactNode;
-}) {
+/** The host's saved segment names (for the top-N "chosen by" pickers). */
+export function useSiteSegmentNames(host: string | null): string[] {
   const [segments, setSegments] = useState<{ host: string; names: string[] } | null>(null);
   useEffect(() => {
     if (!host || !flag("crawl.segments")) return;
@@ -134,15 +114,45 @@ export function AddDataSection({
       cancelled = true;
     };
   }, [host]);
-  const names = segments?.host === host ? segments.names : [];
+  return segments?.host === host ? segments.names : [];
+}
+
+export function AddDataSection({
+  t,
+  host,
+  quota,
+  value,
+  onChange,
+  disabled = false,
+  children,
+  extra,
+  bare = false,
+}: {
+  t: SiteCrawler4dCopy;
+  /** The start URL's host, for its saved segments. */
+  host: string | null;
+  quota: AddDataQuota;
+  value: AddData | null;
+  onChange: (v: AddData | null) => void;
+  disabled?: boolean;
+  /** Later opt-ins and the source status lines. */
+  children?: React.ReactNode;
+  /** Phase 4e: opt-ins that also pick a segment (the AI prompts), given the host's segment names. */
+  extra?: (segments: string[]) => React.ReactNode;
+  /** Inside an Advanced options sub-section: no box and no heading of its own. */
+  bare?: boolean;
+}) {
+  const names = useSiteSegmentNames(host);
   const left = Math.max(0, quota.lighthouseLimit - quota.lighthouseUsed);
 
   return (
-    <section className="mt-4 space-y-3 rounded-lg border border-gray-100 p-3" aria-labelledby="crawl-add-data-title">
-      <h4 id="crawl-add-data-title" className="text-sm font-semibold text-gray-900">
-        {t.addTitle}
-      </h4>
-      <p className="text-xs text-gray-500">{t.addHelp}</p>
+    <section className={bare ? "space-y-3" : "mt-4 space-y-3 rounded-lg border border-gray-100 p-3"} aria-labelledby={bare ? undefined : "crawl-add-data-title"}>
+      {!bare && (
+        <h4 id="crawl-add-data-title" className="text-sm font-semibold text-gray-900">
+          {t.addTitle}
+        </h4>
+      )}
+      <p className="text-xs text-gray-600">{t.addHelp}</p>
       {children}
       {flag("crawl.psi") && (
         <div className="space-y-1">

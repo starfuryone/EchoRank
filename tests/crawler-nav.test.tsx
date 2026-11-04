@@ -14,6 +14,7 @@ vi.mock("next/navigation", () => ({
   usePathname: () => nav.pathname,
   permanentRedirect: (url: string) => nav.redirect(url),
   useSearchParams: () => new URLSearchParams(),
+  useRouter: () => ({ push: () => {}, replace: () => {} }),
 }));
 
 import { Sidebar, activeNavHref } from "@/components/layout/sidebar";
