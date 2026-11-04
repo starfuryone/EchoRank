@@ -59,6 +59,9 @@ export interface CrawlQuota {
   /** Phase 4e: custom JS snippets and AI-prompted pages per crawl. */
   jsSnippetCap: number;
   aiPageCap: number;
+  /** Phase 4g: semantic-duplicate pages and URL Inspection pages per crawl. */
+  semanticCap: number;
+  inspectionCap: number;
   /** Phase 4d: the Lighthouse tool's hourly allowance, which PSI opt-ins draw from. */
   lighthouseUsed: number;
   lighthouseLimit: number;
@@ -92,6 +95,12 @@ export function scheduleCapsForPlan(plan: PlanType): { scheduleCap: number; sche
 export function metricCapsForPlan(plan: PlanType): { psiCap: number; backlinkCap: number } {
   const c = planConfig(plan);
   return { psiCap: c.crawlPsiPages, backlinkCap: c.crawlBacklinkPages };
+}
+
+/** Phase 4g per-crawl caps: semantically compared pages and URL Inspection pages. */
+export function parityCapsForPlan(plan: PlanType): { semanticCap: number; inspectionCap: number } {
+  const c = planConfig(plan);
+  return { semanticCap: c.crawlSemanticPages, inspectionCap: c.crawlInspectionPages };
 }
 
 /** Phase 4e per-crawl caps: custom JS snippets and AI-prompted pages. */
@@ -134,7 +143,7 @@ export async function getCrawlQuota(
   const monthlyLimit = monthlyLimitForPlan(plan);
   const locked = urlCap <= 0;
   const crawlsKept = planConfig(plan).crawlsKept;
-  const caps = { ...featureCapsForPlan(plan), ...scheduleCapsForPlan(plan), ...metricCapsForPlan(plan), ...renderFeatureCapsForPlan(plan) };
+  const caps = { ...featureCapsForPlan(plan), ...scheduleCapsForPlan(plan), ...metricCapsForPlan(plan), ...renderFeatureCapsForPlan(plan), ...parityCapsForPlan(plan) };
 
   // A locked tier never runs a query it cannot act on.
   if (locked) {

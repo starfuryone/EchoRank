@@ -89,6 +89,9 @@ export interface CrawlQuotaDto {
   /** Phase 4e: custom JS snippets and AI-prompted pages per crawl. */
   jsSnippetCap?: number;
   aiPageCap?: number;
+  /** Phase 4g. */
+  semanticCap?: number;
+  inspectionCap?: number;
   lighthouseUsed?: number;
   lighthouseLimit?: number;
   backlinkUnitUsd?: number;

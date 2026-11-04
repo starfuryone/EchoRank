@@ -2344,6 +2344,10 @@ model CrawlPage {
   relNext             String?
   relPrev             String?
   /// Phase 4e: the first <link rel="amphtml"> target, absolute; and whether this page is an AMP document.
+  /// Phase 4g: internal PageRank (damping 0.85, 20 iterations), log-scaled 0–100.
+  linkScore           Float?   @db.Real
+  /// Phase 4g: text-embedding-3-small, 256 dimensions, Float32 little-endian (1 KB).
+  embedding           Bytes?
   ampHtml             String?
   isAmp               Boolean?
   bytes               Int?
@@ -2425,6 +2429,12 @@ model CrawlLink {
   nofollow   Boolean @default(false)
   /// Order of the first such link on the page, 0-based.
   position   Int     @db.SmallInt
+  /// Phase 4g: an outbound link (another site). Deduped per (page, URL), at
+  /// most 50 per page; toPageId stays null.
+  isExternal Boolean @default(false)
+  /// Phase 4g: the external target's HTTP status, resolved once per URL per
+  /// crawl at aggregation; null = not checked (cap) or no answer.
+  status     Int?    @db.SmallInt
 
   crawlJob CrawlJob  @relation(fields: [crawlJobId], references: [id], onDelete: Cascade)
   /// Cascade: retention deletes a crawl's pages and the edges go with them.
@@ -2432,6 +2442,7 @@ model CrawlLink {
 
   @@index([crawlJobId, toPageId])
   @@index([crawlJobId, fromPageId])
+  @@index([crawlJobId, isExternal, toUrl])
   @@map("crawl_links")
 }
 
@@ -2595,6 +2606,7 @@ enum CrawlMetricSource {
   psi
   ga4
   backlinks
+  gsc_inspection
 }
 
 /// Phase 4d: one external data source joined onto one crawled page. data is

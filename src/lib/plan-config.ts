@@ -348,6 +348,13 @@ export interface PlanConfig {
    */
   crawlJsSnippets: number;
   crawlAiPages: number;
+  /**
+   * Phase 4g, per crawl: pages embedded for semantic duplicates (the tenant's
+   * own OpenAI key), and pages sent to Search Console URL Inspection (within
+   * Google's 2,000/day per property).
+   */
+  crawlSemanticPages: number;
+  crawlInspectionPages: number;
   /** Shape of one AI Visibility checkup for this tier. */
   aiCheckup: AiCheckupShape;
   /**
@@ -471,6 +478,8 @@ export const PLAN_CONFIGS: Record<SellablePlanType, PlanConfig> = {
     crawlBacklinkPages: 10,
     crawlJsSnippets: 1,
     crawlAiPages: 20,
+    crawlSemanticPages: 500,
+    crawlInspectionPages: 50,
     // The shape the retired AI Visibility tier sold: two providers and one
     // repetition. Repeatability needs >1 and stays a GROWTH feature.
     aiCheckup: { frequency: "weekly", providers: 2, prompts: 10, repetitions: 1 },
@@ -523,6 +532,8 @@ export const PLAN_CONFIGS: Record<SellablePlanType, PlanConfig> = {
     crawlBacklinkPages: 50,
     crawlJsSnippets: 3,
     crawlAiPages: 100,
+    crawlSemanticPages: 2_000,
+    crawlInspectionPages: 200,
     aiCheckup: { frequency: "twice_weekly", providers: 4, prompts: 15, repetitions: 2 },
     aiProjects: 3,
     aiMonthlyCapUsd: 40,
@@ -573,6 +584,8 @@ export const PLAN_CONFIGS: Record<SellablePlanType, PlanConfig> = {
     crawlBacklinkPages: 100,
     crawlJsSnippets: 5,
     crawlAiPages: 500,
+    crawlSemanticPages: 5_000,
+    crawlInspectionPages: 500,
     aiCheckup: { frequency: "daily", providers: null, prompts: 20, repetitions: 3 },
     aiProjects: 25,
     aiMonthlyCapUsd: 150,
@@ -623,6 +636,8 @@ export const PLAN_CONFIGS: Record<SellablePlanType, PlanConfig> = {
     crawlBacklinkPages: 100,
     crawlJsSnippets: 5,
     crawlAiPages: 500,
+    crawlSemanticPages: 5_000,
+    crawlInspectionPages: 500,
     // "custom": the schedule is set per contract, so the scheduler reads the
     // brand profile rather than a cadence baked in here.
     aiCheckup: { frequency: "custom", providers: null, prompts: 20, repetitions: 3 },
