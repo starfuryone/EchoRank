@@ -55,8 +55,8 @@ import { ExtractionPanel } from "@/components/seo-tools/site-crawler-extraction"
 import { ComparePanel } from "@/components/seo-tools/site-crawler-compare";
 import { CrawlSchedules } from "@/components/seo-tools/site-crawler-schedules";
 import { SheetsExport } from "@/components/seo-tools/site-crawler-sheets";
-import { helpArticleHref } from "@/lib/help-articles";
-import { LOOKER_STUDIO_SLUG } from "@/lib/help-articles-crawler";
+import { ReportDownloadButton } from "@/components/reports/ReportDownloadButton";
+import { lookerStudioHref } from "@/lib/site-crawler/sheets-layout";
 import { SegmentOverview, SegmentPicker } from "@/components/seo-tools/site-crawler-segments";
 import type { ConfigProblem, CrawlConfigInput } from "@/lib/site-crawler/crawl-config";
 import { parseUrlList } from "@/lib/site-crawler/url-list";
@@ -602,9 +602,15 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
                 </p>
                 <p className="text-xs text-gray-500">{formatDateTime(active.createdAt, locale)}</p>
               </div>
-              <Badge variant={active.status === "FAILED" ? "danger" : "default"}>
-                {statusLabel(active.status, t)}
-              </Badge>
+              <div className="flex items-center gap-2">
+                {/* Phase 4c: the PDF crawl report; the button probes the route and hides itself when unavailable. */}
+                {flag("crawl.reports") && active.status === "COMPLETED" && !active.dataPurgedAt && (
+                  <ReportDownloadButton key={active.id} endpoint={`/api/seo/v1/crawl/${active.id}/report`} />
+                )}
+                <Badge variant={active.status === "FAILED" ? "danger" : "default"}>
+                  {statusLabel(active.status, t)}
+                </Badge>
+              </div>
             </div>
           </CardHeader>
 
@@ -646,7 +652,7 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
                   }}
                 />
                 {flag("crawl.sheets") && active.status === "COMPLETED" && !active.dataPurgedAt && (
-                  <SheetsExport crawlId={active.id} t={t.p4c} int={int} guideHref={helpArticleHref(locale, LOOKER_STUDIO_SLUG)} />
+                  <SheetsExport crawlId={active.id} t={t.p4c} int={int} guideHref={lookerStudioHref(locale)} />
                 )}
               </div>
             )}

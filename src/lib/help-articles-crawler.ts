@@ -17,9 +17,9 @@
 // Dependency-free: the proxy reaches this through help-articles.ts.
 
 import type { HelpArticle } from "./help-articles";
-import { COMPARE_HEADER, ISSUES_HEADER, PAGES_HEADER, SHEETS_PAGE_ROWS, SUMMARY_HEADER } from "./site-crawler/sheets-layout";
+import { COMPARE_HEADER, ISSUES_HEADER, LOOKER_STUDIO_SLUG, PAGES_HEADER, SHEETS_PAGE_ROWS, SUMMARY_HEADER } from "./site-crawler/sheets-layout";
 
-export const LOOKER_STUDIO_SLUG = "looker-studio-crawl-report";
+export { LOOKER_STUDIO_SLUG };
 
 const cols = (h: readonly string[]) => h.map((c) => `\`${c}\``).join(", ");
 const n = (v: number, fr: boolean) => new Intl.NumberFormat(fr ? "fr-CA" : "en-US").format(v);

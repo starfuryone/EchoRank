@@ -32,3 +32,8 @@ export const COMPARE_HEADER = ["Crawl ID", "Compared with", "Measure", "Value"] 
 
 /** Rows the Pages tab holds at most (one export). */
 export const SHEETS_PAGE_ROWS = 50_000;
+
+/** The Looker Studio guide's help-article slug (help-articles-crawler.ts). */
+export const LOOKER_STUDIO_SLUG = "looker-studio-crawl-report";
+/** Same shape as helpArticleHref(locale, slug), without pulling every article's copy into a client bundle. */
+export const lookerStudioHref = (locale: string) => `/${locale}/help/${LOOKER_STUDIO_SLUG}`;
