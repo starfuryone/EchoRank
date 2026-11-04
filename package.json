@@ -50,6 +50,8 @@
     "cheerio": "^1.2.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "d3-force": "3.0.0",
+    "d3-hierarchy": "3.1.2",
     "date-fns": "^4.3.0",
     "dictionary-de": "3.0.0",
     "dictionary-en": "4.0.0",
@@ -84,6 +86,8 @@
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@types/bcryptjs": "^2.4.6",
+    "@types/d3-force": "3.0.10",
+    "@types/d3-hierarchy": "3.1.7",
     "@types/node": "^20",
     "@types/nodemailer": "^8.0.0",
     "@types/nspell": "2.1.6",
@@ -101,5 +105,10 @@
     "tsx": "^4.22.3",
     "typescript": "^5",
     "vitest": "^4.1.10"
+  },
+  "overrides": {
+    "d3-dispatch": "3.0.1",
+    "d3-quadtree": "3.0.1",
+    "d3-timer": "3.0.1"
   }
 }

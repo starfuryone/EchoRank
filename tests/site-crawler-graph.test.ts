@@ -66,6 +66,17 @@ describe("GET /crawl/[id]/graph", () => {
     expect(crawlLink.findMany.mock.calls[0]![0].where).toEqual({ crawlJobId: "c1", fromPageId: { in: ["r", "a"] }, toPageId: { in: ["r", "a"] } });
   });
 
+  it("Phase 4c: ?segment=N narrows the node set; an unknown segment is a 400", async () => {
+    crawlJob.findFirst.mockResolvedValue({
+      id: "c1",
+      dataPurgedAt: null,
+      config: { segments: [{ name: "Blog", rule: { kind: "urlPattern", pattern: "/blog/*" } }] },
+    });
+    expect((await get("?kind=links&segment=0")).status).toBe(200);
+    expect(crawlPage.findMany.mock.calls[0]![0].where).toEqual({ crawlJobId: "c1", segmentIds: { has: 0 } });
+    expect((await get("?kind=directory&segment=1")).status).toBe(400);
+  });
+
   it.each(["", "?kind=sideways", "?kind=links&limit=2001", "?kind=links&limit=0"])("400 on %s", async (qs) => {
     expect((await get(qs)).status).toBe(400);
   });

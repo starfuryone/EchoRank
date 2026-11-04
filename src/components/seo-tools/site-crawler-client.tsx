@@ -13,6 +13,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { AlertCircle, CircleQuestionMark, Download, Loader2, Network } from "lucide-react";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -59,7 +60,7 @@ import { SITE_CRAWLER_COPY, type DashLocale, type SiteCrawlerCopy } from "@/lib/
 import { CRAWLER_BRAND } from "@/lib/site-crawler/brand";
 import { helpArticleFor, learnHref } from "@/lib/help-content";
 
-type TabId = "overview" | "rules" | "issues" | "duplicates" | "redirects" | "pages" | "extraction";
+type TabId = "overview" | "rules" | "issues" | "duplicates" | "redirects" | "pages" | "structure" | "extraction";
 
 /** The Issues filter: every registry rule, by name. Pre-3a rows match through legacy-map. */
 const RULE_OPTIONS = RULE_IDS.map((id) => ({ value: id, label: RULE_COPY[id]?.name ?? id })).sort((a, b) =>
@@ -68,9 +69,18 @@ const RULE_OPTIONS = RULE_IDS.map((id) => ({ value: id, label: RULE_COPY[id]?.na
 
 const TABS: TabId[] = ["overview", "rules", "issues", "duplicates", "redirects", "pages"];
 
-/** The tabs a crawl shows: Extraction only when it ran extractors (Phase 4b). */
-export function crawlTabs(crawl: Pick<CrawlDto, "config"> | null): TabId[] {
-  return flag("crawl.extraction") && (crawl?.config?.extractors?.length ?? 0) > 0 ? [...TABS, "extraction"] : TABS;
+// Phase 4c: the Structure tab's d3 code loads only when the tab is opened.
+const StructurePanel = dynamic(() => import("./site-crawler-structure"), { ssr: false, loading: () => null });
+
+/**
+ * The tabs a crawl shows: Structure while its pages are kept (Phase 4c),
+ * Extraction only when it ran extractors (Phase 4b).
+ */
+export function crawlTabs(crawl: (Pick<CrawlDto, "config"> & { dataPurgedAt?: string | null }) | null): TabId[] {
+  const tabs: TabId[] = [...TABS];
+  if (flag("crawl.visualise") && crawl && !crawl.dataPurgedAt) tabs.push("structure");
+  if (flag("crawl.extraction") && (crawl?.config?.extractors?.length ?? 0) > 0) tabs.push("extraction");
+  return tabs;
 }
 
 function tabLabel(id: TabId, t: SiteCrawlerCopy): string {
@@ -80,6 +90,7 @@ function tabLabel(id: TabId, t: SiteCrawlerCopy): string {
   if (id === "duplicates") return t.tabDuplicates;
   if (id === "redirects") return t.tabRedirects;
   if (id === "extraction") return t.p4b.tabExtraction;
+  if (id === "structure") return t.p4c.tabStructure;
   return t.tabPages;
 }
 
@@ -308,7 +319,7 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
   );
 
   useEffect(() => {
-    if (!active || isInFlight(active.status) || tab === "issues" || tab === "rules" || tab === "extraction") return;
+    if (!active || isInFlight(active.status) || tab === "issues" || tab === "rules" || tab === "extraction" || tab === "structure") return;
     let cancelled = false;
     void (async () => {
       const data = await loadTab(active.id, tab);
@@ -649,6 +660,23 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
           crawlId={active.id}
           extractorNames={(active.config?.extractors ?? []).map((e) => e.name)}
           segment={segment || null}
+          t={t}
+          int={int}
+        />
+      )}
+
+      {active && !running && tab === "structure" && (
+        <StructurePanel
+          crawlId={active.id}
+          rootUrl={active.rootUrl}
+          segment={segment || null}
+          purged={Boolean(active.dataPurgedAt)}
+          onFilterPages={(urlPrefix) => {
+            setPageFilters({ ...EMPTY_PAGE_FILTERS, urlPrefix });
+            setPagesPage(1);
+            setPageRows(null);
+            setTab("pages");
+          }}
           t={t}
           int={int}
         />

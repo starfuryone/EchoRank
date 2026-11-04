@@ -100,26 +100,28 @@ export function crawlTree(rows: Row[]): (GraphNode & { parentId: string | null }
   return rows.map((r) => ({ ...toNode(r), parentId: r.parentPageId && ids.has(r.parentPageId) ? r.parentPageId : null }));
 }
 
-async function topPages(jobId: string, limit: number, order: "depth" | "inlinks"): Promise<Row[]> {
+async function topPages(jobId: string, limit: number, order: "depth" | "inlinks", segment: number | null): Promise<Row[]> {
   return prisma.crawlPage.findMany({
-    where: { crawlJobId: jobId },
+    // Phase 4c: the segment filter narrows the node set; the links view keeps
+    // only edges between nodes in it.
+    where: { crawlJobId: jobId, ...(segment === null ? {} : { segmentIds: { has: segment } }) },
     orderBy: order === "depth" ? [{ depth: "asc" }, { inlinkCount: "desc" }, { id: "asc" }] : [{ inlinkCount: "desc" }, { depth: "asc" }, { id: "asc" }],
     take: limit,
     select: { id: true, url: true, statusCode: true, noindex: true, depth: true, inlinkCount: true, parentPageId: true },
   });
 }
 
-export async function crawlGraph(jobId: string, kind: GraphKind, limit: number) {
+export async function crawlGraph(jobId: string, kind: GraphKind, limit: number, segment: number | null = null) {
   const n = Math.max(1, Math.min(GRAPH_MAX_NODES, limit));
   if (kind === "directory") {
-    const rows = await topPages(jobId, n, "depth");
+    const rows = await topPages(jobId, n, "depth", segment);
     return { kind, nodes: rows.map(toNode), tree: directoryTree(rows) };
   }
   if (kind === "crawl-tree") {
-    return { kind, nodes: crawlTree(await topPages(jobId, n, "depth")) };
+    return { kind, nodes: crawlTree(await topPages(jobId, n, "depth", segment)) };
   }
   // links: the most-linked pages and the edges among them.
-  const rows = await topPages(jobId, n, "inlinks");
+  const rows = await topPages(jobId, n, "inlinks", segment);
   const ids = rows.map((r) => r.id);
   const edges = await prisma.crawlLink.findMany({
     where: { crawlJobId: jobId, fromPageId: { in: ids }, toPageId: { in: ids } },

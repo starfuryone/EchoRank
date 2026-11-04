@@ -239,9 +239,11 @@ export interface PageFilters {
   minInlinks: string;
   /** Phase 4b: "" = any; "N:hit" / "N:none" = custom search N matched / did not. */
   search: string;
+  /** Phase 4c: URLs starting with this (a Structure tab click). "" = any. */
+  urlPrefix?: string;
 }
 
-export const EMPTY_PAGE_FILTERS: PageFilters = { inSitemap: "", depth: "", minInlinks: "", search: "" };
+export const EMPTY_PAGE_FILTERS: PageFilters = { inSitemap: "", depth: "", minInlinks: "", search: "", urlPrefix: "" };
 
 /** The pages route's query for a set of filters (the table and its CSV share it). */
 export function pageFilterParams(f: PageFilters): URLSearchParams {
@@ -249,6 +251,7 @@ export function pageFilterParams(f: PageFilters): URLSearchParams {
   if (f.inSitemap) params.set("inSitemap", f.inSitemap);
   if (f.depth) params.set("depth", f.depth);
   if (f.minInlinks) params.set("minInlinks", f.minInlinks);
+  if (f.urlPrefix) params.set("urlPrefix", f.urlPrefix);
   const [index, which] = f.search.split(":");
   if (index && which) {
     params.set("search", index);

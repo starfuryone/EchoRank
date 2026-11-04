@@ -416,6 +416,14 @@ export function PagesPanel({
             onChange={(e) => set("minInlinks", e.target.value.replace(/\D/g, ""))}
           />
         </div>
+        <div className="w-72">
+          <Input
+            aria-label={t.p4c.filterUrlPrefix}
+            placeholder={t.p4c.filterUrlPrefix}
+            value={filters.urlPrefix ?? ""}
+            onChange={(e) => set("urlPrefix", e.target.value)}
+          />
+        </div>
         {searchNames.length > 0 && (
           <div className="w-56">
             <Select

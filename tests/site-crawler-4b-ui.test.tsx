@@ -62,6 +62,9 @@ describe("Extraction tab", () => {
     expect(crawlTabs({ config: null })).not.toContain("extraction");
     expect(crawlTabs({ config: { extractors: [] } as never })).not.toContain("extraction");
     expect(crawlTabs({ config: { extractors: [css("a")] } as never })).toContain("extraction");
+    // Phase 4c: Structure while the pages are kept.
+    expect(crawlTabs({ config: null })).toContain("structure");
+    expect(crawlTabs({ config: null, dataPurgedAt: "2026-11-01T00:00:00.000Z" })).not.toContain("structure");
   });
 
   it.each([

@@ -3,7 +3,8 @@
  *
  * Filters: inSitemap, minInlinks/maxInlinks, depth, and (Phase 4b)
  * search=N&hit=true|false — custom search N matched / did not, and
- * segment=N (the CSV then carries a Segment column). Each is validated rather
+ * segment=N (the CSV then carries a Segment column), and (Phase 4c)
+ * urlPrefix=… — URLs starting with it (the Structure tab's click-through). Each is validated rather
  * than coerced — an unparseable depth is a 400, not a silent "all pages",
  * which would look like the filter had been applied and found everything.
  *
@@ -99,6 +100,12 @@ export async function GET(
         ? {}
         : { searchHits: hitParam === "true" ? { path: [String(searchIndex)], gt: 0 } : { path: [String(searchIndex)], equals: 0 } };
 
+    // Phase 4c: the Structure tab filters Pages to a directory or one URL.
+    const urlPrefix = url.searchParams.get("urlPrefix");
+    if (urlPrefix !== null && (urlPrefix === "" || urlPrefix.length > 2048)) {
+      return NextResponse.json({ error: "urlPrefix must be 1–2048 characters", code: "INVALID_REQUEST" }, { status: 400 });
+    }
+
     const inlinkRange = {
       ...(minInlinks.value !== undefined ? { gte: minInlinks.value } : {}),
       ...(maxInlinks.value !== undefined ? { lte: maxInlinks.value } : {}),
@@ -110,6 +117,7 @@ export async function GET(
       ...(depth.value !== undefined ? { depth: depth.value } : {}),
       ...(Object.keys(inlinkRange).length > 0 ? { inlinkCount: inlinkRange } : {}),
       ...searchFilter,
+      ...(urlPrefix !== null ? { url: { startsWith: urlPrefix } } : {}),
       ...pageInSegment(segment),
     };
 
