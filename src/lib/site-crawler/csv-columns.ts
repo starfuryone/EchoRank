@@ -75,6 +75,8 @@ export interface CrawlPageRow {
   redirectTarget: string | null;
   contentType: string | null;
   foundOn: string | null;
+  /** Phase 4g: Link Score 0–100. */
+  linkScore?: number | null;
   /** Phase 4b: {"<search index>": matches}; null on non-HTML pages. */
   searchHits?: unknown;
   segmentIds?: number[];
@@ -270,6 +272,9 @@ export function extractionColumns(names: readonly string[], hasSegments: boolean
     ...(hasSegments ? [{ header: "Segment", value: (r: ExtractionRow) => r.segment }] : []),
   ];
 }
+
+/** Phase 4g: the Link Score column, in a page export only when the crawl has scores (older exports keep their header). */
+export const LINK_SCORE_COLUMN: CsvColumn<CrawlPageRow> = { header: "Link Score", value: (r) => r.linkScore ?? null };
 
 /** Phase 4g External tab: one row per distinct outbound URL. */
 export function externalColumns(): CsvColumn<ExternalRow>[] {

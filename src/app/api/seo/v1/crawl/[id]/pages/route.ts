@@ -17,9 +17,10 @@
  */
 
 import { NextResponse } from "next/server";
+import { flag } from "@/lib/flags";
 import { requirePaidPlan } from "@/lib/paid-plan";
 import { csvFilename } from "@/lib/csv-export";
-import { metricCsvColumns, pageColumns, withSegmentColumn, type CrawlPageRow } from "@/lib/site-crawler/csv-columns";
+import { LINK_SCORE_COLUMN, metricCsvColumns, pageColumns, withSegmentColumn, type CrawlPageRow } from "@/lib/site-crawler/csv-columns";
 import { METRIC_SORT_KEYS, METRIC_SOURCES } from "@/lib/site-crawler/metrics-shared";
 import { metricCoverage } from "@/lib/site-crawler/metrics";
 import { pageIdsByMetric } from "@/lib/site-crawler/pages-sort";
@@ -115,7 +116,9 @@ export async function GET(
     // Phase 4d: sort by a joined metric.
     const sort = url.searchParams.get("sort");
     const dir = url.searchParams.get("dir") ?? "desc";
-    if (sort !== null && !METRIC_SORT_KEYS.has(sort)) {
+    // Phase 4g: or by Link Score.
+    const byLinkScore = sort === "linkScore" && flag("crawl.linkScore");
+    if (sort !== null && !METRIC_SORT_KEYS.has(sort) && !byLinkScore) {
       return NextResponse.json({ error: "Unknown sort", code: "INVALID_REQUEST" }, { status: 400 });
     }
     if (dir !== "asc" && dir !== "desc") {
@@ -145,8 +148,9 @@ export async function GET(
       // with none exports exactly the columns it did before Phase 4d.
       const coverage = await metricCoverage(crawl.id);
       const sources = METRIC_SOURCES.filter((s) => coverage[s] > 0);
+      const scored = flag("crawl.linkScore") && (await prisma.crawlPage.count({ where: { crawlJobId: crawl.id, linkScore: { not: null } }, take: 1 })) > 0;
       return csvStreamResponse<CrawlPageRow>({
-        columns: withSegmentColumn([...pageColumns(searches.map((s) => s.name)), ...metricCsvColumns(sources)], segment.defs, (r) => r.segmentIds),
+        columns: withSegmentColumn([...pageColumns(searches.map((s) => s.name)), ...(scored ? [LINK_SCORE_COLUMN] : []), ...metricCsvColumns(sources)], segment.defs, (r) => r.segmentIds),
         filename: csvFilename("site-crawler-pages"),
         cursorOf: (row) => row.id,
         fetchPage: (cursor, take) =>
@@ -184,7 +188,17 @@ export async function GET(
     const ids =
       sort === null
         ? null
-        : await pageIdsByMetric(
+        : byLinkScore
+          ? (
+              await prisma.crawlPage.findMany({
+                where,
+                orderBy: [{ linkScore: { sort: dir, nulls: "last" } }, { id: "asc" }],
+                skip: (page - 1) * pageSize,
+                take: pageSize,
+                select: { id: true },
+              })
+            ).map((r) => r.id)
+          : await pageIdsByMetric(
             {
               jobId: crawl.id,
               ...(inSitemapParam !== null ? { inSitemap: inSitemapParam === "true" } : {}),
@@ -226,6 +240,7 @@ export async function GET(
           foundOn: true,
           searchHits: true,
           metrics: { select: { source: true, data: true } },
+          linkScore: true,
           _count: { select: { issues: true } },
         },
       }),
@@ -253,6 +268,7 @@ export async function GET(
         foundOn: r.foundOn,
         searchHits: (r.searchHits as Record<string, number> | null) ?? null,
         issueCount: r._count.issues,
+        linkScore: r.linkScore,
         metrics: Object.fromEntries((r.metrics ?? []).map((m) => [m.source, m.data])),
       })),
       page,

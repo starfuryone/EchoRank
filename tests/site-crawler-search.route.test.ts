@@ -32,7 +32,8 @@ beforeEach(() => {
   vi.clearAllMocks();
   requirePaidPlan.mockResolvedValue({ tenantId: "t1", tenant: { planType: "GROWTH" } });
   crawlJob.findFirst.mockResolvedValue({ id: "c1", config });
-  crawlPage.count.mockResolvedValue(1);
+  // Phase 4g: the CSV asks whether any page has a Link Score; these crawls have none.
+  crawlPage.count.mockImplementation(async (a?: { where?: { linkScore?: unknown } }) => (a?.where?.linkScore ? 0 : 1));
   crawlPage.findMany.mockResolvedValueOnce([row]).mockResolvedValue([]);
 });
 

@@ -29,6 +29,8 @@ export const FLAGS = {
   // external links per page.
   // Phase 4g: outbound links stored per page, status resolved once per URL per crawl; the External tab.
   "crawl.externalLinks": true,
+  // Phase 4g: Link Score — internal PageRank at aggregation, a Pages column, node size in the Structure graph.
+  "crawl.linkScore": true,
   // Phase 4b
   "crawl.extraction": true,
   "crawl.segments": true,

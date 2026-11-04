@@ -248,6 +248,8 @@ export interface CrawlPageRow {
   /** Phase 4b: {"<search index>": matches}; null on non-HTML pages. */
   searchHits?: Record<string, number> | null;
   issueCount: number;
+  /** Phase 4g: Link Score 0–100; null when not computed. */
+  linkScore?: number | null;
 }
 
 export interface CrawlPagesPage {

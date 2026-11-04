@@ -17,6 +17,8 @@ export interface StructureNode {
   indexable: boolean;
   depth: number;
   inlinks: number;
+  /** Phase 4g: Link Score 0–100, when the crawl has it. */
+  linkScore?: number | null;
 }
 
 export interface StructureDir {
@@ -46,6 +48,11 @@ export const NODE_FILL: Record<NodeClass, string> = {
 export function nodeRadius(inlinks: number, maxInlinks: number): number {
   if (maxInlinks <= 0 || inlinks <= 0) return 3;
   return 3 + 9 * Math.sqrt(Math.min(inlinks, maxInlinks) / maxInlinks);
+}
+
+/** Phase 4g: size by Link Score (0–100) when the crawl has it, by inlinks otherwise. */
+export function nodeSize(n: Pick<StructureNode, "inlinks" | "linkScore">, maxInlinks: number): number {
+  return n.linkScore === null || n.linkScore === undefined ? nodeRadius(n.inlinks, maxInlinks) : nodeRadius(n.linkScore, 100);
 }
 
 /** The Pages filter a click applies: the folder's URL prefix, or the page's own URL. */

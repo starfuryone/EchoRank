@@ -115,6 +115,7 @@ export interface StoredPageRow {
   relPrev: string | null;
   ampHtml?: string | null;
   isAmp?: boolean | null;
+  linkScore?: number | null;
 }
 
 /** A crawl_pages row → the package's StoredPageFacts. Pre-3a rows fill what they can. */
@@ -140,5 +141,6 @@ export function toStoredFacts(row: StoredPageRow, rootUrl: string): StoredPageFa
     relPrev: row.relPrev,
     ampHtml: row.ampHtml ?? null,
     isAmp: row.isAmp ?? null,
+    linkScore: row.linkScore ?? null,
   };
 }

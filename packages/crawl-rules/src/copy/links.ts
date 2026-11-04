@@ -76,4 +76,9 @@ export const COPY: Record<string, RuleCopy> = {
     description: "The page links to http:// URLs. Visitors may be shown an insecure-site warning, or a redirect hop at best.",
     howToFix: "Change the links to https://. For your own site, update templates and content to use HTTPS URLs.",
   },
+  "links.low_link_score": {
+    name: "Low Link Score",
+    description: "This indexable page is linked from the site, but its Link Score (internal PageRank, 0–100) is in the crawl's bottom 10 %. Few, weak or deep internal links point at it, so search engines see it as one of the least important pages on the site.",
+    howToFix: "If the page matters, link to it from stronger pages: the home page, hubs and category pages, or related articles. If it does not, consider merging it into a stronger page.",
+  },
 };

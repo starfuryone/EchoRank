@@ -29,6 +29,8 @@ export interface GraphNode {
   indexable: boolean;
   depth: number;
   inlinks: number;
+  /** Phase 4g: Link Score 0–100; null on crawls without it. */
+  linkScore: number | null;
 }
 
 export interface DirNode {
@@ -50,6 +52,7 @@ interface Row {
   depth: number;
   inlinkCount: number | null;
   parentPageId: string | null;
+  linkScore?: number | null;
 }
 
 const toNode = (r: Row): GraphNode => ({
@@ -59,6 +62,7 @@ const toNode = (r: Row): GraphNode => ({
   indexable: r.statusCode === 200 && r.noindex !== true,
   depth: r.depth,
   inlinks: r.inlinkCount ?? 0,
+  linkScore: r.linkScore ?? null,
 });
 
 /** Pure: a directory tree from page URLs. Query strings are part of the leaf name. */
@@ -107,7 +111,7 @@ async function topPages(jobId: string, limit: number, order: "depth" | "inlinks"
     where: { crawlJobId: jobId, ...(segment === null ? {} : { segmentIds: { has: segment } }) },
     orderBy: order === "depth" ? [{ depth: "asc" }, { inlinkCount: "desc" }, { id: "asc" }] : [{ inlinkCount: "desc" }, { depth: "asc" }, { id: "asc" }],
     take: limit,
-    select: { id: true, url: true, statusCode: true, noindex: true, depth: true, inlinkCount: true, parentPageId: true },
+    select: { id: true, url: true, statusCode: true, noindex: true, depth: true, inlinkCount: true, parentPageId: true, linkScore: true },
   });
 }
 

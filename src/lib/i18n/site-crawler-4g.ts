@@ -22,6 +22,9 @@ const en = {
   sourcesMore: (n: string) => `First ${n} shown.`,
   noRows: "No external links match.",
   notChecked: "not checked",
+  // ── Link Score ──────────────────────────────────────────────────────────
+  colLinkScore: "Link Score",
+  linkScoreHelp: "Internal PageRank, 0–100 on a log scale: how much link weight the site's own links give the page.",
 };
 
 export type SiteCrawler4gCopy = typeof en;
@@ -43,6 +46,8 @@ const fr: SiteCrawler4gCopy = {
   sourcesMore: (n: string) => `${n} premières affichées.`,
   noRows: "Aucun lien externe ne correspond.",
   notChecked: "non vérifié",
+  colLinkScore: "Link Score",
+  linkScoreHelp: "PageRank interne, de 0 à 100 sur une échelle logarithmique : le poids que les liens du site donnent à la page.",
 };
 
 const deCH: SiteCrawler4gCopy = {
@@ -62,6 +67,8 @@ const deCH: SiteCrawler4gCopy = {
   sourcesMore: (n: string) => `Die ersten ${n} werden angezeigt.`,
   noRows: "Keine externen Links gefunden.",
   notChecked: "nicht geprüft",
+  colLinkScore: "Link Score",
+  linkScoreHelp: "Interner PageRank, 0–100 auf einer logarithmischen Skala: wie viel Linkgewicht die Links der eigenen Website der Seite geben.",
 };
 
 export const SITE_CRAWLER_4G = { en, fr, "de-CH": deCH } as const;

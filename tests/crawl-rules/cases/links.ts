@@ -41,6 +41,13 @@ const cases: RuleCase[] = [
   pc("links.anchor_over_100_chars", "short", false, body(NAV)),
   pc("links.to_http", "http link", true, body(NAV + a("http://other.org/"))),
   pc("links.to_http", "https only", false, body(NAV + a("https://other.org/"))),
+  // Phase 4g: Link Score in the bottom decile on an indexable, linked page.
+  { ...sc("links.low_link_score", "bottom decile, linked, indexable", true, stored({ linkScore: 4, inlinkCount: 2 }), siteCtx({ job: { linkScoreP10: 8 } })), evidence: { score: 4, threshold: 8, inlinks: 2 } },
+  sc("links.low_link_score", "above the threshold", false, stored({ linkScore: 30, inlinkCount: 2 }), siteCtx({ job: { linkScoreP10: 8 } })),
+  sc("links.low_link_score", "nothing links to it (orphan rules' job)", false, stored({ linkScore: 1, inlinkCount: 0 }), siteCtx({ job: { linkScoreP10: 8 } })),
+  sc("links.low_link_score", "noindex", false, stored({ linkScore: 1, inlinkCount: 3, noindex: true }), siteCtx({ job: { linkScoreP10: 8 } })),
+  sc("links.low_link_score", "no threshold (tiny crawl or no spread)", false, stored({ linkScore: 1, inlinkCount: 3 }), siteCtx({ job: { linkScoreP10: null } })),
+  sc("links.low_link_score", "not computed", false, stored({ inlinkCount: 3 }), siteCtx({ job: { linkScoreP10: 8 } })),
 ];
 
 export default cases;

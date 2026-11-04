@@ -14,6 +14,7 @@ import { useState } from "react";
 //
 // Every string comes from SITE_CRAWLER_COPY; there is no inline English here.
 
+import { flag } from "@/lib/flags";
 import { MetricGroupToggles, MetricHeader, columnsOf, formatMetric, sourcesIn } from "./site-crawler-metrics";
 import type { MetricSource } from "@/lib/site-crawler/metrics-shared";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
@@ -475,6 +476,9 @@ export function PagesPanel({
                   <th scope="col" className="py-2 pr-3">{t.colUrl}</th>
                   <th scope="col" className="py-2 pr-3">{t.colDepth}</th>
                   <th scope="col" className="py-2 pr-3">{t.colInlinks}</th>
+                  {flag("crawl.linkScore") && (
+                    <MetricHeader colKey="linkScore" label={t.p4g.colLinkScore} sort={filters.sort} dir={filters.dir} onSort={(key, dir) => onFilters({ ...filters, sort: key, dir })} />
+                  )}
                   <th scope="col" className="py-2 pr-3">{t.colSitemap}</th>
                   {onInlinks && <th scope="col" className="py-2 pr-3">{t.p4a.colFoundOn}</th>}
                   {searchNames.length > 0 && <th scope="col" className="py-2 pr-3">{t.p4b.colSearch}</th>}
@@ -505,6 +509,9 @@ export function PagesPanel({
                         </button>
                       )}
                     </td>
+                    {flag("crawl.linkScore") && (
+                      <td className="py-2 pr-3 tabular-nums text-gray-600">{row.linkScore === null || row.linkScore === undefined ? "—" : row.linkScore.toFixed(1)}</td>
+                    )}
                     <td className="py-2 pr-3 text-gray-600">
                       {row.inSitemap === null ? "—" : row.inSitemap ? t.filterYes : t.filterNo}
                     </td>

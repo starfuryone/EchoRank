@@ -4,6 +4,7 @@
 
 import { ev, pageRule, siteRule } from "../engine";
 import type { AnchorFact, PageFacts, Rule } from "../types";
+import { indexable } from "./search_console";
 
 const F = "links" as const;
 
@@ -135,4 +136,17 @@ export const RULES: Rule[] = [
   }),
   anyAnchor("anchor_over_100_chars", "opportunity", "low", (a) => a.text.length > ANCHOR_MAX, (a) => a.text),
   anyAnchor("to_http", "warning", "low", (a) => /^http:\/\//i.test(a.href) && !/^(localhost|127\.)/.test(hostOf(a.href))),
+  // Phase 4g: an indexable page the site links to, but whose internal PageRank is in the crawl's bottom decile.
+  siteRule({
+    id: "links.low_link_score",
+    family: F,
+    kind: "opportunity",
+    priority: "low",
+    detect: (p, ctx) => {
+      const t = ctx.job.linkScoreP10;
+      if (t === undefined || t === null || p.linkScore === undefined || p.linkScore === null) return null;
+      if ((p.inlinkCount ?? 0) < 1 || !indexable(p) || p.linkScore >= t) return null;
+      return ev({ score: p.linkScore, threshold: t, inlinks: p.inlinkCount });
+    },
+  }),
 ];

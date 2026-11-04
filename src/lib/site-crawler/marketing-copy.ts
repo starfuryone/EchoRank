@@ -313,6 +313,8 @@ export const CRAWL_FEATURE_ROWS: readonly CrawlFeatureRow[] = [
   // Phase 4g: the same on every plan (a per-page limit, not a plan cap).
   row("external-links", { flag: "crawl.externalLinks" }, "External links", "Liens externes", (_p, b) =>
     b === "fr" ? `${fmt(MAX_EXTERNAL_LINKS_PER_PAGE, b)} par page, code vérifié une fois par exploration` : `${fmt(MAX_EXTERNAL_LINKS_PER_PAGE, b)} per page, status checked once per crawl`),
+  row("link-score", { flag: "crawl.linkScore" }, "Link Score", "Link Score", (_p, b) =>
+    b === "fr" ? "Toutes les pages explorées" : "Every crawled page"),
   row("titles-meta", { family: "page_titles" }, "Analyse page titles & meta data", "Analyse des titres et métadonnées"),
   row("directives", { family: "directives" }, "Review meta robots & directives", "Meta robots et directives"),
   row("hreflang", { family: "hreflang" }, "Audit hreflang attributes", "Audit des attributs hreflang"),

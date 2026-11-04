@@ -20,7 +20,7 @@ import {
   layoutDirectory,
   layoutLinks,
   nodeClass,
-  nodeRadius,
+  nodeSize,
   openTree,
   prefixFor,
   svgDocument,
@@ -247,7 +247,7 @@ export default function StructurePanel({
                           return (
                             <g key={v.dir.path} transform={`translate(${x},${y})`}>
                               <g {...activate(() => onFilterPages(prefixFor(origin, v.dir.path)))}>
-                                <circle r={page ? nodeRadius(page.inlinks, maxIn) : 4} fill={page ? NODE_FILL[nodeClass(page)] : FOLDER_FILL} />
+                                <circle r={page ? nodeSize(page, maxIn) : 4} fill={page ? NODE_FILL[nodeClass(page)] : FOLDER_FILL} />
                                 <text x={14} dy="0.32em" fill={INK}>
                                   {v.dir.name} ({int.format(v.dir.pages)})
                                 </text>
@@ -267,7 +267,7 @@ export default function StructurePanel({
                       : drawing.nodes.map(({ data: n, x, y }) =>
                           n ? (
                             <g key={n.id} transform={`translate(${x},${y})`} {...activate(() => onFilterPages(n.url))}>
-                              <circle r={nodeRadius(n.inlinks, maxIn)} fill={NODE_FILL[nodeClass(n)]} />
+                              <circle r={nodeSize(n, maxIn)} fill={NODE_FILL[nodeClass(n)]} />
                               <text x={14} dy="0.32em" fill={INK}>
                                 {n.url.replace(origin, "") || "/"}
                               </text>

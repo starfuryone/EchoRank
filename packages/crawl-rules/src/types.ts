@@ -407,6 +407,8 @@ export interface StoredPageFacts {
   langAttr: string | null;
   relNext: string | null;
   relPrev: string | null;
+  /** Phase 4g: internal PageRank, log-scaled 0–100. Absent = not computed. */
+  linkScore?: number | null;
   /** Phase 4e. Absent on crawls stored before AMP was extracted. */
   ampHtml?: string | null;
   isAmp?: boolean | null;
@@ -473,6 +475,8 @@ export interface JobFacts {
     /** robots.txt carried at least one Sitemap: line. */
     declaredInRobots: boolean;
   };
+  /** Phase 4g: a page is in the crawl's bottom Link Score decile when its score is strictly below this. Absent / null = not computed. */
+  linkScoreP10?: number | null;
 }
 
 export interface PageRuleCtx {

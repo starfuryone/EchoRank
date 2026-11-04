@@ -46,6 +46,7 @@ import { metricsForPages } from "./metrics";
 import type { Ga4Metric, GscMetric } from "./metrics-shared";
 import { toTotals } from "./issue-totals";
 import { externalFacts, resolveExternalStatuses } from "./external-links";
+import { computeLinkScores } from "./link-score";
 
 export interface AggregateArgs {
   jobId: string;
@@ -108,6 +109,8 @@ export interface CrawlSummary {
   psiPages?: number;
   /** Phase 4g: distinct external URLs, how many had their status resolved, and whether the resolve cap cut it short. */
   external?: { urls: number; checked: number; capped: boolean };
+  /** Phase 4g: pages and followed internal edges Link Score ran over, and its bottom-decile threshold. */
+  linkScore?: { pages: number; edges: number; p10: number | null };
   /** Phase 4d: what each joined source did on this crawl (absent = not attempted). */
   metrics?: { gsc?: GscJoinStatus; ga4?: Ga4JoinStatus };
   aggregationMs: number;
@@ -144,6 +147,8 @@ export async function aggregateCrawl({
   const inlinkStats = await flushInlinks(jobId, redis, keys.inlinks);
   await flushHash(jobId, redis, keys.nofollowInlinks, "nofollowInlinkCount");
 
+  // Phase 4g: Link Score (PageRank over the resolved internal edges), before the site rules read it.
+  const linkScore = flag("crawl.linkScore") ? await computeLinkScores(jobId) : null;
   // Phase 4g: each external URL's status, once per crawl, before the facts that read it.
   const external = flag("crawl.externalLinks") ? await resolveExternalStatuses(jobId, redis, keys.headCache) : null;
   const [dupTitle, dupMeta, dupH1, dupH2, dupContent, h1Title, canonicalTargets, hreflang, pagination, near, ampTargets, externalByPage] =
@@ -176,6 +181,7 @@ export async function aggregateCrawl({
       notCrawledSample: notCrawled.sample[0] ?? null,
       declaredInRobots: sitemapDeclaredInRobots,
     },
+    ...(linkScore ? { linkScoreP10: linkScore.p10 } : {}),
   };
 
   // ── Phase 4d: joined data, stored before the site rules so they read it ──
@@ -211,7 +217,7 @@ export async function aggregateCrawl({
         title: true, metaDescription: true, h1First: true, h2First: true, canonical: true,
         canonicalHeader: true, noindex: true, metaRobots: true, inSitemap: true, inlinkCount: true,
         nofollowInlinkCount: true, hreflang: true, langAttr: true, relNext: true, relPrev: true,
-        ampHtml: true, isAmp: true,
+        ampHtml: true, isAmp: true, linkScore: true,
       },
       orderBy: { id: "asc" },
       take: AGGREGATION_BATCH_SIZE,
@@ -324,6 +330,7 @@ export async function aggregateCrawl({
     psiPages,
     ...(Object.keys(metricsStatus).length ? { metrics: metricsStatus } : {}),
     ...(external ? { external } : {}),
+    ...(linkScore ? { linkScore } : {}),
     aggregationMs: Date.now() - started,
   };
 
