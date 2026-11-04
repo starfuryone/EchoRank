@@ -113,6 +113,11 @@ const fakeRedis = { zcount: vi.fn(async () => 0), rpush: vi.fn(), sadd: vi.fn(),
 vi.mock("@/infrastructure/redis/connection", () => ({ getRedisConnection: () => fakeRedis, createNewConnection: () => fakeRedis, getSubscriberConnection: () => fakeRedis }));
 vi.mock("@/lib/rate-limit", () => ({ rateLimit: vi.fn(async () => ({ success: true, remaining: 2 })) }));
 vi.mock("@/lib/paid-plan", () => ({ hasPaidPlan: vi.fn(async () => true) }));
+// --via api (Phase 3d-A): a throwaway key, created and revoked by the run.
+const SMOKE_KEY = "er_api_0123456789abcdef01234567.00112233445566778899aabbccddeeff0011223344556677";
+const createApiKey = vi.fn(async () => ({ key: SMOKE_KEY, id: "key_smoke", prefix: "01234567" }));
+const revokeApiKey = vi.fn(async () => true);
+vi.mock("@/lib/api-keys", () => ({ createApiKey: (...a: unknown[]) => createApiKey(...(a as [])), revokeApiKey: (...a: unknown[]) => revokeApiKey(...(a as [])) }));
 vi.mock("@/lib/dataforseo/metering", () => ({ monthlyCapUsd: vi.fn(async () => 25), spentThisMonth: vi.fn(async () => 1), seoMeteredCall: vi.fn() }));
 
 const { parseArgs, requestBody, runSmoke, csvHeaderCells } = await import("@/lib/site-crawler/smoke");
@@ -439,5 +444,60 @@ describe("crawl smoke: 4g flags", () => {
     expect(verdictOf(result.lines, "inspection rows")).toBe("FAIL");
     prismaFake.gscConnection.findUnique.mockResolvedValue(null as never);
     prismaFake.tenantAiKey.findMany.mockResolvedValue([] as never);
+  });
+});
+
+describe("crawl smoke: --via api (Phase 3d-A)", () => {
+  const PUBLIC = `/api/public/v1/crawl`;
+  const apiRoutes = (start: Answer = { status: 202, json: { crawlId: JOB_ID, status: "queued", queuePosition: 1 } }) => {
+    routes[`POST ${PUBLIC}`] = start;
+    routes[`GET ${PUBLIC}/${JOB_ID}`] = { json: { crawlId: JOB_ID, status: "completed", progress: { pagesCrawled: 3 }, health: 88 } };
+    routes[`GET ${PUBLIC}/${JOB_ID}/issues?limit=5`] = { json: { issues: [{ ruleId: "h1.missing" }], nextCursor: null } };
+    routes[`GET ${PUBLIC}/${JOB_ID}/pages?limit=5`] = { json: { pages: [{ id: "p1" }], nextCursor: null } };
+    routes[`GET ${PUBLIC}/${JOB_ID}/export?view=issues`] = { csv: csvLine(["URL", "Status code"]) };
+  };
+  beforeEach(() => {
+    healthy();
+    vi.clearAllMocks();
+  });
+
+  it("parses --via", () => {
+    expect(parseArgs(["--via", "api"], {}).via).toBe("api");
+    expect(parseArgs([], {}).via).toBe("direct");
+    expect(() => parseArgs(["--via", "cli"], {})).toThrow("--via takes api or direct");
+  });
+
+  it("starts through POST /api/public/v1/crawl with a throwaway key, checks the read endpoints, revokes the key, never prints it", async () => {
+    apiRoutes();
+    // The start answers 202 the first time and 200 (the idempotent replay) after.
+    let starts = 0;
+    const startStub = routes[`POST ${PUBLIC}`]!;
+    routes[`POST ${PUBLIC}`] = new Proxy(startStub, { get: (t, k) => (k === "status" ? (starts++ === 0 ? 202 : 200) : (t as Record<string | symbol, unknown>)[k]) }) as Answer;
+    const { result, out } = await run([...FULL, "--via", "api"]);
+    expect(createApiKey).toHaveBeenCalledWith("t1", "crawl:smoke (temporary)", ["public"]);
+    expect(revokeApiKey).toHaveBeenCalledWith("t1", "key_smoke");
+    // Started by the API, not directly.
+    expect(addJob).not.toHaveBeenCalled();
+    for (const name of ["api start", "api idempotency", "api status", "api issues", "api pages", "api CSV issues"]) expect(verdictOf(result.lines, name), name).toBe("PASS");
+    const posts = seen.filter((x) => x.url === PUBLIC);
+    expect(posts).toHaveLength(2);
+    const h = posts[0]!.init.headers as Record<string, string>;
+    expect(h.authorization).toBe(`Bearer ${SMOKE_KEY}`);
+    expect(h["idempotency-key"]).toMatch(/^crawl-smoke-/);
+    expect((posts[1]!.init.headers as Record<string, string>)["idempotency-key"]).toBe(h["idempotency-key"]);
+    // The key goes to the public API only, and is never printed.
+    for (const x of seen) if (!x.url.startsWith(PUBLIC)) expect(JSON.stringify(x.init)).not.toContain(SMOKE_KEY);
+    expect(out.join("\n")).not.toContain(SMOKE_KEY);
+    expect(out.join("\n")).not.toContain(SMOKE_KEY.split(".")[1]);
+    expect(out).toContain("[smoke] temporary API key revoked");
+  });
+
+  it("a refused start FAILs, exits 1, and still revokes the key", async () => {
+    apiRoutes({ status: 403, json: { error: "subscription_inactive" } });
+    const { result, out } = await run([...FULL, "--via", "api"]);
+    expect(verdictOf(result.lines, "api start")).toBe("FAIL");
+    expect(result.exitCode).toBe(1);
+    expect(revokeApiKey).toHaveBeenCalledTimes(1);
+    expect(out.join("\n")).not.toContain(SMOKE_KEY);
   });
 });

@@ -13,6 +13,11 @@
  * --backlinks spends real money (DataForSEO, metered under the tenant's USD
  * cap); the estimate is printed before the crawl is enqueued. Run without
  * --tenant to list tenant slugs.
+ *
+ * --via api starts the crawl through POST /api/public/v1/crawl instead (Phase
+ * 3d-A) with a throwaway API key for the tenant — created at the start,
+ * revoked at the end whatever happens, never printed — then checks the
+ * Idempotency-Key replay, GET /crawl/{id}, /issues, /pages and the CSV export.
  */
 
 import "dotenv/config";

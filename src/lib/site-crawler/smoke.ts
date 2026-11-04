@@ -30,6 +30,7 @@ import Papa from "papaparse";
 import { encode } from "next-auth/jwt";
 import { Prisma, type PlanType } from "@/generated/prisma";
 import { prisma } from "@/lib/prisma";
+import { createApiKey, revokeApiKey } from "@/lib/api-keys";
 import { flag, type FlagName } from "@/lib/flags";
 import { hasPaidPlan } from "@/lib/paid-plan";
 import { rateLimit } from "@/lib/rate-limit";
@@ -74,6 +75,8 @@ export interface SmokeArgs {
   inspect: number | null;
   timeoutMin: number;
   baseUrl: string;
+  /** Phase 3d-A: "api" starts through POST /api/public/v1/crawl with a throwaway key (created, then revoked). */
+  via: "direct" | "api";
 }
 
 /** --js takes the presets that need no further input. */
@@ -92,7 +95,7 @@ const EXTRACT_ALIASES: Record<string, ExtractorPreset[]> = { og: ["ogTitle", "og
 export const USAGE = `usage: npm run crawl:smoke -- --tenant <slug> --url <https://host> [--render thin|all] [--psi N]
        [--backlinks N] [--extract og|<preset,...>] [--search "<text>"] [--segment "<glob>"] [--timeout <minutes>]
        [--js ${SMOKE_JS.join("|")}] [--ai "suggest title"|intent|summary|grammar[,…]] [--ai-pages N] [--login]
-       [--semantic N] [--inspect N]
+       [--semantic N] [--inspect N] [--via api]
 presets: ${Object.keys(EXTRACTOR_PRESETS).join(", ")} (og = ogTitle,ogDescription,ogImage)
 env:   CRAWL_SMOKE_BASE_URL (default http://127.0.0.1:4400) — the web process the API checks call`;
 
@@ -100,7 +103,7 @@ export function parseArgs(argv: readonly string[], env: Record<string, string | 
   const out: SmokeArgs = {
     tenant: null, url: null, render: null, psi: null, backlinks: null, extract: [], search: null, segment: null,
     js: null, ai: [], aiPages: 5, login: false, semantic: null, inspect: null,
-    timeoutMin: 20, baseUrl: (env.CRAWL_SMOKE_BASE_URL || "http://127.0.0.1:4400").replace(/\/+$/, ""),
+    timeoutMin: 20, baseUrl: (env.CRAWL_SMOKE_BASE_URL || "http://127.0.0.1:4400").replace(/\/+$/, ""), via: "direct",
   };
   const int = (name: string, v: string | undefined) => {
     const n = Number(v);
@@ -156,6 +159,12 @@ export function parseArgs(argv: readonly string[], env: Record<string, string | 
       case "--login": out.login = true; break;
       case "--semantic": out.semantic = int("semantic", take()); break;
       case "--inspect": out.inspect = int("inspect", take()); break;
+      case "--via": {
+        const via = take();
+        if (via !== "api" && via !== "direct") throw new Error(`--via takes api or direct, got ${via}`);
+        out.via = via;
+        break;
+      }
       default: throw new Error(`unknown argument ${a}`);
     }
   }
@@ -437,7 +446,27 @@ export function pendingMetrics(job: Pick<JobRow, "config" | "summary">): ("psi" 
   return out;
 }
 
+/** --via api: the throwaway key this run created; runSmoke revokes it whatever happens. */
+interface ApiRun {
+  tenantId: string;
+  keyId: string;
+  /** Never printed. */
+  key: string;
+}
+
 export async function runSmoke(args: SmokeArgs, deps: SmokeDeps): Promise<SmokeResult> {
+  const apiRun: { current: ApiRun | null } = { current: null };
+  try {
+    return await runSmokeInner(args, deps, apiRun);
+  } finally {
+    if (apiRun.current) {
+      await revokeApiKey(apiRun.current.tenantId, apiRun.current.keyId).catch(() => undefined);
+      deps.out("[smoke] temporary API key revoked");
+    }
+  }
+}
+
+async function runSmokeInner(args: SmokeArgs, deps: SmokeDeps, apiRun: { current: ApiRun | null }): Promise<SmokeResult> {
   const lines: CheckLine[] = [];
   const say = deps.out;
   const check = (verdict: Verdict, name: string, value: string) => {
@@ -532,7 +561,7 @@ export async function runSmoke(args: SmokeArgs, deps: SmokeDeps): Promise<SmokeR
     }
   }
 
-  const limited = await rateLimit(startRateKey(tenant.id), START_RATE_LIMIT, START_RATE_WINDOW_MS);
+  const limited = args.via === "api" ? { success: true } : await rateLimit(startRateKey(tenant.id), START_RATE_LIMIT, START_RATE_WINDOW_MS);
   if (!limited.success) {
     if (tempSegmentId) await prisma.crawlSegment.delete({ where: { id: tempSegmentId } }).catch(() => undefined);
     check("FAIL", "start", "rate limited (3 starts a minute); wait a minute");
@@ -545,14 +574,42 @@ export async function runSmoke(args: SmokeArgs, deps: SmokeDeps): Promise<SmokeR
   if (aiEstimate) say(`[smoke] AI estimate ${aiEstimate} tokens (${body.config!.ai!.top.pages} pages × ${body.config!.ai!.prompts.length} prompts × 2k) · meter ${tokensBefore}`);
 
   let jobId: string;
+  const publicApi = `${args.baseUrl}/api/public/v1/crawl`;
+  const idemKey = `crawl-smoke-${deps.now()}-${tenant.id}`;
+  const bearer = () => ({ authorization: `Bearer ${apiRun.current!.key}` });
   try {
-    const started = await startCrawl(tenant.id, plan, body.url, body.renderMode, {
-      config: body.config,
-      saveAsDefault: false,
-      mode: body.mode,
-      urls: body.urls,
-    });
-    jobId = started.id;
+    if (args.via === "api") {
+      const issued = await createApiKey(tenant.id, "crawl:smoke (temporary)", ["public"]);
+      apiRun.current = { tenantId: tenant.id, keyId: issued.id, key: issued.key };
+      say(`[smoke] temporary API key ${issued.prefix}… created (revoked at the end)`);
+      const res = await deps.fetch(publicApi, {
+        method: "POST",
+        headers: { ...bearer(), "content-type": "application/json", "idempotency-key": idemKey },
+        body: JSON.stringify(requestBody(args)),
+      });
+      const started = (await res.json().catch(() => null)) as { crawlId?: string; queuePosition?: number | null; error?: string } | null;
+      if (res.status !== 202 || !started?.crawlId) {
+        check("FAIL", "api start", `${res.status} ${started?.error ?? ""}`.trim());
+        return finish(null);
+      }
+      check("PASS", "api start", `202 · crawl ${started.crawlId} · queue position ${started.queuePosition ?? "-"}`);
+      jobId = started.crawlId;
+      const again = await deps.fetch(publicApi, {
+        method: "POST",
+        headers: { ...bearer(), "content-type": "application/json", "idempotency-key": idemKey },
+        body: JSON.stringify(requestBody(args)),
+      });
+      const replay = (await again.json().catch(() => null)) as { crawlId?: string } | null;
+      check(again.status === 200 && replay?.crawlId === jobId ? "PASS" : "FAIL", "api idempotency", `replay ${again.status} · ${replay?.crawlId === jobId ? "same crawl" : `crawl ${replay?.crawlId ?? "none"}`}`);
+    } else {
+      const started = await startCrawl(tenant.id, plan, body.url, body.renderMode, {
+        config: body.config,
+        saveAsDefault: false,
+        mode: body.mode,
+        urls: body.urls,
+      });
+      jobId = started.id;
+    }
   } catch (err) {
     const e = err as Error & { problems?: unknown };
     check("FAIL", "start", `${e.name}: ${e.message}${e.problems ? ` ${JSON.stringify(e.problems)}` : ""}`);
@@ -593,6 +650,43 @@ export async function runSmoke(args: SmokeArgs, deps: SmokeDeps): Promise<SmokeR
   const ran = job.startedAt && job.finishedAt ? job.finishedAt.getTime() - job.startedAt.getTime() : null;
   const queued = job.startedAt ? job.startedAt.getTime() - job.createdAt.getTime() : null;
   check(ran !== null ? "PASS" : "FAIL", "duration", ran !== null ? `${fmtDuration(ran)} crawling · ${fmtDuration(queued ?? 0)} queued` : "no startedAt/finishedAt");
+
+  // --via api: the public read endpoints answer for the crawl, with the key that started it.
+  if (args.via === "api" && apiRun.current) {
+    const get = async (path: string) => {
+      try {
+        return await deps.fetch(`${publicApi}/${jobId}${path}`, { headers: bearer(), redirect: "manual" });
+      } catch (err) {
+        return `web not reachable at ${args.baseUrl}: ${(err as Error).message}`.slice(0, 160);
+      }
+    };
+    const status = await get("");
+    if (typeof status === "string") check("FAIL", "api status", status);
+    else {
+      const b = (await status.json().catch(() => null)) as { status?: string; progress?: { pagesCrawled?: number }; health?: number | null } | null;
+      const ok = status.ok && b?.status === "completed" && b.progress?.pagesCrawled === job.pagesCrawled;
+      check(ok ? "PASS" : "FAIL", "api status", `${status.status} · ${b?.status ?? "?"} · ${b?.progress?.pagesCrawled ?? "?"} pages · health ${b?.health ?? "-"}`);
+    }
+    const issues = await get("/issues?limit=5");
+    if (typeof issues === "string") check("FAIL", "api issues", issues);
+    else {
+      const b = (await issues.json().catch(() => null)) as { issues?: unknown[]; nextCursor?: string | null } | null;
+      check(issues.ok && Array.isArray(b?.issues) ? "PASS" : "FAIL", "api issues", `${issues.status} · ${b?.issues?.length ?? "?"} rows · next ${b?.nextCursor ? "yes" : "none"}`);
+    }
+    const pages = await get("/pages?limit=5");
+    if (typeof pages === "string") check("FAIL", "api pages", pages);
+    else {
+      const b = (await pages.json().catch(() => null)) as { pages?: unknown[] } | null;
+      check(pages.ok && Array.isArray(b?.pages) ? "PASS" : "FAIL", "api pages", `${pages.status} · ${b?.pages?.length ?? "?"} rows`);
+    }
+    const csv = await get("/export?view=issues");
+    if (typeof csv === "string") check("FAIL", "api CSV issues", csv);
+    else {
+      const type = csv.headers.get("content-type") ?? "";
+      const head = (await csv.text()).split(/\r?\n/)[0] ?? "";
+      check(csv.ok && type.includes("text/csv") && head.includes("URL") ? "PASS" : "FAIL", "api CSV issues", `${csv.status} · ${type || "no type"} · ${head.slice(0, 60)}`);
+    }
+  }
 
   const config = readStoredConfig(job.config);
   const segments = config?.segments ?? [];
