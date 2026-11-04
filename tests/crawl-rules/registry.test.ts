@@ -61,7 +61,7 @@ describe("rule registry", () => {
   it("site rules carry no `applies`, and `requires` names known capabilities", () => {
     for (const r of RULES) {
       if (r.scope === "site") expect("applies" in r, r.id).toBe(false);
-      for (const cap of r.requires ?? []) expect(["render", "psi", "spell", "gsc", "ga4", "backlinks", "amp", "ai", "semantic"]).toContain(cap);
+      for (const cap of r.requires ?? []) expect(["render", "psi", "spell", "gsc", "ga4", "backlinks", "amp", "ai", "semantic", "gsc_inspection"]).toContain(cap);
     }
   });
 

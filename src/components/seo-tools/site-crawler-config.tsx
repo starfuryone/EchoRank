@@ -172,6 +172,12 @@ export function toInput(d: Draft): CrawlConfigInput {
 
 /** One server-side problem as a sentence. */
 export function problemText(p: ConfigProblem, t: T, t4b: T4b, t4d?: SiteCrawler4dCopy, t4e?: SiteCrawler4eCopy, t4g?: SiteCrawler4gCopy): string {
+  // Phase 4g: URL Inspection.
+  if (p.field === "inspection") {
+    if (p.code === "gsc_not_covering") return t4g?.problemInsGsc ?? t.problemVerified(p.field);
+    if (p.code === "over_plan_cap" && t4d) return t4d.problemCap(String(p.limit));
+    if (p.code === "unknown_segment" && t4d) return t4d.problemSegment;
+  }
   // Phase 4g: semantic duplicates.
   if (p.field === "semantic") {
     if (p.code === "ai_key_missing") return t4g?.problemSemKey ?? t.problemVerified(p.field);

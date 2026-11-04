@@ -195,6 +195,12 @@ export interface CrawlConfigOf<S> {
    * the crawl, on the tenant's own OpenAI key. N at most crawlSemanticPages.
    */
   semantic?: TopPages | null;
+  /**
+   * Phase 4g URL Inspection (crawl.inspection): the top N pages through Search
+   * Console's URL Inspection, when the tenant's GSC property covers the host.
+   * N at most crawlInspectionPages.
+   */
+  inspection?: TopPages | null;
 }
 
 /** Phase 4d: the top N pages by inlinks, optionally inside one of the crawl's segments. */
@@ -403,6 +409,7 @@ export const CrawlConfigInputSchema = z.object({
     .default(null),
   useLogin: z.boolean().default(false),
   semantic: z.object({ pages: z.number().int().min(1).max(5_000), segment: z.number().int().min(0).nullable().default(null) }).nullable().default(null),
+  inspection: z.object({ pages: z.number().int().min(1).max(2_000), segment: z.number().int().min(0).nullable().default(null) }).nullable().default(null),
   ai: z
     .object({
       provider: z.enum(AI_PROVIDERS),
@@ -439,6 +446,9 @@ export type ConfigProblem =
   | { field: "ai" | "semantic"; code: "ai_key_missing"; provider: "openai" | "gemini" }
   | { field: "semantic"; code: "over_plan_cap"; limit: number }
   | { field: "semantic"; code: "unknown_segment" }
+  | { field: "inspection"; code: "over_plan_cap"; limit: number }
+  | { field: "inspection"; code: "gsc_not_covering" }
+  | { field: "inspection"; code: "unknown_segment" }
   | { field: "ai"; code: "ai_unavailable" }
   | { field: "ai"; code: "invalid_prompt"; index: number }
   | { field: "ai"; code: "unknown_segment" }
@@ -479,8 +489,10 @@ export function checkCrawlConfig(
     renders?: boolean;
     /** Phase 4e AI: plan crawlAiPages (absent = 0); which tenant keys are saved; whether Claude (Marketing Studio) is on the plan. Absent = not checked. */
     aiPageCap?: number;
-    /** Phase 4g: plan crawlSemanticPages (absent = 0). */
+    /** Phase 4g: plan crawlSemanticPages / crawlInspectionPages (absent = 0), and whether the tenant's GSC property covers the host (absent = not checked). */
     semanticCap?: number;
+    inspectionCap?: number;
+    gscCovers?: boolean;
     aiKeys?: { openai: boolean; gemini: boolean };
     claudeAvailable?: boolean;
     /** Server-side syntax check for css / xpath expressions (needs cheerio / xpath). */
@@ -539,6 +551,13 @@ export function checkCrawlConfig(
     const cap = ctx.semanticCap ?? 0;
     if (config.semantic.pages > cap) problems.push({ field: "semantic", code: "over_plan_cap", limit: cap });
     if (ctx.aiKeys && !ctx.aiKeys.openai) problems.push({ field: "semantic", code: "ai_key_missing", provider: "openai" });
+  }
+  // Phase 4g URL Inspection: dropped when off; capped; needs a GSC property covering the host.
+  config.inspection = flag("crawl.inspection") ? (input.inspection ?? null) : null;
+  if (config.inspection) {
+    const cap = ctx.inspectionCap ?? 0;
+    if (config.inspection.pages > cap) problems.push({ field: "inspection", code: "over_plan_cap", limit: cap });
+    if (ctx.gscCovers === false) problems.push({ field: "inspection", code: "gsc_not_covering" });
   }
   // Phase 4e forms login: never from input; useLogin asks for the saved one, verified sites only.
   delete config.login;

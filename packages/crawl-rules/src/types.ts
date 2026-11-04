@@ -79,7 +79,7 @@ export type RulePriority = "high" | "medium" | "low";
  * (a page with no row then reads as zero); "backlinks" — the page itself was
  * looked up. The consumer hands the joined numbers in SiteRuleCtx.metrics.
  */
-export type Capability = "render" | "psi" | "spell" | "gsc" | "ga4" | "backlinks" | "amp" | "ai" | "semantic";
+export type Capability = "render" | "psi" | "spell" | "gsc" | "ga4" | "backlinks" | "amp" | "ai" | "semantic" | "gsc_inspection";
 
 /**
  * What a rule reports alongside its verdict. Small by contract: counts,
@@ -538,8 +538,18 @@ export interface SiteMetricFacts {
   highPriorityIssues?: number;
   /** Phase 4e: the AI prompts' answers on this page. */
   ai?: AiFacts | null;
+  /** Phase 4g: Search Console URL Inspection for this page (capability "gsc_inspection"). */
+  inspection?: InspectionFacts | null;
   /** Phase 4g: the page's embedding compared with the other embedded pages and the site centroid. */
   semantic?: SemanticFacts | null;
+}
+
+/** Phase 4g: what URL Inspection reported (Google's enum strings, as returned). */
+export interface InspectionFacts {
+  verdict: string | null;
+  coverageState: string | null;
+  robotsTxtState: string | null;
+  googleCanonical: string | null;
 }
 
 /** Phase 4g: semantic similarity (capability "semantic", only on pages that were embedded). */

@@ -33,6 +33,8 @@ export const FLAGS = {
   "crawl.linkScore": true,
   // Phase 4g: semantic duplicates and off-topic pages (embeddings on the tenant's OpenAI key).
   "crawl.semantic": true,
+  // Phase 4g: Search Console URL Inspection on the top N pages (Google's 2,000/day per property).
+  "crawl.inspection": true,
   // Phase 4b
   "crawl.extraction": true,
   "crawl.segments": true,

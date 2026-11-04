@@ -527,7 +527,7 @@ export function PagesPanel({
                     )}
                     {metricCols.map((c) => (
                       <td key={c.key} className="py-2 pr-3 tabular-nums text-gray-600">
-                        {formatMetric(c.key, c.value(row.metrics?.[c.source] ?? null), int)}
+                        {c.text ? (c.text(row.metrics?.[c.source] ?? null) ?? "—") : formatMetric(c.key, c.value(row.metrics?.[c.source] ?? null), int)}
                       </td>
                     ))}
                     <td className="py-2 tabular-nums text-gray-600">

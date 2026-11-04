@@ -211,6 +211,9 @@ export const CRAWL_CAPABILITIES: readonly CrawlCapability[] = [
   cap("forms-login", { flag: "crawl.login" },
     ["Forms-based authentication", "Log in through your site's own login form before crawling, to audit the pages behind it. Your verified sites only; logout links are never followed."],
     ["Authentification par formulaire", "Connectez-vous via le formulaire de connexion de votre site avant l'exploration, pour auditer les pages protégées. Sur vos sites vérifiés seulement ; les liens de déconnexion ne sont jamais suivis."]),
+  cap("index-status", { flag: "crawl.inspection" },
+    ["Index status", "What Google reports for each page: indexed or not, its chosen canonical, last crawl."],
+    ["État d'indexation", "Ce que Google indique pour chaque page : indexée ou non, l'URL canonique retenue, la dernière exploration."]),
   cap("semantic-duplicates", { flag: "crawl.semantic" },
     ["Semantic duplicates", "Pages that say the same thing in different words, and pages that don't belong on the site."],
     ["Doublons sémantiques", "Les pages qui disent la même chose avec d'autres mots, et celles qui n'ont pas leur place sur le site."]),
@@ -321,6 +324,8 @@ export const CRAWL_FEATURE_ROWS: readonly CrawlFeatureRow[] = [
   // Phase 4g caps per crawl, from plan-config (on the tenant's own OpenAI key).
   row("semantic-duplicates", { flag: "crawl.semantic" }, "Semantic duplicates", "Doublons sémantiques", (p, b) =>
     b === "fr" ? `${fmt(p.crawlSemanticPages, b)} pages par exploration` : `${fmt(p.crawlSemanticPages, b)} pages per crawl`),
+  row("index-status", { flag: "crawl.inspection" }, "Index status", "État d'indexation", (p, b) =>
+    b === "fr" ? `${fmt(p.crawlInspectionPages, b)} pages par exploration` : `${fmt(p.crawlInspectionPages, b)} pages per crawl`),
   row("titles-meta", { family: "page_titles" }, "Analyse page titles & meta data", "Analyse des titres et métadonnées"),
   row("directives", { family: "directives" }, "Review meta robots & directives", "Meta robots et directives"),
   row("hreflang", { family: "hreflang" }, "Audit hreflang attributes", "Audit des attributs hreflang"),

@@ -45,7 +45,7 @@ describe.skipIf(!TEST_DB)("metrics store against Postgres", () => {
     await m.upsertPageMetrics(job, "gsc", [{ pageId: ids.a!, data: { clicks: 20 } }]);
     expect(await prisma.crawlPageMetric.count({ where: { pageId: ids.a } })).toBe(2);
     expect((await m.metricsForPages([ids.a!])).get(ids.a!)).toEqual({ gsc: { clicks: 20 }, backlinks: { backlinks: 5 } });
-    expect(await m.metricCoverage(job)).toEqual({ gsc: 3, psi: 0, ga4: 0, backlinks: 1 });
+    expect(await m.metricCoverage(job)).toEqual({ gsc: 3, psi: 0, ga4: 0, backlinks: 1, gsc_inspection: 0 });
   });
 
   it("goes with its page", async () => {

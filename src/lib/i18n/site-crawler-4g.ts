@@ -36,6 +36,13 @@ const en = {
   semStatusDone: (embedded: string, total: string) => `Semantic comparison: ${embedded} of ${total} pages compared.`,
   semStatusKey: "Semantic comparison stopped: the OpenAI key is missing or was refused. Check Settings → Integrations.",
   problemSemKey: "Semantic duplicates need your OpenAI key. Add it in Settings → Integrations.",
+  // ── Index status (URL Inspection) ───────────────────────────────────────
+  insOn: (cap: string) => `Check index status for the top pages (up to ${cap})`,
+  insHelp: "What Google reports for each page through Search Console's URL Inspection: indexed or not, its chosen canonical, last crawl.",
+  insQuota: "Counts against Search Console's limit of 2,000 inspections a day for this property; the check stops there and says so.",
+  insNotCovered: "Needs a Search Console connection that covers this site.",
+  confirmIns: (pages: string) => `Index status for ${pages} pages: ${pages} of Search Console's 2,000 daily URL inspections for this property.`,
+  problemInsGsc: "Index status needs a Search Console property that covers this site.",
 };
 
 export type SiteCrawler4gCopy = typeof en;
@@ -69,6 +76,12 @@ const fr: SiteCrawler4gCopy = {
   semStatusDone: (embedded: string, total: string) => `Comparaison sémantique : ${embedded} pages comparées sur ${total}.`,
   semStatusKey: "Comparaison sémantique arrêtée : la clé OpenAI est absente ou a été refusée. Vérifiez Paramètres → Intégrations.",
   problemSemKey: "Les doublons sémantiques nécessitent votre clé OpenAI. Ajoutez-la dans Paramètres → Intégrations.",
+  insOn: (cap: string) => `Vérifier l'état d'indexation des pages principales (jusqu'à ${cap})`,
+  insHelp: "Ce que Google indique pour chaque page via l'inspection d'URL de la Search Console : indexée ou non, l'URL canonique retenue, la dernière exploration.",
+  insQuota: "Compte dans la limite de la Search Console de 2 000 inspections par jour pour cette propriété ; la vérification s'arrête à cette limite et le signale.",
+  insNotCovered: "Nécessite une connexion Search Console qui couvre ce site.",
+  confirmIns: (pages: string) => `État d'indexation de ${pages} pages : ${pages} des 2 000 inspections d'URL quotidiennes de la Search Console pour cette propriété.`,
+  problemInsGsc: "L'état d'indexation nécessite une propriété Search Console qui couvre ce site.",
 };
 
 const deCH: SiteCrawler4gCopy = {
@@ -100,6 +113,12 @@ const deCH: SiteCrawler4gCopy = {
   semStatusDone: (embedded: string, total: string) => `Semantischer Vergleich: ${embedded} von ${total} Seiten verglichen.`,
   semStatusKey: "Semantischer Vergleich gestoppt: Der OpenAI-Schlüssel fehlt oder wurde abgelehnt. Prüfen Sie Einstellungen → Integrationen.",
   problemSemKey: "Semantische Duplikate brauchen Ihren OpenAI-Schlüssel. Hinterlegen Sie ihn unter Einstellungen → Integrationen.",
+  insOn: (cap: string) => `Indexierungsstatus der wichtigsten Seiten prüfen (bis ${cap})`,
+  insHelp: "Was Google über die URL-Prüfung der Search Console zu jeder Seite meldet: indexiert oder nicht, die gewählte Canonical-URL, der letzte Crawl.",
+  insQuota: "Zählt gegen das Limit der Search Console von 2000 Prüfungen pro Tag für diese Property; die Prüfung stoppt dort und meldet es.",
+  insNotCovered: "Braucht eine Search-Console-Verbindung, die diese Website abdeckt.",
+  confirmIns: (pages: string) => `Indexierungsstatus für ${pages} Seiten: ${pages} der 2000 täglichen URL-Prüfungen der Search Console für diese Property.`,
+  problemInsGsc: "Der Indexierungsstatus braucht eine Search-Console-Property, die diese Website abdeckt.",
 };
 
 export const SITE_CRAWLER_4G = { en, fr, "de-CH": deCH } as const;

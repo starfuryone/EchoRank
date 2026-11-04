@@ -37,6 +37,8 @@ import {
 } from "./crawl-config";
 import { flag } from "@/lib/flags";
 import { SegmentDefSchema, type SegmentDef } from "./segments";
+import { getConnection } from "@/lib/gsc/service";
+import { propertyCovers } from "./gsc-join";
 import { readStoredLogin } from "./login";
 import { aiKeyStatus } from "./ai-keys";
 import { planCanUseMarketing } from "@/lib/marketing/quota";
@@ -158,6 +160,13 @@ export function validateUrlList(lines: string[]): { urls: string[]; skipped: num
   return { urls, skipped };
 }
 
+/** Phase 4g: whether the tenant's GSC property covers the host (only looked up when URL Inspection is asked for). */
+async function inspectionChecks(tenantId: string, host: string, inspection: { pages: number } | null) {
+  if (!inspection) return {};
+  const conn = await getConnection(tenantId);
+  return { gscCovers: Boolean(conn && conn.status === "ACTIVE" && conn.siteUrl && propertyCovers(conn.siteUrl, `https://${host}/`)) };
+}
+
 /** Phase 4e: what the AI prompts' provider check needs (only looked up when the crawl asks for AI). */
 async function aiChecks(tenantId: string, plan: PlanType, ai: { provider: string } | null) {
   if (!ai) return {};
@@ -208,6 +217,7 @@ export async function startCrawl(
       ...renderFeatureCapsForPlan(plan),
       renders: renderMode !== "none" && quota.renderCap > 0,
       ...parityCapsForPlan(plan),
+      ...(await inspectionChecks(tenantId, host, opts.config.inspection ?? null)),
       ...(await aiChecks(tenantId, plan, opts.config.ai ?? (opts.config.semantic ? { provider: "openai" } : null))),
       checkExpr: checkExtractorExpr,
     });
@@ -222,6 +232,7 @@ export async function startCrawl(
       ...renderFeatureCapsForPlan(plan),
       renders: renderMode !== "none" && quota.renderCap > 0,
       ...parityCapsForPlan(plan),
+      ...(await inspectionChecks(tenantId, host, opts.sealed.inspection ?? null)),
       ...(await aiChecks(tenantId, plan, opts.sealed.ai ?? (opts.sealed.semantic ? { provider: "openai" } : null))),
       checkExpr: checkExtractorExpr,
     });
@@ -259,6 +270,8 @@ export async function startCrawl(
   const segments = flag("crawl.segments") ? await segmentSnapshot(tenantId, host, featureCapsForPlan(plan).segmentCap) : [];
   const jobConfig: StoredCrawlConfig | null =
     stored || segments.length ? { ...(stored ?? DEFAULT_CRAWL_CONFIG), ...(segments.length ? { segments } : {}) } : null;
+  const insSeg = jobConfig?.inspection?.segment;
+  if (insSeg != null && insSeg >= segments.length) throw new InvalidCrawlConfigError([{ field: "inspection", code: "unknown_segment" }]);
   // Phase 4g: and the semantic opt-in's.
   const semSeg = jobConfig?.semantic?.segment;
   if (semSeg != null && semSeg >= segments.length) throw new InvalidCrawlConfigError([{ field: "semantic", code: "unknown_segment" }]);

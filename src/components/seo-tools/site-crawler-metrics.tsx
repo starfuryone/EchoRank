@@ -8,14 +8,14 @@ import { METRIC_COLUMNS, type MetricSource } from "@/lib/site-crawler/metrics-sh
 import type { SiteCrawler4dCopy } from "@/lib/i18n/site-crawler-4d";
 
 export interface MetricOverview {
-  coverage: Record<MetricSource, number>;
+  coverage: Partial<Record<MetricSource, number>>;
   total: number;
   /** summary.metrics: what each source did (absent = not attempted). */
   status: Partial<Record<MetricSource, { status: string; stoppedReason?: string; targets?: number; completed?: number }>>;
 }
 
 export function sourceLabel(s: MetricSource, t: SiteCrawler4dCopy): string {
-  return { gsc: t.srcGsc, psi: t.srcPsi, ga4: t.srcGa4, backlinks: t.srcBacklinks }[s];
+  return { gsc: t.srcGsc, psi: t.srcPsi, ga4: t.srcGa4, backlinks: t.srcBacklinks, gsc_inspection: t.srcInspection }[s];
 }
 
 /** The tile's note: why there is no data, or how far a post-crawl source got. */
@@ -40,6 +40,7 @@ export function statusNote(s: MetricSource, st: MetricOverview["status"][MetricS
     case "waiting_quota":
       return t.stWaitingQuota(int.format(st.completed ?? 0), int.format((st.targets ?? 0) * 2));
     case "stopped":
+      if (st.stoppedReason === "daily_quota") return t.stInspectQuota;
       return st.stoppedReason === "usd_cap" ? t.stUsdCap : t.stFailed;
     default:
       return t.stFailed;
@@ -48,7 +49,7 @@ export function statusNote(s: MetricSource, st: MetricOverview["status"][MetricS
 
 /** Tiles for the sources this crawl attempted or has data from. */
 export function MetricTiles({ data, t, int }: { data: MetricOverview; t: SiteCrawler4dCopy; int: Intl.NumberFormat }) {
-  const sources = (["gsc", "psi", "ga4", "backlinks"] as const).filter((s) => data.status[s] || data.coverage[s] > 0);
+  const sources = (["gsc", "psi", "ga4", "backlinks", "gsc_inspection"] as const).filter((s) => data.status[s] || (data.coverage[s] ?? 0) > 0);
   if (sources.length === 0) return null;
   return (
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -58,7 +59,7 @@ export function MetricTiles({ data, t, int }: { data: MetricOverview; t: SiteCra
           <div key={s} className="rounded-lg border border-gray-200 p-3">
             <p className="text-xs font-medium uppercase tracking-wide text-gray-500">{sourceLabel(s, t)}</p>
             <p className="mt-1 text-lg font-semibold tabular-nums text-gray-900">
-              {t.tilePages(int.format(data.coverage[s]), int.format(data.total))}
+              {t.tilePages(int.format(data.coverage[s] ?? 0), int.format(data.total))}
             </p>
             {note && <p className="mt-1 text-xs text-gray-500">{note}</p>}
           </div>
@@ -70,7 +71,7 @@ export function MetricTiles({ data, t, int }: { data: MetricOverview; t: SiteCra
 
 /** Sources with data on at least one row of this page of results, in display order. */
 export function sourcesIn(rows: readonly { metrics?: Partial<Record<MetricSource, unknown>> }[]): MetricSource[] {
-  return (["gsc", "psi", "ga4", "backlinks"] as const).filter((s) => rows.some((r) => r.metrics?.[s] !== undefined));
+  return (["gsc", "psi", "ga4", "backlinks", "gsc_inspection"] as const).filter((s) => rows.some((r) => r.metrics?.[s] !== undefined));
 }
 
 export const columnsOf = (shown: readonly MetricSource[]) => METRIC_COLUMNS.filter((c) => shown.includes(c.source));

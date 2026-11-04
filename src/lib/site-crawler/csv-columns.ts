@@ -251,7 +251,10 @@ export function pageColumns(searchNames: readonly string[]): CsvColumn<CrawlPage
 export function metricCsvColumns(sources: readonly MetricSource[]): CsvColumn<CrawlPageRow>[] {
   return METRIC_COLUMNS.filter((c) => sources.includes(c.source)).map((c) => ({
     header: c.header,
-    value: (r) => c.value(r.metrics?.find((m) => m.source === c.source)?.data ?? null),
+    value: (r) => {
+      const d = r.metrics?.find((m) => m.source === c.source)?.data ?? null;
+      return c.text ? c.text(d) : c.value(d);
+    },
   }));
 }
 

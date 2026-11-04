@@ -706,7 +706,7 @@ describe("GET /crawl/[id]/summary", () => {
       issuesByKind: { issue: 1, warning: 0, opportunity: 0 },
       totals: { ERROR: 1, WARNING: 0, NOTICE: 0 },
       // Phase 4d: the Overview tiles' data, empty for a crawl with no joined sources.
-      metricOverview: { coverage: { gsc: 0, psi: 0, ga4: 0, backlinks: 0 }, status: {} },
+      metricOverview: { coverage: { gsc: 0, psi: 0, ga4: 0, backlinks: 0, gsc_inspection: 0 }, status: {} },
     });
   });
 

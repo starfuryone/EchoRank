@@ -134,9 +134,9 @@ export interface CrawlListResponse {
 export interface CrawlSummaryDto {
   /** Phase 4d: pages with data per joined source, and what each source did. */
   metricOverview?: {
-    coverage: Record<"gsc" | "psi" | "ga4" | "backlinks", number>;
+    coverage: Partial<Record<"gsc" | "psi" | "ga4" | "backlinks" | "gsc_inspection", number>>;
     total: number;
-    status: Partial<Record<"gsc" | "psi" | "ga4" | "backlinks", { status: string; stoppedReason?: string; targets?: number; completed?: number }>>;
+    status: Partial<Record<"gsc" | "psi" | "ga4" | "backlinks" | "gsc_inspection", { status: string; stoppedReason?: string; targets?: number; completed?: number }>>;
   };
   statusCodes: Record<string, number>;
   depths: Record<string, number>;
@@ -253,7 +253,7 @@ export interface CrawlPageRow {
 }
 
 export interface CrawlPagesPage {
-  pages: (CrawlPageRow & { metrics?: Partial<Record<"gsc" | "psi" | "ga4" | "backlinks", unknown>> })[];
+  pages: (CrawlPageRow & { metrics?: Partial<Record<"gsc" | "psi" | "ga4" | "backlinks" | "gsc_inspection", unknown>> })[];
   page: number;
   pageSize: number;
   total: number;

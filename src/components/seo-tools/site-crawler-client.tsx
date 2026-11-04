@@ -58,6 +58,7 @@ import { CrawlSchedules } from "@/components/seo-tools/site-crawler-schedules";
 import { AddDataSection, confirmLines } from "@/components/seo-tools/site-crawler-add-data";
 import { AiPromptsSection, AiStatusLine, aiConfirmLine, type AiQuota } from "@/components/seo-tools/site-crawler-ai";
 import { SemanticSection, semanticConfirmLine, semanticStatusText } from "@/components/seo-tools/site-crawler-semantic";
+import { InspectionSection } from "@/components/seo-tools/site-crawler-inspection";
 import type { TopPages } from "@/lib/site-crawler/crawl-config";
 import type { AiConfig } from "@/lib/site-crawler/ai-shared";
 import { MetricTiles } from "@/components/seo-tools/site-crawler-metrics";
@@ -215,6 +216,7 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
   const [addData, setAddData] = useState<AddData | null>(null);
   const [ai, setAi] = useState<AiConfig | null>(null);
   const [semantic, setSemantic] = useState<TopPages | null>(null);
+  const [inspection, setInspection] = useState<TopPages | null>(null);
   const [confirming, setConfirming] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [inlinksFor, setInlinksFor] = useState<{ id: string; url: string } | null>(null);
@@ -408,7 +410,8 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
     const extra = mode === "spider" ? addData : null;
     const aiExtra = mode === "spider" && flag("crawl.ai") ? ai : null;
     const semExtra = mode === "spider" && flag("crawl.semantic") ? semantic : null;
-    if ((extra || aiExtra || semExtra) && !confirming) {
+    const insExtra = mode === "spider" && flag("crawl.inspection") ? inspection : null;
+    if ((extra || aiExtra || semExtra || insExtra) && !confirming) {
       setConfirming(true);
       return;
     }
@@ -426,13 +429,14 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
           url: listing ? "" : url,
           renderMode: quota && quota.renderCap > 0 ? renderMode : "none",
           ...(listing ? { mode: "list", urls: listUrls } : {}),
-          ...((flag("crawl.config") && cfg.config) || extra || aiExtra || semExtra
+          ...((flag("crawl.config") && cfg.config) || extra || aiExtra || semExtra || insExtra
             ? {
                 config: {
                   ...(flag("crawl.config") && cfg.config ? cfg.config : {}),
                   ...(extra ? { addData: extra } : {}),
                   ...(aiExtra ? { ai: aiExtra } : {}),
                   ...(semExtra ? { semantic: semExtra } : {}),
+                  ...(insExtra ? { inspection: insExtra } : {}),
                 },
                 saveAsDefault: !listing && flag("crawl.config") && cfg.config !== null && cfg.saveAsDefault,
               }
@@ -663,7 +667,7 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
             </CrawlConfigSection>
           )}
 
-          {(flag("crawl.psi") || flag("crawl.backlinks") || flag("crawl.gsc") || flag("crawl.ga4") || flag("crawl.ai") || flag("crawl.semantic")) && mode === "spider" && quota && (
+          {(flag("crawl.psi") || flag("crawl.backlinks") || flag("crawl.gsc") || flag("crawl.ga4") || flag("crawl.ai") || flag("crawl.semantic") || flag("crawl.inspection")) && mode === "spider" && quota && (
             <AddDataSection
               t={t.p4d}
               host={hostOfInput(url)}
@@ -676,6 +680,22 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
               disabled={starting || Boolean(running)}
               extra={(segments) => (
                 <>
+                  {flag("crawl.inspection") && (
+                    <InspectionSection
+                      t={t.p4g}
+                      t4d={t.p4d}
+                      host={hostOfInput(url)}
+                      cap={quota.inspectionCap ?? 0}
+                      value={inspection}
+                      segments={segments}
+                      int={int}
+                      disabled={starting || Boolean(running)}
+                      onChange={(v) => {
+                        setInspection(v);
+                        setConfirming(false);
+                      }}
+                    />
+                  )}
                   {flag("crawl.semantic") && (
                     <SemanticSection
                       t={t.p4g}
@@ -714,13 +734,13 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
             </AddDataSection>
           )}
 
-          {confirming && (addData || ai || semantic) && quota && (
+          {confirming && (addData || ai || semantic || inspection) && quota && (
             <div role="dialog" aria-labelledby="crawl-confirm-title" className="mt-4 space-y-2 rounded-lg border border-amber-200 bg-amber-50 p-3">
               <p id="crawl-confirm-title" className="text-sm font-semibold text-gray-900">
                 {t.p4d.confirmTitle}
               </p>
               <ul className="list-disc space-y-1 pl-5 text-sm text-gray-700">
-                {[...(addData ? confirmLines(t.p4d, addData, addDataQuota(quota)) : []), ...(ai ? [aiConfirmLine(t.p4e, ai, int)] : []), ...(semantic ? [semanticConfirmLine(t.p4g, semantic, int)] : [])].map((line) => (
+                {[...(addData ? confirmLines(t.p4d, addData, addDataQuota(quota)) : []), ...(ai ? [aiConfirmLine(t.p4e, ai, int)] : []), ...(semantic ? [semanticConfirmLine(t.p4g, semantic, int)] : []), ...(inspection ? [t.p4g.confirmIns(int.format(inspection.pages))] : [])].map((line) => (
                   <li key={line}>{line}</li>
                 ))}
               </ul>

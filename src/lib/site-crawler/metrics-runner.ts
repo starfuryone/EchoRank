@@ -34,6 +34,12 @@
 //              tried, nearest neighbours and centroid distance are computed in
 //              memory over typed arrays and content.semantic_duplicate /
 //              content.off_topic run on those pages.
+//   inspection Phase 4g: Search Console URL Inspection on the top N pages when
+//              the tenant's GSC property covers the host, within Google's
+//              2,000/day and 600/min per property (Redis counters, reserved
+//              before each call): at the minute limit the step waits for the
+//              next minute, at the daily limit it stops with "daily_quota".
+//              Results in crawl_page_metrics source gsc_inspection.
 //   rules      once a source's targets are done (or it stopped), the rules
 //              requiring its capability are re-evaluated for those pages
 //              (earlier findings replaced) and the summary is re-tallied.
@@ -53,7 +59,7 @@ import { backlinksSummaryTask, parseBacklinksSummary, type BacklinksSummaryItem 
 import { monthlyCapUsd, seoMeteredCall, spentThisMonth } from "@/lib/dataforseo/metering";
 import { recountIssues } from "./aggregate";
 import { metricsForPages, upsertPageMetrics } from "./metrics";
-import type { BacklinkMetric, PsiMetric, PsiRunSummary } from "./metrics-shared";
+import type { BacklinkMetric, InspectionMetric, PsiMetric, PsiRunSummary } from "./metrics-shared";
 import { psiFactsForUrls } from "./psi";
 import { issueRows, toStoredFacts } from "./stored";
 import { openCrawlConfig } from "./crawl-config-secrets";
@@ -64,6 +70,11 @@ import { isFetchableUrl } from "./url";
 import { AI_LIMITS, type AiConfig, type AiProvider } from "./ai-shared";
 import { claudeCostUsd, parseGrammar, parseSuggestion, runPrompt } from "./ai-prompts";
 import { openAiKey } from "./ai-keys";
+import { getConnection, withAccessToken } from "@/lib/gsc/service";
+import { GscReauthError } from "@/lib/gsc/client";
+import { InspectionError, inspectUrl, reserveInspection, type Reservation } from "@/lib/gsc/inspection";
+import { getRedisConnection } from "@/infrastructure/redis/connection";
+import { propertyCovers } from "./gsc-join";
 import { EMBEDDING_DIMS, EMBEDDING_TEXT_CHARS, EmbeddingError, analyse, embedBatch, embeddingCostUsd, fromBytes, toBytes } from "./semantic";
 import { MARKETING_MODEL } from "@/lib/marketing-templates";
 import { marketingTokenLimit, marketingTokensUsed, recordMarketingTokens } from "@/lib/marketing/quota";
@@ -111,6 +122,10 @@ export interface MetricsDeps {
   recordTokens: (tenantId: string, tokens: number) => Promise<void>;
   /** Phase 4g semantic duplicates. */
   embed: typeof embedBatch;
+  /** Phase 4g URL Inspection: the tenant's GSC connection, one inspection, the quota reservation. */
+  gscConnection: (tenantId: string) => Promise<{ status: string; siteUrl: string | null } | null>;
+  inspect: (tenantId: string, siteUrl: string, url: string) => Promise<InspectionMetric>;
+  reserveInspection: (siteUrl: string) => Promise<Reservation>;
 }
 const DEFAULT_DEPS: MetricsDeps = {
   runAudit,
@@ -127,7 +142,16 @@ const DEFAULT_DEPS: MetricsDeps = {
   tokenBudget: async (tenantId, plan) => ({ used: await marketingTokensUsed(tenantId), limit: marketingTokenLimit(plan) }),
   recordTokens: recordMarketingTokens,
   embed: embedBatch,
+  gscConnection: (tenantId) => getConnection(tenantId),
+  inspect: async (tenantId, siteUrl, url) => {
+    const conn = await getConnection(tenantId);
+    if (!conn) throw new GscReauthError();
+    return withAccessToken(conn, (token) => inspectUrl(token, siteUrl, url));
+  },
+  reserveInspection: (siteUrl) => reserveInspection(getRedisConnection(), siteUrl),
 };
+
+export const INSPECTIONS_PER_TICK = 60;
 
 export const SEMANTIC_PAGES_PER_TICK = 100;
 const EMBED_BATCH = 50;
@@ -225,7 +249,7 @@ export async function reevaluatePsiRules(jobId: string, tenantId: string, rootUr
 }
 
 /** Read-modify-write one source's state under summary.metrics. */
-export async function setSourceState(jobId: string, source: "psi" | "backlinks" | "ai" | "semantic", state: Omit<SourceState, "updatedAt">): Promise<void> {
+export async function setSourceState(jobId: string, source: "psi" | "backlinks" | "ai" | "semantic" | "gsc_inspection", state: Omit<SourceState, "updatedAt">): Promise<void> {
   const job = await prisma.crawlJob.findUnique({ where: { id: jobId }, select: { summary: true } });
   const summary = (job?.summary as Record<string, unknown> | null) ?? {};
   const metrics = (summary.metrics as Record<string, unknown> | undefined) ?? {};
@@ -267,6 +291,72 @@ export async function reevaluateAiRules(jobId: string, rootUrl: string, ai: AiCo
   });
   if (issues.length) await prisma.crawlIssue.createMany({ data: issues });
   return issues.length;
+}
+
+export const INSPECTION_RULE_IDS = RULES.filter((r) => r.requires?.includes("gsc_inspection")).map((r) => r.id);
+
+/** Replace the URL Inspection rules' findings on these pages, from their stored results. */
+export async function reevaluateInspectionRules(jobId: string, rootUrl: string, pages: Awaited<ReturnType<typeof targetPages>>): Promise<number> {
+  if (pages.length === 0) return 0;
+  const have = await metricsForPages(pages.map((p) => p.id));
+  await prisma.crawlIssue.deleteMany({ where: { crawlPageId: { in: pages.map((p) => p.id) }, ruleId: { in: INSPECTION_RULE_IDS } } });
+  const keep = new Set(INSPECTION_RULE_IDS);
+  const rows = pages.flatMap((page) => {
+    const d = have.get(page.id)?.gsc_inspection as (InspectionMetric & { error?: string }) | undefined;
+    if (!d || d.error) return [];
+    const inspection = { verdict: d.verdict, coverageState: d.coverageState, robotsTxtState: d.robotsTxtState, googleCanonical: d.googleCanonical };
+    const found = evaluateSiteRules(toStoredFacts(page, rootUrl), { capabilities: ["gsc_inspection"], metrics: { inspection }, site: NO_SITE, job: NO_JOB, isRoot: false }).filter((f) => keep.has(f.ruleId));
+    return issueRows(found, jobId).map((r) => ({ ...r, crawlPageId: page.id }));
+  });
+  if (rows.length) await prisma.crawlIssue.createMany({ data: rows });
+  return rows.length;
+}
+
+async function inspectionTick(job: Job, top: TopPages, deps: MetricsDeps): Promise<MetricsTick> {
+  const pages = await targetPages(job.id, top, { htmlOnly: true });
+  const have = await metricsForPages(pages.map((p) => p.id));
+  const state = (extra: Partial<SourceState> = {}) => {
+    const done = pages.filter((p) => have.get(p.id)?.gsc_inspection);
+    const failed = done.filter((p) => (have.get(p.id)?.gsc_inspection as { error?: string }).error).length;
+    return { status: "running" as const, targets: pages.length, completed: done.length, failed, ...extra };
+  };
+  const finish = async (s: Pick<SourceState, "status" | "stoppedReason">) => {
+    await reevaluateInspectionRules(job.id, job.rootUrl, pages.filter((p) => have.get(p.id)?.gsc_inspection));
+    await recountIssues(job.id);
+    await setSourceState(job.id, "gsc_inspection", state(s));
+    return { done: true } as const;
+  };
+  const todo = pages.filter((p) => !have.get(p.id)?.gsc_inspection);
+  if (todo.length === 0) return finish({ status: "done" });
+  const conn = await deps.gscConnection(job.tenantId);
+  if (!conn || conn.status !== "ACTIVE" || !conn.siteUrl || !propertyCovers(conn.siteUrl, job.rootUrl)) return finish({ status: "stopped", stoppedReason: "not_covered" });
+  const siteUrl = conn.siteUrl;
+
+  for (const page of todo.slice(0, INSPECTIONS_PER_TICK)) {
+    const r = await deps.reserveInspection(siteUrl);
+    if (!r.ok && r.reason === "daily_quota") return finish({ status: "stopped", stoppedReason: "daily_quota" });
+    if (!r.ok) {
+      await setSourceState(job.id, "gsc_inspection", state({ status: "waiting_quota" }));
+      return { done: false, delayMs: r.reason === "minute" ? r.waitMs : 60_000 };
+    }
+    let data: InspectionMetric | { error: string };
+    try {
+      data = await deps.inspect(job.tenantId, siteUrl, page.url);
+    } catch (err) {
+      if (err instanceof GscReauthError) return finish({ status: "stopped", stoppedReason: "needs_reauth" });
+      const status = err instanceof InspectionError ? err.status : null;
+      if (status === 429) {
+        await setSourceState(job.id, "gsc_inspection", state({ status: "waiting_quota" }));
+        return { done: false, delayMs: 60_000 };
+      }
+      if (status === 403) return finish({ status: "stopped", stoppedReason: "no_access" });
+      data = { error: err instanceof Error ? err.message.slice(0, 120) : "failed" };
+    }
+    have.set(page.id, { ...(have.get(page.id) ?? {}), gsc_inspection: data });
+    await upsertPageMetrics(job.id, "gsc_inspection", [{ pageId: page.id, data }]);
+  }
+  await setSourceState(job.id, "gsc_inspection", state());
+  return { done: false, delayMs: 0 };
 }
 
 export const SEMANTIC_RULE_IDS = RULES.filter((r) => r.requires?.includes("semantic")).map((r) => r.id);
@@ -541,6 +631,11 @@ export async function runCrawlMetrics(jobId: string, overrides: Partial<MetricsD
     const tick = await backlinksTick(job, add.backlinks, deps);
     if (!tick.done) return tick;
   }
+  const inspection = readStoredConfig(job.config)?.inspection;
+  if (inspection && flag("crawl.inspection") && !settled(states.gsc_inspection)) {
+    const tick = await inspectionTick(job, inspection, deps);
+    if (!tick.done) return tick;
+  }
   const semantic = readStoredConfig(job.config)?.semantic;
   if (semantic && flag("crawl.semantic") && !settled(states.semantic)) {
     const tick = await semanticTick(job, semantic, deps);
@@ -561,5 +656,5 @@ export async function runCrawlMetrics(jobId: string, overrides: Partial<MetricsD
 export function needsMetrics(config: unknown): boolean {
   const stored = readStoredConfig(config);
   const add = stored?.addData;
-  return Boolean((add?.psi && flag("crawl.psi")) || (add?.backlinks && flag("crawl.backlinks")) || (stored?.ai && flag("crawl.ai")) || (stored?.semantic && flag("crawl.semantic")));
+  return Boolean((add?.psi && flag("crawl.psi")) || (add?.backlinks && flag("crawl.backlinks")) || (stored?.ai && flag("crawl.ai")) || (stored?.semantic && flag("crawl.semantic")) || (stored?.inspection && flag("crawl.inspection")));
 }

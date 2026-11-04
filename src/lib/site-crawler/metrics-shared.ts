@@ -4,7 +4,7 @@
 // GSC and GA4 joins match on, and the metric columns the Pages tab, its CSV
 // and the Overview tiles share. Dependency-free (the client imports it).
 
-export const METRIC_SOURCES = ["gsc", "psi", "ga4", "backlinks"] as const;
+export const METRIC_SOURCES = ["gsc", "psi", "ga4", "backlinks", "gsc_inspection"] as const;
 export type MetricSource = (typeof METRIC_SOURCES)[number];
 
 export interface GscMetric {
@@ -51,7 +51,21 @@ export interface BacklinkMetric {
   rank: number | null;
 }
 
-export type MetricData = { gsc: GscMetric; psi: PsiMetric; ga4: Ga4Metric; backlinks: BacklinkMetric };
+/** Phase 4g: Search Console URL Inspection, as Google reports it for one page. */
+export interface InspectionMetric {
+  /** PASS | PARTIAL | FAIL | NEUTRAL | VERDICT_UNSPECIFIED. */
+  verdict: string | null;
+  coverageState: string | null;
+  indexingState: string | null;
+  robotsTxtState: string | null;
+  pageFetchState: string | null;
+  googleCanonical: string | null;
+  lastCrawlTime: string | null;
+  mobileUsability: string | null;
+  richResults: string | null;
+}
+
+export type MetricData = { gsc: GscMetric; psi: PsiMetric; ga4: Ga4Metric; backlinks: BacklinkMetric; gsc_inspection: InspectionMetric };
 
 /**
  * The join key: scheme dropped, host lowercased, fragment dropped, trailing
@@ -77,10 +91,17 @@ export interface MetricColumn {
   header: string;
   /** Read from the source's data; null when absent. */
   value: (data: unknown) => number | null;
+  /** Phase 4g: a text column (URL Inspection): shown and exported as text, not sortable. */
+  text?: (data: unknown) => string | null;
 }
 
 const num = (v: unknown) => (typeof v === "number" && Number.isFinite(v) ? v : null);
 const field = (k: string) => (d: unknown) => num((d as Record<string, unknown> | null)?.[k]);
+const str = (k: string) => (d: unknown) => {
+  const v = (d as Record<string, unknown> | null)?.[k];
+  return typeof v === "string" && v ? v : null;
+};
+const none = () => null;
 const run = (strategy: "mobile" | "desktop", k: keyof PsiRunSummary) => (d: unknown) => {
   const r = (d as PsiMetric | null)?.[strategy];
   return r && !("error" in r) ? num(r[k]) : null;
@@ -106,9 +127,19 @@ export const METRIC_COLUMNS: readonly MetricColumn[] = [
   { source: "backlinks", key: "backlinks.referringDomains", header: "Referring domains", value: field("referringDomains") },
   { source: "backlinks", key: "backlinks.backlinks", header: "Backlinks", value: field("backlinks") },
   { source: "backlinks", key: "backlinks.rank", header: "Page rank (DataForSEO)", value: field("rank") },
+  { source: "gsc_inspection", key: "gsc_inspection.verdict", header: "Index verdict", value: none, text: str("verdict") },
+  { source: "gsc_inspection", key: "gsc_inspection.coverageState", header: "Coverage state", value: none, text: str("coverageState") },
+  { source: "gsc_inspection", key: "gsc_inspection.indexingState", header: "Indexing state", value: none, text: str("indexingState") },
+  { source: "gsc_inspection", key: "gsc_inspection.robotsTxtState", header: "robots.txt state (Google)", value: none, text: str("robotsTxtState") },
+  { source: "gsc_inspection", key: "gsc_inspection.pageFetchState", header: "Page fetch state", value: none, text: str("pageFetchState") },
+  { source: "gsc_inspection", key: "gsc_inspection.googleCanonical", header: "Google canonical", value: none, text: str("googleCanonical") },
+  { source: "gsc_inspection", key: "gsc_inspection.lastCrawlTime", header: "Last crawled (Google)", value: none, text: str("lastCrawlTime") },
+  { source: "gsc_inspection", key: "gsc_inspection.mobileUsability", header: "Mobile usability (Google)", value: none, text: str("mobileUsability") },
+  { source: "gsc_inspection", key: "gsc_inspection.richResults", header: "Rich results (Google)", value: none, text: str("richResults") },
 ];
 
-export const METRIC_SORT_KEYS: ReadonlySet<string> = new Set(METRIC_COLUMNS.map((c) => c.key));
+/** Numeric columns only: text columns are not sortable. */
+export const METRIC_SORT_KEYS: ReadonlySet<string> = new Set(METRIC_COLUMNS.filter((c) => !c.text).map((c) => c.key));
 
 /** The jsonb path a sort key reads: "psi.mobile.lcpMs" → source psi, path ["mobile", "lcpMs"]. */
 export function sortPath(key: string): { source: MetricSource; path: string[] } | null {
