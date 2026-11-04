@@ -54,6 +54,9 @@ import { InlinksPanel } from "@/components/seo-tools/site-crawler-inlinks";
 import { ExtractionPanel } from "@/components/seo-tools/site-crawler-extraction";
 import { ComparePanel } from "@/components/seo-tools/site-crawler-compare";
 import { CrawlSchedules } from "@/components/seo-tools/site-crawler-schedules";
+import { SheetsExport } from "@/components/seo-tools/site-crawler-sheets";
+import { helpArticleHref } from "@/lib/help-articles";
+import { LOOKER_STUDIO_SLUG } from "@/lib/help-articles-crawler";
 import { SegmentOverview, SegmentPicker } from "@/components/seo-tools/site-crawler-segments";
 import type { ConfigProblem, CrawlConfigInput } from "@/lib/site-crawler/crawl-config";
 import { parseUrlList } from "@/lib/site-crawler/url-list";
@@ -642,6 +645,9 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
                     setCrawls((list) => list.map((x) => (x.id === c.id ? { ...x, pinned: c.pinned } : x)));
                   }}
                 />
+                {flag("crawl.sheets") && active.status === "COMPLETED" && !active.dataPurgedAt && (
+                  <SheetsExport crawlId={active.id} t={t.p4c} int={int} guideHref={helpArticleHref(locale, LOOKER_STUDIO_SLUG)} />
+                )}
               </div>
             )}
           </CardContent>

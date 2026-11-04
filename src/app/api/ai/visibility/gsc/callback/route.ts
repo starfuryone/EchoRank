@@ -7,9 +7,9 @@
 // page renders localized.
 import { NextRequest, NextResponse } from "next/server";
 import { requirePaidPlan } from "@/lib/paid-plan";
-import { verifyState } from "@/lib/gsc/state";
+import { verifyStatePurpose } from "@/lib/gsc/state";
 import { exchangeCode, listSites } from "@/lib/gsc/client";
-import { saveConnection } from "@/lib/gsc/service";
+import { getConnection, saveConnection } from "@/lib/gsc/service";
 
 const PAGE = "/visibility/tools/gsc-insights";
 const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://echorank360.com";
@@ -28,14 +28,34 @@ export async function GET(req: NextRequest) {
 
   const url = req.nextUrl;
   if (url.searchParams.get("error")) {
-    // User declined on Google's screen.
+    // User declined on Google's screen. A Sheets connect goes back to the crawler.
+    if (verifyStatePurpose(url.searchParams.get("state") ?? "")?.purpose === "sheets") {
+      return NextResponse.redirect(new URL("/crawler?sheets_error=denied", BASE));
+    }
     return back(req, "gsc_error=denied");
   }
   const code = url.searchParams.get("code") ?? "";
   const state = url.searchParams.get("state") ?? "";
-  const stateTenant = verifyState(state);
-  if (!code || !stateTenant || stateTenant !== tenantId) {
+  const verified = verifyStatePurpose(state);
+  if (!code || !verified || verified.tenantId !== tenantId) {
     return back(req, "gsc_error=bad_state");
+  }
+
+  // Phase 4c: the Site Crawler's "Connect Google Sheets" (crawl.sheets). The
+  // same refresh token, now carrying spreadsheets too; the chosen property
+  // is kept, and having no property is fine here.
+  if (verified.purpose === "sheets") {
+    const crawler = (q: string) => NextResponse.redirect(new URL(`/crawler?${q}`, BASE));
+    try {
+      const { refreshToken } = await exchangeCode(code);
+      if (!refreshToken) return crawler("sheets_error=no_refresh_token");
+      const prev = await getConnection(tenantId);
+      await saveConnection({ tenantId, refreshToken, googleEmail: prev?.googleEmail ?? null, siteUrl: prev?.siteUrl ?? null });
+      return crawler("sheets=connected");
+    } catch (err) {
+      console.error("[gsc/callback] sheets connection failed:", err instanceof Error ? err.message : err);
+      return crawler("sheets_error=exchange_failed");
+    }
   }
 
   try {

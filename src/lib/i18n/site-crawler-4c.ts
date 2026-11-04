@@ -102,6 +102,19 @@ const en = {
   schErrConfig: "Some settings above cannot be used. Fix them, then save again.",
   schErrUrl: "Enter a public http(s) URL, like https://example.com.",
   schErrGeneric: "The schedule could not be saved. Try again.",
+  // ── Google Sheets ───────────────────────────────────────────────────────
+  shTitle: "Google Sheets",
+  shTarget: "Spreadsheet URL or ID (leave blank to create one)",
+  shExport: "Export to Sheets",
+  shExporting: "Exporting…",
+  shDone: (pages: string) => `Written: Summary, Issues, Pages (${pages} rows) and Compare.`,
+  shOpen: "Open the spreadsheet",
+  shConnect: "Connect Google Sheets",
+  shNeedConnect: "Connect Google Sheets to export. Echorank asks Google for access to your spreadsheets in addition to Search Console.",
+  shConnected: "Google Sheets is connected.",
+  shGuide: "Build a Looker Studio report from this sheet",
+  shErrTarget: "That is not a Google Sheets URL or spreadsheet ID.",
+  shErr: "The export failed. Try again.",
 };
 
 export type SiteCrawler4cCopy = typeof en;
@@ -201,6 +214,18 @@ const fr: SiteCrawler4cCopy = {
   schErrConfig: "Certains réglages ci-dessus ne peuvent pas être utilisés. Corrigez-les, puis enregistrez de nouveau.",
   schErrUrl: "Saisissez une URL http(s) publique, comme https://exemple.com.",
   schErrGeneric: "La planification n'a pas pu être enregistrée. Réessayez.",
+  shTitle: "Google Sheets",
+  shTarget: "URL ou identifiant de la feuille (laissez vide pour en créer une)",
+  shExport: "Exporter vers Sheets",
+  shExporting: "Exportation…",
+  shDone: (pages: string) => `Écrit : Summary, Issues, Pages (${pages} lignes) et Compare.`,
+  shOpen: "Ouvrir la feuille de calcul",
+  shConnect: "Connecter Google Sheets",
+  shNeedConnect: "Connectez Google Sheets pour exporter. Echorank demande à Google l'accès à vos feuilles de calcul en plus de la Search Console.",
+  shConnected: "Google Sheets est connecté.",
+  shGuide: "Créer un rapport Looker Studio à partir de cette feuille",
+  shErrTarget: "Ce n'est pas une URL ni un identifiant de feuille Google Sheets.",
+  shErr: "L'exportation a échoué. Réessayez.",
 };
 
 const deCH: SiteCrawler4cCopy = {
@@ -298,6 +323,18 @@ const deCH: SiteCrawler4cCopy = {
   schErrConfig: "Einige Einstellungen oben können nicht verwendet werden. Korrigieren Sie sie und speichern Sie erneut.",
   schErrUrl: "Geben Sie eine öffentliche http(s)-URL ein, etwa https://example.com.",
   schErrGeneric: "Der Zeitplan konnte nicht gespeichert werden. Bitte erneut versuchen.",
+  shTitle: "Google Sheets",
+  shTarget: "Tabellen-URL oder -ID (leer lassen, um eine neue anzulegen)",
+  shExport: "Nach Sheets exportieren",
+  shExporting: "Wird exportiert…",
+  shDone: (pages: string) => `Geschrieben: Summary, Issues, Pages (${pages} Zeilen) und Compare.`,
+  shOpen: "Tabelle öffnen",
+  shConnect: "Google Sheets verbinden",
+  shNeedConnect: "Verbinden Sie Google Sheets, um zu exportieren. Echorank bittet Google zusätzlich zur Search Console um Zugriff auf Ihre Tabellen.",
+  shConnected: "Google Sheets ist verbunden.",
+  shGuide: "Aus dieser Tabelle einen Looker-Studio-Bericht erstellen",
+  shErrTarget: "Das ist keine Google-Sheets-URL und keine Tabellen-ID.",
+  shErr: "Der Export ist fehlgeschlagen. Bitte erneut versuchen.",
 };
 
 export const SITE_CRAWLER_4C = { en, fr, "de-CH": deCH } as const;

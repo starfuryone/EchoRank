@@ -34,6 +34,7 @@ import { prisma } from "@/lib/prisma";
 import { afterScheduledCrawl, runScheduledCrawl, syncAllRepeatables } from "@/lib/site-crawler/schedule-service";
 import { SCHEDULE_JOB_NAME } from "@/lib/site-crawler/schedule";
 import { sendScheduledCrawlEmail } from "@/lib/site-crawler/schedule-email";
+import { exportScheduledToSheets } from "@/lib/site-crawler/sheets";
 import { CRAWL_JOB_CONCURRENCY } from "@/lib/site-crawler/constants";
 import { logger } from "@/infrastructure/observability/logger";
 import { withSpan } from "@/infrastructure/observability/telemetry";
@@ -94,8 +95,8 @@ async function processSiteCrawlJob(job: Job<SiteCrawlQueueJob>): Promise<void> {
 
 type RepeatableQueue = Pick<Queue, "getRepeatableJobs" | "removeRepeatableByKey" | "add">;
 
-/** What a scheduled crawl does on completion besides comparing (Sheets joins in 4c-e). */
-const SCHEDULE_HOOKS = { email: sendScheduledCrawlEmail };
+/** What a scheduled crawl does on completion besides comparing (each gated by its flag in afterScheduledCrawl). */
+const SCHEDULE_HOOKS = { email: sendScheduledCrawlEmail, sheets: exportScheduledToSheets };
 
 /**
  * Register the nightly retention job and one repeatable per enabled schedule,

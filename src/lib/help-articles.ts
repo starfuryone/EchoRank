@@ -23,13 +23,15 @@
 // to en, so a third catalog here would be unreachable code.
 
 import type { LearnBlock, LearnFaqEntry, LearnLink } from "./learn-content";
+import { flag } from "./flags";
+import { LOOKER_STUDIO_ARTICLE } from "./help-articles-crawler";
 
 /** Path after the locale segment. The in-app hub at exactly "/help" is a
  *  DIFFERENT, auth-gated dashboard route — see src/app/(dashboard)/help. */
 export const HELP_ARTICLE_BASE = "/help";
 
-/** Hub grouping. One value today; the type is what makes the second one cheap. */
-export type HelpArticleCategory = "billing";
+/** Hub grouping. "site-crawler" holds the Looker Studio guide (Phase 4c), listed while crawl.sheets is on. */
+export type HelpArticleCategory = "billing" | "site-crawler";
 
 export type HelpBase = "en" | "fr";
 
@@ -247,6 +249,9 @@ export const HELP_ARTICLES: HelpArticle[] = [
       },
     },
   },
+  // Phase 4c: the Looker Studio guide documents the Sheets export, so it is
+  // public only once that export is (src/lib/help-articles-crawler.ts).
+  ...(flag("crawl.sheets") ? [LOOKER_STUDIO_ARTICLE] : []),
 ];
 
 export function helpArticleBySlug(slug: string): HelpArticle | undefined {

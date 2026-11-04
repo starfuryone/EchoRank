@@ -17,8 +17,12 @@ function hmac(payload: string, secret: string): string {
   return createHmac("sha256", secret).update(payload).digest("base64url");
 }
 
-export function signState(tenantId: string, secret = envSecret(), now = Date.now()): string {
-  const payload = `${tenantId}.${now + STATE_TTL_MS}.${randomBytes(8).toString("base64url")}`;
+/** Which flow minted the state: Search Console (default) or the crawler's Sheets connect (Phase 4c). */
+export type StatePurpose = "gsc" | "sheets";
+
+export function signState(tenantId: string, secret = envSecret(), now = Date.now(), purpose: StatePurpose = "gsc"): string {
+  const nonce = randomBytes(8).toString("base64url");
+  const payload = purpose === "gsc" ? `${tenantId}.${now + STATE_TTL_MS}.${nonce}` : `${tenantId}.${now + STATE_TTL_MS}.${nonce}.${purpose}`;
   return `${Buffer.from(payload).toString("base64url")}.${hmac(payload, secret)}`;
 }
 
@@ -28,6 +32,15 @@ export function verifyState(
   secret = envSecret(),
   now = Date.now(),
 ): string | null {
+  return verifyStatePurpose(state, secret, now)?.tenantId ?? null;
+}
+
+/** The tenant AND the flow the state was signed for. The purpose is inside the HMAC. */
+export function verifyStatePurpose(
+  state: string,
+  secret = envSecret(),
+  now = Date.now(),
+): { tenantId: string; purpose: StatePurpose } | null {
   const dot = state.lastIndexOf(".");
   if (dot <= 0) return null;
   const payloadB64 = state.slice(0, dot);
@@ -42,9 +55,10 @@ export function verifyState(
   const a = Buffer.from(sig);
   const b = Buffer.from(expected);
   if (a.length !== b.length || !timingSafeEqual(a, b)) return null;
-  const [tenantId, expiresStr] = payload.split(".");
+  const [tenantId, expiresStr, , purposeStr] = payload.split(".");
   if (!tenantId || !expiresStr) return null;
   const expires = Number(expiresStr);
   if (!Number.isFinite(expires) || now > expires) return null;
-  return tenantId;
+  if (purposeStr !== undefined && purposeStr !== "sheets") return null;
+  return { tenantId, purpose: purposeStr === "sheets" ? "sheets" : "gsc" };
 }

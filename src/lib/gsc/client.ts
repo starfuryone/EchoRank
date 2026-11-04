@@ -1,10 +1,14 @@
 // Plain-REST Google OAuth + Search Console client (no SDK — zero new deps).
-// Scope is webmasters.readonly ONLY. Tokens are handled in memory and never
+// Scope is webmasters.readonly, plus — only through the Site Crawler's
+// "Connect Google Sheets" flow (Phase 4c, crawl.sheets) — spreadsheets, asked
+// for incrementally (include_granted_scopes) on the same OAuth client. Tokens are handled in memory and never
 // logged; refresh tokens are persisted encrypted by the service layer.
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://echorank360.com";
 export const GSC_REDIRECT_URI = `${SITE}/api/ai/visibility/gsc/callback`;
 export const GSC_SCOPE = "https://www.googleapis.com/auth/webmasters.readonly";
+/** Phase 4c Sheets export. Needs the Sheets API enabled and the scope on the consent screen. */
+export const SHEETS_SCOPE = "https://www.googleapis.com/auth/spreadsheets";
 
 function clientId(): string {
   const v = process.env.GOOGLE_OAUTH_CLIENT_ID;
@@ -25,16 +29,19 @@ export class GscReauthError extends Error {
   }
 }
 
-export function buildAuthUrl(state: string): string {
+export function buildAuthUrl(state: string, scopes: readonly string[] = [GSC_SCOPE]): string {
   const p = new URLSearchParams({
     client_id: clientId(),
     redirect_uri: GSC_REDIRECT_URI,
     response_type: "code",
-    scope: GSC_SCOPE,
+    scope: scopes.join(" "),
     access_type: "offline", // guarantees a refresh token...
     prompt: "consent",      // ...even on re-connection
     state,
   });
+  // More than Search Console: keep what was granted before, so the one
+  // refresh token on gsc_connections still reads Search Console.
+  if (scopes.length > 1) p.set("include_granted_scopes", "true");
   return `https://accounts.google.com/o/oauth2/v2/auth?${p.toString()}`;
 }
 
