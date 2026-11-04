@@ -50,7 +50,7 @@ describe.skipIf(!TEST_DB)("external links against Postgres", () => {
   it("resolves each external URL once, most-linked first, reusing the crawl's HEAD cache", async () => {
     const asked: string[] = [];
     const headFn = async (u: string) => (asked.push(u), { status: u.includes("gone") ? 404 : u.includes("down") ? 503 : 200, bytes: null });
-    const out = await x.resolveExternalStatuses(job, redis, "k", headFn);
+    const out = await x.resolveExternalStatuses(job, redis as never, "k", headFn);
     expect(out).toEqual({ urls: 4, checked: 4, capped: false });
     expect(asked.sort()).toEqual(["https://down.example/", "https://gone.example/x", "https://ok.example/"]);
     const rows = await prisma.crawlLink.findMany({ where: { crawlJobId: job }, select: { toUrl: true, status: true, isExternal: true } });
@@ -59,7 +59,7 @@ describe.skipIf(!TEST_DB)("external links against Postgres", () => {
     expect(rows.find((r) => !r.isExternal)!.status).toBeNull();
     // A second pass asks nobody: every URL is in the cache now.
     asked.length = 0;
-    await x.resolveExternalStatuses(job, redis, "k", headFn);
+    await x.resolveExternalStatuses(job, redis as never, "k", headFn);
     expect(asked).toEqual([]);
   });
 
