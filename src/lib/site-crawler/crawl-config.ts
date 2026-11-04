@@ -27,6 +27,7 @@ import type { SegmentDef } from "./segments";
 import { flag } from "@/lib/flags";
 import { JS_LIMITS, JS_PRESETS, type JsSnippet } from "./js-snippets";
 import { AI_LIMITS, AI_PRESETS, AI_PROVIDERS, type AiConfig } from "./ai-shared";
+import type { LoginConfigOf } from "./login-config";
 
 export const CONFIG_LIMITS = {
   patterns: 20,
@@ -181,6 +182,14 @@ export interface CrawlConfigOf<S> {
    * budget), OpenAI / Gemini on the tenant's own key.
    */
   ai?: AiConfig | null;
+  /**
+   * Phase 4e forms login (crawl.login), verified sites only. Never from
+   * input: the server copies the host's saved login (crawl_site_defaults.login,
+   * credentials sealed) when the start request sets useLogin.
+   */
+  login?: LoginConfigOf<S> | null;
+  /** Phase 4e, input only: log in with the host's saved login before crawling. */
+  useLogin?: boolean;
 }
 
 /** Phase 4d: the top N pages by inlinks, optionally inside one of the crawl's segments. */
@@ -387,6 +396,7 @@ export const CrawlConfigInputSchema = z.object({
     })
     .nullable()
     .default(null),
+  useLogin: z.boolean().default(false),
   ai: z
     .object({
       provider: z.enum(AI_PROVIDERS),
@@ -424,6 +434,7 @@ export type ConfigProblem =
   | { field: "ai"; code: "ai_unavailable" }
   | { field: "ai"; code: "invalid_prompt"; index: number }
   | { field: "ai"; code: "unknown_segment" }
+  | { field: "login"; code: "login_missing" }
   | { field: "js"; code: "requires_render" }
   | { field: "js"; code: "invalid_snippet"; index: number; reason: "selector_missing" | "code_missing" }
   | { field: "extractors" | "searches"; code: "invalid_expression"; index: number; reason: string };
@@ -512,6 +523,10 @@ export function checkCrawlConfig(
     if (provider !== "claude" && ctx.aiKeys && !ctx.aiKeys[provider]) problems.push({ field: "ai", code: "ai_key_missing", provider });
     if (provider === "claude" && ctx.claudeAvailable === false) problems.push({ field: "ai", code: "ai_unavailable" });
   }
+  // Phase 4e forms login: never from input; useLogin asks for the saved one, verified sites only.
+  delete config.login;
+  config.useLogin = flag("crawl.login") ? Boolean(input.useLogin) : false;
+  if (config.useLogin && !ctx.verified) problems.push({ field: "login", code: "requires_verified_site" });
   // Never from input: the server snapshots the host's saved segments.
   delete config.segments;
   const extractorCap = ctx.extractorCap ?? 0;
@@ -555,12 +570,16 @@ export function viewCrawlConfig(stored: StoredCrawlConfig | null): CrawlConfigVi
     headers: stored.headers.map((h) => ({ name: h.name, value: { set: true } })),
     cookies: set(stored.cookies),
     basicAuth: stored.basicAuth ? { user: stored.basicAuth.user, password: { set: true } } : null,
+    login: stored.login ? { ...stored.login, username: { set: true }, password: { set: true } } : null,
   };
 }
 
-/** Phase 4e: a site's saved defaults as columns — the snippets live in jsSnippets, not in config. */
+/** Phase 4e: a site's saved defaults as columns — the snippets live in jsSnippets, the login in login, neither in config. */
 export function siteDefaultColumns(stored: StoredCrawlConfig): { config: object; jsSnippets: object } {
-  const { js, ...rest } = stored;
+  // The login has its own column and route (crawl_site_defaults.login); it is never saved from a crawl's config.
+  const { js, login: _login, useLogin: _useLogin, ...rest } = stored;
+  void _login;
+  void _useLogin;
   return { config: rest as object, jsSnippets: (js ?? []) as object };
 }
 

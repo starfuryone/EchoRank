@@ -85,6 +85,8 @@ export interface FetchOptions {
    * handed to whatever host a redirect names.
    */
   credentialsFor?: (url: string) => boolean;
+  /** Phase 4e forms login: the Cookie header the session gives this URL (login host only), or null. */
+  cookiesFor?: (url: string) => string | null;
 }
 
 export interface RedirectHop {
@@ -139,7 +141,9 @@ export async function fetchPage(url: string, opts: FetchOptions = {}): Promise<F
 
   try {
     for (;;) {
-      const credentials = opts.extraHeaders && (!opts.credentialsFor || opts.credentialsFor(current)) ? opts.extraHeaders : {};
+      const credentials: Record<string, string> = opts.extraHeaders && (!opts.credentialsFor || opts.credentialsFor(current)) ? { ...opts.extraHeaders } : {};
+      const session = opts.cookiesFor?.(current);
+      if (session) credentials.cookie = credentials.cookie ? `${credentials.cookie}; ${session}` : session;
       const res = await fetch(current, {
         headers: {
           ...credentials,

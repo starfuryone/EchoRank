@@ -61,7 +61,8 @@ export const FLAGS = {
   // Phase 4e: AI prompts on the top N pages after the crawl (Claude on the
   // Marketing Studio token budget, OpenAI / Gemini on the tenant's own key).
   "crawl.ai": true,
-  "crawl.formsAuth": false,
+  // Phase 4e: forms-based login before crawling (verified sites only).
+  "crawl.login": true,
 } as const satisfies Record<string, boolean>;
 
 export type FlagName = keyof typeof FLAGS;

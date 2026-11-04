@@ -1144,6 +1144,11 @@ function Summary({
         </p>
       )}
       {stopped && <p className="text-xs text-gray-500">{stopped}</p>}
+      {crawl.login && (
+        <p role="status" className={crawl.login.status === "failed" ? "text-xs text-amber-700" : "text-xs text-gray-500"}>
+          {crawl.login.status === "failed" ? t.p4e.loginFailedNote(t.p4e.loginReasons[crawl.login.reason ?? ""] ?? t.p4e.loginReasons.success_check_failed) : t.p4e.loginOkNote}
+        </p>
+      )}
     </div>
   );
 }

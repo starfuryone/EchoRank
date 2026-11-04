@@ -48,6 +48,8 @@ import { RenderBudget, callSidecarRender } from "./render";
 import { isRenderMode } from "./types";
 import { flag } from "@/lib/flags";
 import type { Validator as AmpValidator } from "amphtml-validator";
+import { cookieHeaderFor, loadJar, saveJar, sidecarLogin, type JarCookie } from "./login";
+import { LOGOUT_TEXT, LOGOUT_URL } from "./login-config";
 import { snippetCode } from "./js-snippets";
 import { ampValidator, validateAmp } from "./amp-validator";
 import { renderedOnlyLinks } from "@/lib/crawl-rules";
@@ -102,6 +104,8 @@ interface CrawlCtx {
   segmentsOf: ((page: SegmentPage) => number[]) | null;
   /** Phase 4e: the official AMP validator, loaded on the first AMP page (null = unavailable); null when crawl.amp is off. */
   amp: (() => Promise<AmpValidator | null>) | null;
+  /** Phase 4e: the crawl is logged in — logout links and rel=nofollow links are never followed. */
+  loggedIn: boolean;
 }
 
 /** The job's stored config, decrypted; the defaults for a pre-4a job. */
@@ -217,11 +221,14 @@ export async function runCrawl({
   };
   // Phase 4e: the custom JavaScript snippets ride every render call (set once the config is open).
   let snippetCodes: string[] = [];
+  // Phase 4e forms login: the session (cookies) for the login host, and what the crawl header says.
+  let jar: JarCookie[] | null = null;
+  let loginState: { status: "ok" | "failed"; reason?: string } | null = null;
   const render = new RenderBudget(
     isRenderMode(job.renderMode) ? job.renderMode : "none",
     job.renderCap,
     job.pagesRendered,
-    (url) => callSidecarRender(url, fetch, snippetCodes),
+    (url) => callSidecarRender(url, fetch, snippetCodes, jar ?? []),
   );
   // Released in the finally below: the dictionaries (600 MB for French) are
   // dropped once no crawl in this process holds them.
@@ -239,6 +246,29 @@ export async function runCrawl({
     const cfg = runtimeConfig(job.config);
     const settings = crawlSettings(cfg, rootUrl);
     snippetCodes = flag("crawl.customJs") ? (cfg.js ?? []).map(snippetCode) : [];
+    // Once per crawl (a retried job reuses the session in Redis). A failed
+    // login is not fatal: the crawl runs unauthenticated and says so.
+    if (cfg.login && flag("crawl.login")) {
+      const loginHost = new URL(cfg.login.loginUrl).hostname.toLowerCase();
+      jar = await loadJar(redis, jobId);
+      if (!jar) {
+        const out = await sidecarLogin(cfg.login, settings.userAgent);
+        if (out.ok) {
+          jar = out.cookies;
+          await saveJar(redis, jobId, jar);
+        } else {
+          loginState = { status: "failed", reason: out.reason };
+        }
+      }
+      if (jar) {
+        const session = jar;
+        settings.fetchOpts.cookiesFor = (u) => cookieHeaderFor(session, loginHost, u);
+      }
+      const state: { status: "ok" | "failed"; reason?: string } = jar ? { status: "ok" } : (loginState ?? { status: "failed", reason: "sidecar_unavailable" });
+      loginState = state;
+      await prisma.crawlJob.update({ where: { id: jobId }, data: { summary: { login: state } as object } });
+      logger.info({ jobId, login: state.status, reason: state.reason ?? null }, "site-crawl login");
+    }
     const live = await fetchRobots(rootUrl, { userAgent: settings.userAgent, agent: settings.agent });
     const { obey: robots, test: robotsTest } = resolveRobots(
       live,
@@ -348,6 +378,7 @@ export async function runCrawl({
       extract: compileExtraction(cfg.extractors ?? [], cfg.searches ?? []),
       segmentsOf: cfg.segments?.length ? segmentMatcher(cfg.segments) : null,
       amp: flag("crawl.amp") ? () => ampValidator() : null,
+      loggedIn: jar !== null,
     };
 
     for (;;) {
@@ -434,7 +465,7 @@ export async function runCrawl({
           stoppedReason,
           finishedAt: new Date(),
           pagesRendered: job.pagesRendered + render.rendered,
-          ...(summary === undefined ? {} : { summary: summary as never }),
+          ...(summary === undefined && !loginState ? {} : { summary: (loginState ? { ...((summary as object | undefined) ?? {}), login: loginState } : summary) as never }),
         },
       })
       .catch((err) => logger.error({ jobId, err }, "site-crawl: final status write failed"));
@@ -451,6 +482,7 @@ export async function runCrawl({
         keys.nofollowInlinks,
         keys.firstSource,
         keys.headCache,
+        keys.login,
       )
       .catch(() => {});
   }
@@ -689,7 +721,10 @@ async function crawlOne(item: FrontierItem, ctx: CrawlCtx): Promise<PendingPage>
   const linkTargets = admitAll([...(parsed?.links ?? []), ...jsLinks]);
   // rel=nofollow targets are crawled only when the configuration says so;
   // they never earn a followed-inlink credit either way.
-  const nofollowFollowed = settings.followNofollow ? admitAll(parsed?.nofollowLinks ?? []) : [];
+  // Phase 4e: a logged-in crawl never follows a rel=nofollow link, whatever the configuration says.
+  const nofollowFollowed = settings.followNofollow && !ctx.loggedIn ? admitAll(parsed?.nofollowLinks ?? []) : [];
+  // …nor a logout link (by URL or anchor text): following one would end the session.
+  const logout = ctx.loggedIn ? logoutTargets(facts) : null;
   const deeper = settings.maxDepth === null || item.depth + 1 <= settings.maxDepth;
 
   return {
@@ -712,11 +747,13 @@ async function crawlOne(item: FrontierItem, ctx: CrawlCtx): Promise<PendingPage>
     jsValues: facts.render?.snippets ?? null,
     searchHits: ex?.searchHits ?? null,
     discovered: deeper && !ctx.listMode
-      ? [...linkTargets, ...nofollowFollowed, ...annotationTargets(facts, linkTargets, settings)].map((url) => ({
-          url,
-          depth: item.depth + 1,
-          from: item.url,
-        }))
+      ? [...linkTargets, ...nofollowFollowed, ...annotationTargets(facts, linkTargets, settings)]
+          .filter((url) => !logout || (!logout.has(url) && !LOGOUT_URL.test(url)))
+          .map((url) => ({
+            url,
+            depth: item.depth + 1,
+            from: item.url,
+          }))
       : [],
     linkTargets,
     nofollowTargets: [...new Set(parsed?.nofollowLinks ?? [])],
@@ -741,6 +778,18 @@ function annotationTargets(facts: PageFacts, linkTargets: string[], settings: Cr
     if (!url || seen.has(url)) continue;
     seen.add(url);
     out.push(url);
+  }
+  return out;
+}
+
+/** Phase 4e: links a logged-in crawl must not follow — logout by URL or anchor text, and every rel=nofollow link. */
+function logoutTargets(facts: PageFacts): Set<string> {
+  const out = new Set<string>();
+  for (const a of facts.html?.anchors ?? []) {
+    if (LOGOUT_URL.test(a.href) || LOGOUT_TEXT.test(a.text) || /\bnofollow\b/i.test(a.rel)) {
+      const u = normalizeCrawlUrl(a.href, facts.finalUrl);
+      if (u) out.add(u);
+    }
   }
   return out;
 }

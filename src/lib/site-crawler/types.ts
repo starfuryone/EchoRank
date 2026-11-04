@@ -55,6 +55,8 @@ export interface CrawlDto {
   listSkipped?: number;
   /** Present on the detail endpoint once the crawl has settled. */
   severityCounts?: SeverityCounts;
+  /** Phase 4e forms login: failed = the crawl ran unauthenticated. */
+  login?: { status: "ok" | "failed"; reason: string | null } | null;
 }
 
 export interface SeverityCounts {

@@ -171,7 +171,7 @@ describe("/site-crawler", () => {
     expect(gateOpen({ family: "links" }, ctx)).toBe(true);
     expect(gateOpen({ family: "amp" }, ctx)).toBe(false);
     expect(gateOpen({ flag: "crawl.links" }, ctx)).toBe(true);
-    expect(gateOpen({ flag: "crawl.formsAuth" }, ctx)).toBe(false);
+    expect(gateOpen({ flag: "crawl.sheets" }, ctx)).toBe(false);
   });
 
   it("names Lighthouse in the mobile card only once crawl.psi ships", () => {

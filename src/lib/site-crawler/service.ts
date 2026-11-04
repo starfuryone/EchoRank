@@ -37,6 +37,7 @@ import {
 } from "./crawl-config";
 import { flag } from "@/lib/flags";
 import { SegmentDefSchema, type SegmentDef } from "./segments";
+import { readStoredLogin } from "./login";
 import { aiKeyStatus } from "./ai-keys";
 import { planCanUseMarketing } from "@/lib/marketing/quota";
 import { sealCrawlConfig } from "./crawl-config-secrets";
@@ -64,6 +65,14 @@ export interface CrawlJobDto {
   pinned: boolean;
   /** Set once retention deleted the crawl's pages: summary only from then on. */
   dataPurgedAt: string | null;
+  /** Phase 4e forms login: how it went (failed = the crawl ran unauthenticated). Absent when no login was asked. */
+  login?: { status: "ok" | "failed"; reason: string | null } | null;
+}
+
+/** summary.login, when the crawl logged in (or tried to). */
+function loginOf(summary: unknown): CrawlJobDto["login"] {
+  const l = (summary as { login?: { status?: string; reason?: string } } | null)?.login;
+  return l && (l.status === "ok" || l.status === "failed") ? { status: l.status, reason: l.reason ?? null } : null;
 }
 
 export function toCrawlDto(row: {
@@ -84,6 +93,7 @@ export function toCrawlDto(row: {
   config?: unknown;
   pinned?: boolean;
   dataPurgedAt?: Date | null;
+  summary?: unknown;
 }): CrawlJobDto {
   return {
     id: row.id,
@@ -103,6 +113,7 @@ export function toCrawlDto(row: {
     config: viewCrawlConfig(readStoredConfig(row.config)),
     pinned: row.pinned ?? false,
     dataPurgedAt: row.dataPurgedAt?.toISOString() ?? null,
+    ...(row.summary !== undefined && loginOf(row.summary) ? { login: loginOf(row.summary) } : {}),
   };
 }
 
@@ -184,7 +195,7 @@ export async function startCrawl(
   const site = opts.config || opts.saveAsDefault || opts.sealed
     ? await prisma.crawlSiteDefault.findUnique({
         where: { tenantId_host: { tenantId, host } },
-        select: { verifiedAt: true, config: true, jsSnippets: true },
+        select: { verifiedAt: true, config: true, jsSnippets: true, login: true },
       })
     : null;
   let stored = null;
@@ -202,7 +213,7 @@ export async function startCrawl(
     if (checked.problems.length) throw new InvalidCrawlConfigError(checked.problems);
     stored = sealCrawlConfig(checked.config, readSiteDefaults(site?.config, site?.jsSnippets));
   } else if (opts.sealed) {
-    const checked = checkCrawlConfig({ ...opts.sealed, headers: [], cookies: null, basicAuth: null }, {
+    const checked = checkCrawlConfig({ ...opts.sealed, headers: [], cookies: null, basicAuth: null, login: null, useLogin: Boolean(opts.sealed.login) }, {
       urlCap: quota.urlCap,
       verified: Boolean(site?.verifiedAt),
       ...featureCapsForPlan(plan),
@@ -213,7 +224,19 @@ export async function startCrawl(
       checkExpr: checkExtractorExpr,
     });
     if (checked.problems.length) throw new InvalidCrawlConfigError(checked.problems);
-    stored = { ...opts.sealed, maxUrls: checked.config.maxUrls };
+    stored = { ...opts.sealed, maxUrls: checked.config.maxUrls, useLogin: checked.config.useLogin };
+  }
+  // Phase 4e forms login: the host's CURRENT saved login (credentials still
+  // sealed) rides on the crawl; a crawl asking for one without it is refused.
+  if (stored) {
+    const wants = Boolean(stored.useLogin);
+    delete stored.useLogin;
+    stored.login = null;
+    if (wants) {
+      const saved = readStoredLogin(site?.login);
+      if (!saved) throw new InvalidCrawlConfigError([{ field: "login", code: "login_missing" }]);
+      stored.login = saved;
+    }
   }
 
   if (!quota.allowed) {

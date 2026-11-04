@@ -102,6 +102,8 @@ export const crawlKeys = (jobId: string) => ({
   firstSource: `crawl:${jobId}:firstsource`,
   /** HASH url -> "status|bytes" of a HEAD check, so a shared image or link is checked once per crawl. */
   headCache: `crawl:${jobId}:head`,
+  /** Phase 4e: the forms-login cookie jar, encrypted (login.ts). Never in Postgres. */
+  login: `crawl:${jobId}:login`,
 });
 
 // ─── Phase 3a: bounded HEAD checks (external links, same-host images) ──────

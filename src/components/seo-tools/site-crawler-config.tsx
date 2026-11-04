@@ -20,6 +20,7 @@ import type { SiteCrawlerCopy } from "@/lib/i18n/dashboard";
 import { flag } from "@/lib/flags";
 import { ExtractorsEditor, SearchesEditor, SegmentsEditor } from "./site-crawler-config-4b";
 import { JsSnippetsEditor } from "./site-crawler-js";
+import { LoginEditor } from "./site-crawler-login";
 import type { SiteCrawler4eCopy } from "@/lib/i18n/site-crawler-4e";
 import type { JsSnippet } from "@/lib/site-crawler/js-snippets";
 import {
@@ -79,6 +80,7 @@ interface Draft {
   searches: CustomSearch[];
   /** Phase 4e. */
   js: JsSnippet[];
+  useLogin: boolean;
 }
 
 const EMPTY: Draft = {
@@ -104,6 +106,7 @@ const EMPTY: Draft = {
   extractors: [],
   searches: [],
   js: [],
+  useLogin: false,
 };
 
 const lines = (s: string) => s.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
@@ -133,6 +136,7 @@ function fromView(v: CrawlConfigView): Draft {
     extractors: v.extractors ?? [],
     searches: v.searches ?? [],
     js: v.js ?? [],
+    useLogin: false,
   };
 }
 
@@ -161,11 +165,15 @@ export function toInput(d: Draft): CrawlConfigInput {
     extractors: d.extractors,
     searches: d.searches,
     js: d.js,
+    useLogin: d.useLogin,
   };
 }
 
 /** One server-side problem as a sentence. */
 export function problemText(p: ConfigProblem, t: T, t4b: T4b, t4d?: SiteCrawler4dCopy, t4e?: SiteCrawler4eCopy): string {
+  // Phase 4e: forms login.
+  if (p.code === "login_missing") return t4e?.problemLoginMissing ?? t.problemVerified(p.field);
+  if (p.code === "requires_verified_site" && p.field === "login" && t4e) return `${t4e.loginTitle}: ${t4e.loginVerifiedOnly}`;
   // Phase 4e: AI prompts.
   if (p.code === "ai_key_missing") return t4e?.problemAiKey(p.provider === "openai" ? "OpenAI" : "Gemini") ?? t.problemVerified(p.field);
   if (p.code === "ai_unavailable") return t4e?.problemAiUnavailable ?? t.problemVerified(p.field);
@@ -519,6 +527,10 @@ export function CrawlConfigSection({
         )}
         {flag("crawl.segments") && host && (
           <SegmentsEditor t={t4b} host={host} cap={caps.segments} extractorNames={draft.extractors.map((e) => e.name)} />
+        )}
+
+        {flag("crawl.login") && t4e && host && (
+          <LoginEditor t={t4e} host={host} verified={verified} use={draft.useLogin} onUse={(v) => set("useLogin", v)} disabled={disabled} />
         )}
 
         {flag("crawl.customJs") && t4e && (caps.js ?? 0) > 0 && (

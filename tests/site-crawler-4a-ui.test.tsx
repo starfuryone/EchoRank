@@ -45,6 +45,7 @@ const draft = (over: Partial<DraftArg> = {}): DraftArg => ({
   extractors: [],
   searches: [],
   js: [],
+  useLogin: false,
   ...over,
 });
 

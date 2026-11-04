@@ -75,7 +75,13 @@ export function toRenderFacts(r: SidecarRender, rootUrl: string): RenderFacts {
 type FetchLike = (url: string, init: RequestInit) => Promise<Response>;
 
 /** One call to the sidecar. Null on any failure; the reason is logged. */
-export async function callSidecarRender(url: string, fetchImpl: FetchLike = fetch, snippets: readonly string[] = []): Promise<SidecarRender | null> {
+export async function callSidecarRender(
+  url: string,
+  fetchImpl: FetchLike = fetch,
+  snippets: readonly string[] = [],
+  /** Phase 4e forms login: the session's cookies (the sidecar keeps those for the page's host). */
+  cookies: readonly object[] = [],
+): Promise<SidecarRender | null> {
   for (let attempt = 0; attempt < 2; attempt++) {
     let res: Response;
     try {
@@ -85,7 +91,7 @@ export async function callSidecarRender(url: string, fetchImpl: FetchLike = fetc
           "content-type": "application/json",
           "X-Internal-Secret": process.env.INTERNAL_API_SECRET || "",
         },
-        body: JSON.stringify({ url, userAgent: CRAWLER_USER_AGENT, ...(snippets.length ? { snippets } : {}) }),
+        body: JSON.stringify({ url, userAgent: CRAWLER_USER_AGENT, ...(snippets.length ? { snippets } : {}), ...(cookies.length ? { cookies } : {}) }),
         signal: AbortSignal.timeout(RENDER_REQUEST_TIMEOUT_MS + SNIPPET_TIMEOUT_MS * snippets.length),
       });
     } catch (err) {

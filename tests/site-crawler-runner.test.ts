@@ -822,3 +822,77 @@ describe("custom JavaScript and AMP (Phase 4e)", () => {
     expect(rows.find((r) => r.url === "https://example.com/amp")).toMatchObject({ isAmp: true });
   });
 });
+
+// ─── Phase 4e: forms login ─────────────────────────────────────────────────
+
+describe("forms login (Phase 4e)", () => {
+  const KEY = "test-key-not-a-secret";
+  const loginInput = {
+    loginUrl: "https://example.com/login",
+    usernameSelector: "#u",
+    passwordSelector: "#p",
+    submitSelector: "#go",
+    successCheck: { kind: "urlPrefix" as const, value: "https://example.com/account" },
+    username: "ada",
+    password: "pw-very-secret",
+  };
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    vi.unstubAllGlobals();
+  });
+
+  async function crawlWith(sidecar: unknown) {
+    vi.stubEnv("GSC_TOKEN_ENCRYPTION_KEY", KEY);
+    const { sealLogin } = await import("@/lib/site-crawler/login");
+    const config = { ...sealCrawlConfig(CrawlConfigInputSchema.parse({}), null, KEY), login: sealLogin(loginInput, null, KEY) };
+    crawlJob.findUnique.mockResolvedValue({ id: "job_1", rootUrl: "https://example.com/", urlCap: 20, status: "QUEUED", config });
+    const loginCalls: string[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (url: string, init: RequestInit) => {
+        loginCalls.push(url);
+        expect(url.endsWith("/login")).toBe(true);
+        expect(JSON.parse(init.body as string).password).toBe("pw-very-secret");
+        return new Response(JSON.stringify(sidecar), { status: 200 });
+      }),
+    );
+    fetchPage.mockImplementation(async (url: string) => {
+      const r = htmlResponse(url, url === "https://example.com/" ? ["/account", "/logout", "/blog"] : []);
+      if (url === "https://example.com/") r.html = r.html.replace("</body>", '<a href="/bye">Sign out</a><a rel="nofollow" href="/private">p</a></body>');
+      return r;
+    });
+    const store = new Map<string, string>();
+    const deleted: string[] = [];
+    const redis = {
+      ...fakeRedis(),
+      get: async (k: string) => store.get(k) ?? null,
+      set: async (k: string, v: string) => (store.set(k, v), "OK"),
+      del: async (...keys: string[]) => (deleted.push(...keys), keys.length),
+    };
+    await runCrawl({ jobId: "job_1", redis: redis as never });
+    return { loginCalls, store, deleted };
+  }
+
+  it("logs in once, sends the session to the site only, never follows logout or nofollow links", async () => {
+    const { loginCalls, store, deleted } = await crawlWith({ ok: true, cookies: [{ name: "sid", value: "s3", domain: "example.com", path: "/" }] });
+    expect(loginCalls).toHaveLength(1);
+    const opts = fetchPage.mock.calls[0]![1];
+    expect(opts.cookiesFor("https://example.com/account")).toBe("sid=s3");
+    expect(opts.cookiesFor("https://cdn.other.net/x")).toBeNull();
+    const fetched = fetchPage.mock.calls.map((c) => c[0] as string);
+    expect(fetched).toEqual(expect.arrayContaining(["https://example.com/account", "https://example.com/blog"]));
+    expect(fetched.some((u) => /logout|bye|private/.test(u))).toBe(false);
+    // The jar was in Redis encrypted for the crawl, and is deleted when it ends.
+    expect([...store.values()].join("")).not.toContain("s3");
+    expect(deleted).toContain("crawl:job_1:login");
+    expect(terminalWrite()).toMatchObject({ status: "COMPLETED", summary: expect.objectContaining({ login: { status: "ok" } }) });
+  });
+
+  it("a failed login does not fail the crawl: it runs without the session and says why", async () => {
+    await crawlWith({ ok: false, reason: "success_check_failed" });
+    expect(fetchPage.mock.calls[0]![1].cookiesFor).toBeUndefined();
+    expect(terminalWrite()).toMatchObject({ status: "COMPLETED", summary: expect.objectContaining({ login: { status: "failed", reason: "success_check_failed" } }) });
+    // Unauthenticated, ordinary rules apply: the logout URL is just a link (rel=nofollow still not followed by default).
+    expect(fetchPage.mock.calls.map((c) => c[0])).toContain("https://example.com/logout");
+  });
+});

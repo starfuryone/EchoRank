@@ -15,6 +15,7 @@ import type {
   StoredCrawlConfig,
   StoredSecret,
 } from "./crawl-config";
+import type { LoginInput, RuntimeLogin, StoredLogin } from "./login-config";
 
 export class MissingKeptSecretError extends Error {
   constructor(readonly field: string) {
@@ -50,6 +51,8 @@ export function sealCrawlConfig(
     headers,
     cookies: seal(input.cookies, previous?.cookies, "cookies"),
     basicAuth: input.basicAuth && password ? { user: input.basicAuth.user, password } : null,
+    // Phase 4e: the login is never sealed from crawl input; the server copies the site's saved one.
+    login: null,
   };
 }
 
@@ -61,5 +64,25 @@ export function openCrawlConfig(stored: StoredCrawlConfig, secret?: string): Run
     headers: stored.headers.map((h) => ({ name: h.name, value: open(h.value) })),
     cookies: stored.cookies ? open(stored.cookies) : null,
     basicAuth: stored.basicAuth ? { user: stored.basicAuth.user, password: open(stored.basicAuth.password) } : null,
+    login: stored.login ? openLogin(stored.login, secret) : null,
   };
 }
+
+/** Phase 4e forms login: seal the credentials; { keep: true } takes the saved ones. */
+export function sealLogin(input: LoginInput, previous: StoredLogin | null, secret?: string): StoredLogin {
+  const seal = (v: SecretInput, kept: StoredSecret | undefined, field: string): StoredSecret => {
+    if (typeof v === "string") return { enc: encryptToken(v, secret) };
+    if (!kept || v === null) throw new MissingKeptSecretError(field);
+    return kept;
+  };
+  return {
+    ...input,
+    username: seal(input.username, previous?.username, "login.username"),
+    password: seal(input.password, previous?.password, "login.password"),
+  };
+}
+
+export function openLogin(stored: StoredLogin, secret?: string): RuntimeLogin {
+  return { ...stored, username: decryptToken(stored.username.enc, secret), password: decryptToken(stored.password.enc, secret) };
+}
+

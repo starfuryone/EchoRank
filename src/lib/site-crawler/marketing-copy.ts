@@ -350,7 +350,7 @@ export const CRAWL_FEATURE_ROWS: readonly CrawlFeatureRow[] = [
   row("accessibility", { family: "accessibility" }, "Accessibility auditing", "Audit d'accessibilité"),
   row("link-metrics", { flag: "crawl.backlinks" }, "Link metrics integration", "Intégration des métriques de liens", (p, b) =>
     b === "fr" ? `${fmt(p.crawlBacklinkPages, b)} pages par exploration` : `${fmt(p.crawlBacklinkPages, b)} pages per crawl`),
-  row("forms-auth", { flag: "crawl.formsAuth" }, "Forms-based authentication", "Authentification par formulaire"),
+  row("forms-auth", { flag: "crawl.login" }, "Forms-based authentication", "Authentification par formulaire"),
   row("segmentation", { flag: "crawl.segments" }, "Segmentation", "Segmentation", (p, b) =>
     b === "fr" ? `${fmt(p.crawlSegments, b)} segments par site` : `${fmt(p.crawlSegments, b)} segments per site`),
   // Sheets export + the Looker Studio guide; the PDF report (crawl.reports) is not this row.
