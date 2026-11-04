@@ -10,7 +10,7 @@ import type { PlanType } from "@/generated/prisma";
 import { planConfig } from "@/lib/plan-config";
 import { platformAdmin } from "@/lib/platform-admin";
 import { prisma } from "@/lib/prisma";
-import { OVERRIDE_BOUNDS, TENANT_CRAWL_CONCURRENCY_DEFAULT, effectiveCaps } from "@/lib/site-crawler/tenant-caps";
+import { OVERRIDE_BOUNDS, TENANT_CRAWL_CONCURRENCY_DEFAULT, crawlMaxConcurrent, effectiveCaps } from "@/lib/site-crawler/tenant-caps";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Crawl overrides · admin", robots: { index: false, follow: false } };
@@ -42,7 +42,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ s
       <h1 style={{ fontSize: 22 }}>Site crawler overrides</h1>
       <p style={{ color: "#666", fontSize: 13 }}>
         Per-tenant caps that replace the plan&apos;s. Empty = the plan&apos;s value. Simultaneous crawls default to {TENANT_CRAWL_CONCURRENCY_DEFAULT}; the box
-        runs two crawls at a time whatever the setting.
+        runs {crawlMaxConcurrent()} crawls at a time (CRAWL_MAX_CONCURRENT) whatever the setting.
       </p>
 
       <form method="get" style={{ display: "flex", gap: 8, alignItems: "end", margin: "16px 0" }}>
