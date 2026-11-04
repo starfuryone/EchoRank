@@ -57,6 +57,8 @@ export interface CrawlDto {
   severityCounts?: SeverityCounts;
   /** Site health 0–100 (summary.health; site-health.ts). Null before the crawl settles or on older crawls. */
   health?: number | null;
+  /** Findings by kind (summary.issuesByKind); null before the crawl settles. */
+  kinds?: { issue: number; warning: number; opportunity: number } | null;
   /** Phase 4e forms login: failed = the crawl ran unauthenticated. */
   login?: { status: "ok" | "failed"; reason: string | null } | null;
 }

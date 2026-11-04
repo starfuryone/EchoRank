@@ -103,6 +103,22 @@ const en = {
   subAll: "All findings",
   subMetrics: "Metrics",
   subSegments: "Segments",
+  // ── History ─────────────────────────────────────────────────────────────
+  historyTitle: "All crawls",
+  historyRetention: (kept: string, pins: string, days: string) =>
+    `Every crawl stays listed. Full data is kept for your ${kept} most recent completed crawls, up to ${pins} pinned ones, and failed or cancelled crawls for ${days} days; older ones keep their summary only.`,
+  filterHost: "Site contains",
+  filterStatus: "Status",
+  statusAll: "All statuses",
+  statusInFlight: "Queued or running",
+  historyEmpty: "No crawls yet.",
+  historyNoMatch: "No crawl matches these filters.",
+  colKinds: "Issues · warnings · opportunities",
+  colActions: "Actions",
+  summaryOnly: "Summary only",
+  pinCrawl: (host: string) => `Pin the crawl of ${host}`,
+  unpinCrawl: (host: string) => `Unpin the crawl of ${host}`,
+  historyPage: (from: string, to: string, total: string) => `${from}–${to} of ${total}`,
 };
 
 export type SiteCrawlerUxCopy = typeof en;
@@ -197,6 +213,21 @@ const fr: SiteCrawlerUxCopy = {
   subAll: "Tous les constats",
   subMetrics: "Métriques",
   subSegments: "Segments",
+  historyTitle: "Toutes les explorations",
+  historyRetention: (kept: string, pins: string, days: string) =>
+    `Chaque exploration reste listée. Les données complètes sont conservées pour vos ${kept} dernières explorations terminées, jusqu'à ${pins} explorations épinglées, et ${days} jours pour les explorations échouées ou annulées ; les plus anciennes ne gardent que leur résumé.`,
+  filterHost: "Le site contient",
+  filterStatus: "Statut",
+  statusAll: "Tous les statuts",
+  statusInFlight: "En attente ou en cours",
+  historyEmpty: "Aucune exploration pour l'instant.",
+  historyNoMatch: "Aucune exploration ne correspond à ces filtres.",
+  colKinds: "Problèmes · avertissements · opportunités",
+  colActions: "Actions",
+  summaryOnly: "Résumé seul",
+  pinCrawl: (host: string) => `Épingler l'exploration de ${host}`,
+  unpinCrawl: (host: string) => `Désépingler l'exploration de ${host}`,
+  historyPage: (from: string, to: string, total: string) => `${from}–${to} sur ${total}`,
 };
 
 const deCH: SiteCrawlerUxCopy = {
@@ -289,6 +320,21 @@ const deCH: SiteCrawlerUxCopy = {
   subAll: "Alle Befunde",
   subMetrics: "Kennzahlen",
   subSegments: "Segmente",
+  historyTitle: "Alle Crawls",
+  historyRetention: (kept: string, pins: string, days: string) =>
+    `Jeder Crawl bleibt aufgelistet. Die vollständigen Daten bleiben für Ihre ${kept} neusten abgeschlossenen Crawls, bis zu ${pins} angeheftete Crawls und fehlgeschlagene oder abgebrochene Crawls ${days} Tage erhalten; ältere behalten nur ihre Zusammenfassung.`,
+  filterHost: "Website enthält",
+  filterStatus: "Status",
+  statusAll: "Alle Status",
+  statusInFlight: "Wartend oder laufend",
+  historyEmpty: "Noch keine Crawls.",
+  historyNoMatch: "Kein Crawl entspricht diesen Filtern.",
+  colKinds: "Probleme · Warnungen · Chancen",
+  colActions: "Aktionen",
+  summaryOnly: "Nur Zusammenfassung",
+  pinCrawl: (host: string) => `Crawl von ${host} anheften`,
+  unpinCrawl: (host: string) => `Crawl von ${host} lösen`,
+  historyPage: (from: string, to: string, total: string) => `${from}–${to} von ${total}`,
 };
 
 export const SITE_CRAWLER_UX = { en, fr, "de-CH": deCH } as const;

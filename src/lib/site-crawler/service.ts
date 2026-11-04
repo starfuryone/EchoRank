@@ -72,6 +72,8 @@ export interface CrawlJobDto {
   login?: { status: "ok" | "failed"; reason: string | null } | null;
   /** Site health 0–100 from the summary; null before it settles or on older crawls. */
   health?: number | null;
+  /** Findings by kind from the summary; null before it settles. */
+  kinds?: { issue: number; warning: number; opportunity: number } | null;
 }
 
 /** summary.login, when the crawl logged in (or tried to). */
@@ -119,8 +121,16 @@ export function toCrawlDto(row: {
     pinned: row.pinned ?? false,
     dataPurgedAt: row.dataPurgedAt?.toISOString() ?? null,
     ...(row.summary !== undefined && loginOf(row.summary) ? { login: loginOf(row.summary) } : {}),
-    ...(row.summary !== undefined ? { health: healthOf(row.summary) } : {}),
+    ...(row.summary !== undefined ? { health: healthOf(row.summary), kinds: kindsOf(row.summary) } : {}),
   };
+}
+
+/** Findings by kind from the summary (History's columns); null before the crawl settles. */
+function kindsOf(summary: unknown): { issue: number; warning: number; opportunity: number } | null {
+  const k = (summary as { issuesByKind?: Record<string, unknown> } | null)?.issuesByKind;
+  if (!k) return null;
+  const n = (v: unknown) => (typeof v === "number" ? v : 0);
+  return { issue: n(k.issue), warning: n(k.warning), opportunity: n(k.opportunity) };
 }
 
 export interface StartCrawlOptions {

@@ -231,6 +231,24 @@ describe("tenant isolation", () => {
     await listCrawls();
     expect(crawlJob.findMany.mock.calls[0]![0]!.where).toEqual({ tenantId: TENANT });
   });
+
+  it("History (?history=1): tenant-scoped, filtered by host and status, paged, with health and kind totals", async () => {
+    authed();
+    crawlJob.findMany.mockResolvedValue([{ ...JOB_ROW, summary: { health: { score: 64 }, issuesByKind: { issue: 4, warning: 2, opportunity: 1 } } }]);
+    crawlJob.count.mockResolvedValue(51);
+    const res = await listCrawls(new Request("https://app.test/api/seo/v1/crawl?history=1&host=Shop.example&status=ACTIVE&page=2"));
+    const args = crawlJob.findMany.mock.calls[0]![0]!;
+    expect(args.where).toEqual({ tenantId: TENANT, rootUrl: { contains: "Shop.example", mode: "insensitive" }, status: { in: ["QUEUED", "RUNNING"] } });
+    expect(args).toMatchObject({ skip: 50, take: 50 });
+    expect(crawlJob.count.mock.calls[0]![0]!.where).toEqual(args.where);
+    const body = await res.json();
+    expect(body).toMatchObject({ total: 51, page: 2, pageSize: 50 });
+    expect(body.crawls[0]).toMatchObject({ health: 64, kinds: { issue: 4, warning: 2, opportunity: 1 } });
+    // An unknown status filters nothing rather than everything.
+    crawlJob.findMany.mockClear();
+    await listCrawls(new Request("https://app.test/api/seo/v1/crawl?history=1&status=BOGUS"));
+    expect(crawlJob.findMany.mock.calls[0]![0]!.where).toEqual({ tenantId: TENANT });
+  });
 });
 
 // ─── Start ──────────────────────────────────────────────────────────────────

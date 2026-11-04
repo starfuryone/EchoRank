@@ -15,6 +15,7 @@ import { NextResponse } from "next/server";
 import { requirePaidPlan } from "@/lib/paid-plan";
 import { rateLimit } from "@/lib/rate-limit";
 import { prisma } from "@/lib/prisma";
+import type { CrawlStatus } from "@/generated/prisma";
 import { startCrawl, toCrawlDto } from "@/lib/site-crawler/service";
 import { getCrawlQuota } from "@/lib/site-crawler/quota";
 import { crawlRouteError } from "@/lib/site-crawler/http";
@@ -26,6 +27,14 @@ import {
 } from "@/lib/site-crawler/start-body";
 
 const LIST_LIMIT = 20;
+/** History view (?history=1): a page of every crawl the tenant has, filtered. */
+const HISTORY_PAGE_SIZE = 50;
+const HISTORY_STATUSES: Record<string, CrawlStatus[]> = {
+  COMPLETED: ["COMPLETED"],
+  FAILED: ["FAILED"],
+  CANCELLED: ["CANCELLED"],
+  ACTIVE: ["QUEUED", "RUNNING"],
+};
 
 export async function POST(request: Request) {
   try {
@@ -69,9 +78,32 @@ export async function POST(request: Request) {
   }
 }
 
-export async function GET() {
+export async function GET(request?: Request) {
   try {
     const tenant = await requirePaidPlan();
+
+    const params = request ? new URL(request.url).searchParams : null;
+    if (params?.get("history") === "1") {
+      const host = (params.get("host") ?? "").trim().slice(0, 200);
+      const statuses = HISTORY_STATUSES[params.get("status") ?? ""];
+      const page = Math.max(1, Math.min(10_000, Number.parseInt(params.get("page") ?? "1", 10) || 1));
+      const where = {
+        tenantId: tenant.tenantId,
+        ...(host ? { rootUrl: { contains: host, mode: "insensitive" as const } } : {}),
+        ...(statuses ? { status: { in: statuses } } : {}),
+      };
+      const [rows, total, quota] = await Promise.all([
+        prisma.crawlJob.findMany({
+          where,
+          orderBy: { createdAt: "desc" },
+          skip: (page - 1) * HISTORY_PAGE_SIZE,
+          take: HISTORY_PAGE_SIZE,
+        }),
+        prisma.crawlJob.count({ where }),
+        getCrawlQuota(tenant.tenantId, tenant.tenant.planType),
+      ]);
+      return NextResponse.json({ crawls: rows.map(toCrawlDto), quota, total, page, pageSize: HISTORY_PAGE_SIZE });
+    }
 
     const [rows, quota] = await Promise.all([
       prisma.crawlJob.findMany({
