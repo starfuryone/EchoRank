@@ -2303,6 +2303,7 @@ model CrawlJob {
   pages  CrawlPage[]
   issues CrawlIssue[]
   links  CrawlLink[]
+  freeCrawl FreeCrawl?
   extractions CrawlExtraction[]
   metrics     CrawlPageMetric[]
   comparisonsAsA CrawlComparison[] @relation("ComparisonJobA")
@@ -5085,4 +5086,41 @@ model VisibilitySnapshotLead {
   @@unique([snapshotId, email])
   @@index([createdAt])
   @@map("visibility_snapshot_leads")
+}
+
+/// The free public site crawler (src/lib/site-crawler/free-crawl.ts): one row
+/// per free crawl, owned by the system tenant's CrawlJob. `token` is the
+/// unguessable result link (/free-tools/site-crawler/r/<token>); `domain` is
+/// the registrable domain the one-per-24-hours rule keys on. Purged with its
+/// crawl after FREE_CRAWL_RETENTION_DAYS by the nightly retention job.
+model FreeCrawl {
+  id         String   @id @default(cuid())
+  token      String   @unique
+  crawlJobId String   @unique
+  domain     String
+  host       String
+  /// sha256(salt:ip), never the IP itself.
+  ipHash     String
+  locale     String   @default("en")
+  createdAt  DateTime @default(now())
+
+  crawlJob CrawlJob @relation(fields: [crawlJobId], references: [id], onDelete: Cascade)
+
+  @@index([domain, createdAt])
+  @@index([createdAt])
+  @@map("free_crawls")
+}
+
+/// Hosts the free public crawler refuses: site owners who asked to be left
+/// out (support@). `host` is a lowercase hostname or registrable domain; a
+/// domain entry covers its subdomains. Edited by staff in /admin/free-crawler.
+/// Kept until removed (no retention: it is the opt-out list).
+model FreeCrawlBlockedHost {
+  id        String   @id @default(cuid())
+  host      String   @unique
+  note      String?
+  addedBy   String?
+  createdAt DateTime @default(now())
+
+  @@map("free_crawl_blocked_hosts")
 }

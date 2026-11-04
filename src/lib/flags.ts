@@ -74,6 +74,10 @@ export const FLAGS = {
   // signed callbacks) and its MCP tools; the feature table's API row and the
   // API-access page's crawler section key on it.
   "crawl.api": true,
+  // The free public crawler (/free-tools/site-crawler, /api/free/v1/site-crawler):
+  // the tool, its result pages, the hub card, the "Try it free" strip and the
+  // feature table's Free column. Off = every one of them is gone (404s).
+  "crawl.free": true,
 } as const satisfies Record<string, boolean>;
 
 export type FlagName = keyof typeof FLAGS;
