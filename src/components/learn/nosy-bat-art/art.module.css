@@ -1,0 +1,82 @@
+/* crawler guide diagrams. One palette, two themes: strokes are the theme's
+   gray-200 line (#eaecef by day), text is currentColor, highlights emerald,
+   status cells red / amber. Values only — every shape reads its colour from a
+   class, so a theme switch repaints without re-rendering. */
+.figure {
+  margin: 20px 0 8px;
+  max-width: 640px;
+  width: 100%;
+  --nb-stroke: #3a414b;
+  --nb-fill: var(--er-surface, #1e2329);
+  --nb-fill2: var(--er-bg, #181a20);
+  --nb-text: var(--er-text, #eaecef);
+  --nb-muted: var(--er-text-muted, #a3a8b0);
+  --nb-accent: #34d399;
+  --nb-accent-fill: rgba(52, 211, 153, 0.14);
+  --nb-red: #f87171;
+  --nb-red-fill: rgba(248, 113, 113, 0.16);
+  --nb-amber: #fbbf24;
+  --nb-amber-fill: rgba(251, 191, 36, 0.16);
+}
+:global([data-theme="day"]) .figure {
+  --nb-stroke: #e5e7eb;
+  --nb-fill: #ffffff;
+  --nb-fill2: #f9fafb;
+  --nb-accent: #059669;
+  --nb-accent-fill: #ecfdf5;
+  --nb-red: #dc2626;
+  --nb-red-fill: #fef2f2;
+  --nb-amber: #b45309;
+  --nb-amber-fill: #fffbeb;
+}
+.svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 640 / 360;
+  color: var(--nb-text);
+  font-family: inherit;
+}
+.caption {
+  margin-top: 8px;
+  font-size: 13.5px;
+  color: var(--nb-muted);
+}
+.hero {
+  display: block;
+  width: 100%;
+  max-width: 640px;
+  height: auto;
+  aspect-ratio: 640 / 200;
+  margin: 0 0 18px;
+  color: var(--nb-text);
+}
+
+/* Shape vocabulary */
+.card { fill: var(--nb-fill); stroke: var(--nb-stroke); stroke-width: 2; }
+.card2 { fill: var(--nb-fill2); stroke: var(--nb-stroke); stroke-width: 2; }
+.line { fill: none; stroke: var(--nb-stroke); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.arrow { fill: none; stroke: var(--nb-muted); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.arrowHead { fill: var(--nb-muted); }
+.accent { fill: var(--nb-accent-fill); stroke: var(--nb-accent); stroke-width: 2; }
+.accentLine { fill: none; stroke: var(--nb-accent); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+.accentHead { fill: var(--nb-accent); }
+.red { fill: var(--nb-red-fill); stroke: var(--nb-red); stroke-width: 2; }
+.redLine { fill: none; stroke: var(--nb-red); stroke-width: 2.5; stroke-linecap: round; }
+.redHead { fill: var(--nb-red); }
+.amber { fill: var(--nb-amber-fill); stroke: var(--nb-amber); stroke-width: 2; }
+.amberLine { fill: none; stroke: var(--nb-amber); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+.amberHead { fill: var(--nb-amber); }
+.dash { stroke-dasharray: 5 5; }
+
+/* Type */
+.t { fill: currentColor; font-size: 15px; }
+.tSm { fill: currentColor; font-size: 13px; }
+.tXs { fill: var(--nb-muted); font-size: 12px; }
+.tB { fill: currentColor; font-size: 15px; font-weight: 650; }
+.tLg { fill: currentColor; font-size: 18px; font-weight: 650; }
+.tMuted { fill: var(--nb-muted); font-size: 13px; }
+.mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+.tAccent { fill: var(--nb-accent); font-weight: 650; }
+.tRed { fill: var(--nb-red); font-weight: 650; }
+.tAmber { fill: var(--nb-amber); font-weight: 650; }

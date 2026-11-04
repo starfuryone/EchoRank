@@ -506,3 +506,84 @@ export const CRAWL_FAQ: readonly CrawlFaqEntry[] = [
 export function visibleFaq(ctx: GateContext & FaqContext, base: CopyBase): { q: string; a: string }[] {
   return CRAWL_FAQ.filter((f) => gateOpen(f.gate, ctx)).map((f) => ({ q: f.q[base], a: f.a[base](ctx) }));
 }
+
+// ─── The crawler guides' calls to action (NOSY-BAT-GUIDES.md) ───────────────
+//
+// Three per guide, one component (<GuideCta>): an inline band after the first
+// numbered step, a one-sentence nudge after the export / compare step, and a
+// closing card before "Related". The copy is a function of the plans so no
+// cap is ever written down here; the caller passes PLAN_CONFIGS for the crawl
+// tiers, the same way visibleFaq() is called. Every button goes to /pricing
+// (signed out) or /crawler (signed in) — never to the registration form.
+
+type PlansCtx = Readonly<Record<CrawlPlan, PlanConfig>>;
+type CtaText = Readonly<Record<CopyBase, (p: PlansCtx) => string>>;
+
+export interface GuideCtaCopy {
+  inline: CtaText;
+  nudge: CtaText;
+  closing: { h: CtaText; p1: CtaText; p2: CtaText };
+}
+
+/** Button and link labels, shared by every guide. */
+export const GUIDE_CTA_CHROME: {
+  plans: Text;
+  open: Text;
+  free: Text;
+  nudgePlans: Text;
+  nudgeOpen: Text;
+} = {
+  plans: { en: "See plans", fr: "Voir les forfaits" },
+  open: { en: `Open ${NB}`, fr: `Ouvrir ${NB}` },
+  free: { en: `or crawl ${FREE_CRAWL_URL_CAP} pages free`, fr: `ou explorez ${FREE_CRAWL_URL_CAP} pages gratuitement` },
+  nudgePlans: { en: "See plans →", fr: "Voir les forfaits →" },
+  nudgeOpen: { en: `Open ${NB} →`, fr: `Ouvrir ${NB} →` },
+};
+
+const largest = (p: PlansCtx, b: CopyBase) => fmt(Math.max(...CRAWL_PLANS.map((id) => p[id].crawlUrlCap)), b);
+/** The first crawl tier whose schedules may run weekly. */
+const weeklyFrom = (p: PlansCtx) => CRAWL_PLANS.map((id) => p[id]).find((c) => c.crawlScheduleCadences.includes("weekly"))?.name ?? p.AGENCY.name;
+const fixed = (en: string, fr: string): CtaText => ({ en: () => en, fr: () => fr });
+
+export const guideCtas: Readonly<Record<string, GuideCtaCopy>> = {
+  "how-to-find-broken-links": {
+    inline: fixed(
+      `${NB} finds every broken link on your site and tells you which page it's on.`,
+      `${NB} trouve chaque lien brisé de votre site et vous dit sur quelle page il se trouve.`,
+    ),
+    // The spec's "every week … on every paid plan" is not what the plans say:
+    // Starter schedules monthly. The cadence comes from the config instead.
+    nudge: {
+      en: (p) => `Want this list on a schedule without lifting a finger? Every paid plan schedules crawls — weekly from ${weeklyFrom(p)} up.`,
+      fr: (p) => `Vous voulez recevoir cette liste sans lever le petit doigt ? Chaque forfait payant planifie les explorations — chaque semaine à partir de ${weeklyFrom(p)}.`,
+    },
+    closing: {
+      h: fixed("Stop finding broken links by accident.", "Cessez de tomber sur vos liens brisés par hasard."),
+      p1: {
+        en: (p) => `Crawl up to ${largest(p, "en")} pages, export the source of every broken link, and get a scheduled check in your inbox.`,
+        fr: (p) => `Explorez jusqu'à ${largest(p, "fr")} pages, exportez la source de chaque lien brisé et recevez une vérification planifiée dans votre boîte de réception.`,
+      },
+      p2: fixed("Included in every paid Echorank plan — no per-user licence.", "Inclus dans chaque forfait payant Echorank — aucune licence par utilisateur."),
+    },
+  },
+};
+
+/** One guide's CTA copy, resolved for a base and the crawl tiers. Undefined for a guide without CTAs. */
+export function guideCtaCopy(slug: string, base: CopyBase, plans: PlansCtx) {
+  const c = guideCtas[slug];
+  if (!c) return undefined;
+  return {
+    inline: c.inline[base](plans),
+    nudge: c.nudge[base](plans),
+    closing: { h: c.closing.h[base](plans), p1: c.closing.p1[base](plans), p2: c.closing.p2[base](plans) },
+    labels: {
+      plans: GUIDE_CTA_CHROME.plans[base],
+      open: GUIDE_CTA_CHROME.open[base],
+      free: GUIDE_CTA_CHROME.free[base],
+      nudgePlans: GUIDE_CTA_CHROME.nudgePlans[base],
+      nudgeOpen: GUIDE_CTA_CHROME.nudgeOpen[base],
+    },
+  };
+}
+
+export type GuideCtaResolved = NonNullable<ReturnType<typeof guideCtaCopy>>;

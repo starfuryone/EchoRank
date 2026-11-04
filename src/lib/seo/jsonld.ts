@@ -186,6 +186,46 @@ export function article(input: ArticleInput): JsonLdNode {
   };
 }
 
+export interface HowToInput {
+  name: string;
+  description: string;
+  /** Absolute URL of the page whose numbered steps these are. */
+  pageUrl: string;
+  /** Plain text — the caller strips inline markup. At least one. */
+  steps: readonly { id: string; name: string; text: string }[];
+  inLanguage?: string;
+  /** Minutes; emitted as totalTime. The reading time, not a made-up task time. */
+  readingTime?: number;
+}
+
+/**
+ * HowTo for a guide whose body is a numbered walkthrough.
+ *
+ * The steps must be the ones the page renders (see howToSteps() in
+ * learn-content.ts, which derives them from the body), and each carries a url
+ * to its own heading so a rich result can deep-link the step. No image, tool
+ * or supply lists: we would have to invent them.
+ */
+export function howTo(input: HowToInput): JsonLdNode {
+  return {
+    "@type": "HowTo",
+    "@id": `${input.pageUrl}#howto`,
+    name: input.name,
+    description: input.description,
+    url: input.pageUrl,
+    ...(input.inLanguage ? { inLanguage: input.inLanguage } : {}),
+    ...(input.readingTime ? { totalTime: `PT${input.readingTime}M` } : {}),
+    mainEntityOfPage: { "@id": `${input.pageUrl}#article` },
+    step: input.steps.map((s, i) => ({
+      "@type": "HowToStep",
+      position: i + 1,
+      name: s.name,
+      text: s.text,
+      url: `${input.pageUrl}#${s.id}`,
+    })),
+  };
+}
+
 export interface BlogPostingInput {
   headline: string;
   description: string;

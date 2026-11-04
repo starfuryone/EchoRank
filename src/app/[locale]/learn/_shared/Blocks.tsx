@@ -8,6 +8,7 @@ import { Fragment, type ReactNode } from "react";
 import b from "./learn.module.css";
 import { RULES } from "@/lib/crawl-rules";
 import { capabilityBody, visibleCapabilities } from "@/lib/site-crawler/marketing-copy";
+import { NbArt } from "@/components/learn/nosy-bat-art";
 
 export interface BlocksProps {
   body: readonly LearnBlock[];
@@ -26,6 +27,12 @@ export interface BlocksProps {
    * hostage to a comma.
    */
   afterIntro?: ReactNode;
+  /**
+   * The crawler guides' inline band and nudge, rendered where the body
+   * carries {k:"guideCta", at}. Already built by the page (auth-aware client
+   * components), so a guide without CTAs simply passes nothing.
+   */
+  ctas?: { inline?: ReactNode; nudge?: ReactNode };
 }
 
 /**
@@ -39,7 +46,7 @@ function introEndIndex(body: readonly LearnBlock[]): number {
   return i === -1 ? body.length : i;
 }
 
-export function Blocks({ body, locale, video, faq, afterIntro }: BlocksProps) {
+export function Blocks({ body, locale, video, faq, afterIntro, ctas }: BlocksProps) {
   const introEnd = afterIntro ? introEndIndex(body) : -1;
 
   const renderBlock = (block: LearnBlock, i: number): ReactNode => {
@@ -190,6 +197,16 @@ export function Blocks({ body, locale, video, faq, afterIntro }: BlocksProps) {
                 ))}
               </ul>
             );
+
+          case "figure":
+            // Inline SVG with its own <title> and caption, labels in the
+            // reader's base language (en/fr; everything else folds to en).
+            return <NbArt key={key} id={block.art} base={locale.startsWith("fr") ? "fr" : "en"} />;
+
+          case "guideCta": {
+            const node = ctas?.[block.at];
+            return node ? <Fragment key={key}>{node}</Fragment> : null;
+          }
 
           case "faq":
             // The FAQPage JSON-LD is built from this same array by the page —

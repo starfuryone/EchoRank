@@ -21,6 +21,7 @@
 // nothing.
 
 import { CRAWLER_BRAND } from "@/lib/site-crawler/brand";
+import { NOSY_BAT_GUIDES } from "./learn-nosy-bat";
 
 /** One renderable unit of article body. The markdown subset the pack uses. */
 export type LearnBlock =
@@ -51,7 +52,19 @@ export type LearnBlock =
    * /site-crawler page. A marker, not copy: the words live in one place, and
    * this module stays free of the rule registry (the proxy imports it).
    */
-  | { k: "crawlCapabilities" };
+  | { k: "crawlCapabilities" }
+  /**
+   * One of the crawler guides' inline-SVG diagrams, by id — resolved by
+   * Blocks against src/components/learn/nosy-bat-art. An id, not a component:
+   * this module is imported by the proxy and stays free of React.
+   */
+  | { k: "figure"; art: string }
+  /**
+   * Where a crawler guide's inline CTA band or mid-guide nudge sits. The copy
+   * is guideCtas[slug] in src/lib/site-crawler/marketing-copy.ts; the closing
+   * block is not a marker, it is the shell's fixed slot before "Related".
+   */
+  | { k: "guideCta"; at: "inline" | "nudge" };
 
 /**
  * One step of a {k:"steps"} walkthrough.
@@ -163,7 +176,27 @@ export interface LearnGuide extends Omit<LearnChapter, "order"> {
    * the note at the top); these localise the heading, the hub card and the
    * metadata so a French visitor knows what the page is before reading it.
    */
-  fr?: { title: string; description: string; blurb: string };
+  fr?: {
+    title: string;
+    description: string;
+    blurb: string;
+    /**
+     * A French BODY — only the crawler guides carry one. Its presence is what
+     * makes the page localized: the route then canonicals each base to itself
+     * and suppresses the English-only notice.
+     */
+    body?: LearnBlock[];
+    related?: LearnLink[];
+  };
+  /** A family of guides listed together on the guides index (an anchored section). */
+  group?: "nosy-bat";
+  /** Hero illustration above the title, by id (src/components/learn/nosy-bat-art). */
+  hero?: string;
+  /**
+   * Emit HowTo JSON-LD alongside Article. Steps are DERIVED from the body —
+   * every h2/h3 that starts with "N. " — so they cannot disagree with the page.
+   */
+  howTo?: boolean;
 }
 
 export interface GlossaryTerm {
@@ -1877,6 +1910,8 @@ export const LEARN_GUIDES: LearnGuide[] = [
       },
     ],
   },
+  // The crawler guides (src/lib/learn-nosy-bat.ts): localized bodies, diagrams, CTAs.
+  ...NOSY_BAT_GUIDES,
 ];
 
 export const ECHOPEDIA_TERMS: GlossaryTerm[] = [
@@ -1966,6 +2001,49 @@ export function chapterBySlug(slug: string): LearnChapter | undefined {
 
 export function guideBySlug(slug: string): LearnGuide | undefined {
   return LEARN_GUIDES.find((g) => g.slug === slug);
+}
+
+/** A guide in the reader's base language: the French body where one is written. */
+export function guideCopy(
+  guide: LearnGuide,
+  base: "en" | "fr",
+): { title: string; description: string; body: LearnBlock[]; related: LearnLink[]; localized: boolean } {
+  const fr = base === "fr" ? guide.fr : undefined;
+  return {
+    title: fr?.title ?? guide.title,
+    description: fr?.description ?? guide.description,
+    body: fr?.body ?? guide.body,
+    related: fr?.related ?? guide.related,
+    // Localized means "this guide has a body in every base", not "this one is
+    // French": the en page of a bilingual guide canonicals to itself too.
+    localized: Boolean(guide.fr?.body),
+  };
+}
+
+/** "3. Export the list" → step 3. Anything else is not a step. */
+const STEP_HEADING = /^(\d+)\.\s+(.+)$/;
+
+/**
+ * HowTo steps, derived from a body: each h2/h3 numbered "N. …" is a step, and
+ * its text is the prose and list items that follow it up to the next heading.
+ * Figures and CTA markers contribute nothing. Markup is left in — the caller
+ * strips it (plainText) for structured data.
+ */
+export function howToSteps(body: readonly LearnBlock[]): { id: string; name: string; text: string }[] {
+  const steps: { id: string; name: string; text: string[] }[] = [];
+  let current: { id: string; name: string; text: string[] } | null = null;
+  for (const b of body) {
+    if (b.k === "h2" || b.k === "h3") {
+      const m = STEP_HEADING.exec(b.t);
+      current = m ? { id: headingId(b.t), name: m[2], text: [] } : null;
+      if (current) steps.push(current);
+    } else if (current) {
+      if (b.k === "p") current.text.push(b.t);
+      else if (b.k === "ul" || b.k === "ol") current.text.push(...b.items);
+      else if (b.k === "code") current.text.push(b.t);
+    }
+  }
+  return steps.map((s) => ({ id: s.id, name: s.name, text: s.text.join(" ") }));
 }
 
 /**

@@ -9,6 +9,13 @@
 // visitor can move between them. Do not "sync" the wording — making them
 // verbatim identical is what would turn two useful pages into a duplicate-
 // content problem.
+//
+// THE NOSY BAT GUIDES (src/lib/learn-nosy-bat.ts) are localized: a guide with
+// a French body canonicals each base to ITSELF (en-CA/de-CH → en, fr-CA → fr),
+// declares that language in its Article node and adds HowTo when the guide
+// asks for it — steps derived from its numbered headings, so the markup is
+// always the walkthrough on screen. Their three CTAs and hero come from the
+// guide's slug; every other guide renders exactly as before.
 
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
@@ -19,14 +26,26 @@ import {
   article,
   breadcrumbList,
   faqPage,
+  howTo,
   organization,
   videoObject,
   webSite,
 } from "@/lib/seo/jsonld";
 import { SITE_URL } from "@/lib/seo/constants";
-import { LEARN_BASE, LEARN_GUIDES, guideBySlug } from "@/lib/learn-content";
+import { LEARN_BASE, LEARN_GUIDES, guideBySlug, guideCopy, howToSteps } from "@/lib/learn-content";
+import { flag } from "@/lib/flags";
+import { PLAN_CONFIGS } from "@/lib/plan-config";
+import { FREE_TOOLS_BASE } from "@/lib/free-tools";
+import { CRAWL_PLANS, guideCtaCopy } from "@/lib/site-crawler/marketing-copy";
+import { GuideCta, GuideCtaSession } from "@/components/learn/GuideCta";
+import { NbHero } from "@/components/learn/nosy-bat-art";
 import { ArticleShell, baseOf } from "../../_shared/ArticleShell";
 import { plainText } from "../../_shared/inline";
+
+const CRAWL_TIERS = Object.fromEntries(CRAWL_PLANS.map((id) => [id, PLAN_CONFIGS[id]])) as Record<
+  (typeof CRAWL_PLANS)[number],
+  (typeof PLAN_CONFIGS)[(typeof CRAWL_PLANS)[number]]
+>;
 
 export function generateStaticParams() {
   return SUPPORTED_LOCALES.flatMap((locale) =>
@@ -49,14 +68,16 @@ export async function generateMetadata({
   const guide = guideBySlug(slug);
   if (!guide) return {};
 
-  const fr = baseOf(locale) === "fr" ? guide.fr : undefined;
+  const b = baseOf(locale);
+  const copy = guideCopy(guide, b);
   return buildMetadata({
     locale,
     path: `${LEARN_BASE}/guides/${guide.slug}`,
-    title: fr?.title ?? guide.title,
-    description: fr?.description ?? guide.description,
+    title: copy.title,
+    description: copy.description,
     ogType: "article",
-    canonicalLocale: "en",
+    // A localized guide canonicals to its own base; an English-only one to en.
+    canonicalLocale: copy.localized ? b : "en",
   });
 }
 
@@ -71,22 +92,41 @@ export default async function GuidePage({
   if (!guide) notFound();
 
   const b = baseOf(locale);
-  const pageUrl = `${SITE_URL}/en${LEARN_BASE}/guides/${guide.slug}`;
+  const copy = guideCopy(guide, b);
+  // Structured data names the canonical URL: the base's own for a localized
+  // guide, the en one otherwise.
+  const lang = copy.localized ? b : "en";
+  const pageUrl = `${SITE_URL}/${lang}${LEARN_BASE}/guides/${guide.slug}`;
+  const steps = guide.howTo
+    ? howToSteps(copy.body).map((st) => ({ id: st.id, name: plainText(st.name), text: plainText(st.text) }))
+    : [];
 
   const graph = [
     organization(locale),
     webSite(locale),
     article({
-      headline: guide.title,
-      description: guide.description,
+      headline: copy.localized ? copy.title : guide.title,
+      description: copy.localized ? copy.description : guide.description,
       pageUrl,
       readingTime: guide.readingTime,
-      inLanguage: "en",
+      inLanguage: lang,
     }),
+    ...(steps.length > 0
+      ? [
+          howTo({
+            name: copy.title,
+            description: copy.description,
+            pageUrl,
+            steps,
+            inLanguage: lang,
+            readingTime: guide.readingTime,
+          }),
+        ]
+      : []),
     breadcrumbList([
-      { name: CRUMB[b].home, url: `${SITE_URL}/en` },
-      { name: CRUMB[b].hub, url: `${SITE_URL}/en${LEARN_BASE}` },
-      { name: guide.title, url: pageUrl },
+      { name: CRUMB[b].home, url: `${SITE_URL}/${lang}` },
+      { name: CRUMB[b].hub, url: `${SITE_URL}/${lang}${LEARN_BASE}` },
+      { name: copy.localized ? copy.title : guide.title, url: pageUrl },
     ]),
     ...(guide.video
       ? [
@@ -114,21 +154,42 @@ export default async function GuidePage({
       : []),
   ];
 
+  // The crawler guides' three CTAs, copy resolved here (server) and handed
+  // to the client component; a guide without guideCtas gets none of this.
+  const ctaCopy = guideCtaCopy(guide.slug, b, CRAWL_TIERS);
+  const ctaLinks = {
+    pricingHref: `/${locale}/pricing`,
+    freeHref: flag("crawl.free") ? `/${locale}${FREE_TOOLS_BASE}/site-crawler` : null,
+  };
+
   return (
     <>
       <JsonLd graph={graph} />
       <ArticleShell
         locale={locale}
         eyebrow={CRUMB[b].eyebrow}
-        // A French title/description where one is written; the body stays en.
-        title={(b === "fr" && guide.fr?.title) || guide.title}
-        description={(b === "fr" && guide.fr?.description) || guide.description}
+        localizedBody={copy.localized}
+        // A French title/description where one is written; the body too for
+        // the localized guides.
+        title={copy.title}
+        description={copy.description}
         readingTime={guide.readingTime}
-        body={guide.body}
+        body={copy.body}
         video={guide.video}
         faq={guide.faq}
         cta={guide.cta}
-        related={guide.related}
+        related={copy.related}
+        hero={guide.hero ? <NbHero id={guide.hero} /> : undefined}
+        {...(ctaCopy
+          ? {
+              wrap: (node) => <GuideCtaSession>{node}</GuideCtaSession>,
+              ctas: {
+                inline: <GuideCta variant="inline" copy={ctaCopy} {...ctaLinks} />,
+                nudge: <GuideCta variant="nudge" copy={ctaCopy} {...ctaLinks} />,
+              },
+              closing: <GuideCta variant="closing" copy={ctaCopy} {...ctaLinks} />,
+            }
+          : {})}
       />
     </>
   );

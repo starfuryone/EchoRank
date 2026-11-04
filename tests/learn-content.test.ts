@@ -31,6 +31,7 @@ import {
   type LearnBlock,
   type LearnLink,
 } from "@/lib/learn-content";
+import { NOSY_BAT_GUIDES } from "@/lib/learn-nosy-bat";
 import { LOCALIZED_ROUTES } from "@/lib/seo/registry";
 import { SUPPORTED_LOCALES } from "@/lib/i18n/config";
 
@@ -126,10 +127,11 @@ describe("route table", () => {
 });
 
 describe("config integrity", () => {
-  it("has ten chapters numbered 1..10 in order, and six guides", () => {
+  it("has ten chapters numbered 1..10 in order, and the guides numbered in order", () => {
     expect(LEARN_CHAPTERS.map((c) => c.order)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
-    expect(LEARN_GUIDES).toHaveLength(6);
-    expect(LEARN_GUIDES.map((g) => g.order)).toEqual([1, 2, 3, 4, 5, 6]);
+    // Six ultimate guides, then the crawler guides (src/lib/learn-nosy-bat.ts).
+    expect(LEARN_GUIDES).toHaveLength(6 + NOSY_BAT_GUIDES.length);
+    expect(LEARN_GUIDES.map((g) => g.order)).toEqual(LEARN_GUIDES.map((_, i) => i + 1));
   });
 
   it("keeps slugs unique across chapters and guides", () => {
@@ -195,7 +197,9 @@ describe("calls to action", () => {
     const audit = LEARN_CHAPTERS.filter((c) => c.cta === "audit").map((c) => c.order);
     expect(audit).toEqual([1, 2, 7, 8]);
     // The crawler guide closes on the crawler's own page instead.
-    for (const g of LEARN_GUIDES) expect(g.cta, g.slug).toBe(g.slug === "what-nosy-bat-checks" ? "crawler" : "register");
+    // So do the crawler guides, whose closing card is <GuideCta>.
+    for (const g of LEARN_GUIDES)
+      expect(g.cta, g.slug).toBe(g.slug === "what-nosy-bat-checks" || g.group === "nosy-bat" ? "crawler" : "register");
   });
 });
 

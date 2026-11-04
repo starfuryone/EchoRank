@@ -13,6 +13,7 @@
 // Server component. The table of contents is sticky in CSS, not JavaScript.
 
 import Link from "next/link";
+import type { ReactNode } from "react";
 import { PublicNav } from "../../PublicNav";
 import { HomeVideo } from "../../HomeVideo";
 import { CONTENT, HOME_TOOLS } from "@/lib/i18n/content";
@@ -120,6 +121,17 @@ export interface ArticleShellProps {
    */
   cta?: LearnCta;
   related: readonly LearnLink[];
+  /**
+   * Replaces the `cta` block in the same slot (after the body, before
+   * "Related"). The crawler guides pass their auth-aware closing card here.
+   */
+  closing?: ReactNode;
+  /** The crawler guides' inline band and nudge, placed by {k:"guideCta"} markers. */
+  ctas?: { inline?: ReactNode; nudge?: ReactNode };
+  /** Illustration above the h1. */
+  hero?: ReactNode;
+  /** Wraps the article (the guides' single session probe for their CTAs). */
+  wrap?: (article: ReactNode) => ReactNode;
   prev?: { href: string; label: string };
   next?: { href: string; label: string };
 }
@@ -136,6 +148,10 @@ export function ArticleShell({
   faq,
   cta,
   related,
+  closing,
+  ctas,
+  hero,
+  wrap = (x) => x,
   prev,
   next,
 }: ArticleShellProps) {
@@ -169,7 +185,8 @@ export function ArticleShell({
           </nav>
 
           <div className={c.articleLayout}>
-            <article className={c.article}>
+            {wrap(<article className={c.article}>
+              {hero}
               <p className={s.label}>
                 <b>/ {eyebrow}</b> — {t.minRead(readingTime)}
               </p>
@@ -182,6 +199,7 @@ export function ArticleShell({
                 body={body}
                 locale={locale}
                 faq={faq}
+                ctas={ctas}
                 // A chapter's own video, in a fixed structural position: after
                 // the intro prose, before the first section heading.
                 afterIntro={chapterVideo ? <ChapterVideo video={chapterVideo} /> : undefined}
@@ -202,7 +220,7 @@ export function ArticleShell({
                 }
               />
 
-              {ctaCopy && (
+              {closing ?? (ctaCopy && (
                 <aside className={c.cta}>
                   <h2 className={c.ctaH}>{ctaCopy.h}</h2>
                   <p className={c.ctaP}>{ctaCopy.p}</p>
@@ -220,7 +238,7 @@ export function ArticleShell({
                     </Link>
                   )}
                 </aside>
-              )}
+              ))}
 
               {related.length > 0 && (
                 <section className={c.related}>
@@ -259,7 +277,7 @@ export function ArticleShell({
                   )}
                 </nav>
               )}
-            </article>
+            </article>)}
 
             {toc.length > 0 && (
               <nav className={c.toc} aria-label={t.toc}>

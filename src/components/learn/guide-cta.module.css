@@ -1,0 +1,95 @@
+/* <GuideCta>: the crawler guides' three calls to action. Emerald-50 band by
+   day; a translucent emerald wash at night, so the band never turns into a
+   bright slab on the dark theme. */
+.band {
+  --gc-bg: rgba(16, 185, 129, 0.1);
+  --gc-line: rgba(52, 211, 153, 0.35);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px 18px;
+  margin: 22px 0;
+  padding: 14px 18px;
+  background: var(--gc-bg);
+  border: 1px solid var(--gc-line);
+  border-radius: 12px;
+}
+:global([data-theme="day"]) .band,
+:global([data-theme="day"]) .closing {
+  --gc-bg: #ecfdf5;
+  --gc-line: #a7f3d0;
+}
+.mark {
+  width: 36px;
+  height: 36px;
+  flex: none;
+}
+.line {
+  flex: 1 1 260px;
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.5;
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 14px;
+}
+.textLink {
+  font-size: 14px;
+  color: var(--goldText, inherit);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.nudge {
+  margin: 18px 0;
+  padding-left: 14px;
+  border-left: 3px solid var(--gc-line, rgba(52, 211, 153, 0.5));
+  font-size: 15px;
+  line-height: 1.6;
+}
+.nudge a {
+  white-space: nowrap;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.closing {
+  --gc-bg: rgba(16, 185, 129, 0.08);
+  --gc-line: rgba(52, 211, 153, 0.35);
+  margin: 44px 0 0;
+  padding: 28px;
+  background: var(--gc-bg);
+  border: 1px solid var(--gc-line);
+  border-radius: 14px;
+}
+.lockup {
+  display: block;
+  height: 52px;
+  width: auto;
+  max-width: 100%;
+  margin-bottom: 16px;
+}
+.lockupLight {
+  display: none;
+}
+:global([data-theme="day"]) .lockupDark {
+  display: none;
+}
+:global([data-theme="day"]) .lockupLight {
+  display: block;
+}
+.closingH {
+  font-size: 22px;
+  font-weight: 650;
+  margin: 0 0 8px;
+}
+.closingP {
+  margin: 0 0 6px;
+  color: var(--muted, inherit);
+  font-size: 15.5px;
+  line-height: 1.55;
+}
+.closing .actions {
+  margin-top: 18px;
+}
