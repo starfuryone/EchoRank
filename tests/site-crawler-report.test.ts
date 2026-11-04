@@ -69,6 +69,7 @@ describe("top issues", () => {
 describe("payload", () => {
   it("families, the example finding with its evidence, segments; no compare without a comparison", async () => {
     const p = await crawlReportPayload(CRAWL);
+    expect(p.resultsUrl).toBe("https://echorank360.com/crawler/j1");
     expect(p).toMatchObject({ host: "x.com", pagesCrawled: 10, totals: { ERROR: 3, WARNING: 2, NOTICE: 1 }, byKind: { issue: 3, opportunity: 9 }, compare: null });
     expect(p.families.find((f) => f.family === "response_codes")).toMatchObject({ label: "Response codes", issue: 3, total: 3 });
     expect(p.topIssues[0]).toMatchObject({ ruleId: "response_codes.internal_4xx", pages: 3, example: { url: "https://x.com/missing", evidence: "status: 404 · title: <x>" } });

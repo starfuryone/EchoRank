@@ -215,7 +215,7 @@ describe("the email", () => {
     expect(m.text).toContain(c.since);
     expect(m.html).toContain("x.com&lt;b&gt;");
     expect(m.html).not.toContain("x.com<b>");
-    expect(m.links[0]).toBe("https://echorank360.com/crawler?crawl=j2");
+    expect(m.links[0]).toBe("https://echorank360.com/crawler/j2");
     expect(m.links).toContain("https://echorank360.com/api/seo/v1/crawl/j2/compare/cmp?bucket=added&format=csv");
     for (const href of m.links) {
       expect(href.startsWith("https://echorank360.com/")).toBe(true);

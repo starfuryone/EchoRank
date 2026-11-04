@@ -118,7 +118,7 @@ export function scheduleEmail(d: ScheduleEmailData): { subject: string; html: st
   const nf = new Intl.NumberFormat(d.locale === "en" ? "en-US" : d.locale);
   const n = (v: number) => nf.format(v);
   const api = `${SITE}/api/seo/v1/crawl/${d.crawlJobId}`;
-  const open = `${SITE}/crawler?crawl=${encodeURIComponent(d.crawlJobId)}`;
+  const open = `${SITE}/crawler/${encodeURIComponent(d.crawlJobId)}`;
   const csv: [string, string][] = [
     [c.csvIssues, `${api}/export`],
     [c.csvPages, `${api}/pages?format=csv`],

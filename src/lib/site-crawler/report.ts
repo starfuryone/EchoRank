@@ -5,7 +5,6 @@
 // signed-in tenant. Counts and capped samples only — the 20 busiest rules,
 // one example finding each, the segment table, the latest comparison.
 
-import { healthOf } from "./site-health";
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import { RULE_BY_ID } from "@/lib/crawl-rules";
@@ -17,6 +16,9 @@ import { ruleIssueWhere, ruleTalliesFor } from "./rule-summary";
 import { segmentOverview } from "./segment-filter";
 import { evidenceCell } from "./csv-columns";
 import type { ComparisonResult } from "./compare";
+import { healthOf } from "./site-health";
+
+const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://echorank360.com";
 
 export const REPORT_TOP_ISSUES = 20;
 const PRIORITY_RANK: Record<string, number> = { high: 0, medium: 1, low: 2 };
@@ -32,6 +34,8 @@ export interface CrawlReportPayload {
   renderMode: string;
   /** Site health 0–100 (site-health.ts); null on crawls from before it. */
   health: number | null;
+  /** The crawl's Results view in the app (sign-in required); the PDF links to it. */
+  resultsUrl: string;
   totals: { ERROR: number; WARNING: number; NOTICE: number };
   byKind: Record<string, number>;
   families: { family: string; label: string; issue: number; warning: number; opportunity: number; total: number }[];
@@ -114,6 +118,7 @@ export async function crawlReportPayload(crawl: ReportCrawl): Promise<CrawlRepor
     stoppedReason: crawl.stoppedReason,
     renderMode: crawl.renderMode,
     health: healthOf(crawl.summary),
+    resultsUrl: `${SITE}/crawler/${encodeURIComponent(crawl.id)}`,
     totals: await getIssueTotals(crawl.id, crawl.summary),
     byKind: tallies.issuesByKind,
     families: [...families.values()].sort((a, b) => b.total - a.total),
