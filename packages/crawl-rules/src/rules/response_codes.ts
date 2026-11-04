@@ -26,27 +26,27 @@ export const RULES: Rule[] = [
     applies: "fetched",
     detect: (p) => (p.statusCode !== null && p.statusCode >= 500 ? ev({ status: p.statusCode }) : null),
   }),
-  pageRule({
+  // Phase 4g: site rules over the crawl's stored outbound links, each URL's
+  // status resolved once per crawl; foundOn = pages linking to the sample.
+  siteRule({
     id: "response_codes.external_4xx",
     family: F,
     kind: "issue",
     priority: "medium",
-    applies: "html",
-    detect: (p) =>
-      p.externalLinkChecks && p.externalLinkChecks.clientErrors > 0
-        ? ev({ count: p.externalLinkChecks.clientErrors, checked: p.externalLinkChecks.checked, sample: p.externalLinkChecks.sample })
-        : null,
+    detect: (_p, ctx) => {
+      const x = ctx.site.external;
+      return x && x.clientErrors > 0 ? ev({ count: x.clientErrors, checked: x.checked, sample: x.sample, status: x.sampleStatus, foundOn: x.foundOn }) : null;
+    },
   }),
-  pageRule({
+  siteRule({
     id: "response_codes.external_5xx",
     family: F,
     kind: "warning",
     priority: "medium",
-    applies: "html",
-    detect: (p) =>
-      p.externalLinkChecks && p.externalLinkChecks.serverErrors > 0
-        ? ev({ count: p.externalLinkChecks.serverErrors, checked: p.externalLinkChecks.checked, sample: p.externalLinkChecks.sample })
-        : null,
+    detect: (_p, ctx) => {
+      const x = ctx.site.external;
+      return x && x.serverErrors > 0 ? ev({ count: x.serverErrors, checked: x.checked, sample: x.sample, status: x.sampleStatus, foundOn: x.foundOn }) : null;
+    },
   }),
   pageRule({
     id: "response_codes.no_response",

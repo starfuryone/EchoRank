@@ -13,12 +13,12 @@ export const COPY: Record<string, RuleCopy> = {
   },
   "response_codes.external_4xx": {
     name: "Broken external link (4xx)",
-    description: "The page links to another site's URL that answers with a 4xx status. A broken outbound link is a dead end for readers and a quality signal for search engines.",
+    description: "The page links to another site's URL that answers with a 4xx status. A broken outbound link is a dead end for readers and a quality signal for search engines. The evidence shows how many, a sample URL and how many pages of your site it is found on.",
     howToFix: "Update the link to the resource's new address, link to an archived or alternative source, or remove it.",
   },
   "response_codes.external_5xx": {
     name: "External link server error (5xx)",
-    description: "The page links to another site's URL that answered with a 5xx status during the crawl. It may be a temporary outage on their side.",
+    description: "The page links to another site's URL that answered with a 5xx status during the crawl. It may be a temporary outage on their side. The evidence shows a sample URL and how many pages of your site it is found on.",
     howToFix: "Re-check the link later. If it keeps failing, replace it with a working source or remove it.",
   },
   "response_codes.no_response": {

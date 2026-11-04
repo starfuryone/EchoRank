@@ -12,6 +12,7 @@ import { METRIC_COLUMNS, type MetricSource } from "./metrics-shared";
 import type { CsvColumn } from "@/lib/csv-export";
 import { RULE_COPY } from "@/lib/crawl-rules";
 import { segmentCell, type SegmentDef } from "./segments";
+import type { ExternalRow } from "./external-links";
 
 /**
  * Phase 4b: append a "Segment" column (the page's segment names, "; "-joined)
@@ -267,5 +268,16 @@ export function extractionColumns(names: readonly string[], hasSegments: boolean
     { header: "URL", value: (r) => r.url },
     ...names.map((name, i): CsvColumn<ExtractionRow> => ({ header: name, value: (r) => r.values[i]?.join(" | ") ?? "" })),
     ...(hasSegments ? [{ header: "Segment", value: (r: ExtractionRow) => r.segment }] : []),
+  ];
+}
+
+/** Phase 4g External tab: one row per distinct outbound URL. */
+export function externalColumns(): CsvColumn<ExternalRow>[] {
+  return [
+    { header: "URL", value: (r) => r.url },
+    { header: "Status", value: (r) => (r.status === null ? "" : String(r.status)) },
+    { header: "Source pages", value: (r) => String(r.sources) },
+    { header: "First anchor", value: (r) => r.firstAnchor ?? "" },
+    { header: "Host", value: (r) => r.host },
   ];
 }

@@ -27,7 +27,8 @@ export const FLAGS = {
   // Every outbound link stored with status, anchor and source. No phase
   // builds it yet: 4a stores internal edges, 3a HEAD-checks a sample of
   // external links per page.
-  "crawl.externalLinks": false,
+  // Phase 4g: outbound links stored per page, status resolved once per URL per crawl; the External tab.
+  "crawl.externalLinks": true,
   // Phase 4b
   "crawl.extraction": true,
   "crawl.segments": true,

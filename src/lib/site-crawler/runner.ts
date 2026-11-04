@@ -28,6 +28,7 @@ import {
   MAX_CRAWL_DURATION_MS,
   MAX_IMG_SRCS_PER_PAGE,
   MAX_LINKS_PER_PAGE,
+  MAX_EXTERNAL_LINKS_PER_PAGE,
   REDIS_KEY_TTL_SECONDS,
   WRITE_BATCH_SIZE,
   crawlKeys,
@@ -127,6 +128,8 @@ interface PendingEdge {
   anchor: string | null;
   nofollow: boolean;
   position: number;
+  /** Phase 4g: an outbound link; never resolved to a page id. */
+  isExternal?: boolean;
 }
 
 /** One page's fetch+parse result, held only until the batch is written. */
@@ -809,10 +812,27 @@ function ampKey(facts: PageFacts, settings: CrawlSettings): string | null {
 function linkEdges(facts: PageFacts, settings: CrawlSettings): PendingEdge[] {
   const out: PendingEdge[] = [];
   const seen = new Set<string>();
+  // Phase 4g: outbound links too, deduped per URL, at most MAX_EXTERNAL_LINKS_PER_PAGE.
+  const external: PendingEdge[] = [];
+  const seenExternal = new Set<string>();
+  const keepExternal = flag("crawl.externalLinks");
   for (const [position, a] of (facts.html?.anchors ?? []).entries()) {
-    if (out.length >= MAX_LINKS_PER_PAGE) break;
     const normalized = normalizeCrawlUrl(a.href, facts.finalUrl);
-    if (!normalized || !settings.inScope(normalized)) continue;
+    if (!normalized) continue;
+    if (!settings.inScope(normalized)) {
+      if (keepExternal && external.length < MAX_EXTERNAL_LINKS_PER_PAGE && /^https?:\/\//i.test(normalized) && !seenExternal.has(normalized)) {
+        seenExternal.add(normalized);
+        external.push({
+          toUrl: normalized,
+          anchor: a.text ? a.text.slice(0, MAX_ANCHOR_CHARS) : null,
+          nofollow: a.rel.split(/\s+/).includes("nofollow"),
+          position: Math.min(position, 32_767),
+          isExternal: true,
+        });
+      }
+      continue;
+    }
+    if (out.length >= MAX_LINKS_PER_PAGE) continue;
     const toUrl = settings.canonical(normalized);
     if (seen.has(toUrl)) continue;
     seen.add(toUrl);
@@ -823,7 +843,7 @@ function linkEdges(facts: PageFacts, settings: CrawlSettings): PendingEdge[] {
       position: Math.min(position, 32_767),
     });
   }
-  return out;
+  return [...out, ...external];
 }
 
 /** Absolute http(s) <img> srcs, deduped, capped (image sitemap). */

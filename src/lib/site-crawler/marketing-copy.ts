@@ -19,7 +19,7 @@
 // family ids, which is what lets a test stub the registry.
 
 import { CRAWLER_BRAND } from "./brand";
-import { CRAWL_PIN_MAX } from "./constants";
+import { CRAWL_PIN_MAX, MAX_EXTERNAL_LINKS_PER_PAGE } from "./constants";
 import { flag as flagOn, FLAGS, type FlagName, type Flags } from "@/lib/flags";
 import type { CrawlCadence, PlanConfig } from "@/lib/plan-config";
 
@@ -310,6 +310,9 @@ function scheduleCell(p: PlanConfig, b: CopyBase): string {
 
 export const CRAWL_FEATURE_ROWS: readonly CrawlFeatureRow[] = [
   row("broken-links", { family: "response_codes" }, "Find broken links, errors & redirects", "Liens brisés, erreurs et redirections"),
+  // Phase 4g: the same on every plan (a per-page limit, not a plan cap).
+  row("external-links", { flag: "crawl.externalLinks" }, "External links", "Liens externes", (_p, b) =>
+    b === "fr" ? `${fmt(MAX_EXTERNAL_LINKS_PER_PAGE, b)} par page, code vérifié une fois par exploration` : `${fmt(MAX_EXTERNAL_LINKS_PER_PAGE, b)} per page, status checked once per crawl`),
   row("titles-meta", { family: "page_titles" }, "Analyse page titles & meta data", "Analyse des titres et métadonnées"),
   row("directives", { family: "directives" }, "Review meta robots & directives", "Meta robots et directives"),
   row("hreflang", { family: "hreflang" }, "Audit hreflang attributes", "Audit des attributs hreflang"),

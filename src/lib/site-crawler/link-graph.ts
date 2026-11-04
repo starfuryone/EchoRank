@@ -96,7 +96,7 @@ export async function resolveLinkGraph(jobId: string, window = LINK_RESOLVE_WIND
       UPDATE "crawl_links" l SET "toPageId" = p."id"
       FROM "crawl_pages" p
       WHERE l."crawlJobId" = ${jobId} AND p."crawlJobId" = ${jobId}
-        AND p."url" = l."toUrl" AND l."toPageId" IS NULL
+        AND p."url" = l."toUrl" AND l."toPageId" IS NULL AND NOT l."isExternal"
         ${lo === null ? Prisma.empty : Prisma.sql`AND l."id" > ${lo}`}
         ${hi === null ? Prisma.empty : Prisma.sql`AND l."id" <= ${hi}`}`;
     windows++;

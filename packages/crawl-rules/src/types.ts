@@ -448,6 +448,11 @@ export interface PageSiteFacts {
     sample: string | null;
   };
   pagination: { non200: number; sequenceErrors: number; sample: string | null };
+  /**
+   * Phase 4g: this page's outbound links (crawl_links isExternal) by the
+   * status aggregation resolved once per URL. Absent = not stored.
+   */
+  external?: { checked: number; clientErrors: number; serverErrors: number; sample: string | null; sampleStatus: number | null; foundOn: number } | null;
   /** Phase 4e: the crawled page this page's rel=amphtml names. Null = none, or not crawled. */
   ampTarget?: { url: string; statusCode: number | null; isAmp: boolean; canonical: string | null } | null;
 }

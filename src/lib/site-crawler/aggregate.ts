@@ -45,6 +45,7 @@ import { joinGa4, type Ga4JoinStatus } from "./ga4-join";
 import { metricsForPages } from "./metrics";
 import type { Ga4Metric, GscMetric } from "./metrics-shared";
 import { toTotals } from "./issue-totals";
+import { externalFacts, resolveExternalStatuses } from "./external-links";
 
 export interface AggregateArgs {
   jobId: string;
@@ -105,6 +106,8 @@ export interface CrawlSummary {
   deepestPages: { url: string; depth: number }[];
   /** Phase 3c: pages whose performance rules ran on an attached Lighthouse run. */
   psiPages?: number;
+  /** Phase 4g: distinct external URLs, how many had their status resolved, and whether the resolve cap cut it short. */
+  external?: { urls: number; checked: number; capped: boolean };
   /** Phase 4d: what each joined source did on this crawl (absent = not attempted). */
   metrics?: { gsc?: GscJoinStatus; ga4?: Ga4JoinStatus };
   aggregationMs: number;
@@ -141,7 +144,9 @@ export async function aggregateCrawl({
   const inlinkStats = await flushInlinks(jobId, redis, keys.inlinks);
   await flushHash(jobId, redis, keys.nofollowInlinks, "nofollowInlinkCount");
 
-  const [dupTitle, dupMeta, dupH1, dupH2, dupContent, h1Title, canonicalTargets, hreflang, pagination, near, ampTargets] =
+  // Phase 4g: each external URL's status, once per crawl, before the facts that read it.
+  const external = flag("crawl.externalLinks") ? await resolveExternalStatuses(jobId, redis, keys.headCache) : null;
+  const [dupTitle, dupMeta, dupH1, dupH2, dupContent, h1Title, canonicalTargets, hreflang, pagination, near, ampTargets, externalByPage] =
     await Promise.all([
       duplicateCounts(jobId, "title"),
       duplicateCounts(jobId, "metaDescription"),
@@ -154,6 +159,7 @@ export async function aggregateCrawl({
       paginationFacts(jobId),
       nearDuplicates(jobId),
       ampTargetFacts(jobId),
+      external ? externalFacts(jobId) : Promise.resolve(new Map<string, NonNullable<PageSiteFacts["external"]>>()),
     ]);
   const redirects = await walkRedirects(jobId, redis, keys.firstSource);
   const orphans = await findOrphans(jobId, sitemapSeeded);
@@ -238,6 +244,7 @@ export async function aggregateCrawl({
         },
         pagination: pagination.get(page.id) ?? { non200: 0, sequenceErrors: 0, sample: null },
         ampTarget: ampTargets.get(page.id) ?? null,
+        external: externalByPage.get(page.id) ?? null,
       };
       const isRoot = page.url.replace(/\/+$/, "") === rootKey;
       const pagePsi = psi.get(page.url) ?? null;
@@ -316,6 +323,7 @@ export async function aggregateCrawl({
     deepestPages,
     psiPages,
     ...(Object.keys(metricsStatus).length ? { metrics: metricsStatus } : {}),
+    ...(external ? { external } : {}),
     aggregationMs: Date.now() - started,
   };
 

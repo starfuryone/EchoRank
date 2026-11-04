@@ -684,11 +684,14 @@ describe("link graph", () => {
       };
     });
     await runCrawl({ jobId: "job_1", redis: fakeRedis() as never });
-    const edges = crawlLink.createMany.mock.calls[0]![0].data as { toUrl: string; anchor: string; nofollow: boolean; position: number; fromPageId: string }[];
+    const all = crawlLink.createMany.mock.calls[0]![0].data as { toUrl: string; anchor: string; nofollow: boolean; position: number; fromPageId: string; isExternal?: boolean }[];
+    const edges = all.filter((e) => !e.isExternal);
     expect(edges.map((e) => [e.toUrl, e.anchor, e.nofollow])).toEqual([
       ["https://example.com/a", "First", false],
       ["https://example.com/b", "B", true],
     ]);
+    // Phase 4g: the outbound link is stored too, as an external row.
+    expect(all.filter((e) => e.isExternal).map((e) => [e.toUrl, e.anchor])).toEqual([["https://other.test/", "Out"]]);
     expect(edges[0]!.fromPageId).toBe("p1");
     expect(edges[1]!.position).toBe(2);
   });
@@ -894,5 +897,22 @@ describe("forms login (Phase 4e)", () => {
     expect(terminalWrite()).toMatchObject({ status: "COMPLETED", summary: expect.objectContaining({ login: { status: "failed", reason: "success_check_failed" } }) });
     // Unauthenticated, ordinary rules apply: the logout URL is just a link (rel=nofollow still not followed by default).
     expect(fetchPage.mock.calls.map((c) => c[0])).toContain("https://example.com/logout");
+  });
+});
+
+// ─── Phase 4g: external links ──────────────────────────────────────────────
+
+describe("external links (Phase 4g)", () => {
+  it("stores outbound links per page, deduped by URL, at most 50, never as internal edges", async () => {
+    crawlJob.findUnique.mockResolvedValue({ id: "job_1", rootUrl: "https://example.com/", urlCap: 1, status: "QUEUED" });
+    const outbound = [...Array.from({ length: 60 }, (_, i) => `https://other${i}.net/p`), "https://other0.net/p", "mailto:x@example.org"];
+    fetchPage.mockImplementation(async (url: string) => htmlResponse(url, ["/in", ...outbound]));
+    await runCrawl({ jobId: "job_1", redis: fakeRedis() as never });
+    const edges = crawlLink.createMany.mock.calls.flatMap((c) => c[0].data) as { toUrl: string; isExternal?: boolean }[];
+    const ext = edges.filter((e) => e.isExternal);
+    expect(ext).toHaveLength(50);
+    expect(new Set(ext.map((e) => e.toUrl)).size).toBe(50);
+    expect(ext.every((e) => /^https:\/\/other\d+\.net\/p$/.test(e.toUrl))).toBe(true);
+    expect(edges.filter((e) => !e.isExternal).map((e) => e.toUrl)).toEqual(["https://example.com/in"]);
   });
 });

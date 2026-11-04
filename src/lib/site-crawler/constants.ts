@@ -109,6 +109,11 @@ export const crawlKeys = (jobId: string) => ({
 // ─── Phase 3a: bounded HEAD checks (external links, same-host images) ──────
 /** External links HEAD-checked per page; results cached per crawl. */
 export const EXTERNAL_CHECKS_PER_PAGE = 10;
+/** Phase 4g: outbound links stored per page (crawl_links isExternal), deduped by URL. */
+export const MAX_EXTERNAL_LINKS_PER_PAGE = 50;
+/** Phase 4g: distinct external URLs whose status aggregation resolves per crawl, most-linked first. */
+export const EXTERNAL_RESOLVE_CAP = 1_000;
+export const EXTERNAL_RESOLVE_CONCURRENCY = 10;
 /** Same-host images HEAD-checked per page, through the politeness limiter. */
 export const IMAGE_CHECKS_PER_PAGE = 10;
 export const HEAD_TIMEOUT_MS = 5_000;

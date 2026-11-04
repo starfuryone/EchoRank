@@ -52,6 +52,7 @@ import { CrawlConfigSection, problemText } from "@/components/seo-tools/site-cra
 import { CrawlTools } from "@/components/seo-tools/site-crawler-crawl-tools";
 import { InlinksPanel } from "@/components/seo-tools/site-crawler-inlinks";
 import { ExtractionPanel } from "@/components/seo-tools/site-crawler-extraction";
+import { ExternalPanel } from "@/components/seo-tools/site-crawler-external";
 import { ComparePanel } from "@/components/seo-tools/site-crawler-compare";
 import { CrawlSchedules } from "@/components/seo-tools/site-crawler-schedules";
 import { AddDataSection, confirmLines } from "@/components/seo-tools/site-crawler-add-data";
@@ -71,7 +72,7 @@ import { SITE_CRAWLER_COPY, type DashLocale, type SiteCrawlerCopy } from "@/lib/
 import { CRAWLER_BRAND } from "@/lib/site-crawler/brand";
 import { helpArticleFor, learnHref } from "@/lib/help-content";
 
-type TabId = "overview" | "rules" | "issues" | "duplicates" | "redirects" | "pages" | "structure" | "compare" | "extraction";
+type TabId = "overview" | "rules" | "issues" | "duplicates" | "redirects" | "pages" | "structure" | "compare" | "extraction" | "external";
 
 /** The Issues filter: every registry rule, by name. Pre-3a rows match through legacy-map. */
 const RULE_OPTIONS = RULE_IDS.map((id) => ({ value: id, label: RULE_COPY[id]?.name ?? id })).sort((a, b) =>
@@ -97,6 +98,8 @@ export function crawlTabs(crawl: (Pick<CrawlDto, "config"> & { dataPurgedAt?: st
     (flag("crawl.ai") && (crawl?.config?.ai?.prompts.length ?? 0) > 0)
   )
     tabs.push("extraction");
+  // Phase 4g: outbound links, while the crawl's links are kept.
+  if (flag("crawl.externalLinks") && crawl && !crawl.dataPurgedAt) tabs.push("external");
   return tabs;
 }
 
@@ -109,6 +112,7 @@ function tabLabel(id: TabId, t: SiteCrawlerCopy): string {
   if (id === "extraction") return t.p4b.tabExtraction;
   if (id === "structure") return t.p4c.tabStructure;
   if (id === "compare") return t.p4c.tabCompare;
+  if (id === "external") return t.p4g.tabExternal;
   return t.tabPages;
 }
 
@@ -381,7 +385,7 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
   );
 
   useEffect(() => {
-    if (!active || isInFlight(active.status) || tab === "issues" || tab === "rules" || tab === "extraction" || tab === "structure" || tab === "compare") return;
+    if (!active || isInFlight(active.status) || tab === "issues" || tab === "rules" || tab === "extraction" || tab === "external" || tab === "structure" || tab === "compare") return;
     let cancelled = false;
     void (async () => {
       const data = await loadTab(active.id, tab);
@@ -812,6 +816,8 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
       )}
 
       {active && !running && tab === "rules" && <RulesPanel crawlId={active.id} segment={segment || null} t={t} int={int} />}
+
+      {active && !running && tab === "external" && <ExternalPanel crawlId={active.id} t={t} int={int} />}
 
       {active && !running && tab === "extraction" && (
         <ExtractionPanel

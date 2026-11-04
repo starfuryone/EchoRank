@@ -46,6 +46,12 @@ function fakeRedis(hashes: Record<string, Record<string, string>>) {
     async hget(key: string, field: string) {
       return hashes[key]?.[field] ?? null;
     },
+    async hset(key: string, field: string, value: string) {
+      (hashes[key] ??= {})[field] = value;
+    },
+    async expire() {
+      return 1;
+    },
   };
 }
 
@@ -120,7 +126,13 @@ describe.skipIf(!TEST_DB)("aggregateCrawl against Postgres", () => {
       ] as never,
     });
 
+    // Phase 4g: /article and /badamp both link a dead external URL; its status was cached by a page-time HEAD check.
+    const byUrl = new Map((await prisma.crawlPage.findMany({ where: { crawlJobId: jobId }, select: { id: true, url: true } })).map((p) => [p.url, p.id]));
+    await prisma.crawlLink.createMany({
+      data: ["/article", "/badamp"].map((path) => ({ crawlJobId: jobId, fromPageId: byUrl.get(u(path))!, toUrl: "https://dead.example/x", anchor: "x", position: 0, isExternal: true })),
+    });
     redis = fakeRedis({
+      [`crawl:${jobId}:head`]: { "https://dead.example/x": "410|" },
       [`crawl:${jobId}:inlinks`]: { [u("/dup1")]: "1", [u("/en")]: "3", [u("/r1")]: "1" },
       [`crawl:${jobId}:nofollow`]: { [u("/nf")]: "2" },
       [`crawl:${jobId}:firstsource`]: { [u("/r1")]: ROOT },
@@ -160,6 +172,12 @@ describe.skipIf(!TEST_DB)("aggregateCrawl against Postgres", () => {
 
   it("judges a canonical by its target row", async () => {
     expect(await rulesOn("/canon")).toEqual(expect.arrayContaining(["canonicals.to_error"]));
+  });
+
+  it("Phase 4g: external_4xx is judged from the crawl's outbound links, with the pages it is found on", async () => {
+    const row = await prisma.crawlIssue.findFirst({ where: { crawlJobId: jobId, ruleId: "response_codes.external_4xx", crawlPage: { url: u("/article") } } });
+    expect(row?.evidence).toMatchObject({ count: 1, sample: "https://dead.example/x", status: 410, foundOn: 2 });
+    expect(summary.external).toEqual({ urls: 1, checked: 1, capped: false });
   });
 
   it("Phase 4e: judges a rel=amphtml link by the crawled AMP row", async () => {
