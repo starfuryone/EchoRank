@@ -55,6 +55,8 @@ import { ExtractionPanel } from "@/components/seo-tools/site-crawler-extraction"
 import { ComparePanel } from "@/components/seo-tools/site-crawler-compare";
 import { CrawlSchedules } from "@/components/seo-tools/site-crawler-schedules";
 import { AddDataSection, confirmLines } from "@/components/seo-tools/site-crawler-add-data";
+import { AiPromptsSection, AiStatusLine, aiConfirmLine, type AiQuota } from "@/components/seo-tools/site-crawler-ai";
+import type { AiConfig } from "@/lib/site-crawler/ai-shared";
 import { MetricTiles } from "@/components/seo-tools/site-crawler-metrics";
 import { SourceLines } from "@/components/seo-tools/site-crawler-sources";
 import type { AddData } from "@/lib/site-crawler/crawl-config";
@@ -91,7 +93,8 @@ export function crawlTabs(crawl: (Pick<CrawlDto, "config"> & { dataPurgedAt?: st
   if (flag("crawl.compare") && crawl && !crawl.dataPurgedAt && (crawl.status ?? "COMPLETED") === "COMPLETED") tabs.push("compare");
   if (
     (flag("crawl.extraction") && (crawl?.config?.extractors?.length ?? 0) > 0) ||
-    (flag("crawl.customJs") && (crawl?.config?.js?.length ?? 0) > 0)
+    (flag("crawl.customJs") && (crawl?.config?.js?.length ?? 0) > 0) ||
+    (flag("crawl.ai") && (crawl?.config?.ai?.prompts.length ?? 0) > 0)
   )
     tabs.push("extraction");
   return tabs;
@@ -118,6 +121,17 @@ function addDataQuota(q: CrawlQuotaDto) {
     backlinkCap: q.backlinkCap ?? 0,
     backlinkUnitUsd: q.backlinkUnitUsd ?? 0,
     seoBudgetLeftUsd: q.seoBudgetLeftUsd ?? 0,
+  };
+}
+
+/** The AI prompts' view of the crawl quota (Phase 4e). */
+function aiQuota(q: CrawlQuotaDto): AiQuota {
+  return {
+    aiPageCap: q.aiPageCap ?? 0,
+    aiTokensUsed: q.aiTokensUsed ?? 0,
+    aiTokenLimit: q.aiTokenLimit === undefined ? 0 : q.aiTokenLimit,
+    aiClaude: q.aiClaude ?? false,
+    aiKeys: q.aiKeys ?? { openai: false, gemini: false },
   };
 }
 
@@ -193,6 +207,7 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
   const [problems, setProblems] = useState<ConfigProblem[]>([]);
   // Phase 4d: the post-crawl opt-ins, confirmed with their cost before the crawl starts.
   const [addData, setAddData] = useState<AddData | null>(null);
+  const [ai, setAi] = useState<AiConfig | null>(null);
   const [confirming, setConfirming] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [inlinksFor, setInlinksFor] = useState<{ id: string; url: string } | null>(null);
@@ -384,7 +399,8 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
   async function start(event: React.FormEvent) {
     event.preventDefault();
     const extra = mode === "spider" ? addData : null;
-    if (extra && !confirming) {
+    const aiExtra = mode === "spider" && flag("crawl.ai") ? ai : null;
+    if ((extra || aiExtra) && !confirming) {
       setConfirming(true);
       return;
     }
@@ -402,9 +418,9 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
           url: listing ? "" : url,
           renderMode: quota && quota.renderCap > 0 ? renderMode : "none",
           ...(listing ? { mode: "list", urls: listUrls } : {}),
-          ...((flag("crawl.config") && cfg.config) || extra
+          ...((flag("crawl.config") && cfg.config) || extra || aiExtra
             ? {
-                config: { ...(flag("crawl.config") && cfg.config ? cfg.config : {}), ...(extra ? { addData: extra } : {}) },
+                config: { ...(flag("crawl.config") && cfg.config ? cfg.config : {}), ...(extra ? { addData: extra } : {}), ...(aiExtra ? { ai: aiExtra } : {}) },
                 saveAsDefault: !listing && flag("crawl.config") && cfg.config !== null && cfg.saveAsDefault,
               }
             : {}),
@@ -634,7 +650,7 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
             </CrawlConfigSection>
           )}
 
-          {(flag("crawl.psi") || flag("crawl.backlinks") || flag("crawl.gsc") || flag("crawl.ga4")) && mode === "spider" && quota && (
+          {(flag("crawl.psi") || flag("crawl.backlinks") || flag("crawl.gsc") || flag("crawl.ga4") || flag("crawl.ai")) && mode === "spider" && quota && (
             <AddDataSection
               t={t.p4d}
               host={hostOfInput(url)}
@@ -645,18 +661,37 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
                 setConfirming(false);
               }}
               disabled={starting || Boolean(running)}
+              extra={
+                flag("crawl.ai")
+                  ? (segments) => (
+                      <AiPromptsSection
+                        t={t.p4e}
+                        t4d={t.p4d}
+                        quota={aiQuota(quota)}
+                        value={ai}
+                        segments={segments}
+                        int={int}
+                        disabled={starting || Boolean(running)}
+                        onChange={(v) => {
+                          setAi(v);
+                          setConfirming(false);
+                        }}
+                      />
+                    )
+                  : undefined
+              }
             >
               <SourceLines t={t.p4d} host={hostOfInput(url)} />
             </AddDataSection>
           )}
 
-          {confirming && addData && quota && (
+          {confirming && (addData || ai) && quota && (
             <div role="dialog" aria-labelledby="crawl-confirm-title" className="mt-4 space-y-2 rounded-lg border border-amber-200 bg-amber-50 p-3">
               <p id="crawl-confirm-title" className="text-sm font-semibold text-gray-900">
                 {t.p4d.confirmTitle}
               </p>
               <ul className="list-disc space-y-1 pl-5 text-sm text-gray-700">
-                {confirmLines(t.p4d, addData, addDataQuota(quota)).map((line) => (
+                {[...(addData ? confirmLines(t.p4d, addData, addDataQuota(quota)) : []), ...(ai ? [aiConfirmLine(t.p4e, ai, int)] : [])].map((line) => (
                   <li key={line}>{line}</li>
                 ))}
               </ul>
@@ -769,6 +804,9 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
         <>
           <SegmentOverview segments={summary?.segments} segment={summary?.segment} onPick={pickSegment} t={t} int={int} />
           {summary && "metricOverview" in summary && summary.metricOverview && <MetricTiles data={summary.metricOverview} t={t.p4d} int={int} />}
+          {flag("crawl.ai") && summary && "metricOverview" in summary && summary.metricOverview && (
+            <AiStatusLine status={summary.metricOverview.status as object} t={t.p4e} int={int} />
+          )}
           <OverviewPanel summary={summary} t={t} int={int} />
         </>
       )}
@@ -778,7 +816,7 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
       {active && !running && tab === "extraction" && (
         <ExtractionPanel
           crawlId={active.id}
-          extractorNames={[...(active.config?.extractors ?? []).map((e) => e.name), ...(active.config?.js ?? []).map((s) => `JS: ${s.name}`)]}
+          extractorNames={[...(active.config?.extractors ?? []).map((e) => e.name), ...(active.config?.js ?? []).map((s) => `JS: ${s.name}`), ...(active.config?.ai?.prompts ?? []).map((p, i) => `AI: ${p.preset === "custom" ? `${t.p4e.aiPresets.custom} ${i + 1}` : t.p4e.aiPresets[p.preset]}`)]}
           segment={segment || null}
           t={t}
           int={int}

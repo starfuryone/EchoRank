@@ -91,6 +91,11 @@ export interface CrawlQuotaDto {
   lighthouseLimit?: number;
   backlinkUnitUsd?: number;
   seoBudgetLeftUsd?: number;
+  /** Phase 4e AI prompts. */
+  aiTokensUsed?: number;
+  aiTokenLimit?: number | null;
+  aiClaude?: boolean;
+  aiKeys?: { openai: boolean; gemini: boolean };
 }
 
 export interface CrawlIssueRow {

@@ -28,6 +28,7 @@ export function extractionColumnRefs(config: StoredCrawlConfig | null): Extracti
   return [
     ...(config?.extractors ?? []).map((e, index) => ({ kind: "extract" as const, index, name: e.name })),
     ...(config?.js ?? []).map((s, index) => ({ kind: "js" as const, index, name: `JS: ${s.name}` })),
+    ...(config?.ai?.prompts ?? []).map((p, index) => ({ kind: "ai" as const, index, name: `AI: ${p.preset === "custom" ? `custom ${index + 1}` : p.preset}` })),
   ];
 }
 

@@ -67,7 +67,8 @@ export function ExtractionPanel({
     };
   }, [crawlId, filter, segment, page]);
 
-  const names = data?.extractors.map((e) => e.name) ?? extractorNames;
+  // The client's names are localised (AI preset labels); the server's are the fallback when the two disagree.
+  const names = !data || data.extractors.length === extractorNames.length ? extractorNames : data.extractors.map((e) => e.name);
   return (
     <Card>
       <CardHeader>

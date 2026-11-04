@@ -26,6 +26,7 @@ import { z } from "zod";
 import type { SegmentDef } from "./segments";
 import { flag } from "@/lib/flags";
 import { JS_LIMITS, JS_PRESETS, type JsSnippet } from "./js-snippets";
+import { AI_LIMITS, AI_PRESETS, AI_PROVIDERS, type AiConfig } from "./ai-shared";
 
 export const CONFIG_LIMITS = {
   patterns: 20,
@@ -174,6 +175,12 @@ export interface CrawlConfigOf<S> {
    * in crawl_site_defaults.jsSnippets, not in its config.
    */
   js?: JsSnippet[];
+  /**
+   * Phase 4e AI prompts (crawl.ai): up to 3, run after the crawl on its top N
+   * pages' visible text. Claude on the house key (Marketing Studio token
+   * budget), OpenAI / Gemini on the tenant's own key.
+   */
+  ai?: AiConfig | null;
 }
 
 /** Phase 4d: the top N pages by inlinks, optionally inside one of the crawl's segments. */
@@ -380,6 +387,17 @@ export const CrawlConfigInputSchema = z.object({
     })
     .nullable()
     .default(null),
+  ai: z
+    .object({
+      provider: z.enum(AI_PROVIDERS),
+      prompts: z
+        .array(z.object({ preset: z.enum(AI_PRESETS), text: z.string().trim().max(AI_LIMITS.customChars).nullable().default(null) }))
+        .min(1)
+        .max(AI_LIMITS.prompts),
+      top: TopPagesSchema,
+    })
+    .nullable()
+    .default(null),
   js: z
     .array(
       z.object({
@@ -401,6 +419,11 @@ export type ConfigProblem =
   | { field: "extractors" | "searches" | "addData.psi" | "addData.backlinks"; code: "over_plan_cap"; limit: number }
   | { field: "addData.psi" | "addData.backlinks"; code: "unknown_segment" }
   | { field: "js"; code: "over_plan_cap"; limit: number }
+  | { field: "ai"; code: "over_plan_cap"; limit: number }
+  | { field: "ai"; code: "ai_key_missing"; provider: "openai" | "gemini" }
+  | { field: "ai"; code: "ai_unavailable" }
+  | { field: "ai"; code: "invalid_prompt"; index: number }
+  | { field: "ai"; code: "unknown_segment" }
   | { field: "js"; code: "requires_render" }
   | { field: "js"; code: "invalid_snippet"; index: number; reason: "selector_missing" | "code_missing" }
   | { field: "extractors" | "searches"; code: "invalid_expression"; index: number; reason: string };
@@ -435,6 +458,10 @@ export function checkCrawlConfig(
     /** Phase 4e: plan crawlJsSnippets (absent = 0), and whether the crawl renders (JS runs on rendered pages only; absent = not checked, as when saving defaults). */
     jsSnippetCap?: number;
     renders?: boolean;
+    /** Phase 4e AI: plan crawlAiPages (absent = 0); which tenant keys are saved; whether Claude (Marketing Studio) is on the plan. Absent = not checked. */
+    aiPageCap?: number;
+    aiKeys?: { openai: boolean; gemini: boolean };
+    claudeAvailable?: boolean;
     /** Server-side syntax check for css / xpath expressions (needs cheerio / xpath). */
     checkExpr?: (e: Extractor) => string | null;
   },
@@ -472,6 +499,18 @@ export function checkCrawlConfig(
       if (s.preset === "loadMore" && !s.selector?.trim()) problems.push({ field: "js", code: "invalid_snippet", index, reason: "selector_missing" });
       if (s.preset === "custom" && !s.code?.trim()) problems.push({ field: "js", code: "invalid_snippet", index, reason: "code_missing" });
     });
+  }
+  // Phase 4e AI prompts: dropped when the feature is off; capped; the provider must be usable.
+  config.ai = flag("crawl.ai") ? (input.ai ?? null) : null;
+  if (config.ai) {
+    const aiCap = ctx.aiPageCap ?? 0;
+    if (config.ai.top.pages > aiCap) problems.push({ field: "ai", code: "over_plan_cap", limit: aiCap });
+    config.ai.prompts.forEach((p, index) => {
+      if (p.preset === "custom" && !p.text?.trim()) problems.push({ field: "ai", code: "invalid_prompt", index });
+    });
+    const provider = config.ai.provider;
+    if (provider !== "claude" && ctx.aiKeys && !ctx.aiKeys[provider]) problems.push({ field: "ai", code: "ai_key_missing", provider });
+    if (provider === "claude" && ctx.claudeAvailable === false) problems.push({ field: "ai", code: "ai_unavailable" });
   }
   // Never from input: the server snapshots the host's saved segments.
   delete config.segments;

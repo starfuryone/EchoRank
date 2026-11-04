@@ -22,7 +22,10 @@ import { prisma } from "@/lib/prisma";
 import { planConfig, type CrawlCadence } from "@/lib/plan-config";
 import { auditsUsedThisHour } from "@/lib/lighthouse/usage";
 import { AUDITS_PER_HOUR } from "@/lib/lighthouse/options";
+import { flag } from "@/lib/flags";
 import { OBSERVED_BACKLINK_UNIT_USD, backlinkUnitCostUsd, seoBudgetLeftUsd } from "./backlink-cost";
+import { aiKeyStatus } from "./ai-keys";
+import { marketingTokenLimit, marketingTokensUsed, planCanUseMarketing } from "@/lib/marketing/quota";
 
 /** Statuses that consume a monthly slot. */
 export const QUOTA_CONSUMING_STATUSES = ["QUEUED", "RUNNING", "COMPLETED"] as const;
@@ -62,6 +65,11 @@ export interface CrawlQuota {
   /** Phase 4d backlink estimate: last metered unit cost and the monthly SEO data budget left. */
   backlinkUnitUsd: number;
   seoBudgetLeftUsd: number;
+  /** Phase 4e AI prompts: the Marketing Studio token budget (limit null = unmetered), whether Claude is on the plan, which own keys are saved. */
+  aiTokensUsed?: number;
+  aiTokenLimit?: number | null;
+  aiClaude?: boolean;
+  aiKeys?: { openai: boolean; gemini: boolean };
 }
 
 export function urlCapForPlan(plan: PlanType): number {
@@ -150,5 +158,17 @@ export async function getCrawlQuota(
     lighthouseLimit: AUDITS_PER_HOUR,
     backlinkUnitUsd: await backlinkUnitCostUsd().catch(() => OBSERVED_BACKLINK_UNIT_USD),
     seoBudgetLeftUsd: await seoBudgetLeftUsd(tenantId).catch(() => 0),
+    ...(flag("crawl.ai") ? await aiQuota(tenantId, plan) : {}),
+  };
+}
+
+/** Phase 4e: what the AI prompts' estimate and provider choice need. */
+async function aiQuota(tenantId: string, plan: PlanType) {
+  const keys = await aiKeyStatus(tenantId).catch(() => null);
+  return {
+    aiTokensUsed: await marketingTokensUsed(tenantId),
+    aiTokenLimit: marketingTokenLimit(plan),
+    aiClaude: planCanUseMarketing(plan),
+    aiKeys: { openai: Boolean(keys?.openai.set), gemini: Boolean(keys?.gemini.set) },
   };
 }

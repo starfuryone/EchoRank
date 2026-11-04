@@ -59,6 +59,9 @@ export const RULE_FAMILIES = [
   // Phase 4e: AMP pages found through <link rel="amphtml">, validated with
   // the official validator (capability "amp" when it loaded).
   "amp",
+  // Phase 4e: what the crawl's AI prompts said about a page (capability "ai",
+  // set only on pages the prompts ran on).
+  "ai",
 ] as const;
 
 /** Families whose rule ids may start with more than the family name. Ids are public API, so this is a closed list. */
@@ -76,7 +79,7 @@ export type RulePriority = "high" | "medium" | "low";
  * (a page with no row then reads as zero); "backlinks" — the page itself was
  * looked up. The consumer hands the joined numbers in SiteRuleCtx.metrics.
  */
-export type Capability = "render" | "psi" | "spell" | "gsc" | "ga4" | "backlinks" | "amp";
+export type Capability = "render" | "psi" | "spell" | "gsc" | "ga4" | "backlinks" | "amp" | "ai";
 
 /**
  * What a rule reports alongside its verdict. Small by contract: counts,
@@ -524,6 +527,15 @@ export interface SiteMetricFacts {
   backlinks?: BacklinkFacts | null;
   /** High-priority findings already on the page (any family), for ga4.converting_page_has_issues. */
   highPriorityIssues?: number;
+  /** Phase 4e: the AI prompts' answers on this page. */
+  ai?: AiFacts | null;
+}
+
+/** Phase 4e: what the title and grammar presets answered (null = that preset did not run). */
+export interface AiFacts {
+  suggestedTitle: string | null;
+  /** Issues the grammar preset listed, at most 5. Null when it did not run. */
+  grammarIssues: string[] | null;
 }
 
 export interface SiteRuleCtx {

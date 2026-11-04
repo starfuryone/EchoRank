@@ -24,6 +24,7 @@ export const FAMILY_FLAGS: Partial<Record<RuleFamily, FlagName>> = {
   analytics: "crawl.ga4",
   backlinks: "crawl.backlinks",
   amp: "crawl.amp",
+  ai: "crawl.ai",
 };
 
 export function familyIsPublic(f: RuleFamily): boolean {

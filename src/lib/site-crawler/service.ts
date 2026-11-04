@@ -37,6 +37,8 @@ import {
 } from "./crawl-config";
 import { flag } from "@/lib/flags";
 import { SegmentDefSchema, type SegmentDef } from "./segments";
+import { aiKeyStatus } from "./ai-keys";
+import { planCanUseMarketing } from "@/lib/marketing/quota";
 import { sealCrawlConfig } from "./crawl-config-secrets";
 import { checkExtractorExpr } from "./extraction";
 import { newVerifyToken } from "./site-verify";
@@ -145,6 +147,13 @@ export function validateUrlList(lines: string[]): { urls: string[]; skipped: num
   return { urls, skipped };
 }
 
+/** Phase 4e: what the AI prompts' provider check needs (only looked up when the crawl asks for AI). */
+async function aiChecks(tenantId: string, plan: PlanType, ai: { provider: string } | null) {
+  if (!ai) return {};
+  const keys = await aiKeyStatus(tenantId);
+  return { aiKeys: { openai: keys.openai.set, gemini: keys.gemini.set }, claudeAvailable: planCanUseMarketing(plan) };
+}
+
 /** Validate, enforce quota, create the row, enqueue the job. */
 export async function startCrawl(
   tenantId: string,
@@ -187,6 +196,7 @@ export async function startCrawl(
       ...metricCapsForPlan(plan),
       ...renderFeatureCapsForPlan(plan),
       renders: renderMode !== "none" && quota.renderCap > 0,
+      ...(await aiChecks(tenantId, plan, opts.config.ai ?? null)),
       checkExpr: checkExtractorExpr,
     });
     if (checked.problems.length) throw new InvalidCrawlConfigError(checked.problems);
@@ -199,6 +209,7 @@ export async function startCrawl(
       ...metricCapsForPlan(plan),
       ...renderFeatureCapsForPlan(plan),
       renders: renderMode !== "none" && quota.renderCap > 0,
+      ...(await aiChecks(tenantId, plan, opts.sealed.ai ?? null)),
       checkExpr: checkExtractorExpr,
     });
     if (checked.problems.length) throw new InvalidCrawlConfigError(checked.problems);
@@ -223,6 +234,9 @@ export async function startCrawl(
   const segments = flag("crawl.segments") ? await segmentSnapshot(tenantId, host, featureCapsForPlan(plan).segmentCap) : [];
   const jobConfig: StoredCrawlConfig | null =
     stored || segments.length ? { ...(stored ?? DEFAULT_CRAWL_CONFIG), ...(segments.length ? { segments } : {}) } : null;
+  // Phase 4e: so may the AI prompts' top N.
+  const aiSeg = jobConfig?.ai?.top.segment;
+  if (aiSeg != null && aiSeg >= segments.length) throw new InvalidCrawlConfigError([{ field: "ai", code: "unknown_segment" }]);
   // Phase 4d: a top-N opt-in may name one of the segments just snapshotted.
   for (const key of ["psi", "backlinks"] as const) {
     const seg = jobConfig?.addData?.[key]?.segment;

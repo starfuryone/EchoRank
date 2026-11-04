@@ -61,7 +61,7 @@ describe("rule registry", () => {
   it("site rules carry no `applies`, and `requires` names known capabilities", () => {
     for (const r of RULES) {
       if (r.scope === "site") expect("applies" in r, r.id).toBe(false);
-      for (const cap of r.requires ?? []) expect(["render", "psi", "spell", "gsc", "ga4", "backlinks", "amp"]).toContain(cap);
+      for (const cap of r.requires ?? []) expect(["render", "psi", "spell", "gsc", "ga4", "backlinks", "amp", "ai"]).toContain(cap);
     }
   });
 
@@ -115,7 +115,8 @@ describe("Phase 3c families", () => {
     const sp = RULES.filter((r) => r.family === "spelling");
     expect(sp.map((r) => r.id).sort()).toEqual(["spelling.misspellings", "spelling.over_5_misspellings", "spelling.unsupported_language"]);
     for (const r of sp) expect(r.requires).toEqual(["spell"]);
-    expect(RULES.some((r) => /grammar/.test(r.id))).toBe(false);
+    // Grammar is not a spelling rule. Phase 4e added it through the AI prompts (feature #19's grammar half), opt-in and metered.
+    expect(RULES.filter((r) => /grammar/.test(r.id)).map((r) => [r.id, r.requires])).toEqual([["ai.grammar_issues", ["ai"]]]);
   });
 });
 

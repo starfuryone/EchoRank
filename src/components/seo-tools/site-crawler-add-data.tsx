@@ -106,6 +106,7 @@ export function AddDataSection({
   onChange,
   disabled = false,
   children,
+  extra,
 }: {
   t: SiteCrawler4dCopy;
   /** The start URL's host, for its saved segments. */
@@ -116,6 +117,8 @@ export function AddDataSection({
   disabled?: boolean;
   /** Later opt-ins and the source status lines. */
   children?: React.ReactNode;
+  /** Phase 4e: opt-ins that also pick a segment (the AI prompts), given the host's segment names. */
+  extra?: (segments: string[]) => React.ReactNode;
 }) {
   const [segments, setSegments] = useState<{ host: string; names: string[] } | null>(null);
   useEffect(() => {
@@ -176,6 +179,7 @@ export function AddDataSection({
           )}
         </div>
       )}
+      {extra?.(names)}
     </section>
   );
 }

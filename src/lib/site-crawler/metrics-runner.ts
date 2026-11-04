@@ -19,6 +19,14 @@
 //              ARCHIVE: there is no seodata provider-response store in this
 //              repo, so responses are not archived (the SeoApiCall row and
 //              the parsed numbers are what is kept).
+//   ai         Phase 4e: up to 3 prompts per page on the top N pages' visible
+//              text (re-fetched with the crawl's own credentials, truncated to
+//              6,000 chars). Claude on the house key, metered on the Marketing
+//              Studio token budget (input + output tokens, checked before
+//              every call: a call that would cross it is not made, the step
+//              stops with "token_budget"); OpenAI / Gemini on the tenant's key.
+//              Two pages at a time, one retry per call, outputs (<= 1 KB) in
+//              crawl_extractions kind ai. Prompts and outputs are never logged.
 //   rules      once a source's targets are done (or it stopped), the rules
 //              requiring its capability are re-evaluated for those pages
 //              (earlier findings replaced) and the summary is re-tallied.
@@ -31,7 +39,7 @@ import { RULES, evaluateSiteRules, type JobFacts, type PageSiteFacts } from "@/l
 import { LighthouseRateLimitedError, runAudit } from "@/lib/lighthouse/service";
 import { msUntilNextAudit } from "@/lib/lighthouse/usage";
 import type { LighthouseAuditDto } from "@/lib/lighthouse/types";
-import { readStoredConfig, type TopPages } from "./crawl-config";
+import { DEFAULT_CRAWL_CONFIG, readStoredConfig, type TopPages } from "./crawl-config";
 import { DataforseoError } from "@/lib/dataforseo/client";
 import { BACKLINKS } from "@/lib/dataforseo/endpoints";
 import { backlinksSummaryTask, parseBacklinksSummary, type BacklinksSummaryItem } from "@/lib/dataforseo/backlinks-summary";
@@ -41,6 +49,18 @@ import { metricsForPages, upsertPageMetrics } from "./metrics";
 import type { BacklinkMetric, PsiMetric, PsiRunSummary } from "./metrics-shared";
 import { psiFactsForUrls } from "./psi";
 import { issueRows, toStoredFacts } from "./stored";
+import { openCrawlConfig } from "./crawl-config-secrets";
+import { crawlSettings } from "./crawl-settings";
+import { RateLimiter, fetchPage, isHtmlContentType } from "./fetch";
+import { visibleText } from "./facts";
+import { isFetchableUrl } from "./url";
+import { AI_LIMITS, type AiConfig, type AiProvider } from "./ai-shared";
+import { claudeCostUsd, parseGrammar, parseSuggestion, runPrompt } from "./ai-prompts";
+import { openAiKey } from "./ai-keys";
+import { MARKETING_MODEL } from "@/lib/marketing-templates";
+import { marketingTokenLimit, marketingTokensUsed, recordMarketingTokens } from "@/lib/marketing/quota";
+import type { AiFacts } from "@/lib/crawl-rules";
+import type { PlanType } from "@/generated/prisma";
 
 const log = logger.child({ module: "crawl-metrics" });
 
@@ -57,8 +77,11 @@ export interface SourceState {
   /** PSI: runs finished (ok or failed); backlinks: pages looked up. */
   completed: number;
   failed: number;
-  /** Why it stopped early (backlinks: "usd_cap"). */
+  /** Why it stopped early (backlinks: "usd_cap"; ai: "token_budget", "key_missing"). */
   stoppedReason?: string;
+  /** ai: tokens charged (Claude: to the Marketing Studio budget) and their list cost. */
+  tokens?: number;
+  costUsd?: number;
   updatedAt: string;
 }
 
@@ -70,13 +93,32 @@ export interface MetricsDeps {
   msUntilNextAudit: typeof msUntilNextAudit;
   backlinksSummary: (tenantId: string, url: string) => Promise<BacklinksSummaryItem[]>;
   budget: (tenantId: string) => Promise<{ spent: number; cap: number }>;
+  /** Phase 4e AI prompts. */
+  aiCall: typeof runPrompt;
+  aiFetchHtml: (url: string, settings: ReturnType<typeof crawlSettings>) => Promise<string | null>;
+  aiKey: (tenantId: string, provider: AiProvider) => Promise<string | null>;
+  tokenBudget: (tenantId: string, plan: PlanType) => Promise<{ used: number; limit: number | null }>;
+  recordTokens: (tenantId: string, tokens: number) => Promise<void>;
 }
 const DEFAULT_DEPS: MetricsDeps = {
   runAudit,
   msUntilNextAudit,
   backlinksSummary: (tenantId, url) => seoMeteredCall<BacklinksSummaryItem[]>(tenantId, BACKLINKS.summary, backlinksSummaryTask(url, { includeSubdomains: false })),
   budget: async (tenantId) => ({ spent: await spentThisMonth(tenantId), cap: await monthlyCapUsd(tenantId) }),
+  aiCall: runPrompt,
+  aiFetchHtml: async (url, settings) => {
+    if (!isFetchableUrl(url)) return null;
+    const res = await fetchPage(url, settings.fetchOpts);
+    return res.statusCode === 200 && isHtmlContentType(res.contentType) ? res.html : null;
+  },
+  aiKey: async (tenantId, provider) => (provider === "claude" ? process.env.ANTHROPIC_API_KEY?.trim() || null : openAiKey(tenantId, provider)),
+  tokenBudget: async (tenantId, plan) => ({ used: await marketingTokensUsed(tenantId), limit: marketingTokenLimit(plan) }),
+  recordTokens: recordMarketingTokens,
 };
+
+/** AI pages per tick, and how many run at once. */
+export const AI_PAGES_PER_TICK = 10;
+export const AI_CONCURRENCY = 2;
 
 
 const PAGE_SELECT = {
@@ -167,7 +209,7 @@ export async function reevaluatePsiRules(jobId: string, tenantId: string, rootUr
 }
 
 /** Read-modify-write one source's state under summary.metrics. */
-export async function setSourceState(jobId: string, source: "psi" | "backlinks", state: Omit<SourceState, "updatedAt">): Promise<void> {
+export async function setSourceState(jobId: string, source: "psi" | "backlinks" | "ai", state: Omit<SourceState, "updatedAt">): Promise<void> {
   const job = await prisma.crawlJob.findUnique({ where: { id: jobId }, select: { summary: true } });
   const summary = (job?.summary as Record<string, unknown> | null) ?? {};
   const metrics = (summary.metrics as Record<string, unknown> | undefined) ?? {};
@@ -177,7 +219,120 @@ export async function setSourceState(jobId: string, source: "psi" | "backlinks",
   });
 }
 
-type Job = { id: string; tenantId: string; rootUrl: string };
+type Job = { id: string; tenantId: string; rootUrl: string; config?: unknown; summary?: unknown; tenant?: { planType: PlanType } | null };
+
+export const AI_RULE_IDS = RULES.filter((r) => r.requires?.includes("ai")).map((r) => r.id);
+
+/** What the title and grammar presets answered on one page (error values ignored). */
+export function aiFactsOf(ai: AiConfig, values: Map<number, string>): AiFacts {
+  const of = (preset: string) => {
+    const i = ai.prompts.findIndex((p) => p.preset === preset);
+    const v = i < 0 ? undefined : values.get(i);
+    return v === undefined || v.startsWith("error: ") ? null : v;
+  };
+  const title = of("title");
+  const grammar = of("grammar");
+  return { suggestedTitle: title ? parseSuggestion(title).title : null, grammarIssues: grammar === null ? null : parseGrammar(grammar) };
+}
+
+/** Replace the ai rules' findings on these pages, from their stored answers. */
+export async function reevaluateAiRules(jobId: string, rootUrl: string, ai: AiConfig, pages: Awaited<ReturnType<typeof targetPages>>): Promise<number> {
+  if (pages.length === 0) return 0;
+  const rows = await prisma.crawlExtraction.findMany({ where: { crawlJobId: jobId, kind: "ai", pageId: { in: pages.map((p) => p.id) } }, select: { pageId: true, extractorIndex: true, values: true } });
+  const byPage = new Map<string, Map<number, string>>();
+  for (const r of rows) byPage.set(r.pageId, (byPage.get(r.pageId) ?? new Map()).set(r.extractorIndex, r.values[0] ?? ""));
+  await prisma.crawlIssue.deleteMany({ where: { crawlPageId: { in: pages.map((p) => p.id) }, ruleId: { in: AI_RULE_IDS } } });
+  const keep = new Set(AI_RULE_IDS);
+  const issues = pages.flatMap((page) => {
+    const values = byPage.get(page.id);
+    if (!values) return [];
+    const found = evaluateSiteRules(toStoredFacts(page, rootUrl), { capabilities: ["ai"], metrics: { ai: aiFactsOf(ai, values) }, site: NO_SITE, job: NO_JOB, isRoot: false }).filter((f) => keep.has(f.ruleId));
+    return issueRows(found, jobId).map((r) => ({ ...r, crawlPageId: page.id }));
+  });
+  if (issues.length) await prisma.crawlIssue.createMany({ data: issues });
+  return issues.length;
+}
+
+async function aiTick(job: Job, ai: AiConfig, deps: MetricsDeps): Promise<MetricsTick> {
+  const pages = await targetPages(job.id, ai.top, { htmlOnly: true });
+  const stored = await prisma.crawlExtraction.findMany({ where: { crawlJobId: job.id, kind: "ai", pageId: { in: pages.map((p) => p.id) } }, select: { pageId: true, extractorIndex: true, values: true } });
+  const have = new Map<string, Map<number, string>>();
+  for (const r of stored) have.set(r.pageId, (have.get(r.pageId) ?? new Map()).set(r.extractorIndex, r.values[0] ?? ""));
+  const prev = ((job.summary as { metrics?: { ai?: SourceState } } | null)?.metrics?.ai) ?? null;
+  let tokens = prev?.tokens ?? 0;
+  let costUsd = prev?.costUsd ?? 0;
+  const state = (extra: Partial<SourceState> = {}) => {
+    const done = pages.filter((p) => (have.get(p.id)?.size ?? 0) >= ai.prompts.length);
+    const failed = done.filter((p) => [...have.get(p.id)!.values()].some((v) => v.startsWith("error: "))).length;
+    return { status: "running" as const, targets: pages.length, completed: done.length, failed, tokens, costUsd: Math.round(costUsd * 1e6) / 1e6, ...extra };
+  };
+  const finish = async (s: Pick<SourceState, "status" | "stoppedReason">) => {
+    await reevaluateAiRules(job.id, job.rootUrl, ai, pages.filter((p) => have.has(p.id)));
+    await recountIssues(job.id);
+    await setSourceState(job.id, "ai", state(s));
+    return { done: true } as const;
+  };
+  const todo = pages.filter((p) => (have.get(p.id)?.size ?? 0) < ai.prompts.length);
+  if (todo.length === 0) return finish({ status: "done" });
+
+  const key = await deps.aiKey(job.tenantId, ai.provider);
+  if (!key) return finish({ status: "stopped", stoppedReason: "key_missing" });
+  const plan = job.tenant?.planType ?? "STARTER";
+  const stored0 = readStoredConfig(job.config);
+  // The crawl's own credentials and user agent (decrypted in memory only), so a staging site answers as it did.
+  const settings = crawlSettings(stored0 ? openCrawlConfig(stored0) : { ...DEFAULT_CRAWL_CONFIG }, job.rootUrl);
+  const limiter = new RateLimiter(stored0?.speed ?? 2, 0);
+  let budgetHit = false;
+
+  const save = async (pageId: string, index: number, value: string) => {
+    await prisma.crawlExtraction.createMany({ data: [{ crawlJobId: job.id, pageId, kind: "ai", extractorIndex: index, values: [value] }], skipDuplicates: true });
+    have.set(pageId, (have.get(pageId) ?? new Map()).set(index, value));
+  };
+  const onePage = async (page: (typeof pages)[number]) => {
+    await limiter.acquire();
+    const html = await deps.aiFetchHtml(page.url, settings).catch(() => null);
+    const text = html ? visibleText(html, page.url, job.rootUrl).slice(0, AI_LIMITS.textChars) : "";
+    for (const [index, prompt] of ai.prompts.entries()) {
+      if (budgetHit) return;
+      if (have.get(page.id)?.has(index)) continue;
+      if (!text) {
+        await save(page.id, index, html ? "error: no visible text" : "error: page could not be fetched");
+        continue;
+      }
+      if (ai.provider === "claude") {
+        const b = await deps.tokenBudget(job.tenantId, plan);
+        if (b.limit !== null && b.used + AI_LIMITS.tokensPerCall > b.limit) {
+          budgetHit = true;
+          return;
+        }
+      }
+      try {
+        const r = await deps.aiCall(ai.provider, key, prompt, { url: page.url, text });
+        const spent = r.inputTokens + r.outputTokens;
+        tokens += spent;
+        if (ai.provider === "claude") {
+          costUsd += claudeCostUsd(r.inputTokens, r.outputTokens);
+          await deps.recordTokens(job.tenantId, spent);
+          await prisma.aiApiCall
+            .create({ data: { tenantId: job.tenantId, categoryId: "site_crawler_ai", model: MARKETING_MODEL, inputTokens: r.inputTokens, outputTokens: r.outputTokens } })
+            .catch(() => undefined);
+        }
+        await save(page.id, index, r.text || "(empty)");
+      } catch (err) {
+        await save(page.id, index, `error: ${err instanceof Error ? err.message.slice(0, 120) : "failed"}`);
+      }
+    }
+  };
+
+  const batch = todo.slice(0, AI_PAGES_PER_TICK);
+  for (let i = 0; i < batch.length; i += AI_CONCURRENCY) {
+    await Promise.all(batch.slice(i, i + AI_CONCURRENCY).map(onePage));
+    if (budgetHit) return finish({ status: "stopped", stoppedReason: "token_budget" });
+  }
+  log.info({ jobId: job.id, pages: batch.length, tokens }, "crawl AI tick");
+  await setSourceState(job.id, "ai", state());
+  return { done: false, delayMs: 0 };
+}
 
 async function psiTick(job: Job, top: TopPages, deps: MetricsDeps): Promise<MetricsTick> {
   const pages = await targetPages(job.id, top, { htmlOnly: true });
@@ -269,14 +424,19 @@ export async function runCrawlMetrics(jobId: string, overrides: Partial<MetricsD
   const deps: MetricsDeps = { ...DEFAULT_DEPS, ...overrides };
   const job = await prisma.crawlJob.findFirst({
     where: { id: jobId, status: "COMPLETED", dataPurgedAt: null },
-    select: { id: true, tenantId: true, rootUrl: true, config: true, summary: true },
+    select: { id: true, tenantId: true, rootUrl: true, config: true, summary: true, tenant: { select: { planType: true } } },
   });
   if (!job) return { done: true };
   const add = readStoredConfig(job.config)?.addData;
+  const ai = readStoredConfig(job.config)?.ai;
   const states = ((job.summary as { metrics?: Record<string, SourceState> } | null)?.metrics ?? {}) as Record<string, SourceState | undefined>;
   const settled = (s: SourceState | undefined) => s?.status === "done" || s?.status === "stopped";
   if (add?.backlinks && flag("crawl.backlinks") && !settled(states.backlinks)) {
     const tick = await backlinksTick(job, add.backlinks, deps);
+    if (!tick.done) return tick;
+  }
+  if (ai && flag("crawl.ai") && !settled(states.ai)) {
+    const tick = await aiTick(job, ai, deps);
     if (!tick.done) return tick;
   }
   if (add?.psi && flag("crawl.psi") && !settled(states.psi)) {
@@ -288,6 +448,7 @@ export async function runCrawlMetrics(jobId: string, overrides: Partial<MetricsD
 
 /** Whether a finished crawl has post-crawl work to queue. */
 export function needsMetrics(config: unknown): boolean {
-  const add = readStoredConfig(config)?.addData;
-  return Boolean((add?.psi && flag("crawl.psi")) || (add?.backlinks && flag("crawl.backlinks")));
+  const stored = readStoredConfig(config);
+  const add = stored?.addData;
+  return Boolean((add?.psi && flag("crawl.psi")) || (add?.backlinks && flag("crawl.backlinks")) || (stored?.ai && flag("crawl.ai")));
 }

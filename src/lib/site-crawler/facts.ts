@@ -105,6 +105,11 @@ function resolve(raw: string, base: string): string {
   }
 }
 
+/** Phase 4e: a page's visible text (the body's, whitespace collapsed), for the AI prompts. */
+export function visibleText(html: string, pageUrl: string, rootUrl: string): string {
+  return extractWithText(html, pageUrl, rootUrl, null).text;
+}
+
 export function extractHtmlFacts(html: string, pageUrl: string, rootUrl: string, bytes: number | null): HtmlFacts {
   return extractWithText(html, pageUrl, rootUrl, bytes).facts;
 }

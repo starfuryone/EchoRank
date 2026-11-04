@@ -166,6 +166,12 @@ export function toInput(d: Draft): CrawlConfigInput {
 
 /** One server-side problem as a sentence. */
 export function problemText(p: ConfigProblem, t: T, t4b: T4b, t4d?: SiteCrawler4dCopy, t4e?: SiteCrawler4eCopy): string {
+  // Phase 4e: AI prompts.
+  if (p.code === "ai_key_missing") return t4e?.problemAiKey(p.provider === "openai" ? "OpenAI" : "Gemini") ?? t.problemVerified(p.field);
+  if (p.code === "ai_unavailable") return t4e?.problemAiUnavailable ?? t.problemVerified(p.field);
+  if (p.code === "invalid_prompt") return t4e?.problemAiPrompt(String(p.index + 1)) ?? t4b.problemExtractor(String(p.index + 1));
+  if (p.code === "unknown_segment" && p.field === "ai" && t4d) return t4d.problemSegment;
+  if (p.code === "over_plan_cap" && p.field === "ai" && t4d) return t4d.problemCap(String(p.limit));
   // Phase 4e: custom JavaScript.
   if (p.code === "requires_render") return t4e?.problemRender ?? t.problemVerified(p.field);
   if (p.code === "invalid_snippet") return t4e?.problemSnippet(String(p.index + 1)) ?? t4b.problemExtractor(String(p.index + 1));

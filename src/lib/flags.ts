@@ -58,7 +58,9 @@ export const FLAGS = {
   "crawl.amp": true,
   // Phase 4e: custom JavaScript snippets in rendered pages (verified sites only).
   "crawl.customJs": true,
-  "crawl.ai": false,
+  // Phase 4e: AI prompts on the top N pages after the crawl (Claude on the
+  // Marketing Studio token budget, OpenAI / Gemini on the tenant's own key).
+  "crawl.ai": true,
   "crawl.formsAuth": false,
 } as const satisfies Record<string, boolean>;
 
