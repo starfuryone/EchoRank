@@ -1,0 +1,310 @@
+// tests/public-crawl-api.test.ts — the site crawler over the public API
+// (Phase 3d-A), through the real route handlers with Prisma, Redis, the rate
+// limiter and the crawl start stubbed:
+//
+//   AUTH       missing / revoked key → 401, wrong scope / unpaid → 403, on every route
+//   START      the dashboard's body schema, callbackUrl (https, SSRF guard),
+//              Idempotency-Key (replay, in progress, reused), the start rate
+//              limit, tenant scoping, { crawlId, queuePosition, estimatedStart }
+//   CALLBACK   signed with HMAC-SHA256 keyed by the key's secret hash (a test
+//              client verifies it), one retry, nothing for a revoked key
+import { createHash, createHmac, timingSafeEqual } from "node:crypto";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+vi.mock("server-only", () => ({}));
+
+// ─── Fakes ───────────────────────────────────────────────────────────────────
+
+const kv = new Map<string, string>();
+const redis = {
+  set: vi.fn(async (k: string, v: string, ...opts: unknown[]) => {
+    if (opts.includes("NX") && kv.has(k)) return null;
+    kv.set(k, v);
+    return "OK";
+  }),
+  get: vi.fn(async (k: string) => kv.get(k) ?? null),
+  del: vi.fn(async (k: string) => (kv.delete(k) ? 1 : 0)),
+};
+vi.mock("@/infrastructure/redis/connection", () => ({ getRedisConnection: () => redis }));
+
+const limits = { api: true, start: true };
+vi.mock("@/lib/rate-limit", () => ({
+  rateLimit: vi.fn(async (key: string) => ({ success: key.startsWith("apikey:") ? limits.api : limits.start })),
+}));
+
+const paid = new Set(["t_a", "t_b"]);
+vi.mock("@/lib/paid-plan", () => ({ hasPaidPlan: vi.fn(async (t: string) => paid.has(t)) }));
+
+type KeyRow = { id: string; tenantId: string; keyHash: string; revokedAt: Date | null; scopes: string[] };
+const keys: KeyRow[] = [];
+type JobRow = Record<string, unknown> & { id: string; tenantId: string; status: string; createdAt: Date };
+const jobs: JobRow[] = [];
+const match = (row: Record<string, unknown>, where: Record<string, unknown>) =>
+  Object.entries(where).every(([k, v]) => (v && typeof v === "object" && !(v instanceof Date) ? true : row[k] === v));
+
+vi.mock("@/lib/prisma", () => ({
+  prisma: {
+    apiKey: {
+      findUnique: vi.fn(async ({ where }: { where: { keyHash: string } }) => keys.find((k) => k.keyHash === where.keyHash) ?? null),
+      findFirst: vi.fn(
+        async ({ where }: { where: { id: string; tenantId: string } }) => keys.find((k) => k.id === where.id && k.tenantId === where.tenantId) ?? null,
+      ),
+      update: vi.fn(async () => ({})),
+    },
+    tenant: { findUnique: vi.fn(async ({ where }: { where: { id: string } }) => ({ id: where.id, planType: "GROWTH" })) },
+    crawlJob: {
+      findUnique: vi.fn(async ({ where }: { where: { id: string } }) => jobs.find((j) => j.id === where.id) ?? null),
+      findFirst: vi.fn(async ({ where }: { where: Record<string, unknown> }) => jobs.find((j) => match(j, where)) ?? null),
+      findMany: vi.fn(async () => []),
+      count: vi.fn(async ({ where }: { where: { status: string } }) => jobs.filter((j) => j.status === where.status && j.id !== "self").length),
+    },
+  },
+}));
+
+const startCrawl = vi.fn(async (tenantId: string) => {
+  const job = { id: `c${jobs.length + 1}`, tenantId, status: "QUEUED", createdAt: new Date(), startedAt: null };
+  jobs.push(job);
+  return job;
+});
+vi.mock("@/lib/site-crawler/service", () => ({ startCrawl: (...a: unknown[]) => startCrawl(...(a as [string])) }));
+
+const crawlRoute = await import("@/app/api/public/v1/crawl/route");
+const { deliverCrawlCallback, signCallback, SIGNATURE_HEADER } = await import("@/lib/site-crawler/callback");
+const { queueEstimate } = await import("@/lib/site-crawler/public-api");
+
+// ─── Keys ────────────────────────────────────────────────────────────────────
+
+const secretOf = new Map<string, string>();
+function makeKey(id: string, tenantId: string, scopes = ["public"], revoked = false): string {
+  const idPart = createHash("md5").update(id).digest("hex").slice(0, 24);
+  const secret = createHash("sha1").update(id).digest("hex").slice(0, 48);
+  secretOf.set(id, secret);
+  keys.push({ id, tenantId, keyHash: createHash("sha256").update(secret).digest("hex"), revokedAt: revoked ? new Date() : null, scopes });
+  return `er_api_${idPart}.${secret}`;
+}
+const KEY_A = makeKey("k_a", "t_a");
+const KEY_B = makeKey("k_b", "t_b");
+const REVOKED = makeKey("k_r", "t_a", ["public"], true);
+const PARTNER = makeKey("k_p", "t_a", ["partner"]);
+const UNPAID = makeKey("k_u", "t_unpaid");
+
+const post = (body: unknown, opts: { key?: string; headers?: Record<string, string> } = {}) =>
+  crawlRoute.POST(
+    new Request("https://app.test/api/public/v1/crawl", {
+      method: "POST",
+      headers: { "content-type": "application/json", ...(opts.key ? { authorization: `Bearer ${opts.key}` } : {}), ...opts.headers },
+      body: typeof body === "string" ? body : JSON.stringify(body),
+    }),
+  );
+
+beforeEach(() => {
+  kv.clear();
+  jobs.length = 0;
+  startCrawl.mockClear();
+  limits.api = true;
+  limits.start = true;
+});
+
+// ─── Start ───────────────────────────────────────────────────────────────────
+
+describe("POST /api/public/v1/crawl", () => {
+  it.each([
+    ["no key", undefined, 401, "missing_bearer_key"],
+    ["a revoked key", REVOKED, 401, "invalid_or_revoked_key"],
+    ["a partner-scoped key", PARTNER, 403, "wrong_scope"],
+    ["an unpaid tenant", UNPAID, 403, "subscription_inactive"],
+  ])("%s → %i", async (_n, key, status, error) => {
+    const res = await post({ url: "https://shop.example/" }, { key });
+    expect(res.status).toBe(status);
+    expect((await res.json()).error).toBe(error);
+    expect(startCrawl).not.toHaveBeenCalled();
+  });
+
+  it("the per-key API limit answers 429 before anything runs", async () => {
+    limits.api = false;
+    expect((await post({ url: "https://shop.example/" }, { key: KEY_A })).status).toBe(429);
+    expect(startCrawl).not.toHaveBeenCalled();
+  });
+
+  it("starts with the dashboard's body, as the key's tenant, and answers with the queue position", async () => {
+    jobs.push({ id: "older", tenantId: "t_b", status: "QUEUED", createdAt: new Date(Date.now() - 60_000) });
+    const config = { maxUrls: 200, extractors: [{ name: "Price", kind: "css", expr: ".price", attr: null, multiple: false }] };
+    const res = await post({ url: "https://shop.example/", renderMode: "thin", config, callbackUrl: "https://hooks.echopilot.app/echorank" }, { key: KEY_A });
+    expect(res.status).toBe(202);
+    const body = await res.json();
+    expect(body).toMatchObject({ crawlId: "c2", status: "queued" });
+    expect(typeof body.queuePosition).toBe("number");
+    expect(body.estimatedStart).toMatch(/^\d{4}-/);
+    const [tenantId, plan, url, render, opts] = startCrawl.mock.calls[0] as unknown as [string, string, string, string, Record<string, unknown>];
+    expect([tenantId, plan, url, render]).toEqual(["t_a", "GROWTH", "https://shop.example/", "thin"]);
+    expect(opts).toMatchObject({ config: { maxUrls: 200 }, mode: "spider", api: { apiKeyId: "k_a", callbackUrl: "https://hooks.echopilot.app/echorank" } });
+  });
+
+  it.each([
+    [{ url: "https://shop.example/", renderMode: "sometimes" }, "invalid_request"],
+    [{ url: "https://shop.example/", mode: "sitemap" }, "invalid_request"],
+    ["{not json", "invalid_json"],
+  ])("refuses a body the dashboard would refuse: %j", async (body, error) => {
+    const res = await post(body, { key: KEY_A });
+    expect(res.status).toBe(400);
+    expect((await res.json()).error).toBe(error);
+  });
+
+  it.each([
+    ["http://hooks.echopilot.app/x", "https_only"],
+    ["https://127.0.0.1/x", "private_host"],
+    ["https://user:pw@hooks.echopilot.app/x", "has_credentials"],
+    ["https://localhost/x", null],
+  ])("callbackUrl %s is refused", async (callbackUrl, reason) => {
+    const res = await post({ url: "https://shop.example/", callbackUrl }, { key: KEY_A });
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.error).toBe("invalid_callback_url");
+    if (reason) expect(body.reason).toBe(reason);
+    expect(startCrawl).not.toHaveBeenCalled();
+  });
+
+  it("the start rate limit (3 a minute, as in the dashboard) answers 429", async () => {
+    limits.start = false;
+    const res = await post({ url: "https://shop.example/" }, { key: KEY_A });
+    expect(res.status).toBe(429);
+    expect((await res.json()).code).toBe("RATE_LIMITED");
+  });
+
+  it("Idempotency-Key: a retry returns the same crawl; a different body is refused; a failure frees the key", async () => {
+    const headers = { "idempotency-key": "order-42" };
+    const first = await post({ url: "https://shop.example/" }, { key: KEY_A, headers });
+    expect(first.status).toBe(202);
+    const again = await post({ url: "https://shop.example/" }, { key: KEY_A, headers });
+    expect(again.status).toBe(200);
+    expect(await again.json()).toMatchObject({ crawlId: (await first.json()).crawlId, replayed: true });
+    expect(startCrawl).toHaveBeenCalledTimes(1);
+    expect((await post({ url: "https://other.example/" }, { key: KEY_A, headers })).status).toBe(422);
+    // Per tenant: another workspace's same key is its own.
+    expect((await post({ url: "https://shop.example/" }, { key: KEY_B, headers })).status).toBe(202);
+    // A refused start releases the key, so the retry can start.
+    limits.start = false;
+    expect((await post({ url: "https://shop.example/" }, { key: KEY_A, headers: { "idempotency-key": "order-43" } })).status).toBe(429);
+    limits.start = true;
+    expect((await post({ url: "https://shop.example/" }, { key: KEY_A, headers: { "idempotency-key": "order-43" } })).status).toBe(202);
+  });
+
+  it("Idempotency-Key: a second request while the first is still starting gets 409", async () => {
+    const { idempotencyRedisKey } = await import("@/lib/site-crawler/idempotency");
+    kv.set(
+      idempotencyRedisKey("t_a", "order-9"),
+      JSON.stringify({
+        pending: true,
+        body: createHash("sha256")
+          .update(JSON.stringify({ url: "https://shop.example/" }))
+          .digest("hex"),
+      }),
+    );
+    expect((await post({ url: "https://shop.example/" }, { key: KEY_A, headers: { "idempotency-key": "order-9" } })).status).toBe(409);
+  });
+});
+
+describe("queue estimate", () => {
+  it("position 1 starts now when a slot is free; behind a full box, after the average crawl", async () => {
+    const now = new Date("2026-11-05T10:00:00Z");
+    const self = { id: "self", status: "QUEUED" as const, createdAt: now, startedAt: null };
+    expect(await queueEstimate(self, now)).toEqual({ queuePosition: 1, estimatedStart: now.toISOString() });
+    jobs.push({ id: "r1", tenantId: "t_b", status: "RUNNING", createdAt: now }, { id: "r2", tenantId: "t_b", status: "RUNNING", createdAt: now });
+    const est = await queueEstimate(self, now);
+    expect(est.estimatedStart).toBe(new Date(now.getTime() + 10 * 60_000).toISOString());
+    expect(await queueEstimate({ ...self, status: "COMPLETED" }, now)).toEqual({ queuePosition: null, estimatedStart: null });
+    expect((await queueEstimate({ ...self, status: "RUNNING", startedAt: now }, now)).queuePosition).toBe(0);
+  });
+});
+
+// ─── Callback ────────────────────────────────────────────────────────────────
+
+/** What a receiver does: recompute the HMAC over the raw body with sha256(secret), compare in constant time. */
+function verifyAsClient(body: string, signature: string, secret: string): boolean {
+  const expected = createHmac("sha256", createHash("sha256").update(secret).digest("hex")).update(body).digest("hex");
+  const a = Buffer.from(expected, "hex");
+  const b = Buffer.from(signature, "hex");
+  return a.length === b.length && timingSafeEqual(a, b);
+}
+
+describe("completion callback", () => {
+  const job = (extra: Record<string, unknown> = {}) => ({
+    id: "c9",
+    tenantId: "t_a",
+    rootUrl: "https://shop.example/",
+    mode: "spider",
+    status: "COMPLETED",
+    stoppedReason: null,
+    createdAt: new Date("2026-11-05T10:00:00Z"),
+    startedAt: new Date("2026-11-05T10:01:00Z"),
+    finishedAt: new Date("2026-11-05T10:11:00Z"),
+    pagesCrawled: 120,
+    urlCap: 500,
+    pagesRendered: 0,
+    renderCap: 0,
+    issueCount: 7,
+    config: null,
+    scheduleId: null,
+    apiKeyId: "k_a",
+    callbackUrl: "https://hooks.echopilot.app/echorank",
+    summary: {
+      health: { score: 81 },
+      highPages: 4,
+      statusCodes: { "200": 118, "404": 2 },
+      issues: { "h1.missing": { count: 7, kind: "issue", priority: "high" } },
+      issuesByKind: { issue: 7, warning: 0, opportunity: 0 },
+    },
+    ...extra,
+  });
+
+  it("POSTs {crawlId, status, summary} signed so the key's holder can verify it", async () => {
+    jobs.push(job() as never);
+    const fetchMock = vi.fn(async () => new Response(null, { status: 204 }));
+    const retry = vi.fn();
+    expect(await deliverCrawlCallback("c9", 1, { fetch: fetchMock as never, retry })).toBe("sent");
+    const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit & { headers: Record<string, string> }];
+    expect(url).toBe("https://hooks.echopilot.app/echorank");
+    expect(init).toMatchObject({ method: "POST", redirect: "manual" });
+    const body = String(init.body);
+    expect(JSON.parse(body)).toMatchObject({
+      crawlId: "c9",
+      status: "completed",
+      summary: { health: 81, issueCount: 7, highPriorityPages: 4, totals: { byFamily: { h1: 7 } } },
+    });
+    const sig = init.headers[SIGNATURE_HEADER];
+    expect(verifyAsClient(body, sig, secretOf.get("k_a")!)).toBe(true);
+    expect(verifyAsClient(body, sig, secretOf.get("k_b")!)).toBe(false);
+    expect(verifyAsClient(body.replace("81", "99"), sig, secretOf.get("k_a")!)).toBe(false);
+    expect(signCallback(body, keys[0]!.keyHash)).toBe(sig);
+    expect(retry).not.toHaveBeenCalled();
+  });
+
+  it("one retry: a failed first attempt schedules the second; a failed second is dropped", async () => {
+    jobs.push(job({ status: "FAILED", stoppedReason: "boom: internal detail" }) as never);
+    const fail = vi.fn(async () => new Response(null, { status: 500 }));
+    const retry = vi.fn(async () => undefined);
+    expect(await deliverCrawlCallback("c9", 1, { fetch: fail as never, retry })).toBe("retry");
+    expect(retry).toHaveBeenCalledWith("c9", 60_000);
+    const body = JSON.parse(String((fail.mock.calls[0] as unknown as [string, RequestInit])[1].body));
+    // A failure says failed, never the internal error.
+    expect(body).toMatchObject({ status: "failed", summary: { stoppedReason: null } });
+    const network = vi.fn(async () => {
+      throw new Error("ECONNREFUSED");
+    });
+    expect(await deliverCrawlCallback("c9", 2, { fetch: network as never, retry })).toBe("failed");
+    expect(retry).toHaveBeenCalledTimes(1);
+  });
+
+  it("sends nothing without a callback, for a running crawl, for a revoked key, or to a URL the guard now refuses", async () => {
+    const fetchMock = vi.fn();
+    const deps = { fetch: fetchMock as never, retry: vi.fn() };
+    jobs.push(
+      job({ id: "n1", callbackUrl: null }) as never,
+      job({ id: "n2", status: "RUNNING" }) as never,
+      job({ id: "n3", apiKeyId: "k_r" }) as never,
+      job({ id: "n4", callbackUrl: "https://10.0.0.1/x" }) as never,
+    );
+    for (const id of ["n1", "n2", "n3", "n4"]) expect(await deliverCrawlCallback(id, 1, deps)).toBe("skipped");
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+});

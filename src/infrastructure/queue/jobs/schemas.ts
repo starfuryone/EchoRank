@@ -277,6 +277,13 @@ export interface SiteCrawlMetricsJob {
   metrics: true;
 }
 
+/** Phase 3d-A: the second attempt at a public-API crawl's completion callback (job name "callback"). */
+export interface SiteCrawlCallbackJob {
+  crawlJobId: string;
+  callback: true;
+  attempt: 2;
+}
+
 /** Phase 4c: one schedule's repeatable tick on the site-crawl queue (job name "schedule"). */
 export interface SiteCrawlScheduleJob {
   scheduleId: string;
@@ -445,7 +452,7 @@ export interface QueueJobMap {
   "rank-tracker": RankTrackerJob;
   "site-audit": SiteAuditJob;
   "bot-log-analysis": BotLogAnalysisJob;
-  "site-crawl": SiteCrawlJob | SiteCrawlRetentionJob | SiteCrawlScheduleJob | SiteCrawlMetricsJob;
+  "site-crawl": SiteCrawlJob | SiteCrawlRetentionJob | SiteCrawlScheduleJob | SiteCrawlMetricsJob | SiteCrawlCallbackJob;
   "free-tools-volatility": FreeToolsVolatilityJob;
   "sov-aggregation": SovAggregationJob;
   "citation-aggregation": CitationAggregationJob;

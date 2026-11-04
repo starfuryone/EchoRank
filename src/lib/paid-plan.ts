@@ -184,6 +184,12 @@ export class PaidPlanRequiredError extends Error {
  * hasPaidPlan() and branch instead.
  */
 export async function requirePaidPlan() {
+  // A public-API route running a dashboard handler as its key's tenant: the
+  // key, scope, paid status and rate limit were already checked by
+  // authenticatePublicRequest (src/lib/api-tenant-context.ts).
+  const { apiTenantMembership } = await import("@/lib/api-tenant-context");
+  const api = apiTenantMembership();
+  if (api) return api as unknown as Awaited<ReturnType<typeof import("@/lib/tenant").requireTenant>>;
   const { requireTenant } = await import("@/lib/tenant");
   const membership = await requireTenant();
   const { status, hasSubscriptionRow } = await getBillingContext(membership.tenantId);

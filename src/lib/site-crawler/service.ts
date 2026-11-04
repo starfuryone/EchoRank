@@ -154,6 +154,8 @@ export interface StartCrawlOptions {
   sealed?: StoredCrawlConfig | null;
   /** Phase 4c: the schedule this run belongs to; rides the job payload to the completion hook. */
   scheduleId?: string;
+  /** Phase 3d-A: started through the public API — the key, and the (already guarded) callback URL. */
+  api?: { apiKeyId: string; callbackUrl: string | null };
 }
 
 /**
@@ -320,6 +322,7 @@ export async function startCrawl(
       renderCap: quota.renderCap,
       status: "QUEUED",
       ...(opts.scheduleId ? { scheduleId: opts.scheduleId } : {}),
+      ...(opts.api ? { apiKeyId: opts.api.apiKeyId, callbackUrl: opts.api.callbackUrl } : {}),
     },
   });
 

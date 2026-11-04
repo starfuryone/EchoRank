@@ -33,7 +33,8 @@ import { addJob, getQueue } from "@/infrastructure/queue/registry";
 import { METRICS_JOB_NAME, needsMetrics, runCrawlMetrics } from "@/lib/site-crawler/metrics-runner";
 import { getSubscriberConnection, createNewConnection } from "@/infrastructure/redis/connection";
 import { REDIS_CONFIG } from "@/infrastructure/redis/config";
-import type { SiteCrawlJob, SiteCrawlMetricsJob, SiteCrawlRetentionJob, SiteCrawlScheduleJob } from "@/infrastructure/queue/jobs/schemas";
+import type { SiteCrawlCallbackJob, SiteCrawlJob, SiteCrawlMetricsJob, SiteCrawlRetentionJob, SiteCrawlScheduleJob } from "@/infrastructure/queue/jobs/schemas";
+import { CALLBACK_JOB_NAME, deliverCrawlCallback, type CallbackDeps } from "@/lib/site-crawler/callback";
 import { runCrawl } from "@/lib/site-crawler/runner";
 import { runCrawlRetention } from "@/lib/site-crawler/retention";
 import { prisma } from "@/lib/prisma";
@@ -51,7 +52,13 @@ export const RETENTION_JOB_NAME = "retention";
 /** Numeric, and a constant: BullMQ keys a repeatable job by its interval. */
 export const RETENTION_INTERVAL_MS = 24 * 60 * 60 * 1000;
 
-type SiteCrawlQueueJob = SiteCrawlJob | SiteCrawlRetentionJob | SiteCrawlScheduleJob | SiteCrawlMetricsJob;
+type SiteCrawlQueueJob = SiteCrawlJob | SiteCrawlRetentionJob | SiteCrawlScheduleJob | SiteCrawlMetricsJob | SiteCrawlCallbackJob;
+
+/** Phase 3d-A: the public API's completion callback; its one retry rides this queue. */
+const CALLBACK_DEPS: CallbackDeps = {
+  fetch: (...a) => fetch(...a),
+  retry: (crawlJobId, delayMs) => addJob("site-crawl", CALLBACK_JOB_NAME, { crawlJobId, callback: true, attempt: 2 }, { delay: delayMs }),
+};
 
 /**
  * A dedicated connection for frontier operations.
@@ -78,6 +85,11 @@ async function processSiteCrawlJob(job: Job<SiteCrawlQueueJob>): Promise<void> {
     if (!tick.done) await addJob("site-crawl", METRICS_JOB_NAME, { crawlJobId, metrics: true }, { delay: tick.delayMs });
     return;
   }
+  if (job.name === CALLBACK_JOB_NAME && "callback" in job.data) {
+    const outcome = await deliverCrawlCallback(job.data.crawlJobId, 2, CALLBACK_DEPS);
+    logger.info({ jobId: job.id, crawlJobId: job.data.crawlJobId, outcome }, "site-crawl callback retry");
+    return;
+  }
   if (job.name === SCHEDULE_JOB_NAME && !("crawlJobId" in job.data)) {
     const { scheduleId } = job.data as SiteCrawlScheduleJob;
     const outcome = await withSpan("site-crawl.schedule", () => runScheduledCrawl(scheduleId));
@@ -100,6 +112,10 @@ async function processSiteCrawlJob(job: Job<SiteCrawlQueueJob>): Promise<void> {
       const row = await prisma.crawlJob.findUnique({ where: { id: crawlJobId }, select: { config: true } });
       if (needsMetrics(row?.config)) await addJob("site-crawl", METRICS_JOB_NAME, { crawlJobId, metrics: true });
     }
+    // Phase 3d-A: a public-API crawl with a callbackUrl tells its caller, whatever the outcome.
+    await deliverCrawlCallback(crawlJobId, 1, CALLBACK_DEPS).catch((err) =>
+      logger.error({ err, crawlJobId, queue: QUEUE_NAME }, "crawl callback failed"),
+    );
     if (scheduleId) {
       // After the crawl's own terminal write; its failure never fails the crawl.
       await afterScheduledCrawl(scheduleId, crawlJobId, SCHEDULE_HOOKS).catch((err) =>

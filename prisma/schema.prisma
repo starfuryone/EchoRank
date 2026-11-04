@@ -2270,6 +2270,11 @@ model CrawlJob {
   /// The CrawlSchedule that started this crawl; null = started by hand. A plain
   /// id, no FK: deleting the schedule keeps the crawl marked "Scheduled".
   scheduleId    String?
+  /// Phase 3d-A public API: the https URL told when the crawl ends, and the
+  /// API key that started it (its secret hash signs the callback). Plain ids,
+  /// no FK: a revoked or deleted key just means no callback.
+  callbackUrl   String?
+  apiKeyId      String?
   /// Set when retention deleted this crawl's pages, issues and links. The row
   /// and its summary stay forever (history list).
   dataPurgedAt  DateTime?
