@@ -75,16 +75,16 @@ export function ExtractorsEditor({
       <p className="text-sm font-medium text-gray-900">{t.exSection}</p>
       <p className="text-xs text-gray-500">{t.exHelp(capText)}</p>
       {value.map((e, i) => (
-        <div key={i} className="grid gap-2 rounded-lg border border-gray-100 p-2 sm:grid-cols-[8rem_8rem_1fr_7rem_auto]">
-          <Input aria-label={t.exName} placeholder={t.exName} maxLength={CONFIG_LIMITS.nameChars} value={e.name} onChange={(ev) => update(i, { name: ev.target.value })} />
+        <div key={i} className="grid gap-2 rounded-lg border border-gray-100 p-2 sm:grid-cols-[8rem_8rem_1fr_7rem_auto] sm:items-end">
+          <Input id={`cr-ex-name-${i}`} label={t.exName} placeholder={t.exName} maxLength={CONFIG_LIMITS.nameChars} value={e.name} onChange={(ev) => update(i, { name: ev.target.value })} />
           <Select
-            aria-label={t.exKind}
+            id={`cr-ex-kind-${i}`} label={t.exKind}
             value={e.kind}
             onChange={(ev) => update(i, { kind: ev.target.value as ExtractorKind })}
             options={EXTRACTOR_KINDS.map((k) => ({ value: k, label: kindLabel(k, t) }))}
           />
           <Input
-            aria-label={t.exExpr}
+            id={`cr-ex-expr-${i}`} label={t.exExpr}
             placeholder={t.exExpr}
             className="font-mono text-xs"
             maxLength={CONFIG_LIMITS.exprChars}
@@ -92,7 +92,7 @@ export function ExtractorsEditor({
             onChange={(ev) => update(i, { expr: ev.target.value })}
           />
           <Input
-            aria-label={t.exAttr}
+            id={`cr-ex-attr-${i}`} label={t.exAttr}
             placeholder={e.kind === "regex" ? "" : t.exAttr}
             disabled={e.kind === "regex"}
             maxLength={CONFIG_LIMITS.attrChars}
@@ -104,14 +104,14 @@ export function ExtractorsEditor({
               <input type="checkbox" checked={e.multiple} onChange={(ev) => update(i, { multiple: ev.target.checked })} />
               {t.exMultiple}
             </label>
-            <button type="button" aria-label={t.exRemove} className="text-gray-400 hover:text-gray-700" onClick={() => onChange(value.filter((_, j) => j !== i))}>
+            <button type="button" aria-label={t.exRemove} className="self-end rounded p-1.5 text-gray-600 hover:text-gray-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500" onClick={() => onChange(value.filter((_, j) => j !== i))}>
               <Trash2 className="h-4 w-4" aria-hidden="true" />
             </button>
           </div>
         </div>
       ))}
       {room ? (
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-end gap-2">
           <Button
             type="button"
             size="sm"
@@ -121,7 +121,7 @@ export function ExtractorsEditor({
             <Plus className="h-4 w-4" aria-hidden="true" /> {t.exAdd}
           </Button>
           <Select
-            aria-label={t.exPresetLabel}
+            id="cr-ex-preset" label={t.exPresetLabel}
             className="w-auto"
             value=""
             onChange={(ev) => {
@@ -156,10 +156,10 @@ export function SearchesEditor({
       <p className="text-sm font-medium text-gray-900">{t.srSection}</p>
       <p className="text-xs text-gray-500">{t.srHelp(capText)}</p>
       {value.map((s, i) => (
-        <div key={i} className="grid gap-2 rounded-lg border border-gray-100 p-2 sm:grid-cols-[10rem_1fr_auto]">
-          <Input aria-label={t.srName} placeholder={t.srName} maxLength={CONFIG_LIMITS.nameChars} value={s.name} onChange={(ev) => update(i, { name: ev.target.value })} />
+        <div key={i} className="grid gap-2 rounded-lg border border-gray-100 p-2 sm:grid-cols-[10rem_1fr_auto] sm:items-end">
+          <Input id={`cr-sr-name-${i}`} label={t.srName} placeholder={t.srName} maxLength={CONFIG_LIMITS.nameChars} value={s.name} onChange={(ev) => update(i, { name: ev.target.value })} />
           <Input
-            aria-label={t.srPattern}
+            id={`cr-sr-pattern-${i}`} label={t.srPattern}
             placeholder={t.srPattern}
             className="font-mono text-xs"
             maxLength={CONFIG_LIMITS.exprChars}
@@ -171,7 +171,7 @@ export function SearchesEditor({
               <input type="checkbox" checked={s.isRegex} onChange={(ev) => update(i, { isRegex: ev.target.checked })} />
               {t.srRegex}
             </label>
-            <button type="button" aria-label={t.srRemove} className="text-gray-400 hover:text-gray-700" onClick={() => onChange(value.filter((_, j) => j !== i))}>
+            <button type="button" aria-label={t.srRemove} className="self-end rounded p-1.5 text-gray-600 hover:text-gray-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500" onClick={() => onChange(value.filter((_, j) => j !== i))}>
               <Trash2 className="h-4 w-4" aria-hidden="true" />
             </button>
           </div>
@@ -268,16 +268,16 @@ export function SegmentsEditor({
       <p className="text-sm font-medium text-gray-900">{t.segSection}</p>
       <p className="text-xs text-gray-500">{t.segHelp(String(cap))}</p>
       {list.map((s, i) => (
-        <div key={i} className="grid gap-2 rounded-lg border border-gray-100 p-2 sm:grid-cols-[9rem_11rem_1fr_auto]">
-          <Input aria-label={t.segName} placeholder={t.segName} maxLength={SEGMENT_NAME_CHARS} value={s.name} onChange={(ev) => update(i, { name: ev.target.value })} />
+        <div key={i} className="grid gap-2 rounded-lg border border-gray-100 p-2 sm:grid-cols-[9rem_11rem_1fr_auto] sm:items-end">
+          <Input id={`cr-seg-name-${i}`} label={t.segName} placeholder={t.segName} maxLength={SEGMENT_NAME_CHARS} value={s.name} onChange={(ev) => update(i, { name: ev.target.value })} />
           <Select
-            aria-label={t.segRule}
+            id={`cr-seg-rule-${i}`} label={t.segRule}
             value={s.rule.kind}
             onChange={(ev) => setRule(i, blankRule(ev.target.value as SegmentRule["kind"]))}
             options={RULE_KINDS.map((k) => ({ value: k, label: ruleKindLabel(k, t) }))}
           />
-          <RuleValue t={t} rule={s.rule} extractorNames={extractorNames} onChange={(r) => setRule(i, r)} />
-          <button type="button" aria-label={t.segRemove} className="text-gray-400 hover:text-gray-700" onClick={() => change(list.filter((_, j) => j !== i))}>
+          <RuleValue id={`cr-seg-${i}`} t={t} rule={s.rule} extractorNames={extractorNames} onChange={(r) => setRule(i, r)} />
+          <button type="button" aria-label={t.segRemove} className="self-end rounded p-1.5 text-gray-600 hover:text-gray-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500" onClick={() => change(list.filter((_, j) => j !== i))}>
             <Trash2 className="h-4 w-4" aria-hidden="true" />
           </button>
         </div>
@@ -301,11 +301,14 @@ export function SegmentsEditor({
 }
 
 function RuleValue({
+  id,
   t,
   rule,
   extractorNames,
   onChange,
 }: {
+  /** Prefix for the controls' ids (each has a visible label). */
+  id: string;
   t: T4b;
   rule: SegmentRule;
   extractorNames: string[];
@@ -313,7 +316,7 @@ function RuleValue({
 }) {
   if (rule.kind === "urlPattern") {
     return (
-      <Input aria-label={t.ruleUrlPattern} placeholder={t.segPattern} className="font-mono text-xs" maxLength={200} value={rule.pattern} onChange={(ev) => onChange({ ...rule, pattern: ev.target.value })} />
+      <Input id={`${id}-rule-url-pattern`} label={t.ruleUrlPattern} placeholder={t.segPattern} className="font-mono text-xs" maxLength={200} value={rule.pattern} onChange={(ev) => onChange({ ...rule, pattern: ev.target.value })} />
     );
   }
   if (rule.kind === "extractorValue") {
@@ -321,19 +324,19 @@ function RuleValue({
     return (
       <div className="grid grid-cols-2 gap-2">
         <Select
-          aria-label={t.segExtractor}
+          id={`${id}-seg-extractor`} label={t.segExtractor}
           value={String(rule.index)}
           onChange={(ev) => onChange({ ...rule, index: Number(ev.target.value) })}
           options={extractorNames.map((n, i) => ({ value: String(i), label: n || `#${i + 1}` }))}
         />
-        <Input aria-label={t.segEquals} placeholder={t.segEquals} maxLength={500} value={rule.equals} onChange={(ev) => onChange({ ...rule, equals: ev.target.value })} />
+        <Input id={`${id}-seg-equals`} label={t.segEquals} placeholder={t.segEquals} maxLength={500} value={rule.equals} onChange={(ev) => onChange({ ...rule, equals: ev.target.value })} />
       </div>
     );
   }
   if (rule.kind === "depthMax") {
     return (
       <Input
-        aria-label={t.segDepth}
+        id={`${id}-seg-depth`} label={t.segDepth}
         inputMode="numeric"
         value={String(rule.max)}
         onChange={(ev) => onChange({ ...rule, max: Math.min(100, Number(ev.target.value.replace(/\D/g, "") || 0)) })}
@@ -342,7 +345,7 @@ function RuleValue({
   }
   return (
     <Select
-      aria-label={t.ruleStatusClass}
+      id={`${id}-rule-status-class`} label={t.ruleStatusClass}
       value={rule.cls}
       onChange={(ev) => onChange({ ...rule, cls: ev.target.value as StatusClass })}
       options={STATUS_CLASSES.map((c) => ({ value: c, label: c === "none" ? t.statusNone : c }))}

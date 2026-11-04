@@ -96,7 +96,8 @@ describe("the editor", () => {
     expect(el.textContent).toContain(t.jsTitle);
     expect(el.textContent).toContain(t.jsNeedsRender);
     expect(el.textContent).toContain(t.jsCapReached("1"));
-    expect(el.querySelector(`input[aria-label="${t.jsSelector}"]`)).not.toBeNull();
+    // A visible label now (UX restructure a11y), not aria-label alone.
+    expect([...el.querySelectorAll("label")].find((l) => l.textContent === t.jsSelector)?.control?.tagName).toBe("INPUT");
     expect([...el.querySelectorAll("option")].map((o) => o.textContent)).toEqual(JS_PRESETS.map((p) => t.jsPresets[p]));
     await act(async () => root.render(<JsSnippetsEditor t={t} value={[]} cap={3} verified={false} renders onChange={onChange} />));
     expect(el.textContent).toContain(t.jsVerifiedOnly);

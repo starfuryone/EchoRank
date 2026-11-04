@@ -46,17 +46,17 @@ export function JsSnippetsEditor({
       {verified && !renders && <p className="text-xs text-amber-700">{t.jsNeedsRender}</p>}
       {value.map((s, i) => (
         <div key={i} className="space-y-2 rounded-lg border border-gray-100 p-2">
-          <div className="grid gap-2 sm:grid-cols-[10rem_14rem_1fr_auto]">
-            <Input aria-label={t.jsName} placeholder={t.jsName} maxLength={JS_LIMITS.nameChars} value={s.name} onChange={(ev) => update(i, { name: ev.target.value })} />
+          <div className="grid gap-2 sm:grid-cols-[10rem_14rem_1fr_auto] sm:items-end">
+            <Input id={`cr-js-name-${i}`} label={t.jsName} placeholder={t.jsName} maxLength={JS_LIMITS.nameChars} value={s.name} onChange={(ev) => update(i, { name: ev.target.value })} />
             <Select
-              aria-label={t.jsPreset}
+              id={`cr-js-preset-${i}`} label={t.jsPreset}
               value={s.preset}
               onChange={(ev) => update(i, { preset: ev.target.value as JsPreset })}
               options={JS_PRESETS.map((p) => ({ value: p, label: t.jsPresets[p] ?? p }))}
             />
             {s.preset === "loadMore" ? (
               <Input
-                aria-label={t.jsSelector}
+                id={`cr-js-selector-${i}`} label={t.jsSelector}
                 placeholder={t.jsSelector}
                 className="font-mono text-xs"
                 maxLength={JS_LIMITS.selectorChars}
@@ -66,13 +66,18 @@ export function JsSnippetsEditor({
             ) : (
               <span />
             )}
-            <button type="button" aria-label={t.jsRemove} className="text-gray-400 hover:text-gray-700" onClick={() => onChange(value.filter((_, j) => j !== i))}>
+            <button type="button" aria-label={t.jsRemove} className="self-end rounded p-1.5 text-gray-600 hover:text-gray-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500" onClick={() => onChange(value.filter((_, j) => j !== i))}>
               <Trash2 className="h-4 w-4" aria-hidden="true" />
             </button>
           </div>
           {s.preset === "custom" && (
+            <label htmlFor={`cr-js-code-${i}`} className="block text-sm font-medium text-gray-700">
+              {t.jsCode}
+            </label>
+          )}
+          {s.preset === "custom" && (
             <textarea
-              aria-label={t.jsCode}
+              id={`cr-js-code-${i}`}
               placeholder={t.jsCode}
               rows={4}
               maxLength={JS_LIMITS.codeChars}

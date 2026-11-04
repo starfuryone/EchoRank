@@ -572,7 +572,7 @@ export function SiteCrawlerClient({ locale, view = "start", crawlId = null }: { 
         <CrawlerHeader t={t} locale={locale} quota={quota} />
         <Card>
           <CardContent className="py-10 text-center">
-            <Network className="mx-auto h-8 w-8 text-gray-300" aria-hidden="true" />
+            <Network className="mx-auto h-8 w-8 text-gray-500" aria-hidden="true" />
             <h3 className="mt-3 text-base font-semibold text-gray-900">{t.lockedTitle}</h3>
             <p className="mx-auto mt-2 max-w-lg text-sm text-gray-500">{t.lockedBody}</p>
             <Link
@@ -692,7 +692,7 @@ export function SiteCrawlerClient({ locale, view = "start", crawlId = null }: { 
             >
               {starting ? (
                 <>
-                  <Loader2 className="h-4 w-4 animate-spin" /> {t.starting}
+                  <Loader2 className="h-4 w-4 animate-spin motion-reduce:animate-none" aria-hidden="true" /> {t.starting}
                 </>
               ) : (
                 t.startCta
@@ -1130,9 +1130,10 @@ export function SiteCrawlerClient({ locale, view = "start", crawlId = null }: { 
           <CardHeader>
             <div className="flex flex-wrap items-center justify-between gap-3">
               <h3 className="text-sm font-semibold text-gray-900">{t.issuesTitle}</h3>
-              <div className="flex flex-wrap items-center gap-2">
+              <div className="flex flex-wrap items-end gap-2">
                 <Select
-                  aria-label={t.filterSeverity}
+                  id="issues-severity"
+                  label={t.filterSeverity}
                   className="w-auto"
                   value={severity}
                   onChange={(e) => {
@@ -1140,12 +1141,13 @@ export function SiteCrawlerClient({ locale, view = "start", crawlId = null }: { 
                     setPage(1);
                   }}
                   options={[
-                    { value: "", label: `${t.filterSeverity}: ${t.filterAll}` },
+                    { value: "", label: t.filterAll },
                     ...SEVERITIES.map((s) => ({ value: s, label: severityLabel(s, t) })),
                   ]}
                 />
                 <Select
-                  aria-label={t.filterType}
+                  id="issues-type"
+                  label={t.filterType}
                   className="w-auto"
                   value={type}
                   onChange={(e) => {
@@ -1153,7 +1155,7 @@ export function SiteCrawlerClient({ locale, view = "start", crawlId = null }: { 
                     setPage(1);
                   }}
                   options={[
-                    { value: "", label: `${t.filterType}: ${t.filterAll}` },
+                    { value: "", label: t.filterAll },
                     ...RULE_OPTIONS,
                   ]}
                 />
@@ -1184,7 +1186,7 @@ export function SiteCrawlerClient({ locale, view = "start", crawlId = null }: { 
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
                     <thead>
-                      <tr className="border-b border-gray-200 text-left text-xs uppercase tracking-wide text-gray-400">
+                      <tr className="border-b border-gray-200 text-left text-xs uppercase tracking-wide text-gray-600">
                         <th scope="col" className="py-2 pr-3">{t.colSeverity}</th>
                         <th scope="col" className="py-2 pr-3">{t.colType}</th>
                         <th scope="col" className="py-2 pr-3">{t.colUrl}</th>

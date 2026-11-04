@@ -444,7 +444,7 @@ export function CrawlConfigSection({
                 ]}
               />
               {draft.queryStrings === "strip_listed" && (
-                <Input aria-label={t.stripParams} placeholder={t.stripParams} value={draft.stripParams} onChange={(e) => set("stripParams", e.target.value)} />
+                <Input id="cfg-strip-params" label={t.stripParams} placeholder={t.stripParams} value={draft.stripParams} onChange={(e) => set("stripParams", e.target.value)} />
               )}
             </div>
             <Select
@@ -470,7 +470,7 @@ export function CrawlConfigSection({
               />
               {!verified && <p className="text-xs text-gray-500">{t.verifiedOnly}</p>}
               {draft.userAgent === "custom" && (
-                <Input aria-label={t.customUa} placeholder={t.customUa} maxLength={CONFIG_LIMITS.customUaChars} value={draft.customUserAgent} onChange={(e) => set("customUserAgent", e.target.value)} />
+                <Input id="cfg-custom-ua" label={t.customUa} placeholder={t.customUa} maxLength={CONFIG_LIMITS.customUaChars} value={draft.customUserAgent} onChange={(e) => set("customUserAgent", e.target.value)} />
               )}
             </div>
             <Toggle
@@ -488,14 +488,16 @@ export function CrawlConfigSection({
             {draft.headers.map((h, i) => (
               <div key={i} className="flex flex-wrap gap-2">
                 <Input
-                  aria-label={t.headerName}
+                  id={`cfg-header-name-${i}`}
+                  label={t.headerName}
                   placeholder={t.headerName}
                   className="w-40"
                   value={h.name}
                   onChange={(e) => set("headers", draft.headers.map((x, j) => (j === i ? { ...x, name: e.target.value } : x)))}
                 />
                 <Input
-                  aria-label={t.headerValue}
+                  id={`cfg-header-value-${i}`}
+                  label={t.headerValue}
                   placeholder={h.saved ? t.secretSaved : t.headerValue}
                   className="min-w-0 flex-1"
                   type="password"
@@ -646,9 +648,14 @@ export function RobotsTester({ t, rootUrl, customRobots }: { t: T; rootUrl: stri
       <p className="text-sm font-medium text-gray-900">{t.testerTitle}</p>
       <p className="text-xs text-gray-500">{t.testerHelp}</p>
       <div className="grid gap-2 sm:grid-cols-[1fr_12rem]">
-        <textarea aria-label={t.testerUrls} placeholder={t.testerUrls} rows={3} className="w-full rounded-lg border border-gray-300 px-3 py-2 font-mono text-xs" value={urls} onChange={(e) => setUrls(e.target.value)} />
+        <div>
+          <label htmlFor="robots-tester-urls" className="mb-1 block text-sm font-medium text-gray-700">
+            {t.testerUrls}
+          </label>
+          <textarea id="robots-tester-urls" placeholder={t.testerUrls} rows={3} className="w-full rounded-lg border border-gray-300 px-3 py-2 font-mono text-xs" value={urls} onChange={(e) => setUrls(e.target.value)} />
+        </div>
         <div className="space-y-2">
-          <Input aria-label={t.testerAgent} placeholder={`${t.testerAgent}: Echorank360Bot`} value={agent} onChange={(e) => setAgent(e.target.value)} />
+          <Input id="robots-tester-agent" label={t.testerAgent} placeholder={`${t.testerAgent}: Echorank360Bot`} value={agent} onChange={(e) => setAgent(e.target.value)} />
           <Button type="button" size="sm" variant="outline" onClick={run} disabled={state === "running" || lines(urls).length === 0}>
             {state === "running" ? t.testerRunning : t.testerRun}
           </Button>

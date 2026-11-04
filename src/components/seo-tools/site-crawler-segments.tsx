@@ -23,9 +23,11 @@ export function SegmentPicker({
   if (names.length === 0) return null;
   return (
     <div className="flex items-center gap-2">
-      <span className="text-xs font-medium text-gray-600">{t.p4b.segFilter}</span>
+      <label htmlFor="segment-filter" className="text-xs font-medium text-gray-700">
+        {t.p4b.segFilter}
+      </label>
       <Select
-        aria-label={t.p4b.segFilter}
+        id="segment-filter"
         className="w-auto"
         value={value}
         onChange={(e) => onChange(e.target.value)}

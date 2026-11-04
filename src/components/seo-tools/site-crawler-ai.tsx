@@ -133,7 +133,8 @@ export function AiPromptsSection({
           {value.prompts.map((p, i) => (
             <div key={i} className="grid gap-2 sm:grid-cols-[14rem_1fr_auto]">
               <Select
-                aria-label={t.aiPrompt(String(i + 1))}
+                id={`ai-prompt-${i}`}
+                label={t.aiPrompt(String(i + 1))}
                 value={p.preset}
                 disabled={disabled}
                 onChange={(e) => setPrompt(i, e.target.value as AiPreset)}
@@ -141,7 +142,8 @@ export function AiPromptsSection({
               />
               {p.preset === "custom" ? (
                 <Input
-                  aria-label={t.aiCustom}
+                  id={`ai-custom-${i}`}
+                  label={t.aiCustom}
                   placeholder={t.aiCustom}
                   maxLength={AI_LIMITS.customChars}
                   value={p.text ?? ""}
@@ -154,7 +156,7 @@ export function AiPromptsSection({
               <button
                 type="button"
                 aria-label={t.aiRemove}
-                className="text-gray-400 hover:text-gray-700 disabled:opacity-40"
+                className="self-end rounded p-1 text-gray-600 hover:text-gray-900 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 disabled:opacity-40"
                 disabled={disabled || value.prompts.length <= 1}
                 onClick={() => set({ prompts: value.prompts.filter((_, j) => j !== i) })}
               >
