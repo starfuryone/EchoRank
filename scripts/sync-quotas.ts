@@ -6,6 +6,7 @@ import { planQuotaDefaults } from "@/lib/plan-config";
  *  Run after any manual planType change (SQL flips bypass seeding). */
 async function main() {
   const tenants = await prisma.tenant.findMany({
+    where: { source: "customer" },
     select: { id: true, name: true, planType: true },
   });
   for (const t of tenants) {

@@ -485,7 +485,7 @@ async function runSmokeInner(args: SmokeArgs, deps: SmokeDeps, apiRun: { current
   // ── 1. tenant, guards, config ────────────────────────────────────────────
   if (!args.tenant || !args.url) {
     say(USAGE);
-    const tenants = await prisma.tenant.findMany({ orderBy: { createdAt: "asc" }, take: 50, select: { slug: true, name: true, planType: true } });
+    const tenants = await prisma.tenant.findMany({ where: { source: "customer" }, orderBy: { createdAt: "asc" }, take: 50, select: { slug: true, name: true, planType: true } });
     if (tenants.length) say(`tenants: ${tenants.map((t) => `${t.slug ?? "-"} (${t.planType})`).join(", ")}`);
     return { exitCode: 2, jobId: null, lines };
   }

@@ -62,6 +62,7 @@ import type { RedirectHop } from "./fetch";
 import { resolveLinkGraph } from "./link-graph";
 import { compileExtraction, customFacts, type PageExtraction, type PageExtractor } from "./extraction";
 import { segmentMatcher, type SegmentPage } from "./segments";
+import { FREE_CRAWL_MAX_DURATION_MS, isFreeSource } from "./free-tenant";
 
 export interface RunCrawlArgs {
   jobId: string;
@@ -222,8 +223,11 @@ export async function runCrawl({
   // Spell check (Phase 3c): the workspace's accepted words, and the root
   // page's language as the fallback for pages that do not declare one.
   const tenant = await prisma.tenant
-    .findUnique({ where: { id: job.tenantId }, select: { name: true, spellingAcceptedWords: true } })
+    .findUnique({ where: { id: job.tenantId }, select: { name: true, spellingAcceptedWords: true, source: true } })
     .catch(() => null);
+  // The free public crawler (free-tenant.ts): a 10-minute ceiling and raw HTML only.
+  const free = isFreeSource(tenant?.source);
+  const maxDurationMs = free ? FREE_CRAWL_MAX_DURATION_MS : MAX_CRAWL_DURATION_MS;
   const spell: SpellCtx = {
     accepted: acceptedWords(tenant?.spellingAcceptedWords ?? [], tenant?.name ?? "", job.rootUrl),
     rootLang: null,
@@ -234,7 +238,7 @@ export async function runCrawl({
   let jar: JarCookie[] | null = null;
   let loginState: { status: "ok" | "failed"; reason?: string } | null = null;
   const render = new RenderBudget(
-    isRenderMode(job.renderMode) ? job.renderMode : "none",
+    !free && isRenderMode(job.renderMode) ? job.renderMode : "none",
     job.renderCap,
     job.pagesRendered,
     (url) => callSidecarRender(url, fetch, snippetCodes, jar ?? []),
@@ -401,7 +405,7 @@ export async function runCrawl({
         stoppedReason = "url_cap";
         break;
       }
-      if (now() - startedAt >= MAX_CRAWL_DURATION_MS) {
+      if (now() - startedAt >= maxDurationMs) {
         stoppedReason = "time_cap";
         break;
       }

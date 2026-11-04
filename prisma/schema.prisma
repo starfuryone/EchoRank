@@ -179,6 +179,11 @@ model Tenant {
   crawlConcurrencyOverride Int?
   crawlsKeptOverride       Int?
   crawlUrlCapOverride      Int?
+  /// "customer" for every real workspace. "free" marks the system tenant that
+  /// owns the free public site crawler's crawls (slug free-crawler,
+  /// src/lib/site-crawler/free-tenant.ts): it has no members and no
+  /// subscription, and anything that counts tenants or revenue excludes it.
+  source                   String   @default("customer")
   /// NONE, not TRIALING. TRIALING as a default was a lie the rest of the app
   /// had to keep working around: it made "registered but never subscribed"
   /// indistinguishable from a real Stripe trial, which is why paid-plan.ts has

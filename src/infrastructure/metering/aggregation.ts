@@ -96,7 +96,9 @@ export class UsageAggregator {
     year: number,
     month: number
   ): Promise<UsageSnapshot[]> {
+    // Customer tenants only: the free crawler's system tenant (source "free") is not usage anyone pays for.
     const tenants = await prisma.tenant.findMany({
+      where: { source: "customer" },
       select: { id: true },
     });
 

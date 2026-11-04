@@ -17,6 +17,7 @@ const crawlPage = { create: vi.fn(), findFirst: vi.fn() };
 const crawlLink = { createMany: vi.fn() };
 const crawlExtraction = { createMany: vi.fn() };
 const executeRaw = vi.fn(async () => 0);
+const tenantRow: { current: Record<string, unknown> } = { current: { name: "Acme", spellingAcceptedWords: ["Acmeware"] } };
 vi.mock("@/lib/prisma", () => ({
   prisma: {
     crawlJob,
@@ -25,7 +26,7 @@ vi.mock("@/lib/prisma", () => ({
     // resolveLinkGraph's window lookup: no edge past the first window.
     $queryRaw: async () => [],
     // Spell check: the workspace's accepted words (Phase 3c).
-    tenant: { findUnique: async () => ({ name: "Acme", spellingAcceptedWords: ["Acmeware"] }) },
+    tenant: { findUnique: async () => tenantRow.current },
     // The runner writes a batch inside a transaction; run the callback inline.
     $transaction: async (fn: (tx: unknown) => Promise<unknown>) => fn({ crawlPage, crawlLink, crawlExtraction }),
   },
@@ -266,6 +267,20 @@ describe("stop conditions", () => {
     expect(outcome.stoppedReason).toBe("time_cap");
     expect(outcome.status).toBe("COMPLETED");
     expect(terminalWrite()).toMatchObject({ status: "COMPLETED", stoppedReason: "time_cap" });
+  });
+
+  it("a free crawl (system tenant, source free) stops at 10 minutes; a paid one does not", async () => {
+    const at11 = () => {
+      let calls = 0;
+      return () => (calls++ === 0 ? 0 : 11 * 60 * 1000);
+    };
+    tenantRow.current = { name: "Free site crawler (system)", spellingAcceptedWords: [], source: "free" };
+    try {
+      expect((await runCrawl({ jobId: "job_1", redis: fakeRedis() as never, now: at11() })).stoppedReason).toBe("time_cap");
+    } finally {
+      tenantRow.current = { name: "Acme", spellingAcceptedWords: ["Acmeware"] };
+    }
+    expect((await runCrawl({ jobId: "job_1", redis: fakeRedis() as never, now: at11() })).stoppedReason).not.toBe("time_cap");
   });
 
   it("stops on the cancel flag with status CANCELLED", async () => {

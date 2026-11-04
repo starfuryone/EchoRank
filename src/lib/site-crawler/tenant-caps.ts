@@ -63,11 +63,14 @@ export async function tenantOverrides(tenantId: string): Promise<CrawlOverrides>
 
 /** Whether this tenant may start another crawl now (fewer RUNNING than its concurrency). */
 export async function tenantHasCrawlSlot(tenantId: string, crawlJobId: string): Promise<boolean> {
-  const [o, running] = await Promise.all([
-    tenantOverrides(tenantId),
+  const [t, running] = await Promise.all([
+    prisma.tenant.findUnique({ where: { id: tenantId }, select: { crawlConcurrencyOverride: true, source: true } }),
     prisma.crawlJob.count({ where: { tenantId, status: "RUNNING", id: { not: crawlJobId } } }),
   ]);
-  return running < (o.crawlConcurrencyOverride ?? TENANT_CRAWL_CONCURRENCY_DEFAULT);
+  // The free crawler's system tenant (free-tenant.ts): exactly one free crawl
+  // runs at a time, whatever an override says.
+  const limit = t?.source === "free" ? 1 : (t?.crawlConcurrencyOverride ?? TENANT_CRAWL_CONCURRENCY_DEFAULT);
+  return running < limit;
 }
 
 /** An override value from a form: "" or absent = null (the plan's), else an integer within its bounds. */

@@ -355,9 +355,9 @@ export async function readRollup(
   };
 }
 
-/** Every tenant with a workspace, for the nightly sweep. */
+/** Every tenant with a workspace, for the nightly sweep. Customer tenants only (not the free crawler's system tenant). */
 export async function listTenantIds(): Promise<string[]> {
-  const rows = await prisma.tenant.findMany({ select: { id: true } });
+  const rows = await prisma.tenant.findMany({ where: { source: "customer" }, select: { id: true } });
   return rows.map((r) => r.id);
 }
 
