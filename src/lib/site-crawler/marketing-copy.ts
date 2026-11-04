@@ -344,9 +344,12 @@ export const CRAWL_FEATURE_ROWS: readonly CrawlFeatureRow[] = [
   row("ai-crawl", { flag: "crawl.ai" }, "Crawl with AI (Claude / OpenAI / Gemini)", "Exploration avec l'IA (Claude / OpenAI / Gemini)"),
   row("google-analytics", { flag: "crawl.ga4" }, "Google Analytics integration", "Intégration Google Analytics"),
   row("search-console", { flag: "crawl.gsc" }, "Search Console integration", "Intégration Search Console"),
-  row("pagespeed", { flag: "crawl.psi" }, "PageSpeed Insights integration", "Intégration PageSpeed Insights"),
+  // Phase 4d caps per crawl, from plan-config; Search Console and GA4 are uncapped.
+  row("pagespeed", { flag: "crawl.psi" }, "PageSpeed Insights integration", "Intégration PageSpeed Insights", (p, b) =>
+    b === "fr" ? `${fmt(p.crawlPsiPages, b)} pages par exploration, mobile et ordinateur` : `${fmt(p.crawlPsiPages, b)} pages per crawl, mobile and desktop`),
   row("accessibility", { family: "accessibility" }, "Accessibility auditing", "Audit d'accessibilité"),
-  row("link-metrics", { flag: "crawl.backlinks" }, "Link metrics integration", "Intégration des métriques de liens"),
+  row("link-metrics", { flag: "crawl.backlinks" }, "Link metrics integration", "Intégration des métriques de liens", (p, b) =>
+    b === "fr" ? `${fmt(p.crawlBacklinkPages, b)} pages par exploration` : `${fmt(p.crawlBacklinkPages, b)} pages per crawl`),
   row("forms-auth", { flag: "crawl.formsAuth" }, "Forms-based authentication", "Authentification par formulaire"),
   row("segmentation", { flag: "crawl.segments" }, "Segmentation", "Segmentation", (p, b) =>
     b === "fr" ? `${fmt(p.crawlSegments, b)} segments par site` : `${fmt(p.crawlSegments, b)} segments per site`),
