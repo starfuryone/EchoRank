@@ -48,6 +48,7 @@ import { RULES as urlRules } from "./rules/url";
 import { RULES as responseCodesRules } from "./rules/response_codes";
 import { RULES as robotsRules } from "./rules/robots";
 import { RULES as extractionRules } from "./rules/extraction";
+import { RULES as searchConsoleRules } from "./rules/search_console";
 
 const FAMILIES: (readonly Rule[])[] = [
   // one line per family, in RULE_FAMILIES order
@@ -76,6 +77,7 @@ const FAMILIES: (readonly Rule[])[] = [
   performanceRules,
   robotsRules,
   extractionRules,
+  searchConsoleRules,
 ];
 
 export const RULES: readonly Rule[] = FAMILIES.flat();

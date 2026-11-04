@@ -122,6 +122,8 @@ export async function searchAnalytics(
     endDate: string;
     dimensions: string[];
     rowLimit?: number;
+    /** Paging: the first row to return (Search Analytics returns ≤ 25,000 per call). */
+    startRow?: number;
   },
 ): Promise<SearchAnalyticsRow[]> {
   const res = await fetch(

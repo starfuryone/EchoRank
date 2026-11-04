@@ -21,6 +21,7 @@ import { logger } from "@/infrastructure/observability/logger";
 import {
   RULES,
   evaluateSiteRules,
+  type Capability,
   type JobFacts,
   type PageSiteFacts,
   type RuleKind,
@@ -37,6 +38,10 @@ import type { SitemapResult } from "./sitemap";
 import type { SeverityCounts } from "./types";
 import { issueRows, toStoredFacts } from "./stored";
 import { psiFactsForUrls } from "./psi";
+import { flag } from "@/lib/flags";
+import { joinGsc, type GscJoinStatus } from "./gsc-join";
+import { metricsForPages } from "./metrics";
+import type { GscMetric } from "./metrics-shared";
 import { toTotals } from "./issue-totals";
 
 export interface AggregateArgs {
@@ -98,6 +103,8 @@ export interface CrawlSummary {
   deepestPages: { url: string; depth: number }[];
   /** Phase 3c: pages whose performance rules ran on an attached Lighthouse run. */
   psiPages?: number;
+  /** Phase 4d: what each joined source did on this crawl (absent = not attempted). */
+  metrics?: { gsc?: GscJoinStatus };
   aggregationMs: number;
   aggregationError?: string;
 }
@@ -162,6 +169,18 @@ export async function aggregateCrawl({
     },
   };
 
+  // ── Phase 4d: joined data, stored before the site rules so they read it ──
+  const metricsStatus: NonNullable<CrawlSummary["metrics"]> = {};
+  const joined: Capability[] = [];
+  if (tenantId && flag("crawl.gsc")) {
+    const gsc: GscJoinStatus = await joinGsc(jobId, tenantId, rootUrl).catch((err: unknown) => ({
+      status: "failed" as const,
+      error: err instanceof Error ? err.message.slice(0, 200) : "unknown",
+    }));
+    metricsStatus.gsc = gsc;
+    if (gsc.status === "ok") joined.push("gsc");
+  }
+
   // ── Run the site rules over every page, one keyset window at a time ──────
   const rootKey = rootUrl.replace(/\/+$/, "");
   let cursor: string | undefined;
@@ -184,6 +203,7 @@ export async function aggregateCrawl({
 
     const psi = tenantId ? await psiFactsForUrls(tenantId, batch.map((p) => p.url)) : new Map();
     psiPages += psi.size;
+    const metrics = joined.length ? await metricsForPages(batch.map((p) => p.id)) : new Map();
 
     const rows = batch.flatMap((page) => {
       const site: PageSiteFacts = {
@@ -206,8 +226,10 @@ export async function aggregateCrawl({
       };
       const isRoot = page.url.replace(/\/+$/, "") === rootKey;
       const pagePsi = psi.get(page.url) ?? null;
+      const m = metrics.get(page.id);
       const found = evaluateSiteRules(toStoredFacts(page, rootUrl), {
-        capabilities: pagePsi ? ["psi"] : [],
+        capabilities: pagePsi ? ["psi", ...joined] : joined,
+        metrics: { gsc: joined.includes("gsc") ? gscFacts(m?.gsc as GscMetric | undefined) : null },
         site,
         job,
         isRoot,
@@ -260,6 +282,7 @@ export async function aggregateCrawl({
     inlinks: inlinkStats,
     deepestPages,
     psiPages,
+    ...(Object.keys(metricsStatus).length ? { metrics: metricsStatus } : {}),
     aggregationMs: Date.now() - started,
   };
 
@@ -269,6 +292,11 @@ export async function aggregateCrawl({
   );
 
   return { summary, issueCount };
+}
+
+/** A page GSC returned no row for had no clicks and no impressions. */
+export function gscFacts(g: GscMetric | undefined) {
+  return g ? { clicks: g.clicks, impressions: g.impressions, ctr: g.ctr, position: g.position } : { clicks: 0, impressions: 0, ctr: 0, position: null };
 }
 
 /** Distinct groups in a page→group-size map: sum over members of 1/size. */

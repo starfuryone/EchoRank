@@ -16,6 +16,19 @@ const TEST_DB = process.env.TEST_DATABASE_URL;
 if (TEST_DB) process.env.DATABASE_URL = TEST_DB;
 
 vi.mock("server-only", () => ({}));
+// Phase 4d: a GSC connection covering the crawled host, with two pages of data.
+vi.mock("@/lib/gsc/service", () => ({
+  getConnection: async () => ({ status: "ACTIVE", siteUrl: "sc-domain:agg.example" }),
+  latestAvailableDay: () => "2026-11-01",
+  withAccessToken: (_c: unknown, fn: (t: string) => unknown) => fn("tok"),
+}));
+vi.mock("@/lib/gsc/client", async (orig) => ({
+  ...(await orig<typeof import("@/lib/gsc/client")>()),
+  searchAnalytics: async () => [
+    { keys: ["http://agg.example/dup1/"], clicks: 2, impressions: 10, ctr: 0.2, position: 3 },
+    { keys: ["https://agg.example/nf"], clicks: 1, impressions: 5, ctr: 0.2, position: 8 },
+  ],
+}));
 
 const ROOT = "https://agg.example/";
 const u = (path: string) => new URL(path, ROOT).toString().replace(/\/$/, path === "/" ? "/" : "");
@@ -181,6 +194,25 @@ describe.skipIf(!TEST_DB)("aggregateCrawl against Postgres", () => {
     expect(summary.issues!["page_titles.duplicate"]).toEqual({ count: 2, kind: "issue", priority: "medium" });
     const total = Object.values(summary.issuesByKind!).reduce((a, b) => a + b, 0);
     expect(total).toBe(firstCount);
+  });
+
+  it("Phase 4d: with the tenant's GSC covering the host, joins page data and runs the search_console rules in the same pass", async () => {
+    const out = await aggregateCrawl({
+      jobId,
+      rootUrl: ROOT,
+      redis: redis as never,
+      sitemap: { found: false, urls: [], filesFetched: 0, truncated: false },
+      sitemapSeeded: new Set([u("/orph")]),
+      tenantId,
+    });
+    expect(out.summary.metrics?.gsc).toMatchObject({ status: "ok", rows: 2, pages: 2 });
+    const rows = await prisma.crawlPageMetric.findMany({ where: { crawlJobId: jobId, source: "gsc" }, include: { page: { select: { url: true } } } });
+    expect(rows.map((r) => r.page.url).sort()).toEqual([u("/dup1"), u("/nf")].sort());
+    const fired = async (rule: string) =>
+      (await prisma.crawlIssue.findMany({ where: { crawlJobId: jobId, ruleId: rule }, include: { crawlPage: { select: { url: true } } } })).map((i) => i.crawlPage.url);
+    expect(await fired("gsc.traffic_low_inlinks")).toContain(u("/dup1"));
+    expect((await fired("gsc.indexed_zero_impressions")).length).toBeGreaterThan(0);
+    expect(await fired("gsc.indexed_zero_impressions")).not.toContain(u("/dup1"));
   });
 
   it("is idempotent: a second run writes the same number of rows", async () => {

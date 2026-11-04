@@ -51,17 +51,26 @@ export const RULE_FAMILIES = [
   // Phase 4b: the tenant's own extractors and searches. The one family whose
   // rules carry two id prefixes: extraction.* and search.* (FAMILY_ID_PREFIXES).
   "extraction",
+  // Phase 4d: data joined from other sources onto crawled pages. Ids carry
+  // the source's short name (FAMILY_ID_PREFIXES).
+  "search_console",
 ] as const;
 
 /** Families whose rule ids may start with more than the family name. Ids are public API, so this is a closed list. */
 export const FAMILY_ID_PREFIXES: Partial<Record<(typeof RULE_FAMILIES)[number], readonly string[]>> = {
   extraction: ["extraction", "search"],
+  search_console: ["gsc"],
 };
 
 export type RuleFamily = (typeof RULE_FAMILIES)[number];
 export type RuleKind = "issue" | "warning" | "opportunity";
 export type RulePriority = "high" | "medium" | "low";
-export type Capability = "render" | "psi" | "spell";
+/**
+ * Phase 4d: "gsc" / "ga4" — the crawl joined Search Console / Analytics data
+ * (a page with no row then reads as zero); "backlinks" — the page itself was
+ * looked up. The consumer hands the joined numbers in SiteRuleCtx.metrics.
+ */
+export type Capability = "render" | "psi" | "spell" | "gsc";
 
 /**
  * What a rule reports alongside its verdict. Small by contract: counts,
@@ -458,8 +467,23 @@ export interface PsiAudit {
   display: string | null;
 }
 
+/** Phase 4d: Search Console, last 28 days, for one page (zeros when GSC had no row). */
+export interface GscFacts {
+  clicks: number;
+  impressions: number;
+  ctr: number;
+  position: number | null;
+}
+
+/** Phase 4d: numbers joined onto the page from other sources. */
+export interface SiteMetricFacts {
+  gsc?: GscFacts | null;
+}
+
 export interface SiteRuleCtx {
   capabilities: readonly Capability[];
+  /** Phase 4d: joined data; each field is read only by rules requiring its capability. */
+  metrics?: SiteMetricFacts;
   /** Phase 3c: the page's Lighthouse run, when one is attached. */
   psi?: PsiFacts | null;
   site: PageSiteFacts;

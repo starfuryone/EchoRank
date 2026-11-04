@@ -43,9 +43,10 @@ export const FLAGS = {
   // the spreadsheets scope on the Google OAuth client and the Sheets API
   // enabled in the GCP project — an operator step; flipped after it.
   "crawl.sheets": false,
-  // Phase 4d
+  // Phase 4d: Search Console joined onto crawled pages (automatic when the
+  // GSC connection covers the host).
   "crawl.ga4": false,
-  "crawl.gsc": false,
+  "crawl.gsc": true,
   "crawl.psi": false,
   "crawl.backlinks": false,
   // Phase 3b / 4e
