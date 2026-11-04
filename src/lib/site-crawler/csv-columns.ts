@@ -8,6 +8,7 @@
 // Exporting a constant from one route.ts and importing it into another is the
 // kind of thing that type-checks locally and fails the production build.
 
+import { METRIC_COLUMNS, type MetricSource } from "./metrics-shared";
 import type { CsvColumn } from "@/lib/csv-export";
 import { RULE_COPY } from "@/lib/crawl-rules";
 import { segmentCell, type SegmentDef } from "./segments";
@@ -76,6 +77,8 @@ export interface CrawlPageRow {
   /** Phase 4b: {"<search index>": matches}; null on non-HTML pages. */
   searchHits?: unknown;
   segmentIds?: number[];
+  /** Phase 4d: joined data, one row per source. */
+  metrics?: { source: string; data: unknown }[];
 }
 
 /**
@@ -239,6 +242,14 @@ export function pageColumns(searchNames: readonly string[]): CsvColumn<CrawlPage
     ...PAGE_COLUMNS,
     ...searchNames.map((name, i): CsvColumn<CrawlPageRow> => ({ header: `Search: ${name}`, value: (r) => searchCount(r.searchHits, i) })),
   ];
+}
+
+/** Phase 4d: every metric column of these sources, read from the page's joined rows. */
+export function metricCsvColumns(sources: readonly MetricSource[]): CsvColumn<CrawlPageRow>[] {
+  return METRIC_COLUMNS.filter((c) => sources.includes(c.source)).map((c) => ({
+    header: c.header,
+    value: (r) => c.value(r.metrics?.find((m) => m.source === c.source)?.data ?? null),
+  }));
 }
 
 /** Phase 4b: one HTML page and what each extractor found on it (null = nothing). */

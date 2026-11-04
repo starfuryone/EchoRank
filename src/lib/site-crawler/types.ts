@@ -119,6 +119,12 @@ export interface CrawlListResponse {
 // know the shape of a summary.
 
 export interface CrawlSummaryDto {
+  /** Phase 4d: pages with data per joined source, and what each source did. */
+  metricOverview?: {
+    coverage: Record<"gsc" | "psi" | "ga4" | "backlinks", number>;
+    total: number;
+    status: Partial<Record<"gsc" | "psi" | "ga4" | "backlinks", { status: string; stoppedReason?: string; targets?: number; completed?: number }>>;
+  };
   statusCodes: Record<string, number>;
   depths: Record<string, number>;
   issuesBySeverity: Record<string, number>;
@@ -232,7 +238,7 @@ export interface CrawlPageRow {
 }
 
 export interface CrawlPagesPage {
-  pages: CrawlPageRow[];
+  pages: (CrawlPageRow & { metrics?: Partial<Record<"gsc" | "psi" | "ga4" | "backlinks", unknown>> })[];
   page: number;
   pageSize: number;
   total: number;
@@ -248,6 +254,9 @@ export interface PageFilters {
   search: string;
   /** Phase 4c: URLs starting with this (a Structure tab click). "" = any. */
   urlPrefix?: string;
+  /** Phase 4d: a metric sort key (metrics-shared METRIC_COLUMNS) and direction; "" = the default order. */
+  sort?: string;
+  dir?: "asc" | "desc";
 }
 
 export const EMPTY_PAGE_FILTERS: PageFilters = { inSitemap: "", depth: "", minInlinks: "", search: "", urlPrefix: "" };
@@ -259,6 +268,10 @@ export function pageFilterParams(f: PageFilters): URLSearchParams {
   if (f.depth) params.set("depth", f.depth);
   if (f.minInlinks) params.set("minInlinks", f.minInlinks);
   if (f.urlPrefix) params.set("urlPrefix", f.urlPrefix);
+  if (f.sort) {
+    params.set("sort", f.sort);
+    params.set("dir", f.dir ?? "desc");
+  }
   const [index, which] = f.search.split(":");
   if (index && which) {
     params.set("search", index);

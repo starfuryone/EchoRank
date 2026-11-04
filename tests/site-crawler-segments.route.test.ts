@@ -19,6 +19,7 @@ const queryRaw = vi.fn();
 const transaction = vi.fn(async (ops: unknown[]) => ops);
 vi.mock("@/lib/prisma", () => ({
   prisma: {
+    crawlPageMetric: { groupBy: async () => [] },
     crawlJob,
     crawlPage,
     crawlIssue,

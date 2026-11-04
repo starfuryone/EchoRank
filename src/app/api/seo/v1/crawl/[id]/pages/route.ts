@@ -4,7 +4,10 @@
  * Filters: inSitemap, minInlinks/maxInlinks, depth, and (Phase 4b)
  * search=N&hit=true|false — custom search N matched / did not, and
  * segment=N (the CSV then carries a Segment column), and (Phase 4c)
- * urlPrefix=… — URLs starting with it (the Structure tab's click-through). Each is validated rather
+ * urlPrefix=… — URLs starting with it (the Structure tab's click-through).
+ * Phase 4d: every row carries its joined metrics (GSC, PSI, GA4, backlinks);
+ * sort=<metric key>&dir=asc|desc orders by one (pages-sort.ts); the CSV
+ * carries every metric column of each source the crawl has data from. Each is validated rather
  * than coerced — an unparseable depth is a 400, not a silent "all pages",
  * which would look like the filter had been applied and found everything.
  *
@@ -16,7 +19,10 @@
 import { NextResponse } from "next/server";
 import { requirePaidPlan } from "@/lib/paid-plan";
 import { csvFilename } from "@/lib/csv-export";
-import { pageColumns, withSegmentColumn, type CrawlPageRow } from "@/lib/site-crawler/csv-columns";
+import { metricCsvColumns, pageColumns, withSegmentColumn, type CrawlPageRow } from "@/lib/site-crawler/csv-columns";
+import { METRIC_SORT_KEYS, METRIC_SOURCES } from "@/lib/site-crawler/metrics-shared";
+import { metricCoverage } from "@/lib/site-crawler/metrics";
+import { pageIdsByMetric } from "@/lib/site-crawler/pages-sort";
 import { pageInSegment, segmentScope } from "@/lib/site-crawler/segment-filter";
 import { readStoredConfig } from "@/lib/site-crawler/crawl-config";
 import { csvStreamResponse, wantsCsv } from "@/lib/csv-stream";
@@ -106,6 +112,16 @@ export async function GET(
       return NextResponse.json({ error: "urlPrefix must be 1–2048 characters", code: "INVALID_REQUEST" }, { status: 400 });
     }
 
+    // Phase 4d: sort by a joined metric.
+    const sort = url.searchParams.get("sort");
+    const dir = url.searchParams.get("dir") ?? "desc";
+    if (sort !== null && !METRIC_SORT_KEYS.has(sort)) {
+      return NextResponse.json({ error: "Unknown sort", code: "INVALID_REQUEST" }, { status: 400 });
+    }
+    if (dir !== "asc" && dir !== "desc") {
+      return NextResponse.json({ error: "dir must be asc or desc", code: "INVALID_REQUEST" }, { status: 400 });
+    }
+
     const inlinkRange = {
       ...(minInlinks.value !== undefined ? { gte: minInlinks.value } : {}),
       ...(maxInlinks.value !== undefined ? { lte: maxInlinks.value } : {}),
@@ -125,8 +141,12 @@ export async function GET(
     // inherits the same requirePaidPlan, the same 404 and the same 400 on an
     // unparseable filter. A response format, not a second access surface.
     if (wantsCsv(url)) {
+      // Every metric column of every source this crawl has data from; a crawl
+      // with none exports exactly the columns it did before Phase 4d.
+      const coverage = await metricCoverage(crawl.id);
+      const sources = METRIC_SOURCES.filter((s) => coverage[s] > 0);
       return csvStreamResponse<CrawlPageRow>({
-        columns: withSegmentColumn(pageColumns(searches.map((s) => s.name)), segment.defs, (r) => r.segmentIds),
+        columns: withSegmentColumn([...pageColumns(searches.map((s) => s.name)), ...metricCsvColumns(sources)], segment.defs, (r) => r.segmentIds),
         filename: csvFilename("site-crawler-pages"),
         cursorOf: (row) => row.id,
         fetchPage: (cursor, take) =>
@@ -155,18 +175,37 @@ export async function GET(
               foundOn: true,
               searchHits: true,
               segmentIds: true,
+              metrics: { select: { source: true, data: true } },
             },
           }),
       });
     }
 
-    const [total, rows] = await Promise.all([
+    const ids =
+      sort === null
+        ? null
+        : await pageIdsByMetric(
+            {
+              jobId: crawl.id,
+              ...(inSitemapParam !== null ? { inSitemap: inSitemapParam === "true" } : {}),
+              ...(depth.value !== undefined ? { depth: depth.value } : {}),
+              ...(minInlinks.value !== undefined ? { minInlinks: minInlinks.value } : {}),
+              ...(maxInlinks.value !== undefined ? { maxInlinks: maxInlinks.value } : {}),
+              ...(searchIndex !== null ? { search: { index: searchIndex, hit: hitParam === "true" } } : {}),
+              ...(urlPrefix !== null ? { urlPrefix } : {}),
+              segment: segment.index,
+            },
+            sort,
+            dir,
+            (page - 1) * pageSize,
+            pageSize,
+          );
+    const [total, found] = await Promise.all([
       prisma.crawlPage.count({ where }),
       prisma.crawlPage.findMany({
-        where,
+        where: ids === null ? where : { id: { in: ids } },
         orderBy: [{ depth: "asc" }, { url: "asc" }],
-        skip: (page - 1) * pageSize,
-        take: pageSize,
+        ...(ids === null ? { skip: (page - 1) * pageSize, take: pageSize } : {}),
         select: {
           id: true,
           url: true,
@@ -186,10 +225,12 @@ export async function GET(
           inSitemap: true,
           foundOn: true,
           searchHits: true,
+          metrics: { select: { source: true, data: true } },
           _count: { select: { issues: true } },
         },
       }),
     ]);
+    const rows = ids === null ? found : ids.flatMap((id) => found.filter((r) => r.id === id));
 
     return NextResponse.json({
       pages: rows.map((r) => ({
@@ -212,6 +253,7 @@ export async function GET(
         foundOn: r.foundOn,
         searchHits: (r.searchHits as Record<string, number> | null) ?? null,
         issueCount: r._count.issues,
+        metrics: Object.fromEntries((r.metrics ?? []).map((m) => [m.source, m.data])),
       })),
       page,
       pageSize,

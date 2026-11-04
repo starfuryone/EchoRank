@@ -34,7 +34,7 @@ const queryRaw = vi.fn();
 const crawlSiteDefault = { findUnique: vi.fn(), upsert: vi.fn() };
 const crawlSegment = { findMany: vi.fn() };
 vi.mock("@/lib/prisma", () => ({
-  prisma: { crawlJob, crawlPage, crawlIssue, crawlSiteDefault, crawlSegment, $queryRaw: (...a: unknown[]) => queryRaw(...a) },
+  prisma: { crawlJob, crawlPage, crawlIssue, crawlSiteDefault, crawlSegment, crawlPageMetric: { groupBy: async () => [] }, $queryRaw: (...a: unknown[]) => queryRaw(...a) },
 }));
 
 vi.mock("@/lib/rate-limit", () => ({
@@ -705,6 +705,8 @@ describe("GET /crawl/[id]/summary", () => {
       issues: { "response_codes.internal_4xx": { count: 1, kind: "issue", priority: "high" } },
       issuesByKind: { issue: 1, warning: 0, opportunity: 0 },
       totals: { ERROR: 1, WARNING: 0, NOTICE: 0 },
+      // Phase 4d: the Overview tiles' data, empty for a crawl with no joined sources.
+      metricOverview: { coverage: { gsc: 0, psi: 0, ga4: 0, backlinks: 0 }, status: {} },
     });
   });
 

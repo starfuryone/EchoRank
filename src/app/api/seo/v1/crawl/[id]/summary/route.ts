@@ -18,6 +18,7 @@ import { requirePaidPlan } from "@/lib/paid-plan";
 import { prisma } from "@/lib/prisma";
 import { crawlRouteError } from "@/lib/site-crawler/http";
 import { getIssueTotals } from "@/lib/site-crawler/issue-totals";
+import { metricCoverage } from "@/lib/site-crawler/metrics";
 import { computeRuleTallies, ruleTalliesFor } from "@/lib/site-crawler/rule-summary";
 import {
   issueInSegment,
@@ -37,7 +38,7 @@ export async function GET(
 
     const row = await prisma.crawlJob.findFirst({
       where: { id, tenantId: tenant.tenantId },
-      select: { id: true, status: true, summary: true, config: true },
+      select: { id: true, status: true, summary: true, config: true, pagesCrawled: true },
     });
 
     if (!row || row.status !== "COMPLETED") {
@@ -69,8 +70,14 @@ export async function GET(
       segmentOverview(row.id, scope.defs),
     ]);
     const perSegment = segments.length ? { segments } : {};
-    if (row.summary === null) return NextResponse.json({ partial: true, issues, issuesByKind, totals, computed, ...perSegment });
-    return NextResponse.json({ ...(row.summary as object), issues, issuesByKind, totals, computed, ...perSegment });
+    // Phase 4d: pages with data per joined source, for the Overview tiles.
+    const metricOverview = {
+      coverage: await metricCoverage(row.id),
+      total: row.pagesCrawled,
+      status: ((row.summary as { metrics?: object } | null)?.metrics ?? {}) as object,
+    };
+    if (row.summary === null) return NextResponse.json({ partial: true, issues, issuesByKind, totals, computed, ...perSegment, metricOverview });
+    return NextResponse.json({ ...(row.summary as object), issues, issuesByKind, totals, computed, ...perSegment, metricOverview });
   } catch (err) {
     return crawlRouteError(err);
   }

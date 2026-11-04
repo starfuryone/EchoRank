@@ -12,7 +12,7 @@ vi.mock("@/lib/paid-plan", async (importOriginal) => ({
 
 const crawlJob = { findFirst: vi.fn() };
 const crawlPage = { findMany: vi.fn(), count: vi.fn() };
-vi.mock("@/lib/prisma", () => ({ prisma: { crawlJob, crawlPage } }));
+vi.mock("@/lib/prisma", () => ({ prisma: { crawlJob, crawlPage, crawlPageMetric: { groupBy: async () => [] } } }));
 
 const { GET } = await import("@/app/api/seo/v1/crawl/[id]/pages/route");
 import { EMPTY_PAGE_FILTERS, pageFilterParams } from "@/lib/site-crawler/types";

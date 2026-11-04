@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 // The four non-Issues tabs of a completed crawl.
 //
 // Split out of site-crawler-client.tsx to keep that file about the crawl
@@ -13,6 +14,8 @@
 //
 // Every string comes from SITE_CRAWLER_COPY; there is no inline English here.
 
+import { MetricGroupToggles, MetricHeader, columnsOf, formatMetric, sourcesIn } from "./site-crawler-metrics";
+import type { MetricSource } from "@/lib/site-crawler/metrics-shared";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -382,6 +385,12 @@ export function PagesPanel({
   csvHref?: string;
 }) {
   const set = (key: keyof PageFilters, value: string) => onFilters({ ...filters, [key]: value });
+  // Phase 4d: a column group per joined source, shown when toggled on (the sorted one always is).
+  const [shown, setShown] = useState<MetricSource[]>([]);
+  const sortSource = filters.sort ? (filters.sort.split(".")[0] as MetricSource) : null;
+  const available = data ? [...new Set([...sourcesIn(data.pages), ...(sortSource ? [sortSource] : [])])] : [];
+  const visible = available.filter((s) => shown.includes(s) || s === sortSource);
+  const metricCols = columnsOf(visible);
 
   return (
     <div className="space-y-4">
@@ -453,6 +462,8 @@ export function PagesPanel({
         )}
       </div>
 
+      <MetricGroupToggles available={available} shown={visible} onToggle={(s) => setShown((v) => (v.includes(s) ? v.filter((x) => x !== s) : [...v, s]))} t={t.p4d} />
+
       {!data || data.pages.length === 0 ? (
         <p className="py-8 text-center text-sm text-gray-500">{t.noPages}</p>
       ) : (
@@ -467,6 +478,9 @@ export function PagesPanel({
                   <th scope="col" className="py-2 pr-3">{t.colSitemap}</th>
                   {onInlinks && <th scope="col" className="py-2 pr-3">{t.p4a.colFoundOn}</th>}
                   {searchNames.length > 0 && <th scope="col" className="py-2 pr-3">{t.p4b.colSearch}</th>}
+                  {metricCols.map((c) => (
+                    <MetricHeader key={c.key} colKey={c.key} label={t.p4d.colLabels[c.key] ?? c.header} sort={filters.sort} dir={filters.dir} onSort={(key, dir) => onFilters({ ...filters, sort: key, dir })} />
+                  ))}
                   <th scope="col" className="py-2">{t.issuesTitle}</th>
                 </tr>
               </thead>
@@ -504,6 +518,11 @@ export function PagesPanel({
                     {searchNames.length > 0 && (
                       <td className="py-2 pr-3 text-xs text-gray-600">{searchHitsText(row.searchHits, searchNames, int)}</td>
                     )}
+                    {metricCols.map((c) => (
+                      <td key={c.key} className="py-2 pr-3 tabular-nums text-gray-600">
+                        {formatMetric(c.key, c.value(row.metrics?.[c.source] ?? null), int)}
+                      </td>
+                    ))}
                     <td className="py-2 tabular-nums text-gray-600">
                       {int.format(row.issueCount)}
                     </td>

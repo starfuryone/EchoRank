@@ -55,6 +55,8 @@ import { ExtractionPanel } from "@/components/seo-tools/site-crawler-extraction"
 import { ComparePanel } from "@/components/seo-tools/site-crawler-compare";
 import { CrawlSchedules } from "@/components/seo-tools/site-crawler-schedules";
 import { AddDataSection, confirmLines } from "@/components/seo-tools/site-crawler-add-data";
+import { MetricTiles } from "@/components/seo-tools/site-crawler-metrics";
+import { SourceLines } from "@/components/seo-tools/site-crawler-sources";
 import type { AddData } from "@/lib/site-crawler/crawl-config";
 import { SheetsExport } from "@/components/seo-tools/site-crawler-sheets";
 import { ReportDownloadButton } from "@/components/reports/ReportDownloadButton";
@@ -626,7 +628,7 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
             </CrawlConfigSection>
           )}
 
-          {(flag("crawl.psi") || flag("crawl.backlinks")) && mode === "spider" && quota && (
+          {(flag("crawl.psi") || flag("crawl.backlinks") || flag("crawl.gsc") || flag("crawl.ga4")) && mode === "spider" && quota && (
             <AddDataSection
               t={t.p4d}
               host={hostOfInput(url)}
@@ -637,7 +639,9 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
                 setConfirming(false);
               }}
               disabled={starting || Boolean(running)}
-            />
+            >
+              <SourceLines t={t.p4d} host={hostOfInput(url)} />
+            </AddDataSection>
           )}
 
           {confirming && addData && quota && (
@@ -758,6 +762,7 @@ export function SiteCrawlerClient({ locale }: { locale: DashLocale }) {
       {active && !running && tab === "overview" && (
         <>
           <SegmentOverview segments={summary?.segments} segment={summary?.segment} onPick={pickSegment} t={t} int={int} />
+          {summary && "metricOverview" in summary && summary.metricOverview && <MetricTiles data={summary.metricOverview} t={t.p4d} int={int} />}
           <OverviewPanel summary={summary} t={t} int={int} />
         </>
       )}
