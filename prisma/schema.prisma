@@ -257,6 +257,7 @@ model Tenant {
   crawlJobs CrawlJob[]
   crawlSiteDefaults CrawlSiteDefault[]
   crawlSegments CrawlSegment[]
+  crawlSchedules CrawlSchedule[]
 
   brandProfiles   BrandProfile[]
   checkups        Checkup[]
@@ -2277,6 +2278,8 @@ model CrawlJob {
   issues CrawlIssue[]
   links  CrawlLink[]
   extractions CrawlExtraction[]
+  comparisonsAsA CrawlComparison[] @relation("ComparisonJobA")
+  comparisonsAsB CrawlComparison[] @relation("ComparisonJobB")
 
   @@index([tenantId, createdAt])
   @@map("crawl_jobs")
@@ -2485,6 +2488,58 @@ model CrawlSegment {
 
   @@unique([tenantId, host, position])
   @@map("crawl_segments")
+}
+
+/// Phase 4c: two crawls compared. A is "this" crawl, B the baseline; the URL
+/// mapping rewrites B's URLs before matching (staging → production).
+/// result: counts + the first 500 URLs per bucket, ≤ 1 MB; full lists are
+/// recomputed in SQL by the paged endpoint. Retention: deleted when either
+/// crawl's data is purged (nightly crawl retention), and with either crawl
+/// row (FK cascade, so with the tenant too).
+model CrawlComparison {
+  id        String   @id @default(cuid())
+  jobAId    String
+  jobBId    String
+  /// Ordered [{ find: regex, replace }] pairs.
+  mapping   Json
+  /// Index into crawl A's config.segments; null = the whole crawl.
+  segmentId Int?     @db.SmallInt
+  result    Json
+  createdAt DateTime @default(now())
+
+  jobA CrawlJob @relation("ComparisonJobA", fields: [jobAId], references: [id], onDelete: Cascade)
+  jobB CrawlJob @relation("ComparisonJobB", fields: [jobBId], references: [id], onDelete: Cascade)
+
+  @@index([jobAId, createdAt])
+  @@index([jobBId])
+  @@map("crawl_comparisons")
+}
+
+/// Phase 4c: a crawl that runs on a cadence. config holds the root URL,
+/// render mode and the sealed crawl configuration (secrets encrypted, as on
+/// crawl_site_defaults). One BullMQ repeatable per enabled row. Retention:
+/// goes with the tenant (FK cascade).
+model CrawlSchedule {
+  id        String   @id @default(cuid())
+  tenantId  String
+  /// Lowercased hostname of the root URL.
+  host      String
+  config    Json
+  /// "daily" | "weekly" | "monthly" (src/lib/site-crawler/schedule.ts).
+  cadence   String
+  hourUtc   Int      @db.SmallInt
+  nextRunAt DateTime
+  /// The last COMPLETED crawl this schedule produced; the next run compares with it.
+  lastJobId String?
+  enabled   Boolean  @default(true)
+  /// { email?: boolean, sheets?: { spreadsheetId: string | null } }
+  exportTo  Json?
+  createdAt DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@map("crawl_schedules")
 }
 
 /// One finding on one page. `type` and `severity` are enum-like strings rather

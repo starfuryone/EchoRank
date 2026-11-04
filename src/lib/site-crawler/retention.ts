@@ -69,6 +69,8 @@ export async function purgeCrawlData(jobId: string, batch = RETENTION_BATCH_ROWS
       if (n < batch) break;
     }
   }
+  // Phase 4c: a comparison is only as good as both crawls' pages.
+  await prisma.crawlComparison.deleteMany({ where: { OR: [{ jobAId: jobId }, { jobBId: jobId }] } });
   await prisma.crawlJob.update({ where: { id: jobId }, data: { dataPurgedAt: new Date() } });
   return total;
 }

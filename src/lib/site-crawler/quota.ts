@@ -19,7 +19,7 @@
 
 import type { PlanType } from "@/generated/prisma";
 import { prisma } from "@/lib/prisma";
-import { planConfig } from "@/lib/plan-config";
+import { planConfig, type CrawlCadence } from "@/lib/plan-config";
 
 /** Statuses that consume a monthly slot. */
 export const QUOTA_CONSUMING_STATUSES = ["QUEUED", "RUNNING", "COMPLETED"] as const;
@@ -44,6 +44,9 @@ export interface CrawlQuota {
   extractorCap: number;
   searchCap: number;
   segmentCap: number;
+  /** Phase 4c: schedules per tenant and the cadences the tier allows. */
+  scheduleCap: number;
+  scheduleCadences: readonly CrawlCadence[];
 }
 
 export function urlCapForPlan(plan: PlanType): number {
@@ -54,6 +57,12 @@ export function urlCapForPlan(plan: PlanType): number {
 export function featureCapsForPlan(plan: PlanType): { extractorCap: number; searchCap: number; segmentCap: number } {
   const c = planConfig(plan);
   return { extractorCap: c.crawlExtractors, searchCap: c.crawlSearches, segmentCap: c.crawlSegments };
+}
+
+/** Phase 4c caps (plan-config crawlSchedules / crawlScheduleCadences). */
+export function scheduleCapsForPlan(plan: PlanType): { scheduleCap: number; scheduleCadences: readonly CrawlCadence[] } {
+  const c = planConfig(plan);
+  return { scheduleCap: c.crawlSchedules, scheduleCadences: c.crawlScheduleCadences };
 }
 
 export function monthlyLimitForPlan(plan: PlanType): number | null {
@@ -90,7 +99,7 @@ export async function getCrawlQuota(
   const monthlyLimit = monthlyLimitForPlan(plan);
   const locked = urlCap <= 0;
   const crawlsKept = planConfig(plan).crawlsKept;
-  const caps = featureCapsForPlan(plan);
+  const caps = { ...featureCapsForPlan(plan), ...scheduleCapsForPlan(plan) };
 
   // A locked tier never runs a query it cannot act on.
   if (locked) {

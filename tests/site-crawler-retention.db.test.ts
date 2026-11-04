@@ -34,6 +34,14 @@ describe.skipIf(!TEST_DB)("retention against Postgres", () => {
         await prisma.crawlExtraction.create({ data: { crawlJobId: job(n), pageId: page.id, extractorIndex: 0, values: ["v"] } });
       }
     }
+    // Phase 4c: comparisons naming crawl 2 on either side, and one that does not.
+    await prisma.crawlComparison.createMany({
+      data: [
+        { jobAId: job(3), jobBId: job(2), mapping: [], result: {} },
+        { jobAId: job(2), jobBId: job(1), mapping: [], result: {} },
+        { jobAId: job(4), jobBId: job(3), mapping: [], result: {} },
+      ],
+    });
   });
 
   afterAll(async () => {
@@ -48,6 +56,9 @@ describe.skipIf(!TEST_DB)("retention against Postgres", () => {
     expect(row!.dataPurgedAt).not.toBeNull();
     expect(await prisma.crawlPage.count({ where: { crawlJobId: job(2) } })).toBe(0);
     expect(await prisma.crawlExtraction.count({ where: { crawlJobId: job(2) } })).toBe(0);
+    // Either side purged → the comparison goes; the unrelated one stays.
+    expect(await prisma.crawlComparison.count({ where: { OR: [{ jobAId: job(2) }, { jobBId: job(2) }] } })).toBe(0);
+    expect(await prisma.crawlComparison.count({ where: { jobAId: job(4) } })).toBe(1);
   });
 
   it("the nightly run spares the 3 newest and the pinned one", async () => {

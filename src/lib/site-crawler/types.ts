@@ -78,6 +78,9 @@ export interface CrawlQuotaDto {
   extractorCap?: number;
   searchCap?: number;
   segmentCap?: number;
+  /** Phase 4c: schedules per tenant and the cadences this tier may pick. */
+  scheduleCap?: number;
+  scheduleCadences?: readonly ("daily" | "weekly" | "monthly")[];
 }
 
 export interface CrawlIssueRow {

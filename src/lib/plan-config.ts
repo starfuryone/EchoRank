@@ -220,6 +220,9 @@ export interface BacklinksCapability {
   deepEndpoints: boolean;
 }
 
+/** A scheduled crawl's cadence (Phase 4c). */
+export type CrawlCadence = "daily" | "weekly" | "monthly";
+
 export interface PlanConfig {
   name: string;
   slug: string;
@@ -323,6 +326,12 @@ export interface PlanConfig {
   crawlSearches: number;
   /** Phase 4b: saved segments per site (tenant + host). */
   crawlSegments: number;
+  /**
+   * Phase 4c: scheduled crawls per tenant, and the cadences this tier may
+   * pick. Each scheduled run still counts against crawlsPerMonth.
+   */
+  crawlSchedules: number;
+  crawlScheduleCadences: readonly CrawlCadence[];
   /** Shape of one AI Visibility checkup for this tier. */
   aiCheckup: AiCheckupShape;
   /**
@@ -440,6 +449,8 @@ export const PLAN_CONFIGS: Record<SellablePlanType, PlanConfig> = {
     crawlExtractors: 3,
     crawlSearches: 2,
     crawlSegments: 3,
+    crawlSchedules: 1,
+    crawlScheduleCadences: ["monthly"],
     // The shape the retired AI Visibility tier sold: two providers and one
     // repetition. Repeatability needs >1 and stays a GROWTH feature.
     aiCheckup: { frequency: "weekly", providers: 2, prompts: 10, repetitions: 1 },
@@ -486,6 +497,8 @@ export const PLAN_CONFIGS: Record<SellablePlanType, PlanConfig> = {
     crawlExtractors: 5,
     crawlSearches: 5,
     crawlSegments: 10,
+    crawlSchedules: 2,
+    crawlScheduleCadences: ["weekly", "monthly"],
     aiCheckup: { frequency: "twice_weekly", providers: 4, prompts: 15, repetitions: 2 },
     aiProjects: 3,
     aiMonthlyCapUsd: 40,
@@ -530,6 +543,8 @@ export const PLAN_CONFIGS: Record<SellablePlanType, PlanConfig> = {
     crawlExtractors: 10,
     crawlSearches: 5,
     crawlSegments: 25,
+    crawlSchedules: 10,
+    crawlScheduleCadences: ["daily", "weekly", "monthly"],
     aiCheckup: { frequency: "daily", providers: null, prompts: 20, repetitions: 3 },
     aiProjects: 25,
     aiMonthlyCapUsd: 150,
@@ -574,6 +589,8 @@ export const PLAN_CONFIGS: Record<SellablePlanType, PlanConfig> = {
     crawlExtractors: 10,
     crawlSearches: 5,
     crawlSegments: 25,
+    crawlSchedules: 10,
+    crawlScheduleCadences: ["daily", "weekly", "monthly"],
     // "custom": the schedule is set per contract, so the scheduler reads the
     // brand profile rather than a cadence baked in here.
     aiCheckup: { frequency: "custom", providers: null, prompts: 20, repetitions: 3 },
