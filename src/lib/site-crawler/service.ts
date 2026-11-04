@@ -39,6 +39,7 @@ import { flag } from "@/lib/flags";
 import { SegmentDefSchema, type SegmentDef } from "./segments";
 import { getConnection } from "@/lib/gsc/service";
 import { propertyCovers } from "./gsc-join";
+import { healthOf } from "./site-health";
 import { readStoredLogin } from "./login";
 import { aiKeyStatus } from "./ai-keys";
 import { planCanUseMarketing } from "@/lib/marketing/quota";
@@ -69,6 +70,8 @@ export interface CrawlJobDto {
   dataPurgedAt: string | null;
   /** Phase 4e forms login: how it went (failed = the crawl ran unauthenticated). Absent when no login was asked. */
   login?: { status: "ok" | "failed"; reason: string | null } | null;
+  /** Site health 0–100 from the summary; null before it settles or on older crawls. */
+  health?: number | null;
 }
 
 /** summary.login, when the crawl logged in (or tried to). */
@@ -116,6 +119,7 @@ export function toCrawlDto(row: {
     pinned: row.pinned ?? false,
     dataPurgedAt: row.dataPurgedAt?.toISOString() ?? null,
     ...(row.summary !== undefined && loginOf(row.summary) ? { login: loginOf(row.summary) } : {}),
+    ...(row.summary !== undefined ? { health: healthOf(row.summary) } : {}),
   };
 }
 

@@ -52,13 +52,14 @@ import { AcceptedWords } from "@/components/seo-tools/site-crawler-accepted-word
 import { CrawlConfigSection, problemText } from "@/components/seo-tools/site-crawler-config";
 import { CrawlTools } from "@/components/seo-tools/site-crawler-crawl-tools";
 import { InlinksPanel } from "@/components/seo-tools/site-crawler-inlinks";
-import { ExtractionPanel } from "@/components/seo-tools/site-crawler-extraction";
+import { ExtractionPanel, extractionQuery } from "@/components/seo-tools/site-crawler-extraction";
 import { ExternalPanel } from "@/components/seo-tools/site-crawler-external";
 import { ComparePanel } from "@/components/seo-tools/site-crawler-compare";
 import { CrawlSchedules } from "@/components/seo-tools/site-crawler-schedules";
 import { AddDataSection, confirmLines, useSiteSegmentNames } from "@/components/seo-tools/site-crawler-add-data";
 import { AdvancedSection, summaryLine } from "@/components/seo-tools/site-crawler-advanced";
-import { CrawlerNav, RecentCrawls, statusLabel } from "@/components/seo-tools/site-crawler-nav";
+import { CRAWLER_ROUTES, CrawlerNav, RecentCrawls, hostOfCrawl, statusLabel } from "@/components/seo-tools/site-crawler-nav";
+import { CompletenessBanner, ExportsMenu, FixFirst, ResultsHero, TabStrip, completenessLines } from "@/components/seo-tools/site-crawler-results";
 import { AiPromptsSection, AiStatusLine, aiConfirmLine, type AiQuota } from "@/components/seo-tools/site-crawler-ai";
 import { SemanticSection, semanticConfirmLine, semanticStatusText } from "@/components/seo-tools/site-crawler-semantic";
 import { InspectionSection } from "@/components/seo-tools/site-crawler-inspection";
@@ -78,14 +79,34 @@ import { SITE_CRAWLER_COPY, type DashLocale, type SiteCrawlerCopy } from "@/lib/
 import { CRAWLER_BRAND } from "@/lib/site-crawler/brand";
 import { helpModalFor, learnHref } from "@/lib/help-content";
 
-type TabId = "overview" | "rules" | "issues" | "duplicates" | "redirects" | "pages" | "structure" | "compare" | "extraction" | "external";
+type TabId = "overview" | "rules" | "issues" | "duplicates" | "redirects" | "pages" | "structure" | "compare" | "extraction" | "external" | "metrics" | "segments";
+
+/** The Results view's top-level groups (UX restructure); each tab sits in one. */
+type GroupId = "issues" | "pages" | "links" | "data" | "compare";
+const GROUPS: GroupId[] = ["issues", "pages", "links", "data", "compare"];
+const GROUP_OF: Record<TabId, GroupId> = {
+  overview: "data",
+  rules: "issues",
+  issues: "issues",
+  pages: "pages",
+  duplicates: "links",
+  redirects: "links",
+  external: "links",
+  structure: "links",
+  extraction: "data",
+  metrics: "data",
+  segments: "data",
+  compare: "compare",
+};
+/** Sub-view order inside a group. */
+const SUB_ORDER: TabId[] = ["rules", "issues", "pages", "duplicates", "redirects", "external", "structure", "extraction", "metrics", "segments", "compare"];
 
 /** The Issues filter: every registry rule, by name. Pre-3a rows match through legacy-map. */
 const RULE_OPTIONS = RULE_IDS.map((id) => ({ value: id, label: RULE_COPY[id]?.name ?? id })).sort((a, b) =>
   a.label.localeCompare(b.label),
 );
 
-const TABS: TabId[] = ["overview", "rules", "issues", "duplicates", "redirects", "pages"];
+const TABS: TabId[] = ["rules", "issues", "duplicates", "redirects", "pages"];
 
 // Phase 4c: the Structure tab's d3 code loads only when the tab is opened.
 // <CrawlerHelpModal>: loaded only when the Help button (or ?help=1) opens it.
@@ -108,6 +129,9 @@ export function crawlTabs(crawl: (Pick<CrawlDto, "config"> & { dataPurgedAt?: st
     tabs.push("extraction");
   // Phase 4g: outbound links, while the crawl's links are kept.
   if (flag("crawl.externalLinks") && crawl && !crawl.dataPurgedAt) tabs.push("external");
+  // Data: metric tiles and step status; segments when the crawl was segmented.
+  tabs.push("metrics");
+  if (flag("crawl.segments") && (crawl?.config?.segments?.length ?? 0) > 0) tabs.push("segments");
   return tabs;
 }
 
@@ -121,7 +145,24 @@ function tabLabel(id: TabId, t: SiteCrawlerCopy): string {
   if (id === "structure") return t.p4c.tabStructure;
   if (id === "compare") return t.p4c.tabCompare;
   if (id === "external") return t.p4g.tabExternal;
+  if (id === "metrics") return t.ux.subMetrics;
+  if (id === "segments") return t.ux.subSegments;
   return t.tabPages;
+}
+
+function groupLabel(id: GroupId, t: SiteCrawlerCopy): string {
+  if (id === "issues") return t.ux.grpIssues;
+  if (id === "pages") return t.ux.grpPages;
+  if (id === "links") return t.ux.grpLinks;
+  if (id === "data") return t.ux.grpData;
+  return t.ux.grpCompare;
+}
+
+/** A tab's label as a sub-view of its group ("By rule" / "All findings" in Issues). */
+function subLabel(id: TabId, t: SiteCrawlerCopy): string {
+  if (id === "rules") return t.ux.subByRule;
+  if (id === "issues") return t.ux.subAll;
+  return tabLabel(id, t);
 }
 
 /** The Add data section's view of the crawl quota (Phase 4d). */
@@ -232,7 +273,22 @@ export function SiteCrawlerClient({ locale, view = "start", crawlId = null }: { 
   // Each panel's data is fetched when its tab is first opened, not up front:
   // a crawl of 25,000 pages has four more endpoints behind it and nobody
   // opens all of them.
-  const [tab, setTab] = useState<TabId>("overview");
+  // Results open on Issues → By rule; ?rule=<id> (Fix first's link) opens that rule.
+  const deepRule = useSearchParams()?.get("rule") ?? null;
+  const [tab, setTab] = useState<TabId>("rules");
+  const [ruleSel, setRuleSel] = useState<string | null>(deepRule);
+  /** The sub-view last open in each group, so switching groups and back keeps your place. */
+  const [lastSub, setLastSub] = useState<Partial<Record<GroupId, TabId>>>({});
+  const pickTab = (id: TabId) => {
+    setTab(id);
+    setLastSub((m) => ({ ...m, [GROUP_OF[id]]: id }));
+  };
+  /** Fix first → Issues › By rule, that rule's affected pages open. */
+  const openRule = (ruleId: string) => {
+    setRuleSel(ruleId);
+    pickTab("rules");
+    if (typeof document !== "undefined") document.getElementById("tab-issues")?.scrollIntoView?.({ block: "start" });
+  };
   const [summary, setSummary] = useState<CrawlSummaryDto | PartialSummaryDto | null>(null);
   // Phase 4b: the segment every tab, total and CSV is filtered to, per crawl
   // (picking another crawl drops it without an effect).
@@ -375,9 +431,7 @@ export function SiteCrawlerClient({ locale, view = "start", crawlId = null }: { 
     async (crawlId: string, which: TabId): Promise<unknown | null> => {
       const seg = segment ? `segment=${encodeURIComponent(segment)}` : "";
       const url =
-        which === "overview"
-          ? `/api/seo/v1/crawl/${crawlId}/summary?${seg}`
-          : which === "duplicates"
+        which === "duplicates"
             ? `/api/seo/v1/crawl/${crawlId}/duplicates?type=${dupKind}&page=${dupPage}&${seg}`
             : which === "redirects"
               ? `/api/seo/v1/crawl/${crawlId}/redirects?page=${redirectPage}&${seg}`
@@ -397,12 +451,11 @@ export function SiteCrawlerClient({ locale, view = "start", crawlId = null }: { 
   );
 
   useEffect(() => {
-    if (!active || isInFlight(active.status) || tab === "issues" || tab === "rules" || tab === "extraction" || tab === "external" || tab === "structure" || tab === "compare") return;
+    if (!active || isInFlight(active.status) || (tab !== "duplicates" && tab !== "redirects" && tab !== "pages")) return;
     let cancelled = false;
     void (async () => {
       const data = await loadTab(active.id, tab);
       if (cancelled) return;
-      if (tab === "overview") setSummary((data as CrawlSummaryDto | PartialSummaryDto | null) ?? null);
       if (tab === "duplicates") setDuplicates((data as DuplicatePage | null) ?? null);
       if (tab === "redirects") setRedirects((data as RedirectPage | null) ?? null);
       if (tab === "pages") setPageRows((data as CrawlPagesPage | null) ?? null);
@@ -411,6 +464,24 @@ export function SiteCrawlerClient({ locale, view = "start", crawlId = null }: { 
       cancelled = true;
     };
   }, [active, tab, loadTab]);
+
+  // The summary feeds the hero, Fix first and the Data tabs: loaded once the
+  // crawl settles, again when the segment changes.
+  const settledId = active && !isInFlight(active.status) ? active.id : null;
+  useEffect(() => {
+    if (!settledId) return;
+    let cancelled = false;
+    const seg = segment ? `segment=${encodeURIComponent(segment)}` : "";
+    void fetch(`/api/seo/v1/crawl/${settledId}/summary?${seg}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: CrawlSummaryDto | PartialSummaryDto | null) => {
+        if (!cancelled) setSummary(d ?? null);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [settledId, segment]);
 
   async function start(event: React.FormEvent) {
     event.preventDefault();
@@ -814,6 +885,9 @@ export function SiteCrawlerClient({ locale, view = "start", crawlId = null }: { 
   }
 
   // ── Results (/crawler/[id]) ─────────────────────────────────────────────
+  const tabsOf = crawlTabs(active);
+  const subsOf = (g: GroupId) => SUB_ORDER.filter((id) => GROUP_OF[id] === g && tabsOf.includes(id));
+  const groupsOf = GROUPS.filter((g) => subsOf(g).length > 0);
   return (
     <div className="space-y-6">
       <CrawlerHeader t={t} locale={locale} quota={quota} />
@@ -823,22 +897,41 @@ export function SiteCrawlerClient({ locale, view = "start", crawlId = null }: { 
       {active && (
         <Card>
           <CardHeader>
-            <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0">
-                <p className="truncate text-sm font-medium text-gray-900">
+                <h2 className="truncate text-base font-semibold text-gray-900" data-testid="results-host">
                   {active.mode === "list" && <Badge className="mr-2">{t.p4a.listBadge}</Badge>}
-                  {active.rootUrl}
+                  {hostOfCrawl(active.rootUrl)}
+                </h2>
+                <p className="text-xs text-gray-600">
+                  {formatDateTime(active.createdAt, locale)} · <span className="truncate">{active.rootUrl}</span>
                 </p>
-                <p className="text-xs text-gray-500">{formatDateTime(active.createdAt, locale)}</p>
               </div>
               <div className="flex items-center gap-2">
-                {/* Phase 4c: the PDF crawl report; the button probes the route and hides itself when unavailable. */}
-                {flag("crawl.reports") && active.status === "COMPLETED" && !active.dataPurgedAt && (
-                  <ReportDownloadButton key={active.id} endpoint={`/api/seo/v1/crawl/${active.id}/report`} />
-                )}
                 <Badge variant={active.status === "FAILED" ? "danger" : "default"}>
                   {statusLabel(active.status, t)}
                 </Badge>
+                {!running && !active.dataPurgedAt && (
+                  <ExportsMenu
+                    t={t}
+                    links={[
+                      { href: `/api/seo/v1/crawl/${active.id}/export?view=issues${segment ? `&segment=${encodeURIComponent(segment)}` : ""}`, label: t.ux.exportIssues },
+                      { href: `/api/seo/v1/crawl/${active.id}/pages?format=csv${segment ? `&segment=${encodeURIComponent(segment)}` : ""}`, label: t.ux.exportPages },
+                      { href: `/api/seo/v1/crawl/${active.id}/export?view=broken-links${segment ? `&segment=${encodeURIComponent(segment)}` : ""}`, label: t.p4a.exportBrokenLinks },
+                      { href: `/api/seo/v1/crawl/${active.id}/export?view=redirects${segment ? `&segment=${encodeURIComponent(segment)}` : ""}`, label: t.p4a.exportRedirectHops },
+                      ...(tabsOf.includes("external") ? [{ href: `/api/seo/v1/crawl/${active.id}/external?format=csv`, label: t.ux.exportExternal }] : []),
+                      ...(tabsOf.includes("extraction") ? [{ href: `/api/seo/v1/crawl/${active.id}/extractions?${extractionQuery("", segment || null)}&format=csv`, label: t.ux.exportExtraction }] : []),
+                    ]}
+                  >
+                    {/* Phase 4c: the PDF crawl report; the button probes the route and hides itself when unavailable. */}
+                    {flag("crawl.reports") && active.status === "COMPLETED" && (
+                      <ReportDownloadButton key={active.id} endpoint={`/api/seo/v1/crawl/${active.id}/report`} />
+                    )}
+                    {flag("crawl.sheets") && active.status === "COMPLETED" && (
+                      <SheetsExport crawlId={active.id} t={t.p4c} int={int} guideHref={lookerStudioHref(locale)} />
+                    )}
+                  </ExportsMenu>
+                )}
               </div>
             </div>
           </CardHeader>
@@ -848,7 +941,7 @@ export function SiteCrawlerClient({ locale, view = "start", crawlId = null }: { 
               <div className="space-y-3">
                 <div className="h-2 w-full overflow-hidden rounded-full bg-gray-100">
                   <div
-                    className="h-full rounded-full bg-gray-900 transition-[width] duration-500"
+                    className="h-full rounded-full bg-gray-900 transition-[width] duration-500 motion-reduce:transition-none"
                     style={{
                       width: `${Math.min(100, Math.round((active.pagesCrawled / Math.max(1, active.urlCap)) * 100))}%`,
                     }}
@@ -858,31 +951,38 @@ export function SiteCrawlerClient({ locale, view = "start", crawlId = null }: { 
                   {t.progress(int.format(active.pagesCrawled), int.format(active.urlCap))}
                 </p>
                 {active.renderMode !== "none" && (
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-gray-600">
                     {t.renderedProgress(int.format(active.pagesRendered), int.format(active.renderCap))}
                   </p>
                 )}
-                <p className="text-xs text-gray-400">{t.crawlingNote}</p>
+                <p className="text-xs text-gray-600">{t.crawlingNote}</p>
                 <Button variant="outline" size="sm" onClick={cancel} disabled={cancelling}>
                   {cancelling ? t.cancelling : t.cancelCta}
                 </Button>
               </div>
             ) : (
               <div className="space-y-4">
-                <Summary crawl={active} t={t} int={int} />
-                <CrawlTools
-                  crawl={active}
-                  segment={segment || null}
-                  t={t.p4a}
-                  kept={int.format(quota?.crawlsKept ?? 0)}
-                  onUpdated={(c) => {
-                    setActive(c);
-                    setCrawls((list) => list.map((x) => (x.id === c.id ? { ...x, pinned: c.pinned } : x)));
-                  }}
-                />
-                {flag("crawl.sheets") && active.status === "COMPLETED" && !active.dataPurgedAt && (
-                  <SheetsExport crawlId={active.id} t={t.p4c} int={int} guideHref={lookerStudioHref(locale)} />
-                )}
+                <CompletenessBanner lines={completenessLines(active, summary, t, int)} />
+                <ResultsHero crawl={active} summary={summary} t={t} int={int} />
+                <details className="rounded-lg border border-gray-200" id="crawl-details">
+                  <summary className="cursor-pointer select-none px-4 py-2 text-sm font-medium text-gray-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500">
+                    {t.ux.details}
+                  </summary>
+                  <div className="space-y-4 border-t border-gray-200 p-4">
+                    <Summary crawl={active} t={t} int={int} />
+                    <OverviewPanel summary={summary} t={t} int={int} />
+                    <CrawlTools
+                      crawl={active}
+                      segment={segment || null}
+                      t={t.p4a}
+                      kept={int.format(quota?.crawlsKept ?? 0)}
+                      onUpdated={(c) => {
+                        setActive(c);
+                        setCrawls((list) => list.map((x) => (x.id === c.id ? { ...x, pinned: c.pinned } : x)));
+                      }}
+                    />
+                  </div>
+                </details>
               </div>
             )}
           </CardContent>
@@ -890,30 +990,43 @@ export function SiteCrawlerClient({ locale, view = "start", crawlId = null }: { 
       )}
 
       {active && !running && (
-        <div className="flex flex-wrap gap-2 border-b border-gray-200 pb-2">
-          <SegmentPicker names={segmentNames} value={segment} onChange={pickSegment} t={t} />
-          {crawlTabs(active).map((id) => (
-            <button
-              key={id}
-              type="button"
-              onClick={() => setTab(id)}
-              aria-current={tab === id ? "page" : undefined}
-              className={
-                tab === id
-                  ? "rounded-lg bg-gray-900 px-3 py-1.5 text-sm font-medium text-white"
-                  : "rounded-lg px-3 py-1.5 text-sm font-medium text-gray-500 hover:bg-gray-100"
-              }
-            >
-              {tabLabel(id, t)}
-            </button>
-          ))}
+        <FixFirst
+          summary={summary}
+          onOpenRule={openRule}
+          ruleHref={(r) => `${CRAWLER_ROUTES.results(active.id)}?rule=${encodeURIComponent(r)}`}
+          t={t}
+          int={int}
+        />
+      )}
+
+      {active && !running && (
+        <div className="space-y-2">
+          <div className="flex flex-wrap items-end justify-between gap-2">
+            <TabStrip
+              label={t.ux.tabsLabel}
+              items={groupsOf.map((g) => ({ id: g, label: groupLabel(g, t) }))}
+              current={GROUP_OF[tab]}
+              onSelect={(g) => setTab(lastSub[g] && tabsOf.includes(lastSub[g]!) ? lastSub[g]! : subsOf(g)[0]!)}
+            />
+            <SegmentPicker names={segmentNames} value={segment} onChange={pickSegment} t={t} />
+          </div>
+          {subsOf(GROUP_OF[tab]).length > 1 && (
+            <TabStrip
+              size="sm"
+              label={t.ux.subTabsLabel}
+              items={subsOf(GROUP_OF[tab]).map((id) => ({ id, label: subLabel(id, t) }))}
+              current={tab}
+              onSelect={pickTab}
+            />
+          )}
         </div>
       )}
 
-      {active && !running && tab === "overview" && (
+      {active && !running && <div role="tabpanel" aria-labelledby={`tab-${subsOf(GROUP_OF[tab]).length > 1 ? tab : GROUP_OF[tab]}`} className="space-y-4">
+
+      {active && !running && tab === "metrics" && (
         <>
-          <SegmentOverview segments={summary?.segments} segment={summary?.segment} onPick={pickSegment} t={t} int={int} />
-          {summary && "metricOverview" in summary && summary.metricOverview && <MetricTiles data={summary.metricOverview} t={t.p4d} int={int} />}
+          {summary && "metricOverview" in summary && summary.metricOverview ? <MetricTiles data={summary.metricOverview} t={t.p4d} int={int} /> : <OverviewPanel summary={summary} t={t} int={int} />}
           {flag("crawl.ai") && summary && "metricOverview" in summary && summary.metricOverview && (
             <AiStatusLine status={summary.metricOverview.status as object} t={t.p4e} int={int} />
           )}
@@ -922,11 +1035,14 @@ export function SiteCrawlerClient({ locale, view = "start", crawlId = null }: { 
               {semanticStatusText((summary.metricOverview.status as { semantic?: Parameters<typeof semanticStatusText>[0] }).semantic, t.p4g, int)}
             </p>
           )}
-          <OverviewPanel summary={summary} t={t} int={int} />
         </>
       )}
 
-      {active && !running && tab === "rules" && <RulesPanel crawlId={active.id} segment={segment || null} t={t} int={int} />}
+      {active && !running && tab === "segments" && (
+        <SegmentOverview segments={summary?.segments} segment={summary?.segment} onPick={pickSegment} t={t} int={int} />
+      )}
+
+      {active && !running && tab === "rules" && <RulesPanel key={ruleSel ?? ""} crawlId={active.id} segment={segment || null} initialRule={ruleSel} t={t} int={int} />}
 
       {active && !running && tab === "external" && <ExternalPanel crawlId={active.id} t={t} int={int} />}
 
@@ -1140,7 +1256,7 @@ export function SiteCrawlerClient({ locale, view = "start", crawlId = null }: { 
           </CardContent>
         </Card>
       )}
-
+      </div>}
     </div>
   );
 }

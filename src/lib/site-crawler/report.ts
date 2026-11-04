@@ -5,6 +5,7 @@
 // signed-in tenant. Counts and capped samples only — the 20 busiest rules,
 // one example finding each, the segment table, the latest comparison.
 
+import { healthOf } from "./site-health";
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import { RULE_BY_ID } from "@/lib/crawl-rules";
@@ -29,6 +30,8 @@ export interface CrawlReportPayload {
   urlCap: number;
   stoppedReason: string | null;
   renderMode: string;
+  /** Site health 0–100 (site-health.ts); null on crawls from before it. */
+  health: number | null;
   totals: { ERROR: number; WARNING: number; NOTICE: number };
   byKind: Record<string, number>;
   families: { family: string; label: string; issue: number; warning: number; opportunity: number; total: number }[];
@@ -110,6 +113,7 @@ export async function crawlReportPayload(crawl: ReportCrawl): Promise<CrawlRepor
     urlCap: crawl.urlCap,
     stoppedReason: crawl.stoppedReason,
     renderMode: crawl.renderMode,
+    health: healthOf(crawl.summary),
     totals: await getIssueTotals(crawl.id, crawl.summary),
     byKind: tallies.issuesByKind,
     families: [...families.values()].sort((a, b) => b.total - a.total),

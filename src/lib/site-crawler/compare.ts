@@ -16,6 +16,7 @@
 // counts and the first COMPARE_SAMPLE URLs per bucket, kept under 1 MB; the
 // paged endpoint recomputes any bucket in full with a keyset cursor.
 
+import { healthOf } from "./site-health";
 import "server-only";
 import { Prisma } from "@/generated/prisma";
 import { prisma } from "@/lib/prisma";
@@ -40,6 +41,8 @@ export class CompareError extends Error {
 }
 
 export interface SideStats {
+  /** Site health of the crawl (unsegmented comparisons only; null otherwise or on older crawls). */
+  health?: number | null;
   pages: number;
   indexable: number;
   redirects: number;
@@ -211,6 +214,13 @@ export async function comparisonBucket(input: CompareInput, bucket: CompareBucke
   );
 }
 
+/** The crawl's stored site health; a segment of it has none (the score is whole-crawl). */
+async function sideHealth(tx: Tx, jobId: string, segment: number | null): Promise<number | null> {
+  if (segment !== null) return null;
+  const row = await tx.crawlJob.findUnique({ where: { id: jobId }, select: { summary: true } });
+  return healthOf(row?.summary ?? null);
+}
+
 async function sideStats(tx: Tx, table: "cmp_a" | "cmp_b", jobId: string, segment: number | null): Promise<SideStats> {
   const [s] = await tx.$queryRaw<{ pages: bigint; indexable: bigint; redirects: bigint; errors: bigint }[]>(Prisma.sql`
     SELECT count(*) AS pages,
@@ -276,8 +286,8 @@ export async function computeComparison(input: CompareInput): Promise<Comparison
         counts: { added: n("added"), removed: n("removed"), changed: n("changed"), issuesNew: n("issuesNew"), issuesResolved: n("issuesResolved") },
         changedFields: { status: n("f_status"), title: n("f_title"), canonical: n("f_canonical"), indexability: n("f_indexability") },
         summary: {
-          a: await sideStats(tx, "cmp_a", input.jobAId, input.segmentA),
-          b: await sideStats(tx, "cmp_b", input.jobBId, input.segmentB),
+          a: { ...(await sideStats(tx, "cmp_a", input.jobAId, input.segmentA)), health: await sideHealth(tx, input.jobAId, input.segmentA) },
+          b: { ...(await sideStats(tx, "cmp_b", input.jobBId, input.segmentB)), health: await sideHealth(tx, input.jobBId, input.segmentB) },
         },
         rules: rules.map((r) => ({ ruleId: r.rule, new: Number(r.new), resolved: Number(r.resolved) })),
         samples: {

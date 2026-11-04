@@ -185,6 +185,8 @@ export interface RuleTallyDto {
   count: number;
   kind: RuleKindDto;
   priority: "high" | "medium" | "low";
+  /** Distinct pages affected (Fix first); absent on summaries from before it. */
+  pages?: number;
 }
 
 /** A crawl from before Phase 2: no site-wide summary, tallies only. */

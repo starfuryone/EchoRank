@@ -47,6 +47,7 @@ import type { Ga4Metric, GscMetric } from "./metrics-shared";
 import { toTotals } from "./issue-totals";
 import { externalFacts, resolveExternalStatuses } from "./external-links";
 import { computeLinkScores } from "./link-score";
+import { priorityCounts, siteHealth, type SiteHealth } from "./site-health";
 
 export interface AggregateArgs {
   jobId: string;
@@ -78,6 +79,8 @@ export interface RuleTally {
   count: number;
   kind: RuleKind;
   priority: RulePriority;
+  /** Distinct pages with a finding of this rule (Fix first ranks by it). Absent on older summaries. */
+  pages?: number;
 }
 
 export interface CrawlSummary {
@@ -107,6 +110,8 @@ export interface CrawlSummary {
   deepestPages: { url: string; depth: number }[];
   /** Phase 3c: pages whose performance rules ran on an attached Lighthouse run. */
   psiPages?: number;
+  /** Site health 0–100 (site-health.ts), with its inputs. Absent on crawls from before it. */
+  health?: SiteHealth | null;
   /** Phase 4g: distinct external URLs, how many had their status resolved, and whether the resolve cap cut it short. */
   external?: { urls: number; checked: number; capped: boolean };
   /** Phase 4g: pages and followed internal edges Link Score ran over, and its bottom-decile threshold. */
@@ -328,6 +333,7 @@ export async function aggregateCrawl({
     inlinks: inlinkStats,
     deepestPages,
     psiPages,
+    health: siteHealth(priorityCounts(ruleTallies.issues), job.pagesCrawled),
     ...(Object.keys(metricsStatus).length ? { metrics: metricsStatus } : {}),
     ...(external ? { external } : {}),
     ...(linkScore ? { linkScore } : {}),
@@ -353,7 +359,7 @@ export async function recountIssues(jobId: string): Promise<{ issueCount: number
     issueDistribution(jobId, "type"),
     ruleTally(jobId),
     prisma.crawlIssue.count({ where: { crawlJobId: jobId } }),
-    prisma.crawlJob.findUnique({ where: { id: jobId }, select: { summary: true } }),
+    prisma.crawlJob.findUnique({ where: { id: jobId }, select: { summary: true, pagesCrawled: true } }),
   ]);
   const summary = {
     ...((job?.summary as object | null) ?? {}),
@@ -362,6 +368,8 @@ export async function recountIssues(jobId: string): Promise<{ issueCount: number
     totals: toTotals(issuesBySeverity),
     issues: ruleTallies.issues,
     issuesByKind: ruleTallies.byKind,
+    // Post-crawl steps add findings: health follows them.
+    health: siteHealth(priorityCounts(ruleTallies.issues), job?.pagesCrawled ?? 0),
   };
   await prisma.crawlJob.update({ where: { id: jobId }, data: { issueCount, summary: summary as object } });
   return { issueCount };
@@ -751,17 +759,18 @@ async function issueDistribution(
 
 /** Findings per rule id and totals by kind, for summary.issues / issuesByKind. */
 async function ruleTally(jobId: string): Promise<{ issues: Record<string, RuleTally>; byKind: Record<RuleKind, number> }> {
-  const groups = await prisma.crawlIssue.groupBy({
-    by: ["ruleId", "kind", "priority"],
-    where: { crawlJobId: jobId, ruleId: { not: null } },
-    _count: { _all: true },
-  });
+  // One grouped read: findings and the distinct pages they sit on, per rule.
+  const groups = await prisma.$queryRaw<{ ruleId: string; kind: string; priority: string; n: bigint; pages: bigint }[]>`
+    SELECT "ruleId", "kind", "priority", count(*) AS n, count(DISTINCT "crawlPageId") AS pages
+    FROM "crawl_issues"
+    WHERE "crawlJobId" = ${jobId} AND "ruleId" IS NOT NULL
+    GROUP BY "ruleId", "kind", "priority"`;
   const issues: Record<string, RuleTally> = {};
   const byKind: Record<RuleKind, number> = { issue: 0, warning: 0, opportunity: 0 };
   for (const g of groups) {
     const kind = g.kind as RuleKind;
-    issues[g.ruleId!] = { count: g._count._all, kind, priority: g.priority as RulePriority };
-    if (kind in byKind) byKind[kind] += g._count._all;
+    issues[g.ruleId] = { count: Number(g.n), kind, priority: g.priority as RulePriority, pages: Number(g.pages) };
+    if (kind in byKind) byKind[kind] += Number(g.n);
   }
   return { issues, byKind };
 }

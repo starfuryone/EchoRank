@@ -66,10 +66,13 @@ function evidenceText(e: Record<string, unknown>): string {
 export function RulesPanel({
   crawlId,
   segment = null,
+  initialRule = null,
   t,
   int,
 }: {
   crawlId: string;
+  /** Open with this rule's affected pages showing (Fix first, ?rule=). */
+  initialRule?: string | null;
   /** Phase 4b segment filter (index), or null for the whole crawl. */
   segment?: string | null;
   t: SiteCrawlerCopy;
@@ -78,7 +81,7 @@ export function RulesPanel({
   const seg = segment === null ? "" : `segment=${encodeURIComponent(segment)}`;
   const [data, setData] = useState<RulesResponse | null>(null);
   const [kind, setKind] = useState<RuleKindDto | "all">("all");
-  const [selected, setSelected] = useState<string | null>(null);
+  const [selected, setSelected] = useState<string | null>(initialRule);
   const [pages, setPages] = useState<RulePagesResponse | null>(null);
   const [page, setPage] = useState(1);
 
