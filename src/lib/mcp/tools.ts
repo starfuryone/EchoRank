@@ -351,7 +351,7 @@ export const MCP_TOOLS: readonly McpToolDefinition[] = [
   {
     name: "start_crawl",
     description:
-      "Start a site crawl (the Nosy Bat crawler) — the same as POST /api/public/v1/crawl. Spider mode follows links from `url`; list mode fetches `urls` once each. Uses one crawl from this month's allowance and runs within the plan's URL and render caps. Returns the crawl id and its queue position; poll get_crawl_status.",
+      "Start a site crawl — the same as POST /api/public/v1/crawl. Spider mode follows links from `url`; list mode fetches `urls` once each. Uses one crawl from this month's allowance and runs within the plan's URL and render caps. Returns the crawl id and its queue position; poll get_crawl_status.",
     inputSchema: {
       type: "object",
       properties: {
