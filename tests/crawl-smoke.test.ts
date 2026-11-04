@@ -6,7 +6,7 @@
 // enqueued crawl as the handler would build it, the estimate is printed
 // before the enqueue, the checks pass on a healthy crawl and FAIL (exit 1)
 // on the drifts they exist for, and no credential is ever printed.
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const events: string[] = [];
 
@@ -22,6 +22,8 @@ const db = {
   seoCalls: [] as Row[],
   earlier: [] as Row[],
   pages: [] as Row[],
+  jsValues: [] as Row[],
+  aiValues: [] as Row[],
 };
 
 const JOB_ID = "job_smoke";
@@ -81,11 +83,13 @@ const prismaFake = {
     ]),
   },
   crawlExtraction: {
+    findMany: vi.fn(async ({ where }: { where: { kind?: string } }) => (where.kind === "js" ? db.jsValues : db.aiValues)),
     groupBy: vi.fn(async ({ by }: { by: string[] }) =>
       by[0] === "extractorIndex" ? [{ extractorIndex: 0, _count: { _all: 2 } }, { extractorIndex: 1, _count: { _all: 1 } }] : [{ pageId: "p1", _count: { _all: 2 } }],
     ),
   },
   gscConnection: { findUnique: vi.fn(async () => null) },
+  tenantAiKey: { findMany: vi.fn(async () => []) },
   seoApiCall: {
     findFirst: vi.fn(async () => ({ costUsd: 0.02 })),
     findMany: vi.fn(async () => db.seoCalls),
@@ -315,5 +319,77 @@ describe("crawl smoke: a run", () => {
     const { result } = await run(FULL, {});
     expect(fetchStub).not.toHaveBeenCalled();
     expect(result.lines.find((l) => l.name === "PDF report")).toMatchObject({ verdict: "FAIL", value: expect.stringContaining("AUTH_SECRET") });
+  });
+});
+
+// ─── Phase 4e: --js, --ai, --login ──────────────────────────────────────────
+
+describe("crawl smoke: 4e flags", () => {
+  const E4 = ["--tenant", "smoke", "--url", "https://echorank360.com", "--render", "thin", "--js", "dataLayer", "--ai", "suggest title", "--ai-pages", "2", "--login", "--timeout", "1"];
+  const sealedLogin = {
+    loginUrl: "https://echorank360.com/login", usernameSelector: "#u", passwordSelector: "#p", submitSelector: "#go",
+    successCheck: { kind: "urlPrefix", value: "https://echorank360.com/account" },
+    username: { enc: "v1:a:b:c" }, password: { enc: "v1:d:e:f" },
+  };
+  beforeEach(() => {
+    healthy();
+    vi.clearAllMocks();
+    prismaFake.crawlSiteDefault.findUnique.mockResolvedValue({ verifiedAt: T0, config: null, jsSnippets: null, login: sealedLogin } as never);
+    const ai = { status: "done", targets: 2, completed: 2, failed: 0, tokens: 1800 };
+    const loggedIn = (status: string, m: Record<string, unknown> = {}) => job(status, m, { summary: { totals: { ERROR: 1, WARNING: 2, NOTICE: 3 }, metrics: m, login: { status: "ok" } } });
+    db.jobStates = [loggedIn("RUNNING"), loggedIn("COMPLETED", { ai: { status: "running" } }), loggedIn("COMPLETED", { ai })];
+    db.jsValues = [{ pageId: "p1", values: ['[{"event":"gtm.js"}]'] }, { pageId: "p2", values: ["error: boom"] }];
+    db.aiValues = [{ pageId: "p1", values: ["Title: A"] }, { pageId: "p2", values: ["Title: B"] }];
+    let reads = 0;
+    // Read by the quota (start card) and the smoke's "before"; then after the run.
+    fakeRedis.get.mockImplementation(async () => (reads++ < 2 ? "1000" : "2800") as never);
+    prismaFake.crawlPage.count.mockResolvedValue(2);
+  });
+  afterEach(() => {
+    prismaFake.crawlSiteDefault.findUnique.mockResolvedValue(null as never);
+    fakeRedis.get.mockReset();
+    fakeRedis.get.mockImplementation(async () => null);
+    prismaFake.crawlPage.count.mockResolvedValue(3);
+  });
+
+  it("parses the flags; --js needs --render; --ai takes labels or ids", () => {
+    expect(parseArgs(E4, {})).toMatchObject({ js: "dataLayer", ai: ["title"], aiPages: 2, login: true });
+    expect(parseArgs(["--ai", "Grammar check,intent"], {}).ai).toEqual(["grammar", "intent"]);
+    expect(() => parseArgs(["--js", "dataLayer"], {})).toThrow(/--render/);
+    expect(() => parseArgs(["--render", "all", "--js", "custom"], {})).toThrow(/--js takes/);
+    expect(() => parseArgs(["--ai", "poem"], {})).toThrow(/unknown prompt/);
+    expect(() => parseArgs(["--ai", "title,intent,summary,grammar"], {})).toThrow(/at most 3/);
+  });
+
+  it("asks for the snippet, the prompts and the saved login in a body the handler accepts", () => {
+    const body = requestBody(parseArgs(E4, {})) as { config: Record<string, unknown> };
+    expect(StartCrawlBodySchema.safeParse(body).success).toBe(true);
+    expect(body.config).toMatchObject({
+      js: [{ name: "dataLayer", preset: "dataLayer", selector: null, code: null }],
+      ai: { provider: "claude", prompts: [{ preset: "title", text: null }], top: { pages: 2, segment: null } },
+      useLogin: true,
+    });
+  });
+
+  it("PASSes snippet values, AI answers with the meter under the estimate × 1.5, and authenticated pages", async () => {
+    const { result, out } = await run(E4);
+    const config = db.createdJob!.config as Record<string, unknown>;
+    expect(config.login).toEqual(sealedLogin);
+    expect(verdictOf(result.lines, "js snippet values present")).toBe("PASS");
+    expect(verdictOf(result.lines, "ai values present")).toBe("PASS");
+    expect(result.lines.find((l) => l.name.startsWith("ai token meter"))).toMatchObject({ verdict: "PASS", value: "meter moved 1800 · estimate 4000 · limit 6000" });
+    expect(verdictOf(result.lines, "authenticated pages crawled")).toBe("PASS");
+    expect(out.join("\n")).not.toMatch(/v1:a:b:c|v1:d:e:f/);
+  });
+
+  it("FAILs when the meter moved past 1.5× the estimate, or the login failed", async () => {
+    let reads = 0;
+    fakeRedis.get.mockImplementation(async () => (reads++ < 2 ? "0" : "9000") as never);
+    const failed = (status: string) => job(status, {}, { summary: { totals: { ERROR: 1, WARNING: 2, NOTICE: 3 }, metrics: { ai: { status: "done" } }, login: { status: "failed", reason: "success_check_failed" } } });
+    db.jobStates = [failed("COMPLETED")];
+    const { result } = await run(E4);
+    expect(verdictOf(result.lines, "ai token meter")).toBe("FAIL");
+    expect(result.lines.find((l) => l.name.startsWith("authenticated pages"))).toMatchObject({ verdict: "FAIL", value: "login failed (success_check_failed)" });
+    expect(result.exitCode).toBe(1);
   });
 });

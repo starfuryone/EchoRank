@@ -49,6 +49,9 @@ import { START_RATE_LIMIT, START_RATE_WINDOW_MS, StartCrawlBodySchema, startRate
 import { COMPARE_BUCKETS } from "./compare";
 import { THIN_MAX_WORDS, RENDER_MODES, type RenderMode } from "./types";
 import { validateRootUrl } from "./url";
+import { JS_PRESETS, type JsPreset } from "./js-snippets";
+import { aiTokenEstimate, type AiPreset } from "./ai-shared";
+import { marketingTokensUsed } from "@/lib/marketing/quota";
 
 // ─── Arguments ───────────────────────────────────────────────────────────────
 
@@ -61,21 +64,38 @@ export interface SmokeArgs {
   extract: ExtractorPreset[];
   search: string | null;
   segment: string | null;
+  /** Phase 4e: one custom JavaScript preset (needs --render), AI prompt presets on --ai-pages pages, the site's saved login. */
+  js: JsPreset | null;
+  ai: AiPreset[];
+  aiPages: number;
+  login: boolean;
   timeoutMin: number;
   baseUrl: string;
 }
+
+/** --js takes the presets that need no further input. */
+const SMOKE_JS = JS_PRESETS.filter((p) => p !== "loadMore" && p !== "custom");
+/** --ai takes a preset id or its label, comma-separated: "suggest title", "grammar check", … */
+const AI_ALIASES: Record<string, AiPreset> = {
+  intent: "intent", "classify intent": "intent",
+  summary: "summary", summarise: "summary", summarize: "summary",
+  title: "title", "suggest title": "title", "suggest title + description": "title",
+  grammar: "grammar", "grammar check": "grammar",
+};
 
 /** "og" is shorthand for the three Open Graph presets; otherwise preset keys, comma-separated. */
 const EXTRACT_ALIASES: Record<string, ExtractorPreset[]> = { og: ["ogTitle", "ogDescription", "ogImage"] };
 
 export const USAGE = `usage: npm run crawl:smoke -- --tenant <slug> --url <https://host> [--render thin|all] [--psi N]
        [--backlinks N] [--extract og|<preset,...>] [--search "<text>"] [--segment "<glob>"] [--timeout <minutes>]
+       [--js ${SMOKE_JS.join("|")}] [--ai "suggest title"|intent|summary|grammar[,…]] [--ai-pages N] [--login]
 presets: ${Object.keys(EXTRACTOR_PRESETS).join(", ")} (og = ogTitle,ogDescription,ogImage)
 env:   CRAWL_SMOKE_BASE_URL (default http://127.0.0.1:4400) — the web process the API checks call`;
 
 export function parseArgs(argv: readonly string[], env: Record<string, string | undefined> = process.env): SmokeArgs {
   const out: SmokeArgs = {
     tenant: null, url: null, render: null, psi: null, backlinks: null, extract: [], search: null, segment: null,
+    js: null, ai: [], aiPages: 5, login: false,
     timeoutMin: 20, baseUrl: (env.CRAWL_SMOKE_BASE_URL || "http://127.0.0.1:4400").replace(/\/+$/, ""),
   };
   const int = (name: string, v: string | undefined) => {
@@ -113,9 +133,27 @@ export function parseArgs(argv: readonly string[], env: Record<string, string | 
       case "--search": out.search = take(); break;
       case "--segment": out.segment = take(); break;
       case "--timeout": out.timeoutMin = int("timeout", take()); break;
+      case "--js": {
+        const p = take();
+        if (!(SMOKE_JS as readonly string[]).includes(p)) throw new Error(`--js takes ${SMOKE_JS.join(", ")}, got ${p}`);
+        out.js = p as JsPreset;
+        break;
+      }
+      case "--ai": {
+        for (const k of take().split(",").map((s) => s.trim().toLowerCase()).filter(Boolean)) {
+          const preset = AI_ALIASES[k];
+          if (!preset) throw new Error(`--ai: unknown prompt ${k}`);
+          if (!out.ai.includes(preset)) out.ai.push(preset);
+        }
+        if (out.ai.length > 3) throw new Error("--ai takes at most 3 prompts");
+        break;
+      }
+      case "--ai-pages": out.aiPages = int("ai-pages", take()); break;
+      case "--login": out.login = true; break;
       default: throw new Error(`unknown argument ${a}`);
     }
   }
+  if (out.js && !out.render) throw new Error("--js runs on rendered pages: add --render thin|all");
   return out;
 }
 
@@ -130,6 +168,9 @@ export function requestBody(args: SmokeArgs): unknown {
       backlinks: args.backlinks ? { pages: args.backlinks, segment: null } : null,
     };
   }
+  if (args.js) config.js = [{ name: args.js, preset: args.js, selector: null, code: null }];
+  if (args.ai.length) config.ai = { provider: "claude", prompts: args.ai.map((preset) => ({ preset, text: null })), top: { pages: args.aiPages, segment: null } };
+  if (args.login) config.useLogin = true;
   return {
     url: args.url ?? "",
     renderMode: args.render ?? "none",
@@ -197,6 +238,7 @@ export const GATED_FAMILIES: Partial<Record<RuleFamily, FlagName>> = {
   extraction: "crawl.extraction",
   robots: "crawl.customRobots",
   amp: "crawl.amp",
+  ai: "crawl.ai",
 };
 
 type Num = number | null | undefined;
@@ -289,6 +331,8 @@ export async function familyFacts(jobId: string, config: ReturnType<typeof readS
     robots: Boolean(config?.customRobots),
     // Phase 4e: whether a rule fires depends on the validator and the AMP pair; only "AMP was found" is stored.
     amp: (await prisma.crawlPage.count({ where: { crawlJobId: jobId, OR: [{ ampHtml: { not: null } }, { isAmp: true }] } })) > 0 ? "unknown" : false,
+    // Phase 4e: whether a rule fires depends on what the model answered; only that it answered is countable.
+    ai: config?.ai ? "unknown" : false,
   };
 }
 
@@ -370,11 +414,13 @@ const JOB_SELECT = {
 const TERMINAL = new Set(["COMPLETED", "FAILED", "CANCELLED"]);
 
 /** Opted-in post-crawl sources still running. Empty once every one is done or stopped. */
-export function pendingMetrics(job: Pick<JobRow, "config" | "summary">): ("psi" | "backlinks")[] {
+export function pendingMetrics(job: Pick<JobRow, "config" | "summary">): ("psi" | "backlinks" | "ai")[] {
   const add = readStoredConfig(job.config)?.addData;
+  const ai = readStoredConfig(job.config)?.ai;
   const states = ((job.summary as { metrics?: Record<string, SourceState | undefined> } | null)?.metrics ?? {});
   const settled = (s: SourceState | undefined) => s?.status === "done" || s?.status === "stopped";
-  const out: ("psi" | "backlinks")[] = [];
+  const out: ("psi" | "backlinks" | "ai")[] = [];
+  if (ai && flag("crawl.ai") && !settled(states.ai)) out.push("ai");
   if (add?.backlinks && flag("crawl.backlinks") && !settled(states.backlinks)) out.push("backlinks");
   if (add?.psi && flag("crawl.psi") && !settled(states.psi)) out.push("psi");
   return out;
@@ -481,6 +527,11 @@ export async function runSmoke(args: SmokeArgs, deps: SmokeDeps): Promise<SmokeR
     check("FAIL", "start", "rate limited (3 starts a minute); wait a minute");
     return finish(null);
   }
+
+  // Phase 4e: the Marketing Studio token meter before the run, for the AI check.
+  const aiEstimate = flag("crawl.ai") ? aiTokenEstimate(body.config?.ai ?? null) : 0;
+  const tokensBefore = aiEstimate ? await marketingTokensUsed(tenant.id) : 0;
+  if (aiEstimate) say(`[smoke] AI estimate ${aiEstimate} tokens (${body.config!.ai!.top.pages} pages × ${body.config!.ai!.prompts.length} prompts × 2k) · meter ${tokensBefore}`);
 
   let jobId: string;
   try {
@@ -714,9 +765,43 @@ export async function runSmoke(args: SmokeArgs, deps: SmokeDeps): Promise<SmokeR
   if (!args.extract.length) check("SKIP", "extraction values", "no --extract");
   else {
     const n = config?.extractors.length ?? 0;
-    const rows = await prisma.crawlExtraction.groupBy({ by: ["extractorIndex"], where: { crawlJobId: jobId, NOT: { values: { isEmpty: true } } }, _count: { _all: true } });
+    const rows = await prisma.crawlExtraction.groupBy({ by: ["extractorIndex"], where: { crawlJobId: jobId, kind: "extract", NOT: { values: { isEmpty: true } } }, _count: { _all: true } });
     const per = (config?.extractors ?? []).map((e, i) => `${e.name} ${rows.find((r) => r.extractorIndex === i)?._count._all ?? 0}`).join(" · ");
     check(rows.length > 0 ? "PASS" : "FAIL", "extraction values present", n ? `pages with a value: ${per}` : "no extractor reached the crawl's config");
+  }
+  // ── Phase 4e ─────────────────────────────────────────────────────────────
+  const valuesOf = async (kind: "js" | "ai") => {
+    const rows = await prisma.crawlExtraction.findMany({ where: { crawlJobId: jobId, kind }, select: { pageId: true, values: true } });
+    const errors = rows.filter((r) => (r.values[0] ?? "").startsWith("error: ")).length;
+    return { rows: rows.length, ok: rows.length - errors, errors, pages: new Set(rows.map((r) => r.pageId)).size };
+  };
+  if (!args.js) check("SKIP", "js snippet values", "no --js");
+  else if (!flag("crawl.customJs")) check("SKIP", "js snippet values", "crawl.customJs is off");
+  else if (!config?.js?.length) check("FAIL", "js snippet values present", "the snippet did not reach the crawl's config");
+  else {
+    const v = await valuesOf("js");
+    check(v.ok > 0 ? "PASS" : "FAIL", "js snippet values present", `${args.js}: ${v.ok} values · ${v.errors} errors on ${v.pages} of ${job.pagesRendered} rendered pages`);
+  }
+  if (!args.ai.length) check("SKIP", "ai values", "no --ai");
+  else if (!flag("crawl.ai")) check("SKIP", "ai values", "crawl.ai is off");
+  else if (!config?.ai) check("FAIL", "ai values present", "the prompts did not reach the crawl's config");
+  else {
+    const v = await valuesOf("ai");
+    const st = (job.summary as { metrics?: { ai?: SourceState } } | null)?.metrics?.ai;
+    check(v.ok > 0 ? "PASS" : "FAIL", "ai values present", `${v.ok} answers · ${v.errors} errors on ${v.pages} pages${st?.stoppedReason ? ` · stopped: ${st.stoppedReason}` : ""}`);
+    const moved = (await marketingTokensUsed(tenant.id)) - tokensBefore;
+    const ok = moved > 0 && moved < aiEstimate * 1.5;
+    check(ok ? "PASS" : "FAIL", "ai token meter < estimate × 1.5", `meter moved ${moved} · estimate ${aiEstimate} · limit ${Math.round(aiEstimate * 1.5)}`);
+  }
+  if (!args.login) check("SKIP", "authenticated pages", "no --login");
+  else if (!flag("crawl.login")) check("SKIP", "authenticated pages", "crawl.login is off");
+  else {
+    const login = (job.summary as { login?: { status?: string; reason?: string } } | null)?.login;
+    const saved = config?.login ?? null;
+    const prefix = saved?.successCheck.kind === "urlPrefix" ? saved.successCheck.value : null;
+    const behind = prefix ? await prisma.crawlPage.count({ where: { crawlJobId: jobId, statusCode: 200, url: { startsWith: prefix } } }) : job.pagesCrawled;
+    if (login?.status !== "ok") check("FAIL", "authenticated pages crawled", `login ${login?.status ?? "not attempted"}${login?.reason ? ` (${login.reason})` : ""}`);
+    else check(behind > 0 ? "PASS" : "FAIL", "authenticated pages crawled", prefix ? `logged in · ${behind} pages answered 200 under ${prefix}` : `logged in · ${behind} pages`);
   }
   if (!args.search) check("SKIP", "search counts", "no --search");
   else {
