@@ -136,7 +136,7 @@ describe("the tick", () => {
     crawlJob.create.mockImplementation(async (a: { data: Record<string, unknown> }) => ({ id: "job1", createdAt: new Date(), ...a.data }));
     const out = await svc.runScheduledCrawl("s1", new Date("2026-11-04T10:00:00Z"));
     expect(out).toEqual({ status: "started", crawlJobId: "job1" });
-    expect(crawlJob.create.mock.calls[0]![0].data).toMatchObject({ tenantId: "t1", rootUrl: "https://x.com/", urlCap: 5000, status: "QUEUED" });
+    expect(crawlJob.create.mock.calls[0]![0].data).toMatchObject({ tenantId: "t1", rootUrl: "https://x.com/", urlCap: 5000, status: "QUEUED", scheduleId: "s1" });
     expect(addJob).toHaveBeenCalledWith("site-crawl", "crawl", { crawlJobId: "job1", tenantId: "t1", scheduleId: "s1" });
     expect(crawlSchedule.update.mock.calls[0]![0].data.nextRunAt.toISOString()).toBe("2026-11-09T03:00:00.000Z");
   });

@@ -15,7 +15,7 @@ import { NextResponse } from "next/server";
 import { requirePaidPlan } from "@/lib/paid-plan";
 import { rateLimit } from "@/lib/rate-limit";
 import { prisma } from "@/lib/prisma";
-import type { CrawlStatus } from "@/generated/prisma";
+import type { CrawlStatus, Prisma } from "@/generated/prisma";
 import { startCrawl, toCrawlDto } from "@/lib/site-crawler/service";
 import { getCrawlQuota } from "@/lib/site-crawler/quota";
 import { crawlRouteError } from "@/lib/site-crawler/http";
@@ -27,14 +27,29 @@ import {
 } from "@/lib/site-crawler/start-body";
 
 const LIST_LIMIT = 20;
-/** History view (?history=1): a page of every crawl the tenant has, filtered. */
-const HISTORY_PAGE_SIZE = 50;
-const HISTORY_STATUSES: Record<string, CrawlStatus[]> = {
-  COMPLETED: ["COMPLETED"],
-  FAILED: ["FAILED"],
-  CANCELLED: ["CANCELLED"],
-  ACTIVE: ["QUEUED", "RUNNING"],
+/** History view (?history=1): a cursor page of every crawl the tenant has, filtered. */
+const HISTORY_PAGE_SIZE = 20;
+/** Distinct sites offered by the host filter. */
+const HISTORY_HOSTS_MAX = 100;
+/** "Stopped at limit": the crawl ended on the page or time ceiling, not an empty frontier. */
+const LIMIT_REASONS = ["url_cap", "time_cap"];
+const HISTORY_STATUSES: Record<string, Prisma.CrawlJobWhereInput> = {
+  COMPLETED: { status: "COMPLETED", stoppedReason: null },
+  STOPPED: { status: "COMPLETED", stoppedReason: { in: LIMIT_REASONS } },
+  // A list crawl whose list expired before it ran never crawled anything.
+  FAILED: { OR: [{ status: "FAILED" }, { status: "COMPLETED", stoppedReason: "list_expired" }] },
+  CANCELLED: { status: "CANCELLED" },
+  ACTIVE: { status: { in: ["QUEUED", "RUNNING"] satisfies CrawlStatus[] } },
 };
+
+/** Host of a root URL, lower case; "" when it does not parse. */
+function hostOf(rootUrl: string): string {
+  try {
+    return new URL(rootUrl).host.toLowerCase();
+  } catch {
+    return "";
+  }
+}
 
 export async function POST(request: Request) {
   try {
@@ -84,25 +99,51 @@ export async function GET(request?: Request) {
 
     const params = request ? new URL(request.url).searchParams : null;
     if (params?.get("history") === "1") {
-      const host = (params.get("host") ?? "").trim().slice(0, 200);
-      const statuses = HISTORY_STATUSES[params.get("status") ?? ""];
-      const page = Math.max(1, Math.min(10_000, Number.parseInt(params.get("page") ?? "1", 10) || 1));
-      const where = {
-        tenantId: tenant.tenantId,
-        ...(host ? { rootUrl: { contains: host, mode: "insensitive" as const } } : {}),
-        ...(statuses ? { status: { in: statuses } } : {}),
-      };
-      const [rows, total, quota] = await Promise.all([
+      // Exact site: the host of the root URL (with its port, if any), either scheme.
+      const host = (params.get("host") ?? "").trim().toLowerCase().slice(0, 200);
+      const status = HISTORY_STATUSES[params.get("status") ?? ""];
+      const filters: Prisma.CrawlJobWhereInput[] = [];
+      if (host) {
+        filters.push({
+          OR: ["http", "https"].flatMap((scheme) => [
+            { rootUrl: { startsWith: `${scheme}://${host}/`, mode: "insensitive" as const } },
+            { rootUrl: { equals: `${scheme}://${host}`, mode: "insensitive" as const } },
+          ]),
+        });
+      }
+      if (status) filters.push(status);
+      const where: Prisma.CrawlJobWhereInput = { tenantId: tenant.tenantId, AND: filters };
+
+      // Keyset cursor: the last crawl of the previous page, read tenant-scoped so
+      // another workspace's id positions nothing. An unknown cursor is page 1.
+      const cursorId = (params.get("cursor") ?? "").slice(0, 64);
+      const cursor = cursorId
+        ? await prisma.crawlJob.findFirst({ where: { id: cursorId, tenantId: tenant.tenantId }, select: { id: true, createdAt: true } })
+        : null;
+      const after: Prisma.CrawlJobWhereInput = cursor
+        ? { OR: [{ createdAt: { lt: cursor.createdAt } }, { createdAt: cursor.createdAt, id: { lt: cursor.id } }] }
+        : {};
+
+      const [rows, total, sites, quota] = await Promise.all([
         prisma.crawlJob.findMany({
-          where,
-          orderBy: { createdAt: "desc" },
-          skip: (page - 1) * HISTORY_PAGE_SIZE,
-          take: HISTORY_PAGE_SIZE,
+          where: { AND: [where, after] },
+          orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+          take: HISTORY_PAGE_SIZE + 1,
         }),
         prisma.crawlJob.count({ where }),
+        prisma.crawlJob.findMany({
+          where: { tenantId: tenant.tenantId },
+          distinct: ["rootUrl"],
+          select: { rootUrl: true },
+          orderBy: { rootUrl: "asc" },
+          take: HISTORY_HOSTS_MAX * 3,
+        }),
         getCrawlQuota(tenant.tenantId, tenant.tenant.planType),
       ]);
-      return NextResponse.json({ crawls: rows.map(toCrawlDto), quota, total, page, pageSize: HISTORY_PAGE_SIZE });
+      const page = rows.slice(0, HISTORY_PAGE_SIZE);
+      const nextCursor = rows.length > HISTORY_PAGE_SIZE ? page[page.length - 1].id : null;
+      const hosts = [...new Set(sites.map((r) => hostOf(r.rootUrl)).filter(Boolean))].sort().slice(0, HISTORY_HOSTS_MAX);
+      return NextResponse.json({ crawls: page.map(toCrawlDto), quota, total, nextCursor, pageSize: HISTORY_PAGE_SIZE, hosts });
     }
 
     const [rows, quota] = await Promise.all([

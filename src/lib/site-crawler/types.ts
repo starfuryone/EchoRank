@@ -59,6 +59,8 @@ export interface CrawlDto {
   health?: number | null;
   /** Findings by kind (summary.issuesByKind); null before the crawl settles. */
   kinds?: { issue: number; warning: number; opportunity: number } | null;
+  /** Started by a CrawlSchedule rather than by hand. */
+  scheduled?: boolean;
   /** Phase 4e forms login: failed = the crawl ran unauthenticated. */
   login?: { status: "ok" | "failed"; reason: string | null } | null;
 }

@@ -68,6 +68,8 @@ export interface CrawlJobDto {
   pinned: boolean;
   /** Set once retention deleted the crawl's pages: summary only from then on. */
   dataPurgedAt: string | null;
+  /** Started by a CrawlSchedule (crawl_jobs.scheduleId set). */
+  scheduled: boolean;
   /** Phase 4e forms login: how it went (failed = the crawl ran unauthenticated). Absent when no login was asked. */
   login?: { status: "ok" | "failed"; reason: string | null } | null;
   /** Site health 0–100 from the summary; null before it settles or on older crawls. */
@@ -101,6 +103,7 @@ export function toCrawlDto(row: {
   pinned?: boolean;
   dataPurgedAt?: Date | null;
   summary?: unknown;
+  scheduleId?: string | null;
 }): CrawlJobDto {
   return {
     id: row.id,
@@ -120,6 +123,7 @@ export function toCrawlDto(row: {
     config: viewCrawlConfig(readStoredConfig(row.config)),
     pinned: row.pinned ?? false,
     dataPurgedAt: row.dataPurgedAt?.toISOString() ?? null,
+    scheduled: Boolean(row.scheduleId),
     ...(row.summary !== undefined && loginOf(row.summary) ? { login: loginOf(row.summary) } : {}),
     ...(row.summary !== undefined ? { health: healthOf(row.summary), kinds: kindsOf(row.summary) } : {}),
   };
@@ -315,6 +319,7 @@ export async function startCrawl(
       renderMode: quota.renderCap > 0 ? renderMode : "none",
       renderCap: quota.renderCap,
       status: "QUEUED",
+      ...(opts.scheduleId ? { scheduleId: opts.scheduleId } : {}),
     },
   });
 

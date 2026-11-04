@@ -2267,6 +2267,9 @@ model CrawlJob {
   config        Json?
   /// Kept with full data past the plan's crawlsKept (≤ CRAWL_PIN_MAX per tenant).
   pinned        Boolean     @default(false)
+  /// The CrawlSchedule that started this crawl; null = started by hand. A plain
+  /// id, no FK: deleting the schedule keeps the crawl marked "Scheduled".
+  scheduleId    String?
   /// Set when retention deleted this crawl's pages, issues and links. The row
   /// and its summary stay forever (history list).
   dataPurgedAt  DateTime?

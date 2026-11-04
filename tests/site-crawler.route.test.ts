@@ -232,22 +232,65 @@ describe("tenant isolation", () => {
     expect(crawlJob.findMany.mock.calls[0]![0]!.where).toEqual({ tenantId: TENANT });
   });
 
-  it("History (?history=1): tenant-scoped, filtered by host and status, paged, with health and kind totals", async () => {
+  it("History (?history=1): tenant-scoped, exact site and status, cursor pages of 20, sites, health and kinds", async () => {
     authed();
-    crawlJob.findMany.mockResolvedValue([{ ...JOB_ROW, summary: { health: { score: 64 }, issuesByKind: { issue: 4, warning: 2, opportunity: 1 } } }]);
+    const row = (i: number) => ({ ...JOB_ROW, id: `c${i}`, scheduleId: i === 0 ? "sch_1" : null, summary: { health: { score: 64 }, issuesByKind: { issue: 4, warning: 2, opportunity: 1 } } });
+    crawlJob.findFirst.mockResolvedValue({ id: "c_prev", createdAt: new Date("2026-11-01T00:00:00Z") });
+    crawlJob.findMany
+      .mockResolvedValueOnce(Array.from({ length: 21 }, (_, i) => row(i)))
+      .mockResolvedValueOnce([{ rootUrl: "https://b.example/" }, { rootUrl: "https://a.example/x" }, { rootUrl: "http://a.example/" }, { rootUrl: "nope" }]);
     crawlJob.count.mockResolvedValue(51);
-    const res = await listCrawls(new Request("https://app.test/api/seo/v1/crawl?history=1&host=Shop.example&status=ACTIVE&page=2"));
+    const res = await listCrawls(new Request("https://app.test/api/seo/v1/crawl?history=1&host=Shop.example&status=STOPPED&cursor=c_prev"));
+    // The cursor is read tenant-scoped.
+    expect(crawlJob.findFirst.mock.calls[0]![0]!.where).toEqual({ id: "c_prev", tenantId: TENANT });
     const args = crawlJob.findMany.mock.calls[0]![0]!;
-    expect(args.where).toEqual({ tenantId: TENANT, rootUrl: { contains: "Shop.example", mode: "insensitive" }, status: { in: ["QUEUED", "RUNNING"] } });
-    expect(args).toMatchObject({ skip: 50, take: 50 });
-    expect(crawlJob.count.mock.calls[0]![0]!.where).toEqual(args.where);
+    const where = {
+      tenantId: TENANT,
+      AND: [
+        {
+          OR: [
+            { rootUrl: { startsWith: "http://shop.example/", mode: "insensitive" } },
+            { rootUrl: { equals: "http://shop.example", mode: "insensitive" } },
+            { rootUrl: { startsWith: "https://shop.example/", mode: "insensitive" } },
+            { rootUrl: { equals: "https://shop.example", mode: "insensitive" } },
+          ],
+        },
+        { status: "COMPLETED", stoppedReason: { in: ["url_cap", "time_cap"] } },
+      ],
+    };
+    const created = new Date("2026-11-01T00:00:00Z");
+    expect(args.where).toEqual({ AND: [where, { OR: [{ createdAt: { lt: created } }, { createdAt: created, id: { lt: "c_prev" } }] }] });
+    expect(args).toMatchObject({ take: 21, orderBy: [{ createdAt: "desc" }, { id: "desc" }] });
+    expect(crawlJob.count.mock.calls[0]![0]!.where).toEqual(where);
+    // The site list is the tenant's, whatever the filters.
+    expect(crawlJob.findMany.mock.calls[1]![0]!.where).toEqual({ tenantId: TENANT });
     const body = await res.json();
-    expect(body).toMatchObject({ total: 51, page: 2, pageSize: 50 });
-    expect(body.crawls[0]).toMatchObject({ health: 64, kinds: { issue: 4, warning: 2, opportunity: 1 } });
-    // An unknown status filters nothing rather than everything.
-    crawlJob.findMany.mockClear();
-    await listCrawls(new Request("https://app.test/api/seo/v1/crawl?history=1&status=BOGUS"));
-    expect(crawlJob.findMany.mock.calls[0]![0]!.where).toEqual({ tenantId: TENANT });
+    expect(body).toMatchObject({ total: 51, pageSize: 20, nextCursor: "c19", hosts: ["a.example", "b.example"] });
+    expect(body.crawls).toHaveLength(20);
+    expect(body.crawls[0]).toMatchObject({ health: 64, kinds: { issue: 4, warning: 2, opportunity: 1 }, scheduled: true });
+    expect(body.crawls[1].scheduled).toBe(false);
+
+    // An unknown status filters nothing rather than everything; another tenant's (or a missing) cursor is page 1.
+    crawlJob.findMany.mockReset();
+    crawlJob.findMany.mockResolvedValue([]);
+    crawlJob.findFirst.mockResolvedValue(null);
+    const last = await listCrawls(new Request("https://app.test/api/seo/v1/crawl?history=1&status=BOGUS&cursor=other_tenant"));
+    expect(crawlJob.findMany.mock.calls[0]![0]!.where).toEqual({ AND: [{ tenantId: TENANT, AND: [] }, {}] });
+    expect((await last.json()).nextCursor).toBeNull();
+  });
+
+  it("History status filters: Completed is a clean finish; Failed includes an expired list", async () => {
+    authed();
+    crawlJob.findMany.mockResolvedValue([]);
+    const whereFor = async (status: string) => {
+      crawlJob.findMany.mockClear();
+      await listCrawls(new Request(`https://app.test/api/seo/v1/crawl?history=1&status=${status}`));
+      return crawlJob.findMany.mock.calls[0]![0]!.where.AND[0].AND[0];
+    };
+    expect(await whereFor("COMPLETED")).toEqual({ status: "COMPLETED", stoppedReason: null });
+    expect(await whereFor("FAILED")).toEqual({ OR: [{ status: "FAILED" }, { status: "COMPLETED", stoppedReason: "list_expired" }] });
+    expect(await whereFor("CANCELLED")).toEqual({ status: "CANCELLED" });
+    expect(await whereFor("ACTIVE")).toEqual({ status: { in: ["QUEUED", "RUNNING"] } });
   });
 });
 
