@@ -28,7 +28,7 @@ const crawlJob = {
   update: vi.fn(),
   count: vi.fn(),
 };
-const crawlPage = { findMany: vi.fn(), count: vi.fn() };
+const crawlPage = { findMany: vi.fn(), count: vi.fn(), findFirst: vi.fn() };
 const crawlIssue = { findMany: vi.fn(), count: vi.fn(), groupBy: vi.fn() };
 const queryRaw = vi.fn();
 const crawlSiteDefault = { findUnique: vi.fn(), upsert: vi.fn() };
@@ -59,6 +59,8 @@ const { POST: startCrawl, GET: listCrawls } = await import("@/app/api/seo/v1/cra
 const { GET: getCrawl } = await import("@/app/api/seo/v1/crawl/[id]/route");
 const { GET: getIssues } = await import("@/app/api/seo/v1/crawl/[id]/issues/route");
 const { GET: getPages } = await import("@/app/api/seo/v1/crawl/[id]/pages/route");
+const { GET: getPageDetail } = await import("@/app/api/seo/v1/crawl/[id]/pages/[pageId]/route");
+const pageParams = (id: string, pageId: string) => ({ params: Promise.resolve({ id, pageId }) });
 const { POST: cancel } = await import("@/app/api/seo/v1/crawl/[id]/cancel/route");
 const { GET: exportCsv } = await import("@/app/api/seo/v1/crawl/[id]/export/route");
 const { GET: getSummary } = await import("@/app/api/seo/v1/crawl/[id]/summary/route");
@@ -118,6 +120,7 @@ beforeEach(() => {
   crawlIssue.findMany.mockResolvedValue([]);
   crawlPage.count.mockResolvedValue(0);
   crawlPage.findMany.mockResolvedValue([]);
+  crawlPage.findFirst.mockResolvedValue(null);
   queryRaw.mockResolvedValue([]);
   crawlSegment.findMany.mockResolvedValue([]);
 });
@@ -900,6 +903,145 @@ describe("GET /crawl/[id]/pages — Phase 2 filters", () => {
     });
     const res = await getPages(new Request("https://app.test/x?rule=no.such_rule"), params("crawl_1"));
     expect(res.status).toBe(400);
+  });
+});
+
+describe("GET /crawl/[id]/pages — Pages view: search, scope, sorts, cursor", () => {
+  beforeEach(() => {
+    authed();
+    crawlJob.findFirst.mockResolvedValue({ id: "crawl_1" });
+  });
+  const pageRow = (i: number, extra: Record<string, unknown> = {}) => ({
+    id: `p${i}`, url: `https://e.com/${i}`, statusCode: 200, title: null, titleLength: null, metaDescLength: null, h1Count: null, wordCount: null, depth: 1,
+    internalLinks: null, fetchMs: null, contentType: null, redirectTarget: null, canonical: null, inlinkCount: 3, inSitemap: true, foundOn: null, searchHits: null,
+    metrics: [], linkScore: null, pageScore: 70, issueTotal: 2, issueHigh: 1, _count: { issues: 2 }, ...extra,
+  });
+
+  it("searches URL or title, any case, and scopes; each under AND", async () => {
+    await getPages(new Request("https://app.test/x?q=Blog&scope=indexable"), params("crawl_1"));
+    expect(crawlPage.findMany.mock.calls[0]![0]!.where).toEqual({
+      crawlJobId: "crawl_1",
+      AND: [
+        { OR: [{ url: { contains: "Blog", mode: "insensitive" } }, { title: { contains: "Blog", mode: "insensitive" } }] },
+        { statusCode: 200, OR: [{ noindex: false }, { noindex: null }] },
+      ],
+    });
+  });
+
+  it.each([
+    ["nonindexable", { OR: [{ statusCode: null }, { statusCode: { not: 200 } }, { noindex: true }] }],
+    ["errors", { OR: [{ statusCode: null }, { statusCode: { gte: 400 } }] }],
+    ["redirects", { statusCode: { gte: 300, lt: 400 } }],
+    // Legacy rows count too (NO_INLINKS, ORPHAN_PAGE map to links.orphan).
+    ["orphans", { issues: { some: { OR: [{ ruleId: "links.orphan" }, { ruleId: null, type: { in: ["NO_INLINKS", "ORPHAN_PAGE"] } }] } } }],
+  ])("scope=%s", async (scope, expected) => {
+    await getPages(new Request(`https://app.test/x?scope=${scope}`), params("crawl_1"));
+    expect(crawlPage.findMany.mock.calls[0]![0]!.where).toEqual({ crawlJobId: "crawl_1", AND: [expected] });
+  });
+
+  it("rejects an unknown scope and an over-long search", async () => {
+    expect((await getPages(new Request("https://app.test/x?scope=everything"), params("crawl_1"))).status).toBe(400);
+    expect((await getPages(new Request(`https://app.test/x?q=${"a".repeat(201)}`), params("crawl_1"))).status).toBe(400);
+    expect((await getPages(new Request("https://app.test/x?sort=bogus"), params("crawl_1"))).status).toBe(400);
+  });
+
+  it("sorts on status, issues, score and inlinks (nulls last, id breaks ties), returns score fields and a keyset cursor", async () => {
+    crawlPage.findMany.mockResolvedValue(Array.from({ length: 51 }, (_, i) => pageRow(i)));
+    crawlPage.count.mockResolvedValue(120);
+    const res = await getPages(new Request("https://app.test/x?sort=score&dir=asc&pageSize=50"), params("crawl_1"));
+    const args = crawlPage.findMany.mock.calls[0]![0]!;
+    expect(args.orderBy).toEqual([{ pageScore: { sort: "asc", nulls: "last" } }, { id: "asc" }]);
+    expect(args).toMatchObject({ skip: 0, take: 51 });
+    const body = await res.json();
+    expect(body.pages).toHaveLength(50);
+    expect(body.pages[0]).toMatchObject({ pageScore: 70, issueTotal: 2, issueHigh: 1 });
+    expect(body.nextCursor).toBe("p49");
+    for (const [sort, col] of [["status", "statusCode"], ["issues", "issueTotal"], ["inlinks", "inlinkCount"]] as const) {
+      crawlPage.findMany.mockClear();
+      await getPages(new Request(`https://app.test/x?sort=${sort}`), params("crawl_1"));
+      expect(crawlPage.findMany.mock.calls[0]![0]!.orderBy[0]).toEqual({ [col]: { sort: "desc", nulls: "last" } });
+    }
+  });
+
+  it("a keyset cursor continues after its row (read in this crawl); the last page has no cursor", async () => {
+    crawlPage.findFirst.mockResolvedValue({ id: "p49", depth: 1, url: "https://e.com/49", statusCode: 200, issueTotal: 2, pageScore: 70, inlinkCount: 3, linkScore: null });
+    crawlPage.findMany.mockResolvedValue([pageRow(50)]);
+    const res = await getPages(new Request("https://app.test/x?sort=score&dir=desc&cursor=p49"), params("crawl_1"));
+    expect(crawlPage.findFirst.mock.calls[0]![0]!.where).toEqual({ id: "p49", crawlJobId: "crawl_1" });
+    const args = crawlPage.findMany.mock.calls[0]![0]!;
+    expect(args.where).toEqual({
+      AND: [{ crawlJobId: "crawl_1" }, { OR: [{ pageScore: { lt: 70 } }, { pageScore: 70, id: { gt: "p49" } }, { pageScore: null }] }],
+    });
+    expect(args.skip).toBe(0);
+    expect((await res.json()).nextCursor).toBeNull();
+    // The default order continues on depth, URL, id.
+    crawlPage.findMany.mockClear();
+    await getPages(new Request("https://app.test/x?cursor=p49"), params("crawl_1"));
+    expect(crawlPage.findMany.mock.calls[0]![0]!.where.AND[1]).toEqual({
+      OR: [{ depth: { gt: 1 } }, { depth: 1, url: { gt: "https://e.com/49" } }, { depth: 1, url: "https://e.com/49", id: { gt: "p49" } }],
+    });
+    // A null sort value continues among the nulls.
+    crawlPage.findFirst.mockResolvedValue({ id: "p9", depth: 1, url: "u", statusCode: 200, issueTotal: 0, pageScore: null, inlinkCount: 0, linkScore: null });
+    crawlPage.findMany.mockClear();
+    await getPages(new Request("https://app.test/x?sort=score&cursor=p9"), params("crawl_1"));
+    expect(crawlPage.findMany.mock.calls[0]![0]!.where.AND[1]).toEqual({ pageScore: null, id: { gt: "p9" } });
+  });
+
+  it("a metric sort pages by offset and hands every filter, search and scope included, to the SQL", async () => {
+    queryRaw.mockResolvedValue(Array.from({ length: 51 }, (_, i) => ({ id: `p${i}` })));
+    crawlPage.findMany.mockResolvedValue(Array.from({ length: 51 }, (_, i) => pageRow(i)));
+    const res = await getPages(new Request("https://app.test/x?sort=gsc.clicks&q=blog&scope=errors&rule=h1.missing&cursor=o:50&pageSize=50"), params("crawl_1"));
+    const sql = queryRaw.mock.calls[0]!;
+    const text = (sql[0] as string[]).join("?");
+    expect(text).toContain("OFFSET");
+    const flat = JSON.stringify(sql);
+    expect(flat).toContain("%blog%");
+    expect(flat).toContain("h1.missing");
+    expect(flat).toContain('\\"statusCode\\" >= 400');
+    expect(sql).toContain(50);
+    expect((await res.json()).nextCursor).toBe("o:100");
+  });
+
+  it("the CSV carries the same filters", async () => {
+    crawlPage.findMany.mockResolvedValue([]);
+    // The stream pulls its first page when read.
+    await (await getPages(new Request("https://app.test/x?format=csv&q=blog&scope=redirects"), params("crawl_1"))).text();
+    const call = crawlPage.findMany.mock.calls.find((c) => c[0]?.where?.AND);
+    expect(call![0].where).toEqual({
+      crawlJobId: "crawl_1",
+      AND: [{ OR: [{ url: { contains: "blog", mode: "insensitive" } }, { title: { contains: "blog", mode: "insensitive" } }] }, { statusCode: { gte: 300, lt: 400 } }],
+    });
+  });
+});
+
+describe("GET /crawl/[id]/pages/[pageId] — the detail panel", () => {
+  it("is tenant-scoped through the crawl; another workspace's page is a 404", async () => {
+    authed();
+    crawlPage.findFirst.mockResolvedValue(null);
+    const res = await getPageDetail(new Request("https://app.test/x"), pageParams("crawl_1", "p1"));
+    expect(res.status).toBe(404);
+    expect(crawlPage.findFirst.mock.calls[0]![0]!.where).toEqual({ id: "p1", crawlJobId: "crawl_1", crawlJob: { tenantId: TENANT } });
+  });
+
+  it("returns the page, its findings high first (legacy rows mapped), metrics and extraction values", async () => {
+    authed();
+    crawlPage.findFirst.mockResolvedValue({
+      id: "p1", url: "https://e.com/a", statusCode: 200, title: "A", pageScore: 67, issueTotal: 2, issueHigh: 1,
+      issues: [
+        { id: "i1", ruleId: null, type: "TITLE_TOO_LONG", kind: null, priority: null, evidence: null, detail: "72 chars" },
+        { id: "i2", ruleId: "response_codes.internal_4xx", type: "response_codes.internal_4xx", kind: "issue", priority: "high", evidence: { target: "x" }, detail: null },
+      ],
+      metrics: [{ source: "gsc", data: { clicks: 3 } }],
+      extractions: [{ kind: "extract", extractorIndex: 0, values: ["€12"] }],
+    });
+    const body = await (await getPageDetail(new Request("https://app.test/x"), pageParams("crawl_1", "p1"))).json();
+    expect(body.page).toMatchObject({ id: "p1", pageScore: 67 });
+    expect(body.page.issues).toBeUndefined();
+    expect(body.issues.map((i: { ruleId: string }) => i.ruleId)).toEqual(["response_codes.internal_4xx", "page_titles.over_60_chars"]);
+    expect(body.issues[1]).toMatchObject({ kind: "warning", evidence: { detail: "72 chars" } });
+    expect(body.metrics).toEqual({ gsc: { clicks: 3 } });
+    expect(body.extractions).toEqual([{ kind: "extract", index: 0, values: ["€12"] }]);
+    expect(body.issuesTruncated).toBe(false);
   });
 });
 

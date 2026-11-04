@@ -47,7 +47,7 @@ import type { Ga4Metric, GscMetric } from "./metrics-shared";
 import { toTotals } from "./issue-totals";
 import { externalFacts, resolveExternalStatuses } from "./external-links";
 import { computeLinkScores } from "./link-score";
-import { priorityCounts, siteHealth, type SiteHealth } from "./site-health";
+import { HEALTH_SCALE, HEALTH_WEIGHTS, priorityCounts, siteHealth, type SiteHealth } from "./site-health";
 
 export interface AggregateArgs {
   jobId: string;
@@ -299,6 +299,7 @@ export async function aggregateCrawl({
     cursor = batch[batch.length - 1]!.id;
   }
 
+  await scorePages(jobId);
   const [statusCodes, depths, issuesBySeverity, issuesByType, ruleTallies, deepestPages, issueCount] = await Promise.all([
     distribution(jobId, "statusCode"),
     distribution(jobId, "depth"),
@@ -357,6 +358,7 @@ export async function aggregateCrawl({
  * aggregation runs, written over the summary's issue fields only.
  */
 export async function recountIssues(jobId: string): Promise<{ issueCount: number }> {
+  await scorePages(jobId);
   const [issuesBySeverity, issuesByType, ruleTallies, issueCount, job] = await Promise.all([
     issueDistribution(jobId, "severity"),
     issueDistribution(jobId, "type"),
@@ -759,6 +761,35 @@ async function issueDistribution(
   const out: Record<string, number> = {};
   for (const group of groups) out[group[field]] = group._count._all;
   return out;
+}
+
+/**
+ * Pages view: each page's findings, high-priority findings and page score
+ * (site-health.ts pageScore, same weights), written onto crawl_pages so the
+ * table sorts on them. Every page first gets the clean values, then the pages
+ * with findings get theirs from one grouped read.
+ */
+export async function scorePages(jobId: string): Promise<void> {
+  const w = HEALTH_WEIGHTS;
+  await prisma.$executeRaw`
+    UPDATE "crawl_pages" SET "pageScore" = 100, "issueTotal" = 0, "issueHigh" = 0
+    WHERE "crawlJobId" = ${jobId}`;
+  await prisma.$executeRaw`
+    UPDATE "crawl_pages" p
+    SET "issueTotal" = x.n, "issueHigh" = x.h,
+        -- numeric, not float8: round() on a float rounds halves to even (92.5 → 92),
+        -- Math.round in pageScore() rounds them up (93).
+        "pageScore" = round(100 - least(100, ${HEALTH_SCALE}::numeric * x.w))::smallint
+    FROM (
+      SELECT "crawlPageId",
+             count(*)::int AS n,
+             (count(*) FILTER (WHERE "priority" = 'high'))::int AS h,
+             sum(CASE "priority" WHEN 'high' THEN ${w.high}::numeric WHEN 'medium' THEN ${w.medium}::numeric WHEN 'low' THEN ${w.low}::numeric ELSE 0 END) AS w
+      FROM "crawl_issues"
+      WHERE "crawlJobId" = ${jobId} AND "ruleId" IS NOT NULL
+      GROUP BY "crawlPageId"
+    ) x
+    WHERE p."id" = x."crawlPageId" AND p."crawlJobId" = ${jobId}`;
 }
 
 /** Findings per rule id and totals by kind, for summary.issues / issuesByKind. */

@@ -14,8 +14,7 @@ vi.mock("@/lib/flags", async (importOriginal) => {
 import { SITE_CRAWLER_COPY, type DashLocale } from "@/lib/i18n/dashboard";
 import { problemText } from "@/components/seo-tools/site-crawler-config";
 import { ExtractorsEditor, PRESET_GROUPS, SearchesEditor, withPreset } from "@/components/seo-tools/site-crawler-config-4b";
-import { PagesPanel, searchHitsText } from "@/components/seo-tools/site-crawler-panels";
-import { EMPTY_PAGE_FILTERS } from "@/lib/site-crawler/types";
+import { searchHitsText } from "@/components/seo-tools/site-crawler-panels";
 import { SegmentsEditor, blankRule, segmentsPayload } from "@/components/seo-tools/site-crawler-config-4b";
 import { SegmentOverview, SegmentPicker } from "@/components/seo-tools/site-crawler-segments";
 import { ExtractionPanel, extractionQuery } from "@/components/seo-tools/site-crawler-extraction";
@@ -98,22 +97,7 @@ describe("custom search", () => {
     expect(html).not.toMatch(UNDEFINED);
   });
 
-  it.each(LOCALES)("%s: Pages shows the search column, its filter and the CSV link", (l) => {
-    const t = SITE_CRAWLER_COPY[l];
-    const int = new Intl.NumberFormat(l);
-    const data = {
-      pages: [{ id: "p1", url: "https://x.com/", statusCode: 200, title: "T", depth: 0, inlinkCount: 1, inSitemap: true, wordCount: 1, issueCount: 0, searchHits: { "0": 12, "1": 0 } }],
-      page: 1, pageSize: 50, total: 1, totalPages: 1,
-    };
-    const html = renderToStaticMarkup(
-      <PagesPanel data={data} filters={EMPTY_PAGE_FILTERS} onFilters={() => {}} onPage={() => {}} searchNames={["GTM", "Price"]} csvHref="/csv" t={t} int={int} />,
-    );
-    expect(html).toContain(t.p4b.colSearch);
-    expect(html).toContain(t.p4b.filterSearchNone("Price"));
-    expect(html).toContain("GTM: 12");
-    expect(html).toContain('href="/csv"');
-    expect(html).not.toMatch(UNDEFINED);
-  });
+  // Pages: the custom-search column, filter and CSV moved with the Pages view (tests/site-crawler-ux-pages.test.tsx).
 
   it("lists only the searches that matched", () => {
     const int = new Intl.NumberFormat("en");

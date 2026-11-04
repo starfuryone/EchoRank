@@ -6,6 +6,12 @@
  * segment=N (the CSV then carries a Segment column), and (Phase 4c)
  * urlPrefix=… — URLs starting with it (the Structure tab's click-through),
  * and rule=<id> — pages with a finding of that rule (Issues' "See all pages").
+ * Pages view: q=… (URL or title contains, any case) and scope=indexable |
+ * nonindexable | errors | redirects | orphans (pages-sort.ts PAGE_SCOPES).
+ * Sorts: a metric key, linkScore, or status | issues | score | inlinks
+ * (crawl_pages columns; score and issues are written in the summary pass).
+ * Paging: `cursor` (the Pages view, 50 a page) — a keyset on the sort column
+ * and id, or "o:<offset>" for a metric sort; the legacy `page` still works.
  * Phase 4d: every row carries its joined metrics (GSC, PSI, GA4, backlinks);
  * sort=<metric key>&dir=asc|desc orders by one (pages-sort.ts); the CSV
  * carries every metric column of each source the crawl has data from. Each is validated rather
@@ -18,6 +24,7 @@
  */
 
 import { NextResponse } from "next/server";
+import type { Prisma } from "@/generated/prisma";
 import { RULE_BY_ID } from "@/lib/crawl-rules";
 import { flag } from "@/lib/flags";
 import { requirePaidPlan } from "@/lib/paid-plan";
@@ -25,7 +32,7 @@ import { csvFilename } from "@/lib/csv-export";
 import { LINK_SCORE_COLUMN, metricCsvColumns, pageColumns, withSegmentColumn, type CrawlPageRow } from "@/lib/site-crawler/csv-columns";
 import { METRIC_SORT_KEYS, METRIC_SOURCES } from "@/lib/site-crawler/metrics-shared";
 import { metricCoverage } from "@/lib/site-crawler/metrics";
-import { pageIdsByMetric } from "@/lib/site-crawler/pages-sort";
+import { PAGE_SCOPES, pageIdsByMetric, pageScopeWhere, pageSearchWhere, type PageScope } from "@/lib/site-crawler/pages-sort";
 import { pageInSegment, segmentScope } from "@/lib/site-crawler/segment-filter";
 import { readStoredConfig } from "@/lib/site-crawler/crawl-config";
 import { csvStreamResponse, wantsCsv } from "@/lib/csv-stream";
@@ -35,6 +42,11 @@ import { ruleIssueOnPage } from "@/lib/site-crawler/rule-summary";
 
 const DEFAULT_PAGE_SIZE = 50;
 const MAX_PAGE_SIZE = 200;
+
+/** Sorts on crawl_pages columns (nullable ones sort nulls last). */
+const NATIVE_SORTS = { status: "statusCode", issues: "issueTotal", score: "pageScore", inlinks: "inlinkCount", linkScore: "linkScore" } as const;
+type NativeSort = keyof typeof NATIVE_SORTS;
+type NativeColumn = (typeof NATIVE_SORTS)[NativeSort];
 
 export async function GET(
   request: Request,
@@ -122,12 +134,24 @@ export async function GET(
       return NextResponse.json({ error: "Unknown rule", code: "INVALID_REQUEST" }, { status: 400 });
     }
 
+    // Pages view: search and scope.
+    const q = (url.searchParams.get("q") ?? "").trim();
+    if (q.length > 200) {
+      return NextResponse.json({ error: "q must be at most 200 characters", code: "INVALID_REQUEST" }, { status: 400 });
+    }
+    const scopeParam = url.searchParams.get("scope");
+    const scope: PageScope | null = scopeParam && scopeParam !== "all" ? (scopeParam as PageScope) : null;
+    if (scope !== null && !PAGE_SCOPES.includes(scope)) {
+      return NextResponse.json({ error: "Unknown scope", code: "INVALID_REQUEST" }, { status: 400 });
+    }
+
     // Phase 4d: sort by a joined metric.
     const sort = url.searchParams.get("sort");
     const dir = url.searchParams.get("dir") ?? "desc";
-    // Phase 4g: or by Link Score.
-    const byLinkScore = sort === "linkScore" && flag("crawl.linkScore");
-    if (sort !== null && !METRIC_SORT_KEYS.has(sort) && !byLinkScore) {
+    // Phase 4g: or by Link Score; Pages view: or by status, issues, score, inlinks.
+    const native: NativeColumn | null =
+      sort !== null && sort in NATIVE_SORTS && (sort !== "linkScore" || flag("crawl.linkScore")) ? NATIVE_SORTS[sort as NativeSort] : null;
+    if (sort !== null && !METRIC_SORT_KEYS.has(sort) && native === null) {
       return NextResponse.json({ error: "Unknown sort", code: "INVALID_REQUEST" }, { status: 400 });
     }
     if (dir !== "asc" && dir !== "desc") {
@@ -139,7 +163,7 @@ export async function GET(
       ...(maxInlinks.value !== undefined ? { lte: maxInlinks.value } : {}),
     };
 
-    const where = {
+    const where: Prisma.CrawlPageWhereInput = {
       crawlJobId: crawl.id,
       ...(inSitemapParam !== null ? { inSitemap: inSitemapParam === "true" } : {}),
       ...(depth.value !== undefined ? { depth: depth.value } : {}),
@@ -148,6 +172,8 @@ export async function GET(
       ...(urlPrefix !== null ? { url: { startsWith: urlPrefix } } : {}),
       ...(ruleParam !== null ? { issues: { some: ruleIssueOnPage(ruleParam) } } : {}),
       ...pageInSegment(segment),
+      // Each carries its own OR, so they go under AND rather than spread.
+      ...(q || scope ? { AND: [...(q ? [pageSearchWhere(q)] : []), ...(scope ? [pageScopeWhere(scope)] : [])] } : {}),
     };
 
     // CSV branches after validation and the tenant-scoped crawl lookup, so it
@@ -187,6 +213,9 @@ export async function GET(
               redirectTarget: true,
               contentType: true,
               foundOn: true,
+              pageScore: true,
+              issueTotal: true,
+              issueHigh: true,
               searchHits: true,
               segmentIds: true,
               metrics: { select: { source: true, data: true } },
@@ -195,20 +224,39 @@ export async function GET(
       });
     }
 
+    // Paging. `cursor` (Pages view): a keyset after that row for the default
+    // and native orders, an offset ("o:N") for a metric sort. `page` otherwise.
+    const cursorParam = url.searchParams.get("cursor");
+    const offsetCursor = cursorParam?.startsWith("o:") ? Math.max(0, Number.parseInt(cursorParam.slice(2), 10) || 0) : null;
+    const after =
+      cursorParam && offsetCursor === null
+        ? await prisma.crawlPage.findFirst({
+            where: { id: cursorParam, crawlJobId: crawl.id },
+            select: { id: true, depth: true, url: true, statusCode: true, issueTotal: true, pageScore: true, inlinkCount: true, linkScore: true },
+          })
+        : null;
+    const usingCursor = cursorParam !== null;
+    const skip = usingCursor ? (offsetCursor ?? 0) : (page - 1) * pageSize;
+    // One more than a page: whether there is a next one.
+    const take = pageSize + 1;
+
+    let keyset: Prisma.CrawlPageWhereInput = {};
+    if (after && native) {
+      const v = after[native];
+      keyset =
+        v === null
+          ? { [native]: null, id: { gt: after.id } }
+          : { OR: [{ [native]: dir === "desc" ? { lt: v } : { gt: v } }, { [native]: v, id: { gt: after.id } }, { [native]: null }] };
+    } else if (after && sort === null) {
+      keyset = {
+        OR: [{ depth: { gt: after.depth } }, { depth: after.depth, url: { gt: after.url } }, { depth: after.depth, url: after.url, id: { gt: after.id } }],
+      };
+    }
+
     const ids =
-      sort === null
+      sort === null || native !== null
         ? null
-        : byLinkScore
-          ? (
-              await prisma.crawlPage.findMany({
-                where,
-                orderBy: [{ linkScore: { sort: dir, nulls: "last" } }, { id: "asc" }],
-                skip: (page - 1) * pageSize,
-                take: pageSize,
-                select: { id: true },
-              })
-            ).map((r) => r.id)
-          : await pageIdsByMetric(
+        : await pageIdsByMetric(
             {
               jobId: crawl.id,
               ...(inSitemapParam !== null ? { inSitemap: inSitemapParam === "true" } : {}),
@@ -217,19 +265,26 @@ export async function GET(
               ...(maxInlinks.value !== undefined ? { maxInlinks: maxInlinks.value } : {}),
               ...(searchIndex !== null ? { search: { index: searchIndex, hit: hitParam === "true" } } : {}),
               ...(urlPrefix !== null ? { urlPrefix } : {}),
+              ...(ruleParam !== null ? { rule: ruleParam } : {}),
+              ...(q ? { q } : {}),
+              ...(scope ? { scope } : {}),
               segment: segment.index,
             },
             sort,
             dir,
-            (page - 1) * pageSize,
-            pageSize,
+            skip,
+            take,
           );
-    const [total, found] = await Promise.all([
+    const orderBy: Prisma.CrawlPageOrderByWithRelationInput[] = native
+      ? [{ [native]: { sort: dir, nulls: "last" } }, { id: "asc" }]
+      : [{ depth: "asc" }, { url: "asc" }, { id: "asc" }];
+    const [total, fetched] = await Promise.all([
       prisma.crawlPage.count({ where }),
       prisma.crawlPage.findMany({
-        where: ids === null ? where : { id: { in: ids } },
-        orderBy: [{ depth: "asc" }, { url: "asc" }],
-        ...(ids === null ? { skip: (page - 1) * pageSize, take: pageSize } : {}),
+        where: ids !== null ? { id: { in: ids } } : after ? { AND: [where, keyset] } : where,
+        orderBy,
+        // A keyset cursor starts after its row; an offset or `page` skips.
+        ...(ids === null ? { skip: after ? 0 : skip, take } : {}),
         select: {
           id: true,
           url: true,
@@ -251,11 +306,19 @@ export async function GET(
           searchHits: true,
           metrics: { select: { source: true, data: true } },
           linkScore: true,
+          pageScore: true,
+          issueTotal: true,
+          issueHigh: true,
           _count: { select: { issues: true } },
         },
       }),
     ]);
-    const rows = ids === null ? found : ids.flatMap((id) => found.filter((r) => r.id === id));
+    const ordered = ids === null ? fetched : ids.flatMap((id) => fetched.filter((r) => r.id === id));
+    const more = ordered.length > pageSize;
+    const rows = ordered.slice(0, pageSize);
+    const last = rows[rows.length - 1];
+    // Metric sorts page by offset; the default and native orders by keyset on the last row.
+    const nextCursor = !more || !last ? null : ids !== null ? `o:${skip + pageSize}` : last.id;
 
     return NextResponse.json({
       pages: rows.map((r) => ({
@@ -279,12 +342,16 @@ export async function GET(
         searchHits: (r.searchHits as Record<string, number> | null) ?? null,
         issueCount: r._count.issues,
         linkScore: r.linkScore,
+        pageScore: r.pageScore,
+        issueTotal: r.issueTotal,
+        issueHigh: r.issueHigh,
         metrics: Object.fromEntries((r.metrics ?? []).map((m) => [m.source, m.data])),
       })),
       page,
       pageSize,
       total,
       totalPages: Math.max(1, Math.ceil(total / pageSize)),
+      nextCursor,
     });
   } catch (err) {
     return crawlRouteError(err);

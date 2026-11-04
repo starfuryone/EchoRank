@@ -77,6 +77,10 @@ export interface CrawlPageRow {
   foundOn: string | null;
   /** Phase 4g: Link Score 0–100. */
   linkScore?: number | null;
+  /** Pages view: page score 0–100 and findings (summary pass); null on older crawls. */
+  pageScore?: number | null;
+  issueTotal?: number | null;
+  issueHigh?: number | null;
   /** Phase 4b: {"<search index>": matches}; null on non-HTML pages. */
   searchHits?: unknown;
   segmentIds?: number[];
@@ -106,6 +110,9 @@ export const PAGE_COLUMNS: CsvColumn<CrawlPageRow>[] = [
   { header: "Redirect target", value: (r) => r.redirectTarget },
   { header: "Content type", value: (r) => r.contentType },
   { header: "Found on", value: (r) => r.foundOn },
+  { header: "Page score", value: (r) => r.pageScore ?? null },
+  { header: "Issues", value: (r) => r.issueTotal ?? null },
+  { header: "High-priority issues", value: (r) => r.issueHigh ?? null },
 ];
 
 // ─── Phase 3a: Issues by rule ───────────────────────────────────────────────

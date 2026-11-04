@@ -25,15 +25,14 @@ import { formatDateTime } from "@/lib/utils";
 import type { Severity } from "@/lib/site-crawler/checks";
 import { RULE_COPY, RULE_IDS } from "@/lib/crawl-rules-meta";
 import { IssuesView } from "./site-crawler-issues";
+import { PagesView, extractionNamesOf } from "./site-crawler-pages";
 import {
   EMPTY_PAGE_FILTERS,
-  pageFilterParams,
   isInFlight,
   type CrawlDto,
   type RenderMode,
   type CrawlIssuePage,
   type CrawlListResponse,
-  type CrawlPagesPage,
   type CrawlQuotaDto,
   type CrawlSummaryDto,
   type PartialSummaryDto,
@@ -45,13 +44,11 @@ import {
 import {
   DuplicatesPanel,
   OverviewPanel,
-  PagesPanel,
   RedirectsPanel,
 } from "@/components/seo-tools/site-crawler-panels";
 import { AcceptedWords } from "@/components/seo-tools/site-crawler-accepted-words";
 import { CrawlConfigSection, problemText } from "@/components/seo-tools/site-crawler-config";
 import { CrawlTools } from "@/components/seo-tools/site-crawler-crawl-tools";
-import { InlinksPanel } from "@/components/seo-tools/site-crawler-inlinks";
 import { ExtractionPanel, extractionQuery } from "@/components/seo-tools/site-crawler-extraction";
 import { ExternalPanel } from "@/components/seo-tools/site-crawler-external";
 import { ComparePanel } from "@/components/seo-tools/site-crawler-compare";
@@ -268,7 +265,6 @@ export function SiteCrawlerClient({
   const [inspection, setInspection] = useState<TopPages | null>(null);
   const [confirming, setConfirming] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
-  const [inlinksFor, setInlinksFor] = useState<{ id: string; url: string } | null>(null);
   const listUrls = useMemo(() => parseUrlList(listText), [listText]);
   const [starting, setStarting] = useState(false);
   const [cancelling, setCancelling] = useState(false);
@@ -311,22 +307,20 @@ export function SiteCrawlerClient({
     setPage(1);
     setDupPage(1);
     setRedirectPage(1);
-    setPagesPage(1);
     setSummary(null);
     setDuplicates(null);
     setRedirects(null);
-    setPageRows(null);
   };
   const [duplicates, setDuplicates] = useState<DuplicatePage | null>(null);
   const [dupKind, setDupKind] = useState<DuplicateKind>("title");
   const [dupPage, setDupPage] = useState(1);
   const [redirects, setRedirects] = useState<RedirectPage | null>(null);
   const [redirectPage, setRedirectPage] = useState(1);
-  const [pageRows, setPageRows] = useState<CrawlPagesPage | null>(null);
+  // The Pages view owns its filters and rows; these are what it opens with
+  // (a Structure click sets a URL prefix, /pages?rule= a rule).
   const [pageFilters, setPageFilters] = useState<PageFilters>(() =>
     initialTab === "pages" && deepRule ? { ...EMPTY_PAGE_FILTERS, rule: deepRule } : EMPTY_PAGE_FILTERS,
   );
-  const [pagesPage, setPagesPage] = useState(1);
 
   /** Fetches; never sets state itself, so effects can decide when to apply. */
   const loadList = useCallback(async (): Promise<CrawlListResponse | null> => {
@@ -445,32 +439,23 @@ export function SiteCrawlerClient({
       const url =
         which === "duplicates"
             ? `/api/seo/v1/crawl/${crawlId}/duplicates?type=${dupKind}&page=${dupPage}&${seg}`
-            : which === "redirects"
-              ? `/api/seo/v1/crawl/${crawlId}/redirects?page=${redirectPage}&${seg}`
-              : (() => {
-                  const params = pageFilterParams(pageFilters);
-                  params.set("page", String(pagesPage));
-                  params.set("pageSize", "50");
-                  if (segment) params.set("segment", segment);
-                  return `/api/seo/v1/crawl/${crawlId}/pages?${params}`;
-                })();
+            : `/api/seo/v1/crawl/${crawlId}/redirects?page=${redirectPage}&${seg}`;
 
       const res = await fetch(url);
       if (!res.ok) return null;
       return res.json();
     },
-    [dupKind, dupPage, redirectPage, pagesPage, pageFilters, segment],
+    [dupKind, dupPage, redirectPage, segment],
   );
 
   useEffect(() => {
-    if (!active || isInFlight(active.status) || (tab !== "duplicates" && tab !== "redirects" && tab !== "pages")) return;
+    if (!active || isInFlight(active.status) || (tab !== "duplicates" && tab !== "redirects")) return;
     let cancelled = false;
     void (async () => {
       const data = await loadTab(active.id, tab);
       if (cancelled) return;
       if (tab === "duplicates") setDuplicates((data as DuplicatePage | null) ?? null);
       if (tab === "redirects") setRedirects((data as RedirectPage | null) ?? null);
-      if (tab === "pages") setPageRows((data as CrawlPagesPage | null) ?? null);
     })();
     return () => {
       cancelled = true;
@@ -1076,8 +1061,6 @@ export function SiteCrawlerClient({
           purged={Boolean(active.dataPurgedAt)}
           onFilterPages={(urlPrefix) => {
             setPageFilters({ ...EMPTY_PAGE_FILTERS, urlPrefix });
-            setPagesPage(1);
-            setPageRows(null);
             setTab("pages");
           }}
           t={t}
@@ -1126,46 +1109,22 @@ export function SiteCrawlerClient({
         />
       )}
 
-      {active && !running && tab === "pages" && pageFilters.rule && (
-        <p className="flex flex-wrap items-center gap-2 text-sm text-gray-700" data-testid="pages-rule-filter">
-          {t.ux.pagesRuleFilter(RULE_COPY[pageFilters.rule]?.name ?? pageFilters.rule)}
-          <button
-            type="button"
-            onClick={() => {
-              setPageFilters((f) => ({ ...f, rule: "" }));
-              setPagesPage(1);
-              setPageRows(null);
-            }}
-            className="rounded px-1.5 text-sm font-medium text-blue-700 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
-          >
-            {t.ux.clearFilter}
-          </button>
-        </p>
-      )}
-
       {active && !running && tab === "pages" && (
-        <PagesPanel
-          data={pageRows}
-          filters={pageFilters}
-          onFilters={(f) => {
-            setPageFilters(f);
-            setPagesPage(1);
-            setPageRows(null);
-          }}
-          onPage={(p) => {
-            setPagesPage(p);
-            setPageRows(null);
-          }}
-          onInlinks={flag("crawl.links") && !active.dataPurgedAt ? setInlinksFor : undefined}
-          searchNames={flag("crawl.extraction") ? (active.config?.searches ?? []).map((s) => s.name) : []}
-          csvHref={`/api/seo/v1/crawl/${active.id}/pages?${pageFilterParams(pageFilters)}&format=csv${segment ? `&segment=${encodeURIComponent(segment)}` : ""}`}
+        <PagesView
+          key={JSON.stringify(pageFilters)}
+          crawlId={active.id}
+          crawl={active}
+          locale={locale}
+          segmentNames={segmentNames}
+          segment={segment}
+          onSegment={pickSegment}
+          initialFilters={pageFilters}
+          searchNames={flag("crawl.extraction") ? (active.config?.searches ?? []).map((x) => x.name) : []}
+          extractionNames={extractionNamesOf(active.config, t)}
+          linksOn={flag("crawl.links") && !active.dataPurgedAt}
           t={t}
           int={int}
         />
-      )}
-
-      {active && !running && tab === "pages" && inlinksFor && (
-        <InlinksPanel crawlId={active.id} page={inlinksFor} t={t.p4a} onClose={() => setInlinksFor(null)} />
       )}
 
       {active && !running && tab === "issues" && (

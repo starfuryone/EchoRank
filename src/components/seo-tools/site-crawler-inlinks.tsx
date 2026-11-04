@@ -26,7 +26,8 @@ export function InlinksPanel({
   crawlId: string;
   page: { id: string; url: string };
   t: T;
-  onClose: () => void;
+  /** Absent inside the Pages view's detail panel, which has its own close. */
+  onClose?: () => void;
 }) {
   const [rows, setRows] = useState<Inlink[] | null>(null);
   const [next, setNext] = useState<string | null>(null);
@@ -63,9 +64,11 @@ export function InlinksPanel({
           <a href={`${base}?format=csv`} className="inline-flex items-center gap-1 text-xs text-gray-600 hover:text-gray-900">
             <Download className="h-3.5 w-3.5" aria-hidden="true" /> CSV
           </a>
-          <button type="button" aria-label={t.close} onClick={onClose} className="text-gray-400 hover:text-gray-700">
-            <X className="h-4 w-4" aria-hidden="true" />
-          </button>
+          {onClose && (
+            <button type="button" aria-label={t.close} onClick={onClose} className="text-gray-600 hover:text-gray-900">
+              <X className="h-4 w-4" aria-hidden="true" />
+            </button>
+          )}
         </div>
       </div>
       {rows === null ? null : rows.length === 0 ? (

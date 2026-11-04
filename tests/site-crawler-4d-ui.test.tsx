@@ -16,9 +16,8 @@ vi.mock("@/lib/flags", async (importOriginal) => {
 
 import { SITE_CRAWLER_COPY, type DashLocale } from "@/lib/i18n/dashboard";
 import { MetricTiles, formatMetric, statusNote } from "@/components/seo-tools/site-crawler-metrics";
-import { PagesPanel } from "@/components/seo-tools/site-crawler-panels";
 import { SourceLines } from "@/components/seo-tools/site-crawler-sources";
-import { EMPTY_PAGE_FILTERS, pageFilterParams, type CrawlPagesPage } from "@/lib/site-crawler/types";
+import { EMPTY_PAGE_FILTERS, pageFilterParams } from "@/lib/site-crawler/types";
 import { metricCsvColumns } from "@/lib/site-crawler/csv-columns";
 import { METRIC_COLUMNS } from "@/lib/site-crawler/metrics-shared";
 
@@ -74,40 +73,9 @@ describe("Overview tiles", () => {
   });
 });
 
-describe("Pages column groups", () => {
-  const data: CrawlPagesPage = {
-    page: 1,
-    pageSize: 50,
-    total: 1,
-    totalPages: 1,
-    pages: [
-      {
-        id: "p1", url: "https://x.com/a", statusCode: 200, title: null, titleLength: null, metaDescLength: null, h1Count: null, wordCount: null, depth: 1,
-        internalLinks: null, inlinkCount: 3, inSitemap: true, canonical: null, redirectTarget: null, contentType: null, foundOn: null, issueCount: 0, fetchMs: 1,
-        metrics: { gsc: { clicks: 12, impressions: 400, ctr: 0.03, position: 4.25 }, backlinks: { referringDomains: 4, backlinks: 9, rank: 120 } },
-      } as never,
-    ],
-  };
-
-  it.each(LOCALES)("%s: a toggle per source with data; columns appear and sort", async (l) => {
-    const t = SITE_CRAWLER_COPY[l];
-    const onFilters = vi.fn();
-    const el = await mount(<PagesPanel data={data} filters={EMPTY_PAGE_FILTERS} onFilters={onFilters} onPage={() => {}} t={t} int={int} />);
-    const toggles = [...el.querySelectorAll('[role="group"] button')];
-    expect(toggles.map((b) => b.textContent)).toEqual([t.p4d.srcGsc, t.p4d.srcBacklinks]);
-    expect(el.textContent).not.toContain(t.p4d.colLabels["gsc.clicks"]);
-    await act(async () => (toggles[0] as HTMLButtonElement).click());
-    expect(el.textContent).toContain("3.0%");
-    expect(el.textContent).toContain("4.3");
-    const clicks = [...el.querySelectorAll("th button")].find((b) => b.textContent?.startsWith(t.p4d.colLabels["gsc.clicks"]!))!;
-    await act(async () => (clicks as HTMLButtonElement).click());
-    expect(onFilters).toHaveBeenCalledWith({ ...EMPTY_PAGE_FILTERS, sort: "gsc.clicks", dir: "desc" });
-  });
-
-  it("the sorted source's columns stay visible, with the direction marked", async () => {
-    const t = SITE_CRAWLER_COPY.en;
-    const el = await mount(<PagesPanel data={data} filters={{ ...EMPTY_PAGE_FILTERS, sort: "backlinks.backlinks", dir: "asc" }} onFilters={() => {}} onPage={() => {}} t={t} int={int} />);
-    expect(el.querySelector('th[aria-sort="ascending"]')!.textContent).toContain(t.p4d.colLabels["backlinks.backlinks"]);
+describe("metric columns", () => {
+  // The Pages column groups (toggles, sort, aria-sort) moved with the Pages view (tests/site-crawler-ux-pages.test.tsx).
+  it("the pages query carries a metric sort", () => {
     expect(pageFilterParams({ ...EMPTY_PAGE_FILTERS, sort: "gsc.clicks", dir: "asc" }).toString()).toBe("sort=gsc.clicks&dir=asc");
   });
 

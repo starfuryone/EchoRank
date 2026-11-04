@@ -258,6 +258,11 @@ export interface CrawlPageRow {
   issueCount: number;
   /** Phase 4g: Link Score 0–100; null when not computed. */
   linkScore?: number | null;
+  /** Pages view: 100 − weighted findings on the page (site-health.ts pageScore); null on older crawls. */
+  pageScore?: number | null;
+  /** Findings on the page, and the high-priority ones (summary pass). */
+  issueTotal?: number | null;
+  issueHigh?: number | null;
 }
 
 export interface CrawlPagesPage {
@@ -266,6 +271,26 @@ export interface CrawlPagesPage {
   pageSize: number;
   total: number;
   totalPages: number;
+  /** Pages view: the cursor of the next page; null on the last. */
+  nextCursor?: string | null;
+}
+
+/** One page in the Pages view's detail panel (GET /pages/[pageId]). */
+export interface CrawlPageDetail {
+  page: CrawlPageRow & {
+    metaDescription: string | null;
+    h1First: string | null;
+    canonical: string | null;
+    noindex: boolean | null;
+    redirectTarget: string | null;
+    contentType: string | null;
+    fetchMs: number | null;
+    internalLinks: number | null;
+  };
+  issues: { id: string; ruleId: string; kind: RuleKindDto; priority: "high" | "medium" | "low"; evidence: Record<string, unknown> }[];
+  issuesTruncated: boolean;
+  metrics: Partial<Record<"gsc" | "psi" | "ga4" | "backlinks" | "gsc_inspection", unknown>>;
+  extractions: { kind: "extract" | "js" | "ai"; index: number; values: string[] }[];
 }
 
 /** Filters the Pages tab can apply. Empty string means "not filtered". */
@@ -279,6 +304,10 @@ export interface PageFilters {
   urlPrefix?: string;
   /** Issues view "See all pages": pages with a finding of this rule id. "" = any. */
   rule?: string;
+  /** Pages view: URL or title contains this. "" = any. */
+  q?: string;
+  /** Pages view: indexable | nonindexable | errors | redirects | orphans. "" = all pages. */
+  scope?: string;
   /** Phase 4d: a metric sort key (metrics-shared METRIC_COLUMNS) and direction; "" = the default order. */
   sort?: string;
   dir?: "asc" | "desc";
@@ -294,6 +323,8 @@ export function pageFilterParams(f: PageFilters): URLSearchParams {
   if (f.minInlinks) params.set("minInlinks", f.minInlinks);
   if (f.urlPrefix) params.set("urlPrefix", f.urlPrefix);
   if (f.rule) params.set("rule", f.rule);
+  if (f.q?.trim()) params.set("q", f.q.trim());
+  if (f.scope) params.set("scope", f.scope);
   if (f.sort) {
     params.set("sort", f.sort);
     params.set("dir", f.dir ?? "desc");

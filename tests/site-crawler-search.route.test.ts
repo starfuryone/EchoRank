@@ -57,13 +57,13 @@ describe("pages: custom search", () => {
 
   it("CSV carries one count column per search", async () => {
     const out = await lines(await call("format=csv"));
-    expect(out[0]!.endsWith(",Found on,Search: GTM,Search: Price")).toBe(true);
+    expect(out[0]!.endsWith(",Found on,Page score,Issues,High-priority issues,Search: GTM,Search: Price")).toBe(true);
     expect(out[1]!.endsWith(",2,0")).toBe(true);
   });
 
   it("a crawl without searches exports the 4a columns only", async () => {
     crawlJob.findFirst.mockResolvedValue({ id: "c1", config: null });
-    expect((await lines(await call("format=csv")))[0]!.endsWith(",Found on")).toBe(true);
+    expect((await lines(await call("format=csv")))[0]!.endsWith(",Found on,Page score,Issues,High-priority issues")).toBe(true);
   });
 });
 

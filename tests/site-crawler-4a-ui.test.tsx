@@ -15,9 +15,8 @@ vi.mock("@/lib/flags", async (importOriginal) => {
 import { SITE_CRAWLER_COPY, type DashLocale } from "@/lib/i18n/dashboard";
 import { problemText, toInput } from "@/components/seo-tools/site-crawler-config";
 import { CrawlTools, sitemapHref } from "@/components/seo-tools/site-crawler-crawl-tools";
-import { PagesPanel } from "@/components/seo-tools/site-crawler-panels";
 import { CrawlConfigInputSchema, checkCrawlConfig } from "@/lib/site-crawler/crawl-config";
-import { EMPTY_PAGE_FILTERS, type CrawlDto } from "@/lib/site-crawler/types";
+import type { CrawlDto } from "@/lib/site-crawler/types";
 
 const LOCALES: DashLocale[] = ["en", "fr", "de-CH"];
 type DraftArg = Parameters<typeof toInput>[0];
@@ -126,7 +125,6 @@ const crawl = (over: Partial<CrawlDto> = {}): CrawlDto => ({
 
 describe.each(LOCALES)("rendered in %s", (locale) => {
   const t = SITE_CRAWLER_COPY[locale];
-  const int = new Intl.NumberFormat(locale === "en" ? "en-US" : locale);
 
   it("crawl tools: pin, link exports, sitemap form", () => {
     const html = renderToStaticMarkup(<CrawlTools crawl={crawl()} t={t.p4a} kept="10" onUpdated={() => {}} />);
@@ -147,23 +145,7 @@ describe.each(LOCALES)("rendered in %s", (locale) => {
   it("a list-mode crawl offers no sitemap", () => {
     expect(renderToStaticMarkup(<CrawlTools crawl={crawl({ mode: "list" })} t={t.p4a} kept="10" onUpdated={() => {}} />)).not.toContain(t.p4a.sitemapTitle);
   });
-
-  it("Pages: Found on column and an Inlinks button when the page has inlinks", () => {
-    const data = {
-      pages: [{ id: "p1", url: "https://x.com/a", statusCode: 200, title: null, depth: 1, inlinkCount: 3, inSitemap: true, wordCount: 10, foundOn: "https://x.com/", issueCount: 0 }],
-      page: 1,
-      pageSize: 50,
-      total: 1,
-      totalPages: 1,
-    };
-    const html = renderToStaticMarkup(
-      <PagesPanel data={data} filters={EMPTY_PAGE_FILTERS} onFilters={() => {}} onPage={() => {}} onInlinks={() => {}} t={t} int={int} />,
-    );
-    expect(html).toContain(t.p4a.colFoundOn);
-    expect(html).toContain(t.p4a.inlinksCta);
-    const without = renderToStaticMarkup(<PagesPanel data={data} filters={EMPTY_PAGE_FILTERS} onFilters={() => {}} onPage={() => {}} t={t} int={int} />);
-    expect(without).not.toContain(t.p4a.colFoundOn);
-  });
+  // Pages: Found on and inlinks moved with the Pages view (tests/site-crawler-ux-pages.test.tsx).
 });
 
 describe("catalogs", () => {

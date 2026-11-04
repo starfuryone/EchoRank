@@ -2349,6 +2349,12 @@ model CrawlPage {
   /// Phase 4e: the first <link rel="amphtml"> target, absolute; and whether this page is an AMP document.
   /// Phase 4g: internal PageRank (damping 0.85, 20 iterations), log-scaled 0–100.
   linkScore           Float?   @db.Real
+  /// Pages view: 100 − weighted findings on this page (page-score.ts, the site
+  /// health weights), with the findings and the high-priority ones. Written in
+  /// the summary pass (aggregate, recount); null on crawls from before it.
+  pageScore           Int?     @db.SmallInt
+  issueTotal          Int?
+  issueHigh           Int?
   /// Phase 4g: text-embedding-3-small, 256 dimensions, Float32 little-endian (1 KB).
   embedding           Bytes?
   /// Phase 4g: the page's visible text (≤ 6,000 chars), kept only on crawls with

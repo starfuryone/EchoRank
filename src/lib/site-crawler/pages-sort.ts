@@ -10,6 +10,58 @@ import "server-only";
 import { Prisma } from "@/generated/prisma";
 import { prisma } from "@/lib/prisma";
 import { sortPath } from "./metrics-shared";
+import { legacyTypesFor, ruleIssueOnPage } from "./rule-summary";
+
+/** The Pages view's scope select. Indexable = a 200 without noindex (graph.ts). */
+export const PAGE_SCOPES = ["indexable", "nonindexable", "errors", "redirects", "orphans"] as const;
+export type PageScope = (typeof PAGE_SCOPES)[number];
+export const ORPHAN_RULE = "links.orphan";
+
+/** Prisma form of a scope; the SQL form below must select the same rows. */
+export function pageScopeWhere(scope: PageScope): Prisma.CrawlPageWhereInput {
+  switch (scope) {
+    case "indexable":
+      return { statusCode: 200, OR: [{ noindex: false }, { noindex: null }] };
+    case "nonindexable":
+      return { OR: [{ statusCode: null }, { statusCode: { not: 200 } }, { noindex: true }] };
+    case "errors":
+      // No status = the fetch failed: an error too.
+      return { OR: [{ statusCode: null }, { statusCode: { gte: 400 } }] };
+    case "redirects":
+      return { statusCode: { gte: 300, lt: 400 } };
+    case "orphans":
+      return { issues: { some: ruleIssueOnPage(ORPHAN_RULE) } };
+  }
+}
+
+/** Search: URL or title contains the text, any case. */
+export function pageSearchWhere(q: string): Prisma.CrawlPageWhereInput {
+  return { OR: [{ url: { contains: q, mode: "insensitive" } }, { title: { contains: q, mode: "insensitive" } }] };
+}
+
+/** LIKE-escape a literal for a contains match. */
+const likeContains = (s: string) => `%${s.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
+
+function ruleExistsSql(ruleId: string): Prisma.Sql {
+  const legacy = legacyTypesFor(ruleId);
+  const legacySql = legacy.length ? Prisma.sql` OR (i."ruleId" IS NULL AND i."type" IN (${Prisma.join(legacy)}))` : Prisma.empty;
+  return Prisma.sql`EXISTS (SELECT 1 FROM "crawl_issues" i WHERE i."crawlPageId" = p."id" AND (i."ruleId" = ${ruleId}${legacySql}))`;
+}
+
+function pageScopeSql(scope: PageScope): Prisma.Sql {
+  switch (scope) {
+    case "indexable":
+      return Prisma.sql`(p."statusCode" = 200 AND p."noindex" IS NOT TRUE)`;
+    case "nonindexable":
+      return Prisma.sql`(p."statusCode" IS NULL OR p."statusCode" <> 200 OR p."noindex" IS TRUE)`;
+    case "errors":
+      return Prisma.sql`(p."statusCode" IS NULL OR p."statusCode" >= 400)`;
+    case "redirects":
+      return Prisma.sql`(p."statusCode" >= 300 AND p."statusCode" < 400)`;
+    case "orphans":
+      return ruleExistsSql(ORPHAN_RULE);
+  }
+}
 
 export interface PageSqlFilters {
   jobId: string;
@@ -21,6 +73,11 @@ export interface PageSqlFilters {
   search?: { index: number; hit: boolean };
   urlPrefix?: string;
   segment?: number | null;
+  /** Pages view: URL or title contains this. */
+  q?: string;
+  scope?: PageScope;
+  /** Pages with a finding of this rule (Issues › See all pages). */
+  rule?: string;
 }
 
 /** LIKE-escape a literal prefix. */
@@ -39,6 +96,9 @@ export function pageWhereSql(f: PageSqlFilters): Prisma.Sql {
   }
   if (f.urlPrefix !== undefined) parts.push(Prisma.sql`p."url" LIKE ${likePrefix(f.urlPrefix)}`);
   if (f.segment !== null && f.segment !== undefined) parts.push(Prisma.sql`p."segmentIds" @> ARRAY[${f.segment}]::smallint[]`);
+  if (f.q) parts.push(Prisma.sql`(p."url" ILIKE ${likeContains(f.q)} OR p."title" ILIKE ${likeContains(f.q)})`);
+  if (f.scope) parts.push(pageScopeSql(f.scope));
+  if (f.rule) parts.push(ruleExistsSql(f.rule));
   return Prisma.join(parts, " AND ");
 }
 

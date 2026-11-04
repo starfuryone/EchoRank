@@ -1,10 +1,10 @@
 "use client";
 
-import { useState } from "react";
-// The four non-Issues tabs of a completed crawl.
+// The non-Issues tabs of a completed crawl.
 //
 // Split out of site-crawler-client.tsx to keep that file about the crawl
-// lifecycle (start, poll, cancel) rather than about rendering four tables.
+// lifecycle (start, poll, cancel) rather than about rendering its tables.
+// Pages moved to site-crawler-pages.tsx (the Pages view).
 //
 // DISTRIBUTION BARS ARE PLAIN DIVS. recharts is already in the dashboard
 // bundle (Content Explorer, Web Analytics, Historical use it), so a chart
@@ -14,26 +14,18 @@ import { useState } from "react";
 //
 // Every string comes from SITE_CRAWLER_COPY; there is no inline English here.
 
-import { flag } from "@/lib/flags";
-import { MetricGroupToggles, MetricHeader, columnsOf, formatMetric, sourcesIn } from "./site-crawler-metrics";
-import type { MetricSource } from "@/lib/site-crawler/metrics-shared";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Select } from "@/components/ui/select";
 import type { SiteCrawlerCopy } from "@/lib/i18n/dashboard";
 import type {
-  CrawlPagesPage,
   CrawlSummaryDto,
   PartialSummaryDto,
   RuleKindDto,
   DuplicateKind,
   DuplicatePage,
-  PageFilters,
   RedirectPage,
 } from "@/lib/site-crawler/types";
-import { EMPTY_PAGE_FILTERS } from "@/lib/site-crawler/types";
 
 interface Common {
   t: SiteCrawlerCopy;
@@ -361,189 +353,6 @@ export function RedirectsPanel({
 export function searchHitsText(hits: Record<string, number> | null | undefined, names: readonly string[], int: Intl.NumberFormat): string {
   const found = names.flatMap((n, i) => ((hits?.[String(i)] ?? 0) > 0 ? [`${n}: ${int.format(hits![String(i)]!)}`] : []));
   return found.length ? found.join(", ") : "—";
-}
-
-export function PagesPanel({
-  data,
-  filters,
-  onFilters,
-  onPage,
-  onInlinks,
-  searchNames = [],
-  csvHref,
-  t,
-  int,
-}: Common & {
-  data: CrawlPagesPage | null;
-  filters: PageFilters;
-  onFilters: (f: PageFilters) => void;
-  onPage: (p: number) => void;
-  /** Phase 4a: open the Inlinks panel for a row. Absent = no link-graph column. */
-  onInlinks?: (row: { id: string; url: string }) => void;
-  /** Phase 4b: the crawl's custom searches, by index. Empty = no search column or filter. */
-  searchNames?: string[];
-  /** The pages CSV for the current filters. */
-  csvHref?: string;
-}) {
-  const set = (key: keyof PageFilters, value: string) => onFilters({ ...filters, [key]: value });
-  // Phase 4d: a column group per joined source, shown when toggled on (the sorted one always is).
-  const [shown, setShown] = useState<MetricSource[]>([]);
-  const sortSource = filters.sort ? (filters.sort.split(".")[0] as MetricSource) : null;
-  const available = data ? [...new Set([...sourcesIn(data.pages), ...(sortSource ? [sortSource] : [])])] : [];
-  const visible = available.filter((s) => shown.includes(s) || s === sortSource);
-  const metricCols = columnsOf(visible);
-
-  return (
-    <div className="space-y-4">
-      <div className="flex flex-wrap items-end gap-3">
-        <div className="w-40">
-          <Select
-            aria-label={t.filterSitemap}
-            value={filters.inSitemap}
-            onChange={(e) => set("inSitemap", e.target.value)}
-            options={[
-              { value: "", label: `${t.filterSitemap}: ${t.filterAll}` },
-              { value: "true", label: t.filterYes },
-              { value: "false", label: t.filterNo },
-            ]}
-          />
-        </div>
-        <div className="w-28">
-          <Input
-            aria-label={t.filterDepth}
-            placeholder={t.filterDepth}
-            inputMode="numeric"
-            value={filters.depth}
-            onChange={(e) => set("depth", e.target.value.replace(/\D/g, ""))}
-          />
-        </div>
-        <div className="w-36">
-          <Input
-            aria-label={t.filterInlinks}
-            placeholder={t.filterInlinks}
-            inputMode="numeric"
-            value={filters.minInlinks}
-            onChange={(e) => set("minInlinks", e.target.value.replace(/\D/g, ""))}
-          />
-        </div>
-        <div className="w-72">
-          <Input
-            aria-label={t.p4c.filterUrlPrefix}
-            placeholder={t.p4c.filterUrlPrefix}
-            value={filters.urlPrefix ?? ""}
-            onChange={(e) => set("urlPrefix", e.target.value)}
-          />
-        </div>
-        {searchNames.length > 0 && (
-          <div className="w-56">
-            <Select
-              aria-label={t.p4b.colSearch}
-              value={filters.search}
-              onChange={(e) => set("search", e.target.value)}
-              options={[
-                { value: "", label: t.p4b.filterSearchAll },
-                ...searchNames.flatMap((n, i) => [
-                  { value: `${i}:hit`, label: t.p4b.filterSearchHit(n) },
-                  { value: `${i}:none`, label: t.p4b.filterSearchNone(n) },
-                ]),
-              ]}
-            />
-          </div>
-        )}
-        <Button variant="outline" size="sm" onClick={() => onFilters(EMPTY_PAGE_FILTERS)}>
-          {t.filterClear}
-        </Button>
-        {csvHref && (
-          <a
-            href={csvHref}
-            className="ml-auto inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1 text-xs font-medium text-gray-700 hover:border-gray-300"
-          >
-            {t.exportCsv}
-          </a>
-        )}
-      </div>
-
-      <MetricGroupToggles available={available} shown={visible} onToggle={(s) => setShown((v) => (v.includes(s) ? v.filter((x) => x !== s) : [...v, s]))} t={t.p4d} />
-
-      {!data || data.pages.length === 0 ? (
-        <p className="py-8 text-center text-sm text-gray-500">{t.noPages}</p>
-      ) : (
-        <>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-200 text-left text-xs uppercase tracking-wide text-gray-400">
-                  <th scope="col" className="py-2 pr-3">{t.colUrl}</th>
-                  <th scope="col" className="py-2 pr-3">{t.colDepth}</th>
-                  <th scope="col" className="py-2 pr-3">{t.colInlinks}</th>
-                  {flag("crawl.linkScore") && (
-                    <MetricHeader colKey="linkScore" label={t.p4g.colLinkScore} sort={filters.sort} dir={filters.dir} onSort={(key, dir) => onFilters({ ...filters, sort: key, dir })} />
-                  )}
-                  <th scope="col" className="py-2 pr-3">{t.colSitemap}</th>
-                  {onInlinks && <th scope="col" className="py-2 pr-3">{t.p4a.colFoundOn}</th>}
-                  {searchNames.length > 0 && <th scope="col" className="py-2 pr-3">{t.p4b.colSearch}</th>}
-                  {metricCols.map((c) => (
-                    <MetricHeader key={c.key} colKey={c.key} label={t.p4d.colLabels[c.key] ?? c.header} sort={filters.sort} dir={filters.dir} onSort={(key, dir) => onFilters({ ...filters, sort: key, dir })} />
-                  ))}
-                  <th scope="col" className="py-2">{t.issuesTitle}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.pages.map((row) => (
-                  <tr key={row.id} className="border-b border-gray-100">
-                    <td className="max-w-md py-2 pr-3">
-                      <span className="block truncate text-gray-600" title={row.url}>
-                        {row.url}
-                      </span>
-                    </td>
-                    <td className="py-2 pr-3 tabular-nums text-gray-600">{int.format(row.depth)}</td>
-                    <td className="py-2 pr-3 tabular-nums text-gray-600">
-                      {row.inlinkCount === null ? "—" : int.format(row.inlinkCount)}
-                      {onInlinks && (row.inlinkCount ?? 0) > 0 && (
-                        <button
-                          type="button"
-                          className="ml-2 text-xs text-blue-700 hover:underline"
-                          onClick={() => onInlinks({ id: row.id, url: row.url })}
-                        >
-                          {t.p4a.inlinksCta}
-                        </button>
-                      )}
-                    </td>
-                    {flag("crawl.linkScore") && (
-                      <td className="py-2 pr-3 tabular-nums text-gray-600">{row.linkScore === null || row.linkScore === undefined ? "—" : row.linkScore.toFixed(1)}</td>
-                    )}
-                    <td className="py-2 pr-3 text-gray-600">
-                      {row.inSitemap === null ? "—" : row.inSitemap ? t.filterYes : t.filterNo}
-                    </td>
-                    {onInlinks && (
-                      <td className="max-w-xs py-2 pr-3">
-                        <span className="block truncate text-gray-500" title={row.foundOn ?? undefined}>
-                          {row.foundOn ?? "—"}
-                        </span>
-                      </td>
-                    )}
-                    {searchNames.length > 0 && (
-                      <td className="py-2 pr-3 text-xs text-gray-600">{searchHitsText(row.searchHits, searchNames, int)}</td>
-                    )}
-                    {metricCols.map((c) => (
-                      <td key={c.key} className="py-2 pr-3 tabular-nums text-gray-600">
-                        {c.text ? (c.text(row.metrics?.[c.source] ?? null) ?? "—") : formatMetric(c.key, c.value(row.metrics?.[c.source] ?? null), int)}
-                      </td>
-                    ))}
-                    <td className="py-2 tabular-nums text-gray-600">
-                      {int.format(row.issueCount)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          <Pager page={data.page} totalPages={data.totalPages} onPage={onPage} t={t} int={int} />
-        </>
-      )}
-    </div>
-  );
 }
 
 export function Pager({

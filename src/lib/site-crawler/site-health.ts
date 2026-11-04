@@ -36,6 +36,23 @@ export function siteHealth(counts: PriorityCounts, pages: number): SiteHealth | 
   return { score: Math.round(100 - penalty), weighted: Math.round(weighted * 100) / 100, pages, version: HEALTH_VERSION };
 }
 
+// ─── Page score ──────────────────────────────────────────────────────────────
+//
+// The Pages view's per-page number, on the same scale as site health with one
+// page: 100 − min(100, 10 × weighted findings on the page). One high-priority
+// finding scores 70, one medium 90, four lows 90. Computed in SQL in the
+// summary pass (aggregate.ts scorePages) from these constants; this function
+// is the reference the tests hold the SQL to.
+
+export function pageScore(counts: PriorityCounts): number {
+  return siteHealth(counts, 1)!.score;
+}
+
+/** Page score bands for the pill: good ≥ 80, fair 50–79, poor < 50 (site health's too). */
+export function scoreBand(score: number): "good" | "fair" | "poor" {
+  return score >= 80 ? "good" : score >= 50 ? "fair" : "poor";
+}
+
 /** Findings per priority from the summary's per-rule tallies. */
 export function priorityCounts(issues: Record<string, { count: number; priority: string }> | null | undefined): PriorityCounts {
   const out: PriorityCounts = { high: 0, medium: 0, low: 0 };
