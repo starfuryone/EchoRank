@@ -26,7 +26,7 @@ export function extractionWhere(jobId: string, f: ExtractionFilter): Prisma.Craw
     statusCode: { not: null },
     contentType: { contains: "html", mode: "insensitive" },
     ...(f.extractor !== null && f.has !== null
-      ? { extractions: f.has ? { some: { extractorIndex: f.extractor } } : { none: { extractorIndex: f.extractor } } }
+      ? { extractions: f.has ? { some: { kind: "extract", extractorIndex: f.extractor } } : { none: { kind: "extract", extractorIndex: f.extractor } } }
       : {}),
     ...(f.segment !== null ? { segmentIds: { has: f.segment } } : {}),
   };
@@ -36,7 +36,8 @@ const SELECT = {
   id: true,
   url: true,
   segmentIds: true,
-  extractions: { select: { extractorIndex: true, values: true } },
+  // Phase 4e: js and ai rows share the table; this tab's extractor columns are kind "extract".
+  extractions: { where: { kind: "extract" }, select: { extractorIndex: true, values: true } },
 } as const;
 
 type Raw = { id: string; url: string; segmentIds: number[]; extractions: { extractorIndex: number; values: string[] }[] };

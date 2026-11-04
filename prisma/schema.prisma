@@ -256,6 +256,7 @@ model Tenant {
 
   crawlJobs CrawlJob[]
   crawlSiteDefaults CrawlSiteDefault[]
+  aiKeys            TenantAiKey[]
   crawlSegments CrawlSegment[]
   crawlSchedules CrawlSchedule[]
 
@@ -2449,6 +2450,11 @@ model CrawlSiteDefault {
   verifiedAt   DateTime?
   /// "meta" | "dns" | "gsc"
   verifyMethod String?
+  /// Phase 4e forms login (verified sites only): selectors, success check and
+  /// the credentials, encrypted as config's secrets ({ enc }). Never echoed.
+  login        Json?
+  /// Phase 4e custom JavaScript snippets saved for this host (verified only).
+  jsSnippets   Json?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
@@ -2464,7 +2470,10 @@ model CrawlExtraction {
   id             String   @id @default(cuid())
   crawlJobId     String
   pageId         String
-  /// Index into the crawl's config.extractors.
+  /// Phase 4e: what produced the row. extractorIndex indexes config.extractors
+  /// ("extract"), config.js ("js") or config.ai.prompts ("ai").
+  kind           CrawlExtractionKind @default(extract)
+  /// Index into the crawl's config list for this kind.
   extractorIndex Int      @db.SmallInt
   values         String[]
 
@@ -2472,9 +2481,37 @@ model CrawlExtraction {
   /// Cascade: retention deletes a crawl's pages and their extractions go with them.
   page     CrawlPage @relation(fields: [pageId], references: [id], onDelete: Cascade)
 
-  @@unique([pageId, extractorIndex])
-  @@index([crawlJobId, extractorIndex])
+  @@unique([pageId, kind, extractorIndex])
+  @@index([crawlJobId, kind, extractorIndex])
   @@map("crawl_extractions")
+}
+
+enum CrawlExtractionKind {
+  extract
+  js
+  ai
+}
+
+enum AiKeyProvider {
+  openai
+  gemini
+}
+
+/// Phase 4e: a tenant's own OpenAI / Gemini key for the crawler's AI prompts.
+/// AES-256-GCM (src/lib/gsc/crypto.ts). Never logged, never returned to the UI
+/// after save. Retention: deleted by the tenant (Integrations card) or with it.
+model TenantAiKey {
+  id           String        @id @default(cuid())
+  tenantId     String
+  provider     AiKeyProvider
+  encryptedKey String
+  createdAt    DateTime      @default(now())
+  lastUsedAt   DateTime?
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, provider])
+  @@map("tenant_ai_keys")
 }
 
 /// Phase 4b: a named slice of one site, saved per tenant + host. Each crawl

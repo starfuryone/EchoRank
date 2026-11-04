@@ -340,6 +340,14 @@ export interface PlanConfig {
    */
   crawlPsiPages: number;
   crawlBacklinkPages: number;
+  /**
+   * Phase 4e, per crawl: custom JavaScript snippets run on each rendered page
+   * (verified sites only; the rendered-page cap applies), and pages the AI
+   * prompts run on (top N by inlinks or in a segment; Claude through the
+   * Marketing Studio token budget, OpenAI / Gemini on the tenant's own key).
+   */
+  crawlJsSnippets: number;
+  crawlAiPages: number;
   /** Shape of one AI Visibility checkup for this tier. */
   aiCheckup: AiCheckupShape;
   /**
@@ -461,6 +469,8 @@ export const PLAN_CONFIGS: Record<SellablePlanType, PlanConfig> = {
     crawlScheduleCadences: ["monthly"],
     crawlPsiPages: 10,
     crawlBacklinkPages: 10,
+    crawlJsSnippets: 1,
+    crawlAiPages: 20,
     // The shape the retired AI Visibility tier sold: two providers and one
     // repetition. Repeatability needs >1 and stays a GROWTH feature.
     aiCheckup: { frequency: "weekly", providers: 2, prompts: 10, repetitions: 1 },
@@ -511,6 +521,8 @@ export const PLAN_CONFIGS: Record<SellablePlanType, PlanConfig> = {
     crawlScheduleCadences: ["weekly", "monthly"],
     crawlPsiPages: 50,
     crawlBacklinkPages: 50,
+    crawlJsSnippets: 3,
+    crawlAiPages: 100,
     aiCheckup: { frequency: "twice_weekly", providers: 4, prompts: 15, repetitions: 2 },
     aiProjects: 3,
     aiMonthlyCapUsd: 40,
@@ -559,6 +571,8 @@ export const PLAN_CONFIGS: Record<SellablePlanType, PlanConfig> = {
     crawlScheduleCadences: ["daily", "weekly", "monthly"],
     crawlPsiPages: 100,
     crawlBacklinkPages: 100,
+    crawlJsSnippets: 5,
+    crawlAiPages: 500,
     aiCheckup: { frequency: "daily", providers: null, prompts: 20, repetitions: 3 },
     aiProjects: 25,
     aiMonthlyCapUsd: 150,
@@ -607,6 +621,8 @@ export const PLAN_CONFIGS: Record<SellablePlanType, PlanConfig> = {
     crawlScheduleCadences: ["daily", "weekly", "monthly"],
     crawlPsiPages: 100,
     crawlBacklinkPages: 100,
+    crawlJsSnippets: 5,
+    crawlAiPages: 500,
     // "custom": the schedule is set per contract, so the scheduler reads the
     // brand profile rather than a cadence baked in here.
     aiCheckup: { frequency: "custom", providers: null, prompts: 20, repetitions: 3 },

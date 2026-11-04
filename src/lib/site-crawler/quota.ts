@@ -53,6 +53,9 @@ export interface CrawlQuota {
   /** Phase 4d: pages per crawl for PageSpeed and for backlink metrics. */
   psiCap: number;
   backlinkCap: number;
+  /** Phase 4e: custom JS snippets and AI-prompted pages per crawl. */
+  jsSnippetCap: number;
+  aiPageCap: number;
   /** Phase 4d: the Lighthouse tool's hourly allowance, which PSI opt-ins draw from. */
   lighthouseUsed: number;
   lighthouseLimit: number;
@@ -81,6 +84,12 @@ export function scheduleCapsForPlan(plan: PlanType): { scheduleCap: number; sche
 export function metricCapsForPlan(plan: PlanType): { psiCap: number; backlinkCap: number } {
   const c = planConfig(plan);
   return { psiCap: c.crawlPsiPages, backlinkCap: c.crawlBacklinkPages };
+}
+
+/** Phase 4e per-crawl caps: custom JS snippets and AI-prompted pages. */
+export function renderFeatureCapsForPlan(plan: PlanType): { jsSnippetCap: number; aiPageCap: number } {
+  const c = planConfig(plan);
+  return { jsSnippetCap: c.crawlJsSnippets, aiPageCap: c.crawlAiPages };
 }
 
 export function monthlyLimitForPlan(plan: PlanType): number | null {
@@ -117,7 +126,7 @@ export async function getCrawlQuota(
   const monthlyLimit = monthlyLimitForPlan(plan);
   const locked = urlCap <= 0;
   const crawlsKept = planConfig(plan).crawlsKept;
-  const caps = { ...featureCapsForPlan(plan), ...scheduleCapsForPlan(plan), ...metricCapsForPlan(plan) };
+  const caps = { ...featureCapsForPlan(plan), ...scheduleCapsForPlan(plan), ...metricCapsForPlan(plan), ...renderFeatureCapsForPlan(plan) };
 
   // A locked tier never runs a query it cannot act on.
   if (locked) {

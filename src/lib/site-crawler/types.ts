@@ -84,6 +84,9 @@ export interface CrawlQuotaDto {
   /** Phase 4d: pages per crawl for PageSpeed and for backlink metrics. */
   psiCap?: number;
   backlinkCap?: number;
+  /** Phase 4e: custom JS snippets and AI-prompted pages per crawl. */
+  jsSnippetCap?: number;
+  aiPageCap?: number;
   lighthouseUsed?: number;
   lighthouseLimit?: number;
   backlinkUnitUsd?: number;
