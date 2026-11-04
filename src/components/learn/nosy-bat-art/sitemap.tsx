@@ -91,13 +91,13 @@ export const whereItGoes: ArtSpec = {
         <text x={204} y={54} className={`${a.t} ${a.mono} ${a.tAccent}`}>sitemap.xml</text>
 
         {/* robots.txt */}
-        <Box x={30} y={102} w={350} h={220} r={12} />
+        <Box x={30} y={102} w={362} h={220} r={12} />
         <text x={50} y={132} className={`${a.tB} ${a.mono}`}>robots.txt</text>
-        <path className={a.line} d="M30 146H380" />
+        <path className={a.line} d="M30 146H392" />
         <text x={50} y={176} className={`${a.tSm} ${a.mono}`}>User-agent: *</text>
         <text x={50} y={202} className={`${a.tSm} ${a.mono}`}>Disallow: /admin/</text>
-        <rect x={42} y={236} width={326} height={34} rx={6} className={a.accent} />
-        <text x={52} y={258} className={`${a.mono} ${a.tSm}`}>
+        <rect x={42} y={236} width={338} height={34} rx={6} className={a.accent} />
+        <text x={52} y={258} className={`${a.mono} ${a.tXs}`} style={{ fill: "currentColor" }}>
           Sitemap: https://your-site.com/sitemap.xml
         </text>
 

@@ -29,14 +29,14 @@ export const selectorToValue: ArtSpec = {
         {chips.map((c) => (
           <g key={c.label}>
             <Arrow x1={212} y1={180} x2={232} y2={c.y + 20} />
-            <rect x={236} y={c.y} width={268} height={40} rx={20} className={a.card} />
+            <rect x={236} y={c.y} width={290} height={40} rx={20} className={a.card} />
             <text x={254} y={c.y + 25} className={a.tB}>{c.label}</text>
-            <text x={b === "fr" && c.label === regex ? 340 : 304} y={c.y + 25} className={`${a.tSm} ${a.mono}`}>{c.expr}</text>
-            <Arrow x1={506} y1={c.y + 20} x2={530} y2={180} tone="accent" />
+            <text x={b === "fr" && c.label === regex ? 340 : 310} y={c.y + 25} className={`${a.tXs} ${a.mono}`} style={{ fill: "currentColor" }}>{c.expr}</text>
+            <Arrow x1={528} y1={c.y + 20} x2={544} y2={180} tone="accent" />
           </g>
         ))}
-        <Box x={534} y={150} w={86} h={60} r={12} cls={a.accent} />
-        <text x={577} y={187} textAnchor="middle" className={a.tLg}>{b === "fr" ? "49 $" : "$49"}</text>
+        <Box x={548} y={150} w={76} h={60} r={12} cls={a.accent} />
+        <text x={586} y={187} textAnchor="middle" className={a.tLg}>{b === "fr" ? "49 $" : "$49"}</text>
       </g>
     );
   },
