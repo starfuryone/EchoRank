@@ -18,6 +18,16 @@
  * 3d-A) with a throwaway API key for the tenant — created at the start,
  * revoked at the end whatever happens, never printed — then checks the
  * Idempotency-Key replay, GET /crawl/{id}, /issues, /pages and the CSV export.
+ *
+ * --free --url <https://host> runs the free public crawler instead (no
+ * --tenant): POST /api/free/v1/site-crawler with Cloudflare's Turnstile test
+ * token (CRAWL_SMOKE_TURNSTILE_TOKEN overrides it; only the TEST secret key
+ * accepts the default) and cf-connecting-ip CRAWL_SMOKE_IP (default
+ * 127.0.0.1, which spends one of that IP's 3 daily starts), then checks the
+ * crawl's shape (system tenant, 100 URLs, raw HTML, no config), polls the
+ * public status endpoint, and reads the result page (noindex, summary, full
+ * list locked) and the locked CSV. A domain crawled in the last 24 h answers
+ * with that crawl.
  */
 
 import "dotenv/config";

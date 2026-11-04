@@ -77,6 +77,8 @@ export interface SmokeArgs {
   baseUrl: string;
   /** Phase 3d-A: "api" starts through POST /api/public/v1/crawl with a throwaway key (created, then revoked). */
   via: "direct" | "api";
+  /** The free public crawler: start through POST /api/free/v1/site-crawler with a Turnstile test token (no --tenant). */
+  free: boolean;
 }
 
 /** --js takes the presets that need no further input. */
@@ -96,14 +98,17 @@ export const USAGE = `usage: npm run crawl:smoke -- --tenant <slug> --url <https
        [--backlinks N] [--extract og|<preset,...>] [--search "<text>"] [--segment "<glob>"] [--timeout <minutes>]
        [--js ${SMOKE_JS.join("|")}] [--ai "suggest title"|intent|summary|grammar[,…]] [--ai-pages N] [--login]
        [--semantic N] [--inspect N] [--via api]
+       npm run crawl:smoke -- --free --url <https://host>   (the free public crawler, no --tenant)
 presets: ${Object.keys(EXTRACTOR_PRESETS).join(", ")} (og = ogTitle,ogDescription,ogImage)
-env:   CRAWL_SMOKE_BASE_URL (default http://127.0.0.1:4400) — the web process the API checks call`;
+env:   CRAWL_SMOKE_BASE_URL (default http://127.0.0.1:4400) — the web process the API checks call
+       CRAWL_SMOKE_TURNSTILE_TOKEN (--free; default Cloudflare's test token XXXX.DUMMY.TOKEN, which only the
+       test secret key accepts), CRAWL_SMOKE_IP (--free; the cf-connecting-ip sent, default 127.0.0.1)`;
 
 export function parseArgs(argv: readonly string[], env: Record<string, string | undefined> = process.env): SmokeArgs {
   const out: SmokeArgs = {
     tenant: null, url: null, render: null, psi: null, backlinks: null, extract: [], search: null, segment: null,
     js: null, ai: [], aiPages: 5, login: false, semantic: null, inspect: null,
-    timeoutMin: 20, baseUrl: (env.CRAWL_SMOKE_BASE_URL || "http://127.0.0.1:4400").replace(/\/+$/, ""), via: "direct",
+    timeoutMin: 20, baseUrl: (env.CRAWL_SMOKE_BASE_URL || "http://127.0.0.1:4400").replace(/\/+$/, ""), via: "direct", free: false,
   };
   const int = (name: string, v: string | undefined) => {
     const n = Number(v);
@@ -159,6 +164,7 @@ export function parseArgs(argv: readonly string[], env: Record<string, string | 
       case "--login": out.login = true; break;
       case "--semantic": out.semantic = int("semantic", take()); break;
       case "--inspect": out.inspect = int("inspect", take()); break;
+      case "--free": out.free = true; break;
       case "--via": {
         const via = take();
         if (via !== "api" && via !== "direct") throw new Error(`--via takes api or direct, got ${via}`);
@@ -455,6 +461,7 @@ interface ApiRun {
 }
 
 export async function runSmoke(args: SmokeArgs, deps: SmokeDeps): Promise<SmokeResult> {
+  if (args.free) return runFreeSmoke(args, deps);
   const apiRun: { current: ApiRun | null } = { current: null };
   try {
     return await runSmokeInner(args, deps, apiRun);
@@ -1005,4 +1012,110 @@ async function runSmokeInner(args: SmokeArgs, deps: SmokeDeps, apiRun: { current
   }
 
   return finish(jobId);
+}
+
+// ─── --free: the free public crawler, end to end through its public routes ───
+
+/** Cloudflare's published Turnstile test response; passes only against the test secret key. */
+export const TURNSTILE_TEST_TOKEN = "XXXX.DUMMY.TOKEN";
+
+async function runFreeSmoke(args: SmokeArgs, deps: SmokeDeps): Promise<SmokeResult> {
+  const lines: CheckLine[] = [];
+  const say = deps.out;
+  const check = (verdict: Verdict, name: string, value: string) => {
+    lines.push({ verdict, name, value });
+    say(`${verdict.padEnd(4)}  ${name.padEnd(38)} ${value}`);
+  };
+  const finish = (jobId: string | null): SmokeResult => {
+    const failed = lines.filter((l) => l.verdict === "FAIL").length;
+    const passed = lines.filter((l) => l.verdict === "PASS").length;
+    const skipped = lines.filter((l) => l.verdict === "SKIP").length;
+    say("─".repeat(72));
+    say(`${failed ? "SMOKE FAILED" : "SMOKE OK"} — ${passed} pass · ${failed} fail · ${skipped} skip${jobId ? ` · crawl ${jobId}` : ""}`);
+    return { exitCode: failed ? 1 : 0, jobId, lines };
+  };
+  if (!args.url) {
+    say(USAGE);
+    return { exitCode: 2, jobId: null, lines };
+  }
+  const api = `${args.baseUrl}/api/free/v1/site-crawler`;
+  const ip = deps.env.CRAWL_SMOKE_IP || "127.0.0.1";
+  const reach = async (url: string, init?: RequestInit) => {
+    try {
+      return await deps.fetch(url, { redirect: "manual", ...init });
+    } catch (err) {
+      return `web not reachable at ${args.baseUrl}: ${(err as Error).message}`.slice(0, 160);
+    }
+  };
+  say(`[smoke] free crawler · ${args.url} · web ${args.baseUrl}`);
+
+  const res = await reach(api, {
+    method: "POST",
+    headers: { "content-type": "application/json", "cf-connecting-ip": ip },
+    body: JSON.stringify({ url: args.url, turnstileToken: deps.env.CRAWL_SMOKE_TURNSTILE_TOKEN || TURNSTILE_TEST_TOKEN, locale: "en" }),
+  });
+  if (typeof res === "string") {
+    check("FAIL", "free start", res);
+    return finish(null);
+  }
+  const started = (await res.json().catch(() => null)) as { token?: string; reused?: boolean; error?: string } | null;
+  if (!started?.token || (res.status !== 202 && res.status !== 200)) {
+    const hint = started?.error === "turnstile" ? " (the server's TURNSTILE_SECRET_KEY rejects the test token; set CRAWL_SMOKE_TURNSTILE_TOKEN or use the test secret)" : "";
+    check("FAIL", "free start", `${res.status} ${started?.error ?? ""}${hint}`.trim());
+    return finish(null);
+  }
+  const token = started.token;
+  // The token is the result link's secret: printed shortened.
+  check("PASS", "free start", `${res.status} · ${started.reused ? "reused this domain's crawl from the last 24 h" : "new crawl"} · result ${token.slice(0, 6)}…`);
+
+  const row = await prisma.freeCrawl.findUnique({
+    where: { token },
+    select: { crawlJob: { select: { id: true, urlCap: true, renderMode: true, mode: true, config: true, tenant: { select: { slug: true, source: true } } } } },
+  });
+  if (!row) {
+    check("FAIL", "free crawl row", "no free_crawls row for the token");
+    return finish(null);
+  }
+  const j = row.crawlJob;
+  const shapeOk = j.tenant.source === "free" && j.urlCap === 100 && j.renderMode === "none" && j.mode === "spider" && j.config === null;
+  check(shapeOk ? "PASS" : "FAIL", "free crawl shape", `tenant ${j.tenant.slug} (${j.tenant.source}) · ${j.urlCap} URLs · render ${j.renderMode} · ${j.mode} · config ${j.config === null ? "none" : "set"}`);
+
+  // Wait through the public status endpoint.
+  const deadline = deps.now() + args.timeoutMin * 60_000;
+  const pollMs = deps.pollMs ?? 5_000;
+  type FreeStatus = { status?: string; pagesCrawled?: number; queuePosition?: number | null };
+  let status: FreeStatus | null = null as FreeStatus | null;
+  let lastNote = "";
+  for (;;) {
+    const s = await reach(`${api}/${encodeURIComponent(token)}`);
+    status = typeof s === "string" ? null : ((await s.json().catch(() => null)) as FreeStatus | null);
+    if (status?.status && ["completed", "failed", "cancelled"].includes(status.status)) break;
+    const note = `${status?.status ?? "?"} · ${status?.pagesCrawled ?? 0} pages${status?.queuePosition ? ` · position ${status.queuePosition}` : ""}`;
+    if (note !== lastNote) say(`[smoke] ${note}`);
+    lastNote = note;
+    if (deps.now() >= deadline) break;
+    await deps.sleep(pollMs);
+  }
+  if (status?.status !== "completed") {
+    check("FAIL", "free crawl completed", `${status?.status ?? "no status"}${deps.now() >= deadline ? ` after the ${args.timeoutMin} min timeout` : ""}`);
+    return finish(j.id);
+  }
+  const job = await prisma.crawlJob.findUnique({ where: { id: j.id }, select: { pagesCrawled: true, startedAt: true, finishedAt: true, stoppedReason: true } });
+  const pages = job?.pagesCrawled ?? 0;
+  check(pages > 0 && pages <= 100 ? "PASS" : "FAIL", "free crawl completed", `${pages} pages${job?.stoppedReason ? ` (${job.stoppedReason})` : ""}`);
+  const ran = job?.startedAt && job.finishedAt ? job.finishedAt.getTime() - job.startedAt.getTime() : null;
+  check(ran !== null && ran <= 11 * 60_000 ? "PASS" : "FAIL", "free crawl within 10 min", ran !== null ? fmtDuration(ran) : "no startedAt/finishedAt");
+
+  const page = await reach(`${args.baseUrl}/en/free-tools/site-crawler/r/${encodeURIComponent(token)}`);
+  if (typeof page === "string") check("FAIL", "free result page", page);
+  else {
+    const html = await page.text();
+    const noindex = /<meta name="robots" content="noindex, nofollow"/.test(html);
+    const top = html.includes('data-testid="free-fix-first"') || html.includes('data-testid="free-result-summary"');
+    const locked = html.includes('data-locked="true"');
+    check(page.status === 200 && noindex && top && locked ? "PASS" : "FAIL", "free result page", `${page.status} · ${noindex ? "noindex" : "INDEXABLE"} · ${top ? "summary + fix first" : "no summary"} · ${locked ? "full list locked" : "full list NOT locked"}`);
+  }
+  const csv = await reach(`${api}/${encodeURIComponent(token)}/export`);
+  check(typeof csv !== "string" && csv.status === 403 ? "PASS" : "FAIL", "free CSV locked without the email", typeof csv === "string" ? csv : String(csv.status));
+  return finish(j.id);
 }

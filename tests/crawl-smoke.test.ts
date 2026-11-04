@@ -125,7 +125,7 @@ const { StartCrawlBodySchema } = await import("@/lib/site-crawler/start-body");
 const { ISSUE_COLUMNS, LINK_SCORE_COLUMN, metricCsvColumns, pageColumns, withSegmentColumn } = await import("@/lib/site-crawler/csv-columns");
 
 // ── fake web process ─────────────────────────────────────────────────────────
-type Answer = { status?: number; json?: unknown; csv?: string; pdf?: boolean; type?: string };
+type Answer = { status?: number; json?: unknown; csv?: string; pdf?: boolean; type?: string; html?: string };
 let routes: Record<string, Answer>;
 const seen: { url: string; init: RequestInit }[] = [];
 const fetchStub = vi.fn(async (url: string | URL | Request, init?: RequestInit) => {
@@ -135,6 +135,7 @@ const fetchStub = vi.fn(async (url: string | URL | Request, init?: RequestInit) 
   const match = routes[key] ?? routes[key.replace(/\?.*$/, "")];
   if (!match) return new Response(JSON.stringify({ error: `no stub for ${key}` }), { status: 404 });
   if (match.pdf) return new Response(new TextEncoder().encode("%PDF-1.7 fake"), { status: 200, headers: { "content-type": match.type ?? "application/pdf" } });
+  if (match.html !== undefined) return new Response(match.html, { status: match.status ?? 200, headers: { "content-type": "text/html" } });
   if (match.csv !== undefined) return new Response(match.csv, { status: match.status ?? 200, headers: { "content-type": "text/csv" } });
   return new Response(JSON.stringify(match.json), { status: match.status ?? 200, headers: { "content-type": "application/json" } });
 });
@@ -499,5 +500,63 @@ describe("crawl smoke: --via api (Phase 3d-A)", () => {
     expect(result.exitCode).toBe(1);
     expect(revokeApiKey).toHaveBeenCalledTimes(1);
     expect(out.join("\n")).not.toContain(SMOKE_KEY);
+  });
+});
+
+describe("crawl smoke: --free (the free public crawler)", () => {
+  const FREE = "/api/free/v1/site-crawler";
+  const TOKEN = "tokABCDEFGHIJKLMNOPQRSTU";
+  const freeRow = (over: Record<string, unknown> = {}) => ({
+    crawlJob: { id: JOB_ID, urlCap: 100, renderMode: "none", mode: "spider", config: null, tenant: { slug: "free-crawler", source: "free" }, ...over },
+  });
+  const freeRoutes = (start: Answer = { status: 202, json: { token: TOKEN, reused: false } }) => {
+    routes = {};
+    routes[`POST ${FREE}`] = start;
+    let polls = 0;
+    routes[`GET ${FREE}/${TOKEN}`] = new Proxy({} as Answer, {
+      get: (_t, k) => (k === "json" ? (polls++ === 0 ? { status: "queued", pagesCrawled: 0, queuePosition: 2 } : { status: "completed", pagesCrawled: 100 }) : undefined),
+    });
+    routes[`GET /en/free-tools/site-crawler/r/${TOKEN}`] = {
+      html: '<meta name="robots" content="noindex, nofollow"/><div data-testid="free-result-summary"></div><div data-testid="free-full-list" data-locked="true"></div>',
+    };
+    routes[`GET ${FREE}/${TOKEN}/export`] = { status: 403, json: { error: "locked" } };
+  };
+  beforeEach(() => {
+    healthy();
+    vi.clearAllMocks();
+    (prismaFake as Record<string, unknown>).freeCrawl = { findUnique: vi.fn(async () => freeRow()) };
+    prismaFake.crawlJob.findUnique.mockImplementation(async () => ({ pagesCrawled: 100, startedAt: new Date(T0.getTime()), finishedAt: new Date(T0.getTime() + 4 * 60_000), stoppedReason: "url_cap" }) as never);
+  });
+
+  it("parses --free (no --tenant needed)", () => {
+    expect(parseArgs(["--free", "--url", "https://example.org"], {})).toMatchObject({ free: true, tenant: null, url: "https://example.org" });
+    expect(parseArgs([], {}).free).toBe(false);
+  });
+
+  it("starts through the public route with the Turnstile test token and a cf-connecting-ip, then checks shape, progress, result page and the locked CSV", async () => {
+    freeRoutes();
+    const { result, out } = await run(["--free", "--url", "https://example.org"]);
+    const start = seen.find((x) => x.url === FREE)!;
+    expect(JSON.parse(String(start.init.body))).toMatchObject({ url: "https://example.org", turnstileToken: "XXXX.DUMMY.TOKEN" });
+    expect((start.init.headers as Record<string, string>)["cf-connecting-ip"]).toBe("127.0.0.1");
+    for (const name of ["free start", "free crawl shape", "free crawl completed", "free crawl within 10 min", "free result page", "free CSV locked"]) {
+      expect(verdictOf(result.lines, name), name).toBe("PASS");
+    }
+    expect(result.exitCode).toBe(0);
+    // The result token is shortened in the output, never printed whole.
+    expect(out.join("\n")).not.toContain(TOKEN);
+    expect(createApiKey).not.toHaveBeenCalled();
+  });
+
+  it("fails clearly when the server rejects the test token, and when the crawl is not the free shape", async () => {
+    freeRoutes({ status: 403, json: { error: "turnstile" } });
+    let r = await run(["--free", "--url", "https://example.org"]);
+    expect(r.result.lines.find((l) => l.name === "free start")!.value).toContain("CRAWL_SMOKE_TURNSTILE_TOKEN");
+    expect(r.result.exitCode).toBe(1);
+
+    freeRoutes();
+    (prismaFake as Record<string, unknown>).freeCrawl = { findUnique: vi.fn(async () => freeRow({ renderMode: "all", tenant: { slug: "acme", source: "customer" } })) };
+    r = await run(["--free", "--url", "https://example.org"]);
+    expect(verdictOf(r.result.lines, "free crawl shape")).toBe("FAIL");
   });
 });
