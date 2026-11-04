@@ -131,6 +131,16 @@ const en = {
   schToNone: "Nothing",
   integrations: "Integrations",
   integrationsHelp: "Connect Google Sheets and other export destinations in Settings.",
+  // ── Page metadata (titles and descriptions; every view is noindex) ─────
+  metaStartTitle: `${NB} — site crawler by Echorank`,
+  metaStartDesc: "Crawl your site for technical SEO issues: start a crawl, set its options, and see your recent crawls.",
+  metaResultsTitle: (host: string, date: string) => `Crawl of ${host}, ${date}`,
+  metaResultsFallback: `Crawl results — ${NB}`,
+  metaResultsDesc: "Site health, what to fix first, and every finding of this crawl.",
+  metaHistoryTitle: `Crawl history — ${NB}`,
+  metaHistoryDesc: "Every crawl kept for this workspace, with health, pages and findings.",
+  metaSchedulesTitle: `Scheduled crawls — ${NB}`,
+  metaSchedulesDesc: "Crawls that run on their own, daily, weekly or monthly, and where their reports go.",
 };
 
 export type SiteCrawlerUxCopy = typeof en;
@@ -251,6 +261,15 @@ const fr: SiteCrawlerUxCopy = {
   schToNone: "Rien",
   integrations: "Intégrations",
   integrationsHelp: "Connectez Google Sheets et les autres destinations d'export dans les Paramètres.",
+  metaStartTitle: `${NB} — robot d'exploration par Echorank`,
+  metaStartDesc: "Explorez votre site à la recherche de problèmes SEO techniques : lancez une exploration, réglez ses options et retrouvez vos explorations récentes.",
+  metaResultsTitle: (host: string, date: string) => `Exploration de ${host}, ${date}`,
+  metaResultsFallback: `Résultats d'exploration — ${NB}`,
+  metaResultsDesc: "Santé du site, ce qu'il faut corriger d'abord et tous les constats de cette exploration.",
+  metaHistoryTitle: `Historique des explorations — ${NB}`,
+  metaHistoryDesc: "Toutes les explorations conservées pour cet espace de travail, avec santé, pages et constats.",
+  metaSchedulesTitle: `Explorations planifiées — ${NB}`,
+  metaSchedulesDesc: "Les explorations qui s'exécutent seules, chaque jour, semaine ou mois, et la destination de leurs rapports.",
 };
 
 const deCH: SiteCrawlerUxCopy = {
@@ -369,6 +388,15 @@ const deCH: SiteCrawlerUxCopy = {
   schToNone: "Nichts",
   integrations: "Integrationen",
   integrationsHelp: "Verbinden Sie Google Sheets und weitere Exportziele in den Einstellungen.",
+  metaStartTitle: `${NB} — Website-Crawler von Echorank`,
+  metaStartDesc: "Crawlen Sie Ihre Website nach technischen SEO-Problemen: Crawl starten, Optionen festlegen und die letzten Crawls ansehen.",
+  metaResultsTitle: (host: string, date: string) => `Crawl von ${host}, ${date}`,
+  metaResultsFallback: `Crawl-Ergebnisse — ${NB}`,
+  metaResultsDesc: "Website-Zustand, was zuerst zu beheben ist, und alle Befunde dieses Crawls.",
+  metaHistoryTitle: `Crawl-Verlauf — ${NB}`,
+  metaHistoryDesc: "Alle für diesen Arbeitsbereich aufbewahrten Crawls, mit Zustand, Seiten und Befunden.",
+  metaSchedulesTitle: `Geplante Crawls — ${NB}`,
+  metaSchedulesDesc: "Crawls, die von selbst laufen, täglich, wöchentlich oder monatlich, und wohin ihre Berichte gehen.",
 };
 
 export const SITE_CRAWLER_UX = { en, fr, "de-CH": deCH } as const;

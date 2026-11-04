@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { cookies } from "next/headers";
+import { crawlerLocale, crawlerMetadata } from "@/lib/site-crawler/page-metadata";
 import { redirect } from "next/navigation";
-import { dashboardLocale, SITE_CRAWLER_COPY } from "@/lib/i18n/dashboard";
+import { dashboardLocale } from "@/lib/i18n/dashboard";
 import { SiteCrawlerClient } from "@/components/seo-tools/site-crawler-client";
 
 // The Site Crawler (CRAWLER_BRAND) — our own BFS crawl of a tenant's site, no
@@ -18,11 +19,7 @@ import { SiteCrawlerClient } from "@/components/seo-tools/site-crawler-client";
 // the per-tier lock is in the client. The old /visibility/tools/site-crawler
 // path 308s here.
 export async function generateMetadata(): Promise<Metadata> {
-  const cookieStore = await cookies();
-  const t = SITE_CRAWLER_COPY[dashboardLocale(cookieStore.get("echorank_locale")?.value)];
-  // Absolute: the page title already ends in the brand, so the root template's
-  // "| Echorank360" would say it twice.
-  return { title: { absolute: t.pageTitle } };
+  return crawlerMetadata(await crawlerLocale(), "start");
 }
 
 export default async function SiteCrawlerPage({ searchParams }: { searchParams: Promise<{ crawl?: string | string[] }> }) {
