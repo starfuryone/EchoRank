@@ -94,7 +94,8 @@ describe("the top bar on /crawler", () => {
     expect(dashNavByline("en", "/visibility/tools")).toBeUndefined();
 
     const html = renderToStaticMarkup(createElement(Header, { title: dashNav.en["/crawler"]!, byline }));
-    expect(html).toMatch(new RegExp(`<h1[^>]*>${CRAWLER_BRAND.name}<span[^>]*text-xs[^>]*>${CRAWLER_BRAND.byline}</span></h1>`));
+    // The logo is the title (alt = the name), the byline text beside it.
+    expect(html).toMatch(new RegExp(`<h1[^>]*><picture[^>]*>.*<img[^>]*alt="${CRAWLER_BRAND.name}"[^>]*/></picture><span[^>]*text-xs[^>]*>${CRAWLER_BRAND.byline}</span></h1>`));
   });
 
   it("sets the browser title to the brand and Echorank", () => {

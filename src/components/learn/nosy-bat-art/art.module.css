@@ -47,7 +47,8 @@
   width: 100%;
   max-width: 640px;
   height: auto;
-  aspect-ratio: 640 / 200;
+  /* The heroes' viewBox: logo on top, the guide's motif under it. */
+  aspect-ratio: 640 / 320;
   margin: 0 0 18px;
   color: var(--nb-text);
 }

@@ -1,12 +1,10 @@
 /* /[locale]/site-crawler — what home2.module.css does not already have.
    Same theme variables as home2, so the page follows [data-theme] with it. */
 
-/* The lockup has a white wordmark (on-dark) and a dark one (on-light); the
-   day theme swaps them so the name never disappears into the background. */
-.lockup{display:block;height:72px;width:auto;max-width:100%;margin-bottom:22px}
-.lockupLight{display:none}
-:global([data-theme="day"]) .lockupDark{display:none}
-:global([data-theme="day"]) .lockupLight{display:block}
+/* The logo (<NosyBatLogo>) with the byline as text under it; the free result
+   page reuses .lockup at a smaller size (.lockupSm). */
+.lockup{display:flex;flex-direction:column;align-items:flex-start;gap:6px;margin-bottom:22px}
+.byline{margin:0;font-size:14px;letter-spacing:.02em;color:var(--muted)}
 
 .textLink{color:var(--goldText);font-size:14px;text-decoration:underline;text-underline-offset:3px;align-self:center}
 

@@ -15,6 +15,7 @@ import "server-only";
 import { prisma } from "@/lib/prisma";
 import { sendMail } from "@/lib/mailer";
 import { getIssueTotals } from "./issue-totals";
+import { CRAWLER_BRAND } from "./brand";
 import type { ComparisonResult } from "./compare";
 
 type Loc = "en" | "fr" | "de-CH";
@@ -22,6 +23,7 @@ const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://echorank360.com";
 
 const COPY = {
   en: {
+    byline: CRAWLER_BRAND.byline as string,
     subject: (host: string) => `Scheduled crawl finished: ${host}`,
     intro: (host: string, pages: string) => `Your scheduled crawl of ${host} finished: ${pages} pages crawled.`,
     issues: "Issues",
@@ -47,6 +49,7 @@ const COPY = {
     why: "You receive this because a crawl schedule in your workspace has email export turned on. Turn it off under Site Crawler → Configuration → Scheduled crawls.",
   },
   fr: {
+    byline: "robot d'exploration par Echorank",
     subject: (host: string) => `Exploration planifiée terminée : ${host}`,
     intro: (host: string, pages: string) => `L'exploration planifiée de ${host} est terminée : ${pages} pages explorées.`,
     issues: "Problèmes",
@@ -72,6 +75,7 @@ const COPY = {
     why: "Vous recevez ce message parce qu'une planification d'exploration de votre espace de travail a l'export par courriel activé. Désactivez-le sous Explorateur de site → Configuration → Explorations planifiées.",
   },
   "de-CH": {
+    byline: "Crawler von Echorank",
     subject: (host: string) => `Geplanter Crawl abgeschlossen: ${host}`,
     intro: (host: string, pages: string) => `Ihr geplanter Crawl von ${host} ist abgeschlossen: ${pages} Seiten gecrawlt.`,
     issues: "Probleme",
@@ -112,6 +116,20 @@ export interface ScheduleEmailData {
   comparison: { id: string; counts: ComparisonResult["counts"] } | null;
 }
 
+const EMAIL_LOGO_W = 240;
+
+/**
+ * The email's header: the logo on white (clients that drop transparency show
+ * it as drawn), 240 px wide at 735:410, and the byline as text under it.
+ */
+export function logoHeader(byline: string): string {
+  const h = Math.round((EMAIL_LOGO_W * CRAWLER_BRAND.logo.height) / CRAWLER_BRAND.logo.width);
+  return (
+    `<img src="${esc(CRAWLER_BRAND.logoEmail)}" width="${EMAIL_LOGO_W}" height="${h}" alt="${esc(CRAWLER_BRAND.name)}" ` +
+    `style="display:block;border:0;outline:none;width:${EMAIL_LOGO_W}px;height:${h}px">` +
+    `<p style="margin:4px 0 16px;color:#6b7280;font-size:12px">${esc(byline)}</p>`
+  );
+}
 /** Subject, HTML and text. Pure, so the copy and every link are testable. */
 export function scheduleEmail(d: ScheduleEmailData): { subject: string; html: string; text: string; links: string[] } {
   const c = COPY[d.locale];
@@ -152,6 +170,7 @@ export function scheduleEmail(d: ScheduleEmailData): { subject: string; html: st
   const p = (s: string) => `<p style="margin:0 0 12px">${s}</p>`;
   const html = [
     '<div style="font-family:system-ui,sans-serif;font-size:14px;color:#111827;max-width:560px">',
+    logoHeader(c.byline),
     p(esc(c.intro(d.host, n(d.pagesCrawled)))),
     p(esc(issueLine)),
     deltas ? `${p(`<strong>${esc(c.since)}</strong>`)}<ul style="margin:0 0 12px">${deltas.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>` : p(esc(c.noBaseline)),

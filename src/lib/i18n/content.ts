@@ -1851,7 +1851,8 @@ export interface TwoCrawlersCopy {
   lead: string;
   a: { eyebrow: string; title: string; body: string; bullets: string[]; cta: string; secondary: string };
   b: {
-    lockupAlt: string;
+    /** Text beside the logo (the logo's alt is the name). */
+    byline: string;
     title: string;
     body: (cap: string, rules: string, checks: string) => string;
     checks: readonly { family: string; text: string }[];
@@ -1884,7 +1885,7 @@ export const HOME_TWO_CRAWLERS: Record<"en" | "fr", TwoCrawlersCopy> = {
       secondary: "See plans",
     },
     b: {
-      lockupAlt: `${CRAWLER_BRAND.name}, ${CRAWLER_BRAND.byline}`,
+      byline: CRAWLER_BRAND.byline,
       title: "What search engines see, every page.",
       body: (cap, rules, checks) =>
         `Crawls up to ${cap} URLs and checks each one against ${rules} rules: ${checks}. Every finding is an issue, a warning or an opportunity, with the evidence next to it.`,
@@ -1929,7 +1930,7 @@ export const HOME_TWO_CRAWLERS: Record<"en" | "fr", TwoCrawlersCopy> = {
       secondary: "Voir les forfaits",
     },
     b: {
-      lockupAlt: `${CRAWLER_BRAND.name}, robot d'exploration par Echorank`,
+      byline: "robot d'exploration par Echorank",
       title: "Ce que les moteurs de recherche voient, page par page.",
       body: (cap, rules, checks) =>
         `Explore jusqu'à ${cap} URL et vérifie chacune selon ${rules} règles : ${checks}. Chaque constat est un problème, un avertissement ou une occasion, avec la preuve à côté.`,

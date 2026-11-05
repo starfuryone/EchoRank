@@ -400,6 +400,9 @@ export const FREE_COLUMN: { head: Text; summary: Text; link: Text } = {
   link: { en: "Try it free", fr: "Essayer gratuitement" },
 };
 
+/** The byline, as text beside or under the logo (never in the image). */
+export const CRAWLER_BYLINE: Text = { en: CRAWLER_BRAND.byline, fr: "robot d'exploration par Echorank" };
+
 export const FREE_TRY_STRIP: { label: Text; h2: Text; body: Text; button: Text } = {
   label: { en: "Try it free", fr: "Essayez gratuitement" },
   h2: {
@@ -639,6 +642,7 @@ export function guideCtaCopy(slug: string, base: CopyBase, plans: PlansCtx) {
     inline: c.inline[base](plans),
     nudge: c.nudge[base](plans),
     closing: { h: c.closing.h[base](plans), p1: c.closing.p1[base](plans), p2: c.closing.p2[base](plans) },
+    byline: CRAWLER_BYLINE[base],
     labels: {
       plans: GUIDE_CTA_CHROME.plans[base],
       open: GUIDE_CTA_CHROME.open[base],

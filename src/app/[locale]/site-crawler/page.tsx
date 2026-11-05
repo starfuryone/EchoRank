@@ -41,6 +41,7 @@ import {
   CRAWL_CLOSER,
   CRAWL_INTRO,
   CRAWL_PLANS,
+  CRAWLER_BYLINE,
   FREE_COLUMN,
   FREE_TRY_STRIP,
   capabilityBody,
@@ -56,6 +57,7 @@ import { PublicNav } from "../PublicNav";
 import { PricingSection } from "../PricingSection";
 import { PublicFooter } from "@/components/PublicFooter";
 import { CrawlerCta } from "./CrawlerCta";
+import { NosyBatLogo } from "@/components/brand/NosyBatLogo";
 import { CRAWLER_GUIDES_HREF } from "@/lib/crawler-guides-link";
 import s from "../home2.module.css";
 import c from "./site-crawler.module.css";
@@ -225,10 +227,10 @@ export default async function Page({ params }: { params: Params }) {
       {/* /01 — hero */}
       <section className={s.section}>
         <div className={s.container}>
-          {/* eslint-disable-next-line @next/next/no-img-element -- static SVG lockup */}
-          <img className={`${c.lockup} ${c.lockupDark}`} src={CRAWLER_BRAND.logoOnDark} alt={`${CRAWLER_BRAND.nameTm} — ${CRAWLER_BRAND.byline}`} width={230} height={72} />
-          {/* eslint-disable-next-line @next/next/no-img-element -- static SVG lockup */}
-          <img className={`${c.lockup} ${c.lockupLight}`} src={CRAWLER_BRAND.logoOnLight} alt="" aria-hidden="true" width={230} height={72} />
+          <div className={c.lockup} data-testid="hero-lockup">
+            <NosyBatLogo height={120} alt={CRAWLER_BRAND.name} onDark />
+            <p className={c.byline}>{CRAWLER_BYLINE[base]}</p>
+          </div>
           <h1 className={s.h1}>{t.h1}</h1>
           <p className={s.sub}>{lead}</p>
           <div className={s.ctarow} style={{ marginTop: 24 }}>

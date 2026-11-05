@@ -14,6 +14,7 @@
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import axe from "axe-core";
+import { CRAWLER_BRAND } from "@/lib/site-crawler/brand";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 process.env.AUTH_SECRET = "test-only-secret";
@@ -145,7 +146,9 @@ describe("the result page", () => {
   it("shows the lockup, host, pages, health, kind totals and the top 5 Fix-first rules to anyone", async () => {
     addRow("tok_abcdefghijklmnop");
     await renderResult("tok_abcdefghijklmnop");
-    expect(el.querySelector("img")?.getAttribute("alt")).toContain("™");
+    const logo = el.querySelector('[data-testid="free-result-lockup"] img')!;
+    expect([logo.getAttribute("alt"), logo.getAttribute("width"), logo.getAttribute("height")]).toEqual([CRAWLER_BRAND.name, "100", "56"]);
+    expect(el.querySelector('[data-testid="free-result-lockup"]')!.textContent).toBe(CRAWLER_BRAND.byline);
     expect(el.querySelector('[data-testid="free-result-host"]')!.textContent).toBe("www.example.org");
     expect(el.querySelector('[data-testid="free-result-health"]')!.textContent).toContain("41");
     expect(el.textContent).toContain("197");

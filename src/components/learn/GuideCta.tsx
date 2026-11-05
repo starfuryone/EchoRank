@@ -19,6 +19,7 @@ import { createContext, useContext, type ReactNode } from "react";
 import { useSignedIn } from "@/app/[locale]/PublicNav";
 import type { GuideCtaResolved } from "@/lib/site-crawler/marketing-copy";
 import { CRAWLER_BRAND } from "@/lib/site-crawler/brand";
+import { NosyBatLogo } from "@/components/brand/NosyBatLogo";
 import s from "@/app/[locale]/home2.module.css";
 import g from "./guide-cta.module.css";
 
@@ -77,10 +78,11 @@ export function GuideCta({ variant, copy, pricingHref, freeHref }: GuideCtaProps
 
   return (
     <aside className={g.closing} data-guide-cta="closing">
-      {/* eslint-disable-next-line @next/next/no-img-element -- static SVG lockup */}
-      <img className={`${g.lockup} ${g.lockupDark}`} src={CRAWLER_BRAND.logoOnDark} alt={`${CRAWLER_BRAND.nameTm} — ${CRAWLER_BRAND.byline}`} width={166} height={52} />
-      {/* eslint-disable-next-line @next/next/no-img-element -- static SVG lockup */}
-      <img className={`${g.lockup} ${g.lockupLight}`} src={CRAWLER_BRAND.logoOnLight} alt="" aria-hidden="true" width={166} height={52} />
+      {/* 68 px high keeps it over 120 px wide, where the wordmark still reads. */}
+      <div className={g.lockup}>
+        <NosyBatLogo height={68} alt={CRAWLER_BRAND.name} onDark />
+        <span className={g.byline}>{copy.byline}</span>
+      </div>
       <h2 className={g.closingH}>{copy.closing.h}</h2>
       <p className={g.closingP}>{copy.closing.p1}</p>
       <p className={g.closingP}>{copy.closing.p2}</p>

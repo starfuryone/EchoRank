@@ -17,6 +17,7 @@ import { CRAWLER_BRAND } from "@/lib/site-crawler/brand";
 import { FREE_CRAWLER_COPY, freeBase } from "@/lib/site-crawler/free-copy";
 import { freeCrawlByToken, freeExpiresAt, freeFullList, freePreview, isUnlocked, paidCrawlCeiling, unlockCookieName } from "@/lib/site-crawler/free-result";
 import { PublicFooter } from "@/components/PublicFooter";
+import { NosyBatLogo } from "@/components/brand/NosyBatLogo";
 import { PublicNav } from "../../../../PublicNav";
 import { FreeResultProgress, FreeUnlockForm, ShareResultButton } from "../../result-client";
 import s from "../../../../home2.module.css";
@@ -55,10 +56,10 @@ export default async function Page({ params, searchParams }: { params: Promise<{
       <PublicNav locale={locale} />
       <section className={s.section}>
         <div className={s.container}>
-          {/* eslint-disable-next-line @next/next/no-img-element -- static SVG lockup */}
-          <img className={`${c.lockup} ${c.lockupDark}`} src={CRAWLER_BRAND.logoOnDark} alt={r.lockupAlt} width={179} height={56} />
-          {/* eslint-disable-next-line @next/next/no-img-element -- static SVG lockup */}
-          <img className={`${c.lockup} ${c.lockupLight}`} src={CRAWLER_BRAND.logoOnLight} alt="" aria-hidden="true" width={179} height={56} />
+          <div className={c.lockup} data-testid="free-result-lockup">
+            <NosyBatLogo height={56} alt={CRAWLER_BRAND.name} onDark />
+            <p className={c.byline}>{r.byline}</p>
+          </div>
           <p className={s.label}>
             <b>{r.kicker}</b>
           </p>

@@ -15,6 +15,7 @@
 import { useState } from "react";
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
+import { NosyBatLogo } from "@/components/brand/NosyBatLogo";
 import { REGISTRY_FAMILIES } from "@/lib/crawl-rules-meta";
 import { FLAGS } from "@/lib/flags";
 import type { DashLocale, SiteCrawlerCopy } from "@/lib/i18n/dashboard";
@@ -73,6 +74,11 @@ export default function CrawlerHelpModal({
   return (
     <Modal open onClose={onClose} title={h.title} closeLabel={h.close} className="max-w-3xl">
       <div className="space-y-4">
+        {/* The modal's title names the brand; the 40 px logo here is decorative, the byline text. */}
+        <div className="flex items-center gap-3" data-testid="crawler-help-brand">
+          <NosyBatLogo height={40} alt="" />
+          <span className="text-xs text-gray-500">{t.byline}</span>
+        </div>
         <div role="tablist" aria-label={h.title} className="flex flex-wrap gap-1 border-b border-gray-200">
           {HELP_TABS.map((id) => (
             <button

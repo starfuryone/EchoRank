@@ -15,6 +15,7 @@ import { HOME_TWO_CRAWLERS } from "@/lib/i18n/content";
 import { PLAN_CONFIGS } from "@/lib/plan-config";
 import { CRAWLER_BRAND } from "@/lib/site-crawler/brand";
 import { ruleCountLabel } from "@/lib/site-crawler/rule-count";
+import { NosyBatLogo } from "@/components/brand/NosyBatLogo";
 import s from "./home2.module.css";
 import c from "./two-crawlers.module.css";
 
@@ -64,10 +65,8 @@ export function TwoCrawlers({ locale, sectionNumber }: { locale: string; section
 
           <article className={c.card}>
             <div className={c.head}>
-              {/* eslint-disable-next-line @next/next/no-img-element -- static SVG lockup */}
-              <img className={`${c.lockup} ${c.lockupDark}`} src={CRAWLER_BRAND.logoOnDark} alt={t.b.lockupAlt} width={179} height={56} />
-              {/* eslint-disable-next-line @next/next/no-img-element -- static SVG lockup */}
-              <img className={`${c.lockup} ${c.lockupLight}`} src={CRAWLER_BRAND.logoOnLight} alt="" aria-hidden="true" width={179} height={56} />
+              <NosyBatLogo height={56} alt={CRAWLER_BRAND.name} onDark testId="two-crawlers-logo" />
+              <span className={c.byline}>{t.b.byline}</span>
             </div>
             <h3 className={c.title}>{t.b.title}</h3>
             <p className={c.body}>{t.b.body(cap, rules, checks)}</p>

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 //
 // tests/crawler-brand-once.test.tsx — /crawler renders the Nosy Bat brand once
-// outside the sidebar: the top bar's mark, name and byline. The page header
+// outside the sidebar: the top bar's logo (its alt is the name) and byline. The page header
 // below starts with the description; no lockup, no second name. Each crawler
 // view shares that header, so Start stands for all of them.
 import { act } from "react";
@@ -67,18 +67,20 @@ describe.each(["en", "fr", "de-CH"] as const)("/crawler (%s)", (l) => {
     await vi.waitFor(() => expect(el.querySelector('[data-testid="crawler-header"]')).not.toBeNull());
     const found = brandRenderings();
     expect(found.map((e) => e.outerHTML.slice(0, 160))).toHaveLength(1);
-    const h1 = found[0]!;
-    expect(h1.tagName).toBe("H1");
+    // The one rendering is the 44 px logo inside the top bar's h1; its alt is the name.
+    const logo = found[0]!;
+    expect(logo.tagName).toBe("IMG");
+    expect(logo.getAttribute("alt")).toBe(CRAWLER_BRAND.name);
+    expect([logo.getAttribute("width"), logo.getAttribute("height")]).toEqual(["79", "44"]);
+    expect(logo.getAttribute("src")).toBe(CRAWLER_BRAND.logo.png);
+    expect(logo.closest("picture")!.querySelector('source[type="image/webp"]')!.getAttribute("srcset")).toContain(CRAWLER_BRAND.logo.webp);
+    const h1 = logo.closest("h1")!;
     expect(h1.closest("header")).not.toBeNull();
-    expect(accessibleName(h1).startsWith(CRAWLER_BRAND.name)).toBe(true);
-    expect(h1.textContent).toContain(SITE_CRAWLER_COPY[l].byline);
-    // The 28 px mark sits before the title, decorative.
-    const mark = el.querySelector<HTMLImageElement>('header [data-testid="topbar-mark"]')!;
-    expect(mark.getAttribute("src")).toBe(CRAWLER_BRAND.mark);
-    expect([mark.getAttribute("width"), mark.getAttribute("height"), mark.getAttribute("alt")]).toEqual(["28", "28", ""]);
-    expect(mark.compareDocumentPosition(h1) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    // No lockup anywhere on the page; the page header opens with the description.
-    for (const src of [CRAWLER_BRAND.logoOnLight, CRAWLER_BRAND.logoOnDark]) expect(el.querySelector(`img[src="${src}"]`)).toBeNull();
+    // The byline is text, beside the logo; no "Nosy Bat" text in the h1 besides the alt.
+    expect(h1.textContent).toBe(SITE_CRAWLER_COPY[l].byline);
+    // The old mark is gone from the top bar; one logo on the page.
+    expect(el.querySelector('header [data-testid="topbar-mark"]')).toBeNull();
+    expect(el.querySelectorAll(`img[src="${CRAWLER_BRAND.logo.png}"]`)).toHaveLength(1);
     const header = el.querySelector('[data-testid="crawler-header"]')!;
     expect(header.firstElementChild!.tagName).toBe("P");
     expect(header.firstElementChild!.textContent).toBe(SITE_CRAWLER_COPY[l].subtitle);

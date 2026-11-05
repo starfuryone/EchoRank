@@ -39,7 +39,8 @@ export interface FreeCrawlerCopy {
   errors: Record<string, string>;
   result: {
     kicker: string;
-    lockupAlt: string;
+    /** Text beside the logo (the logo's alt is the name). */
+    byline: string;
     pagesCrawled: string;
     health: string;
     healthHelp: string;
@@ -108,7 +109,7 @@ export const FREE_CRAWLER_COPY: Record<FreeBase, FreeCrawlerCopy> = {
     },
     result: {
       kicker: "FREE CRAWL RESULT",
-      lockupAlt: `${CRAWLER_BRAND.nameTm}, ${CRAWLER_BRAND.byline}`,
+      byline: CRAWLER_BRAND.byline,
       pagesCrawled: "Pages crawled",
       health: "Site health",
       healthHelp: "0 to 100, from high-priority findings per page.",
@@ -191,7 +192,7 @@ export const FREE_CRAWLER_COPY: Record<FreeBase, FreeCrawlerCopy> = {
     },
     result: {
       kicker: "RÉSULTAT DE L'EXPLORATION GRATUITE",
-      lockupAlt: `${CRAWLER_BRAND.nameTm}, crawler par Echorank`,
+      byline: "robot d'exploration par Echorank",
       pagesCrawled: "Pages explorées",
       health: "Santé du site",
       healthHelp: "De 0 à 100, selon les problèmes prioritaires par page.",

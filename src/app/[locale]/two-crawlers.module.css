@@ -4,12 +4,9 @@
 .grid{display:grid;grid-template-columns:1fr;gap:20px;margin-top:28px}
 @media(min-width:900px){.grid{grid-template-columns:repeat(2,minmax(0,1fr));align-items:stretch}}
 .card{display:flex;flex-direction:column;gap:14px;padding:28px;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);min-width:0}
-.head{min-height:56px;display:flex;align-items:center}
+.head{min-height:56px;display:flex;align-items:center;flex-wrap:wrap;gap:6px 14px}
 .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--goldText)}
-.lockup{display:block;height:56px;width:auto;max-width:100%}
-.lockupLight{display:none}
-:global([data-theme="day"]) .lockupDark{display:none}
-:global([data-theme="day"]) .lockupLight{display:block}
+.byline{font-size:14px;letter-spacing:.02em;color:var(--muted)}
 .title{font-size:22px;line-height:1.25;font-weight:650;color:var(--text);margin:0}
 .body{font-size:15px;line-height:1.6;color:var(--muted);margin:0}
 .bullets{margin:0;padding-left:18px;display:grid;gap:6px;font-size:14.5px;line-height:1.5;color:var(--text)}

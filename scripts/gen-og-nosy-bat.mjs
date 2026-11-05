@@ -3,44 +3,48 @@
 //
 //   node scripts/gen-og-nosy-bat.mjs
 //
-// Mark left, wordmark right, on the dark background. Both come from the brand
-// SVGs in public/nosy-bat/ — the mark from nosy-bat-mark-on-dark.svg, the
-// wordmark by cropping nosy-bat-logo-on-dark.svg to its text (its paths are
-// already outlined, so no font is involved). Rasterised with sharp, an
-// existing Next dependency, like the sibling gen-og-*.mjs scripts. Run once
-// and commit the PNG; rerun only when the brand files change.
+// The v2 logo (public/nosy-bat/v2/nosy-bat-logo.png, transparent, 735x410)
+// composited at its own size — never resampled, cropped, recoloured or given
+// effects — on the dark #181A20 background, with the byline set as text
+// beside it (the byline is never part of the artwork). Rasterised with sharp,
+// an existing Next dependency, like the sibling gen-og-*.mjs scripts. The text
+// uses the box's sans (DejaVu Sans here), so rerunning on another machine can
+// shift the type slightly. Run once and commit the PNG; rerun when the logo or
+// the byline changes. tests/nosy-bat-logo.test.ts checks the output is 1200x630.
 
 import sharp from "sharp";
-import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 
 const W = 1200;
 const H = 630;
 const BG = "#181A20";
+const TEXT = "#EAECEF";
+const MUTED = "#B7BDC6";
+// Kept in step with CRAWLER_BRAND.byline (src/lib/site-crawler/brand.ts).
+const BYLINE = ["crawler by", "Echorank"];
+
 const dir = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "public", "nosy-bat");
+const logoPath = path.join(dir, "v2", "nosy-bat-logo.png");
+const { width: LW, height: LH } = await sharp(logoPath).metadata();
+if (LW !== 735 || LH !== 410) throw new Error(`expected the 735x410 logo, got ${LW}x${LH}`);
 
-const MARK = 400;
-const mark = await sharp(await readFile(path.join(dir, "nosy-bat-mark-on-dark.svg")), { density: 300 })
-  .resize(MARK, MARK)
-  .png()
-  .toBuffer();
-
-// The logo is 640x200 with the mark in its first 200 px; cropping the viewBox
-// to x >= 196 leaves the wordmark and byline.
-const logo = await readFile(path.join(dir, "nosy-bat-logo-on-dark.svg"), "utf8");
-const wordmarkSvg = logo
-  .replace('viewBox="0 0 640 200"', 'viewBox="196 30 444 140"')
-  .replace('width="640" height="200"', 'width="444" height="140"');
-const WORD_W = 620;
-const wordmark = await sharp(Buffer.from(wordmarkSvg), { density: 300 }).resize({ width: WORD_W }).png().toBuffer();
-const wordH = (await sharp(wordmark).metadata()).height;
+const LEFT = 60;
+const TOP = Math.round((H - LH) / 2);
+const TX = LEFT + LW + 40;
+const byline = Buffer.from(
+  `<svg xmlns="http://www.w3.org/2000/svg" width="${W - TX}" height="${H}">` +
+    `<text x="0" y="${H / 2 - 8}" font-family="DejaVu Sans, Arial, sans-serif" font-size="46" fill="${MUTED}">${BYLINE[0]}</text>` +
+    `<text x="0" y="${H / 2 + 52}" font-family="DejaVu Sans, Arial, sans-serif" font-size="52" font-weight="bold" fill="${TEXT}">${BYLINE[1]}</text>` +
+    `</svg>`,
+);
 
 await sharp({ create: { width: W, height: H, channels: 4, background: BG } })
   .composite([
-    { input: mark, left: 80, top: Math.round((H - MARK) / 2) },
-    { input: wordmark, left: 80 + MARK + 30, top: Math.round((H - wordH) / 2) },
+    { input: logoPath, left: LEFT, top: TOP },
+    { input: byline, left: TX, top: 0 },
   ])
+  .flatten({ background: BG })
   .png()
   .toFile(path.join(dir, "og.png"));
 
