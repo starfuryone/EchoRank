@@ -10,7 +10,9 @@
 import { NextResponse } from "next/server";
 import { requirePaidPlan } from "@/lib/paid-plan";
 import { prisma } from "@/lib/prisma";
-import { crawlRouteError } from "@/lib/site-crawler/http";
+import { archivedGuard, crawlRouteError } from "@/lib/site-crawler/http";
+import { DATA_STATE_SELECT } from "@/lib/site-crawler/data-state";
+
 import { csvFilename } from "@/lib/csv-export";
 import { csvStreamResponse, wantsCsv } from "@/lib/csv-stream";
 import { COMPARE_BUCKETS, bucketCursor, comparisonBucket, storedCompareInput, type BucketRow, type CompareBucket } from "@/lib/site-crawler/compare";
@@ -22,10 +24,14 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   try {
     const tenant = await requirePaidPlan();
     const { id, comparisonId } = await params;
-    const a = await prisma.crawlJob.findFirst({ where: { id, tenantId: tenant.tenantId }, select: { id: true, config: true, dataPurgedAt: true } });
+    const a = await prisma.crawlJob.findFirst({ where: { id, tenantId: tenant.tenantId }, select: { id: true, config: true, ...DATA_STATE_SELECT } });
     if (!a) return NextResponse.json({ error: "Crawl not found", code: "NOT_FOUND" }, { status: 404 });
     const row = await prisma.crawlComparison.findFirst({ where: { id: comparisonId, jobAId: a.id } });
     if (!row) return NextResponse.json({ error: "Comparison not found", code: "NOT_FOUND" }, { status: 404 });
+    // Both crawls: the stored result needs neither, but the buckets read both sides' pages.
+    const jobB = await prisma.crawlJob.findFirst({ where: { id: row.jobBId, tenantId: tenant.tenantId }, select: DATA_STATE_SELECT });
+    const archived = archivedGuard(a) ?? (jobB ? archivedGuard(jobB) : null);
+    if (archived) return archived;
 
     const url = new URL(request.url);
     const bucket = url.searchParams.get("bucket");

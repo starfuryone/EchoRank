@@ -15,7 +15,8 @@ import { NextResponse } from "next/server";
 import { RULE_BY_ID } from "@/lib/crawl-rules";
 import { requirePaidPlan } from "@/lib/paid-plan";
 import { prisma } from "@/lib/prisma";
-import { crawlRouteError } from "@/lib/site-crawler/http";
+import { archivedGuard, crawlRouteError } from "@/lib/site-crawler/http";
+import { DATA_STATE_SELECT } from "@/lib/site-crawler/data-state";
 import { ruleIdOf } from "@/lib/site-crawler/legacy-map";
 
 /** Findings listed per page; the rule's own list has the rest. */
@@ -26,6 +27,12 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
   try {
     const tenant = await requirePaidPlan();
     const { id, pageId } = await params;
+    // The crawl first: an archived crawl's pages are not in Postgres (409 ARCHIVED, not 404).
+    const crawl = await prisma.crawlJob.findFirst({ where: { id, tenantId: tenant.tenantId }, select: DATA_STATE_SELECT });
+    if (crawl) {
+      const archived = archivedGuard(crawl);
+      if (archived) return archived;
+    }
     const page = await prisma.crawlPage.findFirst({
       where: { id: pageId, crawlJobId: id, crawlJob: { tenantId: tenant.tenantId } },
       select: {

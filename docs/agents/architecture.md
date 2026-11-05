@@ -42,6 +42,7 @@ be readable by it — see [gotchas.md](gotchas.md).
 | Redis (`redis-echorank.service`) | `127.0.0.1:6380` | password-protected; this is the one `REDIS_URL` points at |
 | Redis (default instance) | `127.0.0.1:6379` | **not ours** — the commented-out `REDIS_URL` in `.env` still points here |
 | OTEL collector | `localhost:4318` | `OTEL_EXPORTER_OTLP_ENDPOINT` |
+| Spaces `nosybat-archive` | DigitalOcean, private | The crawl archive and generated exports (`src/lib/spaces/client.ts`, its own `SPACES_ARCHIVE_*` key). `tenants/<t>/crawls/<c>/` = one gzip NDJSON per table + `manifest.json`; `tenants/<t>/exports/<c>/` = CSV / PDF / sitemap zips, swept after 7 days. Off unless `CRAWL_ARCHIVE_ENABLED` / `EXPORTS_VIA_SPACES`; queue `crawl-archive` (05:17 UTC). Retention (per tenant, `retention.ts`) still decides what is kept; the archive only moves kept crawls' rows, and every reader asks `data-state.ts` first. |
 
 ## App
 

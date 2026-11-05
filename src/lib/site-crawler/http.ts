@@ -6,6 +6,7 @@
 
 import { NextResponse } from "next/server";
 import { enforcementErrorResponse } from "@/lib/plan-enforcement";
+import { archivedBody, crawlDataState, type DataStateRow } from "./data-state";
 
 export {
   CrawlLockedError,
@@ -15,6 +16,20 @@ export {
   InvalidCrawlUrlError,
 } from "./errors";
 import { CrawlLockedError, CrawlQuotaExceededError, InvalidCrawlConfigError, InvalidCrawlListError, InvalidCrawlUrlError } from "./errors";
+
+/** 409 ARCHIVED: the crawl's rows are in the archive (data-state.ts). */
+export function archivedResponse(row: DataStateRow): NextResponse {
+  return NextResponse.json(archivedBody(row), { status: 409 });
+}
+
+/**
+ * The shared guard for a route about to read a crawl's child rows: a 409
+ * ARCHIVED response when they are in the archive, null otherwise. A PURGED
+ * crawl gets null too — each route keeps its own answer for that, unchanged.
+ */
+export function archivedGuard(row: DataStateRow): NextResponse | null {
+  return crawlDataState(row) === "archived" ? archivedResponse(row) : null;
+}
 
 export function crawlRouteError(err: unknown): NextResponse {
   const enforcement = enforcementErrorResponse(err);

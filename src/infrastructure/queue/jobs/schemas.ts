@@ -290,6 +290,9 @@ export interface SiteCrawlScheduleJob {
 }
 
 /** The nightly retention sweep on the site-crawl queue (job name "retention"). */
+/** crawl-archive queue (CRAWL-ARCHIVE.md): the daily sweep, or one restore. */
+export type CrawlArchiveJob = { kind: "sweep" } | { kind: "restore"; crawlJobId: string };
+
 export interface SiteCrawlRetentionJob {
   retention: true;
 }
@@ -460,4 +463,5 @@ export interface QueueJobMap {
   "opportunity-scan": OpportunityScanJob;
   "action-agent": ActionAgentJob;
   "assistant-precompute": AssistantPrecomputeJob;
+  "crawl-archive": CrawlArchiveJob;
 }

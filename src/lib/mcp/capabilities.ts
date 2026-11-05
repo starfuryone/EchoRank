@@ -10,6 +10,7 @@
 // no tenant at all, and paying a database round-trip to answer `ping` would be
 // a round-trip on every client's every reconnect.
 
+import { crawlDataState } from "@/lib/site-crawler/data-state";
 import "server-only";
 
 import { prisma } from "@/lib/prisma";
@@ -123,8 +124,9 @@ export function capsFor(tenantId: string, keyId = ""): McpCapabilities {
       return { ...detail, ...queue };
     },
     async getCrawlIssues(args) {
-      const crawl = await prisma.crawlJob.findFirst({ where: { id: args.crawlId as string, tenantId }, select: { id: true, config: true } });
+      const crawl = await prisma.crawlJob.findFirst({ where: { id: args.crawlId as string, tenantId }, select: { id: true, config: true, storageState: true, dataPurgedAt: true } });
       if (!crawl) throw new Error("No crawl with that id in this workspace.");
+      if (crawlDataState(crawl) === "archived") throw new Error("This crawl is archived. Restore it from History on the Site Crawler page to list its findings.");
       return publicIssues(crawl, {
         ruleId: (args.ruleId as string) ?? null,
         family: (args.family as string) ?? null,

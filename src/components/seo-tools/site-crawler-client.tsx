@@ -67,6 +67,11 @@ import { SourceLines } from "@/components/seo-tools/site-crawler-sources";
 import type { AddData } from "@/lib/site-crawler/crawl-config";
 import { SheetsExport } from "@/components/seo-tools/site-crawler-sheets";
 import { ReportDownloadButton } from "@/components/reports/ReportDownloadButton";
+import { ArchivedPanel } from "@/components/seo-tools/site-crawler-archived";
+import { crawlDataState } from "@/lib/site-crawler/data-state";
+
+/** True when a (not purged) crawl's rows are in the archive or moving (data-state.ts). */
+const rowsArchived = (crawl: Pick<CrawlDto, "storageState" | "dataPurgedAt">) => crawlDataState(crawl) === "archived";
 import { lookerStudioHref } from "@/lib/site-crawler/sheets-layout";
 import { SegmentOverview, SegmentPicker } from "@/components/seo-tools/site-crawler-segments";
 import type { ConfigProblem, CrawlConfigInput } from "@/lib/site-crawler/crawl-config";
@@ -428,7 +433,8 @@ export function SiteCrawlerClient({
   );
 
   useEffect(() => {
-    if (!active || isInFlight(active.status)) return;
+    // An archived crawl's findings are in the archive: no request until it is restored.
+    if (!active || isInFlight(active.status) || rowsArchived(active)) return;
     let cancelled = false;
     void (async () => {
       const data = await loadIssues(active.id, page, severity, type, segment);
@@ -456,7 +462,7 @@ export function SiteCrawlerClient({
   );
 
   useEffect(() => {
-    if (!active || isInFlight(active.status) || (tab !== "duplicates" && tab !== "redirects")) return;
+    if (!active || isInFlight(active.status) || rowsArchived(active) || (tab !== "duplicates" && tab !== "redirects")) return;
     let cancelled = false;
     void (async () => {
       const data = await loadTab(active.id, tab);
@@ -593,6 +599,9 @@ export function SiteCrawlerClient({
   }
 
   const running = active && isInFlight(active.status);
+  // The crawl archive: a kept crawl whose rows are in Spaces shows its summary,
+  // then "Archived — Restore" in place of every tab that reads rows.
+  const archived = Boolean(active && rowsArchived(active));
   // Start view: one crawl at a time per workspace, so a crawl in flight anywhere holds the Start button.
   const busy = crawls.some((c) => isInFlight(c.status));
   const advancedCount = [cfg.config, addData, ai, semantic, inspection].filter(Boolean).length;
@@ -902,7 +911,7 @@ export function SiteCrawlerClient({
                 <Badge variant={active.status === "FAILED" ? "danger" : "default"}>
                   {statusLabel(active.status, t)}
                 </Badge>
-                {!running && !active.dataPurgedAt && (
+                {!running && !active.dataPurgedAt && !archived && (
                   <ExportsMenu
                     t={t}
                     links={[
@@ -980,7 +989,22 @@ export function SiteCrawlerClient({
         </Card>
       )}
 
-      {active && !running && (
+      {active && !running && archived && (
+        <ArchivedPanel
+          key={active.id}
+          crawlId={active.id}
+          storageState={active.storageState ?? "ARCHIVED"}
+          host={hostOfCrawl(active.rootUrl)}
+          a={t.archive}
+          onRestored={() => {
+            void fetch(`/api/seo/v1/crawl/${active.id}`)
+              .then((r) => (r.ok ? r.json() : null))
+              .then((fresh: CrawlDto | null) => fresh && setActive((current) => (current?.id === fresh.id ? fresh : current)));
+          }}
+        />
+      )}
+
+      {active && !running && !archived && (
         <FixFirst
           summary={summary}
           onOpenRule={openRule}
@@ -990,7 +1014,7 @@ export function SiteCrawlerClient({
         />
       )}
 
-      {active && !running && (
+      {active && !running && !archived && (
         <div className="space-y-2">
           <div className="flex flex-wrap items-end justify-between gap-2">
             <TabStrip
@@ -1013,9 +1037,9 @@ export function SiteCrawlerClient({
         </div>
       )}
 
-      {active && !running && <div role="tabpanel" aria-labelledby={`tab-${subsOf(GROUP_OF[tab]).length > 1 ? tab : GROUP_OF[tab]}`} className="space-y-4">
+      {active && !running && !archived && <div role="tabpanel" aria-labelledby={`tab-${subsOf(GROUP_OF[tab]).length > 1 ? tab : GROUP_OF[tab]}`} className="space-y-4">
 
-      {active && !running && tab === "metrics" && (
+      {active && !running && !archived && tab === "metrics" && (
         <>
           {summary && "metricOverview" in summary && summary.metricOverview ? <MetricTiles data={summary.metricOverview} t={t.p4d} int={int} /> : <OverviewPanel summary={summary} t={t} int={int} />}
           {flag("crawl.ai") && summary && "metricOverview" in summary && summary.metricOverview && (
@@ -1029,11 +1053,11 @@ export function SiteCrawlerClient({
         </>
       )}
 
-      {active && !running && tab === "segments" && (
+      {active && !running && !archived && tab === "segments" && (
         <SegmentOverview segments={summary?.segments} segment={summary?.segment} onPick={pickSegment} t={t} int={int} />
       )}
 
-      {active && !running && tab === "rules" && (
+      {active && !running && !archived && tab === "rules" && (
         <IssuesView
           key={ruleSel ?? ""}
           crawlId={active.id}
@@ -1048,9 +1072,9 @@ export function SiteCrawlerClient({
         />
       )}
 
-      {active && !running && tab === "external" && <ExternalPanel crawlId={active.id} t={t} int={int} />}
+      {active && !running && !archived && tab === "external" && <ExternalPanel crawlId={active.id} t={t} int={int} />}
 
-      {active && !running && tab === "extraction" && (
+      {active && !running && !archived && tab === "extraction" && (
         <ExtractionPanel
           crawlId={active.id}
           extractorNames={[...(active.config?.extractors ?? []).map((e) => e.name), ...(active.config?.js ?? []).map((s) => `JS: ${s.name}`), ...(active.config?.ai?.prompts ?? []).map((p, i) => `AI: ${p.preset === "custom" ? `${t.p4e.aiPresets.custom} ${i + 1}` : t.p4e.aiPresets[p.preset]}`)]}
@@ -1060,7 +1084,7 @@ export function SiteCrawlerClient({
         />
       )}
 
-      {active && !running && tab === "structure" && (
+      {active && !running && !archived && tab === "structure" && (
         <StructurePanel
           crawlId={active.id}
           rootUrl={active.rootUrl}
@@ -1075,7 +1099,7 @@ export function SiteCrawlerClient({
         />
       )}
 
-      {active && !running && tab === "compare" && (
+      {active && !running && !archived && tab === "compare" && (
         <ComparePanel
           crawlId={active.id}
           segment={segment || null}
@@ -1086,7 +1110,7 @@ export function SiteCrawlerClient({
         />
       )}
 
-      {active && !running && tab === "duplicates" && (
+      {active && !running && !archived && tab === "duplicates" && (
         <DuplicatesPanel
           data={duplicates}
           kind={dupKind}
@@ -1104,7 +1128,7 @@ export function SiteCrawlerClient({
         />
       )}
 
-      {active && !running && tab === "redirects" && (
+      {active && !running && !archived && tab === "redirects" && (
         <RedirectsPanel
           data={redirects}
           onPage={(p) => {
@@ -1116,7 +1140,7 @@ export function SiteCrawlerClient({
         />
       )}
 
-      {active && !running && tab === "pages" && (
+      {active && !running && !archived && tab === "pages" && (
         <PagesView
           key={JSON.stringify(pageFilters)}
           crawlId={active.id}
@@ -1134,7 +1158,7 @@ export function SiteCrawlerClient({
         />
       )}
 
-      {active && !running && tab === "issues" && (
+      {active && !running && !archived && tab === "issues" && (
         <Card>
           <CardHeader>
             <div className="flex flex-wrap items-center justify-between gap-3">

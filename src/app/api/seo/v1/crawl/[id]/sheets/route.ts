@@ -16,7 +16,8 @@ import { requirePaidPlan } from "@/lib/paid-plan";
 import { prisma } from "@/lib/prisma";
 import { flag } from "@/lib/flags";
 import { GscReauthError } from "@/lib/gsc/client";
-import { crawlRouteError } from "@/lib/site-crawler/http";
+import { archivedGuard, crawlRouteError } from "@/lib/site-crawler/http";
+import { DATA_STATE_SELECT } from "@/lib/site-crawler/data-state";
 import { SheetsNotConnectedError, SheetsScopeError, exportCrawlToSheets, spreadsheetIdOf, withSheetsClient } from "@/lib/site-crawler/sheets";
 
 const CONNECT = "/api/seo/v1/crawl/sheets/connect";
@@ -30,8 +31,10 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     const parsed = BodySchema.safeParse(await request.json().catch(() => ({})));
     const spreadsheetId = spreadsheetIdOf(parsed.success ? parsed.data.spreadsheet : "invalid");
     if (spreadsheetId === "invalid") return NextResponse.json({ error: "Not a spreadsheet URL or ID", code: "INVALID_REQUEST" }, { status: 400 });
-    const crawl = await prisma.crawlJob.findFirst({ where: { id, tenantId: tenant.tenantId }, select: { id: true, status: true, dataPurgedAt: true } });
+    const crawl = await prisma.crawlJob.findFirst({ where: { id, tenantId: tenant.tenantId }, select: { id: true, status: true, ...DATA_STATE_SELECT } });
     if (!crawl) return NextResponse.json({ error: "Crawl not found", code: "NOT_FOUND" }, { status: 404 });
+    const archived = archivedGuard(crawl);
+    if (archived) return archived;
     if (crawl.status !== "COMPLETED" || crawl.dataPurgedAt) {
       return NextResponse.json({ error: "Only a completed crawl with its pages kept can be exported.", code: "NOT_EXPORTABLE" }, { status: 409 });
     }

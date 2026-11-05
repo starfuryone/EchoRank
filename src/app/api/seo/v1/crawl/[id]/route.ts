@@ -45,7 +45,7 @@ export async function GET(
     // every 3 s — a groupBy per poll is a cost the running view does not need.
     const severityCounts =
       row.status !== "QUEUED" && row.status !== "RUNNING"
-        ? await getIssueTotals(row.id, row.summary)
+        ? await getIssueTotals(row.id, row.summary, row)
         : { ERROR: 0, WARNING: 0, NOTICE: 0 };
 
     return NextResponse.json({ ...toCrawlDto(row), severityCounts });

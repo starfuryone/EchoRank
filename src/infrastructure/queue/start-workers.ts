@@ -45,6 +45,7 @@ import { startActionAgentWorker } from "./workers/action-agent.worker";
 import { startAssistantPrecomputeWorker } from "./workers/assistant-precompute.worker";
 import { startKeywordOpportunityWorker } from "./workers/keyword-opportunity.worker";
 import { startBlogAgentWorker } from "./workers/blog-agent.worker";
+import { startCrawlArchiveWorker } from "./workers/crawl-archive.worker";
 import { startQueueFailureAlert } from "./failure-alert";
 
 /**
@@ -138,6 +139,10 @@ async function startWorkers() {
     // registers its schedules, so the cron is already correct on the day the
     // switch is flipped; every stage returns immediately while it is off.
     { name: "blog-agent", start: startBlogAgentWorker },
+    // Daily at 05:17 UTC, plus restores on demand. Starts with the archive
+    // off (CRAWL_ARCHIVE_ENABLED) and in dry-run (CRAWL_ARCHIVE_DRY_RUN); with
+    // Spaces not configured every job is a no-op.
+    { name: "crawl-archive", start: startCrawlArchiveWorker },
   ];
 
   void disabledWorkers();

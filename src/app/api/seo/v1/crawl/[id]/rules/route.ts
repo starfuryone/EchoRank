@@ -18,7 +18,8 @@ import { NextResponse } from "next/server";
 import { KIND_ORDER, PRIORITY_ORDER, RULE_BY_ID } from "@/lib/crawl-rules";
 import { requirePaidPlan } from "@/lib/paid-plan";
 import { prisma } from "@/lib/prisma";
-import { crawlRouteError } from "@/lib/site-crawler/http";
+import { archivedGuard, crawlRouteError } from "@/lib/site-crawler/http";
+import { DATA_STATE_SELECT } from "@/lib/site-crawler/data-state";
 import { computeRuleTallies, ruleTalliesFor } from "@/lib/site-crawler/rule-summary";
 import { issueInSegment, pageInSegment, ruleCountsBySegment, segmentScope } from "@/lib/site-crawler/segment-filter";
 import { csvFilename } from "@/lib/csv-export";
@@ -36,16 +37,19 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     const { id } = await params;
     const crawl = await prisma.crawlJob.findFirst({
       where: { id, tenantId: tenant.tenantId },
-      select: { id: true, pagesCrawled: true, summary: true, config: true },
+      select: { id: true, pagesCrawled: true, summary: true, config: true, ...DATA_STATE_SELECT },
     });
     if (!crawl) {
       return NextResponse.json({ error: "Crawl not found", code: "NOT_FOUND" }, { status: 404 });
     }
+    // The rows are in the archive: 409 ARCHIVED, never a query (data-state.ts).
+    const archived = archivedGuard(crawl);
+    if (archived) return archived;
 
     const segment = segmentScope(new URL(request.url), crawl.config);
     const filtered = segment.index !== null;
     const [{ issues, issuesByKind }, pagesInScope, bySegment] = await Promise.all([
-      filtered ? computeRuleTallies(crawl.id, issueInSegment(segment)) : ruleTalliesFor(crawl.id, crawl.summary),
+      filtered ? computeRuleTallies(crawl.id, issueInSegment(segment)) : ruleTalliesFor(crawl.id, crawl.summary, crawl),
       filtered ? prisma.crawlPage.count({ where: { crawlJobId: crawl.id, ...pageInSegment(segment) } }) : crawl.pagesCrawled,
       filtered ? ({} as Record<string, number[]>) : ruleCountsBySegment(crawl.id, segment.defs),
     ]);

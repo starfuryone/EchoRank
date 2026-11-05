@@ -305,7 +305,8 @@ export async function computeComparison(input: CompareInput): Promise<Comparison
 
 // ── Which crawls may be compared ────────────────────────────────────────────
 
-const COMPARABLE = { status: "COMPLETED" as const, dataPurgedAt: null };
+/** Both sides of a comparison need their pages in Postgres: completed, not purged, not archived. */
+const COMPARABLE = { status: "COMPLETED" as const, dataPurgedAt: null, storageState: "HOT" as const };
 
 export interface CompareCrawl {
   id: string;

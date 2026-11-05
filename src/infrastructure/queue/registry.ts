@@ -279,6 +279,15 @@ const DEFAULT_JOB_OPTIONS: Record<QueueName, JobsOptions> = {
     removeOnComplete: { age: REDIS_CONFIG.ttl.completedJobs },
     removeOnFail: { age: REDIS_CONFIG.ttl.failedJobs },
   },
+  // One attempt. A failed archive has already put its crawl back to HOT and
+  // deleted its objects, and the next daily sweep picks it up again; a failed
+  // restore is back to ARCHIVED and the user presses Restore again. A blind
+  // retry would only repeat the same failure.
+  "crawl-archive": {
+    attempts: 1,
+    removeOnComplete: { age: REDIS_CONFIG.ttl.completedJobs },
+    removeOnFail: { age: REDIS_CONFIG.ttl.failedJobs },
+  },
 };
 
 // ─── Queue registry ───────────────────────────────────────────────────────────

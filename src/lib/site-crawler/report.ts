@@ -59,6 +59,8 @@ type ReportCrawl = {
   renderMode: string;
   summary: unknown;
   config: unknown;
+  storageState?: string | null;
+  dataPurgedAt?: Date | null;
 };
 
 /** Rank rules: kind (issue first), then priority, then findings. */
@@ -70,7 +72,7 @@ export function topRules(issues: Record<string, { count: number; kind: string; p
 }
 
 export async function crawlReportPayload(crawl: ReportCrawl): Promise<CrawlReportPayload> {
-  const tallies = await ruleTalliesFor(crawl.id, crawl.summary);
+  const tallies = await ruleTalliesFor(crawl.id, crawl.summary, crawl);
   const families = new Map<string, CrawlReportPayload["families"][number]>();
   for (const [id, t] of Object.entries(tallies.issues)) {
     const family = RULE_BY_ID.get(id)?.family ?? "other";
@@ -119,7 +121,7 @@ export async function crawlReportPayload(crawl: ReportCrawl): Promise<CrawlRepor
     renderMode: crawl.renderMode,
     health: healthOf(crawl.summary),
     resultsUrl: `${SITE}/crawler/${encodeURIComponent(crawl.id)}`,
-    totals: await getIssueTotals(crawl.id, crawl.summary),
+    totals: await getIssueTotals(crawl.id, crawl.summary, crawl),
     byKind: tallies.issuesByKind,
     families: [...families.values()].sort((a, b) => b.total - a.total),
     topIssues: top,

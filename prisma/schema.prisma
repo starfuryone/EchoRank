@@ -2245,6 +2245,17 @@ enum CrawlStatus {
   CANCELLED
 }
 
+/// Where a crawl's full data lives (the crawl archive, src/lib/site-crawler/archive/).
+/// HOT = in Postgres. ARCHIVED = in the private Spaces bucket, child rows deleted,
+/// restorable. ARCHIVING / RESTORING = a crawl-archive job is moving it. The
+/// crawl_jobs row and its summary stay in Postgres in every state.
+enum CrawlStorageState {
+  HOT
+  ARCHIVING
+  ARCHIVED
+  RESTORING
+}
+
 /// One full-site crawl. Raw-HTML only — no JavaScript rendering, no external
 /// API: the worker fetches and parses in-process.
 ///
@@ -2290,6 +2301,17 @@ model CrawlJob {
   /// Set when retention deleted this crawl's pages, issues and links. The row
   /// and its summary stay forever (history list).
   dataPurgedAt  DateTime?
+  /// The crawl archive. Only a crawl retention still keeps is archived; one it
+  /// purges also loses its archive objects. archiveKeyPrefix stays set after a
+  /// restore, so a re-archive can reuse the objects (manifest still valid).
+  storageState     CrawlStorageState @default(HOT)
+  archiveKeyPrefix String?
+  archivedAt       DateTime?
+  /// Gzipped bytes in Spaces, all objects including the manifest. Int, not
+  /// BigInt: a BigInt in a row breaks JSON.stringify of that row anywhere, and
+  /// a 25,000-page crawl gzips to a few hundred MB, far under 2 GiB.
+  archiveBytes     Int?
+  restoredAt       DateTime?
   /// Site-wide aggregation output: distributions, duplicate/redirect counts,
   /// sitemap and inlink stats. COUNTS AND CAPPED SAMPLES ONLY — never full
   /// lists, so the column stays well under 100 KB on a 25,000-URL crawl.
@@ -2310,6 +2332,7 @@ model CrawlJob {
   comparisonsAsB CrawlComparison[] @relation("ComparisonJobB")
 
   @@index([tenantId, createdAt])
+  @@index([storageState])
   @@map("crawl_jobs")
 }
 

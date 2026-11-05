@@ -20,6 +20,7 @@ import type { CrawlStatus, Prisma } from "@/generated/prisma";
 import { crawlMaxConcurrent, TENANT_CRAWL_CONCURRENCY_DEFAULT, tenantOverrides } from "./tenant-caps";
 import { healthOf } from "./site-health";
 import { legacyTypesFor, ruleTalliesFor } from "./rule-summary";
+import { crawlDataState, rowsReadable, type CrawlDataState } from "./data-state";
 import { ruleIdOf } from "./legacy-map";
 import { issueInSegment, segmentOverview, segmentScope } from "./segment-filter";
 
@@ -39,6 +40,8 @@ export interface PublicCrawl {
   health: number | null;
   scheduled: boolean;
   viaApi: boolean;
+  /** Where the full data is: "hot" (readable), "archived" (restore it in the dashboard), "purged" (summary only, for good). */
+  data: CrawlDataState;
 }
 
 export interface PublicCrawlDetail extends PublicCrawl {
@@ -73,6 +76,8 @@ export const PUBLIC_CRAWL_SELECT = {
   scheduleId: true,
   apiKeyId: true,
   tenantId: true,
+  storageState: true,
+  dataPurgedAt: true,
 } satisfies Prisma.CrawlJobSelect;
 
 export type PublicCrawlRow = Prisma.CrawlJobGetPayload<{ select: typeof PUBLIC_CRAWL_SELECT }>;
@@ -102,6 +107,7 @@ export function toPublicCrawl(row: PublicCrawlRow): PublicCrawl {
     health: healthOf(row.summary),
     scheduled: Boolean(row.scheduleId),
     viaApi: Boolean(row.apiKeyId),
+    data: crawlDataState(row),
   };
 }
 
@@ -122,7 +128,8 @@ export async function publicCrawlDetail(row: PublicCrawlRow): Promise<PublicCraw
   if (!settled) return { ...base, summary: null, totals: null, segments: [] };
   const s = (row.summary ?? {}) as { statusCodes?: Record<string, number>; highPages?: number };
   const defs = segmentScope(new URL("https://x.invalid/"), row.config).defs;
-  const [tallies, segments] = await Promise.all([ruleTalliesFor(row.id, row.summary), segmentOverview(row.id, defs)]);
+  // Totals from the summary's cache when the rows are archived or purged; segments need the rows.
+  const [tallies, segments] = await Promise.all([ruleTalliesFor(row.id, row.summary, row), rowsReadable(row) ? segmentOverview(row.id, defs) : []]);
   return {
     ...base,
     summary: {

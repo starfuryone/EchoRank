@@ -18,7 +18,8 @@ import { requirePaidPlan } from "@/lib/paid-plan";
 import { Prisma } from "@/generated/prisma";
 import { prisma } from "@/lib/prisma";
 import { segmentScope, sqlInSegment } from "@/lib/site-crawler/segment-filter";
-import { crawlRouteError } from "@/lib/site-crawler/http";
+import { archivedGuard, crawlRouteError } from "@/lib/site-crawler/http";
+import { DATA_STATE_SELECT } from "@/lib/site-crawler/data-state";
 
 const DEFAULT_PAGE_SIZE = 20;
 const MAX_PAGE_SIZE = 100;
@@ -44,11 +45,14 @@ export async function GET(
 
     const crawl = await prisma.crawlJob.findFirst({
       where: { id, tenantId: tenant.tenantId },
-      select: { id: true, config: true },
+      select: { id: true, config: true, ...DATA_STATE_SELECT },
     });
     if (!crawl) {
       return NextResponse.json({ error: "Crawl not found", code: "NOT_FOUND" }, { status: 404 });
     }
+    // The rows are in the archive: 409 ARCHIVED, never a query (data-state.ts).
+    const archived = archivedGuard(crawl);
+    if (archived) return archived;
 
     const url = new URL(request.url);
     const kind = (url.searchParams.get("type") ?? "title") as DuplicateKind;

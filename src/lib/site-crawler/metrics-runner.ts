@@ -847,7 +847,8 @@ async function backlinksTick(job: Job, top: TopPages, deps: MetricsDeps): Promis
 export async function runCrawlMetrics(jobId: string, overrides: Partial<MetricsDeps> = {}): Promise<MetricsTick> {
   const deps: MetricsDeps = { ...DEFAULT_DEPS, ...overrides };
   const job = await prisma.crawlJob.findFirst({
-    where: { id: jobId, status: "COMPLETED", dataPurgedAt: null },
+    // HOT only: an archived crawl's pages are not in Postgres to enrich.
+    where: { id: jobId, status: "COMPLETED", dataPurgedAt: null, storageState: "HOT" },
     select: { id: true, tenantId: true, rootUrl: true, config: true, summary: true, tenant: { select: { planType: true } } },
   });
   if (!job) return { done: true };
@@ -887,6 +888,27 @@ export async function runCrawlMetrics(jobId: string, overrides: Partial<MetricsD
 }
 
 /** Whether a finished crawl has post-crawl work to queue. */
+/**
+ * True while a completed crawl still has metrics work to do — some source it
+ * opted into is not done/stopped in summary.metrics. The archive leaves such a
+ * crawl hot: its metrics job is still writing rows.
+ */
+export function metricsPending(config: unknown, summary: unknown): boolean {
+  if (!needsMetrics(config)) return false;
+  const stored = readStoredConfig(config);
+  const add = stored?.addData;
+  const states = ((summary as { metrics?: Record<string, SourceState> } | null)?.metrics ?? {}) as Record<string, SourceState | undefined>;
+  const settled = (s: SourceState | undefined) => s?.status === "done" || s?.status === "stopped";
+  const wanted: [boolean, string][] = [
+    [Boolean(add?.backlinks && flag("crawl.backlinks")), "backlinks"],
+    [Boolean(stored?.inspection && flag("crawl.inspection")), "gsc_inspection"],
+    [Boolean(stored?.semantic && flag("crawl.semantic")), "semantic"],
+    [Boolean(stored?.ai && flag("crawl.ai")), "ai"],
+    [Boolean(add?.psi && flag("crawl.psi")), "psi"],
+  ];
+  return wanted.some(([on, key]) => on && !settled(states[key]));
+}
+
 export function needsMetrics(config: unknown): boolean {
   const stored = readStoredConfig(config);
   const add = stored?.addData;

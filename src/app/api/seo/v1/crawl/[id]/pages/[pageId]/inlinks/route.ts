@@ -14,7 +14,8 @@ import { requirePaidPlan } from "@/lib/paid-plan";
 import { prisma } from "@/lib/prisma";
 import { csvFilename } from "@/lib/csv-export";
 import { csvStreamResponse, wantsCsv } from "@/lib/csv-stream";
-import { crawlRouteError } from "@/lib/site-crawler/http";
+import { archivedGuard, crawlRouteError } from "@/lib/site-crawler/http";
+import { DATA_STATE_SELECT } from "@/lib/site-crawler/data-state";
 import { INLINK_COLUMNS, type InlinkRow } from "@/lib/site-crawler/csv-columns";
 import { inlinksPage } from "@/lib/site-crawler/link-graph";
 
@@ -27,6 +28,12 @@ export async function GET(
   try {
     const tenant = await requirePaidPlan();
     const { id, pageId } = await params;
+    // The crawl first: an archived crawl's pages are not in Postgres (409 ARCHIVED, not 404).
+    const crawl = await prisma.crawlJob.findFirst({ where: { id, tenantId: tenant.tenantId }, select: DATA_STATE_SELECT });
+    if (crawl) {
+      const archived = archivedGuard(crawl);
+      if (archived) return archived;
+    }
     const page = await prisma.crawlPage.findFirst({
       where: { id: pageId, crawlJobId: id, crawlJob: { tenantId: tenant.tenantId } },
       select: { id: true, crawlJobId: true, url: true, inlinkCount: true },

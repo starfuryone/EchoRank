@@ -108,7 +108,7 @@ describe("exportCrawlToSheets (mocked Sheets client)", () => {
     const out = await sheets.exportCrawlToSheets({ tenantId: "t1", crawlJobId: "j1", comparisonId: null, spreadsheetId: null }, c);
     expect(c.create).toHaveBeenCalledWith("Echorank crawl report — x.com", ["Summary", "Issues", "Pages", "Compare"]);
     expect(out).toEqual({ spreadsheetId: "new-sheet-id-0123456789", url: "https://docs.google.com/spreadsheets/d/new-sheet-id-0123456789", pages: 3 });
-    expect(crawlJob.findFirst.mock.calls[0]![0].where).toEqual({ id: "j1", tenantId: "t1", status: "COMPLETED", dataPurgedAt: null });
+    expect(crawlJob.findFirst.mock.calls[0]![0].where).toEqual({ id: "j1", tenantId: "t1", status: "COMPLETED", dataPurgedAt: null, storageState: "HOT" });
 
     const summaryHeader = calls.find((x) => x.op === "write" && x.tab === "Summary")!;
     expect(summaryHeader.rows![0]).toEqual([...sheets.SUMMARY_HEADER]);

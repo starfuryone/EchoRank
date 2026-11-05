@@ -19,7 +19,8 @@ import { csvFilename } from "@/lib/csv-export";
 import { csvStreamResponse, wantsCsv } from "@/lib/csv-stream";
 import { externalColumns } from "@/lib/site-crawler/csv-columns";
 import { EXTERNAL_STATUS_CLASSES, externalCount, externalRows, externalSources, type ExternalRow, type ExternalStatusClass } from "@/lib/site-crawler/external-links";
-import { crawlRouteError } from "@/lib/site-crawler/http";
+import { archivedGuard, crawlRouteError } from "@/lib/site-crawler/http";
+import { DATA_STATE_SELECT } from "@/lib/site-crawler/data-state";
 
 const DEFAULT_PAGE_SIZE = 50;
 const MAX_PAGE_SIZE = 200;
@@ -30,8 +31,11 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     if (!flag("crawl.externalLinks")) return NextResponse.json({ error: "Not found", code: "NOT_FOUND" }, { status: 404 });
     const tenant = await requirePaidPlan();
     const { id } = await params;
-    const crawl = await prisma.crawlJob.findFirst({ where: { id, tenantId: tenant.tenantId }, select: { id: true } });
+    const crawl = await prisma.crawlJob.findFirst({ where: { id, tenantId: tenant.tenantId }, select: { id: true, ...DATA_STATE_SELECT } });
     if (!crawl) return NextResponse.json({ error: "Crawl not found", code: "NOT_FOUND" }, { status: 404 });
+    // The rows are in the archive: 409 ARCHIVED, never a query (data-state.ts).
+    const archived = archivedGuard(crawl);
+    if (archived) return archived;
 
     const url = new URL(request.url);
     const target = url.searchParams.get("url");

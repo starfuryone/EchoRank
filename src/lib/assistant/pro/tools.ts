@@ -39,6 +39,7 @@
 // the data", because the alternative is an assistant that tells customers their
 // integration is broken when it is working exactly as documented.
 
+import { rowsReadable } from "@/lib/site-crawler/data-state";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/infrastructure/observability/logger";
@@ -665,6 +666,8 @@ const TOOLS: ToolSpec[] = [
             issueCount: true,
             stoppedReason: true,
             finishedAt: true,
+            storageState: true,
+            dataPurgedAt: true,
           },
         });
 
@@ -677,7 +680,8 @@ const TOOLS: ToolSpec[] = [
 
         // Grouped in the database rather than fetched and counted here: a
         // 25,000-page crawl's issues do not belong in this process's memory.
-        const issues = await prisma.crawlIssue.groupBy({
+        // No query for an archived (or purged) crawl's findings — data-state.ts.
+        const issues = !rowsReadable(job) ? [] : await prisma.crawlIssue.groupBy({
           by: ["type", "severity"],
           where: { crawlPage: { crawlJobId: job.id } },
           _count: { _all: true },

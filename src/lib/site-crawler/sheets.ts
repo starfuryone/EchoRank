@@ -130,8 +130,9 @@ export interface SheetsExportInput {
 /** Write the four tabs. Returns the spreadsheet written to. */
 export async function exportCrawlToSheets(input: SheetsExportInput, client: SheetsClient): Promise<{ spreadsheetId: string; url: string; pages: number }> {
   const job = await prisma.crawlJob.findFirst({
-    where: { id: input.crawlJobId, tenantId: input.tenantId, status: "COMPLETED", dataPurgedAt: null },
-    select: { id: true, rootUrl: true, createdAt: true, summary: true, pagesCrawled: true },
+    // HOT only: the pages tab reads crawl_pages (an archived crawl is refused like a purged one).
+    where: { id: input.crawlJobId, tenantId: input.tenantId, status: "COMPLETED", dataPurgedAt: null, storageState: "HOT" },
+    select: { id: true, rootUrl: true, createdAt: true, summary: true, pagesCrawled: true, storageState: true, dataPurgedAt: true },
   });
   if (!job) throw new Error("crawl_not_exportable");
   const host = new URL(job.rootUrl).hostname;
@@ -153,7 +154,7 @@ export async function exportCrawlToSheets(input: SheetsExportInput, client: Shee
     prisma.crawlPage.count({ where: { crawlJobId: job.id, OR: [{ statusCode: null }, { statusCode: { gte: 400 } }] } }),
     prisma.crawlPage.count({ where: { crawlJobId: job.id, statusCode: { gte: 300, lt: 400 } } }),
   ]);
-  const totals = await getIssueTotals(job.id, job.summary);
+  const totals = await getIssueTotals(job.id, job.summary, job);
   const cmp = input.comparisonId
     ? await prisma.crawlComparison.findFirst({ where: { id: input.comparisonId, jobAId: job.id }, select: { result: true, jobB: { select: { createdAt: true } } } })
     : null;
@@ -182,7 +183,7 @@ export async function exportCrawlToSheets(input: SheetsExportInput, client: Shee
   ]);
 
   // ── Issues: one row per rule ──
-  const tallies = await ruleTalliesFor(job.id, job.summary);
+  const tallies = await ruleTalliesFor(job.id, job.summary, job);
   const issueRows: Cell[][] = Object.entries(tallies.issues)
     .sort((a, b) => b[1].count - a[1].count)
     .map(([id, t]) => [job.id, id, RULE_COPY[id]?.name ?? id, t.kind, t.priority, t.count]);

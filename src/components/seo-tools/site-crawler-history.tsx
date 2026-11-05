@@ -18,6 +18,8 @@ import { CRAWL_PIN_MAX, RETENTION_UNFINISHED_DAYS } from "@/lib/site-crawler/con
 import type { CrawlDto, CrawlQuotaDto } from "@/lib/site-crawler/types";
 import { CRAWLER_ROUTES, CrawlerNav, hostOfCrawl } from "./site-crawler-nav";
 import { CrawlerHeader } from "./site-crawler-client";
+import { ArchivedBadge } from "./site-crawler-archived";
+import { crawlDataState } from "@/lib/site-crawler/data-state";
 
 interface HistoryResponse {
   crawls: CrawlDto[];
@@ -334,6 +336,18 @@ export function CrawlHistory({ locale }: { locale: DashLocale }) {
                   </span>
 
                   <div className="flex items-center justify-end gap-1">
+                    {/* The crawl archive: a kept crawl whose rows are in Spaces. */}
+                    {crawlDataState(c) === "archived" && (
+                      <ArchivedBadge
+                        crawlId={c.id}
+                        storageState={c.storageState ?? "ARCHIVED"}
+                        host={h}
+                        a={t.archive}
+                        onRestored={() =>
+                          setData((d) => d && { ...d, crawls: d.crawls.map((x) => (x.id === c.id ? { ...x, storageState: "HOT" } : x)) })
+                        }
+                      />
+                    )}
                     {pinnable && (
                       <button
                         type="button"

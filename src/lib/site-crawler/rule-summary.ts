@@ -16,6 +16,7 @@ import { RULE_BY_ID, type RuleKind } from "@/lib/crawl-rules";
 import { prisma } from "@/lib/prisma";
 import type { RuleTally } from "./aggregate";
 import { LEGACY_RULE, ruleIdOf } from "./legacy-map";
+import { rowsReadable, type DataStateRow } from "./data-state";
 
 export interface RuleTallies {
   issues: Record<string, RuleTally>;
@@ -42,10 +43,21 @@ export async function computeRuleTallies(jobId: string, extra: Prisma.CrawlIssue
   return { issues, issuesByKind };
 }
 
-/** The tallies a summary already carries, or computed ones when it carries none. */
-export async function ruleTalliesFor(jobId: string, summary: unknown): Promise<RuleTallies & { computed: boolean }> {
+/** The tallies a summary carries, when it carries them. */
+export function cachedRuleTallies(summary: unknown): RuleTallies | null {
   const s = (summary ?? {}) as Partial<RuleTallies>;
-  if (s.issues && s.issuesByKind) return { issues: s.issues, issuesByKind: s.issuesByKind, computed: false };
+  return s.issues && s.issuesByKind ? { issues: s.issues, issuesByKind: s.issuesByKind } : null;
+}
+
+/**
+ * The tallies a summary already carries, or computed ones when it carries
+ * none — computed only for a HOT crawl (data-state.ts). An archived or purged
+ * crawl without cached tallies reads as no findings counted, never a query.
+ */
+export async function ruleTalliesFor(jobId: string, summary: unknown, state: DataStateRow): Promise<RuleTallies & { computed: boolean }> {
+  const cached = cachedRuleTallies(summary);
+  if (cached) return { ...cached, computed: false };
+  if (!rowsReadable(state)) return { issues: {}, issuesByKind: { issue: 0, warning: 0, opportunity: 0 }, computed: false };
   return { ...(await computeRuleTallies(jobId)), computed: true };
 }
 

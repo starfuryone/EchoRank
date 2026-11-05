@@ -20,7 +20,8 @@ import { csvStreamResponse, wantsCsv } from "@/lib/csv-stream";
 import { readStoredConfig } from "@/lib/site-crawler/crawl-config";
 import { extractionColumns, type ExtractionRow } from "@/lib/site-crawler/csv-columns";
 import { extractionColumnRefs, extractionKeysetPage, extractionOffsetPage, extractionWhere } from "@/lib/site-crawler/extraction-rows";
-import { crawlRouteError } from "@/lib/site-crawler/http";
+import { archivedGuard, crawlRouteError } from "@/lib/site-crawler/http";
+import { DATA_STATE_SELECT } from "@/lib/site-crawler/data-state";
 import { segmentScope } from "@/lib/site-crawler/segment-filter";
 
 const DEFAULT_PAGE_SIZE = 50;
@@ -32,9 +33,12 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     const { id } = await params;
     const crawl = await prisma.crawlJob.findFirst({
       where: { id, tenantId: tenant.tenantId },
-      select: { id: true, config: true },
+      select: { id: true, config: true, ...DATA_STATE_SELECT },
     });
     if (!crawl) return NextResponse.json({ error: "Crawl not found", code: "NOT_FOUND" }, { status: 404 });
+    // The rows are in the archive: 409 ARCHIVED, never a query (data-state.ts).
+    const archived = archivedGuard(crawl);
+    if (archived) return archived;
 
     const config = readStoredConfig(crawl.config);
     // Phase 4e: extractors, then custom JS snippets, then AI prompts.

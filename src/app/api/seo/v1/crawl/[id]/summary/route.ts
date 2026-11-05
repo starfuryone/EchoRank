@@ -16,7 +16,8 @@
 import { NextResponse } from "next/server";
 import { requirePaidPlan } from "@/lib/paid-plan";
 import { prisma } from "@/lib/prisma";
-import { crawlRouteError } from "@/lib/site-crawler/http";
+import { archivedGuard, crawlRouteError } from "@/lib/site-crawler/http";
+import { DATA_STATE_SELECT, rowsReadable } from "@/lib/site-crawler/data-state";
 import { getIssueTotals } from "@/lib/site-crawler/issue-totals";
 import { metricCoverage } from "@/lib/site-crawler/metrics";
 import { computeRuleTallies, ruleTalliesFor } from "@/lib/site-crawler/rule-summary";
@@ -38,7 +39,7 @@ export async function GET(
 
     const row = await prisma.crawlJob.findFirst({
       where: { id, tenantId: tenant.tenantId },
-      select: { id: true, status: true, summary: true, config: true, pagesCrawled: true },
+      select: { id: true, status: true, summary: true, config: true, pagesCrawled: true, ...DATA_STATE_SELECT },
     });
 
     if (!row || row.status !== "COMPLETED") {
@@ -53,7 +54,12 @@ export async function GET(
     // rest of the stored summary stays whole-crawl. Without it, a crawl that
     // ran with segments also gets `segments`: pages and totals per segment.
     const scope = segmentScope(new URL(request.url), row.config);
+    // An archived crawl: the stored summary and its cached totals only — a
+    // segment view, the per-segment overview and metric coverage all read rows.
+    const hot = rowsReadable(row);
     if (scope.index !== null) {
+      const archived = archivedGuard(row);
+      if (archived) return archived;
       const [{ issues, issuesByKind }, totals, pages] = await Promise.all([
         computeRuleTallies(row.id, issueInSegment(scope)),
         segmentIssueTotals(row.id, scope),
@@ -65,14 +71,14 @@ export async function GET(
     }
 
     const [{ issues, issuesByKind, computed }, totals, segments] = await Promise.all([
-      ruleTalliesFor(row.id, row.summary),
-      getIssueTotals(row.id, row.summary),
-      segmentOverview(row.id, scope.defs),
+      ruleTalliesFor(row.id, row.summary, row),
+      getIssueTotals(row.id, row.summary, row),
+      hot ? segmentOverview(row.id, scope.defs) : [],
     ]);
     const perSegment = segments.length ? { segments } : {};
     // Phase 4d: pages with data per joined source, for the Overview tiles.
     const metricOverview = {
-      coverage: await metricCoverage(row.id),
+      coverage: hot ? await metricCoverage(row.id) : {},
       total: row.pagesCrawled,
       status: ((row.summary as { metrics?: object } | null)?.metrics ?? {}) as object,
     };

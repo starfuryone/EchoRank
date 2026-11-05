@@ -10,7 +10,9 @@ import { flag } from "@/lib/flags";
 import { SITE_CRAWLER_COPY, type DashLocale } from "@/lib/i18n/dashboard";
 import { EMPTY_PAGE_FILTERS, type CrawlDto } from "@/lib/site-crawler/types";
 import { CrawlerHeader } from "./site-crawler-client";
-import { CrawlerNav } from "./site-crawler-nav";
+import { CrawlerNav, hostOfCrawl } from "./site-crawler-nav";
+import { ArchivedPanel } from "./site-crawler-archived";
+import { crawlDataState } from "@/lib/site-crawler/data-state";
 import { PagesView, extractionNamesOf } from "./site-crawler-pages";
 
 export function CrawlPagesPage({ locale, crawlId }: { locale: DashLocale; crawlId: string }) {
@@ -18,6 +20,8 @@ export function CrawlPagesPage({ locale, crawlId }: { locale: DashLocale; crawlI
   const int = useMemo(() => new Intl.NumberFormat(locale === "en" ? "en-US" : locale), [locale]);
   const rule = useSearchParams()?.get("rule") ?? "";
   const [crawl, setCrawl] = useState<CrawlDto | null>(null);
+  // The crawl first, so an archived one never asks for its pages.
+  const [loaded, setLoaded] = useState(false);
   const [segment, setSegment] = useState("");
 
   useEffect(() => {
@@ -25,9 +29,13 @@ export function CrawlPagesPage({ locale, crawlId }: { locale: DashLocale; crawlI
     void fetch(`/api/seo/v1/crawl/${encodeURIComponent(crawlId)}`)
       .then((r) => (r.ok ? r.json() : null))
       .then((d: CrawlDto | null) => {
-        if (!cancelled) setCrawl(d);
+        if (cancelled) return;
+        setCrawl(d);
+        setLoaded(true);
       })
-      .catch(() => undefined);
+      .catch(() => {
+        if (!cancelled) setLoaded(true);
+      });
     return () => {
       cancelled = true;
     };
@@ -38,6 +46,15 @@ export function CrawlPagesPage({ locale, crawlId }: { locale: DashLocale; crawlI
     <div className="space-y-6">
       <CrawlerHeader t={t} locale={locale} quota={null} howto="pages" />
       <CrawlerNav current="results" t={t.ux} />
+      {crawl && crawlDataState(crawl) === "archived" ? (
+        <ArchivedPanel
+          crawlId={crawl.id}
+          storageState={crawl.storageState ?? "ARCHIVED"}
+          host={hostOfCrawl(crawl.rootUrl)}
+          a={t.archive}
+          onRestored={() => setCrawl((c) => c && { ...c, storageState: "HOT" })}
+        />
+      ) : loaded && (
       <PagesView
         crawlId={crawlId}
         crawl={crawl}
@@ -53,6 +70,7 @@ export function CrawlPagesPage({ locale, crawlId }: { locale: DashLocale; crawlI
         t={t}
         int={int}
       />
+      )}
     </div>
   );
 }

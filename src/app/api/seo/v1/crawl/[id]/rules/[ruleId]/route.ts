@@ -17,7 +17,8 @@ import { NextResponse } from "next/server";
 import { RULE_BY_ID } from "@/lib/crawl-rules";
 import { requirePaidPlan } from "@/lib/paid-plan";
 import { prisma } from "@/lib/prisma";
-import { crawlRouteError } from "@/lib/site-crawler/http";
+import { archivedGuard, crawlRouteError } from "@/lib/site-crawler/http";
+import { DATA_STATE_SELECT } from "@/lib/site-crawler/data-state";
 import { ruleIssueWhere } from "@/lib/site-crawler/rule-summary";
 import { csvFilename } from "@/lib/csv-export";
 import { csvStreamResponse, wantsCsv } from "@/lib/csv-stream";
@@ -36,11 +37,14 @@ export async function GET(
     const { id, ruleId } = await params;
     const crawl = await prisma.crawlJob.findFirst({
       where: { id, tenantId: tenant.tenantId },
-      select: { id: true, config: true },
+      select: { id: true, config: true, ...DATA_STATE_SELECT },
     });
     if (!crawl) {
       return NextResponse.json({ error: "Crawl not found", code: "NOT_FOUND" }, { status: 404 });
     }
+    // The rows are in the archive: 409 ARCHIVED, never a query (data-state.ts).
+    const archived = archivedGuard(crawl);
+    if (archived) return archived;
     if (!RULE_BY_ID.has(ruleId)) {
       return NextResponse.json({ error: "Unknown rule", code: "INVALID_REQUEST" }, { status: 400 });
     }

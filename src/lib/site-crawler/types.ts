@@ -51,6 +51,10 @@ export interface CrawlDto {
   pinned?: boolean;
   /** Set once retention deleted the crawl's pages: summary only. */
   dataPurgedAt?: string | null;
+  /** The crawl archive (data-state.ts): HOT, or ARCHIVING / ARCHIVED / RESTORING. */
+  storageState?: "HOT" | "ARCHIVING" | "ARCHIVED" | "RESTORING";
+  archivedAt?: string | null;
+  restoredAt?: string | null;
   /** Start response only, list mode: lines that were not public http(s) URLs. */
   listSkipped?: number;
   /** Present on the detail endpoint once the crawl has settled. */

@@ -5,6 +5,7 @@
 // download link to /crawl/[id]/sitemap; nothing is generated until it is
 // clicked, and nothing is stored.
 
+import { crawlDataState } from "@/lib/site-crawler/data-state";
 import { useState } from "react";
 import { Download, Pin, PinOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -52,6 +53,8 @@ export function CrawlTools({
   const [images, setImages] = useState(false);
 
   const purged = Boolean(crawl.dataPurgedAt);
+  // Archived (rows in Spaces): pinning still works, the row-reading tools wait for a restore.
+  const archived = crawlDataState(crawl) === "archived";
   const segQ = segment ? `&segment=${encodeURIComponent(segment)}` : "";
   const settled = crawl.status === "COMPLETED" || crawl.status === "FAILED" || crawl.status === "CANCELLED";
 
@@ -81,7 +84,7 @@ export function CrawlTools({
             {crawl.pinned ? t.unpin : t.pin}
           </Button>
         )}
-        {!purged && flag("crawl.links") && (
+        {!purged && !archived && flag("crawl.links") && (
           <>
             <a href={`/api/seo/v1/crawl/${crawl.id}/export?view=broken-links${segQ}`} className={linkClass}>
               <Download className="h-4 w-4" aria-hidden="true" /> {t.exportBrokenLinks}
@@ -95,7 +98,7 @@ export function CrawlTools({
       {!purged && <p className="text-xs text-gray-500">{t.pinnedHelp(kept, String(CRAWL_PIN_MAX))}</p>}
       {pinError && <p className="text-xs text-red-600">{pinError}</p>}
 
-      {!purged && crawl.status === "COMPLETED" && crawl.mode !== "list" && flag("crawl.sitemapGen") && (
+      {!purged && !archived && crawl.status === "COMPLETED" && crawl.mode !== "list" && flag("crawl.sitemapGen") && (
         <details className="rounded-lg border border-gray-200">
           <summary className="cursor-pointer select-none px-3 py-2 text-sm font-medium text-gray-900">{t.sitemapTitle}</summary>
           <div className="space-y-3 border-t border-gray-100 p-3">

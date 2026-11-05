@@ -17,7 +17,8 @@ import { z } from "zod";
 import { requirePaidPlan } from "@/lib/paid-plan";
 import { prisma } from "@/lib/prisma";
 import { CONFIG_LIMITS, compilePattern } from "@/lib/site-crawler/crawl-config";
-import { crawlRouteError } from "@/lib/site-crawler/http";
+import { archivedGuard, crawlRouteError } from "@/lib/site-crawler/http";
+import { DATA_STATE_SELECT } from "@/lib/site-crawler/data-state";
 import { CHANGEFREQS, writeSitemaps } from "@/lib/site-crawler/sitemap-generator";
 import { ZipWriter } from "@/lib/site-crawler/zip";
 
@@ -37,9 +38,11 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     const { id } = await params;
     const crawl = await prisma.crawlJob.findFirst({
       where: { id, tenantId: tenant.tenantId },
-      select: { id: true, rootUrl: true, status: true, mode: true, dataPurgedAt: true, finishedAt: true },
+      select: { id: true, rootUrl: true, status: true, mode: true, finishedAt: true, ...DATA_STATE_SELECT },
     });
     if (!crawl) return NextResponse.json({ error: "Crawl not found", code: "NOT_FOUND" }, { status: 404 });
+    const archived = archivedGuard(crawl);
+    if (archived) return archived;
     if (crawl.status !== "COMPLETED" || crawl.dataPurgedAt || crawl.mode === "list") {
       return NextResponse.json(
         { error: "Sitemaps are generated from a completed site crawl whose pages are kept.", code: "NOT_AVAILABLE" },
@@ -66,6 +69,10 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     const origin = new URL(crawl.rootUrl).origin;
     const crawlDate = crawl.finishedAt ?? new Date();
     const opts = { ...parsed.data, images: parsed.data.images === "1" };
+    const host = new URL(crawl.rootUrl).hostname.replace(/[^a-z0-9.-]/gi, "");
+    const filename = `sitemaps-${host}-${crawlDate.toISOString().slice(0, 10)}.zip`;
+
+
     const stream = new ReadableStream<Uint8Array>({
       async start(controller) {
         try {
@@ -78,11 +85,10 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
         }
       },
     });
-    const host = new URL(crawl.rootUrl).hostname.replace(/[^a-z0-9.-]/gi, "");
     return new Response(stream, {
       headers: {
         "content-type": "application/zip",
-        "content-disposition": `attachment; filename="sitemaps-${host}-${crawlDate.toISOString().slice(0, 10)}.zip"`,
+        "content-disposition": `attachment; filename="${filename}"`,
         "cache-control": "no-store",
       },
     });

@@ -35,6 +35,7 @@
 // in both places rather than referenced, because getting it wrong in one is
 // silent.
 
+import { crawlDataState } from "@/lib/site-crawler/data-state";
 import "server-only";
 
 import type { PlanType } from "@/generated/prisma";
@@ -811,6 +812,8 @@ export async function getCrawlSummary(tenant: McpTenant, args: Record<string, un
           issueCount: true,
           stoppedReason: true,
           finishedAt: true,
+          storageState: true,
+          dataPurgedAt: true,
         },
       })
     : await prisma.crawlJob.findFirst({
@@ -824,6 +827,8 @@ export async function getCrawlSummary(tenant: McpTenant, args: Record<string, un
           issueCount: true,
           stoppedReason: true,
           finishedAt: true,
+          storageState: true,
+          dataPurgedAt: true,
         },
       });
 
@@ -838,9 +843,12 @@ export async function getCrawlSummary(tenant: McpTenant, args: Record<string, un
     };
   }
 
+  // An archived crawl's findings are in the Spaces archive, not Postgres
+  // (data-state.ts): no query, and say how to get them back.
+  const dataState = crawlDataState(job);
   // Grouped in the database rather than fetched and counted here: a
   // 25,000-page crawl's issues do not belong in this process's memory.
-  const issues = await prisma.crawlIssue.groupBy({
+  const issues = dataState !== "hot" ? [] : await prisma.crawlIssue.groupBy({
     by: ["type", "severity"],
     where: { crawlPage: { crawlJobId: job.id } },
     _count: { _all: true },
@@ -865,8 +873,10 @@ export async function getCrawlSummary(tenant: McpTenant, args: Record<string, un
       pages: issue._count._all,
     })),
     note:
-      job.status === "COMPLETED"
-        ? undefined
-        : `This crawl is ${String(job.status).toLowerCase()}; the figures are partial.`,
+      dataState === "archived"
+        ? "This crawl is archived: its findings are not listed until someone restores it from History on the Site Crawler page."
+        : job.status === "COMPLETED"
+          ? undefined
+          : `This crawl is ${String(job.status).toLowerCase()}; the figures are partial.`,
   };
 }

@@ -13,7 +13,8 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { requirePaidPlan } from "@/lib/paid-plan";
 import { prisma } from "@/lib/prisma";
-import { crawlRouteError } from "@/lib/site-crawler/http";
+import { archivedGuard, crawlRouteError } from "@/lib/site-crawler/http";
+import { DATA_STATE_SELECT } from "@/lib/site-crawler/data-state";
 import { compareCandidates, defaultBaseline, resolveCompare, runComparison } from "@/lib/site-crawler/compare";
 import { MappingSchema, mappingProblems } from "@/lib/site-crawler/compare-mapping";
 import { readStoredConfig } from "@/lib/site-crawler/crawl-config";
@@ -27,7 +28,7 @@ const BodySchema = z.object({
 async function crawlA(id: string, tenantId: string) {
   return prisma.crawlJob.findFirst({
     where: { id, tenantId },
-    select: { id: true, tenantId: true, rootUrl: true, mode: true, config: true, createdAt: true, status: true, dataPurgedAt: true },
+    select: { id: true, tenantId: true, rootUrl: true, mode: true, config: true, createdAt: true, status: true, ...DATA_STATE_SELECT },
   });
 }
 
@@ -40,6 +41,8 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
     const { id } = await params;
     const a = await crawlA(id, tenant.tenantId);
     if (!a) return notFound();
+    const archived = archivedGuard(a);
+    if (archived) return archived;
     if (a.status !== "COMPLETED" || a.dataPurgedAt) return notReady();
     const candidates = await compareCandidates(a);
     const comparisons = await prisma.crawlComparison.findMany({
@@ -68,6 +71,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     }
     const a = await crawlA(id, tenant.tenantId);
     if (!a) return notFound();
+    const archived = archivedGuard(a);
+    if (archived) return archived;
     if (a.status !== "COMPLETED" || a.dataPurgedAt) return notReady();
     const { segment } = parsed.data;
     if (segment !== null && segment >= (readStoredConfig(a.config)?.segments?.length ?? 0)) {

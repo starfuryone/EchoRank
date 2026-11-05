@@ -196,7 +196,7 @@ export async function sendScheduledCrawlEmail(ctx: { tenantId: string; crawlJobI
   });
   const to = tenant?.members[0]?.user?.email;
   if (!to) return false;
-  const job = await prisma.crawlJob.findFirst({ where: { id: ctx.crawlJobId, tenantId: ctx.tenantId }, select: { id: true, rootUrl: true, pagesCrawled: true, summary: true } });
+  const job = await prisma.crawlJob.findFirst({ where: { id: ctx.crawlJobId, tenantId: ctx.tenantId }, select: { id: true, rootUrl: true, pagesCrawled: true, summary: true, storageState: true, dataPurgedAt: true } });
   if (!job) return false;
   const cmp = ctx.comparisonId ? await prisma.crawlComparison.findFirst({ where: { id: ctx.comparisonId, jobAId: job.id }, select: { id: true, result: true } }) : null;
   const mail = scheduleEmail({
@@ -204,7 +204,7 @@ export async function sendScheduledCrawlEmail(ctx: { tenantId: string; crawlJobI
     host: new URL(job.rootUrl).hostname,
     crawlJobId: job.id,
     pagesCrawled: job.pagesCrawled,
-    issues: await getIssueTotals(job.id, job.summary),
+    issues: await getIssueTotals(job.id, job.summary, job),
     comparison: cmp ? { id: cmp.id, counts: (cmp.result as unknown as ComparisonResult).counts } : null,
   });
   return sendMail({ to: [to], subject: mail.subject, html: mail.html, text: mail.text });

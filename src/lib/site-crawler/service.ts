@@ -46,6 +46,7 @@ import { planCanUseMarketing } from "@/lib/marketing/quota";
 import { sealCrawlConfig } from "./crawl-config-secrets";
 import { checkExtractorExpr } from "./extraction";
 import { newVerifyToken } from "./site-verify";
+import type { StorageState } from "./data-state";
 
 export interface CrawlJobDto {
   id: string;
@@ -68,6 +69,10 @@ export interface CrawlJobDto {
   pinned: boolean;
   /** Set once retention deleted the crawl's pages: summary only from then on. */
   dataPurgedAt: string | null;
+  /** The crawl archive: HOT = rows in Postgres; otherwise in Spaces (restorable) or moving. */
+  storageState: StorageState;
+  archivedAt: string | null;
+  restoredAt: string | null;
   /** Started by a CrawlSchedule (crawl_jobs.scheduleId set). */
   scheduled: boolean;
   /** Phase 4e forms login: how it went (failed = the crawl ran unauthenticated). Absent when no login was asked. */
@@ -102,6 +107,9 @@ export function toCrawlDto(row: {
   config?: unknown;
   pinned?: boolean;
   dataPurgedAt?: Date | null;
+  storageState?: string | null;
+  archivedAt?: Date | null;
+  restoredAt?: Date | null;
   summary?: unknown;
   scheduleId?: string | null;
 }): CrawlJobDto {
@@ -123,6 +131,9 @@ export function toCrawlDto(row: {
     config: viewCrawlConfig(readStoredConfig(row.config)),
     pinned: row.pinned ?? false,
     dataPurgedAt: row.dataPurgedAt?.toISOString() ?? null,
+    storageState: (row.storageState ?? "HOT") as StorageState,
+    archivedAt: row.archivedAt?.toISOString() ?? null,
+    restoredAt: row.restoredAt?.toISOString() ?? null,
     scheduled: Boolean(row.scheduleId),
     ...(row.summary !== undefined && loginOf(row.summary) ? { login: loginOf(row.summary) } : {}),
     ...(row.summary !== undefined ? { health: healthOf(row.summary), kinds: kindsOf(row.summary) } : {}),

@@ -8,6 +8,7 @@
  * Auth: the public API key. Tenant-scoped: another workspace's id is a 404.
  */
 
+import { crawlDataState } from "@/lib/site-crawler/data-state";
 import { NextResponse } from "next/server";
 import { authenticatePublicRequest } from "@/lib/api-keys";
 import { prisma } from "@/lib/prisma";
@@ -19,8 +20,10 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
   if (!auth.ok) return auth.response;
   try {
     const { id } = await params;
-    const crawl = await prisma.crawlJob.findFirst({ where: { id, tenantId: auth.tenantId }, select: { id: true, config: true } });
+    const crawl = await prisma.crawlJob.findFirst({ where: { id, tenantId: auth.tenantId }, select: { id: true, config: true, storageState: true, dataPurgedAt: true } });
     if (!crawl) return NextResponse.json({ error: "not_found" }, { status: 404 });
+    // Archived: the findings are in the archive until a dashboard user restores the crawl.
+    if (crawlDataState(crawl) === "archived") return NextResponse.json({ error: "archived", storageState: crawl.storageState }, { status: 409 });
     const q = new URL(request.url).searchParams;
     const limit = q.get("limit");
     return NextResponse.json(

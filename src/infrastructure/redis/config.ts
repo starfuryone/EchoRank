@@ -166,7 +166,9 @@ export type QueueName =
   | "keyword-opportunity"
   // Internal content pipeline. No tenant, no customer-facing surface —
   // see src/infrastructure/queue/workers/blog-agent.worker.ts.
-  | "blog-agent";
+  | "blog-agent"
+  // The crawl archive (CRAWL-ARCHIVE.md): the daily sweep and restores.
+  | "crawl-archive";
 
 /** All valid queue names */
 export const QUEUE_NAMES: QueueName[] = [
@@ -201,4 +203,5 @@ export const QUEUE_NAMES: QueueName[] = [
   "assistant-precompute",
   "keyword-opportunity",
   "blog-agent",
+  "crawl-archive",
 ];

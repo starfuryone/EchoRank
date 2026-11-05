@@ -9,6 +9,7 @@
  * Auth: the public API key. Tenant-scoped: another workspace's id is a 404.
  */
 
+import { publicArchived } from "@/lib/site-crawler/public-api-archived";
 import { NextResponse } from "next/server";
 import { authenticatePublicRequest } from "@/lib/api-keys";
 import { runAsApiTenant } from "@/lib/api-tenant-context";
@@ -32,5 +33,5 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     dashboardPages(new Request(`https://internal.invalid/api/seo/v1/crawl/${encodeURIComponent(id)}/pages?${forward}`), { params: Promise.resolve({ id }) }),
   );
   if (res.status === 404) return NextResponse.json({ error: "not_found" }, { status: 404 });
-  return res;
+  return publicArchived(res);
 }

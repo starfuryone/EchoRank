@@ -227,7 +227,8 @@ export async function gatherPageInventory(
 
   const job = await prisma.crawlJob.findFirst({
     // Tenant-scoped in the WHERE clause, never a check-then-read.
-    where: { tenantId, status: "COMPLETED", rootUrl: { contains: host } },
+    // The newest crawl whose pages are in Postgres — not an archived or purged one (data-state.ts).
+    where: { tenantId, status: "COMPLETED", rootUrl: { contains: host }, storageState: "HOT", dataPurgedAt: null },
     orderBy: { createdAt: "desc" },
     select: { id: true },
   });

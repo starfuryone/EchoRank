@@ -14,6 +14,7 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import type { SeverityCounts } from "./types";
+import { rowsReadable, type DataStateRow } from "./data-state";
 
 const SEVERITIES = ["ERROR", "WARNING", "NOTICE"] as const;
 
@@ -30,9 +31,15 @@ export function cachedTotals(summary: unknown): SeverityCounts | null {
   return { ERROR: totals.ERROR as number, WARNING: totals.WARNING as number, NOTICE: totals.NOTICE as number };
 }
 
-export async function getIssueTotals(jobId: string, summary?: unknown): Promise<SeverityCounts> {
+export async function getIssueTotals(jobId: string, summary: unknown, state: DataStateRow): Promise<SeverityCounts> {
   const cached = cachedTotals(summary);
   if (cached) return cached;
+  if (!rowsReadable(state)) return toTotals({});
+  return countIssueTotals(jobId);
+}
+
+/** The groupBy itself, cache ignored (the backfill's source). */
+export async function countIssueTotals(jobId: string): Promise<SeverityCounts> {
   const grouped = await prisma.crawlIssue.groupBy({
     by: ["severity"],
     where: { crawlJobId: jobId },
