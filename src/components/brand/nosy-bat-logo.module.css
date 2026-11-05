@@ -1,5 +1,6 @@
-/* <NosyBatLogo>. The glow is the brand's NOSY_BAT_LOGO_GLOW (brand.ts); keep the two in step. */
-.picture{display:block;line-height:0}
+/* <NosyBatLogo>. Themed: the dark-surface file by default, the teal one under the public day theme. */
+.wrap{display:inline-block;line-height:0;max-width:100%}
 .img{display:block;max-width:100%;height:auto}
-.glow{filter:drop-shadow(0 0 24px rgba(240,185,11,.35))}
-:global([data-theme="day"]) .glow{filter:none}
+.day{display:none}
+:global([data-theme="day"]) .night{display:none}
+:global([data-theme="day"]) .day{display:block}

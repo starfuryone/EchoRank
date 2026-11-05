@@ -201,7 +201,7 @@ export default async function Page({ params }: { params: Params }) {
     operatingSystem: "Web",
     url,
     description: lead,
-    image: `${SITE_URL}${CRAWLER_BRAND.markOnDark}`,
+    image: `${SITE_URL}${CRAWLER_BRAND.markPng}`,
     isPartOf: { "@id": SOFTWARE_ID },
     publisher: { "@id": ORGANIZATION_ID },
     // From PLAN_CONFIGS via PLANS — the same prices the cards below render.
@@ -228,7 +228,7 @@ export default async function Page({ params }: { params: Params }) {
       <section className={s.section}>
         <div className={s.container}>
           <div className={c.lockup} data-testid="hero-lockup">
-            <NosyBatLogo height={120} alt={CRAWLER_BRAND.name} onDark />
+            <NosyBatLogo height={72} alt={CRAWLER_BRAND.name} tone="accent" themed />
             <p className={c.byline}>{CRAWLER_BYLINE[base]}</p>
           </div>
           <h1 className={s.h1}>{t.h1}</h1>

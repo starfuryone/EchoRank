@@ -72,7 +72,8 @@ const navItems = [
   { href: "/assistant", icon: Sparkle, group: "workspace" },
   { href: "/visibility/tools", icon: Wrench, group: "workspace" },
   // The crawler's own row (sub-brand): label from dashNav (CRAWLER_BRAND.name),
-  // icon the brand mark as an <img> — the slot takes a className component.
+  // icon the emblem (<NosyBatIcon>, a currentColor mask) at the lucide icons'
+  // h-5 w-5, so it turns white on hover / active with them.
   { href: CRAWLER_HREF, icon: NosyBatIcon, group: "workspace" },
   { href: "/visibility/tools/ai-content-helper", icon: PenTool, group: "workspace" },
   { href: "/reputation", icon: Sparkles, group: "workspace" },

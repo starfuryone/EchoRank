@@ -119,11 +119,11 @@ export interface ScheduleEmailData {
 const EMAIL_LOGO_W = 240;
 
 /**
- * The email's header: the logo on white (clients that drop transparency show
- * it as drawn), 240 px wide at 735:410, and the byline as text under it.
+ * The email's header: the teal logo as an 800 px PNG (email clients do not
+ * all render SVG), shown 240 px wide at 3:1, and the byline as text under it.
  */
 export function logoHeader(byline: string): string {
-  const h = Math.round((EMAIL_LOGO_W * CRAWLER_BRAND.logo.height) / CRAWLER_BRAND.logo.width);
+  const h = Math.round((EMAIL_LOGO_W * CRAWLER_BRAND.logoHeight) / CRAWLER_BRAND.logoWidth);
   return (
     `<img src="${esc(CRAWLER_BRAND.logoEmail)}" width="${EMAIL_LOGO_W}" height="${h}" alt="${esc(CRAWLER_BRAND.name)}" ` +
     `style="display:block;border:0;outline:none;width:${EMAIL_LOGO_W}px;height:${h}px">` +

@@ -57,7 +57,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
       <section className={s.section}>
         <div className={s.container}>
           <div className={c.lockup} data-testid="free-result-lockup">
-            <NosyBatLogo height={56} alt={CRAWLER_BRAND.name} onDark />
+            <NosyBatLogo height={36} alt={CRAWLER_BRAND.name} tone="dark" themed />
             <p className={c.byline}>{r.byline}</p>
           </div>
           <p className={s.label}>

@@ -60,7 +60,7 @@ export function Header({
       cancelled = true;
     };
   }, [pathname]);
-  // On the crawler's routes the logo (44 px) IS the title: its alt carries the
+  // On the crawler's routes the logo (30 px high, 90 wide) IS the title: its alt carries the
   // name, the byline stays text. The one brand rendering on those pages
   // besides the sidebar row.
   const crawler = pathname === "/crawler" || Boolean(pathname?.startsWith("/crawler/"));
@@ -82,7 +82,7 @@ export function Header({
 
         {crawler ? (
           <h1 className="flex items-center gap-2 text-lg font-semibold text-gray-900 sm:text-xl">
-            <NosyBatLogo height={44} alt={title} className="shrink-0" testId="topbar-logo" />
+            <NosyBatLogo height={30} alt={title} className="shrink-0" testId="topbar-logo" />
             {byline && <span className="text-xs font-normal text-gray-500">{byline}</span>}
           </h1>
         ) : (

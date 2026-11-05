@@ -54,7 +54,7 @@ describe("/site-crawler", () => {
   it("renders in en and fr", async () => {
     const en = await render("en");
     expect(en).toContain("The site crawler that shows its evidence.");
-    expect(en).toContain(`src="${CRAWLER_BRAND.logoOnDark.png}"`);
+    expect(en).toContain(`src="${CRAWLER_BRAND.logoOnDarkAccent}"`);
     const fr = await render("fr");
     expect(fr).toContain("Le robot d&#x27;exploration qui montre ses preuves.");
     expect(fr).toContain("Ce que");

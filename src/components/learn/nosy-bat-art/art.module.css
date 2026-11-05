@@ -48,7 +48,7 @@
   max-width: 640px;
   height: auto;
   /* The heroes' viewBox: logo on top, the guide's motif under it. */
-  aspect-ratio: 640 / 320;
+  aspect-ratio: 640 / 280;
   margin: 0 0 18px;
   color: var(--nb-text);
 }
@@ -69,6 +69,10 @@
 .amberLine { fill: none; stroke: var(--nb-amber); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
 .amberHead { fill: var(--nb-amber); }
 .dash { stroke-dasharray: 5 5; }
+/* The hero's wordmark: white on the dark default, teal under the day theme. */
+.logoDay { display: none; }
+:global([data-theme="day"]) .logoNight { display: none; }
+:global([data-theme="day"]) .logoDay { display: inline; }
 
 /* Type */
 .t { fill: currentColor; font-size: 15px; }

@@ -58,7 +58,9 @@ describe("the sidebar row", () => {
     );
     expect(order.every((i) => i > 0)).toBe(true);
     expect(order).toEqual([...order].sort((a, b) => a - b));
-    expect(html).toContain(`src="${CRAWLER_BRAND.mark}"`);
+    // The emblem, painted from the currentColor SVG through a mask (tests/nosy-bat-logo.test.tsx).
+    expect(html).toContain(CRAWLER_BRAND.mark);
+    expect(html).toContain("data-nb-emblem");
     expect(html).toContain('title="Site crawler"');
   });
 
@@ -95,7 +97,7 @@ describe("the top bar on /crawler", () => {
 
     const html = renderToStaticMarkup(createElement(Header, { title: dashNav.en["/crawler"]!, byline }));
     // The logo is the title (alt = the name), the byline text beside it.
-    expect(html).toMatch(new RegExp(`<h1[^>]*><picture[^>]*>.*<img[^>]*alt="${CRAWLER_BRAND.name}"[^>]*/></picture><span[^>]*text-xs[^>]*>${CRAWLER_BRAND.byline}</span></h1>`));
+    expect(html).toMatch(new RegExp(`<h1[^>]*><span[^>]*><img[^>]*alt="${CRAWLER_BRAND.name}"[^>]*/></span><span[^>]*text-xs[^>]*>${CRAWLER_BRAND.byline}</span></h1>`));
   });
 
   it("sets the browser title to the brand and Echorank", () => {

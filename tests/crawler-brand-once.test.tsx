@@ -67,20 +67,19 @@ describe.each(["en", "fr", "de-CH"] as const)("/crawler (%s)", (l) => {
     await vi.waitFor(() => expect(el.querySelector('[data-testid="crawler-header"]')).not.toBeNull());
     const found = brandRenderings();
     expect(found.map((e) => e.outerHTML.slice(0, 160))).toHaveLength(1);
-    // The one rendering is the 44 px logo inside the top bar's h1; its alt is the name.
+    // The one rendering is the 30 px logo inside the top bar's h1; its alt is the name.
     const logo = found[0]!;
     expect(logo.tagName).toBe("IMG");
     expect(logo.getAttribute("alt")).toBe(CRAWLER_BRAND.name);
-    expect([logo.getAttribute("width"), logo.getAttribute("height")]).toEqual(["79", "44"]);
-    expect(logo.getAttribute("src")).toBe(CRAWLER_BRAND.logo.png);
-    expect(logo.closest("picture")!.querySelector('source[type="image/webp"]')!.getAttribute("srcset")).toContain(CRAWLER_BRAND.logo.webp);
+    expect([logo.getAttribute("width"), logo.getAttribute("height")]).toEqual(["90", "30"]);
+    expect(logo.getAttribute("src")).toBe(CRAWLER_BRAND.logo);
     const h1 = logo.closest("h1")!;
     expect(h1.closest("header")).not.toBeNull();
     // The byline is text, beside the logo; no "Nosy Bat" text in the h1 besides the alt.
     expect(h1.textContent).toBe(SITE_CRAWLER_COPY[l].byline);
     // The old mark is gone from the top bar; one logo on the page.
     expect(el.querySelector('header [data-testid="topbar-mark"]')).toBeNull();
-    expect(el.querySelectorAll(`img[src="${CRAWLER_BRAND.logo.png}"]`)).toHaveLength(1);
+    expect(el.querySelectorAll(`img[src="${CRAWLER_BRAND.logo}"]`)).toHaveLength(1);
     const header = el.querySelector('[data-testid="crawler-header"]')!;
     expect(header.firstElementChild!.tagName).toBe("P");
     expect(header.firstElementChild!.textContent).toBe(SITE_CRAWLER_COPY[l].subtitle);

@@ -192,7 +192,10 @@ describe.each(LOCALES)("%s", (l) => {
     await act(async () => root.render(<CrawlHistory locale={l} />));
     await vi.waitFor(() => expect(el.querySelector('[data-testid="history-empty"]')).not.toBeNull());
     const box = el.querySelector('[data-testid="history-empty"]')!;
-    expect(box.querySelector("img")!.getAttribute("alt")).toBe("");
+    // The emblem, decorative, painted in the brand teal (a currentColor mask, no <img>).
+    const emblem = box.querySelector("[data-nb-emblem]")!;
+    expect(emblem.getAttribute("aria-hidden")).toBe("true");
+    expect(emblem.getAttribute("class")).toBe("h-20 w-20");
     expect(box.textContent).toContain(u.historyEmpty);
     expect(box.querySelector('a[href="/crawler"]')).not.toBeNull();
   });

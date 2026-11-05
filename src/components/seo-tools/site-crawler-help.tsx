@@ -74,9 +74,9 @@ export default function CrawlerHelpModal({
   return (
     <Modal open onClose={onClose} title={h.title} closeLabel={h.close} className="max-w-3xl">
       <div className="space-y-4">
-        {/* The modal's title names the brand; the 40 px logo here is decorative, the byline text. */}
+        {/* The modal's title names the brand; the 28 px logo here is decorative, the byline text. */}
         <div className="flex items-center gap-3" data-testid="crawler-help-brand">
-          <NosyBatLogo height={40} alt="" />
+          <NosyBatLogo height={28} alt="" />
           <span className="text-xs text-gray-500">{t.byline}</span>
         </div>
         <div role="tablist" aria-label={h.title} className="flex flex-wrap gap-1 border-b border-gray-200">

@@ -1,52 +1,45 @@
-// <NosyBatLogo> — the crawler brand's v2 logo: <picture> with the WebP and a PNG
-// fallback (srcSet of the 240 / 480 / 735 / 800 files), explicit width and
-// height at the artwork's 735:410 so nothing shifts while it loads.
+// <NosyBatLogo> — the crawler brand's v3 wordmark as an <img> of the SVG, used
+// as-is, with explicit width and height at 3:1 so nothing shifts while it loads.
 //
 // No hooks and no server imports, so Server and Client Components both use it.
-// `onDark` adds the glow (NOSY_BAT_LOGO_GLOW) as a CSS filter — never in the
-// image — and the public day theme drops it. The byline is the caller's text,
-// beside or under this, never part of it. Under 120 px wide use the mark.
+// `tone` picks the file: "light" (teal, light backgrounds), "dark" (white),
+// "accent" (light teal, the public hero only). `themed` is for the public
+// pages, dark by default with a day theme: it adds the teal file, shown only
+// under [data-theme="day"] (decorative, so one accessible name either way).
+// The byline is the caller's text, beside or under this, never part of it.
 
-import { CRAWLER_BRAND, NOSY_BAT_LOGO_GLOW, logoWidth } from "@/lib/site-crawler/brand";
+import { CRAWLER_BRAND, logoWidthAt } from "@/lib/site-crawler/brand";
 import l from "./nosy-bat-logo.module.css";
 
-const L = CRAWLER_BRAND.logo;
-const PNG_SRCSET = [...L.sizes.slice(0, 2), { src: L.png, w: L.width }, ...L.sizes.slice(2)].map((x) => `${x.src} ${x.w}w`).join(", ");
+const SRC = { light: CRAWLER_BRAND.logo, dark: CRAWLER_BRAND.logoOnDark, accent: CRAWLER_BRAND.logoOnDarkAccent } as const;
 
 export function NosyBatLogo({
   height,
   alt,
-  onDark = false,
+  tone = "light",
+  themed = false,
   className,
   testId,
 }: {
-  /** Rendered height in CSS px; the width follows the 735:410 ratio. */
+  /** Rendered height in CSS px; the width is 3x. */
   height: number;
   /** Accessible name; "" makes it decorative (aria-hidden). */
   alt: string;
-  /** On a dark surface: the soft gold glow. */
-  onDark?: boolean;
+  tone?: keyof typeof SRC;
+  /** On a public page with the day theme: swap to the teal file there. */
+  themed?: boolean;
   className?: string;
   testId?: string;
 }) {
-  const width = logoWidth(height);
-  const sizes = `${width}px`;
+  const width = logoWidthAt(height);
+  const img = (src: string, a: string, cls: string | undefined) => (
+    // eslint-disable-next-line @next/next/no-img-element -- a static SVG at a fixed size; next/image adds nothing
+    <img className={cls} src={src} width={width} height={height} alt={a} aria-hidden={a === "" ? true : undefined} decoding="async" />
+  );
   return (
-    <picture className={[l.picture, className].filter(Boolean).join(" ")} data-testid={testId}>
-      <source type="image/webp" srcSet={`${L.webp} ${L.width}w`} sizes={sizes} />
-      {/* A plain <img> in <picture>: fixed-size static art, the browser picks the format. */}
-      <img
-        className={onDark ? `${l.img} ${l.glow}` : l.img}
-        src={L.png}
-        srcSet={PNG_SRCSET}
-        sizes={sizes}
-        width={width}
-        height={height}
-        alt={alt}
-        aria-hidden={alt === "" ? true : undefined}
-        decoding="async"
-        data-glow={onDark ? NOSY_BAT_LOGO_GLOW : undefined}
-      />
-    </picture>
+    <span className={[l.wrap, className].filter(Boolean).join(" ")} data-testid={testId}>
+      {img(SRC[tone], alt, themed ? `${l.img} ${l.night}` : l.img)}
+      {themed && tone !== "light" && img(SRC.light, "", `${l.img} ${l.day}`)}
+    </span>
   );
 }

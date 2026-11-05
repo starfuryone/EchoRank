@@ -147,7 +147,7 @@ describe("the result page", () => {
     addRow("tok_abcdefghijklmnop");
     await renderResult("tok_abcdefghijklmnop");
     const logo = el.querySelector('[data-testid="free-result-lockup"] img')!;
-    expect([logo.getAttribute("alt"), logo.getAttribute("width"), logo.getAttribute("height")]).toEqual([CRAWLER_BRAND.name, "100", "56"]);
+    expect([logo.getAttribute("src"), logo.getAttribute("alt"), logo.getAttribute("width"), logo.getAttribute("height")]).toEqual([CRAWLER_BRAND.logoOnDark, CRAWLER_BRAND.name, "108", "36"]);
     expect(el.querySelector('[data-testid="free-result-lockup"]')!.textContent).toBe(CRAWLER_BRAND.byline);
     expect(el.querySelector('[data-testid="free-result-host"]')!.textContent).toBe("www.example.org");
     expect(el.querySelector('[data-testid="free-result-health"]')!.textContent).toContain("41");

@@ -12,7 +12,8 @@ import Link from "next/link";
 import { Check, Clock, Info, Loader2, Pin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { SITE_CRAWLER_COPY, type DashLocale, type SiteCrawlerCopy } from "@/lib/i18n/dashboard";
-import { CRAWLER_BRAND } from "@/lib/site-crawler/brand";
+import { NOSY_BAT_TEAL } from "@/lib/site-crawler/brand";
+import { NosyBatIcon } from "./nosy-bat-icon";
 import { CRAWL_PIN_MAX, RETENTION_UNFINISHED_DAYS } from "@/lib/site-crawler/constants";
 import type { CrawlDto, CrawlQuotaDto } from "@/lib/site-crawler/types";
 import { CRAWLER_ROUTES, CrawlerNav, hostOfCrawl } from "./site-crawler-nav";
@@ -261,8 +262,7 @@ export function CrawlHistory({ locale }: { locale: DashLocale }) {
           </p>
         ) : (
           <div className="flex flex-col items-center gap-3 rounded-xl border border-gray-200 bg-white px-4 py-12 text-center" data-testid="history-empty">
-            {/* eslint-disable-next-line @next/next/no-img-element -- a static SVG; next/image adds nothing */}
-            <img src={CRAWLER_BRAND.mark} alt="" width={80} height={80} className="h-20 w-20" />
+            <NosyBatIcon className="h-20 w-20" style={{ color: NOSY_BAT_TEAL }} />
             <h2 className="text-base font-semibold text-gray-900">{u.historyEmpty}</h2>
             <p className="max-w-sm text-sm text-gray-600">{u.historyEmptyBody}</p>
             {newCrawl}

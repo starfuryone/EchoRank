@@ -65,7 +65,7 @@ export function TwoCrawlers({ locale, sectionNumber }: { locale: string; section
 
           <article className={c.card}>
             <div className={c.head}>
-              <NosyBatLogo height={56} alt={CRAWLER_BRAND.name} onDark testId="two-crawlers-logo" />
+              <NosyBatLogo height={36} alt={CRAWLER_BRAND.name} tone="dark" themed testId="two-crawlers-logo" />
               <span className={c.byline}>{t.b.byline}</span>
             </div>
             <h3 className={c.title}>{t.b.title}</h3>

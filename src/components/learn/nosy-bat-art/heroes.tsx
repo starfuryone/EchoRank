@@ -1,36 +1,37 @@
-// One hero per guide, above the title: the crawler brand's logo (160 px wide)
-// centred above a motif from that guide (a broken chain link, a sitemap tree,
-// a selector bracket, a timeline). Decorative — the h1 says what the page is —
+// One hero per guide, above the title: the crawler brand's wordmark (56 px
+// high) above a motif from that guide (a broken chain link, a sitemap tree, a
+// selector bracket, a timeline). Decorative — the h1 says what the page is —
 // so aria-hidden, and no translatable text (the wordmark is the brand), which
-// is what lets every locale share them. The logo is the 480 px PNG drawn at
-// 160 x 89 (735:410), never scaled up.
+// is what lets every locale share them. The wordmark is the v3 SVG as-is:
+// white on the dark default, teal under the day theme (two <image>s, one shown).
 
 import type { ReactNode } from "react";
-import { CRAWLER_BRAND } from "@/lib/site-crawler/brand";
+import { CRAWLER_BRAND, logoWidthAt } from "@/lib/site-crawler/brand";
 import { Arrow, artStyles as a } from "./frame";
 
-const LOGO_W = 160;
-const LOGO_H = (LOGO_W * CRAWLER_BRAND.logo.height) / CRAWLER_BRAND.logo.width;
-const LOGO_SRC = CRAWLER_BRAND.logo.sizes.find((x) => x.w === 480)!.src;
+const LOGO_H = 56;
+const LOGO_W = logoWidthAt(LOGO_H);
+const LOGO_X = (640 - LOGO_W) / 2;
 
 function Hero({ id, children }: { id: string; children: ReactNode }) {
   return (
     <svg
       className={`${a.hero} ${a.figure}`}
-      viewBox="0 0 640 320"
+      viewBox="0 0 640 280"
       width={640}
-      height={320}
+      height={280}
       aria-hidden="true"
       focusable="false"
       data-nb-hero={id}
       xmlns="http://www.w3.org/2000/svg"
     >
-      <rect x={1} y={1} width={638} height={318} rx={18} className={a.card2} />
-      <image href={LOGO_SRC} x={(640 - LOGO_W) / 2} y={18} width={LOGO_W} height={LOGO_H} data-nb-hero-logo="" />
+      <rect x={1} y={1} width={638} height={278} rx={18} className={a.card2} />
+      <image className={a.logoNight} href={CRAWLER_BRAND.logoOnDark} x={LOGO_X} y={20} width={LOGO_W} height={LOGO_H} data-nb-hero-logo="" />
+      <image className={a.logoDay} href={CRAWLER_BRAND.logo} x={LOGO_X} y={20} width={LOGO_W} height={LOGO_H} />
       {/* Dotted ground under the motif. */}
-      <path className={`${a.line} ${a.dash}`} d="M24 300H616" />
+      <path className={`${a.line} ${a.dash}`} d="M24 262H616" />
       {/* The motifs are drawn in a 360 x 200 box; centred under the logo. */}
-      <g transform="translate(140 112)">{children}</g>
+      <g transform="translate(140 72)">{children}</g>
     </svg>
   );
 }

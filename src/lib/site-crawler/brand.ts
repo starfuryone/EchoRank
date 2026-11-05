@@ -13,41 +13,42 @@
 // No React here, so server code, the catalogs and the workers can all import it.
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://echorank360.com";
+const V3 = "/nosy-bat/v3";
 
-// The v2 logo is final artwork: never resampled up, recoloured, cropped or
-// given effects inside the image. Every <img> of it carries the 735:410 ratio
-// as width/height. The byline is always text beside or under it, never in it.
-const LOGO = {
-  webp: "/nosy-bat/v2/nosy-bat-logo.webp",
-  png: "/nosy-bat/v2/nosy-bat-logo.png",
-  /** Downscaled PNGs plus the 735 px original, for srcSet. */
-  sizes: [
-    { src: "/nosy-bat/v2/nosy-bat-logo-240.png", w: 240 },
-    { src: "/nosy-bat/v2/nosy-bat-logo-480.png", w: 480 },
-    { src: "/nosy-bat/v2/nosy-bat-logo-800.png", w: 800 },
-  ],
-  width: 735,
-  height: 410,
-} as const;
+// The v3 wordmark and emblem (public/nosy-bat/v3/) are final SVGs: used as-is
+// at any size, never with edited paths, colours or ™. Every <img> of the logo
+// carries the 2172:724 (3:1) ratio as width/height. The byline is always text
+// beside or under it, never in an image.
 
-/** The glow a dark surface puts around the logo — CSS only, nothing baked in. */
-export const NOSY_BAT_LOGO_GLOW = "drop-shadow(0 0 24px rgba(240,185,11,.35))";
+/** The teal of the light-background logo and emblem (their fill). */
+export const NOSY_BAT_TEAL = "#027453";
 
-/** Width for a logo rendered `height` px high, at the artwork's 735:410. */
-export const logoWidth = (height: number) => Math.round((height * LOGO.width) / LOGO.height);
+/** The logo's width at `height` px (3:1). */
+export const logoWidthAt = (height: number) => Math.round((height * 2172) / 724);
 
 export const CRAWLER_BRAND = {
   name: "Nosy Bat",
   nameTm: "Nosy Bat™",
   byline: "crawler by Echorank",
-  /** The small mark: sidebar icon, favicon, anything under 120 px wide (the logo's wordmark is unreadable there). */
-  mark: "/nosy-bat/nosy-bat-mark.svg",
-  markOnDark: "/nosy-bat/nosy-bat-mark-on-dark.svg",
-  /** The logo, transparent, wordmark inside the wings. Rendered through <NosyBatLogo>. */
-  logo: LOGO,
-  /** No separate dark variant: the same file, with a CSS drop-shadow on dark surfaces (NOSY_BAT_LOGO_GLOW). */
-  logoOnDark: LOGO,
-  /** For email clients that drop transparency: the original on white, absolute. */
-  logoEmail: `${SITE}/nosy-bat/v2/nosy-bat-logo-on-white.png`,
+  /** The emblem, fill="currentColor": painted through a CSS mask (<NosyBatIcon>), so it takes the text colour. */
+  mark: `${V3}/nosy-bat-emblem-current.svg`,
+  /** The emblem in white, for an <img> on a dark surface. */
+  markOnDark: `${V3}/nosy-bat-emblem-on-dark.svg`,
+  /** The emblem as a 512 px PNG (structured data). */
+  markPng: `${V3}/nosy-bat-emblem-512.png`,
+  /** The tab icon on /crawler/*. */
+  favicon: `${V3}/nosy-bat-emblem-32.png`,
+  /** The wordmark, teal, for light backgrounds. */
+  logo: `${V3}/nosy-bat-logo.svg`,
+  /** The wordmark in white, for dark backgrounds. */
+  logoOnDark: `${V3}/nosy-bat-logo-on-dark.svg`,
+  /** The wordmark in light teal: the public /site-crawler hero only. */
+  logoOnDarkAccent: `${V3}/nosy-bat-logo-on-dark-teal.svg`,
+  /** Emails: the 800 px teal PNG, absolute. */
+  logoEmail: `${SITE}${V3}/nosy-bat-logo-800.png`,
+  /** The PDF cover: the same PNG. The sidecar reads it from disk (AV_CRAWLER_LOCKUP_PATH). */
+  logoPdf: `${SITE}${V3}/nosy-bat-logo-800.png`,
+  logoWidth: 2172,
+  logoHeight: 724,
   ua: "Echorank360Bot/2.0 (Nosy Bat; +https://echorank360.com/bot)",
 } as const;

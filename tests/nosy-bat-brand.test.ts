@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
-// Nosy Bat™ branding: the two marks are well-formed SVGs (the v2 logo is
-// raster, tests/nosy-bat-logo.test.tsx), the UA keeps the
+// Nosy Bat™ branding: the wordmarks and emblems are well-formed SVGs (sizes
+// and viewBoxes in tests/nosy-bat-logo.test.tsx), the UA keeps the
 // Echorank360Bot token robots.txt rules key on, and the name is spelled out
 // only in brand.ts and the i18n catalogs — every other surface reads it.
 import { readdirSync, readFileSync, statSync } from "node:fs";
@@ -10,7 +10,7 @@ import { CRAWLER_BRAND } from "@/lib/site-crawler/brand";
 import { CRAWLER_USER_AGENT } from "@/lib/site-crawler/constants";
 
 const ROOT = join(__dirname, "..");
-const ASSETS = [CRAWLER_BRAND.mark, CRAWLER_BRAND.markOnDark];
+const ASSETS = [CRAWLER_BRAND.mark, CRAWLER_BRAND.markOnDark, CRAWLER_BRAND.logo, CRAWLER_BRAND.logoOnDark, CRAWLER_BRAND.logoOnDarkAccent];
 
 function walk(dir: string, out: string[] = []): string[] {
   for (const name of readdirSync(dir)) {
@@ -27,7 +27,7 @@ describe("Nosy Bat brand", () => {
     const doc = new DOMParser().parseFromString(xml, "image/svg+xml");
     expect(doc.getElementsByTagName("parsererror")).toHaveLength(0);
     expect(doc.documentElement.nodeName).toBe("svg");
-    expect(doc.documentElement.getAttribute("viewBox")).toMatch(/^0 0 \d+ \d+$/);
+    expect(doc.documentElement.getAttribute("viewBox")).toMatch(/^[\d.]+ [\d.]+ [\d.]+ [\d.]+$/);
   });
 
   it("keeps the Echorank360Bot token and the crawler sends that UA", () => {

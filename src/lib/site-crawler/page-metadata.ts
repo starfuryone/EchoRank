@@ -11,10 +11,14 @@ import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { getCurrentTenant } from "@/lib/tenant";
 import { dashboardLocale, SITE_CRAWLER_COPY, type DashLocale } from "@/lib/i18n/dashboard";
+import { CRAWLER_BRAND } from "./brand";
 
 export type CrawlerPage = "start" | "results" | "history" | "schedules";
 
 export const NOINDEX: Metadata["robots"] = { index: false, follow: false };
+
+/** The tab icon on every crawler view: the 32 px emblem (the root favicon.ico stays for the rest of the app). */
+export const CRAWLER_ICONS: Metadata["icons"] = { icon: [{ url: CRAWLER_BRAND.favicon, type: "image/png", sizes: "32x32" }] };
 
 export async function crawlerLocale(): Promise<DashLocale> {
   const cookieStore = await cookies();
@@ -38,7 +42,7 @@ export function crawlerMetadata(locale: DashLocale, page: Exclude<CrawlerPage, "
   const [title, description] =
     page === "start" ? [u.metaStartTitle, u.metaStartDesc] : page === "history" ? [u.metaHistoryTitle, u.metaHistoryDesc] : [u.metaSchedulesTitle, u.metaSchedulesDesc];
   // Absolute: the title already carries the brand; the root template would repeat it.
-  return { title: { absolute: title }, description, robots: NOINDEX };
+  return { title: { absolute: title }, description, robots: NOINDEX, icons: CRAWLER_ICONS };
 }
 
 export async function resultsMetadata(locale: DashLocale, crawlId: string): Promise<Metadata> {
@@ -53,5 +57,5 @@ export async function resultsMetadata(locale: DashLocale, crawlId: string): Prom
   } catch {
     // The title is never worth an error page.
   }
-  return { title: { absolute: title }, description: u.metaResultsDesc, robots: NOINDEX };
+  return { title: { absolute: title }, description: u.metaResultsDesc, robots: NOINDEX, icons: CRAWLER_ICONS };
 }

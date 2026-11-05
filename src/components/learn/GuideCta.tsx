@@ -19,6 +19,7 @@ import { createContext, useContext, type ReactNode } from "react";
 import { useSignedIn } from "@/app/[locale]/PublicNav";
 import type { GuideCtaResolved } from "@/lib/site-crawler/marketing-copy";
 import { CRAWLER_BRAND } from "@/lib/site-crawler/brand";
+import { NosyBatIcon } from "@/components/seo-tools/nosy-bat-icon";
 import { NosyBatLogo } from "@/components/brand/NosyBatLogo";
 import s from "@/app/[locale]/home2.module.css";
 import g from "./guide-cta.module.css";
@@ -68,8 +69,7 @@ export function GuideCta({ variant, copy, pricingHref, freeHref }: GuideCtaProps
   if (variant === "inline") {
     return (
       <aside className={g.band} data-guide-cta="inline">
-        {/* eslint-disable-next-line @next/next/no-img-element -- static SVG mark */}
-        <img className={g.mark} src={CRAWLER_BRAND.mark} alt="" aria-hidden="true" width={36} height={36} />
+        <NosyBatIcon className={g.mark} />
         <p className={g.line}>{copy.inline}</p>
         {actions}
       </aside>
@@ -78,9 +78,8 @@ export function GuideCta({ variant, copy, pricingHref, freeHref }: GuideCtaProps
 
   return (
     <aside className={g.closing} data-guide-cta="closing">
-      {/* 68 px high keeps it over 120 px wide, where the wordmark still reads. */}
       <div className={g.lockup}>
-        <NosyBatLogo height={68} alt={CRAWLER_BRAND.name} onDark />
+        <NosyBatLogo height={36} alt={CRAWLER_BRAND.name} tone="dark" themed />
         <span className={g.byline}>{copy.byline}</span>
       </div>
       <h2 className={g.closingH}>{copy.closing.h}</h2>
