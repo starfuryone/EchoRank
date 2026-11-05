@@ -10,12 +10,16 @@ import {
   __resetClaudeModelFallback,
   aiCostUsd,
   aiListPrice,
+  buildRequest,
   capBytes,
   claudeModelInUse,
   claudeRequest,
+  pageBlock,
   parseGrammar,
+  parseResponse,
   parseSuggestion,
   runPrompt,
+  systemPrompt,
   userMessage,
 } from "@/lib/site-crawler/ai-prompts";
 import { aiTokenEstimate } from "@/lib/site-crawler/ai-shared";
@@ -145,6 +149,67 @@ describe("models (commit: cheaper defaults from env)", () => {
     expect(aiListPrice("openai", env)).toEqual({ input: 0.05, output: 0.4 });
     expect(aiCostUsd("claude", { inputTokens: 2_000_000, outputTokens: 1_000_000 }, env)).toBeCloseTo(0.7, 10);
     expect(aiListPrice("gemini", { CRAWL_AI_GEMINI_PRICE: "cheap" })).toBeNull();
+  });
+});
+
+describe("prompt caching (commit: static prefix, page last)", () => {
+  const pageA = { url: "https://x.com/a", text: "Oak tables, handmade in Vermont." };
+  const pageB = { url: "https://x.com/b/very/different", text: "Shipping and returns. ".repeat(200) };
+  const prompts = [{ preset: "title", text: null }, { preset: "grammar", text: null }, { preset: "custom", text: "Name the product category." }] as const;
+
+  /** The request as bytes, cut where the page starts: everything before it is the prefix. */
+  const prefixBytes = (provider: "claude" | "openai" | "gemini", p: (typeof prompts)[number], pg: typeof pageA) => {
+    const body = JSON.stringify(buildRequest(provider, KEY, p, pg).body);
+    const at = body.indexOf(JSON.stringify(pageBlock(pg.url, pg.text)).slice(1, 20));
+    expect(at, `${provider}: page text not found`).toBeGreaterThan(0);
+    return body.slice(0, at);
+  };
+
+  it.each(["claude", "openai", "gemini"] as const)("%s: the prefix is byte-identical across pages and the page comes last", (provider) => {
+    __resetClaudeModelFallback();
+    for (const p of prompts) {
+      const a = prefixBytes(provider, p, pageA);
+      expect(a).toBe(prefixBytes(provider, p, pageB));
+      expect(a).toContain(JSON.stringify(systemPrompt()).slice(1, -1));
+      // Nothing page-specific before the page block.
+      expect(a).not.toContain("x.com");
+    }
+    // Different prompts, different prefixes (one cache entry per prompt).
+    expect(prefixBytes(provider, prompts[0], pageA)).not.toBe(prefixBytes(provider, prompts[1], pageA));
+  });
+
+  it("claude: the cache marker sits on the task block that ends the prefix, not on the page", () => {
+    __resetClaudeModelFallback();
+    const body = buildRequest("claude", KEY, prompts[0], pageA).body as { system: { text: string }[]; messages: { content: { text: string; cache_control?: unknown }[] }[] };
+    expect(body.system).toEqual([{ type: "text", text: systemPrompt() }]);
+    const [task, pg] = body.messages[0]!.content;
+    expect(task!.cache_control).toEqual({ type: "ephemeral" });
+    expect(pg!.cache_control).toBeUndefined();
+    expect(pg!.text).toBe(pageBlock(pageA.url, pageA.text));
+    expect(JSON.stringify(body).match(/cache_control/g)).toHaveLength(1);
+  });
+
+  it("the prefix is far below every provider's cache minimum (512 tokens on Haiku 5.5) — documented, not padded", () => {
+    for (const preset of ["intent", "summary", "title", "grammar"] as const) {
+      const chars = systemPrompt().length + userMessage({ preset, text: null }, "", "").indexOf("URL:");
+      // Even at 2 characters a token this is under 512 tokens.
+      expect(chars).toBeLessThan(1024);
+    }
+  });
+
+  it("reads cache usage the same way for every provider (input = uncached)", () => {
+    const c = parseResponse("claude", "m", { content: [{ type: "thinking", thinking: "" }, { type: "text", text: "ok" }], usage: { input_tokens: 100, cache_creation_input_tokens: 600, cache_read_input_tokens: 0, output_tokens: 9 } });
+    expect(c).toMatchObject({ text: "ok", inputTokens: 100, cacheWriteTokens: 600, cacheReadTokens: 0, outputTokens: 9 });
+    const o = parseResponse("openai", "m", { output: [], usage: { input_tokens: 1500, input_tokens_details: { cached_tokens: 1024 }, output_tokens: 20 } });
+    expect(o).toMatchObject({ inputTokens: 476, cacheReadTokens: 1024, cacheWriteTokens: 0, outputTokens: 20 });
+    const g = parseResponse("gemini", "m", { candidates: [], usageMetadata: { promptTokenCount: 3000, cachedContentTokenCount: 2048, candidatesTokenCount: 5 } });
+    expect(g).toMatchObject({ inputTokens: 952, cacheReadTokens: 2048, outputTokens: 5 });
+    expect(() => parseResponse("claude", "m", { stop_reason: "refusal", content: [] })).toThrow("refused");
+  });
+
+  it("the list cost prices cache reads at 0.1x and writes at 1.25x of input", () => {
+    const env = { CRAWL_AI_CLAUDE_PRICE: "1/5" };
+    expect(aiCostUsd("claude", { inputTokens: 0, cacheWriteTokens: 1_000_000, cacheReadTokens: 1_000_000, outputTokens: 0 }, env)).toBeCloseTo(1.35, 10);
   });
 });
 

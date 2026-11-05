@@ -58,11 +58,19 @@ export function claudeTakesEffort(model: string): boolean {
   return !/^claude-(haiku-4|sonnet-4-5|opus-4-5|opus-4-1|opus-4-0|sonnet-4-0|3)/.test(model) && !/^claude-(sonnet|opus)-4$/.test(model);
 }
 
-/** The Messages request body for one prompt. */
-export function claudeRequest(model: string, system: string, user: string) {
+/**
+ * The Messages request body for one prompt: the static prefix (system prompt,
+ * then the task, which carries the cache breakpoint) and the page last.
+ */
+export function claudeRequest(model: string, task: string, page: string) {
+  const content = [
+    { type: "text", text: task, cache_control: { type: "ephemeral" } },
+    { type: "text", text: page },
+  ];
+  const common = { model, system: [{ type: "text", text: SYSTEM }], messages: [{ role: "user", content }] };
   return claudeTakesEffort(model)
-    ? { model, max_tokens: CLAUDE_THINKING_MAX_TOKENS, output_config: { effort: "low" }, system, messages: [{ role: "user", content: user }] }
-    : { model, max_tokens: MAX_OUTPUT_TOKENS, system, messages: [{ role: "user", content: user }] };
+    ? { ...common, max_tokens: CLAUDE_THINKING_MAX_TOKENS, output_config: { effort: "low" } }
+    : { ...common, max_tokens: MAX_OUTPUT_TOKENS };
 }
 
 /**
@@ -86,16 +94,38 @@ export function aiListPrice(provider: AiProvider, env: Record<string, string | u
   return m ? { input: Number(m[1]), output: Number(m[2]) } : null;
 }
 
-/** The list cost of one call from the configured price, or null when no price is configured. */
-export function aiCostUsd(provider: AiProvider, r: Pick<AiCallResult, "inputTokens" | "outputTokens">, env: Record<string, string | undefined> = process.env): number | null {
+/**
+ * The list cost of one call from the configured price, or null when no price
+ * is configured. Cache reads cost 0.1x the input price and Anthropic cache
+ * writes 1.25x (5-minute TTL), on all three providers' pricing pages.
+ */
+export function aiCostUsd(
+  provider: AiProvider,
+  r: Pick<AiUsage, "inputTokens" | "outputTokens"> & Partial<Pick<AiUsage, "cacheReadTokens" | "cacheWriteTokens">>,
+  env: Record<string, string | undefined> = process.env,
+): number | null {
   const p = aiListPrice(provider, env);
-  return p ? (r.inputTokens * p.input + r.outputTokens * p.output) / 1_000_000 : null;
+  if (!p) return null;
+  const input = r.inputTokens + (r.cacheWriteTokens ?? 0) * 1.25 + (r.cacheReadTokens ?? 0) * 0.1;
+  return (input * p.input + r.outputTokens * p.output) / 1_000_000;
 }
 
-export interface AiCallResult {
-  text: string;
+/**
+ * One call's tokens, the same shape for every provider. inputTokens is the
+ * UNCACHED input: Anthropic reports cache reads and writes beside
+ * input_tokens, OpenAI and Gemini count cached tokens inside their input
+ * total, so those two are split here.
+ */
+export interface AiUsage {
   inputTokens: number;
+  /** Anthropic only (OpenAI and Gemini do not bill writes separately on these models). */
+  cacheWriteTokens: number;
+  cacheReadTokens: number;
   outputTokens: number;
+}
+
+export interface AiCallResult extends AiUsage {
+  text: string;
   model: string;
 }
 
@@ -118,8 +148,39 @@ export function taskFor(p: AiPrompt): string {
   return p.preset === "custom" ? (p.text ?? "").trim() : TASKS[p.preset];
 }
 
+// Prompt caching. Every request is a STATIC PREFIX — the system prompt, then
+// the prompt's task — identical bytes for every page, and the page (URL and
+// text) last. Claude marks the end of the prefix with cache_control; OpenAI
+// and Gemini cache a repeated prefix on their own.
+//
+// The prefix is small: the system prompt and the longest preset come to about
+// 600 characters (a custom prompt adds at most 500), roughly 150-300 tokens.
+// That is under every provider's minimum cacheable prefix: 512 tokens on
+// Claude Haiku 5.5, 4,096 on Claude Haiku 4.5, 1,024 on OpenAI, and Gemini's
+// implicit caching starts in the thousands. So in practice NOTHING caches,
+// and the request accepts the marker without error. It is deliberately not
+// padded to reach a minimum: that would pay to send filler in order to
+// discount filler. The usage is still read and logged per crawl
+// (cacheReadTokens / cacheWriteTokens), so a change in that is visible.
+
+/** The prompt's task: the end of the static prefix. */
+export function staticTask(p: AiPrompt): string {
+  return taskFor(p);
+}
+
+/** The per-page part, always last: the URL and the visible text (capped). */
+export function pageBlock(pageUrl: string, text: string): string {
+  return `URL: ${pageUrl}\n<page_text>\n${text.slice(0, AI_LIMITS.textChars)}\n</page_text>`;
+}
+
+/** The single user message where a provider takes one string (OpenAI): task, blank line, page. */
 export function userMessage(p: AiPrompt, pageUrl: string, text: string): string {
-  return `${taskFor(p)}\n\nURL: ${pageUrl}\n<page_text>\n${text.slice(0, AI_LIMITS.textChars)}\n</page_text>`;
+  return `${staticTask(p)}\n\n${pageBlock(pageUrl, text)}`;
+}
+
+/** The system prompt every provider gets (part of the static prefix). */
+export function systemPrompt(): string {
+  return SYSTEM;
 }
 
 /** Cut to at most `bytes` UTF-8 bytes without splitting a character. */
@@ -151,39 +212,91 @@ async function post(f: Fetch, url: string, headers: Record<string, string>, body
   });
 }
 
-async function once(provider: AiProvider, key: string, system: string, user: string, f: Fetch): Promise<AiCallResult> {
+/** One provider request: endpoint, auth header, JSON body. The same body goes into a batch. */
+export interface AiRequest {
+  url: string;
+  headers: Record<string, string>;
+  body: Record<string, unknown>;
+  model: string;
+}
+
+export function buildRequest(provider: AiProvider, key: string, prompt: AiPrompt, page: { url: string; text: string }): AiRequest {
+  const task = staticTask(prompt);
   if (provider === "claude") {
     const model = claudeModelInUse();
-    const d = await post(f, "https://api.anthropic.com/v1/messages", { "x-api-key": key, "anthropic-version": "2023-06-01" }, claudeRequest(model, system, user), claudeModelRefused);
-    if (d?.stop_reason === "refusal") throw new AiCallError("refused", 200);
-    // Read text blocks by type: a model that thinks puts thinking blocks first.
-    const text = (d?.content ?? []).filter((b: any) => b?.type === "text").map((b: any) => String(b.text ?? "")).join("");
-    return { text, inputTokens: Number(d?.usage?.input_tokens ?? 0), outputTokens: Number(d?.usage?.output_tokens ?? 0), model: String(d?.model || model) };
+    return {
+      url: "https://api.anthropic.com/v1/messages",
+      headers: { "x-api-key": key, "anthropic-version": "2023-06-01" },
+      body: claudeRequest(model, task, pageBlock(page.url, page.text)),
+      model,
+    };
   }
   if (provider === "openai") {
     const model = OPENAI_CRAWL_MODEL();
-    const d = await post(f, "https://api.openai.com/v1/responses", { authorization: `Bearer ${key}` }, {
+    return {
+      url: "https://api.openai.com/v1/responses",
+      headers: { authorization: `Bearer ${key}` },
+      body: {
+        model,
+        instructions: SYSTEM,
+        input: userMessage(prompt, page.url, page.text),
+        max_output_tokens: MAX_OUTPUT_TOKENS * 4,
+        ...(model.startsWith("gpt-5") ? { reasoning: { effort: "minimal" } } : {}),
+      },
       model,
-      instructions: system,
-      input: user,
-      max_output_tokens: MAX_OUTPUT_TOKENS * 4,
-      ...(model.startsWith("gpt-5") ? { reasoning: { effort: "minimal" } } : {}),
-    });
+    };
+  }
+  const model = GEMINI_CRAWL_MODEL();
+  return {
+    url: `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
+    headers: { "x-goog-api-key": key },
+    body: {
+      systemInstruction: { parts: [{ text: SYSTEM }] },
+      contents: [{ role: "user", parts: [{ text: task }, { text: pageBlock(page.url, page.text) }] }],
+      generationConfig: { maxOutputTokens: MAX_OUTPUT_TOKENS * 4 },
+    },
+    model,
+  };
+}
+
+const n = (v: unknown) => (Number.isFinite(Number(v)) ? Number(v) : 0);
+
+/** The answer and the usage from one provider response body (sync or a batch result). Throws on a refusal. */
+export function parseResponse(provider: AiProvider, model: string, d: any): AiCallResult {
+  if (provider === "claude") {
+    if (d?.stop_reason === "refusal") throw new AiCallError("refused", 200);
+    // Read text blocks by type: a model that thinks puts thinking blocks first.
+    const text = (d?.content ?? []).filter((b: any) => b?.type === "text").map((b: any) => String(b.text ?? "")).join("");
+    const u = d?.usage ?? {};
+    return {
+      text,
+      inputTokens: n(u.input_tokens),
+      cacheWriteTokens: n(u.cache_creation_input_tokens),
+      cacheReadTokens: n(u.cache_read_input_tokens),
+      outputTokens: n(u.output_tokens),
+      model: String(d?.model || model),
+    };
+  }
+  if (provider === "openai") {
     let text = "";
     for (const item of d?.output ?? []) {
       if (item?.type !== "message") continue;
       for (const c of item?.content ?? []) if (c?.type === "output_text") text += String(c.text ?? "");
     }
-    return { text, inputTokens: Number(d?.usage?.input_tokens ?? 0), outputTokens: Number(d?.usage?.output_tokens ?? 0), model };
+    const total = n(d?.usage?.input_tokens);
+    const cached = Math.min(total, n(d?.usage?.input_tokens_details?.cached_tokens));
+    return { text, inputTokens: total - cached, cacheWriteTokens: 0, cacheReadTokens: cached, outputTokens: n(d?.usage?.output_tokens), model };
   }
-  const model = GEMINI_CRAWL_MODEL();
-  const d = await post(f, `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`, { "x-goog-api-key": key }, {
-    systemInstruction: { parts: [{ text: system }] },
-    contents: [{ role: "user", parts: [{ text: user }] }],
-    generationConfig: { maxOutputTokens: MAX_OUTPUT_TOKENS * 4 },
-  });
   const text = (d?.candidates?.[0]?.content?.parts ?? []).map((p: any) => String(p?.text ?? "")).join("");
-  return { text, inputTokens: Number(d?.usageMetadata?.promptTokenCount ?? 0), outputTokens: Number(d?.usageMetadata?.candidatesTokenCount ?? 0), model };
+  const total = n(d?.usageMetadata?.promptTokenCount);
+  const cached = Math.min(total, n(d?.usageMetadata?.cachedContentTokenCount));
+  return { text, inputTokens: total - cached, cacheWriteTokens: 0, cacheReadTokens: cached, outputTokens: n(d?.usageMetadata?.candidatesTokenCount), model };
+}
+
+async function once(provider: AiProvider, key: string, prompt: AiPrompt, page: { url: string; text: string }, f: Fetch): Promise<AiCallResult> {
+  const req = buildRequest(provider, key, prompt, page);
+  const d = await post(f, req.url, req.headers, req.body, provider === "claude" ? claudeModelRefused : undefined);
+  return parseResponse(provider, req.model, d);
 }
 
 /** A 404, or a 400 about the model, from the Messages API: the model itself is refused. */
@@ -204,11 +317,10 @@ export async function runPrompt(
   f: Fetch = fetch,
   sleep: (ms: number) => Promise<void> = (ms) => new Promise((r) => setTimeout(r, ms)),
 ): Promise<AiCallResult> {
-  const user = userMessage(prompt, page.url, page.text);
   let last: unknown;
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
-      const r = await once(provider, key, SYSTEM, user, f);
+      const r = await once(provider, key, prompt, page, f);
       return { ...r, text: capBytes(r.text.trim()) };
     } catch (err) {
       last = err;

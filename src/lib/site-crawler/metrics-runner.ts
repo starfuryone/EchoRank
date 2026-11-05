@@ -102,6 +102,9 @@ export interface SourceState {
   /** ai: tokens charged (Claude: to the Marketing Studio budget) and their list cost (CRAWL_AI_<PROVIDER>_PRICE; absent when unset). */
   tokens?: number;
   costUsd?: number;
+  /** ai: prompt-cache tokens over the crawl (read = served from cache, write = stored to it). */
+  cacheReadTokens?: number;
+  cacheWriteTokens?: number;
   updatedAt: string;
 }
 
@@ -470,15 +473,29 @@ async function aiTick(job: Job, ai: AiConfig, deps: MetricsDeps): Promise<Metric
   const prev = ((job.summary as { metrics?: { ai?: SourceState } } | null)?.metrics?.ai) ?? null;
   let tokens = prev?.tokens ?? 0;
   let costUsd: number | undefined = prev?.costUsd;
+  let cacheReadTokens = prev?.cacheReadTokens ?? 0;
+  let cacheWriteTokens = prev?.cacheWriteTokens ?? 0;
   const state = (extra: Partial<SourceState> = {}) => {
     const done = pages.filter((p) => (have.get(p.id)?.size ?? 0) >= ai.prompts.length);
     const failed = done.filter((p) => [...have.get(p.id)!.values()].some((v) => v.startsWith("error: "))).length;
-    return { status: "running" as const, targets: pages.length, completed: done.length, failed, tokens, ...(costUsd !== undefined ? { costUsd: Math.round(costUsd * 1e6) / 1e6 } : {}), ...extra };
+    return {
+      status: "running" as const,
+      targets: pages.length,
+      completed: done.length,
+      failed,
+      tokens,
+      ...(costUsd !== undefined ? { costUsd: Math.round(costUsd * 1e6) / 1e6 } : {}),
+      cacheReadTokens,
+      cacheWriteTokens,
+      ...extra,
+    };
   };
   const finish = async (s: Pick<SourceState, "status" | "stoppedReason">) => {
     await reevaluateAiRules(job.id, job.rootUrl, ai, pages.filter((p) => have.has(p.id)));
     await recountIssues(job.id);
     await setSourceState(job.id, "ai", state(s));
+    // Per crawl: whether the static prefix ever cached (ai-prompts.ts says why it mostly will not).
+    log.info({ jobId: job.id, provider: ai.provider, status: s.status, tokens, cacheReadTokens, cacheWriteTokens }, "crawl AI done");
     return { done: true } as const;
   };
   const todo = pages.filter((p) => (have.get(p.id)?.size ?? 0) < ai.prompts.length);
@@ -515,14 +532,18 @@ async function aiTick(job: Job, ai: AiConfig, deps: MetricsDeps): Promise<Metric
       }
       try {
         const r = await deps.aiCall(ai.provider, key, prompt, { url: page.url, text });
-        const spent = r.inputTokens + r.outputTokens;
+        const read = r.cacheReadTokens ?? 0;
+        const written = r.cacheWriteTokens ?? 0;
+        const spent = r.inputTokens + written + read + r.outputTokens;
         tokens += spent;
+        cacheReadTokens += read;
+        cacheWriteTokens += written;
         const cost = aiCostUsd(ai.provider, r);
         if (cost !== null) costUsd = (costUsd ?? 0) + cost;
         if (ai.provider === "claude") {
           await deps.recordTokens(job.tenantId, spent);
           await prisma.aiApiCall
-            .create({ data: { tenantId: job.tenantId, categoryId: "site_crawler_ai", model: r.model, inputTokens: r.inputTokens, outputTokens: r.outputTokens } })
+            .create({ data: { tenantId: job.tenantId, categoryId: "site_crawler_ai", model: r.model, inputTokens: r.inputTokens, outputTokens: r.outputTokens, cacheReadTokens: read } })
             .catch(() => undefined);
         }
         await save(page.id, index, r.text || "(empty)");
@@ -537,7 +558,7 @@ async function aiTick(job: Job, ai: AiConfig, deps: MetricsDeps): Promise<Metric
     await Promise.all(batch.slice(i, i + AI_CONCURRENCY).map(onePage));
     if (budgetHit) return finish({ status: "stopped", stoppedReason: "token_budget" });
   }
-  log.info({ jobId: job.id, pages: batch.length, tokens }, "crawl AI tick");
+  log.info({ jobId: job.id, pages: batch.length, tokens, cacheReadTokens, cacheWriteTokens }, "crawl AI tick");
   await setSourceState(job.id, "ai", state());
   return { done: false, delayMs: 0 };
 }
