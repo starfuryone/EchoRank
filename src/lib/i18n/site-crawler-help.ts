@@ -65,6 +65,7 @@ const en = {
   unlimited: "Unlimited",
   guide: "Open the full guide",
   allGuides: `All ${NB} guides`,
+  watchIntro: "Watch the intro",
   close: "Close",
 };
 
@@ -125,6 +126,7 @@ const fr: SiteCrawlerHelpCopy = {
   unlimited: "Illimité",
   guide: "Ouvrir le guide complet",
   allGuides: `Tous les guides ${NB}`,
+  watchIntro: "Voir la présentation",
   close: "Fermer",
 };
 
@@ -183,6 +185,7 @@ const deCH: SiteCrawlerHelpCopy = {
   unlimited: "Unbegrenzt",
   guide: "Vollständige Anleitung öffnen",
   allGuides: `Alle ${NB}-Leitfäden`,
+  watchIntro: "Intro ansehen",
   close: "Schliessen",
 };
 

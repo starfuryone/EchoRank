@@ -41,7 +41,8 @@ describe("the guides index", () => {
     const section = doc.getElementById("nosy-bat")!;
     expect(section).not.toBeNull();
     const hrefs = [...section.querySelectorAll("a")].map((a) => a.getAttribute("href"));
-    expect(hrefs).toEqual(NOSY_BAT_GUIDES.map((g) => `/${l}/learn/guides/${g.slug}`));
+    // The intro video link, then the four guide cards.
+    expect(hrefs).toEqual([`/${l}/site-crawler#video`, ...NOSY_BAT_GUIDES.map((g) => `/${l}/learn/guides/${g.slug}`)]);
     for (const g of NOSY_BAT_GUIDES) expect(section.textContent).toContain(guideCopy(g, l).title);
     const ultimate = doc.getElementById("ultimate")!;
     expect(ultimate.querySelectorAll("a")).toHaveLength(LEARN_GUIDES.filter((g) => !g.group).length);

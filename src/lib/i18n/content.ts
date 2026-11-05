@@ -1863,6 +1863,8 @@ export interface TwoCrawlersCopy {
     bullets: string[];
     cta: string;
     secondary: string;
+    /** The text link to the intro video on the crawler page (#video). */
+    watch: string;
   };
   closer: string;
 }
@@ -1909,6 +1911,7 @@ export const HOME_TWO_CRAWLERS: Record<"en" | "fr", TwoCrawlersCopy> = {
       ],
       cta: "See plans",
       secondary: `Meet ${CRAWLER_BRAND.name}`,
+      watch: "Watch the 2-minute intro",
     },
     closer: "Your whole team on one plan. Both crawlers run on our servers, on a schedule if you want, and share nothing with anyone but you.",
   },
@@ -1953,6 +1956,7 @@ export const HOME_TWO_CRAWLERS: Record<"en" | "fr", TwoCrawlersCopy> = {
       ],
       cta: "Voir les forfaits",
       secondary: `Rencontrer ${CRAWLER_BRAND.name}`,
+      watch: "Voir la présentation de 2 minutes",
     },
     closer: "Toute votre équipe sur un seul forfait. Les deux robots tournent sur nos serveurs, à l'horaire si vous le souhaitez, et ne partagent rien avec personne d'autre que vous.",
   },

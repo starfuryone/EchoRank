@@ -16,6 +16,7 @@ import { PLAN_CONFIGS } from "@/lib/plan-config";
 import { CRAWLER_BRAND } from "@/lib/site-crawler/brand";
 import { ruleCountLabel } from "@/lib/site-crawler/rule-count";
 import { NosyBatLogo } from "@/components/brand/NosyBatLogo";
+import { NB_INTRO_ANCHOR } from "@/lib/site-crawler/intro-video";
 import { AiVisibilityLogo } from "@/components/brand/AiVisibilityLogo";
 import s from "./home2.module.css";
 import c from "./two-crawlers.module.css";
@@ -78,7 +79,10 @@ export function TwoCrawlers({ locale, sectionNumber }: { locale: string; section
             <div className={c.ctas}>
               <Link className={`${s.btn} ${s.btnPrimary}`} href={L("/pricing")}>{t.b.cta}</Link>
               {flag("crawl.publicPage") && (
-                <Link className={c.textLink} href={L("/site-crawler")}>{t.b.secondary}</Link>
+                <>
+                  <Link className={c.textLink} href={L("/site-crawler")}>{t.b.secondary}</Link>
+                  <Link className={c.textLink} href={L(`/site-crawler#${NB_INTRO_ANCHOR}`)} data-testid="two-crawlers-watch">{t.b.watch}</Link>
+                </>
               )}
             </div>
           </article>

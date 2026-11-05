@@ -27,3 +27,12 @@
 .hostedGrid{display:grid;grid-template-columns:1fr;gap:16px;margin-top:24px}
 @media(min-width:760px){.hostedGrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(min-width:1100px){.hostedGrid{grid-template-columns:repeat(4,minmax(0,1fr))}}
+
+/* The intro video (#video): a 16:9 card, at most 960 wide, centred, rounded,
+   on a dark surface in both themes (the video is dark). The player's
+   "tap the speaker icon to unmute" caption at 12 px. */
+.videoCard{max-width:960px;margin:26px auto 0;border-radius:16px;overflow:hidden;background:#0b0e11;border:1px solid var(--line)}
+.videoWrap{background:#0b0e11}
+.videoWrap p{font-size:12px;padding:8px 14px 10px;margin:0;line-height:1.45}
+.video{display:block;width:100%;aspect-ratio:16/9;height:auto;object-fit:cover;background:#0b0e11}
+.videoPrefer{text-align:center;margin:18px 0 0;color:var(--muted);font-size:15px}

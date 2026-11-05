@@ -29,10 +29,13 @@ import {
   faqPage,
   softwareApplication,
 } from "@/lib/seo";
+import { videoObject } from "@/lib/seo/jsonld";
+import { NB_INTRO_ANCHOR, NB_INTRO_VIDEO } from "@/lib/site-crawler/intro-video";
+import { HomeVideo } from "../HomeVideo";
 import { RULES } from "@/lib/crawl-rules";
 import { FLAGS, flag } from "@/lib/flags";
 import { PLAN_CONFIGS } from "@/lib/plan-config";
-import { HOME_PRICING_CHROME, PRICING_NOTES, toolCountLine } from "@/lib/i18n/content";
+import { HOME_PRICING_CHROME, HOME_TOOLS, PRICING_NOTES, toolCountLine } from "@/lib/i18n/content";
 import { pricingTiers } from "@/lib/pricing-tiers";
 import { seoToolCounts } from "@/lib/seo-tools";
 import { CRAWLER_BRAND } from "@/lib/site-crawler/brand";
@@ -87,6 +90,11 @@ const COPY = {
       `${NB} crawls every page of a site the way a search engine does, checks each one against ${rules} rules, and puts the proof next to every finding. Hosted, scheduled, shared with your team — nothing to install.`,
     seePlans: "See plans",
     open: `Open ${NB}`,
+    videoLabel: `Meet ${NB}`,
+    videoH2: "Two minutes, every feature.",
+    videoAria: `${NB}: the intro video`,
+    videoDesc: `A tour of ${NB}, the site crawler inside Echorank: what it checks, the proof behind every finding, exports and scheduling, and the free 100-page crawl.`,
+    videoPrefer: "Prefer reading? The full feature list is just below.",
     compare: "How it compares to a desktop crawler",
     guides: "Guides",
     reportsLabel: "WHAT IT REPORTS",
@@ -109,6 +117,11 @@ const COPY = {
       `${NB} explore chaque page d'un site comme le fait un moteur de recherche, la vérifie selon ${rules} règles et place la preuve à côté de chaque constat. Hébergé, planifié, partagé avec votre équipe — rien à installer.`,
     seePlans: "Voir les forfaits",
     open: `Ouvrir ${NB}`,
+    videoLabel: `Découvrez ${NB}`,
+    videoH2: "Deux minutes, toutes les fonctionnalités.",
+    videoAria: `${NB} : la vidéo de présentation`,
+    videoDesc: `Une visite de ${NB}, le robot d'exploration d'Echorank : ce qu'il vérifie, la preuve derrière chaque constat, les exports et la planification, et l'exploration gratuite de 100 pages.`,
+    videoPrefer: "Vous préférez lire ? La liste complète des fonctionnalités est juste en dessous.",
     compare: "Comparé à un robot à installer",
     guides: "Guides",
     reportsLabel: "CE QU'IL SIGNALE",
@@ -217,6 +230,16 @@ export default async function Page({ params }: { params: Params }) {
           softwareApplication(l),
           crawlerNode,
           faqPage(faq, url),
+          videoObject({
+            name: t.videoAria,
+            description: t.videoDesc,
+            thumbnailUrl: NB_INTRO_VIDEO.poster,
+            contentUrl: NB_INTRO_VIDEO.src,
+            uploadDate: NB_INTRO_VIDEO.uploadDate,
+            durationSeconds: NB_INTRO_VIDEO.durationSeconds,
+            pageUrl: url,
+            inLanguage: base,
+          }),
           breadcrumbList([
             { name: "Echorank360", url: `${SITE_URL}/${l}` },
             { name: NB, url },
@@ -239,6 +262,30 @@ export default async function Page({ params }: { params: Params }) {
             {/* One link, not a strip of cards: the four guides are listed on
                 the guides index (#nosy-bat), and only there. */}
             <a className={c.textLink} href={link(CRAWLER_GUIDES_HREF)} data-testid="crawler-guides-link">{t.guides}</a>
+          </div>
+        </div>
+      </section>
+
+      {/* The intro video: after the hero, before the capabilities. Unnumbered,
+          like the "Try it free" strip, so the sections below keep their numbers. */}
+      <section id={NB_INTRO_ANCHOR} className={s.section} data-testid="nb-intro-video">
+        <div className={s.container}>
+          <p className={s.label}><b>{t.videoLabel}</b></p>
+          <h2 className={s.h2}>{t.videoH2}</h2>
+          <div className={c.videoCard}>
+            <HomeVideo
+              wrapClassName={c.videoWrap}
+              className={c.video}
+              src={NB_INTRO_VIDEO.src}
+              poster={NB_INTRO_VIDEO.poster}
+              ariaLabel={t.videoAria}
+              labels={HOME_TOOLS[l].player}
+              tracks={NB_INTRO_VIDEO.tracks}
+            />
+          </div>
+          <p className={c.videoPrefer}>{t.videoPrefer}</p>
+          <div className={s.ctarow} style={{ marginTop: 14, justifyContent: "center" }}>
+            <CrawlerCta pricingHref={link("/pricing")} plansLabel={t.seePlans} openLabel={t.open} />
           </div>
         </div>
       </section>

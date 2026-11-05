@@ -1,0 +1,28 @@
+# Media the site serves that is NOT in git (public/videos/ is gitignored in
+# full: the files are too large for the repo). A rebuild of this box from git
+# does not restore them — each section degrades to its poster, or to nothing
+# where the poster is in this list too. These paths must be in the off-box copy.
+#
+# NOTHING READS THIS LIST YET. The off-box backup is still open
+# (docs/agents/SECURITY.md, D1: "OPEN (operator): off-box copy"); the nightly
+# job on the box covers the databases only. Whoever sets up the off-box copy
+# includes every path below. One path (or glob) per line, relative to the app.
+#
+# The two caption files public/videos/nosy-bat-intro.{en,fr}.vtt ARE in git
+# (force-added: written text, not media) and are not listed here.
+
+public/videos/90-Days-AI-Visibility_1080p_caption.mp4
+public/videos/90-Days-AI-Visibility_1080p_caption-poster.jpg
+public/videos/ai-search-tracking-explainer.mp4
+public/videos/ai-search-tracking-explainer-poster.jpg
+public/videos/Avatar_Video_with_captions.mp4
+public/videos/Avatar_Video_with_captions-poster.jpg
+public/videos/echorank-classic-seo-tools-overview.mp4
+public/videos/echorank-classic-seo-tools-overview-poster.jpg
+public/videos/echorank-what-is-reputation-management.mp4
+public/videos/echorank-what-is-reputation-management-poster.jpg
+public/videos/faq-intro.mp4
+public/videos/faq-intro-poster.jpg
+# The crawler intro on /[locale]/site-crawler#video (src/lib/site-crawler/intro-video.ts).
+public/videos/nosy-bat-intro*.mp4
+public/videos/nosy-bat-intro*.jpg

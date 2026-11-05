@@ -16,6 +16,7 @@ import { useState } from "react";
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
 import { NosyBatLogo } from "@/components/brand/NosyBatLogo";
+import { NB_INTRO_ANCHOR } from "@/lib/site-crawler/intro-video";
 import { REGISTRY_FAMILIES } from "@/lib/crawl-rules-meta";
 import { FLAGS } from "@/lib/flags";
 import type { DashLocale, SiteCrawlerCopy } from "@/lib/i18n/dashboard";
@@ -170,6 +171,9 @@ export default function CrawlerHelpModal({
           </a>
           <a href={allGuidesHref} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-blue-600 hover:underline" data-testid="help-all-guides">
             {h.allGuides}
+          </a>
+          <a href={`/${locale}/site-crawler#${NB_INTRO_ANCHOR}`} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-blue-600 hover:underline" data-testid="help-watch-intro">
+            {h.watchIntro}
           </a>
           <Button type="button" variant="outline" onClick={onClose}>
             {h.close}

@@ -20,6 +20,7 @@ import { breadcrumbList, organization, webSite } from "@/lib/seo/jsonld";
 import { SITE_URL } from "@/lib/seo/constants";
 import { LEARN_BASE, LEARN_GUIDES, guideCopy, type LearnGuide } from "@/lib/learn-content";
 import { NOSY_BAT_GUIDES_ANCHOR } from "@/lib/learn-nosy-bat";
+import { NB_INTRO_ANCHOR } from "@/lib/site-crawler/intro-video";
 import { CRAWLER_BRAND } from "@/lib/site-crawler/brand";
 import { PublicNav } from "../../PublicNav";
 import { baseOf, type Base } from "../_shared/ArticleShell";
@@ -43,6 +44,7 @@ const CHROME: Record<Base, {
   nbLabel: string;
   nbH: string;
   nbSub: string;
+  nbWatch: string;
   ultimateH: string;
   ultimateSub: string;
   minRead: (n: number) => string;
@@ -58,6 +60,7 @@ const CHROME: Record<Base, {
     nbLabel: "TECHNICAL SEO WITH A CRAWLER",
     nbH: `${NB} guides`,
     nbSub: "Four walkthroughs, each with its diagrams: find what's broken, list what should be indexed, collect your own data, and move a site without losing a page.",
+    nbWatch: "Watch the intro",
     ultimateH: "Ultimate guides",
     ultimateSub: "Deep dives on the topics the course can only touch.",
     minRead: (n) => `${n} min read`,
@@ -73,6 +76,7 @@ const CHROME: Record<Base, {
     nbLabel: "SEO TECHNIQUE AVEC UN ROBOT D'EXPLORATION",
     nbH: `Les guides ${NB}`,
     nbSub: "Quatre marches à suivre, chacune avec ses schémas : trouver ce qui est brisé, lister ce qui doit être indexé, recueillir vos propres données et déménager un site sans perdre une page.",
+    nbWatch: "Voir la présentation",
     ultimateH: "Guides approfondis",
     ultimateSub: "Les sujets que le cours ne fait qu'effleurer, traités à fond.",
     minRead: (n) => `${n} min de lecture`,
@@ -152,8 +156,13 @@ export default async function GuidesIndexPage({ params }: { params: Promise<{ lo
             <b>/ {t.nbLabel}</b>
           </p>
           <h2 className={s.h2}>{t.nbH}</h2>
-          <p className={s.sub} style={{ marginBottom: 24 }}>
+          <p className={s.sub} style={{ marginBottom: 12 }}>
             {t.nbSub}
+          </p>
+          <p style={{ marginBottom: 24 }}>
+            <a style={{ color: "var(--goldText)", textDecoration: "underline", textUnderlineOffset: 3 }} href={`/${locale}/site-crawler#${NB_INTRO_ANCHOR}`} data-testid="guides-watch-intro">
+              {t.nbWatch}
+            </a>
           </p>
           <div className={c.grid}>
             {crawler.map((g) => (

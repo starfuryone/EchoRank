@@ -65,6 +65,8 @@ export interface HomeVideoProps {
   ariaLabel: string;
   /** Localised control labels — see HOME_TOOLS.player. */
   labels: HomeVideoLabels;
+  /** Text tracks (WebVTT); none is on by default. */
+  tracks?: readonly { src: string; srclang: string; label: string; kind: "captions" | "subtitles" }[];
 }
 
 export function HomeVideo({
@@ -74,6 +76,7 @@ export function HomeVideo({
   wrapClassName,
   ariaLabel,
   labels,
+  tracks,
 }: HomeVideoProps) {
   const ref = useRef<HTMLVideoElement>(null);
   const [playing, setPlaying] = useState(false);
@@ -165,7 +168,11 @@ export function HomeVideo({
             setPlaying(false);
             if (el) el.currentTime = 0;
           }}
-        />
+        >
+          {tracks?.map((t) => (
+            <track key={t.src} kind={t.kind} src={t.src} srcLang={t.srclang} label={t.label} />
+          ))}
+        </video>
         {!playing && (
           <button type="button" className={v.overlay} aria-label={labels.play}>
             <span className={v.circle}>
