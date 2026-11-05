@@ -1,4 +1,8 @@
-// House policy: claude-haiku-4-5 for every Anthropic call, in both repos.
+// House policy: claude-haiku-4-5 for every Anthropic call, in both repos —
+// with one named exception: the crawler's AI step (src/lib/site-crawler/
+// ai-prompts.ts) defaults to claude-haiku-5-5 and falls back to
+// claude-haiku-4-5 (the owner's decision, 2026-11-05: cheaper per token).
+// Asserted below, so a second exception cannot appear unnoticed.
 //
 // Source-level assertions rather than behavioural ones, because the point is
 // that NO call site anywhere can name another model — including the av-service
@@ -59,6 +63,16 @@ describe("app Anthropic call sites", () => {
     expect(estimateCost("claude-haiku-4-5", 1000, 1000)).toBeGreaterThan(0);
     // And the dated form still resolves through the suffix-stripping fallback.
     expect(estimateCost("claude-haiku-4-5-20251001", 1000, 1000)).toBeGreaterThan(0);
+  });
+});
+
+describe("the crawler AI exception", () => {
+  it("names exactly claude-haiku-5-5 (default) and claude-haiku-4-5 (fallback)", () => {
+    const src = read(join(APP, "src/lib/site-crawler/ai-prompts.ts"));
+    const models = new Set([...src.matchAll(/"(claude-[a-z0-9.-]+)"/g)].map((m) => m[1]));
+    expect([...models].sort()).toEqual(["claude-haiku-4-5", "claude-haiku-5-5"]);
+    expect(src).toContain('CLAUDE_CRAWL_DEFAULT_MODEL = "claude-haiku-5-5"');
+    expect(src).toContain('CLAUDE_CRAWL_FALLBACK_MODEL = "claude-haiku-4-5"');
   });
 });
 

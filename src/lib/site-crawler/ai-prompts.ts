@@ -3,11 +3,17 @@
 // Crawl with AI (Phase 4e): one prompt against one page's visible text, on
 // one of three providers, through fetch against each REST API (no SDKs):
 //
-//   claude  the house ANTHROPIC_API_KEY, Marketing Studio's pinned model
-//           (MARKETING_MODEL), metered on its monthly token budget by the
-//           caller (metrics-runner);
-//   openai  the tenant's own key (tenant_ai_keys), Responses API;
-//   gemini  the tenant's own key, generateContent.
+//   claude  the house ANTHROPIC_API_KEY, CRAWL_AI_CLAUDE_MODEL (default
+//           claude-haiku-5-5; claude-haiku-4-5 when the API rejects the
+//           configured model), metered on Marketing Studio's monthly token
+//           budget by the caller (metrics-runner);
+//   openai  the tenant's own key (tenant_ai_keys), Responses API,
+//           CRAWL_AI_OPENAI_MODEL (default gpt-5-nano);
+//   gemini  the tenant's own key, generateContent, CRAWL_AI_GEMINI_MODEL.
+//
+// No prices live in code: the list cost a run records comes from
+// CRAWL_AI_{CLAUDE,OPENAI,GEMINI}_PRICE ("<input>/<output>" USD per 1M
+// tokens, from the provider's pricing page); unset, the cost is not recorded.
 //
 // The page text is wrapped as data and the system prompt says so: a page
 // cannot instruct the model. Prompts, page text and outputs are NEVER logged,
@@ -15,23 +21,75 @@
 // 429 / 5xx / network; a 4xx is final.
 
 import "server-only";
-import { MARKETING_MODEL } from "@/lib/marketing-templates";
 import { AI_LIMITS, type AiPreset, type AiPrompt, type AiProvider } from "./ai-shared";
 
-export const OPENAI_CRAWL_MODEL = () => process.env.CRAWL_AI_OPENAI_MODEL || "gpt-5-mini";
-export const GEMINI_CRAWL_MODEL = () => process.env.CRAWL_AI_GEMINI_MODEL || "gemini-3.1-flash-lite";
+/** The crawler's own Claude model: a deliberate exception to the house Haiku 4.5 pin (tests/model-policy.test.ts). */
+export const CLAUDE_CRAWL_DEFAULT_MODEL = "claude-haiku-5-5";
+/** What a call falls back to when the API rejects the configured model (not served, not enabled for the org). */
+export const CLAUDE_CRAWL_FALLBACK_MODEL = "claude-haiku-4-5";
+export const CLAUDE_CRAWL_MODEL = () => process.env.CRAWL_AI_CLAUDE_MODEL?.trim() || CLAUDE_CRAWL_DEFAULT_MODEL;
+export const OPENAI_CRAWL_MODEL = () => process.env.CRAWL_AI_OPENAI_MODEL?.trim() || "gpt-5-nano";
+export const GEMINI_CRAWL_MODEL = () => process.env.CRAWL_AI_GEMINI_MODEL?.trim() || "gemini-3.1-flash-lite";
 const TIMEOUT_MS = 45_000;
+/** The answer itself: a word, two lines, or five short lines. */
 const MAX_OUTPUT_TOKENS = 400;
+/**
+ * Models that think by default (Claude Haiku 5.5 runs adaptive thinking at
+ * effort medium unless told otherwise) spend part of max_tokens thinking, so
+ * they get room for it and effort "low": these are short, simple tasks.
+ */
+const CLAUDE_THINKING_MAX_TOKENS = 1_024;
 const RETRY_DELAY_MS = 2_000;
 
 export class AiCallError extends Error {
   constructor(
     message: string,
     readonly status: number | null,
+    /** The API refused the model itself (unknown, retired, not enabled): try the fallback. */
+    readonly modelRejected = false,
   ) {
     super(message);
     this.name = "AiCallError";
   }
+}
+
+/** Claude models before the 4.6 generation take no `effort` and do not think unless asked. */
+export function claudeTakesEffort(model: string): boolean {
+  return !/^claude-(haiku-4|sonnet-4-5|opus-4-5|opus-4-1|opus-4-0|sonnet-4-0|3)/.test(model) && !/^claude-(sonnet|opus)-4$/.test(model);
+}
+
+/** The Messages request body for one prompt. */
+export function claudeRequest(model: string, system: string, user: string) {
+  return claudeTakesEffort(model)
+    ? { model, max_tokens: CLAUDE_THINKING_MAX_TOKENS, output_config: { effort: "low" }, system, messages: [{ role: "user", content: user }] }
+    : { model, max_tokens: MAX_OUTPUT_TOKENS, system, messages: [{ role: "user", content: user }] };
+}
+
+/**
+ * The model this process sends: the configured one until the API has rejected
+ * it once, then the fallback (until the workers restart — a model does not
+ * come back mid-run, and re-asking would double every call).
+ */
+let claudeRejected: string | null = null;
+export function claudeModelInUse(): string {
+  const m = CLAUDE_CRAWL_MODEL();
+  return claudeRejected === m ? CLAUDE_CRAWL_FALLBACK_MODEL : m;
+}
+export function __resetClaudeModelFallback(): void {
+  claudeRejected = null;
+}
+
+/** "<input>/<output>" USD per 1M tokens from CRAWL_AI_<PROVIDER>_PRICE, or null. */
+export function aiListPrice(provider: AiProvider, env: Record<string, string | undefined> = process.env): { input: number; output: number } | null {
+  const raw = env[`CRAWL_AI_${provider.toUpperCase()}_PRICE`]?.trim();
+  const m = raw?.match(/^\$?([0-9]*\.?[0-9]+)\s*\/\s*\$?([0-9]*\.?[0-9]+)$/);
+  return m ? { input: Number(m[1]), output: Number(m[2]) } : null;
+}
+
+/** The list cost of one call from the configured price, or null when no price is configured. */
+export function aiCostUsd(provider: AiProvider, r: Pick<AiCallResult, "inputTokens" | "outputTokens">, env: Record<string, string | undefined> = process.env): number | null {
+  const p = aiListPrice(provider, env);
+  return p ? (r.inputTokens * p.input + r.outputTokens * p.output) / 1_000_000 : null;
 }
 
 export interface AiCallResult {
@@ -73,7 +131,7 @@ export function capBytes(s: string, bytes: number = AI_LIMITS.outputBytes): stri
 type Fetch = typeof fetch;
 
 /* eslint-disable @typescript-eslint/no-explicit-any -- provider payloads, parsed defensively */
-async function post(f: Fetch, url: string, headers: Record<string, string>, body: unknown): Promise<any> {
+async function post(f: Fetch, url: string, headers: Record<string, string>, body: unknown, modelOf?: (err: any) => boolean): Promise<any> {
   const res = await f(url, {
     method: "POST",
     headers: { "content-type": "application/json", ...headers },
@@ -81,8 +139,12 @@ async function post(f: Fetch, url: string, headers: Record<string, string>, body
     signal: AbortSignal.timeout(TIMEOUT_MS),
   });
   if (!res.ok) {
-    await res.body?.cancel().catch(() => {});
-    throw new AiCallError(`HTTP ${res.status}`, res.status);
+    // Only the error's type is looked at, to tell "this model is refused" from
+    // any other 4xx; the body itself is never kept (it can echo the request).
+    let modelRejected = false;
+    if (modelOf && (res.status === 400 || res.status === 404)) modelRejected = modelOf(await res.json().catch(() => null));
+    else await res.body?.cancel().catch(() => {});
+    throw new AiCallError(`HTTP ${res.status}`, res.status, modelRejected);
   }
   return res.json().catch(() => {
     throw new AiCallError("invalid JSON", res.status);
@@ -91,15 +153,12 @@ async function post(f: Fetch, url: string, headers: Record<string, string>, body
 
 async function once(provider: AiProvider, key: string, system: string, user: string, f: Fetch): Promise<AiCallResult> {
   if (provider === "claude") {
-    const d = await post(f, "https://api.anthropic.com/v1/messages", { "x-api-key": key, "anthropic-version": "2023-06-01" }, {
-      model: MARKETING_MODEL,
-      max_tokens: MAX_OUTPUT_TOKENS,
-      system,
-      messages: [{ role: "user", content: user }],
-    });
+    const model = claudeModelInUse();
+    const d = await post(f, "https://api.anthropic.com/v1/messages", { "x-api-key": key, "anthropic-version": "2023-06-01" }, claudeRequest(model, system, user), claudeModelRefused);
     if (d?.stop_reason === "refusal") throw new AiCallError("refused", 200);
+    // Read text blocks by type: a model that thinks puts thinking blocks first.
     const text = (d?.content ?? []).filter((b: any) => b?.type === "text").map((b: any) => String(b.text ?? "")).join("");
-    return { text, inputTokens: Number(d?.usage?.input_tokens ?? 0), outputTokens: Number(d?.usage?.output_tokens ?? 0), model: MARKETING_MODEL };
+    return { text, inputTokens: Number(d?.usage?.input_tokens ?? 0), outputTokens: Number(d?.usage?.output_tokens ?? 0), model: String(d?.model || model) };
   }
   if (provider === "openai") {
     const model = OPENAI_CRAWL_MODEL();
@@ -126,6 +185,12 @@ async function once(provider: AiProvider, key: string, system: string, user: str
   const text = (d?.candidates?.[0]?.content?.parts ?? []).map((p: any) => String(p?.text ?? "")).join("");
   return { text, inputTokens: Number(d?.usageMetadata?.promptTokenCount ?? 0), outputTokens: Number(d?.usageMetadata?.candidatesTokenCount ?? 0), model };
 }
+
+/** A 404, or a 400 about the model, from the Messages API: the model itself is refused. */
+function claudeModelRefused(err: any): boolean {
+  const e = err?.error;
+  return e?.type === "not_found_error" || (e?.type === "invalid_request_error" && /\bmodel\b/i.test(String(e?.message ?? "")));
+}
 /* eslint-enable @typescript-eslint/no-explicit-any */
 
 const retryable = (e: unknown) => !(e instanceof AiCallError) || e.status === null || e.status === 429 || e.status >= 500;
@@ -147,6 +212,13 @@ export async function runPrompt(
       return { ...r, text: capBytes(r.text.trim()) };
     } catch (err) {
       last = err;
+      // The configured Claude model refused: switch to the fallback for this
+      // process and run the same call again (not counted as the retry).
+      if (provider === "claude" && err instanceof AiCallError && err.modelRejected && claudeModelInUse() !== CLAUDE_CRAWL_FALLBACK_MODEL) {
+        claudeRejected = CLAUDE_CRAWL_MODEL();
+        attempt--;
+        continue;
+      }
       if (attempt === 0 && retryable(err)) {
         await sleep(RETRY_DELAY_MS);
         continue;
@@ -174,7 +246,4 @@ export function parseGrammar(output: string): string[] {
     .slice(0, 5);
 }
 
-/** Haiku 4.5 list price ($1 / $5 per million tokens), for the costUsd the run records. */
-export function claudeCostUsd(inputTokens: number, outputTokens: number): number {
-  return (inputTokens * 1 + outputTokens * 5) / 1_000_000;
-}
+

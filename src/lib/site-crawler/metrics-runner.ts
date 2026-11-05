@@ -68,7 +68,7 @@ import { RateLimiter, fetchPage, isHtmlContentType } from "./fetch";
 import { visibleText } from "./facts";
 import { isFetchableUrl } from "./url";
 import { AI_LIMITS, type AiConfig, type AiProvider } from "./ai-shared";
-import { claudeCostUsd, parseGrammar, parseSuggestion, runPrompt } from "./ai-prompts";
+import { aiCostUsd, parseGrammar, parseSuggestion, runPrompt } from "./ai-prompts";
 import { openAiKey } from "./ai-keys";
 import { getConnection, withAccessToken } from "@/lib/gsc/service";
 import { GscReauthError } from "@/lib/gsc/client";
@@ -76,7 +76,6 @@ import { InspectionError, inspectUrl, reserveInspection, type Reservation } from
 import { getRedisConnection } from "@/infrastructure/redis/connection";
 import { propertyCovers } from "./gsc-join";
 import { EMBEDDING_DIMS, EMBEDDING_TEXT_CHARS, EmbeddingError, analyse, embedBatch, embeddingCostUsd, fromBytes, toBytes } from "./semantic";
-import { MARKETING_MODEL } from "@/lib/marketing-templates";
 import { marketingTokenLimit, marketingTokensUsed, recordMarketingTokens } from "@/lib/marketing/quota";
 import type { AiFacts } from "@/lib/crawl-rules";
 import type { PlanType } from "@/generated/prisma";
@@ -100,7 +99,7 @@ export interface SourceState {
   stoppedReason?: string;
   /** semantic: pages with a vector. */
   embedded?: number;
-  /** ai: tokens charged (Claude: to the Marketing Studio budget) and their list cost. */
+  /** ai: tokens charged (Claude: to the Marketing Studio budget) and their list cost (CRAWL_AI_<PROVIDER>_PRICE; absent when unset). */
   tokens?: number;
   costUsd?: number;
   updatedAt: string;
@@ -470,11 +469,11 @@ async function aiTick(job: Job, ai: AiConfig, deps: MetricsDeps): Promise<Metric
   for (const r of stored) have.set(r.pageId, (have.get(r.pageId) ?? new Map()).set(r.extractorIndex, r.values[0] ?? ""));
   const prev = ((job.summary as { metrics?: { ai?: SourceState } } | null)?.metrics?.ai) ?? null;
   let tokens = prev?.tokens ?? 0;
-  let costUsd = prev?.costUsd ?? 0;
+  let costUsd: number | undefined = prev?.costUsd;
   const state = (extra: Partial<SourceState> = {}) => {
     const done = pages.filter((p) => (have.get(p.id)?.size ?? 0) >= ai.prompts.length);
     const failed = done.filter((p) => [...have.get(p.id)!.values()].some((v) => v.startsWith("error: "))).length;
-    return { status: "running" as const, targets: pages.length, completed: done.length, failed, tokens, costUsd: Math.round(costUsd * 1e6) / 1e6, ...extra };
+    return { status: "running" as const, targets: pages.length, completed: done.length, failed, tokens, ...(costUsd !== undefined ? { costUsd: Math.round(costUsd * 1e6) / 1e6 } : {}), ...extra };
   };
   const finish = async (s: Pick<SourceState, "status" | "stoppedReason">) => {
     await reevaluateAiRules(job.id, job.rootUrl, ai, pages.filter((p) => have.has(p.id)));
@@ -518,11 +517,12 @@ async function aiTick(job: Job, ai: AiConfig, deps: MetricsDeps): Promise<Metric
         const r = await deps.aiCall(ai.provider, key, prompt, { url: page.url, text });
         const spent = r.inputTokens + r.outputTokens;
         tokens += spent;
+        const cost = aiCostUsd(ai.provider, r);
+        if (cost !== null) costUsd = (costUsd ?? 0) + cost;
         if (ai.provider === "claude") {
-          costUsd += claudeCostUsd(r.inputTokens, r.outputTokens);
           await deps.recordTokens(job.tenantId, spent);
           await prisma.aiApiCall
-            .create({ data: { tenantId: job.tenantId, categoryId: "site_crawler_ai", model: MARKETING_MODEL, inputTokens: r.inputTokens, outputTokens: r.outputTokens } })
+            .create({ data: { tenantId: job.tenantId, categoryId: "site_crawler_ai", model: r.model, inputTokens: r.inputTokens, outputTokens: r.outputTokens } })
             .catch(() => undefined);
         }
         await save(page.id, index, r.text || "(empty)");

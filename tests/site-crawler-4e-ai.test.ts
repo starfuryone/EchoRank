@@ -3,7 +3,21 @@
 // config checks; the estimate.
 import { describe, expect, it, vi } from "vitest";
 vi.mock("server-only", () => ({}));
-import { AiCallError, capBytes, parseGrammar, parseSuggestion, runPrompt, userMessage } from "@/lib/site-crawler/ai-prompts";
+import {
+  AiCallError,
+  CLAUDE_CRAWL_FALLBACK_MODEL,
+  OPENAI_CRAWL_MODEL,
+  __resetClaudeModelFallback,
+  aiCostUsd,
+  aiListPrice,
+  capBytes,
+  claudeModelInUse,
+  claudeRequest,
+  parseGrammar,
+  parseSuggestion,
+  runPrompt,
+  userMessage,
+} from "@/lib/site-crawler/ai-prompts";
 import { aiTokenEstimate } from "@/lib/site-crawler/ai-shared";
 import { CrawlConfigInputSchema, checkCrawlConfig } from "@/lib/site-crawler/crawl-config";
 import { aiFactsOf, needsMetrics } from "@/lib/site-crawler/metrics-runner";
@@ -62,6 +76,75 @@ describe("runPrompt", () => {
     expect(capBytes("abc")).toBe("abc");
     const msg = userMessage({ preset: "summary", text: null }, "https://x.com/", "w".repeat(9000));
     expect(msg.split("<page_text>\n")[1]!.split("\n</page_text>")[0]).toHaveLength(6000);
+  });
+});
+
+describe("models (commit: cheaper defaults from env)", () => {
+  const sent = (f: ReturnType<typeof vi.fn>, i = 0) => JSON.parse((f.mock.calls[i]![1] as RequestInit).body as string);
+
+  it("Claude defaults to claude-haiku-5-5 at effort low with room to think; CRAWL_AI_CLAUDE_MODEL overrides", async () => {
+    __resetClaudeModelFallback();
+    const f = vi.fn(async () => ok(claudeBody));
+    await runPrompt("claude", KEY, { preset: "intent", text: null }, page, f, noSleep);
+    expect(sent(f)).toMatchObject({ model: "claude-haiku-5-5", max_tokens: 1024, output_config: { effort: "low" } });
+    expect(sent(f)).not.toHaveProperty("temperature");
+    vi.stubEnv("CRAWL_AI_CLAUDE_MODEL", "claude-haiku-4-5");
+    try {
+      await runPrompt("claude", KEY, { preset: "intent", text: null }, page, f, noSleep);
+      // Haiku 4.5 takes no effort and does not think unless asked.
+      expect(sent(f, 1)).toEqual(expect.objectContaining({ model: "claude-haiku-4-5", max_tokens: 400 }));
+      expect(sent(f, 1)).not.toHaveProperty("output_config");
+    } finally {
+      vi.unstubAllEnvs();
+    }
+  });
+
+  it("falls back to claude-haiku-4-5 when the API refuses the model (404 / 400 about the model), and stays there", async () => {
+    __resetClaudeModelFallback();
+    const refused = new Response(JSON.stringify({ type: "error", error: { type: "not_found_error", message: "model: claude-haiku-5-5" } }), { status: 404 });
+    const f = vi.fn().mockResolvedValueOnce(refused).mockImplementation(async () => ok(claudeBody));
+    const r = await runPrompt("claude", KEY, { preset: "summary", text: null }, page, f, noSleep);
+    expect(f).toHaveBeenCalledTimes(2);
+    expect(sent(f, 0).model).toBe("claude-haiku-5-5");
+    expect(sent(f, 1).model).toBe(CLAUDE_CRAWL_FALLBACK_MODEL);
+    expect(r.model).toBe(CLAUDE_CRAWL_FALLBACK_MODEL);
+    expect(claudeModelInUse()).toBe(CLAUDE_CRAWL_FALLBACK_MODEL);
+    await runPrompt("claude", KEY, { preset: "summary", text: null }, page, f, noSleep);
+    expect(sent(f, 2).model).toBe(CLAUDE_CRAWL_FALLBACK_MODEL);
+    // A 400 about the model counts too; any other 400 does not.
+    __resetClaudeModelFallback();
+    const g = vi.fn().mockResolvedValueOnce(new Response(JSON.stringify({ error: { type: "invalid_request_error", message: "max_tokens: too large" } }), { status: 400 }));
+    await expect(runPrompt("claude", KEY, { preset: "summary", text: null }, page, g, noSleep)).rejects.toThrow("HTTP 400");
+    expect(g).toHaveBeenCalledTimes(1);
+    expect(claudeModelInUse()).toBe("claude-haiku-5-5");
+    __resetClaudeModelFallback();
+  });
+
+  it("OpenAI defaults to gpt-5-nano at minimal reasoning; Gemini is unchanged", async () => {
+    expect(OPENAI_CRAWL_MODEL()).toBe("gpt-5-nano");
+    const body = { output: [{ type: "message", content: [{ type: "output_text", text: "x" }] }], usage: { input_tokens: 1, output_tokens: 1 } };
+    const f = vi.fn(async () => ok(body));
+    await runPrompt("openai", KEY, { preset: "intent", text: null }, page, f, noSleep);
+    expect(sent(f)).toMatchObject({ model: "gpt-5-nano", reasoning: { effort: "minimal" } });
+    const g = vi.fn<(u: string) => Promise<Response>>(async () => ok({ candidates: [{ content: { parts: [{ text: "x" }] } }], usageMetadata: {} }));
+    await runPrompt("gemini", KEY, { preset: "intent", text: null }, page, g as never, noSleep);
+    expect(g.mock.calls[0]![0]).toContain("models/gemini-3.1-flash-lite:generateContent");
+  });
+
+  it("claudeRequest shapes by model generation", () => {
+    expect(claudeRequest("claude-haiku-5-5", "s", "u")).toHaveProperty("output_config");
+    expect(claudeRequest("claude-haiku-4-5", "s", "u")).not.toHaveProperty("output_config");
+    expect(claudeRequest("claude-sonnet-5-5", "s", "u")).toHaveProperty("output_config");
+  });
+
+  it("prices come from CRAWL_AI_<PROVIDER>_PRICE, never from code; unset = no cost recorded", () => {
+    expect(aiListPrice("claude", {})).toBeNull();
+    expect(aiCostUsd("claude", { inputTokens: 1_000_000, outputTokens: 0 }, {})).toBeNull();
+    const env = { CRAWL_AI_CLAUDE_PRICE: "0.10/0.50", CRAWL_AI_OPENAI_PRICE: "$0.05 / $0.40" };
+    expect(aiListPrice("claude", env)).toEqual({ input: 0.1, output: 0.5 });
+    expect(aiListPrice("openai", env)).toEqual({ input: 0.05, output: 0.4 });
+    expect(aiCostUsd("claude", { inputTokens: 2_000_000, outputTokens: 1_000_000 }, env)).toBeCloseTo(0.7, 10);
+    expect(aiListPrice("gemini", { CRAWL_AI_GEMINI_PRICE: "cheap" })).toBeNull();
   });
 });
 
