@@ -234,12 +234,15 @@ export function SiteCrawlerClient({
   view = "start",
   crawlId = null,
   initialTab = "rules",
+  initialUrl,
 }: {
   locale: DashLocale;
   view?: CrawlerView;
   crawlId?: string | null;
   /** The tab Results opens on: Issues by default; /crawler/[id]/pages opens Pages. */
   initialTab?: "rules" | "pages";
+  /** Start view: the URL field's first value (/crawler?url=, page.tsx checks it). */
+  initialUrl?: string;
 }) {
   const router = useRouter();
   const t = SITE_CRAWLER_COPY[locale];
@@ -250,7 +253,7 @@ export function SiteCrawlerClient({
   const [active, setActive] = useState<CrawlDto | null>(null);
   const [issues, setIssues] = useState<CrawlIssuePage | null>(null);
 
-  const [url, setUrl] = useState("");
+  const [url, setUrl] = useState(initialUrl ?? "");
   const [renderMode, setRenderMode] = useState<RenderMode>("none");
   // Phase 4a: spider or list mode, the configuration section's output.
   const [mode, setMode] = useState<"spider" | "list">("spider");

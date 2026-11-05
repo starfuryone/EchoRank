@@ -1,5 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import { hasFeature } from "@/lib/feature-flags";
+import { hasPaidPlan } from "@/lib/paid-plan";
+import { ruleCountLabel } from "@/lib/site-crawler/rule-count";
+import { healthOf } from "@/lib/site-crawler/site-health";
+import { effectiveCaps, tenantOverrides } from "@/lib/site-crawler/tenant-caps";
 import type { PlanType, Prisma } from "@/generated/prisma";
 
 /** Checklist shows until all steps are done, capped at 6 months of tenant age. */
@@ -18,6 +22,7 @@ export interface OnboardingJson {
 
 export type OnboardingStepKey =
   | "first_audit"
+  | "crawl_site"
   | "download_pdf"
   | "review_link"
   | "add_prompts"
@@ -27,10 +32,34 @@ export type OnboardingStepKey =
   | "add_client"
   | "invite_teammate";
 
+/**
+ * The crawler step's state (crawl_site only), for the card's three faces:
+ * start (or See plans), "Crawling…" with the live count, and the done line.
+ */
+export interface OnboardingCrawl {
+  /** The tenant may start a crawl: a paid plan or a real trial (hasPaidPlan, the
+   * same gate /crawler uses) on a tier whose URL cap is above 0. False → See plans. */
+  canCrawl: boolean;
+  /** The rule count as marketing prints it (ruleCountLabel: "340+"), never typed. */
+  rules: string;
+  /** The latest COMPLETED crawl; present = the step is done. */
+  latest: { id: string; pages: number; health: number | null } | null;
+  /** A crawl in flight (QUEUED / RUNNING), polled by the card for its count. */
+  running: { id: string; pages: number; cap: number } | null;
+}
+
 export interface OnboardingStep {
   key: OnboardingStepKey;
   href: string;
   done: boolean;
+  /** crawl_site only. */
+  crawl?: OnboardingCrawl;
+}
+
+/** /crawler with the tenant's domain in the URL field (?url=), or bare. */
+export function crawlerStartHref(domain: string | null | undefined): string {
+  const d = normalizeDomain(domain);
+  return d ? `/crawler?url=${encodeURIComponent(d)}` : "/crawler";
 }
 
 export interface OnboardingCounts {
@@ -59,7 +88,10 @@ export function normalizeDomain(input: string | null | undefined): string | null
 }
 
 /**
- * The five onboarding steps, tailored by plan capabilities and stated intent.
+ * The six onboarding steps, tailored by plan capabilities and stated intent.
+ * The crawler step sits right after the AI Visibility audit, so the two
+ * engines read together; it shows on every plan, and a tier that cannot crawl
+ * is sent to /pricing instead of /crawler.
  * Substitutions are feature-driven: a tier without `ai_visibility` gets the
  * review-link step instead of the PDF one, and one without `answer_tracking`
  * gets the roadmap step instead of prompts. Every current tier carries both,
@@ -70,11 +102,27 @@ export function buildOnboardingSteps(input: {
   intent: OnboardingIntent | null;
   json: OnboardingJson;
   counts: OnboardingCounts;
+  crawl: OnboardingCrawl;
+  /** Tenant.auditDomain: pre-fills the crawler's URL field. */
+  domain: string | null;
 }): OnboardingStep[] {
-  const { plan, intent, json, counts } = input;
+  const { plan, intent, json, counts, crawl, domain } = input;
   const steps: OnboardingStep[] = [];
 
   steps.push({ key: "first_audit", href: "/visibility", done: counts.audits > 0 });
+
+  steps.push({
+    key: "crawl_site",
+    href: crawl.latest
+      ? `/crawler/${crawl.latest.id}`
+      : crawl.running
+        ? `/crawler/${crawl.running.id}`
+        : crawl.canCrawl
+          ? crawlerStartHref(domain)
+          : "/pricing",
+    done: crawl.latest !== null,
+    crawl,
+  });
 
   if (hasFeature(plan, "ai_visibility")) {
     steps.push({
@@ -162,6 +210,9 @@ export async function getOnboardingSnapshot(
     importJobs,
     tenantMembers,
     userMemberships,
+    latestCrawl,
+    runningCrawl,
+    paid,
   ] = await Promise.all([
     prisma.tenant.findUnique({
       where: { id: tenantId },
@@ -187,6 +238,17 @@ export async function getOnboardingSnapshot(
     prisma.importJob.count({ where: { tenantId } }),
     prisma.tenantMember.count({ where: { tenantId } }),
     prisma.tenantMember.count({ where: { userId: ownerUserId } }),
+    prisma.crawlJob.findFirst({
+      where: { tenantId, status: "COMPLETED" },
+      orderBy: { createdAt: "desc" },
+      select: { id: true, pagesCrawled: true, summary: true },
+    }),
+    prisma.crawlJob.findFirst({
+      where: { tenantId, status: { in: ["QUEUED", "RUNNING"] } },
+      orderBy: { createdAt: "desc" },
+      select: { id: true, pagesCrawled: true, urlCap: true },
+    }),
+    hasPaidPlan(tenantId),
   ]);
 
   if (!tenant) {
@@ -199,10 +261,26 @@ export async function getOnboardingSnapshot(
       ? tenant.onboardingIntent
       : null;
 
+  // The crawler's own two gates: paid (or a real trial), and a tier URL cap
+  // above 0 after staff overrides. Only read when the first one passes.
+  const canCrawl =
+    paid && effectiveCaps(tenant.planType, await tenantOverrides(tenantId)).urlCap > 0;
+
   const steps = buildOnboardingSteps({
     plan: tenant.planType,
     intent,
     json,
+    domain: tenant.auditDomain,
+    crawl: {
+      canCrawl,
+      rules: ruleCountLabel(),
+      latest: latestCrawl
+        ? { id: latestCrawl.id, pages: latestCrawl.pagesCrawled, health: healthOf(latestCrawl.summary) }
+        : null,
+      running: runningCrawl
+        ? { id: runningCrawl.id, pages: runningCrawl.pagesCrawled, cap: runningCrawl.urlCap }
+        : null,
+    },
     counts: {
       audits,
       reviewLinks,

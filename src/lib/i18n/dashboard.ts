@@ -5257,6 +5257,7 @@ const onboardingEn = {
   dismissAria: "Dismiss checklist",
   steps: {
     first_audit: "Run your first AI Visibility audit",
+    crawl_site: `Crawl your site with ${CRAWLER_BRAND.name}`,
     download_pdf: "Download your PDF report",
     review_link: "Set up a review link",
     add_prompts: "Add 3 tracked prompts",
@@ -5266,6 +5267,18 @@ const onboardingEn = {
     add_client: "Add your first client workspace",
     invite_teammate: "Invite a teammate",
   } as Record<string, string>,
+  // The crawler step (crawl_site): one line, its button, and its two other faces.
+  crawl: {
+    line: (rules: string) =>
+      `Every page, checked against ${rules} rules — the search-engine view to go with your AI visibility check`,
+    start: "Start a crawl",
+    seePlans: "See plans",
+    crawling: (pages: string, cap: string) => `Crawling… ${pages} of ${cap} pages`,
+    viewProgress: "View progress",
+    done: (pages: string, health: string | null) =>
+      health === null ? `Crawled ${pages} pages` : `Crawled ${pages} pages · health ${health}/100`,
+    results: "View results",
+  },
 
   // Add-client modal (agency intent)
   addClientTitle: "Add a client workspace",
@@ -5311,6 +5324,7 @@ export const ONBOARDING_COPY: Record<DashLocale, OnboardingCopy> = {
     dismissAria: "Masquer la liste de vérification",
     steps: {
       first_audit: "Lancez votre premier audit de visibilité IA",
+      crawl_site: `Explorez votre site avec ${CRAWLER_BRAND.name}`,
       download_pdf: "Téléchargez votre rapport PDF",
       review_link: "Configurez un lien d'avis",
       add_prompts: "Ajoutez 3 requêtes suivies",
@@ -5320,6 +5334,17 @@ export const ONBOARDING_COPY: Record<DashLocale, OnboardingCopy> = {
       add_client: "Ajoutez votre premier espace client",
       invite_teammate: "Invitez un membre de l'équipe",
     } as Record<string, string>,
+    crawl: {
+      line: (rules: string) =>
+        `Chaque page vérifiée selon ${rules} règles — la vue des moteurs de recherche, en complément de votre audit de visibilité IA`,
+      start: "Lancer une exploration",
+      seePlans: "Voir les forfaits",
+      crawling: (pages: string, cap: string) => `Exploration en cours… ${pages} pages sur ${cap}`,
+      viewProgress: "Voir la progression",
+      done: (pages: string, health: string | null) =>
+        health === null ? `${pages} pages explorées` : `${pages} pages explorées · santé ${health}/100`,
+      results: "Voir les résultats",
+    },
 
     addClientTitle: "Ajouter un espace client",
     addClientIntro:
@@ -5360,6 +5385,7 @@ export const ONBOARDING_COPY: Record<DashLocale, OnboardingCopy> = {
     dismissAria: "Checkliste ausblenden",
     steps: {
       first_audit: "Starten Sie Ihr erstes KI-Sichtbarkeits-Audit",
+      crawl_site: `Crawlen Sie Ihre Website mit ${CRAWLER_BRAND.name}`,
       download_pdf: "Laden Sie Ihren PDF-Bericht herunter",
       review_link: "Richten Sie einen Bewertungslink ein",
       add_prompts: "Fügen Sie 3 verfolgte Prompts hinzu",
@@ -5369,6 +5395,17 @@ export const ONBOARDING_COPY: Record<DashLocale, OnboardingCopy> = {
       add_client: "Fügen Sie Ihren ersten Kunden-Arbeitsbereich hinzu",
       invite_teammate: "Laden Sie ein Teammitglied ein",
     } as Record<string, string>,
+    crawl: {
+      line: (rules: string) =>
+        `Jede Seite, geprüft nach ${rules} Regeln — die Sicht der Suchmaschinen als Ergänzung zu Ihrem KI-Sichtbarkeits-Check`,
+      start: "Crawl starten",
+      seePlans: "Pläne ansehen",
+      crawling: (pages: string, cap: string) => `Crawl läuft… ${pages} von ${cap} Seiten`,
+      viewProgress: "Fortschritt ansehen",
+      done: (pages: string, health: string | null) =>
+        health === null ? `${pages} Seiten gecrawlt` : `${pages} Seiten gecrawlt · Zustand ${health}/100`,
+      results: "Ergebnisse ansehen",
+    },
 
     addClientTitle: "Kunden-Arbeitsbereich hinzufügen",
     addClientIntro:

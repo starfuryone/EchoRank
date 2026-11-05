@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { getOnboardingSnapshot } from "@/lib/onboarding";
+import { CRAWLER_BRAND } from "@/lib/site-crawler/brand";
 import { SITE_URL } from "@/lib/seo/constants";
 // planConfig(), not PLAN_CONFIGS[...]: the map is keyed by SellablePlanType and
 // a tenant can still carry the retired AI_VISIBILITY tier, which the helper
@@ -38,6 +39,7 @@ interface AuditCheck {
 const STEP_LABELS: Record<EmailLocale, Record<string, string>> = {
   en: {
     first_audit: "Run your first AI Visibility audit",
+    crawl_site: `Crawl your site with ${CRAWLER_BRAND.name}`,
     download_pdf: "Download your PDF report",
     review_link: "Set up a review link",
     add_prompts: "Add 3 tracked prompts",
@@ -49,6 +51,7 @@ const STEP_LABELS: Record<EmailLocale, Record<string, string>> = {
   },
   fr: {
     first_audit: "Lancez votre première analyse de visibilité IA",
+    crawl_site: `Explorez votre site avec ${CRAWLER_BRAND.name}`,
     download_pdf: "Téléchargez votre rapport PDF",
     review_link: "Configurez un lien d'avis",
     add_prompts: "Ajoutez 3 requêtes suivies",

@@ -22,13 +22,29 @@ export async function generateMetadata(): Promise<Metadata> {
   return crawlerMetadata(await crawlerLocale(), "start");
 }
 
-export default async function SiteCrawlerPage({ searchParams }: { searchParams: Promise<{ crawl?: string | string[] }> }) {
+/**
+ * ?url= pre-fills the URL field (the dashboard's first-steps card sends the
+ * tenant's domain). Only a bare host or an http(s) URL is taken; anything else
+ * leaves the field empty. Nothing starts until the visitor presses the button.
+ */
+function prefillUrl(raw: string | string[] | undefined): string | undefined {
+  const v = (Array.isArray(raw) ? raw[0] : raw)?.trim();
+  if (!v || v.length > 2048) return undefined;
+  try {
+    const u = new URL(/^https?:\/\//i.test(v) ? v : `https://${v}`);
+    return (u.protocol === "https:" || u.protocol === "http:") && u.hostname.includes(".") ? v : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+export default async function SiteCrawlerPage({ searchParams }: { searchParams: Promise<{ crawl?: string | string[]; url?: string | string[] }> }) {
   // The old deep link (/crawler?crawl=<id>, in scheduled-crawl emails already
   // sent) now has its own page.
-  const { crawl } = await searchParams;
+  const { crawl, url } = await searchParams;
   const wanted = Array.isArray(crawl) ? crawl[0] : crawl;
   if (wanted && /^[A-Za-z0-9_-]{1,64}$/.test(wanted)) redirect(`/crawler/${wanted}`);
   const cookieStore = await cookies();
   const locale = dashboardLocale(cookieStore.get("echorank_locale")?.value);
-  return <SiteCrawlerClient locale={locale} view="start" />;
+  return <SiteCrawlerClient locale={locale} view="start" initialUrl={prefillUrl(url)} />;
 }
