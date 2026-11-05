@@ -68,6 +68,10 @@ export const FLAGS = {
   // Phase 4e: AI prompts on the top N pages after the crawl (Claude on the
   // Marketing Studio token budget, OpenAI / Gemini on the tenant's own key).
   "crawl.ai": true,
+  // AI prompts through the Claude Message Batches API and the OpenAI Batch API
+  // (half price; the step runs after the crawl, no one waits on it), with the
+  // synchronous path as the fallback. Off = every provider synchronous.
+  "crawl.aiBatch": true,
   // Phase 4e: forms-based login before crawling (verified sites only).
   "crawl.login": true,
   // Phase 3d-A: the crawler over the public API (POST/GET /api/public/v1/crawl…,

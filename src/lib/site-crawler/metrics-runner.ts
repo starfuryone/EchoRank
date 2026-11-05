@@ -68,7 +68,24 @@ import { RateLimiter, fetchPage, isHtmlContentType } from "./fetch";
 import { visibleText } from "./facts";
 import { isFetchableUrl } from "./url";
 import { AI_LIMITS, type AiConfig, type AiProvider } from "./ai-shared";
-import { aiCostUsd, parseGrammar, parseSuggestion, runPrompt } from "./ai-prompts";
+import { aiCostUsd, buildRequest, capBytes, parseGrammar, parseSuggestion, runPrompt, type AiCallResult } from "./ai-prompts";
+import {
+  BATCH_ACCEPT_MS,
+  BATCH_POLL_MS,
+  BATCH_RETRY_MS,
+  batchCustomId,
+  batchResults,
+  cancelBatch,
+  isBatchProvider,
+  parseCustomId,
+  pollBatch,
+  removeBatch,
+  submitBatch,
+  type BatchHandle,
+  type BatchItem,
+  type BatchPoll,
+  type BatchProvider,
+} from "./ai-batch";
 import { openAiKey } from "./ai-keys";
 import { getConnection, withAccessToken } from "@/lib/gsc/service";
 import { GscReauthError } from "@/lib/gsc/client";
@@ -87,10 +104,15 @@ export const METRICS_JOB_NAME = "metrics";
 export const PSI_RUNS_PER_TICK = 6;
 const STRATEGIES = ["mobile", "desktop"] as const;
 
-export type MetricsTick = { done: true } | { done: false; delayMs: number };
+/**
+ * parked: this source is only waiting on someone else (an AI batch at the
+ * provider) — the later sources run meanwhile instead of queueing behind it.
+ */
+export type MetricsTick = { done: true } | { done: false; delayMs: number; parked?: true };
 
 export interface SourceState {
-  status: "running" | "waiting_quota" | "done" | "stopped";
+  /** queued_batch: ai, a batch is at the provider (ai-batch.ts). */
+  status: "running" | "waiting_quota" | "queued_batch" | "done" | "stopped";
   targets: number;
   /** PSI: runs finished (ok or failed); backlinks: pages looked up. */
   completed: number;
@@ -105,7 +127,24 @@ export interface SourceState {
   /** ai: prompt-cache tokens over the crawl (read = served from cache, write = stored to it). */
   cacheReadTokens?: number;
   cacheWriteTokens?: number;
+  /** ai: the provider batch, while one is being submitted or polled, and after. */
+  batch?: AiBatchState;
   updatedAt: string;
+}
+
+export interface AiBatchState {
+  provider: BatchProvider;
+  /** submitting → queued → ended; fallback when it was not accepted in time (the synchronous path takes over). */
+  phase: "submitting" | "queued" | "ended" | "fallback";
+  id: string | null;
+  /** OpenAI: the uploaded input file. */
+  inputFileId: string | null;
+  model: string | null;
+  /** The first submission attempt: the BATCH_ACCEPT_MS clock starts here. */
+  firstTryAt: string;
+  acceptedAt: string | null;
+  requests: number;
+  answered?: number;
 }
 
 /** Backlink lookups per tick: live calls take a second or two. */
@@ -122,6 +161,16 @@ export interface MetricsDeps {
   aiKey: (tenantId: string, provider: AiProvider) => Promise<string | null>;
   tokenBudget: (tenantId: string, plan: PlanType) => Promise<{ used: number; limit: number | null }>;
   recordTokens: (tenantId: string, tokens: number) => Promise<void>;
+  /** AI batch mode (Claude / OpenAI), behind crawl.aiBatch. */
+  aiBatch: {
+    enabled: () => boolean;
+    submit: typeof submitBatch;
+    poll: typeof pollBatch;
+    results: typeof batchResults;
+    cancel: typeof cancelBatch;
+    remove: typeof removeBatch;
+  };
+  now: () => number;
   /** Phase 4g semantic duplicates. */
   embed: typeof embedBatch;
   /** Phase 4g URL Inspection: the tenant's GSC connection, one inspection, the quota reservation. */
@@ -143,6 +192,15 @@ const DEFAULT_DEPS: MetricsDeps = {
   aiKey: async (tenantId, provider) => (provider === "claude" ? process.env.ANTHROPIC_API_KEY?.trim() || null : openAiKey(tenantId, provider)),
   tokenBudget: async (tenantId, plan) => ({ used: await marketingTokensUsed(tenantId), limit: marketingTokenLimit(plan) }),
   recordTokens: recordMarketingTokens,
+  aiBatch: {
+    enabled: () => flag("crawl.aiBatch"),
+    submit: (provider, key, items) => submitBatch(provider, key, items),
+    poll: (key, h) => pollBatch(key, h),
+    results: (key, h, ended, model) => batchResults(key, h, ended, model),
+    cancel: (key, h) => cancelBatch(key, h),
+    remove: (key, h, ended) => removeBatch(key, h, ended),
+  },
+  now: () => Date.now(),
   embed: embedBatch,
   gscConnection: (tenantId) => getConnection(tenantId),
   inspect: async (tenantId, siteUrl, url) => {
@@ -475,6 +533,7 @@ async function aiTick(job: Job, ai: AiConfig, deps: MetricsDeps): Promise<Metric
   let costUsd: number | undefined = prev?.costUsd;
   let cacheReadTokens = prev?.cacheReadTokens ?? 0;
   let cacheWriteTokens = prev?.cacheWriteTokens ?? 0;
+  let batchState: AiBatchState | undefined = prev?.batch;
   const state = (extra: Partial<SourceState> = {}) => {
     const done = pages.filter((p) => (have.get(p.id)?.size ?? 0) >= ai.prompts.length);
     const failed = done.filter((p) => [...have.get(p.id)!.values()].some((v) => v.startsWith("error: "))).length;
@@ -487,6 +546,7 @@ async function aiTick(job: Job, ai: AiConfig, deps: MetricsDeps): Promise<Metric
       ...(costUsd !== undefined ? { costUsd: Math.round(costUsd * 1e6) / 1e6 } : {}),
       cacheReadTokens,
       cacheWriteTokens,
+      ...(batchState ? { batch: batchState } : {}),
       ...extra,
     };
   };
@@ -514,6 +574,23 @@ async function aiTick(job: Job, ai: AiConfig, deps: MetricsDeps): Promise<Metric
     await prisma.crawlExtraction.createMany({ data: [{ crawlJobId: job.id, pageId, kind: "ai", extractorIndex: index, values: [value] }], skipDuplicates: true });
     have.set(pageId, (have.get(pageId) ?? new Map()).set(index, value));
   };
+  /** One answered call: the crawl's totals, and on Claude the Marketing Studio meter and the usage row. */
+  const meter = async (r: AiCallResult) => {
+    const read = r.cacheReadTokens ?? 0;
+    const written = r.cacheWriteTokens ?? 0;
+    const spent = r.inputTokens + written + read + r.outputTokens;
+    tokens += spent;
+    cacheReadTokens += read;
+    cacheWriteTokens += written;
+    const cost = aiCostUsd(ai.provider, r);
+    if (cost !== null) costUsd = (costUsd ?? 0) + cost;
+    if (ai.provider === "claude") {
+      await deps.recordTokens(job.tenantId, spent);
+      await prisma.aiApiCall
+        .create({ data: { tenantId: job.tenantId, categoryId: "site_crawler_ai", model: r.model, inputTokens: r.inputTokens, outputTokens: r.outputTokens, cacheReadTokens: read } })
+        .catch(() => undefined);
+    }
+  };
   const onePage = async (page: (typeof pages)[number]) => {
     const { text, fetched } = await pageText(page, deps, settings, limiter, job.rootUrl, AI_LIMITS.textChars);
     for (const [index, prompt] of ai.prompts.entries()) {
@@ -532,26 +609,136 @@ async function aiTick(job: Job, ai: AiConfig, deps: MetricsDeps): Promise<Metric
       }
       try {
         const r = await deps.aiCall(ai.provider, key, prompt, { url: page.url, text });
-        const read = r.cacheReadTokens ?? 0;
-        const written = r.cacheWriteTokens ?? 0;
-        const spent = r.inputTokens + written + read + r.outputTokens;
-        tokens += spent;
-        cacheReadTokens += read;
-        cacheWriteTokens += written;
-        const cost = aiCostUsd(ai.provider, r);
-        if (cost !== null) costUsd = (costUsd ?? 0) + cost;
-        if (ai.provider === "claude") {
-          await deps.recordTokens(job.tenantId, spent);
-          await prisma.aiApiCall
-            .create({ data: { tenantId: job.tenantId, categoryId: "site_crawler_ai", model: r.model, inputTokens: r.inputTokens, outputTokens: r.outputTokens, cacheReadTokens: read } })
-            .catch(() => undefined);
-        }
+        await meter(r);
         await save(page.id, index, r.text || "(empty)");
       } catch (err) {
         await save(page.id, index, `error: ${err instanceof Error ? err.message.slice(0, 120) : "failed"}`);
       }
     }
   };
+
+  // Batch mode: Claude and OpenAI, until the batch has ended or fallen back.
+  const waiting = (delayMs: number) => setSourceState(job.id, "ai", state({ status: "queued_batch" })).then(() => ({ done: false, delayMs, parked: true }) as const);
+  const fallBack = async (reason: string, b: AiBatchState) => {
+    batchState = { ...b, phase: "fallback" };
+    log.info({ jobId: job.id, provider: b.provider, reason }, "crawl AI batch: synchronous fallback");
+    await setSourceState(job.id, "ai", state());
+  };
+  const batchStep = async (provider: BatchProvider): Promise<MetricsTick | "sync"> => {
+    const now = deps.now();
+    const b = batchState;
+    if (!b?.id) {
+      const firstTryAt = b?.firstTryAt ?? new Date(now).toISOString();
+      const pending: AiBatchState = b ?? { provider, phase: "submitting", id: null, inputFileId: null, model: null, firstTryAt, acceptedAt: null, requests: 0 };
+      if (now - Date.parse(firstTryAt) > BATCH_ACCEPT_MS) {
+        await fallBack("not accepted in time", pending);
+        return "sync";
+      }
+      // Every remaining request in one batch. Claude: only what the token budget still covers.
+      let allowance = Number.POSITIVE_INFINITY;
+      if (provider === "claude") {
+        const bud = await deps.tokenBudget(job.tenantId, plan);
+        if (bud.limit !== null) allowance = Math.max(0, Math.floor((bud.limit - bud.used) / AI_LIMITS.tokensPerCall));
+      }
+      const items: BatchItem[] = [];
+      let leftOut = 0;
+      for (const page of todo) {
+        const { text, fetched } = await pageText(page, deps, settings, limiter, job.rootUrl, AI_LIMITS.textChars);
+        for (const [index, prompt] of ai.prompts.entries()) {
+          if (have.get(page.id)?.has(index)) continue;
+          if (!text) {
+            await save(page.id, index, fetched ? "error: no visible text" : "error: page could not be fetched");
+            continue;
+          }
+          if (items.length >= allowance) {
+            leftOut++;
+            continue;
+          }
+          items.push({ customId: batchCustomId(page.id, index), req: buildRequest(provider, key, prompt, { url: page.url, text }) });
+        }
+      }
+      if (items.length === 0) {
+        if (leftOut > 0) return finish({ status: "stopped", stoppedReason: "token_budget" });
+        await setSourceState(job.id, "ai", state());
+        return { done: false, delayMs: 0 };
+      }
+      try {
+        const h = await deps.aiBatch.submit(provider, key, items);
+        batchState = {
+          provider,
+          phase: "queued",
+          id: h.id,
+          inputFileId: h.inputFileId,
+          model: items[0]!.req.model,
+          firstTryAt,
+          // Anthropic takes a batch straight into processing; OpenAI validates it first.
+          acceptedAt: provider === "claude" ? new Date(now).toISOString() : null,
+          requests: items.length,
+        };
+        log.info({ jobId: job.id, provider, requests: items.length, leftOut }, "crawl AI batch submitted");
+        return waiting(provider === "claude" ? BATCH_POLL_MS : BATCH_RETRY_MS);
+      } catch (err) {
+        batchState = pending;
+        log.warn({ jobId: job.id, provider, err: err instanceof Error ? err.message : "failed" }, "crawl AI batch not accepted; retrying");
+        return waiting(BATCH_RETRY_MS);
+      }
+    }
+
+    const h: BatchHandle = { provider, id: b.id, inputFileId: b.inputFileId };
+    const late = !b.acceptedAt && now - Date.parse(b.firstTryAt) > BATCH_ACCEPT_MS;
+    let poll: BatchPoll;
+    try {
+      poll = await deps.aiBatch.poll(key, h);
+    } catch {
+      if (late) {
+        await deps.aiBatch.cancel(key, h);
+        await fallBack("not reachable before acceptance", b);
+        return "sync";
+      }
+      return waiting(BATCH_POLL_MS);
+    }
+    if (poll.state === "failed") {
+      await deps.aiBatch.remove(key, h, null);
+      await fallBack("refused by the provider", b);
+      return "sync";
+    }
+    if (poll.state === "validating") {
+      if (late) {
+        await deps.aiBatch.cancel(key, h);
+        await fallBack("not accepted in time", b);
+        return "sync";
+      }
+      return waiting(BATCH_RETRY_MS);
+    }
+    if (poll.state === "running") {
+      if (!b.acceptedAt) batchState = { ...b, acceptedAt: new Date(now).toISOString() };
+      return waiting(BATCH_POLL_MS);
+    }
+    // Ended: store what it answered; anything it did not (errored, expired) runs synchronously next.
+    const lines = await deps.aiBatch.results(key, h, poll, b.model ?? "");
+    const ours = new Set(pages.map((p) => p.id));
+    let answered = 0;
+    for (const line of lines) {
+      const at = parseCustomId(line.customId);
+      if (!at || !ours.has(at[0]) || have.get(at[0])?.has(at[1])) continue;
+      if (line.ok) {
+        await meter(line.result);
+        await save(at[0], at[1], capBytes(line.result.text.trim()) || "(empty)");
+        answered++;
+      } else if (line.reason === "refused") {
+        await save(at[0], at[1], "error: refused");
+      }
+    }
+    await deps.aiBatch.remove(key, h, poll);
+    batchState = { ...b, phase: "ended", answered };
+    log.info({ jobId: job.id, provider, requests: b.requests, answered, tokens, cacheReadTokens, cacheWriteTokens }, "crawl AI batch ended");
+    await setSourceState(job.id, "ai", state());
+    return { done: false, delayMs: 0 };
+  };
+  if (deps.aiBatch.enabled() && isBatchProvider(ai.provider) && batchState?.phase !== "ended" && batchState?.phase !== "fallback") {
+    const step = await batchStep(ai.provider);
+    if (step !== "sync") return step;
+  }
 
   const batch = todo.slice(0, AI_PAGES_PER_TICK);
   for (let i = 0; i < batch.length; i += AI_CONCURRENCY) {
@@ -674,15 +861,21 @@ export async function runCrawlMetrics(jobId: string, overrides: Partial<MetricsD
     const tick = await semanticTick(job, semantic, deps);
     if (!tick.done) return tick;
   }
+  // An AI batch waiting at the provider (hours, at worst) parks the AI step:
+  // PSI runs meanwhile, and the next tick polls the batch again.
+  let parked: Extract<MetricsTick, { done: false }> | null = null;
   if (ai && flag("crawl.ai") && !settled(states.ai)) {
     const tick = await aiTick(job, ai, deps);
-    if (!tick.done) return tick;
+    if (!tick.done) {
+      if (!tick.parked) return tick;
+      parked = tick;
+    }
   }
   if (add?.psi && flag("crawl.psi") && !settled(states.psi)) {
     const tick = await psiTick(job, add.psi, deps);
-    if (!tick.done) return tick;
+    if (!tick.done) return parked ? { done: false, delayMs: Math.min(tick.delayMs, parked.delayMs) } : tick;
   }
-  return { done: true };
+  return parked ?? { done: true };
 }
 
 /** Whether a finished crawl has post-crawl work to queue. */

@@ -187,6 +187,7 @@ export function aiStatusText(
   const total = int.format(st.targets ?? 0);
   if (st.status === "stopped") return st.stoppedReason === "token_budget" ? t.aiStatusBudget : t.aiStatusKey;
   if (st.status === "done") return t.aiStatusDone(done, total, int.format(st.tokens ?? 0));
+  if (st.status === "queued_batch") return t.aiStatusBatch(done, total);
   return t.aiStatusRunning(done, total);
 }
 

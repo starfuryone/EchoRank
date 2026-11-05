@@ -52,6 +52,8 @@ describe("start card", () => {
     expect(aiStatusText({ status: "stopped", stoppedReason: "token_budget" }, t, int)).toBe(t.aiStatusBudget);
     expect(aiStatusText({ status: "done", targets: 20, completed: 20, tokens: 33200 }, t, int)).toBe(t.aiStatusDone("20", "20", "33,200"));
     expect(aiStatusText(undefined, t, int)).toBeNull();
+    // Batch mode: "queued in batch" while the provider works on it.
+    expect(aiStatusText({ status: "queued_batch", targets: 20, completed: 0 }, t, int)).toBe(t.aiStatusBatch("0", "20"));
     expect(defaultProvider({ ...quota, aiClaude: false })).toBe("gemini");
   });
 });
