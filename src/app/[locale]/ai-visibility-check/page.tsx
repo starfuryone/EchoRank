@@ -15,6 +15,7 @@ import { SnapshotCheck } from "@/components/snapshot/SnapshotCheck";
 import { SnapshotUpsell } from "@/components/snapshot/SnapshotReportView";
 import st from "@/components/snapshot/snapshot.module.css";
 import { PublicNav } from "../PublicNav";
+import { AiVisibilityLogo } from "@/components/brand/AiVisibilityLogo";
 import { PublicFooter } from "@/components/PublicFooter";
 import s from "../home2.module.css";
 
@@ -26,7 +27,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   const { locale } = await params;
   if (!isSupportedLocale(locale)) return {};
   const c = SNAPSHOT_COPY[snapshotBaseOf(locale)];
-  return buildMetadata({ locale, path: "/ai-visibility-check", title: c.metaTitle, description: c.metaDescription });
+  return buildMetadata({ locale, path: "/ai-visibility-check", title: c.metaTitle, description: c.metaDescription, ogImage: "/ai-visibility/og-ai-visibility-check.png" });
 }
 
 export default async function Page({ params }: { params: Promise<{ locale: string }> }) {
@@ -57,6 +58,7 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
 
       <section className={s.hero}>
         <div className={s.container}>
+          <AiVisibilityLogo height={56} surface="themed" className={st.avLogo} testId="av-check-logo" />
           <p className={s.label}>
             <b>/ 01</b> — {c.eyebrow}
           </p>

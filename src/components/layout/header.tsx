@@ -7,6 +7,8 @@ import { Bell, LogOut, Menu } from "lucide-react";
 import { cn, getInitials } from "@/lib/utils";
 import { dashChrome, type DashLocale } from "@/lib/i18n/dashboard";
 import { NosyBatLogo } from "@/components/brand/NosyBatLogo";
+import { AvEmblemIcon } from "@/components/brand/AiVisibilityLogo";
+import { avBrandedPath } from "@/lib/ai-visibility/brand";
 
 interface HeaderProps {
   title: string;
@@ -64,6 +66,9 @@ export function Header({
   // name, the byline stays text. The one brand rendering on those pages
   // besides the sidebar row.
   const crawler = pathname === "/crawler" || Boolean(pathname?.startsWith("/crawler/"));
+  // The AI Visibility pages: the emblem (28 px, the title's colour) before their
+  // existing "AI Visibility" title.
+  const aiVisibility = !crawler && avBrandedPath(pathname);
   const displayName = user?.name || user?.email || chrome.user;
   const initials = getInitials(displayName);
 
@@ -87,6 +92,11 @@ export function Header({
           <h1 className="flex min-w-0 flex-col items-start gap-0.5 text-lg font-semibold text-gray-900 sm:flex-row sm:items-center sm:gap-2 sm:text-xl">
             <NosyBatLogo height={30} alt={title} className="min-w-0 sm:shrink-0" testId="topbar-logo" />
             {byline && <span className="whitespace-nowrap text-xs font-normal leading-none text-gray-500 sm:leading-normal">{byline}</span>}
+          </h1>
+        ) : aiVisibility ? (
+          <h1 className="flex min-w-0 items-center gap-2 text-lg font-semibold text-gray-900 sm:text-xl">
+            <AvEmblemIcon className="h-7 w-7 shrink-0" />
+            {title}
           </h1>
         ) : (
           <h1 className="text-lg font-semibold text-gray-900 sm:text-xl">

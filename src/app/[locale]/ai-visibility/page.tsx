@@ -7,6 +7,7 @@ import { CONTENT, THEME_TOGGLE_COPY } from '@/lib/i18n/content';
 import { ThemeToggle } from '@/components/marketing/theme-toggle';
 import { PLAN_CONFIGS } from '@/lib/plan-config';
 import { AuditWidget, type AuditWidgetContent } from '@/components/AuditWidget';
+import { AiVisibilityLogo } from '@/components/brand/AiVisibilityLogo';
 import { KeywordWidget, type KeywordWidgetContent } from '@/components/KeywordWidget';
 import { JsonLd, SITE_URL, buildMetadata, faqPage, normalizeLocale, organization, webSite } from "@/lib/seo";
 
@@ -88,7 +89,7 @@ const C: Record<Locale, AvContent> = {
     },
     nav: { features: 'Features', pricing: 'Pricing', login: 'Login', cta: 'Start tracking' },
     hero: {
-      eyebrow: 'AI Visibility · in every plan',
+      eyebrow: 'In every plan',
       h1a: 'When someone asks ChatGPT for a recommendation,',
       h1b: ' are you in the answer?',
       sub: 'Millions of buying decisions now start as a prompt, not a search. Echorank360 tracks the prompts that matter to your business, alerts you the moment an AI stops recommending you, and scores your standing across the major assistants.',
@@ -220,7 +221,7 @@ const C: Record<Locale, AvContent> = {
     },
     nav: { features: 'Fonctionnalités', pricing: 'Tarifs', login: 'Connexion', cta: 'Commencer le suivi' },
     hero: {
-      eyebrow: 'Visibilité IA · dans tous les forfaits',
+      eyebrow: 'Dans tous les forfaits',
       h1a: 'Quand quelqu’un demande une recommandation à ChatGPT,',
       h1b: ' êtes-vous dans la réponse ?',
       sub: 'Des millions de décisions d’achat commencent désormais par une requête, pas une recherche. Echorank360 suit les requêtes qui comptent pour votre entreprise, vous alerte dès qu’une IA cesse de vous recommander, et évalue votre position auprès des principaux assistants.',
@@ -352,7 +353,7 @@ const C: Record<Locale, AvContent> = {
     },
     nav: { features: 'Funktionen', pricing: 'Preise', login: 'Anmelden', cta: 'Jetzt starten' },
     hero: {
-      eyebrow: 'KI-Sichtbarkeit · in jedem Abo',
+      eyebrow: 'In jedem Abo',
       h1a: 'Wenn jemand ChatGPT um eine Empfehlung bittet,',
       h1b: ' sind Sie in der Antwort?',
       sub: 'Millionen von Kaufentscheidungen beginnen heute als Prompt, nicht als Suche. Echorank360 verfolgt die Prompts, die für Ihr Unternehmen zählen, benachrichtigt Sie in dem Moment, in dem eine KI Sie nicht mehr empfiehlt, und bewertet Ihre Stellung bei den grossen Assistenten.',
@@ -496,6 +497,7 @@ export async function generateMetadata({
     path: "/ai-visibility",
     title: meta.titleShort,
     description: meta.description,
+    ogImage: "/ai-visibility/og-ai-visibility.png",
   });
 }
 
@@ -557,6 +559,8 @@ export default async function AIVisibilityPage({
       </header>
       <section className="av-hero">
         <div className="av-hero-copy">
+          {/* The sub-brand logo replaces the text eyebrow that named the product; "in every plan" stays as the eyebrow. */}
+          <AiVisibilityLogo height={72} surface="themed" className="av-hero-logo" testId="av-hero-logo" />
           <p className="av-eyebrow">{c.hero.eyebrow}</p>
           <h1>
             {c.hero.h1a}
@@ -744,6 +748,7 @@ const css = `
 .av-nav .av-toggle a:hover { color: var(--av-accent-text); }
 .av-nav .av-toggle a.av-toggle-on { color: var(--av-accent-text); font-weight: 650; }
 .av-gold { color: var(--av-accent-text); }
+.av-hero-logo { margin-bottom: 1.1rem; }
 .av-eyebrow {
   color: var(--av-accent-text); font-size: 0.8rem; letter-spacing: 0.14em;
   text-transform: uppercase; font-weight: 600; margin-bottom: 1rem;

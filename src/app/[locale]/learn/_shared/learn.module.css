@@ -726,3 +726,10 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* The course title with the AI Visibility emblem beside it (index), and the
+   course line above a chapter's eyebrow. */
+.courseTitle { display: flex; align-items: center; gap: 10px; }
+.courseLine { display: flex; align-items: center; gap: 8px; margin: 0 0 12px; font-size: 14px; font-weight: 600; }
+.courseLine a { color: var(--text); text-decoration: none; }
+.courseLine a:hover { text-decoration: underline; }

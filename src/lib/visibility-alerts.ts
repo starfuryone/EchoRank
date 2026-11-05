@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { sendMail } from "@/lib/mailer";
+import { avEmailHeader } from "@/lib/ai-visibility/brand";
 import { logger } from "@/infrastructure/observability/logger";
 import {
   notifyPromptTransitions,
@@ -201,7 +202,8 @@ export async function recordPromptAlerts(
   }
   lines.push(``, `Trends and details: https://echorank360.com/visibility`);
   const text = lines.join("\n");
-  const html = `<pre style="font-family:ui-monospace,Menlo,monospace;font-size:13px;line-height:1.6">${text
+  // The prompt-alert digest is headed by the AI Visibility logo (on its dark strip).
+  const html = `${avEmailHeader()}<pre style="font-family:ui-monospace,Menlo,monospace;font-size:13px;line-height:1.6">${text
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")}</pre>`;
 

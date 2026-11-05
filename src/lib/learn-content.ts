@@ -2114,3 +2114,9 @@ export function learnRoutes(): string[] {
     `${LEARN_BASE}/${ECHOPEDIA_SLUG}`,
   ];
 }
+
+/**
+ * The flagship course's title (/learn index and each chapter's header, beside
+ * the AI Visibility emblem). One source: the index's CHROME reads it too.
+ */
+export const LEARN_COURSE_NAME = { en: "Learn Reputation & AI Visibility", fr: "Réputation et visibilité IA" } as const;

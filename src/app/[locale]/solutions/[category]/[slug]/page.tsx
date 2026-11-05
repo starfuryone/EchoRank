@@ -23,11 +23,13 @@ import {
   categoryBySlug,
   itemBySlug,
   solutionBase,
+  leadsWithAiVisibility,
 } from "@/lib/solutions-taxonomy";
 import { longformFor } from "@/lib/solutions-longform";
 import { detailFor } from "@/lib/solutions-detail";
 import { PublicNav } from "../../../PublicNav";
 import { PublicFooter } from "@/components/PublicFooter";
+import { AvEmblem } from "@/components/brand/AiVisibilityLogo";
 import s from "../../../home2.module.css";
 
 /** locale x category x slug — 5 x 25 = 125 static pages. */
@@ -85,9 +87,18 @@ export default async function Page({ params }: { params: Params }) {
 
       <section className={s.section}>
         <div className={s.container}>
-          <p className={s.label}>
-            <b>/ 01</b> — <Link href={link(`/solutions/${cat.slug}`)}>{cat[base].label}</Link>
-          </p>
+          {leadsWithAiVisibility(item) ? (
+            <div className={s.labelIcon} data-testid="solution-av-emblem">
+              <AvEmblem size={32} />
+              <p className={s.label}>
+                <b>/ 01</b> — <Link href={link(`/solutions/${cat.slug}`)}>{cat[base].label}</Link>
+              </p>
+            </div>
+          ) : (
+            <p className={s.label}>
+              <b>/ 01</b> — <Link href={link(`/solutions/${cat.slug}`)}>{cat[base].label}</Link>
+            </p>
+          )}
           <h1 className={s.h1}>{c.h1}</h1>
           <p className={s.sub}>{c.intro}</p>
           <div className={s.ctarow} style={{ marginTop: 24 }}>

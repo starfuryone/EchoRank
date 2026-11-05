@@ -12,6 +12,7 @@ import { ShareLink, SnapshotFullView, SnapshotUpsell } from "@/components/snapsh
 import st from "@/components/snapshot/snapshot.module.css";
 import { SITE_URL } from "@/lib/seo";
 import { PublicNav } from "../../../PublicNav";
+import { AiVisibilityLogo } from "@/components/brand/AiVisibilityLogo";
 import { PublicFooter } from "@/components/PublicFooter";
 import s from "../../../home2.module.css";
 
@@ -34,6 +35,7 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
       <PublicNav locale={locale} />
       <section className={s.hero}>
         <div className={s.container}>
+          <AiVisibilityLogo height={40} surface="themed" className={st.avLogo} testId="av-result-logo" />
           {run?.report ? (
             <>
               <p className={s.label}>

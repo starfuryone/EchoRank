@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { AvEmblem } from "@/components/brand/AiVisibilityLogo";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import s from "./home2.module.css";
 import { FAQ } from "./faq-data";
@@ -799,7 +800,10 @@ export default function HomeClient({
       {/* 8. ENGINES */}
       <section className={s.section}>
         <div className={s.container}>
-          <p className={s.label}><b>/ 09</b> — {t.eng.label}</p>
+          <div className={s.labelIcon} data-testid="home-09-av">
+            <AvEmblem size={40} />
+            <p className={s.label}><b>/ 09</b> — {t.eng.label}</p>
+          </div>
           <h2 className={s.h2}>{t.eng.h2}</h2>
           <p className={s.sub}>{t.eng.sub}</p>
           <div className={s.englogos}>
@@ -891,7 +895,10 @@ export default function HomeClient({
       {/* 11. ROI */}
       <section id="roi" className={s.section}>
         <div className={s.container}>
-          <p className={s.label}><b>/ 13</b> — {t.roi.label}<Tm /></p>
+          <div className={s.labelIcon} data-testid="home-13-av">
+            <AvEmblem size={40} />
+            <p className={s.label}><b>/ 13</b> — {t.roi.label}<Tm /></p>
+          </div>
           <h2 className={s.h2}>{t.roi.h2}</h2>
           <p className={s.sub}>{t.roi.sub}</p>
           <div className={s.roi}>

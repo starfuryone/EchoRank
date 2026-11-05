@@ -16,6 +16,7 @@ import { PLAN_CONFIGS } from "@/lib/plan-config";
 import { CRAWLER_BRAND } from "@/lib/site-crawler/brand";
 import { ruleCountLabel } from "@/lib/site-crawler/rule-count";
 import { NosyBatLogo } from "@/components/brand/NosyBatLogo";
+import { AiVisibilityLogo } from "@/components/brand/AiVisibilityLogo";
 import s from "./home2.module.css";
 import c from "./two-crawlers.module.css";
 
@@ -49,7 +50,8 @@ export function TwoCrawlers({ locale, sectionNumber }: { locale: string; section
         <div className={c.grid}>
           <article className={c.card}>
             <div className={c.head}>
-              <span className={c.eyebrow}>{t.a.eyebrow}</span>
+              {/* The AI Visibility logo, top-left, at the crawler logo's height in card B. */}
+              <AiVisibilityLogo height={36} surface="themed" testId="two-crawlers-av-logo" />
             </div>
             <h3 className={c.title}>{t.a.title}</h3>
             <p className={c.body}>{t.a.body}</p>

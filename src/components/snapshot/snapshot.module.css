@@ -91,3 +91,6 @@
   .form { grid-template-columns: 1fr; }
   .card, .upsell { padding: 18px; }
 }
+
+/* The AI Visibility logo above the hero label (check page 56 px, result page 40 px). */
+.avLogo { display: block; margin: 0 0 18px; }

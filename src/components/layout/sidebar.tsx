@@ -9,7 +9,6 @@ import {
   UserPlus,
   Settings,
   CreditCard,
-  ScanEye,
   Sparkle,
   Wrench,
   UserCircle,
@@ -20,6 +19,7 @@ import { cn } from "@/lib/utils";
 import { SIDEBAR_GROUPS_COPY, SIDEBAR_TOOLTIPS, dashNav, type DashLocale } from "@/lib/i18n/dashboard";
 import { SEO_TOOLS_HUB } from "@/lib/seo-tools";
 import { NosyBatIcon } from "@/components/seo-tools/nosy-bat-icon";
+import { AvEmblemIcon } from "@/components/brand/AiVisibilityLogo";
 import type { PlanType } from "@/generated/prisma";
 
 // Eleven reputation surfaces used to sit here as eleven rows, which made the
@@ -64,7 +64,9 @@ const CRAWLER_HREF = "/crawler";
 // grouping pass.
 const navItems = [
   { href: "/dashboard", icon: LayoutDashboard, group: "workspace" },
-  { href: "/ai", icon: ScanEye, activePrefixes: ["/visibility"], group: "workspace" },
+  // The AI row's icon is the AI Visibility emblem (<AvEmblemIcon>, a currentColor
+  // mask) at the lucide icons' h-5 w-5, so it turns white on hover / active with them.
+  { href: "/ai", icon: AvEmblemIcon, activePrefixes: ["/visibility"], group: "workspace" },
   // Directly under the AI row: the assistant answers questions ABOUT the
   // data the AI hub renders, so it belongs next to it rather than in the
   // administration block at the bottom. Filtered out entirely below when

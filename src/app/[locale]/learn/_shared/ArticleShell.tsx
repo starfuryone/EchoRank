@@ -32,6 +32,7 @@ import { Blocks } from "./Blocks";
 import { ChapterVideo } from "./ChapterVideo";
 import { resolveHref } from "./inline";
 import { CRAWLER_BRAND } from "@/lib/site-crawler/brand";
+import { AvEmblem } from "@/components/brand/AiVisibilityLogo";
 import s from "../../home2.module.css";
 import c from "./learn.module.css";
 
@@ -130,6 +131,8 @@ export interface ArticleShellProps {
   ctas?: { inline?: ReactNode; nudge?: ReactNode };
   /** Illustration above the h1. */
   hero?: ReactNode;
+  /** The course this article belongs to (the chapters): its name beside the AI Visibility emblem, above the eyebrow. */
+  course?: { name: string; href: string };
   /** Wraps the article (the guides' single session probe for their CTAs). */
   wrap?: (article: ReactNode) => ReactNode;
   prev?: { href: string; label: string };
@@ -151,6 +154,7 @@ export function ArticleShell({
   closing,
   ctas,
   hero,
+  course,
   wrap = (x) => x,
   prev,
   next,
@@ -187,6 +191,12 @@ export function ArticleShell({
           <div className={c.articleLayout}>
             {wrap(<article className={c.article}>
               {hero}
+              {course && (
+                <p className={c.courseLine} data-testid="learn-chapter-course">
+                  <AvEmblem size={24} />
+                  <Link href={course.href}>{course.name}</Link>
+                </p>
+              )}
               <p className={s.label}>
                 <b>/ {eyebrow}</b> — {t.minRead(readingTime)}
               </p>

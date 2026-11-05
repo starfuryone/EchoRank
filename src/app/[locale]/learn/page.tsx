@@ -40,6 +40,8 @@ import { baseOf, type Base } from "./_shared/ArticleShell";
 import { inline } from "./_shared/inline";
 import s from "../home2.module.css";
 import c from "./_shared/learn.module.css";
+import { AvEmblem } from "@/components/brand/AiVisibilityLogo";
+import { LEARN_COURSE_NAME } from "@/lib/learn-content";
 
 export function generateStaticParams() {
   return SUPPORTED_LOCALES.map((locale) => ({ locale }));
@@ -105,7 +107,7 @@ const CHROME: Record<Base, HubChrome> = {
     startCta: "Start the course →",
     pdfCta: "Download the full guide (PDF)",
     courseLabel: "FLAGSHIP COURSE",
-    courseName: "Learn Reputation & AI Visibility",
+    courseName: LEARN_COURSE_NAME.en,
     courseBlurb:
       "The complete beginner-to-operator path: audit your baseline, import your review history, build the request habit, and turn what customers say into rankings and AI mentions. About an hour to read, 90 days to execute.",
     courseCta: "Start with Chapter 1 →",
@@ -150,7 +152,7 @@ const CHROME: Record<Base, HubChrome> = {
     startCta: "Commencer le cours →",
     pdfCta: "Télécharger le guide complet (PDF)",
     courseLabel: "COURS PRINCIPAL",
-    courseName: "Réputation et visibilité IA",
+    courseName: LEARN_COURSE_NAME.fr,
     courseBlurb:
       "Le parcours complet, du débutant à l'opérateur : mesurez votre point de départ, importez votre historique d'avis, installez l'habitude de solliciter, et transformez ce que disent vos clients en positions et en mentions par les IA. Environ une heure de lecture, 90 jours d'exécution.",
     courseCta: "Commencer par le chapitre 1 →",
@@ -284,7 +286,10 @@ export default async function LearnHubPage({
               <p className={s.label}>
                 <b>/ {t.courseLabel}</b>
               </p>
-              <h2 className={c.flagH}>{t.courseName}</h2>
+              <h2 className={`${c.flagH} ${c.courseTitle}`} data-testid="learn-course-title">
+                <AvEmblem size={24} />
+                {t.courseName}
+              </h2>
               <p className={c.flagP}>{t.courseBlurb}</p>
               <Link className={`${s.btn} ${s.btnPrimary}`} href={L(`${LEARN_BASE}/${firstChapter.slug}`)}>
                 {t.courseCta}

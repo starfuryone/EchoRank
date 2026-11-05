@@ -125,7 +125,8 @@ describe("the deleted files", () => {
     expect(files.length).toBeGreaterThan(100);
     const offenders = files.filter((f) => {
       const s = readFileSync(f, "utf8");
-      return DELETED.some((d) => s.includes(d)) || /\blogoOnLight\b/.test(s);
+      // The crawler's removed field only (AV_BRAND.logoOnLight is the AI Visibility sub-brand's own).
+      return DELETED.some((d) => s.includes(d)) || /CRAWLER_BRAND\.logoOnLight\b/.test(s);
     });
     expect(offenders).toEqual([]);
   });

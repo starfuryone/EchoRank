@@ -19,6 +19,7 @@ import Link from "next/link";
 import { SUPPORTED_LOCALES, isSupportedLocale } from "@/lib/i18n/config";
 import { JsonLd, SITE_URL, buildMetadata, faqPage, normalizeLocale, organization } from "@/lib/seo";
 import { AuditWidget, type AuditWidgetContent } from "@/components/AuditWidget";
+import { AiVisibilityLogo } from "@/components/brand/AiVisibilityLogo";
 import { PLAN_CONFIGS } from "@/lib/plan-config";
 import { PublicNav } from "../PublicNav";
 import { PublicFooter } from "@/components/PublicFooter";
@@ -344,6 +345,9 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
           <h1 className={s.h1}>{c.h1}</h1>
           <p className={s.sub}>{c.heroSub}</p>
 
+          <div style={{ margin: "26px 0 14px" }}>
+            <AiVisibilityLogo height={48} surface="themed" testId="av-free-audit-logo" />
+          </div>
           <AuditWidget c={{ ...c.widget, ctaHref: L("/pricing") }} />
 
           <p className={s.label} style={{ marginTop: 18 }}>

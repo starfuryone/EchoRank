@@ -1849,7 +1849,8 @@ export interface TwoCrawlersCopy {
   eyebrow: string;
   h2: string;
   lead: string;
-  a: { eyebrow: string; title: string; body: string; bullets: string[]; cta: string; secondary: string };
+  /** Card A's header is the AI Visibility logo (AV_BRAND), not text. */
+  a: { title: string; body: string; bullets: string[]; cta: string; secondary: string };
   b: {
     /** Text beside the logo (the logo's alt is the name). */
     byline: string;
@@ -1872,7 +1873,6 @@ export const HOME_TWO_CRAWLERS: Record<"en" | "fr", TwoCrawlersCopy> = {
     h2: "Two crawlers. One honest picture of your site.",
     lead: "Search engines read your site one way. AI engines read it another way, then talk about it. Echorank runs both views, in your browser, nothing to install.",
     a: {
-      eyebrow: "Echorank AI Visibility",
       title: "What AI engines see, and what they say.",
       body: "Checks whether ChatGPT, Gemini, Claude and Perplexity can reach and render your pages, measures the gap between what they read and what your visitors see, validates your llms.txt, then asks the engines about your brand and tracks the answers week over week.",
       bullets: [
@@ -1917,7 +1917,6 @@ export const HOME_TWO_CRAWLERS: Record<"en" | "fr", TwoCrawlersCopy> = {
     h2: "Deux robots. Une image honnête de votre site.",
     lead: "Les moteurs de recherche lisent votre site d'une façon. Les moteurs d'IA le lisent autrement, puis en parlent. Echorank fait les deux lectures, dans votre navigateur, sans rien installer.",
     a: {
-      eyebrow: "Echorank Visibilité IA",
       title: "Ce que les moteurs d'IA voient, et ce qu'ils disent.",
       body: "Vérifie si ChatGPT, Gemini, Claude et Perplexity peuvent atteindre et rendre vos pages, mesure l'écart entre ce qu'ils lisent et ce que voient vos visiteurs, valide votre llms.txt, puis interroge les moteurs sur votre marque et suit les réponses semaine après semaine.",
       bullets: [

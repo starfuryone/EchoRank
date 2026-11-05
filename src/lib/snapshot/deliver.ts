@@ -11,6 +11,7 @@ import "server-only";
 
 import { sendMail } from "@/lib/mailer";
 import { SITE_URL } from "@/lib/seo/constants";
+import { avEmailHeader } from "@/lib/ai-visibility/brand";
 import { logger } from "@/infrastructure/observability/logger";
 import { ENGINE_LABEL, type SnapshotReport } from "./types";
 
@@ -56,9 +57,11 @@ export function reportEmail(report: SnapshotReport, locale: string, link: string
         `— Echorank360`,
       ];
   const esc = (s: string) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-  const html = lines
-    .map((l) => (l === link ? `<p><a href="${esc(link)}">${esc(link)}</a></p>` : `<p>${esc(l)}</p>`))
-    .join("\n");
+  // The AI Visibility logo heads the email (on its dark strip: avEmailHeader).
+  const html =
+    avEmailHeader() +
+    "\n" +
+    lines.map((l) => (l === link ? `<p><a href="${esc(link)}">${esc(link)}</a></p>` : `<p>${esc(l)}</p>`)).join("\n");
   return { subject, text: lines.join("\n\n"), html };
 }
 

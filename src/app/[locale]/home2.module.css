@@ -46,6 +46,9 @@
 .container{max-width:1180px;margin:0 auto;padding:0 28px}
 .label{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint)}
 .label b{color:var(--goldText);font-weight:500}
+/* A section label with the AI Visibility emblem as its icon (/09, /13). */
+.labelIcon{display:flex;align-items:center;gap:12px}
+.labelIcon .label{margin:0}
 .section{padding:96px 0;border-top:1px solid var(--lineSoft)}
 .h2{font-size:clamp(26px,3.4vw,40px);font-weight:650;letter-spacing:-.02em;line-height:1.12;margin:14px 0 10px}
 .sub{color:var(--muted);max-width:640px;font-size:16px}

@@ -1,4 +1,6 @@
+import type { Metadata } from "next";
 import Link from "next/link";
+import { AV_ICONS } from "@/lib/ai-visibility/brand";
 import { requireTenant } from "@/lib/tenant";
 import { aiSearchEnabledFor } from "@/lib/ai-monitor/rollout";
 import {
@@ -23,6 +25,9 @@ import { AiSearchOverview } from "./overview-client";
  * nothing is running" is a real situation with a real explanation — telling
  * someone their data does not exist would be false.
  */
+/** The AI Visibility emblem as the tab icon (the title stays the app's). */
+export const metadata: Metadata = { icons: AV_ICONS };
+
 export default async function AiSearchPage({
   searchParams,
 }: {

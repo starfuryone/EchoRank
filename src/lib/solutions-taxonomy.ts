@@ -813,3 +813,12 @@ export function solutionRoutes(): string[] {
     ...c.items.map((i) => `/solutions/${c.slug}/${i.slug}`),
   ]);
 }
+
+/**
+ * The solution pages that lead with AI Visibility: their first linked product
+ * is /ai-visibility. Their hero eyebrow row carries the AI Visibility emblem.
+ * Derived, so an item that changes its lead product moves with it.
+ */
+export function leadsWithAiVisibility(item: SolutionItem): boolean {
+  return item.en.features[0]?.href === AI;
+}

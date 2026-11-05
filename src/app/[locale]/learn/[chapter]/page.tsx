@@ -16,6 +16,7 @@ import { JsonLd } from "@/lib/seo/JsonLd";
 import {
   LEARN_BASE,
   LEARN_CHAPTERS,
+  LEARN_COURSE_NAME,
   chapterBySlug,
   chapterNeighbours,
 } from "@/lib/learn-content";
@@ -84,6 +85,7 @@ export default async function ChapterPage({
       <ArticleShell
         locale={locale}
         eyebrow={NUMBER[b](ch.order)}
+        course={{ name: LEARN_COURSE_NAME[b], href: L("/learn#course") }}
         title={ch.title}
         description={ch.description}
         readingTime={ch.readingTime}

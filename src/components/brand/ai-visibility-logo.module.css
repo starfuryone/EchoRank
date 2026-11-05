@@ -1,0 +1,6 @@
+/* <AiVisibilityLogo>. Themed: the on-dark file by default, the on-light one under the public day theme. */
+.wrap{display:inline-block;line-height:0;max-width:100%}
+.img{display:block;max-width:100%;height:auto}
+.day{display:none}
+:global([data-theme="day"]) .night{display:none}
+:global([data-theme="day"]) .day{display:block}
