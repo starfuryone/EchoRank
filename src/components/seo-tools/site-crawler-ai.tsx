@@ -4,7 +4,9 @@
 // top N pages (by inlinks, or inside one saved segment), N capped by the
 // plan. Claude runs on the house key and the Marketing Studio token budget;
 // OpenAI / Gemini on the tenant's own key from Settings → Integrations. The
-// token estimate (N × prompts × ~2k) shows here and in the confirm step.
+// token estimate (N × prompts × the charged per-call estimate, halved when the
+// prompts go through a batch: ai-shared aiTokenEstimate) shows here and in
+// the confirm step.
 
 import { Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -13,6 +15,7 @@ import { Select } from "@/components/ui/select";
 import type { SiteCrawler4eCopy } from "@/lib/i18n/site-crawler-4e";
 import type { SiteCrawler4dCopy } from "@/lib/i18n/site-crawler-4d";
 import { AI_LIMITS, AI_PRESETS, AI_PROVIDERS, aiTokenEstimate, type AiConfig, type AiPreset, type AiProvider } from "@/lib/site-crawler/ai-shared";
+import { FLAGS, flag, type Flags } from "@/lib/flags";
 
 export interface AiQuota {
   aiPageCap: number;
@@ -37,16 +40,21 @@ export function providerUsable(p: AiProvider, q: AiQuota): boolean {
   return p === "claude" ? q.aiClaude : q.aiKeys[p];
 }
 
+/** The pre-run estimate in charged tokens: halved where the prompts will go through a batch (crawl.aiBatch). */
+export function aiEstimate(ai: AiConfig, flags: Flags = FLAGS): number {
+  return aiTokenEstimate(ai, { batch: flag("crawl.aiBatch", flags) });
+}
+
 /** The estimate sentence for the current choice. */
 export function aiEstimateLine(t: SiteCrawler4eCopy, ai: AiConfig, q: AiQuota, int: Intl.NumberFormat): string {
-  const tokens = int.format(aiTokenEstimate(ai));
+  const tokens = int.format(aiEstimate(ai));
   if (ai.provider !== "claude") return t.aiEstimateOwn(tokens, PROVIDER_NAME[ai.provider]);
   if (q.aiTokenLimit === null) return t.aiEstimateUnmetered(tokens);
   return t.aiEstimate(tokens, int.format(Math.max(0, q.aiTokenLimit - q.aiTokensUsed)));
 }
 
 export function aiConfirmLine(t: SiteCrawler4eCopy, ai: AiConfig, int: Intl.NumberFormat): string {
-  return t.confirmAi(int.format(ai.top.pages), String(ai.prompts.length), int.format(aiTokenEstimate(ai)));
+  return t.confirmAi(int.format(ai.top.pages), String(ai.prompts.length), int.format(aiEstimate(ai)));
 }
 
 export function AiPromptsSection({

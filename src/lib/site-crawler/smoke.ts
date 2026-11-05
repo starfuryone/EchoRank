@@ -51,7 +51,7 @@ import { COMPARE_BUCKETS } from "./compare";
 import { THIN_MAX_WORDS, RENDER_MODES, type RenderMode } from "./types";
 import { validateRootUrl } from "./url";
 import { JS_PRESETS, type JsPreset } from "./js-snippets";
-import { aiTokenEstimate, type AiPreset } from "./ai-shared";
+import { aiBatchApplies, aiCallEstimate, aiTokenEstimate, type AiPreset } from "./ai-shared";
 import { marketingTokensUsed } from "@/lib/marketing/quota";
 
 // ─── Arguments ───────────────────────────────────────────────────────────────
@@ -576,9 +576,15 @@ async function runSmokeInner(args: SmokeArgs, deps: SmokeDeps, apiRun: { current
   }
 
   // Phase 4e: the Marketing Studio token meter before the run, for the AI check.
-  const aiEstimate = flag("crawl.ai") ? aiTokenEstimate(body.config?.ai ?? null) : 0;
+  const aiBatched = aiBatchApplies(body.config?.ai?.provider, flag("crawl.aiBatch"));
+  const aiEstimate = flag("crawl.ai") ? aiTokenEstimate(body.config?.ai ?? null, { batch: flag("crawl.aiBatch") }) : 0;
   const tokensBefore = aiEstimate ? await marketingTokensUsed(tenant.id) : 0;
-  if (aiEstimate) say(`[smoke] AI estimate ${aiEstimate} tokens (${body.config!.ai!.top.pages} pages × ${body.config!.ai!.prompts.length} prompts × 2k) · meter ${tokensBefore}`);
+  if (aiEstimate) {
+    say(
+      `[smoke] AI estimate ${aiEstimate} charged tokens (${body.config!.ai!.top.pages} pages × ${body.config!.ai!.prompts.length} prompts × ${aiCallEstimate(aiBatched)}` +
+        `${aiBatched ? ", batch: half price, can take up to 24 h, consider --timeout 90" : ""}) · meter ${tokensBefore}`,
+    );
+  }
 
   let jobId: string;
   const publicApi = `${args.baseUrl}/api/public/v1/crawl`;
@@ -905,6 +911,14 @@ async function runSmokeInner(args: SmokeArgs, deps: SmokeDeps, apiRun: { current
     const moved = (await marketingTokensUsed(tenant.id)) - tokensBefore;
     const ok = moved > 0 && moved < aiEstimate * 1.5;
     check(ok ? "PASS" : "FAIL", "ai token meter < estimate × 1.5", `meter moved ${moved} · estimate ${aiEstimate} · limit ${Math.round(aiEstimate * 1.5)}`);
+    // Calibration, not a verdict: the estimate assumes full-length pages, so a site of short pages reads high.
+    say(`[smoke] ai estimate vs meter: ${aiEstimate} vs ${moved}${moved > 0 ? ` (ratio ${(aiEstimate / moved).toFixed(2)}; within 1.2 = calibrated)` : ""}`);
+    const per100 = st?.costUsd !== undefined && v.pages > 0 ? `USD ${((st.costUsd / v.pages) * 100).toFixed(4)} per 100 pages` : "cost not recorded (CRAWL_AI_<PROVIDER>_PRICE unset)";
+    const b = st?.batch;
+    say(
+      `[smoke] ai cost: ${st?.tokens ?? 0} charged tokens on ${v.pages} pages · ${per100} · cache read ${st?.cacheReadTokens ?? 0} / write ${st?.cacheWriteTokens ?? 0}` +
+        ` · ${b ? `batch ${b.phase}${b.answered !== undefined ? `, ${b.answered} of ${b.requests} answered in batch` : ""}` : "synchronous"}`,
+    );
   }
   if (!args.login) check("SKIP", "authenticated pages", "no --login");
   else if (!flag("crawl.login")) check("SKIP", "authenticated pages", "crawl.login is off");

@@ -22,7 +22,7 @@ import {
   systemPrompt,
   userMessage,
 } from "@/lib/site-crawler/ai-prompts";
-import { aiTokenEstimate } from "@/lib/site-crawler/ai-shared";
+import { AI_LIMITS, aiCallEstimate, aiTokenEstimate, chargedTokens, type AiConfig } from "@/lib/site-crawler/ai-shared";
 import { CrawlConfigInputSchema, checkCrawlConfig } from "@/lib/site-crawler/crawl-config";
 import { aiFactsOf, needsMetrics } from "@/lib/site-crawler/metrics-runner";
 
@@ -213,6 +213,38 @@ describe("prompt caching (commit: static prefix, page last)", () => {
   });
 });
 
+describe("metering the real numbers (commit: charged tokens)", () => {
+  it("charges cache reads at 0.1x, cache writes at 1.25x, and a batched call at half", () => {
+    expect(chargedTokens({ inputTokens: 1000, outputTokens: 100 }, false)).toBe(1100);
+    expect(chargedTokens({ inputTokens: 1000, outputTokens: 100 }, true)).toBe(550);
+    expect(chargedTokens({ inputTokens: 200, cacheReadTokens: 1000, cacheWriteTokens: 0, outputTokens: 100 }, false)).toBe(400);
+    expect(chargedTokens({ inputTokens: 200, cacheReadTokens: 0, cacheWriteTokens: 1000, outputTokens: 100 }, false)).toBe(1550);
+    expect(chargedTokens({ inputTokens: 200, cacheReadTokens: 1000, cacheWriteTokens: 0, outputTokens: 100 }, true)).toBe(200);
+  });
+
+  // The fixture: full-length pages (6,000 characters of visible text, the cap)
+  // on Claude Haiku 5.5, with usage as the API reports it for this request
+  // shape: ~1,950 tokens of page text on Haiku 5.5's tokenizer, ~200 of
+  // prefix, an answer with brief low-effort thinking. SYNTHETIC: no crawl AI
+  // run has been logged yet to take real numbers from; the dogfood smoke run
+  // (crawl:smoke --ai ...) prints estimate vs meter to recalibrate it.
+  const FIXTURE = [
+    { preset: "title", inputTokens: 2_160, outputTokens: 210 },
+    { preset: "grammar", inputTokens: 2_170, outputTokens: 230 },
+    { preset: "intent", inputTokens: 2_140, outputTokens: 120 },
+    { preset: "summary", inputTokens: 2_150, outputTokens: 190 },
+  ] as const;
+
+  it.each([false, true])("the estimate is at least the charge and at most 1.2x it on the fixture (batched: %s)", (batched) => {
+    const pages = 25;
+    const actual = pages * FIXTURE.reduce((sum, u) => sum + chargedTokens(u, batched), 0);
+    const estimate = aiTokenEstimate({ provider: "claude", prompts: FIXTURE.map((u) => ({ preset: u.preset, text: null })), top: { pages: pages, segment: null } }, { batch: batched });
+    expect(estimate).toBeGreaterThanOrEqual(actual);
+    expect(estimate).toBeLessThanOrEqual(actual * 1.2);
+    expect(aiCallEstimate(batched)).toBe(batched ? AI_LIMITS.tokensPerCall / 2 : AI_LIMITS.tokensPerCall);
+  });
+});
+
 describe("parsers", () => {
   it.each([
     ["Title: Oak tables | Acme\nDescription: Handmade.", "Oak tables | Acme", "Handmade."],
@@ -252,8 +284,12 @@ describe("config", () => {
     expect(CrawlConfigInputSchema.safeParse({ ai: ai({ prompts: Array.from({ length: 4 }, () => ({ preset: "summary" })) }) }).success).toBe(false);
     expect(CrawlConfigInputSchema.safeParse({ ai: ai({ prompts: [] }) }).success).toBe(false);
   });
-  it("estimates N × prompts × 2k tokens and queues the metrics job", () => {
-    expect(aiTokenEstimate({ prompts: [{ preset: "title", text: null }, { preset: "grammar", text: null }], top: { pages: 20, segment: null } })).toBe(80_000);
+  it("estimates N × prompts × the charged per-call estimate and queues the metrics job", () => {
+    const two: Pick<AiConfig, "prompts" | "top"> = { prompts: [{ preset: "title", text: null }, { preset: "grammar", text: null }], top: { pages: 20, segment: null } };
+    expect(aiTokenEstimate(two)).toBe(20 * 2 * 2_400);
+    expect(aiTokenEstimate({ ...two, provider: "claude" }, { batch: true })).toBe(20 * 2 * 1_200);
+    expect(aiTokenEstimate({ ...two, provider: "openai" }, { batch: true })).toBe(20 * 2 * 1_200);
+    expect(aiTokenEstimate({ ...two, provider: "gemini" }, { batch: true })).toBe(20 * 2 * 2_400);
     expect(aiTokenEstimate(null)).toBe(0);
     expect(needsMetrics({ ai: ai() })).toBe(true);
     expect(needsMetrics({})).toBe(false);

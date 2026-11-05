@@ -16,7 +16,8 @@ const tenantAiKey = { upsert: vi.fn(), findMany: vi.fn(), deleteMany: vi.fn() };
 vi.mock("@/lib/prisma", () => ({ prisma: { tenantAiKey } }));
 
 import { SITE_CRAWLER_COPY } from "@/lib/i18n/dashboard";
-import { AiPromptsSection, aiConfirmLine, aiEstimateLine, aiStatusText, defaultProvider, type AiQuota } from "@/components/seo-tools/site-crawler-ai";
+import { AiPromptsSection, aiConfirmLine, aiEstimate, aiEstimateLine, aiStatusText, defaultProvider, type AiQuota } from "@/components/seo-tools/site-crawler-ai";
+import { FLAGS } from "@/lib/flags";
 import { AiKeysIntegration } from "@/components/settings/ai-keys-integration";
 import type { AiConfig } from "@/lib/site-crawler/ai-shared";
 
@@ -38,7 +39,8 @@ describe("start card", () => {
     expect(onChange).toHaveBeenCalledWith({ provider: "claude", prompts: [{ preset: "title", text: null }], top: { pages: 10, segment: null } });
     await act(async () => root.render(<AiPromptsSection t={t.p4e} t4d={t.p4d} quota={quota} value={{ ...ai, provider: "openai" }} segments={["Shop"]} int={int} disabled={false} onChange={onChange} />));
     expect(el.textContent).toContain(t.p4e.aiKeyMissing("OpenAI"));
-    expect(el.textContent).toContain(t.p4e.aiEstimateOwn("80,000", "OpenAI"));
+    // OpenAI goes through a batch: 20 pages × 2 prompts × 1,200 charged tokens (2,400 halved).
+    expect(el.textContent).toContain(t.p4e.aiEstimateOwn("48,000", "OpenAI"));
     expect([...el.querySelectorAll("option")].map((o) => o.textContent)).toEqual(expect.arrayContaining([t.p4e.aiPresets.title, t.p4e.aiProviders.gemini, t.p4d.bySegment("Shop")]));
     if (l === "de-CH") expect(JSON.stringify(t.p4e)).not.toContain("ß");
     root.unmount();
@@ -46,9 +48,12 @@ describe("start card", () => {
 
   it("estimates against the budget left, or unmetered; confirm and status lines", () => {
     const t = SITE_CRAWLER_COPY.en.p4e;
-    expect(aiEstimateLine(t, ai, quota, int)).toBe(t.aiEstimate("80,000", "450,000"));
-    expect(aiEstimateLine(t, ai, { ...quota, aiTokenLimit: null }, int)).toBe(t.aiEstimateUnmetered("80,000"));
-    expect(aiConfirmLine(t, ai, int)).toBe(t.confirmAi("20", "2", "80,000"));
+    expect(aiEstimateLine(t, ai, quota, int)).toBe(t.aiEstimate("48,000", "450,000"));
+    expect(aiEstimateLine(t, ai, { ...quota, aiTokenLimit: null }, int)).toBe(t.aiEstimateUnmetered("48,000"));
+    expect(aiConfirmLine(t, ai, int)).toBe(t.confirmAi("20", "2", "48,000"));
+    // Gemini stays synchronous; with crawl.aiBatch off nothing is batched.
+    expect(aiEstimate({ ...ai, provider: "gemini" })).toBe(96_000);
+    expect(aiEstimate(ai, { ...FLAGS, "crawl.aiBatch": false })).toBe(96_000);
     expect(aiStatusText({ status: "stopped", stoppedReason: "token_budget" }, t, int)).toBe(t.aiStatusBudget);
     expect(aiStatusText({ status: "done", targets: 20, completed: 20, tokens: 33200 }, t, int)).toBe(t.aiStatusDone("20", "20", "33,200"));
     expect(aiStatusText(undefined, t, int)).toBeNull();

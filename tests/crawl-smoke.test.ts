@@ -389,7 +389,7 @@ describe("crawl smoke: 4e flags", () => {
     expect(config.login).toEqual(sealedLogin);
     expect(verdictOf(result.lines, "js snippet values present")).toBe("PASS");
     expect(verdictOf(result.lines, "ai values present")).toBe("PASS");
-    expect(result.lines.find((l) => l.name.startsWith("ai token meter"))).toMatchObject({ verdict: "PASS", value: "meter moved 1800 · estimate 4000 · limit 6000" });
+    expect(result.lines.find((l) => l.name.startsWith("ai token meter"))).toMatchObject({ verdict: "PASS", value: "meter moved 1800 · estimate 2400 · limit 3600" });
     expect(verdictOf(result.lines, "authenticated pages crawled")).toBe("PASS");
     expect(out.join("\n")).not.toMatch(/v1:a:b:c|v1:d:e:f/);
   });

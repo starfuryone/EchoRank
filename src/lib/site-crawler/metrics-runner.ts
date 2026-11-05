@@ -67,7 +67,7 @@ import { crawlSettings } from "./crawl-settings";
 import { RateLimiter, fetchPage, isHtmlContentType } from "./fetch";
 import { visibleText } from "./facts";
 import { isFetchableUrl } from "./url";
-import { AI_LIMITS, type AiConfig, type AiProvider } from "./ai-shared";
+import { AI_DISCOUNTS, AI_LIMITS, aiCallEstimate, chargedTokens, type AiConfig, type AiProvider } from "./ai-shared";
 import { aiCostUsd, buildRequest, capBytes, parseGrammar, parseSuggestion, runPrompt, type AiCallResult } from "./ai-prompts";
 import {
   BATCH_ACCEPT_MS,
@@ -121,7 +121,11 @@ export interface SourceState {
   stoppedReason?: string;
   /** semantic: pages with a vector. */
   embedded?: number;
-  /** ai: tokens charged (Claude: to the Marketing Studio budget) and their list cost (CRAWL_AI_<PROVIDER>_PRICE; absent when unset). */
+  /**
+   * ai: tokens charged after the cache and batch discounts (chargedTokens; Claude:
+   * what the Marketing Studio meter records) and their list cost
+   * (CRAWL_AI_<PROVIDER>_PRICE, batch-discounted; absent when unset).
+   */
   tokens?: number;
   costUsd?: number;
   /** ai: prompt-cache tokens over the crawl (read = served from cache, write = stored to it). */
@@ -574,16 +578,20 @@ async function aiTick(job: Job, ai: AiConfig, deps: MetricsDeps): Promise<Metric
     await prisma.crawlExtraction.createMany({ data: [{ crawlJobId: job.id, pageId, kind: "ai", extractorIndex: index, values: [value] }], skipDuplicates: true });
     have.set(pageId, (have.get(pageId) ?? new Map()).set(index, value));
   };
-  /** One answered call: the crawl's totals, and on Claude the Marketing Studio meter and the usage row. */
-  const meter = async (r: AiCallResult) => {
+  /**
+   * One answered call: the crawl's totals, and on Claude the Marketing Studio
+   * meter and the usage row. Everything is charged as billed: cache reads and
+   * writes at their rates, a batched call at half.
+   */
+  const meter = async (r: AiCallResult, batched: boolean) => {
     const read = r.cacheReadTokens ?? 0;
     const written = r.cacheWriteTokens ?? 0;
-    const spent = r.inputTokens + written + read + r.outputTokens;
+    const spent = chargedTokens({ ...r, cacheReadTokens: read, cacheWriteTokens: written }, batched);
     tokens += spent;
     cacheReadTokens += read;
     cacheWriteTokens += written;
     const cost = aiCostUsd(ai.provider, r);
-    if (cost !== null) costUsd = (costUsd ?? 0) + cost;
+    if (cost !== null) costUsd = (costUsd ?? 0) + cost * (batched ? AI_DISCOUNTS.batch : 1);
     if (ai.provider === "claude") {
       await deps.recordTokens(job.tenantId, spent);
       await prisma.aiApiCall
@@ -602,14 +610,14 @@ async function aiTick(job: Job, ai: AiConfig, deps: MetricsDeps): Promise<Metric
       }
       if (ai.provider === "claude") {
         const b = await deps.tokenBudget(job.tenantId, plan);
-        if (b.limit !== null && b.used + AI_LIMITS.tokensPerCall > b.limit) {
+        if (b.limit !== null && b.used + aiCallEstimate(false) > b.limit) {
           budgetHit = true;
           return;
         }
       }
       try {
         const r = await deps.aiCall(ai.provider, key, prompt, { url: page.url, text });
-        await meter(r);
+        await meter(r, false);
         await save(page.id, index, r.text || "(empty)");
       } catch (err) {
         await save(page.id, index, `error: ${err instanceof Error ? err.message.slice(0, 120) : "failed"}`);
@@ -638,7 +646,7 @@ async function aiTick(job: Job, ai: AiConfig, deps: MetricsDeps): Promise<Metric
       let allowance = Number.POSITIVE_INFINITY;
       if (provider === "claude") {
         const bud = await deps.tokenBudget(job.tenantId, plan);
-        if (bud.limit !== null) allowance = Math.max(0, Math.floor((bud.limit - bud.used) / AI_LIMITS.tokensPerCall));
+        if (bud.limit !== null) allowance = Math.max(0, Math.floor((bud.limit - bud.used) / aiCallEstimate(true)));
       }
       const items: BatchItem[] = [];
       let leftOut = 0;
@@ -722,7 +730,7 @@ async function aiTick(job: Job, ai: AiConfig, deps: MetricsDeps): Promise<Metric
       const at = parseCustomId(line.customId);
       if (!at || !ours.has(at[0]) || have.get(at[0])?.has(at[1])) continue;
       if (line.ok) {
-        await meter(line.result);
+        await meter(line.result, true);
         await save(at[0], at[1], capBytes(line.result.text.trim()) || "(empty)");
         answered++;
       } else if (line.reason === "refused") {

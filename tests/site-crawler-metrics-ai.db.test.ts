@@ -91,8 +91,8 @@ describe.skipIf(!TEST_DB)("AI prompts against Postgres", () => {
     await makeJob(id);
     calls.length = 0;
     used = 0;
-    const row = await run(id, deps(3_000));
-    // Each call must fit 2,000 tokens under the limit: two calls (1,660 used) fit, a third would cross 3,000.
+    const row = await run(id, deps(3_500));
+    // Each call must fit its 2,400-token estimate under the limit: two calls (1,660 used) fit, a third would cross 3,500.
     expect(calls).toHaveLength(2);
     expect((row.summary as { metrics: { ai: unknown } }).metrics.ai).toMatchObject({ status: "stopped", stoppedReason: "token_budget" });
   });
@@ -181,7 +181,9 @@ describe.skipIf(!TEST_DB)("AI prompts against Postgres", () => {
       expect(calls).toEqual([]); // nothing ran synchronously
       expect(seen.submits).toBe(1);
       expect(await aiState(id)).toMatchObject({ status: "done", completed: 2, failed: 0, batch: { phase: "ended", answered: 4 } });
-      expect(used).toBeGreaterThan(0);
+      // Metered at the batch price: 4 calls × (800 + 30) halved.
+      expect(used).toBe(4 * 415);
+      expect(await aiState(id)).toMatchObject({ tokens: 4 * 415 });
       const fired = (await prisma.crawlIssue.findMany({ where: { crawlJobId: id, ruleId: "ai.grammar_issues" } })).length;
       expect(fired).toBe(2);
     });
