@@ -31,7 +31,7 @@ import { prisma } from "@/lib/prisma";
 import { archivedGuard, crawlRouteError } from "@/lib/site-crawler/http";
 import { DATA_STATE_SELECT } from "@/lib/site-crawler/data-state";
 import { csvFilename } from "@/lib/csv-export";
-import { csvStreamResponse } from "@/lib/csv-stream";
+import { crawlCsvResponse } from "@/lib/site-crawler/export-store";
 import {
   BROKEN_LINK_COLUMNS,
   ISSUE_COLUMNS,
@@ -72,23 +72,23 @@ export async function GET(
       return NextResponse.json({ error: "Unknown view", code: "INVALID_REQUEST" }, { status: 400 });
     }
     if (view === "broken-links") {
-      return csvStreamResponse<BrokenLinkRow>({
+      return await crawlCsvResponse<BrokenLinkRow>({
         columns: withSegmentColumn(BROKEN_LINK_COLUMNS, segment.defs, (r) => r.segmentIds),
         filename: csvFilename("site-crawler-broken-links"),
         cursorOf: (row) => row.id,
         fetchPage: (cursor, take) => brokenLinksPage(crawl.id, cursor, take, segment.index),
-      });
+      }, { tenantId: tenant.tenantId, crawlId: crawl.id, type: "broken-links", request });
     }
     if (view === "redirects") {
-      return csvStreamResponse<RedirectChainRow>({
+      return await crawlCsvResponse<RedirectChainRow>({
         columns: withSegmentColumn(REDIRECT_CHAIN_COLUMNS, segment.defs, (r) => r.segmentIds),
         filename: csvFilename("site-crawler-redirects"),
         cursorOf: (row) => row.id,
         fetchPage: (cursor, take) => redirectChainsPage(crawl.id, cursor, take, segment.index),
-      });
+      }, { tenantId: tenant.tenantId, crawlId: crawl.id, type: "redirect-chains", request });
     }
 
-    return csvStreamResponse<CrawlIssueRow>({
+    return await crawlCsvResponse<CrawlIssueRow>({
       columns: withSegmentColumn(ISSUE_COLUMNS, segment.defs, (r) => r.crawlPage.segmentIds),
       filename: csvFilename("site-crawler-issues"),
       cursorOf: (row) => row.id,
@@ -109,7 +109,7 @@ export async function GET(
             crawlPage: { select: { url: true, statusCode: true, segmentIds: true } },
           },
         }),
-    });
+    }, { tenantId: tenant.tenantId, crawlId: crawl.id, type: "issues-export", request });
   } catch (err) {
     return crawlRouteError(err);
   }

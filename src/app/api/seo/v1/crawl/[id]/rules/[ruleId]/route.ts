@@ -21,7 +21,8 @@ import { archivedGuard, crawlRouteError } from "@/lib/site-crawler/http";
 import { DATA_STATE_SELECT } from "@/lib/site-crawler/data-state";
 import { ruleIssueWhere } from "@/lib/site-crawler/rule-summary";
 import { csvFilename } from "@/lib/csv-export";
-import { csvStreamResponse, wantsCsv } from "@/lib/csv-stream";
+import { wantsCsv } from "@/lib/csv-stream";
+import { crawlCsvResponse } from "@/lib/site-crawler/export-store";
 import { RULE_PAGE_COLUMNS, withSegmentColumn, type RulePageRow } from "@/lib/site-crawler/csv-columns";
 import { issueInSegment, segmentScope } from "@/lib/site-crawler/segment-filter";
 
@@ -60,7 +61,7 @@ export async function GET(
 
     // After validation and the tenant-scoped lookup, so CSV inherits both.
     if (wantsCsv(url)) {
-      return csvStreamResponse<RulePageRow>({
+      return await crawlCsvResponse<RulePageRow>({
         columns: withSegmentColumn(RULE_PAGE_COLUMNS, segment.defs, (r) => r.crawlPage.segmentIds),
         filename: csvFilename(`site-crawler-${ruleId.replace(/[^a-z0-9]+/g, "-")}`),
         cursorOf: (r) => r.id,
@@ -78,7 +79,7 @@ export async function GET(
               crawlPage: { select: { url: true, statusCode: true, foundOn: true, segmentIds: true } },
             },
           }),
-      });
+      }, { tenantId: tenant.tenantId, crawlId: crawl.id, type: "rule", request, extra: { ruleId } });
     }
     const [total, rows] = await Promise.all([
       prisma.crawlIssue.count({ where }),

@@ -11,7 +11,8 @@ import { Button } from "@/components/ui/button";
  * (so it stays hidden when the tenant has no data or lacks the feature/plan — the
  * route's own requireTenant()/requireFeature()/requirePlan() gating decides). A
  * click POSTs to the same endpoint, which assembles the tenant's real data
- * server-side and streams back a PDF — no tenant id is ever sent from here.
+ * server-side and streams back a PDF — or JSON { url }, a presigned link to the
+ * stored PDF, which the browser opens — no tenant id is ever sent from here.
  *
  * Used by /visibility, /monitoring and /intelligence via a thin per-surface
  * wrapper (see VisibilityReportButton) or directly with an `endpoint` prop.
@@ -78,6 +79,16 @@ export function ReportDownloadButton({
     try {
       const res = await fetch(endpoint, { method: "POST" });
       if (!res.ok) throw new Error(`report failed: ${res.status}`);
+      // A route that stores its PDF (the crawl report with EXPORTS_VIA_SPACES)
+      // answers JSON { url }: a short-lived download link the browser opens
+      // itself — a navigation, so the bucket needs no CORS.
+      if (res.headers.get("content-type")?.includes("application/json")) {
+        const body = (await res.json()) as { url?: unknown };
+        if (typeof body.url !== "string" || !/^https:\/\//.test(body.url)) throw new Error("report failed: no url");
+        window.location.assign(body.url);
+        setStatus("idle");
+        return;
+      }
       const blob = await res.blob();
       const cd = res.headers.get("content-disposition") ?? "";
       const m = /filename="?([^"]+)"?/.exec(cd);

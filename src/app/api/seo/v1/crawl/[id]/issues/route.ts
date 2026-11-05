@@ -23,7 +23,8 @@ import { ruleIssueWhere } from "@/lib/site-crawler/rule-summary";
 import { csvFilename } from "@/lib/csv-export";
 import { ISSUE_COLUMNS, withSegmentColumn, type CrawlIssueRow } from "@/lib/site-crawler/csv-columns";
 import { issueInSegment, segmentScope } from "@/lib/site-crawler/segment-filter";
-import { csvStreamResponse, wantsCsv } from "@/lib/csv-stream";
+import { wantsCsv } from "@/lib/csv-stream";
+import { crawlCsvResponse } from "@/lib/site-crawler/export-store";
 
 const DEFAULT_PAGE_SIZE = 50;
 const MAX_PAGE_SIZE = 200;
@@ -86,7 +87,7 @@ export async function GET(
     // on an unknown severity or type. It is a response format, not a second
     // access surface.
     if (wantsCsv(url)) {
-      return csvStreamResponse<CrawlIssueRow>({
+      return await crawlCsvResponse<CrawlIssueRow>({
         columns: withSegmentColumn(ISSUE_COLUMNS, segment.defs, (r) => r.crawlPage.segmentIds),
         filename: csvFilename("site-crawler-issues"),
         cursorOf: (row) => row.id,
@@ -105,7 +106,7 @@ export async function GET(
               crawlPage: { select: { url: true, statusCode: true, segmentIds: true } },
             },
           }),
-      });
+      }, { tenantId: tenant.tenantId, crawlId: crawl.id, type: "issues", request });
     }
 
     const [total, rows] = await Promise.all([

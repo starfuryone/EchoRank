@@ -5,6 +5,9 @@
  *   POST → assemble this crawl's payload (src/lib/site-crawler/report.ts),
  *          render it on the sidecar's secret-gated POST /crawl-report and
  *          send application/pdf back. Nothing is stored; no link is minted.
+ *          With EXPORTS_VIA_SPACES (export-store.ts): the PDF is rendered once,
+ *          streamed into Spaces, and the answer is JSON { url } — a presigned
+ *          GET the button opens (no CORS on the bucket: the browser navigates).
  *
  * requirePaidPlan (session + tenant + paid); the crawl is looked up by id AND
  * tenantId. Logged-in only — AUTHENTICATED, do not add /api/seo/v1/* to
@@ -18,6 +21,7 @@ import { flag } from "@/lib/flags";
 import { archivedResponse, crawlRouteError } from "@/lib/site-crawler/http";
 import { DATA_STATE_SELECT, crawlDataState } from "@/lib/site-crawler/data-state";
 import { crawlReportPayload } from "@/lib/site-crawler/report";
+import { nodeReadable, serveViaSpaces } from "@/lib/site-crawler/export-store";
 
 const SIDECAR_URL = process.env.AV_SIDECAR_URL ?? "http://127.0.0.1:4500";
 const INTERNAL_SECRET = process.env.INTERNAL_API_SECRET ?? "";
@@ -77,6 +81,19 @@ export async function POST(_request: Request, { params }: Ctx) {
       res === null
         ? NextResponse.json({ error: "report_unavailable" }, { status: 502 })
         : NextResponse.json({ error: "report_failed" }, { status: res.status === 504 ? 504 : 502 });
+
+    // Phase 5: rendered once into Spaces; JSON { url } for the button to open.
+    const via = await serveViaSpaces(
+      { tenantId: tenant.tenantId, crawlId: crawl.id, type: "report", filters: {}, ext: "pdf", contentType: "application/pdf", filename: DEFAULT_PDF_NAME },
+      async () => {
+        const res = await render();
+        if (!res || !res.ok || !res.body) return refusal(res);
+        const name = /filename="?([^";]+)"?/.exec(res.headers.get("content-disposition") ?? "")?.[1];
+        return { body: nodeReadable(res.body), ...(name ? { filename: name } : {}) };
+      },
+      "json",
+    );
+    if (via) return via;
 
     const res = await render();
     if (!res || !res.ok) return refusal(res);

@@ -16,7 +16,8 @@ import { NextResponse } from "next/server";
 import { requirePaidPlan } from "@/lib/paid-plan";
 import { prisma } from "@/lib/prisma";
 import { csvFilename } from "@/lib/csv-export";
-import { csvStreamResponse, wantsCsv } from "@/lib/csv-stream";
+import { wantsCsv } from "@/lib/csv-stream";
+import { crawlCsvResponse } from "@/lib/site-crawler/export-store";
 import { readStoredConfig } from "@/lib/site-crawler/crawl-config";
 import { extractionColumns, type ExtractionRow } from "@/lib/site-crawler/csv-columns";
 import { extractionColumnRefs, extractionKeysetPage, extractionOffsetPage, extractionWhere } from "@/lib/site-crawler/extraction-rows";
@@ -63,7 +64,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     });
 
     if (wantsCsv(url)) {
-      return csvStreamResponse<ExtractionRow>({
+      return await crawlCsvResponse<ExtractionRow>({
         columns: extractionColumns(
           refs.map((c) => c.name),
           segments.length > 0,
@@ -71,7 +72,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
         filename: csvFilename("site-crawler-extraction"),
         cursorOf: (row) => row.id,
         fetchPage: (cursor, take) => extractionKeysetPage(where, cursor, take, refs, segments),
-      });
+      }, { tenantId: tenant.tenantId, crawlId: crawl.id, type: "extractions", request });
     }
 
     const page = Math.max(1, Number(url.searchParams.get("page") ?? "1") || 1);

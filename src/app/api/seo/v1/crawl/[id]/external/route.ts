@@ -16,7 +16,8 @@ import { requirePaidPlan } from "@/lib/paid-plan";
 import { prisma } from "@/lib/prisma";
 import { flag } from "@/lib/flags";
 import { csvFilename } from "@/lib/csv-export";
-import { csvStreamResponse, wantsCsv } from "@/lib/csv-stream";
+import { wantsCsv } from "@/lib/csv-stream";
+import { crawlCsvResponse } from "@/lib/site-crawler/export-store";
 import { externalColumns } from "@/lib/site-crawler/csv-columns";
 import { EXTERNAL_STATUS_CLASSES, externalCount, externalRows, externalSources, type ExternalRow, type ExternalStatusClass } from "@/lib/site-crawler/external-links";
 import { archivedGuard, crawlRouteError } from "@/lib/site-crawler/http";
@@ -54,12 +55,12 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     const filter = { statusClass: statusRaw as ExternalStatusClass | null, host: hostRaw };
 
     if (wantsCsv(url)) {
-      return csvStreamResponse<ExternalRow>({
+      return await crawlCsvResponse<ExternalRow>({
         columns: externalColumns(),
         filename: csvFilename("site-crawler-external-links"),
         cursorOf: (row) => row.url,
         fetchPage: (cursor, take) => externalRows(crawl.id, filter, { after: cursor, take }),
-      });
+      }, { tenantId: tenant.tenantId, crawlId: crawl.id, type: "external", request });
     }
     const page = Math.max(1, Number(url.searchParams.get("page") ?? "1") || 1);
     const pageSize = Math.min(MAX_PAGE_SIZE, Math.max(1, Number(url.searchParams.get("pageSize") ?? DEFAULT_PAGE_SIZE) || DEFAULT_PAGE_SIZE));

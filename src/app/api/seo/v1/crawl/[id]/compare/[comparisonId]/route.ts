@@ -14,7 +14,8 @@ import { archivedGuard, crawlRouteError } from "@/lib/site-crawler/http";
 import { DATA_STATE_SELECT } from "@/lib/site-crawler/data-state";
 
 import { csvFilename } from "@/lib/csv-export";
-import { csvStreamResponse, wantsCsv } from "@/lib/csv-stream";
+import { wantsCsv } from "@/lib/csv-stream";
+import { crawlCsvResponse } from "@/lib/site-crawler/export-store";
 import { COMPARE_BUCKETS, bucketCursor, comparisonBucket, storedCompareInput, type BucketRow, type CompareBucket } from "@/lib/site-crawler/compare";
 import { compareColumns } from "@/lib/site-crawler/compare-csv";
 
@@ -29,7 +30,7 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     const row = await prisma.crawlComparison.findFirst({ where: { id: comparisonId, jobAId: a.id } });
     if (!row) return NextResponse.json({ error: "Comparison not found", code: "NOT_FOUND" }, { status: 404 });
     // Both crawls: the stored result needs neither, but the buckets read both sides' pages.
-    const jobB = await prisma.crawlJob.findFirst({ where: { id: row.jobBId, tenantId: tenant.tenantId }, select: DATA_STATE_SELECT });
+    const jobB = await prisma.crawlJob.findFirst({ where: { id: row.jobBId, tenantId: tenant.tenantId }, select: { finishedAt: true, ...DATA_STATE_SELECT } });
     const archived = archivedGuard(a) ?? (jobB ? archivedGuard(jobB) : null);
     if (archived) return archived;
 
@@ -43,14 +44,14 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     const input = await storedCompareInput(row, a.config);
 
     if (wantsCsv(url)) {
-      return csvStreamResponse<BucketRow>({
+      return await crawlCsvResponse<BucketRow>({
         columns: compareColumns(b),
         filename: csvFilename(`site-crawler-compare-${b}`),
         cursorOf: bucketCursor,
         // Each chunk recomputes both sides; large chunks keep that to a handful.
         chunkSize: 5_000,
         fetchPage: (cursor, take) => comparisonBucket(input, b, cursor, take),
-      });
+      }, { tenantId: tenant.tenantId, crawlId: a.id, type: "compare", request, extra: { comparisonId: row.id }, alsoDependsOn: jobB?.finishedAt ?? null });
     }
 
     // Paged by keyset: ?after=<cursor> from the previous page's `next`.

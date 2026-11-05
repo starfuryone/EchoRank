@@ -21,6 +21,8 @@ import { archivedGuard, crawlRouteError } from "@/lib/site-crawler/http";
 import { DATA_STATE_SELECT } from "@/lib/site-crawler/data-state";
 import { CHANGEFREQS, writeSitemaps } from "@/lib/site-crawler/sitemap-generator";
 import { ZipWriter } from "@/lib/site-crawler/zip";
+import { serveViaSpaces } from "@/lib/site-crawler/export-store";
+import { PassThrough } from "node:stream";
 
 const QuerySchema = z.object({
   lastmod: z.enum(["header", "crawl", "none"]).default("crawl"),
@@ -72,6 +74,22 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
     const host = new URL(crawl.rootUrl).hostname.replace(/[^a-z0-9.-]/gi, "");
     const filename = `sitemaps-${host}-${crawlDate.toISOString().slice(0, 10)}.zip`;
 
+    // Phase 5: written once to Spaces, then a presigned 302 (flag on, Spaces configured).
+    const via = await serveViaSpaces(
+      { tenantId: tenant.tenantId, crawlId: crawl.id, type: "sitemaps", filters: { ...parsed.data }, ext: "zip", contentType: "application/zip", filename },
+      () => {
+        const body = new PassThrough();
+        const zip = new ZipWriter((chunk) => body.write(chunk), crawlDate);
+        void writeSitemaps(zip, { jobId: crawl.id, origin, crawlDate, opts })
+          .then(() => {
+            zip.finish();
+            body.end();
+          })
+          .catch((err) => body.destroy(err));
+        return { body };
+      },
+    );
+    if (via) return via;
 
     const stream = new ReadableStream<Uint8Array>({
       async start(controller) {

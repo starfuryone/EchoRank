@@ -50,15 +50,12 @@ export interface CsvStreamSource<Row> {
 }
 
 /**
- * Build the streamed CSV response.
- *
- * The BOM is written as the response's very first bytes, ahead of the header
- * line, so Excel sees it before anything else — see csv-export.ts for why that
- * matters. Rows are serialized with the same functions the client button uses,
- * so a table exported from the browser and the same table exported from the
- * server are byte-identical apart from row order.
+ * The CSV bytes themselves: BOM + header, then one chunk per page of rows,
+ * with the truncation notice when the cap stops it. csvStreamResponse wraps
+ * it in a Response; the Spaces export path (site-crawler/export-store.ts)
+ * pipes it into an upload with `cap: Infinity` — no row cap there.
  */
-export function csvStreamResponse<Row>(source: CsvStreamSource<Row>): Response {
+export function csvByteStream<Row>(source: CsvStreamSource<Row>): ReadableStream<Uint8Array> {
   const cap = source.cap ?? CSV_ROW_CAP;
   const chunkSize = source.chunkSize ?? CSV_CHUNK_SIZE;
   const encoder = new TextEncoder();
@@ -67,7 +64,7 @@ export function csvStreamResponse<Row>(source: CsvStreamSource<Row>): Response {
   let written = 0;
   let done = false;
 
-  const stream = new ReadableStream<Uint8Array>({
+  return new ReadableStream<Uint8Array>({
     start(controller) {
       controller.enqueue(encoder.encode(UTF8_BOM + csvHeader(source.columns) + "\r\n"));
     },
@@ -76,7 +73,7 @@ export function csvStreamResponse<Row>(source: CsvStreamSource<Row>): Response {
       try {
         // Never fetch past the cap: asking for a full page when two rows of
         // headroom remain would read 498 rows only to discard them.
-        const take = Math.min(chunkSize, cap - written);
+        const take = Number.isFinite(cap) ? Math.min(chunkSize, cap - written) : chunkSize;
         const rows = take > 0 ? await source.fetchPage(cursor, take) : [];
 
         if (rows.length === 0) {
@@ -112,7 +109,19 @@ export function csvStreamResponse<Row>(source: CsvStreamSource<Row>): Response {
       }
     },
   });
+}
 
+/**
+ * Build the streamed CSV response.
+ *
+ * The BOM is written as the response's very first bytes, ahead of the header
+ * line, so Excel sees it before anything else — see csv-export.ts for why that
+ * matters. Rows are serialized with the same functions the client button uses,
+ * so a table exported from the browser and the same table exported from the
+ * server are byte-identical apart from row order.
+ */
+export function csvStreamResponse<Row>(source: CsvStreamSource<Row>): Response {
+  const stream = csvByteStream(source);
   return new Response(stream, {
     headers: {
       "content-type": "text/csv; charset=utf-8",

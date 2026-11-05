@@ -23,7 +23,8 @@ import { DATA_STATE_SELECT } from "@/lib/site-crawler/data-state";
 import { computeRuleTallies, ruleTalliesFor } from "@/lib/site-crawler/rule-summary";
 import { issueInSegment, pageInSegment, ruleCountsBySegment, segmentScope } from "@/lib/site-crawler/segment-filter";
 import { csvFilename } from "@/lib/csv-export";
-import { csvStreamResponse, wantsCsv } from "@/lib/csv-stream";
+import { wantsCsv } from "@/lib/csv-stream";
+import { crawlCsvResponse } from "@/lib/site-crawler/export-store";
 import { ruleListColumns, type RuleListRow } from "@/lib/site-crawler/csv-columns";
 
 function highPagesOf(summary: unknown): number | null {
@@ -75,12 +76,12 @@ export async function GET(request: Request, { params }: { params: Promise<{ id: 
 
     if (wantsCsv(new URL(request.url))) {
       // At most one row per registry rule: one page, then done.
-      return csvStreamResponse<RuleListRow>({
+      return await crawlCsvResponse<RuleListRow>({
         columns: ruleListColumns(filtered ? [] : segment.defs),
         filename: csvFilename("site-crawler-issues-by-rule"),
         cursorOf: (r) => r.ruleId,
         fetchPage: async (cursor) => (cursor === null ? rules : []),
-      });
+      }, { tenantId: tenant.tenantId, crawlId: crawl.id, type: "rules", request });
     }
 
     return NextResponse.json({

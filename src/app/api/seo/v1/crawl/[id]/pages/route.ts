@@ -45,7 +45,8 @@ import {
 } from "@/lib/site-crawler/pages-sort";
 import { pageInSegment, segmentScope } from "@/lib/site-crawler/segment-filter";
 import { readStoredConfig } from "@/lib/site-crawler/crawl-config";
-import { csvStreamResponse, wantsCsv } from "@/lib/csv-stream";
+import { wantsCsv } from "@/lib/csv-stream";
+import { crawlCsvResponse } from "@/lib/site-crawler/export-store";
 import { prisma } from "@/lib/prisma";
 import { archivedGuard, crawlRouteError } from "@/lib/site-crawler/http";
 import { DATA_STATE_SELECT } from "@/lib/site-crawler/data-state";
@@ -207,7 +208,7 @@ export async function GET(
       const coverage = await metricCoverage(crawl.id);
       const sources = METRIC_SOURCES.filter((s) => coverage[s] > 0);
       const scored = flag("crawl.linkScore") && (await prisma.crawlPage.count({ where: { crawlJobId: crawl.id, linkScore: { not: null } }, take: 1 })) > 0;
-      return csvStreamResponse<CrawlPageRow>({
+      return await crawlCsvResponse<CrawlPageRow>({
         columns: withSegmentColumn([...pageColumns(searches.map((s) => s.name)), ...(scored ? [LINK_SCORE_COLUMN] : []), ...metricCsvColumns(sources)], segment.defs, (r) => r.segmentIds),
         filename: csvFilename("site-crawler-pages"),
         cursorOf: (row) => row.id,
@@ -243,7 +244,7 @@ export async function GET(
               metrics: { select: { source: true, data: true } },
             },
           }),
-      });
+      }, { tenantId: tenant.tenantId, crawlId: crawl.id, type: "pages", request });
     }
 
     // Paging. `cursor` (Pages view): a keyset after that row for the default

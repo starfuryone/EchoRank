@@ -13,7 +13,8 @@ import { NextResponse } from "next/server";
 import { requirePaidPlan } from "@/lib/paid-plan";
 import { prisma } from "@/lib/prisma";
 import { csvFilename } from "@/lib/csv-export";
-import { csvStreamResponse, wantsCsv } from "@/lib/csv-stream";
+import { wantsCsv } from "@/lib/csv-stream";
+import { crawlCsvResponse } from "@/lib/site-crawler/export-store";
 import { archivedGuard, crawlRouteError } from "@/lib/site-crawler/http";
 import { DATA_STATE_SELECT } from "@/lib/site-crawler/data-state";
 import { INLINK_COLUMNS, type InlinkRow } from "@/lib/site-crawler/csv-columns";
@@ -44,12 +45,12 @@ export async function GET(
 
     const url = new URL(request.url);
     if (wantsCsv(url)) {
-      return csvStreamResponse<InlinkRow>({
+      return await crawlCsvResponse<InlinkRow>({
         columns: INLINK_COLUMNS,
         filename: csvFilename("site-crawler-inlinks"),
         cursorOf: (row) => row.id,
         fetchPage: (cursor, take) => inlinksPage(page.crawlJobId, page.id, cursor, take),
-      });
+      }, { tenantId: tenant.tenantId, crawlId: page.crawlJobId, type: "inlinks", request, extra: { pageId: page.id } });
     }
 
     const cursor = url.searchParams.get("cursor");
