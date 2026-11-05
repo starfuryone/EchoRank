@@ -2,8 +2,9 @@
 //
 // tests/nosy-bat-logo.test.tsx — the Nosy Bat v3 wordmark and emblem
 // (public/nosy-bat/v3/):
-//   - the files are there: the wordmark SVGs at viewBox 0 0 2172 724 (3:1), the
-//     emblem SVGs with a square viewBox, the PNGs at their stated sizes;
+//   - the files are there: the wordmark SVGs at viewBox 195 218 1915 266 (cropped
+//     to the glyphs, ~7.2:1), the emblem SVGs with a square viewBox, the PNGs
+//     at their stated sizes and the wordmarks' ratio;
 //   - the old marks and the v2 raster folder are gone and nothing references
 //     them (app code, scripts, tests, the sidecar's PDF code);
 //   - every CRAWLER_BRAND asset field is a plain string path (or the two
@@ -43,7 +44,7 @@ import { logoHeader, scheduleEmail } from "@/lib/site-crawler/schedule-email";
 const ROOT = join(__dirname, "..");
 const SIDECAR = "/opt/echorank/av-service";
 const V3 = join(ROOT, "public/nosy-bat/v3");
-const DELETED = ["nosy-bat-mark.svg", "nosy-bat-mark-on-dark.svg", "nosy-bat/v2"];
+const DELETED = ["nosy-bat-mark.svg", "nosy-bat-mark-on-dark.svg", "nosy-bat-mark-512.png", "nosy-bat/v2"];
 const LOCALES = ["en", "fr", "de-CH"] as const;
 
 function walk(dir: string, exts: RegExp, out: string[] = []): string[] {
@@ -72,12 +73,13 @@ function viewBox(publicPath: string): number[] {
 }
 
 describe("the v3 files", () => {
-  it("the three wordmark SVGs are 2172x724 (3:1)", () => {
+  it("the three wordmark SVGs are cropped to the glyphs: viewBox 195 218 1915 266 (~7.2:1)", () => {
     for (const f of [CRAWLER_BRAND.logo, CRAWLER_BRAND.logoOnDark, CRAWLER_BRAND.logoOnDarkAccent]) {
-      expect(viewBox(f)).toEqual([0, 0, 2172, 724]);
+      expect(viewBox(f)).toEqual([195, 218, 1915, 266]);
     }
-    expect([CRAWLER_BRAND.logoWidth, CRAWLER_BRAND.logoHeight]).toEqual([2172, 724]);
-    expect(logoWidthAt(30)).toBe(90);
+    expect([CRAWLER_BRAND.logoWidth, CRAWLER_BRAND.logoHeight]).toEqual([1915, 266]);
+    expect(CRAWLER_BRAND.logoWidth / CRAWLER_BRAND.logoHeight).toBeCloseTo(7.2, 1);
+    expect(logoWidthAt(30)).toBe(216);
   });
 
   it("the emblem SVGs have a square viewBox; the mask one fills with currentColor", () => {
@@ -92,7 +94,7 @@ describe("the v3 files", () => {
 
   it("the PNGs are at their stated sizes", () => {
     for (const v of ["nosy-bat-logo", "nosy-bat-logo-on-dark", "nosy-bat-logo-on-dark-teal"]) {
-      for (const w of [240, 480, 800, 1200]) expect(pngSize(join(V3, `${v}-${w}.png`))).toEqual([w, Math.round(w / 3)]);
+      for (const w of [240, 480, 800, 1200]) expect(pngSize(join(V3, `${v}-${w}.png`))).toEqual([w, Math.round((w * 266) / 1915)]);
     }
     for (const s of [512, 64, 32, 20]) expect(pngSize(join(V3, `nosy-bat-emblem-${s}.png`))).toEqual([s, s]);
     expect(CRAWLER_BRAND.favicon).toBe("/nosy-bat/v3/nosy-bat-emblem-32.png");
@@ -110,7 +112,7 @@ describe("the v3 files", () => {
 
 describe("the deleted files", () => {
   it("are gone", () => {
-    for (const f of ["nosy-bat-mark.svg", "nosy-bat-mark-on-dark.svg", "v2"]) expect(existsSync(join(ROOT, "public/nosy-bat", f))).toBe(false);
+    for (const f of ["nosy-bat-mark.svg", "nosy-bat-mark-on-dark.svg", "nosy-bat-mark-512.png", "v2"]) expect(existsSync(join(ROOT, "public/nosy-bat", f))).toBe(false);
   });
 
   it("are referenced by no code: src, scripts, tests, the sidecar", () => {
@@ -149,7 +151,7 @@ function checkImg(img: Element | null, src: string, height: number) {
   expect(img).not.toBeNull();
   expect(img!.tagName).toBe("IMG");
   expect(img!.getAttribute("src")).toBe(src);
-  expect([img!.getAttribute("width"), img!.getAttribute("height")]).toEqual([String(height * 3), String(height)]);
+  expect([img!.getAttribute("width"), img!.getAttribute("height")]).toEqual([String(logoWidthAt(height)), String(height)]);
 }
 
 let el: HTMLDivElement;
@@ -171,7 +173,7 @@ afterEach(() => {
 describe.each(LOCALES)("%s", (l) => {
   const t = SITE_CRAWLER_COPY[l];
 
-  it("top bar on /crawler/*: the teal logo, 30 px high and 90 wide (alt = the name), then the byline text", async () => {
+  it("top bar on /crawler/*: the teal logo, 30 px high and 216 wide (alt = the name), then the byline text", async () => {
     nav.pathname = "/crawler/abc";
     await act(async () => root.render(createElement(Header, { title: CRAWLER_BRAND.name, byline: t.byline, locale: l })));
     const img = el.querySelector("header h1 img");
@@ -237,7 +239,7 @@ describe.each(LOCALES)("%s", (l) => {
 
   it("schedule email: the 800 px PNG, absolute, shown 240 px wide, the byline as text", () => {
     const m = scheduleEmail({ locale: l, host: "x.com", crawlJobId: "j", pagesCrawled: 3, issues: { ERROR: 0, WARNING: 0, NOTICE: 0 }, comparison: null });
-    expect(m.html).toContain(`<img src="${CRAWLER_BRAND.logoEmail}" width="240" height="80" alt="${CRAWLER_BRAND.name}"`);
+    expect(m.html).toContain(`<img src="${CRAWLER_BRAND.logoEmail}" width="240" height="33" alt="${CRAWLER_BRAND.name}"`);
     expect(m.html.indexOf("<img")).toBeLessThan(m.html.indexOf("x.com"));
     expect(logoHeader("by")).toMatch(/<p[^>]*>by<\/p>$/);
   });

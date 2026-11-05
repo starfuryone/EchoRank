@@ -69,7 +69,7 @@ export function Header({
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-gray-200 bg-white px-4 sm:px-6">
-      <div className="flex items-center gap-3">
+      <div className="flex min-w-0 items-center gap-3">
         {/* Mobile menu toggle */}
         <button
           type="button"
@@ -81,9 +81,12 @@ export function Header({
         </button>
 
         {crawler ? (
-          <h1 className="flex items-center gap-2 text-lg font-semibold text-gray-900 sm:text-xl">
-            <NosyBatLogo height={30} alt={title} className="shrink-0" testId="topbar-logo" />
-            {byline && <span className="text-xs font-normal text-gray-500">{byline}</span>}
+          // 30 px high (216 wide) with the byline beside it from sm up; on a phone
+          // the two do not fit beside the bell and avatar, so the logo shrinks to
+          // the room left (ratio kept) and the byline sits under it.
+          <h1 className="flex min-w-0 flex-col items-start gap-0.5 text-lg font-semibold text-gray-900 sm:flex-row sm:items-center sm:gap-2 sm:text-xl">
+            <NosyBatLogo height={30} alt={title} className="min-w-0 sm:shrink-0" testId="topbar-logo" />
+            {byline && <span className="whitespace-nowrap text-xs font-normal leading-none text-gray-500 sm:leading-normal">{byline}</span>}
           </h1>
         ) : (
           <h1 className="text-lg font-semibold text-gray-900 sm:text-xl">

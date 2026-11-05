@@ -4,9 +4,10 @@
 //   node scripts/gen-og-nosy-bat.mjs
 //
 // The v3 wordmark in white (public/nosy-bat/v3/nosy-bat-logo-on-dark.svg,
-// viewBox 2172x724), rasterised as-is from the SVG at 720x240 — no edited
-// paths or colours — on the dark #181A20 background, with the byline set as
-// text beside it (the byline is never part of the artwork). Rasterised with
+// viewBox 195 218 1915 266, cropped to the glyphs), rasterised as-is from the
+// SVG 640 px wide — no edited paths or colours — on the dark #181A20
+// background, with the byline set as text beside it (the byline is never part
+// of the artwork). Rasterised with
 // sharp, an existing Next dependency, like the sibling gen-og-*.mjs scripts.
 // The byline uses the box's sans (DejaVu Sans here), so rerunning on another
 // machine can shift the type slightly. Run once and commit the PNG; rerun when
@@ -27,13 +28,13 @@ const BYLINE = ["crawler by", "Echorank"];
 
 const dir = path.join(path.dirname(fileURLToPath(import.meta.url)), "..", "public", "nosy-bat");
 const svg = await readFile(path.join(dir, "v3", "nosy-bat-logo-on-dark.svg"));
-if (!svg.includes('viewBox="0 0 2172 724"')) throw new Error("expected the 2172x724 wordmark");
+if (!svg.includes('viewBox="195 218 1915 266"')) throw new Error("expected the 1915x266 wordmark");
 
-const LW = 720;
-const LH = 240;
-const logo = await sharp(svg, { density: 96 * (LW / 2172) * 4 }).resize(LW, LH).png().toBuffer();
+const LW = 640;
+const LH = Math.round((LW * 266) / 1915);
+const logo = await sharp(svg, { density: Math.ceil((72 * LW * 2) / 1915) }).resize(LW, LH, { fit: "fill" }).png().toBuffer();
 
-const LEFT = 70;
+const LEFT = 90;
 const TOP = Math.round((H - LH) / 2);
 const TX = LEFT + LW + 44;
 const byline = Buffer.from(

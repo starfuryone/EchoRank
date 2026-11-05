@@ -71,7 +71,7 @@ describe.each(["en", "fr", "de-CH"] as const)("/crawler (%s)", (l) => {
     const logo = found[0]!;
     expect(logo.tagName).toBe("IMG");
     expect(logo.getAttribute("alt")).toBe(CRAWLER_BRAND.name);
-    expect([logo.getAttribute("width"), logo.getAttribute("height")]).toEqual(["90", "30"]);
+    expect([logo.getAttribute("width"), logo.getAttribute("height")]).toEqual(["216", "30"]);
     expect(logo.getAttribute("src")).toBe(CRAWLER_BRAND.logo);
     const h1 = logo.closest("h1")!;
     expect(h1.closest("header")).not.toBeNull();

@@ -120,7 +120,7 @@ const EMAIL_LOGO_W = 240;
 
 /**
  * The email's header: the teal logo as an 800 px PNG (email clients do not
- * all render SVG), shown 240 px wide at 3:1, and the byline as text under it.
+ * all render SVG), shown 240 px wide at its ratio, and the byline as text under it.
  */
 export function logoHeader(byline: string): string {
   const h = Math.round((EMAIL_LOGO_W * CRAWLER_BRAND.logoHeight) / CRAWLER_BRAND.logoWidth);

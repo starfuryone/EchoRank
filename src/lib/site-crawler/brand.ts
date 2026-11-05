@@ -16,15 +16,20 @@ const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://echorank360.com";
 const V3 = "/nosy-bat/v3";
 
 // The v3 wordmark and emblem (public/nosy-bat/v3/) are final SVGs: used as-is
-// at any size, never with edited paths, colours or ™. Every <img> of the logo
-// carries the 2172:724 (3:1) ratio as width/height. The byline is always text
+// at any size, never with edited paths, colours or ™. The wordmarks' viewBox is
+// cropped to the glyphs (195 218 1915 266: their box plus ~15 units each side),
+// so every <img> of the logo carries 1915:266 (~7.2:1) as width/height. The
+// PNGs are rendered from these files (scripts/gen-nosy-bat-pngs.mjs). The byline is always text
 // beside or under it, never in an image.
 
 /** The teal of the light-background logo and emblem (their fill). */
 export const NOSY_BAT_TEAL = "#027453";
 
-/** The logo's width at `height` px (3:1). */
-export const logoWidthAt = (height: number) => Math.round((height * 2172) / 724);
+const LOGO_W = 1915;
+const LOGO_H = 266;
+
+/** The logo's width at `height` px (1915:266). */
+export const logoWidthAt = (height: number) => Math.round((height * LOGO_W) / LOGO_H);
 
 export const CRAWLER_BRAND = {
   name: "Nosy Bat",
@@ -48,7 +53,7 @@ export const CRAWLER_BRAND = {
   logoEmail: `${SITE}${V3}/nosy-bat-logo-800.png`,
   /** The PDF cover: the same PNG. The sidecar reads it from disk (AV_CRAWLER_LOCKUP_PATH). */
   logoPdf: `${SITE}${V3}/nosy-bat-logo-800.png`,
-  logoWidth: 2172,
-  logoHeight: 724,
+  logoWidth: LOGO_W,
+  logoHeight: LOGO_H,
   ua: "Echorank360Bot/2.0 (Nosy Bat; +https://echorank360.com/bot)",
 } as const;

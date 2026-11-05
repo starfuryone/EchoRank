@@ -1,5 +1,5 @@
 // <NosyBatLogo> — the crawler brand's v3 wordmark as an <img> of the SVG, used
-// as-is, with explicit width and height at 3:1 so nothing shifts while it loads.
+// as-is, with explicit width and height at 1915:266 so nothing shifts while it loads.
 //
 // No hooks and no server imports, so Server and Client Components both use it.
 // `tone` picks the file: "light" (teal, light backgrounds), "dark" (white),
@@ -21,7 +21,7 @@ export function NosyBatLogo({
   className,
   testId,
 }: {
-  /** Rendered height in CSS px; the width is 3x. */
+  /** Rendered height in CSS px; the width follows (logoWidthAt). */
   height: number;
   /** Accessible name; "" makes it decorative (aria-hidden). */
   alt: string;
