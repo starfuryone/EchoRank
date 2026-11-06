@@ -45,9 +45,9 @@ describe("the Claude tracking model", () => {
 
   it("is what the keyword-opportunity AI test asks and meters", () => {
     const src = read(join(APP, "src/lib/keyword-opportunity/runner.ts"));
-    const answerCall = src.slice(src.indexOf('purpose: "answer"') - 200, src.indexOf("promptText: prompt.text"));
-    expect(answerCall).toContain("model: TRACKING_CLAUDE_MODEL");
-    expect(answerCall).not.toContain("JSON_CALL_MODEL");
+    expect(src).toContain('{ provider: "CLAUDE", model: TRACKING_CLAUDE_MODEL, purpose: "answer" }');
+    expect(src).toMatch(/askEngine\(\{\s*provider: "CLAUDE",\s*model: TRACKING_CLAUDE_MODEL,/);
+    expect(src).not.toMatch(/model: JSON_CALL_MODEL, purpose: "answer"/);
   });
 
   it("is what the sidecar's answer_track.py pins, with the same cap", () => {

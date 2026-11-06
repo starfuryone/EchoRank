@@ -42,6 +42,7 @@ import { AiCapReachedError, meteredAiCall } from "@/lib/ai-monitor/metering";
 import { JSON_CALL_MODEL } from "@/lib/ai-monitor/json-call";
 import { TRACKING_CLAUDE_MODEL } from "@/ai/anthropic-request";
 import { askEngine } from "@/lib/ai-monitor/runner/providers";
+import { askShared } from "@/lib/ai-monitor/runner/shared-answers";
 import { analyzeResponse } from "@/lib/ai-monitor/analysis/analyze-response";
 import { costUsdFor } from "@/lib/ai-monitor/pricing";
 import {
@@ -340,21 +341,40 @@ export async function runAnalysis(analysisId: string): Promise<RunSummary> {
           // The answer is a TRACKING answer, on the one Claude tracking model
           // (it ran on the JSON-call model until 2026-11-06, so a domain
           // analysed before then saw Haiku 4.5's answer).
-          const answer = await meteredAiCall(
-            ctx,
-            { provider: "CLAUDE", model: TRACKING_CLAUDE_MODEL, purpose: "answer" },
-            async () => {
-              const asked = await askEngine({
-                provider: "CLAUDE",
-                model: TRACKING_CLAUDE_MODEL,
-                promptText: prompt.text,
-              });
-              return {
-                value: asked,
-                usage: { inputTokens: asked.inputTokens, outputTokens: asked.outputTokens },
-                model: asked.model,
-              };
+          // Through the shared answer cache: the same request as the tracker's
+          // Claude answer, so a question either asked today is not paid twice.
+          // A hit has zero tokens, so the cost line below adds nothing.
+          const brandContext = {
+            brand: brand.name,
+            domain: analysis.domain,
+            brandVariations: brand.aliases,
+            competitors: brand.competitors,
+          };
+          const { result: answer } = await askShared(
+            {
+              provider: "CLAUDE",
+              model: TRACKING_CLAUDE_MODEL,
+              promptText: prompt.text,
+              repetition: 1,
+              brand: brandContext,
             },
+            () =>
+              meteredAiCall(
+                ctx,
+                { provider: "CLAUDE", model: TRACKING_CLAUDE_MODEL, purpose: "answer" },
+                async () => {
+                  const asked = await askEngine({
+                    provider: "CLAUDE",
+                    model: TRACKING_CLAUDE_MODEL,
+                    promptText: prompt.text,
+                  });
+                  return {
+                    value: asked,
+                    usage: { inputTokens: asked.inputTokens, outputTokens: asked.outputTokens },
+                    model: asked.model,
+                  };
+                },
+              ),
           );
 
           aiCost += costUsdFor("CLAUDE", answer.model, {

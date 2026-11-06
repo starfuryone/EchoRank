@@ -125,6 +125,22 @@ system prompts still differ between the tracker and the sidecar. Claude has no w
 so the catalogue no longer claims citations for it (its citation score shows as not
 measurable).
 
+### Shared answer cache
+
+`src/lib/answer-cache.ts`: one engine answer per question per UTC day, shared across
+tenants and runs, in Redis (`echorank:answer-cache:v1:<day>:<hash>`, NX, expires an hour
+after the day ends). The key is the normalized prompt + engine + model + request profile
+(system prompt, tools, cap) + location sent + repetition + day; the value is the answer,
+sources and model, never a tenant. Prompts naming the brand, an alias, the domain or a
+competitor are asked fresh. Users: the scheduled tracker and keyword-opportunity test
+(`runner/shared-answers.ts`, same request profile, so they share) and the free check
+(`snapshot/job.ts`, its own profile; its 8 generic prompts share between visitors, the 2
+direct ones never). The sidecar's tracked prompts are not routed through it. A hit makes
+no call and meters nothing; analysis stays per brand. Fails open. Daily counters at
+`echorank:answer-cache:v1:stats:<day>:{hit,miss,skip}`; expected rate from today's prompts:
+`NODE_OPTIONS=--conditions=react-server npx tsx scripts/answer-cache-hit-rate.ts` (as
+echorank, read-only).
+
 ### AI Search monitor engines (the scheduled tracker)
 
 Adapters: **Claude** (SDK), **ChatGPT** and **Gemini** (direct HTTP,

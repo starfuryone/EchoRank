@@ -102,6 +102,8 @@ export interface Answer {
   sourceUrls: string[];
   usage: Usage;
   model: string;
+  /** Read from the shared answer cache (src/lib/answer-cache.ts): no call was made, nothing was spent. */
+  shared?: boolean;
 }
 
 const OPENAI_URL = () => process.env.OPENAI_BASE_URL ?? "https://api.openai.com/v1";

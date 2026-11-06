@@ -27,6 +27,7 @@ import { checkAiCap, meteredAiCall } from "../metering";
 import { persistRunAnalysis, writeVisibilityMetrics } from "../metrics-store";
 import type { AiProvider } from "../pricing";
 import { askEngine } from "./providers";
+import { askShared } from "./shared-answers";
 import { answerHash, normalizeAnswer } from "./normalize";
 import { slotKey, type RunSlot } from "./plan";
 import { scoredRunFromPersisted } from "./salvage";
@@ -52,33 +53,47 @@ export function prismaPorts(ctx: PortContext): RunnerPorts {
       // they are separately priced and separately attributable — a tenant
       // asking about the cost of a checkup wants the split, and the ledger is
       // the only place it exists.
-      const result = await meteredAiCall(
-        { tenantId: ctx.tenantId, plan: ctx.plan },
+      //
+      // SHARED FIRST (./shared-answers.ts): a brand-independent question this
+      // engine already answered today, for anyone, is read back instead of
+      // asked — no call, nothing metered. Analysis below is still this brand's.
+      const { result } = await askShared(
         {
-          provider: slot.engine as AiProvider,
+          provider: slot.engine,
           model: slot.model,
-          purpose: "answer",
-          checkupId: ctx.checkupId,
+          promptText: slot.promptText,
+          repetition: slot.repetition,
+          brand: ctx.brand,
         },
-        async () => {
-          const answer = await askEngine({
-            provider: slot.engine,
-            model: slot.model,
-            promptText: slot.promptText,
-            tenantId: ctx.tenantId,
-          });
-          return {
-            value: answer,
-            usage: {
-              inputTokens: answer.inputTokens,
-              outputTokens: answer.outputTokens,
-              searchCalls: answer.searchCalls ?? 0,
+        () =>
+          meteredAiCall(
+            { tenantId: ctx.tenantId, plan: ctx.plan },
+            {
+              provider: slot.engine as AiProvider,
+              model: slot.model,
+              purpose: "answer",
+              checkupId: ctx.checkupId,
             },
-            model: answer.model,
-            // Google AI Overviews: DataForSEO's billed figure (token-free).
-            costUsd: answer.costUsd,
-          };
-        },
+            async () => {
+              const answer = await askEngine({
+                provider: slot.engine,
+                model: slot.model,
+                promptText: slot.promptText,
+                tenantId: ctx.tenantId,
+              });
+              return {
+                value: answer,
+                usage: {
+                  inputTokens: answer.inputTokens,
+                  outputTokens: answer.outputTokens,
+                  searchCalls: answer.searchCalls ?? 0,
+                },
+                model: answer.model,
+                // Google AI Overviews: DataForSEO's billed figure (token-free).
+                costUsd: answer.costUsd,
+              };
+            },
+          ),
       );
 
       // Metered first, refused second: an empty answer was still billed, but

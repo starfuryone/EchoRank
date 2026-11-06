@@ -197,7 +197,8 @@ export async function runSnapshot(spec: SnapshotSpec, deps: RunDeps): Promise<Ru
     } else {
       try {
         const a = await deps.ask(cfg, spec.prompts[i].text);
-        const cost = deps.cost(cfg.engine, cfg.model, a.usage, true);
+        // A shared answer was asked (and paid for) earlier today; this run spent nothing.
+        const cost = a.shared ? 0 : deps.cost(cfg.engine, cfg.model, a.usage, true);
         budget.settle(est, cost);
         const citedDomains = domainsOf(a.sourceUrls);
         row = {
