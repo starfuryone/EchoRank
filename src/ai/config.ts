@@ -25,13 +25,9 @@ export interface AnalysisTypeConfig {
   timeoutMs: number;
 }
 
+// Sentiment is not here: it matches topic names itself and asks the house
+// Claude model only for the tone (src/ai/pipelines/sentiment.ts).
 export const ANALYSIS_TYPE_CONFIG: Record<string, AnalysisTypeConfig> = {
-  sentiment: {
-    temperature: 0.1,
-    maxTokens: 512,
-    modelId: AI_MODELS.FAST,
-    timeoutMs: 10_000,
-  },
   escalation: {
     temperature: 0.2,
     maxTokens: 768,

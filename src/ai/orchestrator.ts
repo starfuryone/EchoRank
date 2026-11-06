@@ -6,7 +6,6 @@ import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@/generated/prisma";
 import {
   AI_FEATURE_FLAGS,
-  ANALYSIS_TYPE_CONFIG,
   BATCH_CONFIG,
   ESCALATION_THRESHOLDS,
   estimateCost,
@@ -160,7 +159,6 @@ export class AiOrchestrator {
             rating,
             source: "feedback",
           },
-          ANALYSIS_TYPE_CONFIG.sentiment.modelId,
         ),
         // 3. Intent detection
         this.intentPipeline.detect(content),
@@ -324,7 +322,6 @@ export class AiOrchestrator {
             rating,
             source: review.source.platform,
           },
-          ANALYSIS_TYPE_CONFIG.sentiment.modelId,
         ),
         this.intentPipeline.detect(content),
         this.extractEntities(content),

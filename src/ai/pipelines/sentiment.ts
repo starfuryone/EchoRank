@@ -2,13 +2,36 @@
 // Sentiment Analysis Pipeline
 // ---------------------------------------------------------------------------
 
-import { sentimentAnalysis } from "@/ai/prompts/templates";
-import {
-  AI_FEATURE_FLAGS,
-  ANALYSIS_TYPE_CONFIG,
-  CONFIDENCE_THRESHOLDS,
-} from "@/ai/config";
-import { getProvider } from "@/ai/providers/registry";
+//
+// NAME MATCHING FIRST, THE MODEL ONLY FOR TONE. Topics are found by matching
+// topic names in the text (TOPIC_PATTERNS) — free, deterministic, and the same
+// answer every time. The model is asked only for the tone (label, score,
+// emotions, confidence), which a word list judges badly ("not bad at all").
+//
+// ON THE HOUSE CLAUDE MODEL, PINNED. Not through src/ai/providers/registry.ts,
+// which picks OpenAI whenever OPENAI_API_KEY is set: this is one vendor's
+// model, decided (2026-11-06), not whichever key happens to be present. With
+// no ANTHROPIC_API_KEY the heuristic answers and nothing is metered.
+
+import { sentimentAnalysis, sentimentTone } from "@/ai/prompts/templates";
+import { AI_FEATURE_FLAGS, CONFIDENCE_THRESHOLDS } from "@/ai/config";
+import { HOUSE_CLAUDE_MODEL } from "@/ai/anthropic-request";
+import { AnthropicProvider } from "@/ai/providers/anthropic";
+import type { AiProvider } from "@/ai/providers/base";
+
+/** The model the tone call runs on. */
+export const SENTIMENT_MODEL = HOUSE_CLAUDE_MODEL;
+/** The tone object is ~60 tokens; this is the ceiling, in Haiku 4.5 tokens. */
+export const SENTIMENT_MAX_TOKENS = 200;
+
+/** The tone call's provider, or null when no key is configured. */
+function defaultToneProvider(): AiProvider | null {
+  try {
+    return new AnthropicProvider();
+  } catch {
+    return null; // no ANTHROPIC_API_KEY
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Types
@@ -202,6 +225,9 @@ const TOPIC_PATTERNS: Record<string, RegExp> = {
 // ---------------------------------------------------------------------------
 
 export class SentimentPipeline {
+  /** Injectable for tests; the default reads ANTHROPIC_API_KEY. */
+  constructor(private readonly toneProvider: () => AiProvider | null = defaultToneProvider) {}
+
   /**
    * Analyse the sentiment of text content. Uses the mock AI inference and
    * falls back to keyword heuristics if parsing fails.
@@ -322,43 +348,37 @@ export class SentimentPipeline {
   // -----------------------------------------------------------------------
 
   /**
-   * Analyse sentiment using a real LLM provider when available, returning the
-   * provider's real token usage and the model that actually ran. When the
-   * active provider is the mock engine (or AI is disabled), `usage` is null so
-   * callers know not to meter or cost the call.
-   *
-   * The `modelId` override is passed through to the provider so the
-   * analysis-specific model configuration is honored (e.g. the fast model for
-   * sentiment). Providers ignore overrides that don't apply to them.
+   * Topics by name matching, then the tone from the house Claude model,
+   * returning the real token usage and the model that ran. With no key (or AI
+   * disabled) `usage` is null so callers know not to meter or cost the call.
    */
   async analyzeWithUsage(
     content: string,
     context?: { customerName?: string; rating?: number; source?: string },
-    modelId?: string,
   ): Promise<SentimentInference> {
+    // Name matching first: the topics (and the fallback tone) cost nothing.
     const heuristic = this.heuristicAnalysis(content, context?.rating);
 
     if (!AI_FEATURE_FLAGS.ENABLED || !AI_FEATURE_FLAGS.SENTIMENT_ANALYSIS) {
       return { result: heuristic, usage: null };
     }
 
-    const provider = getProvider();
+    const provider = this.toneProvider();
 
-    // Mock provider: keep the content-aware heuristic, report no usage/cost.
-    if (provider.isMock) {
+    // No key: keep the content-aware heuristic, report no usage/cost.
+    if (!provider || provider.isMock) {
       return { result: this.mockInference(content, context?.rating), usage: null };
     }
 
-    const prompt = sentimentAnalysis(content, context);
+    const prompt = sentimentTone(content, { rating: context?.rating, source: context?.source });
 
     try {
       const inference = await provider.infer({
         systemPrompt: prompt.system,
         userPrompt: prompt.user,
-        temperature: ANALYSIS_TYPE_CONFIG.sentiment.temperature,
-        maxTokens: ANALYSIS_TYPE_CONFIG.sentiment.maxTokens,
+        maxTokens: SENTIMENT_MAX_TOKENS,
         responseFormat: "json",
-        modelId,
+        modelId: SENTIMENT_MODEL,
       });
 
       // Real tokens were spent regardless of whether the body parses cleanly.
@@ -368,8 +388,8 @@ export class SentimentPipeline {
         modelId: inference.modelId,
       };
 
-      const parsed = this.parseLlmResult(inference.content);
-      return { result: parsed ?? heuristic, usage };
+      const tone = this.parseTone(inference.content);
+      return { result: tone ? { ...tone, topics: heuristic.topics } : heuristic, usage };
     } catch (err) {
       console.warn(
         "[SentimentPipeline] LLM inference failed, falling back to heuristic:",
@@ -380,13 +400,17 @@ export class SentimentPipeline {
   }
 
   /**
-   * Parse and validate a JSON sentiment response from an LLM. Returns null
-   * when the payload is malformed so the caller can fall back to a heuristic.
+   * Parse and validate the tone object. Returns null when the payload is
+   * malformed so the caller can fall back to the heuristic. A ```json fence or
+   * a sentence around the object is tolerated; topics are not read from it.
    */
-  private parseLlmResult(raw: string): SentimentResult | null {
+  parseTone(raw: string): Omit<SentimentResult, "topics"> | null {
+    const start = raw.indexOf("{");
+    const end = raw.lastIndexOf("}");
+    if (start === -1 || end <= start) return null;
     let parsed: Record<string, unknown>;
     try {
-      parsed = JSON.parse(raw);
+      parsed = JSON.parse(raw.slice(start, end + 1));
     } catch {
       return null;
     }
@@ -395,7 +419,6 @@ export class SentimentPipeline {
       typeof parsed.label !== "string" ||
       typeof parsed.score !== "number" ||
       !Array.isArray(parsed.emotions) ||
-      !Array.isArray(parsed.topics) ||
       typeof parsed.confidence !== "number"
     ) {
       return null;
@@ -414,9 +437,6 @@ export class SentimentPipeline {
       score: Math.round(score * 100) / 100,
       emotions: (parsed.emotions as unknown[]).filter(
         (e): e is string => typeof e === "string",
-      ),
-      topics: (parsed.topics as unknown[]).filter(
-        (t): t is string => typeof t === "string",
       ),
       confidence: Math.round(confidence * 100) / 100,
     };

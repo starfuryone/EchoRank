@@ -8,12 +8,11 @@ import { houseClaudeControls } from "../anthropic-request";
 // House policy: claude-haiku-5-5 for every Anthropic call that is not a
 // tracking answer (tests/model-policy.test.ts).
 //
-// This is a LIVE path, not the dead fallback it looks like. registry.ts picks
-// OpenAI first, but OPENAI_API_KEY is set to the empty string on this box —
-// falsy — so the registry falls through to this provider, and the sentiment
-// pipeline (orchestrator -> /api/ai/analyze) reaches Anthropic through it. It
-// was running Sonnet at ~5x Haiku's input price and ~3x its output price for
-// classification work Haiku does fine.
+// This is a LIVE path: the AI monitor's analysis and JSON calls, the tracker's
+// Claude answer and the sentiment pipeline's tone call (orchestrator ->
+// /api/ai/analyze) all construct it directly. The sentiment pipeline used to
+// reach it through registry.ts, which picks OpenAI whenever OPENAI_API_KEY is
+// set; it no longer goes through the registry (2026-11-06).
 //
 // ANTHROPIC_MODEL still overrides, for a one-off experiment. Nothing sets it.
 const DEFAULT_MODEL = "claude-haiku-5-5";
