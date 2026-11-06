@@ -195,6 +195,14 @@ export const SERP = {
    * unmetered getEndpoint() on purpose.
    */
   organicTaskGet: "v3/serp/google/organic/task_get/advanced",
+  /**
+   * googleOrganicLiveAdvanced — one synchronous call. $0.002 per SERP of 10
+   * results, plus one more base price when `load_async_ai_overview` is set
+   * (refunded when there is no asynchronous AI Overview). dataforseo.com/
+   * pricing/serp/google-organic-serp-api, read 2026-11-06. The AI Search
+   * monitor's Google AI Overviews engine (ai-monitor/runner/aio-engine.ts).
+   */
+  organicLive: "v3/serp/google/organic/live/advanced",
   /** googleMapsLiveAdvanced */
   mapsLive: "v3/serp/google/maps/live/advanced",
   /** googleLocalFinderLiveAdvanced */

@@ -65,6 +65,7 @@ export function prismaPorts(ctx: PortContext): RunnerPorts {
             provider: slot.engine,
             model: slot.model,
             promptText: slot.promptText,
+            tenantId: ctx.tenantId,
           });
           return {
             value: answer,
@@ -74,6 +75,8 @@ export function prismaPorts(ctx: PortContext): RunnerPorts {
               searchCalls: answer.searchCalls ?? 0,
             },
             model: answer.model,
+            // Google AI Overviews: DataForSEO's billed figure (token-free).
+            costUsd: answer.costUsd,
           };
         },
       );
@@ -81,8 +84,10 @@ export function prismaPorts(ctx: PortContext): RunnerPorts {
       // Metered first, refused second: an empty answer was still billed, but
       // scoring "" would record "the engine did not mention the brand" — a
       // finding — for what is really a failed call. The runner marks it FAILED.
+      // Google AI Overviews says why ("Google showed no AI Overview for this
+      // prompt"): a SERP without one is not an answer that omits the brand.
       if (!result.answer.trim()) {
-        throw new Error(`${slot.engine} returned an empty answer`);
+        throw new Error(result.emptyReason ?? `${slot.engine} returned an empty answer`);
       }
 
       // Sources arrive only from engines that return them structurally

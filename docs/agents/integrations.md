@@ -128,8 +128,9 @@ measurable).
 ### AI Search monitor engines (the scheduled tracker)
 
 Adapters: **Claude** (SDK), **ChatGPT** and **Gemini** (direct HTTP,
-`src/lib/ai-monitor/runner/http-engines.ts`, reusing the free check's parsers). Every
-other catalogue engine refuses `no_adapter`. An engine runs only when it has a key, an
+`src/lib/ai-monitor/runner/http-engines.ts`, reusing the free check's parsers), and
+**Google AI Overviews** (DataForSEO, below). Every other catalogue engine refuses
+`no_adapter`. An engine runs only when it has a key, an
 adapter AND prices (`runner/providers.ts`, fail closed). ChatGPT and Gemini are
 search-billed, so they need two env lines each and **ship off** — setting them is the
 switch-on:
@@ -158,10 +159,25 @@ for Haiku 5.5's tokenizer, before thinking; worst = the whole 2,000-token cap).
 | Gemini `gemini-3.8-flash` (from 2027-01-01) | $0.023 | $0.049 | $0.70 |
 | Gemini `gemini-3.8-flash` (to 2026-12-31) | $0.019 | $0.039 | $0.57 |
 | Claude `claude-haiku-5-5`, no search ($0.10 / $0.50) | $0.0008 | $0.0014 | $0.025 |
+| Google AI Overviews (DataForSEO Live) | $0.0044 | $0.0044 | $0.13 |
 | alt: `gpt-5-mini` | $0.013 | $0.025 | $0.38 |
 | alt: `gemini-3.1-flash-lite` | $0.016 | $0.032 | $0.48 |
 
 The search fee alone ($0.010 / $0.014) is the larger half of a search-grounded check.
+
+**Google AI Overviews** (`runner/aio-engine.ts`): the prompt is searched on Google
+through DataForSEO's SERP API in Live mode (`v3/serp/google/organic/live/advanced`,
+depth 10, `load_async_ai_overview: true`, location `AI_AIO_LOCATION_CODE` default 2840 /
+`AI_AIO_LANGUAGE_CODE` default `en`); the overview is the answer and its references the
+sources. Cost is the envelope's own `cost`, metered as a SeoApiCall (DataForSEO cap) and
+carried on the AiProviderCall row (AI cap): $0.002 the SERP + $0.002 for the async
+overview, refunded when there is none (dataforseo.com/pricing/serp/google-organic-serp-api,
+read 2026-11-06). A SERP with no overview is a FAILED run ("Google showed no AI Overview
+for this prompt", $0.002), never scored as "not mentioned". Ships off:
+
+```
+AI_ENGINE_GOOGLE_AI_OVERVIEWS=on    # needs DATAFORSEO_LOGIN / DATAFORSEO_PASSWORD too
+```
 
 ## Email / SMS
 

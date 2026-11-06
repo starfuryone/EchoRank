@@ -57,7 +57,23 @@ export interface EngineRefusal {
  * flags all need them; that is a different question from whether this process
  * can send one a request.
  */
-export const ADAPTER_PROVIDERS: ReadonlySet<string> = new Set<string>(["CLAUDE", "CHATGPT", "GEMINI"]);
+export const ADAPTER_PROVIDERS: ReadonlySet<string> = new Set<string>([
+  "CLAUDE",
+  "CHATGPT",
+  "GEMINI",
+  "GOOGLE_AI_OVERVIEWS",
+]);
+
+/**
+ * Google AI Overviews' switch. Its cost is DataForSEO's own envelope figure, so
+ * there is no rate to withhold the way ChatGPT's and Gemini's are withheld; it
+ * ships off behind this line instead (runner/aio-engine.ts).
+ */
+export const AIO_ENABLE_ENV = "AI_ENGINE_GOOGLE_AI_OVERVIEWS";
+
+export function aioEnabled(env: NodeJS.ProcessEnv = process.env): boolean {
+  return env[AIO_ENABLE_ENV]?.trim().toLowerCase() === "on";
+}
 
 /**
  * Is this engine priced? Token-free providers carry their cost another way;
@@ -102,6 +118,13 @@ export function refusalFor(
       detail: "no adapter is implemented for this provider yet",
     };
   }
+  if (engine.provider === "GOOGLE_AI_OVERVIEWS" && !aioEnabled(env)) {
+    return {
+      provider: engine.provider,
+      reason: "missing_config",
+      detail: `set ${AIO_ENABLE_ENV}=on to enable this engine (DataForSEO Live, $0.002 to $0.004 a check)`,
+    };
+  }
   if (!isPriced(engine, env)) {
     return {
       provider: engine.provider,
@@ -134,6 +157,11 @@ export interface AskRequest {
   provider: string;
   model: string;
   promptText: string;
+  /**
+   * The tenant the call is for. Google AI Overviews needs it: its DataForSEO
+   * call is metered against the tenant's DataForSEO cap as well.
+   */
+  tenantId?: string;
 }
 
 export interface AskResult {
@@ -147,6 +175,10 @@ export interface AskResult {
   searchCalls?: number;
   /** Sources the engine returned structurally, when it does. */
   sources?: { url: string }[] | null;
+  /** USD, for an engine not billed per token (Google AI Overviews). */
+  costUsd?: number;
+  /** Why the answer is empty, when that is a finding rather than a fault. */
+  emptyReason?: string;
 }
 
 /**
@@ -174,6 +206,8 @@ export interface AskDeps {
   /** For the HTTP adapters (ChatGPT, Gemini). */
   fetch?: typeof fetch;
   env?: NodeJS.ProcessEnv;
+  /** For Google AI Overviews: the metered DataForSEO call. Default: bound to request.tenantId. */
+  serpCall?: import("./aio-engine").SerpCall;
 }
 
 /**
@@ -210,6 +244,29 @@ export async function askEngine(request: AskRequest, deps: AskDeps = {}): Promis
       latencyMs: clock() - startedAt,
       searchCalls: result.searchCalls,
       sources: result.sources,
+    };
+  }
+
+  if (request.provider === "GOOGLE_AI_OVERVIEWS") {
+    // Lazy for the same reason as http-engines: aio-engine is server-only.
+    const { askAiOverview, meteredSerpCall } = await import("./aio-engine");
+    const call =
+      deps.serpCall ??
+      (request.tenantId
+        ? meteredSerpCall(request.tenantId)
+        : (() => {
+            throw new Error("GOOGLE_AI_OVERVIEWS needs a tenantId to meter its DataForSEO call");
+          })());
+    const result = await askAiOverview(request.promptText, call, deps.env);
+    return {
+      answer: result.answer,
+      inputTokens: 0,
+      outputTokens: 0,
+      model: request.model,
+      latencyMs: clock() - startedAt,
+      sources: result.sources,
+      costUsd: result.costUsd,
+      emptyReason: result.emptyReason,
     };
   }
 
