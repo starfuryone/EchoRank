@@ -282,18 +282,32 @@
 .ronote{font-size:12px;color:var(--faint);border-top:1px solid var(--lineSoft);padding-top:14px;margin-top:6px}
 
 /* PRICING (compact, preserves #pricing anchor) */
-.priceGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:44px}
-@media(max-width:1000px){.priceGrid{grid-template-columns:1fr 1fr}}
-@media(max-width:560px){.priceGrid{grid-template-columns:1fr}}
+/* Three tracks: one per card tier (Enterprise has no card). Below 900 px the
+   cards stack — a 2-up grid with three cards leaves an orphan. */
+.priceGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:44px}
+@media(max-width:900px){.priceGrid{grid-template-columns:1fr}}
 /* Two-card variant, for the Watcher page's Free + Watcher pair. Composes the
    four-column grid and overrides only the track count, so gap and margin stay
    defined once — a second hand-written grid is how two pricing surfaces end up
    with different spacing. */
 .priceGrid2{composes:priceGrid;grid-template-columns:repeat(2,1fr);max-width:760px;margin-left:auto;margin-right:auto}
 @media(max-width:760px){.priceGrid2{grid-template-columns:1fr}}
-.price{composes:card;padding:22px 20px}
+.price{composes:card;padding:22px 20px;display:flex;flex-direction:column}
 .priceHi{composes:price;border-color:rgba(252,213,53,.45);box-shadow:0 0 50px -20px rgba(240,185,11,.35)}
+.pnameRow{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
 .pname{font-family:var(--mono);font-size:11px;letter-spacing:.12em;color:var(--faint);text-transform:uppercase}
+/* "Most popular": a gold FILL with --onGold text, per the fill/text rule. */
+.pbadge{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;
+  background:var(--goldGrad);color:var(--onGold);border-radius:999px;padding:3px 9px;font-weight:600}
+.ptrial{font-size:12.5px;color:var(--muted);margin:6px 0 16px}
+.pinherits{font-size:13px;font-weight:600;color:var(--text);margin:0 0 8px}
+/* The line list grows so every card's footer links sit at the same height. */
+.price ul{flex:1 0 auto;align-content:start}
+.pcompare{font-size:13px;color:var(--goldText);margin-top:10px;display:inline-block}
+.pcompare:hover{text-decoration:underline}
+.gridNotes{font-size:13px;color:var(--muted);margin-top:20px}
+.gridNotes a{color:var(--goldText)}
+.gridNotes a:hover{text-decoration:underline}
 .pamount{font-size:28px;font-weight:700;margin:10px 0 14px;letter-spacing:-.02em}
 .pamount span{font-size:13px;color:var(--faint);font-weight:500}
 .price ul{list-style:none;padding:0;margin:0;display:grid;gap:8px;font-size:13px;color:var(--muted)}

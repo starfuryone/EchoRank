@@ -1,33 +1,36 @@
 /**
  * @vitest-environment jsdom
  */
-// The pricing grid AS RENDERED, in both locales and both billing intervals.
+// The pricing grid AS RENDERED, in three locales and both billing intervals.
 //
-// The invariant suite (pricing-card-invariants.test.ts) proves the bullets are
-// derived from the right config fields. This one proves they survive the trip
-// to the DOM — that the real tier data, the real chrome and the real component
-// put the expected line-up on screen, that the monthly/annual toggle changes
-// only the price, and that the things this change was told not to disturb
-// (ConsentGate, the struck anchor price, the tools footer) are still there.
+// pricing-page.test.ts proves the headline lines are derived from the right
+// config fields. This one proves they survive the trip to the DOM — that the
+// real tier data, the real chrome and the real component put the expected
+// line-up on screen, that the monthly/yearly toggle changes only the price,
+// and that the furniture (ConsentGate, the struck anchor price, the tools
+// footer, the credits line) is still there.
 //
-// Rendered rather than asserted on source text because a card that renders
-// nothing still passes a grep.
+// EVERY EXPECTED NUMBER IS READ FROM CONFIG, never typed: a price change must
+// move these assertions with it, not fail them.
 
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { PricingSection } from "@/app/[locale]/PricingSection";
-import { pricingTiers } from "@/lib/pricing-tiers";
+import { pricingTiers, savePctOf } from "@/lib/pricing-tiers";
 import { HOME_PRICING_CHROME, toolCountLine } from "@/lib/i18n/content";
 import { seoToolCounts } from "@/lib/seo-tools";
-import { PLAN_CONFIGS } from "@/lib/plan-config";
+import { PLAN_CONFIGS, TRIAL_DAYS } from "@/lib/plan-config";
+import { CRAWLER_BRAND } from "@/lib/site-crawler/brand";
 import type { Locale } from "@/lib/i18n/config";
 
 vi.stubGlobal("fetch", vi.fn());
 afterEach(cleanup);
 
 const counts = seoToolCounts();
+const CARDS = ["STARTER", "GROWTH", "AGENCY"] as const;
+const en = (n: number) => n.toLocaleString("en-US");
 
-function renderGrid(locale: Locale) {
+function renderGrid(locale: Locale, extra: { compareHref?: string } = {}) {
   return render(
     <PricingSection
       locale={locale}
@@ -37,21 +40,42 @@ function renderGrid(locale: Locale) {
       tax="tax line"
       currency="currency line"
       header={null}
+      {...extra}
     />,
   );
 }
 
-/** The <div> for one tier, found by its uppercased name. */
-function card(name: string): HTMLElement {
-  const label = screen.getByText(`/ ${name}`);
-  return label.parentElement as HTMLElement;
+/** The card for one tier. */
+function card(plan: string): HTMLElement {
+  return document.querySelector(`[data-plan="${plan}"]`) as HTMLElement;
 }
 
 /** Every <li> in a card, as text. */
-function bullets(name: string): string[] {
-  return within(card(name))
+function bullets(plan: string): string[] {
+  return within(card(plan))
     .getAllByRole("listitem")
     .map((li) => li.textContent ?? "");
+}
+
+/** The English headline lines one tier would show on its own, from config. */
+function enLines(plan: (typeof CARDS)[number]): string[] {
+  const c = PLAN_CONFIGS[plan];
+  const locs = c.quotaDefaults.maxLocations;
+  const engines = c.aiCheckup.providers === null ? "all AI engines" : `${c.aiCheckup.providers} AI engines`;
+  const cadence = { weekly: "weekly", twice_weekly: "2×/week", daily: "daily" }[c.aiCheckup.frequency as "weekly"];
+  const crawls =
+    c.crawlsPerMonth === null
+      ? `Unlimited ${CRAWLER_BRAND.name} crawls, up to ${en(c.crawlUrlCap)} URLs each`
+      : `${en(c.crawlsPerMonth)} ${CRAWLER_BRAND.name} crawls/mo, up to ${en(c.crawlUrlCap)} URLs each`;
+  return [
+    `${en(locs)} location${locs === 1 ? "" : "s"}`,
+    `AI answer tracking across ${engines} (${cadence})`,
+    `${en(c.quotaDefaults.maxRequestsPerMonth)} feedback requests/month`,
+    `${en(c.seoSearchesPerMonth!)} SEO searches + ${en(c.trackedKeywords!)} tracked keywords`,
+    `${en(c.keywordOpportunityAnalysesPerMonth!)} domain analyses/mo`,
+    crawls,
+    plan === "STARTER" ? "Email support — 48h weekday response" : "Priority support — email, 24h weekday response",
+  ];
 }
 
 // ─── The line-ups, on screen ────────────────────────────────────────────────
@@ -65,144 +89,136 @@ describe("the rendered card line-ups", () => {
     expect(screen.queryByText("/ ENTERPRISE")).toBeNull();
   });
 
-  it("puts STARTER's whole line-up on screen, in order", () => {
+  it("STARTER lists its seven headline lines, in the spec's order", () => {
     renderGrid("en");
-    expect(bullets("STARTER")).toEqual([
-      "1 location",
-      "AI answer tracking across 2 AI engines (weekly)",
-      "AI Trust Score",
-      "Lost-recommendation alerts",
-      "500 feedback requests/month",
-      "Email review requests",
-      "250 SEO searches + 25 tracked keywords/mo",
-      "5 domain analyses/mo — 75+ AI-tested opportunities (AI Keyword Opportunity Finder)",
-      "Site crawls up to 2,500 URLs",
-      "Review authenticity verification",
-      "Email support — 48h weekday response",
-    ]);
+    expect(bullets("STARTER")).toEqual(enLines("STARTER"));
+    expect(card("STARTER").textContent).not.toContain("Everything in");
   });
 
-  it("puts GROWTH's whole line-up on screen, in order", () => {
+  it("GROWTH opens with 'Everything in Starter, plus:' and lists only what differs", () => {
     renderGrid("en");
-    expect(bullets("GROWTH")).toEqual([
-      "5 locations",
-      "AI answer tracking across 4 AI engines (2×/week)",
-      "5,000 feedback requests/month",
-      "Email + SMS channels",
-      "AI risk scoring & sentiment analysis",
-      "Recovery tickets & workflows",
-      "Escalation prediction",
-      "1,000 SEO searches + 100 tracked keywords/mo",
-      "25 domain analyses/mo",
-      "Site crawls up to 5,000 URLs",
-      "Advanced analytics",
-      "Priority support — email, 24h weekday response",
-    ]);
+    expect(within(card("GROWTH")).getByText("Everything in Starter, plus:")).toBeTruthy();
+    const starter = new Set(enLines("STARTER"));
+    expect(bullets("GROWTH")).toEqual(enLines("GROWTH").filter((l) => !starter.has(l)));
   });
 
-  it("puts AGENCY's whole line-up on screen, in order", () => {
+  it("AGENCY opens with 'Everything in Growth, plus:' and drops the shared support line", () => {
     renderGrid("en");
-    expect(bullets("AGENCY")).toEqual([
-      "25 locations",
-      "AI answer tracking across all AI engines (daily)",
-      "15,000 feedback requests/month",
-      "White-label dashboard",
-      "Client management",
-      "Custom domain support",
-      "Full API access",
-      "5,000 SEO searches + 500 tracked keywords/mo",
-      "55 domain analyses/mo",
-      "Site crawls up to 25,000 URLs",
-      "All AI features",
-      "Priority support — email, 24h weekday response",
-    ]);
-  });
-});
-
-// ─── French ─────────────────────────────────────────────────────────────────
-
-describe("the French grid", () => {
-  it("renders French bullets, not English ones", () => {
-    renderGrid("fr");
-    expect(bullets("STARTER")).toEqual([
-      "1 emplacement",
-      "Suivi des réponses IA sur 2 moteurs IA (hebdomadaire)",
-      "Score de confiance IA",
-      "Alertes de perte de recommandation",
-      "500 demandes de rétroaction/mois",
-      "Demandes d'avis par courriel",
-      "250 recherches SEO + 25 mots-clés suivis/mois",
-      "5 analyses de domaine/mois — plus de 75 occasions testées par IA (Détecteur d'occasions IA)",
-      "Analyses de site jusqu'à 2 500 URL",
-      "Vérification de l'authenticité des avis",
-      "Soutien par courriel — réponse en 48 h les jours ouvrables",
-    ]);
+    expect(within(card("AGENCY")).getByText("Everything in Growth, plus:")).toBeTruthy();
+    const growth = new Set(enLines("GROWTH"));
+    const lines = bullets("AGENCY");
+    expect(lines).toEqual(enLines("AGENCY").filter((l) => !growth.has(l)));
+    expect(lines.join(" ")).not.toContain("Priority support");
   });
 
-  it("carries no English bullet on any French card", () => {
-    renderGrid("fr");
-    const all = ["STARTER", "GROWTH", "AGENCY"].flatMap(bullets).join(" ");
-    for (const english of [
-      "location",
-      "feedback requests",
-      "SEO searches",
-      "Site crawls",
-      "support —",
-      "domain analyses",
-    ]) {
-      expect(all, `English "${english}" leaked onto a French card`).not.toContain(english);
+  it("every card carries six to eight headline entries (lines + the 'plus' heading)", () => {
+    renderGrid("en");
+    for (const plan of CARDS) {
+      const n = bullets(plan).length + (card(plan).textContent!.includes("Everything in") ? 1 : 0);
+      expect(n, plan).toBeGreaterThanOrEqual(6);
+      expect(n, plan).toBeLessThanOrEqual(8);
     }
   });
 
-  it("uses French chrome around the French cards", () => {
+  it("badges the plan config marks highlighted as Most popular, and only that one", () => {
+    renderGrid("en");
+    const badged = CARDS.filter((p) => within(card(p)).queryByText("Most popular"));
+    expect(badged).toEqual(CARDS.filter((p) => PLAN_CONFIGS[p].highlighted));
+    expect(badged).toEqual(["GROWTH"]);
+  });
+
+  it("prints the trial line from TRIAL_DAYS on every card", () => {
+    renderGrid("en");
+    for (const plan of CARDS) {
+      expect(within(card(plan)).getByText(`${TRIAL_DAYS}-day free trial · card required`)).toBeTruthy();
+    }
+  });
+
+  it("links every card to the comparison table", () => {
+    renderGrid("en");
+    const links = screen.getAllByText("See every feature →");
+    expect(links).toHaveLength(3);
+    for (const a of links) expect(a.getAttribute("href")).toBe("/en/pricing#compare");
+  });
+
+  it("the standalone page can point the link at its own #compare", () => {
+    renderGrid("en", { compareHref: "#compare" });
+    for (const a of screen.getAllByText("See every feature →")) expect(a.getAttribute("href")).toBe("#compare");
+  });
+});
+
+// ─── French and German ──────────────────────────────────────────────────────
+
+describe("the French and Swiss-German grids", () => {
+  it("renders French lines, not English ones", () => {
+    renderGrid("fr");
+    const all = CARDS.flatMap(bullets).join(" ");
+    for (const english of ["location", "feedback requests", "SEO searches", "crawls/mo", "support —", "domain analyses"]) {
+      expect(all, `English "${english}" leaked onto a French card`).not.toContain(english);
+    }
+    expect(bullets("STARTER")[0]).toBe(`${PLAN_CONFIGS.STARTER.quotaDefaults.maxLocations} emplacement`);
+    expect(within(card("GROWTH")).getByText("Tout ce qu'offre Starter, plus :")).toBeTruthy();
+  });
+
+  it("renders German lines with Swiss grouping and no ß", () => {
+    renderGrid("de-CH");
+    const all = CARDS.flatMap(bullets).join(" ");
+    expect(all).toContain("Standort");
+    expect(all).toContain(PLAN_CONFIGS.AGENCY.crawlUrlCap.toLocaleString("en-US").replace(/,/g, "’"));
+    expect(all).not.toContain("ß");
+    expect(document.body.textContent).not.toContain("ß");
+    expect(within(card("GROWTH")).getByText("Alles aus Starter, dazu:")).toBeTruthy();
+  });
+
+  it("uses each locale's chrome around the cards", () => {
     renderGrid("fr");
     expect(screen.getByText("Mensuel")).toBeTruthy();
     expect(screen.getByText("Annuel")).toBeTruthy();
+    cleanup();
+    renderGrid("de-CH");
+    expect(screen.getByText("Monatlich")).toBeTruthy();
+    expect(screen.getByText("Jährlich")).toBeTruthy();
   });
 });
 
 // ─── The toggle ─────────────────────────────────────────────────────────────
 
-describe("the monthly / annual toggle", () => {
-  it("shows monthly prices first, with no struck anchor", () => {
+describe("the monthly / yearly toggle", () => {
+  it("defaults to monthly prices, with no struck anchor and no yearly total", () => {
     renderGrid("en");
-    expect(within(card("STARTER")).getByText(/\$79/)).toBeTruthy();
-    expect(card("STARTER").querySelector("s")).toBeNull();
+    for (const plan of CARDS) {
+      expect(card(plan).querySelector("[class*=pamount]")!.textContent).toContain(`$${PLAN_CONFIGS[plan].monthlyPrice}`);
+      expect(card(plan).querySelector("s")).toBeNull();
+      expect(card(plan).textContent).not.toContain("yearly");
+    }
   });
 
-  it("switches to annual prices and strikes the monthly one through", () => {
+  it("yearly: per-month rate, struck monthly price, 'billed $X yearly' and the saving — all from config", () => {
     renderGrid("en");
-    fireEvent.click(screen.getByText("Annual"));
-
-    const starter = card("STARTER");
-    expect(within(starter).getByText(/\$63/)).toBeTruthy();
-    // The anchor is the REAL monthly price, struck beside the annual rate.
-    const struck = starter.querySelector("s");
-    expect(struck?.textContent).toBe("$79");
-    expect(within(starter).getByText("billed annually")).toBeTruthy();
-    expect(within(starter).getByText("save 20%")).toBeTruthy();
+    fireEvent.click(screen.getByText("Yearly"));
+    for (const plan of CARDS) {
+      const c = PLAN_CONFIGS[plan];
+      const el = card(plan);
+      expect(el.querySelector("[class*=pamount]")!.textContent).toContain(`$${c.annualPrice}`);
+      expect(el.querySelector("s")?.textContent).toBe(`$${c.monthlyPrice}`);
+      expect(within(el).getByText(`billed $${en(c.annualPrice * 12)} yearly`)).toBeTruthy();
+      expect(within(el).getByText(`save ${savePctOf(c.monthlyPrice, c.annualPrice)}%`)).toBeTruthy();
+    }
   });
 
-  it("leaves the bullets untouched when the interval changes", () => {
-    // The line-up describes the plan, not the billing period. A toggle that
-    // edited it would be selling two different products at two prices.
+  it("the saving is rounded down, never up", () => {
+    for (const plan of CARDS) {
+      const c = PLAN_CONFIGS[plan];
+      const exact = ((c.monthlyPrice - c.annualPrice) / c.monthlyPrice) * 100;
+      expect(savePctOf(c.monthlyPrice, c.annualPrice)).toBe(Math.floor(exact));
+    }
+  });
+
+  it("leaves the lines untouched when the interval changes", () => {
     renderGrid("en");
     const monthly = bullets("GROWTH");
-    fireEvent.click(screen.getByText("Annual"));
+    fireEvent.click(screen.getByText("Yearly"));
     expect(bullets("GROWTH")).toEqual(monthly);
-  });
-
-  it("prices every card from PLAN_CONFIGS, at both intervals", () => {
-    renderGrid("en");
-    for (const plan of ["STARTER", "GROWTH", "AGENCY"] as const) {
-      const re = new RegExp(`\\$${PLAN_CONFIGS[plan].monthlyPrice}`);
-      expect(within(card(plan)).getByText(re), `${plan} monthly`).toBeTruthy();
-    }
-    fireEvent.click(screen.getByText("Annual"));
-    for (const plan of ["STARTER", "GROWTH", "AGENCY"] as const) {
-      const re = new RegExp(`\\$${PLAN_CONFIGS[plan].annualPrice}`);
-      expect(within(card(plan)).getByText(re), `${plan} annual`).toBeTruthy();
-    }
   });
 });
 
@@ -210,27 +226,18 @@ describe("the monthly / annual toggle", () => {
 
 describe("the surrounding furniture is undisturbed", () => {
   it("still renders the ConsentGate below the cards", () => {
-    // Explicitly in scope as "must be untouched": the checkout consent checkbox
-    // is what makes the card's CTA lawful, and it is easy to lose to a layout
-    // edit because nothing else fails when it goes.
     renderGrid("en");
     expect(screen.getByRole("checkbox")).toBeTruthy();
   });
 
-  it("still renders the tools footer on every paid card, from the registry counts", () => {
+  it("renders the one tool-count line on every paid card, from the registry counts", () => {
     renderGrid("en");
-    const links = screen.getAllByText(
-      new RegExp(`${counts.available} tools available · ${counts.coming} coming`),
-    );
-    expect(links).toHaveLength(3);
+    expect(screen.getAllByText(new RegExp(`${counts.available} tools available · ${counts.coming} coming`))).toHaveLength(3);
   });
 
   it("prints the French count line on the French grid", () => {
     renderGrid("fr");
-    const links = screen.getAllByText(
-      new RegExp(`${counts.available} outils disponibles · ${counts.coming} à venir`),
-    );
-    expect(links).toHaveLength(3);
+    expect(screen.getAllByText(new RegExp(`${counts.available} outils disponibles · ${counts.coming} à venir`))).toHaveLength(3);
   });
 
   it("still renders one checkout button per paid card", () => {
@@ -244,9 +251,13 @@ describe("the surrounding furniture is undisturbed", () => {
     expect(link.getAttribute("href")).toBe("/fr/credits");
   });
 
-  it("keeps the tax and currency lines", () => {
+  it("keeps the tax and currency lines, and adds Stripe + the Enterprise contact under the grid", () => {
     renderGrid("en");
     expect(screen.getByText("tax line")).toBeTruthy();
     expect(screen.getByText("currency line")).toBeTruthy();
+    expect(screen.getByText("Secure checkout by Stripe")).toBeTruthy();
+    const ent = screen.getByText(/^Enterprise: custom limits/);
+    expect(ent.getAttribute("href")).toMatch(/^mailto:/);
+    expect(screen.queryByText("/ ENTERPRISE")).toBeNull();
   });
 });

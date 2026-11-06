@@ -24,6 +24,8 @@ import { ConsentGate, consentPayload } from "./ConsentGate";
 import { stashCheckoutConsent } from "@/lib/checkout-consent";
 import { SNAPSHOT_COPY, snapshotBaseOf } from "@/lib/snapshot/copy";
 import { fitsTracking, parseTrackParam } from "@/lib/snapshot/tracking";
+import { fmtNum, pricingBase } from "@/lib/pricing-page/format";
+import { SUPPORT_EMAIL } from "@/lib/assistant/config";
 
 export interface HomePricingTier {
   id: string;
@@ -32,8 +34,16 @@ export interface HomePricingTier {
   monthly: number | null;
   annual: number | null;
   customLabel: string | null;
+  /** Yearly saving in whole percent, rounded DOWN (pricing-tiers.ts). */
   savePct: number | null;
-  features: string[];
+  /** annual × 12: what a yearly subscriber is billed once a year. */
+  annualTotal: number | null;
+  /** Free-trial length (TRIAL_DAYS). */
+  trialDays: number;
+  /** "Everything in Starter, plus:" — null on the entry card. */
+  inherits: string | null;
+  /** The card's headline lines (pricing-page/headlines.ts), in render order. */
+  lines: string[];
   highlighted: boolean;
   /** The plan's AI checkup shape, for the free check's "track these prompts" prefill. */
   tracking?: { prompts: number; providers: number | null; perWeek: number };
@@ -116,6 +126,12 @@ export function PricingSection({
    * Defaulting to "#tools" would leave a dead anchor there.
    */
   toolsHref = "#tools",
+  /**
+   * Where "See every feature →" points: the comparison table on /pricing.
+   * The standalone page passes its own "#compare"; the homepage and
+   * /site-crawler take the default, which crosses over to /pricing.
+   */
+  compareHref,
 }: {
   locale: string;
   pricing: HomePricingTier[];
@@ -131,7 +147,11 @@ export function PricingSection({
   /** Section label / heading, supplied by the caller. */
   header: ReactNode;
   toolsHref?: string;
+  compareHref?: string;
 }) {
+  const base = pricingBase(locale);
+  const compare = compareHref ?? `/${locale}/pricing#compare`;
+  // Monthly by default; the toggle is client-side state only.
   const [annual, setAnnual] = useState(false);
   // Arriving from the free AI Visibility Check ("Track these 10 prompts
   // weekly", ?track=10x2-weekly): pick out the smallest plan that covers it.
@@ -281,8 +301,14 @@ export function PricingSection({
           const amount = annual ? p.annual : p.monthly;
           const hi = trackFit ? trackFit.id === p.id : p.highlighted;
           return (
-            <div className={hi ? s.priceHi : s.price} key={p.id}>
-              <div className={s.pname}>/ {p.name}</div>
+            <div className={hi ? s.priceHi : s.price} key={p.id} data-plan={p.id}>
+              <div className={s.pnameRow}>
+                <div className={s.pname}>/ {p.name}</div>
+                {/* The recommended plan is CONFIG (PLAN_CONFIGS highlighted),
+                    not this component's choice. The track-fit outline may
+                    move to another card; the badge stays where config put it. */}
+                {p.highlighted && <span className={s.pbadge}>{priceChrome.mostPopular}</span>}
+              </div>
               {amount === null ? (
                 <div className={s.pamount}>{p.customLabel}</div>
               ) : (
@@ -294,8 +320,8 @@ export function PricingSection({
                         — never a computed "was" figure, because nobody has
                         ever been charged one and a struck-through price
                         that was never charged is what pricing law is about.
-                        $29 IS what a monthly subscriber pays, so "$29 $24"
-                        is a comparison rather than a claim. */}
+                        The struck figure IS what a monthly subscriber pays,
+                        so the pair is a comparison rather than a claim. */}
                     {annual && p.monthly !== null && p.annual !== null && p.monthly > p.annual ? (
                       <s className={s.priceAnchor} aria-label={priceChrome.anchorLabel}>
                         ${p.monthly}
@@ -309,18 +335,31 @@ export function PricingSection({
                       </span>
                     ) : null}
                   </div>
-                  {annual && <div className={s.pbilled}>{priceChrome.billedAnnually}</div>}
+                  {/* "billed $X yearly": annual × 12, from config. */}
+                  {annual && p.annualTotal !== null && (
+                    <div className={s.pbilled}>
+                      {priceChrome.billedYearly.replace("{total}", `$${fmtNum(p.annualTotal, base)}`)}
+                    </div>
+                  )}
+                  <div className={s.ptrial}>
+                    {priceChrome.trialLine.replace("{days}", String(p.trialDays))}
+                  </div>
                 </>
               )}
-              <ul>{p.features.map((f) => <li key={f}>{f}</li>)}</ul>
+              {p.inherits && <p className={s.pinherits}>{p.inherits}</p>}
+              <ul>{p.lines.map((f) => <li key={f}>{f}</li>)}</ul>
               {/* Every paid tier reaches the tools hub, so the line is not
-                  tier-gated. */}
+                  tier-gated — and it is the SAME sentence on every card and
+                  every page: toolCountLine(seoToolCounts()). */}
               {amount !== null && (
                 <a className={s.ptools} href={toolsHref}>
                   {toolCountLine} ·{" "}
                   {priceChrome.toolsAnchor}
                 </a>
               )}
+              <a className={s.pcompare} href={compare}>
+                {priceChrome.seeEveryFeature}
+              </a>
               {/* The card's ONE action. The old "Start Free Trial →" link
                   to /register?plan=… is gone: two CTAs on a card that only
                   does one thing just split the click. Enterprise never
@@ -341,13 +380,20 @@ export function PricingSection({
       </div>
       {/* Credit packs. ONE LINE, NOT A FOURTH CARD, and the restraint is the
           decision: this grid sells plans, and a credit pack is an add-on to
-          one of them. A fourth column would invite the "$79 vs $99/mo"
+          one of them. A fourth column would invite a pack-vs-plan price
           comparison it would lose, and would imply packs are an alternative
           to a subscription rather than something you spend inside one.
 
           Rendered HERE rather than on each page so both surfaces carry it
           from one string — it previously existed only on /pricing, which is
           how the homepage came to have no route to /credits at all. */}
+      {/* Under the grid. Enterprise has NO CARD by design (custom priced, no
+          Stripe price); this line is its entry point. */}
+      <p className={s.gridNotes}>
+        <span>{priceChrome.secureCheckout}</span>
+        <span aria-hidden="true"> · </span>
+        <a href={`mailto:${SUPPORT_EMAIL}?subject=Enterprise`}>{priceChrome.enterpriseLine}</a>
+      </p>
       <p className={s.creditsLine}>
         <a href={`/${locale}/credits`}>{priceChrome.creditsLine}</a>
       </p>

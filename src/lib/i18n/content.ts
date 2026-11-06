@@ -9,6 +9,7 @@
 
 import type { Locale, Currency } from "./config";
 import { CRAWLER_BRAND } from "@/lib/site-crawler/brand";
+import { TRIAL_DAYS } from "@/lib/plan-config";
 
 export interface PricingTier {
   key: "starter" | "growth" | "agency" | "enterprise";
@@ -1592,6 +1593,18 @@ export interface HomePricingChrome {
   annual: string;
   perMonth: string;
   billedAnnually: string;
+  /** Under a yearly plan price. Contains "{total}" — annualPrice × 12, from config. */
+  billedYearly: string;
+  /** Under every paid card's price. Contains "{days}" — TRIAL_DAYS. */
+  trialLine: string;
+  /** Badge on the recommended card (PLAN_CONFIGS highlighted). */
+  mostPopular: string;
+  /** Link from each card to the comparison table on /pricing. */
+  seeEveryFeature: string;
+  /** Under the grid. */
+  secureCheckout: string;
+  /** Under the grid: Enterprise has no card, by design. */
+  enterpriseLine: string;
   /** Screen-reader label for the struck-through monthly price on the annual
    *  toggle. The strike is meaningless read aloud without it. */
   anchorLabel: string;
@@ -1618,9 +1631,15 @@ export interface HomePricingChrome {
 export const HOME_PRICING_CHROME: Record<Locale, HomePricingChrome> = {
   en: {
     monthly: "Monthly",
-    annual: "Annual",
+    annual: "Yearly",
     perMonth: "/mo",
     billedAnnually: "billed annually",
+    billedYearly: "billed {total} yearly",
+    trialLine: "{days}-day free trial \u00b7 card required",
+    mostPopular: "Most popular",
+    seeEveryFeature: "See every feature \u2192",
+    secureCheckout: "Secure checkout by Stripe",
+    enterpriseLine: "Enterprise: custom limits \u2014 contact us",
     anchorLabel: "regular monthly price",
     save: "save {pct}%",
     toolsAnchor: "See the tools ↓",
@@ -1632,9 +1651,15 @@ export const HOME_PRICING_CHROME: Record<Locale, HomePricingChrome> = {
   },
   "en-CA": {
     monthly: "Monthly",
-    annual: "Annual",
+    annual: "Yearly",
     perMonth: "/mo",
     billedAnnually: "billed annually",
+    billedYearly: "billed {total} yearly",
+    trialLine: "{days}-day free trial \u00b7 card required",
+    mostPopular: "Most popular",
+    seeEveryFeature: "See every feature \u2192",
+    secureCheckout: "Secure checkout by Stripe",
+    enterpriseLine: "Enterprise: custom limits \u2014 contact us",
     anchorLabel: "regular monthly price",
     save: "save {pct}%",
     toolsAnchor: "See the tools ↓",
@@ -1649,6 +1674,12 @@ export const HOME_PRICING_CHROME: Record<Locale, HomePricingChrome> = {
     annual: "Annuel",
     perMonth: "/mois",
     billedAnnually: "facturé annuellement",
+    billedYearly: "factur\u00e9 {total} par an",
+    trialLine: "Essai gratuit de {days} jours \u00b7 carte requise",
+    mostPopular: "Le plus populaire",
+    seeEveryFeature: "Voir toutes les fonctions \u2192",
+    secureCheckout: "Paiement s\u00e9curis\u00e9 par Stripe",
+    enterpriseLine: "Entreprise : limites sur mesure \u2014 contactez-nous",
     anchorLabel: "prix mensuel normal",
     save: "économisez {pct} %",
     toolsAnchor: "Voir les outils ↓",
@@ -1663,6 +1694,12 @@ export const HOME_PRICING_CHROME: Record<Locale, HomePricingChrome> = {
     annual: "Annuel",
     perMonth: "/mois",
     billedAnnually: "facturé annuellement",
+    billedYearly: "factur\u00e9 {total} par an",
+    trialLine: "Essai gratuit de {days} jours \u00b7 carte requise",
+    mostPopular: "Le plus populaire",
+    seeEveryFeature: "Voir toutes les fonctions \u2192",
+    secureCheckout: "Paiement s\u00e9curis\u00e9 par Stripe",
+    enterpriseLine: "Entreprise : limites sur mesure \u2014 contactez-nous",
     anchorLabel: "prix mensuel normal",
     save: "économisez {pct} %",
     toolsAnchor: "Voir les outils ↓",
@@ -1674,9 +1711,15 @@ export const HOME_PRICING_CHROME: Record<Locale, HomePricingChrome> = {
   },
   "de-CH": {
     monthly: "Monatlich",
-    annual: "Jährlich",
+    annual: "J\u00e4hrlich",
     perMonth: "/Mt.",
     billedAnnually: "jährlich verrechnet",
+    billedYearly: "{total} j\u00e4hrlich verrechnet",
+    trialLine: "{days} Tage gratis testen \u00b7 Karte n\u00f6tig",
+    mostPopular: "Am beliebtesten",
+    seeEveryFeature: "Alle Funktionen ansehen \u2192",
+    secureCheckout: "Sichere Zahlung \u00fcber Stripe",
+    enterpriseLine: "Enterprise: individuelle Limits \u2014 kontaktieren Sie uns",
     anchorLabel: "regulärer Monatspreis",
     save: "{pct}% sparen",
     toolsAnchor: "Werkzeuge ansehen ↓",
@@ -1823,18 +1866,37 @@ export const THEME_TOGGLE_COPY: Record<Locale, ThemeToggleCopy> = {
 // The two notes under the plan cards on /pricing, shared by every page that
 // renders PricingSection outside the homepage (/pricing, /site-crawler), so a
 // second page never words the trial or the currency differently.
-export const PRICING_NOTES: Record<"en" | "fr", { tax: string; currency: string }> = {
+//
+// `tax` carries "{days}", filled from TRIAL_DAYS by pricingNotes(): the trial
+// length is config, not copy. de is real German for /pricing; the pages that
+// fold de-CH onto en still read the en entry.
+export const PRICING_NOTES: Record<"en" | "fr" | "de", { tax: string; currency: string }> = {
   en: {
-    tax: "Try Echorank free for 7 days. Cancel anytime. Card required.",
+    tax: "Try Echorank free for {days} days. Cancel anytime. Card required.",
     currency:
       "All prices are in US dollars (USD). If you pay with a card in another currency, your bank converts the charge at its own exchange rate.",
   },
   fr: {
-    tax: "Essayez Echorank gratuitement pendant 7 jours. Annulez à tout moment. Carte requise.",
+    tax: "Essayez Echorank gratuitement pendant {days} jours. Annulez à tout moment. Carte requise.",
     currency:
       "Tous les prix sont en dollars américains (USD). Si vous payez avec une carte dans une autre devise, votre banque effectue la conversion à son propre taux de change.",
   },
+  de: {
+    tax: "Testen Sie Echorank {days} Tage gratis. Jederzeit kündbar. Karte nötig.",
+    currency:
+      "Alle Preise sind in US-Dollar (USD). Zahlen Sie mit einer Karte in einer anderen Währung, rechnet Ihre Bank zu ihrem eigenen Kurs um.",
+  },
 };
+
+/**
+ * The notes for a locale, trial length filled in. fr* → fr, de* → de,
+ * everything else → en. Pages whose own copy folds de-CH onto en pass "en".
+ */
+export function pricingNotes(locale: string): { tax: string; currency: string } {
+  const base = locale.startsWith("fr") ? "fr" : locale.startsWith("de") ? "de" : "en";
+  const n = PRICING_NOTES[base];
+  return { tax: n.tax.replace("{days}", String(TRIAL_DAYS)), currency: n.currency };
+}
 
 // ─── Homepage /01 — "Two crawlers" (SITE-CRAWLER-HOMEPAGE.md) ───────────────
 //

@@ -35,7 +35,7 @@ import { HomeVideo } from "../HomeVideo";
 import { RULES } from "@/lib/crawl-rules";
 import { FLAGS, flag } from "@/lib/flags";
 import { PLAN_CONFIGS } from "@/lib/plan-config";
-import { HOME_PRICING_CHROME, HOME_TOOLS, PRICING_NOTES, toolCountLine } from "@/lib/i18n/content";
+import { HOME_PRICING_CHROME, HOME_TOOLS, pricingNotes, toolCountLine } from "@/lib/i18n/content";
 import { pricingTiers } from "@/lib/pricing-tiers";
 import { seoToolCounts } from "@/lib/seo-tools";
 import { CRAWLER_BRAND } from "@/lib/site-crawler/brand";
@@ -399,8 +399,8 @@ export default async function Page({ params }: { params: Params }) {
             pricing={pricingTiers(l)}
             priceChrome={HOME_PRICING_CHROME[l]}
             toolCountLine={toolCountLine(l, seoToolCounts())}
-            tax={PRICING_NOTES[base].tax}
-            currency={PRICING_NOTES[base].currency}
+            tax={pricingNotes(l).tax}
+            currency={pricingNotes(l).currency}
             toolsHref={`/${l}#tools`}
             header={
               <>
