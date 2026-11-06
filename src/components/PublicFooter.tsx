@@ -7,6 +7,9 @@
 import Link from "next/link";
 import s from "@/app/[locale]/home2.module.css";
 import { CRAWLER_BRAND } from "@/lib/site-crawler/brand";
+import { CookieSettingsLink } from "@/components/marketing/cookie-consent";
+import { cookieLocale } from "@/lib/consent/cookie-consent";
+import { COMPLAINT_LINK } from "@/lib/privacy/complaint-copy";
 
 const LINKS: Record<"en" | "fr", ReadonlyArray<readonly [string, string]>> = {
   en: [
@@ -46,6 +49,8 @@ export function PublicFooter({ locale }: { locale: string }) {
           {LINKS[base].map(([href, lbl]) => (
             <Link key={href} href={L(href)}>{lbl}</Link>
           ))}
+          <Link href={L("/privacy/complaint")}>{COMPLAINT_LINK[cookieLocale(locale)]}</Link>
+          <CookieSettingsLink locale={locale} />
         </span>
       </div>
     </footer>

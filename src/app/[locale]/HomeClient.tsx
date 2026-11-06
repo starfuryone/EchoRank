@@ -5,6 +5,9 @@ import { AvEmblem } from "@/components/brand/AiVisibilityLogo";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import s from "./home2.module.css";
 import { AI_LABELS } from "@/lib/i18n/ai-labels";
+import { CookieSettingsLink } from "@/components/marketing/cookie-consent";
+import { cookieLocale } from "@/lib/consent/cookie-consent";
+import { COMPLAINT_LINK } from "@/lib/privacy/complaint-copy";
 import { FAQ } from "./faq-data";
 import { inline } from "./learn/_shared/inline";
 import { DemoVideoModal } from "@/components/demo-video";
@@ -1039,6 +1042,8 @@ export default function HomeClient({
           <span>© 2026 ECHORANK / CHATLOGIC INSIGHTS LTD</span>
           <span className={s.footlinks}>
             {t.foot.links.map(([href, lbl]) => <Link key={href} href={L(href)}>{lbl}</Link>)}
+            <Link href={L("/privacy/complaint")}>{COMPLAINT_LINK[cookieLocale(locale)]}</Link>
+            <CookieSettingsLink locale={locale} />
           </span>
         </div>
       </footer>

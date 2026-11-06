@@ -1,4 +1,6 @@
 import Script from "next/script";
+import { CookieConsent } from "@/components/marketing/cookie-consent";
+import { GA_MEASUREMENT_ID, ga4ConsentInitScript } from "@/lib/consent/cookie-consent";
 
 // Public marketing layout. It exists solely to scope Google Analytics to the
 // pages we actually want measured.
@@ -16,7 +18,12 @@ import Script from "next/script";
 //
 // A GA4 measurement id is public by design: Google embeds it in the page for
 // every visitor. It is not a secret and does not belong in .env.
-const GA_MEASUREMENT_ID = "G-WLEC4CZ86S";
+//
+// CONSENT MODE, DEFAULT DENIED (UK GDPR / PECR): the init script sets every
+// consent type to denied before gtag.js does anything, re-applies a stored
+// Accept, and configures GA4 with Google signals and ads personalisation off.
+// The banner (<CookieConsent>) asks once; "Cookie settings" in the footer
+// reopens it. src/lib/consent/cookie-consent.ts holds all of it.
 
 export default function PublicLocaleLayout({
   children,
@@ -26,20 +33,18 @@ export default function PublicLocaleLayout({
   return (
     <>
       {children}
+      <CookieConsent />
 
-      {/* afterInteractive: the tag loads early but never blocks hydration.
-          beforeInteractive would be wrong here — it is reserved for scripts the
-          page cannot render without, and it must live in the root layout. */}
+      {/* The consent defaults go first (the init script queues them into
+          dataLayer before gtag.js reads it), then the tag. afterInteractive:
+          never blocks hydration. */}
+      <Script id="ga4-init" strategy="afterInteractive">
+        {ga4ConsentInitScript(GA_MEASUREMENT_ID)}
+      </Script>
       <Script
         src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
         strategy="afterInteractive"
       />
-      <Script id="ga4-init" strategy="afterInteractive">
-        {`window.dataLayer = window.dataLayer || [];
-function gtag(){dataLayer.push(arguments);}
-gtag('js', new Date());
-gtag('config', '${GA_MEASUREMENT_ID}');`}
-      </Script>
     </>
   );
 }
