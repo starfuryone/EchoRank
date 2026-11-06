@@ -4637,6 +4637,11 @@ const visibilityEn = {
   blockedBadge: "BLOCKED",
   // scored checks
   checksTitle: "Scored checks",
+  verdictsTitle: "Pass / fail checks",
+  verdictsLead: "Each check in plain words, with its fix. These do not change the score.",
+  verdictPass: "Pass",
+  verdictFail: "Fail",
+  verdictFix: "Fix:",
   // fixes
   fixesTitle: "Generated fixes",
   mockBadge: "mock copy — set ANTHROPIC_API_KEY",
@@ -4708,6 +4713,11 @@ export const VISIBILITY_COPY: Record<DashLocale, VisibilityCopy> = {
     openBadge: "OUVERT",
     blockedBadge: "BLOQUÉ",
     checksTitle: "Vérifications notées",
+    verdictsTitle: "Vérifications réussies / échouées",
+    verdictsLead: "Chaque vérification en clair, avec sa correction. Elles ne changent pas le score.",
+    verdictPass: "Réussi",
+    verdictFail: "Échec",
+    verdictFix: "Correction :",
     fixesTitle: "Correctifs générés",
     mockBadge: "contenu factice — définissez ANTHROPIC_API_KEY",
     fixesIntro:
@@ -4774,6 +4784,11 @@ export const VISIBILITY_COPY: Record<DashLocale, VisibilityCopy> = {
     openBadge: "OFFEN",
     blockedBadge: "BLOCKIERT",
     checksTitle: "Bewertete Prüfungen",
+    verdictsTitle: "Bestanden / nicht bestanden",
+    verdictsLead: "Jede Prüfung in klaren Worten, mit ihrer Korrektur. Sie verändern die Punktzahl nicht.",
+    verdictPass: "Bestanden",
+    verdictFail: "Nicht bestanden",
+    verdictFix: "Korrektur:",
     fixesTitle: "Generierte Korrekturen",
     mockBadge: "Platzhaltertext — ANTHROPIC_API_KEY setzen",
     fixesIntro:

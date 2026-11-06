@@ -55,6 +55,8 @@ interface AuditResult {
   jsonld: { types: string[]; blocks: number; errors: number };
   rendering: { likely_csr: boolean; text_len: number; framework: string | null };
   llms_txt: boolean;
+  /** Pass/fail checks with their fix (sidecar free_audit_checks.py); not scored. */
+  verdicts?: { id: string; title: string; pass: boolean; detail: string; fix: string }[];
   error?: string;
 }
 interface Remediation {
@@ -464,6 +466,38 @@ export function VisibilityPageClient({
               </CardContent>
             </Card>
           </div>
+
+          {audit.verdicts && audit.verdicts.length > 0 && (
+            <Card>
+              <CardHeader>
+                <h3 className="text-base font-semibold text-gray-900">{t.verdictsTitle}</h3>
+                <p className="mt-1 text-xs text-gray-500">{t.verdictsLead}</p>
+              </CardHeader>
+              <CardContent>
+                <ul className="divide-y divide-gray-100" data-testid="audit-verdicts">
+                  {audit.verdicts.map((v) => (
+                    <li key={v.id} className="py-2">
+                      <div className="flex items-baseline justify-between gap-3">
+                        <span className="text-sm font-medium text-gray-800">{v.title}</span>
+                        {/* Stated in words, never colour alone. */}
+                        <span
+                          className={`shrink-0 text-xs font-semibold ${v.pass ? "text-green-700" : "text-red-700"}`}
+                        >
+                          {v.pass ? t.verdictPass : t.verdictFail}
+                        </span>
+                      </div>
+                      <p className="mt-0.5 text-xs text-gray-500">{v.detail}</p>
+                      {!v.pass && v.fix && (
+                        <p className="mt-0.5 text-xs text-gray-700">
+                          <span className="font-medium">{t.verdictFix}</span> {v.fix}
+                        </p>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Fixes. #fixes is the target of the onboarding "explore roadmap"
               step and needs the same scroll-mt-20 the #prompts anchor carried:
