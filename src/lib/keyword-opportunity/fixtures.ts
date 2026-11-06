@@ -640,7 +640,8 @@ function rowId(keyword: string): string {
 function resultFor(entry: DemoKeyword): OpportunityPromptResult {
   return {
     provider: "CLAUDE",
-    model: "claude-haiku-4-5",
+    // The Claude tracking model (TRACKING_CLAUDE_MODEL), which the live AI test asks.
+    model: "claude-sonnet-5",
     brandMentioned: entry.answer.brandMentioned,
     brandPosition: entry.answer.brandPosition,
     answerSnapshot: entry.answer.snapshot,

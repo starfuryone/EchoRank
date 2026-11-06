@@ -25,6 +25,23 @@
 export const HOUSE_CLAUDE_MODEL = "claude-haiku-5-5";
 
 /**
+ * The model for every Claude TRACKING answer: the scheduled tracker, the
+ * keyword-opportunity AI test, and — through the sidecar's answer_track.py,
+ * which pins the same id (tests/tracking-model.test.ts) — tracked prompts and
+ * the partner API. One id, so a Claude answer means the same thing on every
+ * surface. Not read from the environment: an env change would move every
+ * score without anyone deciding to. (The free check asks no Claude engine.)
+ */
+export const TRACKING_CLAUDE_MODEL = "claude-sonnet-5";
+
+/**
+ * The output cap for a Claude tracking answer, on every surface. The model
+ * keeps its own thinking on a tracking answer, and thinking counts against
+ * this, so it carries headroom over the answer itself (~250 words).
+ */
+export const TRACKING_MAX_TOKENS = 1_200;
+
+/**
  * Claude models from the 4.6 generation on: adaptive thinking (on by default
  * for most), `effort`, and a 400 for sampling parameters and prefill.
  * The older generations think only when asked and take no `effort`.

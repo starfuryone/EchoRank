@@ -327,10 +327,10 @@ describe("visibility query", () => {
     status: 200,
     data: {
       engine: "claude",
-      model: "claude-haiku-4-5",
+      model: "claude-sonnet-5",
       results: [
-        { id: "question", prompt: "q", brand_mentioned: true, brand_rank: 1, competitors: [], excerpt: "Try Acme Plumbing in Laval.", error: null, model: "claude-haiku-4-5" },
-        { id: "description", prompt: "d", brand_mentioned: true, brand_rank: 1, competitors: [], excerpt: "Acme Plumbing is a plumber in Laval.", error: null, model: "claude-haiku-4-5" },
+        { id: "question", prompt: "q", brand_mentioned: true, brand_rank: 1, competitors: [], excerpt: "Try Acme Plumbing in Laval.", error: null, model: "claude-sonnet-5" },
+        { id: "description", prompt: "d", brand_mentioned: true, brand_rank: 1, competitors: [], excerpt: "Acme Plumbing is a plumber in Laval.", error: null, model: "claude-sonnet-5" },
       ],
     },
   };
@@ -349,11 +349,13 @@ describe("visibility query", () => {
     expect(body).toMatchObject({
       mentioned: true,
       answer_excerpt: "Try Acme Plumbing in Laval.",
-      engines: [{ engine: "claude", model: "claude-haiku-4-5", mentioned: true, answer_excerpt: "Try Acme Plumbing in Laval." }],
+      engines: [{ engine: "claude", model: "claude-sonnet-5", mentioned: true, answer_excerpt: "Try Acme Plumbing in Laval." }],
       description: "Acme Plumbing is a plumber in Laval.",
     });
-    expect(body.costUsd).toBeGreaterThan(0);
-    expect(body.costUsd).toBeLessThan(0.01);
+    // A ceiling: two answers billed at the 1,200-token tracking cap at Sonnet
+    // 5's $10/MTok output (~$0.024), plus a few dozen input tokens each.
+    expect(body.costUsd).toBeGreaterThan(0.024);
+    expect(body.costUsd).toBeLessThan(0.025);
     expect(calls[0]).toMatchObject({ kind: "query", subject: "tenant_123", costUsd: body.costUsd });
   });
 

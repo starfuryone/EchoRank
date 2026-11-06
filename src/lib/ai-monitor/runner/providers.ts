@@ -26,6 +26,7 @@
 import type { AnthropicProvider } from "@/ai/providers/anthropic";
 import type { EngineSpec } from "../engines";
 import { engineAvailability } from "../engines";
+import { TRACKING_MAX_TOKENS } from "@/ai/anthropic-request";
 import {
   SEARCH_BILLED_PROVIDERS,
   TOKEN_FREE_PROVIDERS,
@@ -160,8 +161,12 @@ export const ASK_SYSTEM_PROMPT =
   "You are answering a question from a member of the public. Answer as you " +
   "normally would, in your own words and at your usual length.";
 
-/** Enough for a full recommendation answer without paying for an essay. */
-export const ASK_MAX_TOKENS = 1_200;
+/**
+ * Enough for a full recommendation answer without paying for an essay. The
+ * same cap every Claude tracking surface sends (TRACKING_MAX_TOKENS; the
+ * sidecar's answer_track.py pins the same number).
+ */
+export const ASK_MAX_TOKENS = TRACKING_MAX_TOKENS;
 
 export interface AskDeps {
   anthropic?: AnthropicProvider;

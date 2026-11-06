@@ -10,6 +10,7 @@ import "server-only";
 import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@/generated/prisma";
 import { sidecarPost } from "@/lib/av-sidecar";
+import { TRACKING_MAX_TOKENS } from "@/ai/anthropic-request";
 import { guardPublicUrl } from "@/lib/public-url";
 import { costUsdFor, roundUsd } from "@/lib/ai-monitor/pricing";
 import type { PartnerContext } from "./auth";
@@ -27,8 +28,11 @@ export interface PartnerResult {
 const AUDIT_TIMEOUT_MS: Record<PartnerAuditMode, number> = { quick: 60_000, full: 120_000 };
 const TRACK_TIMEOUT_MS = 90_000;
 
-/** answer_track.py MAX_TOKENS: the ceiling every answer is billed against. */
-const TRACK_MAX_OUTPUT_TOKENS = 700;
+/**
+ * answer_track.py MAX_TOKENS: the ceiling every answer is billed against. The
+ * shared Claude tracking cap; tests/tracking-model.test.ts holds the sidecar to it.
+ */
+const TRACK_MAX_OUTPUT_TOKENS = TRACKING_MAX_TOKENS;
 /** answer_track.py SYSTEM, ~200 characters. */
 const TRACK_SYSTEM_CHARS = 200;
 

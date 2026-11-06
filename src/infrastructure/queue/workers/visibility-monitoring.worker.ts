@@ -309,7 +309,7 @@ async function processPromptBatch(tenantId: string): Promise<void> {
     where: { promptId: { in: prompts.map((p) => p.id) }, error: null },
     orderBy: { createdAt: "desc" },
     distinct: ["promptId"],
-    select: { promptId: true, brandMentioned: true, brandRank: true },
+    select: { promptId: true, brandMentioned: true, brandRank: true, model: true },
   });
   const prevByPrompt = new Map(prevRuns.map((r) => [r.promptId, r]));
   const promptTextById = new Map(prompts.map((p) => [p.id, p.text]));
@@ -375,6 +375,10 @@ async function processPromptBatch(tenantId: string): Promise<void> {
     if (r.error) continue;
     const prev = prevByPrompt.get(r.id);
     if (!prev) continue; // first run = baseline, never alert
+    // A run on a different model is a new baseline too: the answer changed
+    // because the model did, not the market (the move from claude-haiku-4-5
+    // to claude-sonnet-5 on 2026-11-06 would otherwise alert on every prompt).
+    if (prev.model !== (r.model ?? data.model ?? "unknown")) continue;
     const text = promptTextById.get(r.id) ?? r.prompt;
     if (prev.brandMentioned && !r.brand_mentioned) {
       transitions.push({

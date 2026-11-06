@@ -40,6 +40,7 @@ import { prisma } from "@/lib/prisma";
 import { logger } from "@/infrastructure/observability/logger";
 import { AiCapReachedError, meteredAiCall } from "@/lib/ai-monitor/metering";
 import { JSON_CALL_MODEL } from "@/lib/ai-monitor/json-call";
+import { TRACKING_CLAUDE_MODEL } from "@/ai/anthropic-request";
 import { askEngine } from "@/lib/ai-monitor/runner/providers";
 import { analyzeResponse } from "@/lib/ai-monitor/analysis/analyze-response";
 import { costUsdFor } from "@/lib/ai-monitor/pricing";
@@ -336,13 +337,16 @@ export async function runAnalysis(analysisId: string): Promise<RunSummary> {
         try {
           // ONE PROMPT, ONE REPETITION, ONE PROVIDER. Deep multi-rep testing
           // across providers is the Watcher's product and is priced as one.
+          // The answer is a TRACKING answer, on the one Claude tracking model
+          // (it ran on the JSON-call model until 2026-11-06, so a domain
+          // analysed before then saw Haiku 4.5's answer).
           const answer = await meteredAiCall(
             ctx,
-            { provider: "CLAUDE", model: JSON_CALL_MODEL, purpose: "answer" },
+            { provider: "CLAUDE", model: TRACKING_CLAUDE_MODEL, purpose: "answer" },
             async () => {
               const asked = await askEngine({
                 provider: "CLAUDE",
-                model: JSON_CALL_MODEL,
+                model: TRACKING_CLAUDE_MODEL,
                 promptText: prompt.text,
               });
               return {

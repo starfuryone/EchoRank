@@ -103,13 +103,22 @@ web app, so every `ai_analysis` surface falls back to heuristics — by design, 
 tells the user when it happened rather than failing. The av-service sidecar carries its own
 key.
 
-**The answer check asks Claude only.** The sidecar's `/track` (`answer_track.py`, model from
-`TRACK_MODEL`, default `claude-haiku-4-5`) is what tracked prompts and the partner API's
+**The answer check asks Claude only.** The sidecar's `/track` (`answer_track.py`, pinned to
+`claude-sonnet-5`, 1,200-token cap; `TRACK_MODEL` no longer exists) is what tracked prompts and the partner API's
 `/visibility/query` run, and it answers with one engine: Claude. Marketing copy that says
 Echorank monitors six engines (the homepage hero and feature cards, the "six engines"
 paragraph in `src/lib/i18n/content.ts`) describes more than this path does; the
 multi-provider list in `src/lib/ai-monitor/pricing.ts` belongs to the AI Search monitor,
 and each provider there is live only when its key is set.
+
+**One Claude tracking model.** Every Claude tracking answer runs on `claude-sonnet-5`
+with a 1,200-token cap and the model's own defaults (no temperature, no thinking
+setting): the scheduled tracker, the keyword-opportunity AI test and the sidecar's
+`/track`. The id lives in `TRACKING_CLAUDE_MODEL` (`src/ai/anthropic-request.ts`);
+`tests/tracking-model.test.ts` holds the sidecar to it. House calls (analysis, drafting,
+classification) run on `claude-haiku-5-5` with thinking off — `tests/model-policy.test.ts`.
+A tracked prompt whose model changed since its last run starts a new baseline instead of
+alerting. The system prompts still differ between the tracker and the sidecar.
 
 ### AI Search monitor engines (the scheduled tracker)
 

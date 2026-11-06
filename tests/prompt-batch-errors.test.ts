@@ -29,7 +29,8 @@ vi.mock("@/lib/prisma", () => ({ prisma: db }));
 vi.mock("@/generated/prisma", () => ({ Prisma: {} }));
 vi.mock("@/lib/av-sidecar", () => ({ sidecarPost }));
 vi.mock("@/infrastructure/metering/service", () => ({ meteringService: { record, checkQuota } }));
-vi.mock("@/lib/visibility-alerts", () => ({ sendVisibilityAlert: vi.fn(), recordPromptAlerts: vi.fn() }));
+const { recordPromptAlerts } = vi.hoisted(() => ({ recordPromptAlerts: vi.fn() }));
+vi.mock("@/lib/visibility-alerts", () => ({ sendVisibilityAlert: vi.fn(), recordPromptAlerts }));
 vi.mock("@/infrastructure/observability/logger", () => ({ logger: log }));
 vi.mock("@/infrastructure/observability/telemetry", () => ({ withSpan: (_n: string, f: () => unknown) => f() }));
 vi.mock("@/infrastructure/queue/registry", () => ({ addJob: vi.fn(), getQueue: vi.fn() }));
@@ -93,6 +94,30 @@ describe("prompt batch with provider errors", () => {
     );
     // Runs are still stored, error and all, so the report can show them.
     expect(db.promptRun.create).toHaveBeenCalledTimes(3);
+  });
+
+  it("treats a run on a different model as a new baseline: no alert for the model's change", async () => {
+    // Every prompt was mentioned on Haiku 4.5; the new model mentions none.
+    db.promptRun.findMany.mockResolvedValue(
+      prompts.map((p) => ({ promptId: p.id, brandMentioned: true, brandRank: 1, model: "claude-haiku-4-5" })),
+    );
+    sidecarPost.mockResolvedValue({
+      status: 200,
+      data: { results: prompts.map((p) => ({ ...result(p.id, null), model: "claude-sonnet-5" })) },
+    });
+    await processPromptBatch("t1");
+    expect(recordPromptAlerts).not.toHaveBeenCalled();
+  });
+
+  it("still alerts on a lost mention when the model is unchanged", async () => {
+    db.promptRun.findMany.mockResolvedValue([
+      { promptId: "p1", brandMentioned: true, brandRank: 1, model: "claude-haiku-4-5" },
+    ]);
+    sidecarPost.mockResolvedValue({ status: 200, data: { results: prompts.map((p) => result(p.id, null)) } });
+    await processPromptBatch("t1");
+    expect(recordPromptAlerts).toHaveBeenCalledWith("t1", [
+      expect.objectContaining({ promptId: "p1", kind: "visibility_lost" }),
+    ]);
   });
 
   it("an all-error batch fails the job for good (no retry that would 'complete' with nothing)", async () => {

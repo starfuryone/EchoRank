@@ -21,6 +21,7 @@
 // jobs to enqueue. Asking each adapter would mean instantiating eight clients
 // to discover that six of them cannot run.
 
+import { TRACKING_CLAUDE_MODEL } from "@/ai/anthropic-request";
 import { type AiProvider, TOKEN_FREE_PROVIDERS, ratesFor } from "./pricing";
 
 /**
@@ -106,7 +107,9 @@ export const ENGINE_CATALOGUE: readonly EngineSpec[] = [
   },
   {
     provider: "CLAUDE",
-    modelName: "claude-sonnet-5",
+    // The one Claude tracking model, shared with every other Claude tracking
+    // path (src/ai/anthropic-request.ts).
+    modelName: TRACKING_CLAUDE_MODEL,
     displayName: "Claude",
     supportsSearch: true,
     supportsCitations: true,
