@@ -141,6 +141,17 @@ no call and meters nothing; analysis stays per brand. Fails open. Daily counters
 `NODE_OPTIONS=--conditions=react-server npx tsx scripts/answer-cache-hit-rate.ts` (as
 echorank, read-only).
 
+### Analysis pass: heuristic first
+
+`analyzeResponse` (`ai-monitor/analysis/analyze-response.ts`) no longer calls a model per
+answer. Entities and the brand's list position come from the text
+(`analysis/heuristic.ts`: list-item names, prose bold, known names), tone from an en/fr/de
+lexicon over the sentences naming the brand; only an unsure tone (both kinds of words, no
+clear majority) asks Haiku 5.5 for the tone alone (`analysis/tone.ts`, metered as
+analysis). `AI_ANALYSIS_MODE=llm` restores the one-call-per-answer ranking pass.
+`npx tsx scripts/analysis-agreement.ts [200]` (as echorank, read-only, no model calls)
+compares the two on stored answers and prints the calls avoided per day.
+
 ### AI Search monitor engines (the scheduled tracker)
 
 Adapters: **Claude** (SDK), **ChatGPT** and **Gemini** (direct HTTP,

@@ -35,10 +35,25 @@ import {
 } from "./competitor-filter";
 import {
   extractEntities,
+  resolveEntities,
+  type EntityExtraction,
   type EntityExtractionResult,
   type RankedCompetitor,
   type Sentiment,
 } from "./entities";
+import { extractEntitiesHeuristic, lexiconTone } from "./heuristic";
+import { toneWithModel } from "./tone";
+
+/**
+ * Which analysis pass runs. "heuristic" (the default): entities and position
+ * from the text, tone from a lexicon, a model asked only for an unsure tone
+ * (./heuristic.ts). "llm": the ranking pass, one model call per answer — kept
+ * to compare the two (scripts/analysis-agreement.ts). Read per call.
+ */
+export const ANALYSIS_MODE_ENV = "AI_ANALYSIS_MODE";
+export function analysisMode(env: NodeJS.ProcessEnv = process.env): "heuristic" | "llm" {
+  return env[ANALYSIS_MODE_ENV]?.trim().toLowerCase() === "llm" ? "llm" : "heuristic";
+}
 
 /** Who we are watching, as the brand record describes it. */
 export interface BrandContext {
@@ -92,6 +107,8 @@ export interface MeteredCall {
 export interface AnalyzeOptions {
   meter?: MeteredCall;
   provider?: AnthropicProvider;
+  /** Overrides AI_ANALYSIS_MODE; the comparison script runs both. */
+  mode?: "heuristic" | "llm";
 }
 
 export interface RunAnalysis {
@@ -135,6 +152,59 @@ export function brandAliases(brand: BrandContext): string[] {
 }
 
 /**
+ * The heuristic pass, shaped like the ranking pass's result so everything
+ * downstream (classification, persistence, quarantine) is unchanged.
+ *
+ * Entities and the brand's position come from the text; the tone from the
+ * lexicon. Only an unsure tone is asked of the model, metered like any other
+ * analysis call. No call at all leaves the extraction "ok" with zero tokens
+ * and model "heuristic".
+ */
+async function heuristicExtraction(
+  response: ProviderResponse,
+  brand: BrandContext,
+  aliases: string[],
+  listed: boolean,
+  metered: <T>(fn: () => Promise<AiCallOutcome<T>>) => Promise<T>,
+  provider?: AnthropicProvider,
+): Promise<EntityExtractionResult> {
+  const entities = extractEntitiesHeuristic(response.answer, [...aliases, ...(brand.competitors ?? [])]);
+  const names = [brand.brand, ...brand.brandVariations].filter((n) => n?.trim());
+  const lexicon = lexiconTone(response.answer, names, listed);
+
+  let sentiment = lexicon.sentiment;
+  let usage = { inputTokens: 0, outputTokens: 0, model: "heuristic", attempts: 0, error: undefined as string | undefined };
+  if (sentiment === null) {
+    const tone = await metered(async () => {
+      const result = await toneWithModel(brand.brand, response.answer, provider);
+      return {
+        value: result,
+        usage: { inputTokens: result.inputTokens, outputTokens: result.outputTokens },
+        model: result.model,
+      };
+    });
+    sentiment = tone.sentiment;
+    usage = { ...tone, error: tone.error };
+  }
+
+  // An unsure tone the model could not settle drops the row to
+  // deterministic-only and quarantinable, exactly as a failed ranking pass did.
+  const extraction: EntityExtraction | null =
+    sentiment === null
+      ? null
+      : { entities, sentiment, ...resolveEntities(entities, aliases) };
+  return {
+    extraction,
+    inputTokens: usage.inputTokens,
+    outputTokens: usage.outputTokens,
+    model: usage.model,
+    attempts: usage.attempts,
+    raw: "",
+    ...(usage.error ? { error: usage.error } : {}),
+  };
+}
+
+/**
  * Analyse one answer.
  *
  * The LLM pass is metered even when it fails to produce usable JSON: the tokens
@@ -169,26 +239,35 @@ export async function analyzeResponse(
     checkupId: ctx.checkupId ?? null,
   };
 
-  const extraction = await meter(
-    { tenantId: ctx.tenantId, plan: ctx.plan },
-    spec,
-    async (): Promise<AiCallOutcome<EntityExtractionResult>> => {
-      const result = await extractEntities(
-        {
-          brandName: brand.brand,
-          promptText: response.promptText,
-          answer: response.answer,
+  const metered = <T,>(fn: () => Promise<AiCallOutcome<T>>) =>
+    meter({ tenantId: ctx.tenantId, plan: ctx.plan }, spec, fn);
+
+  const extraction =
+    (options.mode ?? analysisMode()) === "heuristic"
+      ? await heuristicExtraction(
+          response,
+          brand,
           aliases,
-        },
-        options.provider,
-      );
-      return {
-        value: result,
-        usage: { inputTokens: result.inputTokens, outputTokens: result.outputTokens },
-        model: result.model,
-      };
-    },
-  );
+          deterministic.listPosition !== null,
+          metered,
+          options.provider,
+        )
+      : await metered(async (): Promise<AiCallOutcome<EntityExtractionResult>> => {
+          const result = await extractEntities(
+            {
+              brandName: brand.brand,
+              promptText: response.promptText,
+              answer: response.answer,
+              aliases,
+            },
+            options.provider,
+          );
+          return {
+            value: result,
+            usage: { inputTokens: result.inputTokens, outputTokens: result.outputTokens },
+            model: result.model,
+          };
+        });
 
   return {
     brandMentioned: deterministic.brandMentioned,

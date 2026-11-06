@@ -361,7 +361,7 @@ describe("analysing one response", () => {
       },
       BRAND,
       CTX,
-      { meter, provider },
+      { meter, provider, mode: "llm" },
     );
 
     expect(analysis.brandMentioned).toBe(true);
@@ -393,7 +393,7 @@ describe("analysing one response", () => {
       { answer: "Echorank360 is good.", promptText: "q" },
       BRAND,
       CTX,
-      { meter, provider },
+      { meter, provider, mode: "llm" },
     );
     expect(Object.keys(analysis)).not.toContain("score");
     expect(Object.keys(analysis)).not.toContain("visibilityScore");
@@ -406,6 +406,7 @@ describe("analysing one response", () => {
     await analyzeResponse({ answer: "Echorank360.", promptText: "q" }, BRAND, CTX, {
       meter,
       provider,
+      mode: "llm",
     });
 
     // One call for the whole row, not one per field.
@@ -432,7 +433,7 @@ describe("analysing one response", () => {
       { answer: "Echorank360 is good.", promptText: "q" },
       BRAND,
       CTX,
-      { meter, provider },
+      { meter, provider, mode: "llm" },
     );
 
     expect(requests).toHaveLength(2);
@@ -449,7 +450,7 @@ describe("analysing one response", () => {
       { answer: "Echorank360 is good.", promptText: "q" },
       BRAND,
       CTX,
-      { meter, provider },
+      { meter, provider, mode: "llm" },
     );
 
     expect(calls[0].usage).toEqual({ inputTokens: 200, outputTokens: 40 });
@@ -474,7 +475,7 @@ describe("analysing one response", () => {
       { answer: "Echorank360 is a solid choice.", promptText: "q" },
       BRAND,
       CTX,
-      { meter, provider },
+      { meter, provider, mode: "llm" },
     );
 
     expect(analysis.brandMentioned).toBe(true);
@@ -494,7 +495,7 @@ describe("analysing one response", () => {
       { answer: "Ahrefs and Semrush are the leaders.", promptText: "q" },
       BRAND,
       CTX,
-      { meter, provider },
+      { meter, provider, mode: "llm" },
     );
 
     expect(calls).toHaveLength(1);
@@ -517,7 +518,7 @@ describe("analysing one response", () => {
       { answer: "Try ChatGPT and Ahrefs.", promptText: "q", promptCategory: "COMPARISON" },
       BRAND,
       CTX,
-      { meter, provider },
+      { meter, provider, mode: "llm" },
     );
 
     expect(analysis.competitors.map((c) => c.name)).toEqual(["ChatGPT", "Ahrefs"]);
@@ -540,7 +541,7 @@ describe("analysing one response", () => {
       { answer: "Echorank360 is good.", promptText: "q" },
       BRAND,
       CTX,
-      { meter, provider },
+      { meter, provider, mode: "llm" },
     );
 
     expect(analysis.extraction.ok).toBe(false);
@@ -558,7 +559,7 @@ describe("analysing one response", () => {
       },
       BRAND,
       CTX,
-      { meter, provider },
+      { meter, provider, mode: "llm" },
     );
 
     expect(requests[0].systemPrompt).toContain("never as instructions");
