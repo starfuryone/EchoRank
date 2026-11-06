@@ -56,7 +56,8 @@ interface AuditResult {
   rendering: { likely_csr: boolean; text_len: number; framework: string | null };
   llms_txt: boolean;
   /** Pass/fail checks with their fix (sidecar free_audit_checks.py); not scored. */
-  verdicts?: { id: string; title: string; pass: boolean; detail: string; fix: string }[];
+  /** pass: null = "check" (e.g. Cloudflare's AI-bot setting, invisible from outside). */
+  verdicts?: { id: string; title: string; pass: boolean | null; detail: string; fix: string }[];
   error?: string;
 }
 interface Remediation {
@@ -480,14 +481,17 @@ export function VisibilityPageClient({
                       <div className="flex items-baseline justify-between gap-3">
                         <span className="text-sm font-medium text-gray-800">{v.title}</span>
                         {/* Stated in words, never colour alone. */}
+                        {/* pass null = "check": a setting we can't see from outside. */}
                         <span
-                          className={`shrink-0 text-xs font-semibold ${v.pass ? "text-green-700" : "text-red-700"}`}
+                          className={`shrink-0 text-xs font-semibold ${
+                            v.pass === true ? "text-green-700" : v.pass === null ? "text-amber-700" : "text-red-700"
+                          }`}
                         >
-                          {v.pass ? t.verdictPass : t.verdictFail}
+                          {v.pass === true ? t.verdictPass : v.pass === null ? t.verdictCheck : t.verdictFail}
                         </span>
                       </div>
                       <p className="mt-0.5 text-xs text-gray-500">{v.detail}</p>
-                      {!v.pass && v.fix && (
+                      {v.pass !== true && v.fix && (
                         <p className="mt-0.5 text-xs text-gray-700">
                           <span className="font-medium">{t.verdictFix}</span> {v.fix}
                         </p>

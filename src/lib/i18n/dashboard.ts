@@ -4641,6 +4641,7 @@ const visibilityEn = {
   verdictsLead: "Each check in plain words, with its fix. These do not change the score.",
   verdictPass: "Pass",
   verdictFail: "Fail",
+  verdictCheck: "Check",
   verdictFix: "Fix:",
   // fixes
   fixesTitle: "Generated fixes",
@@ -4717,6 +4718,7 @@ export const VISIBILITY_COPY: Record<DashLocale, VisibilityCopy> = {
     verdictsLead: "Chaque vérification en clair, avec sa correction. Elles ne changent pas le score.",
     verdictPass: "Réussi",
     verdictFail: "Échec",
+    verdictCheck: "À vérifier",
     verdictFix: "Correction :",
     fixesTitle: "Correctifs générés",
     mockBadge: "contenu factice — définissez ANTHROPIC_API_KEY",
@@ -4788,6 +4790,7 @@ export const VISIBILITY_COPY: Record<DashLocale, VisibilityCopy> = {
     verdictsLead: "Jede Prüfung in klaren Worten, mit ihrer Korrektur. Sie verändern die Punktzahl nicht.",
     verdictPass: "Bestanden",
     verdictFail: "Nicht bestanden",
+    verdictCheck: "Prüfen",
     verdictFix: "Korrektur:",
     fixesTitle: "Generierte Korrekturen",
     mockBadge: "Platzhaltertext — ANTHROPIC_API_KEY setzen",
