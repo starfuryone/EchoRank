@@ -6,6 +6,7 @@ import {
   type DashLocale,
   type PromptTrendsCopy,
 } from "@/lib/i18n/dashboard";
+import { rollingWilson } from "@/lib/stats/noise";
 
 type Point = { d: string; m: boolean; r: number | null };
 type ModelChange = { d: string; from: string; to: string };
@@ -42,6 +43,14 @@ function Sparkline({
   const bw = Math.max(1, Math.floor(W / days) - 1);
   const byDay = new Map(points.map((p) => [p.d, p]));
   const today = new Date();
+  // The light band: the 90% Wilson interval of the mention rate over each
+  // run and the six before it (src/lib/stats/noise.ts), on a 0-100% scale.
+  // Wide where a week's runs say little, narrow where they agree.
+  const ordered = [...points].sort((a, b) => a.d.localeCompare(b.d));
+  const bandByDay = new Map(
+    rollingWilson(ordered.map((p) => p.m)).map((ci, i) => [ordered[i].d, ci] as const),
+  );
+  const band = [];
   const bars = [];
   for (let i = days - 1; i >= 0; i--) {
     const d = new Date(today.getTime() - i * 24 * 60 * 60 * 1000)
@@ -49,6 +58,21 @@ function Sparkline({
       .slice(0, 10);
     const p = byDay.get(d);
     const x = ((days - 1 - i) / days) * W;
+    const ci = bandByDay.get(d);
+    if (ci) {
+      band.push(
+        <rect
+          key={`band-${d}`}
+          data-testid="rate-band"
+          x={x}
+          y={H * (1 - ci.high)}
+          width={bw + 1}
+          height={Math.max(1, H * (ci.high - ci.low))}
+          fill="#10b981"
+          opacity={0.12}
+        />,
+      );
+    }
     if (!p) {
       bars.push(<rect key={d} x={x} y={H - 2} width={bw} height={2} fill="#e5e7eb" />);
     } else if (p.m) {
@@ -91,6 +115,7 @@ function Sparkline({
   });
   return (
     <svg width={W} height={H} className="shrink-0" aria-hidden="true">
+      {band}
       {bars}
       {markers}
     </svg>

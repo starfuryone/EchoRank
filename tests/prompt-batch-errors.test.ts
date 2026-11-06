@@ -109,14 +109,25 @@ describe("prompt batch with provider errors", () => {
     expect(recordPromptAlerts).not.toHaveBeenCalled();
   });
 
-  it("still alerts on a lost mention when the model is unchanged", async () => {
+  it("does not alert on a single miss after a mention: one run is one noisy sample", async () => {
     db.promptRun.findMany.mockResolvedValue([
       { promptId: "p1", brandMentioned: true, brandRank: 1, model: "claude-haiku-4-5" },
     ]);
     sidecarPost.mockResolvedValue({ status: 200, data: { results: prompts.map((p) => result(p.id, null)) } });
     await processPromptBatch("t1");
+    expect(recordPromptAlerts).not.toHaveBeenCalled();
+  });
+
+  it("alerts when the miss persists for a second run on the same model, at the rank last seen", async () => {
+    // Newest first, as the worker queries them.
+    db.promptRun.findMany.mockResolvedValue([
+      { promptId: "p1", brandMentioned: false, brandRank: null, model: "claude-haiku-4-5" },
+      { promptId: "p1", brandMentioned: true, brandRank: 2, model: "claude-haiku-4-5" },
+    ]);
+    sidecarPost.mockResolvedValue({ status: 200, data: { results: prompts.map((p) => result(p.id, null)) } });
+    await processPromptBatch("t1");
     expect(recordPromptAlerts).toHaveBeenCalledWith("t1", [
-      expect.objectContaining({ promptId: "p1", kind: "visibility_lost" }),
+      expect.objectContaining({ promptId: "p1", kind: "visibility_lost", prevRank: 2 }),
     ]);
   });
 

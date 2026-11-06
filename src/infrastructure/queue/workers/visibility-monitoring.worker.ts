@@ -14,6 +14,12 @@ import {
   type PromptTransition,
 } from "@/lib/visibility-alerts";
 import { logger } from "@/infrastructure/observability/logger";
+import {
+  EARLIER_RUNS,
+  RECENT_RUNS,
+  lostRecommendation,
+  regainedRecommendation,
+} from "@/lib/prompt-alert-policy";
 import { withSpan } from "@/infrastructure/observability/telemetry";
 
 const QUEUE_NAME = "visibility-monitoring";
@@ -302,16 +308,26 @@ async function processPromptBatch(tenantId: string): Promise<void> {
     throw new Error(`sidecar track failed (${status})`);
   }
 
-  // Latest prior run per prompt, for transition detection. Fetched before
-  // the inserts below so "previous" excludes this batch. distinct+orderBy
-  // desc yields the newest row per promptId.
-  const prevRuns = await prisma.promptRun.findMany({
-    where: { promptId: { in: prompts.map((p) => p.id) }, error: null },
+  // Prior runs per prompt, newest first, for transition detection: the latest
+  // is "previous", and the recent history feeds the lost-recommendation policy
+  // (src/lib/prompt-alert-policy.ts). Fetched before the inserts below so it
+  // excludes this batch. 45 days covers the policy's windows at a daily cadence.
+  const priorRuns = await prisma.promptRun.findMany({
+    where: {
+      promptId: { in: prompts.map((p) => p.id) },
+      error: null,
+      createdAt: { gte: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000) },
+    },
     orderBy: { createdAt: "desc" },
-    distinct: ["promptId"],
     select: { promptId: true, brandMentioned: true, brandRank: true, model: true },
   });
-  const prevByPrompt = new Map(prevRuns.map((r) => [r.promptId, r]));
+  const historyByPrompt = new Map<string, typeof priorRuns>();
+  for (const run of priorRuns) {
+    const list = historyByPrompt.get(run.promptId) ?? [];
+    if (list.length < RECENT_RUNS + EARLIER_RUNS + 2) list.push(run);
+    historyByPrompt.set(run.promptId, list);
+  }
+  const prevByPrompt = new Map([...historyByPrompt].map(([id, runs]) => [id, runs[0]]));
   const promptTextById = new Map(prompts.map((p) => [p.id, p.text]));
 
   const now = new Date();
@@ -378,17 +394,24 @@ async function processPromptBatch(tenantId: string): Promise<void> {
     // A run on a different model is a new baseline too: the answer changed
     // because the model did, not the market (the move from claude-haiku-4-5
     // to claude-haiku-5-5 on 2026-11-06 would otherwise alert on every prompt).
-    if (prev.model !== (r.model ?? data.model ?? "unknown")) continue;
+    const model = r.model ?? data.model ?? "unknown";
+    if (prev.model !== model) continue;
     const text = promptTextById.get(r.id) ?? r.prompt;
-    if (prev.brandMentioned && !r.brand_mentioned) {
+    // Oldest first, this model only (a model change is a new baseline).
+    const runs = historyByPrompt.get(r.id) ?? [];
+    const cut = runs.findIndex((run) => run.model !== model);
+    const history = (cut === -1 ? runs : runs.slice(0, cut)).map((run) => run.brandMentioned).reverse();
+    if (lostRecommendation(history, r.brand_mentioned)) {
+      // The rank it was last seen at: the newest run that mentioned it.
+      const lastSeen = (cut === -1 ? runs : runs.slice(0, cut)).find((run) => run.brandMentioned);
       transitions.push({
         promptId: r.id,
         promptText: text,
         kind: "visibility_lost",
-        prevRank: prev.brandRank,
+        prevRank: lastSeen?.brandRank ?? null,
         newRank: null,
       });
-    } else if (!prev.brandMentioned && r.brand_mentioned) {
+    } else if (regainedRecommendation(history, r.brand_mentioned)) {
       transitions.push({
         promptId: r.id,
         promptText: text,

@@ -46,6 +46,28 @@ describe("prompt trends: Claude model change marker", () => {
     expect(markers[0].textContent).toContain("claude-haiku-4-5 → claude-haiku-5-5");
   });
 
+  it("draws the mention rate's 90% interval as a light band behind the bars", async () => {
+    serve([
+      {
+        promptId: "p1",
+        text: "band prompt",
+        active: true,
+        points: [
+          { d: yesterday, m: true, r: 1 },
+          { d: today, m: false, r: null },
+        ],
+        modelChanges: [],
+      },
+    ]);
+    const { container } = render(<PromptTrends locale="en" />);
+    await screen.findByText("band prompt");
+    const band = container.querySelectorAll('[data-testid="rate-band"]');
+    expect(band).toHaveLength(2);
+    // One of two runs mentioned: the band spans most of the height.
+    expect(Number(band[1].getAttribute("height"))).toBeGreaterThan(14);
+    expect(band[1].getAttribute("opacity")).toBe("0.12");
+  });
+
   it("draws nothing for a prompt whose model never changed", async () => {
     serve([
       { promptId: "p1", text: "q", active: true, points: [{ d: today, m: true, r: 2 }], modelChanges: [] },

@@ -5,7 +5,9 @@
 //   PromptRun aggregates   → mention rate + per-engine coverage
 //   PromptTrends component → per-prompt sparklines (same data as /visibility)
 //   AlertEvent visibility_* rows → recent alerts list
-// Trust score is intentionally absent: nothing persists one.
+// The summary now carries the AI Trust Score (an EWMA of the daily mention
+// rate) and 90% intervals (src/lib/visibility-summary.ts); this page does not
+// render them yet.
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
