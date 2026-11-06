@@ -20,6 +20,8 @@
 // and the first sign of trouble would be the vendor's invoice. Setting
 // AI_RATES_<PROVIDER> alongside the key closes that hole without a code change.
 
+import { CLAUDE_PRICES, rateCardFor } from "@/ai/anthropic-request";
+
 /**
  * Providers the monitor knows how to call. Stored verbatim in
  * AiProviderCall.provider and Checkup.providers.
@@ -51,6 +53,16 @@ export interface TokenRates {
   outputPerMTok: number;
   /** USD per 1,000,000 input tokens served from cache. */
   cachedInputPerMTok: number;
+  /**
+   * A second rate card for prompts longer than `aboveTokens` (input plus cached
+   * input), applied to the whole call. Claude Haiku 5.5 has one; most do not.
+   */
+  longPrompt?: {
+    aboveTokens: number;
+    inputPerMTok: number;
+    outputPerMTok: number;
+    cachedInputPerMTok: number;
+  };
 }
 
 export interface TokenUsage {
@@ -123,19 +135,19 @@ export const TOKEN_FREE_PROVIDERS: ReadonlySet<AiProvider> = new Set<AiProvider>
  * Published rates, per 1M tokens.
  *
  * ONLY RATES WE CAN CITE LIVE HERE. Anthropic's are first-party published
- * figures (Haiku 4.5 $1/$5, Sonnet 5 $3/$15, Opus 5 $5/$25; cache reads bill at
- * ~0.1x input). Every other vendor is deliberately absent rather than guessed —
+ * figures, kept once in src/ai/anthropic-request.ts (CLAUDE_PRICES) and read from
+ * there: Haiku 5.5 $0.10/$0.50 up to 100K prompt tokens and $0.50/$2.50 above,
+ * Haiku 4.5 $1/$5, Sonnet 5 $2/$10 (the rise to $3/$15 was cancelled). Every
+ * other vendor is deliberately absent rather than guessed —
  * a wrong rate does not fail, it quietly mis-bills, and a cap enforced against
  * a made-up number is worse than no cap because it looks like it works. Supply
  * those through AI_RATES_<PROVIDER> when the key is added.
  *
  * Keyed "PROVIDER:model", with "PROVIDER:*" as a per-provider fallback.
  */
-export const DEFAULT_RATES: Readonly<Record<string, TokenRates>> = {
-  "CLAUDE:claude-haiku-4-5": { inputPerMTok: 1.0, outputPerMTok: 5.0, cachedInputPerMTok: 0.1 },
-  "CLAUDE:claude-sonnet-5": { inputPerMTok: 3.0, outputPerMTok: 15.0, cachedInputPerMTok: 0.3 },
-  "CLAUDE:claude-opus-5": { inputPerMTok: 5.0, outputPerMTok: 25.0, cachedInputPerMTok: 0.5 },
-};
+export const DEFAULT_RATES: Readonly<Record<string, TokenRates>> = Object.fromEntries(
+  Object.entries(CLAUDE_PRICES).map(([model, price]) => [`CLAUDE:${model}`, price]),
+);
 
 /** Env var carrying a provider's rates: "input,output,cachedInput" per MTok. */
 export function rateEnvName(provider: AiProvider): string {
@@ -224,10 +236,13 @@ export function costUsdFor(
   const rates = ratesFor(provider, model, env);
   if (!rates) return { costUsd: 0, priced: false };
 
+  // The prompt's length picks the rate card (Haiku 5.5 bills a prompt over
+  // 100K tokens at its long-prompt rates, for the whole call).
+  const card = rateCardFor(rates, usage.inputTokens + usage.cachedInputTokens);
   const tokenUsd =
-    (usage.inputTokens / 1e6) * rates.inputPerMTok +
-    (usage.outputTokens / 1e6) * rates.outputPerMTok +
-    (usage.cachedInputTokens / 1e6) * rates.cachedInputPerMTok;
+    (usage.inputTokens / 1e6) * card.inputPerMTok +
+    (usage.outputTokens / 1e6) * card.outputPerMTok +
+    (usage.cachedInputTokens / 1e6) * card.cachedInputPerMTok;
 
   // Searches are billed per call. A search the ledger cannot price makes the
   // whole call unpriced (flagged, logged) rather than silently token-only.

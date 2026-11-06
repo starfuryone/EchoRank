@@ -2,6 +2,8 @@
 // AI Configuration Constants
 // ---------------------------------------------------------------------------
 
+import { claudeCostUsd } from "./anthropic-request";
+
 /** Supported model identifiers used for analysis pipelines. */
 export const AI_MODELS = {
   PRIMARY: "gpt-4o-2024-05-13",
@@ -158,12 +160,20 @@ function resolveRates(
   return undefined;
 }
 
-/** Calculate dollar cost for a given model call. */
+/**
+ * Calculate dollar cost for a given model call.
+ *
+ * A Claude model with a published price in src/ai/anthropic-request.ts is costed
+ * from there first: that table is the one kept current, and it knows Haiku
+ * 5.5's long-prompt rate card, which a flat per-1K row cannot express.
+ */
 export function estimateCost(
   modelId: string,
   promptTokens: number,
   completionTokens: number,
 ): number {
+  const claude = claudeCostUsd(modelId, { inputTokens: promptTokens, outputTokens: completionTokens });
+  if (claude !== null) return claude;
   const rates = resolveRates(modelId);
   if (!rates) return 0;
   return (

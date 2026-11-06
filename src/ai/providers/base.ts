@@ -24,8 +24,22 @@ export interface InferenceRequest {
    * previous behaviour (a provider default), so nothing that already works
    * changes.
    */
+  //
+  // AnthropicProvider never sends one, whatever is passed here: every Claude
+  // model the house runs on is from the generation that rejects it.
   temperature?: number | null;
+  /**
+   * A cap sized in Haiku 4.5 tokens. AnthropicProvider restates it for the
+   * model's tokenizer on a house call (see src/ai/anthropic-request.ts).
+   */
   maxTokens?: number;
+  /**
+   * "house" (the default): our own work — thinking off on a model that thinks
+   * by default, the cap restated for the tokenizer.
+   * "observe": a tracking answer — the model's own defaults and the cap exactly
+   * as given, because what is measured must be what an ordinary user gets.
+   */
+  mode?: "house" | "observe";
   responseFormat?: "json" | "text";
   /** Optional per-call model override. Falls back to the provider default. */
   modelId?: string;

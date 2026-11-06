@@ -172,11 +172,21 @@ describe("config", () => {
     expect(() => withEnv({ BLOG_AGENT_DAILY_TARGET: "0" }, blogAgentDailyTarget)).toThrow();
   });
 
-  it("prices a call from the reported token counts", () => {
-    // 1M in + 1M out at $1 / $5.
-    expect(callCostUsd(1_000_000, 1_000_000)).toBeCloseTo(6, 6);
+  it("prices a call from the model and the reported token counts", () => {
+    // 1M in + 1M out at Haiku 4.5's $1 / $5.
+    expect(callCostUsd("claude-haiku-4-5", 1_000_000, 1_000_000)).toBeCloseTo(6, 6);
+    // Haiku 5.5: $0.10 / $0.50 up to 100K prompt tokens...
+    expect(callCostUsd("claude-haiku-5-5", 100_000, 1_000_000)).toBeCloseTo(0.51, 6);
+    // ...and $0.50 / $2.50 for the whole call above it.
+    expect(callCostUsd("claude-haiku-5-5", 100_001, 1_000_000)).toBeCloseTo(2.5500005, 6);
     // A realistic article: ~12k in, ~2.5k out. Comfortably inside the default cap.
-    expect(callCostUsd(12_000, 2_500)).toBeLessThan(0.03);
+    expect(callCostUsd("claude-haiku-4-5", 12_000, 2_500)).toBeLessThan(0.03);
+    expect(callCostUsd("claude-haiku-5-5", 12_000, 2_500)).toBeGreaterThan(0);
+  });
+
+  it("costs a model with no published price high, never at zero", () => {
+    // Opus 5's rate card: the daily cap stops an unknown model early.
+    expect(callCostUsd("claude-next-unreleased", 1_000_000, 1_000_000)).toBeCloseTo(30, 6);
   });
 });
 

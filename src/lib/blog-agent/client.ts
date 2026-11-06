@@ -179,7 +179,7 @@ export async function callDraftModel(input: {
         text: withPrefill(text),
         inputTokens,
         outputTokens,
-        costUsd: callCostUsd(inputTokens, outputTokens),
+        costUsd: callCostUsd(model, inputTokens, outputTokens),
         model,
       };
     } catch (err) {

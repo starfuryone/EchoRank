@@ -141,7 +141,7 @@ search (300 in / 600 out typical, 1,200 out worst).
 | ChatGPT `gpt-5` | $0.024 | $0.045 | $0.71 |
 | Gemini `gemini-3.8-flash` (from 2027-01-01) | $0.026 | $0.052 | $0.79 |
 | Gemini `gemini-3.8-flash` (to 2026-12-31) | $0.022 | $0.042 | $0.65 |
-| Claude `claude-sonnet-5` | $0.013 | $0.022 | $0.39 |
+| Claude `claude-sonnet-5` ($2 / $10) | $0.010 | $0.016 | $0.29 |
 | alt: `gpt-5-mini` | $0.015 | $0.028 | $0.46 |
 | alt: `gemini-3.1-flash-lite` | $0.019 | $0.035 | $0.57 |
 

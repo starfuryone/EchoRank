@@ -219,11 +219,11 @@ export async function askEngine(request: AskRequest, deps: AskDeps = {}): Promis
     systemPrompt: ASK_SYSTEM_PROMPT,
     userPrompt: request.promptText,
     maxTokens: ASK_MAX_TOKENS,
-    // No temperature at all. claude-sonnet-5 returns a 400 for the parameter,
-    // and the point of this call is to observe what the engine says to an
-    // ordinary person — which is its own default, not a setting we chose.
-    // Found by a dogfood run: every answer call failed until this was removed.
-    temperature: null,
+    // The engine's own defaults: no temperature (claude-sonnet-5 returns a 400
+    // for it — found by a dogfood run), no thinking setting, the cap as given.
+    // The point of this call is to observe what the engine says to an
+    // ordinary person, not what it says under settings we chose.
+    mode: "observe",
     // Pinned per call. AnthropicProvider falls back to ANTHROPIC_MODEL, and an
     // env change moving the monitor onto a different model would change both
     // the bill and every score it produces.

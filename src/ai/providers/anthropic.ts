@@ -3,6 +3,7 @@
 // ---------------------------------------------------------------------------
 
 import { AiProvider, type InferenceRequest, type InferenceResult } from "./base";
+import { houseClaudeControls } from "../anthropic-request";
 
 // House policy: claude-haiku-4-5 for every Anthropic call, everywhere.
 //
@@ -46,21 +47,19 @@ export class AnthropicProvider extends AiProvider {
         ? request.modelId
         : this.model;
 
+    const cap = request.maxTokens ?? 512;
+    // No temperature, ever, and no prefill (the one message is the user's):
+    // both are a 400 on the 4.6+ generation. A house call also turns thinking
+    // off and restates the cap for the tokenizer; a tracking answer ("observe")
+    // keeps the model's own defaults and the cap as given.
     const body: Record<string, unknown> = {
       model: requestedModel,
-      max_tokens: request.maxTokens ?? 512,
+      ...(request.mode === "observe"
+        ? { max_tokens: cap }
+        : houseClaudeControls(requestedModel, cap)),
       system: request.systemPrompt,
       messages: [{ role: "user", content: request.userPrompt }],
     };
-
-    // Only send a temperature when one is wanted. Explicit null means "leave it
-    // out": the newer Sonnet-class models reject the parameter with a 400, and a caller
-    // observing what a model says to an ordinary person wants the vendor's own
-    // default anyway. `undefined` keeps the historical 0.1, so every existing
-    // caller behaves exactly as before.
-    if (request.temperature !== null) {
-      body.temperature = request.temperature ?? 0.1;
-    }
 
     let lastError: Error | null = null;
 

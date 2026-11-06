@@ -13,6 +13,8 @@
 // because the one thing worse than an agent that will not run is an agent that
 // runs and silently produces nothing while the logs say "completed".
 
+import { claudeCostUsd } from "@/ai/anthropic-request";
+
 /** Thrown when a required variable is absent. Always names the variable. */
 export class BlogAgentConfigError extends Error {
   constructor(public readonly envVar: string, detail?: string) {
@@ -44,14 +46,13 @@ export type BlogAgentMode = "review" | "auto";
 export const DEFAULT_BLOG_AGENT_MODEL = "claude-haiku-4-5";
 
 /**
- * Per-million-token prices for the default model, USD.
- *
- * Used only to compute the spend we log and cap on. They are a local copy of a
- * published price and will drift if the model changes — which is why
- * BLOG_AGENT_MODEL changing away from the default makes the cost figure an
- * ESTIMATE, and why costUsd is stored per run rather than recomputed later.
+ * Per-million-token price for a model with no published price in
+ * src/ai/anthropic-request.ts, USD: Opus 5's, the dearest Claude rate card. An
+ * unknown BLOG_AGENT_MODEL is costed high rather than at zero, so the daily cap
+ * stops it early instead of not seeing it. costUsd is stored per run rather
+ * than recomputed later, so a price correction never rewrites history.
  */
-export const HAIKU_PRICE_PER_MTOK = { input: 1.0, output: 5.0 } as const;
+export const UNPRICED_MODEL_PRICE_PER_MTOK = { input: 5.0, output: 25.0 } as const;
 
 /** Articles drafted per discover run when enough worthy topics exist. */
 export const DEFAULT_DAILY_TARGET = 3;
@@ -134,10 +135,15 @@ export function blogAgentDailyTarget(): number {
   return n;
 }
 
-/** USD cost of one call, from the token counts the API reports back. */
-export function callCostUsd(inputTokens: number, outputTokens: number): number {
+/**
+ * USD cost of one call, from the model and the token counts the API reports
+ * back, at the model's published rate card (Haiku 5.5's depends on the
+ * prompt's length).
+ */
+export function callCostUsd(model: string, inputTokens: number, outputTokens: number): number {
   return (
-    (inputTokens / 1_000_000) * HAIKU_PRICE_PER_MTOK.input +
-    (outputTokens / 1_000_000) * HAIKU_PRICE_PER_MTOK.output
+    claudeCostUsd(model, { inputTokens, outputTokens }) ??
+    (inputTokens / 1_000_000) * UNPRICED_MODEL_PRICE_PER_MTOK.input +
+      (outputTokens / 1_000_000) * UNPRICED_MODEL_PRICE_PER_MTOK.output
   );
 }
