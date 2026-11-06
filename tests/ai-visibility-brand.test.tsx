@@ -2,8 +2,9 @@
 //
 // tests/ai-visibility-brand.test.tsx — the Echorank AI Visibility sub-brand
 // (src/lib/ai-visibility/brand.ts, public/ai-visibility/):
-//   - the files: logo SVGs at 2056:518 (≈3.97:1), the emblem square, the PNG
-//     sizes, the two OG cards at 1200x630;
+//   - the files: the 2026-11 artwork (light / on-dark logo at 1580:371 ≈4.26:1,
+//     the mark), copied as-is (the light one differs from on-dark only in its
+//     wordmark fill), the email PNG and the two OG cards at 1200x630;
 //   - every placement renders, in en / fr / de-CH: homepage /01 card A, /09 and
 //     /13, /ai-visibility, /ai-visibility-check (and its result page),
 //     /free-audit, the in-app top bar / sidebar / tab icon, /learn and a
@@ -71,13 +72,13 @@ function viewBox(publicPath: string): number[] {
   return /viewBox="([^"]+)"/.exec(xml)![1]!.trim().split(/\s+/).map(Number);
 }
 /** The <img> tags of the AI Visibility logo that carry a name (decorative day-theme copies excluded). */
-const namedLogos = (html: string) => [...html.matchAll(/<img[^>]*src="\/ai-visibility\/echorank-ai-visibility-logo[^"]*"[^>]*>/g)].map((x) => x[0]).filter((t) => !/alt=""/.test(t));
+const namedLogos = (html: string) => [...html.matchAll(/<img[^>]*src="\/ai-visibility\/echorank-ai-visibility(?:-on-dark)?\.svg"[^>]*>/g)].map((x) => x[0]).filter((t) => !/alt=""/.test(t));
 const doc = (html: string) => {
   const el = document.createElement("div");
   el.innerHTML = html;
   return el;
 };
-/** The logo inside a container: the named <img>, at `height` with the 2056:518 width, on-dark first (themed). */
+/** The logo inside a container: the named <img>, at `height` with the 1580:371 width, on-dark first (themed). */
 function checkLogo(container: Element | null, height: number, surface: "themed" | "dark" | "light" = "themed") {
   expect(container).not.toBeNull();
   const imgs = [...container!.querySelectorAll("img")];
@@ -92,32 +93,38 @@ function checkLogo(container: Element | null, height: number, surface: "themed" 
 }
 
 describe("the files", () => {
-  it("logo SVGs are 2056:518 (≈3.97:1); the emblems are square", () => {
-    for (const f of [AV_BRAND.logoOnDark, AV_BRAND.logoOnLight, AV_BRAND.logoMonoGold, AV_BRAND.logoMonoWhite]) {
+  it("the logo SVGs are the supplied 1580:371 artwork; the mark is near-square", () => {
+    expect([AV_BRAND.logoOnLight, AV_BRAND.logoOnDark, AV_BRAND.mark]).toEqual([
+      "/ai-visibility/echorank-ai-visibility.svg",
+      "/ai-visibility/echorank-ai-visibility-on-dark.svg",
+      "/ai-visibility/echorank-ai-visibility-mark.svg",
+    ]);
+    for (const f of [AV_BRAND.logoOnDark, AV_BRAND.logoOnLight]) {
       const [, , w, h] = viewBox(f);
-      expect(w! / h!).toBeCloseTo(3.97, 2);
       expect([w, h]).toEqual([AV_BRAND.width, AV_BRAND.height]);
+      expect(w! / h!).toBeCloseTo(4.26, 2);
     }
-    for (const f of [AV_BRAND.emblem, AV_BRAND.emblemCurrent]) {
-      const [, , w, h] = viewBox(f);
-      expect(w).toBeGreaterThan(0);
-      expect(w).toBe(h);
+    const [, , mw, mh] = viewBox(AV_BRAND.mark);
+    expect(Math.abs(mw! / mh! - 1)).toBeLessThan(0.02);
+    // The light file is the on-dark artwork with only the wordmark's fill changed.
+    const svg = (f: string) => readFileSync(join(ROOT, "public", f), "utf8");
+    expect(svg(AV_BRAND.logoOnLight).replace('fill="#181A20"', 'fill="#FFFFFF"')).toBe(svg(AV_BRAND.logoOnDark));
+    // Copied as-is from the supplied set when it is on this box.
+    const SRC = "/opt/echorank/prompts/logo";
+    if (existsSync(SRC)) {
+      expect(svg(AV_BRAND.logoOnDark)).toBe(readFileSync(join(SRC, "echorank-ai-visibility-on-dark.svg"), "utf8"));
+      expect(svg(AV_BRAND.mark)).toBe(readFileSync(join(SRC, "echorank-ai-visibility-mark.svg"), "utf8"));
     }
-    expect(readFileSync(join(ROOT, "public", AV_BRAND.emblemCurrent), "utf8")).toContain('fill="currentColor"');
   });
 
   it("the PNGs are present at their sizes", () => {
-    for (const v of ["on-dark", "on-light", "mono-white"]) {
-      for (const w of [240, 480, 800, 1200]) {
-        const [pw, ph] = pngSize(join(DIR, `echorank-ai-visibility-logo-${v}-${w}.png`));
-        expect(pw).toBe(w);
-        expect(Math.abs(ph - (w * 518) / 2056)).toBeLessThanOrEqual(1);
-      }
-    }
+    const [ew, eh] = pngSize(join(DIR, "echorank-ai-visibility-on-dark-800.png"));
+    expect(ew).toBe(800);
+    expect(Math.abs(eh - (800 * 371) / 1580)).toBeLessThanOrEqual(1);
     for (const s of [32, 64, 128, 512]) expect(pngSize(join(DIR, `echorank-ai-visibility-emblem-${s}.png`))).toEqual([s, s]);
     for (const og of ["og-ai-visibility.png", "og-ai-visibility-check.png"]) expect(pngSize(join(DIR, og))).toEqual([1200, 630]);
-    expect(AV_BRAND.logoEmail).toMatch(/^https:\/\/.+\/ai-visibility\/echorank-ai-visibility-logo-on-dark-800\.png$/);
-    expect(AV_BRAND.logoPdf).toMatch(/^https:\/\/.+\/ai-visibility\/echorank-ai-visibility-logo-on-light-800\.png$/);
+    expect(AV_BRAND.logoEmail).toMatch(/^https:\/\/.+\/ai-visibility\/echorank-ai-visibility-on-dark-800\.png$/);
+    expect(AV_BRAND.logoPdf).toMatch(/^https:\/\/.+\/ai-visibility\/echorank-ai-visibility\.svg$/);
     for (const f of readdirSync(DIR)) expect(statSync(join(DIR, f)).mode & 0o044, f).toBe(0o044);
     for (const v of Object.values(AV_BRAND)) if (typeof v === "string" && v.startsWith("/ai-visibility/")) expect(existsSync(join(ROOT, "public", v)), v).toBe(true);
   });
@@ -192,7 +199,7 @@ describe.each(LOCALES)("%s", (l) => {
     const el = doc(html);
     for (const id of ["home-09-av", "home-13-av"]) {
       const em = el.querySelector(`[data-testid="${id}"] img`)!;
-      expect([em.getAttribute("src"), em.getAttribute("width"), em.getAttribute("height"), em.getAttribute("alt")]).toEqual([AV_BRAND.emblem, "40", "40", ""]);
+      expect([em.getAttribute("src"), em.getAttribute("width"), em.getAttribute("height"), em.getAttribute("alt")]).toEqual([AV_BRAND.mark, "40", "40", ""]);
     }
     expect(el.querySelector('[data-testid="home-09-av"] p')!.textContent).toContain("/ 09");
     expect(el.querySelector('[data-testid="home-13-av"] p')!.textContent).toContain("/ 13");
@@ -259,7 +266,7 @@ describe.each(LOCALES)("%s", (l) => {
       const row = side.querySelector('a[href="/ai"]')!;
       const em = row.querySelector("[data-av-emblem-current]")!;
       expect(em.getAttribute("class")).toBe("h-5 w-5 shrink-0");
-      expect(em.getAttribute("style") ?? "").toContain(`url("${AV_BRAND.emblemCurrent}")`);
+      expect(em.getAttribute("style") ?? "").toContain(`url("${AV_BRAND.mark}")`);
       expect(em.getAttribute("style") ?? "").toContain("background-color:currentColor");
       expect(row.querySelector("svg, img")).toBeNull();
       expect(row.getAttribute("class") ?? "").toContain(active ? "text-white" : "text-gray-400");
@@ -271,13 +278,13 @@ describe.each(LOCALES)("%s", (l) => {
     const el = doc(renderToStaticMarkup(await Learn(P(l) as never)));
     const title = el.querySelector('[data-testid="learn-course-title"]')!;
     const em = title.querySelector("img")!;
-    expect([em.getAttribute("src"), em.getAttribute("width"), em.getAttribute("height")]).toEqual([AV_BRAND.emblem, "24", "24"]);
+    expect([em.getAttribute("src"), em.getAttribute("width"), em.getAttribute("height")]).toEqual([AV_BRAND.mark, "24", "24"]);
     const base = l === "fr" ? "fr" : "en";
     expect(title.textContent).toBe(LEARN_COURSE_NAME[base]);
     const Chapter = (await import("@/app/[locale]/learn/[chapter]/page")).default;
     const ch = doc(renderToStaticMarkup(await Chapter(P(l, { chapter: LEARN_CHAPTERS[0]!.slug }) as never)));
     const line = ch.querySelector('[data-testid="learn-chapter-course"]')!;
-    expect(line.querySelector("img")!.getAttribute("src")).toBe(AV_BRAND.emblem);
+    expect(line.querySelector("img")!.getAttribute("src")).toBe(AV_BRAND.mark);
     expect(line.querySelector("img")!.getAttribute("width")).toBe("24");
     expect(line.textContent).toBe(LEARN_COURSE_NAME[base]);
   });
@@ -291,7 +298,7 @@ describe.each(LOCALES)("%s", (l) => {
     const render = async (i: (typeof items)[number]) => doc(renderToStaticMarkup(await Sol(P(l, { category: i.category, slug: i.slug }) as never)));
     const yes = await render(items.find((i) => i.slug === "get-cited-by-ai")!);
     const em = yes.querySelector('[data-testid="solution-av-emblem"] img')!;
-    expect([em.getAttribute("src"), em.getAttribute("width"), em.getAttribute("height")]).toEqual([AV_BRAND.emblem, "32", "32"]);
+    expect([em.getAttribute("src"), em.getAttribute("width"), em.getAttribute("height")]).toEqual([AV_BRAND.mark, "32", "32"]);
     expect(yes.querySelector('[data-testid="solution-av-emblem"]')!.compareDocumentPosition(yes.querySelector("h1")!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     const no = await render(items.find((i) => i.slug === "healthcare")!);
     expect(no.querySelector('[data-testid="solution-av-emblem"]')).toBeNull();
@@ -324,10 +331,10 @@ describe("in-app tab icon and scope", () => {
   });
 });
 
-describe("emails: the on-dark logo, 240 px, on a dark strip", () => {
+describe("emails: the on-dark logo, 60 px high (as before), on a dark strip", () => {
   const header = (html: string) => {
     expect(html).toContain(`background:${AV_EMAIL_BAND}`);
-    expect(html).toMatch(new RegExp(`<img src="${AV_BRAND.logoEmail.replace(/[.?]/g, "\\$&")}" width="240" height="60" alt="${AV_BRAND.name}"`));
+    expect(html).toMatch(new RegExp(`<img src="${AV_BRAND.logoEmail.replace(/[.?]/g, "\\$&")}" width="256" height="60" alt="${AV_BRAND.name}"`));
   };
 
   it("the AI Visibility Check report email (en, fr)", () => {

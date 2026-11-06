@@ -1,13 +1,13 @@
 // The Echorank AI Visibility sub-brand on a page (src/lib/ai-visibility/brand.ts).
 //
 //   <AiVisibilityLogo>  the logo as an <img> of the SVG, explicit width/height
-//                       at 2056:518. surface "dark" / "light", or "themed" for
+//                       at 1580:371. surface "dark" / "light", or "themed" for
 //                       the public pages (dark by default, light under
 //                       [data-theme="day"]: the light file is added, shown only
 //                       there, and decorative, so one accessible name).
-//   <AvEmblem>          the gold emblem, square, decorative.
-//   <AvEmblemIcon>      the currentColor emblem in an icon slot (the sidebar, the
-//                       top bar): painted through a CSS mask filled with
+//   <AvEmblem>          the gold mark, in a square slot, decorative.
+//   <AvEmblemIcon>      the mark in currentColor in an icon slot (the sidebar,
+//                       the top bar): painted through a CSS mask filled with
 //                       currentColor, since an <img> cannot take the page's
 //                       colour; the file is used as-is.
 //
@@ -53,11 +53,22 @@ export function AiVisibilityLogo({
 export function AvEmblem({ size, className }: { size: number; className?: string }) {
   return (
     // eslint-disable-next-line @next/next/no-img-element -- a static SVG at a fixed size
-    <img className={className} src={AV_BRAND.emblem} width={size} height={size} alt="" aria-hidden="true" data-av-emblem="" />
+    <img
+      className={className}
+      src={AV_BRAND.mark}
+      width={size}
+      height={size}
+      alt=""
+      aria-hidden="true"
+      data-av-emblem=""
+      // The mark is 366:372, not quite square: contained, never stretched.
+      style={{ objectFit: "contain" }}
+    />
   );
 }
 
-const MASK = `url("${AV_BRAND.emblemCurrent}") center / contain no-repeat`;
+// A mask uses only the file's shape (alpha), so the gold mark paints in currentColor here.
+const MASK = `url("${AV_BRAND.mark}") center / contain no-repeat`;
 const MASK_STYLE: CSSProperties = { display: "inline-block", backgroundColor: "currentColor", mask: MASK, WebkitMask: MASK };
 
 /** lucide's shape (a className), so it drops into an icon slot; size from the className. */
