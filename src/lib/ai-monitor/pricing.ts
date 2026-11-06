@@ -57,6 +57,54 @@ export interface TokenUsage {
   inputTokens: number;
   outputTokens: number;
   cachedInputTokens: number;
+  /**
+   * Web searches the provider ran while answering. Billed per call on top of
+   * tokens by the search-grounded engines (see SEARCH_BILLED_PROVIDERS).
+   * Optional so every token-only caller stays as it was; absent means 0.
+   */
+  searchCalls?: number;
+}
+
+/**
+ * Providers whose answers run a billed web search.
+ *
+ * ChatGPT (Responses API web_search tool) and Gemini (Grounding with Google
+ * Search) charge per search ON TOP OF tokens, and at these prices the search
+ * fee is the larger half of a check. A token rate alone would therefore
+ * under-meter them by more than half — so for these providers a call is only
+ * priced when a search fee is configured too (searchFeeFor below).
+ */
+export const SEARCH_BILLED_PROVIDERS: ReadonlySet<AiProvider> = new Set<AiProvider>([
+  "CHATGPT",
+  "GEMINI",
+]);
+
+/** Env var carrying a provider's per-search fee in USD, e.g. "0.01". */
+export function searchFeeEnvName(provider: AiProvider): string {
+  return `AI_SEARCH_FEE_${provider}`;
+}
+
+/**
+ * USD per web search for a provider, or null when none is configured.
+ *
+ * ENV ONLY, NO BUILT-IN DEFAULT, on purpose: a search-billed engine becomes
+ * runnable the moment it is fully priced, and this box serves production from
+ * the working tree. Shipping a default would switch real spend on at deploy
+ * time for every tier whose engine allowance reaches it. Setting the two env
+ * lines (AI_RATES_<P> and AI_SEARCH_FEE_<P>) is the operator's decision to
+ * turn the engine on, taken against the vendor's current price list.
+ *
+ * A malformed or negative value is "not configured", never zero — zero would
+ * make every search look free.
+ */
+export function searchFeeFor(
+  provider: AiProvider,
+  env: NodeJS.ProcessEnv = process.env,
+): number | null {
+  const raw = env[searchFeeEnvName(provider)]?.trim();
+  if (!raw) return null;
+  const n = Number(raw);
+  return Number.isFinite(n) && n >= 0 ? n : null;
 }
 
 /**
@@ -176,12 +224,18 @@ export function costUsdFor(
   const rates = ratesFor(provider, model, env);
   if (!rates) return { costUsd: 0, priced: false };
 
-  const usd =
+  const tokenUsd =
     (usage.inputTokens / 1e6) * rates.inputPerMTok +
     (usage.outputTokens / 1e6) * rates.outputPerMTok +
     (usage.cachedInputTokens / 1e6) * rates.cachedInputPerMTok;
 
-  return { costUsd: roundUsd(usd), priced: true };
+  // Searches are billed per call. A search the ledger cannot price makes the
+  // whole call unpriced (flagged, logged) rather than silently token-only.
+  const searches = Math.max(0, usage.searchCalls ?? 0);
+  if (searches === 0) return { costUsd: roundUsd(tokenUsd), priced: true };
+  const fee = searchFeeFor(provider, env);
+  if (fee === null) return { costUsd: roundUsd(tokenUsd), priced: false };
+  return { costUsd: roundUsd(tokenUsd + searches * fee), priced: true };
 }
 
 /**

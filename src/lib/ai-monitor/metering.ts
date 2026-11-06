@@ -106,6 +106,8 @@ function fullUsage(usage: Partial<TokenUsage> | undefined): TokenUsage {
     inputTokens: usage?.inputTokens ?? 0,
     outputTokens: usage?.outputTokens ?? 0,
     cachedInputTokens: usage?.cachedInputTokens ?? 0,
+    // Priced into costUsd (pricing.ts); the ledger has no column for the count.
+    searchCalls: usage?.searchCalls ?? 0,
   };
 }
 

@@ -71,18 +71,27 @@ export function prismaPorts(ctx: PortContext): RunnerPorts {
             usage: {
               inputTokens: answer.inputTokens,
               outputTokens: answer.outputTokens,
+              searchCalls: answer.searchCalls ?? 0,
             },
             model: answer.model,
           };
         },
       );
 
-      // Sources arrive only from engines that return them structurally; the
-      // ones that do not fall back to the URLs in their own prose, which
+      // Metered first, refused second: an empty answer was still billed, but
+      // scoring "" would record "the engine did not mention the brand" — a
+      // finding — for what is really a failed call. The runner marks it FAILED.
+      if (!result.answer.trim()) {
+        throw new Error(`${slot.engine} returned an empty answer`);
+      }
+
+      // Sources arrive only from engines that return them structurally
+      // (ChatGPT's url citations, Gemini's grounding chunks); the ones that do
+      // not fall back to the URLs in their own prose, which
       // ../analysis/citations.ts handles.
       return {
         answer: result.answer,
-        sources: null,
+        sources: result.sources && result.sources.length > 0 ? result.sources : null,
         model: result.model,
         latencyMs: result.latencyMs,
         inputTokens: result.inputTokens,

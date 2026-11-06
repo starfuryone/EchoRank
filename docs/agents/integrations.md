@@ -111,6 +111,42 @@ paragraph in `src/lib/i18n/content.ts`) describes more than this path does; the
 multi-provider list in `src/lib/ai-monitor/pricing.ts` belongs to the AI Search monitor,
 and each provider there is live only when its key is set.
 
+### AI Search monitor engines (the scheduled tracker)
+
+Adapters: **Claude** (SDK), **ChatGPT** and **Gemini** (direct HTTP,
+`src/lib/ai-monitor/runner/http-engines.ts`, reusing the free check's parsers). Every
+other catalogue engine refuses `no_adapter`. An engine runs only when it has a key, an
+adapter AND prices (`runner/providers.ts`, fail closed). ChatGPT and Gemini are
+search-billed, so they need two env lines each and **ship off** — setting them is the
+switch-on:
+
+```
+AI_RATES_CHATGPT=1.25,10,0.125      # gpt-5, $/MTok in,out,cached
+AI_SEARCH_FEE_CHATGPT=0.01          # web search tool, $10 / 1k calls
+AI_RATES_GEMINI=1.5,7.5,0.15        # gemini-3.8-flash at its 2027-01-01 rate (0.75,3.75,0.075 until then)
+AI_SEARCH_FEE_GEMINI=0.014          # Google Search grounding, $14 / 1k queries
+```
+
+Sources, read 2026-11-06: developers.openai.com/api/docs/pricing,
+aistudio.google.com/docs/pricing. Gemini 3 bills per search **query** (one answer can run
+several); the 5,000 free queries a month are not credited; grounding is capped at
+**1,500 requests a day per account**, shared with the free check.
+
+Cost per check (one answer + one Haiku analysis pass at $0.0032). Typical = 2,000 in /
+800 out and one search; worst = 8,000 in / 1,200 out and two searches; Claude does not
+search (300 in / 600 out typical, 1,200 out worst).
+
+| Engine / model | Typical | Worst | Per prompt per month, daily |
+|---|---|---|---|
+| ChatGPT `gpt-5` | $0.024 | $0.045 | $0.71 |
+| Gemini `gemini-3.8-flash` (from 2027-01-01) | $0.026 | $0.052 | $0.79 |
+| Gemini `gemini-3.8-flash` (to 2026-12-31) | $0.022 | $0.042 | $0.65 |
+| Claude `claude-sonnet-5` | $0.013 | $0.022 | $0.39 |
+| alt: `gpt-5-mini` | $0.015 | $0.028 | $0.46 |
+| alt: `gemini-3.1-flash-lite` | $0.019 | $0.035 | $0.57 |
+
+The search fee alone ($0.010 / $0.014) is the larger half of a search-grounded check.
+
 ## Email / SMS
 
 `SMTP_*` empty, `BREVO_API_KEY` absent though `/api/webhooks/brevo` exists, Twilio

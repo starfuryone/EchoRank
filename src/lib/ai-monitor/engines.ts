@@ -93,7 +93,11 @@ export const ENGINE_CATALOGUE: readonly EngineSpec[] = [
   },
   {
     provider: "GEMINI",
-    modelName: "gemini-3-pro",
+    // Was "gemini-3-pro", which Google's price list (aistudio.google.com/docs/
+    // pricing, read 2026-11-06) no longer names — the adapter would have hit a
+    // model id that does not exist. 3.8 Flash is the current Flash model, the
+    // class the consumer Gemini app answers with, and it is listed verbatim.
+    modelName: "gemini-3.8-flash",
     displayName: "Gemini",
     supportsSearch: true,
     supportsCitations: true,

@@ -14,17 +14,26 @@
 // tenant would rather have four engines that bill correctly than six where two
 // appear free until the month closes.
 //
-// TODAY THAT MEANS CLAUDE. It is the only provider with built-in rates, because
-// pricing.ts ships published prices and refuses to guess the rest. Turning any
-// other engine on is one AI_RATES_<PROVIDER> line plus an adapter — deliberately
-// an operator action taken against the vendor's current price list, not a
-// number invented here from memory. `refusals()` exists so that is visible in
-// the dashboard rather than looking like an outage.
+// ADAPTERS: CLAUDE, CHATGPT, GEMINI. Only CLAUDE has built-in rates, because
+// pricing.ts ships Anthropic's published prices and nothing else. ChatGPT and
+// Gemini have adapters (./http-engines.ts) but stay refused with `no_rates`
+// until the operator sets BOTH AI_RATES_<P> and AI_SEARCH_FEE_<P> — they are
+// search-billed, and a token rate alone would under-meter them by more than
+// half. Deliberately an operator action taken against the vendor's current
+// price list, so a deploy never switches new spend on by itself. `refusals()`
+// exists so that is visible in the dashboard rather than looking like an outage.
 
 import type { AnthropicProvider } from "@/ai/providers/anthropic";
 import type { EngineSpec } from "../engines";
 import { engineAvailability } from "../engines";
-import { TOKEN_FREE_PROVIDERS, ratesFor } from "../pricing";
+import {
+  SEARCH_BILLED_PROVIDERS,
+  TOKEN_FREE_PROVIDERS,
+  rateEnvName,
+  ratesFor,
+  searchFeeEnvName,
+  searchFeeFor,
+} from "../pricing";
 
 export type RefusalReason =
   | "missing_key"
@@ -47,12 +56,29 @@ export interface EngineRefusal {
  * flags all need them; that is a different question from whether this process
  * can send one a request.
  */
-export const ADAPTER_PROVIDERS: ReadonlySet<string> = new Set<string>(["CLAUDE"]);
+export const ADAPTER_PROVIDERS: ReadonlySet<string> = new Set<string>(["CLAUDE", "CHATGPT", "GEMINI"]);
 
-/** Is this engine priced? Token-free providers carry their cost another way. */
+/**
+ * Is this engine priced? Token-free providers carry their cost another way;
+ * search-billed ones need their per-search fee as well as token rates.
+ */
 export function isPriced(engine: EngineSpec, env: NodeJS.ProcessEnv = process.env): boolean {
   if (TOKEN_FREE_PROVIDERS.has(engine.provider)) return true;
-  return ratesFor(engine.provider, engine.modelName, env) !== null;
+  if (ratesFor(engine.provider, engine.modelName, env) === null) return false;
+  if (SEARCH_BILLED_PROVIDERS.has(engine.provider)) {
+    return searchFeeFor(engine.provider, env) !== null;
+  }
+  return true;
+}
+
+/** The env lines an unpriced engine is missing, named for the refusal detail. */
+function missingPriceEnv(engine: EngineSpec, env: NodeJS.ProcessEnv): string[] {
+  const missing: string[] = [];
+  if (ratesFor(engine.provider, engine.modelName, env) === null) missing.push(rateEnvName(engine.provider));
+  if (SEARCH_BILLED_PROVIDERS.has(engine.provider) && searchFeeFor(engine.provider, env) === null) {
+    missing.push(searchFeeEnvName(engine.provider));
+  }
+  return missing;
 }
 
 /** Why this engine cannot run, or null when it can. */
@@ -79,7 +105,7 @@ export function refusalFor(
     return {
       provider: engine.provider,
       reason: "no_rates",
-      detail: `set AI_RATES_${engine.provider} before enabling this engine`,
+      detail: `set ${missingPriceEnv(engine, env).join(" and ")} before enabling this engine`,
     };
   }
   return null;
@@ -116,6 +142,10 @@ export interface AskResult {
   /** The model actually served, which is what the ledger prices. */
   model: string;
   latencyMs: number;
+  /** Billed web searches (search-grounded engines only). */
+  searchCalls?: number;
+  /** Sources the engine returned structurally, when it does. */
+  sources?: { url: string }[] | null;
 }
 
 /**
@@ -136,6 +166,9 @@ export const ASK_MAX_TOKENS = 1_200;
 export interface AskDeps {
   anthropic?: AnthropicProvider;
   now?: () => number;
+  /** For the HTTP adapters (ChatGPT, Gemini). */
+  fetch?: typeof fetch;
+  env?: NodeJS.ProcessEnv;
 }
 
 /**
@@ -149,6 +182,31 @@ export interface AskDeps {
 export async function askEngine(request: AskRequest, deps: AskDeps = {}): Promise<AskResult> {
   const clock = deps.now ?? (() => Date.now());
   const startedAt = clock();
+
+  if (request.provider === "CHATGPT" || request.provider === "GEMINI") {
+    // Imported lazily, like the Anthropic SDK below: http-engines is
+    // server-only, and this module's pure gates are read by the setup wizard.
+    const { askHttpEngine } = await import("./http-engines");
+    const result = await askHttpEngine(
+      {
+        provider: request.provider,
+        model: request.model,
+        systemPrompt: ASK_SYSTEM_PROMPT,
+        promptText: request.promptText,
+        maxOutputTokens: ASK_MAX_TOKENS,
+      },
+      { fetch: deps.fetch, env: deps.env },
+    );
+    return {
+      answer: result.answer,
+      inputTokens: result.inputTokens,
+      outputTokens: result.outputTokens,
+      model: result.model,
+      latencyMs: clock() - startedAt,
+      searchCalls: result.searchCalls,
+      sources: result.sources,
+    };
+  }
 
   if (request.provider !== "CLAUDE") {
     throw new Error(`no adapter for provider ${request.provider}`);

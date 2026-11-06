@@ -60,12 +60,30 @@ const CLAUDE: EngineSpec = {
 };
 const GEMINI: EngineSpec = {
   provider: "GEMINI",
-  modelName: "gemini-3-pro",
+  modelName: "gemini-3.8-flash",
   displayName: "Gemini",
   supportsSearch: true,
   supportsCitations: true,
   apiKeyEnv: "GEMINI_API_KEY",
   sortOrder: 30,
+};
+const CHATGPT: EngineSpec = {
+  provider: "CHATGPT",
+  modelName: "gpt-5",
+  displayName: "ChatGPT",
+  supportsSearch: true,
+  supportsCitations: true,
+  apiKeyEnv: "OPENAI_API_KEY",
+  sortOrder: 10,
+};
+const PERPLEXITY: EngineSpec = {
+  provider: "PERPLEXITY",
+  modelName: "sonar-pro",
+  displayName: "Perplexity",
+  supportsSearch: true,
+  supportsCitations: true,
+  apiKeyEnv: "PERPLEXITY_API_KEY",
+  sortOrder: 50,
 };
 
 const PROMPTS = [
@@ -163,9 +181,10 @@ describe("which engines may spend money", () => {
   });
 
   it("refuses a provider it has no adapter for", () => {
-    const refusal = refusalFor(GEMINI, withKeys);
+    const keyed = { ...withKeys, PERPLEXITY_API_KEY: "k", AI_RATES_PERPLEXITY: "1,5" } as unknown as NodeJS.ProcessEnv;
+    const refusal = refusalFor(PERPLEXITY, keyed);
     expect(refusal?.reason).toBe("no_adapter");
-    expect(runnableEngines([CLAUDE, GEMINI], withKeys)).toEqual([CLAUDE]);
+    expect(runnableEngines([CLAUDE, PERPLEXITY], keyed)).toEqual([CLAUDE]);
   });
 
   it("refuses an engine whose key is missing", () => {
@@ -178,12 +197,45 @@ describe("which engines may spend money", () => {
     expect(reported[0].detail).toBeTruthy();
   });
 
-  it("lets an operator price a provider without a deploy", () => {
-    // AI_RATES_<PROVIDER> is the designed path; the built-in table ships only
-    // rates with a published source.
-    const priced = { ...withKeys, AI_RATES_GEMINI: "1,5,0.1" } as unknown as NodeJS.ProcessEnv;
-    // Still refused, but now for the honest reason: no adapter, not no price.
-    expect(refusalFor(GEMINI, priced)?.reason).toBe("no_adapter");
+  it("ships ChatGPT and Gemini OFF: an adapter and a key are not enough without prices", () => {
+    // A deploy must not switch new spend on by itself. With keys set (as they
+    // are in production, for the free check) both engines refuse on price.
+    const keyed = { ...withKeys, OPENAI_API_KEY: "k" } as unknown as NodeJS.ProcessEnv;
+    for (const engine of [CHATGPT, GEMINI]) {
+      const refusal = refusalFor(engine, keyed);
+      expect(refusal?.reason).toBe("no_rates");
+      expect(refusal?.detail).toContain(`AI_RATES_${engine.provider}`);
+      expect(refusal?.detail).toContain(`AI_SEARCH_FEE_${engine.provider}`);
+    }
+  });
+
+  it("keeps a search-billed engine off on a token rate alone", () => {
+    // The search fee is the larger half of a ChatGPT/Gemini check; token-only
+    // metering would under-count the cap by more than half.
+    const tokenOnly = { ...withKeys, AI_RATES_GEMINI: "1.5,7.5,0.15" } as unknown as NodeJS.ProcessEnv;
+    const refusal = refusalFor(GEMINI, tokenOnly);
+    expect(refusal?.reason).toBe("no_rates");
+    expect(refusal?.detail).toContain("AI_SEARCH_FEE_GEMINI");
+    expect(refusal?.detail).not.toContain("AI_RATES_GEMINI");
+  });
+
+  it("runs ChatGPT and Gemini once the operator sets both price lines", () => {
+    const priced = {
+      ...withKeys,
+      OPENAI_API_KEY: "k",
+      AI_RATES_CHATGPT: "1.25,10,0.125",
+      AI_SEARCH_FEE_CHATGPT: "0.01",
+      AI_RATES_GEMINI: "1.5,7.5,0.15",
+      AI_SEARCH_FEE_GEMINI: "0.014",
+    } as unknown as NodeJS.ProcessEnv;
+    expect(runnableEngines([CHATGPT, GEMINI, CLAUDE], priced)).toEqual([CHATGPT, GEMINI, CLAUDE]);
+  });
+
+  it("treats a malformed search fee as unset, never as free", () => {
+    for (const bad of ["", "abc", "-0.01"]) {
+      const env = { ...withKeys, AI_RATES_GEMINI: "1,5", AI_SEARCH_FEE_GEMINI: bad } as unknown as NodeJS.ProcessEnv;
+      expect(refusalFor(GEMINI, env)?.reason).toBe("no_rates");
+    }
   });
 });
 
