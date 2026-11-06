@@ -97,6 +97,7 @@ interface ModelCall {
   body: {
     model?: string;
     max_tokens?: number;
+    thinking?: unknown;
     system?: unknown;
     /** Must stay undefined: this assistant deliberately has no tools. */
     tools?: unknown;
@@ -411,7 +412,11 @@ describe("heuristic-first", () => {
   it("caps a turn's output tokens", async () => {
     process.env.AI_ASSISTANT_MAX_OUTPUT_TOKENS = "400";
     await post({ message: "hello" });
-    expect(modelCalls[0].body.max_tokens).toBe(400);
+    // The fast tier is the house Haiku 5.5: the cap (in Haiku 4.5 tokens) is
+    // restated for its tokenizer, and thinking is off so it is not spent first.
+    expect(modelCalls[0].body.max_tokens).toBe(520);
+    expect(modelCalls[0].body.thinking).toEqual({ type: "disabled" });
+    expect(modelCalls[0].body).not.toHaveProperty("temperature");
     delete process.env.AI_ASSISTANT_MAX_OUTPUT_TOKENS;
   });
 });

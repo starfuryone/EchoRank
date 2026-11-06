@@ -412,14 +412,14 @@ describe("analysing one response", () => {
     expect(calls).toHaveLength(1);
     expect(calls[0].spec).toEqual({
       provider: "CLAUDE",
-      model: "claude-haiku-4-5",
+      model: "claude-haiku-5-5",
       purpose: "analysis",
       checkupId: "checkup_1",
     });
     expect(calls[0].tenantId).toBe("tenant_1");
     expect(calls[0].plan).toBe("GROWTH");
     expect(calls[0].usage).toEqual({ inputTokens: 100, outputTokens: 20 });
-    expect(calls[0].model).toBe("claude-haiku-4-5");
+    expect(calls[0].model).toBe("claude-haiku-5-5");
   });
 
   it("meters both attempts when the model needed a retry", async () => {

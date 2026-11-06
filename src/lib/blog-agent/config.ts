@@ -43,7 +43,7 @@ export class BlogAgentConfigError extends Error {
 export type BlogAgentMode = "review" | "auto";
 
 /** Default model. Overridable so an upgrade is a config change, not a deploy. */
-export const DEFAULT_BLOG_AGENT_MODEL = "claude-haiku-4-5";
+export const DEFAULT_BLOG_AGENT_MODEL = "claude-haiku-5-5";
 
 /**
  * Per-million-token price for a model with no published price in

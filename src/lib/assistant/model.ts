@@ -19,6 +19,8 @@
 // Cloudflare's proxy buffering, which is a thing to verify per deployment rather
 // than assume. A single JSON response has no such failure mode.
 
+import { assertNoPrefill, houseClaudeControls } from "@/ai/anthropic-request";
+
 const API_URL = "https://api.anthropic.com/v1/messages";
 const API_VERSION = "2023-06-01";
 const TIMEOUT_MS = 45_000;
@@ -63,6 +65,12 @@ export interface ToolDefinition {
  */
 export type ContentBlock =
   | { type: "text"; text: string }
+  // Thinking blocks are carried back UNMODIFIED with the tool results that
+  // follow them: a model that thought before calling a tool expects to see that
+  // thinking again, and an edited or missing block invalidates it. The text is
+  // empty by default (only the signature comes back); it is kept anyway.
+  | { type: "thinking"; thinking: string; signature: string }
+  | { type: "redacted_thinking"; data: string }
   | { type: "tool_use"; id: string; name: string; input: unknown }
   | {
       type: "tool_result";
@@ -138,6 +146,9 @@ interface AnthropicResponse {
     id?: string;
     name?: string;
     input?: unknown;
+    thinking?: string;
+    signature?: string;
+    data?: string;
   }>;
   stop_reason?: string;
   usage?: {
@@ -174,12 +185,22 @@ export async function callAssistantModelRaw(input: {
    * you turn one over-budget turn into a 400 on every retry.
    */
   toolChoice?: "auto" | "none";
+  /**
+   * True for the reasoning tier: the model keeps its own thinking and the cap
+   * is sent as given. Otherwise this is a house call (src/ai/anthropic-request.ts):
+   * thinking off on a model that thinks by default, the cap restated for the
+   * tokenizer, so a short answer is not spent on thinking first.
+   */
+  reasoning?: boolean;
 }): Promise<ToolResult> {
   const key = apiKey();
+  assertNoPrefill(input.messages);
 
   const body = JSON.stringify({
     model: input.model,
-    max_tokens: input.maxTokens,
+    ...(input.reasoning
+      ? { max_tokens: input.maxTokens }
+      : houseClaudeControls(input.model, input.maxTokens)),
     system: input.system,
     messages: input.messages.map((m) => ({ role: m.role, content: m.content })),
     // Sent only when there are tools: an empty `tools` array is a different
@@ -244,11 +265,16 @@ export async function callAssistantModelRaw(input: {
       // Unknown block types are DROPPED rather than passed through. Anything we
       // do not understand we also cannot echo back correctly on the next turn,
       // and a malformed replay is a 400 on every subsequent request in the
-      // conversation rather than one degraded answer.
+      // conversation rather than one degraded answer. Thinking blocks are KNOWN
+      // and kept exactly as they came, empty text included.
       const blocks: ContentBlock[] = [];
       for (const block of data.content ?? []) {
         if (block.type === "text" && typeof block.text === "string") {
           blocks.push({ type: "text", text: block.text });
+        } else if (block.type === "thinking" && typeof block.signature === "string") {
+          blocks.push({ type: "thinking", thinking: block.thinking ?? "", signature: block.signature });
+        } else if (block.type === "redacted_thinking" && typeof block.data === "string") {
+          blocks.push({ type: "redacted_thinking", data: block.data });
         } else if (block.type === "tool_use" && block.id && block.name) {
           blocks.push({
             type: "tool_use",
@@ -309,6 +335,7 @@ export async function callAssistantModel(input: {
   system: SystemBlock[];
   messages: ChatTurn[];
   maxTokens: number;
+  reasoning?: boolean;
 }): Promise<ModelResult> {
   const result = await callAssistantModelRaw(input);
   const text = blockText(result.blocks);

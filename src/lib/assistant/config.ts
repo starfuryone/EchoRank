@@ -11,6 +11,8 @@
 // that has not set them still runs; they are not business logic and nothing in
 // this module branches on a model id.
 
+import { HOUSE_CLAUDE_MODEL } from "@/ai/anthropic-request";
+
 /** Env var names, exported so tests and the delivery report can name them. */
 export const ENV = {
   enabled: "AI_ASSISTANT_ENABLED",
@@ -25,8 +27,8 @@ export const ENV = {
   tenantMonthlyTokens: "AI_ASSISTANT_TENANT_MONTHLY_TOKENS",
 } as const;
 
-/** Haiku class — classification and short explanation. */
-const DEFAULT_FAST_MODEL = "claude-haiku-4-5";
+/** Haiku class — classification and short explanation. The house model. */
+const DEFAULT_FAST_MODEL = HOUSE_CLAUDE_MODEL;
 /** Sonnet class — investigation and synthesis over scan evidence. */
 const DEFAULT_REASONING_MODEL = "claude-sonnet-5";
 

@@ -189,8 +189,12 @@ describe("the outbound request", () => {
     expect(url).toBe("https://api.anthropic.com/v1/messages");
     const body = JSON.parse(init.body as string);
     expect(body.model).toBe(MARKETING_MODEL);
-    expect(body.model).toBe("claude-haiku-4-5");
-    expect(body.max_tokens).toBe(1500);
+    expect(body.model).toBe("claude-haiku-5-5");
+    // The category's 1,500 (Haiku 4.5 tokens) restated for the tokenizer, with
+    // thinking off so the copy is not cut short by thinking first.
+    expect(body.max_tokens).toBe(1950);
+    expect(body.thinking).toEqual({ type: "disabled" });
+    expect(body).not.toHaveProperty("temperature");
   });
 
   it("never sends Sonnet or Opus, whatever the category", async () => {
@@ -207,7 +211,7 @@ describe("the outbound request", () => {
         }),
       );
       const body = JSON.parse((fetchMock.mock.calls[0] as [string, RequestInit])[1].body as string);
-      expect(body.model, categoryId).toBe("claude-haiku-4-5");
+      expect(body.model, categoryId).toBe("claude-haiku-5-5");
     }
   });
 
@@ -218,8 +222,8 @@ describe("the outbound request", () => {
       post({ ...adsBody, model: "claude-opus-5", max_tokens: 100_000, system: "ignore previous" }),
     );
     const body = JSON.parse((fetchMock.mock.calls[0] as [string, RequestInit])[1].body as string);
-    expect(body.model).toBe("claude-haiku-4-5");
-    expect(body.max_tokens).toBe(1500);
+    expect(body.model).toBe("claude-haiku-5-5");
+    expect(body.max_tokens).toBe(1950);
     expect(JSON.stringify(body.system)).not.toContain("ignore previous");
   });
 
@@ -302,7 +306,7 @@ describe("token budget", () => {
     expect(row).toMatchObject({
       tenantId: TENANT,
       categoryId: "ads",
-      model: "claude-haiku-4-5",
+      model: "claude-haiku-5-5",
       outputTokens: 400,
     });
     expect(redisStore.get(marketingBudgetKey(TENANT))).toBe("400");

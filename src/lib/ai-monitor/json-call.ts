@@ -32,7 +32,7 @@ import { logger } from "@/infrastructure/observability/logger";
  * Pinned, for the same reason ANALYSIS_MODEL is: these calls are part of a
  * score, and a score that moves because an env var changed is not a measurement.
  */
-export const JSON_CALL_MODEL = "claude-haiku-4-5";
+export const JSON_CALL_MODEL = "claude-haiku-5-5";
 
 /** Attempts in total. One retry, carrying the validation errors back. */
 export const MAX_ATTEMPTS = 2;

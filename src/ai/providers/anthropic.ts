@@ -5,7 +5,8 @@
 import { AiProvider, type InferenceRequest, type InferenceResult } from "./base";
 import { houseClaudeControls } from "../anthropic-request";
 
-// House policy: claude-haiku-4-5 for every Anthropic call, everywhere.
+// House policy: claude-haiku-5-5 for every Anthropic call that is not a
+// tracking answer (tests/model-policy.test.ts).
 //
 // This is a LIVE path, not the dead fallback it looks like. registry.ts picks
 // OpenAI first, but OPENAI_API_KEY is set to the empty string on this box —
@@ -15,7 +16,7 @@ import { houseClaudeControls } from "../anthropic-request";
 // classification work Haiku does fine.
 //
 // ANTHROPIC_MODEL still overrides, for a one-off experiment. Nothing sets it.
-const DEFAULT_MODEL = "claude-haiku-4-5";
+const DEFAULT_MODEL = "claude-haiku-5-5";
 const API_BASE = "https://api.anthropic.com/v1";
 const API_VERSION = "2023-06-01";
 const TIMEOUT_MS = 30_000;

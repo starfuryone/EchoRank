@@ -88,7 +88,7 @@ describe("category config", () => {
   });
 
   it("pins one model and never names Sonnet", () => {
-    expect(MARKETING_MODEL).toBe("claude-haiku-4-5");
+    expect(MARKETING_MODEL).toBe("claude-haiku-5-5");
     const serialized = JSON.stringify(MARKETING_CATEGORIES);
     expect(serialized).not.toMatch(/sonnet/i);
     // No per-category model field — one constant, as specified.

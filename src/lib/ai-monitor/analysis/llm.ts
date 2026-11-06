@@ -9,7 +9,7 @@
 // accounting, and it returns prompt/completion counts, which is exactly what
 // the metering layer needs. Note it is the PROVIDER that is reused, not
 // src/ai/providers/registry.ts — the registry resolves to OpenAI whenever
-// OPENAI_API_KEY is set (it is, on this box), so routing a `claude-haiku-4-5`
+// OPENAI_API_KEY is set (it is, on this box), so routing a Claude
 // model id through it would send that id to OpenAI. src/lib/marketing/client.ts
 // carries the same warning for the same reason.
 //
@@ -30,7 +30,7 @@
 import { AnthropicProvider } from "@/ai/providers/anthropic";
 
 /** Pinned. See the header — this must not follow ANTHROPIC_MODEL. */
-export const ANALYSIS_MODEL = "claude-haiku-4-5";
+export const ANALYSIS_MODEL = "claude-haiku-5-5";
 
 /** Enough for the JSON object; the pass returns findings, not prose. */
 const MAX_TOKENS = 900;

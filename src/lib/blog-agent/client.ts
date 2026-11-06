@@ -15,6 +15,7 @@
 // take the blog agent with it, and vice versa. Sharing the module would mean
 // sharing the key, which is the thing the separate variable exists to prevent.
 
+import { assertNoPrefill, houseClaudeControls } from "@/ai/anthropic-request";
 import { blogAgentApiKey, blogAgentModel, callCostUsd } from "./config";
 
 const API_URL = "https://api.anthropic.com/v1/messages";
@@ -23,50 +24,19 @@ const API_VERSION = "2023-06-01";
 const TIMEOUT_MS = 120_000;
 const MAX_RETRIES = 2;
 
-/** Output ceiling. ~4k tokens comfortably covers 1,600 words plus frontmatter. */
+/**
+ * Output ceiling, in Haiku 4.5 tokens: ~4k comfortably covers 1,600 words plus
+ * frontmatter. houseClaudeControls restates it for the model's tokenizer.
+ */
 export const MAX_OUTPUT_TOKENS = 4_096;
 
-/**
- * The assistant prefill — the reply is forced to begin INSIDE the frontmatter.
- *
- * On 2026-08-27 the 05:00 run produced zero drafts and every gate failure read
- * "file does not open with a --- frontmatter block": a small model asked for
- * "one fenced block and nothing else" writes a sentence first anyway. Prefilling
- * the assistant turn removes the opportunity — there is no position before the
- * delimiter left to write in.
- *
- * NO TRAILING WHITESPACE. The API rejects a final assistant message that ends in
- * whitespace, so the prefill is "---" and the newline is the model's first token.
- *
- * THE PREFILL IS NOT ECHOED BACK. The response continues from it, so the three
- * characters have to be put back on the front — see withPrefill(), which is
- * applied here so callers always receive a whole document.
- *
- * MODEL-GATED, and this is the reason to leave BLOG_AGENT_MODEL alone: prefill
- * was removed in the 4.6+ family and on Fable/Opus/Sonnet 5, where a prefilled
- * assistant turn is a 400. It works on claude-haiku-4-5, which is the default
- * and what this runs on. Pointing BLOG_AGENT_MODEL at a newer model means
- * deleting the prefill in the same change — the gate below tolerates a preamble
- * either way, so nothing else depends on it.
- */
-export const DRAFT_PREFILL = "---";
-
-/**
- * Put the prefill back on the front of the reply.
- *
- * Exported for the suite. The `---` repeat guard is for the model that, having
- * been handed the delimiter, opens with it again: without it the document would
- * carry an empty frontmatter block and the gate would report field errors for a
- * formatting slip.
- */
-export function withPrefill(reply: string): string {
-  // A reply that opens with a fence is a wrapped document, which means the
-  // prefill was not honoured at all — prepending to it would push the delimiter
-  // outside the fence and break a reply that extractFenced() can still read.
-  if (reply.trimStart().startsWith("```")) return reply;
-  const continued = reply.replace(/^[ \t]*\n?[ \t]*---[ \t]*(?:\n|$)/, "").replace(/^\n+/, "");
-  return `${DRAFT_PREFILL}\n${continued}`;
-}
+// NO PREFILL. Until 2026-11-06 the request ended on an assistant turn of "---"
+// so the reply had to start inside the frontmatter (on 2026-08-27 every draft
+// opened with a sentence and failed the gate). Claude Haiku 5.5, like every
+// model from the 4.6 generation, rejects a prefill with a 400. Two things cover
+// what it did: the system prompt asks for the `---` line first, and the gate's
+// stripPreamble() drops anything above the first `---` line, so a sentence
+// before the frontmatter no longer fails a draft (gate.ts, since 2026-08-27).
 
 export class BlogAgentUpstreamError extends Error {
   constructor(
@@ -104,9 +74,9 @@ function sleep(ms: number): Promise<void> {
  * Retries 429 and 5xx; a 4xx other than 429 is a bug in our request and is
  * surfaced immediately rather than retried three times into the same wall.
  *
- * No `thinking` parameter: Haiku 4.5 predates adaptive thinking, and this is a
- * single-shot generation with a deterministic checker behind it — the budget is
- * better spent on the retry the gate may ask for.
+ * Thinking off (houseClaudeControls): this is a single-shot generation with a
+ * deterministic checker behind it, and thinking would spend the output cap and
+ * the daily budget that the retry the gate may ask for needs.
  */
 export async function callDraftModel(input: {
   system: string;
@@ -115,15 +85,13 @@ export async function callDraftModel(input: {
   const key = blogAgentApiKey();
   const model = blogAgentModel();
 
+  const messages = [{ role: "user", content: input.userMessage }];
+  assertNoPrefill(messages);
   const body = JSON.stringify({
     model,
-    max_tokens: MAX_OUTPUT_TOKENS,
+    ...houseClaudeControls(model, MAX_OUTPUT_TOKENS),
     system: input.system,
-    messages: [
-      { role: "user", content: input.userMessage },
-      // Forces the reply to start inside the frontmatter. See DRAFT_PREFILL.
-      { role: "assistant", content: DRAFT_PREFILL },
-    ],
+    messages,
   });
 
   let lastError = new BlogAgentUpstreamError("Draft generation failed");
@@ -174,9 +142,7 @@ export async function callDraftModel(input: {
       const inputTokens = json.usage?.input_tokens ?? 0;
       const outputTokens = json.usage?.output_tokens ?? 0;
       return {
-        // The whole document, prefill included — the caller never has to know
-        // the turn was prefilled.
-        text: withPrefill(text),
+        text,
         inputTokens,
         outputTokens,
         costUsd: callCostUsd(model, inputTokens, outputTokens),
@@ -207,10 +173,8 @@ export async function callDraftModel(input: {
 /**
  * Unwrap a fenced block, but ONLY one that opens the reply.
  *
- * The prefill means a wrapper fence can no longer be emitted at all — there is
- * no room before the delimiter — so on the current model this is a no-op kept
- * for the reply shapes the prefill does not cover (a model without prefill
- * support, a hand-fed fixture).
+ * The system prompt asks for no wrapper fence, but nothing forces it (there is
+ * no prefill any more), so a reply wrapped in one is unwrapped here.
  *
  * ANCHORED AT THE START, deliberately. The unanchored form matched the FIRST
  * ``` anywhere in the reply, and the body is allowed to contain fenced code —

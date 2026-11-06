@@ -132,18 +132,19 @@ aistudio.google.com/docs/pricing. Gemini 3 bills per search **query** (one answe
 several); the 5,000 free queries a month are not credited; grounding is capped at
 **1,500 requests a day per account**, shared with the free check.
 
-Cost per check (one answer + one Haiku analysis pass at $0.0032). Typical = 2,000 in /
-800 out and one search; worst = 8,000 in / 1,200 out and two searches; Claude does not
-search (300 in / 600 out typical, 1,200 out worst).
+Cost per check (one answer + one analysis pass on Haiku 5.5, ~$0.0004: 1,200 in / 400
+out at Haiku 4.5's count, +30% for the tokenizer, at $0.10 / $0.50; it was $0.0032 on
+Haiku 4.5). Typical = 2,000 in / 800 out and one search; worst = 8,000 in / 1,200 out and
+two searches; Claude does not search (300 in / 600 out typical, 1,200 out worst).
 
 | Engine / model | Typical | Worst | Per prompt per month, daily |
 |---|---|---|---|
-| ChatGPT `gpt-5` | $0.024 | $0.045 | $0.71 |
-| Gemini `gemini-3.8-flash` (from 2027-01-01) | $0.026 | $0.052 | $0.79 |
-| Gemini `gemini-3.8-flash` (to 2026-12-31) | $0.022 | $0.042 | $0.65 |
-| Claude `claude-sonnet-5` ($2 / $10) | $0.010 | $0.016 | $0.29 |
-| alt: `gpt-5-mini` | $0.015 | $0.028 | $0.46 |
-| alt: `gemini-3.1-flash-lite` | $0.019 | $0.035 | $0.57 |
+| ChatGPT `gpt-5` | $0.021 | $0.042 | $0.63 |
+| Gemini `gemini-3.8-flash` (from 2027-01-01) | $0.023 | $0.049 | $0.70 |
+| Gemini `gemini-3.8-flash` (to 2026-12-31) | $0.019 | $0.039 | $0.57 |
+| Claude `claude-sonnet-5` ($2 / $10) | $0.007 | $0.013 | $0.21 |
+| alt: `gpt-5-mini` | $0.013 | $0.025 | $0.38 |
+| alt: `gemini-3.1-flash-lite` | $0.016 | $0.032 | $0.48 |
 
 The search fee alone ($0.010 / $0.014) is the larger half of a search-grounded check.
 

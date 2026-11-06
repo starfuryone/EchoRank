@@ -208,6 +208,7 @@ export async function runProTurn(input: ProTurnInput): Promise<ProTurnResult> {
       system,
       messages,
       maxTokens: limits.maxOutputTokens,
+      reasoning: true,
       tools,
       // Tools stay DECLARED even when forbidden — see the note on toolChoice
       // in model.ts. Dropping them would invalidate the tool_use blocks

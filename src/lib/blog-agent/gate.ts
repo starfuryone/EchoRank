@@ -66,8 +66,8 @@ export function heroAlt(title: string): string {
  * 2026-08-27 the 05:00 run drafted three articles and rejected all three on
  * "file does not open with a --- frontmatter block": one conversational sentence
  * before the delimiter, and $0.075 of drafting thrown away over a line nobody
- * wanted anyway. The prefill in client.ts stops it happening; this stops it
- * mattering.
+ * wanted anyway. The system prompt asks for the delimiter first (the prefill
+ * that used to force it is a 400 on Haiku 5.5); this stops a slip mattering.
  *
  * The bar is unchanged: reject only when there is NO frontmatter block at all.
  * A line of exactly `---` (trailing spaces ignored) opens one — everything above

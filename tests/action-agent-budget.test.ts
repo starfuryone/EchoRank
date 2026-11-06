@@ -222,7 +222,7 @@ describe("metering", () => {
     expect(data).toMatchObject({
       tenantId: TENANT,
       categoryId: "action_agent:review_reply",
-      model: "claude-haiku-4-5",
+      model: "claude-haiku-5-5",
       outputTokens: 87,
     });
   });

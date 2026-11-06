@@ -17,6 +17,7 @@
 // adding a dependency is a deploy risk taken for one endpoint. If the module
 // later needs streaming or tool use, the SDK becomes worth it; today it is not.
 
+import { houseClaudeControls } from "@/ai/anthropic-request";
 import { MARKETING_MODEL } from "@/lib/marketing-templates";
 import type { SystemBlock } from "./prompt";
 
@@ -88,9 +89,11 @@ export async function callMarketingModel(input: {
 }): Promise<MarketingCallResult> {
   const key = apiKey();
 
+  // Thinking off and the cap restated for the tokenizer (anthropic-request.ts):
+  // thinking would spend the template's output cap before the copy starts.
   const body = JSON.stringify({
     model: MARKETING_MODEL,
-    max_tokens: input.maxTokens,
+    ...houseClaudeControls(MARKETING_MODEL, input.maxTokens),
     system: input.system,
     messages: [{ role: "user", content: input.userMessage }],
   });

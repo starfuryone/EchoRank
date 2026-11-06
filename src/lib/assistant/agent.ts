@@ -195,6 +195,7 @@ export async function runTurn(input: AgentInput): Promise<AgentResult> {
     system: systemBlocks(input.locale),
     messages: [...trimHistory(input.history), { role: "user", content: userContent }],
     maxTokens: limits.maxOutputTokens,
+    reasoning: Boolean(summary),
   });
 
   return {

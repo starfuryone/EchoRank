@@ -122,11 +122,11 @@ export function systemPrompt(): string {
     "- Brand is Echorank, always. Never EchoRank, echoRank or Echo Rank.",
     "",
     "## Output format",
-    // THE REPLY IS PREFILLED WITH `---` (client.ts, DRAFT_PREFILL), so there is
-    // no position left for a preamble or a wrapper fence. This instruction
-    // describes what the model is actually continuing; asking for a fence it
-    // cannot open would only invite a stray closing ``` at the end.
-    "Your reply has been started for you with the opening `---` of the frontmatter. Continue from there: the frontmatter keys, then a closing `---`, then the markdown body.",
+    // No prefill any more (Haiku 5.5 rejects one; see client.ts), so the
+    // instruction asks for the delimiter first. A sentence written before it
+    // anyway is dropped by the gate's stripPreamble(), and a wrapper fence is
+    // unwrapped by extractFenced(), so neither fails a draft.
+    "Begin your reply with the line `---` that opens the frontmatter, with nothing before it: the opening `---`, the frontmatter keys, a closing `---`, then the markdown body.",
     "Write no preamble, no sign-off and no code fence around the document. Fenced code blocks INSIDE the body are fine where the article needs one.",
     "",
     "## Frontmatter — every key, and exactly what it accepts",

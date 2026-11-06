@@ -9,10 +9,13 @@ import { cachedAiCall } from "@/lib/ai-cache";
 // tests/action-agent-generate.test.ts asserts this route still reads it from
 // there, and that no copy of the clauses survives in this file.
 import { REVIEW_REPLY_INSTRUCTION } from "@/lib/action-agent/prompts";
+import { houseClaudeControls } from "@/ai/anthropic-request";
 
-// House policy: claude-haiku-4-5 for every Anthropic call.
-// AI_RESPOND_MODEL still overrides; nothing sets it.
-const MODEL = process.env.AI_RESPOND_MODEL || "claude-haiku-4-5";
+// House policy: claude-haiku-5-5 for every Anthropic call that is not a
+// tracking answer. AI_RESPOND_MODEL still overrides; nothing sets it.
+const MODEL = process.env.AI_RESPOND_MODEL || "claude-haiku-5-5";
+/** A reply of a few sentences, in Haiku 4.5 tokens; restated for the tokenizer. */
+const MAX_TOKENS = 500;
 
 export async function POST(req: NextRequest) {
   const auth = await resolveTenant(req);
@@ -84,9 +87,10 @@ export async function POST(req: NextRequest) {
         "x-api-key": key,
         "anthropic-version": "2023-06-01",
       },
+      // Thinking off: a 500-token reply cap would otherwise be spent thinking.
       body: JSON.stringify({
         model: MODEL,
-        max_tokens: 500,
+        ...houseClaudeControls(MODEL, MAX_TOKENS),
         system,
         messages: [{ role: "user", content: user }],
       }),

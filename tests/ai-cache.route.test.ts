@@ -222,10 +222,15 @@ describe("respond", () => {
     expect(fetchMock, "second call must not reach Anthropic").toHaveBeenCalledTimes(1);
   });
 
-  it("sends claude-haiku-4-5 on the wire", async () => {
+  it("sends claude-haiku-5-5 on the wire: thinking off, no temperature, no prefill", async () => {
     await RESPOND(post("/api/ai/respond", body));
     const sent = JSON.parse((fetchMock.mock.calls[0][1] as RequestInit).body as string);
-    expect(sent.model).toBe("claude-haiku-4-5");
+    expect(sent.model).toBe("claude-haiku-5-5");
+    expect(sent.thinking).toEqual({ type: "disabled" });
+    expect(sent).not.toHaveProperty("temperature");
+    // 500 Haiku 4.5 tokens, restated for the newer tokenizer.
+    expect(sent.max_tokens).toBe(650);
+    expect(sent.messages.map((m: { role: string }) => m.role)).toEqual(["user"]);
   });
 
   it("misses when the tone changes", async () => {

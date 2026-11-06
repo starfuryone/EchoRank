@@ -19,7 +19,7 @@ import {
   MIN_WORDS,
   MAX_WORDS,
 } from "@/lib/blog-agent/gate";
-import { DRAFT_PREFILL, extractFenced, withPrefill } from "@/lib/blog-agent/client";
+import { extractFenced } from "@/lib/blog-agent/client";
 import { BANNED_PHRASES, systemPrompt, TOOL_LINK_ALLOWLIST } from "@/lib/blog-agent/prompt";
 import {
   BLOG_CATEGORIES,
@@ -406,17 +406,9 @@ describe("helpers", () => {
 // rather than beside the transport because what they have to produce is defined
 // by the gate: a whole document, starting at the frontmatter delimiter.
 describe("assembling the reply the gate is handed", () => {
-  const reply = (draft: string) => extractFenced(withPrefill(draft.replace(/^---\n/, "\n")));
-
-  it("puts the prefill back, since the API does not echo it", () => {
-    // The model is handed "---" and continues; on its own the continuation is
-    // not a parseable document.
-    expect(withPrefill("\ntitle: x\n---\nbody")).toBe("---\ntitle: x\n---\nbody");
-  });
-
-  it("does not double the delimiter when the model repeats it", () => {
-    expect(withPrefill("---\ntitle: x")).toBe("---\ntitle: x");
-  });
+  // No prefill since Haiku 5.5 (it is a 400): the reply arrives whole, and a
+  // sentence before the frontmatter or a wrapper fence must not fail a draft.
+  const reply = (text: string) => extractFenced(text);
 
   it("hands the gate a draft that passes, end to end", () => {
     const r = gate(reply(validDraft()));
@@ -424,8 +416,16 @@ describe("assembling the reply the gate is handed", () => {
     expect(r.ok).toBe(true);
   });
 
-  it("has no trailing whitespace — the API rejects a prefill that does", () => {
-    expect(DRAFT_PREFILL).toBe(DRAFT_PREFILL.trimEnd());
+  it("passes a draft the model opened with a sentence, as the prefill used to ensure", () => {
+    const r = gate(reply(`Here is the article you asked for.\n\n${validDraft()}`));
+    expect(r.failures).toEqual([]);
+    expect(r.ok).toBe(true);
+  });
+
+  it("passes a draft the model wrapped in a fence", () => {
+    const r = gate(reply("```markdown\n" + validDraft() + "\n```"));
+    expect(r.failures).toEqual([]);
+    expect(r.ok).toBe(true);
   });
 
   it("unwraps a fence only when the fence opens the reply", () => {
@@ -440,13 +440,10 @@ describe("assembling the reply the gate is handed", () => {
   });
 });
 
-describe("a reply the prefill did not reach", () => {
-  it("leaves a fence-wrapped reply for extractFenced to unwrap", () => {
-    // Prepending the delimiter would push it OUTSIDE the fence and turn a
-    // readable reply into an unparseable one.
+describe("a fence-wrapped reply", () => {
+  it("is unwrapped by extractFenced", () => {
     const wrapped = "```markdown\n---\ntitle: x\n---\nbody\n```";
-    expect(withPrefill(wrapped)).toBe(wrapped);
-    expect(extractFenced(withPrefill(wrapped))).toBe("---\ntitle: x\n---\nbody");
+    expect(extractFenced(wrapped)).toBe("---\ntitle: x\n---\nbody");
   });
 });
 

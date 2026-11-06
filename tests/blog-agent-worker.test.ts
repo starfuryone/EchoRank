@@ -126,7 +126,7 @@ describe("config", () => {
 
   it("defaults to the cheapest model and lets an upgrade be a config change", () => {
     expect(withEnv({ BLOG_AGENT_MODEL: undefined }, blogAgentModel)).toBe(DEFAULT_BLOG_AGENT_MODEL);
-    expect(DEFAULT_BLOG_AGENT_MODEL).toBe("claude-haiku-4-5");
+    expect(DEFAULT_BLOG_AGENT_MODEL).toBe("claude-haiku-5-5");
     expect(withEnv({ BLOG_AGENT_MODEL: "claude-sonnet-5" }, blogAgentModel)).toBe("claude-sonnet-5");
   });
 

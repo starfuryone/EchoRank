@@ -20,14 +20,14 @@
 // and translating them costs generation quality. The route appends a
 // "respond in <language>" line for fr/fr-CA/de-CH instead.
 
-/** The only model this module uses. Haiku, everywhere, deliberately. */
-export const MARKETING_MODEL = "claude-haiku-4-5";
+/** The only model this module uses: the house Haiku, deliberately. */
+export const MARKETING_MODEL = "claude-haiku-5-5";
 
 /**
  * Prompt caching does NOT engage for this module and that is expected.
  *
- * The minimum cacheable prefix is model-dependent, and for claude-haiku-4-5 it
- * is 4096 tokens — the audit block, the global rules and a template come to
+ * The minimum cacheable prefix is model-dependent; for Haiku 4.5 it was 4096
+ * tokens, and Haiku 5.5's has not been measured here — the audit block, the global rules and a template come to
  * roughly 500. Below the minimum the API accepts `cache_control` and silently
  * declines to cache: no error, and `cache_creation_input_tokens` stays 0.
  *
