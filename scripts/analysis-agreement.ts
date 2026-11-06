@@ -6,7 +6,11 @@
  * is called. An answer the lexicon is unsure about is counted as "would ask
  * the model", not compared.
  *
- *   sudo -u echorank bash -c 'cd /opt/echorank/app && npx tsx scripts/analysis-agreement.ts [N]'
+ *   sudo -u echorank bash -c 'cd /opt/echorank/app && \
+ *     NODE_OPTIONS=--conditions=react-server npx tsx scripts/analysis-agreement.ts [N]'
+ *
+ * (react-server: @/lib/prisma is `server-only`; without the condition the
+ * script dies at import — see CLAUDE.md.)
  *
  * N defaults to 200: the most recent OK runs that have a stored answer and a
  * stored ranking-pass result. Run it BEFORE the heuristic pass has written
