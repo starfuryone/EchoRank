@@ -104,6 +104,8 @@ export const LOCALIZED_ROUTES: LocalizedRoute[] = [
   { path: "/reputation-risk", priority: 0.6, changeFrequency: "monthly" },
   { path: "/legal/subscription-agreement", priority: 0.3, changeFrequency: "yearly" },
   { path: "/legal/privacy", priority: 0.3, changeFrequency: "yearly" },
+  // The data-protection complaint form (src/lib/privacy/complaints.ts).
+  { path: "/privacy/complaint", priority: 0.2, changeFrequency: "yearly" },
   { path: "/legal/cookies", priority: 0.3, changeFrequency: "yearly" },
   { path: "/legal/terms", priority: 0.3, changeFrequency: "yearly" },
   { path: "/legal/no-financial-advice", priority: 0.3, changeFrequency: "yearly" },

@@ -6,6 +6,7 @@ import { CONTENT } from "@/lib/i18n/content";
 import lp from "../legal.module.css";
 import BackButton from "../back-button";
 import { buildMetadata } from "@/lib/seo";
+import { COMPLAINT_LINK, complaintLocale } from "@/lib/privacy/complaint-copy";
 
 export function generateStaticParams() {
   return SUPPORTED_LOCALES.map((locale) => ({ locale }));
@@ -61,6 +62,10 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
             {foot.links.map((l) => (
               <Link key={l.label} href={`/${locale}${l.href}`}>{l.label}</Link>
             ))}
+            {/* Page chrome, not policy text: the policy body above is unchanged. */}
+            <Link href={`/${locale}/privacy/complaint`} data-testid="privacy-complaint-link">
+              {COMPLAINT_LINK[complaintLocale(locale)]}
+            </Link>
           </span>
         </footer>
       </div>

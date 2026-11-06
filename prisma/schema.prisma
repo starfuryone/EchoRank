@@ -5173,3 +5173,35 @@ model FreeCrawlLead {
   @@index([createdAt])
   @@map("free_crawl_leads")
 }
+
+/// Data-protection complaints (UK Data (Use and Access) Act 2025: from 19 June
+/// 2026 a controller must offer a way to complain and acknowledge within 30 days).
+/// Filed publicly at /{locale}/privacy/complaint; acknowledged by email at once,
+/// legal@ notified; status moves received → in progress → answered with a
+/// timestamp for each step (staff only: /api/admin/privacy-complaints).
+model PrivacyComplaint {
+  id             String          @id @default(cuid())
+  /// Human reference quoted in emails, e.g. "PC-7Q4K2M".
+  reference      String          @unique
+  name           String
+  email          String
+  locale         String          @default("en")
+  details        String
+  status         ComplaintStatus @default(RECEIVED)
+  acknowledgedAt DateTime?
+  inProgressAt   DateTime?
+  answeredAt     DateTime?
+  /// Staff note on the answer (not shown to the complainant).
+  answerNote     String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  @@index([status, createdAt])
+  @@map("privacy_complaints")
+}
+
+enum ComplaintStatus {
+  RECEIVED
+  IN_PROGRESS
+  ANSWERED
+}
