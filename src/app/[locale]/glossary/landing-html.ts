@@ -91,13 +91,15 @@ a{color:inherit}
 .no-results{display:none;padding:50px 20px;text-align:center;border:1px dashed var(--border);border-radius:var(--radius);color:var(--muted)}
 .footer{padding:40px 0;border-top:1px solid var(--border);color:var(--muted);text-align:center;font-size:.9rem}
 @media (max-width:700px){.nav{display:none}.hero{padding-top:55px}.alphabet{justify-content:flex-start}}
+/* The ™ on the ECHORANK wordmark: verbatim WORDMARK_TM_CSS (src/lib/brand/wordmark-tm.ts). */
+@property --er-wm-em{syntax:"<length>";inherits:true;initial-value:0px}@property --er-wm-cap{syntax:"<length>";inherits:true;initial-value:0px}@property --er-wm-ls{syntax:"<length>";inherits:true;initial-value:0px}:where(:has(> .er-tm)){--er-wm-em:1em;--er-wm-cap:1cap}.er-tm{font-size:max(7px,.35em);line-height:0;letter-spacing:0;font-style:normal;color:currentColor;margin-left:calc(var(--er-wm-em)*.05 - var(--er-wm-ls));vertical-align:calc(var(--er-wm-cap) - 1cap)}
 </style>
 </head>
 <body>
 
 <header class="header">
   <div class="container header-inner">
-    <a href="/en" class="brand" aria-label="Echorank home"><svg width="30" height="30" viewBox="0 0 40 40" style="display:block" aria-hidden="true"><defs><linearGradient id="eg-lex" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FDE38A"/><stop offset="1" stop-color="#F0B90B"/></linearGradient></defs><rect x="9" y="9" width="22" height="22" rx="5" transform="rotate(45 20 20)" fill="url(#eg-lex)"/></svg><span style="letter-spacing:.06em">ECHORANK</span></a>
+    <a href="/en" class="brand" aria-label="Echorank home"><svg width="30" height="30" viewBox="0 0 40 40" style="display:block" aria-hidden="true"><defs><linearGradient id="eg-lex" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FDE38A"/><stop offset="1" stop-color="#F0B90B"/></linearGradient></defs><rect x="9" y="9" width="22" height="22" rx="5" transform="rotate(45 20 20)" fill="url(#eg-lex)"/></svg><span style="letter-spacing:.06em;--er-wm-ls:.06em">ECHORANK<span class="er-tm" aria-hidden="true">™</span></span></a>
     <nav class="nav" aria-label="Main navigation">
       <a href="#glossary">Glossary</a>
       <a href="/en/learn">Learn</a>

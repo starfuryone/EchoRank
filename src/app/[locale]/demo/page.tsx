@@ -10,6 +10,7 @@ import { join } from "node:path";
 import { SUPPORTED_LOCALES, isSupportedLocale } from "@/lib/i18n/config";
 import { DEMO_VIDEO, THEME_TOGGLE_COPY } from "@/lib/i18n/content";
 import { ThemeToggle } from "@/components/marketing/theme-toggle";
+import { WordmarkTm } from "@/components/brand/WordmarkTm";
 import { DemoVideoPlayer } from "@/components/demo-video";
 import { DEMO_VIDEO_POSTER, DEMO_VIDEO_SRC } from "@/lib/demo-video";
 import s from "@/components/demo-video.module.css";
@@ -82,7 +83,11 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
           <div className={s.demoHead}>
             <Link href={`/${locale}`} className={s.demoBrand}>
               <span className={s.demoDiamond} aria-hidden />
-              ECHORANK
+              {/* One flex item, as the bare text was: the gap must not split the K from the ™. */}
+              <span>
+                ECHORANK
+                <WordmarkTm />
+              </span>
             </Link>
             <ThemeToggle labels={THEME_TOGGLE_COPY[locale]} className={s.demoThemeBtn} />
           </div>

@@ -45,7 +45,7 @@ a:focus-visible,button:focus-visible{outline:2px solid var(--gold2);outline-offs
 /* ---------- header ---------- */
 .topnav{position:sticky;top:0;z-index:50;background:rgba(24,26,32,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--border)}
 .topnav .wrap{display:flex;align-items:center;justify-content:space-between;height:64px;max-width:1120px}
-.brand{display:flex;align-items:center;gap:10px;color:var(--text);font-weight:700;letter-spacing:.12em;font-size:15px}
+.brand{display:flex;align-items:center;gap:10px;color:var(--text);font-weight:700;letter-spacing:.12em;font-size:15px;--er-wm-ls:.12em}
 .brand:hover{text-decoration:none}
 .navlinks{display:flex;align-items:center;gap:22px;font-size:14px}
 .navlinks a{color:var(--muted)}
@@ -124,6 +124,8 @@ footer .wrap{max-width:1120px}
 .legal{color:var(--muted);font-size:13px;margin-top:26px;line-height:1.8}
 .legal a{color:var(--muted);text-decoration:underline}
 .legal a:hover{color:var(--gold2)}
+/* The ™ on the ECHORANK wordmark: verbatim WORDMARK_TM_CSS (src/lib/brand/wordmark-tm.ts). */
+@property --er-wm-em{syntax:"<length>";inherits:true;initial-value:0px}@property --er-wm-cap{syntax:"<length>";inherits:true;initial-value:0px}@property --er-wm-ls{syntax:"<length>";inherits:true;initial-value:0px}:where(:has(> .er-tm)){--er-wm-em:1em;--er-wm-cap:1cap}.er-tm{font-size:max(7px,.35em);line-height:0;letter-spacing:0;font-style:normal;color:currentColor;margin-left:calc(var(--er-wm-em)*.05 - var(--er-wm-ls));vertical-align:calc(var(--er-wm-cap) - 1cap)}
 </style>
 </head>
 <body>
@@ -139,7 +141,7 @@ footer .wrap{max-width:1120px}
         </defs>
         <rect x="8" y="8" width="16" height="16" rx="2" transform="rotate(45 16 16)" fill="url(#eg-seo)"/>
       </svg>
-      ECHORANK
+      <span>ECHORANK<span class="er-tm" aria-hidden="true">™</span></span>
     </a>
     <nav class="navlinks" aria-label="Primary">
       <a href="/en/glossary">Glossary</a>
@@ -650,7 +652,7 @@ footer .wrap{max-width:1120px}
           </defs>
           <rect x="8" y="8" width="16" height="16" rx="2" transform="rotate(45 16 16)" fill="url(#eg-seo-f)"/>
         </svg>
-        ECHORANK
+        <span>ECHORANK<span class="er-tm" aria-hidden="true">™</span></span>
       </a>
       <nav class="flinks" aria-label="Resources">
         <a href="/en/glossary">Echorank Glossary</a>

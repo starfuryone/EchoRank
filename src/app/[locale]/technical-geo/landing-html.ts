@@ -122,7 +122,7 @@ export const TECHNICAL_GEO_HTML = `<!DOCTYPE html>
       border-bottom:1px solid var(--line);
     }
     .nav-inner{height:70px;display:flex;align-items:center;justify-content:space-between;gap:24px}
-    .brand{display:flex;align-items:center;gap:11px;font-weight:800;letter-spacing:.08em;font-size:18px}
+    .brand{display:flex;align-items:center;gap:11px;font-weight:800;letter-spacing:.08em;font-size:18px;--er-wm-ls:.08em}
     .brand-mark{
       width:22px;height:22px;flex:none;border-radius:5px;
       background:linear-gradient(135deg,var(--yellow),var(--yellow-2));
@@ -379,6 +379,8 @@ export const TECHNICAL_GEO_HTML = `<!DOCTYPE html>
       .sticky-cta{display:block}
       body{padding-bottom:74px}
     }
+    /* The ™ on the ECHORANK wordmark: verbatim WORDMARK_TM_CSS (src/lib/brand/wordmark-tm.ts). */
+    @property --er-wm-em{syntax:"<length>";inherits:true;initial-value:0px}@property --er-wm-cap{syntax:"<length>";inherits:true;initial-value:0px}@property --er-wm-ls{syntax:"<length>";inherits:true;initial-value:0px}:where(:has(> .er-tm)){--er-wm-em:1em;--er-wm-cap:1cap}.er-tm{font-size:max(7px,.35em);line-height:0;letter-spacing:0;font-style:normal;color:currentColor;margin-left:calc(var(--er-wm-em)*.05 - var(--er-wm-ls));vertical-align:calc(var(--er-wm-cap) - 1cap)}
   </style>
 </head>
 
@@ -387,7 +389,7 @@ export const TECHNICAL_GEO_HTML = `<!DOCTYPE html>
     <div class="container nav-inner">
       <a class="brand" href="/en/" aria-label="Echorank home">
         <span class="brand-mark" aria-hidden="true"></span>
-        <span>ECHORANK</span>
+        <span>ECHORANK<span class="er-tm" aria-hidden="true">™</span></span>
       </a>
 
       <nav class="nav-links" aria-label="Primary">
@@ -1047,7 +1049,7 @@ export const TECHNICAL_GEO_HTML = `<!DOCTYPE html>
     <div class="container footer-inner">
       <div class="brand">
         <span class="brand-mark" aria-hidden="true"></span>
-        <span>ECHORANK</span>
+        <span>ECHORANK<span class="er-tm" aria-hidden="true">™</span></span>
       </div>
       <div class="footer-links">
         <a href="/en/pricing">Pricing</a>

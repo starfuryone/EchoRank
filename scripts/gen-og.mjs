@@ -47,7 +47,11 @@ const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" 
   <g transform="translate(80,150)">
     <polygon points="0,-13 15,0 0,13 -15,0" fill="url(#gold)"/>
     <text x="34" y="10" font-family="${FONT}" font-size="30" font-weight="bold"
-          fill="#ffffff" letter-spacing="5">ECHORANK 360</text>
+          fill="#ffffff" letter-spacing="5">ECHORANK<tspan dx="-3.5" dy="-14.2" font-size="10.5" letter-spacing="0">™</tspan><tspan dy="14.2" xml:space="preserve"> 360</tspan></text>
+    <!-- ™ (src/lib/brand/wordmark-tm.ts): 0.35em (10.5px), top on the cap line (DejaVu
+         caps 0.729em: 21.9 - 7.7 = 14.2 up), 0.05em after the K (the K's 5px
+         letter-spacing taken back: -5 + 1.5). -->
+
   </g>
 
   <!-- headline. Set on two lines: DejaVu runs wider than the site's Geist and

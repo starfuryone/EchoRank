@@ -47,7 +47,9 @@ const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" 
   <g transform="translate(80,150)">
     <polygon points="0,-13 15,0 0,13 -15,0" fill="url(#gold)"/>
     <text x="34" y="10" font-family="${FONT}" font-size="30" font-weight="bold"
-          fill="#ffffff" letter-spacing="5">ECHORANK</text>
+          fill="#ffffff" letter-spacing="5">ECHORANK<tspan dx="-3.5" dy="-14.2" font-size="10.5" letter-spacing="0">™</tspan></text>
+    <!-- ™ (src/lib/brand/wordmark-tm.ts): 0.35em, top on the cap line, 0.05em after the K. -->
+
   </g>
 
   <!-- title. Two lines, white then gold, exactly as the two sibling cards do

@@ -15,6 +15,7 @@ import { RULE_COPY, RULE_FAMILIES, RULES, type Rule, type RuleFamily } from "@/l
 import { CRAWLER_BRAND } from "@/lib/site-crawler/brand";
 import { familyIsPublic, ruleCountLabel } from "@/lib/site-crawler/rule-count";
 import { LEGACY_THEME_INIT_SCRIPT } from "@/lib/theme-schedule";
+import { WORDMARK_TM_CSS, WORDMARK_TM_HTML } from "@/lib/brand/wordmark-tm";
 
 export const LIBRARY_PATH = "/seo-spider/issues";
 const SITE = "https://echorank360.com";
@@ -190,12 +191,12 @@ export function issueLibraryHtml(): string {
 <meta property="og:url" content="${canonical}">
 <meta property="og:image" content="${SITE}/nosy-bat/og.png">
 <script type="application/ld+json">${JSON.stringify(jsonLd).replace(/</g, "\\u003c")}</script>
-<style>${CSS}</style>
+<style>${CSS}${WORDMARK_TM_CSS}</style>
 </head>
 <body>
 <header class="header">
 <div class="container header-inner">
-<a href="/en" class="brand" aria-label="Echorank home"><span style="letter-spacing:.06em">ECHORANK</span></a>
+<a href="/en" class="brand" aria-label="Echorank home"><span style="letter-spacing:.06em;--er-wm-ls:.06em">ECHORANK${WORDMARK_TM_HTML}</span></a>
 <nav class="nav" aria-label="Main navigation">
 <a href="/en/site-crawler">${esc(CRAWLER_BRAND.name)}</a>
 <a href="/en/learn/guides/what-nosy-bat-checks">Guide</a>

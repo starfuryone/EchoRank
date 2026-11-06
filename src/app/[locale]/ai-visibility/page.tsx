@@ -539,9 +539,10 @@ export default async function AIVisibilityPage({
               aria-label, so whichever mark is showing, it is announced once
               rather than twice or not at all. */}
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img className="av-logo-night" src="/echorank-logo-light.svg" alt="" aria-hidden="true" width={180} height={34} />
+          {/* 187 wide (was 180): the ™ widened the SVG, and the box keeps the logo's height. */}
+          <img className="av-logo-night" src="/echorank-logo-light.svg" alt="" aria-hidden="true" width={187} height={34} />
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img className="av-logo-day" src="/echorank-logo-dark.svg" alt="" aria-hidden="true" width={180} height={34} />
+          <img className="av-logo-day" src="/echorank-logo-dark.svg" alt="" aria-hidden="true" width={187} height={34} />
         </a>
         <nav className="av-nav" aria-label="Primary">
           <a href="#how">{c.nav.features}</a>

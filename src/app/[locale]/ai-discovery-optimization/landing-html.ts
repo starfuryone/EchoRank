@@ -115,7 +115,7 @@ section.block{padding:56px 0;border-top:1px solid var(--line)}
 /* header */
 .hdr{position:sticky;top:0;z-index:50;background:rgba(24,26,32,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
 .hdr .wrap{display:flex;align-items:center;justify-content:space-between;height:64px}
-.brand{display:flex;align-items:center;gap:10px;color:var(--text);font-weight:700;letter-spacing:.14em;font-size:15px}
+.brand{display:flex;align-items:center;gap:10px;color:var(--text);font-weight:700;letter-spacing:.14em;font-size:15px;--er-wm-ls:.14em}
 .brand:hover{text-decoration:none}
 .hnav{display:flex;align-items:center;gap:22px;font-size:14px}
 .hnav a{color:var(--ink-muted)}
@@ -249,6 +249,8 @@ svg{max-width:100%;height:auto;display:block}
 footer{border-top:1px solid var(--line);padding:40px 0 48px;margin-top:64px;font-size:14px;color:var(--muted)}
 footer .legal a{color:var(--muted);text-decoration:underline}
 footer .legal a:hover{color:var(--ink-accent)}
+/* The ™ on the ECHORANK wordmark: verbatim WORDMARK_TM_CSS (src/lib/brand/wordmark-tm.ts). */
+@property --er-wm-em{syntax:"<length>";inherits:true;initial-value:0px}@property --er-wm-cap{syntax:"<length>";inherits:true;initial-value:0px}@property --er-wm-ls{syntax:"<length>";inherits:true;initial-value:0px}:where(:has(> .er-tm)){--er-wm-em:1em;--er-wm-cap:1cap}.er-tm{font-size:max(7px,.35em);line-height:0;letter-spacing:0;font-style:normal;color:currentColor;margin-left:calc(var(--er-wm-em)*.05 - var(--er-wm-ls));vertical-align:calc(var(--er-wm-cap) - 1cap)}
 </style>
 </head>
 <body>
@@ -262,7 +264,7 @@ footer .legal a:hover{color:var(--ink-accent)}
         </linearGradient></defs>
         <rect x="5" y="5" width="16" height="16" rx="3" transform="rotate(45 13 13)" fill="url(#eg-aido)"/>
       </svg>
-      ECHORANK
+      <span>ECHORANK<span class="er-tm" aria-hidden="true">™</span></span>
     </a>
     <nav class="hnav" aria-label="Site">
       <a class="hide-m" href="/en/free-audit">Free audit</a>

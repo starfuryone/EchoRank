@@ -30,6 +30,7 @@ import { THEME_TOGGLE_COPY, type ThemeToggleCopy } from "@/lib/i18n/content";
 import { isSupportedLocale } from "@/lib/i18n/config";
 import s from "./home2.module.css";
 import { ThemeToggle } from "@/components/marketing/theme-toggle";
+import { WordmarkTm } from "@/components/brand/WordmarkTm";
 import { CRAWLER_BRAND } from "@/lib/site-crawler/brand";
 import { CRAWLER_GUIDES_HREF } from "@/lib/crawler-guides-link";
 
@@ -618,7 +619,11 @@ export function PublicNav({
       <div className={`${s.container} ${s.navin}`}>
         <Link className={s.brand} href={L("/")}>
           <span className={s.diamond} aria-hidden />
-          ECHORANK
+          {/* One flex item, as the bare text was: .brand's gap must not split the K from the ™. */}
+          <span>
+            ECHORANK
+            <WordmarkTm />
+          </span>
         </Link>
 
         <div className={s.navlinks}>
@@ -710,7 +715,12 @@ export function PublicNav({
       {mobileOpen && (
         <div className={s.sheet} role="dialog" aria-modal="true" aria-label={t.menu}>
           <div className={s.sheetHead}>
-            <span className={s.brand}>ECHORANK</span>
+            <span className={s.brand}>
+              <span>
+                ECHORANK
+                <WordmarkTm />
+              </span>
+            </span>
             {/* The desktop control is off-screen behind the sheet, so the
                 toggle is repeated here rather than being desktop-only. */}
             <ThemeToggle

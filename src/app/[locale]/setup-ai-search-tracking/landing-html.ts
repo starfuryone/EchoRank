@@ -75,7 +75,7 @@ export const SETUP_AI_SEARCH_TRACKING_HTML: string = String.raw`<!DOCTYPE html>
   .nav{display:flex;align-items:center;justify-content:space-between;height:64px}
   .brand{display:flex;align-items:center;gap:10px;color:var(--text)}
   .brand:hover{text-decoration:none}
-  .brand .wordmark{font-weight:800;letter-spacing:.14em;font-size:15px}
+  .brand .wordmark{font-weight:800;letter-spacing:.14em;font-size:15px;--er-wm-ls:.14em}
   .nav .cta{background:var(--accent);color:var(--ink-on-gold);font-weight:600;font-size:14px;padding:9px 18px;border-radius:8px}
   .nav .cta:hover{background:var(--accent2);text-decoration:none}
 
@@ -159,6 +159,8 @@ export const SETUP_AI_SEARCH_TRACKING_HTML: string = String.raw`<!DOCTYPE html>
     .hero{padding:52px 0 44px}
   }
   @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+/* The ™ on the ECHORANK wordmark: verbatim WORDMARK_TM_CSS (src/lib/brand/wordmark-tm.ts). */
+@property --er-wm-em{syntax:"<length>";inherits:true;initial-value:0px}@property --er-wm-cap{syntax:"<length>";inherits:true;initial-value:0px}@property --er-wm-ls{syntax:"<length>";inherits:true;initial-value:0px}:where(:has(> .er-tm)){--er-wm-em:1em;--er-wm-cap:1cap}.er-tm{font-size:max(7px,.35em);line-height:0;letter-spacing:0;font-style:normal;color:currentColor;margin-left:calc(var(--er-wm-em)*.05 - var(--er-wm-ls));vertical-align:calc(var(--er-wm-cap) - 1cap)}
 </style>
 </head>
 <body>
@@ -174,7 +176,7 @@ export const SETUP_AI_SEARCH_TRACKING_HTML: string = String.raw`<!DOCTYPE html>
         </defs>
         <rect x="5.5" y="5.5" width="15" height="15" rx="3" fill="url(#eg-ast)" transform="rotate(45 13 13)"/>
       </svg>
-      <span class="wordmark">ECHORANK</span>
+      <span class="wordmark">ECHORANK<span class="er-tm" aria-hidden="true">™</span></span>
     </a>
     <button type="button" class="er-theme" id="er-theme" aria-label="Switch to day theme"><span class="er-night" aria-hidden="true">&#9788;</span><span class="er-day" aria-hidden="true">&#9789;</span></button>
     <a class="cta" href="/en/pricing">See plans</a>

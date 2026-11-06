@@ -89,7 +89,7 @@ h2{font-size:clamp(28px,4vw,42px);line-height:1.12;font-weight:700;letter-spacin
 .btn-back{padding:8px 14px;color:var(--muted)}
 .btn-back:hover{color:var(--text)}
 .foot-back{margin-bottom:26px;display:inline-flex}
-.brand{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:.08em;font-size:15px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:.08em;font-size:15px;--er-wm-ls:.08em}
 .brand svg{width:26px;height:26px}
 .nav-ctas{display:flex;gap:12px;align-items:center}
 .btn{display:inline-flex;align-items:center;gap:8px;padding:12px 22px;border-radius:8px;font-weight:600;font-size:15px;transition:transform .15s ease,background .15s ease,border-color .15s ease;border:1px solid transparent}
@@ -278,6 +278,8 @@ footer{border-top:1px solid var(--border);padding:36px 0}
 }
 
 a:focus-visible,summary:focus-visible,.btn:focus-visible{outline:2px solid var(--accent-bright);outline-offset:2px;border-radius:8px}
+/* The ™ on the ECHORANK wordmark: verbatim WORDMARK_TM_CSS (src/lib/brand/wordmark-tm.ts). */
+@property --er-wm-em{syntax:"<length>";inherits:true;initial-value:0px}@property --er-wm-cap{syntax:"<length>";inherits:true;initial-value:0px}@property --er-wm-ls{syntax:"<length>";inherits:true;initial-value:0px}:where(:has(> .er-tm)){--er-wm-em:1em;--er-wm-cap:1cap}.er-tm{font-size:max(7px,.35em);line-height:0;letter-spacing:0;font-style:normal;color:currentColor;margin-left:calc(var(--er-wm-em)*.05 - var(--er-wm-ls));vertical-align:calc(var(--er-wm-cap) - 1cap)}
 </style>
 </head>
 <body>
@@ -291,7 +293,7 @@ a:focus-visible,summary:focus-visible,.btn:focus-visible{outline:2px solid var(-
       </a>
       <a class="brand" href="/en">
       <svg viewBox="0 0 32 32" aria-hidden="true"><defs><linearGradient id="eg-meth" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FDE38A"/><stop offset="1" stop-color="#F0B90B"/></linearGradient></defs><rect x="7" y="7" width="18" height="18" rx="3" transform="rotate(45 16 16)" fill="url(#eg-meth)"/></svg>
-      ECHORANK
+      <span>ECHORANK<span class="er-tm" aria-hidden="true">™</span></span>
       </a>
     </div>
     <div class="nav-ctas">
@@ -476,7 +478,7 @@ a:focus-visible,summary:focus-visible,.btn:focus-visible{outline:2px solid var(-
     <div class="foot">
       <a class="brand" href="/en">
         <svg viewBox="0 0 32 32" aria-hidden="true"><defs><linearGradient id="eg-meth-f" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FDE38A"/><stop offset="1" stop-color="#F0B90B"/></linearGradient></defs><rect x="7" y="7" width="18" height="18" rx="3" transform="rotate(45 16 16)" fill="url(#eg-meth-f)"/></svg>
-        ECHORANK
+        <span>ECHORANK<span class="er-tm" aria-hidden="true">™</span></span>
       </a>
       <nav class="foot-links" aria-label="Footer">
         <a href="/en/pricing">Pricing</a>

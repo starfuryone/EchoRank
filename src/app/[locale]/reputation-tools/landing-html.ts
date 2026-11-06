@@ -83,7 +83,7 @@ export const landingHtml = String.raw`<!DOCTYPE html>
   /* header */
   header{position:sticky;top:0;z-index:50;background:rgba(11,13,16,.85);backdrop-filter:blur(10px);border-bottom:1px solid var(--border)}
   .nav{display:flex;align-items:center;justify-content:space-between;height:64px}
-  .logo{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:.06em;font-size:15px}
+  .logo{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:.06em;font-size:15px;--er-wm-ls:.06em}
   .logo .diamond{width:18px;height:18px;background:var(--gold);transform:rotate(45deg);border-radius:4px}
   .nav-cta{display:flex;gap:12px}
 
@@ -204,13 +204,15 @@ export const landingHtml = String.raw`<!DOCTYPE html>
     section{padding:64px 0}
     .nav-cta .btn{padding:9px 12px;font-size:13px}
   }
+/* The ™ on the ECHORANK wordmark: verbatim WORDMARK_TM_CSS (src/lib/brand/wordmark-tm.ts). */
+@property --er-wm-em{syntax:"<length>";inherits:true;initial-value:0px}@property --er-wm-cap{syntax:"<length>";inherits:true;initial-value:0px}@property --er-wm-ls{syntax:"<length>";inherits:true;initial-value:0px}:where(:has(> .er-tm)){--er-wm-em:1em;--er-wm-cap:1cap}.er-tm{font-size:max(7px,.35em);line-height:0;letter-spacing:0;font-style:normal;color:currentColor;margin-left:calc(var(--er-wm-em)*.05 - var(--er-wm-ls));vertical-align:calc(var(--er-wm-cap) - 1cap)}
 </style>
 </head>
 <body>
 
 <header>
   <div class="wrap nav">
-    <a class="logo" href="/en" aria-label="Echorank home"><span class="diamond"></span>ECHORANK</a>
+    <a class="logo" href="/en" aria-label="Echorank home"><span class="diamond"></span><span>ECHORANK<span class="er-tm" aria-hidden="true">™</span></span></a>
     <nav class="nav-cta">
       <button type="button" class="btn btn-ghost" id="back-btn" aria-label="Go back to the previous page">&#8592; Back</button>
       <a class="btn btn-ghost" href="/en/free-audit">Run a free audit</a>

@@ -211,13 +211,15 @@ export const KEYWORD_GUIDE_HTML: string = String.raw`<!DOCTYPE html>
       .toc{grid-template-columns:1fr}
       .hero{padding-top:58px}
     }
+    /* The ™ on the ECHORANK wordmark: verbatim WORDMARK_TM_CSS (src/lib/brand/wordmark-tm.ts). */
+    @property --er-wm-em{syntax:"<length>";inherits:true;initial-value:0px}@property --er-wm-cap{syntax:"<length>";inherits:true;initial-value:0px}@property --er-wm-ls{syntax:"<length>";inherits:true;initial-value:0px}:where(:has(> .er-tm)){--er-wm-em:1em;--er-wm-cap:1cap}.er-tm{font-size:max(7px,.35em);line-height:0;letter-spacing:0;font-style:normal;color:currentColor;margin-left:calc(var(--er-wm-em)*.05 - var(--er-wm-ls));vertical-align:calc(var(--er-wm-cap) - 1cap)}
   </style>
 </head>
 <body>
   <header class="topbar">
     <div class="container topbar-inner">
       <a class="brand" href="/en" aria-label="Echorank home">
-        <svg width="30" height="30" viewBox="0 0 40 40" style="display:block" aria-hidden="true"><defs><linearGradient id="eg-kg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FDE38A"/><stop offset="1" stop-color="#F0B90B"/></linearGradient></defs><rect x="9" y="9" width="22" height="22" rx="5" transform="rotate(45 20 20)" fill="url(#eg-kg)"/></svg><span style="letter-spacing:.06em">ECHORANK</span>
+        <svg width="30" height="30" viewBox="0 0 40 40" style="display:block" aria-hidden="true"><defs><linearGradient id="eg-kg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FDE38A"/><stop offset="1" stop-color="#F0B90B"/></linearGradient></defs><rect x="9" y="9" width="22" height="22" rx="5" transform="rotate(45 20 20)" fill="url(#eg-kg)"/></svg><span style="letter-spacing:.06em;--er-wm-ls:.06em">ECHORANK<span class="er-tm" aria-hidden="true">™</span></span>
       </a>
       <nav class="topnav" aria-label="Page navigation">
         <a href="#basics">Basics</a>

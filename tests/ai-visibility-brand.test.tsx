@@ -139,7 +139,11 @@ describe("the global Echorank logo is exactly where it was", () => {
     expect([...side.querySelectorAll("img")].map((i) => i.getAttribute("src"))).toEqual(["/echorank-logo-light.svg"]);
     for (const l of LOCALES) {
       const navHtml = renderToStaticMarkup(createElement(PublicNav, { locale: l }));
-      expect(doc(navHtml).querySelector("a")!.textContent).toBe("ECHORANK");
+      // The wordmark plus its ™ (decorative: the accessible text stays "ECHORANK").
+      const brand = doc(navHtml).querySelector("a")!;
+      expect(brand.textContent).toBe("ECHORANK™");
+      brand.querySelectorAll('[aria-hidden="true"]').forEach((n) => n.remove());
+      expect(brand.textContent).toBe("ECHORANK");
       expect(navHtml).not.toContain("/ai-visibility/echorank-ai-visibility");
       const foot = renderToStaticMarkup(createElement(PublicFooter, { locale: l }));
       expect(foot).toContain("ECHORANK");
