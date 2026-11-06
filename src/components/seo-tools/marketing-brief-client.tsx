@@ -36,6 +36,7 @@ import {
   type DashLocale,
 } from "@/lib/i18n/dashboard";
 import { CTA_LINK_CLASS } from "@/components/seo-tools/marketing-studio-client";
+import { AI_LABELS } from "@/lib/i18n/ai-labels";
 
 const STUDIO_BASE = "/visibility/tools/ai-content-helper";
 
@@ -402,6 +403,9 @@ export function MarketingBriefClient({
                 {result.cached ? (
                   <p className="mb-3 text-xs text-gray-500">{t.cachedNote}</p>
                 ) : null}
+                <p className="mb-3 text-xs font-medium text-amber-800" data-testid="drafted-by-ai">
+                  {AI_LABELS[locale].draftedByAi}
+                </p>
                 <pre className="whitespace-pre-wrap text-sm leading-relaxed text-gray-800">
                   {result.output}
                 </pre>

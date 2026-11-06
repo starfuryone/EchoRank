@@ -8,6 +8,7 @@ import { ThemeToggle } from '@/components/marketing/theme-toggle';
 import { PLAN_CONFIGS } from '@/lib/plan-config';
 import { AuditWidget, type AuditWidgetContent } from '@/components/AuditWidget';
 import { AiVisibilityLogo } from '@/components/brand/AiVisibilityLogo';
+import { aiLabels } from '@/lib/i18n/ai-labels';
 import { KeywordWidget, type KeywordWidgetContent } from '@/components/KeywordWidget';
 import { JsonLd, SITE_URL, buildMetadata, faqPage, normalizeLocale, organization, webSite } from "@/lib/seo";
 
@@ -567,6 +568,8 @@ export default async function AIVisibilityPage({
             <span className="av-gold">{c.hero.h1b}</span>
           </h1>
           <p className="av-sub">{c.hero.sub}</p>
+          {/* AI disclosure, text only (src/lib/i18n/ai-labels.ts). */}
+          <p className="av-powered" data-testid="powered-by-ai">{aiLabels(locale).poweredByAi}</p>
           {/* The site's "run the free audit" CTAs used to point at
               /{locale}/ai-visibility#audit; they now go to /{locale}/free-audit,
               which mounts this same widget on a page of its own. The id stays:
@@ -754,6 +757,7 @@ const css = `
   text-transform: uppercase; font-weight: 600; margin-bottom: 1rem;
 }
 .av-sub { max-width: 34rem; color: var(--er-text-muted); font-size: 1.05rem; }
+.av-powered { margin-top: -0.35rem; font-size: 0.8rem; letter-spacing: 0.04em; color: var(--er-text-faint); }
 .av-hero {
   display: grid; grid-template-columns: 1.1fr 0.9fr;
   gap: clamp(2rem, 5vw, 4rem); align-items: center; min-height: 70vh;

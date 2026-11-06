@@ -4,6 +4,7 @@ import Link from "next/link";
 import { AvEmblem } from "@/components/brand/AiVisibilityLogo";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import s from "./home2.module.css";
+import { AI_LABELS } from "@/lib/i18n/ai-labels";
 import { FAQ } from "./faq-data";
 import { inline } from "./learn/_shared/inline";
 import { DemoVideoModal } from "@/components/demo-video";
@@ -563,6 +564,8 @@ export default function HomeClient({
             <span className={s.livechip}><span className={s.pulse} />{t.hero.live}</span>
             <h1 className={s.h1}>{t.hero.h1a}<span className={s.goldtext}>{t.hero.h1b}</span></h1>
             <p className={s.heroSub}>{t.hero.sub}</p>
+            {/* AI disclosure, text only (src/lib/i18n/ai-labels.ts), in the hero's own language. */}
+            <p className={s.poweredByAi} data-testid="powered-by-ai">{AI_LABELS[baseOf(locale)].poweredByAi}</p>
             {/* Primary CTA runs the real audit with no account: the widget on
                 /ai-visibility is anonymous and rate-limited to 1/IP/day.
                 /register is the secondary path for people who already want an

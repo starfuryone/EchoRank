@@ -48,6 +48,7 @@ import {
   type DashLocale,
 } from "@/lib/i18n/dashboard";
 import type { ActionAgentUsage } from "@/lib/action-agent/generate";
+import { AI_LABELS } from "@/lib/i18n/ai-labels";
 import {
   V1_KINDS,
   type ActionItemDto,
@@ -567,6 +568,10 @@ function ActionItemCard({
       </CardHeader>
 
       <CardContent className="space-y-4">
+        {/* Every Action Agent item is model-written (review replies, schema, FAQ). */}
+        <p className="text-xs font-medium text-amber-800" data-testid="drafted-by-ai">
+          {AI_LABELS[locale].draftedByAi}
+        </p>
         <DraftBody
           item={item}
           copy={copy}

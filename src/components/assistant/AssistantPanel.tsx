@@ -186,6 +186,9 @@ export function AssistantPanel({
       <div className="flex items-start justify-between gap-3 border-b border-gray-200 bg-white px-4 py-3">
         <div className="min-w-0">
           <h2 className="truncate text-sm font-semibold text-gray-900">{c.heading}</h2>
+          <p className="text-xs text-gray-500" data-testid="assistant-ai-label">
+            {c.aiLabel}
+          </p>
           {!isWidget && <p className="mt-1 text-sm text-gray-500">{c.subtitle}</p>}
         </div>
         {isWidget && fullHref && (

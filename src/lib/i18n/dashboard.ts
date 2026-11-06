@@ -20,6 +20,7 @@ import { SITE_CRAWLER_4G } from "./site-crawler-4g";
 import { SITE_CRAWLER_HELP } from "./site-crawler-help";
 import { SITE_CRAWLER_UX } from "./site-crawler-ux";
 import { CRAWLER_BRAND } from "@/lib/site-crawler/brand";
+import { AI_LABELS } from "./ai-labels";
 export type DashLocale = "en" | "fr" | "de-CH";
 
 export function dashboardLocale(cookieValue?: string | null): DashLocale {
@@ -17183,6 +17184,8 @@ export const ACTION_AGENT_COPY: Record<DashLocale, ActionAgentCopy> = {
 // French and looking for English body text.
 const assistantEn = {
   heading: "Echorank Intelligence",
+  /** Under the heading, widget and full view (src/lib/i18n/ai-labels.ts). */
+  aiLabel: AI_LABELS.en.assistantHeader,
   subtitle: "Ask about your own data. It reads your audits, prompts and rankings before it answers.",
   metaTitle: "AI Assistant",
   metaDescription:
@@ -17242,6 +17245,7 @@ export const ASSISTANT_COPY: Record<DashLocale, AssistantCopy> = {
   en: assistantEn,
   fr: {
     heading: "Echorank Intelligence",
+    aiLabel: AI_LABELS.fr.assistantHeader,
     subtitle:
       "Posez vos questions sur vos propres données. L'assistant consulte vos audits, vos requêtes suivies et vos positions avant de répondre.",
     metaTitle: "Assistant IA",
@@ -17292,6 +17296,7 @@ export const ASSISTANT_COPY: Record<DashLocale, AssistantCopy> = {
   },
   "de-CH": {
     heading: "Echorank Intelligence",
+    aiLabel: AI_LABELS["de-CH"].assistantHeader,
     subtitle:
       "Stellen Sie Fragen zu Ihren eigenen Daten. Der Assistent liest Ihre Audits, verfolgten Fragen und Positionen, bevor er antwortet.",
     metaTitle: "KI-Assistent",

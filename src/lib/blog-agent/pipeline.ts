@@ -36,6 +36,7 @@ import {
 } from "./store";
 import { getAllArticles } from "@/lib/blog/loader";
 import { logger } from "@/infrastructure/observability/logger";
+import { AI_LABELS } from "@/lib/i18n/ai-labels";
 
 /** Thrown when a stage is entered with the agent disabled. Caught by the worker. */
 export class BlogAgentDisabled extends Error {
@@ -248,6 +249,8 @@ export async function runDraft(payload: DraftJobPayload, now = new Date()): Prom
       level: "briefing",
       title: `Draft ready: ${gate.draft.title}`,
       lines: [
+        // Staff notification, English like the rest of it (src/lib/i18n/ai-labels.ts).
+        AI_LABELS.en.draftedByAi,
         `slug: ${gate.draft.slug}`,
         `category: ${gate.draft.category}`,
         `${gate.draft.wordCount} words, ${gate.draft.readingTime} min read`,
