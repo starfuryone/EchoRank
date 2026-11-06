@@ -26,6 +26,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import type { CitationGapRow } from "@/lib/citation-gap";
+import { CITATION_GAP_PANEL_COPY, type DashLocale } from "@/lib/i18n/dashboard";
 import {
   CartesianGrid,
   Line,
@@ -58,14 +59,6 @@ interface Competitor {
   appearances: number;
   averagePosition: number | null;
 }
-const GAP_TYPE_LABEL: Record<CitationGapRow["type"], string> = {
-  review_site: "Review site",
-  directory: "Directory",
-  forum: "Forum",
-  news: "News",
-  own_site: "Your own site",
-  other: "Other",
-};
 
 interface CitationDomain {
   domain: string;
@@ -89,6 +82,7 @@ export function AiSearchOverview({
   citationGap = [],
   history,
   timezone,
+  locale = "en",
 }: {
   brands: { id: string; name: string }[];
   brand: { id: string; name: string; promptCount: number };
@@ -99,8 +93,11 @@ export function AiSearchOverview({
   citationGap?: CitationGapRow[];
   history: HistoryEntry[];
   timezone: string;
+  /** Only the citation-gap panel is translated so far; the rest is English inline. */
+  locale?: DashLocale;
 }) {
   const [showTable, setShowTable] = useState(false);
+  const gap = CITATION_GAP_PANEL_COPY[locale];
 
   const supported = useMemo(
     () => metrics.filter((m): m is Extract<MetricView, { supported: true }> => m.supported),
@@ -365,28 +362,28 @@ export function AiSearchOverview({
       </section>
 
       <Panel
-        title="Citation gap"
-        subtitle="Sources cited when a competitor is named and you are not, last 30 days"
+        title={gap.title}
+        subtitle={gap.subtitle}
         className="mt-4"
       >
         {citationGap.length === 0 ? (
-          <Muted>No answer named a competitor without you. Nothing to close.</Muted>
+          <Muted>{gap.empty}</Muted>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm" data-testid="citation-gap-full">
               <thead className="text-xs text-gray-500">
                 <tr>
-                  <th scope="col" className="py-1 pr-4 font-medium">Source</th>
-                  <th scope="col" className="py-1 pr-4 font-medium">Type</th>
-                  <th scope="col" className="py-1 pr-4 font-medium">Answers</th>
-                  <th scope="col" className="py-1 font-medium">Named instead of you</th>
+                  <th scope="col" className="py-1 pr-4 font-medium">{gap.colSource}</th>
+                  <th scope="col" className="py-1 pr-4 font-medium">{gap.colType}</th>
+                  <th scope="col" className="py-1 pr-4 font-medium">{gap.colAnswers}</th>
+                  <th scope="col" className="py-1 font-medium">{gap.colNamed}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {citationGap.map((row) => (
                   <tr key={row.domain}>
                     <td className="py-1.5 pr-4 text-gray-900">{row.domain}</td>
-                    <td className="py-1.5 pr-4 text-gray-600">{GAP_TYPE_LABEL[row.type]}</td>
+                    <td className="py-1.5 pr-4 text-gray-600">{gap.types[row.type]}</td>
                     <td className="py-1.5 pr-4 tabular-nums">{row.count}</td>
                     <td className="py-1.5 text-gray-600">{row.competitors.join(", ") || "—"}</td>
                   </tr>

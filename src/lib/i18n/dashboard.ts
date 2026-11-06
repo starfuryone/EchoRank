@@ -17908,3 +17908,72 @@ export const KEYWORD_OPPORTUNITY_COPY: Record<DashLocale, KeywordOpportunityCopy
       "Der nächste Schritt ist Inhalt, der eine Frage Ihrer Käuferschaft beantwortet, ohne Sie zu nennen. Veröffentlichen Sie einen und starten Sie danach eine weitere Domain-Analyse, um zu sehen, ob er erfasst wird.",
   },
 };
+
+// The AI Search overview's "Citation gap" panel (src/lib/citation-gap.ts):
+// sources cited when a competitor is named and the brand is not. The rest of
+// that page is still English inline; this panel is the first part translated.
+export const CITATION_GAP_PANEL_COPY: Record<
+  DashLocale,
+  {
+    title: string;
+    subtitle: string;
+    empty: string;
+    colSource: string;
+    colType: string;
+    colAnswers: string;
+    colNamed: string;
+    types: Record<"review_site" | "directory" | "forum" | "news" | "own_site" | "other", string>;
+  }
+> = {
+  en: {
+    title: "Citation gap",
+    subtitle: "Sources cited when a competitor is named and you are not, last 30 days",
+    empty: "No answer named a competitor without you. Nothing to close.",
+    colSource: "Source",
+    colType: "Type",
+    colAnswers: "Answers",
+    colNamed: "Named instead of you",
+    types: {
+      review_site: "Review site",
+      directory: "Directory",
+      forum: "Forum",
+      news: "News",
+      own_site: "Your own site",
+      other: "Other",
+    },
+  },
+  fr: {
+    title: "Écart de citations",
+    subtitle: "Sources citées quand un concurrent est nommé et pas vous, sur les 30 derniers jours",
+    empty: "Aucune réponse n'a nommé un concurrent sans vous. Aucun écart à combler.",
+    colSource: "Source",
+    colType: "Type",
+    colAnswers: "Réponses",
+    colNamed: "Nommés à votre place",
+    types: {
+      review_site: "Site d'avis",
+      directory: "Annuaire",
+      forum: "Forum",
+      news: "Actualités",
+      own_site: "Votre propre site",
+      other: "Autre",
+    },
+  },
+  "de-CH": {
+    title: "Zitierlücke",
+    subtitle: "Quellen, die zitiert werden, wenn ein Mitbewerber genannt wird und Sie nicht, letzte 30 Tage",
+    empty: "Keine Antwort hat einen Mitbewerber ohne Sie genannt. Es gibt keine Lücke zu schliessen.",
+    colSource: "Quelle",
+    colType: "Typ",
+    colAnswers: "Antworten",
+    colNamed: "Statt Ihnen genannt",
+    types: {
+      review_site: "Bewertungsportal",
+      directory: "Verzeichnis",
+      forum: "Forum",
+      news: "News",
+      own_site: "Ihre eigene Website",
+      other: "Andere",
+    },
+  },
+};

@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import Link from "next/link";
+import { dashboardLocale } from "@/lib/i18n/dashboard";
 import { AV_ICONS } from "@/lib/ai-visibility/brand";
 import { requireTenant } from "@/lib/tenant";
 import { aiSearchEnabledFor } from "@/lib/ai-monitor/rollout";
@@ -95,6 +97,7 @@ export default async function AiSearchPage({
       citationGap={citationGap}
       history={history}
       timezone={membership.tenant.timezone}
+      locale={dashboardLocale((await cookies()).get("echorank_locale")?.value)}
     />
   );
 }

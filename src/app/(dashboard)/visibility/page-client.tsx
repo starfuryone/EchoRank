@@ -27,6 +27,7 @@ import { MonitorCard } from "@/components/visibility/MonitorCard";
 import { BenchmarkCard } from "@/components/visibility/BenchmarkCard";
 import { AiLensAuditPanel } from "@/components/visibility/AiLensAuditPanel";
 import { FixWithAiButton } from "@/components/seo-tools/fix-with-ai-button";
+import { localizeAuditVerdict, type AuditVerdict } from "@/lib/i18n/audit-verdicts";
 import {
   ACTION_AGENT_COPY,
   VISIBILITY_COPY,
@@ -55,9 +56,12 @@ interface AuditResult {
   jsonld: { types: string[]; blocks: number; errors: number };
   rendering: { likely_csr: boolean; text_len: number; framework: string | null };
   llms_txt: boolean;
-  /** Pass/fail checks with their fix (sidecar free_audit_checks.py); not scored. */
-  /** pass: null = "check" (e.g. Cloudflare's AI-bot setting, invisible from outside). */
-  verdicts?: { id: string; title: string; pass: boolean | null; detail: string; fix: string }[];
+  /**
+   * Pass/fail checks with their fix (sidecar free_audit_checks.py); not scored.
+   * pass null = "check" (e.g. Cloudflare's AI-bot setting, invisible from outside).
+   * Rendered in fr / de-CH by key (localizeAuditVerdict).
+   */
+  verdicts?: AuditVerdict[];
   error?: string;
 }
 interface Remediation {
@@ -476,7 +480,7 @@ export function VisibilityPageClient({
               </CardHeader>
               <CardContent>
                 <ul className="divide-y divide-gray-100" data-testid="audit-verdicts">
-                  {audit.verdicts.map((v) => (
+                  {audit.verdicts.map((raw) => localizeAuditVerdict(raw, locale)).map((v) => (
                     <li key={v.id} className="py-2">
                       <div className="flex items-baseline justify-between gap-3">
                         <span className="text-sm font-medium text-gray-800">{v.title}</span>
