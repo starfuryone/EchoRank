@@ -32,6 +32,9 @@ export interface AuthContent {
     emailPh: string;
     businessLabel: string;
     businessPh: string;
+    /** Where the business is; required (EU/EEA/UK are refused, src/lib/geo/blocked-countries.ts). */
+    countryLabel: string;
+    countryPh: string;
     passwordLabel: string;
     passwordPh: string;
     submit: string;
@@ -78,6 +81,8 @@ const en: AuthContent = {
     emailPh: "you@company.com",
     businessLabel: "Business name",
     businessPh: "Acme Plumbing",
+    countryLabel: "Country",
+    countryPh: "Choose your country",
     passwordLabel: "Password",
     passwordPh: "At least 8 characters",
     submit: "Create Account",
@@ -124,6 +129,8 @@ const fr: AuthContent = {
     emailPh: "vous@entreprise.com",
     businessLabel: "Nom de l'entreprise",
     businessPh: "Plomberie Martin",
+    countryLabel: "Pays",
+    countryPh: "Choisissez votre pays",
     passwordLabel: "Mot de passe",
     passwordPh: "Au moins 8 caractères",
     submit: "Créer mon compte",
@@ -170,6 +177,8 @@ const frCA: AuthContent = {
     emailPh: "vous@entreprise.com",
     businessLabel: "Nom de l'entreprise",
     businessPh: "Plomberie Tremblay",
+    countryLabel: "Pays",
+    countryPh: "Choisissez votre pays",
     passwordLabel: "Mot de passe",
     passwordPh: "Au moins 8 caractères",
     submit: "Créer mon compte",
@@ -216,6 +225,8 @@ const deCH: AuthContent = {
     emailPh: "sie@firma.ch",
     businessLabel: "Firmenname",
     businessPh: "Muster Sanitär AG",
+    countryLabel: "Land",
+    countryPh: "Wählen Sie Ihr Land",
     passwordLabel: "Passwort",
     passwordPh: "Mindestens 8 Zeichen",
     submit: "Konto erstellen",

@@ -182,6 +182,15 @@ describe("the signed-in checkout", () => {
     expect(await res.json()).toEqual({ url: expect.stringContaining("cs_test_1") });
   });
 
+  it("REQUIRES the billing address (the webhook refuses EU/EEA/UK billing countries)", async () => {
+    const { POST } = await import("@/app/api/billing/checkout/route");
+    await POST(req({ tier: "starter", interval: "month", consent: CONSENT }));
+    const s = createdSession();
+    expect(s.billing_address_collection).toBe("required");
+    // An existing customer's saved address is updated from what Checkout collects.
+    expect(s.customer_update).toEqual({ address: "auto" });
+  });
+
   it("ALWAYS stamps client_reference_id with the tenant id", async () => {
     // Not conditional any more: there is no anonymous path to omit it on, and
     // a tenant has no stripeCustomerId until its first completed checkout, so

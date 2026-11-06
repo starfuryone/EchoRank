@@ -14,6 +14,7 @@ import {
   scheduleTrialEndingNotice,
 } from "@/lib/billing/trial-notice";
 import { handleCreditPackCompleted, isCreditPackSession } from "@/lib/billing/credit-webhook";
+import { refuseBlockedCheckout, wasRefusedAtCheckout } from "@/lib/billing/blocked-checkout";
 
 const log = logger.child({ module: "stripe-webhook" });
 
@@ -115,6 +116,12 @@ async function handleCheckoutCompleted(session: Stripe.Checkout.Session) {
   // by the warn-and-return below rather than by provisioning an account from
   // a payment. src/lib/billing/guest-signup.ts is now unreferenced; it is
   // removed in its own commit with the rest of that cluster.
+  // EU/EEA/UK BILLING COUNTRY: REFUSED BEFORE EITHER ARM. Cancelled at once,
+  // refunded in full, the customer emailed, logged (src/lib/billing/
+  // blocked-checkout.ts). Ahead of the credit-pack branch so no credits are
+  // granted, and of the plan arm so the tenant is never activated.
+  if ((await refuseBlockedCheckout(session)).refused) return;
+
   if (isCreditPackSession(session)) {
     await handleCreditPackCompleted(session);
     return;
@@ -342,6 +349,14 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
   // whether a paying customer got a Subscription row at all.
   const { tenant, customerId, resolvedBy } = await resolveSubscriptionTenant(subscription);
   if (!tenant) return;
+
+  // A subscription refused at checkout (EU/EEA/UK billing country) is already
+  // cancelled; a created/updated event delivered after that must not put the
+  // tenant on a plan or a trial. customer.subscription.deleted still runs.
+  if (subscription.status !== "canceled" && (await wasRefusedAtCheckout(tenant.id, subscription.id))) {
+    log.info({ tenantId: tenant.id, subscriptionId: subscription.id }, "Subscription event ignored: refused at checkout");
+    return;
+  }
 
   const billingStatus = mapStripeStatus(subscription.status);
   const firstItem = subscription.items?.data?.[0];

@@ -179,6 +179,21 @@ export async function unlock(
   });
 }
 
+/**
+ * Unlock the page WITHOUT recording the visitor: the share token only, no lead
+ * row (src/lib/geo/blocked-countries.ts — an EU/EEA/UK visitor still gets the
+ * free report on the page; their email is not stored, so none is sent).
+ */
+export async function unlockShareOnly(id: string, now = new Date()): Promise<{ token: string; expiresAt: Date }> {
+  const expiresAt = new Date(now.getTime() + SHARE_DAYS * DAY_MS);
+  return prisma.$transaction(async (tx) => {
+    const run = await tx.visibilitySnapshot.findUniqueOrThrow({ where: { id } });
+    const token = run.shareToken ?? randomBytes(18).toString("base64url");
+    await tx.visibilitySnapshot.update({ where: { id }, data: { shareToken: token, shareExpiresAt: expiresAt } });
+    return { token, expiresAt };
+  });
+}
+
 export async function getLead(leadId: string) {
   return prisma.visibilitySnapshotLead.findUnique({ where: { id: leadId }, include: { snapshot: true } });
 }

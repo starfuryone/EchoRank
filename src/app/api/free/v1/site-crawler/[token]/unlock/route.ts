@@ -8,6 +8,7 @@ import { z } from "zod";
 import { flag } from "@/lib/flags";
 import { consumeDailyLimit, visitorIp } from "@/lib/free-tools/limits";
 import { freeCrawlByToken, recordLead, unlockCookie } from "@/lib/site-crawler/free-result";
+import { cfCountry, isBlockedCountry } from "@/lib/geo/blocked-countries";
 
 const Body = z.object({
   email: z.string().trim().max(254).email(),
@@ -30,6 +31,10 @@ export async function POST(request: Request, ctx: { params: Promise<{ token: str
   if (!allowance.ok) return NextResponse.json({ error: allowance.reason }, { status: allowance.reason === "rate_limited" ? 429 : 503 });
 
   const locale = parsed.data.locale?.startsWith("fr") ? "fr" : "en";
-  await recordLead({ row, email: parsed.data.email, locale, consent: parsed.data.consent === true });
+  // The tool stays open everywhere; a lead from the EU/EEA/UK is not stored
+  // (no row, no Brevo list): src/lib/geo/blocked-countries.ts.
+  if (!isBlockedCountry(cfCountry(request.headers))) {
+    await recordLead({ row, email: parsed.data.email, locale, consent: parsed.data.consent === true });
+  }
   return NextResponse.json({ ok: true }, { headers: { "set-cookie": cookie, "cache-control": "no-store" } });
 }

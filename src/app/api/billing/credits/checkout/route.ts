@@ -173,8 +173,11 @@ export async function POST(req: NextRequest) {
       // tenant from here, because a tenant buying its first thing has no Stripe
       // customer id yet.
       client_reference_id: tenantId,
+      // Required, as on the plan checkout: an EU/EEA/UK billing country is
+      // refunded by the webhook (src/lib/billing/blocked-checkout.ts).
+      billing_address_collection: "required",
       ...(customerId
-        ? { customer: customerId }
+        ? { customer: customerId, customer_update: { address: "auto" as const } }
         : customerEmail
           ? { customer_email: customerEmail }
           : {}),

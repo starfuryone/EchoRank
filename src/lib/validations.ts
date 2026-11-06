@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { ValidationError } from "@/lib/api-handler";
+import { isSignupCountry } from "@/lib/geo/blocked-countries";
 
 export const registerSchema = z.object({
   name: z.string().min(1).max(100),
@@ -14,6 +15,13 @@ export const registerSchema = z.object({
   // Domain carried over from the landing-page audit widget (?brand=); free-form
   // because the route normalizes it and silently drops garbage.
   brand: z.string().max(253).optional(),
+  // Required: where the customer is (ISO 3166-1 alpha-2). The route refuses
+  // EU/EEA/UK (src/lib/geo/blocked-countries.ts).
+  country: z
+    .string()
+    .trim()
+    .toUpperCase()
+    .refine((c) => isSignupCountry(c), { message: "Choose your country" }),
 });
 
 export const createCustomerSchema = z.object({

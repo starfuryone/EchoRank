@@ -267,8 +267,13 @@ export async function POST(req: NextRequest) {
       // completed checkout, so without this the very first activation never
       // finds its tenant. Unconditional now: this route has no anonymous path.
       client_reference_id: tenantId,
+      // The billing address is required: the webhook refuses (cancels and
+      // refunds) a checkout whose billing country is EU/EEA/UK
+      // (src/lib/billing/blocked-checkout.ts). An existing customer's address
+      // is updated from what they enter here.
+      billing_address_collection: "required",
       ...(customerId
-        ? { customer: customerId }
+        ? { customer: customerId, customer_update: { address: "auto" as const } }
         : customerEmail
           ? { customer_email: customerEmail }
           : {}),

@@ -168,7 +168,8 @@ export function SnapshotCheck({
         setError(errText(d.error));
         return;
       }
-      setSent(true);
+      // emailed:false = unlocked without storing the address (EU/EEA/UK), so nothing was sent.
+      setSent(d.emailed !== false);
       setPhase({ k: "full", id: phase.id, report: d.report, token: d.token, expiresAt: d.expiresAt ?? null });
     } catch {
       setError(c.errors.generic);

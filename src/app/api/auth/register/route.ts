@@ -11,6 +11,10 @@ import { normalizeDomain } from "@/lib/onboarding";
 import { resolveRequestLocale } from "@/lib/i18n/resolve-request-locale";
 import { enqueueOnboardingDrip } from "@/lib/onboarding-drip";
 import type { PlanType } from "@/generated/prisma";
+import { cfCountry, countryNotAvailable, isBlockedCountry } from "@/lib/geo/blocked-countries";
+import { logger } from "@/infrastructure/observability/logger";
+
+const log = logger.child({ module: "register" });
 
 /**
  * Plans a user may put themselves on at signup. Deliberately excludes the
@@ -40,7 +44,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { name, email, password, businessName, plan, brand, acceptedTerms } = validate(
+    const { name, email, password, businessName, plan, brand, acceptedTerms, country } = validate(
       registerSchema,
       body,
     );
@@ -49,6 +53,22 @@ export async function POST(request: Request) {
     // Emails are localized en/fr only; the dashboard collapses fr-CA → fr too.
     const requestLocale = await resolveRequestLocale();
     const defaultLanguage = requestLocale.startsWith("fr") ? "fr" : "en";
+
+    // No new customers from the EU/EEA/UK (src/lib/geo/blocked-countries.ts):
+    // refused when EITHER the declared country or Cloudflare's IP country is
+    // blocked, before anything is looked up or written. Invitations into an
+    // existing workspace do not come through here.
+    const ipCountry = cfCountry(request.headers);
+    if (isBlockedCountry(country) || isBlockedCountry(ipCountry)) {
+      log.info(
+        { declared: country, ipCountry, by: isBlockedCountry(country) ? "declared" : "ip" },
+        "signup refused: blocked country",
+      );
+      return NextResponse.json(
+        { error: countryNotAvailable(requestLocale), code: "COUNTRY_NOT_AVAILABLE" },
+        { status: 403 },
+      );
+    }
 
     const existingUser = await prisma.user.findUnique({
       where: { email: email.toLowerCase().trim() },
@@ -93,6 +113,8 @@ export async function POST(request: Request) {
           planType,
           auditDomain,
           defaultLanguage,
+          signupCountry: country,
+          signupIpCountry: ipCountry,
         },
       });
 

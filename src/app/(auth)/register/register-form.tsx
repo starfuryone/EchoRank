@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import { SIGNUP_COUNTRY_CODES } from "@/lib/geo/blocked-countries";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -34,6 +35,14 @@ export default function RegisterForm({
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [businessName, setBusinessName] = useState("");
+  const [country, setCountry] = useState("");
+  // Country names in the page's language, sorted by name.
+  const countryOptions = useMemo(() => {
+    const names = new Intl.DisplayNames([locale], { type: "region" });
+    return SIGNUP_COUNTRY_CODES.map((code) => [code, names.of(code) ?? code] as const).sort((a, b) =>
+      a[1].localeCompare(b[1], locale),
+    );
+  }, [locale]);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -49,7 +58,7 @@ export default function RegisterForm({
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password, businessName, plan, brand, acceptedTerms }),
+        body: JSON.stringify({ name, email, password, businessName, plan, brand, acceptedTerms, country }),
       });
 
       const data = await res.json();
@@ -165,6 +174,29 @@ export default function RegisterForm({
           placeholder={c.businessPh}
           required
         />
+
+        {/* Required. EU/EEA/UK are listed and refused by the server with the
+            "not available yet" message (src/lib/geo/blocked-countries.ts). */}
+        <div className="w-full">
+          <label htmlFor="country" className="block text-sm font-medium text-gray-700 mb-1">
+            {c.countryLabel}
+          </label>
+          <select
+            id="country"
+            name="country"
+            value={country}
+            onChange={(e) => setCountry(e.target.value)}
+            required
+            className="block w-full rounded-lg border border-gray-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+          >
+            <option value="">{c.countryPh}</option>
+            {countryOptions.map(([code, label]) => (
+              <option key={code} value={code}>
+                {label}
+              </option>
+            ))}
+          </select>
+        </div>
 
         <div className="relative">
           <Input

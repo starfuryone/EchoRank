@@ -13,7 +13,8 @@ import { z } from "zod";
 import { getClientIp } from "@/lib/client-ip";
 import { logger } from "@/infrastructure/observability/logger";
 import { hashIp, takePrefillAllowance } from "@/lib/snapshot/limits";
-import { getSnapshot, unlock } from "@/lib/snapshot/store";
+import { getSnapshot, unlock, unlockShareOnly } from "@/lib/snapshot/store";
+import { cfCountry, isBlockedCountry } from "@/lib/geo/blocked-countries";
 import { enqueueSnapshotEmail } from "@/lib/snapshot/job";
 
 export const dynamic = "force-dynamic";
@@ -34,6 +35,19 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   // Same per-IP budget as the prefill: unlocking sends mail, so it is not free to spam.
   if (!(await takePrefillAllowance(hashIp(getClientIp(request.headers))))) {
     return NextResponse.json({ error: "rate_limited" }, { status: 429 });
+  }
+
+  // The free check stays open everywhere, but a lead from the EU/EEA/UK is not
+  // stored (src/lib/geo/blocked-countries.ts): the page unlocks with a share
+  // token only, so no lead row, no Brevo list and no emailed copy.
+  if (isBlockedCountry(cfCountry(request.headers))) {
+    const shared = await unlockShareOnly(id);
+    return NextResponse.json({
+      token: shared.token,
+      expiresAt: shared.expiresAt.toISOString(),
+      report: run.report,
+      emailed: false,
+    });
   }
 
   const locale = parsed.data.locale?.startsWith("fr") ? "fr" : "en";

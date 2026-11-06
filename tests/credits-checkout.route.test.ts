@@ -141,6 +141,8 @@ describe("the billing gate", () => {
 
     expect(res.status).toBe(200);
     expect(stripeMock.checkout.sessions.create).toHaveBeenCalledTimes(1);
+    // Required: an EU/EEA/UK billing country is refunded by the webhook.
+    expect(stripeMock.checkout.sessions.create.mock.calls[0][0].billing_address_collection).toBe("required");
   });
 
   it.each(["PAST_DUE", "CANCELED"] as const)(

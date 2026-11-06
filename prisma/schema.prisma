@@ -170,6 +170,11 @@ model Tenant {
   trustpilotLink        String?
   defaultLanguage       String        @default("en")
   timezone              String        @default("America/New_York")
+  /// ISO 3166-1 alpha-2 the owner declared at signup (src/lib/geo/blocked-countries.ts).
+  /// Null for workspaces created before it was asked, and for agency client workspaces.
+  signupCountry         String?
+  /// Cloudflare's CF-IPCountry on the signup request; null when the header was absent.
+  signupIpCountry       String?
   planType              PlanType      @default(STARTER)
   monthlyRequestLimit   Int           @default(300)
   /// Site crawler caps set by staff in /admin/crawl-overrides (Phase 3d-A),
