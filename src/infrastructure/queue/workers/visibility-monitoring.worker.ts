@@ -39,6 +39,7 @@ const PROMPT_ERROR_RETRY_MS = 60 * 60 * 1000;
 
 const PROMPT_SWEEP_JOB_NAME = "prompt-sweep";
 const GSC_SWEEP_JOB_NAME = "gsc-sweep";
+const DATA_DELETION_SWEEP_JOB_NAME = "data-deletion-sweep";
 const PROMPT_BATCH_JOB_NAME = "run-prompt-batch";
 const PROMPT_BATCH_SIZE = 25; // sidecar MAX_PROMPTS_PER_CALL
 const RANK_DROP_THRESHOLD = 2; // alert when brandRank worsens by this many
@@ -477,6 +478,11 @@ async function processVisibilityJob(job: Job<VisibilityMonitoringJob>): Promise<
     if (job.data.sweep) return processSweep();
     if (job.data.promptSweep) return processPromptSweep();
     if (job.data.gscSweep) return processGscSweep();
+    if (job.data.dataDeletionSweep) {
+      // Throws when a request failed, so the queue's support@ alert fires.
+      const { runDueDeletions } = await import("@/lib/privacy/deletion");
+      return runDueDeletions();
+    }
     if (job.data.promptTenantId) return processPromptBatch(job.data.promptTenantId);
     // The free AI Visibility Check (src/lib/snapshot/job.ts).
     if (job.data.snapshotId) {
@@ -547,6 +553,21 @@ export function startVisibilityMonitoringWorker(): Worker<VisibilityMonitoringJo
     )
     .catch((err) => {
       logger.error({ err, queue: QUEUE_NAME }, "Failed to schedule GSC sweep");
+    });
+
+  // Nightly data-deletion sweep (03:20 UTC): requests past their 14-day grace period.
+  getQueue(QUEUE_NAME)
+    .add(
+      DATA_DELETION_SWEEP_JOB_NAME,
+      { dataDeletionSweep: true },
+      {
+        repeat: { pattern: "20 3 * * *", tz: "UTC" },
+        removeOnComplete: true,
+        removeOnFail: { count: 50 },
+      },
+    )
+    .catch((err) => {
+      logger.error({ err, queue: QUEUE_NAME }, "Failed to schedule the data-deletion sweep");
     });
 
   worker.on("completed", (job) => {

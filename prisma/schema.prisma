@@ -5205,3 +5205,43 @@ enum ComplaintStatus {
   IN_PROGRESS
   ANSWERED
 }
+
+/// A user's request to delete their data (/settings/account), carried out
+/// after a 14-day grace period by the nightly sweep (src/lib/privacy/deletion.ts).
+/// No foreign keys, on purpose: the row outlives the user and the workspace.
+/// Once COMPLETED, userId and tenantId are cleared and only subjectHash, the
+/// per-table counts and the timestamps remain — the log keeps no personal data.
+model DataDeletionRequest {
+  id          String                @id @default(cuid())
+  userId      String?
+  tenantId    String?
+  /// sha256 of the user id: lets a later request be matched without keeping the id.
+  subjectHash String
+  scope       DeletionScope
+  status      DeletionStatus        @default(PENDING)
+  requestedAt DateTime              @default(now())
+  runAfter    DateTime
+  cancelledAt DateTime?
+  completedAt DateTime?
+  /// { table: rowsDeleted } plus Redis/Spaces counts. No values.
+  summary     Json?
+  error       String?
+
+  @@index([status, runAfter])
+  @@index([userId])
+  @@map("data_deletion_requests")
+}
+
+enum DeletionScope {
+  /// The requester owns the workspace: the workspace and everything in it, then the user.
+  WORKSPACE
+  /// A member: the user and what is theirs; the workspace stays.
+  USER
+}
+
+enum DeletionStatus {
+  PENDING
+  CANCELLED
+  COMPLETED
+  FAILED
+}

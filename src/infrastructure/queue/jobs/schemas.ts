@@ -145,6 +145,8 @@ export interface VisibilityMonitoringJob {
   promptTenantId?: string;
   /** Nightly GSC query-stat sync across all connected tenants. */
   gscSweep?: boolean;
+  /** Nightly: carry out data-deletion requests whose 14-day grace period is over (src/lib/privacy/deletion.ts). */
+  dataDeletionSweep?: boolean;
   /** Free AI Visibility Check: run one check (job name "snapshot"). */
   snapshotId?: string;
   /** Free AI Visibility Check: email one unlocked report (job name "snapshot-email"). */

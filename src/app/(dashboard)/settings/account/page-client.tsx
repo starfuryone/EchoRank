@@ -11,6 +11,7 @@ import { InitialsAvatar } from "@/components/ui/initials-avatar";
 import { ACCOUNT_COPY } from "@/lib/i18n/account";
 import type { DashLocale } from "@/lib/i18n/dashboard";
 import { TeamChatSection } from "@/components/account/TeamChatSection";
+import { DataRequestsSection } from "@/components/account/DataRequestsSection";
 import {
   updateTenantNameAction,
   updateRevenueAssumptionsAction,
@@ -276,6 +277,9 @@ export function AccountPageClient({ locale, user, tenant, subscription, price, c
         existingMxid={chat.existingMxid}
         elementUrl={chat.elementUrl}
       />
+
+      {/* ── Your data: export and deletion (14-day grace) ───────────────── */}
+      <DataRequestsSection locale={locale} />
     </div>
   );
 }
