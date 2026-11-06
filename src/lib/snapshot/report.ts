@@ -16,6 +16,7 @@ import {
   type SnapshotReport,
 } from "./types";
 import { sourceMap } from "./sources";
+import { citationGap, FREE_GAP_ROWS } from "@/lib/citation-gap";
 
 export const TOP_COMPETITORS = 5;
 
@@ -125,6 +126,14 @@ export function buildReport(input: ReportInput): SnapshotReport {
     prompts,
     sources: sourceMap(input.answers, input.domain),
     actions: input.actions,
+    // Answers naming a competitor and not you: the domains they cited, top
+    // three. The paid dashboard shows the whole list.
+    citationGap: citationGap(
+      input.answers
+        .filter((a) => !a.error)
+        .map((a) => ({ brandMentioned: a.mentioned, competitorsNamed: a.competitors, citedDomains: a.citedDomains })),
+      input.domain,
+    ).slice(0, FREE_GAP_ROWS),
     capped: input.capped,
     generatedAt: input.now.toISOString(),
   };

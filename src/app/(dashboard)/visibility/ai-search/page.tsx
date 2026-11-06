@@ -6,6 +6,7 @@ import { aiSearchEnabledFor } from "@/lib/ai-monitor/rollout";
 import {
   listBrands,
   readCheckupHistory,
+  readCitationGap,
   readMetrics,
   readTopCitationDomains,
   readTopCompetitors,
@@ -76,11 +77,12 @@ export default async function AiSearchPage({
     );
   }
 
-  const [metrics, competitors, citationDomains, history] = await Promise.all([
+  const [metrics, competitors, citationDomains, history, citationGap] = await Promise.all([
     readMetrics(brand.id),
     readTopCompetitors(brand.id),
     readTopCitationDomains(brand.id),
     readCheckupHistory(brand.id),
+    readCitationGap(brand.id, brand.website),
   ]);
 
   return (
@@ -90,6 +92,7 @@ export default async function AiSearchPage({
       metrics={metrics}
       competitors={competitors}
       citationDomains={citationDomains}
+      citationGap={citationGap}
       history={history}
       timezone={membership.tenant.timezone}
     />

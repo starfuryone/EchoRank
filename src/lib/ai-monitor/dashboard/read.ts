@@ -14,6 +14,7 @@
 // averaged, mapped or reconciled — see the header of ../metrics.ts.
 
 import { prisma } from "@/lib/prisma";
+import { citationGap, type CitationGapRow } from "@/lib/citation-gap";
 import { toMetricView, type MetricRow, type MetricView } from "./display";
 
 /** How much history the overview charts show. */
@@ -208,6 +209,45 @@ export async function readTopCitationDomains(
     .map(([domain, bucket]) => ({ domain, ...bucket }))
     .sort((a, b) => b.count - a.count || a.domain.localeCompare(b.domain))
     .slice(0, TOP_N);
+}
+
+/** Gap rows are read over the last month: the sources deciding answers now. */
+export const GAP_DAYS = 30;
+
+/**
+ * The full citation gap for a brand (src/lib/citation-gap.ts): domains cited
+ * by answers that named a competitor and not the brand, over the last 30
+ * days, most cited first. Competitors are the known ones the deterministic
+ * pass found plus the entities classified RIVAL.
+ */
+export async function readCitationGap(
+  brandProfileId: string,
+  ownDomain: string | null,
+  days: number = GAP_DAYS,
+): Promise<CitationGapRow[]> {
+  const since = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+  const rows = await prisma.mentionAnalysis.findMany({
+    where: {
+      createdAt: { gte: since },
+      promptRun: { checkup: { brandProfileId }, status: "OK" },
+    },
+    select: {
+      brandMentioned: true,
+      competitorNames: true,
+      citedDomains: true,
+      promptRun: {
+        select: { competitorMentions: { where: { classification: "RIVAL" }, select: { name: true } } },
+      },
+    },
+  });
+  return citationGap(
+    rows.map((r) => ({
+      brandMentioned: r.brandMentioned,
+      competitorsNamed: [...r.competitorNames, ...r.promptRun.competitorMentions.map((c) => c.name)],
+      citedDomains: r.citedDomains,
+    })),
+    ownDomain,
+  );
 }
 
 export interface PromptRow {

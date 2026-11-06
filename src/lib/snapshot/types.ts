@@ -4,6 +4,8 @@
 // run, the per-answer rows and the report. Dependency-free on purpose: the
 // client widget imports these types, and `import type` is all it may import.
 
+import type { CitationGapRow } from "@/lib/citation-gap";
+
 export type SnapshotEngine = "openai" | "gemini";
 export const SNAPSHOT_ENGINES: readonly SnapshotEngine[] = ["openai", "gemini"];
 export const ENGINE_LABEL: Record<SnapshotEngine, string> = { openai: "ChatGPT", gemini: "Gemini" };
@@ -93,6 +95,12 @@ export interface SnapshotReport {
   sources: SourceRow[];
   /** Top 5 absent sources with a type and an action. */
   actions: ActionRow[];
+  /**
+   * The citation gap's top rows (src/lib/citation-gap.ts): domains cited by
+   * answers that named a competitor and not you. Absent on reports built
+   * before 2026-11-06.
+   */
+  citationGap?: CitationGapRow[];
   /** True when the cost or call cap stopped the run before every call was made. */
   capped: boolean;
   generatedAt: string;

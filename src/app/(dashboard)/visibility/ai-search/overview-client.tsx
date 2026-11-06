@@ -25,6 +25,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import type { CitationGapRow } from "@/lib/citation-gap";
 import {
   CartesianGrid,
   Line,
@@ -57,6 +58,15 @@ interface Competitor {
   appearances: number;
   averagePosition: number | null;
 }
+const GAP_TYPE_LABEL: Record<CitationGapRow["type"], string> = {
+  review_site: "Review site",
+  directory: "Directory",
+  forum: "Forum",
+  news: "News",
+  own_site: "Your own site",
+  other: "Other",
+};
+
 interface CitationDomain {
   domain: string;
   count: number;
@@ -76,6 +86,7 @@ export function AiSearchOverview({
   metrics,
   competitors,
   citationDomains,
+  citationGap = [],
   history,
   timezone,
 }: {
@@ -84,6 +95,8 @@ export function AiSearchOverview({
   metrics: MetricView[];
   competitors: Competitor[];
   citationDomains: CitationDomain[];
+  /** Every gap domain, most cited first (src/lib/citation-gap.ts). */
+  citationGap?: CitationGapRow[];
   history: HistoryEntry[];
   timezone: string;
 }) {
@@ -350,6 +363,39 @@ export function AiSearchOverview({
           )}
         </Panel>
       </section>
+
+      <Panel
+        title="Citation gap"
+        subtitle="Sources cited when a competitor is named and you are not, last 30 days"
+        className="mt-4"
+      >
+        {citationGap.length === 0 ? (
+          <Muted>No answer named a competitor without you. Nothing to close.</Muted>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-sm" data-testid="citation-gap-full">
+              <thead className="text-xs text-gray-500">
+                <tr>
+                  <th scope="col" className="py-1 pr-4 font-medium">Source</th>
+                  <th scope="col" className="py-1 pr-4 font-medium">Type</th>
+                  <th scope="col" className="py-1 pr-4 font-medium">Answers</th>
+                  <th scope="col" className="py-1 font-medium">Named instead of you</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {citationGap.map((row) => (
+                  <tr key={row.domain}>
+                    <td className="py-1.5 pr-4 text-gray-900">{row.domain}</td>
+                    <td className="py-1.5 pr-4 text-gray-600">{GAP_TYPE_LABEL[row.type]}</td>
+                    <td className="py-1.5 pr-4 tabular-nums">{row.count}</td>
+                    <td className="py-1.5 text-gray-600">{row.competitors.join(", ") || "—"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Panel>
 
       <Panel title="Checkup history" className="mt-4">
         <HistoryList history={history} timezone={timezone} />

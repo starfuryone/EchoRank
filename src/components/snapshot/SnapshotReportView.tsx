@@ -193,6 +193,42 @@ export function SnapshotFullView({ r, c }: { r: SnapshotReport; c: SnapshotCopy 
         <p className={st.muted}>{c.full.sourcesNone}</p>
       )}
 
+      {r.citationGap && (
+        <>
+          <h3 className={st.h3}>{c.gap.title}</h3>
+          {r.citationGap.length ? (
+            <>
+              <p className={st.muted}>{c.gap.lead}</p>
+              <div className={st.tableWrap}>
+                <table className={st.table} data-testid="citation-gap">
+                  <thead>
+                    <tr>
+                      <th scope="col">{c.gap.colSource}</th>
+                      <th scope="col">{c.gap.colType}</th>
+                      <th scope="col">{c.gap.colTimes}</th>
+                      <th scope="col">{c.gap.colNamed}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {r.citationGap.map((g) => (
+                      <tr key={g.domain}>
+                        <td>{g.domain}</td>
+                        <td>{c.gap.types[g.type]}</td>
+                        <td>{g.count}</td>
+                        <td>{g.competitors.join(", ") || "—"}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <p className={st.fine}>{c.gap.more}</p>
+            </>
+          ) : (
+            <p className={st.muted}>{c.gap.none}</p>
+          )}
+        </>
+      )}
+
       <h3 className={st.h3}>{c.todo.title}</h3>
       {r.actions.length ? (
         <>

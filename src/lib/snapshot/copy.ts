@@ -86,6 +86,18 @@ export interface SnapshotCopy {
     actions: Record<"get_listed" | "claim_profile" | "pitch_comparison" | "join_discussion", string>;
     noAction: string;
   };
+  /** The citation gap (src/lib/citation-gap.ts), top three. */
+  gap: {
+    title: string;
+    lead: string;
+    none: string;
+    colSource: string;
+    colType: string;
+    colTimes: string;
+    colNamed: string;
+    more: string;
+    types: Record<"review_site" | "directory" | "forum" | "news" | "own_site" | "other", string>;
+  };
   shows: { heading: string; lead: string; items: { h: string; p: string }[]; footnote: string };
   upsell: { heading: string; body: string; cta: string; planLine: string };
   /** Pricing page banner when arriving from the check's upsell. */
@@ -201,6 +213,24 @@ export const SNAPSHOT_COPY: Record<SnapshotBase, SnapshotCopy> = {
         join_discussion: "Join the discussion",
       },
       noAction: "No action",
+    },
+    gap: {
+      title: "Where competitors are cited and you are not",
+      lead: "The sources behind answers that named a competitor and not you, most cited first.",
+      none: "No answer named a competitor without you. No gap to close here.",
+      colSource: "Source",
+      colType: "Type",
+      colTimes: "Answers",
+      colNamed: "Named instead of you",
+      more: "The full list, refreshed on every check, is in the paid plans.",
+      types: {
+        review_site: "Review site",
+        directory: "Directory",
+        forum: "Forum",
+        news: "News",
+        own_site: "Your own site",
+        other: "Other",
+      },
     },
     shows: {
       heading: "What the check shows",
@@ -335,6 +365,24 @@ export const SNAPSHOT_COPY: Record<SnapshotBase, SnapshotCopy> = {
         join_discussion: "Prendre part à la discussion",
       },
       noAction: "Aucune action",
+    },
+    gap: {
+      title: "Là où vos concurrents sont cités, et pas vous",
+      lead: "Les sources des réponses qui nomment un concurrent sans vous nommer, des plus citées aux moins citées.",
+      none: "Aucune réponse ne nomme un concurrent sans vous. Rien à combler ici.",
+      colSource: "Source",
+      colType: "Type",
+      colTimes: "Réponses",
+      colNamed: "Nommés à votre place",
+      more: "La liste complète, mise à jour à chaque vérification, est incluse dans les forfaits payants.",
+      types: {
+        review_site: "Site d’avis",
+        directory: "Annuaire",
+        forum: "Forum",
+        news: "Presse",
+        own_site: "Votre propre site",
+        other: "Autre",
+      },
     },
     shows: {
       heading: "Ce que montre la vérification",
