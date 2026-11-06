@@ -28,8 +28,6 @@ export interface PricingPageCopy {
   scrollHint: string;
   faqLabel: string;
   faqH2: string;
-  /** Visible marker on an answer that still needs the owner's wording. */
-  placeholderNote: string;
   closingH2: string;
   closingBody: string;
   closingCta: string;
@@ -54,7 +52,6 @@ export const PRICING_PAGE_COPY: Record<PricingBase, PricingPageCopy> = {
     scrollHint: "Scroll sideways to see every plan.",
     faqLabel: "FAQ",
     faqH2: "Straight answers",
-    placeholderNote: "Answer pending confirmation",
     closingH2: "Pick a plan and start the trial",
     closingBody: "Every plan starts free, and you can cancel before the trial ends without being charged.",
     closingCta: "See the plans",
@@ -77,7 +74,6 @@ export const PRICING_PAGE_COPY: Record<PricingBase, PricingPageCopy> = {
     scrollHint: "Faites défiler horizontalement pour voir chaque forfait.",
     faqLabel: "FAQ",
     faqH2: "Réponses directes",
-    placeholderNote: "Réponse en attente de confirmation",
     closingH2: "Choisissez un forfait et démarrez l'essai",
     closingBody: "Chaque forfait commence gratuitement, et vous pouvez annuler avant la fin de l'essai sans être facturé.",
     closingCta: "Voir les forfaits",
@@ -100,7 +96,6 @@ export const PRICING_PAGE_COPY: Record<PricingBase, PricingPageCopy> = {
     scrollHint: "Seitlich scrollen, um alle Abos zu sehen.",
     faqLabel: "FAQ",
     faqH2: "Klare Antworten",
-    placeholderNote: "Antwort noch zu bestätigen",
     closingH2: "Abo wählen und Test starten",
     closingBody: "Jedes Abo beginnt gratis, und Sie können vor Ende der Testphase kündigen, ohne belastet zu werden.",
     closingCta: "Zu den Abos",

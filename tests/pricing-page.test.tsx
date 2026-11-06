@@ -29,7 +29,8 @@ import { planFeatures } from "@/lib/plan-features";
 import { pricingTiers, savePctOf, yearlySavingPct } from "@/lib/pricing-tiers";
 import { cardPlans, planHeadlines, supportLine } from "@/lib/pricing-page/headlines";
 import { comparisonTable } from "@/lib/pricing-page/compare";
-import { CONFIRM, faqJsonLdItems, pricingFaq } from "@/lib/pricing-page/faq";
+import { pricingFaq } from "@/lib/pricing-page/faq";
+import { SUPPORT_EMAIL } from "@/lib/assistant/config";
 import { PRICING_PAGE_COPY } from "@/lib/pricing-page/copy";
 import { toolCountLine } from "@/lib/i18n/content";
 import { seoToolCounts } from "@/lib/seo-tools";
@@ -214,34 +215,53 @@ describe("Free vs paid", () => {
 // ─── FAQ + JSON-LD ──────────────────────────────────────────────────────────
 
 describe("Straight answers and the structured data", () => {
-  it.each(LOCALES)("%s: FAQPage JSON-LD lists exactly the final answers, as plain text", async (l) => {
+  it.each(LOCALES)("%s: FAQPage JSON-LD lists every question on the page, as plain text", async (l) => {
     const html = await pricingHtml(l);
     const items = pricingFaq(l, { savePct: yearlySavingPct()!, freeCrawler: true });
     const faq = graph(html).find((n) => n["@type"] === "FAQPage") as { mainEntity: Array<{ name: string; acceptedAnswer: { text: string } }> };
     expect(faq).toBeTruthy();
-    expect(faq.mainEntity.map((q) => q.name)).toEqual(faqJsonLdItems(items).map((i) => i.q));
-    for (const q of faq.mainEntity) {
-      expect(q.acceptedAnswer.text).not.toContain(CONFIRM);
-      expect(q.acceptedAnswer.text).not.toMatch(/\*\*|\]\(/);
-    }
-    // Every visible question is on the page, placeholders included.
+    expect(faq.mainEntity).toHaveLength(10);
+    expect(faq.mainEntity.map((q) => q.name)).toEqual(items.map((i) => i.q));
+    for (const q of faq.mainEntity) expect(q.acceptedAnswer.text).not.toMatch(/\*\*|\]\(/);
     const shown = [...doc(html).querySelectorAll("[data-faq] h3")].map((h) => h.textContent);
     expect(shown).toEqual(items.map((i) => i.q));
   });
 
-  it("covers the spec's ten topics; refunds and VAT stay [CONFIRM] placeholders", () => {
-    const items = pricingFaq("en", { savePct: 20, freeCrawler: true });
-    expect(items.map((i) => i.id)).toEqual(["trial", "cancel", "location", "limits", "billing", "crawler", "seats", "payment", "refunds", "tax"]);
-    for (const id of ["refunds", "tax"]) {
-      const it = items.find((i) => i.id === id)!;
-      expect(it.a).toBe(CONFIRM);
-      expect(it.placeholder).toBe(true);
+  it.each(LOCALES)("%s: no [CONFIRM] anywhere in the rendered page, markup included", async (l) => {
+    expect(await pricingHtml(l)).not.toContain("CONFIRM");
+  });
+
+  it("covers the spec's ten topics, all answered", () => {
+    for (const l of ["en", "fr", "de-CH"]) {
+      const items = pricingFaq(l, { savePct: 20, freeCrawler: true });
+      expect(items.map((i) => i.id)).toEqual(["trial", "cancel", "location", "limits", "billing", "crawler", "seats", "payment", "refunds", "tax"]);
+      for (const it of items) expect(it.a.length, `${l} ${it.id}`).toBeGreaterThan(40);
     }
   });
 
-  it("the trial answer states TRIAL_DAYS and the card requirement", () => {
+  it("trial and refund answers state TRIAL_DAYS from config", () => {
     for (const l of ["en", "fr", "de-CH"]) {
-      expect(pricingFaq(l, { savePct: 20, freeCrawler: true })[0]!.a).toContain(String(TRIAL_DAYS));
+      const items = pricingFaq(l, { savePct: 20, freeCrawler: true });
+      for (const id of ["trial", "refunds"]) {
+        expect(items.find((i) => i.id === id)!.a, `${l} ${id}`).toContain(String(TRIAL_DAYS));
+      }
+    }
+  });
+
+  it("the location answer lists each tier's configured location count", () => {
+    const joiner = { en: "on", fr: "avec", "de-CH": "bei" } as const;
+    for (const l of ["en", "fr", "de-CH"] as const) {
+      const a = pricingFaq(l, { savePct: 20, freeCrawler: true }).find((i) => i.id === "location")!.a;
+      for (const p of CARDS) {
+        // Location counts are below 1,000, so no grouping separator applies.
+        expect(a, `${l} ${p}`).toContain(`${PLAN_CONFIGS[p].quotaDefaults.maxLocations} ${joiner[l]} ${PLAN_CONFIGS[p].name}`);
+      }
+    }
+  });
+
+  it("the billing answer sends interval switches to the support address", () => {
+    for (const l of ["en", "fr", "de-CH"]) {
+      expect(pricingFaq(l, { savePct: 20, freeCrawler: true }).find((i) => i.id === "billing")!.a).toContain(SUPPORT_EMAIL);
     }
   });
 

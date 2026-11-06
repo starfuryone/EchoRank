@@ -18,8 +18,8 @@
 //      the banned camel-case brand and predates the current site;
 //   6. value estimator — SKIPPED: no measured time-saved figure exists to
 //      ground conservative defaults in;
-//   7. "Straight answers" — pricingFaq(), and the FAQPage JSON-LD from the same
-//      array minus the [CONFIRM] placeholders;
+//   7. "Straight answers" — pricingFaq(), and the FAQPage JSON-LD from the
+//      same array, every question included;
 //   8. closing band → the cards (#pricing).
 // The Offer JSON-LD comes from the same config through softwareApplication().
 //
@@ -41,7 +41,7 @@ import { pricingBase } from "@/lib/pricing-page/format";
 import { PRICING_PAGE_COPY, fill, planCountWord } from "@/lib/pricing-page/copy";
 import { cardPlans } from "@/lib/pricing-page/headlines";
 import { comparisonTable } from "@/lib/pricing-page/compare";
-import { faqJsonLdItems, pricingFaq } from "@/lib/pricing-page/faq";
+import { pricingFaq } from "@/lib/pricing-page/faq";
 import { inline, plainText } from "../learn/_shared/inline";
 import { CompareTable } from "./CompareTable";
 import s from "../home2.module.css";
@@ -85,8 +85,7 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
       <PublicNav locale={l} />
       {/* Offers come from PLAN_CONFIGS via softwareApplication(), the same
           source the visible cards read. The FAQPage is built from the same
-          array the FAQ section renders, minus answers still marked [CONFIRM]:
-          structured data must never publish a placeholder. */}
+          array the FAQ section renders — every question, as plain text. */}
       <JsonLd
         graph={[
           ...baseGraph(l),
@@ -96,7 +95,7 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
             { name: c.metaTitle, url: pageUrl },
           ]),
           faqPage(
-            faqJsonLdItems(faq).map((it) => ({ q: plainText(it.q), a: plainText(it.a) })),
+            faq.map((it) => ({ q: plainText(it.q), a: plainText(it.a) })),
             pageUrl,
           ),
         ]}
@@ -155,12 +154,9 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
           <h2 className={s.h2}>{c.faqH2}</h2>
           <div className={s.faq}>
             {faq.map((it) => (
-              <div className={s.faqItem} key={it.id} data-faq={it.id} data-placeholder={it.placeholder ? "true" : undefined}>
+              <div className={s.faqItem} key={it.id} data-faq={it.id}>
                 <h3 className={s.faqQ}>{it.q}</h3>
-                <p className={s.faqA}>
-                  {inline(it.a, l, it.id)}
-                  {it.placeholder && <span className={p.placeholder}> {c.placeholderNote}</span>}
-                </p>
+                <p className={s.faqA}>{inline(it.a, l, it.id)}</p>
               </div>
             ))}
           </div>

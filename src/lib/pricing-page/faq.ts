@@ -1,9 +1,11 @@
 // src/lib/pricing-page/faq.ts
 //
 // "Straight answers" on /pricing, and the FAQPage JSON-LD built from the SAME
-// array (ECHORANK-PRICING.md §7).
+// array (ECHORANK-PRICING.md §7). Every question renders, and every question
+// is in the markup.
 //
-// EVERY ANSWER STATES WHAT THE CODE DOES, with its numbers read from config:
+// EVERY NUMBER IS READ FROM CONFIG, never typed: TRIAL_DAYS, the per-tier
+// location counts, the crawl caps, the yearly saving. What the answers state:
 //   - trial: TRIAL_DAYS, passed to Stripe as trial_period_days with no
 //     payment_method_collection override, so the card is required
 //     (api/billing/checkout) and charged when the trial ends;
@@ -12,36 +14,46 @@
 //     catalog, so its answer is a translation of that short form;
 //   - plan changes: in-app upgrade/downgrade goes through our checkout and the
 //     webhook retires the old subscription; the Stripe portal has
-//     subscription_update disabled (scripts/seed-portal-config.ts);
+//     subscription_update disabled (scripts/seed-portal-config.ts), so a
+//     monthly ↔ yearly switch is done by support, from the next renewal;
 //   - limits: the search pool, crawls and domain analyses count per calendar
 //     month (UTC) and stop at the cap; nothing in the app bills overage;
 //   - credit packs: prospect lookups for the Agency Opportunity Scanner only;
-//   - seats: /api/team invites without a plan check.
-//
-// PLACEHOLDERS. Refunds, taxes, the definition of a location (maxLocations is
-// configured but enforced nowhere) and switching an existing subscription
-// between monthly and yearly are not settled. Those answers carry
-// `placeholder: true` and a visible [CONFIRM]; they render on the page and are
-// LEFT OUT of the FAQPage markup, which must never publish a placeholder.
+//   - seats: /api/team invites without a plan check;
+//   - refunds, taxes, what a location is: the owner's wording of 2026-11-06.
+//     Checkout does not compute tax (no automatic_tax), which is what the tax
+//     answer says.
 
 import { PLAN_CONFIGS, TRIAL_DAYS } from "@/lib/plan-config";
 import { helpArticleBySlug, helpArticleCopy } from "@/lib/help-articles";
 import { CRAWLER_BRAND } from "@/lib/site-crawler/brand";
 import { FREE_CRAWL_URL_CAP } from "@/lib/site-crawler/free-limits";
+import { SUPPORT_EMAIL } from "@/lib/assistant/config";
 import { pricingNotes } from "@/lib/i18n/content";
 import { cardPlans } from "./headlines";
-import { fmtNum, pricingBase } from "./format";
+import { fmtNum, pricingBase, type PricingBase } from "./format";
 
 export interface PricingFaqItem {
   id: string;
   q: string;
   /** May carry **bold** and [label](href); rendered by inline(), stripped by plainText(). */
   a: string;
-  /** True while the answer still needs the owner's wording. Never in JSON-LD. */
-  placeholder?: true;
 }
 
-export const CONFIRM = "[CONFIRM]";
+/**
+ * "1 on Starter, 5 on Growth and 25 on Agency" — each card tier's location
+ * count from PLAN_CONFIGS (-1 is the config's unlimited).
+ */
+function locationCounts(b: PricingBase): string {
+  const parts = cardPlans().map((p) => {
+    const n = PLAN_CONFIGS[p].quotaDefaults.maxLocations;
+    const count = n < 0 ? { en: "unlimited", fr: "illimité", de: "unbegrenzt" }[b] : fmtNum(n, b);
+    const name = PLAN_CONFIGS[p].name;
+    return { en: `${count} on ${name}`, fr: `${count} avec ${name}`, de: `${count} bei ${name}` }[b];
+  });
+  const and = { en: " and ", fr: " et ", de: " und " }[b];
+  return parts.length > 1 ? `${parts.slice(0, -1).join(", ")}${and}${parts[parts.length - 1]}` : parts.join("");
+}
 
 export function pricingFaq(
   locale: string,
@@ -56,6 +68,7 @@ export function pricingFaq(
   const highCap = fmtNum(high.crawlUrlCap, b);
   const freeCap = fmtNum(FREE_CRAWL_URL_CAP, b);
   const pct = opts.savePct;
+  const locs = locationCounts(b);
   // Already locale-prefixed: resolveHref() does not prefix /credits.
   const credits = `/${locale}/credits`;
 
@@ -71,7 +84,11 @@ export function pricingFaq(
         q: "Wie kündige ich mein Abo?",
         a: "Anmelden → **Abrechnung** → **Abonnement verwalten** → Ihr Abo anklicken → **Abonnement kündigen**. Das Abo bleibt bis zum Ende der bezahlten Periode aktiv, und Sie werden nicht erneut belastet. Keine Gebühren, keine Anrufe. Wer während des Gratis-Tests kündigt, zahlt nie etwas. Anleitung (Englisch): [So kündigen Sie Ihr Echorank-Abo](/help/cancel-subscription).",
       },
-      { id: "location", q: "Was zählt als Standort?", a: CONFIRM, placeholder: true },
+      {
+        id: "location",
+        q: "Was zählt als Standort?",
+        a: `Ein Standort ist eine physische Geschäftsadresse, meist ein Google-Unternehmensprofil, deren Bewertungen und Feedback Sie in Echorank verwalten. Enthalten sind ${locs}.`,
+      },
       {
         id: "limits",
         q: "Was wird gezählt, und was passiert am Limit?",
@@ -80,8 +97,7 @@ export function pricingFaq(
       {
         id: "billing",
         q: "Monatlich oder jährlich – kann ich wechseln?",
-        a: `Jährlich wird einmal pro Jahr zum angezeigten Monatspreis verrechnet, ${pct}% günstiger als monatlich. In ein höheres oder tieferes Abo wechseln Sie unter **Abrechnung** im Dashboard; das neue Abo ersetzt das bisherige. ${CONFIRM} Wechsel eines laufenden Abos zwischen monatlich und jährlich.`,
-        placeholder: true,
+        a: `Jährlich wird einmal pro Jahr zum angezeigten Monatspreis verrechnet, ${pct}% günstiger als monatlich. In ein höheres oder tieferes Abo wechseln Sie unter **Abrechnung** im Dashboard; das neue Abo ersetzt das bisherige. Für den Wechsel zwischen monatlicher und jährlicher Abrechnung schreiben Sie an ${SUPPORT_EMAIL}; wir stellen um, und die Änderung gilt ab Ihrer nächsten Verlängerung.`,
       },
       {
         id: "crawler",
@@ -98,8 +114,16 @@ export function pricingFaq(
         q: "Wie bezahle ich, und in welcher Währung?",
         a: `Per Karte über den sicheren Checkout von Stripe. ${pricingNotes("de").currency}`,
       },
-      { id: "refunds", q: "Gibt es Rückerstattungen?", a: CONFIRM, placeholder: true },
-      { id: "tax", q: "Kommen Steuern oder MWST dazu?", a: CONFIRM, placeholder: true },
+      {
+        id: "refunds",
+        q: "Gibt es Rückerstattungen?",
+        a: `Jedes Abo beginnt mit einem ${TRIAL_DAYS}-tägigen Gratis-Test. Danach können Sie jederzeit kündigen und behalten den Zugang bis zum Ende der bezahlten Periode. Angebrochene Monate oder Jahre erstatten wir nicht zurück.`,
+      },
+      {
+        id: "tax",
+        q: "Kommen Steuern oder MWST dazu?",
+        a: "Die Preise sind in US-Dollar und verstehen sich ohne Steuern. Beim Checkout erheben wir derzeit weder Umsatzsteuer noch MWST; ändert sich das, informieren wir Sie vor Ihrer nächsten Verlängerung.",
+      },
     ];
   }
 
@@ -115,7 +139,13 @@ export function pricingFaq(
         : `Yes. Every plan starts with a ${TRIAL_DAYS}-day free trial. A card is required at checkout; it is charged automatically when the trial ends unless you cancel before then. Cancel during the trial and you are never charged.`,
     },
     { id: "cancel", q: cancel.q, a: cancel.a },
-    { id: "location", q: fr ? "Qu'est-ce qui compte comme un emplacement ?" : "What counts as a location?", a: CONFIRM, placeholder: true },
+    {
+      id: "location",
+      q: fr ? "Qu'est-ce qui compte comme un emplacement ?" : "What counts as a location?",
+      a: fr
+        ? `Un emplacement est une adresse physique d'entreprise, habituellement une fiche d'établissement Google, dont vous gérez les avis et la rétroaction dans Echorank. Les forfaits en comprennent ${locs}.`
+        : `A location is one physical business address, usually one Google Business Profile, whose reviews and feedback you manage in Echorank. Plans include ${locs}.`,
+    },
     {
       id: "limits",
       q: fr ? "Qu'est-ce qui est compté, et que se passe-t-il à la limite ?" : "What is metered, and what happens at a limit?",
@@ -127,9 +157,8 @@ export function pricingFaq(
       id: "billing",
       q: fr ? "Mensuel ou annuel : puis-je changer ?" : "Monthly or yearly — can I switch?",
       a: fr
-        ? `L'annuel est facturé une fois par an au prix mensuel affiché, ${pct} % de moins qu'au mois. Vous passez à un forfait supérieur ou inférieur depuis **Facturation** dans votre tableau de bord ; le nouveau forfait remplace l'actuel. ${CONFIRM} Passage d'un abonnement en cours du mensuel à l'annuel, ou l'inverse.`
-        : `Yearly is billed once a year at the per-month price shown, ${pct}% less than paying monthly. You move to a higher or lower plan from **Billing** in your dashboard; the new plan replaces the current one. ${CONFIRM} Switching an existing subscription between monthly and yearly.`,
-      placeholder: true,
+        ? `L'annuel est facturé une fois par an au prix mensuel affiché, ${pct} % de moins qu'au mois. Vous passez à un forfait supérieur ou inférieur depuis **Facturation** dans votre tableau de bord ; le nouveau forfait remplace l'actuel. Pour passer du mensuel à l'annuel ou l'inverse, écrivez à ${SUPPORT_EMAIL} et nous ferons le changement ; il s'applique à partir de votre prochain renouvellement.`
+        : `Yearly is billed once a year at the per-month price shown, ${pct}% less than paying monthly. You move to a higher or lower plan from **Billing** in your dashboard; the new plan replaces the current one. Email ${SUPPORT_EMAIL} and we'll switch your billing between monthly and yearly; the change applies from your next renewal.`,
     },
     {
       id: "crawler",
@@ -150,12 +179,19 @@ export function pricingFaq(
       q: fr ? "Comment payer, et dans quelle devise ?" : "How do I pay, and in which currency?",
       a: fr ? `Par carte, via le paiement sécurisé de Stripe. ${notes.currency}` : `By card, through Stripe's secure checkout. ${notes.currency}`,
     },
-    { id: "refunds", q: fr ? "Remboursez-vous ?" : "Do you offer refunds?", a: CONFIRM, placeholder: true },
-    { id: "tax", q: fr ? "Des taxes ou la TVA s'ajoutent-elles ?" : "Are taxes or VAT added?", a: CONFIRM, placeholder: true },
+    {
+      id: "refunds",
+      q: fr ? "Remboursez-vous ?" : "Do you offer refunds?",
+      a: fr
+        ? `Chaque forfait commence par un essai gratuit de ${TRIAL_DAYS} jours. Ensuite, vous pouvez annuler à tout moment et garder l'accès jusqu'à la fin de la période payée. Nous ne remboursons pas les mois ou les années entamés.`
+        : `Every plan starts with a ${TRIAL_DAYS}-day free trial. After that you can cancel any time and keep access until the end of the period you've paid for. We don't refund partial months or years.`,
+    },
+    {
+      id: "tax",
+      q: fr ? "Des taxes ou la TVA s'ajoutent-elles ?" : "Are taxes or VAT added?",
+      a: fr
+        ? "Les prix sont en dollars américains, taxes en sus. Nous n'ajoutons actuellement ni taxe de vente ni TVA au paiement ; si cela change, nous vous en informerons avant votre prochain renouvellement."
+        : "Prices are in US dollars and exclude taxes. We don't currently add sales tax or VAT at checkout; if that changes, we'll tell you before your next renewal.",
+    },
   ];
-}
-
-/** The FAQPage entries: every answer that is final, none that is a placeholder. */
-export function faqJsonLdItems(items: PricingFaqItem[]): PricingFaqItem[] {
-  return items.filter((i) => !i.placeholder);
 }
