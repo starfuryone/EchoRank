@@ -103,7 +103,7 @@ describe("prompt batch with provider errors", () => {
     );
     sidecarPost.mockResolvedValue({
       status: 200,
-      data: { results: prompts.map((p) => ({ ...result(p.id, null), model: "claude-sonnet-5" })) },
+      data: { results: prompts.map((p) => ({ ...result(p.id, null), model: "claude-haiku-5-5" })) },
     });
     await processPromptBatch("t1");
     expect(recordPromptAlerts).not.toHaveBeenCalled();

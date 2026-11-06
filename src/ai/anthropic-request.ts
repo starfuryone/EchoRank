@@ -29,17 +29,22 @@ export const HOUSE_CLAUDE_MODEL = "claude-haiku-5-5";
  * keyword-opportunity AI test, and — through the sidecar's answer_track.py,
  * which pins the same id (tests/tracking-model.test.ts) — tracked prompts and
  * the partner API. One id, so a Claude answer means the same thing on every
- * surface. Not read from the environment: an env change would move every
- * score without anyone deciding to. (The free check asks no Claude engine.)
+ * surface; asked WITHOUT web search everywhere. Not read from the environment:
+ * an env change would move every score without anyone deciding to. (The free
+ * check asks no Claude engine.) The owner's decision of 2026-11-06; until then
+ * the tracker asked claude-sonnet-5 and the sidecar claude-haiku-4-5.
  */
-export const TRACKING_CLAUDE_MODEL = "claude-sonnet-5";
+export const TRACKING_CLAUDE_MODEL = "claude-haiku-5-5";
 
 /**
  * The output cap for a Claude tracking answer, on every surface. The model
- * keeps its own thinking on a tracking answer, and thinking counts against
- * this, so it carries headroom over the answer itself (~250 words).
+ * keeps its own defaults on a tracking answer, and Haiku 5.5 thinks by default
+ * (effort medium) against this cap; the answer itself is ~250 words, 1,200
+ * tokens at Haiku 4.5's count and ~1,560 at Haiku 5.5's. 2,000 leaves the
+ * thinking room so an answer is not cut short. Billed per token used, not per
+ * cap, except where the cap is the only figure (the partner API's ceiling).
  */
-export const TRACKING_MAX_TOKENS = 1_200;
+export const TRACKING_MAX_TOKENS = 2_000;
 
 /**
  * Claude models from the 4.6 generation on: adaptive thinking (on by default

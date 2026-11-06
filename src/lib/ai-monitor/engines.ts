@@ -108,11 +108,13 @@ export const ENGINE_CATALOGUE: readonly EngineSpec[] = [
   {
     provider: "CLAUDE",
     // The one Claude tracking model, shared with every other Claude tracking
-    // path (src/ai/anthropic-request.ts).
+    // path (src/ai/anthropic-request.ts), asked without web search.
     modelName: TRACKING_CLAUDE_MODEL,
     displayName: "Claude",
-    supportsSearch: true,
-    supportsCitations: true,
+    // No web search, so nothing retrieved to cite: its citation score is
+    // reported as not measurable rather than computed from prose URLs.
+    supportsSearch: false,
+    supportsCitations: false,
     apiKeyEnv: "ANTHROPIC_API_KEY",
     sortOrder: 40,
   },

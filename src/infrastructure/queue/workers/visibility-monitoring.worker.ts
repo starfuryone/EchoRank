@@ -377,7 +377,7 @@ async function processPromptBatch(tenantId: string): Promise<void> {
     if (!prev) continue; // first run = baseline, never alert
     // A run on a different model is a new baseline too: the answer changed
     // because the model did, not the market (the move from claude-haiku-4-5
-    // to claude-sonnet-5 on 2026-11-06 would otherwise alert on every prompt).
+    // to claude-haiku-5-5 on 2026-11-06 would otherwise alert on every prompt).
     if (prev.model !== (r.model ?? data.model ?? "unknown")) continue;
     const text = promptTextById.get(r.id) ?? r.prompt;
     if (prev.brandMentioned && !r.brand_mentioned) {

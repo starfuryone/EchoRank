@@ -641,7 +641,7 @@ function resultFor(entry: DemoKeyword): OpportunityPromptResult {
   return {
     provider: "CLAUDE",
     // The Claude tracking model (TRACKING_CLAUDE_MODEL), which the live AI test asks.
-    model: "claude-sonnet-5",
+    model: "claude-haiku-5-5",
     brandMentioned: entry.answer.brandMentioned,
     brandPosition: entry.answer.brandPosition,
     answerSnapshot: entry.answer.snapshot,

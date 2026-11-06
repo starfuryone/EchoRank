@@ -306,7 +306,9 @@ describe("running one brand's checkup", () => {
 
   it("tells the runner which engines can cite, so citationScore is null not zero", async () => {
     await mod.__testing.runOne({ brandProfileId: "brand_1" }, NOW);
-    expect([...runCheckupMock.mock.calls[0][0].citationCapableEngines]).toEqual(["CLAUDE"]);
+    // Claude is asked without web search since 2026-11-06, so it cites
+    // nothing and its citationScore is null; this fixture runs Claude only.
+    expect([...runCheckupMock.mock.calls[0][0].citationCapableEngines]).toEqual([]);
   });
 
   it("marks only the prompts that actually answered as run", async () => {

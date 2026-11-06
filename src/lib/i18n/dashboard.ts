@@ -4566,6 +4566,10 @@ const promptTrendsEn = {
   mentionedTooltip: (date: string, rank: number | null) =>
     `${date} — mentioned${rank ? ` #${rank}` : ""}`,
   notMentionedTooltip: (date: string) => `${date} — not mentioned`,
+  /** The marker on a sparkline at the day the Claude model changed. */
+  modelChanged: "Claude model changed",
+  modelChangedTooltip: (date: string, from: string, to: string) =>
+    `${date} — Claude model changed (${from} → ${to}). Mentions before and after are not directly comparable.`,
 };
 export type PromptTrendsCopy = typeof promptTrendsEn;
 
@@ -4579,6 +4583,9 @@ export const PROMPT_TRENDS_COPY: Record<DashLocale, PromptTrendsCopy> = {
     mentionedTooltip: (date: string, rank: number | null) =>
       `${date} — mentionné${rank ? ` #${rank}` : ""}`,
     notMentionedTooltip: (date: string) => `${date} — non mentionné`,
+    modelChanged: "Modèle Claude changé",
+    modelChangedTooltip: (date: string, from: string, to: string) =>
+      `${date} — modèle Claude changé (${from} → ${to}). Les mentions avant et après ne sont pas directement comparables.`,
   },
   "de-CH": {
     loading: "Prompt-Trends werden geladen…",
@@ -4588,6 +4595,9 @@ export const PROMPT_TRENDS_COPY: Record<DashLocale, PromptTrendsCopy> = {
     mentionedTooltip: (date: string, rank: number | null) =>
       `${date} — erwähnt${rank ? ` #${rank}` : ""}`,
     notMentionedTooltip: (date: string) => `${date} — nicht erwähnt`,
+    modelChanged: "Claude-Modell gewechselt",
+    modelChangedTooltip: (date: string, from: string, to: string) =>
+      `${date} — Claude-Modell gewechselt (${from} → ${to}). Erwähnungen davor und danach sind nicht direkt vergleichbar.`,
   },
 };
 

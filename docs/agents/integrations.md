@@ -104,21 +104,26 @@ tells the user when it happened rather than failing. The av-service sidecar carr
 key.
 
 **The answer check asks Claude only.** The sidecar's `/track` (`answer_track.py`, pinned to
-`claude-sonnet-5`, 1,200-token cap; `TRACK_MODEL` no longer exists) is what tracked prompts and the partner API's
+`claude-haiku-5-5`, 2,000-token cap, no web search; `TRACK_MODEL` no longer exists) is what tracked prompts and the partner API's
 `/visibility/query` run, and it answers with one engine: Claude. Marketing copy that says
 Echorank monitors six engines (the homepage hero and feature cards, the "six engines"
 paragraph in `src/lib/i18n/content.ts`) describes more than this path does; the
 multi-provider list in `src/lib/ai-monitor/pricing.ts` belongs to the AI Search monitor,
 and each provider there is live only when its key is set.
 
-**One Claude tracking model.** Every Claude tracking answer runs on `claude-sonnet-5`
-with a 1,200-token cap and the model's own defaults (no temperature, no thinking
-setting): the scheduled tracker, the keyword-opportunity AI test and the sidecar's
-`/track`. The id lives in `TRACKING_CLAUDE_MODEL` (`src/ai/anthropic-request.ts`);
-`tests/tracking-model.test.ts` holds the sidecar to it. House calls (analysis, drafting,
-classification) run on `claude-haiku-5-5` with thinking off — `tests/model-policy.test.ts`.
+**One Claude tracking model.** Every Claude tracking answer runs on `claude-haiku-5-5`
+without web search, with a 2,000-token cap and the model's own defaults (no temperature,
+no thinking setting — Haiku 5.5 thinks by default, against the cap): the scheduled
+tracker, the keyword-opportunity AI test and the sidecar's `/track`. The id lives in
+`TRACKING_CLAUDE_MODEL` (`src/ai/anthropic-request.ts`); `tests/tracking-model.test.ts`
+holds the sidecar to it. House calls (analysis, drafting, classification) run on the same
+model with thinking off — `tests/model-policy.test.ts`. Every answer stores its model
+(`PromptRun.model`, `visibility_snapshot_answers.model`, the keyword-opportunity result).
 A tracked prompt whose model changed since its last run starts a new baseline instead of
-alerting. The system prompts still differ between the tracker and the sidecar.
+alerting, and the prompt-trend sparklines mark the day the Claude model changed. The
+system prompts still differ between the tracker and the sidecar. Claude has no web search,
+so the catalogue no longer claims citations for it (its citation score shows as not
+measurable).
 
 ### AI Search monitor engines (the scheduled tracker)
 
@@ -144,14 +149,15 @@ several); the 5,000 free queries a month are not credited; grounding is capped a
 Cost per check (one answer + one analysis pass on Haiku 5.5, ~$0.0004: 1,200 in / 400
 out at Haiku 4.5's count, +30% for the tokenizer, at $0.10 / $0.50; it was $0.0032 on
 Haiku 4.5). Typical = 2,000 in / 800 out and one search; worst = 8,000 in / 1,200 out and
-two searches; Claude does not search (300 in / 600 out typical, 1,200 out worst).
+two searches; Claude does not search (300 in / 600 out typical at Haiku 4.5's count, +30%
+for Haiku 5.5's tokenizer, before thinking; worst = the whole 2,000-token cap).
 
 | Engine / model | Typical | Worst | Per prompt per month, daily |
 |---|---|---|---|
 | ChatGPT `gpt-5` | $0.021 | $0.042 | $0.63 |
 | Gemini `gemini-3.8-flash` (from 2027-01-01) | $0.023 | $0.049 | $0.70 |
 | Gemini `gemini-3.8-flash` (to 2026-12-31) | $0.019 | $0.039 | $0.57 |
-| Claude `claude-sonnet-5` ($2 / $10) | $0.007 | $0.013 | $0.21 |
+| Claude `claude-haiku-5-5`, no search ($0.10 / $0.50) | $0.0008 | $0.0014 | $0.025 |
 | alt: `gpt-5-mini` | $0.013 | $0.025 | $0.38 |
 | alt: `gemini-3.1-flash-lite` | $0.016 | $0.032 | $0.48 |
 

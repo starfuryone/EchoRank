@@ -8,7 +8,15 @@ import {
 } from "@/lib/i18n/dashboard";
 
 type Point = { d: string; m: boolean; r: number | null };
-type Series = { promptId: string; text: string; active: boolean; points: Point[] };
+type ModelChange = { d: string; from: string; to: string };
+type Series = {
+  promptId: string;
+  text: string;
+  active: boolean;
+  points: Point[];
+  /** Days a Claude answer came from a different model than the run before. */
+  modelChanges?: ModelChange[];
+};
 
 /** Mention rate (%) over the given points; null if empty. */
 function rate(points: Point[]): number | null {
@@ -20,10 +28,12 @@ function rate(points: Point[]): number | null {
  *  rank), absent = short gray tick. No chart lib needed for this density. */
 function Sparkline({
   points,
+  modelChanges = [],
   days,
   t,
 }: {
   points: Point[];
+  modelChanges?: ModelChange[];
   days: number;
   t: PromptTrendsCopy;
 }) {
@@ -57,10 +67,44 @@ function Sparkline({
       );
     }
   }
+  // A dashed rule at the start of each day the Claude model changed, so a
+  // step in the bars is not read as the market moving.
+  const markers = modelChanges.flatMap((change) => {
+    const i = Math.round((Date.parse(today.toISOString().slice(0, 10)) - Date.parse(change.d)) / 86_400_000);
+    if (i < 0 || i >= days) return [];
+    const x = ((days - 1 - i) / days) * W;
+    return [
+      <line
+        key={`model-${change.d}`}
+        data-testid="model-change-marker"
+        x1={x}
+        x2={x}
+        y1={0}
+        y2={H}
+        stroke="#6366f1"
+        strokeWidth={1}
+        strokeDasharray="2 2"
+      >
+        <title>{t.modelChangedTooltip(change.d, change.from, change.to)}</title>
+      </line>,
+    ];
+  });
   return (
     <svg width={W} height={H} className="shrink-0" aria-hidden="true">
       {bars}
+      {markers}
     </svg>
+  );
+}
+
+/** The text half of the marker: the sparkline itself is aria-hidden. */
+function ModelChangedNote({ changes, t }: { changes?: ModelChange[]; t: PromptTrendsCopy }) {
+  const last = changes?.[changes.length - 1];
+  if (!last) return null;
+  return (
+    <span className="text-xs text-indigo-600" title={t.modelChangedTooltip(last.d, last.from, last.to)}>
+      {t.modelChanged}
+    </span>
   );
 }
 
@@ -118,7 +162,8 @@ export function PromptTrends({ locale = "en" }: { locale?: DashLocale }) {
               {s.text}
             </span>
             <TrendChip points={s.points} t={t} />
-            <Sparkline points={s.points} days={data.days} t={t} />
+            <ModelChangedNote changes={s.modelChanges} t={t} />
+            <Sparkline points={s.points} modelChanges={s.modelChanges} days={data.days} t={t} />
           </li>
         ))}
       </ul>

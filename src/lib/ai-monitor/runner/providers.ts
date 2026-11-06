@@ -162,11 +162,11 @@ export const ASK_SYSTEM_PROMPT =
   "normally would, in your own words and at your usual length.";
 
 /**
- * Enough for a full recommendation answer without paying for an essay. The
- * same cap every Claude tracking surface sends (TRACKING_MAX_TOKENS; the
- * sidecar's answer_track.py pins the same number).
+ * Enough for a full recommendation answer without paying for an essay, for the
+ * HTTP engines (ChatGPT, Gemini). Claude's tracking answer uses the shared
+ * TRACKING_MAX_TOKENS instead, the cap every Claude tracking surface sends.
  */
-export const ASK_MAX_TOKENS = TRACKING_MAX_TOKENS;
+export const ASK_MAX_TOKENS = 1_200;
 
 export interface AskDeps {
   anthropic?: AnthropicProvider;
@@ -223,7 +223,8 @@ export async function askEngine(request: AskRequest, deps: AskDeps = {}): Promis
   const result = await provider.infer({
     systemPrompt: ASK_SYSTEM_PROMPT,
     userPrompt: request.promptText,
-    maxTokens: ASK_MAX_TOKENS,
+    // The shared Claude tracking cap; no web search tool is offered.
+    maxTokens: TRACKING_MAX_TOKENS,
     // The engine's own defaults: no temperature (claude-sonnet-5 returns a 400
     // for it — found by a dogfood run), no thinking setting, the cap as given.
     // The point of this call is to observe what the engine says to an

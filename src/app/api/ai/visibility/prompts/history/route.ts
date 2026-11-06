@@ -37,9 +37,26 @@ export async function GET(req: Request) {
           brandMentioned: true,
           brandRank: true,
           createdAt: true,
+          engine: true,
+          model: true,
         },
       }),
     ]);
+
+    // promptId -> the days a Claude answer came from a different model than the
+    // run before it. Drawn as a marker on the sparkline: a change in mentions
+    // across that day may be the model's, not the market's.
+    const modelChanges = new Map<string, { d: string; from: string; to: string }[]>();
+    const lastClaudeModel = new Map<string, string>();
+    for (const run of runs) {
+      if (run.engine.toLowerCase() !== "claude") continue;
+      const prev = lastClaudeModel.get(run.promptId);
+      lastClaudeModel.set(run.promptId, run.model);
+      if (prev === undefined || prev === run.model) continue;
+      const list = modelChanges.get(run.promptId) ?? [];
+      list.push({ d: run.createdAt.toISOString().slice(0, 10), from: prev, to: run.model });
+      modelChanges.set(run.promptId, list);
+    }
 
     // promptId -> day(YYYY-MM-DD, UTC) -> latest run that day
     const byPrompt = new Map<
@@ -68,6 +85,7 @@ export async function GET(req: Request) {
           points: dayMap
             ? [...dayMap.entries()].map(([d, v]) => ({ d, m: v.m, r: v.r }))
             : [],
+          modelChanges: modelChanges.get(p.id) ?? [],
         };
       }),
     });
