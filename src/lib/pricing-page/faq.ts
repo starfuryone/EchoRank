@@ -70,18 +70,18 @@ function aiOnlyAnswer(b: PricingBase): { q: string; a: string } {
   if (b === "de") {
     return {
       q: "Welches Abo, wenn ich nur KI-Sichtbarkeit brauche?",
-      a: `**${ai.name}**, für $${ai.monthlyPrice}/Monat ($${ai.annualPrice}/Monat bei jährlicher Zahlung): ${p} Prompts, ${when} auf ${names} geprüft, mit AI Trust Score, Benachrichtigungen, Brand Radar und AI Lens. Bewertungen, SEO-Werkzeuge und der Crawler beginnen bei **${next.name}** ($${next.monthlyPrice}/Monat).`,
+      a: `**${ai.name}**, für $${ai.monthlyPrice}/Monat ($${ai.annualPrice}/Monat bei jährlicher Zahlung): ${p} Prompts, ${when} auf ${names} geprüft, mit zitierten Quellen und Zitat-Chancen, Trendverlauf, AI Trust Score, Benachrichtigungen, Brand Radar und AI Lens. Bewertungen, SEO-Werkzeuge und der Crawler beginnen bei **${next.name}** ($${next.monthlyPrice}/Monat).`,
     };
   }
   if (b === "fr") {
     return {
       q: "Quel forfait si je n'ai besoin que de la visibilité IA ?",
-      a: `**${ai.name}**, à ${ai.monthlyPrice} $ par mois (${ai.annualPrice} $ par mois en annuel) : suivi ${when} de ${p} requêtes sur ${names}, avec le score de confiance IA, les alertes, Brand Radar et AI Lens. Les avis, les outils SEO et le robot d'exploration commencent avec **${next.name}** (${next.monthlyPrice} $ par mois).`,
+      a: `**${ai.name}**, à ${ai.monthlyPrice} $ par mois (${ai.annualPrice} $ par mois en annuel) : suivi ${when} de ${p} requêtes sur ${names}, avec les sources citées et les occasions de citation, l'historique des tendances, le score de confiance IA, les alertes, Brand Radar et AI Lens. Les avis, les outils SEO et le robot d'exploration commencent avec **${next.name}** (${next.monthlyPrice} $ par mois).`,
     };
   }
   return {
     q: "Which plan if I only need AI visibility?",
-    a: `**${ai.name}**, at $${ai.monthlyPrice}/month ($${ai.annualPrice}/month billed yearly): ${p} prompts checked ${when} on ${names}, with AI Trust Score, alerts, Brand Radar and AI Lens. Reviews, the SEO tools and the crawler start at **${next.name}** ($${next.monthlyPrice}/month).`,
+    a: `**${ai.name}**, at $${ai.monthlyPrice}/month ($${ai.annualPrice}/month billed yearly): ${p} prompts checked ${when} on ${names}, with cited sources and citation opportunities, trend history, AI Trust Score, alerts, Brand Radar and AI Lens. Reviews, the SEO tools and the crawler start at **${next.name}** ($${next.monthlyPrice}/month).`,
   };
 }
 

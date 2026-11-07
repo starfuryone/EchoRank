@@ -17,6 +17,10 @@ export type Feature =
   | "review_authenticity"
   | "multi_location_intelligence"
   | "answer_tracking"
+  // Citation Finder and Citation Opportunities: which sources the engines cite
+  // and which of them to get listed on. Part of AI visibility, so every plan
+  // from the $29 AI Visibility plan up (2026-11-07; Growth+ before).
+  | "citation_tracking"
   | "marketing_studio"
   | "matrix_chat";
 
@@ -36,31 +40,34 @@ const ALL_FEATURES: Feature[] = [
   "sla_guarantee",
   "custom_integrations",
   "answer_tracking",
+  "citation_tracking",
   "multi_location_intelligence",
   "marketing_studio",
   "matrix_chat",
 ];
 
-// STARTER's set. ai_visibility and answer_tracking are on every plan,
-// including the $29 AI Visibility plan (reinstated 2026-11-07), which has
-// nothing else.
+// STARTER's set. ai_visibility, answer_tracking and citation_tracking are on
+// every plan, including the $29 AI Visibility plan (reinstated 2026-11-07),
+// which has nothing else.
 const STARTER_FEATURES: Feature[] = [
   "review_authenticity",
   "marketing_studio",
   "ai_visibility",
   "answer_tracking",
+  "citation_tracking",
 ];
 
 const PLAN_FEATURES: Record<PlanType, Set<Feature>> = {
-  // The $29 AI-only plan: AI visibility and answer tracking, nothing else.
-  // src/lib/plan-access.ts is the allowlist every gate reads.
-  AI_VISIBILITY: new Set<Feature>(["ai_visibility", "answer_tracking"]),
+  // The $29 AI-only plan: AI visibility, answer tracking and the citation
+  // tools, nothing else. src/lib/plan-access.ts is the allowlist every gate reads.
+  AI_VISIBILITY: new Set<Feature>(["ai_visibility", "answer_tracking", "citation_tracking"]),
   STARTER: new Set<Feature>(STARTER_FEATURES),
   GROWTH: new Set<Feature>([
     "review_authenticity",
     "ai_analysis",
     "ai_visibility",
     "answer_tracking",
+    "citation_tracking",
     "advanced_analytics",
     // Matrix team chat: GROWTH and up. AGENCY/ENTERPRISE inherit it through
     // ALL_FEATURES, so this is the only tier that has to name it.

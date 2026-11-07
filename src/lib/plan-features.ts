@@ -208,6 +208,8 @@ const COPY: Record<PlanFeatureBase, Record<SellablePlanType, string[]>> = {
     AI_VISIBILITY: [
       "AI Trust Score",
       "Lost-recommendation alerts",
+      "Cited sources and citation opportunities",
+      "Trend history: score and every checkup",
       "Brand Radar",
       "AI Lens",
       "Email support — 48h weekday response",
@@ -251,6 +253,8 @@ const COPY: Record<PlanFeatureBase, Record<SellablePlanType, string[]>> = {
     AI_VISIBILITY: [
       "Score de confiance IA",
       "Alertes de perte de recommandation",
+      "Sources citées et occasions de citation",
+      "Historique des tendances : score et chaque vérification",
       "Brand Radar",
       "AI Lens",
       "Soutien par courriel — réponse en 48 h les jours ouvrables",

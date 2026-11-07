@@ -4,20 +4,19 @@
 // ── Gating: TWO gates, both server-side ─────────────────────────────────────
 // 1. PAID, from ../layout.tsx, which wraps every /visibility/tools/* route and
 //    renders UpgradeState for a tenant whose billing status is not active.
-// 2. GROWTH+, here, via hasFeature(planType, "advanced_analytics").
+// 2. Every plan from the $29 AI Visibility plan up, here, via
+//    hasFeature(planType, "citation_tracking") — Growth+ (advanced_analytics)
+//    until 2026-11-07.
 //
-// The same feature key Citation Finder and Share of Voice use, deliberately:
-// `advanced_analytics` IS the GROWTH+ line in PLAN_FEATURES, and a
-// `citation_opportunities` key would be a second name for the same line that
-// drifts the first time somebody moves a tier. This tool is downstream of
-// Citation Finder in every sense, so gating them differently would produce the
-// worst possible state — a worklist a customer can read, built from a table
-// they cannot.
+// The same feature key Citation Finder uses, deliberately: this tool is
+// downstream of Citation Finder in every sense, so gating them differently
+// would produce the worst possible state — a worklist a customer can read,
+// built from a table they cannot. The weekly worker reads the same key.
 //
 // hasFeature() rather than requireFeature(): requireFeature throws
 // FeatureNotAvailableError, which enforcementErrorResponse maps to a 403 — the
-// right shape for the PATCH route and the wrong one for a page, where a STARTER
-// tenant should read what the tool does and how to get it.
+// right shape for the PATCH route and the wrong one for a page, where a tenant
+// without the feature should read what the tool does and how to get it.
 //
 // SPENDING HAPPENS IN THE WORKER, NEVER HERE. The weekly job makes at most one
 // metered DataForSEO call per tenant; this page renders rows that job already
@@ -49,7 +48,7 @@ export default async function Page() {
   };
 
   const unlocked =
-    membership !== null && hasFeature(membership.tenant.planType, "advanced_analytics");
+    membership !== null && hasFeature(membership.tenant.planType, "citation_tracking");
 
   // The read is skipped entirely when locked — not fetched and hidden. A locked
   // page that still runs the queries leaks nothing visually and everything in

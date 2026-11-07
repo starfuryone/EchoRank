@@ -24,6 +24,7 @@ import { CRAWLER_BRAND } from "@/lib/site-crawler/brand";
 import { engineNames } from "@/lib/pricing-page/headlines";
 import { PLAN_AUDIENCE } from "@/lib/pricing-page/audience";
 import { planAllowsArea } from "@/lib/plan-access";
+import { hasFeature } from "@/lib/feature-flags";
 import type { Locale } from "@/lib/i18n/config";
 
 vi.stubGlobal("fetch", vi.fn());
@@ -82,6 +83,8 @@ function enLines(plan: Card): string[] {
       : `${en(c.crawlsPerMonth)} ${CRAWLER_BRAND.name} crawls/mo, up to ${en(c.crawlUrlCap)} URLs each`;
   const lines: (string | null)[] = [
     `${en(shape.prompts)} AI prompts · ${engines} · ${cadence}${names ? ` (${names.join(", ")})` : ""}`,
+    hasFeature(plan, "citation_tracking") ? "Cited sources and citation opportunities" : null,
+    "Trend history: score and every checkup",
     shape.repetitions > 1 ? `Each prompt asked ${shape.repetitions}× per engine` : null,
     `${en(locs)} location${locs === 1 ? "" : "s"}`,
     c.quotaDefaults.maxRequestsPerMonth > 0 ? `${en(c.quotaDefaults.maxRequestsPerMonth)} feedback requests/month` : null,
@@ -111,11 +114,13 @@ describe("the rendered card line-ups", () => {
     expect(screen.queryByText("/ ENTERPRISE")).toBeNull();
   });
 
-  it("AI VISIBILITY lists all its lines: the AI line, one location, support — nothing else", () => {
+  it("AI VISIBILITY lists all its lines: the AI line, cited sources, trend history, one location, support", () => {
     renderGrid("en");
     expect(bullets("AI_VISIBILITY")).toEqual(enLines("AI_VISIBILITY"));
     expect(bullets("AI_VISIBILITY")).toEqual([
       "10 AI prompts · 3 AI engines · daily (ChatGPT, Google AI Overviews, Gemini)",
+      "Cited sources and citation opportunities",
+      "Trend history: score and every checkup",
       "1 location",
       "Email support — 48h weekday response",
     ]);
@@ -211,7 +216,11 @@ describe("the French and Swiss-German grids", () => {
       expect(all, `English "${english}" leaked onto a French card`).not.toContain(english);
     }
     expect(bullets("AI_VISIBILITY")[0]).toMatch(/^10 requêtes IA · 3 moteurs IA · quotidien/);
-    expect(bullets("AI_VISIBILITY")[1]).toBe(`${PLAN_CONFIGS.AI_VISIBILITY.quotaDefaults.maxLocations} emplacement`);
+    expect(bullets("AI_VISIBILITY").slice(1, 4)).toEqual([
+      "Sources citées et occasions de citation",
+      "Historique des tendances : score et chaque vérification",
+      `${PLAN_CONFIGS.AI_VISIBILITY.quotaDefaults.maxLocations} emplacement`,
+    ]);
     expect(within(card("STARTER")).getByText("Tout ce qu'offre AI Visibility, plus :")).toBeTruthy();
     expect(within(card("GROWTH")).getByText("Tout ce qu'offre Starter, plus :")).toBeTruthy();
   });

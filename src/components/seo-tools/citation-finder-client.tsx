@@ -108,7 +108,7 @@ export function CitationFinderClient({
     </div>
   );
 
-  // ── Locked (below Growth) ────────────────────────────────────────────────
+  // ── Locked (a plan without citation_tracking) ────────────────────────────
   if (locked) {
     return (
       <div className="space-y-6">

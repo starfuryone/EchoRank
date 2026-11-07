@@ -26,6 +26,7 @@ import {
   type SellablePlanType,
 } from "@/lib/plan-config";
 import { isSeoToolLive } from "@/lib/seo-tools";
+import { hasFeature } from "@/lib/feature-flags";
 import { CRAWLER_BRAND } from "@/lib/site-crawler/brand";
 import { ENGINE_CATALOGUE } from "@/lib/ai-monitor/engines";
 import { PLAN_AUDIENCE } from "./audience";
@@ -94,6 +95,30 @@ export function tracking(c: PlanConfig, b: PricingBase): string {
   const head = { en: `${p} AI prompts`, fr: `${p} requêtes IA`, de: `${p} KI-Prompts` }[b];
   const parts = [head, engines(shape, b), when].filter(Boolean).join(" · ");
   return names ? `${parts} (${names.join(", ")})` : parts;
+}
+
+/**
+ * The citation tools (Citation Finder + Citation Opportunities), read from the
+ * same feature key their pages gate on. Every plan has it, so in practice the
+ * line shows on the entry card and is "shared" above it.
+ */
+function citations(plan: SellablePlanType, b: PricingBase): string | null {
+  if (!hasFeature(plan, "citation_tracking")) return null;
+  return {
+    en: "Cited sources and citation opportunities",
+    fr: "Sources citées et occasions de citation",
+    de: "Zitierte Quellen und Zitat-Chancen",
+  }[b];
+}
+
+/** Trend history: the AI Search overview's score history and every checkup. */
+function trendHistory(plan: SellablePlanType, b: PricingBase): string | null {
+  if (!hasFeature(plan, "ai_visibility")) return null;
+  return {
+    en: "Trend history: score and every checkup",
+    fr: "Historique des tendances : score et chaque vérification",
+    de: "Trendverlauf: Score und jeder Check",
+  }[b];
 }
 
 /** Growth and up ask each prompt more than once; null at one repetition. */
@@ -196,6 +221,8 @@ function allLines(plan: SellablePlanType, b: PricingBase): string[] {
   const c = PLAN_CONFIGS[plan];
   return [
     tracking(c, b),
+    citations(plan, b),
+    trendHistory(plan, b),
     repetitions(c, b),
     locations(c, b),
     feedback(c, b),

@@ -148,6 +148,21 @@ export function comparisonTable(locale: Locale): CompareTable {
         },
       ),
       row("brands", { en: "Brands tracked", fr: "Marques suivies", de: "Verfolgte Marken" }, b, NO, (c) => count(c.aiProjects, b)),
+      // Citation Finder + Citation Opportunities: the feature key their pages gate on.
+      row(
+        "citations",
+        { en: "Cited sources and citation opportunities", fr: "Sources citées et occasions de citation", de: "Zitierte Quellen und Zitat-Chancen" },
+        b,
+        NO,
+        (_c, p) => bool(hasFeature(p, "citation_tracking")),
+      ),
+      row(
+        "history",
+        { en: "Trend history", fr: "Historique des tendances", de: "Trendverlauf" },
+        b,
+        NO,
+        (_c, p) => bool(hasFeature(p, "ai_visibility")),
+      ),
     ],
   };
 

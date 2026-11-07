@@ -194,6 +194,12 @@ describe("Free vs paid", () => {
     expect(CARDS[0]).toBe("AI_VISIBILITY");
     expect(cell("locations")).toBe("1");
     for (const row of ["feedback", "searches", "keywords", "tools", "sms"]) expect(cell(row), row).toBe("no");
+    // Cited sources and trend history are part of AI visibility (2026-11-07), on every column.
+    for (const p of CARDS) {
+      const r = (id: string) => t.groups.flatMap((g) => g.rows).find((x) => x.id === id)!.plans[p]!.kind;
+      expect(r("citations"), p).toBe("yes");
+      expect(r("history"), p).toBe("yes");
+    }
   });
 
   it("the Free column reads the free tools' own limits and links to each tool", async () => {

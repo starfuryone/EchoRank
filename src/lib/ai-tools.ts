@@ -13,7 +13,9 @@
 // /visibility is still the AI Visibility dashboard, and it is linked from the
 // marketing site, the onboarding emails and the notification fan-in. The hub
 // took a NEW path (/ai) rather than displacing it, exactly as /reputation did.
-// This file is navigation only: it grants nothing and enforces nothing.
+// This file is navigation only: it grants nothing and enforces nothing. It
+// reads the plan allowlist to decide which cards to draw; the proxy and the
+// (dashboard) layout are what enforce it.
 //
 // TOOLS STAY REGISTERED WHERE THEY ARE. ai_attribution and custom_prompts are
 // cards in SEO_TOOL_GROUPS and rows in dashNav already. The hub LINKS to them;
@@ -45,6 +47,7 @@ import {
   Banknote,
 } from "lucide-react";
 import type { PlanType } from "@/generated/prisma";
+import { planAllowsPage } from "@/lib/plan-access";
 
 export const AI_HUB = "/ai";
 
@@ -174,8 +177,10 @@ export type AiRolloutState = Record<AiRollout, boolean>;
  *
  * A null/undefined plan sees NOTHING, matching visibleReputationGroups: that is
  * a signed-out visitor or a tenant we could not resolve, and the hub is not a
- * public surface. Beyond that no tier is confined — every signed-in tenant sees
- * every card whose destination is actually reachable.
+ * public surface. Beyond that, a card is shown when the plan allowlist
+ * (src/lib/plan-access.ts) opens its page: every card for every plan but the
+ * $29 AI Visibility plan, which sees only what it includes — no locked cards
+ * for areas it excludes, because those pages answer with the upgrade screen.
  *
  * A group that empties out is dropped rather than rendered as a heading with no
  * cards under it.
@@ -187,7 +192,9 @@ export function visibleAiGroups(
   if (!plan) return [];
   return AI_TOOL_GROUPS.map((group) => ({
     ...group,
-    tools: group.tools.filter((tool) => !tool.rollout || rollouts[tool.rollout]),
+    tools: group.tools.filter(
+      (tool) => (!tool.rollout || rollouts[tool.rollout]) && planAllowsPage(plan, tool.href),
+    ),
   })).filter((group) => group.tools.length > 0);
 }
 

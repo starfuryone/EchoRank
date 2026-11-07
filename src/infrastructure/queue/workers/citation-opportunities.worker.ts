@@ -50,7 +50,8 @@ import { listOpportunityTenants, loadCandidates, sweepTenant } from "@/lib/citat
 import { checkListed } from "@/lib/citation-opportunities/listed";
 import { p75 } from "@/lib/citation-opportunities/score";
 import { notifyCitationOpportunity } from "@/lib/notifications/adapters";
-import { tenantAllowsArea } from "@/lib/plan-access-server";
+import { tenantPlan } from "@/lib/plan-access-server";
+import { hasFeature } from "@/lib/feature-flags";
 
 const QUEUE_NAME = "citation-opportunities" as const;
 const SWEEP_JOB_NAME = "sweep";
@@ -114,10 +115,13 @@ async function scoreOne(job: CitationOpportunityJob): Promise<void> {
     throw new Error("scoring job needs a tenantId");
   }
 
-  // The plan allowlist, re-checked when the job runs: citation opportunities
-  // are a tools-hub tool the AI-only plan does not include, and this pass
-  // spends DataForSEO money. Logged, not thrown: it is a decision, not a fault.
-  if (!(await tenantAllowsArea(tenantId, "seo_tools"))) {
+  // The plan, re-checked when the job runs: this pass spends DataForSEO money
+  // (one backlinks call, ~$0.026), so only a plan with the citation tools pays
+  // for it — every plan from AI Visibility up, the same key the page reads. The
+  // sweep used to score every tracking tenant whatever its plan. Logged, not
+  // thrown: it is a decision, not a fault.
+  const plan = await tenantPlan(tenantId);
+  if (!plan || !hasFeature(plan, "citation_tracking")) {
     logger.info({ tenantId }, "citation opportunity pass skipped: plan excludes this tool");
     return;
   }

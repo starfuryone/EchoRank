@@ -15200,9 +15200,9 @@ export const SHARE_OF_VOICE_COPY: Record<DashLocale, ShareOfVoiceCopy> = {
 */
 
 const citationFinderEn = {
-  lockedTitle: "Citation Finder is on Growth and above",
+  lockedTitle: "Citation Finder is on every plan, from AI Visibility",
   lockedBody:
-    "See every source the AI engines cite when they answer about your market, and which of them recommend your competitors without ever naming you. Upgrade to Growth to switch it on for your tracked prompts.",
+    "See every source the AI engines cite when they answer about your market, and which of them recommend your competitors without ever naming you. Choose a plan to switch it on for your tracked prompts.",
   lockedCta: "See plans",
 
   emptyTitle: "No sources yet",
@@ -15263,9 +15263,9 @@ export type CitationFinderCopy = typeof citationFinderEn;
 export const CITATION_FINDER_COPY: Record<DashLocale, CitationFinderCopy> = {
   en: citationFinderEn,
   fr: {
-    lockedTitle: "Le détecteur de sources est inclus à partir de Growth",
+    lockedTitle: "Le détecteur de sources est inclus dans chaque forfait, dès AI Visibility",
     lockedBody:
-      "Découvrez toutes les sources que les moteurs d'IA citent lorsqu'ils parlent de votre marché, et lesquelles recommandent vos concurrents sans jamais vous nommer. Passez à Growth pour l'activer sur vos requêtes suivies.",
+      "Découvrez toutes les sources que les moteurs d'IA citent lorsqu'ils parlent de votre marché, et lesquelles recommandent vos concurrents sans jamais vous nommer. Choisissez un forfait pour l'activer sur vos requêtes suivies.",
     lockedCta: "Voir les forfaits",
 
     emptyTitle: "Pas encore de sources",
@@ -15315,9 +15315,9 @@ export const CITATION_FINDER_COPY: Record<DashLocale, CitationFinderCopy> = {
       "Une source est comptée une fois par réponse qui la cite. « Vous cite » signifie que la réponse a nommé votre marque quelque part, et non que le lien lui-même vous concernait. Être cité prouve qu'un moteur a lu une page : ce n'est pas un facteur de classement, et figurer quelque part ne garantit pas d'être recommandé.",
   },
   "de-CH": {
-    lockedTitle: "Der Quellenfinder ist ab Growth enthalten",
+    lockedTitle: "Der Quellenfinder ist in jedem Abo enthalten, ab AI Visibility",
     lockedBody:
-      "Sehen Sie jede Quelle, die KI-Maschinen zu Ihrem Markt zitieren, und welche davon Ihre Mitbewerber empfehlen, ohne Sie je zu nennen. Wechseln Sie zu Growth, um ihn für Ihre verfolgten Prompts einzuschalten.",
+      "Sehen Sie jede Quelle, die KI-Maschinen zu Ihrem Markt zitieren, und welche davon Ihre Mitbewerber empfehlen, ohne Sie je zu nennen. Wählen Sie ein Abo, um ihn für Ihre verfolgten Prompts einzuschalten.",
     lockedCta: "Pläne ansehen",
 
     emptyTitle: "Noch keine Quellen",
@@ -15391,9 +15391,9 @@ export const CITATION_FINDER_COPY: Record<DashLocale, CitationFinderCopy> = {
 */
 
 const citationOpportunitiesEn = {
-  lockedTitle: "Citation Opportunities is on Growth and above",
+  lockedTitle: "Citation Opportunities is on every plan, from AI Visibility",
   lockedBody:
-    "Turn the sources that cite your competitors into a ranked list of places to get listed, with what to do on each one. Upgrade to Growth to switch it on for your tracked prompts.",
+    "Turn the sources that cite your competitors into a ranked list of places to get listed, with what to do on each one. Choose a plan to switch it on for your tracked prompts.",
   lockedCta: "See plans",
 
   emptyTitle: "No opportunities yet",
@@ -15472,9 +15472,9 @@ export type CitationOpportunitiesCopy = typeof citationOpportunitiesEn;
 export const CITATION_OPPORTUNITIES_COPY: Record<DashLocale, CitationOpportunitiesCopy> = {
   en: citationOpportunitiesEn,
   fr: {
-    lockedTitle: "Les opportunités de citation sont incluses à partir de Growth",
+    lockedTitle: "Les opportunités de citation sont incluses dans chaque forfait, dès AI Visibility",
     lockedBody:
-      "Transformez les sources qui citent vos concurrents en une liste classée d'endroits où vous faire référencer, avec la marche à suivre pour chacun. Passez à Growth pour l'activer sur vos requêtes suivies.",
+      "Transformez les sources qui citent vos concurrents en une liste classée d'endroits où vous faire référencer, avec la marche à suivre pour chacun. Choisissez un forfait pour l'activer sur vos requêtes suivies.",
     lockedCta: "Voir les forfaits",
 
     emptyTitle: "Pas encore d'opportunités",
@@ -15544,9 +15544,9 @@ export const CITATION_OPPORTUNITIES_COPY: Record<DashLocale, CitationOpportuniti
       "Classées selon l'intérêt d'y figurer — la fréquence à laquelle les moteurs citent cette source, le nombre de moteurs concernés et la part qui profite à vos concurrents — divisé par la difficulté. Les sources qui pointent déjà vers votre site sont exclues. Être référencé vous rend éligible à la lecture ; ce n'est pas un facteur de classement, ni une garantie d'être recommandé.",
   },
   "de-CH": {
-    lockedTitle: "Zitat-Chancen gibt es ab Growth",
+    lockedTitle: "Zitat-Chancen gibt es in jedem Abo, ab AI Visibility",
     lockedBody:
-      "Machen Sie aus den Quellen, die Ihre Mitbewerber zitieren, eine sortierte Liste von Orten, an denen Sie gelistet werden sollten — samt Anleitung für jeden einzelnen. Wechseln Sie zu Growth, um das für Ihre verfolgten Prompts einzuschalten.",
+      "Machen Sie aus den Quellen, die Ihre Mitbewerber zitieren, eine sortierte Liste von Orten, an denen Sie gelistet werden sollten — samt Anleitung für jeden einzelnen. Wählen Sie ein Abo, um das für Ihre verfolgten Prompts einzuschalten.",
     lockedCta: "Pläne ansehen",
 
     emptyTitle: "Noch keine Chancen",

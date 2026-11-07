@@ -98,6 +98,10 @@ describe("the AI-only plan", () => {
     "/visibility/tools/brand-radar",
     "/visibility/tools/ai-lens",
     "/visibility/brand-radar",
+    // Cited sources (2026-11-07) and the AI hub, which shows only these.
+    "/visibility/tools/citation-finder",
+    "/visibility/tools/citation-opportunities",
+    "/ai",
     "/settings",
     "/settings/account",
     "/billing",
@@ -137,7 +141,14 @@ describe("the AI-only plan", () => {
     "/imports",
     "/extension",
     "/assistant",
-    "/ai",
+    // Kept out on purpose (2026-11-07): AI Attribution and the Assistant; the
+    // SERP-history tool, whose data comes from SEO rank checks; Share of Voice
+    // (Growth+); revenue and the scanner.
+    "/visibility/tools/ai-attribution",
+    "/visibility/tools/historical",
+    "/visibility/tools/share-of-voice",
+    "/visibility/tools/revenue",
+    "/visibility/tools/opportunity-scanner",
   ])("excludes the page %s", (path) => expect(planAllowsPage("AI_VISIBILITY", path)).toBe(false));
 
   it.each([
@@ -146,6 +157,7 @@ describe("the AI-only plan", () => {
     ["POST", "/api/ai-search/brands"],
     ["POST", "/api/av/audit/report"],
     ["POST", "/api/seo/v1/ai-lens/analyze"],
+    ["PATCH", "/api/citation-opportunities/abc"],
     ["GET", "/api/billing"],
     ["GET", "/api/account/export"],
     ["GET", "/api/tenants"],
@@ -167,7 +179,35 @@ describe("the AI-only plan", () => {
     ["POST", "/api/agency/funnels"],
     ["POST", "/api/action-agent/run"],
     ["POST", "/api/assistant/pro/chat"],
+    ["GET", "/api/ai/visibility/historical/timeline"],
+    ["POST", "/api/ai/visibility/attribution-keys"],
   ])("refuses %s %s", (method, path) => expect(planAllowsApi("AI_VISIBILITY", path, method)).toBe(false));
+
+  it("the /ai hub shows only the cards the plan includes", async () => {
+    const { visibleAiGroups, ALL_AI_TOOLS } = await import("@/lib/ai-tools");
+    const ids = (plan: "AI_VISIBILITY" | "STARTER") =>
+      visibleAiGroups(plan, { ai_search: true }).flatMap((g) => g.tools.map((t) => t.id));
+    expect(ids("AI_VISIBILITY")).toEqual(["ai_visibility", "ai_search", "custom_prompts", "citation_finder", "citation_opportunities"]);
+    // Every other plan sees every card, as before (locked ones render their own upgrade state).
+    expect(ids("STARTER")).toEqual(ALL_AI_TOOLS.map((t) => t.id));
+  });
+
+  it("the citation tools are on every plan from AI Visibility up, Share of Voice stays Growth+", async () => {
+    const { hasFeature } = await import("@/lib/feature-flags");
+    for (const plan of ["AI_VISIBILITY", "STARTER", "GROWTH", "AGENCY", "ENTERPRISE"] as const) {
+      expect(hasFeature(plan, "citation_tracking"), plan).toBe(true);
+    }
+    expect(hasFeature("STARTER", "advanced_analytics")).toBe(false);
+    expect(hasFeature("AI_VISIBILITY", "advanced_analytics")).toBe(false);
+    for (const f of [
+      "src/app/(dashboard)/visibility/tools/citation-finder/page.tsx",
+      "src/app/(dashboard)/visibility/tools/citation-opportunities/page.tsx",
+    ]) {
+      expect(read(f), f).toContain('hasFeature(membership.tenant.planType, "citation_tracking")');
+    }
+    expect(read("src/app/api/citation-opportunities/[id]/route.ts")).toContain('requireFeature("citation_tracking")');
+    expect(read("src/app/(dashboard)/visibility/tools/share-of-voice/page.tsx")).toContain('"advanced_analytics"');
+  });
 });
 
 describe("every other plan reaches everything it did before", () => {
@@ -194,7 +234,7 @@ describe("the gates read the allowlist", () => {
   });
 
   it("the sidebar and the tools hub derive from it", () => {
-    expect(read("src/components/layout/sidebar.tsx")).toContain("!planAllowsPage(plan, linkHref(item.href, restricted))");
+    expect(read("src/components/layout/sidebar.tsx")).toContain("!planAllowsPage(plan, item.href)");
     expect(read("src/app/(dashboard)/visibility/tools/page.tsx")).toContain("const allowed = planAllowsPage(plan, tool.href);");
   });
 });
@@ -257,12 +297,17 @@ describe("background jobs re-check the plan when they run", () => {
     ["src/infrastructure/queue/workers/email-delivery.worker.ts", "reputation"],
     ["src/infrastructure/queue/workers/sms-delivery.worker.ts", "reputation"],
     ["src/infrastructure/queue/workers/feedback-routing.worker.ts", "reputation"],
-    ["src/infrastructure/queue/workers/citation-opportunities.worker.ts", "seo_tools"],
     ["src/infrastructure/queue/workers/visibility-monitoring.worker.ts", "seo_tools"],
     ["src/lib/signals/competitors.ts", "reputation"],
   ])("%s re-checks %s", (file, area) => {
     expect(read(file)).toContain(`tenantAllowsArea(`);
     expect(read(file)).toContain(`"${area}"`);
+  });
+
+  it("the citation-opportunity pass re-reads the plan and spends only for citation_tracking", () => {
+    const src = read("src/infrastructure/queue/workers/citation-opportunities.worker.ts");
+    expect(src).toContain("const plan = await tenantPlan(tenantId);");
+    expect(src).toContain('if (!plan || !hasFeature(plan, "citation_tracking")) {');
   });
 
   it("the Keyword Opportunity run refuses before spending", () => {

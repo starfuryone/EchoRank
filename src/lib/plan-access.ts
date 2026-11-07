@@ -94,6 +94,11 @@ export const PAGE_RULES: readonly RouteRule[] = [
   { prefix: "/visibility/tools/brand-radar", area: "ai_visibility" },
   { prefix: "/visibility/tools/ai-lens", area: "ai_visibility" },
   { prefix: "/visibility/tools/custom-prompts", area: "ai_visibility" },
+  // Cited sources: which pages the engines cite, and which to get listed on.
+  // Core to an AI visibility plan (2026-11-07); the pages gate on the
+  // citation_tracking feature too, which every plan from AI Visibility up has.
+  { prefix: "/visibility/tools/citation-finder", area: "ai_visibility" },
+  { prefix: "/visibility/tools/citation-opportunities", area: "ai_visibility" },
   // The hub index itself: open, with excluded cards shown locked.
   { prefix: "/visibility/tools", area: "ai_visibility", exact: true },
   { prefix: "/visibility/tools/action-agent", area: "marketing_studio" },
@@ -116,10 +121,10 @@ export const PAGE_RULES: readonly RouteRule[] = [
   { prefix: "/help", area: "account" },
   { prefix: "/team", area: "account" },
   { prefix: "/notifications", area: "account" },
-  // The AI tools hub: its cards are Growth+ insight tools (share of voice,
-  // citations, attribution, revenue, scanner). Excluded (placement unclear in
-  // the spec; defaulted to excluded and reported).
-  { prefix: "/ai", area: "seo_tools" },
+  // The AI tools hub: open, showing only the cards whose page the plan opens
+  // (visibleAiGroups filters with planAllowsPage). AI Attribution, Share of
+  // Voice, revenue and the scanner live under /visibility/tools and stay out.
+  { prefix: "/ai", area: "ai_visibility" },
   { prefix: "/assistant", area: "assistant" },
   { prefix: "/reputation", area: "reputation" },
   { prefix: "/campaigns", area: "reputation" },
@@ -167,7 +172,7 @@ export const API_RULES: readonly RouteRule[] = [
   { prefix: "/api/seo/v1/crawl", area: "crawler" },
   { prefix: "/api/seo", area: "seo_tools" },
   { prefix: "/api/keyword-opportunities", area: "seo_tools" },
-  { prefix: "/api/citation-opportunities", area: "seo_tools" },
+  { prefix: "/api/citation-opportunities", area: "ai_visibility" },
   // Account.
   { prefix: "/api/account", area: "account" },
   { prefix: "/api/billing", area: "account" },

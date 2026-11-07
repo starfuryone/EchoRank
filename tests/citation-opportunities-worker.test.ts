@@ -44,9 +44,12 @@ const { addJob, getQueue } = vi.hoisted(() => ({
 }));
 vi.mock("@/infrastructure/queue/registry", () => ({ addJob, getQueue }));
 
-// The worker re-checks the plan allowlist before spending (src/lib/plan-access.ts).
-const { tenantAllowsArea } = vi.hoisted(() => ({ tenantAllowsArea: vi.fn(async () => true) }));
-vi.mock("@/lib/plan-access-server", () => ({ tenantAllowsArea }));
+// The worker re-reads the plan before spending: citation_tracking, every plan
+// from AI Visibility up.
+const { tenantPlan } = vi.hoisted(() => ({
+  tenantPlan: vi.fn<(id: string) => Promise<string | null>>(async () => "AI_VISIBILITY"),
+}));
+vi.mock("@/lib/plan-access-server", () => ({ tenantPlan }));
 
 import {
   scoreOne,
@@ -191,13 +194,20 @@ describe("the pass itself", () => {
     expect(loggerFns.warn).toHaveBeenCalled();
   });
 
-  it("spends nothing when the tenant's plan no longer includes the tool", async () => {
-    tenantAllowsArea.mockResolvedValueOnce(false);
+  it("spends nothing when the tenant has no plan any more", async () => {
+    tenantPlan.mockResolvedValueOnce(null);
     await scoreOne({ tenantId: TENANT });
-    expect(tenantAllowsArea).toHaveBeenCalledWith(TENANT, "seo_tools");
+    expect(tenantPlan).toHaveBeenCalledWith(TENANT);
     expect(listOpportunityTenants).not.toHaveBeenCalled();
     expect(checkListed).not.toHaveBeenCalled();
     expect(sweepTenant).not.toHaveBeenCalled();
+  });
+
+  it.each(["AI_VISIBILITY", "STARTER", "GROWTH", "AGENCY"])("scores a %s tenant: the citation tools are on its plan", async (plan) => {
+    tenantPlan.mockResolvedValueOnce(plan);
+    listOpportunityTenants.mockResolvedValue([]);
+    await scoreOne({ tenantId: TENANT });
+    expect(listOpportunityTenants).toHaveBeenCalledWith(TENANT);
   });
 
   it("refuses a job with no tenantId rather than sweeping everybody", async () => {

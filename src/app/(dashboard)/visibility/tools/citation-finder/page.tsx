@@ -4,17 +4,16 @@
 // ── Gating: TWO gates, both server-side ─────────────────────────────────────
 // 1. PAID, from ../layout.tsx, which wraps every /visibility/tools/* route and
 //    renders UpgradeState for a tenant whose billing status is not active.
-// 2. GROWTH+, here, via hasFeature(planType, "advanced_analytics").
-//
-// Same feature key Share of Voice uses, and for the same reason its page gives
-// at length: `advanced_analytics` IS the GROWTH+ line in PLAN_FEATURES, and a
-// `citation_finder` key would be a second name for the same line that drifts
-// the first time somebody moves a tier.
+// 2. Every plan from the $29 AI Visibility plan up, here, via
+//    hasFeature(planType, "citation_tracking"). Growth+ (advanced_analytics,
+//    Share of Voice's key) until 2026-11-07: cited sources are core to an AI
+//    visibility plan, so the citation tools moved to their own key and down
+//    the ladder, while Share of Voice stayed Growth+.
 //
 // hasFeature() rather than requireFeature(): requireFeature throws
 // FeatureNotAvailableError, which enforcementErrorResponse maps to a 403 — the
-// right shape for an API route and the wrong one for a page, where a STARTER
-// tenant should read what the tool does and how to get it.
+// right shape for an API route and the wrong one for a page, where a tenant
+// without the feature should read what the tool does and how to get it.
 //
 // This tool spends nothing upstream. Every row comes from citations the checkup
 // worker already paid for, so there is no costUsd to log and no quota to
@@ -65,7 +64,7 @@ export default async function Page({
   };
 
   const unlocked =
-    membership !== null && hasFeature(membership.tenant.planType, "advanced_analytics");
+    membership !== null && hasFeature(membership.tenant.planType, "citation_tracking");
 
   // The read is skipped entirely when locked — not fetched and hidden. A locked
   // page that still runs the queries leaks nothing visually and everything in

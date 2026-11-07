@@ -23,15 +23,15 @@ import { isOpportunityStatus, setOpportunityStatus } from "@/lib/citation-opport
  * into touching another tenant's row, and a foreign id gets the same 404 a
  * genuinely missing one gets, so this cannot be used to probe for ids.
  *
- * GROWTH+ via requireFeature("advanced_analytics") — the same key the page
- * gates on. requireFeature and not hasFeature here: this is an API route, where
- * a 403 is the right shape, and the page is where a Starter tenant reads what
- * the tool does instead.
+ * Every plan from AI Visibility up, via requireFeature("citation_tracking") —
+ * the same key the page gates on. requireFeature and not hasFeature here: this
+ * is an API route, where a 403 is the right shape, and the page is where a
+ * tenant without the feature reads what the tool does instead.
  */
 export async function PATCH(request: Request, context: { params: Promise<{ id: string }> }) {
   try {
     const membership = await requireTenant();
-    await requireFeature("advanced_analytics");
+    await requireFeature("citation_tracking");
 
     const { id } = await context.params;
     const body = (await request.json().catch(() => ({}))) as { status?: unknown };
