@@ -31,7 +31,12 @@
 // never ran. That is new operative language in two of the four consent
 // documents, which is exactly what this constant is bumped for. Every consent
 // recorded against 2026-08-12 is now stale, and the next checkout re-asks.
-export const CONSENT_VERSION = "2026-08-20";
+//
+// 2026-11-07: the Subscription Agreement gains the $29 AI Visibility plan in
+// §1.1, says what that plan excludes (Overview, §1.2), and says what stops on a
+// downgrade to a plan that excludes a feature (§5.2). The next checkout or plan
+// change re-asks; nothing else reads this, so no existing customer loses access.
+export const CONSENT_VERSION = "2026-11-07";
 
 export type ConsentDocumentId =
   | "subscription_agreement"

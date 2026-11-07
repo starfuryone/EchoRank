@@ -107,10 +107,20 @@ describe("the consent version", () => {
   it("was bumped past the date these documents last said", () => {
     // Adding operative language to two of the four consent documents makes
     // every consent recorded under the old version stale. consent-config.ts
-    // states the rule; this asserts somebody followed it.
-    expect(CONSENT_VERSION).toBe("2026-08-20");
+    // states the rule; this asserts somebody followed it. The version is a date,
+    // so "bumped past" is an ISO string comparison: it may be later than the
+    // 2026-08-20 credit terms (the Subscription Agreement moved again on
+    // 2026-11-07 for the AI Visibility plan), never earlier.
+    expect(CONSENT_VERSION >= "2026-08-20").toBe(true);
     expect(buildTerms("en").updated).toContain("August 20, 2026");
     expect(buildTerms("fr").updated).toContain("20 août 2026");
-    expect(buildSubscriptionAgreement("en").updated).toContain("August 20, 2026");
+  });
+
+  it("follows the Subscription Agreement's latest revision (2026-11-07)", () => {
+    expect(CONSENT_VERSION).toBe("2026-11-07");
+    expect(buildSubscriptionAgreement("en").updated).toContain("November 7, 2026");
+    const body = JSON.stringify(buildSubscriptionAgreement("en").sections.map((s) => s.ps.filter((p) => typeof p === "string")));
+    expect(body).toContain("The AI Visibility plan includes AI visibility monitoring only");
+    expect(body).toContain("scheduled work for that feature (site crawls, queued review-request emails and SMS) stops");
   });
 });

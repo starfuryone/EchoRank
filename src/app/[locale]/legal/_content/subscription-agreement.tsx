@@ -20,7 +20,7 @@ function planLines(): string[] {
 export function buildSubscriptionAgreement(locale: string): LegalDoc {
   return {
   title: "Subscription Agreement",
-  updated: "Last updated: August 20, 2026",
+  updated: "Last updated: November 7, 2026",
   description:
     "This Subscription Agreement governs your subscription to Echorank360, operated by ChatLogic Insights LTD.",
   sections: [
@@ -32,14 +32,15 @@ export function buildSubscriptionAgreement(locale: string): LegalDoc {
         the terms below in addition to our Terms of Use and our{" "}
         <NfaLink locale={locale} label="No Financial Advice Disclaimer" />. A subscription (with an
         active trial or paid status) is required to access the dashboard, reputation tools, AI
-        visibility monitoring, SEO tools, and all other platform features.
+        visibility monitoring, SEO tools, and all other platform features. The features included
+        depend on your plan.
       </>,
     ]},
     { h: "1. Plans and Pricing", ps: [
       "1.1 Available Plans. Echorank360 offers the following subscription tiers:",
       ...planLines(),
       "Prices are in US Dollars and may be updated with 30 days' notice. Current pricing is always displayed at echorank360.com/en/pricing.",
-      "1.2 Plan Limits. Each plan includes usage limits — such as the number of locations, team seats, monthly feedback requests, SEO lookups, and AI generation tokens — as described on the pricing page. Exceeding a limit may require upgrading to a higher tier. Limits reset at the start of each billing month unless otherwise stated.",
+      "1.2 Plan Limits. Each plan includes usage limits — such as the number of locations, team seats, monthly feedback requests, SEO lookups, and AI generation tokens — as described on the pricing page. Exceeding a limit may require upgrading to a higher tier. Limits reset at the start of each billing month unless otherwise stated. The AI Visibility plan includes AI visibility monitoring only; reputation tools, SEO tools, the site crawler, the public API and MCP server, and client management are not included and are available on higher plans, as described on the pricing page.",
       "1.3 Billing Intervals. Subscriptions are billed either monthly (recurring every calendar month) or yearly (recurring every 12 months). Your billing interval is selected at checkout and may be changed as described in Section 5.",
     ]},
     { h: "2. Eligibility", ps: [
@@ -79,7 +80,7 @@ export function buildSubscriptionAgreement(locale: string): LegalDoc {
     { h: "5. Plan Changes", ps: [
       "Summary: Upgrades and switches to yearly billing take effect immediately. Downgrades and switches to monthly billing take effect at the end of your current billing period. You keep full access to your current plan until any scheduled change takes effect.",
       "5.1 Upgrades (Immediate). An upgrade is a change from a lower-tier plan to a higher-tier plan (e.g., Starter to Growth). Upgrades take effect immediately. You gain instant access to the features of your new plan. Prorated charges are applied for the remainder of your current billing period — you are credited for the unused portion of your previous plan and charged for the remaining time at the new plan's rate.",
-      "5.2 Downgrades (Scheduled at Period End). A downgrade is a change from a higher-tier plan to a lower-tier plan (e.g., Growth to Starter). Downgrades are scheduled to take effect at the end of your current billing period. You retain full access to all features of your current plan until the scheduled change date. On that date, your subscription automatically transitions to the new plan at the new rate. If your usage exceeds the limits of the lower plan, some data or features may become read-only or inaccessible after the change.",
+      "5.2 Downgrades (Scheduled at Period End). A downgrade is a change from a higher-tier plan to a lower-tier plan (e.g., Growth to Starter). Downgrades are scheduled to take effect at the end of your current billing period. You retain full access to all features of your current plan until the scheduled change date. On that date, your subscription automatically transitions to the new plan at the new rate. If your usage exceeds the limits of the lower plan, some data or features may become read-only or inaccessible after the change. On a downgrade to a plan that excludes a feature, scheduled work for that feature (site crawls, queued review-request emails and SMS) stops when the change takes effect.",
       "5.3 Billing Interval Changes — Same Tier. Monthly to Yearly (Immediate): switching from monthly to yearly billing on the same plan takes effect immediately. Prorated charges are applied — you receive a credit for the unused portion of your current monthly period and are charged the yearly rate. Yearly to Monthly (Scheduled at Period End): switching from yearly to monthly billing on the same plan is scheduled to take effect at the end of your current yearly billing period. You retain access for the full year you have already paid for. Monthly billing begins at the next renewal.",
       "5.4 Combined Changes. A plan change may involve both a tier change and a billing interval change simultaneously (e.g., Starter Monthly to Growth Yearly). The rules follow the dominant direction: if the change includes an upgrade or a switch to yearly billing, it is immediate with proration; if the change is a downgrade or a switch to monthly billing, it is scheduled at period end.",
       "5.5 Proration. When an immediate plan change involves proration, Stripe calculates the unused time remaining on your current plan and credits that amount against the charge for your new plan. The net difference is either charged immediately or applied to your next invoice. Prorated amounts are calculated to the day.",
