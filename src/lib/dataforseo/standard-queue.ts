@@ -28,12 +28,32 @@ export interface PendingTask {
 }
 
 /**
+ * Where one family of standard-queue tasks is read back. Each DataForSEO API
+ * has its own tasks_ready list and task_get path (SERP organic, the LLM
+ * Scraper per engine); an owner names the one its rows were posted to.
+ */
+export interface QueueEndpoints {
+  /** e.g. "v3/serp/google/organic/tasks_ready". */
+  tasksReady: string;
+  /** task_get prefix; the task id is appended. */
+  taskGet: string;
+}
+
+/** The default, and every owner written before QueueEndpoints existed. */
+export const SERP_ORGANIC_QUEUE: QueueEndpoints = {
+  tasksReady: SERP.organicTasksReady,
+  taskGet: SERP.organicTaskGet,
+};
+
+/**
  * One table's stake in the standard queue. Implementations own their own
  * persistence; the engine owns the polling protocol.
  */
 export interface StandardQueueOwner {
   /** Log label, and the tie-breaker if two owners ever claim one id. */
   readonly name: string;
+  /** The queue its tasks live on. Absent: SERP organic. */
+  readonly queue?: QueueEndpoints;
   /** Mark rows older than `cutoff` failed. Returns how many. */
   timeoutStale(cutoff: Date): Promise<number>;
   /** Queued rows with a task id, created at or before `createdBefore`. */
@@ -86,11 +106,12 @@ async function collectTask(
   rowId: string,
   taskId: string,
 ): Promise<boolean> {
+  const queue = owner.queue ?? SERP_ORGANIC_QUEUE;
   try {
     const { data } = await getEndpoint<unknown[]>(
-      `${SERP.organicTaskGet}/${taskId}`,
+      `${queue.taskGet}/${taskId}`,
       // The live path carries a per-task id; fixtures key on the stable prefix.
-      { fixtureKey: SERP.organicTaskGet },
+      { fixtureKey: queue.taskGet },
     );
     await owner.complete(rowId, data);
     // The tenant now has something to look at, so this is the moment the search
@@ -164,30 +185,36 @@ export async function sweepStandardQueue(
   if (pending.length === 0) return { pending: 0, collected: 0, retried: 0, timedOut };
 
   // ── 3. Ready list -> dispatch to the claiming owner. ───────────────────
+  // ONE read per distinct ready list (SERP organic, each LLM Scraper engine),
+  // and only for lists that have pending rows: each list is a drain, and
+  // DataForSEO allows 20 tasks_ready calls a minute per endpoint.
   const collected = new Set<string>();
   // Rows already fetched this tick, whether or not they were done — step 4
   // must not ask again for a task we just heard "in queue" about.
   const attempted = new Set<string>();
-  try {
-    const { data } = await getEndpoint<ReadyTask[]>(SERP.organicTasksReady);
-    for (const ready of data) {
-      const entry = ready.id ? byTaskId.get(ready.id) : undefined;
-      if (!entry) continue; // not ours
-      const key = `${entry.owner.name}:${entry.row.rowId}`;
-      // A repeated id in one ready list would otherwise be fetched twice and
-      // written twice. task_get is unbilled so the cost is zero, but the second
-      // write is pure noise and the guard below was always meant to cover this
-      // loop as well as the direct-get pass.
-      if (attempted.has(key)) continue;
-      attempted.add(key);
-      if (await collectTask(entry.owner, entry.row.rowId, ready.id as string)) {
-        collected.add(key);
+  const readyLists = [...new Set(pending.map(({ owner }) => (owner.queue ?? SERP_ORGANIC_QUEUE).tasksReady))];
+  for (const tasksReady of readyLists) {
+    try {
+      const { data } = await getEndpoint<ReadyTask[]>(tasksReady);
+      for (const ready of data) {
+        const entry = ready.id ? byTaskId.get(ready.id) : undefined;
+        if (!entry) continue; // not ours
+        const key = `${entry.owner.name}:${entry.row.rowId}`;
+        // A repeated id in one ready list would otherwise be fetched twice and
+        // written twice. task_get is unbilled so the cost is zero, but the second
+        // write is pure noise and the guard below was always meant to cover this
+        // loop as well as the direct-get pass.
+        if (attempted.has(key)) continue;
+        attempted.add(key);
+        if (await collectTask(entry.owner, entry.row.rowId, ready.id as string)) {
+          collected.add(key);
+        }
       }
+    } catch (err) {
+      // A tasks_ready outage must not stall the queue — step 4 still runs, and
+      // the next tick retries.
+      logger.error({ err, tasksReady }, "standard-queue tasks_ready failed");
     }
-  } catch (err) {
-    // A tasks_ready outage must not stall the queue — step 4 still runs, and
-    // the next tick retries.
-    logger.error({ err }, "standard-queue tasks_ready failed");
   }
 
   // ── 4. Direct fetch for rows the ready list never mentioned. ───────────

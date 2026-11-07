@@ -26,6 +26,8 @@ import {
 } from "@/lib/dataforseo/standard-queue";
 import { serpCheckOwner } from "@/lib/serp/task-owner";
 import { rankSnapshotOwner } from "@/lib/rank-tracker/task-owner";
+// ChatGPT and Gemini answers on the LLM Scraper queue (each its own ready list).
+import { LLM_SCRAPER_OWNERS } from "@/lib/ai-monitor/runner/llm-scraper";
 import { logger } from "@/infrastructure/observability/logger";
 import { withSpan } from "@/infrastructure/observability/telemetry";
 
@@ -38,7 +40,7 @@ const SWEEP_JOB_NAME = "sweep";
 const SWEEP_INTERVAL_MS = 30_000;
 
 /** Everything that parks rows on DataForSEO's standard queue. */
-const OWNERS: readonly StandardQueueOwner[] = [serpCheckOwner, rankSnapshotOwner];
+const OWNERS: readonly StandardQueueOwner[] = [serpCheckOwner, rankSnapshotOwner, ...LLM_SCRAPER_OWNERS];
 
 /** Exported for the e2e scripts and for ops, which occasionally needs to force
  * a drain without waiting for the next tick. */

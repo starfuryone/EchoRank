@@ -45,6 +45,8 @@ vi.mock("@/lib/prisma", () => ({
       update: (...a: unknown[]) => updateCheckup(...a),
     },
     promptRun: { findMany: (...a: unknown[]) => findManyRuns(...a) },
+    // No checkup here waits on the LLM Scraper queue (runner/llm-scraper.ts).
+    llmScraperTask: { count: async () => 0 },
     subscription: { findUnique: (...a: unknown[]) => findSubscription(...a) },
     tenant: { findUnique: (...a: unknown[]) => findTenant(...a) },
   },

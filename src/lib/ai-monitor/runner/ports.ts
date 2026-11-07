@@ -28,6 +28,8 @@ import { persistRunAnalysis, writeVisibilityMetrics } from "../metrics-store";
 import type { AiProvider } from "../pricing";
 import { askEngine } from "./providers";
 import { askShared } from "./shared-answers";
+import { askViaLlmScraper, hasPostedTask } from "./llm-scraper";
+import { isLlmScraperProvider } from "./llm-scraper-parse";
 import { answerHash, normalizeAnswer } from "./normalize";
 import { slotKey, type RunSlot } from "./plan";
 import { scoredRunFromPersisted } from "./salvage";
@@ -48,6 +50,11 @@ export function prismaPorts(ctx: PortContext): RunnerPorts {
       return { capped: state.capped, spent: state.spent, cap: state.cap };
     },
 
+    // A ChatGPT/Gemini slot whose task is already posted is paid for.
+    async prepaid(slot: RunSlot) {
+      return isLlmScraperProvider(slot.engine) ? hasPostedTask(slot) : false;
+    },
+
     async ask(slot: RunSlot) {
       // The answer call and the analysis call are metered separately because
       // they are separately priced and separately attributable — a tenant
@@ -57,6 +64,7 @@ export function prismaPorts(ctx: PortContext): RunnerPorts {
       // SHARED FIRST (./shared-answers.ts): a brand-independent question this
       // engine already answered today, for anyone, is read back instead of
       // asked — no call, nothing metered. Analysis below is still this brand's.
+      const llmProvider = isLlmScraperProvider(slot.engine) ? slot.engine : null;
       const { result } = await askShared(
         {
           provider: slot.engine,
@@ -66,7 +74,12 @@ export function prismaPorts(ctx: PortContext): RunnerPorts {
           brand: ctx.brand,
         },
         () =>
-          meteredAiCall(
+          // ChatGPT and Gemini: DataForSEO's LLM Scraper queue (./llm-scraper.ts).
+          // It meters the post itself, through the same meteredAiCall, and
+          // throws AnswerPending until the drain has collected the answer.
+          llmProvider
+            ? askViaLlmScraper({ provider: llmProvider, slot, tenantId: ctx.tenantId, plan: ctx.plan, meter: meteredAiCall })
+            : meteredAiCall(
             { tenantId: ctx.tenantId, plan: ctx.plan },
             {
               provider: slot.engine as AiProvider,

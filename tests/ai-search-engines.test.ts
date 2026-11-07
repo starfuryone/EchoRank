@@ -33,9 +33,11 @@ function env(vars: Record<string, string> = {}): NodeJS.ProcessEnv {
 const BARE = env();
 
 /** Anthropic and OpenAI keys only — this box, as it stands today. */
+// Two reachable engines. Not ChatGPT on an OpenAI key any more: ChatGPT and
+// Gemini are reached through DataForSEO's LLM Scraper (DataForSEO credentials).
 const TWO_KEYS = env({
   ANTHROPIC_API_KEY: "sk-ant-test",
-  OPENAI_API_KEY: "sk-test",
+  PERPLEXITY_API_KEY: "p",
 });
 
 const EVERYTHING = env({
@@ -103,9 +105,9 @@ describe("availability", () => {
   });
 
   it("treats an empty-string key as missing, not as set", () => {
-    // A .env line left as `GEMINI_API_KEY=` is the most common way this fails,
+    // A .env line left as `PERPLEXITY_API_KEY=` is the most common way this fails,
     // and truthiness alone would let it through to a 401 in a worker.
-    const result = engineAvailability("GEMINI", env({ GEMINI_API_KEY: "   " }));
+    const result = engineAvailability("PERPLEXITY", env({ PERPLEXITY_API_KEY: "   " }));
     expect(result.available).toBe(false);
     expect(result.reason).toBe("missing_key");
   });
@@ -144,8 +146,8 @@ describe("availability", () => {
 describe("per-tier engine selection", () => {
   it("gives an unlimited tier every reachable engine", () => {
     expect(enginesForCheckup(null, TWO_KEYS).map((spec) => spec.provider)).toEqual([
-      "CHATGPT",
       "CLAUDE",
+      "PERPLEXITY",
     ]);
   });
 
@@ -175,9 +177,11 @@ describe("readiness reporting", () => {
   it("flags an engine that is reachable but would meter at zero", () => {
     // The dangerous state: the key is set, so calls happen and cost money, but
     // no rates are configured, so the monthly cap never sees the spend.
-    const gemini = engineReadiness(EVERYTHING).find((row) => row.provider === "GEMINI");
-    expect(gemini?.available).toBe(true);
-    expect(gemini?.unpriced).toBe(true);
+    // Perplexity: key-billed by token, with no built-in rates. (ChatGPT and
+    // Gemini are token-free on DataForSEO's LLM Scraper, so never unpriced.)
+    const perplexity = engineReadiness(EVERYTHING).find((row) => row.provider === "PERPLEXITY");
+    expect(perplexity?.available).toBe(true);
+    expect(perplexity?.unpriced).toBe(true);
   });
 
   it("does not flag an engine that ships with rates", () => {

@@ -2928,11 +2928,56 @@ model Checkup {
   brandProfile BrandProfile     @relation(fields: [brandProfileId], references: [id], onDelete: Cascade)
   runs         PromptRun[]
   calls        AiProviderCall[]
+  llmTasks     LlmScraperTask[]
 
   /// Dashboard reads: this brand's checkups, newest first.
   @@index([brandProfileId, completedAt])
   @@index([tenantId, createdAt])
   @@map("checkups")
+}
+
+/// One ChatGPT or Gemini check posted to DataForSEO's LLM Scraper standard
+/// queue (src/lib/ai-monitor/runner/llm-scraper.ts). The checkup posts the
+/// task and carries on; the shared standard-queue drain collects it, and a
+/// resume job finishes the slot from this row. Carries the whole slot, so the
+/// resume can rebuild it without re-planning. Billed at post (costUsd, also on
+/// the AI ledger and a SeoApiCall row with feature "ai_tracking").
+model LlmScraperTask {
+  id             String               @id @default(cuid())
+  tenantId       String
+  checkupId      String
+  /// checkup-runner slotKey(): checkupId:promptId:engine:repetition.
+  slotKey        String
+  /// CHATGPT | GEMINI
+  provider       String
+  model          String
+  promptId       String
+  promptText     String
+  promptCategory String?
+  repetition     Int
+  /// DataForSEO's task uuid.
+  taskId         String               @unique
+  status         LlmScraperTaskStatus @default(QUEUED)
+  answer         String?
+  sources        Json?
+  /// The model DataForSEO reports having served ("gpt-6", "3.5 Flash-Lite").
+  servedModel    String?
+  costUsd        Float                @default(0)
+  error          String?
+  createdAt      DateTime             @default(now())
+  completedAt    DateTime?
+
+  checkup Checkup @relation(fields: [checkupId], references: [id], onDelete: Cascade)
+
+  @@unique([checkupId, slotKey])
+  @@index([provider, status, createdAt])
+  @@map("llm_scraper_tasks")
+}
+
+enum LlmScraperTaskStatus {
+  QUEUED
+  DONE
+  FAILED
 }
 
 /// What one provider said about one prompt, analysed.

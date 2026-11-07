@@ -98,9 +98,11 @@ describe("rate configuration", () => {
   it("prices a provider the built-in table has never heard of, from env alone", () => {
     // This is the whole flip-on-by-key contract: a key plus AI_RATES_<P> is
     // enough, with no entry in DEFAULT_RATES and no code change.
-    const env = { [rateEnvName("GEMINI")]: "0.5,2" } as NodeJS.ProcessEnv;
+    // Perplexity: token-billed. (Gemini, the old example, is token-free since
+    // it moved to DataForSEO's LLM Scraper.)
+    const env = { [rateEnvName("PERPLEXITY")]: "0.5,2" } as NodeJS.ProcessEnv;
     const { costUsd, priced } = costUsdFor(
-      "GEMINI",
+      "PERPLEXITY",
       "some-future-model",
       { inputTokens: 1_000_000, outputTokens: 1_000_000, cachedInputTokens: 0 },
       env,

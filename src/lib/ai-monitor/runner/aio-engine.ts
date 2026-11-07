@@ -6,8 +6,8 @@
 // answer, its reference links the sources.
 //
 // COST IS DATAFORSEO'S, AND IT IS THE REAL ONE. Not tokens: the envelope's own
-// `cost` field, metered as a SeoApiCall row against the tenant's DataForSEO cap
-// (seoMeteredCallResult) and carried onto the AiProviderCall row so a
+// `cost` field, recorded as a SeoApiCall row with feature "ai_tracking"
+// (./tracking-calls.ts) and carried onto the AiProviderCall row so a
 // checkup's total is complete (pricing.ts, TOKEN_FREE_PROVIDERS). List price,
 // dataforseo.com/pricing/serp/google-organic-serp-api read 2026-11-06: $0.002
 // per SERP of 10 results in Live mode, plus one base price ($0.002) for
@@ -128,14 +128,21 @@ export interface AioAnswer extends ParsedOverview {
   emptyReason?: string;
 }
 
-/** A metered DataForSEO call bound to a tenant: seoMeteredCallResult in production. */
+/** A metered DataForSEO call bound to a tenant: postTrackingTask in production. */
 export type SerpCall = (path: string, task: Record<string, unknown>) => Promise<ApiResult<unknown>>;
 
-/** The tenant-metered DataForSEO call, imported lazily (it pulls in Prisma). */
+/**
+ * The tenant-metered DataForSEO call, imported lazily (it pulls in Prisma).
+ *
+ * Recorded as feature "ai_tracking" (./tracking-calls.ts), not by its path:
+ * through seoMeteredCallResult a serp/* call was filed as keyword_research,
+ * drawing a search from the tenant's SEO allowance and spending its SEO data
+ * budget for a check the scheduler made. The AI cap governs it instead.
+ */
 export function meteredSerpCall(tenantId: string): SerpCall {
   return async (path, task) => {
-    const { seoMeteredCallResult } = await import("@/lib/dataforseo/metering");
-    return seoMeteredCallResult<unknown>(tenantId, path, task);
+    const { postTrackingTask } = await import("./tracking-calls");
+    return postTrackingTask<unknown>(tenantId, path, task);
   };
 }
 

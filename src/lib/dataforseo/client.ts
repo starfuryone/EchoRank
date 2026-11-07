@@ -80,7 +80,20 @@ export type CreditFeature =
    * it from SEO_SEARCH_FEATURES; both are one-line changes and neither
    * rewrites history, because the rows carry the feature key either way.
    */
-  | "ai_citations";
+  | "ai_citations"
+  /**
+   * The AI visibility tracker's own DataForSEO calls: ChatGPT and Gemini
+   * through the LLM Scraper, Google AI Overviews through the SERP API.
+   *
+   * NEVER RETURNED BY pathToFeature(): the paths are shared with tools that
+   * are searches (serp/* is keyword_research, ai_optimization/* is
+   * ai_citations), so the tracker supplies it explicitly
+   * (ai-monitor/runner/tracking-calls.ts). OUT of the pooled search quota and
+   * OUT of the SEO data budget (OWN_CAP_FEATURES): a scheduled checkup is not a
+   * search the tenant made, and its spend is capped by the AI cap
+   * (ai-monitor/cap.ts), which these calls are also metered against.
+   */
+  | "ai_tracking";
 
 export type ApiCallCost = { path: string[]; costUsd: number };
 /** `taskId` is DataForSEO's own task uuid — set on every envelope, and the

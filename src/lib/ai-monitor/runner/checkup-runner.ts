@@ -38,6 +38,7 @@ import type { Aggregate } from "../metrics";
 import { aggregateCheckup, type ScoredRun } from "../metrics";
 import type { RunSlot } from "./plan";
 import { slotKey } from "./plan";
+import { isAnswerPending } from "./pending";
 import { isPartialCoverage, stoppedReason, tally, type CheckupTally } from "./status";
 
 /** One engine's reply, with what it cost to get it. */
@@ -154,6 +155,13 @@ export interface RunnerPorts {
     partialCoverage: boolean;
     skippedRuns: number;
   }) => Promise<void>;
+  /**
+   * Is this slot's answer already paid for (a ChatGPT/Gemini task posted on an
+   * earlier pass)? Such a slot is not refused at the cap: the money is spent,
+   * and refusing would throw away an answer we bought. Optional; absent means
+   * no slot is.
+   */
+  prepaid?: (slot: RunSlot) => Promise<boolean>;
   /** Move the checkup through its lifecycle. */
   setStatus: (
     checkupId: string,
@@ -173,6 +181,8 @@ export interface RunCheckupArgs {
   citationCapableEngines?: ReadonlySet<string>;
   /** The UTC day the metrics row belongs to. */
   day: Date;
+  /** A resume pass (queued answers came back): keeps the original startedAt. */
+  resume?: boolean;
 }
 
 export interface RunCheckupResult {
@@ -181,6 +191,11 @@ export interface RunCheckupResult {
   outcomes: SlotOutcome[];
   /** False when nothing was scoreable, so no row was written. */
   wroteMetrics: boolean;
+  /**
+   * Slots whose answer is still queued (./pending.ts). While any are, the
+   * checkup stays RUNNING, nothing is scored and a resume finishes it.
+   */
+  pending: number;
 }
 
 /** The analysis, reshaped into what metrics.ts scores. */
@@ -217,7 +232,7 @@ export async function runCheckup(
 ): Promise<RunCheckupResult> {
   const { checkupId, tenantId, plan, slots, day } = args;
 
-  await ports.setStatus(checkupId, "RUNNING", { startedAt: new Date() });
+  await ports.setStatus(checkupId, "RUNNING", args.resume ? {} : { startedAt: new Date() });
 
   // A resumed checkup re-plans identically (the plan is a pure function of the
   // tier and the prompts), so anything already recorded is skipped here as well
@@ -239,11 +254,15 @@ export async function runCheckup(
     .map((run) => run.scored)
     .filter((run): run is ScoredRun => run !== null);
 
+  // Slots whose answer is queued upstream: not written, not counted, not scored.
+  const pending: RunSlot[] = [];
+
   for (const slot of slots) {
     if (alreadyDone.has(slotKey(slot))) continue;
 
-    const cap = await ports.readCap(tenantId, plan);
-    if (cap.capped) {
+    const prepaid = ports.prepaid ? await ports.prepaid(slot) : false;
+    const cap = prepaid ? null : await ports.readCap(tenantId, plan);
+    if (cap?.capped) {
       const outcome: SlotOutcome = {
         slot,
         status: "SKIPPED_CAP",
@@ -277,6 +296,10 @@ export async function runCheckup(
       scored.push(toScoredRun(slot, analysis));
       await ports.persistRun(outcome);
     } catch (err) {
+      if (isAnswerPending(err)) {
+        pending.push(slot);
+        continue;
+      }
       const outcome: SlotOutcome = {
         slot,
         status: "FAILED",
@@ -294,6 +317,15 @@ export async function runCheckup(
   }
 
   const counts = tally([...prior.map((run) => ({ status: run.status })), ...outcomes]);
+
+  if (pending.length > 0) {
+    // Not finished: the queued answers come back through a resume, which runs
+    // this function again over them. Scoring now would write a metrics row for
+    // part of the day and then have nothing to update it with.
+    logger.info({ checkupId, pending: pending.length, ok: counts.ok }, "checkup waiting on queued answers");
+    return { status: "RUNNING", tally: counts, outcomes, wroteMetrics: false, pending: pending.length };
+  }
+
   const partial = isPartialCoverage(counts);
   let wroteMetrics = false;
 
@@ -331,5 +363,5 @@ export async function runCheckup(
     completedAt: new Date(),
   });
 
-  return { status, tally: counts, outcomes, wroteMetrics };
+  return { status, tally: counts, outcomes, wroteMetrics, pending: 0 };
 }

@@ -4,9 +4,28 @@
 // half of their pricing. Every call goes to a fake fetch: nothing here spends.
 
 import { describe, expect, it, vi } from "vitest";
-import { askEngine } from "@/lib/ai-monitor/runner/providers";
-import { geminiSearchQueries, openAiSearchCalls } from "@/lib/ai-monitor/runner/http-engines";
+import { ASK_MAX_TOKENS, ASK_SYSTEM_PROMPT, askEngine as askEngineLive } from "@/lib/ai-monitor/runner/providers";
+import { askHttpEngine, geminiSearchQueries, openAiSearchCalls } from "@/lib/ai-monitor/runner/http-engines";
 import { costUsdFor, searchFeeFor } from "@/lib/ai-monitor/pricing";
+
+// The direct-API adapters are OFF since 2026-11-07: the tracker asks ChatGPT
+// and Gemini through DataForSEO's LLM Scraper (runner/llm-scraper.ts) and
+// askEngine refuses them. The adapters stay in the tree, tested directly, with
+// the same request askEngine used to make.
+const askEngine = (
+  r: { provider: "CHATGPT" | "GEMINI"; model: string; promptText: string },
+  deps: { fetch?: typeof fetch; env?: NodeJS.ProcessEnv },
+) => askHttpEngine({ ...r, systemPrompt: ASK_SYSTEM_PROMPT, maxOutputTokens: ASK_MAX_TOKENS }, deps);
+
+describe("askEngine no longer reaches the direct adapters", () => {
+  it.each(["CHATGPT", "GEMINI"])("refuses %s, pointing at the LLM Scraper path", async (provider) => {
+    const doFetch = vi.fn<typeof fetch>();
+    await expect(
+      askEngineLive({ provider, model: "m", promptText: "q" }, { fetch: doFetch, env: { OPENAI_API_KEY: "k", GEMINI_API_KEY: "k" } as never }),
+    ).rejects.toThrow(/LLM Scraper/);
+    expect(doFetch).not.toHaveBeenCalled();
+  });
+});
 
 const KEY = "test-key-not-real";
 const ENV = { OPENAI_API_KEY: KEY, GEMINI_API_KEY: KEY } as unknown as NodeJS.ProcessEnv;
@@ -147,27 +166,18 @@ describe("per-search pricing", () => {
     AI_SEARCH_FEE_CHATGPT: "0.01",
   } as unknown as NodeJS.ProcessEnv;
 
-  it("adds the search fee per call on top of tokens", () => {
-    const { costUsd, priced: ok } = costUsdFor(
-      "CHATGPT",
-      "gpt-5",
-      { inputTokens: 2000, outputTokens: 800, cachedInputTokens: 0, searchCalls: 2 },
-      priced,
-    );
-    // 2000 × 1.25/M + 800 × 10/M + 2 × 0.01 = 0.0025 + 0.008 + 0.02
-    expect(ok).toBe(true);
-    expect(costUsd).toBeCloseTo(0.0305, 6);
+  it("ChatGPT and Gemini are token-free now: their cost is DataForSEO's billed figure, supplied by the caller", () => {
+    // Tokens and search fees no longer price them (they did on the direct
+    // adapters); the LLM Scraper post carries the envelope's cost to the ledger.
+    for (const provider of ["CHATGPT", "GEMINI"] as const) {
+      expect(
+        costUsdFor(provider, "m", { inputTokens: 2000, outputTokens: 800, cachedInputTokens: 0, searchCalls: 2 }, priced),
+      ).toEqual({ costUsd: 0, priced: true });
+    }
   });
 
-  it("flags a call that searched but has no fee configured as unpriced", () => {
-    const tokenOnly = { AI_RATES_CHATGPT: "1.25,10,0.125" } as unknown as NodeJS.ProcessEnv;
-    const result = costUsdFor(
-      "CHATGPT",
-      "gpt-5",
-      { inputTokens: 2000, outputTokens: 800, cachedInputTokens: 0, searchCalls: 1 },
-      tokenOnly,
-    );
-    expect(result.priced).toBe(false);
+  it("still reads a configured search fee (kept for the dormant direct adapters)", () => {
+    expect(searchFeeFor("CHATGPT", priced)).toBe(0.01);
   });
 
   it("leaves token-only callers exactly as they were", () => {

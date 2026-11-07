@@ -48,7 +48,7 @@ export function startOfBillingMonth(now = new Date()): Date {
  * Behaviour-preserving on every existing row: no SeoApiCall carries these
  * features before the migration that introduced them.
  */
-export const OWN_CAP_FEATURES: readonly CreditFeature[] = ["keyword_opportunity"];
+export const OWN_CAP_FEATURES: readonly CreditFeature[] = ["keyword_opportunity", "ai_tracking"];
 
 /**
  * Sum of PLAN-FUNDED billed USD for a tenant since the start of the month.

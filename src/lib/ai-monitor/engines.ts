@@ -76,7 +76,12 @@ export const ENGINE_CATALOGUE: readonly EngineSpec[] = [
     displayName: "ChatGPT",
     supportsSearch: true,
     supportsCitations: true,
-    apiKeyEnv: "OPENAI_API_KEY",
+    // Asked through DataForSEO's LLM Scraper (runner/llm-scraper.ts), which
+    // asks the consumer ChatGPT app with web search on and returns its cited
+    // sources. The modelName above is the catalogue key; the model DataForSEO
+    // reports serving ("gpt-6" on 2026-11-07) is recorded per answer.
+    apiKeyEnv: null,
+    requiredEnv: ["DATAFORSEO_LOGIN", "DATAFORSEO_PASSWORD"],
     sortOrder: 10,
   },
   {
@@ -102,7 +107,10 @@ export const ENGINE_CATALOGUE: readonly EngineSpec[] = [
     displayName: "Gemini",
     supportsSearch: true,
     supportsCitations: true,
-    apiKeyEnv: "GEMINI_API_KEY",
+    // Through DataForSEO's LLM Scraper, like ChatGPT (served "3.5 Flash-Lite"
+    // on 2026-11-07).
+    apiKeyEnv: null,
+    requiredEnv: ["DATAFORSEO_LOGIN", "DATAFORSEO_PASSWORD"],
     sortOrder: 30,
   },
   {

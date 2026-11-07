@@ -129,6 +129,10 @@ export function searchFeeFor(
  */
 export const TOKEN_FREE_PROVIDERS: ReadonlySet<AiProvider> = new Set<AiProvider>([
   "GOOGLE_AI_OVERVIEWS",
+  // Through DataForSEO's LLM Scraper (runner/llm-scraper.ts): billed per task,
+  // the envelope's cost carried to the ledger at post.
+  "CHATGPT",
+  "GEMINI",
 ]);
 
 /**

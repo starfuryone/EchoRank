@@ -14,14 +14,16 @@
 // tenant would rather have four engines that bill correctly than six where two
 // appear free until the month closes.
 //
-// ADAPTERS: CLAUDE, CHATGPT, GEMINI. Only CLAUDE has built-in rates, because
-// pricing.ts ships Anthropic's published prices and nothing else. ChatGPT and
-// Gemini have adapters (./http-engines.ts) but stay refused with `no_rates`
-// until the operator sets BOTH AI_RATES_<P> and AI_SEARCH_FEE_<P> — they are
-// search-billed, and a token rate alone would under-meter them by more than
-// half. Deliberately an operator action taken against the vendor's current
-// price list, so a deploy never switches new spend on by itself. `refusals()`
-// exists so that is visible in the dashboard rather than looking like an outage.
+// ADAPTERS: CLAUDE (Anthropic, built-in rates), GOOGLE_AI_OVERVIEWS (DataForSEO
+// SERP, behind AI_ENGINE_GOOGLE_AI_OVERVIEWS=on), and CHATGPT / GEMINI through
+// DataForSEO's LLM Scraper standard queue (./llm-scraper.ts). The last three
+// are token-free: their cost is DataForSEO's billed figure (pricing.ts,
+// TOKEN_FREE_PROVIDERS), so they are priced without any rate env. ChatGPT and
+// Gemini went live on that path on 2026-11-07, after their tests passed and
+// five real tasks were checked (ECHORANK-AI-TIER.md). The direct-API adapters
+// (./http-engines.ts) are kept but off: askEngine refuses those providers.
+// `refusals()` exists so an excluded engine is visible in the dashboard rather
+// than looking like an outage.
 
 import type { AnthropicProvider } from "@/ai/providers/anthropic";
 import type { EngineSpec } from "../engines";
@@ -223,28 +225,12 @@ export async function askEngine(request: AskRequest, deps: AskDeps = {}): Promis
   const startedAt = clock();
 
   if (request.provider === "CHATGPT" || request.provider === "GEMINI") {
-    // Imported lazily, like the Anthropic SDK below: http-engines is
-    // server-only, and this module's pure gates are read by the setup wizard.
-    const { askHttpEngine } = await import("./http-engines");
-    const result = await askHttpEngine(
-      {
-        provider: request.provider,
-        model: request.model,
-        systemPrompt: ASK_SYSTEM_PROMPT,
-        promptText: request.promptText,
-        maxOutputTokens: ASK_MAX_TOKENS,
-      },
-      { fetch: deps.fetch, env: deps.env },
+    // Answered through DataForSEO's LLM Scraper queue, which cannot be waited
+    // on here: the tracker's ports route these slots to ./llm-scraper.ts. The
+    // direct-API adapters (./http-engines.ts) stay off; nothing calls them.
+    throw new Error(
+      `${request.provider} is answered through the LLM Scraper queue (runner/llm-scraper.ts), not askEngine`,
     );
-    return {
-      answer: result.answer,
-      inputTokens: result.inputTokens,
-      outputTokens: result.outputTokens,
-      model: result.model,
-      latencyMs: clock() - startedAt,
-      searchCalls: result.searchCalls,
-      sources: result.sources,
-    };
   }
 
   if (request.provider === "GOOGLE_AI_OVERVIEWS") {

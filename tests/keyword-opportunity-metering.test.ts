@@ -99,7 +99,10 @@ describe("one action, one allowance", () => {
 
     await spentThisMonth("tenant-1");
     const where = seoApiCall.aggregate.mock.calls[0][0].where;
-    expect(where.feature).toEqual({ notIn: [KOF_FEATURE] });
+    // Every own-cap feature is excluded: KOF, and the AI tracker's calls
+    // ("ai_tracking", capped by the AI cap) since 2026-11-07.
+    expect(where.feature).toEqual({ notIn: [...OWN_CAP_FEATURES] });
+    expect(where.feature.notIn).toContain(KOF_FEATURE);
     expect(where.creditFunded).toBe(false);
   });
 

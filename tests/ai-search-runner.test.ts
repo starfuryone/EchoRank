@@ -35,6 +35,7 @@ import {
 } from "@/lib/ai-monitor/runner/status";
 import { answerHash, normalizeAnswer } from "@/lib/ai-monitor/runner/normalize";
 import { refusalFor, refusals, runnableEngines } from "@/lib/ai-monitor/runner/providers";
+import { TOKEN_FREE_PROVIDERS } from "@/lib/ai-monitor/pricing";
 import {
   MIN_STALE_MS,
   PER_SLOT_BUDGET_MS,
@@ -197,45 +198,32 @@ describe("which engines may spend money", () => {
     expect(reported[0].detail).toBeTruthy();
   });
 
-  it("ships ChatGPT and Gemini OFF: an adapter and a key are not enough without prices", () => {
-    // A deploy must not switch new spend on by itself. With keys set (as they
-    // are in production, for the free check) both engines refuse on price.
-    const keyed = { ...withKeys, OPENAI_API_KEY: "k" } as unknown as NodeJS.ProcessEnv;
+  // ChatGPT and Gemini are asked through DataForSEO's LLM Scraper
+  // (runner/llm-scraper.ts) since 2026-11-07; the direct-API adapters are off.
+  const dfs = { ...withKeys, DATAFORSEO_LOGIN: "l", DATAFORSEO_PASSWORD: "p" } as unknown as NodeJS.ProcessEnv;
+
+  it("runs ChatGPT and Gemini on DataForSEO credentials alone: no OpenAI/Gemini key, no rate env", () => {
+    expect(refusalFor(CHATGPT, dfs)).toBeNull();
+    expect(refusalFor(GEMINI, dfs)).toBeNull();
+    expect(runnableEngines([CHATGPT, GEMINI, CLAUDE], dfs)).toEqual([CHATGPT, GEMINI, CLAUDE]);
+  });
+
+  it("refuses them without DataForSEO credentials, naming what is missing", () => {
     for (const engine of [CHATGPT, GEMINI]) {
-      const refusal = refusalFor(engine, keyed);
-      expect(refusal?.reason).toBe("no_rates");
-      expect(refusal?.detail).toContain(`AI_RATES_${engine.provider}`);
-      expect(refusal?.detail).toContain(`AI_SEARCH_FEE_${engine.provider}`);
+      const refusal = refusalFor(engine, withKeys);
+      expect(refusal?.reason).toBe("missing_config");
+      expect(refusal?.detail).toContain("DATAFORSEO_LOGIN");
     }
   });
 
-  it("keeps a search-billed engine off on a token rate alone", () => {
-    // The search fee is the larger half of a ChatGPT/Gemini check; token-only
-    // metering would under-count the cap by more than half.
-    const tokenOnly = { ...withKeys, AI_RATES_GEMINI: "1.5,7.5,0.15" } as unknown as NodeJS.ProcessEnv;
-    const refusal = refusalFor(GEMINI, tokenOnly);
-    expect(refusal?.reason).toBe("no_rates");
-    expect(refusal?.detail).toContain("AI_SEARCH_FEE_GEMINI");
-    expect(refusal?.detail).not.toContain("AI_RATES_GEMINI");
+  it("a direct-API key alone does not make them runnable (those adapters are off)", () => {
+    const direct = { ...withKeys, OPENAI_API_KEY: "k", GEMINI_API_KEY: "k" } as unknown as NodeJS.ProcessEnv;
+    expect(runnableEngines([CHATGPT, GEMINI], direct)).toEqual([]);
   });
 
-  it("runs ChatGPT and Gemini once the operator sets both price lines", () => {
-    const priced = {
-      ...withKeys,
-      OPENAI_API_KEY: "k",
-      AI_RATES_CHATGPT: "1.25,10,0.125",
-      AI_SEARCH_FEE_CHATGPT: "0.01",
-      AI_RATES_GEMINI: "1.5,7.5,0.15",
-      AI_SEARCH_FEE_GEMINI: "0.014",
-    } as unknown as NodeJS.ProcessEnv;
-    expect(runnableEngines([CHATGPT, GEMINI, CLAUDE], priced)).toEqual([CHATGPT, GEMINI, CLAUDE]);
-  });
-
-  it("treats a malformed search fee as unset, never as free", () => {
-    for (const bad of ["", "abc", "-0.01"]) {
-      const env = { ...withKeys, AI_RATES_GEMINI: "1,5", AI_SEARCH_FEE_GEMINI: bad } as unknown as NodeJS.ProcessEnv;
-      expect(refusalFor(GEMINI, env)?.reason).toBe("no_rates");
-    }
+  it("they are token-free: the billed DataForSEO cost is the cost, no search-fee env needed", () => {
+    expect(TOKEN_FREE_PROVIDERS.has("CHATGPT")).toBe(true);
+    expect(TOKEN_FREE_PROVIDERS.has("GEMINI")).toBe(true);
   });
 });
 

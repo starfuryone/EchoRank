@@ -40,6 +40,12 @@ import { buildRunPlan, snapshotShape } from "@/lib/ai-monitor/runner/plan";
 import { runCheckup } from "@/lib/ai-monitor/runner/checkup-runner";
 import { prismaPorts } from "@/lib/ai-monitor/runner/ports";
 import {
+  enqueueCheckupResume,
+  hasQueuedTasks,
+  llmScraperSlots,
+} from "@/lib/ai-monitor/runner/llm-scraper";
+import { engineFor } from "@/lib/ai-monitor/engines";
+import {
   createProviderLimiter,
   dueBrands,
   enqueueBucket,
@@ -79,6 +85,11 @@ export interface AiCheckupJob {
   tenantId?: string;
   /** Set when an operator asked for one, rather than the schedule. */
   manual?: boolean;
+  /**
+   * Finish a RUNNING checkup whose queued ChatGPT/Gemini answers came back
+   * (runner/llm-scraper.ts enqueueCheckupResume).
+   */
+  resumeCheckupId?: string;
 }
 
 /**
@@ -134,6 +145,9 @@ async function reapStale(now: Date): Promise<number> {
     const planned =
       checkup.promptCount * Math.max(1, checkup.providers.length) * checkup.repetitions;
     if (!isStaleRunning(checkup.startedAt, planned, now)) continue;
+    // Still waiting on DataForSEO (ChatGPT/Gemini): not abandoned. The drain
+    // fails a task after 90 minutes, and the resume then finishes the checkup.
+    if (await hasQueuedTasks(checkup.id)) continue;
 
     const runs = await prisma.promptRun.findMany({
       where: { checkupId: checkup.id },
@@ -410,10 +424,89 @@ async function runOne(job: AiCheckupJob, now: Date): Promise<void> {
   );
 }
 
+/**
+ * Finish a checkup whose queued ChatGPT/Gemini answers moved (collected,
+ * failed or timed out). Rebuilds those slots from their task rows: everything
+ * else the checkup asked is already written and comes back through priorRuns,
+ * so the score covers the whole checkup. Does nothing to a checkup that is no
+ * longer RUNNING.
+ */
+async function runResume(checkupId: string, now: Date): Promise<void> {
+  const checkup = await prisma.checkup.findUnique({
+    where: { id: checkupId },
+    select: {
+      id: true,
+      status: true,
+      startedAt: true,
+      brandProfile: {
+        select: {
+          id: true,
+          tenantId: true,
+          name: true,
+          website: true,
+          aliases: true,
+          competitors: true,
+          tenant: { select: { planType: true } },
+        },
+      },
+    },
+  });
+  if (!checkup || checkup.status !== "RUNNING") {
+    logger.info({ checkupId, status: checkup?.status ?? null }, "checkup resume skipped: not running");
+    return;
+  }
+  const brand = checkup.brandProfile;
+  const planType = brand.tenant.planType;
+  const brandContext = {
+    brand: brand.name,
+    domain: brand.website,
+    brandVariations: brand.aliases,
+    competitors: brand.competitors,
+  };
+  const slots = await llmScraperSlots(checkupId);
+  const ports = prismaPorts({ tenantId: brand.tenantId, plan: planType, checkupId, brand: brandContext });
+  const result = await runCheckup(
+    {
+      checkupId,
+      tenantId: brand.tenantId,
+      brandProfileId: brand.id,
+      plan: planType,
+      brand: brandContext,
+      slots,
+      citationCapableEngines: new Set(
+        [...new Set(slots.map((s) => s.engine))].filter((p) => engineFor(p as never)?.supportsCitations),
+      ),
+      // The day the checkup started, not the day its last answer came back.
+      day: utcDay(checkup.startedAt ?? now),
+      resume: true,
+    },
+    { ...ports, ask: (slot) => limiter.run(slot.engine, () => ports.ask(slot)) },
+  );
+
+  // A task can finish while this resume runs, after its slot was read as
+  // queued; its own resume was dropped as a duplicate of this job's id. Catch
+  // it here with a follow-up of its own.
+  if (result.pending > 0) {
+    const moved = await prisma.llmScraperTask.count({ where: { checkupId, status: { not: "QUEUED" } } });
+    const written = await prisma.promptRun.count({ where: { checkupId, engine: { in: ["CHATGPT", "GEMINI"] } } });
+    if (moved > written) await enqueueCheckupResume(checkupId, true);
+  }
+
+  const asked = [...new Set(result.outcomes.filter((o) => o.status === "OK").map((o) => o.slot.promptId))];
+  if (asked.length > 0) {
+    await prisma.trackedPrompt.updateMany({ where: { id: { in: asked } }, data: { lastRunAt: now } });
+  }
+  logger.info({ checkupId, status: result.status, pending: result.pending, ...result.tally }, "AI checkup resumed");
+}
+
 async function processAiCheckupJob(job: Job<AiCheckupJob>): Promise<void> {
   const now = new Date();
   if (job.data.sweep) {
     await sweep(now);
+    return;
+  }
+  if (job.data.resumeCheckupId) {
+    await runResume(job.data.resumeCheckupId, now);
     return;
   }
   await runOne(job.data, now);

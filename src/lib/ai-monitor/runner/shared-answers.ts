@@ -13,10 +13,17 @@ import { TRACKING_MAX_TOKENS } from "@/ai/anthropic-request";
 import { requestProfile, isBrandSpecific, withSharedAnswer, type AnswerRequest } from "@/lib/answer-cache";
 import type { BrandContext } from "../analysis/analyze-response";
 import { aioTask } from "./aio-engine";
+import { isLlmScraperProvider, trackingLocation } from "./llm-scraper-parse";
 import { ASK_MAX_TOKENS, ASK_SYSTEM_PROMPT, type AskResult } from "./providers";
 
 /** Bump when an adapter changes what it sends, so old answers stop matching. */
 const ADAPTER_VERSION = 1;
+/**
+ * ChatGPT and Gemini moved to DataForSEO's LLM Scraper (2026-11-07): a
+ * different request, so their answers get their own version and never match
+ * one from the direct-API adapters.
+ */
+const LLM_SCRAPER_ADAPTER_VERSION = 2;
 
 /** The cache description of one askEngine call. */
 export function trackerAnswerRequest(
@@ -31,10 +38,15 @@ export function trackerAnswerRequest(
     const task = aioTask("", env);
     location = `${task.location_code}:${task.language_code}`;
   }
+  const llm = isLlmScraperProvider(provider);
+  if (llm) {
+    const where = trackingLocation(env);
+    location = `${where.location_code}:${where.language_code}`;
+  }
   return {
     engine: provider,
     model,
-    profile: requestProfile("askEngine", ADAPTER_VERSION, provider, ASK_SYSTEM_PROMPT, cap),
+    profile: requestProfile("askEngine", llm ? LLM_SCRAPER_ADAPTER_VERSION : ADAPTER_VERSION, provider, ASK_SYSTEM_PROMPT, cap),
     location,
     repetition,
   };
