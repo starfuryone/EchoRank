@@ -29,6 +29,7 @@ import {
   guideBySlug,
 } from "@/lib/learn-content";
 import { HelpVideoCard } from "./HelpVideoCard";
+import { planAllowsPage } from "@/lib/plan-access";
 
 /** Title, description and reading time for a card — derived, never restated. */
 function resolve(card: HelpCard, copy: (typeof HELP_COPY)["en"], locale: string) {
@@ -93,7 +94,8 @@ function resolve(card: HelpCard, copy: (typeof HELP_COPY)["en"], locale: string)
 
 export default async function HelpHubPage() {
   // Membership, not plan: every tier reaches this page.
-  await requireTenant();
+  const membership = await requireTenant();
+  const plan = membership.tenant.planType;
 
   const cookieStore = await cookies();
   const locale = dashboardLocale(cookieStore.get("echorank_locale")?.value);
@@ -123,6 +125,10 @@ export default async function HelpHubPage() {
 
           <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
             {group.cards.map((card) => {
+              // In-app links follow the plan allowlist (src/lib/plan-access.ts):
+              // a card into an area the plan does not include is not drawn.
+              // Public articles and guides stay — they are reading, not access.
+              if (card.kind === "app" && card.href && !planAllowsPage(plan, card.href)) return null;
               // The one card that does not navigate: the install walkthrough
               // opens in place, because a reader is following along with it.
               if (card.kind === "video") {

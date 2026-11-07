@@ -5,6 +5,7 @@ import type { EmailDeliveryJob } from "@/infrastructure/queue/jobs/schemas";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/infrastructure/observability/logger";
 import { withSpan } from "@/infrastructure/observability/telemetry";
+import { tenantAllowsArea } from "@/lib/plan-access-server";
 
 const QUEUE_NAME = "email-delivery";
 
@@ -23,6 +24,14 @@ const QUEUE_NAME = "email-delivery";
 async function processEmailDelivery(job: Job<EmailDeliveryJob>): Promise<void> {
   await withSpan("email-delivery.process", async (span) => {
     const { tenantId, customerId, to, subject, body, correlationId } = job.data;
+
+    // The plan allowlist, re-checked at send time (src/lib/plan-access.ts): a
+    // tenant now on the AI-only plan has no reputation tools, so a queued
+    // customer email is dropped rather than delivered.
+    if (!(await tenantAllowsArea(tenantId, "reputation"))) {
+      logger.info({ jobId: job.id, tenantId, queue: "email-delivery" }, "email skipped: plan excludes reputation sends");
+      return;
+    }
 
     span.setAttributes({
       "job.id": job.id ?? "",

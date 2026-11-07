@@ -15,6 +15,7 @@ import {
 } from "@/lib/billing/trial-notice";
 import { handleCreditPackCompleted, isCreditPackSession } from "@/lib/billing/credit-webhook";
 import { refuseBlockedCheckout, wasRefusedAtCheckout } from "@/lib/billing/blocked-checkout";
+import { onPlanChange } from "@/lib/plan-change";
 
 const log = logger.child({ module: "stripe-webhook" });
 
@@ -508,6 +509,13 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
         "Matrix reconcile threw — plan change stands, run reconcileMatrixAccounts()"
       );
     }
+  }
+
+  // Across the plan allowlist (src/lib/plan-access.ts): a downgrade to the
+  // AI-only plan pauses excluded schedules and stops pending sends, an upgrade
+  // resumes them. Never throws; the plan change above stands either way.
+  if (planType && planType !== tenant.planType) {
+    await onPlanChange(tenant.id, tenant.planType, planType);
   }
 
   log.info(

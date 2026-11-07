@@ -100,10 +100,11 @@ describe("which statuses consume quota", () => {
 });
 
 describe("getCrawlQuota", () => {
-  it("unlocks a legacy AI_VISIBILITY row, folded onto STARTER", async () => {
+  it("locks the AI-only plan (reinstated 2026-11-07): no crawler", async () => {
     const quota = await getCrawlQuota("tenant_1", "AI_VISIBILITY");
-    expect(quota.locked).toBe(false);
-    expect(quota.urlCap).toBe(urlCapForPlan("STARTER"));
+    expect(quota.locked).toBe(true);
+    expect(quota.allowed).toBe(false);
+    expect(urlCapForPlan("AI_VISIBILITY")).toBe(0);
   });
 
   it("allows a tier with allowance left", async () => {

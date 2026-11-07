@@ -6,6 +6,7 @@ import type { FeedbackRoutingJob } from "@/infrastructure/queue/jobs/schemas";
 import { routeFeedback, backfillUnroutedFeedback } from "@/lib/feedback-router";
 import { logger } from "@/infrastructure/observability/logger";
 import { withSpan } from "@/infrastructure/observability/telemetry";
+import { tenantAllowsArea } from "@/lib/plan-access-server";
 
 const QUEUE_NAME = "feedback-routing";
 
@@ -38,6 +39,14 @@ async function processFeedbackRouting(job: Job<FeedbackJobData>): Promise<void> 
   }
 
   const { tenantId, feedbackId, correlationId } = job.data as FeedbackRoutingJob;
+
+  // The plan allowlist, re-checked when the job runs: feedback routing is
+  // reputation, which the AI-only plan does not include. The feedback row is
+  // kept (hidden), not routed.
+  if (!(await tenantAllowsArea(tenantId, "reputation"))) {
+    logger.info({ jobId: job.id, tenantId, feedbackId, queue: QUEUE_NAME }, "feedback routing skipped: plan excludes reputation");
+    return;
+  }
 
   await withSpan("feedback-routing.process", async (span) => {
     span.setAttributes({

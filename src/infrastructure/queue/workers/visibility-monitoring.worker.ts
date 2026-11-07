@@ -465,7 +465,14 @@ async function processGscSweep(): Promise<void> {
     where: { status: "ACTIVE", siteUrl: { not: null } },
   });
   const day = latestAvailableDay();
+  const { tenantAllowsArea } = await import("@/lib/plan-access-server");
   for (const conn of connections) {
+    // The plan allowlist, re-checked per run: GSC Insights is an SEO tool the
+    // AI-only plan does not include. The connection is kept, unsynced.
+    if (!(await tenantAllowsArea(conn.tenantId, "seo_tools"))) {
+      logger.info({ tenantId: conn.tenantId, queue: QUEUE_NAME }, "GSC sync skipped: plan excludes SEO tools");
+      continue;
+    }
     try {
       const rows = await syncDay(conn, day);
       logger.info({ tenantId: conn.tenantId, day, rows, queue: QUEUE_NAME }, "GSC sync done");

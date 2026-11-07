@@ -1,8 +1,9 @@
 // SEO Tools hub — the single navigation surface for all SEO tools, grouped
 // Ahrefs-style (information architecture only; visual identity is native
 // Echorank). Cards render from the typed config in src/lib/seo-tools.ts;
-// every tier sees every card, since no tier is confined to a route subset.
-// The paid gate lives in ./layout.tsx.
+// every tier sees every card. On the AI-only plan, cards outside its areas
+// (src/lib/plan-access.ts) are shown locked and link to the plans. The paid
+// gate lives in ./layout.tsx.
 import Link from "next/link";
 import { cookies } from "next/headers";
 import { dashboardLocale, SEO_TOOLS_COPY } from "@/lib/i18n/dashboard";
@@ -15,6 +16,9 @@ import { ToolsHubHelpButton } from "@/components/seo-tools/tools-hub-help";
 import { RecentResearchPanel } from "@/components/seo-tools/recent-research-panel";
 import { readResearchLog } from "@/lib/research-log/store";
 import { RESEARCH_LOG_PANEL_LIMIT } from "@/lib/research-log/types";
+import { Lock } from "lucide-react";
+import { planAllowsPage } from "@/lib/plan-access";
+import { PLAN_ACCESS_COPY } from "@/lib/i18n/plan-access";
 
 export default async function SeoToolsHubPage() {
   const cookieStore = await cookies();
@@ -63,11 +67,16 @@ export default async function SeoToolsHubPage() {
           <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
             {group.tools.map((tool) => {
               const it = copy.items[tool.id];
+              // The plan allowlist (src/lib/plan-access.ts): a card for a tool
+              // the plan does not include is shown locked and links to the
+              // plans, never to the tool. Only the AI-only plan locks any.
+              const allowed = planAllowsPage(plan, tool.href);
               return (
                 <li key={tool.id}>
                   <Link
-                    href={tool.href}
-                    className="group flex h-full items-start gap-3 rounded-xl border border-gray-200 bg-white p-4 shadow-sm transition-colors hover:border-gray-300 hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 motion-reduce:transition-none"
+                    href={allowed ? tool.href : `/${locale}/pricing`}
+                    data-locked={allowed ? undefined : "true"}
+                    className={`group flex h-full items-start gap-3 rounded-xl border border-gray-200 p-4 shadow-sm transition-colors hover:border-gray-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 motion-reduce:transition-none ${allowed ? "bg-white hover:bg-gray-50" : "bg-gray-50 opacity-75"}`}
                   >
                     <tool.icon
                       className="mt-0.5 h-5 w-5 shrink-0 text-gray-400 group-hover:text-gray-600"
@@ -82,7 +91,12 @@ export default async function SeoToolsHubPage() {
                             one card is a card that has to be read twice, and
                             the Google block is always the more urgent of the
                             two. */}
-                        {tool.requiresGoogleApproval ? (
+                        {!allowed ? (
+                          <span className="inline-flex items-center gap-1 rounded-full bg-gray-200 px-2 py-0.5 text-[11px] font-medium text-gray-600">
+                            <Lock className="h-3 w-3" aria-hidden="true" />
+                            {PLAN_ACCESS_COPY[locale].locked}
+                          </span>
+                        ) : tool.requiresGoogleApproval ? (
                           <ComingSoonBadge locale={locale} />
                         ) : (
                           tool.badge === "new" && <NewBadge locale={locale} />

@@ -20,6 +20,7 @@
 import type { PlanType } from "@/generated/prisma";
 import { prisma } from "@/lib/prisma";
 import { planConfig, type CrawlCadence } from "@/lib/plan-config";
+import { planAllowsArea } from "@/lib/plan-access";
 import { auditsUsedThisHour } from "@/lib/lighthouse/usage";
 import { AUDITS_PER_HOUR } from "@/lib/lighthouse/options";
 import { flag } from "@/lib/flags";
@@ -145,7 +146,9 @@ export async function getCrawlQuota(
   const urlCap = caps0.urlCap;
   const renderCap = planConfig(plan).crawlRenderedPages;
   const monthlyLimit = monthlyLimitForPlan(plan);
-  const locked = urlCap <= 0;
+  // A staff URL-cap override changes a limit INSIDE an area the plan has; it
+  // never opens the crawler to a plan that excludes it (src/lib/plan-access.ts).
+  const locked = urlCap <= 0 || !planAllowsArea(plan, "crawler");
   const crawlsKept = caps0.crawlsKept;
   const caps = { ...featureCapsForPlan(plan), ...scheduleCapsForPlan(plan), ...metricCapsForPlan(plan), ...renderFeatureCapsForPlan(plan), ...parityCapsForPlan(plan) };
 

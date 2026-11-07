@@ -358,12 +358,11 @@ describe("POST /crawl", () => {
     expect(addJob).not.toHaveBeenCalled();
   });
 
-  it("accepts a legacy AI_VISIBILITY row, folded onto STARTER", async () => {
-    // The tier is retired and no sellable tier is crawl-locked, so the
-    // PLAN_LOCKED branch is a retained guard rather than a reachable state.
+  it("refuses the AI-only plan (reinstated 2026-11-07): no crawler", async () => {
     authed("AI_VISIBILITY");
     const res = await startCrawl(postRequest({ url: "https://example.com" }));
-    expect(res.status).toBe(202);
+    expect(res.status).toBe(403);
+    expect(addJob).not.toHaveBeenCalled();
   });
 
   it("refuses once the monthly allowance is spent, with 429", async () => {

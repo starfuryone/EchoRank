@@ -45,7 +45,7 @@ export class ScheduleRefusedError extends Error {
   }
 }
 
-type RepeatableQueue = Pick<Queue, "getRepeatableJobs" | "removeRepeatableByKey" | "add">;
+export type RepeatableQueue = Pick<Queue, "getRepeatableJobs" | "removeRepeatableByKey" | "add">;
 
 export interface ScheduleRow {
   id: string;

@@ -502,10 +502,9 @@ export function isSeoToolLive(id: SeoToolId): boolean {
 /**
  * Groups this plan may see — now every group, for every tier.
  *
- * This used to drop cards outside the caller's route allowlist (the Dashboard
- * card was hidden from AI_VISIBILITY). That tier is retired and no tier is
- * confined to a route subset, so nothing is filtered. Paid-gating still
- * happens server-side in the tools layout; this was never authorization.
+ * Nothing is filtered here. The AI-only plan is confined by the allowlist in
+ * plan-access.ts, enforced in the proxy and the (dashboard) layout; the
+ * tools hub draws its locked cards from that. This was never authorization.
  */
 export function visibleSeoToolGroups(
   _plan: PlanType | null | undefined,

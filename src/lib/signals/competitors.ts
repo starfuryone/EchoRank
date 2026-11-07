@@ -2,6 +2,7 @@ import { prisma } from './db';
 import { ingestSignal } from './ingest';
 import { createEvent, CreatedAlert } from './alerts';
 import { sendAlertDigest } from './notify';
+import { tenantAllowsArea } from '@/lib/plan-access-server';
 import { clamp } from './types';
 
 // ── Tunables ────────────────────────────────────────────────────────────────
@@ -307,6 +308,13 @@ export async function runCompetitorSweep(onlyTenantId?: string): Promise<number>
   const week = isoWeek();
 
   for (const [tenantId, list] of byTenant) {
+    // The plan allowlist, re-checked when the sweep runs: competitor tracking
+    // is reputation, which the AI-only plan does not include. The rows stay;
+    // nothing is fetched (Google Places costs money) until the plan includes it.
+    if (!(await tenantAllowsArea(tenantId, "reputation"))) {
+      console.info(`[competitors] sweep skipped for tenant ${tenantId}: plan excludes reputation`);
+      continue;
+    }
     const own7 = await ownReviewPace7d(tenantId);
     const created: CreatedAlert[] = [];
 

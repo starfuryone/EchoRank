@@ -21,6 +21,7 @@ import { SEO_TOOLS_HUB } from "@/lib/seo-tools";
 import { NosyBatIcon } from "@/components/seo-tools/nosy-bat-icon";
 import { AvEmblemIcon } from "@/components/brand/AiVisibilityLogo";
 import type { PlanType } from "@/generated/prisma";
+import { planAllowsPage, planIsRestricted } from "@/lib/plan-access";
 
 // Eleven reputation surfaces used to sit here as eleven rows, which made the
 // sidebar the product's table of contents. They now live behind /reputation as
@@ -88,6 +89,14 @@ const navItems = [
   { href: "/help", icon: HelpCircle, group: "utility" },
 ] as const;
 
+/**
+ * Where a row links. The AI row opens the /ai hub, except on the AI-only plan,
+ * whose AI home is /visibility (the hub's cards are tools it does not include).
+ */
+export function linkHref(href: string, restricted: boolean): string {
+  return restricted && href === "/ai" ? "/visibility" : href;
+}
+
 /** Render order of the bands. "utility" is unlabelled — it is the tail. */
 const NAV_GROUPS = ["workspace", "manage", "utility"] as const;
 
@@ -150,10 +159,16 @@ export function Sidebar({
   const groupLabels = SIDEBAR_GROUPS_COPY[locale];
   const tooltips = SIDEBAR_TOOLTIPS[locale];
   const pathname = usePathname();
-  // No plan-based route filtering: every tier reaches every dashboard path.
+  // THE PLAN ALLOWLIST (src/lib/plan-access.ts): rows for areas the plan does
+  // not include are not drawn. Only the $29 AI-only plan excludes any; its
+  // home is /visibility, so its AI row links there (the /ai hub is excluded)
+  // and the /dashboard row is dropped. The (dashboard) layout and the proxy
+  // enforce the same list server-side; this is presentation.
   // The SEO Tools hub still requires a paid (ACTIVE) subscription — visibility
   // only; the tools layout enforces the same predicate server-side.
+  const restricted = planIsRestricted(plan);
   const items = navItems.filter((item) => {
+    if (restricted && (item.href === "/dashboard" || !planAllowsPage(plan, linkHref(item.href, restricted)))) return false;
     if (item.href.startsWith(SEO_TOOLS_HUB) || item.href === CRAWLER_HREF) return paid;
     // The assistant row is gated on its own flag, not on `paid`: the two
     // kill-switch envs can hide it while the tenant is still fully paid.
@@ -219,7 +234,7 @@ export function Sidebar({
                     return (
                       <li key={item.href}>
                         <Link
-                          href={item.href}
+                          href={linkHref(item.href, restricted)}
                           onClick={onClose}
                           aria-current={isActive ? "page" : undefined}
                           title={tooltips[item.href]}

@@ -233,7 +233,9 @@ describe("the gate is server-derived", () => {
   it("computes visibility from the plan and both kill switches", () => {
     expect(layout).toContain("assistantEnabled()");
     expect(layout).toContain("assistantLinkVisible()");
-    expect(layout).toMatch(/const assistantVisible = paid &&/);
+    expect(layout).toMatch(/const assistantVisible =\s+paid &&/);
+    // The plan allowlist too: the AI-only plan has no assistant.
+    expect(layout).toMatch(/planAllowsArea\(plan, "assistant"\)/);
   });
 
   it("mounts the widget once, in the layout, and only when visible", () => {

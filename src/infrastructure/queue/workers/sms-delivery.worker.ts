@@ -3,6 +3,7 @@ import { getSubscriberConnection } from "@/infrastructure/redis/connection";
 import { REDIS_CONFIG } from "@/infrastructure/redis/config";
 import type { SmsDeliveryJob } from "@/infrastructure/queue/jobs/schemas";
 import { prisma } from "@/lib/prisma";
+import { tenantAllowsArea } from "@/lib/plan-access-server";
 
 const QUEUE_NAME = "sms-delivery";
 const LOG_PREFIX = `[Worker:${QUEUE_NAME}]`;
@@ -20,6 +21,14 @@ const LOG_PREFIX = `[Worker:${QUEUE_NAME}]`;
 
 async function processSmsDelivery(job: Job<SmsDeliveryJob>): Promise<void> {
   const { tenantId, customerId, to, body, correlationId } = job.data;
+
+  // The plan allowlist, re-checked at send time (src/lib/plan-access.ts): a
+  // tenant now on the AI-only plan has no reputation tools, so a queued send
+  // is dropped rather than delivered. The customer row is kept.
+  if (!(await tenantAllowsArea(tenantId, "reputation"))) {
+    console.log(`${LOG_PREFIX} Job ${job.id} skipped: tenant ${tenantId}'s plan excludes reputation sends`);
+    return;
+  }
 
   console.log(`${LOG_PREFIX} Processing job ${job.id} - sending to ${to} for tenant ${tenantId}`);
 

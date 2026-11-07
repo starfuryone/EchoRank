@@ -10,6 +10,9 @@ import { unreadNotificationCount } from "@/lib/notifications/store";
 import { DashboardShell } from "@/components/layout/dashboard-shell";
 import { AssistantWidgetLoader } from "@/components/assistant/AssistantWidgetLoader";
 import { OnboardingGate } from "@/components/onboarding/welcome-setup-modal";
+import { PlanUpgradeScreen } from "@/components/billing/PlanUpgradeScreen";
+import { planAllowsArea, planAllowsPage, planIsRestricted } from "@/lib/plan-access";
+import { PLAN_HOME } from "@/lib/plan-routing";
 
 export default async function DashboardLayout({
   children,
@@ -24,11 +27,20 @@ export default async function DashboardLayout({
     redirect("/login");
   }
 
-  // No route allowlist: every tier reaches every dashboard path. The retired
-  // AI_VISIBILITY tier was the only confined one, and feature gates
-  // (requireFeature) rather than path prefixes are what guard capability now.
   const membership = await getCurrentTenant();
   const plan = membership?.tenant.planType;
+
+  // ── THE PLAN ALLOWLIST (src/lib/plan-access.ts) ─────────────────────────
+  // The $29 AI-only plan reaches AI visibility, account and help pages only.
+  // Its home is /visibility; any other page renders the upgrade screen here,
+  // server-side, instead of the page. FAILS CLOSED like the billing gate
+  // below: with no x-pathname the restricted plan gets the upgrade screen.
+  const pathname = (await headers()).get("x-pathname");
+  let excluded = false;
+  if (plan && planIsRestricted(plan)) {
+    if (pathname === "/dashboard") redirect(PLAN_HOME[plan]);
+    excluded = !pathname || !planAllowsPage(plan, pathname);
+  }
 
   // ── THE BILLING GATE, AND THE ONLY PLACE IT LIVES ────────────────────────
   //
@@ -60,7 +72,6 @@ export default async function DashboardLayout({
   // fail CLOSED (redirect), because the alternative is a gate that silently
   // stops applying the moment a header goes missing.
   if (billing?.needsPlanSelection) {
-    const pathname = (await headers()).get("x-pathname");
     if (!isNoneAllowedPath(pathname)) {
       redirect(`/${locale}/pricing`);
     }
@@ -83,7 +94,8 @@ export default async function DashboardLayout({
   // routes enforce; `assistantLinkVisible()` is its build-time NEXT_PUBLIC twin,
   // the same pair the public assistant's nav link uses. Either one off hides
   // the feature, and the routes refuse regardless of what the UI did.
-  const assistantVisible = paid && assistantEnabled() && assistantLinkVisible();
+  const assistantVisible =
+    paid && planAllowsArea(plan, "assistant") && assistantEnabled() && assistantLinkVisible();
 
   return (
     <DashboardShell
@@ -99,7 +111,7 @@ export default async function DashboardLayout({
       }}
     >
       <OnboardingGate locale={locale} />
-      {children}
+      {excluded ? <PlanUpgradeScreen locale={locale} /> : children}
       {/* Mounted once for the whole (dashboard) group, so a navigation does not
           reset an open conversation. Lazily loaded — see the loader. */}
       {assistantVisible && (

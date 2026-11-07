@@ -9,6 +9,9 @@ import { KNOWN_MARKETING_PATHS, KNOWN_MARKETING_PREFIXES } from "@/lib/seo/regis
 import { firstSegment, isStaticPath, isUnroutableDottedPath } from "@/lib/static-paths";
 import { localeAppRedirect } from "@/lib/app-routes";
 import { isAdminApiPath, isPlatformAdminEmail } from "@/lib/platform-admin-emails";
+import { areaForApi, planAllowsApi, planUpgradeBody } from "@/lib/plan-access";
+import { sessionPlan } from "@/lib/plan-access-server";
+import { ACTIVE_TENANT_COOKIE } from "@/lib/tenant";
 
 const LOCALE_COOKIE = "echorank_locale";
 
@@ -174,7 +177,7 @@ function resolveHomepage(req: Parameters<Parameters<typeof auth>[0]>[0]) {
   );
 }
 
-const withSession = auth((req) => {
+const withSession = auth(async (req) => {
   const { pathname } = req.nextUrl;
   const method = req.method;
 
@@ -376,6 +379,30 @@ const withSession = auth((req) => {
     // The login page still only follows same-origin paths.
     loginUrl.searchParams.set("callbackUrl", pathname + req.nextUrl.search);
     return NextResponse.redirect(loginUrl);
+  }
+
+  // ── Plan allowlist for tenant API routes ─────────────────────────────
+  // One gate for every signed-in /api call (src/lib/plan-access.ts): a route
+  // in an area the tenant's plan does not include answers 403
+  // PLAN_UPGRADE_REQUIRED before its handler runs. Only the $29 AI-only plan
+  // is restricted. Exempt namespaces (auth, webhooks, free tools, key APIs,
+  // staff) skip the plan read entirely.
+  if (pathname.startsWith("/api/")) {
+    const area = areaForApi(pathname, method);
+    if (area !== "exempt" && req.auth.user?.id) {
+      // A failed plan read lets the call through rather than 500-ing every
+      // signed-in API request on a database blip: the handler needs the same
+      // database and fails on its own, and the page gate re-checks the plan.
+      const plan = await sessionPlan(req.auth.user.id, req.cookies.get(ACTIVE_TENANT_COOKIE)?.value).catch(
+        (err: unknown) => {
+          console.warn("[proxy] plan lookup failed; API plan gate skipped", err instanceof Error ? err.message : err);
+          return undefined;
+        },
+      );
+      if (plan !== undefined && !planAllowsApi(plan, pathname, method)) {
+        return NextResponse.json(planUpgradeBody(area), { status: 403 });
+      }
+    }
   }
 
   // ── Authenticated app routes ──────────────────────────────────────────

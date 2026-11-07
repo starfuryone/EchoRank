@@ -99,9 +99,12 @@ const FIX_KEY: Record<string, keyof Remediation["artifacts"]> = {
 export function VisibilityPageClient({
   locale,
   onboarding = false,
+  keywordsLink = true,
 }: {
   locale: DashLocale;
   onboarding?: boolean;
+  /** False on a plan without Keywords Explorer (src/lib/plan-access.ts). */
+  keywordsLink?: boolean;
 }) {
   const t = VISIBILITY_COPY[locale];
   const aa = ACTION_AGENT_COPY[locale];
@@ -270,9 +273,11 @@ export function VisibilityPageClient({
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <a href="/visibility/keywords">
-            <Button variant="outline">{t.keywordsLink}</Button>
-          </a>
+          {keywordsLink && (
+            <a href="/visibility/keywords">
+              <Button variant="outline">{t.keywordsLink}</Button>
+            </a>
+          )}
           <VisibilityReportButton />
           <VisibilityHelpButton locale={locale} />
         </div>

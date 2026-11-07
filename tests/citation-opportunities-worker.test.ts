@@ -44,6 +44,10 @@ const { addJob, getQueue } = vi.hoisted(() => ({
 }));
 vi.mock("@/infrastructure/queue/registry", () => ({ addJob, getQueue }));
 
+// The worker re-checks the plan allowlist before spending (src/lib/plan-access.ts).
+const { tenantAllowsArea } = vi.hoisted(() => ({ tenantAllowsArea: vi.fn(async () => true) }));
+vi.mock("@/lib/plan-access-server", () => ({ tenantAllowsArea }));
+
 import {
   scoreOne,
   sweep,
@@ -185,6 +189,15 @@ describe("the pass itself", () => {
     expect(checkListed).not.toHaveBeenCalled();
     expect(sweepTenant).not.toHaveBeenCalled();
     expect(loggerFns.warn).toHaveBeenCalled();
+  });
+
+  it("spends nothing when the tenant's plan no longer includes the tool", async () => {
+    tenantAllowsArea.mockResolvedValueOnce(false);
+    await scoreOne({ tenantId: TENANT });
+    expect(tenantAllowsArea).toHaveBeenCalledWith(TENANT, "seo_tools");
+    expect(listOpportunityTenants).not.toHaveBeenCalled();
+    expect(checkListed).not.toHaveBeenCalled();
+    expect(sweepTenant).not.toHaveBeenCalled();
   });
 
   it("refuses a job with no tenantId rather than sweeping everybody", async () => {

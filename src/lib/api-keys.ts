@@ -2,6 +2,7 @@ import { createHash, randomBytes, timingSafeEqual } from "crypto";
 import { NextResponse } from "next/server";
 import { hasPaidPlan } from "@/lib/paid-plan";
 import { rateLimit } from "@/lib/rate-limit";
+import { planUpgradeBody } from "@/lib/plan-access";
 
 // Prisma is imported lazily inside each function so the pure helpers
 // (parse/sha256/format) stay importable in DB-less contexts (node --test).
@@ -173,6 +174,17 @@ export async function authenticatePublicRequest(req: Request): Promise<PublicAut
     return {
       ok: false,
       response: NextResponse.json({ error: "subscription_inactive" }, { status: 403 }),
+    };
+  }
+  // The plan allowlist (src/lib/plan-access.ts): the AI-only plan has no
+  // public API or MCP server. Checked on every call, so a key issued before a
+  // downgrade stops working with the plan. Imported lazily, like Prisma above:
+  // the module is server-only, and the pure helpers here run under node --test.
+  const { tenantAllowsArea } = await import("@/lib/plan-access-server");
+  if (!(await tenantAllowsArea(verified.tenantId, "public_api"))) {
+    return {
+      ok: false,
+      response: NextResponse.json(planUpgradeBody("public_api"), { status: 403 }),
     };
   }
   const rl = await rateLimit(`apikey:${verified.keyId}`, PUBLIC_API_RATE_LIMIT, RATE_WINDOW_MS);

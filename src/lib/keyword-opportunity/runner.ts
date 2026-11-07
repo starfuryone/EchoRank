@@ -66,6 +66,7 @@ import {
   type OpportunityInput,
 } from "./score";
 import { addSpend, markCompleted, markFailed, markRunning, markStep } from "./store";
+import { planAllowsArea } from "@/lib/plan-access";
 
 /** The endpoint name recorded when seeded enrichment answers badly. */
 const LABS_OVERVIEW = "v3/dataforseo_labs/google/keyword_overview/live";
@@ -158,6 +159,14 @@ export async function runAnalysis(analysisId: string): Promise<RunSummary> {
     summary.stoppedReason = reason.stoppedReason ?? null;
     return summary;
   };
+
+  // The plan allowlist, re-checked at run time (plans change between enqueue
+  // and run): a tenant now on the AI-only plan has no SEO tools, so nothing is
+  // spent, whatever a cached result or a prepaid credit would have funded.
+  if (!planAllowsArea(plan, "seo_tools")) {
+    logger.info({ analysisId, tenantId: analysis.tenantId, plan }, "keyword opportunity run skipped: plan excludes SEO tools");
+    return fail({ stoppedReason: "plan_excludes_area" });
+  }
 
   try {
     await markRunning(analysisId);

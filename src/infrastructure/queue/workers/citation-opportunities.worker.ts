@@ -50,6 +50,7 @@ import { listOpportunityTenants, loadCandidates, sweepTenant } from "@/lib/citat
 import { checkListed } from "@/lib/citation-opportunities/listed";
 import { p75 } from "@/lib/citation-opportunities/score";
 import { notifyCitationOpportunity } from "@/lib/notifications/adapters";
+import { tenantAllowsArea } from "@/lib/plan-access-server";
 
 const QUEUE_NAME = "citation-opportunities" as const;
 const SWEEP_JOB_NAME = "sweep";
@@ -111,6 +112,14 @@ async function scoreOne(job: CitationOpportunityJob): Promise<void> {
   const { tenantId } = job;
   if (!tenantId) {
     throw new Error("scoring job needs a tenantId");
+  }
+
+  // The plan allowlist, re-checked when the job runs: citation opportunities
+  // are a tools-hub tool the AI-only plan does not include, and this pass
+  // spends DataForSEO money. Logged, not thrown: it is a decision, not a fault.
+  if (!(await tenantAllowsArea(tenantId, "seo_tools"))) {
+    logger.info({ tenantId }, "citation opportunity pass skipped: plan excludes this tool");
+    return;
   }
 
   const tenants = await listOpportunityTenants(tenantId);
