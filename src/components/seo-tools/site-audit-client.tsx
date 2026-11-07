@@ -14,6 +14,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { SalesContactLink } from "@/components/sales/SalesContactLink";
 import { AlertCircle, CheckCircle2, Info, Loader2, ScanSearch, XCircle } from "lucide-react";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -426,6 +427,7 @@ export function SiteAuditClient({ locale }: { locale: DashLocale }) {
           <Link href="/billing" className="mt-2 inline-block text-sm font-medium text-blue-600 hover:text-blue-700">
             {t.quotaCta}
           </Link>
+          <SalesContactLink locale={locale} src="app-limit-site-audit" />
         </div>
       )}
 

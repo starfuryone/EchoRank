@@ -11,6 +11,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { SalesContactLink } from "@/components/sales/SalesContactLink";
 import { AlertCircle, Loader2, Lock, ScanEye, Search } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -209,12 +210,15 @@ export function AiLensClient({ locale }: { locale: DashLocale }) {
 
       {/* ── Errors ───────────────────────────────────────────────────── */}
       {errorKind === "quota" && usage && (
-        <ErrorCard
-          tone="amber"
-          title={t.quotaTitle}
-          body={t.quotaBody(usage.limit)}
-          cta={{ href: "/billing", label: t.quotaCta }}
-        />
+        <div>
+          <ErrorCard
+            tone="amber"
+            title={t.quotaTitle}
+            body={t.quotaBody(usage.limit)}
+            cta={{ href: "/billing", label: t.quotaCta }}
+          />
+          <SalesContactLink locale={locale} src="app-limit-ai-lens" />
+        </div>
       )}
       {errorKind === "foreign" && (
         <ErrorCard

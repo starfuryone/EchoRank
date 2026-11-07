@@ -10,6 +10,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
+import { SalesContactLink } from "@/components/sales/SalesContactLink";
 import { ListOrdered, AlertCircle, Loader2, Search } from "lucide-react";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { ExportCsvButton } from "@/components/seo-tools/export-csv-button";
@@ -316,6 +317,7 @@ export function SerpCheckerClient({ locale }: { locale: DashLocale }) {
           >
             {t.quotaCta}
           </Link>
+          <SalesContactLink locale={locale} src="app-limit-serp-checker" />
         </div>
       )}
 

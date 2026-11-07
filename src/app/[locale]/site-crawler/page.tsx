@@ -395,6 +395,7 @@ export default async function Page({ params }: { params: Params }) {
       <section id="pricing" className={s.section}>
         <div className={s.container}>
           <PricingSection
+            salesSrc="site-crawler-pricing"
             locale={l}
             pricing={pricingTiers(l)}
             priceChrome={HOME_PRICING_CHROME[l]}

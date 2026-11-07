@@ -15,6 +15,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { SalesContactLink } from "@/components/sales/SalesContactLink";
 import { AlertCircle, Link2, Loader2, Lock, Search, TrendingUp } from "lucide-react";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -1163,6 +1164,7 @@ export function BacklinksClient({
           >
             {t.quotaCta}
           </Link>
+          <SalesContactLink locale={locale} src="app-limit-backlinks" />
         </div>
       )}
 

@@ -25,7 +25,7 @@ import { stashCheckoutConsent } from "@/lib/checkout-consent";
 import { SNAPSHOT_COPY, snapshotBaseOf } from "@/lib/snapshot/copy";
 import { fitsTracking, parseTrackParam } from "@/lib/snapshot/tracking";
 import { fmtNum, pricingBase } from "@/lib/pricing-page/format";
-import { SUPPORT_EMAIL } from "@/lib/assistant/config";
+import { salesContactHref } from "@/lib/sales/inquiry-options";
 
 export interface HomePricingTier {
   id: string;
@@ -132,8 +132,11 @@ export function PricingSection({
    * /site-crawler take the default, which crosses over to /pricing.
    */
   compareHref,
+  salesSrc,
 }: {
   locale: string;
+  /** ?src= for the Enterprise line's link to the sales form: which page this grid is on. */
+  salesSrc: string;
   pricing: HomePricingTier[];
   priceChrome: HomePricingChrome;
   /**
@@ -392,7 +395,7 @@ export function PricingSection({
       <p className={s.gridNotes}>
         <span>{priceChrome.secureCheckout}</span>
         <span aria-hidden="true"> · </span>
-        <a href={`mailto:${SUPPORT_EMAIL}?subject=Enterprise`}>{priceChrome.enterpriseLine}</a>
+        <a href={salesContactHref(locale, salesSrc)} data-testid="pricing-enterprise-link">{priceChrome.enterpriseLine}</a>
       </p>
       <p className={s.creditsLine}>
         <a href={`/${locale}/credits`}>{priceChrome.creditsLine}</a>

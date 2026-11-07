@@ -100,6 +100,7 @@ afterEach(() => {
 function renderPricing() {
   return render(
     <PricingSection
+      salesSrc="pricing-enterprise"
       locale="en"
       pricing={TIERS}
       priceChrome={chrome}

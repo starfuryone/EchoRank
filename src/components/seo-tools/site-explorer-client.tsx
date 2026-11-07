@@ -10,6 +10,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { SalesContactLink } from "@/components/sales/SalesContactLink";
 import { AlertCircle, Globe, Link2, Loader2, Search, Users } from "lucide-react";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -682,6 +683,7 @@ export function SiteExplorerClient({ locale }: { locale: DashLocale }) {
           >
             {t.quotaCta}
           </Link>
+          <SalesContactLink locale={locale} src="app-limit-site-explorer" />
         </div>
       )}
 

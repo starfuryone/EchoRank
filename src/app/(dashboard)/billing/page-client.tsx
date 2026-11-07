@@ -19,6 +19,8 @@ import { planFeaturesByPlan } from "@/lib/plan-features";
 import type { PlanType } from "@/generated/prisma";
 import { BILLING_COPY, type DashLocale } from "@/lib/i18n/dashboard";
 import { PlanCards } from "@/components/billing/plan-cards";
+import { salesContactHref } from "@/lib/sales/inquiry-options";
+import { SALES_COPY } from "@/lib/sales/inquiry-copy";
 import type { CreditHistoryRow } from "@/lib/credits/store";
 
 interface BillingData {
@@ -196,9 +198,13 @@ export function BillingPageClient({
                   </Badge>
                 </div>
                 <p className="text-sm text-gray-500">
-                  {planConfig(billing.plan as PlanType).isCustomPricing
-                    ? t.contactUs
-                    : `$${PLAN_PRICES[sellablePlan(billing.plan as PlanType)] ?? 0}${t.perMonth}`}
+                  {planConfig(billing.plan as PlanType).isCustomPricing ? (
+                    <Link href={salesContactHref(locale, "app-billing-plan")} className="text-blue-600 hover:text-blue-700">
+                      {t.contactUs}
+                    </Link>
+                  ) : (
+                    `$${PLAN_PRICES[sellablePlan(billing.plan as PlanType)] ?? 0}${t.perMonth}`
+                  )}
                   {billing.currentPeriodEnd && (
                     <span>
                       {" "}
@@ -312,6 +318,15 @@ export function BillingPageClient({
           features={planFeaturesByPlan(locale)}
         />
         <p className="mt-4 text-sm text-gray-500">{t.pricesInUsd}</p>
+        <p className="mt-1 text-sm">
+          <Link
+            href={salesContactHref(locale, "app-billing")}
+            className="font-medium text-blue-600 hover:text-blue-700"
+            data-testid="billing-sales-link"
+          >
+            {SALES_COPY[locale].links.enterpriseLine}
+          </Link>
+        </p>
       </div>
 
       {/* ── Prospect lookups ───────────────────────────────────────────────

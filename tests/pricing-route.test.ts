@@ -112,6 +112,7 @@ describe("the funnel terminates at pricing", () => {
     // never as a rendered href, then or now.
     const html = renderToStaticMarkup(
       createElement(PricingSection, {
+        salesSrc: "pricing-enterprise",
         locale: "en",
         pricing: pricingTiers("en"),
         priceChrome: HOME_PRICING_CHROME.en,

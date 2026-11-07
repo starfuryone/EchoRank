@@ -12,6 +12,8 @@ import { aiLabels } from '@/lib/i18n/ai-labels';
 import { KeywordWidget, type KeywordWidgetContent } from '@/components/KeywordWidget';
 import { JsonLd, SITE_URL, buildMetadata, faqPage, normalizeLocale, organization, webSite } from "@/lib/seo";
 import { CompanyLine } from "@/components/brand/CompanyLine";
+import { salesContactHref } from "@/lib/sales/inquiry-options";
+import { SALES_COPY, salesLocale } from "@/lib/sales/inquiry-copy";
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://echorank360.com';
 
@@ -657,6 +659,11 @@ export default async function AIVisibilityPage({
             <a href="/#pricing">{c.pricing.fineLink}</a>.
           </p>
           <p className="av-fine">{c.pricing.currency}</p>
+          <p className="av-fine">
+            <a href={salesContactHref(locale, "ai-visibility-pricing")} data-testid="av-sales-link">
+              {SALES_COPY[salesLocale(locale)].links.agencies}
+            </a>
+          </p>
         </div>
       </section>
 

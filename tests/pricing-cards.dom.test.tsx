@@ -33,6 +33,7 @@ const en = (n: number) => n.toLocaleString("en-US");
 function renderGrid(locale: Locale, extra: { compareHref?: string } = {}) {
   return render(
     <PricingSection
+      salesSrc="pricing-enterprise"
       locale={locale}
       pricing={pricingTiers(locale)}
       priceChrome={HOME_PRICING_CHROME[locale]}
@@ -257,7 +258,8 @@ describe("the surrounding furniture is undisturbed", () => {
     expect(screen.getByText("currency line")).toBeTruthy();
     expect(screen.getByText("Secure checkout by Stripe")).toBeTruthy();
     const ent = screen.getByText(/^Enterprise: custom limits/);
-    expect(ent.getAttribute("href")).toMatch(/^mailto:/);
+    // The sales form, not a mailto (src/lib/sales/), with ?src= naming this grid.
+    expect(ent.getAttribute("href")).toBe("/en/enterprise/contact?src=pricing-enterprise");
     expect(screen.queryByText("/ ENTERPRISE")).toBeNull();
   });
 });

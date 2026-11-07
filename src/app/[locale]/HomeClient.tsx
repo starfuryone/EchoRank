@@ -950,6 +950,7 @@ export default function HomeClient({
             <p><Link className={s.label} href="/en-CA#pricing">{t.pricing.cadLink}</Link></p>
           )}
           <PricingSection
+            salesSrc="home-pricing"
             locale={locale}
             pricing={pricing}
             priceChrome={priceChrome}
