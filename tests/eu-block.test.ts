@@ -150,7 +150,7 @@ describe("signup: POST /api/auth/register", () => {
   it("the form asks for the country, required, and sends it", () => {
     const form = read("src/app/(auth)/register/register-form.tsx");
     expect(form).toMatch(/<select\s+id="country"[^>]*?[\s\S]*?required/);
-    expect(form).toContain("acceptedTerms, country })");
+    expect(form).toContain("acceptedTerms, country, marketingConsent })");
   });
 
   it("invitations into an existing workspace are not checked (no country on the invite path)", () => {

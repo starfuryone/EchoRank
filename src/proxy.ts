@@ -136,6 +136,8 @@ const publicExactPaths = new Set([
   "/api/public/funnel/audit",
   "/api/v1/visibility/query",
   "/embed/audit",
+  // One-click unsubscribe from marketing email: opened from an inbox, signed out.
+  "/api/email/unsubscribe",
 ]);
 
 /** "/xx/legal/terms" -> "/legal/terms". "/about" -> "". */
@@ -233,6 +235,11 @@ const withSession = auth((req) => {
     // authority to borrow. src/lib/funnel/origins.ts is the whole argument.
     // Exact-match, deliberately: /api/public/funnel/* keeps the origin check.
     pathname !== "/api/public/funnel/audit" &&
+    // RFC 8058 one-click unsubscribe. The POST comes from the mail provider
+    // (Gmail, Yahoo, Apple Mail) with no Origin. The route reads no cookie; its
+    // only credential is the HMAC token in the URL, which can only turn
+    // marketing email off. Exact-match.
+    pathname !== "/api/email/unsubscribe" &&
     method !== "GET" &&
     method !== "HEAD" &&
     method !== "OPTIONS"

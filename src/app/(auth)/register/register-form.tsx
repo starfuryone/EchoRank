@@ -47,6 +47,7 @@ export default function RegisterForm({
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [marketingConsent, setMarketingConsent] = useState(false);
   const [showTerms, setShowTerms] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -58,7 +59,7 @@ export default function RegisterForm({
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password, businessName, plan, brand, acceptedTerms, country }),
+        body: JSON.stringify({ name, email, password, businessName, plan, brand, acceptedTerms, country, marketingConsent }),
       });
 
       const data = await res.json();
@@ -239,6 +240,17 @@ export default function RegisterForm({
             </button>
             {c.termsLabelPost}
           </span>
+        </label>
+
+        <label className="flex items-start gap-2 text-sm text-gray-600">
+          <input
+            type="checkbox"
+            name="marketingConsent"
+            checked={marketingConsent}
+            onChange={(e) => setMarketingConsent(e.target.checked)}
+            className="mt-0.5 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+          />
+          <span>{c.marketingLabel}</span>
         </label>
 
         <Button type="submit" loading={loading} disabled={!acceptedTerms} className="w-full" size="lg">

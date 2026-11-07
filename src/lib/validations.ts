@@ -22,6 +22,8 @@ export const registerSchema = z.object({
     .trim()
     .toUpperCase()
     .refine((c) => isSignupCountry(c), { message: "Choose your country" }),
+  // Optional opt-in to marketing email, an unticked box. Only `true` opts in.
+  marketingConsent: z.boolean().optional(),
 });
 
 export const createCustomerSchema = z.object({

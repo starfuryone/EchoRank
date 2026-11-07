@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { getOnboardingSnapshot } from "@/lib/onboarding";
 import { CRAWLER_BRAND } from "@/lib/site-crawler/brand";
 import { SITE_URL } from "@/lib/seo/constants";
+import { oneClickUnsubscribeHeaders, unsubscribeUrl } from "@/lib/email/unsubscribe";
 // planConfig(), not PLAN_CONFIGS[...]: the map is keyed by SellablePlanType and
 // a tenant can still carry the retired AI_VISIBILITY tier, which the helper
 // folds to STARTER.
@@ -236,12 +237,18 @@ export async function sendOnboardingEmail(
     params.billingUrl = `${SITE_URL}/billing`;
   }
 
+  // Marketing email: one-click unsubscribe (RFC 8058) in the headers, and the
+  // same link as {{ params.unsubscribeUrl }} for the template's footer.
+  params.unsubscribeUrl = unsubscribeUrl(tenantId);
+
   const templateId = templateIdFor(stage, locale);
   const apiKey = process.env.BREVO_API_KEY;
+  const headers = oneClickUnsubscribeHeaders(tenantId);
   const payload = {
     templateId,
     to: [{ email: owner.email, name: owner.name ?? undefined }],
     params,
+    ...(Object.keys(headers).length ? { headers } : {}),
   };
 
   const dryRun =
@@ -261,6 +268,11 @@ export async function sendOnboardingEmail(
       "BREVO_API_KEY not set — onboarding email skipped",
     );
     return { status: "skipped", reason: "no_api_key" };
+  }
+  if (!headers["List-Unsubscribe"]) {
+    // No marketing email goes out without a working unsubscribe.
+    logger.warn({ tenantId, stage, queue: "onboarding-email" }, "AUTH_SECRET not set: no unsubscribe link, onboarding email skipped");
+    return { status: "skipped", reason: "no_unsubscribe_link" };
   }
   if (!templateId) {
     logger.warn(

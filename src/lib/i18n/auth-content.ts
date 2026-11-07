@@ -35,6 +35,8 @@ export interface AuthContent {
     /** Where the business is; required (EU/EEA/UK are refused, src/lib/geo/blocked-countries.ts). */
     countryLabel: string;
     countryPh: string;
+    /** The optional, unticked marketing opt-in at signup. */
+    marketingLabel: string;
     passwordLabel: string;
     passwordPh: string;
     submit: string;
@@ -83,6 +85,7 @@ const en: AuthContent = {
     businessPh: "Acme Plumbing",
     countryLabel: "Country",
     countryPh: "Choose your country",
+    marketingLabel: "Send me tips and product news from Echorank (optional, unsubscribe anytime).",
     passwordLabel: "Password",
     passwordPh: "At least 8 characters",
     submit: "Create Account",
@@ -131,6 +134,7 @@ const fr: AuthContent = {
     businessPh: "Plomberie Martin",
     countryLabel: "Pays",
     countryPh: "Choisissez votre pays",
+    marketingLabel: "Envoyez-moi les conseils et nouveautés d'Echorank (facultatif, désabonnement à tout moment).",
     passwordLabel: "Mot de passe",
     passwordPh: "Au moins 8 caractères",
     submit: "Créer mon compte",
@@ -179,6 +183,7 @@ const frCA: AuthContent = {
     businessPh: "Plomberie Tremblay",
     countryLabel: "Pays",
     countryPh: "Choisissez votre pays",
+    marketingLabel: "Envoyez-moi les conseils et nouveautés d'Echorank (facultatif, désabonnement à tout moment).",
     passwordLabel: "Mot de passe",
     passwordPh: "Au moins 8 caractères",
     submit: "Créer mon compte",
@@ -227,6 +232,7 @@ const deCH: AuthContent = {
     businessPh: "Muster Sanitär AG",
     countryLabel: "Land",
     countryPh: "Wählen Sie Ihr Land",
+    marketingLabel: "Senden Sie mir Tipps und Produktneuigkeiten von Echorank (freiwillig, jederzeit abbestellbar).",
     passwordLabel: "Passwort",
     passwordPh: "Mindestens 8 Zeichen",
     submit: "Konto erstellen",

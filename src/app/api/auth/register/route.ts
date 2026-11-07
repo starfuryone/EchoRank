@@ -44,7 +44,7 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { name, email, password, businessName, plan, brand, acceptedTerms, country } = validate(
+    const { name, email, password, businessName, plan, brand, acceptedTerms, country, marketingConsent } = validate(
       registerSchema,
       body,
     );
@@ -115,6 +115,10 @@ export async function POST(request: Request) {
           defaultLanguage,
           signupCountry: country,
           signupIpCountry: ipCountry,
+          // Marketing email only with the box ticked; it starts unticked.
+          ...(marketingConsent === true
+            ? { marketingConsent: true, marketingConsentAt: new Date(), marketingConsentSource: "signup" }
+            : { marketingConsent: false }),
         },
       });
 
