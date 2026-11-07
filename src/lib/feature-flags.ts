@@ -41,10 +41,9 @@ const ALL_FEATURES: Feature[] = [
   "matrix_chat",
 ];
 
-// STARTER's set, named because the retired AI_VISIBILITY key aliases it.
-// ai_visibility and answer_tracking are baseline from STARTER up: the
-// standalone $29 AI Visibility tier was retired and its capabilities folded
-// into every tier, so the ladder is STARTER→ENTERPRISE with no side product.
+// STARTER's set. ai_visibility and answer_tracking are on every plan,
+// including the $29 AI Visibility plan (reinstated 2026-11-07), which has
+// nothing else.
 const STARTER_FEATURES: Feature[] = [
   "review_authenticity",
   "marketing_studio",
@@ -53,13 +52,9 @@ const STARTER_FEATURES: Feature[] = [
 ];
 
 const PLAN_FEATURES: Record<PlanType, Set<Feature>> = {
-  /**
-   * @deprecated The AI_VISIBILITY tier is retired. The enum value survives for
-   * legacy rows only — nothing sells it (see plan-config.ts) and no tenant is
-   * on it. It resolves to STARTER's set so a stray row keeps working rather
-   * than losing every feature.
-   */
-  AI_VISIBILITY: new Set<Feature>(STARTER_FEATURES),
+  // The $29 AI-only plan: AI visibility and answer tracking, nothing else.
+  // src/lib/plan-access.ts is the allowlist every gate reads.
+  AI_VISIBILITY: new Set<Feature>(["ai_visibility", "answer_tracking"]),
   STARTER: new Set<Feature>(STARTER_FEATURES),
   GROWTH: new Set<Feature>([
     "review_authenticity",
@@ -90,9 +85,9 @@ export function getFeaturesForPlan(planType: PlanType): Feature[] {
 }
 
 export function getMinimumPlan(feature: Feature): PlanType {
-  // Cheapest-first. The retired AI_VISIBILITY tier is absent: it is not
-  // sellable, so it must never be the answer to "what do I upgrade to?".
+  // Cheapest-first, the $29 AI-only plan included since its reinstatement.
   const planOrder: PlanType[] = [
+    "AI_VISIBILITY",
     "STARTER",
     "GROWTH",
     "AGENCY",

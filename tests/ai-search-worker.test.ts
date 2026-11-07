@@ -142,8 +142,8 @@ describe("the sweep", () => {
     findManyBrands.mockResolvedValue([brandRow()]);
     await mod.__testing.sweep(NOW);
 
-    // GROWTH is twice_weekly, so the interval is 3.5 days.
-    const bucket = Math.floor(NOW.getTime() / (3.5 * DAY_MS));
+    // GROWTH is daily since 2026-11-07, so the interval is one day.
+    const bucket = Math.floor(NOW.getTime() / DAY_MS);
     expect(addJob.mock.calls[0][3]).toEqual({ jobId: `checkup:brand_1:${bucket}` });
 
     // A sweep in the NEXT interval gets a different id, so the enqueue lands

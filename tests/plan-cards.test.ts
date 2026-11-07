@@ -11,7 +11,8 @@ import {
 import { isUpgrade } from "@/lib/plan-config";
 import type { PlanType } from "@/generated/prisma";
 
-const CARDS: PlanType[] = ["STARTER", "GROWTH", "AGENCY"];
+// AI_VISIBILITY is a card again since its reinstatement (2026-11-07).
+const CARDS: PlanType[] = ["AI_VISIBILITY", "STARTER", "GROWTH", "AGENCY"];
 const ALL: PlanType[] = [...CARDS, "ENTERPRISE"];
 
 describe("current-plan badge", () => {
@@ -37,7 +38,7 @@ describe("upgrade buttons", () => {
     }
   });
 
-  it("offers a button on exactly STARTER and GROWTH, whichever way it points", () => {
+  it("offers a button on exactly AI_VISIBILITY, STARTER and GROWTH, whichever way it points", () => {
     // Tenant on ENTERPRISE so nothing is masked by the current-tier rule. Both
     // cards are BELOW enterprise, so both are downgrades — this assertion used
     // to require "upgrade" for both, which is the bug.
@@ -87,6 +88,9 @@ describe("each rendered button hits checkout with the right lookup key", () => {
 
   it("only ever builds keys that exist in Stripe", () => {
     const EXISTING = new Set([
+      // Created by /opt/echorank/prompts/stripe-ai-visibility.sh.
+      "echorank_ai_visibility_usd_month",
+      "echorank_ai_visibility_usd_year",
       "echorank_starter_usd_month",
       "echorank_starter_usd_year",
       "echorank_growth_usd_month",
@@ -163,12 +167,11 @@ describe("direction relative to the tenant's own tier", () => {
     }
   });
 
-  it("folds the retired AI_VISIBILITY tier rather than mislabelling it", () => {
-    // It ranks as STARTER, so Growth is genuinely up from it. Left outside the
-    // order it would compare as index -1 and read as an upgrade to everything,
-    // including Starter.
+  it("places the AI Visibility plan below Starter (reinstated 2026-11-07)", () => {
+    // Every paid tier is up from it, and it is down from every paid tier.
+    expect(planCardAction("STARTER", "AI_VISIBILITY")).toBe("upgrade");
     expect(planCardAction("GROWTH", "AI_VISIBILITY")).toBe("upgrade");
-    expect(planCardAction("STARTER", "AI_VISIBILITY")).toBe("downgrade");
+    expect(planCardAction("AI_VISIBILITY", "STARTER")).toBe("downgrade");
   });
 
   it("builds a checkout key for a downgrade too", () => {

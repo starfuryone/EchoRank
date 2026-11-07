@@ -136,13 +136,10 @@ describe("the d10 payload", () => {
     expect(params.billingUrl).toContain("/billing");
   });
 
-  it("folds the retired AI_VISIBILITY tier to a real plan name", async () => {
-    // PLAN_CONFIGS is keyed by SellablePlanType; a tenant can still carry the
-    // retired tier, and an undefined plan name in a customer email is worse
-    // than a slightly wrong one.
+  it("names the AI Visibility plan by its own name (reinstated 2026-11-07)", async () => {
     tenant.findUnique.mockResolvedValue(trialingTenant({ planType: "AI_VISIBILITY" }));
 
-    expect((await d10()).planName).toBe("Starter");
+    expect((await d10()).planName).toBe("AI Visibility");
   });
 });
 

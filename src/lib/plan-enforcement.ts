@@ -10,13 +10,11 @@ export { QuotaExceededError };
 
 // ─── Plan hierarchy ─────────────────────────────────────────────────────────
 
-// Ranked by price, low to high. The retired AI_VISIBILITY tier shares
-// STARTER's rank rather than sitting below it: STARTER absorbed it wholesale,
-// so a legacy row should carry exactly STARTER's authority. AI-visibility
-// surfaces are gated with requireFeature(), never with requirePlan().
+// Ranked by price, low to high. AI_VISIBILITY ($29, AI-only) sits below
+// STARTER again since its reinstatement (2026-11-07). Which AREAS a plan may
+// reach is src/lib/plan-access.ts, not this rank.
 const PLAN_RANK: Record<PlanType, number> = {
-  /** @deprecated Retired tier; ranks as STARTER for legacy rows. */
-  AI_VISIBILITY: 1,
+  AI_VISIBILITY: 0,
   STARTER: 1,
   GROWTH: 2,
   AGENCY: 3,

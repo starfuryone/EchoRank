@@ -3,14 +3,11 @@ import type { PlanType } from "@/generated/prisma";
 /**
  * Where each plan lands after login / when redirected off a forbidden path.
  *
- * Every tier lands on /dashboard. The retired AI_VISIBILITY tier used to land
- * on /visibility because it was confined to that subtree; no tier is confined
- * any more, so there is nothing left to vary. The key survives only because
- * the enum value does — see feature-flags.ts.
+ * The AI-only plan lands on /visibility, the part of the product it has
+ * (src/lib/plan-access.ts); every other tier on /dashboard.
  */
 export const PLAN_HOME: Record<PlanType, string> = {
-  /** @deprecated AI_VISIBILITY is retired; legacy rows land on /dashboard. */
-  AI_VISIBILITY: "/dashboard",
+  AI_VISIBILITY: "/visibility",
   STARTER: "/dashboard",
   GROWTH: "/dashboard",
   AGENCY: "/dashboard",
@@ -20,16 +17,13 @@ export const PLAN_HOME: Record<PlanType, string> = {
 /**
  * Maps a `?plan=` query value (e.g. "starter") to a PlanType.
  *
- * `ai_visibility` normalizes to STARTER rather than resolving to the retired
- * tier or falling through to null: live external links still carry it, and
- * STARTER is what replaced it (it now includes ai_visibility + answer_tracking).
+ * `ai_visibility` is the $29 AI-only plan again (reinstated 2026-11-07).
  */
 export function planFromParam(
   planParam: string | null | undefined,
 ): PlanType | null {
   if (!planParam) return null;
   const normalized = planParam.trim().toUpperCase();
-  if (normalized === "AI_VISIBILITY") return "STARTER";
   return Object.prototype.hasOwnProperty.call(PLAN_HOME, normalized)
     ? (normalized as PlanType)
     : null;

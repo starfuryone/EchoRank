@@ -15,6 +15,7 @@ import {
   checkoutLookupKey,
   isBillingInterval,
   isCheckoutTier,
+  planTypeForLookupKey,
 } from "@/lib/stripe/lookup-keys";
 import { PLAN_ORDER } from "@/lib/plan-config";
 
@@ -26,6 +27,9 @@ import { PLAN_ORDER } from "@/lib/plan-config";
  * list and is deliberately excluded from the plan-shaped assertions below.
  */
 const EXPECTED_KEYS = [
+  // The $29 AI-only plan, reinstated 2026-11-07 (/opt/echorank/prompts/stripe-ai-visibility.sh).
+  "echorank_ai_visibility_usd_month",
+  "echorank_ai_visibility_usd_year",
   "echorank_starter_usd_month",
   "echorank_starter_usd_year",
   "echorank_growth_usd_month",
@@ -118,9 +122,14 @@ describe("tier -> PlanType mapping", () => {
     }
   });
 
-  it("never maps the retired ai_visibility tier", () => {
-    expect(CHECKOUT_TIERS).not.toContain("ai_visibility");
-    expect(PLAN_ORDER).not.toContain("AI_VISIBILITY");
+  it("maps ai_visibility both ways, month and year (the round trip the webhook depends on)", () => {
+    expect(CHECKOUT_TIERS).toContain("ai_visibility");
+    expect(PLAN_ORDER[0]).toBe("AI_VISIBILITY");
+    for (const interval of ["month", "year"] as const) {
+      const key = checkoutLookupKey("ai_visibility", interval);
+      expect(key).toBe(`echorank_ai_visibility_usd_${interval}`);
+      expect(planTypeForLookupKey(key)).toBe("AI_VISIBILITY");
+    }
   });
 });
 

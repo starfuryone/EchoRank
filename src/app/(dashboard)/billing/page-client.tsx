@@ -33,6 +33,7 @@ interface BillingData {
 }
 
 const PLAN_ICONS: Record<string, React.ReactNode> = {
+  AI_VISIBILITY: <Eye className="h-6 w-6" />,
   STARTER: <Zap className="h-6 w-6" />,
   GROWTH: <Rocket className="h-6 w-6" />,
   AGENCY: <Building2 className="h-6 w-6" />,
@@ -40,14 +41,16 @@ const PLAN_ICONS: Record<string, React.ReactNode> = {
 
 // Product names — intentionally kept English in every locale.
 const PLAN_LABELS: Record<string, string> = {
+  AI_VISIBILITY: "AI Visibility",
   STARTER: "Starter",
   GROWTH: "Growth",
   AGENCY: "Agency",
 };
 
-/** Tiers drawn on this page, in order. ENTERPRISE is not among them — it has
- *  never had a card here, and adding one would change a four-column grid. */
-const PLAN_CARD_ORDER = ["STARTER", "GROWTH", "AGENCY"] as const;
+/** Tiers drawn on this page, in order: the four self-serve plans fill the
+ *  four-column grid. ENTERPRISE is not among them — it has never had a card
+ *  here; it is reached through the sales contact link. */
+const PLAN_CARD_ORDER = ["AI_VISIBILITY", "STARTER", "GROWTH", "AGENCY"] as const;
 
 export function BillingPageClient({
   locale,

@@ -14,8 +14,8 @@ import type { PlanType } from "@/generated/prisma";
  * start time, never taken from the request.
  */
 export const CRAWL_PAGES_PER_PLAN: Record<PlanType, number> = {
-  /** @deprecated Retired tier; pinned to STARTER's value for legacy rows. */
-  AI_VISIBILITY: 25,
+  /** The AI-only plan has no SEO tools; the proxy refuses it before this is read. */
+  AI_VISIBILITY: 0,
   STARTER: 25,
   GROWTH: 100,
   AGENCY: 500,
@@ -24,8 +24,8 @@ export const CRAWL_PAGES_PER_PLAN: Record<PlanType, number> = {
 
 /** Audits per calendar month, by plan. */
 export const AUDITS_PER_MONTH: Record<PlanType, number> = {
-  /** @deprecated Retired tier; pinned to STARTER's value for legacy rows. */
-  AI_VISIBILITY: 2,
+  /** The AI-only plan has no SEO tools; the proxy refuses it before this is read. */
+  AI_VISIBILITY: 0,
   STARTER: 2,
   GROWTH: 10,
   AGENCY: 50,

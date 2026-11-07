@@ -279,7 +279,15 @@ describe("plan gating", () => {
   // assigned to — the locked card would still be the whole experience. Its
   // allowance is now 5. This is a PACKAGING decision, so it is asserted rather
   // than implied: setting it back to 0 must fail here and be argued for.
-  it.each(["STARTER", "AI_VISIBILITY", "GROWTH", "AGENCY", "ENTERPRISE"] as const)(
+  // AI_VISIBILITY is the $29 AI-only plan since 2026-11-07: no Backlinks.
+  it("the AI-only plan cannot run a lookup", async () => {
+    requirePaidPlan.mockResolvedValue(membership("AI_VISIBILITY"));
+    const body = await (await GET_HISTORY()).json();
+    expect(body.usage.canAnalyze).toBe(false);
+    expect(body.usage.limit).toBe(0);
+  });
+
+  it.each(["STARTER", "GROWTH", "AGENCY", "ENTERPRISE"] as const)(
     "%s can run a lookup",
     async (plan) => {
       requirePaidPlan.mockResolvedValue(membership(plan));

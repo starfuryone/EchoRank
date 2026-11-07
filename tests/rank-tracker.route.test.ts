@@ -192,7 +192,7 @@ describe("plan gating", () => {
   // STARTER GAINED THE TOOL ON 2026-08-17 (25 keywords, weekly). These cases
   // asserted a 403 PLAN_LOCKED until then; the lock itself is still live code,
   // it simply has no tier standing behind it today.
-  it.each(["STARTER", "AI_VISIBILITY"] as const)(
+  it.each(["STARTER"] as const)(
     "%s may create a weekly project — the tool is in the plan",
     async (plan) => {
       requirePaidPlan.mockResolvedValue(membership(plan));
@@ -202,6 +202,13 @@ describe("plan gating", () => {
       expect(rankProject.create).toHaveBeenCalled();
     },
   );
+
+  it("the AI-only plan (reinstated 2026-11-07) may not: no Rank Tracker", async () => {
+    requirePaidPlan.mockResolvedValue(membership("AI_VISIBILITY"));
+    const res = await CREATE(jsonRequest(VALID_BODY));
+    expect(res.status).toBe(403);
+    expect(rankProject.create).not.toHaveBeenCalled();
+  });
 
   it("STARTER cannot schedule daily checks", async () => {
     requirePaidPlan.mockResolvedValue(membership("STARTER"));

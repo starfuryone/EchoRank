@@ -39,12 +39,17 @@ const BRAND = "Echorank360";
 // ENTERPRISE is deliberately absent: sales-led, no price rows, renders
 // "Contact us" wherever tiers are compared.
 const TIERS: TierSpec[] = [
+  // The $29 AI-only plan, reinstated 2026-11-07: $29/month, $276/year ($23/month).
+  // Its product and prices are created by /opt/echorank/prompts/stripe-ai-visibility.sh
+  // (transfer_lookup_key=true, so a price left by the retired tier gives up its
+  // key); this seeder then reuses them by metadata tier / lookup_key.
+  { planTier: "ai_visibility", label: "AI Visibility", monthlyCents: 2_900, annualCents: 27_600 },
   { planTier: "starter", label: "Starter", monthlyCents: 7_900, annualCents: 75_600 },
   { planTier: "growth", label: "Growth", monthlyCents: 19_900, annualCents: 190_800 },
   { planTier: "agency", label: "Agency", monthlyCents: 49_900, annualCents: 478_800 },
 ];
 
-const EXPECTED_ROWS = TIERS.length * 2; // 3 tiers x 2 intervals = 6
+const EXPECTED_ROWS = TIERS.length * 2; // 4 tiers x 2 intervals = 8
 
 interface ResultRow {
   tier: string;

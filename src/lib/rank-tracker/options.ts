@@ -58,8 +58,8 @@ export const RANK_TRACKED_KEYWORDS: Record<SellablePlanType, number> = Object.fr
  * stays where it was.
  */
 export const RANK_ALLOWED_FREQUENCIES: Record<PlanType, readonly RankFrequency[]> = {
-  /** @deprecated Retired tier; pinned to STARTER's value for legacy rows. */
-  AI_VISIBILITY: ["weekly"],
+  /** The AI-only plan has no Rank Tracker (src/lib/plan-access.ts). */
+  AI_VISIBILITY: [],
   STARTER: ["weekly"],
   GROWTH: ["weekly"],
   AGENCY: ["daily", "weekly"],
@@ -85,8 +85,8 @@ export const RANK_ALLOWED_FREQUENCIES: Record<PlanType, readonly RankFrequency[]
  * AGENCY's ceiling doubles ($54 -> $108) because its keyword cap did.
  */
 export const RANK_CHECKS_PER_MONTH: Record<PlanType, number> = {
-  /** @deprecated Retired tier; pinned to STARTER's value for legacy rows. */
-  AI_VISIBILITY: 200,
+  /** The AI-only plan has no Rank Tracker; 0 refuses. */
+  AI_VISIBILITY: 0,
   STARTER: 200,
   GROWTH: 800,
   AGENCY: 18000,

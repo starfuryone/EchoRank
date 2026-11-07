@@ -38,6 +38,7 @@ export const WATCHER_TIER = "watcher_pro" as const;
 export type CheckoutTier = Exclude<PlanTierKey, "enterprise"> | typeof WATCHER_TIER;
 
 export const CHECKOUT_TIERS: readonly CheckoutTier[] = [
+  "ai_visibility",
   "starter",
   "growth",
   "agency",
@@ -82,8 +83,11 @@ export function checkoutLookupKey(tier: CheckoutTier, interval: BillingInterval)
  */
 export function planTypeForLookupKey(
   lookupKey: string | null | undefined,
-): "STARTER" | "GROWTH" | "AGENCY" | null {
+): "AI_VISIBILITY" | "STARTER" | "GROWTH" | "AGENCY" | null {
   switch (lookupKey) {
+    case "echorank_ai_visibility_usd_month":
+    case "echorank_ai_visibility_usd_year":
+      return "AI_VISIBILITY";
     case "echorank_starter_usd_month":
     case "echorank_starter_usd_year":
       return "STARTER";

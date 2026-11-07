@@ -41,6 +41,7 @@ import {
 } from "@/lib/plan-config";
 import { isSeoToolLive } from "@/lib/seo-tools";
 import { AI_TESTED_KEYWORD_LIMIT } from "@/lib/keyword-opportunity/score";
+import { tracking as headlineTracking } from "@/lib/pricing-page/headlines";
 
 /** The two catalogues these bullets exist in. */
 export type PlanFeatureBase = "en" | "fr";
@@ -76,52 +77,15 @@ function num(value: number, base: PlanFeatureBase): string {
 // ─── Derived fragments ──────────────────────────────────────────────────────
 
 /**
- * "2 AI engines" / "all AI engines".
+ * "10 AI prompts · 3 AI engines · daily (ChatGPT, Google AI Overviews, Gemini)".
  *
- * `providers: null` means every provider currently AVAILABLE, which is a
- * runtime fact — an adapter is available when its API key is set. There is no
- * honest number to print for it, so it renders as "all" rather than as a count
- * someone would have to keep in sync with the deployed key set.
+ * The marketing cards' line (pricing-page/headlines.ts tracking()), so /billing
+ * and /pricing cannot describe the same plan two ways. Every part is read from
+ * aiCheckup; `providers: null` reads "all AI engines", with no names, because
+ * which engines are reachable is a runtime fact.
  */
-function engineCount(shape: AiCheckupShape, base: PlanFeatureBase): string {
-  if (shape.providers === null) return base === "fr" ? "tous les moteurs IA" : "all AI engines";
-  const n = shape.providers;
-  if (base === "fr") return `${n} moteur${n === 1 ? "" : "s"} IA`;
-  return `${n} AI engine${n === 1 ? "" : "s"}`;
-}
-
-/**
- * The cadence in parentheses after the engine count.
- *
- * "custom" is ENTERPRISE, whose schedule is set per contract and read from the
- * brand profile rather than from a cadence baked into config — so it names no
- * interval. "none" would be a tier with no monitor at all; none currently is,
- * but the branch is here so adding one cannot fall through to a wrong word.
- */
-function cadence(shape: AiCheckupShape, base: PlanFeatureBase): string | null {
-  const fr = base === "fr";
-  switch (shape.frequency) {
-    case "weekly":
-      return fr ? "hebdomadaire" : "weekly";
-    case "twice_weekly":
-      return fr ? "2x/semaine" : "2×/week";
-    case "daily":
-      return fr ? "quotidien" : "daily";
-    case "custom":
-      return fr ? "selon votre contrat" : "on your schedule";
-    case "none":
-      return null;
-  }
-}
-
-/** "AI answer tracking across 2 AI engines (weekly)". */
-function trackingLine(shape: AiCheckupShape, base: PlanFeatureBase): string {
-  const engines = engineCount(shape, base);
-  const when = cadence(shape, base);
-  const suffix = when ? ` (${when})` : "";
-  return base === "fr"
-    ? `Suivi des réponses IA sur ${engines}${suffix}`
-    : `AI answer tracking across ${engines}${suffix}`;
+function aiTrackingLine(config: PlanConfig, base: PlanFeatureBase): string {
+  return headlineTracking(config, base);
 }
 
 /**
@@ -241,6 +205,13 @@ function feedbackLine(config: PlanConfig, base: PlanFeatureBase): string {
  */
 const COPY: Record<PlanFeatureBase, Record<SellablePlanType, string[]>> = {
   en: {
+    AI_VISIBILITY: [
+      "AI Trust Score",
+      "Lost-recommendation alerts",
+      "Brand Radar",
+      "AI Lens",
+      "Email support — 48h weekday response",
+    ],
     STARTER: [
       "AI Trust Score",
       "Lost-recommendation alerts",
@@ -277,6 +248,13 @@ const COPY: Record<PlanFeatureBase, Record<SellablePlanType, string[]>> = {
     ],
   },
   fr: {
+    AI_VISIBILITY: [
+      "Score de confiance IA",
+      "Alertes de perte de recommandation",
+      "Brand Radar",
+      "AI Lens",
+      "Soutien par courriel — réponse en 48 h les jours ouvrables",
+    ],
     STARTER: [
       "Score de confiance IA",
       "Alertes de perte de recommandation",
@@ -328,7 +306,12 @@ function assemble(plan: SellablePlanType, base: PlanFeatureBase): string[] {
   const copy = COPY[base][plan];
 
   const location = locationLine(config, base);
-  const tracking = trackingLine(config.aiCheckup, base);
+  // The marketing cards' AI line, so /billing and /pricing say the same thing.
+  const tracking = aiTrackingLine(config, base);
+
+  // The AI-only plan: AI tracking, one location, the AI features, support.
+  // Nothing about feedback, SEO or crawls, which it does not include.
+  if (plan === "AI_VISIBILITY") return [tracking, location, ...copy];
   const feedback = feedbackLine(config, base);
   const search = searchLine(config, base);
   const opportunity = opportunityLine(config, base, plan === "STARTER");
@@ -353,8 +336,8 @@ function assemble(plan: SellablePlanType, base: PlanFeatureBase): string[] {
   const ordered =
     plan === "STARTER"
       ? [
-          location,
           tracking,
+          location,
           copy[0], // AI Trust Score
           copy[1], // Lost-recommendation alerts
           feedback,
@@ -366,8 +349,8 @@ function assemble(plan: SellablePlanType, base: PlanFeatureBase): string[] {
           copy[4], // Email support
         ]
       : [
-          location,
           tracking,
+          location,
           feedback,
           ...copy.slice(0, -2), // capability bullets, minus analytics + support
           search,
@@ -398,6 +381,7 @@ export function planFeaturesByPlan(
 ): Record<SellablePlanType, string[]> {
   const base = planFeatureBase(locale);
   return {
+    AI_VISIBILITY: assemble("AI_VISIBILITY", base),
     STARTER: assemble("STARTER", base),
     GROWTH: assemble("GROWTH", base),
     AGENCY: assemble("AGENCY", base),

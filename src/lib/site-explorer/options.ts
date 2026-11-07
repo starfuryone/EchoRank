@@ -61,8 +61,8 @@ export const SITE_EXPLORER_CACHE_TTL_MS =
  * dataforseo/metering.ts still applies underneath and can bite first.
  */
 export const SITE_EXPLORER_ANALYSES_PER_MONTH: Record<PlanType, number> = {
-  /** @deprecated Retired tier; pinned to STARTER's value for legacy rows. */
-  AI_VISIBILITY: 5,
+  /** The AI-only plan has no SEO tools; the proxy refuses it before this is read. */
+  AI_VISIBILITY: 0,
   STARTER: 5,
   GROWTH: 50,
   AGENCY: 200,

@@ -54,8 +54,8 @@ export const MAX_SPAM_SCORE_FOR_BADGE = 30;
 
 /** Searches per month per plan. */
 const SEARCHES_PER_MONTH: Record<PlanType, number> = {
-  /** @deprecated Retired tier; pinned to STARTER's value for legacy rows. */
-  AI_VISIBILITY: 10,
+  /** The AI-only plan has no content tools; 0 refuses. */
+  AI_VISIBILITY: 0,
   STARTER: 10,
   GROWTH: 50,
   AGENCY: 200,

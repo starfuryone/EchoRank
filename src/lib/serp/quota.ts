@@ -20,8 +20,8 @@ import { getRedisConnection } from "@/infrastructure/redis/connection";
  * Retune here; nothing else reads these.
  */
 export const SERP_CHECKS_PER_MONTH: Record<PlanType, number> = {
-  /** @deprecated Retired tier; pinned to STARTER's value for legacy rows. */
-  AI_VISIBILITY: 25,
+  /** The AI-only plan has no SEO tools; the proxy refuses it before this is read. */
+  AI_VISIBILITY: 0,
   STARTER: 25,
   GROWTH: 200,
   AGENCY: 1000,

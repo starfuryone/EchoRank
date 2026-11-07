@@ -22,17 +22,20 @@ export type PlanCardAction = "current" | "upgrade" | "downgrade" | "contact" | "
  * AGENCY is absent on purpose: it is the top self-serve tier, so there is
  * nothing to upgrade to from it. ENTERPRISE is absent because it is custom
  * priced and has no Stripe lookup key — it gets a contact link instead.
- * AI_VISIBILITY is absent because the tier is retired.
  */
 export const UPGRADEABLE_PLANS: readonly PlanType[] = [
+  // The $29 AI-only plan (reinstated 2026-11-07): moving between it and Starter
+  // is an ordinary checkout, in both directions.
+  "AI_VISIBILITY",
   "STARTER",
   "GROWTH",
 ] as const;
 
-/** PlanType -> Stripe tier key. Null where no key exists (ENTERPRISE, and the
- *  retired AI_VISIBILITY tier, which has no prices to check out against). */
+/** PlanType -> Stripe tier key. Null where no key exists (ENTERPRISE). */
 export function tierKeyFor(plan: PlanType): CheckoutTier | null {
   switch (plan) {
+    case "AI_VISIBILITY":
+      return "ai_visibility";
     case "STARTER":
       return "starter";
     case "GROWTH":

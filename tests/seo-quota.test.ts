@@ -233,10 +233,10 @@ describe("seoQuotaUsage", () => {
     expect(u.exceeded).toBe(false);
   });
 
-  it("reports a legacy AI_VISIBILITY row against STARTER's pool", async () => {
+  it("gives the AI-only plan (reinstated 2026-11-07) a pool of 0, which refuses", async () => {
     const u = await seoQuotaUsage("t1", "AI_VISIBILITY", NOW);
-    expect(u.limit).toBe(seoSearchLimit("STARTER"));
-    expect(u.exceeded).toBe(false);
+    expect(u.limit).toBe(0);
+    expect(u.exceeded).toBe(true);
   });
 });
 
@@ -274,14 +274,15 @@ describe("tracked keyword cap", () => {
     }
   });
 
-  it("grants STARTER its 25 keywords, and folds the retired tier onto it", () => {
+  it("grants STARTER its 25 keywords, and the AI-only plan none", () => {
     // DELIBERATE REVERSAL, 2026-08-17. This assertion used to read `toBe(0)`
     // under the comment "must not have quietly granted rank tracking to
     // STARTER". The grant is no longer quiet: 25/100/500 is the 2026-07-30
     // pricing decision, and the 0 that stood here was implementation drift
     // against a sheet that had always sold the tool on Starter.
     expect(trackedKeywordLimit("STARTER")).toBe(25);
-    expect(trackedKeywordLimit("AI_VISIBILITY")).toBe(25);
+    expect(trackedKeywordLimit("AI_VISIBILITY")).toBe(0);
+    expect(() => requireTrackedKeywordRoom("AI_VISIBILITY", 0, 1, NOW)).toThrow(TrackedKeywordLimitError);
     // The cap still bites once it is reached, on Starter like anywhere else.
     expect(() => requireTrackedKeywordRoom("STARTER", 25, 1, NOW)).toThrow(
       TrackedKeywordLimitError,

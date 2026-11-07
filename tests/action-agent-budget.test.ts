@@ -170,17 +170,16 @@ describe("assertActionAgentBudget", () => {
     expect(redis.get).not.toHaveBeenCalled();
   });
 
-  it("unlocks every plan that exists today, including the retired AI_VISIBILITY alias", async () => {
-    // marketing_studio is baseline from STARTER up and AI_VISIBILITY aliases
-    // STARTER's set, so the gate this feature is registered behind excludes
-    // nobody currently on the ladder. Asserted rather than assumed: this is the
-    // whole reason the tool is gated on marketing_studio and not on
-    // ai_visibility, whose GROWTH+ line would have refused STARTER tenants an
-    // allowance they are entitled to spend.
+  it("unlocks every plan from STARTER up, and refuses the AI-only plan", async () => {
+    // marketing_studio is baseline from STARTER up. AI_VISIBILITY is the $29
+    // AI-only plan again (reinstated 2026-11-07) and has no Marketing Studio.
+    // Asserted rather than assumed: this is the whole reason the tool is gated
+    // on marketing_studio and not on ai_visibility.
     redis.get.mockResolvedValue("0");
-    for (const plan of ["AI_VISIBILITY", "STARTER", "GROWTH", "AGENCY", "ENTERPRISE"] as const) {
+    for (const plan of ["STARTER", "GROWTH", "AGENCY", "ENTERPRISE"] as const) {
       await expect(assertActionAgentBudget(TENANT, plan)).resolves.toBeDefined();
     }
+    await expect(assertActionAgentBudget(TENANT, "AI_VISIBILITY")).rejects.toBeInstanceOf(MarketingPlanLockedError);
   });
 
   it("refuses a plan the feature table does not know, before it reads the counter", async () => {

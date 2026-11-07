@@ -69,8 +69,8 @@ export const BACKLINKS_OBSERVED_COST_USD = 0.368;
  * dataforseo/metering.ts still applies underneath and can bite first.
  */
 export const BACKLINKS_ANALYSES_PER_MONTH: Record<PlanType, number> = {
-  /** @deprecated Retired tier; pinned to STARTER's value for legacy rows. */
-  AI_VISIBILITY: 5,
+  /** The AI-only plan has no Backlinks tool; 0 refuses. */
+  AI_VISIBILITY: 0,
   /**
    * STARTER WAS 0, AND IS NOW 5. The two-tier split puts STARTER on Basic, and
    * a tier whose allowance is zero cannot use the tier it is assigned to — the

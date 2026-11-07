@@ -138,10 +138,11 @@ describe("the price comes from the plan config, never from the copy", () => {
     expect(render().text).toContain(PLAN_CONFIGS.GROWTH.name);
   });
 
-  it("folds the retired AI_VISIBILITY tier onto STARTER rather than throwing", () => {
+  it("charges the AI Visibility plan its own price ($29, reinstated 2026-11-07)", () => {
     expect(trialChargeLabel("AI_VISIBILITY", "month", "en")).toBe(
-      `$${money(PLAN_CONFIGS.STARTER.monthlyPrice)} USD/month`,
+      `$${money(PLAN_CONFIGS.AI_VISIBILITY.monthlyPrice)} USD/month`,
     );
+    expect(PLAN_CONFIGS.AI_VISIBILITY.monthlyPrice).toBe(29);
   });
 
   it("states NO amount when there is none to state", () => {

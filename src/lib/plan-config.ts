@@ -2,30 +2,22 @@ import type { PlanType } from "@/generated/prisma";
 import { hasFeature } from "./feature-flags";
 
 /**
- * The tiers that actually exist as products.
+ * The tiers that exist as products: every PlanType.
  *
- * PlanType still carries AI_VISIBILITY because the Prisma enum value survives
- * for legacy rows — dropping an enum value needs a migration, and there is
- * nothing to gain from one. But it is not sellable, has no price, no card and
- * no config, so every pricing/config surface is keyed by this narrower type.
- * Anything holding a raw PlanType goes through sellablePlan() first.
+ * AI_VISIBILITY was retired on 2026-08-09 (b4fd801) and folded onto STARTER,
+ * and reinstated on 2026-11-07 as the $29 AI-only plan (ECHORANK-AI-TIER.md).
+ * The name and the identity functions below are kept so every call site that
+ * went through them keeps compiling and now simply sees the real plan.
  */
-export type SellablePlanType = Exclude<PlanType, "AI_VISIBILITY">;
+export type SellablePlanType = PlanType;
 
-/**
- * Fold a stored plan value onto a sellable tier.
- *
- * AI_VISIBILITY maps to STARTER, which absorbed its capabilities wholesale
- * (ai_visibility + answer_tracking, same checkup shape, same AI allowances).
- * No tenant is on it, so this is belt-and-braces for stale rows.
- */
+/** Identity since AI_VISIBILITY is sellable again; kept for its call sites. */
 export function sellablePlan(plan: PlanType): SellablePlanType {
-  return plan === "AI_VISIBILITY" ? "STARTER" : plan;
+  return plan;
 }
 
-/** PLAN_CONFIGS lookup that tolerates a legacy AI_VISIBILITY value. */
 export function planConfig(plan: PlanType): PlanConfig {
-  return PLAN_CONFIGS[sellablePlan(plan)];
+  return PLAN_CONFIGS[plan];
 }
 
 /**
@@ -59,6 +51,8 @@ export const TRIAL_DAYS = 7;
  * wrong failure mode there).
  */
 export const MARKETING_MONTHLY_OUTPUT_TOKENS: Record<SellablePlanType, number | null> = {
+  // No Marketing Studio on the AI-only plan; 0 refuses (it is not "unlimited").
+  AI_VISIBILITY: 0,
   STARTER: 200_000,
   GROWTH: 500_000,
   AGENCY: 2_000_000,
@@ -68,11 +62,9 @@ export const MARKETING_MONTHLY_OUTPUT_TOKENS: Record<SellablePlanType, number | 
 /**
  * How often a brand's checkup runs. "none" = the tier has no monitor at all.
  *
- * Every sellable tier carries the `ai_visibility` feature, so every tier has a
- * real checkup shape. "none" is reserved for a tier that genuinely has no
- * monitor; none currently does. STARTER inherits the shape the retired $29 AI
- * Visibility tier used to sell, which is what makes "everything in the old AI
- * Visibility plan" true rather than marketing.
+ * Every tier carries the `ai_visibility` feature, so every tier has a real
+ * checkup shape. "none" is reserved for a tier that genuinely has no monitor;
+ * none currently does. Shapes rise with the ladder (tests/plan-access.test.ts).
  */
 export type CheckupFrequency = "none" | "weekly" | "twice_weekly" | "daily" | "custom";
 
@@ -165,6 +157,8 @@ export const WATCHER_PRICES_CENTS = {
  * same call every other `null` ceiling in this file makes.
  */
 export const KEYWORD_OPPORTUNITY_CAP_USD: Record<SellablePlanType, number | null> = {
+  // No Keyword Opportunity Finder on the AI-only plan.
+  AI_VISIBILITY: 0,
   STARTER: 2,
   GROWTH: 8,
   AGENCY: 15,
@@ -409,11 +403,8 @@ export interface PlanConfig {
    * allowance on each deploy. A 24h cache hit is not counted at all — see
    * keyword-opportunity/entitlement.ts for the order of draw.
    *
-   * A legacy AI_VISIBILITY tenant inherits STARTER's 5 through planConfig(),
-   * like every other capability that tier absorbed. That is deliberate: a
-   * special case to withhold five analyses from a tier nobody is on would be
-   * the first field in this file to break the fold, for well under a dollar of
-   * monthly COGS.
+   * The AI-only plan (AI_VISIBILITY) has 0: the Finder is an SEO tool it does
+   * not include (src/lib/plan-access.ts).
    */
   keywordOpportunityAnalysesPerMonth: number | null;
   /**
@@ -439,11 +430,72 @@ export interface PlanConfig {
 }
 
 export const PLAN_CONFIGS: Record<SellablePlanType, PlanConfig> = {
+  // The $29 AI-only plan (reinstated 2026-11-07, ECHORANK-AI-TIER.md). AI
+  // visibility and nothing else: every SEO, crawl, reputation and API
+  // allowance is 0, and src/lib/plan-access.ts keeps the areas themselves shut.
+  AI_VISIBILITY: {
+    name: "AI Visibility",
+    slug: "ai_visibility",
+    description: "Track whether ChatGPT, Gemini and Google's AI Overviews recommend your business",
+    monthlyPrice: 29,
+    annualPrice: 23,
+    isCustomPricing: false,
+    quotaDefaults: {
+      maxLocations: 1,
+      maxRequestsPerMonth: 0,
+      maxEmailsPerMonth: 0,
+      maxSmsPerMonth: 0,
+      maxWebhooksPerMonth: 0,
+      // The AI monitor routes draw on these, as they did on the retired tier.
+      maxAiInferencesPerMonth: 200,
+      maxMonitoringChecks: 120,
+      maxApiRequestsPerDay: 0,
+    },
+    seoSearchesPerMonth: 0,
+    trackedKeywords: 0,
+    crawlUrlCap: 0,
+    crawlsPerMonth: 0,
+    crawlRenderedPages: 0,
+    crawlsKept: 0,
+    crawlExtractors: 0,
+    crawlSearches: 0,
+    crawlSegments: 0,
+    crawlSchedules: 0,
+    crawlScheduleCadences: [],
+    crawlPsiPages: 0,
+    crawlBacklinkPages: 0,
+    crawlJsSnippets: 0,
+    crawlAiPages: 0,
+    crawlSemanticPages: 0,
+    crawlInspectionPages: 0,
+    // 10 prompts, the first three engines in catalogue order (ChatGPT, Google
+    // AI Overviews, Gemini), daily, one repetition.
+    aiCheckup: { frequency: "daily", providers: 3, prompts: 10, repetitions: 1 },
+    aiProjects: 1,
+    // Projected $2.55/month at worst case (real per-check costs, 2026-11-07:
+    // ChatGPT and Gemini $0.0012, AI Overviews $0.004, analysis ≤ $0.0007 an
+    // answer) × 1.5.
+    aiMonthlyCapUsd: 3.83,
+    keywordOpportunityAnalysesPerMonth: 0,
+    backlinks: {
+      tier: "basic",
+      scope: "domain",
+      listRows: 0,
+      filters: false,
+      csv: false,
+      history: false,
+      deepEndpoints: false,
+    },
+    highlighted: false,
+    cta: "Start tracking",
+    ctaLink: "/register?plan=ai_visibility",
+  },
+
   STARTER: {
     name: "Starter",
     slug: "starter",
-    // Positioned as a strict superset of the retired $29 AI Visibility tier:
-    // it carries that tier's whole feature set plus the reputation engine.
+    // Everything AI Visibility has, more AI tracking (a fourth engine, more
+    // prompts), plus the reputation engine and the SEO tools.
     description:
       "AI answer tracking plus the reputation engine, for small businesses getting started",
     monthlyPrice: 79,
@@ -480,11 +532,13 @@ export const PLAN_CONFIGS: Record<SellablePlanType, PlanConfig> = {
     crawlAiPages: 20,
     crawlSemanticPages: 500,
     crawlInspectionPages: 50,
-    // The shape the retired AI Visibility tier sold: two providers and one
-    // repetition. Repeatability needs >1 and stays a GROWTH feature.
-    aiCheckup: { frequency: "weekly", providers: 2, prompts: 10, repetitions: 1 },
+    // Raised 2026-11-07 (ECHORANK-AI-TIER.md): 15 prompts, four engines (AI
+    // Visibility's three plus Claude), daily. Repeatability needs >1 and stays
+    // a GROWTH feature.
+    aiCheckup: { frequency: "daily", providers: 4, prompts: 15, repetitions: 1 },
     aiProjects: 1,
-    aiMonthlyCapUsd: 5,
+    // Projected $4.59/month at worst case × 1.5.
+    aiMonthlyCapUsd: 6.89,
     keywordOpportunityAnalysesPerMonth: 5,
     backlinks: {
       tier: "basic",
@@ -534,7 +588,9 @@ export const PLAN_CONFIGS: Record<SellablePlanType, PlanConfig> = {
     crawlAiPages: 100,
     crawlSemanticPages: 2_000,
     crawlInspectionPages: 200,
-    aiCheckup: { frequency: "twice_weekly", providers: 4, prompts: 15, repetitions: 2 },
+    // Daily since 2026-11-07 (projected $9.18/month at worst case; the $40 cap
+    // already covers × 1.5).
+    aiCheckup: { frequency: "daily", providers: 4, prompts: 15, repetitions: 2 },
     aiProjects: 3,
     aiMonthlyCapUsd: 40,
     keywordOpportunityAnalysesPerMonth: 25,
@@ -586,7 +642,10 @@ export const PLAN_CONFIGS: Record<SellablePlanType, PlanConfig> = {
     crawlAiPages: 500,
     crawlSemanticPages: 5_000,
     crawlInspectionPages: 500,
-    aiCheckup: { frequency: "daily", providers: null, prompts: 20, repetitions: 3 },
+    // Four engines, as decided 2026-11-07 (was "every reachable engine"):
+    // the four the runner has adapters for. Projected $18.36/month at worst
+    // case; the $150 cap covers × 1.5.
+    aiCheckup: { frequency: "daily", providers: 4, prompts: 20, repetitions: 3 },
     aiProjects: 25,
     aiMonthlyCapUsd: 150,
     keywordOpportunityAnalysesPerMonth: 55,
@@ -726,7 +785,7 @@ export function planQuotaDefaults(planType: PlanType): MeteringQuotaDefaults {
  */
 export function getUpgradePath(currentPlan: PlanType): PlanType | null {
   const upgradeMap: Record<PlanType, PlanType | null> = {
-    // Legacy rows only; STARTER is a strict superset of the retired tier.
+    // The AI-only plan's next step: everything it has, plus the rest.
     AI_VISIBILITY: "STARTER",
     STARTER: "GROWTH",
     GROWTH: "AGENCY",
@@ -748,11 +807,11 @@ export function getEnterpriseContact() {
   };
 }
 
-/** Canonical tier ordering, low to high. The retired AI_VISIBILITY tier is
- *  absent — it is not sellable, so it must never appear in a pricing surface
- *  or be the answer to "what do I upgrade to?". Enterprise is custom-priced,
- *  so rank, not monthlyPrice, decides what counts as an upgrade. */
+/** Canonical tier ordering, low to high, starting at the $29 AI-only plan.
+ *  Enterprise is custom-priced, so rank, not monthlyPrice, decides what
+ *  counts as an upgrade. */
 export const PLAN_ORDER: SellablePlanType[] = [
+  "AI_VISIBILITY",
   "STARTER",
   "GROWTH",
   "AGENCY",

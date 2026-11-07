@@ -146,12 +146,17 @@ describe("the tier boundary is a capability object, not a plan name", () => {
         expect(cap.history, plan).toBe(true);
         expect(cap.deepEndpoints, plan).toBe(true);
       }
-      expect(cap.listRows, plan).toBeGreaterThan(0);
+      // The AI-only plan has no Backlinks tool at all (src/lib/plan-access.ts).
+      if (plan === "AI_VISIBILITY") expect(cap.listRows, plan).toBe(0);
+      else expect(cap.listRows, plan).toBeGreaterThan(0);
     }
   });
 
-  it("gives the retired tier STARTER's shape rather than an undefined one", () => {
-    expect(backlinksCapability("AI_VISIBILITY")).toEqual(backlinksCapability("STARTER"));
+  it("gives the AI-only plan (reinstated 2026-11-07) no rows and nothing above Basic", () => {
+    const cap = backlinksCapability("AI_VISIBILITY");
+    expect(cap.listRows).toBe(0);
+    expect(cap.tier).toBe("basic");
+    expect(cap.deepEndpoints).toBe(false);
   });
 });
 

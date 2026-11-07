@@ -356,14 +356,15 @@ test("serp check defaults match the keywords/overview route", () => {
   assert.ok((SERP_LOCATION_CODES as readonly number[]).includes(DEFAULT_LOCATION_CODE));
 });
 
-test("every plan has a monthly SERP check limit, ordered by tier", () => {
-  for (const plan of ["AI_VISIBILITY", "STARTER", "GROWTH", "AGENCY", "ENTERPRISE"] as const) {
+test("every plan with the SEO tools has a monthly SERP check limit, ordered by tier", () => {
+  for (const plan of ["STARTER", "GROWTH", "AGENCY", "ENTERPRISE"] as const) {
     assert.ok(SERP_CHECKS_PER_MONTH[plan] > 0, plan);
   }
   assert.equal(SERP_CHECKS_PER_MONTH.STARTER, 25);
   assert.equal(SERP_CHECKS_PER_MONTH.GROWTH, 200);
   assert.equal(SERP_CHECKS_PER_MONTH.AGENCY, 1000);
-  assert.ok(SERP_CHECKS_PER_MONTH.AI_VISIBILITY <= SERP_CHECKS_PER_MONTH.STARTER);
+  // The $29 AI-only plan has no SEO tools (src/lib/plan-access.ts): a 0 quota refuses.
+  assert.equal(SERP_CHECKS_PER_MONTH.AI_VISIBILITY, 0);
   assert.ok(SERP_CHECKS_PER_MONTH.ENTERPRISE >= SERP_CHECKS_PER_MONTH.AGENCY);
 });
 
@@ -460,14 +461,14 @@ test("cost levers: a wide keyword fetch, once a week", () => {
   assert.equal(SITE_EXPLORER_CACHE_TTL_MS, 7 * 24 * 60 * 60 * 1000);
 });
 
-test("every plan has a monthly analysis limit, ordered by tier", () => {
-  for (const plan of ["AI_VISIBILITY", "STARTER", "GROWTH", "AGENCY", "ENTERPRISE"] as const) {
+test("every plan with the SEO tools has a monthly analysis limit, ordered by tier", () => {
+  for (const plan of ["STARTER", "GROWTH", "AGENCY", "ENTERPRISE"] as const) {
     assert.ok(SITE_EXPLORER_ANALYSES_PER_MONTH[plan] > 0, plan);
   }
   assert.equal(SITE_EXPLORER_ANALYSES_PER_MONTH.STARTER, 5);
   assert.equal(SITE_EXPLORER_ANALYSES_PER_MONTH.GROWTH, 50);
   assert.equal(SITE_EXPLORER_ANALYSES_PER_MONTH.AGENCY, 200);
-  assert.ok(SITE_EXPLORER_ANALYSES_PER_MONTH.AI_VISIBILITY <= SITE_EXPLORER_ANALYSES_PER_MONTH.STARTER);
+  assert.equal(SITE_EXPLORER_ANALYSES_PER_MONTH.AI_VISIBILITY, 0);
   assert.ok(SITE_EXPLORER_ANALYSES_PER_MONTH.ENTERPRISE >= SITE_EXPLORER_ANALYSES_PER_MONTH.AGENCY);
 });
 
@@ -772,17 +773,17 @@ test("backlinks plan caps match the pricing sheet", () => {
   // Basic buys fewer endpoint families than the old five-call analysis did.
   // A PACKAGING DECISION, pinned here so reverting it has to be deliberate.
   assert.equal(BACKLINKS_ANALYSES_PER_MONTH.STARTER, 5);
-  assert.equal(BACKLINKS_ANALYSES_PER_MONTH.AI_VISIBILITY, 5);
   assert.equal(BACKLINKS_ANALYSES_PER_MONTH.GROWTH, 25);
   assert.equal(BACKLINKS_ANALYSES_PER_MONTH.AGENCY, 100);
   assert.ok(BACKLINKS_ANALYSES_PER_MONTH.ENTERPRISE >= BACKLINKS_ANALYSES_PER_MONTH.AGENCY);
 
-  // Every sellable tier can now run a lookup. The locked-card branch stays,
-  // because a future tier — or one whose allowance is cut back — needs it
-  // without a component change.
-  for (const plan of ["STARTER", "AI_VISIBILITY", "GROWTH", "AGENCY", "ENTERPRISE"] as const) {
+  // Every tier with the SEO tools can run a lookup. The $29 AI-only plan
+  // (2026-11-07) has none: its 0 is the locked-card branch this kept for.
+  for (const plan of ["STARTER", "GROWTH", "AGENCY", "ENTERPRISE"] as const) {
     assert.ok(planCanAnalyzeBacklinks(plan), plan);
   }
+  assert.equal(BACKLINKS_ANALYSES_PER_MONTH.AI_VISIBILITY, 0);
+  assert.equal(planCanAnalyzeBacklinks("AI_VISIBILITY"), false);
 });
 
 test("the tier boundary is a capability object, and the two tiers differ", () => {

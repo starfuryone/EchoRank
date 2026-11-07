@@ -3,9 +3,8 @@ import { getOnboardingSnapshot } from "@/lib/onboarding";
 import { CRAWLER_BRAND } from "@/lib/site-crawler/brand";
 import { SITE_URL } from "@/lib/seo/constants";
 import { oneClickUnsubscribeHeaders, unsubscribeUrl } from "@/lib/email/unsubscribe";
-// planConfig(), not PLAN_CONFIGS[...]: the map is keyed by SellablePlanType and
-// a tenant can still carry the retired AI_VISIBILITY tier, which the helper
-// folds to STARTER.
+// planConfig() is the identity lookup since AI_VISIBILITY is sellable again;
+// it is kept as the one accessor so a future fold lands in one place.
 import { planConfig } from "@/lib/plan-config";
 import { logger } from "@/infrastructure/observability/logger";
 import type { OnboardingEmailStage } from "@/infrastructure/queue/jobs/schemas";

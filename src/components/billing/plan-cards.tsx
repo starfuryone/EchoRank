@@ -46,6 +46,7 @@ import s from "./plan-cards.module.css";
 
 /** Product names stay English in every locale, as elsewhere in the app. */
 const PLAN_LABELS: Record<string, string> = {
+  AI_VISIBILITY: "AI Visibility",
   STARTER: "Starter",
   GROWTH: "Growth",
   AGENCY: "Agency",

@@ -137,7 +137,7 @@ describe("guards", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it("lets a legacy AI_VISIBILITY row generate, folded onto STARTER", async () => {
+  it("refuses the AI-only plan (reinstated 2026-11-07): no Marketing Studio", async () => {
     requirePaidPlan.mockResolvedValue(membership("AI_VISIBILITY"));
     const res = await GENERATE(
       post({
@@ -145,7 +145,7 @@ describe("guards", () => {
         values: { PRODUCT: "p", AUDIENCE: "a", COMPETITOR: "c", THEIR_ANGLE: "t" },
       }),
     );
-    expect(res.status).toBe(200);
+    expect(res.status).toBe(403);
   });
 
   it("400s an unknown category before the rate limiter is spent", async () => {

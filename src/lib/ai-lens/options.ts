@@ -16,7 +16,7 @@ import type { PlanType } from "@/generated/prisma";
  *
  */
 export const AI_LENS_ANALYSES_PER_MONTH: Record<PlanType, number> = {
-  /** @deprecated Retired tier; pinned to STARTER's value for legacy rows. */
+  /** AI Lens is included in the AI-only plan, at Starter's allowance. */
   AI_VISIBILITY: 10,
   STARTER: 10,
   GROWTH: 50,

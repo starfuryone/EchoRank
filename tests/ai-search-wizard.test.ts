@@ -768,7 +768,9 @@ describe("generating suggestions", () => {
         meter,
       },
     );
-    expect(result.limit).toBe(10);
-    expect(generate.mock.calls[0][0].count).toBe(20);
+    // From the tier's config (15 since 2026-11-07), never a constant.
+    const limit = planConfig("STARTER").aiCheckup.prompts;
+    expect(result.limit).toBe(limit);
+    expect(generate.mock.calls[0][0].count).toBe(limit * 2);
   });
 });
