@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const m = vi.hoisted(() => {
   const count = () => vi.fn(async () => 0);
-  const many = (n: number) => vi.fn(async () => ({ count: n }));
+  const many = (n: number) => vi.fn<(a: { where?: unknown }) => Promise<{ count: number }>>(async () => ({ count: n }));
   return {
     customer: { findFirst: vi.fn(), update: vi.fn() },
     feedback: { count: count(), findMany: vi.fn(), updateMany: many(2) },
