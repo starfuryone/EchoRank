@@ -48,7 +48,8 @@ function landingPayloads(): { slug: string; file: string }[] {
 /** Every locale-prefixed destination the payload links to, as registry paths. */
 function localePaths(src: string): string[] {
   const hrefs = [...src.matchAll(/href="\/en([^"]*)"/g)].map((m) => m[1]);
-  return [...new Set(hrefs.map((h) => h.split("#")[0].replace(/\/$/, "")))];
+  // The route is the path: a ?query (the sales form's ?src=) and a #fragment are not part of it.
+  return [...new Set(hrefs.map((h) => h.split("#")[0].split("?")[0].replace(/\/$/, "")))];
 }
 
 describe("landing payload links", () => {

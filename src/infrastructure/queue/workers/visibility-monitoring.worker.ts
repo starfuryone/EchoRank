@@ -41,6 +41,7 @@ const PROMPT_SWEEP_JOB_NAME = "prompt-sweep";
 const GSC_SWEEP_JOB_NAME = "gsc-sweep";
 const DATA_DELETION_SWEEP_JOB_NAME = "data-deletion-sweep";
 const LOGIN_EVENTS_PURGE_JOB_NAME = "login-events-purge";
+const SALES_INQUIRIES_PURGE_JOB_NAME = "sales-inquiries-purge";
 const PROMPT_BATCH_JOB_NAME = "run-prompt-batch";
 const PROMPT_BATCH_SIZE = 25; // sidecar MAX_PROMPTS_PER_CALL
 const RANK_DROP_THRESHOLD = 2; // alert when brandRank worsens by this many
@@ -489,6 +490,11 @@ async function processVisibilityJob(job: Job<VisibilityMonitoringJob>): Promise<
       await purgeOldLoginEvents();
       return;
     }
+    if (job.data.salesInquiriesPurge) {
+      const { purgeClosedInquiries } = await import("@/lib/sales/inquiries");
+      await purgeClosedInquiries();
+      return;
+    }
     if (job.data.promptTenantId) return processPromptBatch(job.data.promptTenantId);
     // The free AI Visibility Check (src/lib/snapshot/job.ts).
     if (job.data.snapshotId) {
@@ -589,6 +595,21 @@ export function startVisibilityMonitoringWorker(): Worker<VisibilityMonitoringJo
     )
     .catch((err) => {
       logger.error({ err, queue: QUEUE_NAME }, "Failed to schedule the login-events purge");
+    });
+
+  // Nightly sales-inquiry purge (03:50 UTC): closed inquiries are kept 24 months.
+  getQueue(QUEUE_NAME)
+    .add(
+      SALES_INQUIRIES_PURGE_JOB_NAME,
+      { salesInquiriesPurge: true },
+      {
+        repeat: { pattern: "50 3 * * *", tz: "UTC" },
+        removeOnComplete: true,
+        removeOnFail: { count: 50 },
+      },
+    )
+    .catch((err) => {
+      logger.error({ err, queue: QUEUE_NAME }, "Failed to schedule the sales-inquiry purge");
     });
 
   worker.on("completed", (job) => {

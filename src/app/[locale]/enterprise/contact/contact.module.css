@@ -1,0 +1,37 @@
+/* The sales contact form. Marketing tokens only: every colour is a var() that
+   .page (home2.module.css) defines and [data-theme] switches. */
+.wrap{max-width:720px}
+.form{display:grid;grid-template-columns:1fr 1fr;gap:18px 20px;margin-top:32px}
+.full{grid-column:1/-1}
+.field{display:flex;flex-direction:column;gap:6px;min-width:0}
+.lbl{font-size:14px;font-weight:560;color:var(--text)}
+.opt{font-weight:400;color:var(--faint)}
+.input,.select,.textarea{
+  width:100%;box-sizing:border-box;min-width:0;
+  padding:12px 14px;border-radius:10px;
+  border:1px solid var(--line);background:var(--surface);color:var(--text);
+  font:inherit;font-size:16px;line-height:1.4;
+}
+.textarea{min-height:140px;resize:vertical}
+.input:focus,.select:focus,.textarea:focus,.check input:focus-visible{outline:2px solid var(--gold);outline-offset:1px}
+.input[aria-invalid="true"],.select[aria-invalid="true"]{border-color:var(--red)}
+.fieldset{border:0;padding:0;margin:0;min-width:0}
+.legend{padding:0;margin-bottom:8px}
+.checks{display:grid;grid-template-columns:1fr 1fr;gap:10px 20px}
+.check{display:flex;align-items:flex-start;gap:10px;font-size:15px;color:var(--text);cursor:pointer}
+.check input{width:18px;height:18px;margin:2px 0 0;flex:0 0 18px;accent-color:var(--gold)}
+.muted{font-size:14px;color:var(--muted)}
+.muted a{color:var(--blue);text-decoration:underline}
+.hp{position:absolute!important;left:-10000px!important;width:1px;height:1px;overflow:hidden}
+.error{margin:0;padding:12px 14px;border-radius:10px;border:1px solid var(--red);color:var(--redText);background:var(--surface)}
+.submit{
+  justify-self:start;display:inline-flex;align-items:center;justify-content:center;
+  height:52px;padding:0 28px;border-radius:10px;border:0;
+  background:var(--goldGrad);color:var(--onGold);font-size:16px;font-weight:600;cursor:pointer;
+}
+.submit[disabled]{opacity:.6;cursor:default}
+.done{margin-top:32px;padding:20px 22px;border-radius:12px;border:1px solid var(--green);background:var(--surface);color:var(--text);font-size:17px}
+@media (max-width:640px){
+  .form,.checks{grid-template-columns:1fr}
+  .submit{justify-self:stretch}
+}

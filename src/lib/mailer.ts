@@ -125,6 +125,8 @@ export interface MailInput {
   text?: string;
   /** Files to attach (the free check's PDF report). */
   attachments?: { filename: string; content: Buffer; contentType: string }[];
+  /** Where a reply goes (the sales inquiry's submitter); the From stays ours. */
+  replyTo?: string;
 }
 
 /**
@@ -136,7 +138,7 @@ export interface MailInput {
  * inside BullMQ needs the rejection to trigger the retry, and a caller on a
  * request path is expected to wrap it (see src/lib/funnel/notify.ts).
  */
-export async function sendMail({ to, subject, html, text, attachments }: MailInput): Promise<boolean> {
+export async function sendMail({ to, subject, html, text, attachments, replyTo }: MailInput): Promise<boolean> {
   const t = getTransport();
   if (!t) return false;
 
@@ -159,6 +161,7 @@ export async function sendMail({ to, subject, html, text, attachments }: MailInp
     html,
     ...(text ? { text } : {}),
     ...(attachments?.length ? { attachments } : {}),
+    ...(replyTo ? { replyTo } : {}),
   });
   return true;
 }

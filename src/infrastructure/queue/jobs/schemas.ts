@@ -149,6 +149,8 @@ export interface VisibilityMonitoringJob {
   dataDeletionSweep?: boolean;
   /** Nightly: delete sign-in records older than 90 days (src/lib/login-events.ts). */
   loginEventsPurge?: boolean;
+  /** Nightly: delete sales inquiries closed more than 24 months ago (src/lib/sales/inquiries.ts). */
+  salesInquiriesPurge?: boolean;
   /** Free AI Visibility Check: run one check (job name "snapshot"). */
   snapshotId?: string;
   /** Free AI Visibility Check: email one unlocked report (job name "snapshot-email"). */

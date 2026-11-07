@@ -21,6 +21,7 @@ const STANDALONE = [
   "setup-ai-search-tracking",
   "technical-geo",
   "seo-spider/issues",
+  "enterprise",
 ];
 
 const REACT_FOOTERS = [

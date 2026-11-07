@@ -5232,6 +5232,49 @@ enum ComplaintStatus {
   ANSWERED
 }
 
+/// A sales inquiry from /{locale}/enterprise/contact (src/lib/sales/inquiries.ts).
+/// support@ gets every answer (reply-to the submitter), the submitter gets an
+/// acknowledgement. Staff move it new → contacted → closed at
+/// /admin/sales-inquiries. Closed inquiries are deleted 24 months after closing.
+/// Nothing is stored for a visitor in a blocked country (src/lib/geo/blocked-countries.ts).
+model SalesInquiry {
+  id               String             @id @default(cuid())
+  name             String
+  email            String
+  company          String
+  website          String
+  /// Declared, ISO 3166-1 alpha-2; ipCountry is Cloudflare's for the request.
+  country          String
+  ipCountry        String?
+  /// "1-5" | "6-25" | "26-100" | "100+" (clients or locations)
+  size             String
+  /// higher_limits | white_label | api_mcp | annual_billing | dpa | other
+  needs            String[]
+  message          String?
+  marketingConsent Boolean            @default(false)
+  locale           String             @default("en")
+  /// Where the visitor came from: the ?src= of the link, and document.referrer.
+  source           String?
+  referrer         String?
+  status           SalesInquiryStatus @default(NEW)
+  notifiedAt       DateTime?
+  acknowledgedAt   DateTime?
+  contactedAt      DateTime?
+  closedAt         DateTime?
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+
+  @@index([status, createdAt])
+  @@index([closedAt])
+  @@map("sales_inquiries")
+}
+
+enum SalesInquiryStatus {
+  NEW
+  CONTACTED
+  CLOSED
+}
+
 /// A user's request to delete their data (/settings/account), carried out
 /// after a 14-day grace period by the nightly sweep (src/lib/privacy/deletion.ts).
 /// No foreign keys, on purpose: the row outlives the user and the workspace.
