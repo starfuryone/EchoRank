@@ -147,6 +147,8 @@ export interface VisibilityMonitoringJob {
   gscSweep?: boolean;
   /** Nightly: carry out data-deletion requests whose 14-day grace period is over (src/lib/privacy/deletion.ts). */
   dataDeletionSweep?: boolean;
+  /** Nightly: delete sign-in records older than 90 days (src/lib/login-events.ts). */
+  loginEventsPurge?: boolean;
   /** Free AI Visibility Check: run one check (job name "snapshot"). */
   snapshotId?: string;
   /** Free AI Visibility Check: email one unlocked report (job name "snapshot-email"). */

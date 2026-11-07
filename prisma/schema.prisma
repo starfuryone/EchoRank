@@ -110,8 +110,28 @@ model User {
   sessions        Session[]
   auditLogs       AuditLog[]
   extensionTokens ExtensionToken[]
+  loginEvents     LoginEvent[]
 
   @@map("users")
+}
+
+/// One sign-in attempt (src/lib/login-events.ts): when, who, from which IP, and
+/// whether it worked. Kept 90 days (nightly purge). An attempt on an unknown
+/// email stores a short hash of it, never the address.
+model LoginEvent {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  emailHash String?
+  ip        String?
+  success   Boolean
+  /// Why it failed: bad_password, no_such_user, rate_limited_ip, ...
+  reason    String?
+
+  @@index([createdAt])
+  @@index([userId, createdAt])
+  @@map("login_events")
 }
 
 model Account {

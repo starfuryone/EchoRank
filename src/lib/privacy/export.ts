@@ -17,7 +17,7 @@ import { prisma } from "@/lib/prisma";
 const CAP = 50_000; // rows per table; a larger workspace gets the first CAP and a note
 
 export async function buildAccountExport(userId: string, tenantId: string, role: string) {
-  const [user, memberships, conversations, reads, consents] = await Promise.all([
+  const [user, memberships, conversations, reads, consents, logins] = await Promise.all([
     prisma.user.findUnique({
       where: { id: userId },
       select: { id: true, name: true, email: true, image: true, createdAt: true, termsAcceptedAt: true },
@@ -29,6 +29,12 @@ export async function buildAccountExport(userId: string, tenantId: string, role:
     prisma.assistantConversation.findMany({ where: { userId }, include: { messages: true }, take: CAP }),
     prisma.notificationRead.findMany({ where: { userId }, take: CAP }),
     prisma.consentEvent.findMany({ where: { userId }, take: CAP }),
+    prisma.loginEvent.findMany({
+      where: { userId },
+      select: { createdAt: true, ip: true, success: true, reason: true },
+      orderBy: { createdAt: "desc" },
+      take: CAP,
+    }),
   ]);
 
   const out: Record<string, unknown> = {
@@ -39,6 +45,7 @@ export async function buildAccountExport(userId: string, tenantId: string, role:
     assistantConversations: conversations,
     notificationsRead: reads,
     consentRecords: consents,
+    signIns: logins,
   };
 
   if (role === "OWNER" || role === "ADMIN") {

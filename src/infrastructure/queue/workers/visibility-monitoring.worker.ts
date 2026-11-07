@@ -40,6 +40,7 @@ const PROMPT_ERROR_RETRY_MS = 60 * 60 * 1000;
 const PROMPT_SWEEP_JOB_NAME = "prompt-sweep";
 const GSC_SWEEP_JOB_NAME = "gsc-sweep";
 const DATA_DELETION_SWEEP_JOB_NAME = "data-deletion-sweep";
+const LOGIN_EVENTS_PURGE_JOB_NAME = "login-events-purge";
 const PROMPT_BATCH_JOB_NAME = "run-prompt-batch";
 const PROMPT_BATCH_SIZE = 25; // sidecar MAX_PROMPTS_PER_CALL
 const RANK_DROP_THRESHOLD = 2; // alert when brandRank worsens by this many
@@ -483,6 +484,11 @@ async function processVisibilityJob(job: Job<VisibilityMonitoringJob>): Promise<
       const { runDueDeletions } = await import("@/lib/privacy/deletion");
       return runDueDeletions();
     }
+    if (job.data.loginEventsPurge) {
+      const { purgeOldLoginEvents } = await import("@/lib/login-events");
+      await purgeOldLoginEvents();
+      return;
+    }
     if (job.data.promptTenantId) return processPromptBatch(job.data.promptTenantId);
     // The free AI Visibility Check (src/lib/snapshot/job.ts).
     if (job.data.snapshotId) {
@@ -568,6 +574,21 @@ export function startVisibilityMonitoringWorker(): Worker<VisibilityMonitoringJo
     )
     .catch((err) => {
       logger.error({ err, queue: QUEUE_NAME }, "Failed to schedule the data-deletion sweep");
+    });
+
+  // Nightly login-log purge (03:35 UTC): sign-in records are kept 90 days.
+  getQueue(QUEUE_NAME)
+    .add(
+      LOGIN_EVENTS_PURGE_JOB_NAME,
+      { loginEventsPurge: true },
+      {
+        repeat: { pattern: "35 3 * * *", tz: "UTC" },
+        removeOnComplete: true,
+        removeOnFail: { count: 50 },
+      },
+    )
+    .catch((err) => {
+      logger.error({ err, queue: QUEUE_NAME }, "Failed to schedule the login-events purge");
     });
 
   worker.on("completed", (job) => {

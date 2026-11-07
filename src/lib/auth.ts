@@ -6,6 +6,7 @@ import { verifyPassword } from "./password";
 import { getClientIp } from "./client-ip";
 import { rateLimit } from "./rate-limit";
 import { logger } from "@/infrastructure/observability/logger";
+import { loginEmailHash, recordLogin } from "./login-events";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   adapter: PrismaAdapter(prisma),
@@ -30,18 +31,25 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         // CredentialsSignin error, which is right for the client but leaves
         // operators unable to tell a locked-out account from a typo'd
         // password. Record the deciding branch server-side only.
-        // `xff` is the raw forwarded chain next to the resolved IP: when the
-        // two disagree, the proxy chain is misattributing clients and the
-        // per-IP limiter below is bucketing unrelated users together.
+        //
+        // The record of each attempt (time, user, IP, outcome) is a
+        // login_events row, kept 90 days (src/lib/login-events.ts). The
+        // application log gets no email and no IP: pm2 logs rotate by size,
+        // not age. `emailHash` correlates repeated attempts on one address;
+        // `xffDiffers` keeps the old diagnostic (the forwarded chain
+        // disagreeing with the resolved IP means the proxy chain is
+        // misattributing clients and the per-IP limiter is bucketing
+        // unrelated users together) without logging either address.
+        const xffFirst = request?.headers?.get?.("x-forwarded-for")?.split(",")[0]?.trim() || null;
         const logCtx = {
           operation: "auth.credentials",
-          email: loginEmail,
-          ip: loginIp,
-          xff: request?.headers?.get?.("x-forwarded-for") ?? null,
+          emailHash: loginEmailHash(loginEmail),
+          xffDiffers: xffFirst !== null && xffFirst !== loginIp,
         };
 
-        const reject = (reason: string) => {
+        const reject = async (reason: string, userId: string | null = null) => {
           logger.warn({ ...logCtx, reason }, "Credentials login rejected");
+          await recordLogin({ userId, email: loginEmail, ip: loginIp, success: false, reason });
           return null;
         };
 
@@ -63,19 +71,20 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         });
 
         if (!user) return reject("no_such_user");
-        if (!user.passwordHash) return reject("no_password_hash");
+        if (!user.passwordHash) return reject("no_password_hash", user.id);
 
         const isValid = await verifyPassword(
           credentials.password as string,
           user.passwordHash
         );
 
-        if (!isValid) return reject("bad_password");
+        if (!isValid) return reject("bad_password", user.id);
 
         logger.info(
           { ...logCtx, userId: user.id },
           "Credentials login succeeded"
         );
+        await recordLogin({ userId: user.id, email: loginEmail, ip: loginIp, success: true });
 
         return {
           id: user.id,
