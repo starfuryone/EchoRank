@@ -6,6 +6,7 @@ import { CONTENT } from "@/lib/i18n/content";
 import lp from "../legal/legal.module.css";
 import BackButton from "../legal/back-button";
 import { buildMetadata } from "@/lib/seo";
+import { CompanyLine } from "@/components/brand/CompanyLine";
 
 export function generateStaticParams() {
   return SUPPORTED_LOCALES.map((locale) => ({ locale }));
@@ -509,6 +510,7 @@ export default async function GuidePage({ params }: { params: Promise<{ locale: 
               <Link key={l.label} href={`/${locale}${l.href}`}>{l.label}</Link>
             ))}
           </span>
+          <CompanyLine />
         </footer>
       </div>
     </div>

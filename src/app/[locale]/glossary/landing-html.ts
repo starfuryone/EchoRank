@@ -609,7 +609,7 @@ a{color:inherit}
 </main>
 
 <footer class="footer">
-  <div class="container">&copy; 2026 ECHORANK &middot; ChatLogic Insights Ltd &middot; Registered in England &amp; Wales No. 15593166<br><a href="/en/pricing">Pricing</a> &middot; <a href="/en/keyword-research">Keyword guide</a></div>
+  <div class="container">&copy; 2026 ECHORANK &middot; ChatLogic Insights Ltd<br><a href="/en/pricing">Pricing</a> &middot; <a href="/en/keyword-research">Keyword guide</a></div>
 </footer>
 
 <script>

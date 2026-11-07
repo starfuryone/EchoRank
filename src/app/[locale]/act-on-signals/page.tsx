@@ -8,6 +8,7 @@ import lp from "./act-on-signals.module.css";
 import BackButton from "../legal/back-button";
 import { ActArt } from "../hero-art";
 import { buildMetadata } from "@/lib/seo";
+import { CompanyLine } from "@/components/brand/CompanyLine";
 
 export function generateStaticParams() {
   return SUPPORTED_LOCALES.map((locale) => ({ locale }));
@@ -352,6 +353,7 @@ export default async function ActOnSignalsPage({ params }: { params: Promise<{ l
               <Link key={l.label} href={`/${locale}${l.href}`}>{l.label}</Link>
             ))}
           </span>
+          <CompanyLine />
         </footer>
       </div>
     </div>

@@ -6,6 +6,7 @@
 
 import Link from "next/link";
 import s from "@/app/[locale]/home2.module.css";
+import { CompanyLine } from "@/components/brand/CompanyLine";
 import { CRAWLER_BRAND } from "@/lib/site-crawler/brand";
 import { CookieSettingsLink } from "@/components/marketing/cookie-consent";
 import { cookieLocale } from "@/lib/consent/cookie-consent";
@@ -52,6 +53,7 @@ export function PublicFooter({ locale }: { locale: string }) {
           <Link href={L("/privacy/complaint")}>{COMPLAINT_LINK[cookieLocale(locale)]}</Link>
           <CookieSettingsLink locale={locale} />
         </span>
+        <CompanyLine />
       </div>
     </footer>
   );

@@ -310,7 +310,7 @@ export const SETUP_AI_SEARCH_TRACKING_HTML: string = String.raw`<!DOCTYPE html>
 
 <footer>
   <div class="wrap foot">
-    <div class="legal">© 2026 ECHORANK — ChatLogic Insights Ltd · Registered in England &amp; Wales No. 15593166</div>
+    <div class="legal">© 2026 ECHORANK — ChatLogic Insights Ltd</div>
     <nav class="links" aria-label="Legal">
       <a href="/en/legal/terms">Terms</a>
       <a href="/en/legal/privacy">Privacy</a>

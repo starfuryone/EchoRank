@@ -21,6 +21,7 @@ import type { HomePricingChrome } from "@/lib/i18n/content";
 // "~35% / 30%" assumptions clause stays with the calculator that makes it.
 import { ROI_CALCULATOR_NOTE } from "@/lib/revenue/disclaimer";
 import { HOME_STATS, filledHomeStats } from "@/lib/home-stats";
+import { CompanyLine } from "@/components/brand/CompanyLine";
 
 /**
  * One pricing card, built server-side from PLAN_CONFIGS. Prices and feature
@@ -1045,6 +1046,7 @@ export default function HomeClient({
             <Link href={L("/privacy/complaint")}>{COMPLAINT_LINK[cookieLocale(locale)]}</Link>
             <CookieSettingsLink locale={locale} />
           </span>
+          <CompanyLine />
         </div>
       </footer>
     </div>

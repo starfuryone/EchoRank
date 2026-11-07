@@ -1,9 +1,10 @@
 import { SEO_GUIDE_HTML } from "./landing-html";
+import { withCompanyLine } from "@/lib/brand/company";
 
 export const dynamic = "force-static";
 
 export function GET(): Response {
-  return new Response(SEO_GUIDE_HTML, {
+  return new Response(withCompanyLine(SEO_GUIDE_HTML), {
     headers: {
       "Content-Type": "text/html; charset=utf-8",
       // Same policy as /methodology and /link-building-playbook: long edge

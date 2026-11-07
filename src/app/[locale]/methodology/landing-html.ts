@@ -488,7 +488,7 @@ a:focus-visible,summary:focus-visible,.btn:focus-visible{outline:2px solid var(-
       </nav>
     </div>
     <div class="legal-row">
-      <p class="legal">© 2026 Echorank · ChatLogic Insights Ltd, registered in England &amp; Wales, company No. 15593166.</p>
+      <p class="legal">© 2026 Echorank · ChatLogic Insights Ltd</p>
       <nav class="foot-links foot-legal" aria-label="Legal">
         <a data-legal="terms" href="/en/legal/terms">Terms of Service</a>
         <a data-legal="privacy" href="/en/legal/privacy">Privacy Policy</a>

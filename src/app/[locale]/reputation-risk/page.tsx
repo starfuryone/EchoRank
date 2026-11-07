@@ -8,6 +8,7 @@ import home from "../home.module.css";
 import { RiskArt } from "../hero-art";
 import lp from "./reputation-risk.module.css";
 import { buildMetadata } from "@/lib/seo";
+import { CompanyLine } from "@/components/brand/CompanyLine";
 
 export function generateStaticParams() {
   return SUPPORTED_LOCALES.map((locale) => ({ locale }));
@@ -395,6 +396,7 @@ export default async function ReputationRiskPage({
               <Link key={l.label} href={`/${locale}${l.href}`}>{l.label}</Link>
             ))}
           </span>
+          <CompanyLine />
         </footer>
       </div>
     </div>

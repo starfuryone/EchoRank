@@ -1,10 +1,11 @@
 import { AIDO_HTML } from "./landing-html";
 import { withThemeSchedule } from "@/lib/theme-schedule";
+import { withCompanyLine } from "@/lib/brand/company";
 
 export const dynamic = "force-static";
 
 export function GET(): Response {
-  return new Response(withThemeSchedule(AIDO_HTML), {
+  return new Response(withCompanyLine(withThemeSchedule(AIDO_HTML)), {
     headers: {
       "Content-Type": "text/html; charset=utf-8",
       // Same policy as /methodology and /link-building-playbook: long edge

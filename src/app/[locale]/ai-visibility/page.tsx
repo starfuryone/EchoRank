@@ -11,6 +11,7 @@ import { AiVisibilityLogo } from '@/components/brand/AiVisibilityLogo';
 import { aiLabels } from '@/lib/i18n/ai-labels';
 import { KeywordWidget, type KeywordWidgetContent } from '@/components/KeywordWidget';
 import { JsonLd, SITE_URL, buildMetadata, faqPage, normalizeLocale, organization, webSite } from "@/lib/seo";
+import { CompanyLine } from "@/components/brand/CompanyLine";
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://echorank360.com';
 
@@ -683,6 +684,7 @@ export default async function AIVisibilityPage({
             <a key={l.href} href={`/${locale}${l.href}`}>{l.label}</a>
           ))}
         </nav>
+        <CompanyLine />
       </footer>
 
       <style>{css}</style>

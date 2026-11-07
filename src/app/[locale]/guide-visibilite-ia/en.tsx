@@ -9,6 +9,7 @@ import RevenueCalculator from "./calculator";
 import BackButton from "../legal/back-button";
 import { GuideHeroArt, SerpToAnswerArt, ChecklistArt, CrawlerGateArt, ReviewPulseArt } from "./art";
 import { JsonLd } from "@/lib/seo";
+import { CompanyLine } from "@/components/brand/CompanyLine";
 
 export const TITLE_EN = "The complete guide to AI visibility in 2026";
 export const SUBTITLE_EN = "How to get recommended by ChatGPT, Google AI, Gemini, Claude and Perplexity.";
@@ -428,6 +429,7 @@ export default function EnGuide({ locale, foot }: { locale: string; foot: Foot }
               <Link key={l.label} href={`/${locale}${l.href}`}>{l.label}</Link>
             ))}
           </span>
+          <CompanyLine />
         </footer>
       </div>
     </div>

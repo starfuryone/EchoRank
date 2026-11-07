@@ -1,5 +1,6 @@
 import { TECHNICAL_GEO_HTML } from "./landing-html";
 import { withThemeSchedule } from "@/lib/theme-schedule";
+import { withCompanyLine } from "@/lib/brand/company";
 
 /**
  * Standalone marketing landing page served as a raw HTML document. A route
@@ -9,7 +10,7 @@ import { withThemeSchedule } from "@/lib/theme-schedule";
  * first-pass pages); links inside it are locale-prefixed /en/... paths.
  */
 export function GET() {
-  return new Response(withThemeSchedule(TECHNICAL_GEO_HTML), {
+  return new Response(withCompanyLine(withThemeSchedule(TECHNICAL_GEO_HTML)), {
     headers: {
       "Content-Type": "text/html; charset=utf-8",
       "Cache-Control": "public, max-age=300",

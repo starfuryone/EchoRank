@@ -664,7 +664,7 @@ footer .wrap{max-width:1120px}
       </nav>
     </div>
     <p class="legal">
-      &copy; 2026 ECHORANK / CHATLOGIC INSIGHTS LTD &middot; ChatLogic Insights Ltd is registered in England and Wales, Company No. 15593166.<br>
+      &copy; 2026 ECHORANK / CHATLOGIC INSIGHTS LTD<br>
       <a href="/en/legal/privacy">Privacy Policy</a> &middot; <a href="/en/legal/terms">Terms of Service</a> &middot; <a href="/en/legal/cookies">Cookie Policy</a>
     </p>
   </div>

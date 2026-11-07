@@ -223,3 +223,7 @@ body {
 /* The ™ on the ECHORANK wordmark: <WordmarkTm />. One copy of the rules, verbatim from
    src/lib/brand/wordmark-tm.ts (WORDMARK_TM_CSS); tests/wordmark-tm.test.ts keeps them equal. */
 @property --er-wm-em{syntax:"<length>";inherits:true;initial-value:0px}@property --er-wm-cap{syntax:"<length>";inherits:true;initial-value:0px}@property --er-wm-ls{syntax:"<length>";inherits:true;initial-value:0px}:where(:has(> .er-tm)){--er-wm-em:1em;--er-wm-cap:1cap}.er-tm{font-size:max(7px,.35em);line-height:0;letter-spacing:0;font-style:normal;color:currentColor;margin-left:calc(var(--er-wm-em)*.05 - var(--er-wm-ls));vertical-align:calc(var(--er-wm-cap) - 1cap)}
+
+/* The company line in public footers: <CompanyLine /> (src/lib/brand/company.ts). A full
+   row in the wrapping flex footers, quieter than the links. */
+.er-company-line{flex:0 0 100%;width:100%;margin:6px 0 0;font-size:11px;line-height:1.5;letter-spacing:.02em;text-transform:none;opacity:.85}
