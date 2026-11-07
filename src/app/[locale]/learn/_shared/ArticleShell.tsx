@@ -55,7 +55,7 @@ const CHROME = {
     },
     ctaCrawler: {
       h: `Crawl your own site with ${CRAWLER_BRAND.name}`,
-      p: "Every page, every rule family, the evidence next to each finding. Included in every paid plan.",
+      p: "Every page, every rule family, the evidence next to each finding. Included in every plan from Starter.",
       btn: `Meet ${CRAWLER_BRAND.name} ↗`,
     },
     ctaRegister: {
@@ -79,7 +79,7 @@ const CHROME = {
     },
     ctaCrawler: {
       h: `Explorez votre propre site avec ${CRAWLER_BRAND.name}`,
-      p: "Chaque page, chaque famille de règles, la preuve à côté de chaque constat. Inclus dans chaque forfait payant.",
+      p: "Chaque page, chaque famille de règles, la preuve à côté de chaque constat. Inclus dans chaque forfait à partir de Starter.",
       btn: `Découvrir ${CRAWLER_BRAND.name} ↗`,
     },
     ctaRegister: {

@@ -14,7 +14,7 @@ const EN: GuideDoc = {
     "Good keyword research starts with what customers already say, not with a tool. This guide goes from their language to a short, defensible list you can assign to pages and track — without burning your monthly search quota on curiosity.",
   needs: [
     "Your review history imported, or a folder of customer emails",
-    "A paid plan for Keywords Explorer",
+    "A plan from Starter for Keywords Explorer",
     "About 30 minutes",
   ],
   steps: [
@@ -80,7 +80,7 @@ const FR: GuideDoc = {
     "Une bonne recherche de mots-clés commence par ce que disent déjà vos clients, pas par un outil. Ce guide va de leur vocabulaire à une liste courte et défendable, à affecter à vos pages et à suivre — sans gaspiller votre quota mensuel par curiosité.",
   needs: [
     "Votre historique d'avis importé, ou un dossier de courriels clients",
-    "Un forfait payant pour Keywords Explorer",
+    "Un forfait à partir de Starter pour Keywords Explorer",
     "Environ 30 minutes",
   ],
   steps: [

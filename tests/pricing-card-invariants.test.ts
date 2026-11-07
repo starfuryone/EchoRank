@@ -18,9 +18,14 @@ import { planFeatures, planFeatureBase, planFeaturesByPlan } from "@/lib/plan-fe
 import { AI_TESTED_KEYWORD_LIMIT } from "@/lib/keyword-opportunity/score";
 import { SEO_TOOL_GROUPS, isSeoToolLive } from "@/lib/seo-tools";
 
-/** The three tiers that render a card. ENTERPRISE is filtered out by price. */
-const CARD_TIERS: SellablePlanType[] = ["STARTER", "GROWTH", "AGENCY"];
+/** The four tiers that render a card. ENTERPRISE is filtered out by price. */
+const CARD_TIERS: SellablePlanType[] = ["AI_VISIBILITY", "STARTER", "GROWTH", "AGENCY"];
+/** The card tiers that include feedback, the SEO tools and the crawler. */
+const FULL_TIERS: SellablePlanType[] = ["STARTER", "GROWTH", "AGENCY"];
 const ALL_TIERS: SellablePlanType[] = [...CARD_TIERS, "ENTERPRISE"];
+
+/** Bullets that are a tool's name alone, kept English in every locale. */
+const PRODUCT_NAMES = new Set(["Brand Radar", "AI Lens"]);
 
 /** en and fr in full, plus the folds every marketing/dash locale goes through. */
 const LOCALES = ["en", "en-CA", "fr", "fr-CA", "de-CH"] as const;
@@ -42,7 +47,7 @@ describe("engine count and cadence are derived from the tier's checkup shape", (
 
   it.each(ALL_TIERS)("%s names the provider count its checkup actually queries", (plan) => {
     const shape = PLAN_CONFIGS[plan].aiCheckup;
-    const line = bullet(plan, "en", /AI answer tracking/);
+    const line = bullet(plan, "en", /AI prompts/);
     expect(line, `${plan} has no tracking bullet`).toBeDefined();
 
     if (shape.providers === null) {
@@ -53,35 +58,48 @@ describe("engine count and cadence are derived from the tier's checkup shape", (
     } else {
       expect(line).toContain(`${shape.providers} AI engine`);
     }
+    expect(line).toContain(`${shape.prompts} AI prompts`);
   });
 
   it.each(ALL_TIERS)("%s names the cadence its checkup actually runs at", (plan) => {
     const shape = PLAN_CONFIGS[plan].aiCheckup;
-    expect(bullet(plan, "en", /AI answer tracking/)).toContain(CADENCE[shape.frequency].en);
-    expect(bullet(plan, "fr", /Suivi des réponses IA/)).toContain(CADENCE[shape.frequency].fr);
+    expect(bullet(plan, "en", /AI prompts/)).toContain(CADENCE[shape.frequency].en);
+    expect(bullet(plan, "fr", /requêtes IA/)).toContain(CADENCE[shape.frequency].fr);
   });
 
-  it("keeps the tiers distinguishable — this is what the card is selling", () => {
-    // A regression that made every tier read the same would pass the per-tier
-    // assertions above while erasing the reason to upgrade.
-    const lines = CARD_TIERS.map((p) => bullet(p, "en", /AI answer tracking/));
-    expect(new Set(lines).size).toBe(CARD_TIERS.length);
+  it.each(CARD_TIERS)("%s leads its card with the AI line", (plan) => {
+    for (const locale of LOCALES) {
+      expect(planFeatures(plan, locale)[0], `${locale}/${plan}`).toMatch(/AI prompts|requêtes IA/);
+    }
   });
 
-  it("states 2 engines weekly on STARTER, not the 4 it used to claim", () => {
-    // The specific bug this file was written for: every tier advertised "AI
-    // answer tracking across 4 engines" while STARTER queried 2 providers.
-    expect(PLAN_CONFIGS.STARTER.aiCheckup.providers).toBe(2);
-    expect(bullet("STARTER", "en", /AI answer tracking/)).toBe(
-      "AI answer tracking across 2 AI engines (weekly)",
+  it("names the engines as text, in the order the checkup takes them", () => {
+    // enginesForCheckup() takes the head of the catalogue, so the first N
+    // engines by sortOrder are the ones a tier with N providers queries.
+    expect(bullet("AI_VISIBILITY", "en", /AI prompts/)).toBe(
+      "10 AI prompts · 3 AI engines · daily (ChatGPT, Google AI Overviews, Gemini)",
     );
+    expect(bullet("STARTER", "en", /AI prompts/)).toBe(
+      "15 AI prompts · 4 AI engines · daily (ChatGPT, Google AI Overviews, Gemini, Claude)",
+    );
+  });
+
+  it("carries the allowances ECHORANK-AI-TIER.md sets, per plan", () => {
+    const shape = (p: SellablePlanType) => {
+      const { prompts, providers, repetitions, frequency } = PLAN_CONFIGS[p].aiCheckup;
+      return { prompts, providers, repetitions, frequency };
+    };
+    expect(shape("AI_VISIBILITY")).toEqual({ prompts: 10, providers: 3, repetitions: 1, frequency: "daily" });
+    expect(shape("STARTER")).toEqual({ prompts: 15, providers: 4, repetitions: 1, frequency: "daily" });
+    expect(shape("GROWTH")).toEqual({ prompts: 15, providers: 4, repetitions: 2, frequency: "daily" });
+    expect(shape("AGENCY")).toEqual({ prompts: 20, providers: 4, repetitions: 3, frequency: "daily" });
   });
 });
 
 // ─── Search pool and tracked keywords ───────────────────────────────────────
 
 describe("search and keyword bullets are derived from the enforced allowances", () => {
-  it.each(CARD_TIERS)("%s prints both halves with the enforced numbers", (plan) => {
+  it.each(FULL_TIERS)("%s prints both halves with the enforced numbers", (plan) => {
     const config = PLAN_CONFIGS[plan];
     const line = bullet(plan, "en", /SEO searches/);
     expect(line, `${plan} has no search bullet`).toBeDefined();
@@ -102,9 +120,10 @@ describe("search and keyword bullets are derived from the enforced allowances", 
     // today — this asserts the branch that keeps that true if one ever is.
     const zeroed = { ...PLAN_CONFIGS.STARTER, trackedKeywords: 0 };
     expect(zeroed.trackedKeywords).toBe(0);
-    // Guard the live config too: nothing sellable may sit at 0 while the card
-    // advertises the tool.
-    for (const plan of CARD_TIERS) {
+    // Guard the live config too: nothing that includes the SEO tools may sit
+    // at 0 while the card advertises the tool. The AI-only plan sits at 0 and
+    // its card carries no search line at all (asserted below).
+    for (const plan of FULL_TIERS) {
       expect(PLAN_CONFIGS[plan].trackedKeywords, `${plan} keyword cap`).toBeGreaterThan(0);
     }
   });
@@ -113,7 +132,7 @@ describe("search and keyword bullets are derived from the enforced allowances", 
 // ─── Crawl, location and volume bullets ─────────────────────────────────────
 
 describe("volume bullets match their quota fields", () => {
-  it.each(CARD_TIERS)("%s crawl ceiling matches crawlUrlCap", (plan) => {
+  it.each(FULL_TIERS)("%s crawl ceiling matches crawlUrlCap", (plan) => {
     const cap = PLAN_CONFIGS[plan].crawlUrlCap;
     expect(bullet(plan, "en", /Site crawls/)).toContain(cap.toLocaleString("en-US"));
   });
@@ -123,7 +142,7 @@ describe("volume bullets match their quota fields", () => {
     expect(bullet(plan, "en", /location/)).toContain(String(n));
   });
 
-  it.each(CARD_TIERS)("%s feedback volume matches maxRequestsPerMonth", (plan) => {
+  it.each(FULL_TIERS)("%s feedback volume matches maxRequestsPerMonth", (plan) => {
     const n = PLAN_CONFIGS[plan].quotaDefaults.maxRequestsPerMonth;
     expect(bullet(plan, "en", /feedback requests/)).toContain(n.toLocaleString("en-US"));
   });
@@ -140,7 +159,7 @@ describe("the domain-analyses line is conditional on the tool being live", () =>
   it("is live today, so every tier with an allowance shows the line", () => {
     // Reads the real catalog: the Finder currently ships (no `comingSoon`).
     expect(isSeoToolLive("keyword_opportunities")).toBe(true);
-    for (const plan of CARD_TIERS) {
+    for (const plan of FULL_TIERS) {
       const line = bullet(plan, "en", /domain analyses/);
       const allowance = PLAN_CONFIGS[plan].keywordOpportunityAnalysesPerMonth!;
       expect(line, `${plan} domain-analyses line`).toBeDefined();
@@ -252,9 +271,10 @@ describe("locale folding", () => {
       const fr = planFeatures(plan, "fr");
       const en = planFeatures(plan, "en");
       // Every line must differ from its English counterpart except where the
-      // two languages genuinely coincide (none currently do).
+      // two languages genuinely coincide: tool names, which stay English.
       expect(fr).toHaveLength(en.length);
       for (let i = 0; i < fr.length; i++) {
+        if (PRODUCT_NAMES.has(en[i])) continue;
         expect(fr[i], `${plan}[${i}] untranslated`).not.toBe(en[i]);
       }
     }
@@ -285,7 +305,10 @@ describe("there is exactly one source of card bullets", () => {
     }
   });
 
-  it("folds the retired AI_VISIBILITY tier onto STARTER's bullets", () => {
-    expect(planFeatures("AI_VISIBILITY", "en")).toEqual(planFeatures("STARTER", "en"));
+  it("gives the AI-only plan no feedback, SEO, crawl or tool-count line", () => {
+    for (const locale of LOCALES) {
+      const lines = planFeatures("AI_VISIBILITY", locale).join("\n");
+      expect(lines, locale).not.toMatch(/feedback|rétroaction|SEO|crawl|Analyses de site|tools|outils/i);
+    }
   });
 });

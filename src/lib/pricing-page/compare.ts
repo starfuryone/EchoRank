@@ -31,6 +31,7 @@ import { PROMPT_COUNT } from "@/lib/snapshot/prompts";
 import { SNAPSHOT_ENGINES } from "@/lib/snapshot/types";
 import { cadence, cardPlans, engines, supportLine } from "./headlines";
 import { fmtNum, pricingBase, type PricingBase } from "./format";
+import { planAllowsArea } from "@/lib/plan-access";
 
 /** One cell: text, an optional link, or a yes/no mark (rendered ✓ / — with a spoken label). */
 export type CompareCell =
@@ -208,8 +209,9 @@ export function comparisonTable(locale: Locale): CompareTable {
         }[b],
         href(locale, FREE_TOOLS_BASE),
       ),
-      // The same sentence on every card and every page (toolCountLine).
-      () => text(toolCountLine(locale, counts)),
+      // The same sentence on every card and every page (toolCountLine), for the
+      // plans that include the tools hub (not the AI-only plan, src/lib/plan-access.ts).
+      (_c, p) => (planAllowsArea(p, "seo_tools") ? text(toolCountLine(locale, counts)) : NO),
     ),
     row(
       "searches",
@@ -232,7 +234,8 @@ export function comparisonTable(locale: Locale): CompareTable {
     );
   }
   seoRows.push(
-    row("backlinks", { en: "Backlinks", fr: "Liens entrants", de: "Backlinks" }, b, NO, (c) => {
+    row("backlinks", { en: "Backlinks", fr: "Liens entrants", de: "Backlinks" }, b, NO, (c, p) => {
+      if (!planAllowsArea(p, "seo_tools")) return NO;
       const bl = c.backlinks;
       const rows = fmtNum(bl.listRows, b);
       if (bl.tier === "basic") {

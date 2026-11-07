@@ -106,7 +106,7 @@ const COPY = {
     hostedLabel: "HOSTED",
     hostedH2: "Hosted, not installed",
     pricingLabel: "PRICING",
-    pricingH2: "Included in every paid plan",
+    pricingH2: "Included in every plan from Starter",
     faqLabel: "FAQ",
     faqH2: "Questions",
   },
@@ -133,7 +133,7 @@ const COPY = {
     hostedLabel: "HÉBERGÉ",
     hostedH2: "Hébergé, pas installé",
     pricingLabel: "TARIFS",
-    pricingH2: "Inclus dans chaque forfait payant",
+    pricingH2: "Inclus dans chaque forfait à partir de Starter",
     faqLabel: "FAQ",
     faqH2: "Questions",
   },
@@ -397,7 +397,8 @@ export default async function Page({ params }: { params: Params }) {
           <PricingSection
             salesSrc="site-crawler-pricing"
             locale={l}
-            pricing={pricingTiers(l)}
+            // Starter, Growth and Agency only: the AI Visibility plan has no crawler.
+            pricing={pricingTiers(l, ["STARTER", "GROWTH", "AGENCY"])}
             priceChrome={HOME_PRICING_CHROME[l]}
             toolCountLine={toolCountLine(l, seoToolCounts())}
             tax={pricingNotes(l).tax}

@@ -30,6 +30,7 @@ import { pricingTiers, savePctOf, yearlySavingPct } from "@/lib/pricing-tiers";
 import { cardPlans, planHeadlines, supportLine } from "@/lib/pricing-page/headlines";
 import { comparisonTable } from "@/lib/pricing-page/compare";
 import { pricingFaq } from "@/lib/pricing-page/faq";
+import { planAllowsArea } from "@/lib/plan-access";
 import { SUPPORT_EMAIL } from "@/lib/assistant/config";
 import { PRICING_PAGE_COPY } from "@/lib/pricing-page/copy";
 import { toolCountLine } from "@/lib/i18n/content";
@@ -165,7 +166,8 @@ describe("Free vs paid", () => {
       const c = r.plans[plan]!;
       return c.kind === "text" ? c.text : c.kind;
     };
-    const num = (n: number | null) => (n === null ? "Unlimited" : n.toLocaleString("en-US"));
+    // A 0 allowance is a locked tool, so the cell is "not included", not "0".
+    const num = (n: number | null) => (n === null ? "Unlimited" : n === 0 ? "no" : n.toLocaleString("en-US"));
     for (const p of CARDS) {
       const c = PLAN_CONFIGS[p];
       expect(cell("locations", p)).toBe(num(c.quotaDefaults.maxLocations));
@@ -178,8 +180,20 @@ describe("Free vs paid", () => {
       expect(cell("rendered", p)).toBe(num(c.crawlRenderedPages));
       expect(cell("brands", p)).toBe(num(c.aiProjects));
       expect(cell("sms", p)).toBe(c.quotaDefaults.maxSmsPerMonth === 0 ? "no" : num(c.quotaDefaults.maxSmsPerMonth));
-      expect(cell("tools", p)).toBe(toolCountLine("en", seoToolCounts()));
+      expect(cell("tools", p)).toBe(planAllowsArea(p, "seo_tools") ? toolCountLine("en", seoToolCounts()) : "no");
     }
+  });
+
+  it("has an AI Visibility column: AI rows filled, every SEO, crawler and reputation volume not included", () => {
+    const t = comparisonTable("en");
+    const cell = (row: string) => {
+      const r = t.groups.flatMap((g) => g.rows).find((x) => x.id === row)!;
+      const c = r.plans.AI_VISIBILITY!;
+      return c.kind === "text" ? c.text : c.kind;
+    };
+    expect(CARDS[0]).toBe("AI_VISIBILITY");
+    expect(cell("locations")).toBe("1");
+    for (const row of ["feedback", "searches", "keywords", "tools", "sms"]) expect(cell(row), row).toBe("no");
   });
 
   it("the Free column reads the free tools' own limits and links to each tool", async () => {
@@ -220,7 +234,7 @@ describe("Straight answers and the structured data", () => {
     const items = pricingFaq(l, { savePct: yearlySavingPct()!, freeCrawler: true });
     const faq = graph(html).find((n) => n["@type"] === "FAQPage") as { mainEntity: Array<{ name: string; acceptedAnswer: { text: string } }> };
     expect(faq).toBeTruthy();
-    expect(faq.mainEntity).toHaveLength(10);
+    expect(faq.mainEntity).toHaveLength(11);
     expect(faq.mainEntity.map((q) => q.name)).toEqual(items.map((i) => i.q));
     for (const q of faq.mainEntity) expect(q.acceptedAnswer.text).not.toMatch(/\*\*|\]\(/);
     const shown = [...doc(html).querySelectorAll("[data-faq] h3")].map((h) => h.textContent);
@@ -231,12 +245,32 @@ describe("Straight answers and the structured data", () => {
     expect(await pricingHtml(l)).not.toContain("CONFIRM");
   });
 
-  it("covers the spec's ten topics, all answered", () => {
+  it("covers the spec's ten topics plus the AI-only question first, all answered", () => {
     for (const l of ["en", "fr", "de-CH"]) {
       const items = pricingFaq(l, { savePct: 20, freeCrawler: true });
-      expect(items.map((i) => i.id)).toEqual(["trial", "cancel", "location", "limits", "billing", "crawler", "seats", "payment", "refunds", "tax"]);
+      expect(items.map((i) => i.id)).toEqual(["ai-only", "trial", "cancel", "location", "limits", "billing", "crawler", "seats", "payment", "refunds", "tax"]);
       for (const it of items) expect(it.a.length, `${l} ${it.id}`).toBeGreaterThan(40);
     }
+  });
+
+  it("answers 'Which plan if I only need AI visibility?' with the AI plan's own numbers", () => {
+    const ai = PLAN_CONFIGS.AI_VISIBILITY;
+    const q = { en: "Which plan if I only need AI visibility?" } as const;
+    const en = pricingFaq("en", { savePct: 20, freeCrawler: true })[0]!;
+    expect(en.q).toBe(q.en);
+    expect(en.a).toContain(ai.name);
+    expect(en.a).toContain(`$${ai.monthlyPrice}`);
+    expect(en.a).toContain(String(ai.aiCheckup.prompts));
+    for (const l of ["fr", "de-CH"]) {
+      const a = pricingFaq(l, { savePct: 20, freeCrawler: true })[0]!.a;
+      expect(a, l).toContain(String(ai.aiCheckup.prompts));
+      expect(a, l).toContain(String(ai.monthlyPrice));
+    }
+  });
+
+  it("the crawler answer names the first plan that includes the crawler, not 'every plan'", () => {
+    const a = pricingFaq("en", { savePct: 20, freeCrawler: true }).find((i) => i.id === "crawler")!.a;
+    expect(a).toContain("every plan from Starter");
   });
 
   it("trial and refund answers state TRIAL_DAYS from config", () => {
@@ -292,14 +326,31 @@ describe("/pricing, the homepage and /site-crawler render the same cards", () =>
     const all = await pages(l);
     const line = toolCountLine(l as Locale, seoToolCounts());
     for (const [name, d] of Object.entries(all)) {
-      for (const plan of CARDS) {
+      // /site-crawler sells the crawler, so it shows only the plans that include it.
+      const plans = name === "crawler" ? CARDS.filter((p) => planAllowsArea(p, "crawler")) : CARDS;
+      for (const plan of plans) {
         const card = d.querySelector(`[data-plan="${plan}"]`);
         expect(card, `${name} ${plan}`).toBeTruthy();
         expect(card!.querySelector("[class*=pamount]")!.textContent, `${name} ${plan}`).toContain(`$${PLAN_CONFIGS[plan].monthlyPrice}`);
         expect(card!.textContent, `${name} ${plan}`).toContain(String(TRIAL_DAYS));
-        expect(card!.querySelector("[class*=ptools]")!.textContent, `${name} ${plan}`).toContain(line);
+        const tools = card!.querySelector("[class*=ptools]");
+        if (planAllowsArea(plan, "seo_tools")) expect(tools!.textContent, `${name} ${plan}`).toContain(line);
+        else expect(tools, `${name} ${plan} has a tool-count line`).toBeNull();
       }
     }
+  }, 30_000);
+
+  it("en: /pricing shows five cards with Enterprise, the homepage four, /site-crawler three", async () => {
+    const all = await pages("en");
+    // Cards only: the comparison table carries data-plan on its cells too.
+    const shown = (d: Document) =>
+      [...d.querySelectorAll("[class*=priceGrid] > [data-plan]")].map((el) => el.getAttribute("data-plan"));
+    expect(shown(all.pricing)).toEqual(["AI_VISIBILITY", "STARTER", "GROWTH", "AGENCY", "ENTERPRISE"]);
+    expect(shown(all.home)).toEqual(["AI_VISIBILITY", "STARTER", "GROWTH", "AGENCY"]);
+    expect(shown(all.crawler)).toEqual(["STARTER", "GROWTH", "AGENCY"]);
+    const cta = all.pricing.querySelector("[data-testid=enterprise-card-cta]")!;
+    expect(cta.getAttribute("href")).toBe("/en/enterprise/contact?src=pricing-enterprise-card");
+    expect(all.home.querySelector("[data-testid=enterprise-card-cta]")).toBeNull();
   }, 30_000);
 });
 

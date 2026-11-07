@@ -26,6 +26,9 @@ import { SNAPSHOT_COPY, snapshotBaseOf } from "@/lib/snapshot/copy";
 import { fitsTracking, parseTrackParam } from "@/lib/snapshot/tracking";
 import { fmtNum, pricingBase } from "@/lib/pricing-page/format";
 import { salesContactHref } from "@/lib/sales/inquiry-options";
+import { ENTERPRISE_CARD, PLAN_AUDIENCE } from "@/lib/pricing-page/audience";
+import { planAllowsArea } from "@/lib/plan-access";
+import type { PlanType } from "@/generated/prisma";
 
 export interface HomePricingTier {
   id: string;
@@ -44,13 +47,15 @@ export interface HomePricingTier {
   inherits: string | null;
   /** The card's headline lines (pricing-page/headlines.ts), in render order. */
   lines: string[];
+  /** Who the plan is for, under the price (pricing-page/headlines.ts PLAN_AUDIENCE). */
+  audience?: string;
   highlighted: boolean;
   /** The plan's AI checkup shape, for the free check's "track these prompts" prefill. */
   tracking?: { prompts: number; providers: number | null; perWeek: number };
 }
 
 /** The Stripe tier keys a card can check out with. */
-export type CheckoutTier = "starter" | "growth" | "agency";
+export type CheckoutTier = "ai_visibility" | "starter" | "growth" | "agency";
 export type CheckoutInterval = "month" | "year";
 
 /**
@@ -60,6 +65,8 @@ export type CheckoutInterval = "month" | "year";
  */
 export function checkoutTierFor(planId: string): CheckoutTier | null {
   switch (planId) {
+    case "AI_VISIBILITY":
+      return "ai_visibility";
     case "STARTER":
       return "starter";
     case "GROWTH":
@@ -133,10 +140,13 @@ export function PricingSection({
    */
   compareHref,
   salesSrc,
+  enterpriseCard = false,
 }: {
   locale: string;
   /** ?src= for the Enterprise line's link to the sales form: which page this grid is on. */
   salesSrc: string;
+  /** /pricing only: draw Enterprise as a card (and drop the line under the grid). */
+  enterpriseCard?: boolean;
   pricing: HomePricingTier[];
   priceChrome: HomePricingChrome;
   /**
@@ -154,6 +164,10 @@ export function PricingSection({
 }) {
   const base = pricingBase(locale);
   const compare = compareHref ?? `/${locale}/pricing#compare`;
+  // Five across with the Enterprise card (/pricing), four for the four paid
+  // plans (homepage), the three-column grid otherwise (/site-crawler).
+  const cardCount = pricing.length + (enterpriseCard ? 1 : 0);
+  const gridClass = cardCount >= 5 ? s.priceGrid5 : cardCount === 4 ? s.priceGrid4 : s.priceGrid;
   // Monthly by default; the toggle is client-side state only.
   const [annual, setAnnual] = useState(false);
   // Arriving from the free AI Visibility Check ("Track these 10 prompts
@@ -299,7 +313,7 @@ export function PricingSection({
         </p>
       )}
 
-      <div className={s.priceGrid}>
+      <div className={gridClass}>
         {pricing.map((p) => {
           const amount = annual ? p.annual : p.monthly;
           const hi = trackFit ? trackFit.id === p.id : p.highlighted;
@@ -349,12 +363,18 @@ export function PricingSection({
                   </div>
                 </>
               )}
+              {p.audience && (
+                <p className={s.paudience} data-testid="plan-audience">
+                  {p.audience}
+                </p>
+              )}
               {p.inherits && <p className={s.pinherits}>{p.inherits}</p>}
               <ul>{p.lines.map((f) => <li key={f}>{f}</li>)}</ul>
-              {/* Every paid tier reaches the tools hub, so the line is not
-                  tier-gated — and it is the SAME sentence on every card and
-                  every page: toolCountLine(seoToolCounts()). */}
-              {amount !== null && (
+              {/* The SAME sentence on every card and every page
+                  (toolCountLine(seoToolCounts())), on the cards of plans that
+                  include the tools hub: not on AI Visibility, which does not
+                  (src/lib/plan-access.ts). */}
+              {amount !== null && planAllowsArea(p.id as PlanType, "seo_tools") && (
                 <a className={s.ptools} href={toolsHref}>
                   {toolCountLine} ·{" "}
                   {priceChrome.toolsAnchor}
@@ -380,6 +400,26 @@ export function PricingSection({
             </div>
           );
         })}
+        {/* /pricing only: Enterprise as a card. Custom priced, no checkout; its
+            one action is the sales contact form. */}
+        {enterpriseCard && (
+          <div className={s.price} key="ENTERPRISE" data-plan="ENTERPRISE">
+            <div className={s.pnameRow}>
+              <div className={s.pname}>/ ENTERPRISE</div>
+            </div>
+            <div className={s.pamount}>{ENTERPRISE_CARD[base].price}</div>
+            <p className={s.paudience} data-testid="plan-audience">
+              {PLAN_AUDIENCE.ENTERPRISE[base]}
+            </p>
+            <a
+              className={s.pbuyLink}
+              href={salesContactHref(locale, "pricing-enterprise-card")}
+              data-testid="enterprise-card-cta"
+            >
+              {ENTERPRISE_CARD[base].cta}
+            </a>
+          </div>
+        )}
       </div>
       {/* Credit packs. ONE LINE, NOT A FOURTH CARD, and the restraint is the
           decision: this grid sells plans, and a credit pack is an add-on to
@@ -394,8 +434,13 @@ export function PricingSection({
           Stripe price); this line is its entry point. */}
       <p className={s.gridNotes}>
         <span>{priceChrome.secureCheckout}</span>
-        <span aria-hidden="true"> · </span>
-        <a href={salesContactHref(locale, salesSrc)} data-testid="pricing-enterprise-link">{priceChrome.enterpriseLine}</a>
+        {/* With an Enterprise card on the page the card is its entry point. */}
+        {!enterpriseCard && (
+          <>
+            <span aria-hidden="true"> · </span>
+            <a href={salesContactHref(locale, salesSrc)} data-testid="pricing-enterprise-link">{priceChrome.enterpriseLine}</a>
+          </>
+        )}
       </p>
       <p className={s.creditsLine}>
         <a href={`/${locale}/credits`}>{priceChrome.creditsLine}</a>

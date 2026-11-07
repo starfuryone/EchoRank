@@ -1006,7 +1006,7 @@ export const TECHNICAL_GEO_HTML = `<!DOCTYPE html>
             <p>
               Yes. You get one free AI visibility audit per day&mdash;no account, no card. It includes the
               visibility score, the check-by-check breakdown, and a downloadable PDF report. Paid plans add
-              re-runs, history, monitoring, and the full SEO Tools hub.
+              re-runs, history and monitoring; every plan from Starter adds the full SEO Tools hub.
             </p>
           </details>
 

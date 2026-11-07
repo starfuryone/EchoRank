@@ -107,6 +107,8 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
         <div className={s.container}>
           <PricingSection
             salesSrc="pricing-enterprise"
+            // /pricing only: AI Visibility, Starter, Growth, Agency + Enterprise.
+            enterpriseCard
             locale={l}
             pricing={pricingTiers(l)}
             priceChrome={HOME_PRICING_CHROME[l]}

@@ -106,7 +106,7 @@ const EN: Doc = {
       "Invite teammates with roles from the Team page. Agencies can run multiple client workspaces and use white label options so clients see the agency brand.",
     ]},
     { h: "18. Billing and plans", ps: [
-      "Manage your subscription on the Billing page. Plans renew automatically until cancelled, and cancellation takes effect at the end of the current period. Feature availability: campaigns, feedback, monitoring and response drafting on every plan. Visibility audit, risk score, alerts and revenue at risk from Growth. Answer tracking, five competitors, white label and multi client from Agency.",
+      "Manage your subscription on the Billing page. Plans renew automatically until cancelled, and cancellation takes effect at the end of the current period. Feature availability: the AI Visibility plan covers AI answer tracking only. Campaigns, feedback, monitoring and response drafting on every plan from Starter. Visibility audit, risk score, alerts and revenue at risk from Growth. Answer tracking, five competitors, white label and multi client from Agency.",
     ]},
     { h: "19. Your data", ps: [
       "You can export your data and request deletion. Deletion removes your content subject to a short backup cycle and legal retention duties. The details live in the Privacy Policy, linked in the footer of every page.",
@@ -250,7 +250,7 @@ const FR: Doc = {
       "Invitez des collègues avec des rôles depuis la page Équipe. Les agences peuvent gérer plusieurs espaces clients et utiliser la marque blanche pour que les clients voient la marque de l'agence.",
     ]},
     { h: "18. Facturation et forfaits", ps: [
-      "Gérez votre abonnement sur la page Facturation. Les forfaits se renouvellent automatiquement jusqu'à annulation, effective à la fin de la période en cours. Disponibilité des fonctions : campagnes, rétroaction, surveillance et réponses rédigées sur tous les forfaits. Audit de visibilité, score de risque, alertes et revenus à risque dès Croissance. Suivi des réponses, cinq concurrents, marque blanche et multi-clients dès Agence.",
+      "Gérez votre abonnement sur la page Facturation. Les forfaits se renouvellent automatiquement jusqu'à annulation, effective à la fin de la période en cours. Disponibilité des fonctions : le forfait AI Visibility couvre uniquement le suivi des réponses des IA. Campagnes, rétroaction, surveillance et réponses rédigées sur tous les forfaits à partir de Starter. Audit de visibilité, score de risque, alertes et revenus à risque dès Croissance. Suivi des réponses, cinq concurrents, marque blanche et multi-clients dès Agence.",
     ]},
     { h: "19. Vos données", ps: [
       "Vous pouvez exporter vos données et demander leur suppression. La suppression retire vos contenus, sous réserve d'un court cycle de sauvegarde et des obligations légales de conservation. Les détails figurent dans la Politique de confidentialité, liée en pied de chaque page.",
@@ -394,7 +394,7 @@ const DE: Doc = {
       "Laden Sie Teammitglieder mit Rollen über die Team Seite ein. Agenturen führen mehrere Kunden Arbeitsbereiche und nutzen White Label, damit Kunden die Marke der Agentur sehen.",
     ]},
     { h: "18. Abrechnung und Pläne", ps: [
-      "Ihr Abo verwalten Sie auf der Abrechnungsseite. Pläne verlängern sich automatisch bis zur Kündigung, wirksam zum Ende der laufenden Periode. Verfügbarkeit: Kampagnen, Feedback, Überwachung und Antwortentwürfe in jedem Plan. Sichtbarkeits Audit, Risiko Score, Alarme und Umsatz im Risiko ab Wachstum. Antwort Tracking, fünf Konkurrenten, White Label und Mandanten ab Agentur.",
+      "Ihr Abo verwalten Sie auf der Abrechnungsseite. Pläne verlängern sich automatisch bis zur Kündigung, wirksam zum Ende der laufenden Periode. Verfügbarkeit: Das AI-Visibility-Abo umfasst nur das Tracking von KI-Antworten. Kampagnen, Feedback, Überwachung und Antwortentwürfe in jedem Plan ab Starter. Sichtbarkeits Audit, Risiko Score, Alarme und Umsatz im Risiko ab Wachstum. Antwort Tracking, fünf Konkurrenten, White Label und Mandanten ab Agentur.",
     ]},
     { h: "19. Ihre Daten", ps: [
       "Sie können Ihre Daten exportieren und die Löschung verlangen. Die Löschung entfernt Ihre Inhalte, vorbehaltlich eines kurzen Backup Zyklus und gesetzlicher Aufbewahrungspflichten. Details stehen in der Datenschutzerklärung, verlinkt im Fussbereich jeder Seite.",

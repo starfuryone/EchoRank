@@ -30,7 +30,8 @@ import { CRAWLER_BRAND } from "@/lib/site-crawler/brand";
 import { FREE_CRAWL_URL_CAP } from "@/lib/site-crawler/free-limits";
 import { SUPPORT_EMAIL } from "@/lib/assistant/config";
 import { pricingNotes } from "@/lib/i18n/content";
-import { cardPlans } from "./headlines";
+import { cadence, cardPlans, engineNames } from "./headlines";
+import { planAllowsArea } from "@/lib/plan-access";
 import { fmtNum, pricingBase, type PricingBase } from "./format";
 
 export interface PricingFaqItem {
@@ -55,6 +56,35 @@ function locationCounts(b: PricingBase): string {
   return parts.length > 1 ? `${parts.slice(0, -1).join(", ")}${and}${parts[parts.length - 1]}` : parts.join("");
 }
 
+/**
+ * "Which plan if I only need AI visibility?" Every figure from PLAN_CONFIGS:
+ * the AI Visibility plan's price, prompts, engines (by name) and cadence, and
+ * the plan everything else starts at.
+ */
+function aiOnlyAnswer(b: PricingBase): { q: string; a: string } {
+  const ai = PLAN_CONFIGS.AI_VISIBILITY;
+  const next = PLAN_CONFIGS.STARTER;
+  const names = (engineNames(ai.aiCheckup) ?? []).join(", ");
+  const when = cadence(ai.aiCheckup, b) ?? "";
+  const p = fmtNum(ai.aiCheckup.prompts, b);
+  if (b === "de") {
+    return {
+      q: "Welches Abo, wenn ich nur KI-Sichtbarkeit brauche?",
+      a: `**${ai.name}**, für $${ai.monthlyPrice}/Monat ($${ai.annualPrice}/Monat bei jährlicher Zahlung): ${p} Prompts, ${when} auf ${names} geprüft, mit AI Trust Score, Benachrichtigungen, Brand Radar und AI Lens. Bewertungen, SEO-Werkzeuge und der Crawler beginnen bei **${next.name}** ($${next.monthlyPrice}/Monat).`,
+    };
+  }
+  if (b === "fr") {
+    return {
+      q: "Quel forfait si je n'ai besoin que de la visibilité IA ?",
+      a: `**${ai.name}**, à ${ai.monthlyPrice} $ par mois (${ai.annualPrice} $ par mois en annuel) : suivi ${when} de ${p} requêtes sur ${names}, avec le score de confiance IA, les alertes, Brand Radar et AI Lens. Les avis, les outils SEO et le robot d'exploration commencent avec **${next.name}** (${next.monthlyPrice} $ par mois).`,
+    };
+  }
+  return {
+    q: "Which plan if I only need AI visibility?",
+    a: `**${ai.name}**, at $${ai.monthlyPrice}/month ($${ai.annualPrice}/month billed yearly): ${p} prompts checked ${when} on ${names}, with AI Trust Score, alerts, Brand Radar and AI Lens. Reviews, the SEO tools and the crawler start at **${next.name}** ($${next.monthlyPrice}/month).`,
+  };
+}
+
 export function pricingFaq(
   locale: string,
   opts: { savePct: number; freeCrawler: boolean },
@@ -62,8 +92,12 @@ export function pricingFaq(
   const b = pricingBase(locale);
   const name = CRAWLER_BRAND.name;
   const plans = cardPlans();
-  const low = PLAN_CONFIGS[plans[0]!];
+  // The crawler's range starts at the first plan that has it (Starter): the
+  // AI Visibility plan, first on the ladder, does not (src/lib/plan-access.ts).
+  const crawlPlans = plans.filter((p) => planAllowsArea(p, "crawler") && PLAN_CONFIGS[p].crawlUrlCap > 0);
+  const low = PLAN_CONFIGS[crawlPlans[0]!];
   const high = PLAN_CONFIGS[plans[plans.length - 1]!];
+  const aiOnly = aiOnlyAnswer(b);
   const lowCap = fmtNum(low.crawlUrlCap, b);
   const highCap = fmtNum(high.crawlUrlCap, b);
   const freeCap = fmtNum(FREE_CRAWL_URL_CAP, b);
@@ -74,6 +108,7 @@ export function pricingFaq(
 
   if (b === "de") {
     return [
+      { id: "ai-only", q: aiOnly.q, a: aiOnly.a },
       {
         id: "trial",
         q: "Gibt es einen Gratis-Test? Brauche ich eine Karte?",
@@ -102,7 +137,7 @@ export function pricingFaq(
       {
         id: "crawler",
         q: `Ist ${name} inbegriffen?`,
-        a: `Ja, in jedem bezahlten Abo. Das Abo legt fest, wie viele URLs ein Crawl abruft – von ${lowCap} bei ${low.name} bis ${highCap} bei ${high.name} – und wie viele Crawls pro Monat möglich sind (Tabelle oben).${opts.freeCrawler ? ` Der Gratis-Crawler prüft ${freeCap} Seiten ohne Konto.` : ""}`,
+        a: `Ja, in jedem Abo ab ${low.name}. Das Abo legt fest, wie viele URLs ein Crawl abruft – von ${lowCap} bei ${low.name} bis ${highCap} bei ${high.name} – und wie viele Crawls pro Monat möglich sind (Tabelle oben).${opts.freeCrawler ? ` Der Gratis-Crawler prüft ${freeCap} Seiten ohne Konto.` : ""}`,
       },
       {
         id: "seats",
@@ -131,6 +166,7 @@ export function pricingFaq(
   const cancel = helpArticleCopy(helpArticleBySlug("cancel-subscription")!, locale).faq;
   const notes = pricingNotes(fr ? "fr" : "en");
   return [
+    { id: "ai-only", q: aiOnly.q, a: aiOnly.a },
     {
       id: "trial",
       q: fr ? "Y a-t-il un essai gratuit ? Faut-il une carte ?" : "Is there a free trial? Do I need a card?",
@@ -164,8 +200,8 @@ export function pricingFaq(
       id: "crawler",
       q: fr ? `${name} est-il inclus ?` : `Is ${name} included?`,
       a: fr
-        ? `Oui, dans chaque forfait payant. Le forfait fixe le nombre d'URL qu'une exploration peut parcourir — de ${lowCap} avec ${low.name} à ${highCap} avec ${high.name} — et le nombre d'explorations par mois (tableau ci-dessus).${opts.freeCrawler ? ` Le robot gratuit vérifie ${freeCap} pages sans compte.` : ""}`
-        : `Yes, on every paid plan. Each plan sets how many URLs one crawl may fetch — from ${lowCap} on ${low.name} to ${highCap} on ${high.name} — and how many crawls a month it runs (table above).${opts.freeCrawler ? ` The free crawler checks ${freeCap} pages without an account.` : ""}`,
+        ? `Oui, dans chaque forfait à partir de ${low.name}. Le forfait fixe le nombre d'URL qu'une exploration peut parcourir — de ${lowCap} avec ${low.name} à ${highCap} avec ${high.name} — et le nombre d'explorations par mois (tableau ci-dessus).${opts.freeCrawler ? ` Le robot gratuit vérifie ${freeCap} pages sans compte.` : ""}`
+        : `Yes, on every plan from ${low.name}. Each plan sets how many URLs one crawl may fetch — from ${lowCap} on ${low.name} to ${highCap} on ${high.name} — and how many crawls a month it runs (table above).${opts.freeCrawler ? ` The free crawler checks ${freeCap} pages without an account.` : ""}`,
     },
     {
       id: "seats",

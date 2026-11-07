@@ -12,7 +12,7 @@
 // way the JSON-LD offers already behave. Enterprise still exists everywhere
 // else (feature matrix, upgrade ordering); it simply has no card.
 
-import { PLAN_CONFIGS, PLAN_ORDER, TRIAL_DAYS } from "@/lib/plan-config";
+import { PLAN_CONFIGS, PLAN_ORDER, TRIAL_DAYS, type SellablePlanType } from "@/lib/plan-config";
 import { planHeadlines } from "@/lib/pricing-page/headlines";
 import { HOME_PRICING_CHROME } from "@/lib/i18n/content";
 import { normalizeLocale } from "@/lib/seo/constants";
@@ -37,9 +37,15 @@ export function yearlySavingPct(): number | null {
   return Math.min(...(pcts as number[]));
 }
 
-export function pricingTiers(locale: string): HomePricingTier[] {
+/**
+ * The cards for one page. `plans` narrows the set (default: every card plan,
+ * AI Visibility first): /site-crawler shows Starter, Growth and Agency only,
+ * since the AI-only plan has no crawler.
+ */
+export function pricingTiers(locale: string, plans?: readonly SellablePlanType[]): HomePricingTier[] {
   const chrome = HOME_PRICING_CHROME[normalizeLocale(locale)];
-  return PLAN_ORDER.filter((plan) => !PLAN_CONFIGS[plan].isCustomPricing).map((plan) => {
+  const shown = PLAN_ORDER.filter((plan) => !PLAN_CONFIGS[plan].isCustomPricing && (!plans || plans.includes(plan)));
+  return shown.map((plan) => {
     const c = PLAN_CONFIGS[plan];
     const monthly = c.isCustomPricing ? null : c.monthlyPrice;
     const annual = c.isCustomPricing ? null : c.annualPrice;
@@ -59,7 +65,7 @@ export function pricingTiers(locale: string): HomePricingTier[] {
       // this locale (pricing-page/headlines.ts). The full per-tier list stays
       // in plan-features.ts for /billing; the comparison table on /pricing
       // carries the rest.
-      ...planHeadlines(plan, locale),
+      ...planHeadlines(plan, locale, shown),
       // cta / ctaLink are deliberately NOT passed through. The cards have a
       // single action now (Stripe Checkout), and PLAN_CONFIGS keeps both
       // fields because FeatureGate still reads them.

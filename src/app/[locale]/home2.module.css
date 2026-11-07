@@ -288,6 +288,14 @@
    cards stack — a 2-up grid with three cards leaves an orphan. */
 .priceGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:44px}
 @media(max-width:900px){.priceGrid{grid-template-columns:1fr}}
+/* Four cards (homepage) and five (/pricing, with Enterprise): all across on
+   wide screens, two per row below, one column on a phone. minmax(0,1fr) so a
+   long line wraps inside its card instead of widening the page. */
+.priceGrid4{composes:priceGrid;grid-template-columns:repeat(4,minmax(0,1fr))}
+.priceGrid5{composes:priceGrid;grid-template-columns:repeat(5,minmax(0,1fr))}
+@media(max-width:1180px){.priceGrid4,.priceGrid5{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:900px){.priceGrid4,.priceGrid5{grid-template-columns:1fr}}
+.paudience{font-size:13px;line-height:1.45;color:var(--muted);margin:-8px 0 14px}
 /* Two-card variant, for the Watcher page's Free + Watcher pair. Composes the
    four-column grid and overrides only the track count, so gap and margin stay
    defined once — a second hand-written grid is how two pricing surfaces end up
@@ -672,6 +680,10 @@
 .pbuy:hover,.pbuy:focus-visible{filter:brightness(1.1)}
 .pbuy:disabled{opacity:.65;cursor:default;filter:none}
 .pbuyErr{margin:8px 0 0;font-size:12px;line-height:1.4;color:var(--redText)}
+/* The Enterprise card's "Talk to us": a link with .pbuy's look, pushed to the
+   card's foot so it lines up with the checkout buttons beside it (that card has
+   no list to take up the slack). */
+.pbuyLink{composes:pbuy;text-decoration:none;margin-top:auto}
 /* Secondary card action — the free tool's link, and "Manage" for someone who
    already subscribes. Same geometry as .pbuy so the two cards' buttons line up,
    without the gold: only the card that takes money wears the accent. */

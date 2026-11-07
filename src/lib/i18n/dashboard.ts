@@ -5491,7 +5491,7 @@ const seoToolsEn = {
   classicSubtitle: "Traditional search data — rankings, keywords, backlinks and technical health.",
   upgradeTitle: "SEO Tools are part of your paid plan",
   upgradeBody:
-    "Your workspace does not have an active subscription yet. Activate any Echorank360 plan to open the SEO Tools hub — keyword research, site analysis, content and reporting tools included.",
+    "Your workspace does not have an active subscription yet. Activate any Echorank360 plan from Starter to open the SEO Tools hub — keyword research, site analysis, content and reporting tools included.",
   upgradeCta: "Go to billing",
   newBadge: "New",
   newBadgeSr: "new feature",
@@ -5695,7 +5695,7 @@ export const SEO_TOOLS_COPY: Record<DashLocale, SeoToolsCopy> = {
     classicSubtitle: "Données de recherche traditionnelles — positions, mots-clés, liens retour et santé technique.",
     upgradeTitle: "Les outils SEO font partie de votre forfait payant",
     upgradeBody:
-      "Votre espace de travail n'a pas encore d'abonnement actif. Activez n'importe quel forfait Echorank360 pour ouvrir le centre d'outils SEO — recherche de mots-clés, analyse de site, outils de contenu et de rapports inclus.",
+      "Votre espace de travail n'a pas encore d'abonnement actif. Activez n'importe quel forfait Echorank360 à partir de Starter pour ouvrir le centre d'outils SEO — recherche de mots-clés, analyse de site, outils de contenu et de rapports inclus.",
     upgradeCta: "Aller à la facturation",
     newBadge: "Nouveau",
     newBadgeSr: "nouvelle fonctionnalité",
@@ -5889,7 +5889,7 @@ export const SEO_TOOLS_COPY: Record<DashLocale, SeoToolsCopy> = {
     classicSubtitle: "Traditionelle Suchdaten — Rankings, Keywords, Backlinks und technische Gesundheit.",
     upgradeTitle: "SEO-Tools sind Teil Ihres bezahlten Plans",
     upgradeBody:
-      "Ihr Arbeitsbereich hat noch kein aktives Abonnement. Aktivieren Sie einen beliebigen Echorank360-Plan, um das SEO-Tools-Hub zu öffnen — Keyword-Recherche, Website-Analyse, Content- und Berichtstools inklusive.",
+      "Ihr Arbeitsbereich hat noch kein aktives Abonnement. Aktivieren Sie einen beliebigen Echorank360-Plan ab Starter, um das SEO-Tools-Hub zu öffnen — Keyword-Recherche, Website-Analyse, Content- und Berichtstools inklusive.",
     upgradeCta: "Zur Abrechnung",
     newBadge: "Neu",
     newBadgeSr: "neue Funktion",
@@ -10964,7 +10964,7 @@ const seoToolsHubHelpEn = {
 
   accessTitle: "The whole hub is part of a paid plan",
   accessBody:
-    "Access is checked on the server for this page and every tool under it, not merely hidden in the sidebar. Without an active subscription the hub is replaced by an upgrade screen; activate any Echorank360 plan and every card here opens. Individual tools may additionally require their feature to be enabled on your plan.",
+    "Access is checked on the server for this page and every tool under it, not merely hidden in the sidebar. Without a plan that includes it the hub is replaced by an upgrade screen; activate any Echorank360 plan from Starter and every card here opens. Individual tools may additionally require their feature to be enabled on your plan.",
 
   quotaTitle: "Usage and limits live in Billing",
   quotaBody:
@@ -10998,7 +10998,7 @@ export const SEO_TOOLS_HUB_HELP_COPY: Record<DashLocale, SeoToolsHubHelpCopy> = 
 
     accessTitle: "L'ensemble du hub fait partie d'un forfait payant",
     accessBody:
-      "L'accès est vérifié côté serveur pour cette page et pour chaque outil qu'elle contient, et non simplement masqué dans le menu latéral. Sans abonnement actif, le hub est remplacé par un écran de mise à niveau ; activez n'importe quel forfait Echorank360 et toutes les cartes s'ouvrent. Certains outils exigent en plus que leur fonctionnalité soit activée sur votre forfait.",
+      "L'accès est vérifié côté serveur pour cette page et pour chaque outil qu'elle contient, et non simplement masqué dans le menu latéral. Sans un forfait qui l'inclut, le hub est remplacé par un écran de mise à niveau ; activez n'importe quel forfait Echorank360 à partir de Starter et toutes les cartes s'ouvrent. Certains outils exigent en plus que leur fonctionnalité soit activée sur votre forfait.",
 
     quotaTitle: "La consommation et les limites figurent dans Facturation",
     quotaBody:
@@ -11028,7 +11028,7 @@ export const SEO_TOOLS_HUB_HELP_COPY: Record<DashLocale, SeoToolsHubHelpCopy> = 
 
     accessTitle: "Der gesamte Hub gehört zu einem kostenpflichtigen Plan",
     accessBody:
-      "Der Zugriff wird für diese Seite und jedes Tool darunter auf dem Server geprüft und nicht bloss in der Seitenleiste ausgeblendet. Ohne aktives Abonnement erscheint statt des Hubs ein Upgrade-Hinweis; aktivieren Sie einen beliebigen Echorank360-Plan, und jede Karte hier lässt sich öffnen. Einzelne Tools setzen zusätzlich voraus, dass ihre Funktion in Ihrem Plan freigeschaltet ist.",
+      "Der Zugriff wird für diese Seite und jedes Tool darunter auf dem Server geprüft und nicht bloss in der Seitenleiste ausgeblendet. Ohne einen Plan, der ihn enthält, erscheint statt des Hubs ein Upgrade-Hinweis; aktivieren Sie einen beliebigen Echorank360-Plan ab Starter, und jede Karte hier lässt sich öffnen. Einzelne Tools setzen zusätzlich voraus, dass ihre Funktion in Ihrem Plan freigeschaltet ist.",
 
     quotaTitle: "Verbrauch und Limiten stehen unter Abrechnung",
     quotaBody:

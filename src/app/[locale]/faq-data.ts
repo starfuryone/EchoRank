@@ -78,7 +78,7 @@ export const FAQ: Record<FaqBase, { label: string; h2: string; sub: string; item
       // thing in the world to write and the most expensive to not honour.
       {
         q: "What support is included?",
-        a: "Starter includes email support with a response within 48 hours on weekdays. Growth and Agency include priority support: email with a response within 24 hours on weekdays. Support is email-based on every plan — we do not offer a phone line or live chat, and response times are measured on weekdays only.",
+        a: "AI Visibility and Starter include email support with a response within 48 hours on weekdays. Growth and Agency include priority support: email with a response within 24 hours on weekdays. Support is email-based on every plan — we do not offer a phone line or live chat, and response times are measured on weekdays only.",
       },
     ],
   },
@@ -119,7 +119,7 @@ export const FAQ: Record<FaqBase, { label: string; h2: string; sub: string; item
       cancelFaq("fr"),
       {
         q: "Quel soutien est inclus ?",
-        a: "Le forfait Démarrage comprend le soutien par courriel, avec une réponse en 48 heures les jours ouvrables. Les forfaits Croissance et Agence comprennent le soutien prioritaire : par courriel, avec une réponse en 24 heures les jours ouvrables. Le soutien se fait par courriel sur tous les forfaits — nous n'offrons ni ligne téléphonique ni clavardage en direct, et les délais de réponse ne comptent que les jours ouvrables.",
+        a: "Les forfaits AI Visibility et Démarrage comprennent le soutien par courriel, avec une réponse en 48 heures les jours ouvrables. Les forfaits Croissance et Agence comprennent le soutien prioritaire : par courriel, avec une réponse en 24 heures les jours ouvrables. Le soutien se fait par courriel sur tous les forfaits — nous n'offrons ni ligne téléphonique ni clavardage en direct, et les délais de réponse ne comptent que les jours ouvrables.",
       },
     ],
   },

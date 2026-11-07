@@ -476,8 +476,8 @@ export const CRAWL_FAQ: readonly CrawlFaqEntry[] = [
     gate: { always: true },
     q: { en: "Is it included in my plan?", fr: "Est-il inclus dans mon forfait ?" },
     a: {
-      en: () => "Yes, in every paid plan. Plans differ in caps, not features. No per-user licence.",
-      fr: () => "Oui, dans chaque forfait payant. Les forfaits diffèrent par leurs plafonds, pas par leurs fonctions. Aucune licence par utilisateur.",
+      en: () => "Yes, on every plan from Starter. Plans differ in caps, not features. No per-user licence.",
+      fr: () => "Oui, dans chaque forfait à partir de Starter. Les forfaits diffèrent par leurs plafonds, pas par leurs fonctions. Aucune licence par utilisateur.",
     },
   },
   {
@@ -557,8 +557,8 @@ export const guideCtas: Readonly<Record<string, GuideCtaCopy>> = {
     // The spec's "every week … on every paid plan" is not what the plans say:
     // Starter schedules monthly. The cadence comes from the config instead.
     nudge: {
-      en: (p) => `Want this list on a schedule without lifting a finger? Every paid plan schedules crawls — weekly from ${weeklyFrom(p)} up.`,
-      fr: (p) => `Vous voulez recevoir cette liste sans lever le petit doigt ? Chaque forfait payant planifie les explorations — chaque semaine à partir de ${weeklyFrom(p)}.`,
+      en: (p) => `Want this list on a schedule without lifting a finger? Every plan from Starter schedules crawls — weekly from ${weeklyFrom(p)} up.`,
+      fr: (p) => `Vous voulez recevoir cette liste sans lever le petit doigt ? Chaque forfait à partir de Starter planifie les explorations — chaque semaine à partir de ${weeklyFrom(p)}.`,
     },
     closing: {
       h: fixed("Stop finding broken links by accident.", "Cessez de tomber sur vos liens brisés par hasard."),
@@ -566,7 +566,7 @@ export const guideCtas: Readonly<Record<string, GuideCtaCopy>> = {
         en: (p) => `Crawl up to ${largest(p, "en")} pages, export the source of every broken link, and get a scheduled check in your inbox.`,
         fr: (p) => `Explorez jusqu'à ${largest(p, "fr")} pages, exportez la source de chaque lien brisé et recevez une vérification planifiée dans votre boîte de réception.`,
       },
-      p2: fixed("Included in every paid Echorank plan — no per-user licence.", "Inclus dans chaque forfait payant Echorank — aucune licence par utilisateur."),
+      p2: fixed("Included in every Echorank plan from Starter — no per-user licence.", "Inclus dans chaque forfait Echorank à partir de Starter — aucune licence par utilisateur."),
     },
   },
   "xml-sitemap-generator": {
@@ -587,8 +587,8 @@ export const guideCtas: Readonly<Record<string, GuideCtaCopy>> = {
         "Les pages indexables seulement, découpé automatiquement à 50 000 URL, plan de site d'images compris.",
       ),
       p2: fixed(
-        "Generate it from any completed crawl on any paid plan.",
-        "Générez-le à partir de n'importe quelle exploration terminée, sur chaque forfait payant.",
+        "Generate it from any completed crawl, on any plan from Starter.",
+        "Générez-le à partir de n'importe quelle exploration terminée, sur chaque forfait à partir de Starter.",
       ),
     },
   },
@@ -629,7 +629,7 @@ export const guideCtas: Readonly<Record<string, GuideCtaCopy>> = {
         "List-mode redirect checks, crawl comparison with URL mapping, and a scheduled watch for the first month.",
         "Vérification des redirections en mode liste, comparaison d'explorations avec correspondance d'URL et une surveillance planifiée pendant le premier mois.",
       ),
-      p2: fixed("Everything in this guide is on every paid plan.", "Tout ce que décrit ce guide est offert dans chaque forfait payant."),
+      p2: fixed("Everything in this guide is on every plan from Starter.", "Tout ce que décrit ce guide est offert dans chaque forfait à partir de Starter."),
     },
   },
 };
