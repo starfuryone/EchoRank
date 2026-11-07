@@ -222,6 +222,13 @@ export const BACKLINKS = {
   domainPages: "v3/backlinks/domain_pages/live",
   domainPagesSummary: "v3/backlinks/domain_pages_summary/live",
   history: "v3/backlinks/history/live",
+  /**
+   * Up to 1000 targets' domain rank in ONE call — the free Website Authority
+   * Checker (src/lib/authority-checker/), with rank_scale "one_hundred". Billed
+   * like every Backlinks endpoint: $0.024 a call + $0.000036 a row (published
+   * price, 2026-11-07; no recorded fixture yet), so four targets ≈ $0.024144.
+   */
+  bulkRanks: "v3/backlinks/bulk_ranks/live",
 } as const;
 
 // ---------------------------------------------------------------------------

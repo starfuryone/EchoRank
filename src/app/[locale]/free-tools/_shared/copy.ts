@@ -12,6 +12,7 @@
 
 import type { FreeToolId } from "@/lib/free-tools";
 import { FREE_CRAWLER_COPY } from "@/lib/site-crawler/free-copy";
+import { AUTHORITY_COPY } from "@/lib/authority-checker/copy";
 
 export interface ToolCopy {
   name: string;
@@ -145,5 +146,17 @@ export const TOOL_COPY: Record<FreeToolId, ToolCopy> = {
     limitNote: FREE_CRAWLER_COPY.en.limitNote,
     cta: FREE_CRAWLER_COPY.en.result.ctaButton,
     faq: FREE_CRAWLER_COPY.en.faq,
+  },
+  // Localized en/fr/de-CH in src/lib/authority-checker/copy.ts; this entry is
+  // its English hub card and the shell's fallback.
+  authority_checker: {
+    name: AUTHORITY_COPY.en.name,
+    blurb: AUTHORITY_COPY.en.blurb,
+    intro: AUTHORITY_COPY.en.intro,
+    metaTitle: AUTHORITY_COPY.en.metaTitle,
+    metaDescription: AUTHORITY_COPY.en.metaDescription,
+    limitNote: AUTHORITY_COPY.en.limitNote,
+    cta: AUTHORITY_COPY.en.ctaButton,
+    faq: AUTHORITY_COPY.en.faq,
   },
 };

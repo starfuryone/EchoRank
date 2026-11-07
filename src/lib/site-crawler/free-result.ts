@@ -201,7 +201,17 @@ export async function recordLead(input: { row: FreeRow; email: string; locale: s
  * they click it, then lands on redirectionUrl. Skipped (logged, nothing sent)
  * when unconfigured, outside production, or with MAIL_DRY_RUN=1.
  */
-export async function requestDoubleOptIn(email: string, locale: string, domain: string, fetchImpl: typeof fetch = fetch): Promise<"sent" | "skipped"> {
+export async function requestDoubleOptIn(
+  email: string,
+  locale: string,
+  domain: string,
+  fetchImpl: typeof fetch = fetch,
+  // Another free tool's leads (the Website Authority Checker) use the same
+  // list and template with their own SOURCE and landing page.
+  opts: { source?: string; redirectPath?: string } = {},
+): Promise<"sent" | "skipped"> {
+  const source = opts.source ?? LEAD_SOURCE;
+  const redirectPath = opts.redirectPath ?? "/free-tools/site-crawler";
   const apiKey = process.env.BREVO_API_KEY;
   const listId = Number(process.env.BREVO_FREE_TOOLS_LIST_ID);
   const templateId = Number(process.env.BREVO_DOI_TEMPLATE_ID);
@@ -221,8 +231,8 @@ export async function requestDoubleOptIn(email: string, locale: string, domain: 
       email,
       includeListIds: [listId],
       templateId,
-      redirectionUrl: `${SITE_URL}/${base}/free-tools/site-crawler?subscribed=1`,
-      attributes: { SOURCE: LEAD_SOURCE, LOCALE: base, CHECKED_DOMAIN: domain },
+      redirectionUrl: `${SITE_URL}/${base}${redirectPath}?subscribed=1`,
+      attributes: { SOURCE: source, LOCALE: base, CHECKED_DOMAIN: domain },
     }),
     signal: AbortSignal.timeout(10_000),
   });

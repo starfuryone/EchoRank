@@ -56,6 +56,7 @@ export function FreeToolShell({
   copy,
   cta,
   wide,
+  explainer,
   children,
 }: {
   locale: string;
@@ -64,6 +65,8 @@ export function FreeToolShell({
   cta?: ShellCta;
   /** Wider measure for a tool that lays out in two columns. */
   wide?: boolean;
+  /** Long-form sections between the CTA and the FAQ (the Authority Checker's). */
+  explainer?: React.ReactNode;
   children: React.ReactNode;
 }) {
   const foot = CONTENT[locale as Locale].footer;
@@ -125,6 +128,8 @@ export function FreeToolShell({
                 </>
               )}
             </div>
+
+            {explainer}
 
             {copy.faq.length > 0 && (
               <div className={f.faq}>

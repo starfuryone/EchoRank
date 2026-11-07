@@ -25,7 +25,8 @@ export type FreeToolId =
   | "content_optimizer"
   | "share_of_search"
   | "serp_simulator"
-  | "site_crawler";
+  | "site_crawler"
+  | "authority_checker";
 
 /**
  * What a tool costs us per run.
@@ -123,6 +124,20 @@ export const FREE_TOOLS: FreeTool[] = [
     isNew: true,
     jsonLd: "faq",
     flag: "crawl.free",
+  },
+  {
+    // The Website Authority Checker: Echorank Authority (DataForSEO bulk_ranks,
+    // 0–100) + link counts free; top referring domains, the competitor
+    // comparison and a PDF behind an email. Its OWN daily budget
+    // (AUTHORITY_CHECKER_DAILY_USD, default $3), not the shared free-tools cap
+    // — src/lib/authority-checker/. Body localized en/fr/de-CH.
+    id: "authority_checker",
+    slug: "authority-checker",
+    cost: "paid_api",
+    dailyLimit: 10,
+    apiPath: "/api/free/v1/authority-checker",
+    isNew: true,
+    jsonLd: "faq",
   },
 ];
 
