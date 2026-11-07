@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireTenant } from "@/lib/tenant";
 import { requireFeature, enforcementErrorResponse } from "@/lib/plan-enforcement";
 import { sidecarPost } from "@/lib/av-sidecar";
+import { scoreVersionOf } from "@/lib/visibility-score";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/generated/prisma";
 
@@ -31,10 +32,12 @@ function limitFor(planType: string): number {
   return planType === "AGENCY" || planType === "ENTERPRISE" ? 5 : 1;
 }
 
-function summarize(url: string, score: number, grade: string, bots: Record<string, AuditBot>) {
+function summarize(url: string, score: number, grade: string, bots: Record<string, AuditBot>, scoreVersion: number) {
   const botTotal = Object.keys(bots).length;
   const blocked = Object.values(bots).filter((b) => b.status === "BLOCKED").length;
-  return { url, score, grade, blocked, botTotal };
+  // scoreVersion: the card sets a competitor beside your score only when both
+  // were scored by the same version (src/lib/visibility-score.ts).
+  return { url, score, grade, blocked, botTotal, scoreVersion };
 }
 
 async function recentBenchmarks(tenantId: string) {
@@ -42,7 +45,7 @@ async function recentBenchmarks(tenantId: string) {
   return prisma.visibilityAudit.findMany({
     where: { tenantId, monitorId: null, createdAt: { gte: since } },
     orderBy: { createdAt: "desc" },
-    select: { url: true, score: true, grade: true, bots: true },
+    select: { url: true, score: true, grade: true, bots: true, scoreVersion: true },
   });
 }
 
@@ -58,7 +61,7 @@ export async function GET() {
     for (const r of rows) {
       if (seen.has(r.url)) continue; // keep latest per url only
       seen.add(r.url);
-      recent.push(summarize(r.url, r.score, r.grade, (r.bots ?? {}) as unknown as Record<string, AuditBot>));
+      recent.push(summarize(r.url, r.score, r.grade, (r.bots ?? {}) as unknown as Record<string, AuditBot>, r.scoreVersion));
     }
     return NextResponse.json({ limit, used: seen.size, recent });
   } catch (error) {
@@ -118,6 +121,7 @@ export async function POST(req: Request) {
         url: canonUrl,
         score: data.score,
         grade: data.grade ?? "?",
+        scoreVersion: scoreVersionOf(data),
         checks: (data.checks ?? []) as unknown as Prisma.InputJsonValue,
         bots: bots as unknown as Prisma.InputJsonValue,
         raw: data as unknown as Prisma.InputJsonValue,
@@ -126,7 +130,7 @@ export async function POST(req: Request) {
 
     distinct.add(canonUrl);
     return NextResponse.json({
-      result: summarize(canonUrl, data.score, data.grade ?? "?", bots),
+      result: summarize(canonUrl, data.score, data.grade ?? "?", bots, scoreVersionOf(data)),
       used: distinct.size,
       limit,
     });

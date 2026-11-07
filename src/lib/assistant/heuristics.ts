@@ -81,12 +81,19 @@ export interface HeuristicSummary {
   counts: { critical: number; warning: number; ok: number };
 }
 
-/** Buckets match the sidecar's /grade endpoint so the two never disagree. */
+/**
+ * Only a fallback: the audit carries its own grade (used first, below). The
+ * bands are the sidecar's one table (av-service ai_readiness.grade): A >= 85,
+ * B >= 70, C >= 55, D >= 40. They used to copy /grade's 90/75/60/45 buckets,
+ * which disagreed with the audit's own grade; /grade now returns the audit's.
+ * (A v2 A also needs no gate, but every gate caps at 60, so the score alone
+ * gives the same letter.)
+ */
 export function gradeFor(score: number): string {
-  if (score >= 90) return "A";
-  if (score >= 75) return "B";
-  if (score >= 60) return "C";
-  if (score >= 45) return "D";
+  if (score >= 85) return "A";
+  if (score >= 70) return "B";
+  if (score >= 55) return "C";
+  if (score >= 40) return "D";
   return "F";
 }
 

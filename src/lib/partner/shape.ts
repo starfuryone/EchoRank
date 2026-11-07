@@ -33,6 +33,10 @@ export interface PartnerAudit {
   mode: PartnerAuditMode;
   score: number;
   grade: string;
+  /** 1: the seven-check score (until Nov 2026); 2: the AI readiness score. Compare scores only within one version. */
+  scoreVersion: number;
+  /** v2: the caps that bound the score, lowest first ([] on v1 audits). */
+  gates: { id: string; cap: number; reason: string }[];
   rendering: { likelyCsr: boolean; textLength: number; framework: string | null } | null;
   robotsTxt: boolean;
   crawlers: PartnerCrawler[];
@@ -47,10 +51,13 @@ const VENDORS: Readonly<Record<string, string>> = {
   "ChatGPT-User": "OpenAI",
   ClaudeBot: "Anthropic",
   "Claude-User": "Anthropic",
+  "Claude-SearchBot": "Anthropic",
   "anthropic-ai": "Anthropic",
   PerplexityBot: "Perplexity",
   "Perplexity-User": "Perplexity",
   "Google-Extended": "Google",
+  Googlebot: "Google",
+  Bingbot: "Microsoft",
   "Applebot-Extended": "Apple",
   CCBot: "Common Crawl",
   "meta-externalagent": "Meta",
@@ -85,6 +92,7 @@ export function checkKey(label: string): string {
 }
 
 interface SidecarCheck {
+  id?: string;
   category?: string;
   points?: number;
   max?: number;
@@ -98,6 +106,7 @@ interface SidecarAudit {
   checks?: SidecarCheck[];
   robots?: { present?: boolean; bots?: Record<string, { status?: string; detail?: string }> };
   rendering?: { likely_csr?: boolean; text_len?: number; framework?: string | null };
+  gates?: { id?: string; cap?: number; reason?: string }[];
 }
 
 export interface StoredAuditRow {
@@ -105,6 +114,7 @@ export interface StoredAuditRow {
   url: string;
   score: number;
   grade: string;
+  scoreVersion?: number;
   raw: unknown;
   createdAt: Date;
 }
@@ -126,7 +136,8 @@ export function toPartnerAudit(row: StoredAuditRow, mode: PartnerAuditMode): Par
     }))
     .sort((a, b) => order(a.engine) - order(b.engine));
   const checks = (raw.checks ?? []).map((c) => ({
-    key: checkKey(String(c.category ?? "")),
+    // v2 checks carry their own stable id; v1 labels map through CHECK_KEYS.
+    key: typeof c.id === "string" && c.id ? c.id : checkKey(String(c.category ?? "")),
     label: String(c.category ?? ""),
     score: Number(c.points ?? 0),
     max: Number(c.max ?? 0),
@@ -140,6 +151,8 @@ export function toPartnerAudit(row: StoredAuditRow, mode: PartnerAuditMode): Par
     mode,
     score: row.score,
     grade: row.grade,
+    scoreVersion: row.scoreVersion ?? 1,
+    gates: (raw.gates ?? []).map((g) => ({ id: String(g.id ?? ""), cap: Number(g.cap ?? 0), reason: String(g.reason ?? "") })),
     rendering: r
       ? { likelyCsr: !!r.likely_csr, textLength: Number(r.text_len ?? 0), framework: r.framework ?? null }
       : null,

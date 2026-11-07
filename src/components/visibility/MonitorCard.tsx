@@ -5,6 +5,8 @@ import { Activity, Lock, Trash2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { MONITOR_CARD_COPY, type DashLocale } from "@/lib/i18n/dashboard";
+import { READINESS_COPY } from "@/lib/i18n/readiness";
+import { crossesVersions, versionSegments } from "@/lib/visibility-score";
 
 /**
  * Scheduled monitoring panel for the AI Visibility page (GROWTH+).
@@ -30,6 +32,8 @@ interface AuditPoint {
   url: string;
   score: number;
   grade: string;
+  /** 1 before the Nov 2026 AI readiness score, 2 after; absent from older API responses. */
+  scoreVersion?: number;
   createdAt: string;
 }
 
@@ -37,7 +41,18 @@ function canon(u: string): string {
   return u.trim().toLowerCase().replace(/^https?:\/\//, "").replace(/\/+$/, "");
 }
 
-function Sparkline({ points, hint }: { points: number[]; hint: string }) {
+export interface SparkPoint {
+  score: number;
+  scoreVersion?: number;
+}
+
+/**
+ * Score history, oldest first. The line BREAKS where the score version
+ * changes (src/lib/visibility-score.ts): v1 and v2 scores are not on the same
+ * scale, so the two runs are drawn as separate segments with a dashed marker
+ * between them, never joined into a fake drop.
+ */
+export function Sparkline({ points, hint }: { points: SparkPoint[]; hint: string }) {
   if (points.length < 2) {
     return <span className="text-xs text-gray-400">{hint}</span>;
   }
@@ -45,18 +60,46 @@ function Sparkline({ points, hint }: { points: number[]; hint: string }) {
   const h = 28;
   const step = w / (points.length - 1);
   const y = (s: number) => h - (Math.max(0, Math.min(100, s)) / 100) * h;
-  const d = points.map((s, i) => `${i * step},${y(s).toFixed(1)}`).join(" ");
-  const rising = points[points.length - 1] >= points[0];
+  const segments = versionSegments(points);
+  const last = segments[segments.length - 1];
+  const rising = last[last.length - 1].score >= last[0].score;
+  let index = 0;
+  const lines: { d: string; start: number; single: boolean }[] = [];
+  for (const seg of segments) {
+    const start = index;
+    const d = seg.map((p, i) => `${(start + i) * step},${y(p.score).toFixed(1)}`).join(" ");
+    lines.push({ d, start, single: seg.length === 1 });
+    index += seg.length;
+  }
   return (
-    <svg viewBox={`0 0 ${w} ${h}`} className="h-7 w-[120px]" aria-hidden="true">
-      <polyline
-        points={d}
-        fill="none"
-        stroke={rising ? "#059669" : "#dc2626"}
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
+    <svg viewBox={`0 0 ${w} ${h}`} className="h-7 w-[120px]" aria-hidden="true" data-segments={segments.length}>
+      {lines.map((l, i) => (
+        <g key={i}>
+          {i > 0 && (
+            <line
+              x1={(l.start - 0.5) * step}
+              x2={(l.start - 0.5) * step}
+              y1={0}
+              y2={h}
+              stroke="#9ca3af"
+              strokeWidth="1"
+              strokeDasharray="2 2"
+            />
+          )}
+          {l.single ? (
+            <circle cx={l.d.split(",")[0]} cy={l.d.split(",")[1]} r="1.8" fill={rising ? "#059669" : "#dc2626"} />
+          ) : (
+            <polyline
+              points={l.d}
+              fill="none"
+              stroke={i === lines.length - 1 ? (rising ? "#059669" : "#dc2626") : "#9ca3af"}
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          )}
+        </g>
+      ))}
     </svg>
   );
 }
@@ -172,12 +215,12 @@ export function MonitorCard({
   const alreadyMonitored =
     suggestedCanon !== null && monitors.some((m) => canon(m.url) === suggestedCanon);
 
-  const pointsFor = (m: Monitor): number[] =>
+  const pointsFor = (m: Monitor): SparkPoint[] =>
     audits
       .filter((a) => a.monitorId === m.id)
       .slice(0, 12)
       .reverse()
-      .map((a) => a.score);
+      .map((a) => ({ score: a.score, scoreVersion: a.scoreVersion ?? 1 }));
 
   return (
     <Card>
@@ -204,6 +247,11 @@ export function MonitorCard({
                 ) : null}
                 {t.nextRun(new Date(m.nextRunAt).toLocaleDateString(locale))}
               </p>
+              {crossesVersions(pointsFor(m)) && (
+                <p className="text-xs text-gray-400" data-testid="score-version-note">
+                  {READINESS_COPY[locale].versionNote}
+                </p>
+              )}
             </div>
             <Sparkline points={pointsFor(m)} hint={t.sparklineHint} />
             <select

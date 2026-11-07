@@ -1185,6 +1185,11 @@ model VisibilityAudit {
   url       String
   score     Int
   grade     String
+  // The sidecar's SCORE_VERSION when this audit ran (av-service ai_readiness.py).
+  // 1 = the seven-check score used until Nov 2026; 2 = the AI readiness score.
+  // Scores are only compared within one version (monitoring alerts, charts);
+  // old rows keep their score and version and are never rescored.
+  scoreVersion Int    @default(1)
   // checks[] and robots.bots snapshots from the sidecar, for diffing + trend UI.
   checks    Json
   bots      Json

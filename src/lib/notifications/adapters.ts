@@ -278,7 +278,7 @@ export async function notifyVisibilityAlert(
       tenantId: input.tenantId,
       type: "visibility_score_drop",
       severity: "warning",
-      title: `AI visibility score dropped: ${input.prevScore} -> ${input.newScore} (${input.url})`,
+      title: `AI readiness score dropped: ${input.prevScore} -> ${input.newScore} (${input.url})`,
       dedupeKey: `notif:vis-score-${input.url}-${day}`,
       payload: {
         url: input.url,

@@ -169,12 +169,12 @@ const C: Record<Locale, AvContent> = {
       errLimit: 'Free audit limit reached for today. Sign up to run unlimited audits.',
       errGeneric: 'The audit could not run. Try again in a minute.',
       fine: 'No account needed. One audit per day.',
-      mentionLabel: 'Named in AI answers',
+      mentionLabel: 'AI presence',
       mentionValue: '{hits} of {total} AI engines',
       mentionNotTested: 'not tested by the free audit',
       mentionGloss: 'Whether ChatGPT, Claude, Gemini or Perplexity mention you when asked for a recommendation. The free audit does not ask them; a plan does, every week.',
-      readabilityLabel: 'AI readability',
-      readabilityGloss: 'How easily AI crawlers can read and cite your site.',
+      readabilityLabel: 'AI readiness score',
+      readabilityGloss: 'Whether AI answer engines can read, trust and cite your site. Access and a sitemap are the start; content, specific facts and a clear identity earn the rest.',
       upsell:
         `The free audit reads your site; it does not ask the AI engines anything. Plans track ${PROMPTS_MIN}–${PROMPTS_MAX} prompts of your choosing, weekly or more often, with alerts when you drop out.`,
       ctaTemplate: 'Track {brand} with Echorank',
@@ -301,12 +301,12 @@ const C: Record<Locale, AvContent> = {
       errLimit: 'Limite d’audit gratuit atteinte pour aujourd’hui. Inscrivez-vous pour des audits illimités.',
       errGeneric: 'L’audit n’a pas pu s’exécuter. Réessayez dans une minute.',
       fine: 'Aucun compte requis. Un audit par jour.',
-      mentionLabel: 'Cité dans les réponses IA',
+      mentionLabel: 'Présence IA',
       mentionValue: '{hits} moteurs IA sur {total}',
-      mentionNotTested: 'non testé par l’audit gratuit',
+      mentionNotTested: 'non testée par l’audit gratuit',
       mentionGloss: 'Si ChatGPT, Claude, Gemini ou Perplexity vous nomment quand on leur demande une recommandation. L’audit gratuit ne les interroge pas ; un forfait le fait, chaque semaine.',
-      readabilityLabel: 'Lisibilité IA',
-      readabilityGloss: 'La facilité avec laquelle les robots d’IA peuvent lire et citer votre site.',
+      readabilityLabel: 'Score de préparation IA',
+      readabilityGloss: 'Si les moteurs de réponse IA peuvent lire votre site, s’y fier et le citer. L’accès et un sitemap ne sont qu’un début ; le contenu, les faits précis et une identité claire font le reste.',
       upsell:
         `L’audit gratuit lit votre site ; il n’interroge aucun moteur d’IA. Les forfaits suivent de ${PROMPTS_MIN} à ${PROMPTS_MAX} requêtes de votre choix, chaque semaine ou plus souvent, avec des alertes quand vous décrochez.`,
       ctaTemplate: 'Suivre {brand} avec Echorank',
@@ -433,12 +433,12 @@ const C: Record<Locale, AvContent> = {
       errLimit: 'Gratis-Audit-Limit für heute erreicht. Registrieren Sie sich für unbegrenzte Audits.',
       errGeneric: 'Der Audit konnte nicht ausgeführt werden. Versuchen Sie es in einer Minute erneut.',
       fine: 'Kein Konto nötig. Ein Audit pro Tag.',
-      mentionLabel: 'In KI-Antworten genannt',
+      mentionLabel: 'KI-Präsenz',
       mentionValue: '{hits} von {total} KI-Maschinen',
       mentionNotTested: 'im Gratis-Audit nicht getestet',
       mentionGloss: 'Ob ChatGPT, Claude, Gemini oder Perplexity Sie nennen, wenn man sie um eine Empfehlung bittet. Das Gratis-Audit fragt sie nicht; ein Abo tut es, jede Woche.',
-      readabilityLabel: 'KI-Lesbarkeit',
-      readabilityGloss: 'Wie leicht KI-Crawler Ihre Website lesen und zitieren können.',
+      readabilityLabel: 'KI-Bereitschafts-Score',
+      readabilityGloss: 'Ob KI-Antwortmaschinen Ihre Website lesen, ihr vertrauen und sie zitieren können. Zugang und Sitemap sind erst der Anfang; Inhalt, konkrete Fakten und eine klare Identität bringen den Rest.',
       upsell:
         `Das Gratis-Audit liest Ihre Website; es befragt keine KI-Maschine. Die Abos verfolgen ${PROMPTS_MIN} bis ${PROMPTS_MAX} Prompts Ihrer Wahl, wöchentlich oder häufiger, mit Warnungen, wenn Sie herausfallen.`,
       ctaTemplate: '{brand} mit Echorank verfolgen',
@@ -581,7 +581,7 @@ export default async function AIVisibilityPage({
               carry, and dropping it turns those into a scroll to the top of the
               page rather than a 404 anyone would notice. */}
           <div id="audit" style={{ scrollMarginTop: "96px" }}>
-            <AuditWidget c={{ ...c.widget, ctaHref: `/${locale}/pricing` }} />
+            <AuditWidget c={{ ...c.widget, ctaHref: `/${locale}/pricing` }} locale={locale} />
           </div>
           <p className="av-engines">
             {c.hero.engines} ChatGPT · Claude · Gemini · Perplexity
@@ -904,6 +904,11 @@ const css = `
 .av-audit-line-k { font-weight: 650; color: var(--er-text); }
 .av-audit-line-na { color: var(--er-text-muted); }
 .av-audit-gloss { display: block; color: var(--er-text-muted); font-size: 0.86rem; line-height: 1.55; margin-top: 2px; }
+.av-audit-gates { margin: 0 0 0.75rem; padding-left: 1.1rem; font-size: 0.92rem; line-height: 1.5; color: var(--er-text); }
+.av-audit-fixes { margin: 0 0 0.9rem; font-size: 0.92rem; line-height: 1.5; }
+.av-audit-fixes ol { margin: 0.4rem 0 0; padding-left: 1.25rem; }
+.av-audit-fixes li { margin: 0 0 0.5rem; overflow-wrap: anywhere; }
+.av-audit-fixes .av-audit-gloss { display: inline; }
 .av-audit-engines { list-style: none; padding: 0; margin: 0 0 0.9rem; display: flex; gap: 0.5rem; flex-wrap: wrap; }
 .av-audit-engines li {
   font-size: 0.82rem; padding: 0.25rem 0.7rem; border-radius: 999px;

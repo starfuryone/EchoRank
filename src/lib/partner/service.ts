@@ -12,6 +12,7 @@ import type { Prisma } from "@/generated/prisma";
 import { sidecarPost } from "@/lib/av-sidecar";
 import { TRACKING_MAX_TOKENS } from "@/ai/anthropic-request";
 import { guardPublicUrl } from "@/lib/public-url";
+import { scoreVersionOf } from "@/lib/visibility-score";
 import { costUsdFor, roundUsd } from "@/lib/ai-monitor/pricing";
 import type { PartnerContext } from "./auth";
 import { PARTNER_BENCHMARK_MAX_COMPETITORS, PARTNER_QUERY_ENGINES, type PartnerKind } from "./limits";
@@ -132,11 +133,12 @@ async function auditOne(ctx: PartnerContext, url: string, mode: PartnerAuditMode
       url: data.url ?? url,
       score: data.score,
       grade: data.grade ?? "?",
+      scoreVersion: scoreVersionOf(data),
       checks: (data.checks ?? []) as unknown as Prisma.InputJsonValue,
       bots: (data.robots?.bots ?? {}) as unknown as Prisma.InputJsonValue,
       raw: data as unknown as Prisma.InputJsonValue,
     },
-    select: { id: true, url: true, score: true, grade: true, raw: true, createdAt: true },
+    select: { id: true, url: true, score: true, grade: true, scoreVersion: true, raw: true, createdAt: true },
   });
   return { ok: true, audit: toPartnerAudit(row, mode) };
 }
@@ -170,7 +172,7 @@ export async function partnerAuditById(ctx: PartnerContext, id: string): Promise
   if (!call) return { status: 404, body: { error: "not_found" } };
   const row = await prisma.visibilityAudit.findFirst({
     where: { id, tenantId: ctx.tenantId },
-    select: { id: true, url: true, score: true, grade: true, raw: true, createdAt: true },
+    select: { id: true, url: true, score: true, grade: true, scoreVersion: true, raw: true, createdAt: true },
   });
   if (!row) return { status: 404, body: { error: "not_found" } };
   return { status: 200, body: toPartnerAudit(row, call.kind === "audit_full" ? "full" : "quick") };

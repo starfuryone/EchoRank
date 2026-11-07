@@ -40,10 +40,15 @@ export interface HomeStats {
 
 export const HOME_STATS: HomeStats = {
   ownerReadability: {
-    value: 98,
+    // Emptied 2026-11-07: the 98 (as of 2026-10-30) was a v1 score. The free
+    // audit now returns the stricter AI readiness score (v2), and a homepage
+    // claim must match what the free tool says. A calibration run read 77 on
+    // 2026-11-07 (av-service calibration/REPORT.md); re-read it on production
+    // after the sidecar restart and fill it in with that date.
+    value: null,
     suffix: "/100",
-    asOf: "2026-10-30",
-    source: "Free-audit score for https://echorank360.com (av sidecar audit_site), as reported by the owner on 2026-10-30",
+    asOf: null,
+    source: "Free-audit AI readiness score for https://echorank360.com (av sidecar audit_site, score v2) — to re-read on production",
   },
   freeAuditsRun: {
     value: null,

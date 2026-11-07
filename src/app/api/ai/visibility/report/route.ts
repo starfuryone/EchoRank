@@ -53,7 +53,7 @@ async function assemble(tenantId: string, brand: string) {
       where: { tenantId },
       orderBy: { createdAt: "desc" },
       take: 12,
-      select: { score: true, createdAt: true },
+      select: { score: true, scoreVersion: true, createdAt: true },
     }),
     prisma.trackedPrompt.findMany({
       where: { tenantId },
@@ -74,14 +74,22 @@ async function assemble(tenantId: string, brand: string) {
 
   const hasData = Boolean(latestAudit) || runs.length > 0;
 
-  // score history (oldest→newest) + delta vs previous snapshot
+  // score history (oldest→newest) + delta vs previous snapshot. The delta is
+  // only stated within one score version; the PDF breaks the chart at a change.
   const history = [...auditHistory]
     .reverse()
-    .map((h) => ({ date: h.createdAt.toISOString(), score: h.score }));
+    .map((h) => ({ date: h.createdAt.toISOString(), score: h.score, score_version: h.scoreVersion }));
   let scoreDelta: number | null = null;
   if (history.length >= 2) {
-    scoreDelta = history[history.length - 1].score - history[history.length - 2].score;
+    const [a, b] = history.slice(-2);
+    if (a.score_version === b.score_version) scoreDelta = b.score - a.score;
   }
+  const raw = (latestAudit?.raw ?? {}) as {
+    gates?: unknown[];
+    top_fixes?: unknown[];
+    confidence?: string;
+    groups?: unknown[];
+  };
 
   // per-engine mention rate — only engines actually present
   const engineAgg = new Map<string, { hit: number; total: number }>();
@@ -175,6 +183,11 @@ async function assemble(tenantId: string, brand: string) {
       ? {
           score: latestAudit.score,
           grade: latestAudit.grade,
+          score_version: latestAudit.scoreVersion,
+          confidence: raw.confidence ?? null,
+          gates: Array.isArray(raw.gates) ? raw.gates : [],
+          groups: Array.isArray(raw.groups) ? raw.groups : [],
+          top_fixes: Array.isArray(raw.top_fixes) ? raw.top_fixes : [],
           checks,
           robots: { bots: latestAudit.bots ?? {} },
         }
@@ -188,8 +201,10 @@ async function assemble(tenantId: string, brand: string) {
     primary_opportunity: primaryOpportunity,
     methodology: {
       sources:
-        "Echorank360 audit signals (robots.txt, rendered HTML, structured data, metadata, sitemaps) and scheduled prompt runs against major AI assistants",
+        "Echorank360 audit signals (robots.txt, page content, structured data, key pages, sitemaps) and scheduled prompt runs against major AI assistants",
       prompt_count: prompts.length,
+      scoring:
+        "The AI readiness score (0–100) measures whether AI answer engines can read, trust and cite the site: access, rendering, content substance, entity and trust signals, and discoverability. It asks no AI engine anything. AI presence (mention rate) is measured separately, from the tracked prompts, and is never blended into it.",
     },
   };
 

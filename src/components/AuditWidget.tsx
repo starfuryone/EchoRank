@@ -2,21 +2,33 @@
 'use client';
 
 import { useState } from 'react';
+import {
+  READINESS_COPY,
+  fixLines,
+  gateLine,
+  readinessLocale,
+  type ReadinessFix,
+  type ReadinessGate,
+} from '@/lib/i18n/readiness';
 
 // WHAT THE FREE AUDIT ACTUALLY MEASURES. /api/av/audit proxies the sidecar's
-// audit_site(): a crawler-readability check (robots, JSON-LD, llms.txt,
-// rendering...) whose `score` is points out of 100. It asks NO AI engine
-// anything — the route fills `mentionRate: 0` and `engines: []` as constants,
-// and `trustScore` falls back to `score`. So the teaser prints `score` as
-// "AI readability", and prints a mention count ONLY if real engine results
-// ever arrive; until then the line says it was not tested. It used to read
-// "appeared in 0% of tested queries" for every brand, about queries never run.
+// audit_site(): the AI readiness score (av-service ai_readiness.py, v2) —
+// access, rendering, content substance, entity & trust, discoverability, with
+// gates that cap it. It asks NO AI engine anything — the route fills
+// `mentionRate: 0` and `engines: []` as constants, and `trustScore` falls back
+// to `score`. So the teaser prints `score` as the "AI readiness score", and
+// prints "AI presence" ONLY if real engine results ever arrive; until then the
+// line says it was not tested. The two are never blended.
 type AuditResult = {
   brand: string;
-  score?: number;             // 0–100, crawler readability (sum of checks[].points)
+  score?: number;             // 0–100, the AI readiness score
   engines: { name: string; mentioned: boolean }[];
   sampleAnswer?: string;      // short excerpt of one AI answer
   trustScore?: number;        // legacy alias; equals `score` today
+  score_version?: number;
+  confidence?: 'high' | 'low';
+  gates?: ReadinessGate[];    // "Capped at 45: homepage has under 150 words"
+  top_fixes?: ReadinessFix[]; // the 3 fixes worth the most points
 };
 
 type Status = 'idle' | 'running' | 'done' | 'error';
@@ -62,7 +74,9 @@ export interface AuditWidgetContent {
 
 type PdfStatus = 'idle' | 'loading' | 'error';
 
-export function AuditWidget({ c }: { c: AuditWidgetContent }) {
+export function AuditWidget({ c, locale = 'en' }: { c: AuditWidgetContent; locale?: string }) {
+  const rl = readinessLocale(locale);
+  const rc = READINESS_COPY[rl];
   const [brand, setBrand] = useState('');
   const [status, setStatus] = useState<Status>('idle');
   const [result, setResult] = useState<AuditResult | null>(null);
@@ -188,6 +202,29 @@ export function AuditWidget({ c }: { c: AuditWidgetContent }) {
               <span className="av-gold">{readability}/100</span>
               <span className="av-audit-gloss">{c.readabilityGloss}</span>
             </p>
+          )}
+          {(result.gates?.length ?? 0) > 0 && (
+            <ul className="av-audit-gates" data-testid="audit-gates">
+              {result.gates!.map((g) => (
+                <li key={g.id}>{gateLine(g, rl)}</li>
+              ))}
+            </ul>
+          )}
+          {result.confidence === 'low' && <p className="av-audit-line-na">{rc.lowConfidence}</p>}
+          {(result.top_fixes?.length ?? 0) > 0 && (
+            <div className="av-audit-fixes" data-testid="audit-fixes">
+              <p className="av-audit-line-k">{rc.topFixesTitle}</p>
+              <ol>
+                {fixLines(result.top_fixes, rl).map((f) => (
+                  <li key={f.id}>
+                    <strong>{f.title}</strong>
+                    {f.recover > 0 && <span className="av-audit-gloss"> ({rc.recover(f.recover)})</span>}
+                    <br />
+                    {f.fix}
+                  </li>
+                ))}
+              </ol>
+            </div>
           )}
           <ul className="av-audit-engines">
             {result.engines.map((e) => (

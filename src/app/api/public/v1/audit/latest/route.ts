@@ -11,7 +11,9 @@ export async function GET(req: NextRequest) {
   const audit = await prisma.visibilityAudit.findFirst({
     where: { tenantId: auth.tenantId },
     orderBy: { createdAt: "desc" },
-    select: { url: true, score: true, grade: true, checks: true, createdAt: true },
+    // scoreVersion: 1 = the seven-check score (until Nov 2026), 2 = the AI
+    // readiness score. Compare scores only within one version.
+    select: { url: true, score: true, grade: true, scoreVersion: true, checks: true, createdAt: true },
   });
   if (!audit) {
     return NextResponse.json({ error: "no_audit_yet" }, { status: 404 });

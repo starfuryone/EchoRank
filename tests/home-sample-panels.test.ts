@@ -43,10 +43,14 @@ describe("illustrative panels are marked and captioned", () => {
 });
 
 describe("real numbers render only where they exist", () => {
-  it("ships the owner readability score with its date", () => {
-    expect(HOME_STATS.ownerReadability.value).toBe(98);
-    expect(HOME_STATS.ownerReadability.asOf).toMatch(/^\d{4}-\d{2}-\d{2}$/);
-    expect(filledHomeStats()).toEqual(["ownerReadability"]);
+  it("does not ship the retired v1 owner score (98) under the v2 AI readiness score", () => {
+    // A homepage claim must match what the free audit says today; the v1 98
+    // was emptied with the v2 scorer until it is re-read on production.
+    expect(HOME_STATS.ownerReadability.value).not.toBe(98);
+    if (HOME_STATS.ownerReadability.value !== null) {
+      expect(HOME_STATS.ownerReadability.asOf).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+      expect(HOME_STATS.ownerReadability.asOf! >= "2026-11-07").toBe(true);
+    }
   });
 
   it("drops a slot with no value, no date, or (for findings) no label", () => {

@@ -71,12 +71,15 @@ export async function sendVisibilityAlert(input: VisibilityAlertInput): Promise<
   const subject =
     input.flippedBlocked.length > 0
       ? `[Echorank] AI crawler blocked on ${input.url}`
-      : `[Echorank] AI visibility score dropped: ${input.prevScore} -> ${input.newScore} (${input.url})`;
+      : `[Echorank] AI readiness score dropped: ${input.prevScore} -> ${input.newScore} (${input.url})`;
 
+  // "AI readiness score": it measures whether engines can read and trust the
+  // site, and asks no engine anything (src/lib/i18n/readiness.ts). Both scores
+  // here are always of the same scoring version (src/lib/visibility-score.ts).
   const lines: string[] = [
-    `AI visibility change detected for ${input.url}`,
+    `AI readiness change detected for ${input.url}`,
     ``,
-    `Score: ${input.prevScore} -> ${input.newScore} (${delta >= 0 ? "+" : ""}${delta}), grade ${input.newGrade}`,
+    `AI readiness score: ${input.prevScore} -> ${input.newScore} (${delta >= 0 ? "+" : ""}${delta}), grade ${input.newGrade}`,
   ];
   if (input.flippedBlocked.length > 0) {
     lines.push(``, `Crawlers newly BLOCKED:`);

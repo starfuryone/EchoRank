@@ -10,9 +10,9 @@ import { meteringService } from "@/infrastructure/metering/service";
 import {
   sendVisibilityAlert,
   recordPromptAlerts,
-  type BotFlip,
   type PromptTransition,
 } from "@/lib/visibility-alerts";
+import { monitorAlertDecision, scoreVersionOf, type BotMap } from "@/lib/visibility-score";
 import { logger } from "@/infrastructure/observability/logger";
 import {
   EARLIER_RUNS,
@@ -27,7 +27,8 @@ const SWEEP_JOB_NAME = "sweep";
 const RUN_JOB_NAME = "run-monitor";
 const SWEEP_INTERVAL_MS = 15 * 60_000; // find due monitors every 15 min
 const SWEEP_BATCH = 25;
-const SCORE_DROP_THRESHOLD = 5; // alert when score falls by more than this
+// A score drop alerts at SCORE_DROP_ALERT_POINTS (5) or more, within one score
+// version: src/lib/visibility-score.ts monitorAlertDecision.
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 /**
@@ -91,6 +92,9 @@ interface AuditResult {
   grade?: string;
   checks?: AuditCheck[];
   robots?: { present?: boolean; bots?: Record<string, AuditBot> };
+  /** v2 (av-service ai_readiness.py): the scoring version and the fixes worth the most points. */
+  score_version?: number;
+  top_fixes?: { id?: string; title?: string; fix?: string }[];
   error?: string;
 }
 
@@ -114,7 +118,7 @@ async function processSweep(): Promise<void> {
   }
 }
 
-async function processMonitorRun(monitorId: string): Promise<void> {
+export async function processMonitorRun(monitorId: string): Promise<void> {
   const monitor = await prisma.visibilityMonitor.findUnique({ where: { id: monitorId } });
   if (!monitor || !monitor.active) return;
 
@@ -147,13 +151,14 @@ async function processMonitorRun(monitorId: string): Promise<void> {
 
   const newScore = data.score;
   const newGrade = data.grade ?? "?";
+  const newVersion = scoreVersionOf(data);
   const newBots: Record<string, AuditBot> = data.robots?.bots ?? {};
   const checks: AuditCheck[] = data.checks ?? [];
 
   const prev = await prisma.visibilityAudit.findFirst({
     where: { monitorId },
     orderBy: { createdAt: "desc" },
-    select: { score: true, bots: true },
+    select: { score: true, bots: true, scoreVersion: true },
   });
 
   await prisma.visibilityAudit.create({
@@ -163,6 +168,7 @@ async function processMonitorRun(monitorId: string): Promise<void> {
       url: data.url ?? monitor.url,
       score: newScore,
       grade: newGrade,
+      scoreVersion: newVersion,
       checks: checks as unknown as Prisma.InputJsonValue,
       bots: newBots as unknown as Prisma.InputJsonValue,
       raw: data as unknown as Prisma.InputJsonValue,
@@ -186,47 +192,57 @@ async function processMonitorRun(monitorId: string): Promise<void> {
   });
 
   // ── Diff vs previous run ──────────────────────────────────────────────────
-  if (!prev) {
-    logger.info({ monitorId, score: newScore, queue: QUEUE_NAME }, "Baseline audit stored");
+  // Only audits of the same score version are compared (src/lib/visibility-score.ts):
+  // the first audit after a scoring change is a silent new baseline, so no
+  // tenant is told their score "dropped" because the scoring got stricter.
+  const decision = monitorAlertDecision(
+    prev
+      ? { score: prev.score, scoreVersion: prev.scoreVersion, bots: prev.bots as BotMap }
+      : null,
+    { score: newScore, scoreVersion: newVersion, bots: newBots },
+  );
+  if (decision.kind !== "compare") {
+    logger.info(
+      { monitorId, score: newScore, scoreVersion: newVersion, prevVersion: prev?.scoreVersion, queue: QUEUE_NAME },
+      decision.kind === "baseline" ? "Baseline audit stored" : "Score version changed: new baseline stored, no alert",
+    );
     return;
   }
-  const prevBots = (prev.bots ?? {}) as Record<string, Partial<AuditBot>>;
-  const flippedBlocked: BotFlip[] = [];
-  const flippedAllowed: string[] = [];
-  for (const [bot, info] of Object.entries(newBots)) {
-    const was = prevBots[bot]?.status;
-    if (was === "ALLOWED" && info.status !== "ALLOWED") {
-      flippedBlocked.push({ bot, detail: info.detail || info.status });
-    } else if (was && was !== "ALLOWED" && info.status === "ALLOWED") {
-      flippedAllowed.push(bot);
-    }
-  }
-  const dropped = newScore < prev.score - SCORE_DROP_THRESHOLD;
+  const { dropped, flippedBlocked, flippedAllowed } = decision;
 
   logger.info(
     {
       monitorId,
       url: monitor.url,
-      score: `${prev.score} -> ${newScore}`,
+      score: `${prev!.score} -> ${newScore}`,
+      dropped,
       flippedBlocked: flippedBlocked.length,
       queue: QUEUE_NAME,
     },
     "Monitor run complete",
   );
 
-  if (dropped || flippedBlocked.length > 0) {
+  if (decision.alert) {
+    // v2 audits rank their fixes by points recoverable (top_fixes); a v1
+    // audit falls back to its first checks with a recommendation.
+    const topFixes = (data.top_fixes ?? [])
+      .filter((f) => f && (f.title || f.fix))
+      .slice(0, 3)
+      .map((f) => ({ category: String(f.title ?? f.id ?? ""), recommendation: String(f.fix ?? "") }));
     await sendVisibilityAlert({
       tenantId: monitor.tenantId,
       url: monitor.url,
-      prevScore: prev.score,
+      prevScore: prev!.score,
       newScore,
       newGrade,
       flippedBlocked,
       flippedAllowed,
-      failingChecks: checks
-        .filter((c) => c.recommendation)
-        .slice(0, 3)
-        .map((c) => ({ category: c.category, recommendation: c.recommendation })),
+      failingChecks: topFixes.length
+        ? topFixes
+        : checks
+            .filter((c) => c.recommendation)
+            .slice(0, 3)
+            .map((c) => ({ category: c.category, recommendation: c.recommendation })),
     });
   }
 }

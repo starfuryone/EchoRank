@@ -19,24 +19,29 @@ interface BenchResult {
   grade: string;
   blocked: number;
   botTotal: number;
+  scoreVersion?: number;
 }
 
 export function BenchmarkCard({
   yourUrl,
   yourScore,
+  yourScoreVersion = 1,
   yourBlocked,
   botTotal,
   locale = "en",
 }: {
   yourUrl: string;
   yourScore: number;
+  /** Rows scored by another version are not set beside yours (src/lib/visibility-score.ts). */
+  yourScoreVersion?: number;
   yourBlocked: number;
   botTotal: number;
   locale?: DashLocale;
 }) {
   const t = BENCHMARK_CARD_COPY[locale];
   const [input, setInput] = useState("");
-  const [rows, setRows] = useState<BenchResult[]>([]);
+  const [allRows, setRows] = useState<BenchResult[]>([]);
+  const rows = allRows.filter((r) => (r.scoreVersion ?? 1) === yourScoreVersion);
   const [limit, setLimit] = useState<number>(1);
   const [used, setUsed] = useState<number>(0);
   const [busy, setBusy] = useState(false);

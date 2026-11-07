@@ -40,7 +40,7 @@ export async function GET() {
         where: { tenantId },
         orderBy: { createdAt: "desc" },
         take: 60,
-        select: { id: true, monitorId: true, url: true, score: true, grade: true, createdAt: true },
+        select: { id: true, monitorId: true, url: true, score: true, grade: true, scoreVersion: true, createdAt: true },
       }),
     ]);
     return NextResponse.json({ monitors, audits });

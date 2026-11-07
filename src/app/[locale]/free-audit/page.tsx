@@ -79,8 +79,8 @@ const COPY: Record<Base, Copy> = {
     whatTitle: "What you get",
     whatItems: [
       {
-        h: "A visibility score",
-        p: "One number, 0–100, showing how findable your business is to AI assistants and search engines today.",
+        h: "An AI readiness score",
+        p: "One number, 0–100: can AI answer engines read, trust and cite your site? Being crawlable with a sitemap is only the start; real content, specific facts and a clear identity earn the rest. Anything capping it is named, with the three fixes worth the most points.",
       },
       {
         h: "Itemized checks",
@@ -129,12 +129,13 @@ const COPY: Record<Base, Copy> = {
       errLimit: "Free audit limit reached for today. Sign up to run unlimited audits.",
       errGeneric: "The audit could not run. Try again in a minute.",
       fine: "No account needed. One audit per day.",
-      mentionLabel: "Named in AI answers",
+      mentionLabel: "AI presence",
       mentionValue: "{hits} of {total} AI engines",
       mentionNotTested: "not tested by the free audit",
       mentionGloss: "Whether ChatGPT, Claude, Gemini or Perplexity mention you when asked for a recommendation. The free audit does not ask them; a plan does, every week.",
-      readabilityLabel: "AI readability",
-      readabilityGloss: "How easily AI crawlers can read and cite your site.",
+      readabilityLabel: "AI readiness score",
+      readabilityGloss:
+        "Whether AI answer engines can read, trust and cite your site. Access and a sitemap are the start; content, specific facts and a clear identity earn the rest.",
       upsell:
         `The free audit reads your site; it does not ask the AI engines anything. Plans track ${PROMPTS_MIN}–${PROMPTS_MAX} prompts of your choosing, weekly or more often, with alerts when you drop out.`,
       ctaTemplate: "Track {brand} with Echorank",
@@ -159,8 +160,8 @@ const COPY: Record<Base, Copy> = {
     whatTitle: "Ce que vous obtenez",
     whatItems: [
       {
-        h: "Un score de visibilité",
-        p: "Un seul chiffre, de 0 à 100, qui montre à quel point votre entreprise est repérable aujourd’hui par les assistants IA et les moteurs de recherche.",
+        h: "Un score de préparation IA",
+        p: "Un seul chiffre, de 0 à 100 : les moteurs de réponse IA peuvent-ils lire votre site, s’y fier et le citer ? Être explorable avec un sitemap n’est qu’un début ; un vrai contenu, des faits précis et une identité claire font le reste. Ce qui plafonne votre score est nommé, avec les trois corrections qui rapportent le plus de points.",
       },
       {
         h: "Des vérifications détaillées",
@@ -216,12 +217,13 @@ const COPY: Record<Base, Copy> = {
         "Limite d’audit gratuit atteinte pour aujourd’hui. Inscrivez-vous pour des audits illimités.",
       errGeneric: "L’audit n’a pas pu s’exécuter. Réessayez dans une minute.",
       fine: "Aucun compte requis. Un audit par jour.",
-      mentionLabel: "Cité dans les réponses IA",
+      mentionLabel: "Présence IA",
       mentionValue: "{hits} moteurs IA sur {total}",
-      mentionNotTested: "non testé par l’audit gratuit",
+      mentionNotTested: "non testée par l’audit gratuit",
       mentionGloss: "Si ChatGPT, Claude, Gemini ou Perplexity vous nomment quand on leur demande une recommandation. L’audit gratuit ne les interroge pas ; un forfait le fait, chaque semaine.",
-      readabilityLabel: "Lisibilité IA",
-      readabilityGloss: "La facilité avec laquelle les robots d’IA peuvent lire et citer votre site.",
+      readabilityLabel: "Score de préparation IA",
+      readabilityGloss:
+        "Si les moteurs de réponse IA peuvent lire votre site, s’y fier et le citer. L’accès et un sitemap ne sont qu’un début ; le contenu, les faits précis et une identité claire font le reste.",
       upsell:
         `L’audit gratuit lit votre site ; il n’interroge aucun moteur d’IA. Les forfaits suivent de ${PROMPTS_MIN} à ${PROMPTS_MAX} requêtes de votre choix, chaque semaine ou plus souvent, avec des alertes quand vous décrochez.`,
       ctaTemplate: "Suivre {brand} avec Echorank",
@@ -274,6 +276,11 @@ const CSS = `
 .av-audit-line-k { font-weight:650; color:var(--text); }
 .av-audit-line-na { color:var(--muted); }
 .av-audit-gloss { display:block; color:var(--muted); font-size:13.5px; line-height:1.55; margin-top:2px; }
+.av-audit-gates { margin:0 0 12px; padding-left:18px; font-size:14.5px; line-height:1.5; color:var(--text); }
+.av-audit-fixes { margin:0 0 14px; font-size:14.5px; line-height:1.5; }
+.av-audit-fixes ol { margin:6px 0 0; padding-left:20px; }
+.av-audit-fixes li { margin:0 0 8px; overflow-wrap:anywhere; }
+.av-audit-fixes .av-audit-gloss { display:inline; }
 .av-gold { color:var(--gold); font-weight:700; }
 .av-audit-engines { list-style:none; padding:0; margin:0 0 14px; display:flex; gap:8px; flex-wrap:wrap; }
 .av-audit-engines li {
@@ -348,7 +355,8 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
           <div style={{ margin: "26px 0 14px" }}>
             <AiVisibilityLogo height={48} surface="themed" testId="av-free-audit-logo" />
           </div>
-          <AuditWidget c={{ ...c.widget, ctaHref: L("/pricing") }} />
+          {/* The page itself is en or fr (baseOf), so the gates and fixes follow it. */}
+          <AuditWidget c={{ ...c.widget, ctaHref: L("/pricing") }} locale={baseOf(locale)} />
 
           <p className={s.label} style={{ marginTop: 18 }}>
             {c.engines}

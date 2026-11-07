@@ -47,7 +47,8 @@ export function capsFor(tenantId: string, keyId = ""): McpCapabilities {
       const audit = await prisma.visibilityAudit.findFirst({
         where: { tenantId },
         orderBy: { createdAt: "desc" },
-        select: { url: true, score: true, grade: true, checks: true, createdAt: true },
+        // scoreVersion 2 = the AI readiness score (Nov 2026); compare within one version.
+        select: { url: true, score: true, grade: true, scoreVersion: true, checks: true, createdAt: true },
       });
       if (!audit) throw new Error("No audit stored yet — run one on the AI Visibility page.");
       return audit;

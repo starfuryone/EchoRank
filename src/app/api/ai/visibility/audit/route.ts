@@ -3,6 +3,7 @@ import { requireTenant } from "@/lib/tenant";
 import { enforcementErrorResponse } from "@/lib/plan-enforcement";
 import { sidecarPost } from "@/lib/av-sidecar";
 import { hydratableAudit } from "@/lib/visibility-audit-hydrate";
+import { scoreVersionOf } from "@/lib/visibility-score";
 import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@/generated/prisma";
 
@@ -44,6 +45,7 @@ async function persistAudit(tenantId: string, url: string, data: AuditResponse) 
       url: canonUrl,
       score: data.score as number,
       grade: data.grade ?? "?",
+      scoreVersion: scoreVersionOf(data),
       checks: (data.checks ?? []) as unknown as Prisma.InputJsonValue,
       bots: (data.robots?.bots ?? {}) as unknown as Prisma.InputJsonValue,
       raw: data as unknown as Prisma.InputJsonValue,

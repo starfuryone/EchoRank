@@ -68,17 +68,17 @@ const BAD_AUDIT: SidecarAudit = {
 };
 
 describe("grade buckets", () => {
-  it("matches the sidecar's /grade thresholds", () => {
+  it("matches the sidecar's one band table (ai_readiness.grade)", () => {
     // Buckets, not curves: the same score must mean the same letter in the free
     // tool, the paid audit and the assistant, or a visitor comparing two sites
-    // gets three different answers.
+    // gets three different answers. /grade's old 90/75/60/45 buckets are gone.
     expect(gradeFor(95)).toBe("A");
-    expect(gradeFor(90)).toBe("A");
-    expect(gradeFor(89)).toBe("B");
-    expect(gradeFor(75)).toBe("B");
-    expect(gradeFor(60)).toBe("C");
-    expect(gradeFor(45)).toBe("D");
-    expect(gradeFor(44)).toBe("F");
+    expect(gradeFor(85)).toBe("A");
+    expect(gradeFor(84)).toBe("B");
+    expect(gradeFor(70)).toBe("B");
+    expect(gradeFor(55)).toBe("C");
+    expect(gradeFor(40)).toBe("D");
+    expect(gradeFor(39)).toBe("F");
     expect(gradeFor(0)).toBe("F");
   });
 });

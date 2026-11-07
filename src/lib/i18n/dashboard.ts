@@ -4625,7 +4625,8 @@ const visibilityEn = {
   attrFailed: "Could not measure impact",
   auditFailed: "Audit failed",
   // stat cards
-  statScore: "Visibility Score",
+  // "AI readiness score": the audit asks no AI engine anything (src/lib/i18n/readiness.ts).
+  statScore: "AI readiness score",
   statGrade: "Grade",
   statCrawlersOpen: "AI Crawlers Open",
   statRendering: "Rendering",
@@ -4704,7 +4705,7 @@ export const VISIBILITY_COPY: Record<DashLocale, VisibilityCopy> = {
     pasteLogAndDate: "Collez un journal d'accès et une date de déploiement.",
     attrFailed: "Impossible de mesurer l'impact",
     auditFailed: "Échec de l'audit",
-    statScore: "Score de visibilité",
+    statScore: "Score de préparation IA",
     statGrade: "Note",
     statCrawlersOpen: "Robots d'IA ouverts",
     statRendering: "Rendu",
@@ -4776,7 +4777,7 @@ export const VISIBILITY_COPY: Record<DashLocale, VisibilityCopy> = {
     pasteLogAndDate: "Fügen Sie ein Zugriffsprotokoll und ein Deploy-Datum ein.",
     attrFailed: "Wirkung konnte nicht gemessen werden",
     auditFailed: "Audit fehlgeschlagen",
-    statScore: "Sichtbarkeits-Score",
+    statScore: "KI-Bereitschafts-Score",
     statGrade: "Note",
     statCrawlersOpen: "Offene KI-Crawler",
     statRendering: "Rendering",
@@ -6077,9 +6078,10 @@ export const SEO_TOOLS_COPY: Record<DashLocale, SeoToolsCopy> = {
 // ─── /visibility/tools/brand-radar ──────────────────────────────────────────
 const brandRadarEn = {
   domainLabel: "Tracked site",
-  statScore: "AI Visibility Score",
+  // Readiness (the audit, no engine asked) beside presence (real engine answers), never blended.
+  statScore: "AI readiness score",
   statGrade: "Grade",
-  statMentionRate: (days: number) => `Mention rate (${days}d)`,
+  statMentionRate: (days: number) => `AI presence: mention rate (${days}d)`,
   statActivePrompts: "Active prompts",
   auditAt: (date: string) => `Last audit: ${date}`,
   enginesTitle: "Engine coverage",
@@ -6107,9 +6109,9 @@ export const BRAND_RADAR_COPY: Record<DashLocale, BrandRadarCopy> = {
   en: brandRadarEn,
   fr: {
     domainLabel: "Site suivi",
-    statScore: "Score de visibilité IA",
+    statScore: "Score de préparation IA",
     statGrade: "Note",
-    statMentionRate: (days: number) => `Taux de mention (${days} j)`,
+    statMentionRate: (days: number) => `Présence IA : taux de mention (${days} j)`,
     statActivePrompts: "Requêtes actives",
     auditAt: (date: string) => `Dernier audit : ${date}`,
     enginesTitle: "Couverture par moteur",
@@ -6134,9 +6136,9 @@ export const BRAND_RADAR_COPY: Record<DashLocale, BrandRadarCopy> = {
   },
   "de-CH": {
     domainLabel: "Verfolgte Website",
-    statScore: "KI-Sichtbarkeits-Score",
+    statScore: "KI-Bereitschafts-Score",
     statGrade: "Note",
-    statMentionRate: (days: number) => `Erwähnungsrate (${days} T.)`,
+    statMentionRate: (days: number) => `KI-Präsenz: Erwähnungsrate (${days} T.)`,
     statActivePrompts: "Aktive Prompts",
     auditAt: (date: string) => `Letztes Audit: ${date}`,
     enginesTitle: "Abdeckung pro Engine",
@@ -14338,8 +14340,8 @@ const notificationsEn = {
       body: "Estimated probability {probability}.",
     },
     visibility_score_drop: {
-      label: "AI visibility dropped",
-      title: "AI visibility score fell from {prevScore} to {newScore}",
+      label: "AI readiness dropped",
+      title: "AI readiness score fell from {prevScore} to {newScore}",
       body: "{url} — grade {grade}.",
     },
     visibility_crawler_blocked: {
@@ -14472,8 +14474,8 @@ export const NOTIFICATIONS_COPY: Record<DashLocale, NotificationsCopy> = {
         body: "Probabilité estimée : {probability}.",
       },
       visibility_score_drop: {
-        label: "Visibilité IA en baisse",
-        title: "Le score de visibilité IA est passé de {prevScore} à {newScore}",
+        label: "Préparation IA en baisse",
+        title: "Le score de préparation IA est passé de {prevScore} à {newScore}",
         body: "{url} — note {grade}.",
       },
       visibility_crawler_blocked: {
@@ -14575,8 +14577,8 @@ export const NOTIFICATIONS_COPY: Record<DashLocale, NotificationsCopy> = {
         body: "Geschätzte Wahrscheinlichkeit: {probability}.",
       },
       visibility_score_drop: {
-        label: "KI-Sichtbarkeit gefallen",
-        title: "Der KI-Sichtbarkeitswert fiel von {prevScore} auf {newScore}",
+        label: "KI-Bereitschaft gesunken",
+        title: "Der KI-Bereitschafts-Score fiel von {prevScore} auf {newScore}",
         body: "{url} — Note {grade}.",
       },
       visibility_crawler_blocked: {

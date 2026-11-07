@@ -28,6 +28,8 @@ import { BenchmarkCard } from "@/components/visibility/BenchmarkCard";
 import { AiLensAuditPanel } from "@/components/visibility/AiLensAuditPanel";
 import { FixWithAiButton } from "@/components/seo-tools/fix-with-ai-button";
 import { localizeAuditVerdict, type AuditVerdict } from "@/lib/i18n/audit-verdicts";
+import type { ReadinessFix, ReadinessGate, ReadinessGroup } from "@/lib/i18n/readiness";
+import { ReadinessBreakdown } from "@/components/visibility/ReadinessBreakdown";
 import {
   ACTION_AGENT_COPY,
   VISIBILITY_COPY,
@@ -42,6 +44,11 @@ interface Check {
   max: number;
   status: string;
   recommendation: string;
+  /** v2 (AI readiness score): stable id, group and whether the check could run. */
+  id?: string;
+  group?: string;
+  ran?: boolean;
+  params?: Record<string, unknown>;
 }
 interface BotState {
   status: "ALLOWED" | "BLOCKED";
@@ -62,6 +69,12 @@ interface AuditResult {
    * Rendered in fr / de-CH by key (localizeAuditVerdict).
    */
   verdicts?: AuditVerdict[];
+  /** v2 only (av-service ai_readiness.py); absent on audits stored before it. */
+  score_version?: number;
+  confidence?: "high" | "low";
+  gates?: ReadinessGate[];
+  groups?: ReadinessGroup[];
+  top_fixes?: ReadinessFix[];
   error?: string;
 }
 interface Remediation {
@@ -353,6 +366,7 @@ export function VisibilityPageClient({
           locale={locale}
           yourUrl={url}
           yourScore={audit.score}
+          yourScoreVersion={audit.score_version ?? 1}
           yourBlocked={blockedCount}
           botTotal={botTotal}
         />
@@ -443,13 +457,17 @@ export function VisibilityPageClient({
               </CardContent>
             </Card>
 
-            {/* Scored checks */}
+            {/* Scored checks: v2 shows its five groups, the caps and the top
+                fixes; an audit stored before v2 keeps the old per-check list. */}
             <Card>
               <CardHeader>
                 <h3 className="text-base font-semibold text-gray-900">{t.checksTitle}</h3>
               </CardHeader>
               <CardContent className="space-y-4">
-                {audit.checks.map((c) => {
+                {audit.groups && audit.groups.length > 0 ? (
+                  <ReadinessBreakdown audit={audit} locale={locale} />
+                ) : (
+                audit.checks.map((c) => {
                   const ratio = c.max ? c.points / c.max : 0;
                   const bar =
                     ratio >= 0.999 ? "bg-green-500" : ratio > 0 ? "bg-amber-500" : "bg-red-500";
@@ -472,7 +490,8 @@ export function VisibilityPageClient({
                       <p className="mt-1 text-xs text-gray-400">{c.status}</p>
                     </div>
                   );
-                })}
+                })
+                )}
               </CardContent>
             </Card>
           </div>
