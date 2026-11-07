@@ -182,9 +182,31 @@ export class GdprService {
         },
       });
 
-      // 4. Preserve feedback ratings but mark as anonymized
-      // (ratings and non-PII are kept for analytics)
-      // No changes to feedback ratings needed -- only the linked customer is anonymized.
+      // 4. What the person wrote, and what was written about them. Ratings and
+      // dates stay (they say nothing about who), the text goes:
+      //   - feedback comments: cleared;
+      //   - recovery-ticket notes: cleared;
+      //   - AI analysis of their feedback (entities, topics, emotions can quote
+      //     or name them): deleted;
+      //   - escalation alerts about them or their feedback: title and text
+      //     replaced (titles can carry the name), the row kept for counts.
+      const feedbackIds = (
+        await tx.feedback.findMany({ where: { customerId, tenantId }, select: { id: true } })
+      ).map((f) => f.id);
+      const [feedbackCleared, ticketNotesCleared, aiAnalysesDeleted, alertsAnonymized] = await Promise.all([
+        tx.feedback.updateMany({ where: { customerId, tenantId }, data: { comment: null } }),
+        tx.recoveryTicket.updateMany({ where: { customerId, tenantId }, data: { notes: null } }),
+        feedbackIds.length
+          ? tx.aiAnalysis.deleteMany({ where: { tenantId, feedbackId: { in: feedbackIds } } })
+          : { count: 0 },
+        tx.escalationAlert.updateMany({
+          where: {
+            tenantId,
+            OR: [{ customerId }, ...(feedbackIds.length ? [{ feedbackId: { in: feedbackIds } }] : [])],
+          },
+          data: { title: "[Erased]", description: "[Erased per GDPR request]", suggestedAction: null },
+        }),
+      ]);
 
       // 5. Create deletion log (PII-free metadata only)
       await tx.deletionLog.create({
@@ -203,6 +225,10 @@ export class GdprService {
             feedbackCount,
             emailLogCount,
             smsLogCount,
+            feedbackCommentsCleared: feedbackCleared.count,
+            ticketNotesCleared: ticketNotesCleared.count,
+            aiAnalysesDeleted: aiAnalysesDeleted.count,
+            alertsAnonymized: alertsAnonymized.count,
             erasedAt: new Date().toISOString(),
           } as Prisma.InputJsonValue,
         },
