@@ -13,6 +13,7 @@ import { PublicFooter } from "@/components/PublicFooter";
 import s from "../../home2.module.css";
 import f from "./contact.module.css";
 import { ContactForm } from "./contact-form";
+import { EnterpriseSubnav } from "../EnterpriseSubnav";
 
 export function generateStaticParams() {
   return SUPPORTED_LOCALES.map((locale) => ({ locale }));
@@ -39,7 +40,8 @@ export default async function Page({
   const c = SALES_COPY[salesLocale(locale)];
   return (
     <div className={s.page}>
-      <PublicNav locale={locale} />
+      <PublicNav locale={locale} current="enterprise" />
+      <EnterpriseSubnav locale={locale} page="contact" />
       <section className={s.hero} id="contact">
         <div className={`${s.container} ${f.wrap}`}>
           <p className={s.label}>Enterprise</p>

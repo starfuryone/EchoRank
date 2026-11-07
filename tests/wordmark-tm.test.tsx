@@ -18,7 +18,6 @@ import { AIDO_HTML } from "@/app/[locale]/ai-discovery-optimization/landing-html
 import { PLAYBOOK_HTML } from "@/app/[locale]/link-building-playbook/landing-html";
 import { SETUP_AI_SEARCH_TRACKING_HTML } from "@/app/[locale]/setup-ai-search-tracking/landing-html";
 import { landingHtml as REPUTATION_TOOLS_HTML } from "@/app/[locale]/reputation-tools/landing-html";
-import { ENTERPRISE_HTML } from "@/app/[locale]/enterprise/landing-html";
 import { issueLibraryHtml } from "@/app/[locale]/seo-spider/issues/library-html";
 
 const ROOT = join(__dirname, "..");
@@ -37,7 +36,8 @@ const PAYLOADS: [string, string, number][] = [
   ["setup-ai-search-tracking", SETUP_AI_SEARCH_TRACKING_HTML, 1],
   ["reputation-tools", REPUTATION_TOOLS_HTML, 1],
   ["seo-spider/issues", issueLibraryHtml(), 1],
-  ["enterprise", ENTERPRISE_HTML, 1],
+  // /enterprise left this list on 2026-11-07: it is a React page under
+  // PublicNav now, whose wordmark is the <WordmarkTm /> checked below.
 ];
 
 describe("the shared ™ class", () => {

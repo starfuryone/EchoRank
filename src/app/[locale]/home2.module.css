@@ -93,7 +93,20 @@
 .navcta{background:var(--goldGrad);color: var(--onGold);font-size:13.5px;font-weight: 700;padding:9px 16px;border-radius:9px;
   letter-spacing: 0.2px;
 }
-@media(max-width:900px){.navlinks{display:none}}
+/* The row's breakpoint is the width its longest locale needs on one line, not
+   a round tablet size. Measured 2026-11-07 with the Enterprise item, signed
+   out (Login shown), links gap 18px: en and de-CH 1030px, fr 1110px. At the
+   old 900px the row wrapped to two lines below ~1024px in every locale and
+   overflowed French pages up to 978px wide; the menu sheet carries every item
+   the row does. Adding an item to the row means measuring again.
+   The 18px gap holds at every width: .container stops growing at 1180px, and
+   at the old 26px the French row cleared its neighbours by ~10px on any
+   desktop. */
+.navlinks{gap:18px}
+@media(max-width:1120px){.navlinks{display:none}}
+/* The current item's gold. A lone .toggleOn loses to `.page a{color:inherit}`
+   (0,1,1), so at night the highlight never showed; day had its own rule. */
+.navlinks a.toggleOn,.navlinks .megaTrigger.toggleOn{color:var(--goldText)}
 
 /* HERO */
 .hero{padding:72px 0 88px;position:relative;overflow:hidden}
@@ -852,7 +865,9 @@
   padding:16px 0;cursor:pointer;
 }
 .sheetLink{display:block;color:var(--muted);font-size:14px;padding:10px 0 10px 14px}
-@media(max-width:900px){
+/* Same breakpoint as .navlinks above: the burger takes over exactly where
+   the row stops fitting. */
+@media(max-width:1120px){
   .burger{display:inline-block}
   .megaPanel{display:none}
 }

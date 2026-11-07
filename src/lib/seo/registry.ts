@@ -70,7 +70,8 @@ export const LOCALIZED_ROUTES: LocalizedRoute[] = [
   // The crawler's public page: a product page in the funnel (linked from
   // Solutions > By goal and the footer), ranked with /reputation-tools.
   { path: "/site-crawler", priority: 0.7, changeFrequency: "monthly" },
-  // Enterprise: the standalone page and its sales contact form (src/lib/sales/).
+  // Enterprise: the page (under PublicNav, with its own section sub-nav) and
+  // its sales contact form (src/lib/sales/).
   { path: "/enterprise", priority: 0.7, changeFrequency: "monthly" },
   { path: "/enterprise/contact", priority: 0.4, changeFrequency: "yearly" },
   // Its public issue library: one anchor per rule, generated from the

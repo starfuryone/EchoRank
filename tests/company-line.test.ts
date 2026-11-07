@@ -21,7 +21,8 @@ const STANDALONE = [
   "setup-ai-search-tracking",
   "technical-geo",
   "seo-spider/issues",
-  "enterprise",
+  // /enterprise left on 2026-11-07: a React page now, footed by PublicFooter
+  // (checked below, and rendered in tests/sales-links.test.ts).
 ];
 
 const REACT_FOOTERS = [
@@ -76,6 +77,12 @@ describe("the company line", () => {
       const src = read(`src/app/[locale]/${slug}/${file}`);
       const footer = src.slice(src.lastIndexOf("<footer"), src.lastIndexOf("</footer>"));
       expect(footer, slug).not.toContain("15593166");
+    }
+  });
+
+  it("/enterprise and /enterprise/contact end with PublicFooter, which carries it", () => {
+    for (const p of ["src/app/[locale]/enterprise/page.tsx", "src/app/[locale]/enterprise/contact/page.tsx"]) {
+      expect(read(p), p).toContain("<PublicFooter locale={locale} />");
     }
   });
 

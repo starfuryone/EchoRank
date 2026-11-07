@@ -58,7 +58,8 @@ export type NavCurrent =
   | "resources-page"
   | "use-cases"
   | "ai-assistant"
-  | "free-check";
+  | "free-check"
+  | "enterprise";
 
 interface NavItem {
   /** Locale-less path, or a "#fragment" resolved against the locale root. */
@@ -82,6 +83,8 @@ interface NavCopy {
   freeCheck: string;
   /** Flat top-level link, like Pricing — one destination, so not a panel. */
   assistant: string;
+  /** Flat top-level link to /enterprise, the agencies and multi-location page. */
+  enterprise: string;
   useCases: string;
   login: string;
   join: string;
@@ -165,6 +168,7 @@ const NAV: Record<Base, NavCopy> = {
     pricing: "Pricing",
     freeCheck: "Free check",
     assistant: "AI Assistant",
+    enterprise: "Enterprise",
     useCases: "Use cases",
     login: "Login",
     join: "Join Now",
@@ -257,6 +261,7 @@ const NAV: Record<Base, NavCopy> = {
     pricing: "Tarifs",
     freeCheck: "Vérification gratuite",
     assistant: "Assistant IA",
+    enterprise: "Entreprise",
     useCases: "Cas d'usage",
     login: "Connexion",
     join: "S'inscrire",
@@ -672,6 +677,13 @@ export function PublicNav({
             {t.freeCheck}
           </Link>
           <Link
+            href={L("/enterprise")}
+            className={current === "enterprise" ? s.toggleOn : undefined}
+            aria-current={current === "enterprise" ? "page" : undefined}
+          >
+            {t.enterprise}
+          </Link>
+          <Link
             href={L("/pricing")}
             className={current === "pricing" ? s.toggleOn : undefined}
             aria-current={current === "pricing" ? "page" : undefined}
@@ -778,6 +790,9 @@ export function PublicNav({
               onClick={() => setMobileOpen(false)}
             >
               {t.freeCheck}
+            </Link>
+            <Link href={L("/enterprise")} className={s.sheetSection} onClick={() => setMobileOpen(false)}>
+              {t.enterprise}
             </Link>
             <Link href={L("/pricing")} className={s.sheetSection} onClick={() => setMobileOpen(false)}>
               {t.pricing}

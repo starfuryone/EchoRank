@@ -1,0 +1,42 @@
+/* The Enterprise sub-nav: a second sticky bar directly under PublicNav.
+   PublicNav's .nav is sticky at top:0 and 64px tall at every width
+   (home2.module.css), so this one sticks at 64px and the two stay stacked.
+   z-index 40 sits under the nav's 50, so a mega panel or the mobile sheet
+   opens over this bar, never under it. Colours are .page's tokens: the bar
+   is always rendered inside home2's .page. */
+.bar{position:sticky;top:64px;z-index:40;background:rgba(9,9,12,.82);backdrop-filter:blur(12px);border-bottom:1px solid var(--lineSoft)}
+.in{display:flex;align-items:center;gap:28px;height:48px}
+.bar .title{flex:none;display:flex;align-items:center;gap:9px;font-weight:650;font-size:14px;color:var(--text)}
+.title::before{content:"";width:8px;height:8px;border-radius:2px;transform:rotate(45deg);background:var(--goldGrad)}
+/* The links scroll sideways rather than wrap: a second row would double the
+   bar's height on exactly the screens that can least spare it. */
+.links{display:flex;align-items:stretch;gap:24px;flex:1;min-width:0;height:100%;overflow-x:auto;scrollbar-width:none;font-size:14px;color:var(--muted)}
+.links::-webkit-scrollbar{display:none}
+.links a{display:flex;align-items:center;flex:none;white-space:nowrap;border-bottom:2px solid transparent;padding-top:2px;transition:color 150ms ease}
+.links a:hover,.links a:focus-visible{color:var(--text)}
+.links a[aria-current]{color:var(--text);border-bottom-color:var(--gold)}
+/* .bar .cta: home2's `.page a{color:inherit}` outranks a lone class. */
+.bar .cta{flex:none;display:inline-flex;align-items:center;height:32px;padding:0 14px;border-radius:8px;background:var(--goldGrad);color:var(--onGold);font-weight:600;font-size:13px;white-space:nowrap}
+.cta:hover{filter:brightness(1.05)}
+
+/* In-page jumps scroll smoothly on /enterprise only (the bar is the page's
+   own; no other page is affected), and not at all for reduced motion. */
+@media (prefers-reduced-motion: no-preference){
+  :global(html):has(.smooth){scroll-behavior:smooth}
+}
+
+@media (max-width:640px){
+  .bar .title{display:none}
+  .in{gap:18px}
+}
+/* Phones: the page is full of "Talk to us" buttons and the four links need
+   the room, so the bar's CTA steps aside. Gutter matches PublicNav's. */
+@media (max-width:480px){
+  /* .bar .in, not .in: it must beat home2's .container whatever order the
+     two modules load in. */
+  .bar .in{padding-left:16px;padding-right:16px}
+  .links{gap:20px;font-size:13px}
+  .bar .cta{display:none}
+}
+
+:global([data-theme="day"]) .bar{background:var(--surface);backdrop-filter:none;border-bottom:1px solid var(--line)}
