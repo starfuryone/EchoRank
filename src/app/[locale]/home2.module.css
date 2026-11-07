@@ -856,6 +856,19 @@
   .burger{display:inline-block}
   .megaPanel{display:none}
 }
+/* Phones. At 375px the 28px container gutter leaves 319px for the wordmark,
+   EN/FR, the theme button, the CTA and the burger; French "S'inscrire" cannot
+   wrap the way "Join Now" did, so the row overflowed every French page by 34px.
+   A narrower gutter and gap, a CTA that never wraps, and the theme button left
+   to the menu sheet (which repeats it) fit every locale's label, signed in
+   ("Tableau de bord") or not, down to 320px. */
+@media(max-width:480px){
+  .navin{padding-left:16px;padding-right:16px}
+  .navin > .brand{gap:8px;font-size:14px}
+  .navright{gap:8px}
+  .navright > .themeBtn{display:none}
+  .navcta{padding:7px 10px;font-size:12.5px;white-space:nowrap}
+}
 
 /* ── Theme toggle ─────────────────────────────────────────────────────────
    Sized to match the EN/FR switch beside it rather than the CTA — it is a
