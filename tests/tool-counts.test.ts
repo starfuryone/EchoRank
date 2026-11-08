@@ -27,7 +27,9 @@ import { SEO_TOOLS_COPY } from "@/lib/i18n/dashboard";
 import { planFeatures } from "@/lib/plan-features";
 import { SUPPORTED_LOCALES } from "@/lib/i18n/config";
 
-const ALL = SEO_TOOL_GROUPS.flatMap((g) => g.tools);
+// Echorank's own tools: a partner card (social posting, by EchoPilot) is a
+// sister product's page and is not counted as an Echorank tool.
+const ALL = SEO_TOOL_GROUPS.flatMap((g) => g.tools).filter((t) => !t.partner);
 const NOT_AVAILABLE = ALL.filter((t) => seoToolStatus(t) !== "available");
 const src = (p: string) => readFileSync(join(process.cwd(), p), "utf8");
 
@@ -36,6 +38,12 @@ describe("counts come from the registry", () => {
     const c = seoToolCounts();
     expect(c.available + c.coming).toBe(ALL.length);
     expect(c.available).toBe(ALL.filter((t) => !t.comingSoon && !t.requiresGoogleApproval).length);
+  });
+
+  it("leaves the EchoPilot partner card out of every count", () => {
+    const partner = SEO_TOOL_GROUPS.flatMap((g) => g.tools).filter((t) => t.partner);
+    expect(partner.map((t) => t.id)).toEqual(["social_posting"]);
+    expect(seoToolCounts().total).toBe(SEO_TOOL_GROUPS.flatMap((g) => g.tools).length - partner.length);
   });
 
   it("treats Google-blocked tools as not available", () => {

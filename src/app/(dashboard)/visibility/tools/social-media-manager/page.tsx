@@ -1,11 +1,8 @@
-import { cookies } from "next/headers";
-import { dashboardLocale } from "@/lib/i18n/dashboard";
-import { FeatureScaffold } from "@/components/scaffold/feature-scaffold";
+import { permanentRedirect } from "next/navigation";
 
-// INTEGRATION POINT: social scheduling/publishing backend (no existing service).
-// Paid-subscription gating is enforced by ../layout.tsx for all tool pages.
-export default async function Page() {
-  const cookieStore = await cookies();
-  const locale = dashboardLocale(cookieStore.get("echorank_locale")?.value);
-  return <FeatureScaffold locale={locale} id="social_media_manager" />;
+// The old "Social Media Manager" scaffold. Social posting stays in our sister
+// product EchoPilot (2026-11-08), so this URL now only forwards to the page
+// that promotes it. Kept (not deleted) so old links and bookmarks still land.
+export default function Page() {
+  permanentRedirect("/visibility/tools/social-posting");
 }

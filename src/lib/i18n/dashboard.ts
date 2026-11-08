@@ -13,6 +13,8 @@ import type { SerpLanguageCode, SerpLocationCode } from "@/lib/serp/options";
 // src/app/[locale]/HomeClient.tsx read one string instead of keeping two.
 // REVENUE_COPY.disclaimer is the only consumer here.
 import { ESTIMATE_DISCLAIMER } from "@/lib/revenue/disclaimer";
+// The channels EchoPilot publishes to, for the social posting card (one list).
+import { echopilotChannelList } from "@/lib/echopilot";
 import { SITE_CRAWLER_4C } from "./site-crawler-4c";
 import { SITE_CRAWLER_4D } from "./site-crawler-4d";
 import { SITE_CRAWLER_4E } from "./site-crawler-4e";
@@ -66,7 +68,7 @@ export const dashNav: Record<DashLocale, Record<string, string>> = {
     "/visibility/tools/ai-content-helper": "Marketing Studio",
     // Sub-brand, never translated — see CRAWLER_BRAND.
     "/crawler": CRAWLER_BRAND.name,
-    "/visibility/tools/social-media-manager": "Social Media Manager",
+    "/visibility/tools/social-posting": "Social posting, by EchoPilot",
     "/visibility/tools/portfolios": "Portfolios",
     "/visibility/tools/report-builder": "Report Builder",
     "/visibility/tools/gbp-monitor": "GBP Monitor",
@@ -124,7 +126,7 @@ export const dashNav: Record<DashLocale, Record<string, string>> = {
     "/visibility/tools/ai-content-helper": "Marketing Studio",
     // Sub-brand, never translated — see CRAWLER_BRAND.
     "/crawler": CRAWLER_BRAND.name,
-    "/visibility/tools/social-media-manager": "Social-Media-Manager",
+    "/visibility/tools/social-posting": "Social-Media-Beiträge, von EchoPilot",
     "/visibility/tools/portfolios": "Portfolios",
     "/visibility/tools/report-builder": "Report Builder",
     "/visibility/tools/gbp-monitor": "GBP-Monitor",
@@ -181,7 +183,7 @@ export const dashNav: Record<DashLocale, Record<string, string>> = {
     "/visibility/tools/content-explorer": "Explorateur de contenu",
     "/visibility/tools/ai-content-helper": "Studio marketing",
     "/crawler": CRAWLER_BRAND.name,
-    "/visibility/tools/social-media-manager": "Gestionnaire de médias sociaux",
+    "/visibility/tools/social-posting": "Publication sur les réseaux sociaux, par EchoPilot",
     "/visibility/tools/portfolios": "Portefeuilles",
     "/visibility/tools/report-builder": "Générateur de rapports",
     "/visibility/tools/gbp-monitor": "Suivi GBP",
@@ -5600,9 +5602,11 @@ const seoToolsEn = {
       description:
         "The sources worth getting listed on, ranked by what they are worth against what they cost you to win.",
     },
-    social_media_manager: {
-      name: "Social Media Manager",
-      description: "Plan, edit, schedule, and manage social media content.",
+    // Not an Echorank tool: our sister product EchoPilot writes and publishes
+    // the posts. Nothing here may say Echorank schedules or publishes them.
+    social_posting: {
+      name: "Social posting, by EchoPilot",
+      description: `AI-written posts on a content calendar, approved by you, then published to ${echopilotChannelList("en")} by our sister product EchoPilot.`,
     },
     opportunity_scanner: {
       name: "Opportunity Scanner",
@@ -5674,7 +5678,6 @@ const seoToolsEn = {
     bot_analytics: { cta: "Add a website", related: "Measure AI crawler impact →" },
     content_explorer: { cta: "Explore content" },
     ai_content_helper: { cta: "Create content", related: "Open message templates →" },
-    social_media_manager: { cta: "Create a post" },
     portfolios: { cta: "Create a portfolio" },
     report_builder: { cta: "Create a report", related: "Download existing PDF reports →" },
     gbp_monitor: { cta: "Connect Google Business Profile", related: "Open review monitoring →" },
@@ -5802,9 +5805,9 @@ export const SEO_TOOLS_COPY: Record<DashLocale, SeoToolsCopy> = {
         description:
           "Les sources où il vaut la peine de se faire référencer, classées selon ce qu'elles rapportent face à ce qu'elles coûtent.",
       },
-      social_media_manager: {
-        name: "Gestionnaire de médias sociaux",
-        description: "Planifiez, modifiez, programmez et gérez le contenu de vos médias sociaux.",
+      social_posting: {
+        name: "Publication sur les réseaux sociaux, par EchoPilot",
+        description: `Des publications rédigées par IA dans un calendrier de contenu, approuvées par vous, puis publiées sur ${echopilotChannelList("fr")} par notre produit frère EchoPilot.`,
       },
       opportunity_scanner: {
         name: "Scanner d'opportunités",
@@ -5873,7 +5876,6 @@ export const SEO_TOOLS_COPY: Record<DashLocale, SeoToolsCopy> = {
       bot_analytics: { cta: "Ajouter un site web", related: "Mesurer l'impact des robots d'IA →" },
       content_explorer: { cta: "Explorer le contenu" },
       ai_content_helper: { cta: "Créer du contenu", related: "Ouvrir les modèles de messages →" },
-      social_media_manager: { cta: "Créer une publication" },
       portfolios: { cta: "Créer un portefeuille" },
       report_builder: { cta: "Créer un rapport", related: "Télécharger les rapports PDF existants →" },
       gbp_monitor: { cta: "Connecter Google Business Profile", related: "Ouvrir la surveillance des avis →" },
@@ -5996,9 +5998,9 @@ export const SEO_TOOLS_COPY: Record<DashLocale, SeoToolsCopy> = {
         description:
           "Die Quellen, bei denen sich ein Eintrag lohnt — sortiert nach Ertrag gegenüber Aufwand.",
       },
-      social_media_manager: {
-        name: "Social-Media-Manager",
-        description: "Planen, bearbeiten, terminieren und verwalten Sie Social-Media-Inhalte.",
+      social_posting: {
+        name: "Social-Media-Beiträge, von EchoPilot",
+        description: `Von KI geschriebene Beiträge in einem Redaktionsplan, von Ihnen freigegeben und von unserem Schwesterprodukt EchoPilot auf ${echopilotChannelList("de-CH")} veröffentlicht.`,
       },
       opportunity_scanner: {
         name: "Chancen-Scanner",
@@ -6067,7 +6069,6 @@ export const SEO_TOOLS_COPY: Record<DashLocale, SeoToolsCopy> = {
       bot_analytics: { cta: "Website hinzufügen", related: "KI-Crawler-Wirkung messen →" },
       content_explorer: { cta: "Inhalte erkunden" },
       ai_content_helper: { cta: "Inhalt erstellen", related: "Nachrichtenvorlagen öffnen →" },
-      social_media_manager: { cta: "Beitrag erstellen" },
       portfolios: { cta: "Portfolio erstellen" },
       report_builder: { cta: "Bericht erstellen", related: "Vorhandene PDF-Berichte herunterladen →" },
       gbp_monitor: { cta: "Google Business Profile verbinden", related: "Bewertungsüberwachung öffnen →" },

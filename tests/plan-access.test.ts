@@ -101,6 +101,10 @@ describe("the AI-only plan", () => {
     // Cited sources (2026-11-07) and the AI hub, which shows only these.
     "/visibility/tools/citation-finder",
     "/visibility/tools/citation-opportunities",
+    // Social posting, by EchoPilot: every paid plan (2026-11-08); the old
+    // Social Media Manager URL redirects to it.
+    "/visibility/tools/social-posting",
+    "/visibility/tools/social-media-manager",
     "/ai",
     "/settings",
     "/settings/account",
@@ -158,6 +162,7 @@ describe("the AI-only plan", () => {
     ["POST", "/api/av/audit/report"],
     ["POST", "/api/seo/v1/ai-lens/analyze"],
     ["PATCH", "/api/citation-opportunities/abc"],
+    ["POST", "/api/echopilot/click"],
     ["GET", "/api/billing"],
     ["GET", "/api/account/export"],
     ["GET", "/api/tenants"],

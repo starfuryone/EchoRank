@@ -766,7 +766,7 @@ export const TECHNICAL_GEO_HTML = `<!DOCTYPE html>
             <div class="pill-row">
               <span class="pill">Content Explorer</span>
               <span class="pill">AI Content Helper</span>
-              <span class="pill">Social Media Manager</span>
+              <span class="pill">Social posting, by EchoPilot</span>
             </div>
           </div>
           <div class="tool-group">

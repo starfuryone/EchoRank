@@ -328,7 +328,26 @@ model Tenant {
 
   assistantConversations AssistantConversation[]
 
+  partnerClicks PartnerClick[]
+
   @@map("tenants")
+}
+
+/// A click from Echorank out to a sister product's page, kept as a demand
+/// signal (2026-11-08): today the CTA on "Social posting, by EchoPilot"
+/// (target "echopilot_social", src/lib/echopilot.ts). One row per click; no
+/// user, no IP, only the workspace and the plan it was on.
+model PartnerClick {
+  id        String   @id @default(cuid())
+  tenantId  String
+  plan      PlanType
+  target    String
+  createdAt DateTime @default(now())
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([target, createdAt])
+  @@index([tenantId])
+  @@map("partner_clicks")
 }
 
 model TenantMember {

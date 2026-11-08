@@ -240,7 +240,7 @@ describe("Straight answers and the structured data", () => {
     const items = pricingFaq(l, { savePct: yearlySavingPct()!, freeCrawler: true });
     const faq = graph(html).find((n) => n["@type"] === "FAQPage") as { mainEntity: Array<{ name: string; acceptedAnswer: { text: string } }> };
     expect(faq).toBeTruthy();
-    expect(faq.mainEntity).toHaveLength(11);
+    expect(faq.mainEntity).toHaveLength(12);
     expect(faq.mainEntity.map((q) => q.name)).toEqual(items.map((i) => i.q));
     for (const q of faq.mainEntity) expect(q.acceptedAnswer.text).not.toMatch(/\*\*|\]\(/);
     const shown = [...doc(html).querySelectorAll("[data-faq] h3")].map((h) => h.textContent);
@@ -251,10 +251,10 @@ describe("Straight answers and the structured data", () => {
     expect(await pricingHtml(l)).not.toContain("CONFIRM");
   });
 
-  it("covers the spec's ten topics plus the AI-only question first, all answered", () => {
+  it("covers the spec's ten topics plus the AI-only question first and social posting, all answered", () => {
     for (const l of ["en", "fr", "de-CH"]) {
       const items = pricingFaq(l, { savePct: 20, freeCrawler: true });
-      expect(items.map((i) => i.id)).toEqual(["ai-only", "trial", "cancel", "location", "limits", "billing", "crawler", "seats", "payment", "refunds", "tax"]);
+      expect(items.map((i) => i.id)).toEqual(["ai-only", "trial", "cancel", "location", "limits", "billing", "crawler", "social", "seats", "payment", "refunds", "tax"]);
       for (const it of items) expect(it.a.length, `${l} ${it.id}`).toBeGreaterThan(40);
     }
   });

@@ -33,6 +33,31 @@ import { pricingNotes } from "@/lib/i18n/content";
 import { cadence, cardPlans, engineNames } from "./headlines";
 import { planAllowsArea } from "@/lib/plan-access";
 import { fmtNum, pricingBase, type PricingBase } from "./format";
+import { echopilotChannelList } from "@/lib/echopilot";
+
+/**
+ * "Do you schedule social posts?" Social posting stays in our sister product
+ * EchoPilot (2026-11-08); Echorank never schedules or publishes posts itself.
+ * The channels come from ECHOPILOT_CHANNELS, so adding one is one line there.
+ */
+function socialAnswer(b: PricingBase): { q: string; a: string } {
+  if (b === "de") {
+    return {
+      q: "Planen Sie Social-Media-Beiträge?",
+      a: `Ja, mit unserem Schwesterprodukt EchoPilot, das auf ${echopilotChannelList("de-CH")} veröffentlicht.`,
+    };
+  }
+  if (b === "fr") {
+    return {
+      q: "Programmez-vous des publications sur les réseaux sociaux ?",
+      a: `Oui, grâce à notre produit frère EchoPilot, qui publie sur ${echopilotChannelList("fr")}.`,
+    };
+  }
+  return {
+    q: "Do you schedule social posts?",
+    a: `Yes, through our sister product EchoPilot, which publishes to ${echopilotChannelList("en")}.`,
+  };
+}
 
 export interface PricingFaqItem {
   id: string;
@@ -98,6 +123,7 @@ export function pricingFaq(
   const low = PLAN_CONFIGS[crawlPlans[0]!];
   const high = PLAN_CONFIGS[plans[plans.length - 1]!];
   const aiOnly = aiOnlyAnswer(b);
+  const social = socialAnswer(b);
   const lowCap = fmtNum(low.crawlUrlCap, b);
   const highCap = fmtNum(high.crawlUrlCap, b);
   const freeCap = fmtNum(FREE_CRAWL_URL_CAP, b);
@@ -139,6 +165,7 @@ export function pricingFaq(
         q: `Ist ${name} inbegriffen?`,
         a: `Ja, in jedem Abo ab ${low.name}. Das Abo legt fest, wie viele URLs ein Crawl abruft – von ${lowCap} bei ${low.name} bis ${highCap} bei ${high.name} – und wie viele Crawls pro Monat möglich sind (Tabelle oben).${opts.freeCrawler ? ` Der Gratis-Crawler prüft ${freeCap} Seiten ohne Konto.` : ""}`,
       },
+      { id: "social", q: social.q, a: social.a },
       {
         id: "seats",
         q: "Kostet jedes Teammitglied extra?",
@@ -203,6 +230,7 @@ export function pricingFaq(
         ? `Oui, dans chaque forfait à partir de ${low.name}. Le forfait fixe le nombre d'URL qu'une exploration peut parcourir — de ${lowCap} avec ${low.name} à ${highCap} avec ${high.name} — et le nombre d'explorations par mois (tableau ci-dessus).${opts.freeCrawler ? ` Le robot gratuit vérifie ${freeCap} pages sans compte.` : ""}`
         : `Yes, on every plan from ${low.name}. Each plan sets how many URLs one crawl may fetch — from ${lowCap} on ${low.name} to ${highCap} on ${high.name} — and how many crawls a month it runs (table above).${opts.freeCrawler ? ` The free crawler checks ${freeCap} pages without an account.` : ""}`,
     },
+    { id: "social", q: social.q, a: social.a },
     {
       id: "seats",
       q: fr ? "Payez-vous par utilisateur ?" : "Do you charge per seat?",

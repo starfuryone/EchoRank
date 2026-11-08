@@ -103,7 +103,11 @@ export const PAGE_RULES: readonly RouteRule[] = [
   { prefix: "/visibility/tools", area: "ai_visibility", exact: true },
   { prefix: "/visibility/tools/action-agent", area: "marketing_studio" },
   { prefix: "/visibility/tools/ai-content-helper", area: "marketing_studio" },
-  { prefix: "/visibility/tools/social-media-manager", area: "marketing_studio" },
+  // Social posting, by EchoPilot: a page promoting the sister product, on
+  // every paid plan, the AI-only one included. The old Social Media Manager
+  // URL only redirects to it, so it is classified the same way.
+  { prefix: "/visibility/tools/social-posting", area: "ai_visibility" },
+  { prefix: "/visibility/tools/social-media-manager", area: "ai_visibility" },
   { prefix: "/visibility/tools/funnels", area: "client_management" },
   { prefix: "/visibility/tools/opportunity-scanner", area: "client_management" },
   { prefix: "/visibility/tools/portfolios", area: "client_management" },
@@ -173,6 +177,9 @@ export const API_RULES: readonly RouteRule[] = [
   { prefix: "/api/seo", area: "seo_tools" },
   { prefix: "/api/keyword-opportunities", area: "seo_tools" },
   { prefix: "/api/citation-opportunities", area: "ai_visibility" },
+  // The click on the EchoPilot page's CTA, recorded for every paid plan like
+  // the page itself (/visibility/tools/social-posting).
+  { prefix: "/api/echopilot/click", area: "ai_visibility" },
   // Account.
   { prefix: "/api/account", area: "account" },
   { prefix: "/api/billing", area: "account" },

@@ -53,7 +53,7 @@ const EXPECTED_HREFS: Record<string, string> = {
   action_agent: "/visibility/tools/action-agent",
   keyword_opportunities: "/visibility/tools/keyword-opportunities",
   historical: "/visibility/tools/historical",
-  social_media_manager: "/visibility/tools/social-media-manager",
+  social_posting: "/visibility/tools/social-posting",
   dashboard: "/dashboard",
   portfolios: "/visibility/tools/portfolios",
   report_builder: "/visibility/tools/report-builder",
@@ -139,9 +139,11 @@ test("the live/coming-soon split is what the marketing copy claims", () => {
   // so a change in the split is a deliberate, reviewed one.
   const soon = ALL_TOOLS.filter((t) => t.comingSoon);
   assert.equal(ALL_TOOLS.length, 34, "tool count changed");
-  assert.equal(soon.length, 5);
-  // Available = neither a scaffold nor blocked on Google's approval.
-  assert.deepEqual(seoToolCounts(), { available: 27, coming: 7, total: 34 });
+  assert.equal(soon.length, 4);
+  // Available = neither a scaffold nor blocked on Google's approval. The
+  // EchoPilot partner card (social_posting) is on the hub but is not an
+  // Echorank tool, so the counts leave it out: 33, not 34.
+  assert.deepEqual(seoToolCounts(), { available: 27, coming: 6, total: 33 });
   assert.deepEqual(
     ALL_TOOLS.filter((t) => seoToolStatus(t) === "waiting_approval").map((t) => t.id).sort(),
     ["gbp_monitor", "gsc_insights", "web_analytics"],
@@ -153,7 +155,7 @@ test("the live/coming-soon split is what the marketing copy claims", () => {
   // together, which is the point. See src/lib/ai-citations/options.ts.
   assert.deepEqual(
     soon.map((t) => t.id).sort(),
-    ["ai_citations", "gbp_monitor", "portfolios", "report_builder", "social_media_manager"],
+    ["ai_citations", "gbp_monitor", "portfolios", "report_builder"],
   );
 });
 

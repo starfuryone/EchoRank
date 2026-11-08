@@ -74,7 +74,7 @@ export type SeoToolId =
   | "bot_analytics"
   | "content_explorer"
   | "ai_content_helper"
-  | "social_media_manager"
+  | "social_posting"
   | "dashboard"
   | "portfolios"
   | "report_builder"
@@ -150,6 +150,9 @@ export type ScaffoldId = Exclude<
   // And the Keyword Opportunity Finder, which ships real with its progress,
   // empty, error and no-allowance states in KEYWORD_OPPORTUNITY_COPY.
   | "keyword_opportunities"
+  // Social posting is EchoPilot's, not a scaffold: the page is a short
+  // promotion of the sister product, its copy in ECHOPILOT_COPY.
+  | "social_posting"
 >;
 
 export interface SeoTool {
@@ -197,6 +200,13 @@ export interface SeoTool {
    * monitoring card in reputation-tools.ts.
    */
   requiresGoogleApproval?: true;
+
+  /**
+   * The card promotes a sister product instead of an Echorank tool (today
+   * only social posting, by EchoPilot). It stays out of seoToolCounts(): the
+   * "N tools available" line counts what an Echorank plan includes.
+   */
+  partner?: "echopilot";
 }
 
 export interface SeoToolGroup {
@@ -343,7 +353,11 @@ export const SEO_TOOL_GROUPS: SeoToolGroup[] = [
       // engines read. This is an ACTION surface: it produces work to approve,
       // not a number to read. Registered in SEO Tools only.
       t("action_agent", "action-agent", Wand2, { badge: "new" }),
-      t("social_media_manager", "social-media-manager", Share2, { comingSoon: true }),
+      // Social posting stays in our sister product EchoPilot (2026-11-08):
+      // Echorank promotes it rather than building a scheduler. Replaces the
+      // old "Social Media Manager" scaffold, whose URL redirects here. Every
+      // paid plan, the AI-only one included (plan-access.ts).
+      t("social_posting", "social-posting", Share2, { partner: "echopilot" }),
     ],
   },
   {
@@ -473,10 +487,11 @@ export function seoToolStatus(tool: SeoTool): SeoToolStatus {
  * "{available} tools available · {coming} coming" — the numbers behind every
  * tool count on the site (homepage section, pricing cards on / and /pricing,
  * the in-app hub header). `coming` folds scaffolds and Google-blocked tools
- * together: to a buyer both mean "not usable yet".
+ * together: to a buyer both mean "not usable yet". Partner cards (a sister
+ * product's page, `partner`) are not Echorank tools and are not counted.
  */
 export function seoToolCounts(): { available: number; coming: number; total: number } {
-  const all = SEO_TOOL_GROUPS.flatMap((g) => g.tools);
+  const all = SEO_TOOL_GROUPS.flatMap((g) => g.tools).filter((t) => !t.partner);
   const available = all.filter((t) => seoToolStatus(t) === "available").length;
   return { available, coming: all.length - available, total: all.length };
 }
