@@ -167,13 +167,14 @@ export const PLAIN_ROUTES: PlainRoute[] = [
  * Retired paths that must keep canonicalizing but must NOT be advertised.
  *
  * A removed page whose route still answers with a 301 needs to stay in the
- * proxy's locale guard: without it, the locale-less "/free-tools/reddit-threads"
+ * proxy's locale guard: without it, the locale-less "/free-tools/ai-search-grader"
  * falls through to the auth gate and 307s to /login instead of reaching the
  * redirect. It stays out of LOCALIZED_ROUTES so the sitemap stops listing it.
  */
 export const RETIRED_LOCALIZED_PATHS: readonly string[] = [
-  // Both removed 2026-08-16, both 301 → /{locale}/free-tools.
-  "/free-tools/reddit-threads",
+  // Removed 2026-08-16, 301 → /{locale}/free-tools. (The Reddit Threads
+  // Finder, retired the same day, came back on its slug on 2026-11-08 and is
+  // in LOCALIZED_ROUTES again through FREE_TOOLS.)
   "/free-tools/ai-search-grader",
 ];
 

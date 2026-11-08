@@ -13,6 +13,7 @@
 import type { FreeToolId } from "@/lib/free-tools";
 import { FREE_CRAWLER_COPY } from "@/lib/site-crawler/free-copy";
 import { AUTHORITY_COPY } from "@/lib/authority-checker/copy";
+import { REDDIT_COPY } from "@/lib/reddit-threads/copy";
 
 export interface ToolCopy {
   name: string;
@@ -158,5 +159,17 @@ export const TOOL_COPY: Record<FreeToolId, ToolCopy> = {
     limitNote: AUTHORITY_COPY.en.limitNote,
     cta: AUTHORITY_COPY.en.ctaButton,
     faq: AUTHORITY_COPY.en.faq,
+  },
+  // Localized en/fr/de-CH in src/lib/reddit-threads/copy.ts; this entry is
+  // its English hub card and the shell's fallback.
+  reddit_threads: {
+    name: REDDIT_COPY.en.name,
+    blurb: REDDIT_COPY.en.blurb,
+    intro: REDDIT_COPY.en.intro,
+    metaTitle: REDDIT_COPY.en.metaTitle,
+    metaDescription: REDDIT_COPY.en.metaDescription,
+    limitNote: REDDIT_COPY.en.limitNote,
+    cta: REDDIT_COPY.en.ctaButton,
+    faq: REDDIT_COPY.en.faq,
   },
 };

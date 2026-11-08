@@ -99,10 +99,13 @@ describe("route table", () => {
     }
   });
 
-  it("tracks the signup source per tool", () => {
+  it("tracks the signup source per tool, in the visitor's locale", () => {
     for (const tool of FREE_TOOLS) {
-      expect(ctaHref(tool)).toBe(`/en/pricing?src=free-tools-${tool.slug}`);
+      for (const locale of ["en", "en-CA", "fr", "fr-CA", "de-CH"]) {
+        expect(ctaHref(tool, locale)).toBe(`/${locale}/pricing?src=free-tools-${tool.slug}`);
+      }
     }
+    expect(ctaHref(freeToolById("reddit_threads"), "fr")).toBe("/fr/pricing?src=free-tools-reddit-threads");
   });
 
   it("points the extension card at the Caddy-served page", () => {

@@ -21,6 +21,7 @@ import { flag, type FlagName } from "@/lib/flags";
 export const FREE_TOOLS_BASE = "/free-tools";
 
 export type FreeToolId =
+  | "reddit_threads"
   | "serp_volatility"
   | "content_optimizer"
   | "share_of_search"
@@ -62,10 +63,9 @@ export interface FreeTool {
 }
 
 export const FREE_TOOLS: FreeTool[] = [
-  // RETIRED: reddit_threads (Reddit Threads Finder). Removed 2026-08-16; its
-  // page path still 301s from src/app/[locale]/free-tools/reddit-threads/route.ts
-  // and stays in RETIRED_LOCALIZED_PATHS in src/lib/seo/registry.ts so the
-  // locale-less URL keeps canonicalizing instead of hitting the auth gate.
+  // reddit_threads was retired 2026-08-16 and brought back 2026-11-08 without
+  // Reddit's API; it sits last (below) so the hub's bottom CTA, which reads
+  // FREE_TOOLS[0], keeps its attribution.
   {
     id: "serp_volatility",
     slug: "serp-volatility",
@@ -139,6 +139,20 @@ export const FREE_TOOLS: FreeTool[] = [
     isNew: true,
     jsonLd: "faq",
   },
+  {
+    // The Reddit Threads Finder, back on its old slug (2026-11-08) WITHOUT
+    // Reddit's API: Google's site:reddit.com results by country, through
+    // DataForSEO (live, top 10). Its OWN daily budget (REDDIT_THREADS_DAILY_USD,
+    // default $1), 10 searches per IP a day, 7-day cache, CSV behind an email
+    // — src/lib/reddit-threads/. Body localized en/fr/de-CH.
+    id: "reddit_threads",
+    slug: "reddit-threads",
+    cost: "paid_api",
+    dailyLimit: 10,
+    apiPath: "/api/free/v1/reddit-threads",
+    isNew: true,
+    jsonLd: "faq",
+  },
 ];
 
 /** A tool whose flag is off is not shown anywhere (hub, routes, sitemap; its page 404s). */
@@ -196,10 +210,9 @@ export function paidFreeTools(): FreeTool[] {
  * Renamed from signupHref() in the same change. A function called "signup"
  * that returns a pricing URL is the kind of thing that gets miswired later.
  *
- * The locale is hardcoded to /en deliberately, matching the explicit `cta`
- * props on the pages that pass one: the attribution survives, and a bare
- * /pricing would take an extra 308 through the proxy's locale guard.
+ * Locale-prefixed (2026-11-08): /<locale>/pricing keeps the visitor in their
+ * language and still skips the proxy's 308 a bare /pricing would take.
  */
-export function ctaHref(tool: FreeTool): string {
-  return `/en/pricing?src=free-tools-${tool.slug}`;
+export function ctaHref(tool: FreeTool, locale: string): string {
+  return `/${locale}/pricing?src=free-tools-${tool.slug}`;
 }

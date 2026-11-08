@@ -53,7 +53,7 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
       // generic copy.cta. The href still goes through ctaHref() so this page
       // keeps its ?src= attribution like every other.
       cta={{
-        primary: { href: ctaHref(TOOL), label: "Track your own keywords daily →" },
+        primary: { href: ctaHref(TOOL, locale), label: "Track your own keywords daily →" },
         secondary: { href: `/${locale}${FREE_TOOLS_BASE}`, label: "All free tools" },
       }}
     >

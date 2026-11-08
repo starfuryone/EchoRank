@@ -105,7 +105,7 @@ export default async function FreeToolsHubPage({
             </p>
             <Link
               className={`${s.btn} ${s.btnPrimary}`}
-              href={ctaHref(FREE_TOOLS[0]!)}
+              href={ctaHref(FREE_TOOLS[0]!, locale)}
             >
               {HUB_COPY.ctaButton}
             </Link>

@@ -119,7 +119,7 @@ export function FreeToolShell({
                 </>
               ) : (
                 <>
-                  <Link className={`${s.btn} ${s.btnPrimary}`} href={ctaHref(tool)}>
+                  <Link className={`${s.btn} ${s.btnPrimary}`} href={ctaHref(tool, locale)}>
                     {copy.cta} →
                   </Link>{" "}
                   <Link className={s.btn} href={L(FREE_TOOLS_BASE)}>

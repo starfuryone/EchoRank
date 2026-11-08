@@ -192,7 +192,7 @@ export default async function Page({ params, searchParams }: { params: Promise<{
                 {r.ctaTitle(paidCrawlCeiling(locale))}
               </h2>
               <p className={f.upsellP}>{r.ctaBody}</p>
-              <Link className={`${s.btn} ${s.btnPrimary}`} href={ctaHref(TOOL)}>
+              <Link className={`${s.btn} ${s.btnPrimary}`} href={ctaHref(TOOL, locale)}>
                 {r.ctaButton}
               </Link>{" "}
               <Link className={s.btn} href={`/${locale}${FREE_TOOLS_BASE}/${TOOL.slug}`}>

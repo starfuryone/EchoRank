@@ -60,7 +60,7 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
       tool={TOOL}
       copy={shellCopy(c, locale)}
       cta={{
-        primary: { href: ctaHref(TOOL), label: `${c.result.ctaButton} →` },
+        primary: { href: ctaHref(TOOL, locale), label: `${c.result.ctaButton} →` },
         secondary: { href: `/${locale}${FREE_TOOLS_BASE}`, label: "All free tools" },
       }}
     >
