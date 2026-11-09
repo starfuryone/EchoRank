@@ -30,7 +30,8 @@ import { promisify } from "node:util";
 
 /** Bump on any change to keys, body, hashing or scrubbing. */
 // 1.0.1: endpointSlug() is idempotent (a slug passed back in keeps its dashes).
-export const PURCHASE_ARCHIVE_VERSION = "1.0.1";
+// 1.0.2: the backfill's cache-key params are on the allowlist.
+export const PURCHASE_ARCHIVE_VERSION = "1.0.2";
 /** The `v` field of every body and the `v1/` key prefix. */
 export const OBJECT_SCHEMA_VERSION = 1;
 
@@ -152,6 +153,8 @@ export const ALLOWED_PARAMS: ReadonlySet<string> = new Set([
   "reasoning", "store", "text", "systemInstruction", "contents", "generationConfig",
   "system", "messages", "max_tokens", "systemPrompt", "userPrompt", "prompt", "modelId", "maxTokens",
   "temperature", "top_p",
+  // A backfilled cache object's key parts (the target is already a hash).
+  "cache_feature", "cache_version", "cache_scope", "target_sha256", "date_bucket",
 ]);
 
 const REDACTED = "[redacted]";

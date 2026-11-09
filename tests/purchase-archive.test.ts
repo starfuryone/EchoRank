@@ -559,6 +559,7 @@ describe("purchase-archive worker", () => {
       pageStore: () => null,
       drainPages: async () => ({ uploaded: 0, remaining: 0, failed: false }),
       pageDir: () => tmp(),
+      retentionIndex: { expired: async () => [], deleteRows: async () => 0 },
     };
     const o = serializeObject(await obj(1_700_000_000_000));
     const job = (attemptsMade: number) => ({ data: { kind: "store", object: o }, opts: { attempts: 5 }, attemptsMade }) as never;

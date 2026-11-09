@@ -308,7 +308,8 @@ export type CrawlArchiveJob = { kind: "sweep" } | { kind: "restore"; crawlJobId:
 export type PurchaseArchiveJob =
   | { kind: "store"; object: import("@/lib/purchase-archive/spool").SerializedObject }
   | { kind: "drain" }
-  | { kind: "manifest"; day?: string };
+  | { kind: "manifest"; day?: string }
+  | { kind: "retention" };
 
 export interface SiteCrawlRetentionJob {
   retention: true;

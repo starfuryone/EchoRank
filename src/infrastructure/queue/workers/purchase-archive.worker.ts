@@ -12,6 +12,9 @@
 //             alert (#echorank-alerts) past 1,000 files or 1 GB in total.
 //   manifest  repeatable, 00:20 UTC: v1/echorank/_manifests/<yesterday>.ndjson.gz
 //             from the index rows.
+//   retention repeatable, 03:40 UTC: personal-data objects older than
+//             PURCHASE_ARCHIVE_PERSONAL_MONTHS (24) deleted, object then row
+//             (src/lib/purchase-archive/retention.ts). Everything else is kept.
 //
 // Archive not configured (PURCHASE_ARCHIVE_* missing) → store spools, drain and
 // manifest return at once.
@@ -31,15 +34,19 @@ import { archiveStore, type ObjectStore } from "@/lib/spaces/client";
 import { postMatrixAlert } from "@/lib/matrix/alert";
 import { drainPageSpool } from "@/lib/page-archive/spool";
 import { pageSpoolDir } from "@/lib/page-archive/config";
+import { prismaRetentionIndex, purgePersonalData, type RetentionIndex } from "@/lib/purchase-archive/retention";
 
 export const DRAIN_JOB = "drain";
 export const MANIFEST_JOB = "manifest";
+export const RETENTION_JOB = "retention";
 export const DRAIN_CRON = "*/10 * * * *";
 export const MANIFEST_CRON = "20 0 * * *";
+export const RETENTION_CRON = "40 3 * * *";
 
 const SCHEDULES: ReadonlyArray<{ name: string; pattern: string }> = [
   { name: DRAIN_JOB, pattern: DRAIN_CRON },
   { name: MANIFEST_JOB, pattern: MANIFEST_CRON },
+  { name: RETENTION_JOB, pattern: RETENTION_CRON },
 ];
 
 /** Whether a registered repeatable is one we want (`every` arrives from Redis as a string). */
@@ -59,9 +66,11 @@ export interface PurchaseWorkerDeps {
   pageStore: () => ObjectStore | null;
   drainPages: (store: ObjectStore) => Promise<{ uploaded: number; remaining: number; failed: boolean }>;
   pageDir: () => string;
+  retentionIndex: RetentionIndex;
 }
 
 export const defaultPurchaseWorkerDeps: PurchaseWorkerDeps = {
+  retentionIndex: prismaRetentionIndex,
   pageStore: () => archiveStore(),
   drainPages: (s) => drainPageSpool(s),
   pageDir: () => pageSpoolDir(),
@@ -112,6 +121,13 @@ export async function processPurchaseArchiveJob(job: Job<PurchaseArchiveJob>, de
 
   if (!store) return { skipped: "not_configured" };
 
+  if (data.kind === "retention") {
+    // Personal-data objects past PURCHASE_ARCHIVE_PERSONAL_MONTHS: object, then row.
+    const out = await purgePersonalData({ store, index: deps.retentionIndex, now: deps.now() });
+    logger.info(out, "purchase-archive: personal-data retention");
+    return out;
+  }
+
   // manifest: yesterday (UTC) unless a day is given.
   const day = data.day ? new Date(`${data.day}T00:00:00Z`) : new Date(deps.now().getTime() - 86_400_000);
   const out = await writeManifest(day, { store, index: deps.index });
@@ -140,6 +156,7 @@ export function startPurchaseArchiveWorker(): Worker<PurchaseArchiveJob> {
       }
       await queue.add(DRAIN_JOB, { kind: "drain" }, { repeat: { pattern: DRAIN_CRON, tz: "UTC" }, attempts: 1 });
       await queue.add(MANIFEST_JOB, { kind: "manifest" }, { repeat: { pattern: MANIFEST_CRON, tz: "UTC" }, attempts: 2 });
+      await queue.add(RETENTION_JOB, { kind: "retention" }, { repeat: { pattern: RETENTION_CRON, tz: "UTC" }, attempts: 1 });
     } catch (err) {
       logger.error({ err, queue: PURCHASE_ARCHIVE_QUEUE }, "failed to schedule the purchase-archive jobs");
     }
