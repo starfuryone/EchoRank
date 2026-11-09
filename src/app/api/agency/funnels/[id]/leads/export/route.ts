@@ -15,6 +15,7 @@
 
 import { NextResponse } from "next/server";
 import { requireTenant } from "@/lib/tenant";
+import { saveReportCopy } from "@/lib/report-archive";
 import { requireFeature, enforcementErrorResponse } from "@/lib/plan-enforcement";
 import { leadsForExport, LEADS_EXPORT_CAP } from "@/lib/funnel/store";
 import { LEAD_CSV_COLUMNS } from "@/lib/funnel/csv";
@@ -42,6 +43,8 @@ export async function GET(
     if (result.truncated) {
       body += truncationNotice(LEAD_CSV_COLUMNS, LEADS_EXPORT_CAP) + "\r\n";
     }
+    // The report archive: a copy in tenants/<t>/reports/, in the background.
+    void saveReportCopy({ tenantId: membership.tenantId, type: "funnel-leads", ext: "csv", contentType: "text/csv; charset=utf-8", body });
 
     return new NextResponse(body, {
       headers: {

@@ -292,6 +292,30 @@ export function PageDetail({
               </dl>
             </section>
 
+            {data.storedCopy && (data.storedCopy.raw || data.storedCopy.rendered) && (
+              // The page archive's copy of the customer's own page: a presigned
+              // download (attachment) on the bucket's host, never shown inline here.
+              <section aria-label={u.detailStoredCopy} data-testid="stored-copy">
+                <div className="flex flex-wrap gap-3 text-sm">
+                  {data.storedCopy.raw && (
+                    <a className="font-medium text-blue-700 hover:underline" href={`/api/seo/v1/crawl/${crawlId}/pages/${encodeURIComponent(p.id)}/stored-copy?kind=raw`} rel="nofollow">
+                      {u.detailStoredCopy}
+                    </a>
+                  )}
+                  {data.storedCopy.rendered && (
+                    <a className="font-medium text-blue-700 hover:underline" href={`/api/seo/v1/crawl/${crawlId}/pages/${encodeURIComponent(p.id)}/stored-copy?kind=rendered`} rel="nofollow">
+                      {u.detailStoredRendered}
+                    </a>
+                  )}
+                </div>
+                {data.storedCopy.fetchedAt && (
+                  <p className="mt-1 text-xs text-gray-600">
+                    {u.detailStoredNote(new Intl.DateTimeFormat(int.resolvedOptions().locale, { dateStyle: "medium" }).format(new Date(data.storedCopy.fetchedAt)))}
+                  </p>
+                )}
+              </section>
+            )}
+
             {linksOn && (p.inlinkCount ?? 0) > 0 && <InlinksPanel crawlId={crawlId} page={{ id: p.id, url: p.url }} t={t.p4a} />}
 
             {metricSources.length > 0 && (

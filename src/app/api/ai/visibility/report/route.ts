@@ -10,6 +10,7 @@
 //   POST → assemble + render + stream application/pdf
 import { NextRequest, NextResponse } from "next/server";
 import { requireTenant } from "@/lib/tenant";
+import { saveReportCopy } from "@/lib/report-archive";
 import { requireFeature, enforcementErrorResponse } from "@/lib/plan-enforcement";
 import { csrfProtection } from "@/lib/csrf-protection";
 import { prisma } from "@/lib/prisma";
@@ -271,6 +272,8 @@ export async function POST(req: NextRequest) {
     markOnboardingStep(membership.tenantId, "pdf_downloaded").catch(() => {});
 
     const pdf = new Uint8Array(await res.arrayBuffer());
+    // The report archive: a copy in tenants/<t>/reports/, in the background.
+    void saveReportCopy({ tenantId: membership.tenantId, type: "ai-visibility", ext: "pdf", contentType: "application/pdf", body: pdf });
     const disposition =
       res.headers.get("content-disposition") ??
       `attachment; filename="Echorank-360-AI-Visibility-Report-${domain}.pdf"`;

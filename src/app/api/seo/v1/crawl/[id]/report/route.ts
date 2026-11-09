@@ -16,6 +16,7 @@
 
 import { NextResponse } from "next/server";
 import { requirePaidPlan } from "@/lib/paid-plan";
+import { newReportId, saveReportCopy } from "@/lib/report-archive";
 import { prisma } from "@/lib/prisma";
 import { flag } from "@/lib/flags";
 import { archivedResponse, crawlRouteError } from "@/lib/site-crawler/http";
@@ -99,6 +100,9 @@ export async function POST(_request: Request, { params }: Ctx) {
     if (!res || !res.ok) return refusal(res);
 
     const pdf = new Uint8Array(await res.arrayBuffer());
+    // The report archive (the Spaces path above copies its own object): a copy
+    // in tenants/<t>/reports/, in the background.
+    void saveReportCopy({ tenantId: tenant.tenantId, type: "crawl-report", ext: "pdf", contentType: "application/pdf", body: pdf, id: `${id}-${newReportId()}`.slice(0, 64) });
     return new NextResponse(pdf, {
       headers: {
         "Content-Type": "application/pdf",

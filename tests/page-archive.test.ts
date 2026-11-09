@@ -132,7 +132,7 @@ describe("keys and tenant isolation", () => {
     for (const k of order) expect(k.startsWith(`tenants/${T}/pages/crawl/c1/`)).toBe(true);
   });
 
-  it("no route builds a page-archive key (nothing serves the prefix yet)", () => {
+  it("no route builds a page-archive key; only the tenant-scoped stored-copy pair reads one", () => {
     const ROOT = join(__dirname, "..");
     const walk = (d: string, out: string[] = []): string[] => {
       for (const n of readdirSync(d)) {
@@ -142,8 +142,11 @@ describe("keys and tenant isolation", () => {
       }
       return out;
     };
-    const hits = walk(join(ROOT, "src/app")).filter((p) => /pagesPrefix\(|\/pages\/(crawl|ai-lens|audit)\//.test(readFileSync(p, "utf8")));
-    expect(hits.map((p) => relative(ROOT, p))).toEqual([]);
+    const files = walk(join(ROOT, "src/app"));
+    const builds = files.filter((p) => /pagesPrefix\(|\/pages\/(crawl|ai-lens|audit)\//.test(readFileSync(p, "utf8")));
+    expect(builds.map((p) => relative(ROOT, p))).toEqual([]);
+    const reads = files.filter((p) => /@\/lib\/page-archive\/stored-copy/.test(readFileSync(p, "utf8"))).map((p) => relative(ROOT, p)).sort();
+    expect(reads).toEqual(["src/app/api/seo/v1/crawl/[id]/pages/[pageId]/route.ts", "src/app/api/seo/v1/crawl/[id]/pages/[pageId]/stored-copy/route.ts"]);
   });
 });
 

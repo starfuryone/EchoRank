@@ -42,6 +42,7 @@ import "server-only";
 import { createHash } from "node:crypto";
 import type { Readable } from "node:stream";
 import {
+  CopyObjectCommand,
   DeleteObjectsCommand,
   GetObjectCommand,
   HeadObjectCommand,
@@ -202,7 +203,9 @@ export interface ObjectStore {
   /** The "directories" one level under a prefix (Delimiter "/"). */
   listPrefixes(prefix: string): Promise<string[]>;
   /** A presigned GET against the bucket endpoint, with the download's filename. */
-  presignGet(key: string, opts: { filename: string; expiresIn: number; contentType?: string }): Promise<string>;
+  presignGet(key: string, opts: { filename: string; expiresIn: number; contentType?: string; contentEncoding?: string }): Promise<string>;
+  /** Server-side copy within the bucket (no download). Optional: fakes may omit it. */
+  copy?(sourceKey: string, destKey: string): Promise<void>;
 }
 
 export const DELETE_BATCH = 1_000;
@@ -292,6 +295,12 @@ export function s3ObjectStore(client: S3Client, bucket: string): ObjectStore {
       return out;
     },
 
+    async copy(sourceKey, destKey) {
+      await client.send(
+        new CopyObjectCommand({ Bucket: bucket, Key: destKey, CopySource: `${bucket}/${sourceKey.split("/").map(encodeURIComponent).join("/")}` }),
+      );
+    },
+
     async presignGet(key, opts) {
       return getSignedUrl(
         client,
@@ -300,6 +309,7 @@ export function s3ObjectStore(client: S3Client, bucket: string): ObjectStore {
           Key: key,
           ResponseContentDisposition: attachmentDisposition(opts.filename),
           ...(opts.contentType ? { ResponseContentType: opts.contentType } : {}),
+          ...(opts.contentEncoding ? { ResponseContentEncoding: opts.contentEncoding } : {}),
         }),
         { expiresIn: opts.expiresIn },
       );

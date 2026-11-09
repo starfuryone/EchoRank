@@ -38,6 +38,7 @@ import { archiveStore, attachmentDisposition, crawlExportPrefix, type ObjectStor
 import { csvByteStream, csvStreamResponse, type CsvStreamSource } from "@/lib/csv-stream";
 import { EXPORT_URL_TTL_SECONDS, exportsViaSpacesFlag } from "./archive/constants";
 import { crawlDataState } from "./data-state";
+import { copyExportToReports } from "@/lib/report-archive";
 import { metricsPending } from "./metrics-runner";
 
 export type ExportFilters = Record<string, string | string[] | number | boolean | null | undefined>;
@@ -131,7 +132,8 @@ export async function serveViaSpaces(
   const finishedAt = await cacheableFinishedAt(target.tenantId, target.crawlId);
   if (!finishedAt) return null;
   const filters = target.alsoDependsOn ? { ...target.filters, __dependsOn: target.alsoDependsOn.toISOString() } : target.filters;
-  const key = exportKey(target.tenantId, target.crawlId, target.type, exportHash(target.type, filters, finishedAt), target.ext);
+  const hash = exportHash(target.type, filters, finishedAt);
+  const key = exportKey(target.tenantId, target.crawlId, target.type, hash, target.ext);
 
   let filename = target.filename;
   const head = await store.head(key);
@@ -147,6 +149,9 @@ export async function serveViaSpaces(
       contentDisposition: attachmentDisposition(filename),
       metadata: { filename: encodeURIComponent(filename) },
     });
+    // The report archive (ECHORANK-DATA-ARCHIVE.md Phase 4): a server-side copy
+    // into tenants/<t>/reports/, once, when the export is created. Background.
+    copyExportToReports({ store, tenantId: target.tenantId, type: `crawl-${target.type}`, ext: target.ext, sourceKey: key, id: `${target.crawlId}-${hash}`.slice(0, 64) });
   }
   const url = await store.presignGet(key, { filename, expiresIn: EXPORT_URL_TTL_SECONDS, contentType: target.contentType });
   if (respond === "json") return NextResponse.json({ url, expiresIn: EXPORT_URL_TTL_SECONDS }, { headers: { "cache-control": "no-store" } });

@@ -295,6 +295,12 @@ export interface CrawlPageDetail {
   issuesTruncated: boolean;
   metrics: Partial<Record<"gsc" | "psi" | "ga4" | "backlinks" | "gsc_inspection", unknown>>;
   extractions: { kind: "extract" | "js" | "ai"; index: number; values: string[] }[];
+  /**
+   * The page archive's copy of this page (ECHORANK-DATA-ARCHIVE.md Phase 4):
+   * which documents exist and when they were fetched; null when none is stored.
+   * Downloaded through …/pages/[pageId]/stored-copy?kind=raw|rendered.
+   */
+  storedCopy?: { raw: boolean; rendered: boolean; fetchedAt: string } | null;
 }
 
 /** Filters the Pages tab can apply. Empty string means "not filtered". */

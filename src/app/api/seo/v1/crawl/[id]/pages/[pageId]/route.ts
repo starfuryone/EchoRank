@@ -18,6 +18,8 @@ import { prisma } from "@/lib/prisma";
 import { archivedGuard, crawlRouteError } from "@/lib/site-crawler/http";
 import { DATA_STATE_SELECT } from "@/lib/site-crawler/data-state";
 import { ruleIdOf } from "@/lib/site-crawler/legacy-map";
+import { archiveStore } from "@/lib/spaces/client";
+import { storedCopyInfo } from "@/lib/page-archive/stored-copy";
 
 /** Findings listed per page; the rule's own list has the rest. */
 const ISSUES_MAX = 200;
@@ -82,7 +84,12 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
 
     const { issues: _raw, metrics, extractions, ...fields } = page;
     void _raw;
+    // "View stored copy": what the page archive holds for this page (one small
+    // read, only with the archive configured; any failure is "none").
+    const store = archiveStore();
+    const storedCopy = store ? await storedCopyInfo(store, tenant.tenantId, id, page.url) : null;
     return NextResponse.json({
+      storedCopy,
       page: fields,
       issues,
       issuesTruncated: page.issues.length >= ISSUES_MAX,

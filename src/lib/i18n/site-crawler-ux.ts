@@ -269,6 +269,9 @@ const en = {
   detailFetchMs: (ms: string) => `${ms} ms`,
   detailNoindex: "noindex",
   detailRedirect: "Redirects to",
+  detailStoredCopy: "View stored copy",
+  detailStoredRendered: "View rendered copy",
+  detailStoredNote: (date: string) => `Your page's HTML as crawled on ${date}, downloaded as a file.`,
   // ── Schedules view ──────────────────────────────────────────────────────
   schEyebrow: "Automate the check-in",
   schH1: "Keep an eye on your site.",
@@ -587,6 +590,9 @@ const fr: SiteCrawlerUxCopy = {
   detailFetchMs: (ms: string) => `${ms} ms`,
   detailNoindex: "noindex",
   detailRedirect: "Redirige vers",
+  detailStoredCopy: "Voir la copie enregistrée",
+  detailStoredRendered: "Voir la copie rendue",
+  detailStoredNote: (date: string) => `Le HTML de votre page tel qu’exploré le ${date}, téléchargé sous forme de fichier.`,
   // ── Schedules view ──────────────────────────────────────────────────────
   schEyebrow: "Automatisez le suivi",
   schH1: "Gardez un œil sur votre site.",
@@ -901,6 +907,9 @@ const deCH: SiteCrawlerUxCopy = {
   detailFetchMs: (ms: string) => `${ms} ms`,
   detailNoindex: "noindex",
   detailRedirect: "Leitet weiter zu",
+  detailStoredCopy: "Gespeicherte Kopie ansehen",
+  detailStoredRendered: "Gerenderte Kopie ansehen",
+  detailStoredNote: (date: string) => `Das HTML Ihrer Seite, wie am ${date} gecrawlt, als Datei heruntergeladen.`,
   // ── Schedules view ──────────────────────────────────────────────────────
   schEyebrow: "Den Check-in automatisieren",
   schH1: "Behalten Sie Ihre Website im Auge.",

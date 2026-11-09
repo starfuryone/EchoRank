@@ -15,6 +15,7 @@
 
 import { NextResponse } from "next/server";
 import { requireTenant } from "@/lib/tenant";
+import { saveReportCopy } from "@/lib/report-archive";
 import { requireFeature, enforcementErrorResponse } from "@/lib/plan-enforcement";
 import { getBatch, listRows } from "@/lib/opportunity-scanner/store";
 import { SCAN_CSV_COLUMNS } from "@/lib/opportunity-scanner/csv";
@@ -37,6 +38,8 @@ export async function GET(
 
     const rows = await listRows(membership.tenantId, id);
     const body = toCsv(rows, SCAN_CSV_COLUMNS);
+    // The report archive: a copy in tenants/<t>/reports/, in the background.
+    void saveReportCopy({ tenantId: membership.tenantId, type: "agency-scan-csv", ext: "csv", contentType: "text/csv; charset=utf-8", body });
 
     return new NextResponse(body, {
       headers: {

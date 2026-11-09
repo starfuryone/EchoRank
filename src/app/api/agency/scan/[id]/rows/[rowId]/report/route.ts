@@ -27,6 +27,7 @@
 
 import { NextResponse } from "next/server";
 import { requireTenant } from "@/lib/tenant";
+import { saveReportCopy } from "@/lib/report-archive";
 import { requireFeature, enforcementErrorResponse } from "@/lib/plan-enforcement";
 import { getRow } from "@/lib/opportunity-scanner/store";
 import { brandingFor } from "@/lib/opportunity-scanner/branding";
@@ -99,7 +100,10 @@ export async function GET(
       return NextResponse.json({ error: "Could not build that report." }, { status: 502 });
     }
 
-    return new NextResponse(await res.arrayBuffer(), {
+    const pdf = new Uint8Array(await res.arrayBuffer());
+    // The report archive: a copy in tenants/<t>/reports/, in the background.
+    void saveReportCopy({ tenantId: membership.tenantId, type: "agency-scan", ext: "pdf", contentType: "application/pdf", body: pdf });
+    return new NextResponse(pdf, {
       headers: {
         "Content-Type": "application/pdf",
         // Forwarded verbatim from the sidecar, which built it from the
