@@ -78,6 +78,8 @@ export async function generateMetadata({
     ogType: "article",
     // A localized guide canonicals to its own base; an English-only one to en.
     canonicalLocale: copy.localized ? b : "en",
+    // The guide's own share card: EN base only (English text in the picture).
+    ...(guide.image && b === "en" ? { ogImage: guide.image.og, ogImageAlt: guide.image.ogAlt } : {}),
   });
 }
 
@@ -110,6 +112,8 @@ export default async function GuidePage({
       pageUrl,
       readingTime: guide.readingTime,
       inLanguage: lang,
+      // EN base only, like the share card.
+      ...(guide.image && b === "en" ? { image: `${SITE_URL}${guide.image.article}` } : {}),
     }),
     ...(steps.length > 0
       ? [

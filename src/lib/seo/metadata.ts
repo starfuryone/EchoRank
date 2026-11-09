@@ -24,6 +24,8 @@ export interface BuildMetadataInput {
   description?: string;
   /** Site-relative or absolute. Defaults to the shared OG card. */
   ogImage?: string;
+  /** og:image:alt. Defaults to the title. Must be 1200x630 like the default card. */
+  ogImageAlt?: string;
   /** og:type. Long-form guides are "article"; everything else is "website". */
   ogType?: "website" | "article";
   noIndex?: boolean;
@@ -111,7 +113,7 @@ export function buildMetadata(input: BuildMetadataInput): Metadata {
       siteName: SITE_NAME,
       type: input.ogType ?? "website",
       locale: OG_LOCALE[locale],
-      images: [{ url: image, width: OG_IMAGE_WIDTH, height: OG_IMAGE_HEIGHT, alt: title }],
+      images: [{ url: image, width: OG_IMAGE_WIDTH, height: OG_IMAGE_HEIGHT, alt: input.ogImageAlt ?? title }],
     },
     twitter: {
       card: "summary_large_image",

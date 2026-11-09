@@ -60,6 +60,25 @@ export type LearnBlock =
    */
   | { k: "figure"; art: string }
   /**
+   * A raster figure with a caption: responsive srcset, explicit intrinsic size
+   * so nothing shifts while it loads, eager + high priority when it is the
+   * page's first large visual. `onlyBase` hides it from the other reader base —
+   * an image with English baked into it is not shown on /fr, where the guide
+   * body is otherwise the same array.
+   */
+  | {
+      k: "image";
+      src: string;
+      srcset: ReadonlyArray<{ src: string; w: number }>;
+      sizes: string;
+      width: number;
+      height: number;
+      alt: string;
+      caption?: string;
+      priority?: boolean;
+      onlyBase?: "en" | "fr";
+    }
+  /**
    * Where a crawler guide's inline CTA band or mid-guide nudge sits. The copy
    * is guideCtas[slug] in src/lib/site-crawler/marketing-copy.ts; the closing
    * block is not a marker, it is the shell's fixed slot before "Related".
@@ -190,6 +209,12 @@ export interface LearnGuide extends Omit<LearnChapter, "order"> {
   };
   /** A family of guides listed together on the guides index (an anchored section). */
   group?: "nosy-bat";
+  /**
+   * The guide's own share image and Article `image`, for the EN base only
+   * (the pictures carry English text); other bases keep the site defaults.
+   * Site-relative paths.
+   */
+  image?: { og: string; ogAlt: string; article: string };
   /** Hero illustration above the title, by id (src/components/learn/nosy-bat-art). */
   hero?: string;
   /**
@@ -1286,6 +1311,10 @@ export const LEARN_CHAPTERS: LearnChapter[] = [
   },
 ];
 
+/** The review-request-templates figure's alt text, also its og:image:alt. */
+const REVIEW_SYSTEM_ALT =
+  "The review request system, an ethical five-part workflow: ask everyone, time it right, make it personal, use a one-tap link, send one reminder.";
+
 export const LEARN_GUIDES: LearnGuide[] = [
   {
     slug: "review-request-templates",
@@ -1296,6 +1325,11 @@ export const LEARN_GUIDES: LearnGuide[] = [
     tag: "Templates",
     blurb: "Email, SMS, invoice, and QR workflows — with the compliance lines you must not cross.",
     cta: "register",
+    image: {
+      og: "/learn/guides/review-request-system-og.jpg",
+      ogAlt: REVIEW_SYSTEM_ALT,
+      article: "/learn/guides/review-request-system-1671.webp",
+    },
     related: [
       {
         href: "/learn/generate-reviews-ethically",
@@ -1313,17 +1347,37 @@ export const LEARN_GUIDES: LearnGuide[] = [
         k: "p",
         t: "The difference between 3 reviews a year and 3 a week is rarely the business — it's whether asking is a system or an afterthought. This guide is the system: channel by channel, with the exact copy.",
       },
+      // The system in one picture, before the rules it names. English text is
+      // baked into the image, so /fr does not show it. The five rules below
+      // follow the image's order and wording.
+      {
+        k: "image",
+        src: "/learn/guides/review-request-system-1200.webp",
+        srcset: [
+          { src: "/learn/guides/review-request-system-800.webp", w: 800 },
+          { src: "/learn/guides/review-request-system-1200.webp", w: 1200 },
+          { src: "/learn/guides/review-request-system-1671.webp", w: 1671 },
+        ],
+        sizes: "(max-width: 760px) 100vw, 720px",
+        width: 1671,
+        height: 941,
+        alt: REVIEW_SYSTEM_ALT,
+        caption: "The whole system on one page. Each part is explained below.",
+        priority: true,
+        onlyBase: "en",
+      },
       {
         k: "h2",
-        t: "The four rules",
+        t: "The five rules",
       },
       {
         k: "ol",
         items: [
           "**Ask everyone.** Selecting who to ask based on how happy they seemed is review gating — prohibited by Google and detectable in your rating distribution.",
-          "**Ask fast.** Same-day for services, 7–14 days post-delivery for products (after they've used it).",
-          "**One tap.** Use the short share link from your Google Business Profile's \"Ask for reviews\". Every extra click halves completion.",
-          "**Ask personally.** A message signed by the owner outperforms a no-reply blast.",
+          "**Time it right.** Same-day for services, 7–14 days post-delivery for products (after they've used it).",
+          "**Make it personal.** A message signed by the owner outperforms a no-reply blast.",
+          "**One-tap link.** Use the short share link from your Google Business Profile's \"Ask for reviews\". Every extra click halves completion.",
+          "**One reminder.** After 5–7 days, then stop. A second reminder costs goodwill.",
         ],
       },
       {

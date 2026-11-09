@@ -161,6 +161,8 @@ export interface ArticleInput {
   /** Minutes. Emitted as ISO 8601 duration — a real number from frontmatter. */
   readingTime?: number;
   inLanguage?: string;
+  /** Absolute URL of the article's main image. Omitted when the page has none. */
+  image?: string;
 }
 
 /**
@@ -180,6 +182,7 @@ export function article(input: ArticleInput): JsonLdNode {
     url: input.pageUrl,
     ...(input.inLanguage ? { inLanguage: input.inLanguage } : {}),
     ...(input.readingTime ? { timeRequired: `PT${input.readingTime}M` } : {}),
+    ...(input.image ? { image: input.image } : {}),
     isPartOf: { "@id": WEBSITE_ID },
     author: { "@id": ORGANIZATION_ID },
     publisher: { "@id": ORGANIZATION_ID },

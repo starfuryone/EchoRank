@@ -455,6 +455,27 @@
 .steps {
   gap: 18px;
 }
+/* A raster figure at full article width ({k:"image"}): the .cta radius, the
+   .line border, the caption at .cardP's size in the muted colour. No new
+   colours. height:auto with the img's width/height keeps the ratio reserved. */
+.figure {
+  margin: 24px 0 28px;
+  width: 100%;
+}
+.figureImg {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--line, #232330);
+  border-radius: 14px;
+}
+.figcaption {
+  margin: 10px 0 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--muted, #8f8fa3);
+}
+
 .stepFigure {
   /* ~560px, the width these schematics were drawn to read at. Capped by the
      column too, so a narrow viewport shrinks them rather than scrolling. */
