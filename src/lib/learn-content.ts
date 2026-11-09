@@ -1319,6 +1319,10 @@ const REVIEW_SYSTEM_ALT =
 const CSV_SYSTEM_ALT =
   "The CSV review import system, a universal five-part workflow: export your reviews, map the columns to the seven-field schema, validate ratings and dates, save as a CSV of up to 5 MB, then import and retry rejected rows.";
 
+/** The ai-lens-content-gap figure's alt text, also its og:image:alt. */
+const AI_LENS_GAP_ALT =
+  "The AI Lens content gap, a five-part visibility workflow: compare the raw HTML with the rendered page, measure the gap, prioritize key pages, render content early, then recheck and monitor.";
+
 export const LEARN_GUIDES: LearnGuide[] = [
   {
     slug: "review-request-templates",
@@ -1604,6 +1608,11 @@ export const LEARN_GUIDES: LearnGuide[] = [
     tag: "AI Visibility",
     blurb: "Raw HTML vs rendered page, how to measure the gap, and the rendering fixes that close it.",
     cta: "register",
+    image: {
+      og: "/learn/guides/ai-lens-content-gap-og.jpg",
+      ogAlt: AI_LENS_GAP_ALT,
+      article: "/learn/guides/ai-lens-content-gap-1670.webp",
+    },
     related: [
       {
         href: "/free-audit",
@@ -1628,6 +1637,35 @@ export const LEARN_GUIDES: LearnGuide[] = [
       {
         k: "p",
         t: "Modern storefront and app frameworks often ship a nearly empty HTML shell and build the page in the browser. Human visitors never notice. Googlebot renders JavaScript (with delays and a budget). Most AI crawlers don't render at all — they read the shell, find nothing, and move on. Result: an assistant asked about your product category recommends competitors whose product detail exists in plain HTML.",
+      },
+      // The how-to half starts here: the workflow in one picture (English text
+      // baked in: not shown on /fr), then its five steps as text, each already
+      // stated in the sections below. Not near the top, so lazy, no priority.
+      // No heading, so the table of contents is unchanged.
+      {
+        k: "image",
+        src: "/learn/guides/ai-lens-content-gap-1200.webp",
+        srcset: [
+          { src: "/learn/guides/ai-lens-content-gap-800.webp", w: 800 },
+          { src: "/learn/guides/ai-lens-content-gap-1200.webp", w: 1200 },
+          { src: "/learn/guides/ai-lens-content-gap-1670.webp", w: 1670 },
+        ],
+        sizes: "(max-width: 760px) 100vw, 720px",
+        width: 1670,
+        height: 942,
+        alt: AI_LENS_GAP_ALT,
+        caption: "From finding the gap to closing it.",
+        onlyBase: "en",
+      },
+      {
+        k: "ol",
+        items: [
+          "**Compare the views**: the raw HTML your server sends against the rendered page. ([how](#measuring-it))",
+          "**Measure the gap**: the share of content that only exists after rendering. ([what the numbers mean](#measuring-it))",
+          "**Prioritize key pages**: product detail, service descriptions and FAQs first.",
+          "**Render content early**: server-side rendering, static pre-rendering, or pre-rendering the key pages only. ([options](#closing-it))",
+          "**Recheck and monitor**: re-run the measurement, then watch AI crawler visits in Bot Analytics over the following weeks.",
+        ],
       },
       {
         k: "h2",

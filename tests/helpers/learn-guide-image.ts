@@ -33,8 +33,13 @@ export interface ExpectedFigure {
   height: number;
   alt: string;
   caption: string;
-  /** Text that ends the intro paragraph the figure follows. */
+  /** Text that ends the paragraph the figure follows (the intro, on most guides). */
   introEnd: string;
+  /**
+   * true (default): eager + fetchpriority=high, for a figure near the top.
+   * false: lazy and no fetchpriority, for one further down the page.
+   */
+  priority?: boolean;
   /** id of the H2 that comes after the figure (and its own trailing blocks). */
   nextH2: string;
 }
@@ -65,8 +70,13 @@ export function expectGuideFigure(html: string, f: ExpectedFigure): string {
   expect(img).toContain(`height="${f.height}"`);
   expect(decode(img)).toContain(`alt="${f.alt}"`);
   expect(img).toContain('sizes="(max-width: 760px) 100vw, 720px"');
-  expect(img).toContain('loading="eager"');
-  expect(img).toContain('fetchPriority="high"');
+  if (f.priority ?? true) {
+    expect(img).toContain('loading="eager"');
+    expect(img).toContain('fetchPriority="high"');
+  } else {
+    expect(img).toContain('loading="lazy"');
+    expect(img.toLowerCase()).not.toContain("fetchpriority");
+  }
   expect(img).toContain('decoding="async"');
   const srcset = img.match(/srcSet="([^"]+)"/)![1].split(", ");
   expect(srcset).toEqual([w0, w1, native].map((w) => `/learn/guides/${f.stem}-${w}.webp ${w}w`));
