@@ -1315,6 +1315,10 @@ export const LEARN_CHAPTERS: LearnChapter[] = [
 const REVIEW_SYSTEM_ALT =
   "The review request system, an ethical five-part workflow: ask everyone, time it right, make it personal, use a one-tap link, send one reminder.";
 
+/** The csv-review-import figure's alt text, also its og:image:alt. */
+const CSV_SYSTEM_ALT =
+  "The CSV review import system, a universal five-part workflow: export your reviews, map the columns to the seven-field schema, validate ratings and dates, save as a CSV of up to 5 MB, then import and retry rejected rows.";
+
 export const LEARN_GUIDES: LearnGuide[] = [
   {
     slug: "review-request-templates",
@@ -1458,6 +1462,11 @@ export const LEARN_GUIDES: LearnGuide[] = [
     tag: "Data",
     blurb: "One schema that swallows any platform's export, and the errors that reject rows.",
     cta: "register",
+    image: {
+      og: "/learn/guides/csv-review-import-system-og.jpg",
+      ogAlt: CSV_SYSTEM_ALT,
+      article: "/learn/guides/csv-review-import-system-1670.webp",
+    },
     related: [
       {
         href: "/learn/import-your-review-history",
@@ -1473,6 +1482,35 @@ export const LEARN_GUIDES: LearnGuide[] = [
       {
         k: "p",
         t: "Extensions and API connections cover the big platforms. For everything else — industry directories, a previous reputation tool, marketplace reviews, a spreadsheet someone kept by hand — one normalized CSV is the route.",
+      },
+      // The route in one picture (English text baked in: not shown on /fr),
+      // then the same five steps as readable text, linking into the sections
+      // below. No heading, so the table of contents is unchanged.
+      {
+        k: "image",
+        src: "/learn/guides/csv-review-import-system-1200.webp",
+        srcset: [
+          { src: "/learn/guides/csv-review-import-system-800.webp", w: 800 },
+          { src: "/learn/guides/csv-review-import-system-1200.webp", w: 1200 },
+          { src: "/learn/guides/csv-review-import-system-1670.webp", w: 1670 },
+        ],
+        sizes: "(max-width: 760px) 100vw, 720px",
+        width: 1670,
+        height: 941,
+        alt: CSV_SYSTEM_ALT,
+        caption: "The whole workflow on one page.",
+        priority: true,
+        onlyBase: "en",
+      },
+      {
+        k: "ol",
+        items: [
+          "**Export reviews** from the old tool, directory or spreadsheet.",
+          "**Map the columns** to the seven-field schema. ([how](#mapping-an-export-from-another-tool))",
+          "**Validate the data**: ratings 1–5, dates YYYY-MM-DD, text with commas in quotes. ([rules](#the-schema))",
+          "**Save as CSV**, up to 5 MB; split larger files.",
+          "**Import and retry**: fix the rejected rows and re-upload; duplicates are skipped. ([details](#when-rows-reject))",
+        ],
       },
       {
         k: "h2",
