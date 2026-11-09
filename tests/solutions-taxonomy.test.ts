@@ -1,8 +1,8 @@
 // The Solutions taxonomy: config integrity, the dynamic route's params, and
 // the nav columns derived from it.
 //
-// The config is the single source of truth for 26 pages, four category
-// indexes, four nav columns and 30 sitemap entries. Nothing else asserts that
+// The config is the single source of truth for 27 pages, four category
+// indexes, four nav columns and 31 sitemap entries. Nothing else asserts that
 // a French translation exists or that a feature href is real, so a gap here
 // ships as an "undefined" on a live page.
 //
@@ -31,10 +31,10 @@ import { generateStaticParams as itemParams } from "@/app/[locale]/solutions/[ca
 import { generateStaticParams as catParams } from "@/app/[locale]/solutions/[category]/page";
 
 describe("config integrity", () => {
-  it("has four categories totalling 26 items", () => {
+  it("has four categories totalling 27 items", () => {
     expect(SOLUTION_CATEGORIES).toHaveLength(4);
-    expect(SOLUTION_ITEMS).toHaveLength(26);
-    expect(SOLUTION_CATEGORIES.map((c) => c.items.length)).toEqual([9, 6, 5, 6]);
+    expect(SOLUTION_ITEMS).toHaveLength(27);
+    expect(SOLUTION_CATEGORIES.map((c) => c.items.length)).toEqual([9, 6, 5, 7]);
   });
 
   it("has globally unique slugs", () => {

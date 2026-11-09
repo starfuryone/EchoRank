@@ -16,7 +16,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { SUPPORTED_LOCALES, isSupportedLocale, type Locale } from "@/lib/i18n/config";
-import { buildMetadata } from "@/lib/seo";
+import { JsonLd, SITE_URL, buildMetadata, faqPage } from "@/lib/seo";
 import {
   FEATURES,
   SOLUTION_CATEGORIES,
@@ -44,8 +44,8 @@ export function generateStaticParams() {
 type Params = Promise<{ locale: string; category: string; slug: string }>;
 
 const COPY = {
-  en: { ctaTrial: "Start 7-day trial ↗", helps: "HOW ECHORANK HELPS", closeH2: "Not sure where to start?", closeSub: "Run the free AI visibility audit. No account needed, and it takes about a minute.", ctaAudit: "Run my free audit ↗" },
-  fr: { ctaTrial: "Essai gratuit de 7 jours ↗", helps: "COMMENT ECHORANK VOUS AIDE", closeH2: "Vous ne savez pas par où commencer ?", closeSub: "Lancez l'audit de visibilité IA gratuit. Sans compte, en une minute environ.", ctaAudit: "Lancer mon audit gratuit ↗" },
+  en: { ctaTrial: "Start 7-day trial ↗", helps: "HOW ECHORANK HELPS", closeH2: "Not sure where to start?", closeSub: "Run the free AI visibility audit. No account needed, and it takes about a minute.", ctaAudit: "Run my free audit ↗", faqH2: "Questions" },
+  fr: { ctaTrial: "Essai gratuit de 7 jours ↗", helps: "COMMENT ECHORANK VOUS AIDE", closeH2: "Vous ne savez pas par où commencer ?", closeSub: "Lancez l'audit de visibilité IA gratuit. Sans compte, en une minute environ.", ctaAudit: "Lancer mon audit gratuit ↗", faqH2: "Questions" },
 } as const;
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
@@ -53,12 +53,16 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
   if (!isSupportedLocale(locale)) return {};
   const item = itemBySlug(category, slug);
   if (!item) return {};
-  const c = item[solutionBase(locale)];
+  const base = solutionBase(locale);
+  const c = item[base];
+  // A detail entry may carry its own title and description; the OG image stays
+  // buildMetadata's shared card, as on every other solutions page.
+  const meta = detailFor(item.slug, base)?.meta;
   return buildMetadata({
     locale,
     path: `/solutions/${category}/${slug}`,
-    title: c.h1,
-    description: c.desc,
+    title: meta?.title ?? c.h1,
+    description: meta?.description ?? c.desc,
   });
 }
 
@@ -80,10 +84,22 @@ export default async function Page({ params }: { params: Params }) {
   // block is skipped rather than emitting an empty section.
   const longform = longformFor(item.slug, base);
   const detail = detailFor(item.slug, base);
+  const pricingHref = link(detail?.cta ? `/pricing?src=${detail.cta.src}` : "/pricing");
+  // /03 onward: long-form, then detail prose, then the cards, then the FAQ.
+  const cardsNo = (longform?.sections.length ?? 0) + 3 + (detail?.prose?.length ?? 0);
+  const num = (n: number) => String(n).padStart(2, "0");
+  // Explicit width/height only when the config gives them; height:auto keeps
+  // the ratio while CSS scales the width.
+  const dims = (img: { width?: number; height?: number }) =>
+    img.width && img.height ? { width: img.width, height: img.height } : {};
 
   return (
     <div className={s.page}>
       <PublicNav locale={l} current="solutions" />
+      {detail?.faq && detail.faq.length > 0 && (
+        // The same array the FAQ section below renders.
+        <JsonLd graph={[faqPage(detail.faq, `${SITE_URL}/${l}/solutions/${cat.slug}/${item.slug}`)]} />
+      )}
 
       <section className={s.section}>
         <div className={s.container}>
@@ -102,7 +118,10 @@ export default async function Page({ params }: { params: Params }) {
           <h1 className={s.h1}>{c.h1}</h1>
           <p className={s.sub}>{c.intro}</p>
           <div className={s.ctarow} style={{ marginTop: 24 }}>
-            <Link className={`${s.btn} ${s.btnPrimary}`} href={link("/pricing")}>{t.ctaTrial}</Link>
+            <Link className={`${s.btn} ${s.btnPrimary}`} href={pricingHref}>{t.ctaTrial}</Link>
+            {detail?.cta?.heroAudit && (
+              <Link className={`${s.btn} ${s.btnGhost}`} href={link("/free-audit")}>{t.ctaAudit}</Link>
+            )}
           </div>
         </div>
       </section>
@@ -157,7 +176,8 @@ export default async function Page({ params }: { params: Params }) {
                   src={sec.image.src}
                   alt={sec.image.alt}
                   loading="lazy"
-                  style={{ width: "100%", maxWidth: sec.image.maxWidth ?? 380, borderRadius: 14, marginTop: 10, border: "1px solid rgba(255,255,255,.08)" }}
+                  {...dims(sec.image)}
+                  style={{ width: "100%", height: "auto", maxWidth: sec.image.maxWidth ?? 380, borderRadius: 14, marginTop: 10, border: "1px solid rgba(255,255,255,.08)" }}
                 />
               </div>
             ) : (
@@ -172,7 +192,8 @@ export default async function Page({ params }: { params: Params }) {
                     src={sec.image.src}
                     alt={sec.image.alt}
                     loading="lazy"
-                    style={{ width: "100%", maxWidth: sec.image.maxWidth ?? "100%", borderRadius: 14, marginTop: 24, border: "1px solid rgba(255,255,255,.08)" }}
+                    {...dims(sec.image)}
+                    style={{ width: "100%", height: "auto", maxWidth: sec.image.maxWidth ?? "100%", borderRadius: 14, marginTop: 24, border: "1px solid rgba(255,255,255,.08)" }}
                   />
                 )}
               </>
@@ -184,7 +205,7 @@ export default async function Page({ params }: { params: Params }) {
         <section className={s.section}>
           <div className={s.container}>
             <p className={s.label}>
-              <b>/ {String((longform?.sections.length ?? 0) + 3 + (detail.prose?.length ?? 0)).padStart(2, "0")}</b> — {detail.eyebrow}
+              <b>/ {num(cardsNo)}</b> — {detail.eyebrow}
             </p>
             <h2 className={s.h2}>{detail.h2}</h2>
             <div className={s.ucGrid}>
@@ -200,9 +221,32 @@ export default async function Page({ params }: { params: Params }) {
                 src={detail.image.src}
                 alt={detail.image.alt}
                 loading="lazy"
-                style={{ width: "100%", borderRadius: 14, marginTop: 28, border: "1px solid rgba(255,255,255,.08)" }}
+                {...dims(detail.image)}
+                style={{ width: "100%", height: "auto", borderRadius: 14, marginTop: 28, border: "1px solid rgba(255,255,255,.08)" }}
               />
             )}
+            {detail.related && (
+              <p className={s.sub} style={{ marginTop: 22 }} data-testid="solution-related">
+                <Link href={link(detail.related.href)}>{detail.related.text}</Link>
+              </p>
+            )}
+          </div>
+        </section>
+      )}
+
+      {detail?.faq && detail.faq.length > 0 && (
+        <section id="faq" className={s.section}>
+          <div className={s.container}>
+            <p className={s.label}><b>/ {num(cardsNo + 1)}</b> — FAQ</p>
+            <h2 className={s.h2}>{t.faqH2}</h2>
+            <div className={s.faq}>
+              {detail.faq.map((it) => (
+                <div className={s.faqItem} key={it.q}>
+                  <h3 className={s.faqQ}>{it.q}</h3>
+                  <p className={s.faqA}>{it.a}</p>
+                </div>
+              ))}
+            </div>
           </div>
         </section>
       )}
@@ -213,7 +257,7 @@ export default async function Page({ params }: { params: Params }) {
           <p className={s.sub}>{t.closeSub}</p>
           <div className={s.ctarow} style={{ marginTop: 22 }}>
             <Link className={`${s.btn} ${s.btnPrimary}`} href={link("/free-audit")}>{t.ctaAudit}</Link>
-            <Link className={`${s.btn} ${s.btnGhost}`} href={link("/pricing")}>{t.ctaTrial}</Link>
+            <Link className={`${s.btn} ${s.btnGhost}`} href={pricingHref}>{t.ctaTrial}</Link>
           </div>
         </div>
       </section>

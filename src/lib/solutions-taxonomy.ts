@@ -1,6 +1,6 @@
 // src/lib/solutions-taxonomy.ts
 //
-// The Solutions taxonomy: 4 categories, 25 items. Single source of truth for
+// The Solutions taxonomy: 4 categories, 27 items. Single source of truth for
 // the mega-menu column, the category index pages and the 25 landing pages —
 // same rule as PLAN_CONFIGS, no string written twice.
 //
@@ -754,6 +754,35 @@ export const SOLUTION_CATEGORIES: SolutionCategory[] = [
             { href: FB, why: "Demandez un retour au bon moment, par courriel ou SMS." },
             { href: ACT, why: "Joignez un patient mécontent avant que l'avis ne soit écrit." },
             { href: MON, why: "Suivez les nouveaux avis sur les plateformes que consultent les patients." },
+          ],
+        },
+      },
+      {
+        // A sub-page of healthcare for dental practices (ECHORANK-DENTISTS-PAGE,
+        // 2026-11-09). Its meta title, FAQ and graphics live in
+        // solutions-detail.ts, which only the page imports.
+        slug: "dentists",
+        category: "industries",
+        en: {
+          label: "Dentists & dental clinics",
+          desc: "Be the practice assistants name for the treatments you offer.",
+          h1: "Echorank for dentists and dental clinics",
+          intro: "New patients ask an AI assistant before they call. Make sure it names your practice, for the treatments you actually offer.",
+          features: [
+            { href: AI, why: "See whether assistants name your practice for each treatment, city by city." },
+            { href: FB, why: "A review link and QR code patients open themselves, at the front desk or after a visit." },
+            { href: MON, why: "Catch a new review while it can still be answered well." },
+          ],
+        },
+        fr: {
+          label: "Dentistes et cliniques dentaires",
+          desc: "Soyez la clinique que les assistants citent pour les soins que vous offrez.",
+          h1: "Echorank pour les dentistes et les cliniques dentaires",
+          intro: "Les nouveaux patients interrogent un assistant IA avant d'appeler. Assurez-vous qu'il cite votre clinique, pour les soins que vous offrez vraiment.",
+          features: [
+            { href: AI, why: "Voyez si les assistants citent votre clinique pour chaque soin, ville par ville." },
+            { href: FB, why: "Un lien d'avis et un code QR que les patients ouvrent eux-mêmes, à l'accueil ou après la visite." },
+            { href: MON, why: "Repérez un nouvel avis tant qu'on peut encore bien y répondre." },
           ],
         },
       },

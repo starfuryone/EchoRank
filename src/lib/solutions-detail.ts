@@ -9,6 +9,8 @@
 // PURE — no Prisma, no React.
 
 import type { SolutionBase } from "./solutions-taxonomy";
+import { ENGINE_CATALOGUE } from "./ai-monitor/engines";
+import { PLAN_CONFIGS, PLAN_ORDER } from "./plan-config";
 
 export interface SolutionDetailImage {
   /** Served from public/solutions/. */
@@ -18,6 +20,14 @@ export interface SolutionDetailImage {
   maxWidth?: number;
   /** "right" floats the image beside the text instead of below it. */
   position?: "right";
+  /** Intrinsic size, emitted as width/height so the page reserves the space. */
+  width?: number;
+  height?: number;
+}
+
+export interface SolutionFaqItem {
+  q: string;
+  a: string;
 }
 
 export interface SolutionProseSection {
@@ -39,9 +49,252 @@ export interface SolutionDetail {
   h2: string;
   cards: SolutionDetailCard[];
   image?: SolutionDetailImage;
+  /** <title> and meta description, when they differ from the taxonomy's h1 and desc. */
+  meta?: { title: string; description: string };
+  /**
+   * `src` is appended as ?src= to the page's pricing links; `heroAudit` adds
+   * the free-audit button beside the trial button in the hero.
+   */
+  cta?: { src: string; heroAudit: boolean };
+  /** One line under the cards pointing at a related solutions page (locale-less href). */
+  related?: { text: string; href: string };
+  /**
+   * The last numbered section. The page renders this array AND emits it as
+   * FAQPage JSON-LD, so the markup can never describe questions that are not
+   * on the page.
+   */
+  faq?: SolutionFaqItem[];
+}
+
+// ─── Dentists (ECHORANK-DENTISTS-PAGE, 2026-11-09) ──────────────────────────
+//
+// Every engine name and location count on the page is READ, not written: the
+// engines from ENGINE_CATALOGUE in the order a checkup takes them (each tier
+// queries the head of the catalogue, see enginesForCheckup), the locations
+// from PLAN_CONFIGS. Text only, no vendor logos. tests/solutions-dentists.test.ts
+// pins both.
+
+/** The page's locale-less path; professional-services and healthcare link to it. */
+export const DENTISTS_HREF = "/solutions/industries/dentists";
+
+function listJoin(items: readonly string[], base: SolutionBase): string {
+  const and = base === "fr" ? " et " : " and ";
+  return items.length > 1 ? `${items.slice(0, -1).join(", ")}${and}${items[items.length - 1]}` : items.join("");
+}
+
+/** Every engine in the catalogue, in checkup order. */
+function catalogueEngines(): string[] {
+  return [...ENGINE_CATALOGUE].sort((a, b) => a.sortOrder - b.sortOrder).map((e) => e.displayName);
+}
+
+/** The engines every plan checks: the head of the catalogue, as long as the smallest tier's allowance. */
+export function enginesOnEveryPlan(): string[] {
+  const counts = PLAN_ORDER.map((p) => PLAN_CONFIGS[p].aiCheckup.providers).filter((n): n is number => n !== null);
+  return catalogueEngines().slice(0, Math.min(...counts));
+}
+
+/** "Which AI assistants do you check?", grouped by plan allowance. */
+function enginesAnswer(base: SolutionBase): string {
+  const all = catalogueEngines();
+  const every = enginesOnEveryPlan();
+  const sentences = [base === "fr" ? `Chaque forfait vérifie ${listJoin(every, base)}.` : `Every plan checks ${listJoin(every, base)}.`];
+  const allowances = [...new Set(PLAN_ORDER.map((p) => PLAN_CONFIGS[p].aiCheckup.providers))];
+  let widest = every.length;
+  for (const n of allowances.filter((a): a is number => a !== null && a > every.length).sort((a, b) => a - b)) {
+    const plans = PLAN_ORDER.filter((p) => PLAN_CONFIGS[p].aiCheckup.providers === n).map((p) => PLAN_CONFIGS[p].name);
+    const extra = listJoin(all.slice(every.length, n), base);
+    sentences.push(
+      base === "fr"
+        ? `${listJoin(plans, base)} ${plans.length > 1 ? "vérifient" : "vérifie"} aussi ${extra}.`
+        : `${listJoin(plans, base)} also ${plans.length > 1 ? "check" : "checks"} ${extra}.`,
+    );
+    widest = Math.max(widest, n);
+  }
+  const open = PLAN_ORDER.filter((p) => PLAN_CONFIGS[p].aiCheckup.providers === null).map((p) => PLAN_CONFIGS[p].name);
+  if (open.length > 0 && all.length > widest) {
+    const rest = listJoin(all.slice(widest), base);
+    sentences.push(
+      base === "fr"
+        ? `${listJoin(open, base)} ${open.length > 1 ? "peuvent" : "peut"} couvrir tous les moteurs que nous prenons en charge, en ajoutant ${rest}.`
+        : `${listJoin(open, base)} can cover every engine we support, adding ${rest}.`,
+    );
+  }
+  return sentences.join(" ");
+}
+
+/** True when some plan includes more than one location (-1 is the config's unlimited). */
+export function hasMultiLocationPlans(): boolean {
+  return PLAN_ORDER.some((p) => {
+    const n = PLAN_CONFIGS[p].quotaDefaults.maxLocations;
+    return n < 0 || n > 1;
+  });
+}
+
+/** "Can I track several clinics?", from each plan's maxLocations. */
+function locationsAnswer(base: SolutionBase): string {
+  if (!hasMultiLocationPlans()) {
+    return base === "fr" ? "Pas pour l'instant : chaque forfait couvre un établissement." : "Not yet: every plan covers one location.";
+  }
+  const counts = listJoin(
+    PLAN_ORDER.map((p) => {
+      const n = PLAN_CONFIGS[p].quotaDefaults.maxLocations;
+      const name = PLAN_CONFIGS[p].name;
+      if (base === "fr") return `${n < 0 ? "illimité" : n} avec ${name}`;
+      return `${n < 0 ? "unlimited" : n} on ${name}`;
+    }),
+    base,
+  );
+  return base === "fr"
+    ? `Oui. Établissements par forfait : ${counts}. Chaque clinique a son propre lien d'avis et son code QR, identifiés par son établissement, dans le même compte.`
+    : `Yes. Locations per plan: ${counts}. Each clinic gets its own review link and QR code, labelled with its location, in the same account.`;
+}
+
+function dentistsDetail(base: SolutionBase): SolutionDetail {
+  const img = (name: "ai-answer" | "review-flow" | "tracking", alt: string, height: number): SolutionDetailImage => ({
+    src: `/solutions/dentists/dentists-${name}-${base}.svg`,
+    alt,
+    width: 1200,
+    height,
+  });
+  const engines = listJoin(enginesOnEveryPlan(), base);
+
+  if (base === "fr") {
+    return {
+      meta: {
+        title: "Echorank pour les dentistes : soyez la clinique que l'IA recommande",
+        description: `Vérifiez si ${engines} citent votre clinique pour les implants, les urgences et plus. Liens d'avis à l'accueil, vérifications locales, aucune donnée patient.`,
+      },
+      cta: { src: "solutions-dentists", heroAudit: true },
+      prose: [
+        {
+          h2: "Les patients demandent d'abord à l'assistant",
+          paras: [
+            "Quelqu'un qui se casse une dent un samedi ne fait pas défiler dix résultats. Il demande : « dentiste d'urgence ouvert aujourd'hui près de moi » ou « qui est bon pour les implants dans ma ville ? ». L'assistant répond avec deux ou trois noms.",
+            "Ces noms viennent de ce qu'il peut lire et vérifier : des avis qui mentionnent le soin, une page claire pour chaque service, des horaires, une adresse qu'il peut confirmer et une fiche Google complète. S'il en manque un, il recommande la clinique d'à côté.",
+            "Echorank pose aux assistants qu'utilisent vos patients les questions qu'ils posent, soin par soin et ville par ville, et vous montre si votre clinique est citée.",
+          ],
+          image: img("ai-answer", "Exemple d'un assistant IA qui répond à une question de patient sur les implants dentaires", 720),
+        },
+        {
+          h2: "Des avis, sans liste de patients",
+          paras: [
+            "Ce qu'un assistant peut citer de plus convaincant, c'est un patient récent qui décrit les soins reçus. Echorank vous donne un lien d'avis et un code QR pour l'accueil, le reçu ou le message de suivi que vous envoyez déjà.",
+            "Les patients l'ouvrent eux-mêmes : vous n'avez à téléverser ni liste de patients ni information de santé dans Echorank.",
+            "Quand les avis arrivent, gardez vos réponses publiques générales : remerciez sans confirmer que la personne est un patient ni mentionner son soin.",
+          ],
+          image: img("review-flow", "Du fauteuil dentaire à une recommandation par l'IA, en quatre étapes", 460),
+        },
+        {
+          h2: "Voyez pour quels soins on vous trouve",
+          paras: [
+            "Suivez les questions qui amènent des patients, comme les implants, les urgences, le blanchiment, la dentisterie pour enfants et les aligneurs transparents, dans les villes que vous desservez. Voyez quels assistants vous citent, lesquels citent un concurrent, et sur quoi ils s'appuient pour répondre.",
+            "La vérification de préparation à l'IA lit votre site comme le font les assistants. Peuvent-ils y accéder ? Chaque soin a-t-il sa propre page ? Vos horaires et votre adresse sont-ils balisés avec le schéma Dentist ? Votre fiche Google est-elle complète ? Chaque lacune vient avec sa correction.",
+          ],
+          image: img("tracking", "Exemple de tableau des questions de soins suivies dans les assistants IA", 640),
+        },
+      ],
+      eyebrow: "DENTISTES",
+      h2: "Pensé pour les cliniques dentaires",
+      cards: [
+        { title: "Suivi par soin", body: "Suivez les implants, les urgences ou les aligneurs séparément, ville par ville." },
+        { title: "Liens d'avis à l'accueil", body: "Un lien et un code QR que les patients utilisent eux-mêmes. Aucune donnée patient ne quitte la clinique." },
+        { title: "Signaux locaux vérifiés", body: "Horaires, adresse, schéma Dentist et fiche Google, vérifiés et expliqués." },
+        ...(hasMultiLocationPlans()
+          ? [{ title: "Plusieurs établissements", body: "Suivez chaque clinique séparément dans un seul compte, avec les forfaits multi-établissements." }]
+          : []),
+      ],
+      faq: [
+        {
+          q: "Dois-je fournir ma liste de patients à Echorank ?",
+          a: "Non. Les patients utilisent eux-mêmes votre lien d'avis ou votre code QR. Echorank n'a besoin ni de noms, ni de coordonnées, ni d'informations de santé pour cela.",
+        },
+        {
+          q: "Echorank est-il conforme à la HIPAA ? Signez-vous une entente BAA ?",
+          a: "Echorank n'est pas conçu pour conserver des informations de santé et ne signe pas d'entente d'associé commercial (BAA) ; n'en téléversez donc pas. Le lien d'avis, le suivi de visibilité IA et les vérifications du site n'en ont pas besoin.",
+        },
+        { q: "Quels assistants IA vérifiez-vous ?", a: enginesAnswer("fr") },
+        {
+          q: "Est-ce que ça convient aux orthodontistes, chirurgiens buccaux et autres spécialistes ?",
+          a: "Oui. Vous choisissez les questions à suivre ; un spécialiste suit donc les soins qu'il offre.",
+        },
+        { q: "Puis-je suivre plusieurs cliniques ?", a: locationsAnswer("fr") },
+        {
+          q: "En combien de temps verrai-je un changement ?",
+          a: "Nous ne pouvons pas promettre de délai : chaque assistant se met à jour à son propre rythme. Echorank vous montre votre point de départ dès le premier jour et suit chaque changement ensuite.",
+        },
+      ],
+    };
+  }
+
+  return {
+    meta: {
+      title: "Echorank for dentists: be the practice AI assistants recommend",
+      description: `Track whether ${engines} name your practice for implants, emergencies and more. Front-desk review links, local checks, no patient data.`,
+    },
+    cta: { src: "solutions-dentists", heroAudit: true },
+    prose: [
+      {
+        h2: "Patients ask the assistant first",
+        paras: [
+          "Someone with a cracked tooth on a Saturday doesn't scroll through ten results. They ask: \"emergency dentist open today near me,\" or \"who's good for implants in my city?\" The assistant answers with two or three names.",
+          "Those names come from what it can read and trust: reviews that mention the treatment, a clear page for each service, opening hours, an address it can match and a complete Google Business Profile. Miss one, and it recommends the practice down the street.",
+          "Echorank asks the assistants your patients use the questions they ask, per treatment and per city, and shows you whether you're named.",
+        ],
+        image: img("ai-answer", "Example of an AI assistant answering a patient's question about dental implants", 720),
+      },
+      {
+        h2: "Reviews, without a patient list",
+        paras: [
+          "The most persuasive thing an assistant can quote is a recent patient describing the care they received. Echorank gives you a review link and a QR code for the front desk, the receipt or the follow-up message you already send.",
+          "Patients open it themselves, so you don't upload a patient list or any health information to Echorank.",
+          "When reviews come in, keep public replies general: thank the reviewer without confirming they're a patient or mentioning their treatment.",
+        ],
+        image: img("review-flow", "From the dental chair to an AI recommendation in four steps", 460),
+      },
+      {
+        h2: "See which treatments you're found for",
+        paras: [
+          "Track the questions that bring patients in, such as implants, emergency visits, whitening, children's dentistry and clear aligners, in the cities you serve. See which assistants name you, which name a competitor instead, and what they cite.",
+          "The AI readiness check reads your site the way assistants do. Can they reach it? Is each treatment explained on its own page? Are your hours and address marked up with Dentist schema? Is your Google Business Profile complete? Each gap comes with the fix.",
+        ],
+        image: img("tracking", "Example dashboard of treatment questions tracked across AI assistants", 640),
+      },
+    ],
+    eyebrow: "DENTISTS",
+    h2: "Built for dental practices",
+    cards: [
+      { title: "Treatment-level tracking", body: "Follow implants, emergencies or aligners separately, city by city." },
+      { title: "Front-desk review links", body: "A link and QR code patients use themselves. No patient data leaves your practice." },
+      { title: "Local signals checked", body: "Hours, address, Dentist schema and your Google Business Profile, checked and explained." },
+      ...(hasMultiLocationPlans()
+        ? [{ title: "Several locations", body: "Track each clinic separately from one account, on plans with several locations." }]
+        : []),
+    ],
+    faq: [
+      {
+        q: "Do I need to give Echorank my patient list?",
+        a: "No. Patients use your review link or QR code themselves. Echorank doesn't need patient names, contact details or health information for this.",
+      },
+      {
+        q: "Is Echorank HIPAA compliant? Do you sign a BAA?",
+        a: "Echorank isn't built to store patient health information and doesn't sign business associate agreements, so please don't upload any. The review link, AI visibility tracking and website checks don't need it.",
+      },
+      { q: "Which AI assistants do you check?", a: enginesAnswer("en") },
+      {
+        q: "Does it work for orthodontists, oral surgeons and other specialists?",
+        a: "Yes. You choose the questions to track, so a specialist follows the treatments they offer.",
+      },
+      { q: "Can I track several clinics?", a: locationsAnswer("en") },
+      {
+        q: "How fast will I see a change?",
+        a: "We can't promise a timeline: each assistant updates on its own schedule. Echorank shows where you stand from day one and tracks every change after that.",
+      },
+    ],
+  };
 }
 
 const DETAILS: Record<string, Record<SolutionBase, SolutionDetail>> = {
+  "dentists": { en: dentistsDetail("en"), fr: dentistsDetail("fr") },
   "local-businesses": {
     en: {
       prose: [
@@ -152,6 +405,7 @@ const DETAILS: Record<string, Record<SolutionBase, SolutionDetail>> = {
         { title: "Operational early warning", body: "Wait-time, billing and front-desk themes surfaced from reviews — with same-day alerts on negatives." },
         { title: "Named for your specialty", body: "Specialty and location prompts tracked across assistants — with the directory and profile gaps that decide the names." },
       ],
+      related: { text: "Running a dental practice? See Echorank for dentists →", href: DENTISTS_HREF },
     },
     fr: {
       prose: [
@@ -188,6 +442,7 @@ const DETAILS: Record<string, Record<SolutionBase, SolutionDetail>> = {
         { title: "Alerte opérationnelle précoce", body: "Délais, facturation et accueil ressortent des avis — avec alertes le jour même sur les négatifs." },
         { title: "Nommé pour votre spécialité", body: "Les requêtes spécialité et lieu suivies sur les assistants — avec les manques d'annuaires et de profils qui décident des noms." },
       ],
+      related: { text: "Vous dirigez une clinique dentaire ? Voir Echorank pour les dentistes →", href: DENTISTS_HREF },
     },
   },
   "saas-b2b": {
@@ -448,6 +703,7 @@ const DETAILS: Record<string, Record<SolutionBase, SolutionDetail>> = {
         { title: "Discreet by design", body: "Requests and responses worded for professional contexts — specific without breaching confidentiality." },
         { title: "Named by assistants", body: "Practice-area prompts tracked across the AI assistants — with the source gaps that decide who gets named." },
       ],
+      related: { text: "Running a dental practice? See Echorank for dentists →", href: DENTISTS_HREF },
     },
     fr: {
       prose: [
@@ -484,6 +740,7 @@ const DETAILS: Record<string, Record<SolutionBase, SolutionDetail>> = {
         { title: "Discret par conception", body: "Des demandes et réponses formulées pour le contexte professionnel — précises sans rompre la confidentialité." },
         { title: "Nommé par les assistants", body: "Les requêtes par domaine d'expertise suivies sur les assistants IA — avec les manques de sources qui décident des noms cités." },
       ],
+      related: { text: "Vous dirigez une clinique dentaire ? Voir Echorank pour les dentistes →", href: DENTISTS_HREF },
     },
   },
   "growth-marketers": {

@@ -298,7 +298,7 @@ describe.each(LOCALES)("%s", (l) => {
     const items = SOLUTION_CATEGORIES.flatMap((c) => c.items);
     const led = items.filter(leadsWithAiVisibility);
     expect(led.map((i) => i.slug)).toEqual(expect.arrayContaining(["get-cited-by-ai", "understand-your-market", "saas-b2b"]));
-    expect(led).toHaveLength(12);
+    expect(led).toHaveLength(13); // + dentists (2026-11-09), led like professional-services
     const render = async (i: (typeof items)[number]) => doc(renderToStaticMarkup(await Sol(P(l, { category: i.category, slug: i.slug }) as never)));
     const yes = await render(items.find((i) => i.slug === "get-cited-by-ai")!);
     const em = yes.querySelector('[data-testid="solution-av-emblem"] img')!;
