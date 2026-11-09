@@ -51,6 +51,7 @@ import {
   featureCells,
   visibleCapabilities,
   visibleFaq,
+  faqPlainText,
   visibleFeatureRows,
   type CopyBase,
   type GateContext,
@@ -201,7 +202,7 @@ export default async function Page({ params }: { params: Params }) {
   const ctx: GateContext = { families: new Set(RULES.map((r) => r.family)), flags: FLAGS };
   const capabilities = visibleCapabilities(ctx);
   const rows = visibleFeatureRows(ctx);
-  const faq = visibleFaq({ ...ctx, plans: PLANS_BY_ID }, base);
+  const faq = visibleFaq({ ...ctx, plans: PLANS_BY_ID, ruleCount: ruleCountLabel() }, base);
   const lead = t.lead(ruleCountLabel());
 
   const crawlerNode = {
@@ -229,7 +230,8 @@ export default async function Page({ params }: { params: Params }) {
           ...baseGraph(l),
           softwareApplication(l),
           crawlerNode,
-          faqPage(faq, url),
+          // The whole answer, bullets included, as the page shows it.
+          faqPage(faq.map((f) => ({ q: f.q, a: faqPlainText(f) })), url),
           videoObject({
             name: t.videoAria,
             description: t.videoDesc,
@@ -425,6 +427,28 @@ export default async function Page({ params }: { params: Params }) {
               <div className={s.faqItem} key={it.q}>
                 <h3 className={s.faqQ}>{it.q}</h3>
                 <p className={s.faqA}>{it.a}</p>
+                {it.list && (
+                  <ul className={s.faqA} style={{ paddingLeft: 20, marginTop: 10 }}>
+                    {it.list.map((item) => (
+                      <li key={item.lead} style={{ marginBottom: 8 }}>
+                        <strong>{item.lead}</strong> {item.text}
+                        {item.sub && (
+                          <ul style={{ paddingLeft: 20, margin: "4px 0" }}>
+                            {item.sub.map((x) => (
+                              <li key={x}>{x}</li>
+                            ))}
+                          </ul>
+                        )}
+                        {item.after && <> {item.after}</>}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                {it.after && (
+                  <p className={s.faqA} style={{ marginTop: 10 }}>
+                    <strong>{it.after.lead}</strong> {it.after.text}
+                  </p>
+                )}
               </div>
             ))}
           </div>

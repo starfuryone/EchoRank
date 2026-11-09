@@ -435,12 +435,166 @@ export function featureCells(
 
 export interface FaqContext {
   plans: Readonly<Record<CrawlPlan, PlanConfig>>;
+  /**
+   * The public rule count as shown ("340+"), from rule-count.ts. Passed in by
+   * the caller because this module does not import the registry.
+   */
+  ruleCount?: string;
+  flags?: Flags;
+}
+
+/** A bullet in a structured answer: a bold lead-in, its text, optional sub-items and a closing line. */
+export interface FaqListItem {
+  lead: string;
+  text: string;
+  sub?: string[];
+  after?: string;
 }
 
 export interface CrawlFaqEntry {
   gate: CrawlGate;
   q: Text;
   a: Readonly<Record<CopyBase, (ctx: FaqContext) => string>>;
+  /** Bullets under the answer's first paragraph (rendered on the page and written into the JSON-LD). */
+  list?: Readonly<Record<CopyBase, (ctx: FaqContext) => FaqListItem[]>>;
+  /** A closing paragraph with a bold lead-in. */
+  after?: Readonly<Record<CopyBase, (ctx: FaqContext) => { lead: string; text: string }>>;
+}
+
+/** One FAQ entry as the page renders it. */
+export interface VisibleFaq {
+  q: string;
+  a: string;
+  list?: FaqListItem[];
+  after?: { lead: string; text: string };
+}
+
+/**
+ * The whole answer as plain text, for the FAQPage JSON-LD: the same words the
+ * page renders, in the same order, so the markup cannot describe a different
+ * answer from the one on screen.
+ */
+export function faqPlainText(f: VisibleFaq): string {
+  const parts = [f.a];
+  for (const item of f.list ?? []) {
+    parts.push([`${item.lead} ${item.text}`.trim(), ...(item.sub ?? []), item.after ?? ""].filter(Boolean).join(" "));
+  }
+  if (f.after) parts.push(`${f.after.lead} ${f.after.text}`);
+  return parts.join(" ");
+}
+
+// ─── "Why pay when Search Console is free?" (2026-11-09) ────────────────────
+// Every number from config: the Agency plan's URLs per crawl, the public rule
+// count, the free crawl's page cap, the first crawl plan and its price. Each
+// bullet is shown only while the feature it describes is on (flags).
+
+const usdOf = (n: number, base: CopyBase) => `$${fmt(n, base)}`;
+
+function gscFaqList(c: FaqContext, base: CopyBase): FaqListItem[] {
+  const on = (f: FlagName) => flagOn(f, c.flags ?? FLAGS);
+  const cap = fmt(c.plans.AGENCY.crawlUrlCap, base);
+  const first = c.plans[CRAWL_PLANS[0]];
+  const rules = c.ruleCount ?? "";
+  const fr = base === "fr";
+  const items: FaqListItem[] = [
+    fr
+      ? {
+          lead: `Search Console rapporte ce que Google a remarqué. ${NB} vérifie chaque page, quand vous le décidez.`,
+          text: `Search Console rend compte des pages que Google a choisi d'explorer, souvent avec des jours de retard, et montre au plus 1 000 exemples d'URL par problème. ${NB} explore jusqu'à ${cap} URL par exploration, chaque fois que vous en lancez une, et liste chaque page concernée.`,
+        }
+      : {
+          lead: `Search Console reports what Google noticed. ${NB} checks every page, when you choose.`,
+          text: `Search Console reports on the pages Google decided to crawl, often days later, and shows at most 1,000 example URLs per issue. ${NB} crawls up to ${cap} URLs per crawl, whenever you start one, and lists every affected page.`,
+        },
+    fr
+      ? {
+          lead: "Il vérifie ce que Search Console ne vérifie pas.",
+          text: "Notamment :",
+          sub: [
+            "les liens internes brisés, et les pages qui pointent vers eux",
+            "les chaînes de redirections",
+            "les titres et méta-descriptions en double ou manquants",
+            "les conflits de canonical et de hreflang",
+            "les pages orphelines",
+            "l'accessibilité et l'orthographe",
+          ],
+          after: rules ? `Au total, ${rules} vérifications, chacune avec la preuve derrière le constat et une correction en une ligne.` : undefined,
+        }
+      : {
+          lead: "It checks what Search Console doesn't.",
+          text: "That includes:",
+          sub: [
+            "broken internal links, and the pages that link to them",
+            "redirect chains",
+            "duplicate or missing titles and meta descriptions",
+            "canonical and hreflang conflicts",
+            "orphan pages",
+            "accessibility and spelling",
+          ],
+          after: rules ? `That's ${rules} checks, each with the evidence behind the finding and a one-line fix.` : undefined,
+        },
+  ];
+  if (on("crawl.render")) {
+    items.push(
+      fr
+        ? {
+            lead: "Il montre votre site tel que le voient les robots d'IA.",
+            text: `${NB} compare le HTML brut avec la page rendue. Vous savez ainsi ce que les robots de ChatGPT, et les autres qui n'exécutent pas le JavaScript, peuvent réellement lire.`,
+          }
+        : {
+            lead: "It shows your site the way AI crawlers see it.",
+            text: `${NB} compares the raw HTML with the rendered page. That tells you what ChatGPT's crawlers and others that don't run JavaScript can actually read.`,
+          },
+    );
+  }
+  if (on("crawl.login") && on("crawl.compare") && on("crawl.listMode")) {
+    items.push(
+      fr
+        ? {
+            lead: "Il travaille avant Google.",
+            text: "Explorez un site de préproduction avant le lancement, comparez-le à la production et vérifiez chaque ancienne URL le jour de la migration. Search Console ne voit un site qu'une fois en ligne et exploré par Google.",
+          }
+        : {
+            lead: "It works before Google does.",
+            text: "Crawl a staging site before launch, compare it with production, and check every old URL on migration day. Search Console only sees a site once it's live and Google has crawled it.",
+          },
+    );
+  }
+  const recurring = fr
+    ? [
+        on("crawl.schedule") && "explorations planifiées",
+        on("crawl.compare") && "comparaison d'une exploration à l'autre",
+        on("crawl.schedule") && "résultats par e-mail",
+        "CSV pour chaque tableau",
+        on("crawl.reports") && "un rapport PDF par exploration",
+        on("crawl.api") && "une API avec MCP",
+      ]
+    : [
+        on("crawl.schedule") && "scheduled crawls",
+        on("crawl.compare") && "crawl-to-crawl comparison",
+        on("crawl.schedule") && "results by email",
+        "CSV on every table",
+        on("crawl.reports") && "a PDF report per crawl",
+        on("crawl.api") && "an API with MCP",
+      ];
+  const parts = recurring.filter((p): p is string => Boolean(p));
+  const joined = new Intl.ListFormat(fr ? "fr" : "en", { type: "conjunction" }).format(parts);
+  const sentence = joined.charAt(0).toUpperCase() + joined.slice(1);
+  items.push(
+    fr
+      ? { lead: "Il s'adapte au travail récurrent.", text: `${sentence}. Un seul forfait couvre toute votre équipe, sans tarif par utilisateur.` }
+      : { lead: "It fits recurring work.", text: `${sentence}. One plan covers your whole team, with no per-seat pricing.` },
+  );
+  const included = fr
+    ? `${NB} est inclus dans chaque forfait à partir de ${first.name} (${usdOf(first.monthlyPrice, base)} par mois).`
+    : `${NB} is included in every plan from ${first.name} (${usdOf(first.monthlyPrice, base)}/month).`;
+  const free = fmt(FREE_CRAWL_URL_CAP, base);
+  items.push(
+    fr
+      ? { lead: "Essayez d'abord.", text: on("crawl.free") ? `Explorez ${free} pages gratuitement, sans compte. ${included}` : included }
+      : { lead: "Try it first.", text: on("crawl.free") ? `Crawl ${free} pages free, with no account. ${included}` : included },
+  );
+  return items;
 }
 
 const capsSentence = (ctx: FaqContext, base: CopyBase) => {
@@ -451,6 +605,25 @@ const capsSentence = (ctx: FaqContext, base: CopyBase) => {
 };
 
 export const CRAWL_FAQ: readonly CrawlFaqEntry[] = [
+  // First, by brief: the question every buyer asks before the others.
+  {
+    gate: { always: true },
+    q: {
+      en: `Google Search Console is free. Why would I pay for ${NB}?`,
+      fr: `Google Search Console est gratuit. Pourquoi payer pour ${NB} ?`,
+    },
+    a: {
+      en: (c) =>
+        `Keep Search Console. It's the only place to see how Google itself indexes your site and which searches bring you clicks. ${NB} does a different job${flagOn("crawl.gsc", c.flags ?? FLAGS) ? ", and it pulls in your Search Console data so you see both side by side" : ""}.`,
+      fr: (c) =>
+        `Gardez Search Console. C'est le seul endroit où voir comment Google lui-même indexe votre site et quelles recherches vous amènent des clics. ${NB} fait un autre travail${flagOn("crawl.gsc", c.flags ?? FLAGS) ? ", et il importe vos données Search Console pour que vous voyiez les deux côte à côte" : ""}.`,
+    },
+    list: { en: (c) => gscFaqList(c, "en"), fr: (c) => gscFaqList(c, "fr") },
+    after: {
+      en: () => ({ lead: "In short:", text: `Search Console is Google's report card on your site. ${NB} is the full inspection you run whenever you need it. Most sites need both.` }),
+      fr: () => ({ lead: "En bref :", text: `Search Console est le bulletin de notes de Google sur votre site. ${NB} est l'inspection complète que vous lancez quand vous en avez besoin. La plupart des sites ont besoin des deux.` }),
+    },
+  },
   {
     gate: { always: true },
     q: { en: "Does it need an install?", fr: "Faut-il installer quelque chose ?" },
@@ -506,8 +679,13 @@ export const CRAWL_FAQ: readonly CrawlFaqEntry[] = [
   },
 ];
 
-export function visibleFaq(ctx: GateContext & FaqContext, base: CopyBase): { q: string; a: string }[] {
-  return CRAWL_FAQ.filter((f) => gateOpen(f.gate, ctx)).map((f) => ({ q: f.q[base], a: f.a[base](ctx) }));
+export function visibleFaq(ctx: GateContext & FaqContext, base: CopyBase): VisibleFaq[] {
+  return CRAWL_FAQ.filter((f) => gateOpen(f.gate, ctx)).map((f) => ({
+    q: f.q[base],
+    a: f.a[base](ctx),
+    ...(f.list ? { list: f.list[base](ctx) } : {}),
+    ...(f.after ? { after: f.after[base](ctx) } : {}),
+  }));
 }
 
 // ─── The crawler guides' calls to action (NOSY-BAT-GUIDES.md) ───────────────
