@@ -162,6 +162,17 @@ describe("core: keys, hashing, scrubbing", () => {
     expect(endpointSlug("../../etc/passwd")).not.toContain("/");
   });
 
+  it("the slug is idempotent, so the stored key keeps its dashes", async () => {
+    const slug = endpointSlug("v3/serp/google/organic/live/advanced");
+    expect(endpointSlug(slug)).toBe(slug);
+    const o = await prepareObject(
+      "echorank",
+      { provider: "dataforseo", endpoint: "v3/serp/google/organic/live/advanced", request: { keyword: "k" }, response: {}, costUsd: 0.002, providerTaskId: null, tenantId: null, purpose: "p" },
+      { personalData: true, receivedAt: new Date("2026-11-09T00:00:00Z") },
+    );
+    expect(o.s3Key.startsWith("v1/echorank/dataforseo/serp-google-organic-live-advanced/2026/11/09/")).toBe(true);
+  });
+
   it("hashes the canonical request: key order does not matter, values do", () => {
     expect(requestHash({ keyword: "a", location_code: 2840 })).toBe(requestHash({ location_code: 2840, keyword: "a" }));
     expect(requestHash({ keyword: "a" })).not.toBe(requestHash({ keyword: "b" }));

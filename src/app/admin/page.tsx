@@ -20,6 +20,7 @@ const PAGES = [
   { href: "/admin/sales-inquiries", label: "Sales inquiries" },
   { href: "/admin/crawl-overrides", label: "Crawl overrides" },
   { href: "/admin/free-crawler", label: "Free crawler opt-outs" },
+  { href: "/admin/purchase-archive", label: "Purchase archive (purchases, reuse, savings)" },
 ];
 
 export default async function Page() {

@@ -52,7 +52,7 @@ import "server-only";
 import type { PlanType } from "@/generated/prisma";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/infrastructure/observability/logger";
-import { postTask, type ApiResult } from "@/lib/dataforseo/client";
+import { archivedResult, postTask, type ApiResult } from "@/lib/dataforseo/client";
 import { recordCall, startOfBillingMonth } from "@/lib/dataforseo/metering";
 import { runWithPurchaseContext } from "@/lib/purchase-archive/context";
 import { keywordOpportunityCapUsd } from "@/lib/plan-config";
@@ -153,6 +153,14 @@ export async function kofMeteredCall<T>(
   const state = await checkKofCap(ctx.tenantId, ctx.plan, now);
   if (state.capped) {
     throw new KofCapReachedError(state.spent, state.cap ?? 0);
+  }
+
+  // Reuse before re-buying (purchase-archive/reuse.ts): metered as the
+  // purchase it replaces, at cost 0, so the KOF cap is not drawn on.
+  const archived = await archivedResult<T>(path, task, { tenantId: ctx.tenantId, purpose: KOF_FEATURE });
+  if (archived) {
+    await recordCall({ tenantId: ctx.tenantId, feature: KOF_FEATURE, path, costUsd: 0, ok: true });
+    return archived;
   }
 
   try {

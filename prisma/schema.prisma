@@ -1716,6 +1716,25 @@ model PurchaseArchive {
   @@map("purchase_archive")
 }
 
+/// One purchase NOT made because the archive already held the same request
+/// inside its endpoint's freshness window (src/lib/purchase-archive/reuse.ts).
+/// `savedUsd` is what the reused purchase cost. Feeds /admin/purchase-archive.
+model PurchaseArchiveHit {
+  id        String   @id @default(cuid())
+  /// purchase_archive.id of the object served.
+  archiveId String
+  provider  String
+  endpoint  String
+  tenantId  String?
+  purpose   String
+  savedUsd  Decimal? @db.Decimal(10, 6)
+  createdAt DateTime @default(now())
+
+  @@index([provider, createdAt])
+  @@index([tenantId, createdAt])
+  @@map("purchase_archive_hits")
+}
+
 /// Why a credit ledger row exists.
 ///
 /// The set is deliberately small and closed. Every movement of a credit is one

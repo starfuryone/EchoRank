@@ -29,7 +29,8 @@ import { gzip } from "node:zlib";
 import { promisify } from "node:util";
 
 /** Bump on any change to keys, body, hashing or scrubbing. */
-export const PURCHASE_ARCHIVE_VERSION = "1.0.0";
+// 1.0.1: endpointSlug() is idempotent (a slug passed back in keeps its dashes).
+export const PURCHASE_ARCHIVE_VERSION = "1.0.1";
 /** The `v` field of every body and the `v1/` key prefix. */
 export const OBJECT_SCHEMA_VERSION = 1;
 
@@ -233,7 +234,8 @@ const UUIDISH = /^(?:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12
 /**
  * "v3/serp/google/organic/task_get/advanced/<uuid>" → "serp-google-organic-task_get-advanced".
  * The version prefix and any id segment are dropped; anything outside
- * [a-z0-9_.] becomes "_", so a slug is always one safe key segment.
+ * [a-z0-9_.-] becomes "_" (and a leading "." too), so a slug is always one
+ * safe key segment, and endpointSlug(endpointSlug(x)) === endpointSlug(x).
  */
 export function endpointSlug(endpoint: string): string {
   const kept = endpoint
@@ -242,7 +244,8 @@ export function endpointSlug(endpoint: string): string {
     .filter(Boolean)
     .filter((p, i) => !(i === 0 && /^v\d+(?:beta)?$/i.test(p)))
     .filter((p) => !UUIDISH.test(p))
-    .map((p) => p.toLowerCase().replace(/[^a-z0-9_.]/g, "_"));
+    // "-" is kept so a slug passed back in is unchanged (idempotent).
+    .map((p) => p.toLowerCase().replace(/[^a-z0-9_.-]/g, "_").replace(/^\.+/, "_"));
   return kept.join("-").slice(0, 120) || "unknown";
 }
 

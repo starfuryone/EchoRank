@@ -22,6 +22,7 @@ import "server-only";
 import { fixturesEnabled, loadFixture, recordingEnabled, saveFixture } from "./fixtures";
 import { archiveDataforseoResponse } from "@/lib/purchase-archive/dataforseo";
 import { runWithPurchaseContext } from "@/lib/purchase-archive/context";
+import { reuseDataforseo } from "@/lib/purchase-archive/reuse";
 
 const API_BASE = "https://api.dataforseo.com";
 const REQUEST_TIMEOUT_MS = 60_000;
@@ -352,6 +353,27 @@ function parseEnvelope<T>(json: RawResponse, path: string): ApiResult<T> {
 }
 
 /**
+ * The purchase archive's copy of this exact live request, as a result billed
+ * at 0, or null (off, the endpoint's TTL is 0, a miss, or an envelope that no
+ * longer parses). The metered entry points call it before buying.
+ */
+export async function archivedResult<T>(
+  path: string,
+  task: Record<string, unknown>,
+  ctx: { tenantId: string | null; purpose: string },
+): Promise<ApiResult<T> | null> {
+  if (fixturesEnabled()) return null;
+  const reused = await reuseDataforseo(path, task, ctx);
+  if (!reused) return null;
+  try {
+    const result = parseEnvelope<T>(reused.envelope as RawResponse, path);
+    return { ...result, billing: { path: result.billing.path, costUsd: 0 } };
+  } catch {
+    return null;
+  }
+}
+
+/**
  * Wraps postTask with tenant metering + monthly USD cap.
  * Call this from route handlers; never call postTask directly from a route.
  */
@@ -394,6 +416,23 @@ export async function meteredCallResult<T>(
       "Monthly SEO data budget reached for this workspace",
       "RATE_LIMITED",
     );
+  }
+
+  // REUSE BEFORE RE-BUYING (ECHORANK-DATA-ARCHIVE.md Phase 2): the same request
+  // inside its endpoint's freshness window is served from the purchase
+  // archive. Metered exactly like the purchase it replaces — same row, same
+  // pooled-quota effect — at cost 0. Off, TTL 0, a miss or any error: buy.
+  const archived = await archivedResult<T>(path, task, { tenantId: ctx.tenantId, purpose: pathToFeature(path.split("/").filter(Boolean)) });
+  if (archived) {
+    await deps.record({
+      tenantId: ctx.tenantId,
+      feature: pathToFeature(archived.billing.path),
+      path: archived.billing.path.join("/"),
+      costUsd: 0,
+      ok: true,
+      dataforseoTaskId: null,
+    });
+    return archived;
   }
 
   try {
