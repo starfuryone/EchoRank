@@ -180,7 +180,7 @@ function dentistsDetail(base: SolutionBase): SolutionDetail {
           paras: [
             "Ce qu'un assistant peut citer de plus convaincant, c'est un patient récent qui décrit les soins reçus. Echorank vous donne un lien d'avis et un code QR pour l'accueil, le reçu ou le message de suivi que vous envoyez déjà.",
             "Les patients l'ouvrent eux-mêmes : vous n'avez à téléverser ni liste de patients ni information de santé dans Echorank.",
-            "Quand les avis arrivent, gardez vos réponses publiques générales : remerciez sans confirmer que la personne est un patient ni mentionner son soin.",
+            "Quand les avis arrivent, gardez vos réponses publiques générales : remerciez sans confirmer que la personne est un patient ni mentionner son soin. Les brouillons de réponse d'Echorank respectent cette règle.",
           ],
           image: img("review-flow", "Du fauteuil dentaire à une recommandation par l'IA, en quatre étapes", 460),
         },
@@ -247,7 +247,7 @@ function dentistsDetail(base: SolutionBase): SolutionDetail {
         paras: [
           "The most persuasive thing an assistant can quote is a recent patient describing the care they received. Echorank gives you a review link and a QR code for the front desk, the receipt or the follow-up message you already send.",
           "Patients open it themselves, so you don't upload a patient list or any health information to Echorank.",
-          "When reviews come in, keep public replies general: thank the reviewer without confirming they're a patient or mentioning their treatment.",
+          "When reviews come in, keep public replies general: thank the reviewer without confirming they're a patient or mentioning their treatment. Echorank's reply drafts follow that rule.",
         ],
         image: img("review-flow", "From the dental chair to an AI recommendation in four steps", 460),
       },
@@ -401,7 +401,7 @@ const DETAILS: Record<string, Record<SolutionBase, SolutionDetail>> = {
       eyebrow: "HEALTHCARE",
       h2: "Built for practices that run on trust",
       cards: [
-        { title: "Privacy-safe responses", body: "Every review answered in a compliant voice — human and specific, never confirming a care relationship." },
+        { title: "Privacy-safe responses", body: "Every review answered in a compliant voice — warm and general, never confirming a care relationship." },
         { title: "Operational early warning", body: "Wait-time, billing and front-desk themes surfaced from reviews — with same-day alerts on negatives." },
         { title: "Named for your specialty", body: "Specialty and location prompts tracked across assistants — with the directory and profile gaps that decide the names." },
       ],
@@ -438,7 +438,7 @@ const DETAILS: Record<string, Record<SolutionBase, SolutionDetail>> = {
       eyebrow: "SANTÉ",
       h2: "Conçu pour les cabinets qui vivent de la confiance",
       cards: [
-        { title: "Réponses conformes au secret", body: "Chaque avis reçoit une réponse humaine et précise — sans jamais confirmer une relation de soin." },
+        { title: "Réponses conformes au secret", body: "Chaque avis reçoit une réponse chaleureuse et générale — sans jamais confirmer une relation de soin." },
         { title: "Alerte opérationnelle précoce", body: "Délais, facturation et accueil ressortent des avis — avec alertes le jour même sur les négatifs." },
         { title: "Nommé pour votre spécialité", body: "Les requêtes spécialité et lieu suivies sur les assistants — avec les manques d'annuaires et de profils qui décident des noms." },
       ],

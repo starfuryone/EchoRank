@@ -206,13 +206,37 @@ describe("FAQ", () => {
     }
   });
 
-  it("does not append the reply-draft sentence: reply drafting has no healthcare guardrail", async () => {
-    // src/lib/action-agent/prompts.ts REVIEW_REPLY_INSTRUCTION has no rule about
-    // confirming a patient relationship, so the page must not claim one.
-    const prompts = readFileSync(join(ROOT, "src/lib/action-agent/prompts.ts"), "utf8");
-    expect(prompts).not.toMatch(/patient/i);
-    expect(decode(await dentists("en"))).not.toContain("Echorank's reply drafts follow that rule");
-    expect(decode(await dentists("fr"))).not.toContain("Les brouillons de réponse d'Echorank respectent cette règle");
+  it("says reply drafts follow the rule, because the healthcare guardrail exists and is wired in", async () => {
+    // e5bebb43: src/lib/review-replies/healthcare-guardrail.ts, enforced on
+    // every reply-drafting path (tests/healthcare-reply-guardrail.test.ts).
+    // If the guardrail goes, this sentence must go with it.
+    const guardrail = readFileSync(join(ROOT, "src/lib/review-replies/healthcare-guardrail.ts"), "utf8");
+    expect(guardrail).toContain("export function enforceHealthcareReply");
+    for (const f of ["src/app/api/ai/respond/route.ts", "src/lib/action-agent/generate.ts"]) {
+      expect(readFileSync(join(ROOT, f), "utf8"), f).toContain("enforceHealthcareReply(");
+    }
+    // Dental tenants are in scope.
+    const { isHealthcareCategory } = await import("@/lib/review-replies/healthcare-guardrail");
+    expect(isHealthcareCategory("Dentist")).toBe(true);
+    expect(decode(await dentists("en"))).toContain(
+      "keep public replies general: thank the reviewer without confirming they're a patient or mentioning their treatment. Echorank's reply drafts follow that rule.",
+    );
+    expect(decode(await dentists("fr"))).toContain(
+      "ni mentionner son soin. Les brouillons de réponse d'Echorank respectent cette règle.",
+    );
+  });
+
+  it("the healthcare page's privacy-safe-responses claim matches the guardrail", async () => {
+    // Replies are general by design (the guardrail strips anything specific to
+    // the review), so the card says "warm and general", not "specific".
+    for (const base of BASES) {
+      const card = detailFor("healthcare", base)!.cards[0];
+      expect(card.title).toBe(base === "en" ? "Privacy-safe responses" : "Réponses conformes au secret");
+      expect(card.body).toMatch(base === "en" ? /warm and general, never confirming a care relationship/ : /chaleureuse et générale — sans jamais confirmer une relation de soin/);
+      expect(card.body).not.toMatch(/specific|précise/);
+    }
+    const { isHealthcareCategory } = await import("@/lib/review-replies/healthcare-guardrail");
+    expect(isHealthcareCategory("Healthcare practice")).toBe(true);
   });
 });
 
