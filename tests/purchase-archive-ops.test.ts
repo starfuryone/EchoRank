@@ -145,8 +145,85 @@ describe("personal-data retention", () => {
       pageDir: () => mkdtempSync(join(tmpdir(), "pd-")),
       retentionIndex,
     });
-    expect(out).toMatchObject({ objects: 0, rows: 0 });
+    expect(out).toMatchObject({ purchases: { objects: 0, rows: 0 }, archive: null });
     expect(seen[0]!.toISOString()).toBe("2024-11-09T03:40:00.000Z");
+  });
+});
+
+// ─── Archive-bucket retention: AI Lens / audit pages 365 days, reports 730 ──
+
+describe("archive-bucket retention", () => {
+  const NOW = new Date("2026-11-09T03:40:00Z");
+  const DAY = 86_400_000;
+
+  function datedStore(objects: Record<string, number>) {
+    const live = new Map(Object.entries(objects).map(([k, ageDays]) => [k, new Date(NOW.getTime() - ageDays * DAY)]));
+    const store: ObjectStore = {
+      ...memStore().store,
+      async *list(prefix) {
+        for (const [key, at] of live) if (key.startsWith(prefix)) yield { key, size: 1, lastModified: at };
+      },
+      async listPrefixes(prefix) {
+        const out = new Set<string>();
+        for (const key of live.keys()) if (key.startsWith(prefix)) out.add(prefix + key.slice(prefix.length).split("/")[0] + "/");
+        return [...out];
+      },
+      async deleteKeys(keys) {
+        for (const k of keys) live.delete(k);
+        return keys.length;
+      },
+    };
+    return { store, live };
+  }
+
+  it("deletes AI Lens and audit pages past 365 days and reports past 730; keeps crawl pages and everything newer", async () => {
+    const { purgeArchiveRetention } = await import("@/lib/page-archive/retention");
+    const t = "tenants/tenant12345678/";
+    const { store, live } = datedStore({
+      [`${t}pages/ai-lens/l1/a.html.gz`]: 366,
+      [`${t}pages/ai-lens/l2/a.html.gz`]: 364,
+      [`${t}pages/audit/a1/manifest.json`]: 400,
+      [`${t}pages/crawl/c1/a.html.gz`]: 2000, // crawl retention, not this purge
+      [`${t}reports/monitoring/2024/10/r1.pdf`]: 731,
+      [`${t}reports/monitoring/2025/01/r2.pdf`]: 700,
+      [`${t}crawls/c1/manifest.json`]: 2000,
+      [`tenants/other1234567/pages/audit/a9/x.meta.json`]: 500,
+    });
+    const out = await purgeArchiveRetention({ store, now: NOW, env: {} as NodeJS.ProcessEnv });
+    expect(out.deleted).toEqual({ "pages/ai-lens/": 1, "pages/audit/": 2, "reports/": 1 });
+    expect([...live.keys()].sort()).toEqual([
+      `${t}crawls/c1/manifest.json`,
+      `${t}pages/ai-lens/l2/a.html.gz`,
+      `${t}pages/crawl/c1/a.html.gz`,
+      `${t}reports/monitoring/2025/01/r2.pdf`,
+    ]);
+  });
+
+  it("both windows are config-driven", async () => {
+    const { auditPageDays, reportDays } = await import("@/lib/page-archive/retention");
+    expect(auditPageDays({} as NodeJS.ProcessEnv)).toBe(365);
+    expect(reportDays({} as NodeJS.ProcessEnv)).toBe(730);
+    expect(auditPageDays({ PAGE_ARCHIVE_AUDIT_DAYS: "90" } as unknown as NodeJS.ProcessEnv)).toBe(90);
+    expect(reportDays({ REPORT_ARCHIVE_DAYS: "0" } as unknown as NodeJS.ProcessEnv)).toBe(730);
+  });
+
+  it("the nightly job runs it against the archive bucket even with the purchase archive unconfigured", async () => {
+    const { processPurchaseArchiveJob } = await import("@/infrastructure/queue/workers/purchase-archive.worker");
+    const { store, live } = datedStore({ "tenants/tenant12345678/reports/x/2024/01/r.pdf": 800 });
+    const out = await processPurchaseArchiveJob({ data: { kind: "retention" }, opts: {}, attemptsMade: 0 } as never, {
+      store: () => null,
+      index: memIndex().index,
+      spool: async () => "f",
+      claimAlertDay: async () => true,
+      post: async () => true,
+      now: () => NOW,
+      pageStore: () => store,
+      drainPages: async () => ({ uploaded: 0, remaining: 0, failed: false }),
+      pageDir: () => mkdtempSync(join(tmpdir(), "pd-")),
+      retentionIndex: { expired: async () => [], deleteRows: async () => 0 },
+    });
+    expect(out).toMatchObject({ purchases: null, archive: { deleted: { "reports/": 1 } } });
+    expect(live.size).toBe(0);
   });
 });
 

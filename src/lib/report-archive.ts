@@ -8,8 +8,9 @@
 // returns at once and never throws, so a slow or missing bucket never touches
 // the download. Users keep downloading exactly as before — the response, or
 // the exports-via-Spaces presigned URL; nothing here serves these objects.
-// `tenantId` is always the session's (or the job's), never input. Deleted with
-// the workspace (everything under tenants/<tenantId>/).
+// `tenantId` is always the session's (or the job's), never input. Kept
+// REPORT_ARCHIVE_DAYS (default 730) by the nightly purge
+// (page-archive/retention.ts), and deleted with the workspace before that.
 //
 // Crawl exports already have a Spaces path (site-crawler/export-store.ts,
 // EXPORTS_VIA_SPACES): when it generates an object, that object is copied

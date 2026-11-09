@@ -11,7 +11,9 @@
 //   tenants/<tenantId>/pages/crawl/<crawlId>/tables/…                      (crawl tables, CRAWL-ARCHIVE format)
 //
 // On when the crawl archive's Spaces key is configured, unless
-// PAGE_ARCHIVE_ENABLED=false. Not kept: the free public crawler's pages (not a
+// PAGE_ARCHIVE_ENABLED=false. Retention: crawl pages follow the plan's crawl
+// retention; AI Lens and audit pages are kept PAGE_ARCHIVE_AUDIT_DAYS (default
+// 365, ./retention.ts); everything goes with the workspace. Not kept: the free public crawler's pages (not a
 // client), and the HTML of crawls that log in to the customer's site (owner's
 // decision 2026-11-09: metadata only — those pages are private content).
 

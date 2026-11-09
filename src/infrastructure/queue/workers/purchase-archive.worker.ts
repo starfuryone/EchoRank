@@ -12,9 +12,12 @@
 //             alert (#echorank-alerts) past 1,000 files or 1 GB in total.
 //   manifest  repeatable, 00:20 UTC: v1/echorank/_manifests/<yesterday>.ndjson.gz
 //             from the index rows.
-//   retention repeatable, 03:40 UTC: personal-data objects older than
+//   retention repeatable, 03:40 UTC: personal-data purchases older than
 //             PURCHASE_ARCHIVE_PERSONAL_MONTHS (24) deleted, object then row
-//             (src/lib/purchase-archive/retention.ts). Everything else is kept.
+//             (src/lib/purchase-archive/retention.ts); other purchases kept.
+//             In the archive bucket, AI Lens and audit page snapshots older
+//             than PAGE_ARCHIVE_AUDIT_DAYS (365) and report copies older than
+//             REPORT_ARCHIVE_DAYS (730) (src/lib/page-archive/retention.ts).
 //
 // Archive not configured (PURCHASE_ARCHIVE_* missing) → store spools, drain and
 // manifest return at once.
@@ -35,6 +38,7 @@ import { postMatrixAlert } from "@/lib/matrix/alert";
 import { drainPageSpool } from "@/lib/page-archive/spool";
 import { pageSpoolDir } from "@/lib/page-archive/config";
 import { prismaRetentionIndex, purgePersonalData, type RetentionIndex } from "@/lib/purchase-archive/retention";
+import { purgeArchiveRetention } from "@/lib/page-archive/retention";
 
 export const DRAIN_JOB = "drain";
 export const MANIFEST_JOB = "manifest";
@@ -119,14 +123,19 @@ export async function processPurchaseArchiveJob(job: Job<PurchaseArchiveJob>, de
     return { purchases: drained, pages, alert };
   }
 
-  if (!store) return { skipped: "not_configured" };
-
   if (data.kind === "retention") {
-    // Personal-data objects past PURCHASE_ARCHIVE_PERSONAL_MONTHS: object, then row.
-    const out = await purgePersonalData({ store, index: deps.retentionIndex, now: deps.now() });
-    logger.info(out, "purchase-archive: personal-data retention");
-    return out;
+    // Two independent purges, each on its own bucket and key:
+    //   purchases  personal-data objects past PURCHASE_ARCHIVE_PERSONAL_MONTHS (object, then row);
+    //   archive    AI Lens / audit page snapshots past PAGE_ARCHIVE_AUDIT_DAYS (365)
+    //              and report copies past REPORT_ARCHIVE_DAYS (730).
+    const purchases = store ? await purgePersonalData({ store, index: deps.retentionIndex, now: deps.now() }) : null;
+    const pageStore = deps.pageStore();
+    const archive = pageStore ? await purgeArchiveRetention({ store: pageStore, now: deps.now() }) : null;
+    logger.info({ purchases, archive }, "archive: nightly retention");
+    return { purchases, archive };
   }
+
+  if (!store) return { skipped: "not_configured" };
 
   // manifest: yesterday (UTC) unless a day is given.
   const day = data.day ? new Date(`${data.day}T00:00:00Z`) : new Date(deps.now().getTime() - 86_400_000);
