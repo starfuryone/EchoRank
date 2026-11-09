@@ -20,6 +20,9 @@ import { breadcrumbList, organization, webSite } from "@/lib/seo/jsonld";
 import { SITE_URL } from "@/lib/seo/constants";
 import { LEARN_BASE, LEARN_GUIDES, guideCopy, type LearnGuide } from "@/lib/learn-content";
 import { NOSY_BAT_GUIDES_ANCHOR } from "@/lib/learn-nosy-bat";
+
+/** The guides index's AI visibility section (where nav links can point). */
+const AI_VISIBILITY_GUIDES_ANCHOR = "ai-visibility";
 import { NB_INTRO_ANCHOR } from "@/lib/site-crawler/intro-video";
 import { CRAWLER_BRAND } from "@/lib/site-crawler/brand";
 import { PublicNav } from "../../PublicNav";
@@ -47,6 +50,9 @@ const CHROME: Record<Base, {
   nbWatch: string;
   ultimateH: string;
   ultimateSub: string;
+  avLabel: string;
+  avH: string;
+  avSub: string;
   minRead: (n: number) => string;
 }> = {
   en: {
@@ -63,6 +69,9 @@ const CHROME: Record<Base, {
     nbWatch: "Watch the intro",
     ultimateH: "Ultimate guides",
     ultimateSub: "Deep dives on the topics the course can only touch.",
+    avLabel: "AI VISIBILITY",
+    avH: "AI visibility guides",
+    avSub: "How AI assistants pick the businesses and pages they cite, and what you can do about it.",
     minRead: (n) => `${n} min read`,
   },
   fr: {
@@ -79,6 +88,9 @@ const CHROME: Record<Base, {
     nbWatch: "Voir la présentation",
     ultimateH: "Guides approfondis",
     ultimateSub: "Les sujets que le cours ne fait qu'effleurer, traités à fond.",
+    avLabel: "VISIBILITÉ IA",
+    avH: "Guides de visibilité IA",
+    avSub: "Comment les assistants IA choisissent les entreprises et les pages qu'ils citent, et ce que vous pouvez y faire.",
     minRead: (n) => `${n} min de lecture`,
   },
 };
@@ -120,6 +132,7 @@ export default async function GuidesIndexPage({ params }: { params: Promise<{ lo
   const foot = CONTENT[locale as Locale].footer;
   const L = (p: string) => `/${locale}${p.startsWith("/") ? p : `/${p}`}`;
   const crawler = LEARN_GUIDES.filter((g) => g.group === "nosy-bat");
+  const aiVisibility = LEARN_GUIDES.filter((g) => g.group === "ai-visibility");
   const ultimate = LEARN_GUIDES.filter((g) => !g.group);
 
   const graph = [
@@ -171,6 +184,25 @@ export default async function GuidesIndexPage({ params }: { params: Promise<{ lo
           </div>
         </div>
       </section>
+
+      {aiVisibility.length > 0 && (
+        <section className={s.section} id={AI_VISIBILITY_GUIDES_ANCHOR} data-testid="ai-visibility-guides">
+          <div className={s.container}>
+            <p className={s.label}>
+              <b>/ {t.avLabel}</b>
+            </p>
+            <h2 className={s.h2}>{t.avH}</h2>
+            <p className={s.sub} style={{ marginBottom: 24 }}>
+              {t.avSub}
+            </p>
+            <div className={c.grid}>
+              {aiVisibility.map((g) => (
+                <Card key={g.slug} g={g} locale={locale} />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       <section className={s.section} id="ultimate">
         <div className={s.container}>

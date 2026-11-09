@@ -32,6 +32,11 @@ const LOCALIZED_PREFIXES = [
   // cheaper and one language more correct this way.
   "/free-audit",
   "/free-tools",
+  // The free AI Visibility Check, linked from the ChatGPT-citations guide.
+  // Its own entry: "/ai-visibility" above matches only "/ai-visibility/…".
+  "/ai-visibility-check",
+  // The AI visibility guide (in French), linked from the same guide.
+  "/guide-visibilite-ia",
 ];
 
 /**
@@ -50,7 +55,8 @@ export function resolveHref(href: string, locale: string): string {
   const localized =
     href.startsWith(HELP_ARTICLE_PREFIX) ||
     LOCALIZED_PREFIXES.some(
-      (p) => href === p || href.startsWith(`${p}/`) || href.startsWith(`${p}#`),
+      // `?`: a CTA carrying its attribution (/free-audit?src=…) is still that page.
+      (p) => href === p || href.startsWith(`${p}/`) || href.startsWith(`${p}#`) || href.startsWith(`${p}?`),
     );
   return localized ? `/${locale}${href}` : href;
 }

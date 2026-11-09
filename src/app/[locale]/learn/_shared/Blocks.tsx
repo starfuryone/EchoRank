@@ -9,6 +9,17 @@ import b from "./learn.module.css";
 import { RULES } from "@/lib/crawl-rules";
 import { capabilityBody, visibleCapabilities } from "@/lib/site-crawler/marketing-copy";
 import { NbArt } from "@/components/learn/nosy-bat-art";
+import { CitationFlowArt } from "@/components/learn/citation-flow-art";
+import { CopyCodeButton } from "@/components/learn/CopyCodeButton";
+
+/** The visible "#" beside a heading that carries an explicit anchor. */
+function HeadingAnchor({ id }: { id: string }) {
+  return (
+    <a className={b.anchor} href={`#${id}`} aria-hidden="true" tabIndex={-1}>
+      #
+    </a>
+  );
+}
 
 export interface BlocksProps {
   body: readonly LearnBlock[];
@@ -56,19 +67,59 @@ export function Blocks({ body, locale, video, faq, afterIntro, ctas }: BlocksPro
           case "h2":
             // id from the heading text, matching tableOfContents() — the TOC
             // links and these anchors are the same pure function, so they
-            // cannot fall out of step.
+            // cannot fall out of step. An explicit id (stable across
+            // languages) wins, and adds a visible "#" link to the heading.
             return (
-              <h2 key={key} id={headingId(block.t)} className={b.h2}>
+              <h2 key={key} id={block.id ?? headingId(block.t)} className={b.h2}>
                 {block.t}
+                {block.id && <HeadingAnchor id={block.id} />}
               </h2>
             );
 
           case "h3":
             return (
-              <h3 key={key} id={headingId(block.t)} className={b.h3}>
+              <h3 key={key} id={block.id ?? headingId(block.t)} className={b.h3}>
                 {block.t}
+                {block.id && <HeadingAnchor id={block.id} />}
               </h3>
             );
+
+          case "list": {
+            const Tag = block.ordered ? "ol" : "ul";
+            return (
+              <Tag key={key} className={b.list}>
+                {block.items.map((item, j) => (
+                  <li key={`${key}-${j}`}>
+                    {inline(item.t, locale, `${key}-${j}`)}
+                    {item.sub && (
+                      <ul className={b.subList}>
+                        {item.sub.map((s, n) => (
+                          <li key={`${key}-${j}-${n}`}>{inline(s, locale, `${key}-${j}-${n}`)}</li>
+                        ))}
+                      </ul>
+                    )}
+                    {item.after && <p className={b.listAfter}>{inline(item.after, locale, `${key}-${j}-a`)}</p>}
+                  </li>
+                ))}
+              </Tag>
+            );
+          }
+
+          case "sources":
+            return (
+              <ol key={key} className={`${b.list} ${b.sources}`}>
+                {block.items.map((src) => (
+                  <li key={src.url}>
+                    <a href={src.url} target="_blank" rel="noopener noreferrer">
+                      {src.title}
+                    </a>
+                  </li>
+                ))}
+              </ol>
+            );
+
+          case "citationFlow":
+            return <CitationFlowArt key={key} locale={locale} />;
 
           case "p":
             return (
@@ -107,7 +158,14 @@ export function Blocks({ body, locale, video, faq, afterIntro, ctas }: BlocksPro
           case "code":
             // Scrolls inside its own box. A CSV header row is wider than the
             // column and must not widen the page.
-            return (
+            return block.copy ? (
+              <div key={key} className={b.codeWrap}>
+                <pre className={b.code}>
+                  <code>{block.t}</code>
+                </pre>
+                <CopyCodeButton text={block.t} locale={locale} />
+              </div>
+            ) : (
               <pre key={key} className={b.code}>
                 <code>{block.t}</code>
               </pre>
@@ -115,7 +173,7 @@ export function Blocks({ body, locale, video, faq, afterIntro, ctas }: BlocksPro
 
           case "table":
             return (
-              <div key={key} className={b.tableWrap}>
+              <div key={key} className={block.stack ? `${b.tableWrap} ${b.tableStack}` : b.tableWrap}>
                 <table className={b.table}>
                   <thead>
                     <tr>
@@ -130,7 +188,7 @@ export function Blocks({ body, locale, video, faq, afterIntro, ctas }: BlocksPro
                     {block.rows.map((row, j) => (
                       <tr key={`${key}-r${j}`}>
                         {row.map((cell, c) => (
-                          <td key={`${key}-r${j}-${c}`}>
+                          <td key={`${key}-r${j}-${c}`} data-label={block.stack ? block.head[c] : undefined}>
                             {inline(cell, locale, `${key}-r${j}-${c}`)}
                           </td>
                         ))}

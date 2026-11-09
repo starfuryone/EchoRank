@@ -8,6 +8,7 @@
 import { useState } from "react";
 import type { SnapshotCopy } from "@/lib/snapshot/copy";
 import { trackHref } from "@/lib/snapshot/copy";
+import { CHATGPT_GUIDE_ANCHORS, CHATGPT_GUIDE_HREF } from "@/lib/chatgpt-guide-link";
 import {
   ENGINE_LABEL,
   type EngineSummary,
@@ -264,6 +265,10 @@ export function SnapshotUpsell({ c, locale, snapshotId }: { c: SnapshotCopy; loc
         {c.upsell.cta} →
       </a>
       <span className={st.planLine}>{c.upsell.planLine}</span>
+      {/* The guide's section on checking ChatGPT citations over time (same anchor in every language). */}
+      <a className={st.planLine} href={`/${locale}${CHATGPT_GUIDE_HREF}#${CHATGPT_GUIDE_ANCHORS.check}`} data-testid="snapshot-guide-link">
+        {c.upsell.guideLink} →
+      </a>
     </div>
   );
 }

@@ -33,6 +33,7 @@ import { ThemeToggle } from "@/components/marketing/theme-toggle";
 import { WordmarkTm } from "@/components/brand/WordmarkTm";
 import { CRAWLER_BRAND } from "@/lib/site-crawler/brand";
 import { CRAWLER_GUIDES_HREF } from "@/lib/crawler-guides-link";
+import { CHATGPT_GUIDE_HREF, CHATGPT_GUIDE_LABEL } from "@/lib/chatgpt-guide-link";
 
 type Base = "en" | "fr";
 const baseOf = (locale: string): Base => (locale.startsWith("fr") ? "fr" : "en");
@@ -243,6 +244,7 @@ const NAV: Record<Base, NavCopy> = {
               { href: "/guides/audit-your-website", label: "Audit your website" },
               { href: "/guides/keyword-research", label: "Keyword research" },
               { href: "/guides/track-rankings", label: "Track rankings" },
+              { href: CHATGPT_GUIDE_HREF, label: CHATGPT_GUIDE_LABEL.en },
             ],
           },
           {
@@ -333,6 +335,7 @@ const NAV: Record<Base, NavCopy> = {
               { href: "/guides/audit-your-website", label: "Auditer votre site" },
               { href: "/guides/keyword-research", label: "Recherche de mots-clés" },
               { href: "/guides/track-rankings", label: "Suivre les positions" },
+              { href: CHATGPT_GUIDE_HREF, label: CHATGPT_GUIDE_LABEL.fr },
             ],
           },
           {
@@ -368,12 +371,25 @@ export function nextOpenPanel(
 
 /** Every href the menu can render, for the route test. */
 /** The catalog with the derived Solutions group substituted in. */
-function navFor(base: Base): NavCopy {
-  return {
+function navFor(base: Base, locale?: string): NavCopy {
+  const nav: NavCopy = {
     ...NAV[base],
     groups: NAV[base].groups.map((g) =>
       (g as unknown as string) === "SOLUTIONS_GROUP_PLACEHOLDER" ? solutionsGroup(base) : g,
     ),
+  };
+  // de-CH reads the English menu, except the one item whose page has a German
+  // version: the ChatGPT-citations guide is labelled in German there.
+  if (!locale?.startsWith("de")) return nav;
+  return {
+    ...nav,
+    groups: nav.groups.map((g) => ({
+      ...g,
+      columns: g.columns.map((c) => ({
+        ...c,
+        items: c.items.map((i) => (i.href === CHATGPT_GUIDE_HREF ? { ...i, label: CHATGPT_GUIDE_LABEL.de } : i)),
+      })),
+    })),
   };
 }
 
@@ -476,7 +492,7 @@ export function PublicNav({
   signedIn?: boolean;
 }) {
   const b = baseOf(locale);
-  const t = navFor(b);
+  const t = navFor(b, locale);
   const L = (p: string) => (p.startsWith("#") ? `/${locale}${p}` : `/${locale}${p}`);
 
   /**

@@ -423,6 +423,37 @@
   border-bottom: 0;
 }
 
+/* A code block with a copy button ({k:"code", copy:true}): the button sits
+   in the corner, the block keeps room for it. */
+.codeWrap { position: relative; }
+.codeWrap .code { padding-right: 84px; }
+
+/* {k:"table", stack:true}: below 640 px every row is a card, each cell
+   labelled by its column header (data-label), so nothing scrolls sideways. */
+@media (max-width: 640px) {
+  .tableStack { border: 0; overflow: visible; }
+  .tableStack .table { min-width: 0; }
+  .tableStack thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .tableStack tr { display: block; margin: 0 0 12px; border: 1px solid var(--line, #232330); border-radius: 10px; padding: 4px 0; }
+  .tableStack td { display: block; border-bottom: 0; padding: 6px 14px; }
+  .tableStack td::before { content: attr(data-label); display: block; font-size: 11.5px; font-weight: 600; letter-spacing: 0.02em; color: var(--text, #eceaf2); }
+}
+
+/* Nested lists ({k:"list"}) and their closing line. */
+.subList { margin: 6px 0 0; padding-left: 20px; list-style: disc; }
+.subList li { margin: 4px 0; }
+.listAfter { margin: 6px 0 0; }
+
+/* Source links: long titles wrap instead of widening the column. */
+.sources a { overflow-wrap: anywhere; }
+
+/* The visible "#" beside a heading with an explicit anchor. */
+.anchor { margin-left: 8px; font-weight: 400; color: var(--muted, #8f8fa3); text-decoration: none; opacity: 0.6; }
+.anchor:hover { opacity: 1; }
+
+/* Text equivalents for diagrams: read by screen readers, not shown. */
+.srOnly { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+
 /* Hub cross-link blurb (the Billing basics section). One authored paragraph
    with an inline link, outside .article, so it carries its own link styling
    rather than inheriting the prose rules above. */

@@ -22,15 +22,29 @@
 
 import { CRAWLER_BRAND } from "@/lib/site-crawler/brand";
 import { NOSY_BAT_GUIDES } from "./learn-nosy-bat";
+import { CHATGPT_CITATIONS_GUIDE } from "./learn-chatgpt-citations";
 
 /** One renderable unit of article body. The markdown subset the pack uses. */
 export type LearnBlock =
   | { k: "p"; t: string }
-  | { k: "h2"; t: string }
-  | { k: "h3"; t: string }
+  /**
+   * `id`: an explicit anchor, kept the same in every language so links from
+   * other pages (e.g. #can-chatgpt-get-into-your-website) land on a translated
+   * page too. A heading with an id also gets a visible "#" anchor link.
+   * Without one, the anchor is headingId(t), as before.
+   */
+  | { k: "h2"; t: string; id?: string }
+  | { k: "h3"; t: string; id?: string }
   | { k: "ul"; items: string[] }
   | { k: "ol"; items: string[] }
-  | { k: "table"; head: string[]; rows: string[][] }
+  /**
+   * A list whose items may carry sub-items and a closing line, for prose that
+   * nests ("1. Ask it." → three bullets). A separate kind so "ul"/"ol" items
+   * stay plain strings for everything that reads them.
+   */
+  | { k: "list"; ordered?: boolean; items: LearnListItem[] }
+  /** `stack`: below 640 px each row becomes a card, every cell labelled by its column. */
+  | { k: "table"; head: string[]; rows: string[][]; stack?: boolean }
   /**
    * A numbered walkthrough where a step may carry its own illustration.
    *
@@ -41,7 +55,15 @@ export type LearnBlock =
    */
   | { k: "steps"; items: LearnStep[] }
   | { k: "quote"; paras: string[] }
-  | { k: "code"; t: string }
+  /** `copy`: a copy-to-clipboard button on the block (a small client island). */
+  | { k: "code"; t: string; copy?: boolean }
+  /**
+   * Source links: a list of titled external URLs, each opening in a new tab
+   * (target=_blank, rel=noopener noreferrer). Prose links keep their own tab.
+   */
+  | { k: "sources"; items: { title: string; url: string }[] }
+  /** The "how ChatGPT picks what to cite" flow (src/components/learn/citation-flow-art.tsx). */
+  | { k: "citationFlow" }
   /** Renders the page's `video` through HomeVideo, in prose position. */
   | { k: "video" }
   /** Renders the page's `faq` array — the same array the JSON-LD is built from. */
@@ -92,6 +114,13 @@ export type LearnBlock =
  * locale even though the image is shared, because a schematic drawing of the UI
  * is language-neutral and its description is not.
  */
+export interface LearnListItem {
+  t: string;
+  sub?: string[];
+  /** A line under the sub-items, still inside the item. */
+  after?: string;
+}
+
 export interface LearnStep {
   t: string;
   img?: { src: string; alt: string };
@@ -207,8 +236,27 @@ export interface LearnGuide extends Omit<LearnChapter, "order"> {
     body?: LearnBlock[];
     related?: LearnLink[];
   };
+  /**
+   * A Swiss German version (de-CH), where written. Unlike `fr`, it exists only
+   * with a body: a de-CH reader gets either the whole guide in German or the
+   * English one, never a German title over English prose.
+   */
+  de?: {
+    title: string;
+    description: string;
+    blurb: string;
+    body: LearnBlock[];
+    related?: LearnLink[];
+  };
+  /** Article JSON-LD dateModified (ISO date), when the guide carries a "last checked" date. */
+  dateModified?: string;
+  /**
+   * A share card for EVERY locale (site-relative), unlike `image`, which is
+   * EN-only because its picture carries English text. `image` wins on en.
+   */
+  shareImage?: string;
   /** A family of guides listed together on the guides index (an anchored section). */
-  group?: "nosy-bat";
+  group?: "nosy-bat" | "ai-visibility";
   /**
    * The guide's own share image and Article `image`, for the EN base only
    * (the pictures carry English text); other bases keep the site defaults.
@@ -2045,6 +2093,8 @@ export const LEARN_GUIDES: LearnGuide[] = [
   },
   // The crawler guides (src/lib/learn-nosy-bat.ts): localized bodies, diagrams, CTAs.
   ...NOSY_BAT_GUIDES,
+  // AI visibility (src/lib/learn-chatgpt-citations.ts): en / fr / de-CH bodies.
+  CHATGPT_CITATIONS_GUIDE,
 ];
 
 export const ECHOPEDIA_TERMS: GlossaryTerm[] = [
@@ -2140,16 +2190,41 @@ export function guideBySlug(slug: string): LearnGuide | undefined {
 export function guideCopy(
   guide: LearnGuide,
   base: "en" | "fr",
-): { title: string; description: string; body: LearnBlock[]; related: LearnLink[]; localized: boolean } {
+  /**
+   * The full locale, when the caller has it: a de* locale reads the guide's
+   * `de` version where one exists (base "en" otherwise, as before).
+   */
+  locale?: string,
+): {
+  title: string;
+  description: string;
+  body: LearnBlock[];
+  related: LearnLink[];
+  localized: boolean;
+  /** The language the body is in: the canonical locale of a localized guide. */
+  lang: "en" | "fr" | "de-CH";
+} {
+  if (locale?.startsWith("de") && guide.de) {
+    return {
+      title: guide.de.title,
+      description: guide.de.description,
+      body: guide.de.body,
+      related: guide.de.related ?? guide.related,
+      localized: true,
+      lang: "de-CH",
+    };
+  }
   const fr = base === "fr" ? guide.fr : undefined;
+  // Localized means "this guide has a body in every base", not "this one is
+  // French": the en page of a bilingual guide canonicals to itself too.
+  const localized = Boolean(guide.fr?.body);
   return {
     title: fr?.title ?? guide.title,
     description: fr?.description ?? guide.description,
     body: fr?.body ?? guide.body,
     related: fr?.related ?? guide.related,
-    // Localized means "this guide has a body in every base", not "this one is
-    // French": the en page of a bilingual guide canonicals to itself too.
-    localized: Boolean(guide.fr?.body),
+    localized,
+    lang: localized && base === "fr" ? "fr" : "en",
   };
 }
 
@@ -2223,8 +2298,8 @@ export function headingId(text: string): string {
 /** The h2s of a body, for the in-page table of contents. */
 export function tableOfContents(body: readonly LearnBlock[]): { id: string; text: string }[] {
   return body
-    .filter((b): b is { k: "h2"; t: string } => b.k === "h2")
-    .map((b) => ({ id: headingId(b.t), text: b.t }));
+    .filter((b): b is { k: "h2"; t: string; id?: string } => b.k === "h2")
+    .map((b) => ({ id: b.id ?? headingId(b.t), text: b.t }));
 }
 
 /**

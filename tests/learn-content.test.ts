@@ -33,6 +33,7 @@ import {
 } from "@/lib/learn-content";
 import { NOSY_BAT_GUIDES } from "@/lib/learn-nosy-bat";
 import { LOCALIZED_ROUTES } from "@/lib/seo/registry";
+import { blogArticleRoutes } from "@/lib/blog/loader";
 import { SUPPORTED_LOCALES } from "@/lib/i18n/config";
 
 const APP = join(process.cwd(), "src", "app", "[locale]", "learn");
@@ -40,6 +41,7 @@ const ALL = [...LEARN_CHAPTERS, ...LEARN_GUIDES];
 
 /** Every path a learn link may point at, and where each one is proven to exist. */
 const LOCALE_PREFIXED = new Set(LOCALIZED_ROUTES.map((r) => r.path));
+const BLOG_ARTICLES = new Set(blogArticleRoutes());
 /** App routes that are NOT locale-prefixed. Proven by the route file on disk. */
 const APP_ROUTES: Record<string, string> = {
   "/register": "src/app/(auth)/register",
@@ -56,9 +58,11 @@ const CADDY_PAGES = new Set([
 const EXTENSION_DIST = "/opt/echorank/extension-dist";
 
 function isLive(href: string): boolean {
-  const [path, hash] = href.split("#");
-  void hash;
+  // A CTA's ?src= attribution does not change the page it points at.
+  const path = href.split(/[?#]/)[0]!;
   if (LOCALE_PREFIXED.has(path)) return true;
+  // Published blog articles (the ChatGPT-citations guide links two).
+  if (BLOG_ARTICLES.has(path)) return true;
   if (path in APP_ROUTES) return true;
   if (CADDY_PAGES.has(path)) return true;
   // Learn's own pages are covered by the route-table test below.
@@ -74,6 +78,7 @@ function bodyLinks(body: readonly LearnBlock[]): string[] {
     if (b.k === "ul" || b.k === "ol") text.push(...b.items);
     if (b.k === "quote") text.push(...b.paras);
     if (b.k === "table") text.push(...b.head, ...b.rows.flat());
+    if (b.k === "list") for (const i of b.items) text.push(i.t, ...(i.sub ?? []), i.after ?? "");
   }
   return [...text.join("\n").matchAll(/\[[^\]]+\]\(([^)]+)\)/g)].map((m) => m[1]);
 }
@@ -130,8 +135,9 @@ describe("route table", () => {
 describe("config integrity", () => {
   it("has ten chapters numbered 1..10 in order, and the guides numbered in order", () => {
     expect(LEARN_CHAPTERS.map((c) => c.order)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
-    // Six ultimate guides, then the crawler guides (src/lib/learn-nosy-bat.ts).
-    expect(LEARN_GUIDES).toHaveLength(6 + NOSY_BAT_GUIDES.length);
+    // Six ultimate guides, then the crawler guides (src/lib/learn-nosy-bat.ts),
+    // then the AI visibility guide (src/lib/learn-chatgpt-citations.ts).
+    expect(LEARN_GUIDES).toHaveLength(6 + NOSY_BAT_GUIDES.length + 1);
     expect(LEARN_GUIDES.map((g) => g.order)).toEqual(LEARN_GUIDES.map((_, i) => i + 1));
   });
 
@@ -199,8 +205,12 @@ describe("calls to action", () => {
     expect(audit).toEqual([1, 2, 7, 8]);
     // The crawler guide closes on the crawler's own page instead.
     // So do the crawler guides, whose closing card is <GuideCta>.
+    // The AI visibility guide tells the reader to go and check their own site,
+    // so it closes on the free audit, like the measuring chapters.
     for (const g of LEARN_GUIDES)
-      expect(g.cta, g.slug).toBe(g.slug === "what-nosy-bat-checks" || g.group === "nosy-bat" ? "crawler" : "register");
+      expect(g.cta, g.slug).toBe(
+        g.slug === "what-nosy-bat-checks" || g.group === "nosy-bat" ? "crawler" : g.group === "ai-visibility" ? "audit" : "register",
+      );
   });
 });
 

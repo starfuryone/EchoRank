@@ -88,6 +88,33 @@ const CHROME = {
       btn: "Essai gratuit ↗",
     },
   },
+  // Used ONLY for an article whose body is German (a guide with a `de`
+  // version, e.g. how-to-get-cited-by-chatgpt). Every other de-CH page keeps
+  // the English chrome over its English body, as before.
+  de: {
+    hub: "Wissenszentrum",
+    course: "Reputation und KI-Sichtbarkeit",
+    toc: "Auf dieser Seite",
+    minRead: (n: number) => `${n} Min. Lesezeit`,
+    related: "Weiterlesen",
+    prev: "Zurück",
+    next: "Weiter",
+    ctaAudit: {
+      h: "Sehen Sie, wo Sie stehen – kostenlos",
+      p: "Starten Sie das Echorank-Audit für Ihre eigene Website. Ohne Konto und ohne Karte: Sie erhalten einen Wert, einzelne Prüfungen und ein PDF als Ausgangspunkt.",
+      btn: "Kostenloses Audit starten →",
+    },
+    ctaCrawler: {
+      h: `Crawlen Sie Ihre eigene Website mit ${CRAWLER_BRAND.name}`,
+      p: "Jede Seite, jede Regelfamilie, der Beleg neben jedem Befund. In jedem Plan ab Starter enthalten.",
+      btn: `${CRAWLER_BRAND.name} kennenlernen ↗`,
+    },
+    ctaRegister: {
+      h: "Setzen Sie es um",
+      p: "Importieren Sie Ihre Bewertungen, bitten Sie jeden Kunden mit einem Tipp darum, und verfolgen Sie Themen und KI-Erwähnungen.",
+      btn: "Kostenlos testen ↗",
+    },
+  },
 } as const;
 
 /** English body in every locale, so the article is only ever authored once. */
@@ -160,7 +187,7 @@ export function ArticleShell({
   next,
 }: ArticleShellProps) {
   const b = baseOf(locale);
-  const t = CHROME[b];
+  const t = localizedBody && locale.startsWith("de") ? CHROME.de : CHROME[b];
   const foot = CONTENT[locale as Locale].footer;
   // The player's five-locale catalog, including real de-CH copy. Reused rather
   // than restated so the "tap the speaker icon to unmute" caption is worded

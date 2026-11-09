@@ -163,6 +163,8 @@ export interface ArticleInput {
   inLanguage?: string;
   /** Absolute URL of the article's main image. Omitted when the page has none. */
   image?: string;
+  /** ISO date the content was last checked or changed. Omitted when unknown. */
+  dateModified?: string;
 }
 
 /**
@@ -183,6 +185,7 @@ export function article(input: ArticleInput): JsonLdNode {
     ...(input.inLanguage ? { inLanguage: input.inLanguage } : {}),
     ...(input.readingTime ? { timeRequired: `PT${input.readingTime}M` } : {}),
     ...(input.image ? { image: input.image } : {}),
+    ...(input.dateModified ? { dateModified: input.dateModified } : {}),
     isPartOf: { "@id": WEBSITE_ID },
     author: { "@id": ORGANIZATION_ID },
     publisher: { "@id": ORGANIZATION_ID },

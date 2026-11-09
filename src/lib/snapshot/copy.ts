@@ -99,7 +99,8 @@ export interface SnapshotCopy {
     types: Record<"review_site" | "directory" | "forum" | "news" | "own_site" | "other", string>;
   };
   shows: { heading: string; lead: string; items: { h: string; p: string }[]; footnote: string };
-  upsell: { heading: string; body: string; cta: string; planLine: string };
+  /** guideLink: "How to check over time" → the ChatGPT-citations guide's checking section. */
+  upsell: { heading: string; body: string; cta: string; planLine: string; guideLink: string };
   /** Pricing page banner when arriving from the check's upsell. */
   pricingFit: string;
   share: { metaTitle: string; title: string; expired: string; expiredBody: string; runYours: string };
@@ -248,6 +249,7 @@ export const SNAPSHOT_COPY: Record<SnapshotBase, SnapshotCopy> = {
       body: "When AI leaves you out, names a competitor first, or cites their sources instead of yours, the customer has already narrowed the choice — and you never saw the question. Tracking shows you every answer that changes, the week it changes.",
       cta: "Track these 10 prompts weekly",
       planLine: "10 prompts × 2 engines × weekly",
+      guideLink: "How to check over time",
     },
     pricingFit: "Tracking the 10 prompts from your check on 2 engines, weekly: the {plan} plan covers it.",
     share: {
@@ -400,6 +402,7 @@ export const SNAPSHOT_COPY: Record<SnapshotBase, SnapshotCopy> = {
       body: "Quand l'IA vous oublie, cite d'abord un concurrent ou s'appuie sur ses sources plutôt que les vôtres, le client a déjà fait son tri — et vous n'avez jamais vu la question. Le suivi vous montre chaque réponse qui change, la semaine où elle change.",
       cta: "Suivre ces 10 questions chaque semaine",
       planLine: "10 questions × 2 moteurs × chaque semaine",
+      guideLink: "Comment vérifier dans le temps",
     },
     pricingFit: "Suivre les 10 questions de votre vérification sur 2 moteurs, chaque semaine : le forfait {plan} le couvre.",
     share: {

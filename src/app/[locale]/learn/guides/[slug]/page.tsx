@@ -56,7 +56,12 @@ export function generateStaticParams() {
 const CRUMB = {
   en: { home: "Home", hub: "Knowledge Hub", eyebrow: "GUIDE" },
   fr: { home: "Accueil", hub: "Centre de connaissances", eyebrow: "GUIDE" },
+  // Only for a guide with a German body (copy.lang "de-CH").
+  "de-CH": { home: "Startseite", hub: "Wissenszentrum", eyebrow: "LEITFADEN" },
 } as const;
+
+/** The breadcrumb/eyebrow labels: the body's language for a localized guide, the base's otherwise. */
+const crumbFor = (lang: "en" | "fr" | "de-CH", b: "en" | "fr") => (lang === "de-CH" ? CRUMB["de-CH"] : CRUMB[b]);
 
 export async function generateMetadata({
   params,
@@ -69,17 +74,22 @@ export async function generateMetadata({
   if (!guide) return {};
 
   const b = baseOf(locale);
-  const copy = guideCopy(guide, b);
+  const copy = guideCopy(guide, b, locale);
   return buildMetadata({
     locale,
     path: `${LEARN_BASE}/guides/${guide.slug}`,
     title: copy.title,
     description: copy.description,
     ogType: "article",
-    // A localized guide canonicals to its own base; an English-only one to en.
-    canonicalLocale: copy.localized ? b : "en",
+    // A localized guide canonicals to its body's language (en, fr, or de-CH
+    // for a guide with a German body); an English-only one to en.
+    canonicalLocale: copy.localized ? copy.lang : "en",
     // The guide's own share card: EN base only (English text in the picture).
-    ...(guide.image && b === "en" ? { ogImage: guide.image.og, ogImageAlt: guide.image.ogAlt } : {}),
+    ...(guide.image && b === "en"
+      ? { ogImage: guide.image.og, ogImageAlt: guide.image.ogAlt }
+      : guide.shareImage
+        ? { ogImage: guide.shareImage }
+        : {}),
   });
 }
 
@@ -94,10 +104,11 @@ export default async function GuidePage({
   if (!guide) notFound();
 
   const b = baseOf(locale);
-  const copy = guideCopy(guide, b);
-  // Structured data names the canonical URL: the base's own for a localized
-  // guide, the en one otherwise.
-  const lang = copy.localized ? b : "en";
+  const copy = guideCopy(guide, b, locale);
+  // Structured data names the canonical URL: the body language's own for a
+  // localized guide, the en one otherwise.
+  const lang = copy.localized ? copy.lang : "en";
+  const crumb = crumbFor(lang, b);
   const pageUrl = `${SITE_URL}/${lang}${LEARN_BASE}/guides/${guide.slug}`;
   const steps = guide.howTo
     ? howToSteps(copy.body).map((st) => ({ id: st.id, name: plainText(st.name), text: plainText(st.text) }))
@@ -114,6 +125,7 @@ export default async function GuidePage({
       inLanguage: lang,
       // EN base only, like the share card.
       ...(guide.image && b === "en" ? { image: `${SITE_URL}${guide.image.article}` } : {}),
+      ...(guide.dateModified ? { dateModified: guide.dateModified } : {}),
     }),
     ...(steps.length > 0
       ? [
@@ -128,8 +140,8 @@ export default async function GuidePage({
         ]
       : []),
     breadcrumbList([
-      { name: CRUMB[b].home, url: `${SITE_URL}/${lang}` },
-      { name: CRUMB[b].hub, url: `${SITE_URL}/${lang}${LEARN_BASE}` },
+      { name: crumb.home, url: `${SITE_URL}/${lang}` },
+      { name: crumb.hub, url: `${SITE_URL}/${lang}${LEARN_BASE}` },
       { name: copy.localized ? copy.title : guide.title, url: pageUrl },
     ]),
     ...(guide.video
@@ -171,7 +183,7 @@ export default async function GuidePage({
       <JsonLd graph={graph} />
       <ArticleShell
         locale={locale}
-        eyebrow={CRUMB[b].eyebrow}
+        eyebrow={crumb.eyebrow}
         localizedBody={copy.localized}
         // A French title/description where one is written; the body too for
         // the localized guides.
