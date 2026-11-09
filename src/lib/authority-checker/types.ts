@@ -1,4 +1,4 @@
-// src/lib/authority-checker/types.ts — the stored check and the two views of it.
+// src/lib/authority-checker/types.ts — the Link Authority Checker's report.
 // Dependency-free (the client component imports the view types).
 
 /** Link counts from backlinks/summary. dofollowShare is 0–1, null with no referring domains. */
@@ -21,27 +21,51 @@ export interface ReferringDomainRow {
   backlinks: number;
 }
 
-/** What the email unlock adds: bought at unlock, stored on the check. */
+/** Where the tenant stands against this month's allowance. limit null = unlimited. */
+export interface LinkAuthorityUsage {
+  used: number;
+  limit: number | null;
+  /** First instant of next month, UTC (ISO). */
+  resetsAt: string;
+}
+
+/** What one check returns: the full report, on every plan. */
+export interface LinkAuthorityReport {
+  domain: string;
+  competitors: string[];
+  checkedAt: string;
+  /** Echorank Authority (0–100) of the checked domain. */
+  authority: number | null;
+  links: LinkMetrics;
+  /** The checked domain first, then the competitors, in the order entered. */
+  comparison: DomainRow[];
+  referringDomains: ReferringDomainRow[];
+  /** Every answer came from the 7-day domain cache: nothing bought, nothing counted. */
+  cached: boolean;
+  usage: LinkAuthorityUsage;
+}
+
+// ─── The free tool's stored check ────────────────────────────────────────────
+// Read only by src/lib/authority-checker/{store,pdf}.ts, which are unused since
+// the checker became a paid tool and are listed for deletion (2026-11-09).
+// Delete these three with them.
+
 export interface FullSection {
   referringDomains: ReferringDomainRow[];
-  /** The visitor's domain first, then the competitors, in the order entered. */
   comparison: DomainRow[];
   at: string;
 }
 
-/** A check as stored in Redis under its token (RESULT_TTL_DAYS). */
 export interface StoredCheck {
   token: string;
   createdAt: string;
   domain: string;
   competitors: string[];
-  /** Echorank Authority (0–100) per domain, from one bulk_ranks call. */
   authority: Record<string, number | null>;
   links: LinkMetrics;
   full: FullSection | null;
 }
 
-/** What the API returns. `full` is present only for a browser that unlocked. */
 export interface CheckView {
   token: string;
   createdAt: string;
@@ -51,6 +75,5 @@ export interface CheckView {
   links: LinkMetrics;
   unlocked: boolean;
   full: FullSection | null;
-  /** Unlocked, but the full section could not be bought today (budget). */
   fullPending: boolean;
 }

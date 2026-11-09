@@ -60,6 +60,14 @@ export interface FreeTool {
   jsonLd: "software" | "faq";
   /** Shown (hub card, route table, sitemap, page) only while this flag is on. */
   flag?: FlagName;
+  /**
+   * The page stays (route table, sitemap, its URL) but has no card on the
+   * hub and is not counted as a free tool: a landing page for a paid tool
+   * that kept its free-tool URL (the Link Authority Checker, 2026-11-09).
+   */
+  hubHidden?: true;
+  /** The ?src= its CTA carries, when it is not the default free-tools-<slug>. */
+  ctaSrc?: string;
 }
 
 export const FREE_TOOLS: FreeTool[] = [
@@ -126,18 +134,21 @@ export const FREE_TOOLS: FreeTool[] = [
     flag: "crawl.free",
   },
   {
-    // The Website Authority Checker: Echorank Authority (DataForSEO bulk_ranks,
-    // 0–100) + link counts free; top referring domains, the competitor
-    // comparison and a PDF behind an email. Its OWN daily budget
-    // (AUTHORITY_CHECKER_DAILY_USD, default $3), not the shared free-tools cap
-    // — src/lib/authority-checker/. Body localized en/fr/de-CH.
+    // The Link Authority Checker's LANDING PAGE (2026-11-09). The checker is a
+    // paid tool now, on every paid plan (/visibility/tools/link-authority,
+    // src/lib/authority-checker/); this URL kept its place in the sitemap and
+    // shows what the tool does with a static sample: no form, no API call, so
+    // no cost, no limit and no API path. Not on the hub, not counted as a free
+    // tool. Body localized en/fr/de-CH.
     id: "authority_checker",
     slug: "authority-checker",
-    cost: "paid_api",
-    dailyLimit: 10,
-    apiPath: "/api/free/v1/authority-checker",
-    isNew: true,
+    cost: "none",
+    dailyLimit: null,
+    apiPath: null,
+    isNew: false,
     jsonLd: "faq",
+    hubHidden: true,
+    ctaSrc: "link-authority",
   },
   {
     // The Reddit Threads Finder, back on its old slug (2026-11-08) WITHOUT
@@ -162,6 +173,11 @@ export function freeToolVisible(tool: FreeTool): boolean {
 
 export function visibleFreeTools(): FreeTool[] {
   return FREE_TOOLS.filter(freeToolVisible);
+}
+
+/** The tools the hub shows a card for, and the "N free tools" counts: visible, and not a paid tool's landing page. */
+export function hubFreeTools(): FreeTool[] {
+  return visibleFreeTools().filter((t) => !t.hubHidden);
 }
 
 /**
@@ -214,5 +230,5 @@ export function paidFreeTools(): FreeTool[] {
  * language and still skips the proxy's 308 a bare /pricing would take.
  */
 export function ctaHref(tool: FreeTool, locale: string): string {
-  return `/${locale}/pricing?src=free-tools-${tool.slug}`;
+  return `/${locale}/pricing?src=${tool.ctaSrc ?? `free-tools-${tool.slug}`}`;
 }

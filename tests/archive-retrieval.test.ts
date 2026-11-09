@@ -112,7 +112,8 @@ describe("reports and exports land in Spaces on creation", () => {
       "src/app/api/agency/scan/[id]/rows/[rowId]/report/route.ts": /saveReportCopy\(\{ tenantId: membership\.tenantId, type: "agency-scan"/,
       "src/app/api/agency/scan/[id]/export/route.ts": /saveReportCopy\(\{ tenantId: membership\.tenantId, type: "agency-scan-csv"/,
       "src/app/api/agency/funnels/[id]/leads/export/route.ts": /saveReportCopy\(\{ tenantId: membership\.tenantId, type: "funnel-leads"/,
-      "src/app/api/free/v1/authority-checker/[token]/pdf/route.ts": /if \(member\) void saveReportCopy\(\{ tenantId: member\.tenantId/,
+      // The free authority checker's PDF route is gone (410) since the checker
+      // became a paid tool (2026-11-09); it produces no PDF to copy.
       "src/lib/site-crawler/export-store.ts": /copyExportToReports\(/,
     };
     for (const [file, re] of Object.entries(routes)) expect(readFileSync(join(ROOT, file), "utf8"), file).toMatch(re);

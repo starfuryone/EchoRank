@@ -57,6 +57,7 @@ export function FreeToolShell({
   cta,
   wide,
   explainer,
+  kicker,
   children,
 }: {
   locale: string;
@@ -67,6 +68,8 @@ export function FreeToolShell({
   wide?: boolean;
   /** Long-form sections between the CTA and the FAQ (the Authority Checker's). */
   explainer?: React.ReactNode;
+  /** The hero kicker; "/ FREE TOOL" by default (a paid tool's landing page says otherwise). */
+  kicker?: string;
   children: React.ReactNode;
 }) {
   const foot = CONTENT[locale as Locale].footer;
@@ -89,7 +92,7 @@ export function FreeToolShell({
 
       <div className={`${s.container} ${f.hero}`}>
         <p className={s.label}>
-          <b>/ FREE TOOL</b>
+          <b>{kicker ?? "/ FREE TOOL"}</b>
         </p>
         <h1 className={f.heroH1}>{copy.name}</h1>
         <p className={f.heroSub}>{copy.intro}</p>
@@ -100,7 +103,7 @@ export function FreeToolShell({
           <div className={wide ? f.toolWide : f.tool}>
             {children}
 
-            <p className={f.note}>{copy.limitNote}</p>
+            {copy.limitNote && <p className={f.note}>{copy.limitNote}</p>}
 
             {/* Both branches follow the marketing CTA rule: pricing primary,
                 the hub secondary, never /register. The default carries the

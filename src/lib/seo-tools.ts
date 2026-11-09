@@ -48,6 +48,7 @@ import {
   Banknote,
   Wand2,
   Sparkles,
+  ShieldCheck,
 } from "lucide-react";
 import type { PlanType } from "@/generated/prisma";
 import { NosyBatIcon } from "@/components/seo-tools/nosy-bat-icon";
@@ -96,7 +97,8 @@ export type SeoToolId =
   | "audit_funnels"
   | "ai_revenue"
   | "action_agent"
-  | "keyword_opportunities";
+  | "keyword_opportunities"
+  | "link_authority";
 
 /** Tools that render a scaffold page under /visibility/tools/<slug>. */
 // Note: brand_radar/bot_analytics/content_explorer remain ScaffoldIds although
@@ -153,6 +155,9 @@ export type ScaffoldId = Exclude<
   // Social posting is EchoPilot's, not a scaffold: the page is a short
   // promotion of the sister product, its copy in ECHOPILOT_COPY.
   | "social_posting"
+  // The Link Authority Checker shipped real (the paid version of the former
+  // free tool), its copy in src/lib/authority-checker/copy.ts.
+  | "link_authority"
 >;
 
 export interface SeoTool {
@@ -251,6 +256,12 @@ export const SEO_TOOL_GROUPS: SeoToolGroup[] = [
       t("gsc_insights", "gsc-insights", SearchCheck, { requiresGoogleApproval: true }),
       t("serp_checker", "serp-checker", ListOrdered),
       t("backlinks", "backlinks", Link2),
+      // Directly after Backlinks, which it is the quick version of: one
+      // number (Echorank Authority) plus link counts for a domain and up to
+      // three competitors. THE ONE SEO TOOL ON EVERY PAID PLAN, the AI-only
+      // one included (plan-access.ts, area "link_authority"); its monthly
+      // checks are linkAuthorityChecksPerMonth in plan-config.ts.
+      t("link_authority", "link-authority", ShieldCheck, { badge: "new" }),
       t("brand_radar", "brand-radar", RadarIcon),
       // Sits directly after Brand Radar because it is the other half of the
       // same question. Brand Radar asks "are we in the answers"; this one asks

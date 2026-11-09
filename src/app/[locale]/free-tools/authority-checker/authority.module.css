@@ -1,8 +1,12 @@
-/* The Website Authority Checker's result: score, metric tiles, the gate, the
-   two tables, and the explainer. Colours are home2's .page tokens (the page
-   always renders inside .page), so day and night both follow the theme. */
-.competitors{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:6px}
-.result{margin-top:28px;display:grid;gap:18px}
+/* The Link Authority Checker landing page: what the report shows, the static
+   sample (score, metric tiles, the two tables) and the explainer. Colours are
+   home2's .page tokens (the page always renders inside .page), so day and
+   night both follow the theme. */
+.shows{padding:18px 20px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+.shows ul{margin:0;padding-left:20px;color:var(--muted);font-size:15px;line-height:1.7}
+.sample{position:relative;margin:24px 0 0;padding:22px 18px 16px;border:1px dashed var(--line);border-radius:16px}
+.sampleBadge{position:absolute;top:-11px;left:18px;padding:2px 10px;border-radius:999px;background:var(--gold);color:var(--onGold);font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+.result{display:grid;gap:18px}
 .scoreCard{display:grid;grid-template-columns:auto 1fr;gap:22px;align-items:center;padding:22px 24px;border:1px solid var(--line);border-radius:14px;background:var(--surface)}
 .score{font-size:64px;line-height:1;font-weight:750;letter-spacing:-.03em;color:var(--text);font-variant-numeric:tabular-nums}
 .scoreDen{font-size:18px;font-weight:500;color:var(--muted);margin-left:6px}
@@ -13,14 +17,6 @@
 .tile{padding:16px 18px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
 .tileV{font-size:26px;font-weight:700;color:var(--text);font-variant-numeric:tabular-nums}
 .tileL{font-size:13px;color:var(--muted);margin-top:2px}
-.ai{padding:18px 20px;border:1px dashed var(--line);border-radius:12px}
-.ai h3{font-size:16px;margin:0 0 6px;color:var(--text)}
-.ai p{margin:0 0 10px;color:var(--muted);font-size:14px}
-.link{color:var(--goldText);font-weight:600}
-.gate{padding:20px 22px;border:1px solid var(--gold);border-radius:14px;background:var(--surface)}
-.gate h3{font-size:18px;margin:0 0 6px;color:var(--text)}
-.gate p{margin:0 0 12px;color:var(--muted);font-size:14px}
-.consent{display:flex;gap:10px;align-items:flex-start;font-size:13px;color:var(--muted);margin:10px 0 0}
 .tableWrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
 .table{width:100%;border-collapse:collapse;font-size:14px}
 .table th{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);text-align:left;padding:10px 14px;font-weight:600}
@@ -28,12 +24,11 @@
 .table td.num,.table th.num{text-align:right}
 .you{font-size:11px;color:var(--goldText);margin-left:6px;text-transform:uppercase;letter-spacing:.06em}
 .h3{font-size:17px;margin:6px 0 10px;color:var(--text)}
-.actions{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
 .explain{margin-top:44px;display:grid;gap:26px}
 .explain h2{font-size:22px;margin:0 0 8px;color:var(--text);letter-spacing:-.01em}
 .explain p{margin:0 0 10px;color:var(--muted);line-height:1.65}
 @media (max-width:640px){
-  .competitors,.tiles{grid-template-columns:1fr}
+  .tiles{grid-template-columns:1fr}
   .scoreCard{grid-template-columns:1fr;gap:10px}
   .score{font-size:52px}
 }

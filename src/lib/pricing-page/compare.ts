@@ -24,7 +24,7 @@ import {
   FREE_CRAWL_RETENTION_DAYS,
   FREE_CRAWL_URL_CAP,
 } from "@/lib/site-crawler/free-limits";
-import { FREE_TOOLS, FREE_TOOLS_BASE, freeToolVisible, visibleFreeTools } from "@/lib/free-tools";
+import { FREE_TOOLS, FREE_TOOLS_BASE, freeToolVisible, hubFreeTools } from "@/lib/free-tools";
 import { AV_FREE_AUDITS_PER_DAY } from "@/lib/av-free-limit";
 import { RUNS_PER_IP_PER_DAY } from "@/lib/snapshot/limits";
 import { PROMPT_COUNT } from "@/lib/snapshot/prompts";
@@ -32,6 +32,7 @@ import { SNAPSHOT_ENGINES } from "@/lib/snapshot/types";
 import { cadence, cardPlans, engines, supportLine } from "./headlines";
 import { fmtNum, pricingBase, type PricingBase } from "./format";
 import { planAllowsArea } from "@/lib/plan-access";
+import { AUTHORITY_COPY } from "@/lib/authority-checker/copy";
 
 /** One cell: text, an optional link, or a yes/no mark (rendered ✓ / — with a spoken label). */
 export type CompareCell =
@@ -218,15 +219,28 @@ export function comparisonTable(locale: Locale): CompareTable {
       b,
       text(
         {
-          en: `${visibleFreeTools().length} free tools`,
-          fr: `${visibleFreeTools().length} outils gratuits`,
-          de: `${visibleFreeTools().length} Gratis-Werkzeuge`,
+          en: `${hubFreeTools().length} free tools`,
+          fr: `${hubFreeTools().length} outils gratuits`,
+          de: `${hubFreeTools().length} Gratis-Werkzeuge`,
         }[b],
         href(locale, FREE_TOOLS_BASE),
       ),
       // The same sentence on every card and every page (toolCountLine), for the
       // plans that include the tools hub (not the AI-only plan, src/lib/plan-access.ts).
       (_c, p) => (planAllowsArea(p, "seo_tools") ? text(toolCountLine(locale, counts)) : NO),
+    ),
+    // The one SEO tool on every paid plan, the AI-only one included: its
+    // monthly checks (plan-config linkAuthorityChecksPerMonth). No free cell:
+    // anonymous visitors cannot run it.
+    row(
+      "link-authority",
+      { en: AUTHORITY_COPY.en.name, fr: AUTHORITY_COPY.fr.name, de: AUTHORITY_COPY["de-CH"].name },
+      b,
+      NO,
+      (c, p) =>
+        planAllowsArea(p, "link_authority")
+          ? count(c.linkAuthorityChecksPerMonth, b, { en: "checks / month", fr: "vérifications / mois", de: "Prüfungen / Monat" })
+          : NO,
     ),
     row(
       "searches",

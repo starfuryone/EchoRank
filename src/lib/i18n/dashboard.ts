@@ -77,6 +77,7 @@ export const dashNav: Record<DashLocale, Record<string, string>> = {
     "/visibility/tools/classic": "Classic SEO Tools",
     "/visibility/tools/serp-checker": "SERP Checker",
     "/visibility/tools/backlinks": "Backlinks",
+    "/visibility/tools/link-authority": "Link Authority Checker",
     "/visibility/tools/lighthouse": "Lighthouse",
     "/visibility/tools/site-audit": "Site Audit",
     "/visibility/tools/custom-prompts": "Custom Prompts",
@@ -135,6 +136,7 @@ export const dashNav: Record<DashLocale, Record<string, string>> = {
     "/visibility/tools/classic": "Klassische SEO-Tools",
     "/visibility/tools/serp-checker": "SERP-Checker",
     "/visibility/tools/backlinks": "Backlinks",
+    "/visibility/tools/link-authority": "Link Authority Checker",
     "/visibility/tools/lighthouse": "Lighthouse",
     "/visibility/tools/site-audit": "Site-Audit",
     "/visibility/tools/custom-prompts": "Eigene Prompts",
@@ -192,6 +194,7 @@ export const dashNav: Record<DashLocale, Record<string, string>> = {
     "/visibility/tools/classic": "Outils SEO classiques",
     "/visibility/tools/serp-checker": "Vérificateur SERP",
     "/visibility/tools/backlinks": "Liens retour",
+    "/visibility/tools/link-authority": "Link Authority Checker",
     "/visibility/tools/lighthouse": "Lighthouse",
     "/visibility/tools/site-audit": "Audit de site",
     "/visibility/tools/custom-prompts": "Requêtes personnalisées",
@@ -5518,6 +5521,10 @@ const seoToolsEn = {
       name: "Backlinks",
       description: "Referring domains, link profile breakdown, top linked pages, and growth history.",
     },
+    link_authority: {
+      name: "Link Authority Checker",
+      description: "Echorank Authority, referring domains and backlinks for a domain, next to up to three competitors.",
+    },
     lighthouse: {
       name: "Lighthouse",
       description: "Core Web Vitals, performance, accessibility, best-practices, and SEO scores for any URL.",
@@ -5723,6 +5730,10 @@ export const SEO_TOOLS_COPY: Record<DashLocale, SeoToolsCopy> = {
         name: "Liens retour",
         description: "Domaines référents, répartition du profil de liens, pages les plus liées et historique de croissance.",
       },
+      link_authority: {
+        name: "Link Authority Checker",
+        description: "Autorité Echorank, domaines référents et backlinks d'un domaine, face à trois concurrents au plus.",
+      },
       lighthouse: {
         name: "Lighthouse",
         description: "Core Web Vitals, performance, accessibilité, bonnes pratiques et scores SEO pour toute URL.",
@@ -5915,6 +5926,10 @@ export const SEO_TOOLS_COPY: Record<DashLocale, SeoToolsCopy> = {
       backlinks: {
         name: "Backlinks",
         description: "Verweisende Domains, Linkprofil-Aufschlüsselung, meistverlinkte Seiten und Wachstumsverlauf.",
+      },
+      link_authority: {
+        name: "Link Authority Checker",
+        description: "Echorank-Autorität, verweisende Domains und Backlinks einer Domain, neben bis zu drei Mitbewerbern.",
       },
       lighthouse: {
         name: "Lighthouse",

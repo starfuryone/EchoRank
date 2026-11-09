@@ -1,381 +1,143 @@
-"use client";
-
-// The Website Authority Checker's form and result. One component: the form,
-// then the free result (score, links, the AI audit card), then the email gate,
-// then — once unlocked — the top referring domains, the comparison and the
-// PDF. The result's token rides in ?r= so a reload or a shared link reopens
-// it (GET, free); the unlock is per browser (an HttpOnly cookie).
+// The Link Authority Checker landing page's SAMPLE report (2026-11-09): what
+// the paid tool shows, as a static example labelled "Sample". No form, no
+// fetch, no state: it renders on the server and ships no JavaScript.
 //
-// Imports only dependency-free modules (copy, config, domains, types).
+// The file keeps its old name (it held the free tool's client-side form until
+// the checker became a paid tool); `git mv client.tsx sample.tsx` is safe,
+// page.tsx is its only importer.
+//
+// Imports only dependency-free modules (copy, types).
 
-import { useEffect, useState } from "react";
-import { useTurnstile } from "@/components/turnstile/use-turnstile";
-import { AUTHORITY_COPY, authorityLocale, type AuthorityErrorCode } from "@/lib/authority-checker/copy";
-import { AUTHORITY_SRC, MAX_COMPETITORS } from "@/lib/authority-checker/config";
-import { normalizeCheck } from "@/lib/authority-checker/domains";
-import type { CheckView } from "@/lib/authority-checker/types";
-import s from "../../home2.module.css";
+import { AUTHORITY_COPY, authorityLocale } from "@/lib/authority-checker/copy";
+import type { DomainRow, ReferringDomainRow } from "@/lib/authority-checker/types";
 import f from "../_shared/free-tools.module.css";
 import a from "./authority.module.css";
 
-const API = "/api/free/v1/authority-checker";
-type UnlockView = CheckView & { notice?: "budget" | "upstream" | null };
+/** Illustrative numbers on reserved example domains, never a real site's. */
+export const SAMPLE = {
+  domain: "example.com",
+  checkedAt: "2026-11-02T09:00:00.000Z",
+  comparison: [
+    { domain: "example.com", authority: 41, referringDomains: 1_284, backlinks: 23_910, dofollowShare: 0.72 },
+    { domain: "example.net", authority: 48, referringDomains: 2_046, backlinks: 41_377, dofollowShare: 0.68 },
+    { domain: "example.org", authority: 36, referringDomains: 903, backlinks: 12_455, dofollowShare: 0.77 },
+  ] satisfies DomainRow[],
+  referringDomains: [
+    { domain: "news.example", authority: 78, backlinks: 14 },
+    { domain: "guide.example", authority: 71, backlinks: 6 },
+    { domain: "directory.example", authority: 64, backlinks: 3 },
+    { domain: "association.example", authority: 59, backlinks: 2 },
+    { domain: "blog.example", authority: 52, backlinks: 9 },
+  ] satisfies ReferringDomainRow[],
+};
 
-export function AuthorityChecker({ locale, siteKey }: { locale: string; siteKey?: string }) {
-  const c = AUTHORITY_COPY[authorityLocale(locale)];
-  const { box, token: challenge, reset } = useTurnstile(siteKey);
-  const [domain, setDomain] = useState("");
-  const [competitors, setCompetitors] = useState<string[]>(Array(MAX_COMPETITORS).fill(""));
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [view, setView] = useState<UnlockView | null>(null);
-
-  // Reopen a result from ?r=<token> (a reload, or a shared link).
-  useEffect(() => {
-    const r = new URLSearchParams(window.location.search).get("r");
-    if (!r) return;
-    fetch(`${API}/${encodeURIComponent(r)}?locale=${encodeURIComponent(locale)}`, { credentials: "same-origin" })
-      .then((res) => (res.ok ? (res.json() as Promise<CheckView>) : null))
-      .then((v) => {
-        if (v) setView(v);
-      })
-      .catch(() => {});
-  }, [locale]);
-
-  const message = (code: unknown) => c.errors[(typeof code === "string" && code in c.errors ? code : "generic") as AuthorityErrorCode];
-
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    const input = normalizeCheck({ domain, competitors });
-    if (!input.ok) {
-      setError(c.errors[input.error]);
-      return;
-    }
-    setBusy(true);
-    try {
-      const res = await fetch(API, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ domain, competitors, turnstileToken: challenge ?? undefined, locale }),
-      });
-      const data = await res.json().catch(() => null);
-      if (!res.ok || !data?.token) {
-        setError(data?.error ?? message(data?.code));
-        reset();
-        return;
-      }
-      setView(data as CheckView);
-      window.history.replaceState(null, "", `?r=${data.token}`);
-    } catch {
-      setError(c.errors.generic);
-      reset();
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const again = () => {
-    setView(null);
-    setError(null);
-    reset();
-    window.history.replaceState(null, "", window.location.pathname);
-  };
-
-  if (view) return <Result view={view} locale={locale} onUnlocked={setView} onAgain={again} />;
-
-  return (
-    <form className={f.panel} onSubmit={submit} data-testid="authority-form" noValidate>
-      <label className={f.label} htmlFor="authority-domain">
-        {c.form.domainLabel}
-      </label>
-      <input
-        id="authority-domain"
-        className={f.input}
-        inputMode="url"
-        autoComplete="url"
-        required
-        maxLength={300}
-        placeholder={c.form.domainPlaceholder}
-        value={domain}
-        onChange={(e) => setDomain(e.target.value)}
-      />
-      <p className={f.label} style={{ marginTop: 16 }} id="authority-competitors">
-        {c.form.competitorsLabel}
-      </p>
-      <div className={a.competitors} role="group" aria-labelledby="authority-competitors">
-        {competitors.map((value, i) => (
-          <input
-            key={i}
-            className={f.input}
-            inputMode="url"
-            maxLength={300}
-            aria-label={`${c.form.competitorsLabel} ${i + 1}`}
-            placeholder={c.form.competitorPlaceholder(i + 1)}
-            value={value}
-            onChange={(e) => setCompetitors((cur) => cur.map((v, j) => (j === i ? e.target.value : v)))}
-          />
-        ))}
-      </div>
-      {siteKey && <div ref={box} style={{ marginTop: 14 }} />}
-      <div style={{ marginTop: 16 }}>
-        <button className={`${s.btn} ${s.btnPrimary}`} type="submit" disabled={busy || !domain.trim() || Boolean(siteKey && !challenge)}>
-          {busy ? c.form.checking : c.form.submit}
-        </button>
-      </div>
-      {error && (
-        <p className={f.error} role="alert">
-          {error}
-        </p>
-      )}
-    </form>
-  );
-}
-
-function Result({
-  view,
-  locale,
-  onUnlocked,
-  onAgain,
-}: {
-  view: UnlockView;
-  locale: string;
-  onUnlocked: (v: UnlockView) => void;
-  onAgain: () => void;
-}) {
+export function AuthoritySample({ locale }: { locale: string }) {
   const c = AUTHORITY_COPY[authorityLocale(locale)];
   const nf = new Intl.NumberFormat(locale);
   const pct = (r: number | null) => (r === null ? "—" : `${Math.round(r * 100)}%`);
-  const date = new Intl.DateTimeFormat(locale, { dateStyle: "medium" }).format(new Date(view.createdAt));
+  const date = new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeZone: "UTC" }).format(new Date(SAMPLE.checkedAt));
+  const own = SAMPLE.comparison[0]!;
 
   return (
-    <div className={a.result} data-testid="authority-result">
-      <div className={a.scoreCard}>
-        <div className={a.score} aria-label={`${c.result.scoreLabel}: ${view.authority ?? c.result.noRank}`}>
-          {view.authority ?? "—"}
-          <span className={a.scoreDen}>{c.result.outOf}</span>
-        </div>
-        <div>
-          <p className={a.scoreDomain}>{view.domain}</p>
-          <p className={a.scoreLabel}>{view.authority === null ? c.result.noRank : c.result.scoreLabel}</p>
-          <p className={a.scoreSource}>{c.result.scoreSource}</p>
-        </div>
+    <div data-testid="authority-landing">
+      <div className={a.shows}>
+        <h2 className={a.h3}>{c.shows.title}</h2>
+        <ul>
+          {c.shows.items.map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+        </ul>
       </div>
 
-      <div className={a.tiles}>
-        <div className={a.tile}>
-          <div className={a.tileV}>{nf.format(view.links.referringDomains)}</div>
-          <div className={a.tileL}>{c.result.referringDomains}</div>
+      <figure className={a.sample} data-testid="authority-sample" aria-label={`${c.sample.badge}: ${c.name}`}>
+        <span className={a.sampleBadge}>{c.sample.badge}</span>
+        <div className={a.result}>
+          <div className={a.scoreCard}>
+            <div className={a.score} aria-label={`${c.result.scoreLabel}: ${own.authority}`}>
+              {own.authority}
+              <span className={a.scoreDen}>{c.result.outOf}</span>
+            </div>
+            <div>
+              <p className={a.scoreDomain}>{own.domain}</p>
+              <p className={a.scoreLabel}>{c.result.scoreLabel}</p>
+              <p className={a.scoreSource}>{c.result.scoreSource}</p>
+            </div>
+          </div>
+
+          <div className={a.tiles}>
+            <div className={a.tile}>
+              <div className={a.tileV}>{nf.format(own.referringDomains)}</div>
+              <div className={a.tileL}>{c.result.referringDomains}</div>
+            </div>
+            <div className={a.tile}>
+              <div className={a.tileV}>{nf.format(own.backlinks)}</div>
+              <div className={a.tileL}>{c.result.backlinks}</div>
+            </div>
+            <div className={a.tile} title={c.result.dofollowHint}>
+              <div className={a.tileV}>{pct(own.dofollowShare)}</div>
+              <div className={a.tileL}>{c.result.dofollowShare}</div>
+            </div>
+          </div>
+
+          <div>
+            <h3 className={a.h3}>{c.full.compTitle}</h3>
+            <div className={a.tableWrap}>
+              <table className={a.table}>
+                <thead>
+                  <tr>
+                    <th>{c.full.colDomain}</th>
+                    <th className={a.num}>{c.full.colAuthority}</th>
+                    <th className={a.num}>{c.full.colReferring}</th>
+                    <th className={a.num}>{c.full.colBacklinks}</th>
+                    <th className={a.num}>{c.full.colDofollow}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {SAMPLE.comparison.map((row) => (
+                    <tr key={row.domain}>
+                      <td>
+                        {row.domain}
+                        {row.domain === SAMPLE.domain && <span className={a.you}>{c.full.you}</span>}
+                      </td>
+                      <td className={a.num}>{row.authority}</td>
+                      <td className={a.num}>{nf.format(row.referringDomains)}</td>
+                      <td className={a.num}>{nf.format(row.backlinks)}</td>
+                      <td className={a.num}>{pct(row.dofollowShare)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div>
+            <h3 className={a.h3}>{c.full.refTitle}</h3>
+            <div className={a.tableWrap}>
+              <table className={a.table}>
+                <thead>
+                  <tr>
+                    <th>{c.full.colDomain}</th>
+                    <th className={a.num}>{c.full.colAuthority}</th>
+                    <th className={a.num}>{c.full.colBacklinks}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {SAMPLE.referringDomains.map((row) => (
+                    <tr key={row.domain}>
+                      <td>{row.domain}</td>
+                      <td className={a.num}>{row.authority}</td>
+                      <td className={a.num}>{nf.format(row.backlinks)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </div>
-        <div className={a.tile}>
-          <div className={a.tileV}>{nf.format(view.links.backlinks)}</div>
-          <div className={a.tileL}>{c.result.backlinks}</div>
-        </div>
-        <div className={a.tile} title={c.result.dofollowHint}>
-          <div className={a.tileV}>{pct(view.links.dofollowShare)}</div>
-          <div className={a.tileL}>{c.result.dofollowShare}</div>
-        </div>
-      </div>
-      <p className={f.note} style={{ margin: 0 }}>
-        {c.result.checkedOn(date)} {c.result.dofollowHint}
-      </p>
-
-      <div className={a.ai}>
-        <h3>{c.result.aiTitle}</h3>
-        <p>{c.result.aiBody}</p>
-        <a className={a.link} href={`/${locale}/free-audit?src=${AUTHORITY_SRC}`}>
-          {c.result.aiCta} →
-        </a>
-      </div>
-
-      {view.unlocked ? <Full view={view} locale={locale} onUnlocked={onUnlocked} /> : <Gate view={view} locale={locale} onUnlocked={onUnlocked} />}
-
-      <div className={a.actions}>
-        <button type="button" className={s.btn} onClick={onAgain}>
-          {c.result.again}
-        </button>
-      </div>
-    </div>
-  );
-}
-
-function useUnlock(view: CheckView, locale: string, onUnlocked: (v: UnlockView) => void) {
-  const c = AUTHORITY_COPY[authorityLocale(locale)];
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const unlock = async (email: string, consent: boolean) => {
-    setBusy(true);
-    setError(null);
-    try {
-      const res = await fetch(`${API}/${view.token}/unlock`, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        credentials: "same-origin",
-        body: JSON.stringify({ email, consent, locale }),
-      });
-      const data = await res.json().catch(() => null);
-      if (!res.ok) {
-        setError(data?.error ?? c.errors.generic);
-        return;
-      }
-      onUnlocked(data as UnlockView);
-    } catch {
-      setError(c.errors.generic);
-    } finally {
-      setBusy(false);
-    }
-  };
-  return { busy, error, unlock };
-}
-
-function Gate({ view, locale, onUnlocked }: { view: CheckView; locale: string; onUnlocked: (v: UnlockView) => void }) {
-  const c = AUTHORITY_COPY[authorityLocale(locale)];
-  const [email, setEmail] = useState("");
-  const [consent, setConsent] = useState(false);
-  const { busy, error, unlock } = useUnlock(view, locale, onUnlocked);
-  return (
-    <form
-      className={a.gate}
-      data-testid="authority-gate"
-      onSubmit={(e) => {
-        e.preventDefault();
-        try {
-          sessionStorage.setItem("er-authority-email", email);
-        } catch {}
-        void unlock(email, consent);
-      }}
-    >
-      <h3>{c.gate.title}</h3>
-      <p>{c.gate.body(view.competitors.length)}</p>
-      <label className={f.label} htmlFor="authority-email">
-        {c.gate.emailLabel}
-      </label>
-      <input
-        id="authority-email"
-        className={f.input}
-        type="email"
-        autoComplete="email"
-        required
-        maxLength={254}
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-      />
-      <label className={a.consent}>
-        <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
-        <span>{c.gate.consent}</span>
-      </label>
-      <div style={{ marginTop: 14 }}>
-        <button className={`${s.btn} ${s.btnPrimary}`} type="submit" disabled={busy || !email.trim()}>
-          {busy ? c.gate.sending : c.gate.submit}
-        </button>
-      </div>
-      <p className={f.note}>{c.gate.privacy}</p>
-      {error && (
-        <p className={f.error} role="alert">
-          {error}
-        </p>
-      )}
-    </form>
-  );
-}
-
-function Full({ view, locale, onUnlocked }: { view: UnlockView; locale: string; onUnlocked: (v: UnlockView) => void }) {
-  const c = AUTHORITY_COPY[authorityLocale(locale)];
-  const nf = new Intl.NumberFormat(locale);
-  const pct = (r: number | null) => (r === null ? "—" : `${Math.round(r * 100)}%`);
-  const { busy, error, unlock } = useUnlock(view, locale, onUnlocked);
-
-  if (!view.full) {
-    const retry = () => {
-      let email = "";
-      try {
-        email = sessionStorage.getItem("er-authority-email") ?? "";
-      } catch {}
-      void unlock(email, false);
-    };
-    return (
-      <div className={a.gate} data-testid="authority-pending">
-        <p>{view.notice === "upstream" ? c.errors.upstream : c.full.pending}</p>
-        <button type="button" className={s.btn} onClick={retry} disabled={busy}>
-          {c.full.retry}
-        </button>
-        {error && (
-          <p className={f.error} role="alert">
-            {error}
-          </p>
-        )}
-      </div>
-    );
-  }
-
-  return (
-    <div data-testid="authority-full">
-      <h3 className={a.h3}>{c.full.compTitle}</h3>
-      {view.full.comparison.length > 1 ? (
-        <div className={a.tableWrap}>
-          <table className={a.table}>
-            <thead>
-              <tr>
-                <th>{c.full.colDomain}</th>
-                <th className={a.num}>{c.full.colAuthority}</th>
-                <th className={a.num}>{c.full.colReferring}</th>
-                <th className={a.num}>{c.full.colBacklinks}</th>
-                <th className={a.num}>{c.full.colDofollow}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {view.full.comparison.map((row) => (
-                <tr key={row.domain}>
-                  <td>
-                    {row.domain}
-                    {row.domain === view.domain && <span className={a.you}>{c.full.you}</span>}
-                  </td>
-                  <td className={a.num}>{row.authority ?? "—"}</td>
-                  <td className={a.num}>{nf.format(row.referringDomains)}</td>
-                  <td className={a.num}>{nf.format(row.backlinks)}</td>
-                  <td className={a.num}>{pct(row.dofollowShare)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      ) : (
-        <p className={f.note}>{c.full.compNone}</p>
-      )}
-
-      <h3 className={a.h3} style={{ marginTop: 22 }}>
-        {c.full.refTitle}
-      </h3>
-      {view.full.referringDomains.length > 0 ? (
-        <div className={a.tableWrap}>
-          <table className={a.table}>
-            <thead>
-              <tr>
-                <th>{c.full.colDomain}</th>
-                <th className={a.num}>{c.full.colAuthority}</th>
-                <th className={a.num}>{c.full.colBacklinks}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {view.full.referringDomains.map((row) => (
-                <tr key={row.domain}>
-                  <td>{row.domain}</td>
-                  <td className={a.num}>{row.authority ?? "—"}</td>
-                  <td className={a.num}>{nf.format(row.backlinks)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      ) : (
-        <p className={f.note}>{c.full.refEmpty}</p>
-      )}
-
-      <div className={a.actions} style={{ marginTop: 18 }}>
-        <a className={`${s.btn} ${s.btnPrimary}`} href={`${API}/${view.token}/pdf?locale=${encodeURIComponent(locale)}`} download>
-          {c.full.pdf}
-        </a>
-      </div>
+        <figcaption className={f.note}>
+          {c.sample.caption} {c.result.checkedOn(date)}
+        </figcaption>
+      </figure>
     </div>
   );
 }

@@ -83,8 +83,8 @@ describe("every route is classified", () => {
 });
 
 describe("the AI-only plan", () => {
-  it("reaches exactly its areas: AI visibility, account, home (and exempt APIs)", () => {
-    expect([...AI_VISIBILITY_AREAS].sort()).toEqual(["account", "ai_visibility", "exempt", "home"]);
+  it("reaches exactly its areas: AI visibility, account, home, the Link Authority Checker (and exempt APIs)", () => {
+    expect([...AI_VISIBILITY_AREAS].sort()).toEqual(["account", "ai_visibility", "exempt", "home", "link_authority"]);
     expect(planIsRestricted("AI_VISIBILITY")).toBe(true);
     for (const plan of OTHER_PLANS) expect(planIsRestricted(plan), plan).toBe(false);
   });

@@ -3,7 +3,7 @@
 // Everything here is deterministic — no Redis, no Postgres, no network. The
 // route-level behaviour (limits, cache, cap) lives in free-tools.route.test.ts.
 import { describe, expect, it, vi } from "vitest";
-import { existsSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 
 // share-of-search.ts reaches DataForSEO's metering module, which constructs a
 // Prisma client at import time. Nothing in this file touches a database — the
@@ -56,6 +56,17 @@ describe("route table", () => {
       const dir = join(process.cwd(), "src", "app", "api", "free", "v1", tool.slug);
       if (tool.apiPath) {
         expect(existsSync(join(dir, "route.ts")), `${tool.slug} route missing`).toBe(true);
+      } else if (tool.hubHidden) {
+        // A paid tool's landing page (the Link Authority Checker, 2026-11-09)
+        // whose old anonymous routes are still on disk, as 410 stubs that buy
+        // nothing, until someone deletes them. Every route there must stay one.
+        for (const f of ["route.ts", "[token]/route.ts", "[token]/unlock/route.ts", "[token]/pdf/route.ts"]) {
+          const p = join(dir, f);
+          if (!existsSync(p)) continue;
+          const src = readFileSync(p, "utf8");
+          expect(src, f).toContain("status: 410");
+          expect(src, f).not.toMatch(/dataforseo|authority-checker\/(service|data|store)|prisma/);
+        }
       } else {
         // A client-only tool must not grow a server endpoint by accident —
         // that is how an anonymous LLM bill starts.
@@ -102,7 +113,8 @@ describe("route table", () => {
   it("tracks the signup source per tool, in the visitor's locale", () => {
     for (const tool of FREE_TOOLS) {
       for (const locale of ["en", "en-CA", "fr", "fr-CA", "de-CH"]) {
-        expect(ctaHref(tool, locale)).toBe(`/${locale}/pricing?src=free-tools-${tool.slug}`);
+        // ctaSrc overrides the default (the Link Authority Checker's landing page: src=link-authority).
+        expect(ctaHref(tool, locale)).toBe(`/${locale}/pricing?src=${tool.ctaSrc ?? `free-tools-${tool.slug}`}`);
       }
     }
     expect(ctaHref(freeToolById("reddit_threads"), "fr")).toBe("/fr/pricing?src=free-tools-reddit-threads");

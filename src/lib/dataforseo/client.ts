@@ -96,7 +96,19 @@ export type CreditFeature =
    * search the tenant made, and its spend is capped by the AI cap
    * (ai-monitor/cap.ts), which these calls are also metered against.
    */
-  | "ai_tracking";
+  | "ai_tracking"
+  /**
+   * The Link Authority Checker (src/lib/authority-checker/).
+   *
+   * NEVER RETURNED BY pathToFeature(): its paths are the Backlinks family's,
+   * which is a pooled search feature, so the checker supplies it explicitly
+   * (authority-checker/data.ts). OUT of the pooled search quota and OUT of the
+   * SEO data budget (OWN_CAP_FEATURES), the keyword_opportunity reasoning: one
+   * check draws one count from its own monthly allowance
+   * (linkAuthorityChecksPerMonth), not six searches from the pool, and it
+   * cannot exhaust the USD budget every other SEO tool draws from.
+   */
+  | "link_authority";
 
 export type ApiCallCost = { path: string[]; costUsd: number };
 /** `taskId` is DataForSEO's own task uuid — set on every envelope, and the

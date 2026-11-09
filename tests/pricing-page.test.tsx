@@ -181,7 +181,21 @@ describe("Free vs paid", () => {
       expect(cell("brands", p)).toBe(num(c.aiProjects));
       expect(cell("sms", p)).toBe(c.quotaDefaults.maxSmsPerMonth === 0 ? "no" : num(c.quotaDefaults.maxSmsPerMonth));
       expect(cell("tools", p)).toBe(planAllowsArea(p, "seo_tools") ? toolCountLine("en", seoToolCounts()) : "no");
+      // The Link Authority Checker: on every card, the AI-only plan included, from config.
+      expect(cell("link-authority", p)).toBe(`${num(c.linkAuthorityChecksPerMonth)} checks / month`);
     }
+  });
+
+  it("has a Link Authority Checker row in the SEO group, named from its copy, with no free cell", () => {
+    const t = comparisonTable("en");
+    const seo = t.groups.find((g) => g.id === "seo")!;
+    const r = seo.rows.find((x) => x.id === "link-authority")!;
+    expect(r.label).toBe("Link Authority Checker");
+    expect(r.free.kind).toBe("no");
+    expect(comparisonTable("fr").groups.flatMap((g) => g.rows).find((x) => x.id === "link-authority")!.plans.AI_VISIBILITY).toEqual({
+      kind: "text",
+      text: `${PLAN_CONFIGS.AI_VISIBILITY.linkAuthorityChecksPerMonth} vérifications / mois`,
+    });
   });
 
   it("has an AI Visibility column: AI rows filled, every SEO, crawler and reputation volume not included", () => {

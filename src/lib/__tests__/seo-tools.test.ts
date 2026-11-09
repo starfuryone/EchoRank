@@ -29,6 +29,7 @@ const LOCALES = ["en", "fr", "de-CH"] as const;
 const EXPECTED_HREFS: Record<string, string> = {
   serp_checker: "/visibility/tools/serp-checker",
   backlinks: "/visibility/tools/backlinks",
+  link_authority: "/visibility/tools/link-authority",
   lighthouse: "/visibility/tools/lighthouse",
   site_explorer: "/visibility/tools/site-explorer",
   keywords_explorer: "/visibility/keywords",
@@ -98,6 +99,7 @@ test('"New" badges exactly on Action Agent, AI Attribution, AI Citations, AI Len
     "gbp_monitor",
     "historical",
     "keyword_opportunities",
+    "link_authority",
     "opportunity_scanner",
     "share_of_voice",
   ]);
@@ -138,12 +140,13 @@ test("the live/coming-soon split is what the marketing copy claims", () => {
   // nothing in copy has to move with these numbers any more. They are pinned
   // so a change in the split is a deliberate, reviewed one.
   const soon = ALL_TOOLS.filter((t) => t.comingSoon);
-  assert.equal(ALL_TOOLS.length, 34, "tool count changed");
+  assert.equal(ALL_TOOLS.length, 35, "tool count changed");
   assert.equal(soon.length, 4);
   // Available = neither a scaffold nor blocked on Google's approval. The
   // EchoPilot partner card (social_posting) is on the hub but is not an
-  // Echorank tool, so the counts leave it out: 33, not 34.
-  assert.deepEqual(seoToolCounts(), { available: 27, coming: 6, total: 33 });
+  // Echorank tool, so the counts leave it out: 34, not 35. The Link
+  // Authority Checker (2026-11-09) is the 28th available tool.
+  assert.deepEqual(seoToolCounts(), { available: 28, coming: 6, total: 34 });
   assert.deepEqual(
     ALL_TOOLS.filter((t) => seoToolStatus(t) === "waiting_approval").map((t) => t.id).sort(),
     ["gbp_monitor", "gsc_insights", "web_analytics"],

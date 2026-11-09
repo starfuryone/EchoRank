@@ -1,32 +1,32 @@
-// src/lib/authority-checker/data.ts — the Website Authority Checker's three
-// DataForSEO purchases, each cached per domain for CACHE_DAYS, and the tool's
-// daily budget.
+// src/lib/authority-checker/data.ts — the Link Authority Checker's three
+// DataForSEO purchases, each cached per domain for CACHE_DAYS.
 //
 //   bulk_ranks   Echorank Authority (rank_scale one_hundred) for every domain
 //                of a check in ONE call — only the domains not in cache.
 //   summary      referring domains, backlinks, dofollow share (one per domain).
-//   referring_domains  the top 10, strongest first (bought at email unlock).
+//   referring_domains  the top 10, strongest first.
 //
-// CACHE, TWO LAYERS, SAME RULE AS EVERY FREE TOOL: a hit costs nobody
-// anything. Redis (src/lib/free-tools/cache.ts, always on) answers first; the
-// shared cross-feature Spaces store (src/lib/spaces-cache.ts) second, so a
-// domain bought here is a fact any later reader of that store can reuse; then
-// DataForSEO. Both writes are fail-open. Values are wrapped ({ v }) so "the
-// index has no rank for this domain" is cached too, not bought again.
+// CACHE, TWO LAYERS, SHARED ACROSS TENANTS: a hit costs nobody anything. Redis
+// (src/lib/free-tools/cache.ts) answers first; the shared cross-feature Spaces
+// store (src/lib/spaces-cache.ts) second; then DataForSEO. Both writes are
+// fail-open. Values are wrapped ({ v }) so "the index has no rank for this
+// domain" is cached too, not bought again. The keys are the free tool's, so
+// what it cached before 2026-11-09 is still served.
 //
-// METERED LIKE EVERY OTHER DATAFORSEO CALL: seoMeteredCallResult writes the
-// SeoApiCall row, under the sentinel AUTHORITY_TENANT_ID (config.ts). The
-// daily budget sums those rows; the metering's own monthly cap
-// (SEO_MONTHLY_CAP_USD_DEFAULT) also applies to that id and surfaces as the
-// same "back tomorrow" answer.
+// METERED TO THE TENANT, like every other DataForSEO tool: one SeoApiCall row
+// per call, with the response's real cost, under the feature "link_authority"
+// (LINK_AUTHORITY_FEATURE). That feature is outside the pooled search quota
+// and outside the shared SEO USD budget (OWN_CAP_FEATURES): a check draws on
+// its own monthly allowance (quota.ts), the Keyword Opportunity Finder's
+// pattern (keyword-opportunity/metering.ts).
 
 import "server-only";
 
-import { prisma } from "@/lib/prisma";
-import { getRedisConnection } from "@/infrastructure/redis/connection";
 import { logger } from "@/infrastructure/observability/logger";
 import { BACKLINKS } from "@/lib/dataforseo/endpoints";
-import { seoMeteredCallResult } from "@/lib/dataforseo/metering";
+import { DataforseoError, archivedResult, postTask, type ApiResult } from "@/lib/dataforseo/client";
+import { recordCall } from "@/lib/dataforseo/metering";
+import { runWithPurchaseContext } from "@/lib/purchase-archive/context";
 import {
   backlinksSummaryTask,
   parseBacklinksSummary,
@@ -34,17 +34,12 @@ import {
 } from "@/lib/dataforseo/backlinks-summary";
 import { parseReferringDomains } from "@/lib/backlinks/parse";
 import { cacheKey as redisKey, readCache as redisRead, writeCache as redisWrite } from "@/lib/free-tools/cache";
-import { utcDayStamp } from "@/lib/free-tools/limits";
 import { cacheKey as spacesKey, dateBucket, readCache as spacesRead, writeCache as spacesWrite } from "@/lib/spaces-cache";
-import { postMatrixAlert } from "@/lib/matrix/alert";
-import {
-  AUTHORITY_TENANT_ID,
-  BUDGET_ALERT_SHARE,
-  CACHE_DAYS,
-  TOP_REFERRING_DOMAINS,
-  dailyBudgetUsd,
-} from "./config";
+import { CACHE_DAYS, TOP_REFERRING_DOMAINS } from "./config";
 import type { LinkMetrics, ReferringDomainRow } from "./types";
+
+/** The feature every SeoApiCall row of this tool carries. */
+export const LINK_AUTHORITY_FEATURE = "link_authority" as const;
 
 type Kind = "rank" | "links" | "refdomains";
 type Wrapped<T> = { v: T };
@@ -74,6 +69,32 @@ async function writeCached<T>(kind: Kind, domain: string, value: T, now: Date): 
   const k = keys(kind, domain, now);
   const wrapped: Wrapped<T> = { v: value };
   await Promise.all([redisWrite(k.redis, wrapped, CACHE_DAYS * 86_400), spacesWrite(k.spaces, wrapped)]);
+}
+
+// ─── The metered call ────────────────────────────────────────────────────────
+
+/**
+ * One DataForSEO call billed to the tenant: the purchase archive first (cost
+ * 0, as every metered tool does), then the live call. Charged-but-failed
+ * calls are recorded with their cost; an uncharged failure with 0.
+ */
+export async function laMeteredCall<T>(tenantId: string, path: string, task: Record<string, unknown>): Promise<ApiResult<T>> {
+  const ctx = { tenantId, purpose: LINK_AUTHORITY_FEATURE };
+  const archived = await archivedResult<T>(path, task, ctx);
+  if (archived) {
+    await recordCall({ tenantId, feature: LINK_AUTHORITY_FEATURE, path, costUsd: 0, ok: true });
+    return archived;
+  }
+  try {
+    const result = await runWithPurchaseContext(ctx, () => postTask<T>(path, task));
+    await recordCall({ tenantId, feature: LINK_AUTHORITY_FEATURE, path, costUsd: result.billing.costUsd, ok: true });
+    return result;
+  } catch (err) {
+    const billed = err instanceof DataforseoError && err.billing ? err.billing.costUsd : 0;
+    await recordCall({ tenantId, feature: LINK_AUTHORITY_FEATURE, path, costUsd: billed, ok: false }).catch(() => {});
+    logger.warn({ tenantId, path, err: err instanceof Error ? err.message : String(err) }, "link authority: DataForSEO call failed");
+    throw err;
+  }
 }
 
 // ─── Parsers (pure; exported for the tests) ──────────────────────────────────
@@ -112,7 +133,7 @@ export function refDomainsFromResult(
     .map((r) => ({ domain: r.domain, authority: Number.isFinite(r.rank) ? Math.round(r.rank) : null, backlinks: r.backlinks }));
 }
 
-// ─── Reads (free) and purchases (metered) ────────────────────────────────────
+// ─── Reads (free) and purchases (metered to the tenant) ──────────────────────
 
 export async function cachedRanks(domains: string[], now = new Date()) {
   const known: Record<string, number | null> = {};
@@ -126,13 +147,12 @@ export async function cachedRanks(domains: string[], now = new Date()) {
 }
 
 /** One bulk_ranks call for every domain given. */
-export async function buyRanks(domains: string[], now = new Date()): Promise<Record<string, number | null>> {
+export async function buyRanks(tenantId: string, domains: string[], now = new Date()): Promise<Record<string, number | null>> {
   if (domains.length === 0) return {};
-  const res = await seoMeteredCallResult<{ items?: { target?: string; rank?: number | null }[] }[]>(
-    AUTHORITY_TENANT_ID,
-    BACKLINKS.bulkRanks,
-    { targets: domains, rank_scale: RANK_SCALE },
-  );
+  const res = await laMeteredCall<{ items?: { target?: string; rank?: number | null }[] }[]>(tenantId, BACKLINKS.bulkRanks, {
+    targets: domains,
+    rank_scale: RANK_SCALE,
+  });
   const ranks = parseBulkRanks(res.data, domains);
   for (const d of domains) await writeCached("rank", d, ranks[d], now);
   return ranks;
@@ -142,8 +162,8 @@ export async function cachedLinks(domain: string, now = new Date()): Promise<Lin
   return (await readCached<LinkMetrics>("links", domain, now))?.v ?? null;
 }
 
-export async function buyLinks(domain: string, now = new Date()): Promise<LinkMetrics> {
-  const res = await seoMeteredCallResult<BacklinksSummaryItem[]>(AUTHORITY_TENANT_ID, BACKLINKS.summary, {
+export async function buyLinks(tenantId: string, domain: string, now = new Date()): Promise<LinkMetrics> {
+  const res = await laMeteredCall<BacklinksSummaryItem[]>(tenantId, BACKLINKS.summary, {
     ...backlinksSummaryTask(domain, { includeSubdomains: true }),
     rank_scale: RANK_SCALE,
   });
@@ -156,79 +176,17 @@ export async function cachedRefDomains(domain: string, now = new Date()): Promis
   return (await readCached<ReferringDomainRow[]>("refdomains", domain, now))?.v ?? null;
 }
 
-export async function buyRefDomains(domain: string, now = new Date()): Promise<ReferringDomainRow[]> {
-  const res = await seoMeteredCallResult<{ items?: unknown[]; total_count?: number }[]>(
-    AUTHORITY_TENANT_ID,
-    BACKLINKS.referringDomains,
-    {
-      target: domain,
-      // Rows are billed: buy exactly the ten the page shows, strongest first.
-      limit: TOP_REFERRING_DOMAINS,
-      include_subdomains: true,
-      backlinks_status_type: "live",
-      order_by: ["rank,desc"],
-      rank_scale: RANK_SCALE,
-    },
-  );
+export async function buyRefDomains(tenantId: string, domain: string, now = new Date()): Promise<ReferringDomainRow[]> {
+  const res = await laMeteredCall<{ items?: unknown[]; total_count?: number }[]>(tenantId, BACKLINKS.referringDomains, {
+    target: domain,
+    // Rows are billed: buy exactly the ten the report shows, strongest first.
+    limit: TOP_REFERRING_DOMAINS,
+    include_subdomains: true,
+    backlinks_status_type: "live",
+    order_by: ["rank,desc"],
+    rank_scale: RANK_SCALE,
+  });
   const rows = refDomainsFromResult(res.data);
   await writeCached("refdomains", domain, rows, now);
   return rows;
-}
-
-// ─── The daily budget ────────────────────────────────────────────────────────
-
-function startOfUtcDay(now: Date): Date {
-  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
-}
-
-/** USD this tool was billed since UTC midnight (its SeoApiCall rows). */
-export async function spentTodayUsd(now = new Date()): Promise<number> {
-  const agg = await prisma.seoApiCall.aggregate({
-    _sum: { costUsd: true },
-    where: { tenantId: AUTHORITY_TENANT_ID, createdAt: { gte: startOfUtcDay(now) } },
-  });
-  return Number(agg._sum.costUsd ?? 0);
-}
-
-export interface BudgetState {
-  spent: number;
-  budget: number;
-  exhausted: boolean;
-}
-
-/**
- * Checked before every purchase. A purchase that starts under the budget may
- * finish a few cents over it (one check is at most ~$0.05, an unlock ~$0.1);
- * the next one is refused.
- */
-export async function budgetState(now = new Date()): Promise<BudgetState> {
-  const budget = dailyBudgetUsd();
-  const spent = await spentTodayUsd(now);
-  return { spent, budget, exhausted: budget <= 0 || spent >= budget };
-}
-
-/** The Matrix line, pure for the test. */
-export function budgetAlertLine(spent: number, budget: number): string {
-  const pct = budget > 0 ? Math.round((spent / budget) * 100) : 100;
-  return `Website Authority Checker: ${pct}% of today's DataForSEO budget used ($${spent.toFixed(2)} of $${budget.toFixed(2)}). New checks stop at 100% until midnight UTC.`;
-}
-
-/**
- * One Matrix alert per UTC day, once spend reaches BUDGET_ALERT_SHARE of the
- * budget. The once-a-day guard is a Redis SET NX; if Redis cannot answer, no
- * alert is sent rather than one per request. Never throws.
- */
-export async function alertIfNearBudget(now = new Date()): Promise<boolean> {
-  try {
-    const { spent, budget } = await budgetState(now);
-    // In micro-dollars: 0.8 × 3 is 2.4000000000000004 in floating point, which
-    // would keep the alert silent at exactly 80%.
-    if (budget <= 0 || Math.round(spent * 1e6) < Math.round(budget * BUDGET_ALERT_SHARE * 1e6)) return false;
-    const first = await getRedisConnection().set(`free:authority:alert:${utcDayStamp(now)}`, "1", "EX", 2 * 86_400, "NX");
-    if (first !== "OK") return false;
-    return await postMatrixAlert(budgetAlertLine(spent, budget));
-  } catch (err) {
-    logger.debug({ err }, "authority checker: budget alert skipped");
-    return false;
-  }
 }

@@ -170,6 +170,11 @@ export function keywordOpportunityCapUsd(plan: PlanType): number | null {
   return KEYWORD_OPPORTUNITY_CAP_USD[sellablePlan(plan)];
 }
 
+/** Link Authority Checker checks a month on this tier (PlanConfig.linkAuthorityChecksPerMonth). `null` = unlimited. */
+export function linkAuthorityChecksLimit(plan: PlanType): number | null {
+  return PLAN_CONFIGS[sellablePlan(plan)].linkAuthorityChecksPerMonth;
+}
+
 /**
  * The Backlinks tool's shape on one tier.
  *
@@ -408,6 +413,29 @@ export interface PlanConfig {
    */
   keywordOpportunityAnalysesPerMonth: number | null;
   /**
+   * Link Authority Checker CHECKS per calendar month (UTC). `null` = unlimited.
+   *
+   * THE ONE SEO TOOL ON EVERY PAID PLAN, the AI-only one included
+   * (src/lib/plan-access.ts, area "link_authority"). One check is one domain
+   * plus up to three competitors, with the full report: Echorank Authority for
+   * every domain (one bulk_ranks), each domain's summary and the top referring
+   * domains — up to six DataForSEO calls, metered to the tenant under the
+   * feature "link_authority" (src/lib/authority-checker/data.ts).
+   *
+   * A check whose every answer is already in the shared 7-day domain cache buys
+   * nothing and is not counted. Counted in Redis (authority-checker/quota.ts),
+   * month-keyed, so the count survives restarts.
+   *
+   * PLACEHOLDERS (2026-11-09 brief). Worst case at ~$0.146 a check (four
+   * summaries at the recorded $0.024036, referring domains at $0.0258,
+   * bulk_ranks unrecorded and assumed at the same ~$0.024 request base):
+   *   AI_VISIBILITY  10 → $1.46 of $29  (5.0%)
+   *   STARTER        25 → $3.65 of $79  (4.6%)
+   *   GROWTH        100 → $14.59 of $199 (7.3%)
+   *   AGENCY        300 → $43.77 of $499 (8.8%)
+   */
+  linkAuthorityChecksPerMonth: number | null;
+  /**
    * What the Backlinks tool DOES on this tier.
    *
    * ── A CAPABILITY OBJECT, NOT A PLAN NAME ──────────────────────────────────
@@ -477,6 +505,7 @@ export const PLAN_CONFIGS: Record<SellablePlanType, PlanConfig> = {
     // answer) × 1.5.
     aiMonthlyCapUsd: 3.83,
     keywordOpportunityAnalysesPerMonth: 0,
+    linkAuthorityChecksPerMonth: 10,
     backlinks: {
       tier: "basic",
       scope: "domain",
@@ -540,6 +569,7 @@ export const PLAN_CONFIGS: Record<SellablePlanType, PlanConfig> = {
     // Projected $4.59/month at worst case × 1.5.
     aiMonthlyCapUsd: 6.89,
     keywordOpportunityAnalysesPerMonth: 5,
+    linkAuthorityChecksPerMonth: 25,
     backlinks: {
       tier: "basic",
       scope: "domain",
@@ -594,6 +624,7 @@ export const PLAN_CONFIGS: Record<SellablePlanType, PlanConfig> = {
     aiProjects: 3,
     aiMonthlyCapUsd: 40,
     keywordOpportunityAnalysesPerMonth: 25,
+    linkAuthorityChecksPerMonth: 100,
     backlinks: {
       tier: "basic",
       scope: "domain",
@@ -649,6 +680,7 @@ export const PLAN_CONFIGS: Record<SellablePlanType, PlanConfig> = {
     aiProjects: 25,
     aiMonthlyCapUsd: 150,
     keywordOpportunityAnalysesPerMonth: 55,
+    linkAuthorityChecksPerMonth: 300,
     backlinks: {
       tier: "full",
       scope: "full",
@@ -703,6 +735,8 @@ export const PLAN_CONFIGS: Record<SellablePlanType, PlanConfig> = {
     aiProjects: null,
     aiMonthlyCapUsd: null,
     keywordOpportunityAnalysesPerMonth: null,
+    // Not in the brief; contract-priced like every other Enterprise allowance.
+    linkAuthorityChecksPerMonth: null,
     backlinks: {
       tier: "full",
       scope: "full",

@@ -148,16 +148,18 @@ export const TOOL_COPY: Record<FreeToolId, ToolCopy> = {
     cta: FREE_CRAWLER_COPY.en.result.ctaButton,
     faq: FREE_CRAWLER_COPY.en.faq,
   },
-  // Localized en/fr/de-CH in src/lib/authority-checker/copy.ts; this entry is
-  // its English hub card and the shell's fallback.
+  // The Link Authority Checker's landing page (a paid tool, no hub card since
+  // 2026-11-09). Localized en/fr/de-CH in src/lib/authority-checker/copy.ts;
+  // this entry is the shell's English fallback. No limit note: the page runs
+  // nothing.
   authority_checker: {
     name: AUTHORITY_COPY.en.name,
     blurb: AUTHORITY_COPY.en.blurb,
     intro: AUTHORITY_COPY.en.intro,
     metaTitle: AUTHORITY_COPY.en.metaTitle,
     metaDescription: AUTHORITY_COPY.en.metaDescription,
-    limitNote: AUTHORITY_COPY.en.limitNote,
-    cta: AUTHORITY_COPY.en.ctaButton,
+    limitNote: "",
+    cta: AUTHORITY_COPY.en.ctaTitle,
     faq: AUTHORITY_COPY.en.faq,
   },
   // Localized en/fr/de-CH in src/lib/reddit-threads/copy.ts; this entry is

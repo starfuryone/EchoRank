@@ -33,6 +33,12 @@ export type AccessArea =
   | "home"
   /** The SEO tools hub's tools (Site Explorer, Keywords, Rank Tracker, GSC, SERP, Backlinks, Lighthouse, analytics, content, reporting, AI insight tools). */
   | "seo_tools"
+  /**
+   * The Link Authority Checker: an SEO tool, and the ONLY one on the AI-only
+   * plan (2026-11-09). Its own area so the allowlist below names it
+   * explicitly rather than opening "seo_tools" or filing it under AI visibility.
+   */
+  | "link_authority"
   /** The site crawler (CRAWLER_BRAND): /crawler and the crawl API. */
   | "crawler"
   /** Reviews, campaigns, feedback requests, recovery, monitoring, intelligence, data sources, extension import. */
@@ -52,6 +58,7 @@ export const ALL_AREAS: readonly AccessArea[] = [
   "account",
   "home",
   "seo_tools",
+  "link_authority",
   "crawler",
   "reputation",
   "marketing_studio",
@@ -61,8 +68,11 @@ export const ALL_AREAS: readonly AccessArea[] = [
   "exempt",
 ];
 
-/** What the AI-only plan includes. Everything else is excluded. */
-export const AI_VISIBILITY_AREAS: ReadonlySet<AccessArea> = new Set<AccessArea>(["ai_visibility", "account", "home", "exempt"]);
+/**
+ * What the AI-only plan includes. Everything else is excluded. "link_authority"
+ * is the one SEO tool on it (the Link Authority Checker, 2026-11-09).
+ */
+export const AI_VISIBILITY_AREAS: ReadonlySet<AccessArea> = new Set<AccessArea>(["ai_visibility", "account", "home", "link_authority", "exempt"]);
 
 export function planAllowsArea(plan: PlanType | null | undefined, area: AccessArea): boolean {
   if (area === "exempt") return true;
@@ -115,6 +125,8 @@ export const PAGE_RULES: readonly RouteRule[] = [
   { prefix: "/visibility/tools/mcp-server", area: "public_api" },
   { prefix: "/visibility/tools/site-crawler", area: "crawler" },
   { prefix: "/visibility/tools/gbp-monitor", area: "reputation" },
+  // The Link Authority Checker: the one SEO tool every paid plan has.
+  { prefix: "/visibility/tools/link-authority", area: "link_authority" },
   { prefix: "/visibility/tools", area: "seo_tools" },
   { prefix: "/visibility/keywords", area: "seo_tools" },
   { prefix: "/visibility", area: "ai_visibility" },
@@ -174,6 +186,7 @@ export const API_RULES: readonly RouteRule[] = [
   { prefix: "/api/av", area: "ai_visibility" },
   { prefix: "/api/seo/v1/ai-lens", area: "ai_visibility" },
   { prefix: "/api/seo/v1/crawl", area: "crawler" },
+  { prefix: "/api/seo/v1/link-authority", area: "link_authority" },
   { prefix: "/api/seo", area: "seo_tools" },
   { prefix: "/api/keyword-opportunities", area: "seo_tools" },
   { prefix: "/api/citation-opportunities", area: "ai_visibility" },

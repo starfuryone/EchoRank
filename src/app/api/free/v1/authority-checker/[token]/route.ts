@@ -1,14 +1,9 @@
-// GET /api/free/v1/authority-checker/{token} — a stored check: the free view,
-// plus the full section for a browser that unlocked it (erac_<token> cookie).
-// Free: reads Redis only, never DataForSEO.
+// GET /api/free/v1/authority-checker/{token} — GONE (2026-11-09): the free
+// checker's stored results are no longer served. 410 for every request.
+// Deletable with the rest of /api/free/v1/authority-checker/.
 
-import { loadCheck, requestUnlocked, toView } from "@/lib/authority-checker/store";
-import { authorityError, authorityJson } from "@/lib/authority-checker/http";
+import { NextResponse } from "next/server";
 
-export async function GET(request: Request, ctx: { params: Promise<{ token: string }> }) {
-  const { token } = await ctx.params;
-  const locale = new URL(request.url).searchParams.get("locale");
-  const check = await loadCheck(token);
-  if (!check) return authorityError(locale, "not_found", 404);
-  return authorityJson(toView(check, requestUnlocked(request, token)));
+export function GET() {
+  return NextResponse.json({ error: "Gone", code: "gone" }, { status: 410, headers: { "cache-control": "no-store" } });
 }

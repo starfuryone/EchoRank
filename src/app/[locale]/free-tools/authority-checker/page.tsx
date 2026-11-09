@@ -1,20 +1,27 @@
-// /[locale]/free-tools/authority-checker — the free Website Authority Checker.
-// The form and result are client-side (./client.tsx); below them, the
-// explainer (what authority is, how ours is calculated, what a good score is,
-// how to improve it) and the FAQ, whose FAQPage JSON-LD the shell builds from
-// the same array. Body localized en / fr / de-CH, so each canonicals to its
-// own base. Primary CTA: "Track it monthly" → /pricing?src=authority-checker.
+// /[locale]/free-tools/authority-checker — the Link Authority Checker's public
+// LANDING PAGE (2026-11-09). The checker itself is a paid tool on every paid
+// plan (/visibility/tools/link-authority); this URL kept its place in the
+// sitemap and now shows what the tool does: the report's contents, a static
+// result labelled "Sample" (./client.tsx), the explainer and the FAQ, whose
+// FAQPage JSON-LD the shell builds from the same array. No form and no API
+// call: nothing here spends money or needs a limit.
+//
+// Primary CTA: "Included in every plan from $29" → ctaHref() (pricing, with
+// src=link-authority). The price is the lowest plan that includes the tool,
+// read from plan-config, never typed. Body localized en / fr / de-CH, so each
+// canonicals to its own base.
 
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { SUPPORTED_LOCALES, isSupportedLocale } from "@/lib/i18n/config";
 import { buildMetadata } from "@/lib/seo";
-import { FREE_TOOLS_BASE, freeToolById, freeToolVisible } from "@/lib/free-tools";
+import { FREE_TOOLS_BASE, ctaHref, freeToolById, freeToolVisible } from "@/lib/free-tools";
 import { AUTHORITY_COPY, authorityLocale, type AuthorityCopy } from "@/lib/authority-checker/copy";
-import { AUTHORITY_SRC } from "@/lib/authority-checker/config";
+import { linkAuthorityFromPrice } from "@/lib/authority-checker/pricing";
+import { pricingBase, usd } from "@/lib/pricing-page/format";
 import type { ToolCopy } from "../_shared/copy";
 import { FreeToolShell } from "../_shared/FreeToolShell";
-import { AuthorityChecker } from "./client";
+import { AuthoritySample } from "./client";
 import a from "./authority.module.css";
 
 const TOOL = freeToolById("authority_checker");
@@ -26,7 +33,7 @@ function shellCopy(c: AuthorityCopy): ToolCopy {
     intro: c.intro,
     metaTitle: c.metaTitle,
     metaDescription: c.metaDescription,
-    limitNote: c.limitNote,
+    limitNote: "",
     cta: c.ctaTitle,
     faq: c.faq,
   };
@@ -60,8 +67,9 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
       locale={locale}
       tool={TOOL}
       copy={shellCopy(c)}
+      kicker={c.kicker}
       cta={{
-        primary: { href: `/${locale}/pricing?src=${AUTHORITY_SRC}`, label: `${c.ctaButton} →` },
+        primary: { href: ctaHref(TOOL, locale), label: `${c.ctaButton(usd(linkAuthorityFromPrice(), pricingBase(locale)))} →` },
         secondary: { href: `/${locale}${FREE_TOOLS_BASE}`, label: c.allTools },
       }}
       explainer={
@@ -77,7 +85,7 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
         </div>
       }
     >
-      <AuthorityChecker locale={locale} siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY} />
+      <AuthoritySample locale={locale} />
     </FreeToolShell>
   );
 }
