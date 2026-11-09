@@ -285,6 +285,16 @@ The suite ends **green**:
 npx tsc --noEmit && npx eslint src tests && npm test
 ```
 
+**`tsc` and stale dist dirs.** `tsconfig.json` includes `.next/types`, `.next-check/types`
+and every other dist dir Next ever built into (Next adds an entry per dist dir and never
+removes one). Each holds a `validator.ts` that imports the routes of the build that made
+it, so after a route is deleted, plain `npx tsc --noEmit` fails on the old build's
+validator until that dir is rebuilt. The deploy is immune: `next.config.ts` points
+`.next-build` builds at `tsconfig.build.json` (extends `tsconfig.json`; includes only
+`.next-build`'s types; Next never rewrites a tsconfig with `extends`) — see
+`tests/build-tsconfig.test.ts`. For the same stale-proof check by hand, run
+`npx tsc --noEmit -p tsconfig.build.json`.
+
 `eslint src tests` has a pre-existing error baseline: **173 errors, 57 warnings** as of
 2026-08-15 — `react/no-unescaped-entities` (101), `no-html-link-for-pages` (45),
 `react-hooks/set-state-in-effect` (19), then a long tail. Do not add to it; do not "fix"

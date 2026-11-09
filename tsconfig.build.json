@@ -1,0 +1,37 @@
+// The production build's TypeScript config. next.config.ts selects it when
+// NEXT_DIST_DIR is .next-build, which is how scripts/deploy.sh builds.
+//
+// It type-checks the sources plus the types of THIS build only. tsconfig.json
+// also includes .next/types, .next-check/types and the rest: Next adds an
+// include entry for every dist dir it ever builds into and never removes one.
+// Those dirs hold the validator.ts of an OLDER build, which imports every route
+// that existed then — so a deleted route (enterprise/route.ts, then
+// reddit-threads/route.ts) failed the next deploy's type check, against the
+// live .next's validator.
+//
+// `next build` empties .next-build before it generates types, so the one
+// validator included here always matches the tree being built. next-env.d.ts
+// imports only <distDir>/types/routes.d.ts (route-name declarations, no route
+// imports), which cannot go stale this way.
+//
+// Next never rewrites a tsconfig that has `extends`, so this file stays as
+// written and needs no write permission for the build user.
+{
+  "extends": "./tsconfig.json",
+  "include": [
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    "**/*.mts",
+    ".next-build/types/**/*.ts",
+    ".next-build/dev/types/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "extension",
+    "tests/e2e",
+    ".next",
+    ".next-check",
+    ".next-prev"
+  ]
+}
