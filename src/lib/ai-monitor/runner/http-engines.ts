@@ -26,6 +26,7 @@
 import "server-only";
 
 import { parseGemini, parseOpenAi } from "@/lib/snapshot/engines";
+import { archiveLlmAnswer } from "@/lib/purchase-archive/llm";
 
 export interface HttpAsk {
   provider: "CHATGPT" | "GEMINI";
@@ -104,6 +105,7 @@ export async function askHttpEngine(request: HttpAsk, deps: HttpDeps = {}): Prom
 
   let parsed: ReturnType<typeof parseOpenAi>;
   let searchCalls: number;
+  let archived: { endpoint: string; data: unknown };
 
   if (request.provider === "CHATGPT") {
     const base = env.OPENAI_BASE_URL ?? "https://api.openai.com/v1";
@@ -127,6 +129,7 @@ export async function askHttpEngine(request: HttpAsk, deps: HttpDeps = {}): Prom
     );
     parsed = parseOpenAi(data, request.model);
     searchCalls = openAiSearchCalls(data);
+    archived = { endpoint: "responses", data };
   } else {
     const base = env.GEMINI_BASE_URL ?? "https://generativelanguage.googleapis.com/v1beta";
     const data = await postJson(
@@ -142,7 +145,20 @@ export async function askHttpEngine(request: HttpAsk, deps: HttpDeps = {}): Prom
     );
     parsed = parseGemini(data, request.model);
     searchCalls = geminiSearchQueries(data);
+    archived = { endpoint: "generate_content", data };
   }
+
+  // The purchase archive (ECHORANK-DATA-ARCHIVE.md). Never awaited; the cost
+  // is metered by the caller, so it is left unknown here.
+  archiveLlmAnswer({
+    provider: request.provider === "CHATGPT" ? "openai" : "gemini",
+    endpoint: archived.endpoint,
+    request: { model: request.model, instructions: request.systemPrompt, input: request.promptText, max_output_tokens: request.maxOutputTokens },
+    response: archived.data,
+    costUsd: null,
+    tenantId: null,
+    purpose: "ai_tracking",
+  });
 
   // An empty answer is NOT thrown here: its tokens and searches were billed,
   // and a throw inside meteredAiCall records the row with zero usage. The

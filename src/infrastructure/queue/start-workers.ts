@@ -46,6 +46,7 @@ import { startAssistantPrecomputeWorker } from "./workers/assistant-precompute.w
 import { startKeywordOpportunityWorker } from "./workers/keyword-opportunity.worker";
 import { startBlogAgentWorker } from "./workers/blog-agent.worker";
 import { startCrawlArchiveWorker } from "./workers/crawl-archive.worker";
+import { startPurchaseArchiveWorker } from "./workers/purchase-archive.worker";
 import { startQueueFailureAlert } from "./failure-alert";
 
 /**
@@ -143,6 +144,10 @@ async function startWorkers() {
     // off (CRAWL_ARCHIVE_ENABLED) and in dry-run (CRAWL_ARCHIVE_DRY_RUN); with
     // Spaces not configured every job is a no-op.
     { name: "crawl-archive", start: startCrawlArchiveWorker },
+    // Captured provider responses, the spool drain (every 10 min) and the
+    // 00:20 UTC manifest. With PURCHASE_ARCHIVE_* unset nothing is captured
+    // and the scheduled jobs return at once.
+    { name: "purchase-archive", start: startPurchaseArchiveWorker },
   ];
 
   void disabledWorkers();

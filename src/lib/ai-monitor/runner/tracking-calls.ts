@@ -13,6 +13,7 @@ import "server-only";
 // is not, exactly as dataforseo/client.ts meteredCallResult does.
 import { postTask, DataforseoError, type ApiResult } from "@/lib/dataforseo/client";
 import { recordCall } from "@/lib/dataforseo/metering";
+import { runWithPurchaseContext } from "@/lib/purchase-archive/context";
 
 export const TRACKING_FEATURE = "ai_tracking" as const;
 
@@ -22,7 +23,7 @@ export async function postTrackingTask<T>(
   task: Record<string, unknown>,
 ): Promise<ApiResult<T>> {
   try {
-    const result = await postTask<T>(path, task);
+    const result = await runWithPurchaseContext({ tenantId, purpose: TRACKING_FEATURE }, () => postTask<T>(path, task));
     await recordCall({
       tenantId,
       feature: TRACKING_FEATURE,

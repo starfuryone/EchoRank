@@ -54,6 +54,7 @@ import { prisma } from "@/lib/prisma";
 import { logger } from "@/infrastructure/observability/logger";
 import { postTask, type ApiResult } from "@/lib/dataforseo/client";
 import { recordCall, startOfBillingMonth } from "@/lib/dataforseo/metering";
+import { runWithPurchaseContext } from "@/lib/purchase-archive/context";
 import { keywordOpportunityCapUsd } from "@/lib/plan-config";
 
 /** The one feature value every DataForSEO call from this product carries. */
@@ -155,7 +156,7 @@ export async function kofMeteredCall<T>(
   }
 
   try {
-    const result = await postTask<T>(path, task);
+    const result = await runWithPurchaseContext({ tenantId: ctx.tenantId, purpose: KOF_FEATURE }, () => postTask<T>(path, task));
     await recordCall({
       tenantId: ctx.tenantId,
       feature: KOF_FEATURE,

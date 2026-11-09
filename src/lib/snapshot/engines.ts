@@ -17,6 +17,7 @@
 import "server-only";
 
 import type { SnapshotEngine } from "./types";
+import { archiveLlmAnswer } from "@/lib/purchase-archive/llm";
 
 export interface EnginePrice {
   /** USD per 1M input / output tokens. */
@@ -183,31 +184,51 @@ export function parseGemini(data: any, model: string): Answer {
 /** Ask one question with search on. Throws on a provider error. */
 export async function askEngine(cfg: EngineConfig, prompt: string): Promise<Answer> {
   if (cfg.engine === "openai") {
-    const data = await postJson(
-      `${OPENAI_URL()}/responses`,
-      { Authorization: `Bearer ${cfg.apiKey}` },
-      {
-        model: cfg.model,
-        input: prompt,
-        tools: [{ type: "web_search" }],
-        // The check is about what the engine says when it looks things up.
-        tool_choice: "required",
-        include: ["web_search_call.action.sources"],
-        max_output_tokens: 1200,
-      },
-    );
-    return parseOpenAi(data, cfg.model);
+    const body = {
+      model: cfg.model,
+      input: prompt,
+      tools: [{ type: "web_search" }],
+      // The check is about what the engine says when it looks things up.
+      tool_choice: "required",
+      include: ["web_search_call.action.sources"],
+      max_output_tokens: 1200,
+    };
+    const data = await postJson(`${OPENAI_URL()}/responses`, { Authorization: `Bearer ${cfg.apiKey}` }, body);
+    const answer = parseOpenAi(data, cfg.model);
+    archiveAnswer(cfg, "responses", body, data, answer);
+    return answer;
   }
+  const body = {
+    contents: [{ role: "user", parts: [{ text: prompt }] }],
+    tools: [{ google_search: {} }],
+    generationConfig: { maxOutputTokens: 1200 },
+  };
   const data = await postJson(
     `${GEMINI_URL()}/models/${encodeURIComponent(cfg.model)}:generateContent`,
     { "x-goog-api-key": cfg.apiKey },
-    {
-      contents: [{ role: "user", parts: [{ text: prompt }] }],
-      tools: [{ google_search: {} }],
-      generationConfig: { maxOutputTokens: 1200 },
-    },
+    body,
   );
-  return parseGemini(data, cfg.model);
+  const answer = parseGemini(data, cfg.model);
+  archiveAnswer(cfg, "generate_content", { model: cfg.model, ...body }, data, answer);
+  return answer;
+}
+
+/**
+ * The purchase archive (ECHORANK-DATA-ARCHIVE.md): a search-grounded answer is
+ * bought data. After the parse, never awaited, never throws. The free check
+ * has no tenant. The JSON calls below (competitor extraction, source
+ * classification) are our own analysis, not archived.
+ */
+function archiveAnswer(cfg: EngineConfig, endpoint: string, request: unknown, data: unknown, answer: Answer): void {
+  archiveLlmAnswer({
+    provider: cfg.engine,
+    endpoint,
+    request,
+    response: data,
+    costUsd: costOf(cfg.engine, cfg.model, answer.usage, true),
+    tenantId: null,
+    purpose: "free-ai-visibility-check",
+  });
 }
 
 /**

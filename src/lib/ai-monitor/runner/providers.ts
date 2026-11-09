@@ -32,6 +32,7 @@ import { TRACKING_MAX_TOKENS } from "@/ai/anthropic-request";
 import {
   SEARCH_BILLED_PROVIDERS,
   TOKEN_FREE_PROVIDERS,
+  costUsdFor,
   rateEnvName,
   ratesFor,
   searchFeeEnvName,
@@ -278,6 +279,27 @@ export async function askEngine(request: AskRequest, deps: AskDeps = {}): Promis
     // the bill and every score it produces.
     modelId: request.model,
   });
+
+  // The purchase archive (ECHORANK-DATA-ARCHIVE.md): a tracking answer is
+  // bought data. Lazy, like the adapters above (the archive is server-only),
+  // and never awaited: a failure to archive is a log line, not a failed slot.
+  void import("@/lib/purchase-archive/llm")
+    .then(({ archiveLlmAnswer }) =>
+      archiveLlmAnswer({
+        provider: "anthropic",
+        endpoint: "messages",
+        request: { model: request.model, system: ASK_SYSTEM_PROMPT, prompt: request.promptText, max_tokens: TRACKING_MAX_TOKENS },
+        response: { model: result.modelId, content: result.content, usage: { input_tokens: result.promptTokens, output_tokens: result.completionTokens } },
+        costUsd: costUsdFor("CLAUDE", result.modelId || request.model, {
+          inputTokens: result.promptTokens,
+          outputTokens: result.completionTokens,
+          cachedInputTokens: 0,
+        }).costUsd,
+        tenantId: request.tenantId ?? null,
+        purpose: "ai_tracking",
+      }),
+    )
+    .catch(() => undefined);
 
   return {
     answer: result.content,

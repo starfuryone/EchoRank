@@ -20,6 +20,8 @@ import "server-only";
 // compile error naming this file instead. Use `import type` for types.
 
 import { fixturesEnabled, loadFixture, recordingEnabled, saveFixture } from "./fixtures";
+import { archiveDataforseoResponse } from "@/lib/purchase-archive/dataforseo";
+import { runWithPurchaseContext } from "@/lib/purchase-archive/context";
 
 const API_BASE = "https://api.dataforseo.com";
 const REQUEST_TIMEOUT_MS = 60_000;
@@ -301,7 +303,18 @@ async function request<T>(
     }
   }
 
-  return parseEnvelope<T>(json, path);
+  const result = parseEnvelope<T>(json, path);
+  // THE PURCHASE ARCHIVE (ECHORANK-DATA-ARCHIVE.md). Every live DataForSEO
+  // response passes this one line, so every endpoint is archived without its
+  // call site knowing. Only a parsed success reaches it; fixture replays return
+  // above and are never archived. It returns at once and never throws: the
+  // capture runs after this function has returned the data.
+  try {
+    archiveDataforseoResponse({ method, path, body: opts.body, envelope: json });
+  } catch {
+    // The wrapper catches everything itself; this is the second guard.
+  }
+  return result;
 }
 
 /** Shared envelope → result/billing parsing (live responses and fixtures). */
@@ -384,7 +397,11 @@ export async function meteredCallResult<T>(
   }
 
   try {
-    const result = await postTask<T>(path, task);
+    // The tenant and feature ride to the purchase archive's capture.
+    const result = await runWithPurchaseContext(
+      { tenantId: ctx.tenantId, purpose: pathToFeature(path.split("/").filter(Boolean)) },
+      () => postTask<T>(path, task),
+    );
     const { billing } = result;
     await deps.record({
       tenantId: ctx.tenantId,

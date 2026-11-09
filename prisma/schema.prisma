@@ -1670,6 +1670,52 @@ model SeoApiCall {
   @@index([dataforseoTaskId])
 }
 
+/// One purchased provider response kept in the purchase archive
+/// (ECHORANK-DATA-ARCHIVE.md, src/lib/purchase-archive/). The object itself is in
+/// the private PURCHASE_ARCHIVE_BUCKET at `s3Key`; this row is its index.
+///
+/// INTERNAL ONLY: for reuse, history and cost audit. No route serves an
+/// archive object to a user, and none may.
+///
+/// The row is written BEFORE the upload (storedAt null) and stamped after it,
+/// so `dedupeKey` (unique) makes a retried or duplicate capture a no-op: the
+/// same provider task, or the same request at the same instant, is one object.
+/// Readers count only rows with storedAt set.
+///
+/// No foreign key to tenants: purchased data without personal data is kept
+/// forever, and a nullable tenantId (free tools, unattributed task reads) has
+/// nothing to point at.
+model PurchaseArchive {
+  id             String    @id @default(cuid())
+  /// echorank | gateway | echopilot
+  app            String
+  provider       String
+  /// endpointSlug(): "serp-google-organic-live-advanced"
+  endpoint       String
+  /// sha256 of the canonical scrubbed request.
+  requestHash    String
+  dedupeKey      String    @unique
+  providerTaskId String?
+  s3Key          String
+  costUsd        Decimal?  @db.Decimal(10, 6)
+  /// Gzipped object size.
+  bytes          Int
+  tenantId       String?
+  purpose        String
+  /// May contain personal data: deleted after PURCHASE_ARCHIVE_PERSONAL_MONTHS.
+  personalData   Boolean   @default(false)
+  receivedAt     DateTime
+  /// Null while the upload is in flight (or spooled); set once the object exists.
+  storedAt       DateTime?
+  createdAt      DateTime  @default(now())
+
+  @@index([provider, endpoint, requestHash, createdAt])
+  @@index([tenantId, createdAt])
+  /// Personal-data retention sweep.
+  @@index([personalData, createdAt])
+  @@map("purchase_archive")
+}
+
 /// Why a credit ledger row exists.
 ///
 /// The set is deliberately small and closed. Every movement of a credit is one

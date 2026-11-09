@@ -288,6 +288,17 @@ const DEFAULT_JOB_OPTIONS: Record<QueueName, JobsOptions> = {
     removeOnComplete: { age: REDIS_CONFIG.ttl.completedJobs },
     removeOnFail: { age: REDIS_CONFIG.ttl.failedJobs },
   },
+  // Retries are SAFE and the point: storing an object is idempotent by its
+  // index row (dedupeKey), and nothing upstream is bought — the purchase
+  // already happened. The last attempt spools instead of failing, so an
+  // outage loses nothing; the drain uploads the spool later. Completed store
+  // jobs are removed at once: each carries a gzipped body.
+  "purchase-archive": {
+    attempts: 5,
+    backoff: { type: "exponential", delay: 15_000 },
+    removeOnComplete: true,
+    removeOnFail: { age: REDIS_CONFIG.ttl.failedJobs },
+  },
 };
 
 // ─── Queue registry ───────────────────────────────────────────────────────────

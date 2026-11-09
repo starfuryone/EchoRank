@@ -299,6 +299,17 @@ export interface SiteCrawlScheduleJob {
 /** crawl-archive queue (CRAWL-ARCHIVE.md): the daily sweep, or one restore. */
 export type CrawlArchiveJob = { kind: "sweep" } | { kind: "restore"; crawlJobId: string };
 
+/**
+ * purchase-archive queue (ECHORANK-DATA-ARCHIVE.md): one captured object to
+ * store, the spool drain, the nightly manifest. `object` is
+ * src/lib/purchase-archive/spool.ts SerializedObject (inline only up to
+ * INLINE_MAX_BYTES gzipped; bigger ones ride the spool).
+ */
+export type PurchaseArchiveJob =
+  | { kind: "store"; object: import("@/lib/purchase-archive/spool").SerializedObject }
+  | { kind: "drain" }
+  | { kind: "manifest"; day?: string };
+
 export interface SiteCrawlRetentionJob {
   retention: true;
 }
@@ -470,4 +481,5 @@ export interface QueueJobMap {
   "action-agent": ActionAgentJob;
   "assistant-precompute": AssistantPrecomputeJob;
   "crawl-archive": CrawlArchiveJob;
+  "purchase-archive": PurchaseArchiveJob;
 }

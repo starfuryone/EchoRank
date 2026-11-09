@@ -168,7 +168,10 @@ export type QueueName =
   // see src/infrastructure/queue/workers/blog-agent.worker.ts.
   | "blog-agent"
   // The crawl archive (CRAWL-ARCHIVE.md): the daily sweep and restores.
-  | "crawl-archive";
+  | "crawl-archive"
+  // The purchase archive (ECHORANK-DATA-ARCHIVE.md): captured objects, the
+  // spool drain, the nightly manifest.
+  | "purchase-archive";
 
 /** All valid queue names */
 export const QUEUE_NAMES: QueueName[] = [
@@ -204,4 +207,5 @@ export const QUEUE_NAMES: QueueName[] = [
   "keyword-opportunity",
   "blog-agent",
   "crawl-archive",
+  "purchase-archive",
 ];
