@@ -24,6 +24,7 @@
 
 import type { DashLocale } from "@/lib/i18n/dashboard";
 import type { SystemBlock } from "@/lib/marketing/prompt";
+import { HEALTHCARE_REPLY_RULES } from "@/lib/review-replies/healthcare-guardrail";
 import { ALLOWED_BUSINESS_TYPES } from "./assemble";
 import type { V1Kind } from "./types";
 
@@ -245,6 +246,21 @@ export interface ReviewReplyPromptInput {
   reviewText: string;
   locale: DashLocale;
   voiceGuide: string | null;
+  /**
+   * The tenant is a healthcare practice (isHealthcareTenant). REQUIRED, not
+   * optional, so no caller can forget to decide. Adds HEALTHCARE_REPLY_RULES as
+   * the LAST system block, after the voice guide it overrides; the generator
+   * then runs enforceHealthcareReply on the result.
+   */
+  healthcare: boolean;
+}
+
+/**
+ * The reply system prompt as one string, for /api/ai/respond, which sends
+ * `system` as text. Same instruction, same healthcare block, same order.
+ */
+export function reviewReplySystemText(healthcare: boolean): string {
+  return healthcare ? `${REVIEW_REPLY_INSTRUCTION}\n\n${HEALTHCARE_REPLY_RULES}` : REVIEW_REPLY_INSTRUCTION;
 }
 
 export function buildReviewReplyPrompt(input: ReviewReplyPromptInput): {
@@ -263,6 +279,7 @@ export function buildReviewReplyPrompt(input: ReviewReplyPromptInput): {
       text: `Write in this brand's established voice:\n\n${input.voiceGuide.trim()}`,
     });
   }
+  if (input.healthcare) system.push({ type: "text", text: HEALTHCARE_REPLY_RULES });
 
   const parts = [`Business: ${input.businessName || "the business"}`, `Platform: ${input.platform}`];
   if (typeof input.rating === "number") parts.push(`Rating: ${input.rating}/5`);

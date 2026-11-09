@@ -25,7 +25,11 @@ vi.mock("@/lib/tenant", () => ({
   ACTIVE_TENANT_COOKIE: "echorank_active_tenant",
 }));
 
-vi.mock("@/lib/prisma", () => ({ prisma: {} }));
+// The respond route asks whether the tenant is a healthcare practice (the
+// reply guardrail). A plumber is not; the guardrail has its own suite.
+vi.mock("@/lib/prisma", () => ({
+  prisma: { tenant: { findFirst: async () => ({ name: "Acme Plumbing", brandProfiles: [] }) } },
+}));
 
 const requireFeature = vi.fn(async () => undefined);
 const requireQuota = vi.fn(async () => undefined);

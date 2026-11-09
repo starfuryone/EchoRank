@@ -61,6 +61,8 @@ import {
 } from "./context";
 import { buildFaqPrompt, buildReviewReplyPrompt, buildSchemaPrompt } from "./prompts";
 import { createDraft } from "./store";
+import { HEALTHCARE_GUARDRAIL, enforceHealthcareReply } from "@/lib/review-replies/healthcare-guardrail";
+import { isHealthcareTenant } from "@/lib/review-replies/tenant-category";
 import type { ActionItemDto, V1Kind } from "./types";
 
 /** Reviews drafted in one batch. */
@@ -334,6 +336,10 @@ export async function generateReviewReplies(input: GenerateInput): Promise<Gener
   }
 
   const tenant = await loadTenant(input.tenantId);
+  // Healthcare practices: the guardrail's rules join the prompt and every draft
+  // is checked, replaced by the safe fallback on any violation. Always on for
+  // those tenants; nothing in GenerateInput can turn it off.
+  const healthcare = await isHealthcareTenant(input.tenantId);
 
   // Assert once before the first call so an already-exhausted tenant is refused
   // rather than told "0 of 5 drafted".
@@ -367,11 +373,31 @@ export async function generateReviewReplies(input: GenerateInput): Promise<Gener
       reviewText: review.content,
       locale: input.locale,
       voiceGuide: tenant.voiceGuide,
+      healthcare,
     });
 
     const call = await callMarketingModel(prompt);
     await meter(input.tenantId, "review_reply", call);
     outputTokens += call.outputTokens;
+
+    let reply = call.text;
+    if (healthcare) {
+      const enforced = enforceHealthcareReply(call.text, {
+        reviewText: review.content,
+        businessName: tenant.name,
+        rating: review.rating,
+        locale: input.locale,
+      });
+      if (enforced.replaced) {
+        // The rules (e.g. "care_detail"), never the matched text: it may be
+        // health information from the review.
+        logger.info(
+          { tenantId: input.tenantId, reviewId: review.id, rules: [...new Set(enforced.violations.map((v) => v.rule))] },
+          "action agent: healthcare reply guardrail replaced a draft",
+        );
+      }
+      reply = enforced.reply;
+    }
 
     const item = await createDraft({
       tenantId: input.tenantId,
@@ -384,7 +410,8 @@ export async function generateReviewReplies(input: GenerateInput): Promise<Gener
         rating: review.rating,
         authorName: review.authorName,
         reviewExcerpt: review.content.slice(0, 5000),
-        reply: call.text,
+        reply,
+        ...(healthcare ? { guardrail: HEALTHCARE_GUARDRAIL } : {}),
       },
     });
     items.push(item);

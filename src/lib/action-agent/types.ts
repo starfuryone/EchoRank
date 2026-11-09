@@ -138,6 +138,8 @@ export const ReviewReplyDraftSchema = z.object({
    *  purged by retention. */
   reviewExcerpt: z.string().max(5000),
   reply: z.string().min(1).max(4000),
+  /** Set when the healthcare reply guardrail applied to this draft. */
+  guardrail: z.literal("healthcare-v1").optional(),
 });
 export type ReviewReplyDraft = z.infer<typeof ReviewReplyDraftSchema>;
 

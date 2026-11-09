@@ -8,8 +8,15 @@ import { cachedAiCall } from "@/lib/ai-cache";
 // posture on public replies is how that posture drifts.
 // tests/action-agent-generate.test.ts asserts this route still reads it from
 // there, and that no copy of the clauses survives in this file.
-import { REVIEW_REPLY_INSTRUCTION } from "@/lib/action-agent/prompts";
+// reviewReplySystemText() returns REVIEW_REPLY_INSTRUCTION, plus the healthcare
+// rules for a healthcare tenant.
+import { reviewReplySystemText } from "@/lib/action-agent/prompts";
 import { houseClaudeControls } from "@/ai/anthropic-request";
+// Healthcare practices: rules in the prompt, then every draft checked and
+// replaced by the safe fallback on a violation — cached drafts included, so a
+// reply cached before the guardrail existed is still checked on the way out.
+import { HEALTHCARE_GUARDRAIL, enforceHealthcareReply } from "@/lib/review-replies/healthcare-guardrail";
+import { isHealthcareTenant } from "@/lib/review-replies/tenant-category";
 
 // House policy: claude-haiku-5-5 for every Anthropic call that is not a
 // tracking answer. AI_RESPOND_MODEL still overrides; nothing sets it.
@@ -49,7 +56,9 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const system = REVIEW_REPLY_INSTRUCTION;
+  // Always on for healthcare tenants: nothing in the request body can turn it off.
+  const healthcare = await isHealthcareTenant(auth.tenantId);
+  const system = reviewReplySystemText(healthcare);
 
   const user =
     `Business: ${body.businessName || "the business"}\n` +
@@ -76,6 +85,8 @@ export async function POST(req: NextRequest) {
         businessName: body.businessName ?? null,
         tone: body.tone ?? null,
         model: MODEL,
+        // A guarded draft is a different request from an unguarded one.
+        guardrail: healthcare ? HEALTHCARE_GUARDRAIL : null,
       },
       fresh: (body as { fresh?: boolean }).fresh === true,
     },
@@ -117,6 +128,16 @@ export async function POST(req: NextRequest) {
       );
     }
     throw err;
+  }
+
+  if (healthcare) {
+    draft = enforceHealthcareReply(draft, {
+      reviewText,
+      businessName: body.businessName ?? null,
+      rating: typeof body.rating === "number" ? body.rating : null,
+      locale: "en",
+    }).reply;
+    return NextResponse.json({ draft, model: MODEL, cached, guardrail: HEALTHCARE_GUARDRAIL });
   }
 
   return NextResponse.json({ draft, model: MODEL, cached });

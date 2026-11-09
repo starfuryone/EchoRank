@@ -363,6 +363,7 @@ describe("prompts", () => {
       reviewText: "Great.",
       locale: "de-CH",
       voiceGuide: null,
+      healthcare: false,
     });
     expect(de.userMessage).toContain("Swiss High German");
     expect(de.userMessage).toContain("ss, never ß");
@@ -395,8 +396,9 @@ describe("the review-reply instruction", () => {
       join(process.cwd(), "src/app/api/ai/respond/route.ts"),
       "utf8",
     );
-    expect(source).toContain("REVIEW_REPLY_INSTRUCTION");
-    expect(source).toContain("@/lib/action-agent/prompts");
+    // Through reviewReplySystemText(), which returns REVIEW_REPLY_INSTRUCTION
+    // (plus the healthcare rules for a healthcare tenant).
+    expect(source).toMatch(/import \{ reviewReplySystemText \} from "@\/lib\/action-agent\/prompts"/);
     expect(source).not.toContain("never admit legal fault");
   });
 });
