@@ -132,6 +132,10 @@ const SECRETS = {
   PURCHASE_ARCHIVE_SECRET: "spaces-secret-ZZZZZZZZZZZZ",
 };
 
+function asEnv(o: Record<string, string>): NodeJS.ProcessEnv {
+  return o as unknown as NodeJS.ProcessEnv;
+}
+
 function gunzipJson(buf: Buffer): Record<string, unknown> {
   return JSON.parse(gunzipSync(buf).toString("utf8"));
 }
@@ -248,7 +252,7 @@ describe("credentials never appear in an object or index row", () => {
         const o = await prepareObject(
           "echorank",
           { provider: shape.provider, endpoint: shape.endpoint, request: shape.request(secret), response: { echo: secret, nested: [secret] }, costUsd: 0.01, providerTaskId: null, tenantId: "t", purpose: "p" },
-          { personalData: false, secrets: liveSecrets({ ...SECRETS } as NodeJS.ProcessEnv) },
+          { personalData: false, secrets: liveSecrets(asEnv(SECRETS)) },
         );
         const text = gunzipSync(o.gz).toString("utf8");
         expect(text).not.toContain(secret);
@@ -264,12 +268,12 @@ describe("credentials never appear in an object or index row", () => {
 describe("config", () => {
   it("reads PURCHASE_ARCHIVE_* on its own; SPACES_ARCHIVE_* never stands in", () => {
     const spaces = { SPACES_ARCHIVE_ENDPOINT: "e", SPACES_ARCHIVE_REGION: "r", SPACES_ARCHIVE_BUCKET: "b", SPACES_ARCHIVE_KEY: "k", SPACES_ARCHIVE_SECRET: "s" };
-    expect(purchaseArchiveConfig(spaces as NodeJS.ProcessEnv)).toBeNull();
+    expect(purchaseArchiveConfig(asEnv(spaces))).toBeNull();
     const full = { PURCHASE_ARCHIVE_ENDPOINT: "e", PURCHASE_ARCHIVE_REGION: "r", PURCHASE_ARCHIVE_BUCKET: "echorank-seodata", PURCHASE_ARCHIVE_KEY: "k", PURCHASE_ARCHIVE_SECRET: "s" };
-    expect(purchaseArchiveConfig(full as NodeJS.ProcessEnv)?.bucket).toBe("echorank-seodata");
-    expect(purchaseArchiveEnabled(full as NodeJS.ProcessEnv)).toBe(true);
-    expect(purchaseArchiveEnabled({ ...full, PURCHASE_ARCHIVE_ENABLED: "false" } as NodeJS.ProcessEnv)).toBe(false);
-    expect(purchaseArchiveEnabled({} as NodeJS.ProcessEnv)).toBe(false);
+    expect(purchaseArchiveConfig(asEnv(full))?.bucket).toBe("echorank-seodata");
+    expect(purchaseArchiveEnabled(asEnv(full))).toBe(true);
+    expect(purchaseArchiveEnabled(asEnv({ ...full, PURCHASE_ARCHIVE_ENABLED: "false" }))).toBe(false);
+    expect(purchaseArchiveEnabled(asEnv({}))).toBe(false);
   });
 
   it("excludes Maps, Local Finder and Business Data; skips free and acknowledgement calls; flags personal data", () => {
@@ -534,7 +538,17 @@ describe("purchase-archive worker", () => {
     const down = fakeStore({ failPut: () => true });
     const { index } = fakeIndex();
     const spooled: PreparedObject[] = [];
-    const deps = { store: () => down.store, index, spool: async (o: PreparedObject) => (spooled.push(o), "f"), claimAlertDay: async () => true, post: async () => true, now: () => new Date() };
+    const deps = {
+      store: () => down.store,
+      index,
+      spool: async (o: PreparedObject) => (spooled.push(o), "f"),
+      claimAlertDay: async () => true,
+      post: async () => true,
+      now: () => new Date(),
+      pageStore: () => null,
+      drainPages: async () => ({ uploaded: 0, remaining: 0, failed: false }),
+      pageDir: () => tmp(),
+    };
     const o = serializeObject(await obj(1_700_000_000_000));
     const job = (attemptsMade: number) => ({ data: { kind: "store", object: o }, opts: { attempts: 5 }, attemptsMade }) as never;
     await expect(processPurchaseArchiveJob(job(0), deps)).rejects.toThrow("Spaces unreachable");

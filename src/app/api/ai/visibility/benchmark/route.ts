@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireTenant } from "@/lib/tenant";
 import { requireFeature, enforcementErrorResponse } from "@/lib/plan-enforcement";
 import { sidecarPost } from "@/lib/av-sidecar";
+import { archiveSidecarPages, sidecarArchiveBody, takeSidecarArchive } from "@/lib/page-archive/sidecar";
 import { scoreVersionOf } from "@/lib/visibility-score";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/generated/prisma";
@@ -85,7 +86,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "A valid url is required." }, { status: 400 });
     }
 
-    const { status, data } = await sidecarPost<AuditResult>("/audit", { url });
+    const { status, data } = await sidecarPost<AuditResult>("/audit", { url, ...sidecarArchiveBody() });
+    // The pages read (page snapshots on): out before the response is stored or returned.
+    const pages = takeSidecarArchive(data);
     if (status !== 200 || typeof data.score !== "number") {
       return NextResponse.json(
         { error: data.error || "Could not audit that site." },
@@ -114,7 +117,7 @@ export async function POST(req: Request) {
       );
     }
 
-    await prisma.visibilityAudit.create({
+    const auditRow = await prisma.visibilityAudit.create({
       data: {
         tenantId,
         monitorId: null,
@@ -126,7 +129,9 @@ export async function POST(req: Request) {
         bots: bots as unknown as Prisma.InputJsonValue,
         raw: data as unknown as Prisma.InputJsonValue,
       },
+      select: { id: true },
     });
+    if (pages) archiveSidecarPages({ tenantId, source: "audit", runId: auditRow.id, archive: pages });
 
     distinct.add(canonUrl);
     return NextResponse.json({

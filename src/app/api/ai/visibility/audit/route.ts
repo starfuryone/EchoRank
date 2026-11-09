@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireTenant } from "@/lib/tenant";
 import { enforcementErrorResponse } from "@/lib/plan-enforcement";
 import { sidecarPost } from "@/lib/av-sidecar";
+import { archiveSidecarPages, sidecarArchiveBody, takeSidecarArchive } from "@/lib/page-archive/sidecar";
 import { hydratableAudit } from "@/lib/visibility-audit-hydrate";
 import { scoreVersionOf } from "@/lib/visibility-score";
 import { prisma } from "@/lib/prisma";
@@ -38,7 +39,7 @@ async function persistAudit(tenantId: string, url: string, data: AuditResponse) 
       lastGrade: data.grade ?? "?",
     },
   });
-  await prisma.visibilityAudit.create({
+  const row = await prisma.visibilityAudit.create({
     data: {
       tenantId,
       monitorId: monitor.id,
@@ -51,6 +52,7 @@ async function persistAudit(tenantId: string, url: string, data: AuditResponse) 
       raw: data as unknown as Prisma.InputJsonValue,
     },
   });
+  return row.id;
 }
 
 /**
@@ -101,16 +103,23 @@ export async function POST(request: NextRequest) {
     const crawl = body?.crawl !== false;
     const persist = body?.persist === true;
 
-    const { status, data } = await sidecarPost<AuditResponse>("/audit", { url, crawl });
+    const { status, data } = await sidecarPost<AuditResponse>("/audit", { url, crawl, ...(persist ? sidecarArchiveBody() : {}) });
+    // The pages the sidecar read (page snapshots on): out of the response
+    // before it is stored or returned (ECHORANK-DATA-ARCHIVE.md 1b).
+    const pages = takeSidecarArchive(data);
 
+    let runId: string | null = null;
     if (persist && status === 200 && typeof data.score === "number" && !data.error) {
       // Best-effort: a failed write must not eat a successful audit result.
       try {
-        await persistAudit(membership.tenantId, url, data);
+        runId = await persistAudit(membership.tenantId, url, data);
       } catch (err) {
         console.error("Failed to persist visibility audit:", err);
       }
     }
+    // Stored under the audit row's id; an unpersisted audit has no row, and its
+    // pages are not kept (there would be nothing to retain or delete them by).
+    if (runId) archiveSidecarPages({ tenantId: membership.tenantId, source: "audit", runId, archive: pages });
 
     return NextResponse.json(data, { status });
   } catch (error) {

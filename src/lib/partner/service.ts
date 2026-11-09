@@ -10,6 +10,7 @@ import "server-only";
 import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@/generated/prisma";
 import { sidecarPost } from "@/lib/av-sidecar";
+import { archiveSidecarPages, sidecarArchiveBody, takeSidecarArchive } from "@/lib/page-archive/sidecar";
 import { TRACKING_MAX_TOKENS } from "@/ai/anthropic-request";
 import { guardPublicUrl } from "@/lib/public-url";
 import { scoreVersionOf } from "@/lib/visibility-score";
@@ -115,9 +116,11 @@ type AuditOutcome = { ok: true; audit: PartnerAudit } | { ok: false; status: num
 async function auditOne(ctx: PartnerContext, url: string, mode: PartnerAuditMode): Promise<AuditOutcome> {
   const { status, data } = await sidecarPost<SidecarAuditResult>(
     "/audit",
-    { url, crawl: mode === "full" },
+    { url, crawl: mode === "full", ...sidecarArchiveBody() },
     { timeoutMs: AUDIT_TIMEOUT_MS[mode] },
   );
+  // The pages read (page snapshots on): out before the response is stored or returned.
+  const pages = takeSidecarArchive(data);
   if (status !== 200 || typeof data.score !== "number" || data.error) {
     const msg = data.error ?? `sidecar ${status}`;
     // The sidecar answers 502 "Couldn't fetch <url> (...)" when the SITE is down — the
@@ -140,6 +143,7 @@ async function auditOne(ctx: PartnerContext, url: string, mode: PartnerAuditMode
     },
     select: { id: true, url: true, score: true, grade: true, scoreVersion: true, raw: true, createdAt: true },
   });
+  if (pages) archiveSidecarPages({ tenantId: ctx.tenantId, source: "audit", runId: row.id, archive: pages });
   return { ok: true, audit: toPartnerAudit(row, mode) };
 }
 

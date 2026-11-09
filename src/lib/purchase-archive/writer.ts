@@ -96,6 +96,8 @@ export async function drainSpool(deps: { store: ObjectStore; index: ArchiveIndex
 
 export interface SpoolAlertDeps {
   dir?: string;
+  /** More spool directories counted into the same thresholds (the page spool). */
+  extraDirs?: string[];
   /** SET NX for today's alert; true when this call claimed it. */
   claimToday: (day: string) => Promise<boolean>;
   post: (line: string) => Promise<boolean>;
@@ -104,12 +106,17 @@ export interface SpoolAlertDeps {
 
 /** At most one alert per UTC day, only past 1,000 files or 1 GB. */
 export async function checkSpoolAlert(deps: SpoolAlertDeps): Promise<{ alerted: boolean; files: number; bytes: number }> {
-  const { files, bytes } = await spoolStats(deps.dir);
+  let { files, bytes } = await spoolStats(deps.dir);
+  for (const d of deps.extraDirs ?? []) {
+    const s = await spoolStats(d);
+    files += s.files;
+    bytes += s.bytes;
+  }
   if (files <= SPOOL_ALERT_FILES && bytes <= SPOOL_ALERT_BYTES) return { alerted: false, files, bytes };
   const day = (deps.now?.() ?? new Date()).toISOString().slice(0, 10);
   if (!(await deps.claimToday(day))) return { alerted: false, files, bytes };
   const gb = (bytes / 1024 ** 3).toFixed(2);
-  await deps.post(`Echorank purchase archive: the spool holds ${files} objects (${gb} GB) waiting for Spaces. Check PURCHASE_ARCHIVE_* and the bucket.`);
+  await deps.post(`Echorank archive: the spool holds ${files} objects (${gb} GB) waiting for Spaces. Check PURCHASE_ARCHIVE_* / SPACES_ARCHIVE_* and the buckets.`);
   return { alerted: true, files, bytes };
 }
 

@@ -157,6 +157,15 @@ export function crawlExportPrefix(tenantId: string, crawlId: string): string {
   return `${tenantPrefix(tenantId)}exports/${seg(crawlId)}/`;
 }
 
+/** Page snapshots (ECHORANK-DATA-ARCHIVE.md 1b): where a run's pages live. */
+export type PageSource = "crawl" | "ai-lens" | "audit";
+export const PAGE_SOURCES: readonly PageSource[] = ["crawl", "ai-lens", "audit"];
+
+export function pagesPrefix(tenantId: string, source: PageSource, runId: string): string {
+  if (!PAGE_SOURCES.includes(source)) throw new InvalidKeySegmentError();
+  return `${tenantPrefix(tenantId)}pages/${source}/${seg(runId)}/`;
+}
+
 // ── The store ────────────────────────────────────────────────────────────
 
 export interface ObjectHead {

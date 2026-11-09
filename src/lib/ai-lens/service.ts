@@ -16,6 +16,7 @@
 import type { AiLensAnalysis, PlanType, Prisma } from "@/generated/prisma";
 import { prisma } from "@/lib/prisma";
 import { sidecarPost } from "@/lib/av-sidecar";
+import { archiveSidecarPages, sidecarArchiveBody, takeSidecarArchive, type SidecarArchive } from "@/lib/page-archive/sidecar";
 import { AI_LENS_CACHE_TTL_MS, aiLensVerdict } from "./options";
 import {
   aiLensLimit,
@@ -115,11 +116,15 @@ export async function runLensAnalysis(
   const reservation = await reserveAiLensAnalysis(tenantId, plan, now);
 
   let result: SidecarLensResult;
+  let pages: SidecarArchive | null = null;
   try {
     const { status, data } = await sidecarPost<SidecarLensResult & { error?: string }>(
       "/internal/ai-lens",
-      { url },
+      // Page snapshots on: the sidecar also returns the raw and rendered HTML.
+      { url, ...sidecarArchiveBody() },
     );
+    // Taken out before anything else reads the response (ECHORANK-DATA-ARCHIVE.md 1b).
+    pages = takeSidecarArchive(data);
     if (status !== 200 || !data || typeof data.gap_percent !== "number") {
       const message =
         (data as { error?: string } | null)?.error ??
@@ -159,6 +164,10 @@ export async function runLensAnalysis(
       } as unknown as Prisma.InputJsonValue,
     },
   });
+
+  // The page archive: both documents as fetched, under this analysis's id.
+  // Background, never awaited, never thrown.
+  if (pages) archiveSidecarPages({ tenantId, source: "ai-lens", runId: row.id, archive: pages });
 
   // Capture path A for the Historical tool. The rendered markdown is already in
   // hand and was about to be discarded; persisting it costs one hash and, only

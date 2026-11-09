@@ -250,6 +250,16 @@ export async function backfillIssueJobIds(crawlId: string): Promise<number> {
     WHERE p."id" = i."crawlPageId" AND p."crawlJobId" = ${crawlId} AND i."crawlJobId" IS NULL`;
 }
 
+/**
+ * Every table of one crawl as NDJSON + manifest under `prefix` (anything there
+ * before is deleted first). The archive's step 2, and the page archive's copy
+ * of a crawl at completion (ECHORANK-DATA-ARCHIVE.md 1b: …/pages/crawl/<id>/tables/),
+ * which leaves the rows where they are.
+ */
+export async function writeCrawlTables(store: ObjectStore, crawl: { id: string; tenantId: string }, prefix: string): Promise<Manifest> {
+  return freshArchive(store, crawl, prefix);
+}
+
 async function freshArchive(store: ObjectStore, crawl: { id: string; tenantId: string }, prefix: string): Promise<Manifest> {
   // Leftovers of an older or interrupted archive are not trusted.
   await deleteArchiveObjects(store, prefix);

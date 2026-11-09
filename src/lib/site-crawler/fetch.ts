@@ -114,9 +114,27 @@ export interface FetchOutcome {
   headers: Record<string, string>;
   /** Body bytes read; null when the body was not read. */
   bytes: number | null;
+  /**
+   * Every header of the final response, lowercased, for the page archive
+   * (ECHORANK-DATA-ARCHIVE.md 1b). Set-Cookie and auth headers are dropped.
+   * Only on a final (non-redirect) response.
+   */
+  responseHeaders?: Record<string, string>;
   fetchMs: number;
   /** Set when the request never produced a response at all. */
   error: string | null;
+}
+
+const ARCHIVE_DROPPED_HEADERS = new Set(["set-cookie", "cookie", "authorization", "proxy-authorization", "www-authenticate"]);
+
+/** The final response's headers for the page archive, without cookies or auth. */
+export function archiveHeaders(h: Headers): Record<string, string> {
+  const out: Record<string, string> = {};
+  h.forEach((value, name) => {
+    const n = name.toLowerCase();
+    if (!ARCHIVE_DROPPED_HEADERS.has(n)) out[n] = value.slice(0, 2_000);
+  });
+  return out;
 }
 
 /** True for a Content-Type this crawler will parse. */
@@ -244,6 +262,7 @@ export async function fetchPage(url: string, opts: FetchOptions = {}): Promise<F
         html: body?.text ?? null,
         xRobotsTag,
         headers: pickRuleHeaders((n) => res.headers.get(n)),
+        responseHeaders: archiveHeaders(res.headers),
         bytes: body?.bytes ?? null,
         fetchMs: Date.now() - started,
         error: body === null ? "response_too_large" : null,

@@ -6,6 +6,7 @@ import { getQueue, addJob } from "@/infrastructure/queue/registry";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/generated/prisma";
 import { sidecarPost } from "@/lib/av-sidecar";
+import { archiveSidecarPages, sidecarArchiveBody, takeSidecarArchive } from "@/lib/page-archive/sidecar";
 import { meteringService } from "@/infrastructure/metering/service";
 import {
   sendVisibilityAlert,
@@ -138,7 +139,9 @@ export async function processMonitorRun(monitorId: string): Promise<void> {
     return;
   }
 
-  const { status, data } = await sidecarPost<AuditResult>("/audit", { url: monitor.url });
+  const { status, data } = await sidecarPost<AuditResult>("/audit", { url: monitor.url, ...sidecarArchiveBody() });
+  // The pages read (page snapshots on): out before the response is stored.
+  const pages = takeSidecarArchive(data);
   if (status !== 200 || typeof data.score !== "number") {
     logger.error(
       { monitorId, url: monitor.url, status, error: data.error, queue: QUEUE_NAME },
@@ -161,7 +164,7 @@ export async function processMonitorRun(monitorId: string): Promise<void> {
     select: { score: true, bots: true, scoreVersion: true },
   });
 
-  await prisma.visibilityAudit.create({
+  const auditRow = await prisma.visibilityAudit.create({
     data: {
       tenantId: monitor.tenantId,
       monitorId: monitor.id,
@@ -173,7 +176,9 @@ export async function processMonitorRun(monitorId: string): Promise<void> {
       bots: newBots as unknown as Prisma.InputJsonValue,
       raw: data as unknown as Prisma.InputJsonValue,
     },
+    select: { id: true },
   });
+  if (pages) archiveSidecarPages({ tenantId: monitor.tenantId, source: "audit", runId: auditRow.id, archive: pages });
 
   await prisma.visibilityMonitor.update({
     where: { id: monitor.id },

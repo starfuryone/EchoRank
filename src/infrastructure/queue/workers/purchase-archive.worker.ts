@@ -6,9 +6,10 @@
 //             The LAST attempt spools the object instead of failing, so a
 //             Spaces outage never loses a purchase.
 //   drain     repeatable, every 10 min (cron, never `every`; see
-//             crawl-archive.worker.ts): uploads the spool oldest first, stops
-//             at the first failure, then raises the once-a-day spool alert
-//             (#echorank-alerts) past 1,000 files or 1 GB.
+//             crawl-archive.worker.ts): uploads both spools (purchases, and
+//             the page snapshots of src/lib/page-archive/) oldest first,
+//             stopping at the first failure, then raises the once-a-day spool
+//             alert (#echorank-alerts) past 1,000 files or 1 GB in total.
 //   manifest  repeatable, 00:20 UTC: v1/echorank/_manifests/<yesterday>.ndjson.gz
 //             from the index rows.
 //
@@ -26,8 +27,10 @@ import { purchaseStore } from "@/lib/purchase-archive/store";
 import { prismaArchiveIndex } from "@/lib/purchase-archive/prisma-index";
 import { deserializeObject, writeSpool } from "@/lib/purchase-archive/spool";
 import { checkSpoolAlert, drainSpool, storeObject, writeManifest, type ArchiveIndex } from "@/lib/purchase-archive/writer";
-import type { ObjectStore } from "@/lib/spaces/client";
+import { archiveStore, type ObjectStore } from "@/lib/spaces/client";
 import { postMatrixAlert } from "@/lib/matrix/alert";
+import { drainPageSpool } from "@/lib/page-archive/spool";
+import { pageSpoolDir } from "@/lib/page-archive/config";
 
 export const DRAIN_JOB = "drain";
 export const MANIFEST_JOB = "manifest";
@@ -52,9 +55,16 @@ export interface PurchaseWorkerDeps {
   claimAlertDay: (day: string) => Promise<boolean>;
   post: (line: string) => Promise<boolean>;
   now: () => Date;
+  /** The page-snapshot spool (src/lib/page-archive/spool.ts), drained by the same job. */
+  pageStore: () => ObjectStore | null;
+  drainPages: (store: ObjectStore) => Promise<{ uploaded: number; remaining: number; failed: boolean }>;
+  pageDir: () => string;
 }
 
 export const defaultPurchaseWorkerDeps: PurchaseWorkerDeps = {
+  pageStore: () => archiveStore(),
+  drainPages: (s) => drainPageSpool(s),
+  pageDir: () => pageSpoolDir(),
   store: () => purchaseStore(),
   index: prismaArchiveIndex,
   spool: writeSpool,
@@ -89,14 +99,18 @@ export async function processPurchaseArchiveJob(job: Job<PurchaseArchiveJob>, de
   }
 
   const store = deps.store();
-  if (!store) return { skipped: "not_configured" };
 
   if (data.kind === "drain") {
-    const drained = await drainSpool({ store, index: deps.index });
-    const alert = await checkSpoolAlert({ claimToday: deps.claimAlertDay, post: deps.post, now: deps.now });
-    if (drained.uploaded || drained.failed) logger.info({ ...drained, spool: alert }, "purchase-archive: spool drain");
-    return { ...drained, alert };
+    // Both spools: purchases (PURCHASE_ARCHIVE_*) and page snapshots (SPACES_ARCHIVE_*).
+    const drained = store ? await drainSpool({ store, index: deps.index }) : null;
+    const pageStore = deps.pageStore();
+    const pages = pageStore ? await deps.drainPages(pageStore) : null;
+    const alert = await checkSpoolAlert({ claimToday: deps.claimAlertDay, post: deps.post, now: deps.now, extraDirs: [deps.pageDir()] });
+    if (drained?.uploaded || drained?.failed || pages?.uploaded || pages?.failed) logger.info({ purchases: drained, pages, spool: alert }, "archive: spool drain");
+    return { purchases: drained, pages, alert };
   }
+
+  if (!store) return { skipped: "not_configured" };
 
   // manifest: yesterday (UTC) unless a day is given.
   const day = data.day ? new Date(`${data.day}T00:00:00Z`) : new Date(deps.now().getTime() - 86_400_000);

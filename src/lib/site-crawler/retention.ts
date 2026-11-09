@@ -32,7 +32,14 @@ import { logger } from "@/infrastructure/observability/logger";
 import { RETENTION_BATCH_ROWS, SITE_DEFAULTS_STALE_DAYS } from "./constants";
 import { effectiveCaps } from "./tenant-caps";
 import { FREE_CRAWL_RETENTION_DAYS } from "./free-limits";
-import { archiveStore, type ObjectStore } from "@/lib/spaces/client";
+import { archiveStore, pagesPrefix, type ObjectStore } from "@/lib/spaces/client";
+
+/** Every object under a prefix. Returns how many. */
+export async function deletePrefix(store: ObjectStore, prefix: string): Promise<number> {
+  const keys: string[] = [];
+  for await (const o of store.list(prefix)) keys.push(o.key);
+  return keys.length ? store.deleteKeys(keys) : 0;
+}
 
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -107,7 +114,7 @@ export async function purgeFreeCrawls(now: Date = new Date()): Promise<number> {
  * deleted, or null when skipped.
  */
 export async function purgeRetainedOut(
-  crawl: { id: string; storageState?: string | null; archiveKeyPrefix?: string | null },
+  crawl: { id: string; tenantId?: string; storageState?: string | null; archiveKeyPrefix?: string | null },
   store: ObjectStore | null,
 ): Promise<number | null> {
   if (crawl.storageState === "ARCHIVING" || crawl.storageState === "RESTORING") return null;
@@ -120,6 +127,10 @@ export async function purgeRetainedOut(
     for await (const o of store.list(crawl.archiveKeyPrefix)) keys.push(o.key);
     if (keys.length) await store.deleteKeys(keys);
   }
+  // The page archive (ECHORANK-DATA-ARCHIVE.md 1b): a crawl that leaves
+  // retention takes its page snapshots and table copy with it. Pages are only
+  // ever written with the store configured, so no store means none to delete.
+  if (store && crawl.tenantId) await deletePrefix(store, pagesPrefix(crawl.tenantId, "crawl", crawl.id));
   const rows = await purgeCrawlData(crawl.id);
   if (crawl.archiveKeyPrefix || (crawl.storageState && crawl.storageState !== "HOT")) {
     await prisma.crawlJob.update({ where: { id: crawl.id }, data: { storageState: "HOT", archiveKeyPrefix: null, archiveBytes: null } });
@@ -145,7 +156,7 @@ export async function runCrawlRetention(now: Date = new Date()): Promise<Retenti
     if (!tenant || tenant.source === "free") continue;
     const crawls = await prisma.crawlJob.findMany({
       where: { tenantId, dataPurgedAt: null, status: { in: ["COMPLETED", "FAILED", "CANCELLED"] } },
-      select: { id: true, status: true, pinned: true, finishedAt: true, createdAt: true, storageState: true, archiveKeyPrefix: true },
+      select: { id: true, tenantId: true, status: true, pinned: true, finishedAt: true, createdAt: true, storageState: true, archiveKeyPrefix: true },
     });
     const byId = new Map(crawls.map((c) => [c.id, c]));
     // Phase 3d-A: a staff override of crawls kept (tenant-caps.ts) replaces the plan's.

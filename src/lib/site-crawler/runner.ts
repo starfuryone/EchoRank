@@ -57,6 +57,9 @@ import { snippetCode } from "./js-snippets";
 import { ampValidator, validateAmp } from "./amp-validator";
 import { renderedOnlyLinks } from "@/lib/crawl-rules";
 import { fetchRobots, type RobotsRules } from "./robots";
+import { closeCrawlSnapshots, openCrawlSnapshots } from "@/lib/page-archive/crawl";
+import type { PageRunWriter } from "@/lib/page-archive/writer";
+import { writeCrawlTables } from "./archive/engine";
 import { isFetchableUrl, normalizeCrawlUrl } from "./url";
 import type { RedirectHop } from "./fetch";
 import { resolveLinkGraph } from "./link-graph";
@@ -112,6 +115,8 @@ interface CrawlCtx {
   loggedIn: boolean;
   /** Phase 4g: keep each page's visible text (AI prompts or semantic duplicates opted in). */
   keepText: boolean;
+  /** The page archive (ECHORANK-DATA-ARCHIVE.md 1b); null when off. add() never waits. */
+  snapshots: PageRunWriter | null;
 }
 
 /** The job's stored config, decrypted; the defaults for a pre-4a job. */
@@ -246,6 +251,10 @@ export async function runCrawl({
   // Released in the finally below: the dictionaries (600 MB for French) are
   // dropped once no crawl in this process holds them.
   const releaseSpelling = acquireSpelling();
+  // The page archive (ECHORANK-DATA-ARCHIVE.md 1b): every page fetched, copied
+  // to Spaces as the crawl goes. Null when off, unconfigured, or the free crawler.
+  const archived = openCrawlSnapshots({ id: jobId, tenantId: job.tenantId, free });
+  const snapshots = archived?.writer ?? null;
 
   try {
     await prisma.crawlJob.update({
@@ -393,6 +402,7 @@ export async function runCrawl({
       amp: flag("crawl.amp") ? () => ampValidator() : null,
       loggedIn: jar !== null,
       keepText: Boolean((cfg.ai && flag("crawl.ai")) || (cfg.semantic && flag("crawl.semantic"))),
+      snapshots,
     };
 
     for (;;) {
@@ -500,6 +510,10 @@ export async function runCrawl({
       )
       .catch(() => {});
   }
+
+  // The page archive: the last uploads, the manifest, and (COMPLETED) a copy
+  // of the tables. After the terminal status, so the crawl is done on screen.
+  if (archived) await closeCrawlSnapshots(archived, { id: jobId, tenantId: job.tenantId, status }, writeCrawlTables);
 
   // Research Log — COMPLETED crawls only, including cap- and time-capped ones
   // (a partial crawl's findings are still findings, which is the same call the
@@ -693,8 +707,24 @@ async function crawlOne(item: FrontierItem, ctx: CrawlCtx): Promise<PendingPage>
   if (extract && ex) facts.custom = customFacts(extract, ex);
   await attachHeadChecks(facts, rootUrl, head);
   if (robotsTest) facts.robotsTest = judgeDraft(robots, robotsTest, item.url);
-  const rendered = await render.maybeRender(facts);
+  const renderOut = ctx.snapshots ? await render.maybeRenderWithHtml(facts) : null;
+  const rendered = ctx.snapshots ? (renderOut?.facts ?? null) : await render.maybeRender(facts);
   if (rendered) facts.render = rendered;
+  // The page archive: a copy of what was fetched, queued and never awaited.
+  // A logged-in crawl keeps metadata only (owner's decision 2026-11-09);
+  // a non-HTML body is never read, so it is metadata only too.
+  ctx.snapshots?.add({
+    url: item.url,
+    finalUrl: res.finalUrl,
+    status: res.statusCode,
+    contentType: res.contentType,
+    headers: res.responseHeaders ?? res.headers,
+    fetchedAt: new Date().toISOString(),
+    raw: isHtml ? { html: res.html! } : null,
+    rendered: renderOut?.html ? { html: renderOut.html } : null,
+    renderedStatus: renderOut?.status ?? null,
+    skipped: ctx.loggedIn ? "login_crawl" : isHtml ? null : res.statusCode === null ? "fetch_failed" : "not_html",
+  });
   // Phase 4e: an AMP document is validated on its raw HTML, as AMP caches see it.
   if (ctx.amp && facts.html?.isAmp && isHtml) {
     const validator = await ctx.amp();

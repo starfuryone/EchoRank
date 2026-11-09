@@ -40,6 +40,9 @@ import { getStripe } from "@/lib/stripe/client";
 import { sendMail } from "@/lib/mailer";
 import { getRedisConnection } from "@/infrastructure/redis/connection";
 import { deleteSnapshotObject, isSpacesConfigured } from "@/lib/historical/spaces";
+import { archiveStore, tenantPrefix } from "@/lib/spaces/client";
+import { deletePrefix } from "@/lib/site-crawler/retention";
+import { purchaseStore } from "@/lib/purchase-archive/store";
 import { logger } from "@/infrastructure/observability/logger";
 
 const log = logger.child({ module: "data-deletion" });
@@ -178,6 +181,30 @@ export async function deleteWorkspace(tenantId: string): Promise<Record<string, 
       await deleteSnapshotObject(key).then(() => n++, (err) => log.warn({ err }, "snapshot object delete failed"));
     }
     out["spaces.snapshots"] = n;
+  }
+
+  // The crawl archive's bucket: everything under tenants/<tenantId>/ — page
+  // snapshots and crawl table copies (ECHORANK-DATA-ARCHIVE.md 1b), archived
+  // crawls and generated exports. A failure is logged and the deletion goes on.
+  const archive = archiveStore();
+  if (archive) {
+    try {
+      out["spaces.archive"] = await deletePrefix(archive, tenantPrefix(tenantId));
+    } catch (err) {
+      log.warn({ err }, "archive objects delete failed");
+    }
+  }
+
+  // The purchase archive: this workspace's purchased responses, objects before
+  // their purchase_archive rows (the generic sweep below deletes the rows).
+  const purchases = purchaseStore();
+  if (purchases) {
+    const keys = (await prisma.purchaseArchive.findMany({ where: { tenantId }, select: { s3Key: true } })).map((r) => r.s3Key);
+    try {
+      out["spaces.purchases"] = keys.length ? await purchases.deleteKeys(keys) : 0;
+    } catch (err) {
+      log.warn({ err }, "purchase archive objects delete failed");
+    }
   }
 
   for (const model of modelsWithoutFk("tenantId", "Tenant")) {

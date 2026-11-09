@@ -141,6 +141,14 @@ export class RenderBudget {
 
   /** Render this page if the mode picks it and the ceiling allows. Null otherwise. */
   async maybeRender(facts: PageFacts): Promise<RenderFacts | null> {
+    return (await this.maybeRenderWithHtml(facts))?.facts ?? null;
+  }
+
+  /**
+   * maybeRender, plus the rendered document itself (on-site only), for the page
+   * archive (ECHORANK-DATA-ARCHIVE.md 1b). The facts are the same object.
+   */
+  async maybeRenderWithHtml(facts: PageFacts): Promise<{ facts: RenderFacts; html: string | null; status: number | null } | null> {
     if (!this.enabled || this.stopped || this.reserved >= this.cap || !wantsRender(this.mode, facts)) return null;
     // Reserved synchronously, before waiting: four fetch workers can reach
     // here at once and the ceiling must hold across them.
@@ -150,7 +158,7 @@ export class RenderBudget {
     return turn;
   }
 
-  private async renderOne(facts: PageFacts): Promise<RenderFacts | null> {
+  private async renderOne(facts: PageFacts): Promise<{ facts: RenderFacts; html: string | null; status: number | null } | null> {
     if (this.stopped) return null;
     const res = await this.call(facts.finalUrl);
     if (!res) {
@@ -163,6 +171,6 @@ export class RenderBudget {
     }
     this.failuresInARow = 0;
     this.rendered++;
-    return toRenderFacts(res, facts.rootUrl);
+    return { facts: toRenderFacts(res, facts.rootUrl), html: res.html !== null && !res.offSite ? res.html : null, status: res.status };
   }
 }
