@@ -21,7 +21,10 @@ import { checkExtractorExpr } from "./extraction";
 import { featureCapsForPlan, getCrawlQuota, metricCapsForPlan, scheduleCapsForPlan } from "./quota";
 import { validateRootUrl } from "./url";
 import { startCrawl } from "./service";
-import { CrawlQuotaExceededError, InvalidCrawlConfigError, InvalidCrawlUrlError } from "./errors";
+import { CrawlPageAllowanceError, CrawlQuotaExceededError, InvalidCrawlConfigError, InvalidCrawlUrlError } from "./errors";
+import type { PageAllowance } from "./page-allowance";
+import { sendScheduleSkippedEmail } from "./schedule-email";
+import { getRedisConnection } from "@/infrastructure/redis/connection";
 import { resolveCompare, runComparison } from "./compare";
 import {
   SCHEDULE_JOB_NAME,
@@ -226,7 +229,26 @@ export async function deleteSchedule(tenantId: string, id: string, queue: Repeat
 
 export type TickOutcome =
   | { status: "started"; crawlJobId: string }
-  | { status: "skipped"; reason: "missing" | "disabled" | "locked" | "quota_exhausted" | "config_refused" | "url_refused" };
+  | { status: "skipped"; reason: "missing" | "disabled" | "locked" | "quota_exhausted" | "pages_exhausted" | "config_refused" | "url_refused" };
+
+/**
+ * The month's page allowance is spent: email the owner once per schedule per
+ * month (a daily schedule would otherwise send one a day). Claimed in Redis
+ * until the allowance resets; a mail failure gives the claim back.
+ */
+async function emailPagesSkipped(scheduleId: string, tenantId: string, host: string, pages: PageAllowance): Promise<void> {
+  if (pages.limit === null) return;
+  const ttl = Math.max(60, Math.ceil((Date.parse(pages.resetsAt) - Date.now()) / 1000));
+  const key = `echorank:crawl:schedule-skipped:${scheduleId}:${pages.resetsAt.slice(0, 7)}`;
+  try {
+    const redis = getRedisConnection();
+    if ((await redis.set(key, "1", "EX", ttl, "NX")) !== "OK") return;
+    const sent = await sendScheduleSkippedEmail({ tenantId, host, used: pages.used, limit: pages.limit, resetsAt: pages.resetsAt });
+    if (!sent) await redis.del(key);
+  } catch (err) {
+    log.warn({ scheduleId, err: err instanceof Error ? err.message : err }, "scheduled crawl: skipped-for-allowance email not sent");
+  }
+}
 
 /** One scheduled run: start a normal crawl, or skip with a logged reason. Never throws for a skip. */
 export async function runScheduledCrawl(scheduleId: string, now: Date = new Date()): Promise<TickOutcome> {
@@ -241,10 +263,14 @@ export async function runScheduledCrawl(scheduleId: string, now: Date = new Date
 
   const plan = row.tenant.planType;
   const quota = await getCrawlQuota(row.tenantId, plan);
-  if (quota.locked) return skip("locked");
-  if (!quota.allowed) return skip("quota_exhausted");
-
   const cfg = row.config as unknown as ScheduleConfig;
+  if (quota.locked) return skip("locked");
+  if (quota.monthlyLimit !== null && quota.used >= quota.monthlyLimit) return skip("quota_exhausted");
+  if (quota.pages.remaining !== null && quota.pages.remaining <= 0) {
+    await emailPagesSkipped(row.id, row.tenantId, row.host, quota.pages);
+    return skip("pages_exhausted");
+  }
+
   try {
     const job = await startCrawl(row.tenantId, plan, cfg.rootUrl, cfg.renderMode, {
       sealed: (cfg.crawl as StoredCrawlConfig | null) ?? null,
@@ -254,6 +280,10 @@ export async function runScheduledCrawl(scheduleId: string, now: Date = new Date
     return { status: "started", crawlJobId: job.id };
   } catch (err) {
     if (err instanceof CrawlQuotaExceededError) return skip("quota_exhausted");
+    if (err instanceof CrawlPageAllowanceError) {
+      await emailPagesSkipped(row.id, row.tenantId, row.host, { limit: err.limit, used: err.used, remaining: 0, resetsAt: err.resetsAt });
+      return skip("pages_exhausted");
+    }
     if (err instanceof InvalidCrawlConfigError) return skip("config_refused");
     if (err instanceof InvalidCrawlUrlError) return skip("url_refused");
     throw err;

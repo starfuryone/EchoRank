@@ -84,6 +84,8 @@ export interface CrawlQuotaDto {
   remaining: number | null;
   allowed: boolean;
   locked: boolean;
+  /** The month's page allowance across every crawl (page-allowance.ts): "x / y pages this month". */
+  pages?: { limit: number | null; used: number; remaining: number | null; resetsAt: string };
   /** Phase 4a: crawls kept with full data (plan-config crawlsKept). */
   crawlsKept?: number;
   /** Phase 4b caps: extractors and searches per crawl, segments per site. */

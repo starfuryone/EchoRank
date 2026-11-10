@@ -48,7 +48,7 @@ export async function planAllTenants(now: Date = new Date()): Promise<TenantArch
   for (const { tenantId } of tenants) {
     const tenant = await prisma.tenant.findUnique({
       where: { id: tenantId },
-      select: { planType: true, crawlConcurrencyOverride: true, crawlsKeptOverride: true, crawlUrlCapOverride: true, source: true },
+      select: { planType: true, crawlConcurrencyOverride: true, crawlsKeptOverride: true, crawlUrlCapOverride: true, crawlPagesPerMonthOverride: true, source: true },
     });
     if (!tenant || tenant.source === "free") continue;
     const [crawls, schedules] = await Promise.all([

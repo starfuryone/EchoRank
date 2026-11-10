@@ -12,7 +12,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 // ─── Stubs ──────────────────────────────────────────────────────────────────
 
-const crawlJob = { findUnique: vi.fn(), update: vi.fn() };
+// aggregate: the monthly page allowance's sum (page-allowance.ts); a tenant row
+// without planType (the default here) skips the check entirely.
+const crawlJob = { findUnique: vi.fn(), update: vi.fn(), aggregate: vi.fn(async () => ({ _sum: { pagesCrawled: 0 } })) };
 const crawlPage = { create: vi.fn(), findFirst: vi.fn() };
 const crawlLink = { createMany: vi.fn() };
 const crawlExtraction = { createMany: vi.fn() };
@@ -256,6 +258,43 @@ describe("stop conditions", () => {
     expect(outcome.stoppedReason).toBe("url_cap");
     expect(outcome.status).toBe("COMPLETED"); // capped is a success, not a failure
     expect(outcome.pagesCrawled).toBeLessThanOrEqual(3);
+  });
+
+  it("stops cleanly at the monthly page allowance (monthly_allowance), COMPLETED, never past it", async () => {
+    const { PLAN_CONFIGS } = await import("@/lib/plan-config");
+    const limit = PLAN_CONFIGS.STARTER.crawlPagesPerMonth!;
+    const before = tenantRow.current;
+    tenantRow.current = { ...before, planType: "STARTER", source: "customer" };
+    // Other crawls this month left exactly 2 pages.
+    crawlJob.aggregate.mockResolvedValue({ _sum: { pagesCrawled: limit - 2 } });
+    crawlJob.findUnique.mockResolvedValue({ id: "job_m", rootUrl: "https://example.com/", urlCap: 50, status: "QUEUED" });
+    fetchPage.mockImplementation(async (url: string) => htmlResponse(url, ["/a", "/b", "/c", "/d", "/e"]));
+    try {
+      const outcome = await runCrawl({ jobId: "job_m", redis: fakeRedis() as never });
+      expect(outcome.stoppedReason).toBe("monthly_allowance");
+      expect(outcome.status).toBe("COMPLETED");
+      expect(outcome.pagesCrawled).toBe(2);
+      // The month is read with this job left out (its own count is added live).
+      expect((crawlJob.aggregate.mock.calls as unknown as [{ where: unknown }][])[0]![0]).toMatchObject({ where: { id: { not: "job_m" } } });
+    } finally {
+      tenantRow.current = before;
+      crawlJob.aggregate.mockResolvedValue({ _sum: { pagesCrawled: 0 } });
+    }
+  });
+
+  it("the free crawler's system tenant is exempt from the monthly allowance", async () => {
+    const before = tenantRow.current;
+    tenantRow.current = { ...before, planType: "AGENCY", source: "free" };
+    crawlJob.aggregate.mockClear();
+    crawlJob.findUnique.mockResolvedValue({ id: "job_f", rootUrl: "https://example.com/", urlCap: 2, status: "QUEUED" });
+    fetchPage.mockImplementation(async (url: string) => htmlResponse(url, ["/a", "/b"]));
+    try {
+      const outcome = await runCrawl({ jobId: "job_f", redis: fakeRedis() as never });
+      expect(outcome.stoppedReason).not.toBe("monthly_allowance");
+      expect(crawlJob.aggregate).not.toHaveBeenCalled();
+    } finally {
+      tenantRow.current = before;
+    }
   });
 
   it("stops at the wall clock with stoppedReason time_cap, still COMPLETED", async () => {

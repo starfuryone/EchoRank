@@ -204,6 +204,9 @@ model Tenant {
   crawlConcurrencyOverride Int?
   crawlsKeptOverride       Int?
   crawlUrlCapOverride      Int?
+  /// Site Crawler pages per calendar month (plan-config crawlPagesPerMonth),
+  /// set by staff for a contract above the plan's. Null = the plan's value.
+  crawlPagesPerMonthOverride Int?
   /// Link Authority Checker checks a month, set by staff in
   /// /admin/link-authority for a contract above the plan's default
   /// (src/lib/authority-checker/quota.ts). Null = the plan's value.

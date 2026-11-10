@@ -54,6 +54,8 @@ const prismaFake = {
   },
   crawlJob: {
     count: vi.fn(async () => 0),
+    // The monthly page allowance's sum (page-allowance.ts): nothing used yet.
+    aggregate: vi.fn(async () => ({ _sum: { pagesCrawled: 0 } })),
     create: vi.fn(async ({ data }: { data: Row }) => {
       events.push("crawlJob.create");
       db.createdJob = data;

@@ -10,12 +10,20 @@ import { archivedBody, crawlDataState, type DataStateRow } from "./data-state";
 
 export {
   CrawlLockedError,
+  CrawlPageAllowanceError,
   CrawlQuotaExceededError,
   InvalidCrawlConfigError,
   InvalidCrawlListError,
   InvalidCrawlUrlError,
 } from "./errors";
-import { CrawlLockedError, CrawlQuotaExceededError, InvalidCrawlConfigError, InvalidCrawlListError, InvalidCrawlUrlError } from "./errors";
+import {
+  CrawlLockedError,
+  CrawlPageAllowanceError,
+  CrawlQuotaExceededError,
+  InvalidCrawlConfigError,
+  InvalidCrawlListError,
+  InvalidCrawlUrlError,
+} from "./errors";
 
 /** 409 ARCHIVED: the crawl's rows are in the archive (data-state.ts). */
 export function archivedResponse(row: DataStateRow): NextResponse {
@@ -92,6 +100,20 @@ export function crawlRouteError(err: unknown): NextResponse {
         code: "QUOTA_EXCEEDED",
         limit: err.limit,
         plan: err.plan,
+        upgradeHref: "/billing",
+      },
+      { status: 429 },
+    );
+  }
+
+  if (err instanceof CrawlPageAllowanceError) {
+    return NextResponse.json(
+      {
+        error: err.message,
+        code: "PAGE_ALLOWANCE_EXCEEDED",
+        limit: err.limit,
+        used: err.used,
+        resetsAt: err.resetsAt,
         upgradeHref: "/billing",
       },
       { status: 429 },

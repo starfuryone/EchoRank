@@ -226,6 +226,7 @@ function stoppedLabel(reason: string | null, t: SiteCrawlerCopy): string | null 
   if (!reason) return null;
   if (reason === "url_cap") return t.stoppedUrlCap;
   if (reason === "time_cap") return t.stoppedTimeCap;
+  if (reason === "monthly_allowance") return t.stoppedMonthly;
   if (reason === "cancelled") return t.stoppedCancelled;
   if (reason === "list_expired") return t.p4a.stoppedListExpired;
   return reason; // a FAILED crawl carries its truncated error here
@@ -252,6 +253,9 @@ export function SiteCrawlerClient({
   const router = useRouter();
   const t = SITE_CRAWLER_COPY[locale];
   const int = useMemo(() => new Intl.NumberFormat(locale === "en" ? "en-US" : locale), [locale]);
+  // The monthly page allowance's reset date: the 1st, shown as a date in UTC.
+  const resetDate = (iso: string) =>
+    new Intl.DateTimeFormat(locale === "en" ? "en-US" : locale, { dateStyle: "long", timeZone: "UTC" }).format(new Date(iso));
 
   const [quota, setQuota] = useState<CrawlQuotaDto | null>(null);
   const [crawls, setCrawls] = useState<CrawlDto[]>([]);
@@ -541,6 +545,8 @@ export function SiteCrawlerClient({
         setError(
           data?.code === "QUOTA_EXCEEDED"
             ? t.errQuota
+            : data?.code === "PAGE_ALLOWANCE_EXCEEDED" && typeof data.limit === "number" && typeof data.resetsAt === "string"
+              ? t.errPages(int.format(Number(data.used) || 0), int.format(data.limit), resetDate(data.resetsAt))
             : data?.code === "INVALID_LIST"
               ? data.reason === "too_long"
                 ? t.p4a.errListTooLong(int.format(data.cap))
@@ -726,6 +732,13 @@ export function SiteCrawlerClient({
               ) : (
                 <p>{t.quotaNote(int.format(quota.used), int.format(quota.monthlyLimit))}</p>
               ))}
+            {quota?.pages && !quota.locked && (
+              <p data-testid="crawl-pages-month">
+                {quota.pages.limit === null
+                  ? t.pagesUnlimited(int.format(quota.pages.used))
+                  : t.pagesNote(int.format(quota.pages.used), int.format(quota.pages.limit), resetDate(quota.pages.resetsAt))}
+              </p>
+            )}
             <p>{t.politeNote}</p>
           </div>
 

@@ -298,6 +298,20 @@ export interface PlanConfig {
    */
   crawlsPerMonth: number | null;
   /**
+   * Site Crawler pages per calendar month (UTC), across every crawl the
+   * workspace runs. `null` = unlimited. Resets on the 1st, 00:00 UTC.
+   *
+   * The pages a crawl fetches are our bandwidth and storage; this pool bounds
+   * them per month, where crawlUrlCap bounds one run and crawlsPerMonth the
+   * number of runs. Counted from CrawlJob.pagesCrawled (Postgres, never an
+   * in-process tally), so a cancelled or failed crawl's pages count too: they
+   * were fetched. At the limit a running crawl stops cleanly ("monthly
+   * allowance reached") and a scheduled one is skipped with an email
+   * (src/lib/site-crawler/page-allowance.ts). Staff can set a per-tenant
+   * figure in /admin/crawl-overrides (an Enterprise contract).
+   */
+  crawlPagesPerMonth: number | null;
+  /**
    * Pages one Site Crawler run may send through headless Chromium (render
    * mode, Phase 3b). A per-RUN ceiling like crawlUrlCap, copied onto the
    * CrawlJob row at creation. 0 = render mode is off for the tier.
@@ -487,6 +501,7 @@ export const PLAN_CONFIGS: Record<SellablePlanType, PlanConfig> = {
     trackedKeywords: 0,
     crawlUrlCap: 0,
     crawlsPerMonth: 0,
+    crawlPagesPerMonth: 0,
     crawlRenderedPages: 0,
     crawlsKept: 0,
     crawlExtractors: 0,
@@ -552,6 +567,9 @@ export const PLAN_CONFIGS: Record<SellablePlanType, PlanConfig> = {
     trackedKeywords: 25,
     crawlUrlCap: 2_500,
     crawlsPerMonth: 4,
+    // Owner's figures (2026-11-10). 4 crawls × 2,500 URLs reaches 10,000
+    // first, so on Starter the crawl count is the binding limit today.
+    crawlPagesPerMonth: 25_000,
     crawlRenderedPages: 100,
     crawlsKept: 3,
     crawlExtractors: 3,
@@ -609,6 +627,7 @@ export const PLAN_CONFIGS: Record<SellablePlanType, PlanConfig> = {
     trackedKeywords: 100,
     crawlUrlCap: 5_000,
     crawlsPerMonth: 20,
+    crawlPagesPerMonth: 100_000,
     crawlRenderedPages: 500,
     crawlsKept: 10,
     crawlExtractors: 5,
@@ -664,6 +683,8 @@ export const PLAN_CONFIGS: Record<SellablePlanType, PlanConfig> = {
     trackedKeywords: 500,
     crawlUrlCap: 25_000,
     crawlsPerMonth: null,
+    // Unlimited crawls, so this pool is the Agency plan's real crawl limit.
+    crawlPagesPerMonth: 300_000,
     crawlRenderedPages: 5_000,
     crawlsKept: 50,
     crawlExtractors: 10,
@@ -720,6 +741,9 @@ export const PLAN_CONFIGS: Record<SellablePlanType, PlanConfig> = {
     trackedKeywords: 1000,
     crawlUrlCap: 25_000,
     crawlsPerMonth: null,
+    // Agency's figure by default; a contract above it is a per-tenant
+    // override in /admin/crawl-overrides (crawlPagesPerMonthOverride).
+    crawlPagesPerMonth: 300_000,
     crawlRenderedPages: 5_000,
     crawlsKept: 50,
     crawlExtractors: 10,

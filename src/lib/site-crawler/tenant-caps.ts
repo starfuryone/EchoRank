@@ -37,26 +37,37 @@ export const OVERRIDE_BOUNDS = {
   crawlConcurrencyOverride: [1, 10],
   crawlsKeptOverride: [1, 10_000],
   crawlUrlCapOverride: [1, 100_000],
+  /** The monthly page allowance (page-allowance.ts): an Enterprise contract's figure. */
+  crawlPagesPerMonthOverride: [1, 10_000_000],
 } as const;
 export type OverrideField = keyof typeof OVERRIDE_BOUNDS;
 export const OVERRIDE_FIELDS = Object.keys(OVERRIDE_BOUNDS) as OverrideField[];
 
 export type CrawlOverrides = Record<OverrideField, number | null>;
-export const NO_OVERRIDES: CrawlOverrides = { crawlConcurrencyOverride: null, crawlsKeptOverride: null, crawlUrlCapOverride: null };
+export const NO_OVERRIDES: CrawlOverrides = {
+  crawlConcurrencyOverride: null,
+  crawlsKeptOverride: null,
+  crawlUrlCapOverride: null,
+  crawlPagesPerMonthOverride: null,
+};
 
-export function effectiveCaps(plan: PlanType, o: CrawlOverrides = NO_OVERRIDES): { urlCap: number; crawlsKept: number; concurrency: number } {
+export function effectiveCaps(
+  plan: PlanType,
+  o: CrawlOverrides = NO_OVERRIDES,
+): { urlCap: number; crawlsKept: number; concurrency: number; pagesPerMonth: number | null } {
   const c = planConfig(plan);
   return {
     urlCap: o.crawlUrlCapOverride ?? c.crawlUrlCap,
     crawlsKept: o.crawlsKeptOverride ?? c.crawlsKept,
     concurrency: o.crawlConcurrencyOverride ?? TENANT_CRAWL_CONCURRENCY_DEFAULT,
+    pagesPerMonth: o.crawlPagesPerMonthOverride ?? c.crawlPagesPerMonth,
   };
 }
 
 export async function tenantOverrides(tenantId: string): Promise<CrawlOverrides> {
   const t = await prisma.tenant.findUnique({
     where: { id: tenantId },
-    select: { crawlConcurrencyOverride: true, crawlsKeptOverride: true, crawlUrlCapOverride: true },
+    select: { crawlConcurrencyOverride: true, crawlsKeptOverride: true, crawlUrlCapOverride: true, crawlPagesPerMonthOverride: true },
   });
   return t ?? NO_OVERRIDES;
 }

@@ -315,6 +315,11 @@ export function comparisonTable(locale: Locale): CompareTable {
         (c) => count(c.crawlUrlCap, b),
       ),
       row("crawls", { en: "Crawls / month", fr: "Explorations / mois", de: "Crawls / Monat" }, b, NO, (c) => count(c.crawlsPerMonth, b)),
+      // The monthly page allowance across every crawl (plan-config
+      // crawlPagesPerMonth, resets on the 1st, UTC). 0 = no crawler: NO.
+      row("crawl-pages", { en: "Pages crawled / month", fr: "Pages explorées / mois", de: "Gecrawlte Seiten / Monat" }, b, NO, (c) =>
+        c.crawlPagesPerMonth === 0 ? NO : count(c.crawlPagesPerMonth, b),
+      ),
       row(
         "rendered",
         { en: "JavaScript-rendered pages per crawl", fr: "Pages rendues en JavaScript par exploration", de: "JavaScript-gerenderte Seiten pro Crawl" },

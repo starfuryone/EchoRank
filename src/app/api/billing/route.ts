@@ -3,6 +3,9 @@ import { prisma } from "@/lib/prisma";
 import { requireTenant } from "@/lib/tenant";
 import { PLAN_LIMITS, PLAN_PRICES, sellablePlan } from "@/lib/plan-config";
 import type { PlanType } from "@/generated/prisma";
+import { planAllowsArea } from "@/lib/plan-access";
+import { pageAllowance } from "@/lib/site-crawler/page-allowance";
+import { urlCapForPlan } from "@/lib/site-crawler/quota";
 
 export async function GET() {
   try {
@@ -39,6 +42,13 @@ export async function GET() {
     const currentPeriodStart = subscription?.currentPeriodStart || null;
     const currentPeriodEnd = subscription?.currentPeriodEnd || null;
 
+    // The site crawler's monthly page allowance (calendar month, UTC), for the
+    // plans that include the crawler; null for the AI-only plan. A failed
+    // read leaves the row out rather than failing the billing page.
+    const crawlPages = planAllowsArea(tenant.planType as PlanType, "crawler") && urlCapForPlan(tenant.planType as PlanType) > 0
+      ? await pageAllowance(tenantId, tenant.planType as PlanType).catch(() => null)
+      : null;
+
     const feedbackThisPeriod = await prisma.feedback.count({
       where: {
         tenantId,
@@ -72,6 +82,7 @@ export async function GET() {
                 (feedbackThisPeriod / tenant.monthlyRequestLimit) * 100
               )
             : 0,
+        crawlPages,
       },
     });
   } catch (error) {

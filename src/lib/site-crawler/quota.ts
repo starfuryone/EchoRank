@@ -28,6 +28,7 @@ import { OBSERVED_BACKLINK_UNIT_USD, backlinkUnitCostUsd, seoBudgetLeftUsd } fro
 import { aiKeyStatus } from "./ai-keys";
 import { marketingTokenLimit, marketingTokensUsed, planCanUseMarketing } from "@/lib/marketing/quota";
 import { effectiveCaps, tenantOverrides } from "./tenant-caps";
+import { allowanceFrom, pagesUsedThisMonth, type PageAllowance } from "./page-allowance";
 
 
 /** Statuses that consume a monthly slot. */
@@ -44,8 +45,10 @@ export interface CrawlQuota {
   used: number;
   /** null when unlimited. */
   remaining: number | null;
-  /** False when the tier is locked or the monthly allowance is spent. */
+  /** False when the tier is locked, the month's crawls are used or its pages are (page-allowance.ts). */
   allowed: boolean;
+  /** The month's page allowance across every crawl: "x / y pages this month". */
+  pages: PageAllowance;
   locked: boolean;
   /** Phase 4a: completed crawls kept with full data (plan-config crawlsKept). */
   crawlsKept: number;
@@ -154,11 +157,27 @@ export async function getCrawlQuota(
 
   // A locked tier never runs a query it cannot act on.
   if (locked) {
-    return { urlCap, renderCap, monthlyLimit, used: 0, remaining: 0, allowed: false, locked: true, crawlsKept, ...caps, lighthouseUsed: 0, lighthouseLimit: AUDITS_PER_HOUR, backlinkUnitUsd: OBSERVED_BACKLINK_UNIT_USD, seoBudgetLeftUsd: 0 };
+    return {
+      urlCap,
+      renderCap,
+      monthlyLimit,
+      used: 0,
+      remaining: 0,
+      allowed: false,
+      pages: allowanceFrom(caps0.pagesPerMonth, 0, now),
+      locked: true,
+      crawlsKept,
+      ...caps,
+      lighthouseUsed: 0,
+      lighthouseLimit: AUDITS_PER_HOUR,
+      backlinkUnitUsd: OBSERVED_BACKLINK_UNIT_USD,
+      seoBudgetLeftUsd: 0,
+    };
   }
 
-  const used = await crawlsUsedThisMonth(tenantId, now);
+  const [used, pagesUsed] = await Promise.all([crawlsUsedThisMonth(tenantId, now), pagesUsedThisMonth(tenantId, now)]);
   const remaining = monthlyLimit === null ? null : Math.max(0, monthlyLimit - used);
+  const pages = allowanceFrom(caps0.pagesPerMonth, pagesUsed, now);
 
   return {
     urlCap,
@@ -166,7 +185,8 @@ export async function getCrawlQuota(
     monthlyLimit,
     used,
     remaining,
-    allowed: monthlyLimit === null || used < monthlyLimit,
+    allowed: (monthlyLimit === null || used < monthlyLimit) && (pages.remaining === null || pages.remaining > 0),
+    pages,
     locked: false,
     crawlsKept,
     ...caps,

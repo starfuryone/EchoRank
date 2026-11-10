@@ -333,11 +333,12 @@ export const CRAWL_FEATURE_ROWS: readonly CrawlFeatureRow[] = [
   row("exact-duplicates", { family: "content" }, "Discover exact duplicate pages", "Pages en double exact"),
   row("xml-sitemaps", { flag: "crawl.sitemapGen" }, "Generate XML sitemaps", "Génération de plans de site XML"),
   row("visualisations", { flag: "crawl.visualise" }, "Site visualisations", "Visualisations du site"),
-  // Live today: the per-plan URL cap and monthly crawls are the tier caps.
+  // Live today: the per-plan URL cap, monthly crawls and the monthly page
+  // allowance across every crawl (crawlPagesPerMonth) are the tier caps.
   row("crawl-limit", { always: true }, "Crawl limit", "Limite d'exploration", (p, b) =>
     b === "fr"
-      ? `${fmt(p.crawlUrlCap, b)} URL par exploration · ${p.crawlsPerMonth === null ? "explorations illimitées" : `${fmt(p.crawlsPerMonth, b)} explorations par mois`}`
-      : `${fmt(p.crawlUrlCap, b)} URLs per crawl · ${p.crawlsPerMonth === null ? "unlimited crawls" : `${fmt(p.crawlsPerMonth, b)} crawls a month`}`),
+      ? `${fmt(p.crawlUrlCap, b)} URL par exploration · ${p.crawlsPerMonth === null ? "explorations illimitées" : `${fmt(p.crawlsPerMonth, b)} explorations par mois`}${p.crawlPagesPerMonth ? ` · ${fmt(p.crawlPagesPerMonth, b)} pages par mois` : ""}`
+      : `${fmt(p.crawlUrlCap, b)} URLs per crawl · ${p.crawlsPerMonth === null ? "unlimited crawls" : `${fmt(p.crawlsPerMonth, b)} crawls a month`}${p.crawlPagesPerMonth ? ` · ${fmt(p.crawlPagesPerMonth, b)} pages a month` : ""}`),
   // Phase 4c caps: scheduled crawls per workspace and the cadences each plan may pick.
   row("scheduling", { flag: "crawl.schedule" }, "Scheduling", "Planification", (p, b) => scheduleCell(p, b)),
   row("crawl-configuration", { flag: "crawl.config" }, "Crawl configuration", "Configuration de l'exploration"),

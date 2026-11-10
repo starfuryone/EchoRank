@@ -8,13 +8,14 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { PLAN_CONFIGS, type SellablePlanType } from "@/lib/plan-config";
 
-const counts = { value: 0 };
+const counts = { value: 0, pages: 0 };
 vi.mock("@/lib/prisma", () => ({
   prisma: {
     // Phase 3d-A overrides: none here (tenant-caps.ts reads null as the plan's caps).
     tenant: { findUnique: vi.fn(async () => null) },
     crawlJob: {
       count: vi.fn(async () => counts.value),
+      aggregate: vi.fn(async () => ({ _sum: { pagesCrawled: counts.pages } })),
     },
   },
 }));
@@ -33,6 +34,7 @@ const ALL_PLANS: SellablePlanType[] = ["STARTER", "GROWTH", "AGENCY", "ENTERPRIS
 
 beforeEach(() => {
   counts.value = 0;
+  counts.pages = 0;
   vi.clearAllMocks();
 });
 afterEach(() => vi.useRealTimers());

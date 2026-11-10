@@ -27,6 +27,8 @@ const crawlJob = {
   create: vi.fn(),
   update: vi.fn(),
   count: vi.fn(),
+  // The monthly page allowance's sum (page-allowance.ts).
+  aggregate: vi.fn(async () => ({ _sum: { pagesCrawled: 0 } })),
 };
 const crawlPage = { findMany: vi.fn(), count: vi.fn(), findFirst: vi.fn() };
 const crawlIssue = { findMany: vi.fn(), count: vi.fn(), groupBy: vi.fn() };

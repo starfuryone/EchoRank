@@ -16,12 +16,16 @@ vi.mock("@/lib/paid-plan", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/lib/paid-plan")>()),
   requirePaidPlan: () => requirePaidPlan(),
 }));
-const crawlJob = { findFirst: vi.fn(), findMany: vi.fn(), count: vi.fn(), create: vi.fn() };
+const crawlJob = { findFirst: vi.fn(), findMany: vi.fn(), count: vi.fn(), create: vi.fn(), aggregate: vi.fn(async () => ({ _sum: { pagesCrawled: 0 } })) };
 const crawlSchedule = { findMany: vi.fn(), findFirst: vi.fn(), findUnique: vi.fn(), count: vi.fn(), create: vi.fn(), update: vi.fn(), deleteMany: vi.fn() };
 const crawlSiteDefault = { findUnique: vi.fn() };
 const crawlSegment = { findMany: vi.fn(async () => []) };
 const queryRaw = vi.fn<(...a: unknown[]) => Promise<unknown[]>>(async () => []);
-vi.mock("@/lib/prisma", () => ({ prisma: { crawlJob, crawlSchedule, crawlSiteDefault, crawlSegment, tenant: { findUnique: async () => null }, $queryRaw: (...a: unknown[]) => queryRaw(...a) } }));
+// The tenant read: no overrides (tenant-caps.ts), and an owner for the skipped-crawl email.
+const tenant = { findUnique: vi.fn(async () => null as unknown) };
+vi.mock("@/lib/prisma", () => ({ prisma: { crawlJob, crawlSchedule, crawlSiteDefault, crawlSegment, tenant, $queryRaw: (...a: unknown[]) => queryRaw(...a) } }));
+const sendMail = vi.hoisted(() => vi.fn(async (_m: { to: string[]; subject: string }) => true));
+vi.mock("@/lib/mailer", () => ({ sendMail: (m: { to: string[]; subject: string }) => sendMail(m) }));
 const rateLimit = vi.fn<(...a: unknown[]) => Promise<{ success: boolean }>>(async () => ({ success: true }));
 vi.mock("@/lib/rate-limit", () => ({ rateLimit: (...a: unknown[]) => rateLimit(...a) }));
 const addJob = vi.fn(async () => ({ id: "bull" }));
@@ -31,7 +35,17 @@ const queue = {
   add: vi.fn<(name: string, data: unknown, opts: { repeat: unknown }) => Promise<object>>(async () => ({})),
 };
 vi.mock("@/infrastructure/queue/registry", () => ({ addJob: (...a: unknown[]) => addJob(...(a as [])), getQueue: () => queue }));
-vi.mock("@/infrastructure/redis/connection", () => ({ getRedisConnection: () => ({}) }));
+const kv = vi.hoisted(() => new Map<string, string>());
+vi.mock("@/infrastructure/redis/connection", () => ({
+  getRedisConnection: () => ({
+    set: async (k: string, v: string, ...args: unknown[]) => {
+      if (args.includes("NX") && kv.has(k)) return null;
+      kv.set(k, v);
+      return "OK";
+    },
+    del: async (k: string) => (kv.delete(k) ? 1 : 0),
+  }),
+}));
 const compare = vi.hoisted(() => ({ resolveCompare: vi.fn(), runComparison: vi.fn() }));
 vi.mock("@/lib/site-crawler/compare", () => compare);
 
@@ -44,6 +58,9 @@ const runRoute = await import("@/app/api/seo/v1/crawl/schedules/[scheduleId]/run
 
 beforeEach(() => {
   vi.clearAllMocks();
+  kv.clear();
+  tenant.findUnique.mockResolvedValue(null);
+  crawlJob.aggregate.mockResolvedValue({ _sum: { pagesCrawled: 0 } });
   queue.getRepeatableJobs.mockResolvedValue([]);
   crawlJob.count.mockResolvedValue(0);
   crawlSiteDefault.findUnique.mockResolvedValue(null);
@@ -159,6 +176,21 @@ describe("the tick", () => {
     expect(await svc.runScheduledCrawl("s1")).toEqual({ status: "skipped", reason });
     expect(crawlJob.create).not.toHaveBeenCalled();
     expect(addJob).not.toHaveBeenCalled();
+  });
+
+  it("the month's pages spent: skipped (pages_exhausted), the owner emailed once a month, nothing started", async () => {
+    crawlSchedule.findUnique.mockResolvedValue(row());
+    // GROWTH's whole monthly page allowance already used by other crawls.
+    const { PLAN_CONFIGS } = await import("@/lib/plan-config");
+    crawlJob.aggregate.mockResolvedValue({ _sum: { pagesCrawled: PLAN_CONFIGS.GROWTH.crawlPagesPerMonth! } });
+    tenant.findUnique.mockResolvedValue({ defaultLanguage: "en", members: [{ user: { email: "owner@acme.example" } }] });
+    expect(await svc.runScheduledCrawl("s1")).toEqual({ status: "skipped", reason: "pages_exhausted" });
+    expect(crawlJob.create).not.toHaveBeenCalled();
+    expect(sendMail).toHaveBeenCalledTimes(1);
+    expect(sendMail.mock.calls[0]![0]).toMatchObject({ to: ["owner@acme.example"], subject: "Scheduled crawl skipped: x.com" });
+    // The next day's tick: skipped again, no second email this month.
+    expect(await svc.runScheduledCrawl("s1")).toEqual({ status: "skipped", reason: "pages_exhausted" });
+    expect(sendMail).toHaveBeenCalledTimes(1);
   });
 });
 

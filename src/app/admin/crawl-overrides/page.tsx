@@ -19,16 +19,32 @@ const FIELDS = [
   ["crawlConcurrencyOverride", "Simultaneous crawls", "concurrency"],
   ["crawlsKeptOverride", "Crawls kept with full data", "crawlsKept"],
   ["crawlUrlCapOverride", "URLs per crawl", "urlCap"],
+  ["crawlPagesPerMonthOverride", "Pages per month (all crawls)", "pagesPerMonth"],
 ] as const;
 
-const SELECT = { slug: true, name: true, planType: true, crawlConcurrencyOverride: true, crawlsKeptOverride: true, crawlUrlCapOverride: true } as const;
+const SELECT = {
+  slug: true,
+  name: true,
+  planType: true,
+  crawlConcurrencyOverride: true,
+  crawlsKeptOverride: true,
+  crawlUrlCapOverride: true,
+  crawlPagesPerMonthOverride: true,
+} as const;
 
 export default async function Page({ searchParams }: { searchParams: Promise<{ slug?: string; saved?: string }> }) {
   if (!(await platformAdmin())) notFound();
   const { slug, saved } = await searchParams;
   const [overridden, tenant] = await Promise.all([
     prisma.tenant.findMany({
-      where: { OR: [{ crawlConcurrencyOverride: { not: null } }, { crawlsKeptOverride: { not: null } }, { crawlUrlCapOverride: { not: null } }] },
+      where: {
+        OR: [
+          { crawlConcurrencyOverride: { not: null } },
+          { crawlsKeptOverride: { not: null } },
+          { crawlUrlCapOverride: { not: null } },
+          { crawlPagesPerMonthOverride: { not: null } },
+        ],
+      },
       select: SELECT,
       orderBy: { slug: "asc" },
     }),
@@ -65,11 +81,17 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ s
           </p>
           {FIELDS.map(([field, label, key]) => {
             const planValue =
-              key === "concurrency" ? TENANT_CRAWL_CONCURRENCY_DEFAULT : key === "crawlsKept" ? plan(tenant).crawlsKept : plan(tenant).crawlUrlCap;
+              key === "concurrency"
+                ? TENANT_CRAWL_CONCURRENCY_DEFAULT
+                : key === "crawlsKept"
+                  ? plan(tenant).crawlsKept
+                  : key === "pagesPerMonth"
+                    ? plan(tenant).crawlPagesPerMonth
+                    : plan(tenant).crawlUrlCap;
             const [min, max] = OVERRIDE_BOUNDS[field];
             return (
               <label key={field} style={{ display: "grid", gap: 4, fontSize: 13 }}>
-                {label} (plan: {planValue.toLocaleString("en-US")}; {min}–{max.toLocaleString("en-US")})
+                {label} (plan: {planValue === null ? "unlimited" : planValue.toLocaleString("en-US")}; {min}–{max.toLocaleString("en-US")})
                 <input name={field} type="number" min={min} max={max} defaultValue={tenant[field] ?? ""} style={{ padding: 6, maxWidth: 200 }} />
               </label>
             );
@@ -84,7 +106,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ s
       <table style={{ borderCollapse: "collapse", width: "100%" }}>
         <thead>
           <tr>
-            {["Tenant", "Plan", "Simultaneous", "Kept", "URLs per crawl"].map((h) => (
+            {["Tenant", "Plan", "Simultaneous", "Kept", "URLs per crawl", "Pages / month"].map((h) => (
               <th key={h} style={cell}>
                 {h}
               </th>
@@ -103,12 +125,13 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ s
                 <td style={cell}>{eff.concurrency}</td>
                 <td style={cell}>{eff.crawlsKept.toLocaleString("en-US")}</td>
                 <td style={cell}>{eff.urlCap.toLocaleString("en-US")}</td>
+                <td style={cell}>{eff.pagesPerMonth === null ? "unlimited" : eff.pagesPerMonth.toLocaleString("en-US")}</td>
               </tr>
             );
           })}
           {overridden.length === 0 && (
             <tr>
-              <td style={cell} colSpan={5}>
+              <td style={cell} colSpan={6}>
                 None.
               </td>
             </tr>

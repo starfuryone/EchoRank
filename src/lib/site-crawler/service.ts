@@ -19,6 +19,7 @@ import { validateRootUrl } from "./url";
 import type { RenderMode } from "./types";
 import {
   CrawlLockedError,
+  CrawlPageAllowanceError,
   CrawlQuotaExceededError,
   InvalidCrawlConfigError,
   InvalidCrawlListError,
@@ -283,9 +284,16 @@ export async function startCrawl(
     }
   }
 
-  if (!quota.allowed) {
-    throw new CrawlQuotaExceededError(quota.monthlyLimit ?? 0, plan);
+  // The month's crawls first (the older, named limit), then its pages.
+  if (quota.monthlyLimit !== null && quota.used >= quota.monthlyLimit) {
+    throw new CrawlQuotaExceededError(quota.monthlyLimit, plan);
   }
+  if (quota.pages.remaining !== null && quota.pages.remaining <= 0) {
+    throw new CrawlPageAllowanceError(quota.pages.limit ?? 0, quota.pages.used, quota.pages.resetsAt);
+  }
+  // A crawl may fetch no more than the month has left (the runner re-checks
+  // per batch, since other crawls of this workspace draw on the same pool).
+  const pagesLeft = quota.pages.remaining ?? Number.POSITIVE_INFINITY;
 
   if (stored && opts.saveAsDefault) {
     await prisma.crawlSiteDefault.upsert({
@@ -326,7 +334,7 @@ export async function startCrawl(
       // Copied from the plan at creation: the crawl keeps reporting the ceiling
       // it ran under even if the tenant changes tier tomorrow. A configured
       // max URLs lowers it, never raises it.
-      urlCap: list ? list.urls.length : Math.min(quota.urlCap, stored?.maxUrls ?? quota.urlCap),
+      urlCap: list ? list.urls.length : Math.min(quota.urlCap, stored?.maxUrls ?? quota.urlCap, pagesLeft),
       // Same rule for the render ceiling. A tier without one crawls raw only,
       // whatever was asked for.
       renderMode: quota.renderCap > 0 ? renderMode : "none",

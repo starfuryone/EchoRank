@@ -578,6 +578,11 @@ const billingEn = {
   cancellationHelp: "How cancellation works",
   usageTitle: "Usage This Month",
   feedbackRequests: "Feedback Requests",
+  // The site crawler's monthly page allowance (src/lib/site-crawler/page-allowance.ts).
+  crawlPages: (brand: string) => `${brand} pages`,
+  crawlPagesValue: (used: string, limit: string) => `${used} / ${limit} pages this month`,
+  crawlPagesUnlimited: (used: string) => `${used} pages this month (no monthly limit)`,
+  crawlPagesResets: (date: string) => `Resets on ${date} (UTC).`,
   usagePct: (pct: number) => `${pct}% of your monthly limit used`,
   plansTitle: "Plans",
   pricesInUsd: "All prices are in US dollars (USD). If you pay with a card in another currency, your bank converts the charge at its own exchange rate.",
@@ -658,6 +663,10 @@ export const BILLING_COPY: Record<DashLocale, BillingCopy> = {
     cancellationHelp: "Comment fonctionne l'annulation",
     usageTitle: "Utilisation ce mois-ci",
     feedbackRequests: "Demandes de rétroaction",
+    crawlPages: (brand: string) => `Pages ${brand}`,
+    crawlPagesValue: (used: string, limit: string) => `${used} / ${limit} pages ce mois-ci`,
+    crawlPagesUnlimited: (used: string) => `${used} pages ce mois-ci (aucune limite mensuelle)`,
+    crawlPagesResets: (date: string) => `Renouvellement le ${date} (UTC).`,
     usagePct: (pct: number) =>
       `${pct} % de votre limite mensuelle utilisée`,
     plansTitle: "Forfaits",
@@ -724,6 +733,10 @@ export const BILLING_COPY: Record<DashLocale, BillingCopy> = {
     cancellationHelp: "So funktioniert die Kündigung",
     usageTitle: "Nutzung in diesem Monat",
     feedbackRequests: "Feedback-Anfragen",
+    crawlPages: (brand: string) => `${brand}-Seiten`,
+    crawlPagesValue: (used: string, limit: string) => `${used} / ${limit} Seiten diesen Monat`,
+    crawlPagesUnlimited: (used: string) => `${used} Seiten diesen Monat (kein Monatslimit)`,
+    crawlPagesResets: (date: string) => `Erneuert sich am ${date} (UTC).`,
     usagePct: (pct: number) =>
       `${pct} % Ihres monatlichen Limits verbraucht`,
     plansTitle: "Pläne",
@@ -13317,6 +13330,14 @@ const siteCrawlerEn = {
   stoppedUrlCap: "Stopped at your plan's URL limit.",
   stoppedTimeCap: "Stopped at the one-hour limit.",
   stoppedCancelled: "Stopped by you.",
+  // The monthly page allowance (src/lib/site-crawler/page-allowance.ts).
+  stoppedMonthly: "Stopped: monthly allowance reached.",
+  bannerMonthly: (pages: string, reset: string) =>
+    `Stopped at ${pages} pages: your workspace reached its monthly page allowance. It resets on ${reset}.`,
+  pagesNote: (used: string, limit: string, reset: string) => `${used} / ${limit} pages this month (resets ${reset}).`,
+  pagesUnlimited: (used: string) => `${used} pages this month. No monthly page limit on your plan.`,
+  errPages: (used: string, limit: string, reset: string) =>
+    `Monthly allowance reached: ${used} / ${limit} pages this month. It resets on ${reset}.`,
 
   summaryPages: "Pages crawled",
   summaryErrors: "Errors",
@@ -13726,6 +13747,13 @@ export const SITE_CRAWLER_COPY: Record<DashLocale, SiteCrawlerCopy> = {
     stoppedUrlCap: "Arrêtée à la limite d'URL de votre forfait.",
     stoppedTimeCap: "Arrêtée à la limite d'une heure.",
     stoppedCancelled: "Arrêtée par vous.",
+    stoppedMonthly: "Arrêtée : allocation mensuelle atteinte.",
+    bannerMonthly: (pages: string, reset: string) =>
+      `Arrêtée à ${pages} pages : votre espace a atteint son allocation mensuelle de pages. Elle se renouvelle le ${reset}.`,
+    pagesNote: (used: string, limit: string, reset: string) => `${used} / ${limit} pages ce mois-ci (renouvellement le ${reset}).`,
+    pagesUnlimited: (used: string) => `${used} pages ce mois-ci. Aucune limite mensuelle de pages avec votre forfait.`,
+    errPages: (used: string, limit: string, reset: string) =>
+      `Allocation mensuelle atteinte : ${used} / ${limit} pages ce mois-ci. Elle se renouvelle le ${reset}.`,
 
     summaryPages: "Pages explorées",
     summaryErrors: "Erreurs",
@@ -14126,6 +14154,13 @@ export const SITE_CRAWLER_COPY: Record<DashLocale, SiteCrawlerCopy> = {
     stoppedUrlCap: "Beim URL-Limit Ihres Abos gestoppt.",
     stoppedTimeCap: "Bei der Ein-Stunden-Grenze gestoppt.",
     stoppedCancelled: "Von Ihnen gestoppt.",
+    stoppedMonthly: "Gestoppt: Monatskontingent erreicht.",
+    bannerMonthly: (pages: string, reset: string) =>
+      `Bei ${pages} Seiten gestoppt: Ihr Arbeitsbereich hat sein monatliches Seitenkontingent erreicht. Es erneuert sich am ${reset}.`,
+    pagesNote: (used: string, limit: string, reset: string) => `${used} / ${limit} Seiten diesen Monat (erneuert sich am ${reset}).`,
+    pagesUnlimited: (used: string) => `${used} Seiten diesen Monat. Kein monatliches Seitenlimit in Ihrem Abo.`,
+    errPages: (used: string, limit: string, reset: string) =>
+      `Monatskontingent erreicht: ${used} / ${limit} Seiten diesen Monat. Es erneuert sich am ${reset}.`,
 
     summaryPages: "Gecrawlte Seiten",
     summaryErrors: "Fehler",

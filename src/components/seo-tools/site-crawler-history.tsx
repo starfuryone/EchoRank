@@ -53,7 +53,7 @@ export function historyState(c: Pick<CrawlDto, "status" | "stoppedReason">): His
 /** The kind line under the host: how the crawl ran, or why it ended early. */
 export function kindLine(c: CrawlDto, u: SiteCrawlerCopy["ux"], int: Intl.NumberFormat): string {
   if (c.stoppedReason === "url_cap") return u.kindLimit(int.format(c.urlCap));
-  if (c.stoppedReason === "time_cap" || c.status === "CANCELLED") return u.kindStopped(int.format(c.pagesCrawled), int.format(c.urlCap));
+  if (c.stoppedReason === "time_cap" || c.stoppedReason === "monthly_allowance" || c.status === "CANCELLED") return u.kindStopped(int.format(c.pagesCrawled), int.format(c.urlCap));
   if (c.mode === "list") return u.kindList;
   if (c.scheduled) return u.kindScheduled;
   return u.kindFull;

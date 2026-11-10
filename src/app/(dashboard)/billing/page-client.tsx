@@ -18,6 +18,7 @@ import { PLAN_PRICES, planConfig, sellablePlan } from "@/lib/plan-config";
 import { planFeaturesByPlan } from "@/lib/plan-features";
 import type { PlanType } from "@/generated/prisma";
 import { BILLING_COPY, type DashLocale } from "@/lib/i18n/dashboard";
+import { CRAWLER_BRAND } from "@/lib/site-crawler/brand";
 import { PlanCards } from "@/components/billing/plan-cards";
 import { salesContactHref } from "@/lib/sales/inquiry-options";
 import { SALES_COPY } from "@/lib/sales/inquiry-copy";
@@ -30,6 +31,8 @@ interface BillingData {
   requestsUsed: number;
   requestsLimit: number;
   cancelAtPeriodEnd: boolean;
+  /** The site crawler's monthly page allowance; null when the plan has no crawler. */
+  crawlPages: { used: number; limit: number | null; resetsAt: string } | null;
 }
 
 const PLAN_ICONS: Record<string, React.ReactNode> = {
@@ -121,6 +124,7 @@ export function BillingPageClient({
           requestsUsed: json.usage?.feedbackSent ?? 0,
           requestsLimit: json.usage?.feedbackLimit ?? 300,
           cancelAtPeriodEnd: json.subscription?.cancelAtPeriodEnd ?? false,
+          crawlPages: json.usage?.crawlPages ?? null,
         });
       } catch (err) {
         setError(err instanceof Error ? err.message : t.genericError);
@@ -297,6 +301,21 @@ export function BillingPageClient({
             </div>
             <p className="text-xs text-gray-500">{t.usagePct(usagePct)}</p>
           </div>
+          {billing.crawlPages && (
+            <div className="mt-5 space-y-1" data-testid="billing-crawl-pages">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-gray-600">{t.crawlPages(CRAWLER_BRAND.name)}</span>
+                <span className="font-medium text-gray-900">
+                  {billing.crawlPages.limit === null
+                    ? t.crawlPagesUnlimited(billing.crawlPages.used.toLocaleString(locale))
+                    : t.crawlPagesValue(billing.crawlPages.used.toLocaleString(locale), billing.crawlPages.limit.toLocaleString(locale))}
+                </span>
+              </div>
+              <p className="text-xs text-gray-500">
+                {t.crawlPagesResets(new Intl.DateTimeFormat(locale, { dateStyle: "long", timeZone: "UTC" }).format(new Date(billing.crawlPages.resetsAt)))}
+              </p>
+            </div>
+          )}
         </CardContent>
       </Card>
 

@@ -12,6 +12,7 @@
 // STOPPING. Four ways out, all of which leave a terminal status:
 //   frontier empty      → COMPLETED, stoppedReason null
 //   pagesCrawled >= cap → COMPLETED, "url_cap"
+//   month's pages spent → COMPLETED, "monthly_allowance" (page-allowance.ts)
 //   wall clock          → COMPLETED, "time_cap"
 //   cancel flag         → CANCELLED
 // Anything thrown becomes FAILED with a truncated message. The try/finally is
@@ -58,6 +59,7 @@ import { ampValidator, validateAmp } from "./amp-validator";
 import { renderedOnlyLinks } from "@/lib/crawl-rules";
 import { fetchRobots, type RobotsRules } from "./robots";
 import { closeCrawlSnapshots, openCrawlSnapshots } from "@/lib/page-archive/crawl";
+import { MONTHLY_ALLOWANCE_REASON, pagesLeftForJob, pagesLimitFor } from "./page-allowance";
 import type { PageRunWriter } from "@/lib/page-archive/writer";
 import { writeCrawlTables } from "./archive/engine";
 import { isFetchableUrl, normalizeCrawlUrl } from "./url";
@@ -228,10 +230,15 @@ export async function runCrawl({
   // Spell check (Phase 3c): the workspace's accepted words, and the root
   // page's language as the fallback for pages that do not declare one.
   const tenant = await prisma.tenant
-    .findUnique({ where: { id: job.tenantId }, select: { name: true, spellingAcceptedWords: true, source: true } })
+    .findUnique({ where: { id: job.tenantId }, select: { name: true, spellingAcceptedWords: true, source: true, planType: true } })
     .catch(() => null);
   // The free public crawler (free-tenant.ts): a 10-minute ceiling and raw HTML only.
   const free = isFreeSource(tenant?.source);
+  // The month's page allowance (page-allowance.ts), shared by every crawl of
+  // this workspace: re-read before each batch. The free crawler's system
+  // tenant is exempt (its own limits, free-limits.ts); so is a tenant row the
+  // read could not find, rather than stopping a crawl on a lookup error.
+  const pagesLimit = !free && tenant?.planType ? await pagesLimitFor(job.tenantId, tenant.planType).catch(() => null) : null;
   const maxDurationMs = free ? FREE_CRAWL_MAX_DURATION_MS : MAX_CRAWL_DURATION_MS;
   const spell: SpellCtx = {
     accepted: acceptedWords(tenant?.spellingAcceptedWords ?? [], tenant?.name ?? "", job.rootUrl),
@@ -420,8 +427,16 @@ export async function runCrawl({
         break;
       }
 
+      // Monthly page allowance: stop cleanly when the workspace's month is
+      // spent (by this crawl or another), and never start a batch past it.
+      const monthLeft = pagesLimit === null ? Number.POSITIVE_INFINITY : await pagesLeftForJob(job.tenantId, pagesLimit, jobId, pagesCrawled);
+      if (monthLeft <= 0) {
+        stoppedReason = MONTHLY_ALLOWANCE_REASON;
+        break;
+      }
+
       const remaining = job.urlCap - pagesCrawled;
-      const batchSize = Math.min(WRITE_BATCH_SIZE, remaining);
+      const batchSize = Math.min(WRITE_BATCH_SIZE, remaining, monthLeft);
       const batch = await popBatch(redis, keys.queue, batchSize);
       if (batch.length === 0) {
         // A list-mode job that finds no list: it sat queued past the frontier TTL.

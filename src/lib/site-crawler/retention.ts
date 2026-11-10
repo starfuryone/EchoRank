@@ -150,7 +150,7 @@ export async function runCrawlRetention(now: Date = new Date()): Promise<Retenti
   for (const { tenantId } of tenants) {
     const tenant = await prisma.tenant.findUnique({
       where: { id: tenantId },
-      select: { planType: true, crawlConcurrencyOverride: true, crawlsKeptOverride: true, crawlUrlCapOverride: true, source: true },
+      select: { planType: true, crawlConcurrencyOverride: true, crawlsKeptOverride: true, crawlUrlCapOverride: true, crawlPagesPerMonthOverride: true, source: true },
     });
     // The free crawler's tenant has its own rule (purgeFreeCrawls, below).
     if (!tenant || tenant.source === "free") continue;

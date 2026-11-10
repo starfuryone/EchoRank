@@ -185,6 +185,67 @@ export function scheduleEmail(d: ScheduleEmailData): { subject: string; html: st
   return { subject: c.subject(d.host), html, text, links: [open, ...csv.map(([, h]) => h)] };
 }
 
+// ── A scheduled crawl skipped: the month's page allowance is spent ──────────
+
+const SKIP_COPY = {
+  en: {
+    subject: (host: string) => `Scheduled crawl skipped: ${host}`,
+    body: (host: string, used: string, limit: string, reset: string) =>
+      `Your scheduled crawl of ${host} did not run: your workspace has used ${used} of its ${limit} pages this month. The allowance resets on ${reset}, and the schedule runs again from then.`,
+    upgrade: "See plans with more pages",
+    why: "You are getting this because the schedule is set up in your workspace. One email per schedule per month.",
+  },
+  fr: {
+    subject: (host: string) => `Exploration planifiée non lancée : ${host}`,
+    body: (host: string, used: string, limit: string, reset: string) =>
+      `Votre exploration planifiée de ${host} n'a pas eu lieu : votre espace a utilisé ${used} de ses ${limit} pages ce mois-ci. L'allocation se renouvelle le ${reset}, et la planification reprend à partir de là.`,
+    upgrade: "Voir les forfaits avec plus de pages",
+    why: "Vous recevez ce courriel parce que cette planification existe dans votre espace. Un courriel par planification et par mois.",
+  },
+  "de-CH": {
+    subject: (host: string) => `Geplanter Crawl ausgelassen: ${host}`,
+    body: (host: string, used: string, limit: string, reset: string) =>
+      `Ihr geplanter Crawl von ${host} lief nicht: Ihr Arbeitsbereich hat ${used} seiner ${limit} Seiten in diesem Monat verbraucht. Das Kontingent erneuert sich am ${reset}, ab dann läuft der Plan wieder.`,
+    upgrade: "Abos mit mehr Seiten ansehen",
+    why: "Sie erhalten diese E-Mail, weil dieser Plan in Ihrem Arbeitsbereich eingerichtet ist. Eine E-Mail pro Plan und Monat.",
+  },
+} as const;
+
+/** Subject, HTML and text for a skipped scheduled crawl. Pure. */
+export function scheduleSkippedEmail(d: { locale: Loc; host: string; used: number; limit: number; resetsAt: string }) {
+  const c = SKIP_COPY[d.locale];
+  const intl = d.locale === "en" ? "en-US" : d.locale;
+  const nf = new Intl.NumberFormat(intl);
+  const reset = new Intl.DateTimeFormat(intl, { dateStyle: "long", timeZone: "UTC" }).format(new Date(d.resetsAt));
+  const billing = `${SITE}/billing`;
+  const body = c.body(d.host, nf.format(d.used), nf.format(d.limit), reset);
+  const text = [body, "", `${c.upgrade}: ${billing}`, "", c.why].join("\n");
+  const html = [
+    '<div style="font-family:system-ui,sans-serif;font-size:14px;color:#111827;max-width:560px">',
+    logoHeader(COPY[d.locale].byline),
+    `<p style="margin:0 0 12px">${esc(body)}</p>`,
+    `<p style="margin:0 0 12px"><a href="${esc(billing)}">${esc(c.upgrade)}</a></p>`,
+    `<p style="margin:0;color:#6b7280;font-size:12px">${esc(c.why)}</p>`,
+    "</div>",
+  ].join("");
+  return { subject: c.subject(d.host), html, text };
+}
+
+/** Send the skipped-crawl email to the owner. Returns false when there is nobody to send it to. */
+export async function sendScheduleSkippedEmail(ctx: { tenantId: string; host: string; used: number; limit: number; resetsAt: string }): Promise<boolean> {
+  const tenant = await prisma.tenant.findUnique({
+    where: { id: ctx.tenantId },
+    select: {
+      defaultLanguage: true,
+      members: { where: { role: "OWNER" }, orderBy: { createdAt: "asc" }, take: 1, select: { user: { select: { email: true } } } },
+    },
+  });
+  const to = tenant?.members[0]?.user?.email;
+  if (!to) return false;
+  const mail = scheduleSkippedEmail({ locale: fold(tenant?.defaultLanguage), host: ctx.host, used: ctx.used, limit: ctx.limit, resetsAt: ctx.resetsAt });
+  return sendMail({ to: [to], subject: mail.subject, html: mail.html, text: mail.text });
+}
+
 /** The AfterRunHooks email: load, render, send to the owner. */
 export async function sendScheduledCrawlEmail(ctx: { tenantId: string; crawlJobId: string; comparisonId: string | null }): Promise<boolean> {
   const tenant = await prisma.tenant.findUnique({

@@ -30,6 +30,12 @@ export function completenessLines(crawl: CrawlDto, summary: Summary, t: SiteCraw
   if (crawl.status === "FAILED") out.push(u.bannerFailed);
   else if (crawl.stoppedReason === "time_cap") out.push(u.bannerTime(int.format(crawl.pagesCrawled), int.format(crawl.urlCap)));
   else if (crawl.stoppedReason === "url_cap") out.push(u.bannerUrlCap(int.format(crawl.urlCap)));
+  else if (crawl.stoppedReason === "monthly_allowance") {
+    // Resets on the 1st of the month after the crawl started (UTC).
+    const started = new Date(crawl.createdAt);
+    const reset = new Date(Date.UTC(started.getUTCFullYear(), started.getUTCMonth() + 1, 1));
+    out.push(t.bannerMonthly(int.format(crawl.pagesCrawled), new Intl.DateTimeFormat(int.resolvedOptions().locale, { dateStyle: "long", timeZone: "UTC" }).format(reset)));
+  }
   else if (crawl.stoppedReason === "cancelled" || crawl.status === "CANCELLED") out.push(u.bannerCancelled(int.format(crawl.pagesCrawled)));
   else if (crawl.stoppedReason === "list_expired") out.push(t.p4a.stoppedListExpired);
   if (budgetStopped(summary)) out.push(u.bannerUsdCap);

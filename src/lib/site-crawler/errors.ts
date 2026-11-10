@@ -26,6 +26,19 @@ export class CrawlQuotaExceededError extends Error {
   }
 }
 
+/** The month's page allowance is spent (page-allowance.ts). Resets on the 1st, UTC. */
+export class CrawlPageAllowanceError extends Error {
+  readonly statusCode = 429;
+  constructor(
+    readonly limit: number,
+    readonly used: number,
+    readonly resetsAt: string,
+  ) {
+    super(`Monthly allowance reached: ${used.toLocaleString("en-US")} of ${limit.toLocaleString("en-US")} pages this month.`);
+    this.name = "CrawlPageAllowanceError";
+  }
+}
+
 export class CrawlLockedError extends Error {
   readonly statusCode = 403;
   constructor(readonly plan: string) {

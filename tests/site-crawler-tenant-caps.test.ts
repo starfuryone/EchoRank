@@ -20,6 +20,7 @@ vi.mock("@/lib/prisma", () => ({
       updateMany: (a: { where: { slug: string } }) => tenantUpdateMany(a),
     },
     crawlJob: {
+      aggregate: vi.fn(async () => ({ _sum: { pagesCrawled: 0 } })),
       count: vi.fn(async ({ where }: { where: { tenantId?: string; status?: unknown } }) =>
         where.status === "RUNNING" && where.tenantId ? (running[where.tenantId] ?? 0) : 0,
       ),
@@ -95,11 +96,14 @@ describe("box-wide crawl concurrency (CRAWL_MAX_CONCURRENT)", () => {
 describe("effective caps", () => {
   it("the plan's values unless an override is set", () => {
     const g = planConfig("GROWTH");
-    expect(caps.effectiveCaps("GROWTH")).toEqual({ urlCap: g.crawlUrlCap, crawlsKept: g.crawlsKept, concurrency: 1 });
-    expect(caps.effectiveCaps("GROWTH", { crawlConcurrencyOverride: 3, crawlsKeptOverride: 500, crawlUrlCapOverride: 5000 })).toEqual({
+    expect(caps.effectiveCaps("GROWTH")).toEqual({ urlCap: g.crawlUrlCap, crawlsKept: g.crawlsKept, concurrency: 1, pagesPerMonth: g.crawlPagesPerMonth });
+    expect(
+      caps.effectiveCaps("GROWTH", { crawlConcurrencyOverride: 3, crawlsKeptOverride: 500, crawlUrlCapOverride: 5000, crawlPagesPerMonthOverride: 1_000_000 }),
+    ).toEqual({
       urlCap: 5000,
       crawlsKept: 500,
       concurrency: 3,
+      pagesPerMonth: 1_000_000,
     });
     expect(caps.effectiveCaps("STARTER", { ...caps.NO_OVERRIDES, crawlUrlCapOverride: 7000 }).urlCap).toBe(7000);
   });
@@ -166,13 +170,19 @@ describe("POST /api/admin/crawl-overrides (staff only)", () => {
   const form = (fields: Record<string, string>, headers: Record<string, string> = {}) =>
     adminRoute.POST(new Request("https://app.test/api/admin/crawl-overrides", { method: "POST", headers, body: new URLSearchParams(fields) }));
 
-  it("sets the three overrides and redirects back; empty clears one", async () => {
-    const res = await form({ slug: "acme", crawlConcurrencyOverride: "3", crawlsKeptOverride: "500", crawlUrlCapOverride: "" });
+  it("sets the four overrides and redirects back; empty clears one", async () => {
+    const res = await form({
+      slug: "acme",
+      crawlConcurrencyOverride: "3",
+      crawlsKeptOverride: "500",
+      crawlUrlCapOverride: "",
+      crawlPagesPerMonthOverride: "1,000,000",
+    });
     expect(res.status).toBe(303);
     expect(res.headers.get("location")).toBe("https://app.test/admin/crawl-overrides?slug=acme&saved=1");
     expect(tenantUpdateMany).toHaveBeenCalledWith({
       where: { slug: "acme" },
-      data: { crawlConcurrencyOverride: 3, crawlsKeptOverride: 500, crawlUrlCapOverride: null },
+      data: { crawlConcurrencyOverride: 3, crawlsKeptOverride: 500, crawlUrlCapOverride: null, crawlPagesPerMonthOverride: 1_000_000 },
     });
   });
 
