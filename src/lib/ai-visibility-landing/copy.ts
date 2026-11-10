@@ -63,7 +63,13 @@ export interface AvCopy {
     items: Record<AvFeatureId, { h3: string; p: string }>;
     score: { h3: string; p: (w: { mention: number; position: number; citation: number; sentiment: number }) => string; link: string };
   };
-  tools: { label: string; h2: string; check: { name: string; line: string; cta: string }; audit: { name: string; line: string; cta: string } };
+  tools: {
+    label: string;
+    h2: string;
+    check: { name: string; line: string; cta: string };
+    /** perDay: FREE_AUDIT_DAILY_LIMIT, the only place that number lives. */
+    audit: { name: string; line: string; perDay: (n: number) => string; cta: string };
+  };
   pricing: {
     label: string;
     h2: string;
@@ -228,7 +234,12 @@ const EN: AvCopy = {
     label: "Free tools",
     h2: "Two free tools, two different questions",
     check: { name: "AI Visibility Check", line: "What AI says about you: we ask the engines about your business once and show the answers.", cta: "Run the check" },
-    audit: { name: "AI Readiness Audit", line: "Whether AI can read your site: crawler access, readable content and the facts an answer quotes.", cta: "Run the audit" },
+    audit: {
+      name: "AI Readiness Audit",
+      line: "Whether AI can read your site: crawler access, readable content and the facts an answer quotes.",
+      perDay: (n) => `Free, ${n === 1 ? "one audit" : `${n} audits`} a day, no account.`,
+      cta: "Run the audit",
+    },
   },
   pricing: {
     label: "Pricing",
@@ -357,7 +368,12 @@ const FR: AvCopy = {
     label: "Outils gratuits",
     h2: "Deux outils gratuits, deux questions différentes",
     check: { name: "Vérification de visibilité IA", line: "Ce que l’IA dit de vous : nous interrogeons les moteurs sur votre entreprise une fois et montrons les réponses.", cta: "Lancer la vérification" },
-    audit: { name: "Audit de préparation IA", line: "Si l’IA peut lire votre site : accès des robots, contenu lisible et les faits qu’une réponse cite.", cta: "Lancer l’audit" },
+    audit: {
+      name: "Audit de préparation IA",
+      line: "Si l’IA peut lire votre site : accès des robots, contenu lisible et les faits qu’une réponse cite.",
+      perDay: (n) => `Gratuit, ${n === 1 ? "un audit" : `${n} audits`} par jour, sans compte.`,
+      cta: "Lancer l’audit",
+    },
   },
   pricing: {
     label: "Tarifs",
@@ -486,7 +502,12 @@ const DE: AvCopy = {
     label: "Gratis-Tools",
     h2: "Zwei Gratis-Tools, zwei verschiedene Fragen",
     check: { name: "KI-Sichtbarkeits-Check", line: "Was KI über Sie sagt: Wir fragen die Engines einmal nach Ihrem Unternehmen und zeigen die Antworten.", cta: "Check starten" },
-    audit: { name: "KI-Bereitschafts-Audit", line: "Ob KI Ihre Website lesen kann: Crawler-Zugang, lesbarer Inhalt und die Fakten, die eine Antwort zitiert.", cta: "Audit starten" },
+    audit: {
+      name: "KI-Bereitschafts-Audit",
+      line: "Ob KI Ihre Website lesen kann: Crawler-Zugang, lesbarer Inhalt und die Fakten, die eine Antwort zitiert.",
+      perDay: (n) => `Kostenlos, ${n === 1 ? "ein Audit" : `${n} Audits`} pro Tag, ohne Konto.`,
+      cta: "Audit starten",
+    },
   },
   pricing: {
     label: "Preise",

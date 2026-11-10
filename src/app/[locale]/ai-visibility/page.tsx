@@ -29,6 +29,7 @@ import { pricingTiers } from "@/lib/pricing-tiers";
 import { pricingBase, usd } from "@/lib/pricing-page/format";
 import { seoToolCounts } from "@/lib/seo-tools";
 import { KEYWORD_SCAN_LIMIT_PER_DAY } from "@/lib/keyword-scan-limits";
+import { FREE_AUDIT_DAILY_LIMIT } from "@/lib/free-audit/limits";
 import { PLAN_CONFIGS } from "@/lib/plan-config";
 import { AV_BRAND } from "@/lib/ai-visibility/brand";
 import { AV_COPY, cadenceLabel, keywordWidgetCopy } from "@/lib/ai-visibility-landing/copy";
@@ -260,6 +261,7 @@ export default async function AIVisibilityPage({ params }: { params: Promise<{ l
             <div className={`${v.box} ${v.tool}`}>
               <h3>{c.tools.audit.name}</h3>
               <p>{c.tools.audit.line}</p>
+              <p data-testid="av-audit-per-day">{c.tools.audit.perDay(FREE_AUDIT_DAILY_LIMIT)}</p>
               <a className={v.boxLink} href={`/${l}/free-audit`}>
                 {c.tools.audit.cta}
               </a>

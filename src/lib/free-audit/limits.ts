@@ -2,9 +2,16 @@
 // dependency-free so the page, its client components and the API all read the
 // same values (ECHORANK-AI-VISIBILITY-PAGES.md Phase 2).
 
-/** Successful free audits per IP address per 24 hours (src/lib/av-free-limit.ts enforces it). */
-export const FREE_AUDITS_PER_DAY = 1;
-/** The window starts at the first success and does not slide. */
+/**
+ * Free audits per IP address (cf-connecting-ip) per 24 hours. Every surface
+ * that states the allowance reads this: the /free-audit hero, form, FAQ and
+ * meta description, the /ai-visibility tools tile, the /pricing compare row
+ * and the "{remaining} of N left today" line. src/lib/av-free-limit.ts
+ * enforces it in Redis. Only an audit that returns a score uses one.
+ */
+// `: number`, not the literal 3: the copy branches on 1 vs many.
+export const FREE_AUDIT_DAILY_LIMIT: number = 3;
+/** The window starts at the first audit and does not slide. */
 export const FREE_AUDIT_WINDOW_HOURS = 24;
 
 /** How long a result's permalink (/free-audit/r/{id}) stays readable. */

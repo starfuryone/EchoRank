@@ -34,6 +34,7 @@ const redis = {
   }),
   get: vi.fn(async (k: string) => (store.has(k) ? String(store.get(k)) : null)),
   expire: vi.fn(async () => 1),
+  ttl: vi.fn(async (k: string) => (store.has(k) ? 86_400 : -2)),
 };
 vi.mock("@/infrastructure/redis/connection", () => ({ getRedisConnection: () => redis }));
 
@@ -383,7 +384,7 @@ describe("visibility query", () => {
 // ─── 6. Free audit limit ─────────────────────────────────────────────────────
 
 describe("/api/av/audit per-IP limit", () => {
-  it("one success per IP per day, and it survives a module reload", async () => {
+  it("three successes per IP per day (FREE_AUDIT_DAILY_LIMIT), and the count survives a module reload", async () => {
     const fetchMock = vi.fn(async () => new Response(JSON.stringify({ score: 50 }), { status: 200 }));
     vi.stubGlobal("fetch", fetchMock);
     const call = async () => {
@@ -396,10 +397,10 @@ describe("/api/av/audit per-IP limit", () => {
         }) as never,
       );
     };
-    expect((await call()).status).toBe(200);
+    for (let i = 0; i < 3; i++) expect((await call()).status).toBe(200);
     vi.resetModules(); // what a pm2 restart did to the old in-process Map
     expect((await call()).status).toBe(429);
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledTimes(3);
     vi.unstubAllGlobals();
   });
 });

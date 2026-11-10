@@ -17,6 +17,10 @@ export function auditBaseOf(locale: string | null | undefined): AuditBase {
   return (locale ?? "").startsWith("fr") ? "fr" : "en";
 }
 
+/** "3 free audits" / "One free audit": the allowance as a sentence opener. */
+const enAudits = (n: number) => (n === 1 ? "One free audit" : `${n} free audits`);
+const frAudits = (n: number) => (n === 1 ? "Un audit gratuit" : `${n} audits gratuits`);
+
 export type Effort = "minutes" | "hour" | "hours" | "day";
 
 /** Effort per gate or check id: how long the fix usually takes. */
@@ -105,20 +109,35 @@ interface ResultCopy {
   expired: { title: string; body: (days: number) => string; cta: string };
 }
 
+/** Why the sidecar could not read the homepage (ai_readiness.fetch_error). */
+export type FetchReason = "unreachable" | "blocked" | "rate_limited" | "server_error" | "not_found" | "empty";
+
+// Every count of free audits is a parameter: FREE_AUDIT_DAILY_LIMIT
+// (src/lib/free-audit/limits.ts) is the only place the number lives.
 export interface AuditPageCopy {
   metaTitle: string;
-  metaDescription: string;
+  metaDescription: (perDay: number) => string;
   label: string;
   h1: string;
-  heroSub: string;
+  heroSub: (perDay: number) => string;
   toolLine: string;
-  form: { label: string; placeholder: string; run: string; fine: (perDay: number, hours: number) => string };
+  form: {
+    label: string;
+    placeholder: string;
+    run: string;
+    fine: (perDay: number, hours: number) => string;
+    /** Under the form once the allowance is known: "2 of 3 audits left today". */
+    left: (remaining: number, perDay: number) => string;
+  };
   steps: { title: string; items: string[]; note: string };
   errors: {
     invalid: string;
-    unreachable: string;
+    /** The homepage could not be read; none of these uses an audit. */
+    fetch: Record<FetchReason, string>;
     generic: string;
     rateLimited: (when: string | null, perDay: number, hours: number) => string;
+    /** 403: the request reached us without Cloudflare's visitor address. */
+    noClientIp: string;
   };
   what: { label: string; title: string; items: { h: string; p: string }[] };
   how: { label: string; title: string; steps: { h: string; p: string }[] };
@@ -223,18 +242,20 @@ const FR_MEANING: Record<Bot, { allowed: string; blocked: string }> = {
 
 const EN: AuditPageCopy = {
   metaTitle: "Free AI Readiness Audit: can AI read, trust and cite your site? | Echorank360",
-  metaDescription:
-    "Free AI Readiness Audit: check whether AI answer engines can read, trust and cite your website. AI readiness score, AI crawler access, the top fixes with copy-ready snippets, and a PDF. No account.",
+  metaDescription: (perDay) =>
+    `Free AI Readiness Audit: check whether AI answer engines can read, trust and cite your website. AI readiness score, AI crawler access, the top fixes with copy-ready snippets, and a PDF. ${enAudits(perDay)} a day, no account.`,
   label: "FREE TOOL",
   h1: "Can AI read, trust and cite your website?",
-  heroSub:
-    "The AI Readiness Audit reads your site the way AI crawlers do: whether they are let in, whether your text is in the page, and whether the facts an answer quotes are there. No account, no card.",
+  heroSub: (perDay) =>
+    `The AI Readiness Audit reads your site the way AI crawlers do: whether they are let in, whether your text is in the page, and whether the facts an answer quotes are there. ${enAudits(perDay)} a day, no account, no card.`,
   toolLine: "Checks crawler access, readable content, identity and discoverability. It asks no AI engine anything.",
   form: {
     label: "Your website",
     placeholder: "yourdomain.com",
     run: "Run the free audit",
-    fine: (perDay, hours) => `No account needed. ${perDay === 1 ? "One audit" : `${perDay} audits`} per IP address every ${hours} hours.`,
+    fine: (perDay, hours) =>
+      `No account needed. ${enAudits(perDay)} per IP address every ${hours} hours, counted from the first. Only an audit that returns a score counts.`,
+    left: (remaining, perDay) => `${remaining} of ${perDay} audits left today`,
   },
   steps: {
     title: "Auditing your site",
@@ -248,13 +269,23 @@ const EN: AuditPageCopy = {
     note: "Usually 20 to 40 seconds.",
   },
   errors: {
-    invalid: "Enter a public website, like yourdomain.com.",
-    unreachable: "We couldn’t reach that website. Check the address, make sure the site is up, and try again. This didn’t use your free audit.",
-    generic: "The audit could not run. Try again in a minute.",
+    invalid: "Enter your website’s address, like yourdomain.com. The audit reads a website, so a business name on its own won’t work.",
+    fetch: {
+      unreachable:
+        "We couldn’t connect to that website, with or without “www”. Check the address and that the site is up, then try again. This didn’t use one of your free audits.",
+      blocked:
+        "That website refused our request (its firewall or host blocks automated visitors), so there was nothing to read. If it’s your site, check its bot protection: AI crawlers may be refused too. This didn’t use one of your free audits.",
+      rate_limited: "That website asked us to slow down. Wait a few minutes and try again. This didn’t use one of your free audits.",
+      server_error: "That website answered with a server error. Try again once it’s back up. This didn’t use one of your free audits.",
+      not_found: "That page doesn’t exist (HTTP 404). Enter the site’s home address, like yourdomain.com. This didn’t use one of your free audits.",
+      empty: "That website answered with an empty page, so there was nothing to read. This didn’t use one of your free audits.",
+    },
+    generic: "The audit could not run on our side. Try again in a minute. This didn’t use one of your free audits.",
     rateLimited: (when, perDay, hours) =>
       when
-        ? `You’ve used your free audit: ${perDay === 1 ? "one" : perDay} per IP address every ${hours} hours. You can run the next one at ${when}.`
-        : `You’ve used your free audit: ${perDay === 1 ? "one" : perDay} per IP address every ${hours} hours. Try again later.`,
+        ? `You’ve used all ${perDay} free audits for today (${perDay} per IP address every ${hours} hours). You can run the next one on ${when}.`
+        : `You’ve used all ${perDay} free audits for today (${perDay} per IP address every ${hours} hours). Try again later.`,
+    noClientIp: "We couldn’t identify your connection, so the free audit can’t run. Reload the page and try again.",
   },
   what: {
     label: "WHAT YOU GET",
@@ -283,7 +314,10 @@ const EN: AuditPageCopy = {
     label: "FAQ",
     title: "Common questions",
     items: (perDay, hours) => [
-      { q: "Is it really free?", a: `Yes. ${perDay === 1 ? "One audit" : `${perDay} audits`} per IP address every ${hours} hours, no account and no card.` },
+      {
+        q: "Is it really free?",
+        a: `Yes. ${enAudits(perDay)} per IP address every ${hours} hours, no account and no card. An audit that could not read the site doesn’t count.`,
+      },
       { q: "What do you do with my domain?", a: "We read publicly available pages only. The result is kept for a week so its link works, the score is counted (without your domain) for the benchmark, and you are not added to any mailing list." },
       {
         q: "Does it check what ChatGPT says about me?",
@@ -372,18 +406,21 @@ const EN: AuditPageCopy = {
 
 const FR: AuditPageCopy = {
   metaTitle: "Audit de préparation IA gratuit : l’IA peut-elle lire, croire et citer votre site ? | Echorank360",
-  metaDescription:
-    "Audit de préparation IA gratuit : vérifiez si les moteurs de réponse IA peuvent lire votre site, s’y fier et le citer. Score, accès des robots d’IA, les correctifs prioritaires avec des extraits prêts à copier, et un PDF. Sans compte.",
+  metaDescription: (perDay) =>
+    `Audit de préparation IA gratuit : vérifiez si les moteurs de réponse IA peuvent lire votre site, s’y fier et le citer. Score, accès des robots d’IA, les correctifs prioritaires avec des extraits prêts à copier, et un PDF. ${frAudits(perDay)} par jour, sans compte.`,
   label: "OUTIL GRATUIT",
   h1: "L’IA peut-elle lire, croire et citer votre site ?",
-  heroSub:
-    "L’audit de préparation IA lit votre site comme le font les robots d’IA : sont-ils autorisés, votre texte est-il dans la page, les faits qu’une réponse cite sont-ils là ? Sans compte, sans carte.",
+  heroSub: (perDay) =>
+    `L’audit de préparation IA lit votre site comme le font les robots d’IA : sont-ils autorisés, votre texte est-il dans la page, les faits qu’une réponse cite sont-ils là ? ${frAudits(perDay)} par jour, sans compte, sans carte.`,
   toolLine: "Vérifie l’accès des robots, le contenu lisible, l’identité et la découvrabilité. Il n’interroge aucun moteur d’IA.",
   form: {
     label: "Votre site web",
     placeholder: "votredomaine.com",
     run: "Lancer l’audit gratuit",
-    fine: (perDay, hours) => `Aucun compte requis. ${perDay === 1 ? "Un audit" : `${perDay} audits`} par adresse IP toutes les ${hours} heures.`,
+    fine: (perDay, hours) =>
+      `Aucun compte requis. ${frAudits(perDay)} par adresse IP toutes les ${hours} heures, à compter du premier. Seul un audit qui donne un score est compté.`,
+    left: (remaining, perDay) =>
+      `Il vous reste ${remaining} audit${remaining > 1 ? "s" : ""} sur ${perDay} aujourd’hui`,
   },
   steps: {
     title: "Audit de votre site en cours",
@@ -397,13 +434,23 @@ const FR: AuditPageCopy = {
     note: "Généralement de 20 à 40 secondes.",
   },
   errors: {
-    invalid: "Saisissez un site web public, comme votredomaine.com.",
-    unreachable: "Nous n’avons pas pu joindre ce site. Vérifiez l’adresse et que le site est en ligne, puis réessayez. Votre audit gratuit n’a pas été utilisé.",
-    generic: "L’audit n’a pas pu s’exécuter. Réessayez dans une minute.",
+    invalid: "Saisissez l’adresse de votre site, comme votredomaine.com. L’audit lit un site web : un nom d’entreprise seul ne suffit pas.",
+    fetch: {
+      unreachable:
+        "Impossible de se connecter à ce site, avec ou sans « www ». Vérifiez l’adresse et que le site est en ligne, puis réessayez. Cet essai n’a pas été décompté de vos audits gratuits.",
+      blocked:
+        "Ce site a refusé notre requête (son pare-feu ou son hébergeur bloque les visiteurs automatisés) : il n’y avait rien à lire. S’il s’agit de votre site, vérifiez sa protection anti-robots : les robots d’IA sont peut-être refusés eux aussi. Cet essai n’a pas été décompté de vos audits gratuits.",
+      rate_limited: "Ce site nous a demandé de ralentir. Patientez quelques minutes, puis réessayez. Cet essai n’a pas été décompté de vos audits gratuits.",
+      server_error: "Ce site a répondu par une erreur serveur. Réessayez quand il sera rétabli. Cet essai n’a pas été décompté de vos audits gratuits.",
+      not_found: "Cette page n’existe pas (HTTP 404). Saisissez l’adresse d’accueil du site, comme votredomaine.com. Cet essai n’a pas été décompté de vos audits gratuits.",
+      empty: "Ce site a renvoyé une page vide : il n’y avait rien à lire. Cet essai n’a pas été décompté de vos audits gratuits.",
+    },
+    generic: "L’audit n’a pas pu s’exécuter de notre côté. Réessayez dans une minute. Cet essai n’a pas été décompté de vos audits gratuits.",
     rateLimited: (when, perDay, hours) =>
       when
-        ? `Vous avez utilisé votre audit gratuit : ${perDay === 1 ? "un" : perDay} par adresse IP toutes les ${hours} heures. Vous pourrez lancer le suivant le ${when}.`
-        : `Vous avez utilisé votre audit gratuit : ${perDay === 1 ? "un" : perDay} par adresse IP toutes les ${hours} heures. Réessayez plus tard.`,
+        ? `Vous avez utilisé vos ${perDay} audits gratuits du jour (${perDay} par adresse IP toutes les ${hours} heures). Vous pourrez lancer le suivant le ${when}.`
+        : `Vous avez utilisé vos ${perDay} audits gratuits du jour (${perDay} par adresse IP toutes les ${hours} heures). Réessayez plus tard.`,
+    noClientIp: "Nous n’avons pas pu identifier votre connexion : l’audit gratuit ne peut pas s’exécuter. Rechargez la page et réessayez.",
   },
   what: {
     label: "CE QUE VOUS OBTENEZ",
@@ -432,7 +479,10 @@ const FR: AuditPageCopy = {
     label: "FAQ",
     title: "Questions fréquentes",
     items: (perDay, hours) => [
-      { q: "Est-ce vraiment gratuit ?", a: `Oui. ${perDay === 1 ? "Un audit" : `${perDay} audits`} par adresse IP toutes les ${hours} heures, sans compte ni carte.` },
+      {
+        q: "Est-ce vraiment gratuit ?",
+        a: `Oui. ${frAudits(perDay)} par adresse IP toutes les ${hours} heures, sans compte ni carte. Un audit qui n’a pas pu lire le site n’est pas décompté.`,
+      },
       { q: "Que faites-vous de mon domaine ?", a: "Nous lisons uniquement des pages publiques. Le résultat est conservé une semaine pour que son lien fonctionne, le score est compté (sans votre domaine) pour la comparaison, et vous n’êtes ajouté à aucune liste de diffusion." },
       {
         q: "Vérifie-t-il ce que ChatGPT dit de moi ?",

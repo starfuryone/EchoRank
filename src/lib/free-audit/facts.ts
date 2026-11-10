@@ -13,7 +13,7 @@ import { SITE_URL } from "@/lib/seo/constants";
 import { CRAWLER_BRAND } from "@/lib/site-crawler/brand";
 import { FREE_CRAWL_URL_CAP } from "@/lib/site-crawler/free-limits";
 import type { ResultFacts } from "@/components/free-audit/FreeAuditResult";
-import { FREE_AUDITS_PER_DAY, FREE_AUDIT_RESULT_DAYS, FREE_AUDIT_WINDOW_HOURS } from "./limits";
+import { FREE_AUDIT_DAILY_LIMIT, FREE_AUDIT_RESULT_DAYS, FREE_AUDIT_WINDOW_HOURS } from "./limits";
 
 /** ?src= of the result's plan CTA. */
 export const FREE_AUDIT_RESULT_SRC = "free-audit-result";
@@ -27,7 +27,7 @@ export function resultFacts(locale: string, env: NodeJS.ProcessEnv = process.env
   const la = linkAuthorityFromPrice();
   return {
     locale: l,
-    perDay: FREE_AUDITS_PER_DAY,
+    perDay: FREE_AUDIT_DAILY_LIMIT,
     hours: FREE_AUDIT_WINDOW_HOURS,
     resultDays: FREE_AUDIT_RESULT_DAYS,
     av: {

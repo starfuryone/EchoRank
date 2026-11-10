@@ -18,7 +18,7 @@ import { SUPPORTED_LOCALES, isSupportedLocale } from "@/lib/i18n/config";
 import { JsonLd, SITE_URL, buildMetadata, faqPage, normalizeLocale, organization } from "@/lib/seo";
 import { AUDIT_COPY, AUDIT_NAME, auditBaseOf } from "@/lib/free-audit/copy";
 import { resultFacts } from "@/lib/free-audit/facts";
-import { FREE_AUDITS_PER_DAY, FREE_AUDIT_WINDOW_HOURS } from "@/lib/free-audit/limits";
+import { FREE_AUDIT_DAILY_LIMIT, FREE_AUDIT_WINDOW_HOURS } from "@/lib/free-audit/limits";
 import { AuditRunner } from "@/components/free-audit/AuditRunner";
 import { PublicNav } from "../PublicNav";
 import { PublicFooter } from "@/components/PublicFooter";
@@ -32,7 +32,7 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   const { locale } = await params;
   if (!isSupportedLocale(locale)) return {};
   const c = AUDIT_COPY[auditBaseOf(locale)];
-  return buildMetadata({ locale, path: "/free-audit", title: c.metaTitle, description: c.metaDescription });
+  return buildMetadata({ locale, path: "/free-audit", title: c.metaTitle, description: c.metaDescription(FREE_AUDIT_DAILY_LIMIT) });
 }
 
 export default async function Page({ params }: { params: Promise<{ locale: string }> }) {
@@ -43,7 +43,7 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
   const L = (p: string) => `/${locale}${p}`;
   const l = normalizeLocale(locale);
   const pageUrl = `${SITE_URL}/${l}/free-audit`;
-  const faq = c.faq.items(FREE_AUDITS_PER_DAY, FREE_AUDIT_WINDOW_HOURS);
+  const faq = c.faq.items(FREE_AUDIT_DAILY_LIMIT, FREE_AUDIT_WINDOW_HOURS);
 
   return (
     <div className={s.page}>
@@ -55,7 +55,7 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
             "@id": `${pageUrl}#webpage`,
             url: pageUrl,
             name: c.metaTitle,
-            description: c.metaDescription,
+            description: c.metaDescription(FREE_AUDIT_DAILY_LIMIT),
             inLanguage: l,
             isPartOf: { "@id": `${SITE_URL}/#website` },
             publisher: { "@id": `${SITE_URL}/#organization` },
@@ -72,7 +72,7 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
             <b>/ 01</b> — {c.label} · {AUDIT_NAME[base]}
           </p>
           <h1 className={s.h1}>{c.h1}</h1>
-          <p className={s.sub}>{c.heroSub}</p>
+          <p className={s.sub}>{c.heroSub(FREE_AUDIT_DAILY_LIMIT)}</p>
           <AuditRunner facts={resultFacts(locale)} />
           <p className={s.label} style={{ marginTop: 18 }} data-testid="audit-tool-line">
             {c.toolLine}

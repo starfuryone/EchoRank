@@ -1002,7 +1002,7 @@ export const TECHNICAL_GEO_HTML = `<!DOCTYPE html>
           <details>
             <summary>Is the audit really free?</summary>
             <p>
-              Yes. You get one free AI visibility audit per day&mdash;no account, no card. It includes the
+              Yes. You get 3 free audits a day&mdash;no account, no card. It includes the
               visibility score, the check-by-check breakdown, and a downloadable PDF report. Paid plans add
               re-runs, history and monitoring; every plan from Starter adds the full SEO Tools hub.
             </p>

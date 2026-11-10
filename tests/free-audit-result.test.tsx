@@ -30,6 +30,11 @@ vi.mock("@/infrastructure/redis/connection", () => ({
       kv.map.set(k, { v: String(n), exp: kv.map.get(k)?.exp ?? null });
       return n;
     },
+    decr: async (k: string) => {
+      const n = Number(kv.map.get(k)?.v ?? 0) - 1;
+      kv.map.set(k, { v: String(n), exp: kv.map.get(k)?.exp ?? null });
+      return n;
+    },
     expire: async (k: string, s: number) => {
       const e = kv.map.get(k);
       if (e) e.exp = kv.now() + s * 1000;
@@ -282,11 +287,11 @@ describe("the run's API", () => {
 
   it("rate-limited: 429 with the time the next audit is possible and the per-day rule", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify(audit()), { status: 200 })));
-    await post({ brand: "acme.example" });
+    for (let i = 0; i < 3; i++) expect((await post({ brand: "acme.example" })).status).toBe(200);
     const res = await post({ brand: "acme.example" });
     expect(res.status).toBe(429);
     const body = await res.json();
-    expect(body).toMatchObject({ error: "rate_limited", perDay: 1 });
+    expect(body).toMatchObject({ error: "rate_limited", perDay: 3 });
     expect(Date.parse(body.retryAt) - Date.now()).toBeGreaterThan(23 * 3_600_000);
   });
 
@@ -295,7 +300,8 @@ describe("the run's API", () => {
     const res = await post({ brand: "down.example" });
     expect(res.status).toBe(422);
     expect((await res.json()).error).toBe("unreachable");
-    expect(kv.map.has("echorank:av-free-audit:1.2.3.4")).toBe(false);
+    // The slot reserved before the call was refunded.
+    expect(Number(kv.map.get("echorank:av-free-audit:1.2.3.4")?.v ?? 0)).toBe(0);
   });
 });
 

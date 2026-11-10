@@ -9,13 +9,18 @@
 // robots.txt, render, checks, score) and moves the marker on a typical
 // schedule; it never claims a step finished that the response has not.
 //
-// States: site unreachable (friendly, no allowance used), invalid address,
-// rate-limited (with the time the next run is possible, from the API), and
-// errors. A bot challenge is not an error: it is a result, with its gate and
-// its fix.
+// States: the homepage could not be read (one message per reason the sidecar
+// gives: unreachable, blocked, rate-limited, server error, 404, empty; none
+// uses an audit), invalid address, rate-limited (with the time the next run is
+// possible, from the API), and errors. A bot challenge is not an error: it is
+// a result, with its gate and its fix.
+//
+// THE ALLOWANCE: on load the form asks GET /api/av/audit what this visitor has
+// left and shows "{remaining} of {perDay} audits left today"; each run's answer
+// updates it. At zero the form says when the next audit is possible.
 
 import { useEffect, useState } from "react";
-import { AUDIT_COPY, auditBaseOf } from "@/lib/free-audit/copy";
+import { AUDIT_COPY, auditBaseOf, type FetchReason } from "@/lib/free-audit/copy";
 import type { AuditJson } from "@/lib/free-audit/view";
 import { FreeAuditResult, type ResultExtras, type ResultFacts } from "./FreeAuditResult";
 import f from "./free-audit.module.css";
@@ -26,13 +31,34 @@ type State =
   | { k: "error"; message: string }
   | { k: "done"; audit: AuditJson; extras: ResultExtras };
 
+/** What the API says this visitor has left; null until known (or when it cannot say). */
+type Allowance = { remaining: number; retryAt: string | null } | null;
+
 /** Seconds into a run at which each stage starts (the typical audit is 20–40 s). */
 const STEP_AT = [0, 3, 7, 14, 24];
+
+const REASONS: readonly FetchReason[] = ["unreachable", "blocked", "rate_limited", "server_error", "not_found", "empty"];
 
 export function AuditRunner({ facts }: { facts: ResultFacts }) {
   const c = AUDIT_COPY[auditBaseOf(facts.locale)];
   const [domain, setDomain] = useState("");
   const [state, setState] = useState<State>({ k: "idle" });
+  const [allowance, setAllowance] = useState<Allowance>(null);
+
+  useEffect(() => {
+    let live = true;
+    fetch("/api/av/audit", { method: "GET", cache: "no-store" })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d: { remaining?: unknown; retryAt?: unknown } | null) => {
+        if (live && d && typeof d.remaining === "number") {
+          setAllowance({ remaining: d.remaining, retryAt: typeof d.retryAt === "string" ? d.retryAt : null });
+        }
+      })
+      .catch(() => {});
+    return () => {
+      live = false;
+    };
+  }, []);
 
   const running = state.k === "running";
   useEffect(() => {
@@ -60,9 +86,17 @@ export function AuditRunner({ facts }: { facts: ResultFacts }) {
     setState({ k: "running", step: 0 });
     try {
       const res = await fetch("/api/av/audit", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ brand: b }) });
-      const data = (await res.json().catch(() => null)) as (AuditJson & { error?: string; retryAt?: string | null }) | null;
+      const data = (await res.json().catch(() => null)) as
+        | (AuditJson & { error?: string; reason?: string; retryAt?: string | null; remaining?: number | null })
+        | null;
       if (res.status === 429) {
-        setState({ k: "error", message: c.errors.rateLimited(when(data?.retryAt), facts.perDay, facts.hours) });
+        const retryAt = data?.retryAt ?? null;
+        setAllowance({ remaining: 0, retryAt });
+        setState({ k: "error", message: c.errors.rateLimited(when(retryAt), facts.perDay, facts.hours) });
+        return;
+      }
+      if (res.status === 403 && data?.error === "no_client_ip") {
+        setState({ k: "error", message: c.errors.noClientIp });
         return;
       }
       if (res.status === 400) {
@@ -70,13 +104,15 @@ export function AuditRunner({ facts }: { facts: ResultFacts }) {
         return;
       }
       if (res.status === 422 && data?.error === "unreachable") {
-        setState({ k: "error", message: c.errors.unreachable });
+        const reason = REASONS.find((r) => r === data.reason) ?? "unreachable";
+        setState({ k: "error", message: c.errors.fetch[reason] });
         return;
       }
       if (!res.ok || !data || typeof data.score !== "number") {
         setState({ k: "error", message: c.errors.generic });
         return;
       }
+      if (typeof data.remaining === "number") setAllowance({ remaining: data.remaining, retryAt: null });
       setState({
         k: "done",
         audit: data,
@@ -113,13 +149,23 @@ export function AuditRunner({ facts }: { facts: ResultFacts }) {
             onChange={(e) => setDomain(e.target.value)}
             disabled={running}
           />
-          <button type="submit" className={`${f.linkBtn} ${f.primary}`} disabled={running || !domain.trim()} data-testid="audit-run">
+          <button type="submit" className={`${f.linkBtn} ${f.primary}`} disabled={running || !domain.trim() || allowance?.remaining === 0} data-testid="audit-run">
             {c.form.run}
           </button>
         </div>
         {state.k === "error" && (
           <p className={f.err} role="alert" data-testid="audit-error">
             {state.message}
+          </p>
+        )}
+        {allowance && allowance.remaining > 0 && (
+          <p className={f.fine} data-testid="audit-left">
+            <b>{c.form.left(allowance.remaining, facts.perDay)}</b>
+          </p>
+        )}
+        {allowance && allowance.remaining === 0 && state.k !== "error" && (
+          <p className={f.err} role="status" data-testid="audit-left">
+            {c.errors.rateLimited(when(allowance.retryAt), facts.perDay, facts.hours)}
           </p>
         )}
         <p className={f.fine}>{c.form.fine(facts.perDay, facts.hours)}</p>
