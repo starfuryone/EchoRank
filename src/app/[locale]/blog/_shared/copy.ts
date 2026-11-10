@@ -164,7 +164,7 @@ export const BLOG_TOOL_COPY: Record<BlogBase, ToolCopy> = {
     },
     pricing: {
       h: "Track this continuously",
-      p: "Scheduled prompt runs against a frozen set, weekly, with alerts when you drop out of an answer you used to hold.",
+      p: "Scheduled prompt runs against a frozen set, daily on every plan, with alerts when you drop out of an answer you used to hold.",
       cta: "See plans & pricing ↗",
     },
     "ai-assistant": {
@@ -186,7 +186,7 @@ export const BLOG_TOOL_COPY: Record<BlogBase, ToolCopy> = {
     },
     pricing: {
       h: "Suivez-le en continu",
-      p: "Des exécutions planifiées sur un jeu de prompts figé, chaque semaine, avec des alertes quand vous disparaissez d'une réponse que vous occupiez.",
+      p: "Des exécutions planifiées sur un jeu de prompts figé, chaque jour sur tous les forfaits, avec des alertes quand vous disparaissez d'une réponse que vous occupiez.",
       cta: "Voir les tarifs ↗",
     },
     "ai-assistant": {

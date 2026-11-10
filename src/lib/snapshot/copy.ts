@@ -2,7 +2,24 @@
 //
 // Every string the free AI Visibility Check shows: landing page, widget,
 // result, share page. en + fr written; every other marketing locale folds to
-// en, as on /free-audit. Dependency-free: the client widget imports it.
+// en, as on /free-audit. Dependency-light: the client widget imports it.
+//
+// The upsell's numbers (2026-11-10, ECHORANK-AI-VISIBILITY-PAGES.md Phase 3)
+// are the check's own prompt and engine counts and the AI Visibility plan's
+// cadence, read here, not typed: the line used to say "weekly" for a plan
+// that checks daily.
+
+import { PLAN_CONFIGS } from "@/lib/plan-config";
+import { PROMPT_COUNT } from "./prompts";
+import { SNAPSHOT_ENGINES } from "./types";
+
+const P = PROMPT_COUNT;
+const E = SNAPSHOT_ENGINES.length;
+const AV_FREQ = PLAN_CONFIGS.AI_VISIBILITY.aiCheckup.frequency;
+const CADENCE_EN = { weekly: "weekly", twice_weekly: "twice a week", daily: "daily", custom: "on schedule", none: "on schedule" }[AV_FREQ];
+const CADENCE_FR = { weekly: "chaque semaine", twice_weekly: "deux fois par semaine", daily: "chaque jour", custom: "selon le calendrier", none: "selon le calendrier" }[AV_FREQ];
+/** The ?track= cadence: the AI Visibility plan's, when it is one parseTrackParam knows. */
+const TRACK_FREQ = AV_FREQ === "weekly" || AV_FREQ === "twice_weekly" || AV_FREQ === "daily" ? AV_FREQ : "daily";
 
 export type SnapshotBase = "en" | "fr";
 export const snapshotBaseOf = (locale: string): SnapshotBase => (locale.startsWith("fr") ? "fr" : "en");
@@ -247,11 +264,11 @@ export const SNAPSHOT_COPY: Record<SnapshotBase, SnapshotCopy> = {
     upsell: {
       heading: "The shortlist is made before anyone visits your site.",
       body: "When AI leaves you out, names a competitor first, or cites their sources instead of yours, the customer has already narrowed the choice — and you never saw the question. Tracking shows you every answer that changes, the week it changes.",
-      cta: "Track these 10 prompts weekly",
-      planLine: "10 prompts × 2 engines × weekly",
+      cta: `Track these ${P} prompts ${CADENCE_EN}`,
+      planLine: `${P} prompts × ${E} engines × ${CADENCE_EN}`,
       guideLink: "How to check over time",
     },
-    pricingFit: "Tracking the 10 prompts from your check on 2 engines, weekly: the {plan} plan covers it.",
+    pricingFit: `Tracking the ${P} prompts from your check on ${E} engines, ${CADENCE_EN}: the {plan} plan covers it.`,
     share: {
       metaTitle: "AI Visibility Check report",
       title: "AI Visibility Check: {brand}",
@@ -400,11 +417,11 @@ export const SNAPSHOT_COPY: Record<SnapshotBase, SnapshotCopy> = {
     upsell: {
       heading: "La liste restreinte se fait avant qu'on visite votre site.",
       body: "Quand l'IA vous oublie, cite d'abord un concurrent ou s'appuie sur ses sources plutôt que les vôtres, le client a déjà fait son tri — et vous n'avez jamais vu la question. Le suivi vous montre chaque réponse qui change, la semaine où elle change.",
-      cta: "Suivre ces 10 questions chaque semaine",
-      planLine: "10 questions × 2 moteurs × chaque semaine",
+      cta: `Suivre ces ${P} questions ${CADENCE_FR}`,
+      planLine: `${P} questions × ${E} moteurs × ${CADENCE_FR}`,
       guideLink: "Comment vérifier dans le temps",
     },
-    pricingFit: "Suivre les 10 questions de votre vérification sur 2 moteurs, chaque semaine : le forfait {plan} le couvre.",
+    pricingFit: `Suivre les ${P} questions de votre vérification sur ${E} moteurs, ${CADENCE_FR} : le forfait {plan} le couvre.`,
     share: {
       metaTitle: "Rapport de vérification de visibilité IA",
       title: "Vérification de visibilité IA : {brand}",
@@ -416,9 +433,9 @@ export const SNAPSHOT_COPY: Record<SnapshotBase, SnapshotCopy> = {
   },
 };
 
-/** The plan picker link: these prompts × 2 engines × weekly, prefilled. */
+/** The plan picker link: the check's prompts × its engines × the AI Visibility plan's cadence, prefilled. */
 export function trackHref(locale: string, snapshotId?: string): string {
-  const q = new URLSearchParams({ track: "10x2-weekly", from: "ai-visibility-check" });
+  const q = new URLSearchParams({ track: `${P}x${E}-${TRACK_FREQ}`, from: "ai-visibility-check" });
   if (snapshotId) q.set("snapshot", snapshotId);
   return `/${locale}/pricing?${q.toString()}#pricing`;
 }

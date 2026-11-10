@@ -9,6 +9,7 @@ import { plainText } from "./learn/_shared/inline";
 import { PLAN_CONFIGS, PLAN_ORDER } from "@/lib/plan-config";
 import { HOME_PRICING_CHROME, HOME_TOOLS, toolCountLine } from "@/lib/i18n/content";
 import { seoToolCounts } from "@/lib/seo-tools";
+import { allLiveEngineNames } from "@/lib/ai-visibility-landing/facts";
 import {
   BRAND_TITLE,
   JsonLd,
@@ -78,6 +79,9 @@ export default async function Page(
         // HomeClient, whose own copy table is en/fr only, does not have to
         // import the whole content catalog to render a mute button.
         playerLabels={HOME_TOOLS[l].player}
+        // The engines the plans query (live registry, server-side): the strip,
+        // the "monitoring N engines" chip and the sample panels name only these.
+        trackedEngines={allLiveEngineNames()}
         toolCountLine={toolCountLine(l, seoToolCounts())}
         // Passed in as a slot rather than imported by HomeClient: the grid is a
         // server component so the whole seo-tools config (and its lucide icon

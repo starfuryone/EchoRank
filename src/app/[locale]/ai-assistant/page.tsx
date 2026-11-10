@@ -147,7 +147,7 @@ const COPY: Record<Base, Copy> = {
       disabled: "The Echorank assistant is offline for maintenance. Try again shortly.",
       ctaTitle: "Want this watched for you?",
       ctaBody:
-        "Echorank re-runs these checks on a schedule, tracks what assistants say about you across four engines, and tells you the week you stop being recommended.",
+        "Echorank re-runs these checks on a schedule, tracks what the AI engines on your plan say about you every day, and tells you the day you stop being recommended.",
       ctaButton: "See plans",
       fine: "Free and anonymous. One site scan a day per visitor.",
     },
@@ -247,7 +247,7 @@ const COPY: Record<Base, Copy> = {
       disabled: "L'assistant Echorank est hors ligne pour maintenance. Réessayez bientôt.",
       ctaTitle: "Vous voulez que ce soit surveillé pour vous ?",
       ctaBody:
-        "Echorank relance ces contrôles régulièrement, suit ce que les assistants disent de vous sur quatre moteurs et vous prévient la semaine où vous cessez d'être recommandé.",
+        "Echorank relance ces contrôles régulièrement, suit chaque jour ce que disent de vous les moteurs d'IA de votre forfait et vous prévient le jour où vous cessez d'être recommandé.",
       ctaButton: "Voir les forfaits",
       fine: "Gratuit et anonyme. Une analyse de site par jour et par visiteur.",
     },

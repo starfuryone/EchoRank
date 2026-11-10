@@ -34,6 +34,7 @@ function home(locale: "en" | "fr"): string {
       // RESOURCES section does not depend on it.
       toolsSection: null,
       crawlersSection: null,
+      trackedEngines: ["ChatGPT", "Google AI Overviews"],
       playerLabels: HOME_TOOLS[locale].player,
     }),
   );

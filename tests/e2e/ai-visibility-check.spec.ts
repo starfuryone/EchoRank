@@ -77,8 +77,9 @@ test("form → result → email gate → share link", async ({ page, context }) 
   await expect(full.getByText("Get listed")).toBeVisible();
 
   // The upsell goes to the plan picker, prefilled.
-  const track = page.getByRole("link", { name: /Track these 10 prompts weekly/ }).first();
-  await expect(track).toHaveAttribute("href", /\/en\/pricing\?track=10x2-weekly/);
+  // The AI Visibility plan's cadence (daily since 2026-11-07), not "weekly".
+  const track = page.getByRole("link", { name: /Track these 10 prompts daily/ }).first();
+  await expect(track).toHaveAttribute("href", /\/en\/pricing\?track=10x2-daily/);
 
   // The share link opens the full report on its own, noindex.
   const shareUrl = await full.getByRole("textbox", { name: "Share link" }).inputValue();

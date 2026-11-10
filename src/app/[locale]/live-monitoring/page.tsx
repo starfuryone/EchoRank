@@ -43,7 +43,7 @@ const C: Record<Locale, LpContent> = {
       h2: "Every surface where reputation moves.",
       items: [
         { t: "Reviews as they land", b: "New reviews from every configured source sync in and get scored on arrival, sentiment and risk included." },
-        { t: "AI answers, daily", b: "Your key prompts run against ChatGPT, Perplexity and Google AI every day: cited, misquoted or missing, with history." },
+        { t: "AI answers, daily", b: "Your key prompts run against ChatGPT, Google AI Overviews and the other engines on your plan every day: cited, misquoted or missing, with history." },
         { t: "Competitors, every morning", b: "Ratings and review counts snapshotted daily; momentum computed against your own pace." },
         { t: "Risk, every hour", b: "The Reputation Risk Score recomputes hourly, with 7 and 30-day deltas so trends surface early." },
         { t: "Private feedback, live", b: "Submitted feedback routes and folds into the score the same hour." },
@@ -103,7 +103,7 @@ const C: Record<Locale, LpContent> = {
       h2: "Chaque surface où la réputation bouge.",
       items: [
         { t: "Les avis dès leur arrivée", b: "Les nouveaux avis de chaque source configurée sont synchronisés et notés à réception, sentiment et risque compris." },
-        { t: "Les réponses IA, chaque jour", b: "Vos requêtes clés sont testées quotidiennement sur ChatGPT, Perplexity et Google AI : cité, déformé ou absent, avec historique." },
+        { t: "Les réponses IA, chaque jour", b: "Vos requêtes clés sont testées quotidiennement sur ChatGPT, les aperçus IA de Google et les autres moteurs de votre forfait : cité, déformé ou absent, avec historique." },
         { t: "Les concurrents, chaque matin", b: "Notes et volumes d'avis capturés chaque jour ; l'élan est calculé face à votre propre rythme." },
         { t: "Le risque, chaque heure", b: "Le Score de risque de réputation est recalculé toutes les heures, avec variations à 7 et 30 jours pour voir les tendances tôt." },
         { t: "Les retours privés, en direct", b: "Chaque retour soumis est routé et intégré au score dans l'heure." },
@@ -163,7 +163,7 @@ const C: Record<Locale, LpContent> = {
       h2: "Jede Fläche, auf der sich Reputation bewegt.",
       items: [
         { t: "Bewertungen bei Eingang", b: "Neue Bewertungen aus jeder Quelle werden synchronisiert und sofort bewertet, inklusive Stimmung und Risiko." },
-        { t: "KI-Antworten, täglich", b: "Ihre Schlüsselfragen laufen täglich gegen ChatGPT, Perplexity und Google AI: zitiert, verzerrt oder fehlend, mit Verlauf." },
+        { t: "KI-Antworten, täglich", b: "Ihre Schlüsselfragen laufen täglich gegen ChatGPT, Googles AI Overviews und die weiteren Engines Ihres Abos: zitiert, verzerrt oder fehlend, mit Verlauf." },
         { t: "Konkurrenten, jeden Morgen", b: "Bewertungen und Zahlen täglich festgehalten; Momentum gegen Ihr eigenes Tempo berechnet." },
         { t: "Risiko, jede Stunde", b: "Der Risiko-Score wird stündlich neu berechnet, mit 7- und 30-Tage-Deltas für frühe Trends." },
         { t: "Privates Feedback, live", b: "Eingereichtes Feedback wird geroutet und fliesst in derselben Stunde in den Score." },

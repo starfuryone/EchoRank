@@ -82,7 +82,7 @@ const EN: Doc = {
       "Visibility is not a one time check. Scheduled re-audits run automatically and alert you on score drops and on crawler access flips, so a silent disappearance from AI answers never goes unnoticed.",
     ]},
     { h: "11. AI answer tracking (Agency)", ps: [
-      "Define the questions your customers actually ask, and the platform runs them against ChatGPT, Perplexity and Google AI every day. You see when you are cited, when you are misrepresented, and when you are absent, with history, so you know the day AI starts recommending you and the moment it stops.",
+      "Define the questions your customers actually ask, and the platform runs them against ChatGPT, Google AI Overviews and the other engines on your plan every day. You see when you are cited, when you are misrepresented, and when you are absent, with history, so you know the day AI starts recommending you and the moment it stops.",
     ]},
     { h: "12. The Reputation Risk Score (Growth and above)", ps: [
       "Reputation problems rarely announce themselves. They build quietly, a slowing review pace or a cluster of complaints about the same thing, until a public crisis makes them visible. The Risk Score exists to surface that build-up while it is still cheap to fix. One number from 0 to 100 summarizes your reputation risk across public reviews, private feedback, AI visibility and review velocity. It is fully explainable: five weighted components, and every driver behind the score is named, so you always know what to fix first.",
@@ -226,7 +226,7 @@ const FR: Doc = {
       "La visibilité n'est pas une vérification ponctuelle. Les ré-audits programmés tournent automatiquement et vous alertent en cas de chute de score ou de bascule d'accès des robots, pour qu'une disparition silencieuse des réponses d'IA ne passe jamais inaperçue.",
     ]},
     { h: "11. Suivi des réponses IA (Agence)", ps: [
-      "Définissez les questions que vos clients posent réellement, et la plateforme les teste chaque jour sur ChatGPT, Perplexity et Google AI. Vous voyez quand vous êtes cité, quand vous êtes déformé et quand vous êtes absent, avec historique : vous savez le jour où l'IA commence à vous recommander et l'instant où elle s'arrête.",
+      "Définissez les questions que vos clients posent réellement, et la plateforme les teste chaque jour sur ChatGPT, les aperçus IA de Google et les autres moteurs de votre forfait. Vous voyez quand vous êtes cité, quand vous êtes déformé et quand vous êtes absent, avec historique : vous savez le jour où l'IA commence à vous recommander et l'instant où elle s'arrête.",
     ]},
     { h: "12. Le Score de risque de réputation (Croissance et plus)", ps: [
       "Un seul chiffre de 0 à 100 résume votre risque de réputation à travers les avis publics, la rétroaction privée, la visibilité IA et le rythme des avis. Il est entièrement explicable : cinq composantes pondérées, et chaque facteur derrière le score est nommé, pour toujours savoir quoi corriger en premier.",
@@ -370,7 +370,7 @@ const DE: Doc = {
       "Sichtbarkeit ist keine einmalige Prüfung. Geplante Re-Audits laufen automatisch und melden Score Einbrüche und gekippte Crawler Zugriffe, damit ein stilles Verschwinden aus KI Antworten nie unbemerkt bleibt.",
     ]},
     { h: "11. KI Antwort Tracking (Agentur)", ps: [
-      "Definieren Sie die Fragen, die Ihre Kunden wirklich stellen; die Plattform testet sie täglich gegen ChatGPT, Perplexity und Google AI. Sie sehen, wann Sie zitiert, verzerrt oder gar nicht genannt werden, mit Verlauf: Sie kennen den Tag, an dem die KI Sie zu empfehlen beginnt, und den Moment, in dem sie aufhört.",
+      "Definieren Sie die Fragen, die Ihre Kunden wirklich stellen; die Plattform testet sie täglich gegen ChatGPT, Googles AI Overviews und die weiteren Engines Ihres Abos. Sie sehen, wann Sie zitiert, verzerrt oder gar nicht genannt werden, mit Verlauf: Sie kennen den Tag, an dem die KI Sie zu empfehlen beginnt, und den Moment, in dem sie aufhört.",
     ]},
     { h: "12. Der Reputations Risiko Score (ab Wachstum)", ps: [
       "Eine Zahl von 0 bis 100 fasst Ihr Reputationsrisiko über öffentliche Bewertungen, privates Feedback, KI Sichtbarkeit und Bewertungstempo zusammen. Vollständig erklärbar: fünf gewichtete Komponenten, jeder Treiber benannt, damit Sie immer wissen, was zuerst zu beheben ist.",

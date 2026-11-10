@@ -138,7 +138,7 @@ const en: HomeContent = {
       {
         key: "answers",
         title: "Know what AI actually says about you",
-        body: "Your key customer questions run against ChatGPT, Perplexity and Google AI every day. See when you're cited, misquoted or missing, with history: a quiet disappearance never goes unnoticed.",
+        body: "Your key customer questions run against ChatGPT, Google AI Overviews and the other engines on your plan every day. See when you're cited, misquoted or missing, with history: a quiet disappearance never goes unnoticed.",
         link: { href: "/ai-visibility", label: "More details →" },
       },
       {
@@ -312,7 +312,7 @@ const enCA: HomeContent = {
       {
         key: "answers",
         title: "Know what AI actually says about you",
-        body: "Your key customer questions run against ChatGPT, Perplexity and Google AI every day. See when you're cited, misquoted or missing, with history: a quiet disappearance never goes unnoticed.",
+        body: "Your key customer questions run against ChatGPT, Google AI Overviews and the other engines on your plan every day. See when you're cited, misquoted or missing, with history: a quiet disappearance never goes unnoticed.",
         link: { href: "/ai-visibility", label: "More details →" },
       },
       {
@@ -489,7 +489,7 @@ const fr: HomeContent = {
         key: "answers",
         tag: "réponses IA",
         title: "Sachez ce que l'IA dit vraiment de vous",
-        body: "Vos questions clients clés sont testées chaque jour sur ChatGPT, Perplexity et Google AI. Voyez quand vous êtes cité, déformé ou absent, avec historique : une disparition silencieuse ne passe jamais inaperçue.",
+        body: "Vos questions clients clés sont testées chaque jour sur ChatGPT, les aperçus IA de Google et les autres moteurs de votre forfait. Voyez quand vous êtes cité, déformé ou absent, avec historique : une disparition silencieuse ne passe jamais inaperçue.",
         link: { href: "/ai-visibility", label: "Plus de détails →" },
       },
       {
@@ -669,7 +669,7 @@ const frCA: HomeContent = {
         key: "answers",
         tag: "réponses IA",
         title: "Sachez ce que l'IA dit vraiment de vous",
-        body: "Vos questions clients clés sont testées chaque jour sur ChatGPT, Perplexity et Google AI. Voyez quand vous êtes cité, déformé ou absent, avec historique : une disparition silencieuse ne passe jamais inaperçue.",
+        body: "Vos questions clients clés sont testées chaque jour sur ChatGPT, les aperçus IA de Google et les autres moteurs de votre forfait. Voyez quand vous êtes cité, déformé ou absent, avec historique : une disparition silencieuse ne passe jamais inaperçue.",
         link: { href: "/ai-visibility", label: "Plus de détails →" },
       },
       {
@@ -849,7 +849,7 @@ const deCH: HomeContent = {
         key: "answers",
         tag: "ki-antworten",
         title: "Wissen, was die KI wirklich über Sie sagt",
-        body: "Ihre wichtigsten Kundenfragen laufen täglich gegen ChatGPT, Perplexity und Google AI. Sehen Sie, wann Sie zitiert, verzerrt oder gar nicht genannt werden, mit Verlauf: ein stilles Verschwinden bleibt nie unbemerkt.",
+        body: "Ihre wichtigsten Kundenfragen laufen täglich gegen ChatGPT, Googles AI Overviews und die weiteren Engines Ihres Abos. Sehen Sie, wann Sie zitiert, verzerrt oder gar nicht genannt werden, mit Verlauf: ein stilles Verschwinden bleibt nie unbemerkt.",
         link: { href: "/ai-visibility", label: "Mehr erfahren →" },
       },
       {
@@ -1058,7 +1058,7 @@ export const ABOUT: Record<Locale, AboutContent> = {
       {
         h2: "The engines we track",
         body: [
-          "We monitor six engines continuously: ChatGPT, Google AI, Perplexity, Claude, Gemini and Microsoft Copilot. Answers are tracked daily and risk is recalculated hourly, so a quiet disappearance from one engine does not go unnoticed for a quarter. Alerts fire the moment your coverage flips.",
+          "We monitor the AI answer engines on your plan continuously, from ChatGPT and Google AI Overviews on every plan to more engines higher up (the pricing page names them). Answers are tracked daily and risk is recalculated hourly, so a quiet disappearance from one engine does not go unnoticed for a quarter. Alerts fire the moment your coverage flips.",
         ],
       },
     ],
@@ -1100,7 +1100,7 @@ export const ABOUT: Record<Locale, AboutContent> = {
       {
         h2: "The engines we track",
         body: [
-          "We monitor six engines continuously: ChatGPT, Google AI, Perplexity, Claude, Gemini and Microsoft Copilot. Answers are tracked daily and risk is recalculated hourly, so a quiet disappearance from one engine does not go unnoticed for a quarter. Alerts fire the moment your coverage flips.",
+          "We monitor the AI answer engines on your plan continuously, from ChatGPT and Google AI Overviews on every plan to more engines higher up (the pricing page names them). Answers are tracked daily and risk is recalculated hourly, so a quiet disappearance from one engine does not go unnoticed for a quarter. Alerts fire the moment your coverage flips.",
         ],
       },
     ],
@@ -1142,7 +1142,7 @@ export const ABOUT: Record<Locale, AboutContent> = {
       {
         h2: "Les moteurs que nous suivons",
         body: [
-          "Nous surveillons six moteurs en continu : ChatGPT, Google AI, Perplexity, Claude, Gemini et Microsoft Copilot. Les réponses sont suivies chaque jour et le risque est recalculé chaque heure, afin qu'une disparition silencieuse sur un moteur ne passe pas inaperçue pendant un trimestre. Les alertes se déclenchent dès que votre couverture bascule.",
+          "Nous surveillons en continu les moteurs de réponse IA de votre forfait, de ChatGPT et des aperçus IA de Google sur chaque forfait à d'autres moteurs sur les forfaits supérieurs (la page des tarifs les nomme). Les réponses sont suivies chaque jour et le risque est recalculé chaque heure, afin qu'une disparition silencieuse sur un moteur ne passe pas inaperçue pendant un trimestre. Les alertes se déclenchent dès que votre couverture bascule.",
         ],
       },
     ],
@@ -1184,7 +1184,7 @@ export const ABOUT: Record<Locale, AboutContent> = {
       {
         h2: "Les moteurs que nous suivons",
         body: [
-          "Nous surveillons six moteurs en continu : ChatGPT, Google AI, Perplexity, Claude, Gemini et Microsoft Copilot. Les réponses sont suivies chaque jour et le risque est recalculé chaque heure, afin qu'une disparition silencieuse sur un moteur ne passe pas inaperçue pendant un trimestre. Les alertes se déclenchent dès que votre couverture bascule.",
+          "Nous surveillons en continu les moteurs de réponse IA de votre forfait, de ChatGPT et des aperçus IA de Google sur chaque forfait à d'autres moteurs sur les forfaits supérieurs (la page des tarifs les nomme). Les réponses sont suivies chaque jour et le risque est recalculé chaque heure, afin qu'une disparition silencieuse sur un moteur ne passe pas inaperçue pendant un trimestre. Les alertes se déclenchent dès que votre couverture bascule.",
         ],
       },
     ],
@@ -1226,7 +1226,7 @@ export const ABOUT: Record<Locale, AboutContent> = {
       {
         h2: "Die Engines, die wir verfolgen",
         body: [
-          "Wir überwachen sechs Engines fortlaufend: ChatGPT, Google AI, Perplexity, Claude, Gemini und Microsoft Copilot. Antworten werden täglich verfolgt und das Risiko wird stündlich neu berechnet, damit ein stilles Verschwinden bei einer Engine nicht ein Quartal lang unbemerkt bleibt. Warnungen werden ausgelöst, sobald Ihre Abdeckung kippt.",
+          "Wir überwachen fortlaufend die KI-Antwort-Engines Ihres Abos, von ChatGPT und Googles AI Overviews in jedem Abo bis zu weiteren Engines in höheren Abos (die Preisseite nennt sie). Antworten werden täglich verfolgt und das Risiko wird stündlich neu berechnet, damit ein stilles Verschwinden bei einer Engine nicht ein Quartal lang unbemerkt bleibt. Warnungen werden ausgelöst, sobald Ihre Abdeckung kippt.",
         ],
       },
     ],

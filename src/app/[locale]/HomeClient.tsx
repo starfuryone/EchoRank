@@ -93,10 +93,10 @@ const baseOf = (locale: string): Base => (locale.startsWith("fr") ? "fr" : "en")
 const T = {
   en: {
     hero: {
-      live: "LIVE — MONITORING 6 AI ENGINES",
+      live: "LIVE — MONITORING {n} AI ENGINES",
       h1a: "The business AI recommends ",
       h1b: "wins.",
-      sub: "Echorank is the AI Visibility Management platform. We measure how ChatGPT, Google AI, Perplexity, Claude, Gemini and Copilot see your business — then tell you exactly how to become the answer.",
+      sub: "Echorank is the AI Visibility Management platform. We measure how AI answer engines, from ChatGPT to Google's AI Overviews, see your business — then tell you exactly how to become the answer.",
       cta1: "Run My Free AI Visibility Audit ↗",
       // Secondary path for visitors who already want an account. The primary
       // CTA runs the anonymous audit instead — no signup, no card.
@@ -134,7 +134,7 @@ const T = {
       label: "THE PLATFORM", h2: "See the product, not the pitch.",
       more: "More details →",
       items: [
-        { tag: "AI VISIBILITY AUDITOR", h: "One score for how AI sees you", p: "Crawlability, structured data, llms.txt, citations, authority — audited across 6 engines, recalculated on schedule, alerted on every drop." },
+        { tag: "AI VISIBILITY AUDITOR", h: "One score for how AI sees you", p: "Crawler access, readable content, identity, citations, authority — read the way AI crawlers read them, recalculated on schedule, alerted on every drop." },
         { tag: "REPUTATION RISK ENGINE", h: "Revenue at risk, hourly", p: "Every review, rating drop and competitor surge feeds one explainable risk score — with the dollar impact attached to each alert." },
         { tag: "RECOMMENDATION INTELLIGENCE", h: "Your key questions, asked daily", p: "We run your customers' real questions against every engine, every day — and log the moment you appear, get misquoted, or vanish." },
         { tag: "COMPETITOR GAP ANALYZER", h: "Know the week a rival gains ground", p: "Daily snapshots of competitor ratings, review velocity and AI visibility. Momentum alerts land the same week, not next quarter." },
@@ -144,7 +144,7 @@ const T = {
       label: "THE TRAJECTORY", h2: "What 90 days of AI visibility work looks like",
       videoLabel: "Video: what 90 days of AI visibility work looks like",
       items: [
-        { w: "WEEK 0", t: "Baseline audit", d: "First AI Visibility Score, engine coverage map, and full signal inventory.", m: "Score 47 · cited by 2/6 engines", hot: false },
+        { w: "WEEK 0", t: "Baseline audit", d: "First AI Visibility Score, engine coverage map, and full signal inventory.", m: "Score 47 · cited by 2 engines", hot: false },
         { w: "WEEK 2", t: "Review velocity climbs", d: "SMS, email and QR campaigns bring fresh, authentic reviews online.", m: "+38 reviews · reply rate 91%", hot: false },
         { w: "WEEK 4", t: "New citations discovered", d: "Citation Monitor finds and fixes inconsistent listings across the sources AI trusts.", m: "11 citations added · 3 NAP conflicts resolved", hot: false },
         { w: "WEEK 7", t: "Authority improves", d: "Author profiles, a fuller About page and question-led service pages shipped from the roadmap.", m: "Authority Score 52 → 68", hot: false },
@@ -263,10 +263,10 @@ const T = {
 
   fr: {
     hero: {
-      live: "EN DIRECT — 6 MOTEURS IA SURVEILLÉS",
+      live: "EN DIRECT — {n} MOTEURS IA SURVEILLÉS",
       h1a: "L'entreprise que l'IA recommande ",
       h1b: "gagne.",
-      sub: "Echorank est la plateforme de gestion de visibilité IA. Nous mesurons comment ChatGPT, Google AI, Perplexity, Claude, Gemini et Copilot perçoivent votre entreprise — puis nous vous montrons exactement comment devenir la réponse.",
+      sub: "Echorank est la plateforme de gestion de visibilité IA. Nous mesurons comment les moteurs de réponse IA, de ChatGPT aux aperçus IA de Google, perçoivent votre entreprise — puis nous vous montrons exactement comment devenir la réponse.",
       cta1: "Lancer mon audit de visibilité IA gratuit ↗",
       cta3: "Créer un compte",
       cta2: "Voir la démo de 2 minutes",
@@ -302,7 +302,7 @@ const T = {
       label: "LA PLATEFORME", h2: "Voyez le produit, pas le discours.",
       more: "Plus de détails →",
       items: [
-        { tag: "AUDITEUR DE VISIBILITÉ IA", h: "Un score pour votre image auprès de l'IA", p: "Explorabilité, données structurées, llms.txt, citations, autorité — audités sur 6 moteurs, recalculés selon un horaire, avec alerte à chaque baisse." },
+        { tag: "AUDITEUR DE VISIBILITÉ IA", h: "Un score pour votre image auprès de l'IA", p: "Accès des robots, contenu lisible, identité, citations, autorité — lus comme les lisent les robots d'IA, recalculés selon un horaire, avec alerte à chaque baisse." },
         { tag: "MOTEUR DE RISQUE RÉPUTATIONNEL", h: "Le revenu à risque, chaque heure", p: "Chaque avis, chaque baisse de note et chaque poussée d'un concurrent alimente un score de risque explicable — avec l'impact en dollars rattaché à chaque alerte." },
         { tag: "INTELLIGENCE DE RECOMMANDATION", h: "Vos questions clés, posées chaque jour", p: "Nous soumettons les vraies questions de vos clients à chaque moteur, chaque jour — et consignons le moment où vous apparaissez, êtes mal cité, ou disparaissez." },
         { tag: "ANALYSEUR D'ÉCART CONCURRENTIEL", h: "Sachez la semaine où un rival gagne du terrain", p: "Instantanés quotidiens des notes, de la vélocité d'avis et de la visibilité IA des concurrents. Les alertes arrivent la même semaine, pas le trimestre suivant." },
@@ -312,7 +312,7 @@ const T = {
       label: "LA TRAJECTOIRE", h2: "À quoi ressemblent 90 jours de travail sur la visibilité IA",
       videoLabel: "Vidéo : à quoi ressemblent 90 jours de travail sur la visibilité IA",
       items: [
-        { w: "SEMAINE 0", t: "Audit de référence", d: "Premier score de visibilité IA, carte de couverture des moteurs et inventaire complet des signaux.", m: "Score 47 · cité par 2/6 moteurs", hot: false },
+        { w: "SEMAINE 0", t: "Audit de référence", d: "Premier score de visibilité IA, carte de couverture des moteurs et inventaire complet des signaux.", m: "Score 47 · cité par 2 moteurs", hot: false },
         { w: "SEMAINE 2", t: "La vélocité d'avis grimpe", d: "Les campagnes SMS, courriel et QR ramènent des avis frais et authentiques.", m: "+38 avis · taux de réponse 91 %", hot: false },
         { w: "SEMAINE 4", t: "Nouvelles citations découvertes", d: "Le moniteur de citations trouve et corrige les fiches incohérentes sur les sources auxquelles l'IA se fie.", m: "11 citations ajoutées · 3 conflits NAP résolus", hot: false },
         { w: "SEMAINE 7", t: "L'autorité s'améliore", d: "Profils d'auteurs, page À propos étoffée et pages de services organisées autour des questions, livrés depuis la feuille de route.", m: "Score d'autorité 52 → 68", hot: false },
@@ -427,18 +427,25 @@ const T = {
 
 /* ---------- static data ---------- */
 
-const ENGINES = [
-  ["ChatGPT", 82], ["Google AI", 76], ["Perplexity", 88], ["Claude", 71], ["Gemini", 64], ["Copilot", 59],
-] as const;
-
-const HIST = [
-  { n: "ChatGPT", t: "▲ 31%", v: 42, col: "url(#erg)", pts: "0,44 20,40 40,42 60,34 80,36 100,28 120,30 140,22 160,18 180,14 200,10", up: true },
-  { n: "Perplexity", t: "▲ 24%", v: 57, col: "#4ade80", pts: "0,38 20,36 40,30 60,32 80,26 100,24 120,26 140,18 160,16 180,12 200,8", up: true },
-  { n: "Google AI", t: "▲ 12%", v: 29, col: "#7aa7ff", pts: "0,46 20,44 40,46 60,40 80,42 100,36 120,38 140,32 160,30 180,28 200,24", up: true },
-  { n: "Claude", t: "▲ 18%", v: 21, col: "#c9a2ff", pts: "0,48 20,46 40,44 60,44 80,40 100,38 120,34 140,34 160,30 180,26 200,24", up: true },
-  { n: "Gemini", t: "▲ 9%", v: 17, col: "#ffa6c1", pts: "0,50 20,48 40,48 60,44 80,44 100,42 120,40 140,38 160,36 180,34 200,32", up: true },
-  { n: "Copilot", t: "▼ 4%", v: 11, col: "#f87171", pts: "0,40 20,42 40,40 60,42 80,44 100,42 120,44 140,46 160,44 180,46 200,48", up: false },
+// Sample values for the hero bars and the /11 history cards, in order. The
+// NAMES are the engines the plans query (the trackedEngines prop); only these
+// illustrative numbers are fixed.
+const SAMPLE_BAR_VALUES = [82, 76, 64, 71, 88, 59, 55, 50];
+const SAMPLE_HIST = [
+  { t: "▲ 31%", v: 42, col: "url(#erg)", pts: "0,44 20,40 40,42 60,34 80,36 100,28 120,30 140,22 160,18 180,14 200,10", up: true },
+  { t: "▲ 12%", v: 29, col: "#7aa7ff", pts: "0,46 20,44 40,46 60,40 80,42 100,36 120,38 140,32 160,30 180,28 200,24", up: true },
+  { t: "▲ 9%", v: 17, col: "#ffa6c1", pts: "0,50 20,48 40,48 60,44 80,44 100,42 120,40 140,38 160,36 180,34 200,32", up: true },
+  { t: "▲ 18%", v: 21, col: "#c9a2ff", pts: "0,48 20,46 40,44 60,44 80,40 100,38 120,34 140,34 160,30 180,26 200,24", up: true },
+  { t: "▲ 24%", v: 57, col: "#4ade80", pts: "0,38 20,36 40,30 60,32 80,26 100,24 120,26 140,18 160,16 180,12 200,8", up: true },
+  { t: "▼ 4%", v: 11, col: "#f87171", pts: "0,40 20,42 40,40 60,42 80,44 100,42 120,44 140,46 160,44 180,46 200,48", up: false },
 ];
+
+function sampleBars(engines: string[]): (readonly [string, number])[] {
+  return engines.slice(0, SAMPLE_BAR_VALUES.length).map((n, i) => [n, SAMPLE_BAR_VALUES[i]] as const);
+}
+function sampleHistory(engines: string[]) {
+  return engines.slice(0, SAMPLE_HIST.length).map((n, i) => ({ n, ...SAMPLE_HIST[i] }));
+}
 
 const CARD_COLOR: Record<string, string> = {
   gold: "linear-gradient(120deg,#f7d76f,#b88420)",
@@ -457,6 +464,7 @@ export default function HomeClient({
   toolsSection,
   crawlersSection,
   playerLabels,
+  trackedEngines,
 }: {
   locale: string;
   pricing: HomePricingTier[];
@@ -474,8 +482,19 @@ export default function HomeClient({
    * a prop.
    */
   playerLabels: HomeVideoLabels;
+  /**
+   * The AI engines the plans really query, by name (the live-engine registry,
+   * src/lib/ai-visibility-landing/facts.ts), resolved on the server: the
+   * registry reads env and imports server code, so this client file must not.
+   * The engine strip, the "monitoring N engines" chip and the sample panels
+   * name these and no others (2026-11-10: the lists were typed, and named an
+   * engine nothing queries).
+   */
+  trackedEngines: string[];
 }) {
   const t = T[baseOf(locale)];
+  const ENGINES = sampleBars(trackedEngines);
+  const HIST = sampleHistory(trackedEngines);
   const faq = FAQ[baseOf(locale)];
   const L = (p: string) => `/${locale}${p.startsWith("/") ? p : `/${p}`}`;
 
@@ -565,7 +584,7 @@ export default function HomeClient({
       <header className={s.hero}>
         <div className={`${s.container} ${s.herogrid}`}>
           <div>
-            <span className={s.livechip}><span className={s.pulse} />{t.hero.live}</span>
+            <span className={s.livechip}><span className={s.pulse} />{t.hero.live.replace("{n}", String(trackedEngines.length))}</span>
             <h1 className={s.h1}>{t.hero.h1a}<span className={s.goldtext}>{t.hero.h1b}</span></h1>
             <p className={s.heroSub}>{t.hero.sub}</p>
             {/* AI disclosure, text only (src/lib/i18n/ai-labels.ts), in the hero's own language. */}
@@ -814,7 +833,7 @@ export default function HomeClient({
           <h2 className={s.h2}>{t.eng.h2}</h2>
           <p className={s.sub}>{t.eng.sub}</p>
           <div className={s.englogos}>
-            {["ChatGPT", "Google AI", "Perplexity", "Claude", "Gemini", "Microsoft Copilot"].map((n) => (
+            {trackedEngines.map((n) => (
               <div className={`${s.elogo} ${s.reveal}`} key={n}><span className={s.edot} />{n} <span className={s.est}>{t.eng.daily}</span></div>
             ))}
           </div>

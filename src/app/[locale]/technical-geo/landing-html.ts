@@ -415,8 +415,8 @@ export const TECHNICAL_GEO_HTML = `<!DOCTYPE html>
         <div class="eyebrow">Technical GEO &amp; AI visibility</div>
         <h1><span>Fix the issues keeping your brand out of AI answers.</span></h1>
         <p class="lead">
-          Echorank shows you why ChatGPT, Claude, Perplexity, Gemini, Google AI Overviews,
-          and Copilot aren&rsquo;t citing your brand&mdash;then gives you the tools to fix it and
+          Echorank shows you why ChatGPT, Google AI Overviews, Gemini, Claude and the other
+          AI engines aren&rsquo;t citing your brand&mdash;then gives you the tools to fix it and
           measure the change.
         </p>
 
@@ -470,7 +470,6 @@ export const TECHNICAL_GEO_HTML = `<!DOCTYPE html>
                   <div class="engine">Gemini <b>66%</b><div class="mini"><span style="width:66%"></span></div></div>
                   <div class="engine">Claude <b>74%</b><div class="mini"><span style="width:74%"></span></div></div>
                   <div class="engine">AI Overviews <b>70%</b><div class="mini"><span style="width:70%"></span></div></div>
-                  <div class="engine">Copilot <b>73%</b><div class="mini"><span style="width:73%"></span></div></div>
                 </div>
 
                 <div class="panel sparkline-panel" style="padding:14px">
@@ -532,7 +531,6 @@ export const TECHNICAL_GEO_HTML = `<!DOCTYPE html>
         <span>Perplexity</span>
         <span>Gemini</span>
         <span>AI Overviews</span>
-        <span>Copilot</span>
       </div>
     </div>
 
@@ -986,8 +984,8 @@ export const TECHNICAL_GEO_HTML = `<!DOCTYPE html>
           <details>
             <summary>Which AI platforms does Echorank cover?</summary>
             <p>
-              Echorank is built around visibility across leading generative search platforms, including
-              ChatGPT, Claude, Perplexity, Gemini, Google AI Overviews, and Microsoft Copilot.
+              Every plan tracks ChatGPT, Google AI Overviews and Gemini; higher plans add Claude and
+              more. The pricing page lists each plan&rsquo;s engines by name.
             </p>
           </details>
 

@@ -51,7 +51,7 @@ export const FAQ: Record<FaqBase, { label: string; h2: string; sub: string; item
       },
       {
         q: "Which AI engines does Echorank track?",
-        a: "We monitor six engines: ChatGPT, Google AI, Perplexity, Claude, Gemini and Microsoft Copilot. Coverage is continuous rather than a one-time audit — answers are tracked daily and risk is recalculated hourly. You get an alert the moment your coverage on any engine flips.",
+        a: "Every plan tracks ChatGPT and Google AI Overviews, and higher plans add more engines: the pricing page lists each plan's engines by name. Coverage is continuous rather than a one-time audit — answers are tracked daily and risk is recalculated hourly. You get an alert the moment your coverage on any engine flips.",
       },
       {
         q: "How is the AI Visibility Score calculated?",
@@ -98,7 +98,7 @@ export const FAQ: Record<FaqBase, { label: string; h2: string; sub: string; item
       },
       {
         q: "Quels moteurs IA Echorank surveille-t-il?",
-        a: "Nous surveillons six moteurs : ChatGPT, Google AI, Perplexity, Claude, Gemini et Microsoft Copilot. La couverture est continue plutôt qu'un audit ponctuel — les réponses sont suivies chaque jour et le risque est recalculé chaque heure. Vous recevez une alerte dès que votre couverture bascule sur un moteur.",
+        a: "Chaque forfait suit ChatGPT et les aperçus IA de Google, et les forfaits supérieurs ajoutent d'autres moteurs : la page des tarifs nomme les moteurs de chaque forfait. La couverture est continue plutôt qu'un audit ponctuel — les réponses sont suivies chaque jour et le risque est recalculé chaque heure. Vous recevez une alerte dès que votre couverture bascule sur un moteur.",
       },
       {
         q: "Comment le score de visibilité IA est-il calculé?",
