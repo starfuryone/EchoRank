@@ -118,7 +118,7 @@ const EN: LearnBlock[] = [
     k: "ul",
     items: [
       "**ChatGPT cites websites when it searches the web.** When it answers from memory, it may name your business, but it won't cite your pages as sources.",
-      "**Let OpenAI's search crawler in.** It's called OAI-SearchBot. If your site blocks it, ChatGPT won't show your pages in its search answers.",
+      "**Let OpenAI's search crawler in.** It's called OAI-SearchBot. If your site blocks it, ChatGPT won't show your pages in its search answers (at most as a plain link).",
       "**Blocking AI training doesn't have to block search.** GPTBot (training) and OAI-SearchBot (search) are separate switches.",
       "**Put your words in the page itself.** Independent tests keep finding that OpenAI's crawlers don't run JavaScript. Text that only appears after scripts run may be invisible to them.",
       "**Being in Bing helps.** ChatGPT uses outside search providers, and Microsoft says Bing is one of them.",
@@ -364,7 +364,7 @@ const FR: LearnBlock[] = [
     k: "ul",
     items: [
       "**ChatGPT cite des sites quand il fait une recherche sur le web.** Quand il répond de mémoire, il peut nommer votre entreprise, mais il ne cite pas vos pages comme sources.",
-      "**Laissez entrer le robot de recherche d'OpenAI.** Il s'appelle OAI-SearchBot. Si votre site le bloque, ChatGPT n'affichera pas vos pages dans ses réponses de recherche.",
+      "**Laissez entrer le robot de recherche d'OpenAI.** Il s'appelle OAI-SearchBot. Si votre site le bloque, ChatGPT n'affichera pas vos pages dans ses réponses de recherche (tout au plus sous forme de simple lien).",
       "**Bloquer l'entraînement de l'IA ne bloque pas forcément la recherche.** GPTBot (entraînement) et OAI-SearchBot (recherche) sont deux interrupteurs distincts.",
       "**Mettez vos textes dans la page elle-même.** Des tests indépendants constatent régulièrement que les robots d'OpenAI n'exécutent pas le JavaScript. Un texte qui n'apparaît qu'après l'exécution des scripts peut leur être invisible.",
       "**Être présent dans Bing aide.** ChatGPT s'appuie sur des moteurs de recherche externes, et Microsoft indique que Bing en fait partie.",
@@ -610,7 +610,7 @@ const DE: LearnBlock[] = [
     k: "ul",
     items: [
       "**ChatGPT zitiert Websites, wenn es im Web sucht.** Antwortet es aus dem Gedächtnis, nennt es vielleicht Ihr Unternehmen, zitiert Ihre Seiten aber nicht als Quellen.",
-      "**Lassen Sie den Such-Crawler von OpenAI herein.** Er heisst OAI-SearchBot. Sperrt Ihre Website ihn aus, zeigt ChatGPT Ihre Seiten nicht in seinen Suchantworten.",
+      "**Lassen Sie den Such-Crawler von OpenAI herein.** Er heisst OAI-SearchBot. Sperrt Ihre Website ihn aus, zeigt ChatGPT Ihre Seiten nicht in seinen Suchantworten (höchstens als einfache Links).",
       "**Wer das KI-Training sperrt, muss die Suche nicht sperren.** GPTBot (Training) und OAI-SearchBot (Suche) sind zwei getrennte Schalter.",
       "**Schreiben Sie Ihre Texte direkt in die Seite.** Unabhängige Tests stellen immer wieder fest, dass die Crawler von OpenAI kein JavaScript ausführen. Text, der erst nach dem Ausführen von Skripten erscheint, bleibt für sie womöglich unsichtbar.",
       "**Präsenz in Bing hilft.** ChatGPT nutzt externe Suchanbieter, und laut Microsoft gehört Bing dazu.",
