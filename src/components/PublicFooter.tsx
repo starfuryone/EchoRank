@@ -15,6 +15,7 @@ import { COMPLAINT_LINK } from "@/lib/privacy/complaint-copy";
 const LINKS: Record<"en" | "fr", ReadonlyArray<readonly [string, string]>> = {
   en: [
     ["/pricing", "Pricing"],
+    ["/free-audit", "Free AI Readiness Audit"],
     ["/ai-visibility-check", "Free AI visibility check"],
     ["/free-tools", "Free tools"],
     // Product: the crawler's public page. The footer is one flat row, so
@@ -28,6 +29,7 @@ const LINKS: Record<"en" | "fr", ReadonlyArray<readonly [string, string]>> = {
   ],
   fr: [
     ["/pricing", "Tarifs"],
+    ["/free-audit", "Audit de préparation IA gratuit"],
     ["/ai-visibility-check", "Vérification de visibilité IA gratuite"],
     ["/free-tools", "Outils gratuits"],
     ["/site-crawler", CRAWLER_BRAND.name],

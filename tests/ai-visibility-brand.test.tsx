@@ -240,14 +240,14 @@ describe.each(LOCALES)("%s", (l) => {
     }
   });
 
-  it("/free-audit: the logo (48 px) directly above the widget", async () => {
+  it("/free-audit: no AI Visibility logo since it became the AI Readiness Audit (2026-11-10)", async () => {
+    // The brief removed the hero's duplicate image (the themed logo's empty-alt
+    // twin); the audit is its own tool, so the sub-brand logo went with it.
     const FreeAudit = (await import("@/app/[locale]/free-audit/page")).default;
     const html = renderToStaticMarkup(await FreeAudit(P(l) as never));
-    const el = doc(html);
-    const logo = el.querySelector('[data-testid="av-free-audit-logo"]')!;
-    checkLogo(logo, 48);
-    expect(logo.parentElement!.nextElementSibling).not.toBeNull();
-    expect(namedLogos(html)).toHaveLength(1);
+    expect(doc(html).querySelector('[data-testid="av-free-audit-logo"]')).toBeNull();
+    expect(namedLogos(html)).toHaveLength(0);
+    expect(html).not.toMatch(/<img[^>]*alt=""[^>]*echorank-ai-visibility/);
   });
 
   it("in-app: the top bar on /visibility shows the emblem (28 px, currentColor) and the existing title; the sidebar AI row's icon is the emblem", async () => {

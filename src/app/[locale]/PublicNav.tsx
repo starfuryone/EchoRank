@@ -176,8 +176,8 @@ const NAV: Record<Base, NavCopy> = {
     dashboard: "Dashboard",
     menu: "Menu",
     close: "Close",
-    promoTitle: "Free AI visibility audit",
-    promoBody: "See what AI assistants say about your business. No account needed.",
+    promoTitle: "Free AI Readiness Audit",
+    promoBody: "Can AI read, trust and cite your site? No account needed.",
     promoCta: "Run the audit ↗",
     groups: [
       {
@@ -204,9 +204,13 @@ const NAV: Record<Base, NavCopy> = {
             ],
           },
           {
-            title: "SEO & tools",
+            // One column (the panel's grid is three columns plus the promo). The
+            // two free AI tools answer different questions; each says which.
+            title: "Tools & free tools",
             items: [
               { href: "#tools", label: "All SEO tools", desc: "The full classic-SEO toolkit." },
+              { href: "/free-audit", label: "AI Readiness Audit (free)", desc: "Whether AI can read, trust and cite your site." },
+              { href: "/ai-visibility-check", label: "AI Visibility Check (free)", desc: "What AI engines say about your business." },
               { href: "/free-tools", label: "Free tools", desc: "No account, no card." },
             ],
           },
@@ -270,8 +274,8 @@ const NAV: Record<Base, NavCopy> = {
     dashboard: "Tableau de bord",
     menu: "Menu",
     close: "Fermer",
-    promoTitle: "Audit de visibilité IA gratuit",
-    promoBody: "Découvrez ce que les assistants IA disent de votre entreprise. Sans compte.",
+    promoTitle: "Audit de préparation IA gratuit",
+    promoBody: "L’IA peut-elle lire, croire et citer votre site ? Sans compte.",
     promoCta: "Lancer l'audit ↗",
     groups: [
       {
@@ -298,9 +302,11 @@ const NAV: Record<Base, NavCopy> = {
             ],
           },
           {
-            title: "SEO et outils",
+            title: "Outils et outils gratuits",
             items: [
               { href: "#tools", label: "Tous les outils SEO", desc: "La boîte à outils SEO complète." },
+              { href: "/free-audit", label: "Audit de préparation IA (gratuit)", desc: "L’IA peut-elle lire, croire et citer votre site ?" },
+              { href: "/ai-visibility-check", label: "Vérification de visibilité IA (gratuite)", desc: "Ce que les moteurs d’IA disent de votre entreprise." },
               { href: "/free-tools", label: "Outils gratuits", desc: "Sans compte, sans carte." },
             ],
           },

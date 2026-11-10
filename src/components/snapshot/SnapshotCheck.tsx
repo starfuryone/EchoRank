@@ -117,6 +117,19 @@ export function SnapshotCheck({
     }
   }
 
+  // From the AI Readiness Audit's bridge (?domain=…): prefill the domain, then
+  // brand and category from the same /prefill call a typed domain gets.
+  // Nothing runs by itself; the check keeps its own daily limit and Turnstile.
+  useEffect(() => {
+    const params = new URL(window.location.href).searchParams;
+    if (params.get("run")) return;
+    const domain = (params.get("domain") ?? "").trim().toLowerCase();
+    if (!/^[a-z0-9.-]{3,253}$/.test(domain) || !domain.includes(".")) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-shot prefill from the URL
+    setF((cur) => (cur.domain ? cur : { ...cur, domain }));
+    void prefillFrom(domain);
+  }, []);
+
   async function start(e: React.FormEvent) {
     e.preventDefault();
     if (busy) return;

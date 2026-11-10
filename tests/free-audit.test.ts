@@ -22,36 +22,36 @@ async function page(locale: string): Promise<string> {
   return renderToStaticMarkup(await FreeAudit({ params: Promise.resolve({ locale }) }));
 }
 
-describe("the audit widget is on the page", () => {
-  it("renders the widget's brand input and run button", async () => {
+describe("the audit form is on the page", () => {
+  it("renders the form's domain input and its one run button", async () => {
     const html = await page("en");
-    // id="av-brand" is the widget's own input; its <label for> points at it.
-    expect(html).toContain('id="av-brand"');
-    expect(html).toContain('class="av-audit"');
-    expect(html).toContain("Run free audit");
+    // id="audit-domain" is the runner's own input; its <label for> points at it.
+    expect(html).toContain('id="audit-domain"');
+    expect(html).toContain('data-testid="audit-form"');
+    expect(html.match(/Run the free audit/g)).toHaveLength(1);
   });
 
-  it("renders the widget in French too", async () => {
+  it("renders the form in French too", async () => {
     const html = await page("fr");
-    expect(html).toContain('id="av-brand"');
+    expect(html).toContain('id="audit-domain"');
     expect(html).toContain("Lancer l’audit gratuit");
   });
 
   it("folds unwritten locales onto English rather than rendering blanks", async () => {
     for (const locale of ["de-CH", "en-CA"]) {
       const html = await page(locale);
-      expect(html).toContain('id="av-brand"');
-      expect(html).toContain("Is your business the answer AI gives?");
+      expect(html).toContain('id="audit-domain"');
+      expect(html).toContain("Can AI read, trust and cite your website?");
     }
-    // fr-CA takes the French copy, per baseOf().
-    expect(await page("fr-CA")).toContain("Votre entreprise est-elle la réponse que donne l’IA ?");
+    // fr-CA takes the French copy, per auditBaseOf().
+    expect(await page("fr-CA")).toContain("L’IA peut-elle lire, croire et citer votre site ?");
   });
 });
 
 describe("CTAs", () => {
   it("sends the primary CTA to pricing, never straight to /register", async () => {
     const html = await page("en");
-    expect(html).toContain('href="/en/pricing"');
+    expect(html).toContain('href="/en/pricing?plan=ai_visibility&amp;src=free-audit-page"');
     // House rule. The widget's own post-result CTA is a separate, existing
     // funnel; what this asserts is that the PAGE's primary CTA is not one.
     const ctas = [...html.matchAll(/<a[^>]*class="[^"]*btnPrimary[^"]*"[^>]*>/g)].map((m) => m[0]);
@@ -61,8 +61,8 @@ describe("CTAs", () => {
 
   it("keeps the locale in every internal link", async () => {
     const html = await page("fr");
-    expect(html).toContain('href="/fr/pricing"');
-    expect(html).not.toContain('href="/en/pricing"');
+    expect(html).toContain('href="/fr/pricing?plan=ai_visibility&amp;src=free-audit-page"');
+    expect(html).not.toContain('href="/en/');
   });
 });
 

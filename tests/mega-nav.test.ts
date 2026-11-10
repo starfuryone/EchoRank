@@ -187,8 +187,18 @@ describe("i18n", () => {
     expect(html).toContain(">Product<");
   });
 
-  it("translates the promo card", () => {
-    expect(nav("fr")).toContain("Audit de visibilité IA gratuit");
+  it("translates the promo card (the AI Readiness Audit since 2026-11-10)", () => {
+    expect(nav("fr")).toContain("Audit de préparation IA gratuit");
+    expect(nav("en")).toContain("Free AI Readiness Audit");
+  });
+
+  it("the Product panel lists both free AI tools, each with what it answers", () => {
+    const html = nav("en");
+    expect(html).toContain('href="/en/free-audit"><span class="');
+    expect(html).toContain("AI Readiness Audit (free)");
+    expect(html).toContain("Whether AI can read, trust and cite your site.");
+    expect(html).toContain("AI Visibility Check (free)");
+    expect(html).toContain("What AI engines say about your business.");
   });
 });
 

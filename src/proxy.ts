@@ -51,6 +51,11 @@ const publicPaths = ["/login", "/register", "/api/auth", "/api/feedback", "/f/",
 // already holds (no re-audit, not rate-limited). Same anonymous-by-design intent
 // as /api/av/audit, so it is opted in here as a deliberate exact-match entry.
 //
+// /api/av/audit/email ("Email me the PDF", 2026-11-10) sends the PDF of a
+// stored result (by its unguessable id) to the address the visitor typed:
+// anonymous by design, refused in blocked countries, once per result and
+// 3/IP/24h in the route itself. Exact-match, like its two siblings.
+//
 // CSRF is unaffected either way: the origin check above runs before this list.
 //
 // /api/av/keywords backs the free keyword-scan widget on the same landing
@@ -132,6 +137,7 @@ const publicExactPaths = new Set([
   "/api/assistant/chat",
   "/api/av/audit",
   "/api/av/audit/report",
+  "/api/av/audit/email",
   "/api/av/keywords",
   "/api/billing/checkout",
   "/api/webhooks",

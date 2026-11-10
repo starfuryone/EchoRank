@@ -1,330 +1,52 @@
-// /[locale]/free-audit — the standalone home of the anonymous audit funnel.
+// /[locale]/free-audit — the free AI Readiness Audit (ECHORANK-AI-VISIBILITY-
+// PAGES.md Phase 2, 2026-11-10). The URL and the "AI readiness score" stay;
+// the tool's name is "AI Readiness Audit" everywhere it is shown.
 //
-// Every "run the free audit" CTA on the site points here. The widget itself is
-// the SAME component the /ai-visibility landing page mounts at #audit
-// (src/components/AuditWidget.tsx) — it posts to /api/av/audit, which is in
-// the proxy's publicExactPaths, so an anonymous visitor completes the whole
-// flow without an account. Do not fork it: two copies of the funnel means two
-// places to fix when the API contract moves.
+// What it says it does is what it does: it reads the site the way AI crawlers
+// do (access, readable content, identity, discoverability) and asks no AI
+// engine anything. The form and the result are Client Components
+// (src/components/free-audit/): the runner posts to /api/av/audit, the result
+// view is shared with the 7-day permalink page (./r/[id]).
 //
-// Layout follows the /about + /solutions pattern — home2.module.css on a
-// wrapping .page, which is where the Binance palette (--bg #181A20,
-// --gold #FCD535) is defined. The av-* rules below are the widget's own global
-// class names, restyled onto those tokens; the /ai-visibility copy of them is
-// on that page's older palette and is not shared.
+// The page is en or fr (src/lib/free-audit/copy.ts); de-CH and en-CA read en,
+// fr-CA reads fr. Every number comes from limits.ts or the plan config.
 
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { SUPPORTED_LOCALES, isSupportedLocale } from "@/lib/i18n/config";
 import { JsonLd, SITE_URL, buildMetadata, faqPage, normalizeLocale, organization } from "@/lib/seo";
-import { AuditWidget, type AuditWidgetContent } from "@/components/AuditWidget";
-import { AiVisibilityLogo } from "@/components/brand/AiVisibilityLogo";
-import { PLAN_CONFIGS } from "@/lib/plan-config";
+import { AUDIT_COPY, AUDIT_NAME, auditBaseOf } from "@/lib/free-audit/copy";
+import { resultFacts } from "@/lib/free-audit/facts";
+import { FREE_AUDITS_PER_DAY, FREE_AUDIT_WINDOW_HOURS } from "@/lib/free-audit/limits";
+import { AuditRunner } from "@/components/free-audit/AuditRunner";
 import { PublicNav } from "../PublicNav";
 import { PublicFooter } from "@/components/PublicFooter";
 import s from "../home2.module.css";
-
-// The free-audit upsell quotes the plans' prompt allowances. Read from the
-// config, never typed — the line used to promise "25 prompts" against a
-// config that grants 10 to 20.
-const PROMPTS_MIN = PLAN_CONFIGS.STARTER.aiCheckup.prompts;
-const PROMPTS_MAX = Math.max(
-  ...(["STARTER", "GROWTH", "AGENCY"] as const).map((p) => PLAN_CONFIGS[p].aiCheckup.prompts),
-);
 
 export function generateStaticParams() {
   return SUPPORTED_LOCALES.map((locale) => ({ locale }));
 }
 
-/** en + fr are written; every other locale folds to en, same as PublicFooter. */
-type Base = "en" | "fr";
-const baseOf = (locale: string): Base => (locale.startsWith("fr") ? "fr" : "en");
-
-interface Copy {
-  metaTitle: string;
-  metaDescription: string;
-  label: string;
-  h1: string;
-  heroSub: string;
-  engines: string;
-  whatLabel: string;
-  whatTitle: string;
-  whatItems: { h: string; p: string }[];
-  howLabel: string;
-  howTitle: string;
-  howSteps: { h: string; p: string }[];
-  ctaTitle: string;
-  ctaP: string;
-  ctaButton: string;
-  faqLabel: string;
-  faqTitle: string;
-  faq: { q: string; a: string }[];
-  // ctaHref is locale-dependent, so it is injected at render rather than
-  // written into each static copy block.
-  widget: Omit<AuditWidgetContent, "ctaHref">;
-}
-
-const COPY: Record<Base, Copy> = {
-  en: {
-    metaTitle: "Free AI visibility audit — see what AI says about your business | Echorank360",
-    metaDescription:
-      "Run a free audit in 60 seconds. See whether ChatGPT, Claude, Gemini and Perplexity know your business — score, itemized checks, and a PDF report. No account, no card.",
-    label: "FREE TOOL",
-    h1: "Is your business the answer AI gives?",
-    heroSub:
-      "When customers ask ChatGPT, Claude, Gemini or Perplexity who to hire, someone gets named. Run a free audit and find out if it's you — no account, no card, results in about a minute.",
-    engines: "Tracks answers from ChatGPT · Claude · Gemini · Perplexity",
-    whatLabel: "WHAT YOU GET",
-    whatTitle: "What you get",
-    whatItems: [
-      {
-        h: "An AI readiness score",
-        p: "One number, 0–100: can AI answer engines read, trust and cite your site? Being crawlable with a sitemap is only the start; real content, specific facts and a clear identity earn the rest. Anything capping it is named, with the three fixes worth the most points.",
-      },
-      {
-        h: "Itemized checks",
-        p: "Every check we run, pass or fail, in plain language — crawlability, structured data, content signals, and the gaps holding you back.",
-      },
-      {
-        h: "A PDF worth keeping",
-        p: "Download the full report and keep it as your day-zero baseline. Re-run later and measure the difference.",
-      },
-    ],
-    howLabel: "HOW IT WORKS",
-    howTitle: "How it works",
-    howSteps: [
-      { h: "Enter your domain", p: "Brand name or website — no signup form, no email gate." },
-      {
-        h: "We run the checks",
-        p: "Your public pages are analyzed the way AI crawlers and search engines see them.",
-      },
-      { h: "Read your report", p: "Score, checks, and fixes — with the PDF one click away." },
-    ],
-    ctaTitle: "Want the full picture, every day?",
-    ctaP: "The free audit is a snapshot. Echorank plans add daily answer tracking, scheduled monitoring, the complete SEO toolkit, and a prioritized roadmap to become the business AI recommends.",
-    ctaButton: "See plans & pricing →",
-    faqLabel: "FAQ",
-    faqTitle: "Common questions",
-    faq: [
-      {
-        q: "Is it really free?",
-        a: "Yes. One audit per day, no account and no card. The audit is a genuinely useful standalone report — plans exist for businesses that want continuous tracking.",
-      },
-      {
-        q: "What do you do with my domain?",
-        a: "We analyze publicly available pages only. Nothing is published, and you won't be added to a mailing list.",
-      },
-      {
-        q: "Which AI assistants are covered?",
-        a: "The audit measures the signals ChatGPT, Claude, Gemini and Perplexity rely on when deciding which businesses to name.",
-      },
-    ],
-    widget: {
-      label: "Run a free basic audit",
-      placeholder: "Your brand or domain, e.g. acme.com",
-      runIdle: "Run free audit",
-      runBusy: "Auditing…",
-      noteTemplate: "Reading “{brand}” the way AI crawlers do — takes ~20 seconds.",
-      errLimit: "Free audit limit reached for today. Sign up to run unlimited audits.",
-      errGeneric: "The audit could not run. Try again in a minute.",
-      fine: "No account needed. One audit per day.",
-      mentionLabel: "AI presence",
-      mentionValue: "{hits} of {total} AI engines",
-      mentionNotTested: "not tested by the free audit",
-      mentionGloss: "Whether ChatGPT, Claude, Gemini or Perplexity mention you when asked for a recommendation. The free audit does not ask them; a plan does, every week.",
-      readabilityLabel: "AI readiness score",
-      readabilityGloss:
-        "Whether AI answer engines can read, trust and cite your site. Access and a sitemap are the start; content, specific facts and a clear identity earn the rest.",
-      upsell:
-        `The free audit reads your site; it does not ask the AI engines anything. Plans track ${PROMPTS_MIN}–${PROMPTS_MAX} prompts of your choosing, weekly or more often, with alerts when you drop out.`,
-      ctaTemplate: "Track {brand} with Echorank",
-      again: "Run another audit",
-      pdfIdle: "Download PDF report",
-      pdfBusy: "Generating…",
-      pdfErr: "The report could not be generated.",
-      pdfRetry: "Try again",
-    },
-  },
-  fr: {
-    metaTitle:
-      "Audit gratuit de visibilité IA — ce que l’IA dit de votre entreprise | Echorank360",
-    metaDescription:
-      "Lancez un audit gratuit en 60 secondes. Découvrez si ChatGPT, Claude, Gemini et Perplexity connaissent votre entreprise — score, vérifications détaillées et rapport PDF. Sans compte, sans carte.",
-    label: "OUTIL GRATUIT",
-    h1: "Votre entreprise est-elle la réponse que donne l’IA ?",
-    heroSub:
-      "Quand un client demande à ChatGPT, Claude, Gemini ou Perplexity à qui faire appel, un nom sort. Lancez un audit gratuit et voyez si c’est le vôtre — sans compte, sans carte, résultats en une minute environ.",
-    engines: "Suit les réponses de ChatGPT · Claude · Gemini · Perplexity",
-    whatLabel: "CE QUE VOUS OBTENEZ",
-    whatTitle: "Ce que vous obtenez",
-    whatItems: [
-      {
-        h: "Un score de préparation IA",
-        p: "Un seul chiffre, de 0 à 100 : les moteurs de réponse IA peuvent-ils lire votre site, s’y fier et le citer ? Être explorable avec un sitemap n’est qu’un début ; un vrai contenu, des faits précis et une identité claire font le reste. Ce qui plafonne votre score est nommé, avec les trois corrections qui rapportent le plus de points.",
-      },
-      {
-        h: "Des vérifications détaillées",
-        p: "Chaque contrôle effectué, réussi ou non, en langage clair — indexabilité, données structurées, signaux de contenu et les lacunes qui vous freinent.",
-      },
-      {
-        h: "Un PDF à conserver",
-        p: "Téléchargez le rapport complet et gardez-le comme point de départ. Relancez l’audit plus tard et mesurez le chemin parcouru.",
-      },
-    ],
-    howLabel: "COMMENT ÇA MARCHE",
-    howTitle: "Comment ça marche",
-    howSteps: [
-      {
-        h: "Saisissez votre domaine",
-        p: "Nom de marque ou site web — aucun formulaire d’inscription, aucune adresse e-mail exigée.",
-      },
-      {
-        h: "Nous lançons les contrôles",
-        p: "Vos pages publiques sont analysées telles que les robots d’IA et les moteurs de recherche les voient.",
-      },
-      {
-        h: "Lisez votre rapport",
-        p: "Score, contrôles et correctifs — le PDF est à un clic.",
-      },
-    ],
-    ctaTitle: "Envie de la vue complète, chaque jour ?",
-    ctaP: "L’audit gratuit est un instantané. Les forfaits Echorank ajoutent le suivi quotidien des réponses, la surveillance programmée, la boîte à outils SEO complète et une feuille de route priorisée pour devenir l’entreprise que l’IA recommande.",
-    ctaButton: "Voir les forfaits et tarifs →",
-    faqLabel: "FAQ",
-    faqTitle: "Questions fréquentes",
-    faq: [
-      {
-        q: "Est-ce vraiment gratuit ?",
-        a: "Oui. Un audit par jour, sans compte ni carte bancaire. L’audit est un rapport autonome réellement utile — les forfaits existent pour les entreprises qui veulent un suivi continu.",
-      },
-      {
-        q: "Que faites-vous de mon domaine ?",
-        a: "Nous analysons uniquement des pages accessibles publiquement. Rien n’est publié et vous n’êtes ajouté à aucune liste de diffusion.",
-      },
-      {
-        q: "Quels assistants IA sont couverts ?",
-        a: "L’audit mesure les signaux sur lesquels ChatGPT, Claude, Gemini et Perplexity s’appuient pour décider quelles entreprises citer.",
-      },
-    ],
-    widget: {
-      label: "Lancez un audit de base gratuit",
-      placeholder: "Votre marque ou domaine, p. ex. acme.com",
-      runIdle: "Lancer l’audit gratuit",
-      runBusy: "Audit en cours…",
-      noteTemplate: "Lecture de « {brand} » comme le font les robots d’IA — environ 20 secondes.",
-      errLimit:
-        "Limite d’audit gratuit atteinte pour aujourd’hui. Inscrivez-vous pour des audits illimités.",
-      errGeneric: "L’audit n’a pas pu s’exécuter. Réessayez dans une minute.",
-      fine: "Aucun compte requis. Un audit par jour.",
-      mentionLabel: "Présence IA",
-      mentionValue: "{hits} moteurs IA sur {total}",
-      mentionNotTested: "non testée par l’audit gratuit",
-      mentionGloss: "Si ChatGPT, Claude, Gemini ou Perplexity vous nomment quand on leur demande une recommandation. L’audit gratuit ne les interroge pas ; un forfait le fait, chaque semaine.",
-      readabilityLabel: "Score de préparation IA",
-      readabilityGloss:
-        "Si les moteurs de réponse IA peuvent lire votre site, s’y fier et le citer. L’accès et un sitemap ne sont qu’un début ; le contenu, les faits précis et une identité claire font le reste.",
-      upsell:
-        `L’audit gratuit lit votre site ; il n’interroge aucun moteur d’IA. Les forfaits suivent de ${PROMPTS_MIN} à ${PROMPTS_MAX} requêtes de votre choix, chaque semaine ou plus souvent, avec des alertes quand vous décrochez.`,
-      ctaTemplate: "Suivre {brand} avec Echorank",
-      again: "Lancer un autre audit",
-      pdfIdle: "Télécharger le rapport PDF",
-      pdfBusy: "Génération…",
-      pdfErr: "Le rapport n’a pas pu être généré.",
-      pdfRetry: "Réessayer",
-    },
-  },
-};
-
-/**
- * The widget's own class names are global (it predates the CSS-module pages),
- * so its styling has to be global too. Every colour reads a token defined on
- * .page in home2.module.css — no literal gold, so the page follows the palette
- * rather than pinning a second copy of it.
- */
-const CSS = `
-.av-audit { margin: 28px 0 0; max-width: 34rem; }
-.av-audit-label { display:block; font-weight:650; font-size:15px; margin-bottom:10px; color:var(--text); }
-.av-audit-row { display:flex; gap:10px; flex-wrap:wrap; }
-.av-audit-row input {
-  flex:1; min-width:230px; padding:0 16px; height:52px; border-radius:10px;
-  border:1px solid var(--line); background:var(--surface); color:var(--text); font:inherit; font-size:15px;
-}
-.av-audit-row input::placeholder { color:var(--faint); }
-.av-audit-row input:focus-visible { outline:2px solid var(--gold); outline-offset:2px; }
-.av-btn {
-  display:inline-flex; align-items:center; justify-content:center; gap:8px;
-  height:52px; padding:0 26px; border-radius:10px; border:1px solid transparent;
-  font:inherit; font-size:15.5px; font-weight:700; letter-spacing:.2px;
-  transition:transform .15s, box-shadow .15s;
-}
-.av-btn:hover:not(:disabled) { transform:translateY(-1px); }
-.av-btn:disabled { opacity:.55; cursor:not-allowed; transform:none; }
-/* Dark text on yellow — white on #FCD535 is ~1.6:1 and unreadable. */
-.av-btn-gold { background:var(--goldGrad); color:var(--bg); box-shadow:0 8px 30px -10px rgba(240,185,11,.45); }
-.av-btn-ghost { border-color:var(--line); color:var(--text); background:rgba(255,255,255,.02); font-weight:600; }
-.av-btn-block { display:flex; width:100%; margin-top:10px; }
-.av-audit-note { color:var(--muted); font-size:13.5px; margin-top:10px; }
-.av-audit-err { color:var(--red); font-size:14px; margin-top:10px; }
-.av-audit-fine { color:var(--faint); font-size:12.5px; margin-top:10px; }
-.av-audit-result {
-  background:var(--surface); border:1px solid var(--line);
-  border-radius:var(--radius); padding:24px;
-}
-.av-audit-headline { font-size:16.5px; line-height:1.5; margin:0 0 10px; }
-.av-audit-line { font-size:15.5px; line-height:1.5; margin:0 0 12px; }
-.av-audit-line-k { font-weight:650; color:var(--text); }
-.av-audit-line-na { color:var(--muted); }
-.av-audit-gloss { display:block; color:var(--muted); font-size:13.5px; line-height:1.55; margin-top:2px; }
-.av-audit-gates { margin:0 0 12px; padding-left:18px; font-size:14.5px; line-height:1.5; color:var(--text); }
-.av-audit-fixes { margin:0 0 14px; font-size:14.5px; line-height:1.5; }
-.av-audit-fixes ol { margin:6px 0 0; padding-left:20px; }
-.av-audit-fixes li { margin:0 0 8px; overflow-wrap:anywhere; }
-.av-audit-fixes .av-audit-gloss { display:inline; }
-.av-gold { color:var(--gold); font-weight:700; }
-.av-audit-engines { list-style:none; padding:0; margin:0 0 14px; display:flex; gap:8px; flex-wrap:wrap; }
-.av-audit-engines li {
-  font-size:12.5px; padding:4px 10px; border-radius:99px;
-  border:1px solid var(--line); color:var(--muted);
-}
-.av-audit-engines .av-hit { color:var(--gold); border-color:rgba(252,213,53,.4); }
-.av-audit-engines .av-miss { color:var(--faint); }
-.av-audit-sample {
-  margin:0 0 14px; padding:12px 16px; border-left:2px solid var(--gold);
-  background:rgba(255,255,255,.02); color:var(--muted); font-size:14px; line-height:1.6;
-}
-.av-audit-upsell { color:var(--muted); font-size:14px; line-height:1.6; }
-.av-audit-again { display:block; margin-top:14px; text-align:center; color:var(--faint); font-size:13px; text-decoration:underline; }
-.av-audit-again:hover { color:var(--gold); }
-`;
-
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ locale: string }>;
-}): Promise<Metadata> {
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
   if (!isSupportedLocale(locale)) return {};
-  const c = COPY[baseOf(locale)];
-  return buildMetadata({
-    locale,
-    path: "/free-audit",
-    title: c.metaTitle,
-    description: c.metaDescription,
-  });
+  const c = AUDIT_COPY[auditBaseOf(locale)];
+  return buildMetadata({ locale, path: "/free-audit", title: c.metaTitle, description: c.metaDescription });
 }
 
 export default async function Page({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   if (!isSupportedLocale(locale)) notFound();
-  const c = COPY[baseOf(locale)];
+  const base = auditBaseOf(locale);
+  const c = AUDIT_COPY[base];
   const L = (p: string) => `/${locale}${p}`;
   const l = normalizeLocale(locale);
   const pageUrl = `${SITE_URL}/${l}/free-audit`;
+  const faq = c.faq.items(FREE_AUDITS_PER_DAY, FREE_AUDIT_WINDOW_HOURS);
 
   return (
     <div className={s.page}>
-      <style>{CSS}</style>
       <JsonLd
         graph={[
           organization(l),
@@ -338,7 +60,7 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
             isPartOf: { "@id": `${SITE_URL}/#website` },
             publisher: { "@id": `${SITE_URL}/#organization` },
           },
-          faqPage(c.faq, pageUrl),
+          faqPage(faq, pageUrl),
         ]}
       />
 
@@ -347,19 +69,13 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
       <section className={s.hero}>
         <div className={s.container}>
           <p className={s.label}>
-            <b>/ 01</b> — {c.label}
+            <b>/ 01</b> — {c.label} · {AUDIT_NAME[base]}
           </p>
           <h1 className={s.h1}>{c.h1}</h1>
           <p className={s.sub}>{c.heroSub}</p>
-
-          <div style={{ margin: "26px 0 14px" }}>
-            <AiVisibilityLogo height={48} surface="themed" testId="av-free-audit-logo" />
-          </div>
-          {/* The page itself is en or fr (baseOf), so the gates and fixes follow it. */}
-          <AuditWidget c={{ ...c.widget, ctaHref: L("/pricing") }} locale={baseOf(locale)} />
-
-          <p className={s.label} style={{ marginTop: 18 }}>
-            {c.engines}
+          <AuditRunner facts={resultFacts(locale)} />
+          <p className={s.label} style={{ marginTop: 18 }} data-testid="audit-tool-line">
+            {c.toolLine}
           </p>
         </div>
       </section>
@@ -367,11 +83,11 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
       <section className={s.section}>
         <div className={s.container}>
           <p className={s.label}>
-            <b>/ 02</b> — {c.whatLabel}
+            <b>/ 02</b> — {c.what.label}
           </p>
-          <h2 className={s.h2}>{c.whatTitle}</h2>
+          <h2 className={s.h2}>{c.what.title}</h2>
           <div className={s.ucGrid} style={{ marginTop: 28 }}>
-            {c.whatItems.map((it) => (
+            {c.what.items.map((it) => (
               <div key={it.h} className={s.ucCard}>
                 <span className={s.ucTitle}>{it.h}</span>
                 <span className={s.ucBody}>{it.p}</span>
@@ -384,11 +100,11 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
       <section className={s.section}>
         <div className={s.container}>
           <p className={s.label}>
-            <b>/ 03</b> — {c.howLabel}
+            <b>/ 03</b> — {c.how.label}
           </p>
-          <h2 className={s.h2}>{c.howTitle}</h2>
+          <h2 className={s.h2}>{c.how.title}</h2>
           <div className={s.ucGrid} style={{ marginTop: 28 }}>
-            {c.howSteps.map((step, i) => (
+            {c.how.steps.map((step, i) => (
               <div key={step.h} className={s.ucCard}>
                 <span className={s.label}>
                   <b>{String(i + 1).padStart(2, "0")}</b>
@@ -403,13 +119,12 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
 
       <section className={s.section}>
         <div className={s.container}>
-          <h2 className={s.h2}>{c.ctaTitle}</h2>
-          <p className={s.sub}>{c.ctaP}</p>
+          <h2 className={s.h2}>{c.cta.title}</h2>
+          <p className={s.sub}>{c.cta.p}</p>
           <div className={s.ctarow} style={{ marginTop: 22 }}>
-            {/* House rule: the primary marketing CTA goes to pricing, never
-                straight to /register. */}
-            <Link className={`${s.btn} ${s.btnPrimary}`} href={L("/pricing")}>
-              {c.ctaButton}
+            {/* House rule: the primary marketing CTA goes to pricing, never straight to /register. */}
+            <Link className={`${s.btn} ${s.btnPrimary}`} href={L("/pricing?plan=ai_visibility&src=free-audit-page")}>
+              {c.cta.button}
             </Link>
           </div>
         </div>
@@ -418,11 +133,11 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
       <section className={s.section}>
         <div className={s.container}>
           <p className={s.label}>
-            <b>/ 04</b> — {c.faqLabel}
+            <b>/ 04</b> — {c.faq.label}
           </p>
-          <h2 className={s.h2}>{c.faqTitle}</h2>
+          <h2 className={s.h2}>{c.faq.title}</h2>
           <div className={s.faq}>
-            {c.faq.map((it) => (
+            {faq.map((it) => (
               <div className={s.faqItem} key={it.q}>
                 <p className={s.faqQ}>{it.q}</p>
                 <p className={s.faqA}>{it.a}</p>

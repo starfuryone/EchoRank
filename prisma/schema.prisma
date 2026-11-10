@@ -5280,6 +5280,19 @@ model VisibilitySnapshotLead {
   @@map("visibility_snapshot_leads")
 }
 
+/// One free AI Readiness Audit's score, for the "higher than X% of sites
+/// checked" benchmark (src/lib/free-audit/benchmark.ts). SCORE ONLY: no
+/// domain, no IP, nothing that identifies who ran it or what was audited.
+model FreeAuditScore {
+  id           String   @id @default(cuid())
+  score        Int
+  scoreVersion Int
+  createdAt    DateTime @default(now())
+
+  @@index([scoreVersion, createdAt])
+  @@map("free_audit_scores")
+}
+
 /// The free public site crawler (src/lib/site-crawler/free-crawl.ts): one row
 /// per free crawl, owned by the system tenant's CrawlJob. `token` is the
 /// unguessable result link (/free-tools/site-crawler/r/<token>); `domain` is

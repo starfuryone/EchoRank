@@ -41,14 +41,14 @@ describe("labels", () => {
   });
 
   it("the free check's widget copy says readiness and presence on both pages", () => {
-    // /ai-visibility no longer embeds the widget (2026-11-10): it links to /free-audit.
-    for (const page of ["src/app/[locale]/free-audit/page.tsx"]) {
-      const src = readFileSync(page, "utf8");
-      expect(src).toMatch(/readabilityLabel: ["']AI readiness score["']/);
-      expect(src).toMatch(/mentionLabel: ["']AI presence["']/);
-      expect(src).toMatch(/readabilityLabel: ["']Score de préparation IA["']/);
-      expect(src).not.toMatch(/readabilityLabel: ["']AI readability["']/);
-    }
+    // Since 2026-11-10 the free audit's result shows the score under the
+    // catalog's label (READINESS_COPY.label) and promises no "AI presence":
+    // the audit asks no engine anything.
+    const src = readFileSync("src/components/free-audit/FreeAuditResult.tsx", "utf8");
+    expect(src).toContain("{rc.label}");
+    expect(READINESS_COPY.en.label).toBe("AI readiness score");
+    expect(READINESS_COPY.fr.label).toBe("Score de préparation IA");
+    expect(src).not.toMatch(/AI presence|mentionLabel/);
   });
 
   it("folds marketing and dashboard locales to en / fr / de-CH", () => {
