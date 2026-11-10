@@ -1396,6 +1396,14 @@ const AI_LENS_GAP_ALT =
  * locale with the alt text and caption below (also og:image:alt).
  */
 const LOCAL_SEO_IMG = "/learn/guides/seven-layer-local-seo-discovery-blueprint";
+/**
+ * The picture's version, on every URL of it: Cloudflare caches /learn/guides/
+ * for a year and social networks cache a card by its URL, so a re-cut under
+ * the same file names needs a new query to be fetched again. Bump it whenever
+ * the three files are replaced. v2 (2026-11-10): layer 4 no longer names FAQPage.
+ */
+export const LOCAL_SEO_IMG_VERSION = "2";
+const localSeoImg = (variant: "960.webp" | "1672.webp" | "og.jpg") => `${LOCAL_SEO_IMG}-${variant}?v=${LOCAL_SEO_IMG_VERSION}`;
 export const LOCAL_SEO_FIGURE = {
   en: {
     alt: "Seven-layer local SEO blueprint: 1 Google Business Profile (verify, categories, services, photos, reviews); 2 NAP consistency; 3 core citations (Google, Bing, Apple, Yelp, vertical directories); 4 structured data (LocalBusiness, validate); 5 service and city pages; 6 weekly 45-minute upkeep (one post, two photos, review replies, one page fix); 7 monthly check of 10–25 rankings, local links, calls and directions.",
@@ -1825,9 +1833,9 @@ export const LEARN_GUIDES: LearnGuide[] = [
     cta: "register",
     dateModified: LOCAL_SEO_UPDATED,
     image: {
-      og: `${LOCAL_SEO_IMG}-og.jpg`,
+      og: localSeoImg("og.jpg"),
       ogAlt: LOCAL_SEO_FIGURE.en.alt,
-      article: `${LOCAL_SEO_IMG}-1672.webp`,
+      article: localSeoImg("1672.webp"),
       everyLocale: true,
       ogAltI18n: { fr: LOCAL_SEO_FIGURE.fr.alt, "de-CH": LOCAL_SEO_FIGURE["de-CH"].alt },
     },
@@ -1851,10 +1859,10 @@ export const LEARN_GUIDES: LearnGuide[] = [
       // text is English; fr and de-CH get their own alt and caption.
       {
         k: "image",
-        src: `${LOCAL_SEO_IMG}-960.webp`,
+        src: localSeoImg("960.webp"),
         srcset: [
-          { src: `${LOCAL_SEO_IMG}-960.webp`, w: 960 },
-          { src: `${LOCAL_SEO_IMG}-1672.webp`, w: 1672 },
+          { src: localSeoImg("960.webp"), w: 960 },
+          { src: localSeoImg("1672.webp"), w: 1672 },
         ],
         sizes: "(max-width: 760px) 100vw, 720px",
         width: 1672,
@@ -1863,7 +1871,7 @@ export const LEARN_GUIDES: LearnGuide[] = [
         caption: LOCAL_SEO_FIGURE.en.caption,
         priority: true,
         i18n: { fr: LOCAL_SEO_FIGURE.fr, "de-CH": LOCAL_SEO_FIGURE["de-CH"] },
-        href: `${LOCAL_SEO_IMG}-1672.webp`,
+        href: localSeoImg("1672.webp"),
       },
       {
         k: "h2",

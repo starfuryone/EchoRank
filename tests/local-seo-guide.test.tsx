@@ -15,13 +15,15 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { LOCAL_SEO_FIGURE, LOCAL_SEO_UPDATED, guideBySlug, headingId } from "@/lib/learn-content";
+import { LOCAL_SEO_FIGURE, LOCAL_SEO_IMG_VERSION, LOCAL_SEO_UPDATED, guideBySlug, headingId } from "@/lib/learn-content";
 import { ROOT, articleNode, decode, guideMeta, renderGuide } from "./helpers/learn-guide-image";
 
 const SLUG = "local-seo-checklist";
 const render = (locale: string) => renderGuide(SLUG, locale);
 const IMG = "/learn/guides/seven-layer-local-seo-discovery-blueprint";
-const OG = `https://echorank360.com${IMG}-og.jpg`;
+/** Every URL of the picture carries its version (a re-cut under the same names must be refetched). */
+const V = `?v=${LOCAL_SEO_IMG_VERSION}`;
+const OG = `https://echorank360.com${IMG}-og.jpg${V}`;
 const LOCALES = [
   ["en", "en"],
   ["en-CA", "en"],
@@ -66,8 +68,8 @@ describe("the overview figure", () => {
   it("the image: srcset 960w and 1672w, content-column sizes, width/height, eager, high priority", async () => {
     const fig = (await render("en")).match(/<figure[\s\S]*?<\/figure>/)![0];
     const img = fig.match(/<img [^>]*>/)![0];
-    expect(img).toContain(`src="${IMG}-960.webp"`);
-    expect(img.match(/srcSet="([^"]+)"/)![1]).toBe(`${IMG}-960.webp 960w, ${IMG}-1672.webp 1672w`);
+    expect(decode(img)).toContain(`src="${IMG}-960.webp${V}"`);
+    expect(decode(img.match(/srcSet="([^"]+)"/)![1])).toBe(`${IMG}-960.webp${V} 960w, ${IMG}-1672.webp${V} 1672w`);
     expect(img).toContain('sizes="(max-width: 760px) 100vw, 720px"');
     expect(img).toContain('width="1672"');
     expect(img).toContain('height="941"');
@@ -79,7 +81,7 @@ describe("the overview figure", () => {
   it("tapping it opens the full-size image", async () => {
     for (const locale of ["en", "fr", "de-CH"]) {
       const fig = (await render(locale)).match(/<figure[\s\S]*?<\/figure>/)![0];
-      expect(fig, locale).toMatch(new RegExp(`<a [^>]*href="${IMG}-1672\\.webp"[^>]*>\\s*<img `));
+      expect(decode(fig), locale).toMatch(new RegExp(`<a [^>]*href="${IMG}-1672\\.webp\\?v=${LOCAL_SEO_IMG_VERSION}"[^>]*>\\s*<img `));
     }
   });
 
@@ -120,7 +122,14 @@ describe("share card and Article image, every locale", () => {
   });
 
   it.each(LOCALES)("%s: the Article JSON-LD names the full-size image", async (locale) => {
-    expect(articleNode(await render(locale)).image).toBe(`https://echorank360.com${IMG}-1672.webp`);
+    expect(articleNode(await render(locale)).image).toBe(`https://echorank360.com${IMG}-1672.webp${V}`);
+  });
+
+  it("the re-cut picture's layer 4 is structured data, and no alt text names FAQPage", () => {
+    for (const lang of ["en", "fr", "de-CH"] as const) {
+      expect(LOCAL_SEO_FIGURE[lang].alt).not.toMatch(/faq/i);
+      expect(LOCAL_SEO_FIGURE[lang].alt).toContain("LocalBusiness");
+    }
   });
 
   it("the other guides' cards stay EN-only", async () => {
