@@ -35,6 +35,8 @@ export type AuthorityErrorCode =
   | "quota"
   | "unavailable"
   | "upstream"
+  | "expired"
+  | "pdf_failed"
   | "generic";
 
 export interface AuthoritySection {
@@ -105,6 +107,7 @@ export interface AuthorityCopy {
     cacheNote: string;
     upgrade: string;
   };
+  pdf: { download: string; preparing: string };
 }
 
 const SECTIONS_EN: AuthoritySection[] = [
@@ -206,6 +209,8 @@ const en: AuthorityCopy = {
     quota: "You have used this month's checks.",
     unavailable: "This tool is briefly unavailable. Try again in a few minutes.",
     upstream: "The backlink data source did not answer. Try again in a few minutes.",
+    expired: "This report is more than 7 days old. Run the check again to download it.",
+    pdf_failed: "The PDF could not be created. Try again in a few minutes.",
     generic: "Something went wrong. Please try again.",
   },
   result: {
@@ -243,6 +248,7 @@ const en: AuthorityCopy = {
     cacheNote: "Domains checked in the last 7 days still load without using a check.",
     upgrade: "Upgrade for more checks",
   },
+  pdf: { download: "Download PDF", preparing: "Preparing PDF…" },
 };
 
 const fr: AuthorityCopy = {
@@ -342,6 +348,8 @@ const fr: AuthorityCopy = {
     quota: "Vous avez utilisé les vérifications de ce mois-ci.",
     unavailable: "Cet outil est momentanément indisponible. Réessayez dans quelques minutes.",
     upstream: "La source de données de backlinks n'a pas répondu. Réessayez dans quelques minutes.",
+    expired: "Ce rapport date de plus de 7 jours. Relancez la vérification pour le télécharger.",
+    pdf_failed: "Le PDF n'a pas pu être créé. Réessayez dans quelques minutes.",
     generic: "Une erreur s'est produite. Veuillez réessayer.",
   },
   result: {
@@ -379,6 +387,7 @@ const fr: AuthorityCopy = {
     cacheNote: "Les domaines vérifiés ces 7 derniers jours se chargent toujours sans utiliser de vérification.",
     upgrade: "Passer à une formule supérieure",
   },
+  pdf: { download: "Télécharger le PDF", preparing: "Préparation du PDF…" },
 };
 
 const de: AuthorityCopy = {
@@ -478,6 +487,8 @@ const de: AuthorityCopy = {
     quota: "Sie haben die Prüfungen dieses Monats aufgebraucht.",
     unavailable: "Dieses Tool ist kurz nicht verfügbar. Versuchen Sie es in ein paar Minuten erneut.",
     upstream: "Die Backlink-Datenquelle hat nicht geantwortet. Versuchen Sie es in ein paar Minuten erneut.",
+    expired: "Dieser Bericht ist älter als 7 Tage. Führen Sie die Prüfung erneut aus, um ihn herunterzuladen.",
+    pdf_failed: "Das PDF konnte nicht erstellt werden. Versuchen Sie es in ein paar Minuten erneut.",
     generic: "Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut.",
   },
   result: {
@@ -515,6 +526,7 @@ const de: AuthorityCopy = {
     cacheNote: "In den letzten 7 Tagen geprüfte Domains laden weiterhin, ohne eine Prüfung zu verbrauchen.",
     upgrade: "Upgrade für mehr Prüfungen",
   },
+  pdf: { download: "PDF herunterladen", preparing: "PDF wird erstellt…" },
 };
 
 export const AUTHORITY_COPY: Record<AuthorityLocale, AuthorityCopy> = { en, fr, "de-CH": de };

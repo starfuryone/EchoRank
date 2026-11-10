@@ -258,12 +258,16 @@ describe("registration", () => {
     expect(SEO_TOOL_GROUPS.flatMap((g) => g.tools).find((t) => t.id === "link_authority")!.href).toBe(LINK_AUTHORITY_TOOL_PATH);
   });
 
-  it("the quota is plan config: 10 / 25 / 100 / 300, Enterprise unlimited", () => {
+  it("the quota is plan config: 10 / 25 / 60 / 150, Enterprise 1,000 (never unlimited)", () => {
     expect(PLAN_CONFIGS.AI_VISIBILITY.linkAuthorityChecksPerMonth).toBe(10);
     expect(PLAN_CONFIGS.STARTER.linkAuthorityChecksPerMonth).toBe(25);
-    expect(PLAN_CONFIGS.GROWTH.linkAuthorityChecksPerMonth).toBe(100);
-    expect(PLAN_CONFIGS.AGENCY.linkAuthorityChecksPerMonth).toBe(300);
-    expect(PLAN_CONFIGS.ENTERPRISE.linkAuthorityChecksPerMonth).toBeNull();
+    expect(PLAN_CONFIGS.GROWTH.linkAuthorityChecksPerMonth).toBe(60);
+    expect(PLAN_CONFIGS.AGENCY.linkAuthorityChecksPerMonth).toBe(150);
+    expect(PLAN_CONFIGS.ENTERPRISE.linkAuthorityChecksPerMonth).toBe(1000);
+    // Worst case ≈ $0.146 a check: Growth and Agency stay under 5% of the price.
+    for (const p of ["GROWTH", "AGENCY"] as const) {
+      expect((PLAN_CONFIGS[p].linkAuthorityChecksPerMonth! * 0.146) / PLAN_CONFIGS[p].monthlyPrice, p).toBeLessThan(0.045);
+    }
     expect(linkAuthorityFromPrice()).toBe(PLAN_CONFIGS.AI_VISIBILITY.monthlyPrice);
   });
 });

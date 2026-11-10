@@ -2,8 +2,9 @@
 //
 // Per-tenant monthly Link Authority Checker counter: Redis INCR on a
 // month-scoped key (the site-audit/quota.ts shape), so the count survives
-// `pm2 restart` and is shared by every process. The limit is the plan's
-// linkAuthorityChecksPerMonth (plan-config.ts); null = unlimited.
+// `pm2 restart` and is shared by every process. The limit is the tenant's
+// staff override (tenants.linkAuthorityChecksOverride, /admin/link-authority)
+// when set, else the plan's linkAuthorityChecksPerMonth (plan-config.ts).
 //
 // Reserved BEFORE the first purchase and released when nothing was bought, so
 // a failed check costs no allowance. A check answered wholly from the 7-day
@@ -15,7 +16,23 @@ import "server-only";
 import type { PlanType } from "@/generated/prisma";
 import { getRedisConnection } from "@/infrastructure/redis/connection";
 import { linkAuthorityChecksLimit } from "@/lib/plan-config";
+import { prisma } from "@/lib/prisma";
 import type { LinkAuthorityUsage } from "./types";
+
+/** The plan's checks a month, unless staff set an override for this tenant. */
+export function effectiveLinkAuthorityLimit(plan: PlanType, override: number | null | undefined): number | null {
+  return override ?? linkAuthorityChecksLimit(plan);
+}
+
+/** The tenant's limit this month. A failed override read falls back to the plan's (never to unlimited). */
+export async function linkAuthorityLimit(tenantId: string, plan: PlanType): Promise<number | null> {
+  try {
+    const t = await prisma.tenant.findUnique({ where: { id: tenantId }, select: { linkAuthorityChecksOverride: true } });
+    return effectiveLinkAuthorityLimit(plan, t?.linkAuthorityChecksOverride);
+  } catch {
+    return linkAuthorityChecksLimit(plan);
+  }
+}
 
 /** 40 days — comfortably past the longest month, so the key self-cleans. */
 const KEY_TTL_SECONDS = 40 * 24 * 60 * 60;
@@ -62,7 +79,7 @@ export async function linkAuthorityUsed(tenantId: string, now = new Date()): Pro
 export async function linkAuthorityUsage(tenantId: string, plan: PlanType, now = new Date()): Promise<LinkAuthorityUsage> {
   return {
     used: await linkAuthorityUsed(tenantId, now),
-    limit: linkAuthorityChecksLimit(plan),
+    limit: await linkAuthorityLimit(tenantId, plan),
     resetsAt: linkAuthorityResetsAt(now).toISOString(),
   };
 }
@@ -74,7 +91,7 @@ export async function linkAuthorityUsage(tenantId: string, plan: PlanType, now =
  * LinkAuthorityQuotaUnavailableError when Redis cannot count.
  */
 export async function reserveLinkAuthorityCheck(tenantId: string, plan: PlanType, now = new Date()): Promise<LinkAuthorityUsage> {
-  const limit = linkAuthorityChecksLimit(plan);
+  const limit = await linkAuthorityLimit(tenantId, plan);
   const resetsAt = linkAuthorityResetsAt(now).toISOString();
   const key = linkAuthorityQuotaKey(tenantId, now);
   let used: number;

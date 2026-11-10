@@ -12,13 +12,11 @@
 //
 // AUTHENTICATED — do not add /api/seo/v1/* to publicPaths in src/proxy.ts.
 
-import { NextResponse } from "next/server";
 import { z } from "zod";
 import { logger } from "@/infrastructure/observability/logger";
-import { requirePaidPlan, PaidPlanRequiredError } from "@/lib/paid-plan";
-import { planAllowsApi } from "@/lib/plan-access";
 import { rateLimit } from "@/lib/rate-limit";
-import { LINK_AUTHORITY_API, MAX_COMPETITORS } from "@/lib/authority-checker/config";
+import { MAX_COMPETITORS } from "@/lib/authority-checker/config";
+import { linkAuthorityMember as member } from "@/lib/authority-checker/gate";
 import { normalizeCheck } from "@/lib/authority-checker/domains";
 import { runLinkAuthorityCheck } from "@/lib/authority-checker/service";
 import {
@@ -37,25 +35,6 @@ const Body = z.object({
 /** Checks per tenant per minute: a floor under the monthly allowance, against a scripted burst. */
 const RATE_LIMIT = 10;
 const RATE_WINDOW_MS = 60_000;
-
-type Member = Awaited<ReturnType<typeof requirePaidPlan>>;
-
-/** Session and plan, checked server-side: 401 without a session, 403 unpaid or outside the plan. */
-async function member(locale: string | null | undefined): Promise<{ ok: true; m: Member } | { ok: false; res: NextResponse }> {
-  let m: Member;
-  try {
-    m = await requirePaidPlan();
-  } catch (err) {
-    if (err instanceof PaidPlanRequiredError) return { ok: false, res: authorityError(locale, "plan_required", 403) };
-    // requireTenant()'s sentinel: no session, or no membership.
-    if (err instanceof Error && err.message.includes("Not authenticated")) return { ok: false, res: authorityError(locale, "unauthorized", 401) };
-    throw err;
-  }
-  if (!planAllowsApi(m.tenant.planType, LINK_AUTHORITY_API, "POST")) {
-    return { ok: false, res: authorityError(locale, "plan_required", 403) };
-  }
-  return { ok: true, m };
-}
 
 export async function GET(request: Request) {
   const locale = new URL(request.url).searchParams.get("locale");

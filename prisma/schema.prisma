@@ -204,6 +204,10 @@ model Tenant {
   crawlConcurrencyOverride Int?
   crawlsKeptOverride       Int?
   crawlUrlCapOverride      Int?
+  /// Link Authority Checker checks a month, set by staff in
+  /// /admin/link-authority for a contract above the plan's default
+  /// (src/lib/authority-checker/quota.ts). Null = the plan's value.
+  linkAuthorityChecksOverride Int?
   /// "customer" for every real workspace. "free" marks the system tenant that
   /// owns the free public site crawler's crawls (slug free-crawler,
   /// src/lib/site-crawler/free-tenant.ts): it has no members and no

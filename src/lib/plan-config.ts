@@ -426,13 +426,17 @@ export interface PlanConfig {
    * nothing and is not counted. Counted in Redis (authority-checker/quota.ts),
    * month-keyed, so the count survives restarts.
    *
-   * PLACEHOLDERS (2026-11-09 brief). Worst case at ~$0.146 a check (four
+   * Set by the owner 2026-11-10. Worst case at ~$0.146 a check (four
    * summaries at the recorded $0.024036, referring domains at $0.0258,
-   * bulk_ranks unrecorded and assumed at the same ~$0.024 request base):
+   * bulk_ranks unrecorded and assumed at the same ~$0.024 request base; its
+   * first live call's real cost is in its SeoApiCall row):
    *   AI_VISIBILITY  10 → $1.46 of $29  (5.0%)
    *   STARTER        25 → $3.65 of $79  (4.6%)
-   *   GROWTH        100 → $14.59 of $199 (7.3%)
-   *   AGENCY        300 → $43.77 of $499 (8.8%)
+   *   GROWTH         60 → $8.76 of $199 (4.4%)
+   *   AGENCY        150 → $21.89 of $499 (4.4%)
+   *   ENTERPRISE  1,000 by default; staff raise a tenant above it in
+   *               /admin/link-authority (tenants.linkAuthorityChecksOverride).
+   * Never `null` (unlimited) on a sellable plan.
    */
   linkAuthorityChecksPerMonth: number | null;
   /**
@@ -624,7 +628,7 @@ export const PLAN_CONFIGS: Record<SellablePlanType, PlanConfig> = {
     aiProjects: 3,
     aiMonthlyCapUsd: 40,
     keywordOpportunityAnalysesPerMonth: 25,
-    linkAuthorityChecksPerMonth: 100,
+    linkAuthorityChecksPerMonth: 60,
     backlinks: {
       tier: "basic",
       scope: "domain",
@@ -680,7 +684,7 @@ export const PLAN_CONFIGS: Record<SellablePlanType, PlanConfig> = {
     aiProjects: 25,
     aiMonthlyCapUsd: 150,
     keywordOpportunityAnalysesPerMonth: 55,
-    linkAuthorityChecksPerMonth: 300,
+    linkAuthorityChecksPerMonth: 150,
     backlinks: {
       tier: "full",
       scope: "full",
@@ -735,8 +739,9 @@ export const PLAN_CONFIGS: Record<SellablePlanType, PlanConfig> = {
     aiProjects: null,
     aiMonthlyCapUsd: null,
     keywordOpportunityAnalysesPerMonth: null,
-    // Not in the brief; contract-priced like every other Enterprise allowance.
-    linkAuthorityChecksPerMonth: null,
+    // 1,000 by default (owner, 2026-11-10); a contract above that is a
+    // per-tenant override in /admin/link-authority, never unlimited.
+    linkAuthorityChecksPerMonth: 1_000,
     backlinks: {
       tier: "full",
       scope: "full",

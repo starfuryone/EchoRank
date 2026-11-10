@@ -88,6 +88,13 @@ export async function laMeteredCall<T>(tenantId: string, path: string, task: Rec
   try {
     const result = await runWithPurchaseContext(ctx, () => postTask<T>(path, task));
     await recordCall({ tenantId, feature: LINK_AUTHORITY_FEATURE, path, costUsd: result.billing.costUsd, ok: true });
+    // bulk_ranks had no recorded fixture when the allowances were set (plan-config
+    // assumes ~$0.024): log every live one, with its target count, so the real
+    // cost per call is in the logs as well as in its SeoApiCall row.
+    if (path === BACKLINKS.bulkRanks) {
+      const targets = Array.isArray(task.targets) ? task.targets.length : null;
+      logger.info({ tenantId, path, targets, costUsd: result.billing.costUsd }, "link authority: bulk_ranks live cost");
+    }
     return result;
   } catch (err) {
     const billed = err instanceof DataforseoError && err.billing ? err.billing.costUsd : 0;

@@ -18,6 +18,7 @@ import "server-only";
 
 import type { PlanType } from "@/generated/prisma";
 import { buyLinks, buyRanks, buyRefDomains, cachedLinks, cachedRanks, cachedRefDomains } from "./data";
+import type { PdfReport } from "./pdf";
 import { linkAuthorityUsage, releaseLinkAuthorityCheck, reserveLinkAuthorityCheck } from "./quota";
 import type { DomainRow, LinkAuthorityReport, LinkMetrics, ReferringDomainRow } from "./types";
 
@@ -26,6 +27,41 @@ export interface CheckInput {
   plan: PlanType;
   domain: string;
   competitors: string[];
+}
+
+function comparisonRows(domains: string[], authority: Record<string, number | null>, links: Map<string, LinkMetrics>): DomainRow[] {
+  return domains.map((d) => ({ domain: d, authority: authority[d] ?? null, ...(links.get(d) as LinkMetrics) }));
+}
+
+/**
+ * The report rebuilt from the 7-day domain cache alone, for the PDF: no
+ * allowance, no purchase. Null when any piece has left the cache (the page
+ * then asks for the check to be run again).
+ */
+export async function cachedLinkAuthorityReport(
+  input: { domain: string; competitors: string[] },
+  checkedAt: string,
+  now = new Date(),
+): Promise<PdfReport | null> {
+  const domains = [input.domain, ...input.competitors];
+  const { known: authority, missing } = await cachedRanks(domains, now);
+  if (missing.length > 0) return null;
+  const links = new Map<string, LinkMetrics>();
+  for (const d of domains) {
+    const hit = await cachedLinks(d, now);
+    if (!hit) return null;
+    links.set(d, hit);
+  }
+  const refDomains = await cachedRefDomains(input.domain, now);
+  if (refDomains === null) return null;
+  return {
+    domain: input.domain,
+    checkedAt,
+    authority: authority[input.domain] ?? null,
+    links: links.get(input.domain) as LinkMetrics,
+    comparison: comparisonRows(domains, authority, links),
+    referringDomains: refDomains,
+  };
 }
 
 export async function runLinkAuthorityCheck(input: CheckInput, now = new Date()): Promise<LinkAuthorityReport> {
@@ -58,7 +94,7 @@ export async function runLinkAuthorityCheck(input: CheckInput, now = new Date())
     }
   }
 
-  const comparison: DomainRow[] = domains.map((d) => ({ domain: d, authority: authority[d] ?? null, ...(links.get(d) as LinkMetrics) }));
+  const comparison: DomainRow[] = comparisonRows(domains, authority, links);
   return {
     domain: input.domain,
     competitors: input.competitors,

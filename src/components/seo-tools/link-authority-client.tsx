@@ -3,7 +3,8 @@
 // The Link Authority Checker's in-app form and report (2026-11-09). POSTs to
 // /api/seo/v1/link-authority, which checks the session and the plan; the
 // report is the full one (score, link counts, the comparison with up to three
-// competitors, the top 10 referring domains), no email gate.
+// competitors, the top 10 referring domains), no email gate, with a PDF
+// download (PdfButton) that uses no check.
 //
 // The month's usage line sits above the form. At the limit the panel shows
 // used / limit, the reset date and an upgrade link; the form stays, because a
@@ -13,7 +14,7 @@
 
 import { useState } from "react";
 import { AUTHORITY_COPY, authorityLocale, type AuthorityErrorCode } from "@/lib/authority-checker/copy";
-import { LINK_AUTHORITY_API, MAX_COMPETITORS } from "@/lib/authority-checker/config";
+import { LINK_AUTHORITY_API, LINK_AUTHORITY_PDF_API, MAX_COMPETITORS } from "@/lib/authority-checker/config";
 import { normalizeCheck } from "@/lib/authority-checker/domains";
 import type { LinkAuthorityReport, LinkAuthorityUsage } from "@/lib/authority-checker/types";
 
@@ -140,7 +141,72 @@ export function LinkAuthorityClient({ locale, initialUsage }: { locale: string; 
         )}
       </form>
 
-      {report && <Report report={report} locale={locale} />}
+      {report && (
+        <>
+          <PdfButton report={report} locale={locale} />
+          <Report report={report} locale={locale} />
+        </>
+      )}
+    </div>
+  );
+}
+
+/**
+ * Download the report as a PDF (POST …/pdf). The server rebuilds it from the
+ * 7-day cache, so it costs no check; past the cache it says to run it again.
+ */
+function PdfButton({ report, locale }: { report: LinkAuthorityReport; locale: string }) {
+  const c = AUTHORITY_COPY[authorityLocale(locale)];
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const download = async () => {
+    setError(null);
+    setBusy(true);
+    try {
+      const res = await fetch(LINK_AUTHORITY_PDF_API, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify({ domain: report.domain, competitors: report.competitors, checkedAt: report.checkedAt, locale }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        const code = typeof data?.code === "string" && data.code in c.errors ? (data.code as AuthorityErrorCode) : "pdf_failed";
+        setError(data?.error ?? c.errors[code]);
+        return;
+      }
+      const url = URL.createObjectURL(await res.blob());
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Echorank-Link-Authority-${report.domain.replace(/[^a-z0-9.-]/gi, "_")}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 10_000);
+    } catch {
+      setError(c.errors.pdf_failed);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <div className="flex flex-wrap items-center gap-3">
+      <button
+        type="button"
+        onClick={download}
+        disabled={busy}
+        data-testid="link-authority-pdf"
+        className="rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-800 hover:bg-gray-50 disabled:opacity-50"
+      >
+        {busy ? c.pdf.preparing : c.pdf.download}
+      </button>
+      {error && (
+        <p role="alert" className="text-sm text-red-600">
+          {error}
+        </p>
+      )}
     </div>
   );
 }

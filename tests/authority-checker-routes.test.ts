@@ -32,6 +32,7 @@ const session = vi.hoisted(() => ({
   member: null as null | { tenantId: string; tenant: { id: string; planType: PlanType } },
   billingStatus: "ACTIVE" as BillingStatus,
   subscription: null as null | { status: BillingStatus; productKind: "PLAN" | "WATCHER" },
+  override: null as number | null,
 }));
 vi.mock("@/lib/tenant", () => ({
   getCurrentTenant: async () => session.member,
@@ -43,7 +44,7 @@ vi.mock("@/lib/tenant", () => ({
 vi.mock("@/lib/prisma", () => ({
   prisma: {
     subscription: { findUnique: async () => session.subscription },
-    tenant: { findUnique: async () => ({ billingStatus: session.billingStatus }) },
+    tenant: { findUnique: async () => ({ billingStatus: session.billingStatus, linkAuthorityChecksOverride: session.override }) },
   },
 }));
 vi.mock("@/lib/rate-limit", () => ({ rateLimit: async () => ({ success: true }) }));
@@ -90,12 +91,15 @@ vi.mock("@/lib/authority-checker/data", () => ({
 }));
 
 import { GET as usage, POST as check } from "@/app/api/seo/v1/link-authority/route";
+import { POST as pdfRoute } from "@/app/api/seo/v1/link-authority/pdf/route";
 import { POST as oldCheck } from "@/app/api/free/v1/authority-checker/route";
 import { GET as oldRead } from "@/app/api/free/v1/authority-checker/[token]/route";
 import { POST as oldUnlock } from "@/app/api/free/v1/authority-checker/[token]/unlock/route";
 import { GET as oldPdf } from "@/app/api/free/v1/authority-checker/[token]/pdf/route";
 import { AUTHORITY_COPY } from "@/lib/authority-checker/copy";
-import { LINK_AUTHORITY_API, LINK_AUTHORITY_TOOL_PATH } from "@/lib/authority-checker/config";
+import { LINK_AUTHORITY_API, LINK_AUTHORITY_PDF_API, LINK_AUTHORITY_TOOL_PATH } from "@/lib/authority-checker/config";
+import { parseLinkAuthorityOverride } from "@/lib/authority-checker/override";
+import { authorityPdfPayload, pdfCheckedAt } from "@/lib/authority-checker/pdf";
 import {
   LinkAuthorityQuotaExceededError,
   linkAuthorityQuotaKey,
@@ -127,6 +131,7 @@ beforeEach(() => {
   session.member = null;
   session.billingStatus = "ACTIVE";
   session.subscription = null;
+  session.override = null;
   data.ranks.clear();
   data.links.clear();
   data.ref.clear();
@@ -283,7 +288,93 @@ describe("the monthly allowance", () => {
     signIn("AGENCY");
     await run();
     const u = await (await usage(new Request(`https://echorank360.com${LINK_AUTHORITY_API}`))).json();
-    expect(u).toMatchObject({ used: 1, limit: 300 });
+    expect(u).toMatchObject({ used: 1, limit: 150 });
+  });
+
+  it("Enterprise: 1,000 by default, never unlimited; a staff override replaces the plan's number", async () => {
+    signIn("ENTERPRISE");
+    await run();
+    const get = async () => (await usage(new Request(`https://echorank360.com${LINK_AUTHORITY_API}`))).json();
+    expect(await get()).toMatchObject({ used: 1, limit: 1000 });
+    session.override = 2500;
+    expect(await get()).toMatchObject({ used: 1, limit: 2500 });
+    // An override is enforced like the plan's limit.
+    session.override = 1;
+    expect((await run("other.com", [])).status).toBe(429);
+  });
+
+  it("the override form value: empty clears it, an integer within 1–100,000 sets it", () => {
+    expect(parseLinkAuthorityOverride("")).toEqual({ ok: true, value: null });
+    expect(parseLinkAuthorityOverride("2,500")).toEqual({ ok: true, value: 2500 });
+    expect(parseLinkAuthorityOverride("0")).toEqual({ ok: false });
+    expect(parseLinkAuthorityOverride("100001")).toEqual({ ok: false });
+    expect(parseLinkAuthorityOverride("1.5")).toEqual({ ok: false });
+  });
+});
+
+describe("the PDF", () => {
+  const pdf = (body: unknown) =>
+    pdfRoute(new Request(`https://echorank360.com${LINK_AUTHORITY_PDF_API}`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body),
+    }));
+  const sidecar = vi.fn();
+  beforeEach(() => {
+    sidecar.mockReset();
+    sidecar.mockResolvedValue(new Response(new Uint8Array([0x25, 0x50, 0x44, 0x46]), { status: 200 }));
+    vi.stubGlobal("fetch", sidecar);
+  });
+
+  it("anonymous → 401, unpaid → 403, and the sidecar is never called", async () => {
+    expect((await pdf({ domain: "a.com" })).status).toBe(401);
+    signIn("STARTER", { status: "NONE" });
+    expect((await pdf({ domain: "a.com" })).status).toBe(403);
+    expect(sidecar).not.toHaveBeenCalled();
+  });
+
+  it("a paying tenant gets the PDF of the check it just ran, built from the cache: no check used, nothing bought", async () => {
+    signIn("AI_VISIBILITY");
+    const r = await (await run("a.com", ["b.com"])).json();
+    const bought = data.bought.length;
+    const res = await pdf({ domain: "a.com", competitors: ["b.com"], checkedAt: r.checkedAt, locale: "fr" });
+    expect(res.status).toBe(200);
+    expect(res.headers.get("content-type")).toBe("application/pdf");
+    expect(res.headers.get("content-disposition")).toContain("Echorank-Link-Authority-a.com.pdf");
+    expect(data.bought.length).toBe(bought);
+    expect(kv.get(linkAuthorityQuotaKey("t-AI_VISIBILITY"))).toBe("1");
+    const sent = JSON.parse(sidecar.mock.calls[0][1].body);
+    expect(sent).toMatchObject({ paid: true, lang: "fr", domain: "a.com", authority: 50 });
+    expect(sent.comparison.map((row: { domain: string }) => row.domain)).toEqual(["a.com", "b.com"]);
+    expect(sent).not.toHaveProperty("ctaUrl");
+  });
+
+  it("a domain that is not in the 7-day cache → 410 expired, nothing bought (the PDF is not a free check)", async () => {
+    signIn("GROWTH");
+    const res = await pdf({ domain: "never-checked.com" });
+    expect(res.status).toBe(410);
+    expect((await res.json()).code).toBe("expired");
+    expect(data.bought).toEqual([]);
+    expect(sidecar).not.toHaveBeenCalled();
+  });
+
+  it("a sidecar failure → 503 pdf_failed", async () => {
+    signIn("GROWTH");
+    await run("a.com", []);
+    sidecar.mockResolvedValue(new Response("no", { status: 500 }));
+    const res = await pdf({ domain: "a.com" });
+    expect(res.status).toBe(503);
+    expect((await res.json()).code).toBe("pdf_failed");
+  });
+
+  it("the payload is the paid one, de-CH reads de, and a checkedAt outside the cache window falls back to now", () => {
+    const report = { domain: "a.com", checkedAt: "2026-11-09T00:00:00.000Z", authority: 1, links: { referringDomains: 1, backlinks: 1, dofollowShare: 1 }, comparison: [], referringDomains: [] };
+    expect(authorityPdfPayload(report, "de-CH")).toMatchObject({ paid: true, lang: "de" });
+    const now = new Date("2026-11-10T12:00:00Z");
+    expect(pdfCheckedAt("2026-11-09T08:00:00Z", now)).toBe("2026-11-09T08:00:00.000Z");
+    expect(pdfCheckedAt("2026-10-01T00:00:00Z", now)).toBe(now.toISOString());
+    expect(pdfCheckedAt("2026-11-11T00:00:00Z", now)).toBe(now.toISOString());
+    expect(pdfCheckedAt("nonsense", now)).toBe(now.toISOString());
   });
 });
 

@@ -1,6 +1,6 @@
 // GET /api/free/v1/authority-checker/{token}/pdf — GONE (2026-11-09): the free
 // checker's unlocked PDF went with its email gate. 410 for every request.
-// Deletable with the rest of /api/free/v1/authority-checker/.
+// Keep until 2027-02-08, then delete with the rest of /api/free/v1/authority-checker/.
 
 import { NextResponse } from "next/server";
 
