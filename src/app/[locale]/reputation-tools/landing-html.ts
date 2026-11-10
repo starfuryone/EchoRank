@@ -501,6 +501,7 @@ export const landingHtml = String.raw`<!DOCTYPE html>
     <span>© 2026 Echorank — ChatLogic Insights Ltd</span>
     <span><a href="/en" style="color:var(--muted)">echorank360.com</a></span>
   </div>
+<div class="er-other-services" style="flex-basis:100%;min-width:0;font-size:13px;line-height:1.5;margin-top:8px"><span style="display:block;font-weight:600">Other services</span><a href="https://llmstxt.echorank360.com/llms-txt-generator?utm_source=echorank360.com&amp;utm_medium=footer" style="overflow-wrap:anywhere">llms.txt Generator by Echorank</a><span style="display:block;opacity:.75">Free llms.txt generator and validator</span></div>
 </footer>
 
 <script>

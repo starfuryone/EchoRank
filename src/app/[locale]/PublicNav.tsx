@@ -34,6 +34,7 @@ import { WordmarkTm } from "@/components/brand/WordmarkTm";
 import { CRAWLER_BRAND } from "@/lib/site-crawler/brand";
 import { CRAWLER_GUIDES_HREF } from "@/lib/crawler-guides-link";
 import { CHATGPT_GUIDE_HREF, CHATGPT_GUIDE_LABEL } from "@/lib/chatgpt-guide-link";
+import { OTHER_SERVICES_COPY, llmsTxtGeneratorHref } from "@/lib/other-services";
 
 type Base = "en" | "fr";
 const baseOf = (locale: string): Base => (locale.startsWith("fr") ? "fr" : "en");
@@ -256,6 +257,8 @@ const NAV: Record<Base, NavCopy> = {
             items: [
               { href: "/resources", label: "Resources", desc: "Whitepapers and downloads." },
               { href: "/about", label: "About Echorank" },
+              // Another Echorank service (src/lib/other-services.ts), same tab.
+              { href: llmsTxtGeneratorHref("menu"), label: OTHER_SERVICES_COPY.en.menuLabel, desc: OTHER_SERVICES_COPY.en.menuDesc },
             ],
           },
         ],
@@ -349,6 +352,7 @@ const NAV: Record<Base, NavCopy> = {
             items: [
               { href: "/resources", label: "Ressources", desc: "Livres blancs et téléchargements." },
               { href: "/about", label: "À propos d'Echorank" },
+              { href: llmsTxtGeneratorHref("menu"), label: OTHER_SERVICES_COPY.fr.menuLabel, desc: OTHER_SERVICES_COPY.fr.menuDesc },
             ],
           },
         ],
@@ -393,7 +397,13 @@ function navFor(base: Base, locale?: string): NavCopy {
       ...g,
       columns: g.columns.map((c) => ({
         ...c,
-        items: c.items.map((i) => (i.href === CHATGPT_GUIDE_HREF ? { ...i, label: CHATGPT_GUIDE_LABEL.de } : i)),
+        items: c.items.map((i) =>
+          i.href === CHATGPT_GUIDE_HREF
+            ? { ...i, label: CHATGPT_GUIDE_LABEL.de }
+            : i.href === llmsTxtGeneratorHref("menu")
+              ? { ...i, label: OTHER_SERVICES_COPY["de-CH"].menuLabel, desc: OTHER_SERVICES_COPY["de-CH"].menuDesc }
+              : i,
+        ),
       })),
     })),
   };
@@ -500,6 +510,8 @@ export function PublicNav({
   const b = baseOf(locale);
   const t = navFor(b, locale);
   const L = (p: string) => (p.startsWith("#") ? `/${locale}${p}` : `/${locale}${p}`);
+  // A panel item may be another Echorank service (an absolute URL): never locale-prefixed.
+  const hrefOf = (p: string) => (/^https?:\/\//.test(p) ? p : L(p));
 
   /**
    * The AI Assistant link, hidden when the deployment has the feature off.
@@ -614,7 +626,7 @@ export function PublicNav({
           <div key={col.title} className={s.megaCol}>
             <p className={s.megaColTitle}>{col.title}</p>
             {col.items.map((item) => (
-              <Link key={item.href + item.label} href={L(item.href)} className={s.megaLink}>
+              <Link key={item.href + item.label} href={hrefOf(item.href)} className={s.megaLink}>
                 <span className={s.megaLinkLabel}>{item.label}</span>
                 {item.desc && <span className={s.megaLinkDesc}>{item.desc}</span>}
               </Link>
@@ -788,7 +800,7 @@ export function PublicNav({
                   g.columns.flatMap((c) => c.items).map((item) => (
                     <Link
                       key={item.href + item.label}
-                      href={L(item.href)}
+                      href={hrefOf(item.href)}
                       className={s.sheetLink}
                       onClick={() => setMobileOpen(false)}
                     >

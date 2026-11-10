@@ -13,6 +13,7 @@ import { GuideHeroArt, SerpToAnswerArt, ChecklistArt, CrawlerGateArt, ReviewPuls
 import RevenueCalculator from "./calculator";
 import { JsonLd, buildMetadata } from "@/lib/seo";
 import { CompanyLine } from "@/components/brand/CompanyLine";
+import { OtherServices } from "@/components/OtherServices";
 
 export function generateStaticParams() {
   return SUPPORTED_LOCALES.map((locale) => ({ locale }));
@@ -563,6 +564,7 @@ export default async function GuideIaPage({ params }: { params: Promise<{ locale
               <Link key={l.label} href={`/${locale}${l.href}`}>{l.label}</Link>
             ))}
           </span>
+          <OtherServices locale={locale} />
           <CompanyLine />
         </footer>
       </div>

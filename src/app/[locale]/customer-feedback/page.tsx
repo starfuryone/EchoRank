@@ -9,6 +9,7 @@ import { FeedbackArt } from "../hero-art";
 import lp from "./customer-feedback.module.css";
 import { buildMetadata } from "@/lib/seo";
 import { CompanyLine } from "@/components/brand/CompanyLine";
+import { OtherServices } from "@/components/OtherServices";
 
 export function generateStaticParams() {
   return SUPPORTED_LOCALES.map((locale) => ({ locale }));
@@ -368,6 +369,7 @@ export default async function CustomerFeedbackPage({
               <Link key={l.label} href={`/${locale}${l.href}`}>{l.label}</Link>
             ))}
           </span>
+          <OtherServices locale={locale} />
           <CompanyLine />
         </footer>
       </div>

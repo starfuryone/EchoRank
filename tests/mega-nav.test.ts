@@ -25,6 +25,8 @@ describe("every menu destination exists", () => {
     const known = new Set(LOCALIZED_ROUTES.map((r) => r.path));
     for (const href of navHrefs()) {
       if (href.startsWith("#")) continue;
+      // Another Echorank service (src/lib/other-services.ts) is the one absolute URL.
+      if (href.startsWith("https://llmstxt.echorank360.com/")) continue;
       expect(known.has(href.split("#")[0]), `${href} is not a registered route`).toBe(true);
     }
   });

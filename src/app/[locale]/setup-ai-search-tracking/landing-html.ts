@@ -318,6 +318,7 @@ export const SETUP_AI_SEARCH_TRACKING_HTML: string = String.raw`<!DOCTYPE html>
       <a href="/en/pricing">Pricing</a>
     </nav>
   </div>
+<div class="er-other-services" style="flex-basis:100%;min-width:0;font-size:13px;line-height:1.5;margin-top:8px"><span style="display:block;font-weight:600">Other services</span><a href="https://llmstxt.echorank360.com/llms-txt-generator?utm_source=echorank360.com&amp;utm_medium=footer" style="overflow-wrap:anywhere">llms.txt Generator by Echorank</a><span style="display:block;opacity:.75">Free llms.txt generator and validator</span></div>
 </footer>
 
 <script>

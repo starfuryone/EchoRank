@@ -11,6 +11,7 @@ import { CRAWLER_BRAND } from "@/lib/site-crawler/brand";
 import { CookieSettingsLink } from "@/components/marketing/cookie-consent";
 import { cookieLocale } from "@/lib/consent/cookie-consent";
 import { COMPLAINT_LINK } from "@/lib/privacy/complaint-copy";
+import { OtherServices } from "@/components/OtherServices";
 
 const LINKS: Record<"en" | "fr", ReadonlyArray<readonly [string, string]>> = {
   en: [
@@ -55,6 +56,7 @@ export function PublicFooter({ locale }: { locale: string }) {
           <Link href={L("/privacy/complaint")}>{COMPLAINT_LINK[cookieLocale(locale)]}</Link>
           <CookieSettingsLink locale={locale} />
         </span>
+        <OtherServices locale={locale} />
         <CompanyLine />
       </div>
     </footer>
