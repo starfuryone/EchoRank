@@ -32,7 +32,8 @@ import { startSerpCheckWorker } from "./workers/serp-check.worker";
 import { startRankTrackerWorker } from "./workers/rank-tracker.worker";
 import { startSiteAuditWorker } from "./workers/site-audit.worker";
 import { startBotLogAnalysisWorker } from "./workers/bot-log-analysis.worker";
-import { startSiteCrawlWorker } from "./workers/site-crawl.worker";
+import { startSiteCrawlWorker, stopSiteCrawlWorker } from "./workers/site-crawl.worker";
+import { crawlsInOwnProcess } from "@/lib/site-crawler/capacity";
 import { removeFreeToolsVolatilitySchedules, startFreeToolsVolatilityWorker } from "./workers/free-tools-volatility.worker";
 import { volatilityPollEnabled } from "@/lib/free-tools/volatility-flag";
 import { startAiCheckupWorker } from "./workers/ai-checkup.worker";
@@ -116,7 +117,9 @@ async function startWorkers() {
     { name: "rank-tracker", start: startRankTrackerWorker },
     { name: "site-audit", start: startSiteAuditWorker },
     { name: "bot-log-analysis", start: startBotLogAnalysisWorker },
-    { name: "site-crawl", start: startSiteCrawlWorker },
+    // Only while crawls have no process of their own (CRAWL_PROCESSES unset or
+    // 0, src/lib/site-crawler/capacity.ts); otherwise echorank360-crawlers runs them.
+    ...(crawlsInOwnProcess() ? [] : [{ name: "site-crawl", start: startSiteCrawlWorker }]),
     // Only with VOLATILITY_POLL_ENABLED=true; see disabledWorkers() below.
     ...(volatilityPollEnabled() ? [{ name: "free-tools-volatility", start: startFreeToolsVolatilityWorker }] : []),
     { name: "ai-checkup", start: startAiCheckupWorker },
@@ -175,6 +178,8 @@ async function startWorkers() {
     console.log("\n[Workers] Shutting down gracefully...");
     clearInterval(dispatchTimer);
     stopFailureAlert();
+    // Crawls running here (the old shape) go back to the queue with their frontier.
+    if (!crawlsInOwnProcess()) await stopSiteCrawlWorker().catch((err) => console.error("[Workers] site-crawl stop:", err));
     try {
       const { closeAllQueues } = await import("./registry");
       await closeAllQueues();

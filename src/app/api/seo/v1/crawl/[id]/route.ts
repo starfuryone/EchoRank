@@ -22,6 +22,7 @@ import { prisma } from "@/lib/prisma";
 import { toCrawlDto } from "@/lib/site-crawler/service";
 import { crawlRouteError } from "@/lib/site-crawler/http";
 import { getIssueTotals } from "@/lib/site-crawler/issue-totals";
+import { queueEstimate } from "@/lib/site-crawler/public-api";
 
 export async function GET(
   _request: Request,
@@ -47,8 +48,10 @@ export async function GET(
       row.status !== "QUEUED" && row.status !== "RUNNING"
         ? await getIssueTotals(row.id, row.summary, row)
         : { ERROR: 0, WARNING: 0, NOTICE: 0 };
+    // "Queued, position N": four counts, only while the crawl waits for a slot.
+    const queuePosition = row.status === "QUEUED" ? (await queueEstimate(row).catch(() => null))?.queuePosition ?? null : null;
 
-    return NextResponse.json({ ...toCrawlDto(row), severityCounts });
+    return NextResponse.json({ ...toCrawlDto(row), severityCounts, queuePosition });
   } catch (err) {
     return crawlRouteError(err);
   }

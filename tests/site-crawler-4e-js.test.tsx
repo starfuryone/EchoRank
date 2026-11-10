@@ -77,7 +77,8 @@ describe("the sidecar call", () => {
     const out = await callSidecarRender("https://x.com/", f, ["return 1", "throw 1"]);
     expect(JSON.parse(seen.body!).snippets).toEqual(["return 1", "throw 1"]);
     expect(toRenderFacts(out!, "https://x.com/").snippets).toEqual(["1", "error: x"]);
-    expect(RENDER_REQUEST_TIMEOUT_MS).toBe(50_000);
+    // 20 s render + up to 120 s queued behind the sidecar's shared contexts + 5 s slack (render.ts).
+    expect(RENDER_REQUEST_TIMEOUT_MS).toBe(145_000);
   });
   it("sends no snippets key when there are none", async () => {
     let body = "";

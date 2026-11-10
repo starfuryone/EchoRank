@@ -63,6 +63,8 @@ export interface CrawlDto {
   health?: number | null;
   /** Findings by kind (summary.issuesByKind); null before the crawl settles. */
   kinds?: { issue: number; warning: number; opportunity: number } | null;
+  /** While QUEUED, its place in line (1 = next); set by the status poll only. */
+  queuePosition?: number | null;
   /** Started by a CrawlSchedule rather than by hand. */
   scheduled?: boolean;
   /** Phase 4e forms login: failed = the crawl ran unauthenticated. */

@@ -13317,6 +13317,8 @@ const siteCrawlerEn = {
   lockedCta: "Compare plans",
 
   statusQueued: "Queued",
+  /** A queued crawl's place in line (queueEstimate): 1 = next. */
+  statusQueuedAt: (n: string) => `Queued, position ${n}`,
   statusRunning: "Crawling",
   statusCompleted: "Completed",
   statusFailed: "Failed",
@@ -13734,6 +13736,7 @@ export const SITE_CRAWLER_COPY: Record<DashLocale, SiteCrawlerCopy> = {
     lockedCta: "Comparer les forfaits",
 
     statusQueued: "En attente",
+    statusQueuedAt: (n: string) => `En attente, position ${n}`,
     statusRunning: "Exploration en cours",
     statusCompleted: "Terminée",
     statusFailed: "Échec",
@@ -14141,6 +14144,7 @@ export const SITE_CRAWLER_COPY: Record<DashLocale, SiteCrawlerCopy> = {
     lockedCta: "Abos vergleichen",
 
     statusQueued: "In Warteschlange",
+    statusQueuedAt: (n: string) => `In Warteschlange, Position ${n}`,
     statusRunning: "Crawlt",
     statusCompleted: "Abgeschlossen",
     statusFailed: "Fehlgeschlagen",

@@ -331,6 +331,15 @@ export interface PlanConfig {
    */
   crawlsKept: number;
   /**
+   * Site Crawler runs one workspace may have RUNNING at once (fair share,
+   * src/lib/site-crawler/tenant-caps.ts). Extra crawls wait in the queue in
+   * the order they were started; staff can override it per tenant in
+   * /admin/crawl-overrides. The free public crawler's system tenant runs
+   * exactly one, whatever this says. Placeholder figures (1 / 2 / 3) until
+   * the load test sets them; Enterprise takes Agency's by default.
+   */
+  crawlConcurrency: number;
+  /**
    * Site Crawler Phase 4b, per crawl: custom extractors (CSS / XPath / regex)
    * and custom source-code searches. Caps only — every paid tier has the
    * feature.
@@ -503,6 +512,7 @@ export const PLAN_CONFIGS: Record<SellablePlanType, PlanConfig> = {
     crawlsPerMonth: 0,
     crawlPagesPerMonth: 0,
     crawlRenderedPages: 0,
+    crawlConcurrency: 1,
     crawlsKept: 0,
     crawlExtractors: 0,
     crawlSearches: 0,
@@ -571,6 +581,7 @@ export const PLAN_CONFIGS: Record<SellablePlanType, PlanConfig> = {
     // first, so on Starter the crawl count is the binding limit today.
     crawlPagesPerMonth: 25_000,
     crawlRenderedPages: 100,
+    crawlConcurrency: 1,
     crawlsKept: 3,
     crawlExtractors: 3,
     crawlSearches: 2,
@@ -629,6 +640,7 @@ export const PLAN_CONFIGS: Record<SellablePlanType, PlanConfig> = {
     crawlsPerMonth: 20,
     crawlPagesPerMonth: 100_000,
     crawlRenderedPages: 500,
+    crawlConcurrency: 2,
     crawlsKept: 10,
     crawlExtractors: 5,
     crawlSearches: 5,
@@ -686,6 +698,7 @@ export const PLAN_CONFIGS: Record<SellablePlanType, PlanConfig> = {
     // Unlimited crawls, so this pool is the Agency plan's real crawl limit.
     crawlPagesPerMonth: 300_000,
     crawlRenderedPages: 5_000,
+    crawlConcurrency: 3,
     crawlsKept: 50,
     crawlExtractors: 10,
     crawlSearches: 5,
@@ -745,6 +758,7 @@ export const PLAN_CONFIGS: Record<SellablePlanType, PlanConfig> = {
     // override in /admin/crawl-overrides (crawlPagesPerMonthOverride).
     crawlPagesPerMonth: 300_000,
     crawlRenderedPages: 5_000,
+    crawlConcurrency: 3,
     crawlsKept: 50,
     crawlExtractors: 10,
     crawlSearches: 5,

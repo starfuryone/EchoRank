@@ -19,6 +19,7 @@ const PAGES = [
   { href: "/admin/snapshots", label: "Snapshots (free AI Visibility Check)" },
   { href: "/admin/sales-inquiries", label: "Sales inquiries" },
   { href: "/admin/crawl-overrides", label: "Crawl overrides" },
+  { href: "/admin/crawl-metrics", label: "Crawl metrics (live: crawls, pages/s, CPU, Redis, render queue)" },
   { href: "/admin/link-authority", label: "Link Authority Checker allowances" },
   { href: "/admin/free-crawler", label: "Free crawler opt-outs" },
   { href: "/admin/purchase-archive", label: "Purchase archive (purchases, reuse, savings)" },

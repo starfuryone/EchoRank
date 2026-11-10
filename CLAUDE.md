@@ -58,7 +58,10 @@ the fallback when it cannot run. `tests/deploy-script.test.ts` covers its orderi
    ```
    pm2 restart echorank360-web
    ```
-   Add `echorank360-workers` if anything under `src/infrastructure/queue/` changed.
+   Add `echorank360-workers` if anything under `src/infrastructure/queue/` changed, and
+   `echorank360-crawlers` (once it exists, `ecosystem.crawlers.config.js`) if anything the
+   site crawler runs changed (`src/lib/site-crawler/`, the site-crawl worker). Restarting it is
+   safe mid-crawl: each crawl writes what it holds and resumes from its frontier.
    Never leave a rebuilt `.next` under a running process — the old process serves HTML
    referencing chunk hashes the new build deleted. The build and the restart are two
    commands now, which means there is a window in which exactly that is true: close it.
@@ -112,7 +115,8 @@ human notices. Commit, then hand them `sudo echorank360-deploy` instead.
     (`vitest.config.ts`).
   - **tsx workers** — `npm run workers` sets
     `NODE_OPTIONS=--conditions=react-server`, which is the same resolution Next
-    performs rather than an override of it.
+    performs rather than an override of it. `npm run crawlers`
+    (echorank360-crawlers) does the same.
 
   Adding a third runtime (a cron entry, a one-off script, a new worker process)
   means adding its strategy in the same commit. The failure is not subtle — the

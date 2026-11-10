@@ -18,9 +18,28 @@
 // Anything thrown becomes FAILED with a truncated message. The try/finally is
 // what guarantees a job never sits in RUNNING forever, which is the failure a
 // polling UI cannot recover from on its own.
+//
+// RESTARTS. A crawl survives its process going away, cleanly or not:
+//   - the pop moves a batch from the frontier to crawl:<id>:inflight in one
+//     Lua call, and the list is cleared only once the batch is written;
+//   - a batch's Redis side effects (new frontier entries, inlink credits) are
+//     applied BEFORE its rows, and both are idempotent (the seen-set, the
+//     credited set), so a batch re-done after a crash changes nothing twice;
+//   - the rows go in one transaction, so a batch is either written or not.
+// A resumed run (resume: true, from claimCrawlSlot) counts what Postgres
+// already holds, puts back at the front of the frontier every in-flight entry
+// with no row yet, and carries on: no page lost, none written twice. On
+// SIGTERM (requestCrawlStop) a crawl finishes the pages it has in hand, writes
+// them, hands the untouched rest back to inflight and returns INTERRUPTED with
+// the row still RUNNING; the worker re-queues the job at once.
 
 import type Redis from "ioredis";
+import type { Prisma } from "@/generated/prisma";
 import { prisma } from "@/lib/prisma";
+import { newRowId } from "./row-id";
+import { noteBatchWrite, notePagesWritten } from "./crawl-metrics";
+import { crawlFinalizeConcurrency } from "./capacity";
+import { FinishGate, withRetries } from "./finish-gate";
 import { recordResearch } from "@/lib/research-log/store";
 import { logger } from "@/infrastructure/observability/logger";
 import {
@@ -74,10 +93,33 @@ export interface RunCrawlArgs {
   redis: Redis;
   /** Injected so tests can run a crawl without a clock. */
   now?: () => number;
+  /** The crawl was already RUNNING when its job was picked up: a restart resumes it (claimCrawlSlot). */
+  resume?: boolean;
+  /** Stop at the next page boundary and hand the job back (default: requestCrawlStop() was called). */
+  shouldStop?: () => boolean;
+}
+
+// The process is shutting down: every running crawl winds down (see RESTARTS above).
+let stopRequested = false;
+export function requestCrawlStop(): void {
+  stopRequested = true;
+}
+export function crawlStopRequested(): boolean {
+  return stopRequested;
+}
+
+// Finalisations (link graph + aggregation) this process runs at once; the
+// rest queue in order (finish-gate.ts). Sized when the first crawl finishes,
+// so it reads the process's DB_POOL_MAX.
+let finishGate: FinishGate | null = null;
+function getFinishGate(): FinishGate {
+  if (!finishGate) finishGate = new FinishGate(crawlFinalizeConcurrency());
+  return finishGate;
 }
 
 export interface CrawlOutcome {
-  status: "COMPLETED" | "CANCELLED" | "FAILED";
+  /** INTERRUPTED: stopped for a shutdown, row still RUNNING, frontier kept; the job runs again. */
+  status: "COMPLETED" | "CANCELLED" | "FAILED" | "INTERRUPTED";
   pagesCrawled: number;
   issueCount: number;
   stoppedReason: string | null;
@@ -193,9 +235,10 @@ export async function runCrawl({
   jobId,
   redis,
   now = () => Date.now(),
+  resume = false,
+  shouldStop = crawlStopRequested,
 }: RunCrawlArgs): Promise<CrawlOutcome> {
   const keys = crawlKeys(jobId);
-  const startedAt = now();
 
   const job = await prisma.crawlJob.findUnique({
     where: { id: jobId },
@@ -213,10 +256,13 @@ export async function runCrawl({
       pagesRendered: true,
       config: true,
       mode: true,
+      startedAt: true,
     },
   });
   if (!job) throw new Error(`CrawlJob ${jobId} not found`);
   const listMode = job.mode === "list";
+  // A resumed crawl keeps its first start: the one-hour wall clock is the crawl's, not the process's.
+  const startedAt = resume && job.startedAt ? job.startedAt.getTime() : now();
 
   let pagesCrawled = 0;
   let issueCount = 0;
@@ -264,10 +310,19 @@ export async function runCrawl({
   const snapshots = archived?.writer ?? null;
 
   try {
-    await prisma.crawlJob.update({
-      where: { id: jobId },
-      data: { status: "RUNNING", startedAt: new Date() },
-    });
+    if (!resume) {
+      await prisma.crawlJob.update({
+        where: { id: jobId },
+        data: { status: "RUNNING", startedAt: new Date() },
+      });
+    } else {
+      const restored = await restoreFrontier(redis, jobId);
+      if (!restored.frontier) throw new Error("frontier_lost: the crawl's queue expired before a restart could resume it");
+      pagesCrawled = restored.pages;
+      issueCount = restored.issues;
+      for (const url of await redis.smembers(keys.seeded)) sitemapSeeded.add(url);
+      logger.info({ jobId, pagesCrawled, requeued: restored.requeued, alreadyWritten: restored.alreadyWritten }, "site-crawl resumed");
+    }
 
     const rootUrl = job.rootUrl;
     // Phase 4a configuration. Decrypted here, inside the try: a key that
@@ -326,11 +381,14 @@ export async function runCrawl({
     );
 
     // Seed. SADD returns 0 if the root was already seen, which happens only on
-    // a retry of the same job — the frontier is authoritative either way.
-    // List mode was seeded by the service with the whole list; nothing to add.
+    // a resume of the same job — and then the root is NOT pushed again: it was
+    // fetched (or is back in the frontier from inflight), and a second push
+    // would write its row twice. List mode was seeded by the service with the
+    // whole list; nothing to add.
     if (!listMode) {
-      await redis.sadd(keys.seen, rootUrl);
-      await redis.rpush(keys.queue, JSON.stringify({ url: rootUrl, depth: 0 }));
+      if ((await redis.sadd(keys.seen, rootUrl)) === 1) {
+        await redis.rpush(keys.queue, JSON.stringify({ url: rootUrl, depth: 0 }));
+      }
       await redis.expire(keys.seen, REDIS_KEY_TTL_SECONDS);
       await redis.expire(keys.queue, REDIS_KEY_TTL_SECONDS);
     }
@@ -371,7 +429,12 @@ export async function runCrawl({
           sitemapSeeded.add(url);
         }
       }
-      if (seeds.length > 0) await redis.rpush(keys.queue, ...seeds);
+      if (seeds.length > 0) {
+        await redis.rpush(keys.queue, ...seeds);
+        // Kept for a resume: the orphan candidates outlive this process.
+        await redis.sadd(keys.seeded, ...seeds.map((s) => (JSON.parse(s) as FrontierItem).url));
+        await redis.expire(keys.seeded, REDIS_KEY_TTL_SECONDS);
+      }
     }
 
     logger.info(
@@ -413,6 +476,10 @@ export async function runCrawl({
     };
 
     for (;;) {
+      if (shouldStop()) {
+        status = "INTERRUPTED";
+        break;
+      }
       if (await redis.exists(keys.cancel)) {
         status = "CANCELLED";
         stoppedReason = "cancelled";
@@ -437,24 +504,29 @@ export async function runCrawl({
 
       const remaining = job.urlCap - pagesCrawled;
       const batchSize = Math.min(WRITE_BATCH_SIZE, remaining, monthLeft);
-      const batch = await popBatch(redis, keys.queue, batchSize);
+      const batch = await popBatch(redis, keys.queue, batchSize, keys.inflight);
       if (batch.length === 0) {
         // A list-mode job that finds no list: it sat queued past the frontier TTL.
         if (listMode && pagesCrawled === 0) stoppedReason = "list_expired";
         break; // frontier exhausted — the clean ending
       }
 
-      const results = await processBatch(batch, ctx);
-      const written = await writeBatch(jobId, results, redis, keys.seen, job.urlCap, pagesCrawled);
+      const { results, leftover } = await processBatch(batch, ctx, shouldStop);
+      const written = await writeBatch(jobId, results, redis, keys.seen, job.urlCap, pagesCrawled, leftover);
 
       pagesCrawled += written.pages;
       issueCount += written.issues;
+      notePagesWritten(written.pages);
 
       // Progress is written every batch so the UI's 3s poll shows movement.
       await prisma.crawlJob.update({
         where: { id: jobId },
         data: { pagesCrawled, issueCount, pagesRendered: job.pagesRendered + render.rendered },
       });
+      if (leftover.length > 0) {
+        status = "INTERRUPTED";
+        break;
+      }
     }
     // ── Site-wide aggregation ───────────────────────────────────────────
     // Runs for every crawl that produced pages, INCLUDING cap- and
@@ -464,18 +536,22 @@ export async function runCrawl({
     // Wrapped separately from the crawl: the page rows are already good, so an
     // aggregation failure must not turn a COMPLETED crawl into a FAILED one.
     // The reason lands in summary.aggregationError instead.
+    // One finalisation at a time per few pool connections (FinishGate): the
+    // crawls of a process tend to finish together.
     if (status === "COMPLETED" && pagesCrawled > 0) {
       try {
-        await resolveLinkGraph(jobId);
-        const result = await aggregateCrawl({
-          jobId,
-          rootUrl: job.rootUrl,
-          redis,
-          sitemap,
-          sitemapSeeded,
-          sitemapDeclaredInRobots: robots.sitemaps.length > 0,
-          tenantId: job.tenantId,
-          listMode,
+        const result = await getFinishGate().run(async () => {
+          await resolveLinkGraph(jobId);
+          return aggregateCrawl({
+            jobId,
+            rootUrl: job.rootUrl,
+            redis,
+            sitemap,
+            sitemapSeeded,
+            sitemapDeclaredInRobots: robots.sitemaps.length > 0,
+            tenantId: job.tenantId,
+            listMode,
+          });
         });
         summary = result.summary;
         issueCount = result.issueCount;
@@ -492,22 +568,37 @@ export async function runCrawl({
     logger.error({ jobId, err }, "site-crawl failed");
   } finally {
     releaseSpelling();
+  }
+  // Shut down mid-crawl: the row stays RUNNING and the frontier stays in
+  // Redis for the process that picks the job up next. No terminal write,
+  // no aggregation, no cleanup.
+  if (status === "INTERRUPTED") {
+    if (archived) await closeCrawlSnapshots(archived, { id: jobId, tenantId: job.tenantId, status }, writeCrawlTables);
+    logger.info({ jobId, pagesCrawled }, "site-crawl interrupted for a restart; it resumes from its frontier");
+    return { status, pagesCrawled, issueCount, stoppedReason: null };
+  }
+  {
     // Terminal status ALWAYS, even if the update above threw. A job left in
-    // RUNNING is one the UI polls forever.
-    await prisma.crawlJob
-      .update({
-        where: { id: jobId },
-        data: {
-          status,
-          pagesCrawled,
-          issueCount,
-          stoppedReason,
-          finishedAt: new Date(),
-          pagesRendered: job.pagesRendered + render.rendered,
-          ...(summary === undefined && !loginState ? {} : { summary: (loginState ? { ...((summary as object | undefined) ?? {}), login: loginState } : summary) as never }),
-        },
-      })
-      .catch((err) => logger.error({ jobId, err }, "site-crawl: final status write failed"));
+    // RUNNING is one the UI polls forever, so it is retried for ~30 s
+    // (withRetries) before giving up; the worker's failed handler is the
+    // last backstop.
+    const finishedAt = new Date();
+    await withRetries(
+      () =>
+        prisma.crawlJob.update({
+          where: { id: jobId },
+          data: {
+            status,
+            pagesCrawled,
+            issueCount,
+            stoppedReason,
+            finishedAt,
+            pagesRendered: job.pagesRendered + render.rendered,
+            ...(summary === undefined && !loginState ? {} : { summary: (loginState ? { ...((summary as object | undefined) ?? {}), login: loginState } : summary) as never }),
+          },
+        }),
+      { onRetry: (err, attempt) => logger.warn({ jobId, err, attempt }, "site-crawl: final status write failed, retrying") },
+    ).catch((err) => logger.error({ jobId, err }, "site-crawl: final status write failed"));
 
     // The frontier is worthless once the crawl ends; TTL is the backstop for
     // a process that dies before reaching this line.
@@ -522,6 +613,9 @@ export async function runCrawl({
         keys.firstSource,
         keys.headCache,
         keys.login,
+        keys.inflight,
+        keys.credited,
+        keys.seeded,
       )
       .catch(() => {});
   }
@@ -567,38 +661,100 @@ export async function runCrawl({
   return { status, pagesCrawled, issueCount, stoppedReason };
 }
 
-/** Pop up to `count` frontier entries. LPOP with a count is atomic. */
-async function popBatch(redis: Redis, queueKey: string, count: number): Promise<FrontierItem[]> {
-  if (count <= 0) return [];
-  const raw = await redis.lpop(queueKey, count);
-  if (!raw) return [];
-  const items = Array.isArray(raw) ? raw : [raw];
+/**
+ * Pop up to `count` frontier entries AND copy them to the inflight list, in
+ * one Lua call: a process killed between the two can lose nothing. The
+ * inflight list holds exactly the batch being worked on.
+ */
+const POP_TO_INFLIGHT = `
+local items = redis.call('LPOP', KEYS[1], ARGV[1])
+if not items then return {} end
+redis.call('DEL', KEYS[2])
+redis.call('RPUSH', KEYS[2], unpack(items))
+redis.call('EXPIRE', KEYS[2], ARGV[2])
+return items`;
 
-  const out: FrontierItem[] = [];
-  for (const entry of items) {
-    try {
-      const parsed = JSON.parse(entry) as FrontierItem;
-      if (typeof parsed?.url === "string") {
-        out.push({
-          url: parsed.url,
-          depth: Number(parsed.depth) || 0,
-          ...(typeof parsed.from === "string" ? { from: parsed.from } : {}),
-        });
-      }
-    } catch {
-      // A malformed frontier entry is dropped rather than failing the crawl.
-    }
+/** A frontier entry as popped, with its raw JSON (what the inflight list holds). */
+type PoppedItem = FrontierItem & { raw: string };
+
+function parseFrontierEntry(entry: string): FrontierItem | null {
+  try {
+    const parsed = JSON.parse(entry) as FrontierItem;
+    if (typeof parsed?.url !== "string") return null;
+    return {
+      url: parsed.url,
+      depth: Number(parsed.depth) || 0,
+      ...(typeof parsed.from === "string" ? { from: parsed.from } : {}),
+    };
+  } catch {
+    // A malformed frontier entry is dropped rather than failing the crawl.
+    return null;
+  }
+}
+
+/** Pop up to `count` frontier entries into inflight (POP_TO_INFLIGHT). */
+async function popBatch(redis: Redis, queueKey: string, count: number, inflightKey: string): Promise<PoppedItem[]> {
+  if (count <= 0) return [];
+  const raw = (await redis.eval(POP_TO_INFLIGHT, 2, queueKey, inflightKey, count, REDIS_KEY_TTL_SECONDS)) as string[] | null;
+  if (!raw || raw.length === 0) return [];
+  const out: PoppedItem[] = [];
+  for (const entry of raw) {
+    const item = parseFrontierEntry(entry);
+    if (item) out.push({ ...item, raw: entry });
   }
   return out;
 }
 
-/** Fetch and parse one batch, at most FETCH_CONCURRENCY at a time. */
-async function processBatch(batch: FrontierItem[], ctx: CrawlCtx): Promise<PendingPage[]> {
+/**
+ * A resumed crawl's starting point: the rows Postgres already holds, and the
+ * inflight entries put back at the FRONT of the frontier — except those whose
+ * page row exists (the batch was written, the process died before clearing
+ * inflight). `frontier` false = the seen-set is gone (TTL, a Redis flush), so
+ * the crawl cannot know what it already fetched.
+ */
+async function restoreFrontier(
+  redis: Redis,
+  jobId: string,
+): Promise<{ pages: number; issues: number; requeued: number; alreadyWritten: number; frontier: boolean }> {
+  const keys = crawlKeys(jobId);
+  const [pages, issues, raw, seen] = await Promise.all([
+    prisma.crawlPage.count({ where: { crawlJobId: jobId } }),
+    prisma.crawlIssue.count({ where: { crawlJobId: jobId } }),
+    redis.lrange(keys.inflight, 0, -1),
+    redis.exists(keys.seen),
+  ]);
+  const entries = raw.map((r) => ({ raw: r, item: parseFrontierEntry(r) })).filter((e) => e.item);
+  const urls = entries.map((e) => e.item!.url);
+  const written = new Set(
+    urls.length
+      ? (await prisma.crawlPage.findMany({ where: { crawlJobId: jobId, url: { in: urls } }, select: { url: true } })).map((p) => p.url)
+      : [],
+  );
+  const redo = entries.filter((e) => !written.has(e.item!.url)).map((e) => e.raw);
+  const m = redis.multi();
+  // LPUSH a b c leaves c first: push reversed so the batch keeps its order at the front.
+  if (redo.length) m.lpush(keys.queue, ...[...redo].reverse()).expire(keys.queue, REDIS_KEY_TTL_SECONDS);
+  m.del(keys.inflight);
+  await m.exec();
+  return { pages, issues, requeued: redo.length, alreadyWritten: entries.length - redo.length, frontier: seen === 1 };
+}
+
+/**
+ * Fetch and parse one batch, at most FETCH_CONCURRENCY at a time. When a stop
+ * is requested the fetch workers take no new entry: what they hold is
+ * finished, and the untouched entries come back as `leftover`.
+ */
+async function processBatch(
+  batch: PoppedItem[],
+  ctx: CrawlCtx,
+  shouldStop: () => boolean = () => false,
+): Promise<{ results: PendingPage[]; leftover: PoppedItem[] }> {
   const results: PendingPage[] = [];
   let cursor = 0;
 
   const worker = async () => {
     for (;;) {
+      if (shouldStop()) return;
       const index = cursor++;
       if (index >= batch.length) return;
       const item = batch[index]!;
@@ -619,7 +775,7 @@ async function processBatch(batch: FrontierItem[], ctx: CrawlCtx): Promise<Pendi
   await Promise.all(
     Array.from({ length: Math.min(FETCH_CONCURRENCY, batch.length) }, worker),
   );
-  return results;
+  return { results, leftover: batch.slice(Math.min(cursor, batch.length)) };
 }
 
 async function crawlOne(item: FrontierItem, ctx: CrawlCtx): Promise<PendingPage> {
@@ -953,12 +1109,29 @@ function judgeDraft(live: RobotsRules, draft: RobotsRules, url: string) {
   };
 }
 
+/** Rows per multi-row INSERT: well under Postgres's 65,535 bind parameters at ten columns. */
+const INSERT_CHUNK_ROWS = 2_000;
+
+function chunked<T>(rows: T[], size: number = INSERT_CHUNK_ROWS): T[][] {
+  const out: T[][] = [];
+  for (let i = 0; i < rows.length; i += size) out.push(rows.slice(i, i + size));
+  return out;
+}
+
 /**
  * Write one batch and enqueue what it discovered.
  *
  * Page-scope findings only. Everything that needs the rest of the crawl
  * (duplicates, canonical/hreflang targets, orphans…) is a site rule and runs
  * once, in aggregation, over the complete page set.
+ *
+ * ORDER, for restarts (see RESTARTS at the top): the Redis side effects first
+ * (inlink credits once per source page, via the credited set; new frontier
+ * entries, deduped by the seen-set), then every row in ONE transaction of
+ * multi-row INSERTs (pages, issues, extractions, links: four statements, not
+ * one per row), then the inflight list is reduced to `leftover`. A crash
+ * anywhere in between is repaired by restoreFrontier without a lost or
+ * doubled page.
  */
 async function writeBatch(
   jobId: string,
@@ -967,17 +1140,59 @@ async function writeBatch(
   seenKey: string,
   urlCap: number,
   alreadyCrawled: number,
+  leftover: PoppedItem[] = [],
 ): Promise<{ pages: number; issues: number }> {
-  if (results.length === 0) return { pages: 0, issues: 0 };
+  const keys = crawlKeys(jobId);
+  const settleInflight = async () => {
+    const m = redis.multi().del(keys.inflight);
+    if (leftover.length) m.rpush(keys.inflight, ...leftover.map((l) => l.raw)).expire(keys.inflight, REDIS_KEY_TTL_SECONDS);
+    await m.exec();
+  };
+  if (results.length === 0) {
+    await settleInflight();
+    return { pages: 0, issues: 0 };
+  }
 
-  let issuesWritten = 0;
+  // Credit inlinks in Redis rather than a link-edge table. One HINCRBY per
+  // distinct (source page, target) pair — an edge table would carry an order
+  // of magnitude more rows than the pages themselves. Once per source page:
+  // a batch re-done after a crash finds its pages already in `credited`.
+  if (results.some((r) => r.linkTargets.length > 0 || r.nofollowTargets.length > 0)) {
+    const marks = redis.pipeline();
+    for (const r of results) marks.sadd(keys.credited, r.url);
+    marks.expire(keys.credited, REDIS_KEY_TTL_SECONDS);
+    const marked = (await marks.exec()) ?? [];
+    const fresh = results.filter((_, i) => marked[i]?.[1] === 1);
+    const pipeline = redis.pipeline();
+    for (const r of fresh) for (const target of r.linkTargets) pipeline.hincrby(keys.inlinks, target, 1);
+    for (const r of fresh) for (const target of r.nofollowTargets) pipeline.hincrby(keys.nofollowInlinks, target, 1);
+    // First page seen linking to each target: the source that gets the
+    // links.outlinks_to_redirect credit when the target turns out to redirect.
+    for (const r of fresh) for (const target of r.linkTargets) pipeline.hsetnx(keys.firstSource, target, r.url);
+    for (const key of [keys.inlinks, keys.nofollowInlinks, keys.firstSource]) pipeline.expire(key, REDIS_KEY_TTL_SECONDS);
+    await pipeline.exec();
+  }
 
-  await prisma.$transaction(async (tx) => {
-    for (const result of results) {
-      const issues = issueRows(result.issues, jobId);
+  // Enqueue only up to the cap: a crawl that has already reached its ceiling
+  // should not grow a frontier nobody will pop.
+  const room = urlCap - (alreadyCrawled + results.length);
+  if (room > 0) {
+    const candidates = results.flatMap((r) => r.discovered);
+    await enqueueUnseen(redis, seenKey, candidates, room);
+  }
 
-      const page = await tx.crawlPage.create({
-        data: {
+  const pageRows: Prisma.CrawlPageCreateManyInput[] = [];
+  const issueRowsAll: Prisma.CrawlIssueCreateManyInput[] = [];
+  const extractionRows: Prisma.CrawlExtractionCreateManyInput[] = [];
+  const linkRows: Prisma.CrawlLinkCreateManyInput[] = [];
+  for (const result of results) {
+    const pageId = newRowId();
+    for (const issue of issueRows(result.issues, jobId)) issueRowsAll.push({ id: newRowId(), crawlPageId: pageId, ...issue } as Prisma.CrawlIssueCreateManyInput);
+    for (const [extractorIndex, values] of result.extracted) extractionRows.push({ crawlJobId: jobId, pageId, extractorIndex, values });
+    (result.jsValues ?? []).forEach((v, extractorIndex) => extractionRows.push({ crawlJobId: jobId, pageId, kind: "js", extractorIndex, values: [v] }));
+    for (const e of result.edges) linkRows.push({ crawlJobId: jobId, fromPageId: pageId, ...e });
+    pageRows.push({
+          id: pageId,
           crawlJobId: jobId,
           url: result.url,
           foundOn: result.foundOn,
@@ -1006,56 +1221,20 @@ async function writeBatch(
           searchHits: result.searchHits ?? undefined,
           segmentIds: result.segmentIds,
           ...(result.textSnippet ? { textSnippet: result.textSnippet } : {}),
-          issues: { create: issues },
-        },
-        select: { id: true },
-      });
-      if (result.extracted.size) {
-        await tx.crawlExtraction.createMany({
-          data: [...result.extracted].map(([extractorIndex, values]) => ({ crawlJobId: jobId, pageId: page.id, extractorIndex, values })),
-        });
-      }
-      if (result.jsValues?.length) {
-        await tx.crawlExtraction.createMany({
-          data: result.jsValues.map((v, extractorIndex) => ({ crawlJobId: jobId, pageId: page.id, kind: "js" as const, extractorIndex, values: [v] })),
-        });
-      }
-      if (result.edges.length) {
-        await tx.crawlLink.createMany({
-          data: result.edges.map((e) => ({ crawlJobId: jobId, fromPageId: page.id, ...e })),
-        });
-      }
+    } as Prisma.CrawlPageCreateManyInput);
+  }
 
-      issuesWritten += issues.length;
-    }
+  const started = Date.now();
+  await prisma.$transaction(async (tx) => {
+    await tx.crawlPage.createMany({ data: pageRows });
+    for (const rows of chunked(issueRowsAll)) await tx.crawlIssue.createMany({ data: rows });
+    for (const rows of chunked(extractionRows)) await tx.crawlExtraction.createMany({ data: rows });
+    for (const rows of chunked(linkRows)) await tx.crawlLink.createMany({ data: rows });
   });
+  noteBatchWrite(Date.now() - started, pageRows.length + issueRowsAll.length + extractionRows.length + linkRows.length);
 
-  // Credit inlinks in Redis rather than a link-edge table. One HINCRBY per
-  // distinct (source page, target) pair — an edge table would carry an order
-  // of magnitude more rows than the pages themselves.
-  const credits = results.flatMap((r) => r.linkTargets);
-  const nofollow = results.flatMap((r) => r.nofollowTargets);
-  if (credits.length > 0 || nofollow.length > 0) {
-    const keys = crawlKeys(jobId);
-    const pipeline = redis.pipeline();
-    for (const target of credits) pipeline.hincrby(keys.inlinks, target, 1);
-    for (const target of nofollow) pipeline.hincrby(keys.nofollowInlinks, target, 1);
-    // First page seen linking to each target: the source that gets the
-    // links.outlinks_to_redirect credit when the target turns out to redirect.
-    for (const r of results) for (const target of r.linkTargets) pipeline.hsetnx(keys.firstSource, target, r.url);
-    for (const key of [keys.inlinks, keys.nofollowInlinks, keys.firstSource]) pipeline.expire(key, REDIS_KEY_TTL_SECONDS);
-    await pipeline.exec();
-  }
-
-  // Enqueue after the write, and only up to the cap: a crawl that has already
-  // reached its ceiling should not grow a frontier nobody will pop.
-  const room = urlCap - (alreadyCrawled + results.length);
-  if (room > 0) {
-    const candidates = results.flatMap((r) => r.discovered);
-    await enqueueUnseen(redis, seenKey, candidates, room);
-  }
-
-  return { pages: results.length, issues: issuesWritten };
+  await settleInflight();
+  return { pages: results.length, issues: issueRowsAll.length };
 }
 
 /**

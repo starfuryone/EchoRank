@@ -5,12 +5,13 @@
 // the page exists; signed-out visitors never reach it (proxy auth gate).
 
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { PlanType } from "@/generated/prisma";
 import { planConfig } from "@/lib/plan-config";
 import { platformAdmin } from "@/lib/platform-admin";
 import { prisma } from "@/lib/prisma";
-import { OVERRIDE_BOUNDS, TENANT_CRAWL_CONCURRENCY_DEFAULT, crawlMaxConcurrent, effectiveCaps } from "@/lib/site-crawler/tenant-caps";
+import { OVERRIDE_BOUNDS, effectiveCaps } from "@/lib/site-crawler/tenant-caps";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Crawl overrides · admin", robots: { index: false, follow: false } };
@@ -57,8 +58,10 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ s
     <main style={{ padding: 24, fontFamily: "system-ui, sans-serif", maxWidth: 960, margin: "0 auto" }}>
       <h1 style={{ fontSize: 22 }}>Site crawler overrides</h1>
       <p style={{ color: "#666", fontSize: 13 }}>
-        Per-tenant caps that replace the plan&apos;s. Empty = the plan&apos;s value. Simultaneous crawls default to {TENANT_CRAWL_CONCURRENCY_DEFAULT}; the box
-        runs {crawlMaxConcurrent()} crawls at a time (CRAWL_MAX_CONCURRENT) whatever the setting.
+        Per-tenant caps that replace the plan&apos;s. Empty = the plan&apos;s value. Simultaneous crawls come from the plan (Starter{" "}
+        {planConfig("STARTER").crawlConcurrency}, Growth {planConfig("GROWTH").crawlConcurrency}, Agency {planConfig("AGENCY").crawlConcurrency}); the box runs
+        CRAWL_PROCESSES × CRAWL_CONCURRENCY_PER_PROCESS crawls at a time whatever the setting (live figures in{" "}
+        <Link href="/admin/crawl-metrics">crawl metrics</Link>).
       </p>
 
       <form method="get" style={{ display: "flex", gap: 8, alignItems: "end", margin: "16px 0" }}>
@@ -82,7 +85,7 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ s
           {FIELDS.map(([field, label, key]) => {
             const planValue =
               key === "concurrency"
-                ? TENANT_CRAWL_CONCURRENCY_DEFAULT
+                ? plan(tenant).crawlConcurrency
                 : key === "crawlsKept"
                   ? plan(tenant).crawlsKept
                   : key === "pagesPerMonth"

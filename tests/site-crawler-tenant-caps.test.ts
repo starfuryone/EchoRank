@@ -10,11 +10,17 @@ vi.mock("server-only", () => ({}));
 
 const tenants: Record<string, Record<string, unknown>> = {};
 const running: Record<string, number> = {};
+const olderQueued: Record<string, number> = {};
+const claimRow: { current: { status: string; createdAt: Date } | null } = { current: null };
 const executeRaw = vi.fn(async () => 0);
 const jobUpdate = vi.fn(async () => ({}));
+const jobUpdateMany = vi.fn<(args: unknown) => Promise<{ count: number }>>(async () => ({ count: 1 }));
 const tenantUpdateMany = vi.fn(async ({ where }: { where: { slug: string } }) => ({ count: where.slug === "acme" ? 1 : 0 }));
+const prismaMock: Record<string, unknown> = {};
 vi.mock("@/lib/prisma", () => ({
-  prisma: {
+  prisma: Object.assign(prismaMock, {
+    // claimCrawlSlot's transaction (advisory lock, count, flip): run it on the same fakes.
+    $transaction: async (fn: (tx: unknown) => Promise<unknown>) => fn(prismaMock),
     tenant: {
       findUnique: vi.fn(async ({ where }: { where: { id: string } }) => tenants[where.id] ?? null),
       updateMany: (a: { where: { slug: string } }) => tenantUpdateMany(a),
@@ -22,7 +28,11 @@ vi.mock("@/lib/prisma", () => ({
     crawlJob: {
       aggregate: vi.fn(async () => ({ _sum: { pagesCrawled: 0 } })),
       count: vi.fn(async ({ where }: { where: { tenantId?: string; status?: unknown } }) =>
-        where.status === "RUNNING" && where.tenantId ? (running[where.tenantId] ?? 0) : 0,
+        where.status === "RUNNING" && where.tenantId
+          ? (running[where.tenantId] ?? 0)
+          : where.status === "QUEUED" && where.tenantId
+            ? (olderQueued[where.tenantId] ?? 0)
+            : 0,
       ),
       groupBy: vi.fn(async () => [{ tenantId: "t_kept" }]),
       // The free crawler's purge (where.tenant) finds nothing here.
@@ -36,12 +46,15 @@ vi.mock("@/lib/prisma", () => ({
         })),
       ),
       update: (...a: unknown[]) => jobUpdate(...(a as [])),
+      updateMany: (a: unknown) => jobUpdateMany(a),
       findUnique: vi.fn(async () => ({ config: null })),
+      // The claim reads the crawl first (QUEUED unless a test says otherwise).
+      findFirst: vi.fn(async () => claimRow.current),
     },
     crawlComparison: { deleteMany: vi.fn(async () => ({ count: 0 })) },
     crawlSiteDefault: { deleteMany: vi.fn(async () => ({ count: 0 })) },
     $executeRaw: (...a: unknown[]) => executeRaw(...(a as [])),
-  },
+  }),
 }));
 vi.mock("@/lib/site-crawler/backlink-cost", () => ({
   OBSERVED_BACKLINK_UNIT_USD: 0.02,
@@ -66,7 +79,7 @@ vi.mock("@/lib/site-crawler/metrics-runner", () => ({ METRICS_JOB_NAME: "metrics
 const caps = await import("@/lib/site-crawler/tenant-caps");
 const { getCrawlQuota } = await import("@/lib/site-crawler/quota");
 const { runCrawlRetention } = await import("@/lib/site-crawler/retention");
-const { __testing } = await import("@/infrastructure/queue/workers/site-crawl.worker");
+const { __testing, failOrphanedCrawl } = await import("@/infrastructure/queue/workers/site-crawl.worker");
 const adminRoute = await import("@/app/api/admin/crawl-overrides/route");
 const { DelayedError } = await import("bullmq");
 const { planConfig } = await import("@/lib/plan-config");
@@ -74,6 +87,8 @@ const { planConfig } = await import("@/lib/plan-config");
 beforeEach(() => {
   for (const k of Object.keys(tenants)) delete tenants[k];
   for (const k of Object.keys(running)) delete running[k];
+  for (const k of Object.keys(olderQueued)) delete olderQueued[k];
+  claimRow.current = { status: "QUEUED", createdAt: new Date() };
   executeRaw.mockClear();
   jobUpdate.mockClear();
   runCrawl.mockClear();
@@ -81,22 +96,22 @@ beforeEach(() => {
   platform.email = "staff@echorank360.com";
 });
 
-describe("box-wide crawl concurrency (CRAWL_MAX_CONCURRENT)", () => {
-  it("defaults to 6, takes an integer within 1-16, ignores junk", () => {
-    expect(caps.crawlMaxConcurrent(undefined)).toBe(6);
-    expect(caps.crawlMaxConcurrent("")).toBe(6);
-    expect(caps.crawlMaxConcurrent("lots")).toBe(6);
-    expect(caps.crawlMaxConcurrent("2.5")).toBe(6);
-    expect(caps.crawlMaxConcurrent("4")).toBe(4);
-    expect(caps.crawlMaxConcurrent("0")).toBe(1);
-    expect(caps.crawlMaxConcurrent("99")).toBe(16);
+describe("this process's crawl concurrency", () => {
+  it("is capacity.ts's per-process figure (CRAWL_MAX_CONCURRENT while crawls run in the workers, default 6)", () => {
+    const saved = { ...process.env };
+    delete process.env.CRAWL_PROCESSES;
+    delete process.env.CRAWL_MAX_CONCURRENT;
+    expect(caps.crawlMaxConcurrent()).toBe(6);
+    process.env.CRAWL_PROCESSES = "4";
+    expect(caps.crawlMaxConcurrent()).toBe(12);
+    process.env = saved;
   });
 });
 
 describe("effective caps", () => {
   it("the plan's values unless an override is set", () => {
     const g = planConfig("GROWTH");
-    expect(caps.effectiveCaps("GROWTH")).toEqual({ urlCap: g.crawlUrlCap, crawlsKept: g.crawlsKept, concurrency: 1, pagesPerMonth: g.crawlPagesPerMonth });
+    expect(caps.effectiveCaps("GROWTH")).toEqual({ urlCap: g.crawlUrlCap, crawlsKept: g.crawlsKept, concurrency: 2, pagesPerMonth: g.crawlPagesPerMonth });
     expect(
       caps.effectiveCaps("GROWTH", { crawlConcurrencyOverride: 3, crawlsKeptOverride: 500, crawlUrlCapOverride: 5000, crawlPagesPerMonthOverride: 1_000_000 }),
     ).toEqual({
@@ -164,6 +179,67 @@ describe("fair share in the worker", () => {
     running.t_partner = 3;
     await expect(__testing.processSiteCrawlJob(job("t_partner") as never, "tok")).rejects.toBeInstanceOf(DelayedError);
   });
+
+  it("the limit is the plan's crawlConcurrency: Starter 1, Growth 2, Agency 3", async () => {
+    for (const [plan, limit] of [["STARTER", 1], ["GROWTH", 2], ["AGENCY", 3]] as const) {
+      expect(planConfig(plan).crawlConcurrency).toBe(limit);
+      tenants[`t_${plan}`] = { planType: plan, crawlConcurrencyOverride: null };
+      running[`t_${plan}`] = limit - 1;
+      runCrawl.mockClear();
+      await __testing.processSiteCrawlJob(job(`t_${plan}`) as never, "tok");
+      expect(runCrawl, plan).toHaveBeenCalledTimes(1);
+      running[`t_${plan}`] = limit;
+      await expect(__testing.processSiteCrawlJob(job(`t_${plan}`) as never, "tok"), plan).rejects.toBeInstanceOf(DelayedError);
+    }
+    // The free crawler's system tenant runs one, whatever its plan or override says.
+    expect(caps.tenantCrawlLimit({ source: "free", planType: "AGENCY", crawlConcurrencyOverride: 5 })).toBe(1);
+  });
+
+  it("the claim is atomic: under the tenant's advisory lock, and it flips the crawl to RUNNING", async () => {
+    await __testing.processSiteCrawlJob(job("t_b") as never, "tok");
+    const lock = (executeRaw.mock.calls[0] as unknown as [TemplateStringsArray, ...unknown[]]);
+    expect(lock[0].join("?")).toContain("pg_advisory_xact_lock");
+    expect(lock[1]).toBe("crawl-slot:t_b");
+    expect(jobUpdate).toHaveBeenCalledWith({ where: { id: "c9" }, data: { status: "RUNNING", startedAt: expect.any(Date) } });
+    expect(runCrawl).toHaveBeenCalledWith(expect.objectContaining({ jobId: "c9", resume: false }));
+  });
+
+  it("in order: the workspace's older queued crawls keep their slots first", async () => {
+    tenants.t_agency = { planType: "AGENCY", crawlConcurrencyOverride: null };
+    // Agency runs 3: two running and one older crawl still queued leave no room for this one.
+    running.t_agency = 2;
+    olderQueued.t_agency = 1;
+    await expect(__testing.processSiteCrawlJob(job("t_agency") as never, "tok")).rejects.toBeInstanceOf(DelayedError);
+    expect(runCrawl).not.toHaveBeenCalled();
+    // One running and one older queued: room for both, so this one runs too.
+    running.t_agency = 1;
+    await __testing.processSiteCrawlJob(job("t_agency") as never, "tok");
+    expect(runCrawl).toHaveBeenCalledTimes(1);
+  });
+
+  it("a crawl already RUNNING is a restart: resumed, not held back by its own slot", async () => {
+    claimRow.current = { status: "RUNNING", createdAt: new Date() };
+    running.t_a = 1;
+    await __testing.processSiteCrawlJob(job("t_a") as never, "tok");
+    expect(runCrawl).toHaveBeenCalledWith(expect.objectContaining({ jobId: "c9", resume: true }));
+    expect(jobUpdate).not.toHaveBeenCalled();
+  });
+
+  it("a crawl cancelled while queued is skipped: not run, not re-queued", async () => {
+    claimRow.current = { status: "CANCELLED", createdAt: new Date() };
+    const j = job("t_a");
+    await __testing.processSiteCrawlJob(j as never, "tok");
+    expect(runCrawl).not.toHaveBeenCalled();
+    expect(j.moveToDelayed).not.toHaveBeenCalled();
+  });
+
+  it("an INTERRUPTED crawl (shutdown) goes straight back to the queue", async () => {
+    runCrawl.mockResolvedValueOnce({ status: "INTERRUPTED", pagesCrawled: 25, issueCount: 0, stoppedReason: null });
+    const j = job("t_a");
+    await expect(__testing.processSiteCrawlJob(j as never, "tok")).rejects.toBeInstanceOf(DelayedError);
+    const at = (j.moveToDelayed.mock.calls[0] as unknown as [number])[0];
+    expect(at - Date.now()).toBeLessThan(5_000);
+  });
 });
 
 describe("POST /api/admin/crawl-overrides (staff only)", () => {
@@ -196,5 +272,33 @@ describe("POST /api/admin/crawl-overrides (staff only)", () => {
     expect((await form({ slug: "acme" }, { origin: "https://evil.example", host: "app.test" })).status).toBe(403);
     expect((await form({ crawlConcurrencyOverride: "2" })).status).toBe(400);
     expect(tenantUpdateMany).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("a crawl job BullMQ gave up on never leaves its row RUNNING (failOrphanedCrawl)", () => {
+  const failed = (name: string, data: object) => ({ name, data }) as never;
+
+  it("a crawl job that failed for good fails its RUNNING row, with the reason", async () => {
+    jobUpdateMany.mockClear();
+    // The load test's case: the terminal write and then the worker's next query both timed out on the pool.
+    await failOrphanedCrawl(failed("crawl", { crawlJobId: "c1", tenantId: "t" }), new Error("timeout exceeded when trying to connect"));
+    expect(jobUpdateMany).toHaveBeenCalledWith({
+      where: { id: "c1", status: "RUNNING" },
+      data: { status: "FAILED", stoppedReason: "failed: timeout exceeded when trying to connect", finishedAt: expect.any(Date) },
+    });
+  });
+
+  it("a stall says so", async () => {
+    jobUpdateMany.mockClear();
+    await failOrphanedCrawl(failed("crawl", { crawlJobId: "c1" }), new Error("job stalled more than allowable limit"));
+    expect(jobUpdateMany.mock.calls[0]?.[0]).toMatchObject({ data: { stoppedReason: "stalled: the crawl's process stopped too many times" } });
+  });
+
+  it("a metrics or callback job failing leaves its crawl alone", async () => {
+    jobUpdateMany.mockClear();
+    await failOrphanedCrawl(failed("metrics", { crawlJobId: "c1", metrics: true }), new Error("x"));
+    await failOrphanedCrawl(failed("callback", { crawlJobId: "c1", callback: true }), new Error("x"));
+    await failOrphanedCrawl(undefined, new Error("x"));
+    expect(jobUpdateMany).not.toHaveBeenCalled();
   });
 });

@@ -4,14 +4,23 @@
 // it runs for as long as that crawl takes (up to the one-hour wall clock in
 // constants.ts). The queue holds crawls waiting for a slot.
 //
-// CONCURRENCY 2, box-wide. Each crawl runs up to 4 concurrent fetches at 2
-// req/s, so two crawls is 8 sockets and 4 req/s of outbound traffic from a
-// shared box — the ceiling this process can carry alongside everything else it
-// runs. Raising it is a capacity decision, not a config tweak.
+// CONCURRENCY. Where this worker runs and how many crawls it takes is
+// src/lib/site-crawler/capacity.ts: in echorank360-crawlers (CRAWL_PROCESSES
+// processes × CRAWL_CONCURRENCY_PER_PROCESS, 4 × 12 by default), or inside
+// echorank360-workers when CRAWL_PROCESSES is unset (CRAWL_MAX_CONCURRENT,
+// default 6). Each crawl runs up to 4 concurrent fetches at 2 req/s against
+// its own host. A workspace holds at most its plan's crawlConcurrency slots
+// (claimCrawlSlot, atomic across processes); its other crawls wait in order.
+//
+// RESTARTS. On SIGTERM (stopSiteCrawlWorker) every running crawl finishes the
+// pages in hand and returns INTERRUPTED; the job goes straight back to the
+// queue and the next process resumes it from its frontier (runner.ts). A
+// process that dies without SIGTERM leaves its jobs to BullMQ's stalled check,
+// which re-queues them the same way.
 //
 // RETENTION rides the same queue: a repeatable "retention" job every 24 h
-// (src/lib/site-crawler/retention.ts). It occupies one of the two slots for
-// the minutes it takes, at a time the queue is usually empty.
+// (src/lib/site-crawler/retention.ts). It occupies one slot for the minutes
+// it takes, at a time the queue is usually empty.
 //
 // SCHEDULES (Phase 4c) ride it too: one repeatable "schedule" job per enabled
 // crawl_schedules row, keyed crawl-schedule-<id>. A tick only creates a crawl
@@ -29,14 +38,18 @@
 // created with rather than one baked into the payload.
 
 import { DelayedError, Worker, type Job, type Queue } from "bullmq";
-import { crawlMaxConcurrent, FAIR_SHARE_RETRY_MS, tenantHasCrawlSlot } from "@/lib/site-crawler/tenant-caps";
+import { claimCrawlSlot, crawlMaxConcurrent, FAIR_SHARE_RETRY_MS } from "@/lib/site-crawler/tenant-caps";
+import { crawlsInOwnProcess } from "@/lib/site-crawler/capacity";
+import { noteCrawlEnded, noteCrawlStarted, startCrawlerHeartbeat } from "@/lib/site-crawler/crawl-metrics";
+import { poolStats } from "@/lib/prisma";
 import { addJob, getQueue } from "@/infrastructure/queue/registry";
 import { METRICS_JOB_NAME, needsMetrics, runCrawlMetrics } from "@/lib/site-crawler/metrics-runner";
 import { getSubscriberConnection, createNewConnection } from "@/infrastructure/redis/connection";
 import { REDIS_CONFIG } from "@/infrastructure/redis/config";
 import type { SiteCrawlCallbackJob, SiteCrawlJob, SiteCrawlMetricsJob, SiteCrawlRetentionJob, SiteCrawlScheduleJob } from "@/infrastructure/queue/jobs/schemas";
 import { CALLBACK_JOB_NAME, deliverCrawlCallback, type CallbackDeps } from "@/lib/site-crawler/callback";
-import { runCrawl } from "@/lib/site-crawler/runner";
+import { requestCrawlStop, runCrawl } from "@/lib/site-crawler/runner";
+import { withRetries } from "@/lib/site-crawler/finish-gate";
 import { runCrawlRetention } from "@/lib/site-crawler/retention";
 import { prisma } from "@/lib/prisma";
 import { afterScheduledCrawl, runScheduledCrawl, syncAllRepeatables } from "@/lib/site-crawler/schedule-service";
@@ -103,20 +116,38 @@ async function processSiteCrawlJob(job: Job<SiteCrawlQueueJob>, token?: string):
   }
 
   // Fair share (tenant-caps.ts): a tenant already at its simultaneous-crawl
-  // limit waits, so one workspace cannot hold every slot. The crawl stays
-  // QUEUED and is picked up again in FAIR_SHARE_RETRY_MS.
-  if (tenantId && !(await tenantHasCrawlSlot(tenantId, crawlJobId))) {
-    await job.moveToDelayed(Date.now() + FAIR_SHARE_RETRY_MS, token);
-    logger.info({ jobId: job.id, crawlJobId, tenantId }, "site-crawl held back: tenant at its concurrency");
-    throw new DelayedError();
+  // limit, or with an older crawl still queued, waits, so one workspace cannot
+  // hold every slot and its crawls start in order. The crawl stays QUEUED and
+  // is picked up again in FAIR_SHARE_RETRY_MS. The claim flips it to RUNNING
+  // atomically; a crawl already RUNNING is a restart, resumed.
+  let resume = false;
+  if (tenantId) {
+    const claim = await claimCrawlSlot(tenantId, crawlJobId);
+    if (claim.kind === "skip") {
+      logger.info({ jobId: job.id, crawlJobId, status: claim.status }, "site-crawl skipped: no longer queued");
+      return;
+    }
+    if (claim.kind === "wait") {
+      await job.moveToDelayed(Date.now() + FAIR_SHARE_RETRY_MS, token);
+      logger.info({ jobId: job.id, crawlJobId, tenantId }, "site-crawl held back: tenant at its concurrency");
+      throw new DelayedError();
+    }
+    resume = claim.resumed;
   }
 
   await withSpan("site-crawl.process", async () => {
     // runCrawl owns its own try/finally and always writes a terminal status,
     // so a throw here means the row is already FAILED — this only surfaces it
     // to BullMQ for the failed-job log.
-    const outcome = await runCrawl({ jobId: crawlJobId, redis: getFrontierRedis() });
+    noteCrawlStarted();
+    const outcome = await runCrawl({ jobId: crawlJobId, redis: getFrontierRedis(), resume }).finally(noteCrawlEnded);
     logger.info({ jobId: job.id, crawlJobId, ...outcome }, "site-crawl job done");
+    if (outcome.status === "INTERRUPTED") {
+      // Shutting down: back in the queue at once, for whichever process is
+      // up next. The row is still RUNNING, so the claim resumes it.
+      await job.moveToDelayed(Date.now() + 1_000, token);
+      throw new DelayedError();
+    }
     if (outcome.status === "COMPLETED") {
       const row = await prisma.crawlJob.findUnique({ where: { id: crawlJobId }, select: { config: true } });
       if (needsMetrics(row?.config)) await addJob("site-crawl", METRICS_JOB_NAME, { crawlJobId, metrics: true });
@@ -153,6 +184,27 @@ export async function scheduleRetention(
 }
 
 let worker: Worker<SiteCrawlQueueJob> | null = null;
+let stopHeartbeat: (() => Promise<void>) | null = null;
+
+/**
+ * A crawl job BullMQ gave up on leaves its row RUNNING, which the UI would
+ * poll forever: fail the row too. The queue runs crawls with attempts: 1, so
+ * every "failed" event is final: a stall past maxStalledCount, or a throw
+ * after runCrawl (its terminal write lost to a database that would not give
+ * a connection for 30 s). Only the crawl job itself; a metrics or callback
+ * job failing says nothing about its crawl. A row already terminal is left
+ * alone (status: RUNNING in the where).
+ */
+export async function failOrphanedCrawl(job: Job<SiteCrawlQueueJob> | undefined, err: Error): Promise<void> {
+  if (!job || job.name !== "crawl" || !("crawlJobId" in job.data) || !job.data.crawlJobId) return;
+  const stoppedReason = /stalled/i.test(err.message)
+    ? "stalled: the crawl's process stopped too many times"
+    : `failed: ${err.message}`.slice(0, 500);
+  await prisma.crawlJob.updateMany({
+    where: { id: job.data.crawlJobId, status: "RUNNING" },
+    data: { status: "FAILED", stoppedReason, finishedAt: new Date() },
+  });
+}
 
 export function startSiteCrawlWorker(): Worker<SiteCrawlQueueJob> {
   if (worker) return worker;
@@ -165,11 +217,19 @@ export function startSiteCrawlWorker(): Worker<SiteCrawlQueueJob> {
     // between batches. The default 30s lock would be renewed fine, but the
     // stalled check needs headroom for a slow batch on a slow site.
     stalledInterval: 5 * 60_000,
-    maxStalledCount: 1,
+    // A stall is a process that died mid-crawl; the crawl resumes from its
+    // frontier (runner.ts), so a few in one hour are survivable.
+    maxStalledCount: 3,
   });
 
   worker.on("failed", (job, err) => {
     logger.error({ jobId: job?.id, err, queue: QUEUE_NAME }, "site-crawl job failed");
+    void withRetries(() => failOrphanedCrawl(job, err)).catch((e) => logger.error({ err: e, queue: QUEUE_NAME }, "site-crawl: orphaned row not failed"));
+  });
+  stopHeartbeat = startCrawlerHeartbeat(getFrontierRedis(), {
+    role: crawlsInOwnProcess() ? "crawlers" : "workers",
+    concurrency: crawlMaxConcurrent(),
+    poolStats,
   });
   worker.on("error", (err) => {
     logger.error({ err, queue: QUEUE_NAME }, "site-crawl worker error");
@@ -182,6 +242,19 @@ export function startSiteCrawlWorker(): Worker<SiteCrawlQueueJob> {
 
   logger.info({ queue: QUEUE_NAME, concurrency: crawlMaxConcurrent() }, "site-crawl worker started");
   return worker;
+}
+
+/**
+ * SIGTERM: every running crawl stops at its next page boundary, writes what it
+ * holds and goes back to the queue (INTERRUPTED); close() waits for that, then
+ * the heartbeat is removed. Resolves once no crawl is running here.
+ */
+export async function stopSiteCrawlWorker(): Promise<void> {
+  requestCrawlStop();
+  if (worker) await worker.close();
+  worker = null;
+  if (stopHeartbeat) await stopHeartbeat();
+  stopHeartbeat = null;
 }
 
 /** For tests: the job processor (fair share, callback, dispatch). */

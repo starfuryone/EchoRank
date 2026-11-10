@@ -24,7 +24,8 @@ sudo can read process state via `ps` but cannot `pm2 restart`.
 | pm2 app | User | What | Config |
 |---|---|---|---|
 | `echorank360-web` | `echorank` | `npm run start -- -H 127.0.0.1 -p 4400` via `setpriv`, loopback only | `ecosystem.config.js` (in this repo) |
-| `echorank360-workers` | `root` | `npm run workers` → `tsx src/infrastructure/queue/start-workers.ts` | not in this repo |
+| `echorank360-workers` | `root` | `npm run workers` → `tsx src/infrastructure/queue/start-workers.ts`; runs the site-crawl worker too until `CRAWL_PROCESSES` is set | not in this repo |
+| `echorank360-crawlers` | `echorank` | `npm run crawlers` → `tsx src/infrastructure/queue/start-crawlers.ts`, `CRAWL_PROCESSES` (4) instances × `CRAWL_CONCURRENCY_PER_PROCESS` (12) crawls; numbers in `src/lib/site-crawler/capacity.ts` | `ecosystem.crawlers.config.js` (in this repo; root starts it) |
 | `av-visibility` | `root` | uvicorn `av_service:app` on 127.0.0.1:4500 | `/opt/echorank/av-service/ecosystem.av-visibility.config.js` |
 
 `ecosystem.config.js` is authoritative for the web process's user. The `.next` tree must

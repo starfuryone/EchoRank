@@ -82,6 +82,8 @@ export interface CrawlJobDto {
   health?: number | null;
   /** Findings by kind from the summary; null before it settles. */
   kinds?: { issue: number; warning: number; opportunity: number } | null;
+  /** While QUEUED, its place in the box-wide line (queueEstimate; 1 = next). Only the status poll sets it. */
+  queuePosition?: number | null;
 }
 
 /** summary.login, when the crawl logged in (or tried to). */

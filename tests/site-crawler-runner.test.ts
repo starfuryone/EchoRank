@@ -15,22 +15,48 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 // aggregate: the monthly page allowance's sum (page-allowance.ts); a tenant row
 // without planType (the default here) skips the check entirely.
 const crawlJob = { findUnique: vi.fn(), update: vi.fn(), aggregate: vi.fn(async () => ({ _sum: { pagesCrawled: 0 } })) };
-const crawlPage = { create: vi.fn(), findFirst: vi.fn() };
+// `create` is not called by the runner any more: the batch goes in as
+// multi-row INSERTs (createMany). The fake transaction below replays each
+// buffered page row through it, with its issues nested as before, so the
+// assertions in this file read one call per page. pageBatches records the
+// real shape: page rows per createMany.
+const crawlPage = { create: vi.fn(), findFirst: vi.fn(), count: vi.fn(async () => 0), findMany: vi.fn(async () => [] as { url: string }[]) };
+const crawlIssue = { count: vi.fn(async () => 0) };
 const crawlLink = { createMany: vi.fn() };
 const crawlExtraction = { createMany: vi.fn() };
+const pageBatches: number[] = [];
 const executeRaw = vi.fn(async () => 0);
 const tenantRow: { current: Record<string, unknown> } = { current: { name: "Acme", spellingAcceptedWords: ["Acmeware"] } };
 vi.mock("@/lib/prisma", () => ({
   prisma: {
     crawlJob,
     crawlPage,
+    crawlIssue,
     $executeRaw: (...a: unknown[]) => executeRaw(...(a as [])),
     // resolveLinkGraph's window lookup: no edge past the first window.
     $queryRaw: async () => [],
     // Spell check: the workspace's accepted words (Phase 3c).
     tenant: { findUnique: async () => tenantRow.current },
     // The runner writes a batch inside a transaction; run the callback inline.
-    $transaction: async (fn: (tx: unknown) => Promise<unknown>) => fn({ crawlPage, crawlLink, crawlExtraction }),
+    $transaction: async (fn: (tx: unknown) => Promise<unknown>) => {
+      const pages: Record<string, unknown>[] = [];
+      const issues: Record<string, unknown>[] = [];
+      const out = await fn({
+        crawlPage: { createMany: async ({ data }: { data: Record<string, unknown>[] }) => (pages.push(...data), { count: data.length }) },
+        crawlIssue: { createMany: async ({ data }: { data: Record<string, unknown>[] }) => (issues.push(...data), { count: data.length }) },
+        crawlLink,
+        crawlExtraction,
+      });
+      pageBatches.push(pages.length);
+      for (const p of pages) {
+        // The nested-create shape the old row-by-row writes used: an issue without its own id or page id.
+        const own = issues
+          .filter((i) => i.crawlPageId === p.id)
+          .map((i) => Object.fromEntries(Object.entries(i).filter(([k]) => k !== "id" && k !== "crawlPageId")));
+        await crawlPage.create({ data: { ...p, issues: { create: own } } });
+      }
+      return out;
+    },
   },
 }));
 
@@ -91,7 +117,7 @@ function fakeRedis(opts: { cancelled?: boolean } = {}) {
   const flags = new Set<string>();
   if (opts.cancelled) flags.add("crawl:job_1:cancel");
 
-  return {
+  const self = {
     lists,
     sets,
     async sadd(key: string, member: string) {
@@ -112,26 +138,75 @@ function fakeRedis(opts: { cancelled?: boolean } = {}) {
       if (list.length === 0) return null;
       return list.splice(0, count);
     },
+    /** The runner's one script, POP_TO_INFLIGHT: LPOP count from KEYS[1], copy to KEYS[2]. */
+    async eval(_script: string, _n: number, queueKey: string, inflightKey: string, count: number) {
+      const list = lists.get(queueKey) ?? [];
+      const items = list.splice(0, count);
+      if (items.length) lists.set(inflightKey, [...items]);
+      return items;
+    },
+    async lrange(key: string) {
+      return [...(lists.get(key) ?? [])];
+    },
+    async smembers(key: string) {
+      return [...(sets.get(key) ?? [])];
+    },
     async exists(key: string) {
-      return flags.has(key) ? 1 : 0;
+      return flags.has(key) || (lists.get(key)?.length ?? 0) > 0 || (sets.get(key)?.size ?? 0) > 0 ? 1 : 0;
     },
     async sismember(key: string, member: string) {
       return sets.get(key)?.has(member) ? 1 : 0;
     },
-    /** Records the inlink HINCRBY batch so the dedupe rule can be asserted. */
+    /** Records the inlink HINCRBY batch so the dedupe rule can be asserted; SADD answers like Redis. */
     pipeline() {
+      const ops: (() => Promise<unknown>)[] = [];
       const chain = {
+        sadd(key: string, member: string) {
+          ops.push(() => self.sadd(key, member));
+          return chain;
+        },
         hincrby(key: string, field: string, by: number) {
           if (key.endsWith(":inlinks")) credits.push({ field, by });
+          ops.push(async () => 1);
           return chain;
         },
         hsetnx() {
+          ops.push(async () => 1);
+          return chain;
+        },
+        expire() {
+          ops.push(async () => 1);
+          return chain;
+        },
+        async exec() {
+          const out: [null, unknown][] = [];
+          for (const op of ops) out.push([null, await op()]);
+          return out;
+        },
+      };
+      return chain;
+    },
+    /** MULTI for the inflight list: DEL / RPUSH / LPUSH / EXPIRE, applied on exec. */
+    multi() {
+      const ops: (() => void)[] = [];
+      const chain = {
+        del(...keys: string[]) {
+          ops.push(() => keys.forEach((k) => lists.delete(k)));
+          return chain;
+        },
+        rpush(key: string, ...values: string[]) {
+          ops.push(() => lists.set(key, [...(lists.get(key) ?? []), ...values]));
+          return chain;
+        },
+        lpush(key: string, ...values: string[]) {
+          ops.push(() => lists.set(key, [...[...values].reverse(), ...(lists.get(key) ?? [])]));
           return chain;
         },
         expire() {
           return chain;
         },
         async exec() {
+          ops.forEach((op) => op());
           return [];
         },
       };
@@ -147,6 +222,7 @@ function fakeRedis(opts: { cancelled?: boolean } = {}) {
       return "OK";
     },
   };
+  return self;
 }
 
 function htmlResponse(url: string, links: string[] = []) {
@@ -355,6 +431,25 @@ describe("failure handling", () => {
     const outcome = await runCrawl({ jobId: "job_1", redis: fakeRedis() as never });
     expect(outcome.status).toBe("FAILED");
     expect(terminalWrite().status).toBe("FAILED");
+  });
+
+  it("retries the terminal write when the pool times out, so a finished crawl is not left RUNNING", async () => {
+    // The 48-crawl load test: 12 crawls finishing together, the terminal write
+    // waited past pg-pool's 5 s connect timeout. One retry (1 s) here.
+    let failedOnce = false;
+    crawlJob.update.mockImplementation(async ({ data }: { data: { finishedAt?: Date } }) => {
+      if (data.finishedAt && !failedOnce) {
+        failedOnce = true;
+        throw new Error("timeout exceeded when trying to connect");
+      }
+      return {};
+    });
+
+    const outcome = await runCrawl({ jobId: "job_1", redis: fakeRedis() as never });
+    expect(outcome.status).toBe("COMPLETED");
+    const terminal = (crawlJob.update.mock.calls as unknown as [{ data: { finishedAt?: Date; status?: string } }][]).filter(([a]) => a.data.finishedAt);
+    expect(terminal).toHaveLength(2);
+    expect(terminal[1][0].data.status).toBe("COMPLETED");
   });
 
   it("throws when the crawl row does not exist", async () => {
@@ -618,9 +713,12 @@ describe("crawl configuration", () => {
     site({ "https://example.com/": [] });
     await runCrawl({ jobId: "job_1", redis: fakeRedis() as never });
     const rows = crawlExtraction.createMany.mock.calls[0]![0].data;
+    // The page's id is generated with the batch (row-id.ts), before its row exists.
+    const p1 = crawlPage.create.mock.calls[0]![0].data.id;
+    expect(p1).toMatch(/^c[0-9a-z]{24}$/);
     expect(rows).toEqual([
-      { crawlJobId: "job_1", pageId: "p1", extractorIndex: 1, values: ["H"] },
-      { crawlJobId: "job_1", pageId: "p1", extractorIndex: 2, values: ["https://example.com/"] },
+      { crawlJobId: "job_1", pageId: p1, extractorIndex: 1, values: ["H"] },
+      { crawlJobId: "job_1", pageId: p1, extractorIndex: 2, values: ["https://example.com/"] },
     ]);
     // w19 and w190..w199
     expect(crawlPage.create.mock.calls[0]![0].data.searchHits).toEqual({ "0": 11, "1": 0 });
@@ -746,7 +844,7 @@ describe("link graph", () => {
     ]);
     // Phase 4g: the outbound link is stored too, as an external row.
     expect(all.filter((e) => e.isExternal).map((e) => [e.toUrl, e.anchor])).toEqual([["https://other.test/", "Out"]]);
-    expect(edges[0]!.fromPageId).toBe("p1");
+    expect(edges[0]!.fromPageId).toBe(crawlPage.create.mock.calls[0]![0].data.id);
     expect(edges[1]!.position).toBe(2);
   });
 
@@ -857,9 +955,10 @@ describe("custom JavaScript and AMP (Phase 4e)", () => {
     expect(bodies[0]!.snippets![0]).toContain("window.dataLayer");
     expect(bodies[0]!.snippets![1]).toContain('"#more"');
     const js = crawlExtraction.createMany.mock.calls.map((c) => c[0].data).flat().filter((r: { kind?: string }) => r.kind === "js");
+    const p1 = crawlPage.create.mock.calls[0]![0].data.id;
     expect(js).toEqual([
-      { crawlJobId: "job_1", pageId: "p1", kind: "js", extractorIndex: 0, values: ['[{"event":"x"}]'] },
-      { crawlJobId: "job_1", pageId: "p1", kind: "js", extractorIndex: 1, values: ["error: boom"] },
+      { crawlJobId: "job_1", pageId: p1, kind: "js", extractorIndex: 0, values: ['[{"event":"x"}]'] },
+      { crawlJobId: "job_1", pageId: p1, kind: "js", extractorIndex: 1, values: ["error: boom"] },
     ]);
   });
 
@@ -999,5 +1098,113 @@ describe("text snippets (Phase 4g)", () => {
 
   it("keeps nothing otherwise", async () => {
     expect(await crawl(null)).toBeUndefined();
+  });
+});
+
+// ─── Batched writes and restarts (crawl concurrency) ────────────────────────
+
+describe("batched writes and restarts", () => {
+  const ROOT = "https://example.com/";
+  const PAGES = Array.from({ length: 59 }, (_, i) => `https://example.com/p${i + 1}`);
+  /** Every page row written so far, across runs (the fake Postgres). */
+  let written: string[] = [];
+
+  beforeEach(() => {
+    written = [];
+    pageBatches.length = 0;
+    crawlJob.findUnique.mockResolvedValue({ id: "job_1", tenantId: "t1", rootUrl: ROOT, urlCap: 100, status: "QUEUED", startedAt: null, pagesRendered: 0 });
+    fetchPage.mockImplementation(async (url: string) => htmlResponse(url, url === ROOT ? PAGES : []));
+    crawlPage.create.mockImplementation(async ({ data }: { data: { url: string } }) => {
+      written.push(data.url);
+      return { id: "x" };
+    });
+    crawlPage.count.mockImplementation(async () => written.length);
+    crawlPage.findMany.mockImplementation((async ({ where }: { where: { url: { in: string[] } } }) =>
+      written.filter((u) => where.url.in.includes(u)).map((url) => ({ url }))) as never);
+  });
+
+  it("writes a batch as multi-row INSERTs: 60 pages in four page statements (the root, 25, 25, 9), not 60", async () => {
+    const outcome = await runCrawl({ jobId: "job_1", redis: fakeRedis() as never });
+    expect(outcome).toMatchObject({ status: "COMPLETED", pagesCrawled: 60 });
+    expect(pageBatches).toEqual([1, 25, 25, 9]);
+    expect(new Set(written).size).toBe(60);
+  });
+
+  it("a shutdown mid-crawl returns INTERRUPTED: rows written, row left RUNNING, frontier kept, nothing cleaned up", async () => {
+    const redis = fakeRedis();
+    const outcome = await runCrawl({ jobId: "job_1", redis: redis as never, shouldStop: () => pageBatches.length >= 2 });
+    expect(outcome).toMatchObject({ status: "INTERRUPTED", pagesCrawled: 26 });
+    expect(written).toHaveLength(26);
+    // No terminal write: the last update is the batch's progress, not a status.
+    expect(crawlJob.update.mock.calls.some((c) => (c[0] as { data: { status?: string } }).data.status === "COMPLETED")).toBe(false);
+    expect(aggregateCrawl).not.toHaveBeenCalled();
+    expect(redis.lists.get("crawl:job_1:queue")).toHaveLength(34);
+    expect(redis.lists.get("crawl:job_1:inflight") ?? []).toEqual([]);
+  });
+
+  it("a stop inside a batch writes the pages in hand and hands the untouched rest back to inflight", async () => {
+    const redis = fakeRedis();
+    let fetched = 0;
+    fetchPage.mockImplementation(async (url: string) => (fetched++, htmlResponse(url, url === ROOT ? PAGES : [])));
+    // The root's batch is one page; stop once the second batch has started fetching.
+    const outcome = await runCrawl({ jobId: "job_1", redis: redis as never, shouldStop: () => fetched >= 5 });
+    expect(outcome.status).toBe("INTERRUPTED");
+    const inflight = redis.lists.get("crawl:job_1:inflight") ?? [];
+    expect(written.length + inflight.length + (redis.lists.get("crawl:job_1:queue")?.length ?? 0)).toBe(60);
+    expect(inflight.length).toBeGreaterThan(0);
+    for (const raw of inflight) expect(written).not.toContain(JSON.parse(raw).url);
+  });
+
+  it("the next process resumes it: every page exactly once, counts from Postgres, the first start kept", async () => {
+    const redis = fakeRedis();
+    await runCrawl({ jobId: "job_1", redis: redis as never, shouldStop: () => pageBatches.length >= 2 });
+    expect(written).toHaveLength(26);
+    const firstStart = new Date(Date.now() - 60_000);
+    crawlJob.findUnique.mockResolvedValue({ id: "job_1", tenantId: "t1", rootUrl: ROOT, urlCap: 100, status: "RUNNING", startedAt: firstStart, pagesRendered: 0 });
+    crawlJob.update.mockClear();
+    const outcome = await runCrawl({ jobId: "job_1", redis: redis as never, resume: true });
+    expect(outcome).toMatchObject({ status: "COMPLETED", pagesCrawled: 60 });
+    expect(written).toHaveLength(60);
+    expect(new Set(written).size).toBe(60);
+    // A resume never re-stamps startedAt (the one-hour clock is the crawl's).
+    expect(crawlJob.update.mock.calls.some((c) => "startedAt" in (c[0] as { data: object }).data)).toBe(false);
+  });
+
+  it("a crash after the rows were written but before inflight was cleared: those pages are not fetched again", async () => {
+    const redis = fakeRedis();
+    // The state a SIGKILL leaves between the transaction and the inflight clear:
+    // the root and p1 written, both still in inflight, p2 and p3 queued.
+    written = [ROOT, PAGES[0]!];
+    redis.sets.set("crawl:job_1:seen", new Set([ROOT, ...PAGES.slice(0, 3)]));
+    redis.lists.set("crawl:job_1:inflight", [JSON.stringify({ url: PAGES[0], depth: 1 }), JSON.stringify({ url: PAGES[1], depth: 1 })]);
+    redis.lists.set("crawl:job_1:queue", [JSON.stringify({ url: PAGES[2], depth: 1 })]);
+    crawlJob.findUnique.mockResolvedValue({ id: "job_1", tenantId: "t1", rootUrl: ROOT, urlCap: 100, status: "RUNNING", startedAt: new Date(), pagesRendered: 0 });
+    fetchPage.mockClear();
+    const outcome = await runCrawl({ jobId: "job_1", redis: { ...redis, exists: async (k: string) => (k.endsWith(":seen") ? 1 : 0) } as never, resume: true });
+    const fetchedUrls = fetchPage.mock.calls.map((c) => c[0]);
+    // p1 (written) is not fetched again; p2 (in flight, no row) is, first, then p3.
+    expect(fetchedUrls).toEqual([PAGES[1], PAGES[2]]);
+    expect(outcome).toMatchObject({ status: "COMPLETED", pagesCrawled: 4 });
+    expect(new Set(written).size).toBe(written.length);
+  });
+
+  it("a re-done batch credits inlinks once: the credited set remembers the source pages", async () => {
+    const redis = fakeRedis();
+    // The crash between the credits and the rows: the root was credited, never written.
+    redis.sets.set("crawl:job_1:seen", new Set([ROOT]));
+    redis.sets.set("crawl:job_1:credited", new Set([ROOT]));
+    redis.lists.set("crawl:job_1:inflight", [JSON.stringify({ url: ROOT, depth: 0 })]);
+    crawlJob.findUnique.mockResolvedValue({ id: "job_1", tenantId: "t1", rootUrl: ROOT, urlCap: 1, status: "RUNNING", startedAt: new Date(), pagesRendered: 0 });
+    await runCrawl({ jobId: "job_1", redis: { ...redis, exists: async (k: string) => (k.endsWith(":seen") ? 1 : 0) } as never, resume: true });
+    expect(written).toEqual([ROOT]);
+    expect(credits).toEqual([]);
+  });
+
+  it("a resume whose frontier expired fails the crawl and says why, rather than re-crawling from the root", async () => {
+    crawlJob.findUnique.mockResolvedValue({ id: "job_1", tenantId: "t1", rootUrl: ROOT, urlCap: 100, status: "RUNNING", startedAt: new Date(), pagesRendered: 0 });
+    const outcome = await runCrawl({ jobId: "job_1", redis: fakeRedis() as never, resume: true });
+    expect(outcome.status).toBe("FAILED");
+    expect(outcome.stoppedReason).toMatch(/^frontier_lost/);
+    expect(fetchPage).not.toHaveBeenCalled();
   });
 });

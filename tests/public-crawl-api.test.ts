@@ -228,10 +228,13 @@ describe("queue estimate", () => {
     expect((await queueEstimate({ ...self, status: "RUNNING", startedAt: now }, now)).queuePosition).toBe(0);
   });
 
-  it("fair share: free box slots do not help a workspace already running its one crawl", async () => {
+  it("fair share: free box slots do not help a workspace already running its plan's crawls (Growth: 2)", async () => {
     const now = new Date("2026-11-05T10:00:00Z");
     const self = { id: "self", tenantId: "t_b", status: "QUEUED" as const, createdAt: now, startedAt: null };
     jobs.push({ id: "r1", tenantId: "t_b", status: "RUNNING", createdAt: now });
+    // One of its two running: it starts now.
+    expect((await queueEstimate(self, now)).estimatedStart).toBe(now.toISOString());
+    jobs.push({ id: "r2", tenantId: "t_b", status: "RUNNING", createdAt: now });
     expect((await queueEstimate(self, now)).estimatedStart).toBe(new Date(now.getTime() + 10 * 60_000).toISOString());
     // Another workspace with the same box load starts now.
     expect((await queueEstimate({ ...self, tenantId: "t_a" }, now)).estimatedStart).toBe(now.toISOString());

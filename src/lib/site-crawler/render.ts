@@ -5,10 +5,14 @@
 //
 // ONE RENDER AT A TIME PER JOB. The crawl fetches FETCH_CONCURRENCY pages at
 // once, but renders queue behind a promise chain here, so a job never has more
-// than one request open against the sidecar (which itself runs one at a time
-// across every job). The ceiling is the plan's rendered pages per crawl,
-// counted as ATTEMPTS: the expensive part is the browser time, and a page
-// that failed to render spent it too.
+// than one request open against the sidecar. The sidecar renders in
+// RENDER_CONTEXTS browser contexts shared by every crawl (default 6,
+// capacity.ts / av-service render.py); with more crawls rendering than that,
+// a render waits in the sidecar's first-come queue for up to
+// SIDECAR_QUEUE_WAIT_MS, which the request timeout below leaves room for. The
+// ceiling is the plan's rendered pages per crawl, counted as ATTEMPTS: the
+// expensive part is the browser time, and a page that failed to render spent
+// it too.
 //
 // A sidecar that is down must not turn a 20-minute crawl into a 20-hour one:
 // after RENDER_FAILURE_LIMIT failures in a row the job stops rendering and the
@@ -21,8 +25,10 @@ import { CRAWLER_USER_AGENT } from "./constants";
 import { extractHtmlFacts } from "./facts";
 import { THIN_MAX_WORDS, type RenderMode } from "./types";
 
-/** The sidecar's own budget is 20 s plus up to 25 s waiting for its slot. */
-export const RENDER_REQUEST_TIMEOUT_MS = 50_000;
+/** The sidecar's queue wait for a browser context (RENDER_QUEUE_WAIT_S there, default 120). */
+export const SIDECAR_QUEUE_WAIT_MS = 120_000;
+/** The sidecar's own budget is 20 s, plus up to SIDECAR_QUEUE_WAIT_MS waiting for a context, plus margin. */
+export const RENDER_REQUEST_TIMEOUT_MS = 20_000 + SIDECAR_QUEUE_WAIT_MS + 5_000;
 /** Phase 4e: the sidecar gives each custom JavaScript snippet 5 s more. */
 export const SNIPPET_TIMEOUT_MS = 5_000;
 export const RENDER_FAILURE_LIMIT = 5;

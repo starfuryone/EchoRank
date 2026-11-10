@@ -922,7 +922,7 @@ export function SiteCrawlerClient({
               </div>
               <div className="flex items-center gap-2">
                 <Badge variant={active.status === "FAILED" ? "danger" : "default"}>
-                  {statusLabel(active.status, t)}
+                  {active.status === "QUEUED" && active.queuePosition ? t.statusQueuedAt(int.format(active.queuePosition)) : statusLabel(active.status, t)}
                 </Badge>
                 {!running && !active.dataPurgedAt && !archived && (
                   <ExportsMenu

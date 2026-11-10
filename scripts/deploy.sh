@@ -18,7 +18,8 @@
 #   4. migrate deploy   as echorank, then `migrate status`; pending or failed → abort, same
 #   5. swap             renameat2(RENAME_EXCHANGE): .next-build and .next trade places in one
 #                       syscall; the old build becomes .next-prev
-#   6. pm2 restart      web, plus workers when the commits since the last deploy reach them
+#   6. pm2 restart      web, plus workers (and echorank360-crawlers, once it exists) when the
+#                       commits since the last deploy reach them
 #   7. health after     GET /en for up to 60 s, every stylesheet 200, exactly one listener on 4400
 #                       failure → swap .next-prev back, restart, recheck, exit 1
 #   8. reminder         Cloudflare → Purge Everything (manual; see docs/agents/gotchas.md), then the
@@ -44,6 +45,8 @@ BUILD_USER=echorank
 SRC_USER=deploy
 WEB=echorank360-web
 WORKERS=echorank360-workers
+# The site crawler's own pm2 app (ecosystem.crawlers.config.js), once root has started it.
+CRAWLERS=echorank360-crawlers
 LIVE="$APP/.next"
 NEXT_BUILD="$APP/.next-build"
 PREV="$APP/.next-prev"
@@ -260,10 +263,16 @@ step "6/8 pm2 restart"
 pm2 restart "$WEB"
 if [ "$RESTART_WORKERS" = "1" ]; then
   pm2 restart "$WORKERS"
+  # The crawlers run the same src/ through tsx: same rule. Safe mid-crawl (each crawl writes
+  # what it holds and resumes from its frontier); a crawl finishing its aggregation can hold
+  # its process up to kill_timeout (120 s).
+  if pm2 describe "$CRAWLERS" >/dev/null 2>&1; then
+    pm2 restart "$CRAWLERS"
+  fi
 else
-  echo "$WORKERS not restarted: nothing they import changed since ${PREV_SHA:0:7}"
+  echo "$WORKERS / $CRAWLERS not restarted: nothing they import changed since ${PREV_SHA:0:7}"
 fi
-pm2 ls | grep -E "echorank360-(web|workers)" || true
+pm2 ls | grep -E "echorank360-(web|workers|crawlers)" || true
 
 # ---- 7. health after
 step "7/8 health after (up to ${HEALTH_TIMEOUT}s)"

@@ -20,10 +20,11 @@ export const MAX_REQUESTS_PER_SECOND = 2;
 export const FETCH_CONCURRENCY = 4;
 
 /**
- * Simultaneous crawls box-wide (BullMQ worker concurrency): env
- * CRAWL_MAX_CONCURRENT, read by crawlMaxConcurrent() in tenant-caps.ts (server
- * only), bounded to CRAWL_MAX_CONCURRENT_BOUNDS. Each workspace still holds at
- * most one of them unless staff override it (fair share, tenant-caps.ts).
+ * Simultaneous crawls when they run inside echorank360-workers (CRAWL_PROCESSES
+ * unset or 0): env CRAWL_MAX_CONCURRENT, bounded to CRAWL_MAX_CONCURRENT_BOUNDS.
+ * With their own processes the box runs CRAWL_PROCESSES ×
+ * CRAWL_CONCURRENCY_PER_PROCESS instead (capacity.ts). Either way a workspace
+ * holds at most its plan's crawlConcurrency of them (fair share, tenant-caps.ts).
  */
 export const CRAWL_MAX_CONCURRENT_DEFAULT = 6;
 export const CRAWL_MAX_CONCURRENT_BOUNDS = [1, 16] as const;
@@ -110,6 +111,17 @@ export const crawlKeys = (jobId: string) => ({
   headCache: `crawl:${jobId}:head`,
   /** Phase 4e: the forms-login cookie jar, encrypted (login.ts). Never in Postgres. */
   login: `crawl:${jobId}:login`,
+  /**
+   * LIST of the frontier entries the crawl popped and has not finished writing
+   * (one batch). Moved there atomically by the pop, cleared after the batch is
+   * written, put back at the front of the queue when a restarted process
+   * resumes the crawl: no page is lost, and none written twice (runner.ts).
+   */
+  inflight: `crawl:${jobId}:inflight`,
+  /** SET of page URLs whose inlink credits were applied, so a re-done batch credits once. */
+  credited: `crawl:${jobId}:credited`,
+  /** SET of URLs the sitemap seeded (orphan candidates), kept across a resume. */
+  seeded: `crawl:${jobId}:seeded`,
 });
 
 // ─── Phase 3a: bounded HEAD checks (external links, same-host images) ──────

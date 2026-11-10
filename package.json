@@ -15,6 +15,7 @@
     "db:studio": "prisma studio",
     "workers": "NODE_OPTIONS=\"$NODE_OPTIONS --conditions=react-server\" npx tsx src/infrastructure/queue/start-workers.ts",
     "workers:dev": "NODE_OPTIONS=\"$NODE_OPTIONS --conditions=react-server\" npx tsx --watch src/infrastructure/queue/start-workers.ts",
+    "crawlers": "NODE_OPTIONS=\"$NODE_OPTIONS --conditions=react-server\" npx tsx src/infrastructure/queue/start-crawlers.ts",
     "blog-agent:once": "NODE_OPTIONS=\"$NODE_OPTIONS --conditions=react-server\" npx tsx scripts/blog-agent-once.ts",
     "fix-perms": "bash scripts/fix-perms.sh",
     "prompts:seed-owner": "NODE_OPTIONS=\"$NODE_OPTIONS --conditions=react-server\" npx tsx scripts/seed-owner-prompts.ts",

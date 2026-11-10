@@ -24,6 +24,8 @@ mkdir -p "$NEXT_DIST_DIR" && cat "$STUB_STATE/next_id" >"$NEXT_DIST_DIR/BUILD_ID
 [ "$*" = "prisma migrate status" ] && echo "Database schema is up to date!"
 true`,
   pm2: `echo "pm2 $*" >>"$STUB_STATE/log"
+# echorank360-crawlers exists only once root has started it (the "crawlers" state file).
+if [ "$1 $2" = "describe echorank360-crawlers" ] && [ ! -e "$STUB_STATE/crawlers" ]; then exit 1; fi
 if [ "$1 $2" = "restart echorank360-web" ]; then
   n=$(cat "$STUB_STATE/restarts" 2>/dev/null || echo 0); echo $((n + 1)) >"$STUB_STATE/restarts"
 fi
@@ -230,6 +232,32 @@ describe("echorank360-deploy", () => {
     set("next_id", "newest");
     resetLog();
     expect(deploy().log).toContain("pm2 restart echorank360-workers");
+  });
+
+  it("restarts echorank360-crawlers with the workers, once it exists, and never before it does", () => {
+    // Not started yet (before root runs ecosystem.crawlers.config.js): nothing to restart.
+    let r = deploy();
+    expect(r.status, r.err).toBe(0);
+    expect(r.log).toContain("pm2 restart echorank360-workers");
+    expect(r.log).not.toContain("pm2 restart echorank360-crawlers");
+
+    set("crawlers", "1");
+    writeFileSync(join(app, "src/lib.ts"), "export const v = 3;\n");
+    sh("git add -A && git -c user.email=t@t -c user.name=t commit -qm crawler-code");
+    set("next_id", "newer");
+    resetLog();
+    r = deploy();
+    expect(r.status, r.err).toBe(0);
+    expect(indexOf(r.log, "pm2 restart echorank360-crawlers")).toBeGreaterThan(indexOf(r.log, "pm2 restart echorank360-workers"));
+
+    // A web-only change restarts neither.
+    writeFileSync(join(app, "src/app/page.tsx"), "export default 3;\n");
+    sh("git -c user.email=t@t -c user.name=t commit -qam web-only");
+    set("next_id", "newest");
+    resetLog();
+    r = deploy();
+    expect(r.log).not.toContain("pm2 restart echorank360-workers");
+    expect(r.log).not.toContain("pm2 restart echorank360-crawlers");
   });
 
   it("the real repo ignores what the script leaves behind, or the next deploy refuses a dirty tree", () => {

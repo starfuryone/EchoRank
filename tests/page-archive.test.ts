@@ -289,8 +289,9 @@ describe("crawl completion", () => {
     const src = readFileSync(join(__dirname, "../src/lib/site-crawler/runner.ts"), "utf8");
     expect(src).toMatch(/ctx\.snapshots\?\.add\(/);
     expect(src).toMatch(/skipped: ctx\.loggedIn \? "login_crawl"/);
-    const finallyAt = src.indexOf("finishedAt: new Date()");
-    const closeAt = src.indexOf("closeCrawlSnapshots(archived");
+    const finallyAt = src.indexOf("const finishedAt = new Date()");
+    // The last close is the terminal one; an INTERRUPTED crawl (a restart) closes its run earlier, with no terminal write.
+    const closeAt = src.lastIndexOf("closeCrawlSnapshots(archived");
     expect(finallyAt).toBeGreaterThan(0);
     expect(closeAt).toBeGreaterThan(finallyAt);
   });

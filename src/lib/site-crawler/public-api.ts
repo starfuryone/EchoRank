@@ -17,7 +17,10 @@ import "server-only";
 import { RULE_BY_ID, RULES } from "@/lib/crawl-rules";
 import { prisma } from "@/lib/prisma";
 import type { CrawlStatus, Prisma } from "@/generated/prisma";
-import { crawlMaxConcurrent, TENANT_CRAWL_CONCURRENCY_DEFAULT, tenantOverrides } from "./tenant-caps";
+import { tenantCrawlLimit } from "./tenant-caps";
+import { crawlSlotsConfigured } from "./capacity";
+import { liveCrawlSlots } from "./crawl-metrics";
+import { getRedisConnection } from "@/infrastructure/redis/connection";
 import { healthOf } from "./site-health";
 import { legacyTypesFor, ruleTalliesFor } from "./rule-summary";
 import { crawlDataState, rowsReadable, type CrawlDataState } from "./data-state";
@@ -180,18 +183,20 @@ export const DEFAULT_CRAWL_MS = 10 * 60_000;
 /**
  * Where a crawl sits in the box-wide queue and roughly when it starts.
  * Position 1 = next; 0 = already running. The estimate assumes the crawls
- * ahead take the box's recent average and run crawlMaxConcurrent() at a time
- * (CRAWL_MAX_CONCURRENT, default 6) — and, with fair share, that the crawl's
- * own workspace runs only its concurrency (default 1) at a time, so the later
- * of the two waits wins.
+ * ahead take the box's recent average and run as many at a time as the live
+ * crawler processes offer (their heartbeats, crawl-metrics.ts; the configured
+ * slots when none is beating) — and, with fair share, that the crawl's own
+ * workspace runs only its plan's crawlConcurrency at a time, so the later of
+ * the two waits wins.
  */
 export async function queueEstimate(
   job: { id: string; tenantId?: string; status: CrawlStatus; createdAt: Date; startedAt: Date | null },
   now: Date = new Date(),
-  slots: number = crawlMaxConcurrent(),
+  slotsArg?: number,
 ): Promise<{ queuePosition: number | null; estimatedStart: string | null }> {
   if (job.status === "RUNNING") return { queuePosition: 0, estimatedStart: (job.startedAt ?? now).toISOString() };
   if (job.status !== "QUEUED") return { queuePosition: null, estimatedStart: null };
+  const slots = slotsArg ?? (await liveCrawlSlots(getRedisConnection()).catch(() => null)) ?? crawlSlotsConfigured();
   const before = { OR: [{ createdAt: { lt: job.createdAt } }, { createdAt: job.createdAt, id: { lt: job.id } }] };
   const [ahead, running, recent, own] = await Promise.all([
     prisma.crawlJob.count({ where: { status: "QUEUED", ...before } }),
@@ -205,8 +210,11 @@ export async function queueEstimate(
     job.tenantId
       ? Promise.all([
           prisma.crawlJob.count({ where: { tenantId: job.tenantId, OR: [{ status: "RUNNING" }, { status: "QUEUED", ...before }] } }),
-          tenantOverrides(job.tenantId),
-        ]).then(([n, o]) => ({ n, limit: o.crawlConcurrencyOverride ?? TENANT_CRAWL_CONCURRENCY_DEFAULT }))
+          prisma.tenant.findUnique({
+            where: { id: job.tenantId },
+            select: { crawlConcurrencyOverride: true, source: true, planType: true },
+          }),
+        ]).then(([n, t]) => ({ n, limit: tenantCrawlLimit(t) }))
       : null,
   ]);
   const avg = recent.length
