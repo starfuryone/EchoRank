@@ -147,7 +147,7 @@ const T = {
         { w: "WEEK 0", t: "Baseline audit", d: "First AI Visibility Score, engine coverage map, and full signal inventory.", m: "Score 47 · cited by 2/6 engines", hot: false },
         { w: "WEEK 2", t: "Review velocity climbs", d: "SMS, email and QR campaigns bring fresh, authentic reviews online.", m: "+38 reviews · reply rate 91%", hot: false },
         { w: "WEEK 4", t: "New citations discovered", d: "Citation Monitor finds and fixes inconsistent listings across the sources AI trusts.", m: "11 citations added · 3 NAP conflicts resolved", hot: false },
-        { w: "WEEK 7", t: "Authority improves", d: "Structured data, author profiles and FAQ schema shipped from the roadmap.", m: "Authority Score 52 → 68", hot: false },
+        { w: "WEEK 7", t: "Authority improves", d: "Author profiles, a fuller About page and question-led service pages shipped from the roadmap.", m: "Authority Score 52 → 68", hot: false },
         { w: "WEEK 9", t: "AI starts recommending you", d: "Recommendation Intelligence logs the first unprompted mentions.", m: "First cited in ChatGPT + Perplexity answers", hot: true },
         { w: "WEEK 12", t: "Competitor gap closes", d: "You pass two rivals; alerts now watch your lead instead of your deficit.", m: "Score 74 · rank #3 → #2 · +9/month trend", hot: false },
       ],
@@ -163,8 +163,8 @@ const T = {
         chatgpt: {
           answers: ["ProFlow Services — 4.8★, 24/7 emergency, strong recent reviews", "City Drain Co. — 4.7★, cited by 3 local directories", "Bow Valley Plumbing — 4.6★, detailed service pages"],
           missing: true,
-          why: ["Missing authority signals — no author profiles, thin service pages", "Weak review velocity — last review 26 days old", "Incomplete citations — 3 NAP mismatches across directories", "Poor structured data — no LocalBusiness or FAQ schema"],
-          fix: [["Add FAQ + LocalBusiness schema", "+5 pts, ~1 hr"], ["Launch review campaign (SMS + QR)", "+4 pts, ongoing"], ["Resolve 3 citation conflicts", "+3 pts, ~30 min"]],
+          why: ["Missing authority signals — no author profiles, thin service pages", "Weak review velocity — last review 26 days old", "Incomplete citations — 3 NAP mismatches across directories", "Service pages don't answer customer questions — no prices, no question headings"],
+          fix: [["Answer the top 5 customer questions on your service pages", "+4 pts, ~1 hr"], ["Launch review campaign (SMS + QR)", "+4 pts, ongoing"], ["Resolve 3 citation conflicts", "+3 pts, ~30 min"]],
         },
         perplexity: {
           answers: ["ProFlow Services — cited from 4 sources", "Acme Plumbing (you) — cited from 2 sources", "City Drain Co."],
@@ -175,8 +175,8 @@ const T = {
         google: {
           answers: ["ProFlow Services", "Bow Valley Plumbing", "City Drain Co."],
           missing: true,
-          why: ["Google Business primary category mismatched to prompt intent", "No FAQ schema — AI Overviews prefer structured answers", "Competitor review velocity outpacing yours 2.1×"],
-          fix: [["Fix Google Business categories", "+6 pts, 15 min"], ["Ship FAQ schema on top 5 pages", "+5 pts"], ["Close the review velocity gap", "+4 pts"]],
+          why: ["Google Business primary category mismatched to prompt intent", "Service pages bury the answer — AI Overviews quote pages that answer up front", "Competitor review velocity outpacing yours 2.1×"],
+          fix: [["Fix Google Business categories", "+6 pts, 15 min"], ["Put the answer first on your top 5 pages", "+4 pts"], ["Close the review velocity gap", "+4 pts"]],
         },
       },
     },
@@ -225,7 +225,7 @@ const T = {
       sub: "Prioritized fixes, each with an estimated score lift and expected impact. Do them in order; watch the score move.",
       items: [
         { p: 1, t: "Fix Google Business categories", d: "Primary category mismatched against your top AI prompts.", lift: "+6 pts est.", imp: "HIGH IMPACT · 15 MIN" },
-        { p: 1, t: "Add FAQ schema to service pages", d: "Engines cite structured answers first; you have none.", lift: "+5 pts est.", imp: "HIGH IMPACT · 1 HR" },
+        { p: 1, t: "Answer customer questions on your service pages", d: "Engines quote pages that answer the question in the first lines; yours don't.", lift: "+4 pts est.", imp: "HIGH IMPACT · 1 HR" },
         { p: 2, t: "Improve review freshness", d: "Last review is 26 days old — freshness decay starts at 21.", lift: "+4 pts est.", imp: "MED IMPACT · ONGOING" },
         { p: 3, t: "Create author profiles", d: "Unattributed content scores lower on authority signals.", lift: "+2 pts est.", imp: "MED IMPACT · 2 HRS" },
       ],
@@ -315,7 +315,7 @@ const T = {
         { w: "SEMAINE 0", t: "Audit de référence", d: "Premier score de visibilité IA, carte de couverture des moteurs et inventaire complet des signaux.", m: "Score 47 · cité par 2/6 moteurs", hot: false },
         { w: "SEMAINE 2", t: "La vélocité d'avis grimpe", d: "Les campagnes SMS, courriel et QR ramènent des avis frais et authentiques.", m: "+38 avis · taux de réponse 91 %", hot: false },
         { w: "SEMAINE 4", t: "Nouvelles citations découvertes", d: "Le moniteur de citations trouve et corrige les fiches incohérentes sur les sources auxquelles l'IA se fie.", m: "11 citations ajoutées · 3 conflits NAP résolus", hot: false },
-        { w: "SEMAINE 7", t: "L'autorité s'améliore", d: "Données structurées, profils d'auteurs et schéma FAQ livrés depuis la feuille de route.", m: "Score d'autorité 52 → 68", hot: false },
+        { w: "SEMAINE 7", t: "L'autorité s'améliore", d: "Profils d'auteurs, page À propos étoffée et pages de services organisées autour des questions, livrés depuis la feuille de route.", m: "Score d'autorité 52 → 68", hot: false },
         { w: "SEMAINE 9", t: "L'IA commence à vous recommander", d: "L'intelligence de recommandation consigne les premières mentions spontanées.", m: "Premières citations dans ChatGPT + Perplexity", hot: true },
         { w: "SEMAINE 12", t: "L'écart concurrentiel se referme", d: "Vous dépassez deux rivaux; les alertes surveillent maintenant votre avance plutôt que votre retard.", m: "Score 74 · rang no 3 → no 2 · tendance +9/mois", hot: false },
       ],
@@ -331,8 +331,8 @@ const T = {
         chatgpt: {
           answers: ["ProFlow Services — 4,8★, urgence 24/7, avis récents solides", "City Drain Co. — 4,7★, cité par 3 annuaires locaux", "Bow Valley Plumbing — 4,6★, pages de services détaillées"],
           missing: true,
-          why: ["Signaux d'autorité manquants — aucun profil d'auteur, pages de services minces", "Vélocité d'avis faible — dernier avis il y a 26 jours", "Citations incomplètes — 3 incohérences NAP entre annuaires", "Données structurées déficientes — aucun schéma LocalBusiness ni FAQ"],
-          fix: [["Ajouter les schémas FAQ + LocalBusiness", "+5 pts, ~1 h"], ["Lancer une campagne d'avis (SMS + QR)", "+4 pts, en continu"], ["Résoudre les 3 conflits de citations", "+3 pts, ~30 min"]],
+          why: ["Signaux d'autorité manquants — aucun profil d'auteur, pages de services minces", "Vélocité d'avis faible — dernier avis il y a 26 jours", "Citations incomplètes — 3 incohérences NAP entre annuaires", "Les pages de services ne répondent pas aux questions des clients — ni prix, ni titres en forme de question"],
+          fix: [["Répondre aux 5 questions clés des clients sur vos pages de services", "+4 pts, ~1 h"], ["Lancer une campagne d'avis (SMS + QR)", "+4 pts, en continu"], ["Résoudre les 3 conflits de citations", "+3 pts, ~30 min"]],
         },
         perplexity: {
           answers: ["ProFlow Services — cité par 4 sources", "Plomberie Acme (vous) — citée par 2 sources", "City Drain Co."],
@@ -343,8 +343,8 @@ const T = {
         google: {
           answers: ["ProFlow Services", "Bow Valley Plumbing", "City Drain Co."],
           missing: true,
-          why: ["Catégorie principale Google Business inadaptée à l'intention de la question", "Aucun schéma FAQ — les aperçus IA privilégient les réponses structurées", "La vélocité d'avis des concurrents dépasse la vôtre de 2,1×"],
-          fix: [["Corriger les catégories Google Business", "+6 pts, 15 min"], ["Déployer le schéma FAQ sur vos 5 pages clés", "+5 pts"], ["Combler l'écart de vélocité d'avis", "+4 pts"]],
+          why: ["Catégorie principale Google Business inadaptée à l'intention de la question", "Les pages de services enfouissent la réponse — les aperçus IA citent les pages qui répondent d'emblée", "La vélocité d'avis des concurrents dépasse la vôtre de 2,1×"],
+          fix: [["Corriger les catégories Google Business", "+6 pts, 15 min"], ["Placer la réponse en tête de vos 5 pages clés", "+4 pts"], ["Combler l'écart de vélocité d'avis", "+4 pts"]],
         },
       },
     },
@@ -391,7 +391,7 @@ const T = {
       sub: "Des correctifs priorisés, chacun avec un gain de score estimé et un impact attendu. Faites-les dans l'ordre; regardez le score bouger.",
       items: [
         { p: 1, t: "Corriger les catégories Google Business", d: "Catégorie principale inadaptée à vos questions IA principales.", lift: "+6 pts est.", imp: "IMPACT ÉLEVÉ · 15 MIN" },
-        { p: 1, t: "Ajouter le schéma FAQ aux pages de services", d: "Les moteurs citent d'abord les réponses structurées; vous n'en avez aucune.", lift: "+5 pts est.", imp: "IMPACT ÉLEVÉ · 1 H" },
+        { p: 1, t: "Répondre aux questions des clients sur vos pages de services", d: "Les moteurs citent les pages qui répondent à la question dès les premières lignes; les vôtres ne le font pas.", lift: "+4 pts est.", imp: "IMPACT ÉLEVÉ · 1 H" },
         { p: 2, t: "Améliorer la fraîcheur des avis", d: "Dernier avis il y a 26 jours — la décote commence à 21.", lift: "+4 pts est.", imp: "IMPACT MOYEN · EN CONTINU" },
         { p: 3, t: "Créer des profils d'auteurs", d: "Le contenu non attribué obtient un score d'autorité plus faible.", lift: "+2 pts est.", imp: "IMPACT MOYEN · 2 H" },
       ],

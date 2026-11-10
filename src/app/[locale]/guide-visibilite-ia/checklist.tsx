@@ -7,7 +7,7 @@ const ITEMS = {
   fr: [
     "Site en HTTPS avec certificat valide",
     "Fiche Google active avec avis récents",
-    "Données structurées Schema.org (LocalBusiness, FAQ)",
+    "Textes clés (services, prix, horaires) dans le HTML, pas seulement en images ou derrière JavaScript",
     "Page FAQ répondant aux vraies questions des clients",
     "Robots.txt qui autorise les robots des IA (GPTBot, ClaudeBot, PerplexityBot, Google-Extended)",
     "Sitemap XML à jour et déclaré",
@@ -19,7 +19,7 @@ const ITEMS = {
   en: [
     "HTTPS site with a valid certificate",
     "Active Google Business Profile with recent reviews",
-    "Schema.org structured data (LocalBusiness, FAQ)",
+    "Key facts (services, prices, hours) as text in the HTML, not only in images or behind JavaScript",
     "FAQ page answering real customer questions",
     "Robots.txt that allows AI crawlers (GPTBot, ClaudeBot, PerplexityBot, Google-Extended)",
     "Up-to-date, declared XML sitemap",

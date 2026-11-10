@@ -162,7 +162,7 @@ const GLOSSARY: [string, string][] = [
   ["AI Retrieval", "L'étape où l'assistant va chercher des informations fraîches (pages web, fiches, avis) avant de rédiger sa réponse. Sans accès à vos contenus, pas de citation possible."],
   ["Hallucination", "Une affirmation inventée par le modèle. Des informations publiques claires et cohérentes sur votre entreprise réduisent le risque qu'une IA se trompe à votre sujet."],
   ["Embeddings", "La représentation mathématique du sens d'un texte, utilisée pour rapprocher une question client de vos contenus. Des pages précises et bien rédigées produisent de meilleurs rapprochements."],
-  ["Données structurées (Structured Data)", "Des balises normalisées (Schema.org) qui décrivent votre entreprise aux machines : type d'activité, horaires, avis, FAQ. Le format préféré des systèmes automatisés."],
+  ["Données structurées (Structured Data)", "Des balises normalisées (Schema.org) qui décrivent votre entreprise aux machines : type d'activité, horaires, avis. Elles aident Google et Bing à identifier votre entreprise; aucun moteur d'IA n'a confirmé s'en servir pour choisir ce qu'il cite."],
   ["Knowledge Graph", "La base de connaissances où les moteurs relient entités, lieux et faits. Une présence cohérente sur plusieurs sources fiables vous y ancre."],
   ["RAG (Retrieval-Augmented Generation)", "L'architecture qui combine récupération d'informations et génération de texte. C'est elle qui permet à une IA de citer des sources récentes plutôt que sa seule mémoire."],
   ["Recherche sémantique (Semantic Search)", "La recherche par le sens plutôt que par les mots exacts. Elle récompense les contenus qui répondent vraiment à l'intention, pas ceux qui répètent un mot-clé."],
@@ -170,14 +170,14 @@ const GLOSSARY: [string, string][] = [
 ];
 
 const FAQ: [string, string][] = [
-  ["Comment apparaître dans ChatGPT ?", "En rendant votre entreprise lisible et fiable pour les systèmes de récupération : robots des IA autorisés, données structurées, fiche Google active, avis récents et répondus, informations identiques partout. Un audit de visibilité IA identifie précisément les points qui vous bloquent."],
+  ["Comment apparaître dans ChatGPT ?", "En rendant votre entreprise lisible et fiable pour les systèmes de récupération : robots des IA autorisés, vos textes dans la page elle-même (pas derrière JavaScript), fiche Google active, avis récents et répondus, informations identiques partout. Un audit de visibilité IA identifie précisément les points qui vous bloquent."],
   ["Le SEO classique suffit-il pour être recommandé par l'IA ?", "Non. Le SEO optimise un classement de liens; la visibilité IA optimise une recommandation. Les backlinks comptent moins que la confiance, la cohérence des informations et la réputation mesurable par les avis."],
   ["Qu'est-ce que le GEO (Generative Engine Optimization) ?", "La discipline qui consiste à optimiser sa présence pour les moteurs génératifs. Elle couvre l'accès technique (crawlers, structure), la réputation (avis, cohérence) et le contenu (FAQ, pages de services, fraîcheur)."],
-  ["Combien de temps avant de voir des résultats ?", "Les corrections techniques (robots, données structurées, NAP) sont lues dès les prochains passages des robots, souvent en quelques semaines. La réputation se construit en continu; c'est pour cela qu'un suivi quotidien des réponses IA vaut mieux qu'une vérification ponctuelle."],
+  ["Combien de temps avant de voir des résultats ?", "Les corrections techniques (robots, textes rendus côté serveur, NAP) sont lues dès les prochains passages des robots, souvent en quelques semaines. La réputation se construit en continu; c'est pour cela qu'un suivi quotidien des réponses IA vaut mieux qu'une vérification ponctuelle."],
   ["Comment savoir si une IA me recommande déjà ?", "Posez les questions que vos clients posent, sur chaque assistant, régulièrement. Ou laissez une plateforme le faire chaque jour à votre place : Echorank suit vos requêtes clés sur les moteurs IA et vous alerte quand vous apparaissez, êtes déformé ou disparaissez."],
-  ["Pourquoi ChatGPT ne recommande-t-il pas mon entreprise ?", "Les causes les plus fréquentes : robots des IA bloqués par le robots.txt, informations incohérentes entre vos fiches, avis rares ou anciens, absence de données structurées, pages qui ne répondent pas aux questions réelles. Un audit de visibilité IA les identifie une par une, avec un correctif priorisé pour chacune."],
+  ["Pourquoi ChatGPT ne recommande-t-il pas mon entreprise ?", "Les causes les plus fréquentes : robots des IA bloqués par le robots.txt, informations incohérentes entre vos fiches, avis rares ou anciens, textes visibles seulement après l'exécution de JavaScript, pages qui ne répondent pas aux questions réelles. Un audit de visibilité IA les identifie une par une, avec un correctif priorisé pour chacune."],
   ["Les avis Google influencent-ils ChatGPT ?", "Indirectement, mais fortement. Les assistants s'appuient sur des sources qui reflètent votre réputation : fiches, plateformes d'avis, presse, annuaires. Des avis frais, nombreux et répondus renforcent le dossier de preuve que l'IA consulte avant de vous citer; des avis abandonnés l'affaiblissent."],
-  ["Comment apparaître dans Google AI Overview ?", "Les prérequis : une indexation Google saine, du contenu qui répond directement aux questions, des données structurées propres, et ne pas bloquer Google-Extended. Personne ne peut garantir un placement dans AI Overview, mais sans ces fondations l'éligibilité même fait défaut."],
+  ["Comment apparaître dans Google AI Overview ?", "Les prérequis : une indexation Google saine et du contenu qui répond directement aux questions. Google indique que les aperçus IA ne demandent aucun balisage particulier : les données structurées l'aident à comprendre votre entreprise, mais n'ouvrent pas la porte à elles seules. Personne ne peut garantir un placement dans AI Overview, mais sans ces fondations l'éligibilité même fait défaut."],
   ["ChatGPT utilise-t-il Google ?", "Non. La navigation de ChatGPT repose sur ses propres systèmes et des index partenaires, pas sur Google. Conséquence pratique : une stratégie limitée à Google ne couvre plus le terrain; chaque robot d'IA doit pouvoir lire votre site, et chaque assistant se surveille séparément."],
   ["Qu'est-ce que la visibilité IA ?", "Votre présence mesurable dans les réponses des assistants IA : êtes-vous mentionné, correctement décrit et recommandé quand un client pose la question ? Elle se mesure en citations et en exactitude, pas en positions."],
   ["Quelle est la différence entre SEO et GEO ?", "Le SEO optimise le classement de pages dans une liste de liens; le GEO (Generative Engine Optimization) optimise la probabilité qu'un moteur génératif recommande votre entreprise dans une réponse rédigée. Le premier se joue sur les mots-clés et les backlinks, le second sur la confiance, la cohérence et la réputation."],
@@ -228,7 +228,7 @@ export default async function GuideIaPage({ params }: { params: Promise<{ locale
         step: [
           "Passer le site en HTTPS",
           "Maintenir une fiche Google active avec des avis récents",
-          "Ajouter les données structurées Schema.org",
+          "Écrire les informations clés en texte dans le HTML",
           "Publier une page FAQ répondant aux vraies questions",
           "Autoriser les robots des IA dans le robots.txt",
           "Déclarer un sitemap XML à jour",
@@ -354,7 +354,7 @@ export default async function GuideIaPage({ params }: { params: Promise<{ locale
           <li className={s.li}>Autorité : l'ancienneté, les mentions par des sources reconnues, les licences et certifications vérifiables.</li>
           <li className={s.li}>Qualité du contenu : des pages qui répondent réellement aux questions, écrites pour des humains, exploitables par des machines.</li>
           <li className={s.li}>Fraîcheur : des horaires à jour, des avis récents, un contenu daté. Le signal le plus sous-estimé.</li>
-          <li className={s.li}>Données structurées : Schema.org traduit votre activité dans le langage natif des machines.</li>
+          <li className={s.li}>Pages lisibles : vos textes dans le HTML lui-même, pas derrière JavaScript, car la plupart des robots d’IA n’exécutent pas les scripts. (Le balisage Schema.org aide Google et Bing à identifier votre entreprise; aucun moteur d’IA n’a confirmé s’en servir pour choisir ce qu’il cite.)</li>
           <li className={s.li}>Présence multi-plateformes : Google, Facebook, plateformes sectorielles. Chaque source concordante augmente la confiance.</li>
           <li className={s.li}>Signaux de confiance : HTTPS, mentions légales, politique de confidentialité, informations de contact vérifiables.</li>
         </ul>
@@ -366,7 +366,7 @@ export default async function GuideIaPage({ params }: { params: Promise<{ locale
 
         {/* 3 ─────────────────────────────────────────────────────────── */}
         <h2 id="sources" className={s.h2}>3. Les sources que lisent les IA</h2>
-        <p className={s.p}>Avant de vous recommander, un assistant croise plusieurs surfaces publiques. Votre site n'est qu'une pièce du dossier : les avis Google, votre page Facebook, les plateformes comme Trustpilot, la presse et vos données structurées pèsent ensemble dans la réputation que l'IA reconstruit à votre sujet.</p>
+        <p className={s.p}>Avant de vous recommander, un assistant croise plusieurs surfaces publiques. Votre site n'est qu'une pièce du dossier : les avis Google, votre page Facebook, les plateformes comme Trustpilot et la presse pèsent ensemble dans la réputation que l'IA reconstruit à votre sujet.</p>
         <ReputationFlowDiagram />
         <p className={s.p}>La conséquence pratique : travailler une seule surface ne suffit pas. Une excellente fiche Google avec un site que les robots des IA ne peuvent pas lire, ou un beau site avec des avis abandonnés, produit le même résultat : une recommandation qui va ailleurs.</p>
         <CompareTable
@@ -398,7 +398,7 @@ export default async function GuideIaPage({ params }: { params: Promise<{ locale
         <ul className={s.ul}>
           <li className={s.li}>Robots.txt : autorisez explicitement les robots des IA, ou au minimum ne les bloquez pas par défaut.</li>
           <li className={s.li}>HTTPS et sitemap XML déclaré : le socle minimal de la confiance technique.</li>
-          <li className={s.li}>Schema.org : LocalBusiness (ou le type précis de votre activité), horaires, zone de service, FAQPage sur vos pages de questions.</li>
+          <li className={s.li}>Schema.org LocalBusiness (ou le type précis de votre activité), avec horaires et zone de service : il aide Google et Bing à identifier votre entreprise. Il ne vous fera pas citer à lui seul, et le balisage FAQPage n’a montré aucun effet sur les réponses des IA.</li>
           <li className={s.li}>Contenu en texte réel : les menus, tarifs et informations en image ou en PDF sont invisibles pour la récupération.</li>
           <li className={s.li}>Pages de services distinctes : une page précise par prestation rapproche vos contenus des questions réelles (recherche sémantique).</li>
           <li className={s.li}>Fraîcheur : horaires exacts, contenus datés, avis récents. Une information périmée coûte plus cher qu'une information absente.</li>
@@ -441,8 +441,8 @@ export default async function GuideIaPage({ params }: { params: Promise<{ locale
         <p className={s.p}>Deux numéros de téléphone, trois graphies du nom, des horaires contradictoires : pour une IA, citer devient risqué, donc elle s'abstient. Correction : un inventaire de toutes vos fiches, puis un NAP identique partout.</p>
         <h3 className={s.h3}>3. Site lent</h3>
         <p className={s.p}>Les robots des IA travaillent avec des budgets de temps. Un site qui répond en plusieurs secondes est moins exploré, donc moins lu. Correction : mesurer le temps de réponse, compresser, mettre en cache.</p>
-        <h3 className={s.h3}>4. Absence de données structurées</h3>
-        <p className={s.p}>Sans Schema.org, la machine doit deviner votre activité, vos horaires, votre zone. Correction : LocalBusiness (ou le type précis), plus FAQPage sur vos pages de questions.</p>
+        <h3 className={s.h3}>4. Des informations seulement en images, en PDF ou en scripts</h3>
+        <p className={s.p}>Si vos services, prix, horaires et zone ne figurent que dans des images, des PDF ou du texte qui apparaît après l’exécution de JavaScript, un robot d’IA qui lit le HTML n’en voit rien. Correction : écrivez-les en texte dans la page. Le balisage LocalBusiness reste utile pour Google et Bing, mais il ne remplace pas le texte.</p>
         <h3 className={s.h3}>5. Peu de mentions externes</h3>
         <p className={s.p}>Une entreprise que seul son propre site décrit est invérifiable. Correction : annuaires sectoriels, presse locale, chambres de commerce, partenaires. Chaque source concordante rend la citation plus sûre.</p>
         <h3 className={s.h3}>6. Contenu obsolète</h3>
@@ -459,7 +459,7 @@ export default async function GuideIaPage({ params }: { params: Promise<{ locale
           ]}
         />
         <h3 className={s.h3}>8. Absence de FAQ</h3>
-        <p className={s.p}>Les clients posent des questions; la recherche sémantique rapproche les questions des réponses. Pas de page de réponses, pas de rapprochement. Correction : une FAQ en langage client, balisée FAQPage.</p>
+        <p className={s.p}>Les clients posent des questions; la recherche sémantique rapproche les questions des réponses. Pas de page de réponses, pas de rapprochement. Correction : une FAQ en langage client, chaque question en titre et sa réponse juste en dessous. Ce sont les mots de la page qui comptent; le balisage FAQPage n’a montré aucun effet sur les réponses des IA.</p>
         <h3 className={s.h3}>9. Mauvaise réputation</h3>
         <p className={s.p}>Aucune optimisation technique ne compense des avis négatifs laissés sans réponse. Correction : répondre à tout, vite et bien, et traiter les causes récurrentes en amont, avant l'avis public.</p>
         <h3 className={s.h3}>10. Aucun suivi de visibilité IA</h3>
@@ -492,8 +492,8 @@ export default async function GuideIaPage({ params }: { params: Promise<{ locale
         <div className={s.vertical}>
           <h3 className={s.h3} style={{ marginTop: 0 }}>Scénario composite : entreprise de services locale</h3>
           <p className={s.p}><strong>Avant :</strong> une clientèle fidèle, une fiche Google correcte, mais aucune mention dans les réponses des assistants IA. Les demandes de soumission arrivent surtout par bouche-à-oreille.</p>
-          <p className={s.p}><strong>Audit :</strong> robots des IA bloqués par une règle héritée du robots.txt, aucune donnée structurée, avis anciens sans réponse, horaires divergents entre deux annuaires.</p>
-          <p className={s.p}><strong>Corrections :</strong> ouverture explicite aux robots (GPTBot, ClaudeBot, PerplexityBot, Google-Extended), Schema LocalBusiness et FAQPage, campagne d'avis relancée après chaque intervention, NAP unifié, réponses systématiques aux avis.</p>
+          <p className={s.p}><strong>Audit :</strong> robots des IA bloqués par une règle héritée du robots.txt, pages de services qui ne répondaient pas aux questions des clients, avis anciens sans réponse, horaires divergents entre deux annuaires.</p>
+          <p className={s.p}><strong>Corrections :</strong> ouverture explicite aux robots (GPTBot, ClaudeBot, PerplexityBot, Google-Extended), pages de services réécrites autour des questions des clients, campagne d'avis relancée après chaque intervention, NAP unifié, réponses systématiques aux avis.</p>
           <p className={s.p}><strong>Résultats :</strong> [À COMPLÉTER : évolution du score de visibilité, première apparition datée dans une réponse IA, variation de la vélocité d'avis, sur données réelles du tableau de bord.]</p>
         </div>
         <TrendGrid />

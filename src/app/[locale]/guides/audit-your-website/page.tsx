@@ -36,8 +36,8 @@ const EN: GuideDoc = {
       h: "Fix in the right order",
       paras: [
         "Crawlability first. If a crawler cannot reach a page, nothing else about that page matters — not the structured data, not the content. That means HTTPS working properly, no accidental blocks, and pages that respond on mobile.",
-        "Structured data second. LocalBusiness and FAQPage markup are what let an assistant quote you as a fact rather than guess from prose. This is usually the highest-value work per hour on the whole list.",
-        "Content gaps last. They matter, but they are slow, and doing them before the first two means writing pages that nothing can read.",
+        "Readable facts second. Your services, prices, hours and contact details written as text in the HTML, and the questions customers ask answered under headings that say the question. This is usually the highest-value work per hour on the whole list. Organization or LocalBusiness markup is quick to add and helps Google and Bing identify your business, but no AI engine has confirmed using it to choose what to cite, and FAQPage markup is not scored.",
+        "Deeper content last. New pages and longer guides matter, but they are slow, and doing them before the first two means writing pages that nothing can read.",
       ],
       callout: {
         kind: "tip",
@@ -55,7 +55,7 @@ const EN: GuideDoc = {
       h: "Re-run and compare",
       paras: [
         "After a round of fixes, run the audit again and compare it to the result you saved. This is the loop: measure, fix one category, measure again.",
-        "Expect structured data and crawlability fixes to show up immediately. Content changes take longer, because something has to come back and read them before anything reflects the change.",
+        "Expect crawlability and on-page fixes to show up in the next audit. Content changes take longer, because something has to come back and read them before anything reflects the change.",
       ],
       callout: {
         kind: "note",
@@ -102,8 +102,8 @@ const FR: GuideDoc = {
       h: "Corrigez dans le bon ordre",
       paras: [
         "L'accessibilité d'abord. Si un robot ne peut pas atteindre une page, rien d'autre ne compte pour cette page — ni les données structurées, ni le contenu. Cela suppose un HTTPS correct, aucun blocage accidentel, et des pages qui répondent sur mobile.",
-        "Les données structurées ensuite. Le balisage LocalBusiness et FAQPage est ce qui permet à un assistant de vous citer comme un fait plutôt que de deviner à partir d'un texte. C'est généralement le meilleur rapport valeur/heure de toute la liste.",
-        "Les lacunes de contenu en dernier. Elles comptent, mais elles sont lentes, et les traiter avant les deux premières revient à écrire des pages que rien ne peut lire.",
+        "Les informations lisibles ensuite. Vos services, prix, horaires et coordonnées écrits en texte dans le HTML, et les questions de vos clients traitées sous des titres qui reprennent la question. C'est généralement le meilleur rapport valeur/heure de toute la liste. Le balisage Organization ou LocalBusiness s'ajoute vite et aide Google et Bing à identifier votre entreprise, mais aucun moteur d'IA n'a confirmé s'en servir pour choisir ce qu'il cite, et le balisage FAQPage n'est pas noté.",
+        "Le contenu de fond en dernier. Les nouvelles pages et les guides plus longs comptent, mais ils sont lents, et les traiter avant les deux premières étapes revient à écrire des pages que rien ne peut lire.",
       ],
       callout: {
         kind: "tip",
@@ -121,7 +121,7 @@ const FR: GuideDoc = {
       h: "Relancez et comparez",
       paras: [
         "Après une série de correctifs, relancez l'audit et comparez au résultat conservé. C'est la boucle : mesurer, corriger une catégorie, mesurer à nouveau.",
-        "Attendez-vous à ce que les correctifs de données structurées et d'accessibilité apparaissent immédiatement. Les changements de contenu prennent plus de temps : il faut que quelque chose revienne les lire.",
+        "Attendez-vous à ce que les correctifs d'accessibilité et de contenu de la page apparaissent dès l'audit suivant. Les changements de contenu prennent plus de temps : il faut que quelque chose revienne les lire.",
       ],
       callout: {
         kind: "note",
@@ -141,12 +141,12 @@ const META = {
   en: {
     title: "Audit your website — what crawlers and AI actually see",
     description:
-      "Run the free audit, read the itemised checks, and fix in the order that moves the score: crawlability first, structured data second, content last.",
+      "Run the free audit, read the itemised checks, and fix in the order that moves the score: crawlability first, readable facts second, deeper content last.",
   },
   fr: {
     title: "Auditer votre site web — ce que voient les robots et l'IA",
     description:
-      "Lancez l'audit gratuit, lisez les vérifications détaillées et corrigez dans le bon ordre : accessibilité d'abord, données structurées ensuite, contenu en dernier.",
+      "Lancez l'audit gratuit, lisez les vérifications détaillées et corrigez dans le bon ordre : accessibilité d'abord, informations lisibles ensuite, contenu de fond en dernier.",
   },
 };
 

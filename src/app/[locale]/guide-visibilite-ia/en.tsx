@@ -132,7 +132,7 @@ const GLOSSARY: [string, string][] = [
   ["AI Retrieval", "The step where the assistant fetches fresh information (web pages, listings, reviews) before writing its answer. Without access to your content, no citation is possible."],
   ["Hallucination", "A statement invented by the model. Clear, consistent public information about your business reduces the risk that an AI gets you wrong."],
   ["Embeddings", "The mathematical representation of a text's meaning, used to match a customer question to your content. Precise, well-written pages produce better matches."],
-  ["Structured Data", "Standardized markup (Schema.org) that describes your business to machines: activity type, hours, reviews, FAQ. The preferred format of automated systems."],
+  ["Structured Data", "Standardized markup (Schema.org) that describes your business to machines: activity type, hours, reviews. It helps Google and Bing identify your business; no AI engine has confirmed using it to choose what to cite."],
   ["Knowledge Graph", "The knowledge base where engines connect entities, places and facts. A consistent presence across several reliable sources anchors you in it."],
   ["RAG (Retrieval-Augmented Generation)", "The architecture combining information retrieval and text generation. It is what lets an AI cite recent sources rather than only its memory."],
   ["Semantic Search", "Search by meaning rather than exact words. It rewards content that truly answers the intent, not content that repeats a keyword."],
@@ -140,14 +140,14 @@ const GLOSSARY: [string, string][] = [
 ];
 
 const FAQ: [string, string][] = [
-  ["How do I appear in ChatGPT?", "By making your business readable and trustworthy for retrieval systems: AI crawlers allowed, structured data in place, an active Google profile, recent and answered reviews, identical information everywhere. An AI visibility audit identifies precisely which points are blocking you."],
+  ["How do I appear in ChatGPT?", "By making your business readable and trustworthy for retrieval systems: AI crawlers allowed, your text in the page itself (not behind JavaScript), an active Google profile, recent and answered reviews, identical information everywhere. An AI visibility audit identifies precisely which points are blocking you."],
   ["Is classic SEO enough to get recommended by AI?", "No. SEO optimizes a ranking of links; AI visibility optimizes a recommendation. Backlinks matter less than trust, information consistency, and reputation measurable through reviews."],
   ["What is GEO (Generative Engine Optimization)?", "The discipline of optimizing your presence for generative engines. It covers technical access (crawlers, structure), reputation (reviews, consistency) and content (FAQ, service pages, freshness)."],
-  ["How long before results show?", "Technical fixes (robots, structured data, NAP) are read on the crawlers' next passes, often within weeks. Reputation builds continuously; that is why daily tracking of AI answers beats a one-off check."],
+  ["How long before results show?", "Technical fixes (robots, server-rendered text, NAP) are read on the crawlers' next passes, often within weeks. Reputation builds continuously; that is why daily tracking of AI answers beats a one-off check."],
   ["How do I know whether an AI already recommends me?", "Ask the questions your customers ask, on every assistant, regularly. Or let a platform do it daily for you: Echorank runs your key queries against the AI engines and alerts you when you appear, are misrepresented, or disappear."],
-  ["Why does ChatGPT not recommend my business?", "The most frequent causes: AI crawlers blocked by robots.txt, inconsistent information across your listings, rare or old reviews, missing structured data, pages that do not answer real questions. An AI visibility audit identifies them one by one, each with a prioritized fix."],
+  ["Why does ChatGPT not recommend my business?", "The most frequent causes: AI crawlers blocked by robots.txt, inconsistent information across your listings, rare or old reviews, text only visible after JavaScript runs, pages that do not answer real questions. An AI visibility audit identifies them one by one, each with a prioritized fix."],
   ["Do Google reviews influence ChatGPT?", "Indirectly, but strongly. Assistants rely on sources that reflect your reputation: listings, review platforms, press, directories. Fresh, numerous, answered reviews strengthen the evidence file the AI consults before citing you; abandoned reviews weaken it."],
-  ["How do I appear in Google AI Overview?", "The prerequisites: healthy Google indexing, content that answers questions directly, clean structured data, and not blocking Google-Extended. Nobody can guarantee placement in AI Overview, but without these foundations even eligibility is missing."],
+  ["How do I appear in Google AI Overview?", "The prerequisites: healthy Google indexing and content that answers questions directly. Google says AI Overviews need no special markup: structured data helps Google understand your business, but it is not a ticket in. Nobody can guarantee placement in AI Overview, but without these foundations even eligibility is missing."],
   ["Does ChatGPT use Google?", "No. ChatGPT's browsing relies on its own systems and partner indexes, not on Google. The practical consequence: a Google-only strategy no longer covers the field; every AI crawler must be able to read your site, and every assistant is monitored separately."],
   ["What is AI visibility?", "Your measurable presence in AI assistant answers: are you mentioned, described accurately, and recommended when a customer asks? It is measured in citations and accuracy, not in positions."],
   ["What is the difference between SEO and GEO?", "SEO optimizes page rankings inside a list of links; GEO (Generative Engine Optimization) optimizes the probability that a generative engine recommends your business in a written answer. The first is won with keywords and backlinks, the second with trust, consistency and reputation."],
@@ -257,7 +257,7 @@ export default function EnGuide({ locale, foot }: { locale: string; foot: Foot }
           <li className={s.li}>Authority: longevity, mentions by recognized sources, verifiable licences and certifications.</li>
           <li className={s.li}>Content quality: pages that genuinely answer questions, written for humans, usable by machines.</li>
           <li className={s.li}>Freshness: current hours, recent reviews, dated content. The most underrated signal.</li>
-          <li className={s.li}>Structured data: Schema.org translates your business into the machines' native language.</li>
+          <li className={s.li}>Readable pages: your text in the HTML itself, not behind JavaScript, because most AI crawlers do not run scripts. (Schema.org markup helps Google and Bing identify your business; no AI engine has confirmed using it to choose what to cite.)</li>
           <li className={s.li}>Multi-platform presence: Google, Facebook, industry platforms. Every concordant source increases confidence.</li>
           <li className={s.li}>Trust signals: HTTPS, legal pages, privacy policy, verifiable contact details.</li>
         </ul>
@@ -268,7 +268,7 @@ export default function EnGuide({ locale, foot }: { locale: string; foot: Foot }
         <Cta />
 
         <h2 id="sources" className={s.h2}>3. The sources AI systems read</h2>
-        <p className={s.p}>Before recommending you, an assistant cross-references several public surfaces. Your website is only one piece of the file: Google reviews, your Facebook page, platforms like Trustpilot, the press and your structured data weigh together in the reputation the AI reconstructs about you.</p>
+        <p className={s.p}>Before recommending you, an assistant cross-references several public surfaces. Your website is only one piece of the file: Google reviews, your Facebook page, platforms like Trustpilot and the press weigh together in the reputation the AI reconstructs about you.</p>
         <ReputationFlowDiagram />
         <p className={s.p}>The practical consequence: working a single surface is not enough. An excellent Google profile with a site AI crawlers cannot read, or a beautiful site with abandoned reviews, produces the same outcome: a recommendation that goes elsewhere.</p>
         <CompareTable head={["Traditional citations (directories)", "AI citations"]}
@@ -291,7 +291,7 @@ export default function EnGuide({ locale, foot }: { locale: string; foot: Foot }
         <ul className={s.ul}>
           <li className={s.li}>Robots.txt: explicitly allow AI crawlers, or at minimum do not block them by default.</li>
           <li className={s.li}>HTTPS and a declared XML sitemap: the minimal base of technical trust.</li>
-          <li className={s.li}>Schema.org: LocalBusiness (or your precise business type), hours, service area, FAQPage on your question pages.</li>
+          <li className={s.li}>Schema.org LocalBusiness (or your precise business type), with hours and service area: it helps Google and Bing identify your business. It will not get you cited on its own, and FAQPage markup has shown no effect on AI answers.</li>
           <li className={s.li}>Real text content: menus, prices and information locked in images or PDFs are invisible to retrieval.</li>
           <li className={s.li}>Distinct service pages: one precise page per service brings your content closer to real questions (semantic search).</li>
           <li className={s.li}>Freshness: exact hours, dated content, recent reviews. Stale information costs more than missing information.</li>
@@ -325,8 +325,8 @@ export default function EnGuide({ locale, foot }: { locale: string; foot: Foot }
         <p className={s.p}>Two phone numbers, three spellings of the name, contradictory hours: for an AI, citing becomes risky, so it abstains. Fix: an inventory of all your listings, then an identical NAP everywhere.</p>
         <h3 className={s.h3}>3. A slow site</h3>
         <p className={s.p}>AI crawlers work with time budgets. A site that answers in several seconds gets explored less, therefore read less. Fix: measure response time, compress, cache.</p>
-        <h3 className={s.h3}>4. Missing structured data</h3>
-        <p className={s.p}>Without Schema.org, the machine must guess your activity, your hours, your area. Fix: LocalBusiness (or the precise type), plus FAQPage on your question pages.</p>
+        <h3 className={s.h3}>4. Facts only in images, PDFs or scripts</h3>
+        <p className={s.p}>If your services, prices, hours and area are only in images, PDFs or text that appears after JavaScript runs, an AI crawler reading the HTML sees none of it. Fix: write them as plain text on the page. LocalBusiness markup is still worth adding for Google and Bing, but it does not replace the text.</p>
         <h3 className={s.h3}>5. Few external mentions</h3>
         <p className={s.p}>A business described only by its own website is unverifiable. Fix: industry directories, local press, chambers of commerce, partners. Each concordant source makes citation safer.</p>
         <h3 className={s.h3}>6. Stale content</h3>
@@ -336,7 +336,7 @@ export default function EnGuide({ locale, foot }: { locale: string; foot: Foot }
         <CompareTable head={["Web authority (SEO)", "AI trust"]}
           rows={[["Backlinks and referring domains", "Concordant, verifiable sources"], ["PageRank and link juice", "Fact consistency across surfaces"], ["Optimized anchors", "Readable reputation: reviews, replies, press"], ["Can be manipulated (and penalized)", "Is built, hard to fake"]]} />
         <h3 className={s.h3}>8. No FAQ</h3>
-        <p className={s.p}>Customers ask questions; semantic search matches questions with answers. No answer page, no match. Fix: an FAQ in customer language, marked up as FAQPage.</p>
+        <p className={s.p}>Customers ask questions; semantic search matches questions with answers. No answer page, no match. Fix: an FAQ in customer language, each question as a heading with the answer right under it. The words on the page are what counts; FAQPage markup has shown no effect on AI answers.</p>
         <h3 className={s.h3}>9. Bad reputation</h3>
         <p className={s.p}>No technical optimization compensates for negative reviews left unanswered. Fix: reply to everything, fast and well, and treat recurring causes upstream, before the public review.</p>
         <h3 className={s.h3}>10. No AI visibility tracking</h3>
@@ -361,8 +361,8 @@ export default function EnGuide({ locale, foot }: { locale: string; foot: Foot }
         <div className={s.vertical}>
           <h3 className={s.h3} style={{ marginTop: 0 }}>Composite scenario: a local service business</h3>
           <p className={s.p}><strong>Before:</strong> a loyal clientele, a decent Google profile, but zero mentions in AI assistant answers. Quote requests come mostly by word of mouth.</p>
-          <p className={s.p}><strong>Audit:</strong> AI crawlers blocked by an inherited robots.txt rule, no structured data, old reviews without replies, diverging hours across two directories.</p>
-          <p className={s.p}><strong>Fixes:</strong> explicit opening to the crawlers (GPTBot, ClaudeBot, PerplexityBot, Google-Extended), LocalBusiness and FAQPage schema, a review campaign relaunched after every job, unified NAP, systematic review replies.</p>
+          <p className={s.p}><strong>Audit:</strong> AI crawlers blocked by an inherited robots.txt rule, service pages that did not answer customer questions, old reviews without replies, diverging hours across two directories.</p>
+          <p className={s.p}><strong>Fixes:</strong> explicit opening to the crawlers (GPTBot, ClaudeBot, PerplexityBot, Google-Extended), service pages rewritten around customer questions, a review campaign relaunched after every job, unified NAP, systematic review replies.</p>
           <p className={s.p}><strong>Results:</strong> [TO COMPLETE: visibility score evolution, first dated appearance in an AI answer, review velocity change, from real dashboard data.]</p>
         </div>
         <TrendGrid />
