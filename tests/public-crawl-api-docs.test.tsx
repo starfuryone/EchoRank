@@ -15,6 +15,7 @@ import { API_ACCESS_COPY, MCP_SERVER_COPY } from "@/lib/i18n/dashboard";
 import { ApiAccessClient, CRAWL_MCP_TOOLS, CRAWL_WALKTHROUGH } from "@/components/seo-tools/api-access-client";
 import { CRAWL_FEATURE_ROWS, featureCells, visibleFeatureRows } from "@/lib/site-crawler/marketing-copy";
 import { FLAGS } from "@/lib/flags";
+import { hasFeature } from "@/lib/feature-flags";
 import { PLAN_CONFIGS } from "@/lib/plan-config";
 import { MCP_TOOL_NAMES } from "@/lib/mcp/tools";
 
@@ -79,13 +80,17 @@ it("the walkthrough reads the key from $ECHORANK_API_KEY and never prints one", 
   expect(CRAWL_WALKTHROUGH.callback).toContain("timingSafeEqual");
 });
 
-it("the feature table's Command line & API row shows on crawl.api, for every plan", () => {
+it("the feature table's Command line & API row shows on crawl.api, only on the plans with api_access", () => {
   const r = CRAWL_FEATURE_ROWS.find((x) => x.id === "api")!;
   expect(r.gate).toEqual({ flag: "crawl.api" });
   expect(FLAGS["crawl.api"]).toBe(true);
   const ctx = (on: boolean) => ({ flags: { ...FLAGS, "crawl.api": on }, families: new Set<string>() }) as never;
   expect(visibleFeatureRows(ctx(true)).some((x) => x.id === "api")).toBe(true);
   expect(visibleFeatureRows(ctx(false)).some((x) => x.id === "api")).toBe(false);
-  expect(Object.values(featureCells(r, PLAN_CONFIGS as never, "en"))).toEqual(["REST API and MCP", "REST API and MCP", "REST API and MCP"]);
-  expect(Object.values(featureCells(r, PLAN_CONFIGS as never, "fr"))[0]).toBe("API REST et MCP");
+  // The keys come with api_access (Agency and Enterprise today): "—" on the others.
+  const en = featureCells(r, PLAN_CONFIGS as never, "en");
+  for (const p of ["STARTER", "GROWTH", "AGENCY"] as const) expect(en[p], p).toBe(hasFeature(p, "api_access") ? "REST API and MCP" : "—");
+  expect(en.AGENCY).toBe("REST API and MCP");
+  expect(en.STARTER).toBe("—");
+  expect(featureCells(r, PLAN_CONFIGS as never, "fr").AGENCY).toBe("API REST et MCP");
 });

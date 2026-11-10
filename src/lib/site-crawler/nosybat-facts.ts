@@ -32,28 +32,10 @@ import { CRAWL_PIN_MAX } from "./constants";
 import { FREE_CRAWL_IP_DAILY, FREE_CRAWL_RETENTION_DAYS, FREE_CRAWL_URL_CAP } from "./free-limits";
 import { PUBLIC_RULES, ruleCountLabel } from "./rule-count";
 
-/** The limits added after the per-crawl URL cap, each shown only once code enforces it. */
-export type NosybatGated = "pagesPerMonth" | "crawlsAtOnce" | "crawlsKept";
-
-/**
- * Which gated limits are enforced in code today. Flip one only in the commit
- * that adds (or removes) its enforcement; tests/nosybat-facts.test.ts reads
- * the enforcing code for every true marker.
- *   pagesPerMonth  page-allowance.ts: startCrawl refuses and lowers the cap,
- *                  the runner stops per batch, a scheduled crawl is skipped
- *                  with an email (debdaf87).
- *   crawlsAtOnce   tenant-caps.ts claimCrawlSlot: one transaction under a
- *                  per-workspace advisory lock; extra crawls wait in order
- *                  (fc7f5103).
- *   crawlsKept     retention.ts: the nightly job drops the full data of every
- *                  completed crawl past the newest crawlsKept, pinned ones
- *                  aside (2f40f449).
- */
-export const NOSYBAT_ENFORCED: Readonly<Record<NosybatGated, boolean>> = {
-  pagesPerMonth: true,
-  crawlsAtOnce: true,
-  crawlsKept: true,
-};
+// Which gated limits code enforces today: nosybat-enforced.ts (dependency-free,
+// so the in-app Help modal can read it too).
+import { NOSYBAT_ENFORCED, type NosybatGated } from "./nosybat-enforced";
+export { NOSYBAT_ENFORCED, type NosybatGated };
 
 /** The check areas the pitch names, each present when one of its families is in the public registry. */
 export const CHECK_AREAS = ["onPage", "technical", "hreflang", "https", "accessibility", "spelling", "performance"] as const;

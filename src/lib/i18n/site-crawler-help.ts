@@ -54,6 +54,8 @@ const en = {
   plan: {
     urls: "URLs per crawl",
     crawls: "Crawls per month",
+    pages: "Pages per month",
+    atOnce: "Crawls at once",
     rendered: "Rendered pages per crawl",
     extractors: "Extractors per crawl",
     schedules: "Scheduled crawls",
@@ -62,6 +64,10 @@ const en = {
     psi: "PageSpeed pages per crawl",
     backlinks: "Backlink lookups per crawl",
   },
+  /** "3 newest + 5 pinned", as the public by-plan table says it. */
+  keptPinned: (kept: string, pinned: string) => `${kept} newest + ${pinned} pinned`,
+  /** "2 · weekly or monthly" (the list is joined with Intl.ListFormat). */
+  cadence: { daily: "daily", weekly: "weekly", monthly: "monthly" },
   unlimited: "Unlimited",
   guide: "Open the full guide",
   allGuides: `All ${NB} guides`,
@@ -115,6 +121,8 @@ const fr: SiteCrawlerHelpCopy = {
   plan: {
     urls: "URL par exploration",
     crawls: "Explorations par mois",
+    pages: "Pages par mois",
+    atOnce: "Explorations simultanées",
     rendered: "Pages rendues par exploration",
     extractors: "Extracteurs par exploration",
     schedules: "Explorations planifiées",
@@ -123,6 +131,8 @@ const fr: SiteCrawlerHelpCopy = {
     psi: "Pages PageSpeed par exploration",
     backlinks: "Recherches de liens entrants par exploration",
   },
+  keptPinned: (kept: string, pinned: string) => `${kept} plus récentes + ${pinned} épinglées`,
+  cadence: { daily: "quotidiennes", weekly: "hebdomadaires", monthly: "mensuelles" },
   unlimited: "Illimité",
   guide: "Ouvrir le guide complet",
   allGuides: `Tous les guides ${NB}`,
@@ -174,6 +184,8 @@ const deCH: SiteCrawlerHelpCopy = {
   plan: {
     urls: "URLs pro Crawl",
     crawls: "Crawls pro Monat",
+    pages: "Seiten pro Monat",
+    atOnce: "Gleichzeitige Crawls",
     rendered: "Gerenderte Seiten pro Crawl",
     extractors: "Extraktoren pro Crawl",
     schedules: "Geplante Crawls",
@@ -182,6 +194,8 @@ const deCH: SiteCrawlerHelpCopy = {
     psi: "PageSpeed-Seiten pro Crawl",
     backlinks: "Backlink-Abfragen pro Crawl",
   },
+  keptPinned: (kept: string, pinned: string) => `${kept} neueste + ${pinned} angeheftete`,
+  cadence: { daily: "täglich", weekly: "wöchentlich", monthly: "monatlich" },
   unlimited: "Unbegrenzt",
   guide: "Vollständige Anleitung öffnen",
   allGuides: `Alle ${NB}-Leitfäden`,

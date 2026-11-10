@@ -22,6 +22,9 @@ import { FLAGS } from "@/lib/flags";
 import type { DashLocale, SiteCrawlerCopy } from "@/lib/i18n/dashboard";
 import { capabilityBody, visibleCapabilities, type CopyBase } from "@/lib/site-crawler/marketing-copy";
 import type { CrawlQuotaDto } from "@/lib/site-crawler/types";
+import type { CrawlCadence } from "@/lib/plan-config";
+import { CRAWL_PIN_MAX } from "@/lib/site-crawler/constants";
+import { NOSYBAT_ENFORCED, type NosybatGated } from "@/lib/site-crawler/nosybat-enforced";
 
 export const HELP_TABS = ["checks", "reading", "config", "plan"] as const;
 export type HelpTab = (typeof HELP_TABS)[number];
@@ -58,14 +61,23 @@ export default function CrawlerHelpModal({
   const caps = helpCapabilities();
   const label: Record<HelpTab, string> = { checks: h.tabChecks, reading: h.tabReading, config: h.tabConfig, plan: h.tabPlan };
   const n = (v: number | null | undefined) => (v === null ? h.unlimited : int.format(v ?? 0));
+  const or = new Intl.ListFormat(locale, { type: "disjunction" });
+  // The public by-plan table's rows (nosybat-plan-table.ts) with this
+  // workspace's own figures, overrides included; a gated limit shows only
+  // while code enforces it (nosybat-enforced.ts).
+  const shows = (g: NosybatGated, v: unknown) => NOSYBAT_ENFORCED[g] && v !== undefined;
+  const schedules = (cap: number | undefined, cadences: readonly CrawlCadence[] | undefined) =>
+    cap && cadences?.length ? `${n(cap)} · ${or.format(cadences.map((c) => h.cadence[c]))}` : n(cap);
   const plan: [string, string][] = quota
     ? [
         [h.plan.urls, n(quota.urlCap)],
         [h.plan.crawls, n(quota.monthlyLimit)],
+        ...(shows("pagesPerMonth", quota.pages) ? ([[h.plan.pages, n(quota.pages!.limit)]] as [string, string][]) : []),
+        ...(shows("crawlsAtOnce", quota.concurrency) ? ([[h.plan.atOnce, n(quota.concurrency)]] as [string, string][]) : []),
+        ...(shows("crawlsKept", quota.crawlsKept) ? ([[h.plan.kept, h.keptPinned(n(quota.crawlsKept), n(CRAWL_PIN_MAX))]] as [string, string][]) : []),
         [h.plan.rendered, n(quota.renderCap)],
+        [h.plan.schedules, schedules(quota.scheduleCap, quota.scheduleCadences)],
         [h.plan.extractors, n(quota.extractorCap)],
-        [h.plan.schedules, n(quota.scheduleCap)],
-        [h.plan.kept, n(quota.crawlsKept)],
         [h.plan.ai, n(quota.aiPageCap)],
         [h.plan.psi, n(quota.psiCap)],
         [h.plan.backlinks, n(quota.backlinkCap)],

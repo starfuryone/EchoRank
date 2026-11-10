@@ -23,6 +23,10 @@
 .table th{font-family:var(--mono);font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--faint);font-weight:500}
 .table td{color:var(--text)}
 .tick{color:var(--goldText);font-weight:700}
+.tableNote{margin:14px 0 0;color:var(--muted);font-size:14px;line-height:1.6}
+/* The per-feature table, folded under the by-plan one. */
+.allFeatures{margin-top:22px}
+.allFeatures>summary{cursor:pointer;color:var(--goldText);font-size:14px;text-decoration:underline;text-underline-offset:3px;width:fit-content}
 
 /* The pitch under the hero: one column on phones, two from tablet, three on desktop. */
 .pitchGrid{display:grid;grid-template-columns:1fr;gap:16px}

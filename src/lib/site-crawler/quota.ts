@@ -52,6 +52,8 @@ export interface CrawlQuota {
   locked: boolean;
   /** Phase 4a: completed crawls kept with full data (plan-config crawlsKept). */
   crawlsKept: number;
+  /** Crawls this workspace may run at once (plan-config crawlConcurrency, override first); more wait in order. */
+  concurrency: number;
   /** Phase 4b caps: extractors and searches per crawl, segments per site. */
   extractorCap: number;
   searchCap: number;
@@ -153,6 +155,7 @@ export async function getCrawlQuota(
   // never opens the crawler to a plan that excludes it (src/lib/plan-access.ts).
   const locked = urlCap <= 0 || !planAllowsArea(plan, "crawler");
   const crawlsKept = caps0.crawlsKept;
+  const concurrency = caps0.concurrency;
   const caps = { ...featureCapsForPlan(plan), ...scheduleCapsForPlan(plan), ...metricCapsForPlan(plan), ...renderFeatureCapsForPlan(plan), ...parityCapsForPlan(plan) };
 
   // A locked tier never runs a query it cannot act on.
@@ -167,6 +170,7 @@ export async function getCrawlQuota(
       pages: allowanceFrom(caps0.pagesPerMonth, 0, now),
       locked: true,
       crawlsKept,
+      concurrency,
       ...caps,
       lighthouseUsed: 0,
       lighthouseLimit: AUDITS_PER_HOUR,
@@ -189,6 +193,7 @@ export async function getCrawlQuota(
     pages,
     locked: false,
     crawlsKept,
+    concurrency,
     ...caps,
     lighthouseUsed: await auditsUsedThisHour(tenantId, now.getTime()),
     lighthouseLimit: AUDITS_PER_HOUR,

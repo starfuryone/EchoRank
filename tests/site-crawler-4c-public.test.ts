@@ -6,14 +6,9 @@
 import { describe, expect, it } from "vitest";
 import { FLAGS, type Flags } from "@/lib/flags";
 import { PLAN_CONFIGS } from "@/lib/plan-config";
-import {
-  CRAWL_CAPABILITIES,
-  CRAWL_FEATURE_ROWS,
-  capabilityBody,
-  featureCells,
-  visibleCapabilities,
-  visibleFeatureRows,
-} from "@/lib/site-crawler/marketing-copy";
+import { CRAWL_CAPABILITIES, capabilityBody, visibleCapabilities, visibleFeatureRows } from "@/lib/site-crawler/marketing-copy";
+import { buildNosybatFacts, nosybatFacts } from "@/lib/site-crawler/nosybat-facts";
+import { nosybatPlanTable } from "@/lib/site-crawler/nosybat-plan-table";
 import { SITE_CRAWLER_4C } from "@/lib/i18n/site-crawler-4c";
 
 const ctx = (flags: Flags = FLAGS) => ({ families: new Set<string>(), flags });
@@ -28,7 +23,9 @@ describe("flags shipped in 4c", () => {
     const cards = ids(visibleCapabilities(ctx()));
     for (const id of ["site-structure", "visualisations", "crawl-comparison", "scheduling", "reports"]) expect(cards).toContain(id);
     const rows = ids(visibleFeatureRows(ctx()));
-    for (const id of ["visualisations", "scheduling", "crawl-comparison"]) expect(rows).toContain(id);
+    // Scheduling is a row of the by-plan table now (nosybat-plan-table.ts), not of the per-feature one.
+    for (const id of ["visualisations", "crawl-comparison"]) expect(rows).toContain(id);
+    expect(ids(nosybatPlanTable(nosybatFacts(), "en"))).toContain("schedules");
   });
 
   it("nothing claims Sheets, Looker Studio or a template while crawl.sheets is off", () => {
@@ -50,19 +47,22 @@ describe("flags shipped in 4c", () => {
   });
 });
 
-describe("feature-table cells read from plan-config", () => {
-  const plans = { STARTER: PLAN_CONFIGS.STARTER, GROWTH: PLAN_CONFIGS.GROWTH, AGENCY: PLAN_CONFIGS.AGENCY };
-  const row = CRAWL_FEATURE_ROWS.find((r) => r.id === "scheduling")!;
+describe("the by-plan table's schedules row reads plan-config", () => {
+  const schedules = (f: ReturnType<typeof nosybatFacts>, b: "en" | "fr" | "de") => {
+    const r = nosybatPlanTable(f, b).find((x) => x.id === "schedules")!;
+    return f.crawlPlans.map((p) => r.cell!(p));
+  };
   it.each([
-    ["en", ["1 scheduled crawl · monthly", "2 scheduled crawls · weekly or monthly", "10 scheduled crawls · daily, weekly or monthly"]],
-    ["fr", ["1 exploration planifiée · mensuelle", "2 explorations planifiées · hebdomadaire ou mensuelle", "10 explorations planifiées · quotidienne, hebdomadaire ou mensuelle"]],
+    ["en", ["1 · monthly", "2 · weekly or monthly", "10 · daily, weekly, or monthly"]],
+    ["fr", ["1 · mensuelles", "2 · hebdomadaires ou mensuelles", "10 · quotidiennes, hebdomadaires ou mensuelles"]],
+    ["de", ["1 · monatlich", "2 · wöchentlich oder monatlich", "10 · täglich, wöchentlich oder monatlich"]],
   ] as const)("scheduling (%s)", (base, want) => {
-    expect(Object.values(featureCells(row, plans, base))).toEqual(want);
+    expect(schedules(nosybatFacts(), base)).toEqual(want);
   });
 
   it("follows plan-config, not a literal", () => {
-    const changed = { ...plans, STARTER: { ...PLAN_CONFIGS.STARTER, crawlSchedules: 3, crawlScheduleCadences: ["weekly", "monthly"] as const } };
-    expect(featureCells(row, changed, "en").STARTER).toBe("3 scheduled crawls · weekly or monthly");
+    const plans = { ...PLAN_CONFIGS, STARTER: { ...PLAN_CONFIGS.STARTER, crawlSchedules: 3, crawlScheduleCadences: ["weekly", "monthly"] as const } };
+    expect(schedules(buildNosybatFacts({ plans }), "en")[0]).toBe("3 · weekly or monthly");
   });
 });
 

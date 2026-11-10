@@ -19,10 +19,11 @@
 // family ids, which is what lets a test stub the registry.
 
 import { CRAWLER_BRAND } from "./brand";
-import { CRAWL_PIN_MAX, MAX_EXTERNAL_LINKS_PER_PAGE } from "./constants";
+import { MAX_EXTERNAL_LINKS_PER_PAGE } from "./constants";
 import { FREE_CRAWL_RETENTION_DAYS, FREE_CRAWL_URL_CAP } from "./free-limits";
+import { hasFeature } from "@/lib/feature-flags";
 import { flag as flagOn, FLAGS, type FlagName, type Flags } from "@/lib/flags";
-import type { CrawlCadence, PlanConfig } from "@/lib/plan-config";
+import type { PlanConfig } from "@/lib/plan-config";
 
 export type CopyBase = "en" | "fr";
 type Text = Readonly<Record<CopyBase, string>>;
@@ -289,7 +290,7 @@ export interface CrawlFeatureRow {
   label: Text;
   gate: CrawlGate;
   /** Reads this row's cap from the plan config; absent = no cap (a tick). */
-  cap?: (plan: PlanConfig, base: CopyBase) => string;
+  cap?: (plan: PlanConfig, base: CopyBase, id: CrawlPlan) => string;
 }
 
 const fmt = (n: number, base: CopyBase) => new Intl.NumberFormat(base === "fr" ? "fr-CA" : "en-US").format(n);
@@ -300,20 +301,6 @@ const row = (id: string, gate: CrawlGate, en: string, fr: string, capFn?: CrawlF
   label: { en, fr },
   ...(capFn ? { cap: capFn } : {}),
 });
-
-const CADENCE: Record<CopyBase, Record<CrawlCadence, string>> = {
-  en: { daily: "daily", weekly: "weekly", monthly: "monthly" },
-  fr: { daily: "quotidienne", weekly: "hebdomadaire", monthly: "mensuelle" },
-};
-
-/** "2 scheduled crawls · weekly or monthly", from crawlSchedules / crawlScheduleCadences. */
-function scheduleCell(p: PlanConfig, b: CopyBase): string {
-  const list = p.crawlScheduleCadences.map((c) => CADENCE[b][c]);
-  const or = b === "fr" ? " ou " : " or ";
-  const joined = list.length > 1 ? `${list.slice(0, -1).join(", ")}${or}${list[list.length - 1]}` : (list[0] ?? "");
-  if (b === "fr") return `${fmt(p.crawlSchedules, b)} ${p.crawlSchedules > 1 ? "explorations planifiées" : "exploration planifiée"} · ${joined}`;
-  return `${fmt(p.crawlSchedules, b)} ${p.crawlSchedules > 1 ? "scheduled crawls" : "scheduled crawl"} · ${joined}`;
-}
 
 export const CRAWL_FEATURE_ROWS: readonly CrawlFeatureRow[] = [
   row("broken-links", { family: "response_codes" }, "Find broken links, errors & redirects", "Liens brisés, erreurs et redirections"),
@@ -333,19 +320,10 @@ export const CRAWL_FEATURE_ROWS: readonly CrawlFeatureRow[] = [
   row("exact-duplicates", { family: "content" }, "Discover exact duplicate pages", "Pages en double exact"),
   row("xml-sitemaps", { flag: "crawl.sitemapGen" }, "Generate XML sitemaps", "Génération de plans de site XML"),
   row("visualisations", { flag: "crawl.visualise" }, "Site visualisations", "Visualisations du site"),
-  // Live today: the per-plan URL cap, monthly crawls and the monthly page
-  // allowance across every crawl (crawlPagesPerMonth) are the tier caps.
-  row("crawl-limit", { always: true }, "Crawl limit", "Limite d'exploration", (p, b) =>
-    b === "fr"
-      ? `${fmt(p.crawlUrlCap, b)} URL par exploration · ${p.crawlsPerMonth === null ? "explorations illimitées" : `${fmt(p.crawlsPerMonth, b)} explorations par mois`}${p.crawlPagesPerMonth ? ` · ${fmt(p.crawlPagesPerMonth, b)} pages par mois` : ""}`
-      : `${fmt(p.crawlUrlCap, b)} URLs per crawl · ${p.crawlsPerMonth === null ? "unlimited crawls" : `${fmt(p.crawlsPerMonth, b)} crawls a month`}${p.crawlPagesPerMonth ? ` · ${fmt(p.crawlPagesPerMonth, b)} pages a month` : ""}`),
-  // Phase 4c caps: scheduled crawls per workspace and the cadences each plan may pick.
-  row("scheduling", { flag: "crawl.schedule" }, "Scheduling", "Planification", (p, b) => scheduleCell(p, b)),
+  // The URL cap, crawls a month, pages a month, crawls at once, crawls kept,
+  // rendered pages and schedules are the by-plan table's rows
+  // (nosybat-plan-table.ts), not repeated here.
   row("crawl-configuration", { flag: "crawl.config" }, "Crawl configuration", "Configuration de l'exploration"),
-  row("save-open", { always: true }, "Save & open crawls", "Enregistrer et rouvrir les explorations", (p, b) =>
-    b === "fr"
-      ? `${fmt(p.crawlsKept, b)} dernières explorations conservées · ${CRAWL_PIN_MAX} épinglées en plus`
-      : `Last ${fmt(p.crawlsKept, b)} crawls kept · ${CRAWL_PIN_MAX} more pinned`),
   row("javascript-rendering", { family: "javascript" }, "JavaScript rendering", "Rendu JavaScript"),
   row("crawl-comparison", { flag: "crawl.compare" }, "Crawl comparison", "Comparaison d'explorations"),
   row("near-duplicates", { family: "content" }, "Near duplicate content", "Contenu quasi dupliqué"),
@@ -381,8 +359,11 @@ export const CRAWL_FEATURE_ROWS: readonly CrawlFeatureRow[] = [
     b === "fr" ? `${fmt(p.crawlSegments, b)} segments par site` : `${fmt(p.crawlSegments, b)} segments per site`),
   // Sheets export + the Looker Studio guide; the PDF report (crawl.reports) is not this row.
   row("looker-studio", { flag: "crawl.sheets" }, "Looker Studio crawl report", "Rapport d'exploration Looker Studio"),
-  // Phase 3d-A: start and read crawls from scripts and AI assistants, every paid plan.
-  row("api", { flag: "crawl.api" }, "Command line & API", "Ligne de commande et API", (_p, b) => (b === "fr" ? "API REST et MCP" : "REST API and MCP")),
+  // Phase 3d-A: start and read crawls from scripts and AI assistants. The keys
+  // come with the api_access feature (Agency and Enterprise today), so a plan
+  // without it reads "—", not "REST API and MCP".
+  row("api", { flag: "crawl.api" }, "Command line & API", "Ligne de commande et API", (_p, b, id) =>
+    hasFeature(id, "api_access") ? (b === "fr" ? "API REST et MCP" : "REST API and MCP") : "—"),
   row("support", { always: true }, "Free technical support", "Soutien technique gratuit"),
 ];
 
@@ -428,7 +409,7 @@ export function featureCells(
   base: CopyBase,
 ): Record<CrawlPlan, string | true> {
   const out = {} as Record<CrawlPlan, string | true>;
-  for (const p of CRAWL_PLANS) out[p] = r.cap ? r.cap(plans[p], base) : true;
+  for (const p of CRAWL_PLANS) out[p] = r.cap ? r.cap(plans[p], base, p) : true;
   return out;
 }
 

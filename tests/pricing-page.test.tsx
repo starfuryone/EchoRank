@@ -36,6 +36,7 @@ import { PRICING_PAGE_COPY } from "@/lib/pricing-page/copy";
 import { toolCountLine } from "@/lib/i18n/content";
 import { seoToolCounts } from "@/lib/seo-tools";
 import { FREE_CRAWL_URL_CAP } from "@/lib/site-crawler/free-limits";
+import { CRAWL_PIN_MAX } from "@/lib/site-crawler/constants";
 import { AV_FREE_AUDITS_PER_DAY } from "@/lib/av-free-limit";
 import { RUNS_PER_IP_PER_DAY } from "@/lib/snapshot/limits";
 import type { Locale } from "@/lib/i18n/config";
@@ -174,10 +175,20 @@ describe("Free vs paid", () => {
       expect(cell("feedback", p)).toBe(num(c.quotaDefaults.maxRequestsPerMonth));
       expect(cell("searches", p)).toBe(num(c.seoSearchesPerMonth));
       expect(cell("keywords", p)).toBe(num(c.trackedKeywords));
-      expect(cell("urls", p)).toBe(num(c.crawlUrlCap));
-      expect(cell("crawls", p)).toBe(num(c.crawlsPerMonth));
-      expect(cell("kept", p)).toBe(num(c.crawlsKept));
-      expect(cell("rendered", p)).toBe(num(c.crawlRenderedPages));
+      // The crawler group is /site-crawler's by-plan table (nosybat-plan-table.ts);
+      // the AI Visibility plan has the free crawl only, on the first row.
+      if (planAllowsArea(p, "crawler")) {
+        expect(cell("urls", p)).toBe(num(c.crawlUrlCap));
+        expect(cell("crawls", p)).toBe(num(c.crawlsPerMonth));
+        expect(cell("crawl-pages", p)).toBe(num(c.crawlPagesPerMonth));
+        expect(cell("at-once", p)).toBe(num(c.crawlConcurrency));
+        expect(cell("kept", p)).toBe(`${num(c.crawlsKept)} newest + ${CRAWL_PIN_MAX} pinned`);
+        expect(cell("rendered", p)).toBe(num(c.crawlRenderedPages));
+        expect(cell("everything", p)).toBe("yes");
+      } else {
+        expect(cell("urls", p)).toBe(`Free ${FREE_CRAWL_URL_CAP}-page crawl only`);
+        for (const r of ["crawls", "crawl-pages", "at-once", "kept", "rendered", "everything"]) expect(cell(r, p), r).toBe("no");
+      }
       expect(cell("brands", p)).toBe(num(c.aiProjects));
       expect(cell("sms", p)).toBe(c.quotaDefaults.maxSmsPerMonth === 0 ? "no" : num(c.quotaDefaults.maxSmsPerMonth));
       expect(cell("tools", p)).toBe(planAllowsArea(p, "seo_tools") ? toolCountLine("en", seoToolCounts()) : "no");

@@ -18,6 +18,7 @@ import { SITE_CRAWLER_COPY } from "@/lib/i18n/dashboard";
 import { CrawlerHeader } from "@/components/seo-tools/site-crawler-client";
 import { helpCapabilities } from "@/components/seo-tools/site-crawler-help";
 import { REGISTRY_FAMILIES } from "@/lib/crawl-rules-meta";
+import { CRAWL_PIN_MAX } from "@/lib/site-crawler/constants";
 import { FLAGS } from "@/lib/flags";
 import { CRAWL_CAPABILITIES, visibleCapabilities } from "@/lib/site-crawler/marketing-copy";
 import { pageHelp } from "@/lib/help-content";
@@ -26,7 +27,8 @@ import type { CrawlQuotaDto } from "@/lib/site-crawler/types";
 (globalThis as { IS_REACT_ACT_ENVIRONMENT?: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 const LOCALES = ["en", "fr", "de-CH"] as const;
 const quota = {
-  urlCap: 5000, monthlyLimit: 20, renderCap: 500, extractorCap: 5, scheduleCap: 2, crawlsKept: 10, aiPageCap: 100, psiCap: 50, backlinkCap: 50,
+  urlCap: 5000, monthlyLimit: 20, renderCap: 500, extractorCap: 5, scheduleCap: 2, scheduleCadences: ["weekly", "monthly"], crawlsKept: 10, aiPageCap: 100, psiCap: 50, backlinkCap: 50,
+  concurrency: 3, pages: { limit: 60_000, used: 0, remaining: 60_000, resetsAt: "2026-12-01T00:00:00.000Z" },
 } as unknown as CrawlQuotaDto;
 
 let el: HTMLDivElement;
@@ -91,6 +93,15 @@ describe.each(LOCALES)("%s", (l) => {
     const text = dialog()!.textContent!;
     expect(text).toContain(t.helpModal.plan.urls);
     expect(text).toContain(new Intl.NumberFormat(l).format(5000));
+    // The public by-plan table's rows, with this workspace's figures: pages a
+    // month, crawls at once, crawls kept beside the pinned ones, the cadences.
+    const rows = Object.fromEntries([...dialog()!.querySelectorAll("tr")].map((tr) => [tr.querySelector("th")?.textContent, tr.querySelector("td")?.textContent]));
+    expect(rows[t.helpModal.plan.pages]).toBe(new Intl.NumberFormat(l).format(60_000));
+    expect(rows[t.helpModal.plan.atOnce]).toBe("3");
+    expect(rows[t.helpModal.plan.kept]).toBe(t.helpModal.keptPinned("10", String(CRAWL_PIN_MAX)));
+    expect(rows[t.helpModal.plan.schedules]).toBe(
+      `2 · ${new Intl.ListFormat(l, { type: "disjunction" }).format([t.helpModal.cadence.weekly, t.helpModal.cadence.monthly])}`,
+    );
     const configTab = [...dialog()!.querySelectorAll<HTMLButtonElement>('[role="tab"]')].find((x) => x.textContent === t.helpModal.tabConfig)!;
     await act(async () => configTab.click());
     expect(dialog()!.textContent).toContain(t.helpModal.verifiedTitle);

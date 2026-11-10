@@ -57,6 +57,8 @@ import {
   type CopyBase,
   type GateContext,
 } from "@/lib/site-crawler/marketing-copy";
+import { nosybatPlanTable } from "@/lib/site-crawler/nosybat-plan-table";
+import { salesContactHref } from "@/lib/sales/inquiry-options";
 import { FREE_TOOLS_BASE } from "@/lib/free-tools";
 import { PublicNav } from "../PublicNav";
 import { PricingSection } from "../PricingSection";
@@ -98,7 +100,11 @@ const COPY = {
     reportsLabel: "WHAT IT REPORTS",
     reportsH2: `What ${NB} crawls and reports`,
     featuresLabel: "FEATURES",
-    featuresH2: "Every feature, by plan",
+    featuresH2: "By plan",
+    limit: "Limit",
+    enterpriseNote: (name: string) => `${name}: custom limits.`,
+    enterpriseLink: "Talk to us",
+    allFeatures: "Every feature, with its limit per crawl",
     feature: "Feature",
     included: "Included",
     hostedLabel: "HOSTED",
@@ -121,7 +127,11 @@ const COPY = {
     reportsLabel: "CE QU'IL SIGNALE",
     reportsH2: `Ce que ${NB} explore et signale`,
     featuresLabel: "FONCTIONS",
-    featuresH2: "Chaque fonction, par forfait",
+    featuresH2: "Par forfait",
+    limit: "Limite",
+    enterpriseNote: (name: string) => `${name} : limites sur mesure.`,
+    enterpriseLink: "Parlons-en",
+    allFeatures: "Chaque fonction, avec sa limite par exploration",
     feature: "Fonction",
     included: "Inclus",
     hostedLabel: "HÉBERGÉ",
@@ -202,7 +212,11 @@ export default async function Page({ params }: { params: Params }) {
   const capabilities = visibleCapabilities(ctx);
   const rows = visibleFeatureRows(ctx);
   const faq = visibleFaq({ ...ctx, plans: PLANS_BY_ID, ruleCount: ruleCountLabel() }, base);
-  const pitch = pitchCopy(pageFacts(), base);
+  const facts = pageFacts();
+  const pitch = pitchCopy(facts, base);
+  // The by-plan table (nosybat-plan-table.ts): the same rows /pricing shows.
+  const planCols = facts.crawlPlans;
+  const planRows = nosybatPlanTable(facts, base);
   const lead = pitch.sub;
   const freeHref = link(FREE_CRAWLER_PATH);
   const plansHref = (src: string) => `${link("/pricing")}?src=${src}`;
@@ -343,50 +357,85 @@ export default async function Page({ params }: { params: Params }) {
         <div className={s.container}>
           <p className={s.label}><b>/ 03</b> — {t.featuresLabel}</p>
           <h2 className={s.h2}>{t.featuresH2}</h2>
+          {/* The by-plan table (nosybat-plan-table.ts): the same rows /pricing shows. */}
           <div className={c.tableWrap}>
-            <table className={c.table}>
+            <table className={c.table} data-testid="plan-table">
               <thead>
                 <tr>
-                  <th scope="col">{t.feature}</th>
+                  <th scope="col">{t.limit}</th>
                   {freeOn && <th scope="col">{FREE_COLUMN.head[base]}</th>}
-                  {CRAWL_PLANS.map((p) => (
-                    <th key={p} scope="col">{PLAN_CONFIGS[p].name}</th>
+                  {planCols.map((p) => (
+                    <th key={p.id} scope="col">{p.name}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {rows.map((r, i) => {
-                  const cells = featureCells(r, PLANS_BY_ID, base);
-                  return (
-                    <tr key={r.id}>
-                      <th scope="row" style={{ textTransform: "none", fontFamily: "inherit", fontSize: 14, letterSpacing: 0, color: "var(--text)" }}>
-                        {r.label[base]}
-                      </th>
-                      {/* The free crawler (crawl.free): one fixed offer, one cell down the column. */}
-                      {freeOn && i === 0 && (
-                        <td rowSpan={rows.length} data-testid="free-column">
-                          {FREE_COLUMN.summary[base]}
-                          <br />
-                          <a className={c.textLink} href={link(FREE_CRAWLER_PATH)}>
-                            {FREE_COLUMN.link[base]}
-                          </a>
-                        </td>
-                      )}
-                      {CRAWL_PLANS.map((p) => (
-                        <td key={p}>
-                          {cells[p] === true ? (
-                            <span className={c.tick} role="img" aria-label={t.included}>✓</span>
-                          ) : (
-                            cells[p]
-                          )}
-                        </td>
-                      ))}
-                    </tr>
-                  );
-                })}
+                {planRows.map((r, i) => (
+                  <tr key={r.id} data-row={r.id}>
+                    <th scope="row" style={{ textTransform: "none", fontFamily: "inherit", fontSize: 14, letterSpacing: 0, color: "var(--text)" }}>
+                      {r.label}
+                    </th>
+                    {/* The free crawler (crawl.free): one fixed offer, one cell down the column. */}
+                    {freeOn && i === 0 && (
+                      <td rowSpan={planRows.length} data-testid="free-column">
+                        {FREE_COLUMN.summary[base]}
+                        <br />
+                        <a className={c.textLink} href={link(FREE_CRAWLER_PATH)}>
+                          {FREE_COLUMN.link[base]}
+                        </a>
+                      </td>
+                    )}
+                    {r.all !== undefined ? (
+                      <td colSpan={planCols.length}>{r.all}</td>
+                    ) : (
+                      planCols.map((p) => <td key={p.id}>{r.cell!(p)}</td>)
+                    )}
+                  </tr>
+                ))}
               </tbody>
             </table>
           </div>
+          <p className={c.tableNote} data-testid="enterprise-limits">
+            {t.enterpriseNote(facts.plans.ENTERPRISE.name)}{" "}
+            <a className={c.textLink} href={salesContactHref(l, "site-crawler-table")}>{t.enterpriseLink}</a>
+          </p>
+          {/* Every feature with its per-crawl limit, folded: the table above is the comparison. */}
+          <details className={c.allFeatures} data-testid="all-features">
+            <summary>{t.allFeatures}</summary>
+            <div className={c.tableWrap}>
+              <table className={c.table}>
+                <thead>
+                  <tr>
+                    <th scope="col">{t.feature}</th>
+                    {CRAWL_PLANS.map((p) => (
+                      <th key={p} scope="col">{PLAN_CONFIGS[p].name}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((r) => {
+                    const cells = featureCells(r, PLANS_BY_ID, base);
+                    return (
+                      <tr key={r.id}>
+                        <th scope="row" style={{ textTransform: "none", fontFamily: "inherit", fontSize: 14, letterSpacing: 0, color: "var(--text)" }}>
+                          {r.label[base]}
+                        </th>
+                        {CRAWL_PLANS.map((p) => (
+                          <td key={p}>
+                            {cells[p] === true ? (
+                              <span className={c.tick} role="img" aria-label={t.included}>✓</span>
+                            ) : (
+                              cells[p]
+                            )}
+                          </td>
+                        ))}
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </details>
         </div>
       </section>
 

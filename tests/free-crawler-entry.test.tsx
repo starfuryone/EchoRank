@@ -42,8 +42,10 @@ describe("/site-crawler", () => {
     const cell = /<td rowSpan="(\d+)" data-testid="free-column">([\s\S]*?)<\/td>/i.exec(html);
     expect(cell).not.toBeNull();
     expect(decode(cell![2]!)).toContain("100 URLs · raw HTML · full rule library · 7-day results");
-    // It spans every body row, so each row still has one cell per column.
-    expect(Number(cell![1])).toBe((html.match(/<th scope="row"/g) ?? []).length);
+    // It spans every body row of the by-plan table (the folded per-feature
+    // table under it has no Free column), so each row still has one cell per column.
+    const planTable = /<table[^>]*data-testid="plan-table"[^>]*>([\s\S]*?)<\/table>/.exec(html)![1]!;
+    expect(Number(cell![1])).toBe((planTable.match(/<th scope="row"/g) ?? []).length);
     const fr = decode(await crawler("fr"));
     expect(fr).toContain(`<th scope="col">${FREE_COLUMN.head.fr}</th>`);
     expect(fr).toContain(FREE_COLUMN.summary.fr);

@@ -1,3 +1,5 @@
+// @vitest-environment jsdom
+//
 // /[locale]/site-crawler — the crawler's public page.
 //
 // What this protects: the page never lists a capability that is not shipped
@@ -27,6 +29,7 @@ import { FLAGS, type Flags } from "@/lib/flags";
 import { PLAN_CONFIGS } from "@/lib/plan-config";
 import { LOCALIZED_ROUTES } from "@/lib/seo/registry";
 import { CRAWLER_BRAND } from "@/lib/site-crawler/brand";
+import { CRAWL_PIN_MAX } from "@/lib/site-crawler/constants";
 import { RULE_COUNT, familyIsPublic, ruleCountLabel } from "@/lib/site-crawler/rule-count";
 import { nosybatFacts } from "@/lib/site-crawler/nosybat-facts";
 import { pitchCopy } from "@/lib/site-crawler/pitch-copy";
@@ -101,24 +104,31 @@ describe("/site-crawler", () => {
     stub.rules = [];
     const html = await render("en");
     expect(html).toContain("Free technical support");
-    expect(html).toContain("Save &amp; open crawls");
     expect(html).not.toContain("Audit hreflang attributes");
     // A flag still off (4d).
     expect(html).not.toContain("Google Analytics integration");
   });
 
-  it("4a: the kept-crawls cap is read from plan-config", async () => {
-    const html = await render("en");
-    for (const p of ["STARTER", "GROWTH", "AGENCY"] as const) {
-      expect(html).toContain(`Last ${PLAN_CONFIGS[p].crawlsKept} crawls kept`);
-    }
+  it("4a: the kept-crawls cap is read from plan-config, beside the pinned ones", async () => {
+    const d = new DOMParser().parseFromString(await render("en"), "text/html");
+    const kept = [...d.querySelectorAll('[data-testid="plan-table"] [data-row="kept"] td:not([data-testid="free-column"])')].map((td) => td.textContent);
+    expect(kept).toEqual((["STARTER", "GROWTH", "AGENCY"] as const).map((p) => `${PLAN_CONFIGS[p].crawlsKept} newest + ${CRAWL_PIN_MAX} pinned`));
   });
 
-  it("reads table caps from plan-config, never from a literal", async () => {
-    const html = await render("en");
-    for (const p of ["STARTER", "GROWTH", "AGENCY"] as const) {
-      expect(html).toContain(`${PLAN_CONFIGS[p].crawlUrlCap.toLocaleString("en-US")} URLs per crawl`);
-    }
+  it("reads the by-plan table from plan-config, never from a literal", async () => {
+    const d = new DOMParser().parseFromString(await render("en"), "text/html");
+    // The Free column is one cell spanning every row, in the first one: not a plan's cell.
+    const row = (id: string) => [...d.querySelectorAll(`[data-testid="plan-table"] [data-row="${id}"] td:not([data-testid="free-column"])`)].map((td) => td.textContent);
+    const plans = ["STARTER", "GROWTH", "AGENCY"] as const;
+    expect(row("urls")).toEqual(plans.map((p) => PLAN_CONFIGS[p].crawlUrlCap.toLocaleString("en-US")));
+    expect(row("pages")).toEqual(plans.map((p) => PLAN_CONFIGS[p].crawlPagesPerMonth!.toLocaleString("en-US")));
+    expect(row("at-once")).toEqual(plans.map((p) => String(PLAN_CONFIGS[p].crawlConcurrency)));
+    expect(row("rendered")).toEqual(plans.map((p) => PLAN_CONFIGS[p].crawlRenderedPages.toLocaleString("en-US")));
+    // Enterprise: custom limits, a link to the contact form, no number.
+    const ent = d.querySelector('[data-testid="enterprise-limits"]')!;
+    expect(ent.textContent).toMatch(/Enterprise: custom limits\./);
+    expect(ent.textContent).not.toMatch(/\d/);
+    expect(ent.querySelector("a")!.getAttribute("href")).toContain("site-crawler-table");
   });
 
   it("emits FAQPage markup with exactly the questions it renders", async () => {

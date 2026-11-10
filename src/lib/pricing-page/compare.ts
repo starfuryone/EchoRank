@@ -19,11 +19,8 @@ import { isSeoToolLive, seoToolCounts } from "@/lib/seo-tools";
 import { toolCountLine } from "@/lib/i18n/content";
 import type { Locale } from "@/lib/i18n/config";
 import { CRAWLER_BRAND } from "@/lib/site-crawler/brand";
-import {
-  FREE_CRAWL_IP_DAILY,
-  FREE_CRAWL_RETENTION_DAYS,
-  FREE_CRAWL_URL_CAP,
-} from "@/lib/site-crawler/free-limits";
+import { nosybatFacts } from "@/lib/site-crawler/nosybat-facts";
+import { freeCrawlOnly, nosybatPlanTable, type PlanTableRow } from "@/lib/site-crawler/nosybat-plan-table";
 import { FREE_TOOLS, FREE_TOOLS_BASE, freeToolVisible, hubFreeTools } from "@/lib/free-tools";
 import { AV_FREE_AUDITS_PER_DAY } from "@/lib/av-free-limit";
 import { RUNS_PER_IP_PER_DAY } from "@/lib/snapshot/limits";
@@ -85,6 +82,45 @@ function row(
   const plans: CompareRow["plans"] = {};
   for (const p of cardPlans()) plans[p] = cell(PLAN_CONFIGS[p], p);
   return { id, label: label[b], free, plans };
+}
+
+/**
+ * The crawler group: the by-plan table /site-crawler shows
+ * (nosybat-plan-table.ts), same rows, same cells, gated rows dropped while
+ * their limit is not enforced. A plan without the crawler (the AI Visibility
+ * plan) gets the free crawl on the first row and "not included" below it; a
+ * row that is the same on every crawl plan is a tick. `freeHref` is null when
+ * the free crawler is off.
+ */
+function crawlerRows(b: PricingBase, freeHref: string | null): CompareRow[] {
+  const f = nosybatFacts();
+  // This page's house style is a plain space between French thousands (fmtNum);
+  // the facts format with fr-CA's narrow no-break space.
+  const house = (s: string) => (b === "fr" ? s.replace(/ /g, " ") : s);
+  const cell = (s: string): CompareCell => (s === "—" ? NO : text(house(s)));
+  const freeCells: Partial<Record<PlanTableRow["id"], CompareCell>> = freeHref
+    ? {
+        urls: text(
+          {
+            en: `${fmtNum(f.free.pages, b)} pages, ${f.free.perVisitorDaily} crawls a day`,
+            fr: `${fmtNum(f.free.pages, b)} pages, ${f.free.perVisitorDaily} explorations par jour`,
+            de: `${fmtNum(f.free.pages, b)} Seiten, ${f.free.perVisitorDaily} Crawls pro Tag`,
+          }[b],
+          freeHref,
+        ),
+        kept: text({ en: `Result kept ${f.free.retentionDays} days`, fr: `Résultat conservé ${f.free.retentionDays} jours`, de: `Ergebnis ${f.free.retentionDays} Tage gespeichert` }[b]),
+      }
+    : {};
+  return nosybatPlanTable(f, b).map((r, i) => {
+    const plans: CompareRow["plans"] = {};
+    for (const id of cardPlans()) {
+      const p = f.plans[id];
+      if (!p.hasCrawler) plans[id] = i === 0 && freeHref ? text(house(freeCrawlOnly(f, b)), freeHref) : NO;
+      else plans[id] = r.all !== undefined ? YES : cell(r.cell!(p));
+    }
+    // "crawl-pages": the id this row had before the shared table.
+    return { id: r.id === "pages" ? "crawl-pages" : r.id, label: house(r.label), free: freeCells[r.id] ?? NO, plans };
+  });
 }
 
 /** Localized href for a marketing path. */
@@ -297,62 +333,7 @@ export function comparisonTable(locale: Locale): CompareTable {
   const crawler: CompareGroup = {
     id: "crawler",
     title: { en: `${name} crawler`, fr: `Robot d'exploration ${name}`, de: `${name}-Crawler` }[b],
-    rows: [
-      row(
-        "urls",
-        { en: "URLs per crawl", fr: "URL par exploration", de: "URLs pro Crawl" },
-        b,
-        freeCrawlOn
-          ? text(
-              {
-                en: `${fmtNum(FREE_CRAWL_URL_CAP, b)} pages, ${FREE_CRAWL_IP_DAILY} crawls a day`,
-                fr: `${fmtNum(FREE_CRAWL_URL_CAP, b)} pages, ${FREE_CRAWL_IP_DAILY} explorations par jour`,
-                de: `${fmtNum(FREE_CRAWL_URL_CAP, b)} Seiten, ${FREE_CRAWL_IP_DAILY} Crawls pro Tag`,
-              }[b],
-              freeCrawlHref,
-            )
-          : NO,
-        (c) => count(c.crawlUrlCap, b),
-      ),
-      row("crawls", { en: "Crawls / month", fr: "Explorations / mois", de: "Crawls / Monat" }, b, NO, (c) => count(c.crawlsPerMonth, b)),
-      // The monthly page allowance across every crawl (plan-config
-      // crawlPagesPerMonth, resets on the 1st, UTC). 0 = no crawler: NO.
-      row("crawl-pages", { en: "Pages crawled / month", fr: "Pages explorées / mois", de: "Gecrawlte Seiten / Monat" }, b, NO, (c) =>
-        c.crawlPagesPerMonth === 0 ? NO : count(c.crawlPagesPerMonth, b),
-      ),
-      row(
-        "rendered",
-        { en: "JavaScript-rendered pages per crawl", fr: "Pages rendues en JavaScript par exploration", de: "JavaScript-gerenderte Seiten pro Crawl" },
-        b,
-        NO,
-        (c) => count(c.crawlRenderedPages, b),
-      ),
-      row(
-        "kept",
-        { en: "Crawls kept with full data", fr: "Explorations conservées en entier", de: "Vollständig gespeicherte Crawls" },
-        b,
-        freeCrawlOn
-          ? text({ en: `Result kept ${FREE_CRAWL_RETENTION_DAYS} days`, fr: `Résultat conservé ${FREE_CRAWL_RETENTION_DAYS} jours`, de: `Ergebnis ${FREE_CRAWL_RETENTION_DAYS} Tage gespeichert` }[b])
-          : NO,
-        (c) => count(c.crawlsKept, b),
-      ),
-      row("schedules", { en: "Scheduled crawls", fr: "Explorations planifiées", de: "Geplante Crawls" }, b, NO, (c) => {
-        if (c.crawlSchedules <= 0) return NO;
-        const words: Record<string, T3> = {
-          daily: { en: "daily", fr: "quotidienne", de: "täglich" },
-          weekly: { en: "weekly", fr: "hebdomadaire", de: "wöchentlich" },
-          monthly: { en: "monthly", fr: "mensuelle", de: "monatlich" },
-        };
-        return text(`${fmtNum(c.crawlSchedules, b)} (${c.crawlScheduleCadences.map((k) => words[k]![b]).join(", ")})`);
-      }),
-      row(
-        "extractors",
-        { en: "Custom extractors per crawl", fr: "Extracteurs personnalisés par exploration", de: "Eigene Extraktoren pro Crawl" },
-        b,
-        NO,
-        (c) => count(c.crawlExtractors, b),
-      ),
-    ],
+    rows: crawlerRows(b, freeCrawlOn ? freeCrawlHref : null),
   };
 
   const support: CompareGroup = {

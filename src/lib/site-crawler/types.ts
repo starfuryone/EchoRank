@@ -90,6 +90,8 @@ export interface CrawlQuotaDto {
   pages?: { limit: number | null; used: number; remaining: number | null; resetsAt: string };
   /** Phase 4a: crawls kept with full data (plan-config crawlsKept). */
   crawlsKept?: number;
+  /** Crawls the workspace may run at once (plan-config crawlConcurrency, override first). */
+  concurrency?: number;
   /** Phase 4b caps: extractors and searches per crawl, segments per site. */
   extractorCap?: number;
   searchCap?: number;
