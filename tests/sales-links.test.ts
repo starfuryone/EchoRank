@@ -166,8 +166,10 @@ describe("the other entry points", () => {
     for (const src of ["pricing-enterprise", "home-pricing", "site-crawler-pricing"]) resolvesToForm(salesContactHref("en", src));
   });
 
-  it("/ai-visibility's pricing card", () => {
-    expect(read("src/app/[locale]/ai-visibility/page.tsx")).toContain('salesContactHref(locale, "ai-visibility-pricing")');
+  it("/ai-visibility's pricing grid: the shared Enterprise line, src=ai-visibility-pricing", () => {
+    expect(read("src/app/[locale]/ai-visibility/page.tsx")).toContain("salesSrc={AV_SRC.pricing}");
+    expect(read("src/lib/ai-visibility-landing/facts.ts")).toContain('pricing: "ai-visibility-pricing"');
+    resolvesToForm(salesContactHref("en", "ai-visibility-pricing"));
   });
 
   it("in-app billing: the plan line for a custom plan and the line under the plans", () => {

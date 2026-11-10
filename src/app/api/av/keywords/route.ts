@@ -9,9 +9,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getRedisConnection } from "@/infrastructure/redis/connection";
 import { sidecarPost } from "@/lib/av-sidecar";
+import { KEYWORD_SCAN_LIMIT_PER_DAY, KEYWORD_SCAN_WINDOW_SECONDS } from "@/lib/keyword-scan-limits";
 
-const LIMIT_PER_DAY = 2;
-const WINDOW_S = 24 * 60 * 60;
+// /ai-visibility states this number (keyword-scan-limits.ts): one source.
+const LIMIT_PER_DAY = KEYWORD_SCAN_LIMIT_PER_DAY;
+const WINDOW_S = KEYWORD_SCAN_WINDOW_SECONDS;
 
 interface KeywordItem {
   kw: string;

@@ -112,9 +112,10 @@ describe("SVG logo files", () => {
     expect(read("public/echorank-logo.svg")).not.toContain("™");
   });
 
-  it("/ai-visibility's header box grows with the logo so its height stays", () => {
+  it("/ai-visibility has no header logo of its own: it uses the shared PublicNav (2026-11-10)", () => {
     const page = read("src/app/[locale]/ai-visibility/page.tsx");
-    expect(count(page, "width={187} height={34}")).toBe(2);
+    expect(count(page, "width={187} height={34}")).toBe(0);
+    expect(page).toContain("<PublicNav locale={locale} />");
   });
 });
 

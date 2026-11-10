@@ -51,7 +51,7 @@ describe("AI labels", () => {
     const home = read("src/app/[locale]/HomeClient.tsx");
     expect(home).toMatch(/\{t\.hero\.sub\}<\/p>\s*\{\/\*[^]*?\*\/\}\s*<p className=\{s\.poweredByAi\} data-testid="powered-by-ai">\{AI_LABELS\[baseOf\(locale\)\]\.poweredByAi\}/);
     const av = read("src/app/[locale]/ai-visibility/page.tsx");
-    expect(av).toMatch(/\{c\.hero\.sub\}<\/p>\s*\{\/\*[^]*?\*\/\}\s*<p className="av-powered" data-testid="powered-by-ai">\{aiLabels\(locale\)\.poweredByAi\}/);
+    expect(av).toMatch(/\{c\.hero\.sub\}<\/p>\s*\{\/\*[^]*?\*\/\}\s*<p className=\{s\.poweredByAi\} data-testid="powered-by-ai">\{aiLabels\(locale\)\.poweredByAi\}/);
   });
 
   it("labels AI-written drafts: Action Agent items, Marketing Studio results, the blog agent's notification", () => {

@@ -41,7 +41,8 @@ describe("labels", () => {
   });
 
   it("the free check's widget copy says readiness and presence on both pages", () => {
-    for (const page of ["src/app/[locale]/free-audit/page.tsx", "src/app/[locale]/ai-visibility/page.tsx"]) {
+    // /ai-visibility no longer embeds the widget (2026-11-10): it links to /free-audit.
+    for (const page of ["src/app/[locale]/free-audit/page.tsx"]) {
       const src = readFileSync(page, "utf8");
       expect(src).toMatch(/readabilityLabel: ["']AI readiness score["']/);
       expect(src).toMatch(/mentionLabel: ["']AI presence["']/);

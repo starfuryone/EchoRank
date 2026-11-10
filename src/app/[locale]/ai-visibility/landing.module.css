@@ -1,0 +1,205 @@
+/* /[locale]/ai-visibility — the pieces the shared home2 shell does not have:
+   the sticky section bar, the example answer, the steps, the feature grid, the
+   two free tools, the allowance table (cards at phone width) and the keyword
+   scan's widget. Colours come from home2's .page tokens (themed). */
+
+/* ── Sticky section bar, under PublicNav (64px, also sticky) ─────────── */
+.subnav {
+  position: sticky;
+  top: 64px;
+  z-index: 40;
+  background: var(--er-bg, rgba(9, 9, 12, 0.92));
+  border-bottom: 1px solid var(--lineSoft);
+  backdrop-filter: blur(12px);
+}
+.subnavIn {
+  display: flex;
+  gap: 4px 22px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: 10px 0;
+  font-size: 13px;
+}
+.subnavIn::-webkit-scrollbar { display: none; }
+.subnavIn a {
+  color: var(--muted);
+  text-decoration: none;
+  white-space: nowrap;
+  padding: 4px 0;
+}
+.subnavIn a:hover,
+.subnavIn a:focus-visible { color: var(--text); }
+
+/* Anchored sections clear both sticky bars. */
+.anchor { scroll-margin-top: 120px; }
+
+/* ── Hero ───────────────────────────────────────────────────────────── */
+.heroLogo { margin-bottom: 18px; }
+.engines { margin-top: 14px; font-size: 14px; color: var(--muted); }
+.example {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 22px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.18);
+  min-width: 0;
+}
+.exampleTag {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--faint);
+  border: 1px solid var(--line);
+  border-radius: 99px;
+  padding: 2px 8px;
+  margin-bottom: 12px;
+}
+.exampleQ {
+  color: var(--muted);
+  font-size: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--lineSoft);
+  margin: 0 0 12px;
+  overflow-wrap: anywhere;
+}
+.exampleLine { margin: 6px 0; font-size: 15px; overflow-wrap: anywhere; }
+.exampleYou {
+  border-left: 3px solid var(--gold);
+  background: rgba(240, 185, 11, 0.1);
+  padding: 6px 10px;
+  border-radius: 6px;
+}
+.examplePos { color: var(--goldText); font-size: 12px; margin-left: 8px; font-weight: 600; }
+.exampleFoot { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.exampleChip {
+  font-size: 12px;
+  padding: 3px 10px;
+  border-radius: 99px;
+  border: 1px solid var(--line);
+  color: var(--muted);
+}
+
+/* ── Steps, features, tools ─────────────────────────────────────────── */
+.grid3 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 16px;
+  margin-top: 28px;
+}
+.box {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius, 14px);
+  padding: 22px;
+  min-width: 0;
+}
+.box h3 { font-size: 17px; margin: 0 0 8px; letter-spacing: -0.01em; }
+.box p { color: var(--muted); font-size: 15px; line-height: 1.6; margin: 0; }
+.boxLink { display: inline-block; margin-top: 12px; color: var(--goldText); font-weight: 600; }
+.tool h3 { font-size: 18px; }
+
+/* ── Allowance table: a table at desktop, one card per plan at phone width ── */
+.tableWrap { margin-top: 28px; }
+.table { width: 100%; border-collapse: collapse; font-size: 15px; }
+.table caption { text-align: left; font-weight: 600; margin-bottom: 10px; }
+.table th,
+.table td {
+  text-align: left;
+  padding: 12px 10px;
+  border-bottom: 1px solid var(--lineSoft);
+  vertical-align: top;
+}
+.table th { color: var(--faint); font-weight: 500; font-size: 13px; }
+.starterAdds { margin-top: 16px; color: var(--muted); font-size: 15px; }
+@media (max-width: 640px) {
+  .table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .table,
+  .table tbody,
+  .table tr,
+  .table td { display: block; width: 100%; }
+  .table tr {
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    padding: 6px 12px;
+    margin-bottom: 12px;
+  }
+  .table td { border: 0; padding: 6px 0; }
+  .table td::before {
+    content: attr(data-label);
+    display: block;
+    font-size: 12px;
+    color: var(--faint);
+  }
+}
+
+/* ── The keyword scan (KeywordWidget uses global av-kw-* class names) ── */
+.kw {
+  --gold: #d4a843;
+  --av-accent-text: var(--goldText);
+  --av-alert: #e0a184;
+  --av-diff-low: #9ad17b;
+  --av-diff-med: #e5c46f;
+  margin-top: 22px;
+  max-width: 40rem;
+}
+.kw :global(.av-kw-label) { display: block; font-weight: 650; margin-bottom: 0.6rem; }
+.kw :global(.av-kw-row) { display: flex; gap: 0.6rem; flex-wrap: wrap; }
+.kw :global(.av-kw-row input) {
+  flex: 1;
+  min-width: 0;
+  padding: 0.8rem 1rem;
+  border-radius: 10px;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 0.95rem;
+}
+.kw :global(.av-kw-row input:focus-visible) { outline: 2px solid var(--gold); outline-offset: 2px; }
+.kw :global(.av-btn) {
+  display: inline-block;
+  padding: 0.8rem 1.5rem;
+  border-radius: 10px;
+  font-weight: 650;
+  text-decoration: none;
+  font-size: 0.95rem;
+  border: 0;
+  cursor: pointer;
+}
+.kw :global(.av-btn-gold) { background: var(--gold); color: var(--onGold, #111); }
+.kw :global(.av-btn:disabled) { opacity: 0.6; cursor: not-allowed; }
+.kw :global(.av-btn-block) { display: block; text-align: center; margin-top: 1.2rem; width: 100%; }
+.kw :global(.av-kw-note) { color: var(--muted); font-size: 0.85rem; margin-top: 0.6rem; }
+.kw :global(.av-kw-err) { color: var(--av-alert); font-size: 0.9rem; margin-top: 0.6rem; }
+.kw :global(.av-kw-fine) { color: var(--faint); font-size: 0.78rem; margin-top: 0.5rem; }
+.kw :global(.av-kw-result) { background: var(--surface); border: 1px solid var(--gold); border-radius: 14px; padding: 1.5rem; }
+.kw :global(.av-kw-h) { margin: 1.1rem 0 0.4rem; font-size: 1rem; color: var(--av-accent-text); }
+.kw :global(.av-kw-list) { list-style: none; padding: 0; margin: 0; }
+.kw :global(.av-kw-list li) {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.45rem 0.1rem;
+  font-size: 0.92rem;
+  border-bottom: 1px solid var(--lineSoft);
+  overflow-wrap: anywhere;
+}
+.kw :global(.av-kw-diff) { font-size: 0.72rem; border-radius: 999px; padding: 0.12rem 0.6rem; border: 1px solid; white-space: nowrap; }
+.kw :global(.av-kw-diff-low) { color: var(--av-diff-low); border-color: #4f7a3a; }
+.kw :global(.av-kw-diff-med) { color: var(--av-diff-med); border-color: #8a6d2c; }
+.kw :global(.av-kw-diff-high) { color: var(--av-alert); border-color: #a4552f; }
+.kw :global(.av-kw-blur) { filter: blur(5px); user-select: none; }
+.kw :global(.av-kw-lock) { color: var(--faint); font-size: 0.8rem; white-space: nowrap; }
+.kw :global(.av-kw-tech) { color: var(--muted); font-size: 0.9rem; margin: 0.2rem 0 0; }
+.kw :global(.av-kw-upsell) { color: var(--muted); font-size: 0.9rem; margin-top: 1.2rem; }
+.kw :global(.av-kw-again) { display: block; text-align: center; margin-top: 0.7rem; color: var(--faint); font-size: 0.85rem; }
+:global([data-theme="day"]) .kw {
+  --av-alert: #9a3412;
+  --av-diff-low: #3f6212;
+  --av-diff-med: #854d0e;
+}
+
+.closing { text-align: center; }
+.closing .ctaCenter { justify-content: center; margin-top: 18px; }

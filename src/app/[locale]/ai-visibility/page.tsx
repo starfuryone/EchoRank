@@ -1,973 +1,352 @@
-// app/[locale]/ai-visibility/page.tsx — AI Visibility landing + free audit widget
-
-import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
-import { SUPPORTED_LOCALES, isSupportedLocale, type Locale } from '@/lib/i18n/config';
-import { CONTENT, THEME_TOGGLE_COPY } from '@/lib/i18n/content';
-import { ThemeToggle } from '@/components/marketing/theme-toggle';
-import { PLAN_CONFIGS } from '@/lib/plan-config';
-import { AuditWidget, type AuditWidgetContent } from '@/components/AuditWidget';
-import { AiVisibilityLogo } from '@/components/brand/AiVisibilityLogo';
-import { aiLabels } from '@/lib/i18n/ai-labels';
-import { KeywordWidget, type KeywordWidgetContent } from '@/components/KeywordWidget';
-import { JsonLd, SITE_URL, buildMetadata, faqPage, normalizeLocale, organization, webSite } from "@/lib/seo";
-import { CompanyLine } from "@/components/brand/CompanyLine";
-import { salesContactHref } from "@/lib/sales/inquiry-options";
-import { SALES_COPY, salesLocale } from "@/lib/sales/inquiry-copy";
-
-const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://echorank360.com';
-
-// Engine counts for the "included in every plan" card, read from the tiers
-// themselves.
+// app/[locale]/ai-visibility/page.tsx — the AI Visibility plan's landing page
+// (ECHORANK-AI-VISIBILITY-PAGES.md Phase 1, 2026-11-10).
 //
-// THIS CARD USED TO CLAIM ALL FOUR ENGINES ON EVERY PLAN. It is headed "Included
-// in every plan", so the only honest number in it is the FLOOR — and the floor is
-// Starter's checkup, which queries 2 providers, not 4. Interpolating both figures
-// keeps the claim tied to the config that produces it, the same way the pricing
-// cards derive theirs (see src/lib/plan-features.ts).
-const AV_STARTER_ENGINES = PLAN_CONFIGS.STARTER.aiCheckup.providers ?? 0;
-const AV_GROWTH_ENGINES = PLAN_CONFIGS.GROWTH.aiCheckup.providers ?? 0;
-// The free-audit upsell quotes the plans' prompt allowances. Read from the
-// config, never typed — the line used to promise '25 prompts' against a
-// config that grants 10 to 20.
-const PROMPTS_MIN = PLAN_CONFIGS.STARTER.aiCheckup.prompts;
-const PROMPTS_MAX = Math.max(
-  ...(['STARTER', 'GROWTH', 'AGENCY'] as const).map((p) => PLAN_CONFIGS[p].aiCheckup.prompts),
-);
+// The shared shell (PublicNav, PublicFooter, home2 styles), a sticky bar of
+// the sections that exist on this page, then: hero → the problem → how it
+// works (with the free keyword scan that suggests prompts) → what you get →
+// the two free tools → pricing (the shared cards and the AI allowance table) →
+// FAQ → closing CTA.
+//
+// EVERY NUMBER AND ENGINE NAME IS READ, NOT TYPED: prices and allowances from
+// PLAN_CONFIGS, engines from the live-engine registry, features from
+// feature-flags / plan-access, the keyword scan's limit from its route's own
+// constant (src/lib/ai-visibility-landing/facts.ts). The words are in
+// src/lib/ai-visibility-landing/copy.ts.
+//
+// NO SAMPLE SECTION YET. The brief asks for a real stored run; the only store
+// is production Postgres, which this box's agent sessions never read. The
+// section (and its sub-nav link) is added when a run is exported.
+//
+// The #audit id stays (on the free tools section): external links and older
+// PDFs carry /ai-visibility#audit from when the free audit widget lived here.
 
-// Brand/product terms kept verbatim across locales: Echorank360, Trust Score,
-// the engine names (ChatGPT/Claude/Gemini/Perplexity), the plan names
-// (Growth/Agency), the mock-answer example brands (LedgerKit/Countable), and
-// Prices are not written into this page: AI visibility is baseline on every
-// tier now, so every CTA points at /pricing rather than naming a number.
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
+import { SUPPORTED_LOCALES, isSupportedLocale } from "@/lib/i18n/config";
+import { HOME_PRICING_CHROME, pricingNotes, toolCountLine } from "@/lib/i18n/content";
+import { aiLabels } from "@/lib/i18n/ai-labels";
+import { pricingTiers } from "@/lib/pricing-tiers";
+import { pricingBase, usd } from "@/lib/pricing-page/format";
+import { seoToolCounts } from "@/lib/seo-tools";
+import { KEYWORD_SCAN_LIMIT_PER_DAY } from "@/lib/keyword-scan-limits";
+import { PLAN_CONFIGS } from "@/lib/plan-config";
+import { AV_BRAND } from "@/lib/ai-visibility/brand";
+import { AV_COPY, cadenceLabel, keywordWidgetCopy } from "@/lib/ai-visibility-landing/copy";
+import {
+  AV_LADDER,
+  AV_PLAN,
+  AV_SRC,
+  allowanceRows,
+  avMonthlyPrice,
+  avPlanHref,
+  avShippedFeatures,
+  planEngineNames,
+  reviewsFromPlan,
+  searchScoreWeights,
+  starterAdds,
+} from "@/lib/ai-visibility-landing/facts";
+import { JsonLd, SITE_URL, buildMetadata, faqPage, normalizeLocale, organization, webSite } from "@/lib/seo";
+import { AiVisibilityLogo } from "@/components/brand/AiVisibilityLogo";
+import { KeywordWidget } from "@/components/KeywordWidget";
+import { PublicFooter } from "@/components/PublicFooter";
+import { PublicNav } from "../PublicNav";
+import { PricingSection } from "../PricingSection";
+import s from "../home2.module.css";
+import v from "./landing.module.css";
 
-interface AvContent {
-  // `title` is the branded form for og/twitter; `titleShort` is bare and the
-  // root layout's "%s | Echorank360" template appends the brand to it.
-  meta: { title: string; titleShort: string; description: string };
-  nav: { features: string; pricing: string; login: string; cta: string };
-  hero: {
-    eyebrow: string;
-    h1a: string;
-    h1b: string;
-    sub: string;
-    engines: string; // prefix before "ChatGPT · Claude · Gemini · Perplexity"
-    answerAria: string;
-  };
-  answer: {
-    q: string;
-    l1: string;
-    l2desc: string;
-    youBrand: string;
-    youDesc: string;
-    pos: string;
-    l4desc: string;
-    alert: string;
-  };
-  band1: { h2: string; p: string };
-  features: { h2: string; items: { h3: string; p: string }[] };
-  prompts: { h2: string; list: string[]; more: string };
-  pricing: {
-    eyebrow: string;
-    features: string[];
-    cta: string;
-    finePre: string;
-    fineLink: string;
-    currency: string;
-  };
-  faq: { h2: string; items: { q: string; a: string }[] };
-  final: { h2: string; cta: string };
-  // ctaHref is locale-dependent, so it is injected at render rather than
-  // written into each of the three static copy blocks.
-  widget: Omit<AuditWidgetContent, "ctaHref">;
-  kw: { h2: string; p: string; widget: KeywordWidgetContent };
+const PATH = "/ai-visibility";
+
+function intlLocale(locale: string): string {
+  return locale === "de-CH" ? "de-CH" : locale.startsWith("fr") ? "fr-CA" : "en-US";
 }
 
-const C: Record<Locale, AvContent> = {
-  en: {
-    meta: {
-      title: 'AI Visibility — Echorank360',
-      titleShort: 'AI Visibility',
-      description:
-        'Track whether ChatGPT, Claude, Gemini and Perplexity recommend your business. Prompt tracking, lost-recommendation alerts and an AI Trust Score, included in every Echorank360 plan.',
-    },
-    nav: { features: 'Features', pricing: 'Pricing', login: 'Login', cta: 'Start tracking' },
-    hero: {
-      eyebrow: 'In every plan',
-      h1a: 'When someone asks ChatGPT for a recommendation,',
-      h1b: ' are you in the answer?',
-      sub: 'Millions of buying decisions now start as a prompt, not a search. Echorank360 tracks the prompts that matter to your business, alerts you the moment an AI stops recommending you, and scores your standing across the major assistants.',
-      engines: 'Tracks answers from',
-      answerAria: 'Example of a tracked AI answer',
-    },
-    answer: {
-      q: 'best accounting software for freelancers',
-      l1: 'Here are the tools freelancers rate highest:',
-      l2desc: 'strong invoicing',
-      youBrand: 'Your brand',
-      youDesc: 'best value for solo work',
-      pos: '↑ #2 this week',
-      l4desc: 'good bank sync',
-      alert: '⚠ Dropped from Gemini answers — Jul 9',
-    },
-    band1: {
-      h2: 'The new search results have no page two',
-      p: 'An AI answer names three or four businesses. Everyone else is invisible — and nothing tells you when you fall out. Rankings you could watch in Google happen silently inside models. AI Visibility makes that layer observable.',
-    },
-    features: {
-      h2: 'What Echorank watches for you',
-      items: [
-        { h3: 'Answer tracking', p: 'We run your tracked prompts against the major assistants every week and record exactly how each one answers — who gets named, in what order, and with what reasoning.' },
-        { h3: 'Prompt trends', p: 'A sparkline per prompt shows your mention rate over time, so a slow slide is visible weeks before it costs you customers.' },
-        { h3: 'Lost-recommendation alerts', p: 'The moment you drop out of an answer you used to appear in, you get an email digest naming the prompt, the assistant, and who replaced you.' },
-        { h3: 'AI Trust Score', p: 'One number, refreshed on schedule, summarizing how consistently AIs recommend you across your prompt set. Watch it respond as you improve your presence.' },
-      ],
-    },
-    prompts: {
-      h2: 'Track the prompts your customers actually type',
-      list: [
-        'best CRM for small agencies',
-        'accounting software freelancers actually use',
-        'top AI visibility tools 2026',
-      ],
-      more: '…up to 25 prompts of your own',
-    },
-    pricing: {
-      eyebrow: 'Included in every plan',
-      features: [
-        '1 brand',
-        '25 tracked prompts',
-        'Weekly answer refresh',
-        'Lost-recommendation alerts',
-        'AI Trust Score',
-        `${AV_STARTER_ENGINES} AI engines on Starter, all ${AV_GROWTH_ENGINES} on Growth and up`,
-      ],
-      cta: 'See plans',
-      finePre: 'Cancel anytime. Need more brands, seats or nightly refresh? ',
-      fineLink: 'Compare plans',
-      currency: 'All prices are in US dollars (USD). If you pay with a card in another currency, your bank converts the charge at its own exchange rate.',
-    },
-    faq: {
-      h2: 'Questions',
-      items: [
-        { q: 'Which AI assistants do you track?', a: 'ChatGPT, Claude, Gemini and Perplexity. Coverage expands as new assistants gain real usage.' },
-        { q: 'How often are answers refreshed?', a: 'Weekly on this plan. Higher plans refresh nightly.' },
-        { q: 'Can I change my tracked prompts?', a: 'Yes — edit your prompt set anytime. Changes apply from the next refresh.' },
-        { q: 'Does this include review management?', a: 'No. AI Visibility is the tracking layer only. Review and reputation tools are on Growth and Agency plans.' },
-      ],
-    },
-    final: {
-      h2: 'Find out what the AIs say about you',
-      cta: 'Start tracking',
-    },
-    widget: {
-      label: 'Run a free basic audit',
-      placeholder: 'Your brand or domain, e.g. acme.com',
-      runIdle: 'Run free audit',
-      runBusy: 'Auditing…',
-      noteTemplate: 'Reading “{brand}” the way AI crawlers do — takes ~20 seconds.',
-      errLimit: 'Free audit limit reached for today. Sign up to run unlimited audits.',
-      errGeneric: 'The audit could not run. Try again in a minute.',
-      fine: 'No account needed. One audit per day.',
-      mentionLabel: 'AI presence',
-      mentionValue: '{hits} of {total} AI engines',
-      mentionNotTested: 'not tested by the free audit',
-      mentionGloss: 'Whether ChatGPT, Claude, Gemini or Perplexity mention you when asked for a recommendation. The free audit does not ask them; a plan does, every week.',
-      readabilityLabel: 'AI readiness score',
-      readabilityGloss: 'Whether AI answer engines can read, trust and cite your site. Access and a sitemap are the start; content, specific facts and a clear identity earn the rest.',
-      upsell:
-        `The free audit reads your site; it does not ask the AI engines anything. Plans track ${PROMPTS_MIN}–${PROMPTS_MAX} prompts of your choosing, weekly or more often, with alerts when you drop out.`,
-      ctaTemplate: 'Track {brand} with Echorank',
-      again: 'Run another audit',
-      pdfIdle: 'Download PDF report',
-      pdfBusy: 'Generating…',
-      pdfErr: 'The report could not be generated.',
-      pdfRetry: 'Try again',
-    },
-    kw: {
-      h2: 'What keywords should your site own?',
-      p: 'Free scan: we read your homepage and extract the keywords, question searches and AI prompts it should be winning — no account needed.',
-      widget: {
-        label: 'Run a free keyword scan',
-        placeholder: 'yourdomain.com',
-        runIdle: 'Scan keywords',
-        runBusy: 'Scanning…',
-        note: 'Reading your page and extracting keywords — takes a few seconds.',
-        errLimit: 'Free scan limit reached (2 per day). Sign up for unlimited scans.',
-        errGeneric: 'The scan could not run. Check the URL and try again in a minute.',
-        fine: 'No account needed. 2 scans per day.',
-        seedsTitle: 'Seed keywords',
-        questionsTitle: 'Question keywords',
-        promptsTitle: 'AI prompts you should be recommended in',
-        techTitle: 'Technical SEO',
-        techSummaryTemplate:
-          '{pass} checks passed · {warn} warnings · {fail} failed — full details on the full plan.',
-        diffLow: 'easy',
-        diffMedium: 'medium',
-        diffHigh: 'hard',
-        lockedTemplate: '+{n} more on the full plan',
-        upsell:
-          'This scan read your homepage only, heuristics only. The full plan scans up to 5 pages, adds AI-suggested keywords and title/meta rewrites, and tracks whether AIs actually recommend you.',
-        cta: 'Unlock full keyword insights',
-        again: 'Scan another site',
-      },
-    },
-  },
-
-  'en-CA': null as unknown as AvContent,
-
-  fr: {
-    meta: {
-      title: 'Visibilité IA — Echorank360',
-      titleShort: 'Visibilité IA',
-      description:
-        'Suivez si ChatGPT, Claude, Gemini et Perplexity recommandent votre entreprise. Suivi des requêtes, alertes de perte de recommandation et un AI Trust Score, inclus dans tous les forfaits Echorank360.',
-    },
-    nav: { features: 'Fonctionnalités', pricing: 'Tarifs', login: 'Connexion', cta: 'Commencer le suivi' },
-    hero: {
-      eyebrow: 'Dans tous les forfaits',
-      h1a: 'Quand quelqu’un demande une recommandation à ChatGPT,',
-      h1b: ' êtes-vous dans la réponse ?',
-      sub: 'Des millions de décisions d’achat commencent désormais par une requête, pas une recherche. Echorank360 suit les requêtes qui comptent pour votre entreprise, vous alerte dès qu’une IA cesse de vous recommander, et évalue votre position auprès des principaux assistants.',
-      engines: 'Suit les réponses de',
-      answerAria: 'Exemple de réponse d’IA suivie',
-    },
-    answer: {
-      q: 'meilleur logiciel de comptabilité pour indépendants',
-      l1: 'Voici les outils les mieux notés par les indépendants :',
-      l2desc: 'facturation solide',
-      youBrand: 'Votre marque',
-      youDesc: 'meilleur rapport qualité-prix en solo',
-      pos: '↑ n°2 cette semaine',
-      l4desc: 'bonne synchro bancaire',
-      alert: '⚠ Sorti des réponses Gemini — 9 juil.',
-    },
-    band1: {
-      h2: 'Les nouveaux résultats de recherche n’ont pas de page deux',
-      p: 'Une réponse d’IA nomme trois ou quatre entreprises. Toutes les autres sont invisibles — et rien ne vous avertit quand vous en sortez. Les classements que vous pouviez suivre dans Google se jouent en silence à l’intérieur des modèles. La Visibilité IA rend cette couche observable.',
-    },
-    features: {
-      h2: 'Ce qu’Echorank surveille pour vous',
-      items: [
-        { h3: 'Suivi des réponses', p: 'Nous exécutons vos requêtes suivies contre les principaux assistants chaque semaine et enregistrons exactement comment chacun répond — qui est nommé, dans quel ordre et avec quel raisonnement.' },
-        { h3: 'Tendances des requêtes', p: 'Une courbe par requête montre votre taux de mention dans le temps, de sorte qu’un lent déclin est visible des semaines avant qu’il ne vous coûte des clients.' },
-        { h3: 'Alertes de perte de recommandation', p: 'Dès que vous disparaissez d’une réponse où vous figuriez, vous recevez un résumé par e-mail nommant la requête, l’assistant et qui vous a remplacé.' },
-        { h3: 'AI Trust Score', p: 'Un seul chiffre, actualisé selon un calendrier, résumant la constance avec laquelle les IA vous recommandent sur l’ensemble de vos requêtes. Regardez-le réagir à mesure que vous améliorez votre présence.' },
-      ],
-    },
-    prompts: {
-      h2: 'Suivez les requêtes que vos clients tapent vraiment',
-      list: [
-        'meilleur CRM pour petites agences',
-        'logiciel de comptabilité que les indépendants utilisent vraiment',
-        'meilleurs outils de visibilité IA 2026',
-      ],
-      more: '…jusqu’à 25 requêtes bien à vous',
-    },
-    pricing: {
-      eyebrow: 'Inclus dans tous les forfaits',
-      features: [
-        '1 marque',
-        '25 requêtes suivies',
-        'Actualisation hebdomadaire des réponses',
-        'Alertes de perte de recommandation',
-        'AI Trust Score',
-        `${AV_STARTER_ENGINES} moteurs IA avec Démarrage, les ${AV_GROWTH_ENGINES} à partir de Croissance`,
-      ],
-      cta: 'Voir les forfaits',
-      finePre: 'Annulable à tout moment. Besoin de plus de marques, de sièges ou d’une actualisation nocturne ? ',
-      fineLink: 'Comparer les forfaits',
-      currency: 'Tous les prix sont en dollars américains (USD). Si vous payez avec une carte dans une autre devise, votre banque effectue la conversion à son propre taux de change.',
-    },
-    faq: {
-      h2: 'Questions',
-      items: [
-        { q: 'Quels assistants IA suivez-vous ?', a: 'ChatGPT, Claude, Gemini et Perplexity. La couverture s’étend à mesure que de nouveaux assistants gagnent en usage réel.' },
-        { q: 'À quelle fréquence les réponses sont-elles actualisées ?', a: 'Chaque semaine sur ce forfait. Les forfaits supérieurs s’actualisent chaque nuit.' },
-        { q: 'Puis-je modifier mes requêtes suivies ?', a: 'Oui — modifiez votre jeu de requêtes à tout moment. Les changements s’appliquent dès l’actualisation suivante.' },
-        { q: 'Cela inclut-il la gestion des avis ?', a: 'Non. La Visibilité IA n’est que la couche de suivi. Les outils d’avis et de réputation sont sur les forfaits Growth et Agency.' },
-      ],
-    },
-    final: {
-      h2: 'Découvrez ce que les IA disent de vous',
-      cta: 'Commencer le suivi',
-    },
-    widget: {
-      label: 'Lancez un audit de base gratuit',
-      placeholder: 'Votre marque ou domaine, p. ex. acme.com',
-      runIdle: 'Lancer l’audit gratuit',
-      runBusy: 'Audit en cours…',
-      noteTemplate: 'Lecture de « {brand} » comme le font les robots d’IA — environ 20 secondes.',
-      errLimit: 'Limite d’audit gratuit atteinte pour aujourd’hui. Inscrivez-vous pour des audits illimités.',
-      errGeneric: 'L’audit n’a pas pu s’exécuter. Réessayez dans une minute.',
-      fine: 'Aucun compte requis. Un audit par jour.',
-      mentionLabel: 'Présence IA',
-      mentionValue: '{hits} moteurs IA sur {total}',
-      mentionNotTested: 'non testée par l’audit gratuit',
-      mentionGloss: 'Si ChatGPT, Claude, Gemini ou Perplexity vous nomment quand on leur demande une recommandation. L’audit gratuit ne les interroge pas ; un forfait le fait, chaque semaine.',
-      readabilityLabel: 'Score de préparation IA',
-      readabilityGloss: 'Si les moteurs de réponse IA peuvent lire votre site, s’y fier et le citer. L’accès et un sitemap ne sont qu’un début ; le contenu, les faits précis et une identité claire font le reste.',
-      upsell:
-        `L’audit gratuit lit votre site ; il n’interroge aucun moteur d’IA. Les forfaits suivent de ${PROMPTS_MIN} à ${PROMPTS_MAX} requêtes de votre choix, chaque semaine ou plus souvent, avec des alertes quand vous décrochez.`,
-      ctaTemplate: 'Suivre {brand} avec Echorank',
-      again: 'Lancer un autre audit',
-      pdfIdle: 'Télécharger le rapport PDF',
-      pdfBusy: 'Génération…',
-      pdfErr: 'Le rapport n’a pas pu être généré.',
-      pdfRetry: 'Réessayer',
-    },
-    kw: {
-      h2: 'Quels mots-clés votre site devrait-il dominer ?',
-      p: 'Analyse gratuite : nous lisons votre page d’accueil et en extrayons les mots-clés, les recherches en question et les requêtes IA que vous devriez gagner — aucun compte requis.',
-      widget: {
-        label: 'Lancez une analyse de mots-clés gratuite',
-        placeholder: 'votredomaine.com',
-        runIdle: 'Analyser les mots-clés',
-        runBusy: 'Analyse en cours…',
-        note: 'Lecture de votre page et extraction des mots-clés — quelques secondes.',
-        errLimit: 'Limite d’analyses gratuites atteinte (2 par jour). Inscrivez-vous pour des analyses illimitées.',
-        errGeneric: 'L’analyse n’a pas pu s’exécuter. Vérifiez l’URL et réessayez dans une minute.',
-        fine: 'Aucun compte requis. 2 analyses par jour.',
-        seedsTitle: 'Mots-clés de base',
-        questionsTitle: 'Mots-clés en question',
-        promptsTitle: 'Requêtes IA où vous devriez être recommandé',
-        techTitle: 'SEO technique',
-        techSummaryTemplate:
-          '{pass} vérifications réussies · {warn} avertissements · {fail} échecs — détails complets avec le forfait complet.',
-        diffLow: 'facile',
-        diffMedium: 'moyen',
-        diffHigh: 'difficile',
-        lockedTemplate: '+{n} de plus avec le forfait complet',
-        upsell:
-          'Cette analyse n’a lu que votre page d’accueil, heuristiques seulement. Le forfait complet analyse jusqu’à 5 pages, ajoute des mots-clés suggérés par IA et des réécritures de titre/méta, et suit si les IA vous recommandent vraiment.',
-        cta: 'Débloquer l’analyse complète',
-        again: 'Analyser un autre site',
-      },
-    },
-  },
-
-  'fr-CA': null as unknown as AvContent,
-
-  'de-CH': {
-    meta: {
-      title: 'KI-Sichtbarkeit — Echorank360',
-      titleShort: 'KI-Sichtbarkeit',
-      description:
-        'Verfolgen Sie, ob ChatGPT, Claude, Gemini und Perplexity Ihr Unternehmen empfehlen. Prompt-Tracking, Benachrichtigungen bei verlorenen Empfehlungen und ein AI Trust Score — in jedem Echorank360-Abo enthalten.',
-    },
-    nav: { features: 'Funktionen', pricing: 'Preise', login: 'Anmelden', cta: 'Jetzt starten' },
-    hero: {
-      eyebrow: 'In jedem Abo',
-      h1a: 'Wenn jemand ChatGPT um eine Empfehlung bittet,',
-      h1b: ' sind Sie in der Antwort?',
-      sub: 'Millionen von Kaufentscheidungen beginnen heute als Prompt, nicht als Suche. Echorank360 verfolgt die Prompts, die für Ihr Unternehmen zählen, benachrichtigt Sie in dem Moment, in dem eine KI Sie nicht mehr empfiehlt, und bewertet Ihre Stellung bei den grossen Assistenten.',
-      engines: 'Verfolgt Antworten von',
-      answerAria: 'Beispiel einer verfolgten KI-Antwort',
-    },
-    answer: {
-      q: 'beste Buchhaltungssoftware für Freelancer',
-      l1: 'Hier sind die von Freelancern am höchsten bewerteten Tools:',
-      l2desc: 'starke Rechnungsstellung',
-      youBrand: 'Ihre Marke',
-      youDesc: 'bestes Preis-Leistungs-Verhältnis für Solo-Arbeit',
-      pos: '↑ Nr. 2 diese Woche',
-      l4desc: 'gute Banksynchronisierung',
-      alert: '⚠ Aus Gemini-Antworten gefallen — 9. Juli',
-    },
-    band1: {
-      h2: 'Die neuen Suchergebnisse haben keine zweite Seite',
-      p: 'Eine KI-Antwort nennt drei oder vier Unternehmen. Alle anderen sind unsichtbar — und nichts sagt Ihnen, wann Sie herausfallen. Rankings, die Sie in Google beobachten konnten, geschehen still in den Modellen. KI-Sichtbarkeit macht diese Ebene sichtbar.',
-    },
-    features: {
-      h2: 'Was Echorank für Sie beobachtet',
-      items: [
-        { h3: 'Antwort-Tracking', p: 'Wir führen Ihre verfolgten Prompts wöchentlich gegen die grossen Assistenten aus und erfassen genau, wie jeder antwortet — wer genannt wird, in welcher Reihenfolge und mit welcher Begründung.' },
-        { h3: 'Prompt-Trends', p: 'Eine Sparkline pro Prompt zeigt Ihre Nennungsrate über die Zeit, sodass ein langsamer Rückgang Wochen sichtbar wird, bevor er Sie Kunden kostet.' },
-        { h3: 'Benachrichtigungen bei verlorenen Empfehlungen', p: 'Sobald Sie aus einer Antwort fallen, in der Sie zuvor erschienen, erhalten Sie eine E-Mail-Zusammenfassung mit Prompt, Assistent und wer Sie ersetzt hat.' },
-        { h3: 'AI Trust Score', p: 'Eine Zahl, planmässig aktualisiert, die zusammenfasst, wie konstant KIs Sie über Ihr Prompt-Set empfehlen. Beobachten Sie, wie sie reagiert, während Sie Ihre Präsenz verbessern.' },
-      ],
-    },
-    prompts: {
-      h2: 'Verfolgen Sie die Prompts, die Ihre Kunden wirklich eingeben',
-      list: [
-        'bestes CRM für kleine Agenturen',
-        'Buchhaltungssoftware, die Freelancer wirklich nutzen',
-        'beste KI-Sichtbarkeits-Tools 2026',
-      ],
-      more: '…bis zu 25 eigene Prompts',
-    },
-    pricing: {
-      eyebrow: 'In jedem Abo enthalten',
-      features: [
-        '1 Marke',
-        '25 verfolgte Prompts',
-        'Wöchentliche Antwort-Aktualisierung',
-        'Benachrichtigungen bei verlorenen Empfehlungen',
-        'AI Trust Score',
-        `${AV_STARTER_ENGINES} KI-Engines mit Starter, alle ${AV_GROWTH_ENGINES} ab Growth`,
-      ],
-      cta: 'Abos ansehen',
-      finePre: 'Jederzeit kündbar. Mehr Marken, Sitze oder nächtliche Aktualisierung nötig? ',
-      fineLink: 'Pläne vergleichen',
-      currency: 'Alle Preise in US-Dollar (USD). Bei Zahlung mit einer Karte in einer anderen Währung rechnet Ihre Bank den Betrag zu ihrem eigenen Wechselkurs um.',
-    },
-    faq: {
-      h2: 'Fragen',
-      items: [
-        { q: 'Welche KI-Assistenten verfolgen Sie?', a: 'ChatGPT, Claude, Gemini und Perplexity. Die Abdeckung wächst, sobald neue Assistenten echte Nutzung gewinnen.' },
-        { q: 'Wie oft werden Antworten aktualisiert?', a: 'Wöchentlich in diesem Plan. Höhere Pläne aktualisieren nächtlich.' },
-        { q: 'Kann ich meine verfolgten Prompts ändern?', a: 'Ja — bearbeiten Sie Ihr Prompt-Set jederzeit. Änderungen gelten ab der nächsten Aktualisierung.' },
-        { q: 'Ist die Bewertungsverwaltung enthalten?', a: 'Nein. KI-Sichtbarkeit ist nur die Tracking-Ebene. Bewertungs- und Reputations-Tools gibt es in den Plänen Growth und Agency.' },
-      ],
-    },
-    final: {
-      h2: 'Finden Sie heraus, was die KIs über Sie sagen',
-      cta: 'Jetzt starten',
-    },
-    widget: {
-      label: 'Kostenlosen Basis-Audit starten',
-      placeholder: 'Ihre Marke oder Domain, z. B. acme.com',
-      runIdle: 'Gratis-Audit starten',
-      runBusy: 'Audit läuft…',
-      noteTemplate: '«{brand}» wird gelesen, wie KI-Crawler es tun — etwa 20 Sekunden.',
-      errLimit: 'Gratis-Audit-Limit für heute erreicht. Registrieren Sie sich für unbegrenzte Audits.',
-      errGeneric: 'Der Audit konnte nicht ausgeführt werden. Versuchen Sie es in einer Minute erneut.',
-      fine: 'Kein Konto nötig. Ein Audit pro Tag.',
-      mentionLabel: 'KI-Präsenz',
-      mentionValue: '{hits} von {total} KI-Maschinen',
-      mentionNotTested: 'im Gratis-Audit nicht getestet',
-      mentionGloss: 'Ob ChatGPT, Claude, Gemini oder Perplexity Sie nennen, wenn man sie um eine Empfehlung bittet. Das Gratis-Audit fragt sie nicht; ein Abo tut es, jede Woche.',
-      readabilityLabel: 'KI-Bereitschafts-Score',
-      readabilityGloss: 'Ob KI-Antwortmaschinen Ihre Website lesen, ihr vertrauen und sie zitieren können. Zugang und Sitemap sind erst der Anfang; Inhalt, konkrete Fakten und eine klare Identität bringen den Rest.',
-      upsell:
-        `Das Gratis-Audit liest Ihre Website; es befragt keine KI-Maschine. Die Abos verfolgen ${PROMPTS_MIN} bis ${PROMPTS_MAX} Prompts Ihrer Wahl, wöchentlich oder häufiger, mit Warnungen, wenn Sie herausfallen.`,
-      ctaTemplate: '{brand} mit Echorank verfolgen',
-      again: 'Weiteren Audit starten',
-      pdfIdle: 'PDF-Bericht herunterladen',
-      pdfBusy: 'Wird erstellt…',
-      pdfErr: 'Der Bericht konnte nicht erstellt werden.',
-      pdfRetry: 'Erneut versuchen',
-    },
-    kw: {
-      h2: 'Welche Keywords sollte Ihre Website besitzen?',
-      p: 'Gratis-Scan: Wir lesen Ihre Startseite und extrahieren die Keywords, Fragesuchen und KI-Prompts, die Sie gewinnen sollten — kein Konto nötig.',
-      widget: {
-        label: 'Kostenlosen Keyword-Scan starten',
-        placeholder: 'ihredomain.com',
-        runIdle: 'Keywords scannen',
-        runBusy: 'Scan läuft…',
-        note: 'Ihre Seite wird gelesen und Keywords werden extrahiert — dauert wenige Sekunden.',
-        errLimit: 'Gratis-Scan-Limit erreicht (2 pro Tag). Registrieren Sie sich für unbegrenzte Scans.',
-        errGeneric: 'Der Scan konnte nicht ausgeführt werden. Prüfen Sie die URL und versuchen Sie es in einer Minute erneut.',
-        fine: 'Kein Konto nötig. 2 Scans pro Tag.',
-        seedsTitle: 'Basis-Keywords',
-        questionsTitle: 'Frage-Keywords',
-        promptsTitle: 'KI-Prompts, in denen Sie empfohlen werden sollten',
-        techTitle: 'Technisches SEO',
-        techSummaryTemplate:
-          '{pass} Prüfungen bestanden · {warn} Warnungen · {fail} fehlgeschlagen — alle Details im vollen Plan.',
-        diffLow: 'leicht',
-        diffMedium: 'mittel',
-        diffHigh: 'schwer',
-        lockedTemplate: '+{n} weitere im vollen Plan',
-        upsell:
-          'Dieser Scan hat nur Ihre Startseite gelesen, nur Heuristiken. Der volle Plan scannt bis zu 5 Seiten, ergänzt KI-vorgeschlagene Keywords sowie Titel-/Meta-Vorschläge und verfolgt, ob KIs Sie wirklich empfehlen.',
-        cta: 'Volle Keyword-Analyse freischalten',
-        again: 'Weitere Website scannen',
-      },
-    },
-  },
-};
-
-// en-CA shares en; fr-CA shares fr (task permits — prices stay USD, no strong
-// québécois divergence needed for this page).
-C['en-CA'] = C.en;
-C['fr-CA'] = C.fr;
+function listOf(locale: string, items: string[]): string {
+  return new Intl.ListFormat(intlLocale(locale), { style: "long", type: "conjunction" }).format(items);
+}
 
 export function generateStaticParams() {
   return SUPPORTED_LOCALES.map((locale) => ({ locale }));
 }
 
-export async function generateMetadata({
-  params,
-}: {
-  params: Promise<{ locale: string }>;
-}): Promise<Metadata> {
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params;
   if (!isSupportedLocale(locale)) return {};
-  const { meta } = C[locale];
+  const c = AV_COPY[pricingBase(locale)];
   return buildMetadata({
     locale,
-    path: "/ai-visibility",
-    title: meta.titleShort,
-    description: meta.description,
+    path: PATH,
+    title: c.meta.title,
+    description: c.meta.description(listOf(locale, planEngineNames(AV_PLAN))),
     ogImage: "/ai-visibility/og-ai-visibility.png",
   });
 }
 
-export default async function AIVisibilityPage({
-  params,
-}: {
-  params: Promise<{ locale: string }>;
-}) {
+export default async function AIVisibilityPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params;
   if (!isSupportedLocale(locale)) notFound();
-  const c = C[locale];
-  // de-CH highlights neither side of the EN/FR toggle — it is a third locale,
-  // not a variant of either.
-  const base = locale.startsWith('fr') ? 'fr' : locale.startsWith('en') ? 'en' : null;
-  // Footer reuses the shared catalog (same mechanism as the other localized
-  // public pages) — translated labels + the exact homepage copyright.
-  const foot = CONTENT[locale].footer;
-
   const l = normalizeLocale(locale);
+  const base = pricingBase(locale);
+  const c = AV_COPY[base];
+  const pageUrl = `${SITE_URL}/${l}${PATH}`;
+
+  const plan = PLAN_CONFIGS[AV_PLAN];
+  const price = usd(avMonthlyPrice(), base);
+  const avEngines = planEngineNames(AV_PLAN);
+  const rows = allowanceRows();
+  const primaryHref = avPlanHref(l, AV_SRC.hero);
+  const primaryLabel = c.hero.primary(price);
+  const features = avShippedFeatures();
+  const weights = searchScoreWeights();
+  const adds = starterAdds().map((a) => c.pricing.areas[a]);
+  const reviewsFrom = reviewsFromPlan();
+  const faq = c.faq({
+    rows,
+    reviewsFrom: reviewsFrom ? PLAN_CONFIGS[reviewsFrom].name : null,
+    list: (items) => listOf(locale, items),
+  });
+  // The example's alert names an engine the AI Visibility plan really asks.
+  const alertEngine = avEngines[avEngines.length - 1] ?? null;
+  const sub = c.subnav;
 
   return (
-    <main className="av">
-      {/* FAQPage built from c.faq.items — the same array rendered below. */}
+    <div className={s.page}>
+      {/* FAQPage from the same array rendered below; the Offer from the plan config. */}
       <JsonLd
         graph={[
           organization(l),
           webSite(l),
-          faqPage(c.faq.items, `${SITE_URL}/${l}/ai-visibility`),
+          faqPage(faq, pageUrl),
+          {
+            "@type": "Product",
+            "@id": `${pageUrl}#product`,
+            name: AV_BRAND.name,
+            description: c.meta.description(listOf(locale, avEngines)),
+            url: pageUrl,
+            brand: { "@id": `${SITE_URL}/#organization` },
+            offers: {
+              "@type": "Offer",
+              name: plan.name,
+              price: String(plan.monthlyPrice),
+              priceCurrency: "USD",
+              category: "subscription",
+              url: `${SITE_URL}${primaryHref}`,
+              availability: "https://schema.org/InStock",
+            },
+          },
         ]}
       />
-      <header className="av-header">
-        <a href="/" aria-label="Echorank home" className="av-brand">
-          {/* Both marks ship; CSS shows one. The light wordmark is drawn for a
-              dark ground and disappears on a white page, so day swaps in the
-              dark one — the only asset on this page that has to change with
-              the theme, and doing it in CSS keeps the page static.
-              Both are aria-hidden: the accessible name is the link's own
-              aria-label, so whichever mark is showing, it is announced once
-              rather than twice or not at all. */}
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          {/* 187 wide (was 180): the ™ widened the SVG, and the box keeps the logo's height. */}
-          <img className="av-logo-night" src="/echorank-logo-light.svg" alt="" aria-hidden="true" width={187} height={34} />
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img className="av-logo-day" src="/echorank-logo-dark.svg" alt="" aria-hidden="true" width={187} height={34} />
-        </a>
-        <nav className="av-nav" aria-label="Primary">
-          <a href="#how">{c.nav.features}</a>
-          <a href="#pricing">{c.nav.pricing}</a>
-          <a href="/login">{c.nav.login}</a>
-          <span className="av-toggle">
-            <a className={base === 'en' ? 'av-toggle-on' : undefined} href="/en/ai-visibility">EN</a>
-            <span aria-hidden="true">/</span>
-            <a className={base === 'fr' ? 'av-toggle-on' : undefined} href="/fr/ai-visibility">FR</a>
-          </span>
-          <ThemeToggle labels={THEME_TOGGLE_COPY[locale]} className="av-theme-btn" />
-          <a href={`/${locale}/pricing`} className="av-btn av-btn-gold av-nav-cta">
-            {c.nav.cta}
-          </a>
-        </nav>
-      </header>
-      <section className="av-hero">
-        <div className="av-hero-copy">
-          {/* The sub-brand logo replaces the text eyebrow that named the product; "in every plan" stays as the eyebrow. */}
-          <AiVisibilityLogo height={72} surface="themed" className="av-hero-logo" testId="av-hero-logo" />
-          <p className="av-eyebrow">{c.hero.eyebrow}</p>
-          <h1>
-            {c.hero.h1a}
-            <span className="av-gold">{c.hero.h1b}</span>
-          </h1>
-          <p className="av-sub">{c.hero.sub}</p>
-          {/* AI disclosure, text only (src/lib/i18n/ai-labels.ts). */}
-          <p className="av-powered" data-testid="powered-by-ai">{aiLabels(locale).poweredByAi}</p>
-          {/* The site's "run the free audit" CTAs used to point at
-              /{locale}/ai-visibility#audit; they now go to /{locale}/free-audit,
-              which mounts this same widget on a page of its own. The id stays:
-              it is a published URL that external links and older PDFs still
-              carry, and dropping it turns those into a scroll to the top of the
-              page rather than a 404 anyone would notice. */}
-          <div id="audit" style={{ scrollMarginTop: "96px" }}>
-            <AuditWidget c={{ ...c.widget, ctaHref: `/${locale}/pricing` }} locale={locale} />
-          </div>
-          <p className="av-engines">
-            {c.hero.engines} ChatGPT · Claude · Gemini · Perplexity
-          </p>
-        </div>
+      <PublicNav locale={locale} />
 
-        <div className="av-answer" aria-label={c.hero.answerAria}>
-          <div className="av-answer-prompt">
-            <span className="av-answer-q">Q</span>
-            “{c.answer.q}”
+      <nav className={v.subnav} aria-label={sub.aria} data-testid="av-subnav">
+        <div className={`${s.container} ${v.subnavIn}`}>
+          <a href="#how">{sub.how}</a>
+          <a href="#what">{sub.what}</a>
+          <a href="#audit">{sub.tools}</a>
+          <a href="#pricing">{sub.pricing}</a>
+          <a href="#faq">{sub.faq}</a>
+        </div>
+      </nav>
+
+      <section className={s.hero}>
+        <div className={`${s.container} ${s.herogrid}`}>
+          <div>
+            <AiVisibilityLogo height={72} surface="themed" className={v.heroLogo} testId="av-hero-logo" />
+            <h1 className={s.h1}>
+              {c.hero.h1a}
+              <span className={s.goldtext}>{c.hero.h1b}</span>
+            </h1>
+            <p className={s.heroSub}>{c.hero.sub}</p>
+            {/* AI disclosure, text only (src/lib/i18n/ai-labels.ts). */}
+            <p className={s.poweredByAi} data-testid="powered-by-ai">{aiLabels(locale).poweredByAi}</p>
+            <div className={s.ctarow}>
+              <a className={`${s.btn} ${s.btnPrimary}`} href={primaryHref} data-testid="av-cta-primary">
+                {primaryLabel}
+              </a>
+              <a className={`${s.btn} ${s.btnGhost}`} href={`/${l}/ai-visibility-check`} data-testid="av-cta-check">
+                {c.hero.secondary}
+              </a>
+            </div>
+            {avEngines.length > 0 && (
+              <p className={v.engines} data-testid="av-engines">
+                {c.hero.engines(plan.name, listOf(locale, avEngines))}
+              </p>
+            )}
           </div>
-          <div className="av-answer-body">
-            <p className="av-line av-d1">{c.answer.l1}</p>
-            <p className="av-line av-d2">1. LedgerKit — {c.answer.l2desc}</p>
-            <p className="av-line av-d3 av-you">
-              2. <strong>{c.answer.youBrand}</strong> — {c.answer.youDesc}
-              <span className="av-pos">{c.answer.pos}</span>
+
+          <div className={v.example} aria-label={c.mock.aria} data-testid="av-example">
+            <span className={v.exampleTag}>{c.mock.label}</span>
+            <p className={v.exampleQ}>“{c.mock.q}”</p>
+            <p className={v.exampleLine}>{c.mock.l1}</p>
+            <p className={v.exampleLine}>1. LedgerKit — {c.mock.l2desc}</p>
+            <p className={`${v.exampleLine} ${v.exampleYou}`}>
+              2. <strong>{c.mock.youBrand}</strong> — {c.mock.youDesc}
+              <span className={v.examplePos}>{c.mock.pos}</span>
             </p>
-            <p className="av-line av-d4">3. Countable — {c.answer.l4desc}</p>
-            <span className="av-cursor" aria-hidden="true" />
-          </div>
-          <div className="av-answer-foot">
-            <span className="av-chip av-chip-alert">{c.answer.alert}</span>
-            <span className="av-chip">Trust Score 74</span>
+            <p className={v.exampleLine}>3. Countable — {c.mock.l4desc}</p>
+            <div className={v.exampleFoot}>
+              {alertEngine && <span className={v.exampleChip}>{c.mock.alert(alertEngine)}</span>}
+              <span className={v.exampleChip}>{c.mock.scoreChip(74)}</span>
+            </div>
           </div>
         </div>
       </section>
 
-      <section className="av-band">
-        <h2>{c.band1.h2}</h2>
-        <p>{c.band1.p}</p>
-      </section>
-
-      <section className="av-band-alt av-kw-section" id="keywords">
-        <h2>{c.kw.h2}</h2>
-        <p>{c.kw.p}</p>
-        <KeywordWidget c={c.kw.widget} ctaHref={`/${locale}/pricing`} />
-      </section>
-
-      <section className="av-features" id="how">
-        <h2>{c.features.h2}</h2>
-        <div className="av-grid">
-          {c.features.items.map((it) => (
-            <article key={it.h3}>
-              <h3>{it.h3}</h3>
-              <p>{it.p}</p>
-            </article>
-          ))}
+      <section className={s.section}>
+        <div className={s.container}>
+          <h2 className={s.h2}>{c.problem.h2}</h2>
+          <p className={s.sub}>{c.problem.p}</p>
         </div>
       </section>
 
-      <section className="av-band av-band-alt">
-        <h2>{c.prompts.h2}</h2>
-        <ul className="av-prompts">
-          {c.prompts.list.map((p) => (
-            <li key={p}>“{p}”</li>
-          ))}
-          <li className="av-prompts-more">{c.prompts.more}</li>
-        </ul>
+      <section id="how" className={`${s.section} ${v.anchor}`}>
+        <div className={s.container}>
+          <p className={s.label}>{c.how.label}</p>
+          <h2 className={s.h2}>{c.how.h2}</h2>
+          <div className={v.grid3}>
+            <div className={v.box}>
+              <h3>{c.how.steps[0].h3}</h3>
+              <p>{c.how.steps[0].p(KEYWORD_SCAN_LIMIT_PER_DAY)}</p>
+            </div>
+            <div className={v.box}>
+              <h3>{c.how.steps[1].h3}</h3>
+              <p>{c.how.steps[1].p(cadenceLabel(base, plan.aiCheckup.frequency), plan.aiCheckup.repetitions)}</p>
+            </div>
+            <div className={v.box}>
+              <h3>{c.how.steps[2].h3}</h3>
+              <p>{c.how.steps[2].p}</p>
+            </div>
+          </div>
+          <div className={v.kw} id="keywords">
+            <h3 className={s.faqQ}>{c.how.kwH3}</h3>
+            <KeywordWidget c={keywordWidgetCopy(base, KEYWORD_SCAN_LIMIT_PER_DAY)} ctaHref={avPlanHref(l, AV_SRC.pricing)} />
+          </div>
+        </div>
       </section>
 
-      <section className="av-pricing" id="pricing">
-        <div className="av-price-card">
-          <p className="av-eyebrow">{c.pricing.eyebrow}</p>
-          <ul>
-            {c.pricing.features.map((f) => (
-              <li key={f}>{f}</li>
+      <section id="what" className={`${s.section} ${v.anchor}`}>
+        <div className={s.container}>
+          <p className={s.label}>{c.what.label}</p>
+          <h2 className={s.h2}>{c.what.h2}</h2>
+          <div className={v.grid3} data-testid="av-features">
+            {features.map((id) => (
+              <div className={v.box} key={id} data-feature={id}>
+                <h3>{c.what.items[id].h3}</h3>
+                <p>{c.what.items[id].p}</p>
+              </div>
             ))}
-          </ul>
-          <a className="av-btn av-btn-gold av-btn-block" href={`/${locale}/pricing`}>
-            {c.pricing.cta}
-          </a>
-          <p className="av-fine">
-            {c.pricing.finePre}
-            <a href="/#pricing">{c.pricing.fineLink}</a>.
-          </p>
-          <p className="av-fine">{c.pricing.currency}</p>
-          <p className="av-fine">
-            <a href={salesContactHref(locale, "ai-visibility-pricing")} data-testid="av-sales-link">
-              {SALES_COPY[salesLocale(locale)].links.agencies}
-            </a>
-          </p>
+            <div className={v.box} data-feature="score">
+              <h3>{c.what.score.h3}</h3>
+              <p>{c.what.score.p(weights)}</p>
+              <a className={v.boxLink} href={`/${l}/methodology`}>
+                {c.what.score.link}
+              </a>
+            </div>
+          </div>
         </div>
       </section>
 
-      <section className="av-faq">
-        <h2>{c.faq.h2}</h2>
-        {c.faq.items.map((it) => (
-          <details key={it.q}>
-            <summary>{it.q}</summary>
-            <p>{it.a}</p>
-          </details>
-        ))}
+      <section id="audit" className={`${s.section} ${v.anchor}`}>
+        <div className={s.container}>
+          <p className={s.label}>{c.tools.label}</p>
+          <h2 className={s.h2}>{c.tools.h2}</h2>
+          <div className={v.grid3}>
+            <div className={`${v.box} ${v.tool}`}>
+              <h3>{c.tools.check.name}</h3>
+              <p>{c.tools.check.line}</p>
+              <a className={v.boxLink} href={`/${l}/ai-visibility-check`}>
+                {c.tools.check.cta}
+              </a>
+            </div>
+            <div className={`${v.box} ${v.tool}`}>
+              <h3>{c.tools.audit.name}</h3>
+              <p>{c.tools.audit.line}</p>
+              <a className={v.boxLink} href={`/${l}/free-audit`}>
+                {c.tools.audit.cta}
+              </a>
+            </div>
+          </div>
+        </div>
       </section>
 
-      <section className="av-final">
-        <h2>{c.final.h2}</h2>
-        <a className="av-btn av-btn-gold" href={`/${locale}/pricing`}>
-          {c.final.cta}
-        </a>
+      <section id="pricing" className={`${s.section} ${v.anchor}`}>
+        <div className={s.container}>
+          <PricingSection
+            salesSrc={AV_SRC.pricing}
+            locale={l}
+            pricing={pricingTiers(l, AV_LADDER)}
+            priceChrome={HOME_PRICING_CHROME[l]}
+            toolCountLine={toolCountLine(l, seoToolCounts())}
+            tax={pricingNotes(l).tax}
+            currency={pricingNotes(l).currency}
+            toolsHref={`/${l}#tools`}
+            header={
+              <>
+                <p className={s.label}>{c.pricing.label}</p>
+                <h2 className={s.h2}>{c.pricing.h2}</h2>
+              </>
+            }
+          />
+          <div className={v.tableWrap}>
+            <table className={v.table} data-testid="av-allowances">
+              <caption>{c.pricing.tableCaption}</caption>
+              <thead>
+                <tr>
+                  <th scope="col">{c.pricing.cols.plan}</th>
+                  <th scope="col">{c.pricing.cols.prompts}</th>
+                  <th scope="col">{c.pricing.cols.engines}</th>
+                  <th scope="col">{c.pricing.cols.cadence}</th>
+                  <th scope="col">{c.pricing.cols.reps}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((r) => (
+                  <tr key={r.plan} data-plan={r.plan}>
+                    <td data-label={c.pricing.cols.plan}>
+                      <strong>{r.name}</strong>
+                    </td>
+                    <td data-label={c.pricing.cols.prompts}>{r.prompts}</td>
+                    <td data-label={c.pricing.cols.engines}>{listOf(locale, r.engines)}</td>
+                    <td data-label={c.pricing.cols.cadence}>{cadenceLabel(base, r.frequency)}</td>
+                    <td data-label={c.pricing.cols.reps}>{c.pricing.reps(r.repetitions)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {adds.length > 0 && (
+              <p className={v.starterAdds} data-testid="av-starter-adds">
+                {c.pricing.starterAdds(PLAN_CONFIGS.STARTER.name, listOf(locale, adds))}
+              </p>
+            )}
+          </div>
+        </div>
       </section>
 
-      <footer className="av-footer">
-        <span className="av-footer-copy">{foot.copyright}</span>
-        <nav className="av-footer-links" aria-label="Footer">
-          {foot.links.map((l) => (
-            <a key={l.href} href={`/${locale}${l.href}`}>{l.label}</a>
-          ))}
-        </nav>
-        <CompanyLine />
-      </footer>
+      <section id="faq" className={`${s.section} ${v.anchor}`}>
+        <div className={s.container}>
+          <h2 className={s.h2}>{c.faqH2}</h2>
+          <div className={s.faq}>
+            {faq.map((it) => (
+              <div className={s.faqItem} key={it.q}>
+                <h3 className={s.faqQ}>{it.q}</h3>
+                <p className={s.faqA}>{it.a}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
 
-      <style>{css}</style>
-    </main>
+      <section className={`${s.section} ${v.closing}`}>
+        <div className={s.container}>
+          <h2 className={s.h2}>{c.final.h2}</h2>
+          <div className={`${s.ctarow} ${v.ctaCenter}`}>
+            <a className={`${s.btn} ${s.btnPrimary}`} href={primaryHref} data-testid="av-cta-final">
+              {primaryLabel}
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <PublicFooter locale={locale} />
+    </div>
   );
 }
-
-const css = `
-/* This page carries its own stylesheet rather than a CSS module, so it
-   declares its own theme layer too. The rule is the same as everywhere else:
-   --gold is a FILL and does not move; anything that is READ takes a token
-   that does. --av-accent-text exists because brand gold as text is 1.6:1 on
-   white, and because this page's accent has always been #d4a843 rather than
-   #fcd535 — routing it through --er-accent-text would have repainted every
-   h3 and eyebrow here at night. */
-.av {
-  --gold: #d4a843;
-  --gold-soft: rgba(212, 168, 67, 0.14);
-  --av-accent-text: #d4a843;
-  --av-alert: #e0a184;
-  --av-diff-low: #9ad17b;
-  --av-diff-med: #e5c46f;
-  background: var(--er-bg);
-  color: var(--er-text);
-  line-height: 1.6;
-}
-[data-theme="day"] .av {
-  /* Each of these clears AA body on white and on --er-surface (#F5F6F8).
-     The night values are 1.9:1-3:1 there, i.e. decorative at best. */
-  --av-accent-text: #8a6100;
-  --av-alert: #9a3412;
-  --av-diff-low: #3f6212;
-  --av-diff-med: #854d0e;
-}
-.av-logo-day { display: none; }
-[data-theme="day"] .av-logo-night { display: none; }
-[data-theme="day"] .av-logo-day { display: block; }
-.av-theme-btn {
-  display: inline-flex; align-items: center; justify-content: center;
-  width: 32px; height: 32px; border-radius: 8px;
-  border: 1px solid var(--er-line); background: var(--er-wash);
-  color: var(--er-text-muted); cursor: pointer;
-}
-.av-theme-btn:hover { color: var(--er-text); }
-.av h1, .av h2, .av h3 { line-height: 1.15; letter-spacing: -0.015em; margin: 0 0 0.6em; }
-.av h1 { font-size: clamp(2rem, 4.5vw, 3.4rem); font-weight: 750; }
-.av h2 { font-size: clamp(1.5rem, 3vw, 2.2rem); font-weight: 700; }
-.av h3 { font-size: 1.05rem; color: var(--av-accent-text); font-weight: 650; }
-.av section { padding: clamp(3rem, 7vw, 6rem) clamp(1.25rem, 6vw, 6rem); }
-.av-header {
-  display: flex; align-items: center; justify-content: space-between;
-  gap: 0.75rem 1.5rem; flex-wrap: wrap;
-  padding: 1.1rem clamp(1.25rem, 6vw, 6rem) 0;
-}
-.av-header img { display: block; }
-.av-nav { display: flex; align-items: center; gap: 1.4rem; flex-wrap: wrap; }
-.av-nav a:not(.av-nav-cta) { color: var(--er-text-muted); text-decoration: none; font-size: 0.9rem; font-weight: 550; }
-.av-nav a:not(.av-nav-cta):hover { color: var(--av-accent-text); }
-.av-nav a:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
-.av-header .av-nav-cta { padding: 0.5rem 1rem; font-size: 0.85rem; }
-/* EN/FR toggle — adapted from home2.module.css .toggle / .toggleOn */
-.av-toggle {
-  display: inline-flex; gap: 0.5rem; align-items: center;
-  font-size: 0.78rem; letter-spacing: 0.06em; color: var(--er-text-faint);
-}
-.av-nav .av-toggle a:not(.av-toggle-on) { color: var(--er-text-faint); }
-.av-nav .av-toggle a:hover { color: var(--av-accent-text); }
-.av-nav .av-toggle a.av-toggle-on { color: var(--av-accent-text); font-weight: 650; }
-.av-gold { color: var(--av-accent-text); }
-.av-hero-logo { margin-bottom: 1.1rem; }
-.av-eyebrow {
-  color: var(--av-accent-text); font-size: 0.8rem; letter-spacing: 0.14em;
-  text-transform: uppercase; font-weight: 600; margin-bottom: 1rem;
-}
-.av-sub { max-width: 34rem; color: var(--er-text-muted); font-size: 1.05rem; }
-.av-powered { margin-top: -0.35rem; font-size: 0.8rem; letter-spacing: 0.04em; color: var(--er-text-faint); }
-.av-hero {
-  display: grid; grid-template-columns: 1.1fr 0.9fr;
-  gap: clamp(2rem, 5vw, 4rem); align-items: center; min-height: 70vh;
-}
-.av-engines { font-size: 0.85rem; color: var(--er-text-faint); }
-.av-btn {
-  display: inline-block; padding: 0.8rem 1.5rem; border-radius: 10px;
-  font-weight: 650; text-decoration: none; font-size: 0.95rem;
-  transition: transform 120ms ease, background 120ms ease;
-}
-.av-btn:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
-.av-btn-gold { background: var(--gold); color: var(--er-on-gold); border: 0; cursor: pointer; }
-.av-btn-gold:hover { transform: translateY(-1px); }
-.av-btn-ghost { border: 1px solid var(--er-surface2); color: var(--er-text); background: transparent; cursor: pointer; font: inherit; }
-.av-btn-ghost:hover { background: var(--er-surface); }
-.av-btn-block { display: block; text-align: center; margin-top: 1.5rem; width: 100%; }
-.av-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
-.av-answer {
-  background: var(--er-surface);
-  border: 1px solid var(--er-surface2);
-  border-radius: 16px; padding: 1.5rem;
-  box-shadow: 0 24px 60px var(--er-shadow);
-}
-.av-answer-prompt {
-  display: flex; gap: 0.6rem; align-items: baseline;
-  color: var(--er-text-muted); font-size: 0.92rem; padding-bottom: 0.9rem;
-  border-bottom: 1px solid var(--er-surface2); margin-bottom: 0.9rem;
-}
-.av-answer-q {
-  color: var(--av-accent-text); font-weight: 700; font-size: 0.8rem;
-  border: 1px solid var(--gold); border-radius: 6px; padding: 0 0.4rem;
-}
-.av-line { margin: 0.45rem 0; font-size: 0.95rem; opacity: 0; animation: av-in 400ms ease forwards; }
-.av-d1 { animation-delay: 200ms; } .av-d2 { animation-delay: 700ms; }
-.av-d3 { animation-delay: 1200ms; } .av-d4 { animation-delay: 1700ms; }
-.av-you {
-  background: var(--gold-soft); border-left: 3px solid var(--gold);
-  padding: 0.35rem 0.6rem; border-radius: 6px;
-}
-.av-pos { color: var(--av-accent-text); font-size: 0.8rem; margin-left: 0.5rem; font-weight: 600; }
-.av-cursor {
-  display: inline-block; width: 8px; height: 1em; background: var(--gold);
-  vertical-align: text-bottom; animation: av-blink 1s steps(1) infinite;
-}
-@keyframes av-in { to { opacity: 1; } }
-@keyframes av-blink { 50% { opacity: 0; } }
-@media (prefers-reduced-motion: reduce) {
-  .av-line { animation: none; opacity: 1; }
-  .av-cursor { animation: none; }
-}
-.av-answer-foot { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 1rem; }
-.av-chip {
-  font-size: 0.78rem; padding: 0.25rem 0.65rem; border-radius: 999px;
-  border: 1px solid var(--er-surface2); color: var(--er-text-muted);
-}
-.av-chip-alert { border-color: #a4552f; color: var(--av-alert); }
-.av-band { text-align: center; }
-.av-band p { max-width: 40rem; margin: 0 auto; color: var(--er-text-muted); }
-.av-band-alt { background: var(--er-surface); }
-.av-features h2 { text-align: center; margin-bottom: 2.5rem; }
-.av-grid {
-  display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
-  gap: 1rem;
-}
-.av-grid article {
-  background: var(--er-surface);
-  border: 1px solid var(--er-surface2);
-  border-radius: 14px; padding: 1.5rem;
-}
-.av-grid p { color: var(--er-text-muted); font-size: 0.93rem; margin: 0; }
-.av-prompts { list-style: none; padding: 0; margin: 1.5rem auto 0; max-width: 34rem; }
-.av-prompts li {
-  border: 1px solid var(--er-surface2); border-radius: 999px;
-  padding: 0.55rem 1.1rem; margin: 0.5rem 0; font-size: 0.95rem;
-}
-.av-prompts-more { color: var(--er-text-faint); border-style: dashed !important; }
-.av-pricing { display: flex; justify-content: center; }
-.av-price-card {
-  background: var(--er-surface);
-  border: 1px solid var(--gold); border-radius: 18px;
-  padding: 2.25rem; max-width: 24rem; width: 100%;
-}
-.av-price { font-size: 3rem; font-weight: 750; margin: 0 0 1rem; }
-.av-price span { font-size: 1rem; color: var(--er-text-faint); font-weight: 400; }
-.av-price-card ul { list-style: none; padding: 0; margin: 0; }
-.av-price-card li {
-  padding: 0.45rem 0 0.45rem 1.4rem; position: relative; font-size: 0.95rem;
-  border-bottom: 1px solid var(--er-surface2);
-}
-.av-price-card li::before { content: '✓'; position: absolute; left: 0; color: var(--av-accent-text); }
-.av-fine { font-size: 0.8rem; color: var(--er-text-faint); margin-top: 0.9rem; }
-.av-fine a { color: var(--av-accent-text); }
-.av-faq { max-width: 44rem; margin: 0 auto; }
-.av-faq details { border-bottom: 1px solid var(--er-surface2); padding: 0.9rem 0; }
-.av-faq summary { cursor: pointer; font-weight: 600; }
-.av-faq summary:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
-.av-faq p { color: var(--er-text-muted); font-size: 0.95rem; }
-.av-final { text-align: center; }
-.av-footer {
-  display: flex; flex-wrap: wrap; gap: 1rem 1.5rem;
-  align-items: center; justify-content: space-between;
-  padding: 2rem clamp(1.25rem, 6vw, 6rem);
-  border-top: 1px solid var(--er-surface2);
-  font-size: 0.78rem; color: var(--er-text-faint); letter-spacing: 0.04em;
-}
-.av-footer-links { display: flex; flex-wrap: wrap; gap: 0.75rem 1.25rem; }
-.av-footer-links a {
-  color: var(--er-text-faint); text-decoration: none;
-  text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.72rem;
-}
-.av-footer-links a:hover { color: var(--av-accent-text); }
-.av-footer-links a:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
-/* ---- Audit widget ---- */
-.av-audit { margin: 1.75rem 0 1rem; max-width: 32rem; }
-.av-audit-label { display: block; font-weight: 650; margin-bottom: 0.6rem; }
-.av-audit-row { display: flex; gap: 0.6rem; flex-wrap: wrap; }
-.av-audit-row input {
-  flex: 1; min-width: 220px; padding: 0.8rem 1rem; border-radius: 10px;
-  border: 1px solid var(--er-surface2);
-  background: var(--er-surface); color: var(--er-text); font-size: 0.95rem;
-}
-.av-audit-row input::placeholder, .av-kw-row input::placeholder { color: var(--er-placeholder); }
-.av-audit-row input:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
-.av-audit-row button:disabled { opacity: 0.55; cursor: not-allowed; }
-.av-audit-note { color: var(--er-text-muted); font-size: 0.85rem; margin-top: 0.6rem; }
-.av-audit-err { color: var(--av-alert); font-size: 0.9rem; margin-top: 0.6rem; }
-.av-audit-fine { color: var(--er-text-faint); font-size: 0.78rem; margin-top: 0.5rem; }
-.av-audit-result {
-  background: var(--er-surface);
-  border: 1px solid var(--gold); border-radius: 14px; padding: 1.5rem;
-}
-.av-audit-headline { font-size: 1.05rem; margin: 0 0 0.6rem; }
-.av-audit-line { font-size: 1rem; line-height: 1.5; margin: 0 0 0.75rem; }
-.av-audit-line-k { font-weight: 650; color: var(--er-text); }
-.av-audit-line-na { color: var(--er-text-muted); }
-.av-audit-gloss { display: block; color: var(--er-text-muted); font-size: 0.86rem; line-height: 1.55; margin-top: 2px; }
-.av-audit-gates { margin: 0 0 0.75rem; padding-left: 1.1rem; font-size: 0.92rem; line-height: 1.5; color: var(--er-text); }
-.av-audit-fixes { margin: 0 0 0.9rem; font-size: 0.92rem; line-height: 1.5; }
-.av-audit-fixes ol { margin: 0.4rem 0 0; padding-left: 1.25rem; }
-.av-audit-fixes li { margin: 0 0 0.5rem; overflow-wrap: anywhere; }
-.av-audit-fixes .av-audit-gloss { display: inline; }
-.av-audit-engines { list-style: none; padding: 0; margin: 0 0 0.9rem; display: flex; gap: 0.5rem; flex-wrap: wrap; }
-.av-audit-engines li {
-  font-size: 0.82rem; padding: 0.25rem 0.7rem; border-radius: 999px;
-  border: 1px solid var(--er-surface2);
-}
-.av-audit-engines .av-hit { color: var(--av-accent-text); border-color: var(--gold); }
-.av-audit-engines .av-miss { color: var(--er-text-faint); }
-.av-audit-sample {
-  margin: 0 0 0.9rem; padding: 0.7rem 1rem; font-size: 0.88rem; color: var(--er-text-muted);
-  border-left: 3px solid var(--er-surface2); font-style: italic;
-}
-.av-audit-upsell { color: var(--er-text-muted); font-size: 0.9rem; }
-.av-audit-again {
-  display: block; text-align: center; margin-top: 0.7rem;
-  color: var(--er-text-faint); font-size: 0.85rem;
-}
-/* ---- Keyword widget ---- */
-.av-kw-section { text-align: center; background: var(--er-surface); }
-.av-kw-section > p { max-width: 40rem; margin: 0 auto; color: var(--er-text-muted); }
-.av-kw { margin: 2rem auto 0; max-width: 36rem; text-align: left; }
-.av-kw-label { display: block; font-weight: 650; margin-bottom: 0.6rem; }
-.av-kw-row { display: flex; gap: 0.6rem; flex-wrap: wrap; }
-.av-kw-row input {
-  flex: 1; min-width: 220px; padding: 0.8rem 1rem; border-radius: 10px;
-  border: 1px solid var(--er-surface2);
-  background: var(--er-bg); color: var(--er-text); font-size: 0.95rem;
-}
-.av-kw-row input:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
-.av-kw-note { color: var(--er-text-muted); font-size: 0.85rem; margin-top: 0.6rem; }
-.av-kw-err { color: var(--av-alert); font-size: 0.9rem; margin-top: 0.6rem; }
-.av-kw-fine { color: var(--er-text-faint); font-size: 0.78rem; margin-top: 0.5rem; }
-.av-kw-result {
-  background: var(--er-bg);
-  border: 1px solid var(--gold); border-radius: 14px; padding: 1.5rem;
-}
-.av-kw-result .av-kw-h { margin: 1.1rem 0 0.4rem; }
-.av-kw-result .av-kw-h:first-child { margin-top: 0; }
-.av-kw-list { list-style: none; padding: 0; margin: 0; }
-.av-kw-list li {
-  display: flex; justify-content: space-between; align-items: center;
-  gap: 0.75rem; padding: 0.45rem 0.1rem; font-size: 0.92rem;
-  border-bottom: 1px solid var(--er-surface2);
-}
-.av-kw-diff {
-  font-size: 0.72rem; border-radius: 999px; padding: 0.12rem 0.6rem;
-  border: 1px solid; white-space: nowrap;
-}
-.av-kw-diff-low { color: var(--av-diff-low); border-color: #4f7a3a; }
-.av-kw-diff-med { color: var(--av-diff-med); border-color: #8a6d2c; }
-.av-kw-diff-high { color: var(--av-alert); border-color: #a4552f; }
-.av-kw-blur { filter: blur(5px); user-select: none; }
-.av-kw-lock { color: var(--er-text-faint); font-size: 0.8rem; white-space: nowrap; }
-.av-kw-tech { color: var(--er-text-muted); font-size: 0.9rem; margin: 0.2rem 0 0; }
-.av-kw-upsell { color: var(--er-text-muted); font-size: 0.9rem; margin-top: 1.2rem; }
-.av-kw-again {
-  display: block; text-align: center; margin-top: 0.7rem;
-  color: var(--er-text-faint); font-size: 0.85rem;
-}
-@media (max-width: 860px) {
-  .av-hero { grid-template-columns: 1fr; min-height: unset; }
-}
-`;

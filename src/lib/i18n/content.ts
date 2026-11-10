@@ -236,7 +236,8 @@ const en: HomeContent = {
       { label: "LEARN", href: "/learn" },
       { label: "RESOURCES", href: "/resources" },
       { label: "GUIDE", href: "/guide" },
-      { label: "AI VISIBILITY GUIDE", href: "/guide-visibilite-ia" },
+      // An English slug for the English footer (was the French /guide-visibilite-ia).
+      { label: "AI VISIBILITY GUIDE", href: "/guides/ai-visibility" },
       { label: "PRIVACY", href: "/legal/privacy" },
       { label: "TERMS", href: "/legal/terms" },
       { label: "DISCLAIMER", href: "/legal/disclaimer" },
@@ -407,7 +408,8 @@ const enCA: HomeContent = {
       { label: "LEARN", href: "/learn" },
       { label: "RESOURCES", href: "/resources" },
       { label: "GUIDE", href: "/guide" },
-      { label: "AI VISIBILITY GUIDE", href: "/guide-visibilite-ia" },
+      // An English slug for the English footer (was the French /guide-visibilite-ia).
+      { label: "AI VISIBILITY GUIDE", href: "/guides/ai-visibility" },
       { label: "PRIVACY", href: "/legal/privacy" },
       { label: "TERMS", href: "/legal/terms" },
       { label: "DISCLAIMER", href: "/legal/disclaimer" },

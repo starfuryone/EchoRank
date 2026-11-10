@@ -28,7 +28,7 @@ const STANDALONE = [
 const REACT_FOOTERS = [
   "src/components/PublicFooter.tsx",
   "src/app/[locale]/HomeClient.tsx",
-  "src/app/[locale]/ai-visibility/page.tsx",
+  // /ai-visibility renders PublicFooter since 2026-11-10 (covered by its entry above).
   "src/app/[locale]/guide/page.tsx",
   "src/app/[locale]/customer-feedback/page.tsx",
   "src/app/[locale]/how-to/page.tsx",

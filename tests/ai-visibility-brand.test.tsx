@@ -151,11 +151,13 @@ describe("the global Echorank logo is exactly where it was", () => {
     }
   });
 
-  it("the /ai-visibility page keeps its own Echorank header logo (night and day)", async () => {
+  it("the /ai-visibility page uses the shared PublicNav wordmark and footer (2026-11-10)", async () => {
     const Page = (await import("@/app/[locale]/ai-visibility/page")).default;
     const html = renderToStaticMarkup(await Page(P("en") as never));
-    expect(html).toContain('src="/echorank-logo-light.svg"');
-    expect(html).toContain('src="/echorank-logo-dark.svg"');
+    const nav = renderToStaticMarkup(createElement(PublicNav, { locale: "en" }));
+    expect(html).toContain(nav);
+    expect(html).toContain(renderToStaticMarkup(createElement(PublicFooter, { locale: "en" })));
+    expect(html).not.toContain('src="/echorank-logo-light.svg"');
   });
 
   it("is not on pricing, legal, reputation tools, Nosy Bat or the global chrome (by source)", () => {
@@ -217,7 +219,8 @@ describe.each(LOCALES)("%s", (l) => {
     const logo = el.querySelector('[data-testid="av-hero-logo"]');
     checkLogo(logo, 72);
     expect(logo!.compareDocumentPosition(el.querySelector("h1")!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
-    expect(el.querySelector(".av-eyebrow")!.textContent).not.toMatch(/AI Visibility|Visibilité IA|KI-Sichtbarkeit/);
+    // No text eyebrow naming the product between the logo and the H1.
+    expect(logo!.nextElementSibling!.tagName).toBe("H1");
     expect(namedLogos(html)).toHaveLength(1);
   });
 
