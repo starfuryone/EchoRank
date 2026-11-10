@@ -251,7 +251,8 @@ const EN: AuditPageCopy = {
   toolLine: "Checks crawler access, readable content, identity and discoverability. It asks no AI engine anything.",
   form: {
     label: "Your website",
-    placeholder: "yourdomain.com",
+    // A website, not a name: the API refuses a business name (400 invalid_brand).
+    placeholder: "Your website, e.g. example.com",
     run: "Run the free audit",
     fine: (perDay, hours) =>
       `No account needed. ${enAudits(perDay)} per IP address every ${hours} hours, counted from the first. Only an audit that returns a score counts.`,
@@ -269,7 +270,7 @@ const EN: AuditPageCopy = {
     note: "Usually 20 to 40 seconds.",
   },
   errors: {
-    invalid: "Enter your website’s address, like yourdomain.com. The audit reads a website, so a business name on its own won’t work.",
+    invalid: "Enter your website’s address, like example.com. The audit reads a website, so a business name on its own won’t work.",
     fetch: {
       unreachable:
         "We couldn’t connect to that website, with or without “www”. Check the address and that the site is up, then try again. This didn’t use one of your free audits.",
@@ -277,7 +278,7 @@ const EN: AuditPageCopy = {
         "That website refused our request (its firewall or host blocks automated visitors), so there was nothing to read. If it’s your site, check its bot protection: AI crawlers may be refused too. This didn’t use one of your free audits.",
       rate_limited: "That website asked us to slow down. Wait a few minutes and try again. This didn’t use one of your free audits.",
       server_error: "That website answered with a server error. Try again once it’s back up. This didn’t use one of your free audits.",
-      not_found: "That page doesn’t exist (HTTP 404). Enter the site’s home address, like yourdomain.com. This didn’t use one of your free audits.",
+      not_found: "That page doesn’t exist (HTTP 404). Enter the site’s home address, like example.com. This didn’t use one of your free audits.",
       empty: "That website answered with an empty page, so there was nothing to read. This didn’t use one of your free audits.",
     },
     generic: "The audit could not run on our side. Try again in a minute. This didn’t use one of your free audits.",
@@ -415,7 +416,7 @@ const FR: AuditPageCopy = {
   toolLine: "Vérifie l’accès des robots, le contenu lisible, l’identité et la découvrabilité. Il n’interroge aucun moteur d’IA.",
   form: {
     label: "Votre site web",
-    placeholder: "votredomaine.com",
+    placeholder: "Votre site web, p. ex. example.com",
     run: "Lancer l’audit gratuit",
     fine: (perDay, hours) =>
       `Aucun compte requis. ${frAudits(perDay)} par adresse IP toutes les ${hours} heures, à compter du premier. Seul un audit qui donne un score est compté.`,
@@ -434,7 +435,7 @@ const FR: AuditPageCopy = {
     note: "Généralement de 20 à 40 secondes.",
   },
   errors: {
-    invalid: "Saisissez l’adresse de votre site, comme votredomaine.com. L’audit lit un site web : un nom d’entreprise seul ne suffit pas.",
+    invalid: "Saisissez l’adresse de votre site, comme example.com. L’audit lit un site web : un nom d’entreprise seul ne suffit pas.",
     fetch: {
       unreachable:
         "Impossible de se connecter à ce site, avec ou sans « www ». Vérifiez l’adresse et que le site est en ligne, puis réessayez. Cet essai n’a pas été décompté de vos audits gratuits.",
@@ -442,7 +443,7 @@ const FR: AuditPageCopy = {
         "Ce site a refusé notre requête (son pare-feu ou son hébergeur bloque les visiteurs automatisés) : il n’y avait rien à lire. S’il s’agit de votre site, vérifiez sa protection anti-robots : les robots d’IA sont peut-être refusés eux aussi. Cet essai n’a pas été décompté de vos audits gratuits.",
       rate_limited: "Ce site nous a demandé de ralentir. Patientez quelques minutes, puis réessayez. Cet essai n’a pas été décompté de vos audits gratuits.",
       server_error: "Ce site a répondu par une erreur serveur. Réessayez quand il sera rétabli. Cet essai n’a pas été décompté de vos audits gratuits.",
-      not_found: "Cette page n’existe pas (HTTP 404). Saisissez l’adresse d’accueil du site, comme votredomaine.com. Cet essai n’a pas été décompté de vos audits gratuits.",
+      not_found: "Cette page n’existe pas (HTTP 404). Saisissez l’adresse d’accueil du site, comme example.com. Cet essai n’a pas été décompté de vos audits gratuits.",
       empty: "Ce site a renvoyé une page vide : il n’y avait rien à lire. Cet essai n’a pas été décompté de vos audits gratuits.",
     },
     generic: "L’audit n’a pas pu s’exécuter de notre côté. Réessayez dans une minute. Cet essai n’a pas été décompté de vos audits gratuits.",

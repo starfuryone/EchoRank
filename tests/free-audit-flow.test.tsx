@@ -335,6 +335,16 @@ describe("the copy says 3, from config, in en / fr / de-CH", () => {
     expect(src).not.toMatch(/one free AI visibility audit per day/i);
   });
 
+  it.each([
+    ["en", "Your website, e.g. example.com"],
+    ["fr", "Votre site web, p. ex. example.com"],
+    ["de-CH", "Your website, e.g. example.com"], // the page folds de-CH to en
+  ] as const)("%s: the input asks for a website, never a brand", (locale, placeholder) => {
+    const html = renderToStaticMarkup(<AuditRunner facts={resultFacts(locale)} />);
+    expect(html).toContain(`placeholder="${placeholder}"`);
+    expect(html).not.toMatch(/brand|marque|Marke/i);
+  });
+
   it("the form's line reads '{remaining} of 3 audits left today' in en and fr", () => {
     expect(AUDIT_COPY.en.form.left(2, 3)).toBe("2 of 3 audits left today");
     expect(AUDIT_COPY.fr.form.left(2, 3)).toBe("Il vous reste 2 audits sur 3 aujourd’hui");

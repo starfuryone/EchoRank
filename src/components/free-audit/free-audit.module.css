@@ -122,6 +122,8 @@
   cursor: pointer;
 }
 .primary { background: var(--goldGrad); color: var(--onGold); border-color: transparent; font-weight: 750; }
+/* Running, empty field, or no audits left today: visibly off, not just inert. */
+.linkBtn:disabled { opacity: 0.45; cursor: not-allowed; }
 .lines { margin: 12px 0 0; padding-left: 18px; }
 .lines li { margin: 6px 0; }
 .lines a { color: var(--goldText); }
