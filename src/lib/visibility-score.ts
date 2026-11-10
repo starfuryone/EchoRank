@@ -15,8 +15,12 @@
 //   - charts break the line at a version change, with a one-line note.
 // Old audits keep their stored score and version; nothing is rescored.
 
-/** The sidecar's current SCORE_VERSION (av-service ai_readiness.py). */
-export const CURRENT_SCORE_VERSION = 2;
+/**
+ * The sidecar's current SCORE_VERSION (av-service ai_readiness.py). v3
+ * (2026-11-10): llms.txt and FAQ markup informational, Organization schema
+ * 12 → 8. Its first audit per monitor is a silent re-baseline, like v2's.
+ */
+export const CURRENT_SCORE_VERSION = 3;
 
 /** A drop of this many points or more, within one version, alerts. */
 export const SCORE_DROP_ALERT_POINTS = 5;

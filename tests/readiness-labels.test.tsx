@@ -15,6 +15,7 @@ import {
   fixLines,
   gateLine,
   readinessLocale,
+  scoreVersionNote,
   type ReadinessLocale,
 } from "@/lib/i18n/readiness";
 import { VISIBILITY_COPY, BRAND_RADAR_COPY, MONITOR_CARD_COPY } from "@/lib/i18n/dashboard";
@@ -95,7 +96,8 @@ describe("gates and fixes", () => {
       for (const id of gateIds) expect(READINESS_COPY.en.gates).toHaveProperty(id);
       const checkIds = [...py.matchAll(/Check\("([a-z-]+)"/g), ...py.matchAll(/(?:content_check|disc|page_check)\("([a-z-]+)"/g)]
         .map((m) => m[1]);
-      expect(checkIds.length).toBe(24);
+      // 24 in v2, plus v3's informational "faq-markup".
+      expect(checkIds.length).toBe(25);
       for (const id of checkIds) expect(READINESS_COPY.en.checks).toHaveProperty(id);
     }
   });
@@ -135,6 +137,25 @@ describe("the dashboard breakdown", () => {
     expect(html).toContain("Plafonné à 45");
     expect(html).toContain("Substance du contenu");
   });
+
+  it("v3: llms.txt and FAQ markup read 'not scored', never 0/0; Organization schema says what it helps", () => {
+    const v3 = {
+      ...audit,
+      checks: [
+        { id: "org-schema", category: "Organization / LocalBusiness schema", points: 6, max: 8, status: "" },
+        { id: "llms-txt", category: "llms.txt", points: 0, max: 0, status: "", scored: false },
+        { id: "faq-markup", category: "FAQ markup (FAQPage)", points: 0, max: 0, status: "", scored: false },
+      ],
+    };
+    const en = renderToStaticMarkup(createElement(ReadinessBreakdown, { audit: v3, locale: "en" }));
+    expect(en.match(/not scored: no AI engine confirms using it/g)).toHaveLength(2);
+    expect(en).not.toContain("0/0");
+    expect(en).toContain("6/8");
+    expect(en).toContain("Helps Google and Bing identify your business.");
+    const de = renderToStaticMarkup(createElement(ReadinessBreakdown, { audit: v3, locale: "de-CH" }));
+    expect(de).toContain("nicht bewertet");
+    expect(de).toContain("Hilft Google und Bing");
+  });
 });
 
 describe("history breaks at a version change", () => {
@@ -155,8 +176,12 @@ describe("history breaks at a version change", () => {
     expect(html).toContain("stroke-dasharray");
   });
 
-  it("the note names the change", () => {
-    expect(READINESS_COPY.en.versionNote).toBe("Scoring updated Nov 2026: stricter on content and entity signals");
+  it("the note names each change the history crosses", () => {
+    expect(scoreVersionNote([1, 1, 2], "en")).toBe("Scoring updated Nov 2026: stricter on content and entity signals");
+    expect(scoreVersionNote([2, 3], "en")).toBe("Scoring updated Nov 2026: llms.txt and FAQ markup are no longer scored");
+    expect(scoreVersionNote([1, 2, 3], "fr")).toContain("plus exigeante");
+    expect(scoreVersionNote([1, 2, 3], "fr")).toContain("ne sont plus notés");
+    expect(scoreVersionNote([2, 3], "de-CH")).toContain("nicht mehr bewertet");
   });
 });
 

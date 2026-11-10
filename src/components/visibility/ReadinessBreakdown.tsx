@@ -21,7 +21,8 @@ export interface ReadinessAudit {
   gates?: ReadinessGate[];
   groups?: ReadinessGroup[];
   top_fixes?: ReadinessFix[];
-  checks: { id?: string; category: string; points: number; max: number; status: string; ran?: boolean }[];
+  /** `scored: false` (v3): informational, shown as "not scored" instead of points. */
+  checks: { id?: string; category: string; points: number; max: number; status: string; ran?: boolean; scored?: boolean }[];
 }
 
 export function ReadinessBreakdown({ audit, locale }: { audit: ReadinessAudit; locale: ReadinessLocale }) {
@@ -87,14 +88,21 @@ export function ReadinessBreakdown({ audit, locale }: { audit: ReadinessAudit; l
           {c.allChecks}
         </summary>
         <ul className="mt-2 divide-y divide-gray-100">
-          {audit.checks.map((ch) => (
-            <li key={ch.id ?? ch.category} className="flex items-baseline justify-between gap-3 py-1.5">
-              <span className="text-gray-700">{(ch.id && c.checks[ch.id]?.title) || ch.category}</span>
-              <span className="shrink-0 text-xs text-gray-500">
-                {ch.ran === false ? c.notRun : `${ch.points}/${ch.max}`}
-              </span>
-            </li>
-          ))}
+          {audit.checks.map((ch) => {
+            const known = ch.id ? c.checks[ch.id] : undefined;
+            const informational = ch.scored === false;
+            return (
+              <li key={ch.id ?? ch.category} className="flex items-baseline justify-between gap-3 py-1.5" data-scored={informational ? "false" : undefined}>
+                <span className="text-gray-700">
+                  {known?.title || ch.category}
+                  {known?.note && <span className="block text-xs text-gray-500">{known.note}</span>}
+                </span>
+                <span className="shrink-0 text-right text-xs text-gray-500">
+                  {ch.ran === false ? c.notRun : informational ? c.notScored : `${ch.points}/${ch.max}`}
+                </span>
+              </li>
+            );
+          })}
         </ul>
       </details>
     </div>

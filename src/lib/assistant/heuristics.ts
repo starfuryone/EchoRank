@@ -36,6 +36,8 @@ export interface SidecarCheck {
   max: number;
   status: string;
   recommendation: string;
+  /** false = informational (score v3: llms.txt, FAQ markup): reported, worth 0, never a finding. */
+  scored?: boolean;
 }
 
 export interface SidecarAudit {
@@ -143,13 +145,14 @@ function extraFindings(audit: SidecarAudit): Finding[] {
     });
   }
 
+  // Score v3 (2026-11-10): llms.txt is informational. Its absence is reported
+  // as a fact, not a problem: no AI engine confirms using the file.
   if (audit.llms_txt === false) {
     out.push({
       id: "llms_txt_missing",
-      severity: "warning",
-      title: "No llms.txt",
-      evidence: "There is no llms.txt at the site root.",
-      fix: "Publish /llms.txt describing what the site is, who it serves and which pages matter most.",
+      severity: "ok",
+      title: "No llms.txt (not scored)",
+      evidence: "There is no llms.txt at the site root. It is not scored: no AI engine confirms using it.",
     });
   } else if (audit.llms_txt === true) {
     out.push({
@@ -171,7 +174,7 @@ function extraFindings(audit: SidecarAudit): Finding[] {
         types.length > 0
           ? `The homepage declares structured data (${types.join(", ")}) but no Organization or LocalBusiness type.`
           : "The homepage publishes no JSON-LD structured data at all.",
-      fix: "Add Organization (or LocalBusiness) JSON-LD with name, url, logo and sameAs links to your profiles.",
+      fix: "Add Organization (or LocalBusiness) JSON-LD with name, url, logo and sameAs links to your profiles. It helps Google and Bing identify your business.",
     });
   }
 
@@ -213,7 +216,7 @@ const SEVERITY_ORDER: Record<Severity, number> = { critical: 0, warning: 1, ok: 
 export function summarize(audit: SidecarAudit): HeuristicSummary | null {
   if (!audit || audit.error || typeof audit.score !== "number") return null;
 
-  const scored: Finding[] = (audit.checks ?? []).map((check) => {
+  const scored: Finding[] = (audit.checks ?? []).filter((check) => check.scored !== false).map((check) => {
     const severity = severityForCheck(check);
     return {
       id: check.category.toLowerCase().replace(/[^a-z0-9]+/g, "_").replace(/^_|_$/g, ""),

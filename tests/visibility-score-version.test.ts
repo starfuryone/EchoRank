@@ -23,7 +23,7 @@ describe("scoreVersionOf", () => {
     expect(scoreVersionOf({ score: 90 })).toBe(1);
     expect(scoreVersionOf({ score_version: "2" })).toBe(1);
     expect(scoreVersionOf(null)).toBe(1);
-    expect(CURRENT_SCORE_VERSION).toBe(2);
+    expect(CURRENT_SCORE_VERSION).toBe(3);
   });
 });
 
@@ -40,6 +40,11 @@ describe("monitorAlertDecision", () => {
       { score: 94, scoreVersion: 1, bots: allowed },
       { score: 44, scoreVersion: 2, bots: blocked },
     );
+    expect(d).toMatchObject({ kind: "rebaseline", alert: false, dropped: false, flippedBlocked: [] });
+  });
+
+  it("v2 → v3 (llms.txt and FAQ markup unscored) is the same silent re-baseline", () => {
+    const d = monitorAlertDecision({ score: 77, scoreVersion: 2, bots: allowed }, { score: 69, scoreVersion: 3, bots: blocked });
     expect(d).toMatchObject({ kind: "rebaseline", alert: false, dropped: false, flippedBlocked: [] });
   });
 

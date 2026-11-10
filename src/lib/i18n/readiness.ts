@@ -34,7 +34,8 @@ interface ReadinessCopy {
   label: string;
   presence: string;
   presenceNotTested: string;
-  versionNote: string;
+  /** The note for each scoring change, by the version it introduced. */
+  versionNotes: Record<2 | 3, string>;
   lowConfidence: string;
   cappedAt: (cap: number, reason: string) => string;
   gatesTitle: string;
@@ -43,11 +44,14 @@ interface ReadinessCopy {
   noFixes: string;
   allChecks: string;
   notRun: string;
+  /** An informational check (v3, `scored: false`): reported, worth 0 points. */
+  notScored: string;
   groups: Record<GroupId, string>;
   placeholderKinds: Record<string, string>;
   gates: Record<GateId, (p: Params) => string>;
   gateFixes: Record<GateId, string>;
-  checks: Record<string, { title: string; fix: (p: Params) => string }>;
+  /** `note`: one line under the title saying what the check is good for. */
+  checks: Record<string, { title: string; fix: (p: Params) => string; note?: string }>;
 }
 
 const list = (v: unknown) => (Array.isArray(v) ? v.map(String).join(", ") : "");
@@ -56,7 +60,10 @@ const en: ReadinessCopy = {
   label: "AI readiness score",
   presence: "AI presence",
   presenceNotTested: "not tested: this check asks no AI engine anything",
-  versionNote: "Scoring updated Nov 2026: stricter on content and entity signals",
+  versionNotes: {
+    2: "Scoring updated Nov 2026: stricter on content and entity signals",
+    3: "Scoring updated Nov 2026: llms.txt and FAQ markup are no longer scored",
+  },
   lowConfidence: "Low confidence: too many checks could not run, so the score is capped at 70.",
   cappedAt: (cap, reason) => `Capped at ${cap}: ${reason}`,
   gatesTitle: "What caps your score",
@@ -65,6 +72,7 @@ const en: ReadinessCopy = {
   noFixes: "Nothing left that would raise the score.",
   allChecks: "All checks",
   notRun: "not run",
+  notScored: "not scored: no AI engine confirms using it",
   groups: {
     access: "Access",
     rendering: "Rendering",
@@ -107,11 +115,12 @@ const en: ReadinessCopy = {
     "render-gap": { title: "Little hidden behind JavaScript", fix: () => "Server-render or pre-render what your visitors see (SSR/SSG)." },
     "main-words": { title: "Substantial main content", fix: () => "Write more specific copy on your homepage, About and Services pages: what you do, for whom, where, and for how much." },
     headings: { title: "Clear heading structure", fix: () => "Use one H1 that says what you do, and an H2 for each section." },
-    answerable: { title: "Answer-ready formats (FAQ, lists, tables)", fix: () => "Answer the questions customers ask under question headings (with FAQPage markup), and use lists or a table for services and prices." },
+    answerable: { title: "Answer-ready formats (questions, lists, tables)", fix: () => "Answer the questions customers ask under question headings, and use lists or a table for services and prices." },
+    "faq-markup": { title: "FAQ markup (FAQPage)", fix: () => "" },
     specifics: { title: "Specific facts", fix: () => "State the facts an answer can quote: prices, your address, opening hours, years in business, numbers." },
     "low-boilerplate": { title: "Low boilerplate", fix: () => "Trim repeated menus, banners and footers so the page’s own copy dominates." },
     dates: { title: "Visible dates", fix: () => "Show when key pages were last updated, and mark it up with dateModified." },
-    "org-schema": { title: "Organization / LocalBusiness schema", fix: (p) => (p.found ? `Complete your JSON-LD: add ${list(p.missing)}.` : "Add Organization (or LocalBusiness) JSON-LD with name, url, logo, sameAs links to your profiles and, for a local business, the address.") },
+    "org-schema": { title: "Organization / LocalBusiness schema", note: "Helps Google and Bing identify your business.", fix: (p) => (p.found ? `Complete your JSON-LD: add ${list(p.missing)}.` : "Add Organization (or LocalBusiness) JSON-LD with name, url, logo, sameAs links to your profiles and, for a local business, the address.") },
     "about-page": { title: "About page", fix: () => "Publish an About page of 150+ words: who runs the business, since when, credentials, where you work." },
     "contact-page": { title: "Contact page", fix: () => "Publish a Contact page with your phone, email and street address written as text." },
     nap: { title: "Name, address and phone consistent", fix: () => "Use one name, address and phone, written the same way, in your JSON-LD, footer and Contact page." },
@@ -122,7 +131,7 @@ const en: ReadinessCopy = {
     indexable: { title: "Homepage indexable", fix: () => "Remove the noindex robots tag from the homepage." },
     "titles-meta": { title: "Titles and meta descriptions", fix: () => "Give every page its own title and meta description." },
     "internal-links": { title: "Homepage links to key pages", fix: () => "Link About, Services and Contact from the homepage navigation." },
-    "llms-txt": { title: "llms.txt", fix: () => "Publish /llms.txt: a “# Site name” line, a one-line summary, then sections listing your key pages as links." },
+    "llms-txt": { title: "llms.txt", fix: () => "" },
   },
 };
 
@@ -130,7 +139,10 @@ const fr: ReadinessCopy = {
   label: "Score de préparation IA",
   presence: "Présence IA",
   presenceNotTested: "non testée : cette analyse n’interroge aucun moteur d’IA",
-  versionNote: "Notation mise à jour en novembre 2026 : plus exigeante sur le contenu et l’identité de l’entreprise",
+  versionNotes: {
+    2: "Notation mise à jour en novembre 2026 : plus exigeante sur le contenu et l’identité de l’entreprise",
+    3: "Notation mise à jour en novembre 2026 : llms.txt et le balisage FAQ ne sont plus notés",
+  },
   lowConfidence: "Fiabilité faible : trop de vérifications n’ont pas pu s’exécuter, le score est donc plafonné à 70.",
   cappedAt: (cap, reason) => `Plafonné à ${cap} : ${reason}`,
   gatesTitle: "Ce qui plafonne votre score",
@@ -139,6 +151,7 @@ const fr: ReadinessCopy = {
   noFixes: "Plus rien à corriger qui ferait monter le score.",
   allChecks: "Toutes les vérifications",
   notRun: "non exécutée",
+  notScored: "non notée : aucun moteur d’IA ne confirme l’utiliser",
   groups: {
     access: "Accès",
     rendering: "Rendu",
@@ -181,11 +194,12 @@ const fr: ReadinessCopy = {
     "render-gap": { title: "Peu de contenu caché derrière JavaScript", fix: () => "Faites le rendu côté serveur (SSR/SSG) de ce que voient vos visiteurs." },
     "main-words": { title: "Contenu principal substantiel", fix: () => "Étoffez l’accueil, la page À propos et les services : ce que vous faites, pour qui, où, à quel prix." },
     headings: { title: "Structure de titres claire", fix: () => "Un seul H1 qui dit ce que vous faites, et un H2 par section." },
-    answerable: { title: "Formats prêts pour les réponses (FAQ, listes, tableaux)", fix: () => "Répondez aux questions de vos clients sous des titres en forme de question (avec le balisage FAQPage), et présentez services et prix en listes ou en tableau." },
+    answerable: { title: "Formats prêts pour les réponses (questions, listes, tableaux)", fix: () => "Répondez aux questions de vos clients sous des titres en forme de question, et présentez services et prix en listes ou en tableau." },
+    "faq-markup": { title: "Balisage FAQ (FAQPage)", fix: () => "" },
     specifics: { title: "Faits précis", fix: () => "Donnez les faits qu’une réponse peut citer : prix, adresse, horaires, années d’activité, chiffres." },
     "low-boilerplate": { title: "Peu de contenu répétitif", fix: () => "Allégez menus, bannières et pieds de page répétés pour que le texte propre à la page domine." },
     dates: { title: "Dates visibles", fix: () => "Indiquez la date de dernière mise à jour des pages clés, balisée avec dateModified." },
-    "org-schema": { title: "Schéma Organization / LocalBusiness", fix: (p) => (p.found ? `Complétez votre JSON-LD : ajoutez ${list(p.missing)}.` : "Ajoutez un JSON-LD Organization (ou LocalBusiness) avec name, url, logo, des liens sameAs vers vos profils et, pour un commerce local, l’adresse.") },
+    "org-schema": { title: "Schéma Organization / LocalBusiness", note: "Aide Google et Bing à identifier votre entreprise.", fix: (p) => (p.found ? `Complétez votre JSON-LD : ajoutez ${list(p.missing)}.` : "Ajoutez un JSON-LD Organization (ou LocalBusiness) avec name, url, logo, des liens sameAs vers vos profils et, pour un commerce local, l’adresse.") },
     "about-page": { title: "Page À propos", fix: () => "Publiez une page À propos de 150 mots ou plus : qui dirige l’entreprise, depuis quand, qualifications, zone d’activité." },
     "contact-page": { title: "Page Contact", fix: () => "Publiez une page Contact avec téléphone, courriel et adresse postale écrits en texte." },
     nap: { title: "Nom, adresse et téléphone cohérents", fix: () => "Utilisez un seul nom, une seule adresse et un seul téléphone, écrits de la même façon dans le JSON-LD, le pied de page et la page Contact." },
@@ -196,7 +210,7 @@ const fr: ReadinessCopy = {
     indexable: { title: "Page d’accueil indexable", fix: () => "Retirez la balise robots noindex de la page d’accueil." },
     "titles-meta": { title: "Titres et méta-descriptions", fix: () => "Donnez à chaque page son propre titre et sa propre méta-description." },
     "internal-links": { title: "Liens de l’accueil vers les pages clés", fix: () => "Liez À propos, Services et Contact depuis la navigation de la page d’accueil." },
-    "llms-txt": { title: "llms.txt", fix: () => "Publiez /llms.txt : une ligne « # Nom du site », un résumé d’une ligne, puis des sections qui listent vos pages clés en liens." },
+    "llms-txt": { title: "llms.txt", fix: () => "" },
   },
 };
 
@@ -204,7 +218,10 @@ const de: ReadinessCopy = {
   label: "KI-Bereitschafts-Score",
   presence: "KI-Präsenz",
   presenceNotTested: "nicht getestet: diese Prüfung fragt keine KI-Suchmaschine",
-  versionNote: "Bewertung im November 2026 aktualisiert: strenger bei Inhalt und Angaben zum Unternehmen",
+  versionNotes: {
+    2: "Bewertung im November 2026 aktualisiert: strenger bei Inhalt und Angaben zum Unternehmen",
+    3: "Bewertung im November 2026 aktualisiert: llms.txt und FAQ-Auszeichnung werden nicht mehr bewertet",
+  },
   lowConfidence: "Geringe Aussagekraft: zu viele Prüfungen konnten nicht laufen, darum ist der Score auf 70 begrenzt.",
   cappedAt: (cap, reason) => `Auf ${cap} begrenzt: ${reason}`,
   gatesTitle: "Was Ihren Score begrenzt",
@@ -213,6 +230,7 @@ const de: ReadinessCopy = {
   noFixes: "Nichts mehr, was den Score anheben würde.",
   allChecks: "Alle Prüfungen",
   notRun: "nicht gelaufen",
+  notScored: "nicht bewertet: keine KI-Suchmaschine bestätigt, es zu nutzen",
   groups: {
     access: "Zugang",
     rendering: "Darstellung",
@@ -255,11 +273,12 @@ const de: ReadinessCopy = {
     "render-gap": { title: "Wenig hinter JavaScript versteckt", fix: () => "Rendern Sie serverseitig oder vorab, was Ihre Besucher sehen (SSR/SSG)." },
     "main-words": { title: "Substanzieller Hauptinhalt", fix: () => "Schreiben Sie mehr konkreten Text auf Startseite, Über-uns- und Leistungsseiten: was Sie tun, für wen, wo und zu welchem Preis." },
     headings: { title: "Klare Überschriftenstruktur", fix: () => "Eine H1, die sagt, was Sie tun, und eine H2 für jeden Abschnitt." },
-    answerable: { title: "Antwortfähige Formate (FAQ, Listen, Tabellen)", fix: () => "Beantworten Sie die Fragen Ihrer Kunden unter Fragen-Überschriften (mit FAQPage-Auszeichnung) und zeigen Sie Leistungen und Preise als Liste oder Tabelle." },
+    answerable: { title: "Antwortfähige Formate (Fragen, Listen, Tabellen)", fix: () => "Beantworten Sie die Fragen Ihrer Kunden unter Fragen-Überschriften und zeigen Sie Leistungen und Preise als Liste oder Tabelle." },
+    "faq-markup": { title: "FAQ-Auszeichnung (FAQPage)", fix: () => "" },
     specifics: { title: "Konkrete Fakten", fix: () => "Nennen Sie die Fakten, die eine Antwort zitieren kann: Preise, Adresse, Öffnungszeiten, Jahre im Geschäft, Zahlen." },
     "low-boilerplate": { title: "Wenig Wiederholungstext", fix: () => "Kürzen Sie wiederholte Menüs, Banner und Fusszeilen, damit der eigene Text der Seite überwiegt." },
     dates: { title: "Sichtbare Daten", fix: () => "Zeigen Sie, wann wichtige Seiten zuletzt aktualisiert wurden, ausgezeichnet mit dateModified." },
-    "org-schema": { title: "Organization- / LocalBusiness-Schema", fix: (p) => (p.found ? `Vervollständigen Sie Ihr JSON-LD: ergänzen Sie ${list(p.missing)}.` : "Ergänzen Sie Organization- (oder LocalBusiness-) JSON-LD mit name, url, logo, sameAs-Links zu Ihren Profilen und, für ein lokales Geschäft, der Adresse.") },
+    "org-schema": { title: "Organization- / LocalBusiness-Schema", note: "Hilft Google und Bing, Ihr Unternehmen zu erkennen.", fix: (p) => (p.found ? `Vervollständigen Sie Ihr JSON-LD: ergänzen Sie ${list(p.missing)}.` : "Ergänzen Sie Organization- (oder LocalBusiness-) JSON-LD mit name, url, logo, sameAs-Links zu Ihren Profilen und, für ein lokales Geschäft, der Adresse.") },
     "about-page": { title: "Über-uns-Seite", fix: () => "Veröffentlichen Sie eine Über-uns-Seite mit 150 Wörtern oder mehr: wer das Geschäft führt, seit wann, Qualifikationen, Einzugsgebiet." },
     "contact-page": { title: "Kontaktseite", fix: () => "Veröffentlichen Sie eine Kontaktseite mit Telefon, E-Mail und Postadresse als Text." },
     nap: { title: "Name, Adresse und Telefon einheitlich", fix: () => "Verwenden Sie einen Namen, eine Adresse und eine Telefonnummer, gleich geschrieben im JSON-LD, in der Fusszeile und auf der Kontaktseite." },
@@ -270,7 +289,7 @@ const de: ReadinessCopy = {
     indexable: { title: "Startseite indexierbar", fix: () => "Entfernen Sie das robots-Tag noindex von der Startseite." },
     "titles-meta": { title: "Titel und Meta-Beschreibungen", fix: () => "Geben Sie jeder Seite einen eigenen Titel und eine eigene Meta-Beschreibung." },
     "internal-links": { title: "Startseite verlinkt die wichtigsten Seiten", fix: () => "Verlinken Sie Über uns, Leistungen und Kontakt in der Navigation der Startseite." },
-    "llms-txt": { title: "llms.txt", fix: () => "Veröffentlichen Sie /llms.txt: eine Zeile «# Name der Website», eine einzeilige Zusammenfassung, dann Abschnitte mit Links zu Ihren wichtigsten Seiten." },
+    "llms-txt": { title: "llms.txt", fix: () => "" },
   },
 };
 
@@ -299,6 +318,17 @@ export interface ReadinessGroup {
 }
 
 const isGate = (id: string): id is GateId => id in en.gates;
+
+/**
+ * The note under a score history that spans versions: one line per change it
+ * crosses (v1 → v2, v2 → v3), in the reader's language.
+ */
+export function scoreVersionNote(versions: number[], locale: ReadinessLocale): string {
+  const notes = READINESS_COPY[locale].versionNotes;
+  const vs = [...new Set(versions)].sort((a, b) => a - b);
+  const lines = vs.slice(1).flatMap((v) => (v === 2 || v === 3 ? [notes[v]] : []));
+  return lines.length > 0 ? lines.join("; ") : notes[3];
+}
 
 /** "Capped at 45: homepage has under 150 words", in the reader's language. */
 export function gateLine(g: ReadinessGate, locale: ReadinessLocale): string {

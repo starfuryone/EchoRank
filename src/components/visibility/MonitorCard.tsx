@@ -5,7 +5,7 @@ import { Activity, Lock, Trash2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { MONITOR_CARD_COPY, type DashLocale } from "@/lib/i18n/dashboard";
-import { READINESS_COPY } from "@/lib/i18n/readiness";
+import { scoreVersionNote } from "@/lib/i18n/readiness";
 import { crossesVersions, versionSegments } from "@/lib/visibility-score";
 
 /**
@@ -249,7 +249,7 @@ export function MonitorCard({
               </p>
               {crossesVersions(pointsFor(m)) && (
                 <p className="text-xs text-gray-400" data-testid="score-version-note">
-                  {READINESS_COPY[locale].versionNote}
+                  {scoreVersionNote(pointsFor(m).map((p) => p.scoreVersion ?? 1), locale)}
                 </p>
               )}
             </div>
