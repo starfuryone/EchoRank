@@ -49,12 +49,14 @@ const graph = (html: string) =>
   });
 
 describe.each(LOCALES)("%s", (l) => {
-  it("the section sits right after the hero and before the capabilities, with its copy", async () => {
+  it("the section sits after the hero's pitch and before the capabilities, with its copy", async () => {
     const el = doc(await page(l));
     const sections = [...el.querySelectorAll("section")];
     const at = sections.findIndex((x) => x.id === NB_INTRO_ANCHOR);
-    expect(at).toBeGreaterThan(0);
-    expect(sections[at - 1]!.querySelector('[data-testid="hero-lockup"]')).not.toBeNull();
+    expect(at).toBeGreaterThan(1);
+    // Hero, then the pitch (2026-11-10: directly under the hero), then the video.
+    expect(sections[at - 1]!.getAttribute("data-testid")).toBe("nb-pitch");
+    expect(sections[at - 2]!.querySelector('[data-testid="hero-lockup"]')).not.toBeNull();
     expect(sections[at + 1]!.id).toBe("reports");
     const sec = sections[at]!;
     const fr = l === "fr";

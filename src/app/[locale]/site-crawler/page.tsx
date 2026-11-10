@@ -39,10 +39,11 @@ import { HOME_PRICING_CHROME, HOME_TOOLS, pricingNotes, toolCountLine } from "@/
 import { pricingTiers } from "@/lib/pricing-tiers";
 import { seoToolCounts } from "@/lib/seo-tools";
 import { CRAWLER_BRAND } from "@/lib/site-crawler/brand";
-import { ruleCountLabel } from "@/lib/site-crawler/rule-count";
+import { familyIsPublic, ruleCountLabel } from "@/lib/site-crawler/rule-count";
+import { buildNosybatFacts } from "@/lib/site-crawler/nosybat-facts";
+import { pitchCopy } from "@/lib/site-crawler/pitch-copy";
 import {
   CRAWL_CLOSER,
-  CRAWL_INTRO,
   CRAWL_PLANS,
   CRAWLER_BYLINE,
   FREE_COLUMN,
@@ -85,10 +86,6 @@ const num = (n: number, base: CopyBase) => new Intl.NumberFormat(base === "fr" ?
 // marketing-copy.ts so the guide renders the same words.
 const COPY = {
   en: {
-    metaTitle: `${NB} — site crawler by Echorank`,
-    h1: "The site crawler that shows its evidence.",
-    lead: (rules: string) =>
-      `${NB} crawls every page of a site the way a search engine does, checks each one against ${rules} rules, and puts the proof next to every finding. Hosted, scheduled, shared with your team — nothing to install.`,
     seePlans: "See plans",
     open: `Open ${NB}`,
     videoLabel: `Meet ${NB}`,
@@ -112,10 +109,6 @@ const COPY = {
     faqH2: "Questions",
   },
   fr: {
-    metaTitle: `${NB} — robot d'exploration par Echorank`,
-    h1: "Le robot d'exploration qui montre ses preuves.",
-    lead: (rules: string) =>
-      `${NB} explore chaque page d'un site comme le fait un moteur de recherche, la vérifie selon ${rules} règles et place la preuve à côté de chaque constat. Hébergé, planifié, partagé avec votre équipe — rien à installer.`,
     seePlans: "Voir les forfaits",
     open: `Ouvrir ${NB}`,
     videoLabel: `Découvrez ${NB}`,
@@ -172,19 +165,25 @@ export function generateStaticParams() {
 
 type Params = Promise<{ locale: string }>;
 
+/**
+ * The page's facts, from the registry as it is at render (a test stubs it),
+ * the plan config and the free crawl's limits: nosybat-facts.ts.
+ */
+const pageFacts = () => buildNosybatFacts({ rules: RULES.filter((r) => familyIsPublic(r.family)) });
+
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const { locale } = await params;
   if (!isSupportedLocale(locale)) return {};
-  const t = COPY[baseOf(locale)];
-  const description = t.lead(ruleCountLabel());
-  const meta = buildMetadata({ locale, path: PATH, title: t.metaTitle, description, ogImage: "/nosy-bat/og.png" });
-  // The title already ends in "by Echorank"; brandTitle would strip that tail
-  // and append "| Echorank360", leaving "… crawler by | Echorank360".
+  // The title is the H1 and the description the sub-line, from the pitch copy.
+  const p = pitchCopy(pageFacts(), baseOf(locale));
+  const title = p.h1.replace(/\.$/, "");
+  const meta = buildMetadata({ locale, path: PATH, title, description: p.sub, ogImage: "/nosy-bat/og.png" });
+  // Absolute: brandTitle would append "| Echorank360" to a title that is already a sentence.
   return {
     ...meta,
-    title: { absolute: t.metaTitle },
-    openGraph: { ...meta.openGraph, title: t.metaTitle },
-    twitter: { ...meta.twitter, title: t.metaTitle },
+    title: { absolute: title },
+    openGraph: { ...meta.openGraph, title },
+    twitter: { ...meta.twitter, title },
   };
 }
 
@@ -203,7 +202,23 @@ export default async function Page({ params }: { params: Params }) {
   const capabilities = visibleCapabilities(ctx);
   const rows = visibleFeatureRows(ctx);
   const faq = visibleFaq({ ...ctx, plans: PLANS_BY_ID, ruleCount: ruleCountLabel() }, base);
-  const lead = t.lead(ruleCountLabel());
+  const pitch = pitchCopy(pageFacts(), base);
+  const lead = pitch.sub;
+  const freeHref = link(FREE_CRAWLER_PATH);
+  const plansHref = (src: string) => `${link("/pricing")}?src=${src}`;
+  // The hero's and the closing band's two buttons: the free crawl, then the plans.
+  const buttons = (src: string) => (
+    <>
+      {pitch.freeButton && (
+        <a className={`${s.btn} ${s.btnPrimary}`} href={freeHref} data-testid={`${src}-free`}>
+          {pitch.freeButton}
+        </a>
+      )}
+      <a className={`${s.btn}${pitch.freeButton ? "" : ` ${s.btnPrimary}`}`} href={plansHref(src)} data-testid={`${src}-plans`}>
+        {pitch.plansButton}
+      </a>
+    </>
+  );
 
   const crawlerNode = {
     "@type": "SoftwareApplication",
@@ -256,14 +271,29 @@ export default async function Page({ params }: { params: Params }) {
             <NosyBatLogo height={72} alt={CRAWLER_BRAND.name} tone="accent" themed />
             <p className={c.byline}>{CRAWLER_BYLINE[base]}</p>
           </div>
-          <h1 className={s.h1}>{t.h1}</h1>
+          <h1 className={s.h1}>{pitch.h1}</h1>
           <p className={s.sub}>{lead}</p>
           <div className={s.ctarow} style={{ marginTop: 24 }}>
-            <CrawlerCta pricingHref={link("/pricing")} plansLabel={t.seePlans} openLabel={t.open} />
+            {buttons("site-crawler-hero")}
             <a className={c.textLink} href="#hosted">{t.compare}</a>
             {/* One link, not a strip of cards: the four guides are listed on
                 the guides index (#nosy-bat), and only there. */}
             <a className={c.textLink} href={link(CRAWLER_GUIDES_HREF)} data-testid="crawler-guides-link">{t.guides}</a>
+          </div>
+        </div>
+      </section>
+
+      {/* The pitch: six short blocks straight under the hero (pitch-copy.ts).
+          Unnumbered, so the sections below keep their numbers. */}
+      <section id="why" className={s.section} data-testid="nb-pitch">
+        <div className={s.container}>
+          <div className={c.pitchGrid}>
+            {pitch.blocks.map((blk) => (
+              <div key={blk.id} className={s.ucCard} data-block={blk.id}>
+                <h2 className={c.pitchTitle}>{blk.heading}</h2>
+                <p className={c.pitchBody}>{blk.body}</p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
@@ -297,7 +327,6 @@ export default async function Page({ params }: { params: Params }) {
         <div className={s.container}>
           <p className={s.label}><b>/ 02</b> — {t.reportsLabel}</p>
           <h2 className={s.h2}>{t.reportsH2}</h2>
-          <p className={s.sub} style={{ maxWidth: 760 }}>{CRAWL_INTRO[base]}</p>
           <ul className={c.capList}>
             {capabilities.map((cap) => (
               <li key={cap.id} className={c.capItem}>
@@ -452,8 +481,15 @@ export default async function Page({ params }: { params: Params }) {
               </div>
             ))}
           </div>
-          <div className={s.ctarow} style={{ marginTop: 28 }}>
-            <CrawlerCta pricingHref={link("/pricing")} plansLabel={t.seePlans} openLabel={t.open} />
+        </div>
+      </section>
+
+      {/* Closing band: the free crawl and the plans, the same two buttons as the hero. */}
+      <section id="start" className={s.section} data-testid="nb-closing">
+        <div className={s.container}>
+          <p className={c.closingLine}>{pitch.closing}</p>
+          <div className={s.ctarow} style={{ marginTop: 18 }}>
+            {buttons("site-crawler-closing")}
           </div>
         </div>
       </section>

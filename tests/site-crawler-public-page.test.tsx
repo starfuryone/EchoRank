@@ -28,6 +28,8 @@ import { PLAN_CONFIGS } from "@/lib/plan-config";
 import { LOCALIZED_ROUTES } from "@/lib/seo/registry";
 import { CRAWLER_BRAND } from "@/lib/site-crawler/brand";
 import { RULE_COUNT, familyIsPublic, ruleCountLabel } from "@/lib/site-crawler/rule-count";
+import { nosybatFacts } from "@/lib/site-crawler/nosybat-facts";
+import { pitchCopy } from "@/lib/site-crawler/pitch-copy";
 import {
   CRAWL_CAPABILITIES,
   CRAWL_FEATURE_ROWS,
@@ -53,10 +55,10 @@ afterEach(() => {
 describe("/site-crawler", () => {
   it("renders in en and fr", async () => {
     const en = await render("en");
-    expect(en).toContain("The site crawler that shows its evidence.");
+    expect(en).toContain("The SEO crawler that checks every page and shows its evidence.");
     expect(en).toContain(`src="${CRAWLER_BRAND.logoOnDarkAccent}"`);
     const fr = await render("fr");
-    expect(fr).toContain("Le robot d&#x27;exploration qui montre ses preuves.");
+    expect(fr).toContain("Le robot d&#x27;exploration SEO qui vérifie chaque page et montre ses preuves.");
     expect(fr).toContain("Ce que");
   });
 
@@ -64,10 +66,14 @@ describe("/site-crawler", () => {
     expect(LOCALIZED_ROUTES.find((r) => r.path === "/site-crawler")?.priority).toBe(0.7);
   });
 
-  it("titles the page with the brand and the OG card", async () => {
-    const meta = await generateMetadata({ params: Promise.resolve({ locale: "en" }) });
-    expect(meta.title).toEqual({ absolute: `${CRAWLER_BRAND.name} — site crawler by Echorank` });
-    expect(JSON.stringify(meta.openGraph)).toContain("/nosy-bat/og.png");
+  it("titles the page with the H1 and describes it with the sub-line, with the OG card", async () => {
+    for (const [locale, base] of [["en", "en"], ["fr", "fr"]] as const) {
+      const meta = await generateMetadata({ params: Promise.resolve({ locale }) });
+      const p = pitchCopy(nosybatFacts(), base);
+      expect(meta.title).toEqual({ absolute: p.h1.replace(/\.$/, "") });
+      expect(meta.description).toBe(p.sub);
+      expect(JSON.stringify(meta.openGraph)).toContain("/nosy-bat/og.png");
+    }
   });
 
   it("with an empty registry renders only always-on and flag-on items", async () => {
