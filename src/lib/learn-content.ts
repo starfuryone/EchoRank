@@ -1371,6 +1371,15 @@ const CSV_SYSTEM_ALT =
 const AI_LENS_GAP_ALT =
   "The AI Lens content gap, a five-part visibility workflow: compare the raw HTML with the rendered page, measure the gap, prioritize key pages, render content early, then recheck and monitor.";
 
+/**
+ * local-seo-checklist's "Last updated" date: the visible line at the end of
+ * the guide and its Article dateModified, from one constant.
+ */
+export const LOCAL_SEO_UPDATED = "2026-11-10";
+const LOCAL_SEO_UPDATED_LABEL = new Intl.DateTimeFormat("en-US", { dateStyle: "long", timeZone: "UTC" }).format(
+  new Date(`${LOCAL_SEO_UPDATED}T00:00:00Z`),
+);
+
 export const LEARN_GUIDES: LearnGuide[] = [
   {
     slug: "review-request-templates",
@@ -1774,6 +1783,7 @@ export const LEARN_GUIDES: LearnGuide[] = [
     tag: "Local SEO",
     blurb: "GBP completeness, NAP consistency, citations, structured data, weekly upkeep.",
     cta: "register",
+    dateModified: LOCAL_SEO_UPDATED,
     related: [
       {
         href: "/learn/classic-seo-that-compounds",
@@ -1828,7 +1838,8 @@ export const LEARN_GUIDES: LearnGuide[] = [
         k: "ul",
         items: [
           "**LocalBusiness** markup on your homepage/contact page, matching your NAP exactly",
-          "**FAQPage** markup on a real FAQ built from questions customers actually ask",
+          "A real FAQ written for people: the questions customers actually ask, answered plainly on the page",
+          "**FAQPage** markup is optional. Since May 7, 2026, Google shows no FAQ rich results for any site, so the markup earns none; add it only if another tool you rely on reads it",
           "Validate after every site change; re-run your site audit to confirm detection",
         ],
       },
@@ -1867,6 +1878,10 @@ export const LEARN_GUIDES: LearnGuide[] = [
       {
         k: "p",
         t: "The compounding loop: reviews improve rankings and click-through → more customers → more reviews. The checklist exists to make sure nothing structural is blocking that loop from turning.",
+      },
+      {
+        k: "p",
+        t: `**Last updated: ${LOCAL_SEO_UPDATED_LABEL}.** Step 4 now reflects Google ending FAQ rich results for every site on May 7, 2026.`,
       },
     ],
   },
