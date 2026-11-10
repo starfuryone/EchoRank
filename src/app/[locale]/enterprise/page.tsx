@@ -19,6 +19,8 @@ import { notFound } from "next/navigation";
 import { SUPPORTED_LOCALES, isSupportedLocale } from "@/lib/i18n/config";
 import { buildMetadata } from "@/lib/seo";
 import { CRAWLER_BRAND } from "@/lib/site-crawler/brand";
+import { nosybatFacts, shows } from "@/lib/site-crawler/nosybat-facts";
+import { nosybatPillars } from "@/lib/site-crawler/nosybat-pillars";
 import { AI_LABELS } from "@/lib/i18n/ai-labels";
 import { COMPANY } from "@/lib/brand/company";
 import { PLAN_CONFIGS, TRIAL_DAYS } from "@/lib/plan-config";
@@ -59,6 +61,24 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
   const crawler = CRAWLER_BRAND.nameTm;
   const talk = (src: string) => salesContactHref(locale, src);
   const L = (p: string) => `/${locale}${p}`;
+
+  // The crawler section: every number from nosybatFacts, the gated limits only
+  // while code enforces them. The page is English on every locale.
+  const nb = nosybatFacts();
+  const top = nb.topPlan;
+  const pillars = nosybatPillars(nb, "en");
+  const lead = pillars.find((p) => p.id === "checks");
+  const more = pillars.filter((p) => p !== lead && p.id !== "free");
+  const stats: [string, string][] = [
+    [nb.rules.label, "checks per crawl, with evidence on every finding"],
+    [n(top.urlsPerCrawl), `URLs per crawl on ${top.name}, custom on ${nb.plans.ENTERPRISE.name}`],
+    shows(nb, "pagesPerMonth") && top.pagesPerMonth !== null
+      ? [n(top.pagesPerMonth), `pages a month on ${top.name}, every crawl included`]
+      : [top.crawlsPerMonth === null ? "∞" : n(top.crawlsPerMonth), `crawls a month on ${top.name}, scheduled or on demand`],
+    shows(nb, "crawlsAtOnce")
+      ? [n(top.crawlsAtOnce), `crawls at once per workspace on ${top.name}; more wait in order`]
+      : ["0", "installs. Your whole team works from the same results"],
+  ];
 
   return (
     <div className={s.page}>
@@ -165,11 +185,12 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
               <div>
                 <div className={e.eyebrow}>Hosted crawling</div>
                 <h2>{crawler} crawls on our servers, not your laptop.</h2>
-                <p className={e.lead}>
-                  Schedule crawls for every client, compare each run with the last, and get the results by email. Every
-                  finding shows the evidence the rule saw, so your team can check it before a developer touches the
-                  site.
-                </p>
+                {/* The crawler's pillars (nosybat-pillars.ts): the first as the lead, the rest in the grid below. */}
+                {lead && (
+                  <p className={e.lead} data-pillar="checks">
+                    {lead.body}
+                  </p>
+                )}
               </div>
               <div>
                 <Finding
@@ -190,23 +211,21 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
                 />
               </div>
             </div>
-            <div className={e.stats}>
-              <div className={e.stat}>
-                <b>340+</b>
-                <span>checks per crawl, with evidence on every finding</span>
-              </div>
-              <div className={e.stat}>
-                <b>{n(agency.crawlUrlCap)}</b>
-                <span>URLs per crawl on Agency, custom on Enterprise</span>
-              </div>
-              <div className={e.stat}>
-                <b>{agency.crawlsPerMonth === null ? "∞" : n(agency.crawlsPerMonth)}</b>
-                <span>crawls a month on Agency, scheduled or on demand</span>
-              </div>
-              <div className={e.stat}>
-                <b>0</b>
-                <span>installs. Your whole team works from the same results</span>
-              </div>
+            <div className={`${e.grid5} ${e.pillars}`} data-testid="enterprise-pillars">
+              {more.map((p) => (
+                <div key={p.id} className={e.card} data-pillar={p.id}>
+                  <h4>{p.title}</h4>
+                  <p>{p.body}</p>
+                </div>
+              ))}
+            </div>
+            <div className={e.stats} data-testid="enterprise-crawler-stats">
+              {stats.map(([value, label]) => (
+                <div key={label} className={e.stat}>
+                  <b>{value}</b>
+                  <span>{label}</span>
+                </div>
+              ))}
             </div>
           </div>
         </section>
@@ -404,10 +423,10 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
                 <span className={e.go}>Run the audit →</span>
               </a>
               <a href={L("/free-tools/site-crawler")}>
-                <div className={e.eyebrow}>Free · 100 pages</div>
+                <div className={e.eyebrow}>Free · {n(nb.free.pages)} pages</div>
                 <h3>{crawler} crawl</h3>
-                <p>The full rule library on 100 pages, with the five problems to fix first.</p>
-                <span className={e.go}>Crawl 100 pages →</span>
+                <p>The full rule library on {n(nb.free.pages)} pages, with the five problems to fix first.</p>
+                <span className={e.go}>Crawl {n(nb.free.pages)} pages →</span>
               </a>
             </div>
           </div>

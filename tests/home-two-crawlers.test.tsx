@@ -1,3 +1,5 @@
+// @vitest-environment jsdom
+//
 // Homepage /01 — "Two crawlers" (SITE-CRAWLER-HOMEPAGE.md): placement right
 // after the hero with contiguous numbering, a derived rule count, gated words
 // and a gated link, and the featureList in the homepage JSON-LD.
@@ -34,6 +36,8 @@ import { RULES } from "@/lib/crawl-rules";
 import { HOME_TWO_CRAWLERS } from "@/lib/i18n/content";
 import { CRAWLER_BRAND } from "@/lib/site-crawler/brand";
 import { ruleCountLabel } from "@/lib/site-crawler/rule-count";
+import { nosybatFacts } from "@/lib/site-crawler/nosybat-facts";
+import { nosybatPillars } from "@/lib/site-crawler/nosybat-pillars";
 
 const section = (locale: string) => renderToStaticMarkup(TwoCrawlers({ locale, sectionNumber: "01" }));
 const home = async (locale: string) => renderToStaticMarkup(await HomePage({ params: Promise.resolve({ locale }) }));
@@ -81,13 +85,23 @@ describe("homepage two-crawlers section", () => {
     expect(section("en")).not.toContain(`Meet ${CRAWLER_BRAND.name}`);
   });
 
-  it("names a rule area only when its family is in the registry", () => {
-    expect(section("en")).toMatch(/hreflang, structured data and security headers/);
+  it("names a check area only when one of its families is in the registry", () => {
+    expect(section("en")).toMatch(/on-page, technical, hreflang, HTTPS, accessibility, spelling, and performance/);
     stub.rules = [{ family: "response_codes" }, { family: "page_titles" }];
     const html = section("en");
-    expect(html).toContain("broken links, redirect chains and titles and descriptions");
-    expect(html).not.toMatch(/hreflang|structured data|security headers/);
-    expect(html).toContain("across 2 rule families");
+    expect(html).toContain("checks across on-page and technical.");
+    expect(html).not.toMatch(/hreflang|HTTPS|accessibility|spelling/);
+  });
+
+  it("card B is the Nosy Bat pitch: the first pillar, then the others as bullets, from nosybatFacts", () => {
+    for (const base of ["en", "fr"] as const) {
+      const d = new DOMParser().parseFromString(section(base), "text/html");
+      const card = d.querySelectorAll("article")[1]!;
+      const pillars = nosybatPillars(nosybatFacts(), base);
+      expect(card.querySelector('[data-pillar="checks"]')!.textContent).toBe(pillars[0]!.body);
+      expect([...card.querySelectorAll("li")].map((li) => li.textContent)).toEqual(pillars.slice(1).map((p) => p.short));
+      expect(card.textContent).toContain(base === "fr" ? "non évaluable" : "not assessable");
+    }
   });
 
   it("sends Card A to the free audit and every other CTA to /pricing", () => {

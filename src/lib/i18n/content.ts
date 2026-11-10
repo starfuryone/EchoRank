@@ -1919,12 +1919,8 @@ export interface TwoCrawlersCopy {
     /** Text beside the logo (the logo's alt is the name). */
     byline: string;
     title: string;
-    body: (cap: string, rules: string, checks: string) => string;
-    checks: readonly { family: string; text: string }[];
-    and: string;
-    bulletRules: (rules: string, families: number) => string;
-    bulletRulesNoRegistry: (rules: string) => string;
-    bullets: string[];
+    // The body and the bullets are the crawler's pillars (src/lib/site-crawler/
+    // nosybat-pillars.ts): every number from nosybatFacts, each pillar gated.
     cta: string;
     secondary: string;
     /** The text link to the intro video on the crawler page (#video). */
@@ -1952,27 +1948,7 @@ export const HOME_TWO_CRAWLERS: Record<"en" | "fr", TwoCrawlersCopy> = {
     },
     b: {
       byline: CRAWLER_BRAND.byline,
-      title: "What search engines see, every page.",
-      body: (cap, rules, checks) =>
-        `Crawls up to ${cap} URLs and checks each one against ${rules} rules: ${checks}. Every finding is an issue, a warning or an opportunity, with the evidence next to it.`,
-      checks: [
-        { family: "response_codes", text: "broken links" },
-        { family: "response_codes", text: "redirect chains" },
-        { family: "page_titles", text: "titles and descriptions" },
-        { family: "content", text: "duplicate and thin content" },
-        { family: "directives", text: "directives" },
-        { family: "hreflang", text: "hreflang" },
-        { family: "structured_data", text: "structured data" },
-        { family: "security", text: "security headers" },
-      ],
-      and: "and",
-      bulletRules: (rules, families) => `${rules} checks across ${families} rule families`,
-      bulletRulesNoRegistry: (rules) => `${rules} checks across every rule family`,
-      bullets: [
-        "Issues, warnings and opportunities, with evidence",
-        "CSV export of every table",
-        "Included in every plan from Starter — no per-seat licence",
-      ],
+      title: "The hosted SEO crawler that checks every page, on your schedule, and shows the evidence.",
       cta: "See plans",
       secondary: `Meet ${CRAWLER_BRAND.name}`,
       watch: "Watch the 2-minute intro",
@@ -1997,27 +1973,7 @@ export const HOME_TWO_CRAWLERS: Record<"en" | "fr", TwoCrawlersCopy> = {
     },
     b: {
       byline: "robot d'exploration par Echorank",
-      title: "Ce que les moteurs de recherche voient, page par page.",
-      body: (cap, rules, checks) =>
-        `Explore jusqu'à ${cap} URL et vérifie chacune selon ${rules} règles : ${checks}. Chaque constat est un problème, un avertissement ou une occasion, avec la preuve à côté.`,
-      checks: [
-        { family: "response_codes", text: "liens brisés" },
-        { family: "response_codes", text: "chaînes de redirection" },
-        { family: "page_titles", text: "titres et descriptions" },
-        { family: "content", text: "contenu dupliqué ou trop mince" },
-        { family: "directives", text: "directives" },
-        { family: "hreflang", text: "hreflang" },
-        { family: "structured_data", text: "données structurées" },
-        { family: "security", text: "en-têtes de sécurité" },
-      ],
-      and: "et",
-      bulletRules: (rules, families) => `${rules} vérifications dans ${families} familles de règles`,
-      bulletRulesNoRegistry: (rules) => `${rules} vérifications dans chaque famille de règles`,
-      bullets: [
-        "Problèmes, avertissements et occasions, avec preuves",
-        "Export CSV de chaque tableau",
-        "Inclus dans chaque forfait à partir de Starter, sans licence par utilisateur",
-      ],
+      title: "Le robot d'exploration SEO hébergé qui vérifie chaque page, selon votre horaire, et montre les preuves.",
       cta: "Voir les forfaits",
       secondary: `Rencontrer ${CRAWLER_BRAND.name}`,
       watch: "Voir la présentation de 2 minutes",

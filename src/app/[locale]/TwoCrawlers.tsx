@@ -3,18 +3,20 @@
 //
 // A SERVER component passed into HomeClient as a slot, like ClassicSeoTools:
 // the rule registry (and the hreflang code lists it carries) stays out of the
-// homepage's client bundle, and every number here is derived at render —
-// the rule count and family count from the registry, the URL cap from
-// PLAN_CONFIGS. Rule areas named in the body are dropped when their family is
-// not in the registry; the link to the crawler page keys on crawl.publicPage.
+// homepage's client bundle, and every number here is derived at render from
+// nosybatFacts (the registry, PLAN_CONFIGS). Card B's body and bullets are the
+// crawler's pillars (nosybat-pillars.ts): a check area is named only while one
+// of its families is in the registry, a pillar only while its feature is live;
+// the link to the crawler page keys on crawl.publicPage.
 
 import Link from "next/link";
 import { RULES } from "@/lib/crawl-rules";
 import { flag } from "@/lib/flags";
 import { HOME_TWO_CRAWLERS } from "@/lib/i18n/content";
-import { PLAN_CONFIGS } from "@/lib/plan-config";
 import { CRAWLER_BRAND } from "@/lib/site-crawler/brand";
-import { ruleCountLabel } from "@/lib/site-crawler/rule-count";
+import { familyIsPublic } from "@/lib/site-crawler/rule-count";
+import { buildNosybatFacts } from "@/lib/site-crawler/nosybat-facts";
+import { nosybatPillars } from "@/lib/site-crawler/nosybat-pillars";
 import { NosyBatLogo } from "@/components/brand/NosyBatLogo";
 import { NB_INTRO_ANCHOR } from "@/lib/site-crawler/intro-video";
 import { AiVisibilityLogo } from "@/components/brand/AiVisibilityLogo";
@@ -23,23 +25,16 @@ import c from "./two-crawlers.module.css";
 
 const baseOf = (locale: string): "en" | "fr" => (locale.startsWith("fr") ? "fr" : "en");
 
-function joinList(items: string[], and: string): string {
-  return items.length < 2 ? items.join("") : `${items.slice(0, -1).join(", ")} ${and} ${items.at(-1)}`;
-}
-
 export function TwoCrawlers({ locale, sectionNumber }: { locale: string; sectionNumber: string }) {
   const base = baseOf(locale);
   const t = HOME_TWO_CRAWLERS[base];
   const L = (href: string) => `/${locale}${href}`;
 
-  const families = new Set<string>(RULES.map((r) => r.family));
-  const rules = ruleCountLabel();
-  const cap = new Intl.NumberFormat(base === "fr" ? "fr-CA" : "en-US").format(PLAN_CONFIGS.AGENCY.crawlUrlCap);
-  const checks = joinList(
-    [...new Set(t.b.checks.filter((x) => families.has(x.family)).map((x) => x.text))],
-    t.b.and,
-  );
-  const rulesBullet = families.size > 0 ? t.b.bulletRules(rules, families.size) : t.b.bulletRulesNoRegistry(rules);
+  // Card B is the crawler's pitch: the first pillar as the body, the others as
+  // bullets, every number from nosybatFacts (the registry as it is at render).
+  const pillars = nosybatPillars(buildNosybatFacts({ rules: RULES.filter((r) => familyIsPublic(r.family)) }), base);
+  const lead = pillars.find((p) => p.id === "checks");
+  const bullets = pillars.filter((p) => p !== lead).map((p) => p.short);
 
   return (
     <section id="crawlers" className={s.section}>
@@ -72,9 +67,9 @@ export function TwoCrawlers({ locale, sectionNumber }: { locale: string; section
               <span className={c.byline}>{t.b.byline}</span>
             </div>
             <h3 className={c.title}>{t.b.title}</h3>
-            <p className={c.body}>{t.b.body(cap, rules, checks)}</p>
+            {lead && <p className={c.body} data-pillar="checks">{lead.body}</p>}
             <ul className={c.bullets}>
-              {[rulesBullet, ...t.b.bullets].map((b) => <li key={b}>{b}</li>)}
+              {bullets.map((b) => <li key={b}>{b}</li>)}
             </ul>
             <div className={c.ctas}>
               <Link className={`${s.btn} ${s.btnPrimary}`} href={L("/pricing")}>{t.b.cta}</Link>

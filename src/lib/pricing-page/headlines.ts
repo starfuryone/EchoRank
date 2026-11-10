@@ -28,6 +28,9 @@ import {
 import { isSeoToolLive } from "@/lib/seo-tools";
 import { hasFeature } from "@/lib/feature-flags";
 import { CRAWLER_BRAND } from "@/lib/site-crawler/brand";
+import { NOSYBAT_ENFORCED } from "@/lib/site-crawler/nosybat-enforced";
+import { flag } from "@/lib/flags";
+import { planAllowsArea } from "@/lib/plan-access";
 import { ENGINE_CATALOGUE } from "@/lib/ai-monitor/engines";
 import { PLAN_AUDIENCE } from "./audience";
 import { fmtNum, pricingBase, type PricingBase } from "./format";
@@ -161,27 +164,59 @@ function analyses(c: PlanConfig, b: PricingBase): string | null {
   return { en: `${fmtNum(n, b)} domain analyses/mo`, fr: `${fmtNum(n, b)} analyses de domaine/mois`, de: `${fmtNum(n, b)} Domain-Analysen/Monat` }[b];
 }
 
-/** "4 <crawler> crawls/mo, up to 2,500 URLs each". Null when the crawler is locked (cap 0). */
-function crawls(c: PlanConfig, b: PricingBase): string | null {
-  if (c.crawlUrlCap <= 0) return null;
+// The crawler lines (the crawler's pitch, ECHORANK-NOSYBAT-COPY-REFRESH.md
+// Phase 2): the crawls and their size, the month's page allowance, JavaScript
+// rendering, crawls at once. Read from plan-config; the page allowance and
+// the crawls at once only while code enforces them (nosybat-enforced.ts, which
+// is dependency-free: this module reaches the billing page's client bundle
+// through plan-features.ts, so it cannot read nosybat-facts.ts).
+
+/** The crawler is on the plan: plan-access opens it and a crawl may fetch something. */
+const hasCrawler = (plan: SellablePlanType, c: PlanConfig) => planAllowsArea(plan, "crawler") && c.crawlUrlCap > 0;
+
+/**
+ * "20 <crawler> crawls/mo, up to 5,000 URLs each · 100,000 pages/mo · 2 at
+ * once". One line, not three: the cards hold at most nine entries
+ * (tests/pricing-cards.dom.test.tsx). Null without the crawler.
+ */
+function crawls(plan: SellablePlanType, c: PlanConfig, b: PricingBase): string | null {
+  if (!hasCrawler(plan, c)) return null;
   const name = CRAWLER_BRAND.name;
   const cap = fmtNum(c.crawlUrlCap, b);
   const per = c.crawlsPerMonth;
-  if (per === null) {
-    return {
-      en: `Unlimited ${name} crawls, up to ${cap} URLs each`,
-      fr: `Explorations ${name} illimitées, jusqu'à ${cap} URL chacune`,
-      de: `Unbegrenzte Crawls mit ${name}, je bis ${cap} URLs`,
-    }[b];
+  const head =
+    per === null
+      ? {
+          en: `Unlimited ${name} crawls, up to ${cap} URLs each`,
+          fr: `Explorations ${name} illimitées, jusqu'à ${cap} URL chacune`,
+          de: `Unbegrenzte Crawls mit ${name}, je bis ${cap} URLs`,
+        }[b]
+      : {
+          en: `${fmtNum(per, b)} ${name} crawls/mo, up to ${cap} URLs each`,
+          fr: `${fmtNum(per, b)} explorations ${name}/mois, jusqu'à ${cap} URL chacune`,
+          de: `${fmtNum(per, b)} Crawls mit ${name}/Monat, je bis ${cap} URLs`,
+        }[b];
+  const pages = c.crawlPagesPerMonth;
+  const parts = [head];
+  if (NOSYBAT_ENFORCED.pagesPerMonth && pages !== null && pages > 0) {
+    parts.push({ en: `${fmtNum(pages, b)} pages/mo`, fr: `${fmtNum(pages, b)} pages/mois`, de: `${fmtNum(pages, b)} Seiten/Monat` }[b]);
   }
-  const n = fmtNum(per, b);
-  return {
-    en: `${n} ${name} crawls/mo, up to ${cap} URLs each`,
-    fr: `${n} explorations ${name}/mois, jusqu'à ${cap} URL chacune`,
-    de: `${n} Crawls mit ${name}/Monat, je bis ${cap} URLs`,
-  }[b];
+  // Crawls at once only where more than one may run: one is the norm, not a selling point.
+  if (NOSYBAT_ENFORCED.crawlsAtOnce && c.crawlConcurrency > 1) {
+    const n = fmtNum(c.crawlConcurrency, b);
+    parts.push({ en: `${n} at once`, fr: `${n} simultanées`, de: `${n} gleichzeitig` }[b]);
+  }
+  return parts.join(" · ");
 }
 
+/**
+ * "JavaScript rendering included": the same words on every crawl plan, so the
+ * ladder shows it once, on the entry card ("Everything in Starter, plus:").
+ */
+function rendering(plan: SellablePlanType, c: PlanConfig, b: PricingBase): string | null {
+  if (!hasCrawler(plan, c) || !flag("crawl.render") || c.crawlRenderedPages <= 0) return null;
+  return { en: "JavaScript rendering included", fr: "Rendu JavaScript inclus", de: "JavaScript-Rendering inbegriffen" }[b];
+}
 /**
  * Support level per tier. BINDING WORDING, the same promise plan-features.ts
  * and the homepage FAQ make ("What support is included?"): email within 48 h
@@ -228,7 +263,8 @@ function allLines(plan: SellablePlanType, b: PricingBase): string[] {
     feedback(c, b),
     searches(c, b),
     analyses(c, b),
-    crawls(c, b),
+    crawls(plan, c, b),
+    rendering(plan, c, b),
     supportLine(plan, b),
   ].filter((l): l is string => l !== null);
 }

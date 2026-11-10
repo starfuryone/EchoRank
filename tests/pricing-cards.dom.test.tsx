@@ -77,10 +77,15 @@ function enLines(plan: Card): string[] {
   const engines = shape.providers === null ? "all AI engines" : `${shape.providers} AI engines`;
   const cadence = { weekly: "weekly", twice_weekly: "2×/week", daily: "daily" }[shape.frequency as "weekly"];
   const names = engineNames(shape);
+  // The crawler lines: the crawls, their size and the month's pages; JavaScript
+  // rendering; crawls at once where more than one may run.
   const crawls =
-    c.crawlsPerMonth === null
+    (c.crawlsPerMonth === null
       ? `Unlimited ${CRAWLER_BRAND.name} crawls, up to ${en(c.crawlUrlCap)} URLs each`
-      : `${en(c.crawlsPerMonth)} ${CRAWLER_BRAND.name} crawls/mo, up to ${en(c.crawlUrlCap)} URLs each`;
+      : `${en(c.crawlsPerMonth)} ${CRAWLER_BRAND.name} crawls/mo, up to ${en(c.crawlUrlCap)} URLs each`) +
+    (c.crawlPagesPerMonth ? ` · ${en(c.crawlPagesPerMonth)} pages/mo` : "") +
+    (c.crawlConcurrency > 1 ? ` · ${en(c.crawlConcurrency)} at once` : "");
+  const crawler = planAllowsArea(plan, "crawler");
   const lines: (string | null)[] = [
     `${en(shape.prompts)} AI prompts · ${engines} · ${cadence}${names ? ` (${names.join(", ")})` : ""}`,
     hasFeature(plan, "citation_tracking") ? "Cited sources and citation opportunities" : null,
@@ -90,7 +95,8 @@ function enLines(plan: Card): string[] {
     c.quotaDefaults.maxRequestsPerMonth > 0 ? `${en(c.quotaDefaults.maxRequestsPerMonth)} feedback requests/month` : null,
     c.seoSearchesPerMonth ? `${en(c.seoSearchesPerMonth)} SEO searches + ${en(c.trackedKeywords!)} tracked keywords` : null,
     c.keywordOpportunityAnalysesPerMonth ? `${en(c.keywordOpportunityAnalysesPerMonth)} domain analyses/mo` : null,
-    planAllowsArea(plan, "crawler") ? crawls : null,
+    crawler ? crawls : null,
+    crawler && c.crawlRenderedPages > 0 ? "JavaScript rendering included" : null,
     plan === "AI_VISIBILITY" || plan === "STARTER"
       ? "Email support — 48h weekday response"
       : "Priority support — email, 24h weekday response",
