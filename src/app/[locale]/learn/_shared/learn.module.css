@@ -500,6 +500,12 @@
   border: 1px solid var(--line, #232330);
   border-radius: 14px;
 }
+/* A figure that opens its full-size file: block, so the link adds no width. */
+.figureLink {
+  display: block;
+  max-width: 100%;
+  cursor: zoom-in;
+}
 .figcaption {
   margin: 10px 0 0;
   font-size: 13px;

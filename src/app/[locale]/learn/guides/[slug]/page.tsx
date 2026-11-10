@@ -31,7 +31,7 @@ import {
   videoObject,
   webSite,
 } from "@/lib/seo/jsonld";
-import { SITE_URL } from "@/lib/seo/constants";
+import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH, SITE_URL } from "@/lib/seo/constants";
 import { LEARN_BASE, LEARN_GUIDES, guideBySlug, guideCopy, howToSteps } from "@/lib/learn-content";
 import { flag } from "@/lib/flags";
 import { PLAN_CONFIGS } from "@/lib/plan-config";
@@ -75,7 +75,8 @@ export async function generateMetadata({
 
   const b = baseOf(locale);
   const copy = guideCopy(guide, b, locale);
-  return buildMetadata({
+  const card = shareCard(guide, locale);
+  const meta = buildMetadata({
     locale,
     path: `${LEARN_BASE}/guides/${guide.slug}`,
     title: copy.title,
@@ -84,13 +85,26 @@ export async function generateMetadata({
     // A localized guide canonicals to its body's language (en, fr, or de-CH
     // for a guide with a German body); an English-only one to en.
     canonicalLocale: copy.localized ? copy.lang : "en",
-    // The guide's own share card: EN base only (English text in the picture).
-    ...(guide.image && b === "en"
-      ? { ogImage: guide.image.og, ogImageAlt: guide.image.ogAlt }
-      : guide.shareImage
-        ? { ogImage: guide.shareImage }
-        : {}),
+    // The guide's own share card: EN base only (English text in the picture),
+    // unless the guide shows its picture on every locale (image.everyLocale).
+    ...(card ? { ogImage: card.og, ogImageAlt: card.alt } : guide.shareImage ? { ogImage: guide.shareImage } : {}),
   });
+  // twitter:image for a guide's own card: with its size and alt, like og:image.
+  if (card && guide.image?.everyLocale) {
+    meta.twitter = {
+      ...meta.twitter,
+      images: [{ url: `${SITE_URL}${card.og}`, width: OG_IMAGE_WIDTH, height: OG_IMAGE_HEIGHT, alt: card.alt }],
+    };
+  }
+  return meta;
+}
+
+/** The guide's own share card on this locale, or null (site default / shareImage). */
+function shareCard(guide: NonNullable<ReturnType<typeof guideBySlug>>, locale: string): { og: string; alt: string } | null {
+  const img = guide.image;
+  if (!img || (baseOf(locale) !== "en" && !img.everyLocale)) return null;
+  const alt = locale.startsWith("fr") ? img.ogAltI18n?.fr : locale.startsWith("de") ? img.ogAltI18n?.["de-CH"] : undefined;
+  return { og: img.og, alt: alt ?? img.ogAlt };
 }
 
 export default async function GuidePage({
@@ -123,8 +137,8 @@ export default async function GuidePage({
       pageUrl,
       readingTime: guide.readingTime,
       inLanguage: lang,
-      // EN base only, like the share card.
-      ...(guide.image && b === "en" ? { image: `${SITE_URL}${guide.image.article}` } : {}),
+      // EN base only, like the share card (every locale for image.everyLocale).
+      ...(guide.image && (b === "en" || guide.image.everyLocale) ? { image: `${SITE_URL}${guide.image.article}` } : {}),
       ...(guide.dateModified ? { dateModified: guide.dateModified } : {}),
     }),
     ...(steps.length > 0

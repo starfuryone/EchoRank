@@ -99,6 +99,14 @@ export type LearnBlock =
       caption?: string;
       priority?: boolean;
       onlyBase?: "en" | "fr";
+      /**
+       * Alt and caption for the other locales, where the figure shows there
+       * (the picture's own text may stay English). fr* reads `fr`, de* reads
+       * `de-CH`; every other locale reads `alt` / `caption`.
+       */
+      i18n?: Partial<Record<"fr" | "de-CH", { alt: string; caption?: string }>>;
+      /** Tapping the picture opens this file (the full-size image). */
+      href?: string;
     }
   /**
    * Where a crawler guide's inline CTA band or mid-guide nudge sits. The copy
@@ -262,7 +270,18 @@ export interface LearnGuide extends Omit<LearnChapter, "order"> {
    * (the pictures carry English text); other bases keep the site defaults.
    * Site-relative paths.
    */
-  image?: { og: string; ogAlt: string; article: string };
+  image?: {
+    og: string;
+    ogAlt: string;
+    article: string;
+    /**
+     * Use this share card and Article image on EVERY locale, not only en (the
+     * picture's text is English, but the guide shows it to every reader).
+     * ogAltI18n gives og:image:alt per locale: fr* → fr, de* → de-CH.
+     */
+    everyLocale?: boolean;
+    ogAltI18n?: Partial<Record<"fr" | "de-CH", string>>;
+  };
   /** Hero illustration above the title, by id (src/components/learn/nosy-bat-art). */
   hero?: string;
   /**
@@ -1372,6 +1391,27 @@ const AI_LENS_GAP_ALT =
   "The AI Lens content gap, a five-part visibility workflow: compare the raw HTML with the rendered page, measure the gap, prioritize key pages, render content early, then recheck and monitor.";
 
 /**
+ * local-seo-checklist's overview image, "Local SEO with Echorank": the seven
+ * layers and the loop they feed. Its own text is English; it shows on every
+ * locale with the alt text and caption below (also og:image:alt).
+ */
+const LOCAL_SEO_IMG = "/learn/guides/seven-layer-local-seo-discovery-blueprint";
+export const LOCAL_SEO_FIGURE = {
+  en: {
+    alt: "Seven-layer local SEO blueprint: 1 Google Business Profile (verify, categories, services, photos, reviews); 2 NAP consistency; 3 core citations (Google, Bing, Apple, Yelp, vertical directories); 4 structured data (LocalBusiness, validate); 5 service and city pages; 6 weekly 45-minute upkeep (one post, two photos, review replies, one page fix); 7 monthly check of 10–25 rankings, local links, calls and directions.",
+    caption: "The seven layers at a glance, and the loop they feed: more reviews, more visibility, more customers.",
+  },
+  fr: {
+    alt: "Plan du référencement local en sept couches : 1 Profil d’entreprise Google (validation, catégories, services, photos, avis) ; 2 cohérence NAP (nom, adresse, téléphone) ; 3 citations essentielles (Google, Bing, Apple, Yelp, annuaires de votre secteur) ; 4 données structurées (LocalBusiness, validation) ; 5 pages de services et de villes ; 6 entretien hebdomadaire de 45 minutes (une publication, deux photos, réponses aux avis, une correction de page) ; 7 suivi mensuel de 10 à 25 positions, des liens locaux, des appels et des demandes d’itinéraire.",
+    caption: "Les sept couches en un coup d’œil, et la boucle qu’elles alimentent : plus d’avis, plus de visibilité, plus de clients.",
+  },
+  "de-CH": {
+    alt: "Lokales SEO in sieben Ebenen: 1 Google-Unternehmensprofil (bestätigen, Kategorien, Leistungen, Fotos, Bewertungen); 2 NAP-Konsistenz (Name, Adresse, Telefon); 3 wichtigste Brancheneinträge (Google, Bing, Apple, Yelp, Fachverzeichnisse); 4 strukturierte Daten (LocalBusiness, validieren); 5 Leistungs- und Ortsseiten; 6 wöchentliche Pflege in 45 Minuten (ein Beitrag, zwei Fotos, Antworten auf Bewertungen, eine Seitenkorrektur); 7 monatliche Prüfung von 10–25 Rankings, lokalen Links, Anrufen und Routenanfragen.",
+    caption: "Die sieben Ebenen auf einen Blick und der Kreislauf, den sie antreiben: mehr Bewertungen, mehr Sichtbarkeit, mehr Kunden.",
+  },
+} as const;
+
+/**
  * local-seo-checklist's "Last updated" date: the visible line at the end of
  * the guide and its Article dateModified, from one constant.
  */
@@ -1784,6 +1824,13 @@ export const LEARN_GUIDES: LearnGuide[] = [
     blurb: "GBP completeness, NAP consistency, citations, structured data, weekly upkeep.",
     cta: "register",
     dateModified: LOCAL_SEO_UPDATED,
+    image: {
+      og: `${LOCAL_SEO_IMG}-og.jpg`,
+      ogAlt: LOCAL_SEO_FIGURE.en.alt,
+      article: `${LOCAL_SEO_IMG}-1672.webp`,
+      everyLocale: true,
+      ogAltI18n: { fr: LOCAL_SEO_FIGURE.fr.alt, "de-CH": LOCAL_SEO_FIGURE["de-CH"].alt },
+    },
     related: [
       {
         href: "/learn/classic-seo-that-compounds",
@@ -1799,6 +1846,24 @@ export const LEARN_GUIDES: LearnGuide[] = [
       {
         k: "p",
         t: "Local SEO is mostly a completeness-and-consistency game. This is the full checklist, ordered by leverage.",
+      },
+      // The checklist in one picture, above the fold: eager, not lazy. Its
+      // text is English; fr and de-CH get their own alt and caption.
+      {
+        k: "image",
+        src: `${LOCAL_SEO_IMG}-960.webp`,
+        srcset: [
+          { src: `${LOCAL_SEO_IMG}-960.webp`, w: 960 },
+          { src: `${LOCAL_SEO_IMG}-1672.webp`, w: 1672 },
+        ],
+        sizes: "(max-width: 760px) 100vw, 720px",
+        width: 1672,
+        height: 941,
+        alt: LOCAL_SEO_FIGURE.en.alt,
+        caption: LOCAL_SEO_FIGURE.en.caption,
+        priority: true,
+        i18n: { fr: LOCAL_SEO_FIGURE.fr, "de-CH": LOCAL_SEO_FIGURE["de-CH"] },
+        href: `${LOCAL_SEO_IMG}-1672.webp`,
       },
       {
         k: "h2",

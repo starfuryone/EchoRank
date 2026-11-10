@@ -266,25 +266,37 @@ export function Blocks({ body, locale, video, faq, afterIntro, ctas }: BlocksPro
             // picture is kept off /fr, which renders the same body array).
             const base = locale.startsWith("fr") ? "fr" : "en";
             if (block.onlyBase && block.onlyBase !== base) return null;
+            const local = locale.startsWith("fr") ? block.i18n?.fr : locale.startsWith("de") ? block.i18n?.["de-CH"] : undefined;
+            const alt = local?.alt ?? block.alt;
+            const caption = local ? local.caption : block.caption;
+            const img = (
+              // Plain <img>: the srcset is already cut to the widths the
+              // column needs, and width/height reserve the box before the
+              // file lands.
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                className={b.figureImg}
+                src={block.src}
+                srcSet={block.srcset.map((s) => `${s.src} ${s.w}w`).join(", ")}
+                sizes={block.sizes}
+                width={block.width}
+                height={block.height}
+                alt={alt}
+                loading={block.priority ? "eager" : "lazy"}
+                {...(block.priority ? { fetchPriority: "high" as const } : {})}
+                decoding="async"
+              />
+            );
             return (
               <figure key={key} className={b.figure}>
-                {/* Plain <img>: the srcset is already cut to the three widths
-                    the column needs, and width/height reserve the box before
-                    the file lands. */}
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  className={b.figureImg}
-                  src={block.src}
-                  srcSet={block.srcset.map((s) => `${s.src} ${s.w}w`).join(", ")}
-                  sizes={block.sizes}
-                  width={block.width}
-                  height={block.height}
-                  alt={block.alt}
-                  loading={block.priority ? "eager" : "lazy"}
-                  {...(block.priority ? { fetchPriority: "high" as const } : {})}
-                  decoding="async"
-                />
-                {block.caption && <figcaption className={b.figcaption}>{block.caption}</figcaption>}
+                {block.href ? (
+                  <a className={b.figureLink} href={block.href}>
+                    {img}
+                  </a>
+                ) : (
+                  img
+                )}
+                {caption && <figcaption className={b.figcaption}>{caption}</figcaption>}
               </figure>
             );
           }
