@@ -225,6 +225,7 @@ const NAV: Record<Base, NavCopy> = {
           {
             title: "Learn",
             items: [
+              { href: "/blog", label: "Echorank Blog", desc: "GEO, AI search visibility and what to measure." },
               { href: "/learn", label: "Knowledge hub", desc: "Course, guides and Echopedia." },
               { href: "/learn/guides/what-nosy-bat-checks", label: `What ${CRAWLER_BRAND.name} checks`, desc: "Every rule family the crawler runs." },
               // One item, not the four guides: this column already holds eleven
@@ -233,7 +234,6 @@ const NAV: Record<Base, NavCopy> = {
               { href: CRAWLER_GUIDES_HREF, label: `${CRAWLER_BRAND.name} guides`, desc: "Broken links, sitemaps, extraction, migrations." },
               { href: "/seo-spider/issues", label: `${CRAWLER_BRAND.name} issue library`, desc: "Every check, with how to fix it." },
               { href: "/glossary", label: "Echorank Glossary", desc: "Search, ranking and AI visibility terms." },
-              { href: "/blog", label: "Echorank Blog", desc: "GEO, AI search visibility and what to measure." },
               { href: "/keyword-research", label: "Keyword research guide", desc: "Find, analyze and use keywords." },
               { href: "/link-building-playbook", label: "Link Building Playbook", desc: "Earn and scale high-quality backlinks." },
               { href: "/ai-discovery-optimization", label: "AI Discovery Optimization", desc: "Become discoverable, citable, and recommendable across AI search." },
@@ -323,12 +323,12 @@ const NAV: Record<Base, NavCopy> = {
           {
             title: "Apprendre",
             items: [
+              { href: "/blog", label: "Blogue Echorank", desc: "GEO, visibilité dans la recherche IA et quoi mesurer." },
               { href: "/learn", label: "Centre de connaissances", desc: "Cours, guides et Echopedia." },
               { href: "/learn/guides/what-nosy-bat-checks", label: `Ce que ${CRAWLER_BRAND.name} vérifie`, desc: "Chaque famille de règles du robot." },
               { href: CRAWLER_GUIDES_HREF, label: `Les guides ${CRAWLER_BRAND.name}`, desc: "Liens brisés, plans de site, extraction, migrations." },
               { href: "/seo-spider/issues", label: `Bibliothèque des problèmes ${CRAWLER_BRAND.name}`, desc: "Chaque vérification et sa correction (en anglais)." },
               { href: "/glossary", label: "Glossaire Echorank", desc: "Termes de recherche, ranking et visibilité IA." },
-              { href: "/blog", label: "Blog Echorank", desc: "GEO, visibilité dans la recherche IA et quoi mesurer." },
               { href: "/keyword-research", label: "Guide recherche de mots-clés", desc: "Trouver, analyser et utiliser les mots-clés." },
               { href: "/link-building-playbook", label: "Playbook netlinking", desc: "Obtenir et développer des backlinks de qualité." },
               { href: "/ai-discovery-optimization", label: "Optimisation de la découverte IA", desc: "Devenez visible, cité et recommandé dans la recherche IA." },

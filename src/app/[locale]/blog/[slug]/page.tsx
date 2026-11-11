@@ -70,7 +70,10 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
     path: blogArticlePath(slug),
     title: article.seoTitle,
     description: article.metaDescription,
-    ogImage: article.featuredImage,
+    // The raster social image when the article has one (an SVG hero renders
+    // as a blank card on every network), else the hero, as before.
+    ogImage: article.ogImage ?? article.featuredImage,
+    ogImageAlt: article.featuredImageAlt,
     ogType: "article",
     // NO canonicalLocale. Unlike the Knowledge Hub, whose English prose is
     // served under every locale, a blog article that has been translated is a
@@ -94,7 +97,10 @@ export default async function Page({ params }: { params: Params }) {
   const abs = (p: string) => `${SITE_URL}${link(p)}`;
   const pageUrl = abs(blogArticlePath(article.slug));
   const updated = showsUpdated(article);
-  const related = getRelated(loc, article);
+  // Three cards, or every article the author named when that is more: a
+  // series names its siblings, and the strip under the body is its "Further
+  // reading" row from the registry.
+  const related = getRelated(loc, article, Math.max(3, article.relatedSlugs.length));
 
   // The mid-article CTA lands after the second H2's opening paragraph. Anchored
   // to STRUCTURE, not to any sentence, so editing the copy cannot move it.
@@ -113,7 +119,7 @@ export default async function Page({ params }: { params: Params }) {
             headline: article.title,
             description: article.metaDescription,
             pageUrl,
-            image: article.featuredImage,
+            image: article.ogImage ?? article.featuredImage,
             datePublished: article.publishedAt,
             // Only when it is genuinely later — see showsUpdated(). The page and
             // the markup agree because they read the same predicate.
@@ -183,15 +189,16 @@ export default async function Page({ params }: { params: Params }) {
 
           <figure className={b.heroFig}>
             {/* Plain <img>: hand-drawn SVG, which next/image passes through
-                unoptimized anyway. The 1400x600 intrinsic size reserves the
-                block's height before the file lands. */}
+                unoptimized anyway. The intrinsic size (read from the file,
+                1400x600 for the generated heroes) reserves the block's height
+                before the file lands. */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               className={b.heroImg}
               src={article.featuredImage}
               alt={article.featuredImageAlt}
-              width={1400}
-              height={600}
+              width={article.heroSize?.width ?? 1400}
+              height={article.heroSize?.height ?? 600}
               // The hero is above the fold on every article; lazy-loading it
               // would defer the largest paint on the page.
               fetchPriority="high"
@@ -205,15 +212,19 @@ export default async function Page({ params }: { params: Params }) {
           {base !== article.bodyBase && <p className={l.langNotice}>{t.englishBody}</p>}
 
           <div className={l.articleLayout} style={{ marginTop: 34 }}>
-            <article className={l.article}>
-              <aside className={b.tldr}>
-                <p className={b.tldrH}>TL;DR</p>
-                <ul className={b.tldrList}>
-                  {article.tldr.map((line, i) => (
-                    <li key={i}>{line}</li>
-                  ))}
-                </ul>
-              </aside>
+            <article className={`${l.article} ${b.prose}`}>
+              {/* Optional: a hand-written article whose copy carries its own
+                  "Key takeaways" has no TL;DR, and draws no empty box. */}
+              {article.tldr && (
+                <aside className={b.tldr}>
+                  <p className={b.tldrH}>TL;DR</p>
+                  <ul className={b.tldrList}>
+                    {article.tldr.map((line, i) => (
+                      <li key={i}>{line}</li>
+                    ))}
+                  </ul>
+                </aside>
+              )}
 
               <Blocks body={head} locale={loc} />
               <BlogToolCta tool={article.relatedTool} locale={loc} base={base} />

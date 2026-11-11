@@ -1,9 +1,11 @@
-// Inline markup for Knowledge Hub prose: **bold**, `code`, [label](href).
+// Inline markup for Knowledge Hub prose: **bold**, `code`, [label](href),
+// *emphasis*.
 //
 // This is NOT a markdown parser and must not grow into one. The content pack
 // uses exactly these three inline constructs; block structure was resolved when
 // the pack was converted into src/lib/learn-content.ts, so nothing here has to
-// deal with nesting, emphasis, images or HTML.
+// deal with nesting, images or HTML. (Single-asterisk emphasis was added for
+// the blog's hand-written series; it does not nest either.)
 //
 // It returns React nodes rather than an HTML string on purpose: no
 // dangerouslySetInnerHTML anywhere in this feature, so a stray "<" in authored
@@ -62,8 +64,12 @@ export function resolveHref(href: string, locale: string): string {
 }
 
 // One alternation, so the tokens cannot overlap and the split stays lossless.
-const INLINE = /(\*\*[^*]+\*\*|`[^`]+`|\[[^\]]+\]\([^)]+\))/g;
+// *Emphasis* is the last alternative and needs a non-space just inside each
+// asterisk, so "**bold**" is always taken whole first and a lone "*" (a
+// footnote mark, "5 * 3") stays text. Added for the blog, whose articles use it.
+const INLINE = /(\*\*[^*]+\*\*|`[^`]+`|\[[^\]]+\]\([^)]+\)|\*[^*\s](?:[^*\n]*[^*\s])?\*)/g;
 const LINK = /^\[([^\]]+)\]\(([^)]+)\)$/;
+const EMPHASIS = /^\*[^*\s](?:[^*\n]*[^*\s])?\*$/;
 
 /**
  * Render one authored string.
@@ -81,6 +87,10 @@ export function inline(text: string, locale: string, keyPrefix: string): ReactNo
 
     if (part.startsWith("`") && part.endsWith("`")) {
       return <code key={key}>{part.slice(1, -1)}</code>;
+    }
+
+    if (EMPHASIS.test(part)) {
+      return <em key={key}>{part.slice(1, -1)}</em>;
     }
 
     const link = LINK.exec(part);
@@ -114,5 +124,6 @@ export function plainText(text: string): string {
   return text
     .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
     .replace(/\*\*([^*]+)\*\*/g, "$1")
-    .replace(/`([^`]+)`/g, "$1");
+    .replace(/`([^`]+)`/g, "$1")
+    .replace(/\*([^*\s](?:[^*\n]*[^*\s])?)\*/g, "$1");
 }

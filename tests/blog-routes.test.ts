@@ -129,7 +129,19 @@ describe("navigation", () => {
     expect(nav("en")).toContain(`href="/en${BLOG_BASE}"`);
     expect(nav("en")).toContain("Echorank Blog");
     expect(nav("fr")).toContain(`href="/fr${BLOG_BASE}"`);
-    expect(nav("fr")).toContain("Blog Echorank");
+    expect(nav("fr")).toContain("Blogue Echorank");
+  });
+
+  it("puts the blog FIRST in Resources > Learn, ahead of the Knowledge hub (en, fr)", () => {
+    // The Learn column's first link in the rendered panel is the blog.
+    for (const [locale, label] of [["en", "Echorank Blog"], ["fr", "Blogue Echorank"]] as const) {
+      const html = nav(locale);
+      const blog = html.indexOf(`href="/${locale}${BLOG_BASE}"`);
+      const hub = html.indexOf(`href="/${locale}/learn"`);
+      expect(blog, locale).toBeGreaterThan(-1);
+      expect(blog, locale).toBeLessThan(hub);
+      expect(html.slice(blog, blog + 400), locale).toContain(label);
+    }
   });
 
   it("carries a footer link, both locales", () => {
@@ -173,6 +185,12 @@ describe("in-article links", () => {
   it("points every prose link at a page that exists", () => {
     for (const a of articles) {
       for (const href of bodyLinks(a.body)) {
+        // A cited source (the AI Visibility series' "Sources" lists) is off-site:
+        // nothing offline can check it exists, but it must at least be https.
+        if (/^[a-z]+:/i.test(href)) {
+          expect(href.startsWith("https://"), `${a.slug}: ${href}`).toBe(true);
+          continue;
+        }
         const path = href.split("#")[0];
         const ok = registered.has(path) || slugs.has(path.replace(`${BLOG_BASE}/`, ""));
         expect(ok, `${a.slug}: ${href}`).toBe(true);

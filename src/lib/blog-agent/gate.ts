@@ -12,7 +12,7 @@
 // hard rule there has a check here, and a rule that cannot be checked here is
 // a rule the model may quietly ignore.
 
-import { blogFrontmatterSchema } from "@/lib/blog/schema";
+import { agentFrontmatterSchema } from "@/lib/blog/schema";
 import { parseFrontmatter, parseMarkdown, MarkdownError } from "@/lib/blog/markdown";
 import { readingTime, RESERVED_BLOG_SLUGS } from "@/lib/blog/constants";
 import { BANNED_PHRASES, TOOL_LINK_ALLOWLIST } from "./prompt";
@@ -151,7 +151,9 @@ export function runGate(input: GateInput): GateResult {
         featuredImageAlt: heroAlt(title || slug),
       }
     : {};
-  const fm = blogFrontmatterSchema.safeParse({ ...parsed.frontmatter, ...heroFields });
+  // The AGENT schema: the shared one plus the 165-character meta description
+  // and the required TL;DR its prompt asks for.
+  const fm = agentFrontmatterSchema.safeParse({ ...parsed.frontmatter, ...heroFields });
   if (!fm.success) {
     for (const issue of fm.error.issues) {
       failures.push(`Frontmatter field "${issue.path.join(".") || "(root)"}": ${issue.message}`);

@@ -330,8 +330,9 @@ describe("selection over the real content", () => {
       expect(related, a.slug).toHaveLength(Math.min(3, all.length - 1));
       expect(related.some((r) => r.slug === a.slug)).toBe(false);
       expect(new Set(related.map((r) => r.slug)).size).toBe(related.length);
-      // The author's own picks come first.
-      expect(related.slice(0, a.relatedSlugs.length).map((r) => r.slug)).toEqual(a.relatedSlugs);
+      // The author's own picks come first (as many as fit).
+      const picks = a.relatedSlugs.slice(0, 3);
+      expect(related.slice(0, picks.length).map((r) => r.slug)).toEqual(picks);
     }
   });
 

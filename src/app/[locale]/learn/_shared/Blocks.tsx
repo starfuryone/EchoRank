@@ -175,15 +175,20 @@ export function Blocks({ body, locale, video, faq, afterIntro, ctas }: BlocksPro
             return (
               <div key={key} className={block.stack ? `${b.tableWrap} ${b.tableStack}` : b.tableWrap}>
                 <table className={b.table}>
-                  <thead>
-                    <tr>
-                      {block.head.map((h, j) => (
-                        <th key={`${key}-h${j}`} scope="col">
-                          {inline(h, locale, `${key}-h${j}`)}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
+                  {/* A header row of empty cells ("| | |", the markdown way to
+                      write a two-column key/value table) draws no <thead>: an
+                      empty tinted bar above the rows reads as a rendering bug. */}
+                  {block.head.some((h) => h.trim()) && (
+                    <thead>
+                      <tr>
+                        {block.head.map((h, j) => (
+                          <th key={`${key}-h${j}`} scope="col">
+                            {inline(h, locale, `${key}-h${j}`)}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                  )}
                   <tbody>
                     {block.rows.map((row, j) => (
                       <tr key={`${key}-r${j}`}>
@@ -277,8 +282,10 @@ export function Blocks({ body, locale, video, faq, afterIntro, ctas }: BlocksPro
               <img
                 className={b.figureImg}
                 src={block.src}
-                srcSet={block.srcset.map((s) => `${s.src} ${s.w}w`).join(", ")}
-                sizes={block.sizes}
+                // An SVG (the blog's figures) has no srcset: one file at every width.
+                {...(block.srcset.length
+                  ? { srcSet: block.srcset.map((s) => `${s.src} ${s.w}w`).join(", "), sizes: block.sizes }
+                  : {})}
                 width={block.width}
                 height={block.height}
                 alt={alt}

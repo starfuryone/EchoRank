@@ -38,7 +38,7 @@ than an extra. That specifically includes `readingTime` (computed from the body)
 | `slug` | lowercase `a-z0-9` words joined by single hyphens. Must match the filename. Never `page`, `category`, `rss`, `rss.xml` — those are routes. |
 | `title` | 10–120 characters. Rendered as the h1. |
 | `seoTitle` | 10–75 characters. The `<title>`; `brandTitle()` appends the brand, so do not. |
-| `metaDescription` | **70–165 characters.** Over 165 fails the build. Under 120 wastes the slot. |
+| `metaDescription` | **70–165 characters** for the agent (its gate rejects 166+). A hand-written article whose copy is final may run to 190; over 190 fails the build. Under 120 wastes the slot. |
 | `excerpt` | 60–320 characters. Used as both the card blurb and the on-page lede. |
 | `category` | exactly one of: `GEO Guides`, `Best Practices`, `Use Cases`, `AI Visibility`, `Research`, `Tools` |
 | `tags` | 1–8 items, each 2+ characters. Inline array: `[GEO, robots.txt]` |
@@ -49,7 +49,8 @@ than an extra. That specifically includes `readingTime` (computed from the body)
 | `updatedAt` | OPTIONAL. Same format, and never earlier than `publishedAt`. |
 | `featuredImage` | `/blog/<slug>/hero.svg` — see [Hero image](#hero-image). |
 | `featuredImageAlt` | 10+ characters. Required, deliberately: a hero with no alt is the most common accessibility regression in a content system, and the only way to stop it is to make the file unparseable without one. |
-| `tldr` | 3–5 bullets, each over 20 characters. Block sequence. Renders as the accent-bordered summary box. |
+| `ogImage` | OPTIONAL. `/blog/<slug>/cover.png` (1200×630): the og:image, twitter:image and JSON-LD image when the hero is an SVG, which social cards do not render. Must exist. |
+| `tldr` | 3–5 bullets, each over 20 characters. Block sequence. Renders as the accent-bordered summary box. Required for the agent; OPTIONAL for a hand-written article that carries its own "Key takeaways" (no box is drawn). |
 | `faq` | OPTIONAL. If present: 2+ items, `q` 10+ chars, `a` 30+ chars. Its presence is what emits the `FAQPage` JSON-LD, so an empty FAQ section and a missing node cannot come apart. |
 | `relatedTool` | exactly one of: `free-audit`, `free-tools`, `pricing`, `ai-assistant` — see below. |
 | `relatedSlugs` | up to 6 slugs of articles that **already exist** in this directory, lowercase and hyphenated. Never your own slug. Inline array. Drives the Related strip, so a wrong one is a rendered 404. |
@@ -118,11 +119,14 @@ Anything outside it throws, with the line number:
   `####` has no block to compile to.
 - **Paragraphs**, `- ` bullets, `1. ` numbered lists, `> ` quotes, fenced code
   blocks, and pipe tables whose rows all carry the header's cell count.
-- **No inline images.** `![alt](path)` is rejected. An article's one image is
-  the hero; a figure is only expressible inside a `{k:"steps"}` walkthrough,
-  which the blog does not use.
-- **No nested or indented lists.** One level. A silently flattened sub-list
-  reads as an editing mistake nobody made, so it refuses instead.
+- **Figures, hand-written articles only.** `![alt](/blog/<slug>/<file>.svg)`
+  (or `.png`) alone on its line renders as a lazy-loaded figure, sized from the
+  file; a missing file fails the build. The agent's gate still rejects inline
+  images: its article's one image is the hero.
+- **No nested lists.** One level. A silently flattened sub-list reads as an
+  editing mistake nobody made, so it refuses instead. An indented line that is
+  not a list marker continues the item above it (e.g. its `code`).
+- **Emphasis:** `*word*` renders italic; `**word**` bold.
 - **Links** are `[label](path)`. Internal article links are `/blog/<slug>` and
   the slug must exist.
 

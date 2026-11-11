@@ -27,7 +27,9 @@
 //      than publishing an article with a paragraph missing.
 //
 // Supported: ## / ###, paragraphs, - and * bullets, 1. ordered lists,
-// > blockquotes, ``` fenced code, | pipe | tables |, --- ignored as a rule.
+// > blockquotes, ``` fenced code, | pipe | tables |, --- ignored as a rule,
+// and "![alt](/blog/...)" figures on their own line when the caller passes an
+// image resolver (the loader does; the agent's gate does not).
 
 import type { LearnBlock } from "@/lib/learn-content";
 import { headingId } from "@/lib/learn-content";
@@ -189,13 +191,29 @@ function tableCells(line: string): string[] {
 const IS_DIVIDER = (line: string) => /^\s*\|?[\s:-]*-{2,}[\s:|-]*\|?\s*$/.test(line);
 
 /**
+ * Intrinsic size of a body image, or null when the file is not there.
+ *
+ * Supplied by the loader, which can read public/. Without a resolver (the
+ * blog agent's gate) an inline image is refused, as before: the agent's
+ * article has one image, the hero, and it is generated for it.
+ */
+export type ImageResolver = (src: string) => { width: number; height: number } | null;
+
+export interface ParseOptions {
+  images?: ImageResolver;
+}
+
+/** "![alt](/blog/<slug>/<file>.svg)" alone on a line: the only image form accepted. */
+const IMAGE_LINE = /^!\[([^\]]+)\]\((\/blog\/[a-z0-9/-]+\.(?:svg|png))\)$/;
+
+/**
  * Compile a markdown body into LearnBlock[].
  *
  * Deliberately line-based rather than a recursive parser: the subset has no
  * nesting, so a state machine over lines is the whole job, and it can point at
  * the offending line number when it refuses.
  */
-export function parseMarkdown(body: string): LearnBlock[] {
+export function parseMarkdown(body: string, opts: ParseOptions = {}): LearnBlock[] {
   const lines = body.replace(/\r\n/g, "\n").split("\n");
   const blocks: LearnBlock[] = [];
   let para: string[] = [];
@@ -273,6 +291,14 @@ export function parseMarkdown(body: string): LearnBlock[] {
           throw new MarkdownError("nested lists are not supported", i + 1);
         }
         const m = ordered ? /^\d+[.)]\s+(.*)$/.exec(t) : /^[-*]\s+(.*)$/.exec(t);
+        // An indented line that is not a list marker continues the item above
+        // it (a wrapped item, or an item's `code` on its own line). Without
+        // this the list would end there, the line would become a paragraph, and
+        // the next item would restart the numbering at 1.
+        if (!m && items.length && /^\s{2,}\S/.test(lines[i])) {
+          items[items.length - 1] += ` ${t}`;
+          continue;
+        }
         if (!m) break;
         items.push(m[1].trim());
       }
@@ -300,11 +326,21 @@ export function parseMarkdown(body: string): LearnBlock[] {
       continue;
     }
 
-    // An image is a figure, and LearnBlock only carries one inside a {k:"steps"}
-    // walkthrough. Blog articles get their single image from `featuredImage`,
-    // so an inline one is a mistake worth naming.
+    // An image on its own line is a figure, accepted only when the caller can
+    // check the file (opts.images, the loader) and only for a file under
+    // /blog/. Anything else is refused by name: the agent's gate passes no
+    // resolver, so its articles still get their one image from featuredImage.
     if (/^!\[/.test(trimmed)) {
-      throw new MarkdownError("inline images are not supported; use featuredImage", i + 1);
+      flushPara();
+      const img = IMAGE_LINE.exec(trimmed);
+      if (!img || !opts.images) {
+        throw new MarkdownError("inline images are not supported; use featuredImage", i + 1);
+      }
+      const [, alt, src] = img;
+      const size = opts.images(src);
+      if (!size) throw new MarkdownError(`image not found under public/: ${src}`, i + 1);
+      blocks.push({ k: "image", src, srcset: [], sizes: "100vw", width: size.width, height: size.height, alt });
+      continue;
     }
 
     para.push(trimmed);

@@ -34,6 +34,28 @@ import { parseFrontmatter, parseMarkdown, tocOf } from "./markdown";
 import type { LearnBlock } from "@/lib/learn-content";
 
 const CONTENT_ROOT = join(process.cwd(), "content", "blog");
+const PUBLIC_ROOT = join(process.cwd(), "public");
+
+/**
+ * Intrinsic size of a body figure under public/, or null when it is missing
+ * (which the compiler turns into a build failure naming the line). Read from
+ * the file so the <img> reserves its box before it loads: an SVG's viewBox
+ * (or its width/height), a PNG's IHDR. markdown.ts accepts only those two.
+ */
+export function imageSize(src: string): { width: number; height: number } | null {
+  const path = join(PUBLIC_ROOT, src);
+  if (!src.startsWith("/blog/") || src.includes("..") || !existsSync(path)) return null;
+  if (src.endsWith(".png")) {
+    const head = readFileSync(path).subarray(0, 24);
+    return { width: head.readUInt32BE(16), height: head.readUInt32BE(20) };
+  }
+  const svg = readFileSync(path, "utf-8").slice(0, 2000);
+  const vb = /viewBox="\s*[-\d.]+[\s,]+[-\d.]+[\s,]+([\d.]+)[\s,]+([\d.]+)\s*"/.exec(svg);
+  if (vb) return { width: Math.round(Number(vb[1])), height: Math.round(Number(vb[2])) };
+  const w = /\swidth="([\d.]+)"/.exec(svg);
+  const h = /\sheight="([\d.]+)"/.exec(svg);
+  return w && h ? { width: Math.round(Number(w[1])), height: Math.round(Number(h[1])) } : null;
+}
 
 export interface BlogArticle extends BlogFrontmatter {
   /** Compiled body, rendered by the shared Blocks component. */
@@ -46,6 +68,8 @@ export interface BlogArticle extends BlogFrontmatter {
   bodyBase: BlogBase;
   /** Path after the locale segment. */
   path: string;
+  /** The hero's intrinsic size, read from the file; null when unreadable. */
+  heroSize: { width: number; height: number } | null;
 }
 
 /**
@@ -79,9 +103,17 @@ function loadFile(dir: string, file: string, base: BlogBase): BlogArticle {
     throw new Error(`content/blog/${base}/${file}: slug "${fm.slug}" wants the filename ${expected}`);
   }
 
+  // The hero and the social image must exist: a missing file is a broken
+  // picture on the page and a blank card on every share.
+  for (const src of [fm.featuredImage, fm.ogImage]) {
+    if (src && !existsSync(join(PUBLIC_ROOT, src))) {
+      throw new Error(`content/blog/${base}/${file}: image not found under public/: ${src}`);
+    }
+  }
+
   let body: LearnBlock[];
   try {
-    body = parseMarkdown(parsed.body);
+    body = parseMarkdown(parsed.body, { images: imageSize });
   } catch (err) {
     throw new Error(`content/blog/${base}/${file}: ${(err as Error).message}`);
   }
@@ -94,6 +126,7 @@ function loadFile(dir: string, file: string, base: BlogBase): BlogArticle {
     readingTime: readingTime(parsed.body),
     bodyBase: base,
     path: blogArticlePath(fm.slug),
+    heroSize: imageSize(fm.featuredImage),
   };
 }
 

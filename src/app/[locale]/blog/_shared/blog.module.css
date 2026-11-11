@@ -462,6 +462,43 @@
   margin: 0 auto 26px;
 }
 
+/* ── Article prose ─────────────────────────────────────────────────────── */
+/* On the <article> next to learn.module's .article: the blog's data tables
+   (zebra rows, a bold first column, a gold-tinted header), its figures and
+   inline code. The tables keep Blocks' horizontal-scroll wrapper on mobile. */
+
+.prose table th {
+  background: rgba(252, 213, 53, 0.1);
+  color: var(--text, #eaecef);
+}
+.prose table td {
+  color: var(--text-2, #b7bdc6);
+}
+.prose table tbody tr:nth-child(even) td {
+  background: rgba(255, 255, 255, 0.025);
+}
+.prose table td:first-child {
+  font-weight: 600;
+  color: var(--text, #eaecef);
+}
+.prose figure img {
+  border-color: var(--line, #2b3139);
+  border-radius: 16px;
+  background: var(--surface, #1e2329);
+}
+.prose p code,
+.prose li code,
+.prose td code {
+  font-family: var(--mono, ui-monospace, monospace);
+  font-size: 0.88em;
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: var(--surface, #1e2329);
+  border: 1px solid var(--line, #2b3139);
+  color: var(--gold, #fcd535);
+  overflow-wrap: anywhere;
+}
+
 /* ── Responsive ────────────────────────────────────────────────────────── */
 
 @media (max-width: 980px) {

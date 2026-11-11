@@ -66,7 +66,7 @@ export function categoryLabel(category: BlogCategory, base: BlogBase): string {
 export const BLOG_CHROME: Record<BlogBase, BlogChrome> = {
   en: {
     navLabel: "Echorank Blog",
-    hubEyebrow: "THE BLOG",
+    hubEyebrow: "ECHORANK BLOG",
     hubH1: "GEO, AI search visibility, and what actually moves them",
     hubSub:
       "Practical writing on generative engine optimization: how to measure AI visibility, how to earn citations, and which of your SEO habits still apply. Method over predictions.",
@@ -102,8 +102,8 @@ export const BLOG_CHROME: Record<BlogBase, BlogChrome> = {
       "This article has not been translated yet, so the body below is in English. Everything around it is in your language.",
   },
   fr: {
-    navLabel: "Blog Echorank",
-    hubEyebrow: "LE BLOG",
+    navLabel: "Blogue Echorank",
+    hubEyebrow: "BLOGUE ECHORANK",
     hubH1: "GEO, visibilité dans la recherche IA, et ce qui les fait bouger",
     hubSub:
       "Des articles concrets sur l'optimisation pour les moteurs génératifs : comment mesurer la visibilité IA, comment obtenir des citations, et lesquelles de vos habitudes SEO tiennent encore. De la méthode, pas des prédictions.",
@@ -133,10 +133,10 @@ export const BLOG_CHROME: Record<BlogBase, BlogChrome> = {
       "Un audit gratuit des signaux décrits dans cet article : quels agents IA votre robots.txt autorise, si vos pages portent leur contenu dans le HTML, et quelles données structurées sont présentes. Sans compte, sans carte.",
     bandCta: "Lancer mon audit gratuit ↗",
     bandGhost: "Voir les tarifs",
-    categoryTitle: (c) => `${c} — Blog Echorank`,
+    categoryTitle: (c) => `${c} — Blogue Echorank`,
     categoryDesc: (c) =>
       `Tous les articles ${c} du blog Echorank : de la méthode sur la visibilité dans la recherche IA, le GEO et ce qu'il faut mesurer.`,
-    pageTitle: (n) => `Blog Echorank — page ${n}`,
+    pageTitle: (n) => `Blogue Echorank — page ${n}`,
     englishBody:
       "Cet article n'est pas encore traduit : le corps ci-dessous est en anglais. Tout ce qui l'entoure est dans votre langue.",
   },

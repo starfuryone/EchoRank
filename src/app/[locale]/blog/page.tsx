@@ -7,8 +7,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { isSupportedLocale, SUPPORTED_LOCALES, type Locale } from "@/lib/i18n/config";
-import { buildMetadata, JsonLd, baseGraph } from "@/lib/seo";
-import { BLOG_BASE, BLOG_PAGE_SIZE, blogBaseOf } from "@/lib/blog/constants";
+import { SITE_URL, buildMetadata, JsonLd, baseGraph, blogIndex } from "@/lib/seo";
+import { BLOG_BASE, BLOG_PAGE_SIZE, blogArticlePath, blogBaseOf } from "@/lib/blog/constants";
 import { getAllArticles, getFeatured, pageCount, searchIndex } from "@/lib/blog/loader";
 import { PublicNav } from "../PublicNav";
 import { PublicFooter } from "@/components/PublicFooter";
@@ -48,7 +48,26 @@ export default async function Page({ params }: { params: Params }) {
   return (
     <div className={s.page}>
       <PublicNav locale={l} current="resources" />
-      <JsonLd graph={baseGraph(l)} />
+      <JsonLd
+        graph={[
+          ...baseGraph(l),
+          // The posts this page lists: the featured one, then page 1 of the grid.
+          blogIndex({
+            name: t.navLabel,
+            description: t.hubSub,
+            pageUrl: `${SITE_URL}/${l}${BLOG_BASE}`,
+            inLanguage: l,
+            posts: [featured, ...rest.slice(0, BLOG_PAGE_SIZE)]
+              .filter((a): a is NonNullable<typeof a> => !!a)
+              .map((a) => ({
+                headline: a.title,
+                url: `${SITE_URL}/${l}${blogArticlePath(a.slug)}`,
+                datePublished: a.publishedAt,
+                image: a.ogImage ?? a.featuredImage,
+              })),
+          }),
+        ]}
+      />
       <IndexView
         locale={l}
         base={base}

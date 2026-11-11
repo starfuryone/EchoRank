@@ -290,6 +290,41 @@ export function blogPosting(input: BlogPostingInput): JsonLdNode {
   };
 }
 
+export interface BlogIndexInput {
+  name: string;
+  description: string;
+  pageUrl: string;
+  inLanguage?: string;
+  /** The posts the page lists, in the order it lists them. */
+  posts: ReadonlyArray<{ headline: string; url: string; datePublished: string; image?: string }>;
+}
+
+/**
+ * The blog index as a `Blog`, listing the posts the page shows. Each post is
+ * a reference to the BlogPosting its own page emits (same @id), plus the few
+ * fields a reader of this graph alone needs.
+ */
+export function blogIndex(input: BlogIndexInput): JsonLdNode {
+  return {
+    "@type": "Blog",
+    "@id": `${input.pageUrl}#blog`,
+    name: input.name,
+    description: input.description,
+    url: input.pageUrl,
+    publisher: { "@id": ORGANIZATION_ID },
+    isPartOf: { "@id": WEBSITE_ID },
+    ...(input.inLanguage ? { inLanguage: input.inLanguage } : {}),
+    blogPost: input.posts.map((p) => ({
+      "@type": "BlogPosting",
+      "@id": `${p.url}#article`,
+      headline: p.headline,
+      url: p.url,
+      datePublished: p.datePublished,
+      ...(p.image ? { image: abs(p.image) } : {}),
+    })),
+  };
+}
+
 export interface CoursePart {
   headline: string;
   description: string;

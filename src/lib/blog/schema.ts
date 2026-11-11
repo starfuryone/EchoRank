@@ -20,6 +20,10 @@ import {
   SEARCH_INTENTS,
 } from "./constants";
 
+/** The meta description ceiling for any article, and the agent's tighter one. */
+export const META_DESCRIPTION_MAX = 190;
+export const AGENT_META_DESCRIPTION_MAX = 165;
+
 /** YYYY-MM-DD, and a real date — "2026-02-31" parses as March 3rd elsewhere. */
 const isoDate = z
   .string()
@@ -46,8 +50,14 @@ export const blogFrontmatterSchema = z
      * SERP are different sentences. brandTitle() appends the brand.
      */
     seoTitle: z.string().min(10).max(75),
-    /** Google truncates around 160; under 120 wastes the slot. */
-    metaDescription: z.string().min(70).max(165),
+    /**
+     * Google truncates around 160; under 120 wastes the slot. The schema
+     * allows up to META_DESCRIPTION_MAX because hand-written series ship with
+     * descriptions whose copy is final (the 2026-11-11 AI Visibility series
+     * runs to 184); the agent is still held to AGENT_META_DESCRIPTION_MAX by
+     * agentFrontmatterSchema below.
+     */
+    metaDescription: z.string().min(70).max(META_DESCRIPTION_MAX),
     /** The card blurb AND the on-page lede. One string, both jobs. */
     excerpt: z.string().min(60).max(320),
     category: z.enum(BLOG_CATEGORIES),
@@ -60,13 +70,24 @@ export const blogFrontmatterSchema = z
     /** Site-relative, under public/. Existence is checked by the loader. */
     featuredImage: z.string().regex(/^\/blog\/[a-z0-9/-]+\.(svg|webp|png|jpg)$/),
     /**
+     * OPTIONAL. A raster og:image / twitter:image / JSON-LD image (1200x630),
+     * for an article whose hero is an SVG: social cards do not render SVG.
+     * Absent, the hero is used, as before. Existence is checked by the loader.
+     */
+    ogImage: z.string().regex(/^\/blog\/[a-z0-9/-]+\.(png|jpg)$/).optional(),
+    /**
      * Required, not optional. A hero with no alt is the single most common
      * accessibility regression in a content system, and the only way to stop
      * it is to make the file unparseable without one.
      */
     featuredImageAlt: z.string().min(10),
-    /** The accent-bordered summary box. Three to five bullets, by design. */
-    tldr: z.array(z.string().min(20)).min(3).max(5),
+    /**
+     * The accent-bordered summary box. Three to five bullets, by design.
+     * OPTIONAL for a hand-written article whose copy is final and carries its
+     * own "Key takeaways" (no box is drawn without it); REQUIRED for the agent
+     * (agentFrontmatterSchema), whose prompt asks for it.
+     */
+    tldr: z.array(z.string().min(20)).min(3).max(5).optional(),
     /**
      * Optional. An article without it renders no FAQ section AND emits no
      * FAQPage node — the guard is in one place because those two facts must
@@ -92,3 +113,21 @@ export const blogFrontmatterSchema = z
   });
 
 export type BlogFrontmatter = z.infer<typeof blogFrontmatterSchema>;
+
+/**
+ * The blog agent's stricter contract: the same schema, plus the two rules the
+ * hand-written schema relaxed. Its prompt says "70 to 165" and asks for a
+ * TL;DR, so its drafts are judged by exactly that.
+ */
+export const agentFrontmatterSchema = blogFrontmatterSchema.superRefine((fm, ctx) => {
+  if (fm.metaDescription.length > AGENT_META_DESCRIPTION_MAX) {
+    ctx.addIssue({
+      code: "custom",
+      path: ["metaDescription"],
+      message: `over ${AGENT_META_DESCRIPTION_MAX} characters (${fm.metaDescription.length})`,
+    });
+  }
+  if (!fm.tldr) {
+    ctx.addIssue({ code: "custom", path: ["tldr"], message: "required: 3 to 5 bullets" });
+  }
+});
