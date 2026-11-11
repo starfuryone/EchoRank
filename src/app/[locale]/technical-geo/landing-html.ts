@@ -886,7 +886,7 @@ export const TECHNICAL_GEO_HTML = `<!DOCTYPE html>
         <div class="pricing-band">
           <div>
             <div class="eyebrow">Simple pricing</div>
-            <h2 style="margin-top:20px">Start at $79/mo. Scale when you&rsquo;re ready.</h2>
+            <h2 style="margin-top:20px">Starter from __PRICE_STARTER_MONTH__/mo. Scale when you&rsquo;re ready.</h2>
             <p class="lead">
               Every paid plan starts with a 7-day free trial. Cancel any time during the trial
               at no charge. Save up to 20% on annual billing.
@@ -900,20 +900,20 @@ export const TECHNICAL_GEO_HTML = `<!DOCTYPE html>
           <div class="price-cards">
             <div class="price-card hot">
               <span class="tag">Starter</span>
-              <b>$79<small>/mo</small></b>
-              <small>$63/mo billed annually &middot; AI visibility + full reputation suite</small>
+              <b>__PRICE_STARTER_MONTH__<small>/mo</small></b>
+              <small>__PRICE_STARTER_YEAR_MO__/mo billed annually &middot; AI visibility + full reputation suite</small>
               <a class="btn btn-primary" href="/en/pricing">Start free trial</a>
             </div>
             <div class="price-card">
               <span class="tag">Growth</span>
-              <b>$199<small>/mo</small></b>
-              <small>$159/mo billed annually &middot; intelligence + 5 seats</small>
+              <b>__PRICE_GROWTH_MONTH__<small>/mo</small></b>
+              <small>__PRICE_GROWTH_YEAR_MO__/mo billed annually &middot; intelligence + 5 seats</small>
               <a class="btn btn-secondary" href="/en/pricing">Start free trial</a>
             </div>
             <div class="price-card">
               <span class="tag">Agency</span>
-              <b>$499<small>/mo</small></b>
-              <small>$399/mo billed annually &middot; white-label, 20 locations</small>
+              <b>__PRICE_AGENCY_MONTH__<small>/mo</small></b>
+              <small>__PRICE_AGENCY_YEAR_MO__/mo billed annually &middot; white-label, 20 locations</small>
               <a class="btn btn-secondary" href="/en/pricing">Start free trial</a>
             </div>
           </div>

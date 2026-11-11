@@ -1,4 +1,4 @@
-// src/lib/authority-checker/pricing.ts — the "from $29" on the Link Authority
+// src/lib/authority-checker/pricing.ts — the "from $<price>" on the Link Authority
 // Checker's landing page, derived from the plans rather than typed: the lowest
 // monthly price among the plans that include the tool and allow it at least
 // one check. Today that is the AI Visibility plan.

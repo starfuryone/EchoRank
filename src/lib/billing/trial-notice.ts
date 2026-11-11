@@ -15,6 +15,7 @@ import { logger } from "@/infrastructure/observability/logger";
 import { prisma } from "@/lib/prisma";
 import { isEmailConfigured, missingEmailEnv, sendMail } from "@/lib/mailer";
 import { resolveIntervalFromPriceId } from "@/lib/stripe/prices";
+import { chargeForPrice } from "./subscription-charge";
 import { BILLING_URL, emailLocaleOf, renderTrialEndingEmail } from "./trial-ending-email";
 
 const log = logger.child({ module: "trial-notice" });
@@ -199,11 +200,19 @@ export async function sendTrialEndingEmail(input: {
     return;
   }
 
-  const interval = await resolveIntervalFromPriceId(subscription.stripePriceId);
+  // The amount from the subscription's OWN price: a trialist who started
+  // before a price change keeps that price (subscription-charge.ts). When
+  // Stripe cannot say, a price still on sale quotes the config, a retired one
+  // states no amount.
+  const answer = await chargeForPrice(subscription.stripePriceId);
+  const interval =
+    answer.kind === "charge" ? answer.charge.interval : await resolveIntervalFromPriceId(subscription.stripePriceId);
+  const chargeCents = answer.kind === "charge" ? answer.charge.cents : answer.kind === "config" ? undefined : null;
   const locale = emailLocaleOf(tenant.defaultLanguage);
   const { subject, html, text } = renderTrialEndingEmail({
     planType: subscription.planType,
     interval,
+    chargeCents,
     trialEndsAt,
     timezone: tenant.timezone,
     billingUrl: BILLING_URL,

@@ -24,7 +24,7 @@ export type PlanCardAction = "current" | "upgrade" | "downgrade" | "contact" | "
  * priced and has no Stripe lookup key — it gets a contact link instead.
  */
 export const UPGRADEABLE_PLANS: readonly PlanType[] = [
-  // The $29 AI-only plan (reinstated 2026-11-07): moving between it and Starter
+  // The AI-only plan (reinstated 2026-11-07): moving between it and Starter
   // is an ordinary checkout, in both directions.
   "AI_VISIBILITY",
   // NOT the crawler-only plan (2026-11-10): /billing draws no card for it, so

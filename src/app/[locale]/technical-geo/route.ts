@@ -1,6 +1,7 @@
 import { TECHNICAL_GEO_HTML } from "./landing-html";
 import { withThemeSchedule } from "@/lib/theme-schedule";
 import { withCompanyLine } from "@/lib/brand/company";
+import { withPlanPrices } from "./prices";
 
 /**
  * Standalone marketing landing page served as a raw HTML document. A route
@@ -10,7 +11,8 @@ import { withCompanyLine } from "@/lib/brand/company";
  * first-pass pages); links inside it are locale-prefixed /en/... paths.
  */
 export function GET() {
-  return new Response(withCompanyLine(withThemeSchedule(TECHNICAL_GEO_HTML)), {
+  // Prices from PLAN_CONFIGS (./prices.ts); the payload carries tokens, not amounts.
+  return new Response(withCompanyLine(withThemeSchedule(withPlanPrices(TECHNICAL_GEO_HTML))), {
     headers: {
       "Content-Type": "text/html; charset=utf-8",
       "Cache-Control": "public, max-age=300",

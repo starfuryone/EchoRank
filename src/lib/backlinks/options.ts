@@ -77,7 +77,7 @@ export const BACKLINKS_ANALYSES_PER_MONTH: Record<PlanType, number> = {
    * STARTER WAS 0, AND IS NOW 5. The two-tier split puts STARTER on Basic, and
    * a tier whose allowance is zero cannot use the tier it is assigned to — the
    * locked card would still be the whole experience. Five lookups is under $2
-   * of monthly COGS at the observed per-lookup cost, on a $79 plan, and Basic
+   * of monthly COGS at the observed per-lookup cost, on the Starter plan, and Basic
    * buys fewer endpoint families than the old five-call analysis did.
    *
    * FLAGGED: a packaging decision, reversible by setting this back to 0 and

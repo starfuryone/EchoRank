@@ -24,7 +24,7 @@ import { ConsentGate, consentPayload } from "./ConsentGate";
 import { stashCheckoutConsent } from "@/lib/checkout-consent";
 import { SNAPSHOT_COPY, snapshotBaseOf } from "@/lib/snapshot/copy";
 import { fitsTracking, parseTrackParam } from "@/lib/snapshot/tracking";
-import { pricingBase, usd } from "@/lib/pricing-page/format";
+import { pricingBase, usd, usdCents } from "@/lib/pricing-page/format";
 import { salesContactHref } from "@/lib/sales/inquiry-options";
 import { ENTERPRISE_BAND, ENTERPRISE_CARD, PLAN_AUDIENCE } from "@/lib/pricing-page/audience";
 import { planAllowsArea } from "@/lib/plan-access";
@@ -358,12 +358,13 @@ export function PricingSection({
                         {usd(p.monthly, base)}
                       </s>
                     ) : null}
-                    {/* usd(): whole dollars as before, both decimals for a price with cents. */}
-                    {usd(amount, base)}
+                    {/* Monthly: whole dollars (usd). Yearly: the monthly
+                        equivalent with both decimals (usdCents). */}
+                    {annual ? usdCents(amount, base) : usd(amount, base)}
                     <span>{priceChrome.perMonth}</span>
                     {annual && p.saveAmount ? (
                       <span className={s.priceSave}>
-                        {priceChrome.saveAmount.replace("{amount}", usd(p.saveAmount, base))}
+                        {priceChrome.saveAmount.replace("{amount}", usdCents(p.saveAmount, base))}
                       </span>
                     ) : annual && p.savePct ? (
                       <span className={s.priceSave}>
@@ -374,7 +375,7 @@ export function PricingSection({
                   {/* "billed $X yearly": annual × 12, from config. */}
                   {annual && p.annualTotal !== null && (
                     <div className={s.pbilled}>
-                      {priceChrome.billedYearly.replace("{total}", usd(p.annualTotal, base))}
+                      {priceChrome.billedYearly.replace("{total}", usdCents(p.annualTotal, base))}
                     </div>
                   )}
                   <div className={s.ptrial}>

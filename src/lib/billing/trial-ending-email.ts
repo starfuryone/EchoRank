@@ -11,7 +11,9 @@
 // literal somebody typed once.
 //
 // ── THE PRICE IS NEVER WRITTEN DOWN HERE ────────────────────────────────────
-// Every amount comes from PLAN_CONFIGS at send time. This is the money path: the
+// The amount is the subscription's own Stripe price when the sender knows it
+// (a trialist who started before the 2026-11-11 price change keeps that price),
+// and otherwise comes from PLAN_CONFIGS at send time. This is the money path: the
 // card is charged automatically when the trial converts, so an amount in this
 // email that disagrees with the amount on the card is not a copy bug, it is a
 // customer who was told the wrong thing before being charged. tests assert the
@@ -63,6 +65,12 @@ export interface TrialEndingCopyInput {
   planType: PlanType;
   /** From the price catalog. null when the catalog cannot say. */
   interval: BillingInterval | null;
+  /**
+   * The subscription's own price, in cents per period, when known. Omitted:
+   * the price is the one on sale and PLAN_CONFIGS is quoted. null: unknown,
+   * no amount is stated. See trialChargeLabel().
+   */
+  chargeCents?: number | null;
   /** When the trial converts to a charge. */
   trialEndsAt: Date;
   /** IANA zone from the tenant. An unusable value falls back to UTC. */
@@ -94,21 +102,31 @@ export function trialChargeLabel(
   planType: PlanType,
   interval: BillingInterval | null,
   locale: EmailLocale,
+  /**
+   * What the subscription's own Stripe price charges, in cents per period
+   * (src/lib/billing/subscription-charge.ts). A trialist who started before a
+   * price change stays on their price, so this, when known, wins over config.
+   * undefined = the price is the one on sale: quote PLAN_CONFIGS. null = not
+   * known: state no amount.
+   */
+  chargeCents?: number | null,
 ): string | null {
   const config = planConfig(planType);
-  if (config.isCustomPricing || !interval) return null;
+  if (config.isCustomPricing || !interval || chargeCents === null) return null;
 
-  // In cents: one plan has cents (the crawler-only plan, $17.92 × 12 = $215.04), and
+  // In cents: every yearly price has cents ($62.40 × 12 = $748.80), and
   // 17.92 * 12 in floating point is 215.04000000000002.
-  const cents = interval === "year" ? Math.round(config.annualPrice * 100) * 12 : Math.round(config.monthlyPrice * 100);
+  const cents =
+    chargeCents ?? (interval === "year" ? Math.round(config.annualPrice * 100) * 12 : Math.round(config.monthlyPrice * 100));
   const raw = cents / 100;
   // Grouped, because an annual charge runs to four digits and "$4788" is a
   // number a reader has to count. The pricing catalog groups too ("$1,379 CAD",
   // "1 379 $ CAD") — French uses a narrow no-break space, which is what the
-  // fr-CA formatter emits. Whole dollars print as before; an amount with cents
-  // prints both decimals ("$22.40").
+  // fr-CA formatter emits. A monthly charge in whole dollars prints without
+  // decimals ("$78"); a yearly charge always prints both ("$748.80"), as the
+  // cards print yearly figures.
   const amount = new Intl.NumberFormat(locale === "fr" ? "fr-CA" : "en-CA", {
-    minimumFractionDigits: cents % 100 === 0 ? 0 : 2,
+    minimumFractionDigits: interval === "year" || cents % 100 !== 0 ? 2 : 0,
     maximumFractionDigits: 2,
   }).format(raw);
   // House currency formatting, copied from the pricing catalog's own strings
@@ -222,7 +240,7 @@ function copyFor(
 export function renderTrialEndingEmail(input: TrialEndingCopyInput): RenderedEmail {
   const plan = planDisplayName(input.planType);
   const date = formatTrialEnd(input.trialEndsAt, input.timezone, input.locale);
-  const charge = trialChargeLabel(input.planType, input.interval, input.locale);
+  const charge = trialChargeLabel(input.planType, input.interval, input.locale, input.chargeCents);
   const c = copyFor(input.locale, { plan, date, charge });
   const chargeLine = charge ? c.charge : c.chargeUnknown;
 

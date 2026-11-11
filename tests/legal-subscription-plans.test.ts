@@ -28,7 +28,7 @@ import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { PLAN_CONFIGS, PLAN_ORDER } from "@/lib/plan-config";
-import { buildSubscriptionAgreement } from "@/app/[locale]/legal/_content/subscription-agreement";
+import { AGREEMENT_PLAN_LINES_2026_11_07, buildSubscriptionAgreement } from "@/app/[locale]/legal/_content/subscription-agreement";
 import { loadLegalDoc } from "@/app/[locale]/legal/_content/registry";
 import { CONSENT_DOCUMENT_IDS } from "@/lib/consent-config";
 import type { LegalDoc } from "@/app/[locale]/legal/_content/types";
@@ -74,19 +74,15 @@ describe("the served Subscription Agreement", () => {
     expect(planLines).toHaveLength(PLAN_ORDER.length);
   });
 
-  it("quotes the price the checkout charges, for every tier", () => {
+  it("quotes the pinned 2026-11-07 lines (the price change of 2026-11-11 is a draft, not published)", () => {
+    // §1.1 is no longer generated from PLAN_CONFIGS: the owner asked for the
+    // agreement's price change to be drafted only (legal-drafts/
+    // subscription-agreement-price-change-2026-11-11.md). The lines stay the
+    // text consented to under CONSENT_VERSION 2026-11-07 until a reviewed
+    // version replaces them; tests/subscription-agreement-pinned.test.ts holds
+    // them byte for byte.
     const lines = planSection(doc);
-    for (const plan of PLAN_ORDER) {
-      const c = PLAN_CONFIGS[plan];
-      const line = lines.find((l) => l.startsWith(`${c.name}:`))!;
-      if (c.isCustomPricing) {
-        expect(line, plan).toMatch(/custom pricing/i);
-        continue;
-      }
-      expect(line, plan).toContain(`$${c.monthlyPrice}/month`);
-      expect(line, plan).toContain(`$${c.annualPrice * 12}/year`);
-      expect(line, plan).toContain(`$${c.annualPrice}/month equivalent`);
-    }
+    for (const pinned of AGREEMENT_PLAN_LINES_2026_11_07) expect(lines).toContain(pinned);
   });
 
   it.each(RETIRED_TIER.map((r) => [r.source, r] as const))(

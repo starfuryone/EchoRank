@@ -25,7 +25,7 @@ import { CHECKUPS_PER_WEEK } from "@/lib/snapshot/tracking";
 
 /**
  * Whole-percent saving of the annual rate over monthly, rounded DOWN. In
- * cents: $22.40 → $17.92 is exactly 20%, which (22.4 - 17.92) / 22.4 in
+ * cents: 22.40 → 17.92 is exactly 20%, which (22.4 - 17.92) / 22.4 in
  * floating point puts at 19.999… and the floor at 19.
  */
 export function savePctOf(monthly: number | null, annual: number | null): number | null {
@@ -35,9 +35,9 @@ export function savePctOf(monthly: number | null, annual: number | null): number
 }
 
 /**
- * Plans whose card states the yearly saving as an amount ("save $53.76")
- * rather than a percentage: the crawler-only plan (owner's spec, 2026-11-10:
- * "$17.92/mo billed yearly, save $53.76").
+ * Plans whose card states the yearly saving as an amount ("save $52.80" since
+ * the 2026-11-11 price change) rather than a percentage: the crawler-only plan
+ * (owner's spec, 2026-11-10: "…/mo billed yearly, save <amount>").
  */
 const SAVE_AS_AMOUNT: ReadonlySet<SellablePlanType> = new Set<SellablePlanType>(["NOSY_BAT"]);
 

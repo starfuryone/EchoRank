@@ -4,7 +4,7 @@
 // ── Gating: TWO gates, both server-side ─────────────────────────────────────
 // 1. PAID, from ../layout.tsx, which wraps every /visibility/tools/* route and
 //    renders UpgradeState for a tenant whose billing status is not active.
-// 2. Every plan from the $29 AI Visibility plan up, here, via
+// 2. Every plan from the AI Visibility plan up, here, via
 //    hasFeature(planType, "citation_tracking"). Growth+ (advanced_analytics,
 //    Share of Voice's key) until 2026-11-07: cited sources are core to an AI
 //    visibility plan, so the citation tools moved to their own key and down

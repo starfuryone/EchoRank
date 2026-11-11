@@ -54,7 +54,7 @@ export interface AuthorityCopy {
   /** The hero kicker (the shell's default is "/ FREE TOOL"). */
   kicker: string;
   ctaTitle: string;
-  /** "Included in every plan from $29": the price comes from plan-config. */
+  /** "Included in every plan from $<price>": the price comes from plan-config. */
   ctaButton: (price: string) => string;
   allTools: string;
   shows: { title: string; items: string[] };

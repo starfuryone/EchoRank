@@ -68,7 +68,8 @@ describe("the yearly saving", () => {
     for (const t of pricingTiers("en")) {
       const c = PLAN_CONFIGS[t.id as SellablePlanType];
       expect(t.savePct).toBe(savePctOf(c.monthlyPrice, c.annualPrice));
-      expect(t.annualTotal).toBe(c.annualPrice * 12);
+      // In cents: 22.40 × 12 in floating point is 268.79999999999995.
+      expect(t.annualTotal).toBe((Math.round(c.annualPrice * 100) * 12) / 100);
       expect(t.trialDays).toBe(TRIAL_DAYS);
     }
   });

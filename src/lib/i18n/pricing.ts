@@ -19,9 +19,10 @@ export const LOCALE_CURRENCY: Record<string, Currency> = {
 
 // Monthly amounts in major units (no cents). Stripe Prices are created from these.
 export const PRICE_LADDER: Record<Currency, Record<Tier, number>> = {
-  // USD is authoritative (Stripe seed). Non-USD rows below are STALE:
-  // they still reflect the pre-alignment ladder and have no consumers yet.
-  USD: { starter: 79,  growth: 199,   agency: 499,   enterprise: 0 },
+  // NO CONSUMERS: nothing imports this table. The USD row mirrors
+  // PLAN_CONFIGS (src/lib/plan-config.ts, the real source) as of 2026-11-11;
+  // the non-USD rows below are STALE and reflect the pre-alignment ladder.
+  USD: { starter: 78,  growth: 177,   agency: 488,   enterprise: 0 },
   EUR: { starter: 49,  growth: 149,   agency: 349,   enterprise: 999 },
   GBP: { starter: 49,  growth: 149,   agency: 349,   enterprise: 999 },
   CAD: { starter: 69,  growth: 209,   agency: 479,   enterprise: 1379 },

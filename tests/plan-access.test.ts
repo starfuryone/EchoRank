@@ -401,7 +401,8 @@ describe("allowances rise with the ladder", () => {
     expect(shape("STARTER")).toEqual({ frequency: "daily", providers: 4, prompts: 15, repetitions: 1 });
     expect(shape("GROWTH")).toEqual({ frequency: "daily", providers: 4, prompts: 15, repetitions: 2 });
     expect(shape("AGENCY")).toEqual({ frequency: "daily", providers: 4, prompts: 20, repetitions: 3 });
-    expect([PLAN_CONFIGS.AI_VISIBILITY.monthlyPrice, PLAN_CONFIGS.AI_VISIBILITY.annualPrice * 12]).toEqual([29, 276]);
+    // The 2026-11-11 price change: $28 a month, $268.80 a year (20% off), in cents.
+    expect([PLAN_CONFIGS.AI_VISIBILITY.monthlyPrice, Math.round(PLAN_CONFIGS.AI_VISIBILITY.annualPrice * 100) * 12]).toEqual([28, 26_880]);
     expect(planAllowsArea("AI_VISIBILITY", "ai_visibility")).toBe(true);
   });
 });

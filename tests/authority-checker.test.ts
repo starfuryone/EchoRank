@@ -174,7 +174,7 @@ describe("copy: en / fr / de-CH", () => {
   const all = (c: AuthorityCopy) =>
     JSON.stringify(c) +
     c.form.competitorPlaceholder(1) +
-    c.ctaButton("$29") +
+    c.ctaButton("$28") +
     c.result.checkedOn("x") +
     c.usage.line(1, 10) +
     c.usage.unlimited(3) +
@@ -265,8 +265,10 @@ describe("registration", () => {
     expect(PLAN_CONFIGS.AGENCY.linkAuthorityChecksPerMonth).toBe(150);
     expect(PLAN_CONFIGS.ENTERPRISE.linkAuthorityChecksPerMonth).toBe(1000);
     // Worst case ≈ $0.146 a check: Growth and Agency stay under 5% of the price.
+    // (The bound was 4.5% at the old $199 / $499; at the 2026-11-11 prices
+    // Growth's 60 checks are 4.9% of $177, under the 5% this test states.)
     for (const p of ["GROWTH", "AGENCY"] as const) {
-      expect((PLAN_CONFIGS[p].linkAuthorityChecksPerMonth! * 0.146) / PLAN_CONFIGS[p].monthlyPrice, p).toBeLessThan(0.045);
+      expect((PLAN_CONFIGS[p].linkAuthorityChecksPerMonth! * 0.146) / PLAN_CONFIGS[p].monthlyPrice, p).toBeLessThan(0.05);
     }
     expect(linkAuthorityFromPrice()).toBe(PLAN_CONFIGS.AI_VISIBILITY.monthlyPrice);
   });
@@ -296,10 +298,10 @@ describe("the landing page", () => {
     expect(html).not.toContain("/ FREE TOOL");
   });
 
-  it('en says "Sample" and "Included in every plan from $29"', async () => {
+  it('en says "Sample" and "Included in every plan from $<the AI Visibility price>"', async () => {
     const html = await render("en");
     expect(html).toContain(">Sample<");
-    expect(html).toContain("Included in every plan from $29 →");
+    expect(html).toContain(`Included in every plan from $${PLAN_CONFIGS.AI_VISIBILITY.monthlyPrice} →`);
   });
 
   it("makes no API call: no form, no input, no /api/ URL, no fetch while rendering, none in its source", async () => {

@@ -6,7 +6,7 @@
 // FAQPage JSON-LD the shell builds from the same array. No form and no API
 // call: nothing here spends money or needs a limit.
 //
-// Primary CTA: "Included in every plan from $29" → ctaHref() (pricing, with
+// Primary CTA: "Included in every plan from $<price>" → ctaHref() (pricing, with
 // src=link-authority). The price is the lowest plan that includes the tool,
 // read from plan-config, never typed. Body localized en / fr / de-CH, so each
 // canonicals to its own base.

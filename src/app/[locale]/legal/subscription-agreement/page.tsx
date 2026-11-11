@@ -9,11 +9,12 @@
 // plus the "currently in English" banner the other legal pages already use —
 // an FR reader meeting an English body without notice is the worse outcome.
 //
-// §1.1's PRICE TABLE IS GENERATED FROM PLAN_CONFIGS, not typed out. A legal
-// document that quotes a price the checkout does not charge is the one drift in
-// here that actually matters, and this repo already guards the same numbers in
-// the pricing grid and the JSON-LD offers. The yearly figure is annualPrice x 12
-// because annualPrice is the per-month equivalent.
+// §1.1's PRICE TABLE WAS GENERATED FROM PLAN_CONFIGS until the price change of
+// 2026-11-11. It is now PINNED to the 2026-11-07 text
+// (AGREEMENT_PLAN_LINES_2026_11_07 in ../_content/subscription-agreement.tsx):
+// the owner asked for the agreement's change to be drafted, not published, so
+// the live document does not follow the config until a reviewed version
+// replaces the pinned lines and bumps CONSENT_VERSION.
 
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";

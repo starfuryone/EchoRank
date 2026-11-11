@@ -17,6 +17,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen, within } from "@testing-library/react";
 import { PricingSection } from "@/app/[locale]/PricingSection";
 import { pricingTiers, savePctOf } from "@/lib/pricing-tiers";
+import { usdCents } from "@/lib/pricing-page/format";
 import { HOME_PRICING_CHROME, toolCountLine } from "@/lib/i18n/content";
 import { seoToolCounts } from "@/lib/seo-tools";
 import { PLAN_CONFIGS, TRIAL_DAYS, type SellablePlanType } from "@/lib/plan-config";
@@ -131,7 +132,7 @@ describe("the rendered card line-ups", () => {
       "Email support — 48h weekday response",
     ]);
     expect(card("AI_VISIBILITY").textContent).not.toContain("Everything in");
-    expect(card("AI_VISIBILITY").textContent).toContain("$29");
+    expect(card("AI_VISIBILITY").textContent).toContain(`$${PLAN_CONFIGS.AI_VISIBILITY.monthlyPrice}/mo`);
   });
 
   it("STARTER opens with 'Everything in AI Visibility, plus:', its AI line, then what differs", () => {
@@ -270,9 +271,11 @@ describe("the monthly / yearly toggle", () => {
     for (const plan of CARDS) {
       const c = PLAN_CONFIGS[plan];
       const el = card(plan);
-      expect(el.querySelector("[class*=pamount]")!.textContent).toContain(`$${c.annualPrice}`);
+      // Yearly figures always carry both decimals ("$62.40", "$748.80"); the
+      // struck monthly price is whole ("$78"). Totals in cents.
+      expect(el.querySelector("[class*=pamount]")!.textContent).toContain(usdCents(c.annualPrice, "en"));
       expect(el.querySelector("s")?.textContent).toBe(`$${c.monthlyPrice}`);
-      expect(within(el).getByText(`billed $${en(c.annualPrice * 12)} yearly`)).toBeTruthy();
+      expect(within(el).getByText(`billed ${usdCents((Math.round(c.annualPrice * 100) * 12) / 100, "en")} yearly`)).toBeTruthy();
       expect(within(el).getByText(`save ${savePctOf(c.monthlyPrice, c.annualPrice)}%`)).toBeTruthy();
     }
   });
@@ -393,7 +396,8 @@ describe("each page's card set", () => {
     for (const plan of CARDS) {
       expect(card(plan).querySelector("[class*=pamount]")!.textContent, plan).toContain(`$${PLAN_CONFIGS[plan].monthlyPrice}`);
     }
-    expect(PLAN_CONFIGS.AI_VISIBILITY.monthlyPrice).toBe(29);
-    expect(PLAN_CONFIGS.AI_VISIBILITY.annualPrice * 12).toBe(276);
+    // The 2026-11-11 prices, in cents.
+    expect(PLAN_CONFIGS.AI_VISIBILITY.monthlyPrice).toBe(28);
+    expect(Math.round(PLAN_CONFIGS.AI_VISIBILITY.annualPrice * 100) * 12).toBe(26_880);
   });
 });

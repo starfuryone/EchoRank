@@ -52,8 +52,9 @@ describe("ai_visibility + answer_tracking are baseline", () => {
 describe("the plan is sellable", () => {
   it("has a card, a price and its own config, first on the ladder", () => {
     expect(PLAN_ORDER[0]).toBe("AI_VISIBILITY");
-    expect(PLAN_CONFIGS.AI_VISIBILITY.monthlyPrice).toBe(29);
-    expect(PLAN_CONFIGS.AI_VISIBILITY.annualPrice).toBe(23);
+    // The 2026-11-11 price change: $28, $22.40 a month billed yearly.
+    expect(PLAN_CONFIGS.AI_VISIBILITY.monthlyPrice).toBe(28);
+    expect(PLAN_CONFIGS.AI_VISIBILITY.annualPrice).toBe(22.4);
     expect(planConfig("AI_VISIBILITY")).toBe(PLAN_CONFIGS.AI_VISIBILITY);
     expect(sellablePlan("AI_VISIBILITY")).toBe("AI_VISIBILITY");
   });

@@ -40,8 +40,10 @@ describe("/pricing renders in every locale", () => {
       const html = await page(locale);
       expect(html.length).toBeGreaterThan(500);
       // The grid actually rendered, not just the shell.
-      // STARTER is the entry tier now that the $29 AI Visibility card is gone.
-      expect(html).toContain("$79");
+      // Every card plan's monthly price, from the config.
+      for (const plan of ["AI_VISIBILITY", "STARTER", "GROWTH", "AGENCY"] as const) {
+        expect(html, `${locale} ${plan}`).toContain(`$${PLAN_CONFIGS[plan].monthlyPrice}`);
+      }
     }
   });
 

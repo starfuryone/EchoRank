@@ -6,7 +6,7 @@ import { CRAWLER_BRAND } from "./site-crawler/brand";
  * The tiers that exist as products: every PlanType.
  *
  * AI_VISIBILITY was retired on 2026-08-09 (b4fd801) and folded onto STARTER,
- * and reinstated on 2026-11-07 as the $29 AI-only plan (ECHORANK-AI-TIER.md).
+ * and reinstated on 2026-11-07 as the AI-only plan (ECHORANK-AI-TIER.md).
  * The name and the identity functions below are kept so every call site that
  * went through them keeps compiling and now simply sees the real plan.
  */
@@ -189,7 +189,7 @@ export function linkAuthorityChecksLimit(plan: PlanType): number | null {
  * tool rendered a locked upsell card — and Basic includes it, so the allowance
  * had to become non-zero or "Basic = STARTER" would describe a card nobody can
  * click. At roughly $0.37 a lookup, five a month is under $2 of monthly COGS on
- * a $79 tier, and Basic buys fewer endpoint families than the old five-call
+ * the Starter tier, and Basic buys fewer endpoint families than the old five-call
  * analysis did. FLAGGED: this is a packaging change, not an implementation
  * detail.
  */
@@ -389,7 +389,7 @@ export interface PlanConfig {
    * A cap on CURRENT STATE, like trackedKeywords — it falls again when a brand
    * is deleted. It is NOT the spend guardrail; aiMonthlyCapUsd is, and it binds
    * regardless of how the brands are split. This exists because an agency
-   * tracking twelve clients on a $79 tier is a packaging problem, not a cost
+   * tracking twelve clients on the Starter tier is a packaging problem, not a cost
    * problem: the cap would stop them anyway, but at 3am mid-checkup with a
    * CAPPED row rather than at the moment they tried to add the twelfth brand.
    */
@@ -414,7 +414,7 @@ export interface PlanConfig {
    * the cap only bites on abuse. AGENCY's does NOT: $150 is about what one
    * fully-provisioned brand costs, so an agency tracking several brands will
    * reach it and later checkups stop with CAPPED. That is the intended
-   * guardrail on a $499 tier, but it is a pricing decision — raising it raises
+   * guardrail on the Agency tier, but it is a pricing decision — raising it raises
    * the worst-case monthly bill dollar for dollar.
    */
   aiMonthlyCapUsd: number | null;
@@ -457,10 +457,11 @@ export interface PlanConfig {
    * summaries at the recorded $0.024036, referring domains at $0.0258,
    * bulk_ranks unrecorded and assumed at the same ~$0.024 request base; its
    * first live call's real cost is in its SeoApiCall row):
-   *   AI_VISIBILITY  10 → $1.46 of $29  (5.0%)
-   *   STARTER        25 → $3.65 of $79  (4.6%)
-   *   GROWTH         60 → $8.76 of $199 (4.4%)
-   *   AGENCY        150 → $21.89 of $499 (4.4%)
+   *   AI_VISIBILITY  10 → $1.46 of $28  (5.2%)
+   *   STARTER        25 → $3.65 of $78  (4.7%)
+   *   GROWTH         60 → $8.76 of $177 (4.9%)
+   *   AGENCY        150 → $21.89 of $488 (4.5%)
+   * (monthly list prices of 2026-11-11; plan prices are the ones above.)
    *   ENTERPRISE  1,000 by default; staff raise a tenant above it in
    *               /admin/link-authority (tenants.linkAuthorityChecksOverride).
    * Never `null` (unlimited) on a sellable plan.
@@ -524,15 +525,15 @@ const AGENCY_CRAWLER_FREE_EXTRAS = {
 } as const satisfies Partial<PlanConfig>;
 
 export const PLAN_CONFIGS: Record<SellablePlanType, PlanConfig> = {
-  // The $29 AI-only plan (reinstated 2026-11-07, ECHORANK-AI-TIER.md). AI
+  // The AI-only plan (reinstated 2026-11-07, ECHORANK-AI-TIER.md). AI
   // visibility and nothing else: every SEO, crawl, reputation and API
   // allowance is 0, and src/lib/plan-access.ts keeps the areas themselves shut.
   AI_VISIBILITY: {
     name: "AI Visibility",
     slug: "ai_visibility",
     description: "Track whether ChatGPT, Gemini and Google's AI Overviews recommend your business",
-    monthlyPrice: 29,
-    annualPrice: 23,
+    monthlyPrice: 28,
+    annualPrice: 22.4,
     isCustomPricing: false,
     quotaDefaults: {
       maxLocations: 1,
@@ -596,16 +597,16 @@ export const PLAN_CONFIGS: Record<SellablePlanType, PlanConfig> = {
   // no API, MCP or white-label (no features in feature-flags.ts). Sold only once its stripe_prices rows exist
   // (src/lib/stripe/catalog.ts).
   //
-  // THE ONE PRICE WITH CENTS: $22.40 a month, $215.04 a year ($17.92 a month,
-  // 20% off). Every money figure about it is computed in cents
+  // Yearly is 20% off, like every card plan (price change of 2026-11-11). Every
+  // yearly figure has cents, so every money figure is computed in cents
   // (src/lib/pricing-page/format.ts), never by float multiplication.
   NOSY_BAT: {
     // The product name, from brand.ts (tests/nosy-bat-brand.test.ts).
     name: CRAWLER_BRAND.name,
     slug: "nosy_bat",
     description: "The SEO crawler that checks every page and shows its evidence, on its own",
-    monthlyPrice: 22.4,
-    annualPrice: 17.92,
+    monthlyPrice: 22,
+    annualPrice: 17.6,
     isCustomPricing: false,
     quotaDefaults: {
       maxLocations: 0,
@@ -658,8 +659,8 @@ export const PLAN_CONFIGS: Record<SellablePlanType, PlanConfig> = {
     // prompts), plus the reputation engine and the SEO tools.
     description:
       "AI answer tracking plus the reputation engine, for small businesses getting started",
-    monthlyPrice: 79,
-    annualPrice: 63,
+    monthlyPrice: 78,
+    annualPrice: 62.4,
     isCustomPricing: false,
     quotaDefaults: {
       maxLocations: 1,
@@ -667,8 +668,8 @@ export const PLAN_CONFIGS: Record<SellablePlanType, PlanConfig> = {
       maxEmailsPerMonth: 500,
       maxSmsPerMonth: 0,
       maxWebhooksPerMonth: 1000,
-      // AI inference + monitoring allowances inherited from the retired $29 AI
-      // Visibility tier, whose capabilities STARTER now absorbs. Granting the
+      // AI inference + monitoring allowances inherited from the retired AI
+      // Visibility tier (2026-08), whose capabilities STARTER now absorbs. Granting the
       // ai_visibility feature without these would gate every monitor route on
       // a zero budget.
       maxAiInferencesPerMonth: 200,
@@ -723,8 +724,8 @@ export const PLAN_CONFIGS: Record<SellablePlanType, PlanConfig> = {
     name: "Growth",
     slug: "growth",
     description: "For growing businesses that need AI-powered insights",
-    monthlyPrice: 199,
-    annualPrice: 159,
+    monthlyPrice: 177,
+    annualPrice: 141.6,
     isCustomPricing: false,
     quotaDefaults: {
       maxLocations: 5,
@@ -780,8 +781,8 @@ export const PLAN_CONFIGS: Record<SellablePlanType, PlanConfig> = {
     name: "Agency",
     slug: "agency",
     description: "For agencies managing multiple client accounts",
-    monthlyPrice: 499,
-    annualPrice: 399,
+    monthlyPrice: 488,
+    annualPrice: 390.4,
     isCustomPricing: false,
     quotaDefaults: {
       maxLocations: 25,
@@ -979,7 +980,7 @@ export function getEnterpriseContact() {
   };
 }
 
-/** Canonical tier ordering, low to high, starting at the $29 AI-only plan.
+/** Canonical tier ordering, low to high, starting at the AI-only plan.
  *  Enterprise is custom-priced, so rank, not monthlyPrice, decides what
  *  counts as an upgrade.
  *

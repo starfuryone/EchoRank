@@ -13,12 +13,17 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const { tenant, sendMail, isEmailConfigured, resolveIntervalFromPriceId } = vi.hoisted(() => ({
+const { tenant, sendMail, isEmailConfigured, resolveIntervalFromPriceId, chargeForPrice } = vi.hoisted(() => ({
   tenant: { findUnique: vi.fn() },
   sendMail: vi.fn(),
   isEmailConfigured: vi.fn(),
   resolveIntervalFromPriceId: vi.fn(),
+  chargeForPrice: vi.fn(),
 }));
+
+// The subscription's own Stripe price (subscription-charge.ts). Default:
+// Stripe not read, the price is the one on sale, so the config is quoted.
+vi.mock("@/lib/billing/subscription-charge", () => ({ chargeForPrice }));
 
 vi.mock("@/lib/prisma", () => ({ prisma: { tenant } }));
 vi.mock("@/lib/mailer", () => ({
@@ -62,6 +67,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   isEmailConfigured.mockReturnValue(true);
   resolveIntervalFromPriceId.mockResolvedValue("month");
+  chargeForPrice.mockResolvedValue({ kind: "config" });
   sendMail.mockResolvedValue(true);
   tenant.findUnique.mockResolvedValue(tenantRow());
 });
@@ -84,6 +90,31 @@ describe("the happy path", () => {
     tenant.findUnique.mockResolvedValue(tenantRow({ defaultLanguage: "fr-CA" }));
     await sendTrialEndingEmail(JOB);
     expect(sendMail.mock.calls[0][0].subject).toContain("Votre essai Echorank");
+  });
+
+  it("quotes the trialist's OWN price when it is not the one on sale (price change of 2026-11-11)", async () => {
+    // Started at the old $199 Growth price; the config now sells $177. The
+    // card is charged $199, so the email says $199.
+    chargeForPrice.mockResolvedValue({ kind: "charge", charge: { cents: 19_900, interval: "month" } });
+    await sendTrialEndingEmail(JOB);
+    expect(chargeForPrice).toHaveBeenCalledWith("price_growth_monthly");
+    const text = sendMail.mock.calls[0][0].text;
+    expect(text).toContain("$199 USD/month");
+    expect(text).not.toContain(`$${PLAN_CONFIGS.GROWTH.monthlyPrice} `);
+  });
+
+  it("an old yearly price is quoted as its yearly total, with both decimals", async () => {
+    chargeForPrice.mockResolvedValue({ kind: "charge", charge: { cents: 190_800, interval: "year" } });
+    await sendTrialEndingEmail(JOB);
+    expect(sendMail.mock.calls[0][0].text).toContain("$1,908.00 USD/year");
+  });
+
+  it("states no amount when Stripe cannot say and the price is no longer on sale", async () => {
+    chargeForPrice.mockResolvedValue({ kind: "unknown" });
+    await sendTrialEndingEmail(JOB);
+    const text = sendMail.mock.calls[0][0].text;
+    expect(text).not.toMatch(/\$\d/);
+    expect(text).toContain("you can see it on your billing page");
   });
 
   it("takes the interval from the price catalog, not from a guess", async () => {

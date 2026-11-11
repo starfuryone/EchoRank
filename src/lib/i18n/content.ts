@@ -1612,7 +1612,7 @@ export interface HomePricingChrome {
   anchorLabel: string;
   /** Contains "{pct}". */
   save: string;
-  /** The yearly saving as an amount, on a card that states it so ("save $53.76", pricing-tiers.ts SAVE_AS_AMOUNT). */
+  /** The yearly saving as an amount, on a card that states it so ("save $52.80", pricing-tiers.ts SAVE_AS_AMOUNT). */
   saveAmount: string;
   toolsAnchor: string;
   contactUs: string;

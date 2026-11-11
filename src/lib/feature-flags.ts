@@ -19,7 +19,7 @@ export type Feature =
   | "answer_tracking"
   // Citation Finder and Citation Opportunities: which sources the engines cite
   // and which of them to get listed on. Part of AI visibility, so every plan
-  // from the $29 AI Visibility plan up (2026-11-07; Growth+ before).
+  // from the AI Visibility plan up (2026-11-07; Growth+ before).
   | "citation_tracking"
   | "marketing_studio"
   | "matrix_chat";
@@ -47,7 +47,7 @@ const ALL_FEATURES: Feature[] = [
 ];
 
 // STARTER's set. ai_visibility, answer_tracking and citation_tracking are on
-// every plan, including the $29 AI Visibility plan (reinstated 2026-11-07),
+// every plan, including the AI Visibility plan (reinstated 2026-11-07),
 // which has nothing else.
 const STARTER_FEATURES: Feature[] = [
   "review_authenticity",
@@ -58,7 +58,7 @@ const STARTER_FEATURES: Feature[] = [
 ];
 
 const PLAN_FEATURES: Record<PlanType, Set<Feature>> = {
-  // The $29 AI-only plan: AI visibility, answer tracking and the citation
+  // The AI-only plan: AI visibility, answer tracking and the citation
   // tools, nothing else. src/lib/plan-access.ts is the allowlist every gate reads.
   AI_VISIBILITY: new Set<Feature>(["ai_visibility", "answer_tracking", "citation_tracking"]),
   // The crawler-only plan: no feature at all. The crawler is not
@@ -95,7 +95,7 @@ export function getFeaturesForPlan(planType: PlanType): Feature[] {
 }
 
 export function getMinimumPlan(feature: Feature): PlanType {
-  // Cheapest-first, the $29 AI-only plan included since its reinstatement.
+  // Cheapest-first, the AI-only plan included since its reinstatement.
   const planOrder: PlanType[] = [
     "AI_VISIBILITY",
     "STARTER",

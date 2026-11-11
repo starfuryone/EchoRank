@@ -1,6 +1,5 @@
 // Subscription Agreement body. Shared by the route and the consent modal.
 import Link from "next/link";
-import { PLAN_CONFIGS, PLAN_ORDER } from "@/lib/plan-config";
 import type { LegalDoc } from "./types";
 
 /** The cross-referenced document. Not a consent document — see consent-config. */
@@ -8,13 +7,26 @@ function NfaLink({ locale, label }: { locale: string; label: string }) {
   return <Link href={`/${locale}/legal/no-financial-advice`}>{label}</Link>;
 }
 
-/** One line per plan, from the config the checkout actually charges from. */
+/**
+ * §1.1's plan lines, PINNED to the text consented to under CONSENT_VERSION
+ * 2026-11-07. They used to be generated from PLAN_CONFIGS; the price change of
+ * 2026-11-11 moved the config, and the owner's instruction was to draft the
+ * agreement's price table change (/opt/echorank/prompts/legal-drafts/
+ * subscription-agreement-price-change-2026-11-11.md), not to publish it. So
+ * the live text stays byte-identical until a reviewed version replaces these
+ * lines and CONSENT_VERSION is bumped in the same commit.
+ * tests/subscription-agreement-pinned.test.ts holds them to the old text.
+ */
+export const AGREEMENT_PLAN_LINES_2026_11_07: readonly string[] = [
+  "AI Visibility: $29/month, or $276/year ($23/month equivalent).",
+  "Starter: $79/month, or $756/year ($63/month equivalent).",
+  "Growth: $199/month, or $1908/year ($159/month equivalent).",
+  "Agency: $499/month, or $4788/year ($399/month equivalent).",
+  "Enterprise: custom pricing — contact us.",
+];
+
 function planLines(): string[] {
-  return PLAN_ORDER.map((plan) => {
-    const c = PLAN_CONFIGS[plan];
-    if (c.isCustomPricing) return `${c.name}: custom pricing — contact us.`;
-    return `${c.name}: $${c.monthlyPrice}/month, or $${c.annualPrice * 12}/year ($${c.annualPrice}/month equivalent).`;
-  });
+  return [...AGREEMENT_PLAN_LINES_2026_11_07];
 }
 
 export function buildSubscriptionAgreement(locale: string): LegalDoc {

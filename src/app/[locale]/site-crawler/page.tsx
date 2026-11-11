@@ -260,7 +260,7 @@ export default async function Page({ params }: { params: Params }) {
     // From PLAN_CONFIGS via PLANS — the same prices the cards below render.
     offers: [
       // The crawler-only plan's offer while it is on sale, then the ladder's.
-      ...(launched.has("NOSY_BAT") ? [{ name: PLAN_CONFIGS.NOSY_BAT.name, price: String(PLAN_CONFIGS.NOSY_BAT.monthlyPrice.toFixed(2)) }] : []),
+      ...(launched.has("NOSY_BAT") ? [{ name: PLAN_CONFIGS.NOSY_BAT.name, price: String(PLAN_CONFIGS.NOSY_BAT.monthlyPrice) }] : []),
       ...PLANS,
     ].map((p) => ({ "@type": "Offer", name: p.name, price: p.price, priceCurrency: PRICE_CURRENCY, category: "subscription" })),
   };

@@ -29,14 +29,14 @@ export function fmtNum(value: number, base: PricingBase): string {
 }
 
 /**
- * A price in whole cents. PLAN_CONFIGS prices are dollars, and one has cents
- * (the crawler-only plan, 22.40 / 17.92): every sum or product of prices goes through
- * cents, because 17.92 × 12 in floating point is 215.04000000000002.
+ * A price in whole cents. PLAN_CONFIGS prices are dollars, and every yearly
+ * per-month figure has cents (62.40, 141.60): every sum or product of prices
+ * goes through cents, because 17.92 × 12 in floating point is 215.04000000000002.
  */
 export const toCents = (dollars: number): number => Math.round(dollars * 100);
 
 /**
- * An amount as the cards print it: "79" for whole dollars (as before), "22.40"
+ * An amount as the cards print a monthly price: "78" for whole dollars, "22.40"
  * with cents, "22,40" in French. Grouped like fmtNum.
  */
 export function moneyAmount(value: number, base: PricingBase): string {
@@ -46,7 +46,26 @@ export function moneyAmount(value: number, base: PricingBase): string {
   return `${fmtNum(Math.trunc(cents / 100), base)}${base === "fr" ? "," : "."}${frac}`;
 }
 
-/** "$756", "$22.40": the $ sign is the currency, not a typed amount. */
+/**
+ * A MONTHLY plan price: "$78", no decimals (owner, 2026-11-11). Every monthly
+ * price is whole dollars; one with cents would still print both decimals
+ * rather than be rounded. The $ sign is the currency, not a typed amount.
+ */
 export function usd(value: number, base: PricingBase): string {
   return `$${moneyAmount(value, base)}`;
+}
+
+/** An amount with both decimals, always: "62,40" in French, "1,699.20" in English. */
+export function moneyAmountCents(value: number, base: PricingBase): string {
+  const cents = toCents(value);
+  const frac = String(Math.abs(cents % 100)).padStart(2, "0");
+  return `${fmtNum(Math.trunc(cents / 100), base)}${base === "fr" ? "," : "."}${frac}`;
+}
+
+/**
+ * A YEARLY figure: the monthly equivalent, the billed-yearly total and the
+ * yearly saving, always with two decimals ("$62.40", "$748.80", and "$60.00" were one whole).
+ */
+export function usdCents(value: number, base: PricingBase): string {
+  return `$${moneyAmountCents(value, base)}`;
 }

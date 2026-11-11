@@ -82,7 +82,7 @@ const COPY: Record<
     sub: "Faites le test une fois gratuitement, ou surveillez-le chaque semaine.",
     freeName: "Test gratuit",
     // "$0", not "0 $". The site prefixes the symbol in every locale — the
-    // French /pricing cards already read "$29 /mois" — so the local convention
+    // French /pricing cards already read "$28 /mois" (2026-11-11) — so the local convention
     // here would make the two cards on THIS page disagree with each other.
     // Changing the site-wide convention is a separate decision, not one to make
     // on one page.

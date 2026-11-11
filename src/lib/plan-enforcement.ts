@@ -10,7 +10,7 @@ export { QuotaExceededError };
 
 // ─── Plan hierarchy ─────────────────────────────────────────────────────────
 
-// Ranked by price, low to high. AI_VISIBILITY ($29, AI-only) sits below
+// Ranked by price, low to high. AI_VISIBILITY (AI-only) sits below
 // STARTER again since its reinstatement (2026-11-07). Which AREAS a plan may
 // reach is src/lib/plan-access.ts, not this rank.
 const PLAN_RANK: Record<PlanType, number> = {

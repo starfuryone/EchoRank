@@ -21,6 +21,7 @@
 // the pricing page renders, so the two cannot drift.
 
 import { PLAN_CONFIGS, PLAN_ORDER } from "@/lib/plan-config";
+import { toCents, usd, usdCents } from "@/lib/pricing-page/format";
 import { SUPPORT_EMAIL } from "./config";
 import type { SystemBlock } from "./model";
 
@@ -48,7 +49,7 @@ export function planFacts(): string {
     const config = PLAN_CONFIGS[plan];
     const price = config.isCustomPricing
       ? "custom pricing — direct the visitor to the pricing page or sales"
-      : `$${config.monthlyPrice}/month, or $${config.annualPrice}/month billed annually`;
+      : `${usd(config.monthlyPrice, "en")}/month, or ${usdCents(config.annualPrice, "en")}/month billed annually (${usdCents((toCents(config.annualPrice) * 12) / 100, "en")} a year)`;
     return `- ${config.name}: ${price}. ${config.description}`;
   });
   return lines.join("\n");

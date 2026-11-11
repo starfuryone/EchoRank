@@ -19,9 +19,9 @@ export type PlanTierKey =
 /** USD-only: Echorank360 bills all locales in US dollars. */
 export type CurrencyCode = "USD";
 export type PlanType =
-  /** The $29 AI-only plan, reinstated 2026-11-07. */
+  /** The AI-only plan, reinstated 2026-11-07. */
   | "AI_VISIBILITY"
-  /** The $22.40 crawler-only plan (2026-11-10). */
+  /** The crawler-only plan (2026-11-10). */
   | "NOSY_BAT"
   | "STARTER"
   | "GROWTH"
@@ -89,12 +89,21 @@ export async function resolveIntervalFromPriceId(
  * Reverse-lookup a Stripe Price id back to its plan tier + currency. Used by
  * the subscription webhook so we record the tier (not the price id), and so
  * new prices work the moment they're added to the table — no code change.
+ *
+ * NO `active` FILTER (price change of 2026-11-11). `active` on a row means
+ * "on sale": the seed clears it when a new price takes the row's lookup key.
+ * A subscriber or trialist keeps the price they signed up at, so every renewal
+ * and update event for them names a retired price. Filtering here would put
+ * them on no plan (or on the env fallback's guess) at their next invoice.
+ * Selling is decided elsewhere: checkout resolves the lookup key live in
+ * Stripe, and getStripePriceId() above keeps its filter.
  */
 export async function resolvePlanFromPriceId(
   priceId: string,
 ): Promise<{ planType: PlanType; currency: string } | null> {
   const row = await prisma.stripePrice.findFirst({
-    where: { stripePriceId: priceId, active: true },
+    where: { stripePriceId: priceId },
+    orderBy: { createdAt: "desc" },
     select: { planTier: true, currency: true },
   });
   if (!row) return null;

@@ -15,7 +15,7 @@ import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { PLAN_PRICES, planConfig, sellablePlan } from "@/lib/plan-config";
-import { pricingBase, usd } from "@/lib/pricing-page/format";
+import { pricingBase, usd, usdCents } from "@/lib/pricing-page/format";
 import { planFeaturesByPlan } from "@/lib/plan-features";
 import type { PlanType } from "@/generated/prisma";
 import { BILLING_COPY, type DashLocale } from "@/lib/i18n/dashboard";
@@ -34,6 +34,16 @@ interface BillingData {
   cancelAtPeriodEnd: boolean;
   /** The site crawler's monthly page allowance; null when the plan has no crawler. */
   crawlPages: { used: number; limit: number | null; resetsAt: string } | null;
+  /**
+   * What this subscription is charged, from its own Stripe price (/api/billing).
+   * A subscriber from before a price change keeps their price, so this wins
+   * over the plan config. null when unknown.
+   */
+  charge: { cents: number; interval: "month" | "year" } | null;
+  /** No charge read, but the subscription's price is the one on sale. */
+  chargeIsConfig: boolean;
+  /** No subscription price at all (never subscribed): the config price is shown. */
+  noPrice: boolean;
 }
 
 const PLAN_ICONS: Record<string, React.ReactNode> = {
@@ -127,6 +137,9 @@ export function BillingPageClient({
           requestsLimit: json.usage?.feedbackLimit ?? 300,
           cancelAtPeriodEnd: json.subscription?.cancelAtPeriodEnd ?? false,
           crawlPages: json.usage?.crawlPages ?? null,
+          charge: json.plan?.charge ?? null,
+          chargeIsConfig: json.plan?.chargeIsConfig === true,
+          noPrice: !json.subscription,
         });
       } catch (err) {
         setError(err instanceof Error ? err.message : t.genericError);
@@ -211,10 +224,15 @@ export function BillingPageClient({
                     <Link href={salesContactHref(locale, "app-billing-plan")} className="text-blue-600 hover:text-blue-700">
                       {t.contactUs}
                     </Link>
-                  ) : (
-                    // usd(): "$22.40" for the crawler-only plan's price with cents, "$79" as before.
+                  ) : billing.charge ? (
+                    // The subscription's own price: monthly whole ("$78"), a
+                    // yearly price as its total with both decimals ("$748.80").
+                    billing.charge.interval === "year"
+                      ? t.perYearTotal(usdCents(billing.charge.cents / 100, pricingBase(locale)))
+                      : `${usd(billing.charge.cents / 100, pricingBase(locale))}${t.perMonth}`
+                  ) : billing.chargeIsConfig || billing.noPrice ? (
                     `${usd(PLAN_PRICES[sellablePlan(billing.plan as PlanType)] ?? 0, pricingBase(locale))}${t.perMonth}`
-                  )}
+                  ) : null}
                   {billing.currentPeriodEnd && (
                     <span>
                       {" "}

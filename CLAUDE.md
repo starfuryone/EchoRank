@@ -186,6 +186,15 @@ human notices. Commit, then hand them `sudo echorank360-deploy` instead.
   internal-secret bypass skips the proxy. `tests/admin-api-gate.test.ts` fails any route
   there that does not.
 - Log `costUsd` on every stored run that spends money upstream.
+- **Prices: `PLAN_CONFIGS` holds the price ON SALE, not what every customer pays.** A price
+  change creates new Stripe prices on the same lookup keys (`transfer_lookup_key`); nobody is
+  migrated, so subscribers and trialists keep their old price ids. In `stripe_prices`,
+  `active` means "on sale": the seed retires old rows (`active=false`) and never deletes them,
+  and `resolvePlanFromPriceId()` has no `active` filter so the webhook still maps them.
+  Anything that states what a customer is charged (trial-ending email, `/billing`) reads the
+  subscription's own price (`src/lib/billing/subscription-charge.ts`). Monthly prices print
+  whole (`usd()`), yearly figures always with two decimals (`usdCents()`). The Subscription
+  Agreement's §1.1 lines are pinned text, not generated (2026-11-11).
 
 ## Tool pages
 
@@ -274,8 +283,10 @@ backtick, no `${`, no `EchoRank`. Target `src/app/[locale]/reputation-tools/`, r
 priority **0.7**.
 
 - CTAs go to `/en/pricing` (8) and `/en/free-audit` (6), never `/register`.
-- **Pricing is hardcoded in the payload** — 79/199/499 monthly, 63/159/399 annual. A price
-  change means editing this file; nothing propagates into it.
+- **Pricing is hardcoded in the payload** — 79/199/499 monthly, 63/159/399 annual, which is
+  STALE since the 2026-11-11 price change (78/177/488; yearly 62.40/141.60/390.40 a month).
+  When embedding, replace the amounts with price tokens filled from PLAN_CONFIGS at request
+  time, as `technical-geo/prices.ts` does (`__PRICE_<PLAN>_MONTH__`, `__PRICE_<PLAN>_YEAR_MO__`).
 - Ships one broken footer link, `/en/terms`. Fix to `/en/legal/terms` when embedding.
 - Homepage cross-link: a secondary button (`s.btn`, no `btnPrimary`) under the
   `/ 10 — THE FOUNDATION` section of `src/app/[locale]/HomeClient.tsx`, label

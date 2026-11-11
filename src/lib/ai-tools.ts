@@ -179,7 +179,7 @@ export type AiRolloutState = Record<AiRollout, boolean>;
  * a signed-out visitor or a tenant we could not resolve, and the hub is not a
  * public surface. Beyond that, a card is shown when the plan allowlist
  * (src/lib/plan-access.ts) opens its page: every card for every plan but the
- * $29 AI Visibility plan, which sees only what it includes — no locked cards
+ * AI Visibility plan, which sees only what it includes — no locked cards
  * for areas it excludes, because those pages answer with the upgrade screen.
  *
  * A group that empties out is dropped rather than rendered as a heading with no

@@ -390,7 +390,7 @@ const withSession = auth(async (req) => {
   // ── Plan allowlist for tenant API routes ─────────────────────────────
   // One gate for every signed-in /api call (src/lib/plan-access.ts): a route
   // in an area the tenant's plan does not include answers 403
-  // PLAN_UPGRADE_REQUIRED before its handler runs. Only the $29 AI-only plan
+  // PLAN_UPGRADE_REQUIRED before its handler runs. Only the AI-only plan
   // is restricted. Exempt namespaces (auth, webhooks, free tools, key APIs,
   // staff) skip the plan read entirely.
   if (pathname.startsWith("/api/")) {

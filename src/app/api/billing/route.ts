@@ -6,6 +6,7 @@ import type { PlanType } from "@/generated/prisma";
 import { planAllowsArea } from "@/lib/plan-access";
 import { pageAllowance } from "@/lib/site-crawler/page-allowance";
 import { urlCapForPlan } from "@/lib/site-crawler/quota";
+import { chargeForPrice } from "@/lib/billing/subscription-charge";
 
 export async function GET() {
   try {
@@ -38,6 +39,13 @@ export async function GET() {
     const planKey = sellablePlan(tenant.planType as PlanType);
     const limits = PLAN_LIMITS[planKey];
     const price = PLAN_PRICES[planKey];
+    // What THIS subscription is charged, from its own Stripe price: a
+    // subscriber from before the 2026-11-11 price change keeps their price,
+    // which `price` (the one on sale) is not. null when Stripe cannot say; the
+    // page then shows the config price only when it is the one being charged.
+    const answer = subscription?.stripePriceId ? await chargeForPrice(subscription.stripePriceId) : null;
+    const charge = answer?.kind === "charge" ? answer.charge : null;
+    const chargeIsConfig = answer?.kind === "config";
 
     const currentPeriodStart = subscription?.currentPeriodStart || null;
     const currentPeriodEnd = subscription?.currentPeriodEnd || null;
@@ -64,6 +72,8 @@ export async function GET() {
         status: subscription?.status || tenant.billingStatus,
         price,
         limits,
+        charge,
+        chargeIsConfig,
       },
       subscription: subscription
         ? {

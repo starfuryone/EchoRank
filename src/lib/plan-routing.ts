@@ -19,7 +19,7 @@ export const PLAN_HOME: Record<PlanType, string> = {
 /**
  * Maps a `?plan=` query value (e.g. "starter") to a PlanType.
  *
- * `ai_visibility` is the $29 AI-only plan again (reinstated 2026-11-07).
+ * `ai_visibility` is the AI-only plan again (reinstated 2026-11-07).
  */
 export function planFromParam(
   planParam: string | null | undefined,

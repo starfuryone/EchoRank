@@ -368,7 +368,7 @@ test("every plan with the SEO tools has a monthly SERP check limit, ordered by t
   assert.equal(SERP_CHECKS_PER_MONTH.STARTER, 25);
   assert.equal(SERP_CHECKS_PER_MONTH.GROWTH, 200);
   assert.equal(SERP_CHECKS_PER_MONTH.AGENCY, 1000);
-  // The $29 AI-only plan has no SEO tools (src/lib/plan-access.ts): a 0 quota refuses.
+  // The AI-only plan has no SEO tools (src/lib/plan-access.ts): a 0 quota refuses.
   assert.equal(SERP_CHECKS_PER_MONTH.AI_VISIBILITY, 0);
   assert.ok(SERP_CHECKS_PER_MONTH.ENTERPRISE >= SERP_CHECKS_PER_MONTH.AGENCY);
 });
@@ -633,7 +633,7 @@ test("worst-case monthly spend matches the depth-100 cost model", () => {
 
   // The hard ceiling the Redis counter enforces, manual runs included. This is
   // the number that actually bounds a tenant's bill. It doubled on 2026-08-17
-  // with AGENCY's keyword cap (250 -> 500); against a $499 tier it is still
+  // with AGENCY's keyword cap (250 -> 500); against the Agency tier it is still
   // well under a fifth of revenue, which is the test this number has to pass.
   const agencyCeiling = RANK_CHECKS_PER_MONTH.AGENCY * COST_PER_KEYWORD_USD;
   assert.ok(agencyCeiling <= 108, `AGENCY ceiling ${agencyCeiling}`);
@@ -774,7 +774,7 @@ test("backlinks copy never uses CamelCase branding or names the data vendor", ()
 test("backlinks plan caps match the pricing sheet", () => {
   // STARTER WAS 0 AND IS NOW 5 (2026-09-05). The two-tier split assigned it to
   // Basic, and a tier whose allowance is zero cannot use the tier it is
-  // assigned to. Five lookups is under $2 of monthly COGS on a $79 plan, and
+  // assigned to. Five lookups is under $2 of monthly COGS on the Starter plan, and
   // Basic buys fewer endpoint families than the old five-call analysis did.
   // A PACKAGING DECISION, pinned here so reverting it has to be deliberate.
   assert.equal(BACKLINKS_ANALYSES_PER_MONTH.STARTER, 5);
@@ -782,7 +782,7 @@ test("backlinks plan caps match the pricing sheet", () => {
   assert.equal(BACKLINKS_ANALYSES_PER_MONTH.AGENCY, 100);
   assert.ok(BACKLINKS_ANALYSES_PER_MONTH.ENTERPRISE >= BACKLINKS_ANALYSES_PER_MONTH.AGENCY);
 
-  // Every tier with the SEO tools can run a lookup. The $29 AI-only plan
+  // Every tier with the SEO tools can run a lookup. The AI-only plan
   // (2026-11-07) has none: its 0 is the locked-card branch this kept for.
   for (const plan of ["STARTER", "GROWTH", "AGENCY", "ENTERPRISE"] as const) {
     assert.ok(planCanAnalyzeBacklinks(plan), plan);

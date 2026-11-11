@@ -9,7 +9,7 @@
 //   - workers: jobs re-check the tenant's plan when they run;
 //   - plan changes: a downgrade pauses excluded schedules, an upgrade resumes.
 //
-// Two plans are restricted: AI_VISIBILITY (the $29 AI-only plan) and NOSY_BAT
+// Two plans are restricted: AI_VISIBILITY (the AI-only plan) and NOSY_BAT
 // (the crawler-only plan, 2026-11-10). Each reaches only the areas in its set
 // below. Every other plan includes every area, and its existing per-tool gates
 // (features, quotas, requirePlan) still apply inside them; this file never

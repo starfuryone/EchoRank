@@ -154,7 +154,7 @@ export function Sidebar({
   const tooltips = SIDEBAR_TOOLTIPS[locale];
   const pathname = usePathname();
   // THE PLAN ALLOWLIST (src/lib/plan-access.ts): rows for areas the plan does
-  // not include are not drawn. Only the $29 AI-only plan excludes any; its
+  // not include are not drawn. Only the AI-only plan excludes any; its
   // home is /visibility, so the /dashboard row is dropped, and its AI row opens
   // the /ai hub, which shows only the cards that plan includes. The (dashboard)
   // layout and the proxy enforce the same list server-side; this is

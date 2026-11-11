@@ -31,7 +31,7 @@ export default async function DashboardLayout({
   const plan = membership?.tenant.planType;
 
   // ── THE PLAN ALLOWLIST (src/lib/plan-access.ts) ─────────────────────────
-  // A restricted plan reaches only its areas: the $29 AI-only plan AI
+  // A restricted plan reaches only its areas: the AI-only plan AI
   // visibility, account and help pages (home /visibility); the crawler-only
   // plan the crawler, its Google connections and the account basics (home
   // /crawler). Any other page renders the upgrade screen here, server-side,

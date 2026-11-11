@@ -4,13 +4,13 @@
 // nothing.
 //
 // THE PRICE ASSERTIONS ARE MUTATION ASSERTIONS, NOT SNAPSHOTS. Asserting the
-// subject contains "$199" would pass today and keep passing after someone
-// changes GROWTH's price — the email would then be telling customers the wrong
-// amount before charging their card, and this file would be green. So every
-// price and date check is written twice: once against the value computed from
-// PLAN_CONFIGS, and once against a DIFFERENT input, proving the render actually
-// varies with what it is given. Same shape as the $79 drift guard in
-// tests/help-articles.test.ts.
+// subject contains a typed Growth price would pass today and keep passing after
+// someone changes GROWTH's price (it went $199 → $177 on 2026-11-11) — the email
+// would then be telling customers the wrong amount before charging their card,
+// and this file would be green. So every price and date check is written twice:
+// once against the value computed from PLAN_CONFIGS, and once against a
+// DIFFERENT input, proving the render actually varies with what it is given.
+// Same shape as the Starter-price drift guard in tests/help-articles.test.ts.
 
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
@@ -41,6 +41,15 @@ const TRIAL_END = new Date("2026-09-04T14:00:00.000Z");
  */
 const money = (n: number, locale: EmailLocale = "en") =>
   new Intl.NumberFormat(locale === "fr" ? "fr-CA" : "en-CA").format(n);
+
+/**
+ * A YEARLY charge: always both decimals ("$4,684.80"), from the per-month
+ * figure × 12 in cents (390.40 × 12 in floating point is 4684.799999999999).
+ */
+const yearly = (perMonth: number, locale: EmailLocale = "en") =>
+  new Intl.NumberFormat(locale === "fr" ? "fr-CA" : "en-CA", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(
+    (Math.round(perMonth * 100) * 12) / 100,
+  );
 
 function render(over: Partial<Parameters<typeof renderTrialEndingEmail>[0]> = {}) {
   return renderTrialEndingEmail({
@@ -113,7 +122,18 @@ describe("the price comes from the plan config, never from the copy", () => {
     // annualPrice is the PER-MONTH equivalent — the same arithmetic the pricing
     // grid and the subscription agreement do.
     const label = trialChargeLabel("AGENCY", "year", "en");
-    expect(label).toBe(`$${money(PLAN_CONFIGS.AGENCY.annualPrice * 12)} USD/year`);
+    expect(label).toBe(`$${yearly(PLAN_CONFIGS.AGENCY.annualPrice)} USD/year`);
+  });
+
+  it("quotes the subscription's own price when the sender passes it (an old price is kept)", () => {
+    // A trialist from before the 2026-11-11 price change: Growth at $199.
+    expect(trialChargeLabel("GROWTH", "month", "en", 19_900)).toBe("$199 USD/month");
+    expect(trialChargeLabel("GROWTH", "year", "en", 190_800)).toBe("$1,908.00 USD/year");
+    expect(trialChargeLabel("GROWTH", "month", "fr", 19_900)).toBe(`${money(199, "fr")} $ US/mois`);
+    // null: the sender could not tell; no amount at all.
+    expect(trialChargeLabel("GROWTH", "month", "en", null)).toBeNull();
+    expect(render({ chargeCents: 19_900 }).text).toContain("$199 USD/month");
+    expect(render({ chargeCents: null }).text).not.toMatch(/\$\d/);
   });
 
   it("changes when the plan changes — the mutation half", () => {
@@ -130,7 +150,7 @@ describe("the price comes from the plan config, never from the copy", () => {
     const monthly = render({ interval: "month" }).text;
     const annual = render({ interval: "year" }).text;
     expect(monthly).not.toBe(annual);
-    expect(annual).toContain(money(PLAN_CONFIGS.GROWTH.annualPrice * 12));
+    expect(annual).toContain(yearly(PLAN_CONFIGS.GROWTH.annualPrice));
   });
 
   it("names the plan from the config, not from the enum", () => {
@@ -138,11 +158,11 @@ describe("the price comes from the plan config, never from the copy", () => {
     expect(render().text).toContain(PLAN_CONFIGS.GROWTH.name);
   });
 
-  it("charges the AI Visibility plan its own price ($29, reinstated 2026-11-07)", () => {
+  it("charges the AI Visibility plan its own price ($28 since the 2026-11-11 price change)", () => {
     expect(trialChargeLabel("AI_VISIBILITY", "month", "en")).toBe(
       `$${money(PLAN_CONFIGS.AI_VISIBILITY.monthlyPrice)} USD/month`,
     );
-    expect(PLAN_CONFIGS.AI_VISIBILITY.monthlyPrice).toBe(29);
+    expect(PLAN_CONFIGS.AI_VISIBILITY.monthlyPrice).toBe(28);
   });
 
   it("states NO amount when there is none to state", () => {
@@ -170,7 +190,7 @@ describe("the price comes from the plan config, never from the copy", () => {
     );
     // Four digits, where the grouping actually shows.
     expect(trialChargeLabel("AGENCY", "year", "fr")).toBe(
-      `${money(PLAN_CONFIGS.AGENCY.annualPrice * 12, "fr")} $ US/an`,
+      `${yearly(PLAN_CONFIGS.AGENCY.annualPrice, "fr")} $ US/an`,
     );
   });
 });
