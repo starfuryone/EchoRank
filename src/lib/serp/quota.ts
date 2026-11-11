@@ -22,6 +22,8 @@ import { getRedisConnection } from "@/infrastructure/redis/connection";
 export const SERP_CHECKS_PER_MONTH: Record<PlanType, number> = {
   /** The AI-only plan has no SEO tools; the proxy refuses it before this is read. */
   AI_VISIBILITY: 0,
+  /** Nor the crawler-only plan. */
+  NOSY_BAT: 0,
   STARTER: 25,
   GROWTH: 200,
   AGENCY: 1000,

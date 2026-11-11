@@ -6,8 +6,16 @@ import { addJob } from "@/infrastructure/queue/registry";
 import type { FeedbackRoutingJob } from "@/infrastructure/queue/jobs/schemas";
 import { validate, submitFeedbackSchema } from "@/lib/validations";
 import { logger } from "@/infrastructure/observability/logger";
+import { tenantAllowsArea } from "@/lib/plan-access-server";
 
 const log = logger.child({ module: "public-feedback" });
+
+/**
+ * A feedback link of a tenant whose plan has no reviews and feedback (the
+ * AI-only or the crawler-only plan, src/lib/plan-access.ts): answered like an
+ * expired request. The stored feedback is kept.
+ */
+const inactive = () => NextResponse.json({ error: "This feedback request is no longer active" }, { status: 410 });
 
 export async function GET(
   request: NextRequest,
@@ -47,6 +55,7 @@ export async function GET(
         { status: 404 }
       );
     }
+    if (!(await tenantAllowsArea(feedback.tenantId, "reputation"))) return inactive();
 
     if (feedback.expiresAt && new Date() > feedback.expiresAt) {
       if (feedback.status === "PENDING") {
@@ -103,6 +112,8 @@ export async function POST(
         { status: 404 }
       );
     }
+    // Nothing stored for a tenant whose plan no longer has reviews and feedback.
+    if (!(await tenantAllowsArea(feedback.tenantId, "reputation"))) return inactive();
 
     if (feedback.status === "SUBMITTED") {
       return NextResponse.json(

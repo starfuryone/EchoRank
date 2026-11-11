@@ -112,6 +112,12 @@ export async function POST(request: Request): Promise<NextResponse> {
 
     const verified = await verifyAttributionKey(k);
     if (!verified) return noContent();
+    // AI attribution is an SEO-tools feature (its keys live under the tools,
+    // src/lib/plan-access.ts): a snippet left on the site of a tenant whose
+    // plan has no tools (the AI-only or crawler-only plan) records nothing.
+    // Same silent 204 as every other refusal here.
+    const { tenantAllowsArea } = await import("@/lib/plan-access-server");
+    if (!(await tenantAllowsArea(verified.tenantId, "seo_tools"))) return noContent();
 
     // Tenant-scoped budget, checked after the key resolves so it is charged to
     // the tenant that owns the traffic rather than to whoever sent the bytes.

@@ -28,7 +28,25 @@ export function fmtNum(value: number, base: PricingBase): string {
   return grouped;
 }
 
-/** "$756" — prices are whole USD in PLAN_CONFIGS; the $ sign is the currency, not a typed amount. */
+/**
+ * A price in whole cents. PLAN_CONFIGS prices are dollars, and one has cents
+ * (the crawler-only plan, 22.40 / 17.92): every sum or product of prices goes through
+ * cents, because 17.92 × 12 in floating point is 215.04000000000002.
+ */
+export const toCents = (dollars: number): number => Math.round(dollars * 100);
+
+/**
+ * An amount as the cards print it: "79" for whole dollars (as before), "22.40"
+ * with cents, "22,40" in French. Grouped like fmtNum.
+ */
+export function moneyAmount(value: number, base: PricingBase): string {
+  const cents = toCents(value);
+  if (cents % 100 === 0) return fmtNum(cents / 100, base);
+  const frac = String(Math.abs(cents % 100)).padStart(2, "0");
+  return `${fmtNum(Math.trunc(cents / 100), base)}${base === "fr" ? "," : "."}${frac}`;
+}
+
+/** "$756", "$22.40": the $ sign is the currency, not a typed amount. */
 export function usd(value: number, base: PricingBase): string {
-  return `$${fmtNum(value, base)}`;
+  return `$${moneyAmount(value, base)}`;
 }

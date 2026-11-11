@@ -20,7 +20,6 @@
 
 import {
   PLAN_CONFIGS,
-  PLAN_ORDER,
   type AiCheckupShape,
   type PlanConfig,
   type SellablePlanType,
@@ -29,15 +28,21 @@ import { isSeoToolLive } from "@/lib/seo-tools";
 import { hasFeature } from "@/lib/feature-flags";
 import { CRAWLER_BRAND } from "@/lib/site-crawler/brand";
 import { NOSYBAT_ENFORCED } from "@/lib/site-crawler/nosybat-enforced";
+import { NONE_LAUNCHED, OFF_LADDER_PLANS, cardOrder, type LaunchedPlans } from "@/lib/plan-launch";
 import { flag } from "@/lib/flags";
 import { planAllowsArea } from "@/lib/plan-access";
 import { ENGINE_CATALOGUE } from "@/lib/ai-monitor/engines";
 import { PLAN_AUDIENCE } from "./audience";
 import { fmtNum, pricingBase, type PricingBase } from "./format";
 
-/** The tiers that render a card: everything not custom-priced, in ladder order. */
-export function cardPlans(): SellablePlanType[] {
-  return PLAN_ORDER.filter((p) => !PLAN_CONFIGS[p].isCustomPricing);
+/**
+ * The tiers that render a card: everything not custom-priced, in card order.
+ * A plan sold only once its Stripe prices exist (the crawler-only plan) is in
+ * the list only when `launched` holds it (src/lib/plan-launch.ts); the default
+ * is the ladder alone.
+ */
+export function cardPlans(launched: LaunchedPlans = NONE_LAUNCHED): SellablePlanType[] {
+  return cardOrder(launched).filter((p) => !PLAN_CONFIGS[p].isCustomPricing);
 }
 
 function locations(c: PlanConfig, b: PricingBase): string {
@@ -226,6 +231,7 @@ function rendering(plan: SellablePlanType, c: PlanConfig, b: PricingBase): strin
  */
 export const SUPPORT_LEVEL: Record<SellablePlanType, "email" | "priority" | "contract"> = {
   AI_VISIBILITY: "email",
+  NOSY_BAT: "email",
   STARTER: "email",
   GROWTH: "priority",
   AGENCY: "priority",
@@ -254,6 +260,10 @@ export function supportLine(plan: SellablePlanType, b: PricingBase): string {
 /** The AI line FIRST on every card (ECHORANK-AI-TIER.md Phase 2), then the rest. */
 function allLines(plan: SellablePlanType, b: PricingBase): string[] {
   const c = PLAN_CONFIGS[plan];
+  // The crawler-only plan: the crawler lines and support, nothing else (it
+  // has no AI tracking, locations, feedback or SEO tools). /pricing replaces
+  // these with its own lines from nosybatFacts (pricing-tiers.ts).
+  if (plan === "NOSY_BAT") return [crawls(plan, c, b), rendering(plan, c, b), supportLine(plan, b)].filter((l): l is string => l !== null);
   return [
     tracking(c, b),
     citations(plan, b),
@@ -288,11 +298,15 @@ export interface PlanHeadlines {
  */
 export function planHeadlines(plan: SellablePlanType, locale: string, ladder: readonly SellablePlanType[] = cardPlans()): PlanHeadlines {
   const b = pricingBase(locale);
-  const i = ladder.indexOf(plan);
   const lines = allLines(plan, b);
   const audience = PLAN_AUDIENCE[plan][b];
+  // A side plan (the crawler-only one) is not a step: no "Everything in X,
+  // plus:" on it, and the card after it inherits from the ladder plan before.
+  if (OFF_LADDER_PLANS.has(plan)) return { inherits: null, lines, audience };
+  const steps = ladder.filter((p) => !OFF_LADDER_PLANS.has(p));
+  const i = steps.indexOf(plan);
   if (i <= 0) return { inherits: null, lines, audience };
-  const below = ladder[i - 1]!;
+  const below = steps[i - 1]!;
   const shared = new Set(allLines(below, b));
   const name = PLAN_CONFIGS[below].name;
   return {

@@ -7,6 +7,7 @@ import { eventBus } from "@/infrastructure/events/bus";
 import { EVENT_TYPES } from "@/infrastructure/events/types";
 import { JOB_PRIORITY } from "@/infrastructure/queue/jobs/schemas";
 import { prisma } from "@/lib/prisma";
+import { tenantAllowsArea } from "@/lib/plan-access-server";
 
 const QUEUE_NAME = "review-monitoring";
 const LOG_PREFIX = `[Worker:${QUEUE_NAME}]`;
@@ -83,6 +84,8 @@ function generateMockReviews(platform: string, externalId: string): MockExternal
 
 async function processReviewMonitoring(job: Job<ReviewMonitoringJob>): Promise<void> {
   const { tenantId, sourceId, platform, externalId, checkType, correlationId } = job.data;
+  // Review monitoring is reputation: skipped on a plan without it (src/lib/plan-access.ts).
+  if (!(await tenantAllowsArea(tenantId, "reputation"))) return;
 
   console.log(
     `${LOG_PREFIX} Processing job ${job.id} - ${checkType} for ${platform}:${externalId} (tenant ${tenantId})`,

@@ -6,6 +6,7 @@ import { computeAndPersist } from '../lib/signals/scoring';
 import { syncRecentSignals } from '../lib/signals/sync';
 import { evaluateAlerts, previousScore, flushUnnotified } from '../lib/signals/alerts';
 import { runCompetitorSweep } from '../lib/signals/competitors';
+import { tenantAllowsArea } from '@/lib/plan-access-server';
 
 async function recomputeAll(): Promise<number> {
   const synced = await syncRecentSignals(2);
@@ -17,6 +18,10 @@ async function recomputeAll(): Promise<number> {
   let ok = 0;
   for (const { tenantId } of tenants) {
     try {
+      // Reputation risk is a reputation feature: a plan without it (the
+      // AI-only and crawler-only plans, src/lib/plan-access.ts) keeps its
+      // signals but gets no recompute and no alerts.
+      if (!(await tenantAllowsArea(tenantId, 'reputation'))) continue;
       const prev = await previousScore(tenantId);
       const r = await computeAndPersist(tenantId);
       await evaluateAlerts(tenantId, r, prev);
@@ -36,6 +41,7 @@ export function startSignalsWorker(): Worker {
     async (job) => {
       if (job.name === 'recompute-tenant') {
         const { tenantId } = job.data as { tenantId: string };
+        if (!(await tenantAllowsArea(tenantId, 'reputation'))) return { tenantId, skipped: 'plan' };
         const prev = await previousScore(tenantId);
         const r = await computeAndPersist(tenantId);
         await evaluateAlerts(tenantId, r, prev);

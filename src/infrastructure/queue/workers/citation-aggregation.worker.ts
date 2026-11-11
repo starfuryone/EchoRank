@@ -36,6 +36,7 @@ import { queueJobId, utcDay } from "@/infrastructure/queue/job-id";
 import { logger } from "@/infrastructure/observability/logger";
 import type { CitationAggregationJob } from "@/infrastructure/queue/jobs/schemas";
 import { listCitationBrandProfiles, rollUpBrandProfile } from "@/lib/citations/store";
+import { tenantAllowsArea } from "@/lib/plan-access-server";
 
 const QUEUE_NAME = "citation-aggregation" as const;
 const SWEEP_JOB_NAME = "sweep";
@@ -91,6 +92,8 @@ async function rollUpOne(job: CitationAggregationJob): Promise<void> {
   if (!brandProfileId || !tenantId) {
     throw new Error("rollup job needs both brandProfileId and tenantId");
   }
+  // Citations are AI visibility: skipped on a plan without it (src/lib/plan-access.ts).
+  if (!(await tenantAllowsArea(tenantId, "ai_visibility"))) return;
 
   const profiles = await listCitationBrandProfiles(tenantId);
   const profile = profiles.find((candidate) => candidate.brandProfileId === brandProfileId);

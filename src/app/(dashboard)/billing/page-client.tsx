@@ -15,6 +15,7 @@ import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { PLAN_PRICES, planConfig, sellablePlan } from "@/lib/plan-config";
+import { pricingBase, usd } from "@/lib/pricing-page/format";
 import { planFeaturesByPlan } from "@/lib/plan-features";
 import type { PlanType } from "@/generated/prisma";
 import { BILLING_COPY, type DashLocale } from "@/lib/i18n/dashboard";
@@ -45,6 +46,7 @@ const PLAN_ICONS: Record<string, React.ReactNode> = {
 // Product names — intentionally kept English in every locale.
 const PLAN_LABELS: Record<string, string> = {
   AI_VISIBILITY: "AI Visibility",
+  NOSY_BAT: CRAWLER_BRAND.name,
   STARTER: "Starter",
   GROWTH: "Growth",
   AGENCY: "Agency",
@@ -210,7 +212,8 @@ export function BillingPageClient({
                       {t.contactUs}
                     </Link>
                   ) : (
-                    `$${PLAN_PRICES[sellablePlan(billing.plan as PlanType)] ?? 0}${t.perMonth}`
+                    // usd(): "$22.40" for the crawler-only plan's price with cents, "$79" as before.
+                    `${usd(PLAN_PRICES[sellablePlan(billing.plan as PlanType)] ?? 0, pricingBase(locale))}${t.perMonth}`
                   )}
                   {billing.currentPeriodEnd && (
                     <span>

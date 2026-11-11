@@ -23,6 +23,8 @@ interface DashboardShellProps {
   assistantVisible?: boolean;
   /** Unread notifications for this user (computed in the (dashboard) layout). */
   unreadCount?: number;
+  /** The plan includes the notification centre; false hides the bell (the crawler-only plan). */
+  notifications?: boolean;
   user?: {
     name?: string | null;
     email?: string | null;
@@ -38,6 +40,7 @@ export function DashboardShell({
   paid,
   assistantVisible,
   unreadCount,
+  notifications = true,
 }: DashboardShellProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
@@ -76,6 +79,7 @@ export function DashboardShell({
           locale={locale}
           user={user}
           unreadCount={unreadCount}
+          notifications={notifications}
           onMenuToggle={handleMenuToggle}
           onSignOut={handleSignOut}
         />

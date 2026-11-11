@@ -20,6 +20,9 @@ import { Modal } from "@/components/ui/modal";
 import { SETTINGS_COPY, type DashLocale, type SettingsCopy } from "@/lib/i18n/dashboard";
 import { INTEGRATIONS_COPY } from "@/lib/i18n/integrations";
 import { Ga4Integration } from "@/components/settings/ga4-integration";
+import { GscIntegration } from "@/components/settings/gsc-integration";
+import { planAllowsArea, planShowsLockedTeasers } from "@/lib/plan-access";
+import type { PlanType } from "@/generated/prisma";
 import { AiKeysIntegration } from "@/components/settings/ai-keys-integration";
 import { SITE_CRAWLER_4E } from "@/lib/i18n/site-crawler-4e";
 import { flag } from "@/lib/flags";
@@ -195,6 +198,15 @@ export function SettingsPageClient({ locale }: { locale: DashLocale }) {
   if (!settings) return null;
 
   const isAgencyPlan = settings.plan === "AGENCY";
+  const plan = settings.plan as PlanType;
+  // The crawler-only plan (src/lib/plan-access.ts) shows no locked teasers:
+  // brand colours and review links belong to the reputation engine and the
+  // white-label card to Agency, neither of which it has. Business details
+  // and language stay.
+  const extras = planShowsLockedTeasers(plan) || planAllowsArea(plan, "reputation");
+  // Search Console in Settings for a plan with the Google connections but
+  // without the GSC tool page, where every other plan connects it.
+  const gscHere = flag("crawl.gsc") && planAllowsArea(plan, "google_connections") && !planAllowsArea(plan, "seo_tools");
 
   return (
     <div className="space-y-6">
@@ -260,6 +272,7 @@ export function SettingsPageClient({ locale }: { locale: DashLocale }) {
         </Card>
 
         {/* Brand Colors */}
+        {extras && (
         <Card>
           <CardHeader>
             <div className="flex items-center gap-2">
@@ -328,8 +341,10 @@ export function SettingsPageClient({ locale }: { locale: DashLocale }) {
             </div>
           </CardContent>
         </Card>
+        )}
 
         {/* Review Links */}
+        {extras && (
         <Card>
           <CardHeader>
             <div className="flex items-center gap-2">
@@ -366,6 +381,7 @@ export function SettingsPageClient({ locale }: { locale: DashLocale }) {
             />
           </CardContent>
         </Card>
+        )}
 
         {/* Localization */}
         <Card>
@@ -404,6 +420,7 @@ export function SettingsPageClient({ locale }: { locale: DashLocale }) {
         </Card>
 
         {/* White-label (Agency plan only) */}
+        {extras && (
         <Card
           className={!isAgencyPlan ? "opacity-60" : undefined}
         >
@@ -447,6 +464,7 @@ export function SettingsPageClient({ locale }: { locale: DashLocale }) {
             </label>
           </CardContent>
         </Card>
+        )}
 
         {/* Save */}
         <div className="flex items-center justify-between border-t border-gray-200 pt-6">
@@ -464,6 +482,8 @@ export function SettingsPageClient({ locale }: { locale: DashLocale }) {
         </div>
       </form>
 
+      {/* Search Console for the crawler-only plan, which has no GSC tool page. */}
+      {gscHere && <GscIntegration t={INTEGRATIONS_COPY[locale]} />}
       {/* Phase 4d: Integrations → Google Analytics 4 for the Site Crawler (crawl.ga4). */}
       {flag("crawl.ga4") && <Ga4Integration t={INTEGRATIONS_COPY[locale]} />}
       {flag("crawl.ai") && <AiKeysIntegration t={SITE_CRAWLER_4E[locale]} locale={locale} />}

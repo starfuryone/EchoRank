@@ -1,5 +1,6 @@
 import type { PlanType } from "@/generated/prisma";
 import { hasFeature } from "./feature-flags";
+import { CRAWLER_BRAND } from "./site-crawler/brand";
 
 /**
  * The tiers that exist as products: every PlanType.
@@ -53,6 +54,8 @@ export const TRIAL_DAYS = 7;
 export const MARKETING_MONTHLY_OUTPUT_TOKENS: Record<SellablePlanType, number | null> = {
   // No Marketing Studio on the AI-only plan; 0 refuses (it is not "unlimited").
   AI_VISIBILITY: 0,
+  // Nor on the crawler-only plan.
+  NOSY_BAT: 0,
   STARTER: 200_000,
   GROWTH: 500_000,
   AGENCY: 2_000_000,
@@ -157,8 +160,9 @@ export const WATCHER_PRICES_CENTS = {
  * same call every other `null` ceiling in this file makes.
  */
 export const KEYWORD_OPPORTUNITY_CAP_USD: Record<SellablePlanType, number | null> = {
-  // No Keyword Opportunity Finder on the AI-only plan.
+  // No Keyword Opportunity Finder on the AI-only plan, nor on the crawler-only one.
   AI_VISIBILITY: 0,
+  NOSY_BAT: 0,
   STARTER: 2,
   GROWTH: 8,
   AGENCY: 15,
@@ -484,6 +488,41 @@ export interface PlanConfig {
   ctaLink: string;
 }
 
+/**
+ * Agency's crawler caps, in one place so the crawler-only plan (NOSY_BAT)
+ * reads the same values rather than a copy of them (owner, 2026-11-10: "the
+ * same config values, not copied numbers"). Raising Agency's crawl limits
+ * raises the crawler-only plan's with them. Crawls at once differ (3 vs 2) and stay on each
+ * plan.
+ */
+const AGENCY_CRAWLER = {
+  crawlUrlCap: 25_000,
+  crawlsPerMonth: null,
+  // Unlimited crawls, so this pool is the plan's real crawl limit.
+  crawlPagesPerMonth: 300_000,
+  crawlRenderedPages: 5_000,
+  crawlsKept: 50,
+  crawlExtractors: 10,
+  crawlSearches: 5,
+  crawlSegments: 25,
+  crawlSchedules: 10,
+  crawlScheduleCadences: ["daily", "weekly", "monthly"],
+} as const satisfies Partial<PlanConfig>;
+
+/**
+ * Agency's per-crawl caps for the crawl options that cost us nothing, shared
+ * with the crawler-only plan the same way: PageSpeed Insights (Google's free
+ * API, inside the Lighthouse tool's hourly allowance), custom JavaScript on
+ * pages already rendered, semantic duplicates on the tenant's own OpenAI key,
+ * and Search Console URL Inspection.
+ */
+const AGENCY_CRAWLER_FREE_EXTRAS = {
+  crawlPsiPages: 100,
+  crawlJsSnippets: 5,
+  crawlSemanticPages: 5_000,
+  crawlInspectionPages: 500,
+} as const satisfies Partial<PlanConfig>;
+
 export const PLAN_CONFIGS: Record<SellablePlanType, PlanConfig> = {
   // The $29 AI-only plan (reinstated 2026-11-07, ECHORANK-AI-TIER.md). AI
   // visibility and nothing else: every SEO, crawl, reputation and API
@@ -547,6 +586,69 @@ export const PLAN_CONFIGS: Record<SellablePlanType, PlanConfig> = {
     highlighted: false,
     cta: "Start tracking",
     ctaLink: "/register?plan=ai_visibility",
+  },
+
+  // The crawler-only plan (owner's spec, 2026-11-10): the crawler with Agency's
+  // crawl limits (AGENCY_CRAWLER) and two crawls at once, account basics, and
+  // nothing else. Every other allowance is 0 and src/lib/plan-access.ts keeps
+  // the other areas shut. One user, one workspace: team invites and client
+  // workspaces are areas the plan does not open (plan-access.ts), and it has
+  // no API, MCP or white-label (no features in feature-flags.ts). Sold only once its stripe_prices rows exist
+  // (src/lib/stripe/catalog.ts).
+  //
+  // THE ONE PRICE WITH CENTS: $22.40 a month, $215.04 a year ($17.92 a month,
+  // 20% off). Every money figure about it is computed in cents
+  // (src/lib/pricing-page/format.ts), never by float multiplication.
+  NOSY_BAT: {
+    // The product name, from brand.ts (tests/nosy-bat-brand.test.ts).
+    name: CRAWLER_BRAND.name,
+    slug: "nosy_bat",
+    description: "The SEO crawler that checks every page and shows its evidence, on its own",
+    monthlyPrice: 22.4,
+    annualPrice: 17.92,
+    isCustomPricing: false,
+    quotaDefaults: {
+      maxLocations: 0,
+      maxRequestsPerMonth: 0,
+      maxEmailsPerMonth: 0,
+      maxSmsPerMonth: 0,
+      maxWebhooksPerMonth: 0,
+      maxAiInferencesPerMonth: 0,
+      maxMonitoringChecks: 0,
+      maxApiRequestsPerDay: 0,
+    },
+    seoSearchesPerMonth: 0,
+    trackedKeywords: 0,
+    ...AGENCY_CRAWLER,
+    crawlConcurrency: 2,
+    // Free to us: PageSpeed Insights (Google's free API, through the
+    // Lighthouse tool's hourly allowance), URL Inspection (Search Console),
+    // semantic duplicates (the tenant's own OpenAI key), custom JavaScript on
+    // pages we render anyway. Agency's caps.
+    ...AGENCY_CRAWLER_FREE_EXTRAS,
+    // Off: they spend our money. Backlink metrics are metered DataForSEO calls;
+    // AI prompts run Claude on our key (and the plan has no Marketing Studio
+    // token budget for the own-key engines to share a cap with).
+    crawlBacklinkPages: 0,
+    crawlAiPages: 0,
+    // No AI visibility monitor.
+    aiCheckup: { frequency: "none", providers: 0, prompts: 0, repetitions: 0 },
+    aiProjects: 0,
+    aiMonthlyCapUsd: 0,
+    keywordOpportunityAnalysesPerMonth: 0,
+    linkAuthorityChecksPerMonth: 0,
+    backlinks: {
+      tier: "basic",
+      scope: "domain",
+      listRows: 0,
+      filters: false,
+      csv: false,
+      history: false,
+      deepEndpoints: false,
+    },
+    highlighted: false,
+    cta: "Start crawling",
+    ctaLink: "/register?plan=nosy_bat",
   },
 
   STARTER: {
@@ -693,24 +795,14 @@ export const PLAN_CONFIGS: Record<SellablePlanType, PlanConfig> = {
     },
     seoSearchesPerMonth: 5000,
     trackedKeywords: 500,
-    crawlUrlCap: 25_000,
-    crawlsPerMonth: null,
-    // Unlimited crawls, so this pool is the Agency plan's real crawl limit.
-    crawlPagesPerMonth: 300_000,
-    crawlRenderedPages: 5_000,
+    // URLs per crawl, unlimited crawls, pages a month, rendered pages, crawls
+    // kept, extractors, searches, segments and schedules: AGENCY_CRAWLER,
+    // which the crawler-only plan reads too.
+    ...AGENCY_CRAWLER,
     crawlConcurrency: 3,
-    crawlsKept: 50,
-    crawlExtractors: 10,
-    crawlSearches: 5,
-    crawlSegments: 25,
-    crawlSchedules: 10,
-    crawlScheduleCadences: ["daily", "weekly", "monthly"],
-    crawlPsiPages: 100,
+    ...AGENCY_CRAWLER_FREE_EXTRAS,
     crawlBacklinkPages: 100,
-    crawlJsSnippets: 5,
     crawlAiPages: 500,
-    crawlSemanticPages: 5_000,
-    crawlInspectionPages: 500,
     // Four engines, as decided 2026-11-07 (was "every reachable engine"):
     // the four the runner has adapters for. Projected $18.36/month at worst
     // case; the $150 cap covers × 1.5.
@@ -864,6 +956,9 @@ export function getUpgradePath(currentPlan: PlanType): PlanType | null {
   const upgradeMap: Record<PlanType, PlanType | null> = {
     // The AI-only plan's next step: everything it has, plus the rest.
     AI_VISIBILITY: "STARTER",
+    // The crawler-only plan's: every other tool (Starter's crawl limits are
+    // lower; the upgrade is for the rest of the product).
+    NOSY_BAT: "STARTER",
     STARTER: "GROWTH",
     GROWTH: "AGENCY",
     AGENCY: "ENTERPRISE",
@@ -886,7 +981,16 @@ export function getEnterpriseContact() {
 
 /** Canonical tier ordering, low to high, starting at the $29 AI-only plan.
  *  Enterprise is custom-priced, so rank, not monthlyPrice, decides what
- *  counts as an upgrade. */
+ *  counts as an upgrade.
+ *
+ *  NOSY_BAT (the crawler-only plan, 2026-11-10) is NOT on this ladder: it is a
+ *  side plan, not a step between two others, and every listing that walks
+ *  the ladder (the Subscription Agreement's plan lines, the assistant's plan
+ *  list, the card grid) leaves it out until a caller adds it on purpose
+ *  (src/lib/plan-launch.ts, once its Stripe prices exist). Off the ladder,
+ *  indexOf is -1, so isPlanAtLeast(NOSY_BAT, any) is false and every "X and
+ *  up" gate refuses it, and a move from it to any ladder plan reads as an
+ *  upgrade. The areas it opens are plan-access.ts's, never this rank. */
 export const PLAN_ORDER: SellablePlanType[] = [
   "AI_VISIBILITY",
   "STARTER",

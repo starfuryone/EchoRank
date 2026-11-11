@@ -22,6 +22,8 @@ interface HeaderProps {
   };
   /** Unread count resolved server-side in the (dashboard) layout. */
   unreadCount?: number;
+  /** The plan includes the notification centre (src/lib/plan-access.ts); false = no bell, no count fetch. */
+  notifications?: boolean;
   onMenuToggle?: () => void;
   onSignOut?: () => void;
 }
@@ -32,6 +34,7 @@ export function Header({
   locale = "en",
   user,
   unreadCount = 0,
+  notifications = true,
   onMenuToggle,
   onSignOut,
 }: HeaderProps) {
@@ -46,6 +49,8 @@ export function Header({
   // mirrored back into state on every render: this effect already covers the
   // navigation that would change it.
   useEffect(() => {
+    // No notification centre on the plan: nothing to count, and the route would refuse it.
+    if (!notifications) return;
     let cancelled = false;
     fetch("/api/notifications/unread-count")
       .then((res) => (res.ok ? res.json() : null))
@@ -61,7 +66,7 @@ export function Header({
     return () => {
       cancelled = true;
     };
-  }, [pathname]);
+  }, [pathname, notifications]);
   // On the crawler's routes the logo (30 px high, 90 wide) IS the title: its alt carries the
   // name, the byline stays text. The one brand rendering on those pages
   // besides the sidebar row.
@@ -109,22 +114,24 @@ export function Header({
       <div className="flex items-center gap-2">
         {/* Notifications. The dot used to be hardcoded on, so it meant nothing;
             it now appears only when this user has unread rows. */}
-        <Link
-          href="/notifications"
-          className={`relative rounded-lg p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-700${unread > 0 ? " er-bell-live" : ""}`}
-          aria-label={
-            unread > 0
-              ? `${chrome.notifications} (${unread})`
-              : chrome.notifications
-          }
-        >
-          <Bell className="h-5 w-5" />
-          {unread > 0 && (
-            <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-semibold leading-none text-white">
-              {unread > 99 ? "99+" : unread}
-            </span>
-          )}
-        </Link>
+        {notifications && (
+          <Link
+            href="/notifications"
+            className={`relative rounded-lg p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-700${unread > 0 ? " er-bell-live" : ""}`}
+            aria-label={
+              unread > 0
+                ? `${chrome.notifications} (${unread})`
+                : chrome.notifications
+            }
+          >
+            <Bell className="h-5 w-5" />
+            {unread > 0 && (
+              <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-semibold leading-none text-white">
+                {unread > 99 ? "99+" : unread}
+              </span>
+            )}
+          </Link>
+        )}
 
         {/* User avatar */}
         <div className="flex items-center gap-3 pl-2">

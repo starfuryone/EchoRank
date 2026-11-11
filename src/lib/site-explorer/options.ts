@@ -63,6 +63,8 @@ export const SITE_EXPLORER_CACHE_TTL_MS =
 export const SITE_EXPLORER_ANALYSES_PER_MONTH: Record<PlanType, number> = {
   /** The AI-only plan has no SEO tools; the proxy refuses it before this is read. */
   AI_VISIBILITY: 0,
+  /** Nor the crawler-only plan. */
+  NOSY_BAT: 0,
   STARTER: 5,
   GROWTH: 50,
   AGENCY: 200,

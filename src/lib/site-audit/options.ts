@@ -16,6 +16,8 @@ import type { PlanType } from "@/generated/prisma";
 export const CRAWL_PAGES_PER_PLAN: Record<PlanType, number> = {
   /** The AI-only plan has no SEO tools; the proxy refuses it before this is read. */
   AI_VISIBILITY: 0,
+  /** Nor the crawler-only plan (its crawler is the site crawler, not the site audit). */
+  NOSY_BAT: 0,
   STARTER: 25,
   GROWTH: 100,
   AGENCY: 500,
@@ -26,6 +28,7 @@ export const CRAWL_PAGES_PER_PLAN: Record<PlanType, number> = {
 export const AUDITS_PER_MONTH: Record<PlanType, number> = {
   /** The AI-only plan has no SEO tools; the proxy refuses it before this is read. */
   AI_VISIBILITY: 0,
+  NOSY_BAT: 0,
   STARTER: 2,
   GROWTH: 10,
   AGENCY: 50,

@@ -101,6 +101,8 @@ vi.mock("bullmq", async (importOriginal) => ({
   Worker: class {},
 }));
 vi.mock("@/lib/prisma", () => ({ prisma: db }));
+// The plan allowlist check (2026-11-10): an AI-visibility plan, so the monitor runs.
+vi.mock("@/lib/plan-access-server", () => ({ tenantAllowsArea: async () => true }));
 vi.mock("@/generated/prisma", () => ({ Prisma: {} }));
 vi.mock("@/lib/av-sidecar", () => ({ sidecarPost }));
 vi.mock("@/infrastructure/metering/service", () => ({ meteringService: { record, checkQuota } }));

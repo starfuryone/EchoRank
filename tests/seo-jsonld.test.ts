@@ -8,7 +8,7 @@
 // point is that the offers are derived from PLAN_CONFIGS.
 import { describe, it, expect } from "vitest";
 import { softwareApplication } from "@/lib/seo/jsonld";
-import { PLAN_CONFIGS } from "@/lib/plan-config";
+import { PLAN_CONFIGS, PLAN_ORDER } from "@/lib/plan-config";
 
 interface Offer {
   "@type": string;
@@ -22,7 +22,10 @@ function offers(): Offer[] {
   return node.offers;
 }
 
-const listed = Object.values(PLAN_CONFIGS).filter(
+// The ladder's list-priced plans (PLAN_ORDER): the crawler-only plan, sold
+// only once its Stripe prices exist, has no Offer on every page
+// (src/lib/seo/constants.ts); /site-crawler adds its own.
+const listed = PLAN_ORDER.map((p) => PLAN_CONFIGS[p]).filter(
   (p) => !p.isCustomPricing && p.monthlyPrice > 0,
 );
 const custom = Object.values(PLAN_CONFIGS).filter((p) => p.isCustomPricing);

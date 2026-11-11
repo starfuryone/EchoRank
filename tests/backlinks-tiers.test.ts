@@ -146,8 +146,9 @@ describe("the tier boundary is a capability object, not a plan name", () => {
         expect(cap.history, plan).toBe(true);
         expect(cap.deepEndpoints, plan).toBe(true);
       }
-      // The AI-only plan has no Backlinks tool at all (src/lib/plan-access.ts).
-      if (plan === "AI_VISIBILITY") expect(cap.listRows, plan).toBe(0);
+      // A plan without the SEO tools has no Backlinks tool at all: the AI-only
+      // plan and the crawler-only plan (src/lib/plan-access.ts).
+      if (plan === "AI_VISIBILITY" || plan === "NOSY_BAT") expect(cap.listRows, plan).toBe(0);
       else expect(cap.listRows, plan).toBeGreaterThan(0);
     }
   });

@@ -33,6 +33,8 @@ vi.mock("@/infrastructure/observability/logger", () => ({ logger: loggerFns }));
 // unreadable from this account (see CLAUDE.md on the 600 .env). Nothing in this
 // file touches the database.
 vi.mock("@/lib/prisma", () => ({ prisma: {} }));
+// The plan allowlist check (2026-11-10): a plan with Marketing Studio, so the job runs.
+vi.mock("@/lib/plan-access-server", () => ({ tenantAllowsArea: async () => true }));
 vi.mock("@/lib/audit", () => ({ createAuditLog: auditLog }));
 vi.mock("@/infrastructure/redis/connection", () => ({
   getSubscriberConnection: () => ({}),

@@ -44,6 +44,7 @@ import {
 } from "@/lib/sov/store";
 import { detectShareDrops } from "@/lib/sov/alerts";
 import { notifySovShareDrop } from "@/lib/notifications/adapters";
+import { tenantAllowsArea } from "@/lib/plan-access-server";
 
 const QUEUE_NAME = "sov-aggregation" as const;
 const SWEEP_JOB_NAME = "sweep";
@@ -99,6 +100,10 @@ async function rollUpOne(job: SovAggregationJob): Promise<void> {
   if (!promptSetId || !tenantId) {
     throw new Error("rollup job needs both promptSetId and tenantId");
   }
+  // Share of voice is AI visibility: a plan without it (the crawler-only
+  // plan, src/lib/plan-access.ts) keeps its snapshots, gets no new ones and
+  // no share-drop notification.
+  if (!(await tenantAllowsArea(tenantId, "ai_visibility"))) return;
 
   const day = job.date ? new Date(`${job.date}T00:00:00.000Z`) : utcDay();
   const from = windowStart(day, SOV_WINDOW_DAYS);

@@ -15,6 +15,9 @@ export { QuotaExceededError };
 // reach is src/lib/plan-access.ts, not this rank.
 const PLAN_RANK: Record<PlanType, number> = {
   AI_VISIBILITY: 0,
+  // The crawler-only plan: below every ladder plan, so any "X and up" check
+  // refuses it (it is off PLAN_ORDER the same way, plan-config.ts).
+  NOSY_BAT: -1,
   STARTER: 1,
   GROWTH: 2,
   AGENCY: 3,

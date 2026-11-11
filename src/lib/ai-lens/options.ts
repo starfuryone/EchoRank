@@ -18,6 +18,8 @@ import type { PlanType } from "@/generated/prisma";
 export const AI_LENS_ANALYSES_PER_MONTH: Record<PlanType, number> = {
   /** AI Lens is included in the AI-only plan, at Starter's allowance. */
   AI_VISIBILITY: 10,
+  /** The crawler-only plan has no AI visibility; 0 refuses. */
+  NOSY_BAT: 0,
   STARTER: 10,
   GROWTH: 50,
   AGENCY: 200,

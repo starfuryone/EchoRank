@@ -71,6 +71,8 @@ export const BACKLINKS_OBSERVED_COST_USD = 0.368;
 export const BACKLINKS_ANALYSES_PER_MONTH: Record<PlanType, number> = {
   /** The AI-only plan has no Backlinks tool; 0 refuses. */
   AI_VISIBILITY: 0,
+  /** Nor the crawler-only plan. */
+  NOSY_BAT: 0,
   /**
    * STARTER WAS 0, AND IS NOW 5. The two-tier split puts STARTER on Basic, and
    * a tier whose allowance is zero cannot use the tier it is assigned to — the

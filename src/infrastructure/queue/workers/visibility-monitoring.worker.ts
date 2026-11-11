@@ -125,6 +125,18 @@ export async function processMonitorRun(monitorId: string): Promise<void> {
 
   const interval = monitor.cadence === "DAILY" ? DAY_MS : 7 * DAY_MS;
 
+  // The plan allowlist first (src/lib/plan-access.ts): a plan without AI
+  // visibility (the crawler-only plan) keeps its monitor and gets no audit and
+  // no alert. Explicit, so it does not rest on a zero quota alone (overage).
+  const { tenantAllowsArea } = await import("@/lib/plan-access-server");
+  if (!(await tenantAllowsArea(monitor.tenantId, "ai_visibility"))) {
+    await prisma.visibilityMonitor.update({
+      where: { id: monitor.id },
+      data: { nextRunAt: new Date(Date.now() + interval) },
+    });
+    return;
+  }
+
   // Config-enforced monitoring quota (plan-config maxMonitoringChecks).
   const quota = await meteringService.checkQuota(monitor.tenantId, "MONITORING_CHECK", 1);
   if (!quota.allowed) {
@@ -280,6 +292,14 @@ async function processPromptBatch(tenantId: string): Promise<void> {
   if (prompts.length === 0) return;
 
   const advance = { nextRunAt: new Date(Date.now() + DAY_MS) };
+
+  // The plan allowlist first, as in processMonitorRun: no prompt runs and no
+  // prompt alerts on a plan without AI visibility.
+  const { tenantAllowsArea } = await import("@/lib/plan-access-server");
+  if (!(await tenantAllowsArea(tenantId, "ai_visibility"))) {
+    await prisma.trackedPrompt.updateMany({ where: { id: { in: prompts.map((p) => p.id) } }, data: advance });
+    return;
+  }
 
   const quota = await meteringService.checkQuota(tenantId, "AI_INFERENCE", prompts.length);
   if (!quota.allowed) {

@@ -60,6 +60,8 @@ export const RANK_TRACKED_KEYWORDS: Record<SellablePlanType, number> = Object.fr
 export const RANK_ALLOWED_FREQUENCIES: Record<PlanType, readonly RankFrequency[]> = {
   /** The AI-only plan has no Rank Tracker (src/lib/plan-access.ts). */
   AI_VISIBILITY: [],
+  /** Nor the crawler-only plan. */
+  NOSY_BAT: [],
   STARTER: ["weekly"],
   GROWTH: ["weekly"],
   AGENCY: ["daily", "weekly"],
@@ -87,6 +89,7 @@ export const RANK_ALLOWED_FREQUENCIES: Record<PlanType, readonly RankFrequency[]
 export const RANK_CHECKS_PER_MONTH: Record<PlanType, number> = {
   /** The AI-only plan has no Rank Tracker; 0 refuses. */
   AI_VISIBILITY: 0,
+  NOSY_BAT: 0,
   STARTER: 200,
   GROWTH: 800,
   AGENCY: 18000,

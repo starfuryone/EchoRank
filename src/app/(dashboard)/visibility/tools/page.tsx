@@ -17,7 +17,7 @@ import { RecentResearchPanel } from "@/components/seo-tools/recent-research-pane
 import { readResearchLog } from "@/lib/research-log/store";
 import { RESEARCH_LOG_PANEL_LIMIT } from "@/lib/research-log/types";
 import { Lock } from "lucide-react";
-import { planAllowsPage } from "@/lib/plan-access";
+import { planAllowsPage, planShowsLockedTeasers } from "@/lib/plan-access";
 import { PLAN_ACCESS_COPY } from "@/lib/i18n/plan-access";
 
 export default async function SeoToolsHubPage() {
@@ -26,12 +26,18 @@ export default async function SeoToolsHubPage() {
   const copy = SEO_TOOLS_COPY[locale];
   const membership = await getCurrentTenant();
   const plan = membership?.tenant.planType;
-  const groups = visibleSeoToolGroups(plan);
+  // The crawler-only plan sees no locked teasers (src/lib/plan-access.ts): only
+  // the cards it can open (the crawler), no tool count, no research log, and
+  // one "Upgrade for more tools" link. Every other plan sees every card.
+  const teasers = planShowsLockedTeasers(plan);
+  const groups = visibleSeoToolGroups(plan)
+    .map((g) => (teasers ? g : { ...g, tools: g.tools.filter((tool) => planAllowsPage(plan, tool.href)) }))
+    .filter((g) => g.tools.length > 0);
 
   // What this workspace has already paid to research. Reads fail soft and
   // return [] (see readResearchLog), so the hub renders identically on a
   // deployment where the research_log migration has not been applied yet.
-  const research = membership
+  const research = membership && teasers
     ? await readResearchLog(membership.tenant.id, { limit: RESEARCH_LOG_PANEL_LIMIT })
     : [];
 
@@ -45,9 +51,15 @@ export default async function SeoToolsHubPage() {
           <p className="mt-1 text-sm text-gray-500">{copy.hubSubtitle}</p>
           {/* Same sentence and numbers as the homepage and /pricing — see
               TOOL_COUNT_LINE. DashLocale is a subset of the marketing Locale. */}
-          <p className="mt-1 text-xs font-medium text-gray-400">
-            {toolCountLine(locale, seoToolCounts())}
-          </p>
+          {teasers ? (
+            <p className="mt-1 text-xs font-medium text-gray-400">
+              {toolCountLine(locale, seoToolCounts())}
+            </p>
+          ) : (
+            <Link href={`/${locale}/pricing`} className="mt-1 inline-block text-xs font-medium text-blue-600 hover:text-blue-700" data-testid="hub-upgrade-more">
+              {PLAN_ACCESS_COPY[locale].upgradeMore}
+            </Link>
+          )}
         </div>
         <ToolsHubHelpButton locale={locale} />
       </div>
@@ -114,7 +126,7 @@ export default async function SeoToolsHubPage() {
         </section>
       ))}
 
-      <RecentResearchPanel locale={locale} entries={research} />
+      {teasers && <RecentResearchPanel locale={locale} entries={research} />}
     </div>
   );
 }

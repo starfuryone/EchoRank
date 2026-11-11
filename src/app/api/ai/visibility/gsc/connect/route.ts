@@ -6,10 +6,13 @@ import { enforcementErrorResponse } from "@/lib/plan-enforcement";
 import { buildAuthUrl } from "@/lib/gsc/client";
 import { signState } from "@/lib/gsc/state";
 
-export async function GET() {
+// ?from=settings: started from Settings → Integrations (the crawler-only
+// plan's Search Console panel); the callback returns there, not to the tool.
+export async function GET(request: Request) {
   try {
     const membership = await requirePaidPlan();
-    const state = signState(membership.tenantId);
+    const fromSettings = new URL(request.url).searchParams.get("from") === "settings";
+    const state = signState(membership.tenantId, undefined, undefined, fromSettings ? "gsc_settings" : "gsc");
     return NextResponse.redirect(buildAuthUrl(state));
   } catch (error) {
     const resp = enforcementErrorResponse(error);

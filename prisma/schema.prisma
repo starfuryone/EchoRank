@@ -15,6 +15,9 @@ enum Role {
 
 enum PlanType {
   AI_VISIBILITY
+  /// The crawler-only plan (2026-11-10): the site crawler and account basics,
+  /// nothing else (src/lib/plan-access.ts). Migration 20261203090000_plan_type_nosy_bat.
+  NOSY_BAT
   STARTER
   GROWTH
   AGENCY

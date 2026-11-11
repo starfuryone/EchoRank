@@ -1,0 +1,14 @@
+-- PlanType.NOSY_BAT: the crawler-only plan (2026-11-10). ADD THE VALUE, AND
+-- NOTHING ELSE.
+--
+-- Postgres refuses to use a new enum value inside the transaction that added
+-- it ("unsafe use of new value ... of enum type"), and `prisma migrate deploy`
+-- wraps each migration file in one transaction, so nothing here may name
+-- 'NOSY_BAT'. No row needs it: a tenant reaches the plan only through the
+-- Stripe webhook, once the stripe_prices rows for tier nosy_bat exist.
+--
+-- AFTER 'AI_VISIBILITY' keeps the enum in the order of PLAN_ORDER
+-- (plan-config.ts). IF NOT EXISTS makes a re-apply a no-op rather than an
+-- error (docs/agents/gotchas.md). Hand-written, additive. Applied by
+-- `prisma migrate deploy` (sudo echorank360-deploy), never by hand.
+ALTER TYPE "PlanType" ADD VALUE IF NOT EXISTS 'NOSY_BAT' AFTER 'AI_VISIBILITY';

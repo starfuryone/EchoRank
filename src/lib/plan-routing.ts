@@ -8,6 +8,8 @@ import type { PlanType } from "@/generated/prisma";
  */
 export const PLAN_HOME: Record<PlanType, string> = {
   AI_VISIBILITY: "/visibility",
+  // The crawler-only plan lands on the crawler, the one tool it has.
+  NOSY_BAT: "/crawler",
   STARTER: "/dashboard",
   GROWTH: "/dashboard",
   AGENCY: "/dashboard",

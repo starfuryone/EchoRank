@@ -56,6 +56,7 @@ import { salvageScoredRuns } from "@/lib/ai-monitor/runner/salvage";
 import { aggregateCheckup } from "@/lib/ai-monitor/metrics";
 import { writeVisibilityMetrics } from "@/lib/ai-monitor/metrics-store";
 import { isPartialCoverage } from "@/lib/ai-monitor/runner/status";
+import { planAllowsArea } from "@/lib/plan-access";
 
 const QUEUE_NAME = "ai-checkup" as const;
 const SWEEP_JOB_NAME = "sweep";
@@ -249,6 +250,10 @@ async function sweep(now: Date): Promise<number> {
   const schedulable: (SchedulableBrand & { plan: ReturnType<typeof planConfig> })[] = brands
     // The rollout gate, before anything is scheduled or spent.
     .filter((brand) => aiSearchEnabledFor(brand.tenantId))
+    // The plan allowlist: a plan without AI visibility (the crawler-only plan,
+    // src/lib/plan-access.ts) keeps its brands and gets no checkups. Explicit,
+    // rather than resting on its "none" frequency and zero cap alone.
+    .filter((brand) => planAllowsArea(brand.tenant.planType, "ai_visibility"))
     .map((brand) => {
       const plan = planConfig(brand.tenant.planType);
       return {
@@ -313,6 +318,11 @@ async function runOne(job: AiCheckupJob, now: Date): Promise<void> {
   }
 
   const planType = brand.tenant.planType;
+  // Read when the job runs, not when it was queued: a downgrade in between stops it.
+  if (!planAllowsArea(planType, "ai_visibility")) {
+    logger.info({ brandProfileId, planType }, "checkup skipped: the plan has no AI visibility");
+    return;
+  }
 
   // THE ONE PLACE THE SHAPE IS RESOLVED. Everything below takes it as a value;
   // nothing downstream reads planConfig(plan).aiCheckup, so a standalone
@@ -457,6 +467,11 @@ async function runResume(checkupId: string, now: Date): Promise<void> {
   }
   const brand = checkup.brandProfile;
   const planType = brand.tenant.planType;
+  // A checkup that was running when the plan lost AI visibility is not resumed.
+  if (!planAllowsArea(planType, "ai_visibility")) {
+    logger.info({ checkupId, planType }, "checkup resume skipped: the plan has no AI visibility");
+    return;
+  }
   const brandContext = {
     brand: brand.name,
     domain: brand.website,

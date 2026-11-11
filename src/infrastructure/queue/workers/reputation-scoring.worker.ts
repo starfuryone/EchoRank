@@ -6,6 +6,7 @@ import { eventBus } from "@/infrastructure/events/bus";
 import { EVENT_TYPES } from "@/infrastructure/events/types";
 import { prisma } from "@/lib/prisma";
 import { notifyReputationScoreChange } from "@/lib/notifications/adapters";
+import { tenantAllowsArea } from "@/lib/plan-access-server";
 
 const QUEUE_NAME = "reputation-scoring";
 const LOG_PREFIX = `[Worker:${QUEUE_NAME}]`;
@@ -19,6 +20,8 @@ const SIGNIFICANT_CHANGE_THRESHOLD = 10;
 
 async function processReputationScoring(job: Job<ReputationScoringJob>): Promise<void> {
   const { tenantId, location, triggerEvent, correlationId } = job.data;
+  // Dropped on a plan without reputation (src/lib/plan-access.ts): no score, no alert.
+  if (!(await tenantAllowsArea(tenantId, "reputation"))) return;
 
   console.log(
     `${LOG_PREFIX} Processing job ${job.id} - scoring for tenant ${tenantId}${location ? ` (location: ${location})` : ""} triggered by ${triggerEvent}`,

@@ -14,6 +14,7 @@ import {
   UserCircle,
   HelpCircle,
   Bell,
+  ArrowUpRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { SIDEBAR_GROUPS_COPY, SIDEBAR_TOOLTIPS, dashNav, type DashLocale } from "@/lib/i18n/dashboard";
@@ -21,7 +22,8 @@ import { SEO_TOOLS_HUB } from "@/lib/seo-tools";
 import { NosyBatIcon } from "@/components/seo-tools/nosy-bat-icon";
 import { AvEmblemIcon } from "@/components/brand/AiVisibilityLogo";
 import type { PlanType } from "@/generated/prisma";
-import { planAllowsPage, planIsRestricted } from "@/lib/plan-access";
+import { planAllowsPage, planIsRestricted, planShowsLockedTeasers } from "@/lib/plan-access";
+import { PLAN_ACCESS_COPY } from "@/lib/i18n/plan-access";
 
 // Eleven reputation surfaces used to sit here as eleven rows, which made the
 // sidebar the product's table of contents. They now live behind /reputation as
@@ -160,8 +162,13 @@ export function Sidebar({
   // The SEO Tools hub still requires a paid (ACTIVE) subscription — visibility
   // only; the tools layout enforces the same predicate server-side.
   const restricted = planIsRestricted(plan);
+  // The crawler-only plan shows only what it has (no tools-hub row: the hub
+  // would hold the one crawler card the row above it already opens), plus one
+  // "Upgrade for more tools" link under the list.
+  const noTeasers = !planShowsLockedTeasers(plan);
   const items = navItems.filter((item) => {
     if (restricted && (item.href === "/dashboard" || !planAllowsPage(plan, item.href))) return false;
+    if (noTeasers && item.href === SEO_TOOLS_HUB) return false;
     if (item.href.startsWith(SEO_TOOLS_HUB) || item.href === CRAWLER_HREF) return paid;
     // The assistant row is gated on its own flag, not on `paid`: the two
     // kill-switch envs can hide it while the tenant is still fully paid.
@@ -248,6 +255,17 @@ export function Sidebar({
               </div>
             );
           })}
+          {noTeasers && (
+            <a
+              href={`/${locale}/pricing`}
+              onClick={onClose}
+              data-testid="sidebar-upgrade-more"
+              className="mx-3 mt-2 flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-blue-300 hover:bg-gray-800/50 hover:text-white"
+            >
+              <ArrowUpRight className="h-4 w-4 shrink-0" aria-hidden="true" />
+              {PLAN_ACCESS_COPY[locale].upgradeMore}
+            </a>
+          )}
         </nav>
 
         {/* Footer */}

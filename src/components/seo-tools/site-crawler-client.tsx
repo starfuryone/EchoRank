@@ -825,7 +825,9 @@ export function SiteCrawlerClient({
             </AdvancedSection>
           )}
 
-                {flag("crawl.ai") && (
+                {/* Not drawn on a plan whose AI page cap is 0 (the crawler-only
+                    plan: the prompts run Claude on our key, plan-config.ts). */}
+                {flag("crawl.ai") && (quota?.aiPageCap ?? 0) > 0 && (
                   <AdvancedSection id="ai" title={t.ux.secAi} summary={ai ? t.ux.sumAi(int.format(ai.prompts.length), int.format(ai.top.pages)) : t.ux.notSet}>
                     <AiPromptsSection
                         t={t.p4e}

@@ -3,8 +3,13 @@ import "server-only";
 // src/lib/plan-change.ts — what happens to a tenant's background work when its
 // plan moves across the plan allowlist (src/lib/plan-access.ts).
 //
-// DOWNGRADE into the AI-only plan: excluded schedules are paused and pending
-// customer sends stopped; the data is kept, hidden behind the allowlist.
+// DOWNGRADE into a restricted plan (the AI-only plan, or the crawler-only
+// plan since 2026-11-10): excluded schedules are paused and pending customer
+// sends stopped; the data is kept, hidden behind the allowlist, and nothing
+// is deleted. The crawler-only plan keeps the crawler, so its crawl schedules
+// are left alone; its excluded background work (AI checkups, monitoring,
+// rollups, reputation alerts, the onboarding drip) re-checks the plan when it
+// runs. An upgrade from it to Starter or higher opens every area at once.
 //   - crawl schedules: their repeatable jobs are removed (rows kept, still
 //     `enabled`, so an upgrade can restore them);
 //   - email/SMS sends waiting or delayed in their queues are removed;

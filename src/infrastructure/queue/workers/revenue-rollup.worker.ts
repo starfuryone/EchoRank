@@ -47,6 +47,7 @@ import { getQueue, addJob } from "@/infrastructure/queue/registry";
 import { queueJobId, utcDay } from "@/infrastructure/queue/job-id";
 import { logger } from "@/infrastructure/observability/logger";
 import type { RevenueRollupJob } from "@/infrastructure/queue/jobs/schemas";
+import { tenantAllowsArea } from "@/lib/plan-access-server";
 import {
   listTenantIds,
   monthKey,
@@ -114,6 +115,9 @@ async function sweep(now: Date): Promise<number> {
 async function rollUpOne(job: RevenueRollupJob): Promise<void> {
   const { tenantId } = job;
   if (!tenantId) throw new Error("rollup job needs a tenantId");
+  // AI attribution revenue is an SEO-tools page (/visibility/tools/revenue):
+  // skipped on a plan without the tools (src/lib/plan-access.ts).
+  if (!(await tenantAllowsArea(tenantId, "seo_tools"))) return;
 
   const month = job.month ?? monthKey(new Date());
   if (!/^\d{4}-\d{2}$/.test(month)) {

@@ -56,6 +56,8 @@ export const MAX_SPAM_SCORE_FOR_BADGE = 30;
 const SEARCHES_PER_MONTH: Record<PlanType, number> = {
   /** The AI-only plan has no content tools; 0 refuses. */
   AI_VISIBILITY: 0,
+  /** Nor the crawler-only plan. */
+  NOSY_BAT: 0,
   STARTER: 10,
   GROWTH: 50,
   AGENCY: 200,

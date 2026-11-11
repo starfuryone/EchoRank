@@ -170,7 +170,9 @@ export function AddDataSection({
           {value?.psi && <p className="pl-6 text-xs text-gray-500">{t.psiNeeds(String(psiRuns(value.psi)))}</p>}
         </div>
       )}
-      {flag("crawl.backlinks") && (
+      {/* Not drawn on a plan whose cap is 0 (the crawler-only plan: backlink
+          metrics are metered DataForSEO spend, plan-config.ts). */}
+      {flag("crawl.backlinks") && quota.backlinkCap > 0 && (
         <div className="space-y-1">
           <TopPicker
             id="add-backlinks"

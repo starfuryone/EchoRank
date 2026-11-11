@@ -5,6 +5,8 @@ import type { FeedbackRoutingJob } from "@/infrastructure/queue/jobs/schemas";
 import { logger } from "@/infrastructure/observability/logger";
 import { eventBus } from "@/infrastructure/events/bus";
 import { EVENT_TYPES, type EventType } from "@/infrastructure/events/types";
+import { PlanType as PlanTypeEnum, type PlanType } from "@/generated/prisma";
+import { planAllowsArea } from "@/lib/plan-access";
 
 const log = logger.child({ module: "feedback-router" });
 
@@ -73,6 +75,9 @@ export async function routeFeedback(feedbackId: string, correlationId: string) {
  * outage), since the submission path intentionally returns success to the
  * customer even if enqueueing fails. Returns the number re-enqueued.
  */
+/** The plans whose feedback is routed: every plan that includes reputation. */
+const ROUTABLE_PLANS: PlanType[] = Object.values(PlanTypeEnum).filter((p) => planAllowsArea(p, "reputation"));
+
 export async function backfillUnroutedFeedback(limit = 100): Promise<number> {
   const cutoff = new Date(Date.now() - BACKFILL_MIN_AGE_MS);
 
@@ -83,6 +88,10 @@ export async function backfillUnroutedFeedback(limit = 100): Promise<number> {
       rating: { not: null },
       deletedAt: null,
       submittedAt: { lt: cutoff },
+      // Only tenants whose plan includes reputation (src/lib/plan-access.ts):
+      // the routing worker drops the others' jobs, so re-queuing them every
+      // five minutes is churn, and they would hold the batch limit forever.
+      tenant: { planType: { in: ROUTABLE_PLANS } },
     },
     select: { id: true, tenantId: true },
     take: limit,

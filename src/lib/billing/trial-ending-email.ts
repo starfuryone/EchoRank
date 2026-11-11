@@ -98,12 +98,19 @@ export function trialChargeLabel(
   const config = planConfig(planType);
   if (config.isCustomPricing || !interval) return null;
 
-  const raw = interval === "year" ? config.annualPrice * 12 : config.monthlyPrice;
+  // In cents: one plan has cents (the crawler-only plan, $17.92 × 12 = $215.04), and
+  // 17.92 * 12 in floating point is 215.04000000000002.
+  const cents = interval === "year" ? Math.round(config.annualPrice * 100) * 12 : Math.round(config.monthlyPrice * 100);
+  const raw = cents / 100;
   // Grouped, because an annual charge runs to four digits and "$4788" is a
   // number a reader has to count. The pricing catalog groups too ("$1,379 CAD",
   // "1 379 $ CAD") — French uses a narrow no-break space, which is what the
-  // fr-CA formatter emits.
-  const amount = new Intl.NumberFormat(locale === "fr" ? "fr-CA" : "en-CA").format(raw);
+  // fr-CA formatter emits. Whole dollars print as before; an amount with cents
+  // prints both decimals ("$22.40").
+  const amount = new Intl.NumberFormat(locale === "fr" ? "fr-CA" : "en-CA", {
+    minimumFractionDigits: cents % 100 === 0 ? 0 : 2,
+    maximumFractionDigits: 2,
+  }).format(raw);
   // House currency formatting, copied from the pricing catalog's own strings
   // (src/lib/i18n/content.ts): "$69 CAD/mo" in English, "69 $ CAD/mois" in
   // French. Billing is USD-only (src/lib/stripe/prices.ts), and the code is

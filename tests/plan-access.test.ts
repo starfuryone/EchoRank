@@ -84,7 +84,10 @@ describe("every route is classified", () => {
 
 describe("the AI-only plan", () => {
   it("reaches exactly its areas: AI visibility, account, home, the Link Authority Checker (and exempt APIs)", () => {
-    expect([...AI_VISIBILITY_AREAS].sort()).toEqual(["account", "ai_visibility", "exempt", "home", "link_authority"]);
+    // Team and notifications were split out of "account" on 2026-11-10; the AI-only plan keeps both.
+    // The tools hub index and credit packs got their own areas the same day
+    // (they were "ai_visibility" and "account").
+    expect([...AI_VISIBILITY_AREAS].sort()).toEqual(["account", "ai_visibility", "credits", "exempt", "home", "link_authority", "notifications", "team", "tools_hub"]);
     expect(planIsRestricted("AI_VISIBILITY")).toBe(true);
     for (const plan of OTHER_PLANS) expect(planIsRestricted(plan), plan).toBe(false);
   });
@@ -233,7 +236,8 @@ describe("the gates read the allowlist", () => {
 
   it("the (dashboard) layout renders the upgrade screen server-side, and sends /dashboard home", () => {
     const layout = read("src/app/(dashboard)/layout.tsx");
-    expect(layout).toContain("{excluded ? <PlanUpgradeScreen locale={locale} /> : children}");
+    // The screen names what the plan has (the AI-only or the crawler-only plan).
+    expect(layout).toContain("{excluded ? <PlanUpgradeScreen locale={locale} plan={plan} /> : children}");
     expect(layout).toContain('if (pathname === "/dashboard") redirect(PLAN_HOME[plan]);');
     expect(read("src/lib/plan-routing.ts")).toContain('AI_VISIBILITY: "/visibility",');
   });
@@ -377,10 +381,13 @@ describe("allowances rise with the ladder", () => {
   const engines = (n: number | null) => (n === null ? Number.POSITIVE_INFINITY : n);
 
   it("every higher plan is ≥ every lower plan on prompts, engines and frequency", () => {
-    for (let i = 1; i < PLAN_ORDER.length; i++) {
-      const lo = PLAN_CONFIGS[PLAN_ORDER[i - 1]!].aiCheckup;
-      const hi = PLAN_CONFIGS[PLAN_ORDER[i]!].aiCheckup;
-      const pair = `${PLAN_ORDER[i - 1]} -> ${PLAN_ORDER[i]}`;
+    // The ladder of plans with AI visibility: the crawler-only plan has none.
+    const ladder = PLAN_ORDER.filter((p) => planAllowsArea(p, "ai_visibility"));
+    expect(ladder).not.toContain("NOSY_BAT");
+    for (let i = 1; i < ladder.length; i++) {
+      const lo = PLAN_CONFIGS[ladder[i - 1]!].aiCheckup;
+      const hi = PLAN_CONFIGS[ladder[i]!].aiCheckup;
+      const pair = `${ladder[i - 1]} -> ${ladder[i]}`;
       expect(hi.prompts, pair).toBeGreaterThanOrEqual(lo.prompts);
       expect(engines(hi.providers), pair).toBeGreaterThanOrEqual(engines(lo.providers));
       expect(FREQ[hi.frequency], pair).toBeGreaterThanOrEqual(FREQ[lo.frequency]);

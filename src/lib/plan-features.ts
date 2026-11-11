@@ -205,6 +205,13 @@ function feedbackLine(config: PlanConfig, base: PlanFeatureBase): string {
  */
 const COPY: Record<PlanFeatureBase, Record<SellablePlanType, string[]>> = {
   en: {
+    // The crawler-only plan: the crawler and nothing else (crawlLine leads).
+    NOSY_BAT: [
+      "Scheduled crawls, crawl comparison and staging checks",
+      "Search Console, GA4 and PageSpeed data beside the findings",
+      "One user",
+      "Email support — 48h weekday response",
+    ],
     AI_VISIBILITY: [
       "AI Trust Score",
       "Lost-recommendation alerts",
@@ -250,6 +257,12 @@ const COPY: Record<PlanFeatureBase, Record<SellablePlanType, string[]>> = {
     ],
   },
   fr: {
+    NOSY_BAT: [
+      "Explorations planifiées, comparaison d'explorations et vérification de préproduction",
+      "Données Search Console, GA4 et PageSpeed à côté des constats",
+      "Un utilisateur",
+      "Soutien par courriel — réponse en 48 h les jours ouvrables",
+    ],
     AI_VISIBILITY: [
       "Score de confiance IA",
       "Alertes de perte de recommandation",
@@ -316,6 +329,9 @@ function assemble(plan: SellablePlanType, base: PlanFeatureBase): string[] {
   // The AI-only plan: AI tracking, one location, the AI features, support.
   // Nothing about feedback, SEO or crawls, which it does not include.
   if (plan === "AI_VISIBILITY") return [tracking, location, ...copy];
+  // The crawler-only plan: the crawl ceiling, then its crawler bullets.
+  // Nothing about AI tracking, locations, feedback or the SEO tools.
+  if (plan === "NOSY_BAT") return [crawlLine(config, base), ...copy].filter((line): line is string => line !== null);
   const feedback = feedbackLine(config, base);
   const search = searchLine(config, base);
   const opportunity = opportunityLine(config, base, plan === "STARTER");
@@ -386,6 +402,7 @@ export function planFeaturesByPlan(
   const base = planFeatureBase(locale);
   return {
     AI_VISIBILITY: assemble("AI_VISIBILITY", base),
+    NOSY_BAT: assemble("NOSY_BAT", base),
     STARTER: assemble("STARTER", base),
     GROWTH: assemble("GROWTH", base),
     AGENCY: assemble("AGENCY", base),

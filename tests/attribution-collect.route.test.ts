@@ -15,6 +15,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const aiVisit = { upsert: vi.fn() };
 const attributionKey = { findUnique: vi.fn(), update: vi.fn(), findFirst: vi.fn() };
 vi.mock("@/lib/prisma", () => ({ prisma: { aiVisit, attributionKey } }));
+// The plan allowlist check (2026-11-10): a plan with the SEO tools, so the beacon records.
+vi.mock("@/lib/plan-access-server", () => ({ tenantAllowsArea: async () => true }));
 
 const rateLimit = vi.fn(async (..._a: unknown[]) => ({ success: true, remaining: 10 }));
 vi.mock("@/lib/rate-limit", () => ({ rateLimit: (...a: unknown[]) => rateLimit(...a) }));

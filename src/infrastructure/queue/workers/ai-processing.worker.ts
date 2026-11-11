@@ -7,6 +7,7 @@ import { EVENT_TYPES } from "@/infrastructure/events/types";
 import { prisma } from "@/lib/prisma";
 import { logger } from "@/infrastructure/observability/logger";
 import { withSpan } from "@/infrastructure/observability/telemetry";
+import { tenantAllowsArea } from "@/lib/plan-access-server";
 
 const QUEUE_NAME = "ai-processing";
 
@@ -142,6 +143,9 @@ async function processAiJob(job: Job<AiProcessingJob>): Promise<void> {
   await withSpan("ai-processing.process", async (span) => {
     const { tenantId, feedbackId, externalReviewId, analysisType, content, correlationId } =
       job.data;
+    // Feedback and review analysis is reputation, and it spends AI money:
+    // dropped on a plan without reputation (src/lib/plan-access.ts).
+    if (!(await tenantAllowsArea(tenantId, "reputation"))) return;
 
     span.setAttributes({
       "job.id": job.id ?? "",

@@ -11,6 +11,12 @@ export const PLAN_AUDIENCE: Record<PlanType, Record<PricingBase, string>> = {
     fr: "Pour les marketeurs qui n'ont besoin que de la visibilité dans la recherche IA",
     de: "Für Marketer, die nur KI-Suchsichtbarkeit brauchen",
   },
+  // Owner's line (2026-11-10).
+  NOSY_BAT: {
+    en: "For marketers who only need the SEO crawler that checks every page and shows its evidence.",
+    fr: "Pour les marketeurs qui n'ont besoin que du robot d'exploration SEO qui vérifie chaque page et montre ses preuves.",
+    de: "Für Marketer, die nur den SEO-Crawler brauchen, der jede Seite prüft und die Belege zeigt.",
+  },
   STARTER: {
     en: "For solo founders and single-location businesses",
     fr: "Pour les fondateurs solo et les entreprises à un seul établissement",
@@ -34,6 +40,17 @@ export const PLAN_AUDIENCE: Record<PlanType, Record<PricingBase, string>> = {
 };
 
 /** The Enterprise card on /pricing (custom priced, no checkout: the sales form). */
+/**
+ * /pricing's Enterprise band under the cards (owner, 2026-11-10; it replaced
+ * the Enterprise card in the row). The button goes to the sales form with
+ * src=pricing-enterprise-band.
+ */
+export const ENTERPRISE_BAND: Record<PricingBase, { name: string; line: string; cta: string }> = {
+  en: { name: "Enterprise", line: "Custom limits and terms for larger teams", cta: "Talk to us" },
+  fr: { name: "Enterprise", line: "Limites et conditions sur mesure pour les grandes équipes", cta: "Parlons-en" },
+  de: { name: "Enterprise", line: "Individuelle Limits und Konditionen für grössere Teams", cta: "Kontakt aufnehmen" },
+};
+
 export const ENTERPRISE_CARD: Record<PricingBase, { price: string; cta: string }> = {
   en: { price: "Custom", cta: "Talk to us" },
   fr: { price: "Sur mesure", cta: "Parlons-en" },

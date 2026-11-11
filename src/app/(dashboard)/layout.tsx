@@ -31,10 +31,12 @@ export default async function DashboardLayout({
   const plan = membership?.tenant.planType;
 
   // ── THE PLAN ALLOWLIST (src/lib/plan-access.ts) ─────────────────────────
-  // The $29 AI-only plan reaches AI visibility, account and help pages only.
-  // Its home is /visibility; any other page renders the upgrade screen here,
-  // server-side, instead of the page. FAILS CLOSED like the billing gate
-  // below: with no x-pathname the restricted plan gets the upgrade screen.
+  // A restricted plan reaches only its areas: the $29 AI-only plan AI
+  // visibility, account and help pages (home /visibility); the crawler-only
+  // plan the crawler, its Google connections and the account basics (home
+  // /crawler). Any other page renders the upgrade screen here, server-side,
+  // instead of the page. FAILS CLOSED like the billing gate below: with no
+  // x-pathname a restricted plan gets the upgrade screen.
   const pathname = (await headers()).get("x-pathname");
   let excluded = false;
   if (plan && planIsRestricted(plan)) {
@@ -80,9 +82,13 @@ export default async function DashboardLayout({
   // Resolved here so the bell is correct on first paint rather than flashing
   // an empty badge while the client fetches. The header re-reads it on every
   // navigation; this is only the seed value.
-  const unreadCount = membership
-    ? await unreadNotificationCount(membership.tenantId, membership.userId)
-    : 0;
+  // The bell is the notification centre's entry point: a plan without that
+  // area (the crawler-only plan) gets no bell and no count read.
+  const notificationsOn = planAllowsArea(plan, "notifications");
+  const unreadCount =
+    membership && notificationsOn
+      ? await unreadNotificationCount(membership.tenantId, membership.userId)
+      : 0;
 
   // The Pro assistant's visibility, decided HERE and passed down as a boolean.
   // Server-derived on purpose: a client-side plan check is a suggestion, and
@@ -104,14 +110,17 @@ export default async function DashboardLayout({
       paid={paid}
       assistantVisible={assistantVisible}
       unreadCount={unreadCount}
+      notifications={notificationsOn}
       user={{
         name: session.user.name,
         email: session.user.email,
         image: session.user.image,
       }}
     >
-      <OnboardingGate locale={locale} />
-      {excluded ? <PlanUpgradeScreen locale={locale} /> : children}
+      {/* The welcome step belongs to the home dashboard (it leads into the
+          first AI audit): not on a plan without one (the crawler-only plan). */}
+      {planAllowsArea(plan, "home") && <OnboardingGate locale={locale} />}
+      {excluded ? <PlanUpgradeScreen locale={locale} plan={plan} /> : children}
       {/* Mounted once for the whole (dashboard) group, so a navigation does not
           reset an open conversation. Lazily loaded — see the loader. */}
       {assistantVisible && (

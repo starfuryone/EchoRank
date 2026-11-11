@@ -6,6 +6,7 @@ import { oneClickUnsubscribeHeaders, unsubscribeUrl } from "@/lib/email/unsubscr
 // planConfig() is the identity lookup since AI_VISIBILITY is sellable again;
 // it is kept as the one accessor so a future fold lands in one place.
 import { planConfig } from "@/lib/plan-config";
+import { planAllowsArea } from "@/lib/plan-access";
 import { logger } from "@/infrastructure/observability/logger";
 import type { OnboardingEmailStage } from "@/infrastructure/queue/jobs/schemas";
 
@@ -100,6 +101,11 @@ export async function sendOnboardingEmail(
 
   if (!tenant) return { status: "skipped", reason: "tenant_deleted" };
   if (!tenant.marketingConsent) return { status: "skipped", reason: "unsubscribed" };
+  // The drip is about the home dashboard and AI visibility (the score, the
+  // /visibility link, competitors): not for a plan without them (the
+  // crawler-only plan, src/lib/plan-access.ts). Read at send time, so a
+  // downgrade mid-drip stops the rest.
+  if (!planAllowsArea(tenant.planType, "ai_visibility")) return { status: "skipped", reason: "plan_excludes_feature" };
 
   const owner = tenant.members[0]?.user;
   if (!owner?.email) return { status: "skipped", reason: "no_owner_email" };

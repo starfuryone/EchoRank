@@ -3,6 +3,7 @@ import { getSubscriberConnection } from "@/infrastructure/redis/connection";
 import { REDIS_CONFIG } from "@/infrastructure/redis/config";
 import type { AnalyticsAggregationJob } from "@/infrastructure/queue/jobs/schemas";
 import { prisma } from "@/lib/prisma";
+import { tenantAllowsArea } from "@/lib/plan-access-server";
 
 const QUEUE_NAME = "analytics-aggregation";
 const LOG_PREFIX = `[Worker:${QUEUE_NAME}]`;
@@ -13,6 +14,8 @@ async function processAnalyticsAggregation(
   job: Job<AnalyticsAggregationJob>,
 ): Promise<void> {
   const { tenantId, periodType, periodStart, periodEnd } = job.data;
+  // Feedback analytics are reputation: skipped on a plan without it (src/lib/plan-access.ts).
+  if (!(await tenantAllowsArea(tenantId, "reputation"))) return;
 
   const start = new Date(periodStart);
   const end = new Date(periodEnd);

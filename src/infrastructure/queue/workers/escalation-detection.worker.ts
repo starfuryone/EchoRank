@@ -6,6 +6,7 @@ import { eventBus } from "@/infrastructure/events/bus";
 import { EVENT_TYPES } from "@/infrastructure/events/types";
 import { prisma } from "@/lib/prisma";
 import { notifyEscalationAlert } from "@/lib/notifications/adapters";
+import { tenantAllowsArea } from "@/lib/plan-access-server";
 
 const QUEUE_NAME = "escalation-detection";
 const LOG_PREFIX = `[Worker:${QUEUE_NAME}]`;
@@ -45,6 +46,9 @@ async function processEscalationDetection(
   job: Job<EscalationDetectionJob>,
 ): Promise<void> {
   const { tenantId, feedbackId, customerId, signals, correlationId } = job.data;
+  // A job queued before a downgrade to a plan without reputation
+  // (src/lib/plan-access.ts) is dropped when it runs: no case, no alert.
+  if (!(await tenantAllowsArea(tenantId, "reputation"))) return;
 
   console.log(
     `${LOG_PREFIX} Processing job ${job.id} - escalation detection for tenant ${tenantId}`,

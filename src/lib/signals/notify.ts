@@ -1,6 +1,7 @@
 import { prisma } from './db';
 import type { CreatedAlert } from './alerts';
 import { sendMail } from '../mailer';
+import { tenantAllowsArea } from '@/lib/plan-access-server';
 
 /**
  * Recipients: TenantRiskConfig.alertEmails (comma-separated, set in the
@@ -66,7 +67,6 @@ function digestHtml(label: string, events: CreatedAlert[]): string {
 export async function sendAlertDigest(tenantId: string, events: CreatedAlert[]): Promise<void> {
   if (!events.length) return;
   const ids = events.map((e) => e.id);
-  const { emails, enabled } = await resolveRecipients(tenantId);
 
   const skip = async (reason: string) => {
     console.warn(`[signals] alert email skipped for ${tenantId}: ${reason}`);
@@ -76,6 +76,12 @@ export async function sendAlertDigest(tenantId: string, events: CreatedAlert[]):
     });
   };
 
+  // The one place every alert email passes (the hourly sweep, a tenant
+  // recompute, the unsent-alert flush): a plan without reputation (the AI-only
+  // and crawler-only plans, src/lib/plan-access.ts) gets none, and the alerts
+  // are marked handled so the flush stops retrying them.
+  if (!(await tenantAllowsArea(tenantId, 'reputation'))) return skip('plan excludes reputation');
+  const { emails, enabled } = await resolveRecipients(tenantId);
   if (!enabled) return skip('alerts disabled in config');
   if (!emails.length) return skip('no recipients (set alertEmails or ALERT_FALLBACK_EMAIL)');
 

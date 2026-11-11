@@ -9,15 +9,18 @@
 //   - workers: jobs re-check the tenant's plan when they run;
 //   - plan changes: a downgrade pauses excluded schedules, an upgrade resumes.
 //
-// Only AI_VISIBILITY (the $29 AI-only plan) is restricted. Every other plan
-// includes every area, and its existing per-tool gates (features, quotas,
-// requirePlan) still apply inside them; this file never grants anything those
-// gates withhold. Staff overrides change limits inside included areas only.
+// Two plans are restricted: AI_VISIBILITY (the $29 AI-only plan) and NOSY_BAT
+// (the crawler-only plan, 2026-11-10). Each reaches only the areas in its set
+// below. Every other plan includes every area, and its existing per-tool gates
+// (features, quotas, requirePlan) still apply inside them; this file never
+// grants anything those gates withhold. Staff overrides change limits inside
+// included areas only.
 //
 // EVERY ROUTE IS CLASSIFIED. tests/plan-access.test.ts walks every (dashboard)
 // page and every /api route on disk and fails on one with no area, so a new
 // route cannot slip through. At run time an unclassified route is refused for
-// the restricted plan (default excluded).
+// a restricted plan (default excluded); tests/plan-access-nosy-bat.test.ts
+// walks the same table for a crawler-only tenant.
 //
 // Dependency-free: the proxy, the sidebar (a Client Component) and the workers
 // all import it.
@@ -27,8 +30,30 @@ import type { PlanType } from "@/generated/prisma";
 export type AccessArea =
   /** The AI visibility dashboard, monitoring, Custom Prompts, Brand Radar, AI Lens, audits. */
   | "ai_visibility"
-  /** Settings, Account, Billing, Help, Team, Notifications. */
+  /** Settings, Account, Billing, Help: the account basics every plan has. */
   | "account"
+  /** Team invites and members (/team, /api/team). Not on the crawler-only plan: one user. */
+  | "team"
+  /** The in-app notification centre (funnel alerts today). Not on the crawler-only plan. */
+  | "notifications"
+  /**
+   * The Google connections the crawler reads: Search Console (connect,
+   * callback, status, property pick, disconnect) and GA4 (connect, property
+   * list, property pick). The connections only, not the SEO tools built on
+   * them (GSC insights, the sync, performance data).
+   */
+  | "google_connections"
+  /**
+   * The tools hub INDEX (/visibility/tools, exact). Open on every plan: each
+   * card on it is gated by the page it opens (planAllowsPage), so a restricted
+   * plan sees its own tools there and nothing it cannot open is a link.
+   */
+  | "tools_hub"
+  /**
+   * Credit packs (/api/billing/credits): lookups spent in the SEO and AI tools.
+   * Not on the crawler-only plan, which has none of the tools they buy.
+   */
+  | "credits"
   /** /dashboard: every plan has a home; the AI-only plan's is /visibility. */
   | "home"
   /** The SEO tools hub's tools (Site Explorer, Keywords, Rank Tracker, GSC, SERP, Backlinks, Lighthouse, analytics, content, reporting, AI insight tools). */
@@ -56,6 +81,11 @@ export type AccessArea =
 export const ALL_AREAS: readonly AccessArea[] = [
   "ai_visibility",
   "account",
+  "team",
+  "notifications",
+  "google_connections",
+  "tools_hub",
+  "credits",
   "home",
   "seo_tools",
   "link_authority",
@@ -72,20 +102,59 @@ export const ALL_AREAS: readonly AccessArea[] = [
  * What the AI-only plan includes. Everything else is excluded. "link_authority"
  * is the one SEO tool on it (the Link Authority Checker, 2026-11-09).
  */
-export const AI_VISIBILITY_AREAS: ReadonlySet<AccessArea> = new Set<AccessArea>(["ai_visibility", "account", "home", "link_authority", "exempt"]);
+export const AI_VISIBILITY_AREAS: ReadonlySet<AccessArea> = new Set<AccessArea>([
+  "ai_visibility",
+  "account",
+  // Team and notifications were part of "account" until 2026-11-10; the AI-only plan keeps them.
+  "team",
+  "notifications",
+  // The tools hub index, its own area since 2026-11-10 (it was "ai_visibility").
+  "tools_hub",
+  // Credit packs, their own area since 2026-11-10 (they were "account").
+  "credits",
+  "home",
+  "link_authority",
+  "exempt",
+]);
+
+/**
+ * What the crawler-only plan (NOSY_BAT, 2026-11-10) includes: the crawler
+ * (/crawler, the crawl API, its CSV and PDF reports, site verification), the
+ * Google connections the crawler reads, and the account basics (settings,
+ * billing, profile, help, sign-out). DENY BY DEFAULT: every other area, and
+ * every route no rule classifies, is excluded. Its home is /crawler.
+ */
+export const NOSY_BAT_AREAS: ReadonlySet<AccessArea> = new Set<AccessArea>(["crawler", "google_connections", "account", "tools_hub", "exempt"]);
+
+/** The restricted plans and what each includes. A plan not listed includes every area. */
+const RESTRICTED: Partial<Record<PlanType, ReadonlySet<AccessArea>>> = {
+  AI_VISIBILITY: AI_VISIBILITY_AREAS,
+  NOSY_BAT: NOSY_BAT_AREAS,
+};
 
 export function planAllowsArea(plan: PlanType | null | undefined, area: AccessArea): boolean {
   if (area === "exempt") return true;
-  if (plan === "AI_VISIBILITY") return AI_VISIBILITY_AREAS.has(area);
-  return true;
+  const allowed = plan ? RESTRICTED[plan] : undefined;
+  return allowed ? allowed.has(area) : true;
 }
 
-/** Does this plan exclude any area at all? (Only the AI-only plan does.) */
+/** Does this plan exclude any area at all? (The AI-only and the crawler-only plans.) */
 export function planIsRestricted(plan: PlanType | null | undefined): boolean {
-  return ALL_AREAS.some((area) => !planAllowsArea(plan, area));
+  return Boolean(plan && RESTRICTED[plan]);
 }
 
-/** The plan to upgrade to for an area the AI-only plan does not include. */
+/**
+ * Does the plan see LOCKED TEASERS (cards and rows for tools it does not
+ * include, shown locked)? The AI-only plan does. The crawler-only plan does
+ * not (owner, 2026-11-10): the sidebar and the tools hub show only what it
+ * has, plus one "Upgrade for more tools" link.
+ */
+const NO_TEASERS: ReadonlySet<PlanType> = new Set<PlanType>(["NOSY_BAT"]);
+export function planShowsLockedTeasers(plan: PlanType | null | undefined): boolean {
+  return !(plan && NO_TEASERS.has(plan));
+}
+
+/** The plan to upgrade to for an area a restricted plan does not include. */
 export const UPGRADE_PLAN_FOR_EXCLUDED: PlanType = "STARTER";
 
 interface RouteRule {
@@ -109,8 +178,9 @@ export const PAGE_RULES: readonly RouteRule[] = [
   // citation_tracking feature too, which every plan from AI Visibility up has.
   { prefix: "/visibility/tools/citation-finder", area: "ai_visibility" },
   { prefix: "/visibility/tools/citation-opportunities", area: "ai_visibility" },
-  // The hub index itself: open, with excluded cards shown locked.
-  { prefix: "/visibility/tools", area: "ai_visibility", exact: true },
+  // The hub index itself: open on every plan. The AI-only plan sees excluded
+  // cards locked; the crawler-only plan sees only its own (planShowsLockedTeasers).
+  { prefix: "/visibility/tools", area: "tools_hub", exact: true },
   { prefix: "/visibility/tools/action-agent", area: "marketing_studio" },
   { prefix: "/visibility/tools/ai-content-helper", area: "marketing_studio" },
   // Social posting, by EchoPilot: a page promoting the sister product, on
@@ -135,8 +205,8 @@ export const PAGE_RULES: readonly RouteRule[] = [
   { prefix: "/settings", area: "account" },
   { prefix: "/billing", area: "account" },
   { prefix: "/help", area: "account" },
-  { prefix: "/team", area: "account" },
-  { prefix: "/notifications", area: "account" },
+  { prefix: "/team", area: "team" },
+  { prefix: "/notifications", area: "notifications" },
   // The AI tools hub: open, showing only the cards whose page the plan opens
   // (visibleAiGroups filters with planAllowsPage). AI Attribution, Share of
   // Voice, revenue and the scanner live under /visibility/tools and stay out.
@@ -175,6 +245,14 @@ export const API_RULES: readonly RouteRule[] = [
   { prefix: "/api/assistant/chat", area: "exempt" },
   // AI visibility.
   { prefix: "/api/ai/visibility/keywords", area: "seo_tools" },
+  // The Search Console connection itself (the crawler joins it): connect,
+  // the OAuth callback, status, the property pick, disconnect. The rest of
+  // /api/ai/visibility/gsc (performance data, the sync) is the GSC tool.
+  { prefix: "/api/ai/visibility/gsc/connect", area: "google_connections" },
+  { prefix: "/api/ai/visibility/gsc/callback", area: "google_connections" },
+  { prefix: "/api/ai/visibility/gsc/status", area: "google_connections" },
+  { prefix: "/api/ai/visibility/gsc/select", area: "google_connections" },
+  { prefix: "/api/ai/visibility/gsc/disconnect", area: "google_connections" },
   { prefix: "/api/ai/visibility/gsc", area: "seo_tools" },
   { prefix: "/api/ai/visibility/historical", area: "seo_tools" },
   { prefix: "/api/ai/visibility/bots", area: "seo_tools" },
@@ -186,6 +264,8 @@ export const API_RULES: readonly RouteRule[] = [
   { prefix: "/api/av", area: "ai_visibility" },
   { prefix: "/api/seo/v1/ai-lens", area: "ai_visibility" },
   { prefix: "/api/seo/v1/crawl", area: "crawler" },
+  // GA4 for the crawler's join: connect, the property list, the property pick.
+  { prefix: "/api/seo/v1/ga4", area: "google_connections" },
   { prefix: "/api/seo/v1/link-authority", area: "link_authority" },
   { prefix: "/api/seo", area: "seo_tools" },
   { prefix: "/api/keyword-opportunities", area: "seo_tools" },
@@ -194,10 +274,16 @@ export const API_RULES: readonly RouteRule[] = [
   // the page itself (/visibility/tools/social-posting).
   { prefix: "/api/echopilot/click", area: "ai_visibility" },
   // Account.
+  // Matrix team chat is team, not an account basic (one user on the crawler-only plan).
+  { prefix: "/api/account/matrix", area: "team" },
   { prefix: "/api/account", area: "account" },
+  // Credit packs buy lookups for the SEO and AI tools; the watcher is the AI
+  // visibility add-on. Neither is a billing basic of the crawler-only plan.
+  { prefix: "/api/billing/credits", area: "credits" },
+  { prefix: "/api/billing/watcher-status", area: "ai_visibility" },
   { prefix: "/api/billing", area: "account" },
-  { prefix: "/api/team", area: "account" },
-  { prefix: "/api/notifications", area: "account" },
+  { prefix: "/api/team", area: "team" },
+  { prefix: "/api/notifications", area: "notifications" },
   { prefix: "/api/onboarding", area: "account" },
   { prefix: "/api/metering", area: "account" },
   // Creating a client workspace is client management; listing and switching
@@ -246,16 +332,16 @@ export function areaForApi(path: string, method?: string): AccessArea | null {
   return areaFor(API_RULES, path, method);
 }
 
-/** Unclassified routes are refused for the restricted plan (default excluded). */
+/** Unclassified routes are refused for a restricted plan (default excluded). */
 export function planAllowsPage(plan: PlanType | null | undefined, path: string): boolean {
   const area = areaForPage(path);
-  if (area === null) return plan !== "AI_VISIBILITY";
+  if (area === null) return !planIsRestricted(plan);
   return planAllowsArea(plan, area);
 }
 
 export function planAllowsApi(plan: PlanType | null | undefined, path: string, method?: string): boolean {
   const area = areaForApi(path, method);
-  if (area === null) return plan !== "AI_VISIBILITY";
+  if (area === null) return !planIsRestricted(plan);
   return planAllowsArea(plan, area);
 }
 

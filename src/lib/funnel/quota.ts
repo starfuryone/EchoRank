@@ -39,6 +39,7 @@ const KEY_TTL_SECONDS = 40 * 24 * 60 * 60;
  */
 export const FUNNEL_AUDIT_LIMITS: Record<PlanType, number> = {
   AI_VISIBILITY: 0,
+  NOSY_BAT: 0,
   STARTER: 0,
   GROWTH: 0,
   AGENCY: 500,

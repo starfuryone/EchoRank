@@ -47,6 +47,7 @@ import { createAuditLog } from "@/lib/audit";
 import { dashboardLocale } from "@/lib/i18n/dashboard";
 import { ActionAgentBudgetError, assertActionAgentBudget, generate } from "@/lib/action-agent/generate";
 import { isV1Kind } from "@/lib/action-agent/types";
+import { tenantAllowsArea } from "@/lib/plan-access-server";
 
 const QUEUE_NAME = "action-agent" as const;
 const CONCURRENCY = 2;
@@ -60,6 +61,9 @@ export async function processActionAgentJob(job: Job<ActionAgentJob>): Promise<v
   // `page` and `gbp_post` exist in the database enum and have no generator, so
   // this is the line that keeps that gap honest rather than a runtime crash.
   if (!isV1Kind(kind)) throw new UnrecoverableError(`no generator for kind "${kind}"`);
+  // The plan NOW, not the one in the payload: a job queued before a downgrade
+  // to a plan without Marketing Studio (src/lib/plan-access.ts) spends nothing.
+  if (!(await tenantAllowsArea(tenantId, "marketing_studio"))) return;
 
   // ── The second budget check. See this file's header. ──────────────────────
   try {

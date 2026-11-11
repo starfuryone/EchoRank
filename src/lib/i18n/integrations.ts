@@ -16,6 +16,15 @@ const en = {
   ga4Error: "The property could not be saved. Try again.",
   ga4Empty: "This Google account has no GA4 property it can read.",
   ga4Loading: "Loading…",
+  // Search Console, for a plan without the GSC tool page (the crawler-only plan).
+  gscTitle: "Google Search Console",
+  gscHelp: "Pick the Search Console property the Site Crawler reads. Each crawl then joins clicks, impressions, CTR and position per page, and can check index status.",
+  gscConnect: "Connect Search Console",
+  gscNotConnected: "Echorank asks Google for read-only access to Search Console.",
+  gscReauth: "Google needs you to connect again.",
+  gscConnected: (property: string) => `Connected: ${property}`,
+  gscDisconnect: "Disconnect",
+  gscError: "That did not work. Try again.",
 };
 export type IntegrationsCopy = typeof en;
 
@@ -32,6 +41,14 @@ const fr: IntegrationsCopy = {
   ga4Error: "La propriété n'a pas pu être enregistrée. Réessayez.",
   ga4Empty: "Ce compte Google n'a accès à aucune propriété GA4.",
   ga4Loading: "Chargement…",
+  gscTitle: "Google Search Console",
+  gscHelp: "Choisissez la propriété Search Console que lit l'Explorateur de site. Chaque exploration y joint ensuite les clics, impressions, taux de clics et positions par page, et peut vérifier l'état d'indexation.",
+  gscConnect: "Connecter la Search Console",
+  gscNotConnected: "Echorank demande à Google un accès en lecture seule à la Search Console.",
+  gscReauth: "Google vous demande de vous reconnecter.",
+  gscConnected: (property: string) => `Connectée : ${property}`,
+  gscDisconnect: "Déconnecter",
+  gscError: "Cela n'a pas fonctionné. Réessayez.",
 };
 
 const deCH: IntegrationsCopy = {
@@ -47,6 +64,14 @@ const deCH: IntegrationsCopy = {
   ga4Error: "Die Property konnte nicht gespeichert werden. Bitte erneut versuchen.",
   ga4Empty: "Dieses Google-Konto kann keine GA4-Property lesen.",
   ga4Loading: "Wird geladen…",
+  gscTitle: "Google Search Console",
+  gscHelp: "Wählen Sie die Search-Console-Property, die der Site Crawler liest. Jeder Crawl verknüpft dann Klicks, Impressionen, CTR und Position pro Seite und kann den Indexierungsstatus prüfen.",
+  gscConnect: "Search Console verbinden",
+  gscNotConnected: "Echorank bittet Google um Lesezugriff auf die Search Console.",
+  gscReauth: "Google verlangt eine neue Verbindung.",
+  gscConnected: (property: string) => `Verbunden: ${property}`,
+  gscDisconnect: "Trennen",
+  gscError: "Das hat nicht geklappt. Bitte erneut versuchen.",
 };
 
 export const INTEGRATIONS_COPY: Record<DashLocale, IntegrationsCopy> = { en, fr, "de-CH": deCH };

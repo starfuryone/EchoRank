@@ -47,6 +47,7 @@ import { logger } from "@/infrastructure/observability/logger";
 import { prisma } from "@/lib/prisma";
 import type { AssistantPrecomputeJob } from "@/infrastructure/queue/jobs/schemas";
 import { computeIntelligence, writeIntelligence } from "@/lib/assistant/pro/precompute";
+import { tenantAllowsArea } from "@/lib/plan-access-server";
 
 const QUEUE_NAME = "assistant-precompute" as const;
 const SWEEP_JOB_NAME = "sweep";
@@ -109,6 +110,8 @@ export async function sweep(): Promise<number> {
 /** Compute and store one tenant's weekly summary. */
 export async function precomputeOne(tenantId: string): Promise<void> {
   if (!tenantId) throw new Error("assistant precompute needs a tenantId");
+  // The assistant is its own area: a plan without it (src/lib/plan-access.ts) gets no summary.
+  if (!(await tenantAllowsArea(tenantId, "assistant"))) return;
 
   const summary = await computeIntelligence(tenantId);
   await writeIntelligence(tenantId, summary);

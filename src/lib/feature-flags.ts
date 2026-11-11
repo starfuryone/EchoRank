@@ -61,6 +61,9 @@ const PLAN_FEATURES: Record<PlanType, Set<Feature>> = {
   // The $29 AI-only plan: AI visibility, answer tracking and the citation
   // tools, nothing else. src/lib/plan-access.ts is the allowlist every gate reads.
   AI_VISIBILITY: new Set<Feature>(["ai_visibility", "answer_tracking", "citation_tracking"]),
+  // The crawler-only plan: no feature at all. The crawler is not
+  // feature-gated (plan-access.ts opens its area); no API, MCP or white-label.
+  NOSY_BAT: new Set<Feature>(),
   STARTER: new Set<Feature>(STARTER_FEATURES),
   GROWTH: new Set<Feature>([
     "review_authenticity",

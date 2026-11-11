@@ -3,7 +3,7 @@
 // Nothing here may be duplicated in a page file. If a page needs a title, a
 // description or an OG image, it goes through buildMetadata() — see README.md.
 
-import { PLAN_CONFIGS } from "@/lib/plan-config";
+import { PLAN_CONFIGS, PLAN_ORDER } from "@/lib/plan-config";
 
 export const SITE_URL = "https://echorank360.com";
 export const SITE_NAME = "Echorank360";
@@ -77,7 +77,11 @@ export const BRAND_TITLE: Record<SeoLocale, string> = {
 // Custom-priced plans are filtered out rather than given a number: Enterprise
 // carries monthlyPrice 0 and isCustomPricing true, and an Offer of "0" or an
 // invented 999 both misstate it. A plan with no list price has no Offer.
-export const PLANS: { name: string; price: string }[] = Object.values(PLAN_CONFIGS)
+//
+// The ladder plans only (PLAN_ORDER): a plan sold only once its Stripe prices
+// exist (the crawler-only plan, src/lib/plan-launch.ts) has no Offer on every
+// page of the site; /site-crawler adds it to its own node once it is on sale.
+export const PLANS: { name: string; price: string }[] = PLAN_ORDER.map((p) => PLAN_CONFIGS[p])
   .filter((p) => !p.isCustomPricing && p.monthlyPrice > 0)
   .map((p) => ({ name: p.name, price: String(p.monthlyPrice) }));
 export const PRICE_CURRENCY = "USD";

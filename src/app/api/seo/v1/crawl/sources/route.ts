@@ -10,6 +10,7 @@
 import { NextResponse } from "next/server";
 import { requirePaidPlan } from "@/lib/paid-plan";
 import { flag } from "@/lib/flags";
+import { planAllowsArea } from "@/lib/plan-access";
 import { getConnection } from "@/lib/gsc/service";
 import { crawlRouteError } from "@/lib/site-crawler/http";
 import { propertyCovers } from "@/lib/site-crawler/gsc-join";
@@ -22,7 +23,14 @@ export async function GET(request: Request) {
     const active = conn?.status === "ACTIVE";
     return NextResponse.json({
       gsc: flag("crawl.gsc")
-        ? { connected: active, property: conn?.siteUrl ?? null, covers: Boolean(active && conn?.siteUrl && host && propertyCovers(conn.siteUrl, `https://${host}/`)) }
+        ? {
+            connected: active,
+            property: conn?.siteUrl ?? null,
+            covers: Boolean(active && conn?.siteUrl && host && propertyCovers(conn.siteUrl, `https://${host}/`)),
+            // Where to connect it: the GSC tool page, or Settings on a plan
+            // without the SEO tools (the crawler-only plan, plan-access.ts).
+            connectHref: planAllowsArea(tenant.tenant.planType, "seo_tools") ? "/visibility/tools/gsc-insights" : "/settings",
+          }
         : null,
       ga4: flag("crawl.ga4") ? { connected: active, property: conn?.ga4PropertyName ?? conn?.ga4PropertyId ?? null } : null,
     });

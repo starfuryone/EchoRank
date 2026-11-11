@@ -9,7 +9,8 @@ import Link from "next/link";
 import type { SiteCrawler4dCopy } from "@/lib/i18n/site-crawler-4d";
 
 interface Sources {
-  gsc: { connected: boolean; property: string | null; covers: boolean } | null;
+  /** connectHref: the GSC tool page, or /settings on a plan without the SEO tools (the route decides). */
+  gsc: { connected: boolean; property: string | null; covers: boolean; connectHref?: string } | null;
   ga4: { connected: boolean; property: string | null } | null;
 }
 
@@ -33,6 +34,7 @@ export function SourceLines({ t, host }: { t: SiteCrawler4dCopy; host: string | 
   }, [host]);
   const s = data?.host === host ? data.sources : null;
   if (!s) return null;
+  const gscConnectHref = s.gsc?.connectHref ?? "/visibility/tools/gsc-insights";
   return (
     <ul className="space-y-1 text-xs text-gray-600">
       {s.gsc && (
@@ -42,7 +44,7 @@ export function SourceLines({ t, host }: { t: SiteCrawler4dCopy; host: string | 
           ) : (
             <>
               {t.lineGscNone}{" "}
-              <Link className="text-blue-700 hover:underline" href="/visibility/tools/gsc-insights">
+              <Link className="text-blue-700 hover:underline" href={gscConnectHref}>
                 {t.lineGscConnect}
               </Link>
             </>
