@@ -18,6 +18,7 @@ import {
   planTypeForLookupKey,
 } from "@/lib/stripe/lookup-keys";
 import { PLAN_ORDER } from "@/lib/plan-config";
+import { CATALOG_GATED_PLANS } from "@/lib/plan-launch";
 
 /**
  * Every key that exists in Stripe. Nothing else may be constructed.
@@ -30,6 +31,9 @@ const EXPECTED_KEYS = [
   // The $29 AI-only plan, reinstated 2026-11-07 (/opt/echorank/prompts/stripe-ai-visibility.sh).
   "echorank_ai_visibility_usd_month",
   "echorank_ai_visibility_usd_year",
+  // The crawler-only plan, 2026-11-10 (/opt/echorank/prompts/stripe-nosy-bat.sh).
+  "echorank_nosy_bat_usd_month",
+  "echorank_nosy_bat_usd_year",
   "echorank_starter_usd_month",
   "echorank_starter_usd_year",
   "echorank_growth_usd_month",
@@ -81,7 +85,8 @@ describe("checkout lookup keys", () => {
     // or be custom-priced like enterprise — silently missing is the bug.
     // Compared against the PLAN tiers only: the watcher has no PLAN_CONFIGS
     // entry, which is the whole reason it is an entitlement.
-    const sellable = PLAN_ORDER.filter((p) => p !== "ENTERPRISE").map((p) => p.toLowerCase());
+    // The ladder plus the plans sold only once their prices exist (plan-launch.ts).
+    const sellable = [...PLAN_ORDER, ...CATALOG_GATED_PLANS].filter((p) => p !== "ENTERPRISE").map((p) => p.toLowerCase());
     expect([...PLAN_TIERS].sort()).toEqual(sellable.sort());
   });
 
@@ -106,6 +111,7 @@ describe("tier -> PlanType mapping", () => {
   // reverse lookup returns null and planType is never set for that tier.
   const MAP: Record<string, string> = {
     ai_visibility: "AI_VISIBILITY",
+    nosy_bat: "NOSY_BAT",
     starter: "STARTER",
     growth: "GROWTH",
     agency: "AGENCY",
@@ -118,7 +124,8 @@ describe("tier -> PlanType mapping", () => {
     for (const tier of PLAN_TIERS) {
       const planType = MAP[tier];
       expect(planType, `no PlanType for ${tier}`).toBeDefined();
-      expect(PLAN_ORDER).toContain(planType);
+      // A real plan: on the ladder, or a catalog-gated side plan.
+      expect([...PLAN_ORDER, ...CATALOG_GATED_PLANS]).toContain(planType);
     }
   });
 

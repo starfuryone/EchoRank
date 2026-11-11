@@ -32,7 +32,8 @@ import { SUPPORT_EMAIL } from "@/lib/assistant/config";
 import { pricingNotes } from "@/lib/i18n/content";
 import { cadence, cardPlans, engineNames } from "./headlines";
 import { planAllowsArea } from "@/lib/plan-access";
-import { fmtNum, pricingBase, type PricingBase } from "./format";
+import { fmtNum, pricingBase, usd, type PricingBase } from "./format";
+import { NONE_LAUNCHED, type LaunchedPlans } from "@/lib/plan-launch";
 import { echopilotChannelList } from "@/lib/echopilot";
 
 /**
@@ -110,19 +111,43 @@ function aiOnlyAnswer(b: PricingBase): { q: string; a: string } {
   };
 }
 
+/**
+ * The crawler-only plan, once on sale: one sentence the crawler answer and the
+ * AI-only answer add, so neither says the crawler "starts at Starter" while a
+ * cheaper plan sells it on its own. Null while it is not on sale.
+ */
+function crawlerOnlySentence(b: PricingBase, launched: LaunchedPlans): string | null {
+  if (!launched.has("NOSY_BAT")) return null;
+  const nb = PLAN_CONFIGS.NOSY_BAT;
+  const price = usd(nb.monthlyPrice, b);
+  const urls = fmtNum(nb.crawlUrlCap, b);
+  return {
+    en: `The crawler alone is the **${nb.name}** plan (${price}/month): up to ${urls} URLs per crawl, for one user, with nothing else.`,
+    fr: `Le robot seul, c'est le forfait **${nb.name}** (${price} par mois) : jusqu'à ${urls} URL par exploration, pour un utilisateur, sans le reste.`,
+    de: `Nur den Crawler gibt es im Abo **${nb.name}** (${price}/Monat): bis ${urls} URLs pro Crawl, für einen Benutzer, ohne den Rest.`,
+  }[b];
+}
+
 export function pricingFaq(
   locale: string,
-  opts: { savePct: number; freeCrawler: boolean },
+  opts: { savePct: number; freeCrawler: boolean; launched?: LaunchedPlans },
 ): PricingFaqItem[] {
   const b = pricingBase(locale);
   const name = CRAWLER_BRAND.name;
+  // The ladder, not the card row: the crawler range and the location counts
+  // are the ladder's. The crawler-only plan gets its own sentence.
   const plans = cardPlans();
+  const alone = crawlerOnlySentence(b, opts.launched ?? NONE_LAUNCHED);
+  const plusAlone = alone ? ` ${alone}` : "";
   // The crawler's range starts at the first plan that has it (Starter): the
   // AI Visibility plan, first on the ladder, does not (src/lib/plan-access.ts).
   const crawlPlans = plans.filter((p) => planAllowsArea(p, "crawler") && PLAN_CONFIGS[p].crawlUrlCap > 0);
   const low = PLAN_CONFIGS[crawlPlans[0]!];
   const high = PLAN_CONFIGS[plans[plans.length - 1]!];
-  const aiOnly = aiOnlyAnswer(b);
+  const ai0 = aiOnlyAnswer(b);
+  // "…and the crawler start at Starter" stays true of the ladder; once the
+  // crawler-only plan is on sale the answer names it too.
+  const aiOnly = { q: ai0.q, a: `${ai0.a}${plusAlone}` };
   const social = socialAnswer(b);
   const lowCap = fmtNum(low.crawlUrlCap, b);
   const highCap = fmtNum(high.crawlUrlCap, b);
@@ -163,7 +188,7 @@ export function pricingFaq(
       {
         id: "crawler",
         q: `Ist ${name} inbegriffen?`,
-        a: `Ja, in jedem Abo ab ${low.name}. Das Abo legt fest, wie viele URLs ein Crawl abruft – von ${lowCap} bei ${low.name} bis ${highCap} bei ${high.name} – und wie viele Crawls pro Monat möglich sind (Tabelle oben).${opts.freeCrawler ? ` Der Gratis-Crawler prüft ${freeCap} Seiten ohne Konto.` : ""}`,
+        a: `Ja, in jedem Abo ab ${low.name}. Das Abo legt fest, wie viele URLs ein Crawl abruft – von ${lowCap} bei ${low.name} bis ${highCap} bei ${high.name} – und wie viele Crawls pro Monat möglich sind (Tabelle oben).${plusAlone}${opts.freeCrawler ? ` Der Gratis-Crawler prüft ${freeCap} Seiten ohne Konto.` : ""}`,
       },
       { id: "social", q: social.q, a: social.a },
       {
@@ -227,8 +252,8 @@ export function pricingFaq(
       id: "crawler",
       q: fr ? `${name} est-il inclus ?` : `Is ${name} included?`,
       a: fr
-        ? `Oui, dans chaque forfait à partir de ${low.name}. Le forfait fixe le nombre d'URL qu'une exploration peut parcourir — de ${lowCap} avec ${low.name} à ${highCap} avec ${high.name} — et le nombre d'explorations par mois (tableau ci-dessus).${opts.freeCrawler ? ` Le robot gratuit vérifie ${freeCap} pages sans compte.` : ""}`
-        : `Yes, on every plan from ${low.name}. Each plan sets how many URLs one crawl may fetch — from ${lowCap} on ${low.name} to ${highCap} on ${high.name} — and how many crawls a month it runs (table above).${opts.freeCrawler ? ` The free crawler checks ${freeCap} pages without an account.` : ""}`,
+        ? `Oui, dans chaque forfait à partir de ${low.name}. Le forfait fixe le nombre d'URL qu'une exploration peut parcourir — de ${lowCap} avec ${low.name} à ${highCap} avec ${high.name} — et le nombre d'explorations par mois (tableau ci-dessus).${plusAlone}${opts.freeCrawler ? ` Le robot gratuit vérifie ${freeCap} pages sans compte.` : ""}`
+        : `Yes, on every plan from ${low.name}. Each plan sets how many URLs one crawl may fetch — from ${lowCap} on ${low.name} to ${highCap} on ${high.name} — and how many crawls a month it runs (table above).${plusAlone}${opts.freeCrawler ? ` The free crawler checks ${freeCap} pages without an account.` : ""}`,
     },
     { id: "social", q: social.q, a: social.a },
     {

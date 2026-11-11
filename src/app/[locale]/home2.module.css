@@ -328,6 +328,15 @@
 .price ul{flex:1 0 auto;align-content:start}
 .pcompare{font-size:13px;color:var(--goldText);margin-top:10px;display:inline-block}
 .pcompare:hover{text-decoration:underline}
+/* /pricing's Enterprise band, full width under the cards: text and button side
+   by side, stacked on a phone. The button keeps the card buttons' look but not
+   their full width. */
+.enterpriseBand{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-top:14px;padding:20px 24px;border:1px solid var(--line);border-radius:14px;background:var(--bg1)}
+.enterpriseBandText{margin:0;color:var(--muted);font-size:15px;min-width:0}
+.enterpriseBandText b{color:var(--text)}
+/* color: .page a {color:inherit} outranks .pbuy's on a link; the band's button keeps the dark-on-gold text. */
+.enterpriseBand .pbuyLink{width:auto;margin-top:0;padding-left:22px;padding-right:22px;color:var(--onGold)}
+@media(max-width:600px){.enterpriseBand{flex-direction:column;align-items:stretch}.enterpriseBand .pbuyLink{width:100%}}
 .gridNotes{font-size:13px;color:var(--muted);margin-top:20px}
 .gridNotes a{color:var(--goldText)}
 .gridNotes a:hover{text-decoration:underline}

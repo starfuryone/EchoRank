@@ -371,17 +371,23 @@ describe("/pricing, the homepage and /site-crawler render the same cards", () =>
     }
   }, 30_000);
 
-  it("en: /pricing shows five cards with Enterprise, the homepage four, /site-crawler three", async () => {
+  it("en: /pricing shows four cards and the Enterprise band, the homepage four, /site-crawler three", async () => {
     const all = await pages("en");
     // Cards only: the comparison table carries data-plan on its cells too.
     const shown = (d: Document) =>
       [...d.querySelectorAll("[class*=priceGrid] > [data-plan]")].map((el) => el.getAttribute("data-plan"));
-    expect(shown(all.pricing)).toEqual(["AI_VISIBILITY", "STARTER", "GROWTH", "AGENCY", "ENTERPRISE"]);
+    // The crawler-only plan is not on sale in a test (no stripe_prices rows), so no card.
+    expect(shown(all.pricing)).toEqual(["AI_VISIBILITY", "STARTER", "GROWTH", "AGENCY"]);
     expect(shown(all.home)).toEqual(["AI_VISIBILITY", "STARTER", "GROWTH", "AGENCY"]);
     expect(shown(all.crawler)).toEqual(["STARTER", "GROWTH", "AGENCY"]);
-    const cta = all.pricing.querySelector("[data-testid=enterprise-card-cta]")!;
-    expect(cta.getAttribute("href")).toBe("/en/enterprise/contact?src=pricing-enterprise-card");
-    expect(all.home.querySelector("[data-testid=enterprise-card-cta]")).toBeNull();
+    // Enterprise: a full-width band under the cards (2026-11-10), not a card in the row.
+    const band = all.pricing.querySelector("[data-testid=enterprise-band]")!;
+    expect(band.textContent).toContain("Enterprise · Custom limits and terms for larger teams");
+    const cta = band.querySelector("[data-testid=enterprise-band-cta]")!;
+    expect(cta.textContent).toBe("Talk to us");
+    expect(cta.getAttribute("href")).toBe("/en/enterprise/contact?src=pricing-enterprise-band");
+    expect(all.pricing.querySelector("[data-testid=enterprise-card-cta]")).toBeNull();
+    expect(all.home.querySelector("[data-testid=enterprise-band]")).toBeNull();
   }, 30_000);
 });
 

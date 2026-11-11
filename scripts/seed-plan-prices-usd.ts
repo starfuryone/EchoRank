@@ -44,12 +44,18 @@ const TIERS: TierSpec[] = [
   // (transfer_lookup_key=true, so a price left by the retired tier gives up its
   // key); this seeder then reuses them by metadata tier / lookup_key.
   { planTier: "ai_visibility", label: "AI Visibility", monthlyCents: 2_900, annualCents: 27_600 },
+  // The crawler-only plan (2026-11-10): $22.40/month, $215.04/year ($17.92/month,
+  // 20% off). Created by /opt/echorank/prompts/stripe-nosy-bat.sh, reused here by
+  // metadata tier / lookup_key. Its two rows are what puts the plan on sale
+  // (src/lib/plan-launch.ts): until they exist no card shows it and checkout
+  // refuses it.
+  { planTier: "nosy_bat", label: "Nosy Bat", monthlyCents: 2_240, annualCents: 21_504 },
   { planTier: "starter", label: "Starter", monthlyCents: 7_900, annualCents: 75_600 },
   { planTier: "growth", label: "Growth", monthlyCents: 19_900, annualCents: 190_800 },
   { planTier: "agency", label: "Agency", monthlyCents: 49_900, annualCents: 478_800 },
 ];
 
-const EXPECTED_ROWS = TIERS.length * 2; // 4 tiers x 2 intervals = 8
+const EXPECTED_ROWS = TIERS.length * 2; // 5 tiers x 2 intervals = 10
 
 interface ResultRow {
   tier: string;

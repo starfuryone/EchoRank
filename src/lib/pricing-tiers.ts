@@ -14,16 +14,32 @@
 
 import { PLAN_CONFIGS, PLAN_ORDER, TRIAL_DAYS, type SellablePlanType } from "@/lib/plan-config";
 import { planHeadlines } from "@/lib/pricing-page/headlines";
+import { pricingBase, toCents } from "@/lib/pricing-page/format";
+import { NONE_LAUNCHED, cardOrder, type LaunchedPlans } from "@/lib/plan-launch";
+import { buildNosybatFacts } from "@/lib/site-crawler/nosybat-facts";
+import { nosybatCardLines } from "@/lib/site-crawler/nosybat-card";
 import { HOME_PRICING_CHROME } from "@/lib/i18n/content";
 import { normalizeLocale } from "@/lib/seo/constants";
 import type { HomePricingTier } from "@/app/[locale]/PricingSection";
 import { CHECKUPS_PER_WEEK } from "@/lib/snapshot/tracking";
 
-/** Whole-percent saving of the annual rate over monthly, rounded DOWN. */
+/**
+ * Whole-percent saving of the annual rate over monthly, rounded DOWN. In
+ * cents: $22.40 → $17.92 is exactly 20%, which (22.4 - 17.92) / 22.4 in
+ * floating point puts at 19.999… and the floor at 19.
+ */
 export function savePctOf(monthly: number | null, annual: number | null): number | null {
   if (!monthly || annual === null || monthly <= 0 || annual >= monthly) return null;
-  return Math.floor(((monthly - annual) / monthly) * 100);
+  const m = toCents(monthly);
+  return Math.floor(((m - toCents(annual)) * 100) / m);
 }
+
+/**
+ * Plans whose card states the yearly saving as an amount ("save $53.76")
+ * rather than a percentage: the crawler-only plan (owner's spec, 2026-11-10:
+ * "$17.92/mo billed yearly, save $53.76").
+ */
+const SAVE_AS_AMOUNT: ReadonlySet<SellablePlanType> = new Set<SellablePlanType>(["NOSY_BAT"]);
 
 /**
  * The hero's "pay yearly and save N%": the SMALLEST saving across the card
@@ -39,16 +55,25 @@ export function yearlySavingPct(): number | null {
 
 /**
  * The cards for one page. `plans` narrows the set (default: every card plan,
- * AI Visibility first): /site-crawler shows Starter, Growth and Agency only,
- * since the AI-only plan has no crawler.
+ * AI Visibility first): /site-crawler shows the crawl plans only, since the
+ * AI-only plan has no crawler. `launched` holds the catalog-gated plans on
+ * sale (src/lib/stripe/catalog.ts): the crawler-only plan has a card only
+ * once its Stripe prices exist, after AI Visibility.
  */
-export function pricingTiers(locale: string, plans?: readonly SellablePlanType[]): HomePricingTier[] {
+export function pricingTiers(
+  locale: string,
+  plans?: readonly SellablePlanType[],
+  opts: { launched?: LaunchedPlans } = {},
+): HomePricingTier[] {
   const chrome = HOME_PRICING_CHROME[normalizeLocale(locale)];
-  const shown = PLAN_ORDER.filter((plan) => !PLAN_CONFIGS[plan].isCustomPricing && (!plans || plans.includes(plan)));
+  const launched = opts.launched ?? NONE_LAUNCHED;
+  const shown = cardOrder(launched).filter((plan) => !PLAN_CONFIGS[plan].isCustomPricing && (!plans || plans.includes(plan)));
+  const base = pricingBase(locale);
   return shown.map((plan) => {
     const c = PLAN_CONFIGS[plan];
     const monthly = c.isCustomPricing ? null : c.monthlyPrice;
     const annual = c.isCustomPricing ? null : c.annualPrice;
+    const headlines = planHeadlines(plan, locale, shown);
     return {
       id: plan,
       name: c.name.toUpperCase(),
@@ -59,13 +84,23 @@ export function pricingTiers(locale: string, plans?: readonly SellablePlanType[]
       // avoids versus paying monthly for a year. ROUNDED DOWN: a saving claim
       // may understate, never overstate.
       savePct: savePctOf(monthly, annual),
-      annualTotal: annual === null ? null : annual * 12,
+      // In cents: 17.92 × 12 is 215.04, not 215.04000000000002.
+      annualTotal: annual === null ? null : (toCents(annual) * 12) / 100,
+      saveAmount:
+        SAVE_AS_AMOUNT.has(plan) && monthly !== null && annual !== null && annual < monthly
+          ? ((toCents(monthly) - toCents(annual)) * 12) / 100
+          : null,
       trialDays: TRIAL_DAYS,
       // The card's short form: derived from this tier's own allowances, in
       // this locale (pricing-page/headlines.ts). The full per-tier list stays
       // in plan-features.ts for /billing; the comparison table on /pricing
-      // carries the rest.
-      ...planHeadlines(plan, locale, shown),
+      // carries the rest. The crawler-only plan's lines come from nosybatFacts
+      // (site-crawler/nosybat-card.ts), in the page's own number style.
+      ...headlines,
+      lines:
+        plan === "NOSY_BAT"
+          ? nosybatCardLines(buildNosybatFacts({ launched }), base).map((l) => (base === "fr" ? l.replace(/ /g, " ") : l))
+          : headlines.lines,
       // cta / ctaLink are deliberately NOT passed through. The cards have a
       // single action now (Stripe Checkout), and PLAN_CONFIGS keeps both
       // fields because FeatureGate still reads them.

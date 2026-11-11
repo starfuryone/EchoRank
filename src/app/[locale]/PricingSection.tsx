@@ -24,9 +24,9 @@ import { ConsentGate, consentPayload } from "./ConsentGate";
 import { stashCheckoutConsent } from "@/lib/checkout-consent";
 import { SNAPSHOT_COPY, snapshotBaseOf } from "@/lib/snapshot/copy";
 import { fitsTracking, parseTrackParam } from "@/lib/snapshot/tracking";
-import { fmtNum, pricingBase } from "@/lib/pricing-page/format";
+import { pricingBase, usd } from "@/lib/pricing-page/format";
 import { salesContactHref } from "@/lib/sales/inquiry-options";
-import { ENTERPRISE_CARD, PLAN_AUDIENCE } from "@/lib/pricing-page/audience";
+import { ENTERPRISE_BAND, ENTERPRISE_CARD, PLAN_AUDIENCE } from "@/lib/pricing-page/audience";
 import { planAllowsArea } from "@/lib/plan-access";
 import type { PlanType } from "@/generated/prisma";
 
@@ -41,6 +41,12 @@ export interface HomePricingTier {
   savePct: number | null;
   /** annual × 12: what a yearly subscriber is billed once a year. */
   annualTotal: number | null;
+  /**
+   * The yearly saving as an amount, (monthly − annual) × 12, on a card that
+   * states it that way instead of a percentage (the crawler-only plan,
+   * pricing-tiers.ts). Null elsewhere.
+   */
+  saveAmount?: number | null;
   /** Free-trial length (TRIAL_DAYS). */
   trialDays: number;
   /** "Everything in Starter, plus:" — null on the entry card. */
@@ -55,7 +61,7 @@ export interface HomePricingTier {
 }
 
 /** The Stripe tier keys a card can check out with. */
-export type CheckoutTier = "ai_visibility" | "starter" | "growth" | "agency";
+export type CheckoutTier = "ai_visibility" | "nosy_bat" | "starter" | "growth" | "agency";
 export type CheckoutInterval = "month" | "year";
 
 /**
@@ -67,6 +73,8 @@ export function checkoutTierFor(planId: string): CheckoutTier | null {
   switch (planId) {
     case "AI_VISIBILITY":
       return "ai_visibility";
+    case "NOSY_BAT":
+      return "nosy_bat";
     case "STARTER":
       return "starter";
     case "GROWTH":
@@ -141,12 +149,18 @@ export function PricingSection({
   compareHref,
   salesSrc,
   enterpriseCard = false,
+  enterpriseBand = false,
 }: {
   locale: string;
   /** ?src= for the Enterprise line's link to the sales form: which page this grid is on. */
   salesSrc: string;
-  /** /pricing only: draw Enterprise as a card (and drop the line under the grid). */
+  /** Draw Enterprise as a card in the row (and drop the line under the grid). */
   enterpriseCard?: boolean;
+  /**
+   * /pricing: Enterprise as a full-width band under the cards instead of a card
+   * in the row (2026-11-10). Drops the line under the grid too.
+   */
+  enterpriseBand?: boolean;
   pricing: HomePricingTier[];
   priceChrome: HomePricingChrome;
   /**
@@ -341,12 +355,17 @@ export function PricingSection({
                         so the pair is a comparison rather than a claim. */}
                     {annual && p.monthly !== null && p.annual !== null && p.monthly > p.annual ? (
                       <s className={s.priceAnchor} aria-label={priceChrome.anchorLabel}>
-                        ${p.monthly}
+                        {usd(p.monthly, base)}
                       </s>
                     ) : null}
-                    ${amount}
+                    {/* usd(): whole dollars as before, both decimals for a price with cents. */}
+                    {usd(amount, base)}
                     <span>{priceChrome.perMonth}</span>
-                    {annual && p.savePct ? (
+                    {annual && p.saveAmount ? (
+                      <span className={s.priceSave}>
+                        {priceChrome.saveAmount.replace("{amount}", usd(p.saveAmount, base))}
+                      </span>
+                    ) : annual && p.savePct ? (
                       <span className={s.priceSave}>
                         {priceChrome.save.replace("{pct}", String(p.savePct))}
                       </span>
@@ -355,7 +374,7 @@ export function PricingSection({
                   {/* "billed $X yearly": annual × 12, from config. */}
                   {annual && p.annualTotal !== null && (
                     <div className={s.pbilled}>
-                      {priceChrome.billedYearly.replace("{total}", `$${fmtNum(p.annualTotal, base)}`)}
+                      {priceChrome.billedYearly.replace("{total}", usd(p.annualTotal, base))}
                     </div>
                   )}
                   <div className={s.ptrial}>
@@ -421,6 +440,20 @@ export function PricingSection({
           </div>
         )}
       </div>
+      {/* /pricing: Enterprise as a full-width band under the cards. Custom
+          priced, no checkout; its one action is the sales contact form. */}
+      {enterpriseBand && (
+        <div className={s.enterpriseBand} data-testid="enterprise-band" data-plan="ENTERPRISE">
+          <p className={s.enterpriseBandText}>
+            <b>{ENTERPRISE_BAND[base].name}</b>
+            <span aria-hidden="true"> · </span>
+            {ENTERPRISE_BAND[base].line}
+          </p>
+          <a className={s.pbuyLink} href={salesContactHref(locale, "pricing-enterprise-band")} data-testid="enterprise-band-cta">
+            {ENTERPRISE_BAND[base].cta}
+          </a>
+        </div>
+      )}
       {/* Credit packs. ONE LINE, NOT A FOURTH CARD, and the restraint is the
           decision: this grid sells plans, and a credit pack is an add-on to
           one of them. A fourth column would invite a pack-vs-plan price
@@ -434,8 +467,8 @@ export function PricingSection({
           Stripe price); this line is its entry point. */}
       <p className={s.gridNotes}>
         <span>{priceChrome.secureCheckout}</span>
-        {/* With an Enterprise card on the page the card is its entry point. */}
-        {!enterpriseCard && (
+        {/* With an Enterprise card or band on the page, that is its entry point. */}
+        {!enterpriseCard && !enterpriseBand && (
           <>
             <span aria-hidden="true"> · </span>
             <a href={salesContactHref(locale, salesSrc)} data-testid="pricing-enterprise-link">{priceChrome.enterpriseLine}</a>

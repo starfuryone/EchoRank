@@ -10,6 +10,8 @@ import { prisma } from "@/lib/prisma";
 
 export type PlanTierKey =
   | "ai_visibility"
+  /** The crawler-only plan (2026-11-10). Sold only once its rows exist (./catalog.ts). */
+  | "nosy_bat"
   | "starter"
   | "growth"
   | "agency"
@@ -19,6 +21,8 @@ export type CurrencyCode = "USD";
 export type PlanType =
   /** The $29 AI-only plan, reinstated 2026-11-07. */
   | "AI_VISIBILITY"
+  /** The $22.40 crawler-only plan (2026-11-10). */
+  | "NOSY_BAT"
   | "STARTER"
   | "GROWTH"
   | "AGENCY"
@@ -26,6 +30,7 @@ export type PlanType =
 
 const TIER_TO_PLAN: Record<PlanTierKey, PlanType> = {
   ai_visibility: "AI_VISIBILITY",
+  nosy_bat: "NOSY_BAT",
   starter: "STARTER",
   growth: "GROWTH",
   agency: "AGENCY",

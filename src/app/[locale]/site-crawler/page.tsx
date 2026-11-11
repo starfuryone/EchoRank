@@ -41,6 +41,8 @@ import { seoToolCounts } from "@/lib/seo-tools";
 import { CRAWLER_BRAND } from "@/lib/site-crawler/brand";
 import { familyIsPublic, ruleCountLabel } from "@/lib/site-crawler/rule-count";
 import { buildNosybatFacts } from "@/lib/site-crawler/nosybat-facts";
+import { launchedPlans } from "@/lib/stripe/catalog";
+import type { LaunchedPlans } from "@/lib/plan-launch";
 import { pitchCopy } from "@/lib/site-crawler/pitch-copy";
 import {
   CRAWL_CLOSER,
@@ -179,13 +181,18 @@ type Params = Promise<{ locale: string }>;
  * The page's facts, from the registry as it is at render (a test stubs it),
  * the plan config and the free crawl's limits: nosybat-facts.ts.
  */
-const pageFacts = () => buildNosybatFacts({ rules: RULES.filter((r) => familyIsPublic(r.family)) });
+const pageFacts = (launched?: LaunchedPlans) => buildNosybatFacts({ rules: RULES.filter((r) => familyIsPublic(r.family)), launched });
+
+// Regenerated every five minutes: the crawler-only plan's card (first) and
+// column appear once its stripe_prices rows exist (src/lib/stripe/catalog.ts),
+// without a rebuild. Cloudflare's copy still needs the purge after the seed.
+export const revalidate = 300;
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const { locale } = await params;
   if (!isSupportedLocale(locale)) return {};
   // The title is the H1 and the description the sub-line, from the pitch copy.
-  const p = pitchCopy(pageFacts(), baseOf(locale));
+  const p = pitchCopy(pageFacts(await launchedPlans()), baseOf(locale));
   const title = p.h1.replace(/\.$/, "");
   const meta = buildMetadata({ locale, path: PATH, title, description: p.sub, ogImage: "/nosy-bat/og.png" });
   // Absolute: brandTitle would append "| Echorank360" to a title that is already a sentence.
@@ -212,7 +219,10 @@ export default async function Page({ params }: { params: Params }) {
   const capabilities = visibleCapabilities(ctx);
   const rows = visibleFeatureRows(ctx);
   const faq = visibleFaq({ ...ctx, plans: PLANS_BY_ID, ruleCount: ruleCountLabel() }, base);
-  const facts = pageFacts();
+  // The catalog-gated plans on sale: the crawler-only plan joins the table,
+  // the cards (first) and the offers once its Stripe prices exist.
+  const launched = await launchedPlans();
+  const facts = pageFacts(launched);
   const pitch = pitchCopy(facts, base);
   // The by-plan table (nosybat-plan-table.ts): the same rows /pricing shows.
   const planCols = facts.crawlPlans;
@@ -248,7 +258,11 @@ export default async function Page({ params }: { params: Params }) {
     isPartOf: { "@id": SOFTWARE_ID },
     publisher: { "@id": ORGANIZATION_ID },
     // From PLAN_CONFIGS via PLANS — the same prices the cards below render.
-    offers: PLANS.map((p) => ({ "@type": "Offer", name: p.name, price: p.price, priceCurrency: PRICE_CURRENCY, category: "subscription" })),
+    offers: [
+      // The crawler-only plan's offer while it is on sale, then the ladder's.
+      ...(launched.has("NOSY_BAT") ? [{ name: PLAN_CONFIGS.NOSY_BAT.name, price: String(PLAN_CONFIGS.NOSY_BAT.monthlyPrice.toFixed(2)) }] : []),
+      ...PLANS,
+    ].map((p) => ({ "@type": "Offer", name: p.name, price: p.price, priceCurrency: PRICE_CURRENCY, category: "subscription" })),
   };
 
   return (
@@ -478,7 +492,9 @@ export default async function Page({ params }: { params: Params }) {
             salesSrc="site-crawler-pricing"
             locale={l}
             // Starter, Growth and Agency only: the AI Visibility plan has no crawler.
-            pricing={pricingTiers(l, ["STARTER", "GROWTH", "AGENCY"])}
+            // The crawl plans: the crawler-only plan first once it is on sale,
+            // then Starter, Growth and Agency (the AI-only plan has no crawler).
+            pricing={pricingTiers(l, facts.crawlPlans.map((p) => p.id), { launched })}
             priceChrome={HOME_PRICING_CHROME[l]}
             toolCountLine={toolCountLine(l, seoToolCounts())}
             tax={pricingNotes(l).tax}

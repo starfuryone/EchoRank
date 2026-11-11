@@ -42,6 +42,7 @@ import { PRICING_PAGE_COPY, fill, planCountWord } from "@/lib/pricing-page/copy"
 import { cardPlans } from "@/lib/pricing-page/headlines";
 import { comparisonTable } from "@/lib/pricing-page/compare";
 import { pricingFaq } from "@/lib/pricing-page/faq";
+import { launchedPlans } from "@/lib/stripe/catalog";
 import { inline, plainText } from "../learn/_shared/inline";
 import { CompareTable } from "./CompareTable";
 import s from "../home2.module.css";
@@ -50,6 +51,11 @@ import p from "./pricing.module.css";
 export function generateStaticParams() {
   return SUPPORTED_LOCALES.map((locale) => ({ locale }));
 }
+
+// Regenerated every five minutes: the crawler-only plan's card appears once
+// its stripe_prices rows exist (src/lib/stripe/catalog.ts), without a
+// rebuild. Cloudflare's copy still needs the purge after the seed.
+export const revalidate = 300;
 
 export async function generateMetadata(
   { params }: { params: Promise<{ locale: string }> },
@@ -77,7 +83,10 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
   const c = PRICING_PAGE_COPY[base];
   const pct = yearlySavingPct();
   const notes = pricingNotes(l);
-  const faq = pricingFaq(l, { savePct: pct ?? 0, freeCrawler: freeCrawlerOn() });
+  // The catalog-gated plans on sale (none until the crawler-only plan's
+  // Stripe prices are seeded; a failed read is none).
+  const launched = await launchedPlans();
+  const faq = pricingFaq(l, { savePct: pct ?? 0, freeCrawler: freeCrawlerOn(), launched });
   const pageUrl = `${SITE_URL}/${l}/pricing`;
 
   return (
@@ -107,10 +116,11 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
         <div className={s.container}>
           <PricingSection
             salesSrc="pricing-enterprise"
-            // /pricing only: AI Visibility, Starter, Growth, Agency + Enterprise.
-            enterpriseCard
+            // /pricing only: AI Visibility, the crawler-only plan once on sale, Starter,
+            // Growth, Agency, and Enterprise as a band under them.
+            enterpriseBand
             locale={l}
-            pricing={pricingTiers(l)}
+            pricing={pricingTiers(l, undefined, { launched })}
             priceChrome={HOME_PRICING_CHROME[l]}
             toolCountLine={toolCountLine(l, seoToolCounts())}
             tax={notes.tax}
@@ -125,7 +135,7 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
                 <p className={s.label}>
                   <b>/ 01</b> — {c.label}
                 </p>
-                <h1 className={s.h2}>{fill(c.h1, { plans: planCountWord(cardPlans().length, base) })}</h1>
+                <h1 className={s.h2}>{fill(c.h1, { plans: planCountWord(cardPlans(launched).length, base) })}</h1>
                 {pct !== null && <p className={s.sub} data-testid="pricing-sub">{fill(c.sub, { pct })}</p>}
               </>
             }
@@ -144,7 +154,7 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
           </p>
           <h2 className={s.h2}>{c.compareH2}</h2>
           <p className={s.sub}>{c.compareSub}</p>
-          <CompareTable table={comparisonTable(l)} copy={c} />
+          <CompareTable table={comparisonTable(l, launched)} copy={c} />
         </div>
       </section>
 

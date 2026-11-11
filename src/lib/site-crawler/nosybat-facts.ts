@@ -26,7 +26,8 @@
 import type { PlanType } from "@/generated/prisma";
 import { hasFeature } from "@/lib/feature-flags";
 import { planAllowsArea } from "@/lib/plan-access";
-import { PLAN_CONFIGS, PLAN_ORDER, TRIAL_DAYS, type CrawlCadence, type PlanConfig } from "@/lib/plan-config";
+import { PLAN_CONFIGS, TRIAL_DAYS, type CrawlCadence, type PlanConfig } from "@/lib/plan-config";
+import { NONE_LAUNCHED, cardOrder, type LaunchedPlans } from "@/lib/plan-launch";
 import type { RuleFamily } from "@/lib/crawl-rules";
 import { CRAWL_PIN_MAX } from "./constants";
 import { FREE_CRAWL_IP_DAILY, FREE_CRAWL_RETENTION_DAYS, FREE_CRAWL_URL_CAP } from "./free-limits";
@@ -71,6 +72,8 @@ export interface NosybatPlan {
   cadences: readonly CrawlCadence[];
   /** Custom extractors per crawl. */
   extractors: number;
+  /** Pages per crawl sent to PageSpeed Insights (0 = off). */
+  psiPages: number;
   /** The plan opens the public API and MCP server (plan-access "public_api"). */
   api: boolean;
 }
@@ -106,6 +109,12 @@ export interface NosybatFactsInput {
   /** The public rules (rule-count.ts). A test passes its own. */
   rules?: readonly { family: string }[];
   enforced?: Readonly<Record<NosybatGated, boolean>>;
+  /**
+   * The catalog-gated plans on sale (src/lib/plan-launch.ts; the page reads
+   * them from src/lib/stripe/catalog.ts). Default: none, so the crawler-only
+   * plan is in no table, price or "from" line until its Stripe prices exist.
+   */
+  launched?: LaunchedPlans;
 }
 
 function planFacts(id: PlanType, c: PlanConfig): NosybatPlan {
@@ -124,6 +133,7 @@ function planFacts(id: PlanType, c: PlanConfig): NosybatPlan {
     schedules: c.crawlSchedules,
     cadences: c.crawlScheduleCadences,
     extractors: c.crawlExtractors,
+    psiPages: c.crawlPsiPages,
     // Keys are made in the API Access tool (feature api_access: Agency and
     // Enterprise today); the route allowlist alone would say every paid plan.
     api: hasFeature(id, "api_access") && planAllowsArea(id, "public_api"),
@@ -134,8 +144,10 @@ function planFacts(id: PlanType, c: PlanConfig): NosybatPlan {
 export function buildNosybatFacts(input: NosybatFactsInput = {}): NosybatFacts {
   const cfg = input.plans ?? PLAN_CONFIGS;
   const rules = input.rules ?? PUBLIC_RULES;
-  const plans = Object.fromEntries(PLAN_ORDER.map((id) => [id, planFacts(id, cfg[id])])) as Record<PlanType, NosybatPlan>;
-  const selfServe = PLAN_ORDER.map((id) => plans[id]).filter((p) => !p.custom);
+  // Every plan's facts (the crawler-only plan's too, for its own pages); the
+  // lists below walk the card order, which holds it only once it is on sale.
+  const plans = Object.fromEntries((Object.keys(cfg) as PlanType[]).map((id) => [id, planFacts(id, cfg[id])])) as Record<PlanType, NosybatPlan>;
+  const selfServe = cardOrder(input.launched ?? NONE_LAUNCHED).map((id) => plans[id]).filter((p) => !p.custom);
   const crawlPlans = selfServe.filter((p) => p.hasCrawler);
   if (crawlPlans.length === 0) throw new Error("nosybatFacts: no self-serve plan includes the crawler");
   const families = new Set(rules.map((r) => r.family));
@@ -184,7 +196,13 @@ export function nbNum(n: number, base: FactsBase): string {
 }
 
 /** "$79", the plan's price as the cards show it (USD in every locale). */
-export const nbUsd = (n: number, base: FactsBase): string => `$${nbNum(n, base)}`;
+export function nbUsd(n: number, base: FactsBase): string {
+  // Whole dollars as before ("$79"); a price with cents keeps both decimals
+  // ("$22.40", "$22,40" in French): the crawler-only plan's.
+  const cents = Math.round(n * 100);
+  if (cents % 100 === 0) return `$${nbNum(cents / 100, base)}`;
+  return `$${new Intl.NumberFormat(base === "fr" ? "fr-CA" : base === "de" ? "de-CH" : "en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(cents / 100)}`;
+}
 
 /** "a, b and c" in the base's language. */
 export function nbList(items: readonly string[], base: FactsBase): string {

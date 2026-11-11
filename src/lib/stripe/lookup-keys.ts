@@ -2,7 +2,10 @@
 // unit-tested without a Stripe client or a request.
 //
 // The six active keys already exist in both live and sandbox and are NOT
-// created or modified by this app:
+// created or modified by this app (the AI Visibility and crawler-only keys are
+// created by the operator's scripts in /opt/echorank/prompts/stripe-*.sh):
+//   echorank_ai_visibility_usd_month | _year
+//   echorank_nosy_bat_usd_month      | _year
 //   echorank_starter_usd_month       | _year
 //   echorank_growth_usd_month        | _year
 //   echorank_agency_usd_month        | _year
@@ -39,6 +42,9 @@ export type CheckoutTier = Exclude<PlanTierKey, "enterprise"> | typeof WATCHER_T
 
 export const CHECKOUT_TIERS: readonly CheckoutTier[] = [
   "ai_visibility",
+  // The crawler-only plan: a known tier, but the checkout route refuses it
+  // until its stripe_prices rows exist (src/lib/stripe/catalog.ts).
+  "nosy_bat",
   "starter",
   "growth",
   "agency",
@@ -83,11 +89,14 @@ export function checkoutLookupKey(tier: CheckoutTier, interval: BillingInterval)
  */
 export function planTypeForLookupKey(
   lookupKey: string | null | undefined,
-): "AI_VISIBILITY" | "STARTER" | "GROWTH" | "AGENCY" | null {
+): "AI_VISIBILITY" | "NOSY_BAT" | "STARTER" | "GROWTH" | "AGENCY" | null {
   switch (lookupKey) {
     case "echorank_ai_visibility_usd_month":
     case "echorank_ai_visibility_usd_year":
       return "AI_VISIBILITY";
+    case "echorank_nosy_bat_usd_month":
+    case "echorank_nosy_bat_usd_year":
+      return "NOSY_BAT";
     case "echorank_starter_usd_month":
     case "echorank_starter_usd_year":
       return "STARTER";

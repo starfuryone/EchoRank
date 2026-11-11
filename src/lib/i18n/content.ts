@@ -1612,6 +1612,8 @@ export interface HomePricingChrome {
   anchorLabel: string;
   /** Contains "{pct}". */
   save: string;
+  /** The yearly saving as an amount, on a card that states it so ("save $53.76", pricing-tiers.ts SAVE_AS_AMOUNT). */
+  saveAmount: string;
   toolsAnchor: string;
   contactUs: string;
   /**
@@ -1644,6 +1646,7 @@ export const HOME_PRICING_CHROME: Record<Locale, HomePricingChrome> = {
     enterpriseLine: "Enterprise: custom limits \u2014 contact us",
     anchorLabel: "regular monthly price",
     save: "save {pct}%",
+    saveAmount: "save {amount}",
     toolsAnchor: "See the tools ↓",
     contactUs: "Contact us",
     creditsLine: "Need more? Prepaid credit packs \u2014 never expire \u2192",
@@ -1664,6 +1667,7 @@ export const HOME_PRICING_CHROME: Record<Locale, HomePricingChrome> = {
     enterpriseLine: "Enterprise: custom limits \u2014 contact us",
     anchorLabel: "regular monthly price",
     save: "save {pct}%",
+    saveAmount: "save {amount}",
     toolsAnchor: "See the tools ↓",
     contactUs: "Contact us",
     creditsLine: "Need more? Prepaid credit packs \u2014 never expire \u2192",
@@ -1684,6 +1688,7 @@ export const HOME_PRICING_CHROME: Record<Locale, HomePricingChrome> = {
     enterpriseLine: "Entreprise : limites sur mesure \u2014 contactez-nous",
     anchorLabel: "prix mensuel normal",
     save: "économisez {pct} %",
+    saveAmount: "économisez {amount}",
     toolsAnchor: "Voir les outils ↓",
     contactUs: "Nous contacter",
     creditsLine: "Besoin de plus ? Packs de cr\u00e9dits pr\u00e9pay\u00e9s \u2014 sans expiration \u2192",
@@ -1704,6 +1709,7 @@ export const HOME_PRICING_CHROME: Record<Locale, HomePricingChrome> = {
     enterpriseLine: "Entreprise : limites sur mesure \u2014 contactez-nous",
     anchorLabel: "prix mensuel normal",
     save: "économisez {pct} %",
+    saveAmount: "économisez {amount}",
     toolsAnchor: "Voir les outils ↓",
     contactUs: "Nous contacter",
     creditsLine: "Besoin de plus ? Packs de cr\u00e9dits pr\u00e9pay\u00e9s \u2014 sans expiration \u2192",
@@ -1724,6 +1730,7 @@ export const HOME_PRICING_CHROME: Record<Locale, HomePricingChrome> = {
     enterpriseLine: "Enterprise: individuelle Limits \u2014 kontaktieren Sie uns",
     anchorLabel: "regulärer Monatspreis",
     save: "{pct}% sparen",
+    saveAmount: "{amount} sparen",
     toolsAnchor: "Werkzeuge ansehen ↓",
     contactUs: "Kontakt aufnehmen",
     creditsLine: "Mehr n\u00f6tig? Guthabenpakete im Voraus \u2014 ohne Verfall \u2192",

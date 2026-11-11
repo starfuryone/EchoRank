@@ -150,12 +150,16 @@ export function pitchCopy(f: NosybatFacts, b: PitchBase, flags: Flags = FLAGS): 
     body: work.length > 0 ? `${room} ${cap(nbList(work, b))}.` : room,
   });
 
-  const also = ALSO_INCLUDED.filter((a) => planAllowsArea(first.id, a.area)).map((a) => a[b]);
+  // The first crawl plan with a team (plan-access "team"): the crawler-only
+  // plan is one user, so once it is on sale the claim names Starter.
+  const teamPlan = f.crawlPlans.find((p) => planAllowsArea(p.id, "team")) ?? first;
+  const teamFrom = teamPlan.id === first.id ? "" : fr ? ` à partir de ${teamPlan.name}` : ` from ${teamPlan.name}`;
+  const also = ALSO_INCLUDED.filter((a) => planAllowsArea(teamPlan.id, a.area)).map((a) => a[b]);
   blocks.push({
     id: "team",
     heading: fr ? "Toute votre équipe, un seul forfait." : "Your whole team, one plan.",
     body:
-      (fr ? "Aucuns frais par utilisateur." : "No per-seat charge.") +
+      (fr ? `Aucuns frais par utilisateur${teamFrom}.` : `No per-seat charge${teamFrom}.`) +
       (also.length > 0 ? (fr ? ` Avec tout le reste d'Echorank : ${nbList(also, b)}.` : ` Comes with the rest of Echorank: ${nbList(also, b)}.`) : ""),
   });
 

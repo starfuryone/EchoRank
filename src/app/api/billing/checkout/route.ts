@@ -54,6 +54,7 @@ import {
   watcherCheckoutBlock,
 } from "@/lib/ai-monitor/watcher-entitlement";
 import { getCurrentTenant } from "@/lib/tenant";
+import { checkoutTierOnSale } from "@/lib/stripe/catalog";
 import { auth } from "@/lib/auth";
 import { logger } from "@/infrastructure/observability/logger";
 import { SITE_URL, normalizeLocale } from "@/lib/seo";
@@ -92,6 +93,12 @@ export async function POST(req: NextRequest) {
   }
   if (!isBillingInterval(interval)) {
     return NextResponse.json({ error: "Interval must be month or year." }, { status: 400 });
+  }
+  // A catalog-gated plan (the crawler-only plan, src/lib/plan-launch.ts) is
+  // refused until its stripe_prices rows exist, whatever Stripe already holds:
+  // no card shows it before then, so a request for it did not come from one.
+  if (!(await checkoutTierOnSale(tier))) {
+    return NextResponse.json({ error: "That plan is not available.", reason: "plan_not_on_sale" }, { status: 404 });
   }
 
   // CONSENT GATE — ABOVE THE AUTH BRANCH, AND THAT POSITION IS LOAD-BEARING.

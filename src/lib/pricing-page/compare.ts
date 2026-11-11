@@ -19,7 +19,8 @@ import { isSeoToolLive, seoToolCounts } from "@/lib/seo-tools";
 import { toolCountLine } from "@/lib/i18n/content";
 import type { Locale } from "@/lib/i18n/config";
 import { CRAWLER_BRAND } from "@/lib/site-crawler/brand";
-import { nosybatFacts } from "@/lib/site-crawler/nosybat-facts";
+import { buildNosybatFacts } from "@/lib/site-crawler/nosybat-facts";
+import { NONE_LAUNCHED, type LaunchedPlans } from "@/lib/plan-launch";
 import { freeCrawlOnly, nosybatPlanTable, type PlanTableRow } from "@/lib/site-crawler/nosybat-plan-table";
 import { FREE_TOOLS, FREE_TOOLS_BASE, freeToolVisible, hubFreeTools } from "@/lib/free-tools";
 import { AV_FREE_AUDITS_PER_DAY } from "@/lib/av-free-limit";
@@ -92,8 +93,9 @@ function row(
  * row that is the same on every crawl plan is a tick. `freeHref` is null when
  * the free crawler is off.
  */
-function crawlerRows(b: PricingBase, freeHref: string | null): CompareRow[] {
-  const f = nosybatFacts();
+function crawlerRows(b: PricingBase, freeHref: string | null, launched: LaunchedPlans): CompareRow[] {
+  const f = buildNosybatFacts({ launched });
+  const columns = cardPlans(launched);
   // This page's house style is a plain space between French thousands (fmtNum);
   // the facts format with fr-CA's narrow no-break space.
   const house = (s: string) => (b === "fr" ? s.replace(/ /g, " ") : s);
@@ -113,7 +115,7 @@ function crawlerRows(b: PricingBase, freeHref: string | null): CompareRow[] {
     : {};
   return nosybatPlanTable(f, b).map((r, i) => {
     const plans: CompareRow["plans"] = {};
-    for (const id of cardPlans()) {
+    for (const id of columns) {
       const p = f.plans[id];
       if (!p.hasCrawler) plans[id] = i === 0 && freeHref ? text(house(freeCrawlOnly(f, b)), freeHref) : NO;
       else plans[id] = r.all !== undefined ? YES : cell(r.cell!(p));
@@ -126,7 +128,29 @@ function crawlerRows(b: PricingBase, freeHref: string | null): CompareRow[] {
 /** Localized href for a marketing path. */
 const href = (locale: string, path: string) => `/${locale}${path}`;
 
-export function comparisonTable(locale: Locale): CompareTable {
+/**
+ * The crawler-only plan's column in the groups built over the ladder: "not
+ * included" on every AI, reputation and SEO row (its areas, plan-access.ts),
+ * its own support line, and one user instead of "no per-seat charge". The
+ * crawler group builds its column itself (crawlerRows).
+ */
+function addCrawlerOnlyColumn(groups: CompareGroup[], b: PricingBase): void {
+  for (const g of groups) {
+    if (g.id === "crawler") continue;
+    for (const r of g.rows) {
+      r.plans.NOSY_BAT =
+        g.id !== "support"
+          ? NO
+          : r.id === "support"
+            ? text(supportLine("NOSY_BAT", b))
+            : r.id === "team"
+              ? text({ en: "One user", fr: "Un utilisateur", de: "Ein Benutzer" }[b])
+              : NO;
+    }
+  }
+}
+
+export function comparisonTable(locale: Locale, launched: LaunchedPlans = NONE_LAUNCHED): CompareTable {
   const b = pricingBase(locale);
   const freeCrawler = FREE_TOOLS.find((t) => t.id === "site_crawler");
   const freeCrawlOn = !!freeCrawler && freeToolVisible(freeCrawler);
@@ -333,7 +357,7 @@ export function comparisonTable(locale: Locale): CompareTable {
   const crawler: CompareGroup = {
     id: "crawler",
     title: { en: `${name} crawler`, fr: `Robot d'exploration ${name}`, de: `${name}-Crawler` }[b],
-    rows: crawlerRows(b, freeCrawlOn ? freeCrawlHref : null),
+    rows: crawlerRows(b, freeCrawlOn ? freeCrawlHref : null, launched),
   };
 
   const support: CompareGroup = {
@@ -352,5 +376,8 @@ export function comparisonTable(locale: Locale): CompareTable {
     ],
   };
 
-  return { plans: cardPlans(), groups: [ai, reputation, seo, crawler, support] };
+  const groups = [ai, reputation, seo, crawler, support];
+  const plans = cardPlans(launched);
+  if (plans.includes("NOSY_BAT")) addCrawlerOnlyColumn(groups, b);
+  return { plans, groups };
 }

@@ -27,6 +27,8 @@ export const UPGRADEABLE_PLANS: readonly PlanType[] = [
   // The $29 AI-only plan (reinstated 2026-11-07): moving between it and Starter
   // is an ordinary checkout, in both directions.
   "AI_VISIBILITY",
+  // NOT the crawler-only plan (2026-11-10): /billing draws no card for it, so
+  // no button can sell it here; its tier key is mapped below for when it does.
   "STARTER",
   "GROWTH",
 ] as const;
@@ -36,6 +38,8 @@ export function tierKeyFor(plan: PlanType): CheckoutTier | null {
   switch (plan) {
     case "AI_VISIBILITY":
       return "ai_visibility";
+    case "NOSY_BAT":
+      return "nosy_bat";
     case "STARTER":
       return "starter";
     case "GROWTH":

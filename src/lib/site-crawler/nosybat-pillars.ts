@@ -11,6 +11,7 @@
 // "coming soon". Each pillar has a title, a body and a short form for a bullet.
 
 import { flag as flagOn, FLAGS, type FlagName, type Flags } from "@/lib/flags";
+import { planAllowsArea } from "@/lib/plan-access";
 import { nbList, nbNum, shows, type CheckArea, type NosybatFacts } from "./nosybat-facts";
 
 export type PillarBase = "en" | "fr";
@@ -114,13 +115,19 @@ export function nosybatPillars(f: NosybatFacts, b: PillarBase, flags: Flags = FL
     fr ? "du CSV sur chaque tableau" : "CSV on every table",
     on("crawl.api") && apiPlans.length > 0 && (fr ? `une API avec MCP (${nbList(apiPlans, b)})` : `an API with MCP on ${nbList(apiPlans, b)}`),
   ].filter((x): x is string => Boolean(x));
+  // The team claim names the first crawl plan with a team (plan-access
+  // "team"): the crawler-only plan is one user.
+  const teamPlan = f.crawlPlans.find((p) => planAllowsArea(p.id, "team")) ?? first;
+  const teamFrom = teamPlan.id === first.id ? "" : fr ? ` à partir de ${teamPlan.name}` : ` from ${teamPlan.name}`;
   out.push({
     id: "recurring",
     title: fr ? "Conçu pour le travail récurrent." : "Built for recurring work.",
     body:
       `${cap(nbList(work, b))}. ` +
-      (fr ? "Un seul forfait couvre toute l'équipe : aucune licence par utilisateur." : "One plan covers the whole team: no per-seat licence."),
-    short: fr ? "Planifiez, comparez, exportez ; aucune licence par utilisateur" : "Schedule, compare, export; no per-seat licence",
+      (fr
+        ? `Un seul forfait couvre toute l'équipe${teamFrom} : aucune licence par utilisateur.`
+        : `One plan covers the whole team${teamFrom}: no per-seat licence.`),
+    short: fr ? `Planifiez, comparez, exportez ; aucune licence par utilisateur${teamFrom}` : `Schedule, compare, export; no per-seat licence${teamFrom}`,
   });
 
   // 6. Works with Search Console.
