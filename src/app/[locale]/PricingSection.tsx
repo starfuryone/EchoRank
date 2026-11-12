@@ -119,6 +119,30 @@ function CheckoutButton({
       >
         {busy ? chrome.checkoutBusy : chrome.checkoutCta}
       </button>
+      {/* Reassurance, directly under the button and centred to it, on both
+          toggles. One line on every paid card, so the buttons stay level
+          across the row. The trial line above does not say it, so nothing
+          repeats; the sentence under the grid still does, in full. */}
+      <p className={s.pcancel} data-testid="cancel-anytime">
+        <svg
+          className={s.pcancelIcon}
+          width="12"
+          height="12"
+          viewBox="0 0 16 16"
+          aria-hidden="true"
+          focusable="false"
+        >
+          <path
+            d="M3 8.5l3.2 3.2L13 4.8"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+        {chrome.cancelAnytime}
+      </p>
       {error && (
         <p className={s.pbuyErr} role="alert">
           {chrome.checkoutError}

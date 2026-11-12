@@ -1628,6 +1628,12 @@ export interface HomePricingChrome {
   creditsLine: string;
   /** Primary checkout button on each paid pricing card. */
   checkoutCta: string;
+  /**
+   * The reassurance line under each card's checkout button (2026-11-12). The
+   * trial line above it does not say this, so the two do not repeat; the
+   * sentence under the grid (the tax line) still says it in full.
+   */
+  cancelAnytime: string;
   checkoutBusy: string;
   checkoutError: string;
 }
@@ -1651,6 +1657,7 @@ export const HOME_PRICING_CHROME: Record<Locale, HomePricingChrome> = {
     contactUs: "Contact us",
     creditsLine: "Need more? Prepaid credit packs \u2014 never expire \u2192",
     checkoutCta: "Start free trial",
+    cancelAnytime: "Cancel anytime",
     checkoutBusy: "Starting\u2026",
     checkoutError: "Could not start checkout. Please try again.",
   },
@@ -1672,6 +1679,7 @@ export const HOME_PRICING_CHROME: Record<Locale, HomePricingChrome> = {
     contactUs: "Contact us",
     creditsLine: "Need more? Prepaid credit packs \u2014 never expire \u2192",
     checkoutCta: "Start free trial",
+    cancelAnytime: "Cancel anytime",
     checkoutBusy: "Starting\u2026",
     checkoutError: "Could not start checkout. Please try again.",
   },
@@ -1693,6 +1701,7 @@ export const HOME_PRICING_CHROME: Record<Locale, HomePricingChrome> = {
     contactUs: "Nous contacter",
     creditsLine: "Besoin de plus ? Packs de cr\u00e9dits pr\u00e9pay\u00e9s \u2014 sans expiration \u2192",
     checkoutCta: "D\u00e9marrer l'essai gratuit",
+    cancelAnytime: "Annulez \u00e0 tout moment",
     checkoutBusy: "D\u00e9marrage\u2026",
     checkoutError: "Impossible de d\u00e9marrer le paiement. R\u00e9essayez.",
   },
@@ -1714,6 +1723,7 @@ export const HOME_PRICING_CHROME: Record<Locale, HomePricingChrome> = {
     contactUs: "Nous contacter",
     creditsLine: "Besoin de plus ? Packs de cr\u00e9dits pr\u00e9pay\u00e9s \u2014 sans expiration \u2192",
     checkoutCta: "D\u00e9marrer l'essai gratuit",
+    cancelAnytime: "Annulez \u00e0 tout moment",
     checkoutBusy: "D\u00e9marrage\u2026",
     checkoutError: "Impossible de d\u00e9marrer le paiement. R\u00e9essayez.",
   },
@@ -1735,6 +1745,7 @@ export const HOME_PRICING_CHROME: Record<Locale, HomePricingChrome> = {
     contactUs: "Kontakt aufnehmen",
     creditsLine: "Mehr n\u00f6tig? Guthabenpakete im Voraus \u2014 ohne Verfall \u2192",
     checkoutCta: "Gratis-Test starten",
+    cancelAnytime: "Jederzeit k\u00fcndbar",
     checkoutBusy: "Wird gestartet\u2026",
     checkoutError: "Zahlung konnte nicht gestartet werden. Bitte erneut versuchen.",
   },

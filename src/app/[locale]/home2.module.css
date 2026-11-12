@@ -713,6 +713,11 @@
 .pbuy:hover,.pbuy:focus-visible{filter:brightness(1.1)}
 .pbuy:disabled{opacity:.65;cursor:default;filter:none}
 .pbuyErr{margin:8px 0 0;font-size:12px;line-height:1.4;color:var(--redText)}
+/* "Cancel anytime" under each card's checkout button: one muted line, centred
+   to the button, never wrapping, so every card in a row grows by the same
+   amount and the buttons stay level. The check takes the success TEXT token. */
+.pcancel{display:flex;align-items:center;justify-content:center;gap:5px;margin:8px 0 0;font-size:12.5px;line-height:1.4;color:var(--muted);white-space:nowrap}
+.pcancelIcon{flex:none;color:var(--greenText)}
 /* The Enterprise card's "Talk to us": a link with .pbuy's look, pushed to the
    card's foot so it lines up with the checkout buttons beside it (that card has
    no list to take up the slack). */
