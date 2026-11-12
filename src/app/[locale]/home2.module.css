@@ -655,6 +655,16 @@
 .priceAnchor{color:var(--goldDeepText);opacity:.6;font-size:18px;font-weight:600;
   margin-right:8px;text-decoration-thickness:1.5px}
 .pbilled{font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;color:var(--faint);margin-top:-2px}
+/* Yearly toggle, the shared pricing grid (PricingSection; not the Watcher's
+   two-card grid). The save chip followed "/mo" with only a margin, so
+   "$62.40/mo save" was one unbreakable run: "save" stuck out of the card and
+   "20%" wrapped alone, and in French ("/mois économisez 20 %") every grid
+   overflowed. The chip gets its own line, never split. In the five-across row
+   (214 px cards) "$488 $390.40/mo" alone is still wider than the card, so
+   there the struck monthly price sits on the line above the yearly rate. The
+   same structure on every card keeps a row's cards level. Type unchanged. */
+.priceGrid:not(.priceGrid2) .priceSave{display:block;margin:6px 0 0;white-space:nowrap}
+@media(min-width:1181px){.priceGrid5 .priceAnchor{display:block;width:max-content;margin:0 0 2px}}
 .ptools{font-family:var(--mono);font-size:10.5px;letter-spacing:.05em;color:var(--goldText);margin-top:12px;display:block;text-decoration:none;border-top:1px solid var(--lineSoft);padding-top:12px}
 .ptools:hover{text-decoration:underline}
 
