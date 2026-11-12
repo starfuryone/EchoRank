@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import HomeClient, { type HomePricingTier } from "./HomeClient";
 import { pricingTiers } from "@/lib/pricing-tiers";
+import { launchedPlans } from "@/lib/stripe/catalog";
 import { ClassicSeoTools } from "./ClassicSeoTools";
 import { TwoCrawlers } from "./TwoCrawlers";
 import { CRAWLER_BRAND } from "@/lib/site-crawler/brand";
@@ -48,6 +49,11 @@ export default async function Page(
   const l = normalizeLocale(locale);
   // FAQ copy is en/fr only, matching the rest of HomeClient's catalogue.
   const faq = FAQ[baseOf(l)];
+  // The same card set as /pricing (2026-11-12): every plan on sale, cheapest
+  // first, the crawler-only plan included once its stripe_prices rows exist
+  // (src/lib/stripe/catalog.ts). A failed read is "not launched", so the grid
+  // falls back to the ladder rather than selling a plan it cannot price.
+  const launched = await launchedPlans();
 
   return (
     <>
@@ -73,7 +79,7 @@ export default async function Page(
       />
       <HomeClient
         locale={locale}
-        pricing={pricingTiers(locale)}
+        pricing={pricingTiers(locale, undefined, { launched })}
         priceChrome={HOME_PRICING_CHROME[l]}
         // Five-locale player chrome for the /06 video. Resolved here so
         // HomeClient, whose own copy table is en/fr only, does not have to

@@ -301,7 +301,7 @@
    cards stack — a 2-up grid with three cards leaves an orphan. */
 .priceGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:44px}
 @media(max-width:900px){.priceGrid{grid-template-columns:1fr}}
-/* Four cards (homepage) and five (/pricing, with Enterprise): all across on
+/* Four cards and five (/pricing and the homepage, once the crawler-only plan is on sale): all across on
    wide screens, two per row below, one column on a phone. minmax(0,1fr) so a
    long line wraps inside its card instead of widening the page. */
 .priceGrid4{composes:priceGrid;grid-template-columns:repeat(4,minmax(0,1fr))}

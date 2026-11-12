@@ -203,8 +203,8 @@ export function PricingSection({
 }) {
   const base = pricingBase(locale);
   const compare = compareHref ?? `/${locale}/pricing#compare`;
-  // Five across with the Enterprise card (/pricing), four for the four paid
-  // plans (homepage), the three-column grid otherwise (/site-crawler).
+  // Five across for five cards (/pricing and the homepage once the crawler-only
+  // plan is on sale), four for four, the three-column grid otherwise.
   const cardCount = pricing.length + (enterpriseCard ? 1 : 0);
   const gridClass = cardCount >= 5 ? s.priceGrid5 : cardCount === 4 ? s.priceGrid4 : s.priceGrid;
   // Monthly by default; the toggle is client-side state only.
