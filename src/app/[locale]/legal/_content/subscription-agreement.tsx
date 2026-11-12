@@ -8,14 +8,35 @@ function NfaLink({ locale, label }: { locale: string; label: string }) {
 }
 
 /**
- * §1.1's plan lines, PINNED to the text consented to under CONSENT_VERSION
- * 2026-11-07. They used to be generated from PLAN_CONFIGS; the price change of
- * 2026-11-11 moved the config, and the owner's instruction was to draft the
- * agreement's price table change (/opt/echorank/prompts/legal-drafts/
- * subscription-agreement-price-change-2026-11-11.md), not to publish it. So
- * the live text stays byte-identical until a reviewed version replaces these
- * lines and CONSENT_VERSION is bumped in the same commit.
- * tests/subscription-agreement-pinned.test.ts holds them to the old text.
+ * §1.1's plan lines are PINNED TEXT, not generated from PLAN_CONFIGS: the
+ * agreement moves only when a reviewed version is published, with a
+ * CONSENT_VERSION bump in the same commit, never because the config moved.
+ *
+ * LIVE: the 2026-11-12 lines, the reviewed draft of the 2026-11-11 price change
+ * (/opt/echorank/prompts/legal-drafts/subscription-agreement-price-change-
+ * 2026-11-11.md), approved by the owner on 2026-11-12, effective with the
+ * release that puts those prices on sale. Monthly prices whole, yearly figures
+ * with both decimals, as the pricing page prints them. Ascending monthly price,
+ * Enterprise last, like the plan cards (owner, 2026-11-12), so the crawler-only
+ * plan comes first. Its name is typed, not read from CRAWLER_BRAND: a rename
+ * must not change consented text (tests/nosy-bat-brand.test.ts allows this
+ * file for that reason).
+ */
+export const AGREEMENT_PLAN_LINES_2026_11_12: readonly string[] = [
+  "Nosy Bat: $15/month, or $144.00/year ($12.00/month equivalent).",
+  "AI Visibility: $28/month, or $268.80/year ($22.40/month equivalent).",
+  "Starter: $78/month, or $748.80/year ($62.40/month equivalent).",
+  "Growth: $177/month, or $1,699.20/year ($141.60/month equivalent).",
+  "Agency: $488/month, or $4,684.80/year ($390.40/month equivalent).",
+  "Enterprise: custom pricing — contact us.",
+];
+
+/**
+ * KEPT, NOT SERVED: the lines consented to under CONSENT_VERSION 2026-11-07.
+ * Subscriptions started under that version keep those prices (the old-price
+ * sentence below §1.1's plan lines), so this is the record of what they agreed
+ * to. Do not edit or delete it; tests/subscription-agreement-pinned.test.ts
+ * holds it byte for byte.
  */
 export const AGREEMENT_PLAN_LINES_2026_11_07: readonly string[] = [
   "AI Visibility: $29/month, or $276/year ($23/month equivalent).",
@@ -26,13 +47,13 @@ export const AGREEMENT_PLAN_LINES_2026_11_07: readonly string[] = [
 ];
 
 function planLines(): string[] {
-  return [...AGREEMENT_PLAN_LINES_2026_11_07];
+  return [...AGREEMENT_PLAN_LINES_2026_11_12];
 }
 
 export function buildSubscriptionAgreement(locale: string): LegalDoc {
   return {
   title: "Subscription Agreement",
-  updated: "Last updated: November 7, 2026",
+  updated: "Last updated: November 12, 2026",
   description:
     "This Subscription Agreement governs your subscription to Echorank360, operated by ChatLogic Insights LTD.",
   sections: [
@@ -52,6 +73,7 @@ export function buildSubscriptionAgreement(locale: string): LegalDoc {
       "1.1 Available Plans. Echorank360 offers the following subscription tiers:",
       ...planLines(),
       "Prices are in US Dollars and may be updated with 30 days' notice. Current pricing is always displayed at echorank360.com/en/pricing.",
+      "A change to our list prices applies to new subscriptions. An existing subscription, including one in its free trial, keeps the price in effect when it started until you change plan or billing interval, or we give you notice of a change as described above.",
       "1.2 Plan Limits. Each plan includes usage limits — such as the number of locations, team seats, monthly feedback requests, SEO lookups, and AI generation tokens — as described on the pricing page. Exceeding a limit may require upgrading to a higher tier. Limits reset at the start of each billing month unless otherwise stated. The AI Visibility plan includes AI visibility monitoring only; reputation tools, SEO tools, the site crawler, the public API and MCP server, and client management are not included and are available on higher plans, as described on the pricing page.",
       "1.3 Billing Intervals. Subscriptions are billed either monthly (recurring every calendar month) or yearly (recurring every 12 months). Your billing interval is selected at checkout and may be changed as described in Section 5.",
     ]},

@@ -36,7 +36,14 @@
 // §1.1, says what that plan excludes (Overview, §1.2), and says what stops on a
 // downgrade to a plan that excludes a feature (§5.2). The next checkout or plan
 // change re-asks; nothing else reads this, so no existing customer loses access.
-export const CONSENT_VERSION = "2026-11-07";
+//
+// 2026-11-12: the Subscription Agreement's §1.1 carries the prices of the
+// 2026-11-11 price change and the crawler-only plan ($15/month, $144.00/year), and
+// says that an existing subscription keeps the price in effect when it started
+// (owner-approved draft, legal-drafts/subscription-agreement-price-change-
+// 2026-11-11.md). The 2026-11-07 lines are kept in the agreement module as the
+// record of what earlier consents agreed to.
+export const CONSENT_VERSION = "2026-11-12";
 
 export type ConsentDocumentId =
   | "subscription_agreement"

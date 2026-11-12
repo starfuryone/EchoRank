@@ -26,7 +26,7 @@ import { pricingFaq } from "@/lib/pricing-page/faq";
 import { PLAN_AUDIENCE } from "@/lib/pricing-page/audience";
 import { moneyAmount, usd, usdCents } from "@/lib/pricing-page/format";
 import { EXPECTED_ACTIVE_ROWS, PLAN_PRICE_SPECS } from "@/lib/stripe/plan-price-spec";
-import { AGREEMENT_PLAN_LINES_2026_11_07 } from "@/app/[locale]/legal/_content/subscription-agreement";
+import { AGREEMENT_PLAN_LINES_2026_11_07, AGREEMENT_PLAN_LINES_2026_11_12 } from "@/app/[locale]/legal/_content/subscription-agreement";
 import { seoToolCounts } from "@/lib/seo-tools";
 import { CRAWLER_BRAND } from "@/lib/site-crawler/brand";
 import { buildNosybatFacts, nbUsd } from "@/lib/site-crawler/nosybat-facts";
@@ -69,12 +69,19 @@ describe("the plan in config", () => {
     expect(nb.backlinks.listRows).toBe(0);
   });
 
-  it("is off the ladder, so the Subscription Agreement's plan lines and the site-wide offers do not change", () => {
+  it("is off the ladder, so the site-wide offers do not change", () => {
     expect(PLAN_ORDER).not.toContain("NOSY_BAT");
-    // The agreement's plan lines are pinned text since 2026-11-11
-    // (tests/subscription-agreement-pinned.test.ts); none names this plan.
-    expect(AGREEMENT_PLAN_LINES_2026_11_07.some((l) => l.includes(CRAWLER_BRAND.name))).toBe(false);
     expect(PLANS.map((p) => p.name)).not.toContain(CRAWLER_BRAND.name);
+  });
+
+  it("has its line in the Subscription Agreement since 2026-11-12, at its own price, and none in the 2026-11-07 text", () => {
+    // Pinned text, not generated (tests/subscription-agreement-pinned.test.ts):
+    // this holds the published line to the plan's config.
+    const c = PLAN_CONFIGS.NOSY_BAT;
+    expect(AGREEMENT_PLAN_LINES_2026_11_12).toContain(
+      `${CRAWLER_BRAND.name}: ${usd(c.monthlyPrice, "en")}/month, or ${usdCents((Math.round(c.annualPrice * 100) * 12) / 100, "en")}/year (${usdCents(c.annualPrice, "en")}/month equivalent).`,
+    );
+    expect(AGREEMENT_PLAN_LINES_2026_11_07.some((l) => l.includes(CRAWLER_BRAND.name))).toBe(false);
   });
 
   it("has an enum value and a migration that only adds it", () => {

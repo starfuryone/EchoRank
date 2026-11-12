@@ -28,7 +28,8 @@ import { describe, expect, it } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { PLAN_CONFIGS, PLAN_ORDER } from "@/lib/plan-config";
-import { AGREEMENT_PLAN_LINES_2026_11_07, buildSubscriptionAgreement } from "@/app/[locale]/legal/_content/subscription-agreement";
+import { AGREEMENT_PLAN_LINES_2026_11_12, buildSubscriptionAgreement } from "@/app/[locale]/legal/_content/subscription-agreement";
+import { CATALOG_GATED_PLANS } from "@/lib/plan-launch";
 import { loadLegalDoc } from "@/app/[locale]/legal/_content/registry";
 import { CONSENT_DOCUMENT_IDS } from "@/lib/consent-config";
 import type { LegalDoc } from "@/app/[locale]/legal/_content/types";
@@ -69,20 +70,21 @@ describe("the served Subscription Agreement", () => {
     const positions = named.map((l) => lines.indexOf(l!));
     expect(positions).toEqual([...positions].sort((a, b) => a - b));
 
-    // And nothing else claims to be a plan line.
+    // And nothing else claims to be a plan line: the ladder, plus the
+    // catalog-gated plans, which are on sale from the release that seeds them
+    // (Nosy Bat since 2026-11-12).
     const planLines = lines.filter((l) => /^[A-Z][A-Za-z ]+: (custom pricing|\$)/.test(l));
-    expect(planLines).toHaveLength(PLAN_ORDER.length);
+    expect(planLines).toHaveLength(PLAN_ORDER.length + CATALOG_GATED_PLANS.size);
+    for (const plan of CATALOG_GATED_PLANS) expect(planLines.some((l) => l.startsWith(`${PLAN_CONFIGS[plan].name}:`)), plan).toBe(true);
   });
 
-  it("quotes the pinned 2026-11-07 lines (the price change of 2026-11-11 is a draft, not published)", () => {
-    // §1.1 is no longer generated from PLAN_CONFIGS: the owner asked for the
-    // agreement's price change to be drafted only (legal-drafts/
-    // subscription-agreement-price-change-2026-11-11.md). The lines stay the
-    // text consented to under CONSENT_VERSION 2026-11-07 until a reviewed
-    // version replaces them; tests/subscription-agreement-pinned.test.ts holds
-    // them byte for byte.
+  it("quotes the pinned 2026-11-12 lines", () => {
+    // §1.1 is pinned text, not generated from PLAN_CONFIGS (since 2026-11-11).
+    // Live: the owner-approved draft of the 2026-11-11 price change; the
+    // 2026-11-07 lines are kept for the subscriptions that consented to them.
+    // tests/subscription-agreement-pinned.test.ts holds both byte for byte.
     const lines = planSection(doc);
-    for (const pinned of AGREEMENT_PLAN_LINES_2026_11_07) expect(lines).toContain(pinned);
+    for (const pinned of AGREEMENT_PLAN_LINES_2026_11_12) expect(lines).toContain(pinned);
   });
 
   it.each(RETIRED_TIER.map((r) => [r.source, r] as const))(

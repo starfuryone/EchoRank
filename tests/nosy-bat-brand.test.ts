@@ -36,7 +36,15 @@ describe("Nosy Bat brand", () => {
   });
 
   it("spells the name only in brand.ts and the i18n catalogs", () => {
-    const allowed = new Set(["src/lib/site-crawler/brand.ts", "src/lib/i18n/dashboard.ts"]);
+    const allowed = new Set([
+      "src/lib/site-crawler/brand.ts",
+      "src/lib/i18n/dashboard.ts",
+      // The Subscription Agreement's §1.1 lines are pinned legal text (since
+      // 2026-11-12 they name the plan): a brand rename must not silently change
+      // what buyers consented to. tests/nosy-bat-plan.test.tsx holds that line
+      // to CRAWLER_BRAND.name, so a rename still fails loudly there.
+      "src/app/[locale]/legal/_content/subscription-agreement.tsx",
+    ]);
     const offenders = walk(join(ROOT, "src"))
       .map((p) => p.slice(ROOT.length + 1))
       .filter((p) => !allowed.has(p) && readFileSync(join(ROOT, p), "utf8").includes("Nosy Bat"));

@@ -116,9 +116,9 @@ describe("the consent version", () => {
     expect(buildTerms("fr").updated).toContain("20 août 2026");
   });
 
-  it("follows the Subscription Agreement's latest revision (2026-11-07)", () => {
-    expect(CONSENT_VERSION).toBe("2026-11-07");
-    expect(buildSubscriptionAgreement("en").updated).toContain("November 7, 2026");
+  it("follows the Subscription Agreement's latest revision (2026-11-12)", () => {
+    expect(CONSENT_VERSION).toBe("2026-11-12");
+    expect(buildSubscriptionAgreement("en").updated).toContain("November 12, 2026");
     const body = JSON.stringify(buildSubscriptionAgreement("en").sections.map((s) => s.ps.filter((p) => typeof p === "string")));
     expect(body).toContain("The AI Visibility plan includes AI visibility monitoring only");
     expect(body).toContain("scheduled work for that feature (site crawls, queued review-request emails and SMS) stops");

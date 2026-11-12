@@ -194,7 +194,9 @@ human notices. Commit, then hand them `sudo echorank360-deploy` instead.
   Anything that states what a customer is charged (trial-ending email, `/billing`) reads the
   subscription's own price (`src/lib/billing/subscription-charge.ts`). Monthly prices print
   whole (`usd()`), yearly figures always with two decimals (`usdCents()`). The Subscription
-  Agreement's §1.1 lines are pinned text, not generated (2026-11-11).
+  Agreement's §1.1 lines are pinned text, not generated (2026-11-11): a new reviewed version is
+  a new dated constant plus a `CONSENT_VERSION` bump, and the older constant stays as the record
+  of what earlier subscribers consented to (live: `AGREEMENT_PLAN_LINES_2026_11_12`).
 
 ## Tool pages
 
