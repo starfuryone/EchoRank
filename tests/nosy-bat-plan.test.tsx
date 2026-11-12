@@ -2,7 +2,7 @@
 //
 // The crawler-only plan, sold (owner's spec, 2026-11-10): PlanType NOSY_BAT,
 // $15 a month or $144 a year (owner, 2026-11-12), Agency's crawl limits read from the same
-// values, two crawls at once. Its card shows on /pricing (after AI Visibility)
+// values, two crawls at once. Its card shows on /pricing (first: the cards go by price)
 // and /site-crawler (first) only once its stripe_prices rows exist, and the
 // checkout refuses it until then.
 import { readFileSync } from "node:fs";
@@ -121,9 +121,9 @@ describe("on sale only once its stripe_prices rows exist", () => {
     expect((await launchedPlans(async () => { throw new Error("db down"); })).size).toBe(0);
   });
 
-  it("the card order holds it after AI Visibility only when launched", () => {
+  it("the card order holds it only when launched, at its price: first, at $15", () => {
     expect(cardOrder()).toEqual(PLAN_ORDER);
-    expect(cardOrder(ON)).toEqual(["AI_VISIBILITY", "NOSY_BAT", "STARTER", "GROWTH", "AGENCY", "ENTERPRISE"]);
+    expect(cardOrder(ON)).toEqual(["NOSY_BAT", "AI_VISIBILITY", "STARTER", "GROWTH", "AGENCY", "ENTERPRISE"]);
     expect(planOnSale("NOSY_BAT")).toBe(false);
     expect(planOnSale("NOSY_BAT", ON)).toBe(true);
     expect(planOnSale("STARTER")).toBe(true);
@@ -149,9 +149,9 @@ describe("on sale only once its stripe_prices rows exist", () => {
 describe("the cards", () => {
   const tiers = (l: string, launched = NONE_LAUNCHED as ReadonlySet<"NOSY_BAT">, plans?: string[]) => pricingTiers(l, plans as never, { launched });
 
-  it("no card while not on sale; after AI Visibility on /pricing and first on /site-crawler once it is", () => {
+  it("no card while not on sale; first (cheapest) on /pricing and on /site-crawler once it is", () => {
     expect(tiers("en").map((t) => t.id)).not.toContain("NOSY_BAT");
-    expect(tiers("en", ON).map((t) => t.id)).toEqual(["AI_VISIBILITY", "NOSY_BAT", "STARTER", "GROWTH", "AGENCY"]);
+    expect(tiers("en", ON).map((t) => t.id)).toEqual(["NOSY_BAT", "AI_VISIBILITY", "STARTER", "GROWTH", "AGENCY"]);
     const crawlPlans = buildNosybatFacts({ launched: ON }).crawlPlans.map((p) => p.id);
     expect(crawlPlans).toEqual(["NOSY_BAT", "STARTER", "GROWTH", "AGENCY"]);
     expect(tiers("en", ON, crawlPlans).map((t) => t.id)).toEqual(crawlPlans);
@@ -228,7 +228,7 @@ describe("the comparison table, the FAQ and the copy, once on sale", () => {
   it("adds its column: the free crawl's rows from the facts, 'not included' everywhere outside the crawler, one user", () => {
     expect(comparisonTable("en").plans).not.toContain("NOSY_BAT");
     const t = comparisonTable("en", ON);
-    expect(t.plans).toEqual(["AI_VISIBILITY", "NOSY_BAT", "STARTER", "GROWTH", "AGENCY"]);
+    expect(t.plans).toEqual(["NOSY_BAT", "AI_VISIBILITY", "STARTER", "GROWTH", "AGENCY"]);
     for (const g of t.groups.filter((x) => x.id === "ai" || x.id === "reputation" || x.id === "seo")) {
       for (const r of g.rows) expect(r.plans.NOSY_BAT, `${g.id} ${r.id}`).toEqual({ kind: "no" });
     }

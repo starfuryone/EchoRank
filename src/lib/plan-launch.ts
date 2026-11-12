@@ -13,17 +13,10 @@
 // headlines import it.
 
 import type { PlanType } from "@/generated/prisma";
-import { PLAN_ORDER, type SellablePlanType } from "@/lib/plan-config";
+import { PLAN_CONFIGS, PLAN_ORDER, type SellablePlanType } from "@/lib/plan-config";
 
 /** Plans that need their stripe_prices rows before they are shown or sold. */
 export const CATALOG_GATED_PLANS: ReadonlySet<PlanType> = new Set<PlanType>(["NOSY_BAT"]);
-
-/**
- * Where a gated plan's card goes once it is on sale: after this ladder plan.
- * The crawler-only plan sits after AI Visibility (owner, 2026-11-10). It is
- * not on PLAN_ORDER (plan-config.ts), which stays the ladder.
- */
-const CARD_AFTER: Readonly<Record<string, SellablePlanType>> = { NOSY_BAT: "AI_VISIBILITY" };
 
 /** The catalog-gated plans whose rows exist. Empty = none launched (the safe default). */
 export type LaunchedPlans = ReadonlySet<PlanType>;
@@ -34,15 +27,27 @@ export function planOnSale(plan: PlanType, launched: LaunchedPlans = NONE_LAUNCH
   return !CATALOG_GATED_PLANS.has(plan) || launched.has(plan);
 }
 
-/** The card order: the ladder, with every launched gated plan at its place (CARD_AFTER). */
+/**
+ * The card order: every plan on sale by its monthly price in PLAN_CONFIGS,
+ * cheapest first (owner, 2026-11-12), computed here on every call rather than
+ * typed, so a price change reorders the cards. The order does not depend on
+ * the Monthly / Yearly toggle (the cards must not jump), ties keep the ladder's
+ * order (PLAN_ORDER), and a custom-priced plan (Enterprise, the band under the
+ * cards) is not sorted: it stays last. Every surface reads this order: the
+ * cards on /pricing, /site-crawler and the homepage (pricing-tiers.ts, each
+ * narrowing it to its own subset), the /pricing comparison columns, the FAQ
+ * and the crawler's facts. PLAN_ORDER (plan-config.ts) stays the ladder, which
+ * upgrades and "Everything in X, plus:" walk.
+ */
 export function cardOrder(launched: LaunchedPlans = NONE_LAUNCHED): SellablePlanType[] {
-  const out: SellablePlanType[] = [...PLAN_ORDER];
-  for (const p of CATALOG_GATED_PLANS) {
-    if (!launched.has(p) || out.includes(p)) continue;
-    const after = out.indexOf(CARD_AFTER[p] ?? out[0]!);
-    out.splice(after + 1, 0, p);
-  }
-  return out;
+  const onSale: SellablePlanType[] = [...PLAN_ORDER];
+  for (const p of CATALOG_GATED_PLANS) if (launched.has(p) && !onSale.includes(p as SellablePlanType)) onSale.push(p as SellablePlanType);
+  const custom = (p: SellablePlanType) => PLAN_CONFIGS[p].isCustomPricing;
+  const cents = (p: SellablePlanType) => Math.round(PLAN_CONFIGS[p].monthlyPrice * 100);
+  const priced = onSale
+    .filter((p) => !custom(p))
+    .sort((a, b) => cents(a) - cents(b) || onSale.indexOf(a) - onSale.indexOf(b));
+  return [...priced, ...onSale.filter(custom)];
 }
 
 /**

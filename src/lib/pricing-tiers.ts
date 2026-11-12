@@ -54,11 +54,12 @@ export function yearlySavingPct(): number | null {
 }
 
 /**
- * The cards for one page. `plans` narrows the set (default: every card plan,
- * AI Visibility first): /site-crawler shows the crawl plans only, since the
- * AI-only plan has no crawler. `launched` holds the catalog-gated plans on
- * sale (src/lib/stripe/catalog.ts): the crawler-only plan has a card only
- * once its Stripe prices exist, after AI Visibility.
+ * The cards for one page, cheapest first (cardOrder(), plan-launch.ts: by
+ * monthly price, the same order on either toggle). `plans` narrows the set
+ * (default: every card plan): /site-crawler shows the crawl plans only, since
+ * the AI-only plan has no crawler, in the same order. `launched` holds the
+ * catalog-gated plans on sale (src/lib/stripe/catalog.ts): the crawler-only
+ * plan has a card only once its Stripe prices exist.
  */
 export function pricingTiers(
   locale: string,
