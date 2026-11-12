@@ -1,0 +1,193 @@
+<!--
+NON-AUTHORITATIVE SNAPSHOT. The document customers actually read and accept is
+src/app/[locale]/legal/_content/subscription-agreement.tsx, rendered by the
+/[locale]/legal/subscription-agreement route AND by the checkout consent modal
+(LegalDocModal, via _content/registry.ts). Nothing imports this file at
+runtime. It is a plain-text copy of that document for reading and review.
+
+RE-CUT, NEVER HAND-EDITED. Restored on 2026-11-12 (it was removed on
+2026-08-30 as obsolete) and regenerated from the served English document,
+CONSENT_VERSION 2026-11-12. Everything below this comment is the output of
+agreementMarkdown() in tests/helpers/agreement-snapshot.ts, and
+tests/legal-subscription-plans.test.ts compares it byte for byte. When the
+agreement changes, re-cut this file from that output in the same commit.
+
+§1.1's prices are pinned text in the TSX (not generated from PLAN_CONFIGS):
+this table quotes what customers consent to, which can lag a price change
+until the reviewed agreement is published.
+-->
+
+# Subscription Agreement
+
+Last updated: November 12, 2026
+
+## Overview
+
+This Subscription Agreement ("Agreement") governs your subscription to Echorank360 ("Service"), operated by ChatLogic Insights LTD ("we," "us," "our"). By starting a free trial or subscribing, you agree to the terms below in addition to our Terms of Use and our No Financial Advice Disclaimer. A subscription (with an active trial or paid status) is required to access the dashboard, reputation tools, AI visibility monitoring, SEO tools, and all other platform features. The features included depend on your plan.
+
+## 1. Plans and Pricing
+
+### 1.1 Available Plans
+
+Echorank360 offers the following subscription tiers:
+
+| Plan | Monthly | Yearly |
+|---|---|---|
+| Nosy Bat | $15/month | $144.00/year ($12.00/month equivalent) |
+| AI Visibility | $28/month | $268.80/year ($22.40/month equivalent) |
+| Starter | $78/month | $748.80/year ($62.40/month equivalent) |
+| Growth | $177/month | $1,699.20/year ($141.60/month equivalent) |
+| Agency | $488/month | $4,684.80/year ($390.40/month equivalent) |
+| Enterprise | Custom pricing — contact us | Custom pricing — contact us |
+
+Prices are in US Dollars and may be updated with 30 days' notice. Current pricing is always displayed at echorank360.com/en/pricing.
+
+A change to our list prices applies to new subscriptions. An existing subscription, including one in its free trial, keeps the price in effect when it started until you change plan or billing interval, or we give you notice of a change as described above.
+
+### 1.2 Plan Limits
+
+Each plan includes usage limits — such as the number of locations, team seats, monthly feedback requests, SEO lookups, and AI generation tokens — as described on the pricing page. Exceeding a limit may require upgrading to a higher tier. Limits reset at the start of each billing month unless otherwise stated. The AI Visibility plan includes AI visibility monitoring only; reputation tools, SEO tools, the site crawler, the public API and MCP server, and client management are not included and are available on higher plans, as described on the pricing page.
+
+### 1.3 Billing Intervals
+
+Subscriptions are billed either monthly (recurring every calendar month) or yearly (recurring every 12 months). Your billing interval is selected at checkout and may be changed as described in Section 5.
+
+## 2. Eligibility
+
+You must be at least 18 years old to use the Service. Echorank360 is not available to persons located in the United Kingdom. By creating an account or starting a trial you represent that you are not a UK national, UK resident, or accessing the Service from within the UK.
+
+## 3. Free Trial
+
+### 3.1 Trial Terms
+
+New subscriptions begin with a 7-day free trial. A valid payment method is required to start the trial. You will not be charged during the trial period.
+
+### 3.2 Conversion to Paid
+
+Unless you cancel before the trial ends, your payment method is automatically charged for your selected plan and billing interval on the day the trial expires, and your paid subscription begins. We send a reminder email to the address on your account before the trial ends.
+
+### 3.3 Cancelling During the Trial
+
+You may cancel at any time during the trial; see the “How to Cancel” section for the steps and for when cancellation takes effect.
+
+### 3.4 One Trial per Customer
+
+The free trial is available once per customer and per organisation. We may decline or revoke trials created to circumvent this limit.
+
+## 4. Payment and Billing
+
+### 4.1 Payment Processing
+
+All payments are processed securely through Stripe. Echorank360 does not store credit card numbers. By subscribing, you authorise Stripe to charge your payment method on a recurring basis according to your selected billing interval.
+
+### 4.2 Billing Cycle
+
+Your billing cycle begins on the date your trial converts to a paid subscription (or the date of purchase if no trial applies). Subsequent charges occur on the same day each month (for monthly plans) or the same date each year (for yearly plans). If a charge fails, your subscription status becomes "past due" and access may be suspended after a 3-day grace period.
+
+### 4.3 Taxes
+
+Prices are exclusive of applicable taxes unless otherwise stated. Stripe may collect taxes as required by your jurisdiction.
+
+## Automatic Renewal and Recurring Charges
+
+Your subscription renews automatically. After any free trial ends, the payment method on file is charged automatically at the start of each billing period — monthly or annually, at the price you selected — and charges continue on a recurring basis until you cancel. You will not receive a separate invoice or request for approval before each renewal charge.
+
+## How to Cancel
+
+You can cancel at any time in a few clicks: log in to your account, open Billing (echorank360.com/billing), click “Manage subscription”, and choose “Cancel subscription” in the secure Stripe billing portal. If you cancel during a free trial, cancellation is immediate and you are not charged. Otherwise, cancellation takes effect at the end of your current billing period: you keep access until then and no further charges are made after it.
+
+## 5. Plan Changes
+
+Summary: Upgrades and switches to yearly billing take effect immediately. Downgrades and switches to monthly billing take effect at the end of your current billing period. You keep full access to your current plan until any scheduled change takes effect.
+
+### 5.1 Upgrades (Immediate)
+
+An upgrade is a change from a lower-tier plan to a higher-tier plan (e.g., Starter to Growth). Upgrades take effect immediately. You gain instant access to the features of your new plan. Prorated charges are applied for the remainder of your current billing period — you are credited for the unused portion of your previous plan and charged for the remaining time at the new plan's rate.
+
+### 5.2 Downgrades (Scheduled at Period End)
+
+A downgrade is a change from a higher-tier plan to a lower-tier plan (e.g., Growth to Starter). Downgrades are scheduled to take effect at the end of your current billing period. You retain full access to all features of your current plan until the scheduled change date. On that date, your subscription automatically transitions to the new plan at the new rate. If your usage exceeds the limits of the lower plan, some data or features may become read-only or inaccessible after the change. On a downgrade to a plan that excludes a feature, scheduled work for that feature (site crawls, queued review-request emails and SMS) stops when the change takes effect.
+
+### 5.3 Billing Interval Changes — Same Tier
+
+Monthly to Yearly (Immediate): switching from monthly to yearly billing on the same plan takes effect immediately. Prorated charges are applied — you receive a credit for the unused portion of your current monthly period and are charged the yearly rate. Yearly to Monthly (Scheduled at Period End): switching from yearly to monthly billing on the same plan is scheduled to take effect at the end of your current yearly billing period. You retain access for the full year you have already paid for. Monthly billing begins at the next renewal.
+
+### 5.4 Combined Changes
+
+A plan change may involve both a tier change and a billing interval change simultaneously (e.g., Starter Monthly to Growth Yearly). The rules follow the dominant direction: if the change includes an upgrade or a switch to yearly billing, it is immediate with proration; if the change is a downgrade or a switch to monthly billing, it is scheduled at period end.
+
+### 5.5 Proration
+
+When an immediate plan change involves proration, Stripe calculates the unused time remaining on your current plan and credits that amount against the charge for your new plan. The net difference is either charged immediately or applied to your next invoice. Prorated amounts are calculated to the day.
+
+### 5.6 Pending Changes
+
+When a plan change is scheduled (not immediate), your account displays the pending change. You may cancel or modify a pending change before it takes effect by selecting a different plan. Selecting an immediate change (e.g., an upgrade) while a downgrade is pending will cancel the pending downgrade and apply the upgrade immediately.
+
+### 5.7 Plan Changes During the Trial
+
+If you change plans during your free trial, the trial continues on the new plan and the new plan's rate applies when the trial converts to paid.
+
+## 6. Confirmation and Notifications
+
+Every billing event — including trial start, trial conversion, upgrades, downgrades, interval switches, and cancellations — generates a confirmation delivered by email to the address on your account. Confirmations include the transaction date, the plan and billing interval, the effective date (immediate or scheduled), and, for prorated changes, the charge amount. Stripe also issues receipts and invoices for all payments.
+
+## 7. Cancellation
+
+### 7.1 How to Cancel
+
+The steps are set out in the “How to Cancel” section. You may also cancel by contacting support@echorank360.com.
+
+### 7.2 Effect of Cancellation
+
+When cancellation takes effect is set out in the “How to Cancel” section. Once your access ends, your account reverts to an inactive state and dashboard access is suspended.
+
+### 7.3 Data After Cancellation
+
+Following cancellation, you may request an export of your data by contacting support before your access ends. We may delete account data after a reasonable retention period, in accordance with our Privacy Policy.
+
+### 7.4 No Refunds
+
+No refunds are issued for partial billing periods, except where required by applicable law. If you upgrade and then cancel within the same billing period, the prorated charge for the upgrade is not refunded.
+
+## 8. Consent
+
+### 8.1 Checkout Consent
+
+Before starting a trial or completing any purchase or plan change, you must explicitly consent to this Subscription Agreement, the Terms of Use, the Privacy Policy, and the Cookie Policy. Your consent is recorded with a timestamp, consent version, and the specific documents you agreed to.
+
+### 8.2 Consent Records
+
+We maintain a log of all consent events for compliance purposes. Consent records include the user ID, consent version, document IDs, timestamp, and the plan associated with the transaction.
+
+## 9. Third-Party Data and AI Outputs
+
+The Service aggregates data from third-party platforms (including search engines, review platforms, and AI model providers) and generates analysis using artificial intelligence. Third-party data availability is outside our control, and AI-generated scores, rankings, and recommendations are informational estimates, not guarantees of business outcomes. Interruptions or changes in third-party data sources do not entitle you to refunds or billing credits.
+
+See also our No Financial Advice Disclaimer.
+
+## 10. Service Level
+
+Echorank360 aims to provide continuous service availability but does not guarantee specific uptime. Planned maintenance is performed during low-usage hours when possible. Service interruptions do not entitle you to refunds or billing credits.
+
+## 11. Dispute Resolution
+
+If you believe a charge is incorrect, contact support@echorank360.com with the email address on your account and the relevant invoice or receipt. We will review the transaction and respond within 5 business days. Chargebacks filed without first contacting us may result in account suspension.
+
+## 12. Governing Law
+
+This Agreement is governed by the laws of England and Wales. Any disputes shall be subject to the exclusive jurisdiction of the courts of England and Wales.
+
+## 13. Prepaid credits (prospect lookups)
+
+Prospect lookups for the Opportunity Scanner are sold as prepaid credits in one-time packs. A credit purchase is not a subscription and does not change your plan: credits do not renew, are not billed periodically, and do not expire.
+
+Credits are spendable only while you hold an active subscription to a plan that includes the Opportunity Scanner. Ending your subscription does not forfeit them — unused credits remain on the account and become spendable again when an eligible subscription is reactivated.
+
+Credits consumed by batches in which the listing search never executed are automatically re-credited to your account balance; this is a balance adjustment, not a monetary refund. In all other cases, credits are non-refundable and non-transferable, except where a refund is required by applicable consumer law, and are not refunded on cancellation or downgrade of your subscription.
+
+A lookup is consumed when the search runs, whether or not it finds a matching business. Because unused credits are not converted to cash, we recommend using or accounting for your remaining balance before cancelling. Section 7 (Cancellation) governs the subscription itself; this section governs the credits.
+
+## 14. Contact
+
+ChatLogic Insights LTD — support@echorank360.com
