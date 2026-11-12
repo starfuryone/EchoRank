@@ -318,6 +318,26 @@
 /* scroll-margin: a card opened by its anchor (/pricing#nosy-bat) clears the 64px sticky nav. */
 .price{composes:card;padding:22px 20px;display:flex;flex-direction:column;scroll-margin-top:88px}
 .priceHi{composes:price;border-color:rgba(252,213,53,.45);box-shadow:0 0 50px -20px rgba(240,185,11,.35)}
+/* Hover / keyboard focus on a plan card of the shared grid (/pricing, the
+   homepage, /site-crawler, /ai-visibility; not the Watcher's two-card grid):
+   lift, gold border, deeper shadow. Transform only, so nothing reflows; the
+   raised card sits above its neighbours, and no ancestor clips it. Pointer
+   devices only, so a tap never leaves a card stuck lifted. Only the hovered
+   card changes: the highlighted card keeps its rest emphasis while another is
+   hovered, and gets a stronger version of it when it is hovered itself.
+   Reduced motion keeps the border and shadow and drops the movement. */
+@media (hover:hover) and (pointer:fine){
+  .priceGrid:not(.priceGrid2) > .price{transition:transform 180ms ease-out,border-color 180ms ease-out,box-shadow 180ms ease-out}
+  .priceGrid:not(.priceGrid2) > .price:hover,
+  .priceGrid:not(.priceGrid2) > .price:focus-within{transform:translateY(-4px) scale(1.03);z-index:2;border-color:rgba(252,213,53,.6);box-shadow:0 24px 48px -20px var(--er-shadow)}
+  .priceGrid:not(.priceGrid2) > .priceHi:hover,
+  .priceGrid:not(.priceGrid2) > .priceHi:focus-within{border-color:rgba(252,213,53,.85);box-shadow:0 0 60px -18px rgba(240,185,11,.5),0 24px 48px -20px var(--er-shadow)}
+}
+@media (hover:hover) and (pointer:fine) and (prefers-reduced-motion:reduce){
+  .priceGrid:not(.priceGrid2) > .price{transition:border-color 180ms ease-out,box-shadow 180ms ease-out}
+  .priceGrid:not(.priceGrid2) > .price:hover,
+  .priceGrid:not(.priceGrid2) > .price:focus-within{transform:none}
+}
 .pnameRow{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
 .pname{font-family:var(--mono);font-size:11px;letter-spacing:.12em;color:var(--faint);text-transform:uppercase}
 /* "Most popular": a gold FILL with --onGold text, per the fill/text rule. */
