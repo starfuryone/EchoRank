@@ -40,6 +40,21 @@
  * superseded price without it is reported, never archived. Everything created
  * here carries metadata app, tier and brand.
  *
+ * --adopt-legacy: the July 2026 seed (43e421e) created prices before the app
+ * tag existed, so they hold echorank_* keys without metadata[app]. With this
+ * flag a CONFLICT key holder is ADOPTED (metadata[app]=echorank set, nothing
+ * else changed) only when ALL hold: its lookup_key starts with echorank_; its
+ * product's name or metadata says Echorank; that product is one the tier's
+ * active stripe_prices rows point at; its currency is usd. Otherwise it stays a
+ * CONFLICT, with the failed checks named. The dry run prints, per price, the
+ * product id and name, every check, and WOULD adopt or REFUSE, and plans the
+ * rest as if adopted. A run adopts first, and only if no CONFLICT is left
+ * (otherwise nothing is written); then the normal flow runs: new price, key
+ * transferred, the adopted price archived under the rules above.
+ *
+ *   npx tsx scripts/seed-plan-prices-usd.ts --dry-run --adopt-legacy
+ *   npx tsx scripts/seed-plan-prices-usd.ts --live --adopt-legacy
+ *
  * IDEMPOTENT: a rerun finds each key on the configured amount, each row in
  * place and each superseded price archived (or still in use), and changes
  * nothing. Creates carry an idempotency key, so a retried request cannot
@@ -111,6 +126,68 @@ interface Plan {
   /** Superseded prices with no catalog row: given one, inactive. */
   missingRows: string[];
   conflict?: string;
+  /** --adopt-legacy: the checks run on a key holder without metadata[app]. */
+  adoption?: Adoption;
+}
+
+interface AdoptCheck {
+  label: string;
+  ok: boolean;
+  detail: string;
+}
+
+interface Adoption {
+  priceId: string;
+  product: { id: string; name: string };
+  checks: AdoptCheck[];
+  ok: boolean;
+}
+
+interface RunOpts {
+  adoptLegacy: boolean;
+  /** Key holders that passed every adoption check: treated as ours from here on. */
+  adopted: Set<string>;
+}
+
+/**
+ * Whether a key holder without metadata[app] is a legacy Echorank price. Reads
+ * only: the product, and the prices the tier's active catalog rows point at.
+ */
+async function adoptionFor(stripe: Stripe, holder: Stripe.Price, spec: TierSpec): Promise<Adoption> {
+  const productId = productIdOf(holder);
+  const product = await stripe.products.retrieve(productId).catch(() => null);
+  const name = product?.name ?? "(product not found)";
+  const metaHit = Object.entries(product?.metadata ?? {}).find(([, v]) => /echorank/i.test(v));
+
+  const rows = await prisma.stripePrice.findMany({
+    where: { planTier: spec.planTier, currency: CURRENCY, active: true },
+    select: { stripePriceId: true },
+  });
+  const catalogProducts = new Set<string>();
+  for (const r of rows) {
+    const p = await stripe.prices.retrieve(r.stripePriceId).catch(() => null);
+    if (p) catalogProducts.add(productIdOf(p));
+  }
+
+  const checks: AdoptCheck[] = [
+    {
+      label: "lookup_key starts with echorank_",
+      ok: !!holder.lookup_key?.startsWith("echorank_"),
+      detail: holder.lookup_key ?? "(none)",
+    },
+    {
+      label: "product identifies Echorank (name or metadata)",
+      ok: !!product && (/echorank/i.test(product.name) || !!metaHit),
+      detail: !product ? "product not found" : /echorank/i.test(product.name) ? `name "${product.name}"` : metaHit ? `metadata ${metaHit[0]}=${metaHit[1]}` : `name "${product.name}", no Echorank metadata`,
+    },
+    {
+      label: `product is the one the active ${spec.planTier} catalog rows point at`,
+      ok: catalogProducts.has(productId),
+      detail: catalogProducts.size ? `rows point at ${[...catalogProducts].join(", ")}` : `no active ${spec.planTier} row`,
+    },
+    { label: "currency is usd", ok: holder.currency === "usd", detail: holder.currency },
+  ];
+  return { priceId: holder.id, product: { id: productId, name }, checks, ok: checks.every((c) => c.ok) };
 }
 
 async function findProduct(stripe: Stripe, spec: TierSpec): Promise<string | null> {
@@ -137,16 +214,26 @@ async function subscriptionsOn(stripe: Stripe, priceId: string): Promise<Record<
   return counts;
 }
 
-async function planFor(stripe: Stripe, spec: TierSpec, interval: Interval, productHint: string | null): Promise<Plan> {
+async function planFor(stripe: Stripe, spec: TierSpec, interval: Interval, productHint: string | null, opts: RunOpts): Promise<Plan> {
   const lookupKey = lookupKeyFor(spec, interval);
   const desired = amountFor(spec, interval);
   const held = await stripe.prices.list({ lookup_keys: [lookupKey], limit: 1 });
   const holder = held.data[0] ?? null;
   const plan: Plan = { spec, interval, lookupKey, desired, holder, productId: productHint, createPrice: false, superseded: [], archivedBefore: [], missingRows: [] };
+  const isOurs = (p: Stripe.Price) => ours(p.metadata) || opts.adopted.has(p.id);
 
   if (holder && !ours(holder.metadata)) {
-    plan.conflict = `${holder.id} holds ${lookupKey} without metadata[app]=${APP}: not ours to move, nothing done`;
-    return plan;
+    if (!opts.adoptLegacy) {
+      plan.conflict = `${holder.id} holds ${lookupKey} without metadata[app]=${APP}: not ours to move, nothing done (--adopt-legacy checks whether it is a legacy Echorank price)`;
+      return plan;
+    }
+    plan.adoption = await adoptionFor(stripe, holder, spec);
+    if (!plan.adoption.ok) {
+      const failed = plan.adoption.checks.filter((c) => !c.ok).map((c) => c.label).join("; ");
+      plan.conflict = `${holder.id} holds ${lookupKey} without metadata[app]=${APP}, and is not adopted (failed: ${failed}): nothing done`;
+      return plan;
+    }
+    opts.adopted.add(holder.id);
   }
   if (holder) plan.productId = productIdOf(holder);
   const current = holder && holder.unit_amount === desired && holder.currency === "usd" && holder.recurring?.interval === interval ? holder : null;
@@ -187,12 +274,12 @@ async function planFor(stripe: Stripe, spec: TierSpec, interval: Interval, produ
     const subs = await subscriptionsOn(stripe, price.id);
     const inUse = inUseOf(subs);
     let keep: string | undefined;
-    if (!ours(price.metadata)) keep = `no metadata[app]=${APP}: not archived, check it by hand`;
+    if (!isOurs(price)) keep = `no metadata[app]=${APP}: not archived, check it by hand`;
     else if (price.lookup_key && price.lookup_key !== lookupKey) keep = `holds another lookup key (${price.lookup_key}): not archived`;
     else if (price.recurring?.interval_count !== 1) keep = "interval_count is not 1: not archived";
     else if (inUse > 0) keep = `${inUse} subscription(s) not cancelled use it: left active, nobody is moved`;
     plan.superseded.push({ price, subs, inUse, keep });
-    if (!rowIds.has(price.id) && ours(price.metadata)) plan.missingRows.push(price.id);
+    if (!rowIds.has(price.id) && isOurs(price)) plan.missingRows.push(price.id);
   }
   return plan;
 }
@@ -277,6 +364,13 @@ function describePlan(plan: Plan, dry: boolean): string[] {
   const h = plan.holder;
   out.push(`${plan.spec.label} / ${plan.interval}  ${plan.lookupKey}  config ${money(plan.desired)}`);
   out.push(`  key now on: ${h ? `${h.id} ${money(h.unit_amount)} ${h.currency}/${h.recurring?.interval} active=${h.active}` : "no price"}`);
+  if (plan.adoption) {
+    const a = plan.adoption;
+    out.push(`  legacy price ${a.priceId} (no metadata[app]): product ${a.product.id} "${a.product.name}"`);
+    for (const c of a.checks) out.push(`    [${c.ok ? "ok" : "FAIL"}] ${c.label}: ${c.detail}`);
+    if (!a.ok) out.push(`    REFUSE: left as it is (${a.checks.filter((c) => !c.ok).map((c) => c.label).join("; ")})`);
+    else out.push(`    ${dry ? `WOULD adopt (set metadata[app]=${APP})` : `adopted (metadata[app]=${APP} set before any other write)`}`);
+  }
   if (plan.conflict) {
     out.push(`  CONFLICT: ${plan.conflict}`);
     return out;
@@ -302,6 +396,7 @@ function describePlan(plan: Plan, dry: boolean): string[] {
 export async function main(argv: readonly string[] = process.argv.slice(2)) {
   const DRY_RUN = argv.includes("--dry-run");
   const LIVE_OK = argv.includes("--live");
+  const opts: RunOpts = { adoptLegacy: argv.includes("--adopt-legacy"), adopted: new Set() };
   const fromCli = (process.env.STRIPE_API_KEY || "").trim();
   const key = fromCli || (process.env.STRIPE_SECRET_KEY || "").trim();
   const keySource = fromCli ? "STRIPE_API_KEY" : "STRIPE_SECRET_KEY";
@@ -334,12 +429,15 @@ export async function main(argv: readonly string[] = process.argv.slice(2)) {
   }
 
   const stripe = new Stripe(key);
-  console.log(`Mode: ${mode} (${keySource})${DRY_RUN ? " — DRY RUN: reads Stripe and the catalog, writes nothing" : ""}\n`);
+  console.log(
+    `Mode: ${mode} (${keySource})${DRY_RUN ? " — DRY RUN: reads Stripe and the catalog, writes nothing" : ""}` +
+      `${opts.adoptLegacy ? ` — --adopt-legacy: legacy key holders are checked for adoption` : ""}\n`,
+  );
 
   const plans: Plan[] = [];
   for (const spec of TIERS) {
     const product = await findProduct(stripe, spec);
-    for (const interval of INTERVALS) plans.push(await planFor(stripe, spec, interval, product));
+    for (const interval of INTERVALS) plans.push(await planFor(stripe, spec, interval, product, opts));
     // Both intervals go on one product: the month plan may have found it
     // through its key's holder when the search did not.
     const pair = plans.slice(-2);
@@ -353,7 +451,8 @@ export async function main(argv: readonly string[] = process.argv.slice(2)) {
     const creates = plans.filter((p) => p.createPrice && !p.conflict).length;
     const archives = plans.flatMap((p) => p.superseded.filter((s) => !s.keep)).length;
     const kept = plans.flatMap((p) => p.superseded.filter((s) => s.keep)).length;
-    console.log(`Summary: ${creates} price(s) to create, ${archives} to archive, ${kept} superseded left active, ${conflicts.length} CONFLICT.`);
+    const adopt = opts.adoptLegacy ? ` ${opts.adopted.size} legacy price(s) to adopt, ${plans.filter((p) => p.adoption && !p.adoption.ok).length} refused.` : "";
+    console.log(`Summary: ${creates} price(s) to create, ${archives} to archive, ${kept} superseded left active, ${conflicts.length} CONFLICT.${adopt}`);
     reportNosyBat(plans);
     await prisma.$disconnect();
     return;
@@ -361,10 +460,18 @@ export async function main(argv: readonly string[] = process.argv.slice(2)) {
 
   if (conflicts.length) {
     for (const p of conflicts) console.error(describePlan(p, false).join("\n"));
-    console.error("\nCONFLICT: nothing written. Resolve the above by hand and rerun.");
+    console.error("\nCONFLICT: nothing written (no price adopted either). Resolve the above by hand and rerun.");
     await prisma.$disconnect();
     process.exit(1);
   }
+
+  // Adopt before any other write: the tag only, nothing else on the price.
+  // Stripe merges metadata keys, so whatever the price already carries stays.
+  for (const id of opts.adopted) {
+    await stripe.prices.update(id, { metadata: { app: APP } });
+    console.log(`adopted ${id} (metadata[app]=${APP})`);
+  }
+  if (opts.adopted.size) console.log("");
 
   for (const spec of TIERS) {
     const pair = plans.filter((p) => p.spec === spec);

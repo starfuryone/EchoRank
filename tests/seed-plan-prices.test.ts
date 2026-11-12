@@ -22,7 +22,7 @@ type Price = {
 type Row = { id: number; stripePriceId: string; planTier: string; currency: string; interval: string; active: boolean };
 
 const W = vi.hoisted(() => ({
-  products: [] as { id: string; metadata: Record<string, string>; active: boolean }[],
+  products: [] as { id: string; name?: string; metadata: Record<string, string>; active: boolean }[],
   prices: [] as Price[],
   subs: [] as { price: string; status: string }[],
   rows: [] as Row[],
@@ -46,6 +46,11 @@ vi.mock("stripe", () => {
         return page(W.products.filter((p) => p.active && p.metadata.app === "echorank" && p.metadata.tier === tier));
       },
       list: () => page(W.products),
+      retrieve: async (id: string) => {
+        const p = W.products.find((x) => x.id === id);
+        if (!p) throw new Error("no such product");
+        return { ...p, name: p.name ?? id };
+      },
       create: async (p: { metadata: Record<string, string> }) => {
         W.writes.push("product.create");
         const prod = { id: `prod_new${++W.seq}`, metadata: p.metadata, active: true };
@@ -86,10 +91,12 @@ vi.mock("stripe", () => {
         W.prices.push(price);
         return price;
       },
-      update: async (id: string, u: { active: boolean }) => {
-        W.writes.push(`price.update ${id} active=${u.active}`);
+      update: async (id: string, u: { active?: boolean; metadata?: Record<string, string> }) => {
+        W.writes.push(u.metadata ? `price.update ${id} metadata=${JSON.stringify(u.metadata)}` : `price.update ${id} active=${u.active}`);
         const p = W.prices.find((x) => x.id === id)!;
-        p.active = u.active;
+        if (u.active !== undefined) p.active = u.active;
+        // Stripe merges metadata keys on update.
+        if (u.metadata) p.metadata = { ...p.metadata, ...u.metadata };
         return p;
       },
     },
@@ -243,6 +250,147 @@ describe("a live run", () => {
     W.prices.find((p) => p.id === "price_growth_month")!.metadata = {};
     await expect(main(["--live"])).rejects.toThrow("exit 1");
     expect(text()).toContain("CONFLICT: price_growth_month holds echorank_growth_usd_month without metadata[app]=echorank");
+    expect(text()).toContain("--adopt-legacy checks whether it is a legacy Echorank price");
+    expect(W.writes).toEqual([]);
+  });
+});
+
+// ── --adopt-legacy ───────────────────────────────────────────────────────────
+
+/** The 2026-11-12 dry run's July prices: [tier, interval, July cents]. */
+const JULY: [string, "month" | "year", number][] = [
+  ["ai_visibility", "month", 2900],
+  ["starter", "month", 7900],
+  ["starter", "year", 75600],
+  ["growth", "month", 19900],
+  ["growth", "year", 190800],
+  ["agency", "month", 49900],
+  ["agency", "year", 478800],
+];
+
+/**
+ * What the live account looks like: seven July prices (43e421e, before the
+ * app tag) hold their keys without metadata[app], on July products named
+ * "Echorank360 …" with no app metadata, and the catalog rows point at them.
+ * AI Visibility's yearly key and Nosy Bat's two keys are ours, on old amounts.
+ * Old subscriptions are cancelled ones only.
+ */
+function legacyWorld() {
+  Object.assign(W, { products: [], prices: [], subs: [], rows: [], writes: [], seq: 0 });
+  const julyProduct = (tier: string) => `prod_july_${tier}`;
+  for (const s of PLAN_PRICE_SPECS) {
+    const july = JULY.filter(([t]) => t === s.planTier);
+    if (july.length) W.products.push({ id: julyProduct(s.planTier), name: `Echorank360 ${s.label}`, metadata: { tier: s.planTier }, active: true });
+    for (const interval of ["month", "year"] as const) {
+      const legacy = july.find(([, i]) => i === interval);
+      let id: string;
+      if (legacy) {
+        id = `price_july_${s.planTier}_${interval}`;
+        W.prices.push(price(id, julyProduct(s.planTier), legacy[2], interval, lookupKeyFor(s, interval)));
+        W.subs.push({ price: id, status: "canceled" });
+      } else {
+        // Ours, on an old amount: AI Visibility yearly ($276), Nosy Bat ($22 / $211.20).
+        const product = july.length ? julyProduct(s.planTier) : `prod_${s.planTier}`;
+        if (!july.length && !W.products.some((p) => p.id === product)) W.products.push({ id: product, name: `Echorank360 ${s.label}`, metadata: OURS(s.planTier), active: true });
+        const cents = s.plan === "NOSY_BAT" ? (interval === "month" ? 2200 : 21120) : 27600;
+        id = `price_old_${s.planTier}_${interval}`;
+        W.prices.push(price(id, product, cents, interval, lookupKeyFor(s, interval), true, OURS(s.planTier)));
+      }
+      W.rows.push({ id: ++W.seq, stripePriceId: id, planTier: s.planTier, currency: "USD", interval, active: true });
+    }
+  }
+}
+
+describe("--adopt-legacy", () => {
+  beforeEach(legacyWorld);
+
+  it("without the flag, the seven July prices are CONFLICTs, as on the live account", async () => {
+    await main(["--dry-run"]);
+    expect(text()).toMatch(/Summary: \d+ price\(s\) to create, \d+ to archive, \d+ superseded left active, 7 CONFLICT\./);
+  });
+
+  it("--dry-run prints, per July price, its product, the four checks and WOULD adopt; plans 10 / 10 / 0 CONFLICT; writes nothing", async () => {
+    const before = JSON.stringify([W.prices, W.rows]);
+    await main(["--dry-run", "--adopt-legacy"]);
+    expect(W.writes).toEqual([]);
+    expect(JSON.stringify([W.prices, W.rows])).toBe(before);
+    const t = text();
+    for (const [tier, interval] of JULY) {
+      const id = `price_july_${tier}_${interval}`;
+      const block = t.slice(t.indexOf(`legacy price ${id}`));
+      expect(block).toMatch(new RegExp(`^legacy price ${id} \\(no metadata\\[app\\]\\): product prod_july_${tier} "Echorank360 [^"]+"`));
+      expect(block).toContain(`[ok] lookup_key starts with echorank_: echorank_${tier}_usd_${interval}`);
+      expect(block).toContain(`[ok] product identifies Echorank (name or metadata): name "Echorank360`);
+      expect(block).toContain(`[ok] product is the one the active ${tier} catalog rows point at: rows point at prod_july_${tier}`);
+      expect(block).toContain("[ok] currency is usd: usd");
+      expect(block).toMatch(/^[^\n]*\n(\s+\[ok\][^\n]*\n){4}\s+WOULD adopt \(set metadata\[app\]=echorank\)/);
+      expect(t).toMatch(new RegExp(`superseded ${id} [^\\n]*; subscriptions: canceled 1\\n\\s+WOULD archive it`));
+    }
+    expect(t).toContain("Summary: 10 price(s) to create, 10 to archive, 0 superseded left active, 0 CONFLICT. 7 legacy price(s) to adopt, 0 refused.");
+  });
+
+  it("a live run adopts first, then reprices every key and archives the old prices; subscriptions untouched; a rerun changes nothing", async () => {
+    await main(["--live", "--adopt-legacy"]);
+    const t = text();
+    expect(t).toContain("Assertion passed.");
+    // The adoptions come before any other write, and set only the tag.
+    const firstOther = W.writes.findIndex((w) => !w.includes("metadata="));
+    expect(W.writes.slice(0, firstOther)).toEqual(JULY.map(([tier, interval]) => `price.update price_july_${tier}_${interval} metadata={"app":"echorank"}`));
+    expect(W.writes.slice(firstOther).some((w) => w.includes("metadata="))).toBe(false);
+    for (const [tier, interval, cents] of JULY) {
+      const old = W.prices.find((p) => p.id === `price_july_${tier}_${interval}`)!;
+      expect(old.metadata).toEqual({ app: "echorank" });
+      expect([old.unit_amount, old.active, old.lookup_key]).toEqual([cents, false, null]);
+      const spec = PLAN_PRICE_SPECS.find((s) => s.planTier === tier)!;
+      const now = W.prices.find((p) => p.lookup_key === lookupKeyFor(spec, interval))!;
+      expect([now.unit_amount, now.product, now.metadata.app]).toEqual([amountFor(spec, interval), `prod_july_${tier}`, "echorank"]);
+    }
+    expect(W.writes.filter((w) => w.startsWith("price.create"))).toHaveLength(10);
+    expect(W.writes.filter((w) => w.endsWith("active=false"))).toHaveLength(10);
+    expect(W.rows.filter((r) => r.active)).toHaveLength(10);
+    expect(W.subs.every((s) => s.status === "canceled")).toBe(true);
+
+    W.writes = [];
+    await main(["--live", "--adopt-legacy"]);
+    expect(W.writes).toEqual([]);
+  });
+
+  it("a July price still billing is adopted but left active, nobody moved", async () => {
+    W.subs.push({ price: "price_july_starter_month", status: "active" });
+    await main(["--dry-run", "--adopt-legacy"]);
+    expect(text()).toMatch(/superseded price_july_starter_month [^\n]*active 1[^\n]*\n\s+left active: 1 subscription\(s\) not cancelled use it/);
+    expect(text()).toContain("Summary: 10 price(s) to create, 9 to archive, 1 superseded left active, 0 CONFLICT.");
+  });
+
+  it.each([
+    // The product is shared by both Growth prices, so both are refused.
+    ["the product is not Echorank's", () => {
+      const p = W.products.find((x) => x.id === "prod_july_growth")!;
+      Object.assign(p, { name: "Other App Pro", metadata: {} });
+    }, "product identifies Echorank (name or metadata)", 'name "Other App Pro", no Echorank metadata', 2],
+    // The key holder sits on another product, and the catalog row sells a
+    // price on the July product: not the product the app sells.
+    ["the product is not the one the catalog rows point at", () => {
+      W.products.push({ id: "prod_elsewhere", name: "Echorank360 Growth (copy)", metadata: {}, active: true });
+      W.prices.find((x) => x.id === "price_july_growth_month")!.product = "prod_elsewhere";
+      W.prices.push(price("price_july_growth_month_row", "prod_july_growth", 19900, "month", null));
+      W.rows.find((r) => r.stripePriceId === "price_july_growth_month")!.stripePriceId = "price_july_growth_month_row";
+    }, "product is the one the active growth catalog rows point at", "rows point at prod_july_growth", 1],
+    ["the currency is not usd", () => {
+      W.prices.find((x) => x.id === "price_july_growth_month")!.currency = "eur";
+    }, "currency is usd", "eur", 1],
+  ] as const)("REFUSES when %s: says why, stays a CONFLICT, and a run writes nothing", async (_l, change, label, detail, refused) => {
+    change();
+    await main(["--dry-run", "--adopt-legacy"]);
+    const t = text();
+    expect(t).toContain(`[FAIL] ${label}: ${detail}`);
+    expect(t).toContain(`REFUSE: left as it is (${label})`);
+    expect(t).toContain(`CONFLICT: price_july_growth_month holds echorank_growth_usd_month without metadata[app]=echorank, and is not adopted (failed: ${label})`);
+    expect(t).toContain(`${refused} CONFLICT. ${7 - refused} legacy price(s) to adopt, ${refused} refused.`);
+
+    out = [];
+    await expect(main(["--live", "--adopt-legacy"])).rejects.toThrow("exit 1");
+    expect(text()).toContain("CONFLICT: nothing written (no price adopted either)");
     expect(W.writes).toEqual([]);
   });
 });

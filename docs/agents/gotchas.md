@@ -182,7 +182,12 @@ taken down by a query that was only ever meant to touch ours. The rules that cam
   audit. `seed-plan-prices-usd.ts` (rewritten 2026-11-12) is the plans' repricing tool: a key
   off its configured amount gets a new price with `transfer_lookup_key`, and a superseded price
   is archived only when it carries `metadata[app]=echorank` and no subscription that is not
-  cancelled uses it. Its `--dry-run` reads live Stripe and prints exactly that plan.
+  cancelled uses it. Its `--dry-run` reads live Stripe and prints exactly that plan. The July
+  2026 seed's prices predate the tag and hold their keys without it (7 CONFLICTs on the live
+  account, 2026-11-12): `--adopt-legacy` tags such a holder only when its key starts
+  `echorank_`, its product's name or metadata says Echorank, that product is the one the tier's
+  active `stripe_prices` rows point at, and it is USD; anything else stays a CONFLICT, and a run
+  with any CONFLICT left writes nothing.
 - **No seeder ever edits a price's amount** (Stripe cannot): repricing is a new price plus
   archiving the old.
 - Sandbox first (the "Echorank Dome" account), then print the live create plan and get

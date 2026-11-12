@@ -93,6 +93,8 @@ puts each lookup key on a new price at the PLAN_CONFIGS amount (`transfer_lookup
 archives our superseded prices that no live subscription uses, keeps every `stripe_prices`
 row, and a rerun changes nothing. `--dry-run` reads Stripe and the catalog and prints the
 exact plan, plus the subscriptions on the old prices; a live key writes only with `--live`.
+`--adopt-legacy` adopts the July seed's untagged key holders (sets `metadata[app]=echorank`)
+when they pass its four checks, printed per price in the dry run (see gotchas.md).
 Its header has the rules; `tests/seed-plan-prices.test.ts` runs it on fakes.
 
 **Before touching Stripe at all, read the shared-account rules in
