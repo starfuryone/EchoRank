@@ -11,10 +11,22 @@
 import { describe, expect, it } from "vitest";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { PublicNav, navHrefs, nextOpenPanel } from "@/app/[locale]/PublicNav";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
+import { NAV_RULE_COUNT_LABEL, PublicNav, navHrefs, nextOpenPanel } from "@/app/[locale]/PublicNav";
+import { PricingSection } from "@/app/[locale]/PricingSection";
 import { LOCALIZED_ROUTES } from "@/lib/seo/registry";
 import { SOLUTION_ITEMS } from "@/lib/solutions-taxonomy";
 import { CRAWLER_BRAND } from "@/lib/site-crawler/brand";
+import { PLAN_CONFIGS } from "@/lib/plan-config";
+import { NOSY_BAT_CARD_ANCHOR } from "@/lib/plan-launch";
+import { pricingTiers } from "@/lib/pricing-tiers";
+import { HOME_PRICING_CHROME, toolCountLine } from "@/lib/i18n/content";
+import { seoToolCounts } from "@/lib/seo-tools";
+import { moneyAmount, usd } from "@/lib/pricing-page/format";
+import { ruleCountLabel } from "@/lib/site-crawler/rule-count";
+import { FREE_CRAWL_URL_CAP } from "@/lib/site-crawler/free-limits";
+import { NB_INTRO_ANCHOR, NB_INTRO_VIDEO } from "@/lib/site-crawler/intro-video";
 
 const nav = (locale: string, current?: Parameters<typeof PublicNav>[0]["current"]) =>
   renderToStaticMarkup(createElement(PublicNav, { locale, current }));
@@ -201,6 +213,96 @@ describe("i18n", () => {
     expect(html).toContain("Whether AI can read, trust and cite your site.");
     expect(html).toContain("AI Visibility Check (free)");
     expect(html).toContain("What AI engines say about your business.");
+  });
+});
+
+describe("Product › the crawler's own column", () => {
+  const NB = CRAWLER_BRAND;
+  const price = PLAN_CONFIGS.NOSY_BAT.monthlyPrice;
+  const minutes = Math.round(NB_INTRO_VIDEO.durationSeconds / 60);
+  const HREFS = [
+    "/site-crawler",
+    "/free-tools/site-crawler",
+    `/pricing#${NOSY_BAT_CARD_ANCHOR}`,
+    "/seo-spider/issues",
+    `/site-crawler#${NB_INTRO_ANCHOR}`,
+  ];
+  /** The Product panel's column titles, in order, as rendered. */
+  const productTitles = (html: string) => {
+    const panel = html.split('role="region"')[1]!.split('role="region"')[0]!;
+    return [...panel.matchAll(/<p class="[^"]*">([^<]+)<\/p>/g)].map((m) => m[1]);
+  };
+  const known = new Set(LOCALIZED_ROUTES.map((r) => r.path));
+  const read = (p: string) => readFileSync(join(process.cwd(), p), "utf8");
+
+  it("sits fourth, after Tools & free tools and before the promo, in both locales", () => {
+    expect(productTitles(nav("en"))).toEqual(["AI visibility", "Reputation", "Tools &amp; free tools", `${NB.nameTm} crawler`]);
+    expect(productTitles(nav("fr"))).toEqual(["Visibilité IA", "Réputation", "Outils et outils gratuits", `Crawler ${NB.nameTm}`]);
+    // The promo card still closes the panel.
+    const en = nav("en").split('role="region"')[1]!;
+    expect(en.indexOf("Watch the")).toBeLessThan(en.indexOf("Free AI Readiness Audit"));
+  });
+
+  it("links the five destinations, in order, en and fr", () => {
+    for (const href of HREFS) expect(navHrefs()).toContain(href);
+    for (const loc of ["en", "fr"]) {
+      const html = nav(loc);
+      const at = HREFS.map((h) => html.indexOf(`href="/${loc}${h}"`));
+      expect(at.every((i) => i > 0), `${loc}: ${at}`).toBe(true);
+    }
+  });
+
+  it("every new href is a registered route, and both anchors exist on their pages", () => {
+    for (const href of HREFS) expect(known.has(href.split("#")[0]!), href).toBe(true);
+    // #video: the intro section on /site-crawler.
+    expect(read("src/app/[locale]/site-crawler/page.tsx")).toContain("<section id={NB_INTRO_ANCHOR}");
+    // #nosy-bat: the plan's card on the pricing grid, once launched.
+    const html = renderToStaticMarkup(
+      createElement(PricingSection, {
+        salesSrc: "pricing-enterprise",
+        enterpriseBand: true,
+        locale: "en",
+        pricing: pricingTiers("en", undefined, { launched: new Set(["NOSY_BAT"] as const) }),
+        priceChrome: HOME_PRICING_CHROME.en,
+        toolCountLine: toolCountLine("en", seoToolCounts()),
+        tax: "t",
+        currency: "c",
+        header: null,
+      }),
+    );
+    const card = html.match(/<div[^>]*data-plan="NOSY_BAT"[^>]*>/)?.[0] ?? "";
+    expect(card).toContain(`id="${NOSY_BAT_CARD_ANCHOR}"`);
+    expect([...html.matchAll(new RegExp(`id="${NOSY_BAT_CARD_ANCHOR}"`, "g"))]).toHaveLength(1);
+  });
+
+  it("reads every number: the plan's price from PLAN_CONFIGS, the free cap, the rule count, the intro's length", () => {
+    const en = nav("en");
+    const fr = nav("fr");
+    expect(en).toContain(`${NB.name} plan — ${usd(price, "en")}/mo`);
+    expect(fr).toContain(`Forfait ${NB.name} — ${moneyAmount(price, "fr")} $/mois`);
+    expect(en).toContain(`Free ${FREE_CRAWL_URL_CAP}-page crawl`);
+    expect(fr).toContain(`Crawl gratuit de ${FREE_CRAWL_URL_CAP} pages`);
+    expect(en).toContain(`Watch the ${minutes}-minute intro`);
+    expect(fr).toContain(`Voir l&#x27;intro de ${minutes} minutes`);
+    // The one typed number: the registry is server-only. It must match.
+    expect(NAV_RULE_COUNT_LABEL).toBe(ruleCountLabel());
+    expect(en).toContain(`Screaming Frog-style audits, ${ruleCountLabel()} checks, in your browser.`);
+  });
+
+  it("carries the ™ on the heading and the first item, and the brand's spelling", () => {
+    const en = nav("en");
+    expect(en).toContain(`${NB.nameTm} site crawler`);
+    expect(nav("fr")).toContain(`>Crawler ${NB.nameTm}<`);
+    for (const html of [en, nav("fr")]) {
+      expect(html).not.toMatch(/Nozy|EchoRank/);
+    }
+    const src = read("src/app/[locale]/PublicNav.tsx");
+    expect(src).not.toMatch(/EchoRank|Nozy/);
+  });
+
+  it("de-CH reads the English column", () => {
+    expect(nav("de-CH")).toContain(`${NB.nameTm} crawler`);
+    expect(nav("de-CH")).toContain(`href="/de-CH/pricing#${NOSY_BAT_CARD_ANCHOR}"`);
   });
 });
 

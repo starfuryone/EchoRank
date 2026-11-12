@@ -35,6 +35,12 @@ import { CRAWLER_BRAND } from "@/lib/site-crawler/brand";
 import { CRAWLER_GUIDES_HREF } from "@/lib/crawler-guides-link";
 import { CHATGPT_GUIDE_HREF, CHATGPT_GUIDE_LABEL } from "@/lib/chatgpt-guide-link";
 import { OTHER_SERVICES_COPY, llmsTxtGeneratorHref } from "@/lib/other-services";
+import { flag } from "@/lib/flags";
+import { PLAN_CONFIGS } from "@/lib/plan-config";
+import { NOSY_BAT_CARD_ANCHOR } from "@/lib/plan-launch";
+import { moneyAmount, usd } from "@/lib/pricing-page/format";
+import { FREE_CRAWL_URL_CAP } from "@/lib/site-crawler/free-limits";
+import { NB_INTRO_ANCHOR, NB_INTRO_VIDEO } from "@/lib/site-crawler/intro-video";
 
 type Base = "en" | "fr";
 const baseOf = (locale: string): Base => (locale.startsWith("fr") ? "fr" : "en");
@@ -112,6 +118,63 @@ function crawlerGoalItem(base: Base): NavItem {
   return base === "fr"
     ? { href: "/site-crawler", label: `Explorer votre site (${CRAWLER_BRAND.name})`, desc: "Chaque page vérifiée, preuve à l'appui." }
     : { href: "/site-crawler", label: `Crawl your site (${CRAWLER_BRAND.name})`, desc: "Every page checked, with the evidence." };
+}
+
+/**
+ * The crawler's rule count as marketing prints it (ruleCountLabel(), "340+").
+ * TYPED, AND TESTED: the count comes from the crawl-rules registry, which is
+ * server-only (it pulls every rule and the hreflang code lists), and this is a
+ * Client Component rendered by every marketing page, so it can neither import
+ * it nor take it as a prop cleanly. tests/mega-nav.test.ts fails when this
+ * stops matching ruleCountLabel(); update it there, never round it up.
+ */
+export const NAV_RULE_COUNT_LABEL = "340+";
+
+const FREE_CRAWL_HREF = "/free-tools/site-crawler";
+
+/**
+ * Items whose page a release flag can switch off: the free crawl 404s while
+ * crawl.free is off, so its item goes with it. Read per render, not at module
+ * load, so the item follows the flag the route table follows (free-tools.ts).
+ */
+function itemLive(item: NavItem): boolean {
+  return item.href !== FREE_CRAWL_HREF || flag("crawl.free");
+}
+
+/**
+ * Product › the crawler's own column (CRAWLER_BRAND), after Tools & free
+ * tools. Every other number is read, not typed: the free crawl's cap
+ * (free-limits.ts), the plan's monthly price (PLAN_CONFIGS, what the /pricing
+ * card renders) and the intro's length (intro-video.ts). The crawler guides
+ * stay under Resources › Learn only. No icon: NavColumn has no icon field.
+ */
+function nosyBatColumn(base: Base): NavColumn {
+  const nb = CRAWLER_BRAND;
+  const monthly = PLAN_CONFIGS.NOSY_BAT.monthlyPrice;
+  const introMinutes = Math.round(NB_INTRO_VIDEO.durationSeconds / 60);
+  const video = `/site-crawler#${NB_INTRO_ANCHOR}`;
+  const plan = `/pricing#${NOSY_BAT_CARD_ANCHOR}`;
+  return base === "fr"
+    ? {
+        title: `Crawler ${nb.nameTm}`,
+        items: [
+          { href: "/site-crawler", label: `Crawler ${nb.nameTm}`, desc: `Audits façon Screaming Frog, ${NAV_RULE_COUNT_LABEL} contrôles, dans votre navigateur.` },
+          { href: FREE_CRAWL_HREF, label: `Crawl gratuit de ${FREE_CRAWL_URL_CAP} pages`, desc: "Sans compte, sans carte." },
+          { href: plan, label: `Forfait ${nb.name} — ${moneyAmount(monthly, "fr")} $/mois`, desc: `Le crawler seul, pour les marketeurs qui n'ont besoin que de ${nb.name}.` },
+          { href: "/seo-spider/issues", label: "Bibliothèque des problèmes", desc: "Chaque contrôle, avec sa correction (en anglais)." },
+          { href: video, label: `Voir l'intro de ${introMinutes} minutes` },
+        ],
+      }
+    : {
+        title: `${nb.nameTm} crawler`,
+        items: [
+          { href: "/site-crawler", label: `${nb.nameTm} site crawler`, desc: `Screaming Frog-style audits, ${NAV_RULE_COUNT_LABEL} checks, in your browser.` },
+          { href: FREE_CRAWL_HREF, label: `Free ${FREE_CRAWL_URL_CAP}-page crawl`, desc: "No account, no card." },
+          { href: plan, label: `${nb.name} plan — ${usd(monthly, "en")}/mo`, desc: `Crawler only, for marketers who just need ${nb.name}.` },
+          { href: "/seo-spider/issues", label: "Issue library", desc: "Every check, with how to fix it." },
+          { href: video, label: `Watch the ${introMinutes}-minute intro` },
+        ],
+      };
 }
 
 function solutionsGroup(base: Base): NavGroup {
@@ -205,7 +268,7 @@ const NAV: Record<Base, NavCopy> = {
             ],
           },
           {
-            // One column (the panel's grid is three columns plus the promo). The
+            // One column (the Product panel is four columns plus the promo). The
             // two free AI tools answer different questions; each says which.
             title: "Tools & free tools",
             items: [
@@ -215,6 +278,7 @@ const NAV: Record<Base, NavCopy> = {
               { href: "/free-tools", label: "Free tools", desc: "No account, no card." },
             ],
           },
+          nosyBatColumn("en"),
         ],
       },
       "SOLUTIONS_GROUP_PLACEHOLDER" as unknown as NavGroup,
@@ -313,6 +377,7 @@ const NAV: Record<Base, NavCopy> = {
               { href: "/free-tools", label: "Outils gratuits", desc: "Sans compte, sans carte." },
             ],
           },
+          nosyBatColumn("fr"),
         ],
       },
       "SOLUTIONS_GROUP_PLACEHOLDER" as unknown as NavGroup,
@@ -385,7 +450,9 @@ function navFor(base: Base, locale?: string): NavCopy {
   const nav: NavCopy = {
     ...NAV[base],
     groups: NAV[base].groups.map((g) =>
-      (g as unknown as string) === "SOLUTIONS_GROUP_PLACEHOLDER" ? solutionsGroup(base) : g,
+      (g as unknown as string) === "SOLUTIONS_GROUP_PLACEHOLDER"
+        ? solutionsGroup(base)
+        : { ...g, columns: g.columns.map((c) => ({ ...c, items: c.items.filter(itemLive) })) },
     ),
   };
   // de-CH reads the English menu, except the one item whose page has a German
@@ -621,7 +688,7 @@ export function PublicNav({
       hidden={open !== g.id}
       onKeyDown={(e) => onPanelKeyDown(e, g.id)}
     >
-      <div className={`${s.container} ${s.megaInner}`}>
+      <div className={`${s.container} ${g.columns.length === 4 ? s.megaInner4 : s.megaInner}`}>
         {g.columns.map((col) => (
           <div key={col.title} className={s.megaCol}>
             <p className={s.megaColTitle}>{col.title}</p>

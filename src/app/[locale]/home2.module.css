@@ -315,7 +315,8 @@
    with different spacing. */
 .priceGrid2{composes:priceGrid;grid-template-columns:repeat(2,1fr);max-width:760px;margin-left:auto;margin-right:auto}
 @media(max-width:760px){.priceGrid2{grid-template-columns:1fr}}
-.price{composes:card;padding:22px 20px;display:flex;flex-direction:column}
+/* scroll-margin: a card opened by its anchor (/pricing#nosy-bat) clears the 64px sticky nav. */
+.price{composes:card;padding:22px 20px;display:flex;flex-direction:column;scroll-margin-top:88px}
 .priceHi{composes:price;border-color:rgba(252,213,53,.45);box-shadow:0 0 50px -20px rgba(240,185,11,.35)}
 .pnameRow{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap}
 .pname{font-family:var(--mono);font-size:11px;letter-spacing:.12em;color:var(--faint);text-transform:uppercase}
@@ -818,7 +819,10 @@
 .ucSize:hover,.ucSize:focus-visible{border-color:var(--gold)}
 
 /* == mega-menu == */
-.megaWrap{position:relative}
+/* Static, not relative: the panel's containing block is the header (.nav, sticky),
+   so every panel is centred on the page. Centred on its own trigger, a 1180px
+   panel ran off the left edge: Product lost its first column at 1280px. */
+.megaWrap{position:static}
 .megaTrigger{
   display:inline-flex;align-items:center;gap:5px;
   background:none;border:0;color:var(--muted);font:inherit;font-size:14px;
@@ -829,13 +833,16 @@
 .chevOpen{composes:chev;transform:rotate(180deg)}
 /* Full width, anchored under the header, overlaying the page. */
 .megaPanel{
-  position:absolute;top:calc(100% + 12px);left:50%;transform:translateX(-50%);
+  position:absolute;top:100%;left:50%;transform:translateX(-50%);
   width:100vw;max-width:1180px;z-index:60;
   background:var(--surface);border:1px solid var(--line);border-top:0;
   border-radius:0 0 var(--radius) var(--radius);
   box-shadow:0 30px 70px -30px var(--er-shadow);
 }
 .megaInner{display:grid;grid-template-columns:repeat(3,1fr) 260px;gap:26px;padding:26px 28px}
+/* Four text columns plus the promo on one row (Product, since the crawler got
+   its own column): the promo narrows first, then the gap; type stays the same. */
+.megaInner4{composes:megaInner;grid-template-columns:repeat(4,minmax(0,1fr)) 220px;gap:22px}
 @media(max-width:1080px){.megaInner{grid-template-columns:repeat(2,1fr)}}
 .megaCol{display:flex;flex-direction:column;gap:10px}
 .megaColTitle{

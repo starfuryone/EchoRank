@@ -28,6 +28,7 @@ import { pricingBase, usd, usdCents } from "@/lib/pricing-page/format";
 import { salesContactHref } from "@/lib/sales/inquiry-options";
 import { ENTERPRISE_BAND, ENTERPRISE_CARD, PLAN_AUDIENCE } from "@/lib/pricing-page/audience";
 import { planAllowsArea } from "@/lib/plan-access";
+import { NOSY_BAT_CARD_ANCHOR } from "@/lib/plan-launch";
 import type { PlanType } from "@/generated/prisma";
 
 export interface HomePricingTier {
@@ -332,7 +333,12 @@ export function PricingSection({
           const amount = annual ? p.annual : p.monthly;
           const hi = trackFit ? trackFit.id === p.id : p.highlighted;
           return (
-            <div className={hi ? s.priceHi : s.price} key={p.id} data-plan={p.id}>
+            <div
+              className={hi ? s.priceHi : s.price}
+              key={p.id}
+              data-plan={p.id}
+              id={p.id === "NOSY_BAT" ? NOSY_BAT_CARD_ANCHOR : undefined}
+            >
               <div className={s.pnameRow}>
                 <div className={s.pname}>/ {p.name}</div>
                 {/* The recommended plan is CONFIG (PLAN_CONFIGS highlighted),

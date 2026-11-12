@@ -45,5 +45,13 @@ export function cardOrder(launched: LaunchedPlans = NONE_LAUNCHED): SellablePlan
   return out;
 }
 
+/**
+ * The crawler-only plan's card id on the pricing grid, so a link can open
+ * /pricing at it (the Product mega menu's plan item: /pricing#nosy-bat). The
+ * card renders only once the plan is launched; before that the link lands on
+ * the top of /pricing.
+ */
+export const NOSY_BAT_CARD_ANCHOR = "nosy-bat";
+
 /** Plans that are side products, not a step on the ladder: no "Everything in X, plus:" above or below them. */
 export const OFF_LADDER_PLANS: ReadonlySet<PlanType> = CATALOG_GATED_PLANS;
