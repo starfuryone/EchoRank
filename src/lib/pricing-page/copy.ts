@@ -19,6 +19,12 @@ export interface PricingPageCopy {
   compareLabel: string;
   compareH2: string;
   compareSub: string;
+  /** The CTA row under compareSub. Contains {days} (TRIAL_DAYS). Signed out: to the plan cards. */
+  compareTrialCta: string;
+  /** Signed in, in place of compareTrialCta: to /dashboard. */
+  compareDashboardCta: string;
+  /** To /{locale}/free-tools, signed in or out. */
+  compareFreeToolsCta: string;
   featureHead: string;
   freeHead: string;
   freeSub: string;
@@ -44,6 +50,9 @@ export const PRICING_PAGE_COPY: Record<PricingBase, PricingPageCopy> = {
     compareLabel: "COMPARE",
     compareH2: "Free and paid, side by side",
     compareSub: "What the public free tools give you without an account, and what each plan adds.",
+    compareTrialCta: "Start your {days}-day free trial",
+    compareDashboardCta: "Go to dashboard",
+    compareFreeToolsCta: "Try the free tools",
     featureHead: "Feature",
     freeHead: "Free",
     freeSub: "no account",
@@ -66,6 +75,9 @@ export const PRICING_PAGE_COPY: Record<PricingBase, PricingPageCopy> = {
     compareLabel: "COMPARER",
     compareH2: "Gratuit et payant, côte à côte",
     compareSub: "Ce que les outils gratuits offrent sans compte, et ce que chaque forfait ajoute.",
+    compareTrialCta: "Commencer l'essai gratuit de {days} jours",
+    compareDashboardCta: "Aller au tableau de bord",
+    compareFreeToolsCta: "Essayer les outils gratuits",
     featureHead: "Fonction",
     freeHead: "Gratuit",
     freeSub: "sans compte",
@@ -88,6 +100,9 @@ export const PRICING_PAGE_COPY: Record<PricingBase, PricingPageCopy> = {
     compareLabel: "VERGLEICH",
     compareH2: "Gratis und bezahlt im Vergleich",
     compareSub: "Was die öffentlichen Gratis-Werkzeuge ohne Konto bieten und was jedes Abo dazu bringt.",
+    compareTrialCta: "{days} Tage kostenlos testen",
+    compareDashboardCta: "Zum Dashboard",
+    compareFreeToolsCta: "Kostenlose Tools testen",
     featureHead: "Funktion",
     freeHead: "Gratis",
     freeSub: "ohne Konto",

@@ -38,4 +38,12 @@
 
 
 .closing{text-align:center;display:flex;flex-direction:column;align-items:center}
+
+/* #compare's CTA row (CompareCta): the cards' checkout look (.pbuyLink) and a
+   plain .btn, left-aligned under the subtitle. Spacing and stacking only:
+   .pbuy is a full-width card button, so in the row it takes its own width,
+   and below 600 px both buttons stack full width. */
+.ctaRow{display:flex;flex-wrap:wrap;align-items:center;gap:12px;margin-top:24px}
+.ctaRow > a{width:auto;margin-top:0}
+@media(max-width:600px){.ctaRow{flex-direction:column;align-items:stretch}.ctaRow > a{width:100%}}
 .closing p{margin-left:auto;margin-right:auto}

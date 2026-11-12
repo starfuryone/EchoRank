@@ -11,8 +11,10 @@
 //   1. hero — the yearly saving is yearlySavingPct() over PLAN_CONFIGS;
 //   2–3. toggle + plan cards — PricingSection over pricingTiers(), the same
 //      call the homepage and /site-crawler make;
-//   4. "Free vs paid" — comparisonTable(): PLAN_CONFIGS, the feature matrix,
-//      the tool registry and the free tools' own limit constants;
+//   4. "Free vs paid" — a CTA row (CompareCta: trial → the cards, or the
+//      dashboard when signed in; the free tools), then comparisonTable():
+//      PLAN_CONFIGS, the feature matrix, the tool registry and the free
+//      tools' own limit constants;
 //   5. sample output — SKIPPED (see the report in ECHORANK-PRICING work): the
 //      only real sample, the 2026-08-01 audit PDF of echorank360.com, prints
 //      the banned camel-case brand and predates the current site;
@@ -36,7 +38,7 @@ import { TRIAL_DAYS } from "@/lib/plan-config";
 import { SUPPORTED_LOCALES, isSupportedLocale, type Locale } from "@/lib/i18n/config";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { JsonLd, SITE_URL, baseGraph, breadcrumbList, faqPage, softwareApplication } from "@/lib/seo";
-import { FREE_TOOLS, freeToolVisible } from "@/lib/free-tools";
+import { FREE_TOOLS, FREE_TOOLS_BASE, freeToolVisible } from "@/lib/free-tools";
 import { pricingBase } from "@/lib/pricing-page/format";
 import { PRICING_PAGE_COPY, fill, planCountWord } from "@/lib/pricing-page/copy";
 import { cardPlans } from "@/lib/pricing-page/headlines";
@@ -45,6 +47,7 @@ import { pricingFaq } from "@/lib/pricing-page/faq";
 import { launchedPlans } from "@/lib/stripe/catalog";
 import { inline, plainText } from "../learn/_shared/inline";
 import { CompareTable } from "./CompareTable";
+import { CompareCta } from "./CompareCta";
 import s from "../home2.module.css";
 import p from "./pricing.module.css";
 
@@ -154,6 +157,12 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
           </p>
           <h2 className={s.h2}>{c.compareH2}</h2>
           <p className={s.sub}>{c.compareSub}</p>
+          <CompareCta
+            trialLabel={fill(c.compareTrialCta, { days: TRIAL_DAYS })}
+            dashboardLabel={c.compareDashboardCta}
+            freeToolsLabel={c.compareFreeToolsCta}
+            freeToolsHref={`/${l}${FREE_TOOLS_BASE}`}
+          />
           <CompareTable table={comparisonTable(l, launched)} copy={c} />
         </div>
       </section>
