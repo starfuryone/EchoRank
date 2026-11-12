@@ -22,7 +22,7 @@ vi.mock("next/navigation", () => ({
   },
 }));
 
-import { NB_INTRO_ANCHOR, NB_INTRO_VIDEO } from "@/lib/site-crawler/intro-video";
+import { NB_INTRO_ANCHOR, NB_INTRO_MINUTES, NB_INTRO_VIDEO } from "@/lib/site-crawler/intro-video";
 import { CRAWLER_BRAND } from "@/lib/site-crawler/brand";
 import { TwoCrawlers } from "@/app/[locale]/TwoCrawlers";
 import CrawlerHelpModal from "@/components/seo-tools/site-crawler-help";
@@ -61,7 +61,9 @@ describe.each(LOCALES)("%s", (l) => {
     const sec = sections[at]!;
     const fr = l === "fr";
     expect(sec.querySelector("p b")!.textContent).toBe(fr ? `Découvrez ${CRAWLER_BRAND.name}` : `Meet ${CRAWLER_BRAND.name}`);
-    expect(sec.querySelector("h2")!.textContent).toBe(fr ? "Deux minutes, toutes les fonctionnalités." : "Two minutes, every feature.");
+    // The length is the file's, in minutes (NB_INTRO_MINUTES, which the Product menu reads too).
+    expect(sec.querySelector("h2")!.textContent).toBe(fr ? `${NB_INTRO_MINUTES} minutes, toutes les fonctionnalités.` : `${NB_INTRO_MINUTES} minutes, every feature.`);
+    expect(NB_INTRO_MINUTES).toBe(3);
     expect(sec.textContent).toContain(fr ? "Vous préférez lire ? La liste complète des fonctionnalités est juste en dessous." : "Prefer reading? The full feature list is just below.");
     // The player's mute caption, and the signed-out CTA to /pricing.
     expect(sec.textContent).toContain(HOME_TOOLS[l].player.caption);

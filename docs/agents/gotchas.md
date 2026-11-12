@@ -176,13 +176,15 @@ taken down by a query that was only ever meant to touch ours. The rules that cam
 - **Every sweep, list or query is scoped by that metadata.** A `lookup_key` filter alone is
   not scoping — that is exactly what caused the incident.
 - Seeders guard on `test` appearing in the key, so a live key stops them.
-- **Check whether the seeder you are holding is idempotent — they differ.**
-  `seed-plan-prices-usd.ts` is not: it cannot be safely repeated and a half-finished run
-  leaves you unable to tell what it got through. `seed-credit-packs.ts` is: it resolves each
-  lookup key first, skips what exists, prints what the existing price actually charges, and
-  never updates or archives anything — so its dry run doubles as a safe live audit.
-- **No seeder here ever updates a price.** A re-run with new amounts reports SKIP and changes
-  nothing. Repricing is a new price plus archiving the old, in the Stripe dashboard, by hand.
+- **Both seeders are idempotent, and differ in what they may change.** `seed-credit-packs.ts`
+  resolves each lookup key first, skips what exists, prints what the existing price actually
+  charges, and never updates or archives anything — so its dry run doubles as a safe live
+  audit. `seed-plan-prices-usd.ts` (rewritten 2026-11-12) is the plans' repricing tool: a key
+  off its configured amount gets a new price with `transfer_lookup_key`, and a superseded price
+  is archived only when it carries `metadata[app]=echorank` and no subscription that is not
+  cancelled uses it. Its `--dry-run` reads live Stripe and prints exactly that plan.
+- **No seeder ever edits a price's amount** (Stripe cannot): repricing is a new price plus
+  archiving the old.
 - Sandbox first (the "Echorank Dome" account), then print the live create plan and get
   explicit human approval before touching live.
 

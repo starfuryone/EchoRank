@@ -30,3 +30,10 @@ export const NB_INTRO_VIDEO = {
     { src: "/videos/nosy-bat-intro.fr.vtt", srclang: "fr", label: "Français", kind: "subtitles" },
   ],
 } as const;
+
+/**
+ * The intro's length in whole minutes, as copy states it: the Product menu's
+ * "Watch the N-minute intro" and the video section's H2 on /site-crawler both
+ * read this, so neither can say a length the file does not have.
+ */
+export const NB_INTRO_MINUTES = Math.round(NB_INTRO_VIDEO.durationSeconds / 60);

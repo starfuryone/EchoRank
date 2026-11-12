@@ -198,7 +198,7 @@ export function nbNum(n: number, base: FactsBase): string {
 /** A monthly price as the cards show it, "$78" (USD in every locale). */
 export function nbUsd(n: number, base: FactsBase): string {
   // Whole dollars ("$78"); a price with cents would keep both decimals
-  // ("$22.40", "$22,40" in French) rather than be rounded.
+  // ("$62.40", "$62,40" in French) rather than be rounded.
   const cents = Math.round(n * 100);
   if (cents % 100 === 0) return `$${nbNum(cents / 100, base)}`;
   return `$${new Intl.NumberFormat(base === "fr" ? "fr-CA" : base === "de" ? "de-CH" : "en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(cents / 100)}`;

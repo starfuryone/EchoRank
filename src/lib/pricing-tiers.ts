@@ -25,7 +25,7 @@ import { CHECKUPS_PER_WEEK } from "@/lib/snapshot/tracking";
 
 /**
  * Whole-percent saving of the annual rate over monthly, rounded DOWN. In
- * cents: 22.40 → 17.92 is exactly 20%, which (22.4 - 17.92) / 22.4 in
+ * cents: 10.50 → 8.40 is exactly 20%, which (10.5 - 8.4) / 10.5 in
  * floating point puts at 19.999… and the floor at 19.
  */
 export function savePctOf(monthly: number | null, annual: number | null): number | null {
@@ -84,7 +84,7 @@ export function pricingTiers(
       // avoids versus paying monthly for a year. ROUNDED DOWN: a saving claim
       // may understate, never overstate.
       savePct: savePctOf(monthly, annual),
-      // In cents: 17.92 × 12 is 215.04, not 215.04000000000002.
+      // In cents: 141.60 × 12 is 1699.20, not 1699.1999999999998.
       annualTotal: annual === null ? null : (toCents(annual) * 12) / 100,
       saveAmount:
         SAVE_AS_AMOUNT.has(plan) && monthly !== null && annual !== null && annual < monthly

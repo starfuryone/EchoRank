@@ -30,7 +30,7 @@ import {
   softwareApplication,
 } from "@/lib/seo";
 import { videoObject } from "@/lib/seo/jsonld";
-import { NB_INTRO_ANCHOR, NB_INTRO_VIDEO } from "@/lib/site-crawler/intro-video";
+import { NB_INTRO_ANCHOR, NB_INTRO_MINUTES, NB_INTRO_VIDEO } from "@/lib/site-crawler/intro-video";
 import { HomeVideo } from "../HomeVideo";
 import { RULES } from "@/lib/crawl-rules";
 import { FLAGS, flag } from "@/lib/flags";
@@ -93,7 +93,8 @@ const COPY = {
     seePlans: "See plans",
     open: `Open ${NB}`,
     videoLabel: `Meet ${NB}`,
-    videoH2: "Two minutes, every feature.",
+    // The length from intro-video.ts, the value the Product menu reads.
+    videoH2: `${NB_INTRO_MINUTES} minutes, every feature.`,
     videoAria: `${NB}: the intro video`,
     videoDesc: `A tour of ${NB}, the site crawler inside Echorank: what it checks, the proof behind every finding, exports and scheduling, and the free 100-page crawl.`,
     videoPrefer: "Prefer reading? The full feature list is just below.",
@@ -120,7 +121,7 @@ const COPY = {
     seePlans: "Voir les forfaits",
     open: `Ouvrir ${NB}`,
     videoLabel: `Découvrez ${NB}`,
-    videoH2: "Deux minutes, toutes les fonctionnalités.",
+    videoH2: `${NB_INTRO_MINUTES} minutes, toutes les fonctionnalités.`,
     videoAria: `${NB} : la vidéo de présentation`,
     videoDesc: `Une visite de ${NB}, le robot d'exploration d'Echorank : ce qu'il vérifie, la preuve derrière chaque constat, les exports et la planification, et l'exploration gratuite de 100 pages.`,
     videoPrefer: "Vous préférez lire ? La liste complète des fonctionnalités est juste en dessous.",

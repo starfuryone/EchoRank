@@ -31,13 +31,13 @@ export function fmtNum(value: number, base: PricingBase): string {
 /**
  * A price in whole cents. PLAN_CONFIGS prices are dollars, and every yearly
  * per-month figure has cents (62.40, 141.60): every sum or product of prices
- * goes through cents, because 17.92 × 12 in floating point is 215.04000000000002.
+ * goes through cents, because 141.6 × 12 in floating point is 1699.1999999999998.
  */
 export const toCents = (dollars: number): number => Math.round(dollars * 100);
 
 /**
- * An amount as the cards print a monthly price: "78" for whole dollars, "22.40"
- * with cents, "22,40" in French. Grouped like fmtNum.
+ * An amount as the cards print a monthly price: "78" for whole dollars, "62.40"
+ * with cents, "62,40" in French. Grouped like fmtNum.
  */
 export function moneyAmount(value: number, base: PricingBase): string {
   const cents = toCents(value);

@@ -115,7 +115,7 @@ export function trialChargeLabel(
   if (config.isCustomPricing || !interval || chargeCents === null) return null;
 
   // In cents: every yearly price has cents ($62.40 × 12 = $748.80), and
-  // 17.92 * 12 in floating point is 215.04000000000002.
+  // 141.6 * 12 in floating point is 1699.1999999999998.
   const cents =
     chargeCents ?? (interval === "year" ? Math.round(config.annualPrice * 100) * 12 : Math.round(config.monthlyPrice * 100));
   const raw = cents / 100;

@@ -40,7 +40,7 @@ import { PLAN_CONFIGS } from "@/lib/plan-config";
 import { NOSY_BAT_CARD_ANCHOR } from "@/lib/plan-launch";
 import { moneyAmount, usd } from "@/lib/pricing-page/format";
 import { FREE_CRAWL_URL_CAP } from "@/lib/site-crawler/free-limits";
-import { NB_INTRO_ANCHOR, NB_INTRO_VIDEO } from "@/lib/site-crawler/intro-video";
+import { NB_INTRO_ANCHOR, NB_INTRO_MINUTES } from "@/lib/site-crawler/intro-video";
 
 type Base = "en" | "fr";
 const baseOf = (locale: string): Base => (locale.startsWith("fr") ? "fr" : "en");
@@ -151,7 +151,7 @@ function itemLive(item: NavItem): boolean {
 function nosyBatColumn(base: Base): NavColumn {
   const nb = CRAWLER_BRAND;
   const monthly = PLAN_CONFIGS.NOSY_BAT.monthlyPrice;
-  const introMinutes = Math.round(NB_INTRO_VIDEO.durationSeconds / 60);
+  const introMinutes = NB_INTRO_MINUTES;
   const video = `/site-crawler#${NB_INTRO_ANCHOR}`;
   const plan = `/pricing#${NOSY_BAT_CARD_ANCHOR}`;
   return base === "fr"

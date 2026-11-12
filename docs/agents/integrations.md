@@ -88,8 +88,12 @@ stop. What is actually there:
 a missing key is a 404 rather than a fallback to some other price. The lookup keys are
 `echorank_<tier>_usd_<interval>` for plans and the standalone Watcher.
 
-`scripts/seed-plan-prices-usd.ts` exists, is idempotent, and aborts on an empty key by
-design — it has never run.
+`scripts/seed-plan-prices-usd.ts` is the repricing tool for the card plans (2026-11-12): it
+puts each lookup key on a new price at the PLAN_CONFIGS amount (`transfer_lookup_key`),
+archives our superseded prices that no live subscription uses, keeps every `stripe_prices`
+row, and a rerun changes nothing. `--dry-run` reads Stripe and the catalog and prints the
+exact plan, plus the subscriptions on the old prices; a live key writes only with `--live`.
+Its header has the rules; `tests/seed-plan-prices.test.ts` runs it on fakes.
 
 **Before touching Stripe at all, read the shared-account rules in
 [gotchas.md](gotchas.md#stripe-the-live-account-is-shared-with-7-other-products).** The live

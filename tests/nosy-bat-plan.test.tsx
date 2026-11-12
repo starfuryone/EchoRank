@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 //
 // The crawler-only plan, sold (owner's spec, 2026-11-10): PlanType NOSY_BAT,
-// $22.40 a month or $215.04 a year, Agency's crawl limits read from the same
+// $15 a month or $144 a year (owner, 2026-11-12), Agency's crawl limits read from the same
 // values, two crawls at once. Its card shows on /pricing (after AI Visibility)
 // and /site-crawler (first) only once its stripe_prices rows exist, and the
 // checkout refuses it until then.
@@ -45,10 +45,10 @@ describe("the plan in config", () => {
   const nb = PLAN_CONFIGS.NOSY_BAT;
   const ag = PLAN_CONFIGS.AGENCY;
 
-  it("is named from brand.ts, priced $22 / $17.60 (2026-11-11), with a 7-day trial like the others", () => {
+  it("is named from brand.ts, priced $15 / $12 (2026-11-12), with a 7-day trial like the others", () => {
     expect(nb.name).toBe(CRAWLER_BRAND.name);
     expect(nb.slug).toBe("nosy_bat");
-    expect([nb.monthlyPrice, nb.annualPrice, nb.isCustomPricing]).toEqual([22, 17.6, false]);
+    expect([nb.monthlyPrice, nb.annualPrice, nb.isCustomPricing]).toEqual([15, 12, false]);
     expect(TRIAL_DAYS).toBe(7);
   });
 
@@ -94,19 +94,19 @@ describe("Stripe: lookup keys, the seed, the operator's script", () => {
     expect(read("src/app/[locale]/PricingSection.tsx")).toMatch(/case "NOSY_BAT":\s*return "nosy_bat";/);
   });
 
-  it("the seed expects ten active rows, its amounts from the config (Nosy Bat's at 2200 and 21120 cents)", () => {
+  it("the seed expects ten active rows, its amounts from the config (Nosy Bat's at 1500 and 14400 cents)", () => {
     const seed = read("scripts/seed-plan-prices-usd.ts");
     expect(seed).toContain("const TIERS: readonly TierSpec[] = PLAN_PRICE_SPECS;");
     expect(seed).toContain("// 5 tiers x 2 intervals = 10 active rows");
     expect(EXPECTED_ACTIVE_ROWS).toBe(10);
     const nbSpec = PLAN_PRICE_SPECS.find((s) => s.plan === "NOSY_BAT")!;
-    expect([nbSpec.planTier, nbSpec.label, nbSpec.monthlyCents, nbSpec.annualCents]).toEqual(["nosy_bat", "Nosy Bat", 2_200, 21_120]);
+    expect([nbSpec.planTier, nbSpec.label, nbSpec.monthlyCents, nbSpec.annualCents]).toEqual(["nosy_bat", "Nosy Bat", 1_500, 14_400]);
   });
 
-  it("2200 cents a month, 21120 a year: 20% off, $17.60 a month", () => {
-    expect(Math.round(PLAN_CONFIGS.NOSY_BAT.monthlyPrice * 100)).toBe(2200);
-    expect(Math.round(PLAN_CONFIGS.NOSY_BAT.annualPrice * 100) * 12).toBe(21120);
-    expect(savePctOf(22, 17.6)).toBe(20);
+  it("1500 cents a month, 14400 a year: 20% off, $12 a month", () => {
+    expect(Math.round(PLAN_CONFIGS.NOSY_BAT.monthlyPrice * 100)).toBe(1500);
+    expect(Math.round(PLAN_CONFIGS.NOSY_BAT.annualPrice * 100) * 12).toBe(14400);
+    expect(savePctOf(15, 12)).toBe(20);
   });
 });
 
@@ -182,26 +182,26 @@ describe("the cards", () => {
     expect(lines.join(" ")).not.toMatch(/API|MCP|backlink|AI prompt|location/i);
   });
 
-  it("prices in cents: $22, $17.60, billed $211.20 yearly, save $52.80 (20%)", () => {
+  it("prices in cents: $15, $12.00, billed $144.00 yearly, save $36.00 (20%)", () => {
     const nb = tiers("en", ON).find((x) => x.id === "NOSY_BAT")!;
-    expect([nb.monthly, nb.annual, nb.annualTotal, nb.saveAmount, nb.savePct]).toEqual([22, 17.6, 211.2, 52.8, 20]);
+    expect([nb.monthly, nb.annual, nb.annualTotal, nb.saveAmount, nb.savePct]).toEqual([15, 12, 144, 36, 20]);
     // Every other card states the saving as a percentage, as before.
     expect(tiers("en", ON).filter((x) => x.id !== "NOSY_BAT").every((x) => x.saveAmount === null)).toBe(true);
     expect(yearlySavingPct()).toBe(Math.min(...PLAN_ORDER.filter((p) => !PLAN_CONFIGS[p].isCustomPricing).map((p) => savePctOf(PLAN_CONFIGS[p].monthlyPrice, PLAN_CONFIGS[p].annualPrice)!)));
   });
 
-  it("renders $22 a month, then $17.60 with 'save $52.80' and 'billed $211.20 yearly' on the annual toggle", () => {
+  it("renders $15 a month, then $12.00 with 'save $36.00' and 'billed $144.00 yearly' on the annual toggle", () => {
     render(
       <PricingSection salesSrc="pricing-enterprise" enterpriseBand locale="en" pricing={tiers("en", ON)} priceChrome={HOME_PRICING_CHROME.en} toolCountLine={toolCountLine("en", seoToolCounts())} tax="t" currency="c" header={null} />,
     );
     const card = () => document.querySelector('[data-plan="NOSY_BAT"]')!;
     // Monthly: whole dollars, no decimals (owner, 2026-11-11).
-    expect(card().querySelector("[class*=pamount]")!.textContent).toBe("$22/mo");
+    expect(card().querySelector("[class*=pamount]")!.textContent).toBe("$15/mo");
     fireEvent.click(screen.getByRole("button", { name: HOME_PRICING_CHROME.en.annual }));
     const text = card().textContent!;
-    expect(text).toContain("$17.60");
-    expect(text).toContain("save $52.80");
-    expect(text).toContain("billed $211.20 yearly");
+    expect(text).toContain("$12.00");
+    expect(text).toContain("save $36.00");
+    expect(text).toContain("billed $144.00 yearly");
     expect(text).not.toMatch(/save \d+%/);
     // Starter keeps its percentage.
     expect(document.querySelector('[data-plan="STARTER"]')!.textContent).toMatch(/save \d+%/);
@@ -218,8 +218,8 @@ describe("the cards", () => {
   });
 
   it("the trial-ending email names the amount to the cent", () => {
-    expect(trialChargeLabel("NOSY_BAT", "year", "en")).toBe("$211.20 USD/year");
-    expect(trialChargeLabel("NOSY_BAT", "month", "en")).toBe("$22 USD/month");
+    expect(trialChargeLabel("NOSY_BAT", "year", "en")).toBe("$144.00 USD/year");
+    expect(trialChargeLabel("NOSY_BAT", "month", "en")).toBe("$15 USD/month");
     expect(trialChargeLabel("STARTER", "month", "en")).toBe("$78 USD/month");
   });
 });
@@ -245,12 +245,12 @@ describe("the comparison table, the FAQ and the copy, once on sale", () => {
     const crawlerOff = off.find((i) => i.id === "crawler")!.a;
     const crawlerOn = on.find((i) => i.id === "crawler")!.a;
     expect(crawlerOff).not.toContain(CRAWLER_BRAND.name + "** plan");
-    expect(crawlerOn).toContain(`The crawler alone is the **${CRAWLER_BRAND.name}** plan ($22/month): up to 25,000 URLs per crawl, for one user, with nothing else.`);
+    expect(crawlerOn).toContain(`The crawler alone is the **${CRAWLER_BRAND.name}** plan ($15/month): up to 25,000 URLs per crawl, for one user, with nothing else.`);
     expect(on.find((i) => i.id === "ai-only")!.a).toContain("The crawler alone is");
     expect(cardPlans()).toEqual(cardPlans(NONE_LAUNCHED));
   });
 
-  it("the pitch: 'from $22/month' once on sale, and the team claim names Starter (the plan is one user)", () => {
+  it("the pitch: 'from $15/month' once on sale, and the team claim names Starter (the plan is one user)", () => {
     const off = pitchCopy(buildNosybatFacts(), "en");
     expect(off.sub).toContain(`from $${PLAN_CONFIGS.STARTER.monthlyPrice}/month`);
     expect(off.blocks.find((x) => x.id === "team")!.body.startsWith("No per-seat charge.")).toBe(true);

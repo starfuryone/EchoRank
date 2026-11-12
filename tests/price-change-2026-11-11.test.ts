@@ -1,8 +1,10 @@
 // tests/price-change-2026-11-11.test.ts
 //
-// The price change of 2026-11-11: monthly $22 / $28 / $78 / $177 / $488, yearly
-// 20% off. Every surface reads PLAN_CONFIGS; monthly prices print whole, yearly
-// figures with both decimals. Old prices stay recognised: nobody is migrated.
+// The price change of 2026-11-11: monthly $28 / $78 / $177 / $488, yearly 20%
+// off, and the crawler-only plan at $15 / $144 a year (owner, 2026-11-12; it
+// was $22 in the 2026-11-11 table). Every surface reads PLAN_CONFIGS; monthly
+// prices print whole, yearly figures with both decimals. Old prices stay
+// recognised: nobody is migrated.
 
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
@@ -21,13 +23,21 @@ import { planFacts } from "@/lib/assistant/prompt";
 import { PLANS } from "@/lib/seo/constants";
 import { GET as technicalGeo } from "@/app/[locale]/technical-geo/route";
 import { priceTokens } from "@/app/[locale]/technical-geo/prices";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { PublicNav } from "@/app/[locale]/PublicNav";
+import { CRAWLER_BRAND } from "@/lib/site-crawler/brand";
+import { NB_INTRO_MINUTES, NB_INTRO_VIDEO } from "@/lib/site-crawler/intro-video";
+import { pitchCopy } from "@/lib/site-crawler/pitch-copy";
+import { buildNosybatFacts } from "@/lib/site-crawler/nosybat-facts";
 
 const ROOT = process.cwd();
 const read = (p: string) => readFileSync(join(ROOT, p), "utf8");
+const nav = (locale: string) => renderToStaticMarkup(createElement(PublicNav, { locale }));
 
 /** The owner's table: monthly dollars, yearly total in cents. */
 const TABLE: [SellablePlanType, number, number][] = [
-  ["NOSY_BAT", 22, 21_120],
+  ["NOSY_BAT", 15, 14_400],
   ["AI_VISIBILITY", 28, 26_880],
   ["STARTER", 78, 74_880],
   ["GROWTH", 177, 169_920],
@@ -90,6 +100,58 @@ describe("display: monthly whole, yearly with two decimals, plus the billed-year
   });
 });
 
+describe("the crawler-only plan at $15 / $144 (2026-11-12), on every surface that prices it", () => {
+  const ON = new Set(["NOSY_BAT"] as const);
+
+  it("the Stripe amounts: 1500 and 14400 cents", () => {
+    const s = PLAN_PRICE_SPECS.find((x) => x.plan === "NOSY_BAT")!;
+    expect([s.monthlyCents, s.annualCents]).toEqual([1_500, 14_400]);
+    expect(lookupKeyFor(s, "month")).toBe("echorank_nosy_bat_usd_month");
+  });
+
+  it("the card: $15 a month, $12.00 billed $144.00 yearly, save $36.00", () => {
+    const t = pricingTiers("en", undefined, { launched: ON }).find((x) => x.id === "NOSY_BAT")!;
+    expect([usd(t.monthly!, "en"), usdCents(t.annual!, "en"), usdCents(t.annualTotal!, "en"), usdCents(t.saveAmount!, "en")]).toEqual(["$15", "$12.00", "$144.00", "$36.00"]);
+  });
+
+  it("the Product menu's plan item, en and fr", () => {
+    expect(nav("en")).toContain(`${CRAWLER_BRAND.name} plan — $15/mo`);
+    expect(nav("fr")).toMatch(new RegExp(`Forfait ${CRAWLER_BRAND.name} — 15\\s\\$/mois`));
+  });
+
+  it("/site-crawler: the Offer reads the config, the pitch says 'from $15/month'", () => {
+    const page = read("src/app/[locale]/site-crawler/page.tsx");
+    expect(page).toContain("price: String(PLAN_CONFIGS.NOSY_BAT.monthlyPrice)");
+    expect(page).not.toMatch(/\$\d/);
+    expect(pitchCopy(buildNosybatFacts({ launched: ON }), "en").sub).toContain("from $15/month");
+    expect(pricingFaq("en", { savePct: 20, freeCrawler: true, launched: ON }).find((i) => i.id === "crawler")!.a).toContain("plan ($15/month)");
+  });
+
+  it("the technical-geo payload's tokens", () => {
+    expect(priceTokens()["__PRICE_NOSY_BAT_MONTH__"]).toBe("$15");
+    expect(priceTokens()["__PRICE_NOSY_BAT_YEAR_MO__"]).toBe("$12.00");
+  });
+});
+
+describe("the intro video's length: one value for the menu and the /site-crawler H2", () => {
+  it("is the file's length in minutes", () => {
+    expect(NB_INTRO_MINUTES).toBe(Math.round(NB_INTRO_VIDEO.durationSeconds / 60));
+  });
+
+  it("the H2 reads it, en and fr, and types no length", () => {
+    const page = read("src/app/[locale]/site-crawler/page.tsx");
+    expect(page).toContain("videoH2: `${NB_INTRO_MINUTES} minutes, every feature.`");
+    expect(page).toContain("videoH2: `${NB_INTRO_MINUTES} minutes, toutes les fonctionnalités.`");
+    expect(page).not.toMatch(/Two minutes|Deux minutes/);
+  });
+
+  it("the menu reads it, en and fr", () => {
+    expect(read("src/app/[locale]/PublicNav.tsx")).toContain("const introMinutes = NB_INTRO_MINUTES;");
+    expect(nav("en")).toContain(`Watch the ${NB_INTRO_MINUTES}-minute intro`);
+    expect(nav("fr")).toContain(`Voir l&#x27;intro de ${NB_INTRO_MINUTES} minutes`);
+  });
+});
+
 describe("the technical-geo landing page", () => {
   it("reads its prices from the config, and carries no typed price or leftover token", async () => {
     const html = await technicalGeo().text();
@@ -123,7 +185,9 @@ describe("no typed old price in what visitors read", () => {
   // The places a price was typed by hand before: landing payloads, the
   // help illustrations, llms.txt, the blog. (The pinned agreement lines are
   // tested in tests/subscription-agreement-pinned.test.ts.)
-  const OLD = /\$ ?(29|79|199|499)\b|\$(23|63|159|399)\/mo|\$22\.40|\$17\.92|\$215\.04|\$53\.76/;
+  // Nosy Bat's earlier figures too: $22.40 / $17.92 / $215.04, then $22 /
+  // $17.60 / $211.20 (save $52.80).
+  const OLD = /\$ ?(29|79|199|499)\b|\$(23|63|159|399)\/mo|\$22\.40|\$17\.92|\$215\.04|\$53\.76|\$22\/mo|\$17\.60|\$211\.20|\$52\.80/;
   function files(dir: string, ext: RegExp): string[] {
     return readdirSync(join(ROOT, dir)).flatMap((f) => {
       const p = join(dir, f);

@@ -605,8 +605,9 @@ export const PLAN_CONFIGS: Record<SellablePlanType, PlanConfig> = {
     name: CRAWLER_BRAND.name,
     slug: "nosy_bat",
     description: "The SEO crawler that checks every page and shows its evidence, on its own",
-    monthlyPrice: 22,
-    annualPrice: 17.6,
+    // $15 a month, $144 a year ($12 a month): owner, 2026-11-12.
+    monthlyPrice: 15,
+    annualPrice: 12,
     isCustomPricing: false,
     quotaDefaults: {
       maxLocations: 0,
