@@ -35,6 +35,7 @@ import { NOSY_BAT_GUIDES } from "@/lib/learn-nosy-bat";
 import { LOCALIZED_ROUTES } from "@/lib/seo/registry";
 import { blogArticleRoutes } from "@/lib/blog/loader";
 import { SUPPORTED_LOCALES } from "@/lib/i18n/config";
+import { AEO_BASE } from "@/lib/aeo-course-routes";
 
 const APP = join(process.cwd(), "src", "app", "[locale]", "learn");
 const ALL = [...LEARN_CHAPTERS, ...LEARN_GUIDES];
@@ -101,7 +102,10 @@ describe("route table", () => {
     // A new directory here is a page nothing in the config knows about. Add it
     // to the config (or to this list, deliberately) rather than deleting the
     // assertion.
-    expect(dirs).toEqual(["[chapter]", ECHOPEDIA_SLUG, "guides"].sort());
+    // "aeo" is the Echorank AEO course: its own config (src/lib/aeo-course.ts)
+    // and route table (tests/aeo-course-pages.test.ts), not learn-content.ts.
+    const aeo = AEO_BASE.split("/").pop()!;
+    expect(dirs).toEqual(["[chapter]", ECHOPEDIA_SLUG, "guides", aeo].sort());
   });
 
   it("learnRoutes() covers the hub, every chapter, every guide and Echopedia", () => {

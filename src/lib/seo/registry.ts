@@ -10,6 +10,8 @@ import { solutionRoutes } from "@/lib/solutions-taxonomy";
 // The slugs-only module, not "@/lib/prompt-guides": this file is in the edge
 // proxy's bundle and the full guide config is ~50 KB of prompt copy.
 import { PROMPT_GUIDES_BASE, promptGuideRoutes } from "@/lib/prompt-guide-routes";
+// Same reason: the AEO course's ~80 KB of lesson copy stays out of the proxy.
+import { AEO_BASE, aeoRoutes } from "@/lib/aeo-course-routes";
 // "@/lib/blog/constants" DELIBERATELY, not "@/lib/blog": this module is imported
 // by src/proxy.ts, which runs on the EDGE, and the blog's loader reads
 // content/blog/ with node:fs. The constants module imports nothing at all.
@@ -131,6 +133,14 @@ export const LOCALIZED_ROUTES: LocalizedRoute[] = [
   ...solutionRoutes().map((path) => ({
     path,
     priority: path.split("/").length === 3 ? 0.7 : 0.6,
+    changeFrequency: "monthly" as const,
+  })),
+  // The Echorank AEO course — DERIVED from src/lib/aeo-course-routes.ts: the
+  // hub (0.8, with the /learn hub) and its twelve lessons (0.6, with the
+  // chapters). Its worksheet and print view are noindex and stay out.
+  ...aeoRoutes().map((path) => ({
+    path,
+    priority: path === AEO_BASE ? 0.8 : 0.6,
     changeFrequency: "monthly" as const,
   })),
   // Industry prompt setup guides — DERIVED from src/lib/prompt-guide-routes.ts:
