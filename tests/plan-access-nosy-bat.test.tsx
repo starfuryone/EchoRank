@@ -77,6 +77,8 @@ const NB: PlanType = "NOSY_BAT";
 /** THE CRAWLER-ONLY PLAN'S ALLOWLIST: every page and API route it may reach, besides the exempt APIs. */
 const ALLOWED_PAGES = [
   "/billing",
+  // The cancel confirmation page (CANCEL-FAIR-PLAY): every plan can leave.
+  "/billing/cancel",
   "/crawler",
   "/crawler/[id]",
   "/crawler/[id]/issues",
@@ -99,8 +101,10 @@ const ALLOWED_API_OUTSIDE_THE_CRAWL_API = [
   "/api/ai/visibility/gsc/select",
   "/api/ai/visibility/gsc/status",
   "/api/billing",
+  "/api/billing/cancel",
   "/api/billing/checkout",
   "/api/billing/portal",
+  "/api/billing/resume",
   "/api/metering",
   "/api/metering/history",
   "/api/onboarding",

@@ -6,10 +6,17 @@ import { creditBalance, creditHistory } from "@/lib/credits/store";
 import { getBillingContext } from "@/lib/paid-plan";
 import { helpArticleSlugFor } from "@/lib/help-content";
 import { helpArticleHref } from "@/lib/help-articles";
+import { canManageBilling } from "@/lib/billing/billing-roles";
+import { billingOwnerName } from "@/lib/billing/cancellation";
 
-export default async function BillingPage() {
+export default async function BillingPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const cookieStore = await cookies();
   const locale = dashboardLocale(cookieStore.get("echorank_locale")?.value);
+  const query = await searchParams;
 
   // Tenant.planType is read HERE, server-side, and passed down. The client
   // never infers the current tier: the billing GET it already makes is for
@@ -50,6 +57,11 @@ export default async function BillingPage() {
   // locale segments, so the dashboard language carries straight into the URL.
   const cancelSlug = helpArticleSlugFor("/billing");
 
+  // WHO MAY CANCEL, decided server-side (the routes re-check). Everyone else
+  // is told who can, by name, instead of seeing a button that 403s.
+  const canManage = membership ? canManageBilling(membership.role) : false;
+  const ownerName = membership && !canManage ? await billingOwnerName(membership.tenantId) : null;
+
   return (
     <BillingPageClient
       locale={locale}
@@ -58,6 +70,10 @@ export default async function BillingPage() {
       subscribed={subscribed}
       credits={credits}
       creditHistory={history}
+      canManage={canManage}
+      ownerName={ownerName}
+      hasPortal={!!membership?.tenant.stripeCustomerId}
+      justCancelled={query.cancelled === "1"}
     />
   );
 }

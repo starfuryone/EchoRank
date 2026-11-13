@@ -568,11 +568,57 @@ const billingEn = {
   /** A yearly subscription's charge: "$748.80/year". */
   perYearTotal: (total: string) => `${total}/year`,
   renews: (date: string) => `Renews ${date}`,
-  cancelsAtPeriodEnd: "Cancels at period end",
-  manageSubscription: "Manage subscription",
-  manageSubscriptionHint:
-    "Update your payment method or cancel. Cancelling keeps your access until the end of the period you have already paid for.",
+  // ── The plan card's state line (src/lib/billing/plan-card-state.ts) ──
+  // `price` is the subscription's own charge, already formatted with its
+  // interval ("$15/month", "$144.00/year"); null when it is not known, in
+  // which case no amount is stated rather than a guessed one.
+  stateTrial: (date: string, price: string | null) =>
+    price ? `Free trial — ends ${date}, then ${price}.` : `Free trial — ends ${date}.`,
+  stateRenewing: (price: string | null, date: string | null) =>
+    price ? `${price}${date ? ` · renews ${date}` : ""}.` : date ? `Renews ${date}.` : "",
+  stateCancelling: (date: string) => `Cancelled — access until ${date}. You won't be charged again.`,
+  stateEnded: (date: string | null) => (date ? `Your plan ended on ${date}.` : "Your plan has ended."),
+  statePastDue: "Your last payment failed. Update your payment method to keep your plan.",
+  stateEndedCta: "Choose a plan",
+  cancelSubscription: "Cancel subscription",
+  resumeSubscription: "Resume subscription",
+  resumeError: "Could not resume your subscription. Please try again.",
+  // The renamed portal button: what it is for, now that cancelling has its
+  // own button. Cancel still works in the portal; it is just not the only way.
+  paymentAndInvoices: "Payment method & invoices",
   manageSubscriptionError: "Could not open the billing portal. Please try again.",
+  ownerOnly: (owner: string | null) =>
+    owner ? `Only ${owner} can cancel this subscription.` : "Only the account owner can cancel this subscription.",
+  cancelledBanner: (date: string) =>
+    `Your subscription is cancelled. You keep full access until ${date}, and you won't be charged again.`,
+  dismiss: "Dismiss",
+  // ── /billing/cancel ──
+  cancelPageTitle: (plan: string) => `Cancel your ${plan} subscription`,
+  factNoChargeTrial: "You won't be charged.",
+  factNoChargePaid: "You won't be charged again.",
+  factAccess: (date: string) => `You keep full access until ${date}.`,
+  factResume: (date: string) => `You can resume with one click any time before ${date}.`,
+  reasonLabel: "Why are you cancelling? (optional)",
+  reasonPlaceholder: "Choose a reason",
+  reasons: {
+    too_expensive: "Too expensive",
+    missing_feature: "Missing a feature",
+    used_once: "Only needed it once",
+    switching: "Switching to another tool",
+    other: "Other",
+  } as Record<string, string>,
+  noteLabel: "Anything else? (optional)",
+  confirmCancel: "Cancel subscription",
+  keepPlan: "Keep my plan",
+  cancelBusy: "Cancelling…",
+  cancelError: "Could not cancel your subscription. Please try again.",
+  cancelNothing: "There is no active subscription to cancel.",
+  cancelAlready: (date: string) => `This subscription is already cancelled. You keep access until ${date}.`,
+  backToBilling: "Back to Billing",
+  // ── A plan that has ended (CANCELED), on every dashboard page ──
+  planEndedTitle: "Your plan has ended",
+  planEndedBody: "Resubscribe to use your tools again.",
+  planEndedCta: "Resubscribe",
   // Label for the inline link to the public help article beside the button.
   // The ANSWER lives in src/lib/help-articles.ts and is never restated here;
   // this is the four words that get someone to it, and it is chrome, which is
@@ -657,12 +703,52 @@ export const BILLING_COPY: Record<DashLocale, BillingCopy> = {
     perMonth: "/mois",
     perYearTotal: (total: string) => `${total} par an`,
     renews: (date: string) => `Renouvellement le ${date}`,
-    cancelsAtPeriodEnd: "S'annule à la fin de la période",
-    manageSubscription: "Gérer l'abonnement",
-    manageSubscriptionHint:
-      "Modifiez votre moyen de paiement ou résiliez. La résiliation conserve votre accès jusqu'à la fin de la période déjà payée.",
+    stateTrial: (date: string, price: string | null) =>
+      price ? `Essai gratuit — se termine le ${date}, puis ${price}.` : `Essai gratuit — se termine le ${date}.`,
+    stateRenewing: (price: string | null, date: string | null) =>
+      price ? `${price}${date ? ` · renouvellement le ${date}` : ""}.` : date ? `Renouvellement le ${date}.` : "",
+    stateCancelling: (date: string) => `Annulé — accès jusqu'au ${date}. Vous ne serez plus facturé.`,
+    stateEnded: (date: string | null) => (date ? `Votre forfait a pris fin le ${date}.` : "Votre forfait a pris fin."),
+    statePastDue: "Votre dernier paiement a échoué. Mettez à jour votre moyen de paiement pour garder votre forfait.",
+    stateEndedCta: "Choisir un forfait",
+    cancelSubscription: "Annuler l'abonnement",
+    resumeSubscription: "Reprendre l'abonnement",
+    resumeError: "Impossible de reprendre votre abonnement. Veuillez réessayer.",
+    paymentAndInvoices: "Moyen de paiement et factures",
     manageSubscriptionError:
       "Impossible d'ouvrir le portail de facturation. Veuillez réessayer.",
+    ownerOnly: (owner: string | null) =>
+      owner
+        ? `L'annulation de cet abonnement est réservée à ${owner}.`
+        : "L'annulation de cet abonnement est réservée au propriétaire du compte.",
+    cancelledBanner: (date: string) =>
+      `Votre abonnement est annulé. Vous gardez un accès complet jusqu'au ${date} et ne serez plus facturé.`,
+    dismiss: "Fermer",
+    cancelPageTitle: (plan: string) => `Annuler votre abonnement ${plan}`,
+    factNoChargeTrial: "Vous ne serez pas facturé.",
+    factNoChargePaid: "Vous ne serez plus facturé.",
+    factAccess: (date: string) => `Vous gardez un accès complet jusqu'au ${date}.`,
+    factResume: (date: string) => `Vous pouvez reprendre en un clic à tout moment avant le ${date}.`,
+    reasonLabel: "Pourquoi annulez-vous ? (facultatif)",
+    reasonPlaceholder: "Choisir une raison",
+    reasons: {
+      too_expensive: "Trop cher",
+      missing_feature: "Il manque une fonctionnalité",
+      used_once: "Je n'en avais besoin qu'une fois",
+      switching: "Je passe à un autre outil",
+      other: "Autre",
+    } as Record<string, string>,
+    noteLabel: "Autre chose à ajouter ? (facultatif)",
+    confirmCancel: "Annuler l'abonnement",
+    keepPlan: "Garder mon forfait",
+    cancelBusy: "Annulation…",
+    cancelError: "Impossible d'annuler votre abonnement. Veuillez réessayer.",
+    cancelNothing: "Aucun abonnement actif à annuler.",
+    cancelAlready: (date: string) => `Cet abonnement est déjà annulé. Vous gardez l'accès jusqu'au ${date}.`,
+    backToBilling: "Retour à Facturation",
+    planEndedTitle: "Votre forfait a pris fin",
+    planEndedBody: "Réabonnez-vous pour retrouver vos outils.",
+    planEndedCta: "Se réabonner",
     cancellationHelp: "Comment fonctionne l'annulation",
     usageTitle: "Utilisation ce mois-ci",
     feedbackRequests: "Demandes de rétroaction",
@@ -728,12 +814,52 @@ export const BILLING_COPY: Record<DashLocale, BillingCopy> = {
     perMonth: "/Monat",
     perYearTotal: (total: string) => `${total}/Jahr`,
     renews: (date: string) => `Verlängert sich am ${date}`,
-    cancelsAtPeriodEnd: "Wird am Ende der Laufzeit gekündigt",
-    manageSubscription: "Abonnement verwalten",
-    manageSubscriptionHint:
-      "Zahlungsmittel ändern oder kündigen. Bei einer Kündigung bleibt der Zugang bis zum Ende der bereits bezahlten Laufzeit bestehen.",
+    stateTrial: (date: string, price: string | null) =>
+      price ? `Gratis-Testphase — endet am ${date}, danach ${price}.` : `Gratis-Testphase — endet am ${date}.`,
+    stateRenewing: (price: string | null, date: string | null) =>
+      price ? `${price}${date ? ` · verlängert sich am ${date}` : ""}.` : date ? `Verlängert sich am ${date}.` : "",
+    stateCancelling: (date: string) => `Gekündigt — Zugang bis ${date}. Es wird nichts mehr abgebucht.`,
+    stateEnded: (date: string | null) => (date ? `Ihr Plan ist am ${date} abgelaufen.` : "Ihr Plan ist abgelaufen."),
+    statePastDue: "Ihre letzte Zahlung ist fehlgeschlagen. Aktualisieren Sie Ihr Zahlungsmittel, um Ihren Plan zu behalten.",
+    stateEndedCta: "Plan wählen",
+    cancelSubscription: "Abonnement kündigen",
+    resumeSubscription: "Abonnement fortsetzen",
+    resumeError: "Das Abonnement konnte nicht fortgesetzt werden. Bitte erneut versuchen.",
+    paymentAndInvoices: "Zahlungsmittel & Rechnungen",
     manageSubscriptionError:
       "Das Rechnungsportal konnte nicht geöffnet werden. Bitte erneut versuchen.",
+    ownerOnly: (owner: string | null) =>
+      owner
+        ? `Nur ${owner} kann dieses Abonnement kündigen.`
+        : "Nur die Kontoinhaberin oder der Kontoinhaber kann dieses Abonnement kündigen.",
+    cancelledBanner: (date: string) =>
+      `Ihr Abonnement ist gekündigt. Sie behalten den vollen Zugang bis ${date}, und es wird nichts mehr abgebucht.`,
+    dismiss: "Schliessen",
+    cancelPageTitle: (plan: string) => `${plan}-Abonnement kündigen`,
+    factNoChargeTrial: "Es wird nichts abgebucht.",
+    factNoChargePaid: "Es wird nichts mehr abgebucht.",
+    factAccess: (date: string) => `Sie behalten den vollen Zugang bis ${date}.`,
+    factResume: (date: string) => `Sie können das Abonnement bis ${date} jederzeit mit einem Klick fortsetzen.`,
+    reasonLabel: "Warum kündigen Sie? (optional)",
+    reasonPlaceholder: "Grund wählen",
+    reasons: {
+      too_expensive: "Zu teuer",
+      missing_feature: "Eine Funktion fehlt",
+      used_once: "Nur einmal gebraucht",
+      switching: "Wechsel zu einem anderen Tool",
+      other: "Anderes",
+    } as Record<string, string>,
+    noteLabel: "Möchten Sie noch etwas ergänzen? (optional)",
+    confirmCancel: "Abonnement kündigen",
+    keepPlan: "Plan behalten",
+    cancelBusy: "Wird gekündigt…",
+    cancelError: "Die Kündigung ist fehlgeschlagen. Bitte erneut versuchen.",
+    cancelNothing: "Es gibt kein aktives Abonnement zum Kündigen.",
+    cancelAlready: (date: string) => `Dieses Abonnement ist bereits gekündigt. Sie behalten den Zugang bis ${date}.`,
+    backToBilling: "Zurück zur Abrechnung",
+    planEndedTitle: "Ihr Plan ist abgelaufen",
+    planEndedBody: "Abonnieren Sie erneut, um Ihre Tools wieder zu nutzen.",
+    planEndedCta: "Erneut abonnieren",
     cancellationHelp: "So funktioniert die Kündigung",
     usageTitle: "Nutzung in diesem Monat",
     feedbackRequests: "Feedback-Anfragen",

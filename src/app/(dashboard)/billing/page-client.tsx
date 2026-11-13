@@ -3,17 +3,18 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
-  CreditCard,
   AlertCircle,
   Zap,
   Building2,
   Rocket,
   Eye,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { PlanStatusCard } from "@/components/billing/plan-status-card";
+import { formatPeriodDate, planCardState } from "@/lib/billing/plan-card-state";
 import { PLAN_PRICES, planConfig, sellablePlan } from "@/lib/plan-config";
 import { pricingBase, usd, usdCents } from "@/lib/pricing-page/format";
 import { planFeaturesByPlan } from "@/lib/plan-features";
@@ -74,8 +75,20 @@ export function BillingPageClient({
   subscribed,
   credits,
   creditHistory,
+  canManage,
+  ownerName,
+  hasPortal,
+  justCancelled,
 }: {
   locale: DashLocale;
+  /** OWNER or ADMIN (src/lib/billing/billing-roles.ts): may cancel, resume, open the portal. */
+  canManage: boolean;
+  /** Named in "Only {owner} can cancel this subscription". */
+  ownerName: string | null;
+  /** The tenant has a Stripe customer, so the portal has something to show. */
+  hasPortal: boolean;
+  /** Arrived from /billing/cancel (?cancelled=1): show the confirmation banner. */
+  justCancelled: boolean;
   /**
    * The public "How cancellation works" article, already locale-prefixed and
    * resolved server-side — see the note in page.tsx. Null if the route map has
@@ -100,9 +113,42 @@ export function BillingPageClient({
   const [error, setError] = useState<string | null>(null);
   const [portalBusy, setPortalBusy] = useState(false);
   const [portalError, setPortalError] = useState(false);
+  const [resumeBusy, setResumeBusy] = useState(false);
+  const [resumeError, setResumeError] = useState(false);
+  const [bannerOpen, setBannerOpen] = useState(justCancelled);
+  const [reloadKey, setReloadKey] = useState(0);
+
+  /** One click, while the period lasts. Re-reads the card on success. */
+  async function resume() {
+    if (resumeBusy) return;
+    setResumeBusy(true);
+    setResumeError(false);
+    try {
+      const res = await fetch("/api/billing/resume", { method: "POST" });
+      if (!res.ok) throw new Error("resume failed");
+      setBannerOpen(false);
+      setReloadKey((k) => k + 1);
+    } catch {
+      setResumeError(true);
+    } finally {
+      setResumeBusy(false);
+    }
+  }
+
+  function dismissBanner() {
+    setBannerOpen(false);
+    // Drop ?cancelled=1, so a reload or a shared URL does not bring it back.
+    try {
+      window.history.replaceState(null, "", "/billing");
+    } catch {
+      /* the banner is closed either way */
+    }
+  }
 
   /**
-   * Open Stripe's billing portal — where cancellation actually happens.
+   * Open Stripe's billing portal: payment method, invoices (and, if the
+   * portal is configured for it, cancellation too — the in-app button above
+   * is the primary way now).
    *
    * A POST, so it cannot be a link: the route mints a Stripe object, and a
    * prefetchable GET would create portal sessions for links the browser merely
@@ -148,7 +194,7 @@ export function BillingPageClient({
       }
     }
     fetchBilling();
-  }, [t.loadFailed, t.genericError]);
+  }, [t.loadFailed, t.genericError, reloadKey]);
 
 
   if (loading) {
@@ -190,6 +236,18 @@ export function BillingPageClient({
       ? Math.round((billing.requestsUsed / billing.requestsLimit) * 100)
       : 0;
 
+  const cardState = planCardState({ status: billing.status, cancelAtPeriodEnd: billing.cancelAtPeriodEnd });
+  const customPricing = planConfig(billing.plan as PlanType).isCustomPricing;
+  // The subscription's own price: monthly whole ("$78/month"), a yearly
+  // price as its total with both decimals ("$748.80/year").
+  const priceText: string | null = billing.charge
+    ? billing.charge.interval === "year"
+      ? t.perYearTotal(usdCents(billing.charge.cents / 100, pricingBase(locale)))
+      : `${usd(billing.charge.cents / 100, pricingBase(locale))}${t.perMonth}`
+    : billing.chargeIsConfig || billing.noPrice
+      ? `${usd(PLAN_PRICES[sellablePlan(billing.plan as PlanType)] ?? 0, pricingBase(locale))}${t.perMonth}`
+      : null;
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -198,98 +256,57 @@ export function BillingPageClient({
         <p className="mt-1 text-sm text-gray-500">{t.subtitle}</p>
       </div>
 
-      {/* Current Plan Overview */}
-      <Card>
-        <CardContent className="py-6">
-          <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-100 text-blue-600">
-                <CreditCard className="h-6 w-6" />
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h2 className="text-lg font-semibold text-gray-900">
-                    {t.planTitle(PLAN_LABELS[billing.plan] ?? billing.plan)}
-                  </h2>
-                  <Badge
-                    variant={
-                      billing.status === "ACTIVE" ? "success" : "warning"
-                    }
-                  >
-                    {t.statusLabels[billing.status] ?? billing.status}
-                  </Badge>
-                </div>
-                <p className="text-sm text-gray-500">
-                  {planConfig(billing.plan as PlanType).isCustomPricing ? (
-                    <Link href={salesContactHref(locale, "app-billing-plan")} className="text-blue-600 hover:text-blue-700">
-                      {t.contactUs}
-                    </Link>
-                  ) : billing.charge ? (
-                    // The subscription's own price: monthly whole ("$78"), a
-                    // yearly price as its total with both decimals ("$748.80").
-                    billing.charge.interval === "year"
-                      ? t.perYearTotal(usdCents(billing.charge.cents / 100, pricingBase(locale)))
-                      : `${usd(billing.charge.cents / 100, pricingBase(locale))}${t.perMonth}`
-                  ) : billing.chargeIsConfig || billing.noPrice ? (
-                    `${usd(PLAN_PRICES[sellablePlan(billing.plan as PlanType)] ?? 0, pricingBase(locale))}${t.perMonth}`
-                  ) : null}
-                  {billing.currentPeriodEnd && (
-                    <span>
-                      {" "}
-                      &middot;{" "}
-                      {t.renews(
-                        new Date(billing.currentPeriodEnd).toLocaleDateString(
-                          locale
-                        )
-                      )}
-                    </span>
-                  )}
-                </p>
-              </div>
-            </div>
-            {billing.cancelAtPeriodEnd && (
-              <Badge variant="warning">{t.cancelsAtPeriodEnd}</Badge>
-            )}
-          </div>
+      {/* Just cancelled on /billing/cancel: the end date, once more, from
+          the subscription itself. Dismissible; never shown from a guess. */}
+      {bannerOpen && cardState === "cancelling" && billing.currentPeriodEnd && (
+        <div
+          role="status"
+          data-testid="billing-cancelled-banner"
+          className="flex items-start justify-between gap-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900"
+        >
+          <p>{t.cancelledBanner(formatPeriodDate(billing.currentPeriodEnd, locale))}</p>
+          <button
+            type="button"
+            onClick={dismissBanner}
+            className="shrink-0 rounded p-1 text-amber-800 hover:bg-amber-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"
+            aria-label={t.dismiss}
+          >
+            <X className="h-4 w-4" aria-hidden="true" />
+          </button>
+        </div>
+      )}
 
-          {/* The cancellation route the Subscription Agreement promises.
-              Shown for any subscriber, plan or watcher alike — the portal is
-              Stripe's UI over Stripe's customer record and manages whatever
-              they hold. The route 400s a tenant with no Stripe customer, which
-              is the case this button should not be reached in. */}
-          <div className="mt-4 border-t border-gray-100 pt-4">
-            <Button variant="outline" onClick={openPortal} disabled={portalBusy}>
-              {t.manageSubscription}
-            </Button>
-            <p className="mt-2 text-xs text-gray-500">
-              {t.manageSubscriptionHint}
-              {/* The full walkthrough, next to the button it walks through.
-                  Public page, so it opens in a new tab rather than dropping
-                  someone out of the dashboard mid-cancellation — and the slug
-                  comes from the help-content route map, so a renamed article
-                  breaks a test instead of this link. */}
-              {cancelHelpHref && (
-                <>
-                  {" "}
-                  <a
-                    href={cancelHelpHref}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="font-medium text-gray-700 underline underline-offset-2 hover:text-gray-900"
-                  >
-                    {t.cancellationHelp}
-                  </a>
-                </>
-              )}
-            </p>
-            {portalError && (
-              <p className="mt-2 text-xs text-red-600" role="alert">
-                {t.manageSubscriptionError}
-              </p>
-            )}
-          </div>
-        </CardContent>
-      </Card>
+      {/* The plan card: state, dates, Cancel or Resume, and the portal.
+          The cancellation route the Subscription Agreement promises is the
+          portal; the in-app button is the two-click way to the same end. */}
+      <PlanStatusCard
+        locale={locale}
+        t={t}
+        state={cardState}
+        status={billing.status}
+        planLabel={PLAN_LABELS[billing.plan] ?? billing.plan}
+        price={
+          customPricing ? (
+            <Link href={salesContactHref(locale, "app-billing-plan")} className="text-blue-600 hover:text-blue-700">
+              {t.contactUs}
+            </Link>
+          ) : (
+            priceText
+          )
+        }
+        priceText={customPricing ? null : priceText}
+        periodEnd={billing.currentPeriodEnd}
+        canManage={canManage}
+        ownerName={ownerName}
+        hasPortal={hasPortal}
+        onPortal={openPortal}
+        portalBusy={portalBusy}
+        portalError={portalError}
+        onResume={resume}
+        resumeBusy={resumeBusy}
+        resumeError={resumeError}
+        cancelHelpHref={cancelHelpHref}
+      />
 
       {/* Usage */}
       <Card>
@@ -340,8 +357,8 @@ export function BillingPageClient({
         </CardContent>
       </Card>
 
-      {/* Pricing Cards */}
-      <div>
+      {/* Pricing Cards — #plans is where an ended plan's "Choose a plan" lands. */}
+      <div id="plans" className="scroll-mt-24">
         <h3 className="mb-4 text-lg font-semibold text-gray-900">
           {t.plansTitle}
         </h3>

@@ -4,10 +4,18 @@
 // billing CTA, deliberately not a 404 or a bare 403.
 import Link from "next/link";
 import { Lock } from "lucide-react";
-import { SEO_TOOLS_COPY, type DashLocale } from "@/lib/i18n/dashboard";
+import { BILLING_COPY, SEO_TOOLS_COPY, type DashLocale } from "@/lib/i18n/dashboard";
 
-export function UpgradeState({ locale }: { locale: DashLocale }) {
-  const copy = SEO_TOOLS_COPY[locale];
+export function UpgradeState({ locale, ended = false }: { locale: DashLocale; ended?: boolean }) {
+  // ENDED (CANCELED) says what happened and offers the way back — the same
+  // plan, from Billing's plan cards — instead of reading like a plan that
+  // never included these tools.
+  const base = SEO_TOOLS_COPY[locale];
+  const b = BILLING_COPY[locale];
+  const copy = ended
+    ? { ...base, upgradeTitle: b.planEndedTitle, upgradeBody: b.planEndedBody, upgradeCta: b.planEndedCta }
+    : base;
+  const href = ended ? "/billing#plans" : "/billing";
   return (
     <div className="space-y-6">
       <div>
@@ -24,7 +32,8 @@ export function UpgradeState({ locale }: { locale: DashLocale }) {
         <h3 className="text-base font-semibold text-gray-900">{copy.upgradeTitle}</h3>
         <p className="mt-2 max-w-md text-sm text-gray-500">{copy.upgradeBody}</p>
         <Link
-          href="/billing"
+          href={href}
+          data-testid={ended ? "plan-ended-cta" : "upgrade-cta"}
           className="mt-6 inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
         >
           {copy.upgradeCta}

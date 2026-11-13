@@ -304,6 +304,8 @@ describe("the Billing page's inline link", () => {
   const dir = join(ROOT, "src", "app", "(dashboard)", "billing");
   const server = readFileSync(join(dir, "page.tsx"), "utf8");
   const client = readFileSync(join(dir, "page-client.tsx"), "utf8");
+  // The plan card, with its buttons and this link, is its own component.
+  const cardSrc = readFileSync(join(ROOT, "src", "components", "billing", "plan-status-card.tsx"), "utf8");
 
   it("resolves the href server-side and passes it down", () => {
     // Not a style preference. help-content.ts reads the whole Knowledge Hub
@@ -314,22 +316,25 @@ describe("the Billing page's inline link", () => {
     expect(client).not.toContain("@/lib/help-content");
   });
 
-  it("renders the link beside Manage subscription, not somewhere else", () => {
+  it("renders the link beside the Cancel and portal buttons, not somewhere else", () => {
     // A source scan, and it proves proximity in the SOURCE rather than on
     // screen — which is the part that actually drifts. If the two ever end up
     // in different cards this fails and someone re-reads the requirement.
-    const button = client.indexOf("t.manageSubscription}");
-    const link = client.indexOf("t.cancellationHelp}");
-    expect(button, "Manage subscription button not found").toBeGreaterThan(-1);
+    expect(client).toContain("cancelHelpHref={cancelHelpHref}");
+    const button = cardSrc.indexOf("t.cancelSubscription}");
+    const portal = cardSrc.indexOf("t.paymentAndInvoices}");
+    const link = cardSrc.indexOf("t.cancellationHelp}");
+    expect(button, "Cancel subscription button not found").toBeGreaterThan(-1);
+    expect(portal, "Payment method & invoices button not found").toBeGreaterThan(-1);
     expect(link, "cancellation help link not found").toBeGreaterThan(-1);
-    expect(link).toBeGreaterThan(button);
-    expect(client.slice(button, link)).not.toContain("</Card>");
+    expect(link).toBeGreaterThan(portal);
+    expect(cardSrc.slice(button, link)).not.toContain("</Card>");
   });
 
   it("opens the public article in a new tab, safely", () => {
     // It is a marketing-side page; a same-tab navigation would drop someone
     // out of the dashboard in the middle of cancelling.
-    const near = client.slice(client.indexOf("cancelHelpHref &&"), client.indexOf("t.cancellationHelp}"));
+    const near = cardSrc.slice(cardSrc.indexOf("p.cancelHelpHref &&"), cardSrc.indexOf("t.cancellationHelp}"));
     expect(near).toContain('target="_blank"');
     expect(near).toContain('rel="noopener noreferrer"');
   });

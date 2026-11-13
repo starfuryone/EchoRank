@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { cookies, headers } from "next/headers";
-import { ASSISTANT_COPY, dashboardLocale } from "@/lib/i18n/dashboard";
+import { ASSISTANT_COPY, BILLING_COPY, dashboardLocale } from "@/lib/i18n/dashboard";
+import { PlanEndedBanner } from "@/components/billing/plan-ended-banner";
 import { auth } from "@/lib/auth";
 import { getCurrentTenant } from "@/lib/tenant";
 import { getBillingContext, isPaidStatus } from "@/lib/paid-plan";
@@ -59,6 +60,7 @@ export default async function DashboardLayout({
   // in the sidebar; the tools layout re-checks server-side, so this is
   // presentation only.
   const paid = billing ? isPaidStatus(billing.status, billing.hasSubscriptionRow) : false;
+  const planEnded = billing?.status === "CANCELED";
 
   // A tenant that has never subscribed is sent to pick a plan. NOT an error
   // page and NOT a modal: they have an account, they are signed in, and the
@@ -120,6 +122,10 @@ export default async function DashboardLayout({
       {/* The welcome step belongs to the home dashboard (it leads into the
           first AI audit): not on a plan without one (the crawler-only plan). */}
       {planAllowsArea(plan, "home") && <OnboardingGate locale={locale} />}
+      {/* An ended plan (CANCELED) is still a usable account: every page says
+          so, with the way back, above whatever that page renders. Not on
+          /billing itself, whose plan card already says it. */}
+      {planEnded && !pathname?.startsWith("/billing") && <PlanEndedBanner t={BILLING_COPY[locale]} />}
       {excluded ? <PlanUpgradeScreen locale={locale} plan={plan} /> : children}
       {/* Mounted once for the whole (dashboard) group, so a navigation does not
           reset an open conversation. Lazily loaded — see the loader. */}
