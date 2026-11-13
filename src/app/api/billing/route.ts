@@ -57,14 +57,22 @@ export async function GET() {
       ? await pageAllowance(tenantId, tenant.planType as PlanType).catch(() => null)
       : null;
 
-    const feedbackThisPeriod = await prisma.feedback.count({
-      where: {
-        tenantId,
-        createdAt: currentPeriodStart
-          ? { gte: currentPeriodStart }
-          : undefined,
-      },
-    });
+    // FEEDBACK REQUESTS ARE A REPUTATION FEATURE. A plan without that area
+    // (the AI-only plan, the crawler-only plan) gets no meter: "0 / 10,000"
+    // on a plan that cannot send one is a limit for something not bought.
+    // The limit itself is Tenant.monthlyRequestLimit, a per-tenant column no
+    // code path writes (default 300); it does not follow the plan config.
+    const feedbackIncluded = planAllowsArea(tenant.planType as PlanType, "reputation");
+    const feedbackThisPeriod = feedbackIncluded
+      ? await prisma.feedback.count({
+          where: {
+            tenantId,
+            createdAt: currentPeriodStart
+              ? { gte: currentPeriodStart }
+              : undefined,
+          },
+        })
+      : 0;
 
     return NextResponse.json({
       plan: {
@@ -84,6 +92,7 @@ export async function GET() {
           }
         : null,
       usage: {
+        feedbackIncluded,
         feedbackSent: feedbackThisPeriod,
         feedbackLimit: tenant.monthlyRequestLimit,
         percentUsed:

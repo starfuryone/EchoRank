@@ -12,8 +12,8 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
-import { cn } from "@/lib/utils";
 import { PlanStatusCard } from "@/components/billing/plan-status-card";
+import { UsageMeters } from "@/components/billing/usage-meters";
 import { formatPeriodDate, planCardState } from "@/lib/billing/plan-card-state";
 import { PLAN_PRICES, planConfig, sellablePlan } from "@/lib/plan-config";
 import { pricingBase, usd, usdCents } from "@/lib/pricing-page/format";
@@ -30,6 +30,8 @@ interface BillingData {
   plan: string;
   status: string;
   currentPeriodEnd: string | null;
+  /** The plan includes feedback requests (the reputation area); else no meter. */
+  feedbackIncluded: boolean;
   requestsUsed: number;
   requestsLimit: number;
   cancelAtPeriodEnd: boolean;
@@ -179,6 +181,8 @@ export function BillingPageClient({
           plan: json.plan?.type ?? "STARTER",
           status: json.plan?.status ?? "ACTIVE",
           currentPeriodEnd: json.subscription?.currentPeriodEnd ?? null,
+          // Absent (an older server) reads as included: the meter it always showed.
+          feedbackIncluded: json.usage?.feedbackIncluded !== false,
           requestsUsed: json.usage?.feedbackSent ?? 0,
           requestsLimit: json.usage?.feedbackLimit ?? 300,
           cancelAtPeriodEnd: json.subscription?.cancelAtPeriodEnd ?? false,
@@ -230,11 +234,6 @@ export function BillingPageClient({
   }
 
   if (!billing) return null;
-
-  const usagePct =
-    billing.requestsLimit > 0
-      ? Math.round((billing.requestsUsed / billing.requestsLimit) * 100)
-      : 0;
 
   const cardState = planCardState({ status: billing.status, cancelAtPeriodEnd: billing.cancelAtPeriodEnd });
   const customPricing = planConfig(billing.plan as PlanType).isCustomPricing;
@@ -309,53 +308,13 @@ export function BillingPageClient({
       />
 
       {/* Usage */}
-      <Card>
-        <CardHeader>
-          <h3 className="text-base font-semibold text-gray-900">
-            {t.usageTitle}
-          </h3>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-600">{t.feedbackRequests}</span>
-              <span className="font-medium text-gray-900">
-                {billing.requestsUsed.toLocaleString(locale)} /{" "}
-                {billing.requestsLimit.toLocaleString(locale)}
-              </span>
-            </div>
-            <div className="h-3 rounded-full bg-gray-100 overflow-hidden">
-              <div
-                className={cn(
-                  "h-full rounded-full transition-all duration-500",
-                  usagePct >= 90
-                    ? "bg-red-500"
-                    : usagePct >= 70
-                      ? "bg-yellow-400"
-                      : "bg-blue-500"
-                )}
-                style={{ width: `${Math.min(usagePct, 100)}%` }}
-              />
-            </div>
-            <p className="text-xs text-gray-500">{t.usagePct(usagePct)}</p>
-          </div>
-          {billing.crawlPages && (
-            <div className="mt-5 space-y-1" data-testid="billing-crawl-pages">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-gray-600">{t.crawlPages(CRAWLER_BRAND.name)}</span>
-                <span className="font-medium text-gray-900">
-                  {billing.crawlPages.limit === null
-                    ? t.crawlPagesUnlimited(billing.crawlPages.used.toLocaleString(locale))
-                    : t.crawlPagesValue(billing.crawlPages.used.toLocaleString(locale), billing.crawlPages.limit.toLocaleString(locale))}
-                </span>
-              </div>
-              <p className="text-xs text-gray-500">
-                {t.crawlPagesResets(new Intl.DateTimeFormat(locale, { dateStyle: "long", timeZone: "UTC" }).format(new Date(billing.crawlPages.resetsAt)))}
-              </p>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      <UsageMeters
+        locale={locale}
+        t={t}
+        crawlerName={CRAWLER_BRAND.name}
+        feedback={billing.feedbackIncluded ? { used: billing.requestsUsed, limit: billing.requestsLimit } : null}
+        crawlPages={billing.crawlPages}
+      />
 
       {/* Pricing Cards — #plans is where an ended plan's "Choose a plan" lands. */}
       <div id="plans" className="scroll-mt-24">
