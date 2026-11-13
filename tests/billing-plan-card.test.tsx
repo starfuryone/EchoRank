@@ -105,6 +105,9 @@ describe("the plan card tells the truth, with dates", () => {
   it("cancelling: access until {date}, not charged again; Resume replaces Cancel", () => {
     const html = card({ state: "cancelling", status: "TRIALING" });
     expect(html).toContain("Cancelled — access until November 20, 2026. You won&#x27;t be charged again.");
+    // The badge spells it the way the sentence does.
+    expect(html).toMatch(/>Cancelled<\/span>/);
+    expect(html).not.toContain(">Canceled<");
     expect(html).toContain("Resume subscription");
     expect(html).not.toContain('href="/billing/cancel"');
     expect(html).toContain("Payment method &amp; invoices");
@@ -307,6 +310,19 @@ describe("a CANCELED tenant gets a usable page, never an empty render", () => {
     expect(html).toContain("Your plan ended on");
     expect(html.length).toBeGreaterThan(200);
   });
+
+  it.each(["/crawler", "/crawler/history", "/visibility/tools/site-crawler"])(
+    "%s: no banner on top of the ended screen that already says it",
+    async (path) => {
+      m.pathname = path;
+      const { default: DashboardLayout } = await import("@/app/(dashboard)/layout");
+      const tree = (await DashboardLayout({ children: createElement("p", { id: "page" }, "PAGE") })) as ReactElement;
+      const names = flatten((tree.props as { children: ReactNode }).children).map((e) =>
+        typeof e.type === "function" ? e.type.name : String(e.type),
+      );
+      expect(names).not.toContain("PlanEndedBanner");
+    },
+  );
 
   it("/dashboard for the crawler-only plan goes to /crawler (which renders the ended screen)", async () => {
     m.pathname = "/dashboard";

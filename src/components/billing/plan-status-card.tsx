@@ -67,7 +67,7 @@ export function PlanStatusCard(p: PlanStatusCardProps) {
   else if (state === "past_due") line = t.statePastDue;
 
   const badgeVariant = state === "renewing" || state === "trial" ? "success" : "warning";
-  const badgeLabel = state === "cancelling" ? t.statusLabels.CANCELED : (t.statusLabels[p.status] ?? p.status);
+  const badgeLabel = state === "cancelling" ? t.cancellingBadge : (t.statusLabels[p.status] ?? p.status);
 
   return (
     <Card data-testid="billing-plan-card" data-state={state}>

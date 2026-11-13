@@ -15,6 +15,9 @@ import { PlanUpgradeScreen } from "@/components/billing/PlanUpgradeScreen";
 import { planAllowsArea, planAllowsPage, planIsRestricted } from "@/lib/plan-access";
 import { PLAN_HOME } from "@/lib/plan-routing";
 
+/** Pages that already tell a CANCELED tenant their plan ended. */
+const ENDED_SAID_BY_PAGE = ["/billing", "/crawler", "/visibility/tools"] as const;
+
 export default async function DashboardLayout({
   children,
 }: {
@@ -123,9 +126,13 @@ export default async function DashboardLayout({
           first AI audit): not on a plan without one (the crawler-only plan). */}
       {planAllowsArea(plan, "home") && <OnboardingGate locale={locale} />}
       {/* An ended plan (CANCELED) is still a usable account: every page says
-          so, with the way back, above whatever that page renders. Not on
-          /billing itself, whose plan card already says it. */}
-      {planEnded && !pathname?.startsWith("/billing") && <PlanEndedBanner t={BILLING_COPY[locale]} />}
+          so, with the way back, above whatever that page renders. Not where
+          the page itself already says it: /billing (the plan card) and the
+          tools gate (/crawler, /visibility/tools render "Your plan has
+          ended" in place of the tool). */}
+      {planEnded && !ENDED_SAID_BY_PAGE.some((p) => pathname === p || pathname?.startsWith(`${p}/`)) && (
+        <PlanEndedBanner t={BILLING_COPY[locale]} />
+      )}
       {excluded ? <PlanUpgradeScreen locale={locale} plan={plan} /> : children}
       {/* Mounted once for the whole (dashboard) group, so a navigation does not
           reset an open conversation. Lazily loaded — see the loader. */}

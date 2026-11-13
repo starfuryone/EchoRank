@@ -592,6 +592,9 @@ const billingEn = {
   cancelledBanner: (date: string) =>
     `Your subscription is cancelled. You keep full access until ${date}, and you won't be charged again.`,
   dismiss: "Dismiss",
+  // The badge beside "Cancelled — access until …": the same word, spelled
+  // the same way, on the same card.
+  cancellingBadge: "Cancelled",
   // ── /billing/cancel ──
   cancelPageTitle: (plan: string) => `Cancel your ${plan} subscription`,
   factNoChargeTrial: "You won't be charged.",
@@ -724,6 +727,7 @@ export const BILLING_COPY: Record<DashLocale, BillingCopy> = {
     cancelledBanner: (date: string) =>
       `Votre abonnement est annulé. Vous gardez un accès complet jusqu'au ${date} et ne serez plus facturé.`,
     dismiss: "Fermer",
+    cancellingBadge: "Annulé",
     cancelPageTitle: (plan: string) => `Annuler votre abonnement ${plan}`,
     factNoChargeTrial: "Vous ne serez pas facturé.",
     factNoChargePaid: "Vous ne serez plus facturé.",
@@ -835,6 +839,7 @@ export const BILLING_COPY: Record<DashLocale, BillingCopy> = {
     cancelledBanner: (date: string) =>
       `Ihr Abonnement ist gekündigt. Sie behalten den vollen Zugang bis ${date}, und es wird nichts mehr abgebucht.`,
     dismiss: "Schliessen",
+    cancellingBadge: "Gekündigt",
     cancelPageTitle: (plan: string) => `${plan}-Abonnement kündigen`,
     factNoChargeTrial: "Es wird nichts abgebucht.",
     factNoChargePaid: "Es wird nichts mehr abgebucht.",
