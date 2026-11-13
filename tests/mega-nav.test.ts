@@ -78,6 +78,26 @@ describe("every menu destination exists", () => {
     expect(nav("fr")).toContain("Optimisation de la découverte IA");
   });
 
+  it("carries the prompt setup guides in Resources > Learn, right after the keyword research guide, both locales", () => {
+    // The hub is a typed-config route (src/lib/prompt-guides.ts); this is the
+    // only place the menu entry is asserted, label and position included.
+    expect(navHrefs()).toContain("/prompt-guides");
+    for (const [locale, label] of [["en", "Prompt setup guides"], ["fr", "Guides de prompts par secteur"]] as const) {
+      const html = nav(locale);
+      expect(html).toContain(`href="/${locale}/prompt-guides"`);
+      expect(html).toContain(label);
+      const kw = html.indexOf(`href="/${locale}/keyword-research"`);
+      const pgAt = html.indexOf(`href="/${locale}/prompt-guides"`);
+      const lbp = html.indexOf(`href="/${locale}/link-building-playbook"`);
+      expect(kw).toBeGreaterThan(-1);
+      expect(pgAt).toBeGreaterThan(kw);
+      expect(pgAt).toBeLessThan(lbp);
+      // Nothing between the two items: the next href after keyword research is this one.
+      const between = html.slice(kw + 10, pgAt);
+      expect(between.match(/href="/g) ?? []).toHaveLength(0);
+    }
+  });
+
   it("carries the AI Search tracking setup page in Product > AI visibility, both locales", () => {
     // Same reasoning as the two entries above: a route handler with en-only
     // copy, so nothing else in the suite would notice the entry going missing

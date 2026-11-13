@@ -7,6 +7,9 @@ import { learnRoutes } from "@/lib/learn-content";
 import { helpArticleRoutes } from "@/lib/help-articles";
 import { freeToolRoutes } from "@/lib/free-tools";
 import { solutionRoutes } from "@/lib/solutions-taxonomy";
+// The slugs-only module, not "@/lib/prompt-guides": this file is in the edge
+// proxy's bundle and the full guide config is ~50 KB of prompt copy.
+import { PROMPT_GUIDES_BASE, promptGuideRoutes } from "@/lib/prompt-guide-routes";
 // "@/lib/blog/constants" DELIBERATELY, not "@/lib/blog": this module is imported
 // by src/proxy.ts, which runs on the EDGE, and the blog's loader reads
 // content/blog/ with node:fs. The constants module imports nothing at all.
@@ -128,6 +131,14 @@ export const LOCALIZED_ROUTES: LocalizedRoute[] = [
   ...solutionRoutes().map((path) => ({
     path,
     priority: path.split("/").length === 3 ? 0.7 : 0.6,
+    changeFrequency: "monthly" as const,
+  })),
+  // Industry prompt setup guides — DERIVED from src/lib/prompt-guide-routes.ts:
+  // the hub (0.7, with the other Resources hubs) plus one page per guide (0.6,
+  // with the guide pages). Adding a slug there registers its page here.
+  ...promptGuideRoutes().map((path) => ({
+    path,
+    priority: path === PROMPT_GUIDES_BASE ? 0.7 : 0.6,
     changeFrequency: "monthly" as const,
   })),
   // Free tools — DERIVED from src/lib/free-tools.ts, same as the Knowledge Hub
