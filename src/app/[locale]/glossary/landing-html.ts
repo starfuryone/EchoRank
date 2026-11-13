@@ -140,9 +140,10 @@ a{color:inherit}
         <li class="glossary-item"><h3>Above the fold</h3><p>Above the fold refers to the portion of a webpage visible before the user scrolls.</p></li>
         <li class="glossary-item"><h3>Absolute link</h3><p>A link that spells out the full destination address, including protocol and domain, so it resolves the same from anywhere.</p></li>
         <li class="glossary-item"><h3>Access log</h3><p>A server file recording every incoming request with details such as time, IP address and user agent; useful for traffic and bot analysis.</p></li>
+        <li class="glossary-item"><h3>AEO (answer engine optimization)</h3><p>Answer engine optimization is the practice of making a brand easy for AI assistants to find, trust, recommend and describe correctly, so it is included in the answer itself. <a href="/en/learn/aeo">Learn it in the free AEO course &rarr;</a></p></li>
         <li class="glossary-item"><h3>Affiliate link</h3><p>A tracked URL that credits a specific partner when visitors click through and purchase, earning that partner a commission.</p></li>
         <li class="glossary-item"><h3>AI Lens</h3><p>AI Lens is an Echorank tool that compares the raw HTML of a page with its rendered output to measure how much of your content AI crawlers can actually read.</p></li>
-        <li class="glossary-item"><h3>AI visibility</h3><p>AI visibility describes how often and how prominently a brand appears in the answers produced by AI assistants and answer engines.</p></li>
+        <li class="glossary-item"><h3>AI visibility</h3><p>AI visibility describes how often and how prominently a brand appears in the answers produced by AI assistants and answer engines. <a href="/en/learn/aeo">Measure and improve it: free AEO course &rarr;</a></p></li>
         <li class="glossary-item"><h3>Algorithm</h3><p>An algorithm is a set of rules or calculations used to process information and determine outputs such as search rankings.</p></li>
         <li class="glossary-item"><h3>Alt text</h3><p>A written description attached to an image in HTML; screen readers announce it and search engines use it to understand the image.</p></li>
         <li class="glossary-item"><h3>AMP</h3><p>Accelerated Mobile Pages, a Google-backed framework of stripped-down HTML intended to make mobile pages load near-instantly.</p></li>
@@ -265,7 +266,7 @@ a{color:inherit}
       <ul>
         <li class="glossary-item"><h3>Gateway web page</h3><p>Another name for a doorway page: thin content built purely as a ranking entry point.</p></li>
         <li class="glossary-item"><h3>Generative AI</h3><p>Models that produce new text, images or code from prompts; the technology behind AI assistants and answer engines.</p></li>
-        <li class="glossary-item"><h3>Generative Engine Optimization (GEO)</h3><p>Generative Engine Optimization is the practice of structuring and optimizing content so that generative AI systems cite it in their answers.</p></li>
+        <li class="glossary-item"><h3>Generative Engine Optimization (GEO)</h3><p>Generative Engine Optimization is the practice of structuring and optimizing content so that generative AI systems cite it in their answers. <a href="/en/learn/aeo">Free AEO course &rarr;</a></p></li>
         <li class="glossary-item"><h3>Geo redirect</h3><p>Sending visitors to a different URL based on their detected location.</p></li>
         <li class="glossary-item"><h3>Google AI Overviews</h3><p>The AI-generated summaries Google shows above results, synthesized from multiple sources with citations.</p></li>
         <li class="glossary-item"><h3>Google Alerts</h3><p>A free service that emails you when new pages matching your chosen terms are indexed.</p></li>

@@ -52,6 +52,7 @@ import { KeywordWidget } from "@/components/KeywordWidget";
 import { PublicFooter } from "@/components/PublicFooter";
 import { PublicNav } from "../PublicNav";
 import { PricingSection } from "../PricingSection";
+import { AeoCourseStrip } from "@/components/aeo-course/CourseStrip";
 import s from "../home2.module.css";
 import v from "./landing.module.css";
 
@@ -267,6 +268,8 @@ export default async function AIVisibilityPage({ params }: { params: Promise<{ l
               </a>
             </div>
           </div>
+          {/* Below the audit block, not inside it. */}
+          <AeoCourseStrip locale={l} />
         </div>
       </section>
 

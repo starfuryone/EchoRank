@@ -41,6 +41,11 @@ import { NOSY_BAT_CARD_ANCHOR } from "@/lib/plan-launch";
 import { moneyAmount, usd } from "@/lib/pricing-page/format";
 import { FREE_CRAWL_URL_CAP } from "@/lib/site-crawler/free-limits";
 import { NB_INTRO_ANCHOR, NB_INTRO_MINUTES } from "@/lib/site-crawler/intro-video";
+// The slugs-only module, not the course config: this is a Client Component.
+import { AEO_BASE, AEO_LESSON_SLUGS } from "@/lib/aeo-course-routes";
+
+/** The AEO course's lesson count, read from its route list rather than typed. */
+const AEO_LESSONS_N = AEO_LESSON_SLUGS.length;
 
 type Base = "en" | "fr";
 const baseOf = (locale: string): Base => (locale.startsWith("fr") ? "fr" : "en");
@@ -290,6 +295,7 @@ const NAV: Record<Base, NavCopy> = {
             title: "Learn",
             items: [
               { href: "/blog", label: "Echorank Blog", desc: "GEO, AI search visibility and what to measure." },
+              { href: AEO_BASE, label: "AEO course", desc: `Free ${AEO_LESSONS_N}-lesson course: become the answer in AI search.` },
               { href: "/learn", label: "Knowledge hub", desc: "Course, guides and Echopedia." },
               { href: "/learn/guides/what-nosy-bat-checks", label: `What ${CRAWLER_BRAND.name} checks`, desc: "Every rule family the crawler runs." },
               // One item, not the four guides: this column already holds eleven
@@ -390,6 +396,7 @@ const NAV: Record<Base, NavCopy> = {
             title: "Apprendre",
             items: [
               { href: "/blog", label: "Blogue Echorank", desc: "GEO, visibilité dans la recherche IA et quoi mesurer." },
+              { href: AEO_BASE, label: "Cours AEO", desc: `Cours gratuit en ${AEO_LESSONS_N} leçons (en anglais).` },
               { href: "/learn", label: "Centre de connaissances", desc: "Cours, guides et Echopedia." },
               { href: "/learn/guides/what-nosy-bat-checks", label: `Ce que ${CRAWLER_BRAND.name} vérifie`, desc: "Chaque famille de règles du robot." },
               { href: CRAWLER_GUIDES_HREF, label: `Les guides ${CRAWLER_BRAND.name}`, desc: "Liens brisés, plans de site, extraction, migrations." },

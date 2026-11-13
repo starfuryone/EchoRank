@@ -101,6 +101,11 @@ export const HELP_GROUPS: HelpGroup[] = [
         href: "/en/setup-ai-search-tracking",
         icon: "book",
       },
+      // The Echorank AEO course. Same shape as the card above: "external"
+      // because it is not a learn-content.ts article (it has its own config,
+      // src/lib/aeo-course.ts), so the copy lives in HELP_COPY; new tab; /en
+      // because the lessons' body is English; the book icon, since it is read.
+      { id: "aeo_course", kind: "external", href: "/en/learn/aeo", icon: "book" },
     ],
   },
   {

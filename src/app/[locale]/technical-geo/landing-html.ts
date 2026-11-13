@@ -1037,6 +1037,7 @@ export const TECHNICAL_GEO_HTML = `<!DOCTYPE html>
           <div class="hero-actions">
             <a class="btn btn-primary" href="/en/free-audit">Run my free audit</a>
             <a class="btn btn-secondary" href="/en/pricing">See plans</a>
+            <a class="btn btn-secondary" href="/en/learn/aeo">Free AEO course</a>
           </div>
         </div>
       </div>

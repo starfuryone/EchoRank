@@ -258,6 +258,7 @@ const T = {
       repPaper: "Reputation Intelligence guide (PDF)",
       seoPaper: "The SEO tools, explained (PDF)",
       extension: "Browser extension",
+      aeoCourse: "Free AEO course",
     },
     foot: { links: [["pricing", "PRICING"], ["ai-visibility-check", "FREE CHECK"], ["use-cases", "USE CASES"], ["about", "ABOUT"], ["resources", "RESOURCES"], ["guide", "GUIDE"], ["guide-visibilite-ia", "AI VISIBILITY GUIDE"], ["legal/subscription-agreement", "SUBSCRIPTION"], ["legal/privacy", "PRIVACY"], ["legal/terms", "TERMS"], ["legal/cookies", "COOKIES"], ["legal/no-financial-advice", "NO FINANCIAL ADVICE"], ["legal/disclaimer", "DISCLAIMER"]] },
   },
@@ -421,6 +422,7 @@ const T = {
       repPaper: "Guide Reputation Intelligence (PDF)",
       seoPaper: "Les outils SEO, expliqués (PDF)",
       extension: "Extension navigateur",
+      aeoCourse: "Cours AEO gratuit",
     },
     foot: { links: [["pricing", "TARIFS"], ["ai-visibility-check", "VÉRIFICATION GRATUITE"], ["use-cases", "CAS D’USAGE"], ["about", "À PROPOS"], ["resources", "RESSOURCES"], ["guide", "GUIDE"], ["guide-visibilite-ia", "GUIDE VISIBILITÉ IA"], ["legal/subscription-agreement", "ABONNEMENT"], ["legal/privacy", "CONFIDENTIALITÉ"], ["legal/terms", "CONDITIONS"], ["legal/cookies", "COOKIES"], ["legal/no-financial-advice", "CONSEIL FINANCIER"], ["legal/disclaimer", "AVIS"]] },
   },
@@ -1042,7 +1044,9 @@ export default function HomeClient({
         repo's no-html-link-for-pages baseline.
       */}
       {/* eslint-disable-next-line @next/next/no-html-link-for-pages */}
-      <a className={s.btn} href="/extension">{t.resources.extension} ↗</a></div></section><section className={s.close}>
+      <a className={s.btn} href="/extension">{t.resources.extension} ↗</a>{" "}
+      {/* The free AEO course: a Next route, so <Link> and the locale prefix. */}
+      <Link className={s.btn} href={L("/learn/aeo")} data-testid="home-aeo-course">{t.resources.aeoCourse} →</Link></div></section><section className={s.close}>
         <div className={s.container}>
           <p className={s.label}><b>/ 17</b> — {t.close.label}</p>
           <h2 className={s.h2c}>{t.close.h2a}<span className={s.goldtext}>{t.close.h2b}</span></h2>

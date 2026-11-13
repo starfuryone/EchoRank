@@ -22,6 +22,7 @@ import { FREE_AUDIT_DAILY_LIMIT, FREE_AUDIT_WINDOW_HOURS } from "@/lib/free-audi
 import { AuditRunner } from "@/components/free-audit/AuditRunner";
 import { PublicNav } from "../PublicNav";
 import { PublicFooter } from "@/components/PublicFooter";
+import { AeoCourseStrip } from "@/components/aeo-course/CourseStrip";
 import s from "../home2.module.css";
 
 export function generateStaticParams() {
@@ -77,6 +78,8 @@ export default async function Page({ params }: { params: Promise<{ locale: strin
           <p className={s.label} style={{ marginTop: 18 }} data-testid="audit-tool-line">
             {c.toolLine}
           </p>
+          {/* Below the runner and its results, never inside them. */}
+          <AeoCourseStrip locale={locale} />
         </div>
       </section>
 

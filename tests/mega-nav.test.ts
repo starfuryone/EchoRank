@@ -78,6 +78,18 @@ describe("every menu destination exists", () => {
     expect(nav("fr")).toContain("Optimisation de la découverte IA");
   });
 
+  it("carries the AEO course second in Resources > Learn, right after the blog, both locales", () => {
+    expect(navHrefs()).toContain("/learn/aeo");
+    for (const [locale, label] of [["en", "AEO course"], ["fr", "Cours AEO"]] as const) {
+      const html = nav(locale);
+      // The Learn column's first two items, in order: the blog, then the course.
+      const learn = html.slice(html.indexOf(`href="/${locale}/blog"`));
+      const hrefs = [...learn.matchAll(/href="([^"]+)"/g)].map((m) => m[1]);
+      expect(hrefs.slice(0, 2)).toEqual([`/${locale}/blog`, `/${locale}/learn/aeo`]);
+      expect(html).toContain(label);
+    }
+  });
+
   it("carries the prompt setup guides in Resources > Learn, right after the keyword research guide, both locales", () => {
     // The hub is a typed-config route (src/lib/prompt-guides.ts); this is the
     // only place the menu entry is asserted, label and position included.

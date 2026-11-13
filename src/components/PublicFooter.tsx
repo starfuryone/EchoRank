@@ -23,6 +23,8 @@ const LINKS: Record<"en" | "fr", ReadonlyArray<readonly [string, string]>> = {
     // "under Product" means beside the other product links, before Learn.
     ["/site-crawler", CRAWLER_BRAND.name],
     ["/learn", "Learn"],
+    // The free AEO course, beside the hub it lives under.
+    ["/learn/aeo", "AEO course"],
     ["/blog", "Blog"],
     ["/about", "About"],
     ["/legal/terms", "Terms"],
@@ -35,6 +37,7 @@ const LINKS: Record<"en" | "fr", ReadonlyArray<readonly [string, string]>> = {
     ["/free-tools", "Outils gratuits"],
     ["/site-crawler", CRAWLER_BRAND.name],
     ["/learn", "Apprendre"],
+    ["/learn/aeo", "Cours AEO"],
     ["/blog", "Blog"],
     ["/about", "À propos"],
     ["/legal/terms", "Conditions"],

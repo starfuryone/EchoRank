@@ -42,6 +42,29 @@ import s from "../home2.module.css";
 import c from "./_shared/learn.module.css";
 import { AvEmblem } from "@/components/brand/AiVisibilityLogo";
 import { LEARN_COURSE_NAME } from "@/lib/learn-content";
+import { AEO_BASE, AEO_LESSONS, MRCA_STAGES } from "@/lib/aeo-course";
+
+/**
+ * The featured card for the Echorank AEO course, at the top of the hub. The
+ * course has its own config (src/lib/aeo-course.ts); the lesson count and the
+ * four stages are read from it, never typed here.
+ */
+const AEO_FEATURE: Record<Base, { label: (n: number) => string; h: string; p: string; cta: string; stages: string }> = {
+  en: {
+    label: (n) => `New · Free AEO course · ${n} lessons`,
+    h: "Become the answer: the Echorank AEO course",
+    p: "How AI assistants decide what to say, how to measure where your brand stands, and a 90-day plan to fix what keeps you out of the answer. Free, self-paced.",
+    cta: "Start the AEO course",
+    stages: "Scored on four stages",
+  },
+  fr: {
+    label: (n) => `Nouveau · Cours AEO gratuit · ${n} leçons`,
+    h: "Devenez la réponse : le cours AEO d'Echorank",
+    p: "Comment les assistants IA décident quoi répondre, comment mesurer la place de votre marque, et un plan sur 90 jours pour corriger ce qui vous tient à l'écart. Gratuit, à votre rythme, en anglais.",
+    cta: "Commencer le cours AEO",
+    stages: "Quatre étapes notées",
+  },
+};
 
 export function generateStaticParams() {
   return SUPPORTED_LOCALES.map((locale) => ({ locale }));
@@ -277,6 +300,34 @@ export default async function LearnHubPage({
           </a>
         </div>
       </div>
+
+      {/* Featured: the Echorank AEO course (its own config and routes). */}
+      <section className={s.section} id="aeo-course" data-testid="learn-aeo-feature">
+        <div className={s.container}>
+          <div className={c.flag}>
+            <div>
+              <p className={s.label}>
+                <b>{AEO_FEATURE[baseOf(locale)].label(AEO_LESSONS.length)}</b>
+              </p>
+              <h2 className={c.flagH}>{AEO_FEATURE[baseOf(locale)].h}</h2>
+              <p className={c.flagP}>{AEO_FEATURE[baseOf(locale)].p}</p>
+              <Link className={`${s.btn} ${s.btnPrimary}`} href={L(AEO_BASE)}>
+                {AEO_FEATURE[baseOf(locale)].cta}
+              </Link>
+            </div>
+            <div>
+              <p className={s.label}>{AEO_FEATURE[baseOf(locale)].stages}</p>
+              <ol className={c.chapters} style={{ listStyle: "none", padding: 0, gridTemplateColumns: "1fr", gap: 10, marginTop: 12 }}>
+                {MRCA_STAGES.map((st) => (
+                  <li key={st.key}>
+                    <b>{st.key}</b> · {st.name} — {st.line}
+                  </li>
+                ))}
+              </ol>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* Flagship course */}
       <section className={s.section} id="course">

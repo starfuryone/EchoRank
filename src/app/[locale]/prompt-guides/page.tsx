@@ -220,6 +220,9 @@ export default async function PromptGuidesHub({ params }: { params: Params }) {
             <p className={pg.p}>{H.method.body}</p>
             {/* Every step's text is drawn in the figure and repeated in its <desc>. */}
             <MethodFlow id="pg-method" />
+            <p className={pg.p} data-testid="pg-course-link">
+              {H.method.course.lead} <Link href={L(H.method.course.href)}>{H.method.course.label}</Link>
+            </p>
           </div>
         </section>
 

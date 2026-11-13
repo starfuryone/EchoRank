@@ -12905,6 +12905,10 @@ const helpEn = {
       name: "Set up AI Search tracking",
       description: "We ask AI assistants the questions your buyers ask, and record whether they mention you.",
     },
+    aeo_course: {
+      name: "The Echorank AEO course",
+      description: "A free, self-paced course: how AI answers are built, the MRCA scorecard, and a 90-day plan.",
+    },
     echopedia: {
       name: "Echopedia",
       description: "Every term used across the guides, defined in one place.",
@@ -12968,6 +12972,10 @@ export const HELP_COPY: Record<DashLocale, HelpCopy> = {
         name: "Configurer le suivi AI Search",
         description: "Nous posons aux assistants IA les questions que posent vos acheteurs, et notons s'ils vous mentionnent.",
       },
+      aeo_course: {
+        name: "Le cours AEO d'Echorank",
+        description: "Un cours gratuit, à votre rythme : comment se construisent les réponses IA, la grille MRCA et un plan sur 90 jours. En anglais.",
+      },
       echopedia: {
         name: "Echopedia",
         description: "Tous les termes employés dans les guides, définis au même endroit.",
@@ -13023,6 +13031,10 @@ export const HELP_COPY: Record<DashLocale, HelpCopy> = {
       setup_ai_search: {
         name: "AI-Search-Tracking einrichten",
         description: "Wir stellen KI-Assistenten die Fragen Ihrer Käufer und halten fest, ob Sie erwähnt werden.",
+      },
+      aeo_course: {
+        name: "Der AEO-Kurs von Echorank",
+        description: "Ein kostenloser Kurs im eigenen Tempo: wie KI-Antworten entstehen, die MRCA-Bewertung und ein 90-Tage-Plan. Auf Englisch.",
       },
       echopedia: {
         name: "Echopedia",

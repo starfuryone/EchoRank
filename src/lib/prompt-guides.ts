@@ -24,6 +24,7 @@
 // are not search-volume data, and the pages say so where the prompts appear.
 
 import { PROMPT_GUIDES_BASE, PROMPT_GUIDE_SLUGS, type PromptGuideSlug } from "./prompt-guide-routes";
+import { AEO_BASE } from "./aeo-course-routes";
 
 export { PROMPT_GUIDES_BASE, PROMPT_GUIDE_SLUGS, type PromptGuideSlug };
 
@@ -1031,6 +1032,8 @@ export const HUB_COPY = {
     label: "A better way to design a prompt library",
     h2: "From buyer intent to measurable evidence",
     body: "Prompt tracking is research, not a ranking guarantee. Use the same questions repeatedly, observe what the engine actually says, and evaluate the evidence behind its answer.",
+    /** Cross-link to the AEO course lesson that teaches this method in depth. */
+    course: { lead: "Go deeper:", label: "Build your prompt panel, lesson 4 of the free AEO course →", href: `${AEO_BASE}/build-your-prompt-panel` },
   },
   modes: {
     label: "Four core prompt modes",

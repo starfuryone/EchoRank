@@ -181,6 +181,11 @@
 .status{font-size:13px;color:var(--faint)}
 .printOnly{display:none}
 
+/* ── the course strip on /ai-visibility and /free-audit ──────────────── */
+.strip{display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;margin:20px 0 0;padding:12px 16px;border-radius:12px;border:1px solid var(--line);border-left:3px solid var(--gold);background:var(--surface);font-size:14.5px;color:var(--muted);max-width:760px}
+.strip a{color:var(--goldText);font-weight:600}
+.strip a:hover{text-decoration:underline}
+
 /* ── toast ───────────────────────────────────────────────────────────── */
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);z-index:60;padding:10px 16px;border-radius:10px;background:var(--surface2);border:1px solid var(--line);color:var(--text);font-size:14px;pointer-events:none;opacity:0;transition:opacity .15s}
 .toastOn{opacity:1}
