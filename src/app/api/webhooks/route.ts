@@ -8,6 +8,7 @@ import { reconcileTenantMatrixAccounts } from "@/lib/matrix-accounts";
 import { rateLimit } from "@/lib/rate-limit";
 import { logger } from "@/infrastructure/observability/logger";
 import { resolvePlanFromPriceId } from "@/lib/stripe/prices";
+import { planTypeForLookupKey } from "@/lib/stripe/lookup-keys";
 import { quotaEnforcer } from "@/infrastructure/metering/quota";
 import {
   cancelTrialEndingNotice,
@@ -376,7 +377,34 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
   const productKind = productKindFor(lookupKey);
   const isWatcher = productKind === "WATCHER";
 
-  const planType = isWatcher ? null : (dbPlan?.planType ?? mapStripePlan(priceId));
+  // THREE SOURCES, IN THIS ORDER (NOSY-BAT-BLANK, 2026-11-13):
+  //   1. the stripe_prices row for the price id — every price we ever sold,
+  //      retired ones included (resolvePlanFromPriceId has no active filter);
+  //   2. the price's lookup key — ours and stable, so a NEW price (a reprice
+  //      whose row the seed has not written yet) still maps to its tier;
+  //   3. the legacy env-var ids (STARTER..ENTERPRISE only).
+  // Without (2) a $15 crawler-only price missing from the catalog fell through to
+  // (3), which knows no NOSY_BAT: the tenant kept its old plan and the
+  // Subscription row below was stamped with it, so an Agency tenant buying a
+  // $15 trial kept Agency access. An unresolved plan is now logged.
+  const lookupPlan = planTypeForLookupKey(lookupKey);
+  const envPlan = mapStripePlan(priceId);
+  const planType = isWatcher ? null : (dbPlan?.planType ?? lookupPlan ?? envPlan);
+  const planSource = isWatcher
+    ? "watcher"
+    : dbPlan
+      ? "catalog"
+      : lookupPlan
+        ? "lookup_key"
+        : envPlan
+          ? "env"
+          : "none";
+  if (planSource === "none") {
+    log.warn(
+      { tenantId: tenant.id, subscriptionId: subscription.id, priceId, lookupKey: lookupKey ?? null, keptPlan: tenant.planType },
+      "Subscription price maps to no plan: tenant plan left unchanged. Add the price's stripe_prices row (scripts/seed-plan-prices-usd.ts)",
+    );
+  }
 
   // Period dates live on the subscription item in current Stripe API versions
   const periodStart = firstItem?.current_period_start
@@ -519,7 +547,7 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
   }
 
   log.info(
-    { tenantId: tenant.id, status: billingStatus, planType, resolvedBy },
+    { tenantId: tenant.id, status: billingStatus, planType, resolvedBy, planSource, priceId },
     "Subscription updated"
   );
 }
