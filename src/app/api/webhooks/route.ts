@@ -474,6 +474,12 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
     }
   }
 
+  // CANCELLING IS EITHER FIELD. Our own cancel button sets cancel_at_period_end;
+  // a portal or a dashboard edit can instead schedule a bare cancel_at. Reading
+  // only the first left the Billing card saying "renews" on a subscription
+  // Stripe was about to end (CANCEL-FAIR-PLAY).
+  const cancelling = subscription.cancel_at_period_end || subscription.cancel_at != null;
+
   // Upsert subscription record
   await prisma.subscription.upsert({
     where: { tenantId: tenant.id },
@@ -485,7 +491,7 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
       stripePriceId: priceId ?? undefined,
       currentPeriodStart: periodStart,
       currentPeriodEnd: periodEnd,
-      cancelAtPeriodEnd: subscription.cancel_at_period_end,
+      cancelAtPeriodEnd: cancelling,
     },
     create: {
       tenantId: tenant.id,
@@ -496,7 +502,7 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
       stripePriceId: priceId ?? undefined,
       currentPeriodStart: periodStart,
       currentPeriodEnd: periodEnd,
-      cancelAtPeriodEnd: subscription.cancel_at_period_end,
+      cancelAtPeriodEnd: cancelling,
     },
   });
 

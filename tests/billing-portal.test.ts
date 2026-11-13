@@ -19,8 +19,8 @@ vi.mock("@/lib/stripe/client", () => ({
 }));
 
 /** A tenant that has been through checkout, whatever it bought. */
-function membership(stripeCustomerId: string | null) {
-  return { tenant: { id: "tenant_1", stripeCustomerId } };
+function membership(stripeCustomerId: string | null, role: "OWNER" | "ADMIN" | "MEMBER" = "OWNER") {
+  return { role, tenant: { id: "tenant_1", stripeCustomerId } };
 }
 
 async function post() {
@@ -47,6 +47,19 @@ describe("who may open the portal", () => {
     const res = await post();
     expect(res.status).toBe(401);
     expect(createSession).not.toHaveBeenCalled();
+  });
+
+  it("403s a MEMBER: the portal can cancel, so it takes the cancel roles", async () => {
+    getCurrentTenant.mockResolvedValue(membership("cus_abc", "MEMBER"));
+    const res = await post();
+    expect(res.status).toBe(403);
+    expect(await res.json()).toMatchObject({ reason: "role" });
+    expect(createSession).not.toHaveBeenCalled();
+  });
+
+  it("lets an ADMIN in, like an OWNER", async () => {
+    getCurrentTenant.mockResolvedValue(membership("cus_abc", "ADMIN"));
+    expect((await post()).status).toBe(200);
   });
 
   it("400s a tenant that has never been through checkout", async () => {

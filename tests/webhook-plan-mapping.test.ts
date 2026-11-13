@@ -282,3 +282,24 @@ describe("every seeded tier maps back to its plan", () => {
     },
   );
 });
+
+describe("a cancelling subscription is stored as cancelling (CANCEL-FAIR-PLAY)", () => {
+  const updated = (over: Row) => {
+    const obj = subscriptionObject(MONTH_PRICE, over);
+    stripeMock.subscriptions.retrieve.mockResolvedValue(obj);
+    return post("customer.subscription.updated", obj, `evt_upd_${JSON.stringify(over)}`);
+  };
+
+  it.each([
+    ["cancel_at_period_end (our Cancel button)", { cancel_at_period_end: true, cancel_at: 1_900_000_000 }, true],
+    ["a bare cancel_at (a portal or dashboard schedule)", { cancel_at_period_end: false, cancel_at: 1_900_000_000 }, true],
+    ["neither (renewing, or resumed)", { cancel_at_period_end: false, cancel_at: null }, false],
+  ])("%s", async (_l, over, expected) => {
+    catalog();
+    tenant("NOSY_BAT", "TRIALING");
+    expect((await updated(over)).status).toBe(200);
+    expect(db.subs.get(TENANT)).toMatchObject({ cancelAtPeriodEnd: expected, status: "TRIALING" });
+    // Cancelling is not cancelled: access holds until Stripe deletes it.
+    expect(paid()).toBe(true);
+  });
+});

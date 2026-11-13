@@ -27,6 +27,7 @@ import { getStripe } from "@/lib/stripe/client";
 import { getCurrentTenant } from "@/lib/tenant";
 import { logger } from "@/infrastructure/observability/logger";
 import { SITE_URL } from "@/lib/seo";
+import { canManageBilling } from "@/lib/billing/billing-roles";
 
 const log = logger.child({ module: "billing-portal" });
 
@@ -39,6 +40,14 @@ export async function POST() {
       return NextResponse.json(
         { error: "Sign in required.", reason: "unauthenticated" },
         { status: 401 },
+      );
+    }
+    // THE SAME ROLES AS /api/billing/cancel. The portal can cancel too, so a
+    // MEMBER who may not press our Cancel button must not reach Stripe's.
+    if (!canManageBilling(membership.role)) {
+      return NextResponse.json(
+        { error: "Only the account owner or an admin can manage billing.", reason: "role" },
+        { status: 403 },
       );
     }
     tenantId = membership.tenant.id;
