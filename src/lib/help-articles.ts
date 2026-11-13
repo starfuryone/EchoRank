@@ -124,16 +124,16 @@ export const HELP_ARTICLES: HelpArticle[] = [
                 img: { src: STEP_IMG[1], alt: "Billing in the sidebar" },
               },
               {
-                t: "Click **Manage subscription**. This opens your secure Stripe billing portal.",
-                img: { src: STEP_IMG[2], alt: "Manage subscription button" },
+                t: "On your plan card, click **Cancel subscription**.",
+                img: { src: STEP_IMG[2], alt: "The Cancel subscription button on the plan card" },
               },
               {
-                t: "In the portal, click your **active plan** (the row showing your plan name and next payment).",
-                img: { src: STEP_IMG[3], alt: "Active plan row in the portal" },
+                t: "The next page shows when your access ends and confirms you won't be charged again. Giving a reason is optional. Click **Cancel subscription**.",
+                img: { src: STEP_IMG[3], alt: "The cancellation page with its facts and the Cancel subscription button" },
               },
               {
-                t: "Click **Cancel subscription** and confirm.",
-                img: { src: STEP_IMG[4], alt: "Cancel subscription action" },
+                t: "Back on Billing, your plan card reads **Cancelled — access until** your end date.",
+                img: { src: STEP_IMG[4], alt: "The plan card after cancelling, with Resume subscription" },
               },
             ],
           },
@@ -143,28 +143,34 @@ export const HELP_ARTICLES: HelpArticle[] = [
             items: [
               "Your plan stays fully active until the end of the period you've already paid for (or until your trial's end date, if you cancel during a trial). You are not charged again.",
               "There are no cancellation fees.",
+              "Changed your mind? Click **Resume subscription** on the Billing page any time before that date. It is one click, and nothing has to be entered again.",
               "Your workspace data — audits, tracked prompts, reports, settings — is kept, so if you come back everything is where you left it.",
               "Any prepaid lookup credits remain on your account and become usable again if you reactivate a subscription.",
-              "You can restart anytime from **Billing → Plans**; reactivating during the remaining paid period simply resumes your plan.",
+              "After the end date, you can subscribe again any time from **Billing → Plans**.",
             ],
           },
           { k: "h2", t: "Canceling during your free trial" },
           {
             k: "p",
-            t: "Same steps. Cancel any time before the trial ends and you will not be charged at all.",
+            t: "Same steps. Cancel any time before the trial ends and you will not be charged at all. You keep the trial until its end date.",
+          },
+          { k: "h2", t: "Who can cancel" },
+          {
+            k: "p",
+            t: "The account owner or an admin. Other team members see who can cancel instead of the button.",
           },
           { k: "h2", t: "Need help?" },
           {
             k: "p",
-            t: "If anything in the portal doesn't work, contact support and we'll cancel it for you — the self-serve path is a convenience, not a requirement.",
+            t: "If anything doesn't work, contact support and we'll cancel it for you — the self-serve path is a convenience, not a requirement.",
           },
         ],
         faq: {
           q: "How do I cancel my subscription?",
-          a: "Sign in → **Billing** → **Manage subscription** → click your plan → **Cancel subscription**. Your plan stays active until the end of the period you've paid for, and you won't be charged again. No fees, no phone calls. If you cancel during your free trial, you're never charged. Full walkthrough: [How to cancel your Echorank subscription](/help/cancel-subscription).",
+          a: "Sign in → **Billing** → **Cancel subscription** → confirm. Your plan stays active until the end of the period you've paid for, and you won't be charged again. Changed your mind? **Resume subscription** is one click until then. No fees, no phone calls. If you cancel during your free trial, you're never charged. Full walkthrough: [How to cancel your Echorank subscription](/help/cancel-subscription).",
         },
         blurb:
-          "**Canceling your subscription** — Cancellation is self-serve from Billing → Manage subscription and takes effect at the end of your paid period. See the step-by-step guide: [How to cancel](/help/cancel-subscription).",
+          "**Canceling your subscription** — Cancellation is self-serve from Billing → Cancel subscription, two clicks, and takes effect at the end of your paid period. See the step-by-step guide: [How to cancel](/help/cancel-subscription).",
         related: [
           { href: "/pricing", label: "Plans and pricing", internal: true },
           {
@@ -194,16 +200,16 @@ export const HELP_ARTICLES: HelpArticle[] = [
                 img: { src: STEP_IMG[1], alt: "Facturation dans la barre latérale" },
               },
               {
-                t: "Cliquez sur **Gérer l'abonnement**. Votre portail de facturation sécurisé Stripe s'ouvre.",
-                img: { src: STEP_IMG[2], alt: "Le bouton Gérer l'abonnement" },
+                t: "Sur la carte de votre forfait, cliquez sur **Annuler l'abonnement**.",
+                img: { src: STEP_IMG[2], alt: "Le bouton Annuler l'abonnement sur la carte du forfait" },
               },
               {
-                t: "Dans le portail, cliquez sur votre **forfait actif** (la ligne indiquant le nom du forfait et le prochain paiement).",
-                img: { src: STEP_IMG[3], alt: "La ligne du forfait actif dans le portail" },
+                t: "La page suivante indique la date de fin de votre accès et confirme que vous ne serez plus facturé. Indiquer une raison est facultatif. Cliquez sur **Annuler l'abonnement**.",
+                img: { src: STEP_IMG[3], alt: "La page d'annulation, avec les informations et le bouton Annuler l'abonnement" },
               },
               {
-                t: "Cliquez sur **Annuler l'abonnement** et confirmez.",
-                img: { src: STEP_IMG[4], alt: "L'action Annuler l'abonnement" },
+                t: "De retour sur Facturation, la carte de votre forfait affiche **Annulé — accès jusqu'au**, suivi de votre date de fin.",
+                img: { src: STEP_IMG[4], alt: "La carte du forfait après l'annulation, avec Reprendre l'abonnement" },
               },
             ],
           },
@@ -213,31 +219,37 @@ export const HELP_ARTICLES: HelpArticle[] = [
             items: [
               "Votre forfait reste pleinement actif jusqu'à la fin de la période déjà payée (ou jusqu'à la fin de votre essai si vous annulez pendant celui-ci). Aucun nouveau prélèvement.",
               "Aucuns frais d'annulation.",
+              "Vous changez d'avis ? Cliquez sur **Reprendre l'abonnement** dans Facturation à tout moment avant cette date. Un seul clic, rien à saisir de nouveau.",
               "Vos données — audits, prompts suivis, rapports, réglages — sont conservées ; si vous revenez, tout est à sa place.",
               "Vos crédits de recherche prépayés restent sur votre compte et redeviennent utilisables si vous réactivez un abonnement.",
-              "Vous pouvez reprendre à tout moment depuis **Facturation → Forfaits**.",
+              "Après la date de fin, vous pouvez vous réabonner à tout moment depuis **Facturation → Forfaits**.",
             ],
           },
           { k: "h2", t: "Annuler pendant l'essai gratuit" },
           {
             k: "p",
-            t: "Mêmes étapes. Annulez à tout moment avant la fin de l'essai et vous ne serez jamais facturé.",
+            t: "Mêmes étapes. Annulez à tout moment avant la fin de l'essai et vous ne serez jamais facturé. Vous gardez l'essai jusqu'à sa date de fin.",
+          },
+          { k: "h2", t: "Qui peut annuler" },
+          {
+            k: "p",
+            t: "Le propriétaire du compte ou un administrateur. Les autres membres de l'équipe voient qui peut annuler, à la place du bouton.",
           },
           { k: "h2", t: "Besoin d'aide ?" },
           {
             k: "p",
-            t: "Si quelque chose ne fonctionne pas dans le portail, contactez le support et nous annulerons pour vous — le libre-service est une commodité, pas une obligation.",
+            t: "Si quelque chose ne fonctionne pas, contactez le support et nous annulerons pour vous — le libre-service est une commodité, pas une obligation.",
           },
         ],
         faq: {
           q: "Comment annuler mon abonnement ?",
-          a: "Connexion → **Facturation** → **Gérer l'abonnement** → cliquez sur votre forfait → **Annuler l'abonnement**. Le forfait reste actif jusqu'à la fin de la période payée, sans nouveau prélèvement. Aucuns frais, aucun appel. En cas d'annulation pendant l'essai gratuit, vous n'êtes jamais facturé. Guide complet : [Comment annuler](/help/cancel-subscription).",
+          a: "Connexion → **Facturation** → **Annuler l'abonnement** → confirmez. Le forfait reste actif jusqu'à la fin de la période payée, sans nouveau prélèvement. Vous changez d'avis ? **Reprendre l'abonnement** se fait en un clic d'ici là. Aucuns frais, aucun appel. En cas d'annulation pendant l'essai gratuit, vous n'êtes jamais facturé. Guide complet : [Comment annuler](/help/cancel-subscription).",
         },
         // No French blurb shipped with the canonical copy pack — written here
         // from the English one, in the article's own vocabulary
-        // ("Facturation → Gérer l'abonnement"), not machine-translated.
+        // ("Facturation → Annuler l'abonnement"), not machine-translated.
         blurb:
-          "**Annuler votre abonnement** — L'annulation se fait en libre-service depuis Facturation → Gérer l'abonnement et prend effet à la fin de votre période payée. Voir le guide étape par étape : [Comment annuler](/help/cancel-subscription).",
+          "**Annuler votre abonnement** — L'annulation se fait en libre-service depuis Facturation → Annuler l'abonnement, en deux clics, et prend effet à la fin de votre période payée. Voir le guide étape par étape : [Comment annuler](/help/cancel-subscription).",
         related: [
           { href: "/pricing", label: "Forfaits et tarifs", internal: true },
           {

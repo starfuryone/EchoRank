@@ -1012,8 +1012,8 @@ export const TECHNICAL_GEO_HTML = `<!DOCTYPE html>
             <summary>How does the trial work?</summary>
             <p>
               Every paid plan starts with a 7-day free trial. A card is required to start it, and you can
-              cancel any time during the trial with no charge&mdash;cancellation is self-serve through the
-              billing portal.
+              cancel any time during the trial with no charge&mdash;cancellation is self-serve, two clicks
+              from the Billing page.
             </p>
           </details>
 

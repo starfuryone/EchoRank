@@ -8,6 +8,8 @@ import { CONV_RATE_DEFAULT, AVG_SALE_VALUE_DEFAULT } from "@/lib/account-validat
 import { activeMatrixAccount } from "@/lib/matrix-accounts";
 import { ELEMENT_URL } from "@/app/api/account/matrix/provision/route";
 import { AccountPageClient } from "./page-client";
+import { canManageBilling } from "@/lib/billing/billing-roles";
+import { billingOwnerName } from "@/lib/billing/cancellation";
 
 export const dynamic = "force-dynamic";
 
@@ -36,8 +38,20 @@ export default async function AccountPage() {
   // accounts). That is not an error: fall back to tenant.billingStatus.
   const subscription = await prisma.subscription.findUnique({
     where: { tenantId: membership.tenantId },
-    select: { planType: true, status: true, stripePriceId: true },
+    select: { planType: true, status: true, stripePriceId: true, productKind: true, cancelAtPeriodEnd: true },
   });
+
+  // CANCEL IS VISIBLE HERE TOO (CANCEL-FAIR-PLAY): a link to the same
+  // /billing/cancel page, for a live plan that is not already cancelling.
+  // A role that cannot cancel is told who can, as on Billing.
+  const cancellable =
+    subscription?.productKind === "PLAN" &&
+    !subscription.cancelAtPeriodEnd &&
+    ["TRIALING", "ACTIVE", "PAST_DUE"].includes(subscription.status);
+  const canManage = canManageBilling(membership.role);
+  const cancel = cancellable
+    ? { canManage, ownerName: canManage ? null : await billingOwnerName(membership.tenantId) }
+    : null;
 
   // Price catalog lookup is best-effort; a stale or missing price must not
   // take the page down.
@@ -75,6 +89,7 @@ export default async function AccountPage() {
           : null
       }
       price={price}
+      cancel={cancel}
       chat={{
         eligible: chatEligible,
         existingMxid: chatAccount?.mxid ?? null,

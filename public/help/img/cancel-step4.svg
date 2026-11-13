@@ -1,19 +1,23 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" font-family="-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif">
-  <rect width="640" height="360" rx="12" fill="#FFFFFF" stroke="#E5E7EB"/>
-  <text x="40" y="48" fill="#111827" font-size="16" font-weight="700">Starter</text>
-  <text x="40" y="70" fill="#6B7280" font-size="12">$79.00 per month · next payment Aug 27</text>
-  <rect x="40" y="96" width="560" height="1" fill="#EEF0F3"/>
-  <g fill="#374151" font-size="13">
-    <text x="40" y="130">Update plan</text>
-    <text x="40" y="162">Update payment method</text>
-  </g>
-  <!-- cancel action highlighted -->
-  <rect x="30" y="182" width="300" height="40" rx="9" fill="#FEF2F2" stroke="#F0B90B" stroke-width="3"/>
-  <text x="48" y="207" fill="#B42318" font-size="14" font-weight="700">Cancel subscription</text>
-  <circle cx="348" cy="202" r="13" fill="#F0B90B"/>
-  <text x="348" y="207" text-anchor="middle" fill="#15181E" font-size="14" font-weight="800">4</text>
-  <!-- reassurance note -->
-  <rect x="40" y="248" width="560" height="70" rx="10" fill="#F9FAFB" stroke="#EEF0F3"/>
-  <text x="60" y="276" fill="#374151" font-size="13" font-weight="600">Your plan stays active until the end of the period you have paid for.</text>
-  <text x="60" y="298" fill="#6B7280" font-size="12">No further charges. Your data and any prepaid lookup credits are kept.</text>
+  <rect width="640" height="360" rx="12" fill="#F6F7F9"/>
+  <text x="40" y="44" fill="#1F2328" font-size="20" font-weight="800">Billing</text>
+  <!-- the confirmation banner -->
+  <rect x="40" y="60" width="560" height="44" rx="10" fill="#FFFBEB" stroke="#FDE68A"/>
+  <text x="58" y="87" fill="#78350F" font-size="12">Your subscription is cancelled. You keep full access until Dec 12, 2026.</text>
+  <rect x="40" y="118" width="560" height="200" rx="12" fill="#FFFFFF" stroke="#E5E7EB"/>
+  <rect x="64" y="140" width="44" height="44" rx="10" fill="#EEF2FF"/>
+  <rect x="76" y="154" width="20" height="14" rx="2" fill="#4F6BF6"/>
+  <text x="122" y="158" fill="#1F2328" font-size="16" font-weight="700">Starter Plan</text>
+  <rect x="222" y="144" width="70" height="20" rx="10" fill="#FEF3C7"/>
+  <text x="257" y="158" text-anchor="middle" fill="#92400E" font-size="11" font-weight="600">Canceled</text>
+  <text x="122" y="180" fill="#374151" font-size="13">Cancelled — access until Dec 12, 2026. You won't be charged again.</text>
+  <rect x="64" y="202" width="512" height="1" fill="#EEF0F3"/>
+  <!-- Resume, one click, highlighted -->
+  <rect x="64" y="222" width="196" height="42" rx="9" fill="#FFFFFF" stroke="#F0B90B" stroke-width="3"/>
+  <text x="162" y="248" text-anchor="middle" fill="#1F2328" font-size="14" font-weight="600">Resume subscription</text>
+  <rect x="276" y="222" width="224" height="42" rx="9" fill="#FFFFFF" stroke="#D1D5DB"/>
+  <text x="388" y="248" text-anchor="middle" fill="#374151" font-size="14" font-weight="600">Payment method &amp; invoices</text>
+  <circle cx="64" cy="222" r="13" fill="#F0B90B"/>
+  <text x="64" y="227" text-anchor="middle" fill="#15181E" font-size="14" font-weight="800">4</text>
+  <text x="64" y="294" fill="#6B7280" font-size="12">Changed your mind? Resume any time before the end date.</text>
 </svg>

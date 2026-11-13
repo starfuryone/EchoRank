@@ -173,7 +173,7 @@ export function pricingFaq(
       {
         id: "cancel",
         q: "Wie kündige ich mein Abo?",
-        a: "Anmelden → **Abrechnung** → **Abonnement verwalten** → Ihr Abo anklicken → **Abonnement kündigen**. Das Abo bleibt bis zum Ende der bezahlten Periode aktiv, und Sie werden nicht erneut belastet. Keine Gebühren, keine Anrufe. Wer während des Gratis-Tests kündigt, zahlt nie etwas. Anleitung (Englisch): [So kündigen Sie Ihr Echorank-Abo](/help/cancel-subscription).",
+        a: "Anmelden → **Abrechnung** → **Abonnement kündigen** → bestätigen. Das Abo bleibt bis zum Ende der bezahlten Periode aktiv, und Sie werden nicht erneut belastet. Bis dahin setzen Sie es mit einem Klick auf **Abonnement fortsetzen** fort. Keine Gebühren, keine Anrufe. Wer während des Gratis-Tests kündigt, zahlt nie etwas. Anleitung (Englisch): [So kündigen Sie Ihr Echorank-Abo](/help/cancel-subscription).",
       },
       {
         id: "location",

@@ -102,7 +102,7 @@ const en: AuthContent = {
     errUnexpected: "An unexpected error occurred",
     haveAccount: "Already have an account?",
     signIn: "Sign in",
-    trialNote: "7-day free trial · cancel anytime · card required",
+    trialNote: "7-day free trial · card required · cancel anytime in Billing",
   },
 };
 
@@ -151,7 +151,7 @@ const fr: AuthContent = {
     errUnexpected: "Une erreur inattendue s'est produite",
     haveAccount: "Vous avez déjà un compte ?",
     signIn: "Se connecter",
-    trialNote: "essai gratuit de 7 jours · annulez à tout moment · carte requise",
+    trialNote: "essai gratuit de 7 jours · carte requise · annulez à tout moment dans Facturation",
   },
 };
 
@@ -200,7 +200,7 @@ const frCA: AuthContent = {
     errUnexpected: "Une erreur inattendue s'est produite",
     haveAccount: "Vous avez déjà un compte ?",
     signIn: "Se connecter",
-    trialNote: "essai gratuit de 7 jours · annulez à tout moment · carte requise",
+    trialNote: "essai gratuit de 7 jours · carte requise · annulez à tout moment dans Facturation",
   },
 };
 
@@ -249,7 +249,7 @@ const deCH: AuthContent = {
     errUnexpected: "Ein unerwarteter Fehler ist aufgetreten",
     haveAccount: "Sie haben bereits ein Konto?",
     signIn: "Anmelden",
-    trialNote: "7 Tage gratis testen · jederzeit kündbar · Karte erforderlich",
+    trialNote: "7 Tage gratis testen · Karte erforderlich · jederzeit kündbar unter Abrechnung",
   },
 };
 
@@ -257,7 +257,7 @@ export const AUTH_CONTENT: Record<Locale, AuthContent> = {
   en,
   "en-CA": {
     ...en,
-    register: { ...en.register, trialNote: "7-day free trial · cancel anytime · card required · billed in Canadian dollars" },
+    register: { ...en.register, trialNote: "7-day free trial · card required · cancel anytime in Billing · billed in Canadian dollars" },
   },
   fr,
   "fr-CA": frCA,

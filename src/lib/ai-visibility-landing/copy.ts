@@ -281,7 +281,7 @@ const EN: AvCopy = {
       { q: "Can I track competitors?", a: "Yes. Every tracked answer records which businesses are named, so you see who appears instead of you, prompt by prompt and engine by engine." },
       { q: "Which sources do you show?", a: "The pages and websites the engines cite in their answers, and the sites that cite your competitors but not you, so you know where to be listed." },
       { q: "Can I change my prompts?", a: `Yes, any time, up to ${av.prompts} prompts on ${av.name}. Changes apply from the next checkup.` },
-      { q: "Can I cancel anytime?", a: "Yes. Billing → Manage subscription → Cancel. Your plan stays active until the end of the period you paid for, and you are not charged again. Cancel during the free trial and you are never charged." },
+      { q: "Can I cancel anytime?", a: "Yes. Billing → Cancel subscription, then confirm. Your plan stays active until the end of the period you paid for, and you are not charged again. Cancel during the free trial and you are never charged." },
       { q: "What happens to my data?", a: "We do not sell it. Your tracked answers are kept while your subscription is active and deleted or returned after you close your account, as our Privacy Policy explains." },
       {
         q: "Does it include review management?",
@@ -415,7 +415,7 @@ const FR: AvCopy = {
       { q: "Puis-je suivre mes concurrents ?", a: "Oui. Chaque réponse suivie enregistre les entreprises nommées : vous voyez qui apparaît à votre place, requête par requête et moteur par moteur." },
       { q: "Quelles sources montrez-vous ?", a: "Les pages et les sites que les moteurs citent dans leurs réponses, et les sites qui citent vos concurrents mais pas vous, pour savoir où être présent." },
       { q: "Puis-je modifier mes requêtes ?", a: `Oui, à tout moment, jusqu’à ${av.prompts} requêtes avec ${av.name}. Les changements s’appliquent dès la vérification suivante.` },
-      { q: "Puis-je annuler à tout moment ?", a: "Oui. Facturation → Gérer l’abonnement → Annuler. Le forfait reste actif jusqu’à la fin de la période payée, sans nouveau prélèvement. En cas d’annulation pendant l’essai gratuit, vous n’êtes jamais facturé." },
+      { q: "Puis-je annuler à tout moment ?", a: "Oui. Facturation → Annuler l’abonnement, puis confirmez. Le forfait reste actif jusqu’à la fin de la période payée, sans nouveau prélèvement. En cas d’annulation pendant l’essai gratuit, vous n’êtes jamais facturé." },
       { q: "Qu’advient-il de mes données ?", a: "Nous ne les vendons pas. Vos réponses suivies sont conservées tant que votre abonnement est actif, puis supprimées ou restituées après la fermeture de votre compte, comme l’explique notre politique de confidentialité." },
       {
         q: "La gestion des avis est-elle incluse ?",
@@ -549,7 +549,7 @@ const DE: AvCopy = {
       { q: "Kann ich Mitbewerber verfolgen?", a: "Ja. Jede verfolgte Antwort hält fest, welche Unternehmen genannt werden: Sie sehen, wer statt Ihnen erscheint, Prompt für Prompt und Engine für Engine." },
       { q: "Welche Quellen zeigen Sie?", a: "Die Seiten und Websites, die die Engines in ihren Antworten zitieren, und die Websites, die Ihre Mitbewerber zitieren, Sie aber nicht, damit Sie wissen, wo Sie gelistet sein sollten." },
       { q: "Kann ich meine Prompts ändern?", a: `Ja, jederzeit, bis zu ${av.prompts} Prompts bei ${av.name}. Änderungen gelten ab dem nächsten Check.` },
-      { q: "Kann ich jederzeit kündigen?", a: "Ja. Abrechnung → Abo verwalten → Kündigen. Ihr Abo bleibt bis zum Ende der bezahlten Periode aktiv, und es wird nichts mehr abgebucht. Kündigen Sie während der Testphase, zahlen Sie nie etwas." },
+      { q: "Kann ich jederzeit kündigen?", a: "Ja. Abrechnung → Abonnement kündigen, dann bestätigen. Ihr Abo bleibt bis zum Ende der bezahlten Periode aktiv, und es wird nichts mehr abgebucht. Kündigen Sie während der Testphase, zahlen Sie nie etwas." },
       { q: "Was passiert mit meinen Daten?", a: "Wir verkaufen sie nicht. Ihre verfolgten Antworten bleiben gespeichert, solange Ihr Abo aktiv ist, und werden nach der Schliessung Ihres Kontos gelöscht oder zurückgegeben, wie in unserer Datenschutzerklärung beschrieben." },
       {
         q: "Ist die Bewertungsverwaltung enthalten?",

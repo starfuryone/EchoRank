@@ -9,7 +9,7 @@ import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { InitialsAvatar } from "@/components/ui/initials-avatar";
 import { ACCOUNT_COPY } from "@/lib/i18n/account";
-import type { DashLocale } from "@/lib/i18n/dashboard";
+import { BILLING_COPY, type DashLocale } from "@/lib/i18n/dashboard";
 import { TeamChatSection } from "@/components/account/TeamChatSection";
 import { DataRequestsSection } from "@/components/account/DataRequestsSection";
 import {
@@ -32,6 +32,8 @@ interface Props {
   };
   subscription: { planType: string; status: string } | null;
   price: { currency: string; interval: string } | null;
+  /** A live plan that can be cancelled; null otherwise (no link shown). */
+  cancel: { canManage: boolean; ownerName: string | null } | null;
   chat: { eligible: boolean; existingMxid: string | null; elementUrl: string };
 }
 
@@ -44,8 +46,9 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
   );
 }
 
-export function AccountPageClient({ locale, user, tenant, subscription, price, chat }: Props) {
+export function AccountPageClient({ locale, user, tenant, subscription, price, cancel, chat }: Props) {
   const t = ACCOUNT_COPY[locale];
+  const b = BILLING_COPY[locale];
 
   // Registered, never subscribed. A Subscription row settles it either way —
   // one exists only because the Stripe webhook wrote it — so the column is
@@ -149,6 +152,23 @@ export function AccountPageClient({ locale, user, tenant, subscription, price, c
               <p className="pt-3 text-xs text-gray-500">{t.noSubscription}</p>
             )
           )}
+          {/* Same page, same two clicks, same role rule as the Billing card. */}
+          {cancel &&
+            (cancel.canManage ? (
+              <p className="pt-3 text-sm">
+                <Link
+                  href="/billing/cancel"
+                  className="font-medium text-amber-300 underline hover:text-amber-200"
+                  data-testid="account-cancel-link"
+                >
+                  {b.cancelSubscription}
+                </Link>
+              </p>
+            ) : (
+              <p className="pt-3 text-xs text-gray-400" data-testid="account-owner-only">
+                {b.ownerOnly(cancel.ownerName)}
+              </p>
+            ))}
         </CardContent>
       </Card>
 
