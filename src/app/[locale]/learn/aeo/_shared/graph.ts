@@ -6,7 +6,7 @@
 // Lessons are Article nodes (what /learn uses) that are part of the Course.
 // No FAQPage: the knowledge checks are quizzes, not FAQs.
 
-import { ORGANIZATION_ID, WEBSITE_ID, article, breadcrumbList, organization, webSite, type JsonLdNode } from "@/lib/seo/jsonld";
+import { ORGANIZATION_ID, WEBSITE_ID, article, breadcrumbList, organization, videoObject, webSite, type JsonLdNode } from "@/lib/seo/jsonld";
 import { SITE_URL } from "@/lib/seo/constants";
 import { LEARN_BASE } from "@/lib/learn-content";
 import { AEO_BASE, AEO_COURSE, AEO_LESSONS, aeoLessonPath, courseMinutes, lessonMinutes, type AeoLesson } from "@/lib/aeo-course";
@@ -77,5 +77,23 @@ export function aeoLessonGraph(lesson: AeoLesson, locale: string): JsonLdNode[] 
     webSite(locale),
     { ...a, isPartOf: [{ "@id": WEBSITE_ID }, { "@id": AEO_COURSE_ID }], learningResourceType: "Lesson", isAccessibleForFree: true },
     breadcrumbList([...crumbs, { name: lesson.title, url: pageUrl }]),
+    // The lesson's own video, in the same graph (the /learn chapter builder).
+    // videoObject() makes contentUrl and thumbnailUrl absolute.
+    ...(lesson.video
+      ? [
+          videoObject({
+            name: lesson.video.title,
+            description: lesson.video.description,
+            thumbnailUrl: lesson.video.poster,
+            contentUrl: lesson.video.src,
+            uploadDate: lesson.video.uploadDate,
+            durationSeconds: lesson.video.durationSeconds,
+            width: lesson.video.width,
+            height: lesson.video.height,
+            pageUrl,
+            inLanguage: "en",
+          }),
+        ]
+      : []),
   ];
 }

@@ -36,6 +36,7 @@ import { CourseSidebar, MarkComplete, ProgressRing, RecordVisit } from "@/compon
 import { Quiz } from "@/components/aeo-course/Quiz";
 import { AEO_CHROME, LessonBlocks, SalesCta, ToolCard, baseOf } from "@/components/aeo-course/LessonParts";
 import { aeoLessonGraph } from "../_shared/graph";
+import { ChapterVideo } from "../../_shared/ChapterVideo";
 import home from "../../../home2.module.css";
 import css from "@/components/aeo-course/aeo.module.css";
 
@@ -134,6 +135,18 @@ export default async function AeoLessonPage({ params }: { params: Params }) {
                 ))}
               </ul>
             </section>
+
+            {/* The lesson's own video, before the reading starts: it walks
+                through the whole lesson. Every locale gets it, because every
+                locale gets the English body. Hidden in print (.noPrint). */}
+            {lesson.video && (
+              <ChapterVideo
+                video={lesson.video}
+                preload="metadata"
+                className={`${css.figure} ${css.noPrint}`}
+                caption={C.videoCaption(Math.round(lesson.video.durationSeconds / 60), lesson.video.covers)}
+              />
+            )}
 
             <LessonBlocks body={lesson.body} locale={locale} />
 

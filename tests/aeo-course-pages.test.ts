@@ -3,7 +3,7 @@
 // config implies exist on disk and in the registry, structured data is derived
 // from the config, and the HTML keeps the copy, CTA and accessibility rules in
 // all five locales.
-import { existsSync } from "node:fs";
+import { existsSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -13,7 +13,7 @@ import WorksheetPage, { generateMetadata as worksheetMetadata } from "@/app/[loc
 import AllPage, { generateMetadata as allMetadata } from "@/app/[locale]/learn/aeo/all/page";
 import ChapterPage from "@/app/[locale]/learn/[chapter]/page";
 import { AEO_COURSE_ID, AEO_HUB_URL, aeoHubGraph, aeoLessonGraph, aeoLessonUrl } from "@/app/[locale]/learn/aeo/_shared/graph";
-import { AEO_LESSONS, aeoLessonPath, glanceRows } from "@/lib/aeo-course";
+import { AEO_LESSONS, aeoLessonPath, glanceRows, lessonMinutes } from "@/lib/aeo-course";
 import { AEO_ALL, AEO_BASE, AEO_WORKSHEET, aeoRoutes } from "@/lib/aeo-course-routes";
 import { ECHOPEDIA_SLUG, LEARN_CHAPTERS } from "@/lib/learn-content";
 import { KNOWN_MARKETING_PATHS, LOCALIZED_ROUTES } from "@/lib/seo/registry";
@@ -191,4 +191,81 @@ describe("rendered pages", () => {
     }
     expect(pages.filter(([, , h]) => h.includes('data-testid="aeo-cta"')).length).toBe(SUPPORTED_LOCALES.length * 2);
   }, 120_000);
+});
+
+describe("lesson 1 video", () => {
+  const first = AEO_LESSONS.find((l) => l.slug === "what-is-aeo")!;
+  const video = first.video!;
+
+  it("is configured on what-is-aeo only, describing the lesson it sits on", () => {
+    expect(AEO_LESSONS.filter((l) => l.video).map((l) => l.slug)).toEqual(["what-is-aeo"]);
+    expect(video.src).toBe("/videos/aeo-what-is-aeo.mp4");
+    expect(video.poster).toBe("/videos/aeo-what-is-aeo-poster.jpg");
+    expect(video.title).toBe(first.title);
+    expect(video.description).toBe(first.summary);
+    expect(video.uploadDate).toBe("2026-11-13");
+    expect([video.width, video.height]).toEqual([1920, 1080]);
+    // Floored from ffprobe's 103.594 s.
+    expect(video.durationSeconds).toBe(103);
+    // The video adds no words: the reading-time label stays where it was.
+    expect(lessonMinutes(first)).toBe(6);
+  });
+
+  it("ships the mp4 and its poster under public/", () => {
+    // Like /learn's chapter videos (tests/learn-content.test.ts): bundled
+    // assets, gitignored, so this is the check that they are on the box.
+    for (const asset of [video.src, video.poster]) {
+      const file = join(process.cwd(), "public", asset);
+      expect(existsSync(file), asset).toBe(true);
+      expect(statSync(file).size, asset).toBeGreaterThan(0);
+    }
+  });
+
+  it("adds one VideoObject with absolute URLs to the lesson's graph, and none elsewhere", () => {
+    const g = nodes(aeoLessonGraph(first, "en"));
+    const videos = g.filter((n) => n["@type"] === "VideoObject");
+    expect(videos).toHaveLength(1);
+    const v = videos[0];
+    expect(v["@id"]).toBe(`${aeoLessonUrl(first.slug)}#video`);
+    expect(v.contentUrl).toBe("https://echorank360.com/videos/aeo-what-is-aeo.mp4");
+    expect(v.thumbnailUrl).toBe("https://echorank360.com/videos/aeo-what-is-aeo-poster.jpg");
+    expect(v.duration).toBe("PT1M43S");
+    expect(v.uploadDate).toBe("2026-11-13");
+    expect([v.width, v.height]).toEqual([1920, 1080]);
+    expect(v.name).toBe(first.title);
+    for (const l of AEO_LESSONS.filter((x) => x !== first)) {
+      expect(nodes(aeoLessonGraph(l, "en")).some((n) => n["@type"] === "VideoObject"), l.slug).toBe(false);
+    }
+  });
+
+  it("renders the player after the objectives and before the reading, in every locale", async () => {
+    for (const locale of SUPPORTED_LOCALES) {
+      const html = await lesson(locale, first.slug);
+      const tag = html.match(/<video[^>]*>/g) ?? [];
+      expect(tag, locale).toHaveLength(1);
+      expect(tag[0]).toContain('src="/videos/aeo-what-is-aeo.mp4"');
+      expect(tag[0]).toContain('poster="/videos/aeo-what-is-aeo-poster.jpg"');
+      expect(tag[0]).toContain("controls");
+      expect(tag[0]).toContain('preload="metadata"');
+      expect(tag[0]).toMatch(/playsinline/i);
+      expect(tag[0]).not.toMatch(/autoplay|muted/i);
+      expect(html).toContain("<figcaption>Prefer to watch? This 2-minute video covers the lesson: AEO vs SEO, the four MRCA stages and the Northwind Dental example.</figcaption>");
+      const at = html.indexOf("<video");
+      expect(at, locale).toBeGreaterThan(html.indexOf('id="objectives"'));
+      const intro = html.indexOf("Answer engine optimization (AEO) is the practice");
+      expect(intro, locale).toBeGreaterThan(0);
+      expect(at, locale).toBeLessThan(intro);
+      expect(at, locale).toBeLessThan(html.indexOf('data-graphic="g-serp-vs-answer"'));
+      const ld = html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)!;
+      expect(JSON.parse(ld[1])["@graph"].filter((n: LdNode) => n["@type"] === "VideoObject"), locale).toHaveLength(1);
+    }
+  });
+
+  it("is hidden in print, and stays off the other lessons and the print view", async () => {
+    const html = await lesson("en", first.slug);
+    const figure = html.slice(html.lastIndexOf("<figure", html.indexOf("<video")), html.indexOf("<video"));
+    expect(figure).toMatch(/class="[^"]*noPrint/);
+    expect(await lesson("en", AEO_LESSONS[1].slug)).not.toContain("<video");
+    expect(renderToStaticMarkup(await AllPage({ params: Promise.resolve({ locale: "en" }) }))).not.toContain("<video");
+  });
 });

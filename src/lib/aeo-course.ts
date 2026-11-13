@@ -250,6 +250,9 @@ export const AEO_COPY = {
   lessonN: (n: number) => `Lesson ${n}`,
   moduleN: (n: number) => `Module ${n}`,
   objectives: "In this lesson",
+  /** Minutes: the video's measured length, rounded to whole minutes. */
+  videoCaption: (minutes: number, covers: string) =>
+    `Prefer to watch? This ${minutes}-minute video covers the lesson: ${covers}.`,
   takeaways: "Key takeaways",
   practice: "Practice task",
   practiceSection: (title: string) => `Adds to your plan: ${title}`,

@@ -134,6 +134,9 @@ export interface VideoObjectInput {
    * runtime is exactly the kind of fabricated field this module refuses.
    */
   durationSeconds?: number;
+  /** Frame size in pixels, measured from the file. Omitted when unknown. */
+  width?: number;
+  height?: number;
 }
 
 /** VideoObject with only verifiable fields — no duration, views or ratings,
@@ -148,6 +151,7 @@ export function videoObject(input: VideoObjectInput): JsonLdNode {
     contentUrl: abs(input.contentUrl),
     uploadDate: input.uploadDate,
     ...(input.durationSeconds ? { duration: isoDuration(input.durationSeconds) } : {}),
+    ...(input.width && input.height ? { width: input.width, height: input.height } : {}),
     ...(input.inLanguage ? { inLanguage: input.inLanguage } : {}),
     publisher: { "@id": ORGANIZATION_ID },
   };

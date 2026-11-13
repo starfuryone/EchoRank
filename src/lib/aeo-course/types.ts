@@ -6,6 +6,7 @@
 
 import type { SeoToolId } from "@/lib/seo-tools";
 import type { AeoLessonSlug } from "@/lib/aeo-course-routes";
+import type { ChapterVideo } from "@/lib/learn-content";
 
 /** The graphic components, by id (src/components/aeo-course/graphics). */
 export type AeoGraphicId =
@@ -70,6 +71,19 @@ export type AeoToolCard =
   | { kind: "page"; name: string; body: string; href: string; cta: string }
   | { kind: "external"; name: string; body: string; href: string; cta: string };
 
+/**
+ * A lesson's own video: the /learn chapter-video shape (src, poster, title,
+ * description, uploadDate, durationSeconds — all measured, never invented),
+ * plus the frame size for the VideoObject and what the video covers, for the
+ * caption. Played by the same ChapterVideo component as /learn.
+ */
+export interface AeoLessonVideo extends Omit<ChapterVideo, "placement"> {
+  width: number;
+  height: number;
+  /** The caption's tail: "This N-minute video covers the lesson: {covers}." */
+  covers: string;
+}
+
 export interface AeoLesson {
   slug: AeoLessonSlug;
   /** 1–5. */
@@ -83,6 +97,8 @@ export interface AeoLesson {
   objectives: string[];
   /** "You will produce" — the hub's glance table. */
   produces: string;
+  /** Shown after "In this lesson", before the body. Lesson 1 only, for now. */
+  video?: AeoLessonVideo;
   body: AeoBlock[];
   /** Exactly three. */
   takeaways: string[];
