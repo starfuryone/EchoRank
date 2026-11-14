@@ -54,7 +54,11 @@ compliance_refactor.py
 # One of these reached a commit (a solutions page), which is what added it here.
 *.broken.*
 .next.broken*/
-public/videos/
+# Videos stay out of git: the 04:30 UTC media backup copies mp4 and pdf files
+# to Spaces. It does not copy jpg, so the AEO lesson posters are committed
+# (src/lib/aeo-course/video.ts). `*`, not the directory, so the ! can apply.
+public/videos/*
+!public/videos/aeo-*-poster.jpg
 
 # local Claude Code settings — contains credentials in permission rules
 .claude/settings.local.json

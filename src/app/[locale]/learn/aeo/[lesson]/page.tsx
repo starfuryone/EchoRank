@@ -23,6 +23,7 @@ import {
   aeoLessonBySlug,
   aeoLessonNumber,
   aeoLessonPath,
+  aeoLessonVideo,
   aeoModule,
   aeoNeighbours,
   aeoToc,
@@ -85,6 +86,7 @@ export default async function AeoLessonPage({ params }: { params: Params }) {
   const section = AEO_PLAN.find((s) => s.section === lesson.practice.section)!;
   const isLast = n === AEO_LESSONS.length;
   const marks = { mark: C.markComplete, done: C.completed, undo: C.markIncomplete };
+  const video = aeoLessonVideo(lesson);
 
   return (
     <div className={`${home.page} ${css.root}`}>
@@ -127,6 +129,20 @@ export default async function AeoLessonPage({ params }: { params: Params }) {
               <MarkComplete slug={lesson.slug} labels={marks} />
             </div>
             {t.notice && <p className={css.notice}>{t.notice}</p>}
+
+            {/* The lesson's own video, under the summary and above "In this
+                lesson": it walks through the whole lesson. Every locale gets
+                it, because every locale gets the English body. Hidden in print
+                (.noPrint). The frame reserves 16:9 before anything loads. */}
+            {video && (
+              <ChapterVideo
+                video={video}
+                preload="metadata"
+                className={`${css.figure} ${css.noPrint}`}
+                caption={C.videoCaption(Math.max(1, Math.round(video.durationSeconds / 60)))}
+              />
+            )}
+
             <section className={css.objectives} aria-labelledby="objectives">
               <h2 id="objectives">{C.objectives}</h2>
               <ul>
@@ -135,18 +151,6 @@ export default async function AeoLessonPage({ params }: { params: Params }) {
                 ))}
               </ul>
             </section>
-
-            {/* The lesson's own video, before the reading starts: it walks
-                through the whole lesson. Every locale gets it, because every
-                locale gets the English body. Hidden in print (.noPrint). */}
-            {lesson.video && (
-              <ChapterVideo
-                video={lesson.video}
-                preload="metadata"
-                className={`${css.figure} ${css.noPrint}`}
-                caption={C.videoCaption(Math.round(lesson.video.durationSeconds / 60), lesson.video.covers)}
-              />
-            )}
 
             <LessonBlocks body={lesson.body} locale={locale} />
 

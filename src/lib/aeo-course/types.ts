@@ -72,16 +72,28 @@ export type AeoToolCard =
   | { kind: "external"; name: string; body: string; href: string; cta: string };
 
 /**
- * A lesson's own video: the /learn chapter-video shape (src, poster, title,
- * description, uploadDate, durationSeconds — all measured, never invented),
- * plus the frame size for the VideoObject and what the video covers, for the
- * caption. Played by the same ChapterVideo component as /learn.
+ * A lesson's video as the lesson declares it: the file name and the upload
+ * date, nothing else. To add one, put the HeyGen export at
+ * public/videos/<file>.mp4, make the web copy and the poster, and add one line
+ * to the lesson and one ffprobe line to AEO_VIDEO_PROBE (both steps are in
+ * src/lib/aeo-course/video.ts).
+ */
+export interface AeoLessonVideoRef {
+  /** Base name under public/videos/, e.g. "aeo-02-how-ai-answers-are-built". */
+  file: string;
+  /** YYYY-MM-DD, the day the video went on the page. The one hand-typed value. */
+  uploadDate: string;
+}
+
+/**
+ * The resolved video (aeoLessonVideo()): the /learn chapter-video shape plus
+ * the frame size for the VideoObject. Paths come from the file name, title and
+ * description from the lesson's H1 and summary, duration and frame size from
+ * ffprobe. Played by the same ChapterVideo component as /learn.
  */
 export interface AeoLessonVideo extends Omit<ChapterVideo, "placement"> {
   width: number;
   height: number;
-  /** The caption's tail: "This N-minute video covers the lesson: {covers}." */
-  covers: string;
 }
 
 export interface AeoLesson {
@@ -97,8 +109,8 @@ export interface AeoLesson {
   objectives: string[];
   /** "You will produce" — the hub's glance table. */
   produces: string;
-  /** Shown after "In this lesson", before the body. Lesson 1 only, for now. */
-  video?: AeoLessonVideo;
+  /** Shown under the summary, above "In this lesson". */
+  video?: AeoLessonVideoRef;
   body: AeoBlock[];
   /** Exactly three. */
   takeaways: string[];

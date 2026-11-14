@@ -3,7 +3,8 @@
 // config implies exist on disk and in the registry, structured data is derived
 // from the config, and the HTML keeps the copy, CTA and accessibility rules in
 // all five locales.
-import { existsSync, statSync } from "node:fs";
+import { spawnSync } from "node:child_process";
+import { existsSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { renderToStaticMarkup } from "react-dom/server";
@@ -13,7 +14,7 @@ import WorksheetPage, { generateMetadata as worksheetMetadata } from "@/app/[loc
 import AllPage, { generateMetadata as allMetadata } from "@/app/[locale]/learn/aeo/all/page";
 import ChapterPage from "@/app/[locale]/learn/[chapter]/page";
 import { AEO_COURSE_ID, AEO_HUB_URL, aeoHubGraph, aeoLessonGraph, aeoLessonUrl } from "@/app/[locale]/learn/aeo/_shared/graph";
-import { AEO_LESSONS, aeoLessonPath, glanceRows, lessonMinutes } from "@/lib/aeo-course";
+import { AEO_LESSONS, AEO_VIDEO_PROBE, aeoLessonPath, aeoLessonVideo, glanceRows, lessonMinutes } from "@/lib/aeo-course";
 import { AEO_ALL, AEO_BASE, AEO_WORKSHEET, aeoRoutes } from "@/lib/aeo-course-routes";
 import { ECHOPEDIA_SLUG, LEARN_CHAPTERS } from "@/lib/learn-content";
 import { KNOWN_MARKETING_PATHS, LOCALIZED_ROUTES } from "@/lib/seo/registry";
@@ -193,79 +194,157 @@ describe("rendered pages", () => {
   }, 120_000);
 });
 
-describe("lesson 1 video", () => {
-  const first = AEO_LESSONS.find((l) => l.slug === "what-is-aeo")!;
-  const video = first.video!;
+describe("lesson videos", () => {
+  // What each lesson's video resolves to. Only `file` and `uploadDate` are in
+  // the lesson; everything else here is derived (src/lib/aeo-course/video.ts).
+  const EXPECTED = [
+    {
+      slug: "what-is-aeo",
+      file: "aeo-what-is-aeo",
+      uploadDate: "2026-11-13",
+      durationSeconds: 103, // floored from ffprobe's 103.594 s
+      duration: "PT1M43S",
+      caption: "Prefer to watch? This 2-minute video covers the lesson.",
+      minutes: 6,
+    },
+    {
+      slug: "how-ai-answers-are-built",
+      file: "aeo-02-how-ai-answers-are-built",
+      uploadDate: "2026-11-14",
+      durationSeconds: 154, // floored from ffprobe's 154.16 s
+      duration: "PT2M34S",
+      caption: "Prefer to watch? This 3-minute video covers the lesson.",
+      minutes: lessonMinutes(AEO_LESSONS[1]),
+    },
+  ] as const;
+  const byslug = (slug: string) => AEO_LESSONS.find((l) => l.slug === slug)!;
 
-  it("is configured on what-is-aeo only, describing the lesson it sits on", () => {
-    expect(AEO_LESSONS.filter((l) => l.video).map((l) => l.slug)).toEqual(["what-is-aeo"]);
-    expect(video.src).toBe("/videos/aeo-what-is-aeo.mp4");
-    expect(video.poster).toBe("/videos/aeo-what-is-aeo-poster.jpg");
-    expect(video.title).toBe(first.title);
-    expect(video.description).toBe(first.summary);
-    expect(video.uploadDate).toBe("2026-11-13");
-    expect([video.width, video.height]).toEqual([1920, 1080]);
-    // Floored from ffprobe's 103.594 s.
-    expect(video.durationSeconds).toBe(103);
-    // The video adds no words: the reading-time label stays where it was.
-    expect(lessonMinutes(first)).toBe(6);
+  it("are declared as a file name and a date, on lessons 1 and 2 only", () => {
+    expect(AEO_LESSONS.filter((l) => l.video).map((l) => l.slug)).toEqual(EXPECTED.map((e) => e.slug));
+    for (const e of EXPECTED) {
+      expect(byslug(e.slug).video, e.slug).toEqual({ file: e.file, uploadDate: e.uploadDate });
+    }
+    // The lesson-1 video adds no words: the reading-time label stays put.
+    expect(lessonMinutes(AEO_LESSONS[0])).toBe(6);
   });
 
-  it("ships the mp4 and its poster under public/", () => {
-    // Like /learn's chapter videos (tests/learn-content.test.ts): bundled
-    // assets, gitignored, so this is the check that they are on the box.
-    for (const asset of [video.src, video.poster]) {
-      const file = join(process.cwd(), "public", asset);
-      expect(existsSync(file), asset).toBe(true);
-      expect(statSync(file).size, asset).toBeGreaterThan(0);
+  it("resolve paths from the file name, copy from the lesson, numbers from the probe", () => {
+    for (const e of EXPECTED) {
+      const l = byslug(e.slug);
+      expect(aeoLessonVideo(l), e.slug).toEqual({
+        src: `/videos/${e.file}-web.mp4`,
+        poster: `/videos/${e.file}-poster.jpg`,
+        title: l.title,
+        description: l.summary,
+        uploadDate: e.uploadDate,
+        durationSeconds: e.durationSeconds,
+        width: 1920,
+        height: 1080,
+      });
+    }
+    // Every declared file has a probe line, and the resolver refuses one without.
+    for (const l of AEO_LESSONS.filter((x) => x.video)) expect(AEO_VIDEO_PROBE[l.video!.file], l.slug).toBeDefined();
+    expect(() => aeoLessonVideo({ ...AEO_LESSONS[2], video: { file: "aeo-99-missing", uploadDate: "2026-11-14" } })).toThrow(/AEO_VIDEO_PROBE/);
+  });
+
+  it("ship the web copy, the original and the poster under public/", () => {
+    // Bundled assets, so this is the check that they are on the box.
+    for (const e of EXPECTED) {
+      for (const asset of [`/videos/${e.file}-web.mp4`, `/videos/${e.file}.mp4`, `/videos/${e.file}-poster.jpg`]) {
+        const file = join(process.cwd(), "public", asset);
+        expect(existsSync(file), asset).toBe(true);
+        expect(statSync(file).size, asset).toBeGreaterThan(0);
+      }
     }
   });
 
-  it("adds one VideoObject with absolute URLs to the lesson's graph, and none elsewhere", () => {
-    const g = nodes(aeoLessonGraph(first, "en"));
-    const videos = g.filter((n) => n["@type"] === "VideoObject");
-    expect(videos).toHaveLength(1);
-    const v = videos[0];
-    expect(v["@id"]).toBe(`${aeoLessonUrl(first.slug)}#video`);
-    expect(v.contentUrl).toBe("https://echorank360.com/videos/aeo-what-is-aeo.mp4");
-    expect(v.thumbnailUrl).toBe("https://echorank360.com/videos/aeo-what-is-aeo-poster.jpg");
-    expect(v.duration).toBe("PT1M43S");
-    expect(v.uploadDate).toBe("2026-11-13");
-    expect([v.width, v.height]).toEqual([1920, 1080]);
-    expect(v.name).toBe(first.title);
-    for (const l of AEO_LESSONS.filter((x) => x !== first)) {
+  it("commit the posters and keep the mp4 files out of git", () => {
+    // The media backup copies mp4 and pdf only; a poster must live in git.
+    for (const e of EXPECTED) {
+      const ignored = (p: string) => spawnSync("git", ["check-ignore", "-q", p], { cwd: process.cwd() }).status === 0;
+      expect(ignored(`public/videos/${e.file}-poster.jpg`), e.file).toBe(false);
+      expect(ignored(`public/videos/${e.file}-web.mp4`), e.file).toBe(true);
+      expect(ignored(`public/videos/${e.file}.mp4`), e.file).toBe(true);
+    }
+  });
+
+  it.skipIf(spawnSync("ffprobe", ["-version"]).status !== 0)(
+    "have probe lines that match ffprobe on the web copies, which are H.264/AAC, at most 1080p, moov first",
+    () => {
+      for (const l of AEO_LESSONS.filter((x) => x.video)) {
+        const file = l.video!.file;
+        const path = join(process.cwd(), "public", "videos", `${file}-web.mp4`);
+        const probe = (args: string[]) =>
+          spawnSync("ffprobe", ["-v", "error", ...args, "-of", "csv=p=0", path], { encoding: "utf8" }).stdout.trim();
+        const [size, duration] = probe(["-select_streams", "v:0", "-show_entries", "stream=width,height:format=duration"]).split("\n");
+        const [width, height] = size.split(",").map(Number);
+        const line = `  "${file}": { duration: ${Number(duration)}, width: ${width}, height: ${height} },`;
+        expect(AEO_VIDEO_PROBE[file], `paste into AEO_VIDEO_PROBE:\n${line}`).toEqual({ duration: Number(duration), width, height });
+        expect(height, file).toBeLessThanOrEqual(1080);
+        expect(probe(["-select_streams", "v:0", "-show_entries", "stream=codec_name"]), file).toBe("h264");
+        expect(probe(["-select_streams", "a:0", "-show_entries", "stream=codec_name"]), file).toBe("aac");
+        // +faststart: the moov atom comes before the media data.
+        const head = readFileSync(path).subarray(0, 1 << 20).toString("latin1");
+        expect(head.indexOf("moov"), file).toBeGreaterThan(-1);
+        expect(head.indexOf("moov"), file).toBeLessThan(head.indexOf("mdat"));
+      }
+    },
+  );
+
+  it("add one VideoObject with absolute URLs to each lesson's graph, and none elsewhere", () => {
+    for (const e of EXPECTED) {
+      const l = byslug(e.slug);
+      const videos = nodes(aeoLessonGraph(l, "en")).filter((n) => n["@type"] === "VideoObject");
+      expect(videos, e.slug).toHaveLength(1);
+      const v = videos[0];
+      expect(v["@id"]).toBe(`${aeoLessonUrl(l.slug)}#video`);
+      expect(v.name).toBe(l.title);
+      expect(v.description).toBe(l.summary);
+      expect(v.contentUrl).toBe(`https://echorank360.com/videos/${e.file}-web.mp4`);
+      expect(v.thumbnailUrl).toBe(`https://echorank360.com/videos/${e.file}-poster.jpg`);
+      expect(v.duration).toBe(e.duration);
+      expect(v.uploadDate).toBe(e.uploadDate);
+      expect([v.width, v.height]).toEqual([1920, 1080]);
+    }
+    for (const l of AEO_LESSONS.filter((x) => !x.video)) {
       expect(nodes(aeoLessonGraph(l, "en")).some((n) => n["@type"] === "VideoObject"), l.slug).toBe(false);
     }
   });
 
-  it("renders the player after the objectives and before the reading, in every locale", async () => {
-    for (const locale of SUPPORTED_LOCALES) {
-      const html = await lesson(locale, first.slug);
-      const tag = html.match(/<video[^>]*>/g) ?? [];
-      expect(tag, locale).toHaveLength(1);
-      expect(tag[0]).toContain('src="/videos/aeo-what-is-aeo.mp4"');
-      expect(tag[0]).toContain('poster="/videos/aeo-what-is-aeo-poster.jpg"');
-      expect(tag[0]).toContain("controls");
-      expect(tag[0]).toContain('preload="metadata"');
-      expect(tag[0]).toMatch(/playsinline/i);
-      expect(tag[0]).not.toMatch(/autoplay|muted/i);
-      expect(html).toContain("<figcaption>Prefer to watch? This 2-minute video covers the lesson: AEO vs SEO, the four MRCA stages and the Northwind Dental example.</figcaption>");
-      const at = html.indexOf("<video");
-      expect(at, locale).toBeGreaterThan(html.indexOf('id="objectives"'));
-      const intro = html.indexOf("Answer engine optimization (AEO) is the practice");
-      expect(intro, locale).toBeGreaterThan(0);
-      expect(at, locale).toBeLessThan(intro);
-      expect(at, locale).toBeLessThan(html.indexOf('data-graphic="g-serp-vs-answer"'));
-      const ld = html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)!;
-      expect(JSON.parse(ld[1])["@graph"].filter((n: LdNode) => n["@type"] === "VideoObject"), locale).toHaveLength(1);
+  it("render the player under the summary and above 'In this lesson', in every locale", async () => {
+    for (const e of EXPECTED) {
+      const l = byslug(e.slug);
+      for (const locale of SUPPORTED_LOCALES) {
+        const html = await lesson(locale, l.slug);
+        const tag = html.match(/<video[^>]*>/g) ?? [];
+        expect(tag, `${e.slug} ${locale}`).toHaveLength(1);
+        expect(tag[0]).toContain(`src="/videos/${e.file}-web.mp4"`);
+        expect(tag[0]).toContain(`poster="/videos/${e.file}-poster.jpg"`);
+        expect(tag[0]).toContain("controls");
+        expect(tag[0]).toContain('preload="metadata"');
+        expect(tag[0]).toMatch(/playsinline/i);
+        expect(tag[0]).not.toMatch(/autoplay|muted/i);
+        expect(html).toContain(`<figcaption>${e.caption}</figcaption>`);
+        const at = html.indexOf("<video");
+        // The summary is the lead under the H1 (searched from the H1, since the
+        // JSON-LD before <main> carries it too).
+        const lead = html.indexOf(l.summary.slice(0, 40), html.indexOf("<h1"));
+        expect(lead, locale).toBeGreaterThan(html.indexOf("<h1"));
+        expect(at, locale).toBeGreaterThan(lead);
+        expect(at, locale).toBeLessThan(html.indexOf('id="objectives"'));
+        const ld = html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/)!;
+        expect(JSON.parse(ld[1])["@graph"].filter((n: LdNode) => n["@type"] === "VideoObject"), locale).toHaveLength(1);
+      }
     }
   });
 
-  it("is hidden in print, and stays off the other lessons and the print view", async () => {
-    const html = await lesson("en", first.slug);
-    const figure = html.slice(html.lastIndexOf("<figure", html.indexOf("<video")), html.indexOf("<video"));
-    expect(figure).toMatch(/class="[^"]*noPrint/);
-    expect(await lesson("en", AEO_LESSONS[1].slug)).not.toContain("<video");
+  it("are hidden in print, and stay off lessons without one and the print view", async () => {
+    for (const e of EXPECTED) {
+      const html = await lesson("en", e.slug);
+      const figure = html.slice(html.lastIndexOf("<figure", html.indexOf("<video")), html.indexOf("<video"));
+      expect(figure, e.slug).toMatch(/class="[^"]*noPrint/);
+    }
+    expect(await lesson("en", AEO_LESSONS[2].slug)).not.toContain("<video");
     expect(renderToStaticMarkup(await AllPage({ params: Promise.resolve({ locale: "en" }) }))).not.toContain("<video");
   });
 });

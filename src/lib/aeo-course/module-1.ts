@@ -21,23 +21,8 @@ export const MODULE_1: AeoLesson[] = [
       "Recognise the four outcomes Echorank scores: Mentioned, Recommended, Cited, Accurate",
     ],
     produces: "A one-line AEO goal for your brand",
-    // Self-hosted under public/videos/ (gitignored; the nightly rclone job
-    // copies it to Spaces). Title and description are the lesson's own H1
-    // and summary, so the VideoObject cannot describe a different page.
-    // ffprobe: h264 High + AAC LC, 1920×1080, 25 fps, 103.594 s, moov first.
-    video: {
-      src: "/videos/aeo-what-is-aeo.mp4",
-      poster: "/videos/aeo-what-is-aeo-poster.jpg",
-      title: "What AEO is, and what “being the answer” means",
-      description:
-        "Answer engine optimization is the work of making your brand easy for AI assistants to find, trust, recommend and describe correctly. It builds on SEO rather than replacing it.",
-      uploadDate: "2026-11-13",
-      // Floored from the file's real 103.594 s. Serialized as PT1M43S.
-      durationSeconds: 103,
-      width: 1920,
-      height: 1080,
-      covers: "AEO vs SEO, the four MRCA stages and the Northwind Dental example",
-    },
+    // Everything else is derived: src/lib/aeo-course/video.ts.
+    video: { file: "aeo-what-is-aeo", uploadDate: "2026-11-13" },
     body: [
       {
         k: "p",
@@ -189,6 +174,7 @@ export const MODULE_1: AeoLesson[] = [
       "Know why answers differ between runs, and what that means for measurement",
     ],
     produces: "A list of the sub-questions behind your top buyer question",
+    video: { file: "aeo-02-how-ai-answers-are-built", uploadDate: "2026-11-14" },
     body: [
       {
         k: "p",

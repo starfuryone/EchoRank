@@ -9,7 +9,7 @@
 import { ORGANIZATION_ID, WEBSITE_ID, article, breadcrumbList, organization, videoObject, webSite, type JsonLdNode } from "@/lib/seo/jsonld";
 import { SITE_URL } from "@/lib/seo/constants";
 import { LEARN_BASE } from "@/lib/learn-content";
-import { AEO_BASE, AEO_COURSE, AEO_LESSONS, aeoLessonPath, courseMinutes, lessonMinutes, type AeoLesson } from "@/lib/aeo-course";
+import { AEO_BASE, AEO_COURSE, AEO_LESSONS, aeoLessonPath, aeoLessonVideo, courseMinutes, lessonMinutes, type AeoLesson } from "@/lib/aeo-course";
 
 export const AEO_HUB_URL = `${SITE_URL}/en${AEO_BASE}`;
 export const AEO_COURSE_ID = `${AEO_HUB_URL}#course`;
@@ -72,6 +72,7 @@ export function aeoLessonGraph(lesson: AeoLesson, locale: string): JsonLdNode[] 
     readingTime: lessonMinutes(lesson),
     dateModified: AEO_COURSE.updatedAt,
   });
+  const video = aeoLessonVideo(lesson);
   return [
     organization(locale),
     webSite(locale),
@@ -79,17 +80,17 @@ export function aeoLessonGraph(lesson: AeoLesson, locale: string): JsonLdNode[] 
     breadcrumbList([...crumbs, { name: lesson.title, url: pageUrl }]),
     // The lesson's own video, in the same graph (the /learn chapter builder).
     // videoObject() makes contentUrl and thumbnailUrl absolute.
-    ...(lesson.video
+    ...(video
       ? [
           videoObject({
-            name: lesson.video.title,
-            description: lesson.video.description,
-            thumbnailUrl: lesson.video.poster,
-            contentUrl: lesson.video.src,
-            uploadDate: lesson.video.uploadDate,
-            durationSeconds: lesson.video.durationSeconds,
-            width: lesson.video.width,
-            height: lesson.video.height,
+            name: video.title,
+            description: video.description,
+            thumbnailUrl: video.poster,
+            contentUrl: video.src,
+            uploadDate: video.uploadDate,
+            durationSeconds: video.durationSeconds,
+            width: video.width,
+            height: video.height,
             pageUrl,
             inLanguage: "en",
           }),

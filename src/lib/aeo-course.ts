@@ -26,6 +26,7 @@ import { MODULE_5 } from "./aeo-course/module-5";
 import type { AeoBlock, AeoLesson, AeoModule, AeoPlanSection } from "./aeo-course/types";
 
 export * from "./aeo-course/types";
+export { AEO_VIDEO_PROBE, aeoLessonVideo, aeoVideoPoster, aeoVideoSrc } from "./aeo-course/video";
 export { AEO_ALL, AEO_BASE, AEO_LESSON_SLUGS, AEO_WORKSHEET, type AeoLessonSlug };
 
 export const AEO_COURSE = {
@@ -250,9 +251,8 @@ export const AEO_COPY = {
   lessonN: (n: number) => `Lesson ${n}`,
   moduleN: (n: number) => `Module ${n}`,
   objectives: "In this lesson",
-  /** Minutes: the video's measured length, rounded to whole minutes. */
-  videoCaption: (minutes: number, covers: string) =>
-    `Prefer to watch? This ${minutes}-minute video covers the lesson: ${covers}.`,
+  /** Minutes: the video's measured length, rounded to whole minutes (at least 1). */
+  videoCaption: (minutes: number) => `Prefer to watch? This ${minutes}-minute video covers the lesson.`,
   takeaways: "Key takeaways",
   practice: "Practice task",
   practiceSection: (title: string) => `Adds to your plan: ${title}`,
