@@ -39,6 +39,7 @@ import {
   SEO_TOOLS_COPY,
   type DashLocale,
 } from "@/lib/i18n/dashboard";
+import { useLockedPlanName } from "@/components/plan/plan-context";
 
 // ─── Payload shapes (mirror the GET route) ──────────────────────────────────
 
@@ -256,6 +257,7 @@ function HitsChart({
 
 export function BotAnalyticsClient({ locale }: { locale: DashLocale }) {
   const t = BOT_ANALYTICS_COPY[locale];
+  const logsPlan = useLockedPlanName("bot_logs");
   const tools = SEO_TOOLS_COPY[locale];
   const it = tools.items.bot_analytics;
 
@@ -684,7 +686,7 @@ export function BotAnalyticsClient({ locale }: { locale: DashLocale }) {
             <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-gray-100">
               <Lock className="h-6 w-6 text-gray-400" aria-hidden="true" />
             </div>
-            <h3 className="text-base font-semibold text-gray-900">{t.upsellTitle}</h3>
+            <h3 className="text-base font-semibold text-gray-900">{t.upsellTitle(logsPlan)}</h3>
             <p className="mt-2 max-w-md text-sm text-gray-500">{t.upsellBody}</p>
             <Link
               href="/settings/billing"

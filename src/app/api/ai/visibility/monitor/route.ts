@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { requireTenant } from "@/lib/tenant";
 import { requireFeature, requirePlan, enforcementErrorResponse } from "@/lib/plan-enforcement";
 import { prisma } from "@/lib/prisma";
+import { MONITOR_DAILY_MIN_PLAN } from "@/lib/visibility-limits";
 import type { VisibilityCadence } from "@/generated/prisma";
 
 /**
@@ -19,7 +20,7 @@ function normalizeUrl(raw: unknown): string | null {
 
 async function resolveCadence(raw: unknown): Promise<VisibilityCadence> {
   if (raw === "DAILY") {
-    await requirePlan("AGENCY");
+    await requirePlan(MONITOR_DAILY_MIN_PLAN);
     return "DAILY";
   }
   return "WEEKLY";

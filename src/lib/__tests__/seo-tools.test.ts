@@ -21,6 +21,7 @@ import {
   seoToolStatus,
 } from "../seo-tools";
 import { SEO_TOOLS_COPY, dashNav } from "../i18n/dashboard";
+import { PLAN_CONFIGS } from "../plan-config";
 import { isPaidStatus } from "../paid-plan";
 
 const ALL_TOOLS = SEO_TOOL_GROUPS.flatMap((g) => g.tools);
@@ -668,11 +669,15 @@ test("rank-tracker help copy complete in all locales", () => {
 
     // Plan numbers are injected, never hardcoded, so they cannot drift from
     // the config that enforces them.
+    // So are the plan names (PLAN_CONFIGS), as rank-tracker-help.tsx passes them.
     const plans = c.step1Plans(
-      RANK_TRACKED_KEYWORDS.STARTER,
-      RANK_TRACKED_KEYWORDS.GROWTH,
-      RANK_TRACKED_KEYWORDS.AGENCY,
+      { name: PLAN_CONFIGS.STARTER.name, n: RANK_TRACKED_KEYWORDS.STARTER },
+      { name: PLAN_CONFIGS.GROWTH.name, n: RANK_TRACKED_KEYWORDS.GROWTH },
+      { name: PLAN_CONFIGS.AGENCY.name, n: RANK_TRACKED_KEYWORDS.AGENCY },
     );
+    for (const p of ["STARTER", "GROWTH", "AGENCY"] as const) {
+      assert.ok(plans.includes(PLAN_CONFIGS[p].name), `${locale} names ${p} from the config`);
+    }
     assert.ok(plans.includes(String(RANK_TRACKED_KEYWORDS.STARTER)), `${locale} starter cap`);
     assert.ok(plans.includes(String(RANK_TRACKED_KEYWORDS.GROWTH)), `${locale} growth cap`);
     assert.ok(plans.includes(String(RANK_TRACKED_KEYWORDS.AGENCY)), `${locale} agency cap`);
@@ -1069,10 +1074,11 @@ test("site-audit help copy complete in all locales", () => {
     // limit the code does not enforce.
     assert.ok(c.limitsTitle.length);
     const limits = c.limitsBody(
-      CRAWL_PAGES_PER_PLAN.STARTER,
-      CRAWL_PAGES_PER_PLAN.GROWTH,
-      CRAWL_PAGES_PER_PLAN.AGENCY,
+      { name: PLAN_CONFIGS.STARTER.name, n: CRAWL_PAGES_PER_PLAN.STARTER },
+      { name: PLAN_CONFIGS.GROWTH.name, n: CRAWL_PAGES_PER_PLAN.GROWTH },
+      { name: PLAN_CONFIGS.AGENCY.name, n: CRAWL_PAGES_PER_PLAN.AGENCY },
     );
+    assert.ok(limits.includes(PLAN_CONFIGS.GROWTH.name), `${locale} names Growth from the config`);
     assert.ok(limits.includes(String(CRAWL_PAGES_PER_PLAN.STARTER)), `${locale} starter cap`);
     assert.ok(limits.includes(String(CRAWL_PAGES_PER_PLAN.AGENCY)), `${locale} agency cap`);
   }

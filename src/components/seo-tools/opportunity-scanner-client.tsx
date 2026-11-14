@@ -36,6 +36,7 @@ import {
   OPPORTUNITY_SCANNER_COPY,
   type DashLocale,
 } from "@/lib/i18n/dashboard";
+import { useLockedPlanName } from "@/components/plan/plan-context";
 import { OpportunityScannerHelpButton } from "@/components/seo-tools/opportunity-scanner-help";
 
 type Copy = (typeof OPPORTUNITY_SCANNER_COPY)[DashLocale];
@@ -111,6 +112,7 @@ export function OpportunityScannerClient({
   maxRows: number;
 }) {
   const copy: Copy = OPPORTUNITY_SCANNER_COPY[locale];
+  const lockPlan = useLockedPlanName("opportunity_scanner");
   const item = SEO_TOOLS_COPY[locale].items.opportunity_scanner;
   const nf = new Intl.NumberFormat(INTL_LOCALE[locale]);
   // No currency formatter. Every figure on this page is a COUNT OF LOOKUPS
@@ -313,8 +315,8 @@ export function OpportunityScannerClient({
               <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-gray-100">
                 <Lock className="h-7 w-7 text-gray-400" aria-hidden="true" />
               </div>
-              <h3 className="text-base font-semibold text-gray-900">{copy.lockedTitle}</h3>
-              <p className="mt-2 max-w-md text-sm text-gray-500">{copy.lockedBody}</p>
+              <h3 className="text-base font-semibold text-gray-900">{copy.lockedTitle(lockPlan)}</h3>
+              <p className="mt-2 max-w-md text-sm text-gray-500">{copy.lockedBody(lockPlan)}</p>
               <Link
                 href="/billing"
                 className="mt-6 inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"

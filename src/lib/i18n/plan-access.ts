@@ -31,6 +31,22 @@ export interface PlanAccessCopy {
   /** The API access and MCP Server pages below the plan with API access (src/lib/api-access.ts). */
   apiLockedTitle: (plan: string) => string;
   apiLockedBody: string;
+  /**
+   * The crawler-only plan's upgrade screen: the suggested plan's crawl limits
+   * beside the tenant's own, so the switch is not a hidden downgrade (the
+   * label counts gates only; this plan has Agency's crawl limits). Figures
+   * are PLAN_CONFIGS', formatted by the screen.
+   */
+  crawlLimits: (plan: string, theirs: CrawlLimitText, yours: CrawlLimitText) => string;
+  /** A null (unlimited) monthly crawl count. */
+  unlimited: string;
+}
+
+/** One plan's crawl limits, already formatted. */
+export interface CrawlLimitText {
+  perCrawl: string;
+  crawls: string;
+  pages: string;
 }
 
 export const PLAN_ACCESS_COPY: Record<DashLocale, PlanAccessCopy> = {
@@ -49,6 +65,9 @@ export const PLAN_ACCESS_COPY: Record<DashLocale, PlanAccessCopy> = {
     apiLockedTitle: (plan) => `API access is included in ${plan}`,
     apiLockedBody:
       "API keys for the REST API and the MCP server, which connects Claude and other AI assistants to your data, come with this plan. Keys you created before are kept and work again after an upgrade.",
+    crawlLimits: (plan, l, y) =>
+      `${plan} crawler limits — pages per crawl: ${l.perCrawl}, crawls a month: ${l.crawls}, pages a month: ${l.pages}. Your ${NB} plan: ${y.perCrawl}, ${y.crawls}, ${y.pages}.`,
+    unlimited: "unlimited",
   },
   fr: {
     title: (plan) => `Disponible à partir ${frDe(plan)}`,
@@ -65,6 +84,9 @@ export const PLAN_ACCESS_COPY: Record<DashLocale, PlanAccessCopy> = {
     apiLockedTitle: (plan) => `L'accès à l'API est inclus dans le forfait ${plan}`,
     apiLockedBody:
       "Les clés de l'API REST et le serveur MCP, qui relie Claude et d'autres assistants IA à vos données, sont inclus dans ce forfait. Les clés créées auparavant sont conservées et fonctionnent de nouveau après un changement de forfait.",
+    crawlLimits: (plan, l, y) =>
+      `Limites du robot avec ${plan} — pages par exploration : ${l.perCrawl}, explorations par mois : ${l.crawls}, pages par mois : ${l.pages}. Votre forfait ${NB} : ${y.perCrawl}, ${y.crawls}, ${y.pages}.`,
+    unlimited: "illimité",
   },
   "de-CH": {
     title: (plan) => `Ab ${plan} verfügbar`,
@@ -81,5 +103,8 @@ export const PLAN_ACCESS_COPY: Record<DashLocale, PlanAccessCopy> = {
     apiLockedTitle: (plan) => `API-Zugang ist im ${plan}-Abo enthalten`,
     apiLockedBody:
       "API-Schlüssel für die REST-API und der MCP-Server, der Claude und andere KI-Assistenten mit Ihren Daten verbindet, sind in diesem Abo enthalten. Bereits erstellte Schlüssel bleiben erhalten und funktionieren nach einem Upgrade wieder.",
+    crawlLimits: (plan, l, y) =>
+      `Crawler-Limits mit ${plan} — Seiten pro Crawl: ${l.perCrawl}, Crawls pro Monat: ${l.crawls}, Seiten pro Monat: ${l.pages}. Ihr ${NB}-Abo: ${y.perCrawl}, ${y.crawls}, ${y.pages}.`,
+    unlimited: "unbegrenzt",
   },
 };

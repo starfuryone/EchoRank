@@ -47,6 +47,7 @@ import {
   SEO_TOOLS_COPY,
   type DashLocale,
 } from "@/lib/i18n/dashboard";
+import { useLockedPlanName } from "@/components/plan/plan-context";
 import type { ActionAgentUsage } from "@/lib/action-agent/generate";
 import { AI_LABELS } from "@/lib/i18n/ai-labels";
 import {
@@ -170,6 +171,7 @@ export function ActionAgentClient({
   usage: ActionAgentUsage | null;
 }) {
   const copy = ACTION_AGENT_COPY[locale];
+  const lockPlan = useLockedPlanName("action_agent");
   const toolCopy = SEO_TOOLS_COPY[locale].items.action_agent;
   const numberFormat = useMemo(() => new Intl.NumberFormat(INTL_LOCALE[locale]), [locale]);
   const dateFormat = useMemo(
@@ -248,7 +250,7 @@ export function ActionAgentClient({
             interpolate(copy.errBudget, { date: dateFormat.format(new Date(data.resetsAt)) }),
           );
         }
-        if (data.code === "PLAN_LOCKED") throw new Error(copy.errLocked);
+        if (data.code === "PLAN_LOCKED") throw new Error(copy.errLocked(lockPlan));
         if (data.code === "PAGE_UNREACHABLE") throw new Error(copy.errPage);
         throw new Error(data.error ?? copy.errGeneric);
       }
@@ -258,7 +260,7 @@ export function ActionAgentClient({
     } finally {
       setGenerating(false);
     }
-  }, [kind, locale, reviewLimit, url, copy, dateFormat]);
+  }, [kind, locale, reviewLimit, url, copy, dateFormat, lockPlan]);
 
   const act = useCallback(
     async (id: string, action: "approve" | "reject" | "apply" | "regenerate", note?: string) => {
@@ -315,7 +317,7 @@ export function ActionAgentClient({
               <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-gray-100">
                 <Lock className="h-7 w-7 text-gray-400" aria-hidden="true" />
               </div>
-              <h3 className="text-base font-semibold text-gray-900">{copy.lockedTitle}</h3>
+              <h3 className="text-base font-semibold text-gray-900">{copy.lockedTitle(lockPlan)}</h3>
               <p className="mt-2 max-w-md text-sm text-gray-500">{copy.lockedBody}</p>
               <Link
                 href="/billing"

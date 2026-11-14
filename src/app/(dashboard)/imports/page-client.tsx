@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { ImportsHelpButton } from "@/components/help/ImportsHelpButton";
 import { IMPORTS_COPY, type DashLocale, type ImportsCopy } from "@/lib/i18n/dashboard";
+import { useLockedPlanName } from "@/components/plan/plan-context";
 
 const CANONICAL_FIELDS = [
   { key: "content", required: true },
@@ -63,6 +64,7 @@ const IGNORE = "__ignore__";
 
 export function ImportsPageClient({ locale }: { locale: DashLocale }) {
   const t = IMPORTS_COPY[locale];
+  const lockPlan = useLockedPlanName("csv_import");
   const [history, setHistory] = useState<ImportRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [gated, setGated] = useState(false);
@@ -178,7 +180,7 @@ export function ImportsPageClient({ locale }: { locale: DashLocale }) {
             <EmptyState
               icon={<Database className="h-8 w-8 text-gray-400" />}
               title={t.gatedTitle}
-              description={t.gatedDescription}
+              description={t.gatedDescription(lockPlan)}
             />
           </CardContent>
         </Card>

@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ANSWER_TRACKING_COPY, type DashLocale } from "@/lib/i18n/dashboard";
+import { useLockedPlanName } from "@/components/plan/plan-context";
 
 /**
  * Answer tracking panel — the Agency headline. "When customers ask AI for a
@@ -49,6 +50,7 @@ export function AnswerTrackingCard({
   onQuota?: (quota: { used: number; limit: number }) => void;
 }) {
   const t = ANSWER_TRACKING_COPY[locale];
+  const lockPlan = useLockedPlanName("answer_tracking");
   const [locked, setLocked] = useState(false);
   const [loading, setLoading] = useState(true);
   const [prompts, setPrompts] = useState<PromptRow[]>([]);
@@ -154,7 +156,7 @@ export function AnswerTrackingCard({
           <Lock className="h-5 w-5 shrink-0 text-gray-400" />
           <div className="flex-1">
             <p className="text-sm font-medium text-gray-900">{t.title}</p>
-            <p className="text-sm text-gray-500">{t.lockedDescription}</p>
+            <p className="text-sm text-gray-500">{t.lockedDescription(lockPlan)}</p>
           </div>
           <Button variant="outline" size="sm" onClick={() => (window.location.href = "/billing")}>
             {t.upgrade}

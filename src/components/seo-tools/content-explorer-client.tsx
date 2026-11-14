@@ -54,6 +54,7 @@ import {
   SEO_TOOLS_COPY,
   type DashLocale,
 } from "@/lib/i18n/dashboard";
+import { useLockedPlanName } from "@/components/plan/plan-context";
 
 type SortKey = "date" | "rank";
 
@@ -142,6 +143,7 @@ function SentimentBar({
 
 export function ContentExplorerClient({ locale, brandName }: Props) {
   const t = CONTENT_EXPLORER_COPY[locale];
+  const lockPlan = useLockedPlanName("content_explorer");
   const tools = SEO_TOOLS_COPY[locale];
   const it = tools.items.content_explorer;
 
@@ -316,8 +318,8 @@ export function ContentExplorerClient({ locale, brandName }: Props) {
             <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-gray-100">
               <Lock className="h-6 w-6 text-gray-400" aria-hidden="true" />
             </div>
-            <h3 className="text-base font-semibold text-gray-900">{t.planLockedTitle}</h3>
-            <p className="mt-2 max-w-md text-sm text-gray-500">{t.planLockedBody}</p>
+            <h3 className="text-base font-semibold text-gray-900">{t.planLockedTitle(lockPlan)}</h3>
+            <p className="mt-2 max-w-md text-sm text-gray-500">{t.planLockedBody(lockPlan)}</p>
             <Link
               href="/billing"
               className="mt-5 inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"

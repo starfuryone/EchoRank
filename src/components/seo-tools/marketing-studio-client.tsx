@@ -21,6 +21,7 @@ import {
   marketingLabel,
   type DashLocale,
 } from "@/lib/i18n/dashboard";
+import { useLockedPlanName } from "@/components/plan/plan-context";
 
 const STUDIO_BASE = "/visibility/tools/ai-content-helper";
 
@@ -46,6 +47,7 @@ const MODE_ICON: Record<MarketingMode, typeof Sparkles> = {
 
 export function MarketingStudioClient({ locale, usage, hasVoiceGuide }: Props) {
   const t = MARKETING_COPY[locale];
+  const lockPlan = useLockedPlanName("marketing_studio");
   const unlocked = usage?.unlocked ?? false;
 
   const modeLabel = (mode: MarketingMode): string =>
@@ -76,9 +78,9 @@ export function MarketingStudioClient({ locale, usage, hasVoiceGuide }: Props) {
           <CardContent className="flex flex-col items-start gap-3 py-6">
             <Badge className="flex items-center gap-1.5">
               <Lock className="h-3.5 w-3.5" aria-hidden="true" />
-              {t.lockedTitle}
+              {t.lockedTitle(lockPlan)}
             </Badge>
-            <p className="max-w-2xl text-sm text-gray-600">{t.lockedBody}</p>
+            <p className="max-w-2xl text-sm text-gray-600">{t.lockedBody(lockPlan)}</p>
             <Link href="/billing" className={CTA_LINK_CLASS}>
               {t.upgradeCta}
             </Link>

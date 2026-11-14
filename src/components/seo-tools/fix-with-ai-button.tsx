@@ -24,6 +24,7 @@ import Link from "next/link";
 import { Wand2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ACTION_AGENT_COPY, type DashLocale } from "@/lib/i18n/dashboard";
+import { useLockedPlanName } from "@/components/plan/plan-context";
 
 const INTL_LOCALE: Record<DashLocale, string> = { en: "en", fr: "fr", "de-CH": "de-CH" };
 
@@ -54,6 +55,7 @@ export function FixWithAiButton({
   className?: string;
 }) {
   const copy = ACTION_AGENT_COPY[locale];
+  const lockPlan = useLockedPlanName("action_agent");
   const [state, setState] = useState<"idle" | "busy" | "queued">("idle");
   const [error, setError] = useState<string | null>(null);
 
@@ -85,7 +87,7 @@ export function FixWithAiButton({
             }),
           );
         }
-        if (data.code === "PLAN_LOCKED") throw new Error(copy.errLocked);
+        if (data.code === "PLAN_LOCKED") throw new Error(copy.errLocked(lockPlan));
         if (data.code === "PAGE_UNREACHABLE") throw new Error(copy.errPage);
         throw new Error(data.error ?? copy.errGeneric);
       }
@@ -94,7 +96,7 @@ export function FixWithAiButton({
       setError(err instanceof Error ? err.message : copy.errGeneric);
       setState("idle");
     }
-  }, [copy, kind, locale, reviewLimit, url]);
+  }, [copy, kind, locale, reviewLimit, url, lockPlan]);
 
   if (state === "queued") {
     return (

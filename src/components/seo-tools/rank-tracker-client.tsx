@@ -70,6 +70,7 @@ import {
   type DashLocale,
   type RankTrackerCopy,
 } from "@/lib/i18n/dashboard";
+import { useLockedPlanName } from "@/components/plan/plan-context";
 
 const API = "/api/seo/v1/rank-tracker/projects";
 /** While a run is in flight the detail view re-fetches on this cadence. */
@@ -408,6 +409,7 @@ function ProjectModal({
   onSaved: () => void;
 }) {
   const [form, setForm] = useState<ProjectFormState>(initial);
+  const dailyPlan = useLockedPlanName("rank_daily");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -585,7 +587,7 @@ function ProjectModal({
             />
           </div>
           {!usage.allowedFrequencies.includes("daily") && (
-            <p className="text-xs text-gray-400">{t.frequencyLockedNote}</p>
+            <p className="text-xs text-gray-400">{t.frequencyLockedNote(dailyPlan)}</p>
           )}
 
           {error && (
@@ -626,6 +628,7 @@ function frequencyLabel(project: RankProjectSummary, t: RankTrackerCopy, locale:
 
 export function RankTrackerClient({ locale }: { locale: DashLocale }) {
   const t = RANK_TRACKER_COPY[locale];
+  const lockPlan = useLockedPlanName("rank_tracker");
   const serp = SERP_CHECKER_COPY[locale];
   const tools = SEO_TOOLS_COPY[locale];
   const it = tools.items.rank_tracker;
@@ -785,7 +788,7 @@ export function RankTrackerClient({ locale }: { locale: DashLocale }) {
                 <Lock className="h-7 w-7 text-gray-400" aria-hidden="true" />
               </div>
               <h3 className="text-base font-semibold text-gray-900">{t.lockedTitle}</h3>
-              <p className="mt-2 max-w-md text-sm text-gray-500">{t.lockedBody}</p>
+              <p className="mt-2 max-w-md text-sm text-gray-500">{t.lockedBody(lockPlan)}</p>
               <Link
                 href="/billing"
                 className="mt-6 inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"

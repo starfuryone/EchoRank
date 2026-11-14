@@ -40,6 +40,7 @@ import "server-only";
 
 import type { AiCitationsAnalysis, PlanType } from "@/generated/prisma";
 import { prisma } from "@/lib/prisma";
+import { lockedPlanName } from "@/lib/locked-plan";
 import { requireSeoQuota } from "@/lib/seo-quota";
 import { seoMeteredCallResult } from "@/lib/dataforseo/metering";
 import { recordResearch } from "@/lib/research-log/store";
@@ -100,7 +101,7 @@ export class AiCitationsPlanLockedError extends Error {
   readonly statusCode = 403;
   readonly code = "PLAN_LOCKED";
   constructor(readonly plan: PlanType) {
-    super("AI Citations is available on the Growth plan and above.");
+    super(`AI Citations is available from ${lockedPlanName(plan, "ai_citations")}.`);
     this.name = "AiCitationsPlanLockedError";
   }
 }
@@ -115,16 +116,10 @@ export class AiCitationsFailedError extends Error {
   }
 }
 
-/**
- * Plans that include the tool.
- *
- * STARTER is out for the same reason it is out of Backlinks: this is a
- * GROWTH-and-up feature, so STARTER sees a locked card with an upgrade path
- * rather than an empty form it cannot submit.
- */
-export function planCanUseAiCitations(plan: PlanType): boolean {
-  return plan !== "STARTER" && plan !== "AI_VISIBILITY";
-}
+// Which plans include the tool: ./plans (dependency-free), so the locked
+// message names the plan it opens.
+export { planCanUseAiCitations } from "./plans";
+import { planCanUseAiCitations } from "./plans";
 
 // ─── Params ──────────────────────────────────────────────────────────────────
 

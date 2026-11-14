@@ -22,6 +22,8 @@ import { INTEGRATIONS_COPY } from "@/lib/i18n/integrations";
 import { Ga4Integration } from "@/components/settings/ga4-integration";
 import { GscIntegration } from "@/components/settings/gsc-integration";
 import { planAllowsArea, planShowsLockedTeasers } from "@/lib/plan-access";
+import { lockOpen, lockedPlanName } from "@/lib/locked-plan";
+import { useLockedPlanName } from "@/components/plan/plan-context";
 import type { PlanType } from "@/generated/prisma";
 import { AiKeysIntegration } from "@/components/settings/ai-keys-integration";
 import { SITE_CRAWLER_4E } from "@/lib/i18n/site-crawler-4e";
@@ -90,6 +92,7 @@ function SettingsHelpModal({
   onClose: () => void;
   t: SettingsCopy;
 }) {
+  const whitelabelPlan = useLockedPlanName("whitelabel");
   return (
     <Modal open={open} onClose={onClose} title={t.helpModal.title}>
       <div className="divide-y divide-gray-100">
@@ -106,7 +109,7 @@ function SettingsHelpModal({
           {t.helpModal.localizationBody}
         </HelpSection>
         <HelpSection icon={<Settings className="h-4 w-4" />} title={t.whitelabelTitle}>
-          {t.helpModal.whitelabelBody}
+          {t.helpModal.whitelabelBody(whitelabelPlan)}
         </HelpSection>
       </div>
       <div className="mt-2 flex justify-end border-t border-gray-100 pt-4">
@@ -197,8 +200,11 @@ export function SettingsPageClient({ locale }: { locale: DashLocale }) {
 
   if (!settings) return null;
 
-  const isAgencyPlan = settings.plan === "AGENCY";
   const plan = settings.plan as PlanType;
+  // White-label opens on the plans that have its features (Enterprise too,
+  // which a typed "AGENCY" check used to lock); the badge names the plan
+  // src/lib/locked-plan.ts computes for this tenant.
+  const whitelabelOpen = lockOpen(plan, "whitelabel");
   // The crawler-only plan (src/lib/plan-access.ts) shows no locked teasers:
   // brand colours and review links belong to the reputation engine and the
   // white-label card to Agency, neither of which it has. Business details
@@ -422,7 +428,7 @@ export function SettingsPageClient({ locale }: { locale: DashLocale }) {
         {/* White-label (Agency plan only) */}
         {extras && (
         <Card
-          className={!isAgencyPlan ? "opacity-60" : undefined}
+          className={!whitelabelOpen ? "opacity-60" : undefined}
         >
           <CardHeader>
             <div className="flex items-center justify-between">
@@ -432,8 +438,8 @@ export function SettingsPageClient({ locale }: { locale: DashLocale }) {
                   {t.whitelabelTitle}
                 </h2>
               </div>
-              {!isAgencyPlan && (
-                <Badge variant="info">{t.agencyRequired}</Badge>
+              {!whitelabelOpen && (
+                <Badge variant="info">{t.planRequired(lockedPlanName(plan, "whitelabel"))}</Badge>
               )}
             </div>
           </CardHeader>
@@ -444,7 +450,7 @@ export function SettingsPageClient({ locale }: { locale: DashLocale }) {
               value={settings.customDomain}
               onChange={(e) => update("customDomain", e.target.value)}
               placeholder="feedback.yourbusiness.com"
-              disabled={!isAgencyPlan}
+              disabled={!whitelabelOpen}
             />
             <label className="flex items-center gap-2 cursor-pointer">
               <input
@@ -453,11 +459,11 @@ export function SettingsPageClient({ locale }: { locale: DashLocale }) {
                 onChange={(e) =>
                   update("whitelabelEnabled", e.target.checked)
                 }
-                disabled={!isAgencyPlan}
+                disabled={!whitelabelOpen}
                 className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 disabled:opacity-50"
               />
               <span
-                className={`text-sm ${isAgencyPlan ? "text-gray-700" : "text-gray-400"}`}
+                className={`text-sm ${whitelabelOpen ? "text-gray-700" : "text-gray-400"}`}
               >
                 {t.whitelabelCheckbox}
               </span>

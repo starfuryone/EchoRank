@@ -27,6 +27,8 @@ import { MonitorCard } from "@/components/visibility/MonitorCard";
 import { BenchmarkCard } from "@/components/visibility/BenchmarkCard";
 import { AiLensAuditPanel } from "@/components/visibility/AiLensAuditPanel";
 import { FixWithAiButton } from "@/components/seo-tools/fix-with-ai-button";
+import { useLockedPlanName, useTenantPlan } from "@/components/plan/plan-context";
+import { lockOpen } from "@/lib/locked-plan";
 import { localizeAuditVerdict, type AuditVerdict } from "@/lib/i18n/audit-verdicts";
 import type { ReadinessFix, ReadinessGate, ReadinessGroup } from "@/lib/i18n/readiness";
 import { ReadinessBreakdown } from "@/components/visibility/ReadinessBreakdown";
@@ -121,6 +123,10 @@ export function VisibilityPageClient({
 }) {
   const t = VISIBILITY_COPY[locale];
   const aa = ACTION_AGENT_COPY[locale];
+  // Plan names in the locked states, from src/lib/locked-plan.ts.
+  const tenantPlan = useTenantPlan();
+  const fixesPlan = useLockedPlanName("remediation");
+  const attrPlan = useLockedPlanName("roi_attribution");
   const [url, setUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -593,7 +599,7 @@ export function VisibilityPageClient({
                   <Lock className="h-6 w-6 text-gray-400" />
                   <p className="max-w-md text-sm text-gray-500">
                     {t.lockedFixesA}
-                    <span className="font-medium text-gray-700">Growth</span>
+                    <span className="font-medium text-gray-700">{fixesPlan}</span>
                     {t.lockedFixesB}
                   </p>
                   <a href="/billing">
@@ -645,7 +651,8 @@ export function VisibilityPageClient({
                 <h3 className="text-base font-semibold text-gray-900">
                   {t.attrTitle}
                 </h3>
-                <Badge variant="info">Growth</Badge>
+                {/* The plan badge only where the plan does not include it. */}
+                {!lockOpen(tenantPlan, "roi_attribution") && <Badge variant="info">{attrPlan}</Badge>}
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -677,7 +684,7 @@ export function VisibilityPageClient({
                 <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed border-gray-200 bg-gray-50 py-8 text-center">
                   <Lock className="h-6 w-6 text-gray-400" />
                   <p className="max-w-md text-sm text-gray-500">
-                    {t.lockedAttr}
+                    {t.lockedAttr(attrPlan)}
                   </p>
                   <a href="/billing">
                     <Button>{t.upgradePlan}</Button>

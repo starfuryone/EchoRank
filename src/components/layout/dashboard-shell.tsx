@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { Sidebar } from "./sidebar";
 import { Header } from "./header";
+import { PlanProvider } from "@/components/plan/plan-context";
 import { dashNav, dashNavByline, type DashLocale } from "@/lib/i18n/dashboard";
 import type { PlanType } from "@/generated/prisma";
 
@@ -84,7 +85,8 @@ export function DashboardShell({
           onSignOut={handleSignOut}
         />
 
-        <main className="px-4 py-6 sm:px-6 lg:px-8">{children}</main>
+        {/* The plan, for the plan names in locked messages (src/lib/locked-plan.ts). */}
+        <main className="px-4 py-6 sm:px-6 lg:px-8"><PlanProvider plan={plan}>{children}</PlanProvider></main>
       </div>
     </div>
   );

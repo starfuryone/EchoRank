@@ -68,8 +68,9 @@ export interface AccountCopy {
   chatCopied: string;
   chatOpenElement: string;
   chatExisting: string;
-  chatLockedTitle: string;
-  chatLockedBody: string;
+  /** The plan is src/lib/locked-plan.ts's (team_chat), never typed here. */
+  chatLockedTitle: (plan: string) => string;
+  chatLockedBody: (plan: string) => string;
   chatUpgrade: string;
   chatErrExists: string;
   chatErrRate: string;
@@ -131,9 +132,9 @@ export const ACCOUNT_COPY: Record<DashLocale, AccountCopy> = {
     chatCopied: "Copied",
     chatOpenElement: "Open chat",
     chatExisting: "Your chat account is active.",
-    chatLockedTitle: "Team chat is on Growth and above",
-    chatLockedBody:
-      "Private chat for your team, hosted by Echorank. Included from the Growth plan up.",
+    chatLockedTitle: (plan) => `Team chat is on ${plan} and above`,
+    chatLockedBody: (plan) =>
+      `Private chat for your team, hosted by Echorank. Included from the ${plan} plan up.`,
     chatUpgrade: "Compare plans",
     chatErrExists: "You already have a chat account.",
     chatErrRate: "Too many attempts. Try again later.",
@@ -193,9 +194,10 @@ export const ACCOUNT_COPY: Record<DashLocale, AccountCopy> = {
     chatCopied: "Copié",
     chatOpenElement: "Ouvrir la messagerie",
     chatExisting: "Votre compte de messagerie est actif.",
-    chatLockedTitle: "La messagerie d'équipe est incluse à partir de Growth",
-    chatLockedBody:
-      "Une messagerie privée pour votre équipe, hébergée par Echorank. Incluse à partir du forfait Growth.",
+    chatLockedTitle: (plan) =>
+      `La messagerie d'équipe est incluse à partir ${/^[aeiouy]/i.test(plan) ? `d'${plan}` : `de ${plan}`}`,
+    chatLockedBody: (plan) =>
+      `Une messagerie privée pour votre équipe, hébergée par Echorank. Incluse à partir du forfait ${plan}.`,
     chatUpgrade: "Comparer les forfaits",
     chatErrExists: "Vous avez déjà un compte de messagerie.",
     chatErrRate: "Trop de tentatives. Réessayez plus tard.",
@@ -255,9 +257,9 @@ export const ACCOUNT_COPY: Record<DashLocale, AccountCopy> = {
     chatCopied: "Kopiert",
     chatOpenElement: "Chat öffnen",
     chatExisting: "Ihr Chat-Konto ist aktiv.",
-    chatLockedTitle: "Team-Chat gibt es ab Growth",
-    chatLockedBody:
-      "Privater Chat für Ihr Team, von Echorank gehostet. Enthalten ab dem Growth-Abo.",
+    chatLockedTitle: (plan) => `Team-Chat gibt es ab ${plan}`,
+    chatLockedBody: (plan) =>
+      `Privater Chat für Ihr Team, von Echorank gehostet. Enthalten ab dem ${plan}-Abo.`,
     chatUpgrade: "Abos vergleichen",
     chatErrExists: "Sie haben bereits ein Chat-Konto.",
     chatErrRate: "Zu viele Versuche. Versuchen Sie es später erneut.",

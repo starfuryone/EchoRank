@@ -3,6 +3,7 @@
 import { Modal } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
 import { Bot, ShieldCheck, Wrench, BarChart3, Cloud } from "lucide-react";
+import { useLockedPlanName } from "@/components/plan/plan-context";
 
 export function VisibilityHelpModal({
   open,
@@ -11,6 +12,7 @@ export function VisibilityHelpModal({
   open: boolean;
   onClose: () => void;
 }) {
+  const fixesPlan = useLockedPlanName("remediation");
   return (
     <Modal open={open} onClose={onClose} title="About AI Visibility">
       <div className="space-y-5 text-sm leading-relaxed text-gray-600">
@@ -124,7 +126,7 @@ export function VisibilityHelpModal({
           <p>
             <strong>Generate fixes</strong> turns the findings into paste-ready
             artifacts — schema markup, FAQ content, a robots.txt patch, and
-            metadata — written from your live page. Available on Growth and
+            metadata — written from your live page. Available on {fixesPlan} and
             above.
           </p>
         </section>

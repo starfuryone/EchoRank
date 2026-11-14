@@ -7,6 +7,7 @@
 import { ToolHelpModal } from "@/components/seo-tools/ToolHelpModal";
 import { RankTrackerArt } from "@/components/seo-tools/help-illustrations/rank-tracker";
 import { RANK_TRACKED_KEYWORDS } from "@/lib/rank-tracker/options";
+import { planName } from "@/lib/upgrade-target";
 import { RANK_TRACKER_HELP_COPY, type DashLocale } from "@/lib/i18n/dashboard";
 
 /** Keyword discovery lives on the existing Keywords Explorer surface. */
@@ -30,9 +31,9 @@ export function RankTrackerHelpButton({ locale }: { locale: DashLocale }) {
           // the help text cannot claim a limit the code does not enforce.
           bullets: [
             t.step1Plans(
-              RANK_TRACKED_KEYWORDS.STARTER,
-              RANK_TRACKED_KEYWORDS.GROWTH,
-              RANK_TRACKED_KEYWORDS.AGENCY,
+              { name: planName("STARTER"), n: RANK_TRACKED_KEYWORDS.STARTER },
+              { name: planName("GROWTH"), n: RANK_TRACKED_KEYWORDS.GROWTH },
+              { name: planName("AGENCY"), n: RANK_TRACKED_KEYWORDS.AGENCY },
             ),
           ],
         },

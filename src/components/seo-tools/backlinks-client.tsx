@@ -60,6 +60,7 @@ import {
   type BacklinksToolCopy,
   type DashLocale,
 } from "@/lib/i18n/dashboard";
+import { useLockedPlanName } from "@/components/plan/plan-context";
 
 const API = "/api/seo/v1/backlinks";
 
@@ -831,6 +832,7 @@ function Sparkline({
  * That is true, and it is the most persuasive thing on the panel.
  */
 function BacklinksUpsell({ t }: { t: BacklinksToolCopy }) {
+  const fullPlan = useLockedPlanName("backlinks_full");
   return (
     <Card>
       <CardHeader>
@@ -838,7 +840,7 @@ function BacklinksUpsell({ t }: { t: BacklinksToolCopy }) {
           <Lock className="h-4 w-4 text-gray-400" aria-hidden="true" />
           <h3 className="text-base font-semibold text-gray-900">{t.upsellTitle}</h3>
         </div>
-        <p className="mt-1 text-sm text-gray-500">{t.upsellIntro}</p>
+        <p className="mt-1 text-sm text-gray-500">{t.upsellIntro(fullPlan)}</p>
       </CardHeader>
       <CardContent className="space-y-4">
         <ul className="space-y-1.5 text-sm text-gray-600">
@@ -884,6 +886,7 @@ export function BacklinksClient({
   capability: BacklinksCapability;
 }) {
   const t = BACKLINKS_TOOL_COPY[locale];
+  const lockPlan = useLockedPlanName("backlinks");
   const tools = SEO_TOOLS_COPY[locale];
   const it = tools.items.backlinks;
   const { int, dec, relative } = useFormatters(locale);
@@ -1062,7 +1065,7 @@ export function BacklinksClient({
                 <Lock className="h-7 w-7 text-gray-400" aria-hidden="true" />
               </div>
               <h3 className="text-base font-semibold text-gray-900">{t.lockedTitle}</h3>
-              <p className="mt-2 max-w-md text-sm text-gray-500">{t.lockedBody}</p>
+              <p className="mt-2 max-w-md text-sm text-gray-500">{t.lockedBody(lockPlan)}</p>
               <Link
                 href="/billing"
                 className="mt-6 inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"

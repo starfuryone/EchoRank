@@ -5,6 +5,7 @@ import { Activity, Lock, Trash2 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { MONITOR_CARD_COPY, type DashLocale } from "@/lib/i18n/dashboard";
+import { useLockedPlanName } from "@/components/plan/plan-context";
 import { scoreVersionNote } from "@/lib/i18n/readiness";
 import { crossesVersions, versionSegments } from "@/lib/visibility-score";
 
@@ -112,6 +113,8 @@ export function MonitorCard({
   locale?: DashLocale;
 }) {
   const t = MONITOR_CARD_COPY[locale];
+  const lockPlan = useLockedPlanName("visibility_monitor");
+  const dailyPlan = useLockedPlanName("monitor_daily");
   const [locked, setLocked] = useState(false);
   const [loading, setLoading] = useState(true);
   const [err, setErr] = useState<string | null>(null);
@@ -155,7 +158,7 @@ export function MonitorCard({
       });
       const data = await res.json();
       if (res.status === 403) {
-        setErr(data.error || t.dailyRequiresAgency);
+        setErr(cadence === "DAILY" ? t.dailyRequiresPlan(dailyPlan) : data.error || t.saveFailed);
         return;
       }
       if (!res.ok) throw new Error(data.error || t.requestFailed(res.status));
@@ -201,7 +204,7 @@ export function MonitorCard({
           <Lock className="h-5 w-5 shrink-0 text-gray-400" />
           <div className="flex-1">
             <p className="text-sm font-medium text-gray-900">{t.title}</p>
-            <p className="text-sm text-gray-500">{t.lockedDescription}</p>
+            <p className="text-sm text-gray-500">{t.lockedDescription(lockPlan)}</p>
           </div>
           <Button variant="outline" size="sm" onClick={() => (window.location.href = "/billing")}>
             {t.upgrade}
@@ -260,7 +263,7 @@ export function MonitorCard({
               className="rounded-lg border border-gray-300 px-2 py-1.5 text-sm text-gray-700"
             >
               <option value="WEEKLY">{t.weekly}</option>
-              <option value="DAILY">{t.daily}</option>
+              <option value="DAILY">{t.daily(dailyPlan)}</option>
             </select>
             <Button variant="outline" size="sm" onClick={() => void patch(m.id, { active: !m.active })}>
               {m.active ? t.pause : t.resume}
@@ -289,7 +292,7 @@ export function MonitorCard({
               className="rounded-lg border border-blue-200 bg-white px-2 py-1.5 text-sm text-gray-700"
             >
               <option value="WEEKLY">{t.weekly}</option>
-              <option value="DAILY">{t.daily}</option>
+              <option value="DAILY">{t.daily(dailyPlan)}</option>
             </select>
             <Button size="sm" onClick={() => void addMonitor()} disabled={saving}>
               {saving ? t.saving : t.startMonitoring}

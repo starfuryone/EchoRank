@@ -4,25 +4,15 @@ import { meteringService } from "@/infrastructure/metering/service";
 import { QuotaExceededError } from "@/infrastructure/metering/quota";
 import { hasFeature, type Feature } from "@/lib/feature-flags";
 import { PaidPlanRequiredError } from "@/lib/paid-plan";
+import { planAtLeast } from "@/lib/plan-rank";
 import type { PlanType, MeterType } from "@/generated/prisma";
 
 export { QuotaExceededError };
 
 // ─── Plan hierarchy ─────────────────────────────────────────────────────────
 
-// Ranked by price, low to high. AI_VISIBILITY (AI-only) sits below
-// STARTER again since its reinstatement (2026-11-07). Which AREAS a plan may
-// reach is src/lib/plan-access.ts, not this rank.
-const PLAN_RANK: Record<PlanType, number> = {
-  AI_VISIBILITY: 0,
-  // The crawler-only plan: below every ladder plan, so any "X and up" check
-  // refuses it (it is off PLAN_ORDER the same way, plan-config.ts).
-  NOSY_BAT: -1,
-  STARTER: 1,
-  GROWTH: 2,
-  AGENCY: 3,
-  ENTERPRISE: 4,
-};
+// The ladder lives in src/lib/plan-rank.ts (dependency-free), so the locked
+// messages (src/lib/locked-plan.ts) name the plan this check would let in.
 
 // ─── Custom error classes ───────────────────────────────────────────────────
 
@@ -66,7 +56,7 @@ export async function requirePlan(minimumPlan: PlanType): Promise<void> {
   const membership = await requireTenant();
   const currentPlan = membership.tenant.planType;
 
-  if (PLAN_RANK[currentPlan] < PLAN_RANK[minimumPlan]) {
+  if (!planAtLeast(currentPlan, minimumPlan)) {
     throw new PlanRequiredError(currentPlan, minimumPlan);
   }
 }

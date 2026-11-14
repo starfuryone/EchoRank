@@ -16,6 +16,7 @@ import Link from "next/link";
 import { MessageCircle, Copy, Check, AlertTriangle, ExternalLink, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { AccountCopy } from "@/lib/i18n/account";
+import { useLockedPlanName } from "@/components/plan/plan-context";
 
 interface Props {
   copy: AccountCopy;
@@ -33,6 +34,7 @@ interface ProvisionResponse {
 }
 
 export function TeamChatSection({ copy, eligible, existingMxid, elementUrl }: Props) {
+  const lockPlan = useLockedPlanName("team_chat");
   const [issued, setIssued] = useState<ProvisionResponse | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -88,8 +90,8 @@ export function TeamChatSection({ copy, eligible, existingMxid, elementUrl }: Pr
         <div className="mt-3 flex items-start gap-2">
           <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0 text-gray-500" aria-hidden="true" />
           <div>
-            <p className="text-sm font-medium text-gray-300">{copy.chatLockedTitle}</p>
-            <p className="mt-1 max-w-xl text-sm text-gray-500">{copy.chatLockedBody}</p>
+            <p className="text-sm font-medium text-gray-300">{copy.chatLockedTitle(lockPlan)}</p>
+            <p className="mt-1 max-w-xl text-sm text-gray-500">{copy.chatLockedBody(lockPlan)}</p>
             <Link
               href="/billing"
               className="mt-3 inline-flex items-center rounded-lg border border-amber-500/40 px-3 py-1.5 text-xs font-medium text-amber-300 hover:bg-amber-500/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500"

@@ -25,6 +25,19 @@ import { CRAWLER_BRAND } from "@/lib/site-crawler/brand";
 import { AI_LABELS } from "./ai-labels";
 export type DashLocale = "en" | "fr" | "de-CH";
 
+// LOCKED MESSAGES TAKE THE PLAN AS A PARAMETER (2026-11-14). A `(plan) =>`
+// string below names the plan src/lib/locked-plan.ts computes for that lock
+// and that tenant; no locked message types a plan name.
+/** French "de" before a plan name, elided before a vowel (d'Agency, de Starter). */
+const frDe = (plan: string) => (/^[aeiouy]/i.test(plan) ? `d'${plan}` : `de ${plan}`);
+/** English "a"/"an" before a plan name (an Agency feature, a Growth feature). */
+const enA = (plan: string) => (/^[aeiou]/i.test(plan) ? `an ${plan}` : `a ${plan}`);
+/** A plan's display name and one of its limits, both read from PLAN_CONFIGS. */
+export interface NamedLimit {
+  name: string;
+  n: number;
+}
+
 export function dashboardLocale(cookieValue?: string | null): DashLocale {
   if (cookieValue?.startsWith("fr")) return "fr";
   if (cookieValue?.startsWith("de")) return "de-CH";
@@ -1927,8 +1940,8 @@ const importsEn = {
   uploadFailed: "Upload failed",
   commitFailed: "Could not start import",
   gatedTitle: "CSV import isn't on your plan",
-  gatedDescription:
-    "Importing reviews from CSV is available on Growth and above. Upgrade to feed your own review history into the analysis engine.",
+  gatedDescription: (plan: string) =>
+    `Importing reviews from CSV is available from ${plan}. Upgrade to feed your own review history into the analysis engine.`,
   uploadTitle: "Upload a CSV",
   uploadSubtitle:
     "Export reviews from Google, Facebook, Trustpilot, or any tool, and drop the file here. We'll detect the columns and let you map them before importing.",
@@ -1995,8 +2008,8 @@ export const IMPORTS_COPY: Record<DashLocale, ImportsCopy> = {
     uploadFailed: "Échec du téléversement",
     commitFailed: "Impossible de démarrer l'importation",
     gatedTitle: "L'importation CSV n'est pas incluse dans votre forfait",
-    gatedDescription:
-      "L'importation d'avis à partir de fichiers CSV est offerte avec le forfait Growth et les forfaits supérieurs. Passez au forfait supérieur pour alimenter le moteur d'analyse avec votre propre historique d'avis.",
+    gatedDescription: (plan) =>
+      `L'importation d'avis à partir de fichiers CSV est offerte à partir du forfait ${plan}. Passez au forfait supérieur pour alimenter le moteur d'analyse avec votre propre historique d'avis.`,
     uploadTitle: "Téléverser un fichier CSV",
     uploadSubtitle:
       "Exportez vos avis depuis Google, Facebook, Trustpilot ou tout autre outil, puis déposez le fichier ici. Nous détecterons les colonnes et vous pourrez les associer avant l'importation.",
@@ -2059,8 +2072,8 @@ export const IMPORTS_COPY: Record<DashLocale, ImportsCopy> = {
     uploadFailed: "Hochladen fehlgeschlagen",
     commitFailed: "Import konnte nicht gestartet werden",
     gatedTitle: "CSV-Import ist in Ihrem Plan nicht enthalten",
-    gatedDescription:
-      "Der Import von Bewertungen aus CSV-Dateien ist ab dem Growth-Plan verfügbar. Führen Sie ein Upgrade durch, um Ihren eigenen Bewertungsverlauf in die Analyse-Engine einzuspeisen.",
+    gatedDescription: (plan) =>
+      `Der Import von Bewertungen aus CSV-Dateien ist ab dem ${plan}-Plan verfügbar. Führen Sie ein Upgrade durch, um Ihren eigenen Bewertungsverlauf in die Analyse-Engine einzuspeisen.`,
     uploadTitle: "CSV-Datei hochladen",
     uploadSubtitle:
       "Exportieren Sie Bewertungen aus Google, Facebook, Trustpilot oder einem anderen Tool und legen Sie die Datei hier ab. Wir erkennen die Spalten und Sie können sie vor dem Import zuordnen.",
@@ -3699,7 +3712,7 @@ const settingsEn = {
     zh: "Chinese",
   } as Record<string, string>,
   whitelabelTitle: "White-label",
-  agencyRequired: "Agency Plan Required",
+  planRequired: (plan: string) => `${plan} Plan Required`,
   customDomainLabel: "Custom Domain",
   whitelabelCheckbox: "Enable white-label branding (removes Echorank branding)",
   helpModal: {
@@ -3712,8 +3725,8 @@ const settingsEn = {
       "These are where satisfied customers are sent to leave a public review. For Google, use your “write a review” link (https://g.page/r/…/review or a Place ID review URL). Set at least the Google link — it is the default destination when no specific platform is configured.",
     localizationBody:
       "Timezone affects when scheduled requests are sent and how times are displayed. Default language sets the language of customer-facing emails and pages for new requests.",
-    whitelabelBody:
-      "On the Agency plan you can serve feedback pages from your own custom domain and remove Echorank branding. These options are disabled on other plans.",
+    whitelabelBody: (plan: string) =>
+      `From the ${plan} plan up you can serve feedback pages from your own custom domain and remove Echorank branding. Below it these options are disabled.`,
     gotIt: "Got it",
   },
 };
@@ -3774,7 +3787,7 @@ export const SETTINGS_COPY: Record<DashLocale, SettingsCopy> = {
       zh: "Chinois",
     } as Record<string, string>,
     whitelabelTitle: "Marque blanche",
-    agencyRequired: "Forfait Agency requis",
+    planRequired: (plan) => `Forfait ${plan} requis`,
     customDomainLabel: "Domaine personnalisé",
     whitelabelCheckbox:
       "Activer la marque blanche (retire l'image de marque Echorank)",
@@ -3788,8 +3801,8 @@ export const SETTINGS_COPY: Record<DashLocale, SettingsCopy> = {
         "C'est là que les clients satisfaits sont dirigés pour laisser un avis public. Pour Google, utilisez votre lien «Rédiger un avis» (https://g.page/r/…/review ou une URL d'avis avec identifiant de lieu). Configurez au moins le lien Google — c'est la destination par défaut lorsqu'aucune plateforme précise n'est configurée.",
       localizationBody:
         "Le fuseau horaire détermine le moment de l'envoi des demandes planifiées et l'affichage des heures. La langue par défaut définit la langue des courriels et des pages destinés aux clients pour les nouvelles demandes.",
-      whitelabelBody:
-        "Avec le forfait Agency, vous pouvez servir les pages de rétroaction depuis votre propre domaine personnalisé et retirer l'image de marque Echorank. Ces options sont désactivées avec les autres forfaits.",
+      whitelabelBody: (plan) =>
+        `À partir du forfait ${plan}, vous pouvez servir les pages de rétroaction depuis votre propre domaine personnalisé et retirer l'image de marque Echorank. Avec les forfaits inférieurs, ces options sont désactivées.`,
       gotIt: "Compris",
     },
   },
@@ -3846,7 +3859,7 @@ export const SETTINGS_COPY: Record<DashLocale, SettingsCopy> = {
       zh: "Chinesisch",
     } as Record<string, string>,
     whitelabelTitle: "White-Label",
-    agencyRequired: "Agency-Plan erforderlich",
+    planRequired: (plan) => `${plan}-Plan erforderlich`,
     customDomainLabel: "Eigene Domain",
     whitelabelCheckbox:
       "White-Label-Branding aktivieren (entfernt das Echorank-Branding)",
@@ -3860,8 +3873,8 @@ export const SETTINGS_COPY: Record<DashLocale, SettingsCopy> = {
         "Hierhin werden zufriedene Kunden geleitet, um eine öffentliche Bewertung zu hinterlassen. Verwenden Sie für Google Ihren «Rezension schreiben»-Link (https://g.page/r/…/review oder eine Bewertungs-URL mit Place ID). Hinterlegen Sie mindestens den Google-Link — er ist das Standardziel, wenn keine bestimmte Plattform konfiguriert ist.",
       localizationBody:
         "Die Zeitzone beeinflusst, wann geplante Anfragen gesendet werden und wie Zeiten angezeigt werden. Die Standardsprache legt die Sprache der kundenseitigen E-Mails und Seiten für neue Anfragen fest.",
-      whitelabelBody:
-        "Mit dem Agency-Plan können Sie Feedback-Seiten über Ihre eigene Domain bereitstellen und das Echorank-Branding entfernen. Bei anderen Plänen sind diese Optionen deaktiviert.",
+      whitelabelBody: (plan) =>
+        `Ab dem ${plan}-Plan können Sie Feedback-Seiten über Ihre eigene Domain bereitstellen und das Echorank-Branding entfernen. Bei kleineren Plänen sind diese Optionen deaktiviert.`,
       gotIt: "Verstanden",
     },
   },
@@ -4490,8 +4503,8 @@ export const TEMPLATES_COPY: Record<DashLocale, TemplatesCopy> = {
 // ─── visibility cards: MonitorCard ──────────────────────────────────────────
 const monitorCardEn = {
   title: "Scheduled monitoring",
-  lockedDescription:
-    "Weekly re-audits with instant alerts when your score drops or an AI crawler gets blocked. Part of the Growth plan and up.",
+  lockedDescription: (plan: string) =>
+    `Weekly re-audits with instant alerts when your score drops or an AI crawler gets blocked. Part of the ${plan} plan and up.`,
   upgrade: "Upgrade",
   empty:
     "No sites monitored yet. Run an audit, then add the site here — Echorank will re-audit it on schedule and email you if the score drops or a crawler gets blocked.",
@@ -4499,7 +4512,7 @@ const monitorCardEn = {
   nextRun: (date: string) => `next run ${date}`,
   sparklineHint: "history builds after 2 runs",
   weekly: "Weekly",
-  daily: "Daily (Agency)",
+  daily: (plan: string) => `Daily (${plan})`,
   pause: "Pause",
   resume: "Resume",
   deleteMonitor: "Delete monitor",
@@ -4511,7 +4524,7 @@ const monitorCardEn = {
   loadFailed: "Could not load monitors",
   saveFailed: "Could not save monitor",
   updateFailed: "Update failed",
-  dailyRequiresAgency: "Daily cadence requires the Agency plan.",
+  dailyRequiresPlan: (plan: string) => `Daily cadence requires the ${plan} plan.`,
 };
 export type MonitorCardCopy = typeof monitorCardEn;
 
@@ -4519,8 +4532,8 @@ export const MONITOR_CARD_COPY: Record<DashLocale, MonitorCardCopy> = {
   en: monitorCardEn,
   fr: {
     title: "Surveillance planifiée",
-    lockedDescription:
-      "Réaudits hebdomadaires avec alertes instantanées lorsque votre score baisse ou qu'un robot d'IA est bloqué. Inclus dans le forfait Growth et les forfaits supérieurs.",
+    lockedDescription: (plan) =>
+      `Réaudits hebdomadaires avec alertes instantanées lorsque votre score baisse ou qu'un robot d'IA est bloqué. Inclus à partir du forfait ${plan}.`,
     upgrade: "Passer au forfait supérieur",
     empty:
       "Aucun site surveillé pour l'instant. Lancez un audit, puis ajoutez le site ici — Echorank le réauditera selon l'horaire et vous enverra un courriel si le score baisse ou si un robot d'exploration est bloqué.",
@@ -4528,7 +4541,7 @@ export const MONITOR_CARD_COPY: Record<DashLocale, MonitorCardCopy> = {
     nextRun: (date: string) => `prochaine exécution ${date}`,
     sparklineHint: "l'historique apparaît après 2 exécutions",
     weekly: "Hebdomadaire",
-    daily: "Quotidien (Agency)",
+    daily: (plan) => `Quotidien (${plan})`,
     pause: "Suspendre",
     resume: "Reprendre",
     deleteMonitor: "Supprimer la surveillance",
@@ -4540,12 +4553,12 @@ export const MONITOR_CARD_COPY: Record<DashLocale, MonitorCardCopy> = {
     loadFailed: "Impossible de charger les surveillances",
     saveFailed: "Impossible d'enregistrer la surveillance",
     updateFailed: "Échec de la mise à jour",
-    dailyRequiresAgency: "La cadence quotidienne nécessite le forfait Agency.",
+    dailyRequiresPlan: (plan) => `La cadence quotidienne nécessite le forfait ${plan}.`,
   },
   "de-CH": {
     title: "Geplante Überwachung",
-    lockedDescription:
-      "Wöchentliche erneute Audits mit sofortigen Benachrichtigungen, wenn Ihr Score sinkt oder ein KI-Crawler blockiert wird. Teil des Growth-Plans und höher.",
+    lockedDescription: (plan) =>
+      `Wöchentliche erneute Audits mit sofortigen Benachrichtigungen, wenn Ihr Score sinkt oder ein KI-Crawler blockiert wird. Teil des ${plan}-Plans und höher.`,
     upgrade: "Upgrade durchführen",
     empty:
       "Noch keine überwachten Websites. Führen Sie ein Audit durch und fügen Sie die Website hier hinzu — Echorank auditiert sie nach Zeitplan erneut und benachrichtigt Sie per E-Mail, wenn der Score sinkt oder ein Crawler blockiert wird.",
@@ -4553,7 +4566,7 @@ export const MONITOR_CARD_COPY: Record<DashLocale, MonitorCardCopy> = {
     nextRun: (date: string) => `nächster Lauf ${date}`,
     sparklineHint: "Verlauf erscheint nach 2 Läufen",
     weekly: "Wöchentlich",
-    daily: "Täglich (Agency)",
+    daily: (plan) => `Täglich (${plan})`,
     pause: "Pausieren",
     resume: "Fortsetzen",
     deleteMonitor: "Überwachung löschen",
@@ -4565,15 +4578,15 @@ export const MONITOR_CARD_COPY: Record<DashLocale, MonitorCardCopy> = {
     loadFailed: "Überwachungen konnten nicht geladen werden",
     saveFailed: "Überwachung konnte nicht gespeichert werden",
     updateFailed: "Aktualisierung fehlgeschlagen",
-    dailyRequiresAgency: "Tägliche Ausführung erfordert den Agency-Plan.",
+    dailyRequiresPlan: (plan) => `Tägliche Ausführung erfordert den ${plan}-Plan.`,
   },
 };
 
 // ─── visibility cards: BenchmarkCard ────────────────────────────────────────
 const benchmarkCardEn = {
   title: "Competitor benchmark",
-  lockedDescription:
-    "See how your AI visibility stacks up against competitors, side by side. Part of the Growth plan and up.",
+  lockedDescription: (plan: string) =>
+    `See how your AI visibility stacks up against competitors, side by side. Part of the ${plan} plan and up.`,
   upgrade: "Upgrade",
   competitorsToday: (used: number, limit: number) =>
     `${used} / ${limit} competitor${limit === 1 ? "" : "s"} today`,
@@ -4584,9 +4597,11 @@ const benchmarkCardEn = {
   placeholder: "competitor.com",
   auditing: "Auditing…",
   compare: "Compare",
-  growthLimitBefore: "Growth includes 1 competitor per day — ",
-  growthLimitLink: "Agency includes 5",
-  growthLimitAfter: ".",
+  // Limit wording; both plan names and both numbers from the plan config
+  // (src/lib/visibility-limits.ts, src/lib/locked-plan.ts benchmark_more).
+  limitBefore: (plan: string, n: number) => `${plan} includes ${n} competitor${n === 1 ? "" : "s"} per day — `,
+  limitLink: (plan: string, n: number) => `${plan} includes ${n}`,
+  limitAfter: ".",
   requestFailed: (status: number) => `Request failed (${status})`,
   comparisonFailed: "Comparison failed",
 };
@@ -4596,8 +4611,8 @@ export const BENCHMARK_CARD_COPY: Record<DashLocale, BenchmarkCardCopy> = {
   en: benchmarkCardEn,
   fr: {
     title: "Analyse comparative des concurrents",
-    lockedDescription:
-      "Voyez comment votre visibilité IA se compare à celle de vos concurrents, côte à côte. Inclus dans le forfait Growth et les forfaits supérieurs.",
+    lockedDescription: (plan) =>
+      `Voyez comment votre visibilité IA se compare à celle de vos concurrents, côte à côte. Inclus à partir du forfait ${plan}.`,
     upgrade: "Passer au forfait supérieur",
     competitorsToday: (used: number, limit: number) =>
       `${used} / ${limit} concurrent${limit === 1 ? "" : "s"} aujourd'hui`,
@@ -4608,16 +4623,16 @@ export const BENCHMARK_CARD_COPY: Record<DashLocale, BenchmarkCardCopy> = {
     placeholder: "competitor.com",
     auditing: "Audit en cours…",
     compare: "Comparer",
-    growthLimitBefore: "Growth inclut 1 concurrent par jour — ",
-    growthLimitLink: "Agency en inclut 5",
-    growthLimitAfter: ".",
+    limitBefore: (plan, n) => `${plan} inclut ${n} concurrent${n === 1 ? "" : "s"} par jour — `,
+    limitLink: (plan, n) => `${plan} en inclut ${n}`,
+    limitAfter: ".",
     requestFailed: (status: number) => `Échec de la requête (${status})`,
     comparisonFailed: "Échec de la comparaison",
   },
   "de-CH": {
     title: "Wettbewerber-Benchmark",
-    lockedDescription:
-      "Sehen Sie im direkten Vergleich, wie Ihre KI-Sichtbarkeit gegenüber Wettbewerbern abschneidet. Teil des Growth-Plans und höher.",
+    lockedDescription: (plan) =>
+      `Sehen Sie im direkten Vergleich, wie Ihre KI-Sichtbarkeit gegenüber Wettbewerbern abschneidet. Teil des ${plan}-Plans und höher.`,
     upgrade: "Upgrade durchführen",
     competitorsToday: (used: number, limit: number) =>
       `${used} / ${limit} Wettbewerber heute`,
@@ -4628,9 +4643,9 @@ export const BENCHMARK_CARD_COPY: Record<DashLocale, BenchmarkCardCopy> = {
     placeholder: "competitor.com",
     auditing: "Audit läuft…",
     compare: "Vergleichen",
-    growthLimitBefore: "Growth umfasst 1 Wettbewerber pro Tag — ",
-    growthLimitLink: "Agency umfasst 5",
-    growthLimitAfter: ".",
+    limitBefore: (plan, n) => `${plan} umfasst ${n} Wettbewerber pro Tag — `,
+    limitLink: (plan, n) => `${plan} umfasst ${n}`,
+    limitAfter: ".",
     requestFailed: (status: number) => `Anfrage fehlgeschlagen (${status})`,
     comparisonFailed: "Vergleich fehlgeschlagen",
   },
@@ -4639,8 +4654,8 @@ export const BENCHMARK_CARD_COPY: Record<DashLocale, BenchmarkCardCopy> = {
 // ─── visibility cards: AnswerTrackingCard ───────────────────────────────────
 const answerTrackingEn = {
   title: "Answer tracking",
-  lockedDescription:
-    "When customers ask ChatGPT or Claude for a recommendation, are you the answer? Track the exact questions daily and know the moment you appear — or a competitor does. The headline of the Agency plan.",
+  lockedDescription: (plan: string) =>
+    `When customers ask ChatGPT or Claude for a recommendation, are you the answer? Track the exact questions daily and know the moment you appear — or a competitor does. Included from the ${plan} plan.`,
   upgrade: "Upgrade",
   mentionRateBadge: (rate: number) => `mentioned in ${rate}% of answers (14d)`,
   promptsUsed: (used: number, limit: number) => `${used} / ${limit} prompts`,
@@ -4667,8 +4682,8 @@ export const ANSWER_TRACKING_COPY: Record<DashLocale, AnswerTrackingCopy> = {
   en: answerTrackingEn,
   fr: {
     title: "Suivi des réponses",
-    lockedDescription:
-      "Quand des clients demandent une recommandation à ChatGPT ou Claude, êtes-vous la réponse? Suivez ces questions exactes chaque jour et sachez dès l'instant où vous apparaissez — ou qu'un concurrent apparaît. Le point fort du forfait Agency.",
+    lockedDescription: (plan) =>
+      `Quand des clients demandent une recommandation à ChatGPT ou Claude, êtes-vous la réponse? Suivez ces questions exactes chaque jour et sachez dès l'instant où vous apparaissez — ou qu'un concurrent apparaît. Inclus à partir du forfait ${plan}.`,
     upgrade: "Passer au forfait supérieur",
     mentionRateBadge: (rate: number) => `mentionné dans ${rate} % des réponses (14 j)`,
     promptsUsed: (used: number, limit: number) => `${used} / ${limit} requêtes`,
@@ -4691,8 +4706,8 @@ export const ANSWER_TRACKING_COPY: Record<DashLocale, AnswerTrackingCopy> = {
   },
   "de-CH": {
     title: "Antwort-Tracking",
-    lockedDescription:
-      "Wenn Kunden ChatGPT oder Claude um eine Empfehlung bitten — sind Sie die Antwort? Verfolgen Sie genau diese Fragen täglich und erfahren Sie sofort, wenn Sie erscheinen — oder ein Wettbewerber. Das Kernstück des Agency-Plans.",
+    lockedDescription: (plan) =>
+      `Wenn Kunden ChatGPT oder Claude um eine Empfehlung bitten — sind Sie die Antwort? Verfolgen Sie genau diese Fragen täglich und erfahren Sie sofort, wenn Sie erscheinen — oder ein Wettbewerber. Enthalten ab dem ${plan}-Plan.`,
     upgrade: "Upgrade durchführen",
     mentionRateBadge: (rate: number) => `in ${rate}% der Antworten erwähnt (14 Tage)`,
     promptsUsed: (used: number, limit: number) => `${used} / ${limit} Prompts`,
@@ -4831,8 +4846,8 @@ const visibilityEn = {
   deployPlaceholder: "Deploy date, e.g. 2026-06-01",
   measuring: "Measuring…",
   measureImpact: "Measure AI impact",
-  lockedAttr:
-    "ROI attribution is a Growth feature. Upgrade to connect your access logs and prove the fixes drove AI crawlers and referrals.",
+  lockedAttr: (plan: string) =>
+    `ROI attribution is ${enA(plan)} feature. Upgrade to connect your access logs and prove the fixes drove AI crawlers and referrals.`,
   deltaNa: "n/a",
   deltaNew: "new",
   totalRow: "TOTAL",
@@ -4906,8 +4921,8 @@ export const VISIBILITY_COPY: Record<DashLocale, VisibilityCopy> = {
     deployPlaceholder: "Date de déploiement, p. ex. 2026-06-01",
     measuring: "Mesure en cours…",
     measureImpact: "Mesurer l'impact IA",
-    lockedAttr:
-      "L'attribution du ROI est une fonctionnalité Growth. Passez au forfait supérieur pour connecter vos journaux d'accès et prouver que les correctifs ont attiré robots d'IA et références.",
+    lockedAttr: (plan) =>
+      `L'attribution du ROI est une fonctionnalité ${plan}. Passez au forfait supérieur pour connecter vos journaux d'accès et prouver que les correctifs ont attiré robots d'IA et références.`,
     deltaNa: "s. o.",
     deltaNew: "nouveau",
     totalRow: "TOTAL",
@@ -4978,8 +4993,8 @@ export const VISIBILITY_COPY: Record<DashLocale, VisibilityCopy> = {
     deployPlaceholder: "Deploy-Datum, z. B. 2026-06-01",
     measuring: "Wird gemessen…",
     measureImpact: "KI-Wirkung messen",
-    lockedAttr:
-      "ROI-Attribution ist eine Growth-Funktion. Führen Sie ein Upgrade durch, um Ihre Zugriffsprotokolle zu verbinden und zu belegen, dass die Korrekturen KI-Crawler und Referrals gebracht haben.",
+    lockedAttr: (plan) =>
+      `ROI-Attribution ist eine ${plan}-Funktion. Führen Sie ein Upgrade durch, um Ihre Zugriffsprotokolle zu verbinden und zu belegen, dass die Korrekturen KI-Crawler und Referrals gebracht haben.`,
     deltaNa: "k. A.",
     deltaNew: "neu",
     totalRow: "TOTAL",
@@ -5662,8 +5677,8 @@ const seoToolsEn = {
   classicTitle: "Classic SEO Tools",
   classicSubtitle: "Traditional search data — rankings, keywords, backlinks and technical health.",
   upgradeTitle: "SEO Tools are part of your paid plan",
-  upgradeBody:
-    "Your workspace does not have an active subscription yet. Activate any Echorank360 plan from Starter to open the SEO Tools hub — keyword research, site analysis, content and reporting tools included.",
+  upgradeBody: (plan: string) =>
+    `Your workspace does not have an active subscription yet. Activate any Echorank360 plan from ${plan} to open the SEO Tools hub — keyword research, site analysis, content and reporting tools included.`,
   upgradeCta: "Go to billing",
   newBadge: "New",
   newBadgeSr: "new feature",
@@ -5871,8 +5886,8 @@ export const SEO_TOOLS_COPY: Record<DashLocale, SeoToolsCopy> = {
     classicTitle: "Outils SEO classiques",
     classicSubtitle: "Données de recherche traditionnelles — positions, mots-clés, liens retour et santé technique.",
     upgradeTitle: "Les outils SEO font partie de votre forfait payant",
-    upgradeBody:
-      "Votre espace de travail n'a pas encore d'abonnement actif. Activez n'importe quel forfait Echorank360 à partir de Starter pour ouvrir le centre d'outils SEO — recherche de mots-clés, analyse de site, outils de contenu et de rapports inclus.",
+    upgradeBody: (plan) =>
+      `Votre espace de travail n'a pas encore d'abonnement actif. Activez n'importe quel forfait Echorank360 à partir ${frDe(plan)} pour ouvrir le centre d'outils SEO — recherche de mots-clés, analyse de site, outils de contenu et de rapports inclus.`,
     upgradeCta: "Aller à la facturation",
     newBadge: "Nouveau",
     newBadgeSr: "nouvelle fonctionnalité",
@@ -6068,8 +6083,8 @@ export const SEO_TOOLS_COPY: Record<DashLocale, SeoToolsCopy> = {
     classicTitle: "Klassische SEO-Tools",
     classicSubtitle: "Traditionelle Suchdaten — Rankings, Keywords, Backlinks und technische Gesundheit.",
     upgradeTitle: "SEO-Tools sind Teil Ihres bezahlten Plans",
-    upgradeBody:
-      "Ihr Arbeitsbereich hat noch kein aktives Abonnement. Aktivieren Sie einen beliebigen Echorank360-Plan ab Starter, um das SEO-Tools-Hub zu öffnen — Keyword-Recherche, Website-Analyse, Content- und Berichtstools inklusive.",
+    upgradeBody: (plan) =>
+      `Ihr Arbeitsbereich hat noch kein aktives Abonnement. Aktivieren Sie einen beliebigen Echorank360-Plan ab ${plan}, um das SEO-Tools-Hub zu öffnen — Keyword-Recherche, Website-Analyse, Content- und Berichtstools inklusive.`,
     upgradeCta: "Zur Abrechnung",
     newBadge: "Neu",
     newBadgeSr: "neue Funktion",
@@ -6489,7 +6504,7 @@ const botAnalyticsEn = {
   totalBotHits: (n: number) => `${n} crawler hits`,
 
   // ─── STARTER upsell (section B only) ───────────────────────────────────────
-  upsellTitle: "Log analysis is on Growth and Agency",
+  upsellTitle: (plan: string) => `Log analysis is included from ${plan}`,
   upsellBody:
     "The access check above is included on your plan. Log analysis adds the other half: which crawlers actually visited, how often, and which pages they read.",
   upsellCta: "Compare plans",
@@ -6640,7 +6655,7 @@ export const BOT_ANALYTICS_COPY: Record<DashLocale, BotAnalyticsCopy> = {
       "Aucune visite de robot d'IA dans ce journal. Soit ils ne sont pas encore venus, soit quelque chose les repousse — la vérification d'accès ci-dessus vous dira laquelle.",
     totalBotHits: (n: number) => `${n} visites de robots`,
 
-    upsellTitle: "L'analyse des journaux est incluse dans Growth et Agency",
+    upsellTitle: (plan) => `L'analyse des journaux est incluse à partir ${frDe(plan)}`,
     upsellBody:
       "La vérification d'accès ci-dessus est incluse dans votre forfait. L'analyse des journaux ajoute l'autre moitié : quels robots sont réellement venus, à quelle fréquence, et quelles pages ils ont lues.",
     upsellCta: "Comparer les forfaits",
@@ -6787,7 +6802,7 @@ export const BOT_ANALYTICS_COPY: Record<DashLocale, BotAnalyticsCopy> = {
       "Keine KI-Crawler-Besuche in diesem Protokoll. Entweder waren sie noch nicht da, oder etwas weist sie ab — die Zugriffsprüfung oben sagt Ihnen, was davon zutrifft.",
     totalBotHits: (n: number) => `${n} Crawler-Zugriffe`,
 
-    upsellTitle: "Die Protokollanalyse gehört zu Growth und Agency",
+    upsellTitle: (plan) => `Die Protokollanalyse gibt es ab ${plan}`,
     upsellBody:
       "Die Zugriffsprüfung oben ist in Ihrem Abo enthalten. Die Protokollanalyse ergänzt die andere Hälfte: welche Crawler tatsächlich kamen, wie oft, und welche Seiten sie gelesen haben.",
     upsellCta: "Abos vergleichen",
@@ -6967,9 +6982,9 @@ const contentExplorerEn = {
   cachedNote: (date: string) =>
     `Showing your saved search from ${date}. Searching again after 24 hours costs a new search.`,
 
-  planLockedTitle: "Content Explorer is on Starter and above",
-  planLockedBody:
-    "Web mention research is included from the Starter plan up. Your current plan does not include it.",
+  planLockedTitle: (plan: string) => `Content Explorer is on ${plan} and above`,
+  planLockedBody: (plan: string) =>
+    `Web mention research is included from the ${plan} plan up. Your current plan does not include it.`,
   upgradeCta: "Compare plans",
 
   // Summary band
@@ -7064,9 +7079,9 @@ export const CONTENT_EXPLORER_COPY: Record<DashLocale, ContentExplorerCopy> = {
     cachedNote: (date: string) =>
       `Affichage de votre recherche enregistrée du ${date}. Relancer après 24 heures consomme une nouvelle recherche.`,
 
-    planLockedTitle: "Content Explorer est inclus à partir de Starter",
-    planLockedBody:
-      "La recherche de mentions web est incluse à partir du forfait Starter. Votre forfait actuel ne l'inclut pas.",
+    planLockedTitle: (plan) => `Content Explorer est inclus à partir ${frDe(plan)}`,
+    planLockedBody: (plan) =>
+      `La recherche de mentions web est incluse à partir du forfait ${plan}. Votre forfait actuel ne l'inclut pas.`,
     upgradeCta: "Comparer les forfaits",
 
     totalMentions: (n: string) => `${n} pages mentionnent cette expression`,
@@ -7154,9 +7169,9 @@ export const CONTENT_EXPLORER_COPY: Record<DashLocale, ContentExplorerCopy> = {
     cachedNote: (date: string) =>
       `Angezeigt wird Ihre gespeicherte Suche vom ${date}. Ein erneuter Lauf nach 24 Stunden verbraucht eine neue Suche.`,
 
-    planLockedTitle: "Content Explorer gibt es ab Starter",
-    planLockedBody:
-      "Die Recherche von Web-Erwähnungen ist ab dem Starter-Abo enthalten. Ihr aktuelles Abo umfasst sie nicht.",
+    planLockedTitle: (plan) => `Content Explorer gibt es ab ${plan}`,
+    planLockedBody: (plan) =>
+      `Die Recherche von Web-Erwähnungen ist ab dem ${plan}-Abo enthalten. Ihr aktuelles Abo umfasst sie nicht.`,
     upgradeCta: "Abos vergleichen",
 
     totalMentions: (n: string) => `${n} Seiten erwähnen diesen Begriff`,
@@ -7604,7 +7619,7 @@ const aiCitationsEn = {
     "Mention counts come from the provider's full observation set. The example questions come from a sample of it, so they illustrate rather than enumerate.",
   errorNotEnabled:
     "AI Citations is not switched on for this deployment yet. It needs the AI Optimization product on the connected SEO data account.",
-  errorPlanLocked: "AI Citations is available on the Growth plan and above.",
+  errorPlanLocked: (plan: string) => `AI Citations is available on the ${plan} plan and above.`,
   errorQuota: "You have used this month's SEO searches. Stored lookups are still free to reopen.",
   errorGeneric: "Could not complete that lookup. Try again in a minute.",
 };
@@ -7662,7 +7677,7 @@ export const AI_CITATIONS_COPY: Record<DashLocale, AiCitationsCopy> = {
       "Le nombre de mentions provient de l'ensemble complet des observations du fournisseur. Les exemples de questions proviennent d'un échantillon : ils illustrent, sans être exhaustifs.",
     errorNotEnabled:
       "Les citations IA ne sont pas encore activées sur ce déploiement. Le produit AI Optimization doit être actif sur le compte de données SEO connecté.",
-    errorPlanLocked: "Les citations IA sont disponibles à partir du forfait Growth.",
+    errorPlanLocked: (plan) => `Les citations IA sont disponibles à partir du forfait ${plan}.`,
     errorQuota: "Vous avez utilisé les recherches SEO de ce mois. Les recherches stockées restent gratuites à rouvrir.",
     errorGeneric: "Impossible de terminer cette recherche. Réessayez dans une minute.",
   },
@@ -7716,7 +7731,7 @@ export const AI_CITATIONS_COPY: Record<DashLocale, AiCitationsCopy> = {
       "Die Erwähnungszahlen stammen aus dem vollständigen Beobachtungsbestand des Anbieters. Die Beispielfragen stammen aus einer Stichprobe und sind daher illustrativ, nicht vollständig.",
     errorNotEnabled:
       "KI-Zitate sind auf dieser Installation noch nicht aktiviert. Dafür braucht es das Produkt AI Optimization auf dem verbundenen SEO-Datenkonto.",
-    errorPlanLocked: "KI-Zitate sind ab dem Growth-Tarif verfügbar.",
+    errorPlanLocked: (plan) => `KI-Zitate sind ab dem ${plan}-Tarif verfügbar.`,
     errorQuota: "Sie haben die SEO-Suchen dieses Monats aufgebraucht. Gespeicherte Abfragen bleiben kostenlos abrufbar.",
     errorGeneric: "Die Abfrage konnte nicht abgeschlossen werden. Versuchen Sie es in einer Minute erneut.",
   },
@@ -8706,8 +8721,8 @@ const rankTrackerEn = {
 
   // ── Locked (STARTER) ──
   lockedTitle: "Rank Tracker is not in your plan",
-  lockedBody:
-    "Rank tracking is available on Growth and Agency plans. Upgrade to track keyword positions on a schedule and see how they move.",
+  lockedBody: (plan: string) =>
+    `Rank tracking is available from the ${plan} plan. Upgrade to track keyword positions on a schedule and see how they move.`,
   lockedCta: "See plans",
 
   // ── Project detail ──
@@ -8780,7 +8795,6 @@ const rankTrackerEn = {
   deviceDesktop: "Desktop",
   deviceMobile: "Mobile",
   frequencyLabel: "Check frequency",
-  frequencyDailyLocked: "Daily (Agency plan)",
   save: "Save project",
   saving: "Saving…",
   cancel: "Cancel",
@@ -8795,7 +8809,7 @@ const rankTrackerEn = {
   capTitle: "Keyword limit reached",
   capBody: (limit: number) =>
     `Your plan allows ${limit} tracked keywords in total. Remove some, or upgrade to track more.`,
-  frequencyLockedNote: "Daily checks are available on the Agency plan.",
+  frequencyLockedNote: (plan: string) => `Daily checks are available on the ${plan} plan.`,
   spend: (usd: string) => `Rank data cost for this project: $${usd} USD`,
   saveFailed: "Could not save the project. Try again in a minute.",
   runFailed: "Could not start the run. Try again in a minute.",
@@ -8826,8 +8840,8 @@ export const RANK_TRACKER_COPY: Record<DashLocale, RankTrackerCopy> = {
     weeklyAnchor: (weekday: string) => `Hebdomadaire, chaque ${weekday}`,
 
     lockedTitle: "Le suivi de positions n'est pas inclus dans votre forfait",
-    lockedBody:
-      "Le suivi de positions est offert avec les forfaits Croissance et Agence. Passez à un forfait supérieur pour suivre vos positions selon un horaire et voir leur évolution.",
+    lockedBody: (plan) =>
+      `Le suivi de positions est offert à partir du forfait ${plan}. Passez à un forfait supérieur pour suivre vos positions selon un horaire et voir leur évolution.`,
     lockedCta: "Voir les forfaits",
 
     backToList: "Tous les projets",
@@ -8892,7 +8906,6 @@ export const RANK_TRACKER_COPY: Record<DashLocale, RankTrackerCopy> = {
     deviceDesktop: "Ordinateur",
     deviceMobile: "Mobile",
     frequencyLabel: "Fréquence de vérification",
-    frequencyDailyLocked: "Quotidien (forfait Agence)",
     save: "Enregistrer le projet",
     saving: "Enregistrement…",
     cancel: "Annuler",
@@ -8907,7 +8920,7 @@ export const RANK_TRACKER_COPY: Record<DashLocale, RankTrackerCopy> = {
     capTitle: "Limite de mots-clés atteinte",
     capBody: (limit: number) =>
       `Votre forfait permet ${limit} mots-clés suivis au total. Retirez-en, ou passez à un forfait supérieur.`,
-    frequencyLockedNote: "Les vérifications quotidiennes sont offertes avec le forfait Agence.",
+    frequencyLockedNote: (plan) => `Les vérifications quotidiennes sont offertes avec le forfait ${plan}.`,
     spend: (usd: string) => `Coût des données de positions pour ce projet : ${usd} $ US`,
     saveFailed: "Impossible d'enregistrer le projet. Réessayez dans une minute.",
     runFailed: "Impossible de lancer l'exécution. Réessayez dans une minute.",
@@ -8934,8 +8947,8 @@ export const RANK_TRACKER_COPY: Record<DashLocale, RankTrackerCopy> = {
     weeklyAnchor: (weekday: string) => `Wöchentlich, jeden ${weekday}`,
 
     lockedTitle: "Rank Tracker ist nicht in Ihrem Plan enthalten",
-    lockedBody:
-      "Positions-Tracking ist in den Plänen Growth und Agency enthalten. Wechseln Sie den Plan, um Keyword-Positionen nach Zeitplan zu verfolgen und ihre Entwicklung zu sehen.",
+    lockedBody: (plan) =>
+      `Positions-Tracking ist ab dem ${plan}-Plan enthalten. Wechseln Sie den Plan, um Keyword-Positionen nach Zeitplan zu verfolgen und ihre Entwicklung zu sehen.`,
     lockedCta: "Pläne ansehen",
 
     backToList: "Alle Projekte",
@@ -9000,7 +9013,6 @@ export const RANK_TRACKER_COPY: Record<DashLocale, RankTrackerCopy> = {
     deviceDesktop: "Desktop",
     deviceMobile: "Mobil",
     frequencyLabel: "Prüffrequenz",
-    frequencyDailyLocked: "Täglich (Agency-Plan)",
     save: "Projekt speichern",
     saving: "Wird gespeichert…",
     cancel: "Abbrechen",
@@ -9015,7 +9027,7 @@ export const RANK_TRACKER_COPY: Record<DashLocale, RankTrackerCopy> = {
     capTitle: "Keyword-Limit erreicht",
     capBody: (limit: number) =>
       `Ihr Plan erlaubt insgesamt ${limit} verfolgte Keywords. Entfernen Sie einige, oder wechseln Sie den Plan.`,
-    frequencyLockedNote: "Tägliche Prüfungen sind im Agency-Plan enthalten.",
+    frequencyLockedNote: (plan) => `Tägliche Prüfungen sind im ${plan}-Plan enthalten.`,
     spend: (usd: string) => `Positionsdatenkosten für dieses Projekt: ${usd} USD`,
     saveFailed: "Das Projekt konnte nicht gespeichert werden. Versuchen Sie es in einer Minute erneut.",
     runFailed: "Der Lauf konnte nicht gestartet werden. Versuchen Sie es in einer Minute erneut.",
@@ -9041,8 +9053,9 @@ const rankTrackerHelpEn = {
   step1Title: "Create a tracking project",
   step1Body:
     "Add your domain and the keywords you want to watch (one per line), pick country, language, device, and how often to check: daily or weekly.",
-  step1Plans: (starter: number, growth: number, agency: number) =>
-    `Starter tracks up to ${starter} keywords and checks weekly. Growth tracks up to ${growth}, also weekly. Agency tracks up to ${agency} and can also check daily.`,
+  // Names and numbers both from PLAN_CONFIGS (rank-tracker-help.tsx).
+  step1Plans: (starter: NamedLimit, growth: NamedLimit, agency: NamedLimit) =>
+    `${starter.name} tracks up to ${starter.n} keywords and checks weekly. ${growth.name} tracks up to ${growth.n}, also weekly. ${agency.name} tracks up to ${agency.n} and can also check daily.`,
 
   step2Title: "Checks run automatically",
   step2Body:
@@ -9075,8 +9088,8 @@ export const RANK_TRACKER_HELP_COPY: Record<DashLocale, RankTrackerHelpCopy> = {
     step1Title: "Créez un projet de suivi",
     step1Body:
       "Ajoutez votre domaine et les mots-clés à surveiller (un par ligne), puis choisissez le pays, la langue, l'appareil et la fréquence de vérification : quotidienne ou hebdomadaire.",
-    step1Plans: (starter: number, growth: number, agency: number) =>
-      `Le forfait Démarrage suit jusqu'à ${starter} mots-clés avec une vérification hebdomadaire. Le forfait Croissance en suit jusqu'à ${growth}, également chaque semaine. Le forfait Agence en suit jusqu'à ${agency} et permet aussi la vérification quotidienne.`,
+    step1Plans: (starter: NamedLimit, growth: NamedLimit, agency: NamedLimit) =>
+      `Le forfait ${starter.name} suit jusqu'à ${starter.n} mots-clés avec une vérification hebdomadaire. Le forfait ${growth.name} en suit jusqu'à ${growth.n}, également chaque semaine. Le forfait ${agency.name} en suit jusqu'à ${agency.n} et permet aussi la vérification quotidienne.`,
 
     step2Title: "Les vérifications se font automatiquement",
     step2Body:
@@ -9105,8 +9118,8 @@ export const RANK_TRACKER_HELP_COPY: Record<DashLocale, RankTrackerHelpCopy> = {
     step1Title: "Tracking-Projekt erstellen",
     step1Body:
       "Fügen Sie Ihre Domain und die zu beobachtenden Keywords hinzu (eines pro Zeile) und wählen Sie Land, Sprache, Gerät und Prüfhäufigkeit: täglich oder wöchentlich.",
-    step1Plans: (starter: number, growth: number, agency: number) =>
-      `Starter verfolgt bis zu ${starter} Keywords und prüft wöchentlich. Growth verfolgt bis zu ${growth}, ebenfalls wöchentlich. Agency verfolgt bis zu ${agency} und kann zusätzlich täglich prüfen.`,
+    step1Plans: (starter: NamedLimit, growth: NamedLimit, agency: NamedLimit) =>
+      `${starter.name} verfolgt bis zu ${starter.n} Keywords und prüft wöchentlich. ${growth.name} verfolgt bis zu ${growth.n}, ebenfalls wöchentlich. ${agency.name} verfolgt bis zu ${agency.n} und kann zusätzlich täglich prüfen.`,
 
     step2Title: "Prüfungen laufen automatisch",
     step2Body:
@@ -9202,7 +9215,7 @@ const backlinksToolEn = {
   snapshotHistoryReferringDomains: "Referring domains",
   // ── The Basic-tier upsell ────────────────────────────────────────────────
   upsellTitle: "See the whole link profile",
-  upsellIntro: "Your plan shows the strongest referring domains. Agency and above adds:",
+  upsellIntro: (plan: string) => `Your plan shows the strongest referring domains. ${plan} and above adds:`,
   upsellScope: "Subdomain, URL-prefix and single-page scopes",
   upsellFilters: "Filters by follow type, domain rank, TLD and link status",
   upsellLinks: "Every individual link, with its anchor text",
@@ -9224,8 +9237,8 @@ const backlinksToolEn = {
 
   // ── Locked (STARTER) ──
   lockedTitle: "Backlinks is not in your plan",
-  lockedBody:
-    "Backlink analysis is available on Growth and Agency plans. Upgrade to see who links to any site and how its link profile is changing.",
+  lockedBody: (plan: string) =>
+    `Backlink analysis is available from the ${plan} plan. Upgrade to see who links to any site and how its link profile is changing.`,
   lockedCta: "See plans",
 
   // ── Summary ──
@@ -9380,7 +9393,7 @@ export const BACKLINKS_TOOL_COPY: Record<DashLocale, BacklinksToolCopy> = {
     snapshotHistoryBacklinks: "Backlinks",
     snapshotHistoryReferringDomains: "Domaines référents",
     upsellTitle: "Voir tout le profil de liens",
-    upsellIntro: "Votre forfait affiche les domaines référents les plus forts. Agency et au-delà ajoutent :",
+    upsellIntro: (plan) => `Votre forfait affiche les domaines référents les plus forts. ${plan} et au-delà ajoutent :`,
     upsellScope: "Les portées sous-domaine, préfixe d'URL et page unique",
     upsellFilters: "Des filtres par type de suivi, rang de domaine, TLD et état du lien",
     upsellLinks: "Chaque lien individuel, avec son texte d'ancre",
@@ -9404,8 +9417,8 @@ export const BACKLINKS_TOOL_COPY: Record<DashLocale, BacklinksToolCopy> = {
     partialNote: "Certaines sections ne se sont pas chargées. Tout le reste ci-dessous est complet.",
 
     lockedTitle: "L'analyse de liens n'est pas incluse dans votre forfait",
-    lockedBody:
-      "L'analyse de liens est offerte avec les forfaits Croissance et Agence. Passez à un forfait supérieur pour voir qui pointe vers un site et comment son profil de liens évolue.",
+    lockedBody: (plan) =>
+      `L'analyse de liens est offerte à partir du forfait ${plan}. Passez à un forfait supérieur pour voir qui pointe vers un site et comment son profil de liens évolue.`,
     lockedCta: "Voir les forfaits",
 
     summaryTitle: "Aperçu",
@@ -9547,7 +9560,7 @@ export const BACKLINKS_TOOL_COPY: Record<DashLocale, BacklinksToolCopy> = {
     snapshotHistoryBacklinks: "Backlinks",
     snapshotHistoryReferringDomains: "Verweisende Domains",
     upsellTitle: "Das ganze Linkprofil sehen",
-    upsellIntro: "Ihr Tarif zeigt die stärksten verweisenden Domains. Agency und höher ergänzen:",
+    upsellIntro: (plan) => `Ihr Tarif zeigt die stärksten verweisenden Domains. ${plan} und höher ergänzen:`,
     upsellScope: "Die Bereiche Subdomain, URL-Präfix und Einzelseite",
     upsellFilters: "Filter nach Follow-Typ, Domain-Rang, TLD und Linkstatus",
     upsellLinks: "Jeden einzelnen Link, mit seinem Ankertext",
@@ -9573,8 +9586,8 @@ export const BACKLINKS_TOOL_COPY: Record<DashLocale, BacklinksToolCopy> = {
       "Einige Abschnitte konnten nicht geladen werden. Alles Übrige unten ist vollständig.",
 
     lockedTitle: "Backlinks ist nicht in Ihrem Plan enthalten",
-    lockedBody:
-      "Die Backlink-Analyse ist in den Plänen Growth und Agency enthalten. Wechseln Sie den Plan, um zu sehen, wer auf eine Website verlinkt und wie sich ihr Linkprofil verändert.",
+    lockedBody: (plan) =>
+      `Die Backlink-Analyse ist ab dem ${plan}-Plan enthalten. Wechseln Sie den Plan, um zu sehen, wer auf eine Website verlinkt und wie sich ihr Linkprofil verändert.`,
     lockedCta: "Pläne ansehen",
 
     summaryTitle: "Übersicht",
@@ -10352,8 +10365,9 @@ const siteAuditHelpEn = {
     "Errors mean a page is broken or invisible to search engines — fix these first. Warnings work but cost you rankings, like a missing description or a duplicate title. Notices are tidy-ups with little direct impact.",
 
   limitsTitle: "How many pages get crawled",
-  limitsBody: (starter: number, growth: number, agency: number) =>
-    `Crawl size depends on your plan: Starter ${starter} pages, Growth ${growth}, Agency ${agency}. The crawler starts at your home page and follows internal links, so the most important pages are covered first.`,
+  // Names and numbers both from PLAN_CONFIGS (site-audit-help.tsx).
+  limitsBody: (starter: NamedLimit, growth: NamedLimit, agency: NamedLimit) =>
+    `Crawl size depends on your plan: ${starter.name} ${starter.n} pages, ${growth.name} ${growth.n}, ${agency.name} ${agency.n}. The crawler starts at your home page and follows internal links, so the most important pages are covered first.`,
 
   vsVisibilityTitle: "This is not the AI Visibility audit",
   vsVisibilityBody:
@@ -10381,8 +10395,8 @@ export const SITE_AUDIT_HELP_COPY: Record<DashLocale, SiteAuditHelpCopy> = {
       "Une erreur signifie qu'une page est brisée ou invisible pour les moteurs de recherche — corrigez-les en premier. Les avertissements fonctionnent mais nuisent à votre classement, comme une description manquante ou un titre en double. Les remarques sont des nettoyages à faible impact direct.",
 
     limitsTitle: "Combien de pages sont explorées",
-    limitsBody: (starter: number, growth: number, agency: number) =>
-      `La taille de l'exploration dépend de votre forfait : Démarrage ${starter} pages, Croissance ${growth}, Agence ${agency}. L'explorateur part de votre page d'accueil et suit les liens internes, donc les pages les plus importantes sont couvertes en premier.`,
+    limitsBody: (starter: NamedLimit, growth: NamedLimit, agency: NamedLimit) =>
+      `La taille de l'exploration dépend de votre forfait : ${starter.name} ${starter.n} pages, ${growth.name} ${growth.n}, ${agency.name} ${agency.n}. L'explorateur part de votre page d'accueil et suit les liens internes, donc les pages les plus importantes sont couvertes en premier.`,
 
     vsVisibilityTitle: "Ce n'est pas l'audit de visibilité IA",
     vsVisibilityBody:
@@ -10406,8 +10420,8 @@ export const SITE_AUDIT_HELP_COPY: Record<DashLocale, SiteAuditHelpCopy> = {
       "Ein Fehler bedeutet, dass eine Seite defekt oder für Suchmaschinen unsichtbar ist — zuerst beheben. Warnungen funktionieren, kosten aber Rankings, etwa eine fehlende Beschreibung oder ein doppelter Titel. Hinweise sind Aufräumarbeiten mit geringer direkter Wirkung.",
 
     limitsTitle: "Wie viele Seiten gecrawlt werden",
-    limitsBody: (starter: number, growth: number, agency: number) =>
-      `Die Crawl-Grösse hängt vom Plan ab: Starter ${starter} Seiten, Growth ${growth}, Agency ${agency}. Der Crawler startet auf Ihrer Startseite und folgt internen Links, sodass die wichtigsten Seiten zuerst abgedeckt sind.`,
+    limitsBody: (starter: NamedLimit, growth: NamedLimit, agency: NamedLimit) =>
+      `Die Crawl-Grösse hängt vom Plan ab: ${starter.name} ${starter.n} Seiten, ${growth.name} ${growth.n}, ${agency.name} ${agency.n}. Der Crawler startet auf Ihrer Startseite und folgt internen Links, sodass die wichtigsten Seiten zuerst abgedeckt sind.`,
 
     vsVisibilityTitle: "Das ist nicht das AI-Visibility-Audit",
     vsVisibilityBody:
@@ -11147,8 +11161,8 @@ const seoToolsHubHelpEn = {
     "A card takes you straight to the tool. Every tool page carries its own Help button explaining what its numbers mean, where the data comes from, and how to read an empty result — the detail this page deliberately does not repeat.",
 
   accessTitle: "The whole hub is part of a paid plan",
-  accessBody:
-    "Access is checked on the server for this page and every tool under it, not merely hidden in the sidebar. Without a plan that includes it the hub is replaced by an upgrade screen; activate any Echorank360 plan from Starter and every card here opens. Individual tools may additionally require their feature to be enabled on your plan.",
+  accessBody: (plan: string) =>
+    `Access is checked on the server for this page and every tool under it, not merely hidden in the sidebar. Without a plan that includes it the hub is replaced by an upgrade screen; activate any Echorank360 plan from ${plan} and the hub opens. A locked card names the plan that includes its tool.`,
 
   quotaTitle: "Usage and limits live in Billing",
   quotaBody:
@@ -11181,8 +11195,8 @@ export const SEO_TOOLS_HUB_HELP_COPY: Record<DashLocale, SeoToolsHubHelpCopy> = 
       "Une carte vous mène directement à l'outil. Chaque page d'outil dispose de son propre bouton d'aide, qui explique la signification de ses chiffres, la provenance des données et la façon de lire un résultat vide — le détail que cette page ne répète volontairement pas.",
 
     accessTitle: "L'ensemble du hub fait partie d'un forfait payant",
-    accessBody:
-      "L'accès est vérifié côté serveur pour cette page et pour chaque outil qu'elle contient, et non simplement masqué dans le menu latéral. Sans un forfait qui l'inclut, le hub est remplacé par un écran de mise à niveau ; activez n'importe quel forfait Echorank360 à partir de Starter et toutes les cartes s'ouvrent. Certains outils exigent en plus que leur fonctionnalité soit activée sur votre forfait.",
+    accessBody: (plan) =>
+      `L'accès est vérifié côté serveur pour cette page et pour chaque outil qu'elle contient, et non simplement masqué dans le menu latéral. Sans un forfait qui l'inclut, le hub est remplacé par un écran de mise à niveau ; activez n'importe quel forfait Echorank360 à partir ${frDe(plan)} et le hub s'ouvre. Une carte verrouillée indique le forfait qui inclut son outil.`,
 
     quotaTitle: "La consommation et les limites figurent dans Facturation",
     quotaBody:
@@ -11211,8 +11225,8 @@ export const SEO_TOOLS_HUB_HELP_COPY: Record<DashLocale, SeoToolsHubHelpCopy> = 
       "Eine Karte führt Sie direkt zum Tool. Jede Tool-Seite hat eine eigene Hilfe-Schaltfläche, die erklärt, was ihre Zahlen bedeuten, woher die Daten stammen und wie ein leeres Ergebnis zu lesen ist — genau diese Details wiederholt diese Seite bewusst nicht.",
 
     accessTitle: "Der gesamte Hub gehört zu einem kostenpflichtigen Plan",
-    accessBody:
-      "Der Zugriff wird für diese Seite und jedes Tool darunter auf dem Server geprüft und nicht bloss in der Seitenleiste ausgeblendet. Ohne einen Plan, der ihn enthält, erscheint statt des Hubs ein Upgrade-Hinweis; aktivieren Sie einen beliebigen Echorank360-Plan ab Starter, und jede Karte hier lässt sich öffnen. Einzelne Tools setzen zusätzlich voraus, dass ihre Funktion in Ihrem Plan freigeschaltet ist.",
+    accessBody: (plan) =>
+      `Der Zugriff wird für diese Seite und jedes Tool darunter auf dem Server geprüft und nicht bloss in der Seitenleiste ausgeblendet. Ohne einen Plan, der ihn enthält, erscheint statt des Hubs ein Upgrade-Hinweis; aktivieren Sie einen beliebigen Echorank360-Plan ab ${plan}, und der Hub öffnet sich. Eine gesperrte Karte nennt den Plan, der ihr Tool enthält.`,
 
     quotaTitle: "Verbrauch und Limiten stehen unter Abrechnung",
     quotaBody:
@@ -11514,8 +11528,8 @@ const aiLensEn = {
     `Your plan includes ${limit} AI Lens analyses per month. Each one renders the page in a real browser, which is why it is capped.`,
   quotaCta: "See plans →",
   foreignTitle: "That page is not on your site",
-  foreignBody:
-    "Your plan analyzes pages on domains you have audited. Analyzing any URL — including a competitor's — is an Agency feature.",
+  foreignBody: (plan: string) =>
+    `Your plan analyzes pages on domains you have audited. Analyzing any URL — including a competitor's — is ${enA(plan)} feature.`,
   foreignCta: "See plans →",
   busyTitle: "All render slots are busy",
   busyBody:
@@ -11603,8 +11617,8 @@ export const AI_LENS_COPY: Record<DashLocale, AiLensCopy> = {
       `Votre forfait comprend ${limit} analyses AI Lens par mois. Chacune effectue le rendu de la page dans un vrai navigateur, d'où le plafond.`,
     quotaCta: "Voir les forfaits →",
     foreignTitle: "Cette page n'appartient pas à votre site",
-    foreignBody:
-      "Votre forfait analyse les pages des domaines que vous avez audités. Analyser n'importe quelle URL — y compris celle d'un concurrent — est une fonctionnalité Agence.",
+    foreignBody: (plan) =>
+      `Votre forfait analyse les pages des domaines que vous avez audités. Analyser n'importe quelle URL — y compris celle d'un concurrent — est une fonctionnalité ${plan}.`,
     foreignCta: "Voir les forfaits →",
     busyTitle: "Tous les emplacements de rendu sont occupés",
     busyBody:
@@ -11692,8 +11706,8 @@ export const AI_LENS_COPY: Record<DashLocale, AiLensCopy> = {
       `Ihr Abo umfasst ${limit} AI-Lens-Analysen pro Monat. Jede rendert die Seite in einem echten Browser — daher die Obergrenze.`,
     quotaCta: "Abos ansehen →",
     foreignTitle: "Diese Seite gehört nicht zu Ihrer Website",
-    foreignBody:
-      "Ihr Abo analysiert Seiten von Domains, die Sie auditiert haben. Beliebige URLs — auch die der Konkurrenz — zu analysieren ist eine Agency-Funktion.",
+    foreignBody: (plan) =>
+      `Ihr Abo analysiert Seiten von Domains, die Sie auditiert haben. Beliebige URLs — auch die der Konkurrenz — zu analysieren ist eine ${plan}-Funktion.`,
     foreignCta: "Abos ansehen →",
     busyTitle: "Alle Rendering-Plätze sind belegt",
     busyBody:
@@ -11846,9 +11860,9 @@ const marketingEn = {
   usageResets: "Resets on the 1st.",
   usageFree: "Analysis is free and does not count against this.",
 
-  lockedTitle: "Marketing Studio is on Starter and above",
-  lockedBody:
-    "Marketing Studio is included from the Starter plan up. Your current plan does not include it.",
+  lockedTitle: (plan: string) => `Marketing Studio is on ${plan} and above`,
+  lockedBody: (plan: string) =>
+    `Marketing Studio is included from the ${plan} plan up. Your current plan does not include it.`,
   upgradeCta: "Compare plans",
 
   // Brand voice
@@ -12014,9 +12028,9 @@ export const MARKETING_COPY: Record<DashLocale, MarketingCopy> = {
     usageResets: "Remise à zéro le 1er.",
     usageFree: "L'analyse est gratuite et n'est pas décomptée.",
 
-    lockedTitle: "Le Studio marketing est inclus à partir de Starter",
-    lockedBody:
-      "Le Studio marketing est inclus à partir du forfait Starter. Votre forfait actuel ne l'inclut pas.",
+    lockedTitle: (plan) => `Le Studio marketing est inclus à partir ${frDe(plan)}`,
+    lockedBody: (plan) =>
+      `Le Studio marketing est inclus à partir du forfait ${plan}. Votre forfait actuel ne l'inclut pas.`,
     upgradeCta: "Comparer les forfaits",
 
     voiceTitle: "Voix de marque",
@@ -12177,9 +12191,9 @@ export const MARKETING_COPY: Record<DashLocale, MarketingCopy> = {
     usageResets: "Zurückgesetzt am 1.",
     usageFree: "Auswertungen sind kostenlos und zählen nicht mit.",
 
-    lockedTitle: "Marketing Studio gibt es ab Starter",
-    lockedBody:
-      "Marketing Studio ist ab dem Starter-Abo enthalten. Ihr aktuelles Abo umfasst es nicht.",
+    lockedTitle: (plan) => `Marketing Studio gibt es ab ${plan}`,
+    lockedBody: (plan) =>
+      `Marketing Studio ist ab dem ${plan}-Abo enthalten. Ihr aktuelles Abo umfasst es nicht.`,
     upgradeCta: "Abos vergleichen",
 
     voiceTitle: "Markenstimme",
@@ -12911,7 +12925,8 @@ const reputationHelpEn = {
   s5Heading: "Why some cards are locked",
   s5Text:
     "A greyed-out card means the tool behind it needs a higher plan — the card shows which one. Nothing is hidden from you: locking rather than hiding is deliberate, so you can see what exists before deciding whether it is worth upgrading for.",
-  s5Note: "Monitoring is on Agency and above. Intelligence is on Growth and above.",
+  s5Note: (monitoring: string, intelligence: string) =>
+    `Monitoring is on ${monitoring} and above. Intelligence is on ${intelligence} and above.`,
 };
 
 export type ReputationHelpCopy = typeof reputationHelpEn;
@@ -12947,7 +12962,8 @@ export const REPUTATION_HELP_COPY: Record<DashLocale, ReputationHelpCopy> = {
     s5Heading: "Pourquoi certaines cartes sont verrouillées",
     s5Text:
       "Une carte grisée signifie que l'outil nécessite un forfait supérieur — la carte indique lequel. Rien ne vous est caché : verrouiller plutôt que masquer est volontaire, pour que vous voyiez ce qui existe avant de juger si cela vaut une mise à niveau.",
-    s5Note: "Surveillance est disponible à partir d'Agency. Intelligence à partir de Growth.",
+    s5Note: (monitoring, intelligence) =>
+      `Surveillance est disponible à partir ${frDe(monitoring)}. Intelligence à partir ${frDe(intelligence)}.`,
   },
   "de-CH": {
     buttonLabel: "So funktioniert es",
@@ -12978,7 +12994,7 @@ export const REPUTATION_HELP_COPY: Record<DashLocale, ReputationHelpCopy> = {
     s5Heading: "Warum manche Karten gesperrt sind",
     s5Text:
       "Eine ausgegraute Karte bedeutet, dass das Werkzeug ein höheres Abo braucht — die Karte nennt welches. Nichts wird Ihnen vorenthalten: Sperren statt Verbergen ist Absicht, damit Sie sehen, was es gibt, bevor Sie entscheiden, ob sich ein Wechsel lohnt.",
-    s5Note: "Überwachung gibt es ab Agency, Intelligence ab Growth.",
+    s5Note: (monitoring, intelligence) => `Überwachung gibt es ab ${monitoring}, Intelligence ab ${intelligence}.`,
   },
 };
 
@@ -15271,9 +15287,9 @@ export const AI_HUB_COPY: Record<DashLocale, AiHubCopy> = {
 */
 
 const shareOfVoiceEn = {
-  lockedTitle: "Share of Voice is on Growth and above",
-  lockedBody:
-    "See how much of each AI engine's answers you own, who is taking the rest, and how that has moved. Upgrade to Growth to switch it on for your tracked prompts.",
+  lockedTitle: (plan: string) => `Share of Voice is on ${plan} and above`,
+  lockedBody: (plan: string) =>
+    `See how much of each AI engine's answers you own, who is taking the rest, and how that has moved. Upgrade to ${plan} to switch it on for your tracked prompts.`,
   lockedCta: "See plans",
 
   emptyTitle: "No share of voice yet",
@@ -15323,9 +15339,9 @@ export type ShareOfVoiceCopy = typeof shareOfVoiceEn;
 export const SHARE_OF_VOICE_COPY: Record<DashLocale, ShareOfVoiceCopy> = {
   en: shareOfVoiceEn,
   fr: {
-    lockedTitle: "La part de voix est incluse à partir de Growth",
-    lockedBody:
-      "Voyez quelle part des réponses de chaque moteur d'IA vous revient, qui prend le reste, et comment cela a évolué. Passez à Growth pour l'activer sur vos requêtes suivies.",
+    lockedTitle: (plan) => `La part de voix est incluse à partir ${frDe(plan)}`,
+    lockedBody: (plan) =>
+      `Voyez quelle part des réponses de chaque moteur d'IA vous revient, qui prend le reste, et comment cela a évolué. Passez au forfait ${plan} pour l'activer sur vos requêtes suivies.`,
     lockedCta: "Voir les forfaits",
 
     emptyTitle: "Pas encore de part de voix",
@@ -15362,9 +15378,9 @@ export const SHARE_OF_VOICE_COPY: Record<DashLocale, ShareOfVoiceCopy> = {
       "Une réponse vous cite une fois, quel que soit le nombre de répétitions. Une recommandation en première place vaut un point entier, la deuxième un demi, la troisième un tiers, et la quatrième et au-delà un cinquième. Être cité sans classement vaut 0,3 — nous savons que vous y étiez, pas à quelle place. Votre part, c'est vos points divisés par ceux de tout le monde.",
   },
   "de-CH": {
-    lockedTitle: "Stimmanteil gibt es ab Growth",
-    lockedBody:
-      "Sehen Sie, welchen Anteil der Antworten jeder KI-Maschine Sie halten, wer sich den Rest nimmt und wie sich das entwickelt hat. Wechseln Sie zu Growth, um es für Ihre verfolgten Prompts einzuschalten.",
+    lockedTitle: (plan) => `Stimmanteil gibt es ab ${plan}`,
+    lockedBody: (plan) =>
+      `Sehen Sie, welchen Anteil der Antworten jeder KI-Maschine Sie halten, wer sich den Rest nimmt und wie sich das entwickelt hat. Wechseln Sie zu ${plan}, um es für Ihre verfolgten Prompts einzuschalten.`,
     lockedCta: "Abos ansehen",
 
     emptyTitle: "Noch kein Stimmanteil",
@@ -16036,9 +16052,9 @@ export const EXPLAIN_COPY: Record<DashLocale, ExplainCopy> = {
 */
 
 const opportunityScannerEn = {
-  lockedTitle: "Opportunity Scanner is on Agency and above",
-  lockedBody:
-    "Paste a list of prospects and get every one of them graded for AI visibility, worst first, with a white-labeled report you can attach to an email. Upgrade to Agency to switch it on.",
+  lockedTitle: (plan: string) => `Opportunity Scanner is on ${plan} and above`,
+  lockedBody: (plan: string) =>
+    `Paste a list of prospects and get every one of them graded for AI visibility, worst first, with a white-labeled report you can attach to an email. Upgrade to ${plan} to switch it on.`,
   lockedCta: "See plans",
 
   emptyTitle: "No scans yet",
@@ -16131,9 +16147,9 @@ export type OpportunityScannerCopy = typeof opportunityScannerEn;
 export const OPPORTUNITY_SCANNER_COPY: Record<DashLocale, OpportunityScannerCopy> = {
   en: opportunityScannerEn,
   fr: {
-    lockedTitle: "Le scanner d'opportunités est inclus à partir d'Agency",
-    lockedBody:
-      "Collez une liste de prospects et obtenez pour chacun une note de visibilité IA, les plus faibles en tête, avec un rapport en marque blanche à joindre à un courriel. Passez à Agency pour l'activer.",
+    lockedTitle: (plan) => `Le scanner d'opportunités est inclus à partir ${frDe(plan)}`,
+    lockedBody: (plan) =>
+      `Collez une liste de prospects et obtenez pour chacun une note de visibilité IA, les plus faibles en tête, avec un rapport en marque blanche à joindre à un courriel. Passez au forfait ${plan} pour l'activer.`,
     lockedCta: "Voir les forfaits",
 
     emptyTitle: "Aucune analyse pour l'instant",
@@ -16211,9 +16227,9 @@ export const OPPORTUNITY_SCANNER_COPY: Record<DashLocale, OpportunityScannerCopy
       "Chaque prospect fait l'objet d'un audit passif de ce que son site publie déjà — robots.txt, le HTML servi à un robot, les données structurées, les métadonnées et les sitemaps. Rien n'est soumis et aucune page n'est explorée au-delà de la page d'accueil. Les notes utilisent les mêmes tranches A-F que l'audit gratuit : un prospect qui le lance lui-même sur son site verra la même lettre.",
   },
   "de-CH": {
-    lockedTitle: "Der Chancen-Scanner ist ab Agency enthalten",
-    lockedBody:
-      "Fügen Sie eine Liste von Interessenten ein und erhalten Sie für jeden eine Note zur KI-Sichtbarkeit — die schwächsten zuoberst, mit einem Bericht im eigenen Label zum Anhängen an eine E-Mail. Wechseln Sie zu Agency, um ihn freizuschalten.",
+    lockedTitle: (plan) => `Der Chancen-Scanner ist ab ${plan} enthalten`,
+    lockedBody: (plan) =>
+      `Fügen Sie eine Liste von Interessenten ein und erhalten Sie für jeden eine Note zur KI-Sichtbarkeit — die schwächsten zuoberst, mit einem Bericht im eigenen Label zum Anhängen an eine E-Mail. Wechseln Sie zu ${plan}, um ihn freizuschalten.`,
     lockedCta: "Pläne ansehen",
 
     emptyTitle: "Noch keine Scans",
@@ -16528,9 +16544,9 @@ export const EMBED_AUDIT_COPY: Record<DashLocale, EmbedAuditCopy> = {
    those numbers exist is FUNNEL_AUDIT_LIMITS in src/lib/funnel/quota.ts. */
 
 const funnelsEn = {
-  lockedTitle: "Audit Funnels are on Agency and above",
-  lockedBody:
-    "Put a lead-capturing AI visibility audit on your own site, under your own brand. Visitors enter their website and their email to see a score; you get the lead. Upgrade to Agency to switch it on.",
+  lockedTitle: (plan: string) => `Audit Funnels are on ${plan} and above`,
+  lockedBody: (plan: string) =>
+    `Put a lead-capturing AI visibility audit on your own site, under your own brand. Visitors enter their website and their email to see a score; you get the lead. Upgrade to ${plan} to switch it on.`,
   lockedCta: "See plans",
 
   emptyTitle: "No funnels yet",
@@ -16607,9 +16623,9 @@ export type FunnelsCopy = typeof funnelsEn;
 export const FUNNELS_COPY: Record<DashLocale, FunnelsCopy> = {
   en: funnelsEn,
   fr: {
-    lockedTitle: "Les formulaires d'audit sont inclus à partir d'Agency",
-    lockedBody:
-      "Placez sur votre propre site un audit de visibilité IA qui capte des contacts, sous votre marque. Le visiteur saisit son site et son courriel pour voir sa note ; le contact vous revient. Passez à Agency pour l'activer.",
+    lockedTitle: (plan) => `Les formulaires d'audit sont inclus à partir ${frDe(plan)}`,
+    lockedBody: (plan) =>
+      `Placez sur votre propre site un audit de visibilité IA qui capte des contacts, sous votre marque. Le visiteur saisit son site et son courriel pour voir sa note ; le contact vous revient. Passez au forfait ${plan} pour l'activer.`,
     lockedCta: "Voir les forfaits",
 
     emptyTitle: "Aucun formulaire pour l'instant",
@@ -16680,9 +16696,9 @@ export const FUNNELS_COPY: Record<DashLocale, FunnelsCopy> = {
       "Le widget exécute le même audit passif que notre outil gratuit : robots.txt, le HTML servi à un robot, les données structurées, les métadonnées et les sitemaps. Rien n'est soumis et aucune page au-delà de la page d'accueil n'est récupérée. Le courriel du visiteur est exigé avant l'affichage de la note — c'est là que se fait la captation — et il n'est enregistré que dans votre espace.",
   },
   "de-CH": {
-    lockedTitle: "Audit-Funnels sind ab Agency enthalten",
-    lockedBody:
-      "Stellen Sie einen KI-Sichtbarkeits-Audit mit Kontakterfassung auf Ihre eigene Website, unter Ihrer Marke. Besucher geben ihre Website und ihre E-Mail-Adresse ein, um eine Note zu sehen; der Kontakt gehört Ihnen. Wechseln Sie zu Agency, um das freizuschalten.",
+    lockedTitle: (plan) => `Audit-Funnels sind ab ${plan} enthalten`,
+    lockedBody: (plan) =>
+      `Stellen Sie einen KI-Sichtbarkeits-Audit mit Kontakterfassung auf Ihre eigene Website, unter Ihrer Marke. Besucher geben ihre Website und ihre E-Mail-Adresse ein, um eine Note zu sehen; der Kontakt gehört Ihnen. Wechseln Sie zu ${plan}, um das freizuschalten.`,
     lockedCta: "Pläne ansehen",
 
     emptyTitle: "Noch keine Funnels",
@@ -17184,7 +17200,7 @@ const actionAgentEn = {
   // ── Errors ──
   errBudget:
     "You have used this month's generation budget. It resets {date} (UTC), or upgrade for a larger allowance.",
-  errLocked: "Marketing Studio and the Action Agent are included from the Starter plan up.",
+  errLocked: (plan: string) => `Marketing Studio and the Action Agent are included from the ${plan} plan up.`,
   errPage: "That page could not be read. Check the address and that it is publicly reachable.",
   errConflict: "Somebody else changed this draft. Refresh to see where it got to.",
   errGeneric: "Something went wrong. Try again.",
@@ -17200,7 +17216,7 @@ const actionAgentEn = {
   openQueue: "Open the Action Agent",
 
   // ── Locked (below Starter, or no marketing_studio) ──
-  lockedTitle: "Included from the Starter plan up",
+  lockedTitle: (plan: string) => `Included from the ${plan} plan up`,
   lockedBody:
     "The Action Agent drafts structured data, FAQ content and review replies from your own pages and reviews, and waits for you to approve them. It shares Marketing Studio's monthly generation budget.",
   lockedCta: "See plans",
@@ -17278,8 +17294,8 @@ export const ACTION_AGENT_COPY: Record<DashLocale, ActionAgentCopy> = {
 
     errBudget:
       "Vous avez épuisé le budget de rédaction du mois. Il se réinitialise le {date} (UTC) ; vous pouvez aussi passer à une offre supérieure.",
-    errLocked:
-      "Marketing Studio et l'Agent d'action sont inclus à partir de l'offre Starter.",
+    errLocked: (plan) =>
+      `Marketing Studio et l'Agent d'action sont inclus à partir de l'offre ${plan}.`,
     errPage:
       "Cette page n'a pas pu être lue. Vérifiez l'adresse et qu'elle est accessible publiquement.",
     errConflict:
@@ -17296,7 +17312,7 @@ export const ACTION_AGENT_COPY: Record<DashLocale, ActionAgentCopy> = {
       "En file d'attente — rien n'est publié. Relisez la proposition dans l'Agent d'action.",
     openQueue: "Ouvrir l'Agent d'action",
 
-    lockedTitle: "Inclus à partir de l'offre Starter",
+    lockedTitle: (plan) => `Inclus à partir de l'offre ${plan}`,
     lockedBody:
       "L'Agent d'action rédige des données structurées, du contenu FAQ et des réponses aux avis à partir de vos propres pages et avis, puis attend votre approbation. Il partage l'enveloppe mensuelle de rédaction de Marketing Studio.",
     lockedCta: "Voir les offres",
@@ -17369,8 +17385,8 @@ export const ACTION_AGENT_COPY: Record<DashLocale, ActionAgentCopy> = {
 
     errBudget:
       "Sie haben das Erstellungsbudget dieses Monats aufgebraucht. Es wird am {date} (UTC) zurückgesetzt; alternativ können Sie das Abo erweitern.",
-    errLocked:
-      "Marketing Studio und der Aktionsagent sind ab dem Starter-Abo enthalten.",
+    errLocked: (plan) =>
+      `Marketing Studio und der Aktionsagent sind ab dem ${plan}-Abo enthalten.`,
     errPage:
       "Diese Seite konnte nicht gelesen werden. Prüfen Sie die Adresse und ob sie öffentlich erreichbar ist.",
     errConflict:
@@ -17387,7 +17403,7 @@ export const ACTION_AGENT_COPY: Record<DashLocale, ActionAgentCopy> = {
       "In der Warteschlange — es wird nichts veröffentlicht. Prüfen Sie den Entwurf im Aktionsagenten.",
     openQueue: "Aktionsagent öffnen",
 
-    lockedTitle: "Ab dem Starter-Abo enthalten",
+    lockedTitle: (plan) => `Ab dem ${plan}-Abo enthalten`,
     lockedBody:
       "Der Aktionsagent entwirft strukturierte Daten, FAQ-Inhalte und Bewertungsantworten aus Ihren eigenen Seiten und Bewertungen und wartet dann auf Ihre Freigabe. Er teilt sich das monatliche Erstellungsbudget mit Marketing Studio.",
     lockedCta: "Abos ansehen",

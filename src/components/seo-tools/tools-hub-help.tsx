@@ -16,6 +16,7 @@
 
 import { ToolHelpModal } from "@/components/seo-tools/ToolHelpModal";
 import { SEO_TOOL_GROUPS } from "@/lib/seo-tools";
+import { lockedPlanName } from "@/lib/locked-plan";
 import {
   SEO_TOOLS_COPY,
   SEO_TOOLS_HUB_HELP_COPY,
@@ -43,7 +44,8 @@ export function ToolsHubHelpButton({ locale }: { locale: DashLocale }) {
           bullets: SEO_TOOL_GROUPS.map((group) => hub.groups[group.id]),
         },
         { title: t.toolsTitle, body: t.toolsBody },
-        { title: t.accessTitle, body: t.accessBody },
+        // The plan that opens the hub, for a workspace with no plan yet.
+        { title: t.accessTitle, body: t.accessBody(lockedPlanName(null, "seo_tools")) },
         {
           title: t.quotaTitle,
           body: t.quotaBody,

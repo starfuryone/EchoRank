@@ -39,6 +39,7 @@ import {
   SHARE_OF_VOICE_COPY,
   type DashLocale,
 } from "@/lib/i18n/dashboard";
+import { useLockedPlanName } from "@/components/plan/plan-context";
 import type { SovBrandShare, SovEngineBreakdown, SovPageData } from "@/lib/sov/read";
 
 /** Categorical slots, in the fixed order the validator cleared. Never cycled. */
@@ -297,6 +298,7 @@ export function ShareOfVoiceClient({
   answerTrackingEnabled: boolean;
 }) {
   const copy = SHARE_OF_VOICE_COPY[locale];
+  const lockPlan = useLockedPlanName("share_of_voice");
   const item = SEO_TOOLS_COPY[locale].items.share_of_voice;
   const percent = usePercent(locale);
   const router = useRouter();
@@ -336,8 +338,8 @@ export function ShareOfVoiceClient({
               <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-gray-100">
                 <Lock className="h-7 w-7 text-gray-400" aria-hidden="true" />
               </div>
-              <h3 className="text-base font-semibold text-gray-900">{copy.lockedTitle}</h3>
-              <p className="mt-2 max-w-md text-sm text-gray-500">{copy.lockedBody}</p>
+              <h3 className="text-base font-semibold text-gray-900">{copy.lockedTitle(lockPlan)}</h3>
+              <p className="mt-2 max-w-md text-sm text-gray-500">{copy.lockedBody(lockPlan)}</p>
               <Link
                 href="/billing"
                 className="mt-6 inline-flex items-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"

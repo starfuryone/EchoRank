@@ -6,6 +6,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { BENCHMARK_CARD_COPY, type DashLocale } from "@/lib/i18n/dashboard";
+import { useLockedPlanName, useTenantPlan } from "@/components/plan/plan-context";
+import { lockedPlan } from "@/lib/locked-plan";
+import { planName } from "@/lib/upgrade-target";
+import { benchmarkDailyLimit } from "@/lib/visibility-limits";
 
 /**
  * Competitor benchmark panel (GROWTH+). Quota is server-enforced:
@@ -39,6 +43,11 @@ export function BenchmarkCard({
   locale?: DashLocale;
 }) {
   const t = BENCHMARK_CARD_COPY[locale];
+  // Plan names from the plan config: the tenant's own, the one this card's
+  // gates name, and the one with a higher daily limit (src/lib/locked-plan.ts).
+  const tenantPlan = useTenantPlan();
+  const lockPlan = useLockedPlanName("benchmark");
+  const morePlan = lockedPlan(tenantPlan, "benchmark_more");
   const [input, setInput] = useState("");
   const [allRows, setRows] = useState<BenchResult[]>([]);
   const rows = allRows.filter((r) => (r.scoreVersion ?? 1) === yourScoreVersion);
@@ -110,7 +119,7 @@ export function BenchmarkCard({
           <Lock className="h-5 w-5 shrink-0 text-gray-400" />
           <div className="flex-1">
             <p className="text-sm font-medium text-gray-900">{t.title}</p>
-            <p className="text-sm text-gray-500">{t.lockedDescription}</p>
+            <p className="text-sm text-gray-500">{t.lockedDescription(lockPlan)}</p>
           </div>
           <Button variant="outline" size="sm" onClick={() => (window.location.href = "/billing")}>
             {t.upgrade}
@@ -187,11 +196,11 @@ export function BenchmarkCard({
         ) : (
           limit === 1 && (
             <p className="text-sm text-gray-500">
-              {t.growthLimitBefore}
+              {tenantPlan && t.limitBefore(planName(tenantPlan), limit)}
               <a href="/billing" className="font-medium text-blue-600 hover:underline">
-                {t.growthLimitLink}
+                {t.limitLink(planName(morePlan), benchmarkDailyLimit(morePlan))}
               </a>
-              {t.growthLimitAfter}
+              {t.limitAfter}
             </p>
           )
         )}

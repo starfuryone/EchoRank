@@ -5,6 +5,7 @@
 import Link from "next/link";
 import { Lock } from "lucide-react";
 import { BILLING_COPY, SEO_TOOLS_COPY, type DashLocale } from "@/lib/i18n/dashboard";
+import { lockedPlanName } from "@/lib/locked-plan";
 
 export function UpgradeState({ locale, ended = false }: { locale: DashLocale; ended?: boolean }) {
   // ENDED (CANCELED) says what happened and offers the way back — the same
@@ -12,9 +13,11 @@ export function UpgradeState({ locale, ended = false }: { locale: DashLocale; en
   // never included these tools.
   const base = SEO_TOOLS_COPY[locale];
   const b = BILLING_COPY[locale];
+  // No active subscription: the plan named is the cheapest that opens the SEO
+  // tools (src/lib/locked-plan.ts, seo_tools, with no current plan to keep).
   const copy = ended
     ? { ...base, upgradeTitle: b.planEndedTitle, upgradeBody: b.planEndedBody, upgradeCta: b.planEndedCta }
-    : base;
+    : { ...base, upgradeBody: base.upgradeBody(lockedPlanName(null, "seo_tools")) };
   const href = ended ? "/billing#plans" : "/billing";
   return (
     <div className="space-y-6">

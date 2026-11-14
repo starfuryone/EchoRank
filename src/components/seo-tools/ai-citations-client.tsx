@@ -26,6 +26,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ExportCsvButton } from "@/components/seo-tools/export-csv-button";
 import { AI_CITATIONS_COPY, type DashLocale } from "@/lib/i18n/dashboard";
+import { useLockedPlanName } from "@/components/plan/plan-context";
 // The PURE platform module. Importing this from dataforseo/endpoints pulls
 // "server-only" into the browser bundle and fails the build — see that
 // module's header.
@@ -64,6 +65,7 @@ export function AiCitationsClient({
   defaultTarget: string;
 }) {
   const t = AI_CITATIONS_COPY[locale];
+  const lockPlan = useLockedPlanName("ai_citations");
 
   const [target, setTarget] = useState(defaultTarget);
   const [scope, setScope] = useState<CitationScope>("subdomains");
@@ -233,7 +235,7 @@ export function AiCitationsClient({
               {error.code === "NOT_ENABLED"
                 ? t.errorNotEnabled
                 : error.code === "PLAN_LOCKED"
-                  ? t.errorPlanLocked
+                  ? t.errorPlanLocked(lockPlan)
                   : error.code === "quota_exceeded"
                     ? t.errorQuota
                     : (error.error ?? t.errorGeneric)}

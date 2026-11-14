@@ -25,24 +25,10 @@ export const MAX_DECOMPRESSED_BYTES = 200 * 1024 * 1024;
 
 export const ALLOWED_EXTENSIONS = [".log", ".txt", ".gz"] as const;
 
-/**
- * Monthly upload allowance. STARTER is absent on purpose — it has no access to
- * this half at all and sees an upsell card instead, so there is no number to
- * enforce.
- */
-const UPLOADS_PER_MONTH: Partial<Record<PlanType, number>> = {
-  GROWTH: 5,
-  AGENCY: 20,
-  ENTERPRISE: 20,
-};
-
-export function uploadLimit(plan: PlanType): number {
-  return UPLOADS_PER_MONTH[plan] ?? 0;
-}
-
-export function canUploadLogs(plan: PlanType): boolean {
-  return uploadLimit(plan) > 0;
-}
+// The monthly upload allowance lives in ./limits (dependency-free), so the
+// locked message names the plan it opens.
+export { uploadLimit, canUploadLogs } from "./limits";
+import { uploadLimit } from "./limits";
 
 export function hasAllowedExtension(filename: string): boolean {
   const lower = (filename ?? "").toLowerCase();

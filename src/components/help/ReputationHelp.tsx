@@ -13,6 +13,7 @@ import {
   type ReputationHelpCopy,
   type DashLocale,
 } from "@/lib/i18n/dashboard";
+import { useLockedPlanName } from "@/components/plan/plan-context";
 
 /**
  * Per-page help content for /reputation: maps the i18n copy + illustrations
@@ -26,18 +27,24 @@ import {
  *   import { ReputationHelpButton } from "@/components/help/ReputationHelp";
  *   <ReputationHelpButton locale={locale} />
  */
-export function reputationHelpSections(t: ReputationHelpCopy): HelpSection[] {
+export function reputationHelpSections(
+  t: ReputationHelpCopy,
+  /** The plans the lock note names (src/lib/locked-plan.ts). */
+  plans: { monitoring: string; intelligence: string },
+): HelpSection[] {
   return [
     { heading: t.s1Heading, paragraphs: [t.s1Text], note: t.s1Note, art: <ArtHubGrid /> },
     { heading: t.s2Heading, paragraphs: [t.s2Text], note: t.s2Note, art: <ArtRequestFlow /> },
     { heading: t.s3Heading, paragraphs: [t.s3Text], art: <ArtRecoveryCatch /> },
     { heading: t.s4Heading, paragraphs: [t.s4Text], art: <ArtSourcesToScore /> },
-    { heading: t.s5Heading, paragraphs: [t.s5Text], note: t.s5Note, art: <ArtPlanLock /> },
+    { heading: t.s5Heading, paragraphs: [t.s5Text], note: t.s5Note(plans.monitoring, plans.intelligence), art: <ArtPlanLock /> },
   ];
 }
 
 export function ReputationHelpButton({ locale = "en" }: { locale?: DashLocale }) {
   const t = REPUTATION_HELP_COPY[locale];
+  const monitoring = useLockedPlanName("monitoring");
+  const intelligence = useLockedPlanName("intelligence");
   return (
     <HelpButton
       label={t.buttonLabel}
@@ -48,7 +55,7 @@ export function ReputationHelpButton({ locale = "en" }: { locale?: DashLocale })
       // metrics, so these are never rendered — passed because the prop is
       // required, not because the page has metrics to label.
       labels={{ meaning: "", why: "", action: "" }}
-      sections={reputationHelpSections(t)}
+      sections={reputationHelpSections(t, { monitoring, intelligence })}
     />
   );
 }

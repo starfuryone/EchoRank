@@ -45,12 +45,20 @@ export interface Need {
   /** The page's area; null for an unclassified page (open to unrestricted plans only). */
   area?: AccessArea | null;
   features?: readonly Feature[];
+  /**
+   * A limit the thing needs, read from the plan's own config (a tool whose
+   * allowance is 0 on a plan, daily checks, any-URL analysis). Only for locks
+   * that ARE a limit (src/lib/locked-plan.ts); pages never set it, so the
+   * page rule above still counts gates only.
+   */
+  limit?: (plan: PlanType) => boolean;
 }
 
 /** Does `plan` include everything `need` asks for? */
 export function planMeets(plan: PlanType, need: Need): boolean {
   if (need.area === null && planIsRestricted(plan)) return false;
   if (need.area && !planAllowsArea(plan, need.area)) return false;
+  if (need.limit && !need.limit(plan)) return false;
   return (need.features ?? []).every((f) => hasFeature(plan, f));
 }
 

@@ -64,7 +64,9 @@ test("every error key resolves to copy in all three catalogs", () => {
 });
 
 test("de-CH copy never uses ß", () => {
-  for (const value of Object.values(ACCOUNT_COPY["de-CH"])) {
+  for (const entry of Object.values(ACCOUNT_COPY["de-CH"])) {
+    // A locked message takes the plan name (src/lib/locked-plan.ts).
+    const value = typeof entry === "function" ? entry("Growth") : entry;
     assert.ok(!value.includes("ß"), `found ß in: ${value}`);
   }
 });

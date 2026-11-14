@@ -21,6 +21,7 @@ import { AiLensHelpButton } from "@/components/seo-tools/ai-lens-help";
 import { AiLensResult } from "@/components/seo-tools/ai-lens-result";
 import { formatDateTime } from "@/lib/utils";
 import { AI_LENS_COPY, SEO_TOOLS_COPY, type AiLensCopy, type DashLocale } from "@/lib/i18n/dashboard";
+import { useLockedPlanName } from "@/components/plan/plan-context";
 import type { AiLensVerdict } from "@/lib/ai-lens/options";
 import type {
   AiLensAnalysisDto,
@@ -52,6 +53,7 @@ function verdictLabel(verdict: AiLensVerdict, t: AiLensCopy): string {
 
 export function AiLensClient({ locale }: { locale: DashLocale }) {
   const t = AI_LENS_COPY[locale];
+  const anyUrlPlan = useLockedPlanName("ai_lens_any_url");
   const it = SEO_TOOLS_COPY[locale].items.ai_lens;
 
   const [url, setUrl] = useState("");
@@ -224,7 +226,7 @@ export function AiLensClient({ locale }: { locale: DashLocale }) {
         <ErrorCard
           tone="amber"
           title={t.foreignTitle}
-          body={t.foreignBody}
+          body={t.foreignBody(anyUrlPlan)}
           cta={{ href: "/billing", label: t.foreignCta }}
         />
       )}

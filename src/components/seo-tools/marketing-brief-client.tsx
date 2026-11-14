@@ -35,6 +35,7 @@ import {
   marketingVarHint,
   type DashLocale,
 } from "@/lib/i18n/dashboard";
+import { useLockedPlanName } from "@/components/plan/plan-context";
 import { CTA_LINK_CLASS } from "@/components/seo-tools/marketing-studio-client";
 import { AI_LABELS } from "@/lib/i18n/ai-labels";
 
@@ -61,6 +62,7 @@ export function MarketingBriefClient({
   hasVoiceGuide,
 }: Props) {
   const t = MARKETING_COPY[locale];
+  const lockPlan = useLockedPlanName("marketing_studio");
   const category = useMemo(() => findMarketingCategory(categoryId), [categoryId]);
 
   const [values, setValues] = useState<Record<string, string>>({});
@@ -90,7 +92,7 @@ export function MarketingBriefClient({
         case "UPSTREAM_FAILED":
           return t.errUpstream;
         case "PLAN_LOCKED":
-          return t.lockedBody;
+          return t.lockedBody(lockPlan);
         case "INVALID_REQUEST":
           // The only server text shown to the user, and only here: these are
           // field-level messages ("Missing required fields: PRODUCT") that the
@@ -100,7 +102,7 @@ export function MarketingBriefClient({
           return t.errGeneric;
       }
     },
-    [t],
+    [t, lockPlan],
   );
 
   const post = useCallback(
@@ -212,9 +214,9 @@ export function MarketingBriefClient({
           <CardContent className="flex flex-col items-start gap-3 py-6">
             <Badge className="flex items-center gap-1.5">
               <Lock className="h-3.5 w-3.5" aria-hidden="true" />
-              {t.lockedTitle}
+              {t.lockedTitle(lockPlan)}
             </Badge>
-            <p className="max-w-2xl text-sm text-gray-600">{t.lockedBody}</p>
+            <p className="max-w-2xl text-sm text-gray-600">{t.lockedBody(lockPlan)}</p>
             <Link href="/billing" className={CTA_LINK_CLASS}>
               {t.upgradeCta}
             </Link>

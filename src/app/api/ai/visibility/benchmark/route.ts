@@ -4,6 +4,7 @@ import { requireFeature, enforcementErrorResponse } from "@/lib/plan-enforcement
 import { sidecarPost } from "@/lib/av-sidecar";
 import { archiveSidecarPages, sidecarArchiveBody, takeSidecarArchive } from "@/lib/page-archive/sidecar";
 import { scoreVersionOf } from "@/lib/visibility-score";
+import { benchmarkDailyLimit } from "@/lib/visibility-limits";
 import { prisma } from "@/lib/prisma";
 import { Prisma } from "@/generated/prisma";
 
@@ -29,9 +30,9 @@ interface AuditResult {
   error?: string;
 }
 
-function limitFor(planType: string): number {
-  return planType === "AGENCY" || planType === "ENTERPRISE" ? 5 : 1;
-}
+// The per-plan limit: src/lib/visibility-limits.ts, which the card's locked
+// line also reads to name the plan with more.
+const limitFor = benchmarkDailyLimit;
 
 function summarize(url: string, score: number, grade: string, bots: Record<string, AuditBot>, scoreVersion: number) {
   const botTotal = Object.keys(bots).length;
