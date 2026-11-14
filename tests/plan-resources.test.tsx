@@ -281,6 +281,16 @@ describe("plan & billing card", () => {
     const html = render();
     expect(html).toContain('data-testid="plan-cancel-anytime"');
     expect(html).not.toMatch(/receipt/i);
+    // Its markdown link is a link, locale-prefixed, never raw brackets.
+    expect(html).toContain('href="/en/help/cancel-subscription"');
+    expect(html).not.toMatch(/\]\(\/help\//);
+  });
+
+  it("meters read 'Label: value', so no number has to agree with a noun", () => {
+    const html = render({ usage: { seo_searches: { used: 61 } } });
+    expect(html).toContain("Searches this month: 61 / 250");
+    expect(html).toContain("Brands tracked: 1");
+    expect(html).not.toMatch(/\b1 brands\b/);
   });
 });
 

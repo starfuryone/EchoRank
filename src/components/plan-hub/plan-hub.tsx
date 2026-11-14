@@ -63,13 +63,27 @@ function itemCopy(locale: DashLocale, item: PlanResourceItem): { name: string; d
   return { name: dashNav[locale][item.href] ?? item.href, description: "" };
 }
 
-/** **bold** in authored help copy, nothing else. */
-function Bold({ text }: { text: string }) {
+/**
+ * The authored help copy's two inline marks: **bold** and [label](/path). A
+ * site path is locale-prefixed (the public help articles live under
+ * /{locale}/help/...) and opens in a new tab, like the other help links here.
+ */
+function Rich({ text, locale }: { text: string; locale: string }) {
   return (
     <>
-      {text.split(/(\*\*[^*]+\*\*)/g).map((part, i) =>
-        part.startsWith("**") ? <strong key={i}>{part.slice(2, -2)}</strong> : <span key={i}>{part}</span>,
-      )}
+      {text.split(/(\*\*[^*]+\*\*|\[[^\]]+\]\([^)]+\))/g).map((part, i) => {
+        if (part.startsWith("**")) return <strong key={i}>{part.slice(2, -2)}</strong>;
+        const link = part.match(/^\[([^\]]+)\]\(([^)]+)\)$/);
+        if (link) {
+          const href = link[2]!.startsWith("/") ? `/${locale}${link[2]}` : link[2]!;
+          return (
+            <a key={i} href={href} target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-700">
+              {link[1]}
+            </a>
+          );
+        }
+        return <span key={i}>{part}</span>;
+      })}
     </>
   );
 }
@@ -117,7 +131,7 @@ export function PlanHub(p: PlanHubProps) {
     const u = p.usage[l.key];
     const limit = u?.limitOverride !== undefined && u.limitOverride !== null ? u.limitOverride : l.limit;
     if (limit === "custom") return t.custom(unit);
-    if (limit === "unlimited") return u?.used != null ? `${fmt(u.used)} ${unit}` : t.unlimited(unit);
+    if (limit === "unlimited") return u?.used != null ? t.limitOnly(fmt(u.used), unit) : t.unlimited(unit);
     if (u?.used != null) return t.used(fmt(u.used), fmt(limit), unit);
     return t.limitOnly(fmt(limit), unit);
   };
@@ -176,7 +190,7 @@ export function PlanHub(p: PlanHubProps) {
             </div>
             {cancelFaq && (
               <p className="text-xs leading-relaxed text-gray-500" data-testid="plan-cancel-anytime">
-                <Bold text={cancelFaq} />
+                <Rich text={cancelFaq} locale={locale} />
               </p>
             )}
           </CardContent>
@@ -203,7 +217,7 @@ export function PlanHub(p: PlanHubProps) {
                           <span className="text-sm font-semibold text-gray-900">{c.name}</span>
                           {item.status === "coming" && <Badge variant="warning">{t.comingSoon}</Badge>}
                           {item.status === "waiting_approval" && <Badge variant="warning">{t.waitingGoogle}</Badge>}
-                          {item.partner && <Badge>{t.partner}</Badge>}
+                          {/* A partner card's name already says "by EchoPilot". */}
                         </div>
                         {description && <p className="mt-1 text-xs leading-snug text-gray-500">{description}</p>}
                         {(limitsByItem.get(item.key) ?? []).map((l) => (
