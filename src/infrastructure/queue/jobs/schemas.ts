@@ -164,6 +164,13 @@ export type OnboardingEmailStage = "d0" | "d2" | "d5" | "d10";
 
 export interface OnboardingEmailJob extends BaseJob {
   stage: OnboardingEmailStage;
+  /**
+   * true on every job queued from 2026-11-14: the drip is a service email,
+   * sent without marketing consent. Absent on jobs queued before then, which
+   * keep the old consent check, so no account that signed up before that
+   * deploy gets mail it would not have got.
+   */
+  serviceEmail?: true;
 }
 
 // ─── Trial ending notice ──────────────────────────────────────────────────────

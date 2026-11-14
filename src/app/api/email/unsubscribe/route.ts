@@ -8,8 +8,13 @@
 //
 // The token is the only credential; no cookie is read. Product and billing
 // emails are unaffected: they never check marketingConsent.
+//
+// Two lists (src/lib/email/unsubscribe.ts): no `l` is marketing and turns
+// marketingConsent off; `l=onboarding` stops the getting-started emails
+// (onboardingEmailsOptedOutAt) and leaves marketing consent as it is. Each
+// list verifies its own token.
 import { prisma } from "@/lib/prisma";
-import { verifyUnsubscribeToken } from "@/lib/email/unsubscribe";
+import { unsubscribeListOf, verifyUnsubscribeToken, type UnsubscribeList } from "@/lib/email/unsubscribe";
 import { UNSUBSCRIBE_COPY, unsubscribeLocale } from "@/lib/email/unsubscribe-copy";
 import { logger } from "@/infrastructure/observability/logger";
 
@@ -25,30 +30,45 @@ function page(title: string, body: string, status = 200): Response {
   });
 }
 
-async function tenantFor(token: string | null) {
-  const tenantId = verifyUnsubscribeToken(token);
+async function tenantFor(token: string | null, list: UnsubscribeList) {
+  const tenantId = verifyUnsubscribeToken(token, undefined, list);
   if (!tenantId) return null;
   return prisma.tenant.findUnique({ where: { id: tenantId }, select: { id: true, defaultLanguage: true } });
 }
 
+function parse(req: Request) {
+  const q = new URL(req.url).searchParams;
+  return { token: q.get("t"), list: unsubscribeListOf(q.get("l")) };
+}
+
 export async function GET(req: Request) {
-  const token = new URL(req.url).searchParams.get("t");
-  const tenant = await tenantFor(token);
+  const { token, list } = parse(req);
+  const tenant = await tenantFor(token, list);
   const c = UNSUBSCRIBE_COPY[unsubscribeLocale(tenant?.defaultLanguage)];
   if (!tenant || !token) return page(c.title, `<p>${esc(c.invalid)}</p>`, 400);
-  const action = `/api/email/unsubscribe?t=${encodeURIComponent(token)}`;
+  const action = `/api/email/unsubscribe?t=${encodeURIComponent(token)}${list === "onboarding" ? "&l=onboarding" : ""}`;
+  const ask = list === "onboarding" ? c.askOnboarding : c.ask;
   return page(
     c.title,
-    `<h1>${esc(c.title)}</h1><p>${esc(c.ask)}</p><form method="post" action="${esc(action)}"><button type="submit">${esc(c.button)}</button></form>`,
+    `<h1>${esc(c.title)}</h1><p>${esc(ask)}</p><form method="post" action="${esc(action)}"><button type="submit">${esc(c.button)}</button></form>`,
   );
 }
 
 export async function POST(req: Request) {
-  const token = new URL(req.url).searchParams.get("t");
-  const tenant = await tenantFor(token);
+  const { token, list } = parse(req);
+  const tenant = await tenantFor(token, list);
   const c = UNSUBSCRIBE_COPY[unsubscribeLocale(tenant?.defaultLanguage)];
   if (!tenant) return page(c.title, `<p>${esc(c.invalid)}</p>`, 400);
-  await prisma.tenant.update({ where: { id: tenant.id }, data: { marketingConsent: false } });
-  logger.info({ tenantId: tenant.id }, "marketing email: unsubscribed");
+  if (list === "onboarding") {
+    // The first opt-out stands; a second click changes nothing.
+    await prisma.tenant.updateMany({
+      where: { id: tenant.id, onboardingEmailsOptedOutAt: null },
+      data: { onboardingEmailsOptedOutAt: new Date() },
+    });
+    logger.info({ tenantId: tenant.id }, "onboarding email: unsubscribed");
+  } else {
+    await prisma.tenant.update({ where: { id: tenant.id }, data: { marketingConsent: false } });
+    logger.info({ tenantId: tenant.id }, "marketing email: unsubscribed");
+  }
   return page(c.title, `<h1>${esc(c.done)}</h1><p class="note">${esc(c.doneNote)}</p>`);
 }

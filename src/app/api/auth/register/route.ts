@@ -165,8 +165,10 @@ export async function POST(request: Request) {
       return { userId: user.id, tenantId: tenant.id, planType };
     });
 
-    // Onboarding drip: delayed jobs re-check tenant state (consent, progress)
-    // before sending. Fixed jobIds make re-enqueues idempotent — see
+    // Onboarding drip, a service email: every new account gets it, whatever
+    // its marketing consent. This is its only caller, so one sequence per
+    // account. Delayed jobs re-check tenant state (opt-out, progress) before
+    // sending; fixed jobIds make re-enqueues idempotent — see
     // src/lib/onboarding-drip.ts, which owns the schedule. Enqueue failure must
     // never fail the signup itself.
     try {

@@ -2,11 +2,14 @@
 // in the repo (2026-11-14).
 //
 // They used to be Brevo templates referenced by ID (BREVO_ONBOARDING_*_ID),
-// whose content lived in emails/onboarding/*.html and had to be pasted into
-// Brevo by hand. The Brevo account has no templates, so nothing could ever
-// render. Now the sender (src/lib/onboarding-email.ts) posts this HTML as
-// `htmlContent` to the same transactional endpoint, and nothing depends on a
-// template stored in Brevo.
+// which were never uploaded, so nothing could ever render. Now the sender
+// (src/lib/onboarding-email.ts) posts this HTML as `htmlContent` to the same
+// transactional endpoint, and nothing depends on a template stored in Brevo.
+//
+// SERVICE EMAIL, NOT MARKETING (2026-11-14): every new account gets it,
+// whatever its marketing consent. So the copy is about using the product and
+// the account, with no promotion: no upgrade pitch, no offer. Each email keeps
+// its own unsubscribe link.
 //
 // A PURE RENDER, like src/lib/billing/trial-ending-email.ts: no Prisma, no
 // queue, so tests (and a smoke script) render a real message without either.
@@ -14,10 +17,11 @@
 // Every email carries: the ECHORANK™ wordmark, its stage's own call to action,
 // a "See your plan" button (planUrl, or https://echorank360.com/plan), "Cancel
 // anytime", and the footer (why you get it, unsubscribe, privacy and terms,
-// the company line). Every value from the database is escaped; every number
-// renders only behind its has* flag, so no invented figure is ever sent.
+// the company line from src/lib/brand/company.ts). Every value from the
+// database is escaped; every number renders only behind its has* flag, so no
+// invented figure is ever sent.
 
-import { COMPANY_LINE } from "@/lib/brand/company";
+import { COMPANY_EMAIL_LINE } from "@/lib/brand/company";
 import { HOME_PRICING_CHROME } from "@/lib/i18n/content";
 import { SITE_URL } from "@/lib/seo/constants";
 
@@ -49,9 +53,8 @@ export interface OnboardingParams {
   // d5
   hasCompetitors?: boolean;
   competitorNames?: string;
+  /** The plan includes competitor intelligence (/intelligence). */
   isGrowthPlus?: boolean;
-  /** The plan competitor intelligence comes with (src/lib/locked-plan.ts). */
-  intelligencePlan?: string;
   ctaUrl?: string;
   // d10
   planName?: string;
@@ -104,8 +107,7 @@ interface Copy {
   d5NoCompetitors: (brand: string) => string;
   d5Included: string;
   d5Compare: string;
-  d5Locked: (plan: string) => string;
-  d5Upgrade: string;
+  d5SeeAnswers: string;
   // d10
   d10Intro: (brand: string) => string;
   d10Progress: (done: number, total: number) => string;
@@ -147,9 +149,7 @@ const COPY: Record<OnboardingLocale, Copy> = {
       `When someone asks ChatGPT, Claude or Perplexity for a business like <strong>${b}</strong>, the engines pick who to recommend, and who to leave out.`,
     d5Included: "Your plan includes competitor intelligence: see how you compare, side by side.",
     d5Compare: "Compare with competitors",
-    d5Locked: (p) =>
-      `Competitor intelligence (who AI engines mention instead of you, and why) is included from the ${p} plan.`,
-    d5Upgrade: "See upgrade options",
+    d5SeeAnswers: "See your AI Visibility results",
     d10Intro: (b) => `Here is what <strong>${b}</strong> has set up in Echorank so far.`,
     d10Progress: (d, t) => `Setup: ${d} of ${t} steps done.`,
     d10Score: (s, g) => `AI Visibility score: ${s}/100, grade ${g}.`,
@@ -187,9 +187,7 @@ const COPY: Record<OnboardingLocale, Copy> = {
       `Quand quelqu'un demande à ChatGPT, Claude ou Perplexity une entreprise comme <strong>${b}</strong>, les moteurs choisissent qui recommander, et qui laisser de côté.`,
     d5Included: "Votre forfait inclut l'intelligence concurrentielle : voyez comment vous vous comparez, côte à côte.",
     d5Compare: "Comparer avec les concurrents",
-    d5Locked: (p) =>
-      `L'intelligence concurrentielle (qui les moteurs d'IA mentionnent à votre place, et pourquoi) est incluse à partir du forfait ${p}.`,
-    d5Upgrade: "Voir les options de mise à niveau",
+    d5SeeAnswers: "Voir vos résultats de visibilité IA",
     d10Intro: (b) => `Voici ce que <strong>${b}</strong> a mis en place dans Echorank jusqu'ici.`,
     d10Progress: (d, t) => `Configuration : ${d} étapes sur ${t} terminées.`,
     d10Score: (s, g) => `Score de visibilité IA : ${s}/100, note ${g}.`,
@@ -291,13 +289,13 @@ function stageBody(stage: OnboardingStage, c: Copy, p: OnboardingParams): Body {
     html.push(`<h2 style="margin:0 0 16px;font-size:18px;color:#111827;">${esc(c.d5Title)}</h2>`);
     text.push(c.d5Title);
     say(p.hasCompetitors && p.competitorNames ? c.d5Competitors(brand, esc(p.competitorNames)) : c.d5NoCompetitors(brand));
-    const ctaUrl = safeUrl(p.ctaUrl, `${SITE_URL}/billing`);
     if (p.isGrowthPlus) {
       say(esc(c.d5Included));
-      return { html, text, cta: { href: ctaUrl, label: c.d5Compare } };
+      return { html, text, cta: { href: safeUrl(p.ctaUrl, visibilityUrl), label: c.d5Compare } };
     }
-    say(esc(c.d5Locked(p.intelligencePlan ?? "")));
-    return { html, text, cta: { href: ctaUrl, label: c.d5Upgrade } };
+    // A plan without competitor intelligence gets its own results, never an
+    // upgrade pitch: this is a service email.
+    return { html, text, cta: { href: visibilityUrl, label: c.d5SeeAnswers } };
   }
 
   // d10: a value recap, never a date (tests/onboarding-d10-framing.test.ts).
@@ -339,7 +337,7 @@ export function renderOnboardingEmail(
     `<tr><td style="padding:20px 32px;border-top:1px solid #e5e7eb;font-size:12px;line-height:1.6;color:#6b7280;">` +
     `<p style="margin:0 0 8px;">${esc(c.footerWhy)}${unsub ? ` ${link(unsub, c.unsubscribe)}` : ""}</p>` +
     `<p style="margin:0 0 8px;">${link(legal("privacy"), c.privacy)} · ${link(legal("terms"), c.terms)}</p>` +
-    `<p style="margin:0;">${esc(COMPANY_LINE)}</p>` +
+    `<p style="margin:0;">${esc(COMPANY_EMAIL_LINE)}</p>` +
     `</td></tr></table></td></tr></table></body></html>`;
 
   const text = [
@@ -356,7 +354,7 @@ export function renderOnboardingEmail(
     ...(unsub ? [`${c.unsubscribe}: ${unsub}`] : []),
     `${c.privacy}: ${legal("privacy")}`,
     `${c.terms}: ${legal("terms")}`,
-    COMPANY_LINE,
+    COMPANY_EMAIL_LINE,
   ].join("\n");
 
   return { subject: c.subject[stage], html, text };

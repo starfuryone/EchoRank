@@ -18,6 +18,17 @@
 // No colon in the id, deliberately — see trialNoticeJobId in
 // src/lib/billing/trial-notice.ts for the BullMQ rule that makes a colon a
 // throw rather than a style preference.
+//
+// ── ONCE PER ACCOUNT: /api/auth/register IS THE ONLY CALLER ────────────────
+// Every new account is created there; a Stripe checkout always attaches to a
+// tenant that already exists (flow=upgrade), so paying never schedules a
+// second drip. tests/onboarding-service-email.test.ts fails a second caller.
+//
+// ── A SERVICE EMAIL (2026-11-14) ─────────────────────────────────────────────
+// The drip goes to every new account, without the marketing-consent check;
+// its own unsubscribe link stops it. Jobs carry `serviceEmail: true` so the
+// worker can tell them from jobs queued before this change, which keep the
+// consent check: accounts that signed up earlier are not backfilled.
 
 import { addJob } from "@/infrastructure/queue/registry";
 import type { OnboardingEmailStage } from "@/infrastructure/queue/jobs/schemas";
@@ -71,11 +82,11 @@ export function onboardingJobId(tenantId: string, stage: OnboardingEmailStage): 
  * Queue the whole drip for a newly created tenant.
  *
  * NEVER THROWS. A queue that is down must not fail the account creation that
- * called it — the tenant exists and the customer is mid-flow, and losing a
- * marketing email is not a reason to hand them an error. The failure is logged
- * by the caller, which knows what it was doing at the time.
+ * called it — the tenant exists and the customer is mid-flow, and losing an
+ * onboarding email is not a reason to hand them an error. The failure is
+ * logged by the caller, which knows what it was doing at the time.
  *
- * The delayed jobs re-check tenant state at send time (consent, progress,
+ * The delayed jobs re-check tenant state at send time (opt-out, progress,
  * billing status) rather than trusting anything decided here, so enqueuing for
  * a tenant that later unsubscribes or lapses is harmless.
  */
@@ -85,7 +96,7 @@ export async function enqueueOnboardingDrip(tenantId: string): Promise<void> {
       addJob(
         "onboarding-email",
         "drip",
-        { tenantId, correlationId: tenantId, stage },
+        { tenantId, correlationId: tenantId, stage, serviceEmail: true },
         {
           jobId: onboardingJobId(tenantId, stage),
           delay: ONBOARDING_DRIP_DELAYS[stage],

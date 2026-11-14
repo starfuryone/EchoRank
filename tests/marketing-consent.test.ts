@@ -1,12 +1,14 @@
 // Marketing email only with an explicit opt-in, and one-click unsubscribe on
 // every marketing email (RFC 8058). Product and billing email are unaffected.
+// The onboarding drip is a service email (2026-11-14): no consent check, its
+// own unsubscribe list, which leaves marketing consent alone.
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 const m = vi.hoisted(() => ({
   user: { findUnique: vi.fn(), create: vi.fn() },
-  tenant: { findUnique: vi.fn(), create: vi.fn(), update: vi.fn() },
+  tenant: { findUnique: vi.fn(), create: vi.fn(), update: vi.fn(), updateMany: vi.fn() },
   tenantMember: { create: vi.fn() },
   tenantQuota: { create: vi.fn() },
   emailTemplate: { createMany: vi.fn(), create: vi.fn() },
@@ -82,6 +84,17 @@ describe("the unsubscribe token", () => {
     vi.stubEnv("AUTH_SECRET", "");
     expect(oneClickUnsubscribeHeaders("tenant_1")).toEqual({});
   });
+
+  it("each list signs its own token: one list's token never works for the other", () => {
+    const mk = unsubscribeToken("tenant_1")!;
+    const ob = unsubscribeToken("tenant_1", undefined, "onboarding")!;
+    expect(ob).not.toBe(mk);
+    expect(verifyUnsubscribeToken(ob, undefined, "onboarding")).toBe("tenant_1");
+    expect(verifyUnsubscribeToken(ob)).toBeNull();
+    expect(verifyUnsubscribeToken(mk, undefined, "onboarding")).toBeNull();
+    expect(unsubscribeUrl("tenant_1", undefined, "onboarding")).toMatch(/\?t=[^&]+&l=onboarding$/);
+    expect(unsubscribeUrl("tenant_1")).not.toContain("l=");
+  });
 });
 
 describe("/api/email/unsubscribe", () => {
@@ -110,6 +123,28 @@ describe("/api/email/unsubscribe", () => {
     );
     expect(res.status).toBe(200);
     expect(m.tenant.update).toHaveBeenCalledWith({ where: { id: "tenant_1" }, data: { marketingConsent: false } });
+    expect(m.tenant.updateMany).not.toHaveBeenCalled();
+  });
+
+  it("the onboarding list: GET asks about the getting-started emails, POST stops them and leaves marketing alone", async () => {
+    m.tenant.findUnique.mockResolvedValue({ id: "tenant_1", defaultLanguage: "en" });
+    const { GET, POST } = await import("@/app/api/email/unsubscribe/route");
+    const link = unsubscribeUrl("tenant_1", undefined, "onboarding")!;
+    const page = await (await GET(new Request(link))).text();
+    expect(page).toContain(UNSUBSCRIBE_COPY.en.askOnboarding);
+    expect(page).toContain("&#38;l=onboarding");
+    const res = await POST(new Request(link, { method: "POST", body: "List-Unsubscribe=One-Click" }));
+    expect(res.status).toBe(200);
+    expect(m.tenant.updateMany).toHaveBeenCalledWith({
+      where: { id: "tenant_1", onboardingEmailsOptedOutAt: null },
+      data: { onboardingEmailsOptedOutAt: expect.any(Date) },
+    });
+    expect(m.tenant.update).not.toHaveBeenCalled();
+    // A marketing token sent to the onboarding list is refused, and vice versa.
+    const crossed = `${url(unsubscribeToken("tenant_1")!)}&l=onboarding`;
+    expect((await POST(new Request(crossed, { method: "POST" }))).status).toBe(400);
+    for (const c of Object.values(UNSUBSCRIBE_COPY)) expect(c.askOnboarding).toBeTruthy();
+    expect(UNSUBSCRIBE_COPY["de-CH"].askOnboarding).not.toContain("ß");
   });
 
   it("a bad token changes nothing", async () => {
@@ -175,11 +210,11 @@ describe("signup: the opt-in box", () => {
   });
 });
 
-describe("the onboarding drip (the marketing email)", () => {
+describe("the onboarding drip (a service email)", () => {
   beforeEach(() => {
     m.tenant.findUnique.mockResolvedValue({
-      id: "tenant_1", name: "Acme", planType: "GROWTH", billingStatus: "TRIALING", marketingConsent: true,
-      defaultLanguage: "en", members: [{ user: { id: "u1", name: "Dana", email: "dana@example.test" } }],
+      id: "tenant_1", name: "Acme", planType: "GROWTH", billingStatus: "TRIALING", marketingConsent: false,
+      onboardingEmailsOptedOutAt: null, defaultLanguage: "en", members: [{ user: { id: "u1", name: "Dana", email: "dana@example.test" } }],
       subscription: null,
     });
     m.visibilityAudit.findFirst.mockResolvedValue(null);
@@ -187,21 +222,35 @@ describe("the onboarding drip (the marketing email)", () => {
     m.snapshot.get.mockResolvedValue({ completedCount: 0, steps: [] });
   });
 
-  it("carries the one-click headers and the footer link", async () => {
+  it("goes out without marketing consent, with the onboarding list's one-click headers and footer link", async () => {
     const { sendOnboardingEmail } = await import("@/lib/onboarding-email");
     const out = await sendOnboardingEmail("tenant_1", "d2");
     if (out.status !== "dry_run") throw new Error(out.status);
     const p = out.payload as { headers: Record<string, string>; htmlContent: string };
+    const link = unsubscribeUrl("tenant_1", undefined, "onboarding");
     expect(p.headers["List-Unsubscribe-Post"]).toBe("List-Unsubscribe=One-Click");
-    expect(out.params.unsubscribeUrl).toBe(unsubscribeUrl("tenant_1"));
+    expect(p.headers["List-Unsubscribe"]).toBe(`<${link}>`);
+    expect(out.params.unsubscribeUrl).toBe(link);
     // The footer link is in the rendered email itself (no Brevo template).
-    expect(p.htmlContent).toContain(String(unsubscribeUrl("tenant_1")).replace(/&/g, "&amp;"));
+    expect(p.htmlContent).toContain(String(link).replace(/&/g, "&amp;"));
   });
 
-  it("is not sent without consent, nor without an unsubscribe link", async () => {
+  it("stops after its own unsubscribe; a job queued before the change keeps the consent check", async () => {
     const { sendOnboardingEmail } = await import("@/lib/onboarding-email");
-    m.tenant.findUnique.mockResolvedValueOnce({ ...(await m.tenant.findUnique()), marketingConsent: false });
+    const base = await m.tenant.findUnique();
+    m.tenant.findUnique.mockResolvedValueOnce({ ...base, onboardingEmailsOptedOutAt: new Date(), marketingConsent: true });
     expect(await sendOnboardingEmail("tenant_1", "d2")).toEqual({ status: "skipped", reason: "unsubscribed" });
+    // Legacy job (no serviceEmail on it): no backfill of earlier signups.
+    expect(await sendOnboardingEmail("tenant_1", "d2", { requireMarketingConsent: true })).toEqual({
+      status: "skipped",
+      reason: "legacy_job_no_consent",
+    });
+    m.tenant.findUnique.mockResolvedValueOnce({ ...base, marketingConsent: true });
+    expect((await sendOnboardingEmail("tenant_1", "d2", { requireMarketingConsent: true })).status).toBe("dry_run");
+  });
+
+  it("is not sent without an unsubscribe link", async () => {
+    const { sendOnboardingEmail } = await import("@/lib/onboarding-email");
     vi.stubEnv("NODE_ENV", "production");
     vi.stubEnv("BREVO_API_KEY", "x");
     vi.stubEnv("AUTH_SECRET", "");

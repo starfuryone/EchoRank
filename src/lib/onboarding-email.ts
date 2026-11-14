@@ -2,12 +2,12 @@ import { prisma } from "@/lib/prisma";
 import { getOnboardingSnapshot } from "@/lib/onboarding";
 import { CRAWLER_BRAND } from "@/lib/site-crawler/brand";
 import { SITE_URL } from "@/lib/seo/constants";
-import { oneClickUnsubscribeHeaders, unsubscribeUrl } from "@/lib/email/unsubscribe";
+import { oneClickUnsubscribeHeaders, unsubscribeUrl, type UnsubscribeList } from "@/lib/email/unsubscribe";
 // planConfig() is the identity lookup since AI_VISIBILITY is sellable again;
 // it is kept as the one accessor so a future fold lands in one place.
 import { planConfig } from "@/lib/plan-config";
 import { planAllowsArea } from "@/lib/plan-access";
-import { lockOpen, lockedPlanName } from "@/lib/locked-plan";
+import { lockOpen } from "@/lib/locked-plan";
 import { renderOnboardingEmail, type OnboardingLocale, type OnboardingParams } from "@/lib/onboarding-email-render";
 import { logger } from "@/infrastructure/observability/logger";
 import type { OnboardingEmailStage } from "@/infrastructure/queue/jobs/schemas";
@@ -21,7 +21,21 @@ import type { OnboardingEmailStage } from "@/infrastructure/queue/jobs/schemas";
  * here depends on a template stored in Brevo any more.
  * Numeric params still ride with a has* boolean, and the renderer gates on it,
  * so no invented number is ever sent.
+ *
+ * A SERVICE EMAIL, NOT MARKETING (2026-11-14). It goes to every new account
+ * without reading marketingConsent, carries no promotion, and keeps its own
+ * unsubscribe (list "onboarding", src/lib/email/unsubscribe.ts), which sets
+ * Tenant.onboardingEmailsOptedOutAt. Only jobs queued before that change pass
+ * requireMarketingConsent, so earlier signups are not backfilled.
  */
+
+/** The unsubscribe list every onboarding email links to. */
+export const ONBOARDING_UNSUBSCRIBE_LIST: UnsubscribeList = "onboarding";
+
+export interface OnboardingSendOptions {
+  /** Jobs queued before 2026-11-14 (no `serviceEmail` on the job): the old rule. */
+  requireMarketingConsent?: boolean;
+}
 
 const BREVO_SEND_URL = "https://api.brevo.com/v3/smtp/email";
 
@@ -95,6 +109,7 @@ function topFix(checks: AuditCheck[]): { title: string; action: string } | null 
 export async function sendOnboardingEmail(
   tenantId: string,
   stage: OnboardingEmailStage,
+  opts: OnboardingSendOptions = {},
 ): Promise<OnboardingSendOutcome> {
   const tenant = await prisma.tenant.findUnique({
     where: { id: tenantId },
@@ -110,7 +125,10 @@ export async function sendOnboardingEmail(
   });
 
   if (!tenant) return { status: "skipped", reason: "tenant_deleted" };
-  if (!tenant.marketingConsent) return { status: "skipped", reason: "unsubscribed" };
+  if (tenant.onboardingEmailsOptedOutAt) return { status: "skipped", reason: "unsubscribed" };
+  if (opts.requireMarketingConsent && !tenant.marketingConsent) {
+    return { status: "skipped", reason: "legacy_job_no_consent" };
+  }
   // The drip is about the home dashboard and AI visibility (the score, the
   // /visibility link, competitors): not for a plan without them (the
   // crawler-only plan, src/lib/plan-access.ts). Read at send time, so a
@@ -211,16 +229,16 @@ export async function sendOnboardingEmail(
       }
       if (names.size >= 3) break;
     }
-    // Competitor intelligence is the /intelligence page's gate; the plan the
-    // locked line names is the helper's (src/lib/locked-plan.ts), not typed.
+    // Competitor intelligence is the /intelligence page's gate
+    // (src/lib/locked-plan.ts). A plan without it is sent to its own results,
+    // never to an upgrade: this is a service email.
     const isGrowthPlus = lockOpen(tenant.planType, "intelligence");
     params.hasCompetitors = names.size > 0;
     params.competitorNames = Array.from(names).join(", ");
     params.isGrowthPlus = isGrowthPlus;
-    params.intelligencePlan = lockedPlanName(tenant.planType, "intelligence");
     params.ctaUrl = isGrowthPlus
       ? `${SITE_URL}/intelligence/competitors`
-      : `${SITE_URL}/billing`;
+      : `${SITE_URL}/visibility`;
   }
 
   // ── d10: A PRE-CONVERSION VALUE RECAP, NOT A DEADLINE ─────────────────────
@@ -258,12 +276,12 @@ export async function sendOnboardingEmail(
     params.billingUrl = `${SITE_URL}/billing`;
   }
 
-  // Marketing email: one-click unsubscribe (RFC 8058) in the headers, and the
-  // same link in the footer.
-  params.unsubscribeUrl = unsubscribeUrl(tenantId);
+  // Service email with its own list: one-click unsubscribe (RFC 8058) in the
+  // headers, and the same link in the footer. It stops onboarding email only.
+  params.unsubscribeUrl = unsubscribeUrl(tenantId, undefined, ONBOARDING_UNSUBSCRIBE_LIST);
 
   const apiKey = process.env.BREVO_API_KEY;
-  const headers = oneClickUnsubscribeHeaders(tenantId);
+  const headers = oneClickUnsubscribeHeaders(tenantId, undefined, ONBOARDING_UNSUBSCRIBE_LIST);
   const email = renderOnboardingEmail(stage, locale, params as unknown as OnboardingParams);
   // No `params`: the content is already rendered, and Brevo would template
   // any "{{" a customer's brand name happened to contain.
@@ -295,7 +313,7 @@ export async function sendOnboardingEmail(
     return { status: "skipped", reason: "no_api_key" };
   }
   if (!headers["List-Unsubscribe"]) {
-    // No marketing email goes out without a working unsubscribe.
+    // No onboarding email goes out without a working unsubscribe.
     logger.warn({ tenantId, stage, queue: "onboarding-email" }, "AUTH_SECRET not set: no unsubscribe link, onboarding email skipped");
     return { status: "skipped", reason: "no_unsubscribe_link" };
   }

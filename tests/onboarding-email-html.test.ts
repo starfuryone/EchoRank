@@ -4,7 +4,8 @@
 //
 // Every email: a "See your plan" button (planUrl, falling back to
 // https://echorank360.com/plan), the ECHORANK™ wordmark, "Cancel anytime", and
-// the footer (unsubscribe, privacy, terms, the company line).
+// the footer (unsubscribe, privacy, terms, the company email line from
+// src/lib/brand/company.ts). A service email: no promotion in any of them.
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -21,9 +22,8 @@ vi.mock("@/lib/prisma", () => ({ prisma: { tenant, visibilityAudit, promptRun } 
 vi.mock("@/lib/onboarding", () => ({ getOnboardingSnapshot: snapshot.get }));
 vi.mock("@/infrastructure/observability/logger", () => ({ logger: loggerFns }));
 
-import { COMPANY_LINE } from "@/lib/brand/company";
+import { COMPANY_EMAIL_LINE, COMPANY_LINE } from "@/lib/brand/company";
 import { HOME_PRICING_CHROME } from "@/lib/i18n/content";
-import { lockedPlanName } from "@/lib/locked-plan";
 import { ONBOARDING_SENDER, sendOnboardingEmail } from "@/lib/onboarding-email";
 import {
   PLAN_URL_FALLBACK,
@@ -58,8 +58,7 @@ const PARAMS: OnboardingParams = {
   hasCompetitors: true,
   competitorNames: "Bright Smiles, Tooth Co",
   isGrowthPlus: false,
-  intelligencePlan: "Growth",
-  ctaUrl: "https://echorank360.com/billing",
+  ctaUrl: "https://echorank360.com/visibility",
   planName: "Growth",
   billingUrl: "https://echorank360.com/billing",
 };
@@ -79,15 +78,19 @@ describe("every stage, every locale", () => {
         // Cancel anytime, from the pricing cards' source
         expect(html).toContain(escAmp(HOME_PRICING_CHROME[locale].cancelAnytime));
         expect(text).toContain(HOME_PRICING_CHROME[locale].cancelAnytime);
-        // The footer: unsubscribe, privacy, terms, company line
+        // The footer: unsubscribe, privacy, terms, the company email line
         expect(html).toContain(`href="${escAmp(PARAMS.unsubscribeUrl!)}"`);
         expect(html).toContain(`https://echorank360.com/${locale}/legal/privacy`);
         expect(html).toContain(`https://echorank360.com/${locale}/legal/terms`);
-        expect(html).toContain(escAmp(COMPANY_LINE));
-        expect(text).toContain(COMPANY_LINE);
+        expect(html).toContain(escAmp(COMPANY_EMAIL_LINE));
+        expect(text).toContain(COMPANY_EMAIL_LINE);
+        expect(html).not.toContain(escAmp(COMPANY_LINE));
         // No template syntax left for Brevo to fill, and no camel-case brand
         expect(html).not.toMatch(/\{\{|\{%/);
         expect(html + text + subject).not.toMatch(/EchoRank|Echo Rank/);
+        // A service email: no upgrade pitch, no offer, no link to buy
+        expect(html + text + subject).not.toMatch(/upgrade|mise à niveau|discount|réduction|offer|offre|% off|included from|incluse à partir/i);
+        expect(html).not.toContain("/billing\"");
       });
     }
   }
@@ -118,10 +121,25 @@ describe("content", () => {
     expect(d2.html).not.toContain("2 of 5");
   });
 
-  it("d5 names the plan the helper computes", () => {
-    const { html } = renderOnboardingEmail("d5", "fr", { ...PARAMS, intelligencePlan: lockedPlanName("STARTER", "intelligence") });
-    expect(html).toContain("incluse à partir du forfait Growth");
-    expect(renderOnboardingEmail("d5", "en", { ...PARAMS, isGrowthPlus: true }).html).toContain("Compare with competitors");
+  it("the company line is the one company.ts holds, word for word", () => {
+    expect(COMPANY_EMAIL_LINE).toBe(
+      "ChatLogic Insights Ltd · Registered in England & Wales No. 15593166 · 1321 Upland Dr. PMB 10673, Houston, TX 77043, US",
+    );
+    const src = readFileSync(join(process.cwd(), "src/lib/onboarding-email-render.ts"), "utf8");
+    expect(src).not.toContain("Upland");
+    expect(src).not.toContain("15593166");
+  });
+
+  it("d5 without competitor intelligence points at the tenant's own results, never an upgrade", () => {
+    for (const locale of LOCALES) {
+      const { html, text } = renderOnboardingEmail("d5", locale, PARAMS);
+      expect(html).toContain(`<a href="${PARAMS.visibilityUrl}"`);
+      expect(text).not.toMatch(/billing|forfait (Growth|Agency)/i);
+    }
+    expect(renderOnboardingEmail("d5", "en", PARAMS).html).toContain("See your AI Visibility results");
+    const plus = renderOnboardingEmail("d5", "en", { ...PARAMS, isGrowthPlus: true, ctaUrl: "https://echorank360.com/intelligence/competitors" });
+    expect(plus.html).toContain('<a href="https://echorank360.com/intelligence/competitors"');
+    expect(plus.html).toContain("Compare with competitors");
   });
 
   it("d10 is a recap with no date", () => {
@@ -136,8 +154,9 @@ describe("the send: htmlContent through the same transactional endpoint", () => 
   beforeEach(() => {
     vi.clearAllMocks();
     tenant.findUnique.mockResolvedValue({
-      id: "tenant_1", name: "Acme Dental", planType: "STARTER", billingStatus: "TRIALING", marketingConsent: true,
-      defaultLanguage: "fr", members: [{ user: { id: "u1", name: "Dana Reyes", email: "dana@example.test" } }],
+      // No marketing consent: the drip is a service email and goes out anyway.
+      id: "tenant_1", name: "Acme Dental", planType: "STARTER", billingStatus: "TRIALING", marketingConsent: false,
+      onboardingEmailsOptedOutAt: null, defaultLanguage: "fr", members: [{ user: { id: "u1", name: "Dana Reyes", email: "dana@example.test" } }],
       subscription: null,
     });
     visibilityAudit.findFirst.mockResolvedValue({ score: 62, grade: "C", checks: [] });
@@ -171,6 +190,9 @@ describe("the send: htmlContent through the same transactional endpoint", () => 
     expect(body.htmlContent).toContain("Voir votre forfait");
     expect(body.textContent).toContain("https://echorank360.com/plan");
     expect(body.headers["List-Unsubscribe-Post"]).toBe("List-Unsubscribe=One-Click");
+    // Its own list: the link stops onboarding email, not marketing consent.
+    expect(body.headers["List-Unsubscribe"]).toMatch(/\/api\/email\/unsubscribe\?t=[^>]+&l=onboarding>$/);
+    expect(body.htmlContent).toContain("&amp;l=onboarding");
   });
 
   it("a Brevo refusal still throws, so BullMQ retries", async () => {

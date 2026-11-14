@@ -163,11 +163,14 @@ describe("who d10 is withheld from", () => {
   );
 
   it("still honours the unsubscribe and deleted skips", async () => {
-    tenant.findUnique.mockResolvedValue(trialingTenant({ marketingConsent: false }));
+    // The drip's own opt-out (a service email: marketing consent is not read).
+    tenant.findUnique.mockResolvedValue(trialingTenant({ onboardingEmailsOptedOutAt: new Date("2026-11-14T00:00:00Z") }));
     expect(await sendOnboardingEmail(TENANT, "d10")).toEqual({
       status: "skipped",
       reason: "unsubscribed",
     });
+    tenant.findUnique.mockResolvedValue(trialingTenant({ marketingConsent: false }));
+    expect((await sendOnboardingEmail(TENANT, "d10")).status).toBe("dry_run");
 
     tenant.findUnique.mockResolvedValue(null);
     expect(await sendOnboardingEmail(TENANT, "d10")).toEqual({

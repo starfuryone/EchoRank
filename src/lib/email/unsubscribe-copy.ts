@@ -1,13 +1,15 @@
-// Copy for the marketing-email unsubscribe page (/api/email/unsubscribe).
+// Copy for the unsubscribe page (/api/email/unsubscribe): `ask` for the
+// marketing list, `askOnboarding` for the getting-started emails.
 export type UnsubscribeLocale = "en" | "fr" | "de-CH";
 
 export const UNSUBSCRIBE_COPY: Record<
   UnsubscribeLocale,
-  { title: string; ask: string; button: string; done: string; doneNote: string; invalid: string }
+  { title: string; ask: string; askOnboarding: string; button: string; done: string; doneNote: string; invalid: string }
 > = {
   en: {
     title: "Unsubscribe",
     ask: "Stop receiving Echorank tips and product news?",
+    askOnboarding: "Stop receiving the Echorank getting-started emails?",
     button: "Unsubscribe",
     done: "You're unsubscribed.",
     doneNote: "You'll still get emails about your account and billing.",
@@ -16,6 +18,7 @@ export const UNSUBSCRIBE_COPY: Record<
   fr: {
     title: "Se désabonner",
     ask: "Ne plus recevoir les conseils et nouveautés d'Echorank ?",
+    askOnboarding: "Ne plus recevoir les e-mails de prise en main d'Echorank ?",
     button: "Me désabonner",
     done: "Vous êtes désabonné.",
     doneNote: "Vous recevrez toujours les e-mails liés à votre compte et à la facturation.",
@@ -24,6 +27,7 @@ export const UNSUBSCRIBE_COPY: Record<
   "de-CH": {
     title: "Abmelden",
     ask: "Keine Tipps und Produktneuigkeiten von Echorank mehr erhalten?",
+    askOnboarding: "Keine Einstiegs-E-Mails von Echorank mehr erhalten?",
     button: "Abmelden",
     done: "Sie sind abgemeldet.",
     doneNote: "E-Mails zu Ihrem Konto und zur Abrechnung erhalten Sie weiterhin.",

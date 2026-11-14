@@ -244,13 +244,18 @@ model Tenant {
   // an AI Visibility audit, and so overriding it here cannot disturb onboarding.
   botAnalyticsDomain    String?
   onboarding            Json? // { pdfDownloadedAt?, roadmapViewedAt?, firstAuditScore?, firstAuditAt?, profileCompletedAt? }
-  // Marketing email (the onboarding drip) only with an explicit opt-in: the
-  // unticked box at signup. Product and billing email never read this.
-  // Turned off by the one-click unsubscribe (/api/email/unsubscribe) and by a
-  // Brevo unsubscribe event. At/Source record the opt-in that turned it on.
+  // Marketing email (newsletters, promotions) only with an explicit opt-in: the
+  // unticked box at signup. Product, billing and onboarding email never read
+  // this. Turned off by the one-click unsubscribe (/api/email/unsubscribe) and
+  // by a Brevo unsubscribe event. At/Source record the opt-in that turned it on.
   marketingConsent       Boolean   @default(false)
   marketingConsentAt     DateTime?
   marketingConsentSource String? // "signup" | "free-tool-lead" (backfill, see migration 20261122090000)
+  // The onboarding drip is a service email, sent to every new account without
+  // marketing consent (2026-11-14). Its own unsubscribe link
+  // (/api/email/unsubscribe?l=onboarding) sets this; set = no more onboarding
+  // email. Read at send time by src/lib/onboarding-email.ts.
+  onboardingEmailsOptedOutAt DateTime?
 
   // ── AI revenue assumptions, editable on /settings/account ────────────────
   // Both feed every figure on /visibility/tools/revenue and the nightly

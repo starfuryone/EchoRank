@@ -11,6 +11,8 @@ export const COMPANY = {
   jurisdiction: "England and Wales",
   number: "15593166",
   registeredOffice: "82a James Carter Road, Mildenhall, IP28 7DE, United Kingdom",
+  /** The postal address the emails print (a US mailbox, PMB). */
+  postalAddress: "1321 Upland Dr. PMB 10673, Houston, TX 77043, US",
 } as const;
 
 // An array join, not `template` + `template`: the production minifier folded
@@ -20,6 +22,17 @@ export const COMPANY_LINE = [
   COMPANY.name,
   `Registered in ${COMPANY.jurisdiction}, no. ${COMPANY.number}`,
   `Registered office: ${COMPANY.registeredOffice}`,
+].join(" · ");
+
+/**
+ * The company line in every Echorank email's footer (the onboarding drip
+ * today). Emails read it from here and never retype it. It names the postal
+ * address, not the registered office that the site footers above show.
+ */
+export const COMPANY_EMAIL_LINE = [
+  COMPANY.name,
+  `Registered in England & Wales No. ${COMPANY.number}`,
+  COMPANY.postalAddress,
 ].join(" · ");
 
 /** Class shared by the React and HTML renderings (styled in globals.css). */

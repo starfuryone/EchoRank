@@ -128,9 +128,10 @@ async function handleEmailEvent(
   const { emailLogId: customLogId, tenantId: customTenantId } =
     parseMailinCustom(e["X-Mailin-custom"] ?? e["mailin_custom"]);
 
-  // An unsubscribe from any Brevo email suppresses the onboarding/marketing
-  // drip for every tenant this address owns. Lifecycle patching below stays
-  // audit-only for this event.
+  // An unsubscribe from any Brevo email turns marketing email off for every
+  // tenant this address owns. The onboarding drip is a service email with its
+  // own link and does not read marketingConsent. Lifecycle patching below
+  // stays audit-only for this event.
   if (event === "unsubscribed" && recipient) {
     await prisma.tenant.updateMany({
       where: {

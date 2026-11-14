@@ -22,6 +22,9 @@ const QUEUE_NAME = "onboarding-email";
  * Every send re-checks tenant state (deleted / unsubscribed / already activated
  * / no longer trialing) inside sendOnboardingEmail — a skip completes the job,
  * only transport failures throw for retry.
+ *
+ * A job without `serviceEmail` was queued before the drip became a service
+ * email (2026-11-14) and keeps the marketing-consent check: no backfill.
  */
 
 async function processOnboardingEmail(job: Job<OnboardingEmailJob>): Promise<void> {
@@ -29,7 +32,9 @@ async function processOnboardingEmail(job: Job<OnboardingEmailJob>): Promise<voi
     const { tenantId, stage } = job.data;
     span.setAttributes({ "job.id": job.id ?? "", "tenant.id": tenantId, stage });
 
-    const outcome = await sendOnboardingEmail(tenantId, stage);
+    const outcome = await sendOnboardingEmail(tenantId, stage, {
+      requireMarketingConsent: job.data.serviceEmail !== true,
+    });
     logger.info(
       {
         jobId: job.id,
