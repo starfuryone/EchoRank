@@ -123,10 +123,11 @@ describe("content", () => {
 
   it("the company line is the one company.ts holds, word for word", () => {
     expect(COMPANY_EMAIL_LINE).toBe(
-      "ChatLogic Insights Ltd · Registered in England & Wales No. 15593166 · 1321 Upland Dr. PMB 10673, Houston, TX 77043, US",
+      "ChatLogic Insights Ltd · Registered in England & Wales No. 15593166 · Registered office: 82a James Carter Road, Mildenhall, IP28 7DE, United Kingdom · US mailing address: 1321 Upland Dr. PMB 10673, Houston, TX 77043, US",
     );
     const src = readFileSync(join(process.cwd(), "src/lib/onboarding-email-render.ts"), "utf8");
     expect(src).not.toContain("Upland");
+    expect(src).not.toContain("Mildenhall");
     expect(src).not.toContain("15593166");
   });
 

@@ -11,7 +11,7 @@ export const COMPANY = {
   jurisdiction: "England and Wales",
   number: "15593166",
   registeredOffice: "82a James Carter Road, Mildenhall, IP28 7DE, United Kingdom",
-  /** The postal address the emails print (a US mailbox, PMB). */
+  /** The US mailing address the emails print after the registered office (a PMB). */
   postalAddress: "1321 Upland Dr. PMB 10673, Houston, TX 77043, US",
 } as const;
 
@@ -26,13 +26,15 @@ export const COMPANY_LINE = [
 
 /**
  * The company line in every Echorank email's footer (the onboarding drip
- * today). Emails read it from here and never retype it. It names the postal
- * address, not the registered office that the site footers above show.
+ * today). Emails read it from here and never retype it. It names the
+ * registered office, which UK disclosure rules require in business emails,
+ * and then the US mailing address.
  */
 export const COMPANY_EMAIL_LINE = [
   COMPANY.name,
   `Registered in England & Wales No. ${COMPANY.number}`,
-  COMPANY.postalAddress,
+  `Registered office: ${COMPANY.registeredOffice}`,
+  `US mailing address: ${COMPANY.postalAddress}`,
 ].join(" · ");
 
 /** Class shared by the React and HTML renderings (styled in globals.css). */
