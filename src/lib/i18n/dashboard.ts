@@ -1761,6 +1761,8 @@ const feedbackEn = {
   somethingWrong: "Something went wrong",
   sendFailed: "Failed to send request",
   sendAlert: "Failed to send feedback request. Please try again.",
+  limitReached: (limit: string) =>
+    `You have sent this month's ${limit} feedback requests, the limit on your plan. The count starts again on the 1st.`,
   unknownCustomer: "Unknown",
   retry: "Retry",
   eyebrow: "/ Intelligence · Feedback",
@@ -1821,6 +1823,8 @@ export const FEEDBACK_COPY: Record<DashLocale, FeedbackCopy> = {
     somethingWrong: "Une erreur est survenue",
     sendFailed: "Échec de l'envoi de la demande",
     sendAlert: "Échec de l'envoi de la demande de rétroaction. Veuillez réessayer.",
+    limitReached: (limit: string) =>
+      `Vous avez envoyé les ${limit} demandes de rétroaction de ce mois, la limite de votre forfait. Le compteur repart le 1er du mois.`,
     unknownCustomer: "Inconnu",
     retry: "Réessayer",
     eyebrow: "/ Intelligence · Rétroaction",
@@ -1877,6 +1881,8 @@ export const FEEDBACK_COPY: Record<DashLocale, FeedbackCopy> = {
     somethingWrong: "Etwas ist schiefgelaufen",
     sendFailed: "Anfrage konnte nicht gesendet werden",
     sendAlert: "Feedback-Anfrage konnte nicht gesendet werden. Bitte versuchen Sie es erneut.",
+    limitReached: (limit: string) =>
+      `Sie haben die ${limit} Feedback-Anfragen dieses Monats gesendet, das Limit Ihres Abos. Die Zählung beginnt am 1. des Monats neu.`,
     unknownCustomer: "Unbekannt",
     retry: "Erneut versuchen",
     eyebrow: "/ Intelligence · Feedback",

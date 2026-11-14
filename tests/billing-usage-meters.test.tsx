@@ -59,6 +59,17 @@ describe("GET /api/billing: which meters the plan includes", () => {
     expect(body.usage.feedbackIncluded).toBe(true);
     expect(body.usage.feedbackSent).toBe(3);
   });
+
+  // src/lib/feedback-limit.ts (2026-11-14): the plan's figure, not the
+  // stored column — except on Enterprise, whose allowance is contracted.
+  it.each([
+    ["STARTER", 500],
+    ["GROWTH", 5_000],
+    ["AGENCY", 15_000],
+    ["ENTERPRISE", 10_000],
+  ] as const)("%s: the limit is %i", async (plan, limit) => {
+    expect((await get(plan)).usage.feedbackLimit).toBe(limit);
+  });
 });
 
 describe("<UsageMeters>", () => {

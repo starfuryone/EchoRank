@@ -3,6 +3,7 @@ import { randomBytes } from "node:crypto";
 import { prisma } from "@/lib/prisma";
 import { requireTenant } from "@/lib/tenant";
 import { createAuditLog } from "@/lib/audit";
+import { feedbackAllowance } from "@/lib/feedback-limit";
 import type { FeedbackStatus } from "@/generated/prisma";
 
 export async function GET(request: NextRequest) {
@@ -118,6 +119,25 @@ export async function POST(request: Request) {
           { status: 404 }
         );
       }
+    }
+
+    // The plan's monthly allowance (src/lib/feedback-limit.ts): the same
+    // limit and count the /billing meter and the plan hub show. Checked last,
+    // after the request is known to be valid, so a bad body is a 400, not a
+    // spent slot. Count-then-create, like the SEO and crawl quotas: a race
+    // can overshoot by the requests in flight, never by more.
+    const allowance = await feedbackAllowance(tenantId);
+    if (!allowance.allowed) {
+      return NextResponse.json(
+        {
+          error: `Monthly feedback request limit reached (${allowance.limit.toLocaleString("en-US")} on your plan).`,
+          code: "FEEDBACK_LIMIT_REACHED",
+          limit: allowance.limit,
+          used: allowance.used,
+          resetsAt: allowance.resetsAt.toISOString(),
+        },
+        { status: 429 }
+      );
     }
 
     const expiresAt = new Date();

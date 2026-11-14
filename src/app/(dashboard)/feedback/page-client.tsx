@@ -238,6 +238,14 @@ export function FeedbackPageClient({ locale }: { locale: DashLocale }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ customerId: selectedCustomerId }),
       });
+      if (res.status === 429) {
+        // The plan's monthly allowance (src/lib/feedback-limit.ts).
+        const body = (await res.json().catch(() => null)) as { code?: string; limit?: number } | null;
+        if (body?.code === "FEEDBACK_LIMIT_REACHED" && typeof body.limit === "number") {
+          alert(t.limitReached(body.limit.toLocaleString(locale)));
+          return;
+        }
+      }
       if (!res.ok) throw new Error(t.sendFailed);
       setSendModalOpen(false);
       setSelectedCustomerId("");

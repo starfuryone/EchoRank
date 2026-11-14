@@ -7,6 +7,7 @@ import { planAllowsArea } from "@/lib/plan-access";
 import { pageAllowance } from "@/lib/site-crawler/page-allowance";
 import { urlCapForPlan } from "@/lib/site-crawler/quota";
 import { chargeForPrice } from "@/lib/billing/subscription-charge";
+import { effectiveFeedbackLimit, feedbackRequestsThisMonth } from "@/lib/feedback-limit";
 
 export async function GET() {
   try {
@@ -60,19 +61,12 @@ export async function GET() {
     // FEEDBACK REQUESTS ARE A REPUTATION FEATURE. A plan without that area
     // (the AI-only plan, the crawler-only plan) gets no meter: "0 / 10,000"
     // on a plan that cannot send one is a limit for something not bought.
-    // The limit itself is Tenant.monthlyRequestLimit, a per-tenant column no
-    // code path writes (default 300); it does not follow the plan config.
+    // Limit and count come from src/lib/feedback-limit.ts, the same helpers
+    // POST /api/feedback enforces with: the plan's maxRequestsPerMonth (the
+    // stored per-tenant value for Enterprise only), this calendar month (UTC).
     const feedbackIncluded = planAllowsArea(tenant.planType as PlanType, "reputation");
-    const feedbackThisPeriod = feedbackIncluded
-      ? await prisma.feedback.count({
-          where: {
-            tenantId,
-            createdAt: currentPeriodStart
-              ? { gte: currentPeriodStart }
-              : undefined,
-          },
-        })
-      : 0;
+    const feedbackLimit = effectiveFeedbackLimit(tenant);
+    const feedbackThisPeriod = feedbackIncluded ? await feedbackRequestsThisMonth(tenantId) : 0;
 
     return NextResponse.json({
       plan: {
@@ -94,13 +88,8 @@ export async function GET() {
       usage: {
         feedbackIncluded,
         feedbackSent: feedbackThisPeriod,
-        feedbackLimit: tenant.monthlyRequestLimit,
-        percentUsed:
-          tenant.monthlyRequestLimit > 0
-            ? Math.round(
-                (feedbackThisPeriod / tenant.monthlyRequestLimit) * 100
-              )
-            : 0,
+        feedbackLimit,
+        percentUsed: feedbackLimit > 0 ? Math.round((feedbackThisPeriod / feedbackLimit) * 100) : 0,
         crawlPages,
       },
     });
