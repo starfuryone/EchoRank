@@ -20,6 +20,7 @@ const m = vi.hoisted(() => ({
 vi.mock("@/lib/prisma", () => ({ prisma: { apiKey: m.apiKey, tenant: m.tenant, crawlSchedule: m.crawlSchedule } }));
 vi.mock("@/lib/paid-plan", () => ({ hasPaidPlan: m.hasPaidPlan }));
 vi.mock("@/lib/rate-limit", () => ({ rateLimit: m.rateLimit }));
+vi.mock("@/lib/api-daily-quota", () => ({ consumeApiRequest: async () => ({ allowed: true }) }));
 vi.mock("@/infrastructure/queue/registry", () => ({ getQueue: () => ({}) }));
 
 import type { PlanType } from "@/generated/prisma";

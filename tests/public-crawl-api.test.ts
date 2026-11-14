@@ -28,6 +28,8 @@ const redis = {
 };
 vi.mock("@/infrastructure/redis/connection", () => ({ getRedisConnection: () => redis }));
 
+vi.mock("@/lib/api-daily-quota", () => ({ consumeApiRequest: async () => ({ allowed: true }) }));
+
 const limits = { api: true, start: true };
 vi.mock("@/lib/rate-limit", () => ({
   rateLimit: vi.fn(async (key: string) => ({ success: key.startsWith("apikey:") ? limits.api : limits.start })),

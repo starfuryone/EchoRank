@@ -283,7 +283,8 @@ describe("layer 3: server-side checks beyond the proxy", () => {
     expect(read("src/app/api/collect/route.ts")).toContain('tenantAllowsArea(verified.tenantId, "seo_tools")');
     // Public API v1 and MCP: key auth refuses a plan without public_api (and,
     // since 2026-11-14, without the api_access feature: src/lib/api-access.ts).
-    expect(read("src/lib/api-keys.ts")).toContain("planIncludesApi(await tenantPlan(verified.tenantId))");
+    expect(read("src/lib/api-keys.ts")).toContain("const plan = await tenantPlan(verified.tenantId);");
+    expect(read("src/lib/api-keys.ts")).toContain("if (!plan || !planIncludesApi(plan)) {");
   });
 
   it("the crawler's Search Console link points at Settings for the crawler-only plan (it has no GSC tool page)", () => {

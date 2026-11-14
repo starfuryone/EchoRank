@@ -10,6 +10,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/rate-limit", () => ({ rateLimit: vi.fn(async () => ({ success: true })) }));
+vi.mock("@/lib/api-daily-quota", () => ({ consumeApiRequest: async () => ({ allowed: true }) }));
 vi.mock("@/lib/tenant", () => ({
   requireTenant: vi.fn(async () => {
     throw new Error("no session in the public API");

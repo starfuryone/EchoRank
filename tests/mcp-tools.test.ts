@@ -91,6 +91,7 @@ const rateLimit = vi.fn<
 vi.mock("@/lib/rate-limit", () => ({
   rateLimit: (...args: unknown[]) => rateLimit(...args),
 }));
+vi.mock("@/lib/api-daily-quota", () => ({ consumeApiRequest: async () => ({ allowed: true }) }));
 
 // Nothing in this suite may reach the provider.
 vi.mock("@/lib/dataforseo/client", async (importOriginal) => ({

@@ -183,7 +183,8 @@ export async function authenticatePublicRequest(req: Request): Promise<PublicAut
   // an upgrade. Imported lazily, like Prisma above: the module is server-only,
   // and the pure helpers here run under node --test.
   const { tenantPlan } = await import("@/lib/plan-access-server");
-  if (!planIncludesApi(await tenantPlan(verified.tenantId))) {
+  const plan = await tenantPlan(verified.tenantId);
+  if (!plan || !planIncludesApi(plan)) {
     return {
       ok: false,
       response: NextResponse.json(apiAccessRequiredBody(), { status: 403 }),
@@ -194,6 +195,21 @@ export async function authenticatePublicRequest(req: Request): Promise<PublicAut
     return {
       ok: false,
       response: NextResponse.json({ error: "rate_limited" }, { status: 429 }),
+    };
+  }
+  // The workspace's daily allowance (maxApiRequestsPerDay, every key of the
+  // tenant together), after the per-key minute window so a burst the minute
+  // limit refuses does not also spend the day. src/lib/api-daily-quota.ts.
+  const { consumeApiRequest } = await import("@/lib/api-daily-quota");
+  const day = await consumeApiRequest(verified.tenantId, plan);
+  if (!day.allowed) {
+    const retryAfter = Math.max(1, Math.ceil((day.resetsAt.getTime() - Date.now()) / 1000));
+    return {
+      ok: false,
+      response: NextResponse.json(
+        { error: "daily_limit_reached", limit: day.limit, resetsAt: day.resetsAt.toISOString() },
+        { status: 429, headers: { "Retry-After": String(retryAfter) } },
+      ),
     };
   }
   return { ok: true, tenantId: verified.tenantId, keyId: verified.keyId };
