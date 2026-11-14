@@ -8,7 +8,17 @@
 // a test that went through Redis would not prove the coercion happened.
 
 import { execFileSync } from "node:child_process";
-import { existsSync, readFileSync } from "node:fs";
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readdirSync,
+  readFileSync,
+  rmSync,
+  utimesSync,
+  writeFileSync,
+} from "node:fs";
+import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
@@ -241,14 +251,61 @@ describe("publisher", () => {
     expect(() => execFileSync("bash", ["-n", script], { stdio: "pipe" })).not.toThrow();
   });
 
-  it("supports --dry-run, and the dry run never builds or restarts", () => {
-    const out = execFileSync("bash", [script, "--dry-run"], {
-      cwd: ROOT,
-      encoding: "utf-8",
-      stdio: "pipe",
-    });
-    expect(out).toMatch(/DRY RUN|nothing to do/);
-    expect(out).not.toMatch(/pm2 restart/);
+  /**
+   * Runs the dry run on a copy of the script whose three production paths
+   * (the app tree, the build marker, the notification log) point into a temp
+   * dir. The real script writes alerts to /opt/echorank/backups/blog-agent,
+   * which a test must never touch, and its answer depends on the live
+   * content/blog and marker; the copy makes both the test's own.
+   */
+  function dryRun(articles: { name: string; status: "published" | "draft" }[]) {
+    const dir = mkdtempSync(join(tmpdir(), "blog-publisher-"));
+    try {
+      const app = join(dir, "app");
+      const marker = join(dir, ".last-blog-build");
+      const notifyDir = join(dir, "notify");
+      mkdirSync(join(app, "content", "blog", "en"), { recursive: true });
+      writeFileSync(marker, "");
+      const old = new Date(Date.now() - 60_000);
+      utimesSync(marker, old, old);
+      for (const a of articles) {
+        writeFileSync(join(app, "content", "blog", "en", a.name), `---\nstatus: ${a.status}\n---\n`);
+      }
+
+      let body = readFileSync(script, "utf-8");
+      for (const [from, to] of [
+        ["\nAPP_DIR=/opt/echorank/app\n", `\nAPP_DIR=${app}\n`],
+        ["\nMARKER=/opt/echorank/bin/.last-blog-build\n", `\nMARKER=${marker}\n`],
+        ["\nNOTIFY_DIR=/opt/echorank/backups/blog-agent\n", `\nNOTIFY_DIR=${notifyDir}\n`],
+      ]) {
+        // Exactly one match, or the copy would quietly keep a production path.
+        expect(body.split(from).length - 1, from.trim()).toBe(1);
+        body = body.replace(from, to);
+      }
+      expect(body).not.toContain("/opt/echorank/backups");
+      const copy = join(dir, "publish-blog.sh");
+      writeFileSync(copy, body);
+
+      const out = execFileSync("bash", [copy, "--dry-run"], { cwd: dir, encoding: "utf-8", stdio: "pipe" });
+      const alerts = existsSync(notifyDir) ? readdirSync(notifyDir) : [];
+      return { out, alerts };
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
+  }
+
+  it("supports --dry-run, and the dry run never builds, restarts or alerts", () => {
+    const { out, alerts } = dryRun([{ name: "new-post.md", status: "published" }]);
+    expect(out).toContain("change detected:");
+    expect(out).toContain("DRY RUN");
+    expect(out).not.toMatch(/pm2 restart|building/);
+    expect(alerts).toEqual([]);
+  });
+
+  it("has nothing to do when no article is newer than the marker", () => {
+    const { out, alerts } = dryRun([]);
+    expect(out).toContain("nothing to do");
+    expect(alerts).toEqual([]);
   });
 
   it("triggers only on PUBLISHED articles, never on a draft landing overnight", () => {
