@@ -105,6 +105,8 @@ const ALLOWED_API_OUTSIDE_THE_CRAWL_API = [
   "/api/billing/checkout",
   "/api/billing/portal",
   "/api/billing/resume",
+  // /welcome's poll while the webhook lands (PLAN-HUB Part 1): every plan's buyer.
+  "/api/billing/status",
   "/api/metering",
   "/api/metering/history",
   "/api/onboarding",

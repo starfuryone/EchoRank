@@ -1,117 +1,127 @@
-// Post-checkout landing page. Stripe's success_url points here.
+// Post-checkout landing page. Stripe's success_url points here
+// (/{locale}/welcome?s={CHECKOUT_SESSION_ID}; ?session_id= is accepted too).
 //
-// TWO CONTRACTS NOW, AND metadata.flow ON THE SESSION IS WHAT PICKS BETWEEN
-// THEM. Both are live; neither may leak into the other.
+// TWO CONTRACTS, AND metadata.flow ON THE SESSION IS WHAT PICKS BETWEEN THEM.
 //
-// flow=upgrade (and anything without a flow) — THE PAGE CONFIRMS, IT DOES NOT
-// ENTITLE, exactly as before. The session id is a display hint and nothing
-// more: it is user-supplied, a visitor could paste anyone's, and plan access
-// comes from the webhook writing the Subscription row. Nothing on this path
-// reads or changes account state. Unchanged, deliberately — a signed-in
-// customer's confirmation page is not part of the inversion.
+// flow=upgrade (every checkout the app creates today) — THE HANDOFF
+// (PLAN-HUB Part 1, src/lib/billing/checkout-handoff.ts). The session id is a
+// display hint: plan-specific words appear only when Stripe says the session is
+// complete AND it belongs to the signed-in tenant. Then:
+//   a) the tenant already shows the bought plan, paid → /plan?welcome=1 at once;
+//   b) not yet → "Payment confirmed. Setting up your {Plan}…", polling
+//      /api/billing/status every 2 s for up to ~60 s, then /plan;
+//   c) still not → "Still finishing", a button to /plan, the support address.
+// Every other case (logged out, garbage, expired, another tenant's) is ONE
+// generic state: "Thanks. Sign in to see your plan." Entitlement still comes
+// from the webhook; nothing here writes account state.
 //
-// flow=guest_signup — the session id is a CREDENTIAL, because it is the only
-// thing the buyer has: there is no account to log into yet. It authorises
-// setting the first password, once. Every rule that makes that safe lives in
-// src/lib/billing/guest-welcome.ts; this file only renders what it returns.
+// flow=guest_signup — the retired checkout-first path, kept for links already
+// in inboxes: the session id is a CREDENTIAL for setting the first password,
+// once. Every rule lives in src/lib/billing/guest-welcome.ts.
 //
-// IT MUST NEVER THROW, ON EITHER PATH. A missing, malformed, expired or foreign
-// session id all fall back to the generic welcome — someone who has just paid
-// should not meet an error page because a query string was mangled in an email
-// client. That is also why every guest reject renders the same generic state
-// rather than four different ones: the page cannot tell them apart, and the
-// endpoint that matters refuses all four identically.
+// Credit packs return to /credits (their own success_url); a credit session
+// pasted here is sent back there, never to the plan hub.
 //
-// LOCALE MODEL: en/fr bases like the rest of the marketing tree (en-CA folds to
-// en, fr-CA to fr, de-CH shows English). Dates and money are formatted with the
-// real five-locale tag, so a de-CH visitor still gets Swiss date and currency
-// conventions even though the prose is English.
+// IT MUST NEVER THROW, ON ANY PATH, AND NEVER RENDER BLANK OR A LOCK SCREEN.
+//
+// LOCALE MODEL: en / fr / de bases (en-CA folds to en, fr-CA to fr, de-CH to
+// de). The retired guest flow's own strings are en/fr only; de-CH reads them
+// in English.
 
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
-import type Stripe from "stripe";
 import { SUPPORTED_LOCALES, isSupportedLocale, type Locale } from "@/lib/i18n/config";
 import { buildMetadata } from "@/lib/seo";
 import { auth } from "@/lib/auth";
-import { getStripe } from "@/lib/stripe/client";
-import { PLAN_CONFIGS, PLAN_ORDER, TRIAL_DAYS } from "@/lib/plan-config";
-import { PLAN_HOME } from "@/lib/plan-routing";
-import { logger } from "@/infrastructure/observability/logger";
+import { getCurrentTenant } from "@/lib/tenant";
+import { PLAN_CONFIGS } from "@/lib/plan-config";
 import { resolveGuestSession } from "@/lib/billing/guest-welcome";
+import { resolveHandoff } from "@/lib/billing/checkout-handoff";
 import { GuestSetup } from "./GuestSetup";
+import { WelcomeHandoff, type WelcomeHandoffCopy } from "./WelcomeHandoff";
 import { PublicNav } from "../PublicNav";
 import s from "../home2.module.css";
 import g from "../guides/_shared/guide.module.css";
-
-const log = logger.child({ module: "welcome" });
 
 export function generateStaticParams() {
   return SUPPORTED_LOCALES.map((locale) => ({ locale }));
 }
 
-type Base = "en" | "fr";
-const baseOf = (locale: string): Base => (locale.startsWith("fr") ? "fr" : "en");
+type Base = "en" | "fr" | "de";
+const baseOf = (locale: string): Base => (locale.startsWith("fr") ? "fr" : locale.startsWith("de") ? "de" : "en");
 
-const COPY = {
+/**
+ * Where the generic state sends a visitor, and where login returns them. The
+ * login page honours `callbackUrl` (same-origin paths only), not `next`.
+ */
+const WELCOME_SIGN_IN_HREF = "/login?callbackUrl=%2Fplan";
+
+const GUEST_EN = {
+  readyTitle: "One last step: choose a password.",
+  readyBody: (email: string) =>
+    email
+      ? `Your account is set up under ${email}. Choose a password and you are straight in.`
+      : "Your account is set up. Choose a password and you are straight in.",
+  passwordLabel: "Password",
+  passwordHint: "At least 8 characters.",
+  submit: "Set password and continue",
+  submitBusy: "Setting up…",
+  errShort: "Please use at least 8 characters.",
+  errFailed: "That link can no longer be used. If you have already set a password, log in instead.",
+  errSignin: "Your password is set. Please log in to continue.",
+  pendingTitle: "Setting up your account…",
+  pendingBody:
+    "Your payment went through. We are waiting on the confirmation from Stripe — this page updates itself, so there is nothing to do.",
+  pendingSlow:
+    "This is taking longer than usual. Your payment went through and your account will be ready shortly — try this link again in a few minutes, or contact us and we will finish it by hand.",
+  consumedTitle: "This account is already set up.",
+  consumedBody:
+    "A password has already been chosen for it. Log in and you are away — use the password reset on the login page if you cannot remember it.",
+  loginCta: "Log in",
+};
+
+const COPY: Record<Base, {
+  eyebrow: string;
+  title: string;
+  genericTitle: string;
+  genericBody: string;
+  signIn: string;
+  handoff: WelcomeHandoffCopy;
+  guest: typeof GUEST_EN;
+}> = {
   en: {
     eyebrow: "WELCOME",
     title: "You're in.",
-    generic:
-      "Your account is ready. If you have just started a trial, it can take a few seconds for the confirmation to arrive — your plan will be up to date on the billing page shortly.",
-    confirmed: (plan: string) => `Your ${plan} trial has started.`,
-    trialUntil: "Free until",
-    thenCharged: "Then",
-    autoCharge:
-      "The card you entered is charged automatically when the trial ends, unless you cancel before then. You can cancel any time from the billing page.",
-    noAmount:
-      "The card you entered is charged automatically when the trial ends, unless you cancel before then.",
-    trialLen: (n: number) => `${n}-day free trial`,
-    ctaApp: "Go to your dashboard",
-    ctaBilling: "Manage billing",
-    pending:
-      "Still setting up? Access can take a moment to appear while the confirmation from Stripe lands.",
-    guest: {
-      readyTitle: "One last step: choose a password.",
-      readyBody: (email: string) =>
-        email
-          ? `Your account is set up under ${email}. Choose a password and you are straight in.`
-          : "Your account is set up. Choose a password and you are straight in.",
-      passwordLabel: "Password",
-      passwordHint: "At least 8 characters.",
-      submit: "Set password and continue",
-      submitBusy: "Setting up…",
-      errShort: "Please use at least 8 characters.",
-      errFailed: "That link can no longer be used. If you have already set a password, log in instead.",
-      errSignin: "Your password is set. Please log in to continue.",
-      pendingTitle: "Setting up your account…",
-      pendingBody:
-        "Your payment went through. We are waiting on the confirmation from Stripe — this page updates itself, so there is nothing to do.",
-      pendingSlow:
-        "This is taking longer than usual. Your payment went through and your account will be ready shortly — try this link again in a few minutes, or contact us and we will finish it by hand.",
-      consumedTitle: "This account is already set up.",
-      consumedBody:
-        "A password has already been chosen for it. Log in and you are away — use the password reset on the login page if you cannot remember it.",
-      loginCta: "Log in",
+    genericTitle: "Thanks. Sign in to see your plan.",
+    genericBody: "Your plan, what it includes and its billing details are on your plan page once you are signed in.",
+    signIn: "Sign in",
+    handoff: {
+      confirmed: (plan) => `Payment confirmed. Setting up your ${plan}…`,
+      opening: "Opening your plan…",
+      waitingNote: "This usually takes a few seconds. The page moves on by itself.",
+      stillTitle: "Still finishing. This can take a few minutes.",
+      stillBody: "Your payment went through. Your plan page will show everything as soon as the confirmation from Stripe arrives.",
+      openPlan: "Open your plan",
+      supportLead: "Something not right? Write to",
     },
+    guest: GUEST_EN,
   },
   fr: {
     eyebrow: "BIENVENUE",
     title: "C'est parti.",
-    generic:
-      "Votre compte est prêt. Si vous venez de démarrer un essai, la confirmation peut mettre quelques secondes à arriver — votre forfait sera à jour sur la page de facturation sous peu.",
-    confirmed: (plan: string) => `Votre essai ${plan} a démarré.`,
-    trialUntil: "Gratuit jusqu'au",
-    thenCharged: "Ensuite",
-    autoCharge:
-      "La carte saisie est débitée automatiquement à la fin de l'essai, sauf annulation avant cette date. Vous pouvez annuler à tout moment depuis la page de facturation.",
-    noAmount:
-      "La carte saisie est débitée automatiquement à la fin de l'essai, sauf annulation avant cette date.",
-    trialLen: (n: number) => `Essai gratuit de ${n} jours`,
-    ctaApp: "Aller au tableau de bord",
-    ctaBilling: "Gérer la facturation",
-    pending:
-      "Configuration en cours ? L'accès peut mettre un instant à apparaître, le temps que la confirmation de Stripe arrive.",
+    genericTitle: "Merci. Connectez-vous pour voir votre forfait.",
+    genericBody: "Votre forfait, ce qu'il comprend et sa facturation se trouvent sur la page de votre forfait, une fois connecté.",
+    signIn: "Se connecter",
+    handoff: {
+      confirmed: (plan) => `Paiement confirmé. Préparation de votre forfait ${plan}…`,
+      opening: "Ouverture de votre forfait…",
+      waitingNote: "Cela prend d'habitude quelques secondes. La page avance toute seule.",
+      stillTitle: "C'est presque prêt. Cela peut prendre quelques minutes.",
+      stillBody: "Votre paiement est passé. La page de votre forfait affichera tout dès que la confirmation de Stripe sera arrivée.",
+      openPlan: "Ouvrir votre forfait",
+      supportLead: "Un souci ? Écrivez à",
+    },
     guest: {
       readyTitle: "Dernière étape : choisissez un mot de passe.",
       readyBody: (email: string) =>
@@ -137,11 +147,30 @@ const COPY = {
       loginCta: "Se connecter",
     },
   },
-} as const;
+  de: {
+    eyebrow: "WILLKOMMEN",
+    title: "Sie sind dabei.",
+    genericTitle: "Danke. Melden Sie sich an, um Ihr Abo zu sehen.",
+    genericBody: "Ihr Abo, was es umfasst und die Abrechnung finden Sie nach der Anmeldung auf Ihrer Abo-Seite.",
+    signIn: "Anmelden",
+    handoff: {
+      confirmed: (plan) => `Zahlung bestätigt. Ihr ${plan}-Abo wird eingerichtet…`,
+      opening: "Ihr Abo wird geöffnet…",
+      waitingNote: "Das dauert meist nur wenige Sekunden. Die Seite geht von selbst weiter.",
+      stillTitle: "Gleich fertig. Das kann einige Minuten dauern.",
+      stillBody: "Ihre Zahlung ist eingegangen. Ihre Abo-Seite zeigt alles, sobald die Bestätigung von Stripe eintrifft.",
+      openPlan: "Abo öffnen",
+      supportLead: "Stimmt etwas nicht? Schreiben Sie an",
+    },
+    // The retired guest flow was never translated into German.
+    guest: GUEST_EN,
+  },
+};
 
-const META = {
-  en: { title: "Welcome to Echorank", description: "Your Echorank trial has started." },
-  fr: { title: "Bienvenue sur Echorank", description: "Votre essai Echorank a démarré." },
+const META: Record<Base, { title: string; description: string }> = {
+  en: { title: "Welcome to Echorank", description: "Your Echorank plan is being set up." },
+  fr: { title: "Bienvenue sur Echorank", description: "Votre forfait Echorank est en cours de préparation." },
+  de: { title: "Willkommen bei Echorank", description: "Ihr Echorank-Abo wird eingerichtet." },
 };
 
 export async function generateMetadata(
@@ -161,55 +190,6 @@ export async function generateMetadata(
   });
 }
 
-interface Confirmation {
-  planName: string;
-  planHome: string;
-  trialEnd: Date | null;
-  amountMinor: number | null;
-  currency: string | null;
-  interval: string | null;
-}
-
-/**
- * Read the session for display. Any failure returns null and the page renders
- * its generic state — a bad id is a cosmetic problem, not an error condition.
- */
-async function loadConfirmation(sessionId: string): Promise<Confirmation | null> {
-  try {
-    const stripe = getStripe();
-    const session = await stripe.checkout.sessions.retrieve(sessionId, {
-      expand: ["subscription", "subscription.items.data.price"],
-    });
-
-    const sub = session.subscription;
-    const subscription: Stripe.Subscription | null =
-      sub && typeof sub !== "string" ? sub : null;
-
-    // Prefer the tier we stamped at checkout; fall back to the price nickname
-    // only for a plan name, never for entitlement.
-    const tier = (session.metadata?.tier ?? subscription?.metadata?.tier ?? "").toUpperCase();
-    const planType = PLAN_ORDER.find((p) => p === tier) ?? null;
-    const planName = planType ? PLAN_CONFIGS[planType].name : "Echorank";
-    const planHome = planType ? PLAN_HOME[planType] : "/dashboard";
-
-    const item = subscription?.items?.data?.[0];
-    const price = item?.price ?? null;
-
-    return {
-      planName,
-      planHome,
-      trialEnd: subscription?.trial_end ? new Date(subscription.trial_end * 1000) : null,
-      amountMinor: price?.unit_amount ?? null,
-      currency: price?.currency ?? null,
-      interval: price?.recurring?.interval ?? null,
-    };
-  } catch (err) {
-    // Expected for an expired, mistyped or foreign id.
-    log.info({ err, sessionId }, "Could not load checkout session for welcome page");
-    return null;
-  }
-}
-
 export default async function WelcomePage({
   params,
   searchParams,
@@ -226,121 +206,89 @@ export default async function WelcomePage({
   const sessionId = sParam ?? sessionIdParam;
   const c = COPY[baseOf(locale)];
 
-  // THE NAV IS TOLD, NOT LEFT TO GUESS.
-  //
-  // PublicNav otherwise learns about the session from a fetch that cannot run
-  // until after hydration, so its first paint is always the logged-OUT chrome —
-  // "Login" and "Join Now". Every other marketing page can absorb that as a
-  // flicker. This one cannot: it is the page Stripe returns a buyer to, so its
-  // visitor has just paid and is signed in, and greeting them with an invitation
-  // to join is the bug. This page is already dynamic (it reads searchParams), so
-  // reading the session costs it nothing it had not already spent.
+  // THE NAV IS TOLD, NOT LEFT TO GUESS: a buyer arriving from Stripe is
+  // signed in, and the first paint must not invite them to join.
   const session = await auth();
   const signedIn = Boolean(session?.user);
 
   // THE GUEST BRANCH IS TRIED FIRST, AND ONLY A COMPLETE guest_signup SESSION
-  // GETS PAST IT. Everything else — upgrade, credit, incomplete, garbage,
-  // absent — falls through to the confirmation page below with its original
-  // behaviour intact. resolveGuestSession collapses all four reject reasons to
-  // `invalid`, so there is one fallthrough rather than four.
+  // GETS PAST IT. resolveGuestSession collapses every reject to `invalid`.
   const guest =
     sessionId && sessionId.startsWith("cs_") ? await resolveGuestSession(sessionId) : null;
 
-  if (guest && guest.kind !== "invalid") {
-    return (
-      <div className={s.page}>
-        <PublicNav locale={locale} signedIn={signedIn} />
-        <section className={s.section}>
-          <div className={`${s.container} ${g.article}`}>
-            <p className={s.label}>
-              <b>/ {c.eyebrow}</b>
-            </p>
-            <h1 className={s.h2}>{c.title}</h1>
-            <GuestSetup
-              sessionId={sessionId!}
-              initialKind={guest.kind}
-              email={guest.kind === "ready" ? guest.email : null}
-              planHome={guest.kind === "ready" ? guest.planHome : "/dashboard"}
-              loginHref="/login"
-              t={c.guest}
-            />
-          </div>
-        </section>
-      </div>
-    );
-  }
-
-  const confirmation =
-    sessionId && sessionId.startsWith("cs_") ? await loadConfirmation(sessionId) : null;
-
-  const dateFmt = new Intl.DateTimeFormat(locale, {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
-  const money = (minor: number, currency: string) =>
-    new Intl.NumberFormat(locale, {
-      style: "currency",
-      currency: currency.toUpperCase(),
-      maximumFractionDigits: minor % 100 === 0 ? 0 : 2,
-    }).format(minor / 100);
-
-  return (
+  const shell = (body: React.ReactNode) => (
     <div className={s.page}>
       <PublicNav locale={locale} signedIn={signedIn} />
-
       <section className={s.section}>
         <div className={`${s.container} ${g.article}`}>
           <p className={s.label}>
             <b>/ {c.eyebrow}</b>
           </p>
           <h1 className={s.h2}>{c.title}</h1>
-
-          {confirmation ? (
-            <>
-              <p className={s.sub}>{confirmation.planName ? c.confirmed(confirmation.planName) : c.generic}</p>
-
-              <div className={g.needsBox}>
-                <h2 className={g.needsTitle}>{c.trialLen(TRIAL_DAYS)}</h2>
-                <ul className={g.needsList}>
-                  {confirmation.trialEnd && (
-                    <li>
-                      {c.trialUntil} {dateFmt.format(confirmation.trialEnd)}
-                    </li>
-                  )}
-                  {confirmation.amountMinor !== null && confirmation.currency && (
-                    <li>
-                      {c.thenCharged} {money(confirmation.amountMinor, confirmation.currency)}
-                      {confirmation.interval ? ` / ${confirmation.interval}` : ""}
-                    </li>
-                  )}
-                </ul>
-              </div>
-
-              <p className={g.para} style={{ marginTop: 16 }}>
-                {confirmation.amountMinor !== null ? c.autoCharge : c.noAmount}
-              </p>
-            </>
-          ) : (
-            <>
-              <p className={s.sub}>{c.generic}</p>
-              <p className={g.uiNote}>{c.pending}</p>
-            </>
-          )}
-
-          <div className={s.ctarow} style={{ marginTop: 28 }}>
-            <Link
-              className={`${s.btn} ${s.btnPrimary}`}
-              href={confirmation?.planHome ?? "/dashboard"}
-            >
-              {c.ctaApp}
-            </Link>
-            <Link className={`${s.btn} ${s.btnGhost}`} href="/billing">
-              {c.ctaBilling}
-            </Link>
-          </div>
+          {body}
         </div>
       </section>
     </div>
+  );
+
+  if (guest && guest.kind !== "invalid") {
+    return shell(
+      <GuestSetup
+        sessionId={sessionId!}
+        initialKind={guest.kind}
+        email={guest.kind === "ready" ? guest.email : null}
+        planHome={guest.kind === "ready" ? guest.planHome : "/dashboard"}
+        loginHref="/login"
+        t={c.guest}
+      />,
+    );
+  }
+
+  // THE HANDOFF. getCurrentTenant() is the signed-in user's active tenant;
+  // resolveHandoff never throws and answers "generic" for everything it cannot
+  // verify as this tenant's complete checkout.
+  const membership = signedIn ? await getCurrentTenant().catch(() => null) : null;
+  const handoff = await resolveHandoff(
+    sessionId,
+    membership
+      ? {
+          tenantId: membership.tenantId,
+          planType: membership.tenant.planType,
+          stripeCustomerId: membership.tenant.stripeCustomerId ?? null,
+        }
+      : null,
+  );
+
+  if (handoff.kind === "credits") {
+    redirect(`/${locale}/credits?purchased=${encodeURIComponent(handoff.sessionId)}`);
+  }
+  // State (a) with nothing to report: straight on. With a conversion to
+  // report, the client fires it once and moves on in the same paint.
+  if (handoff.kind === "ready" && !handoff.conversion) {
+    redirect("/plan?welcome=1");
+  }
+
+  if (handoff.kind === "ready" || handoff.kind === "pending") {
+    return shell(
+      <WelcomeHandoff
+        mode={handoff.kind}
+        plan={handoff.plan}
+        planName={PLAN_CONFIGS[handoff.plan].name}
+        conversion={handoff.conversion}
+        t={c.handoff}
+      />,
+    );
+  }
+
+  return shell(
+    <div data-testid="welcome-generic">
+      <p className={s.sub}>{c.genericTitle}</p>
+      <p className={g.uiNote}>{c.genericBody}</p>
+      <div className={s.ctarow} style={{ marginTop: 28 }}>
+        <Link className={`${s.btn} ${s.btnPrimary}`} href={WELCOME_SIGN_IN_HREF}>
+          {c.signIn}
+        </Link>
+      </div>
+    </div>,
   );
 }
