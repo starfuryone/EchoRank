@@ -76,11 +76,13 @@ vi.mock("@/lib/paid-plan", async (importOriginal) => ({
   hasPaidPlan: (id: string) => hasPaidPlan(id),
 }));
 
-// The plan allowlist (src/lib/plan-access.ts): every plan but the AI-only one
-// includes the public API. Mocked so a test can flip it.
+// The key's plan (src/lib/api-access.ts): the public API and MCP are Agency
+// and up since 2026-11-14. Mocked so a test can flip it.
 const tenantAllowsArea = vi.fn<(tenantId: string, area: string) => Promise<boolean>>(async () => true);
+const tenantPlan = vi.fn<(tenantId: string) => Promise<string | null>>(async () => "AGENCY");
 vi.mock("@/lib/plan-access-server", () => ({
   tenantAllowsArea: (id: string, area: string) => tenantAllowsArea(id, area),
+  tenantPlan: (id: string) => tenantPlan(id),
 }));
 
 const rateLimit = vi.fn<
@@ -131,6 +133,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   hasPaidPlan.mockResolvedValue(true);
   tenantAllowsArea.mockResolvedValue(true);
+  tenantPlan.mockResolvedValue("AGENCY");
   rateLimit.mockResolvedValue({ success: true, remaining: 59 });
   seoApiCall.count.mockResolvedValue(0);
   seoApiCall.aggregate.mockResolvedValue({ _sum: { costUsd: 0 } });
@@ -211,19 +214,25 @@ describe("MCP endpoint auth", () => {
     expect(await res.json()).toMatchObject({ jsonrpc: "2.0", id: 1, result: {} });
   });
 
-  it("refuses a valid, paid key whose plan has no public API (the AI-only plan)", async () => {
+  it("refuses a valid, paid key whose plan has no API access (below Agency)", async () => {
     const { createHash } = await import("crypto");
-    apiKey.findUnique.mockResolvedValue({
-      id: "key_1",
-      tenantId: TENANT_A.id,
-      keyHash: createHash("sha256").update("b".repeat(48)).digest("hex"),
-      revokedAt: null,
-    });
-    tenantAllowsArea.mockResolvedValue(false);
-    const res = await POST(rpc({ jsonrpc: "2.0", id: 1, method: "ping" }));
-    expect(res.status).toBe(403);
-    expect(await res.json()).toMatchObject({ code: "PLAN_UPGRADE_REQUIRED", area: "public_api" });
-    expect(tenantAllowsArea).toHaveBeenCalledWith(TENANT_A.id, "public_api");
+    for (const plan of ["AI_VISIBILITY", "NOSY_BAT", "STARTER", "GROWTH"]) {
+      apiKey.findUnique.mockResolvedValue({
+        id: "key_1",
+        tenantId: TENANT_A.id,
+        keyHash: createHash("sha256").update("b".repeat(48)).digest("hex"),
+        revokedAt: null,
+      });
+      tenantPlan.mockResolvedValue(plan);
+      const res = await POST(rpc({ jsonrpc: "2.0", id: 1, method: "ping" }));
+      expect(res.status, plan).toBe(403);
+      expect(await res.json(), plan).toMatchObject({
+        error: "API access is included in Agency.",
+        code: "PLAN_UPGRADE_REQUIRED",
+        area: "public_api",
+      });
+      expect(tenantPlan).toHaveBeenCalledWith(TENANT_A.id);
+    }
   });
 
   it("is POST-only", async () => {

@@ -34,6 +34,7 @@ import {
 } from "@/lib/plan-access";
 import { PLAN_CONFIGS, PLAN_ORDER } from "@/lib/plan-config";
 import { authenticatePublicRequest, __testing as keys } from "@/lib/api-keys";
+import { apiAccessPlan, planIncludesApi } from "@/lib/api-access";
 import { getCrawlQuota } from "@/lib/site-crawler/quota";
 
 const ROOT = join(__dirname, "..");
@@ -266,14 +267,46 @@ describe("public API v1 and MCP", () => {
     expect(m.rateLimit).not.toHaveBeenCalled();
   });
 
-  it("accepts the same key on Starter", async () => {
-    m.tenant.findUnique.mockResolvedValue({ planType: "STARTER" });
-    expect((await call()).ok).toBe(true);
+  it("refuses the key below Agency with 'API access is included in Agency' (2026-11-14)", async () => {
+    for (const planType of ["AI_VISIBILITY", "NOSY_BAT", "STARTER", "GROWTH"] as const) {
+      vi.clearAllMocks();
+      m.apiKey.findUnique.mockResolvedValue({ id: "k1", tenantId: "t1", keyHash: keys.sha256("b".repeat(64)), revokedAt: null, scopes: ["public"] });
+      m.tenant.findUnique.mockResolvedValue({ planType });
+      const out = await call();
+      expect(out.ok, planType).toBe(false);
+      if (out.ok) return;
+      expect(out.response.status, planType).toBe(403);
+      expect(await out.response.json(), planType).toMatchObject({
+        error: "API access is included in Agency.",
+        code: "PLAN_UPGRADE_REQUIRED",
+        upgradeTo: "AGENCY",
+      });
+      expect(m.rateLimit, planType).not.toHaveBeenCalled();
+    }
   });
 
-  it("key creation refuses the AI-only plan", () => {
+  it("accepts the same key on Agency and Enterprise", async () => {
+    for (const planType of ["AGENCY", "ENTERPRISE"] as const) {
+      m.tenant.findUnique.mockResolvedValue({ planType });
+      expect((await call()).ok, planType).toBe(true);
+    }
+  });
+
+  it("API access is exactly the plans the pricing pages sell it on", () => {
+    expect(PLAN_ORDER.concat("NOSY_BAT").filter((p) => planIncludesApi(p)).sort()).toEqual(["AGENCY", "ENTERPRISE"]);
+    expect(apiAccessPlan()).toBe("AGENCY");
+  });
+
+  it("key creation refuses every plan without API access", () => {
     const route = read("src/app/api/ai/visibility/api-keys/route.ts");
-    expect(route).toMatch(/if \(!planAllowsArea\(membership\.tenant\.planType, "public_api"\)\) \{\s*return NextResponse\.json\(planUpgradeBody\("public_api"\), \{ status: 403 \}\);/);
+    expect(route).toMatch(/if \(!planIncludesApi\(membership\.tenant\.planType\)\) \{\s*return NextResponse\.json\(apiAccessRequiredBody\(\), \{ status: 403 \}\);/);
+  });
+
+  it("the API access and MCP Server pages render the locked card below Agency", () => {
+    for (const page of ["api-access", "mcp-server"]) {
+      const src = read(`src/app/(dashboard)/visibility/tools/${page}/page.tsx`);
+      expect(src, page).toMatch(/if \(!planIncludesApi\(membership\?\.tenant\.planType\)\) \{[\s\S]*?<ToolLockedCard/);
+    }
   });
 });
 

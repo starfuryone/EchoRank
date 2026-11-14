@@ -49,7 +49,8 @@ vi.mock("@/lib/prisma", () => ({
     tenant: {
       findUnique: vi.fn(async ({ where }: { where: { id: string } }) => ({
         id: where.id,
-        planType: "GROWTH",
+        // Agency: the public API is Agency and up since 2026-11-14 (src/lib/api-access.ts).
+        planType: "AGENCY",
         billingStatus: where.id === "t_unpaid" ? "CANCELED" : "ACTIVE",
       })),
     },

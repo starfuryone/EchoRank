@@ -18,6 +18,9 @@ export interface PlanAccessCopy {
   backCrawler: string;
   /** The one link the crawler-only plan's sidebar and tools hub show beyond what it has. */
   upgradeMore: string;
+  /** The API access and MCP Server pages below the plan with API access (src/lib/api-access.ts). */
+  apiLockedTitle: (plan: string) => string;
+  apiLockedBody: string;
 }
 
 export const PLAN_ACCESS_COPY: Record<DashLocale, PlanAccessCopy> = {
@@ -30,6 +33,9 @@ export const PLAN_ACCESS_COPY: Record<DashLocale, PlanAccessCopy> = {
     bodyCrawler: `Your ${NB} plan includes the ${NB} crawler: crawls, schedules, comparisons, reports and the Search Console, GA4 and PageSpeed data it joins. This part of Echorank comes with the Starter plan and up.`,
     backCrawler: `Back to ${NB}`,
     upgradeMore: "Upgrade for more tools",
+    apiLockedTitle: (plan) => `API access is included in ${plan}`,
+    apiLockedBody:
+      "API keys for the REST API and the MCP server, which connects Claude and other AI assistants to your data, come with this plan. Keys you created before are kept and work again after an upgrade.",
   },
   fr: {
     title: "Disponible à partir de Starter",
@@ -40,6 +46,9 @@ export const PLAN_ACCESS_COPY: Record<DashLocale, PlanAccessCopy> = {
     bodyCrawler: `Votre forfait ${NB} comprend le robot d'exploration ${NB} : explorations, planification, comparaisons, rapports et les données Search Console, GA4 et PageSpeed qu'il joint. Cette partie d'Echorank est incluse à partir du forfait Starter.`,
     backCrawler: `Retour à ${NB}`,
     upgradeMore: "Plus d'outils avec un forfait supérieur",
+    apiLockedTitle: (plan) => `L'accès à l'API est inclus dans le forfait ${plan}`,
+    apiLockedBody:
+      "Les clés de l'API REST et le serveur MCP, qui relie Claude et d'autres assistants IA à vos données, sont inclus dans ce forfait. Les clés créées auparavant sont conservées et fonctionnent de nouveau après un changement de forfait.",
   },
   "de-CH": {
     title: "Ab Starter verfügbar",
@@ -50,5 +59,8 @@ export const PLAN_ACCESS_COPY: Record<DashLocale, PlanAccessCopy> = {
     bodyCrawler: `Ihr ${NB}-Abo umfasst den ${NB}-Crawler: Crawls, Zeitpläne, Vergleiche, Berichte und die Daten aus Search Console, GA4 und PageSpeed, die er verknüpft. Dieser Teil von Echorank ist ab dem Starter-Abo enthalten.`,
     backCrawler: `Zurück zu ${NB}`,
     upgradeMore: "Mehr Werkzeuge mit einem Upgrade",
+    apiLockedTitle: (plan) => `API-Zugang ist im ${plan}-Abo enthalten`,
+    apiLockedBody:
+      "API-Schlüssel für die REST-API und der MCP-Server, der Claude und andere KI-Assistenten mit Ihren Daten verbindet, sind in diesem Abo enthalten. Bereits erstellte Schlüssel bleiben erhalten und funktionieren nach einem Upgrade wieder.",
   },
 };

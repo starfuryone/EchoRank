@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requirePaidPlan } from "@/lib/paid-plan";
 import { enforcementErrorResponse } from "@/lib/plan-enforcement";
 import { createApiKey, listApiKeys } from "@/lib/api-keys";
-import { planAllowsArea, planUpgradeBody } from "@/lib/plan-access";
+import { apiAccessRequiredBody, planIncludesApi } from "@/lib/api-access";
 
 export async function GET() {
   try {
@@ -24,10 +24,11 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const membership = await requirePaidPlan();
-    // The AI-only plan has no public API: it may not create keys
-    // (src/lib/plan-access.ts; the proxy refuses this route for it too).
-    if (!planAllowsArea(membership.tenant.planType, "public_api")) {
-      return NextResponse.json(planUpgradeBody("public_api"), { status: 403 });
+    // API access is Agency and up (src/lib/api-access.ts): no new key below
+    // it. Listing (GET) and revoking stay open, so a tenant can still see and
+    // clean up keys issued before the gate closed.
+    if (!planIncludesApi(membership.tenant.planType)) {
+      return NextResponse.json(apiAccessRequiredBody(), { status: 403 });
     }
     const body = await request.json().catch(() => ({}));
     const label = typeof body?.label === "string" ? body.label : "";

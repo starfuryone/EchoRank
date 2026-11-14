@@ -53,7 +53,8 @@ vi.mock("@/lib/prisma", () => ({
       update: vi.fn(async () => ({})),
     },
     $queryRaw: vi.fn(async () => queryRows.shift() ?? []),
-    tenant: { findUnique: vi.fn(async ({ where }: { where: { id: string } }) => ({ id: where.id, planType: "GROWTH" })) },
+    // Agency: the public API is Agency and up since 2026-11-14 (src/lib/api-access.ts).
+    tenant: { findUnique: vi.fn(async ({ where }: { where: { id: string } }) => ({ id: where.id, planType: "AGENCY" })) },
     crawlIssue: { findMany: vi.fn(async () => []) },
     crawlJob: {
       findUnique: vi.fn(async ({ where }: { where: { id: string } }) => jobs.find((j) => j.id === where.id) ?? null),
@@ -145,7 +146,7 @@ describe("POST /api/public/v1/crawl", () => {
     expect(typeof body.queuePosition).toBe("number");
     expect(body.estimatedStart).toMatch(/^\d{4}-/);
     const [tenantId, plan, url, render, opts] = startCrawl.mock.calls[0] as unknown as [string, string, string, string, Record<string, unknown>];
-    expect([tenantId, plan, url, render]).toEqual(["t_a", "GROWTH", "https://shop.example/", "thin"]);
+    expect([tenantId, plan, url, render]).toEqual(["t_a", "AGENCY", "https://shop.example/", "thin"]);
     expect(opts).toMatchObject({ config: { maxUrls: 200 }, mode: "spider", api: { apiKeyId: "k_a", callbackUrl: "https://hooks.echopilot.app/echorank" } });
   });
 
@@ -228,13 +229,14 @@ describe("queue estimate", () => {
     expect((await queueEstimate({ ...self, status: "RUNNING", startedAt: now }, now)).queuePosition).toBe(0);
   });
 
-  it("fair share: free box slots do not help a workspace already running its plan's crawls (Growth: 2)", async () => {
+  it("fair share: free box slots do not help a workspace already running its plan's crawls (Agency: 3)", async () => {
     const now = new Date("2026-11-05T10:00:00Z");
     const self = { id: "self", tenantId: "t_b", status: "QUEUED" as const, createdAt: now, startedAt: null };
     jobs.push({ id: "r1", tenantId: "t_b", status: "RUNNING", createdAt: now });
-    // One of its two running: it starts now.
-    expect((await queueEstimate(self, now)).estimatedStart).toBe(now.toISOString());
     jobs.push({ id: "r2", tenantId: "t_b", status: "RUNNING", createdAt: now });
+    // Two of its three running: it starts now.
+    expect((await queueEstimate(self, now)).estimatedStart).toBe(now.toISOString());
+    jobs.push({ id: "r3", tenantId: "t_b", status: "RUNNING", createdAt: now });
     expect((await queueEstimate(self, now)).estimatedStart).toBe(new Date(now.getTime() + 10 * 60_000).toISOString());
     // Another workspace with the same box load starts now.
     expect((await queueEstimate({ ...self, tenantId: "t_a" }, now)).estimatedStart).toBe(now.toISOString());

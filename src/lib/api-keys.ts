@@ -2,7 +2,7 @@ import { createHash, randomBytes, timingSafeEqual } from "crypto";
 import { NextResponse } from "next/server";
 import { hasPaidPlan } from "@/lib/paid-plan";
 import { rateLimit } from "@/lib/rate-limit";
-import { planUpgradeBody } from "@/lib/plan-access";
+import { apiAccessRequiredBody, planIncludesApi } from "@/lib/api-access";
 
 // Prisma is imported lazily inside each function so the pure helpers
 // (parse/sha256/format) stay importable in DB-less contexts (node --test).
@@ -176,15 +176,17 @@ export async function authenticatePublicRequest(req: Request): Promise<PublicAut
       response: NextResponse.json({ error: "subscription_inactive" }, { status: 403 }),
     };
   }
-  // The plan allowlist (src/lib/plan-access.ts): the AI-only plan has no
-  // public API or MCP server. Checked on every call, so a key issued before a
-  // downgrade stops working with the plan. Imported lazily, like Prisma above:
-  // the module is server-only, and the pure helpers here run under node --test.
-  const { tenantAllowsArea } = await import("@/lib/plan-access-server");
-  if (!(await tenantAllowsArea(verified.tenantId, "public_api"))) {
+  // API access is Agency and up (src/lib/api-access.ts): the plan allowlist's
+  // public_api area AND the api_access feature. Checked on every call, so a
+  // key issued before a downgrade (or on Starter/Growth before 2026-11-14)
+  // stops working with the plan; the key itself is kept, and works again after
+  // an upgrade. Imported lazily, like Prisma above: the module is server-only,
+  // and the pure helpers here run under node --test.
+  const { tenantPlan } = await import("@/lib/plan-access-server");
+  if (!planIncludesApi(await tenantPlan(verified.tenantId))) {
     return {
       ok: false,
-      response: NextResponse.json(planUpgradeBody("public_api"), { status: 403 }),
+      response: NextResponse.json(apiAccessRequiredBody(), { status: 403 }),
     };
   }
   const rl = await rateLimit(`apikey:${verified.keyId}`, PUBLIC_API_RATE_LIMIT, RATE_WINDOW_MS);
