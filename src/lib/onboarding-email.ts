@@ -7,24 +7,33 @@ import { oneClickUnsubscribeHeaders, unsubscribeUrl } from "@/lib/email/unsubscr
 // it is kept as the one accessor so a future fold lands in one place.
 import { planConfig } from "@/lib/plan-config";
 import { planAllowsArea } from "@/lib/plan-access";
+import { lockOpen, lockedPlanName } from "@/lib/locked-plan";
+import { renderOnboardingEmail, type OnboardingLocale, type OnboardingParams } from "@/lib/onboarding-email-render";
 import { logger } from "@/infrastructure/observability/logger";
 import type { OnboardingEmailStage } from "@/infrastructure/queue/jobs/schemas";
 
 /**
- * Onboarding drip sender. Emails are Brevo transactional templates referenced
- * by ID from env (single-language in Brevo, so one ID per stage per locale):
- *   BREVO_ONBOARDING_{D0|D2|D5|D10}_{EN|FR}_ID
- * All dynamic values are passed as template params; numeric params always ride
- * with a has* boolean so templates can fall back instead of inventing numbers.
+ * Onboarding drip sender. The emails are rendered HERE, in the repo
+ * (src/lib/onboarding-email-render.ts), and posted as htmlContent + textContent
+ * to Brevo's transactional endpoint. Until 2026-11-14 they were Brevo templates
+ * referenced by ID (BREVO_ONBOARDING_{D0|D2|D5|D10}_{EN|FR}_ID); the Brevo
+ * account holds no templates, so no onboarding email could be sent. Nothing
+ * here depends on a template stored in Brevo any more.
+ * Numeric params still ride with a has* boolean, and the renderer gates on it,
+ * so no invented number is ever sent.
  */
 
 const BREVO_SEND_URL = "https://api.brevo.com/v3/smtp/email";
 
-type EmailLocale = "en" | "fr";
+/** The sender Brevo needs when the content is ours (it came from the template before). */
+export const ONBOARDING_SENDER = { name: "Echorank", email: "noreply@echorank360.com" } as const;
+
+type EmailLocale = OnboardingLocale;
 
 export type OnboardingSendOutcome =
   | { status: "sent" }
-  | { status: "dry_run"; payload: Record<string, unknown> }
+  /** `payload` is the exact Brevo body; `params` what it was rendered from. */
+  | { status: "dry_run"; payload: Record<string, unknown>; params: Record<string, unknown> }
   | { status: "skipped"; reason: string };
 
 interface AuditCheck {
@@ -71,13 +80,6 @@ const STEP_LABELS: Record<EmailLocale, Record<string, string>> = {
     monitoring_on: "Activez le suivi planifié",
   },
 };
-
-function templateIdFor(stage: OnboardingEmailStage, locale: EmailLocale): number | null {
-  const key = `BREVO_ONBOARDING_${stage.toUpperCase()}_${locale.toUpperCase()}_ID`;
-  const raw = process.env[key];
-  const id = raw ? Number.parseInt(raw, 10) : NaN;
-  return Number.isFinite(id) ? id : null;
-}
 
 /** Weakest scored check with a recommendation = the #1 fix to surface. */
 function topFix(checks: AuditCheck[]): { title: string; action: string } | null {
@@ -168,8 +170,8 @@ export async function sendOnboardingEmail(
     topFixAction: fix?.action ?? null,
     visibilityUrl: `${SITE_URL}/visibility`,
     dashboardUrl: `${SITE_URL}/dashboard`,
-    // "See everything in your plan" (PLAN-HUB): every stage carries it; the
-    // Brevo templates add the link (they are edited in Brevo, not here).
+    // "See your plan" (PLAN-HUB): every stage's button; the renderer falls back
+    // to PLAN_URL_FALLBACK if this is ever missing.
     planUrl: `${SITE_URL}/plan`,
   };
 
@@ -209,10 +211,13 @@ export async function sendOnboardingEmail(
       }
       if (names.size >= 3) break;
     }
-    const isGrowthPlus = ["GROWTH", "AGENCY", "ENTERPRISE"].includes(tenant.planType);
+    // Competitor intelligence is the /intelligence page's gate; the plan the
+    // locked line names is the helper's (src/lib/locked-plan.ts), not typed.
+    const isGrowthPlus = lockOpen(tenant.planType, "intelligence");
     params.hasCompetitors = names.size > 0;
     params.competitorNames = Array.from(names).join(", ");
     params.isGrowthPlus = isGrowthPlus;
+    params.intelligencePlan = lockedPlanName(tenant.planType, "intelligence");
     params.ctaUrl = isGrowthPlus
       ? `${SITE_URL}/intelligence/competitors`
       : `${SITE_URL}/billing`;
@@ -254,16 +259,20 @@ export async function sendOnboardingEmail(
   }
 
   // Marketing email: one-click unsubscribe (RFC 8058) in the headers, and the
-  // same link as {{ params.unsubscribeUrl }} for the template's footer.
+  // same link in the footer.
   params.unsubscribeUrl = unsubscribeUrl(tenantId);
 
-  const templateId = templateIdFor(stage, locale);
   const apiKey = process.env.BREVO_API_KEY;
   const headers = oneClickUnsubscribeHeaders(tenantId);
+  const email = renderOnboardingEmail(stage, locale, params as unknown as OnboardingParams);
+  // No `params`: the content is already rendered, and Brevo would template
+  // any "{{" a customer's brand name happened to contain.
   const payload = {
-    templateId,
+    sender: ONBOARDING_SENDER,
     to: [{ email: owner.email, name: owner.name ?? undefined }],
-    params,
+    subject: email.subject,
+    htmlContent: email.html,
+    textContent: email.text,
     ...(Object.keys(headers).length ? { headers } : {}),
   };
 
@@ -275,7 +284,7 @@ export async function sendOnboardingEmail(
       { tenantId, stage, locale, payload, queue: "onboarding-email" },
       "DRY RUN: onboarding email logged instead of sent",
     );
-    return { status: "dry_run", payload };
+    return { status: "dry_run", payload, params };
   }
 
   if (!apiKey) {
@@ -290,14 +299,6 @@ export async function sendOnboardingEmail(
     logger.warn({ tenantId, stage, queue: "onboarding-email" }, "AUTH_SECRET not set: no unsubscribe link, onboarding email skipped");
     return { status: "skipped", reason: "no_unsubscribe_link" };
   }
-  if (!templateId) {
-    logger.warn(
-      { tenantId, stage, locale, queue: "onboarding-email" },
-      "Brevo template ID env missing — onboarding email skipped",
-    );
-    return { status: "skipped", reason: "no_template_id" };
-  }
-
   const res = await fetch(BREVO_SEND_URL, {
     method: "POST",
     headers: {

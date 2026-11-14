@@ -72,7 +72,7 @@ beforeEach(() => {
 async function d10() {
   const out = await sendOnboardingEmail(TENANT, "d10");
   if (out.status !== "dry_run") throw new Error(`expected dry_run, got ${out.status}`);
-  return out.payload.params as Record<string, unknown>;
+  return out.params;
 }
 
 describe("the d10 payload", () => {
@@ -93,6 +93,11 @@ describe("the d10 payload", () => {
     const rendered = JSON.stringify(params);
     expect(rendered).not.toContain("2026-08-27");
     expect(rendered).not.toContain("August 27");
+    // Nor in the email itself, now that it is rendered in the repo.
+    const out = await sendOnboardingEmail(TENANT, "d10");
+    if (out.status !== "dry_run") throw new Error(out.status);
+    const email = JSON.stringify(out.payload);
+    for (const date of ["2026-08-27", "August 27", "27 August", "27 août"]) expect(email).not.toContain(date);
   });
 
   it("recaps what the tenant has set up", async () => {

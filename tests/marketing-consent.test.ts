@@ -191,9 +191,11 @@ describe("the onboarding drip (the marketing email)", () => {
     const { sendOnboardingEmail } = await import("@/lib/onboarding-email");
     const out = await sendOnboardingEmail("tenant_1", "d2");
     if (out.status !== "dry_run") throw new Error(out.status);
-    const p = out.payload as { headers: Record<string, string>; params: Record<string, unknown> };
+    const p = out.payload as { headers: Record<string, string>; htmlContent: string };
     expect(p.headers["List-Unsubscribe-Post"]).toBe("List-Unsubscribe=One-Click");
-    expect(p.params.unsubscribeUrl).toBe(unsubscribeUrl("tenant_1"));
+    expect(out.params.unsubscribeUrl).toBe(unsubscribeUrl("tenant_1"));
+    // The footer link is in the rendered email itself (no Brevo template).
+    expect(p.htmlContent).toContain(String(unsubscribeUrl("tenant_1")).replace(/&/g, "&amp;"));
   });
 
   it("is not sent without consent, nor without an unsubscribe link", async () => {
