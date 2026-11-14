@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { InitialsAvatar } from "@/components/ui/initials-avatar";
 import { ACCOUNT_COPY } from "@/lib/i18n/account";
 import { BILLING_COPY, type DashLocale } from "@/lib/i18n/dashboard";
+import { PLAN_HUB_COPY } from "@/lib/i18n/plan-hub";
 import { TeamChatSection } from "@/components/account/TeamChatSection";
 import { DataRequestsSection } from "@/components/account/DataRequestsSection";
 import {
@@ -151,6 +152,15 @@ export function AccountPageClient({ locale, user, tenant, subscription, price, c
             !subscription && (
               <p className="pt-3 text-xs text-gray-500">{t.noSubscription}</p>
             )
+          )}
+          {/* "Your plan" (PLAN-HUB): what the plan includes. Not for a
+              never-subscribed tenant: there is no plan to show it. */}
+          {!neverSubscribed && (
+            <p className="pt-3 text-sm">
+              <Link href="/plan" className="font-medium text-amber-300 underline hover:text-amber-200" data-testid="account-your-plan">
+                {PLAN_HUB_COPY[locale].yourPlan}
+              </Link>
+            </p>
           )}
           {/* Same page, same two clicks, same role rule as the Billing card. */}
           {cancel &&

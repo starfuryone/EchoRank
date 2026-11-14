@@ -20,6 +20,7 @@ import { pricingBase, usd, usdCents } from "@/lib/pricing-page/format";
 import { planFeaturesByPlan } from "@/lib/plan-features";
 import type { PlanType } from "@/generated/prisma";
 import { BILLING_COPY, type DashLocale } from "@/lib/i18n/dashboard";
+import { PLAN_HUB_COPY } from "@/lib/i18n/plan-hub";
 import { CRAWLER_BRAND } from "@/lib/site-crawler/brand";
 import { PlanCards } from "@/components/billing/plan-cards";
 import { salesContactHref } from "@/lib/sales/inquiry-options";
@@ -249,10 +250,16 @@ export function BillingPageClient({
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">{t.title}</h1>
-        <p className="mt-1 text-sm text-gray-500">{t.subtitle}</p>
+      {/* Header, with the way to "Your plan" (PLAN-HUB): what the plan
+          includes lives there, the money lives here. */}
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">{t.title}</h1>
+          <p className="mt-1 text-sm text-gray-500">{t.subtitle}</p>
+        </div>
+        <Link href="/plan" className="text-sm font-medium text-blue-600 hover:text-blue-700" data-testid="billing-your-plan">
+          {PLAN_HUB_COPY[locale].yourPlan} →
+        </Link>
       </div>
 
       {/* Just cancelled on /billing/cancel: the end date, once more, from

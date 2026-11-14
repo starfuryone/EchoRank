@@ -27,6 +27,7 @@
 
 import { NextResponse } from "next/server";
 import { requirePaidPlan } from "@/lib/paid-plan";
+import { markOnboardingStep } from "@/lib/onboarding";
 import { prisma } from "@/lib/prisma";
 import { archivedGuard, crawlRouteError } from "@/lib/site-crawler/http";
 import { DATA_STATE_SELECT } from "@/lib/site-crawler/data-state";
@@ -64,6 +65,9 @@ export async function GET(
     // The rows are in the archive: 409 ARCHIVED, never a query (data-state.ts).
     const archived = archivedGuard(crawl);
     if (archived) return archived;
+    // "Export a CSV", the crawler-only plan's getting-started step
+    // (src/lib/onboarding.ts). Best-effort: never fails the export.
+    markOnboardingStep(tenant.tenantId, "crawl_csv_exported").catch(() => {});
 
     const url = new URL(request.url);
     const view = url.searchParams.get("view") ?? "issues";

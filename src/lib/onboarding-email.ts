@@ -49,6 +49,10 @@ const STEP_LABELS: Record<EmailLocale, Record<string, string>> = {
     second_audit: "Run a follow-up audit",
     add_client: "Add your first client workspace",
     invite_teammate: "Invite a teammate",
+    review_issues: "Review your issues",
+    schedule_crawl: "Schedule a crawl",
+    export_csv: "Export a CSV",
+    monitoring_on: "Turn on scheduled monitoring",
   },
   fr: {
     first_audit: "Lancez votre première analyse de visibilité IA",
@@ -61,6 +65,10 @@ const STEP_LABELS: Record<EmailLocale, Record<string, string>> = {
     second_audit: "Lancez une analyse de suivi",
     add_client: "Ajoutez votre premier espace client",
     invite_teammate: "Invitez un membre de l'équipe",
+    review_issues: "Passez en revue vos problèmes",
+    schedule_crawl: "Planifiez une exploration",
+    export_csv: "Exportez un fichier CSV",
+    monitoring_on: "Activez le suivi planifié",
   },
 };
 
@@ -160,6 +168,9 @@ export async function sendOnboardingEmail(
     topFixAction: fix?.action ?? null,
     visibilityUrl: `${SITE_URL}/visibility`,
     dashboardUrl: `${SITE_URL}/dashboard`,
+    // "See everything in your plan" (PLAN-HUB): every stage carries it; the
+    // Brevo templates add the link (they are edited in Brevo, not here).
+    planUrl: `${SITE_URL}/plan`,
   };
 
   if (stage === "d2") {

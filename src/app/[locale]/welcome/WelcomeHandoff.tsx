@@ -115,7 +115,8 @@ export function WelcomeHandoff({
           </Link>
         </div>
         <p className={g.uiNote} style={{ marginTop: 16 }}>
-          {t.supportLead} <a href={`mailto:${SUPPORT}`}>{SUPPORT}</a>
+          {/* As text: the repo keeps no support@ mailto links (tests/sales-links.test.ts). */}
+          {t.supportLead} <span style={{ userSelect: "all" }}>{SUPPORT}</span>
         </p>
       </div>
     );

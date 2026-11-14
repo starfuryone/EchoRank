@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { Bell, LogOut, Menu } from "lucide-react";
 import { cn, getInitials } from "@/lib/utils";
 import { dashChrome, type DashLocale } from "@/lib/i18n/dashboard";
+import { PLAN_HUB_COPY } from "@/lib/i18n/plan-hub";
 import { NosyBatLogo } from "@/components/brand/NosyBatLogo";
 import { AvEmblemIcon } from "@/components/brand/AiVisibilityLogo";
 import { avBrandedPath } from "@/lib/ai-visibility/brand";
@@ -133,8 +134,15 @@ export function Header({
           </Link>
         )}
 
-        {/* User avatar */}
+        {/* User avatar. The avatar and name open "Your plan" (PLAN-HUB):
+            the account's own summary, reachable every day. */}
         <div className="flex items-center gap-3 pl-2">
+          <Link
+            href="/plan"
+            className="flex items-center gap-3 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+            title={PLAN_HUB_COPY[locale].yourPlan}
+            data-testid="header-your-plan"
+          >
           <div
             className={cn(
               "flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold",
@@ -157,6 +165,8 @@ export function Header({
           <span className="hidden text-sm font-medium text-gray-700 sm:inline-block">
             {displayName}
           </span>
+          <span className="sr-only">{PLAN_HUB_COPY[locale].yourPlan}</span>
+          </Link>
 
           {/* Sign out */}
           <button

@@ -18,6 +18,10 @@ export interface OnboardingJson {
   firstAuditScore?: number;
   firstAuditAt?: string;
   profileCompletedAt?: string;
+  /** The crawler's issues were first read (GET …/crawl/{id}/issues). */
+  crawlIssuesReviewedAt?: string;
+  /** A crawl was first exported as CSV (GET …/crawl/{id}/export). */
+  crawlCsvExportedAt?: string;
 }
 
 export type OnboardingStepKey =
@@ -30,7 +34,13 @@ export type OnboardingStepKey =
   | "connect_source"
   | "second_audit"
   | "add_client"
-  | "invite_teammate";
+  | "invite_teammate"
+  // The two confined plans' own steps (PLAN-HUB): the crawler-only plan's
+  // crawler steps, and the AI-only plan's scheduled monitoring.
+  | "review_issues"
+  | "schedule_crawl"
+  | "export_csv"
+  | "monitoring_on";
 
 /**
  * The crawler step's state (crawl_site only), for the card's three faces:
@@ -71,6 +81,10 @@ export interface OnboardingCounts {
   tenantMembers: number;
   /** Memberships the OWNER user holds across all tenants (agency client detection). */
   userMemberships: number;
+  /** Enabled crawl schedules. Loaded for the crawler-only plan only. */
+  crawlSchedules?: number;
+  /** Active AI visibility monitors. Loaded for the AI-only plan only. */
+  activeMonitors?: number;
 }
 
 /** Strip protocol/path/port from user input and keep a bare lowercase host. */
@@ -108,6 +122,25 @@ export function buildOnboardingSteps(input: {
 }): OnboardingStep[] {
   const { plan, intent, json, counts, crawl, domain } = input;
   const steps: OnboardingStep[] = [];
+
+  // THE TWO CONFINED PLANS GET THEIR OWN STEPS (PLAN-HUB, 2026-11-14). The
+  // general list below sends them to pages their plan does not open (the
+  // audit, the review sources, team invites on the crawler-only plan).
+  if (plan === "NOSY_BAT") {
+    const crawlHref = crawl.latest ? `/crawler/${crawl.latest.id}` : crawl.running ? `/crawler/${crawl.running.id}` : crawlerStartHref(domain);
+    steps.push({ key: "crawl_site", href: crawlHref, done: crawl.latest !== null, crawl });
+    steps.push({ key: "review_issues", href: crawlHref, done: Boolean(json.crawlIssuesReviewedAt) });
+    steps.push({ key: "schedule_crawl", href: "/crawler/schedules", done: (counts.crawlSchedules ?? 0) > 0 });
+    steps.push({ key: "export_csv", href: crawlHref, done: Boolean(json.crawlCsvExportedAt) });
+    return steps;
+  }
+  if (plan === "AI_VISIBILITY") {
+    steps.push({ key: "first_audit", href: "/visibility", done: counts.audits > 0 });
+    steps.push({ key: "add_prompts", href: "/visibility/tools/custom-prompts", done: counts.prompts >= 3 });
+    steps.push({ key: "monitoring_on", href: "/visibility", done: (counts.activeMonitors ?? 0) > 0 });
+    steps.push({ key: "download_pdf", href: "/visibility", done: Boolean(json.pdfDownloadedAt) });
+    return steps;
+  }
 
   steps.push({ key: "first_audit", href: "/visibility", done: counts.audits > 0 });
 
@@ -266,6 +299,12 @@ export async function getOnboardingSnapshot(
   const canCrawl =
     paid && effectiveCaps(tenant.planType, await tenantOverrides(tenantId)).urlCap > 0;
 
+  // The confined plans' extra markers, read only for them.
+  const crawlSchedules =
+    tenant.planType === "NOSY_BAT" ? await prisma.crawlSchedule.count({ where: { tenantId, enabled: true } }) : undefined;
+  const activeMonitors =
+    tenant.planType === "AI_VISIBILITY" ? await prisma.visibilityMonitor.count({ where: { tenantId, active: true } }) : undefined;
+
   const steps = buildOnboardingSteps({
     plan: tenant.planType,
     intent,
@@ -289,6 +328,8 @@ export async function getOnboardingSnapshot(
       importJobs,
       tenantMembers,
       userMemberships,
+      crawlSchedules,
+      activeMonitors,
     },
   });
 
@@ -329,11 +370,27 @@ export async function mergeOnboardingJson(
   });
 }
 
-/** Records a step that has no backing table (PDF download, roadmap view). */
+const STEP_FIELD = {
+  pdf_downloaded: "pdfDownloadedAt",
+  roadmap_viewed: "roadmapViewedAt",
+  crawl_issues_reviewed: "crawlIssuesReviewedAt",
+  crawl_csv_exported: "crawlCsvExportedAt",
+} as const satisfies Record<string, keyof OnboardingJson>;
+
+/**
+ * Records a step that has no backing table (PDF download, roadmap view, the
+ * crawler's issues read and CSV export). The first time counts: a marker that
+ * is already set is left alone, so a busy report does not rewrite the tenant
+ * row on every read.
+ */
 export async function markOnboardingStep(
   tenantId: string,
-  step: "pdf_downloaded" | "roadmap_viewed",
+  step: keyof typeof STEP_FIELD,
 ): Promise<void> {
-  const field = step === "pdf_downloaded" ? "pdfDownloadedAt" : "roadmapViewedAt";
+  const field = STEP_FIELD[step];
+  if (field === "crawlIssuesReviewedAt" || field === "crawlCsvExportedAt") {
+    const row = await prisma.tenant.findUnique({ where: { id: tenantId }, select: { onboarding: true } });
+    if ((row?.onboarding as OnboardingJson | null)?.[field]) return;
+  }
   await mergeOnboardingJson(tenantId, { [field]: new Date().toISOString() });
 }

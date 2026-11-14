@@ -86,6 +86,8 @@ const ALLOWED_PAGES = [
   "/crawler/history",
   "/crawler/schedules",
   "/help",
+  // "Your plan" (PLAN-HUB): every plan's summary of what it includes.
+  "/plan",
   "/settings",
   "/settings/account",
   // The tools hub index, showing only the crawler card (no locked teasers).

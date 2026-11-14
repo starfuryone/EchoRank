@@ -205,6 +205,8 @@ export const PAGE_RULES: readonly RouteRule[] = [
   { prefix: "/dashboard", area: "home" },
   { prefix: "/settings", area: "account" },
   { prefix: "/billing", area: "account" },
+  // "Your plan" (PLAN-HUB): every plan's own summary, next to /billing.
+  { prefix: "/plan", area: "account" },
   { prefix: "/help", area: "account" },
   { prefix: "/team", area: "team" },
   { prefix: "/notifications", area: "notifications" },

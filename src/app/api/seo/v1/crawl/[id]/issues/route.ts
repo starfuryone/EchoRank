@@ -14,6 +14,7 @@
 
 import { NextResponse } from "next/server";
 import { requirePaidPlan } from "@/lib/paid-plan";
+import { markOnboardingStep } from "@/lib/onboarding";
 import { prisma } from "@/lib/prisma";
 import { ISSUE_TYPES, type IssueType, type Severity } from "@/lib/site-crawler/checks";
 import { archivedGuard, crawlRouteError } from "@/lib/site-crawler/http";
@@ -49,6 +50,9 @@ export async function GET(
     // The rows are in the archive: 409 ARCHIVED, never a query (data-state.ts).
     const archived = archivedGuard(crawl);
     if (archived) return archived;
+    // "Review your issues", the crawler-only plan's getting-started step
+    // (src/lib/onboarding.ts). Best-effort: never fails the read it rides on.
+    markOnboardingStep(tenant.tenantId, "crawl_issues_reviewed").catch(() => {});
 
     const url = new URL(request.url);
     const segment = segmentScope(url, crawl.config);

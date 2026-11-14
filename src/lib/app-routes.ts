@@ -31,6 +31,7 @@ export const APP_ROUTE_SEGMENTS: readonly string[] = [
   "intelligence",
   "monitoring",
   "notifications",
+  "plan",
   "recovery",
   "reputation",
   "review-links",

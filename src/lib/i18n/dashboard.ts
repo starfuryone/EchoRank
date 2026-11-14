@@ -5455,6 +5455,10 @@ const onboardingEn = {
     second_audit: "Run a follow-up audit",
     add_client: "Add your first client workspace",
     invite_teammate: "Invite a teammate",
+    review_issues: "Review your issues",
+    schedule_crawl: "Schedule a crawl",
+    export_csv: "Export a CSV",
+    monitoring_on: "Turn on scheduled monitoring",
   } as Record<string, string>,
   // The crawler step (crawl_site): one line, its button, and its two other faces.
   crawl: {
@@ -5522,6 +5526,10 @@ export const ONBOARDING_COPY: Record<DashLocale, OnboardingCopy> = {
       second_audit: "Lancez un audit de suivi",
       add_client: "Ajoutez votre premier espace client",
       invite_teammate: "Invitez un membre de l'équipe",
+      review_issues: "Passez en revue vos problèmes",
+      schedule_crawl: "Planifiez une exploration",
+      export_csv: "Exportez un fichier CSV",
+      monitoring_on: "Activez le suivi planifié",
     } as Record<string, string>,
     crawl: {
       line: (rules: string) =>
@@ -5583,6 +5591,10 @@ export const ONBOARDING_COPY: Record<DashLocale, OnboardingCopy> = {
       second_audit: "Führen Sie ein Folge-Audit durch",
       add_client: "Fügen Sie Ihren ersten Kunden-Arbeitsbereich hinzu",
       invite_teammate: "Laden Sie ein Teammitglied ein",
+      review_issues: "Prüfen Sie Ihre Probleme",
+      schedule_crawl: "Planen Sie einen Crawl",
+      export_csv: "Exportieren Sie eine CSV-Datei",
+      monitoring_on: "Schalten Sie das geplante Monitoring ein",
     } as Record<string, string>,
     crawl: {
       line: (rules: string) =>

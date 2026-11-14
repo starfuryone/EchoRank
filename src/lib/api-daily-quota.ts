@@ -43,6 +43,16 @@ export function apiDailyResetsAt(now = new Date()): Date {
   return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1));
 }
 
+/** Requests counted today (read-only, for the plan hub). Null when Redis is down. */
+export async function apiRequestsToday(tenantId: string, now = new Date()): Promise<number | null> {
+  try {
+    const raw = await getRedisConnection().get(apiDailyQuotaKey(tenantId, now));
+    return raw ? Number(raw) : 0;
+  } catch {
+    return null;
+  }
+}
+
 export interface ApiDailyDecision {
   allowed: boolean;
   /** Requests counted today, this one included when allowed. */

@@ -18,6 +18,7 @@ import Link from "next/link";
 import { cookies } from "next/headers";
 import { BookOpen, ExternalLink } from "lucide-react";
 import { dashboardLocale, HELP_COPY } from "@/lib/i18n/dashboard";
+import { PLAN_HUB_COPY } from "@/lib/i18n/plan-hub";
 import { requireTenant } from "@/lib/tenant";
 import { HELP_GROUPS, HELP_VIDEO, learnHref, type HelpCard } from "@/lib/help-content";
 import { helpArticleBySlug, helpArticleCopy, helpArticleHref } from "@/lib/help-articles";
@@ -109,6 +110,20 @@ export default async function HelpHubPage() {
         </h2>
         <p className="mt-1 max-w-3xl text-sm text-gray-500">{copy.hubSubtitle}</p>
       </div>
+
+      {/* "Your plan" (PLAN-HUB): what this workspace's plan includes, its
+          usage and billing — the first answer to "can I do X on my plan?". */}
+      <Link
+        href="/plan"
+        data-testid="help-your-plan"
+        className="flex items-start gap-3 rounded-xl border border-gray-200 bg-white p-4 shadow-sm hover:border-gray-300 hover:bg-gray-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+      >
+        <BookOpen className="mt-0.5 h-5 w-5 shrink-0 text-gray-400" aria-hidden="true" />
+        <span className="min-w-0">
+          <span className="block text-sm font-semibold text-gray-900">{PLAN_HUB_COPY[locale].yourPlan}</span>
+          <span className="mt-1 block text-xs leading-snug text-gray-500">{PLAN_HUB_COPY[locale].yourPlanCard}</span>
+        </span>
+      </Link>
 
       {HELP_GROUPS.map((group, gi) => (
         <section
