@@ -14,6 +14,7 @@ import { OnboardingGate } from "@/components/onboarding/welcome-setup-modal";
 import { PlanUpgradeScreen } from "@/components/billing/PlanUpgradeScreen";
 import { planAllowsArea, planAllowsPage, planIsRestricted } from "@/lib/plan-access";
 import { PLAN_HOME } from "@/lib/plan-routing";
+import { upgradeTargetForPage } from "@/lib/upgrade-target";
 
 /** Pages that already tell a CANCELED tenant their plan ended. */
 const ENDED_SAID_BY_PAGE = ["/billing", "/crawler", "/visibility/tools"] as const;
@@ -133,7 +134,11 @@ export default async function DashboardLayout({
       {planEnded && !ENDED_SAID_BY_PAGE.some((p) => pathname === p || pathname?.startsWith(`${p}/`)) && (
         <PlanEndedBanner t={BILLING_COPY[locale]} />
       )}
-      {excluded ? <PlanUpgradeScreen locale={locale} plan={plan} /> : children}
+      {excluded ? (
+        <PlanUpgradeScreen locale={locale} plan={plan} target={upgradeTargetForPage(plan, pathname ?? "")} />
+      ) : (
+        children
+      )}
       {/* Mounted once for the whole (dashboard) group, so a navigation does not
           reset an open conversation. Lazily loaded — see the loader. */}
       {assistantVisible && (

@@ -154,8 +154,9 @@ export function planShowsLockedTeasers(plan: PlanType | null | undefined): boole
   return !(plan && NO_TEASERS.has(plan));
 }
 
-/** The plan to upgrade to for an area a restricted plan does not include. */
-export const UPGRADE_PLAN_FOR_EXCLUDED: PlanType = "STARTER";
+// The plan to upgrade to is no longer a constant here ("STARTER" for every
+// excluded area, until 2026-11-14): src/lib/upgrade-target.ts computes it per
+// tool and per current plan.
 
 interface RouteRule {
   /** A path prefix; matched on whole segments. */
@@ -345,13 +346,8 @@ export function planAllowsApi(plan: PlanType | null | undefined, path: string, m
   return planAllowsArea(plan, area);
 }
 
-/** The body every refused API call gets. */
+/**
+ * The code every refused API call carries. The body itself, naming the plan
+ * that includes the area, is planUpgradeBody in src/lib/upgrade-target.ts.
+ */
 export const PLAN_UPGRADE_REQUIRED = "PLAN_UPGRADE_REQUIRED" as const;
-export function planUpgradeBody(area: AccessArea | null) {
-  return {
-    error: "Your plan does not include this. Available from Starter.",
-    code: PLAN_UPGRADE_REQUIRED,
-    area,
-    upgradeTo: UPGRADE_PLAN_FOR_EXCLUDED,
-  };
-}

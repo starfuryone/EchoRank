@@ -124,9 +124,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   // Review import is reputation: a token issued before a downgrade to a plan
   // without it (src/lib/plan-access.ts) imports nothing.
   {
-    const { tenantAllowsArea } = await import("@/lib/plan-access-server");
-    const { planUpgradeBody } = await import("@/lib/plan-access");
-    if (!(await tenantAllowsArea(tenantId, "reputation"))) return json(planUpgradeBody("reputation"), 403, origin);
+    const { tenantAllowsArea, tenantPlan } = await import("@/lib/plan-access-server");
+    const { planUpgradeBody } = await import("@/lib/upgrade-target");
+    if (!(await tenantAllowsArea(tenantId, "reputation"))) {
+      return json(planUpgradeBody("reputation", await tenantPlan(tenantId)), 403, origin);
+    }
   }
 
   // ── 2. Cheap per-request flood guard (before parsing the body) ────────────

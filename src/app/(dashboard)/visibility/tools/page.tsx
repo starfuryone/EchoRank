@@ -19,6 +19,8 @@ import { RESEARCH_LOG_PANEL_LIMIT } from "@/lib/research-log/types";
 import { Lock } from "lucide-react";
 import { planAllowsPage, planShowsLockedTeasers } from "@/lib/plan-access";
 import { PLAN_ACCESS_COPY } from "@/lib/i18n/plan-access";
+import { pageState, planName, upgradeTargetForPage } from "@/lib/upgrade-target";
+import { tenantRollouts } from "@/lib/rollouts-server";
 
 export default async function SeoToolsHubPage() {
   const cookieStore = await cookies();
@@ -30,7 +32,12 @@ export default async function SeoToolsHubPage() {
   // the cards it can open (the crawler), no tool count, no research log, and
   // one "Upgrade for more tools" link. Every other plan sees every card.
   const teasers = planShowsLockedTeasers(plan);
+  // A card behind a build-progress switch that is off for this tenant (the
+  // Keyword Opportunity Finder's live data) is hidden, not locked: no plan
+  // unlocks it (src/lib/upgrade-target.ts).
+  const rollouts = tenantRollouts(membership?.tenantId);
   const groups = visibleSeoToolGroups(plan)
+    .map((g) => ({ ...g, tools: g.tools.filter((tool) => pageState(plan, tool.href, rollouts).state !== "hidden") }))
     .map((g) => (teasers ? g : { ...g, tools: g.tools.filter((tool) => planAllowsPage(plan, tool.href)) }))
     .filter((g) => g.tools.length > 0);
 
@@ -83,6 +90,13 @@ export default async function SeoToolsHubPage() {
               // the plan does not include is shown locked and links to the
               // plans, never to the tool. Only the AI-only plan locks any.
               const allowed = planAllowsPage(plan, tool.href);
+              // The plan named on a locked card: the cheapest that includes
+              // this tool (its area AND its features) and keeps everything the
+              // tenant has, so Funnels says Agency, not Starter.
+              const target = allowed ? null : upgradeTargetForPage(plan, tool.href);
+              const lockedLabel = target
+                ? PLAN_ACCESS_COPY[locale].locked(planName(target))
+                : PLAN_ACCESS_COPY[locale].titleNoPlan;
               return (
                 <li key={tool.id}>
                   <Link
@@ -106,7 +120,7 @@ export default async function SeoToolsHubPage() {
                         {!allowed ? (
                           <span className="inline-flex items-center gap-1 rounded-full bg-gray-200 px-2 py-0.5 text-[11px] font-medium text-gray-600">
                             <Lock className="h-3 w-3" aria-hidden="true" />
-                            {PLAN_ACCESS_COPY[locale].locked}
+                            {lockedLabel}
                           </span>
                         ) : tool.requiresGoogleApproval ? (
                           <ComingSoonBadge locale={locale} />

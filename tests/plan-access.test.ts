@@ -231,7 +231,7 @@ describe("the gates read the allowlist", () => {
   it("the proxy answers 403 PLAN_UPGRADE_REQUIRED for an excluded API route", () => {
     const proxy = read("src/proxy.ts");
     expect(proxy).toContain("if (plan !== undefined && !planAllowsApi(plan, pathname, method)) {");
-    expect(proxy).toContain("return NextResponse.json(planUpgradeBody(area), { status: 403 });");
+    expect(proxy).toContain("return NextResponse.json(planUpgradeBody(area, plan), { status: 403 });");
     // Only a failed read (undefined) skips the gate; a null plan is still judged.
     expect(proxy).toMatch(/await sessionPlan\([\s\S]{0,120}?\)\.catch\(/);
   });
@@ -239,7 +239,7 @@ describe("the gates read the allowlist", () => {
   it("the (dashboard) layout renders the upgrade screen server-side, and sends /dashboard home", () => {
     const layout = read("src/app/(dashboard)/layout.tsx");
     // The screen names what the plan has (the AI-only or the crawler-only plan).
-    expect(layout).toContain("{excluded ? <PlanUpgradeScreen locale={locale} plan={plan} /> : children}");
+    expect(layout).toMatch(/\{excluded \? \(\s*<PlanUpgradeScreen locale=\{locale\} plan=\{plan\} target=\{upgradeTargetForPage\(plan, pathname \?\? ""\)\} \/>\s*\) : \(\s*children\s*\)\}/);
     expect(layout).toContain('if (pathname === "/dashboard") redirect(PLAN_HOME[plan]);');
     expect(read("src/lib/plan-routing.ts")).toContain('AI_VISIBILITY: "/visibility",');
   });

@@ -9,7 +9,8 @@ import { KNOWN_MARKETING_PATHS, KNOWN_MARKETING_PREFIXES } from "@/lib/seo/regis
 import { firstSegment, isStaticPath, isUnroutableDottedPath } from "@/lib/static-paths";
 import { localeAppRedirect } from "@/lib/app-routes";
 import { isAdminApiPath, isPlatformAdminEmail } from "@/lib/platform-admin-emails";
-import { areaForApi, planAllowsApi, planUpgradeBody } from "@/lib/plan-access";
+import { areaForApi, planAllowsApi } from "@/lib/plan-access";
+import { planUpgradeBody } from "@/lib/upgrade-target";
 import { sessionPlan } from "@/lib/plan-access-server";
 import { ACTIVE_TENANT_COOKIE } from "@/lib/tenant";
 
@@ -406,7 +407,7 @@ const withSession = auth(async (req) => {
         },
       );
       if (plan !== undefined && !planAllowsApi(plan, pathname, method)) {
-        return NextResponse.json(planUpgradeBody(area), { status: 403 });
+        return NextResponse.json(planUpgradeBody(area, plan), { status: 403 });
       }
     }
   }

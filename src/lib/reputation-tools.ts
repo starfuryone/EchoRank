@@ -37,7 +37,8 @@ import {
   ExternalLink,
 } from "lucide-react";
 import type { PlanType } from "@/generated/prisma";
-import { hasFeature, getMinimumPlan, type Feature } from "@/lib/feature-flags";
+import { hasFeature, type Feature } from "@/lib/feature-flags";
+import { upgradeTarget } from "@/lib/upgrade-target";
 
 export const REPUTATION_HUB = "/reputation";
 
@@ -147,7 +148,9 @@ export interface ToolLockState {
 export function toolLockState(tool: ReputationTool, plan: PlanType | null | undefined): ToolLockState {
   if (!tool.feature) return { locked: false, requiredPlan: null };
   if (plan && hasFeature(plan, tool.feature)) return { locked: false, requiredPlan: null };
-  return { locked: true, requiredPlan: getMinimumPlan(tool.feature) };
+  // The cheapest plan with the feature that also keeps everything the tenant
+  // has (src/lib/upgrade-target.ts): always an upgrade, never sideways.
+  return { locked: true, requiredPlan: upgradeTarget(plan, { area: "reputation", features: [tool.feature] }) };
 }
 
 /**

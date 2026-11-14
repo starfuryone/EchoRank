@@ -47,8 +47,8 @@ import {
   planAllowsPage,
   planIsRestricted,
   planShowsLockedTeasers,
-  planUpgradeBody,
 } from "@/lib/plan-access";
+import { planUpgradeBody, upgradeTargetForPage } from "@/lib/upgrade-target";
 import { PLAN_CONFIGS, PLAN_ORDER, isPlanAtLeast, isUpgrade } from "@/lib/plan-config";
 import { hasFeature } from "@/lib/feature-flags";
 import { PLAN_HOME } from "@/lib/plan-routing";
@@ -151,7 +151,9 @@ describe("the crawler-only plan's allowlist", () => {
         expect(planAllowsApi(NB, concrete(p), v), `${v} ${p}`).toBe(NOSY_BAT_AREAS.has(area!));
       }
     }
-    expect(planUpgradeBody("seo_tools")).toMatchObject({ code: "PLAN_UPGRADE_REQUIRED", upgradeTo: "STARTER", error: expect.stringContaining("Available from Starter") });
+    // The plan named is computed (src/lib/upgrade-target.ts): for the SEO
+    // tools, Starter is the cheapest plan that opens them and keeps the crawler.
+    expect(planUpgradeBody("seo_tools", NB)).toMatchObject({ code: "PLAN_UPGRADE_REQUIRED", upgradeTo: "STARTER", error: expect.stringContaining("Available from Starter") });
   });
 
   it("refuses a route no rule classifies (deny by default), for both restricted plans only", () => {
@@ -245,7 +247,7 @@ describe("layer 1: sidebar, header, tools hub", () => {
     const layout = read("src/app/(dashboard)/layout.tsx");
     expect(layout).toContain('const notificationsOn = planAllowsArea(plan, "notifications");');
     expect(layout).toContain('{planAllowsArea(plan, "home") && <OnboardingGate locale={locale} />}');
-    expect(layout).toContain("<PlanUpgradeScreen locale={locale} plan={plan} />");
+    expect(layout).toContain('<PlanUpgradeScreen locale={locale} plan={plan} target={upgradeTargetForPage(plan, pathname ?? "")} />');
   });
 
   it("the tools hub drops locked cards, the tool count and the research log for a plan without teasers", () => {
@@ -260,19 +262,36 @@ describe("layer 1: sidebar, header, tools hub", () => {
 });
 
 describe("layer 2: the upgrade screen", () => {
-  it.each(["en", "fr", "de-CH"] as const)("%s: 'Available from Starter', names the crawler, links back to it", (l) => {
-    const html = renderToStaticMarkup(<PlanUpgradeScreen locale={l} plan={NB} />);
+  it.each(["en", "fr", "de-CH"] as const)("%s: names the computed plan, names the crawler, links back to it", (l) => {
+    const target = upgradeTargetForPage(NB, "/visibility/tools/site-explorer");
+    expect(target).toBe("STARTER");
+    const html = renderToStaticMarkup(<PlanUpgradeScreen locale={l} plan={NB} target={target} />);
     const c = PLAN_ACCESS_COPY[l];
-    expect(html).toContain(c.title);
-    expect(html).toContain(c.bodyCrawler.replace(/'/g, "&#x27;"));
+    expect(html).toContain(c.title("Starter"));
+    expect(html).toContain(c.bodyCrawler("Starter").replace(/'/g, "&#x27;"));
     expect(html).toContain('href="/crawler"');
-    if (l === "de-CH") expect(JSON.stringify(c)).not.toContain("ß");
+    if (l === "de-CH") {
+      for (const s of [c.title("Agency"), c.body("Agency"), c.bodyCrawler("Agency"), c.locked("Agency"), c.titleNoPlan]) expect(s).not.toContain("ß");
+    }
   });
 
-  it("the AI-only plan's screen is unchanged", () => {
-    const html = renderToStaticMarkup(<PlanUpgradeScreen locale="en" plan="AI_VISIBILITY" />);
-    expect(html).toContain(PLAN_ACCESS_COPY.en.body);
+  it("names Agency, not Starter, on a tool only Agency includes", () => {
+    const target = upgradeTargetForPage(NB, "/visibility/tools/funnels");
+    expect(target).toBe("AGENCY");
+    const html = renderToStaticMarkup(<PlanUpgradeScreen locale="en" plan={NB} target={target} />);
+    expect(html).toContain("Available from Agency");
+    expect(html).not.toContain("Starter");
+  });
+
+  it("the AI-only plan's screen keeps its body", () => {
+    const html = renderToStaticMarkup(<PlanUpgradeScreen locale="en" plan="AI_VISIBILITY" target="STARTER" />);
+    expect(html).toContain(PLAN_ACCESS_COPY.en.body("Starter"));
     expect(html).toContain('href="/visibility"');
+  });
+
+  it("French elides before a vowel", () => {
+    expect(PLAN_ACCESS_COPY.fr.title("Agency")).toBe("Disponible à partir d'Agency");
+    expect(PLAN_ACCESS_COPY.fr.locked("Starter")).toBe("À partir de Starter");
   });
 });
 
