@@ -72,6 +72,10 @@ export const LOCALIZED_ROUTES: LocalizedRoute[] = [
   // homepage's "classic reputation stack" section links straight here, so it
   // is a product page in the funnel rather than an article.
   { path: "/reputation-tools", priority: 0.7, changeFrequency: "monthly" },
+  // The reputation hub: one page over /reputation-tools, -engine, -risk,
+  // /customer-feedback and /act-on-signals. First item in Product > Reputation
+  // and linked from the homepage's foundation section, so it outranks them.
+  { path: "/reputation-management", priority: 0.8, changeFrequency: "monthly" },
   // The crawler's public page: a product page in the funnel (linked from
   // Solutions > By goal and the footer), ranked with /reputation-tools.
   { path: "/site-crawler", priority: 0.7, changeFrequency: "monthly" },

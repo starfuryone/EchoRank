@@ -48,7 +48,12 @@ function landingDocs(): { slug: string; file: string }[] {
  * if the page is still unthemed AND it fails once the page IS themed, so the
  * exception cannot outlive the reason for it.
  */
-const PENDING = new Set(["seo-guide"]);
+//
+// reputation-management (2026-11-15) is the owner's file served byte for
+// byte: no script, no toggle, its own palette (tests/reputation-management
+// .test.ts pins its hash). Theming it means editing that file, which is the
+// owner's call; once it carries the layer, this entry comes out the same way.
+const PENDING = new Set(["seo-guide", "reputation-management"]);
 
 const GUARD = 'localStorage.getItem("er-theme")==="day"';
 const DAY_BLOCK = '[data-theme="day"]{';

@@ -205,6 +205,7 @@ const T = {
       feats: "Review campaigns by email, SMS and QR · Private feedback & routing · AI response drafting in your voice · Suspicious review detection",
       videoLabel: "Video: the classic reputation stack, explained",
       toolsCta: "Explore reputation tools →",
+      overviewCta: "Reputation management overview →",
     },
     faqVideoLabel: "Video: an introduction to Echorank",
     // Every product mockup on this page shows an invented business. The
@@ -374,6 +375,7 @@ const T = {
       feats: "Campagnes d'avis par courriel, SMS et QR · Rétroaction privée et routage · Réponses IA dans votre ton · Détection d'avis suspects",
       videoLabel: "Vidéo : la panoplie de réputation classique, expliquée",
       toolsCta: "Découvrir les outils de réputation →",
+      overviewCta: "Gestion de la réputation — vue d'ensemble →",
     },
     faqVideoLabel: "Vidéo : une introduction à Echorank",
     sample: {
@@ -871,9 +873,11 @@ export default function HomeClient({
               {/* Secondary weight on purpose: the page's primary CTA is the
                   free audit, and this only offers the reader the tool detail
                   behind the stack they just read about. Bare s.btn is the
-                  same secondary variant the RESOURCES whitepaper link uses. */}
-              <p style={{ marginTop: 22 }}>
+                  same secondary variant the RESOURCES whitepaper link uses.
+                  The hub overview sits next to it in the same style. */}
+              <p style={{ marginTop: 22, display: "flex", flexWrap: "wrap", gap: 12 }}>
                 <Link className={s.btn} href={L("/reputation-tools")}>{t.trad.toolsCta}</Link>
+                <Link className={s.btn} href={L("/reputation-management")}>{t.trad.overviewCta}</Link>
               </p>
             </div>
           </div>

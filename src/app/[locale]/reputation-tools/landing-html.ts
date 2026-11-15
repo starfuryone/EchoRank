@@ -405,10 +405,10 @@ export const landingHtml = String.raw`<!DOCTYPE html>
       <div class="plan">
         <div class="name">Starter</div>
         <div class="for">One location, getting serious</div>
-        <div class="price">$<span class="amt" data-m="79" data-y="63">79</span><small>/mo</small></div>
+        <div class="price">$<span class="amt" data-m="__AMT_STARTER_MONTH__" data-y="__AMT_STARTER_YEAR_MO__">__AMT_STARTER_MONTH__</span><small>/mo</small></div>
         <div class="cycle" data-m="billed monthly" data-y="billed annually">billed monthly</div>
         <ul>
-          <li><span class="m">✓</span>1 business location</li>
+          <li><span class="m">✓</span>__LOCATIONS_STARTER__ business location</li>
           <li><span class="m">✓</span>Google, Trustpilot, Yelp &amp; TripAdvisor monitoring</li>
           <li><span class="m">✓</span>Real-time alerts</li>
           <li><span class="m">✓</span>Review campaigns by email &amp; QR</li>
@@ -420,11 +420,11 @@ export const landingHtml = String.raw`<!DOCTYPE html>
         <div class="badge">Most popular</div>
         <div class="name">Growth</div>
         <div class="for">Multi-location or high review volume</div>
-        <div class="price">$<span class="amt" data-m="199" data-y="159">199</span><small>/mo</small></div>
+        <div class="price">$<span class="amt" data-m="__AMT_GROWTH_MONTH__" data-y="__AMT_GROWTH_YEAR_MO__">__AMT_GROWTH_MONTH__</span><small>/mo</small></div>
         <div class="cycle" data-m="billed monthly" data-y="billed annually">billed monthly</div>
         <ul>
           <li><span class="m">✓</span>Everything in Starter</li>
-          <li><span class="m">✓</span>Up to 5 locations</li>
+          <li><span class="m">✓</span>Up to __LOCATIONS_GROWTH__ locations</li>
           <li><span class="m">✓</span>SMS review campaigns</li>
           <li><span class="m">✓</span>Private feedback routing</li>
           <li><span class="m">✓</span>Suspicious review detection</li>
@@ -435,11 +435,11 @@ export const landingHtml = String.raw`<!DOCTYPE html>
       <div class="plan">
         <div class="name">Agency</div>
         <div class="for">Agencies &amp; brands managing many profiles</div>
-        <div class="price">$<span class="amt" data-m="499" data-y="399">499</span><small>/mo</small></div>
+        <div class="price">$<span class="amt" data-m="__AMT_AGENCY_MONTH__" data-y="__AMT_AGENCY_YEAR_MO__">__AMT_AGENCY_MONTH__</span><small>/mo</small></div>
         <div class="cycle" data-m="billed monthly" data-y="billed annually">billed monthly</div>
         <ul>
           <li><span class="m">✓</span>Everything in Growth</li>
-          <li><span class="m">✓</span>Unlimited locations &amp; client profiles</li>
+          <li><span class="m">✓</span>Up to __LOCATIONS_AGENCY__ locations &amp; client profiles</li>
           <li><span class="m">✓</span>White-label PDF reporting</li>
           <li><span class="m">✓</span>Recovery playbooks</li>
           <li><span class="m">✓</span>Full AI visibility suite included</li>

@@ -121,6 +121,22 @@ describe("every menu destination exists", () => {
     expect(nav("fr")).toContain("Configurer le suivi de recherche IA");
   });
 
+  it("leads Product > Reputation with the reputation hub, both locales", () => {
+    // A route handler with en-only copy, like the entries above: nothing else
+    // would notice it missing from the menu or out of first place.
+    expect(navHrefs()).toContain("/reputation-management");
+    for (const [locale, title, label] of [
+      ["en", "Reputation", "Reputation management"],
+      ["fr", "Réputation", "Gestion de la réputation"],
+    ] as const) {
+      const html = nav(locale);
+      const column = html.slice(html.indexOf(`>${title}<`));
+      const first = column.match(/href="([^"]+)"/)?.[1];
+      expect(first, locale).toBe(`/${locale}/reputation-management`);
+      expect(column.indexOf(label), locale).toBeLessThan(column.indexOf(`/${locale}/reputation-tools`));
+    }
+  });
+
   it("carries the crawler page in Solutions > By goal, both locales", () => {
     // Appended to the goals column, not configured in the taxonomy (it has no
     // solutions/<slug> page), so the taxonomy count below does not see it.

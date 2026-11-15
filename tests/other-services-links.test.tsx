@@ -94,8 +94,17 @@ describe("the footer's Other services group", () => {
     };
     walk(join(ROOT, "src/app/[locale]"));
     expect(files.length).toBeGreaterThanOrEqual(10);
+    // The owner's file, served byte for byte (tests/reputation-management.test.ts
+    // pins its hash): it links the generator from its own Learn column instead of
+    // the shared block. Held to the footer link itself, in its footer.
+    const VERBATIM = join("reputation-management", "landing-html.ts");
     for (const f of files) {
       const src = readFileSync(f, "utf8");
+      if (f.endsWith(VERBATIM)) {
+        const footer = src.slice(src.lastIndexOf("<footer"), src.lastIndexOf("</footer>"));
+        expect(footer.split(FOOTER).length - 1, f).toBe(1);
+        continue;
+      }
       expect(src.split(STATIC_FOOTER_HTML).length - 1, f).toBe(1);
       expect(src.indexOf(STATIC_FOOTER_HTML), f).toBeLessThan(src.lastIndexOf("</footer>"));
       expect(src.indexOf(STATIC_FOOTER_HTML), f).toBeGreaterThan(src.lastIndexOf("<footer"));
