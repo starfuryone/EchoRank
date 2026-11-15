@@ -216,10 +216,19 @@ describe("lesson videos", () => {
       caption: "Prefer to watch? This 3-minute video covers the lesson.",
       minutes: lessonMinutes(AEO_LESSONS[1]),
     },
+    {
+      slug: "engines-compared",
+      file: "aeo-03-engines-compared",
+      uploadDate: "2026-11-15",
+      durationSeconds: 151, // floored from ffprobe's 151.92 s
+      duration: "PT2M31S",
+      caption: "Prefer to watch? This 3-minute video covers the lesson.",
+      minutes: lessonMinutes(AEO_LESSONS[2]),
+    },
   ] as const;
   const byslug = (slug: string) => AEO_LESSONS.find((l) => l.slug === slug)!;
 
-  it("are declared as a file name and a date, on lessons 1 and 2 only", () => {
+  it("are declared as a file name and a date, on lessons 1 to 3 only", () => {
     expect(AEO_LESSONS.filter((l) => l.video).map((l) => l.slug)).toEqual(EXPECTED.map((e) => e.slug));
     for (const e of EXPECTED) {
       expect(byslug(e.slug).video, e.slug).toEqual({ file: e.file, uploadDate: e.uploadDate });
@@ -244,7 +253,7 @@ describe("lesson videos", () => {
     }
     // Every declared file has a probe line, and the resolver refuses one without.
     for (const l of AEO_LESSONS.filter((x) => x.video)) expect(AEO_VIDEO_PROBE[l.video!.file], l.slug).toBeDefined();
-    expect(() => aeoLessonVideo({ ...AEO_LESSONS[2], video: { file: "aeo-99-missing", uploadDate: "2026-11-14" } })).toThrow(/AEO_VIDEO_PROBE/);
+    expect(() => aeoLessonVideo({ ...AEO_LESSONS[EXPECTED.length], video: { file: "aeo-99-missing", uploadDate: "2026-11-14" } })).toThrow(/AEO_VIDEO_PROBE/);
   });
 
   it("ship the web copy, the original and the poster under public/", () => {
@@ -328,7 +337,9 @@ describe("lesson videos", () => {
         const at = html.indexOf("<video");
         // The summary is the lead under the H1 (searched from the H1, since the
         // JSON-LD before <main> carries it too).
-        const lead = html.indexOf(l.summary.slice(0, 40), html.indexOf("<h1"));
+        // Escaped as React writes text ("Google's" → "Google&#x27;s").
+        const escaped = l.summary.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#x27;");
+        const lead = html.indexOf(escaped, html.indexOf("<h1"));
         expect(lead, locale).toBeGreaterThan(html.indexOf("<h1"));
         expect(at, locale).toBeGreaterThan(lead);
         expect(at, locale).toBeLessThan(html.indexOf('id="objectives"'));
@@ -344,7 +355,8 @@ describe("lesson videos", () => {
       const figure = html.slice(html.lastIndexOf("<figure", html.indexOf("<video")), html.indexOf("<video"));
       expect(figure, e.slug).toMatch(/class="[^"]*noPrint/);
     }
-    expect(await lesson("en", AEO_LESSONS[2].slug)).not.toContain("<video");
+    // The first lesson after the ones that have a video.
+    expect(await lesson("en", AEO_LESSONS[EXPECTED.length].slug)).not.toContain("<video");
     expect(renderToStaticMarkup(await AllPage({ params: Promise.resolve({ locale: "en" }) }))).not.toContain("<video");
   });
 });

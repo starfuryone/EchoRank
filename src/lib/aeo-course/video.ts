@@ -34,6 +34,7 @@ import type { AeoLesson, AeoLessonVideo } from "./types";
 export const AEO_VIDEO_PROBE: Readonly<Record<string, { duration: number; width: number; height: number }>> = {
   "aeo-what-is-aeo": { duration: 103.594, width: 1920, height: 1080 },
   "aeo-02-how-ai-answers-are-built": { duration: 154.16, width: 1920, height: 1080 },
+  "aeo-03-engines-compared": { duration: 151.92, width: 1920, height: 1080 },
 };
 
 export const aeoVideoSrc = (file: string) => `/videos/${file}-web.mp4`;

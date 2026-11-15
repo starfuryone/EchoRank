@@ -315,6 +315,7 @@ export const MODULE_1: AeoLesson[] = [
       "Choose which engines to track first for your audience",
     ],
     produces: "Your shortlist of engines to track, with a reason for each",
+    video: { file: "aeo-03-engines-compared", uploadDate: "2026-11-15" },
     body: [
       {
         k: "p",
