@@ -86,6 +86,8 @@ export async function POST(request: Request) {
       raw: parsed.data.values,
       locale: dashboardLocale(parsed.data.locale),
       voiceGuide: row?.brandVoiceGuide ?? null,
+      // AI memory metadata only (who typed the brief); never used for access.
+      userId: tenant.userId,
     });
 
     return NextResponse.json(result);

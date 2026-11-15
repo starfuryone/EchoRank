@@ -130,6 +130,10 @@ export const REDIS_CONFIG = {
     // asserted before the enqueue AND again in the worker; this bounds how fast
     // jobs start across all tenants at once.
     "action-agent": { max: 20, duration: 60_000 },
+    // One Haiku 5.5 extraction per job (~$0.0003). The per-tenant monthly adds
+    // and the global MEM0_DAILY_TOKEN_BUDGET are the cost controls; this
+    // bounds how fast the sidecar's single event loop is fed.
+    "memory-add": { max: 60, duration: 60_000 },
   } as Record<string, { max: number; duration: number }>,
 } as const;
 
@@ -171,7 +175,9 @@ export type QueueName =
   | "crawl-archive"
   // The purchase archive (ECHORANK-DATA-ARCHIVE.md): captured objects, the
   // spool drain, the nightly manifest.
-  | "purchase-archive";
+  | "purchase-archive"
+  // AI memory: one fact extraction per job (src/lib/memory/, av-service memory/).
+  | "memory-add";
 
 /** All valid queue names */
 export const QUEUE_NAMES: QueueName[] = [
@@ -208,4 +214,5 @@ export const QUEUE_NAMES: QueueName[] = [
   "blog-agent",
   "crawl-archive",
   "purchase-archive",
+  "memory-add",
 ];

@@ -147,10 +147,16 @@ export interface AssembleInput {
    * table, a schedule. The corpus itself is never passed here.
    */
   computedContext?: string | null;
+  /**
+   * AI memory: the "Known about this business" block (src/lib/memory/recall.ts
+   * knownFactsBlock), or null. A system block after the voice guide, so the
+   * brief in the user message still has the last word.
+   */
+  knownFacts?: string | null;
 }
 
 export function assemblePrompt(input: AssembleInput): AssembledPrompt {
-  const { category, values, locale, voiceGuide, computedContext } = input;
+  const { category, values, locale, voiceGuide, computedContext, knownFacts } = input;
 
   const system: SystemBlock[] = [{ type: "text", text: AUDIT_INSTRUCTION }];
   if (voiceGuide?.trim()) {
@@ -158,6 +164,9 @@ export function assemblePrompt(input: AssembleInput): AssembledPrompt {
       type: "text",
       text: `Write in this brand's established voice:\n\n${voiceGuide.trim()}`,
     });
+  }
+  if (knownFacts?.trim()) {
+    system.push({ type: "text", text: knownFacts.trim() });
   }
 
   const parts = [fillTemplate(promptTemplate(category), values)];

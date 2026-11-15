@@ -186,6 +186,12 @@ human notices. Commit, then hand them `sudo echorank360-deploy` instead.
   internal-secret bypass skips the proxy. `tests/admin-api-gate.test.ts` fails any route
   there that does not.
 - Log `costUsd` on every stored run that spends money upstream.
+- **AI memory** (2026-11-15) is NOT in the Prisma schema: mem0 in av-service (`memory/`),
+  pgvector in the separate `echorank_memory` database, the per-tenant on/off switch there
+  too. The app talks to it only through `src/lib/memory/client.ts` (search fails open at
+  800 ms; writes throw). Adds go through the `memory-add` queue; allowances are
+  `PLAN_CONFIGS[plan].memory`. Tests that reach `deleteWorkspace()` must mock
+  `@/lib/memory/client`, or they call the live sidecar on :4500.
 - **Prices: `PLAN_CONFIGS` holds the price ON SALE, not what every customer pays.** A price
   change creates new Stripe prices on the same lookup keys (`transfer_lookup_key`); nobody is
   migrated, so subscribers and trialists keep their old price ids. In `stripe_prices`,

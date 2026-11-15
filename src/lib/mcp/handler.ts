@@ -70,6 +70,8 @@ export interface McpCapabilities {
   getCrawlStatus(args: Record<string, unknown>): Promise<unknown>;
   getCrawlIssues(args: Record<string, unknown>): Promise<unknown>;
   listCrawls(args: Record<string, unknown>): Promise<unknown>;
+  remember(args: Record<string, unknown>): Promise<unknown>;
+  recall(args: Record<string, unknown>): Promise<unknown>;
 }
 
 interface JsonRpcRequest {
@@ -187,6 +189,10 @@ function runTool(
       return caps.getCrawlIssues(args);
     case "list_crawls":
       return caps.listCrawls(args);
+    case "remember":
+      return caps.remember(args);
+    case "recall":
+      return caps.recall(args);
     default:
       return Promise.reject(new UnknownToolError(name));
   }

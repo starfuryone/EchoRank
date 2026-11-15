@@ -40,6 +40,7 @@ const m = vi.hoisted(() => {
     sendMail: vi.fn(async () => true),
     redis: { scan: vi.fn(async () => ["0", ["echorank:x:tenant12345678"]]), del: vi.fn(async (...k: string[]) => k.length) },
     deleteSnapshotObject: vi.fn(async () => {}),
+    purgeTenantMemory: vi.fn<(...a: unknown[]) => Promise<unknown>>(async () => ({ purged: { memories: 4 }, remaining: 0 })),
   };
 });
 
@@ -48,6 +49,7 @@ vi.mock("@/lib/stripe/client", () => ({ getStripe: () => ({ subscriptions: { can
 vi.mock("@/lib/mailer", () => ({ sendMail: m.sendMail }));
 vi.mock("@/infrastructure/redis/connection", () => ({ getRedisConnection: () => m.redis }));
 vi.mock("@/lib/historical/spaces", () => ({ isSpacesConfigured: () => true, deleteSnapshotObject: m.deleteSnapshotObject }));
+vi.mock("@/lib/memory/client", () => ({ purgeTenantMemory: m.purgeTenantMemory }));
 
 import { GRACE_DAYS, KEPT_MODELS, modelsWithoutFk, requestDeletion, cancelDeletion, runDueDeletions, subjectHash } from "@/lib/privacy/deletion";
 
@@ -130,6 +132,32 @@ describe("the sweep", () => {
     expect(done.summary).toMatchObject({ Tenant: 1, User: 1, "spaces.snapshots": 2 });
   });
 
+  it("workspace: AI memory is purged, settings row included, before the tenant row goes", async () => {
+    f.dataDeletionRequest.findMany.mockResolvedValue([{ id: "dr3", scope: "WORKSPACE", tenantId: "tenant12345678", userId: null }]);
+    expect(await runDueDeletions()).toEqual({ completed: 1, failed: 0 });
+    expect(m.purgeTenantMemory).toHaveBeenCalledWith("tenant12345678", { forgetSettings: true });
+    const purgeOrder = m.purgeTenantMemory.mock.invocationCallOrder[0];
+    const deleteOrder = f.tenant.delete.mock.invocationCallOrder[0];
+    expect(purgeOrder).toBeLessThan(deleteOrder);
+    const done = f.dataDeletionRequest.update.mock.calls.at(-1)![0].data;
+    expect(done.summary).toMatchObject({ "memory.facts": 4 });
+  });
+
+  it("workspace: a memory purge failure FAILS the request and keeps the tenant row", async () => {
+    f.dataDeletionRequest.findMany.mockResolvedValue([{ id: "dr4", scope: "WORKSPACE", tenantId: "tenant12345678", userId: null }]);
+    m.purgeTenantMemory.mockRejectedValueOnce(new Error("Memory is unavailable (502)"));
+    await expect(runDueDeletions()).rejects.toThrow("1 data deletion request(s) failed");
+    expect(f.tenant.delete).not.toHaveBeenCalled();
+    expect(f.dataDeletionRequest.update).toHaveBeenCalledWith({ where: { id: "dr4" }, data: { status: "FAILED", error: "Memory is unavailable (502)" } });
+  });
+
+  it("workspace: a memory store never configured is not a failure", async () => {
+    f.dataDeletionRequest.findMany.mockResolvedValue([{ id: "dr5", scope: "WORKSPACE", tenantId: "tenant12345678", userId: null }]);
+    m.purgeTenantMemory.mockResolvedValueOnce(null);
+    expect(await runDueDeletions()).toEqual({ completed: 1, failed: 0 });
+    expect(f.tenant.delete).toHaveBeenCalled();
+  });
+
   it("a failure marks the request FAILED (ids kept for a retry) and throws so the queue alert fires", async () => {
     f.dataDeletionRequest.findMany.mockResolvedValue([{ id: "dr2", scope: "USER", tenantId: null, userId: "user1234567890" }]);
     f.user.delete.mockRejectedValueOnce(new Error("fk violation"));
@@ -152,7 +180,10 @@ describe("the API and the page", () => {
     const exp = read("src/app/api/account/export/route.ts");
     expect(exp).toContain("rateLimit(`account-export:${m.userId}`, 5, 3_600_000)");
     expect(exp).toContain("content-disposition");
-    expect(read("src/app/(dashboard)/settings/account/page-client.tsx")).toContain("<DataRequestsSection locale={locale} />");
+    const page = read("src/app/(dashboard)/settings/account/page-client.tsx");
+    expect(page).toMatch(/<DataRequestsSection\s+locale=\{locale\}/);
+    // The AI memory link shows only on plans that have memory.
+    expect(page).toMatch(/showMemory=\{planHasMemory\(/);
   });
 
   it("the export never includes secrets", () => {

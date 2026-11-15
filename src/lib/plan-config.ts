@@ -484,9 +484,26 @@ export interface PlanConfig {
    * one of the specific fields below it.
    */
   backlinks: BacklinksCapability;
+  /**
+   * AI memory (src/lib/memory/): what Echorank remembers about the business
+   * between sessions, in the separate echorank_memory store (av-service
+   * memory/). `addsPerMonth` counts one extraction call each (a Marketing
+   * Studio brief, an MCP `remember`), per tenant per calendar month (UTC), in
+   * Redis. `maxStored` is the ceiling on facts kept; the sidecar refuses an
+   * add past it before any model call. `null` = no plan ceiling (ENTERPRISE,
+   * set per contract); the global MEM0_DAILY_TOKEN_BUDGET still applies.
+   * 0 = not on this plan (the AI-only and crawler-only plans have neither
+   * Marketing Studio nor the MCP server, the two surfaces that use it).
+   */
+  memory: MemoryAllowance;
   highlighted: boolean;
   cta: string;
   ctaLink: string;
+}
+
+export interface MemoryAllowance {
+  addsPerMonth: number | null;
+  maxStored: number | null;
 }
 
 /**
@@ -584,6 +601,9 @@ export const PLAN_CONFIGS: Record<SellablePlanType, PlanConfig> = {
       history: false,
       deepEndpoints: false,
     },
+    // No AI memory: neither Marketing Studio nor the MCP server is on this
+    // plan. TODO(fred): give it an allowance if a surface it has gets memory.
+    memory: { addsPerMonth: 0, maxStored: 0 },
     highlighted: false,
     cta: "Start tracking",
     ctaLink: "/register?plan=ai_visibility",
@@ -648,6 +668,7 @@ export const PLAN_CONFIGS: Record<SellablePlanType, PlanConfig> = {
       history: false,
       deepEndpoints: false,
     },
+    memory: { addsPerMonth: 0, maxStored: 0 },
     highlighted: false,
     cta: "Start crawling",
     ctaLink: "/register?plan=nosy_bat",
@@ -716,6 +737,8 @@ export const PLAN_CONFIGS: Record<SellablePlanType, PlanConfig> = {
       history: false,
       deepEndpoints: false,
     },
+    // TODO(fred): proposed in MEM0-INTEGRATION.md, not yet confirmed.
+    memory: { addsPerMonth: 500, maxStored: 2_000 },
     highlighted: false,
     cta: "Start Free Trial",
     ctaLink: "/register?plan=starter",
@@ -773,6 +796,8 @@ export const PLAN_CONFIGS: Record<SellablePlanType, PlanConfig> = {
       history: false,
       deepEndpoints: false,
     },
+    // TODO(fred): proposed in MEM0-INTEGRATION.md, not yet confirmed.
+    memory: { addsPerMonth: 2_000, maxStored: 10_000 },
     highlighted: true,
     cta: "Start Free Trial",
     ctaLink: "/register?plan=growth",
@@ -822,6 +847,8 @@ export const PLAN_CONFIGS: Record<SellablePlanType, PlanConfig> = {
       history: true,
       deepEndpoints: true,
     },
+    // TODO(fred): proposed in MEM0-INTEGRATION.md, not yet confirmed.
+    memory: { addsPerMonth: 10_000, maxStored: 50_000 },
     highlighted: false,
     cta: "Start Free Trial",
     ctaLink: "/register?plan=agency",
@@ -883,6 +910,9 @@ export const PLAN_CONFIGS: Record<SellablePlanType, PlanConfig> = {
       history: true,
       deepEndpoints: true,
     },
+    // "Custom" in the brief: no plan ceiling until a per-contract override
+    // exists; the global MEM0_DAILY_TOKEN_BUDGET bounds spend. TODO(fred).
+    memory: { addsPerMonth: null, maxStored: null },
     highlighted: false,
     cta: "Book Enterprise Demo",
     ctaLink: "/enterprise",

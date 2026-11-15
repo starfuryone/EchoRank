@@ -29,6 +29,7 @@ import { parseAnalytics, summaryForAi } from "./analytics";
 import { buildCalendar, scheduleForAi } from "./calendar";
 import { assemblePrompt, collectValues, MarketingValidationError } from "./prompt";
 import { callMarketingModel } from "./client";
+import { knownFactsBlock, recallForPrompt, rememberLater } from "@/lib/memory/recall";
 import {
   marketingCacheKey,
   readCachedGeneration,
@@ -181,6 +182,21 @@ export interface GenerateInput {
   raw: Record<string, unknown>;
   locale: DashLocale;
   voiceGuide: string | null;
+  /** Who typed the brief: AI memory metadata only, never used for access. */
+  userId?: string;
+}
+
+/** What to search AI memory for: the brief type and the brief's own words. */
+export function memoryQueryFor(category: MarketingCategory, values: Record<string, string>): string {
+  return [category.id.replace(/[-_]/g, " "), ...Object.values(values)].join(" ").replace(/\s+/g, " ").trim().slice(0, 500);
+}
+
+/** The brief as one text for AI memory's extraction: field names and the tenant's own answers. */
+export function memoryBriefFor(category: MarketingCategory, values: Record<string, string>): string {
+  const lines = Object.entries(values)
+    .filter(([, v]) => typeof v === "string" && v.trim())
+    .map(([k, v]) => `${k}: ${v.trim()}`);
+  return [`Marketing Studio brief (${category.id}):`, ...lines].join("\n");
 }
 
 /** The heuristic-only path. No budget check, no model, no spend — so it stays
@@ -223,12 +239,19 @@ export async function generate(input: GenerateInput): Promise<MarketingResult> {
     };
   }
 
+  // AI memory: what Echorank already knows about this business, closest to
+  // this brief. Fails open after 800 ms: no memories, same prompt as before.
+  const knownFacts = knownFactsBlock(
+    await recallForPrompt({ tenantId, plan, surface: "marketing_studio", query: memoryQueryFor(category, values) }),
+  );
+
   const prompt = assemblePrompt({
     category,
     values,
     locale,
     voiceGuide,
     computedContext: computed?.forAi ?? null,
+    knownFacts,
   });
 
   // 4. Result cache. Keyed on the same things the prompt is built from, plus
@@ -240,6 +263,7 @@ export async function generate(input: GenerateInput): Promise<MarketingResult> {
     values: { ...values, ...(computed?.forAi ? { __computed: computed.forAi } : {}) },
     language: locale,
     voiceGuide,
+    knownFacts,
   });
   const hit = await readCachedGeneration(cacheKey);
   if (hit) {
@@ -286,6 +310,18 @@ export async function generate(input: GenerateInput): Promise<MarketingResult> {
       originalOutputTokens: call.outputTokens,
     }),
   ]);
+
+  // AI memory: queue the BRIEF (what the tenant typed), never the model's
+  // output, which may contain claims the business never made. Not awaited
+  // for anything but the enqueue, and rememberLater never throws.
+  void rememberLater({
+    tenantId,
+    plan,
+    surface: "marketing_studio",
+    locale,
+    messages: [{ role: "user", content: memoryBriefFor(category, values) }],
+    userId: input.userId,
+  });
 
   return {
     categoryId: category.id,

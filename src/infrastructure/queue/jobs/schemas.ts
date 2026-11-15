@@ -459,6 +459,23 @@ export interface ActionAgentJob extends BaseJob {
   requestedByUserId?: string;
 }
 
+/**
+ * One AI memory add (src/lib/memory/recall.ts → memory-add.worker.ts).
+ * tenantId is the caller's session or API-key tenant, never a body field.
+ * The text is already PII-scrubbed (src/lib/memory/scrub.ts).
+ */
+export interface MemoryAddJob {
+  tenantId: string;
+  surface: "mcp" | "marketing_studio";
+  messages?: { role: "user" | "assistant"; content: string }[];
+  text?: string;
+  locale: string;
+  /** The signed-in user, when there is one (absent for API keys). */
+  userId?: string;
+  /** A caller-chosen category; otherwise the sidecar's heuristic sets it. */
+  category?: string;
+}
+
 // ─── Queue → Job Type mapping ─────────────────────────────────────────────────
 
 export interface QueueJobMap {
@@ -490,4 +507,5 @@ export interface QueueJobMap {
   "assistant-precompute": AssistantPrecomputeJob;
   "crawl-archive": CrawlArchiveJob;
   "purchase-archive": PurchaseArchiveJob;
+  "memory-add": MemoryAddJob;
 }

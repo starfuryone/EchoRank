@@ -43,6 +43,7 @@ import { startCitationAggregationWorker } from "./workers/citation-aggregation.w
 import { startCitationOpportunitiesWorker } from "./workers/citation-opportunities.worker";
 import { startOpportunityScanWorker } from "./workers/opportunity-scan.worker";
 import { startActionAgentWorker } from "./workers/action-agent.worker";
+import { startMemoryAddWorker } from "./workers/memory-add.worker";
 import { startAssistantPrecomputeWorker } from "./workers/assistant-precompute.worker";
 import { startKeywordOpportunityWorker } from "./workers/keyword-opportunity.worker";
 import { startBlogAgentWorker } from "./workers/blog-agent.worker";
@@ -133,6 +134,9 @@ async function startWorkers() {
     // The only worker here with no schedule of its own: every job is a human
     // pressing Fix with AI. Nothing periodic, nothing generated unasked.
     { name: "action-agent", start: startActionAgentWorker },
+    // AI memory: every job is one add queued by a surface (Marketing Studio,
+    // MCP remember). No schedule.
+    { name: "memory-add", start: startMemoryAddWorker },
     // Nightly at 07:15 UTC, behind every ingestion it summarises — the
     // checkups, the visibility audit sweep, and the 06:30 competitor sweep.
     { name: "assistant-precompute", start: startAssistantPrecomputeWorker },

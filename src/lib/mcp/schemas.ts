@@ -177,6 +177,17 @@ export const listCrawlsInputSchema = z.object({
   limit: limitSchema(100).optional(),
 });
 
+// AI memory. No tenant field on either: the tenant is the API key's, and
+// z.object() drops any extra key an agent sends.
+export const rememberInputSchema = z.object({
+  text: z.string().trim().min(3, "Say what to remember.").max(4000),
+});
+
+export const recallInputSchema = z.object({
+  query: z.string().trim().min(1, "Say what to look for.").max(500),
+  limit: limitSchema(10).optional(),
+});
+
 /** The registry the handler parses with. Keyed by tool name. */
 export const MCP_INPUT_SCHEMAS: Record<string, z.ZodType> = {
   whoami: noArgsSchema,
@@ -199,6 +210,8 @@ export const MCP_INPUT_SCHEMAS: Record<string, z.ZodType> = {
   get_crawl_status: crawlIdInputSchema,
   get_crawl_issues: crawlIssuesInputSchema,
   list_crawls: listCrawlsInputSchema,
+  remember: rememberInputSchema,
+  recall: recallInputSchema,
 };
 
 /** Tool names in the catalog with no input schema. Empty is the only pass. */

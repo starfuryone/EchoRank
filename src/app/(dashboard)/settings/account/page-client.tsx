@@ -13,6 +13,8 @@ import { BILLING_COPY, type DashLocale } from "@/lib/i18n/dashboard";
 import { PLAN_HUB_COPY } from "@/lib/i18n/plan-hub";
 import { TeamChatSection } from "@/components/account/TeamChatSection";
 import { DataRequestsSection } from "@/components/account/DataRequestsSection";
+import { planHasMemory } from "@/lib/memory/limits";
+import type { PlanType } from "@/generated/prisma";
 import {
   updateTenantNameAction,
   updateRevenueAssumptionsAction,
@@ -309,7 +311,10 @@ export function AccountPageClient({ locale, user, tenant, subscription, price, c
       />
 
       {/* ── Your data: export and deletion (14-day grace) ───────────────── */}
-      <DataRequestsSection locale={locale} />
+      <DataRequestsSection
+        locale={locale}
+        showMemory={planHasMemory((subscription?.planType ?? tenant.planType) as PlanType | null)}
+      />
     </div>
   );
 }

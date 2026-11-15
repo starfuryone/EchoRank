@@ -42,6 +42,8 @@ import type {
   ResearchLogPayload,
   RankKeywordMutationPayload,
   RankTrackerPayload,
+  RecallPayload,
+  RememberPayload,
   StartSerpCheckPayload,
   WhoamiPayload,
 } from "./output-schemas";
@@ -778,6 +780,33 @@ export function renderListCrawls(d: ListCrawlsPayload): string {
   );
 }
 
+// ─── AI memory ───────────────────────────────────────────────────────────────
+
+export function renderRemember(d: RememberPayload): string {
+  return formatMcpFacts([
+    ["Saved", d.queued ? "queued; the business facts are stored within a minute" : "no"],
+    ["Memory adds this month", `${d.addsUsed} of ${allowance(d.addsLimit)}`],
+    ...(d.note ? ([["Note", d.note]] as [string, string][]) : []),
+  ]);
+}
+
+const RECALL_COLUMNS: McpTableColumn<RecallPayload["memories"][number]>[] = [
+  { header: "memory", value: (r) => r.memory, format: truncatedCell(160) },
+  { header: "score", value: (r) => (r.score === null ? null : Number(r.score.toFixed(2))) },
+  { header: "from", value: (r) => r.surface },
+  { header: "saved", value: (r) => r.createdAt?.slice(0, 10) ?? null },
+];
+
+export function renderRecall(d: RecallPayload): string {
+  return formatMcpSection({
+    title: "What Echorank remembers",
+    facts: d.available ? [] : ["Memory could not be searched just now; try again shortly."],
+    rows: d.memories,
+    columns: RECALL_COLUMNS,
+    emptyNote: d.available ? "Nothing relevant remembered yet. Save facts with remember." : "",
+  });
+}
+
 // ─── Dispatch ────────────────────────────────────────────────────────────────
 
 /**
@@ -826,6 +855,10 @@ export function renderToolText(name: string, data: unknown): string {
       return renderCrawlIssues(data as CrawlIssuesPayload);
     case "list_crawls":
       return renderListCrawls(data as ListCrawlsPayload);
+    case "remember":
+      return renderRemember(data as RememberPayload);
+    case "recall":
+      return renderRecall(data as RecallPayload);
     default:
       return JSON.stringify(data, null, 2);
   }
@@ -860,6 +893,8 @@ const RENDERED_TOOLS = new Set([
   "get_crawl_status",
   "get_crawl_issues",
   "list_crawls",
+  "remember",
+  "recall",
 ]);
 
 /** Column sets are exported for the snapshot tests, which assert headers. */

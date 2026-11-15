@@ -51,6 +51,15 @@ vi.mock("@/infrastructure/redis/connection", () => ({
   getSubscriberConnection: () => redis,
 }));
 
+// AI memory goes through the sidecar (also a fetch) and the memory-add queue.
+// This suite counts Anthropic calls on the stubbed fetch, so memory is held at
+// "nothing remembered"; tests/memory-marketing.test.ts covers the injection.
+vi.mock("@/lib/memory/recall", async (orig) => ({
+  ...(await orig<typeof import("@/lib/memory/recall")>()),
+  recallForPrompt: async () => [],
+  rememberLater: async () => false,
+}));
+
 // Imported after the mocks so the modules pick them up.
 const { POST: GENERATE } = await import("@/app/api/ai/visibility/marketing/generate/route");
 const { POST: COMPUTE } = await import("@/app/api/ai/visibility/marketing/compute/route");

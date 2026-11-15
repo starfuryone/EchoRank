@@ -299,6 +299,16 @@ const DEFAULT_JOB_OPTIONS: Record<QueueName, JobsOptions> = {
     removeOnComplete: true,
     removeOnFail: { age: REDIS_CONFIG.ttl.failedJobs },
   },
+  // A memory add carries a scrubbed brief or an MCP `remember` text. Gone on
+  // completion; a final failure stays a day for the support@ alert, not the
+  // usual week, because the payload is tenant text. Three tries: the sidecar
+  // restarts with every deploy and a lost add is a fact re-explained later.
+  "memory-add": {
+    attempts: 3,
+    backoff: { type: "exponential", delay: 30_000 },
+    removeOnComplete: true,
+    removeOnFail: { age: 86_400 },
+  },
 };
 
 // ─── Queue registry ───────────────────────────────────────────────────────────

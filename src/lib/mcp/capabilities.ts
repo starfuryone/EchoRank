@@ -21,6 +21,10 @@ import * as reads from "./reads";
 import { findPublicCrawl, listPublicCrawls, publicCrawlDetail, publicIssues, queueEstimate } from "@/lib/site-crawler/public-api";
 import { acceptCallbackUrl, startViaApi, startedView } from "@/lib/site-crawler/public-start";
 import { CrawlConfigInputSchema } from "@/lib/site-crawler/crawl-config";
+import { getMemorySettings, searchMemories } from "@/lib/memory/client";
+import { memoryAllowance, planHasMemory } from "@/lib/memory/limits";
+import { memoryAddsUsed } from "@/lib/memory/quota";
+import { rememberLater } from "@/lib/memory/recall";
 
 export function capsFor(tenantId: string, keyId = ""): McpCapabilities {
   let tenantPromise: Promise<reads.McpTenant> | null = null;
@@ -139,6 +143,43 @@ export function capsFor(tenantId: string, keyId = ""): McpCapabilities {
     },
     async listCrawls(args) {
       return { crawls: await listPublicCrawls(tenantId, { host: (args.host as string) ?? null, limit: (args.limit as number) ?? null }) };
+    },
+
+    // AI memory (src/lib/memory/). The scope is this key's tenantId, closed
+    // over above; nothing in `args` can name another tenant.
+    async remember(args) {
+      const t = await tenant();
+      const { addsPerMonth } = memoryAllowance(t.plan);
+      if (!planHasMemory(t.plan)) throw new Error(`AI memory is not included in the ${t.plan} plan.`);
+      const settings = await getMemorySettings(tenantId).catch(() => null);
+      if (!settings) throw new Error("AI memory is unavailable right now; nothing was saved. Try again shortly.");
+      if (!settings.enabled) throw new Error("AI memory is switched off for this workspace (Settings → AI memory); nothing was saved.");
+      const used = await memoryAddsUsed(tenantId);
+      if (addsPerMonth !== null && used >= addsPerMonth) {
+        throw new Error(`This month's AI memory allowance (${addsPerMonth} adds) is used up; nothing was saved.`);
+      }
+      const queued = await rememberLater({ tenantId, plan: t.plan, surface: "mcp", locale: "en", text: args.text as string });
+      if (!queued) throw new Error("AI memory is unavailable right now; nothing was saved. Try again shortly.");
+      return { queued: true, addsUsed: used + 1, addsLimit: addsPerMonth };
+    },
+    async recall(args) {
+      const t = await tenant();
+      if (!planHasMemory(t.plan)) throw new Error(`AI memory is not included in the ${t.plan} plan.`);
+      const { ok, results } = await searchMemories({
+        tenantId,
+        query: args.query as string,
+        limit: (args.limit as number) ?? 5,
+      });
+      return {
+        available: ok,
+        memories: results.map((r) => ({
+          id: r.id,
+          memory: r.memory,
+          score: typeof r.score === "number" ? r.score : null,
+          createdAt: r.created_at ?? null,
+          surface: r.surface ?? null,
+        })),
+      };
     },
   };
 }

@@ -368,6 +368,31 @@ export const listCrawlsOutputSchema = z.looseObject({ crawls: z.array(publicCraw
 
 const opaqueOutputSchema = z.looseObject({});
 
+// ─── AI memory ───────────────────────────────────────────────────────────────
+
+export const rememberOutputSchema = z.looseObject({
+  queued: z.boolean(),
+  /** This month's adds after this one, and the plan's ceiling (null = none). */
+  addsUsed: z.number(),
+  addsLimit: nullableNumber,
+  note,
+});
+
+export const recallOutputSchema = z.looseObject({
+  /** False when memory could not be searched (the call failed open). */
+  available: z.boolean(),
+  memories: z.array(
+    z.looseObject({
+      id: z.string(),
+      memory: z.string(),
+      score: nullableNumber,
+      createdAt: z.string().nullable(),
+      surface: z.string().nullable(),
+    }),
+  ),
+  note,
+});
+
 /**
  * The registry the handler validates against.
  *
@@ -396,6 +421,8 @@ export const MCP_OUTPUT_SCHEMAS: Record<string, z.ZodType> = {
   get_crawl_status: crawlStatusOutputSchema,
   get_crawl_issues: crawlIssuesOutputSchema,
   list_crawls: listCrawlsOutputSchema,
+  remember: rememberOutputSchema,
+  recall: recallOutputSchema,
 };
 
 /** Tool names in the catalog with no output schema. Empty is the only pass. */
@@ -431,3 +458,5 @@ export type StartCrawlPayload = z.infer<typeof startCrawlOutputSchema>;
 export type CrawlStatusPayload = z.infer<typeof crawlStatusOutputSchema>;
 export type CrawlIssuesPayload = z.infer<typeof crawlIssuesOutputSchema>;
 export type ListCrawlsPayload = z.infer<typeof listCrawlsOutputSchema>;
+export type RememberPayload = z.infer<typeof rememberOutputSchema>;
+export type RecallPayload = z.infer<typeof recallOutputSchema>;

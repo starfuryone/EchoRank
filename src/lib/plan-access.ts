@@ -203,6 +203,10 @@ export const PAGE_RULES: readonly RouteRule[] = [
   { prefix: "/visibility", area: "ai_visibility" },
   { prefix: "/crawler", area: "crawler" },
   { prefix: "/dashboard", area: "home" },
+  // AI memory: learned in Marketing Studio and through the MCP server, so it
+  // goes where those go. "marketing_studio" is excluded from exactly the two
+  // plans whose memory allowance is 0 (PLAN_CONFIGS[plan].memory).
+  { prefix: "/settings/memory", area: "marketing_studio" },
   { prefix: "/settings", area: "account" },
   { prefix: "/billing", area: "account" },
   // "Your plan" (PLAN-HUB): every plan's own summary, next to /billing.
@@ -279,6 +283,8 @@ export const API_RULES: readonly RouteRule[] = [
   // Account.
   // Matrix team chat is team, not an account basic (one user on the crawler-only plan).
   { prefix: "/api/account/matrix", area: "team" },
+  // AI memory, as /settings/memory above.
+  { prefix: "/api/account/memory", area: "marketing_studio" },
   { prefix: "/api/account", area: "account" },
   // Credit packs buy lookups for the SEO and AI tools; the watcher is the AI
   // visibility add-on. Neither is a billing basic of the crawler-only plan.

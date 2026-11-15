@@ -32,6 +32,8 @@ vi.mock("@/lib/prisma", () => ({ prisma: m.prisma }));
 vi.mock("@/lib/stripe/client", () => ({ getStripe: () => ({ subscriptions: { cancel: vi.fn() } }) }));
 vi.mock("@/lib/mailer", () => ({ sendMail: vi.fn() }));
 vi.mock("@/infrastructure/redis/connection", () => ({ getRedisConnection: () => m.redis }));
+// deleteWorkspace purges AI memory through the sidecar; never the real one.
+vi.mock("@/lib/memory/client", () => ({ purgeTenantMemory: vi.fn(async () => null) }));
 
 import { InvalidKeySegmentError, pagesPrefix, setArchiveStoreForTests, type ObjectStore } from "@/lib/spaces/client";
 import { PageRunWriter, urlHash, type PageCapture } from "@/lib/page-archive/writer";

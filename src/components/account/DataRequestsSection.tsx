@@ -5,16 +5,19 @@
 // follows the role the API reports: an owner's deletion takes the workspace.
 
 import { useEffect, useState } from "react";
-import { Download, Trash2 } from "lucide-react";
+import Link from "next/link";
+import { Brain, Download, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardHeader, CardContent } from "@/components/ui/card";
 import { DATA_REQUESTS_COPY } from "@/lib/i18n/data-requests";
+import { MEMORY_COPY } from "@/lib/i18n/memory";
 import type { DashLocale } from "@/lib/i18n/dashboard";
 
 type Pending = { id: string; scope: string; requestedAt: string; runAfter: string } | null;
 
-export function DataRequestsSection({ locale }: { locale: DashLocale }) {
+export function DataRequestsSection({ locale, showMemory = false }: { locale: DashLocale; showMemory?: boolean }) {
   const t = DATA_REQUESTS_COPY[locale];
+  const mem = MEMORY_COPY[locale];
   const [pending, setPending] = useState<Pending>(null);
   const [role, setRole] = useState<string | null>(null);
   const [confirm, setConfirm] = useState("");
@@ -80,6 +83,20 @@ export function DataRequestsSection({ locale }: { locale: DashLocale }) {
               {t.exportCta}
             </a>
           </section>
+
+          {showMemory && (
+          <section data-testid="memory-link">
+            <h3 className="text-sm font-medium text-gray-200">{mem.linkTitle}</h3>
+            <p className="mt-1 text-xs text-gray-500">{mem.linkBody}</p>
+            <Link
+              href="/settings/memory"
+              className="mt-2 inline-flex items-center gap-2 text-sm font-medium text-amber-300 hover:text-amber-200"
+            >
+              <Brain className="h-4 w-4" aria-hidden="true" />
+              {mem.linkCta}
+            </Link>
+          </section>
+          )}
 
           <section>
             <h3 className="text-sm font-medium text-gray-200">{t.deleteTitle}</h3>

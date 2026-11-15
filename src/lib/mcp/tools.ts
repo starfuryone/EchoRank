@@ -407,6 +407,40 @@ export const MCP_TOOLS: readonly McpToolDefinition[] = [
     },
     annotations: { title: "Site crawls", readOnlyHint: true },
   },
+  // ── AI memory (src/lib/memory/) ──────────────────────────────────────────
+  // `remember` is the fifth write tool: it stores tenant text and spends one
+  // add of the month's AI memory allowance (one Haiku extraction, ~$0.0003).
+  {
+    name: "remember",
+    description:
+      "Save durable facts about this business for later sessions: brand and products, competitors, target markets and keywords, goals, tone of voice, decisions taken, and how Echorank's output should read. Echorank keeps only business facts and drops personal data (people's names, emails, phone numbers), credentials and payment details. Saved in the background within a minute; uses one memory add of this month's allowance. Everything saved is listed, and deletable, in Settings → AI memory.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        text: {
+          type: "string",
+          description:
+            "The facts in plain words, e.g. \"Our tone is warm and plain, no exclamation marks. Main competitor: Boulangerie Dupont.\"",
+        },
+      },
+      required: ["text"],
+    },
+    annotations: { title: "Remember business facts", readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false },
+  },
+  {
+    name: "recall",
+    description:
+      "Search what Echorank remembers about this business (saved with remember, or learned in Marketing Studio): the closest facts to a question, newest wording, in any language. Costs nothing.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        query: { type: "string", description: "What you want to know, e.g. \"tone of voice\" or \"who are our competitors\"." },
+        limit: LIMIT_PROP(10, 5),
+      },
+      required: ["query"],
+    },
+    annotations: { title: "Recall business facts", readOnlyHint: true },
+  },
 ] as const;
 
 /** Every tool name, for exhaustiveness checks in tests and i18n catalogs. */

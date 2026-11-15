@@ -42,6 +42,8 @@ export function marketingCacheKey(input: {
   values: Record<string, string>;
   language: string;
   voiceGuide: string | null;
+  /** AI memory's "Known about this business" block: a new memory is a new prompt. */
+  knownFacts?: string | null;
 }): string {
   // Sorted keys: the client sends a form object, and JS object order is not a
   // contract. Without sorting, the same form could hash two ways.
@@ -53,6 +55,8 @@ export function marketingCacheKey(input: {
     l: input.language,
     // The guide can be long; its hash is enough to detect a change.
     g: input.voiceGuide ? createHash("sha256").update(input.voiceGuide).digest("hex") : null,
+    // Only when there are memories, so every key from before memory is unchanged.
+    ...(input.knownFacts ? { k: createHash("sha256").update(input.knownFacts).digest("hex") } : {}),
   });
   const digest = createHash("sha256").update(canonical).digest("hex").slice(0, 32);
   return `echorank:marketing:result:${input.tenantId}:${digest}`;

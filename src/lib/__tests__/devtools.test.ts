@@ -148,6 +148,12 @@ const caps: McpCapabilities = {
   async listCrawls() {
     return { crawls: [] };
   },
+  async remember() {
+    return { queued: true, addsUsed: 1, addsLimit: 500 };
+  },
+  async recall() {
+    return { available: true, memories: [] };
+  },
 };
 
 test("mcp initialize negotiates protocol and reports server info", async () => {
@@ -193,12 +199,14 @@ test("mcp tools/list advertises the whole catalog, and nothing else", async () =
     );
   }
 
-  // Exactly four tools may spend or mutate. Growing this set is a product
+  // Exactly five tools may spend or mutate. Growing this set is a product
   // decision, so it fails here first. start_crawl (Phase 3d-A) was one: it
   // spends a crawl of the monthly allowance, at most 3 starts a minute.
+  // remember (AI memory, MEM0-INTEGRATION.md) is the fifth: it stores tenant
+  // text and spends one memory add of the month.
   assert.deepEqual(
     [...MCP_WRITE_TOOLS].sort(),
-    ["add_rank_tracking_keywords", "remove_rank_tracking_keywords", "start_crawl", "start_serp_check"],
+    ["add_rank_tracking_keywords", "remember", "remove_rank_tracking_keywords", "start_crawl", "start_serp_check"],
   );
 });
 

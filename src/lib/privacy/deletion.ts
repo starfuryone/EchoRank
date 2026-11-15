@@ -40,6 +40,7 @@ import { getStripe } from "@/lib/stripe/client";
 import { sendMail } from "@/lib/mailer";
 import { getRedisConnection } from "@/infrastructure/redis/connection";
 import { deleteSnapshotObject, isSpacesConfigured } from "@/lib/historical/spaces";
+import { purgeTenantMemory } from "@/lib/memory/client";
 import { archiveStore, tenantPrefix } from "@/lib/spaces/client";
 import { deletePrefix } from "@/lib/site-crawler/retention";
 import { purchaseStore } from "@/lib/purchase-archive/store";
@@ -218,6 +219,15 @@ export async function deleteWorkspace(tenantId: string): Promise<Record<string, 
       AND ("payload"->>'client_reference_id' = ${tenantId}
            OR (${tenant.stripeCustomerId}::text IS NOT NULL AND "payload"->>'customer' = ${tenant.stripeCustomerId}))`;
   if (blanked) out["ProcessedWebhook.payload"] = blanked;
+
+  // AI memory lives outside Postgres-via-Prisma (av-service memory/, database
+  // echorank_memory): facts, their history and raw messages, and the on/off
+  // row. UNLIKE the archives above, a failure here THROWS, before the Tenant
+  // row goes: the request is marked FAILED (and support@ alerted) instead of
+  // completing with the business's memories left behind. A store that was
+  // never configured on this deployment returns null: nothing can be in it.
+  const memory = await purgeTenantMemory(tenantId, { forgetSettings: true });
+  if (memory) out["memory.facts"] = memory.purged.memories ?? 0;
 
   await prisma.tenant.delete({ where: { id: tenantId } });
   out["Tenant"] = 1;
