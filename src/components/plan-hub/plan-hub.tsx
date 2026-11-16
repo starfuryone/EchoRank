@@ -186,7 +186,7 @@ export function PlanHub(p: PlanHubProps) {
             )}
 
             <div className="border-t border-gray-100 pt-4">
-              <PlanBillingActions t={t} state={p.billing.state} canManage={p.canManage} ownerName={p.ownerName} hasPortal={p.billing.hasPortal} />
+              <PlanBillingActions locale={locale} state={p.billing.state} canManage={p.canManage} ownerName={p.ownerName} hasPortal={p.billing.hasPortal} />
             </div>
             {cancelFaq && (
               <p className="text-xs leading-relaxed text-gray-500" data-testid="plan-cancel-anytime">

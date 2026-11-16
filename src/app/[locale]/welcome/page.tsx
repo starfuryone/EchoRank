@@ -39,7 +39,7 @@ import { PLAN_CONFIGS } from "@/lib/plan-config";
 import { resolveGuestSession } from "@/lib/billing/guest-welcome";
 import { resolveHandoff } from "@/lib/billing/checkout-handoff";
 import { GuestSetup } from "./GuestSetup";
-import { WelcomeHandoff, type WelcomeHandoffCopy } from "./WelcomeHandoff";
+import { WelcomeHandoff, type WelcomeHandoffCatalog } from "./WelcomeHandoff";
 import { PublicNav } from "../PublicNav";
 import s from "../home2.module.css";
 import g from "../guides/_shared/guide.module.css";
@@ -87,7 +87,7 @@ const COPY: Record<Base, {
   genericTitle: string;
   genericBody: string;
   signIn: string;
-  handoff: WelcomeHandoffCopy;
+  handoff: WelcomeHandoffCatalog;
   guest: typeof GUEST_EN;
 }> = {
   en: {
@@ -231,15 +231,18 @@ export default async function WelcomePage({
     </div>
   );
 
+  // Client components below get DATA ONLY: the copy's two functions are
+  // filled in here, on the server (tests/rsc-client-props.test.ts).
   if (guest && guest.kind !== "invalid") {
+    const email = guest.kind === "ready" ? guest.email : null;
     return shell(
       <GuestSetup
         sessionId={sessionId!}
         initialKind={guest.kind}
-        email={guest.kind === "ready" ? guest.email : null}
+        email={email}
         planHome={guest.kind === "ready" ? guest.planHome : "/dashboard"}
         loginHref="/login"
-        t={c.guest}
+        t={{ ...c.guest, readyBody: c.guest.readyBody(email ?? "") }}
       />,
     );
   }
@@ -275,7 +278,7 @@ export default async function WelcomePage({
         plan={handoff.plan}
         planName={PLAN_CONFIGS[handoff.plan].name}
         conversion={handoff.conversion}
-        t={c.handoff}
+        t={{ ...c.handoff, confirmed: c.handoff.confirmed(PLAN_CONFIGS[handoff.plan].name) }}
       />,
     );
   }

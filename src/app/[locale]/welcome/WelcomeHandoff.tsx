@@ -20,8 +20,14 @@ import { pollUntilReady, type BillingStatusBody } from "@/lib/billing/handoff-po
 import s from "../home2.module.css";
 import g from "../guides/_shared/guide.module.css";
 
+/**
+ * DATA ONLY: this crosses from the server-rendered /welcome page, and a
+ * function in a Client Component's props is a 500. The page's catalog holds
+ * `confirmed` as a function of the plan name (WelcomeHandoffCatalog) and
+ * fills it in before handing it over (tests/rsc-client-props.test.ts).
+ */
 export interface WelcomeHandoffCopy {
-  confirmed: (plan: string) => string;
+  confirmed: string;
   opening: string;
   waitingNote: string;
   stillTitle: string;
@@ -29,6 +35,9 @@ export interface WelcomeHandoffCopy {
   openPlan: string;
   supportLead: string;
 }
+
+/** The page's catalog entry: `confirmed` still takes the plan name. */
+export type WelcomeHandoffCatalog = Omit<WelcomeHandoffCopy, "confirmed"> & { confirmed: (plan: string) => string };
 
 const PLAN_HREF = "/plan?welcome=1";
 const SUPPORT = "support@echorank360.com";
@@ -124,7 +133,7 @@ export function WelcomeHandoff({
 
   return (
     <div data-testid={mode === "ready" ? "welcome-ready" : "welcome-pending"} role="status" aria-live="polite">
-      <p className={s.sub}>{t.confirmed(planName)}</p>
+      <p className={s.sub}>{t.confirmed}</p>
       <p className={g.uiNote}>{mode === "ready" ? t.opening : t.waitingNote}</p>
       <div className={s.ctarow} style={{ marginTop: 28 }}>
         <Link className={`${s.btn} ${s.btnGhost}`} href={PLAN_HREF}>

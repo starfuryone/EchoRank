@@ -9,6 +9,11 @@
 // size and weight of the others, Resume is one click while access remains,
 // the portal button is absent without a Stripe customer, and a role that
 // cannot manage billing sees who can instead of buttons.
+//
+// Takes the LOCALE, not the copy: PLAN_HUB_COPY has function-valued entries
+// (ownerOnly, planLine, perMonth …), and a function in a prop from the
+// server-rendered <PlanHub> is a 500 ("Functions cannot be passed directly
+// to Client Components"; /plan, 2026-11-15). tests/rsc-client-props.test.ts.
 
 import { useState } from "react";
 import Link from "next/link";
@@ -16,21 +21,23 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { OUTLINE_BUTTON_CLASS } from "@/components/billing/plan-status-card";
 import type { PlanCardState } from "@/lib/billing/plan-card-state";
-import type { PlanHubCopy } from "@/lib/i18n/plan-hub";
+import type { DashLocale } from "@/lib/i18n/dashboard";
+import { PLAN_HUB_COPY } from "@/lib/i18n/plan-hub";
 
 export function PlanBillingActions({
-  t,
+  locale,
   state,
   canManage,
   ownerName,
   hasPortal,
 }: {
-  t: PlanHubCopy;
+  locale: DashLocale;
   state: PlanCardState;
   canManage: boolean;
   ownerName: string | null;
   hasPortal: boolean;
 }) {
+  const t = PLAN_HUB_COPY[locale];
   const router = useRouter();
   const [portalBusy, setPortalBusy] = useState(false);
   const [portalError, setPortalError] = useState(false);

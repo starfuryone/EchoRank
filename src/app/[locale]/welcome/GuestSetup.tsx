@@ -23,9 +23,14 @@ const POLL_LIMIT_MS = 60_000;
 
 export type GuestKind = "ready" | "pending" | "consumed";
 
+/**
+ * DATA ONLY: this crosses from the server-rendered /welcome page, and a
+ * function in a Client Component's props is a 500. The page fills readyBody
+ * with the email before handing it over (tests/rsc-client-props.test.ts).
+ */
 export interface GuestCopy {
   readyTitle: string;
-  readyBody: (email: string) => string;
+  readyBody: string;
   passwordLabel: string;
   passwordHint: string;
   submit: string;
@@ -178,7 +183,7 @@ export function GuestSetup({
     <>
       <p className={s.sub}>{t.readyTitle}</p>
       <p className={g.para}>
-        {t.readyBody(email ?? "")}
+        {t.readyBody}
       </p>
 
       <form className={c.form} onSubmit={submit}>
