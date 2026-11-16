@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import type { MeterType, PlanType } from "@/generated/prisma";
+import type { MeterType, PlanType, Prisma } from "@/generated/prisma";
 import { meteringService } from "./service";
 import { logger } from "@/infrastructure/observability/logger";
 import { planQuotaDefaults } from "@/lib/plan-config";
@@ -240,9 +240,12 @@ export class QuotaEnforcer {
    */
   async setQuota(
     tenantId: string,
-    quotas: Partial<PlanQuotas> & { overageAllowed?: boolean }
+    quotas: Partial<PlanQuotas> & { overageAllowed?: boolean },
+    /** A transaction client, so a plan change and its quotas commit together
+     *  (scripts/tenant-set-plan.ts). Defaults to the shared client. */
+    db: Pick<Prisma.TransactionClient, "tenantQuota"> = prisma,
   ): Promise<void> {
-    await prisma.tenantQuota.upsert({
+    await db.tenantQuota.upsert({
       where: { tenantId },
       create: {
         tenantId,

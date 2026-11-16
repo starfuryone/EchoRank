@@ -27,6 +27,7 @@
     "archive:get": "NODE_OPTIONS=\"$NODE_OPTIONS --conditions=react-server\" npx tsx scripts/archive-cli.ts get",
     "archive:restore-run": "NODE_OPTIONS=\"$NODE_OPTIONS --conditions=react-server\" npx tsx scripts/archive-cli.ts restore-run",
     "email:test-trial": "NODE_OPTIONS=\"$NODE_OPTIONS --conditions=react-server\" npx tsx scripts/email-test-trial.ts",
+    "tenant:set-plan": "NODE_OPTIONS=\"$NODE_OPTIONS --conditions=react-server\" npx tsx scripts/tenant-set-plan.ts",
     "test": "npm run test:imports && npm run test:seo-tools && npm run test:reputation && npm run test:ai-tools && npm run test:devtools && npm run test:gsc && npm run test:account && npm run test:extension && npm run test:vitest",
     "test:vitest": "vitest run",
     "test:imports": "node --test --import tsx src/monitoring/import/__tests__/csv-parser.test.ts",
