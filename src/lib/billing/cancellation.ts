@@ -258,7 +258,7 @@ async function syncEnded(tenantId: string, subscriptionId: string) {
 async function auditFailure(tenantId: string, actor: CancelActor, row: Row, action: string, details: Record<string, unknown>, err: unknown) {
   await createAuditLog({
     tenantId,
-    userId: actor.userId,
+    userId: actor.userId || undefined,
     action,
     entity: "Subscription",
     entityId: row.id,
@@ -355,7 +355,7 @@ export async function cancelTenantSubscription(tenantId: string, opts: CancelOpt
     await syncEnded(tenantId, row.stripeSubscriptionId);
     await createAuditLog({
       tenantId,
-      userId: actor.userId,
+      userId: actor.userId || undefined,
       action: "billing.subscription.cancel_now",
       entity: "Subscription",
       entityId: row.id,
@@ -394,7 +394,7 @@ export async function cancelTenantSubscription(tenantId: string, opts: CancelOpt
   if (changed) {
     await createAuditLog({
       tenantId,
-      userId: actor.userId,
+      userId: actor.userId || undefined,
       action: "billing.subscription.cancel",
       entity: "Subscription",
       entityId: row.id,
@@ -455,7 +455,7 @@ export async function resumeTenantSubscription(tenantId: string, actor: CancelAc
   if (changed) {
     await createAuditLog({
       tenantId,
-      userId: actor.userId,
+      userId: actor.userId || undefined,
       action: "billing.subscription.resume",
       entity: "Subscription",
       entityId: row.id,

@@ -371,12 +371,13 @@ const withSession = auth(async (req) => {
     publicPaths.some((path) => pathname.startsWith(path));
   if (isPublic) return NextResponse.next();
 
-  // Platform-wide APIs: staff only (PLATFORM_ADMIN_EMAILS). A 403 for
-  // everyone else, signed out included — an API answers, it does not 307 to
-  // /login. The routes check again (requirePlatformAdminApi), since the
-  // internal-secret bypass above never reaches this line.
+  // Platform-wide APIs: staff only (PLATFORM_ADMIN_EMAILS). A 404 for
+  // everyone else, signed out included (an API answers, it does not 307 to
+  // /login; and 404, not 403, so nothing admits a staff area exists). The
+  // routes check again (requirePlatformAdminApi), since the internal-secret
+  // bypass above never reaches this line.
   if (isAdminApiPath(pathname) && !isPlatformAdminEmail(req.auth?.user?.email)) {
-    return NextResponse.json({ error: "forbidden" }, { status: 403 });
+    return NextResponse.json({ error: "not_found" }, { status: 404 });
   }
 
   if (!req.auth) {

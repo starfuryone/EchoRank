@@ -16,6 +16,7 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = { title: "Admin", robots: { index: false, follow: false } };
 
 const PAGES = [
+  { href: "/admin/users", label: "Users (every tenant; cancel requests, data-deletion requests)" },
   { href: "/admin/snapshots", label: "Snapshots (free AI Visibility Check)" },
   { href: "/admin/sales-inquiries", label: "Sales inquiries" },
   { href: "/admin/crawl-overrides", label: "Crawl overrides" },

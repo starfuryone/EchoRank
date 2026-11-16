@@ -1,8 +1,9 @@
 // tests/admin-api-gate.test.ts
 //
 // /api/admin/* is staff only (PLATFORM_ADMIN_EMAILS), at two layers:
-//   - the REAL proxy (src/proxy.ts default export) answers 403 before any
-//     route runs, signed out included;
+//   - the REAL proxy (src/proxy.ts default export) answers 404 before any
+//     route runs, signed out included (403 until 2026-11-16: a 404 does not
+//     admit that a staff area exists);
 //   - every route under src/app/api/admin calls requirePlatformAdminApi(),
 //     because the proxy waves through any /api/ request carrying the
 //     internal secret.
@@ -83,22 +84,29 @@ describe("allowlist", () => {
 });
 
 describe("the proxy", () => {
-  it.each(["/api/admin/queues", "/api/admin/not-yet-written", "/api/admin"])("403s %s signed out (no 307 to /login)", async (path) => {
-    const res = await viaProxy(path);
-    expect(res.status).toBe(403);
-    expect(res.location).toBeNull();
-    expect(res.body).toEqual({ error: "forbidden" });
-  });
+  it.each(["/api/admin/queues", "/api/admin/not-yet-written", "/api/admin", "/api/admin/users/cancel", "/api/admin/users/export"])(
+    "404s %s signed out (no 307 to /login)",
+    async (path) => {
+      const res = await viaProxy(path);
+      expect(res.status).toBe(404);
+      expect(res.location).toBeNull();
+      expect(res.body).toEqual({ error: "not_found" });
+    },
+  );
 
-  it("403s a signed-in tenant owner who is not staff", async () => {
+  it("404s a signed-in tenant owner who is not staff, POST included", async () => {
     session = OWNER;
-    expect((await viaProxy("/api/admin/queues")).status).toBe(403);
+    expect((await viaProxy("/api/admin/queues")).status).toBe(404);
+    // Same-origin, so the proxy's CSRF layer (a 403 for any cross-site POST,
+    // staff or not) lets it through to the staff gate.
+    const post = { method: "POST", headers: { origin: "https://echorank360.com", host: "echorank360.com" } };
+    expect((await viaProxy("/api/admin/users/cancel", post)).status).toBe(404);
   });
 
-  it("403s staff too when the allowlist is unset", async () => {
+  it("404s staff too when the allowlist is unset", async () => {
     vi.stubEnv("PLATFORM_ADMIN_EMAILS", "");
     session = STAFF;
-    expect((await viaProxy("/api/admin/queues")).status).toBe(403);
+    expect((await viaProxy("/api/admin/queues")).status).toBe(404);
   });
 
   it("lets staff through to the route", async () => {
@@ -115,12 +123,12 @@ describe("the proxy", () => {
 });
 
 describe("GET /api/admin/queues (the route's own check)", () => {
-  it("403s signed out and a tenant owner — the internal-secret bypass skips the proxy", async () => {
-    expect((await queuesGET()).status).toBe(403);
+  it("404s signed out and a tenant owner — the internal-secret bypass skips the proxy", async () => {
+    expect((await queuesGET()).status).toBe(404);
     session = OWNER;
     const res = await queuesGET();
-    expect(res.status).toBe(403);
-    expect(await res.json()).toEqual({ error: "forbidden" });
+    expect(res.status).toBe(404);
+    expect(await res.json()).toEqual({ error: "not_found" });
   });
 
   it("answers staff with every queue, and no tenant id", async () => {
