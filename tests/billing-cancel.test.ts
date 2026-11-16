@@ -62,6 +62,13 @@ vi.mock("@/lib/prisma", () => ({
   },
 }));
 
+// Redis is not here; the limiter is a switch the 429 test flips.
+const rateLimit = vi.fn<(key: string, limit?: number, windowMs?: number) => Promise<{ success: boolean; remaining: number }>>(async () => ({
+  success: true,
+  remaining: 9,
+}));
+vi.mock("@/lib/rate-limit", () => ({ rateLimit: (k: string, l?: number, w?: number) => rateLimit(k, l, w) }));
+
 const createAuditLog = vi.fn(async (entry: Record<string, unknown>) => entry);
 vi.mock("@/lib/audit", () => ({ createAuditLog: (e: Record<string, unknown>) => createAuditLog(e) }));
 
@@ -203,7 +210,7 @@ describe("POST /api/billing/cancel", () => {
   });
 
   it("sends the owner a confirmation with the same facts", async () => {
-    getCurrentTenant.mockResolvedValue(member("tA", "ADMIN"));
+    getCurrentTenant.mockResolvedValue(member("tA", "OWNER"));
     await cancel();
     expect(sendMail).toHaveBeenCalledTimes(1);
     const mail = sendMail.mock.calls[0][0];
@@ -289,13 +296,62 @@ describe("POST /api/billing/cancel", () => {
     expect(stripeSubs.sub_A.cancel_at_period_end).toBe(false);
   });
 
-  it("502s when Stripe cannot be reached, and changes nothing", async () => {
+  it("502s when Stripe cannot be reached, changes nothing, and records the failure", async () => {
     getCurrentTenant.mockResolvedValue(member("tB"));
     update.mockRejectedValueOnce(new Error("connection reset"));
     const res = await cancel();
     expect(res.status).toBe(502);
+    expect(await res.json()).toMatchObject({ reason: "stripe_error", error: expect.any(String) });
     expect(subs[1].cancelAtPeriodEnd).toBe(false);
-    expect(createAuditLog).not.toHaveBeenCalled();
+    expect(createAuditLog).toHaveBeenCalledTimes(1);
+    expect(createAuditLog.mock.calls[0][0]).toMatchObject({
+      tenantId: "tB",
+      action: "billing.subscription.cancel_failed",
+      details: { stripeError: "connection reset", when: "period_end" },
+    });
+  });
+
+  it("403s an ADMIN: cancelling is the OWNER's alone, and the answer names the owner", async () => {
+    getCurrentTenant.mockResolvedValue(member("tA", "ADMIN"));
+    const res = await cancel();
+    expect(res.status).toBe(403);
+    expect(await res.json()).toMatchObject({ reason: "role", ownerName: "Ada Owner" });
+    expect(retrieve).not.toHaveBeenCalled();
+    expect(update).not.toHaveBeenCalled();
+  });
+
+  it("takes the tenant from the session only: a tenantId in the body is ignored", async () => {
+    getCurrentTenant.mockResolvedValue(member("tA"));
+    const res = await cancel({ tenantId: "tB", reason: "switching" });
+    expect(res.status).toBe(200);
+    expect(update).toHaveBeenCalledTimes(1);
+    expect(update.mock.calls[0][0]).toBe("sub_A");
+    expect(subs.find((s) => s.tenantId === "tB")!.cancelAtPeriodEnd).toBe(false);
+    expect(stripeSubs.sub_B.cancel_at_period_end).toBe(false);
+  });
+
+  it("429s past the rate limit, keyed per tenant and user, before touching Stripe", async () => {
+    getCurrentTenant.mockResolvedValue(member("tA"));
+    rateLimit.mockResolvedValueOnce({ success: false, remaining: 0 });
+    const res = await cancel();
+    expect(res.status).toBe(429);
+    expect(await res.json()).toMatchObject({ reason: "rate_limited" });
+    expect(rateLimit.mock.calls[0][0]).toBe("billing-action:tA:user_tA_OWNER");
+    expect(retrieve).not.toHaveBeenCalled();
+    expect(subs[0].cancelAtPeriodEnd).toBe(false);
+  });
+
+  it("maps the reasons to Stripe's feedback, the old used_once included", async () => {
+    getCurrentTenant.mockResolvedValue(member("tA"));
+    await cancel({ reason: "not_using", note: "  seasonal business  " });
+    expect(update.mock.calls[0][1]).toMatchObject({
+      cancel_at_period_end: true,
+      cancellation_details: { feedback: "unused", comment: "seasonal business" },
+    });
+    getCurrentTenant.mockResolvedValue(member("tB"));
+    await cancel({ reason: "used_once" });
+    expect(update.mock.calls[1][1]).toMatchObject({ cancellation_details: { feedback: "unused" } });
+    expect(createAuditLog.mock.calls[1][0]).toMatchObject({ details: { reason: "not_using" } });
   });
 });
 
@@ -339,8 +395,10 @@ describe("POST /api/billing/resume", () => {
     expect(update).not.toHaveBeenCalled();
   });
 
-  it("403s an ADMIN-less MEMBER, 403s CSRF, 409s no row", async () => {
+  it("403s a MEMBER and an ADMIN (OWNER only), 403s CSRF, 409s no row", async () => {
     getCurrentTenant.mockResolvedValue(member("tB", "MEMBER"));
+    expect((await resume()).status).toBe(403);
+    getCurrentTenant.mockResolvedValue(member("tB", "ADMIN"));
     expect((await resume()).status).toBe(403);
     getCurrentTenant.mockResolvedValue(member("tB"));
     expect((await resume("https://evil.example")).status).toBe(403);

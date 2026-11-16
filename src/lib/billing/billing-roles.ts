@@ -14,3 +14,15 @@ export const BILLING_ROLES: readonly Role[] = ["OWNER", "ADMIN"] as const;
 export function canManageBilling(role: Role | string | null | undefined): boolean {
   return !!role && (BILLING_ROLES as readonly string[]).includes(role);
 }
+
+/**
+ * Cancel and resume: the tenant's OWNER only (owner, 2026-11-16). An ADMIN
+ * still opens the Stripe portal (payment method, invoices) and sees, like a
+ * MEMBER, who can cancel. POST /api/billing/cancel and /resume enforce it
+ * (src/lib/billing/cancellation.ts); every button that offers it reads this.
+ */
+export const CANCEL_ROLES: readonly Role[] = ["OWNER"] as const;
+
+export function canCancelSubscription(role: Role | string | null | undefined): boolean {
+  return !!role && (CANCEL_ROLES as readonly string[]).includes(role);
+}

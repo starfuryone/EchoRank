@@ -35,6 +35,12 @@ export interface PlanHubCopy {
   resumeError: string;
   portalError: string;
   ownerOnly: (name: string | null) => string;
+  /** The cancel dialog's access-date line. */
+  accessUntil: (date: string) => string;
+  /** The dialog's close button (aria-label). */
+  cancelDialogClose: string;
+  /** 429 from /api/billing/cancel or /resume. */
+  rateLimited: string;
   timelineTitle: string;
   timelineToday: string;
   timelineTrialStarts: string;
@@ -119,7 +125,10 @@ export const PLAN_HUB_COPY: Record<DashLocale, PlanHubCopy> = {
     resume: "Resume subscription",
     resumeError: "Could not resume the subscription. Please try again.",
     portalError: "Could not open the billing portal. Please try again.",
-    ownerOnly: (name) => (name ? `Only ${name} can change or cancel this subscription.` : "Only the account owner or an admin can change or cancel this subscription."),
+    ownerOnly: (name) => (name ? `Only ${name} can cancel or resume this subscription.` : "Only the account owner can cancel or resume this subscription."),
+    accessUntil: (date) => `Access until ${date}`,
+    cancelDialogClose: "Close",
+    rateLimited: "Too many attempts. Please wait a few minutes and try again.",
     timelineTitle: "Your trial",
     timelineToday: "Today",
     timelineTrialStarts: "Trial starts",
@@ -205,7 +214,10 @@ export const PLAN_HUB_COPY: Record<DashLocale, PlanHubCopy> = {
     resume: "Reprendre l'abonnement",
     resumeError: "Impossible de reprendre l'abonnement. Veuillez réessayer.",
     portalError: "Impossible d'ouvrir le portail de facturation. Veuillez réessayer.",
-    ownerOnly: (name) => (name ? `${name} est la seule personne à pouvoir modifier ou annuler cet abonnement.` : "Seul le propriétaire du compte ou un administrateur peut modifier ou annuler cet abonnement."),
+    ownerOnly: (name) => (name ? `${name} est la seule personne à pouvoir annuler ou reprendre cet abonnement.` : "Seul le propriétaire du compte peut annuler ou reprendre cet abonnement."),
+    accessUntil: (date) => `Accès jusqu'au ${date}`,
+    cancelDialogClose: "Fermer",
+    rateLimited: "Trop de tentatives. Veuillez patienter quelques minutes, puis réessayer.",
     timelineTitle: "Votre essai",
     timelineToday: "Aujourd'hui",
     timelineTrialStarts: "Début de l'essai",
@@ -298,7 +310,10 @@ export const PLAN_HUB_COPY: Record<DashLocale, PlanHubCopy> = {
     resume: "Abo fortsetzen",
     resumeError: "Das Abo konnte nicht fortgesetzt werden. Bitte versuchen Sie es erneut.",
     portalError: "Das Abrechnungsportal konnte nicht geöffnet werden. Bitte versuchen Sie es erneut.",
-    ownerOnly: (name) => (name ? `Nur ${name} kann dieses Abo ändern oder kündigen.` : "Nur die Kontoinhaberin, der Kontoinhaber oder ein Admin kann dieses Abo ändern oder kündigen."),
+    ownerOnly: (name) => (name ? `Nur ${name} kann dieses Abo kündigen oder fortsetzen.` : "Nur die Kontoinhaberin oder der Kontoinhaber kann dieses Abo kündigen oder fortsetzen."),
+    accessUntil: (date) => `Zugang bis ${date}`,
+    cancelDialogClose: "Schliessen",
+    rateLimited: "Zu viele Versuche. Bitte warten Sie einige Minuten und versuchen Sie es dann erneut.",
     timelineTitle: "Ihre Testphase",
     timelineToday: "Heute",
     timelineTrialStarts: "Testphase beginnt",

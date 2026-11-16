@@ -215,8 +215,9 @@ function render(over: Partial<PlanHubProps> & { plan?: PlanType } = {}) {
     plan,
     resources: resources(plan) as PlanResources,
     usage: {},
-    billing: { state: "renewing", periodEnd: "2026-12-14T00:00:00.000Z", charge: { cents: 7800, interval: "month" }, hasPortal: true },
+    billing: { state: "renewing", periodEnd: "2026-12-14T00:00:00.000Z", charge: { cents: 7800, interval: "month" }, hasPortal: true, hasSubscription: true },
     canManage: true,
+    canCancel: true,
     ownerName: null,
     welcome: false,
     steps: [],
@@ -228,11 +229,13 @@ function render(over: Partial<PlanHubProps> & { plan?: PlanType } = {}) {
 
 describe("plan & billing card", () => {
   it("trialing: first charge date, the timeline with the 24 h reminder, Cancel", () => {
-    const html = render({ billing: { state: "trial", periodEnd: "2026-11-21T00:00:00.000Z", charge: { cents: 7800, interval: "month" }, hasPortal: true } });
+    const html = render({ billing: { state: "trial", periodEnd: "2026-11-21T00:00:00.000Z", charge: { cents: 7800, interval: "month" }, hasPortal: true, hasSubscription: true } });
     expect(html).toContain("Trial, first charge on November 21, 2026");
     expect(html).toContain("Reminder email on November 20, 2026");
     expect(html).toContain('data-testid="plan-timeline"');
-    expect(html).toContain('href="/billing/cancel"');
+    // Our own confirm dialog, not a link away (and never the Stripe portal).
+    expect(html).toContain('data-testid="plan-cancel"');
+    expect(html).not.toContain('href="/billing/cancel"');
   });
 
   it("active: renews on, Cancel, no timeline", () => {
@@ -243,38 +246,60 @@ describe("plan & billing card", () => {
   });
 
   it("cancel_at_period_end: access until, Resume, no Cancel", () => {
-    const html = render({ billing: { state: "cancelling", periodEnd: "2026-12-14T00:00:00.000Z", charge: null, hasPortal: true } });
+    const html = render({ billing: { state: "cancelling", periodEnd: "2026-12-14T00:00:00.000Z", charge: null, hasPortal: true, hasSubscription: true } });
     expect(html).toContain("Cancelled, access until December 14, 2026");
     expect(html).toContain('data-testid="plan-resume"');
     expect(html).not.toContain('data-testid="plan-cancel"');
   });
 
   it("past_due: the payment-issue line", () => {
-    expect(render({ billing: { state: "past_due", periodEnd: null, charge: null, hasPortal: true } })).toContain("Payment issue, update your card");
+    expect(render({ billing: { state: "past_due", periodEnd: null, charge: null, hasPortal: true, hasSubscription: true } })).toContain("Payment issue, update your card");
   });
 
   it("a grandfathered price: the subscription's own amount, not the config's", () => {
-    const html = render({ billing: { state: "renewing", periodEnd: "2026-12-14T00:00:00.000Z", charge: { cents: 7900, interval: "month" }, hasPortal: true } });
+    const html = render({ billing: { state: "renewing", periodEnd: "2026-12-14T00:00:00.000Z", charge: { cents: 7900, interval: "month" }, hasPortal: true, hasSubscription: true } });
     expect(html).toContain("$79 / month");
     expect(html).not.toContain(`$${PLAN_CONFIGS.STARTER.monthlyPrice} / month`);
   });
 
   it("no amount known: the date alone", () => {
-    const html = render({ billing: { state: "renewing", periodEnd: "2026-12-14T00:00:00.000Z", charge: null, hasPortal: true } });
+    const html = render({ billing: { state: "renewing", periodEnd: "2026-12-14T00:00:00.000Z", charge: null, hasPortal: true, hasSubscription: true } });
     expect(html).not.toContain('data-testid="plan-amount"');
     expect(html).toContain("Renews on December 14, 2026");
   });
 
   it("no stripeCustomerId: the portal button is hidden", () => {
-    expect(render({ billing: { state: "renewing", periodEnd: null, charge: null, hasPortal: false } })).not.toContain('data-testid="plan-portal"');
+    expect(render({ billing: { state: "renewing", periodEnd: null, charge: null, hasPortal: false, hasSubscription: true } })).not.toContain('data-testid="plan-portal"');
     expect(render()).toContain('data-testid="plan-portal"');
   });
 
-  it("a role that cannot manage billing sees who can, not buttons that act", () => {
-    const html = render({ canManage: false, ownerName: "Ada Owner" });
-    expect(html).toContain("Only Ada Owner can change or cancel this subscription.");
+  it("a MEMBER sees who can cancel, not buttons that act", () => {
+    const html = render({ canManage: false, canCancel: false, ownerName: "Ada Owner" });
+    expect(html).toContain("Only Ada Owner can cancel or resume this subscription.");
     expect(html).not.toContain('data-testid="plan-cancel"');
     expect(html).not.toContain('data-testid="plan-portal"');
+  });
+
+  it("an ADMIN keeps the portal but not Cancel or Resume: those are the OWNER's", () => {
+    const renewing = render({ canManage: true, canCancel: false, ownerName: "Ada Owner" });
+    expect(renewing).toContain('data-testid="plan-portal"');
+    expect(renewing).not.toContain('data-testid="plan-cancel"');
+    expect(renewing).toContain("Only Ada Owner can cancel or resume this subscription.");
+    const cancelling = render({
+      canManage: true,
+      canCancel: false,
+      billing: { state: "cancelling", periodEnd: "2026-12-14T00:00:00.000Z", charge: null, hasPortal: true, hasSubscription: true },
+    });
+    expect(cancelling).not.toContain('data-testid="plan-resume"');
+  });
+
+  it("no Stripe subscription (a manual plan): no Cancel, no Resume, no owner line", () => {
+    for (const state of ["renewing", "trial", "cancelling"] as const) {
+      const html = render({ billing: { state, periodEnd: "2026-12-14T00:00:00.000Z", charge: null, hasPortal: false, hasSubscription: false } });
+      expect(html, state).not.toContain('data-testid="plan-cancel"');
+      expect(html, state).not.toContain('data-testid="plan-resume"');
+      expect(html, state).not.toContain('data-testid="plan-owner-only"');
+    }
   });
 
   it("shows the cancel article's short-form answer, and claims no emailed receipt", () => {

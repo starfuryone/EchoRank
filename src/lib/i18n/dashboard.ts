@@ -622,8 +622,8 @@ const billingEn = {
   reasons: {
     too_expensive: "Too expensive",
     missing_feature: "Missing a feature",
-    used_once: "Only needed it once",
     switching: "Switching to another tool",
+    not_using: "Not using it",
     other: "Other",
   } as Record<string, string>,
   noteLabel: "Anything else? (optional)",
@@ -754,8 +754,8 @@ export const BILLING_COPY: Record<DashLocale, BillingCopy> = {
     reasons: {
       too_expensive: "Trop cher",
       missing_feature: "Il manque une fonctionnalité",
-      used_once: "Je n'en avais besoin qu'une fois",
       switching: "Je passe à un autre outil",
+      not_using: "Je ne l'utilise pas",
       other: "Autre",
     } as Record<string, string>,
     noteLabel: "Autre chose à ajouter ? (facultatif)",
@@ -866,8 +866,8 @@ export const BILLING_COPY: Record<DashLocale, BillingCopy> = {
     reasons: {
       too_expensive: "Zu teuer",
       missing_feature: "Eine Funktion fehlt",
-      used_once: "Nur einmal gebraucht",
       switching: "Wechsel zu einem anderen Tool",
+      not_using: "Ich nutze es nicht",
       other: "Anderes",
     } as Record<string, string>,
     noteLabel: "Möchten Sie noch etwas ergänzen? (optional)",

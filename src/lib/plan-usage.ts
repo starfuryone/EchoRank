@@ -88,12 +88,14 @@ export interface PlanBilling {
   currentPeriodEnd: string | null;
   charge: SubscriptionCharge | null;
   hasPortal: boolean;
+  /** A PLAN row with a Stripe subscription id: something cancel can act on. */
+  hasSubscription: boolean;
 }
 
 export async function loadPlanBilling(tenantId: string, stripeCustomerId: string | null, tenantStatus: string | null): Promise<PlanBilling> {
   const sub = await prisma.subscription.findUnique({
     where: { tenantId },
-    select: { productKind: true, status: true, cancelAtPeriodEnd: true, currentPeriodEnd: true, stripePriceId: true },
+    select: { productKind: true, status: true, cancelAtPeriodEnd: true, currentPeriodEnd: true, stripePriceId: true, stripeSubscriptionId: true },
   });
   const row = sub?.productKind === "PLAN" ? sub : null;
   return {
@@ -102,5 +104,6 @@ export async function loadPlanBilling(tenantId: string, stripeCustomerId: string
     currentPeriodEnd: row?.currentPeriodEnd?.toISOString() ?? null,
     charge: row ? await subscriptionCharge(row.stripePriceId) : null,
     hasPortal: Boolean(stripeCustomerId),
+    hasSubscription: Boolean(row?.stripeSubscriptionId),
   };
 }

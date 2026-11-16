@@ -55,6 +55,7 @@ function card(over: Partial<PlanStatusCardProps>) {
     priceText: "$15/month",
     periodEnd: END,
     canManage: true,
+    canCancel: true,
     ownerName: null,
     hasPortal: true,
     onPortal: () => {},
@@ -162,14 +163,21 @@ describe("fair play: the Cancel button", () => {
   });
 
   it("is absent for a role that cannot cancel, which is told who can", () => {
-    const html = card({ state: "renewing", status: "ACTIVE", canManage: false, ownerName: "Ada Owner" });
+    const html = card({ state: "renewing", status: "ACTIVE", canManage: false, canCancel: false, ownerName: "Ada Owner" });
     expect(html).not.toContain('data-testid="billing-cancel"');
     expect(html).not.toContain('data-testid="billing-portal"');
     expect(html).toContain("Only Ada Owner can cancel this subscription.");
   });
 
+  it("an ADMIN keeps the portal but not Cancel or Resume (OWNER only)", () => {
+    const html = card({ state: "renewing", status: "ACTIVE", canManage: true, canCancel: false, ownerName: "Ada Owner" });
+    expect(html).toContain('data-testid="billing-portal"');
+    expect(html).not.toContain('data-testid="billing-cancel"');
+    expect(card({ state: "cancelling", status: "ACTIVE", canManage: true, canCancel: false })).not.toContain('data-testid="billing-resume"');
+  });
+
   it("the owner message has a fallback when the owner has no name", () => {
-    expect(card({ state: "trial", canManage: false, ownerName: null })).toContain(
+    expect(card({ state: "trial", canManage: false, canCancel: false, ownerName: null })).toContain(
       "Only the account owner can cancel this subscription.",
     );
   });
@@ -198,7 +206,7 @@ describe("/billing/cancel", () => {
     expect(html).toContain("You keep full access until November 20, 2026.");
     expect(html).toContain("You can resume with one click any time before November 20, 2026.");
     expect(html).toContain("Why are you cancelling? (optional)");
-    for (const r of ["Too expensive", "Missing a feature", "Only needed it once", "Switching to another tool", "Other"]) {
+    for (const r of ["Too expensive", "Missing a feature", "Switching to another tool", "Not using it", "Other"]) {
       expect(html).toContain(r);
     }
     // Optional: nothing on the form is required.

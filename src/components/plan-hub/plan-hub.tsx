@@ -47,8 +47,13 @@ export interface PlanHubProps {
     /** The subscription's own charge; null → the date alone. */
     charge: { cents: number; interval: "month" | "year" } | null;
     hasPortal: boolean;
+    /** A Stripe plan subscription exists: without one there is nothing to cancel. */
+    hasSubscription: boolean;
   };
+  /** OWNER / ADMIN: the Stripe portal. */
   canManage: boolean;
+  /** OWNER only: cancel and resume. */
+  canCancel: boolean;
   ownerName: string | null;
   /** ?welcome=1 after a verified, paid checkout. */
   welcome: boolean;
@@ -186,7 +191,17 @@ export function PlanHub(p: PlanHubProps) {
             )}
 
             <div className="border-t border-gray-100 pt-4">
-              <PlanBillingActions locale={locale} state={p.billing.state} canManage={p.canManage} ownerName={p.ownerName} hasPortal={p.billing.hasPortal} />
+              <PlanBillingActions
+                locale={locale}
+                state={p.billing.state}
+                canManage={p.canManage}
+                canCancel={p.canCancel}
+                ownerName={p.ownerName}
+                hasPortal={p.billing.hasPortal}
+                hasSubscription={p.billing.hasSubscription}
+                planName={planName}
+                periodEndLabel={p.billing.periodEnd ? formatPeriodDate(p.billing.periodEnd, locale) : null}
+              />
             </div>
             {cancelFaq && (
               <p className="text-xs leading-relaxed text-gray-500" data-testid="plan-cancel-anytime">

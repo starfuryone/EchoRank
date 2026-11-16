@@ -10,10 +10,17 @@
 export const CANCEL_REASONS = [
   "too_expensive",
   "missing_feature",
-  "used_once",
   "switching",
+  "not_using",
   "other",
 ] as const;
+
+/**
+ * Earlier keys still accepted, as what they became: "used_once" ("Only
+ * needed it once") is "not_using" since 2026-11-16. Audit rows written before
+ * keep the old word.
+ */
+const LEGACY_REASONS: Record<string, (typeof CANCEL_REASONS)[number]> = { used_once: "not_using" };
 
 export type CancelReason = (typeof CANCEL_REASONS)[number];
 
@@ -27,8 +34,8 @@ export const STRIPE_FEEDBACK: Record<
 > = {
   too_expensive: "too_expensive",
   missing_feature: "missing_features",
-  used_once: "unused",
   switching: "switched_service",
+  not_using: "unused",
   other: "other",
 };
 
@@ -40,10 +47,9 @@ export interface CancelInput {
 /** Whatever the client sent, as a CancelInput. Never throws. */
 export function parseCancelInput(body: unknown): CancelInput {
   const raw = body && typeof body === "object" ? (body as Record<string, unknown>) : {};
-  const reason =
-    typeof raw.reason === "string" && (CANCEL_REASONS as readonly string[]).includes(raw.reason)
-      ? (raw.reason as CancelReason)
-      : null;
+  const asked =
+    typeof raw.reason === "string" ? (Object.hasOwn(LEGACY_REASONS, raw.reason) ? LEGACY_REASONS[raw.reason] : raw.reason) : null;
+  const reason = asked && (CANCEL_REASONS as readonly string[]).includes(asked) ? (asked as CancelReason) : null;
   const note =
     typeof raw.note === "string" && raw.note.trim().length > 0
       ? raw.note.trim().slice(0, CANCEL_NOTE_MAX)

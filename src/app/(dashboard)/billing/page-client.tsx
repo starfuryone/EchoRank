@@ -79,13 +79,16 @@ export function BillingPageClient({
   credits,
   creditHistory,
   canManage,
+  canCancel,
   ownerName,
   hasPortal,
   justCancelled,
 }: {
   locale: DashLocale;
-  /** OWNER or ADMIN (src/lib/billing/billing-roles.ts): may cancel, resume, open the portal. */
+  /** OWNER or ADMIN (src/lib/billing/billing-roles.ts): may open the portal. */
   canManage: boolean;
+  /** OWNER only: may cancel and resume. */
+  canCancel: boolean;
   /** Named in "Only {owner} can cancel this subscription". */
   ownerName: string | null;
   /** The tenant has a Stripe customer, so the portal has something to show. */
@@ -303,6 +306,7 @@ export function BillingPageClient({
         priceText={customPricing ? null : priceText}
         periodEnd={billing.currentPeriodEnd}
         canManage={canManage}
+        canCancel={canCancel}
         ownerName={ownerName}
         hasPortal={hasPortal}
         onPortal={openPortal}

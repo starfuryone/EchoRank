@@ -20,7 +20,7 @@ import { BILLING_COPY, dashboardLocale } from "@/lib/i18n/dashboard";
 import { getCurrentTenant } from "@/lib/tenant";
 import { prisma } from "@/lib/prisma";
 import { planConfig } from "@/lib/plan-config";
-import { canManageBilling } from "@/lib/billing/billing-roles";
+import { canCancelSubscription } from "@/lib/billing/billing-roles";
 import { billingOwnerName } from "@/lib/billing/cancellation";
 import { formatPeriodDate, planCardState } from "@/lib/billing/plan-card-state";
 import { CANCEL_REASONS } from "@/lib/billing/cancel-reasons";
@@ -45,7 +45,7 @@ export default async function BillingCancelPage() {
   );
 
   if (!membership) return notice(t.cancelNothing);
-  if (!canManageBilling(membership.role)) {
+  if (!canCancelSubscription(membership.role)) {
     return notice(t.ownerOnly(await billingOwnerName(membership.tenantId)));
   }
 

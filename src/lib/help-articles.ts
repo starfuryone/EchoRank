@@ -157,7 +157,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
           { k: "h2", t: "Who can cancel" },
           {
             k: "p",
-            t: "The account owner or an admin. Other team members see who can cancel instead of the button.",
+            t: "The account owner. Admins and other team members see who can cancel instead of the button.",
           },
           { k: "h2", t: "Need help?" },
           {
@@ -233,7 +233,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
           { k: "h2", t: "Qui peut annuler" },
           {
             k: "p",
-            t: "Le propriétaire du compte ou un administrateur. Les autres membres de l'équipe voient qui peut annuler, à la place du bouton.",
+            t: "Le propriétaire du compte. Les administrateurs et les autres membres de l'équipe voient qui peut annuler, à la place du bouton.",
           },
           { k: "h2", t: "Besoin d'aide ?" },
           {

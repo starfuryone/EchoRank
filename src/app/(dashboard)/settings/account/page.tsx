@@ -8,7 +8,7 @@ import { CONV_RATE_DEFAULT, AVG_SALE_VALUE_DEFAULT } from "@/lib/account-validat
 import { activeMatrixAccount } from "@/lib/matrix-accounts";
 import { ELEMENT_URL } from "@/app/api/account/matrix/provision/route";
 import { AccountPageClient } from "./page-client";
-import { canManageBilling } from "@/lib/billing/billing-roles";
+import { canCancelSubscription } from "@/lib/billing/billing-roles";
 import { billingOwnerName } from "@/lib/billing/cancellation";
 
 export const dynamic = "force-dynamic";
@@ -48,7 +48,8 @@ export default async function AccountPage() {
     subscription?.productKind === "PLAN" &&
     !subscription.cancelAtPeriodEnd &&
     ["TRIALING", "ACTIVE", "PAST_DUE"].includes(subscription.status);
-  const canManage = canManageBilling(membership.role);
+  // `canManage` here means "may cancel": the OWNER only (canCancelSubscription).
+  const canManage = canCancelSubscription(membership.role);
   const cancel = cancellable
     ? { canManage, ownerName: canManage ? null : await billingOwnerName(membership.tenantId) }
     : null;

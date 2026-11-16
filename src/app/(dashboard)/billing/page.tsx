@@ -6,7 +6,7 @@ import { creditBalance, creditHistory } from "@/lib/credits/store";
 import { getBillingContext } from "@/lib/paid-plan";
 import { helpArticleSlugFor } from "@/lib/help-content";
 import { helpArticleHref } from "@/lib/help-articles";
-import { canManageBilling } from "@/lib/billing/billing-roles";
+import { canCancelSubscription, canManageBilling } from "@/lib/billing/billing-roles";
 import { billingOwnerName } from "@/lib/billing/cancellation";
 
 export default async function BillingPage({
@@ -59,8 +59,10 @@ export default async function BillingPage({
 
   // WHO MAY CANCEL, decided server-side (the routes re-check). Everyone else
   // is told who can, by name, instead of seeing a button that 403s.
+  // The portal is OWNER/ADMIN; cancel and resume are the OWNER's alone.
   const canManage = membership ? canManageBilling(membership.role) : false;
-  const ownerName = membership && !canManage ? await billingOwnerName(membership.tenantId) : null;
+  const canCancel = membership ? canCancelSubscription(membership.role) : false;
+  const ownerName = membership && !canCancel ? await billingOwnerName(membership.tenantId) : null;
 
   return (
     <BillingPageClient
@@ -71,6 +73,7 @@ export default async function BillingPage({
       credits={credits}
       creditHistory={history}
       canManage={canManage}
+      canCancel={canCancel}
       ownerName={ownerName}
       hasPortal={!!membership?.tenant.stripeCustomerId}
       justCancelled={query.cancelled === "1"}

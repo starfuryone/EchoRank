@@ -41,7 +41,10 @@ export interface PlanStatusCardProps {
   priceText: string | null;
   /** ISO: trial end, renewal, or the day access ends. */
   periodEnd: string | null;
+  /** OWNER / ADMIN: "Payment method & invoices". */
   canManage: boolean;
+  /** OWNER only: Cancel and Resume (billing-roles.ts canCancelSubscription). */
+  canCancel: boolean;
   ownerName: string | null;
   /** Show "Payment method & invoices": the tenant has a Stripe customer. */
   hasPortal: boolean;
@@ -94,12 +97,12 @@ export function PlanStatusCard(p: PlanStatusCardProps) {
 
         <div className="mt-4 border-t border-gray-100 pt-4">
           <div className="flex flex-wrap items-center gap-3">
-            {p.canManage && action === "cancel" && (
+            {p.canCancel && action === "cancel" && (
               <Link href="/billing/cancel" className={OUTLINE_BUTTON_CLASS} data-testid="billing-cancel">
                 {t.cancelSubscription}
               </Link>
             )}
-            {p.canManage && action === "resume" && (
+            {p.canCancel && action === "resume" && (
               <Button variant="outline" onClick={p.onResume} loading={p.resumeBusy} data-testid="billing-resume">
                 {t.resumeSubscription}
               </Button>
@@ -115,7 +118,7 @@ export function PlanStatusCard(p: PlanStatusCardProps) {
               </a>
             )}
           </div>
-          {!p.canManage && action && (
+          {!p.canCancel && action && (
             <p className="mt-2 text-sm text-gray-600" data-testid="billing-owner-only">
               {t.ownerOnly(p.ownerName)}
             </p>

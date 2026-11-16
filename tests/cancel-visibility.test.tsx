@@ -56,7 +56,7 @@ describe("/settings/account plan section", () => {
     const page = readFileSync(join(ROOT, "src/app/(dashboard)/settings/account/page.tsx"), "utf8");
     expect(page).toContain('subscription?.productKind === "PLAN"');
     expect(page).toContain("!subscription.cancelAtPeriodEnd");
-    expect(page).toContain("canManageBilling(membership.role)");
+    expect(page).toContain("canCancelSubscription(membership.role)");
   });
 });
 

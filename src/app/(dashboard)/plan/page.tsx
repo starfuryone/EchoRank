@@ -23,7 +23,7 @@ import { loadPlanBilling, loadPlanUsage } from "@/lib/plan-usage";
 import { tenantRollouts } from "@/lib/rollouts-server";
 import { getOnboardingSnapshot } from "@/lib/onboarding";
 import { planCardState } from "@/lib/billing/plan-card-state";
-import { canManageBilling } from "@/lib/billing/billing-roles";
+import { canCancelSubscription, canManageBilling } from "@/lib/billing/billing-roles";
 import { billingOwnerName } from "@/lib/billing/cancellation";
 import { getEnterpriseContact } from "@/lib/plan-config";
 import { PlanHub } from "@/components/plan-hub/plan-hub";
@@ -49,13 +49,15 @@ export default async function PlanPage({ searchParams }: { searchParams: Promise
     monthlyRequestLimit: tenant.monthlyRequestLimit,
   });
   const canManage = canManageBilling(membership.role);
+  // Cancel and resume: the OWNER only. Everyone else is told who can.
+  const canCancel = canCancelSubscription(membership.role);
 
   const [usage, billing, context, onboarding, ownerName] = await Promise.all([
     loadPlanUsage(tenantId, plan, resources.limits),
     loadPlanBilling(tenantId, tenant.stripeCustomerId, tenant.billingStatus),
     getBillingContext(tenantId),
     getOnboardingSnapshot(tenantId, userId).catch(() => null),
-    canManage ? Promise.resolve(null) : billingOwnerName(tenantId).catch(() => null),
+    canCancel ? Promise.resolve(null) : billingOwnerName(tenantId).catch(() => null),
   ]);
 
   const { welcome } = await searchParams;
@@ -76,8 +78,10 @@ export default async function PlanPage({ searchParams }: { searchParams: Promise
         periodEnd: billing.currentPeriodEnd,
         charge: billing.charge,
         hasPortal: billing.hasPortal,
+        hasSubscription: billing.hasSubscription,
       }}
       canManage={canManage}
+      canCancel={canCancel}
       ownerName={ownerName}
       welcome={welcome === "1" && paid}
       steps={onboarding?.steps ?? []}
